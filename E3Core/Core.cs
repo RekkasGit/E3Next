@@ -23,19 +23,16 @@ namespace MonoCore
     public static class MainProcessor
     {
         public static IMQ MQ = Core.mqInstance;
-        public static Int32 _processDelay = 5000;
+        public static Int32 _processDelay = 100;
         private static Logging _log = Core._log;
-        private static string _applicationName = "e3";
+        public static string _applicationName = "";
        
         public static void Init()
         {
-            ///DO YOUR INIT WORK HERE
+          
             //WARNING , you may not be in game yet, so careful what queries you run on MQ.Query. May cause a crash.
-            
-            //current logging level for all _log.writes without specifying logging level
-            Logging._defaultLogLevel = Logging.LogLevels.Debug;
             //how long before auto yielding back to C++/EQ/MQ on the next query/command/etc
-            MonoCore.MQ._maxMillisecondsToWork = 40;
+           
         }
         //we use this to tell the C++ thread that its okay to start processing gain
         //public static EconomicResetEvent _processResetEvent = new EconomicResetEvent(false, Thread.CurrentThread);
@@ -465,7 +462,7 @@ namespace MonoCore
     {
         T Query<T>(string query);
         void Cmd(string query);
-        void Write(string query, string colorcode = "");
+        void Write(string query, string colorcode = "", [CallerMemberName] string memberName = "", [CallerFilePath] string fileName = "", [CallerLineNumber] int lineNumber = 0);
         void TraceStart(string methodName);
         void TraceEnd(string methodName);
         void Delay(Int32 value);
@@ -584,7 +581,7 @@ namespace MonoCore
             Cmd($"/bc {query}");
         }
 
-        public void Write(string query, string colorcode = "\at")
+        public void Write(string query, string colorcode = "\at", [CallerMemberName] string memberName = "", [CallerFilePath] string fileName = "", [CallerLineNumber] int lineNumber = 0)
         {
             //if(String.IsNullOrWhiteSpace(query))
             //{
@@ -597,7 +594,7 @@ namespace MonoCore
             //}
             //Core.mq_Echo(query);
             //set the buffer for the C++ thread
-            Core._currentWrite = colorcode + query;
+            Core._currentWrite = $"[{System.DateTime.Now.ToString("HH:mm:ss")}] <{memberName}>:{colorcode}{query}";
             //swap to the C++thread, and it will swap back after executing the current write becau of us setting _CurrentWrite before
             Core._coreResetEvent.Set();
             //we are now going to wait on the core
@@ -710,7 +707,7 @@ namespace MonoCore
         public ITrace Trace(string name="",[CallerMemberName] string memberName = "", [CallerFilePath] string fileName = "", [CallerLineNumber] int lineNumber = 0)
         {
             BaseTrace returnValue = BaseTrace.Aquire();
-            if (_currentLogLevel== LogLevels.None)
+            if (_currentLogLevel== LogLevels.Info)
             {
                 //if not debugging don't log stuff
                 returnValue.CallBackDispose = TraceSetTime;

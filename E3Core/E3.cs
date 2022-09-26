@@ -16,7 +16,7 @@ namespace E3Core.Processors
 
         //used throughout e3 per loop to allow kickout form methods
         public static Boolean _actionTaken = false;
-        public static Boolean _isPriest = false;
+        public static Boolean _following = false;
         public static Int64 _startTimeStamp;
         public static Boolean _isInit = false;
         public static Boolean _isBadState = false;
@@ -29,41 +29,7 @@ namespace E3Core.Processors
         public static string _currentLongClassString;
         public static string _currentShortClassString;
         public static Int32 _zoneID;
-        public static void Init()
-        {
-            Logging._currentLogLevel = Logging.LogLevels.Debug;
-            Setup.Init();
-            //register events
-            EventProcessor.EventLimiterPerRegisteredEvent = 20;
-            EventProcessor.RegisterEvent("SwarmEvent", "(.+) tells the group, 'SWARM-(.+)'", (x) => {
 
-
-                string user = string.Empty;
-                string swarmSpell = String.Empty;
-                if(x.match.Groups.Count>2)
-                {
-                    user=x.match.Groups[1].Value;
-                    swarmSpell = x.match.Groups[2].Value;
-                }
-
-
-                _log.Write($"{ x.eventName}:{ user} cast the swarm pet: {swarmSpell}"); 
-            
-            });
-
-            //do first to get class information
-            _characterSettings = new Settings.CharacterSettings();
-            _currentClass = _characterSettings._characterClass;
-            //end class information
-
-            _generalSettings = new Settings.GeneralSettings();
-            _advancedSettings = new Settings.AdvancedSettings();
-           
-            _currentLongClassString = _currentClass.ToString();
-            _currentShortClassString = Data.Classes._classLongToShort[_currentLongClassString];
-            _isInit = true;
-
-        }
 
         public static void Process()
         {
@@ -71,12 +37,18 @@ namespace E3Core.Processors
             {
                 return;
             }
+
             _startTimeStamp = Core._stopWatch.ElapsedMilliseconds;
             using (_log.Trace())
             {
-                _zoneID = MQ.Query<Int32>("${Zone.ID}");
+                //update on every loop
+                _zoneID = MQ.Query<Int32>("${Zone.ID}"); //to tell if we zone mid process
+                //action taken is always set to false at the start of the loop
                 _actionTaken = false;
+                //Init is here to make sure we only Init while InGame, as some queries will fail if not in game
                 if (!_isInit) { Init(); }
+
+
                 List<string> _methodsToInvokeAsStrings;
                 if (AdvancedSettings._classMethodsAsStrings.TryGetValue(_currentShortClassString, out _methodsToInvokeAsStrings))
                 {
@@ -94,11 +66,44 @@ namespace E3Core.Processors
                 }
             }
 
-           
+
             MQ.Write("Total Processing time in ms:" + (Core._stopWatch.ElapsedMilliseconds - _startTimeStamp));
         }
 
 
+
+
+        private static void Init()
+        {
+
+            Logging._currentLogLevel = Logging.LogLevels.Debug; //log level we are currently at
+            Logging._minLogLevelTolog = Logging.LogLevels.Debug; //log levels have integers assoicatd to them. you can set this to Error to only log errors. 
+            Logging._defaultLogLevel = Logging.LogLevels.Debug; //the default if a level is not passed into the _log.write statement. useful to hide/show things.
+            MainProcessor._applicationName = "E3Next"; //application name, used in some outputs
+            MainProcessor._processDelay = 100; //how much time we will wait until we start our next processing once we are done with a loop.
+            //how long you allow script to process before auto yield is engaged. generally should't need to mess with this, but an example.
+            MonoCore.MQ._maxMillisecondsToWork = 40;
+            //max event count for each registered event before spilling over.
+            EventProcessor.EventLimiterPerRegisteredEvent = 20;
+
+            Setup.Init();
+           
+
+            //do first to get class information
+            _characterSettings = new Settings.CharacterSettings();
+            _currentClass = _characterSettings._characterClass;
+            //end class information
+
+            _generalSettings = new Settings.GeneralSettings();
+            _advancedSettings = new Settings.AdvancedSettings();
+           
+            _currentLongClassString = _currentClass.ToString();
+            _currentShortClassString = Data.Classes._classLongToShort[_currentLongClassString];
+            _isInit = true;
+
+        }
+
+      
         private static bool ShouldRun()
         {
 
@@ -116,14 +121,28 @@ namespace E3Core.Processors
 
             return true;
         }
-        private static void ReloadSettings()
+        private static void RegisterEvents()
         {
 
+            //register events
+            //Event Line:"Pyra tells the group, 'SWARM-Host of the Elements'"
+            EventProcessor.RegisterEvent("SwarmEvent", "(.+) tells the group, 'SWARM-(.+)'", (x) => {
+                string user = string.Empty;
+                string swarmSpell = String.Empty;
+                if (x.match.Groups.Count > 2)
+                {
+                    user = x.match.Groups[1].Value;
+                    swarmSpell = x.match.Groups[2].Value;
+                }
+                _log.Write($"{ x.eventName}:{ user} cast the swarm pet: {swarmSpell}");
 
+            });
+            //can also just pass it any method with signature
+            ////static void ProcessEvent(EventProcessor.EventMatch x)
         }
         public static void Shutdown()
         {
-            MQ.Write("Shutting down E3....Reload to start gain");
+            MQ.Write($"Shutting down {MainProcessor._applicationName}....Reload to start gain");
             _isBadState = true;
            
         }

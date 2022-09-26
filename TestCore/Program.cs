@@ -1,6 +1,7 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Linq;
+using System.Runtime.CompilerServices;
 using System.Text;
 using System.Threading.Tasks;
 
@@ -114,9 +115,9 @@ namespace TestCore
                 Console.WriteLine("tracestart:"+methodName);
             }
 
-            public void Write(string query, string colorcode = "")
+            public void Write(string query, string colorcode = "", [CallerMemberName] string memberName = "", [CallerFilePath] string fileName = "", [CallerLineNumber] int lineNumber = 0)
             {
-                Console.WriteLine(query);
+                Console.WriteLine($"[{System.DateTime.Now.ToString("HH:mm:ss")}] {colorcode}{query}");
             }
         }
 

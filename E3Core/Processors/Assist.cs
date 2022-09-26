@@ -8,5 +8,8 @@ namespace E3Core.Processors
 {
     public static class Assist
     {
+
+        public static Boolean _isAssisting = false;
+
     }
 }

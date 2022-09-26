@@ -8,5 +8,15 @@ namespace E3Core.Processors
 {
     public static class Basics
     {
+
+        public static bool _following = false;
+
+
+
+        public static void AcquireFollow()
+        {
+
+        }
+
     }
 }

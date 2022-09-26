@@ -479,7 +479,20 @@ namespace E3Core.Data
         public Int32 Duration;
         public Decimal RecastTime;
         public Decimal RecoveryTime;
-        public Decimal MyCastTime;
+        private Decimal myCastTime;
+        public decimal MyCastTime
+        {
+            get { return myCastTime; }
+            set
+            {
+                myCastTime = value;
+                if (CastType != CastType.Ability)
+                {
+                    MyCastTimeInSeconds = value / 1000;
+                }
+            }
+        }
+        public decimal MyCastTimeInSeconds = 0;
         public Decimal MyRange;
         public Int32 Mana;
         public Int32 MinMana;
@@ -509,7 +522,9 @@ namespace E3Core.Data
         public Boolean NoStack;
         public String TriggerSpell;
         public String BeforeSpell;
+        public Data.Spell BeforeSpellData;
         public String AfterSpell;
+        public Data.Spell AfterSpellData;
         public Boolean NoInterrupt;
         public String AfterEvent;
         public String BeforeEvent;
@@ -517,6 +532,9 @@ namespace E3Core.Data
         public string Ifs;
         public string InitName;
         public bool RegentOutOfStock = false;
+
+       
+
         public override string ToString()
         {
             StringBuilder sb = new StringBuilder();
