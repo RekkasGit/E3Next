@@ -531,7 +531,7 @@ namespace E3Core.Data
         public String CastIF;
         public string Ifs;
         public string InitName;
-        public bool RegentOutOfStock = false;
+        public bool ReagentOutOfStock = false;
 
        
 

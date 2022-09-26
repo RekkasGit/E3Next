@@ -27,7 +27,7 @@ namespace TestCore
             while(true)
             {
 
-                MonoCore.Core.OnIncomingChat("Pyra tells the group, 'SWARM-Host of the Elements'");
+                MonoCore.Core.OnIncomingChat("Rekken tells the group, 'nowCast Dawnstrike targetid=88'");
 
                 E3Core.Processors.E3.Process();
                 MonoCore.EventProcessor.ProcessEventsInQueues();

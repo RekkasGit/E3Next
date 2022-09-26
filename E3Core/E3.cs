@@ -76,30 +76,34 @@ namespace E3Core.Processors
         private static void Init()
         {
 
-            Logging._currentLogLevel = Logging.LogLevels.Debug; //log level we are currently at
-            Logging._minLogLevelTolog = Logging.LogLevels.Debug; //log levels have integers assoicatd to them. you can set this to Error to only log errors. 
-            Logging._defaultLogLevel = Logging.LogLevels.Debug; //the default if a level is not passed into the _log.write statement. useful to hide/show things.
-            MainProcessor._applicationName = "E3Next"; //application name, used in some outputs
-            MainProcessor._processDelay = 100; //how much time we will wait until we start our next processing once we are done with a loop.
-            //how long you allow script to process before auto yield is engaged. generally should't need to mess with this, but an example.
-            MonoCore.MQ._maxMillisecondsToWork = 40;
-            //max event count for each registered event before spilling over.
-            EventProcessor.EventLimiterPerRegisteredEvent = 20;
+            if(!_isInit)
+            {
+                Logging._currentLogLevel = Logging.LogLevels.Debug; //log level we are currently at
+                Logging._minLogLevelTolog = Logging.LogLevels.Debug; //log levels have integers assoicatd to them. you can set this to Error to only log errors. 
+                Logging._defaultLogLevel = Logging.LogLevels.Debug; //the default if a level is not passed into the _log.write statement. useful to hide/show things.
+                MainProcessor._applicationName = "E3Next"; //application name, used in some outputs
+                MainProcessor._processDelay = 5000; //how much time we will wait until we start our next processing once we are done with a loop.
+                                                    //how long you allow script to process before auto yield is engaged. generally should't need to mess with this, but an example.
+                MonoCore.MQ._maxMillisecondsToWork = 40;
+                //max event count for each registered event before spilling over.
+                EventProcessor.EventLimiterPerRegisteredEvent = 20;
 
-            Setup.Init();
+                //do first to get class information
+                _characterSettings = new Settings.CharacterSettings();
+                _currentClass = _characterSettings._characterClass;
+                //end class information
+
+                _generalSettings = new Settings.GeneralSettings();
+                _advancedSettings = new Settings.AdvancedSettings();
+
+                Setup.Init();
+
+                _currentLongClassString = _currentClass.ToString();
+                _currentShortClassString = Data.Classes._classLongToShort[_currentLongClassString];
+                //RegisterEvents();
+                _isInit = true;
+            }
            
-
-            //do first to get class information
-            _characterSettings = new Settings.CharacterSettings();
-            _currentClass = _characterSettings._characterClass;
-            //end class information
-
-            _generalSettings = new Settings.GeneralSettings();
-            _advancedSettings = new Settings.AdvancedSettings();
-           
-            _currentLongClassString = _currentClass.ToString();
-            _currentShortClassString = Data.Classes._classLongToShort[_currentLongClassString];
-            _isInit = true;
 
         }
 
@@ -126,15 +130,9 @@ namespace E3Core.Processors
 
             //register events
             //Event Line:"Pyra tells the group, 'SWARM-Host of the Elements'"
-            EventProcessor.RegisterEvent("SwarmEvent", "(.+) tells the group, 'SWARM-(.+)'", (x) => {
-                string user = string.Empty;
-                string swarmSpell = String.Empty;
-                if (x.match.Groups.Count > 2)
-                {
-                    user = x.match.Groups[1].Value;
-                    swarmSpell = x.match.Groups[2].Value;
-                }
-                _log.Write($"{ x.eventName}:{ user} cast the swarm pet: {swarmSpell}");
+            EventProcessor.RegisterEvent("EverythingEvent", "(.+) tells the group, '(.+)'", (x) => {
+                
+                _log.Write($"{ x.eventName}:Processed:{ x.eventString}");
 
             });
             //can also just pass it any method with signature

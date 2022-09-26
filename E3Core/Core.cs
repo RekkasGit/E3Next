@@ -3,16 +3,29 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
-//This is used to setup internal calls
 using System.Runtime.CompilerServices;
 using System.Threading;
 using System.Diagnostics;
 using System.Collections.Concurrent;
 using System.Text.RegularExpressions;
-//your using for your namespace for your object
 using E3Core.Processors;
 
-
+/// <summary>
+/// Version 0.1
+/// This file, is the 'core', or the mediator between you and MQ2Mono 
+/// MQ2Mono is just a simple C++ plugin to MQ, thus exposes the 
+/// OnInit
+/// OnPulse
+/// OnIncomingChat
+/// etc
+/// Methods from the plugin, and meshes it in such a way to allow you to write rather straight forward C# code. 
+/// 
+/// Included in this is a Logging/trace framework, Event Proecssor, MQ command object/etc
+/// 
+/// Your class is included in here with a simple .Process Method. This methoid will be called once every OnPulse from the plugin, or basically every frame of the EQ client.
+/// All you code should *NOT* be in this file. 
+/// 
+/// </summary>
 
 namespace MonoCore
 {
@@ -23,16 +36,16 @@ namespace MonoCore
     public static class MainProcessor
     {
         public static IMQ MQ = Core.mqInstance;
-        public static Int32 _processDelay = 100;
+        public static Int32 _processDelay = 5000;
         private static Logging _log = Core._log;
         public static string _applicationName = "";
        
         public static void Init()
         {
-          
+
             //WARNING , you may not be in game yet, so careful what queries you run on MQ.Query. May cause a crash.
             //how long before auto yielding back to C++/EQ/MQ on the next query/command/etc
-           
+              
         }
         //we use this to tell the C++ thread that its okay to start processing gain
         //public static EconomicResetEvent _processResetEvent = new EconomicResetEvent(false, Thread.CurrentThread);
@@ -113,9 +126,16 @@ namespace MonoCore
         //this threads entire purpose, is to simply keep processing the event processing queue and place matches into
         //the eventfilteredqueue
         public static Task _regExProcessingTask;
+        private static Logging _log = Core._log;
+
+        private static Boolean _isInit = false;
         public static void Init()
         {
-            _regExProcessingTask = Task.Factory.StartNew(() => { ProcessEventsIntoQueues(); }, CancellationToken.None, TaskCreationOptions.DenyChildAttach, TaskScheduler.Default);
+            if(!_isInit)
+            {   
+                _regExProcessingTask = Task.Factory.StartNew(() => { ProcessEventsIntoQueues(); }, CancellationToken.None, TaskCreationOptions.DenyChildAttach, TaskScheduler.Default);
+                _isInit = true;
+            }
 
         }
         /// <summary>
@@ -172,7 +192,7 @@ namespace MonoCore
                         continue;
                     }
                 }
-
+                _log.Write($"Checking Event queue. Total:{item.Value.queuedEvents.Count}");
                 while (item.Value.queuedEvents.Count > 0)
                 {
 
@@ -192,10 +212,9 @@ namespace MonoCore
         public static void ProcessEvent(string line)
         {
             //to prevent spams
-            if (_eventList.Count > 0 && _eventProcessingQueue.Count < 10)
-            {
+            if (_eventList.Count > 0)
+            { 
                 _eventProcessingQueue.Enqueue(line);
-
             }
 
         }
@@ -267,6 +286,7 @@ namespace MonoCore
         public static Int64 _delayStartTime = 0;
         public static Stopwatch _stopWatch = new Stopwatch();
         public static Int64 _onPulseCalls;
+        public static bool _isInit = false;
 
         /// <summary>
         /// IMPORTANT, and why most of this works
@@ -290,21 +310,27 @@ namespace MonoCore
         public static void OnInit()
         {
             
-            _stopWatch.Start();
-            //do all necessary setups here
-            MainProcessor.Init();
-         
-            //isProcessing needs to be true before the event processor has started
-            _isProcessing = true;
-            EventProcessor.Init();
-
-
-            if (_taskThread == null)
+            if(!_isInit)
             {
-                //start up the main processor, this is where most of the C# code kicks off in
-                _taskThread = Task.Factory.StartNew(() => { MainProcessor.Process(); }, CancellationToken.None, TaskCreationOptions.DenyChildAttach, TaskScheduler.Default);
+                _stopWatch.Start();
+                //do all necessary setups here
+                MainProcessor.Init();
+
+                //isProcessing needs to be true before the event processor has started
+                _isProcessing = true;
+                EventProcessor.Init();
+
+
+                if (_taskThread == null)
+                {
+                    //start up the main processor, this is where most of the C# code kicks off in
+                    _taskThread = Task.Factory.StartNew(() => { MainProcessor.Process(); }, CancellationToken.None, TaskCreationOptions.DenyChildAttach, TaskScheduler.Default);
+                }
+                _isInit = true;
+
             }
-            
+
+
         }
        
         public static void OnPulse()
@@ -569,6 +595,8 @@ namespace MonoCore
                 return;
             }
 
+            Core._log.Write($"Sending command to EQ:{query}");
+
             Core._currentCommand = query;
             Core._coreResetEvent.Set();
             //we are now going to wait on the core
@@ -695,7 +723,7 @@ namespace MonoCore
 
             if(logLevel == LogLevels.Debug)
             {
-                MQ.Write($"{className}:{memberName}:({lineNumber}) {message}");
+                MQ.Write($"{className}:{memberName}:({lineNumber}) {message}","","Logging");
 
             }
             else

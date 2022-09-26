@@ -28,7 +28,8 @@ namespace E3Core.Processors
         {
             using (_log.Trace())
             {
-               
+
+                Casting.Init();
                 //lets init server name
                 //laz server specific,otherwise default
                 if (MQ.Query<bool>($"${{MacroQuest.Server.Equal[Project Lazarus]}}"))

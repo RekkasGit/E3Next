@@ -2,6 +2,7 @@
 using System;
 using System.Collections.Generic;
 using System.Linq;
+using System.Net.Http.Headers;
 using System.Text;
 using System.Threading.Tasks;
 
@@ -15,13 +16,51 @@ namespace E3Core.Processors
         private static IMQ MQ = Core.mqInstance;
 
 
+        public static void Init()
+        {
+            RegisterEventsCasting();
+        }
+        static void RegisterEventsCasting()
+        {
+            _log.Write("Regitering nowCast events....");
+            EventProcessor.RegisterEvent("nowCastEvent", "(.+) tells the group, 'nowCast (.+) targetid=(.+)'", (x) => {
+                _log.Write($"Processing {x.eventName}");
+                string user = string.Empty;
+                string spellName = String.Empty;
+                Int32 targetid = 0;
+                if (x.match.Groups.Count > 3)
+                {
+                    user = x.match.Groups[1].Value;
+                    spellName = x.match.Groups[2].Value;
+                    Int32.TryParse(x.match.Groups[3].Value, out targetid);
+
+                }
+                _log.Write($"{ x.eventName}:{ user} asked to cast the spell:{spellName}");
+
+                Data.Spell spell = new Data.Spell(spellName);
+                CastReturn returnValue = Cast(targetid, spell);
+
+                _log.Write($"{ x.eventName}: {spellName} result?: {returnValue.ToString()}");
+
+            });
+
+
+
+        }
         public static CastReturn Cast(int targetID, Data.Spell spell)
         {
 
             //TODO: Add bard logic back in
             using (_log.Trace())
             {
+
+                if(targetID < 1)
+                {
+                    MQ.Write($"Invalid targetId for Casting. {targetID}");
+                }
+
                 var targetName = MQ.Query<string>($"${{Spawn[id {targetID}].CleanName}}");
+                _log.Write($"TargetName:{targetName}");
                 //why we should not cast.. for whatever reason.
                 #region validation checks
                 if (MQ.Query<bool>("${Me.Invis}"))
@@ -36,32 +75,41 @@ namespace E3Core.Processors
 
                 if (!String.IsNullOrWhiteSpace(spell.Reagent))
                 {
+                    _log.Write($"Checking for reagent required for spell cast:{targetName} value:{spell.Reagent}");
                     //spell requires a regent, lets check if we have it.
                     Int32 itemCount = MQ.Query<Int32>($"${{FindItemCount[={spell.Reagent}]}}");
                     if (itemCount < 1)
                     {
-                        spell.RegentOutOfStock = true;
+                        spell.ReagentOutOfStock = true;
                         _log.Write($"Cannot cast [{spell.CastName}], I do not have any [{spell.Reagent}], removing this spell from array. Restock and Reload Macro", Logging.LogLevels.Error);
                         MQ.Cmd("/beep");
                         return CastReturn.CAST_REAGENT;
                     }
+                    else
+                    {
+                        _log.Write($"Reagent found!");
+
+                    }
 
                 }
 
-
+                _log.Write("Checking for zoning...");
                 if (E3._zoneID != MQ.Query<Int32>("${Zone.ID}"))
                 {
+                    _log.Write("Currently zoning, delaying for 1second");
                     //we are zoning, we need to chill for a bit.
                     MQ.Delay(1000);
                     return CastReturn.CAST_ZONING;
                 }
 
+                _log.Write("Checking for Feigning....");
                 if (MQ.Query<bool>("${Me.Feigning}"))
                 {
                     MQ.Broadcast($"skipping [{spell.CastName}] , i am feigned.");
                     MQ.Delay(200);
                     return CastReturn.CAST_FEIGN;
                 }
+                _log.Write("Checking for Open spell book....");
                 if (MQ.Query<bool>("${Window[SpellBookWnd].Open}"))
                 {
                     E3._actionTaken = true;
@@ -69,6 +117,7 @@ namespace E3Core.Processors
                     MQ.Delay(200);
                     return CastReturn.CAST_SPELLBOOKOPEN;
                 }
+                _log.Write("Checking for Open corpse....");
                 if (MQ.Query<bool>("${Corpse.Open}"))
                 {
                     E3._actionTaken = true;
@@ -76,12 +125,16 @@ namespace E3Core.Processors
                     MQ.Delay(200);
                     return CastReturn.CAST_SPELLBOOKOPEN;
                 }
-                if (spell.SpellType.Equals("Beneficial"))
+                _log.Write("Checking for LoS for non beneficial...");
+                if (!spell.SpellType.Equals("Beneficial"))
                 {
+                    _log.Write("Checking for LoS for non disc and not self...");
                     if (!spell.CastType.Equals("Disc") && spell.TargetType.Equals("Self"))
                     {
+                        _log.Write("Checking for LoS for non PB AE and Self...");
                         if (!(spell.TargetType.Equals("PB AE") || spell.TargetType.Equals("Self")))
                         {
+                            _log.Write("Checking for LoS if target has LoS...");
                             if (!MQ.Query<bool>($"${{Spawn[id {targetID}].LineOfSight}}"))
                             {
                                 _log.Write($"I cannot see {targetName}");
@@ -94,27 +147,31 @@ namespace E3Core.Processors
                 }
                 #endregion
                 //now to get the target
+                _log.Write("Checking to see if we need to aquire a target for non self /pbaoe");
                 if (spell.TargetType != "PB AE" && spell.TargetType != "Self")
                 {
                     TrueTarget(targetID);
                 }
-
+                _log.Write($"Checking BeforeEvent...");
                 if (!String.IsNullOrWhiteSpace(spell.BeforeEvent))
                 {
+                    _log.Write($"Doing BeforeEvent:{spell.BeforeEvent}");
                     MQ.Cmd($"/docommand {spell.BeforeEvent}");
                 }
 
-
+                _log.Write($"Checking BeforeSpell...");
                 if (!String.IsNullOrWhiteSpace(spell.BeforeSpell))
                 {
                     if (spell.BeforeSpellData == null)
                     {
                         spell.BeforeSpellData = new Data.Spell(spell.BeforeSpell);
                     }
+                    _log.Write($"Doing BeforeSpell:{spell.BeforeSpell}");
                     Casting.Cast(targetID, spell.BeforeSpellData);
                 }
 
                 //remove item from cursor before casting
+                _log.Write($"Checking for item on cursor...");
                 if (MQ.Query<bool>("${Cursor.ID}"))
                 {
                     MQ.Write("Issuing auto inventory on ${Cursor} for spell: ${pendingCast}");
@@ -123,9 +180,10 @@ namespace E3Core.Processors
 
 
                 //From here, we actually start casting the spell. 
-
+                _log.Write($"Checking for spell type to run logic...");
                 if (spell.CastType == Data.CastType.Disc)
                 {
+                    _log.Write($"Doing disc based logic checks...");
                     if (MQ.Query<bool>("${Me.ActiveDisc.ID}") && spell.TargetType.Equals("Self"))
                     {
                         return CastReturn.CAST_ACTIVEDISC;
@@ -136,6 +194,7 @@ namespace E3Core.Processors
                         //activate disc!
                         TrueTarget(targetID);
                         E3._actionTaken = true;
+                        _log.Write($"Issuing Disc command:{spell.CastName}");
                         MQ.Cmd($"/disc {spell.CastName}");
                         MQ.Delay(300);
                         return CastReturn.CAST_SUCCESS;
@@ -144,9 +203,11 @@ namespace E3Core.Processors
                 }
                 else if (spell.CastType == Data.CastType.Ability && MQ.Query<bool>($"${{Me.AbilityReady[{spell.CastName}]}}"))
                 {
+                    _log.Write($"Doing Ability based logic checks...");
                     //to deal with a slam bug
                     if (spell.CastName.Equals("Slam"))
                     {
+                        _log.Write($"Doing Ability:Slam based logic checks...");
                         if (MQ.Query<bool>("${Window[ActionsAbilitiesPage].Child[AAP_FirstAbilityButton].Text.Equal[Slam]}"))
                         {
 
@@ -189,7 +250,7 @@ namespace E3Core.Processors
                 else
                 {
                     //Spell, AA, Items
-
+                    _log.Write($"Doing Spell based logic checks...");
                     //Stop following for spell/item/aa with a cast time > 0 MyCastTime, unless im a bard
                     //anything under 300 is insta cast
                     if (spell.MyCastTime > 300 && E3._currentClass != Data.Class.Bard)
@@ -198,7 +259,7 @@ namespace E3Core.Processors
                         if (MQ.Query<bool>("${AdvPath.Following}") && E3._following) MQ.Cmd("/squelch /afollow off");
                         if (MQ.Query<bool>("${MoveTo.Moving}") && E3._following) MQ.Cmd("/moveto off");
 
-                        MQ.Delay(300, "${Bool[!${Me.Moving}}");
+                        MQ.Delay(300, "${Bool[!${Me.Moving}]}");
 
                     }
 
@@ -216,6 +277,7 @@ namespace E3Core.Processors
 
                     if (E3._currentClass == Data.Class.Bard && MQ.Query<bool>($"${{Bool[${{Me.Book[{spell.CastName}]}}]}}"))
                     {
+                      
                         MQ.Cmd($"/cast \"{spell.CastName}\"");
                         MQ.Delay(500, "${Window[CastingWindow].Open}");
                         if (!MQ.Query<bool>("${Window[CastingWindow].Open}"))
@@ -233,6 +295,7 @@ namespace E3Core.Processors
                     }
                     else
                     {
+                        _log.Write($"Doing Spell:TargetType based logic checks...");
                         if (spell.TargetType.Equals("Self"))
                         {
                             if (spell.CastType == Data.CastType.Spell)
@@ -262,15 +325,15 @@ namespace E3Core.Processors
 
                 }
 
-                cast_still_pending:
+                
 
                 while(MQ.Query<bool>("${Window[CastingWindow].Open}")) 
-                { 
+                {
                     //means that we didn't fizzle and are now casting the spell
 
+                    //TODO: Interrupt logic
 
-
-
+                    MQ.Delay(100);
 
 
 
@@ -307,17 +370,29 @@ namespace E3Core.Processors
 
 
                 //is an after spell configured? lets do that now.
+                _log.Write($"Checking AfterSpell...");
                 if (!String.IsNullOrWhiteSpace(spell.AfterSpell))
                 {
+                    
+
+
                     if (spell.AfterSpellData == null)
                     {
                         spell.AfterSpellData = new Data.Spell(spell.AfterSpell);
                     }
-                    Casting.Cast(targetID, spell.AfterSpellData);
+                    //Wait for GCD if spell
+
+                    _log.Write($"Doing AfterSpell:{spell.AfterSpell}");
+                    if(CheckReady(spell))
+                    {
+                        Casting.Cast(targetID, spell.AfterSpellData);
+                    }
                 }
                 //after event, after all things are done               
+                _log.Write($"Checking AfterEvent...");
                 if (!String.IsNullOrWhiteSpace(spell.AfterEvent))
                 {
+                    _log.Write($"Doing AfterEvent:{spell.AfterEvent}");
                     MQ.Cmd($"/docommand {spell.AfterEvent}");
                 }
 
@@ -331,6 +406,101 @@ namespace E3Core.Processors
             }
 
 
+        }
+
+        public static Boolean CheckReady(Data.Spell spell)
+        {
+            _log.Write($"CheckReady on {spell.CastName}");
+
+            if(E3._currentClass== Data.Class.Bard && !MQ.Query<bool>("${Twist.Twisting}"))
+            {
+                while(MQ.Query<bool>("${Window[CastingWindow].Open}"))
+                {
+                    MQ.Delay(100);
+                }
+            }
+            bool returnValue = false;
+            if(spell.CastType== Data.CastType.Spell)
+            {
+                recheckCooldown:
+
+                //deal with grouped spells should put in a method if it gets bigger than these two
+                if(spell.CastName== "Focused Hail of Arrows" || spell.CastName== "Hail of Arrows")
+                {
+                    if (MQ.Query<bool>("${Bool[${Me.Gem[Focused Hail of Arrows]}]}") && MQ.Query<bool>("${Bool[${Me.Gem[Hail of Arrows]}]}"))
+                    {
+                        returnValue = true;
+                        if (!MQ.Query<bool>("${Me.SpellReady[Focused Hail of Arrows]}")) { returnValue = false; }
+                        if (!MQ.Query<bool>("${Me.SpellReady[Hail of Arrows]}")) { returnValue = false; }
+
+                        return returnValue;
+                    }
+                }
+                if (spell.CastName == "Mana Flare" || spell.CastName == "Mana Recursion")
+                {
+                    if (MQ.Query<bool>("${Bool[${Me.Gem[Mana Flare]}]}") && MQ.Query<bool>("${Bool[${Me.Gem[Mana Recursion]}]}"))
+                    {
+                        returnValue = true;
+                        if (!MQ.Query<bool>("${Me.SpellReady[Mana Flare]}")) { returnValue = false; }
+                        if (!MQ.Query<bool>("${Me.SpellReady[Mana Recursion]}")) { returnValue = false; }
+
+                        return returnValue;
+                    }
+                }
+
+                _log.Write($"Checking if spell is ready on {spell.CastName}");
+
+                if (MQ.Query<bool>($"${{Me.SpellReady[{spell.CastName}]}}"))
+                {
+                    _log.Write($"CheckReady Success! on {spell.CastName}");
+
+                    returnValue = true;
+                    return returnValue;
+                }
+                _log.Write($"Checking if spell are on cooldown for {spell.CastName}");
+
+                if (MQ.Query<bool>("${Me.SpellInCooldown}") && MQ.Query<bool>($"${{Bool[${{Me.Gem[{spell.CastName}]}}]}}"))
+                {
+                    _log.Write("Spells in cooldown, redoing check.");
+                    MQ.Delay(100);
+                    goto recheckCooldown;
+                }
+
+
+            }
+            else if(spell.CastType == Data.CastType.Item)
+            {
+                if(MQ.Query<bool>($"${{Me.ItemReady[{spell.CastName}]}}"))
+                {
+                    return true;
+                }
+            }
+            else if (spell.CastType == Data.CastType.AA)
+            {
+                if (MQ.Query<bool>($"${{Me.AltAbilityReady[{spell.CastName}]}}"))
+                {
+                    return true;
+                }
+            }
+            else if (spell.CastType == Data.CastType.Disc)
+            {
+                //bug with thiefs eyes, always return true
+                if (spell.SpellID == 8001) return true;
+
+                if (MQ.Query<bool>($"${{Me.CombatAbilityReady[{spell.CastName}]}}"))
+                {
+                    return true;
+                }
+            }
+            else if (spell.CastType == Data.CastType.Ability)
+            {
+                if (MQ.Query<bool>($"${{Me.AbilityReady[{spell.CastName}]}}"))
+                {
+                    return true;
+                }
+            }
+
+            return returnValue;
         }
         private static void WaitForPossibleFizzle(Data.Spell spell)
         {
@@ -349,16 +519,14 @@ namespace E3Core.Processors
                 }
             }
         }
-        public static void Init()
-        {
-
-
-
-
-        }
+  
         public static void TrueTarget(Int32 targetID)
         {
+
+            _log.Write("Trying to Aquire target");
+
             if (MQ.Query<Int32>("${Target.ID}") == targetID) return;
+            
             //now to get the target
             if (MQ.Query<Int32>($"${{SpawnCount[id {targetID}]}}") > 0)
             {
