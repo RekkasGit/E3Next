@@ -23,15 +23,12 @@ namespace TestCore
             //E3Core.Settings.CharacterSettings settings = new E3Core.Settings.CharacterSettings();
 
             MonoCore.Core.OnInit();
-
-            while(true)
+           
+            while (true)
             {
 
-                MonoCore.Core.OnIncomingChat("Rekken tells the group, 'nowCast Dawnstrike targetid=88'");
-
-                E3Core.Processors.E3.Process();
-                MonoCore.EventProcessor.ProcessEventsInQueues();
-                System.Threading.Thread.Sleep(1000);
+                MonoCore.Core.OnPulse();
+                
             }
 
 

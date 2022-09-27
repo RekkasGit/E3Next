@@ -23,8 +23,12 @@ namespace E3Core.Processors
         static void RegisterEventsCasting()
         {
             _log.Write("Regitering nowCast events....");
-            EventProcessor.RegisterEvent("nowCastEvent", "(.+) tells the group, 'nowCast (.+) targetid=(.+)'", (x) => {
+            List<String> r = new List<string>();
+            r.Add("(.+) tells the group, 'nowCast (.+) targetid=(.+)'");
+            r.Add("(.+) tells the says, 'nowCast (.+) targetid=(.+)'");
+            EventProcessor.RegisterEvent("nowCastEvent", r, (x) => {
                 _log.Write($"Processing {x.eventName}");
+                
                 string user = string.Empty;
                 string spellName = String.Empty;
                 Int32 targetid = 0;

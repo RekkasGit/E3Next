@@ -36,7 +36,7 @@ namespace MonoCore
     public static class MainProcessor
     {
         public static IMQ MQ = Core.mqInstance;
-        public static Int32 _processDelay = 5000;
+        public static Int32 _processDelay = 100;
         private static Logging _log = Core._log;
         public static string _applicationName = "";
        
@@ -45,7 +45,11 @@ namespace MonoCore
 
             //WARNING , you may not be in game yet, so careful what queries you run on MQ.Query. May cause a crash.
             //how long before auto yielding back to C++/EQ/MQ on the next query/command/etc
-              
+            //Logging._currentLogLevel = Logging.LogLevels.None; //log level we are currently at
+            //Logging._minLogLevelTolog = Logging.LogLevels.Error; //log levels have integers assoicatd to them. you can set this to Error to only log errors. 
+            //Logging._defaultLogLevel = Logging.LogLevels.None; //the default if a level is not passed into the _log.write statement. useful to hide/show things.
+
+
         }
         //we use this to tell the C++ thread that its okay to start processing gain
         //public static EconomicResetEvent _processResetEvent = new EconomicResetEvent(false, Thread.CurrentThread);
@@ -65,22 +69,31 @@ namespace MonoCore
                
                 try
                 {
+                    //MQ.TraceStart("Process");
                     using (_log.Trace())
                     {
-
+                    
                         //************************************************
                         //DO YOUR WORK HERE
                         //this loop executes once every OnPulse from C++
                         //************************************************
                         //just have a class call a process method or such so you don't have to see this 
                         //boiler plate code with all the threading.
-                        E3.Process();
+
+                        //MQ.Write("Calling e3process");
+                         E3.Process();
                         //***NOTE NOTE NOTE, Use M2.Delay(0) in your code to give control back to EQ if you have taken awhile in doing something
                         //***NOTE NOTE NOTE, generally this isn't needed as there is an auto yield baked into every MQ method. Just be aware.
+                        using(_log.Trace("EventProcessing"))
+                        {
+                            EventProcessor.ProcessEventsInQueues();
 
+                        }
                     }
+
+                    //MQ.TraceEnd("Process");
                     //process all the events that have been registered
-                    EventProcessor.ProcessEventsInQueues();
+                    
                 }
                 catch(Exception ex)
                 {
@@ -157,14 +170,19 @@ namespace MonoCore
                             {
                                 continue;
                             }
-                            var match = item.Value.regex.Match(line);
-                            if (match.Success)
+                            foreach(var regex in item.Value.regexs)
                             {
-                                lock (item.Value.queuedEvents)
+                                var match = regex.Match(line);
+                                if (match.Success)
                                 {
-                                    item.Value.queuedEvents.Enqueue(new EventMatch() { eventName= item.Value.keyName, eventString = line, match = match });
+                                    lock (item.Value.queuedEvents)
+                                    {
+                                        item.Value.queuedEvents.Enqueue(new EventMatch() { eventName = item.Value.keyName, eventString = line, match = match });
+                                    }
+                                    break;
                                 }
                             }
+                          
                         }
 
                     }
@@ -233,7 +251,7 @@ namespace MonoCore
         public class EventListItem
         {
             public String keyName;
-            public System.Text.RegularExpressions.Regex regex;
+            public List<System.Text.RegularExpressions.Regex> regexs;
             public System.Action<EventMatch> method;
             public ConcurrentQueue<EventMatch> queuedEvents = new ConcurrentQueue<EventMatch>();
         }
@@ -246,7 +264,25 @@ namespace MonoCore
         public static void RegisterEvent(string keyName, string pattern, Action<EventMatch> method)
         {
             EventListItem eventToAdd = new EventListItem();
-            eventToAdd.regex = new System.Text.RegularExpressions.Regex(pattern);
+            eventToAdd.regexs = new List<Regex>();
+            
+            eventToAdd.regexs.Add(new System.Text.RegularExpressions.Regex(pattern));
+            eventToAdd.method = method;
+            eventToAdd.keyName = keyName;
+
+            _eventList.TryAdd(keyName, eventToAdd);
+
+        }
+        public static void RegisterEvent(string keyName, List<string> patterns, Action<EventMatch> method)
+        {
+            EventListItem eventToAdd = new EventListItem();
+            eventToAdd.regexs = new List<Regex>();
+
+            foreach (var pattern in patterns)
+            {
+                eventToAdd.regexs.Add(new System.Text.RegularExpressions.Regex(pattern));
+            }
+
             eventToAdd.method = method;
             eventToAdd.keyName = keyName;
 
@@ -335,6 +371,7 @@ namespace MonoCore
        
         public static void OnPulse()
         {
+           
             if (!_isProcessing) return;
             //reset the last delay so we restart the procssing time since its a new OnPulse()
             MQ._sinceLastDelay = _stopWatch.ElapsedMilliseconds;
@@ -354,21 +391,25 @@ namespace MonoCore
             }
 
 
+            //Core.mq_Echo("Starting OnPulse in C#");
+
             //if (_stopWatch.ElapsedMilliseconds - millisecondsSinceLastPrint > 5000)
             //{
             //    use raw command, as we are on the C++thread, and don't want a delay hitting us
             //    Core.mq_Echo("[" + System.DateTime.Now + " Total Calls:" + _onPulseCalls);
             //    millisecondsSinceLastPrint = _stopWatch.ElapsedMilliseconds;
             //}
-            
+
             RestartWait:
             //allow the processing thread to start its work.
             //and copy cache values to other cores so the thread can see the updated information in MQ
             MainProcessor._processResetEvent.Set();
+
+            //Core.mq_Echo("Blocking on C++");
             _coreResetEvent.Wait();
             _coreResetEvent.Reset();
             //we need to block and chill out to let the other thread do its work
-
+            //Core.mq_Echo("Unblocked on C++");
 
             //check to see if the 2nd thread has a command for us to send out
             //if so, we need to run the command, and then empty it
@@ -376,22 +417,26 @@ namespace MonoCore
             {
                 //for writes, we stay in the main thread and just restart the check
                 //commands and delays will release the main thread.
-
                 Core.mq_Echo(_currentWrite);
                 _currentWrite = String.Empty;
                 goto RestartWait;
             }
             if (_currentCommand != String.Empty)
             {
+                Core.mq_Echo("Unblocked on C++:: Doing a Command");
+
                 Core.mq_DoCommand(_currentCommand);
                 _currentCommand = String.Empty;
                 goto RestartWait;
             }
             if (_currentDelay > 0)
             {
+                Core.mq_Echo("Unblocked on C++:: Doing a Delay");
+
                 Core.mq_Delay(_currentDelay);
                 _currentDelay = 0;
             }
+            //Core.mq_Echo("Ending OnPulse in C#");
 
 
         }
@@ -734,8 +779,10 @@ namespace MonoCore
         }
         public ITrace Trace(string name="",[CallerMemberName] string memberName = "", [CallerFilePath] string fileName = "", [CallerLineNumber] int lineNumber = 0)
         {
+
             BaseTrace returnValue = BaseTrace.Aquire();
-            if (_currentLogLevel== LogLevels.Info)
+           
+            if (_currentLogLevel== LogLevels.Info || _currentLogLevel== LogLevels.None)
             {
                 //if not debugging don't log stuff
                 returnValue.CallBackDispose = TraceSetTime;
@@ -777,6 +824,7 @@ namespace MonoCore
         public enum LogLevels
         {
             None = 0,
+            Trace=2000,
             Debug = 30000,
             Info = 40000,
             Error = 70000,
@@ -828,18 +876,12 @@ namespace MonoCore
             public LogLevels LogLevel { get; set; }
 
             #region objectPoolingStuff
-            //note, can't really make a base class for this stuff because of how
-            //generics work in .net :\ sucks but this is mostly copy n paste code, not exactly hard
-            // flipped values to make even uninitialised
-            // objects behave correctly when finalizer is run
-            private const int disposedFalse = 1;
-            private const int disposedTrue = 0;
-
-            // changed default flag value
-            private int disposed = disposedTrue;
+           
 
             //private constructor, needs to be created so that you are forced to use the pool.
-            private BaseTrace() { }
+            private BaseTrace() {
+               
+            }
 
 
             public static BaseTrace Aquire()
@@ -849,8 +891,7 @@ namespace MonoCore
                 {
                     obj = new BaseTrace();
                 }
-                obj.disposed = disposedFalse;
-                obj.MetricID = Guid64.NewGuid();
+               
                 return obj;
             }
 
@@ -859,13 +900,7 @@ namespace MonoCore
                 if (CallBackDispose != null)
                 {
                     CallBackDispose.Invoke(this); //this should null out the CallbackDispose so the normal dispose can then run.
-                    return;
                 }
-
-                if (Interlocked.Exchange(
-                    ref this.disposed, disposedTrue
-                    ) == disposedTrue)
-                    return;
 
                 ResetObject();
 
@@ -893,230 +928,7 @@ namespace MonoCore
             #endregion
         }
     }
-    public class Guid64
-    {
-        //UTC time parse, so we don't have to deal with time zones
-        private static System.DateTime _startYear = System.DateTime.Parse("1/1/2022 00:00:00Z");
-        private static Object _stopWatchLock = new object();
-        private static System.Diagnostics.Stopwatch _stopWatch;
-        private static System.TimeSpan _timeSpanSince;
-        //Unique byte added to the end of the Int64, normally this is the IP Octect, but it is configurable.
-        private static Byte _uniqueByte = 0;
-
-        //Unique byte 2 is used to deal with time drift. 
-        //Computer time is not a constant and can change and be resynced.  
-        //due to the quartz crystal in the computer not being exact. We will swap between these unique bytes to deal
-        //with this time drift.
-        private static Byte _uniqueByte2 = 0;
-
-        private static System.TimeSpan _timeToResync = new System.TimeSpan(0, 24, 0, 0, 0);
-        private static System.DateTime _timeLastResynced;
-
-        //This is necessary because as CPU's get faster, we can Enter Lock, Create ID and Exit lock faster than 1/10th of a micro second. So we if we get the same one, we redo it
-        private static Int64 _lastIDCreated = 0;
-
-
-        public static System.TimeSpan TimeToResync { get { return _timeToResync; } set { _timeToResync = value; } }
-        private static Boolean _isByteTwoSet = false;
-        public static Byte UniqueByte
-        {
-            get { return _uniqueByte; }
-            set
-            {
-                _uniqueByte = value;
-                if (!_isByteTwoSet)
-                {
-                    //Keep in the byte range, go up past the 128. 
-                    //so if unique byte (normally ip octect) is 10, next value would be 138. gives us 128 severs to play with without possible clashing. Normally
-                    //your Load balancer Virtual servers would be in the upper range anyway so unlikly to clash with another server with careful planning
-                    _uniqueByte2 = (Byte)(_uniqueByte2 + 128 % 256);
-                }
-            }
-        }
-        public static Byte UniqueByte2
-        {
-            get { return _uniqueByte2; }
-            set
-            {
-                _uniqueByte2 = value;
-                _isByteTwoSet = true;
-            }
-        }
-
-        static Guid64()
-        {
-            _startYear = _startYear.ToUniversalTime();
-            System.Net.IPHostEntry localhost;
-            System.Net.IPAddress[] ipAddresses;
-            DateTime currentTime = System.DateTime.UtcNow;
-            _timeLastResynced = new System.DateTime(currentTime.Year, currentTime.Month, currentTime.Day, 0, 0, 0);
-
-            //less about locking as a static constructor is only called once and more
-            //about proper Memory Barriers being applied 
-            lock (_stopWatchLock)
-            {
-
-                localhost = System.Net.Dns.GetHostEntry(System.Net.Dns.GetHostName());
-                ipAddresses = localhost.AddressList;
-
-                //If we are IPV6, we cannot simply use the last 8 bytes, need to be aware of it.
-                System.Net.IPAddress ipAddress = null;
-                System.Net.IPAddress ipv6Address = null;
-
-                foreach (System.Net.IPAddress tempAddress in ipAddresses)
-                {
-                    if (tempAddress.AddressFamily == System.Net.Sockets.AddressFamily.InterNetwork)
-                    {
-                        //We found IPv4, break out.
-                        ipAddress = tempAddress;
-                        break;
-                    }
-                    if (tempAddress.AddressFamily == System.Net.Sockets.AddressFamily.InterNetworkV6)
-                    {
-                        //We found IPv4, set.
-                        ipv6Address = tempAddress;
-                    }
-                }
-                if (ipAddress != null)
-                {
-                    _uniqueByte = ipAddress.GetAddressBytes()[3];
-                }
-                else if (ipv6Address != null)
-                {
-                    _uniqueByte = ipv6Address.GetAddressBytes()[15];
-                }
-                else
-                {
-                    System.Random tempRandom = new Random();
-                    Int32 tempInt = tempRandom.Next(0, 128);
-                    _uniqueByte = System.BitConverter.GetBytes(tempInt)[0];
-                }
-                //Set unique byte two in case they don't set it This can be overridden though
-                _uniqueByte2 = (Byte)((_uniqueByte + 128) % 256);
-
-                _timeSpanSince = System.DateTime.UtcNow.Subtract(_startYear);
-                _stopWatch = new System.Diagnostics.Stopwatch();
-                _stopWatch.Start();
-
-            }
-
-        }
-
-        public static Int64 NewGuid()
-        {
-
-            Int64 returnValue = 0;
-            Byte[] bytes = new Byte[8];
-
-            lock (_stopWatchLock)
-            {
-                //if it is time to resync time
-                if (System.DateTime.UtcNow.Subtract(_timeLastResynced) > _timeToResync)
-                {
-                    System.DateTime currentTime = System.DateTime.UtcNow;
-                    //Reset the time since 2012 so we can get a new value from the system
-                    _timeSpanSince = System.DateTime.UtcNow.Subtract(_startYear);
-
-                    if (_timeToResync.Seconds > 0)
-                    {
-                        _timeLastResynced = new System.DateTime(currentTime.Year, currentTime.Month, currentTime.Day, currentTime.Hour, currentTime.Minute, currentTime.Second);
-                    }
-                    else if (_timeToResync.Minutes > 0)
-                    {
-                        _timeLastResynced = new System.DateTime(currentTime.Year, currentTime.Month, currentTime.Day, currentTime.Hour, currentTime.Minute, 0);
-                    }
-                    else if (_timeToResync.Hours > 0)
-                    {
-                        _timeLastResynced = new System.DateTime(currentTime.Year, currentTime.Month, currentTime.Day, currentTime.Hour, 0, 0);
-                    }
-                    else
-                    {
-                        _timeLastResynced = new System.DateTime(currentTime.Year, currentTime.Month, currentTime.Day, 0, 0, 0);
-                    }
-
-                    _stopWatch.Restart();
-                    //Swap bytes
-                    Byte tempByte = _uniqueByte;
-                    _uniqueByte = _uniqueByte2;
-                    _uniqueByte2 = tempByte;
-                }
-
-                //We may have to do this loop a few times to get an ID. 
-                //a the question is, is a SpinWait better. Sleep is far too long.
-                while (_lastIDCreated == returnValue || returnValue == 0)
-                {
-                    Double totalSeconds = _timeSpanSince.TotalSeconds;
-                    Int64 elapsedTicks = _stopWatch.ElapsedTicks;
-                    Int64 frequency = System.Diagnostics.Stopwatch.Frequency;
-                    Double tickFreq = (double)elapsedTicks / (double)frequency;  //Extremely important to make sure both of these are doubles to not lose information
-                    Double secTickFreq = totalSeconds + (tickFreq);
-
-                    returnValue = (Int64)(secTickFreq * 10000000);
-
-                }
-                _lastIDCreated = returnValue;
-            }
-            //Now to bitshift the values over to make room for 1 byte uniqueness
-            returnValue = returnValue << 8;
-            //put the byte at the end
-            returnValue = returnValue | _uniqueByte;
-
-            return returnValue;
-
-        }
-
-        public static System.DateTime GetDate(Int64 guid64ID)
-        {
-
-            //Shift out the unique byte, multiply by 10,000,000 to get back into seconds
-            return _startYear.AddSeconds((guid64ID >> 8) / 10000000);
-        }
-
-        public static Int64 GetGuid(DateTime date)
-        {
-            Double totalSeconds = date.Subtract(_startYear).TotalSeconds;
-            Int64 returnValue;
-            returnValue = (Int64)(totalSeconds * 10000000);
-            returnValue = returnValue << 8;
-            //put the byte at the end
-
-            return returnValue;
-        }
-
-    }
-    //http://genericgamedev.com/general/reusing-objects-with-generic-object-pooling/
-    public class GenericPool<TSelf> : IDisposable where TSelf : GenericPool<TSelf>, new()
-    {
-        // flipped values to make even uninitialised
-        // objects behave correctly when finalizer is run
-        private const int disposedFalse = 1;
-        private const int disposedTrue = 0;
-
-        // changed default flag value
-        private int disposed = disposedTrue;
-
-        public static TSelf GetOne()
-        {
-            var obj = StaticObjectPool.PopOrNew<TSelf>();
-            obj.disposed = disposedFalse;
-            return obj;
-        }
-
-        public void Dispose()
-        {
-            if (Interlocked.Exchange(
-                ref this.disposed, disposedTrue
-                ) == disposedTrue)
-                return;
-
-            StaticObjectPool.Push((TSelf)this);
-        }
-
-        ~GenericPool()
-        {
-            this.Dispose();
-        }
-    }
+   
     public static class StaticObjectPool
     {
         private static class Pool<T>
