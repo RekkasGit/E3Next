@@ -14,7 +14,7 @@ namespace E3Core.Processors
 
 
         public static Logging _log = Core._log;
-        private static IMQ MQ = Core.mqInstance;
+        private static IMQ MQ = E3.MQ;
 
 
         public static void Init()

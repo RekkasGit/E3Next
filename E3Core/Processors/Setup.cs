@@ -23,7 +23,8 @@ namespace E3Core.Processors
         
         public static string _serverNameForIni = "PEQTGC"; //project eq, the grand creation, where e3 was born i believe.
         public static Logging _log = Core._log;
-        private static IMQ MQ = Core.mqInstance;
+        private static IMQ MQ = E3.MQ;
+
         public static Boolean Init()
         {
             using (_log.Trace())

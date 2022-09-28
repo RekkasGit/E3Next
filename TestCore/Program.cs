@@ -1,4 +1,5 @@
-﻿using System;
+﻿using MonoCore;
+using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Runtime.CompilerServices;
@@ -15,7 +16,8 @@ namespace TestCore
 
 
 
-            MonoCore.Core.mqInstance = new MoqMQ();
+            var mq = new MoqMQ();
+            MonoCore.Core.mqInstance = mq;
             MonoCore.Logging.MQ = MonoCore.Core.mqInstance;
 
             //E3Core.Settings.AdvancedSettings asettings = new E3Core.Settings.AdvancedSettings();
@@ -26,9 +28,10 @@ namespace TestCore
            
             while (true)
             {
+                MonoCore.Core.OnIncomingChat("Rekken tells the group, 'nowCast Dawnstrike targetid=88'");
 
                 MonoCore.Core.OnPulse();
-                
+                System.Threading.Thread.Sleep(100);
             }
 
 
@@ -55,6 +58,13 @@ namespace TestCore
 
             public void Delay(int value)
             {
+              
+
+                //lets tell core that it can continue
+                Core._coreResetEvent.Set();
+                //we are now going to wait on the core
+                MainProcessor._processResetEvent.Wait();
+                MainProcessor._processResetEvent.Reset();
                
             }
 

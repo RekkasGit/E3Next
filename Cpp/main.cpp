@@ -8,6 +8,8 @@
 #include <thread> 
 #include <map>
 #include <filesystem>
+#include <deque>
+#include <string_view>
 
 #define GetCurrentDir _getcwd
 
@@ -19,7 +21,134 @@ std::string monoDir;
 bool initialized = false;
 std::string currentDirectory;
 
-struct mqAppDomainInfo
+#pragma region string_methods
+struct ci_less
+{
+	struct nocase_compare
+	{
+		bool operator() (const unsigned char& c1, const unsigned char& c2) const noexcept
+		{
+			if (c1 == c2)
+				return false;
+			return ::tolower(c1) < ::tolower(c2);
+		}
+	};
+
+	struct nocase_equals
+	{
+		bool operator() (const unsigned char& c1, const unsigned char& c2) const noexcept
+		{
+			if (c1 == c2)
+				return true;
+
+			return ::tolower(c1) == ::tolower(c2);
+		}
+	};
+
+	struct nocase_equals_w
+	{
+		bool operator() (const wchar_t& c1, const wchar_t& c2) const noexcept
+		{
+			if (c1 == c2)
+				return true;
+
+			return ::towlower(c1) == ::towlower(c2);
+		}
+	};
+
+	bool operator()(std::string_view s1, std::string_view s2) const noexcept
+	{
+		return std::lexicographical_compare(
+			s1.begin(), s1.end(),
+			s2.begin(), s2.end(),
+			nocase_compare());
+	}
+
+	using is_transparent = void;
+};
+inline int find_substr(std::string_view haystack, std::string_view needle)
+{
+	auto iter = std::search(std::begin(haystack), std::end(haystack),
+		std::begin(needle), std::end(needle));
+	if (iter == std::end(haystack)) return -1;
+	return static_cast<int>(iter - std::begin(haystack));
+}
+
+inline int ci_find_substr(std::string_view haystack, std::string_view needle)
+{
+	auto iter = std::search(std::begin(haystack), std::end(haystack),
+		std::begin(needle), std::end(needle), ci_less::nocase_equals());
+	if (iter == std::end(haystack)) return -1;
+	return static_cast<int>(iter - std::begin(haystack));
+}
+
+inline int ci_find_substr_w(std::wstring_view haystack, std::wstring_view needle)
+{
+	auto iter = std::search(std::begin(haystack), std::end(haystack),
+		std::begin(needle), std::end(needle), ci_less::nocase_equals_w());
+	if (iter == std::end(haystack)) return -1;
+	return static_cast<int>(iter - std::begin(haystack));
+}
+
+inline bool ci_equals(std::string_view sv1, std::string_view sv2)
+{
+	return sv1.size() == sv2.size()
+		&& std::equal(sv1.begin(), sv1.end(), sv2.begin(), ci_less::nocase_equals());
+}
+inline bool ci_equals(std::wstring_view sv1, std::wstring_view sv2)
+{
+	return sv1.size() == sv2.size()
+		&& std::equal(sv1.begin(), sv1.end(), sv2.begin(), ci_less::nocase_equals_w());
+}
+
+inline bool ci_equals(std::string_view haystack, std::string_view needle, bool isExact)
+{
+	if (isExact)
+		return ci_equals(haystack, needle);
+
+	return ci_find_substr(haystack, needle) != -1;
+}
+
+inline bool string_equals(std::string_view sv1, std::string_view sv2)
+{
+	return sv1.size() == sv2.size()
+		&& std::equal(sv1.begin(), sv1.end(), sv2.begin());
+}
+
+inline bool starts_with(std::string_view a, std::string_view b)
+{
+	if (a.length() < b.length())
+		return false;
+
+	return a.substr(0, b.length()).compare(b) == 0;
+}
+
+inline bool ci_starts_with(std::string_view a, std::string_view b)
+{
+	if (a.length() < b.length())
+		return false;
+
+	return ci_equals(a.substr(0, b.length()), b);
+}
+
+inline bool ends_with(std::string_view a, std::string_view b)
+{
+	if (a.length() < b.length())
+		return false;
+
+	return a.substr(a.length() - b.length()).compare(b) == 0;
+}
+
+inline bool ci_ends_with(std::string_view a, std::string_view b)
+{
+	if (a.length() < b.length())
+		return false;
+
+	return ci_equals(a.substr(a.length() - b.length()), b);
+}
+#pragma endregion string_methods
+
+struct monoAppDomainInfo
 {
 	//app domain we have created for e3
 	MonoDomain* m_appDomain = nullptr;
@@ -42,8 +171,9 @@ struct mqAppDomainInfo
 	int m_delayTime = 0;//amount of time in milliseonds that was set by C#
 	std::chrono::steady_clock::time_point m_delayTimer = std::chrono::steady_clock::now(); //the time this was issued + m_delayTime
 };
-std::map<std::string, mqAppDomainInfo> mqAppDomains;
+std::map<std::string, monoAppDomainInfo> mqAppDomains;
 std::map<MonoDomain*, std::string> mqAppDomainPtrToString;
+std::deque<std::string> appDomainProcessQueue;
 
 void mono_Echo(MonoString* string)
 {
@@ -204,7 +334,12 @@ void InitMono()
 	//Indicate Mono where you installed the lib and etc folders
 	std::cout << "CurrentDirectory:" << currentDirectory << std::endl;
 
+
+	
 	mono_set_dirs((currentDirectory + "\\Mono\\lib").c_str(), (currentDirectory + "\\Mono\\etc").c_str());
+
+	
+
 	mono_set_assemblies_path((currentDirectory + "\\Mono\\lib").c_str());
 	_rootDomain = mono_jit_init("Mono_Domain");
 	mono_domain_set(_rootDomain, false);
@@ -250,6 +385,22 @@ void UnloadE3()
 		mono_domain_set(mono_get_root_domain(), false);
 		//mono_thread_pop_appdomain_ref();
 		mono_domain_unload(domainToUnload);
+
+		//remove from the process queue
+		int count = 0;
+		int processCount = appDomainProcessQueue.size();
+
+		while (count < processCount)
+		{
+			count++;
+			std::string currentKey = appDomainProcessQueue.front();
+			appDomainProcessQueue.pop_front();
+			if (!ci_equals(currentKey, appDomainName))
+			{
+				appDomainProcessQueue.push_back(currentKey);
+			}
+		}
+
 	}
 
 }
@@ -282,7 +433,26 @@ void InitE3()
 	mono_domain_set(appDomain, false);
 
 
-	csharpAssembly = mono_domain_assembly_open(appDomain, (currentDirectory + "\\E3Core\\bin\\Debug\\Core.dll").c_str());
+
+	std::string fileName = "Core.dll";
+	std::string assemblypath = (currentDirectory + "\\E3Core\\bin\\Debug\\");
+
+	bool filepathExists = std::filesystem::exists(assemblypath+fileName);
+
+	if (!filepathExists)
+	{
+		return;
+	}
+	std::string shadowDirectory = assemblypath + "Shadowvine\\";
+	namespace fs = std::filesystem;
+	if (!fs::is_directory(shadowDirectory) || !fs::exists(shadowDirectory)) { // Check if src folder exists
+		fs::create_directory(shadowDirectory); // create src folder
+	}
+
+	//copy it to a new directory
+	std::filesystem::copy(assemblypath, shadowDirectory, std::filesystem::copy_options::overwrite_existing);
+
+	csharpAssembly = mono_domain_assembly_open(appDomain, (shadowDirectory+fileName).c_str());
 
 	if (!csharpAssembly)
 	{
@@ -301,7 +471,7 @@ void InitE3()
 
 	//add it to the collection
 
-	mqAppDomainInfo domainInfo;
+	monoAppDomainInfo domainInfo;
 	domainInfo.m_appDomain = appDomain;
 	domainInfo.m_csharpAssembly = csharpAssembly;
 	domainInfo.m_coreAssemblyImage = coreAssemblyImage;
@@ -322,112 +492,75 @@ void InitE3()
 		mono_runtime_invoke(OnInit, classInstance, nullptr, nullptr);
 	}
 
+
+	appDomainProcessQueue.push_front(appDomainName);
+
+
 	//classConstructor = mono_class_get_method_from_name(m_classInfo, ".ctor", 1);
 
 }
 
 int main()
 {
-	//std::string str("EmbeddingMono\\");
-	//
-	//std::string currentDirectory(get_current_dir());
-	//std::size_t found = currentDirectory.find(str);
-	////Indicate Mono where you installed the lib and etc folders
-	//std::cout << "CurrentDirectory:" << currentDirectory << std::endl;
 
-	//if (found != std::string::npos)
-	//{
-	//	currentDirectory.erase(found+13);
-	//}
-	////Indicate Mono where you installed the lib and etc folders
-	//std::cout << "CurrentDirectory:" << currentDirectory << std::endl;
-
-	//mono_set_dirs((currentDirectory+"\\Mono\\lib").c_str(), (currentDirectory+"\\Mono\\etc").c_str());
-
-	////Create the main CSharp domain
-	//MonoDomain* rootDomain = mono_jit_init("Mono_Domain");
-	//MonoDomain* e3Domain =mono_domain_create_appdomain((char*)"E3Runtime", nullptr);
-
-	//mono_domain_set(e3Domain, true);
-	//
-	////Load the binary file as an Assembly
-	//MonoAssembly* csharpAssembly = mono_domain_assembly_open(e3Domain, (currentDirectory+"\\E3Core\\bin\\Debug\\Core.dll").c_str());
-	//MonoImage* CoreAssemblyImage = mono_assembly_get_image(csharpAssembly);
-	//MonoClass* classInfo = mono_class_from_name(CoreAssemblyImage, "MonoCore", "Core");
-	//MonoObject* instance = mono_object_new(e3Domain, classInfo);
-
-	//MonoMethod* m_OnPulse = mono_class_get_method_from_name(classInfo, "OnPulse", 0);
-	//
-	//MonoMethod* m_Constructor = mono_class_get_method_from_name(classInfo, ".ctor", 1);
-
-	//MonoMethod* m_OnWriteChatColor;
-	//MonoMethod* m_OnIncomingChat;
-	//MonoMethod* m_OnInit;
-	//m_OnInit = mono_class_get_method_from_name(classInfo, "OnInit", 0);
-	//m_OnWriteChatColor = mono_class_get_method_from_name(classInfo, "OnWriteChatColor", 1);
-	//m_OnIncomingChat = mono_class_get_method_from_name(classInfo, "OnIncomingChat", 1);
-
-	//if (!csharpAssembly)
-	//{
-	//	//Error detected
-	//	return -1;
-	//}
-
-	////SetUp Internal Calls called from CSharp
-	//const int argc = 1;
-	//char* argv[argc] = { (char*)"On Pulse from MQ2Mono Says Hello" };
-	//
-	////Namespace.Class::Method + a Function pointer with the actual definition
-	//mono_add_internal_call("MonoCore.Core::mq_Echo", &mono_Echo);
-	//mono_add_internal_call("MonoCore.Core::mq_ParseTLO", &mono_ParseTLO);
-	//mono_add_internal_call("MonoCore.Core::mq_DoCommand", &mono_DoCommand);
-	//mono_add_internal_call("MonoCore.Core::mq_Delay", &mono_Delay);
-	////mono_jit_exec(rootDomain, csharpAssembly, argc, argv);
-	///*int value = 5;
-	//int value2 = 508;
-	//void* params[2] =
-	//{
-	//	&value,
-	//	&value2
-	//};*/
 
 	InitMono();
 
-
 	
 
-	////call the init method
-	//mono_runtime_invoke(m_OnInit, instance, nullptr, nullptr);
+
 	
 	//simulate the onPulse from C++
 	while (true)
 	{
-		for (auto i : mqAppDomains)
+		if (appDomainProcessQueue.size() < 1) return 0;
+
+		std::chrono::steady_clock::time_point proccessingTimer = std::chrono::steady_clock::now(); //the time this was issued + m_delayTime
+		
+		int count = 0;
+		int processQueueSize = appDomainProcessQueue.size();
+		while (count < processQueueSize)
 		{
-			//if we are not in game, kick out no sense running
-			//if (gGameState != GAMESTATE_INGAME) return;
-			// Run only after timer is up
-			if (i.second.m_delayTime > 0 && std::chrono::steady_clock::now() > i.second.m_delayTimer)
+			std::string domainKey = appDomainProcessQueue.front();
+			appDomainProcessQueue.pop_front();
+			appDomainProcessQueue.push_back(domainKey);
+			count++;
+			//get pointer to struct
+
+			std::map<std::string, monoAppDomainInfo>::iterator i = mqAppDomains.find(domainKey);
+			if (i != mqAppDomains.end())
 			{
-				i.second.m_delayTime = 0;
-				//WriteChatf("%s", s_environment->monoDir.c_str());
-				// Wait 5 seconds before running again
-				//PulseTimer = std::chrono::steady_clock::now() + std::chrono::seconds(5);
-				//DebugSpewAlways("MQ2Mono::OnPulse()");
+				//if we have a delay check to see if we can reset it
+				if (i->second.m_delayTime > 0 && std::chrono::steady_clock::now() > i->second.m_delayTimer)
+				{
+					i->second.m_delayTime = 0;
+				}
+				//check to make sure we are not in an delay
+				if (i->second.m_delayTime == 0) {
+					//if not, do work
+					if (i->second.m_appDomain && i->second.m_OnPulseMethod)
+					{
+						mono_domain_set(i->second.m_appDomain, false);
+						mono_runtime_invoke(i->second.m_OnPulseMethod, i->second.m_classInstance, nullptr, nullptr);
+					}
+				}
+				//check if we have spent the specified time N-ms, or we have processed the entire queue kick out
+				if (std::chrono::steady_clock::now() > (proccessingTimer + std::chrono::milliseconds(20)) || count >= appDomainProcessQueue.size())
+				{
+					break;
+				}
 			}
-			//we are still in a delay
-			if (i.second.m_delayTime > 0) continue;
-			//WriteChatf("m_delayTime with %d", m_delayTime);
-			//WriteChatf("m_delayTimer with %ld", m_delayTimer);
-			//Call the main method in this code
-			if (i.second.m_appDomain && i.second.m_OnPulseMethod)
+			else
 			{
-				mono_domain_set(i.second.m_appDomain, false);
-				mono_runtime_invoke(i.second.m_OnPulseMethod, i.second.m_classInstance, nullptr, nullptr);
+				//should never be ever to get here, but if so.
+				//get rid of the bad domainKey
+				appDomainProcessQueue.pop_back();
 			}
+
+			
+
+			
 		}
-
-
 		
 		std::this_thread::sleep_for(std::chrono::milliseconds(1000));
 	}

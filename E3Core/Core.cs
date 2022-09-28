@@ -36,10 +36,15 @@ namespace MonoCore
     public static class MainProcessor
     {
         public static IMQ MQ = Core.mqInstance;
-        public static Int32 _processDelay = 100;
+        public static Int32 _processDelay = 1000;
         private static Logging _log = Core._log;
         public static string _applicationName = "";
-       
+        public static Int64 _startTimeStamp;
+        public static Int64 _processingCounts;
+        public static Int64 _totalProcessingCounts;
+        private static Double _startLoopTime;
+        private static Decimal _averageTime;
+        private static Double _totalLoopTime;
         public static void Init()
         {
 
@@ -62,11 +67,13 @@ namespace MonoCore
             //wait for the C++ thread thread to tell us we can go
             _processResetEvent.Wait();
             _processResetEvent.Reset();
-
+            _startTimeStamp = Core._stopWatch.ElapsedMilliseconds;
             //volatile variable, will eventually update to kill the thread on shutdown
             while (Core._isProcessing)
             {
-               
+                _startLoopTime= Core._stopWatch.Elapsed.TotalMilliseconds;
+                _processingCounts++;
+                _totalProcessingCounts++;
                 try
                 {
                     //MQ.TraceStart("Process");
@@ -80,11 +87,11 @@ namespace MonoCore
                         //just have a class call a process method or such so you don't have to see this 
                         //boiler plate code with all the threading.
 
-                        //MQ.Write("Calling e3process");
-                         E3.Process();
-                        //***NOTE NOTE NOTE, Use M2.Delay(0) in your code to give control back to EQ if you have taken awhile in doing something
-                        //***NOTE NOTE NOTE, generally this isn't needed as there is an auto yield baked into every MQ method. Just be aware.
-                        using(_log.Trace("EventProcessing"))
+                        ////MQ.Write("Calling e3process");
+                        E3.Process();
+                        ////***NOTE NOTE NOTE, Use M2.Delay(0) in your code to give control back to EQ if you have taken awhile in doing something
+                        ////***NOTE NOTE NOTE, generally this isn't needed as there is an auto yield baked into every MQ method. Just be aware.
+                        using (_log.Trace("EventProcessing"))
                         {
                             EventProcessor.ProcessEventsInQueues();
 
@@ -93,7 +100,22 @@ namespace MonoCore
 
                     //MQ.TraceEnd("Process");
                     //process all the events that have been registered
+                    //process all the events that have been registered
+
+                    Double endLoopTimeInMS = Core._stopWatch.Elapsed.TotalMilliseconds - _startLoopTime;
+                    _totalLoopTime += endLoopTimeInMS;
+
+                    //every 5 seconds, print out the # processed and average time.
+                    if ((Core._stopWatch.ElapsedMilliseconds > (_startTimeStamp + 5000)))
+                    {
                     
+                      
+                        MQ.Write($"Total Count:{_totalProcessingCounts}, Total this cycle {_processingCounts} average time {_totalLoopTime/_processingCounts}ms");
+                        _startTimeStamp = Core._stopWatch.ElapsedMilliseconds;
+                        _processingCounts = 0;
+                        _totalLoopTime = 0;
+                    }
+
                 }
                 catch(Exception ex)
                 {
@@ -175,10 +197,9 @@ namespace MonoCore
                                 var match = regex.Match(line);
                                 if (match.Success)
                                 {
-                                    lock (item.Value.queuedEvents)
-                                    {
-                                        item.Value.queuedEvents.Enqueue(new EventMatch() { eventName = item.Value.keyName, eventString = line, match = match });
-                                    }
+                                 
+                                    item.Value.queuedEvents.Enqueue(new EventMatch() { eventName = item.Value.keyName, eventString = line, match = match });
+                                 
                                     break;
                                 }
                             }
@@ -210,7 +231,7 @@ namespace MonoCore
                         continue;
                     }
                 }
-                _log.Write($"Checking Event queue. Total:{item.Value.queuedEvents.Count}");
+                //_log.Write($"Checking Event queue. Total:{item.Value.queuedEvents.Count}");
                 while (item.Value.queuedEvents.Count > 0)
                 {
 
@@ -294,15 +315,11 @@ namespace MonoCore
     //This class is for C++ thread to come in and call. for the most part, leave this alone. 
     public static class Core
     {
-        public static IMQ mqInstance = new MQ(); //needs to be declared first
+        public static IMQ mqInstance; //needs to be declared first
         public static Logging _log;
         public volatile static bool _isProcessing = false;
         public const string _coreVersion = "0.1";
        
-        static Core()
-        {
-            _log = new Logging(mqInstance);
-        }
 
         //Note, if you comment out a method, this will tell MQ2Mono to not try and execute it
         //only use the events you need to prevent string allocations to be passed in
@@ -345,9 +362,15 @@ namespace MonoCore
 
         public static void OnInit()
         {
-            
-            if(!_isInit)
+           
+
+            if (!_isInit)
             {
+                if(mqInstance==null)
+                {
+                    mqInstance = new MQ();
+                } 
+                _log = new Logging(mqInstance);
                 _stopWatch.Start();
                 //do all necessary setups here
                 MainProcessor.Init();
@@ -406,8 +429,8 @@ namespace MonoCore
             MainProcessor._processResetEvent.Set();
 
             //Core.mq_Echo("Blocking on C++");
-            _coreResetEvent.Wait();
-            _coreResetEvent.Reset();
+            Core._coreResetEvent.Wait();
+            Core._coreResetEvent.Reset();
             //we need to block and chill out to let the other thread do its work
             //Core.mq_Echo("Unblocked on C++");
 
@@ -423,7 +446,7 @@ namespace MonoCore
             }
             if (_currentCommand != String.Empty)
             {
-                Core.mq_Echo("Unblocked on C++:: Doing a Command");
+                //Core.mq_Echo("Unblocked on C++:: Doing a Command");
 
                 Core.mq_DoCommand(_currentCommand);
                 _currentCommand = String.Empty;
@@ -431,8 +454,7 @@ namespace MonoCore
             }
             if (_currentDelay > 0)
             {
-                Core.mq_Echo("Unblocked on C++:: Doing a Delay");
-
+               // Core.mq_Echo("Unblocked on C++:: Doing a Delay");
                 Core.mq_Delay(_currentDelay);
                 _currentDelay = 0;
             }
@@ -448,7 +470,7 @@ namespace MonoCore
         //}
         public static void OnIncomingChat(string line)
         {
-            EventProcessor.ProcessEvent(line);
+           EventProcessor.ProcessEvent(line);
         }
         public static void OnUpdateImGui()
         {
