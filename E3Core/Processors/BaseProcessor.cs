@@ -9,7 +9,7 @@ namespace E3Core.Processors
 {
     public abstract class BaseProcessor
     {
-        protected static Logging _log = Core._log;
-        protected static IMQ MQ = Core.mqInstance;
+        protected static Logging _log = E3._log;
+        protected static IMQ MQ = E3.MQ;
     }
 }

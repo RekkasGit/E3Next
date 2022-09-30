@@ -8,7 +8,9 @@ using System.Threading;
 using System.Diagnostics;
 using System.Collections.Concurrent;
 using System.Text.RegularExpressions;
-using E3Core.Processors;
+using Nancy;
+using Nancy.Hosting.Self;
+using NetMQ.Sockets;
 
 /// <summary>
 /// Version 0.1
@@ -33,10 +35,233 @@ namespace MonoCore
     /// this is the class for the main C# thread
     //  the C++ core thread will call this in a task at startup
     /// </summary>
+    /// 
+    public class Module : NancyModule
+    {
+        public Module()
+        {
+
+            Get["/TLO/{name}"] = parameters => {
+
+                MainProcessor._queuedQuery.Enqueue(parameters.name);
+
+
+                while (MainProcessor._queuedQueryResposne.Count == 0)
+                {
+                    System.Threading.Thread.Sleep(0);
+                }
+
+                string response;
+                MainProcessor._queuedQueryResposne.TryDequeue(out response);
+
+                return response;
+            };
+
+            Get["/command/{command}"] = parameters => {
+
+
+                MainProcessor._queuedCommands.Enqueue(@"/" + parameters.command);
+
+                return "OK";
+            };
+
+            Get["/write/{message}"] = parameters => {
+
+
+                MainProcessor._queuedWrite.Enqueue(parameters.message);
+
+                return "OK";
+            };
+
+        }
+    }
+
+    public class RouterMessage : IDisposable
+    {
+        public byte[] identity = new byte[1024 * 86]; //86k to get on the LOH
+        public Int32 identiyLength = 0;
+        public Int32 commandType = 0;
+        public byte[] payload = new byte[1024 * 86];
+        public Int32 payloadLength = 0;
+
+        public void Dispose()
+        {
+            payloadLength = 0;
+            identiyLength = 0;
+            StaticObjectPool.Push<RouterMessage>(this);
+        }
+    }
+    public class RouterServer
+    {
+        RouterSocket _rpcRouter = null;
+        Task _serverThread = null;
+        NetMQ.Msg routerResponse = new NetMQ.Msg();
+        TimeSpan recieveTimeout = new TimeSpan(0, 0, 0, 0, 1);
+        NetMQ.Msg routerMessage = new NetMQ.Msg();
+        Int64 counter = 0;
+        static TimeSpan timeout = new TimeSpan(0, 0, 0, 5);
+
+        public static ConcurrentQueue<RouterMessage> _tloRequets = new ConcurrentQueue<RouterMessage>();
+        public static ConcurrentQueue<RouterMessage> _tloResposne = new ConcurrentQueue<RouterMessage>();
+        public static ConcurrentQueue<RouterMessage> _commandRequests = new ConcurrentQueue<RouterMessage>();
+        public static ConcurrentQueue<RouterMessage> _writeRequests = new ConcurrentQueue<RouterMessage>();
+
+
+
+        public void Start()
+        {
+            routerMessage.InitEmpty();
+
+            _serverThread = Task.Factory.StartNew(() => { Process(); }, CancellationToken.None, TaskCreationOptions.DenyChildAttach, TaskScheduler.Default);
+
+        }
+
+        private void Process()
+        {
+
+            while (true)
+            {
+               
+                if (_rpcRouter.TryReceive(ref routerMessage, recieveTimeout))
+                {
+                    RouterMessage message;
+                    StaticObjectPool.TryPop<RouterMessage>(out message);
+
+                    //first get identit identityJump:
+                    unsafe
+                    {
+                        fixed (byte* src = routerMessage.Data)
+                        {
+                            fixed (byte* dest = message.identity)
+                            {
+                                Buffer.MemoryCopy(src, dest, message.identity.Length, routerMessage.Size);
+                            }
+                        }
+                    }
+                    message.identiyLength = routerMessage.Size;
+                    routerMessage.Close();
+                    routerMessage.InitEmpty();
+
+                    //next get empty frame
+
+                    _rpcRouter.TryReceive(ref routerMessage, timeout);
+                    routerMessage.Close();
+                    routerMessage.InitEmpty();
+
+                    //combined MethodTopicOptions 4 + method + 4 + topic + 4 + options
+                    //next method frame
+                    _rpcRouter.TryReceive(ref routerMessage, timeout);
+
+                    //do something with the message
+                    //4 bytes = commandtype
+                    //4 bytes = length
+                    //N-bytes = payload
+
+                    unsafe
+                    {
+                        fixed (byte* src = routerMessage.Data)
+                        {
+
+                            byte* tempPtr = src;
+                           
+                            message.commandType = *(Int32*)(tempPtr);
+                            tempPtr += 4;//move past the command
+
+                            message.payloadLength = *(Int32*)(tempPtr);
+                            tempPtr += 4;//move past the command
+
+                            fixed (byte* dest = message.payload)
+                            {
+                                //copy everything but the last bytes we have. 
+                                Buffer.MemoryCopy(tempPtr, dest, message.payload.Length, routerMessage.Size-8);
+                            }
+                        }
+                    }
+
+                    if(message.commandType==1)
+                    {
+                        _tloRequets.Enqueue(message);
+                    } else if(message.commandType==2)
+                    {
+                        _commandRequests.Enqueue(message);
+                    }else if(message.commandType==3)
+                    {
+                        _writeRequests.Enqueue(message);
+                    } else
+                    {
+                        message.Dispose();
+                    }
+
+
+                    //should not have more here, drain any remaining and close out.
+                    while (routerMessage.HasMore)
+                    {
+                        routerMessage.Close();
+                        routerMessage.InitEmpty();
+                        //drain them
+
+                        _rpcRouter.TryReceive(ref routerMessage, timeout);
+
+                    }
+                    //clean up memory after we are done with it
+                    routerMessage.Close();
+                    routerMessage.InitEmpty();
+                    counter++;
+
+
+
+
+                }
+                //process all the responses that we have to give
+                while (_tloResposne.Count > 0)
+                {
+                    RouterMessage message;
+                    _tloResposne.TryDequeue(out message);
+                    if (message != null)
+                    {
+                        try
+                        {
+                            routerResponse.InitPool(message.identiyLength);
+                            Buffer.BlockCopy(message.identity,0, routerResponse.Data, 0, message.identiyLength);
+                            _rpcRouter.TrySend(ref routerResponse, timeout, true);
+                            routerResponse.Close();
+                            routerResponse.InitEmpty();
+                            _rpcRouter.TrySend(ref routerResponse, timeout, true);
+                            routerResponse.Close();
+                            routerResponse.InitPool(message.payloadLength);
+                            Buffer.BlockCopy(message.payload, 0, routerResponse.Data, 0, message.payloadLength);
+                            _rpcRouter.TrySend(ref routerResponse, timeout, false);
+                            routerResponse.Close();
+                        }
+                        finally
+                        {
+                            //put back into the object pool.
+                            message.Dispose();
+                        }
+                    }
+                }
+
+            }
+
+        }
+
+        public RouterServer()
+        {
+            _rpcRouter = new RouterSocket();
+            _rpcRouter.Options.SendHighWatermark = 10;
+            _rpcRouter.Options.ReceiveHighWatermark = 10;
+            _rpcRouter.Bind("tcp://127.0.0.1:12346");
+            NetMQ.Msg routerMessage = new NetMQ.Msg();
+
+
+           
+        }
+
+    }
     public static class MainProcessor
     {
         public static IMQ MQ = Core.mqInstance;
-        public static Int32 _processDelay = 1000;
+        public static Int32 _processDelay = 0;
         private static Logging _log = Core._log;
         public static string _applicationName = "";
         public static Int64 _startTimeStamp;
@@ -45,6 +270,9 @@ namespace MonoCore
         private static Double _startLoopTime;
         private static Decimal _averageTime;
         private static Double _totalLoopTime;
+        private static NancyHost _host;
+        //start up the web server
+        
         public static void Init()
         {
 
@@ -53,13 +281,23 @@ namespace MonoCore
             //Logging._currentLogLevel = Logging.LogLevels.None; //log level we are currently at
             //Logging._minLogLevelTolog = Logging.LogLevels.Error; //log levels have integers assoicatd to them. you can set this to Error to only log errors. 
             //Logging._defaultLogLevel = Logging.LogLevels.None; //the default if a level is not passed into the _log.write statement. useful to hide/show things.
-
+            HostConfiguration hostConfigs = new HostConfiguration()
+            {
+                UrlReservations = new UrlReservations() { CreateAutomatically = true }
+            };
+            _host = new NancyHost(new Uri("http://localhost:12345"),new DefaultNancyBootstrapper(), hostConfigs);
+            _host.Start();
 
         }
         //we use this to tell the C++ thread that its okay to start processing gain
         //public static EconomicResetEvent _processResetEvent = new EconomicResetEvent(false, Thread.CurrentThread);
         //public static AutoResetEvent _processResetEvent = new AutoResetEvent(false);
         public static ManualResetEventSlim _processResetEvent = new ManualResetEventSlim(false);
+        public static ConcurrentQueue<string> _queuedCommands = new ConcurrentQueue<string>();
+        public static ConcurrentQueue<string> _queuedQuery = new ConcurrentQueue<string>();
+        public static ConcurrentQueue<string> _queuedQueryResposne = new ConcurrentQueue<string>();
+        public static ConcurrentQueue<string> _queuedWrite = new ConcurrentQueue<string>();
+        
 
 
         public static void Process()
@@ -68,6 +306,8 @@ namespace MonoCore
             _processResetEvent.Wait();
             _processResetEvent.Reset();
             _startTimeStamp = Core._stopWatch.ElapsedMilliseconds;
+           
+            //"tcp://"+Config.RPCReplyIPBinding+":" + (Config._rpcStartPort + i)
             //volatile variable, will eventually update to kill the thread on shutdown
             while (Core._isProcessing)
             {
@@ -77,7 +317,7 @@ namespace MonoCore
                 try
                 {
                     //MQ.TraceStart("Process");
-                    using (_log.Trace())
+                    //using (_log.Trace())
                     {
                     
                         //************************************************
@@ -87,15 +327,84 @@ namespace MonoCore
                         //just have a class call a process method or such so you don't have to see this 
                         //boiler plate code with all the threading.
 
-                        ////MQ.Write("Calling e3process");
-                        E3.Process();
-                        ////***NOTE NOTE NOTE, Use M2.Delay(0) in your code to give control back to EQ if you have taken awhile in doing something
-                        ////***NOTE NOTE NOTE, generally this isn't needed as there is an auto yield baked into every MQ method. Just be aware.
-                        using (_log.Trace("EventProcessing"))
+                        while(RouterServer._tloRequets.Count>0)
                         {
-                            EventProcessor.ProcessEventsInQueues();
+                            RouterMessage message;
+                            RouterServer._tloRequets.TryDequeue(out message);
+
+                            //lets pull out the string
+                            string query = System.Text.Encoding.Default.GetString(message.payload, 0, message.payloadLength);
+                            string response = MQ.Query<string>(query);
+
+                            message.payloadLength=System.Text.Encoding.Default.GetBytes(response,0,response.Length,message.payload,0);
+                            RouterServer._tloResposne.Enqueue(message);
 
                         }
+
+                        while (RouterServer._commandRequests.Count > 0)
+                        {
+                            RouterMessage message;
+                            if(RouterServer._commandRequests.TryDequeue(out message))
+                            {
+                                try
+                                {
+                                    //lets pull out the string
+                                    string query = System.Text.Encoding.Default.GetString(message.payload, 0, message.payloadLength);
+                                    MQ.Cmd(query);
+                                }
+                                finally
+                                {
+                                    message.Dispose();
+                                }
+                            }
+                        }
+                        while (RouterServer._writeRequests.Count > 0)
+                        {
+                            RouterMessage message;
+                            if (RouterServer._writeRequests.TryDequeue(out message))
+                            {
+                                try
+                                {
+                                    //lets pull out the string
+                                    string query = System.Text.Encoding.Default.GetString(message.payload, 0, message.payloadLength);
+                                    MQ.Write(query);
+                                }
+                                finally
+                                {
+                                    message.Dispose();
+                                }
+                            }
+                        }
+
+
+                        while (_queuedQuery.Count>0)
+                        {
+                            //have a query to do!
+                            string query;
+                            _queuedQuery.TryDequeue(out query);
+                            string response = MQ.Query<string>(query);
+                            _queuedQueryResposne.Enqueue(response);
+                        }
+
+
+                        while (_queuedCommands.Count > 0)
+                        {
+                            //have a query to do!
+                            string query;
+
+                            _queuedCommands.TryDequeue(out query);
+                            MQ.Write("Trying to issue command:[" + query + "]");
+                            MQ.Cmd(query);
+                        }
+
+                        while (_queuedWrite.Count > 0)
+                        {
+                            //have a query to do!
+                            string query;
+                            _queuedWrite.TryDequeue(out query);
+                            MQ.Write(query);
+                        }
+                      
                     }
 
                     //MQ.TraceEnd("Process");
@@ -120,12 +429,7 @@ namespace MonoCore
                 catch(Exception ex)
                 {
                     _log.Write("Error: Please reload. Terminating. \r\nExceptionMessage:" + ex.Message + " stack:" + ex.StackTrace.ToString(), Logging.LogLevels.CriticalError);
-                    Core._isProcessing = false;
-                    //lets tell core that it can continue
-                    //test
-                    Core._coreResetEvent.Set();
-                    //we perma exit this thread loop a full reload will be necessary
-                    return; 
+                   
                 }
 
                 //SET YOUR MACRO DELAY HERE
@@ -139,6 +443,7 @@ namespace MonoCore
 
 
             }
+            _host.Stop();
 
         }
 
@@ -313,6 +618,7 @@ namespace MonoCore
 
     }
     //This class is for C++ thread to come in and call. for the most part, leave this alone. 
+
     public static class Core
     {
         public static IMQ mqInstance; //needs to be declared first

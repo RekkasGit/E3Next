@@ -8,7 +8,7 @@ using System.Threading;
 using System.Diagnostics;
 using System.Collections.Concurrent;
 using System.Text.RegularExpressions;
-using E3Core.Processors;
+using Template;
 
 /// <summary>
 /// Version 0.1
@@ -36,7 +36,7 @@ namespace MonoCore
     public static class MainProcessor
     {
         public static IMQ MQ = Core.mqInstance;
-        public static Int32 _processDelay = 1000;
+        public static Int32 _processDelay = 500;
         private static Logging _log = Core._log;
         public static string _applicationName = "";
         public static Int64 _startTimeStamp;
@@ -67,19 +67,19 @@ namespace MonoCore
             //wait for the C++ thread thread to tell us we can go
             _processResetEvent.Wait();
             _processResetEvent.Reset();
-            _startTimeStamp = Core._stopWatch.ElapsedMilliseconds;
+           // _startTimeStamp = Core._stopWatch.ElapsedMilliseconds;
             //volatile variable, will eventually update to kill the thread on shutdown
             while (Core._isProcessing)
             {
-                _startLoopTime= Core._stopWatch.Elapsed.TotalMilliseconds;
-                _processingCounts++;
-                _totalProcessingCounts++;
+                //_startLoopTime= Core._stopWatch.Elapsed.TotalMilliseconds;
+                //_processingCounts++;
+                //_totalProcessingCounts++;
                 try
                 {
                     //MQ.TraceStart("Process");
                     using (_log.Trace())
                     {
-                    
+
                         //************************************************
                         //DO YOUR WORK HERE
                         //this loop executes once every OnPulse from C++
@@ -88,7 +88,7 @@ namespace MonoCore
                         //boiler plate code with all the threading.
 
                         ////MQ.Write("Calling e3process");
-                        E3.Process();
+                        MyCode.Process();
                         ////***NOTE NOTE NOTE, Use M2.Delay(0) in your code to give control back to EQ if you have taken awhile in doing something
                         ////***NOTE NOTE NOTE, generally this isn't needed as there is an auto yield baked into every MQ method. Just be aware.
                         using (_log.Trace("EventProcessing"))
@@ -102,19 +102,19 @@ namespace MonoCore
                     //process all the events that have been registered
                     //process all the events that have been registered
 
-                    Double endLoopTimeInMS = Core._stopWatch.Elapsed.TotalMilliseconds - _startLoopTime;
-                    _totalLoopTime += endLoopTimeInMS;
+                    //Double endLoopTimeInMS = Core._stopWatch.Elapsed.TotalMilliseconds - _startLoopTime;
+                    //_totalLoopTime += endLoopTimeInMS;
 
-                    //every 5 seconds, print out the # processed and average time.
-                    if ((Core._stopWatch.ElapsedMilliseconds > (_startTimeStamp + 5000)))
-                    {
+                    ////every 5 seconds, print out the # processed and average time.
+                    //if ((Core._stopWatch.ElapsedMilliseconds > (_startTimeStamp + 5000)))
+                    //{
                     
                       
-                        MQ.Write($"Total Count:{_totalProcessingCounts}, Total this cycle {_processingCounts} average time {_totalLoopTime/_processingCounts}ms");
-                        _startTimeStamp = Core._stopWatch.ElapsedMilliseconds;
-                        _processingCounts = 0;
-                        _totalLoopTime = 0;
-                    }
+                    //    MQ.Write($"Total Count:{_totalProcessingCounts}, Total this cycle {_processingCounts} average time {_totalLoopTime/_processingCounts}ms");
+                    //    _startTimeStamp = Core._stopWatch.ElapsedMilliseconds;
+                    //    _processingCounts = 0;
+                    //    _totalLoopTime = 0;
+                    //}
 
                 }
                 catch(Exception ex)
@@ -472,18 +472,18 @@ namespace MonoCore
         {
            EventProcessor.ProcessEvent(line);
         }
-        public static void OnUpdateImGui()
-        {
+        //public static void OnUpdateImGui()
+        //{
 
-            if(imgui_Begin_OpenFlagGet("e3TestWindow"))
-            {
-                imgui_Begin("e3TestWindow", (int)ImGuiWindowFlags.ImGuiWindowFlags_None);
-                imgui_Button("Test button");
-                imgui_End();
-            }
+        //    if(imgui_Begin_OpenFlagGet("TestWindow"))
+        //    {
+        //        imgui_Begin("e3TestWindow", (int)ImGuiWindowFlags.ImGuiWindowFlags_None);
+        //        imgui_Button("Test button");
+        //        imgui_End();
+        //    }
            
 
-        }
+        //}
 
         #region MQMethods
         [MethodImpl(MethodImplOptions.InternalCall)]
@@ -555,7 +555,7 @@ namespace MonoCore
     {
         T Query<T>(string query);
         void Cmd(string query);
-        void Write(string query, [CallerMemberName] string memberName = "", [CallerFilePath] string fileName = "", [CallerLineNumber] int lineNumber = 0);
+        void Write(string query, string colorcode = "", [CallerMemberName] string memberName = "", [CallerFilePath] string fileName = "", [CallerLineNumber] int lineNumber = 0);
         void TraceStart(string methodName);
         void TraceEnd(string methodName);
         void Delay(Int32 value);
@@ -568,7 +568,7 @@ namespace MonoCore
         //NONE OF THESE METHODS SHOULD BE CALLED ON THE C++ Thread, as it will cause a deadlock due to delay calls
         //**************************************************************************************************
 
-        public static Int64 _maxMillisecondsToWork = 40;
+        public static Int64 _maxMillisecondsToWork = 500;
         public static Int64 _sinceLastDelay = 0;
         public static Int64 _totalQueryCounts;
         public T Query<T>(string query)
@@ -676,7 +676,7 @@ namespace MonoCore
             Cmd($"/bc {query}");
         }
 
-        public void Write(string query, [CallerMemberName] string memberName = "", [CallerFilePath] string fileName = "", [CallerLineNumber] int lineNumber = 0)
+        public void Write(string query, string colorcode = "\at", [CallerMemberName] string memberName = "", [CallerFilePath] string fileName = "", [CallerLineNumber] int lineNumber = 0)
         {
             //if(String.IsNullOrWhiteSpace(query))
             //{
@@ -689,7 +689,7 @@ namespace MonoCore
             //}
             //Core.mq_Echo(query);
             //set the buffer for the C++ thread
-            Core._currentWrite = $"[{System.DateTime.Now.ToString("HH:mm:ss")}] {query}";
+            Core._currentWrite = $"[{System.DateTime.Now.ToString("HH:mm:ss")}] {colorcode}{query}";
             //swap to the C++thread, and it will swap back after executing the current write becau of us setting _CurrentWrite before
             Core._coreResetEvent.Set();
             //we are now going to wait on the core

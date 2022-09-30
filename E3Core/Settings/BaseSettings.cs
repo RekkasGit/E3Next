@@ -13,8 +13,8 @@ namespace E3Core.Settings
     public abstract class BaseSettings
     {
 
-        public static Logging _log = Core._log;
-        protected static IMQ MQ = Core.mqInstance;
+        public static Logging _log = E3._log;
+        protected static IMQ MQ = E3.MQ;
 
         protected static string _macroFolder = MQ.Query<string>("${MacroQuest.Path[macros]}");
         protected static string _configFolder = MQ.Query<string>("${MacroQuest.Path[config]}");

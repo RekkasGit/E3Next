@@ -435,7 +435,7 @@ void InitE3()
 
 
 	std::string fileName = "Core.dll";
-	std::string assemblypath = (currentDirectory + "\\E3Core\\bin\\Debug\\");
+	std::string assemblypath = (currentDirectory + "\\MQServer\\bin\\Debug\\");
 
 	bool filepathExists = std::filesystem::exists(assemblypath+fileName);
 

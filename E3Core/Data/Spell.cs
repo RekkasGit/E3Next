@@ -1,4 +1,5 @@
-﻿using IniParser.Model;
+﻿using E3Core.Processors;
+using IniParser.Model;
 using MonoCore;
 using System;
 using System.Reflection;
@@ -19,7 +20,7 @@ namespace E3Core.Data
     
     public class Spell
     {
-        public static IMQ MQ = Core.mqInstance;
+        public static IMQ MQ = E3.MQ;
         public Spell(string spellName, IniData parsedData=null)
         {
             SpellName = spellName; //what the thing actually casts

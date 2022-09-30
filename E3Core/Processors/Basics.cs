@@ -13,7 +13,7 @@ namespace E3Core.Processors
         public static bool _following = false;
 
 
-        public static Logging _log = Core._log;
+        public static Logging _log = E3._log;
         private static IMQ MQ = E3.MQ;
 
 

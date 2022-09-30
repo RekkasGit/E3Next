@@ -80,7 +80,7 @@ namespace E3Core.Processors
 
             if(!_isInit)
             {
-                Logging._currentLogLevel = Logging.LogLevels.Debug; //log level we are currently at
+                Logging._traceLogLevel = Logging.LogLevels.Debug; //log level we are currently at
                 Logging._minLogLevelTolog = Logging.LogLevels.Debug; //log levels have integers assoicatd to them. you can set this to Error to only log errors. 
                 Logging._defaultLogLevel = Logging.LogLevels.Debug; //the default if a level is not passed into the _log.write statement. useful to hide/show things.
                 MainProcessor._applicationName = "E3Next"; //application name, used in some outputs
@@ -88,7 +88,7 @@ namespace E3Core.Processors
                                                     //how long you allow script to process before auto yield is engaged. generally should't need to mess with this, but an example.
                 MonoCore.MQ._maxMillisecondsToWork = 40;
                 //max event count for each registered event before spilling over.
-                EventProcessor.EventLimiterPerRegisteredEvent = 20;
+                EventProcessor._eventLimiterPerRegisteredEvent = 20;
 
                 //do first to get class information
                 _characterSettings = new Settings.CharacterSettings();
@@ -229,9 +229,9 @@ namespace E3Core.Processors
                 Console.WriteLine("tracestart:" + methodName);
             }
 
-            public void Write(string query, string colorcode = "", [CallerMemberName] string memberName = "", [CallerFilePath] string fileName = "", [CallerLineNumber] int lineNumber = 0)
+            public void Write(string query, [CallerMemberName] string memberName = "", [CallerFilePath] string fileName = "", [CallerLineNumber] int lineNumber = 0)
             {
-                Console.WriteLine($"[{System.DateTime.Now.ToString("HH:mm:ss")}] {colorcode}{query}");
+                Console.WriteLine($"[{System.DateTime.Now.ToString("HH:mm:ss")}] {query}");
             }
         }
     }
