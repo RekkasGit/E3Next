@@ -37,6 +37,222 @@ namespace MonoCore
     //  the C++ core thread will call this in a task at startup
     /// </summary>
     /// 
+
+
+    public static class RemoteDebugServerConfig
+    {
+        //used for browser queries
+        public static Int32 HTTPPort = 12345;
+        //used for remote debugging
+        public static Int32 NetMQRouterPort = 12346;
+        //used for remote debugging events
+        public static Int32 NetMQPubPort = 12347;
+        //how long we wait once a command has been seen
+        //use this to tweak how much of heartbeat 'lag' you wish. careful this will
+        //directly impact query performance if set too low. 
+        public readonly static Double CurrentWaitTimeWhenRequestFound = 100;
+    }
+
+
+    public static class MainProcessor
+    {
+        public static IMQ MQ = Core.mqInstance;
+        public static Int32 _processDelay = 0;
+        private static Logging _log = Core._log;
+        public static string _applicationName = "MQ2MonoRemoteDebugger";
+        public static Int64 _startTimeStamp;
+        public static Int64 _processingCounts;
+        public static Int64 _totalProcessingCounts;
+        
+        private static Double _startLoopTime = 0;
+   
+        //web server
+        private static NancyHost _host;
+        //remote debugging server
+        private static RouterServer _netmqServer;
+        //remote debugging events
+        private static PubServer _pubServer;
+   
+
+        public static void Init()
+        {
+
+            //Logging._currentLogLevel = Logging.LogLevels.None; //log level we are currently at
+            //Logging._minLogLevelTolog = Logging.LogLevels.Error; //log levels have integers assoicatd to them. you can set this to Error to only log errors. 
+            //Logging._defaultLogLevel = Logging.LogLevels.None; //the default if a level is not passed into the _log.write statement. useful to hide/show things.
+            HostConfiguration hostConfigs = new HostConfiguration()
+            {
+                UrlReservations = new UrlReservations() { CreateAutomatically = true }
+            };
+            _host = new NancyHost(new Uri("http://localhost:"+ RemoteDebugServerConfig.HTTPPort), new DefaultNancyBootstrapper(), hostConfigs);
+            _host.Start();
+
+            _netmqServer = new RouterServer();
+            _netmqServer.Start();
+
+            _pubServer = new PubServer();
+            _pubServer.Start();
+
+        }
+        //we use this to tell the C++ thread that its okay to start processing gain
+        //public static EconomicResetEvent _processResetEvent = new EconomicResetEvent(false, Thread.CurrentThread);
+        //public static AutoResetEvent _processResetEvent = new AutoResetEvent(false);
+        public static ManualResetEventSlim _processResetEvent = new ManualResetEventSlim(false);
+        public static ConcurrentQueue<string> _queuedCommands = new ConcurrentQueue<string>();
+        public static ConcurrentQueue<string> _queuedQuery = new ConcurrentQueue<string>();
+        public static ConcurrentQueue<string> _queuedQueryResposne = new ConcurrentQueue<string>();
+        public static ConcurrentQueue<string> _queuedWrite = new ConcurrentQueue<string>();
+
+
+
+        public static void Process()
+        {
+            //wait for the C++ thread thread to tell us we can go
+            _processResetEvent.Wait();
+            _processResetEvent.Reset();
+            _startTimeStamp = Core._stopWatch.ElapsedMilliseconds;
+
+
+            bool foundRequest = false;
+            Int64 foundRequestCount = 0;
+            double _currentWaitTime = 1;
+            while (Core._isProcessing)
+            {
+                if (_startLoopTime == 0)
+                {
+                    _startLoopTime = Core._stopWatch.Elapsed.TotalMilliseconds;
+
+                }
+                _processingCounts++;
+                _totalProcessingCounts++;
+        
+                try
+                {
+                    foundRequest = false;
+                    //using (_log.Trace())
+                    {
+                        //check all the queues where work may be available
+                        while (RouterServer._tloRequets.Count > 0)
+                        {
+                            RouterMessage message;
+                            RouterServer._tloRequets.TryDequeue(out message);
+
+                            //lets pull out the string
+                            string query = System.Text.Encoding.Default.GetString(message.payload, 0, message.payloadLength);
+                            string response = MQ.Query<string>(query);
+
+                            message.payloadLength = System.Text.Encoding.Default.GetBytes(response, 0, response.Length, message.payload, 0);
+                            RouterServer._tloResposne.Enqueue(message);
+                            foundRequest = true;
+                            foundRequestCount++;
+
+                        }
+
+                        while (RouterServer._commandRequests.Count > 0)
+                        {
+                            RouterMessage message;
+                            if (RouterServer._commandRequests.TryDequeue(out message))
+                            {
+                                try
+                                {
+                                    //lets pull out the string
+                                    string query = System.Text.Encoding.Default.GetString(message.payload, 0, message.payloadLength);
+                                    MQ.Cmd(query);
+                                }
+                                finally
+                                {
+                                    message.Dispose();
+                                }
+                            }
+                            foundRequest = true;
+                            foundRequestCount++;
+                        }
+                        while (RouterServer._writeRequests.Count > 0)
+                        {
+                            RouterMessage message;
+                            if (RouterServer._writeRequests.TryDequeue(out message))
+                            {
+                                try
+                                {
+                                    //lets pull out the string
+                                    string query = System.Text.Encoding.Default.GetString(message.payload, 0, message.payloadLength);
+                                    MQ.Write(query);
+                                }
+                                finally
+                                {
+                                    message.Dispose();
+                                }
+                            }
+                            foundRequest = true;
+                            foundRequestCount++;
+                        }
+
+
+                        while (_queuedQuery.Count > 0)
+                        {
+                            //have a query to do!
+                            string query;
+                            _queuedQuery.TryDequeue(out query);
+                            string response = MQ.Query<string>(query);
+                            _queuedQueryResposne.Enqueue(response);
+                            foundRequest = true;
+                            foundRequestCount++;
+                        }
+
+
+                        while (_queuedCommands.Count > 0)
+                        {
+                            //have a query to do!
+                            string query;
+
+                            _queuedCommands.TryDequeue(out query);
+                            MQ.Write("Trying to issue command:[" + query + "]");
+                            MQ.Cmd(query);
+                            foundRequest = true;
+                            foundRequestCount++;
+                        }
+
+                        while (_queuedWrite.Count > 0)
+                        {
+                            //have a query to do!
+                            string query;
+                            _queuedWrite.TryDequeue(out query);
+                            MQ.Write(query);
+                            foundRequest = true;
+                            foundRequestCount++;
+                        }
+
+                    }
+
+
+                }
+                catch (Exception ex)
+                {
+                    _log.Write("Error: Please reload. Terminating. \r\nExceptionMessage:" + ex.Message + " stack:" + ex.StackTrace.ToString(), Logging.LogLevels.CriticalError);
+
+                }
+                if (foundRequest)
+                {
+                    _startLoopTime = Core._stopWatch.Elapsed.TotalMilliseconds;
+                    _currentWaitTime = RemoteDebugServerConfig.CurrentWaitTimeWhenRequestFound;
+                }
+
+                if ((Core._stopWatch.Elapsed.TotalMilliseconds - _startLoopTime) > _currentWaitTime)
+                {
+                    MQ.Delay(_processDelay);//give control back to the C++ thread
+                    _startLoopTime = 0;
+                    foundRequestCount = 0;
+                    foundRequest = false;
+                    _currentWaitTime = 1;
+                }
+            }
+            _host.Stop();
+
+        }
+
+    }
+
+    //CONFIGURE WEB SERVER
     public class Module : NancyModule
     {
         public Module()
@@ -80,6 +296,7 @@ namespace MonoCore
         }
     }
 
+    //remote debug object
     public class RouterMessage : IDisposable
     {
         public byte[] identity = new byte[1024 * 86]; //86k to get on the LOH
@@ -104,6 +321,7 @@ namespace MonoCore
             StaticObjectPool.Push<RouterMessage>(this);
         }
     }
+    //remote debug server
     public class RouterServer
     {
         RouterSocket _rpcRouter = null;
@@ -134,7 +352,8 @@ namespace MonoCore
             _rpcRouter = new RouterSocket();
             _rpcRouter.Options.SendHighWatermark = 10;
             _rpcRouter.Options.ReceiveHighWatermark = 10;
-            _rpcRouter.Bind("tcp://127.0.0.1:12346");
+            _rpcRouter.Bind("tcp://127.0.0.1:" + RemoteDebugServerConfig.NetMQRouterPort.ToString());
+            //_rpcRouter.Bind("tcp://127.0.0.1:12346");
             routerMessage.InitEmpty();
             try
             {
@@ -266,7 +485,7 @@ namespace MonoCore
 
                 }
             }
-            catch (Exception ex)
+            catch (Exception)
             {
 
             }
@@ -285,11 +504,11 @@ namespace MonoCore
         }
 
     }
-
+    //remote debug pub to send out events
     public class PubServer
     {
         Task _serverThread = null;
-        
+
         public static ConcurrentQueue<string> _pubMessages = new ConcurrentQueue<string>();
         public void Start()
         {
@@ -305,14 +524,15 @@ namespace MonoCore
             using (var pubSocket = new PublisherSocket())
             {
                 pubSocket.Options.SendHighWatermark = 1000;
-                pubSocket.Bind("tcp://*:12347");
+               pubSocket.Bind("tcp://*:" + RemoteDebugServerConfig.NetMQPubPort.ToString());
+               // pubSocket.Bind("tcp://*:12347");
                 while (Core._isProcessing)
                 {
 
                     if (_pubMessages.Count > 0)
                     {
                         string message;
-                        if(_pubMessages.TryDequeue(out message))
+                        if (_pubMessages.TryDequeue(out message))
                         {
 
                             pubSocket.SendMoreFrame("OnIncomingChat").SendFrame(message);
@@ -329,426 +549,6 @@ namespace MonoCore
         }
     }
 
-    public static class MainProcessor
-    {
-        public static bool isTesting = false;
-        public static IMQ MQ = Core.mqInstance;
-        public static Int32 _processDelay = 0;
-        private static Logging _log = Core._log;
-        public static string _applicationName = "";
-        public static Int64 _startTimeStamp;
-        public static Int64 _processingCounts;
-        public static Int64 _totalProcessingCounts;
-        private static Double _startLoopTime = 0;
-        private static Decimal _averageTime;
-        private static Double _totalLoopTime;
-        private static NancyHost _host;
-        private static RouterServer _netmqServer;
-        private static PubServer _pubServer;
-        //start up the web server
-
-        public static void Init()
-        {
-
-            //WARNING , you may not be in game yet, so careful what queries you run on MQ.Query. May cause a crash.
-            //how long before auto yielding back to C++/EQ/MQ on the next query/command/etc
-            //Logging._currentLogLevel = Logging.LogLevels.None; //log level we are currently at
-            //Logging._minLogLevelTolog = Logging.LogLevels.Error; //log levels have integers assoicatd to them. you can set this to Error to only log errors. 
-            //Logging._defaultLogLevel = Logging.LogLevels.None; //the default if a level is not passed into the _log.write statement. useful to hide/show things.
-            HostConfiguration hostConfigs = new HostConfiguration()
-            {
-                UrlReservations = new UrlReservations() { CreateAutomatically = true }
-            };
-            _host = new NancyHost(new Uri("http://localhost:12345"), new DefaultNancyBootstrapper(), hostConfigs);
-            _host.Start();
-
-            _netmqServer = new RouterServer();
-            _netmqServer.Start();
-
-            _pubServer = new PubServer();
-            _pubServer.Start();
-
-        }
-        //we use this to tell the C++ thread that its okay to start processing gain
-        //public static EconomicResetEvent _processResetEvent = new EconomicResetEvent(false, Thread.CurrentThread);
-        //public static AutoResetEvent _processResetEvent = new AutoResetEvent(false);
-        public static ManualResetEventSlim _processResetEvent = new ManualResetEventSlim(false);
-        public static ConcurrentQueue<string> _queuedCommands = new ConcurrentQueue<string>();
-        public static ConcurrentQueue<string> _queuedQuery = new ConcurrentQueue<string>();
-        public static ConcurrentQueue<string> _queuedQueryResposne = new ConcurrentQueue<string>();
-        public static ConcurrentQueue<string> _queuedWrite = new ConcurrentQueue<string>();
-
-
-
-        public static void Process()
-        {
-            //wait for the C++ thread thread to tell us we can go
-            if (!isTesting)
-            {
-                _processResetEvent.Wait();
-                _processResetEvent.Reset();
-                _startTimeStamp = Core._stopWatch.ElapsedMilliseconds;
-            }
-
-
-            //"tcp://"+Config.RPCReplyIPBinding+":" + (Config._rpcStartPort + i)
-            //volatile variable, will eventually update to kill the thread on shutdown
-            bool foundRequest = false;
-            Int64 foundRequestCount = 0;
-            double _currentWaitTime = 50;
-            while (Core._isProcessing)
-            {
-                if (!isTesting)
-                {
-                    if (_startLoopTime == 0)
-                    {
-                        _startLoopTime = Core._stopWatch.Elapsed.TotalMilliseconds;
-
-                    }
-                    _processingCounts++;
-                    _totalProcessingCounts++;
-                }
-
-                try
-                {
-                    foundRequest = false;
-                    //MQ.TraceStart("Process");
-                    //using (_log.Trace())
-                    {
-
-                        //************************************************
-                        //DO YOUR WORK HERE
-                        //this loop executes once every OnPulse from C++
-                        //************************************************
-                        //just have a class call a process method or such so you don't have to see this 
-                        //boiler plate code with all the threading.
-
-                        while (RouterServer._tloRequets.Count > 0)
-                        {
-                            RouterMessage message;
-                            RouterServer._tloRequets.TryDequeue(out message);
-
-                            //lets pull out the string
-                            string query = System.Text.Encoding.Default.GetString(message.payload, 0, message.payloadLength);
-                            string response = MQ.Query<string>(query);
-
-                            message.payloadLength = System.Text.Encoding.Default.GetBytes(response, 0, response.Length, message.payload, 0);
-                            RouterServer._tloResposne.Enqueue(message);
-                            foundRequest = true;
-                            foundRequestCount++;
-
-                        }
-
-                        while (RouterServer._commandRequests.Count > 0)
-                        {
-                            RouterMessage message;
-                            if (RouterServer._commandRequests.TryDequeue(out message))
-                            {
-                                try
-                                {
-                                    //lets pull out the string
-                                    string query = System.Text.Encoding.Default.GetString(message.payload, 0, message.payloadLength);
-                                    MQ.Cmd(query);
-                                }
-                                finally
-                                {
-                                    message.Dispose();
-                                }
-                            }
-                            foundRequest = true;
-                            foundRequestCount++;
-                        }
-                        while (RouterServer._writeRequests.Count > 0)
-                        {
-                            RouterMessage message;
-                            if (RouterServer._writeRequests.TryDequeue(out message))
-                            {
-                                try
-                                {
-                                    //lets pull out the string
-                                    string query = System.Text.Encoding.Default.GetString(message.payload, 0, message.payloadLength);
-                                    MQ.Write(query);
-                                }
-                                finally
-                                {
-                                    message.Dispose();
-                                }
-                            }
-                            foundRequest = true;
-                            foundRequestCount++;
-                        }
-
-
-                        while (_queuedQuery.Count > 0)
-                        {
-                            //have a query to do!
-                            string query;
-                            _queuedQuery.TryDequeue(out query);
-                            string response = MQ.Query<string>(query);
-                            _queuedQueryResposne.Enqueue(response);
-                            foundRequest = true;
-                            foundRequestCount++;
-                        }
-
-
-                        while (_queuedCommands.Count > 0)
-                        {
-                            //have a query to do!
-                            string query;
-
-                            _queuedCommands.TryDequeue(out query);
-                            MQ.Write("Trying to issue command:[" + query + "]");
-                            MQ.Cmd(query);
-                            foundRequest = true;
-                            foundRequestCount++;
-                        }
-
-                        while (_queuedWrite.Count > 0)
-                        {
-                            //have a query to do!
-                            string query;
-                            _queuedWrite.TryDequeue(out query);
-                            MQ.Write(query);
-                            foundRequest = true;
-                            foundRequestCount++;
-                        }
-
-                    }
-
-                    ////MQ.TraceEnd("Process");
-                    ////process all the events that have been registered
-                    ////process all the events that have been registered
-                    //if (!isTesting)
-                    //{
-                    //    Double endLoopTimeInMS = Core._stopWatch.Elapsed.TotalMilliseconds - _startLoopTime;
-                    //    _totalLoopTime += endLoopTimeInMS;
-
-                    //    //every 5 seconds, print out the # processed and average time.
-                    //    if ((Core._stopWatch.ElapsedMilliseconds > (_startTimeStamp + 5000)))
-                    //    {
-
-
-                    //        MQ.Write($"Total Count:{_totalProcessingCounts}, Total this cycle {_processingCounts} average time {_totalLoopTime / _processingCounts}ms");
-                    //        _startTimeStamp = Core._stopWatch.ElapsedMilliseconds;
-                    //        _processingCounts = 0;
-                    //        _totalLoopTime = 0;
-                    //    }
-                    //}
-
-
-                }
-                catch (Exception ex)
-                {
-                    _log.Write("Error: Please reload. Terminating. \r\nExceptionMessage:" + ex.Message + " stack:" + ex.StackTrace.ToString(), Logging.LogLevels.CriticalError);
-
-                }
-
-                //SET YOUR MACRO DELAY HERE
-                //this is the pulse you will get on your call. 1 sec is generally fine unless you are a much bigger script
-                //like e3, that may change it to 10.
-                if (!isTesting)
-                {
-                    if (foundRequest)
-                    {
-                        _startLoopTime = Core._stopWatch.Elapsed.TotalMilliseconds;
-                        _currentWaitTime = 100;
-                    }
-
-                    if ((Core._stopWatch.Elapsed.TotalMilliseconds - _startLoopTime) > _currentWaitTime)
-                    {
-                        MQ.Delay(_processDelay);//this calls the reset events and sets the delay to 10ms at min
-                        _startLoopTime = 0;
-                        foundRequestCount = 0;
-                        foundRequest = false;
-                        _currentWaitTime = 1;
-                    }
-
-                }
-                else
-                {
-                    //System.Threading.Thread.Sleep(100);
-
-                }
-                //***********************************************
-                //END YOUR WORK
-                //**********************************************
-
-
-            }
-            _host.Stop();
-
-        }
-
-    }
-    /// <summary>
-    /// Processor to handle Event strings
-    /// It spawns its own thread to do the inital regex parse, whatever matches will be 
-    /// put into the proper queue for each event for later invoke when the C# thread comes around
-    /// </summary>
-    static public class EventProcessor
-    {
-        //event is loaded at startup and then not modified anymore
-        //so if we register events before Init, we can avoid locks on it
-        //will need to add locks if you want to add events at runtime
-        public static System.Collections.Concurrent.ConcurrentDictionary<string, EventListItem> _eventList = new ConcurrentDictionary<string, EventListItem>();
-        //this is the first queue that strings get put into, will be processed by its own thread
-        public static ConcurrentQueue<String> _eventProcessingQueue = new ConcurrentQueue<String>();
-        //if matches take place, they are placed in this queue for the main C# thread to process. 
-        public static Int32 _eventLimiterPerRegisteredEvent = 10;
-        //this threads entire purpose, is to simply keep processing the event processing queue and place matches into
-        //the eventfilteredqueue
-        public static Task _regExProcessingTask;
-        private static Logging _log = Core._log;
-
-        private static Boolean _isInit = false;
-        public static void Init()
-        {
-            if (!_isInit)
-            {
-                _regExProcessingTask = Task.Factory.StartNew(() => { ProcessEventsIntoQueues(); }, CancellationToken.None, TaskCreationOptions.DenyChildAttach, TaskScheduler.Default);
-                _isInit = true;
-            }
-
-        }
-        /// <summary>
-        /// Runs on its own thread, will process through all the strings passed in and then put them into the correct queue
-        /// </summary>
-        static void ProcessEventsIntoQueues()
-        {
-            while (Core._isProcessing)
-            {
-                if (_eventProcessingQueue.Count > 0)
-                {
-                    string line;
-                    if (_eventProcessingQueue.TryDequeue(out line))
-                    {
-                        foreach (var item in _eventList)
-                        {
-                            //prevent spamming of an event to a user
-                            if (item.Value.queuedEvents.Count > _eventLimiterPerRegisteredEvent)
-                            {
-                                continue;
-                            }
-                            foreach (var regex in item.Value.regexs)
-                            {
-                                var match = regex.Match(line);
-                                if (match.Success)
-                                {
-
-                                    item.Value.queuedEvents.Enqueue(new EventMatch() { eventName = item.Value.keyName, eventString = line, match = match });
-
-                                    break;
-                                }
-                            }
-
-                        }
-
-                    }
-
-                }
-                else
-                {
-                    System.Threading.Thread.Sleep(1);
-                }
-            }
-        }
-
-
-        public static void ProcessEventsInQueues(string keyName = "")
-        {
-            foreach (var item in _eventList)
-            {
-                //check to see if we have to have a filter on the events to process
-                if (!String.IsNullOrWhiteSpace(keyName))
-                {
-                    //if keyName is specified, verify that its the key we want. 
-                    if (!item.Value.keyName.Equals(keyName, StringComparison.OrdinalIgnoreCase))
-                    {
-
-                        continue;
-                    }
-                }
-                //_log.Write($"Checking Event queue. Total:{item.Value.queuedEvents.Count}");
-                while (item.Value.queuedEvents.Count > 0)
-                {
-
-                    EventMatch line;
-                    if (item.Value.queuedEvents.TryDequeue(out line))
-                    {
-                        item.Value.method.Invoke(line);
-                    }
-                }
-
-            }
-        }
-        /// <summary>
-        /// main entry from the C++ thread to place the event string for processing
-        /// </summary>
-        /// <param name="line"></param>
-        public static void ProcessEvent(string line)
-        {
-            //to prevent spams
-            if (_eventList.Count > 0)
-            {
-                _eventProcessingQueue.Enqueue(line);
-            }
-
-        }
-        public static void ClearEventQueue(string keyName)
-        {
-            EventListItem tEventItem;
-            if (_eventList.TryGetValue(keyName, out tEventItem))
-            {
-                EventMatch line;
-                while (!tEventItem.queuedEvents.IsEmpty)
-                {
-                    tEventItem.queuedEvents.TryDequeue(out line);
-                }
-            }
-        }
-        public class EventListItem
-        {
-            public String keyName;
-            public List<System.Text.RegularExpressions.Regex> regexs;
-            public System.Action<EventMatch> method;
-            public ConcurrentQueue<EventMatch> queuedEvents = new ConcurrentQueue<EventMatch>();
-        }
-        public class EventMatch
-        {
-            public string eventString;
-            public Match match;
-            public string eventName;
-        }
-        public static void RegisterEvent(string keyName, string pattern, Action<EventMatch> method)
-        {
-            EventListItem eventToAdd = new EventListItem();
-            eventToAdd.regexs = new List<Regex>();
-
-            eventToAdd.regexs.Add(new System.Text.RegularExpressions.Regex(pattern));
-            eventToAdd.method = method;
-            eventToAdd.keyName = keyName;
-
-            _eventList.TryAdd(keyName, eventToAdd);
-
-        }
-        public static void RegisterEvent(string keyName, List<string> patterns, Action<EventMatch> method)
-        {
-            EventListItem eventToAdd = new EventListItem();
-            eventToAdd.regexs = new List<Regex>();
-
-            foreach (var pattern in patterns)
-            {
-                eventToAdd.regexs.Add(new System.Text.RegularExpressions.Regex(pattern));
-            }
-
-            eventToAdd.method = method;
-            eventToAdd.keyName = keyName;
-
-            _eventList.TryAdd(keyName, eventToAdd);
-
-        }
-
-    }
     //This class is for C++ thread to come in and call. for the most part, leave this alone. 
 
     public static class Core
@@ -815,9 +615,7 @@ namespace MonoCore
 
                 //isProcessing needs to be true before the event processor has started
                 _isProcessing = true;
-                EventProcessor.Init();
-
-
+               
                 if (_taskThread == null)
                 {
                     //start up the main processor, this is where most of the C# code kicks off in

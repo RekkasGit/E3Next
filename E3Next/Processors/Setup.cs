@@ -115,14 +115,14 @@ namespace E3Core.Processors
         private static void MakeMacroDataInis()
         {
             return;
-            using (_log.Trace())
-            {
-                //TODO:come back later and do this ourselves
-                MQ.Cmd("/ini \"e3 Macro Inis\\e3 Data.ini\" \"e3 Build\" \"Version\"");
-                MQ.Cmd("/ini \"e3 Macro Inis\\e3 Data.ini\" \"File Paths\" \"Bot Settings\" \"e3 Bot Inis\"");
-                MQ.Cmd("/ini \"e3 Macro Inis\\e3 Data.ini\" \"File Paths\" \"General Settings\" \"e3 Macro Inis\\General Settings.ini\"");
-                MQ.Cmd("/ini \"e3 Macro Inis\\e3 Data.ini\" \"File Paths\" \"Advanced Settings\" \"e3 Macro Inis\\Advanced Settings.ini\"");
-            }
+            //using (_log.Trace())
+            //{
+            //    //TODO:come back later and do this ourselves
+            //    MQ.Cmd("/ini \"e3 Macro Inis\\e3 Data.ini\" \"e3 Build\" \"Version\"");
+            //    MQ.Cmd("/ini \"e3 Macro Inis\\e3 Data.ini\" \"File Paths\" \"Bot Settings\" \"e3 Bot Inis\"");
+            //    MQ.Cmd("/ini \"e3 Macro Inis\\e3 Data.ini\" \"File Paths\" \"General Settings\" \"e3 Macro Inis\\General Settings.ini\"");
+            //    MQ.Cmd("/ini \"e3 Macro Inis\\e3 Data.ini\" \"File Paths\" \"Advanced Settings\" \"e3 Macro Inis\\Advanced Settings.ini\"");
+            //}
         }
         private static void InitPlugins()
         {

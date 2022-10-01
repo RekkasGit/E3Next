@@ -51,9 +51,9 @@
     <None Include="App.config" />
   </ItemGroup>
   <ItemGroup>
-    <ProjectReference Include="..\E3Core\E3Core.csproj">
+    <ProjectReference Include="..\E3Next\E3Next.csproj">
       <Project>{ca025b4a-d09d-48ad-bf6c-7c303c8b5cb9}</Project>
-      <Name>E3Core</Name>
+      <Name>E3Next</Name>
     </ProjectReference>
   </ItemGroup>
   <Import Project="$(MSBuildToolsPath)\Microsoft.CSharp.targets" />

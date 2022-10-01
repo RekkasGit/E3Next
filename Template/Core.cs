@@ -42,9 +42,7 @@ namespace MonoCore
         public static Int64 _startTimeStamp;
         public static Int64 _processingCounts;
         public static Int64 _totalProcessingCounts;
-        private static Double _startLoopTime;
-        private static Decimal _averageTime;
-        private static Double _totalLoopTime;
+
         public static void Init()
         {
 

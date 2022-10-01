@@ -43,7 +43,6 @@ namespace MonoCore
         public static Int64 _processingCounts;
         public static Int64 _totalProcessingCounts;
         private static Double _startLoopTime;
-        private static Decimal _averageTime;
         private static Double _totalLoopTime;
         public static void Init()
         {
@@ -609,6 +608,10 @@ namespace MonoCore
                 if (mqReturnValue == "!FALSE")
                 {
                     return (T)(object)true;
+                }
+                if (mqReturnValue == "!TRUE")
+                {
+                    return (T)(object)false;
                 }
                 Int32 intValue;
                 if (Int32.TryParse(mqReturnValue, out intValue))

@@ -517,8 +517,8 @@ int main()
 
 		std::chrono::steady_clock::time_point proccessingTimer = std::chrono::steady_clock::now(); //the time this was issued + m_delayTime
 		
-		int count = 0;
-		int processQueueSize = appDomainProcessQueue.size();
+		size_t count = 0;
+		size_t processQueueSize = appDomainProcessQueue.size();
 		while (count < processQueueSize)
 		{
 			std::string domainKey = appDomainProcessQueue.front();
