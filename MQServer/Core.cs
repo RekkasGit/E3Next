@@ -11,6 +11,7 @@ using System.Text.RegularExpressions;
 using Nancy;
 using Nancy.Hosting.Self;
 using NetMQ.Sockets;
+using NetMQ;
 
 /// <summary>
 /// Version 0.1
@@ -41,7 +42,8 @@ namespace MonoCore
         public Module()
         {
 
-            Get["/TLO/{name}"] = parameters => {
+            Get["/TLO/{name}"] = parameters =>
+            {
 
                 MainProcessor._queuedQuery.Enqueue(parameters.name);
 
@@ -57,7 +59,8 @@ namespace MonoCore
                 return response;
             };
 
-            Get["/command/{command}"] = parameters => {
+            Get["/command/{command}"] = parameters =>
+            {
 
 
                 MainProcessor._queuedCommands.Enqueue(@"/" + parameters.command);
@@ -65,7 +68,8 @@ namespace MonoCore
                 return "OK";
             };
 
-            Get["/write/{message}"] = parameters => {
+            Get["/write/{message}"] = parameters =>
+            {
 
 
                 MainProcessor._queuedWrite.Enqueue(parameters.message);
@@ -83,7 +87,16 @@ namespace MonoCore
         public Int32 commandType = 0;
         public byte[] payload = new byte[1024 * 86];
         public Int32 payloadLength = 0;
+        public static RouterMessage Aquire()
+        {
+            RouterMessage obj;
+            if (!StaticObjectPool.TryPop<RouterMessage>(out obj))
+            {
+                obj = new RouterMessage();
+            }
 
+            return obj;
+        }
         public void Dispose()
         {
             payloadLength = 0;
@@ -110,7 +123,6 @@ namespace MonoCore
 
         public void Start()
         {
-            routerMessage.InitEmpty();
 
             _serverThread = Task.Factory.StartNew(() => { Process(); }, CancellationToken.None, TaskCreationOptions.DenyChildAttach, TaskScheduler.Default);
 
@@ -118,148 +130,208 @@ namespace MonoCore
 
         private void Process()
         {
-
-            while (true)
+            AsyncIO.ForceDotNet.Force();
+            _rpcRouter = new RouterSocket();
+            _rpcRouter.Options.SendHighWatermark = 10;
+            _rpcRouter.Options.ReceiveHighWatermark = 10;
+            _rpcRouter.Bind("tcp://127.0.0.1:12346");
+            routerMessage.InitEmpty();
+            try
             {
-               
-                if (_rpcRouter.TryReceive(ref routerMessage, recieveTimeout))
+
+                while (Core._isProcessing)
                 {
-                    RouterMessage message;
-                    StaticObjectPool.TryPop<RouterMessage>(out message);
 
-                    //first get identit identityJump:
-                    unsafe
+                    if (_rpcRouter.TryReceive(ref routerMessage, recieveTimeout))
                     {
-                        fixed (byte* src = routerMessage.Data)
+                        RouterMessage message = RouterMessage.Aquire();
+
+
+                        //first get identit identityJump:
+                        unsafe
                         {
-                            fixed (byte* dest = message.identity)
+                            fixed (byte* src = routerMessage.Data)
                             {
-                                Buffer.MemoryCopy(src, dest, message.identity.Length, routerMessage.Size);
+                                fixed (byte* dest = message.identity)
+                                {
+                                    Buffer.MemoryCopy(src, dest, message.identity.Length, routerMessage.Size);
+                                }
                             }
                         }
-                    }
-                    message.identiyLength = routerMessage.Size;
-                    routerMessage.Close();
-                    routerMessage.InitEmpty();
-
-                    //next get empty frame
-
-                    _rpcRouter.TryReceive(ref routerMessage, timeout);
-                    routerMessage.Close();
-                    routerMessage.InitEmpty();
-
-                    //combined MethodTopicOptions 4 + method + 4 + topic + 4 + options
-                    //next method frame
-                    _rpcRouter.TryReceive(ref routerMessage, timeout);
-
-                    //do something with the message
-                    //4 bytes = commandtype
-                    //4 bytes = length
-                    //N-bytes = payload
-
-                    unsafe
-                    {
-                        fixed (byte* src = routerMessage.Data)
-                        {
-
-                            byte* tempPtr = src;
-                           
-                            message.commandType = *(Int32*)(tempPtr);
-                            tempPtr += 4;//move past the command
-
-                            message.payloadLength = *(Int32*)(tempPtr);
-                            tempPtr += 4;//move past the command
-
-                            fixed (byte* dest = message.payload)
-                            {
-                                //copy everything but the last bytes we have. 
-                                Buffer.MemoryCopy(tempPtr, dest, message.payload.Length, routerMessage.Size-8);
-                            }
-                        }
-                    }
-
-                    if(message.commandType==1)
-                    {
-                        _tloRequets.Enqueue(message);
-                    } else if(message.commandType==2)
-                    {
-                        _commandRequests.Enqueue(message);
-                    }else if(message.commandType==3)
-                    {
-                        _writeRequests.Enqueue(message);
-                    } else
-                    {
-                        message.Dispose();
-                    }
-
-
-                    //should not have more here, drain any remaining and close out.
-                    while (routerMessage.HasMore)
-                    {
+                        message.identiyLength = routerMessage.Size;
                         routerMessage.Close();
                         routerMessage.InitEmpty();
-                        //drain them
+
+                        //next get empty frame
 
                         _rpcRouter.TryReceive(ref routerMessage, timeout);
+                        routerMessage.Close();
+                        routerMessage.InitEmpty();
 
-                    }
-                    //clean up memory after we are done with it
-                    routerMessage.Close();
-                    routerMessage.InitEmpty();
-                    counter++;
+                        //combined MethodTopicOptions 4 + method + 4 + topic + 4 + options
+                        //next method frame
+                        _rpcRouter.TryReceive(ref routerMessage, timeout);
 
+                        //do something with the message
+                        //4 bytes = commandtype
+                        //4 bytes = length
+                        //N-bytes = payload
 
-
-
-                }
-                //process all the responses that we have to give
-                while (_tloResposne.Count > 0)
-                {
-                    RouterMessage message;
-                    _tloResposne.TryDequeue(out message);
-                    if (message != null)
-                    {
-                        try
+                        unsafe
                         {
-                            routerResponse.InitPool(message.identiyLength);
-                            Buffer.BlockCopy(message.identity,0, routerResponse.Data, 0, message.identiyLength);
-                            _rpcRouter.TrySend(ref routerResponse, timeout, true);
-                            routerResponse.Close();
-                            routerResponse.InitEmpty();
-                            _rpcRouter.TrySend(ref routerResponse, timeout, true);
-                            routerResponse.Close();
-                            routerResponse.InitPool(message.payloadLength);
-                            Buffer.BlockCopy(message.payload, 0, routerResponse.Data, 0, message.payloadLength);
-                            _rpcRouter.TrySend(ref routerResponse, timeout, false);
-                            routerResponse.Close();
+                            fixed (byte* src = routerMessage.Data)
+                            {
+
+                                byte* tempPtr = src;
+
+                                message.commandType = *(Int32*)(tempPtr);
+                                tempPtr += 4;//move past the command
+
+                                message.payloadLength = *(Int32*)(tempPtr);
+                                tempPtr += 4;//move past the command
+
+                                fixed (byte* dest = message.payload)
+                                {
+                                    //copy everything but the last bytes we have. 
+                                    Buffer.MemoryCopy(tempPtr, dest, message.payload.Length, routerMessage.Size - 8);
+                                }
+                            }
                         }
-                        finally
+
+                        if (message.commandType == 1)
                         {
-                            //put back into the object pool.
+                            _tloRequets.Enqueue(message);
+                        }
+                        else if (message.commandType == 2)
+                        {
+                            _commandRequests.Enqueue(message);
+                        }
+                        else if (message.commandType == 3)
+                        {
+                            _writeRequests.Enqueue(message);
+                        }
+                        else
+                        {
                             message.Dispose();
                         }
+
+
+                        //should not have more here, drain any remaining and close out.
+                        while (routerMessage.HasMore)
+                        {
+                            routerMessage.Close();
+                            routerMessage.InitEmpty();
+                            //drain them
+
+                            _rpcRouter.TryReceive(ref routerMessage, timeout);
+
+                        }
+                        //clean up memory after we are done with it
+                        routerMessage.Close();
+                        routerMessage.InitEmpty();
+                        counter++;
+
+
+
+
                     }
+                    //process all the responses that we have to give
+                    while (_tloResposne.Count > 0)
+                    {
+                        RouterMessage message;
+                        _tloResposne.TryDequeue(out message);
+                        if (message != null)
+                        {
+                            try
+                            {
+                                routerResponse.InitPool(message.identiyLength);
+                                Buffer.BlockCopy(message.identity, 0, routerResponse.Data, 0, message.identiyLength);
+                                _rpcRouter.TrySend(ref routerResponse, timeout, true);
+                                routerResponse.Close();
+                                routerResponse.InitEmpty();
+                                _rpcRouter.TrySend(ref routerResponse, timeout, true);
+                                routerResponse.Close();
+                                routerResponse.InitPool(message.payloadLength);
+                                Buffer.BlockCopy(message.payload, 0, routerResponse.Data, 0, message.payloadLength);
+                                _rpcRouter.TrySend(ref routerResponse, timeout, false);
+                                routerResponse.Close();
+                            }
+                            finally
+                            {
+                                //put back into the object pool.
+                                message.Dispose();
+                            }
+                        }
+                    }
+
                 }
+            }
+            catch (Exception ex)
+            {
 
             }
+
+
+            _rpcRouter.Dispose();
+
 
         }
 
         public RouterServer()
         {
-            _rpcRouter = new RouterSocket();
-            _rpcRouter.Options.SendHighWatermark = 10;
-            _rpcRouter.Options.ReceiveHighWatermark = 10;
-            _rpcRouter.Bind("tcp://127.0.0.1:12346");
-            NetMQ.Msg routerMessage = new NetMQ.Msg();
 
 
-           
+
         }
 
     }
+
+    public class PubServer
+    {
+        Task _serverThread = null;
+        
+        public static ConcurrentQueue<string> _pubMessages = new ConcurrentQueue<string>();
+        public void Start()
+        {
+
+            _serverThread = Task.Factory.StartNew(() => { Process(); }, CancellationToken.None, TaskCreationOptions.DenyChildAttach, TaskScheduler.Default);
+
+        }
+
+
+        private void Process()
+        {
+            AsyncIO.ForceDotNet.Force();
+            using (var pubSocket = new PublisherSocket())
+            {
+                pubSocket.Options.SendHighWatermark = 1000;
+                pubSocket.Bind("tcp://*:12347");
+                while (Core._isProcessing)
+                {
+
+                    if (_pubMessages.Count > 0)
+                    {
+                        string message;
+                        if(_pubMessages.TryDequeue(out message))
+                        {
+
+                            pubSocket.SendMoreFrame("OnIncomingChat").SendFrame(message);
+
+                        }
+
+                    }
+                    else
+                    {
+                        System.Threading.Thread.Sleep(1);
+                    }
+                }
+            }
+        }
+    }
+
     public static class MainProcessor
     {
+        public static bool isTesting = false;
         public static IMQ MQ = Core.mqInstance;
         public static Int32 _processDelay = 0;
         private static Logging _log = Core._log;
@@ -267,12 +339,14 @@ namespace MonoCore
         public static Int64 _startTimeStamp;
         public static Int64 _processingCounts;
         public static Int64 _totalProcessingCounts;
-        private static Double _startLoopTime;
+        private static Double _startLoopTime = 0;
         private static Decimal _averageTime;
         private static Double _totalLoopTime;
         private static NancyHost _host;
+        private static RouterServer _netmqServer;
+        private static PubServer _pubServer;
         //start up the web server
-        
+
         public static void Init()
         {
 
@@ -285,8 +359,14 @@ namespace MonoCore
             {
                 UrlReservations = new UrlReservations() { CreateAutomatically = true }
             };
-            _host = new NancyHost(new Uri("http://localhost:12345"),new DefaultNancyBootstrapper(), hostConfigs);
+            _host = new NancyHost(new Uri("http://localhost:12345"), new DefaultNancyBootstrapper(), hostConfigs);
             _host.Start();
+
+            _netmqServer = new RouterServer();
+            _netmqServer.Start();
+
+            _pubServer = new PubServer();
+            _pubServer.Start();
 
         }
         //we use this to tell the C++ thread that its okay to start processing gain
@@ -297,29 +377,45 @@ namespace MonoCore
         public static ConcurrentQueue<string> _queuedQuery = new ConcurrentQueue<string>();
         public static ConcurrentQueue<string> _queuedQueryResposne = new ConcurrentQueue<string>();
         public static ConcurrentQueue<string> _queuedWrite = new ConcurrentQueue<string>();
-        
+
 
 
         public static void Process()
         {
             //wait for the C++ thread thread to tell us we can go
-            _processResetEvent.Wait();
-            _processResetEvent.Reset();
-            _startTimeStamp = Core._stopWatch.ElapsedMilliseconds;
-           
+            if (!isTesting)
+            {
+                _processResetEvent.Wait();
+                _processResetEvent.Reset();
+                _startTimeStamp = Core._stopWatch.ElapsedMilliseconds;
+            }
+
+
             //"tcp://"+Config.RPCReplyIPBinding+":" + (Config._rpcStartPort + i)
             //volatile variable, will eventually update to kill the thread on shutdown
+            bool foundRequest = false;
+            Int64 foundRequestCount = 0;
+            double _currentWaitTime = 50;
             while (Core._isProcessing)
             {
-                _startLoopTime= Core._stopWatch.Elapsed.TotalMilliseconds;
-                _processingCounts++;
-                _totalProcessingCounts++;
+                if (!isTesting)
+                {
+                    if (_startLoopTime == 0)
+                    {
+                        _startLoopTime = Core._stopWatch.Elapsed.TotalMilliseconds;
+
+                    }
+                    _processingCounts++;
+                    _totalProcessingCounts++;
+                }
+
                 try
                 {
+                    foundRequest = false;
                     //MQ.TraceStart("Process");
                     //using (_log.Trace())
                     {
-                    
+
                         //************************************************
                         //DO YOUR WORK HERE
                         //this loop executes once every OnPulse from C++
@@ -327,7 +423,7 @@ namespace MonoCore
                         //just have a class call a process method or such so you don't have to see this 
                         //boiler plate code with all the threading.
 
-                        while(RouterServer._tloRequets.Count>0)
+                        while (RouterServer._tloRequets.Count > 0)
                         {
                             RouterMessage message;
                             RouterServer._tloRequets.TryDequeue(out message);
@@ -336,15 +432,17 @@ namespace MonoCore
                             string query = System.Text.Encoding.Default.GetString(message.payload, 0, message.payloadLength);
                             string response = MQ.Query<string>(query);
 
-                            message.payloadLength=System.Text.Encoding.Default.GetBytes(response,0,response.Length,message.payload,0);
+                            message.payloadLength = System.Text.Encoding.Default.GetBytes(response, 0, response.Length, message.payload, 0);
                             RouterServer._tloResposne.Enqueue(message);
+                            foundRequest = true;
+                            foundRequestCount++;
 
                         }
 
                         while (RouterServer._commandRequests.Count > 0)
                         {
                             RouterMessage message;
-                            if(RouterServer._commandRequests.TryDequeue(out message))
+                            if (RouterServer._commandRequests.TryDequeue(out message))
                             {
                                 try
                                 {
@@ -357,6 +455,8 @@ namespace MonoCore
                                     message.Dispose();
                                 }
                             }
+                            foundRequest = true;
+                            foundRequestCount++;
                         }
                         while (RouterServer._writeRequests.Count > 0)
                         {
@@ -374,16 +474,20 @@ namespace MonoCore
                                     message.Dispose();
                                 }
                             }
+                            foundRequest = true;
+                            foundRequestCount++;
                         }
 
 
-                        while (_queuedQuery.Count>0)
+                        while (_queuedQuery.Count > 0)
                         {
                             //have a query to do!
                             string query;
                             _queuedQuery.TryDequeue(out query);
                             string response = MQ.Query<string>(query);
                             _queuedQueryResposne.Enqueue(response);
+                            foundRequest = true;
+                            foundRequestCount++;
                         }
 
 
@@ -395,6 +499,8 @@ namespace MonoCore
                             _queuedCommands.TryDequeue(out query);
                             MQ.Write("Trying to issue command:[" + query + "]");
                             MQ.Cmd(query);
+                            foundRequest = true;
+                            foundRequestCount++;
                         }
 
                         while (_queuedWrite.Count > 0)
@@ -403,40 +509,66 @@ namespace MonoCore
                             string query;
                             _queuedWrite.TryDequeue(out query);
                             MQ.Write(query);
+                            foundRequest = true;
+                            foundRequestCount++;
                         }
-                      
+
                     }
 
-                    //MQ.TraceEnd("Process");
-                    //process all the events that have been registered
-                    //process all the events that have been registered
+                    ////MQ.TraceEnd("Process");
+                    ////process all the events that have been registered
+                    ////process all the events that have been registered
+                    //if (!isTesting)
+                    //{
+                    //    Double endLoopTimeInMS = Core._stopWatch.Elapsed.TotalMilliseconds - _startLoopTime;
+                    //    _totalLoopTime += endLoopTimeInMS;
 
-                    Double endLoopTimeInMS = Core._stopWatch.Elapsed.TotalMilliseconds - _startLoopTime;
-                    _totalLoopTime += endLoopTimeInMS;
+                    //    //every 5 seconds, print out the # processed and average time.
+                    //    if ((Core._stopWatch.ElapsedMilliseconds > (_startTimeStamp + 5000)))
+                    //    {
 
-                    //every 5 seconds, print out the # processed and average time.
-                    if ((Core._stopWatch.ElapsedMilliseconds > (_startTimeStamp + 5000)))
-                    {
-                    
-                      
-                        MQ.Write($"Total Count:{_totalProcessingCounts}, Total this cycle {_processingCounts} average time {_totalLoopTime/_processingCounts}ms");
-                        _startTimeStamp = Core._stopWatch.ElapsedMilliseconds;
-                        _processingCounts = 0;
-                        _totalLoopTime = 0;
-                    }
+
+                    //        MQ.Write($"Total Count:{_totalProcessingCounts}, Total this cycle {_processingCounts} average time {_totalLoopTime / _processingCounts}ms");
+                    //        _startTimeStamp = Core._stopWatch.ElapsedMilliseconds;
+                    //        _processingCounts = 0;
+                    //        _totalLoopTime = 0;
+                    //    }
+                    //}
+
 
                 }
-                catch(Exception ex)
+                catch (Exception ex)
                 {
                     _log.Write("Error: Please reload. Terminating. \r\nExceptionMessage:" + ex.Message + " stack:" + ex.StackTrace.ToString(), Logging.LogLevels.CriticalError);
-                   
+
                 }
 
                 //SET YOUR MACRO DELAY HERE
                 //this is the pulse you will get on your call. 1 sec is generally fine unless you are a much bigger script
                 //like e3, that may change it to 10.
-                MQ.Delay(_processDelay);//this calls the reset events and sets the delay to 10ms at min
+                if (!isTesting)
+                {
+                    if (foundRequest)
+                    {
+                        _startLoopTime = Core._stopWatch.Elapsed.TotalMilliseconds;
+                        _currentWaitTime = 100;
+                    }
 
+                    if ((Core._stopWatch.Elapsed.TotalMilliseconds - _startLoopTime) > _currentWaitTime)
+                    {
+                        MQ.Delay(_processDelay);//this calls the reset events and sets the delay to 10ms at min
+                        _startLoopTime = 0;
+                        foundRequestCount = 0;
+                        foundRequest = false;
+                        _currentWaitTime = 1;
+                    }
+
+                }
+                else
+                {
+                    //System.Threading.Thread.Sleep(100);
+
+                }
                 //***********************************************
                 //END YOUR WORK
                 //**********************************************
@@ -471,8 +603,8 @@ namespace MonoCore
         private static Boolean _isInit = false;
         public static void Init()
         {
-            if(!_isInit)
-            {   
+            if (!_isInit)
+            {
                 _regExProcessingTask = Task.Factory.StartNew(() => { ProcessEventsIntoQueues(); }, CancellationToken.None, TaskCreationOptions.DenyChildAttach, TaskScheduler.Default);
                 _isInit = true;
             }
@@ -491,24 +623,24 @@ namespace MonoCore
                     if (_eventProcessingQueue.TryDequeue(out line))
                     {
                         foreach (var item in _eventList)
-                        {   
+                        {
                             //prevent spamming of an event to a user
                             if (item.Value.queuedEvents.Count > _eventLimiterPerRegisteredEvent)
                             {
                                 continue;
                             }
-                            foreach(var regex in item.Value.regexs)
+                            foreach (var regex in item.Value.regexs)
                             {
                                 var match = regex.Match(line);
                                 if (match.Success)
                                 {
-                                 
+
                                     item.Value.queuedEvents.Enqueue(new EventMatch() { eventName = item.Value.keyName, eventString = line, match = match });
-                                 
+
                                     break;
                                 }
                             }
-                          
+
                         }
 
                     }
@@ -557,7 +689,7 @@ namespace MonoCore
         {
             //to prevent spams
             if (_eventList.Count > 0)
-            { 
+            {
                 _eventProcessingQueue.Enqueue(line);
             }
 
@@ -591,7 +723,7 @@ namespace MonoCore
         {
             EventListItem eventToAdd = new EventListItem();
             eventToAdd.regexs = new List<Regex>();
-            
+
             eventToAdd.regexs.Add(new System.Text.RegularExpressions.Regex(pattern));
             eventToAdd.method = method;
             eventToAdd.keyName = keyName;
@@ -625,7 +757,7 @@ namespace MonoCore
         public static Logging _log;
         public volatile static bool _isProcessing = false;
         public const string _coreVersion = "0.1";
-       
+
 
         //Note, if you comment out a method, this will tell MQ2Mono to not try and execute it
         //only use the events you need to prevent string allocations to be passed in
@@ -668,14 +800,14 @@ namespace MonoCore
 
         public static void OnInit()
         {
-           
+
 
             if (!_isInit)
             {
-                if(mqInstance==null)
+                if (mqInstance == null)
                 {
                     mqInstance = new MQ();
-                } 
+                }
                 _log = new Logging(mqInstance);
                 _stopWatch.Start();
                 //do all necessary setups here
@@ -697,10 +829,14 @@ namespace MonoCore
 
 
         }
-       
+        public static void OnStop()
+        {
+            _isProcessing = false;
+            NetMQConfig.Cleanup(false);
+        }
         public static void OnPulse()
         {
-           
+
             if (!_isProcessing) return;
             //reset the last delay so we restart the procssing time since its a new OnPulse()
             MQ._sinceLastDelay = _stopWatch.ElapsedMilliseconds;
@@ -760,7 +896,7 @@ namespace MonoCore
             }
             if (_currentDelay > 0)
             {
-               // Core.mq_Echo("Unblocked on C++:: Doing a Delay");
+                // Core.mq_Echo("Unblocked on C++:: Doing a Delay");
                 Core.mq_Delay(_currentDelay);
                 _currentDelay = 0;
             }
@@ -776,18 +912,18 @@ namespace MonoCore
         //}
         public static void OnIncomingChat(string line)
         {
-           EventProcessor.ProcessEvent(line);
+            PubServer._pubMessages.Enqueue(line);
+            //EventProcessor.ProcessEvent(line);
         }
         public static void OnUpdateImGui()
         {
 
-            if(imgui_Begin_OpenFlagGet("e3TestWindow"))
-            {
-                imgui_Begin("e3TestWindow", (int)ImGuiWindowFlags.ImGuiWindowFlags_None);
-                imgui_Button("Test button");
-                imgui_End();
-            }
-           
+            //if (imgui_Begin_OpenFlagGet("e3TestWindow"))
+            //{
+            //    imgui_Begin("e3TestWindow", (int)ImGuiWindowFlags.ImGuiWindowFlags_None);
+            //    imgui_Button("Test button");
+            //    imgui_End();
+            //}
 
         }
 
@@ -802,7 +938,7 @@ namespace MonoCore
         public extern static void mq_Delay(int delay);
         #region IMGUI
         [MethodImpl(MethodImplOptions.InternalCall)]
-        public extern static bool imgui_Begin(string name,int flags);
+        public extern static bool imgui_Begin(string name, int flags);
         [MethodImpl(MethodImplOptions.InternalCall)]
         public extern static void imgui_Begin_OpenFlagSet(string name, bool value);
         [MethodImpl(MethodImplOptions.InternalCall)]
@@ -869,7 +1005,7 @@ namespace MonoCore
         void Broadcast(string query);
 
     }
-    public class MQ:IMQ
+    public class MQ : IMQ
     {   //**************************************************************************************************
         //NONE OF THESE METHODS SHOULD BE CALLED ON THE C++ Thread, as it will cause a deadlock due to delay calls
         //**************************************************************************************************
@@ -884,10 +1020,10 @@ namespace MonoCore
             Int64 differenceTime = Core._stopWatch.ElapsedMilliseconds - _sinceLastDelay;
 
 
-            if (_maxMillisecondsToWork < differenceTime)
-            {  
-                Delay(0);
-            }
+            //if (_maxMillisecondsToWork < differenceTime)
+            //{  
+            //    Delay(0);
+            //}
             string mqReturnValue = Core.mq_ParseTLO(query);
             if (typeof(T) == typeof(Int32))
             {
@@ -954,14 +1090,14 @@ namespace MonoCore
         }
         public void Cmd(string query)
         {
-            Int64 elapsedTime = Core._stopWatch.ElapsedMilliseconds;
-            Int64 differenceTime = Core._stopWatch.ElapsedMilliseconds - _sinceLastDelay;
+            //Int64 elapsedTime = Core._stopWatch.ElapsedMilliseconds;
+            //Int64 differenceTime = Core._stopWatch.ElapsedMilliseconds - _sinceLastDelay;
 
 
-            if (_maxMillisecondsToWork < differenceTime)
-            {
-                Delay(0);
-            }
+            //if (_maxMillisecondsToWork < differenceTime)
+            //{
+            //    Delay(0);
+            //}
             //delays are not valid commands
             if (query.StartsWith("/delay", StringComparison.OrdinalIgnoreCase))
             {
@@ -1077,7 +1213,7 @@ namespace MonoCore
             WriteStatic(message, logLevel, eventName, memberName, fileName, lineNumber, headers);
 
         }
-       
+
         public static void WriteStatic(string message, LogLevels logLevel = LogLevels.Info, string eventName = "Logging", [CallerMemberName] string memberName = "", [CallerFilePath] string fileName = "", [CallerLineNumber] int lineNumber = 0, Dictionary<String, String> headers = null)
         {
             if ((Int32)logLevel < (Int32)_minLogLevelTolog)
@@ -1085,8 +1221,8 @@ namespace MonoCore
                 return;//log level is too low to currently log. 
             }
 
-          
-           
+
+
             string className = GetClassName(fileName);
 
             if (logLevel == LogLevels.CriticalError)
@@ -1094,9 +1230,9 @@ namespace MonoCore
                 eventName += "._CriticalError_";
             }
 
-            if(logLevel == LogLevels.Debug)
+            if (logLevel == LogLevels.Debug)
             {
-                MQ.Write($"{className}:{memberName}:({lineNumber}) {message}","","Logging");
+                MQ.Write($"{className}:{memberName}:({lineNumber}) {message}", "", "Logging");
 
             }
             else
@@ -1105,12 +1241,12 @@ namespace MonoCore
             }
 
         }
-        public ITrace Trace(string name="",[CallerMemberName] string memberName = "", [CallerFilePath] string fileName = "", [CallerLineNumber] int lineNumber = 0)
+        public ITrace Trace(string name = "", [CallerMemberName] string memberName = "", [CallerFilePath] string fileName = "", [CallerLineNumber] int lineNumber = 0)
         {
 
             BaseTrace returnValue = BaseTrace.Aquire();
-           
-            if (_traceLogLevel!= LogLevels.Trace)
+
+            if (_traceLogLevel != LogLevels.Trace)
             {
                 //if not debugging don't log stuff
                 returnValue.CallBackDispose = TraceSetTime;
@@ -1122,7 +1258,7 @@ namespace MonoCore
             returnValue.Method = memberName;
             returnValue.CallBackDispose = TraceSetTime;
             returnValue.Name = name;
-            
+
             //done at the very last of this
             returnValue.StartTime = Core._stopWatch.Elapsed.TotalMilliseconds;
             if (!string.IsNullOrWhiteSpace(name))
@@ -1133,7 +1269,7 @@ namespace MonoCore
             {
                 MQ.TraceStart(memberName);
             }
-           
+
             return returnValue;
 
         }
@@ -1143,16 +1279,16 @@ namespace MonoCore
             //done first!
             totalMilliseconds = Core._stopWatch.Elapsed.TotalMilliseconds - value.StartTime;
             //put event back into its object pool.
-            if(!string.IsNullOrWhiteSpace(value.Method))
+            if (!string.IsNullOrWhiteSpace(value.Method))
             {
                 MQ.TraceEnd($"{value.Name}:{value.Method}({totalMilliseconds}ms)");
             }
-          
+
         }
         public enum LogLevels
         {
             None = 0,
-            Trace=2000,
+            Trace = 2000,
             Debug = 30000,
             Info = 40000,
             Error = 70000,
@@ -1181,7 +1317,7 @@ namespace MonoCore
             return className;
         }
         public interface ITrace : IDisposable
-        {   
+        {
             String Name { get; set; }
             Int64 MetricID { get; set; }
             Double Value { get; set; }
@@ -1195,7 +1331,7 @@ namespace MonoCore
         {
             public string Name { get; set; }
             public Int64 MetricID { get; set; }
-           
+
             public Double Value { get; set; }
             public Double StartTime { get; set; }
             public Action<ITrace> CallBackDispose { get; set; }
@@ -1204,11 +1340,12 @@ namespace MonoCore
             public LogLevels LogLevel { get; set; }
 
             #region objectPoolingStuff
-           
+
 
             //private constructor, needs to be created so that you are forced to use the pool.
-            private BaseTrace() {
-               
+            private BaseTrace()
+            {
+
             }
 
 
@@ -1219,7 +1356,7 @@ namespace MonoCore
                 {
                     obj = new BaseTrace();
                 }
-               
+
                 return obj;
             }
 
@@ -1250,13 +1387,13 @@ namespace MonoCore
                 //DO NOT CALL DISPOSE FROM THE FINALIZER! This should only ever be used in using statements
                 //if this is called, it will cause the domain to hang in the GC when shuttind down
                 //This is only here to warn you
-                
+
             }
 
             #endregion
         }
     }
-   
+
     public static class StaticObjectPool
     {
         private static class Pool<T>

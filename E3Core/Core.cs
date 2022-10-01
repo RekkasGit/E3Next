@@ -391,7 +391,10 @@ namespace MonoCore
 
 
         }
-       
+        public static void OnStop()
+        {
+            _isProcessing = false;
+        }
         public static void OnPulse()
         {
            
@@ -602,6 +605,10 @@ namespace MonoCore
                 if (mqReturnValue == "NULL")
                 {
                     return (T)(object)false;
+                }
+                if (mqReturnValue == "!FALSE")
+                {
+                    return (T)(object)true;
                 }
                 Int32 intValue;
                 if (Int32.TryParse(mqReturnValue, out intValue))

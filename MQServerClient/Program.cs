@@ -1,5 +1,6 @@
 ﻿using E3Core.Processors;
 using MonoCore;
+using NetMQ;
 using NetMQ.Sockets;
 using RestSharp;
 using System;
@@ -7,6 +8,7 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Runtime.CompilerServices;
 using System.Text;
+using System.Threading;
 using System.Threading.Tasks;
 
 namespace MQServerClient
@@ -16,15 +18,22 @@ namespace MQServerClient
         static void Main(string[] args)
         {
 
+            //so all modultes look for this flag to determine it to continue.
+            MonoCore.Core._isProcessing = true;
+            //start up the thread to process regex
+            EventProcessor.Init();
 
-
-            E3.MQ = new ClientMQ();
+            E3.MQ = new NetMQMQ();
             E3._log = new Logging(E3.MQ);
+            NetMQOnIncomingChat _incChat = new NetMQOnIncomingChat();
 
-            while(true)
+
+            _incChat.Start();
+            while (true)
             {
 
                 E3.Process();
+                EventProcessor.ProcessEventsInQueues();
 
                 System.Threading.Thread.Sleep(1000);
             }
@@ -34,6 +43,36 @@ namespace MQServerClient
         }
     }
 
+
+    public class NetMQOnIncomingChat
+    {
+
+        Task _serverThread;
+        public void Start()
+        {
+            _serverThread = Task.Factory.StartNew(() => { Process(); }, CancellationToken.None, TaskCreationOptions.DenyChildAttach, TaskScheduler.Default);
+
+        }
+
+        public void Process()
+        {
+
+            using (var subSocket = new SubscriberSocket())
+            {
+                subSocket.Options.ReceiveHighWatermark = 1000;
+                subSocket.Connect("tcp://localhost:12347");
+                subSocket.Subscribe("OnIncomingChat");
+                Console.WriteLine("Subscriber socket connecting...");
+                while (true)
+                {
+                    string messageTopicReceived = subSocket.ReceiveFrameString();
+                    string messageReceived = subSocket.ReceiveFrameString();
+                    Console.WriteLine(messageReceived);
+                    EventProcessor.ProcessEvent(messageReceived);
+                }
+            }
+        }
+    }
 
     public class NetMQMQ : MonoCore.IMQ
     {
@@ -127,6 +166,7 @@ namespace MQServerClient
 
         public T Query<T>(string query)
         {
+            Console.WriteLine(query);
             if (_requestMsg.IsInitialised)
             {
                 _requestMsg.Close();
@@ -165,9 +205,35 @@ namespace MQServerClient
             }
 
             _requestSocket.TrySend(ref _requestMsg, SendTimeout, false);
+
+
+            _requestMsg.Close();
+            _requestMsg.InitEmpty();
+
+            //recieve the empty frame
+            while (!_requestSocket.TryReceive(ref _requestMsg, RecieveTimeout))
+            {
+                //wait for the message to come back
+            }
+            _requestMsg.Close();
+            _requestMsg.InitEmpty();
+            while (!_requestSocket.TryReceive(ref _requestMsg, RecieveTimeout))
+            {
+                //wait for the message to come back
+            }
+
+
+
+            //data is back, lets parse out the data
+
+            string mqReturnValue = System.Text.Encoding.Default.GetString(_requestMsg.Data, 0,_requestMsg.Data.Length);
+
             _requestMsg.Close();
 
-            string mqReturnValue = response.Content;
+
+
+
+           
             if (typeof(T) == typeof(Int32))
             {
                 Int32 value;
@@ -250,9 +316,42 @@ namespace MQServerClient
 
         public void Write(string query, [CallerMemberName] string memberName = "", [CallerFilePath] string fileName = "", [CallerLineNumber] int lineNumber = 0)
         {
-            var request = new RestRequest("write/" + query, Method.Get);
-            RestResponse response = client.Execute(request);
-            Console.WriteLine($"[{System.DateTime.Now.ToString("HH:mm:ss")}] {query}");
+
+            if (_requestMsg.IsInitialised)
+            {
+                _requestMsg.Close();
+            }
+            _requestMsg.InitEmpty();
+            //send empty frame
+            _requestSocket.TrySend(ref _requestMsg, SendTimeout, true);
+
+            _payloadLength = System.Text.Encoding.Default.GetBytes(query, 0, query.Length, _payload, 0);
+
+            _requestMsg.Close();
+
+            //include command+ length in payload
+            _requestMsg.InitPool(_payloadLength + 8);
+
+            unsafe
+            {
+                fixed (byte* src = _payload)
+                {
+
+                    fixed (byte* dest = _requestMsg.Data)
+                    {   //4 bytes = commandtype
+                        //4 bytes = length
+                        //N-bytes = payload
+                        byte* tPtr = dest;
+                        *((Int32*)tPtr) = 3;
+                        tPtr += 4;
+                        *(Int32*)tPtr = _payloadLength; //init/modify
+                        tPtr += 4;
+                        Buffer.MemoryCopy(src, tPtr, _requestMsg.Data.Length, _payloadLength);
+                    }
+
+                }
+            }
+            _requestSocket.TrySend(ref _requestMsg, SendTimeout, false);
         }
     }
 

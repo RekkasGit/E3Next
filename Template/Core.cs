@@ -391,7 +391,10 @@ namespace MonoCore
 
 
         }
-       
+        public static void OnStop()
+        {
+            _isProcessing = false;
+        }
         public static void OnPulse()
         {
            
