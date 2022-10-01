@@ -24,9 +24,10 @@ namespace E3Core.Processors
         public static IMQ MQ = Core.mqInstance;
         //public static IMQ MQ = new MoqMQ();
         public static Logging _log = Core._log;
-        private static Settings.CharacterSettings _characterSettings=null;
-        private static Settings.GeneralSettings _generalSettings=null;
-        private static Settings.AdvancedSettings _advancedSettings = null;
+        public static Settings.CharacterSettings _characterSettings=null;
+        public static Settings.GeneralSettings _generalSettings=null;
+        public static Settings.AdvancedSettings _advancedSettings = null;
+        public static IBots _bots = null;
         public static Data.Class _currentClass;
         public static string _currentLongClassString;
         public static string _currentShortClassString;
@@ -102,7 +103,7 @@ namespace E3Core.Processors
 
                 _currentLongClassString = _currentClass.ToString();
                 _currentShortClassString = Data.Classes._classLongToShort[_currentLongClassString];
-                //RegisterEvents();
+                _bots=new Bots();
                 _isInit = true;
             }
            

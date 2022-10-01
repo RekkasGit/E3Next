@@ -43,7 +43,19 @@ namespace MQServerClient
         }
     }
 
-
+    public static class RemoteDebugServerConfig
+    {
+        //used for browser queries
+        public static Int32 HTTPPort = 12345;
+        //used for remote debugging
+        public static Int32 NetMQRouterPort = 12346;
+        //used for remote debugging events
+        public static Int32 NetMQPubPort = 12347;
+        //how long we wait once a command has been seen
+        //use this to tweak how much of heartbeat 'lag' you wish. careful this will
+        //directly impact query performance if set too low. 
+        public readonly static Double CurrentWaitTimeWhenRequestFound = 100;
+    }
     public class NetMQOnIncomingChat
     {
 
@@ -60,7 +72,7 @@ namespace MQServerClient
             using (var subSocket = new SubscriberSocket())
             {
                 subSocket.Options.ReceiveHighWatermark = 1000;
-                subSocket.Connect("tcp://localhost:12347");
+                subSocket.Connect("tcp://localhost:"+ RemoteDebugServerConfig.NetMQPubPort.ToString());
                 subSocket.Subscribe("OnIncomingChat");
                 Console.WriteLine("Subscriber socket connecting...");
                 while (true)
@@ -73,6 +85,7 @@ namespace MQServerClient
             }
         }
     }
+
 
     public class NetMQMQ : MonoCore.IMQ
     {
@@ -88,7 +101,7 @@ namespace MQServerClient
             _requestSocket = new DealerSocket();
             _requestSocket.Options.Identity = Guid.NewGuid().ToByteArray();
             _requestSocket.Options.SendHighWatermark = 100;
-            _requestSocket.Connect("tcp://127.0.0.1:12346");
+            _requestSocket.Connect("tcp://127.0.0.1:"+RemoteDebugServerConfig.NetMQRouterPort.ToString());
         }
         public void Broadcast(string query)
         {
@@ -357,7 +370,7 @@ namespace MQServerClient
 
     public class ClientMQ : MonoCore.IMQ
     {
-        RestClient client = new RestClient("http://192.168.1.191:12345");
+        RestClient client = new RestClient("http://192.168.1.191:"+ RemoteDebugServerConfig.HTTPPort.ToString());
         public void Broadcast(string query)
         {
             query = @"bc " + query;

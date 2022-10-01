@@ -64,7 +64,16 @@ namespace E3Core.Processors
                     MQ.Write($"Invalid targetId for Casting. {targetID}");
                 }
 
-                var targetName = MQ.Query<string>($"${{Spawn[id {targetID}].CleanName}}");
+                String targetName =String.Empty;
+                //targets of 0 means keep current target
+                if (targetID > 0) 
+                {
+                    targetName = MQ.Query<string>($"${{Spawn[id {targetID}].CleanName}}");
+                }
+                else
+                {
+                    targetName = MQ.Query<string>($"${{Spawn[id ${{Target.ID}}].CleanName}}");
+                }
                 _log.Write($"TargetName:{targetName}");
                 //why we should not cast.. for whatever reason.
                 #region validation checks
@@ -527,6 +536,9 @@ namespace E3Core.Processors
   
         public static void TrueTarget(Int32 targetID)
         {
+
+            //0 means don't change target
+            if (targetID == 0) return;
 
             _log.Write("Trying to Aquire target");
 

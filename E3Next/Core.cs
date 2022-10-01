@@ -587,12 +587,23 @@ namespace MonoCore
             string mqReturnValue = Core.mq_ParseTLO(query);
             if (typeof(T) == typeof(Int32))
             {
-                Int32 value;
-                if (Int32.TryParse(mqReturnValue, out value))
+                if(!mqReturnValue.Contains("."))
                 {
-                    return (T)(object)value;
+                    Int32 value;
+                    if (Int32.TryParse(mqReturnValue, out value))
+                    {
+                        return (T)(object)value;
+                    }
                 }
+                else
+                {
+                    Decimal value;
+                    if(decimal.TryParse(mqReturnValue, out value))
+                    {
+                        return (T)(object)value;
+                    }
 
+                }
             }
             else if (typeof(T) == typeof(Boolean))
             {

@@ -61,6 +61,7 @@
     <Compile Include="Core.cs" />
     <Compile Include="Data\Class.cs" />
     <Compile Include="Processors\BaseProcessor.cs" />
+    <Compile Include="Processors\Bots.cs" />
     <Compile Include="Settings\AdvancedSettings.cs" />
     <Compile Include="Settings\BaseSettings.cs" />
     <Compile Include="Settings\CharacterSettings.cs" />

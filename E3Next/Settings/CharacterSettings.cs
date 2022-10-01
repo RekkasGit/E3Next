@@ -3,6 +3,7 @@ using IniParser;
 using IniParser.Model;
 using System;
 using System.Collections.Generic;
+using System.Collections.Specialized;
 using System.IO;
 using System.Linq;
 using System.Runtime.InteropServices;
@@ -140,10 +141,13 @@ namespace E3Core.Settings
             LoadKeyData("Heals", "All Heal", parsedData, HealAll);
             LoadKeyData("Heals", "XTarget Heal", parsedData, HealXTarget);
             LoadKeyData("Heals", "Heal Over Time Spell", parsedData, HealOverTime);
+            LoadKeyData("Heals", "Group Heal", parsedData, HealGroup);
 
             LoadKeyData("Heals", "Tank", parsedData, HealTankTargets);
             LoadKeyData("Heals", "Important Bot", parsedData, HealImportantBotTargets);
+          
             LoadKeyData("Heals", "Pet Heal", parsedData, PetHeals);
+
             //parse out the Tanks/XTargets/etc into collections via the Set method on the
             //property set method
             WhoToHealString = LoadKeyData("Heals", "Who to Heal", parsedData);
@@ -277,6 +281,7 @@ namespace E3Core.Settings
                 section = newFile.Sections.GetSectionData("Heals");
                 section.Keys.AddKey("Tank Heal", "");
                 section.Keys.AddKey("Important Heal", "");
+                section.Keys.AddKey("Group Heal", "");
                 section.Keys.AddKey("All Heal", "");
                 section.Keys.AddKey("XTarget Heal", "");
                 section.Keys.AddKey("Tank", "");
@@ -410,21 +415,22 @@ namespace E3Core.Settings
 
         #region heals
         //heals
-        List<String> HealTankTargets = new List<string>();
+        public List<String> HealTankTargets = new List<string>();
         public List<Data.Spell> HealTanks = new List<Data.Spell>();
 
-        List<String> HealImportantBotTargets = new List<string>();
+        public List<String> HealImportantBotTargets = new List<string>();
         public List<Data.Spell> HealImportantBots = new List<Data.Spell>();
         
+        public List<Data.Spell> HealGroup = new List<Data.Spell>();
 
         public List<Data.Spell> HealAll = new List<Data.Spell>();
         public List<Data.Spell> HealXTarget = new List<Data.Spell>();
         public List<Data.Spell> HealPets = new List<Data.Spell>();
         public List<Data.Spell> HealOverTime = new List<Data.Spell>();
         public List<String> HealPetOwners = new List<string>();
-       
-        
-        List<String> WhoToHeal = new List<string>();
+
+
+        public System.Collections.Generic.HashSet<String> WhoToHeal = new HashSet<string>(10, StringComparer.OrdinalIgnoreCase);
         public Boolean HealAutoNecroOrbs = false;
         private string _whoToHealString;
         public string WhoToHealString
@@ -433,11 +439,19 @@ namespace E3Core.Settings
             set
             {
                 _whoToHealString = value;
-                WhoToHeal = value.Split('/').ToList();
+                List<string> returnValue = value.Split('/').ToList();
+                foreach(var who in returnValue)
+                {
+                    if(!WhoToHeal.Contains(who))
+                    {
+                        WhoToHeal.Add(who);
+
+                    }
+                }
             }
         }
-        List<String> WhoToHoT = new List<string>();
-        private string _whoToHoTString;
+        public System.Collections.Generic.HashSet<String> WhoToHoT = new HashSet<string>(10, StringComparer.OrdinalIgnoreCase);
+         private string _whoToHoTString;
 
         public string WhoToHoTString
         {
@@ -445,7 +459,15 @@ namespace E3Core.Settings
             set
             {
                 _whoToHoTString = value;
-                WhoToHoT = value.Split('/').ToList();
+                List<string> returnValue = value.Split('/').ToList();
+                foreach (var who in returnValue)
+                {
+                    if (!WhoToHoT.Contains(who))
+                    {
+                        WhoToHoT.Add(who);
+
+                    }
+                }
             }
         }
 

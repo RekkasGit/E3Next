@@ -343,7 +343,7 @@ namespace E3Core.Data
                     Int32 AERange = MQ.Query<Int32>($"${{Me.Inventory[{invSlot}].Spell.AERange}}");
                     MyRange = AERange;
                     if(MyRange == 0) {
-                        MyRange = MQ.Query<Int32>($"${{Me.Inventory[{invSlot}].Spell.MyRange}}"); ;
+                        MyRange = MQ.Query<Decimal>($"${{Me.Inventory[{invSlot}].Spell.MyRange}}"); ;
                     }
                    
                     string et = MQ.Query<String>($"${{Me.Inventory[{invSlot}].EffectType}}");
@@ -371,7 +371,7 @@ namespace E3Core.Data
                     MyRange = AERange;
                     if (MyRange == 0)
                     {
-                        MyRange = MQ.Query<Int32>($"${{Me.Inventory[{invSlot}].Item[{bagSlot}].Spell.MyRange}}"); ;
+                        MyRange = MQ.Query<Decimal>($"${{Me.Inventory[{invSlot}].Item[{bagSlot}].Spell.MyRange}}"); ;
                     }
 
                     string et = MQ.Query<String>($"${{Me.Inventory[{invSlot}].Item[{bagSlot}].EffectType}}");
@@ -399,7 +399,7 @@ namespace E3Core.Data
                 MyRange = AERange;
                 if (MyRange == 0)
                 {
-                    MyRange = MQ.Query<Int32>($"${{Me.AltAbility[{CastName}].Spell.MyRange}}");
+                    MyRange = MQ.Query<Decimal>($"${{Me.AltAbility[{CastName}].Spell.MyRange}}");
                 }
                 SpellName = MQ.Query<String>($"${{Me.AltAbility[{CastName}].Spell}}");
                 SpellID = MQ.Query<Int32>($"${{Me.AltAbility[{CastName}].Spell.ID}}");
@@ -415,11 +415,11 @@ namespace E3Core.Data
                 RecoveryTime = MQ.Query<Decimal>($"${{Spell[{CastName}].RecoveryTime}}");
                 MyCastTime = MQ.Query<Decimal>($"${{Spell[{CastName}].MyCastTime}}");
 
-                Int32 AERange = MQ.Query<Int32>($"${{Spell[{CastName}].AERange}}");
+                Decimal AERange = MQ.Query<Decimal>($"${{Spell[{CastName}].AERange}}");
                 MyRange = AERange;
                 if (MyRange == 0)
                 {
-                    MyRange = MQ.Query<Int32>($"${{Spell[{CastName}].MyRange}}");
+                    MyRange = MQ.Query<Decimal>($"${{Spell[{CastName}].MyRange}}");
                 }
                 Mana = MQ.Query<Int32>($"${{Spell[{CastName}].Mana}}");
                 SpellName = CastName;
@@ -436,7 +436,7 @@ namespace E3Core.Data
                 MyRange = AERange;
                 if (MyRange == 0)
                 {
-                    MyRange = MQ.Query<Int32>($"${{Spell[{CastName}].MyRange}}");
+                    MyRange = MQ.Query<Decimal>($"${{Spell[{CastName}].MyRange}}");
                 }
                 SpellName = CastName;
                 SpellID = MQ.Query<Int32>($"${{Spell[{CastName}].ID}}");
