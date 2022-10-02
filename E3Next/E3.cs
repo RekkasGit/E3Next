@@ -36,6 +36,7 @@ namespace E3Core.Processors
 
         public static void Process()
         {
+
             if (!ShouldRun())
             {
                 return;
@@ -81,10 +82,12 @@ namespace E3Core.Processors
 
             if(!_isInit)
             {
+                
+                MQ.ClearCommands();
                 Logging._traceLogLevel = Logging.LogLevels.Debug; //log level we are currently at
                 Logging._minLogLevelTolog = Logging.LogLevels.Debug; //log levels have integers assoicatd to them. you can set this to Error to only log errors. 
                 Logging._defaultLogLevel = Logging.LogLevels.Debug; //the default if a level is not passed into the _log.write statement. useful to hide/show things.
-                MainProcessor._applicationName = "E3Next"; //application name, used in some outputs
+                MainProcessor._applicationName = "E3"; //application name, used in some outputs
                 MainProcessor._processDelay = 100; //how much time we will wait until we start our next processing once we are done with a loop.
                                                     //how long you allow script to process before auto yield is engaged. generally should't need to mess with this, but an example.
                 MonoCore.MQ._maxMillisecondsToWork = 40;
@@ -105,6 +108,15 @@ namespace E3Core.Processors
                 _currentShortClassString = Data.Classes._classLongToShort[_currentLongClassString];
                 _bots=new Bots();
                 _isInit = true;
+
+
+                EventProcessor.RegisterCommand("/testcommand02", (x) => {
+
+                    MQ.Write("Command issued:" + x.eventString);
+                
+                
+                });
+
             }
            
 
@@ -152,9 +164,19 @@ namespace E3Core.Processors
         /// </summary>
         public class MoqMQ : MonoCore.IMQ
         {
+            public void AddCommand(string query)
+            {
+                Console.WriteLine("AddCommand:" + query);
+            }
+
             public void Broadcast(string query)
             {
                 Console.WriteLine("Broadcast:" + query);
+            }
+
+            public void ClearCommands()
+            {
+                Console.WriteLine("ClearCommands");
             }
 
             public void Cmd(string query)

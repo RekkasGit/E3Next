@@ -45,9 +45,19 @@ namespace TestCore
 
         public class MoqMQ : MonoCore.IMQ
         {
+            public void AddCommand(string query)
+            {
+                Console.WriteLine("AddCommand:" + query);
+            }
+
             public void Broadcast(string query)
             {
                 Console.WriteLine("Broadcast:" + query);
+            }
+
+            public void ClearCommands()
+            {
+                throw new NotImplementedException();
             }
 
             public void Cmd(string query)

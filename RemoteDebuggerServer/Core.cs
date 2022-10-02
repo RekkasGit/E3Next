@@ -80,12 +80,12 @@ namespace MonoCore
             //Logging._currentLogLevel = Logging.LogLevels.None; //log level we are currently at
             //Logging._minLogLevelTolog = Logging.LogLevels.Error; //log levels have integers assoicatd to them. you can set this to Error to only log errors. 
             //Logging._defaultLogLevel = Logging.LogLevels.None; //the default if a level is not passed into the _log.write statement. useful to hide/show things.
-            HostConfiguration hostConfigs = new HostConfiguration()
-            {
-                UrlReservations = new UrlReservations() { CreateAutomatically = true }
-            };
-            _host = new NancyHost(new Uri("http://localhost:"+ RemoteDebugServerConfig.HTTPPort), new DefaultNancyBootstrapper(), hostConfigs);
-            _host.Start();
+            //HostConfiguration hostConfigs = new HostConfiguration()
+            //{
+            //    UrlReservations = new UrlReservations() { CreateAutomatically = true }
+            //};
+            //_host = new NancyHost(new Uri("http://localhost:"+ RemoteDebugServerConfig.HTTPPort), new DefaultNancyBootstrapper(), hostConfigs);
+            //_host.Start();
 
             _netmqServer = new RouterServer();
             _netmqServer.Start();
@@ -177,6 +177,44 @@ namespace MonoCore
                                     //lets pull out the string
                                     string query = System.Text.Encoding.Default.GetString(message.payload, 0, message.payloadLength);
                                     MQ.Write(query);
+                                }
+                                finally
+                                {
+                                    message.Dispose();
+                                }
+                            }
+                            foundRequest = true;
+                            foundRequestCount++;
+                        }
+                        while (RouterServer._newCommandRequests.Count > 0)
+                        {
+                            RouterMessage message;
+                            if (RouterServer._newCommandRequests.TryDequeue(out message))
+                            {
+                                try
+                                {
+                                    //lets pull out the string
+                                    string query = System.Text.Encoding.Default.GetString(message.payload, 0, message.payloadLength);
+                                    MQ.AddCommand(query);
+                                }
+                                finally
+                                {
+                                    message.Dispose();
+                                }
+                            }
+                            foundRequest = true;
+                            foundRequestCount++;
+                        }
+
+                        while (RouterServer._clearCommandRequests.Count > 0)
+                        {
+                            RouterMessage message;
+                            if (RouterServer._clearCommandRequests.TryDequeue(out message))
+                            {
+                                try
+                                {
+                                    //lets pull out the string
+                                    MQ.ClearCommands();
                                 }
                                 finally
                                 {
@@ -336,6 +374,8 @@ namespace MonoCore
         public static ConcurrentQueue<RouterMessage> _tloResposne = new ConcurrentQueue<RouterMessage>();
         public static ConcurrentQueue<RouterMessage> _commandRequests = new ConcurrentQueue<RouterMessage>();
         public static ConcurrentQueue<RouterMessage> _writeRequests = new ConcurrentQueue<RouterMessage>();
+        public static ConcurrentQueue<RouterMessage> _newCommandRequests = new ConcurrentQueue<RouterMessage>();
+        public static ConcurrentQueue<RouterMessage> _clearCommandRequests = new ConcurrentQueue<RouterMessage>();
 
 
 
@@ -429,6 +469,14 @@ namespace MonoCore
                         {
                             _writeRequests.Enqueue(message);
                         }
+                        else if (message.commandType == 4)
+                        {
+                            _newCommandRequests.Enqueue(message);
+                        }
+                        else if (message.commandType == 5)
+                        {
+                            _clearCommandRequests.Enqueue(message);
+                        }
                         else
                         {
                             message.Dispose();
@@ -510,6 +558,9 @@ namespace MonoCore
         Task _serverThread = null;
 
         public static ConcurrentQueue<string> _pubMessages = new ConcurrentQueue<string>();
+        public static ConcurrentQueue<string> _pubWriteColorMessages = new ConcurrentQueue<string>();
+        public static ConcurrentQueue<string> _pubCommands = new ConcurrentQueue<string>();
+      
         public void Start()
         {
 
@@ -536,6 +587,28 @@ namespace MonoCore
                         {
 
                             pubSocket.SendMoreFrame("OnIncomingChat").SendFrame(message);
+
+                        }
+
+                    }
+                    else if (_pubWriteColorMessages.Count > 0)
+                    {
+                        string message;
+                        if (_pubWriteColorMessages.TryDequeue(out message))
+                        {
+
+                            pubSocket.SendMoreFrame("OnWriteChatColor").SendFrame(message);
+
+                        }
+
+                    }
+                    else if (_pubCommands.Count > 0)
+                    {
+                        string message;
+                        if (_pubCommands.TryDequeue(out message))
+                        {
+
+                            pubSocket.SendMoreFrame("OnCommand").SendFrame(message);
 
                         }
 
@@ -702,12 +775,15 @@ namespace MonoCore
 
 
         }
-
+        public static void OnCommand(string commandLine)
+        {
+            PubServer._pubCommands.Enqueue(commandLine);
+        }
         //Comment these out if you are not using events so that C++ doesn't waste time sending the string to C#
-        //public static void OnWriteChatColor(string line)
-        //{
-        //    EventProcessor.ProcessEvent(line);
-        //}
+        public static void OnWriteChatColor(string line)
+        {
+            PubServer._pubWriteColorMessages.Enqueue(line);
+        }
         public static void OnIncomingChat(string line)
         {
             PubServer._pubMessages.Enqueue(line);
@@ -734,6 +810,10 @@ namespace MonoCore
         public extern static void mq_DoCommand(string msg);
         [MethodImpl(MethodImplOptions.InternalCall)]
         public extern static void mq_Delay(int delay);
+        [MethodImpl(MethodImplOptions.InternalCall)]
+        public extern static void mq_AddCommand(string command);
+        [MethodImpl(MethodImplOptions.InternalCall)]
+        public extern static void mq_ClearCommands();
         #region IMGUI
         [MethodImpl(MethodImplOptions.InternalCall)]
         public extern static bool imgui_Begin(string name, int flags);
@@ -801,6 +881,8 @@ namespace MonoCore
         void Delay(Int32 value);
         Boolean Delay(Int32 maxTimeToWait, string Condition);
         void Broadcast(string query);
+        void AddCommand(string command);
+        void ClearCommands();
 
     }
     public class MQ : IMQ
@@ -929,7 +1011,7 @@ namespace MonoCore
             //}
             //Core.mq_Echo(query);
             //set the buffer for the C++ thread
-            Core._currentWrite = $"[{System.DateTime.Now.ToString("HH:mm:ss")}] {query}";
+            Core._currentWrite = query;
             //swap to the C++thread, and it will swap back after executing the current write becau of us setting _CurrentWrite before
             Core._coreResetEvent.Set();
             //we are now going to wait on the core
@@ -984,7 +1066,14 @@ namespace MonoCore
             }
             return true;
         }
-
+        public void AddCommand(string commandName)
+        {
+            Core.mq_AddCommand(commandName);
+        }
+        public void ClearCommands()
+        {
+            Core.mq_ClearCommands();
+        }
 
     }
 

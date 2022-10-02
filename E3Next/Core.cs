@@ -153,8 +153,11 @@ namespace MonoCore
         //so if we register events before Init, we can avoid locks on it
         //will need to add locks if you want to add events at runtime
         public static System.Collections.Concurrent.ConcurrentDictionary<string, EventListItem> _eventList = new ConcurrentDictionary<string, EventListItem>();
+        public static System.Collections.Concurrent.ConcurrentDictionary<string, CommandListItem> _commandList = new ConcurrentDictionary<string, CommandListItem>();
         //this is the first queue that strings get put into, will be processed by its own thread
         public static ConcurrentQueue<String> _eventProcessingQueue = new ConcurrentQueue<String>();
+        public static ConcurrentQueue<String> _mqEventProcessingQueue = new ConcurrentQueue<string>();
+        public static ConcurrentQueue<String> _mqCommandProcessingQueue = new ConcurrentQueue<string>();
         //if matches take place, they are placed in this queue for the main C# thread to process. 
         public static Int32 _eventLimiterPerRegisteredEvent = 10;
         //this threads entire purpose, is to simply keep processing the event processing queue and place matches into
@@ -177,6 +180,8 @@ namespace MonoCore
         /// </summary>
         static void ProcessEventsIntoQueues()
         {
+            System.Text.RegularExpressions.Regex dannetRegex = new Regex("");
+
             while (Core._isProcessing)
             {
                 if (_eventProcessingQueue.Count > 0)
@@ -206,7 +211,84 @@ namespace MonoCore
                         }
 
                     }
+                }
+                else if(_mqEventProcessingQueue.Count > 0)
+                {
+                    //have to be careful here and process out anything that isn't boxchat or dannet.
+                    string line;
+                    if (_mqEventProcessingQueue.TryDequeue(out line))
+                    {
+                        if(line.StartsWith("["))
+                        {
+                            Int32 indexOfApp = line.IndexOf(MainProcessor._applicationName);
+                            if (indexOfApp == 1)
+                            {
+                                if(line.IndexOf("]")==MainProcessor._applicationName.Length+1)
+                                {
+                                    //this starts with [appname], ignore it. 
+                                    goto skipLine;
+                                }
+                                else
+                                {
+                                    goto processLine;
+                                }
+                               
+                            }
+                        }
+                        processLine:
+                        foreach (var item in _eventList)
+                        {
+                            //prevent spamming of an event to a user
+                            if (item.Value.queuedEvents.Count > _eventLimiterPerRegisteredEvent)
+                            {
+                                continue;
+                            }
 
+                            foreach (var regex in item.Value.regexs)
+                            {
+                                var match = regex.Match(line);
+                                if (match.Success)
+                                {
+
+                                    item.Value.queuedEvents.Enqueue(new EventMatch() { eventName = item.Value.keyName, eventString = line, match = match });
+
+                                    break;
+                                }
+                            }
+
+                        }
+                      
+                    }
+                    skipLine:
+                    continue;
+                }
+                else if (_mqCommandProcessingQueue.Count > 0)
+                {
+                    //have to be careful here and process out anything that isn't boxchat or dannet.
+                    string line;
+                    if (_mqCommandProcessingQueue.TryDequeue(out line))
+                    {   
+                        if(!String.IsNullOrWhiteSpace(line))
+                        {
+                            foreach (var item in _commandList)
+                            {
+                                //prevent spamming of an event to a user
+                                if (item.Value.queuedEvents.Count > _eventLimiterPerRegisteredEvent)
+                                {
+                                    continue;
+                                }
+                                if (line.Equals(item.Value.command, StringComparison.OrdinalIgnoreCase) || line.StartsWith(item.Value.command + " ", StringComparison.OrdinalIgnoreCase))
+                                {
+
+                                    //need to split out the params
+                                    List<String> args = line.Split(' ').ToList();
+                                    args.RemoveAt(0);
+                                    item.Value.queuedEvents.Enqueue(new CommandMatch() { eventName = item.Value.keyName, eventString = line, args=args });
+                                }
+                            }
+                        }
+                       
+                    }
                 }
                 else
                 {
@@ -242,6 +324,30 @@ namespace MonoCore
                 }
 
             }
+            foreach (var item in _commandList)
+            {
+                //check to see if we have to have a filter on the events to process
+                if (!String.IsNullOrWhiteSpace(keyName))
+                {
+                    //if keyName is specified, verify that its the key we want. 
+                    if (!item.Value.keyName.Equals(keyName, StringComparison.OrdinalIgnoreCase))
+                    {
+
+                        continue;
+                    }
+                }
+                //_log.Write($"Checking Event queue. Total:{item.Value.queuedEvents.Count}");
+                while (item.Value.queuedEvents.Count > 0)
+                {
+
+                    CommandMatch line;
+                    if (item.Value.queuedEvents.TryDequeue(out line))
+                    {
+                        item.Value.method.Invoke(line);
+                    }
+                }
+
+            }
         }
         /// <summary>
         /// main entry from the C++ thread to place the event string for processing
@@ -253,6 +359,25 @@ namespace MonoCore
             if (_eventList.Count > 0)
             { 
                 _eventProcessingQueue.Enqueue(line);
+            }
+
+        }
+
+        public static void ProcessMQEvent(string line)
+        {
+            //to prevent spams
+            if (_eventList.Count > 0)
+            {
+                _mqEventProcessingQueue.Enqueue(line);
+            }
+
+        }
+        public static void ProcessMQCommand(string line)
+        {
+            //to prevent spams
+            if (_eventList.Count > 0)
+            {
+                _mqCommandProcessingQueue.Enqueue(line);
             }
 
         }
@@ -275,11 +400,40 @@ namespace MonoCore
             public System.Action<EventMatch> method;
             public ConcurrentQueue<EventMatch> queuedEvents = new ConcurrentQueue<EventMatch>();
         }
+        public class CommandListItem
+        {
+            public String keyName;
+            public String command;
+            public System.Action<CommandMatch> method;
+            public ConcurrentQueue<CommandMatch> queuedEvents = new ConcurrentQueue<CommandMatch>();
+        }
+        public class CommandMatch
+        {
+            public List<String> args;
+            public string eventString;
+            public string eventName;
+        }
         public class EventMatch
         {
             public string eventString;
             public Match match;
             public string eventName;
+        }
+        public static void RegisterCommand(string commandName,Action<CommandMatch> method)
+        {
+            CommandListItem c = new CommandListItem();
+            c.command = commandName;
+            c.method = method;
+            c.keyName = commandName;
+           
+
+
+            if(_commandList.TryAdd(commandName, c))
+            {
+                //now to register the command over.
+                Core.mqInstance.AddCommand(commandName);
+            }
+            
         }
         public static void RegisterEvent(string keyName, string pattern, Action<EventMatch> method)
         {
@@ -466,14 +620,19 @@ namespace MonoCore
         }
 
         //Comment these out if you are not using events so that C++ doesn't waste time sending the string to C#
-        //public static void OnWriteChatColor(string line)
-        //{
-        //    EventProcessor.ProcessEvent(line);
-        //}
+        public static void OnWriteChatColor(string line)
+        {
+            EventProcessor.ProcessMQEvent(line);
+        }
+        public static void OnCommand(string commandLine)
+        {
+            EventProcessor.ProcessMQCommand(commandLine);
+        }
         public static void OnIncomingChat(string line)
         {
            EventProcessor.ProcessEvent(line);
         }
+       
         public static void OnUpdateImGui()
         {
 
@@ -496,6 +655,10 @@ namespace MonoCore
         public extern static void mq_DoCommand(string msg);
         [MethodImpl(MethodImplOptions.InternalCall)]
         public extern static void mq_Delay(int delay);
+        [MethodImpl(MethodImplOptions.InternalCall)]
+        public extern static void mq_AddCommand(string command);
+        [MethodImpl(MethodImplOptions.InternalCall)]
+        public extern static void mq_ClearCommands();
         #region IMGUI
         [MethodImpl(MethodImplOptions.InternalCall)]
         public extern static bool imgui_Begin(string name,int flags);
@@ -563,6 +726,8 @@ namespace MonoCore
         void Delay(Int32 value);
         Boolean Delay(Int32 maxTimeToWait, string Condition);
         void Broadcast(string query);
+        void AddCommand(string query);
+        void ClearCommands();
 
     }
     public class MQ:IMQ
@@ -710,7 +875,7 @@ namespace MonoCore
             //}
             //Core.mq_Echo(query);
             //set the buffer for the C++ thread
-            Core._currentWrite = $"[{System.DateTime.Now.ToString("HH:mm:ss")}] {query}";
+            Core._currentWrite = $"[{MainProcessor._applicationName}][{System.DateTime.Now.ToString("HH:mm:ss")}] {query}";
             //swap to the C++thread, and it will swap back after executing the current write becau of us setting _CurrentWrite before
             Core._coreResetEvent.Set();
             //we are now going to wait on the core
@@ -765,7 +930,14 @@ namespace MonoCore
             }
             return true;
         }
-
+        public void AddCommand(string commandName)
+        {
+            Core.mq_AddCommand(commandName);
+        }
+        public void ClearCommands()
+        {
+            Core.mq_ClearCommands();
+        }
 
     }
 

@@ -557,8 +557,10 @@ namespace E3Core.Processors
             }
 
         }
-
+        
     }
+   
+
     /*
     | CAST_CANCELLED       | Spell was cancelled by ducking (either manually or because mob died) |
     | CAST_CANNOTSEE       | You can't see your target                                            |

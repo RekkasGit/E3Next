@@ -46,7 +46,7 @@ namespace E3Core.Settings
         public Boolean AutoTribute_Enabled;
 
         public Boolean Assists_AutoAssistEnabled;
-        public Int32 Assists_MaxEncagedDistance;
+        public Int32 Assists_MaxEngagedDistance;
         public Int32 Assists_AEThreadRange;
         public String Assists_AcceptableTargetTypes;
         public Int32 Assists_LongTermDebuffRecast = 30;
@@ -131,7 +131,7 @@ namespace E3Core.Settings
 
             LoadKeyData("Assists", "Auto-Assist (On/Off)", parsedData, ref Assists_AutoAssistEnabled);
 
-            LoadKeyData("Assists", "Max Engage Distance", parsedData, ref Assists_MaxEncagedDistance);
+            LoadKeyData("Assists", "Max Engage Distance", parsedData, ref Assists_MaxEngagedDistance);
             LoadKeyData("Assists", "AE Threat Range", parsedData, ref Assists_AEThreadRange);
             LoadKeyData("Assists", "Acceptable Target Types", parsedData, ref Assists_AcceptableTargetTypes);
             LoadKeyData("Assists", "Long Term Debuff Recast(s)", parsedData, ref Assists_LongTermDebuffRecast);
