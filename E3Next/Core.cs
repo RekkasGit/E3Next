@@ -80,9 +80,6 @@ namespace MonoCore
                     //MQ.TraceStart("Process");
                     using (_log.Trace())
                     {
-
-                        _spawn.RefreshList();
-
                         //************************************************
                         //DO YOUR WORK HERE
                         //this loop executes once every OnPulse from C++
@@ -91,7 +88,7 @@ namespace MonoCore
                         //boiler plate code with all the threading.
 
                         ////MQ.Write("Calling e3process");
-                        //E3.Process();
+                        E3.Process();
                         ////***NOTE NOTE NOTE, Use M2.Delay(0) in your code to give control back to EQ if you have taken awhile in doing something
                         ////***NOTE NOTE NOTE, generally this isn't needed as there is an auto yield baked into every MQ method. Just be aware.
                         using (_log.Trace("EventProcessing"))
@@ -482,6 +479,7 @@ namespace MonoCore
     public static class Core
     {
         public static IMQ mqInstance; //needs to be declared first
+        public static ISpawns spawnInstance;
         public static Logging _log;
         public volatile static bool _isProcessing = false;
         public const string _coreVersion = "0.1";
@@ -535,6 +533,10 @@ namespace MonoCore
                 if (mqInstance == null)
                 {
                     mqInstance = new MQ();
+                }
+                if (spawnInstance == null)
+                {
+                    spawnInstance = new Spawns();
                 }
                 _log = new Logging(mqInstance);
                 _stopWatch.Start();
@@ -647,17 +649,10 @@ namespace MonoCore
         }
         public static void OnSetSpawns(byte[] data, int size)
         {
-            Core.mq_Echo("OnSpawn recieved, size:" + size);
-
-            string value = System.Text.Encoding.ASCII.GetString(data,0,size);
-
-            Core.mq_Echo("OnSpawn recieved. value:" + value);
-
             var spawn = Spawn.Aquire();
             spawn.Init(data, size);
             Spawns._spawns.Add(spawn);
             //copy the data out into the current array set. 
-
         }
 
         public static void OnUpdateImGui()
@@ -851,6 +846,14 @@ namespace MonoCore
             {
                 Decimal value;
                 if (Decimal.TryParse(mqReturnValue, out value))
+                {
+                    return (T)(object)value;
+                }
+            }
+            else if (typeof(T) == typeof(double))
+            {
+                double value;
+                if (double.TryParse(mqReturnValue, out value))
                 {
                     return (T)(object)value;
                 }
@@ -1310,37 +1313,86 @@ namespace MonoCore
 
         IEnumerable<Spawn> Get();
         void RefreshList();
-
+        bool TryByID(Int32 id, out Spawn s);
+        bool TryByName(string name,out Spawn s);
+        Int32 GetIDByName(string name);
+        bool Contains(string name);
+        bool Contains(Int32 id);
+       
     }
 
     public class Spawns: ISpawns
     {
 
         public static List<Spawn> _spawns = new List<Spawn>(2048);
+        private static Dictionary<string,Spawn> _spawnsByName = new Dictionary<string,Spawn>(2048);
+        private static Dictionary<Int32,Spawn> _spawnsByID = new Dictionary<int,Spawn>(2048);
         public static Int64 _lastRefesh = 0;
-        public static Int64 _refreshTimePeriodInMS = 5000000;
+        public static Int64 _refreshTimePeriodInMS = 1000;
+
+
+        public bool TryByID(Int32 id, out Spawn s)
+        {
+             return _spawnsByID.TryGetValue(id,out s);
+        }
+        public bool TryByName(string name, out Spawn s)
+        {
+            return _spawnsByName.TryGetValue(name, out s);
+        }
+        public Int32 GetIDByName(string name)
+        {
+            Spawn returnValue;
+            if (_spawnsByName.TryGetValue(name, out returnValue))
+            {
+                return returnValue.ID;
+            }
+            return 0;
+        }
+        public bool Contains(string name)
+        {
+            RefreshListIfNeeded();
+            return _spawnsByName.ContainsKey(name);
+        }
+        public bool Contains(Int32 id)
+        {
+            RefreshListIfNeeded();
+            return _spawnsByID.ContainsKey(id);
+        }
         public IEnumerable<Spawn> Get()
         {
-            if(Core._stopWatch.ElapsedMilliseconds - _lastRefesh > _refreshTimePeriodInMS)
-            {
-                RefreshList();
-            }
+            RefreshListIfNeeded();
             return _spawns;
         }
 
         private void ClearList()
         {
+            _spawnsByID.Clear();
+            _spawnsByName.Clear();
             foreach (var spawn in _spawns)
             {
                 spawn.Dispose();
             }
             _spawns.Clear();
+          
+        }
+        private void RefreshListIfNeeded()
+        {
+            if (Core._stopWatch.ElapsedMilliseconds - _lastRefesh > _refreshTimePeriodInMS)
+            {
+                RefreshList();
+            }
         }
         public void RefreshList()
         {
             ClearList();
             //request new spawns!
             Core.mq_GetSpawns();
+            foreach(var spawn in _spawns)
+            {
+                _spawnsByID.Add(spawn.ID,spawn);
+                _spawnsByName.Add(spawn.Name,spawn);
+            }
+          
             //_spawns should have fresh data now!
             _lastRefesh = Core._stopWatch.ElapsedMilliseconds;
 

@@ -19,57 +19,21 @@ namespace MQServerClient
         public static Stopwatch _stopWatch = new Stopwatch();
         static void Main(string[] args)
         {
-            _stopWatch.Start();
-            ISpawns Spawns = new NetMQSpawns();
-             Spawns.RefreshList();
-          
-          
-            List<Spawn> result = Spawns.Get().Where(x=>x.Anonymous==true).ToList();
-                
+            
+            MonoCore.Core.mqInstance = new NetMQMQ();
+            MonoCore.Core.spawnInstance = new NetMQSpawns();
+            MonoCore.Core.OnInit();
+           
+            NetMQOnIncomingChat _incChat = new NetMQOnIncomingChat();
+            _incChat.Start();
 
-            foreach(var name in result)
+            while (true)
             {
-                Console.WriteLine(name);
+                E3.Process();
+                EventProcessor.ProcessEventsInQueues();
+
+                System.Threading.Thread.Sleep(1000);
             }
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-            //so all modultes look for this flag to determine it to continue.
-            //MonoCore.Core._isProcessing = true;
-            //MonoCore.Core.mqInstance = new NetMQMQ();
-            //MonoCore.Core.OnInit();
-            //NetMQOnIncomingChat _incChat = new NetMQOnIncomingChat();
-
-            //
-
-            //_incChat.Start();
-
-        
-
-
-
-            //while (true)
-            //{
-
-            //    E3.Process();
-            //    EventProcessor.ProcessEventsInQueues();
-
-            //    System.Threading.Thread.Sleep(1000);
-            //}
-
-
 
         }
     }
@@ -83,10 +47,12 @@ namespace MQServerClient
         public TimeSpan RecieveTimeout = new TimeSpan(0, 5, 30);
         byte[] _payload = new byte[1000 * 86];
         Int32 _payloadLength = 0;
+        private static Dictionary<string, Spawn> _spawnsByName = new Dictionary<string, Spawn>(2048);
+        private static Dictionary<Int32, Spawn> _spawnsByID = new Dictionary<int, Spawn>(2048);
 
         public static List<Spawn> _spawns = new List<Spawn>(2048);
         public static Int64 _lastRefesh = 0;
-        public static Int64 _refreshTimePeriodInMS = 2000;
+        public static Int64 _refreshTimePeriodInMS = 1000;
         public NetMQSpawns()
         {
             _requestSocket = new DealerSocket();
@@ -94,6 +60,36 @@ namespace MQServerClient
             _requestSocket.Options.SendHighWatermark = 10000;
             _requestSocket.Options.ReceiveHighWatermark = 10000;
             _requestSocket.Connect("tcp://127.0.0.1:" + RemoteDebugServerConfig.NetMQRouterPort.ToString());
+        }
+        public bool TryByID(Int32 id, out Spawn s)
+        {
+            RefreshListIfNeeded();
+            return _spawnsByID.TryGetValue(id, out s);
+        }
+        public bool TryByName(string name, out Spawn s)
+        {
+            RefreshListIfNeeded();
+            return _spawnsByName.TryGetValue(name, out s);
+        }
+        public Int32 GetIDByName(string name)
+        {
+            RefreshListIfNeeded();
+            Spawn returnValue;
+            if (_spawnsByName.TryGetValue(name, out returnValue))
+            {
+                return returnValue.ID;
+            }
+            return 0;
+        }
+        public bool Contains(string name)
+        {
+            RefreshListIfNeeded();
+            return _spawnsByName.ContainsKey(name);
+        }
+        public bool Contains(Int32 id)
+        {
+            RefreshListIfNeeded();
+            return _spawnsByID.ContainsKey(id);
         }
         public IEnumerable<Spawn> Get()
         {
@@ -103,9 +99,17 @@ namespace MQServerClient
             }
             return _spawns;
         }
-
+        private void RefreshListIfNeeded()
+        {
+            if (Core._stopWatch.ElapsedMilliseconds - _lastRefesh > _refreshTimePeriodInMS)
+            {
+                RefreshList();
+            }
+        }
         private void ClearList()
         {
+            _spawnsByID.Clear();
+            _spawnsByName.Clear();
             foreach (var spawn in _spawns)
             {
                 spawn.Dispose();
@@ -188,6 +192,11 @@ namespace MQServerClient
                 }
                 _requestMsg.Close();
 
+            }
+            foreach (var spawn in _spawns)
+            {
+                _spawnsByID.Add(spawn.ID, spawn);
+                _spawnsByName.Add(spawn.Name, spawn);
             }
             //_spawns should have fresh data now!
             _lastRefesh = Core._stopWatch.ElapsedMilliseconds;
@@ -457,6 +466,14 @@ namespace MQServerClient
             {
                 Decimal value;
                 if (Decimal.TryParse(mqReturnValue, out value))
+                {
+                    return (T)(object)value;
+                }
+            }
+            else if (typeof(T) == typeof(double))
+            {
+                double value;
+                if (double.TryParse(mqReturnValue, out value))
                 {
                     return (T)(object)value;
                 }
@@ -765,6 +782,14 @@ namespace MQServerClient
             {
                 Decimal value;
                 if (Decimal.TryParse(mqReturnValue, out value))
+                {
+                    return (T)(object)value;
+                }
+            }
+            else if (typeof(T) == typeof(double))
+            {
+                double value;
+                if (double.TryParse(mqReturnValue, out value))
                 {
                     return (T)(object)value;
                 }

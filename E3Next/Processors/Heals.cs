@@ -1,4 +1,5 @@
 ﻿using E3Core.Settings;
+using MonoCore;
 using System;
 using System.Collections.Generic;
 using System.Linq;
@@ -9,7 +10,7 @@ namespace E3Core.Processors
 {
     public class Heals:BaseProcessor
     {
-        
+        public static ISpawns _spawns = E3._spawns;
         [AdvSettingInvoke]
         public static void Check_Heals() 
         { 
@@ -69,7 +70,7 @@ namespace E3Core.Processors
             //dealing with index of 1.
             Int32 currentLowestHealth = 100;
             Int32 lowestHealthTargetid = -1;
-            decimal lowestHealthTargetDistance = -1;
+            double lowestHealthTargetDistance = -1;
             for(Int32 x =1;x<=XtargetMax;x++)
             {
                 
@@ -77,7 +78,8 @@ namespace E3Core.Processors
                 Int32 targetID = MQ.Query<Int32>($"${{Me.XTarget[{x}].ID}}");
                 if (targetID > 0)
                 {
-                    decimal targetDistance = MQ.Query<decimal>($"${{Spawn[id {targetID}].Distance}}");
+                    
+                    double targetDistance = MQ.Query<double>($"${{Spawn[id {targetID}].Distance}}");
                     if(targetID<200)
                     {
                         Int32 pctHealth = MQ.Query<Int32>($"${{Me.XTarget[{x}].PctHPs}}");
@@ -215,20 +217,17 @@ namespace E3Core.Processors
 
                 foreach (var name in targets)
                 {
-                    Int32 targetID;
-                    if (healPets) 
+                    Int32 targetID=0;
+                    Spawn s;
+                    if (_spawns.TryByName(name, out s))
                     {
-                        targetID = MQ.Query<Int32>($"${{Spawn[{name}].Pet.ID}}");
-                    }
-                    else
-                    {
-                        targetID = MQ.Query<Int32>($"${{Spawn[{name}].ID}}");
+                        targetID= healPets ? s.PetID: s.ID;
                     }
                     //they are in zone and have an id
                     if (targetID > 0)
                     {
-                        decimal targetDistance = MQ.Query<decimal>($"${{Spawn[id {targetID}].Distance}}");
-                        string targetType = MQ.Query<string>($"${{Spawn[{name}].Type}}");
+                        double targetDistance = s.Distance;
+                        string targetType = s.TypeDesc;
 
                         //first lets check the distance.
                         bool inRange = false;
@@ -343,20 +342,17 @@ namespace E3Core.Processors
             {
                 foreach (var name in targets)
                 {
-                    Int32 targetID;
-                    if (healPets)
+                    Int32 targetID = 0;
+                    Spawn s;
+                    if (_spawns.TryByName(name, out s))
                     {
-                        targetID = MQ.Query<Int32>($"${{Spawn[{name}].Pet.ID}}");
-                    }
-                    else
-                    {
-                        targetID = MQ.Query<Int32>($"${{Spawn[{name}].ID}}");
+                        targetID = healPets ? s.PetID : s.ID;
                     }
                     //they are in zone and have an id
                     if (targetID > 0)
                     {
-                        decimal targetDistance = MQ.Query<decimal>($"${{Spawn[id {targetID}].Distance}}");
-                        string targetType = MQ.Query<string>($"${{Spawn[{name}].Type}}");
+                        double targetDistance = s.Distance;
+                        string targetType = s.TypeDesc;
 
                         //first lets check the distance.
                         bool inRange = false;

@@ -340,10 +340,10 @@ namespace E3Core.Data
                     RecoveryTime= MQ.Query<Decimal>($"${{Me.Inventory[{invSlot}].Spell.RecoveryTime}}");
                     MyCastTime= MQ.Query<Decimal>($"${{Me.Inventory[{invSlot}].Spell.RecoveryTime}}");
 
-                    Int32 AERange = MQ.Query<Int32>($"${{Me.Inventory[{invSlot}].Spell.AERange}}");
+                    double AERange = MQ.Query<double>($"${{Me.Inventory[{invSlot}].Spell.AERange}}");
                     MyRange = AERange;
                     if(MyRange == 0) {
-                        MyRange = MQ.Query<Decimal>($"${{Me.Inventory[{invSlot}].Spell.MyRange}}"); ;
+                        MyRange = MQ.Query<double>($"${{Me.Inventory[{invSlot}].Spell.MyRange}}"); ;
                     }
                    
                     string et = MQ.Query<String>($"${{Me.Inventory[{invSlot}].EffectType}}");
@@ -367,11 +367,11 @@ namespace E3Core.Data
                     RecoveryTime = MQ.Query<Decimal>($"${{Me.Inventory[{invSlot}].Item[{bagSlot}].Spell.RecoveryTime}}");
                     MyCastTime = MQ.Query<Decimal>($"${{Me.Inventory[{invSlot}].Item[{bagSlot}].Spell.RecoveryTime}}");
 
-                    Int32 AERange = MQ.Query<Int32>($"${{Me.Inventory[{invSlot}].Item[{bagSlot}].Spell.AERange}}");
+                    double AERange = MQ.Query<double>($"${{Me.Inventory[{invSlot}].Item[{bagSlot}].Spell.AERange}}");
                     MyRange = AERange;
                     if (MyRange == 0)
                     {
-                        MyRange = MQ.Query<Decimal>($"${{Me.Inventory[{invSlot}].Item[{bagSlot}].Spell.MyRange}}"); ;
+                        MyRange = MQ.Query<double>($"${{Me.Inventory[{invSlot}].Item[{bagSlot}].Spell.MyRange}}"); ;
                     }
 
                     string et = MQ.Query<String>($"${{Me.Inventory[{invSlot}].Item[{bagSlot}].EffectType}}");
@@ -395,11 +395,11 @@ namespace E3Core.Data
                 RecoveryTime = MQ.Query<Decimal>($"${{Me.AltAbility[{CastName}].Spell.RecoveryTime}}");
                 MyCastTime = MQ.Query<Decimal>($"${{Me.AltAbility[{CastName}].Spell.MyCastTime}}");
 
-                Int32 AERange = MQ.Query<Int32>($"${{Me.AltAbility[{CastName}].Spell.AERange}}");
+                Double AERange = MQ.Query<Double>($"${{Me.AltAbility[{CastName}].Spell.AERange}}");
                 MyRange = AERange;
                 if (MyRange == 0)
                 {
-                    MyRange = MQ.Query<Decimal>($"${{Me.AltAbility[{CastName}].Spell.MyRange}}");
+                    MyRange = MQ.Query<double>($"${{Me.AltAbility[{CastName}].Spell.MyRange}}");
                 }
                 SpellName = MQ.Query<String>($"${{Me.AltAbility[{CastName}].Spell}}");
                 SpellID = MQ.Query<Int32>($"${{Me.AltAbility[{CastName}].Spell.ID}}");
@@ -415,11 +415,11 @@ namespace E3Core.Data
                 RecoveryTime = MQ.Query<Decimal>($"${{Spell[{CastName}].RecoveryTime}}");
                 MyCastTime = MQ.Query<Decimal>($"${{Spell[{CastName}].MyCastTime}}");
 
-                Decimal AERange = MQ.Query<Decimal>($"${{Spell[{CastName}].AERange}}");
+                Double AERange = MQ.Query<Double>($"${{Spell[{CastName}].AERange}}");
                 MyRange = AERange;
                 if (MyRange == 0)
                 {
-                    MyRange = MQ.Query<Decimal>($"${{Spell[{CastName}].MyRange}}");
+                    MyRange = MQ.Query<Double>($"${{Spell[{CastName}].MyRange}}");
                 }
                 Mana = MQ.Query<Int32>($"${{Spell[{CastName}].Mana}}");
                 SpellName = CastName;
@@ -436,7 +436,7 @@ namespace E3Core.Data
                 MyRange = AERange;
                 if (MyRange == 0)
                 {
-                    MyRange = MQ.Query<Decimal>($"${{Spell[{CastName}].MyRange}}");
+                    MyRange = MQ.Query<double>($"${{Spell[{CastName}].MyRange}}");
                 }
                 SpellName = CastName;
                 SpellID = MQ.Query<Int32>($"${{Spell[{CastName}].ID}}");
@@ -494,7 +494,7 @@ namespace E3Core.Data
             }
         }
         public decimal MyCastTimeInSeconds = 0;
-        public Decimal MyRange;
+        public Double MyRange;
         public Int32 Mana;
         public Int32 MinMana;
         public Int32 MaxMana;
