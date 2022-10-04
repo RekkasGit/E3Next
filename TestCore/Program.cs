@@ -14,6 +14,73 @@ namespace TestCore
         static void Main(string[] args)
         {
 
+            ///1 AFK
+            ///1 Aggressive
+            ///1 Anonymous
+            ///4 Blind
+            ///4 BodyID
+            ///4 BodyNameLength
+            ///N BodyName
+            ///1 Buyer
+            ///4 Class.ID //uint_32t
+            ///4 CleanUpNameLength
+            ///N CleanUpName
+            /////4 ConColorID //do the string part in C#
+            ///4 CurrentEndurance
+            ///4 CurrentHPs
+            ///4 CurrentMana
+            ///1 Dead
+            ///4 DisplayNameLength
+            ///N DisplayName
+            /////4 Distance //Do this on the C# size, method GetDistance()
+            ///1 Ducking
+            ///1 Feigning 
+            /////1 Fleeing //looks expensive, skip
+            ///4 GenderID .// do string matching in c# male, female, neuter, uknown. 
+            ///1 GM
+            ///4 GuildID
+            ///4 Heading.Degrees
+            ///4 Height //keep as float
+            ///4 ID
+            ///1 Invs //1,2,3,4 values
+            ///1 IsSummoned
+            ///4 Level
+            /////1 LineOfSight //this is really expensive should be an indiviual call not on EVERYTHING
+            ///1 LinkDead
+            ///4 Look
+            /////4 Mark //looks expensive
+            ///4 MasterID
+            ///4 MaxEndurance
+            ///4 MaxRanage //keep as float?
+            ///4 MaxRangeTo //keep as float?
+            ///1 Mount //true/false
+            ///1 Moving
+            ///2 NameLength
+            ///N Name
+            ///1 Named
+            ///8 PctHps
+            ///8 PctMana
+            ///4 PetID
+            ///4 PlayerState
+            ///4 RaceID
+            ///4 raceNameLength
+            ///N raceName
+            ///1 Roleplaying
+            ///1 Sitting
+            ///1 Sneaking
+            ///1 Standing
+            ///1 Stunned
+            ///2 SuffixLength
+            ///N Suffix
+            ///1 Targetable
+            ///4 TargetOfTargetID
+            ///1 Trader
+            ///2 TypeLength
+            ///N Type
+            ///1 Underwater
+            ///4 X
+            ///4 Y
+            ///4 Z
 
 
             var mq = new MoqMQ();
@@ -120,6 +187,11 @@ namespace TestCore
 
                 return default(T);
 
+            }
+
+            public void RemoveCommand(string commandName)
+            {
+                Console.Write("RemoveCommand:" + commandName);
             }
 
             public void TraceEnd(string methodName)

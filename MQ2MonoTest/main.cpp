@@ -150,6 +150,7 @@ inline bool ci_ends_with(std::string_view a, std::string_view b)
 
 struct monoAppDomainInfo
 {
+	std::string m_appDomainName;
 	//app domain we have created for e3
 	MonoDomain* m_appDomain = nullptr;
 	//core.dll information so we can bind to it
@@ -163,6 +164,10 @@ struct monoAppDomainInfo
 	MonoMethod* m_OnIncomingChat = nullptr;
 	MonoMethod* m_OnInit = nullptr;
 	MonoMethod* m_OnUpdateImGui = nullptr;
+	MonoMethod* m_OnStop = nullptr;
+	MonoMethod* m_OnCommand = nullptr;
+	MonoMethod* m_OnSetSpawns = nullptr;
+
 	std::map<std::string, bool> m_IMGUI_OpenWindows;
 	std::map<std::string, bool> m_IMGUI_CheckboxValues;
 	std::map<std::string, bool> m_IMGUI_RadioButtonValues;
@@ -170,17 +175,63 @@ struct monoAppDomainInfo
 	bool m_IMGUI_Open = true;
 	int m_delayTime = 0;//amount of time in milliseonds that was set by C#
 	std::chrono::steady_clock::time_point m_delayTimer = std::chrono::steady_clock::now(); //the time this was issued + m_delayTime
+	std::deque<std::string> m_CommandList;
+	void AddCommand(std::string commandName)
+	{
+		
+	}
+	void RemoveCommand(std::string command)
+	{
+		
+	}
+	void ClearCommands()
+	{
+	
+
+	}
+
 };
 std::map<std::string, monoAppDomainInfo> mqAppDomains;
 std::map<MonoDomain*, std::string> mqAppDomainPtrToString;
 std::deque<std::string> appDomainProcessQueue;
 
+static void mono_AddCommand(MonoString* text)
+{
+	char* cppString = mono_string_to_utf8(text);
+	std::string str(cppString);
+	mono_free(cppString);
+	MonoDomain* currentDomain = mono_domain_get();
+
+	if (currentDomain)
+	{
+		
+	}
+}
+static void mono_ClearCommands()
+{
+	MonoDomain* currentDomain = mono_domain_get();
+
+	if (currentDomain)
+	{
+		
+	}
+}
+static void mono_RemoveCommand(MonoString* text)
+{
+	char* cppString = mono_string_to_utf8(text);
+	std::string str(cppString);
+	mono_free(cppString);
+	MonoDomain* currentDomain = mono_domain_get();
+
+	if (currentDomain)
+	{
+	
+	}
+}
 void mono_Echo(MonoString* string)
 {
 	char* cppString = mono_string_to_utf8(string);
-
 	std::cout << cppString << std::endl;
-
 	mono_free(cppString);
 }
 static MonoString* mono_ParseTLO(MonoString* text)
@@ -318,10 +369,63 @@ std::string get_current_dir() {
 }
 
 
+static void mono_GetSpawns()
+{
+	MonoDomain* currentDomain = mono_domain_get();
+	if (currentDomain)
+	{
+		std::string key = mqAppDomainPtrToString[currentDomain];
+		//pointer to the value in the map
+		auto& domainInfo = mqAppDomains[key];
+		unsigned char buffer[1024];
+		buffer[0] = 'H';
+		buffer[1] = 'I';
+		buffer[2] = ' ';
+		buffer[3] = 'T';
+		buffer[4] = 'H';
+		buffer[5] = 'E';
+		buffer[6] = 'R';
+		buffer[7] = 'E';
+		int bufferSize = 8;
+		if (!domainInfo.m_OnSetSpawns)
+		{
+			return;
+			
+		}
+		//assuming I cannot reuse this as there is no free once you call the invoke
+		MonoArray* data = mono_array_new(currentDomain, mono_get_byte_class(), sizeof(buffer));
+		//copy over the array
+		for (auto i = 0; i < bufferSize; i++) {
+			mono_array_set(data, unsigned char, i, buffer[i]);
+		}
+		void* params[2] =
+		{
+			data,
+			&bufferSize
+		};
+		mono_runtime_invoke(domainInfo.m_OnSetSpawns, domainInfo.m_classInstance, params, nullptr);
+
+		buffer[0] = 'Y';
+		buffer[1] = 'O';
+		buffer[2] = ' ';
+		buffer[3] = 'T';
+		buffer[4] = 'H';
+		buffer[5] = 'E';
+		buffer[6] = 'R';
+		buffer[7] = 'E';
+
+		for (auto i = 0; i < bufferSize; i++) {
+			mono_array_set(data, unsigned char, i, buffer[i]);
+		}
+		mono_runtime_invoke(domainInfo.m_OnSetSpawns, domainInfo.m_classInstance, params, nullptr);
+
+		//do domnain lookup via its pointer
+	}
+}
 
 void InitMono()
 {
-	std::string str("EmbeddingMono\\");
+	std::string str("MQ2MonoSharp\\");
 	currentDirectory=get_current_dir();
 	std::size_t found = currentDirectory.find(str);
 	//Indicate Mono where you installed the lib and etc folders
@@ -329,7 +433,7 @@ void InitMono()
 
 	if (found != std::string::npos)
 	{
-		currentDirectory.erase(found + 13);
+		currentDirectory.erase(found + 12);
 	}
 	//Indicate Mono where you installed the lib and etc folders
 	std::cout << "CurrentDirectory:" << currentDirectory << std::endl;
@@ -351,7 +455,10 @@ void InitMono()
 	mono_add_internal_call("MonoCore.Core::mq_ParseTLO", &mono_ParseTLO);
 	mono_add_internal_call("MonoCore.Core::mq_DoCommand", &mono_DoCommand);
 	mono_add_internal_call("MonoCore.Core::mq_Delay", &mono_Delay);
-
+	mono_add_internal_call("MonoCore.Core::mq_AddCommand", &mono_AddCommand);
+	mono_add_internal_call("MonoCore.Core::mq_ClearCommands", &mono_ClearCommands);
+	mono_add_internal_call("MonoCore.Core::mq_RemoveCommand", &mono_RemoveCommand);
+	mono_add_internal_call("MonoCore.Core::mq_GetSpawns", &mono_GetSpawns);
 
 
 	//I'm GUI stuff
@@ -426,7 +533,10 @@ void InitE3()
 	MonoMethod* OnWriteChatColor;
 	MonoMethod* OnIncomingChat;
 	MonoMethod* OnInit;
+	MonoMethod* OnStop;
+	MonoMethod* OnCommand;
 	MonoMethod* OnUpdateImGui;
+	MonoMethod* OnSetSpawns;
 	std::map<std::string, bool> IMGUI_OpenWindows;
 
 	//everything below needs to be moved out to a per application run
@@ -435,7 +545,7 @@ void InitE3()
 
 
 	std::string fileName = "Core.dll";
-	std::string assemblypath = (currentDirectory + "\\MQServer\\bin\\Debug\\");
+	std::string assemblypath = (currentDirectory + "\\E3Next\\bin\\Debug\\");
 
 	bool filepathExists = std::filesystem::exists(assemblypath+fileName);
 
@@ -467,11 +577,15 @@ void InitE3()
 	OnWriteChatColor = mono_class_get_method_from_name(classInfo, "OnWriteChatColor", 1);
 	OnIncomingChat = mono_class_get_method_from_name(classInfo, "OnIncomingChat", 1);
 	OnInit = mono_class_get_method_from_name(classInfo, "OnInit", 0);
+	OnStop = mono_class_get_method_from_name(classInfo, "OnStop", 0);
 	OnUpdateImGui = mono_class_get_method_from_name(classInfo, "OnUpdateImGui", 0);
+	OnCommand = mono_class_get_method_from_name(classInfo, "OnCommand", 1);
+	OnSetSpawns = mono_class_get_method_from_name(classInfo, "OnSetSpawns", 2);
 
 	//add it to the collection
 
 	monoAppDomainInfo domainInfo;
+	domainInfo.m_appDomainName = appDomainName;
 	domainInfo.m_appDomain = appDomain;
 	domainInfo.m_csharpAssembly = csharpAssembly;
 	domainInfo.m_coreAssemblyImage = coreAssemblyImage;
@@ -479,9 +593,12 @@ void InitE3()
 	domainInfo.m_classInstance = classInstance;
 	domainInfo.m_OnPulseMethod = OnPulseMethod;
 	domainInfo.m_OnWriteChatColor = OnWriteChatColor;
+	domainInfo.m_OnIncomingChat = OnIncomingChat;
 	domainInfo.m_OnInit = OnInit;
+	domainInfo.m_OnStop = OnStop;
 	domainInfo.m_OnUpdateImGui = OnUpdateImGui;
-
+	domainInfo.m_OnCommand = OnCommand;
+	domainInfo.m_OnSetSpawns = OnSetSpawns;
 
 	mqAppDomains[appDomainName] = domainInfo;
 	mqAppDomainPtrToString[appDomain] = appDomainName;
@@ -503,12 +620,7 @@ void InitE3()
 int main()
 {
 
-
 	InitMono();
-
-	
-
-
 	
 	//simulate the onPulse from C++
 	while (true)

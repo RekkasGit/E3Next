@@ -9,6 +9,7 @@ using System.Diagnostics;
 using System.Collections.Concurrent;
 using System.Text.RegularExpressions;
 using E3Core.Processors;
+using System.Runtime.InteropServices;
 
 /// <summary>
 /// Version 0.1
@@ -44,6 +45,7 @@ namespace MonoCore
         public static Int64 _totalProcessingCounts;
         private static Double _startLoopTime;
         private static Double _totalLoopTime;
+        private static ISpawns _spawn;
         public static void Init()
         {
 
@@ -52,7 +54,7 @@ namespace MonoCore
             //Logging._currentLogLevel = Logging.LogLevels.None; //log level we are currently at
             //Logging._minLogLevelTolog = Logging.LogLevels.Error; //log levels have integers assoicatd to them. you can set this to Error to only log errors. 
             //Logging._defaultLogLevel = Logging.LogLevels.None; //the default if a level is not passed into the _log.write statement. useful to hide/show things.
-
+            _spawn = new Spawns();
 
         }
         //we use this to tell the C++ thread that its okay to start processing gain
@@ -70,7 +72,7 @@ namespace MonoCore
             //volatile variable, will eventually update to kill the thread on shutdown
             while (Core._isProcessing)
             {
-                _startLoopTime= Core._stopWatch.Elapsed.TotalMilliseconds;
+                _startLoopTime = Core._stopWatch.Elapsed.TotalMilliseconds;
                 _processingCounts++;
                 _totalProcessingCounts++;
                 try
@@ -78,7 +80,9 @@ namespace MonoCore
                     //MQ.TraceStart("Process");
                     using (_log.Trace())
                     {
-                    
+
+                        _spawn.RefreshList();
+
                         //************************************************
                         //DO YOUR WORK HERE
                         //this loop executes once every OnPulse from C++
@@ -87,7 +91,7 @@ namespace MonoCore
                         //boiler plate code with all the threading.
 
                         ////MQ.Write("Calling e3process");
-                        E3.Process();
+                        //E3.Process();
                         ////***NOTE NOTE NOTE, Use M2.Delay(0) in your code to give control back to EQ if you have taken awhile in doing something
                         ////***NOTE NOTE NOTE, generally this isn't needed as there is an auto yield baked into every MQ method. Just be aware.
                         using (_log.Trace("EventProcessing"))
@@ -107,16 +111,16 @@ namespace MonoCore
                     //every 5 seconds, print out the # processed and average time.
                     if ((Core._stopWatch.ElapsedMilliseconds > (_startTimeStamp + 5000)))
                     {
-                    
-                      
-                        MQ.Write($"Total Count:{_totalProcessingCounts}, Total this cycle {_processingCounts} average time {_totalLoopTime/_processingCounts}ms");
+
+
+                        MQ.Write($"Total Count:{_totalProcessingCounts}, Total this cycle {_processingCounts} average time {_totalLoopTime / _processingCounts}ms");
                         _startTimeStamp = Core._stopWatch.ElapsedMilliseconds;
                         _processingCounts = 0;
                         _totalLoopTime = 0;
                     }
 
                 }
-                catch(Exception ex)
+                catch (Exception ex)
                 {
                     _log.Write("Error: Please reload. Terminating. \r\nExceptionMessage:" + ex.Message + " stack:" + ex.StackTrace.ToString(), Logging.LogLevels.CriticalError);
                     Core._isProcessing = false;
@@ -124,7 +128,7 @@ namespace MonoCore
                     //test
                     Core._coreResetEvent.Set();
                     //we perma exit this thread loop a full reload will be necessary
-                    return; 
+                    return;
                 }
 
                 //SET YOUR MACRO DELAY HERE
@@ -168,8 +172,8 @@ namespace MonoCore
         private static Boolean _isInit = false;
         public static void Init()
         {
-            if(!_isInit)
-            {   
+            if (!_isInit)
+            {
                 _regExProcessingTask = Task.Factory.StartNew(() => { ProcessEventsIntoQueues(); }, CancellationToken.None, TaskCreationOptions.DenyChildAttach, TaskScheduler.Default);
                 _isInit = true;
             }
@@ -190,40 +194,40 @@ namespace MonoCore
                     if (_eventProcessingQueue.TryDequeue(out line))
                     {
                         foreach (var item in _eventList)
-                        {   
+                        {
                             //prevent spamming of an event to a user
                             if (item.Value.queuedEvents.Count > _eventLimiterPerRegisteredEvent)
                             {
                                 continue;
                             }
-                            foreach(var regex in item.Value.regexs)
+                            foreach (var regex in item.Value.regexs)
                             {
                                 var match = regex.Match(line);
                                 if (match.Success)
                                 {
-                                 
+
                                     item.Value.queuedEvents.Enqueue(new EventMatch() { eventName = item.Value.keyName, eventString = line, match = match });
-                                 
+
                                     break;
                                 }
                             }
-                          
+
                         }
 
                     }
                 }
-                else if(_mqEventProcessingQueue.Count > 0)
+                else if (_mqEventProcessingQueue.Count > 0)
                 {
                     //have to be careful here and process out anything that isn't boxchat or dannet.
                     string line;
                     if (_mqEventProcessingQueue.TryDequeue(out line))
                     {
-                        if(line.StartsWith("["))
+                        if (line.StartsWith("["))
                         {
                             Int32 indexOfApp = line.IndexOf(MainProcessor._applicationName);
                             if (indexOfApp == 1)
                             {
-                                if(line.IndexOf("]")==MainProcessor._applicationName.Length+1)
+                                if (line.IndexOf("]") == MainProcessor._applicationName.Length + 1)
                                 {
                                     //this starts with [appname], ignore it. 
                                     goto skipLine;
@@ -232,7 +236,7 @@ namespace MonoCore
                                 {
                                     goto processLine;
                                 }
-                               
+
                             }
                         }
                         processLine:
@@ -257,7 +261,7 @@ namespace MonoCore
                             }
 
                         }
-                      
+
                     }
                     skipLine:
                     continue;
@@ -267,8 +271,8 @@ namespace MonoCore
                     //have to be careful here and process out anything that isn't boxchat or dannet.
                     string line;
                     if (_mqCommandProcessingQueue.TryDequeue(out line))
-                    {   
-                        if(!String.IsNullOrWhiteSpace(line))
+                    {
+                        if (!String.IsNullOrWhiteSpace(line))
                         {
                             foreach (var item in _commandList)
                             {
@@ -283,11 +287,11 @@ namespace MonoCore
                                     //need to split out the params
                                     List<String> args = line.Split(' ').ToList();
                                     args.RemoveAt(0);
-                                    item.Value.queuedEvents.Enqueue(new CommandMatch() { eventName = item.Value.keyName, eventString = line, args=args });
+                                    item.Value.queuedEvents.Enqueue(new CommandMatch() { eventName = item.Value.keyName, eventString = line, args = args });
                                 }
                             }
                         }
-                       
+
                     }
                 }
                 else
@@ -357,7 +361,7 @@ namespace MonoCore
         {
             //to prevent spams
             if (_eventList.Count > 0)
-            { 
+            {
                 _eventProcessingQueue.Enqueue(line);
             }
 
@@ -419,27 +423,36 @@ namespace MonoCore
             public Match match;
             public string eventName;
         }
-        public static void RegisterCommand(string commandName,Action<CommandMatch> method)
+        public static void RegisterCommand(string commandName, Action<CommandMatch> method)
         {
             CommandListItem c = new CommandListItem();
             c.command = commandName;
             c.method = method;
             c.keyName = commandName;
-           
 
 
-            if(_commandList.TryAdd(commandName, c))
+
+            if (_commandList.TryAdd(commandName, c))
             {
                 //now to register the command over.
                 Core.mqInstance.AddCommand(commandName);
             }
-            
+
+        }
+        public static void UnRegisterCommand(string commandName)
+        {
+            CommandListItem c;
+            if (_commandList.TryRemove(commandName, out c))
+            {
+                Core.mqInstance.RemoveCommand(commandName);
+            }
+
         }
         public static void RegisterEvent(string keyName, string pattern, Action<EventMatch> method)
         {
             EventListItem eventToAdd = new EventListItem();
             eventToAdd.regexs = new List<Regex>();
-            
+
             eventToAdd.regexs.Add(new System.Text.RegularExpressions.Regex(pattern));
             eventToAdd.method = method;
             eventToAdd.keyName = keyName;
@@ -472,7 +485,7 @@ namespace MonoCore
         public static Logging _log;
         public volatile static bool _isProcessing = false;
         public const string _coreVersion = "0.1";
-       
+
 
         //Note, if you comment out a method, this will tell MQ2Mono to not try and execute it
         //only use the events you need to prevent string allocations to be passed in
@@ -515,14 +528,14 @@ namespace MonoCore
 
         public static void OnInit()
         {
-           
+
 
             if (!_isInit)
             {
-                if(mqInstance==null)
+                if (mqInstance == null)
                 {
                     mqInstance = new MQ();
-                } 
+                }
                 _log = new Logging(mqInstance);
                 _stopWatch.Start();
                 //do all necessary setups here
@@ -550,7 +563,7 @@ namespace MonoCore
         }
         public static void OnPulse()
         {
-           
+
             if (!_isProcessing) return;
             //reset the last delay so we restart the procssing time since its a new OnPulse()
             MQ._sinceLastDelay = _stopWatch.ElapsedMilliseconds;
@@ -610,7 +623,7 @@ namespace MonoCore
             }
             if (_currentDelay > 0)
             {
-               // Core.mq_Echo("Unblocked on C++:: Doing a Delay");
+                // Core.mq_Echo("Unblocked on C++:: Doing a Delay");
                 Core.mq_Delay(_currentDelay);
                 _currentDelay = 0;
             }
@@ -630,19 +643,33 @@ namespace MonoCore
         }
         public static void OnIncomingChat(string line)
         {
-           EventProcessor.ProcessEvent(line);
+            EventProcessor.ProcessEvent(line);
         }
-       
+        public static void OnSetSpawns(byte[] data, int size)
+        {
+            Core.mq_Echo("OnSpawn recieved, size:" + size);
+
+            string value = System.Text.Encoding.ASCII.GetString(data,0,size);
+
+            Core.mq_Echo("OnSpawn recieved. value:" + value);
+
+            var spawn = Spawn.Aquire();
+            spawn.Init(data, size);
+            Spawns._spawns.Add(spawn);
+            //copy the data out into the current array set. 
+
+        }
+
         public static void OnUpdateImGui()
         {
 
-            if(imgui_Begin_OpenFlagGet("e3TestWindow"))
+            if (imgui_Begin_OpenFlagGet("e3TestWindow"))
             {
                 imgui_Begin("e3TestWindow", (int)ImGuiWindowFlags.ImGuiWindowFlags_None);
                 imgui_Button("Test button");
                 imgui_End();
             }
-           
+
 
         }
 
@@ -659,9 +686,13 @@ namespace MonoCore
         public extern static void mq_AddCommand(string command);
         [MethodImpl(MethodImplOptions.InternalCall)]
         public extern static void mq_ClearCommands();
+        [MethodImpl(MethodImplOptions.InternalCall)]
+        public extern static void mq_RemoveCommand(string command);
+        [MethodImpl(MethodImplOptions.InternalCall)]
+        public extern static void mq_GetSpawns();
         #region IMGUI
         [MethodImpl(MethodImplOptions.InternalCall)]
-        public extern static bool imgui_Begin(string name,int flags);
+        public extern static bool imgui_Begin(string name, int flags);
         [MethodImpl(MethodImplOptions.InternalCall)]
         public extern static void imgui_Begin_OpenFlagSet(string name, bool value);
         [MethodImpl(MethodImplOptions.InternalCall)]
@@ -674,6 +705,10 @@ namespace MonoCore
         #endregion
 
     }
+
+
+
+
     enum ImGuiWindowFlags
     {
         ImGuiWindowFlags_None = 0,
@@ -728,9 +763,10 @@ namespace MonoCore
         void Broadcast(string query);
         void AddCommand(string query);
         void ClearCommands();
+        void RemoveCommand(string commandName);
 
     }
-    public class MQ:IMQ
+    public class MQ : IMQ
     {   //**************************************************************************************************
         //NONE OF THESE METHODS SHOULD BE CALLED ON THE C++ Thread, as it will cause a deadlock due to delay calls
         //**************************************************************************************************
@@ -746,13 +782,13 @@ namespace MonoCore
 
 
             if (_maxMillisecondsToWork < differenceTime)
-            {  
+            {
                 Delay(0);
             }
             string mqReturnValue = Core.mq_ParseTLO(query);
             if (typeof(T) == typeof(Int32))
             {
-                if(!mqReturnValue.Contains("."))
+                if (!mqReturnValue.Contains("."))
                 {
                     Int32 value;
                     if (Int32.TryParse(mqReturnValue, out value))
@@ -763,7 +799,7 @@ namespace MonoCore
                 else
                 {
                     Decimal value;
-                    if(decimal.TryParse(mqReturnValue, out value))
+                    if (decimal.TryParse(mqReturnValue, out value))
                     {
                         return (T)(object)value;
                     }
@@ -862,6 +898,7 @@ namespace MonoCore
             Cmd($"/bc {query}");
         }
 
+
         public void Write(string query, [CallerMemberName] string memberName = "", [CallerFilePath] string fileName = "", [CallerLineNumber] int lineNumber = 0)
         {
             //if(String.IsNullOrWhiteSpace(query))
@@ -938,6 +975,10 @@ namespace MonoCore
         {
             Core.mq_ClearCommands();
         }
+        public void RemoveCommand(string commandName)
+        {
+            Core.mq_RemoveCommand(commandName);
+        }
 
     }
 
@@ -964,7 +1005,7 @@ namespace MonoCore
             WriteStatic(message, logLevel, eventName, memberName, fileName, lineNumber, headers);
 
         }
-       
+
         public static void WriteStatic(string message, LogLevels logLevel = LogLevels.Info, string eventName = "Logging", [CallerMemberName] string memberName = "", [CallerFilePath] string fileName = "", [CallerLineNumber] int lineNumber = 0, Dictionary<String, String> headers = null)
         {
             if ((Int32)logLevel < (Int32)_minLogLevelTolog)
@@ -972,8 +1013,8 @@ namespace MonoCore
                 return;//log level is too low to currently log. 
             }
 
-          
-           
+
+
             string className = GetClassName(fileName);
 
             if (logLevel == LogLevels.CriticalError)
@@ -981,9 +1022,9 @@ namespace MonoCore
                 eventName += "._CriticalError_";
             }
 
-            if(logLevel == LogLevels.Debug)
+            if (logLevel == LogLevels.Debug)
             {
-                MQ.Write($"{className}:{memberName}:({lineNumber}) {message}","","Logging");
+                MQ.Write($"{className}:{memberName}:({lineNumber}) {message}", "", "Logging");
 
             }
             else
@@ -992,12 +1033,12 @@ namespace MonoCore
             }
 
         }
-        public ITrace Trace(string name="",[CallerMemberName] string memberName = "", [CallerFilePath] string fileName = "", [CallerLineNumber] int lineNumber = 0)
+        public ITrace Trace(string name = "", [CallerMemberName] string memberName = "", [CallerFilePath] string fileName = "", [CallerLineNumber] int lineNumber = 0)
         {
 
             BaseTrace returnValue = BaseTrace.Aquire();
-           
-            if (_traceLogLevel!= LogLevels.Trace)
+
+            if (_traceLogLevel != LogLevels.Trace)
             {
                 //if not debugging don't log stuff
                 returnValue.CallBackDispose = TraceSetTime;
@@ -1009,7 +1050,7 @@ namespace MonoCore
             returnValue.Method = memberName;
             returnValue.CallBackDispose = TraceSetTime;
             returnValue.Name = name;
-            
+
             //done at the very last of this
             returnValue.StartTime = Core._stopWatch.Elapsed.TotalMilliseconds;
             if (!string.IsNullOrWhiteSpace(name))
@@ -1020,7 +1061,7 @@ namespace MonoCore
             {
                 MQ.TraceStart(memberName);
             }
-           
+
             return returnValue;
 
         }
@@ -1030,16 +1071,16 @@ namespace MonoCore
             //done first!
             totalMilliseconds = Core._stopWatch.Elapsed.TotalMilliseconds - value.StartTime;
             //put event back into its object pool.
-            if(!string.IsNullOrWhiteSpace(value.Method))
+            if (!string.IsNullOrWhiteSpace(value.Method))
             {
                 MQ.TraceEnd($"{value.Name}:{value.Method}({totalMilliseconds}ms)");
             }
-          
+
         }
         public enum LogLevels
         {
             None = 0,
-            Trace=2000,
+            Trace = 2000,
             Debug = 30000,
             Info = 40000,
             Error = 70000,
@@ -1068,7 +1109,7 @@ namespace MonoCore
             return className;
         }
         public interface ITrace : IDisposable
-        {   
+        {
             String Name { get; set; }
             Int64 MetricID { get; set; }
             Double Value { get; set; }
@@ -1082,7 +1123,7 @@ namespace MonoCore
         {
             public string Name { get; set; }
             public Int64 MetricID { get; set; }
-           
+
             public Double Value { get; set; }
             public Double StartTime { get; set; }
             public Action<ITrace> CallBackDispose { get; set; }
@@ -1091,11 +1132,11 @@ namespace MonoCore
             public LogLevels LogLevel { get; set; }
 
             #region objectPoolingStuff
-           
+
 
             //private constructor, needs to be created so that you are forced to use the pool.
             private BaseTrace() {
-               
+
             }
 
 
@@ -1106,7 +1147,7 @@ namespace MonoCore
                 {
                     obj = new BaseTrace();
                 }
-               
+
                 return obj;
             }
 
@@ -1137,13 +1178,13 @@ namespace MonoCore
                 //DO NOT CALL DISPOSE FROM THE FINALIZER! This should only ever be used in using statements
                 //if this is called, it will cause the domain to hang in the GC when shuttind down
                 //This is only here to warn you
-                
+
             }
 
             #endregion
         }
     }
-   
+
     public static class StaticObjectPool
     {
         private static class Pool<T>
@@ -1262,4 +1303,916 @@ namespace MonoCore
             return false;
         }
     }
+
+
+    public interface ISpawns
+    {
+
+        IEnumerable<Spawn> Get();
+        void RefreshList();
+
+    }
+
+    public class Spawns: ISpawns
+    {
+
+        public static List<Spawn> _spawns = new List<Spawn>(2048);
+        public static Int64 _lastRefesh = 0;
+        public static Int64 _refreshTimePeriodInMS = 5000000;
+        public IEnumerable<Spawn> Get()
+        {
+            if(Core._stopWatch.ElapsedMilliseconds - _lastRefesh > _refreshTimePeriodInMS)
+            {
+                RefreshList();
+            }
+            return _spawns;
+        }
+
+        private void ClearList()
+        {
+            foreach (var spawn in _spawns)
+            {
+                spawn.Dispose();
+            }
+            _spawns.Clear();
+        }
+        public void RefreshList()
+        {
+            ClearList();
+            //request new spawns!
+            Core.mq_GetSpawns();
+            //_spawns should have fresh data now!
+            _lastRefesh = Core._stopWatch.ElapsedMilliseconds;
+
+        }
+    }
+
+    public class Spawn: IDisposable
+    {
+        public byte[] _data = new byte[1024];
+        public Int32 _dataSize;
+        public static Spawn Aquire()
+        {
+            Spawn obj;
+            if (!StaticObjectPool.TryPop<Spawn>(out obj))
+            {
+                obj = new Spawn();
+            }
+
+            return obj;
+        }
+
+        static Dictionary<string, string> _stringLookup = new Dictionary<string, string>();
+       
+        public void Init(byte[] data, Int32 length)
+        {
+            //used for remote debug, to send the representastion of the data over.
+            System.Buffer.BlockCopy(data, 0, _data, 0, length);
+            _dataSize = length;
+            //end of remote debug
+        
+            Int32 cb = 0;
+            AFK = BitConverter.ToBoolean(data, cb);
+            cb += 1;
+            Aggressive = BitConverter.ToBoolean(data, cb);
+            cb += 1;
+            Anonymous = BitConverter.ToBoolean(data, cb);
+            cb += 1;
+            Blind = BitConverter.ToInt32(data, cb);
+            cb += 4;
+            BodyTypeID = BitConverter.ToInt32(data, cb);
+            cb += 4;
+            //bodytype desc
+            int slength = BitConverter.ToInt32(data, cb);
+            cb += 4;
+            //to prevent GC from chruning from destroying long lived string, keep a small collection of them
+            //change to byte key based dictionary for even better?
+            string tstring = System.Text.Encoding.ASCII.GetString(data, cb, slength);
+            if (!_stringLookup.TryGetValue(tstring, out BodyTypeDesc))
+            {
+                _stringLookup.Add(tstring, tstring);
+                BodyTypeDesc = tstring;
+            }
+            cb += slength;
+            Buyer = BitConverter.ToBoolean(data, cb);
+            cb += 1;
+            ClassID= BitConverter.ToInt32(data, cb);
+            cb += 4;
+            //cleanname
+            slength = BitConverter.ToInt32(data, cb);
+            cb += 4;
+            tstring = System.Text.Encoding.ASCII.GetString(data, cb, slength);
+            if(!_stringLookup.TryGetValue(tstring,out CleanName))
+            {
+                _stringLookup.Add(tstring, tstring);
+                CleanName = tstring;
+            }
+            cb += slength;
+            ConColorID = BitConverter.ToInt32(data, cb);
+            cb += 4;
+            CurrentEndurnace = BitConverter.ToInt32(data, cb);
+            cb += 4;
+            CurrentHPs = BitConverter.ToInt32(data, cb);
+            cb += 4;
+            CurrentMana = BitConverter.ToInt32(data, cb);
+            cb += 4;
+            Dead = BitConverter.ToBoolean(data, cb);
+            cb += 1;
+            //displayname
+            slength = BitConverter.ToInt32(data, cb);
+            cb += 4;
+            tstring = System.Text.Encoding.ASCII.GetString(data, cb, slength);
+            if (!_stringLookup.TryGetValue(tstring, out DiplayName))
+            {
+                _stringLookup.Add(tstring, tstring);
+                DiplayName = tstring;
+            }
+            cb += slength;
+            Ducking = BitConverter.ToBoolean(data, cb);
+            cb += 1;
+            Feigning = BitConverter.ToBoolean(data, cb);
+            cb += 1;
+            GenderID = BitConverter.ToInt32(data, cb);
+            cb += 4;
+            GM = BitConverter.ToBoolean(data, cb);
+            cb += 1;
+            GuildID = BitConverter.ToInt32(data, cb);
+            cb += 4;
+            Heading = BitConverter.ToSingle(data, cb);
+            cb += 4;
+            Height = BitConverter.ToSingle(data, cb);
+            cb += 4;
+            ID = BitConverter.ToInt32(data, cb);
+            cb += 4;
+            Invis = BitConverter.ToBoolean(data, cb);
+            cb += 1;
+            IsSummoned = BitConverter.ToBoolean(data, cb);
+            cb += 1;
+            Level = BitConverter.ToInt32(data, cb);
+            cb += 4;
+            Levitate = BitConverter.ToBoolean(data, cb);
+            cb += 1;
+            Linkdead = BitConverter.ToBoolean(data, cb);
+            cb += 1;
+            Look = BitConverter.ToSingle(data, cb);
+            cb += 4;
+            MasterID = BitConverter.ToInt32(data, cb);
+            cb += 4;
+            MaxEndurance = BitConverter.ToInt32(data, cb);
+            cb += 4;
+            MaxRange = BitConverter.ToSingle(data, cb);
+            cb += 4;
+            MaxRangeTo = BitConverter.ToSingle(data, cb);
+            cb += 4;
+            Mount = BitConverter.ToBoolean(data, cb);
+            cb += 1;
+            Moving = BitConverter.ToBoolean(data, cb);
+            cb += 1;
+            //name
+            slength = BitConverter.ToInt32(data, cb);
+            cb += 4;
+            tstring = System.Text.Encoding.ASCII.GetString(data, cb, slength);
+            if (!_stringLookup.TryGetValue(tstring, out Name))
+            {
+                _stringLookup.Add(tstring, tstring);
+                Name = tstring;
+            }
+            cb += slength;
+            Named = BitConverter.ToBoolean(data, cb);
+            cb += 1;
+            PctHps = BitConverter.ToInt32(data, cb);
+            cb += 4;
+            PctMana = BitConverter.ToInt32(data, cb);
+            cb += 4;
+            PetID = BitConverter.ToInt32(data, cb);
+            cb += 4;
+            PlayerState = BitConverter.ToInt32(data, cb);
+            cb += 4;
+            RaceID = BitConverter.ToInt32(data, cb);
+            cb += 4;
+            //RaceName
+            slength = BitConverter.ToInt32(data, cb);
+            cb += 4;
+            tstring = System.Text.Encoding.ASCII.GetString(data, cb, slength);
+            if (!_stringLookup.TryGetValue(tstring, out RaceName))
+            {
+                _stringLookup.Add(tstring, tstring);
+                RaceName = tstring;
+            }
+            cb += slength;
+            RolePlaying = BitConverter.ToBoolean(data, cb);
+            cb += 1;
+            Sitting = BitConverter.ToBoolean(data, cb);
+            cb += 1;
+            Sneaking = BitConverter.ToBoolean(data, cb);
+            cb += 1;
+            Standing = BitConverter.ToBoolean(data, cb);
+            cb += 1;
+            Stunned = BitConverter.ToBoolean(data, cb);
+            cb += 1;
+            //Suffix
+            slength = BitConverter.ToInt32(data, cb);
+            cb += 4;
+            tstring = System.Text.Encoding.ASCII.GetString(data, cb, slength);
+            if (!_stringLookup.TryGetValue(tstring, out Suffix))
+            {
+                _stringLookup.Add(tstring, tstring);
+                Suffix = tstring;
+            }
+            cb += slength;
+            Targetable = BitConverter.ToBoolean(data, cb);
+            cb += 1;
+            TargetOfTargetID = BitConverter.ToInt32(data, cb);
+            cb += 4;
+            Trader = BitConverter.ToBoolean(data, cb);
+            cb += 1;
+            //TypeDesc
+            slength = BitConverter.ToInt32(data, cb);
+            cb += 4;
+            tstring = System.Text.Encoding.ASCII.GetString(data, cb, slength);
+            if (!_stringLookup.TryGetValue(tstring, out TypeDesc))
+            {
+                _stringLookup.Add(tstring, tstring);
+                TypeDesc = tstring;
+            }
+            cb += slength;
+            Underwater = BitConverter.ToBoolean(data, cb);
+            cb += 1;
+            X = BitConverter.ToSingle(data, cb);
+            cb += 4;
+            Y = BitConverter.ToSingle(data, cb);
+            cb += 4;
+            Z = BitConverter.ToSingle(data, cb);
+            cb += 4;
+            playerX = BitConverter.ToSingle(data, cb);
+            cb += 4;
+            playerY = BitConverter.ToSingle(data, cb);
+            cb += 4;
+            playerZ = BitConverter.ToSingle(data, cb);
+            cb += 4;
+
+
+        }
+        public float playerZ;
+        public float playerY;
+        public float playerX;
+        public float Z;
+        public float Y;
+        public float X;
+        public bool Underwater;
+        public string TypeDesc = String.Empty;
+        public bool Trader;
+        public Int32 TargetOfTargetID;
+        public bool Targetable;
+        public String Suffix;
+        public bool Stunned;
+        public bool Standing;
+        public bool Sneaking;
+        public bool Sitting;
+        public bool RolePlaying;
+        public String RaceName;
+        public Int32 RaceID;
+        public Int32 PlayerState;
+        public Int32 PetID;
+        public Int32 PctMana;
+        public Int32 PctHps;
+        public bool Named;
+        public string Name = String.Empty;
+        public bool Moving;
+        public bool Mount;
+        public float MaxRangeTo;
+        public float MaxRange;
+        public Int32 MaxEndurance;
+        public Int32 MasterID;
+        public float Look;
+        public bool Linkdead;
+        public bool Levitate;
+        public Int32 Level;
+        public bool IsSummoned;
+        public bool Invis;
+        public Int32 ID;
+        public float Height;
+        public float Heading;
+        public Int32 GuildID;
+        public bool GM;
+        public Int32 GenderID;
+        public String Gender
+        {
+            get
+            {
+                return GetGender(GenderID);
+            }
+        }
+
+        public bool Feigning;
+        public bool Ducking;
+        public string DiplayName = string.Empty;
+        public bool Dead;
+        public Int32 CurrentMana;
+        public Int32 CurrentHPs;
+        public Int32 CurrentEndurnace;
+        public Int32 ConColorID;
+        public String ConColor
+        {
+            get
+            {
+                return GetConColor(ConColorID);
+            }
+        }
+        public string CleanName = String.Empty;
+        public Int32 ClassID;
+        public String ClassName 
+        { 
+            get {
+                return ClassIDToName(ClassID);
+            } 
+        }
+        public String ClassShortName
+        {
+            get
+            {
+                return ClassIDToShortName(ClassID);
+            }
+        }
+        public bool Anonymous;
+        public bool AFK;
+        public bool Aggressive;
+        public Int32 Blind;
+        public Int32 BodyTypeID;
+        public string BodyTypeDesc = String.Empty;
+        public bool Buyer;
+        public double Distance3D
+        {
+            get
+            {
+                return GetDistance3D();
+            }
+        }
+        public double Distance
+        {
+            get
+            {
+                return GetDistance();
+            }
+        }
+        private string GetConColor(Int32 ConColorID)
+        {
+            switch (ConColorID)
+            {
+                case 0x06:
+                    return "GREY";
+                case 0x02:
+                    return "GREEN";
+                case 0x12:
+                    return "LIGHT BLUE";
+                case 0x04:
+                    return "BLUE";
+                case 0x0a:
+                    return "WHITE";
+                case 0x0f:
+                    return "YELLOW";
+                case 0x0d:
+                    return "RED";
+                default:
+                    return "RED";
+            }
+         
+        }
+        private string GetGender(Int32 genderID)
+        {
+
+            switch (genderID)
+            {
+                case 0:
+                    return "male";
+                case 1:
+                    return "female";
+                case 2:
+                    return "neuter";
+                case 3:
+                    return "unknown";
+            }
+            return String.Empty;
+
+        }
+        private double GetDistance3D()
+        {
+            double dx = playerX - X;
+            double dy = playerY - Y;
+            double dz = playerZ - Z;
+
+            return Math.Sqrt(dx * dx + dy * dy + dz * dz);
+        }
+        private double GetDistance()
+        {
+            double dx = X - playerX;
+            double dy = Y - playerY;
+            return Math.Sqrt(dx * dx + dy * dy);
+        }
+        private string ClassIDToShortName(Int32 classID)
+        {
+            switch (classID)
+            {
+                case 1:
+                    return "WAR";
+                case 2:
+                    return "CLR";
+                case 3:
+                    return "PAL";
+                case 4:
+                    return "RNG";
+                case 5:
+                    return "SHD";
+                case 6:
+                    return "DRU";
+                case 7:
+                    return "MNK";
+                case 8:
+                    return "BRD";
+                case 9:
+                    return "ROG";
+                case 10:
+                    return "SHM";
+                case 11:
+                    return "NEC";
+                case 12:
+                    return "WIZ";
+                case 13:
+                    return "MAG";
+                case 14:
+                    return "ENC";
+                case 15:
+                    return "BST";
+                case 16:
+                    return "BER";
+            }
+            return String.Empty;
+        }
+        private string ClassIDToName(Int32 ClassID)
+        {
+            switch(ClassID)
+            {
+                case 1:
+                    return "Warrior";
+                case 2:
+                    return "Cleric";
+                case 3:
+                    return "Paladin";
+                case 4:
+                    return "Ranger";
+                case 5:
+                    return "Shadowknight";
+                case 6:
+                    return "Druid";
+                case 7:
+                    return "Monk";
+                case 8:
+                    return "Bard";
+                case 9:
+                    return "Rogue";
+                case 10:
+                    return "Shaman";
+                case 11:
+                    return "Necromancer";
+                case 12:
+                    return "Wizard";
+                case 13:
+                    return "Mage";
+                case 14:
+                    return "Enchanter";
+                case 15:
+                    return "Beastlord";
+                case 16:
+                    return "Berserker";
+            }
+
+            return String.Empty;
+        }
+
+        public void Dispose()
+        {
+            _dataSize = 0;
+            StaticObjectPool.Push(this);
+        }
+    }
+
+
+    ///https://github.com/joaoportela/CircularBuffer-CSharp/blob/master/CircularBuffer/CircularBuffer.cs
+    /// <inheritdoc/>
+    /// <summary>
+    /// Circular buffer.
+    /// 
+    /// When writing to a full buffer:
+    /// PushBack -> removes this[0] / Front()
+    /// PushFront -> removes this[Size-1] / Back()
+    /// 
+    /// this implementation is inspired by
+    /// http://www.boost.org/doc/libs/1_53_0/libs/circular_buffer/doc/circular_buffer.html
+    /// because I liked their interface.
+    /// </summary>
+    public class CircularBuffer<T> : IEnumerable<T>
+        {
+            private readonly T[] _buffer;
+
+            /// <summary>
+            /// The _start. Index of the first element in buffer.
+            /// </summary>
+            private int _start;
+
+            /// <summary>
+            /// The _end. Index after the last element in the buffer.
+            /// </summary>
+            private int _end;
+
+            /// <summary>
+            /// The _size. Buffer size.
+            /// </summary>
+            private int _size;
+
+            /// <summary>
+            /// Initializes a new instance of the <see cref="CircularBuffer{T}"/> class.
+            /// 
+            /// </summary>
+            /// <param name='capacity'>
+            /// Buffer capacity. Must be positive.
+            /// </param>
+            public CircularBuffer(int capacity)
+                : this(capacity, new T[] { })
+            {
+            }
+
+            /// <summary>
+            /// Initializes a new instance of the <see cref="CircularBuffer{T}"/> class.
+            /// 
+            /// </summary>
+            /// <param name='capacity'>
+            /// Buffer capacity. Must be positive.
+            /// </param>
+            /// <param name='items'>
+            /// Items to fill buffer with. Items length must be less than capacity.
+            /// Suggestion: use Skip(x).Take(y).ToArray() to build this argument from
+            /// any enumerable.
+            /// </param>
+            public CircularBuffer(int capacity, T[] items)
+            {
+                if (capacity < 1)
+                {
+                    throw new ArgumentException(
+                        "Circular buffer cannot have negative or zero capacity.", nameof(capacity));
+                }
+                if (items == null)
+                {
+                    throw new ArgumentNullException(nameof(items));
+                }
+                if (items.Length > capacity)
+                {
+                    throw new ArgumentException(
+                        "Too many items to fit circular buffer", nameof(items));
+                }
+
+                _buffer = new T[capacity];
+
+                Array.Copy(items, _buffer, items.Length);
+                _size = items.Length;
+
+                _start = 0;
+                _end = _size == capacity ? 0 : _size;
+            }
+
+            /// <summary>
+            /// Maximum capacity of the buffer. Elements pushed into the buffer after
+            /// maximum capacity is reached (IsFull = true), will remove an element.
+            /// </summary>
+            public int Capacity { get { return _buffer.Length; } }
+
+            /// <summary>
+            /// Boolean indicating if Circular is at full capacity.
+            /// Adding more elements when the buffer is full will
+            /// cause elements to be removed from the other end
+            /// of the buffer.
+            /// </summary>
+            public bool IsFull
+            {
+                get
+                {
+                    return Size == Capacity;
+                }
+            }
+
+            /// <summary>
+            /// True if has no elements.
+            /// </summary>
+            public bool IsEmpty
+            {
+                get
+                {
+                    return Size == 0;
+                }
+            }
+
+            /// <summary>
+            /// Current buffer size (the number of elements that the buffer has).
+            /// </summary>
+            public int Size { get { return _size; } }
+
+            /// <summary>
+            /// Element at the front of the buffer - this[0].
+            /// </summary>
+            /// <returns>The value of the element of type T at the front of the buffer.</returns>
+            public T Front()
+            {
+                ThrowIfEmpty();
+                return _buffer[_start];
+            }
+
+            /// <summary>
+            /// Element at the back of the buffer - this[Size - 1].
+            /// </summary>
+            /// <returns>The value of the element of type T at the back of the buffer.</returns>
+            public T Back()
+            {
+                ThrowIfEmpty();
+                return _buffer[(_end != 0 ? _end : Capacity) - 1];
+            }
+
+            /// <summary>
+            /// Index access to elements in buffer.
+            /// Index does not loop around like when adding elements,
+            /// valid interval is [0;Size[
+            /// </summary>
+            /// <param name="index">Index of element to access.</param>
+            /// <exception cref="IndexOutOfRangeException">Thrown when index is outside of [; Size[ interval.</exception>
+            public T this[int index]
+            {
+                get
+                {
+                    if (IsEmpty)
+                    {
+                        throw new IndexOutOfRangeException(string.Format("Cannot access index {0}. Buffer is empty", index));
+                    }
+                    if (index >= _size)
+                    {
+                        throw new IndexOutOfRangeException(string.Format("Cannot access index {0}. Buffer size is {1}", index, _size));
+                    }
+                    int actualIndex = InternalIndex(index);
+                    return _buffer[actualIndex];
+                }
+                set
+                {
+                    if (IsEmpty)
+                    {
+                        throw new IndexOutOfRangeException(string.Format("Cannot access index {0}. Buffer is empty", index));
+                    }
+                    if (index >= _size)
+                    {
+                        throw new IndexOutOfRangeException(string.Format("Cannot access index {0}. Buffer size is {1}", index, _size));
+                    }
+                    int actualIndex = InternalIndex(index);
+                    _buffer[actualIndex] = value;
+                }
+            }
+
+            /// <summary>
+            /// Pushes a new element to the back of the buffer. Back()/this[Size-1]
+            /// will now return this element.
+            /// 
+            /// When the buffer is full, the element at Front()/this[0] will be 
+            /// popped to allow for this new element to fit.
+            /// </summary>
+            /// <param name="item">Item to push to the back of the buffer</param>
+            public void PushBack(T item)
+            {
+                if (IsFull)
+                {
+                    _buffer[_end] = item;
+                    Increment(ref _end);
+                    _start = _end;
+                }
+                else
+                {
+                    _buffer[_end] = item;
+                    Increment(ref _end);
+                    ++_size;
+                }
+            }
+
+            /// <summary>
+            /// Pushes a new element to the front of the buffer. Front()/this[0]
+            /// will now return this element.
+            /// 
+            /// When the buffer is full, the element at Back()/this[Size-1] will be 
+            /// popped to allow for this new element to fit.
+            /// </summary>
+            /// <param name="item">Item to push to the front of the buffer</param>
+            public void PushFront(T item)
+            {
+                if (IsFull)
+                {
+                    Decrement(ref _start);
+                    _end = _start;
+                    _buffer[_start] = item;
+                }
+                else
+                {
+                    Decrement(ref _start);
+                    _buffer[_start] = item;
+                    ++_size;
+                }
+            }
+
+            /// <summary>
+            /// Removes the element at the back of the buffer. Decreasing the 
+            /// Buffer size by 1.
+            /// </summary>
+            public void PopBack()
+            {
+                ThrowIfEmpty("Cannot take elements from an empty buffer.");
+                Decrement(ref _end);
+                _buffer[_end] = default(T);
+                --_size;
+            }
+
+            /// <summary>
+            /// Removes the element at the front of the buffer. Decreasing the 
+            /// Buffer size by 1.
+            /// </summary>
+            public void PopFront()
+            {
+                ThrowIfEmpty("Cannot take elements from an empty buffer.");
+                _buffer[_start] = default(T);
+                Increment(ref _start);
+                --_size;
+            }
+
+            /// <summary>
+            /// Clears the contents of the array. Size = 0, Capacity is unchanged.
+            /// </summary>
+            /// <exception cref="NotImplementedException"></exception>
+            public void Clear()
+            {
+                // to clear we just reset everything.
+                _start = 0;
+                _end = 0;
+                _size = 0;
+                Array.Clear(_buffer, 0, _buffer.Length);
+            }
+
+            /// <summary>
+            /// Copies the buffer contents to an array, according to the logical
+            /// contents of the buffer (i.e. independent of the internal 
+            /// order/contents)
+            /// </summary>
+            /// <returns>A new array with a copy of the buffer contents.</returns>
+            public T[] ToArray()
+            {
+                T[] newArray = new T[Size];
+                int newArrayOffset = 0;
+                var segments = ToArraySegments();
+                foreach (ArraySegment<T> segment in segments)
+                {
+                    Array.Copy(segment.Array, segment.Offset, newArray, newArrayOffset, segment.Count);
+                    newArrayOffset += segment.Count;
+                }
+                return newArray;
+            }
+
+            /// <summary>
+            /// Get the contents of the buffer as 2 ArraySegments.
+            /// Respects the logical contents of the buffer, where
+            /// each segment and items in each segment are ordered
+            /// according to insertion.
+            ///
+            /// Fast: does not copy the array elements.
+            /// Useful for methods like <c>Send(IList&lt;ArraySegment&lt;Byte&gt;&gt;)</c>.
+            /// 
+            /// <remarks>Segments may be empty.</remarks>
+            /// </summary>
+            /// <returns>An IList with 2 segments corresponding to the buffer content.</returns>
+            public IList<ArraySegment<T>> ToArraySegments()
+            {
+                return new[] { ArrayOne(), ArrayTwo() };
+            }
+
+            #region IEnumerable<T> implementation
+            /// <summary>
+            /// Returns an enumerator that iterates through this buffer.
+            /// </summary>
+            /// <returns>An enumerator that can be used to iterate this collection.</returns>
+            public IEnumerator<T> GetEnumerator()
+            {
+                var segments = ToArraySegments();
+                foreach (ArraySegment<T> segment in segments)
+                {
+                    for (int i = 0; i < segment.Count; i++)
+                    {
+                        yield return segment.Array[segment.Offset + i];
+                    }
+                }
+            }
+            #endregion
+            #region IEnumerable implementation
+            System.Collections.IEnumerator System.Collections.IEnumerable.GetEnumerator()
+            {
+                return (System.Collections.IEnumerator)GetEnumerator();
+            }
+            #endregion
+
+            private void ThrowIfEmpty(string message = "Cannot access an empty buffer.")
+            {
+                if (IsEmpty)
+                {
+                    throw new InvalidOperationException(message);
+                }
+            }
+
+            /// <summary>
+            /// Increments the provided index variable by one, wrapping
+            /// around if necessary.
+            /// </summary>
+            /// <param name="index"></param>
+            private void Increment(ref int index)
+            {
+                if (++index == Capacity)
+                {
+                    index = 0;
+                }
+            }
+
+            /// <summary>
+            /// Decrements the provided index variable by one, wrapping
+            /// around if necessary.
+            /// </summary>
+            /// <param name="index"></param>
+            private void Decrement(ref int index)
+            {
+                if (index == 0)
+                {
+                    index = Capacity;
+                }
+                index--;
+            }
+
+            /// <summary>
+            /// Converts the index in the argument to an index in <code>_buffer</code>
+            /// </summary>
+            /// <returns>
+            /// The transformed index.
+            /// </returns>
+            /// <param name='index'>
+            /// External index.
+            /// </param>
+            private int InternalIndex(int index)
+            {
+                return _start + (index < (Capacity - _start) ? index : index - Capacity);
+            }
+
+            // doing ArrayOne and ArrayTwo methods returning ArraySegment<T> as seen here: 
+            // http://www.boost.org/doc/libs/1_37_0/libs/circular_buffer/doc/circular_buffer.html#classboost_1_1circular__buffer_1957cccdcb0c4ef7d80a34a990065818d
+            // http://www.boost.org/doc/libs/1_37_0/libs/circular_buffer/doc/circular_buffer.html#classboost_1_1circular__buffer_1f5081a54afbc2dfc1a7fb20329df7d5b
+            // should help a lot with the code.
+
+            #region Array items easy access.
+            // The array is composed by at most two non-contiguous segments, 
+            // the next two methods allow easy access to those.
+
+            private ArraySegment<T> ArrayOne()
+            {
+                if (IsEmpty)
+                {
+                    return new ArraySegment<T>(new T[0]);
+                }
+                else if (_start < _end)
+                {
+                    return new ArraySegment<T>(_buffer, _start, _end - _start);
+                }
+                else
+                {
+                    return new ArraySegment<T>(_buffer, _start, _buffer.Length - _start);
+                }
+            }
+
+            private ArraySegment<T> ArrayTwo()
+            {
+                if (IsEmpty)
+                {
+                    return new ArraySegment<T>(new T[0]);
+                }
+                else if (_start < _end)
+                {
+                    return new ArraySegment<T>(_buffer, _end, 0);
+                }
+                else
+                {
+                    return new ArraySegment<T>(_buffer, 0, _end);
+                }
+            }
+
+         
+            #endregion
+        }
+
+
+
+        
+    
 }

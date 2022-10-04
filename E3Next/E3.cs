@@ -32,6 +32,7 @@ namespace E3Core.Processors
         public static string _currentLongClassString;
         public static string _currentShortClassString;
         public static Int32 _zoneID;
+        public static ISpawns _spawns;
 
 
         public static void Process()
@@ -82,8 +83,8 @@ namespace E3Core.Processors
 
             if(!_isInit)
             {
-                
                 MQ.ClearCommands();
+                
                 Logging._traceLogLevel = Logging.LogLevels.Debug; //log level we are currently at
                 Logging._minLogLevelTolog = Logging.LogLevels.Debug; //log levels have integers assoicatd to them. you can set this to Error to only log errors. 
                 Logging._defaultLogLevel = Logging.LogLevels.Debug; //the default if a level is not passed into the _log.write statement. useful to hide/show things.
@@ -107,6 +108,11 @@ namespace E3Core.Processors
                 _currentLongClassString = _currentClass.ToString();
                 _currentShortClassString = Data.Classes._classLongToShort[_currentLongClassString];
                 _bots=new Bots();
+                if(_spawns==null)
+                {
+                    _spawns = new Spawns();
+
+                }
                 _isInit = true;
 
 
@@ -116,6 +122,8 @@ namespace E3Core.Processors
                 
                 
                 });
+
+                EventProcessor.UnRegisterCommand("/testcommand02");
 
             }
            
@@ -240,6 +248,11 @@ namespace E3Core.Processors
 
                 return default(T);
 
+            }
+
+            public void RemoveCommand(string commandName)
+            {
+                Console.Write("RemoveCommand:" + commandName);
             }
 
             public void TraceEnd(string methodName)

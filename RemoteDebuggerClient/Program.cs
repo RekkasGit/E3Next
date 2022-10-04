@@ -5,6 +5,7 @@ using NetMQ.Sockets;
 using RestSharp;
 using System;
 using System.Collections.Generic;
+using System.Diagnostics;
 using System.Linq;
 using System.Runtime.CompilerServices;
 using System.Text;
@@ -15,27 +16,181 @@ namespace MQServerClient
 {
     class Program
     {
+        public static Stopwatch _stopWatch = new Stopwatch();
         static void Main(string[] args)
         {
+            _stopWatch.Start();
+            ISpawns Spawns = new NetMQSpawns();
+             Spawns.RefreshList();
+          
+          
+            List<Spawn> result = Spawns.Get().Where(x=>x.Anonymous==true).ToList();
+                
 
-            //so all modultes look for this flag to determine it to continue.
-            MonoCore.Core._isProcessing = true;
-            MonoCore.Core.mqInstance = new NetMQMQ();
-            MonoCore.Core.OnInit();
-            NetMQOnIncomingChat _incChat = new NetMQOnIncomingChat();
-
-
-            _incChat.Start();
-            while (true)
+            foreach(var name in result)
             {
-
-                E3.Process();
-                EventProcessor.ProcessEventsInQueues();
-
-                System.Threading.Thread.Sleep(1000);
+                Console.WriteLine(name);
             }
 
 
+
+
+
+
+
+
+
+
+
+
+
+
+
+            //so all modultes look for this flag to determine it to continue.
+            //MonoCore.Core._isProcessing = true;
+            //MonoCore.Core.mqInstance = new NetMQMQ();
+            //MonoCore.Core.OnInit();
+            //NetMQOnIncomingChat _incChat = new NetMQOnIncomingChat();
+
+            //
+
+            //_incChat.Start();
+
+        
+
+
+
+            //while (true)
+            //{
+
+            //    E3.Process();
+            //    EventProcessor.ProcessEventsInQueues();
+
+            //    System.Threading.Thread.Sleep(1000);
+            //}
+
+
+
+        }
+    }
+   
+
+    public class NetMQSpawns : ISpawns
+    {
+        DealerSocket _requestSocket;
+        NetMQ.Msg _requestMsg = new NetMQ.Msg();
+        public TimeSpan SendTimeout = new TimeSpan(0, 5, 5);
+        public TimeSpan RecieveTimeout = new TimeSpan(0, 5, 30);
+        byte[] _payload = new byte[1000 * 86];
+        Int32 _payloadLength = 0;
+
+        public static List<Spawn> _spawns = new List<Spawn>(2048);
+        public static Int64 _lastRefesh = 0;
+        public static Int64 _refreshTimePeriodInMS = 2000;
+        public NetMQSpawns()
+        {
+            _requestSocket = new DealerSocket();
+            _requestSocket.Options.Identity = Guid.NewGuid().ToByteArray();
+            _requestSocket.Options.SendHighWatermark = 10000;
+            _requestSocket.Options.ReceiveHighWatermark = 10000;
+            _requestSocket.Connect("tcp://127.0.0.1:" + RemoteDebugServerConfig.NetMQRouterPort.ToString());
+        }
+        public IEnumerable<Spawn> Get()
+        {
+            if (Core._stopWatch.ElapsedMilliseconds - _lastRefesh > _refreshTimePeriodInMS)
+            {
+                RefreshList();
+            }
+            return _spawns;
+        }
+
+        private void ClearList()
+        {
+            foreach (var spawn in _spawns)
+            {
+                spawn.Dispose();
+            }
+            _spawns.Clear();
+        }
+        public void RefreshList()
+        {
+            ClearList();
+
+            if (_requestMsg.IsInitialised)
+            {
+                _requestMsg.Close();
+            }
+            _requestMsg.InitEmpty();
+            //send empty frame
+            _requestSocket.TrySend(ref _requestMsg, SendTimeout, true);
+
+            _payloadLength =0;
+
+            _requestMsg.Close();
+
+            //include command+ length in payload
+            _requestMsg.InitPool(_payloadLength + 8);
+
+
+
+            unsafe
+            {
+                fixed (byte* src = _payload)
+                {
+
+                    fixed (byte* dest = _requestMsg.Data)
+                    {   //4 bytes = commandtype
+                        //4 bytes = length
+                        //N-bytes = payload
+                        byte* tPtr = dest;
+                        *((Int32*)tPtr) = 7;
+                        tPtr += 4;
+                        *(Int32*)tPtr = _payloadLength; //init/modify
+                        tPtr += 4;
+                        Buffer.MemoryCopy(src, tPtr, _requestMsg.Data.Length, _payloadLength);
+                    }
+
+                }
+            }
+
+            _requestSocket.TrySend(ref _requestMsg, SendTimeout, false);
+
+
+            _requestMsg.Close();
+          
+            bool finishedResposne = false;
+
+            while(!finishedResposne)
+            {
+                _requestMsg.InitEmpty();
+                //recieve the empty frame
+                while (!_requestSocket.TryReceive(ref _requestMsg, RecieveTimeout))
+                {
+                    //wait for the message to come back
+                }
+                _requestMsg.Close();
+                _requestMsg.InitEmpty();
+                //recieve the data
+                while (!_requestSocket.TryReceive(ref _requestMsg, RecieveTimeout))
+                {
+                    //wait for the message to come back
+                }
+                if(_requestMsg.Size==0)
+                {
+                    finishedResposne = true;
+                }
+                else
+                {
+                    //data is back, lets parse out the data
+                    var spawn = Spawn.Aquire();
+                    spawn.Init(_requestMsg.Data, _requestMsg.Size);
+                    _spawns.Add(spawn);
+                }
+                _requestMsg.Close();
+
+            }
+            //_spawns should have fresh data now!
+            _lastRefesh = Core._stopWatch.ElapsedMilliseconds;
 
         }
     }
@@ -104,14 +259,14 @@ namespace MQServerClient
         public TimeSpan SendTimeout = new TimeSpan(0, 5, 5);
         public TimeSpan RecieveTimeout = new TimeSpan(0, 5, 30);
         byte[] _payload = new byte[1000 * 86];
-        Int32 _payloadLength=0;
+        Int32 _payloadLength = 0;
 
         public NetMQMQ()
         {
             _requestSocket = new DealerSocket();
             _requestSocket.Options.Identity = Guid.NewGuid().ToByteArray();
             _requestSocket.Options.SendHighWatermark = 100;
-            _requestSocket.Connect("tcp://127.0.0.1:"+RemoteDebugServerConfig.NetMQRouterPort.ToString());
+            _requestSocket.Connect("tcp://127.0.0.1:" + RemoteDebugServerConfig.NetMQRouterPort.ToString());
         }
         public void Broadcast(string query)
         {
@@ -135,9 +290,9 @@ namespace MQServerClient
             _requestMsg.Close();
 
             //include command+ length in payload
-            _requestMsg.InitPool(_payloadLength+8);
+            _requestMsg.InitPool(_payloadLength + 8);
 
-           
+
 
             unsafe
             {
@@ -249,14 +404,14 @@ namespace MQServerClient
 
             //data is back, lets parse out the data
 
-            string mqReturnValue = System.Text.Encoding.Default.GetString(_requestMsg.Data, 0,_requestMsg.Data.Length);
+            string mqReturnValue = System.Text.Encoding.Default.GetString(_requestMsg.Data, 0, _requestMsg.Data.Length);
 
             _requestMsg.Close();
 
 
 
 
-           
+
             if (typeof(T) == typeof(Int32))
             {
                 Int32 value;
@@ -468,7 +623,51 @@ namespace MQServerClient
 
             Console.WriteLine("ClearCommands: Issued");
         }
+        public void RemoveCommand(string commandName)
+        {
+            //send empty frame over
+            if (_requestMsg.IsInitialised)
+            {
+                _requestMsg.Close();
+            }
+            _requestMsg.InitEmpty();
 
+            _requestSocket.TrySend(ref _requestMsg, SendTimeout, true);
+
+            _payloadLength = System.Text.Encoding.Default.GetBytes(commandName, 0, commandName.Length, _payload, 0);
+
+            _requestMsg.Close();
+
+            //include command+ length in payload
+            _requestMsg.InitPool(_payloadLength + 8);
+
+
+
+            unsafe
+            {
+                fixed (byte* src = _payload)
+                {
+
+                    fixed (byte* dest = _requestMsg.Data)
+                    {   //4 bytes = commandtype
+                        //4 bytes = length
+                        //N-bytes = payload
+                        byte* tPtr = dest;
+                        *((Int32*)tPtr) = 6;
+                        tPtr += 4;
+                        *(Int32*)tPtr = _payloadLength; //init/modify
+                        tPtr += 4;
+                        Buffer.MemoryCopy(src, tPtr, _requestMsg.Data.Length, _payloadLength);
+                    }
+
+                }
+            }
+
+            _requestSocket.TrySend(ref _requestMsg, SendTimeout, false);
+            _requestMsg.Close();
+
+            Console.WriteLine("RemoveCommand:" + commandName);
+        }
     }
 
     public class ClientMQ : MonoCore.IMQ
@@ -614,6 +813,11 @@ namespace MQServerClient
         }
 
         public void ClearCommands()
+        {
+            throw new NotImplementedException();
+        }
+
+        public void RemoveCommand(string query)
         {
             throw new NotImplementedException();
         }

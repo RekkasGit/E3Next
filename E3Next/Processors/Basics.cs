@@ -25,6 +25,32 @@ namespace E3Core.Processors
         }
         static void RegisterEventsCasting()
         {
+
+
+            EventProcessor.RegisterCommand("/followme", (x) =>
+            {
+                string user = string.Empty;
+                if(x.args.Count>0)
+                {
+                    user = x.args[1];
+                    //we have someone to follow.
+                    _followTargetID = MQ.Query<Int32>($"${{Spawn[{user}].ID}}");
+                    if(_followTargetID > 0)
+                    {
+                        _followTargetName = user;
+                        _following = true;
+                        Assist.AssistOff();
+                        AcquireFollow();
+                    }
+                }
+                else
+                {
+                    //we are telling people to follow us
+                    E3._bots.BroadcastCommandToOthers("/followme " + E3._characterSettings._characterName);
+                }
+            });
+
+
             #region followEvent
             List<String> r = new List<string>();
             //box chat bct

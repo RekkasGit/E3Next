@@ -13,7 +13,7 @@ namespace E3Core.Processors
         Int32 PctHealth(string name);
         List<string> BotsConnected();
         Boolean HasBuff(string name, Int64 buffid);
-
+        void BroadcastCommandToOthers(string query);
         void SetupAliases();
 
     }
@@ -25,6 +25,10 @@ namespace E3Core.Processors
 
         private string netbotConnectionString = string.Empty;
         private List<string> _connectedBots = new List<string>();
+        public void BroadcastCommandToOthers(string query)
+        {
+            MQ.Cmd($"/bcg /{query}");
+        }
         public Boolean InZone(string name)
         {
 
@@ -141,6 +145,11 @@ namespace E3Core.Processors
         private static IMQ MQ = E3.MQ;
 
         public List<string> BotsConnected()
+        {
+            throw new NotImplementedException();
+        }
+
+        public void BroadcastCommandToOthers(string query)
         {
             throw new NotImplementedException();
         }

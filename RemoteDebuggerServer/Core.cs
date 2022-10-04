@@ -102,7 +102,7 @@ namespace MonoCore
         public static ConcurrentQueue<string> _queuedQuery = new ConcurrentQueue<string>();
         public static ConcurrentQueue<string> _queuedQueryResposne = new ConcurrentQueue<string>();
         public static ConcurrentQueue<string> _queuedWrite = new ConcurrentQueue<string>();
-
+      
 
 
         public static void Process()
@@ -175,8 +175,8 @@ namespace MonoCore
                                 try
                                 {
                                     //lets pull out the string
-                                    string query = System.Text.Encoding.Default.GetString(message.payload, 0, message.payloadLength);
-                                    MQ.Write(query);
+                                    string commandName = System.Text.Encoding.Default.GetString(message.payload, 0, message.payloadLength);
+                                    MQ.Write(commandName);
                                 }
                                 finally
                                 {
@@ -224,7 +224,43 @@ namespace MonoCore
                             foundRequest = true;
                             foundRequestCount++;
                         }
+                        while (RouterServer._removeCommandRequests.Count > 0)
+                        {
+                            RouterMessage message;
+                            if (RouterServer._removeCommandRequests.TryDequeue(out message))
+                            {
+                                try
+                                {
+                                    string query = System.Text.Encoding.Default.GetString(message.payload, 0, message.payloadLength);
+                                    //lets pull out the string
+                                    MQ.Write("Issuing remove command:" + query);
+                                    MQ.RemoveCommand(query);
+                                }
+                                finally
+                                {
+                                    message.Dispose();
+                                }
+                            }
+                            foundRequest = true;
+                            foundRequestCount++;
+                        }
 
+                        while (RouterServer._getSpawnsRequests.Count > 0)
+                        {
+                            RouterMessage message;
+                            if (RouterServer._getSpawnsRequests.TryDequeue(out message))
+                            {
+                                
+                                IEnumerable<Spawn> spawnList = Spawns.Get();
+                                message.spawns = spawnList.ToList();
+                                RouterServer._getSpawnsResponse.Enqueue(message);
+                                foundRequest = true;
+                                foundRequestCount++;
+                            }
+                           
+                        }
+
+                        ///FOR THE WEB SERVER, NOT IN USE ANYMORE
 
                         while (_queuedQuery.Count > 0)
                         {
@@ -342,6 +378,7 @@ namespace MonoCore
         public Int32 commandType = 0;
         public byte[] payload = new byte[1024 * 86];
         public Int32 payloadLength = 0;
+        public IEnumerable<Spawn> spawns;
         public static RouterMessage Aquire()
         {
             RouterMessage obj;
@@ -356,6 +393,7 @@ namespace MonoCore
         {
             payloadLength = 0;
             identiyLength = 0;
+            spawns = null;
             StaticObjectPool.Push<RouterMessage>(this);
         }
     }
@@ -376,6 +414,9 @@ namespace MonoCore
         public static ConcurrentQueue<RouterMessage> _writeRequests = new ConcurrentQueue<RouterMessage>();
         public static ConcurrentQueue<RouterMessage> _newCommandRequests = new ConcurrentQueue<RouterMessage>();
         public static ConcurrentQueue<RouterMessage> _clearCommandRequests = new ConcurrentQueue<RouterMessage>();
+        public static ConcurrentQueue<RouterMessage> _removeCommandRequests = new ConcurrentQueue<RouterMessage>();
+        public static ConcurrentQueue<RouterMessage> _getSpawnsRequests = new ConcurrentQueue<RouterMessage>();
+        public static ConcurrentQueue<RouterMessage> _getSpawnsResponse = new ConcurrentQueue<RouterMessage>();
 
 
 
@@ -390,8 +431,8 @@ namespace MonoCore
         {
             AsyncIO.ForceDotNet.Force();
             _rpcRouter = new RouterSocket();
-            _rpcRouter.Options.SendHighWatermark = 10;
-            _rpcRouter.Options.ReceiveHighWatermark = 10;
+            _rpcRouter.Options.SendHighWatermark = 10000;
+            _rpcRouter.Options.ReceiveHighWatermark = 10000;
             _rpcRouter.Bind("tcp://127.0.0.1:" + RemoteDebugServerConfig.NetMQRouterPort.ToString());
             //_rpcRouter.Bind("tcp://127.0.0.1:12346");
             routerMessage.InitEmpty();
@@ -477,6 +518,14 @@ namespace MonoCore
                         {
                             _clearCommandRequests.Enqueue(message);
                         }
+                        else if (message.commandType == 6)
+                        {
+                            _removeCommandRequests.Enqueue(message);
+                        }
+                        else if (message.commandType == 7)
+                        {
+                            _getSpawnsRequests.Enqueue(message);
+                        }
                         else
                         {
                             message.Dispose();
@@ -522,6 +571,48 @@ namespace MonoCore
                                 Buffer.BlockCopy(message.payload, 0, routerResponse.Data, 0, message.payloadLength);
                                 _rpcRouter.TrySend(ref routerResponse, timeout, false);
                                 routerResponse.Close();
+                            }
+                            finally
+                            {
+                                //put back into the object pool.
+                                message.Dispose();
+                            }
+                        }
+                    }
+                    while (_getSpawnsResponse.Count > 0)
+                    {
+                        RouterMessage message;
+                        _getSpawnsResponse.TryDequeue(out message);
+                        if (message != null && message.spawns!=null)
+                        {
+                            try
+                            {
+                                foreach(var spawn in message.spawns)
+                                {
+                                    routerResponse.InitPool(message.identiyLength);
+                                    Buffer.BlockCopy(message.identity, 0, routerResponse.Data, 0, message.identiyLength);
+                                    _rpcRouter.TrySend(ref routerResponse, timeout, true);
+                                    routerResponse.Close();
+                                    routerResponse.InitEmpty();
+                                    _rpcRouter.TrySend(ref routerResponse, timeout, true);
+                                    routerResponse.Close();
+                                    routerResponse.InitPool(spawn._dataSize);
+                                    Buffer.BlockCopy(spawn._data, 0, routerResponse.Data, 0, spawn._dataSize);
+                                    _rpcRouter.TrySend(ref routerResponse, timeout, false);
+                                    routerResponse.Close();
+                                }
+                                //we need to send a 'done' response
+                                routerResponse.InitPool(message.identiyLength);
+                                Buffer.BlockCopy(message.identity, 0, routerResponse.Data, 0, message.identiyLength);
+                                _rpcRouter.TrySend(ref routerResponse, timeout, true);
+                                routerResponse.Close();
+                                routerResponse.InitEmpty();
+                                _rpcRouter.TrySend(ref routerResponse, timeout, true);
+                                routerResponse.Close();
+                                routerResponse.InitEmpty();
+                                _rpcRouter.TrySend(ref routerResponse, timeout, false);
+                                routerResponse.Close();
+
                             }
                             finally
                             {
@@ -789,6 +880,14 @@ namespace MonoCore
             PubServer._pubMessages.Enqueue(line);
             //EventProcessor.ProcessEvent(line);
         }
+        public static void OnSetSpawns(byte[] data, int size)
+        {
+            var spawn = Spawn.Aquire();
+            spawn.Init(data, size);
+            Spawns._spawns.Add(spawn);
+            //copy the data out into the current array set. 
+
+        }
         public static void OnUpdateImGui()
         {
 
@@ -814,6 +913,10 @@ namespace MonoCore
         public extern static void mq_AddCommand(string command);
         [MethodImpl(MethodImplOptions.InternalCall)]
         public extern static void mq_ClearCommands();
+        [MethodImpl(MethodImplOptions.InternalCall)]
+        public extern static void mq_RemoveCommand(string command);
+        [MethodImpl(MethodImplOptions.InternalCall)]
+        public extern static void mq_GetSpawns();
         #region IMGUI
         [MethodImpl(MethodImplOptions.InternalCall)]
         public extern static bool imgui_Begin(string name, int flags);
@@ -883,6 +986,7 @@ namespace MonoCore
         void Broadcast(string query);
         void AddCommand(string command);
         void ClearCommands();
+        void RemoveCommand(string commandName);
 
     }
     public class MQ : IMQ
@@ -1074,7 +1178,10 @@ namespace MonoCore
         {
             Core.mq_ClearCommands();
         }
-
+        public void RemoveCommand(string commandName)
+        {
+            Core.mq_RemoveCommand(commandName);
+        }
     }
 
     public class Logging
@@ -1397,6 +1504,69 @@ namespace MonoCore
             }
             obj = default(T);
             return false;
+        }
+    }
+    public class Spawns
+    {
+        
+        public static List<Spawn> _spawns = new List<Spawn>(2048);
+        public static Int64 _lastRefesh = 0;
+      
+        public static IEnumerable<Spawn> Get()
+        {
+            //remote version doesn't keep a cache timer, it always returns fresh  
+            RefreshList();
+            
+            return _spawns;
+        }
+
+        private static void ClearList()
+        {
+            foreach (var spawn in _spawns)
+            {
+                spawn.Dispose();
+            }
+            _spawns.Clear();
+        }
+        public static void RefreshList()
+        {
+            ClearList();
+            //request new spawns!
+            Core.mq_GetSpawns();
+            //_spawns should have fresh data now!
+            _lastRefesh = Core._stopWatch.ElapsedMilliseconds;
+
+        }
+    }
+
+    //just used to transfer data
+    public class Spawn : IDisposable
+    {
+        public byte[] _data = new byte[1024];
+        public Int32 _dataSize;
+        public static Spawn Aquire()
+        {
+            Spawn obj;
+            if (!StaticObjectPool.TryPop<Spawn>(out obj))
+            {
+                obj = new Spawn();
+            }
+
+            return obj;
+        }
+        public void Init(byte[] data, Int32 length)
+        {
+            //used for remote debug, to send the representastion of the data over.
+            System.Buffer.BlockCopy(data, 0, _data, 0, length);
+            _dataSize = length;
+            //end of remote debug
+
+        }
+        
+        public void Dispose()
+        {
+            _dataSize = 0;
+            StaticObjectPool.Push(this);
         }
     }
 }
