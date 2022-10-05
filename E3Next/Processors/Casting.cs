@@ -432,7 +432,13 @@ namespace E3Core.Processors
                 {
                     MQ.Delay(100);
                 }
+            } 
+            else if(MQ.Query<bool>("${Window[CastingWindow].Open}"))
+            {
+                //we are already casting a spell, user overrride? 
+                return false;
             }
+
             bool returnValue = false;
             if(spell.CastType== Data.CastType.Spell)
             {

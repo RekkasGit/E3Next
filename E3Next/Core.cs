@@ -954,6 +954,7 @@ namespace MonoCore
 
         public Boolean Delay(Int32 maxTimeToWait, string Condition)
         {
+            Condition = $"${{Bool[{Condition}]}}";
             Int64 startingTime = Core._stopWatch.ElapsedMilliseconds;
             while (!this.Query<bool>(Condition))
             {

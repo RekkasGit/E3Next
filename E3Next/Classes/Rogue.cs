@@ -16,31 +16,56 @@ namespace E3Core.Classes
         private static Data.Spell _rogueSneakAttack = null;
         public static void RogueStrike()
         {
-            string sneakattack = E3._characterSettings.Rogue_SneakAttack;
-
-            if(_rogueSneakAttack==null)
+            using(_log.Trace())
             {
-                _rogueSneakAttack = new Data.Spell(sneakattack);
-            }
+                string sneakattack = E3._characterSettings.Rogue_SneakAttack;
 
-            if(_rogueSneakAttack.CastType!= Data.CastType.None)
-            {
-                if (MQ.Query<bool>($"${{Me.CombatAbilityReady[{sneakattack}]}}") && MQ.Query<bool>($"${{Me.AbilityReady[Backstab]}}"))
+                if (_rogueSneakAttack == null)
                 {
-                    if(MQ.Query<bool>("${Me.Invis}") && MQ.Query<bool>("${Me.Sneaking}") && !MQ.Query<bool>("${Me.ActiveDisc.ID}"))
-                    {
-                        Int32 endurance = MQ.Query<Int32>("${Me.Endurance}");
-                        Int32 enduranceCost = MQ.Query<Int32>($"${{Spell[{sneakattack}].EnduranceCost}}");
-                        Int32 minEndurnace = _rogueSneakAttack.MinEnd;
-                        Int32 pctEndurance = MQ.Query<Int32>("${Me.PctEndurance}");
+                    _rogueSneakAttack = new Data.Spell(sneakattack);
+                }
 
-                        if (endurance > enduranceCost && pctEndurance > minEndurnace)
+                if (_rogueSneakAttack.CastType != Data.CastType.None)
+                {
+                    if (MQ.Query<bool>($"${{Me.CombatAbilityReady[{sneakattack}]}}") && MQ.Query<bool>($"${{Me.AbilityReady[Backstab]}}"))
+                    {
+                        if (MQ.Query<bool>("${Me.Invis}") && MQ.Query<bool>("${Me.Sneaking}") && !MQ.Query<bool>("${Me.ActiveDisc.ID}"))
                         {
-                            MQ.Cmd($"/disc {sneakattack}");
-                            MQ.Delay(500, "${Bool[${Me.ActiveDisc.ID}]}");
-                            MQ.Delay(300);
-                            MQ.Cmd("/doability Backstab");
-                            MQ.Delay(100);
+                            Int32 endurance = MQ.Query<Int32>("${Me.Endurance}");
+                            Int32 enduranceCost = MQ.Query<Int32>($"${{Spell[{sneakattack}].EnduranceCost}}");
+                            Int32 minEndurnace = _rogueSneakAttack.MinEnd;
+                            Int32 pctEndurance = MQ.Query<Int32>("${Me.PctEndurance}");
+
+                            if (endurance > enduranceCost && pctEndurance > minEndurnace)
+                            {
+                                MQ.Cmd($"/disc {sneakattack}");
+                                MQ.Delay(500, "${Bool[${Me.ActiveDisc.ID}]}");
+                                MQ.Delay(300);
+                                MQ.Cmd("/doability Backstab");
+                                MQ.Delay(100);
+                            }
+                        }
+                    }
+                }
+            }
+            
+        }
+        public static void AutoEvade()
+        {
+            using(_log.Trace())
+            {
+                if (MQ.Query<Int32>("${Me.PctAggro}") > E3._characterSettings.Rogue_EvadePct)
+                {
+                    if (MQ.Query<bool>("${Me.AbilityReady[Hide]}"))
+                    {
+                        if (!MQ.Query<bool>("${Bool[${Me.ActiveDisc.ID}]}"))
+                        {
+                            MQ.Cmd("/attack off");
+                            MQ.Delay(1000, "${Bool[!${Me.Combat}]}");
+                            MQ.Delay(500);
+                            MQ.Cmd("/doability Hide");
+                            MQ.Delay(500, "${Me.Invis}");
+                            MQ.Cmd("/attack on");
                         }
                     }
                 }

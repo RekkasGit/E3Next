@@ -32,7 +32,8 @@ namespace E3Core.Data
         PureMelee=Warrior|Rogue|Berserker,
         All = Tank | Priest | Caster | Melee,
         PetClass=Shadowknight|Druid|Necromancer|Mage|Enchanter|Beastlord,
-        HealHybrid= Paladin|Ranger|Beastlord
+        HealHybrid= Paladin|Ranger|Beastlord,
+        FeignDeathClass = Necromancer|Shadowknight|Monk
     }
 
     public static class Classes

@@ -549,7 +549,7 @@ namespace MQServerClient
             _requestSocket.TrySend(ref _requestMsg, SendTimeout, false);
         }
 
-        public void AddCommand(string query)
+        public bool AddCommand(string query)
         {
             //send empty frame over
             if (_requestMsg.IsInitialised)
@@ -593,6 +593,7 @@ namespace MQServerClient
             _requestMsg.Close();
 
             Console.WriteLine("AddCommand:" + query);
+            return true;
         }
         public void ClearCommands()
         {
@@ -832,7 +833,7 @@ namespace MQServerClient
             Console.WriteLine($"[{System.DateTime.Now.ToString("HH:mm:ss")}] {query}");
         }
 
-        public void AddCommand(string query)
+        public bool AddCommand(string query)
         {
             throw new NotImplementedException();
         }
