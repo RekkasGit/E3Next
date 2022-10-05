@@ -238,6 +238,27 @@ namespace E3Core.Settings
                 }
             }
         }
+        public void LoadKeyData(string sectionKey, string Key, IniData parsedData, out Data.Spell spellToLoad)
+        {
+            var section = parsedData.Sections[sectionKey];
+            if (section != null)
+            {
+                var keyData = section.GetKeyData(Key);
+                if (keyData != null)
+                {
+                    foreach (var data in keyData.ValueList)
+                    {
+                        if (!String.IsNullOrWhiteSpace(data))
+                        {
+                            spellToLoad=new Data.Spell(data, parsedData);
+                            return;
+                        }
+
+                    }
+                }
+            }
+            spellToLoad = null;
+        }
     }
     interface IBaseSettings
     {

@@ -87,6 +87,27 @@ namespace E3Core.Settings
             LoadKeyData("Misc", "Auto-Loot (On/Off)", parsedData, ref Misc_AutoLootEnabled);
             LoadKeyData("Misc", "Anchor (Char to Anchor to)", parsedData, ref Misc_AnchorChar);
 
+            LoadKeyData("Assist Settings", "Assist Type (Melee/Ranged/Off)", parsedData, ref Assist_Type);
+            LoadKeyData("Assist Settings", "Melee Stick Point", parsedData, ref Assist_MeleeStickPoint);
+            LoadKeyData("Assist Settings", "Taunt(On/Off)", parsedData, ref Assist_TauntEnabled);
+            LoadKeyData("Assist Settings", "SmartTaunt(On/Off)", parsedData, ref Assist_SmartTaunt);
+            LoadKeyData("Assist Settings", "Melee Distance", parsedData, ref Assist_MeleeDistance);
+            LoadKeyData("Assist Settings", "Ranged Distance", parsedData, ref Assist_RangeDistance);
+            LoadKeyData("Assist Settings", "Auto-Assist Engage Percent", parsedData, ref Assist_AutoAssistPercent);
+
+            if (_characterClass == Data.Class.Rogue)
+            {
+                LoadKeyData("Rogue", "Auto-Hide (On/Off)", parsedData, ref Rogue_AutoHide);
+                LoadKeyData("Rogue", "Auto-Evade (On/Off)", parsedData, ref Rogue_AutoEvade);
+                LoadKeyData("Rogue", "Evade PctAggro", parsedData, ref Rogue_EvadePct);
+                LoadKeyData("Rogue", "Sneak Attack Discipline", parsedData, ref Rogue_SneakAttack);
+                LoadKeyData("Rogue", "PoisonPR", parsedData, ref Rogue_PoisonPR);
+                LoadKeyData("Rogue", "PoisonCR", parsedData, ref Rogue_PoisonCR);
+                LoadKeyData("Rogue", "PoisonFR", parsedData, ref Rogue_PoisonFR);
+
+
+            }
+
             LoadKeyData("Buffs", "Instant Buff", parsedData, InstantBuffs);
             LoadKeyData("Buffs", "Self Buff", parsedData, SelfBuffs);
             LoadKeyData("Buffs", "Bot Buff", parsedData, BotBuffs);
@@ -134,7 +155,7 @@ namespace E3Core.Settings
             LoadKeyData("Cures", "RadiantCure", parsedData, RadiantCure);
 
 
-
+           
 
             LoadKeyData("Heals", "Tank Heal", parsedData, HealTanks);
             LoadKeyData("Heals", "Important Heal", parsedData, HealImportantBots);
@@ -251,7 +272,21 @@ namespace E3Core.Settings
             section.Keys.AddKey("Quick Burn", "");
             section.Keys.AddKey("Full Burn", "");
 
-            if((_characterClass & Data.Class.PetClass) == _characterClass)
+
+            if (_characterClass == Data.Class.Rogue)
+            {
+                newFile.Sections.AddSection("Rogue");
+                section = newFile.Sections.GetSectionData("Rogue");
+                section.Keys.AddKey("Auto-Hide (On/Off)", "Off");
+                section.Keys.AddKey("Auto-Evade (On/Off)", "Off");
+                section.Keys.AddKey("Evade PctAggro", "75");
+                section.Keys.AddKey("Sneak Attack Discipline", "");
+                section.Keys.AddKey("PoisonPR", "");
+                section.Keys.AddKey("PoisonFR", "");
+                section.Keys.AddKey("PoisonCR", "");
+            }
+
+            if ((_characterClass & Data.Class.PetClass) == _characterClass)
             {
                 newFile.Sections.AddSection("Pets");
                 section = newFile.Sections.GetSectionData("Pets");
@@ -366,6 +401,25 @@ namespace E3Core.Settings
         public bool Misc_AutoLootEnabled;
         public string Misc_AnchorChar = String.Empty;
 
+        public bool Rogue_AutoHide = false;
+        public bool Rogue_AutoEvade = false;
+        public int Rogue_EvadePct = 0;
+        public string Rogue_PoisonPR = String.Empty;
+        public string Rogue_PoisonFR = String.Empty;
+        public string Rogue_PoisonCR = String.Empty;
+        public string Rogue_SneakAttack = String.Empty;
+
+        public string Assist_Type = string.Empty;
+        public string Assist_MeleeStickPoint = String.Empty;
+        public bool Assist_TauntEnabled = false;
+        public bool Assist_SmartTaunt = true;
+
+        /// <summary>
+        /// used as MaxMelee or distance numeric
+        /// </summary>
+        public string Assist_MeleeDistance = "MaxMelee";
+        public String Assist_RangeDistance = "100";
+        public Int32 Assist_AutoAssistPercent = 98;
 
         //abilities
         public List<Data.Spell> MeleeAbilities = new List<Data.Spell>();

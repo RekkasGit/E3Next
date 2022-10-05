@@ -46,13 +46,14 @@ namespace E3Core.Processors
             //_startTimeStamp = Core._stopWatch.ElapsedMilliseconds;
             using (_log.Trace())
             {
+                if (!_isInit) { Init(); }
                 //update on every loop
                 _zoneID = MQ.Query<Int32>("${Zone.ID}"); //to tell if we zone mid process
                 //action taken is always set to false at the start of the loop
                 _actionTaken = false;
                 //Init is here to make sure we only Init while InGame, as some queries will fail if not in game
-                if (!_isInit) { Init(); }
 
+                MQ.Cmd("/face");
 
                 List<string> _methodsToInvokeAsStrings;
                 if (AdvancedSettings._classMethodsAsStrings.TryGetValue(_currentShortClassString, out _methodsToInvokeAsStrings))
@@ -111,12 +112,18 @@ namespace E3Core.Processors
                 _isInit = true;
                 Spawns._refreshTimePeriodInMS = 1000;
 
-                EventProcessor.RegisterCommand("/testcommand02", (x) => {
+                if(!EventProcessor.RegisterCommand("/testcommand02", (x) => {
 
                     MQ.Write("Command issued:" + x.eventString);
                 
                 
-                });
+                }))
+                {
+                    MQ.Write("\aERROR couldn't register command /testcommand02");
+                    //terminate script?
+                }
+                
+
 
                 EventProcessor.UnRegisterCommand("/testcommand02");
 
@@ -167,9 +174,10 @@ namespace E3Core.Processors
         /// </summary>
         public class MoqMQ : MonoCore.IMQ
         {
-            public void AddCommand(string query)
+            public bool AddCommand(string query)
             {
-                Console.WriteLine("AddCommand:" + query);
+               Console.WriteLine("AddCommand:" + query);
+                return true;
             }
 
             public void Broadcast(string query)

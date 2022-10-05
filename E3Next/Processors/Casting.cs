@@ -534,26 +534,28 @@ namespace E3Core.Processors
             }
         }
   
-        public static void TrueTarget(Int32 targetID)
+        public static bool TrueTarget(Int32 targetID)
         {
 
             //0 means don't change target
-            if (targetID == 0) return;
+            if (targetID == 0) return false;
 
             _log.Write("Trying to Aquire target");
 
-            if (MQ.Query<Int32>("${Target.ID}") == targetID) return;
+            if (MQ.Query<Int32>("${Target.ID}") == targetID) return true;
             
             //now to get the target
             if (MQ.Query<Int32>($"${{SpawnCount[id {targetID}]}}") > 0)
             {
                 MQ.Cmd($"/target id {targetID}");
                 MQ.Delay(300, $"${{Target.ID}}=={targetID}");
-
+                if (MQ.Query<Int32>("${Target.ID}") == targetID) return true;
+                return false;
             }
             else
-            {
+            {   
                 MQ.Write("TrueTarget has no spawncount");
+                return false;
             }
 
         }

@@ -420,20 +420,24 @@ namespace MonoCore
             public Match match;
             public string eventName;
         }
-        public static void RegisterCommand(string commandName, Action<CommandMatch> method)
+        public static bool RegisterCommand(string commandName, Action<CommandMatch> method)
         {
             CommandListItem c = new CommandListItem();
             c.command = commandName;
             c.method = method;
             c.keyName = commandName;
 
-
-
-            if (_commandList.TryAdd(commandName, c))
+            bool returnvalue =  Core.mqInstance.AddCommand(commandName);
+            if(returnvalue)
             {
-                //now to register the command over.
-                Core.mqInstance.AddCommand(commandName);
+                if (_commandList.TryAdd(commandName, c))
+                {
+                    //now to register the command over.
+                    return true;
+                }
+                
             }
+            return false;
 
         }
         public static void UnRegisterCommand(string commandName)
@@ -584,27 +588,14 @@ namespace MonoCore
                 _delayTime = 0;
             }
 
-
-            //Core.mq_Echo("Starting OnPulse in C#");
-
-            //if (_stopWatch.ElapsedMilliseconds - millisecondsSinceLastPrint > 5000)
-            //{
-            //    use raw command, as we are on the C++thread, and don't want a delay hitting us
-            //    Core.mq_Echo("[" + System.DateTime.Now + " Total Calls:" + _onPulseCalls);
-            //    millisecondsSinceLastPrint = _stopWatch.ElapsedMilliseconds;
-            //}
-
             RestartWait:
             //allow the processing thread to start its work.
             //and copy cache values to other cores so the thread can see the updated information in MQ
             MainProcessor._processResetEvent.Set();
-
             //Core.mq_Echo("Blocking on C++");
             Core._coreResetEvent.Wait();
             Core._coreResetEvent.Reset();
             //we need to block and chill out to let the other thread do its work
-            //Core.mq_Echo("Unblocked on C++");
-
             //check to see if the 2nd thread has a command for us to send out
             //if so, we need to run the command, and then empty it
             if (_currentWrite != String.Empty)
@@ -617,20 +608,21 @@ namespace MonoCore
             }
             if (_currentCommand != String.Empty)
             {
-                //Core.mq_Echo("Unblocked on C++:: Doing a Command");
-
                 Core.mq_DoCommand(_currentCommand);
+               
+                if(Core.mq_GetRunNextCommand())
+                {
+                    goto RestartWait;
+
+                }
                 _currentCommand = String.Empty;
-                goto RestartWait;
             }
             if (_currentDelay > 0)
             {
-                // Core.mq_Echo("Unblocked on C++:: Doing a Delay");
                 Core.mq_Delay(_currentDelay);
                 _currentDelay = 0;
             }
-            //Core.mq_Echo("Ending OnPulse in C#");
-
+  
 
         }
 
@@ -678,13 +670,16 @@ namespace MonoCore
         [MethodImpl(MethodImplOptions.InternalCall)]
         public extern static void mq_Delay(int delay);
         [MethodImpl(MethodImplOptions.InternalCall)]
-        public extern static void mq_AddCommand(string command);
+        public extern static bool mq_AddCommand(string command);
         [MethodImpl(MethodImplOptions.InternalCall)]
         public extern static void mq_ClearCommands();
         [MethodImpl(MethodImplOptions.InternalCall)]
         public extern static void mq_RemoveCommand(string command);
         [MethodImpl(MethodImplOptions.InternalCall)]
         public extern static void mq_GetSpawns();
+        [MethodImpl(MethodImplOptions.InternalCall)]
+        public extern static bool mq_GetRunNextCommand();
+        
         #region IMGUI
         [MethodImpl(MethodImplOptions.InternalCall)]
         public extern static bool imgui_Begin(string name, int flags);
@@ -756,7 +751,7 @@ namespace MonoCore
         void Delay(Int32 value);
         Boolean Delay(Int32 maxTimeToWait, string Condition);
         void Broadcast(string query);
-        void AddCommand(string query);
+        bool AddCommand(string query);
         void ClearCommands();
         void RemoveCommand(string commandName);
 
@@ -970,9 +965,9 @@ namespace MonoCore
             }
             return true;
         }
-        public void AddCommand(string commandName)
+        public bool AddCommand(string commandName)
         {
-            Core.mq_AddCommand(commandName);
+            return Core.mq_AddCommand(commandName);
         }
         public void ClearCommands()
         {

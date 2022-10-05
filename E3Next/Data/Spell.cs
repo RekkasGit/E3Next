@@ -15,7 +15,8 @@ namespace E3Core.Data
         Spell,
         Disc,
         Ability,
-        Item
+        Item,
+        None
     }
     
     public class Spell
@@ -287,27 +288,34 @@ namespace E3Core.Data
         }
         void QueryMQ()
         {
-                      
-            if (MQ.Query<bool>($"${{Me.AltAbility[{SpellName}].Spell}}")){
+
+            if (MQ.Query<bool>($"${{Me.AltAbility[{CastName}].Spell}}")) {
                 CastType = CastType.AA;
             }
-            else if(MQ.Query<bool>($"${{Me.Book[{SpellName}]}}")){
+            else if (MQ.Query<bool>($"${{Me.Book[{CastName}]}}")) {
                 CastType = CastType.Spell;
             }
-            else if (MQ.Query<bool>($"${{Me.CombatAbility[{SpellName}]}}")){
+            else if (MQ.Query<bool>($"${{Me.CombatAbility[{CastName}]}}")) {
                 CastType = CastType.Disc;
             }
-            else if (MQ.Query<bool>($"${{Me.Ability[{SpellName}]}}")){
+            else if (MQ.Query<bool>($"${{Me.Ability[{CastName}]}}")) {
                 CastType = CastType.Ability;
             }
-            else if (MQ.Query<bool>($"${{Spell[{SpellName}]}}"))
+            else if (MQ.Query<bool>($"${{Spell[{CastName}]}}"))
             {
                 //final check to see if its a spell, that maybe a mob casts?
                 CastType = CastType.Spell;
             }
-            else {
+            else if (MQ.Query<bool>($"${{FindItem[={CastName}]}}")) {
+                
                 CastType = CastType.Item;
+            } 
+            else
+            {
+                //bad spell/item/etc
+                CastType = CastType.None;
             }
+       
 
 
             if(CastType==CastType.Item)

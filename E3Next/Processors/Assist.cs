@@ -1,10 +1,9 @@
-﻿using MonoCore;
+﻿using E3Core.Classes;
+using MonoCore;
 using System;
 using System.Collections.Generic;
+using System.Dynamic;
 using System.Linq;
-using System.Reflection;
-using System.Text;
-using System.Threading.Tasks;
 
 namespace E3Core.Processors
 {
@@ -26,6 +25,12 @@ namespace E3Core.Processors
         public static Int32 _assistStickDistance = 10;
         public static string _epicWeaponName=String.Empty;
         public static string _anguishBPName=String.Empty;
+        private static IList<string> _rangeTypes = new List<string>() { "Ranged", "Autofire" };
+        private static IList<string> _meleeTypes = new List<string>() { "Melee"};
+        private static IList<string> _assistDistanceTypes = new List<string> { "MaxMelee", "off" };
+        public static Int32 _assistDistance = 0;
+        public static bool _assistIsEnraged = false;
+        private static Dictionary<string, Action> _stickSwitch;
 
 
         public static void Init()
@@ -95,6 +100,16 @@ namespace E3Core.Processors
                 }
 
 
+                if (MQ.Query<Int32>("${Target.ID}") != _assistTargetID)
+                {
+                    if (!Casting.TrueTarget(_assistTargetID))
+                    {
+                        //could not target
+                        MQ.Broadcast("\arCannot assist, Could not target");
+                        return;
+                    }
+                }
+
                 Spawn folTarget;
 
                 if(_spawns.TryByID(Basics._followTargetID,out folTarget))
@@ -116,10 +131,7 @@ namespace E3Core.Processors
                 _isAssisting = true;
                 _assistTargetID = s.ID;
 
-                if(MQ.Query<Int32>("${Target.ID}")!=_assistTargetID)
-                {
-                    Casting.TrueTarget(_assistTargetID);
-                }
+
                 MQ.Cmd($"/face fast id {_assistTargetID}");
                 
                 if(MQ.Query<Int32>("${Me.Pet.ID}")>0)
@@ -127,13 +139,118 @@ namespace E3Core.Processors
                     MQ.Cmd($"/pet attack {_assistTargetID}");
                 }
 
+                //IF MELEE/Ranged
+                if (_meleeTypes.Contains(E3._characterSettings.Assist_Type, StringComparer.OrdinalIgnoreCase))
+                {
+                    if (_assistDistanceTypes.Contains(E3._characterSettings.Assist_MeleeDistance, StringComparer.OrdinalIgnoreCase))
+                    {
+                        _assistDistance = (int)(s.MaxRangeTo * 0.75);
+                    }
+                    else
+                    {
+                        if (!Int32.TryParse(E3._characterSettings.Assist_MeleeDistance, out _assistDistance))
+                        {
+                            _assistDistance = (int)(s.MaxRangeTo * 0.75);
+                        }
+                    }
+                    //make sure its not too out of bounds
+                    if (_assistDistance > 25 || _assistDistance < 1)
+                    {
+                        _assistTargetID = 25;
+                    }
+                    StickToAssistTarget();
 
+                    if(E3._currentClass== Data.Class.Rogue)
+                    {
+                        Rogue.RogueStrike();
 
+                    }
+                    MQ.Cmd("/attack on");
 
+                }
+                else if (_rangeTypes.Contains(E3._characterSettings.Assist_Type, StringComparer.OrdinalIgnoreCase))
+                {
+                    if(!MQ.Query<bool>("${Me.AutoFire}"))
+                    {
+                        MQ.Delay(1000);
+                        MQ.Cmd("/autofire");
+                    }
+
+                    if(E3._characterSettings.Assist_Type.Equals("Ranged"))
+                    {
+                        if (E3._characterSettings.Assist_RangeDistance.Equals("Clamped"))
+                        {   //so we don't calc multiple times
+                            double distance = s.Distance;
+                            if(distance >= 30 && distance <= 200)
+                            {
+                                MQ.Cmd($"/squelch /stick hold moveback {distance}");
+                            }
+                            else
+                            {
+                                if (distance > 200) MQ.Cmd("/squelch /stick hold moveback 195");
+                                if (distance < 30) MQ.Cmd("/squelch /stick hold moveback 35");
+                            }
+
+                        }
+                        else
+                        {
+                            MQ.Cmd($"/squelch /stick hold moveback {E3._characterSettings.Assist_RangeDistance}");
+                        }
+                    }
+                }
             }
-           
         }
+      
+        private static void StickToAssistTarget()
+        {
+            //needed a case insensitive switch, that was easy to read, thus this.
+            string sp = E3._characterSettings.Assist_MeleeStickPoint;
+            if(_stickSwitch==null)
+            {
+                var stw = new Dictionary<string, Action>(10, StringComparer.OrdinalIgnoreCase);
+                stw.Add("behind", () => {
 
+                    MQ.Cmd("/stick snaproll uw");
+                    MQ.Delay(200, $"${{Bool[${{Stick.Behind}} && ${{Stick.Stopped}}]}}");
+                    MQ.Cmd($"/squelch /stick hold moveback behind {_assistDistance} uw");
+                });
+                stw.Add("front", () => {
+
+                    MQ.Cmd($"/stick hold front {_assistDistance} uw");
+                    MQ.Delay(200, "${Stick.Stopped}");
+                   
+                });
+                stw.Add("behindonce", () => {
+
+                    MQ.Cmd("/stick snaproll uw");
+                    MQ.Delay(200, $"${{Bool[${{Stick.Behind}} && ${{Stick.Stopped}}]}}");
+                    MQ.Cmd($"/squelch /stick hold moveback behindonce {_assistDistance} uw");
+                });
+                stw.Add("pin", () => {
+
+                    MQ.Cmd("/stick snaproll uw");
+                    MQ.Delay(200, $"${{Bool[${{Stick.Behind}} && ${{Stick.Stopped}}]}}");
+                    MQ.Cmd($"/squelch /stick hold moveback pin {_assistDistance} uw");
+                });
+                stw.Add("!front", () => {
+
+                    MQ.Cmd("/stick snaproll uw");
+                    MQ.Delay(200, $"${{Bool[${{Stick.Behind}} && ${{Stick.Stopped}}]}}");
+                    MQ.Cmd($"/squelch /stick hold moveback !front {_assistDistance} uw");
+                });
+                _stickSwitch = stw;
+            }
+            Action action;
+            if(_stickSwitch.TryGetValue(sp,out action))
+            {
+                action();
+            }
+            else
+            {   //defaulting to behind
+                _stickSwitch["behind"]();
+            }
+
+        }
 
         private static void RegisterEpicAndAnguishBP()
         {
@@ -166,6 +283,10 @@ namespace E3Core.Processors
                     {
                         AssistOn(mobid);
                     }
+                    else
+                    {
+                        MQ.Broadcast("\aNeed a valid target to assist.");
+                    }
                 }
                 else
                 {
@@ -174,6 +295,7 @@ namespace E3Core.Processors
                     {
                         //we are telling people to follow us
                         E3._bots.BroadcastCommandToOthers($"/assistme {targetID}");
+                         AssistOn(targetID);
                     }
                     else
                     {
@@ -181,9 +303,105 @@ namespace E3Core.Processors
                     }
                 }
             });
+            EventProcessor.RegisterCommand("/backoff", (x) =>
+            {
+                //we are telling people to follow us
+                E3._bots.BroadcastCommandToOthers($"/backoff");
+                AssistOff();
+            });
+            EventProcessor.RegisterCommand("/swarmpets", (x) =>
+            {
+                ProcessBurn("/swarmpets", x, ref use_Swarms);
+            });
+            EventProcessor.RegisterCommand("/quickburn", (x) =>
+            {
+                ProcessBurn("/quickburn", x,ref use_QUICKBurns);
+
+            });
+            EventProcessor.RegisterCommand("/fullburn", (x) =>
+            {
+                ProcessBurn("/fullburn", x, ref use_FULLBurns);
+
+            });
+            EventProcessor.RegisterCommand("/longburn", (x) =>
+            {
+                ProcessBurn("/longburn", x, ref use_LONGBurns);
+
+            });
+            EventProcessor.RegisterEvent("EnrageOn", "(.)+ has become ENRAGED.", (x) =>
+            {
+                if(x.match.Groups.Count>1)
+                {
+                    string mobName = x.match.Groups[1].Value;
+                    if (MQ.Query<Int32>("${Target.ID}") == MQ.Query<Int32>($"${{Spawn[{mobName}].ID}}"))
+                    {
+                        _assistIsEnraged = true;
+                        if(MQ.Query<Int32>("${Me.Pet.ID}")>0)
+                        {
+                            MQ.Cmd("/pet back off");
+                        }
+                    }
+                }
+            });
+            EventProcessor.RegisterEvent("EnrageOff", "(.)+  is no longer enraged.", (x) =>
+            {
+                if (x.match.Groups.Count > 1)
+                {
+                    string mobName = x.match.Groups[1].Value;
+                    if (MQ.Query<Int32>("${Target.ID}") == MQ.Query<Int32>($"${{Spawn[{mobName}].ID}}"))
+                    {
+                        _assistIsEnraged = false;
+                        if (MQ.Query<Int32>("${Me.Pet.ID}") > 0)
+                        {
+                            MQ.Cmd("/pet attack");
+                        }
+                    }
+                }
+            });
+            EventProcessor.RegisterEvent("GetCloser", "Your target is too far away, get closer!", (x) =>
+            {
+                if(_isAssisting)
+                {
+                    if(_assistStickDistance>5) { _assistStickDistance -= 3; }
+                }
+
+                
+
+            });
+
+
+
 
         }
-
+        private static void ProcessBurn(string command, EventProcessor.CommandMatch x , ref bool burnType)
+        {
+            Int32 mobid;
+            if (x.args.Count > 0)
+            {
+                if (Int32.TryParse(x.args[1], out mobid))
+                {
+                    burnType = true;
+                }
+                else
+                {
+                    MQ.Broadcast($"\aNeed a valid target to {command}.");
+                }
+            }
+            else
+            {
+                Int32 targetID = MQ.Query<Int32>("${Target.ID}");
+                if (targetID > 0)
+                {
+                    //we are telling people to follow us
+                    E3._bots.BroadcastCommandToOthers($"{command} {targetID}");
+                    burnType = true;
+                }
+                else
+                {
+                    MQ.Write($"\aNeed a target to {command}");
+                }
+            }
+        }
         private static List<string> _anguishBPList = new List<string>() { 
             "Bladewhisper Chain Vest of Journeys",
             "Farseeker's Plate Chestguard of Harmony",
