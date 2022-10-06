@@ -72,10 +72,10 @@ namespace E3Core.Settings
             {
                 _classMethodsAsStrings.Add(shortname, new List<string>());
                
-                if((E3._currentClass & Data.Class.Priest)== E3._currentClass)
-                {
-                    _classMethodsAsStrings[shortname].Add("check_Heals");
-                }
+                //if((E3._currentClass & Data.Class.Priest)== E3._currentClass)
+                //{
+                //    _classMethodsAsStrings[shortname].Add("check_Heals");
+                //}
                 
                 LoadKeyData($"{shortname} Functions", $"{shortname} Function", parsedData, _classMethodsAsStrings[shortname]);
             }

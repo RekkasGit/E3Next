@@ -32,6 +32,7 @@ namespace E3Core.Processors
 
                 Casting.Init();
                 Basics.Init();
+                Assist.Init();
 
                 //lets init server name
                 //laz server specific,otherwise default

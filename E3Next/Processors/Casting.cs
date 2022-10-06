@@ -52,12 +52,13 @@ namespace E3Core.Processors
 
 
         }
-        public static CastReturn Cast(int targetID, Data.Spell spell)
+        public static CastReturn Cast(int targetID, Data.Spell spell, Func<bool> interruptCheck=null)
         {
 
             //TODO: Add bard logic back in
             using (_log.Trace())
             {
+               
 
                 if(targetID < 1)
                 {
@@ -346,24 +347,23 @@ namespace E3Core.Processors
                     //means that we didn't fizzle and are now casting the spell
 
                     //TODO: Interrupt logic
-
+                    if (interruptCheck != null && interruptCheck())
+                    {
+                        MQ.Cmd("/interrupt");
+                        E3._actionTaken = true;
+                        return CastReturn.CAST_INTERRUPTFORHEAL;
+                    }
                     MQ.Delay(100);
 
 
 
                 }
-
                 //spell is either complete or interrupted
                 //need to wait for a period to get our results. 
-                MQ.Delay(1500, $"${{Bool[!${{Cast.Status.Find[C]}}]}}");
-
-
+                MQ.Delay(300);
                 string castResult = MQ.Query<string>("${Cast.Result}");
-
                 CastReturn returnValue = CastReturn.CAST_INTERRUPTED;
                 Enum.TryParse<CastReturn>(castResult, out returnValue);
-
-
 
                 if (returnValue == CastReturn.CAST_SUCCESS)
                 {
@@ -388,8 +388,6 @@ namespace E3Core.Processors
                 if (!String.IsNullOrWhiteSpace(spell.AfterSpell))
                 {
                     
-
-
                     if (spell.AfterSpellData == null)
                     {
                         spell.AfterSpellData = new Data.Spell(spell.AfterSpell);
@@ -414,14 +412,34 @@ namespace E3Core.Processors
 
                 //TODO: bard resume twist
 
-
+                MQ.Write("Cast return value:" + returnValue);
                 return returnValue;
                 
             }
 
 
         }
+        public static Boolean checkMana(Data.Spell spell)
+        {
 
+            Int32 currentMana = MQ.Query<Int32>("${Me.CurrentMana}");
+            Int32 pctMana = MQ.Query<Int32>("${Me.PctMana}");
+            if (currentMana>spell.Mana)
+            {
+                if(pctMana> spell.MinMana)
+                {   if(spell.MaxMana > 0)
+                    {
+                        if (pctMana < spell.MaxMana)
+                        {
+                            return false;
+                        }
+                    }
+                    return true;
+                   
+                }
+            }
+            return false;
+        }
         public static Boolean CheckReady(Data.Spell spell)
         {
             _log.Write($"CheckReady on {spell.CastName}");
@@ -622,7 +640,8 @@ namespace E3Core.Processors
         CAST_ZONING,
         CAST_FEIGN,
         CAST_SPELLBOOKOPEN,
-        CAST_ACTIVEDISC
+        CAST_ACTIVEDISC,
+        CAST_INTERRUPTFORHEAL
 
     }
 }

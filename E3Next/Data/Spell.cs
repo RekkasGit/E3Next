@@ -344,6 +344,7 @@ namespace E3Core.Data
                     //Means this is not in a bag and in the root inventory
                     TargetType = MQ.Query<String>($"${{Me.Inventory[{invSlot}].Spell.TargetType}}");
                     Duration= MQ.Query<Int32>($"${{Me.Inventory[{invSlot}].Spell.Duration}}");
+                    DurationTotalSeconds = MQ.Query<Int32>($"${{Me.Inventory[{invSlot}].Spell.Duration.TotalSeconds}}");
                     RecastTime = MQ.Query<Decimal>($"${{Me.Inventory[{invSlot}].Spell.Duration}}");
                     RecoveryTime= MQ.Query<Decimal>($"${{Me.Inventory[{invSlot}].Spell.RecoveryTime}}");
                     MyCastTime= MQ.Query<Decimal>($"${{Me.Inventory[{invSlot}].Spell.RecoveryTime}}");
@@ -371,6 +372,8 @@ namespace E3Core.Data
                     bagSlot += 1;
                     TargetType = MQ.Query<String>($"${{Me.Inventory[{invSlot}].Item[{bagSlot}].Spell.TargetType}}");
                     Duration = MQ.Query<Int32>($"${{Me.Inventory[{invSlot}].Item[{bagSlot}].Spell.Duration}}");
+                    DurationTotalSeconds = MQ.Query<Int32>($"${{Me.Inventory[{invSlot}].Item[{bagSlot}].Spell.Duration.TotalSeconds}}");
+
                     RecastTime = MQ.Query<Decimal>($"${{Me.Inventory[{invSlot}].Item[{bagSlot}].Spell.Duration}}");
                     RecoveryTime = MQ.Query<Decimal>($"${{Me.Inventory[{invSlot}].Item[{bagSlot}].Spell.RecoveryTime}}");
                     MyCastTime = MQ.Query<Decimal>($"${{Me.Inventory[{invSlot}].Item[{bagSlot}].Spell.RecoveryTime}}");
@@ -399,6 +402,8 @@ namespace E3Core.Data
             {
                 TargetType = MQ.Query<String>($"${{Me.AltAbility[{CastName}].Spell.TargetType}}");
                 Duration= MQ.Query<Int32>($"${{Me.AltAbility[{CastName}].Spell.Duration}}");
+                DurationTotalSeconds = MQ.Query<Int32>($"${{Me.AltAbility[{CastName}].Spell.Duration.TotalSeconds}}");
+
                 RecastTime = MQ.Query<Decimal>($"${{Me.AltAbility[{CastName}].ReuseTime}}");
                 RecoveryTime = MQ.Query<Decimal>($"${{Me.AltAbility[{CastName}].Spell.RecoveryTime}}");
                 MyCastTime = MQ.Query<Decimal>($"${{Me.AltAbility[{CastName}].Spell.MyCastTime}}");
@@ -419,6 +424,8 @@ namespace E3Core.Data
 
                 TargetType = MQ.Query<String>($"${{Spell[{CastName}].TargetType}}");
                 Duration = MQ.Query<Int32>($"${{Spell[{CastName}].Duration}}");
+                DurationTotalSeconds = MQ.Query<Int32>($"${{Spell[{CastName}].Duration.TotalSeconds}}");
+
                 RecastTime = MQ.Query<Decimal>($"${{Spell[{CastName}].RecastTime}}");
                 RecoveryTime = MQ.Query<Decimal>($"${{Spell[{CastName}].RecoveryTime}}");
                 MyCastTime = MQ.Query<Decimal>($"${{Spell[{CastName}].MyCastTime}}");
@@ -440,6 +447,8 @@ namespace E3Core.Data
             else if (CastType == CastType.Disc)
             {
                 Duration = MQ.Query<Int32>($"${{Spell[{CastName}].Duration}}");
+                DurationTotalSeconds = MQ.Query<Int32>($"${{Spell[{CastName}].Duration.TotalSeconds}}");
+
                 Int32 AERange = MQ.Query<Int32>($"${{Spell[{CastName}].AERange}}");
                 MyRange = AERange;
                 if (MyRange == 0)
@@ -486,6 +495,7 @@ namespace E3Core.Data
         public Int32 MaxTries = 5;
         public String CheckFor = String.Empty;
         public Int32 Duration;
+        public Int32 DurationTotalSeconds;
         public Decimal RecastTime;
         public Decimal RecoveryTime;
         private Decimal myCastTime;
@@ -515,14 +525,14 @@ namespace E3Core.Data
         public Int32 Mode;
         public Boolean Rotate;
         public Int32 Delay;
-        public Int64 CastID;
+        public Int32 CastID;
         public Int32 MinEnd;
         public Boolean CastInvis;
         public String SpellType;
         public String CastTarget;
         public Boolean GiftOfMana;
         public Int32 CheckForID;
-        public Int64 SpellID;
+        public Int32 SpellID;
         public Int32 PctAggro;
         public String Zone = "All";
         public Int32 MinSick;

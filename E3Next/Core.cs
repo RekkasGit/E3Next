@@ -37,7 +37,7 @@ namespace MonoCore
     public static class MainProcessor
     {
         public static IMQ MQ = Core.mqInstance;
-        public static Int32 _processDelay = 1000;
+        public static Int32 _processDelay = 200;
         private static Logging _log = Core._log;
         public static string _applicationName = "";
         public static Int64 _startTimeStamp;
@@ -86,16 +86,16 @@ namespace MonoCore
                         //************************************************
                         //just have a class call a process method or such so you don't have to see this 
                         //boiler plate code with all the threading.
-
+                       
                         ////MQ.Write("Calling e3process");
                         E3.Process();
-                        ////***NOTE NOTE NOTE, Use M2.Delay(0) in your code to give control back to EQ if you have taken awhile in doing something
-                        ////***NOTE NOTE NOTE, generally this isn't needed as there is an auto yield baked into every MQ method. Just be aware.
                         using (_log.Trace("EventProcessing"))
                         {
                             EventProcessor.ProcessEventsInQueues();
-
                         }
+                        ////***NOTE NOTE NOTE, Use M2.Delay(0) in your code to give control back to EQ if you have taken awhile in doing something
+                        ////***NOTE NOTE NOTE, generally this isn't needed as there is an auto yield baked into every MQ method. Just be aware.
+
                     }
 
                     //MQ.TraceEnd("Process");
@@ -119,7 +119,11 @@ namespace MonoCore
                 }
                 catch (Exception ex)
                 {
-                    _log.Write("Error: Please reload. Terminating. \r\nExceptionMessage:" + ex.Message + " stack:" + ex.StackTrace.ToString(), Logging.LogLevels.CriticalError);
+                    if(Core._isProcessing)
+                    {
+                        _log.Write("Error: Please reload. Terminating. \r\nExceptionMessage:" + ex.Message + " stack:" + ex.StackTrace.ToString(), Logging.LogLevels.CriticalError);
+
+                    }
                     Core._isProcessing = false;
                     //lets tell core that it can continue
                     //test
@@ -179,10 +183,13 @@ namespace MonoCore
         /// <summary>
         /// Runs on its own thread, will process through all the strings passed in and then put them into the correct queue
         /// </summary>
-        static void ProcessEventsIntoQueues()
+        public static void ProcessEventsIntoQueues()
         {
             System.Text.RegularExpressions.Regex dannetRegex = new Regex("");
+            char[] splitChars = new char[1] {' '};
 
+            ////WARNING DO NOT SEND COMMANDS/Writes/Echos, etc from this thread. 
+            ///only the primary C# thread can do that.
             while (Core._isProcessing)
             {
                 if (_eventProcessingQueue.Count > 0)
@@ -228,6 +235,7 @@ namespace MonoCore
                                 {
                                     //this starts with [appname], ignore it. 
                                     goto skipLine;
+                                    //return;
                                 }
                                 else
                                 {
@@ -269,26 +277,26 @@ namespace MonoCore
                     string line;
                     if (_mqCommandProcessingQueue.TryDequeue(out line))
                     {
-                        if (!String.IsNullOrWhiteSpace(line))
+                         if (!String.IsNullOrWhiteSpace(line))
                         {
                             foreach (var item in _commandList)
                             {
                                 //prevent spamming of an event to a user
                                 if (item.Value.queuedEvents.Count > _eventLimiterPerRegisteredEvent)
                                 {
+                                    Core.mqInstance.Write("event limiter");
+
                                     continue;
                                 }
                                 if (line.Equals(item.Value.command, StringComparison.OrdinalIgnoreCase) || line.StartsWith(item.Value.command + " ", StringComparison.OrdinalIgnoreCase))
                                 {
-
                                     //need to split out the params
-                                    List<String> args = line.Split(' ').ToList();
+                                    List<String> args = line.Split(splitChars, StringSplitOptions.RemoveEmptyEntries).ToList();
                                     args.RemoveAt(0);
                                     item.Value.queuedEvents.Enqueue(new CommandMatch() { eventName = item.Value.keyName, eventString = line, args = args });
                                 }
                             }
                         }
-
                     }
                 }
                 else
@@ -337,7 +345,7 @@ namespace MonoCore
                         continue;
                     }
                 }
-                //_log.Write($"Checking Event queue. Total:{item.Value.queuedEvents.Count}");
+                _log.Write($"IsInit:{_isInit} Checking command queue. Total:{item.Value.queuedEvents.Count}");
                 while (item.Value.queuedEvents.Count > 0)
                 {
 
@@ -426,10 +434,12 @@ namespace MonoCore
             c.command = commandName;
             c.method = method;
             c.keyName = commandName;
-
+            Core.mqInstance.Write("Adding command:" + commandName);
             bool returnvalue =  Core.mqInstance.AddCommand(commandName);
-            if(returnvalue)
-            {
+            Core.mqInstance.Write("Return from adding command:" + returnvalue);
+
+            if (returnvalue)
+            {   
                 if (_commandList.TryAdd(commandName, c))
                 {
                     //now to register the command over.
@@ -534,6 +544,7 @@ namespace MonoCore
 
             if (!_isInit)
             {
+                _isProcessing = true;
                 if (mqInstance == null)
                 {
                     mqInstance = new MQ();
@@ -548,7 +559,7 @@ namespace MonoCore
                 MainProcessor.Init();
 
                 //isProcessing needs to be true before the event processor has started
-                _isProcessing = true;
+                mq_Echo("Initing the event processor");
                 EventProcessor.Init();
 
 
@@ -570,8 +581,13 @@ namespace MonoCore
         public static void OnPulse()
         {
 
-            if (!_isProcessing) return;
-            //reset the last delay so we restart the procssing time since its a new OnPulse()
+            if (!_isProcessing)
+            {   
+                //allow the primary thread to finish terminating. 
+                MainProcessor._processResetEvent.Set();
+                return;
+
+            }//reset the last delay so we restart the procssing time since its a new OnPulse()
             MQ._sinceLastDelay = _stopWatch.ElapsedMilliseconds;
 
             _onPulseCalls++;
@@ -609,13 +625,13 @@ namespace MonoCore
             if (_currentCommand != String.Empty)
             {
                 Core.mq_DoCommand(_currentCommand);
-               
-                if(Core.mq_GetRunNextCommand())
+                _currentCommand = String.Empty;
+                if (Core.mq_GetRunNextCommand())
                 {
                     goto RestartWait;
 
                 }
-                _currentCommand = String.Empty;
+               
             }
             if (_currentDelay > 0)
             {
@@ -633,6 +649,8 @@ namespace MonoCore
         }
         public static void OnCommand(string commandLine)
         {
+            mq_Echo("command recieved:" + commandLine);
+
             EventProcessor.ProcessMQCommand(commandLine);
         }
         public static void OnIncomingChat(string line)
@@ -949,6 +967,13 @@ namespace MonoCore
             //we are now going to wait on the core
             MainProcessor._processResetEvent.Wait();
             MainProcessor._processResetEvent.Reset();
+
+            if(!Core._isProcessing)
+            {
+                //we are terminating, kill this thread
+                throw new Exception("Terminating thread");
+            }
+
             _sinceLastDelay = Core._stopWatch.ElapsedMilliseconds;
         }
 

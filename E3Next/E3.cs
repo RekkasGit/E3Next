@@ -53,8 +53,17 @@ namespace E3Core.Processors
                 _actionTaken = false;
                 //Init is here to make sure we only Init while InGame, as some queries will fail if not in game
 
-                MQ.Cmd("/face");
 
+                //do the basics first
+                //first and formost, do healing checks
+                if((_currentClass& Data.Class.Priest)==_currentClass)
+                {
+                    Heals.Check_Heals();
+                    if (_actionTaken) return;
+                }
+                Assist.Process();
+                //now do the dynamic methods from Advanced ini. 
+                //rembmer check_heals is auto inserted, should probably just pull out here
                 List<string> _methodsToInvokeAsStrings;
                 if (AdvancedSettings._classMethodsAsStrings.TryGetValue(_currentShortClassString, out _methodsToInvokeAsStrings))
                 {
@@ -70,6 +79,7 @@ namespace E3Core.Processors
                         }
                     }
                 }
+
             }
 
 
@@ -86,8 +96,8 @@ namespace E3Core.Processors
             {
                 MQ.ClearCommands();
                 
-                Logging._traceLogLevel = Logging.LogLevels.Debug; //log level we are currently at
-                Logging._minLogLevelTolog = Logging.LogLevels.Debug; //log levels have integers assoicatd to them. you can set this to Error to only log errors. 
+                Logging._traceLogLevel = Logging.LogLevels.None; //log level we are currently at
+                Logging._minLogLevelTolog = Logging.LogLevels.Error; //log levels have integers assoicatd to them. you can set this to Error to only log errors. 
                 Logging._defaultLogLevel = Logging.LogLevels.Debug; //the default if a level is not passed into the _log.write statement. useful to hide/show things.
                 MainProcessor._applicationName = "E3"; //application name, used in some outputs
                 MainProcessor._processDelay = 200; //how much time we will wait until we start our next processing once we are done with a loop.
@@ -119,7 +129,7 @@ namespace E3Core.Processors
                 
                 }))
                 {
-                    MQ.Write("\aERROR couldn't register command /testcommand02");
+                    MQ.Write("ERROR couldn't register command /testcommand02");
                     //terminate script?
                 }
                 
@@ -140,13 +150,6 @@ namespace E3Core.Processors
             {
                 return false;
             }
-
-            string gameState = MQ.Query<string>("${EverQuest.GameState}");
-
-            //MQ.Write("GameState:" + gameState);
-
-            //only process while in game
-            if (gameState != "INGAME") return false;
 
             return true;
         }

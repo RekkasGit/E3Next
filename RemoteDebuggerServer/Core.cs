@@ -851,13 +851,12 @@ namespace MonoCore
             if (_currentCommand != String.Empty)
             {
                 Core.mq_DoCommand(_currentCommand);
+                _currentCommand = String.Empty;
 
                 if (Core.mq_GetRunNextCommand())
                 {
                     goto RestartWait;
-
                 }
-                _currentCommand = String.Empty;
             }
             if (_currentDelay > 0)
             {

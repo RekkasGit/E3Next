@@ -1,4 +1,7 @@
 ﻿using E3Core.Classes;
+using E3Core.Data;
+using E3Core.Settings;
+using E3Core.Utility;
 using MonoCore;
 using System;
 using System.Collections.Generic;
@@ -18,11 +21,12 @@ namespace E3Core.Processors
         private static bool use_EPICBurns = false;
         private static bool use_LONGBurns = false;
         private static bool use_Swarms = false;
-        private static Dictionary<Int32, Int32> _resistCounters = new Dictionary<int, int>();
-
+      
         public static Boolean _isAssisting = false;
         public static Int32 _assistTargetID = 0;
         public static Int32 _assistStickDistance = 10;
+        public static List<Data.Spell> _epicWeapon = new List<Data.Spell>();
+        public static List<Data.Spell> _anguishBP = new List<Data.Spell>();
         public static string _epicWeaponName = String.Empty;
         public static string _anguishBPName = String.Empty;
         private static IList<string> _rangeTypes = new List<string>() { "Ranged", "Autofire" };
@@ -35,15 +39,313 @@ namespace E3Core.Processors
         private static Data.Spell _divineStun = new Data.Spell("Divine Stun");
         private static Data.Spell _terrorOfDiscord = new Data.Spell("Terror of Discord");
         private static IList<string> _tankTypes = new List<string>() { "WAR", "PAL", "SK" };
+        private static Double _nukeDelayTimeStamp;
+        private static Dictionary<Int32, ResistCounter> _resistCounters = new Dictionary<Int32, ResistCounter>();
+        private static Dictionary<Int32, SpellTimer> _debuffdotTimers = new Dictionary<Int32, SpellTimer>();
+
+        private static HashSet<Int32> _mobsToDot = new HashSet<int>();
+        private static List<Int32> _deadMobs = new List<int>();
+        private static HashSet<Int32> _mobsToDebuff = new HashSet<int>();
 
 
         public static void Init()
         {
             RegisterEvents();
             RegisterEpicAndAnguishBP();
-            E3._bots.SetupAliases();
+            //E3._bots.SetupAliases();
         }
 
+        public static void Process()
+        {
+            UseBurns();
+            Check_AssistStatus();
+        }
+        //this can be invoked via advanced settings loop
+        [AdvSettingInvoke]
+        public static void Check_Nukes()
+        {
+
+            if (_assistTargetID > 0)
+            {
+                //we should be assisting, check_AssistStatus, verifies its not a corpse.
+
+                Spawn s;
+                if (_spawns.TryByID(_assistTargetID, out s))
+                {
+                    bool giftOfManaSet = false;
+                    bool giftOfMana = false;
+
+                    foreach (var spell in E3._characterSettings.Nukes)
+                    {
+                        //check Ifs on the spell
+                        if (String.IsNullOrWhiteSpace(spell.Ifs))
+                        {
+                            if (!MQ.Query<bool>($"${{Bool[{spell.Ifs}]}}"))
+                            {
+                                //failed check, onto the next
+                                continue;
+                            }
+                        }
+                        //can't cast if it isn't ready
+                        if (Casting.CheckReady(spell) && Casting.checkMana(spell))
+                        {
+                            //we should have a valid target via check_assistStatus
+                            if (spell.Delay > 0 && _nukeDelayTimeStamp > 0 && Core._stopWatch.ElapsedMilliseconds < _nukeDelayTimeStamp)
+                            {
+                                //delay has been specified, skip this spell
+                                continue;
+
+                            }
+                            //reset delay timestamp
+                            if (spell.Delay > 0)
+                            {
+                                _nukeDelayTimeStamp = 0;
+                            }
+
+
+                            if (spell.GiftOfMana)
+                            {
+                                //can only cast if we have gift of mana. do we have it?
+                                if (!(giftOfManaSet))
+                                {
+                                    giftOfMana = (MQ.Query<bool>("${Me.Song[Gift of Mana].ID}") || MQ.Query<bool>("${Me.Song[Celestial Gift].ID}") || MQ.Query<bool>("${Me.Song[Celestial Boon].ID}"));
+                                    giftOfManaSet = true;
+                                }
+                                if (!giftOfMana)
+                                {
+                                    continue;
+                                }
+
+                            }
+                            //aggro checks
+                            if (spell.NoAggro)
+                            {
+                                if (MQ.Query<bool>("${Me.TargetOfTarget.CleanName.Equal[${Me.CleanName}]}"))
+                                {
+                                    continue;
+                                }
+                            }
+                            if (MQ.Query<Int32>("${Me.PctAggro}") > spell.PctAggro)
+                            {
+                                continue;
+                            }
+                            //end aggro checks
+
+                            //check for buff
+                            if (!String.IsNullOrWhiteSpace(spell.CastIF))
+                            {
+                                if (!MQ.Query<bool>($"${{Bool[${{Target.Buff[{spell.CastIF}]}}]}}"))
+                                {
+                                    //doesn't have the buff we want
+                                    continue;
+                                }
+                            }
+
+                            if (s.Distance < spell.MyRange)
+                            {
+                                CastReturn result = Casting.Cast(_assistTargetID, spell,Heals.SomeoneNeedsHealing);
+                                if(result== CastReturn.CAST_INTERRUPTFORHEAL)
+                                {
+                                    return;
+                                }
+                                if (result == CastReturn.CAST_SUCCESS)
+                                {
+                                    //if the spell is a delay time, lets make sure all other delay types are blocked for the
+                                    //delay time
+                                    if (spell.Delay > 0)
+                                    {
+                                        _nukeDelayTimeStamp = Core._stopWatch.ElapsedMilliseconds + (spell.Delay * 1000);
+                                    }
+                                }
+
+                            }
+                            
+                        }
+                    }
+                }
+            }
+        }
+        [AdvSettingInvoke]
+        public static void Check_Debuffs()
+        {
+            if (_assistTargetID > 0)
+            {
+                CastLongTermSpell(_assistTargetID, E3._characterSettings.Debuffs_OnAssist);
+                if (E3._actionTaken) return;
+            }
+            foreach (var mobid in _mobsToDebuff)
+            {
+               
+                CastLongTermSpell(mobid, E3._characterSettings.Debuffs_Command);
+                if (E3._actionTaken) return;
+            }
+            foreach (var mobid in _deadMobs)
+            {
+                _mobsToDot.Remove(mobid);
+                _mobsToDebuff.Remove(mobid);
+            }
+            if (_deadMobs.Count > 0) _deadMobs.Clear();
+        }
+        [AdvSettingInvoke]
+        public static void check_Dots()
+        {
+
+            if(_assistTargetID>0)
+            {
+                CastLongTermSpell(_assistTargetID, E3._characterSettings.Dots_Assist);
+                if (E3._actionTaken) return;
+            }
+            
+            foreach (var mobid in _mobsToDot)
+            {  
+                CastLongTermSpell(mobid, E3._characterSettings.Dots_OnCommand);
+                if (E3._actionTaken) return;
+            }
+            foreach(var mobid in _deadMobs)
+            {
+                _mobsToDot.Remove(mobid);
+                _mobsToDebuff.Remove(mobid);
+            }
+            if (_deadMobs.Count > 0) _deadMobs.Clear();
+        }
+        private static void CastLongTermSpell(Int32 mobid, List<Data.Spell> spells)
+        {
+           
+            foreach(var spell in spells)
+            {
+                //do we already have a timer on this spell?
+                SpellTimer s;
+                if (_debuffdotTimers.TryGetValue(mobid, out s))
+                {
+                    Int64 timestamp;
+                    if (s._timestamps.TryGetValue(spell.SpellID, out timestamp))
+                    {
+                        if (Core._stopWatch.ElapsedMilliseconds < timestamp)
+                        {
+                            //debuff/dot is still on the mob, kick off
+                            continue;
+                        }
+                    }
+                }
+                ResistCounter r;
+                if (_resistCounters.TryGetValue(mobid, out r))
+                {
+                    //have resist counters on this mob, lets check if this spell is on the list
+                    Int32 counters;
+                    if (r._spellCounters.TryGetValue(spell.SpellID, out counters))
+                    {
+                        if (counters > 3)
+                        {   //mob is resistant to this spell, kick out. 
+                            continue;
+                        }
+                    }
+                }
+
+
+                if (Casting.CheckReady(spell) && Casting.checkMana(spell))
+                {
+                   
+                    //lets make sure the buffs/debuffs are there
+                    if (!Casting.TrueTarget(mobid))
+                    {
+                        //can't target it, so kick out for this mob
+                        _deadMobs.Add(mobid);
+                        return;
+                    }
+                    if (MQ.Query<bool>($"${{Bool[${{Spawn[id {mobid}].Type.Equal[Corpse]}}]}}"))
+                    {
+                        _deadMobs.Add(mobid);
+                        return;
+                        //its dead jim, leave it be
+
+                    }
+                    MQ.Delay(500, "${Target.BuffsPopulated}");
+                    //check if the if condition works
+                    if (!String.IsNullOrWhiteSpace(spell.Ifs))
+                    {
+                        if (!MQ.Query<bool>($"${{Bool[{spell.Ifs}]}}"))
+                        {
+                            continue;
+                        }
+                    }
+                    if (!String.IsNullOrWhiteSpace(spell.CastIF))
+                    {
+                        if (!MQ.Query<bool>($"${{Bool[${{Target.Buff[{spell.CastIF}]}}]}}"))
+                        {
+                            //doesn't have the buff we want
+                            continue;
+                        }
+                    }
+                    if (!String.IsNullOrWhiteSpace(spell.CheckFor))
+                    {
+                        if (MQ.Query<bool>($"${{Bool[${{Target.Buff[{spell.CheckFor}]}}]}}"))
+                        {
+                            //has the buff already
+                            continue;
+                        }
+                    }
+                    var result = CastReturn.CAST_FIZZLE;
+
+                    while (result == CastReturn.CAST_FIZZLE)
+                    {
+                        result= Casting.Cast(mobid, spell, Heals.SomeoneNeedsHealing);
+
+                    }
+                    if(result==CastReturn.CAST_INTERRUPTFORHEAL)
+                    {
+                        //need to heal!
+                        E3._actionTaken = true;
+                        return;
+                    }
+                    if(result==CastReturn.CAST_RESIST)
+                    {
+                        MQ.Write("\a Resist Caught");
+                        if (!_resistCounters.ContainsKey(mobid))
+                        {
+                            ResistCounter tresist = ResistCounter.Aquire();
+                            _resistCounters.Add(mobid, tresist);
+                        }
+                        ResistCounter resist = _resistCounters[mobid];
+                        if(!resist._spellCounters.ContainsKey(spell.SpellID))
+                        {
+                            resist._spellCounters.Add(spell.SpellID, 0);
+                        }
+                        resist._spellCounters[spell.SpellID]++;
+                        E3._actionTaken = true;
+                        return;
+                    } 
+                    else if(result==CastReturn.CAST_SUCCESS)
+                    {
+                       
+                        //clear the counter for this pell on this mob?
+                        if (_resistCounters.ContainsKey(mobid))
+                        {
+                            _resistCounters[mobid].Dispose();
+                            _resistCounters.Remove(mobid);
+
+                        }
+                        //set the timer for the spell!
+                        if (_debuffdotTimers.TryGetValue(mobid,out s))
+                        {
+                            if(!s._timestamps.ContainsKey(spell.SpellID))
+                            {
+                                s._timestamps.Add(spell.SpellID, 0);
+                            }
+                            s._timestamps[spell.SpellID] = Core._stopWatch.ElapsedMilliseconds + (spell.DurationTotalSeconds * 1000);
+
+                        }
+                        else
+                        {
+                             SpellTimer ts= SpellTimer.Aquire();
+                            ts._mobID = mobid;
+                            ts._timestamps.Add(spell.SpellID, Core._stopWatch.ElapsedMilliseconds + (spell.DurationTotalSeconds * 1000));
+                            _debuffdotTimers.Add(mobid, ts);
+                        }
+                    }
+                    //onto the next debuff/dot!
+                }
+            }
+        }
         public static void Check_AssistStatus()
         {
 
@@ -97,14 +399,12 @@ namespace E3Core.Processors
 
                         if (!MQ.Query<bool>("${Me.Combat}"))
                         {
-                            //turn off autofire
                             MQ.Cmd("/attack on");
                         }
 
                         //are we sticking?
                         if (!MQ.Query<bool>("${Stick.Active}"))
                         {
-                            //turn off autofire
                             StickToAssistTarget();
                         }
 
@@ -127,20 +427,56 @@ namespace E3Core.Processors
                             MQ.Cmd("/autofire");
                         }
                     }
+                    //call combat abilites
+                    CombatAbilties();
 
                 }
 
-                //call combat abilites
-                CombatAbilties();
+             
 
             }
             else if (_assistTargetID > 0)
             {
-                //can't find the mob, is it dead?
+                //can't find the mob, yet we have an assistID? remove assist.
                 AssistOff();
                 return;
             }
 
+            UseBurns();
+           
+        }
+        public static void UseBurns()
+        {
+            UseBurn(_epicWeapon, use_EPICBurns);
+            UseBurn(_anguishBP, use_EPICBurns);
+            UseBurn(E3._characterSettings.QuickBurns, use_QUICKBurns);
+            UseBurn(E3._characterSettings.FullBurns, use_FULLBurns);
+            UseBurn(E3._characterSettings.LongBurns, use_LONGBurns);
+
+        }
+        private static void UseBurn(List<Data.Spell> burnList, bool use)
+        {
+            if(use)
+            {
+                foreach (var burn in burnList)
+                {
+                    if(Casting.CheckReady(burn))
+                    {
+                        if(burn.CastType== Data.CastType.Disc)
+                        {
+                            if(burn.TargetType=="Self")
+                            {
+                                if(MQ.Query<bool>("${Me.ActiveDisc.ID}"))
+                                {
+                                    continue;
+
+                                }
+                            }
+                        }
+                        Casting.Cast(0,burn);
+                    }
+                }
+            }
         }
         public static void CombatAbilties()
         {
@@ -300,6 +636,22 @@ namespace E3Core.Processors
             use_Swarms = false;
             _resistCounters.Clear();
             _offAssistIgnore.Clear();
+            _mobsToDot.Clear();
+            _mobsToDebuff.Clear();
+            
+            //put them back in their object pools
+            foreach(var kvp in _resistCounters)
+            {
+                kvp.Value.Dispose();
+            }
+            _resistCounters.Clear();
+            //put them back in their object pools
+            foreach (var kvp in _debuffdotTimers)
+            {
+                kvp.Value.Dispose();
+            }
+            _resistCounters.Clear();
+
             //issue follow
             if (Basics._following)
             {
@@ -445,7 +797,20 @@ namespace E3Core.Processors
                 }
             }
         }
-
+        public static void DotsOn(Int32 mobid)
+        {
+            if(!_mobsToDot.Contains(mobid))
+            {
+                _mobsToDot.Add(mobid);
+            }
+        }
+        public static void DebuffsOn(Int32 mobid)
+        {
+            if (!_mobsToDebuff.Contains(mobid))
+            {
+                _mobsToDebuff.Add(mobid);
+            }
+        }
         private static void StickToAssistTarget()
         {
             //needed a case insensitive switch, that was easy to read, thus this.
@@ -520,38 +885,41 @@ namespace E3Core.Processors
                 }
             }
 
+            if(!String.IsNullOrWhiteSpace(_epicWeaponName))
+            {
+                _epicWeapon.Add(new Data.Spell(_epicWeaponName));
+            }
+            if (!String.IsNullOrWhiteSpace(_anguishBPName))
+            {
+                _anguishBP.Add(new Data.Spell(_anguishBPName));
+            }
+
         }
         private static void RegisterEvents()
         {
 
-            EventProcessor.RegisterCommand("/assistme", (x) =>
+            e3Utility.RegisterCommandWithTarget("/assistme", AssistOn);
+            e3Utility.RegisterCommandWithTarget("/dotson", DotsOn);
+            e3Utility.RegisterCommandWithTarget("/dot", DotsOn);
+            e3Utility.RegisterCommandWithTarget("/debuffson", DebuffsOn);
+            e3Utility.RegisterCommandWithTarget("/debuff", DebuffsOn);
+
+            EventProcessor.RegisterCommand("/debuffsoff", (x) =>
             {
-                Int32 mobid;
-                if (x.args.Count > 0)
-                {
-                    if (Int32.TryParse(x.args[1], out mobid))
-                    {
-                        AssistOn(mobid);
-                    }
-                    else
-                    {
-                        MQ.Broadcast("\aNeed a valid target to assist.");
-                    }
-                }
-                else
-                {
-                    Int32 targetID = MQ.Query<Int32>("${Target.ID}");
-                    if (targetID > 0)
-                    {
-                        //we are telling people to follow us
-                        E3._bots.BroadcastCommandToOthers($"/assistme {targetID}");
-                        AssistOn(targetID);
-                    }
-                    else
-                    {
-                        MQ.Write("\aNEED A TARGET TO ASSIST");
-                    }
-                }
+                _mobsToDebuff.Clear();
+               
+            });
+            EventProcessor.RegisterCommand("/dotsoff", (x) =>
+            {
+                _mobsToDot.Clear();
+
+            });
+
+            EventProcessor.RegisterCommand("/backoff", (x) =>
+            {
+                //we are telling people to follow us
+                E3._bots.BroadcastCommandToOthers($"/backoff");
+                AssistOff();
             });
             EventProcessor.RegisterCommand("/backoff", (x) =>
             {
@@ -561,57 +929,30 @@ namespace E3Core.Processors
             });
             EventProcessor.RegisterCommand("/swarmpets", (x) =>
             {
-                ProcessBurn("/swarmpets", x, ref use_Swarms);
+                ProcessBurnRequest("/swarmpets", x, ref use_Swarms);
             });
             EventProcessor.RegisterCommand("/epicburns", (x) =>
             {
-                ProcessBurn("/epicburns", x, ref use_EPICBurns);
+                ProcessBurnRequest("/epicburns", x, ref use_EPICBurns);
             });
             EventProcessor.RegisterCommand("/quickburns", (x) =>
             {
-                ProcessBurn("/quickburns", x, ref use_QUICKBurns);
+                ProcessBurnRequest("/quickburns", x, ref use_QUICKBurns);
 
             });
             EventProcessor.RegisterCommand("/fullburns", (x) =>
             {
-                ProcessBurn("/fullburns", x, ref use_FULLBurns);
+                ProcessBurnRequest("/fullburns", x, ref use_FULLBurns);
 
             });
             EventProcessor.RegisterCommand("/longburns", (x) =>
             {
-                ProcessBurn("/longburns", x, ref use_LONGBurns);
+                ProcessBurnRequest("/longburns", x, ref use_LONGBurns);
 
             });
-            EventProcessor.RegisterCommand("/e3OffAssistIgnore", (x) =>
-            {
-                Int32 mobid;
-                if (x.args.Count > 0)
-                {
-                    if (Int32.TryParse(x.args[1], out mobid))
-                    {
-                        if (!_offAssistIgnore.Contains(mobid))
-                        {
-                            _offAssistIgnore.Add(mobid);
-                        }
-                    }
 
-                }
-                else
-                {
-                    Int32 targetID = MQ.Query<Int32>("${Target.ID}");
-                    if (targetID > 0)
-                    {
-                        if (!_offAssistIgnore.Contains(targetID))
-                        {
-                            _offAssistIgnore.Add(targetID);
-                        }
-                        //we are telling people to follow us
-                        E3._bots.BroadcastCommandToOthers($"/e3OffAssistIgnore {targetID}");
-                    }
+            e3Utility.RegisterCommandWithTarget("/e3offassistignore", (x)=> { _offAssistIgnore.Add(x); });
 
-                }
-
-            });
             EventProcessor.RegisterEvent("EnrageOn", "(.)+ has become ENRAGED.", (x) =>
             {
                 if (x.match.Groups.Count > 1)
@@ -659,11 +1000,8 @@ namespace E3Core.Processors
 
             });
 
-
-
-
         }
-        private static void ProcessBurn(string command, EventProcessor.CommandMatch x, ref bool burnType)
+        private static void ProcessBurnRequest(string command, EventProcessor.CommandMatch x, ref bool burnType)
         {
             Int32 mobid;
             if (x.args.Count > 0)

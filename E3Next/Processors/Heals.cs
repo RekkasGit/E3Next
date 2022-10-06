@@ -45,25 +45,27 @@ namespace E3Core.Processors
 
 
  
-        public static void HealTanks(Int32 currentMana, Int32 pctMana)
+        public static bool HealTanks(Int32 currentMana, Int32 pctMana)
         {
             if(E3._characterSettings.WhoToHeal.Contains("Tanks"))
             {
-                Heal(currentMana, pctMana, E3._characterSettings.HealTankTargets, E3._characterSettings.HealTanks);
+                return Heal(currentMana, pctMana, E3._characterSettings.HealTankTargets, E3._characterSettings.HealTanks);
             }
+            return false;
         }
-        public static void HealImportant(Int32 currentMana, Int32 pctMana)
+        public static bool HealImportant(Int32 currentMana, Int32 pctMana)
         {
             if (E3._characterSettings.WhoToHeal.Contains("ImportantBots"))
             {
-                Heal(currentMana, pctMana, E3._characterSettings.HealImportantBotTargets, E3._characterSettings.HealImportantBots);
+                return Heal(currentMana, pctMana, E3._characterSettings.HealImportantBotTargets, E3._characterSettings.HealImportantBots);
             }
+            return false;
         }
-        public static void HealXTargets(Int32 currentMana, Int32 pctMana)
+        public static bool HealXTargets(Int32 currentMana, Int32 pctMana, bool JustCheck=false)
         {
             if (!E3._characterSettings.WhoToHeal.Contains("XTargets"))
             {
-                return;
+                return false;
             }
             //find the lowest health xtarget
             const Int32 XtargetMax = 6;
@@ -112,8 +114,11 @@ namespace E3Core.Processors
                     {
                         if (currentLowestHealth < spell.HealPct)
                         {
+                            if (JustCheck) return true;
                             if (Casting.CheckReady(spell))
                             {
+                                
+
                                 if (Casting.Cast(lowestHealthTargetid, spell) == CastReturn.CAST_FIZZLE)
                                 {
                                     currentMana = MQ.Query<Int32>("${Me.CurrentMana}");
@@ -121,12 +126,13 @@ namespace E3Core.Processors
                                     goto recastSpell;
                                 }
                                 E3._actionTaken = true;
-                                return;
+                                return true;
                             }
                         }
                     }
                 }
             }
+            return false;
         }
 
 
@@ -209,8 +215,43 @@ namespace E3Core.Processors
                 }
             }
         }
+        /// <summary>
+        /// used as an action to determine if a spell should be interrupted in case someone needs a heal.
+        /// </summary>
+        /// <returns>true if a heal is needed, otherwise false</returns>
+        public static bool SomeoneNeedsHealing()
+        {
+            if(!((E3._currentClass &  Data.Class.Priest)==E3._currentClass))
+            {
+                return false;
+            }
 
-        private static void Heal(Int32 currentMana, Int32 pctMana, List<string> targets, List<Data.Spell> spells, bool healPets=false)
+            Int32 currentMana = MQ.Query<Int32>("${Me.CurrentMana}");
+            Int32 pctMana = MQ.Query<Int32>("${Me.PctMana}");
+            if (E3._characterSettings.WhoToHeal.Contains("Tanks"))
+            {
+                if (Heal(currentMana, pctMana, E3._characterSettings.HealTankTargets, E3._characterSettings.HealTanks, false, true))
+                {
+                    return true;
+                }
+            }
+            if (E3._characterSettings.WhoToHeal.Contains("ImportantBots"))
+            {
+                if (Heal(currentMana, pctMana, E3._characterSettings.HealImportantBotTargets, E3._characterSettings.HealImportantBots, false, true))
+                {
+                    return true;
+                }
+            }
+            if (E3._characterSettings.HealXTarget.Count > 0)
+            {
+                if (HealXTargets(currentMana, pctMana, true))
+                {
+                    return true;
+                }
+            }
+            return false;
+        }
+        private static bool Heal(Int32 currentMana, Int32 pctMana, List<string> targets, List<Data.Spell> spells, bool healPets=false, bool JustCheck=false)
         {
             using (_log.Trace())
             {
@@ -276,6 +317,7 @@ namespace E3Core.Processors
                                     {
                                         if (pctHealth < spell.HealPct)
                                         {
+                                            if (JustCheck) return true;
                                             //should cast a heal!
                                             if (Casting.CheckReady(spell))
                                             {
@@ -286,7 +328,7 @@ namespace E3Core.Processors
                                                     goto recastSpell;
                                                 }
                                                 E3._actionTaken = true;
-                                                return;
+                                                return true;
                                             }
                                         }
                                     }
@@ -315,6 +357,7 @@ namespace E3Core.Processors
                                     {
                                         if (pctHealth < spell.HealPct)
                                         {
+                                            if (JustCheck) return true;
                                             //should cast a heal!
                                             if (Casting.CheckReady(spell))
                                             {
@@ -325,15 +368,18 @@ namespace E3Core.Processors
                                                     goto recastSpell;
                                                 }
                                                 E3._actionTaken = true;
-                                                return;
+                                                return true;
                                             }
                                         }
                                     }
                                 }
                             }
+                            
                         }
                     }
                 }
+
+                return false;
             }
         }
         private static void HealOverTime(Int32 currentMana, Int32 pctMana, List<string> targets, List<Data.Spell> spells, bool healPets = false)
