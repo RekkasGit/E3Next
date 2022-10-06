@@ -1,4 +1,5 @@
-﻿using MonoCore;
+﻿using E3Core.Data;
+using MonoCore;
 using System;
 using System.Collections.Generic;
 using System.Linq;
@@ -14,12 +15,51 @@ namespace E3Core.Processors
         public static string _lastSuccesfulCast = String.Empty;
         public static Logging _log = E3._log;
         private static IMQ MQ = E3.MQ;
+        public static Dictionary<Int32, Int64> _gemRecastLockForMem = new Dictionary<int, long>();
+        public static Dictionary<Int32, ResistCounter> _resistCounters = new Dictionary<Int32, ResistCounter>();
+        public static Dictionary<Int32, Int32> _currentSpellGems = new Dictionary<int, int>();
+        public static Int64 _currentSpellGemsLastRefresh = 0;
 
 
-
+        public static void ResetResistCounters()
+        {
+            //put them back in their object pools
+            foreach (var kvp in Casting._resistCounters)
+            {
+                kvp.Value.Dispose();
+            }
+            _resistCounters.Clear();
+            
+        }
         public static void Init()
         {
             RegisterEventsCasting();
+            RefreshGemCache();
+        }
+
+        public static void RefreshGemCache()
+        {
+            if((E3._currentClass & Class.PureMelee) ==E3._currentClass)
+            {
+                //class doesn't have spells
+                return;
+            }
+
+            if(Core._stopWatch.ElapsedMilliseconds <_currentSpellGemsLastRefresh)
+            {
+                return;
+            }
+            _currentSpellGemsLastRefresh = Core._stopWatch.ElapsedMilliseconds + 2000;
+            //need to get all the spellgems setup
+            for (int i = 1; i < 13; i++)
+            {
+                Int32 spellID = MQ.Query<Int32>($"${{Me.Gem[{i}].ID}}");
+                if (!_currentSpellGems.ContainsKey(i))
+                {
+                    _currentSpellGems.Add(i, spellID);
+                }
+                _currentSpellGems[i] = spellID;
+            }
         }
         static void RegisterEventsCasting()
         {
@@ -64,7 +104,7 @@ namespace E3Core.Processors
                 {
                     MQ.Write($"Invalid targetId for Casting. {targetID}");
                 }
-
+               
                 String targetName =String.Empty;
                 //targets of 0 means keep current target
                 if (targetID > 0) 
@@ -289,7 +329,7 @@ namespace E3Core.Processors
 
                     }
 
-
+                    startCast:
                     if (E3._currentClass == Data.Class.Bard && MQ.Query<bool>($"${{Bool[${{Me.Book[{spell.CastName}]}}]}}"))
                     {
                       
@@ -336,11 +376,19 @@ namespace E3Core.Processors
                         //wait for spell cast
                         MQ.Delay(300);
                     }
-                    WaitForPossibleFizzle(spell);
+                    if(WaitForPossibleFizzle(spell))
+                    {
+                        //do we have the mana to recast the spell if fizzle? if so, do it
+                        if(checkMana(spell))
+                        {
+                            MQ.Delay(100);
+                            goto startCast;
+                            //we fizzled, recast spell?
+
+                        }
+                    }
 
                 }
-
-                
 
                 while(MQ.Query<bool>("${Window[CastingWindow].Open}")) 
                 {
@@ -355,8 +403,6 @@ namespace E3Core.Processors
                     }
                     MQ.Delay(100);
 
-
-
                 }
                 //spell is either complete or interrupted
                 //need to wait for a period to get our results. 
@@ -368,10 +414,28 @@ namespace E3Core.Processors
                 if (returnValue == CastReturn.CAST_SUCCESS)
                 {
                     _lastSuccesfulCast = spell.CastName;
+                    //clear the counter for this pell on this mob?
+                    if (_resistCounters.ContainsKey(targetID))
+                    {
+                        _resistCounters[targetID].Dispose();
+                        _resistCounters.Remove(targetID);
+
+                    }
                 }
                 else if (returnValue == CastReturn.CAST_RESIST)
                 {
-                    //TODO: Add timers/counters
+                    if (!_resistCounters.ContainsKey(targetID))
+                    {
+                        ResistCounter tresist = ResistCounter.Aquire();
+                        _resistCounters.Add(targetID, tresist);
+                    }
+                    ResistCounter resist = _resistCounters[targetID];
+                    if (!resist._spellCounters.ContainsKey(spell.SpellID))
+                    {
+                        resist._spellCounters.Add(spell.SpellID, 0);
+                    }
+                    resist._spellCounters[spell.SpellID]++;
+                    
                 }
                 else if (returnValue==CastReturn.CAST_TAKEHOLD)
                 {
@@ -419,6 +483,57 @@ namespace E3Core.Processors
 
 
         }
+      
+        private static bool MemorizeSpell(Data.Spell spell)
+        {
+            //if no spell gem is set, set it.
+            if (spell.SpellGem == 0)
+            {
+                spell.SpellGem = E3._generalSettings.Casting_DefaultSpellGem;
+            }
+            Int32 spellID;
+            if (_currentSpellGems.TryGetValue(spell.SpellGem, out spellID))
+            {
+                if(spell.SpellID==spellID)
+                {
+                    //already memed, exit.
+                    return true;
+                }
+            }
+
+            //memorize may fail if there is a gem "Lockout" time period, where
+            //We JUST memed a spell so its protected to be used for a period of its recast time.
+            if (_gemRecastLockForMem.ContainsKey(spell.SpellGem))
+            {
+                //there is a spell lock possibly on this gem, check
+                if(_gemRecastLockForMem[spell.SpellGem]> Core._stopWatch.ElapsedMilliseconds)
+                {
+                    //this is still locked, return false
+                    return false;
+                }
+            }
+            MQ.Cmd($"/memorize \"{spell.SpellName}\" {spell.SpellGem}");
+            MQ.Delay(1000);
+            MQ.Delay(5000, "!${Window[SpellBookWnd].Open}");
+
+            //make double sure the collectio has this spell gem. maybe purchased AA for new slots?
+            if (!_gemRecastLockForMem.ContainsKey(spell.SpellGem))
+            {
+                _gemRecastLockForMem.Add(spell.SpellGem, 0);
+            }
+            _gemRecastLockForMem[spell.SpellGem] = Core._stopWatch.ElapsedMilliseconds + spell.RecastTime + 1000;
+
+            //update spellgem collection
+            if(!_currentSpellGems.ContainsKey(spell.SpellGem))
+            {
+                _currentSpellGems.Add(spell.SpellGem, spell.SpellID);
+            }
+            _currentSpellGems[spell.SpellGem] = spell.SpellID;
+
+
+            return true;
+        }
+
         public static Boolean checkMana(Data.Spell spell)
         {
 
@@ -442,6 +557,13 @@ namespace E3Core.Processors
         }
         public static Boolean CheckReady(Data.Spell spell)
         {
+
+            //do we need to memorize it?
+            if(!MemorizeSpell(spell))
+            {
+                return false;
+            }
+
             _log.Write($"CheckReady on {spell.CastName}");
 
             if(E3._currentClass== Data.Class.Bard && !MQ.Query<bool>("${Twist.Twisting}"))
@@ -540,8 +662,9 @@ namespace E3Core.Processors
 
             return returnValue;
         }
-        private static void WaitForPossibleFizzle(Data.Spell spell)
+        private static bool WaitForPossibleFizzle(Data.Spell spell)
         {
+
             if (spell.MyCastTime > 500)
             {
                 Int32 counter = 0;
@@ -550,12 +673,13 @@ namespace E3Core.Processors
                     if (MQ.Query<bool>("${Cast.Result.Equal[CAST_FIZZLE]}"))
                     {
                         //window not open yet, but we have a fizzle set..breaking
-                        return;
+                        return true;
                     }
                     MQ.Delay(100);
                     counter++;
                 }
             }
+            return false;
         }
   
         public static bool TrueTarget(Int32 targetID)

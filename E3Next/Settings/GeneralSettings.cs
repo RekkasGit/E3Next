@@ -123,7 +123,8 @@ namespace E3Core.Settings
             Int32 spellGem = Casting_DefaultSpellGem;
             LoadKeyData("Casting", "Default Spell Gem", parsedData, ref spellGem);
             Casting_DefaultSpellGem = spellGem;
-            LoadKeyData("Buff Requests", "Allow Buff Requests (On/Off)", parsedData, ref BuffRequests_AllowBuffRequests);
+
+                LoadKeyData("Buff Requests", "Allow Buff Requests (On/Off)", parsedData, ref BuffRequests_AllowBuffRequests);
             LoadKeyData("Buff Requests", "Restricted PCs (When Requests [On])", parsedData, ref BuffRequests_RestrictedPCs);
             LoadKeyData("Buff Requests", "Allowed PCs (When Requests [Off])", parsedData, ref BuffRequests_AllowBuffRequests);
 

@@ -40,7 +40,7 @@ namespace E3Core.Processors
         private static Data.Spell _terrorOfDiscord = new Data.Spell("Terror of Discord");
         private static IList<string> _tankTypes = new List<string>() { "WAR", "PAL", "SK" };
         private static Double _nukeDelayTimeStamp;
-        private static Dictionary<Int32, ResistCounter> _resistCounters = new Dictionary<Int32, ResistCounter>();
+        
         private static Dictionary<Int32, SpellTimer> _debuffdotTimers = new Dictionary<Int32, SpellTimer>();
 
         private static HashSet<Int32> _mobsToDot = new HashSet<int>();
@@ -228,7 +228,7 @@ namespace E3Core.Processors
                     }
                 }
                 ResistCounter r;
-                if (_resistCounters.TryGetValue(mobid, out r))
+                if (Casting._resistCounters.TryGetValue(mobid, out r))
                 {
                     //have resist counters on this mob, lets check if this spell is on the list
                     Int32 counters;
@@ -284,46 +284,14 @@ namespace E3Core.Processors
                             continue;
                         }
                     }
-                    var result = CastReturn.CAST_FIZZLE;
-
-                    while (result == CastReturn.CAST_FIZZLE)
+                    var result = Casting.Cast(mobid, spell, Heals.SomeoneNeedsHealing);
+                    if (result==CastReturn.CAST_INTERRUPTFORHEAL)
                     {
-                        result= Casting.Cast(mobid, spell, Heals.SomeoneNeedsHealing);
-
-                    }
-                    if(result==CastReturn.CAST_INTERRUPTFORHEAL)
-                    {
-                        //need to heal!
-                        E3._actionTaken = true;
                         return;
                     }
-                    if(result==CastReturn.CAST_RESIST)
-                    {
-                        MQ.Write("\a Resist Caught");
-                        if (!_resistCounters.ContainsKey(mobid))
-                        {
-                            ResistCounter tresist = ResistCounter.Aquire();
-                            _resistCounters.Add(mobid, tresist);
-                        }
-                        ResistCounter resist = _resistCounters[mobid];
-                        if(!resist._spellCounters.ContainsKey(spell.SpellID))
-                        {
-                            resist._spellCounters.Add(spell.SpellID, 0);
-                        }
-                        resist._spellCounters[spell.SpellID]++;
-                        E3._actionTaken = true;
-                        return;
-                    } 
-                    else if(result==CastReturn.CAST_SUCCESS)
-                    {
-                       
-                        //clear the counter for this pell on this mob?
-                        if (_resistCounters.ContainsKey(mobid))
-                        {
-                            _resistCounters[mobid].Dispose();
-                            _resistCounters.Remove(mobid);
-
-                        }
+                    
+                    if(result==CastReturn.CAST_SUCCESS)
+                    {  
                         //set the timer for the spell!
                         if (_debuffdotTimers.TryGetValue(mobid,out s))
                         {
@@ -634,23 +602,17 @@ namespace E3Core.Processors
             use_EPICBurns = false;
             use_LONGBurns = false;
             use_Swarms = false;
-            _resistCounters.Clear();
+          
             _offAssistIgnore.Clear();
             _mobsToDot.Clear();
             _mobsToDebuff.Clear();
-            
-            //put them back in their object pools
-            foreach(var kvp in _resistCounters)
-            {
-                kvp.Value.Dispose();
-            }
-            _resistCounters.Clear();
+            Casting.ResetResistCounters();
             //put them back in their object pools
             foreach (var kvp in _debuffdotTimers)
             {
                 kvp.Value.Dispose();
             }
-            _resistCounters.Clear();
+            _debuffdotTimers.Clear();
 
             //issue follow
             if (Basics._following)

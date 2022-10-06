@@ -117,7 +117,7 @@ namespace MonoCore
                     }
 
                 }
-                catch (Exception ex)
+                catch (Exception ex) when (!(ex is ThreadAbort))
                 {
                     if(Core._isProcessing)
                     {
@@ -489,6 +489,23 @@ namespace MonoCore
         }
 
     }
+    public class ThreadAbort : Exception
+    {
+        public ThreadAbort()
+        {
+        }
+
+        public ThreadAbort(string message)
+            : base(message)
+        {
+        }
+
+        public ThreadAbort(string message, Exception inner)
+            : base(message, inner)
+        {
+        }
+    }
+
     //This class is for C++ thread to come in and call. for the most part, leave this alone. 
     public static class Core
     {
@@ -557,9 +574,7 @@ namespace MonoCore
                 _stopWatch.Start();
                 //do all necessary setups here
                 MainProcessor.Init();
-
                 //isProcessing needs to be true before the event processor has started
-                mq_Echo("Initing the event processor");
                 EventProcessor.Init();
 
 
@@ -971,7 +986,7 @@ namespace MonoCore
             if(!Core._isProcessing)
             {
                 //we are terminating, kill this thread
-                throw new Exception("Terminating thread");
+                throw new ThreadAbort("Terminating thread");
             }
 
             _sinceLastDelay = Core._stopWatch.ElapsedMilliseconds;

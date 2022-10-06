@@ -345,7 +345,7 @@ namespace E3Core.Data
                     TargetType = MQ.Query<String>($"${{Me.Inventory[{invSlot}].Spell.TargetType}}");
                     Duration= MQ.Query<Int32>($"${{Me.Inventory[{invSlot}].Spell.Duration}}");
                     DurationTotalSeconds = MQ.Query<Int32>($"${{Me.Inventory[{invSlot}].Spell.Duration.TotalSeconds}}");
-                    RecastTime = MQ.Query<Decimal>($"${{Me.Inventory[{invSlot}].Spell.Duration}}");
+                    RecastTime = MQ.Query<Int32>($"${{Me.Inventory[{invSlot}].Spell.RecastTime}}");
                     RecoveryTime= MQ.Query<Decimal>($"${{Me.Inventory[{invSlot}].Spell.RecoveryTime}}");
                     MyCastTime= MQ.Query<Decimal>($"${{Me.Inventory[{invSlot}].Spell.RecoveryTime}}");
 
@@ -374,7 +374,7 @@ namespace E3Core.Data
                     Duration = MQ.Query<Int32>($"${{Me.Inventory[{invSlot}].Item[{bagSlot}].Spell.Duration}}");
                     DurationTotalSeconds = MQ.Query<Int32>($"${{Me.Inventory[{invSlot}].Item[{bagSlot}].Spell.Duration.TotalSeconds}}");
 
-                    RecastTime = MQ.Query<Decimal>($"${{Me.Inventory[{invSlot}].Item[{bagSlot}].Spell.Duration}}");
+                    RecastTime = MQ.Query<Int32>($"${{Me.Inventory[{invSlot}].Item[{bagSlot}].Spell.RecastTime}}");
                     RecoveryTime = MQ.Query<Decimal>($"${{Me.Inventory[{invSlot}].Item[{bagSlot}].Spell.RecoveryTime}}");
                     MyCastTime = MQ.Query<Decimal>($"${{Me.Inventory[{invSlot}].Item[{bagSlot}].Spell.RecoveryTime}}");
 
@@ -404,7 +404,7 @@ namespace E3Core.Data
                 Duration= MQ.Query<Int32>($"${{Me.AltAbility[{CastName}].Spell.Duration}}");
                 DurationTotalSeconds = MQ.Query<Int32>($"${{Me.AltAbility[{CastName}].Spell.Duration.TotalSeconds}}");
 
-                RecastTime = MQ.Query<Decimal>($"${{Me.AltAbility[{CastName}].ReuseTime}}");
+                RecastTime = MQ.Query<Int32>($"${{Me.AltAbility[{CastName}].ReuseTime}}");
                 RecoveryTime = MQ.Query<Decimal>($"${{Me.AltAbility[{CastName}].Spell.RecoveryTime}}");
                 MyCastTime = MQ.Query<Decimal>($"${{Me.AltAbility[{CastName}].Spell.MyCastTime}}");
 
@@ -426,7 +426,7 @@ namespace E3Core.Data
                 Duration = MQ.Query<Int32>($"${{Spell[{CastName}].Duration}}");
                 DurationTotalSeconds = MQ.Query<Int32>($"${{Spell[{CastName}].Duration.TotalSeconds}}");
 
-                RecastTime = MQ.Query<Decimal>($"${{Spell[{CastName}].RecastTime}}");
+                RecastTime = MQ.Query<Int32>($"${{Spell[{CastName}].RecastTime}}");
                 RecoveryTime = MQ.Query<Decimal>($"${{Spell[{CastName}].RecoveryTime}}");
                 MyCastTime = MQ.Query<Decimal>($"${{Spell[{CastName}].MyCastTime}}");
 
@@ -496,7 +496,7 @@ namespace E3Core.Data
         public String CheckFor = String.Empty;
         public Int32 Duration;
         public Int32 DurationTotalSeconds;
-        public Decimal RecastTime;
+        public Int32 RecastTime;
         public Decimal RecoveryTime;
         private Decimal myCastTime;
         public decimal MyCastTime

@@ -51,6 +51,7 @@ namespace E3Core.Processors
                 _zoneID = MQ.Query<Int32>("${Zone.ID}"); //to tell if we zone mid process
                 //action taken is always set to false at the start of the loop
                 _actionTaken = false;
+                Casting.RefreshGemCache();
                 //Init is here to make sure we only Init while InGame, as some queries will fail if not in game
 
 

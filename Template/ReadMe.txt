@@ -104,4 +104,17 @@ WriteChatColor("\apPURPLE    \a-pDARK PURPLE");
 WriteChatColor("\awWHITE     \a-wGREY");
 
 example: "\auTHIS IS BLUE \apAND THIS IS PURPLE"
-                 
+             
+             
+Exceptions
+==================
+you can use them but need to ignore the thread abort exception.
+If you don't, when unloading yout script you can lock the game.
+try
+{
+
+}
+catch(Exception ex) when (!(ex is ThreadAbort))
+{
+
+}
