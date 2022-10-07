@@ -178,13 +178,13 @@ namespace E3Core.Processors
                     E3._actionTaken = true;
                     MQ.Broadcast($"skipping [{spell.CastName}] , I have a corpse open.");
                     MQ.Delay(200);
-                    return CastReturn.CAST_SPELLBOOKOPEN;
+                    return CastReturn.CAST_CORPSEOPEN;
                 }
                 _log.Write("Checking for LoS for non beneficial...");
                 if (!spell.SpellType.Equals("Beneficial"))
                 {
                     _log.Write("Checking for LoS for non disc and not self...");
-                    if (!spell.CastType.Equals("Disc") && spell.TargetType.Equals("Self"))
+                    if (!(spell.CastType.Equals("Disc") && spell.TargetType.Equals("Self")))
                     {
                         _log.Write("Checking for LoS for non PB AE and Self...");
                         if (!(spell.TargetType.Equals("PB AE") || spell.TargetType.Equals("Self")))
@@ -207,14 +207,14 @@ namespace E3Core.Processors
                 {
                     TrueTarget(targetID);
                 }
-                _log.Write($"Checking BeforeEvent...");
+                _log.Write("Checking BeforeEvent...");
                 if (!String.IsNullOrWhiteSpace(spell.BeforeEvent))
                 {
                     _log.Write($"Doing BeforeEvent:{spell.BeforeEvent}");
                     MQ.Cmd($"/docommand {spell.BeforeEvent}");
                 }
 
-                _log.Write($"Checking BeforeSpell...");
+                _log.Write("Checking BeforeSpell...");
                 if (!String.IsNullOrWhiteSpace(spell.BeforeSpell))
                 {
                     if (spell.BeforeSpellData == null)
@@ -226,7 +226,7 @@ namespace E3Core.Processors
                 }
 
                 //remove item from cursor before casting
-                _log.Write($"Checking for item on cursor...");
+                _log.Write("Checking for item on cursor...");
                 if (MQ.Query<bool>("${Cursor.ID}"))
                 {
                     MQ.Write("Issuing auto inventory on ${Cursor} for spell: ${pendingCast}");
@@ -235,10 +235,10 @@ namespace E3Core.Processors
 
 
                 //From here, we actually start casting the spell. 
-                _log.Write($"Checking for spell type to run logic...");
+                _log.Write("Checking for spell type to run logic...");
                 if (spell.CastType == Data.CastType.Disc)
                 {
-                    _log.Write($"Doing disc based logic checks...");
+                    _log.Write("Doing disc based logic checks...");
                     if (MQ.Query<bool>("${Me.ActiveDisc.ID}") && spell.TargetType.Equals("Self"))
                     {
                         return CastReturn.CAST_ACTIVEDISC;
@@ -249,7 +249,7 @@ namespace E3Core.Processors
                         //activate disc!
                         TrueTarget(targetID);
                         E3._actionTaken = true;
-                        _log.Write($"Issuing Disc command:{spell.CastName}");
+                        _log.Write("Issuing Disc command:{spell.CastName}");
                         MQ.Cmd($"/disc {spell.CastName}");
                         MQ.Delay(300);
                         return CastReturn.CAST_SUCCESS;
@@ -258,11 +258,11 @@ namespace E3Core.Processors
                 }
                 else if (spell.CastType == Data.CastType.Ability && MQ.Query<bool>($"${{Me.AbilityReady[{spell.CastName}]}}"))
                 {
-                    _log.Write($"Doing Ability based logic checks...");
+                    _log.Write("Doing Ability based logic checks...");
                     //to deal with a slam bug
                     if (spell.CastName.Equals("Slam"))
                     {
-                        _log.Write($"Doing Ability:Slam based logic checks...");
+                        _log.Write("Doing Ability:Slam based logic checks...");
                         if (MQ.Query<bool>("${Window[ActionsAbilitiesPage].Child[AAP_FirstAbilityButton].Text.Equal[Slam]}"))
                         {
 
@@ -305,7 +305,7 @@ namespace E3Core.Processors
                 else
                 {
                     //Spell, AA, Items
-                    _log.Write($"Doing Spell based logic checks...");
+                    _log.Write("Doing Spell based logic checks...");
                     //Stop following for spell/item/aa with a cast time > 0 MyCastTime, unless im a bard
                     //anything under 300 is insta cast
                     if (spell.MyCastTime > 300 && E3._currentClass != Data.Class.Bard)
@@ -341,7 +341,7 @@ namespace E3Core.Processors
                             MQ.Cmd("/stopcast");
                             MQ.Delay(100);
                             MQ.Cmd($"/cast \"{spell.CastName}\"");
-                            //wait for spell cast
+                            //wait for spell cast window
                             MQ.Delay(300);
 
                         }
@@ -350,7 +350,7 @@ namespace E3Core.Processors
                     }
                     else
                     {
-                        _log.Write($"Doing Spell:TargetType based logic checks...");
+                        _log.Write("Doing Spell:TargetType based logic checks...");
                         if (spell.TargetType.Equals("Self"))
                         {
                             if (spell.CastType == Data.CastType.Spell)
@@ -370,11 +370,24 @@ namespace E3Core.Processors
                             }
                             else
                             {
-                                MQ.Cmd($"/casting \"{spell.CastName}|{spell.CastType.ToString()}\" \"-targetid|{targetID}\"");
+                                if(spell.CastType==CastType.AA)
+                                {
+                                    MQ.Cmd($"/casting \"{spell.CastName}|alt\" \"-targetid|{targetID}\"");
+
+                                }
+                                else
+                                {
+                                    //else its an item
+                                    MQ.Cmd($"/casting \"{spell.CastName}|item\" \"-targetid|{targetID}\"");
+
+                                }
+
+
                             }
                         }
-                        //wait for spell cast
+                        //wait for spell casting window to open
                         MQ.Delay(300);
+                        
                     }
                     if(WaitForPossibleFizzle(spell))
                     {
@@ -448,7 +461,7 @@ namespace E3Core.Processors
 
 
                 //is an after spell configured? lets do that now.
-                _log.Write($"Checking AfterSpell...");
+                _log.Write("Checking AfterSpell...");
                 if (!String.IsNullOrWhiteSpace(spell.AfterSpell))
                 {
                     
@@ -458,14 +471,14 @@ namespace E3Core.Processors
                     }
                     //Wait for GCD if spell
 
-                    _log.Write($"Doing AfterSpell:{spell.AfterSpell}");
+                    _log.Write("Doing AfterSpell:{spell.AfterSpell}");
                     if(CheckReady(spell))
                     {
                         Casting.Cast(targetID, spell.AfterSpellData);
                     }
                 }
                 //after event, after all things are done               
-                _log.Write($"Checking AfterEvent...");
+                _log.Write("Checking AfterEvent...");
                 if (!String.IsNullOrWhiteSpace(spell.AfterEvent))
                 {
                     _log.Write($"Doing AfterEvent:{spell.AfterEvent}");
@@ -486,6 +499,10 @@ namespace E3Core.Processors
       
         private static bool MemorizeSpell(Data.Spell spell)
         {
+            if(spell.CastType!= CastType.Spell)
+            {
+                return true;
+            }
             //if no spell gem is set, set it.
             if (spell.SpellGem == 0)
             {
@@ -665,6 +682,12 @@ namespace E3Core.Processors
         private static bool WaitForPossibleFizzle(Data.Spell spell)
         {
 
+            if(spell.CastType!= CastType.Spell)
+            {
+                //only spells will fizzle
+                return false;
+            }
+
             if (spell.MyCastTime > 500)
             {
                 Int32 counter = 0;
@@ -765,7 +788,8 @@ namespace E3Core.Processors
         CAST_FEIGN,
         CAST_SPELLBOOKOPEN,
         CAST_ACTIVEDISC,
-        CAST_INTERRUPTFORHEAL
+        CAST_INTERRUPTFORHEAL,
+        CAST_CORPSEOPEN
 
     }
 }
