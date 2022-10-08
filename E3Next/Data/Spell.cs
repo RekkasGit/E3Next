@@ -347,7 +347,7 @@ namespace E3Core.Data
                     DurationTotalSeconds = MQ.Query<Int32>($"${{Me.Inventory[{invSlot}].Spell.Duration.TotalSeconds}}");
                     RecastTime = MQ.Query<Int32>($"${{Me.Inventory[{invSlot}].Spell.RecastTime}}");
                     RecoveryTime= MQ.Query<Decimal>($"${{Me.Inventory[{invSlot}].Spell.RecoveryTime}}");
-                    MyCastTime= MQ.Query<Decimal>($"${{Me.Inventory[{invSlot}].Spell.RecoveryTime}}");
+                    MyCastTime= MQ.Query<Decimal>($"${{Me.Inventory[{invSlot}].Spell.CastTime}}");
 
                     double AERange = MQ.Query<double>($"${{Me.Inventory[{invSlot}].Spell.AERange}}");
                     MyRange = AERange;
@@ -376,7 +376,7 @@ namespace E3Core.Data
 
                     RecastTime = MQ.Query<Int32>($"${{Me.Inventory[{invSlot}].Item[{bagSlot}].Spell.RecastTime}}");
                     RecoveryTime = MQ.Query<Decimal>($"${{Me.Inventory[{invSlot}].Item[{bagSlot}].Spell.RecoveryTime}}");
-                    MyCastTime = MQ.Query<Decimal>($"${{Me.Inventory[{invSlot}].Item[{bagSlot}].Spell.RecoveryTime}}");
+                    MyCastTime = MQ.Query<Decimal>($"${{Me.Inventory[{invSlot}].Item[{bagSlot}].Spell.CastTime}}");
 
                     double AERange = MQ.Query<double>($"${{Me.Inventory[{invSlot}].Item[{bagSlot}].Spell.AERange}}");
                     MyRange = AERange;

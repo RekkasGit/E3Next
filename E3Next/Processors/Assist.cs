@@ -78,7 +78,7 @@ namespace E3Core.Processors
                     foreach (var spell in E3._characterSettings.Nukes)
                     {
                         //check Ifs on the spell
-                        if (String.IsNullOrWhiteSpace(spell.Ifs))
+                        if (!String.IsNullOrWhiteSpace(spell.Ifs))
                         {
                             if (!MQ.Query<bool>($"${{Bool[{spell.Ifs}]}}"))
                             {
@@ -125,7 +125,7 @@ namespace E3Core.Processors
                                     continue;
                                 }
                             }
-                            if (MQ.Query<Int32>("${Me.PctAggro}") > spell.PctAggro)
+                            if (spell.PctAggro>0 && MQ.Query<Int32>("${Me.PctAggro}") > spell.PctAggro)
                             {
                                 continue;
                             }
@@ -143,6 +143,7 @@ namespace E3Core.Processors
 
                             if (s.Distance < spell.MyRange)
                             {
+                                 
                                 CastReturn result = Casting.Cast(_assistTargetID, spell,Heals.SomeoneNeedsHealing);
                                 if(result== CastReturn.CAST_INTERRUPTFORHEAL)
                                 {
@@ -156,6 +157,7 @@ namespace E3Core.Processors
                                     {
                                         _nukeDelayTimeStamp = Core._stopWatch.ElapsedMilliseconds + (spell.Delay * 1000);
                                     }
+                                    return;
                                 }
 
                             }
@@ -635,6 +637,7 @@ namespace E3Core.Processors
             Spawn s;
             if (_spawns.TryByID(mobID, out s))
             {
+               
 
                 if (s.TypeDesc == "Corpse")
                 {
@@ -659,15 +662,7 @@ namespace E3Core.Processors
                 }
 
 
-                if (MQ.Query<Int32>("${Target.ID}") != _assistTargetID)
-                {
-                    if (!Casting.TrueTarget(_assistTargetID))
-                    {
-                        //could not target
-                        MQ.Broadcast("\arCannot assist, Could not target");
-                        return;
-                    }
-                }
+                
 
                 Spawn folTarget;
 
@@ -688,8 +683,16 @@ namespace E3Core.Processors
                 if (MQ.Query<bool>("${AdvPath.Following}")) MQ.Cmd("/squelch /afollow off ");
 
                 _isAssisting = true;
-                _assistTargetID = s.ID;
-
+                _assistTargetID = mobID;
+                if (MQ.Query<Int32>("${Target.ID}") != _assistTargetID)
+                {
+                    if (!Casting.TrueTarget(_assistTargetID))
+                    {
+                        //could not target
+                        MQ.Broadcast("\arCannot assist, Could not target");
+                        return;
+                    }
+                }
 
                 MQ.Cmd($"/face fast id {_assistTargetID}");
 

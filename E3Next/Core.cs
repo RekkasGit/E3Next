@@ -69,12 +69,13 @@ namespace MonoCore
             _processResetEvent.Wait();
             _processResetEvent.Reset();
             _startTimeStamp = Core._stopWatch.ElapsedMilliseconds;
+            
             //volatile variable, will eventually update to kill the thread on shutdown
             while (Core._isProcessing)
             {
-                _startLoopTime = Core._stopWatch.Elapsed.TotalMilliseconds;
-                _processingCounts++;
-                _totalProcessingCounts++;
+                //_startLoopTime = Core._stopWatch.Elapsed.TotalMilliseconds;
+                //_processingCounts++;
+                //_totalProcessingCounts++;
                 try
                 {
                     //MQ.TraceStart("Process");
@@ -86,13 +87,14 @@ namespace MonoCore
                         //************************************************
                         //just have a class call a process method or such so you don't have to see this 
                         //boiler plate code with all the threading.
-                       
+
                         ////MQ.Write("Calling e3process");
-                        E3.Process();
-                        using (_log.Trace("EventProcessing"))
+                        /// using (_log.Trace("EventProcessing"))
                         {
                             EventProcessor.ProcessEventsInQueues();
                         }
+                        E3.Process();
+                       
                         ////***NOTE NOTE NOTE, Use M2.Delay(0) in your code to give control back to EQ if you have taken awhile in doing something
                         ////***NOTE NOTE NOTE, generally this isn't needed as there is an auto yield baked into every MQ method. Just be aware.
 
@@ -102,19 +104,19 @@ namespace MonoCore
                     //process all the events that have been registered
                     //process all the events that have been registered
 
-                    Double endLoopTimeInMS = Core._stopWatch.Elapsed.TotalMilliseconds - _startLoopTime;
-                    _totalLoopTime += endLoopTimeInMS;
+                    //Double endLoopTimeInMS = Core._stopWatch.Elapsed.TotalMilliseconds - _startLoopTime;
+                    //_totalLoopTime += endLoopTimeInMS;
 
-                    //every 5 seconds, print out the # processed and average time.
-                    if ((Core._stopWatch.ElapsedMilliseconds > (_startTimeStamp + 5000)))
-                    {
+                    ////every 5 seconds, print out the # processed and average time.
+                    //if ((Core._stopWatch.ElapsedMilliseconds > (_startTimeStamp + 5000)))
+                    //{
 
 
-                        MQ.Write($"Total Count:{_totalProcessingCounts}, Total this cycle {_processingCounts} average time {_totalLoopTime / _processingCounts}ms");
-                        _startTimeStamp = Core._stopWatch.ElapsedMilliseconds;
-                        _processingCounts = 0;
-                        _totalLoopTime = 0;
-                    }
+                    //    MQ.Write($"Total Count:{_totalProcessingCounts}, Total this cycle {_processingCounts} average time {_totalLoopTime / _processingCounts}ms");
+                    //    _startTimeStamp = Core._stopWatch.ElapsedMilliseconds;
+                    //    _processingCounts = 0;
+                    //    _totalLoopTime = 0;
+                    //}
 
                 }
                 catch (Exception ex) when (!(ex is ThreadAbort))
@@ -345,7 +347,6 @@ namespace MonoCore
                         continue;
                     }
                 }
-                _log.Write($"IsInit:{_isInit} Checking command queue. Total:{item.Value.queuedEvents.Count}");
                 while (item.Value.queuedEvents.Count > 0)
                 {
 
@@ -1369,14 +1370,17 @@ namespace MonoCore
 
         public bool TryByID(Int32 id, out Spawn s)
         {
-             return _spawnsByID.TryGetValue(id,out s);
+            RefreshListIfNeeded();
+            return _spawnsByID.TryGetValue(id,out s);
         }
         public bool TryByName(string name, out Spawn s)
         {
+            RefreshListIfNeeded();
             return _spawnsByName.TryGetValue(name, out s);
         }
         public Int32 GetIDByName(string name)
         {
+            RefreshListIfNeeded();
             Spawn returnValue;
             if (_spawnsByName.TryGetValue(name, out returnValue))
             {
@@ -1413,6 +1417,11 @@ namespace MonoCore
         }
         private void RefreshListIfNeeded()
         {
+            if(_spawns.Count==0)
+            {
+                RefreshList();
+                return;
+            }
             if (Core._stopWatch.ElapsedMilliseconds - _lastRefesh > _refreshTimePeriodInMS)
             {
                 RefreshList();

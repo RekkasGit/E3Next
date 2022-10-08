@@ -14,7 +14,7 @@ namespace E3Core.Processors
         [AdvSettingInvoke]
         public static void Check_Heals() 
         { 
-            using (_log.Trace())
+            //using (_log.Trace())
             {
                 //grabbing these values now and reusing them
                 Int32 currentMana = MQ.Query<Int32>("${Me.CurrentMana}");
@@ -219,15 +219,15 @@ namespace E3Core.Processors
         /// used as an action to determine if a spell should be interrupted in case someone needs a heal.
         /// </summary>
         /// <returns>true if a heal is needed, otherwise false</returns>
-        public static bool SomeoneNeedsHealing()
+        public static bool SomeoneNeedsHealing(Int32 currentMana,Int32 pctMana)
         {
             if(!((E3._currentClass &  Data.Class.Priest)==E3._currentClass))
             {
                 return false;
             }
 
-            Int32 currentMana = MQ.Query<Int32>("${Me.CurrentMana}");
-            Int32 pctMana = MQ.Query<Int32>("${Me.PctMana}");
+            //Int32 currentMana = MQ.Query<Int32>("${Me.CurrentMana}");
+            //Int32 pctMana = MQ.Query<Int32>("${Me.PctMana}");
             if (E3._characterSettings.WhoToHeal.Contains("Tanks"))
             {
                 if (Heal(currentMana, pctMana, E3._characterSettings.HealTankTargets, E3._characterSettings.HealTanks, false, true))
@@ -253,7 +253,7 @@ namespace E3Core.Processors
         }
         private static bool Heal(Int32 currentMana, Int32 pctMana, List<string> targets, List<Data.Spell> spells, bool healPets=false, bool JustCheck=false)
         {
-            using (_log.Trace())
+            //using (_log.Trace())
             {
 
                 foreach (var name in targets)
@@ -384,7 +384,7 @@ namespace E3Core.Processors
         }
         private static void HealOverTime(Int32 currentMana, Int32 pctMana, List<string> targets, List<Data.Spell> spells, bool healPets = false)
         {
-            using (_log.Trace())
+            //using (_log.Trace())
             {
                 foreach (var name in targets)
                 {

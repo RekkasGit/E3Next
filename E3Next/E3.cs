@@ -44,7 +44,7 @@ namespace E3Core.Processors
             }
 
             //_startTimeStamp = Core._stopWatch.ElapsedMilliseconds;
-            using (_log.Trace())
+            //using (_log.Trace())
             {
                 if (!_isInit) { Init(); }
                 //update on every loop
@@ -77,18 +77,16 @@ namespace E3Core.Processors
                         if (AdvancedSettings._methodLookup.TryGetValue(methodName, out methodToInvoke))
                         {
                             methodToInvoke.Invoke();
+                        
                         }
+                        //check backoff
+                        EventProcessor.ProcessEventsInQueues();
+
                     }
                 }
-
             }
-
-
             //MQ.Write("Total Processing time in ms:" + (Core._stopWatch.ElapsedMilliseconds - _startTimeStamp));
         }
-
-
-
 
         private static void Init()
         {
@@ -101,7 +99,7 @@ namespace E3Core.Processors
                 Logging._minLogLevelTolog = Logging.LogLevels.Error; //log levels have integers assoicatd to them. you can set this to Error to only log errors. 
                 Logging._defaultLogLevel = Logging.LogLevels.Debug; //the default if a level is not passed into the _log.write statement. useful to hide/show things.
                 MainProcessor._applicationName = "E3"; //application name, used in some outputs
-                MainProcessor._processDelay = 200; //how much time we will wait until we start our next processing once we are done with a loop.
+                MainProcessor._processDelay = 0; //how much time we will wait until we start our next processing once we are done with a loop.
                                                     //how long you allow script to process before auto yield is engaged. generally should't need to mess with this, but an example.
                 MonoCore.MQ._maxMillisecondsToWork = 40;
                 //max event count for each registered event before spilling over.
