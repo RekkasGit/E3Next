@@ -415,8 +415,15 @@ namespace E3Core.Processors
                         {
                             spell.BeforeSpellData = new Data.Spell(spell.BeforeSpell);
                         }
+                            //Wait for GCD if spell
+
+                        _log.Write("Doing AfterSpell:{spell.AfterSpell}");
+                        if (CheckReady(spell.BeforeSpellData) && checkMana(spell.BeforeSpellData))
+                        {
+                            Casting.Cast(targetID, spell.BeforeSpellData);
+                        }
                         _log.Write($"Doing BeforeSpell:{spell.BeforeSpell}");
-                        Casting.Cast(targetID, spell.BeforeSpellData);
+                       
                     }
 
                     //remove item from cursor before casting
@@ -574,7 +581,7 @@ namespace E3Core.Processors
                             {
                                 if (spell.CastType == Data.CastType.Spell)
                                 {
-                                    MQ.Write($"{spell.CastName} {spell.SpellID} {targetName} {targetID} ({spell.MyCastTime/1000}sec)");
+                                    MQ.Write($"\ag{spell.CastName} \at{spell.SpellID} \am{targetName} \ao{targetID} \aw({spell.MyCastTime / 1000}sec)");
                                     MQ.Cmd($"/casting \"{spell.CastName}|{spell.SpellGem}\" \"-targetid|{targetID}\"");
                                     if (spell.MyCastTime > 500)
                                     {
@@ -584,7 +591,7 @@ namespace E3Core.Processors
                                 }
                                 else
                                 {
-                                    MQ.Write($"{spell.CastName} {spell.SpellID} {targetName} {targetID} ({spell.MyCastTime/1000}sec)");
+                                    MQ.Write($"\ag{spell.CastName} \at{spell.SpellID} \am{targetName} \ao{targetID} \aw({spell.MyCastTime/1000}sec)");
                                     if (spell.CastType == CastType.AA)
                                     {
                                         MQ.Cmd($"/casting \"{spell.CastName}|alt\" \"-targetid|{targetID}\"");
@@ -610,18 +617,7 @@ namespace E3Core.Processors
                             }
                           
                         }
-                        //if (CheckForFizzle(spell))
-                        //{
-                        //    //do we have the mana to recast the spell if fizzle? if so, do it
-                        //    if (checkMana(spell))
-                        //    {
-                        //        MQ.Write($"FIZZLE Detected, recasting spell {spell.CastName}");
-                        //        goto startCast;
-                        //        //we fizzled, recast spell?
-
-                        //    }
-                        //}
-
+                      
                     }
 
 
@@ -642,8 +638,20 @@ namespace E3Core.Processors
                             E3._actionTaken = true;
                             return CastReturn.CAST_INTERRUPTFORHEAL;
                         }
-                        MQ.Delay(150);
-                  
+
+                        //check if we need to process any events,if healing tho, ignore. 
+                        if (spell.SpellType.Equals("Detrimental"))
+                        {
+                            EventProcessor.ProcessEventsInQueues("/backoff");
+                            EventProcessor.ProcessEventsInQueues("/followme");
+                            if(Assist._assistTargetID==0)
+                            {
+                                return CastReturn.CAST_INTERRUPTED;
+                            }
+                        }
+
+                        MQ.Delay(50);
+
                     }
 
                     MQ.Delay(2000, "!${Cast.Status.Find[C]}");
@@ -663,17 +671,17 @@ namespace E3Core.Processors
                     }
                     else if (returnValue == CastReturn.CAST_RESIST)
                     {
-                        //if (!_resistCounters.ContainsKey(targetID))
-                        //{
-                        //    ResistCounter tresist = ResistCounter.Aquire();
-                        //    _resistCounters.Add(targetID, tresist);
-                        //}
-                        //ResistCounter resist = _resistCounters[targetID];
-                        //if (!resist._spellCounters.ContainsKey(spell.SpellID))
-                        //{
-                        //    resist._spellCounters.Add(spell.SpellID, 0);
-                        //}
-                        //resist._spellCounters[spell.SpellID]++;
+                        if (!_resistCounters.ContainsKey(targetID))
+                        {
+                            ResistCounter tresist = ResistCounter.Aquire();
+                            _resistCounters.Add(targetID, tresist);
+                        }
+                        ResistCounter resist = _resistCounters[targetID];
+                        if (!resist._spellCounters.ContainsKey(spell.SpellID))
+                        {
+                            resist._spellCounters.Add(spell.SpellID, 0);
+                        }
+                        resist._spellCounters[spell.SpellID]++;
 
                     }
                     else if (returnValue == CastReturn.CAST_TAKEHOLD)
@@ -685,7 +693,7 @@ namespace E3Core.Processors
                         //TODO: deal with immunity
                     }
 
-                    MQ.Write($"{spell.CastName} Result:{returnValue.ToString()}");
+                    //MQ.Write($"{spell.CastName} Result:{returnValue.ToString()}");
 
                     //is an after spell configured? lets do that now.
                     _log.Write("Checking AfterSpell...");
@@ -699,7 +707,7 @@ namespace E3Core.Processors
                         //Wait for GCD if spell
 
                         _log.Write("Doing AfterSpell:{spell.AfterSpell}");
-                        if (CheckReady(spell) && checkMana(spell))
+                        if (CheckReady(spell.AfterSpellData) && checkMana(spell.AfterSpellData))
                         {
                             Casting.Cast(targetID, spell.AfterSpellData);
                         }
@@ -720,7 +728,7 @@ namespace E3Core.Processors
                     return returnValue;
 
                 }
-                MQ.Write($"Invalid targetId for Casting. {targetID}");
+                MQ.Write($"\arInvalid targetId for Casting. {targetID}");
                 E3._actionTaken = true;
                 return CastReturn.CAST_NOTARGET;
             }

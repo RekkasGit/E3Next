@@ -334,6 +334,11 @@ namespace MQServerClient
 
         public void Delay(int value)
         {
+            //set so we don't lock up the screen
+            if (value < 150)
+            {
+                value = 150;
+            }
 
             System.Threading.Thread.Sleep(value);
 

@@ -43,6 +43,7 @@ namespace E3Core.Processors
         
         private static Dictionary<Int32, SpellTimer> _debuffdotTimers = new Dictionary<Int32, SpellTimer>();
 
+
         private static HashSet<Int32> _mobsToDot = new HashSet<int>();
         private static List<Int32> _deadMobs = new List<int>();
         private static HashSet<Int32> _mobsToDebuff = new HashSet<int>();
@@ -61,32 +62,10 @@ namespace E3Core.Processors
             UseBurns();
             Check_AssistStatus();
 
-
-            if(_printoutTimer < Core._stopWatch.ElapsedMilliseconds)
-            {
-                foreach (var kvp in _debuffdotTimers)
-                {
-                    foreach (var kvp2 in kvp.Value._timestamps)
-                    {
-                        Data.Spell spell;
-                        if (Spell._loadedSpells.TryGetValue(kvp2.Key, out spell))
-                        {
-                            MQ.Write($"mobid:{kvp.Value._mobID} spellid:{spell.CastName} timeleft:{(kvp2.Value - Core._stopWatch.ElapsedMilliseconds) / 1000} seconds");
-
-                        }
-                        else
-                        {
-                            MQ.Write($"mobid:{kvp.Value._mobID} spellid:{kvp2.Key} timeleft:{(kvp2.Value - Core._stopWatch.ElapsedMilliseconds) / 1000} seconds");
-
-                        }
-
-                    }
-                }
-                _printoutTimer = Core._stopWatch.ElapsedMilliseconds + 10000;
-
-            }
+            PrintDotDebuffStatus();
 
         }
+
         //this can be invoked via advanced settings loop
         [AdvSettingInvoke]
         public static void Check_Nukes()
@@ -198,8 +177,6 @@ namespace E3Core.Processors
         public static void Check_Debuffs()
         {
 
-           
-
             if (_assistTargetID > 0)
             {
                 CastLongTermSpell(_assistTargetID, E3._characterSettings.Debuffs_OnAssist);
@@ -217,6 +194,15 @@ namespace E3Core.Processors
                 _mobsToDebuff.Remove(mobid);
             }
             if (_deadMobs.Count > 0) _deadMobs.Clear();
+
+            //put us back to our assist target
+            Int32 targetId = MQ.Query<Int32>("${Target.ID}");
+            if (targetId != _assistTargetID)
+            {
+                Casting.TrueTarget(_assistTargetID);
+
+            }
+
         }
         [AdvSettingInvoke]
         public static void check_Dots()
@@ -239,6 +225,14 @@ namespace E3Core.Processors
                 _mobsToDebuff.Remove(mobid);
             }
             if (_deadMobs.Count > 0) _deadMobs.Clear();
+
+            //put us back to our assist target
+            Int32 targetId = MQ.Query<Int32>("${Target.ID}");
+            if (targetId != _assistTargetID)
+            {
+                Casting.TrueTarget(_assistTargetID);
+
+            }
         }
         private static void CastLongTermSpell(Int32 mobid, List<Data.Spell> spells)
         {
@@ -266,14 +260,12 @@ namespace E3Core.Processors
                     Int32 counters;
                     if (r._spellCounters.TryGetValue(spell.SpellID, out counters))
                     {
-                        if (counters > 3)
+                        if (counters > spell.MaxTries)
                         {   //mob is resistant to this spell, kick out. 
                             continue;
                         }
                     }
                 }
-
-
                 if (Casting.CheckReady(spell) && Casting.checkMana(spell))
                 {
                    
@@ -346,10 +338,10 @@ namespace E3Core.Processors
                     //delay to release back to MQ to get a proper buffcount
                     MQ.Delay(100);
                     Int32 buffCount = MQ.Query<Int32>("${Target.BuffCount}");
-                    MQ.Write($"Debuff/Dot Debuff Count:"+buffCount);
+                   // MQ.Write($"Debuff/Dot Debuff Count:"+buffCount);
                     //lets just update our cache with what is on the mob.
                     Int64 timeLeftInMS = Casting.TimeLeftOnMySpell(spell);
-                    MQ.Write($"Debuff/Dot Time Left on spell:" + timeLeftInMS);
+                   // MQ.Write($"Debuff/Dot Time Left on spell:" + timeLeftInMS);
 
 
                     if (buffCount<55)
@@ -398,17 +390,13 @@ namespace E3Core.Processors
                     s._timestamps.Add(spell.SpellID, 0);
                 }
 
-                MQ.Write($"Debuff/Dot setting timestamp wait time:{timeLeftInMS}");
-                s._timestamps[spell.SpellID] = Core._stopWatch.ElapsedMilliseconds + timeLeftInMS;
-
+                 s._timestamps[spell.SpellID] = Core._stopWatch.ElapsedMilliseconds + timeLeftInMS;
 
             }
             else
             {
                 SpellTimer ts = SpellTimer.Aquire();
                 ts._mobID = mobid;
-
-                MQ.Write($"Debuff/Dot setting timestamp wait time:{timeLeftInMS}");
 
                 ts._timestamps.Add(spell.SpellID, Core._stopWatch.ElapsedMilliseconds + timeLeftInMS);
                 _debuffdotTimers.Add(mobid, ts);
@@ -1093,6 +1081,59 @@ namespace E3Core.Processors
                 }
             }
         }
+        private static void PrintDotDebuffStatus()
+        {
+            //Printing out debuff timers
+            if (_printoutTimer < Core._stopWatch.ElapsedMilliseconds)
+            {
+                if (_debuffdotTimers.Count > 0)
+                {
+                    MQ.Write("\atCurrent Debuff/Dots");
+                    MQ.Write("\aw===================");
+
+
+                }
+
+                foreach (var kvp in _debuffdotTimers)
+                {
+                    foreach (var kvp2 in kvp.Value._timestamps)
+                    {
+                        Data.Spell spell;
+                        if (Spell._loadedSpells.TryGetValue(kvp2.Key, out spell))
+                        {
+                            Spawn s;
+                            if (_spawns.TryByID(kvp.Value._mobID, out s))
+                            {
+                                MQ.Write($"\ap{s.CleanName} \aw: \ag{spell.CastName} \aw: {(kvp2.Value - Core._stopWatch.ElapsedMilliseconds) / 1000} seconds");
+
+                            }
+
+
+
+                        }
+                        else
+                        {
+                            Spawn s;
+                            if (_spawns.TryByID(kvp.Value._mobID, out s))
+                            {
+                                MQ.Write($"\ap{s.CleanName} \aw: \agspellid:{kvp2.Key} \aw: {(kvp2.Value - Core._stopWatch.ElapsedMilliseconds) / 1000} seconds");
+
+                            }
+
+                        }
+
+                    }
+                }
+                if (_debuffdotTimers.Count > 0)
+                {
+                    MQ.Write("\aw===================");
+
+                }
+                _printoutTimer = Core._stopWatch.ElapsedMilliseconds + 10000;
+
+            }
+        }
+
         private static List<string> _anguishBPList = new List<string>() {
             "Bladewhisper Chain Vest of Journeys",
             "Farseeker's Plate Chestguard of Harmony",
