@@ -455,7 +455,7 @@ namespace E3Core.Data
                 Duration = MQ.Query<Int32>($"${{Spell[{CastName}].Duration}}");
                 DurationTotalSeconds = MQ.Query<Int32>($"${{Spell[{CastName}].Duration.TotalSeconds}}");
 
-                Int32 AERange = MQ.Query<Int32>($"${{Spell[{CastName}].AERange}}");
+                Double AERange = MQ.Query<Double>($"${{Spell[{CastName}].AERange}}");
                 MyRange = AERange;
                 if (MyRange == 0)
                 {

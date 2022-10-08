@@ -949,7 +949,7 @@ namespace E3Core.Processors
         private static void RegisterEvents()
         {
 
-            e3Utility.RegisterCommandWithTarget("/assistme", AssistOn);
+            e3Utility.RegisterCommandWithTargetToOthers("/assistme", AssistOn);
             e3Utility.RegisterCommandWithTarget("/dotson", DotsOn);
             e3Utility.RegisterCommandWithTarget("/dot", DotsOn);
             e3Utility.RegisterCommandWithTarget("/debuffson", DebuffsOn);
@@ -958,25 +958,31 @@ namespace E3Core.Processors
             EventProcessor.RegisterCommand("/debuffsoff", (x) =>
             {
                 _mobsToDebuff.Clear();
-               
+                if (x.args.Count == 0)
+                {
+                    //we are telling people to back off
+                    E3._bots.BroadcastCommandToOthers($"/debuffsoff all");
+                }
+
             });
             EventProcessor.RegisterCommand("/dotsoff", (x) =>
             {
                 _mobsToDot.Clear();
-
+                if (x.args.Count == 0)
+                {
+                    //we are telling people to back off
+                    E3._bots.BroadcastCommandToOthers($"/dotsoff all");
+                }
+        
             });
 
             EventProcessor.RegisterCommand("/backoff", (x) =>
             {
-                //we are telling people to follow us
-                E3._bots.BroadcastCommandToOthers($"/backoff");
                 AssistOff();
-            });
-            EventProcessor.RegisterCommand("/backoff", (x) =>
-            {
-                //we are telling people to follow us
-                E3._bots.BroadcastCommandToOthers($"/backoff");
-                AssistOff();
+                if (x.args.Count == 0)
+                {     //we are telling people to back off
+                    E3._bots.BroadcastCommandToOthers($"/backoff all");
+                }
             });
             EventProcessor.RegisterCommand("/swarmpets", (x) =>
             {
@@ -1057,7 +1063,7 @@ namespace E3Core.Processors
             Int32 mobid;
             if (x.args.Count > 0)
             {
-                if (Int32.TryParse(x.args[1], out mobid))
+                if (Int32.TryParse(x.args[0], out mobid))
                 {
                     burnType = true;
                 }

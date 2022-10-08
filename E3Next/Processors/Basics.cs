@@ -27,13 +27,21 @@ namespace E3Core.Processors
         static void RegisterEventsCasting()
         {
 
-
+            EventProcessor.RegisterCommand("/followoff", (x) =>
+            {
+                RemoveFollow();
+                if (x.args.Count == 0)
+                {
+                    //we are telling people to follow us
+                    E3._bots.BroadcastCommandToOthers("/followoff all");
+                }
+            });
             EventProcessor.RegisterCommand("/followme", (x) =>
             {
                 string user = string.Empty;
                 if(x.args.Count>0)
                 {
-                    user = x.args[1];
+                    user = x.args[0];
                     //we have someone to follow.
                     _followTargetID = MQ.Query<Int32>($"${{Spawn[{user}].ID}}");
                     if(_followTargetID > 0)
@@ -54,7 +62,14 @@ namespace E3Core.Processors
 
         }
 
-     
+        public static void RemoveFollow()
+        {
+            _followTargetID = 0;
+            _followTargetName = string.Empty;
+            MQ.Cmd("/squelch /afollow off");
+            MQ.Cmd("/squelch /stick off");
+           
+        }
 
         public static void AcquireFollow()
         {

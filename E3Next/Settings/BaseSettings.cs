@@ -115,6 +115,7 @@ namespace E3Core.Settings
         }
         public void LoadKeyData(string sectionKey, string Key, IniData parsedData, ref string valueToSet)
         {
+            _log.Write($"{sectionKey} {Key}");
             var section = parsedData.Sections[sectionKey];
             if (section != null)
             {
@@ -133,6 +134,7 @@ namespace E3Core.Settings
         }
         public string LoadKeyData(string sectionKey, string Key, IniData parsedData)
         {
+            _log.Write($"{sectionKey} {Key}");
             var section = parsedData.Sections[sectionKey];
             if (section != null)
             {
@@ -152,6 +154,7 @@ namespace E3Core.Settings
         }
         public void LoadKeyData(string sectionKey, string Key, IniData parsedData, ref Boolean valueToSet)
         {
+            _log.Write($"{sectionKey} {Key}");
             var section = parsedData.Sections[sectionKey];
             if (section != null)
             {
@@ -182,6 +185,7 @@ namespace E3Core.Settings
         }
         public void LoadKeyData(string sectionKey, string Key, IniData parsedData, ref Int32 valueToSet)
         {
+            _log.Write($"{sectionKey} {Key}");
             var section = parsedData.Sections[sectionKey];
             if (section != null)
             {
@@ -202,6 +206,7 @@ namespace E3Core.Settings
 
         public void LoadKeyData(string sectionKey, string Key, IniData parsedData, List<String> collectionToAddTo)
         {
+            _log.Write($"{sectionKey} {Key}");
             var section = parsedData.Sections[sectionKey];
             if (section != null)
             {
@@ -221,6 +226,7 @@ namespace E3Core.Settings
         }
         public void LoadKeyData(string sectionKey, string Key, IniData parsedData, List<Data.Spell> collectionToAddTo)
         {
+            _log.Write($"{sectionKey} {Key}");
             var section = parsedData.Sections[sectionKey];
             if (section != null)
             {
@@ -240,6 +246,7 @@ namespace E3Core.Settings
         }
         public void LoadKeyData(string sectionKey, string Key, IniData parsedData, out Data.Spell spellToLoad)
         {
+            _log.Write($"{sectionKey} {Key}");
             var section = parsedData.Sections[sectionKey];
             if (section != null)
             {
