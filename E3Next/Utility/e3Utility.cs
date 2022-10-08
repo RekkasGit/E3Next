@@ -14,6 +14,7 @@ namespace E3Core.Utility
         public static string _lastSuccesfulCast = String.Empty;
         public static Logging _log = E3._log;
         private static IMQ MQ = E3.MQ;
+
         public static void RegisterCommandWithTarget(string command, Action<int> FunctionToExecute)
         {
             EventProcessor.RegisterCommand(command, (x) =>

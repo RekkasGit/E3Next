@@ -28,6 +28,7 @@ namespace E3Core.Processors
         public static Settings.GeneralSettings _generalSettings=null;
         public static Settings.AdvancedSettings _advancedSettings = null;
         public static IBots _bots = null;
+        public static string _currentName;
         public static Data.Class _currentClass;
         public static string _currentLongClassString;
         public static string _currentShortClassString;
@@ -71,8 +72,10 @@ namespace E3Core.Processors
                     foreach (var methodName in _methodsToInvokeAsStrings)
                     {
                         //if an action was taken, start over
-                        if (_actionTaken) break;
-
+                        if (_actionTaken)
+                        {
+                            break;
+                        }
                         Action methodToInvoke;
                         if (AdvancedSettings._methodLookup.TryGetValue(methodName, out methodToInvoke))
                         {
@@ -117,6 +120,7 @@ namespace E3Core.Processors
 
                 _currentLongClassString = _currentClass.ToString();
                 _currentShortClassString = Data.Classes._classLongToShort[_currentLongClassString];
+                _currentName = MQ.Query<string>("${Me.CleanName}");
                 _bots=new Bots();
                 _isInit = true;
                 Spawns._refreshTimePeriodInMS = 1000;

@@ -46,6 +46,7 @@ namespace E3Core.Processors
         private static HashSet<Int32> _mobsToDot = new HashSet<int>();
         private static List<Int32> _deadMobs = new List<int>();
         private static HashSet<Int32> _mobsToDebuff = new HashSet<int>();
+        private static Int64 _printoutTimer = 0;
 
 
         public static void Init()
@@ -59,6 +60,32 @@ namespace E3Core.Processors
         {
             UseBurns();
             Check_AssistStatus();
+
+
+            if(_printoutTimer < Core._stopWatch.ElapsedMilliseconds)
+            {
+                foreach (var kvp in _debuffdotTimers)
+                {
+                    foreach (var kvp2 in kvp.Value._timestamps)
+                    {
+                        Data.Spell spell;
+                        if (Spell._loadedSpells.TryGetValue(kvp2.Key, out spell))
+                        {
+                            MQ.Write($"mobid:{kvp.Value._mobID} spellid:{spell.CastName} timeleft:{(kvp2.Value - Core._stopWatch.ElapsedMilliseconds) / 1000} seconds");
+
+                        }
+                        else
+                        {
+                            MQ.Write($"mobid:{kvp.Value._mobID} spellid:{kvp2.Key} timeleft:{(kvp2.Value - Core._stopWatch.ElapsedMilliseconds) / 1000} seconds");
+
+                        }
+
+                    }
+                }
+                _printoutTimer = Core._stopWatch.ElapsedMilliseconds + 10000;
+
+            }
+
         }
         //this can be invoked via advanced settings loop
         [AdvSettingInvoke]
@@ -170,6 +197,9 @@ namespace E3Core.Processors
         [AdvSettingInvoke]
         public static void Check_Debuffs()
         {
+
+           
+
             if (_assistTargetID > 0)
             {
                 CastLongTermSpell(_assistTargetID, E3._characterSettings.Debuffs_OnAssist);
@@ -283,37 +313,105 @@ namespace E3Core.Processors
                         if (MQ.Query<bool>($"${{Bool[${{Target.Buff[{spell.CheckFor}]}}]}}"))
                         {
                             //has the buff already
+                            //lets set the timer for it so we dont' have to keep targeting it.
+                            Int64 buffDuration = MQ.Query<Int64>($"${{Target.BuffDuration[{spell.CheckFor}]}}");
+                            if(buffDuration<1000)
+                            {
+                                buffDuration = 1000;
+                            }
+                            UpdateDotDebuffTimers(mobid, spell, buffDuration);
                             continue;
                         }
                     }
                     var result = Casting.Cast(mobid, spell, Heals.SomeoneNeedsHealing);
-                    if (result==CastReturn.CAST_INTERRUPTFORHEAL)
+                    if (result == CastReturn.CAST_INTERRUPTFORHEAL)
                     {
                         return;
                     }
-                    
-                    if(result==CastReturn.CAST_SUCCESS)
-                    {  
-                        //set the timer for the spell!
-                        if (_debuffdotTimers.TryGetValue(mobid,out s))
-                        {
-                            if(!s._timestamps.ContainsKey(spell.SpellID))
-                            {
-                                s._timestamps.Add(spell.SpellID, 0);
-                            }
-                            s._timestamps[spell.SpellID] = Core._stopWatch.ElapsedMilliseconds + (spell.DurationTotalSeconds * 1000);
+                    ////Okay lesson about EQ resist messages and timers for debuffs
+                    //// you don't know if a spell resits unless the server tells you.. so this result above? somewhat unreliable.
+                    //// The reason for this is, it takes X amount of time to come back from the server , and that X is unreliable as heck. 
+                    //// So... for debuffs we are going to do this. If the target you have has the buff, grab its timer from the buffs object
+                    //// for total time as as the Duration TLO can be unreliable depending on dot focus duration.  as in it says 72  sec when its 92 sec.
+                    Casting.TrueTarget(mobid);
 
+                    MQ.Delay(500, "${Target.BuffsPopulated}");
+                    //// we also have the situation where over 55> buffs on the ROF2 client cannot be viewed, but up to 85 or so work. 
+                    //// we are going to have to loop through the buffs and set dot timers
+                    //// if under 55< we will evict off the timer that we think we should have if we do
+                    //// if over 55> we will update but not evict... best we can do. so if a dot goes over the 55 buff cap
+                    //// but we get an invalid resist message... well... the client is going to assume it landed and set a timer for it. 
+                    //// Most of the time this won't happen, but sometimes.. well.. ya. not much I can do.
+
+                    //delay to release back to MQ to get a proper buffcount
+                    MQ.Delay(100);
+                    Int32 buffCount = MQ.Query<Int32>("${Target.BuffCount}");
+                    MQ.Write($"Debuff/Dot Debuff Count:"+buffCount);
+                    //lets just update our cache with what is on the mob.
+                    Int64 timeLeftInMS = Casting.TimeLeftOnMySpell(spell);
+                    MQ.Write($"Debuff/Dot Time Left on spell:" + timeLeftInMS);
+
+
+                    if (buffCount<55)
+                    {
+
+                        UpdateDotDebuffTimers(mobid, spell, timeLeftInMS);
+                    }
+                    else
+                    {
+                       
+                        Int64 totalTimeToWait;
+                        if (timeLeftInMS > 0)
+                        {
+
+                            totalTimeToWait = timeLeftInMS;
                         }
                         else
                         {
-                             SpellTimer ts= SpellTimer.Aquire();
-                            ts._mobID = mobid;
-                            ts._timestamps.Add(spell.SpellID, Core._stopWatch.ElapsedMilliseconds + (spell.DurationTotalSeconds * 1000));
-                            _debuffdotTimers.Add(mobid, ts);
+                            if(result == CastReturn.CAST_RESIST)
+                            {
+                                //zero it out
+                                totalTimeToWait = 0;
+                            }
+                            else
+                            {
+                                totalTimeToWait = (spell.DurationTotalSeconds * 1000);
+
+                            }
+                           
                         }
+                        UpdateDotDebuffTimers(mobid, spell, totalTimeToWait);
+
                     }
                     //onto the next debuff/dot!
                 }
+            }
+        }
+        private static void UpdateDotDebuffTimers(Int32 mobid, Data.Spell spell, Int64 timeLeftInMS)
+        {
+            SpellTimer s;
+            //if we have no time left, as it was not found, just set it to 0 in ours
+            if (_debuffdotTimers.TryGetValue(mobid, out s))
+            {
+                if (!s._timestamps.ContainsKey(spell.SpellID))
+                {
+                    s._timestamps.Add(spell.SpellID, 0);
+                }
+
+                MQ.Write($"Debuff/Dot setting timestamp wait time:{timeLeftInMS}");
+                s._timestamps[spell.SpellID] = Core._stopWatch.ElapsedMilliseconds + timeLeftInMS;
+
+
+            }
+            else
+            {
+                SpellTimer ts = SpellTimer.Aquire();
+                ts._mobID = mobid;
+
+                MQ.Write($"Debuff/Dot setting timestamp wait time:{timeLeftInMS}");
+
+                ts._timestamps.Add(spell.SpellID, Core._stopWatch.ElapsedMilliseconds + timeLeftInMS);
+                _debuffdotTimers.Add(mobid, ts);
             }
         }
         public static void Check_AssistStatus()

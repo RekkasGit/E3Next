@@ -365,6 +365,7 @@ namespace MonoCore
         /// <param name="line"></param>
         public static void ProcessEvent(string line)
         {
+            
             //to prevent spams
             if (_eventList.Count > 0)
             {
@@ -375,6 +376,7 @@ namespace MonoCore
 
         public static void ProcessMQEvent(string line)
         {
+           
             //to prevent spams
             if (_eventList.Count > 0)
             {
@@ -1435,7 +1437,10 @@ namespace MonoCore
             foreach(var spawn in _spawns)
             {
                 _spawnsByID.Add(spawn.ID,spawn);
-                _spawnsByName.Add(spawn.Name,spawn);
+                if(!_spawnsByName.ContainsKey(spawn.Name))
+                {
+                    _spawnsByName.Add(spawn.Name, spawn);
+                }
             }
           
             //_spawns should have fresh data now!

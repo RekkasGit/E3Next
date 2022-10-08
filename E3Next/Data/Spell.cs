@@ -2,6 +2,7 @@
 using IniParser.Model;
 using MonoCore;
 using System;
+using System.Collections.Generic;
 using System.Reflection;
 using System.Text;
 
@@ -21,6 +22,7 @@ namespace E3Core.Data
     
     public class Spell
     {
+        public static Dictionary<Int32, Data.Spell> _loadedSpells = new Dictionary<int, Spell>();
         public static IMQ MQ = E3.MQ;
         public Spell(string spellName, IniData parsedData=null)
         {
@@ -29,6 +31,10 @@ namespace E3Core.Data
             InitName = spellName;
             Parse(parsedData);
             QueryMQ();
+            if(!_loadedSpells.ContainsKey(this.SpellID))
+            {
+                _loadedSpells.Add(this.SpellID, this);
+            }
         }
 
         void Parse(IniData parsedData)

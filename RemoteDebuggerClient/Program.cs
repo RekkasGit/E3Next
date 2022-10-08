@@ -30,8 +30,7 @@ namespace MQServerClient
             while (true)
             {
                 E3.Process();
-                EventProcessor.ProcessEventsInQueues();
-
+            
                 System.Threading.Thread.Sleep(1000);
             }
 
@@ -196,7 +195,10 @@ namespace MQServerClient
             foreach (var spawn in _spawns)
             {
                 _spawnsByID.Add(spawn.ID, spawn);
-                _spawnsByName.Add(spawn.Name, spawn);
+                if (!_spawnsByName.ContainsKey(spawn.Name))
+                {
+                    _spawnsByName.Add(spawn.Name, spawn);
+                }
             }
             //_spawns should have fresh data now!
             _lastRefesh = Core._stopWatch.ElapsedMilliseconds;
@@ -347,7 +349,7 @@ namespace MQServerClient
                 {
                     return false;
                 }
-                System.Threading.Thread.Sleep(10);
+                System.Threading.Thread.Sleep(200);
             }
             return true;
         }
