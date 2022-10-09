@@ -43,9 +43,6 @@ namespace MonoCore
         public static Int64 _startTimeStamp;
         public static Int64 _processingCounts;
         public static Int64 _totalProcessingCounts;
-        private static Double _startLoopTime;
-        private static Double _totalLoopTime;
-        private static ISpawns _spawn;
         public static void Init()
         {
 
@@ -54,7 +51,7 @@ namespace MonoCore
             //Logging._currentLogLevel = Logging.LogLevels.None; //log level we are currently at
             //Logging._minLogLevelTolog = Logging.LogLevels.Error; //log levels have integers assoicatd to them. you can set this to Error to only log errors. 
             //Logging._defaultLogLevel = Logging.LogLevels.None; //the default if a level is not passed into the _log.write statement. useful to hide/show things.
-            _spawn = new Spawns();
+         
 
         }
         //we use this to tell the C++ thread that its okay to start processing gain

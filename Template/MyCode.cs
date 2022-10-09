@@ -20,6 +20,7 @@ namespace Template
         public static void Process()
         {
             if (!_isInit) { Init(); }
+            string name = MQ.Query<string>("${Me.Name}");
 
             MQ.Write("Hello from Process 1");
 
