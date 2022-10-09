@@ -11,9 +11,14 @@ namespace E3Core.Processors
     public class Heals:BaseProcessor
     {
         public static ISpawns _spawns = E3._spawns;
+
+        private static Int64 _nextHealCheck = 0;
+        private static Int64 _nextHealCheckInterval = 250;
+
         [AdvSettingInvoke]
         public static void Check_Heals() 
-        { 
+        {
+            if (!ShouldHealCheck()) return;
             //using (_log.Trace())
             {
                 //grabbing these values now and reusing them
@@ -464,6 +469,17 @@ namespace E3Core.Processors
             }
         }
 
-
+        private static bool ShouldHealCheck()
+        {
+            if (Core._stopWatch.ElapsedMilliseconds < _nextHealCheck)
+            {
+                return false;
+            }
+            else
+            {
+                _nextHealCheck = Core._stopWatch.ElapsedMilliseconds + _nextHealCheckInterval;
+                return true;
+            }
+        }
     }
 }

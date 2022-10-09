@@ -20,6 +20,10 @@ namespace E3Core.Processors
         public static HashSet<Int32> _mobsToDebuff = new HashSet<int>();
         public static List<Int32> _deadMobs = new List<int>();
         public static Int64 _printoutTimer = 0;
+        private static Int64 _nextDebuffCheck = 0;
+        private static Int64 _nextDebuffCheckInterval = 1000;
+        private static Int64 _nextDoTCheck = 0;
+        private static Int64 _nextDoTCheckInterval = 1000;
 
         public static void Init()
         {
@@ -38,7 +42,7 @@ namespace E3Core.Processors
         [AdvSettingInvoke]
         public static void Check_Debuffs()
         {
-
+            if (!ShouldDebuffCheck()) return;
             if (Assist._assistTargetID > 0)
             {
                 CastLongTermSpell(Assist._assistTargetID, E3._characterSettings.Debuffs_OnAssist);
@@ -69,7 +73,7 @@ namespace E3Core.Processors
         [AdvSettingInvoke]
         public static void check_Dots()
         {
-
+            if (!ShouldDoTCheck()) return;
             if (Assist._assistTargetID > 0)
             {
                 CastLongTermSpell(Assist._assistTargetID, E3._characterSettings.Dots_Assist);
@@ -187,7 +191,7 @@ namespace E3Core.Processors
                         //its dead jim, leave it be
 
                     }
-                    MQ.Delay(500, "${Target.BuffsPopulated}");
+                    MQ.Delay(2000, "${Target.BuffsPopulated}");
                     //check if the if condition works
                     if (!String.IsNullOrWhiteSpace(spell.Ifs))
                     {
@@ -231,7 +235,7 @@ namespace E3Core.Processors
                     //// for total time as as the Duration TLO can be unreliable depending on dot focus duration.  as in it says 72  sec when its 92 sec.
                     Casting.TrueTarget(mobid);
 
-                    MQ.Delay(500, "${Target.BuffsPopulated}");
+                    MQ.Delay(2000, "${Target.BuffsPopulated}");
                     //// we also have the situation where over 55> buffs on the ROF2 client cannot be viewed, but up to 85 or so work. 
                     //// we are going to have to loop through the buffs and set dot timers
                     //// if under 55< we will evict off the timer that we think we should have if we do
@@ -348,7 +352,30 @@ namespace E3Core.Processors
 
             }
         }
-
+        private static bool ShouldDebuffCheck()
+        {
+            if (Core._stopWatch.ElapsedMilliseconds < _nextDebuffCheck)
+            {
+                return false;
+            }
+            else
+            {
+                _nextDebuffCheck = Core._stopWatch.ElapsedMilliseconds + _nextDebuffCheckInterval;
+                return true;
+            }
+        }
+        private static bool ShouldDoTCheck()
+        {
+            if (Core._stopWatch.ElapsedMilliseconds < _nextDoTCheck)
+            {
+                return false;
+            }
+            else
+            {
+                _nextDoTCheck = Core._stopWatch.ElapsedMilliseconds + _nextDoTCheckInterval;
+                return true;
+            }
+        }
     }
 
 }

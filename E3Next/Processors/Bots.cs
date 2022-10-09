@@ -14,7 +14,8 @@ namespace E3Core.Processors
         List<string> BotsConnected();
         Boolean HasShortBuff(string name, Int64 buffid);
         void BroadcastCommandToOthers(string query);
-        void SetupAliases();
+        List<Int32> BuffList(string name);
+
 
     }
     public class Bots: IBots
@@ -25,15 +26,14 @@ namespace E3Core.Processors
 
         private string netbotConnectionString = string.Empty;
         private List<string> _connectedBots = new List<string>();
+        private List<Int32> _buffList = new List<int>();
         public void BroadcastCommandToOthers(string query)
         {
             MQ.Cmd($"/bcg /{query}");
         }
         public Boolean InZone(string name)
         {
-
             return MQ.Query<bool>($"${{NetBots[{name}].InZone}}");
-            
 
         }
         public Int32 PctHealth(string name)
@@ -94,47 +94,41 @@ namespace E3Core.Processors
             return false;
         }
 
-        public void SetupAliases()
+        public List<int> BuffList(string name)
         {
-            MQ.Cmd("/noparse /squelch /alias /AssistOn /bc Assist on ${Target.ID}");
-            MQ.Cmd("/noparse /squelch /alias /AssistMe /bc Assist on ${Target.ID}");
-            MQ.Cmd("/squelch /alias /BackOff /bc Back off");
-            MQ.Cmd("/squelch /alias /debuff /bc Debuffs on ${Target.ID}");
-            MQ.Cmd("/squelch /alias /debuffson /bc Debuffs on ${Target.ID}");
-            MQ.Cmd("/squelch /alias /debuffsoff /bc End Debuffs");
-            MQ.Cmd("/squelch /alias /dot /bc DoTs on ${Target.ID}");
-            MQ.Cmd("/squelch /alias /dotson /bc DoTs on ${Target.ID}");
-            MQ.Cmd("/squelch /alias /dotsoff /bc End DoTs");
-            MQ.Cmd("/squelch /alias /targetaeon /bc targetae on");
-            MQ.Cmd("/squelch /alias /targetaeoff /bc targetae off");
-            MQ.Cmd("/squelch /alias /pbaeon /bc pbae on");
-            MQ.Cmd("/squelch /alias /pbaeoff /bc pbae off");
-            MQ.Cmd("/squelch /alias /aeon /bc allae on");
-            MQ.Cmd("/squelch /alias /aeoff /bc allae off");
-            MQ.Cmd("/squelch /alias /pvpOff /bc //varset TogglePvP FALSE");
-            MQ.Cmd("/squelch /alias /pvpOn /bc //varset TogglePvP TRUE");
-            MQ.Cmd("/squelch /alias /SwarmPets /bc Swarm pets on ${Target.ID}");
-            MQ.Cmd("/squelch /alias /EpicBurns /bc Epic burn");
-            MQ.Cmd("/squelch /alias /QuickBurns /bc Quick burn");
-            MQ.Cmd("/squelch /alias /LongBurns /bc Long burn");
-            MQ.Cmd("/squelch /alias /FullBurns /bc Full burn");
-            MQ.Cmd("/squelch /alias /taunton /varset doTaunt 1");
-            MQ.Cmd("/squelch /alias /tauntoff /varset doTaunt 0");
-            MQ.Cmd("/squelch /alias /AssistType /bc //varset Assist Type");
-            MQ.Cmd("/squelch /alias /ns /bc SpellSet");
-            MQ.Cmd("/squelch /alias /ss /bc SpellSet");
-            MQ.Cmd("/squelch /alias /combatmode /bc combatmode");
-            MQ.Cmd("/squelch /alias /cm /bc combatmode");
-            MQ.Cmd("/squelch /alias /Lesson /bc VetAA Lesson of the Devoted");
-            MQ.Cmd("/squelch /alias /Infusion /bc VetAA Infusion of the Faithful");
-            MQ.Cmd("/squelch /alias /Staunch /bc VetAA Staunch Recovery");
-            MQ.Cmd("/squelch /alias /Servant /bc VetAA Steadfast Servant");
-            MQ.Cmd("/squelch /alias /Intensity /bc VetAA Intensity of the Resolute");
-            MQ.Cmd("/squelch /alias /Armor /bc VetAA Armor of Experience");
-            MQ.Cmd("/squelch /alias /Expedient /bc VetAA Expedient Recovery");
-            MQ.Cmd("/squelch /alias /Throne /bc VetAA Throne of Heroes");
-            MQ.Cmd("/squelch /alias /Jester /bc VetAA Chaotic Jester");
 
+            string listString = MQ.Query<string>($"${{NetBots[{name}].Buff}}");
+            _buffList.Clear();
+            if(listString!="NULL")
+            {
+                StrignsToNumbers(listString, ' ', _buffList);
+
+                listString = MQ.Query<string>($"${{NetBots[{name}].ShortBuff}}");
+                if (listString != "NULL")
+                {
+                    StrignsToNumbers(listString, ' ', _buffList);
+                }
+            }
+            return _buffList;
+
+        }
+        private static void StrignsToNumbers(string s, char delim, List<Int32> list)
+        {
+            List<int> result = list;
+            int start = 0;
+            int end = 0;
+            foreach (char x in s)
+            {
+                if (x == delim || end == s.Length - 1)
+                {
+                    if (end == s.Length - 1)
+                        end++;
+                    result.Add(int.Parse(s.Substring(start, end - start)));
+                    start = end + 1;
+                }
+                end++;
+            }
+            
         }
     }
 
@@ -150,6 +144,11 @@ namespace E3Core.Processors
         }
 
         public void BroadcastCommandToOthers(string query)
+        {
+            throw new NotImplementedException();
+        }
+
+        public List<int> BuffList(string name)
         {
             throw new NotImplementedException();
         }
@@ -171,10 +170,6 @@ namespace E3Core.Processors
             return 0;
         }
 
-        public void SetupAliases()
-        {
-            throw new NotImplementedException();
-        }
     }
 
    

@@ -1,5 +1,6 @@
 ﻿using MonoCore;
 using System;
+using System.Collections.Concurrent;
 using System.Collections.Generic;
 using System.Linq;
 using System.Text;
@@ -11,6 +12,7 @@ namespace E3Core.Data
     {
         public Int32 _mobID;
         public Dictionary<Int32, Int64> _timestamps = new Dictionary<Int32, Int64>();
+        public Dictionary<Int32, Int64> _lockedtimestamps = new Dictionary<Int32, Int64>();
 
         public static SpellTimer Aquire()
         {
@@ -26,7 +28,7 @@ namespace E3Core.Data
         {
             _mobID = 0;
             _timestamps.Clear();
-
+            _lockedtimestamps.Clear();
             StaticObjectPool.Push(this);
         }
     }
