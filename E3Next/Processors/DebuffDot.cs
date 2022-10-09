@@ -191,7 +191,7 @@ namespace E3Core.Processors
                     //check if the if condition works
                     if (!String.IsNullOrWhiteSpace(spell.Ifs))
                     {
-                        if (!MQ.Query<bool>($"${{Bool[{spell.Ifs}]}}"))
+                        if (!MQ.Query<bool>($"${{If[{spell.Ifs},TRUE,FALSE]}}"))
                         {
                             continue;
                         }
@@ -224,7 +224,7 @@ namespace E3Core.Processors
                     {
                         return;
                     }
-                    ////Okay lesson about EQ resist messages and timers for debuffs
+                    ////Okay lesson about EQ resist messages and timers for debuffs/buffs
                     //// you don't know if a spell resits unless the server tells you.. so this result above? somewhat unreliable.
                     //// The reason for this is, it takes X amount of time to come back from the server , and that X is unreliable as heck. 
                     //// So... for debuffs we are going to do this. If the target you have has the buff, grab its timer from the buffs object
@@ -242,29 +242,22 @@ namespace E3Core.Processors
                     //delay to release back to MQ to get a proper buffcount
                     MQ.Delay(100);
                     Int32 buffCount = MQ.Query<Int32>("${Target.BuffCount}");
-                    // MQ.Write($"Debuff/Dot Debuff Count:"+buffCount);
                     //lets just update our cache with what is on the mob.
                     Int64 timeLeftInMS = Casting.TimeLeftOnMySpell(spell);
-                    // MQ.Write($"Debuff/Dot Time Left on spell:" + timeLeftInMS);
-
-
                     if (buffCount < 55)
                     {
-
                         UpdateDotDebuffTimers(mobid, spell, timeLeftInMS);
                     }
                     else
                     {
-
                         Int64 totalTimeToWait;
                         if (timeLeftInMS > 0)
                         {
-
                             totalTimeToWait = timeLeftInMS;
                         }
                         else
                         {
-                            if (result == CastReturn.CAST_RESIST)
+                            if (result != CastReturn.CAST_SUCCESS)
                             {
                                 //zero it out
                                 totalTimeToWait = 0;
@@ -272,12 +265,9 @@ namespace E3Core.Processors
                             else
                             {
                                 totalTimeToWait = (spell.DurationTotalSeconds * 1000);
-
                             }
-
                         }
                         UpdateDotDebuffTimers(mobid, spell, totalTimeToWait);
-
                     }
                     //onto the next debuff/dot!
                 }

@@ -3,6 +3,7 @@ using IniParser.Model;
 using MonoCore;
 using System;
 using System.Collections.Generic;
+using System.Diagnostics;
 using System.Reflection;
 using System.Text;
 
@@ -29,6 +30,8 @@ namespace E3Core.Data
             SpellName = spellName; //what the thing actually casts
             CastName = spellName;//required to send command
             InitName = spellName;
+
+            
             Parse(parsedData);
             QueryMQ();
             if(!_loadedSpells.ContainsKey(this.SpellID))

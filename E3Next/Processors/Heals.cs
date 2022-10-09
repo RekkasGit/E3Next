@@ -440,7 +440,7 @@ namespace E3Core.Processors
                                     {
                                         if (pctHealth <= spell.HealPct)
                                         {
-                                            if(!E3._bots.HasBuff(name,spell.SpellID))
+                                            if(!E3._bots.HasShortBuff(name,spell.SpellID))
                                             {
                                                 if (Casting.CheckReady(spell))
                                                 {

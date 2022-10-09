@@ -674,9 +674,25 @@ namespace MonoCore
         }
         public static void OnSetSpawns(byte[] data, int size)
         {
-            var spawn = Spawn.Aquire();
-            spawn.Init(data, size);
-            Spawns._spawns.Add(spawn);
+
+
+            //pull the id out of the array
+            Int32 ID = BitConverter.ToInt32(data, 0);
+          
+            Spawn s;
+            if(Spawns._spawnsByID.TryGetValue(ID, out s))
+            {
+                //just update the value
+                s.Init(data, size);
+            }
+            else
+            {
+                var spawn = Spawn.Aquire();
+                spawn.Init(data, size);
+                Spawns._spawns.Add(spawn);
+            }
+
+            
             //copy the data out into the current array set. 
         }
 
@@ -1359,10 +1375,12 @@ namespace MonoCore
 
     public class Spawns: ISpawns
     {
-
+        //special list so we can get rid of the non dirty values
+        private static List<Spawn> _tmpSpawnList = new List<Spawn>();
+        
         public static List<Spawn> _spawns = new List<Spawn>(2048);
-        private static Dictionary<string,Spawn> _spawnsByName = new Dictionary<string,Spawn>(2048);
-        private static Dictionary<Int32,Spawn> _spawnsByID = new Dictionary<int,Spawn>(2048);
+        public static Dictionary<string,Spawn> _spawnsByName = new Dictionary<string,Spawn>(2048);
+        public static Dictionary<Int32,Spawn> _spawnsByID = new Dictionary<int,Spawn>(2048);
         public static Int64 _lastRefesh = 0;
         public static Int64 _refreshTimePeriodInMS = 1000;
 
@@ -1403,17 +1421,6 @@ namespace MonoCore
             return _spawns;
         }
 
-        private void ClearList()
-        {
-            _spawnsByID.Clear();
-            _spawnsByName.Clear();
-            foreach (var spawn in _spawns)
-            {
-                spawn.Dispose();
-            }
-            _spawns.Clear();
-          
-        }
         private void RefreshListIfNeeded()
         {
             if(_spawns.Count==0)
@@ -1428,17 +1435,43 @@ namespace MonoCore
         }
         public void RefreshList()
         {
-            ClearList();
+            //need to mark everything not dirty so we know what get spawns gets us.
+            foreach (var spawn in _spawns)
+            {
+                spawn.isDirty = false;
+            }
             //request new spawns!
             Core.mq_GetSpawns();
-            foreach(var spawn in _spawns)
+
+            //spawns has new/updated data, get rid of the non dirty stuff.
+            //can use the other dictionaries to help
+            _spawnsByName.Clear();
+            _spawnsByID.Clear();
+            foreach (var spawn in _spawns)
             {
-                _spawnsByID.Add(spawn.ID,spawn);
-                if(!_spawnsByName.ContainsKey(spawn.Name))
+                if(spawn.isDirty)
                 {
-                    _spawnsByName.Add(spawn.Name, spawn);
+                    _tmpSpawnList.Add(spawn);
+                    if(spawn.TypeDesc=="PC")
+                    {
+                        _spawnsByName.Add(spawn.Name, spawn);
+
+                    }
+                    _spawnsByID.Add(spawn.ID, spawn);
+                }
+                else
+                {
+                    spawn.Dispose();
                 }
             }
+            //swap the collections
+            _spawns.Clear();
+            List<Spawn> tmpPtr = _spawns;
+            _spawns = _tmpSpawnList;
+            _tmpSpawnList = tmpPtr;
+
+            //clear the dictionaries and rebuild.
+            
           
             //_spawns should have fresh data now!
             _lastRefesh = Core._stopWatch.ElapsedMilliseconds;
@@ -1450,6 +1483,7 @@ namespace MonoCore
     {
         public byte[] _data = new byte[1024];
         public Int32 _dataSize;
+        public bool isDirty = false;
         public static Spawn Aquire()
         {
             Spawn obj;
@@ -1465,12 +1499,15 @@ namespace MonoCore
        
         public void Init(byte[] data, Int32 length)
         {
+            isDirty = true;
             //used for remote debug, to send the representastion of the data over.
             System.Buffer.BlockCopy(data, 0, _data, 0, length);
             _dataSize = length;
             //end of remote debug
         
             Int32 cb = 0;
+            ID = BitConverter.ToInt32(data, cb);
+            cb += 4;
             AFK = BitConverter.ToBoolean(data, cb);
             cb += 1;
             Aggressive = BitConverter.ToBoolean(data, cb);
@@ -1541,8 +1578,7 @@ namespace MonoCore
             cb += 4;
             Height = BitConverter.ToSingle(data, cb);
             cb += 4;
-            ID = BitConverter.ToInt32(data, cb);
-            cb += 4;
+    
             Invis = BitConverter.ToBoolean(data, cb);
             cb += 1;
             IsSummoned = BitConverter.ToBoolean(data, cb);

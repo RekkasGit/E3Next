@@ -200,10 +200,10 @@ namespace E3Core.Processors
         public static CastReturn CheckForReist(Data.Spell spell)
         {
             //it takes time to wait for a spell resist, up to 2-400 millieconds.
-            //basically assume anything that has a duration of 0 or is non determential to not resist
-            //what this buys is is a much faster nuke/cast cycle, at the expense of checking for their resist status
-            //tho debuffs/dots its more important as we have to keep track of timers, so we will pay the cost of waiting for resist checks.
-            if(!spell.SpellType.Equals("Detrimental") || spell.Duration==0)
+            //basically 0 or is non determential to not resist, mostly nukes/spells
+            //what this buys is is a much faster nuke/heal cycle, at the expense of checking for their resist status
+            //tho debuffs/dots/buffs its more important as we have to keep track of timers, so we will pay the cost of waiting for resist checks.
+            if(spell.Duration==0)
             {
                 return CastReturn.CAST_SUCCESS;
             }
@@ -257,6 +257,20 @@ namespace E3Core.Processors
                 }
             }
             return 0;
+        }
+        public static Int64 TimeLeftOnTargetBuff(Data.Spell spell)
+        {
+            Int64 millisecondsLeft = MQ.Query<Int64>($"${{Target.Buff[{spell.SpellName}].Duration}}");
+            return millisecondsLeft;
+        }
+        public static Int64 TimeLeftOnMyBuff(Data.Spell spell)
+        {
+            Int64 millisecondsLeft = MQ.Query<Int64>($"${{Me.Buff[{spell.SpellName}].Duration}}");
+            if(millisecondsLeft==0)
+            {
+                millisecondsLeft = MQ.Query<Int64>($"${{Me.Song[{spell.SpellName}].Duration}}");
+            }
+            return millisecondsLeft;
         }
         private static bool CheckForResistByName(string name, Double time)
         {
@@ -569,12 +583,26 @@ namespace E3Core.Processors
                                 }
                                 else
                                 {
-                                    MQ.Cmd($"/casting \"{spell.CastName}|{spell.CastType.ToString()}\"");
-                                    if (spell.MyCastTime > 500)
+                                    if (spell.CastType == CastType.AA)
                                     {
-                                        MQ.Delay(1000);
+                                        MQ.Cmd($"/casting \"{spell.CastName}|alt\"");
+                                        if (spell.MyCastTime > 500)
+                                        {
+                                            MQ.Delay(1000);
 
+                                        }
                                     }
+                                    else
+                                    {
+                                        //else its an item
+                                        MQ.Cmd($"/casting \"{spell.CastName}|{spell.CastType.ToString()}\"");
+                                        if (spell.MyCastTime > 500)
+                                        {
+                                            MQ.Delay(1000);
+
+                                        }
+                                    }
+                                  
                                 }
                             }
                             else

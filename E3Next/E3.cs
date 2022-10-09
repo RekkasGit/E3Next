@@ -107,20 +107,22 @@ namespace E3Core.Processors
                 MonoCore.MQ._maxMillisecondsToWork = 40;
                 //max event count for each registered event before spilling over.
                 EventProcessor._eventLimiterPerRegisteredEvent = 20;
-
+                _currentName = MQ.Query<string>("${Me.CleanName}");
                 //do first to get class information
                 _characterSettings = new Settings.CharacterSettings();
                 _currentClass = _characterSettings._characterClass;
+                _currentLongClassString = _currentClass.ToString();
+                _currentShortClassString = Data.Classes._classLongToShort[_currentLongClassString];
+                
                 //end class information
 
                 _generalSettings = new Settings.GeneralSettings();
                 _advancedSettings = new Settings.AdvancedSettings();
+                
 
                 Setup.Init();
 
-                _currentLongClassString = _currentClass.ToString();
-                _currentShortClassString = Data.Classes._classLongToShort[_currentLongClassString];
-                _currentName = MQ.Query<string>("${Me.CleanName}");
+               
                 _bots=new Bots();
                 _isInit = true;
                 Spawns._refreshTimePeriodInMS = 1000;

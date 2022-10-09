@@ -267,7 +267,7 @@ namespace E3Core.Processors
                                 {
                                     if (String.IsNullOrWhiteSpace(ability.Ifs))
                                     {
-                                        if (!MQ.Query<bool>($"${{Bool[{ability.Ifs}]}}"))
+                                        if (!MQ.Query<bool>($"${{If[{ability.Ifs},TRUE,FALSE]}}"))
                                         {
                                             continue;
                                         }

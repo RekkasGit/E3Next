@@ -110,6 +110,12 @@ namespace E3Core.Settings
 
             LoadKeyData("Buffs", "Instant Buff", parsedData, InstantBuffs);
             LoadKeyData("Buffs", "Self Buff", parsedData, SelfBuffs);
+            //set target on self buffs
+            foreach(var buff in SelfBuffs)
+            {
+                buff.CastTarget = _characterName;
+            }
+
             LoadKeyData("Buffs", "Bot Buff", parsedData, BotBuffs);
             
            

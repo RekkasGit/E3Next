@@ -12,7 +12,7 @@ namespace E3Core.Processors
         Boolean InZone(string Name);
         Int32 PctHealth(string name);
         List<string> BotsConnected();
-        Boolean HasBuff(string name, Int64 buffid);
+        Boolean HasShortBuff(string name, Int64 buffid);
         void BroadcastCommandToOthers(string query);
         void SetupAliases();
 
@@ -71,7 +71,7 @@ namespace E3Core.Processors
             }
         }
 
-        public bool HasBuff(string name, Int64 buffid)
+        public bool HasShortBuff(string name, Int64 buffid)
         {
             string buffidAsString = buffid.ToString();
             string buffList = MQ.Query<string>($"${{NetBots[{name}].ShortBuff}}");
@@ -154,7 +154,7 @@ namespace E3Core.Processors
             throw new NotImplementedException();
         }
 
-        public bool HasBuff(string name, Int64 buffid)
+        public bool HasShortBuff(string name, Int64 buffid)
         {
             throw new NotImplementedException();
         }

@@ -40,6 +40,9 @@ namespace MQServerClient
 
     public class NetMQSpawns : ISpawns
     {
+        //special list so we can get rid of the non dirty values
+        private static List<Spawn> _tmpSpawnList = new List<Spawn>();
+
         DealerSocket _requestSocket;
         NetMQ.Msg _requestMsg = new NetMQ.Msg();
         public TimeSpan SendTimeout = new TimeSpan(0, 5, 5);
@@ -105,20 +108,15 @@ namespace MQServerClient
                 RefreshList();
             }
         }
-        private void ClearList()
-        {
-            _spawnsByID.Clear();
-            _spawnsByName.Clear();
-            foreach (var spawn in _spawns)
-            {
-                spawn.Dispose();
-            }
-            _spawns.Clear();
-        }
         public void RefreshList()
         {
-            ClearList();
-
+            foreach (var spawn in _spawns)
+            {
+                spawn.isDirty = false;
+            }
+         
+            //_spawns should have fresh data now!
+            _lastRefesh = Core._stopWatch.ElapsedMilliseconds;
             if (_requestMsg.IsInitialised)
             {
                 _requestMsg.Close();
@@ -162,7 +160,7 @@ namespace MQServerClient
             _requestMsg.Close();
           
             bool finishedResposne = false;
-
+            List<Spawn> returnList = new List<Spawn>();
             while(!finishedResposne)
             {
                 _requestMsg.InitEmpty();
@@ -184,22 +182,53 @@ namespace MQServerClient
                 }
                 else
                 {
-                    //data is back, lets parse out the data
-                    var spawn = Spawn.Aquire();
-                    spawn.Init(_requestMsg.Data, _requestMsg.Size);
-                    _spawns.Add(spawn);
+                    Int32 ID = BitConverter.ToInt32(_requestMsg.Data, 0);
+                    Spawn s;
+                    if (_spawnsByID.TryGetValue(ID, out s))
+                    {
+                        //just update the value
+                        s.Init(_requestMsg.Data, _requestMsg.Size);
+                    }
+                    else
+                    {
+                        var spawn = Spawn.Aquire();
+                        spawn.Init(_requestMsg.Data, _requestMsg.Size);
+                        _spawns.Add(spawn);
+                    }
+                   
                 }
                 _requestMsg.Close();
 
             }
+
+            
+            //spawns has new/updated data, get rid of the non dirty stuff.
+            //can use the other dictionaries to help
+            _spawnsByName.Clear();
+            _spawnsByID.Clear();
             foreach (var spawn in _spawns)
             {
-                _spawnsByID.Add(spawn.ID, spawn);
-                if (!_spawnsByName.ContainsKey(spawn.Name))
+                if (spawn.isDirty)
                 {
-                    _spawnsByName.Add(spawn.Name, spawn);
+                    _tmpSpawnList.Add(spawn);
+                    if (spawn.TypeDesc == "PC")
+                    {
+                        _spawnsByName.Add(spawn.Name, spawn);
+
+                    }
+                    _spawnsByID.Add(spawn.ID, spawn);
+                }
+                else
+                {
+                    spawn.Dispose();
                 }
             }
+            //swap the collections
+            _spawns.Clear();
+            List<Spawn> tmpPtr = _spawns;
+            _spawns = _tmpSpawnList;
+            _tmpSpawnList = tmpPtr;
+
             //_spawns should have fresh data now!
             _lastRefesh = Core._stopWatch.ElapsedMilliseconds;
 
