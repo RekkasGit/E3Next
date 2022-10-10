@@ -15,11 +15,12 @@ namespace E3Core.Processors
         public static Logging _log = E3._log;
         private static IMQ MQ = E3.MQ;
         private static ISpawns _spawns = E3._spawns;
-        public static Dictionary<Int32, SpellTimer> _debuffdotTimers = new Dictionary<Int32, SpellTimer>();
+        public static Dictionary<Int32, SpellTimer> _debuffTimers = new Dictionary<Int32, SpellTimer>();
+        public static Dictionary<Int32, SpellTimer> _dotTimers = new Dictionary<Int32, SpellTimer>();
         public static HashSet<Int32> _mobsToDot = new HashSet<int>();
         public static HashSet<Int32> _mobsToDebuff = new HashSet<int>();
         public static List<Int32> _deadMobs = new List<int>();
-        public static Int64 _printoutTimer = 0;
+        
         private static Int64 _nextDebuffCheck = 0;
         private static Int64 _nextDebuffCheckInterval = 1000;
         private static Int64 _nextDoTCheck = 0;
@@ -33,26 +34,33 @@ namespace E3Core.Processors
         {
             _mobsToDot.Clear();
             _mobsToDebuff.Clear();
-            foreach (var kvp in _debuffdotTimers)
+            foreach (var kvp in _debuffTimers)
             {
                 kvp.Value.Dispose();
             }
-            _debuffdotTimers.Clear();
+            _debuffTimers.Clear();
+            foreach (var kvp in _dotTimers)
+            {
+                kvp.Value.Dispose();
+            }
+            _dotTimers.Clear();
         }
         [AdvSettingInvoke]
         public static void Check_Debuffs()
         {
             if (!e3util.ShouldCheck(ref _nextDebuffCheck, _nextDebuffCheckInterval)) return;
 
+            e3util.PrintTimerStatus(_debuffTimers, ref _nextDebuffCheck, "Debuffs");
+
             if (Assist._assistTargetID > 0)
             {
-                CastLongTermSpell(Assist._assistTargetID, E3._characterSettings.Debuffs_OnAssist);
+                CastLongTermSpell(Assist._assistTargetID, E3._characterSettings.Debuffs_OnAssist,_debuffTimers);
                 if (E3._actionTaken) return;
             }
             foreach (var mobid in _mobsToDebuff)
             {
 
-                CastLongTermSpell(mobid, E3._characterSettings.Debuffs_Command);
+                CastLongTermSpell(mobid, E3._characterSettings.Debuffs_Command, _debuffTimers);
                 if (E3._actionTaken) return;
             }
             foreach (var mobid in _deadMobs)
@@ -76,15 +84,18 @@ namespace E3Core.Processors
         {
             if (!e3util.ShouldCheck(ref _nextDoTCheck, _nextDoTCheckInterval)) return;
 
+
+            e3util.PrintTimerStatus(_dotTimers, ref _nextDoTCheck, "Damage over Time");
+
             if (Assist._assistTargetID > 0)
             {
-                CastLongTermSpell(Assist._assistTargetID, E3._characterSettings.Dots_Assist);
+                CastLongTermSpell(Assist._assistTargetID, E3._characterSettings.Dots_Assist,_dotTimers);
                 if (E3._actionTaken) return;
             }
 
             foreach (var mobid in _mobsToDot)
             {
-                CastLongTermSpell(mobid, E3._characterSettings.Dots_OnCommand);
+                CastLongTermSpell(mobid, E3._characterSettings.Dots_OnCommand, _dotTimers);
                 if (E3._actionTaken) return;
             }
             foreach (var mobid in _deadMobs)
@@ -144,14 +155,14 @@ namespace E3Core.Processors
                 _mobsToDebuff.Add(mobid);
             }
         }
-        private static void CastLongTermSpell(Int32 mobid, List<Data.Spell> spells)
+        private static void CastLongTermSpell(Int32 mobid, List<Data.Spell> spells, Dictionary<Int32, SpellTimer> timers)
         {
 
             foreach (var spell in spells)
             {
                 //do we already have a timer on this spell?
                 SpellTimer s;
-                if (_debuffdotTimers.TryGetValue(mobid, out s))
+                if (timers.TryGetValue(mobid, out s))
                 {
                     Int64 timestamp;
                     if (s._timestamps.TryGetValue(spell.SpellID, out timestamp))
@@ -221,7 +232,7 @@ namespace E3Core.Processors
                             {
                                 buffDuration = 1000;
                             }
-                            UpdateDotDebuffTimers(mobid, spell, buffDuration);
+                            UpdateDotDebuffTimers(mobid, spell, buffDuration, timers);
                             continue;
                         }
                     }
@@ -252,7 +263,7 @@ namespace E3Core.Processors
                     Int64 timeLeftInMS = Casting.TimeLeftOnMySpell(spell);
                     if (buffCount < 55)
                     {
-                        UpdateDotDebuffTimers(mobid, spell, timeLeftInMS);
+                        UpdateDotDebuffTimers(mobid, spell, timeLeftInMS, timers);
                     }
                     else
                     {
@@ -273,17 +284,17 @@ namespace E3Core.Processors
                                 totalTimeToWait = (spell.DurationTotalSeconds * 1000);
                             }
                         }
-                        UpdateDotDebuffTimers(mobid, spell, totalTimeToWait);
+                        UpdateDotDebuffTimers(mobid, spell, totalTimeToWait, timers);
                     }
                     //onto the next debuff/dot!
                 }
             }
         }
-        private static void UpdateDotDebuffTimers(Int32 mobid, Data.Spell spell, Int64 timeLeftInMS)
+        private static void UpdateDotDebuffTimers(Int32 mobid, Data.Spell spell, Int64 timeLeftInMS, Dictionary<Int32, SpellTimer> timers)
         {
             SpellTimer s;
             //if we have no time left, as it was not found, just set it to 0 in ours
-            if (_debuffdotTimers.TryGetValue(mobid, out s))
+            if (timers.TryGetValue(mobid, out s))
             {
                 if (!s._timestamps.ContainsKey(spell.SpellID))
                 {
@@ -299,61 +310,10 @@ namespace E3Core.Processors
                 ts._mobID = mobid;
 
                 ts._timestamps.Add(spell.SpellID, Core._stopWatch.ElapsedMilliseconds + timeLeftInMS);
-                _debuffdotTimers.Add(mobid, ts);
+                timers.Add(mobid, ts);
             }
         }
-        public static void PrintDotDebuffStatus()
-        {
-            //Printing out debuff timers
-            if (_printoutTimer < Core._stopWatch.ElapsedMilliseconds)
-            {
-                if (_debuffdotTimers.Count > 0)
-                {
-                    MQ.Write("\atCurrent Debuff/Dots");
-                    MQ.Write("\aw===================");
-
-
-                }
-
-                foreach (var kvp in _debuffdotTimers)
-                {
-                    foreach (var kvp2 in kvp.Value._timestamps)
-                    {
-                        Data.Spell spell;
-                        if (Spell._loadedSpells.TryGetValue(kvp2.Key, out spell))
-                        {
-                            Spawn s;
-                            if (_spawns.TryByID(kvp.Value._mobID, out s))
-                            {
-                                MQ.Write($"\ap{s.CleanName} \aw: \ag{spell.CastName} \aw: {(kvp2.Value - Core._stopWatch.ElapsedMilliseconds) / 1000} seconds");
-
-                            }
-
-
-
-                        }
-                        else
-                        {
-                            Spawn s;
-                            if (_spawns.TryByID(kvp.Value._mobID, out s))
-                            {
-                                MQ.Write($"\ap{s.CleanName} \aw: \agspellid:{kvp2.Key} \aw: {(kvp2.Value - Core._stopWatch.ElapsedMilliseconds) / 1000} seconds");
-
-                            }
-
-                        }
-
-                    }
-                }
-                if (_debuffdotTimers.Count > 0)
-                {
-                    MQ.Write("\aw===================");
-
-                }
-                _printoutTimer = Core._stopWatch.ElapsedMilliseconds + 10000;
-
-            }
-        }
+       
        
     }
 

@@ -542,7 +542,6 @@ namespace E3Core.Processors
 
                         }
 
-                        startCast:
                         if (E3._currentClass == Data.Class.Bard && MQ.Query<bool>($"${{Bool[${{Me.Book[{spell.CastName}]}}]}}"))
                         {
                             MemorizeSpell(spell);
@@ -824,9 +823,9 @@ namespace E3Core.Processors
 
             Int32 currentMana = MQ.Query<Int32>("${Me.CurrentMana}");
             Int32 pctMana = MQ.Query<Int32>("${Me.PctMana}");
-            if (currentMana>spell.Mana)
+            if (currentMana>=spell.Mana)
             {
-                if(pctMana> spell.MinMana)
+                if(pctMana>= spell.MinMana)
                 {   if(spell.MaxMana > 0)
                     {
                         if (pctMana < spell.MaxMana)
@@ -968,12 +967,22 @@ namespace E3Core.Processors
             }
             return false;
         }
-  
-        public static bool TrueTarget(Int32 targetID)
+     
+        public static bool TrueTarget(Int32 targetID, bool allowClear = false)
         {
 
             //0 means don't change target
-            if (targetID == 0) return false;
+            if(allowClear && targetID==0)
+            {
+                MQ.Cmd("/keypress esc");
+                MQ.Delay(200);
+                return true;
+            }
+            else
+            {
+                if (targetID == 0) return false;
+
+            }
 
             _log.Write("Trying to Aquire target");
 

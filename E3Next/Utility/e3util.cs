@@ -1,4 +1,5 @@
-﻿using E3Core.Processors;
+﻿using E3Core.Data;
+using E3Core.Processors;
 using MonoCore;
 using System;
 using System.Collections.Generic;
@@ -14,6 +15,7 @@ namespace E3Core.Utility
         public static string _lastSuccesfulCast = String.Empty;
         public static Logging _log = E3._log;
         private static IMQ MQ = E3.MQ;
+        private static ISpawns _spawns = E3._spawns;
         /// <summary>
         /// Use to see if a certain method should be running
         /// </summary>
@@ -30,6 +32,58 @@ namespace E3Core.Utility
             {
                 nextCheck = Core._stopWatch.ElapsedMilliseconds + nextCheckInterval;
                 return true;
+            }
+        }
+        public static void PrintTimerStatus(Dictionary<Int32, SpellTimer> timers, ref Int64 printTimer, string Caption, Int64 delayInMS = 10000)
+        {
+            //Printing out debuff timers
+            if (printTimer < Core._stopWatch.ElapsedMilliseconds)
+            {
+                if (timers.Count > 0)
+                {
+                    MQ.Write($"\at{Caption}");
+                    MQ.Write("\aw===================");
+
+
+                }
+
+                foreach (var kvp in timers)
+                {
+                    foreach (var kvp2 in kvp.Value._timestamps)
+                    {
+                        Data.Spell spell;
+                        if (Spell._loadedSpells.TryGetValue(kvp2.Key, out spell))
+                        {
+                            Spawn s;
+                            if (_spawns.TryByID(kvp.Value._mobID, out s))
+                            {
+                                MQ.Write($"\ap{s.CleanName} \aw: \ag{spell.CastName} \aw: {(kvp2.Value - Core._stopWatch.ElapsedMilliseconds) / 1000} seconds");
+
+                            }
+
+
+
+                        }
+                        else
+                        {
+                            Spawn s;
+                            if (_spawns.TryByID(kvp.Value._mobID, out s))
+                            {
+                                MQ.Write($"\ap{s.CleanName} \aw: \agspellid:{kvp2.Key} \aw: {(kvp2.Value - Core._stopWatch.ElapsedMilliseconds) / 1000} seconds");
+
+                            }
+
+                        }
+
+                    }
+                }
+                if (timers.Count > 0)
+                {
+                    MQ.Write("\aw===================");
+
+                }
+                printTimer = Core._stopWatch.ElapsedMilliseconds + delayInMS;
+
             }
         }
         public static void RegisterCommandWithTarget(string command, Action<int> FunctionToExecute)

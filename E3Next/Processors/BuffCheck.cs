@@ -22,10 +22,11 @@ namespace E3Core.Processors
         //maybe after combat?
         public static Dictionary<Int32, SpellTimer> _buffTimers = new Dictionary<Int32, SpellTimer>();
         private static Int64 _nextBotBuffRefresh = 0;
-        private static Int64 _nextBotRefreshTimeLimit = 2000;
+        private static Int64 _nextBotRefreshTimeInterval = 2000;
         private static Int64 _nextInstantBuffRefresh = 0;
-        private static Int64 _nextInstantRefreshTimeLimit = 250;
+        private static Int64 _nextInstantRefreshTimeInterval = 250;
         private static List<Int32> _keyList = new List<int>();
+        private static Int64 _printoutTimer;
 
         private static Int64 _nextBuffCheck = 0;
         private static Int64 _nextBuffCheckInterval = 1000;
@@ -43,14 +44,19 @@ namespace E3Core.Processors
         [AdvSettingInvoke]
         public static void Check_Buffs()
         {
+            //instant buffs have their own shouldcheck, need it snappy so check quickly.
+            BuffInstant(E3._characterSettings.InstantBuffs);
+
             if (!e3util.ShouldCheck(ref _nextBuffCheck,_nextBuffCheckInterval)) return;
 
             RefresBuffCacheForBots();
             string combatState = MQ.Query<string>("${Me.CombatState}");
             bool moving = MQ.Query<bool>("${Me.Moving}");
 
-            BuffBots(E3._characterSettings.InstantBuffs);
-            if(Assist._assistTargetID>0 || combatState=="COMBAT")
+
+            e3util.PrintTimerStatus(_buffTimers, ref _printoutTimer, "Buffs");
+
+            if (Assist._assistTargetID>0 || combatState=="COMBAT")
             {
                 BuffBots(E3._characterSettings.CombatBuffs);
 
@@ -67,17 +73,50 @@ namespace E3Core.Processors
         }
         private static void BuffInstant(List<Data.Spell> buffs)
         {
+            if (!e3util.ShouldCheck(ref _nextInstantBuffRefresh, _nextInstantRefreshTimeInterval)) return;
             //self only, instacast buffs only
-
+            Int32 id = MQ.Query<Int32>("${Me.ID}");
             foreach(var spell in buffs)
             {
+                bool hasBuff = MQ.Query<bool>($"${{Bool[${{Me.Buff[{spell.SpellName}]}}]}}");
+                bool hasSong = false;
+                if (!hasBuff)
+                {
+                    hasSong = MQ.Query<bool>($"${{Bool[${{Me.Song[{spell.SpellName}]}}]}}");
+                }
 
+                bool hasCheckFor = false;
+                if (!String.IsNullOrWhiteSpace(spell.CheckFor))
+                {
+                    hasCheckFor = MQ.Query<bool>($"${{Bool[${{Me.Buff[{spell.CheckFor}]}}]}}");
+                    if (hasCheckFor)
+                    {
+                        continue;   
+                    }
+                    hasCheckFor = MQ.Query<bool>($"${{Bool[${{Me.Song[{spell.CheckFor}]}}]}}");
+                    if (hasCheckFor)
+                    {
+                        continue;
+                    }
 
-
-
+                }
+                if (!String.IsNullOrWhiteSpace(spell.Ifs))
+                {
+                    if (!MQ.Query<bool>($"${{If[{spell.Ifs},TRUE,FALSE]}}"))
+                    {
+                        continue;
+                    }
+                }
+                if (!(hasBuff || hasSong))
+                {
+                    bool willStack = MQ.Query<bool>($"${{Spell[{spell.SpellName}].WillLand}}");
+                    if (willStack && Casting.CheckReady(spell) && Casting.checkMana(spell))
+                    {
+                        Casting.Cast(id, spell);
+                       
+                    }
+                }
             }
-
-
         }
         private static void BuffBots(List<Data.Spell> buffs, bool usePets=false)
         { 
@@ -233,156 +272,168 @@ namespace E3Core.Processors
                         //someone other than us.
                         //if its a netbots, we initially do target, then have the cache refreshed
 
+                        int currentid = MQ.Query<Int32>("${Target.ID}");
                         //need to change target to be sure ifs run correctly.
                         Casting.TrueTarget(s.ID);
                         MQ.Delay(2000, "${Target.BuffsPopulated}");
                         MQ.Delay(100);
-
-                        if (!String.IsNullOrWhiteSpace(spell.Ifs))
-                        {
-                            if (!MQ.Query<bool>($"${{If[{spell.Ifs},TRUE,FALSE]}}"))
+                        try
+                        {   //double ifs check, so if their if included Target, we have it
+                            if (!String.IsNullOrWhiteSpace(spell.Ifs))
                             {
-                                //ifs failed do a 30 sec retry
-
-                                UpdateBuffTimers(s.ID, spell, 30 * 1000, true);
-                                continue;
-                            }
-                        }
-                        //greater than 0, so we don't get things like shrink that don't have a duration
-                        bool isShortDuration = spell.DurationTotalSeconds <= 90 && spell.DurationTotalSeconds>0;
-
-                        if (isShortDuration)
-                        {
-                            //we cannot do target based checks if a short duration type.
-                            //have to do netbots
-                            //looks live you get it in the target area. 
-
-                            bool botInZone = false;
-                            botInZone = E3._bots.InZone(spell.CastTarget);
-                            if (!botInZone)
-                            {   //not one of our buffs uhh, try and cast and see if we get a non success message.
-                                if (Casting.CheckReady(spell) && Casting.checkMana(spell))
+                                if (!MQ.Query<bool>($"${{If[{spell.Ifs},TRUE,FALSE]}}"))
                                 {
-                                    var result = Casting.Cast(s.ID, spell, Heals.SomeoneNeedsHealing);
-                                    if (result != CastReturn.CAST_SUCCESS)
-                                    {
-                                        //possibly some kind of issue/blocking. set a 90 sec timer to try and recast later.
-                                        UpdateBuffTimers(s.ID, spell, 90 * 1000, true);
-                                    }
-                                    else
-                                    {
-                                        UpdateBuffTimers(s.ID, spell, spell.Duration);
-                                    }
+                                    //ifs failed do a 30 sec retry, so we don't keep swapping targets
+                                    UpdateBuffTimers(s.ID, spell, 30 * 1000, true);
+                                    continue;
                                 }
-                                continue;
-
-
                             }
-                            else
+                            //greater than 0, so we don't get things like shrink that don't have a duration
+                            bool isShortDuration = spell.DurationTotalSeconds <= 90 && spell.DurationTotalSeconds > 0;
+
+                            if (isShortDuration)
                             {
+                                //we cannot do target based checks if a short duration type.
+                                //have to do netbots
+                                //looks live you get it in the target area. 
 
-                                //its one of our bots, we can directly access short buffs
-                                if (!String.IsNullOrWhiteSpace(spell.CheckFor))
-                                {
-                                    bool hasCheckFor = E3._bots.HasShortBuff(spell.CastTarget, spell.CheckForID);
-                                    //can't check for target song buffs, be aware. will have to check netbots. 
-                                    if (hasCheckFor)
-                                    {
-                                        //can't see the time, just set it for this time to recheck
-                                        //6 seconds
-                                        UpdateBuffTimers(s.ID, spell, 6*1000);
-                                        continue;
-                                    }
-                                   
-                                }
-
-                                bool hasBuff = E3._bots.HasShortBuff(spell.CastTarget, spell.SpellID);
-
-                                if(!hasBuff)
-                                {
+                                bool botInZone = false;
+                                botInZone = E3._bots.InZone(spell.CastTarget);
+                                if (!botInZone)
+                                {   //not one of our buffs uhh, try and cast and see if we get a non success message.
                                     if (Casting.CheckReady(spell) && Casting.checkMana(spell))
                                     {
-                                        //then we can cast!
                                         var result = Casting.Cast(s.ID, spell, Heals.SomeoneNeedsHealing);
                                         if (result != CastReturn.CAST_SUCCESS)
                                         {
                                             //possibly some kind of issue/blocking. set a 90 sec timer to try and recast later.
                                             UpdateBuffTimers(s.ID, spell, 90 * 1000, true);
-                                            continue;
                                         }
                                         else
                                         {
-                                            //lets verify what we have on that target.
                                             UpdateBuffTimers(s.ID, spell, spell.Duration);
-                                            continue;
                                         }
                                     }
+                                    continue;
+
+
                                 }
                                 else
                                 {
-                                    //has the buff, no clue how much time is left, set a 6 sec retry.
-                                    UpdateBuffTimers(s.ID, spell, 6000, true);
-                                    continue;
-                                }
 
-
-                            }
-
-                        }
-                        else
-                        {
-                           
-                            Int64 timeLeftInMS = Casting.TimeLeftOnTargetBuff(spell);
-
-                            if (timeLeftInMS < 30000)
-                            {
-                                if (Casting.CheckReady(spell) && Casting.checkMana(spell))
-                                {
-                                    var result = Casting.Cast(s.ID, spell, Heals.SomeoneNeedsHealing);
-                                    if (result != CastReturn.CAST_SUCCESS)
+                                    //its one of our bots, we can directly access short buffs
+                                    if (!String.IsNullOrWhiteSpace(spell.CheckFor))
                                     {
-                                        //possibly some kind of issue/blocking. set a 120 sec timer to try and recast later.
-                                        UpdateBuffTimers(s.ID, spell, 120 * 1000, true);
-                                        continue;
-                                    }
-                                    else
-                                    {
-                                        if (spell.Duration > 0)
+                                        bool hasCheckFor = E3._bots.HasShortBuff(spell.CastTarget, spell.CheckForID);
+                                        //can't check for target song buffs, be aware. will have to check netbots. 
+                                        if (hasCheckFor)
                                         {
-                                            //lets verify what we have on that target.
-                                            Casting.TrueTarget(s.ID);
-                                            MQ.Delay(2000, "${Target.BuffsPopulated}");
-                                            MQ.Delay(100);
-                                            timeLeftInMS = Casting.TimeLeftOnTargetBuff(spell);
-                                            if (timeLeftInMS < 0)
-                                            {
-                                                timeLeftInMS = 120 * 1000;
-                                                UpdateBuffTimers(s.ID, spell, timeLeftInMS, true);
+                                            //can't see the time, just set it for this time to recheck
+                                            //6 seconds
+                                            UpdateBuffTimers(s.ID, spell, 6 * 1000);
+                                            continue;
+                                        }
 
+                                    }
+
+                                    bool hasBuff = E3._bots.HasShortBuff(spell.CastTarget, spell.SpellID);
+
+                                    if (!hasBuff)
+                                    {
+                                        if (Casting.CheckReady(spell) && Casting.checkMana(spell))
+                                        {
+                                            //then we can cast!
+                                            var result = Casting.Cast(s.ID, spell, Heals.SomeoneNeedsHealing);
+                                            if (result != CastReturn.CAST_SUCCESS)
+                                            {
+                                                //possibly some kind of issue/blocking. set a 90 sec timer to try and recast later.
+                                                UpdateBuffTimers(s.ID, spell, 90 * 1000, true);
+                                                continue;
                                             }
                                             else
                                             {
-                                                UpdateBuffTimers(s.ID, spell, timeLeftInMS);
+                                                //lets verify what we have on that target.
+                                                UpdateBuffTimers(s.ID, spell, spell.Duration);
+                                                continue;
                                             }
-
-                                            continue;
                                         }
-                                        else
-                                        {   //stuff like shrink
-                                            //UpdateBuffTimers(s.ID, spell, Int32.MaxValue, true);
-                                            continue;
-                                        }
-
                                     }
+                                    else
+                                    {
+                                        //has the buff, no clue how much time is left, set a 6 sec retry.
+                                        UpdateBuffTimers(s.ID, spell, 6000, true);
+                                        continue;
+                                    }
+
+
                                 }
 
                             }
                             else
                             {
-                                UpdateBuffTimers(s.ID, spell, timeLeftInMS);
-                                continue;
+
+                                Int64 timeLeftInMS = Casting.TimeLeftOnTargetBuff(spell);
+
+                                if (timeLeftInMS < 30000)
+                                {
+                                    if (Casting.CheckReady(spell) && Casting.checkMana(spell))
+                                    {
+                                        var result = Casting.Cast(s.ID, spell, Heals.SomeoneNeedsHealing);
+                                        if (result != CastReturn.CAST_SUCCESS)
+                                        {
+                                            //possibly some kind of issue/blocking. set a 120 sec timer to try and recast later.
+                                            UpdateBuffTimers(s.ID, spell, 120 * 1000, true);
+                                            continue;
+                                        }
+                                        else
+                                        {
+                                            if (spell.Duration > 0)
+                                            {
+                                                //lets verify what we have on that target.
+                                                Casting.TrueTarget(s.ID);
+                                                MQ.Delay(2000, "${Target.BuffsPopulated}");
+                                                MQ.Delay(100);
+                                                timeLeftInMS = Casting.TimeLeftOnTargetBuff(spell);
+                                                if (timeLeftInMS < 0)
+                                                {
+                                                    timeLeftInMS = 120 * 1000;
+                                                    UpdateBuffTimers(s.ID, spell, timeLeftInMS, true);
+
+                                                }
+                                                else
+                                                {
+                                                    UpdateBuffTimers(s.ID, spell, timeLeftInMS);
+                                                }
+
+                                                continue;
+                                            }
+                                            else
+                                            {   //stuff like shrink
+                                                //UpdateBuffTimers(s.ID, spell, Int32.MaxValue, true);
+                                                continue;
+                                            }
+
+                                        }
+                                    }
+
+                                }
+                                else
+                                {
+                                    UpdateBuffTimers(s.ID, spell, timeLeftInMS);
+                                    continue;
+                                }
                             }
+
                         }
+                        finally
+                        {
+                          
+                                //put it back to where it was
+                                Casting.TrueTarget(currentid, true);
+
+                            
+                        }
+                     
 
                     }
                 }
@@ -443,7 +494,7 @@ namespace E3Core.Processors
                         }
                     }
                 }
-                _nextBotBuffRefresh = Core._stopWatch.ElapsedMilliseconds + _nextBotRefreshTimeLimit;
+                _nextBotBuffRefresh = Core._stopWatch.ElapsedMilliseconds + _nextBotRefreshTimeInterval;
             }
         }
         /// <summary>
@@ -507,6 +558,6 @@ namespace E3Core.Processors
             }
         }
         
-        
+
     }
 }

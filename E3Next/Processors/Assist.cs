@@ -42,8 +42,7 @@ namespace E3Core.Processors
         {
             Burns.UseBurns();
             Check_AssistStatus();
-            DebuffDot.PrintDotDebuffStatus();
-
+            
         }
 
         //this can be invoked via advanced settings loop
