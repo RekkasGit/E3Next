@@ -42,7 +42,8 @@ namespace E3Core.Processors
         [AdvSettingInvoke]
         public static void Check_Debuffs()
         {
-            if (!ShouldDebuffCheck()) return;
+            if (!e3util.ShouldCheck(ref _nextDebuffCheck, _nextDebuffCheckInterval)) return;
+
             if (Assist._assistTargetID > 0)
             {
                 CastLongTermSpell(Assist._assistTargetID, E3._characterSettings.Debuffs_OnAssist);
@@ -73,7 +74,8 @@ namespace E3Core.Processors
         [AdvSettingInvoke]
         public static void check_Dots()
         {
-            if (!ShouldDoTCheck()) return;
+            if (!e3util.ShouldCheck(ref _nextDoTCheck, _nextDoTCheckInterval)) return;
+
             if (Assist._assistTargetID > 0)
             {
                 CastLongTermSpell(Assist._assistTargetID, E3._characterSettings.Dots_Assist);
@@ -110,8 +112,8 @@ namespace E3Core.Processors
         private static void RegisterEvents()
         {
 
-            e3Utility.RegisterCommandWithTarget("/dotson", DotsOn);
-            e3Utility.RegisterCommandWithTarget("/dot", DotsOn);
+            e3util.RegisterCommandWithTarget("/dotson", DotsOn);
+            e3util.RegisterCommandWithTarget("/dot", DotsOn);
             EventProcessor.RegisterCommand("/debuffsoff", (x) =>
             {
                 _mobsToDebuff.Clear();
@@ -132,8 +134,8 @@ namespace E3Core.Processors
                 }
 
             });
-            e3Utility.RegisterCommandWithTarget("/debuffson", DebuffsOn);
-            e3Utility.RegisterCommandWithTarget("/debuff", DebuffsOn);
+            e3util.RegisterCommandWithTarget("/debuffson", DebuffsOn);
+            e3util.RegisterCommandWithTarget("/debuff", DebuffsOn);
         }
         public static void DebuffsOn(Int32 mobid)
         {
@@ -352,30 +354,7 @@ namespace E3Core.Processors
 
             }
         }
-        private static bool ShouldDebuffCheck()
-        {
-            if (Core._stopWatch.ElapsedMilliseconds < _nextDebuffCheck)
-            {
-                return false;
-            }
-            else
-            {
-                _nextDebuffCheck = Core._stopWatch.ElapsedMilliseconds + _nextDebuffCheckInterval;
-                return true;
-            }
-        }
-        private static bool ShouldDoTCheck()
-        {
-            if (Core._stopWatch.ElapsedMilliseconds < _nextDoTCheck)
-            {
-                return false;
-            }
-            else
-            {
-                _nextDoTCheck = Core._stopWatch.ElapsedMilliseconds + _nextDoTCheckInterval;
-                return true;
-            }
-        }
+       
     }
 
 }

@@ -216,7 +216,7 @@ namespace E3Core.Processors
 
                 if(result!="CAST_SUCCESS")
                 {
-                    CastReturn r = CastReturn.CAST_SUCCESS;
+                    CastReturn r = CastReturn.CAST_INTERRUPTED;
                     Enum.TryParse<CastReturn>(result, out r);
                     return r;
                 }
@@ -545,7 +545,7 @@ namespace E3Core.Processors
                         startCast:
                         if (E3._currentClass == Data.Class.Bard && MQ.Query<bool>($"${{Bool[${{Me.Book[{spell.CastName}]}}]}}"))
                         {
-
+                            MemorizeSpell(spell);
                             MQ.Cmd($"/cast \"{spell.CastName}\"");
                             MQ.Delay(500, "${Window[CastingWindow].Open}");
                             if (!MQ.Query<bool>("${Window[CastingWindow].Open}"))
@@ -796,16 +796,17 @@ namespace E3Core.Processors
                     return false;
                 }
             }
+            MQ.Write($"\aySpell not memed, meming \ag{spell.SpellName} \ayin \awGEM:{spell.SpellGem}");
             MQ.Cmd($"/memorize \"{spell.SpellName}\" {spell.SpellGem}");
             MQ.Delay(1000);
             MQ.Delay(5000, "!${Window[SpellBookWnd].Open}");
-
+            MQ.Delay(1000);
             //make double sure the collectio has this spell gem. maybe purchased AA for new slots?
             if (!_gemRecastLockForMem.ContainsKey(spell.SpellGem))
             {
                 _gemRecastLockForMem.Add(spell.SpellGem, 0);
             }
-            _gemRecastLockForMem[spell.SpellGem] = Core._stopWatch.ElapsedMilliseconds + spell.RecastTime + 1000;
+            _gemRecastLockForMem[spell.SpellGem] = Core._stopWatch.ElapsedMilliseconds + spell.RecastTime + 2000;
 
             //update spellgem collection
             if(!_currentSpellGems.ContainsKey(spell.SpellGem))

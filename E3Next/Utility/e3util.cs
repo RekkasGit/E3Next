@@ -8,13 +8,30 @@ using System.Threading.Tasks;
 
 namespace E3Core.Utility
 {
-    public static class e3Utility
+    public static class e3util
     {
 
         public static string _lastSuccesfulCast = String.Empty;
         public static Logging _log = E3._log;
         private static IMQ MQ = E3.MQ;
-
+        /// <summary>
+        /// Use to see if a certain method should be running
+        /// </summary>
+        /// <param name="nextCheck">ref param to update ot the next time a thing should run</param>
+        /// <param name="nextCheckInterval">The interval in milliseconds</param>
+        /// <returns></returns>
+        public static bool ShouldCheck(ref Int64 nextCheck, Int64 nextCheckInterval)
+        {
+            if (Core._stopWatch.ElapsedMilliseconds < nextCheck)
+            {
+                return false;
+            }
+            else
+            {
+                nextCheck = Core._stopWatch.ElapsedMilliseconds + nextCheckInterval;
+                return true;
+            }
+        }
         public static void RegisterCommandWithTarget(string command, Action<int> FunctionToExecute)
         {
             EventProcessor.RegisterCommand(command, (x) =>

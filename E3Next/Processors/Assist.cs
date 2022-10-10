@@ -515,7 +515,7 @@ namespace E3Core.Processors
         
         private static void RegisterEvents()
         {
-            e3Utility.RegisterCommandWithTargetToOthers("/assistme", AssistOn);
+            e3util.RegisterCommandWithTargetToOthers("/assistme", AssistOn);
             EventProcessor.RegisterCommand("/backoff", (x) =>
             {
                 AssistOff();
@@ -524,7 +524,7 @@ namespace E3Core.Processors
                     E3._bots.BroadcastCommandToOthers($"/backoff all");
                 }
             });
-            e3Utility.RegisterCommandWithTarget("/e3offassistignore", (x)=> { _offAssistIgnore.Add(x); });
+            e3util.RegisterCommandWithTarget("/e3offassistignore", (x)=> { _offAssistIgnore.Add(x); });
             EventProcessor.RegisterEvent("EnrageOn", "(.)+ has become ENRAGED.", (x) =>
             {
                 if (x.match.Groups.Count > 1)

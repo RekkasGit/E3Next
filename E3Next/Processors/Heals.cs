@@ -1,4 +1,5 @@
 ﻿using E3Core.Settings;
+using E3Core.Utility;
 using MonoCore;
 using System;
 using System.Collections.Generic;
@@ -18,7 +19,7 @@ namespace E3Core.Processors
         [AdvSettingInvoke]
         public static void Check_Heals() 
         {
-            if (!ShouldHealCheck()) return;
+            if (!e3util.ShouldCheck(ref _nextHealCheck, _nextHealCheckInterval)) return;
             //using (_log.Trace())
             {
                 //grabbing these values now and reusing them
@@ -469,17 +470,5 @@ namespace E3Core.Processors
             }
         }
 
-        private static bool ShouldHealCheck()
-        {
-            if (Core._stopWatch.ElapsedMilliseconds < _nextHealCheck)
-            {
-                return false;
-            }
-            else
-            {
-                _nextHealCheck = Core._stopWatch.ElapsedMilliseconds + _nextHealCheckInterval;
-                return true;
-            }
-        }
     }
 }
