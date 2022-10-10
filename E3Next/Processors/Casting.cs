@@ -289,7 +289,7 @@ namespace E3Core.Processors
         }
         public static CastReturn Cast(int targetID, Data.Spell spell, Func<Int32,Int32,bool> interruptCheck=null)
         {
-
+            CastReturn returnValue = CastReturn.CAST_RESIST;
             //TODO: Add bard logic back in
             //using (_log.Trace())
             {
@@ -467,7 +467,8 @@ namespace E3Core.Processors
                             _log.Write("Issuing Disc command:{spell.CastName}");
                             MQ.Cmd($"/disc {spell.CastName}");
                             MQ.Delay(300);
-                            return CastReturn.CAST_SUCCESS;
+                            returnValue= CastReturn.CAST_SUCCESS;
+                            goto startCasting;
                         }
 
                     }
@@ -647,7 +648,7 @@ namespace E3Core.Processors
                       
                     }
 
-
+                    startCasting:
                     //needed for heal interrupt check
                     Int32 currentMana = 0;
                     Int32 pctMana = 0;
@@ -683,7 +684,7 @@ namespace E3Core.Processors
 
                     MQ.Delay(2000, "!${Cast.Status.Find[C]}");
                
-                    CastReturn returnValue = CheckForReist(spell);
+                     returnValue= CheckForReist(spell);
                    
                     if (returnValue == CastReturn.CAST_SUCCESS)
                     {

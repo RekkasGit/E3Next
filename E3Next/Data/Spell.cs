@@ -457,7 +457,7 @@ namespace E3Core.Data
             {
                 Duration = MQ.Query<Int32>($"${{Spell[{CastName}].Duration}}");
                 DurationTotalSeconds = MQ.Query<Int32>($"${{Spell[{CastName}].Duration.TotalSeconds}}");
-
+                EnduranceCost = MQ.Query<Int32>($"${{Spell[{CastName}].EnduranceCost}}");
                 Double AERange = MQ.Query<Double>($"${{Spell[{CastName}].AERange}}");
                 MyRange = AERange;
                 if (MyRange == 0)
@@ -533,6 +533,7 @@ namespace E3Core.Data
         public Boolean NoAggro;
         public Int32 Mode;
         public Boolean Rotate;
+        public Int32 EnduranceCost;
         public Int32 Delay;
         public Int32 CastID;
         public Int32 MinEnd;
