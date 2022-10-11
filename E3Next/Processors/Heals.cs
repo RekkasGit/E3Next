@@ -261,7 +261,6 @@ namespace E3Core.Processors
         {
             //using (_log.Trace())
             {
-
                 foreach (var name in targets)
                 {
                     Int32 targetID=0;
@@ -343,7 +342,7 @@ namespace E3Core.Processors
                             //check netbots
                             bool botInZone = E3._bots.InZone(name);
                             if (botInZone)
-                            {
+                            {   
                                 //they are a netbots and they are in zone
                                 Int32 pctHealth = E3._bots.PctHealth(name);
                                 foreach (var spell in spells)

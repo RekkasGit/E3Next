@@ -21,8 +21,8 @@ namespace E3Core.Processors
         //needs to be refreshed every so often in case of dispels
         //maybe after combat?
         public static Dictionary<Int32, SpellTimer> _buffTimers = new Dictionary<Int32, SpellTimer>();
-        private static Int64 _nextBotBuffRefresh = 0;
-        private static Int64 _nextBotRefreshTimeInterval = 2000;
+        private static Int64 _nextBotCacheCheckTime = 0;
+        private static Int64 nextBotCacheCheckTimeInterval = 1000;
         private static Int64 _nextInstantBuffRefresh = 0;
         private static Int64 _nextInstantRefreshTimeInterval = 250;
         private static List<Int32> _keyList = new List<int>();
@@ -44,12 +44,13 @@ namespace E3Core.Processors
         [AdvSettingInvoke]
         public static void Check_Buffs()
         {
+            RefresBuffCacheForBots();
             //instant buffs have their own shouldcheck, need it snappy so check quickly.
             BuffInstant(E3._characterSettings.InstantBuffs);
 
             if (!e3util.ShouldCheck(ref _nextBuffCheck,_nextBuffCheckInterval)) return;
 
-            RefresBuffCacheForBots();
+           
             string combatState = MQ.Query<string>("${Me.CombatState}");
             bool moving = MQ.Query<bool>("${Me.Moving}");
 
@@ -66,7 +67,6 @@ namespace E3Core.Processors
                 BuffAuras();
                 BuffBots(E3._characterSettings.SelfBuffs);
                 BuffBots(E3._characterSettings.BotBuffs);
-              
                 BuffBots(E3._characterSettings.PetBuffs,true);
                 //TODO: Auras
             }
@@ -122,7 +122,7 @@ namespace E3Core.Processors
         }
         private static void BuffBots(List<Data.Spell> buffs, bool usePets=false)
         {
-            int currentid = MQ.Query<Int32>("${Target.ID}");
+            //int currentid = MQ.Query<Int32>("${Target.ID}");
             foreach (var spell in buffs)
             {
                 Spawn s;
@@ -156,6 +156,7 @@ namespace E3Core.Processors
                             s = ts;
                         }
                     }
+
                     SpellTimer st;
                     if (_buffTimers.TryGetValue(s.ID, out st))
                     {
@@ -280,12 +281,12 @@ namespace E3Core.Processors
                         //someone other than us.
                         //if its a netbots, we initially do target, then have the cache refreshed
 
-                       
                         //need to change target to be sure ifs run correctly.
                         Casting.TrueTarget(s.ID);
                         MQ.Delay(2000, "${Target.BuffsPopulated}");
                                           
                         bool willStack = MQ.Query<bool>($"${{Spell[{spell.SpellName}].StacksTarget}}");
+                        MQ.Write($"Will stack:{spell.SpellName}:" + willStack);
                         if(!willStack)
                         {
                             //won't stack don't check back for awhile
@@ -296,6 +297,8 @@ namespace E3Core.Processors
                         {
                             if (!MQ.Query<bool>($"${{If[{spell.Ifs},TRUE,FALSE]}}"))
                             {
+                                MQ.Write($"Failed if:{spell.SpellName}:" );
+
                                 //ifs failed do a 30 sec retry, so we don't keep swapping targets
                                 UpdateBuffTimers(s.ID, spell, 30 * 1000, true);
                                 continue;
@@ -350,6 +353,7 @@ namespace E3Core.Processors
                                 }
 
                                 bool hasBuff = E3._bots.HasShortBuff(spell.CastTarget, spell.SpellID);
+                                MQ.Write($"Has buff:{spell.SpellName}:" + hasBuff);
 
                                 if (!hasBuff)
                                 {
@@ -373,6 +377,8 @@ namespace E3Core.Processors
                                 }
                                 else
                                 {
+                                    MQ.Write($"Setting 6 sec timer:{spell.SpellName}:");
+
                                     //has the buff, no clue how much time is left, set a 6 sec retry.
                                     UpdateBuffTimers(s.ID, spell, 6000, true);
                                     continue;
@@ -437,17 +443,23 @@ namespace E3Core.Processors
                     }
                 }
             }
-            Casting.TrueTarget(currentid, true);
+           // Casting.TrueTarget(currentid, true);
         }
+        static bool _initAuras = false;
         private static void BuffAuras()
         {
             if(_selectAura==null)
             {
-                foreach (var aura in _auraList)
+                if(!_initAuras)
                 {
-                    if (MQ.Query<bool>($"${{Me.CombatAbility[{aura}]}}")) _selectAura = new Spell(aura);
-                    if (MQ.Query<bool>($"${{Me.Book[{aura}]}}")) _selectAura = new Spell(aura);
-                    if (MQ.Query<bool>($"${{Me.AltAbility[{aura}]}}")) _selectAura = new Spell(aura);
+                    foreach (var aura in _auraList)
+                    {
+                        if (MQ.Query<bool>($"${{Me.CombatAbility[{aura}]}}")) _selectAura = new Spell(aura);
+                        if (MQ.Query<bool>($"${{Me.Book[{aura}]}}")) _selectAura = new Spell(aura);
+                        if (MQ.Query<bool>($"${{Me.AltAbility[{aura}]}}")) _selectAura = new Spell(aura);
+                    }
+                    _initAuras = true;
+                
                 }
             }
             //we have something we want on!
@@ -544,7 +556,7 @@ namespace E3Core.Processors
         }
         public static void RefresBuffCacheForBots()
         {
-            if (Core._stopWatch.ElapsedMilliseconds > _nextBotBuffRefresh)
+            if (Core._stopWatch.ElapsedMilliseconds > _nextBotCacheCheckTime)
             {
                 //this is so we can get up to date buff data from the bots, without having to target/etc.
                 foreach (var kvp in _buffTimers)
@@ -579,7 +591,7 @@ namespace E3Core.Processors
                         }
                     }
                 }
-                _nextBotBuffRefresh = Core._stopWatch.ElapsedMilliseconds + _nextBotRefreshTimeInterval;
+                _nextBotCacheCheckTime = Core._stopWatch.ElapsedMilliseconds + nextBotCacheCheckTimeInterval;
             }
         }
         /// <summary>

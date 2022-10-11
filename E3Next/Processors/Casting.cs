@@ -368,7 +368,7 @@ namespace E3Core.Processors
                     _log.Write("Checking for Feigning....");
                     if (MQ.Query<bool>("${Me.Feigning}"))
                     {
-                        MQ.Broadcast($"skipping [{spell.CastName}] , i am feigned.");
+                        E3._bots.Broadcast($"skipping [{spell.CastName}] , i am feigned.");
                         MQ.Delay(200);
                         return CastReturn.CAST_FEIGN;
                     }
@@ -376,7 +376,7 @@ namespace E3Core.Processors
                     if (MQ.Query<bool>("${Window[SpellBookWnd].Open}"))
                     {
                         E3._actionTaken = true;
-                        MQ.Broadcast($"skipping [{spell.CastName}] , spellbook is open.");
+                        E3._bots.Broadcast($"skipping [{spell.CastName}] , spellbook is open.");
                         MQ.Delay(200);
                         return CastReturn.CAST_SPELLBOOKOPEN;
                     }
@@ -384,7 +384,7 @@ namespace E3Core.Processors
                     if (MQ.Query<bool>("${Corpse.Open}"))
                     {
                         E3._actionTaken = true;
-                        MQ.Broadcast($"skipping [{spell.CastName}] , I have a corpse open.");
+                        E3._bots.Broadcast($"skipping [{spell.CastName}] , I have a corpse open.");
                         MQ.Delay(200);
                         return CastReturn.CAST_CORPSEOPEN;
                     }

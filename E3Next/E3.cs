@@ -141,7 +141,7 @@ namespace E3Core.Processors
                
                 _bots=new Bots();
                 _isInit = true;
-                Spawns._refreshTimePeriodInMS = 10000;
+                Spawns._refreshTimePeriodInMS = 3000;
 
                 if(!EventProcessor.RegisterCommand("/testcommand02", (x) => {
 

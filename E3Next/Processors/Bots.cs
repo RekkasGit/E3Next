@@ -28,7 +28,8 @@ namespace E3Core.Processors
 
         private string netbotConnectionString = string.Empty;
         private List<string> _connectedBots = new List<string>();
-        private List<Int32> _buffList = new List<int>();
+        private static Dictionary<string, List<Int32>> _buffListCollection = new Dictionary<string, List<int>>();
+        private static Dictionary<string, Int64> _buffListCollectionTimeStamps = new Dictionary<string, long>();
         private static Int64 _nextBuffCheck = 0;
         private static Int64 _nextBuffRefreshTimeInterval = 1000;
         public void BroadcastCommandToOthers(string query)
@@ -100,21 +101,40 @@ namespace E3Core.Processors
 
         public  List<int> BuffList(string name)
         {
-            if (!e3util.ShouldCheck(ref _nextBuffCheck, _nextBuffRefreshTimeInterval)) return _buffList;
 
-            string listString = MQ.Query<string>($"${{NetBots[{name}].Buff}}");
-            _buffList.Clear();
-            if(listString!="NULL")
+            List<Int32> buffList;
+            bool alreadyExisted = true;
+            if (!_buffListCollection.TryGetValue(name, out buffList))
             {
-                StrignsToNumbers(listString, ' ', _buffList);
+                alreadyExisted = false;
+                buffList = new List<int>();
+                _buffListCollection.Add(name, buffList);
+                _buffListCollectionTimeStamps.Add(name, 0);
+            }
 
-                listString = MQ.Query<string>($"${{NetBots[{name}].ShortBuff}}");
+            if (!e3util.ShouldCheck(ref _nextBuffCheck, _nextBuffRefreshTimeInterval) && alreadyExisted) return buffList;
+
+            //refresh all lists of all people
+
+            foreach(var kvp in _buffListCollection)
+            {
+                _buffListCollection[kvp.Key].Clear();
+                string listString = MQ.Query<string>($"${{NetBots[{kvp.Key}].Buff}}");
+                buffList.Clear();
                 if (listString != "NULL")
                 {
-                    StrignsToNumbers(listString, ' ', _buffList);
+                    StrignsToNumbers(listString, ' ', _buffListCollection[kvp.Key]);
+
+                    listString = MQ.Query<string>($"${{NetBots[{kvp.Key}].ShortBuff}}");
+                    if (listString != "NULL")
+                    {
+                        StrignsToNumbers(listString, ' ', _buffListCollection[kvp.Key]);
+                    }
                 }
+
             }
-            return _buffList;
+           
+            return _buffListCollection[name];
 
         }
         private static void StrignsToNumbers(string s, char delim, List<Int32> list)
