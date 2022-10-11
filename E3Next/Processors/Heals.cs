@@ -311,7 +311,7 @@ namespace E3Core.Processors
                                     if (!String.IsNullOrWhiteSpace(spell.CheckFor))
                                     {
                                         
-                                        if(E3._bots.BuffList(spell.CastTarget).Contains(spell.CheckForID))
+                                        if(E3._bots.BuffList(name).Contains(spell.CheckForID))
                                         {
                                             //they have the buff, kick out
                                             continue;
@@ -363,7 +363,7 @@ namespace E3Core.Processors
                                     if (!String.IsNullOrWhiteSpace(spell.CheckFor))
                                     {
 
-                                        if (E3._bots.BuffList(spell.CastTarget).Contains(spell.CheckForID))
+                                        if (E3._bots.BuffList(name).Contains(spell.CheckForID))
                                         {
                                             //they have the buff, kick out
                                             continue;

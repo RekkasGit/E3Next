@@ -59,6 +59,11 @@ namespace E3Core.Processors
                     _spawns.RefreshList();//make sure we get a new refresh of this zone.
                     _zoneID = zoneID;
                 }
+                EventProcessor.ProcessEventsInQueues("/e3p");
+                if (Basics._isPaused)
+                {
+                    return;
+                }
                
                 _isInvis = MQ.Query<bool>("${Me.Invis}");
                 //action taken is always set to false at the start of the loop

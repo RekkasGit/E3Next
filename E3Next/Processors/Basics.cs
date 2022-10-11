@@ -18,6 +18,7 @@ namespace E3Core.Processors
         public static Logging _log = E3._log;
         private static IMQ MQ = E3.MQ;
         private static ISpawns _spawns = E3._spawns;
+        public static bool _isPaused = false;
 
 
         public static void Init()
@@ -35,6 +36,15 @@ namespace E3Core.Processors
                     //we are telling people to follow us
                     E3._bots.BroadcastCommandToOthers("/followoff all");
                 }
+            });
+
+            EventProcessor.RegisterCommand("/e3p", (x) =>
+            {
+                //swap them
+                 _isPaused = _isPaused?false:true;
+                if(_isPaused) MQ.Write("\arPAUSING E3!");
+                if (!_isPaused) MQ.Write("\agRunning E3 again!");
+
             });
             EventProcessor.RegisterCommand("/followme", (x) =>
             {

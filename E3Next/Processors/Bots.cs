@@ -118,22 +118,18 @@ namespace E3Core.Processors
 
             foreach(var kvp in _buffListCollection)
             {
-                _buffListCollection[kvp.Key].Clear();
                 string listString = MQ.Query<string>($"${{NetBots[{kvp.Key}].Buff}}");
-                buffList.Clear();
+                _buffListCollection[kvp.Key].Clear();
                 if (listString != "NULL")
-                {
+                {  
                     StrignsToNumbers(listString, ' ', _buffListCollection[kvp.Key]);
-
                     listString = MQ.Query<string>($"${{NetBots[{kvp.Key}].ShortBuff}}");
                     if (listString != "NULL")
                     {
                         StrignsToNumbers(listString, ' ', _buffListCollection[kvp.Key]);
                     }
                 }
-
             }
-           
             return _buffListCollection[name];
 
         }

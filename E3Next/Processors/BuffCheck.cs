@@ -29,7 +29,7 @@ namespace E3Core.Processors
         private static Int64 _printoutTimer;
         private static Data.Spell _selectAura = null;
         private static Int64 _nextBuffCheck = 0;
-        private static Int64 _nextBuffCheckInterval = 1000;
+        private static Int64 _nextBuffCheckInterval = 250;
         public static void Init()
         {
             RegisterEvents();
@@ -64,12 +64,12 @@ namespace E3Core.Processors
                 BuffBots(E3._characterSettings.CombatBuffs);
 
             }
-            else if(!moving)
+            else if(!moving && !Basics._following)
             {
-                BuffAuras();
-                BuffBots(E3._characterSettings.SelfBuffs);
-                BuffBots(E3._characterSettings.BotBuffs);
-                BuffBots(E3._characterSettings.PetBuffs,true);
+                if (!E3._actionTaken) BuffAuras();
+                if (!E3._actionTaken) BuffBots(E3._characterSettings.SelfBuffs);
+                if (!E3._actionTaken) BuffBots(E3._characterSettings.BotBuffs);
+                if (!E3._actionTaken) BuffBots(E3._characterSettings.PetBuffs,true);
                 //TODO: Auras
             }
 
@@ -248,6 +248,7 @@ namespace E3Core.Processors
                                     }
                                     UpdateBuffTimers(s.ID, spell, timeLeftInMS);
                                 }
+                                return;
                             }
                             else if (!willStack)
                             {
@@ -331,6 +332,7 @@ namespace E3Core.Processors
                                     {
                                         UpdateBuffTimers(s.ID, spell, spell.Duration);
                                     }
+                                    return;
                                 }
                                 continue;
 
@@ -367,14 +369,14 @@ namespace E3Core.Processors
                                         {
                                             //possibly some kind of issue/blocking. set a 90 sec timer to try and recast later.
                                             UpdateBuffTimers(s.ID, spell, 90 * 1000, true);
-                                            continue;
                                         }
                                         else
                                         {
                                             //lets verify what we have on that target.
                                             UpdateBuffTimers(s.ID, spell, spell.Duration);
-                                            continue;
+                                           
                                         }
+                                        return;
                                     }
                                 }
                                 else
