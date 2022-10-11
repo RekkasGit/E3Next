@@ -19,6 +19,7 @@ namespace E3Core.Processors
         [AdvSettingInvoke]
         public static void Check_Heals() 
         {
+            if (E3._isInvis) return;
             if (!e3util.ShouldCheck(ref _nextHealCheck, _nextHealCheckInterval)) return;
             //using (_log.Trace())
             {
@@ -306,6 +307,18 @@ namespace E3Core.Processors
                                 }
                                 foreach (var spell in spells)
                                 {
+
+                                    if (!String.IsNullOrWhiteSpace(spell.CheckFor))
+                                    {
+                                        
+                                        if(E3._bots.BuffList(spell.CastTarget).Contains(spell.CheckForID))
+                                        {
+                                            //they have the buff, kick out
+                                            continue;
+                                        }
+
+                                    }
+
                                     recastSpell:
                                     if (spell.Mana > currentMana)
                                     {
@@ -347,6 +360,17 @@ namespace E3Core.Processors
                                 Int32 pctHealth = E3._bots.PctHealth(name);
                                 foreach (var spell in spells)
                                 {
+                                    if (!String.IsNullOrWhiteSpace(spell.CheckFor))
+                                    {
+
+                                        if (E3._bots.BuffList(spell.CastTarget).Contains(spell.CheckForID))
+                                        {
+                                            //they have the buff, kick out
+                                            continue;
+                                        }
+
+                                    }
+
                                     recastSpell:
                                     if (spell.Mana > currentMana)
                                     {

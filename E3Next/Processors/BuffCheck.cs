@@ -44,6 +44,8 @@ namespace E3Core.Processors
         [AdvSettingInvoke]
         public static void Check_Buffs()
         {
+            if (E3._isInvis) return;
+
             RefresBuffCacheForBots();
             //instant buffs have their own shouldcheck, need it snappy so check quickly.
             BuffInstant(E3._characterSettings.InstantBuffs);
