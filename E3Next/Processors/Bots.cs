@@ -1,4 +1,5 @@
-﻿using MonoCore;
+﻿using E3Core.Utility;
+using MonoCore;
 using System;
 using System.Collections.Generic;
 using System.Linq;
@@ -13,7 +14,8 @@ namespace E3Core.Processors
         Int32 PctHealth(string name);
         List<string> BotsConnected();
         Boolean HasShortBuff(string name, Int64 buffid);
-        void BroadcastCommandToOthers(string query);
+        void BroadcastCommandToOthers(string command);
+        void Broadcast(string message);
         List<Int32> BuffList(string name);
 
 
@@ -27,6 +29,8 @@ namespace E3Core.Processors
         private string netbotConnectionString = string.Empty;
         private List<string> _connectedBots = new List<string>();
         private List<Int32> _buffList = new List<int>();
+        private static Int64 _nextBuffCheck = 0;
+        private static Int64 _nextBuffRefreshTimeInterval = 1000;
         public void BroadcastCommandToOthers(string query)
         {
             MQ.Cmd($"/bcg /{query}");
@@ -94,8 +98,9 @@ namespace E3Core.Processors
             return false;
         }
 
-        public List<int> BuffList(string name)
+        public  List<int> BuffList(string name)
         {
+            if (!e3util.ShouldCheck(ref _nextBuffCheck, _nextBuffRefreshTimeInterval)) return _buffList;
 
             string listString = MQ.Query<string>($"${{NetBots[{name}].Buff}}");
             _buffList.Clear();
@@ -130,6 +135,11 @@ namespace E3Core.Processors
             }
             
         }
+
+        public void Broadcast(string message)
+        {
+            MQ.Cmd($"/bc {message}");
+        }
     }
 
     public class DanBots : IBots
@@ -139,6 +149,11 @@ namespace E3Core.Processors
         private static IMQ MQ = E3.MQ;
 
         public List<string> BotsConnected()
+        {
+            throw new NotImplementedException();
+        }
+
+        public void Broadcast(string message)
         {
             throw new NotImplementedException();
         }

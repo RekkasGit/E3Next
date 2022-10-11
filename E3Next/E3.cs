@@ -34,6 +34,7 @@ namespace E3Core.Processors
         public static string _currentShortClassString;
         public static Int32 _zoneID;
         public static ISpawns _spawns = Core.spawnInstance;
+        public static bool _isInvis;
 
 
         public static void Process()
@@ -50,6 +51,7 @@ namespace E3Core.Processors
                 if (!_isInit) { Init(); }
                 //update on every loop
                 _zoneID = MQ.Query<Int32>("${Zone.ID}"); //to tell if we zone mid process
+                _isInvis = MQ.Query<bool>("${Me.Invis}");
                 //action taken is always set to false at the start of the loop
                 _actionTaken = false;
                 Casting.RefreshGemCache();
@@ -64,6 +66,8 @@ namespace E3Core.Processors
                     if (_actionTaken) return;
                 }
                 Assist.Process();
+                WaitForRez.Process();
+
                 //now do the dynamic methods from Advanced ini. 
                 //rembmer check_heals is auto inserted, should probably just pull out here
                 List<string> _methodsToInvokeAsStrings;
@@ -137,7 +141,7 @@ namespace E3Core.Processors
                
                 _bots=new Bots();
                 _isInit = true;
-                Spawns._refreshTimePeriodInMS = 1000;
+                Spawns._refreshTimePeriodInMS = 10000;
 
                 if(!EventProcessor.RegisterCommand("/testcommand02", (x) => {
 
