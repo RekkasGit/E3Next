@@ -545,7 +545,7 @@ namespace E3Core.Data
         public Int32 SpellID;
         public Int32 PctAggro;
         public String Zone = "All";
-        public Int32 MinSick;
+        public Int32 MinSick=2;
         public Boolean AllowSpellSwap;
         public Boolean NoEarlyRecast;
         public Boolean NoStack;

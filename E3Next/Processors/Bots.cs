@@ -18,7 +18,10 @@ namespace E3Core.Processors
         void Broadcast(string message);
         List<Int32> BuffList(string name);
 
-
+        Int32 DebuffCounters(string name);
+        Int32 DiseasedCounters(string name);
+        Int32 PoisonedCounters(string name);
+        Int32 CursedCounters(string name);
     }
     public class Bots: IBots
     {
@@ -156,6 +159,30 @@ namespace E3Core.Processors
         {
             MQ.Cmd($"/bc {message}");
         }
+
+        public int DebuffCounters(string name)
+        {
+            Int32 counters = MQ.Query<Int32>($"${{NetBots[{name}].Counters}}");
+            return counters;
+        }
+
+        public int DiseasedCounters(string name)
+        {
+            Int32 counters = MQ.Query<Int32>($"${{NetBots[{name}].Diseased}}");
+            return counters;
+        }
+
+        public int PoisonedCounters(string name)
+        {
+            Int32 counters = MQ.Query<Int32>($"${{NetBots[{name}].Poisoned}}");
+            return counters;
+        }
+
+        public int CursedCounters(string name)
+        {
+            Int32 counters = MQ.Query<Int32>($"${{NetBots[{name}].Cursed}}");
+            return counters;
+        }
     }
 
     public class DanBots : IBots
@@ -184,6 +211,21 @@ namespace E3Core.Processors
             throw new NotImplementedException();
         }
 
+        public int CursedCounters(string name)
+        {
+            throw new NotImplementedException();
+        }
+
+        public int DebuffCounters(string name)
+        {
+            throw new NotImplementedException();
+        }
+
+        public int DiseasedCounters(string name)
+        {
+            throw new NotImplementedException();
+        }
+
         public bool HasShortBuff(string name, Int64 buffid)
         {
             throw new NotImplementedException();
@@ -201,6 +243,10 @@ namespace E3Core.Processors
             return 0;
         }
 
+        public int PoisonedCounters(string name)
+        {
+            throw new NotImplementedException();
+        }
     }
 
    

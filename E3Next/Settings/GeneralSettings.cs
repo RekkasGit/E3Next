@@ -13,10 +13,6 @@ namespace E3Core.Settings
     public class GeneralSettings : BaseSettings, IBaseSettings
     {
 
-
-
-
-
         public Int32 General_MaxResponseDistance;
         public Int32 General_LeashLength;
         public Boolean General_EndMedBreakInCombat;

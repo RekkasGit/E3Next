@@ -32,7 +32,7 @@ namespace E3Core.Processors
                 {
                     //check if its a valid confirmation box
                     string message = MQ.Query<string>("${Window[ConfirmationDialogBox].Child[cd_textoutput].Text}");
-                    if (!message.Contains("percent)"))
+                    if (!(message.Contains("percent)")||message.Contains("RESURRECT you.")))
                     {
                         MQ.Cmd("/nomodkey /notify ConfirmationDialogBox No_Button leftmouseup");
                         return; //not a rez dialog box, do not accept.
