@@ -432,7 +432,7 @@ namespace E3Core.Processors
                             //Wait for GCD if spell
 
                         _log.Write("Doing AfterSpell:{spell.AfterSpell}");
-                        if (CheckReady(spell.BeforeSpellData) && checkMana(spell.BeforeSpellData))
+                        if (CheckReady(spell.BeforeSpellData) && CheckMana(spell.BeforeSpellData))
                         {
                             Casting.Cast(targetID, spell.BeforeSpellData);
                         }
@@ -735,7 +735,7 @@ namespace E3Core.Processors
                         //Wait for GCD if spell
 
                         _log.Write("Doing AfterSpell:{spell.AfterSpell}");
-                        if (CheckReady(spell.AfterSpellData) && checkMana(spell.AfterSpellData))
+                        if (CheckReady(spell.AfterSpellData) && CheckMana(spell.AfterSpellData))
                         {
                             Casting.Cast(targetID, spell.AfterSpellData);
                         }
@@ -819,7 +819,7 @@ namespace E3Core.Processors
             return true;
         }
 
-        public static Boolean checkMana(Data.Spell spell)
+        public static Boolean CheckMana(Data.Spell spell)
         {
 
             Int32 currentMana = MQ.Query<Int32>("${Me.CurrentMana}");

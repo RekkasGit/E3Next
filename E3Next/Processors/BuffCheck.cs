@@ -114,7 +114,7 @@ namespace E3Core.Processors
                 if (!(hasBuff || hasSong))
                 {
                     bool willStack = MQ.Query<bool>($"${{Spell[{spell.SpellName}].WillLand}}");
-                    if (willStack && Casting.CheckReady(spell) && Casting.checkMana(spell))
+                    if (willStack && Casting.CheckReady(spell) && Casting.CheckMana(spell))
                     {
                         Casting.Cast(id, spell);
                        
@@ -228,7 +228,7 @@ namespace E3Core.Processors
                         if (!(hasBuff || hasSong))
                         {
                             bool willStack = MQ.Query<bool>($"${{Spell[{spell.SpellName}].WillLand}}");
-                            if (willStack && Casting.CheckReady(spell) && Casting.checkMana(spell))
+                            if (willStack && Casting.CheckReady(spell) && Casting.CheckMana(spell))
                             {
                                 var result = Casting.Cast(s.ID, spell, Heals.SomeoneNeedsHealing);
                                 if (result != CastReturn.CAST_SUCCESS)
@@ -320,7 +320,7 @@ namespace E3Core.Processors
                             botInZone = E3._bots.InZone(spell.CastTarget);
                             if (!botInZone)
                             {   //not one of our buffs uhh, try and cast and see if we get a non success message.
-                                if (Casting.CheckReady(spell) && Casting.checkMana(spell))
+                                if (Casting.CheckReady(spell) && Casting.CheckMana(spell))
                                 {
                                     var result = Casting.Cast(s.ID, spell, Heals.SomeoneNeedsHealing);
                                     if (result != CastReturn.CAST_SUCCESS)
@@ -361,7 +361,7 @@ namespace E3Core.Processors
 
                                 if (!hasBuff)
                                 {
-                                    if (Casting.CheckReady(spell) && Casting.checkMana(spell))
+                                    if (Casting.CheckReady(spell) && Casting.CheckMana(spell))
                                     {
                                         //then we can cast!
                                         var result = Casting.Cast(s.ID, spell, Heals.SomeoneNeedsHealing);
@@ -399,7 +399,7 @@ namespace E3Core.Processors
 
                             if (timeLeftInMS < 30000)
                             {
-                                if (Casting.CheckReady(spell) && Casting.checkMana(spell))
+                                if (Casting.CheckReady(spell) && Casting.CheckMana(spell))
                                 {
                                     var result = Casting.Cast(s.ID, spell, Heals.SomeoneNeedsHealing);
                                     if (result != CastReturn.CAST_SUCCESS)
@@ -487,7 +487,7 @@ namespace E3Core.Processors
                 if (_selectAura.CastType== CastType.Spell)
                 {
                     //this is a spell, need to mem, then cast. 
-                    if(Casting.CheckReady(_selectAura) && Casting.checkMana(_selectAura))
+                    if(Casting.CheckReady(_selectAura) && Casting.CheckMana(_selectAura))
                     {
                         Casting.Cast(0, _selectAura);
                     }

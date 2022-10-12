@@ -1,4 +1,5 @@
 ﻿using E3Core.Settings;
+using E3Core.Utility;
 using MonoCore;
 using System;
 using System.Collections.Generic;
@@ -19,8 +20,9 @@ namespace E3Core.Processors
         private static IMQ MQ = E3.MQ;
         private static ISpawns _spawns = E3._spawns;
         public static bool _isPaused = false;
-
-
+        public static List<Int32> _groupMembers = new List<int>();
+        private static Int64 _nextGroupCheck = 0;
+        private static Int64 _nextGroupCheckInterval = 250;
         public static void Init()
         {
             RegisterEventsCasting();
@@ -72,6 +74,25 @@ namespace E3Core.Processors
 
         }
 
+
+        public static void RefreshGroupMembers()
+        {
+            if (!e3util.ShouldCheck(ref _nextGroupCheck, _nextGroupCheckInterval)) return;
+
+            Int32 groupCount = MQ.Query<Int32>("${Group}");
+            groupCount++;
+            if (groupCount != _groupMembers.Count)
+            {
+                _groupMembers.Clear();
+                //refresh group members.
+                //see if any  of our members have it.
+                for (Int32 i = 0; i < groupCount; i++)
+                {
+                    Int32 id = MQ.Query<Int32>($"${{Group.Member[{i}].ID}}");
+                    _groupMembers.Add(id);
+                }
+            }
+        }
         public static void RemoveFollow()
         {
             _followTargetID = 0;

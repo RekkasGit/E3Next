@@ -43,7 +43,7 @@ namespace E3Core.Processors
                             }
                         }
                         //can't cast if it isn't ready
-                        if (Casting.CheckReady(spell) && Casting.checkMana(spell))
+                        if (Casting.CheckReady(spell) && Casting.CheckMana(spell))
                         {
                             //we should have a valid target via check_assistStatus
                             if (spell.Delay > 0 && _nukeDelayTimeStamp > 0 && Core._stopWatch.ElapsedMilliseconds < _nukeDelayTimeStamp)

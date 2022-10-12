@@ -33,6 +33,7 @@ namespace E3Core.Processors
         public static string _currentLongClassString;
         public static string _currentShortClassString;
         public static Int32 _zoneID;
+   
         
         public static ISpawns _spawns = Core.spawnInstance;
         public static bool _isInvis;
@@ -64,11 +65,14 @@ namespace E3Core.Processors
                 {
                     return;
                 }
+
                
+
                 _isInvis = MQ.Query<bool>("${Me.Invis}");
                 //action taken is always set to false at the start of the loop
                 _actionTaken = false;
                 Casting.RefreshGemCache();
+                Basics.RefreshGroupMembers();
                 //Init is here to make sure we only Init while InGame, as some queries will fail if not in game
 
 
