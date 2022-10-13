@@ -26,9 +26,7 @@ namespace E3Core.Settings
         public Int32 Misc_Gimmie_MoltenOrbMinRequests;
         public bool Misc_DestroyUnsoldItems;
         public string Loot_LinkChannel = String.Empty;
-        public Int32 Loot_CorpseSeekRadius;
-        public bool Loot_LootInCombat;
-        public Int32 Loot_NumberOfFreeSlotsOpen;
+
         public bool CorpseSummoning_LootAfterSummon;
         public string Casting_DefaultSpellSet = "Default";
         private Int32 casting_DefaultSpellGem = 8;
@@ -37,7 +35,15 @@ namespace E3Core.Settings
         public Boolean BuffRequests_AllowBuffRequests;
         public String BuffRequests_RestrictedPCs;
         public String BuffRequests_AllowedPcs;
-
+        //loot
+        public Int32 Loot_CorpseSeekRadius;
+        public bool Loot_LootInCombat;
+        public Int32 Loot_NumberOfFreeSlotsOpen;
+        public Boolean Loot_OnlyStackableOnlyCommonTradeSkillItems = false;
+        public Boolean Loot_OnlyStackableAllTradeSkillItems = false;
+        public List<string> Loot_OnlyStackableAlwaysLoot = new List<string>();
+        public Int32 Loot_OnlyStackableValueGreaterThanInCopper = 1;
+        public Boolean Loot_OnlyStackableEnabled = false;
 
         public Boolean AutoTribute_Enabled;
 
@@ -112,6 +118,12 @@ namespace E3Core.Settings
             LoadKeyData("Loot", "Corpse Seek Radius", parsedData, ref Loot_CorpseSeekRadius);
             LoadKeyData("Loot", "Loot in Combat", parsedData, ref Loot_LootInCombat);
             LoadKeyData("Loot", "NumOfFreeSlotsOpen(1+)", parsedData, ref Loot_NumberOfFreeSlotsOpen);
+            LoadKeyData("Loot", "Loot Only Stackable: Enable (On/Off)", parsedData, ref Loot_OnlyStackableEnabled);
+            LoadKeyData("Loot", "Loot Only Stackable: With Value Greater Than Or Equal in Copper", parsedData, ref Loot_OnlyStackableValueGreaterThanInCopper);
+            LoadKeyData("Loot", "Loot Only Stackable: Loot all Tradeskill items (On/Off)", parsedData, ref Loot_OnlyStackableAllTradeSkillItems);
+            LoadKeyData("Loot", "Loot Only Stackable: Loot common tradeskill items ie:pelts ores silks etc (On/Off)", parsedData, ref Loot_OnlyStackableOnlyCommonTradeSkillItems);
+            LoadKeyData("Loot", "Loot Only Stackable: Always Loot Item", parsedData, Loot_OnlyStackableAlwaysLoot);
+            
             LoadKeyData("Corpse Summoning", "Corpse Summoning", parsedData, ref CorpseSummoning_LootAfterSummon);
             LoadKeyData("Casting", "Default Spell Set", parsedData, ref Casting_DefaultSpellSet);
 
@@ -175,6 +187,10 @@ namespace E3Core.Settings
 	        section.Keys.AddKey("Corpse Seek Radius","125");
             section.Keys.AddKey("Loot in Combat","TRUE");
             section.Keys.AddKey("NumOfFreeSlotsOpen(1+)","0");
+            section.Keys.AddKey("Loot Only Stackable: Enable (On/Off)", "Off");
+            section.Keys.AddKey("Loot Only Stackable: With Value Greater Than Or Equal in Copper", "10000");
+            section.Keys.AddKey("Loot Only Stackable: Loot common tradeskill items ie:pelts ores silks etc (On/Off)", "Off");
+            section.Keys.AddKey("Loot Only Stackable: Loot all Tradeskill items (On/Off)", "Off");
 
             //Corpse Summoning
             newFile.Sections.AddSection("Corpse Summoning");

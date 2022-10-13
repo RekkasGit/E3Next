@@ -18,7 +18,7 @@ namespace E3Core.Processors
         private static Data.Spell _RaidentCure;
         private static bool _shouldCastCure = true;
         private static Int64 _nextRCureCheck = 0;
-        private static Int64 _nexRCureCheckInterval = 250;
+        private static Int64 _nexRCureCheckInterval = 1000;
 
         public static void Init()
         {
@@ -42,11 +42,10 @@ namespace E3Core.Processors
         [AdvSettingInvoke]
         public static void Check_Cures()
         {
+            
             if (!e3util.ShouldCheck(ref _nextRCureCheck, _nexRCureCheckInterval)) return;
-
             if (!E3._actionTaken) CheckRaident();
             if (!E3._actionTaken) CheckNormalCures();
-
             if (!E3._actionTaken) CheckNormalCureAll();
 
         }

@@ -463,7 +463,10 @@ namespace E3Core.Processors
                         if (MQ.Query<bool>($"${{Me.AltAbility[{aura}]}}")) _selectAura = new Spell(aura);
                     }
                     _initAuras = true;
-                
+                    if(_selectAura!=null)
+                    {
+                        _selectAura.SpellName = _selectAura.SpellName.Replace("'s", "s");
+                    }
                 }
             }
             //we have something we want on!
@@ -483,13 +486,13 @@ namespace E3Core.Processors
                 }
 
                 //need to put on new aura
-
+                Int32 meID = MQ.Query<Int32>("${Me.ID}");
                 if (_selectAura.CastType== CastType.Spell)
                 {
                     //this is a spell, need to mem, then cast. 
                     if(Casting.CheckReady(_selectAura) && Casting.CheckMana(_selectAura))
                     {
-                        Casting.Cast(0, _selectAura);
+                        Casting.Cast(meID, _selectAura);
                     }
                    
 
@@ -500,7 +503,7 @@ namespace E3Core.Processors
                     if (_selectAura.EnduranceCost<endurance)
                     {
                         //alt ability or disc, just cast
-                        Casting.Cast(0, _selectAura);
+                        Casting.Cast(meID, _selectAura);
                     }
                 }
                 else
@@ -508,7 +511,7 @@ namespace E3Core.Processors
                     //this is a spell, need to mem, then cast. 
                     if (Casting.CheckReady(_selectAura))
                     {
-                        Casting.Cast(0, _selectAura);
+                        Casting.Cast(meID, _selectAura);
                     }
                 }
 

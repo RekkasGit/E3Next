@@ -34,6 +34,21 @@ namespace E3Core.Utility
                 return true;
             }
         }
+
+        public static void TryMoveToTarget()
+        {
+
+            Int32 x = MQ.Query<Int32>("${Target.X}");
+            Int32 y = MQ.Query<Int32>("${Target.Y}");
+
+            double distance = MQ.Query<Double>("${Target.Distance}");
+            MQ.Cmd($"/squelch /moveto loc ${y} ${x}");
+            MQ.Delay(200);
+            MQ.Delay(5000, "!${Me.Moving}");
+
+
+        }
+
         public static void PrintTimerStatus(Dictionary<Int32, SpellTimer> timers, ref Int64 printTimer, string Caption, Int64 delayInMS = 10000)
         {
             //Printing out debuff timers

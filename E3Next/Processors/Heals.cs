@@ -269,10 +269,7 @@ namespace E3Core.Processors
                     if (_spawns.TryByName(name, out s))
                     {
                         targetID= healPets ? s.PetID: s.ID;
-                    }
-                    //they are in zone and have an id
-                    if (targetID > 0)
-                    {
+                  
                         double targetDistance = s.Distance;
                         string targetType = s.TypeDesc;
 
@@ -300,6 +297,7 @@ namespace E3Core.Processors
                             if (groupMemberIndex > 0)
                             {
                                 Int32 pctHealth = MQ.Query<Int32>($"${{Group.Member[{groupMemberIndex}].Spawn.CurrentHPs}}");
+
                                 if (pctHealth < 1)
                                 {
                                     //dead, no sense in casting. check the next person
@@ -362,15 +360,12 @@ namespace E3Core.Processors
                                 {
                                     if (!String.IsNullOrWhiteSpace(spell.CheckFor))
                                     {
-
                                         if (E3._bots.BuffList(name).Contains(spell.CheckForID))
                                         {
                                             //they have the buff, kick out
                                             continue;
                                         }
-
                                     }
-
                                     recastSpell:
                                     if (spell.Mana > currentMana)
                                     {

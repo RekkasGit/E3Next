@@ -22,7 +22,7 @@ namespace E3Core.Processors
         public static bool _isPaused = false;
         public static List<Int32> _groupMembers = new List<int>();
         private static Int64 _nextGroupCheck = 0;
-        private static Int64 _nextGroupCheckInterval = 250;
+        private static Int64 _nextGroupCheckInterval = 1000;
         public static void Init()
         {
             RegisterEventsCasting();

@@ -1,5 +1,6 @@
 ﻿using E3Core.Processors;
 using E3Core.Settings;
+using E3Core.Settings.FeatureSettings;
 using MonoCore;
 using System;
 using System.Collections.Generic;
@@ -71,14 +72,13 @@ namespace E3Core.Processors
                 _isInvis = MQ.Query<bool>("${Me.Invis}");
                 //action taken is always set to false at the start of the loop
                 _actionTaken = false;
-                Casting.RefreshGemCache();
-                Basics.RefreshGroupMembers();
+                RefreshCaches();
                 //Init is here to make sure we only Init while InGame, as some queries will fail if not in game
 
 
                 //do the basics first
                 //first and formost, do healing checks
-                if((_currentClass& Data.Class.Priest)==_currentClass)
+                if ((_currentClass& Data.Class.Priest)==_currentClass)
                 {
                     Heals.Check_Heals();
                     if (_actionTaken) return;
@@ -112,7 +112,11 @@ namespace E3Core.Processors
             }
             //MQ.Write("Total Processing time in ms:" + (Core._stopWatch.ElapsedMilliseconds - _startTimeStamp));
         }
-
+        private static void RefreshCaches()
+        {
+            Casting.RefreshGemCache();
+            Basics.RefreshGroupMembers();
+        }
         private static void Init()
         {
 
@@ -155,7 +159,8 @@ namespace E3Core.Processors
                 
 
                 Setup.Init();
-
+                //LootDataFile.Init();
+              
                
                 _bots=new Bots();
                 _isInit = true;
