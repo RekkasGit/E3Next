@@ -16,7 +16,7 @@ namespace E3Core.Processors
         public static Logging _log = E3._log;
         private static IMQ MQ = E3.MQ;
         private static ISpawns _spawns = E3._spawns;
-        private static bool _shouldLoot = false;
+        private static bool _shouldLoot = true;
         private static Int32 _seekRadius = 50;
         private static HashSet<Int32> _unlootableCorpses = new HashSet<int>();
         private static bool _fullInventoryAlert = false;
@@ -25,11 +25,15 @@ namespace E3Core.Processors
         private static bool _lootOnlyStackableAllTradeSkils = false;
         private static bool _lootOnlyStackableCommonTradeSkils = false;
 
+        private static Int64 _nextLootCheck = 0;
+        private static Int64 _nextLootCheckInterval = 1000;
+
         public static void Init()
         {
             RegisterEvents();
 
-            _shouldLoot =E3._characterSettings.Misc_AutoLootEnabled;
+            //_shouldLoot =E3._characterSettings.Misc_AutoLootEnabled;
+            E3._generalSettings.Loot_LinkChannel = "say";
             _seekRadius = E3._generalSettings.Loot_CorpseSeekRadius;
             _lootOnlyStackable = E3._generalSettings.Loot_OnlyStackableEnabled;
             _lootOnlyStackableValue = E3._generalSettings.Loot_OnlyStackableValueGreaterThanInCopper;
@@ -70,20 +74,42 @@ namespace E3Core.Processors
             });
         }
 
+        public static void Process()
+        {
+            if (!e3util.ShouldCheck(ref _nextLootCheck, _nextLootCheckInterval)) return;
 
+            if (!_shouldLoot) return;
+            // /if (!((${Me.Combat} || ${Me.CombatState.Equal[Combat]} ||  ${AssistTarget} >0 )) || ${combatLooting}) /call loot_Area
+            if(!Assist._isAssisting)
+            {
+                bool inCombat = MQ.Query<bool>("${Me.Combat}") || MQ.Query<bool>("${Me.CombatState.Equal[Combat]}");
+                if(!inCombat)
+                {
+                    LootArea();
+                }
+            }
+        }
         private static void LootArea()
         {
 
             List<Spawn> corpses = new List<Spawn>();
             foreach (var spawn in _spawns.Get())
-            { 
-                if(spawn.Distance<_seekRadius && spawn.Z<50 && spawn.TypeDesc=="Corpse")
+            {
+                if (spawn.Distance < _seekRadius && spawn.Z < 50 && spawn.TypeDesc == "Corpse")
                 {
-                    corpses.Add(spawn);
+                    if(!_unlootableCorpses.Contains(spawn.ID))
+                    {
+                        corpses.Add(spawn);
+
+                    }
                 }
             }
-            //sort all the corpses, removing the ones we cannot loot
-            corpses = corpses.OrderBy(x => x.Distance).Where(x=> !_unlootableCorpses.Contains(x.ID)).ToList();
+            if (corpses.Count==0)
+            {
+                return;
+            }
+                //sort all the corpses, removing the ones we cannot loot
+             corpses = corpses.OrderBy(x => x.Distance).ToList();
 
             if (corpses.Count > 0)
             {
@@ -98,23 +124,29 @@ namespace E3Core.Processors
                 
                 foreach(var c in corpses)
                 {
-                    Casting.TrueTarget(c.ID);
-                    MQ.Delay(100);
-                    e3util.TryMoveToTarget();
                     
+                   
+                    Casting.TrueTarget(c.ID);
+                    MQ.Delay(2000, "${Target.ID}");
+                   
+                    if(MQ.Query<bool>("${Target.ID}"))
+                    {
+                        e3util.TryMoveToTarget();
 
-
-
+                        LootCorpse(c);
+                        if (MQ.Query<bool>("${Window[LootWnd].Open}"))
+                        {
+                            MQ.Cmd("/notify LootWnd DoneButton leftmouseup");
+                        }
+                        MQ.Delay(300);
+                    }
+                    
                 }
-
-
-
             }
-
         }
-        private static bool LootCorpse(Spawn corpse)
+        private static void LootCorpse(Spawn corpse)
         {
-            return false;
+            
             Int32 freeInventorySlots = MQ.Query<Int32>("${Me.FreeInventory}");
             bool importantItem = false;
 
@@ -126,27 +158,28 @@ namespace E3Core.Processors
               
             }
            
-
             MQ.Cmd("/loot");
             MQ.Delay(1000, "${Window[LootWnd].Open}");
-            if(!MQ.Query<bool>("!${Window[LootWnd].Open}"))
+            MQ.Delay(100);
+            if(!MQ.Query<bool>("${Window[LootWnd].Open}"))
             {
-                MQ.Write("\arERROR, Loot Window not opening, adding to ignore corpse list.");
+                MQ.Write($"\arERROR, Loot Window not opening, adding {corpse.CleanName}-{corpse.ID} to ignore corpse list.");
                 if(!_unlootableCorpses.Contains(corpse.ID))
                 {
                     _unlootableCorpses.Add(corpse.ID);
                 }
-                return false;
+                return;
 
             }
-            MQ.Delay(1000, "${Corpse.Items}");
+            MQ.Delay(500, "${Corpse.Items}");
 
             Int32 corpseItems = MQ.Query<Int32>("${Corpse.Items}");
 
             if (corpseItems == 0)
             {
                 //no items on the corpse, kick out
-                return true;
+
+                return;
             }
 
             for(Int32 i =1;i<=corpseItems;i++)
@@ -252,15 +285,38 @@ namespace E3Core.Processors
                         MQ.Delay(300);
                     }
                 }
-                else
+               
+            }
+            if (MQ.Query<Int32>("${Corpse.Items}")>0)
+            {   //link what is ever left over.
+                //should we should notify if we have not looted.
+                if (!String.IsNullOrWhiteSpace(E3._generalSettings.Loot_LinkChannel))
                 {
-                    //should we should notify if we have not looted.
-                    if(!String.IsNullOrWhiteSpace(E3._generalSettings.Loot_LinkChannel))
-                    {
-                        MQ.Cmd($"/{E3._generalSettings.Loot_LinkChannel} {corpse.ID} - {corpseItem}");
-                    }
+                    PrintLink($"{E3._generalSettings.Loot_LinkChannel} {corpse.ID} - ");
                 }
             }
+
+        }
+
+        private static void PrintLink(string message)
+        {
+            MQ.Cmd("/keypress /");
+            foreach(char c in message)
+            {
+                if(c==' ')
+                {
+                    MQ.Cmd($"/nomodkey /keypress space chat");
+                }
+                else
+                {
+                    MQ.Cmd($"/nomodkey /keypress {c} chat");
+                }
+            }
+            MQ.Delay(100);
+            MQ.Cmd("/notify LootWnd BroadcastButton leftmouseup");
+            MQ.Delay(100);
+            MQ.Cmd("/keypress enter chat");
+            MQ.Delay(100);
         }
         private static bool FoundStackableFitInInventory(string corpseItem, Int32 count)
         {

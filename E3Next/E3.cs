@@ -110,6 +110,7 @@ namespace E3Core.Processors
                     }
                 }
             }
+            Loot.Process();
             //MQ.Write("Total Processing time in ms:" + (Core._stopWatch.ElapsedMilliseconds - _startTimeStamp));
         }
         private static void RefreshCaches()

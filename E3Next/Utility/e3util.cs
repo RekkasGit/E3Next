@@ -38,11 +38,11 @@ namespace E3Core.Utility
         public static void TryMoveToTarget()
         {
 
-            Int32 x = MQ.Query<Int32>("${Target.X}");
-            Int32 y = MQ.Query<Int32>("${Target.Y}");
+            Double x = MQ.Query<Double>("${Target.X}");
+            Double y = MQ.Query<Double>("${Target.Y}");
 
             double distance = MQ.Query<Double>("${Target.Distance}");
-            MQ.Cmd($"/squelch /moveto loc ${y} ${x}");
+            MQ.Cmd($"/squelch /moveto loc {y} {x}");
             MQ.Delay(200);
             MQ.Delay(5000, "!${Me.Moving}");
 

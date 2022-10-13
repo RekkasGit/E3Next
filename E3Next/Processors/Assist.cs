@@ -563,7 +563,6 @@ namespace E3Core.Processors
                         _assistStickDistance -= 3;
                         if (MQ.Query<bool>("${Stick.Active}"))
                         {
-                            //turn off autofire
                             StickToAssistTarget();
                         }
                     }
