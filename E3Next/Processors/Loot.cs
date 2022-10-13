@@ -64,7 +64,7 @@ namespace E3Core.Processors
                             LootDataFile._skip.Add(x.args[1]);
                         }
                     }
-                    //E3._bots.BroadcastCommandToOthers($"/E3LootAdd \"{x.args[0]}\" {x.args[1]}");
+                   
 
                 }
             });
@@ -149,7 +149,7 @@ namespace E3Core.Processors
                 return true;
             }
 
-            for(Int32 i =0;i<=corpseItems;i++)
+            for(Int32 i =1;i<=corpseItems;i++)
             {
                 //lets try and loot them.
                 importantItem = false;
@@ -157,11 +157,13 @@ namespace E3Core.Processors
                 MQ.Delay(1000, $"${{Corpse.Item[{i}].ID}}");
 
                 string corpseItem = MQ.Query<string>($"${{Corpse.Item[{i}].Name}}");
-                if(_lootOnlyStackable)
+                bool stackable = MQ.Query<bool>($"${{Corpse.Item[{i}].Stackable}}");
+                bool nodrop = MQ.Query<bool>($"${{Corpse.Item[{i}].NoDrop}}");
+                Int32 itemValue = MQ.Query<Int32>($"${{Corpse.Item[{i}].Value}}");
+                Int32 stackCount = MQ.Query<Int32>($"${{Corpse.Item[{i}].Stack}}");
+
+                if (_lootOnlyStackable)
                 {
-                    bool stackable = MQ.Query<bool>($"${{Corpse.Item[{i}].Stackable}}");
-                    bool nodrop = MQ.Query<bool>($"${{Corpse.Item[{i}].NoDrop}}");
-                    Int32 itemValue = MQ.Query<Int32>($"${{Corpse.Item[{i}].Value}}");
                     if (stackable && !nodrop)
                     {
                         //check if in our always loot. 
@@ -178,25 +180,138 @@ namespace E3Core.Processors
                             if(corpseItem.Contains(" Pelt")) importantItem = true;
                             if (corpseItem.Contains(" Silk")) importantItem = true;
                             if (corpseItem.Contains(" Ore")) importantItem = true;
-                        
+                        }
+
+                        if (!importantItem & itemValue >= E3._generalSettings.Loot_OnlyStackableValueGreaterThanInCopper)
+                        {
+                            importantItem = true;
                         }
 
 
-
-
+                    }
+                }
+                else
+                {
+                    //use normal loot settings
+                    bool foundInFile = false;
+                    if (LootDataFile._keep.Contains(corpseItem) || LootDataFile._sell.Contains(corpseItem))
+                    {
+                        importantItem = true;
+                        foundInFile = true;
+                    }
+                    else if(LootDataFile._skip.Contains(corpseItem))
+                    {
+                        importantItem = false;
+                        foundInFile = true;
+                    }
+                    if(!foundInFile)
+                    {
+                        importantItem = true;
+                        LootDataFile._keep.Add(corpseItem);
+                        E3._bots.BroadcastCommandToOthers($"/E3LootAdd \"{corpseItem}\" KEEP");
+                        LootDataFile.SaveData();
                     }
 
+                }
 
+                //check if its lore
+                bool isLore = MQ.Query<bool>($"${{Corpse.Item[{i}].Lore}}");
+                //if in bank or on our person
+                bool weHaveItem = MQ.Query<bool>($"${{FindItemCount[={corpseItem}]}}");
+                bool weHaveItemInBank = MQ.Query<bool>($"${{FindItemBankCount[={corpseItem}]}}");
+                if (isLore && (weHaveItem || weHaveItemInBank))
+                {
+                    importantItem = false;
+                }
 
+                //stackable but we don't have room and don't have the item yet
+                if(freeInventorySlots<1 && stackable && !weHaveItem)
+                {
+                    importantItem = false;
+                }
+
+                //stackable but we don't have room but we already have an item, lets see if we have room.
+                if (freeInventorySlots < 1 && stackable && weHaveItem)
+                {
+                    //does it have free stacks?
+                    if(FoundStackableFitInInventory(corpseItem,stackCount))
+                    {
+                        importantItem = true;
+                    }
+                }
+
+                if (importantItem)
+                {
+                    //lets loot it if we can!
+                    MQ.Cmd($"/itemnotify loot{i} rightmouseup");
+                    MQ.Delay(300);
+                    bool qtyWindowUp = MQ.Query<bool>("${Window[QuantityWnd].Open}");
+                    if(qtyWindowUp)
+                    {
+                        MQ.Cmd($"/notify QuantityWnd QTYW_Accept_Button leftmouseup");
+                        MQ.Delay(300);
+                    }
+                }
+                else
+                {
+                    //should we should notify if we have not looted.
+                    if(!String.IsNullOrWhiteSpace(E3._generalSettings.Loot_LinkChannel))
+                    {
+                        MQ.Cmd($"/{E3._generalSettings.Loot_LinkChannel} {corpse.ID} - {corpseItem}");
+                    }
+                }
+            }
+        }
+        private static bool FoundStackableFitInInventory(string corpseItem, Int32 count)
+        {
+            //scan through our inventory looking for an item with a stackable
+            for(Int32 i =1;i<=10;i++)
+            {
+                bool SlotExists = MQ.Query<bool>($"${{Me.Inventory[pack{i}]}}");
+                if(SlotExists)
+                {
+                    Int32 slotsInInvetoryLost = MQ.Query<Int32>($"${{Me.Inventory[pack{i}].Container}}");
+
+                    if(slotsInInvetoryLost>0)
+                    {
+                        for(Int32 e=1;e<=slotsInInvetoryLost;e++)
+                        {
+                            //${Me.Inventory[${itemSlot}].Item[${j}].Name.Equal[${itemName}]}
+                            String itemName = MQ.Query<String>($"${{Me.Inventory[pack{i}].Item[{e}]}}");
+
+                            if(itemName==corpseItem)
+                            {
+                                //its the item we are looking for, does it have stackable 
+                                Int32 freeStack = MQ.Query<Int32>($"${{Me.Inventory[pack{i}].Item[{e}].FreeStack}}");
+
+                                if (freeStack <= count)
+                                {
+                                    return true;
+                                }
+                            }
+                        }
+                    }
+                    else
+                    {
+                        //in the root 
+                        string itemName = MQ.Query<String>($"${{Me.Inventory[pack{i}].Item]}}");//${Me.Inventory[pack${i}].Item.Value}
+                        if (itemName == corpseItem)
+                        {
+                            //its the item we are looking for, does it have stackable 
+                            Int32 freeStack = MQ.Query<Int32>($"${{Me.Inventory[pack{i}].Item.FreeStack}}");
+
+                            if (freeStack <= count)
+                            {
+                                return true;
+                            }
+
+                        }
+                    }
 
                 }
 
             }
-
-
-
+            return false;
         }
-
-
     }
 }

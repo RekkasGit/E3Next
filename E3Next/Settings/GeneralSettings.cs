@@ -26,6 +26,7 @@ namespace E3Core.Settings
         public Int32 Misc_Gimmie_MoltenOrbMinRequests;
         public bool Misc_DestroyUnsoldItems;
         public string Loot_LinkChannel = String.Empty;
+        public List<string> Loot_LinkChannelValid = new List<string>() {"g","gu","say","rsay","shout"};
 
         public bool CorpseSummoning_LootAfterSummon;
         public string Casting_DefaultSpellSet = "Default";
@@ -115,6 +116,13 @@ namespace E3Core.Settings
             LoadKeyData("Misc", "Destroy Unsold Items(On/Off)", parsedData, ref Misc_DestroyUnsoldItems);
 
             LoadKeyData("Loot", "Loot Link Channel", parsedData, ref Loot_LinkChannel);
+            //check valid loot channels
+            if (!Loot_LinkChannelValid.Contains(Loot_LinkChannel, StringComparer.OrdinalIgnoreCase))
+            {
+                Loot_LinkChannel = String.Empty;
+            }
+
+
             LoadKeyData("Loot", "Corpse Seek Radius", parsedData, ref Loot_CorpseSeekRadius);
             LoadKeyData("Loot", "Loot in Combat", parsedData, ref Loot_LootInCombat);
             LoadKeyData("Loot", "NumOfFreeSlotsOpen(1+)", parsedData, ref Loot_NumberOfFreeSlotsOpen);
