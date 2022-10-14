@@ -15,6 +15,7 @@ namespace E3Core.Processors
         List<string> BotsConnected();
         Boolean HasShortBuff(string name, Int64 buffid);
         void BroadcastCommandToOthers(string command);
+        void BroadcastCommandToPerson(string person, string command);
         void Broadcast(string message);
         List<Int32> BuffList(string name);
 
@@ -38,6 +39,10 @@ namespace E3Core.Processors
         public void BroadcastCommandToOthers(string query)
         {
             MQ.Cmd($"/bcg /{query}");
+        }
+        public void BroadcastCommandToPerson(string person, string command)
+        {
+            MQ.Cmd($"/bct {person} /{command}");
         }
         public Boolean InZone(string name)
         {
@@ -202,6 +207,11 @@ namespace E3Core.Processors
         }
 
         public void BroadcastCommandToOthers(string query)
+        {
+            throw new NotImplementedException();
+        }
+
+        public void BroadcastCommandToPerson(string person, string command)
         {
             throw new NotImplementedException();
         }

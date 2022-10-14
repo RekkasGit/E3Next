@@ -16,7 +16,7 @@ namespace E3Core.Processors
         public static Logging _log = E3._log;
         private static IMQ MQ = E3.MQ;
         private static ISpawns _spawns = E3._spawns;
-        private static bool _shouldLoot = true;
+        private static bool _shouldLoot = false;
         private static Int32 _seekRadius = 50;
         private static HashSet<Int32> _unlootableCorpses = new HashSet<int>();
         private static bool _fullInventoryAlert = false;
@@ -32,7 +32,7 @@ namespace E3Core.Processors
         {
             RegisterEvents();
 
-            //_shouldLoot =E3._characterSettings.Misc_AutoLootEnabled;
+            _shouldLoot =E3._characterSettings.Misc_AutoLootEnabled;
             E3._generalSettings.Loot_LinkChannel = "say";
             _seekRadius = E3._generalSettings.Loot_CorpseSeekRadius;
             _lootOnlyStackable = E3._generalSettings.Loot_OnlyStackableEnabled;
@@ -40,7 +40,10 @@ namespace E3Core.Processors
             _lootOnlyStackableAllTradeSkils = E3._generalSettings.Loot_OnlyStackableAllTradeSkillItems;
             _lootOnlyStackableCommonTradeSkils = E3._generalSettings.Loot_OnlyStackableOnlyCommonTradeSkillItems;
         }
-
+        public static void Reset()
+        {
+            _unlootableCorpses.Clear();
+        }
         private static void RegisterEvents()
         {
             EventProcessor.RegisterCommand("/E3LootAdd", (x) =>
@@ -49,27 +52,54 @@ namespace E3Core.Processors
                 {
                     if(x.args[1]=="KEEP")
                     {
-                        if (!LootDataFile._keep.Contains(x.args[1]))
+                        if (!LootDataFile._keep.Contains(x.args[0]))
                         {
-                            LootDataFile._keep.Add(x.args[1]);
+                            LootDataFile._keep.Add(x.args[0]);
                         }
                     }
                     else if(x.args[1]=="SELL")
                     {
-                        if (!LootDataFile._sell.Contains(x.args[1]))
+                        if (!LootDataFile._sell.Contains(x.args[0]))
                         {
-                            LootDataFile._sell.Add(x.args[1]);
+                            LootDataFile._sell.Add(x.args[0]);
                         }
                     }
                     else
                     {
-                        if (!LootDataFile._skip.Contains(x.args[1]))
+                        if (!LootDataFile._skip.Contains(x.args[0]))
                         {
-                            LootDataFile._skip.Add(x.args[1]);
+                            LootDataFile._skip.Add(x.args[0]);
                         }
                     }
                    
 
+                }
+            });
+
+            EventProcessor.RegisterCommand("/Looton", (x) =>
+            {
+                if (x.args.Count > 0 && !x.args[0].Equals(E3._currentName, StringComparison.OrdinalIgnoreCase))
+                {
+                    E3._bots.BroadcastCommandToPerson(x.args[0], "/Looton");
+                }
+                else
+                {
+                    //we are turning our own loot on.
+                    _shouldLoot = true;
+                    E3._bots.Broadcast("\agTurning on Loot.");
+                }
+            });
+            EventProcessor.RegisterCommand("/Lootoff", (x) =>
+            {
+                if (x.args.Count > 0 && !x.args[0].Equals(E3._currentName, StringComparison.OrdinalIgnoreCase))
+                {
+                    E3._bots.BroadcastCommandToPerson(x.args[0], "/Lootoff");
+                }
+                else
+                {
+                    //we are turning our own loot on.
+                    _shouldLoot = false;
+                    E3._bots.Broadcast("\agTurning Off Loot.");
                 }
             });
         }
@@ -91,6 +121,9 @@ namespace E3Core.Processors
         }
         private static void LootArea()
         {
+            Double startX = MQ.Query<Double>("${Me.X}");
+            Double startY = MQ.Query<Double>("${Me.Y}");
+
 
             List<Spawn> corpses = new List<Spawn>();
             foreach (var spawn in _spawns.Get())
@@ -142,6 +175,16 @@ namespace E3Core.Processors
                     }
                     
                 }
+                if (Basics._following)
+                {
+                    Basics.AcquireFollow();
+                }
+                else
+                {
+                    //go back to where we started
+                    e3util.TryMoveToLoc(startX, startY);
+                }
+
             }
         }
         private static void LootCorpse(Spawn corpse)

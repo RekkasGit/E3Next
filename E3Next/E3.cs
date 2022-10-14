@@ -59,7 +59,9 @@ namespace E3Core.Processors
                 {
                     //means we have zoned.
                     _spawns.RefreshList();//make sure we get a new refresh of this zone.
+                    Loot.Reset();
                     _zoneID = zoneID;
+                   
                 }
                 EventProcessor.ProcessEventsInQueues("/e3p");
                 if (Basics._isPaused)

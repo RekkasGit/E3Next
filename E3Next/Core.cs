@@ -162,6 +162,8 @@ namespace MonoCore
         public static ConcurrentQueue<String> _eventProcessingQueue = new ConcurrentQueue<String>();
         public static ConcurrentQueue<String> _mqEventProcessingQueue = new ConcurrentQueue<string>();
         public static ConcurrentQueue<String> _mqCommandProcessingQueue = new ConcurrentQueue<string>();
+        private static StringBuilder _tokenBuilder = new StringBuilder();
+        private static List<string> _tokenResult = new List<string>();
         //if matches take place, they are placed in this queue for the main C# thread to process. 
         public static Int32 _eventLimiterPerRegisteredEvent = 10;
         //this threads entire purpose, is to simply keep processing the event processing queue and place matches into
@@ -304,12 +306,15 @@ namespace MonoCore
                 }
             }
         }
-        public static IEnumerable<String> ParseParms(String line, Char delimiter, Char textQualifier)
+        public static List<String> ParseParms(String line, Char delimiter, Char textQualifier)
         {
 
-            if (line == null)
-                yield break;
+            _tokenResult.Clear();
 
+            if (String.IsNullOrWhiteSpace(line))
+            {
+                return _tokenResult;
+            }
             else
             {
                 Char prevChar = '\0';
@@ -317,9 +322,8 @@ namespace MonoCore
                 Char currentChar = '\0';
 
                 Boolean inString = false;
-
-                StringBuilder token = new StringBuilder();
-
+                _tokenBuilder.Clear();
+                string result = string.Empty;
                 for (int i = 0; i < line.Length; i++)
                 {
                     currentChar = line[i];
@@ -348,17 +352,26 @@ namespace MonoCore
 
                     if (currentChar == delimiter && !inString)
                     {
-                        yield return token.ToString();
-                        token = token.Remove(0, token.Length);
+                        result = _tokenBuilder.ToString();
+                        if (!String.IsNullOrWhiteSpace(result))
+                        {
+                            _tokenResult.Add(result);
+                        }
+
+                        _tokenBuilder = _tokenBuilder.Remove(0, _tokenBuilder.Length);
                         continue;
                     }
-
-                    token = token.Append(currentChar);
+                    result = _tokenBuilder.ToString();
+                    _tokenBuilder = _tokenBuilder.Append(currentChar);
 
                 }
-
-                yield return token.ToString();
-
+                result = _tokenBuilder.ToString();
+                if (!String.IsNullOrWhiteSpace(result))
+                {
+                    _tokenResult.Add(result);
+                }
+                //yield return _tokenBuilder.ToString();
+                return _tokenResult;
             }
         }
 

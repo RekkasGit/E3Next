@@ -40,8 +40,16 @@ namespace E3Core.Utility
 
             Double x = MQ.Query<Double>("${Target.X}");
             Double y = MQ.Query<Double>("${Target.Y}");
+            MQ.Cmd($"/squelch /moveto loc {y} {x}");
+            MQ.Delay(200);
+            MQ.Delay(5000, "!${Me.Moving}");
 
-            double distance = MQ.Query<Double>("${Target.Distance}");
+
+        }
+
+        public static void TryMoveToLoc(Double x, Double y)
+        {
+
             MQ.Cmd($"/squelch /moveto loc {y} {x}");
             MQ.Delay(200);
             MQ.Delay(5000, "!${Me.Moving}");
