@@ -180,8 +180,8 @@ namespace E3Core.Settings.FeatureSettings
             //create sorted lists
 
             List<string> _keepSorted = _keep.OrderBy(x => x).ToList();
-            List<string> _sellSorted = _keep.OrderBy(x => x).ToList();
-            List<string> _ignoreSorted = _keep.OrderBy(x => x).ToList();
+            List<string> _sellSorted = _sell.OrderBy(x => x).ToList();
+            List<string> _skipSorted = _skip.OrderBy(x => x).ToList();
 
             for (char c = 'A'; c <= 'Z'; c++)
             {
@@ -196,18 +196,18 @@ namespace E3Core.Settings.FeatureSettings
                         section.Keys.AddKey(hashvalue, "Keep");
                     }
                 }
-                foreach (string hashvalue in _sell)
+                foreach (string hashvalue in _sellSorted)
                 {
                     if (hashvalue.StartsWith(tc))
                     {
                         section.Keys.AddKey(hashvalue, "Sell");
                     }
                 }
-                foreach (string hashvalue in _sell)
+                foreach (string hashvalue in _skipSorted)
                 {
                     if (hashvalue.StartsWith(tc))
                     {
-                        section.Keys.AddKey(hashvalue, "Ignore");
+                        section.Keys.AddKey(hashvalue, "Skip");
                     }
                 }
 
