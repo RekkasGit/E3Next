@@ -39,6 +39,8 @@ namespace E3Core.Processors
             _lootOnlyStackableValue = E3._generalSettings.Loot_OnlyStackableValueGreaterThanInCopper;
             _lootOnlyStackableAllTradeSkils = E3._generalSettings.Loot_OnlyStackableAllTradeSkillItems;
             _lootOnlyStackableCommonTradeSkils = E3._generalSettings.Loot_OnlyStackableOnlyCommonTradeSkillItems;
+
+            LootDataFile.LoadData();
         }
         public static void Reset()
         {
@@ -123,12 +125,14 @@ namespace E3Core.Processors
         {
             Double startX = MQ.Query<Double>("${Me.X}");
             Double startY = MQ.Query<Double>("${Me.Y}");
+            Double startZ = MQ.Query<Double>("${Me.Z}");
 
 
             List<Spawn> corpses = new List<Spawn>();
             foreach (var spawn in _spawns.Get())
             {
-                if (spawn.Distance < _seekRadius && spawn.Z < 50 && spawn.TypeDesc == "Corpse")
+                //only player corpses have a Deity
+                if (spawn.Distance3D < _seekRadius && spawn.DeityID==0 && spawn.TypeDesc == "Corpse")
                 {
                     if(!_unlootableCorpses.Contains(spawn.ID))
                     {

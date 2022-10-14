@@ -152,7 +152,7 @@ namespace E3Core.Settings.FeatureSettings
                 }
             }
 
-            SaveData();
+          
         }
 
         private static void MatchSuccess(HashSet<string> hash, Match match)

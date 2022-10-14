@@ -1754,9 +1754,12 @@ namespace MonoCore
             cb += 4;
             playerZ = BitConverter.ToSingle(data, cb);
             cb += 4;
+            DeityID = BitConverter.ToInt32(data, cb);
+            cb += 4;
 
 
         }
+        public Int32 DeityID;
         public float playerZ;
         public float playerY;
         public float playerX;
