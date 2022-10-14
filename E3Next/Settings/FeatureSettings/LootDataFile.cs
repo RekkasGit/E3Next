@@ -212,8 +212,8 @@ namespace E3Core.Settings.FeatureSettings
                 }
 
             }
-            string macroFile = _macroFolder + _settingsFolder + @"Loot2 Settings.ini";
-            string configFile = _configFolder + _settingsFolder + @"Loot2 Settings.ini";
+            string macroFile = _macroFolder + _settingsFolder + @"Loot Settings.ini";
+            string configFile = _configFolder + _settingsFolder + @"Loot Settings.ini";
             //File already exists, may need to merge in new settings lets check
             string fullFileToUse = macroFile;
 

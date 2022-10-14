@@ -33,7 +33,10 @@ namespace E3Core.Processors
             RegisterEvents();
 
             _shouldLoot =E3._characterSettings.Misc_AutoLootEnabled;
+            //TODO: remove this line when done with debug
             E3._generalSettings.Loot_LinkChannel = "say";
+            //End TODO
+
             _seekRadius = E3._generalSettings.Loot_CorpseSeekRadius;
             _lootOnlyStackable = E3._generalSettings.Loot_OnlyStackableEnabled;
             _lootOnlyStackableValue = E3._generalSettings.Loot_OnlyStackableValueGreaterThanInCopper;
