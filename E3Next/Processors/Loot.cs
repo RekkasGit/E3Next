@@ -384,8 +384,11 @@ namespace E3Core.Processors
                         {
                             //${Me.Inventory[${itemSlot}].Item[${j}].Name.Equal[${itemName}]}
                             String itemName = MQ.Query<String>($"${{Me.Inventory[pack{i}].Item[{e}]}}");
-
-                            if(itemName==corpseItem)
+                            if (itemName == "NULL")
+                            {
+                                continue;
+                            }
+                            if (itemName==corpseItem)
                             {
                                 //its the item we are looking for, does it have stackable 
                                 Int32 freeStack = MQ.Query<Int32>($"${{Me.Inventory[pack{i}].Item[{e}].FreeStack}}");

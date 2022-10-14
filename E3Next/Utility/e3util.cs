@@ -41,9 +41,32 @@ namespace E3Core.Utility
             Double x = MQ.Query<Double>("${Target.X}");
             Double y = MQ.Query<Double>("${Target.Y}");
             MQ.Cmd($"/squelch /moveto loc {y} {x}");
-            MQ.Delay(200);
-            MQ.Delay(5000, "!${Me.Moving}");
+            MQ.Delay(500);
 
+            Double meX = MQ.Query<Double>("${Me.X}");
+            Double meY = MQ.Query<Double>("${Me.Y}");
+            Int64 endTime = Core._stopWatch.ElapsedMilliseconds + 10000;
+            while(true)
+            {
+                MQ.Delay(200);
+                Double tmeX = MQ.Query<Double>("${Me.X}");
+                Double tmeY = MQ.Query<Double>("${Me.Y}");
+
+                if((int)meX==(int)tmeX && (int)meY==(int)tmeY)
+                {
+                    //we are stuck, kick out
+                    break;
+                }
+
+                meX = tmeX;
+                meY = tmeY;
+
+                if (endTime < Core._stopWatch.ElapsedMilliseconds)
+                {
+                    break;
+                }
+                
+            }
 
         }
 

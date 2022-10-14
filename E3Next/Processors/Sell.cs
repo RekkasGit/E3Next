@@ -29,12 +29,14 @@ namespace E3Core.Processors
         {
             EventProcessor.RegisterCommand("/autosell", (x) =>
             {
+                OpenMerchant();
                 AutoSell();
-
+                MQ.Cmd("/notify MerchantWnd MW_Done_Button leftmouseup");
             });
             EventProcessor.RegisterCommand("/syncinv", (x) =>
             {
                 SyncInventory();
+               
 
             });
         }
@@ -54,6 +56,11 @@ namespace E3Core.Processors
                         {
                             //${Me.Inventory[${itemSlot}].Item[${j}].Name.Equal[${itemName}]}
                             String itemName = MQ.Query<String>($"${{Me.Inventory[pack{i}].Item[{e}]}}");
+                            if(itemName=="NULL")
+                            {
+                                continue;
+                            }
+
                             bool nodrop = MQ.Query<bool>($"${{Me.Inventory[pack{i}].Item[{e}].NoDrop}}");
                      
                             if (!nodrop  && !LootDataFile._sell.Contains(itemName) && !LootDataFile._keep.Contains(itemName) && !LootDataFile._keep.Contains(itemName))
@@ -68,8 +75,21 @@ namespace E3Core.Processors
             LootDataFile.SaveData();
         }
 
+        private static void OpenMerchant()
+        {
+            e3util.TryMoveToTarget();
+            MQ.Cmd("/click right target");
+            MQ.Delay(500);
+        }
+
         private static void AutoSell()
         {
+            bool merchantWindowOpen = MQ.Query<bool>("${Window[MerchantWnd].Open}");
+            if(!merchantWindowOpen)
+            {
+                E3._bots.Broadcast("\arError: <AutoSell> Merchant window not open. Exiting");
+                return;
+            }
             //scan through our inventory looking for an item with a stackable
             for (Int32 i = 1; i <= 10; i++)
             {
@@ -84,6 +104,10 @@ namespace E3Core.Processors
                         {
                             //${Me.Inventory[${itemSlot}].Item[${j}].Name.Equal[${itemName}]}
                             String itemName = MQ.Query<String>($"${{Me.Inventory[pack{i}].Item[{e}]}}");
+                            if (itemName == "NULL")
+                            {
+                                continue;
+                            }
                             Int32 itemValue = MQ.Query<Int32>($"${{Me.Inventory[pack{i}].Item[{e}].Value}}");
                             if (LootDataFile._sell.Contains(itemName) && itemValue>0)
                             {
@@ -131,15 +155,7 @@ namespace E3Core.Processors
                             }
                         }
                     }
-                    else
-                    {
-                        //in the root 
-                        //string itemName = MQ.Query<String>($"${{Me.Inventory[pack{i}].Item]}}");//${Me.Inventory[pack${i}].Item.Value}
-                        //if (LootDataFile._sell.Contains(itemName))
-                        //{
-
-                        //}
-                    }
+                   
                 }
             }
         }
