@@ -24,19 +24,26 @@ namespace E3Core.Data
     public class Spell
     {
         public static Dictionary<Int32, Data.Spell> _loadedSpells = new Dictionary<int, Spell>();
+        public static Dictionary<string, Data.Spell> _loadedSpellsByName = new Dictionary<string, Spell>();
         public static IMQ MQ = E3.MQ;
+
+
         public Spell(string spellName, IniData parsedData=null)
         {
+            
             SpellName = spellName; //what the thing actually casts
             CastName = spellName;//required to send command
             InitName = spellName;
 
-            
             Parse(parsedData);
+
+           
+
             QueryMQ();
             if(!_loadedSpells.ContainsKey(this.SpellID))
             {
                 _loadedSpells.Add(this.SpellID, this);
+                _loadedSpellsByName.Add(this.SpellName, this);
             }
         }
 

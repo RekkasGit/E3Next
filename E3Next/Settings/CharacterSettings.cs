@@ -14,7 +14,7 @@ namespace E3Core.Settings
 {
     public class CharacterSettings : BaseSettings, IBaseSettings
     {
-
+        public static IniData _parsedData;
         public CharacterSettings()
         {
             _characterName = MQ.Query<string>("${Me.CleanName}");
@@ -52,7 +52,7 @@ namespace E3Core.Settings
             _log.Write($"macrofolder:{_macroFolder} config folder:{_configFolder}");
 
             string fullPathToUse = macroFile;
-            IniData parsedData;
+            
             FileIniDataParser fileIniData = new FileIniDataParser();
             fileIniData.Parser.Configuration.AllowDuplicateKeys = true;
             fileIniData.Parser.Configuration.OverrideDuplicateKeys = true;// so that the other ones will be put into a collection
@@ -66,7 +66,7 @@ namespace E3Core.Settings
 
                 fullPathToUse = configFile;
                 _log.Write($"Settings not found creating new settings: {fullPathToUse}");
-                parsedData = CreateOrUpdateSettings();
+                _parsedData = CreateOrUpdateSettings();
             }
             else
             {
@@ -76,112 +76,112 @@ namespace E3Core.Settings
                 //Create an instance of a ini file parser
 
                 _log.Write($"Loading up {fullPathToUse}");
-                parsedData = fileIniData.ReadFile(fullPathToUse);
+                _parsedData = fileIniData.ReadFile(fullPathToUse);
             }
 
-            LoadKeyData("Misc", "AutoFood", parsedData, ref Misc_AutoFoodEnabled);
-            LoadKeyData("Misc", "Food", parsedData, ref Misc_AutoFood);
-            LoadKeyData("Misc", "Drink", parsedData, ref Misc_AutoDrink);
-            LoadKeyData("Misc", "End MedBreak in Combat(On/Off)", parsedData, ref Misc_EndMedBreakInCombat);
-            LoadKeyData("Misc", "AutoMedBreak (On/Off)", parsedData, ref Misc_AutoMedBreak);
-            LoadKeyData("Misc", "Auto-Loot (On/Off)", parsedData, ref Misc_AutoLootEnabled);
-            LoadKeyData("Misc", "Anchor (Char to Anchor to)", parsedData, ref Misc_AnchorChar);
+            LoadKeyData("Misc", "AutoFood", _parsedData, ref Misc_AutoFoodEnabled);
+            LoadKeyData("Misc", "Food", _parsedData, ref Misc_AutoFood);
+            LoadKeyData("Misc", "Drink", _parsedData, ref Misc_AutoDrink);
+            LoadKeyData("Misc", "End MedBreak in Combat(On/Off)", _parsedData, ref Misc_EndMedBreakInCombat);
+            LoadKeyData("Misc", "AutoMedBreak (On/Off)", _parsedData, ref Misc_AutoMedBreak);
+            LoadKeyData("Misc", "Auto-Loot (On/Off)", _parsedData, ref Misc_AutoLootEnabled);
+            LoadKeyData("Misc", "Anchor (Char to Anchor to)", _parsedData, ref Misc_AnchorChar);
 
-            LoadKeyData("Assist Settings", "Assist Type (Melee/Ranged/Off)", parsedData, ref Assist_Type);
-            LoadKeyData("Assist Settings", "Melee Stick Point", parsedData, ref Assist_MeleeStickPoint);
-            LoadKeyData("Assist Settings", "Taunt(On/Off)", parsedData, ref Assist_TauntEnabled);
-            LoadKeyData("Assist Settings", "SmartTaunt(On/Off)", parsedData, ref Assist_SmartTaunt);
-            LoadKeyData("Assist Settings", "Melee Distance", parsedData, ref Assist_MeleeDistance);
-            LoadKeyData("Assist Settings", "Ranged Distance", parsedData, ref Assist_RangeDistance);
-            LoadKeyData("Assist Settings", "Auto-Assist Engage Percent", parsedData, ref Assist_AutoAssistPercent);
+            LoadKeyData("Assist Settings", "Assist Type (Melee/Ranged/Off)", _parsedData, ref Assist_Type);
+            LoadKeyData("Assist Settings", "Melee Stick Point", _parsedData, ref Assist_MeleeStickPoint);
+            LoadKeyData("Assist Settings", "Taunt(On/Off)", _parsedData, ref Assist_TauntEnabled);
+            LoadKeyData("Assist Settings", "SmartTaunt(On/Off)", _parsedData, ref Assist_SmartTaunt);
+            LoadKeyData("Assist Settings", "Melee Distance", _parsedData, ref Assist_MeleeDistance);
+            LoadKeyData("Assist Settings", "Ranged Distance", _parsedData, ref Assist_RangeDistance);
+            LoadKeyData("Assist Settings", "Auto-Assist Engage Percent", _parsedData, ref Assist_AutoAssistPercent);
 
             if (_characterClass == Data.Class.Rogue)
             {
-                LoadKeyData("Rogue", "Auto-Hide (On/Off)", parsedData, ref Rogue_AutoHide);
-                LoadKeyData("Rogue", "Auto-Evade (On/Off)", parsedData, ref Rogue_AutoEvade);
-                LoadKeyData("Rogue", "Evade PctAggro", parsedData, ref Rogue_EvadePct);
-                LoadKeyData("Rogue", "Sneak Attack Discipline", parsedData, ref Rogue_SneakAttack);
-                LoadKeyData("Rogue", "PoisonPR", parsedData, ref Rogue_PoisonPR);
-                LoadKeyData("Rogue", "PoisonCR", parsedData, ref Rogue_PoisonCR);
-                LoadKeyData("Rogue", "PoisonFR", parsedData, ref Rogue_PoisonFR);
+                LoadKeyData("Rogue", "Auto-Hide (On/Off)", _parsedData, ref Rogue_AutoHide);
+                LoadKeyData("Rogue", "Auto-Evade (On/Off)", _parsedData, ref Rogue_AutoEvade);
+                LoadKeyData("Rogue", "Evade PctAggro", _parsedData, ref Rogue_EvadePct);
+                LoadKeyData("Rogue", "Sneak Attack Discipline", _parsedData, ref Rogue_SneakAttack);
+                LoadKeyData("Rogue", "PoisonPR", _parsedData, ref Rogue_PoisonPR);
+                LoadKeyData("Rogue", "PoisonCR", _parsedData, ref Rogue_PoisonCR);
+                LoadKeyData("Rogue", "PoisonFR", _parsedData, ref Rogue_PoisonFR);
 
 
             }
 
-            LoadKeyData("Buffs", "Instant Buff", parsedData, InstantBuffs);
-            LoadKeyData("Buffs", "Self Buff", parsedData, SelfBuffs);
+            LoadKeyData("Buffs", "Instant Buff", _parsedData, InstantBuffs);
+            LoadKeyData("Buffs", "Self Buff", _parsedData, SelfBuffs);
             //set target on self buffs
             foreach(var buff in SelfBuffs)
             {
                 buff.CastTarget = _characterName;
             }
 
-            LoadKeyData("Buffs", "Bot Buff", parsedData, BotBuffs);
+            LoadKeyData("Buffs", "Bot Buff", _parsedData, BotBuffs);
             
            
-            LoadKeyData("Buffs", "Combat Buff", parsedData, CombatBuffs);
-            LoadKeyData("Buffs", "Group Buff", parsedData, GroupBuffs);
-            LoadKeyData("Buffs", "Pet Buff", parsedData, PetBuffs);
+            LoadKeyData("Buffs", "Combat Buff", _parsedData, CombatBuffs);
+            LoadKeyData("Buffs", "Group Buff", _parsedData, GroupBuffs);
+            LoadKeyData("Buffs", "Pet Buff", _parsedData, PetBuffs);
 
 
-            LoadKeyData("Melee Abilities", "Ability", parsedData, MeleeAbilities);
+            LoadKeyData("Melee Abilities", "Ability", _parsedData, MeleeAbilities);
 
 
-            LoadKeyData("Nukes", "Main", parsedData, Nukes);
-            LoadKeyData("TargetAE", "TargetAE", parsedData, PBAE);
-            LoadKeyData("PBAE", "PBAE", parsedData, PBAE);
+            LoadKeyData("Nukes", "Main", _parsedData, Nukes);
+            LoadKeyData("TargetAE", "TargetAE", _parsedData, PBAE);
+            LoadKeyData("PBAE", "PBAE", _parsedData, PBAE);
 
-            LoadKeyData("Life Support", "Life Support", parsedData, LifeSupport);
+            LoadKeyData("Life Support", "Life Support", _parsedData, LifeSupport);
 
-            LoadKeyData("DoTs on Assist", "Main", parsedData, Dots_Assist);
-            LoadKeyData("DoTs on Command", "Main", parsedData, Dots_OnCommand);
+            LoadKeyData("DoTs on Assist", "Main", _parsedData, Dots_Assist);
+            LoadKeyData("DoTs on Command", "Main", _parsedData, Dots_OnCommand);
 
-            LoadKeyData("Debuffs", "Debuff on Assist", parsedData, Debuffs_OnAssist);
-            LoadKeyData("Debuffs", "Debuff on Command", parsedData, Debuffs_Command);
+            LoadKeyData("Debuffs", "Debuff on Assist", _parsedData, Debuffs_OnAssist);
+            LoadKeyData("Debuffs", "Debuff on Command", _parsedData, Debuffs_Command);
 
       
 
-            LoadKeyData("Burn", "Quick Burn", parsedData, QuickBurns);
-            LoadKeyData("Burn", "Long Burn", parsedData, LongBurns);
-            LoadKeyData("Burn", "Full Burn", parsedData, FullBurns);
+            LoadKeyData("Burn", "Quick Burn", _parsedData, QuickBurns);
+            LoadKeyData("Burn", "Long Burn", _parsedData, LongBurns);
+            LoadKeyData("Burn", "Full Burn", _parsedData, FullBurns);
 
 
-            LoadKeyData("Pet", "Pet Spell", parsedData, PetSpell);
-            LoadKeyData("Pet", "Pet Buff", parsedData, PetBuffs);
-            LoadKeyData("Pet", "Pet Heal", parsedData, PetBuffs);
-            LoadKeyData("Pet", "Pet Mend (Pct)", parsedData, ref Pet_MendPercent);
-            LoadKeyData("Pet", "Pet Taunt (On/Off)", parsedData, ref Pet_TauntEnabled);
-            LoadKeyData("Pet", "Pet Auto-Shrink (On/Off)", parsedData, ref Pet_AutoShrink);
-            LoadKeyData("Pet", "Pet Summon Combat (On/Off)", parsedData, ref Pet_SummonCombat);
-            LoadKeyData("Pet", "Pet Buff Combat (On/Off)", parsedData, ref Pet_BuffCombat);
+            LoadKeyData("Pet", "Pet Spell", _parsedData, PetSpell);
+            LoadKeyData("Pet", "Pet Buff", _parsedData, PetBuffs);
+            LoadKeyData("Pet", "Pet Heal", _parsedData, PetBuffs);
+            LoadKeyData("Pet", "Pet Mend (Pct)", _parsedData, ref Pet_MendPercent);
+            LoadKeyData("Pet", "Pet Taunt (On/Off)", _parsedData, ref Pet_TauntEnabled);
+            LoadKeyData("Pet", "Pet Auto-Shrink (On/Off)", _parsedData, ref Pet_AutoShrink);
+            LoadKeyData("Pet", "Pet Summon Combat (On/Off)", _parsedData, ref Pet_SummonCombat);
+            LoadKeyData("Pet", "Pet Buff Combat (On/Off)", _parsedData, ref Pet_BuffCombat);
 
 
-            LoadKeyData("Cures", "Cure", parsedData, Cures);
-            LoadKeyData("Cures", "CureAll", parsedData, CureAll);
-            LoadKeyData("Cures", "RadiantCure", parsedData, RadiantCure);
+            LoadKeyData("Cures", "Cure", _parsedData, Cures);
+            LoadKeyData("Cures", "CureAll", _parsedData, CureAll);
+            LoadKeyData("Cures", "RadiantCure", _parsedData, RadiantCure);
 
 
            
 
-            LoadKeyData("Heals", "Tank Heal", parsedData, HealTanks);
-            LoadKeyData("Heals", "Important Heal", parsedData, HealImportantBots);
-            LoadKeyData("Heals", "All Heal", parsedData, HealAll);
-            LoadKeyData("Heals", "XTarget Heal", parsedData, HealXTarget);
-            LoadKeyData("Heals", "Heal Over Time Spell", parsedData, HealOverTime);
-            LoadKeyData("Heals", "Group Heal", parsedData, HealGroup);
+            LoadKeyData("Heals", "Tank Heal", _parsedData, HealTanks);
+            LoadKeyData("Heals", "Important Heal", _parsedData, HealImportantBots);
+            LoadKeyData("Heals", "All Heal", _parsedData, HealAll);
+            LoadKeyData("Heals", "XTarget Heal", _parsedData, HealXTarget);
+            LoadKeyData("Heals", "Heal Over Time Spell", _parsedData, HealOverTime);
+            LoadKeyData("Heals", "Group Heal", _parsedData, HealGroup);
 
-            LoadKeyData("Heals", "Tank", parsedData, HealTankTargets);
-            LoadKeyData("Heals", "Important Bot", parsedData, HealImportantBotTargets);
+            LoadKeyData("Heals", "Tank", _parsedData, HealTankTargets);
+            LoadKeyData("Heals", "Important Bot", _parsedData, HealImportantBotTargets);
           
-            LoadKeyData("Heals", "Pet Heal", parsedData, PetHeals);
+            LoadKeyData("Heals", "Pet Heal", _parsedData, PetHeals);
 
             //parse out the Tanks/XTargets/etc into collections via the Set method on the
             //property set method
-            WhoToHealString = LoadKeyData("Heals", "Who to Heal", parsedData);
-            WhoToHoTString = LoadKeyData("Heals", "Who to HoT", parsedData);
-            LoadKeyData("Heals", "Pet Owner", parsedData, HealPetOwners);
-            LoadKeyData("Heals", "Auto Cast Necro Heal Orbs (On/Off)", parsedData, ref HealAutoNecroOrbs);
-            LoadKeyData("Off Assist Spells", "Main", parsedData, OffAssistSpells);
+            WhoToHealString = LoadKeyData("Heals", "Who to Heal", _parsedData);
+            WhoToHoTString = LoadKeyData("Heals", "Who to HoT", _parsedData);
+            LoadKeyData("Heals", "Pet Owner", _parsedData, HealPetOwners);
+            LoadKeyData("Heals", "Auto Cast Necro Heal Orbs (On/Off)", _parsedData, ref HealAutoNecroOrbs);
+            LoadKeyData("Off Assist Spells", "Main", _parsedData, OffAssistSpells);
 
             _log.Write($"Finished processing and loading: {fullPathToUse}");
 
@@ -380,11 +380,11 @@ namespace E3Core.Settings
                 fileIniData.Parser.Configuration.AllowDuplicateKeys = true;
                 fileIniData.Parser.Configuration.OverrideDuplicateKeys = true;// so that the other ones will be put into a collection
                 fileIniData.Parser.Configuration.AssigmentSpacer = "";
-                IniData parsedData = fileIniData.ReadFile(fullFileToUse);
+                IniData tParsedData = fileIniData.ReadFile(fullFileToUse);
 
                 //overwrite newfile with what was already there
                 _log.Write($"Merging new setting options for file: {fullFileToUse}");
-                newFile.Merge(parsedData);
+                newFile.Merge(tParsedData);
                 //save it it out now
                 System.IO.File.Delete(fullFileToUse);
                 parser.WriteFile(fullFileToUse, newFile);

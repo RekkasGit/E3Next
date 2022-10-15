@@ -14,12 +14,30 @@ namespace E3Core.Settings
     public class AdvSettingInvokeAttribute : Attribute
     {
     }
+    public class ClassInvokeAttribute : Attribute
+    {
+        private Data.Class _currentClass;
+
+        public Data.Class CurrentClass
+        {
+            get { return _currentClass; }
+            set { _currentClass = value; }
+        }
+
+
+        public ClassInvokeAttribute(Data.Class classType)
+        {
+            _currentClass = classType;
+        }
+
+    }
     public class AdvancedSettings : BaseSettings, IBaseSettings
     {
 
         //  public static Dictionary<string, Action> _methodLookup = new Dictionary<string, Action>(StringComparer.OrdinalIgnoreCase);
 
         public static Dictionary<string, Action> _methodLookup = new Dictionary<string, Action>(StringComparer.OrdinalIgnoreCase);
+        public static Dictionary<string,Action> _classMethodLookup = new Dictionary<string, Action>(StringComparer.OrdinalIgnoreCase);
         public static Dictionary<string, List<string>> _classMethodsAsStrings = new Dictionary<string, List<string>>(StringComparer.OrdinalIgnoreCase);
 
         public AdvancedSettings()
@@ -102,7 +120,22 @@ namespace E3Core.Settings
                 _methodLookup.Add(foundMethod.Name, func);
                 
             }
+            methods = AppDomain.CurrentDomain.GetAssemblies()
+           .SelectMany(x => x.GetTypes())
+           .Where(x => x.IsClass)
+           .SelectMany(x => x.GetMethods())
+           .Where(x => x.GetCustomAttributes(typeof(ClassInvokeAttribute),false).FirstOrDefault() != null); // returns only methods that have the InvokeAttribute
 
+            foreach (var foundMethod in methods) // iterate through all found methods
+            {
+                //if the attribute class is the same as our current class.
+                if(((ClassInvokeAttribute)foundMethod.GetCustomAttribute(typeof(ClassInvokeAttribute),false)).CurrentClass==E3._currentClass)
+                { 
+                    //these are static don't need to create an instance
+                    var func = (Action)foundMethod.CreateDelegate(typeof(Action));
+                    _classMethodLookup.Add(foundMethod.Name, func);
+                }
+            }
         }
         public  IniData CreateOrUpdateSettings()
         {

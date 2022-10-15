@@ -1,14 +1,87 @@
-﻿using System;
+﻿using E3Core.Processors;
+using E3Core.Settings;
+using System;
+using E3Core.Classes;
+using E3Core.Data;
+using E3Core.Utility;
+using MonoCore;
 using System.Collections.Generic;
+using System.Dynamic;
 using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
 
 namespace E3Core.Classes
 {
     public static class Bard
     {
 
+        public static Logging _log = E3._log;
+        private static IMQ MQ = E3.MQ;
+        private static ISpawns _spawns = E3._spawns;
+        private static Queue<Data.Spell> _songs = new Queue<Spell>();
+        private static bool _isInit = false;
+        private static bool _playingMelody = false;
+
+        [ClassInvoke(Data.Class.Bard)]
+        public static void Init()
+        {
+            if (_isInit) return;
+            RegisterEvents();
+            _isInit = true;
+
+        }
+
+        private static void RegisterEvents()
+        {
+
+            EventProcessor.RegisterCommand("/playmelody", (x) =>
+            {
+                if(x.args.Count>0)
+                {
+                    if (x.args[0].Equals("stop", StringComparison.OrdinalIgnoreCase))
+                    {
+                        _playingMelody = false;
+                        MQ.Cmd("/interrupt");
+                    }
+                    else
+                    {
+                        StartMelody(x.args[0]);
+                    }
+                }
+            });
+        }
+
+        [ClassInvoke(Data.Class.Bard)]
+        public static void check_BardSongs()
+        {
+            if (!_playingMelody || _songs.Count==0) return;
+
+            bool stunned = MQ.Query<bool>("${Me.Stunned}");
+            bool windowOpen = MQ.Query<bool>("${Window[BigBankWnd].Open}") || MQ.Query<bool>("${Window[MerchantWnd].Open}") || MQ.Query<bool>("${Window[TradeWnd].Open}") || MQ.Query<bool>("${Window[GuildBankWnd].Open}");
+            if (E3._isInvis || windowOpen)
+            {
+                return;
+            }
+            if(MQ.Query<bool>("${Window[CastingWindow].Open}") && (MQ.Query<Int32>("${Cast.Timing}")>500))
+            {
+                return;
+            }
+            //lets play a song!
+            Data.Spell songToPlay= _songs.Dequeue();
+            MQ.Write($"\atTwisting-\ag{songToPlay.SpellName}");
+            Casting.Sing(0, songToPlay);
+        }
+
+        public static void StartMelody(string melodyName)
+        {
+
+            _songs.Clear();
+            //lets find the melody in the character ini.
+            CharacterSettings.LoadKeyData($"{melodyName} Melody", "Song", CharacterSettings._parsedData, _songs);
+            if(_songs.Count>0)
+            {
+                _playingMelody = true;
+            }
+        }
 
     }
 }
