@@ -19,7 +19,11 @@ namespace E3Core.Classes
         private static ISpawns _spawns = E3._spawns;
         private static Queue<Data.Spell> _songs = new Queue<Spell>();
         private static bool _isInit = false;
-        private static bool _playingMelody = false;
+        private static bool _playingMelody = true;
+        private static string _currentMelody = String.Empty;
+        private static Int64 _nextMelodyIfCheck = 0;
+        private static Int64 _nextMelodyIfRefreshTimeInterval = 1000;
+        private static bool _forceOverride = false;
 
         [ClassInvoke(Data.Class.Bard)]
         public static void Init()
@@ -44,10 +48,41 @@ namespace E3Core.Classes
                     }
                     else
                     {
-                        StartMelody(x.args[0]);
+                        if(x.args.Count>1 && x.args[1].Equals("force", StringComparison.OrdinalIgnoreCase))
+                        {
+                            StartMelody(x.args[0],true);
+                        }
+                        else
+                        {
+                            StartMelody(x.args[0]);
+
+                        }
                     }
                 }
             });
+        }
+        [ClassInvoke(Data.Class.Bard)]
+        public static void checkMelodyIf()
+        {
+            if (!e3util.ShouldCheck(ref _nextMelodyIfCheck, _nextMelodyIfRefreshTimeInterval)) return;
+
+            if (!_isInit) return;
+            if (!_playingMelody || _forceOverride) return;
+
+            //go through the ifs and see if we should change the melodies
+            foreach(var melodyCheck in E3._characterSettings.Bard_MelodyIfs)
+            {
+                bool melodyTrue = MQ.Query<bool>($"${{If[{melodyCheck.MelodyIf},TRUE,FALSE]}}");
+                if(melodyTrue)
+                {
+                    if(!_currentMelody.Equals(melodyCheck.MelodyName, StringComparison.OrdinalIgnoreCase))
+                    {
+                        StartMelody(melodyCheck.MelodyName);
+                        
+                    }
+                    return;
+                }
+            }
         }
 
         [ClassInvoke(Data.Class.Bard)]
@@ -79,15 +114,18 @@ namespace E3Core.Classes
             }
         }
 
-        public static void StartMelody(string melodyName)
+        public static void StartMelody(string melodyName, bool force=false)
         {
-
-            _songs.Clear();
+             _songs.Clear();
             //lets find the melody in the character ini.
             CharacterSettings.LoadKeyData($"{melodyName} Melody", "Song", CharacterSettings._parsedData, _songs);
             if(_songs.Count>0)
             {
+                MQ.Write($"\aoStart Melody:\ag{melodyName}");
+
+                _forceOverride = force;
                 _playingMelody = true;
+                _currentMelody = melodyName;
             }
         }
 

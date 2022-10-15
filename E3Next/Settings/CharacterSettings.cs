@@ -1,4 +1,5 @@
-﻿using E3Core.Processors;
+﻿using E3Core.Data;
+using E3Core.Processors;
 using IniParser;
 using IniParser.Model;
 using System;
@@ -105,6 +106,12 @@ namespace E3Core.Settings
                 LoadKeyData("Rogue", "PoisonCR", _parsedData, ref Rogue_PoisonCR);
                 LoadKeyData("Rogue", "PoisonFR", _parsedData, ref Rogue_PoisonFR);
 
+
+            }
+
+            if (_characterClass == Data.Class.Bard)
+            {
+                LoadKeyData("Bard", "MelodyIf", _parsedData, Bard_MelodyIfs);
 
             }
 
@@ -292,6 +299,13 @@ namespace E3Core.Settings
                 section.Keys.AddKey("PoisonCR", "");
             }
 
+            if (_characterClass == Data.Class.Bard)
+            {
+                newFile.Sections.AddSection("Bard");
+                section = newFile.Sections.GetSectionData("Bard");
+                section.Keys.AddKey("MelodyIf", "");
+            }
+
             if ((_characterClass & Data.Class.PetClass) == _characterClass)
             {
                 newFile.Sections.AddSection("Pets");
@@ -414,6 +428,8 @@ namespace E3Core.Settings
         public string Rogue_PoisonFR = String.Empty;
         public string Rogue_PoisonCR = String.Empty;
         public string Rogue_SneakAttack = String.Empty;
+
+        public List<MelodyIfs> Bard_MelodyIfs = new List<MelodyIfs>();
 
         public string Assist_Type = string.Empty;
         public string Assist_MeleeStickPoint = String.Empty;

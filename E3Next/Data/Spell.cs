@@ -235,7 +235,7 @@ namespace E3Core.Data
             }
          
         }
-        T GetArgument<T>(string query)
+        public static T GetArgument<T>(string query)
         {
             Int32 indexOfPipe = query.IndexOf('|')+1;
             string input = query.Substring(indexOfPipe, query.Length - indexOfPipe);

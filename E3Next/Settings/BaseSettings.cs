@@ -264,6 +264,26 @@ namespace E3Core.Settings
                 }
             }
         }
+        public static void LoadKeyData(string sectionKey, string Key, IniData parsedData, List<Data.MelodyIfs> collectionToAddTo)
+        {
+            _log.Write($"{sectionKey} {Key}");
+            var section = parsedData.Sections[sectionKey];
+            if (section != null)
+            {
+                var keyData = section.GetKeyData(Key);
+                if (keyData != null)
+                {
+                    foreach (var data in keyData.ValueList)
+                    {
+                        if (!String.IsNullOrWhiteSpace(data))
+                        {
+                            collectionToAddTo.Add(new Data.MelodyIfs(data, parsedData));
+                        }
+
+                    }
+                }
+            }
+        }
         public static void LoadKeyData(string sectionKey, string Key, IniData parsedData, out Data.Spell spellToLoad)
         {
             _log.Write($"{sectionKey} {Key}");
