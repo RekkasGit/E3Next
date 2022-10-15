@@ -73,10 +73,12 @@ namespace E3Core.Processors
 
                     if (targetID < 1)
                     {
-                        MQ.Write($"Invalid targetId for Casting. {targetID}");
-                        E3._actionTaken = true;
-                        return CastReturn.CAST_NOTARGET;
-
+                         if (!(spell.TargetType == "Self" || spell.TargetType == "Group v1"))
+                         {
+                            MQ.Write($"Invalid targetId for Casting. {targetID}");
+                            E3._actionTaken = true;
+                            return CastReturn.CAST_NOTARGET;
+                        }
                     }
 
                     Spawn s;

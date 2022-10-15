@@ -120,7 +120,7 @@ namespace E3Core.Processors
                 _buffListCollectionTimeStamps.Add(name, 0);
             }
 
-            if (!e3util.ShouldCheck(ref _nextBuffCheck, _nextBuffRefreshTimeInterval) && alreadyExisted) return buffList;
+            if (!e3util.ShouldCheck(ref _nextBuffCheck, _nextBuffRefreshTimeInterval) && alreadyExisted) return _buffListCollection[name];
 
             //refresh all lists of all people
 

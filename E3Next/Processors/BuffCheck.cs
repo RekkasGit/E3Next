@@ -239,7 +239,16 @@ namespace E3Core.Processors
                             bool willStack = MQ.Query<bool>($"${{Spell[{spell.SpellName}].WillLand}}");
                             if (willStack && Casting.CheckReady(spell) && Casting.CheckMana(spell))
                             {
-                                var result = Casting.Cast(s.ID, spell, Heals.SomeoneNeedsHealing);
+                                CastReturn result;
+                                if (spell.TargetType == "Self" || spell.TargetType == "Group v1")
+                                {
+                                    result = Casting.Cast(0, spell, Heals.SomeoneNeedsHealing);
+                                }
+                                else
+                                {
+                                    result = Casting.Cast(s.ID, spell, Heals.SomeoneNeedsHealing);
+                                }
+                              
                                 if (result != CastReturn.CAST_SUCCESS)
                                 {
                                     //possibly some kind of issue/blocking. set a 120 sec timer to try and recast later.

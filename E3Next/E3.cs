@@ -62,11 +62,7 @@ namespace E3Core.Processors
                 WaitForRez.Process();
 
 
-                //lets do our class methods first
-                foreach (var kvp in AdvancedSettings._classMethodLookup)
-                {
-                    kvp.Value.Invoke();
-                }
+               
                 //now do the dynamic methods from Advanced ini. 
                 //rembmer check_heals is auto inserted, should probably just pull out here
                 List<string> _methodsToInvokeAsStrings;
@@ -88,6 +84,11 @@ namespace E3Core.Processors
                         //check backoff
                         EventProcessor.ProcessEventsInQueues();
                     }
+                }
+                //lets do our class methods, this is last because of bards
+                foreach (var kvp in AdvancedSettings._classMethodLookup)
+                {
+                    kvp.Value.Invoke();
                 }
             }
             Loot.Process();
