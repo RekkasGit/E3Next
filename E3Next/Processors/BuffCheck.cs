@@ -116,8 +116,17 @@ namespace E3Core.Processors
                     bool willStack = MQ.Query<bool>($"${{Spell[{spell.SpellName}].WillLand}}");
                     if (willStack && Casting.CheckReady(spell) && Casting.CheckMana(spell))
                     {
-                        Casting.Cast(id, spell);
-                       
+                        if(spell.TargetType=="Self" || spell.TargetType== "Group v1")
+                        {
+                            Casting.Cast(0, spell);
+
+                        }
+                        else
+                        {
+                            Casting.Cast(id, spell);
+
+                        }
+
                     }
                 }
             }

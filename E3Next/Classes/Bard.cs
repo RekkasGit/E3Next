@@ -67,8 +67,16 @@ namespace E3Core.Classes
             }
             //lets play a song!
             Data.Spell songToPlay= _songs.Dequeue();
-            MQ.Write($"\atTwisting-\ag{songToPlay.SpellName}");
-            Casting.Sing(0, songToPlay);
+            _songs.Enqueue(songToPlay);
+            if(Casting.CheckReady(songToPlay))
+            {
+                MQ.Write($"\atTwist \ag{songToPlay.SpellName}");
+                Casting.Sing(0, songToPlay);
+            }
+            else
+            {
+                MQ.Write($"\arTwists-Skip \ag{songToPlay.SpellName}");
+            }
         }
 
         public static void StartMelody(string melodyName)

@@ -131,7 +131,7 @@ namespace E3Core.Processors
                 if (x.args.Count == 0)
                 {
                     //we are telling people to back off
-                    E3._bots.BroadcastCommandToOthers($"/debuffsoff all");
+                    E3._bots.BroadcastCommandToGroup($"/debuffsoff all");
                 }
 
             });
@@ -141,7 +141,7 @@ namespace E3Core.Processors
                 if (x.args.Count == 0)
                 {
                     //we are telling people to back off
-                    E3._bots.BroadcastCommandToOthers($"/dotsoff all");
+                    E3._bots.BroadcastCommandToGroup($"/dotsoff all");
                 }
 
             });

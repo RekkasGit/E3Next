@@ -291,7 +291,7 @@ namespace E3Core.Processors
                     {
                         importantItem = true;
                         LootDataFile._keep.Add(corpseItem);
-                        E3._bots.BroadcastCommandToOthers($"/E3LootAdd \"{corpseItem}\" KEEP");
+                        E3._bots.BroadcastCommandToGroup($"/E3LootAdd \"{corpseItem}\" KEEP");
                         LootDataFile.SaveData();
                     }
 

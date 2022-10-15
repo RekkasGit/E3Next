@@ -14,7 +14,7 @@ namespace E3Core.Processors
         Int32 PctHealth(string name);
         List<string> BotsConnected();
         Boolean HasShortBuff(string name, Int64 buffid);
-        void BroadcastCommandToOthers(string command);
+        void BroadcastCommandToGroup(string command);
         void BroadcastCommandToPerson(string person, string command);
         void Broadcast(string message);
         List<Int32> BuffList(string name);
@@ -36,7 +36,7 @@ namespace E3Core.Processors
         private static Dictionary<string, Int64> _buffListCollectionTimeStamps = new Dictionary<string, long>();
         private static Int64 _nextBuffCheck = 0;
         private static Int64 _nextBuffRefreshTimeInterval = 1000;
-        public void BroadcastCommandToOthers(string query)
+        public void BroadcastCommandToGroup(string query)
         {
             MQ.Cmd($"/bcg /{query}");
         }
@@ -206,7 +206,7 @@ namespace E3Core.Processors
             throw new NotImplementedException();
         }
 
-        public void BroadcastCommandToOthers(string query)
+        public void BroadcastCommandToGroup(string query)
         {
             throw new NotImplementedException();
         }

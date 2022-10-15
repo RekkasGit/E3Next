@@ -155,7 +155,7 @@ namespace E3Core.Utility
                     if (targetID > 0)
                     {
                         //we are telling people to follow us
-                        E3._bots.BroadcastCommandToOthers($"{command} {targetID}");
+                        E3._bots.BroadcastCommandToGroup($"{command} {targetID}");
                         FunctionToExecute(targetID);
                     }
                     else
@@ -176,7 +176,7 @@ namespace E3Core.Utility
                 if (x.args.Count == 0)
                 {
                     Int32 targetID = MQ.Query<Int32>("${Target.ID}");
-                    E3._bots.BroadcastCommandToOthers($"{command} {targetID}");
+                    E3._bots.BroadcastCommandToGroup($"{command} {targetID}");
 
                 }
                 else

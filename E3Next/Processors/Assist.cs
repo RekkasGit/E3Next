@@ -520,7 +520,7 @@ namespace E3Core.Processors
                 AssistOff();
                 if (x.args.Count == 0)
                 {     //we are telling people to back off
-                    E3._bots.BroadcastCommandToOthers($"/backoff all");
+                    E3._bots.BroadcastCommandToGroup($"/backoff all");
                 }
             });
             e3util.RegisterCommandWithTarget("/e3offassistignore", (x)=> { _offAssistIgnore.Add(x); });

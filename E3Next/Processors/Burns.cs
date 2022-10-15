@@ -121,7 +121,7 @@ namespace E3Core.Processors
                 if (targetID > 0)
                 {
                     //we are telling people to follow us
-                    E3._bots.BroadcastCommandToOthers($"{command} {targetID}");
+                    E3._bots.BroadcastCommandToGroup($"{command} {targetID}");
                     burnType = true;
                 }
                 else

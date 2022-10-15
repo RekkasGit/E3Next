@@ -175,7 +175,7 @@ namespace E3Core.Processors
             {
                 if (x.args.Count > 0)
                 {
-                    E3._bots.BroadcastCommandToOthers($"/WaitRez {x.args[0]}");
+                    E3._bots.BroadcastCommandToGroup($"/WaitRez {x.args[0]}");
                 }
             });
         }

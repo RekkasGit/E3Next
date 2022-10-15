@@ -36,7 +36,7 @@ namespace E3Core.Processors
                 if (x.args.Count == 0)
                 {
                     //we are telling people to follow us
-                    E3._bots.BroadcastCommandToOthers("/followoff all");
+                    E3._bots.BroadcastCommandToGroup("/followoff all");
                 }
             });
 
@@ -67,7 +67,7 @@ namespace E3Core.Processors
                 else
                 {
                     //we are telling people to follow us
-                    E3._bots.BroadcastCommandToOthers("/followme " + E3._characterSettings._characterName);
+                    E3._bots.BroadcastCommandToGroup("/followme " + E3._characterSettings._characterName);
                 }
             });
            

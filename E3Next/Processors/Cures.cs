@@ -131,10 +131,10 @@ namespace E3Core.Processors
             EventProcessor.ProcessEventsInQueues("/CastingRadiantCure");
             if(_shouldCastCure)
             {
-                E3._bots.BroadcastCommandToOthers("/CastingRadiantCure FALSE");
+                E3._bots.BroadcastCommandToGroup("/CastingRadiantCure FALSE");
                 //did we find enough sick people? if so, cast cure.
                 Casting.Cast(0, _RaidentCure);
-                E3._bots.BroadcastCommandToOthers("/CastingRadiantCure TRUE");
+                E3._bots.BroadcastCommandToGroup("/CastingRadiantCure TRUE");
             }
         }
     }

@@ -29,16 +29,28 @@ namespace E3Core.Processors
             try
             {
                 //bard can cast insta cast items while singing, they be special.
-                if (E3._currentClass == Class.Bard && spell.MyCastTime <= 500)
+                if (E3._currentClass == Class.Bard && spell.MyCastTime <= 500 && spell.CastType==CastType.Item)
                 {
-                    //instant cast spell, can cast while singing
+                    //instant cast item, can cast while singing
+                }
+                else if(E3._currentClass == Class.Bard && spell.CastType== CastType.Spell)
+                {
+                    Sing(targetID, spell);
+                    MQ.Delay((int)spell.MyCastTime);
+                    return CastReturn.CAST_SUCCESS;
                 }
                 else
                 {
                     //block on waiting for the spell window to close
                     while (MQ.Query<bool>("${Window[CastingWindow].Open}"))
                     {
-                        MQ.Delay(100);
+                        EventProcessor.ProcessEventsInQueues("/backoff");
+                        EventProcessor.ProcessEventsInQueues("/followme");
+                        if (Assist._assistTargetID == 0)
+                        {
+                            return CastReturn.CAST_INTERRUPTED;
+                        }
+                        MQ.Delay(50);
                     }
                 }
 
@@ -284,12 +296,6 @@ namespace E3Core.Processors
 
                             //TODO: SWAP ITEM
 
-                            if (spell.CastType == Data.CastType.Item)
-                            {
-
-                                //TODO: Recast logic
-
-                            }
                             if (spell.MyCastTime > 300)
                             {
 
@@ -300,8 +306,6 @@ namespace E3Core.Processors
                                 MQ.Delay(300, "${Bool[!${Me.Moving}]}");
 
                             }
-
-
 
                             _log.Write("Doing Spell:TargetType based logic checks...");
                             if (spell.TargetType.Equals("Self"))
@@ -514,32 +518,54 @@ namespace E3Core.Processors
             if (E3._currentClass != Data.Class.Bard) return;
             //Stop following for spell/item/aa with a cast time > 0 MyCastTime, unless im a bard
             //anything under 300 is insta cast
-            
 
-            if (E3._currentClass == Data.Class.Bard && MQ.Query<bool>($"${{Bool[${{Me.Book[{spell.CastName}]}}]}}"))
-            {  
-                MQ.Cmd($"/cast \"{spell.CastName}\"");
-                MQ.Delay(500, "${Window[CastingWindow].Open}");
-                if (!MQ.Query<bool>("${Window[CastingWindow].Open}"))
+            if(targetid>0)
+            {
+                TrueTarget(targetid);
+            }
+
+            if (spell.CastType == CastType.Spell)
+            {
+                if (MQ.Query<bool>($"${{Bool[${{Me.Book[{spell.CastName}]}}]}}"))
                 {
-                    MQ.Write("Issuing stopcast as cast window isn't open");
-                    MQ.Cmd("/stopcast");
-                    MQ.Delay(100);
+                    MQ.Cmd("/stopsong");
+                    MQ.Delay(10);
                     MQ.Cmd($"/cast \"{spell.CastName}\"");
-                    //wait for spell cast window
-                    if (spell.MyCastTime > 500)
+                    MQ.Delay(500, "${Window[CastingWindow].Open}");
+                    if (!MQ.Query<bool>("${Window[CastingWindow].Open}"))
                     {
-                        MQ.Delay(1000);
-
+                        MQ.Write("Issuing stopcast as cast window isn't open");
+                        MQ.Cmd("/stopsong");
+                        MQ.Delay(100);
+                        MQ.Cmd($"/cast \"{spell.CastName}\"");
+                        //wait for spell cast window
+                        if (spell.MyCastTime > 500)
+                        {
+                            MQ.Delay(1000);
+                        }
                     }
+                }
+            }
+            else if(spell.CastType == CastType.Item)
+            {   if(spell.MyCastTime>500)
+                {
+                    MQ.Cmd("/stopsong");
+                    MQ.Delay(100);
 
                 }
-
-                E3._actionTaken = true;
-
+                MQ.Cmd($"/useitem \"{spell.CastName}\"");
+                MQ.Delay(300);
             }
-            
-
+            else if (spell.CastType == CastType.AA)
+            {
+                if (spell.MyCastTime > 500)
+                {
+                    MQ.Cmd("/stopsong");
+                    MQ.Delay(100);
+                }
+                MQ.Cmd($"/casting \"{spell.CastName}\" alt");
+                MQ.Delay(300);
+            }
 
         }
         private static bool MemorizeSpell(Data.Spell spell)
@@ -576,7 +602,7 @@ namespace E3Core.Processors
             }
             MQ.Write($"\aySpell not memed, meming \ag{spell.SpellName} \ayin \awGEM:{spell.SpellGem}");
             MQ.Cmd($"/memorize \"{spell.SpellName}\" {spell.SpellGem}");
-            MQ.Delay(1000);
+            MQ.Delay(2000);
             MQ.Delay(5000, "!${Window[SpellBookWnd].Open}");
             MQ.Delay(1000);
             //make double sure the collectio has this spell gem. maybe purchased AA for new slots?

@@ -765,18 +765,18 @@ namespace MonoCore
             //copy the data out into the current array set. 
         }
 
-        public static void OnUpdateImGui()
-        {
+        //public static void OnUpdateImGui()
+        //{
 
-            if (imgui_Begin_OpenFlagGet("e3TestWindow"))
-            {
-                imgui_Begin("e3TestWindow", (int)ImGuiWindowFlags.ImGuiWindowFlags_None);
-                imgui_Button("Test button");
-                imgui_End();
-            }
+        //    if (imgui_Begin_OpenFlagGet("e3TestWindow"))
+        //    {
+        //        imgui_Begin("e3TestWindow", (int)ImGuiWindowFlags.ImGuiWindowFlags_None);
+        //        imgui_Button("Test button");
+        //        imgui_End();
+        //    }
 
 
-        }
+        //}
 
         #region MQMethods
         [MethodImpl(MethodImplOptions.InternalCall)]
