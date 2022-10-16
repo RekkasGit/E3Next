@@ -23,7 +23,7 @@ namespace E3Core.Utility
         /// <param name="nextCheckInterval">The interval in milliseconds</param>
         /// <returns></returns>
         public static bool ShouldCheck(ref Int64 nextCheck, Int64 nextCheckInterval)
-        {
+        {  
             if (Core._stopWatch.ElapsedMilliseconds < nextCheck)
             {
                 return false;

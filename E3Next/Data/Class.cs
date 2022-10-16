@@ -31,7 +31,7 @@ namespace E3Core.Data
         Melee = Beastlord | Berserker | Bard | Rogue | Ranger | Monk,
         PureMelee=Warrior|Rogue|Berserker,
         All = Tank | Priest | Caster | Melee,
-        PetClass=Shadowknight|Druid|Necromancer|Mage|Enchanter|Beastlord,
+        PetClass=Shadowknight|Druid|Necromancer|Mage|Enchanter|Beastlord|Shaman,
         HealHybrid= Paladin|Ranger|Beastlord,
         FeignDeathClass = Necromancer|Shadowknight|Monk
     }

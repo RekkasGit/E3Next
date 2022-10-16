@@ -129,7 +129,8 @@ namespace E3Core.Settings
             foreach (var foundMethod in methods) // iterate through all found methods
             {
                 //if the attribute class is the same as our current class.
-                if(((ClassInvokeAttribute)foundMethod.GetCustomAttribute(typeof(ClassInvokeAttribute),false)).CurrentClass==E3._currentClass)
+                Data.Class configClass = ((ClassInvokeAttribute)foundMethod.GetCustomAttribute(typeof(ClassInvokeAttribute), false)).CurrentClass;
+                if ((E3._currentClass &configClass) == E3._currentClass)
                 { 
                     //these are static don't need to create an instance
                     var func = (Action)foundMethod.CreateDelegate(typeof(Action));

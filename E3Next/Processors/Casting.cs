@@ -742,7 +742,8 @@ namespace E3Core.Processors
                 }
                 _log.Write($"Checking if spell are on cooldown for {spell.CastName}");
 
-                if (MQ.Query<bool>("${Me.SpellInCooldown}") && MQ.Query<bool>($"${{Bool[${{Me.Gem[{spell.CastName}]}}]}}"))
+                //if (MQ.Query<bool>("${Me.SpellInCooldown}") && MQ.Query<bool>($"${{Bool[${{Me.Gem[{spell.CastName}]}}]}}"))
+                if(InGlobalCooldown())
                 {
                     _log.Write("Spells in cooldown, redoing check.");
                     MQ.Delay(20);

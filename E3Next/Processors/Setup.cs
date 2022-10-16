@@ -60,6 +60,7 @@ namespace E3Core.Processors
             WaitForRez.Init();
             Sell.Init();
             NowCast.Init();
+            Pets.Init();
         }
         private static void LoadOrCreateCharacterSettings()
         {

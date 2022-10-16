@@ -61,6 +61,9 @@ namespace E3Core.Processors
                     Heals.Check_Heals();
                     if (_actionTaken) return;
                 }
+
+
+
                 Assist.Process();
                 WaitForRez.Process();
 
@@ -109,20 +112,8 @@ namespace E3Core.Processors
 
             if(!_isInit)
             {
-                //System.Diagnostics.Process p = System.Diagnostics.Process.GetCurrentProcess();
-                //MQ.Write("*** Processor count:" + Environment.ProcessorCount);
-                //MQ.Write("****Processor affinity:" + p.ProcessorAffinity);
-                //p.ProcessorAffinity = (IntPtr)(255);
-                //MQ.Write("****Processor affinityAfter:" + p.ProcessorAffinity);
-                //MQ.Write("****ProcesID:" + p.Id);
-                //System.Diagnostics.Process p2 = System.Diagnostics.Process.GetProcessById(p.Id);
-                //MQ.Write("****Processor affinity2:" + p2.ProcessorAffinity);
-                // p2.ProcessorAffinity = (IntPtr)(255);
-                //MQ.Write("****Processor affinityAfter2:" + p2.ProcessorAffinity);
-
-
                 MQ.ClearCommands();
-                
+    
                 Logging._traceLogLevel = Logging.LogLevels.None; //log level we are currently at
                 Logging._minLogLevelTolog = Logging.LogLevels.Error; //log levels have integers assoicatd to them. you can set this to Error to only log errors. 
                 Logging._defaultLogLevel = Logging.LogLevels.Debug; //the default if a level is not passed into the _log.write statement. useful to hide/show things.

@@ -153,14 +153,14 @@ namespace E3Core.Settings
             LoadKeyData("Burn", "Full Burn", _parsedData, FullBurns);
 
 
-            LoadKeyData("Pet", "Pet Spell", _parsedData, PetSpell);
-            LoadKeyData("Pet", "Pet Buff", _parsedData, PetBuffs);
-            LoadKeyData("Pet", "Pet Heal", _parsedData, PetBuffs);
-            LoadKeyData("Pet", "Pet Mend (Pct)", _parsedData, ref Pet_MendPercent);
-            LoadKeyData("Pet", "Pet Taunt (On/Off)", _parsedData, ref Pet_TauntEnabled);
-            LoadKeyData("Pet", "Pet Auto-Shrink (On/Off)", _parsedData, ref Pet_AutoShrink);
-            LoadKeyData("Pet", "Pet Summon Combat (On/Off)", _parsedData, ref Pet_SummonCombat);
-            LoadKeyData("Pet", "Pet Buff Combat (On/Off)", _parsedData, ref Pet_BuffCombat);
+            LoadKeyData("Pets", "Pet Spell", _parsedData, PetSpell);
+            LoadKeyData("Pets", "Pet Buff", _parsedData, PetBuffs);
+            LoadKeyData("Pets", "Pet Heal", _parsedData, PetBuffs);
+            LoadKeyData("Pets", "Pet Mend (Pct)", _parsedData, ref Pet_MendPercent);
+            LoadKeyData("Pets", "Pet Taunt (On/Off)", _parsedData, ref Pet_TauntEnabled);
+            LoadKeyData("Pets", "Pet Auto-Shrink (On/Off)", _parsedData, ref Pet_AutoShrink);
+            LoadKeyData("Pets", "Pet Summon Combat (On/Off)", _parsedData, ref Pet_SummonCombat);
+            LoadKeyData("Pets", "Pet Buff Combat (On/Off)", _parsedData, ref Pet_BuffCombat);
 
 
             LoadKeyData("Cures", "Cure", _parsedData, Cures);
