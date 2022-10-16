@@ -23,7 +23,7 @@ namespace E3Core.Processors
         private static ISpawns _spawns = E3._spawns;
 
 
-        public static CastReturn Cast(int targetID, Data.Spell spell, Func<Int32,Int32,bool> interruptCheck=null)
+        public static CastReturn Cast(int targetID, Data.Spell spell, Func<Int32,Int32,bool> interruptCheck=null, bool isNowCast = false)
         {
 
             try
@@ -44,6 +44,13 @@ namespace E3Core.Processors
                     //block on waiting for the spell window to close
                     while (MQ.Query<bool>("${Window[CastingWindow].Open}"))
                     {
+                        if (!isNowCast && EventProcessor._commandList.ContainsKey("/nowcast") && EventProcessor._commandList["/nowcast"].queuedEvents.Count > 0)
+                        {
+                            //we have a nowcast ready to be processed
+                            MQ.Cmd("/interrupt");
+                            MQ.Delay(0);
+                            return CastReturn.CAST_INTERRUPTED;
+                        }
                         EventProcessor.ProcessEventsInQueues("/backoff");
                         EventProcessor.ProcessEventsInQueues("/followme");
                         if (Assist._assistTargetID == 0)
@@ -98,7 +105,7 @@ namespace E3Core.Processors
                         _log.Write($"TargetName:{targetName}");
                         //why we should not cast.. for whatever reason.
                         #region validation checks
-                        if (MQ.Query<bool>("${Me.Invis}"))
+                        if (!isNowCast && MQ.Query<bool>("${Me.Invis}"))
                         {
 
                             E3._actionTaken = true;
@@ -403,19 +410,29 @@ namespace E3Core.Processors
                             if (interruptCheck != null && interruptCheck(currentMana, pctMana))
                             {
                                 MQ.Cmd("/interrupt");
+                                MQ.Delay(0);
                                 E3._actionTaken = true;
                                 return CastReturn.CAST_INTERRUPTFORHEAL;
                             }
-
+                            //check to see if there is a nowcast queued up, if so we need to kickout.
+                            if (!isNowCast && EventProcessor._commandList.ContainsKey("/nowcast") && EventProcessor._commandList["/nowcast"].queuedEvents.Count > 0)
+                            {
+                                //we have a nowcast ready to be processed
+                                MQ.Cmd("/interrupt");
+                                MQ.Delay(0);
+                                return CastReturn.CAST_INTERRUPTED;
+                            }
                             //check if we need to process any events,if healing tho, ignore. 
                             if (spell.SpellType.Equals("Detrimental"))
                             {
                                 EventProcessor.ProcessEventsInQueues("/backoff");
                                 EventProcessor.ProcessEventsInQueues("/followme");
+                                
                                 if (Assist._assistTargetID == 0)
                                 {
                                     return CastReturn.CAST_INTERRUPTED;
                                 }
+
                             }
 
                             MQ.Delay(50);
@@ -646,6 +663,17 @@ namespace E3Core.Processors
             }
             return false;
         }
+
+        public static Boolean InGlobalCooldown()
+        {
+            
+
+            if (MQ.Query<bool>("${Me.SpellReady[${Me.Gem[1].Name}]}") || MQ.Query<bool>("${Me.SpellReady[${Me.Gem[3].Name}]}") || MQ.Query<bool>("${Me.SpellReady[${Me.Gem[5].Name}]}") || MQ.Query<bool>("${Me.SpellReady[${Me.Gem[7].Name}]}"))
+            {
+                return false;
+            }
+            return true;
+        }
         public static Boolean CheckReady(Data.Spell spell)
         {
 
@@ -666,6 +694,7 @@ namespace E3Core.Processors
             } 
             while(MQ.Query<bool>("${Window[CastingWindow].Open}"))
             {
+
                 MQ.Delay(20);
             }
 
@@ -854,33 +883,7 @@ namespace E3Core.Processors
         }
         static void RegisterEventsCasting()
         {
-            _log.Write("Regitering nowCast events....");
-            List<String> r = new List<string>();
-            r.Add("(.+) tells the group, 'nowCast (.+) targetid=(.+)'");
-            r.Add("(.+) tells the says, 'nowCast (.+) targetid=(.+)'");
-            EventProcessor.RegisterEvent("nowCastEvent", r, (x) => {
-                _log.Write($"Processing {x.eventName}");
-
-                string user = string.Empty;
-                string spellName = String.Empty;
-                Int32 targetid = 0;
-                if (x.match.Groups.Count > 3)
-                {
-                    user = x.match.Groups[1].Value;
-                    spellName = x.match.Groups[2].Value;
-                    Int32.TryParse(x.match.Groups[3].Value, out targetid);
-
-                }
-                _log.Write($"{ x.eventName}:{ user} asked to cast the spell:{spellName}");
-
-                Data.Spell spell = new Data.Spell(spellName);
-                CastReturn returnValue = Cast(targetid, spell);
-
-                _log.Write($"{ x.eventName}: {spellName} result?: {returnValue.ToString()}");
-
-            });
-
-
+            
 
         }
 
@@ -977,8 +980,7 @@ namespace E3Core.Processors
         }
         static void RegisterEventsCastResults()
         {
-            _log.Write("Regitering nowCast events....");
-            List<String> r = new List<string>();
+             List<String> r = new List<string>();
             r.Add("Your gate is too unstable, and collapses.*");
             EventProcessor.RegisterEvent("CAST_COLLAPSE", r, (x) => {
                 //not doing anything, casting code will remove this from the collection if it detects

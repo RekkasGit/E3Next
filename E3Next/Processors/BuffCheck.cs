@@ -248,7 +248,11 @@ namespace E3Core.Processors
                                 {
                                     result = Casting.Cast(s.ID, spell, Heals.SomeoneNeedsHealing);
                                 }
-                              
+                                
+                                if(result == CastReturn.CAST_INTERRUPTED || result== CastReturn.CAST_INTERRUPTFORHEAL || result == CastReturn.CAST_FIZZLE)
+                                {
+                                    return;
+                                }
                                 if (result != CastReturn.CAST_SUCCESS)
                                 {
                                     //possibly some kind of issue/blocking. set a 120 sec timer to try and recast later.
@@ -341,6 +345,10 @@ namespace E3Core.Processors
                                 if (Casting.CheckReady(spell) && Casting.CheckMana(spell))
                                 {
                                     var result = Casting.Cast(s.ID, spell, Heals.SomeoneNeedsHealing);
+                                    if (result == CastReturn.CAST_INTERRUPTED || result == CastReturn.CAST_INTERRUPTFORHEAL || result == CastReturn.CAST_FIZZLE)
+                                    {
+                                        return;
+                                    }
                                     if (result != CastReturn.CAST_SUCCESS)
                                     {
                                         //possibly some kind of issue/blocking. set a 90 sec timer to try and recast later.
@@ -383,6 +391,10 @@ namespace E3Core.Processors
                                     {
                                         //then we can cast!
                                         var result = Casting.Cast(s.ID, spell, Heals.SomeoneNeedsHealing);
+                                        if (result == CastReturn.CAST_INTERRUPTED || result == CastReturn.CAST_INTERRUPTFORHEAL || result == CastReturn.CAST_FIZZLE)
+                                        {
+                                            return;
+                                        }
                                         if (result != CastReturn.CAST_SUCCESS)
                                         {
                                             //possibly some kind of issue/blocking. set a 90 sec timer to try and recast later.
@@ -420,6 +432,10 @@ namespace E3Core.Processors
                                 if (Casting.CheckReady(spell) && Casting.CheckMana(spell))
                                 {
                                     var result = Casting.Cast(s.ID, spell, Heals.SomeoneNeedsHealing);
+                                    if (result == CastReturn.CAST_INTERRUPTED || result == CastReturn.CAST_INTERRUPTFORHEAL || result == CastReturn.CAST_FIZZLE)
+                                    {
+                                        return;
+                                    }
                                     if (result != CastReturn.CAST_SUCCESS)
                                     {
                                         //possibly some kind of issue/blocking. set a 120 sec timer to try and recast later.

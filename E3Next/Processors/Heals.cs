@@ -35,7 +35,7 @@ namespace E3Core.Processors
                         pctMana = MQ.Query<Int32>("${Me.PctMana}");
                     }
                 }
-                if (E3._characterSettings.HealXTarget.Count > 0)
+                if (!E3._actionTaken && E3._characterSettings.HealXTarget.Count > 0)
                 {
                     HealXTargets(currentMana, pctMana);
                 }

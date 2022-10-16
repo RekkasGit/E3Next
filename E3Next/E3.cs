@@ -51,6 +51,9 @@ namespace E3Core.Processors
                 //Init is here to make sure we only Init while InGame, as some queries will fail if not in game
 
 
+                //nowcast before all.
+                EventProcessor.ProcessEventsInQueues("/nowcast");
+
                 //do the basics first
                 //first and formost, do healing checks
                 if ((_currentClass& Data.Class.Priest)==_currentClass)
@@ -82,7 +85,9 @@ namespace E3Core.Processors
                         
                         }
                         //check backoff
-                        EventProcessor.ProcessEventsInQueues();
+                        //check nowcast
+                        EventProcessor.ProcessEventsInQueues("/nowcast");
+                        EventProcessor.ProcessEventsInQueues("/backoff");
                     }
                 }
                 //lets do our class methods, this is last because of bards

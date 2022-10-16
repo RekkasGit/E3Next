@@ -44,17 +44,22 @@ namespace E3Core.Processors
                 InitServerNameForIni();
                 //ValidateIniFiles();
                 //LoadOrCreateCharacterSettings();
-                Casting.Init();
-                Basics.Init();
-                Assist.Init();
-                DebuffDot.Init();
-                Burns.Init();
-                Loot.Init();
-                WaitForRez.Init();
-                Sell.Init();
+                InitSubSystems();
                 return true;
             }
 
+        }
+        private static void InitSubSystems()
+        {
+            Casting.Init();
+            Basics.Init();
+            Assist.Init();
+            DebuffDot.Init();
+            Burns.Init();
+            Loot.Init();
+            WaitForRez.Init();
+            Sell.Init();
+            NowCast.Init();
         }
         private static void LoadOrCreateCharacterSettings()
         {
