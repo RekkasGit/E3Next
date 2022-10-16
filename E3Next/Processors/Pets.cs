@@ -56,20 +56,19 @@ namespace E3Core.Processors
         }
         private static void CheckPetSummon( ref Int32 petID)
         {
-            if (petID == 0)
+            if (petID == 0 && E3._characterSettings.PetSpell.Count>0)
             {
                 //we have no pet, do we have a pet configurd to summon?
-                if (E3._characterSettings.PetSpell.Count > 0)
+               
+                foreach (var spell in E3._characterSettings.PetSpell)
                 {
-                    foreach (var spell in E3._characterSettings.PetSpell)
+                    if (Casting.CheckReady(spell) && Casting.CheckMana(spell))
                     {
-                        if (Casting.CheckReady(spell) && Casting.CheckMana(spell))
-                        {
-                            Casting.Cast(0, spell);
-                            break;
-                        }
+                        Casting.Cast(0, spell);
+                        break;
                     }
                 }
+               
                 //wait for the pet to appear
                 MQ.Delay(1000);
                 petID = MQ.Query<Int32>("${Me.Pet.ID}");

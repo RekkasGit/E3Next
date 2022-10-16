@@ -61,6 +61,7 @@ namespace E3Core.Processors
             Sell.Init();
             NowCast.Init();
             Pets.Init();
+            Alerts.Init();
         }
         private static void LoadOrCreateCharacterSettings()
         {

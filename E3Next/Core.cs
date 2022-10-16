@@ -86,9 +86,9 @@ namespace MonoCore
                         //boiler plate code with all the threading.
 
                         ////MQ.Write("Calling e3process");
-                        EventProcessor.ProcessEventsInQueues();
                         E3.Process();
-                       
+                        EventProcessor.ProcessEventsInQueues();
+
                         ////***NOTE NOTE NOTE, Use M2.Delay(0) in your code to give control back to EQ if you have taken awhile in doing something
                         ////***NOTE NOTE NOTE, generally this isn't needed as there is an auto yield baked into every MQ method. Just be aware.
 
@@ -97,7 +97,7 @@ namespace MonoCore
                     //MQ.TraceEnd("Process");
                     //process all the events that have been registered
                     //process all the events that have been registered
-                    
+
                     //Double endLoopTimeInMS = Core._stopWatch.Elapsed.TotalMilliseconds - _startLoopTime;
                     //_totalLoopTime += endLoopTimeInMS;
 
