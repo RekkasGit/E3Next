@@ -29,7 +29,40 @@ namespace E3Core.Processors
         }
         static void RegisterEventsCasting()
         {
+           
+            EventProcessor.RegisterEvent("InviteToGroup", "(.+) invites you to join a group.", (x) => {
 
+                MQ.Cmd("/invite");
+                MQ.Delay(300);
+
+            });
+            EventProcessor.RegisterEvent("InviteToRaid", "(.+) invites you to join a raid.", (x) => {
+               
+                MQ.Delay(500);
+                MQ.Cmd("/raidaccept");
+
+            });
+
+            EventProcessor.RegisterEvent("InviteToDZ", "(.+) tells you, 'dzadd'", (x) => {
+                if(x.match.Groups.Count>1)
+                {
+                    MQ.Cmd($"/dzadd {x.match.Groups[1].Value}");
+                }
+            });
+            EventProcessor.RegisterEvent("InviteToDZ", "(.+) tells you, 'raidadd'", (x) => {
+                if (x.match.Groups.Count > 1)
+                {
+                    MQ.Cmd($"/raidinvite {x.match.Groups[1].Value}");
+                }
+            });
+
+            EventProcessor.RegisterCommand("/clickit", (x) =>
+            {
+                MQ.Cmd("/multiline ; /doortarget ; /timed 5 /click left door ");
+                  //we are telling people to follow us
+                E3._bots.BroadcastCommandToGroup("/clickit");
+                
+            });
             EventProcessor.RegisterCommand("/followoff", (x) =>
             {
                 RemoveFollow();

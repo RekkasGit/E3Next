@@ -42,6 +42,18 @@ _log.Write("ERROR OMG!", LogLevel.Error); //will always write to error even if t
 
 _log.Write has class/method/line# included and can be turned on/off dynamically. MQ.Write cannot.
 
+Registering a command
+====================================
+ EventProcessor.RegisterCommand("/followoff", (x) =>
+{
+    RemoveFollow();
+    if (x.args.Count == 0)
+    {
+        //we are telling people to follow us
+        E3._bots.BroadcastCommandToGroup("/followoff all");
+    }
+});
+
 Registering an event
 ================================================
 //Rekken tells the group, 'HI THERE!'
@@ -117,4 +129,35 @@ try
 catch(Exception ex) when (!(ex is ThreadAbort))
 {
 
+}
+
+Spawn TLO
+==================
+You can access the spawn collection that is updated per your configuration (1 sec default) or you can do 
+_spawns.RefreshList() to manually refresh it. Takes about 1 millisecond to full refresh.
+
+public static ISpawns _spawns = Core.spawnInstance;
+
+Spawn s;
+if (_spawns.TryByID(_assistTargetID, out s))
+{
+
+}
+
+foreach(var spawn in _spawns.Get())
+{
+    
+    string name = spawn.CleanName;
+
+}
+foreach (var spawn in _spawns.Get())
+{
+    //only player corpses have a Deity
+    if (spawn.Distance3D < _seekRadius && spawn.DeityID==0 && spawn.TypeDesc == "Corpse")
+    {
+        if(!_unlootableCorpses.Contains(spawn.ID))
+        {
+            corpses.Add(spawn);
+        }
+    }
 }

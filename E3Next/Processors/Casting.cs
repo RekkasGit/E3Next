@@ -858,7 +858,7 @@ namespace E3Core.Processors
         public static void Init()
         {
             RegisterEventsCasting();
-            //RegisterEventsCastResults();
+            RegisterEventsCastResults();
             RefreshGemCache();
         }
 
@@ -916,15 +916,17 @@ namespace E3Core.Processors
                     Enum.TryParse<CastReturn>(result, out r);
                     return r;
                 }
+                //frankly sometimes mq2cast is bad about getting events. do it ourselves as well
+                if (CheckForResistByName("CAST_TAKEHOLD", endtime)) return CastReturn.CAST_TAKEHOLD;
+                if (CheckForResistByName("CAST_RESIST", endtime)) return CastReturn.CAST_RESIST;
+                if (CheckForResistByName("CAST_FIZZLE", endtime)) return CastReturn.CAST_FIZZLE;
 
-                //if (CheckForResistByName("CAST_RESIST", endtime)) return CastReturn.CAST_RESIST;
                 //if (CheckForResistByName("CAST_IMMUNE", endtime)) return CastReturn.CAST_IMMUNE;
                 //if (CheckForResistByName("CAST_COLLAPSE", endtime)) return CastReturn.CAST_COLLAPSE;
                 //if (CheckForResistByName("CAST_CANNOTSEE", endtime)) return CastReturn.CAST_NOTARGET;
                 //if (CheckForResistByName("CAST_COMPONENTS", endtime)) return CastReturn.CAST_COMPONENTS;
                 //if (CheckForResistByName("CAST_DISTRACTED", endtime)) return CastReturn.CAST_DISTRACTED;
                 //if (CheckForResistByName("CAST_INTERRUPTED", endtime)) return CastReturn.CAST_INTERRUPTED;
-                //if (CheckForResistByName("CAST_FIZZLE", endtime)) return CastReturn.CAST_FIZZLE;
                 //if (CheckForResistByName("CAST_NOTARGET", endtime)) return CastReturn.CAST_NOTARGET;
                 //if (CheckForResistByName("CAST_OUTDOORS", endtime)) return CastReturn.CAST_DISTRACTED;
                 MQ.Delay(100);
@@ -986,100 +988,105 @@ namespace E3Core.Processors
         static void RegisterEventsCastResults()
         {
              List<String> r = new List<string>();
-            r.Add("Your gate is too unstable, and collapses.*");
-            EventProcessor.RegisterEvent("CAST_COLLAPSE", r, (x) => {
-                //not doing anything, casting code will remove this from the collection if it detects
-                //so this will never be called.
-            });
+            //r.Add("Your gate is too unstable, and collapses.*");
+            //EventProcessor.RegisterEvent("CAST_COLLAPSE", r, (x) => {
+            //    //not doing anything, casting code will remove this from the collection if it detects
+            //    //so this will never be called.
+            //});
 
-            r = new List<string>();
-            r.Add("You cannot see your target.");
-            EventProcessor.RegisterEvent("CAST_CANNOTSEE", r, (x) => {
-            });
+            //r = new List<string>();
+            //r.Add("You cannot see your target.");
+            //EventProcessor.RegisterEvent("CAST_CANNOTSEE", r, (x) => {
+            //});
 
-            r = new List<string>();
-            r.Add("You need to play a.+ for this song.");
-            EventProcessor.RegisterEvent("CAST_COMPONENTS", r, (x) => {
-            });
+            //r = new List<string>();
+            //r.Add("You need to play a.+ for this song.");
+            //EventProcessor.RegisterEvent("CAST_COMPONENTS", r, (x) => {
+            //});
 
-            r = new List<string>();
-            r.Add("You are too distracted to cast a spell now.");
-            r.Add("You can't cast spells while invulnerable.");
-            r.Add("You *CANNOT* cast spells, you have been silenced.");
-            EventProcessor.RegisterEvent("CAST_DISTRACTED", r, (x) => {
-            });
+            //r = new List<string>();
+            //r.Add("You are too distracted to cast a spell now.");
+            //r.Add("You can't cast spells while invulnerable.");
+            //r.Add("You *CANNOT* cast spells, you have been silenced.");
+            //EventProcessor.RegisterEvent("CAST_DISTRACTED", r, (x) => {
+            //});
 
-            r = new List<string>();
-            r.Add("Your target has no mana to affect.");
-            r.Add("Your target looks unaffected.");
-            r.Add("Your target is immune to changes in its attack speed.");
-            r.Add("Your target is immune to changes in its run speed.");
-            r.Add("Your target is immune to snare spells.");
-            r.Add("Your target cannot be mesmerized.");
-            r.Add("Your target looks unaffected.");
-            EventProcessor.RegisterEvent("CAST_IMMUNE", r, (x) => {
-            });
+            //r = new List<string>();
+            //r.Add("Your target has no mana to affect.");
+            //r.Add("Your target looks unaffected.");
+            //r.Add("Your target is immune to changes in its attack speed.");
+            //r.Add("Your target is immune to changes in its run speed.");
+            //r.Add("Your target is immune to snare spells.");
+            //r.Add("Your target cannot be mesmerized.");
+            //r.Add("Your target looks unaffected.");
+            //EventProcessor.RegisterEvent("CAST_IMMUNE", r, (x) => {
+            //});
 
 
-            r = new List<string>();
-            r.Add("Your .+ is interrupted.");
-            r.Add("Your spell is interrupted.");
-            r.Add("Your casting has been interrupted.");
-            EventProcessor.RegisterEvent("CAST_INTERRUPTED", r, (x) => {
-            });
+            //r = new List<string>();
+            //r.Add("Your .+ is interrupted.");
+            //r.Add("Your spell is interrupted.");
+            //r.Add("Your casting has been interrupted.");
+            //EventProcessor.RegisterEvent("CAST_INTERRUPTED", r, (x) => {
+            //});
 
             r = new List<string>();
             r.Add("Your spell fizzles.");
             r.Add("Your .+ spell fizzles.");
             r.Add("You miss a note, bringing your song to a close.");
-            EventProcessor.RegisterEvent("CAST_FIZZLE", r, (x) => {
+            EventProcessor.RegisterEvent("CAST_FIZZLE", r, (x) =>
+            {
             });
 
-            r = new List<string>();
-            r.Add("You must first select a target for this spell.");
-            r.Add("This spell only works on.*");
-            r.Add("You must first target a group member.");
-            EventProcessor.RegisterEvent("CAST_NOTARGET", r, (x) => {
-            });
+            //r = new List<string>();
+            //r.Add("You must first select a target for this spell.");
+            //r.Add("This spell only works on.*");
+            //r.Add("You must first target a group member.");
+            //EventProcessor.RegisterEvent("CAST_NOTARGET", r, (x) => {
+            //});
 
-            r = new List<string>();
-            r.Add("This spell does not work here.");
-            r.Add("You can only cast this spell in the outdoors.");
-            r.Add("You can not summon a mount here.");
-            r.Add("You must have both the Horse Models and your current Luclin Character Model enabled to summon a mount.");
-            EventProcessor.RegisterEvent("CAST_OUTDOORS", r, (x) => {
-            });
+            //r = new List<string>();
+            //r.Add("This spell does not work here.");
+            //r.Add("You can only cast this spell in the outdoors.");
+            //r.Add("You can not summon a mount here.");
+            //r.Add("You must have both the Horse Models and your current Luclin Character Model enabled to summon a mount.");
+            //EventProcessor.RegisterEvent("CAST_OUTDOORS", r, (x) => {
+            //});
 
             r = new List<string>();
             r.Add("Your target resisted the .+ spell.");
             //TODO deal with live vs non live
             //r.Add(".+ resisted your .+\!"); //for live?
             //r.Add(".+ avoided your .+!"); //for live?
-            EventProcessor.RegisterEvent("CAST_RESIST", r, (x) => {
+            EventProcessor.RegisterEvent("CAST_RESIST", r, (x) =>
+            {
             });
 
-            r = new List<string>();
-            r.Add("You can't cast spells while stunned.");
-            //TODO deal with live vs non live
-            //r.Add(".+ resisted your .+\!"); //for live?
-            //r.Add(".+ avoided your .+!"); //for live?
-            EventProcessor.RegisterEvent("CAST_STUNNED", r, (x) => {
-            });
+            //r = new List<string>();
+            //r.Add("You can't cast spells while stunned.");
+            ////TODO deal with live vs non live
+            ////r.Add(".+ resisted your .+\!"); //for live?
+            ////r.Add(".+ avoided your .+!"); //for live?
+            //EventProcessor.RegisterEvent("CAST_STUNNED", r, (x) => {
+            //});
 
-            r = new List<string>();
-            r.Add("You can't cast spells while stunned.");
-            //TODO deal with live vs non live
-            //r.Add(".+ resisted your .+\!"); //for live?
-            //r.Add(".+ avoided your .+!"); //for live?
-            EventProcessor.RegisterEvent("CAST_STUNNED", r, (x) => {
-            });
+            //r = new List<string>();
+            //r.Add("You can't cast spells while stunned.");
+            ////TODO deal with live vs non live
+            ////r.Add(".+ resisted your .+\!"); //for live?
+            ////r.Add(".+ avoided your .+!"); //for live?
+            //EventProcessor.RegisterEvent("CAST_STUNNED", r, (x) => {
+            //});
 
             r = new List<string>();
             r.Add(@".+ spell did not take hold. \(Blocked by.+");
+            r.Add(@".+ did not take hold on (.+) \(Blocked by.+");
             r.Add("Your spell did not take hold.");
             r.Add("Your spell would not have taken hold.");
             r.Add("Your spell is too powerful for your intended target.");
-            EventProcessor.RegisterEvent("CAST_TAKEHOLD", r, (x) => {
+            EventProcessor.RegisterEvent("CAST_TAKEHOLD", r, (x) =>
+            {
+                MQ.Write("test");
             });
 
 
