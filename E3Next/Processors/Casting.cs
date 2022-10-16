@@ -76,6 +76,10 @@ namespace E3Core.Processors
                     {
                         //means don't change current target
                         targetID = MQ.Query<Int32>("${Target.ID}");
+                        if(targetID==0)
+                        {
+                            targetID= MQ.Query<Int32>("${Me.ID}");
+                        }
                     }
 
                     if (targetID < 1)
