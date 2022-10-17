@@ -17,15 +17,20 @@ namespace E3Core.Processors
         private static ISpawns _spawns = E3._spawns;
         public static Dictionary<Int32, SpellTimer> _debuffTimers = new Dictionary<Int32, SpellTimer>();
         public static Dictionary<Int32, SpellTimer> _dotTimers = new Dictionary<Int32, SpellTimer>();
+        public static Dictionary<Int32, SpellTimer> _OffAssistTimers = new Dictionary<Int32, SpellTimer>();
+
         public static HashSet<Int32> _mobsToDot = new HashSet<int>();
         public static HashSet<Int32> _mobsToDebuff = new HashSet<int>();
+        public static HashSet<Int32> _mobsToOffAsist = new HashSet<int>();
         public static List<Int32> _deadMobs = new List<int>();
         
         private static Int64 _nextDebuffCheck = 0;
         private static Int64 _nextDebuffCheckInterval = 1000;
         private static Int64 _nextDoTCheck = 0;
         private static Int64 _nextDoTCheckInterval = 1000;
-
+        private static Int64 _nextOffAssistCheck = 0;
+        private static Int64 _nextOffAssistCheckInterval = 500;
+        private static List<Data.Spell> _tempOffAssistSpellList = new List<Spell>();
         public static void Init()
         {
             RegisterEvents();
@@ -34,6 +39,8 @@ namespace E3Core.Processors
         {
             _mobsToDot.Clear();
             _mobsToDebuff.Clear();
+            _mobsToOffAsist.Clear();
+
             foreach (var kvp in _debuffTimers)
             {
                 kvp.Value.Dispose();
@@ -44,7 +51,55 @@ namespace E3Core.Processors
                 kvp.Value.Dispose();
             }
             _dotTimers.Clear();
+
+           
         }
+        [AdvSettingInvoke]
+        public static void Check_OffAssistSpells()
+        {
+            //TODO: Test
+            if (!Assist._isAssisting) return;
+            if (E3._characterSettings.OffAssistSpells.Count == 0) return;
+            if (!e3util.ShouldCheck(ref _nextOffAssistCheck, _nextOffAssistCheckInterval)) return;
+
+            //check xtargets
+            for (Int32 i=1;i<=13;i++)
+            {
+                bool autoHater = MQ.Query<bool>($"${{Me.XTarget[{i}].TargetType.Equal[Auto Hater]}}");
+                if (autoHater) continue;
+                Int32 mobId = MQ.Query<Int32>($"${{Me.XTarget[{i}].ID}}");
+                if(mobId>0)
+                {
+                    if (_mobsToOffAsist.Contains(mobId)) continue;
+                    Spawn s;
+                    if(_spawns.TryByID(mobId,out s))
+                    {
+
+                        if (!s.Aggressive) continue;
+                        if (s.PctHps < 10) continue;
+                        if (!MQ.Query<bool>($"${{Spawn[npc id {mobId}].LineOfSight}}")) continue;
+                        if (s.Distance > 60) continue;
+                        if (s.TypeDesc == "Corpse") continue;
+                        _mobsToOffAsist.Add(mobId);
+                    }
+                }
+            }
+
+            if (_mobsToOffAsist.Count == 0) return;
+            //lets place the 1st offensive spell on each mob, then the next, then the next
+            foreach (var spell in E3._characterSettings.OffAssistSpells)
+            {
+                _tempOffAssistSpellList.Clear();
+                _tempOffAssistSpellList.Add(spell);
+                foreach (Int32 mobid in _mobsToOffAsist)
+                {
+                    CastLongTermSpell(mobid, _tempOffAssistSpellList, _OffAssistTimers);
+                    if (E3._actionTaken) return;
+                }
+            }
+  
+        }
+
         [AdvSettingInvoke]
         public static void Check_Debuffs()
         {

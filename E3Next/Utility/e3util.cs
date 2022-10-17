@@ -167,29 +167,7 @@ namespace E3Core.Utility
 
         }
 
-        public static void RegisterCommandWithTargetToOthers(string command, Action<int> FunctionToExecute)
-        {
-            EventProcessor.RegisterCommand(command, (x) =>
-            {
-                _log.Write("Register Command executing:" + command);
-              
-                if (x.args.Count == 0)
-                {
-                    Int32 targetID = MQ.Query<Int32>("${Target.ID}");
-                    E3._bots.BroadcastCommandToGroup($"{command} {targetID}");
-
-                }
-                else
-                {
-                    Int32 mobid;
-                    if (Int32.TryParse(x.args[0], out mobid))
-                    {
-                        FunctionToExecute(mobid);
-                    }
-                }
-            });
-
-        }
+      
 
     }
 }

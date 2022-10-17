@@ -264,36 +264,43 @@ namespace E3Core.Processors
                                 _log.Write("Doing Ability:Slam based logic checks...");
                                 if (MQ.Query<bool>("${Window[ActionsAbilitiesPage].Child[AAP_FirstAbilityButton].Text.Equal[Slam]}"))
                                 {
-
+                                    MQ.Write($"\ag{spell.CastName} \am{targetName} \ao{targetID}");
                                     MQ.Cmd("/doability 1");
                                 }
                                 else if (MQ.Query<bool>("${Window[ActionsAbilitiesPage].Child[AAP_SecondAbilityButton].Text.Equal[Slam]}"))
                                 {
+                                    MQ.Write($"\ag{spell.CastName} \am{targetName} \ao{targetID}");
                                     MQ.Cmd("/doability 2");
                                 }
                                 else if (MQ.Query<bool>("${Window[ActionsAbilitiesPage].Child[AAP_ThirdAbilityButton].Text.Equal[Slam]}"))
                                 {
+                                    MQ.Write($"\ag{spell.CastName} \am{targetName} \ao{targetID}");
                                     MQ.Cmd("/doability 3");
                                 }
                                 else if (MQ.Query<bool>("${Window[ActionsAbilitiesPage].Child[AAP_FourthAbilityButton].Text.Equal[Slam]}"))
                                 {
+                                    MQ.Write($"\ag{spell.CastName} \am{targetName} \ao{targetID}");
                                     MQ.Cmd("/doability 4");
                                 }
                                 else if (MQ.Query<bool>("${Window[ActionsAbilitiesPage].Child[AAP_FourthAbilityButton].Text.Equal[Slam]}"))
                                 {
+                                    MQ.Write($"\ag{spell.CastName} \am{targetName} \ao{targetID}");
                                     MQ.Cmd("/doability 5");
                                 }
                                 else if (MQ.Query<bool>("${Window[ActionsAbilitiesPage].Child[AAP_FifthAbilityButton].Text.Equal[Slam]}"))
                                 {
+                                    MQ.Write($"\ag{spell.CastName} \am{targetName} \ao{targetID}");
                                     MQ.Cmd("/doability 5");
                                 }
                                 else if (MQ.Query<bool>("${Window[ActionsAbilitiesPage].Child[AAP_SixthAbilityButton].Text.Equal[Slam]}"))
                                 {
+                                    MQ.Write($"\ag{spell.CastName} \am{targetName} \ao{targetID}");
                                     MQ.Cmd("/doability 6");
                                 }
                             }
                             else
                             {
+                                MQ.Write($"\ag{spell.CastName} \am{targetName} \ao{targetID}");
                                 MQ.Cmd($"/doability \"{spell.CastName}\"");
                             }
 
@@ -979,7 +986,7 @@ namespace E3Core.Processors
                     EventProcessor.EventMatch e;
                     EventProcessor._eventList[name].queuedEvents.TryDequeue(out e);
                 }
-                MQ.Write($"*********Total Time for Internal result: {500 - (time - Core._stopWatch.Elapsed.TotalMilliseconds)} ms");
+               // MQ.Write($"*********Total Time for Internal result: {500 - (time - Core._stopWatch.Elapsed.TotalMilliseconds)} ms");
 
                 return true;
             }

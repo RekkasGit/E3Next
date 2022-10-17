@@ -29,8 +29,10 @@ namespace E3Core.Processors
         private static Data.Spell _divineStun = new Data.Spell("Divine Stun");
         private static Data.Spell _terrorOfDiscord = new Data.Spell("Terror of Discord");
         private static IList<string> _tankTypes = new List<string>() { "WAR", "PAL", "SK" };
-     
+        private static bool _allowControl = false;
 
+        private static Int64 _nextAssistCheck = 0;
+        private static Int64 _nextAssistCheckInterval = 500;
         public static void Init()
         {
             RegisterEvents();
@@ -50,6 +52,7 @@ namespace E3Core.Processors
        
         public static void Check_AssistStatus()
         {
+            if (!e3util.ShouldCheck(ref _nextAssistCheck, _nextAssistCheckInterval)) return;
 
             if (_assistTargetID == 0) return;
 
@@ -105,7 +108,7 @@ namespace E3Core.Processors
                         }
 
                         //are we sticking?
-                        if (!MQ.Query<bool>("${Stick.Active}"))
+                        if (!_allowControl && !MQ.Query<bool>("${Stick.Active}"))
                         {
                             StickToAssistTarget();
                         }
@@ -144,8 +147,6 @@ namespace E3Core.Processors
                 return;
             }
 
-            
-           
         }
        
         public static void CombatAbilties()
@@ -240,7 +241,7 @@ namespace E3Core.Processors
                             if (ability.CastName == "Bash")
                             {
                                 //check if we can actually bash
-                                if (!(MQ.Query<bool>("${Select[${Me.Inventory[Offhand].Type},Shield]}") || MQ.Query<bool>("${Me.AltAbility[2 Hand Bash]}")))
+                                if (MQ.Query<double>("${Target.Distance}")>14 || !(MQ.Query<bool>("${Select[${Me.Inventory[Offhand].Type},Shield]}") || MQ.Query<bool>("${Me.AltAbility[2 Hand Bash]}")))
                                 {
                                     continue;
                                 }
@@ -296,6 +297,7 @@ namespace E3Core.Processors
             if (MQ.Query<Int32>("${Me.Pet.ID}") > 0) MQ.Cmd("/squelch /pet back off");
             MQ.Delay(500, "${Bool[!${Me.Combat} && !${Me.AutoFire}]}");
             _isAssisting = false;
+            _allowControl = false;
             _assistTargetID = 0;
             if (MQ.Query<bool>("${Stick.Status.Equal[ON]}")) MQ.Cmd("/squelch /stick off");
 
@@ -410,9 +412,13 @@ namespace E3Core.Processors
                     //make sure its not too out of bounds
                     if (_assistDistance > 25 || _assistDistance < 1)
                     {
-                        _assistTargetID = 25;
+                        _assistDistance = 25;
                     }
-                    StickToAssistTarget();
+                    if(!_allowControl)
+                    {
+                        StickToAssistTarget();
+
+                    }
 
                     if (E3._currentClass == Data.Class.Rogue)
                     {
@@ -514,7 +520,27 @@ namespace E3Core.Processors
         
         private static void RegisterEvents()
         {
-            e3util.RegisterCommandWithTargetToOthers("/assistme", AssistOn);
+             EventProcessor.RegisterCommand("/assistme", (x) =>
+            {
+                if (x.args.Count == 0)
+                {
+                    Int32 targetID = MQ.Query<Int32>("${Target.ID}");
+                    _allowControl = true;
+                    AssistOff();
+                    AssistOn(targetID);
+                    E3._bots.BroadcastCommandToGroup($"/assistme {targetID}");
+                }
+                else
+                {
+                    Int32 mobid;
+                    if (Int32.TryParse(x.args[0], out mobid))
+                    {
+                        _allowControl = false;
+                        AssistOff();
+                        AssistOn(mobid);
+                    }
+                }
+            });
             EventProcessor.RegisterCommand("/backoff", (x) =>
             {
                 AssistOff();

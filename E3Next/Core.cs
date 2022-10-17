@@ -997,7 +997,7 @@ namespace MonoCore
                 return;
             }
 
-            Core._log.Write($"Sending command to EQ:{query}");
+            //Core._log.Write($"Sending command to EQ:{query}");
 
             Core._currentCommand = query;
             Core._coreResetEvent.Set();

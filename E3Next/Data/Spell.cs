@@ -502,10 +502,10 @@ namespace E3Core.Data
 
         //    return returnString;
         //}
-        public String SpellName;//the spell's name. If the item clicks, this is the spell it casts
-        public String CastName;//this can be the item, spell, aa, disc. What is required to cast it. 
+        public String SpellName = String.Empty;//the spell's name. If the item clicks, this is the spell it casts
+        public String CastName = String.Empty;//this can be the item, spell, aa, disc. What is required to cast it. 
         public CastType CastType;
-        public String TargetType;
+        public String TargetType = String.Empty;
         public Int32 SpellGem;
         public Int32 GiveUpTimer;
         public Int32 MaxTries = 5;
@@ -534,7 +534,7 @@ namespace E3Core.Data
         public Int32 MaxMana;
         public Int32 MinHP;
         public Int32 HealPct;
-        public String Reagent;
+        public String Reagent = String.Empty;
         public Boolean ItemMustEquip;
         public Boolean NoBurn;
         public Boolean NoAggro;
@@ -545,8 +545,8 @@ namespace E3Core.Data
         public Int32 CastID;
         public Int32 MinEnd;
         public Boolean CastInvis;
-        public String SpellType;
-        public String CastTarget;
+        public String SpellType=String.Empty;
+        public String CastTarget= String.Empty;
         public Boolean GiftOfMana;
         public Int32 CheckForID;
         public Int32 SpellID;
@@ -556,17 +556,17 @@ namespace E3Core.Data
         public Boolean AllowSpellSwap;
         public Boolean NoEarlyRecast;
         public Boolean NoStack;
-        public String TriggerSpell;
-        public String BeforeSpell;
+        public String TriggerSpell = String.Empty;
+        public String BeforeSpell = String.Empty;
         public Data.Spell BeforeSpellData;
-        public String AfterSpell;
+        public String AfterSpell = String.Empty;
         public Data.Spell AfterSpellData;
         public Boolean NoInterrupt;
-        public String AfterEvent;
-        public String BeforeEvent;
-        public String CastIF;
-        public string Ifs;
-        public string InitName;
+        public String AfterEvent = String.Empty;
+        public String BeforeEvent = String.Empty;
+        public String CastIF = String.Empty;
+        public string Ifs = String.Empty;
+        public string InitName = String.Empty;
         public bool ReagentOutOfStock = false;
 
        

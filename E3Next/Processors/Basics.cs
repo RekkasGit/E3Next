@@ -61,6 +61,8 @@ namespace E3Core.Processors
                 MQ.Cmd("/multiline ; /doortarget ; /timed 5 /click left door ");
                   //we are telling people to follow us
                 E3._bots.BroadcastCommandToGroup("/clickit");
+
+                MQ.Delay(1000);
                 
             });
             EventProcessor.RegisterCommand("/followoff", (x) =>
