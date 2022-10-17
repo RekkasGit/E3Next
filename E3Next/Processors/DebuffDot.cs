@@ -22,6 +22,7 @@ namespace E3Core.Processors
         public static HashSet<Int32> _mobsToDot = new HashSet<int>();
         public static HashSet<Int32> _mobsToDebuff = new HashSet<int>();
         public static HashSet<Int32> _mobsToOffAsist = new HashSet<int>();
+        public static HashSet<Int32> _mobsToIgnoreOffAsist = new HashSet<int>();
         public static List<Int32> _deadMobs = new List<int>();
         
         private static Int64 _nextDebuffCheck = 0;
@@ -30,6 +31,7 @@ namespace E3Core.Processors
         private static Int64 _nextDoTCheckInterval = 1000;
         private static Int64 _nextOffAssistCheck = 0;
         private static Int64 _nextOffAssistCheckInterval = 500;
+        private static bool _shouldOffAssist = true;
         private static List<Data.Spell> _tempOffAssistSpellList = new List<Spell>();
         public static void Init()
         {
@@ -40,7 +42,7 @@ namespace E3Core.Processors
             _mobsToDot.Clear();
             _mobsToDebuff.Clear();
             _mobsToOffAsist.Clear();
-
+            _mobsToIgnoreOffAsist.Clear();
             foreach (var kvp in _debuffTimers)
             {
                 kvp.Value.Dispose();
@@ -58,7 +60,7 @@ namespace E3Core.Processors
         public static void Check_OffAssistSpells()
         {
             //TODO: Test
-
+            if (!_shouldOffAssist) return;
             if (!Assist._isAssisting) return;
             if (E3._characterSettings.OffAssistSpells.Count == 0) return;
             if (!e3util.ShouldCheck(ref _nextOffAssistCheck, _nextOffAssistCheckInterval)) return;
@@ -71,7 +73,7 @@ namespace E3Core.Processors
                 Int32 mobId = MQ.Query<Int32>($"${{Me.XTarget[{i}].ID}}");
                 if(mobId>0)
                 {
-                    if (_mobsToOffAsist.Contains(mobId)) continue;
+                    if (_mobsToOffAsist.Contains(mobId) || _mobsToIgnoreOffAsist.Contains(mobId)) continue;
                     Spawn s;
                     if(_spawns.TryByID(mobId,out s))
                     {
@@ -90,13 +92,17 @@ namespace E3Core.Processors
             //lets place the 1st offensive spell on each mob, then the next, then the next
             foreach (var spell in E3._characterSettings.OffAssistSpells)
             {
-                _tempOffAssistSpellList.Clear();
-                _tempOffAssistSpellList.Add(spell);
-                foreach (Int32 mobid in _mobsToOffAsist)
+                if(Casting.CheckMana(spell))
                 {
-                    CastLongTermSpell(mobid, _tempOffAssistSpellList, _OffAssistTimers);
-                    if (E3._actionTaken) return;
+                    _tempOffAssistSpellList.Clear();
+                    _tempOffAssistSpellList.Add(spell);
+                    foreach (Int32 mobid in _mobsToOffAsist)
+                    {
+                        CastLongTermSpell(mobid, _tempOffAssistSpellList, _OffAssistTimers);
+                        if (E3._actionTaken) return;
+                    }
                 }
+                
             }
   
         }
@@ -203,6 +209,80 @@ namespace E3Core.Processors
             });
             e3util.RegisterCommandWithTarget("/debuffson", DebuffsOn);
             e3util.RegisterCommandWithTarget("/debuff", DebuffsOn);
+
+            EventProcessor.RegisterCommand("/offassiston", (x) =>
+            {
+                if (x.args.Count == 0)
+                {
+                    _shouldOffAssist = true;
+                    E3._bots.BroadcastCommandToGroup("/offassiston all");
+                }
+                else
+                {
+                    //we are turning our own loot on.
+                    _shouldOffAssist = true;
+                    E3._bots.Broadcast("\agTurning on OffAssist.");
+                }
+            });
+            EventProcessor.RegisterCommand("/offassistoff", (x) =>
+            {
+                if (x.args.Count == 0)
+                {
+                    _shouldOffAssist = false;
+                    E3._bots.BroadcastCommandToGroup("/offassistoff all");
+                }
+                else
+                {
+                    //we are turning our own loot on.
+                    _shouldOffAssist = false;
+                    E3._bots.Broadcast("\agTurning on OffAssist.");
+                }
+            });
+
+            EventProcessor.RegisterCommand("/offassistignore", (x) =>
+            {
+                if (x.args.Count ==3)
+                {
+                    string command = x.args[1].ToLower();
+                    Int32 targetid;
+                    if (Int32.TryParse(x.args[2], out targetid))
+                    {
+                        if (command == "add")
+                        {
+                            if(!_mobsToIgnoreOffAsist.Contains(targetid))
+                            {
+                                _mobsToIgnoreOffAsist.Add(targetid);
+                            }
+                        }
+                        else if (command == "remove")
+                        {
+                            _mobsToIgnoreOffAsist.Remove(targetid);
+                        }
+                    }
+                } 
+                else if(x.args.Count==2)
+                {
+                    string command = x.args[0].ToLower();
+                    Int32 targetid;
+                    if (Int32.TryParse(x.args[1], out targetid))
+                    {
+                        if (command == "add")
+                        {
+                            if (!_mobsToIgnoreOffAsist.Contains(targetid))
+                            {
+                                _mobsToIgnoreOffAsist.Add(targetid);
+                            }
+                            E3._bots.BroadcastCommandToGroup($"/offassistignore all {command} {targetid}");
+                        }
+                        else if (command == "remove")
+                        {
+                            _mobsToIgnoreOffAsist.Remove(targetid);
+                            E3._bots.BroadcastCommandToGroup($"/offassistignore all {command} {targetid}");
+                        }
+                    }
+                }
+            });
+
         }
         public static void DebuffsOn(Int32 mobid)
         {

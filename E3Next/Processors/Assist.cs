@@ -59,8 +59,20 @@ namespace E3Core.Processors
             Int32 targetId = MQ.Query<Int32>("${Target.ID}");
             if (targetId != _assistTargetID)
             {
+
                 //different target? most likely manual control kicked in, update our assist target.
-                _assistTargetID = targetId;
+                //verify that its
+                Spawn ct;
+                _spawns.RefreshList();
+                if(_spawns.TryByID(targetId,out ct))
+                {
+                    if(ct.Aggressive)
+                    {
+                        _assistTargetID = targetId;
+                    }
+                }
+                
+               
 
             }
 

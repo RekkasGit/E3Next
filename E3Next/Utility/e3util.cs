@@ -134,8 +134,7 @@ namespace E3Core.Utility
         {
             EventProcessor.RegisterCommand(command, (x) =>
             {
-                MQ.Write("Register Command executing:" + command);
-                Int32 mobid;
+                 Int32 mobid;
                 if (x.args.Count > 0)
                 {
                     if (Int32.TryParse(x.args[0], out mobid))
