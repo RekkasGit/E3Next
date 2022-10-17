@@ -526,7 +526,7 @@ namespace E3Core.Processors
                 {
                     Int32 targetID = MQ.Query<Int32>("${Target.ID}");
                     _allowControl = true;
-                    AssistOff();
+                   
                     AssistOn(targetID);
                     E3._bots.BroadcastCommandToGroup($"/assistme {targetID}");
                 }
@@ -536,7 +536,6 @@ namespace E3Core.Processors
                     if (Int32.TryParse(x.args[0], out mobid))
                     {
                         _allowControl = false;
-                        AssistOff();
                         AssistOn(mobid);
                     }
                 }
@@ -582,7 +581,7 @@ namespace E3Core.Processors
             });
             EventProcessor.RegisterEvent("GetCloser", "Your target is too far away, get closer!", (x) =>
             {
-                if (_isAssisting)
+                if (_isAssisting&& !_allowControl)
                 {
                     if (_assistStickDistance > 5)
                     {

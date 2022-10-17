@@ -111,14 +111,14 @@ namespace E3Core.Processors
 
         public static void Process()
         {
+            if (E3._isInvis) return;
             if (!e3util.ShouldCheck(ref _nextLootCheck, _nextLootCheckInterval)) return;
 
             if (!_shouldLoot) return;
-            // /if (!((${Me.Combat} || ${Me.CombatState.Equal[Combat]} ||  ${AssistTarget} >0 )) || ${combatLooting}) /call loot_Area
             if(!Assist._isAssisting)
             {
-                bool inCombat = MQ.Query<bool>("${Me.Combat}") || MQ.Query<bool>("${Me.CombatState.Equal[Combat]}");
-                if(!inCombat)
+                
+                if(!Basics.InCombat())
                 {
                     LootArea();
                 }

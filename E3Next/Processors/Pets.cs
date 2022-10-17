@@ -36,11 +36,12 @@ namespace E3Core.Processors
         }
         [ClassInvoke(Data.Class.PetClass)]
         public static void Check_Pets()
-        { 
-            if (!e3util.ShouldCheck(ref _nextPetCheck, _nextPetCheckInterval)) return;
-            //don't check if invs
+        {
             if (E3._isInvis) return;
 
+            if (!e3util.ShouldCheck(ref _nextPetCheck, _nextPetCheckInterval)) return;
+            //don't check if invs
+           
             Int32 petId = MQ.Query<Int32>("${Me.Pet.ID}");
 
             CheckPetSummon(ref petId);

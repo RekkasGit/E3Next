@@ -51,8 +51,11 @@ namespace E3Core.Processors
                 //Init is here to make sure we only Init while InGame, as some queries will fail if not in game
 
 
+
                 //nowcast before all.
                 EventProcessor.ProcessEventsInQueues("/nowcast");
+
+                Basics.Check_Resources();
 
                 //do the basics first
                 //first and formost, do healing checks

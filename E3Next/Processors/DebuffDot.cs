@@ -58,6 +58,7 @@ namespace E3Core.Processors
         public static void Check_OffAssistSpells()
         {
             //TODO: Test
+
             if (!Assist._isAssisting) return;
             if (E3._characterSettings.OffAssistSpells.Count == 0) return;
             if (!e3util.ShouldCheck(ref _nextOffAssistCheck, _nextOffAssistCheckInterval)) return;

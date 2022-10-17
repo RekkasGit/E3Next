@@ -77,6 +77,7 @@ namespace E3Core.Processors
         }
         private static void BuffInstant(List<Data.Spell> buffs)
         {
+
             if (!e3util.ShouldCheck(ref _nextInstantBuffRefresh, _nextInstantRefreshTimeInterval)) return;
             //self only, instacast buffs only
             Int32 id = MQ.Query<Int32>("${Me.ID}");

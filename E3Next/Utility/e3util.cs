@@ -107,8 +107,6 @@ namespace E3Core.Utility
 
                             }
 
-
-
                         }
                         else
                         {
