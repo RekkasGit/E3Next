@@ -111,6 +111,13 @@ namespace E3Core.Settings
             {
                 LoadKeyData("Bard", "MelodyIf", _parsedData, Bard_MelodyIfs);
 
+
+            }
+            if ((_characterClass & Data.Class.Druid) == _characterClass)
+            {
+                LoadKeyData("Druid", "Evac Spell", _parsedData, Druid_Evacs);
+                LoadKeyData("Druid", "Auto-Cheetah (On/Off)", _parsedData, ref Druid_AutoCheeta);
+
             }
 
             LoadKeyData("Buffs", "Instant Buff", _parsedData, InstantBuffs);
@@ -314,7 +321,16 @@ namespace E3Core.Settings
                 section.Keys.AddKey("Pet Summon Combat (On/Off)", "Off");
                 section.Keys.AddKey("Pet Buff Combat (On/Off)", "On");
             }
-            
+
+            if ((_characterClass & Data.Class.Druid) == _characterClass)
+            {
+                newFile.Sections.AddSection("Druid");
+                section = newFile.Sections.GetSectionData("Druid");
+                section.Keys.AddKey("Evac Spell=", "");
+                section.Keys.AddKey("Auto-Cheetah (On/Off)", "On");
+               
+            }
+
 
             if ((_characterClass & Data.Class.Priest) == _characterClass)
             {
@@ -422,6 +438,9 @@ namespace E3Core.Settings
         public string Rogue_SneakAttack = String.Empty;
 
         public List<MelodyIfs> Bard_MelodyIfs = new List<MelodyIfs>();
+
+        public List<Data.Spell> Druid_Evacs = new List<Spell>();
+        public bool Druid_AutoCheeta = true;
 
         public string Assist_Type = string.Empty;
         public string Assist_MeleeStickPoint = String.Empty;

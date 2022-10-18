@@ -81,11 +81,11 @@ namespace E3Core.Processors
                 }
             });
 
-            EventProcessor.RegisterCommand("/Looton", (x) =>
+            EventProcessor.RegisterCommand("/looton", (x) =>
             {
                 if (x.args.Count > 0 && !x.args[0].Equals(E3._currentName, StringComparison.OrdinalIgnoreCase))
                 {
-                    E3._bots.BroadcastCommandToPerson(x.args[0], "/Looton");
+                    E3._bots.BroadcastCommandToPerson(x.args[0], "/looton");
                 }
                 else
                 {
@@ -94,11 +94,11 @@ namespace E3Core.Processors
                     E3._bots.Broadcast("\agTurning on Loot.");
                 }
             });
-            EventProcessor.RegisterCommand("/Lootoff", (x) =>
+            EventProcessor.RegisterCommand("/lootoff", (x) =>
             {
                 if (x.args.Count > 0 && !x.args[0].Equals(E3._currentName, StringComparison.OrdinalIgnoreCase))
                 {
-                    E3._bots.BroadcastCommandToPerson(x.args[0], "/Lootoff");
+                    E3._bots.BroadcastCommandToPerson(x.args[0], "/lootoff");
                 }
                 else
                 {

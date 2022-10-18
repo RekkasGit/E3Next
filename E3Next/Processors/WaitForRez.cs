@@ -1,4 +1,5 @@
-﻿using MonoCore;
+﻿using E3Core.Data;
+using MonoCore;
 using System;
 using System.Collections.Generic;
 using System.Linq;
@@ -18,6 +19,7 @@ namespace E3Core.Processors
         public static void Init()
         {
             RegisterEvents();
+            InitRezSpells();
         }
 
 
@@ -101,10 +103,10 @@ namespace E3Core.Processors
             }
         }
 
-        private static bool CanRez()
+        public static bool CanRez()
         {
             MQ.Cmd("/consider");
-            MQ.Delay(2000);
+            MQ.Delay(600);
             //check for the event.
             if(HasEventItem("CanRez"))
             {
@@ -136,10 +138,181 @@ namespace E3Core.Processors
             }
             return false;
         }
+    
+        private static List<Int32> _corpseList = new List<int>();
+        private static void AERez()
+        {
+            Int32 rezRetries = 0;
+            retryRez:
+            //we do this to check if our rez tokens have been used up.
+            _currentRezSpells.Clear();
+            InitRezSpells();
+
+
+            if (_currentRezSpells.Count==0)
+            {
+                E3._bots.Broadcast("<AERez> \arI have no rez spells loaded");
+                return;
+            }
+
+            Basics.RemoveFollow();
+
+            CreateCorpseList();
+            List<Int32> corpsesRaised = new List<int>();
+            foreach (var corpseid in _corpseList)
+            {
+                Spawn s;
+                if (_spawns.TryByID(corpseid, out s))
+                {
+                    Casting.TrueTarget(s.ID);
+                    MQ.Cmd($"/tell {s.DiplayName} Wait4Rez");
+                    MQ.Delay(1500); //long delays after tells
+                    //assume consent was given
+                    MQ.Cmd("/corpse");
+
+               
+                    foreach (var spell in _currentRezSpells)
+                    {
+                   
+                        if (Casting.CheckReady(spell) && Casting.CheckMana(spell))
+                        {
+                            
+                            Casting.Cast(s.ID, spell);
+                            corpsesRaised.Add(s.ID);
+                            break;
+                        }
+                    }
+                }
+            }
+
+            foreach (var corspseId in corpsesRaised)
+            {
+                _corpseList.Remove(corspseId);
+            }
+
+            if(_corpseList.Count>0 && !Basics.InCombat())
+            {
+                //have some left over corpses we could rez
+                rezRetries++;
+                if(rezRetries<10)
+                {
+                    goto retryRez;
+
+                }
+            }
+
+            //whatever is left didn't get raised.
+            foreach(var corpseid in _corpseList)
+            {
+                Spawn s;
+                if(_spawns.TryByID(corpseid,out s))
+                {
+                    E3._bots.Broadcast($"\ag<AERez> \awWasn't able to rez \ap{s.CleanName}\aw due to cooldowns, try again.");
+                }
+            }
+
+
+        }
+        private static List<string> _resSpellList = new List<string>()
+        {
+            "Blessing of Resurrection","Water Sprinkler of Nem Ankh","Reviviscence","Token of Resurrection","Spiritual Awakening","Resurrection","Restoration","Resuscitate","Renewal","Revive","Reparation"
+        };
+        private static List<Data.Spell> _currentRezSpells = new List<Spell>();
+
+        private static void InitRezSpells()
+        {
+            foreach (var spellName in _resSpellList)
+            {
+                if (MQ.Query<bool>($"${{FindItem[={spellName}]}}"))
+                {
+                    _currentRezSpells.Add(new Spell(spellName));
+                }
+                if (MQ.Query<bool>($"${{Me.AltAbility[{spellName}].ID}}"))
+                {
+                    _currentRezSpells.Add(new Spell(spellName));
+                }
+                if (MQ.Query<bool>($"${{Me.Book[{spellName}].ID}}"))
+                {
+                    _currentRezSpells.Add(new Spell(spellName));
+                }
+            }
+
+        }
+        private static void CreateCorpseList()
+        {
+            _corpseList.Clear();
+            //lets get a corpse list
+            _spawns.RefreshList();
+
+            //lets find the clerics in range
+            foreach (var spawn in _spawns.Get())
+            {
+                if (spawn.Distance3D < 100 && spawn.DeityID != 0 && spawn.TypeDesc == "Corpse" && spawn.ClassShortName == "CLR")
+                {
+                    Casting.TrueTarget(spawn.ID);
+                    MQ.Delay(500);
+                    if (WaitForRez.CanRez())
+                    {
+                        _corpseList.Add(spawn.ID);
+                    }
+                }
+            }
+            foreach (var spawn in _spawns.Get())
+            {
+                if (spawn.Distance3D < 100 && spawn.DeityID != 0 && spawn.TypeDesc == "Corpse" && (spawn.ClassShortName == "DRU" || spawn.ClassShortName == "SHM" || spawn.ClassShortName == "WAR"))
+                {
+                    Casting.TrueTarget(spawn.ID);
+                    MQ.Delay(500);
+                    if (WaitForRez.CanRez())
+                    {
+                        _corpseList.Add(spawn.ID);
+                    }
+                }
+            }
+            //everyone else
+            foreach (var spawn in _spawns.Get())
+            {
+                if (spawn.Distance3D < 100 && spawn.DeityID != 0 && spawn.TypeDesc == "Corpse")
+                {
+                    Casting.TrueTarget(spawn.ID);
+                    MQ.Delay(500);
+                    if (WaitForRez.CanRez())
+                    {
+                        //lists are super small so contains is fine
+                        if (!_corpseList.Contains(spawn.ID))
+                        {
+                            _corpseList.Add(spawn.ID);
+                        }
+                    }
+                }
+            }
+        }
         private static void RegisterEvents()
         {
 
+            EventProcessor.RegisterCommand("/aerez", (x) =>
+            {
+                if (x.args.Count == 0)
+                {
+                    AERez();
 
+                }
+                else if (x.args.Count == 1)
+                {
+                    string user = x.args[0];
+
+                    if (user == E3._currentName)
+                    {
+                        //its a me!
+                        AERez();
+                    }
+                    else
+                    {
+                        E3._bots.BroadcastCommandToPerson(user, "/aerez");
+                    }
+
+                }
+            });
             EventProcessor.RegisterEvent("YourDead", "You died.", (x) =>
             {
                 Assist.AssistOff();
@@ -156,7 +329,13 @@ namespace E3Core.Processors
             });
             EventProcessor.RegisterEvent("WaitForRez", "(.+) tells you, 'Wait4Rez'", (x) =>
             {
-                _waitingOnRez = true;
+                if(x.match.Groups.Count>1)
+                {
+                    string user = x.match.Groups[1].Value;
+                    E3._bots.Broadcast("Being told to wait for rez by:" + user);
+                    MQ.Cmd($"/consent {user}");
+                    _waitingOnRez = true;
+                }
             });
             EventProcessor.RegisterCommand("/WaitRez", (x) =>
             {

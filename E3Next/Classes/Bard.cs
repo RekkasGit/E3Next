@@ -18,6 +18,7 @@ namespace E3Core.Classes
         private static IMQ MQ = E3.MQ;
         private static ISpawns _spawns = E3._spawns;
         private static Queue<Data.Spell> _songs = new Queue<Spell>();
+
         private static bool _isInit = false;
         private static bool _playingMelody = true;
         private static string _currentMelody = String.Empty;
