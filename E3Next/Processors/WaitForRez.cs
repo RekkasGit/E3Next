@@ -106,7 +106,7 @@ namespace E3Core.Processors
         public static bool CanRez()
         {
             MQ.Cmd("/consider");
-            MQ.Delay(600);
+            MQ.Delay(500);
             //check for the event.
             if(HasEventItem("CanRez"))
             {
@@ -140,18 +140,42 @@ namespace E3Core.Processors
         }
     
         private static List<Int32> _corpseList = new List<int>();
+        private static void SingleRez(Int32 corpseID)
+        {
+            Spawn s;
+            if (_spawns.TryByID(corpseID, out s))
+            {
+                if (s.DeityID != 0 && s.TypeDesc == "Corpse")
+                {
+                    //we do this to check if our rez tokens have been used up.
+                    InitRezSpells();
+                    Casting.TrueTarget(s.ID);
+                    MQ.Cmd($"/tell {s.DiplayName} Wait4Rez");
+                    MQ.Delay(100);
+                    foreach (var spell in _currentRezSpells)
+                    {
+                        if (Casting.CheckReady(spell) && Casting.CheckMana(spell))
+                        {
+
+                            Casting.Cast(s.ID, spell);
+
+                            return;
+                        }
+                    }
+                }
+            }
+        }
         private static void AERez()
         {
             Int32 rezRetries = 0;
             retryRez:
             //we do this to check if our rez tokens have been used up.
-            _currentRezSpells.Clear();
             InitRezSpells();
 
 
             if (_currentRezSpells.Count==0)
             {
-                E3._bots.Broadcast("<AERez> \arI have no rez spells loaded");
+                E3._bots.Broadcast("<\aoAERez\aw> \arI have no rez spells loaded");
                 return;
             }
 
@@ -179,6 +203,7 @@ namespace E3Core.Processors
                             
                             Casting.Cast(s.ID, spell);
                             corpsesRaised.Add(s.ID);
+                            rezRetries = 0;
                             break;
                         }
                     }
@@ -196,6 +221,7 @@ namespace E3Core.Processors
                 rezRetries++;
                 if(rezRetries<10)
                 {
+                    MQ.Delay(1000);
                     goto retryRez;
 
                 }
@@ -207,7 +233,7 @@ namespace E3Core.Processors
                 Spawn s;
                 if(_spawns.TryByID(corpseid,out s))
                 {
-                    E3._bots.Broadcast($"\ag<AERez> \awWasn't able to rez \ap{s.CleanName}\aw due to cooldowns, try again.");
+                    E3._bots.Broadcast($"<\aoAERez\aw> Wasn't able to rez \ap{s.CleanName}\aw due to cooldowns, try again.");
                 }
             }
 
@@ -221,6 +247,7 @@ namespace E3Core.Processors
 
         private static void InitRezSpells()
         {
+            _currentRezSpells.Clear();
             foreach (var spellName in _resSpellList)
             {
                 if (MQ.Query<bool>($"${{FindItem[={spellName}]}}"))
@@ -313,6 +340,34 @@ namespace E3Core.Processors
 
                 }
             });
+
+            //rezit <toon> ${target.ID}
+            EventProcessor.RegisterCommand("/rezit", (x) =>
+            {
+               
+                if (x.args.Count == 1)
+                {
+                    string user = x.args[0];
+                    Int32 targetid = MQ.Query<Int32>("${Target.ID}");
+                    if (targetid>0)
+                    {
+                        E3._bots.BroadcastCommandToPerson(user, $"/rezit {targetid}");
+
+                    }
+
+                }
+                else if (x.args.Count == 0)
+                {
+                    Int32 targetid = MQ.Query<Int32>("${Target.ID}");
+                    if(targetid>0)
+                    {
+                        SingleRez(targetid);
+
+                    }
+
+                }
+            });
+
             EventProcessor.RegisterEvent("YourDead", "You died.", (x) =>
             {
                 Assist.AssistOff();
