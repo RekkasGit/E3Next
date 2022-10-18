@@ -55,8 +55,6 @@ namespace E3Core.Processors
                 //nowcast before all.
                 EventProcessor.ProcessEventsInQueues("/nowcast");
 
-                Basics.Check_Resources();
-
                 //do the basics first
                 //first and formost, do healing checks
                 if ((_currentClass& Data.Class.Priest)==_currentClass)

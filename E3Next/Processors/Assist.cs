@@ -57,7 +57,16 @@ namespace E3Core.Processors
             if (_assistTargetID == 0) return;
 
             Int32 targetId = MQ.Query<Int32>("${Target.ID}");
-            if (targetId != _assistTargetID)
+
+            if (targetId == 0)
+            {
+                if (!Casting.TrueTarget(_assistTargetID))
+                {
+                    AssistOff();
+                    return;
+                }
+            }
+            else if (targetId != _assistTargetID)
             {
 
                 //different target? most likely manual control kicked in, update our assist target.
@@ -71,9 +80,7 @@ namespace E3Core.Processors
                         _assistTargetID = targetId;
                     }
                 }
-                
-               
-
+             
             }
 
             Spawn s;

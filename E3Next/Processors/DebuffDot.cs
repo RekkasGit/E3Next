@@ -221,7 +221,7 @@ namespace E3Core.Processors
                 {
                     //we are turning our own loot on.
                     _shouldOffAssist = true;
-                    E3._bots.Broadcast("\agTurning on OffAssist.");
+                    E3._bots.Broadcast("\a#336699Turning on OffAssist.");
                 }
             });
             EventProcessor.RegisterCommand("/offassistoff", (x) =>
@@ -235,7 +235,7 @@ namespace E3Core.Processors
                 {
                     //we are turning our own loot on.
                     _shouldOffAssist = false;
-                    E3._bots.Broadcast("\agTurning on OffAssist.");
+                    E3._bots.Broadcast("\a-gTurning Off OffAssist.");
                 }
             });
 
@@ -249,6 +249,7 @@ namespace E3Core.Processors
                     {
                         if (command == "add")
                         {
+                            E3._bots.Broadcast($"Trying to add {targetid} to the off assist ignore list.");
                             if(!_mobsToIgnoreOffAsist.Contains(targetid))
                             {
                                 _mobsToIgnoreOffAsist.Add(targetid);
@@ -256,6 +257,8 @@ namespace E3Core.Processors
                         }
                         else if (command == "remove")
                         {
+                            E3._bots.Broadcast($"Removing {targetid} from the off assist ignore list.");
+
                             _mobsToIgnoreOffAsist.Remove(targetid);
                         }
                     }

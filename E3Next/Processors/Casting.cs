@@ -840,7 +840,7 @@ namespace E3Core.Processors
             if (MQ.Query<Int32>($"${{SpawnCount[id {targetID}]}}") > 0)
             {
                 MQ.Cmd($"/target id {targetID}");
-                MQ.Delay(300, $"${{Target.ID}}=={targetID}");
+                MQ.Delay(600, $"${{Target.ID}}=={targetID}");
                 if (MQ.Query<Int32>("${Target.ID}") == targetID) return true;
                 return false;
             }
@@ -1093,7 +1093,6 @@ namespace E3Core.Processors
             r.Add("Your spell is too powerful for your intended target.");
             EventProcessor.RegisterEvent("CAST_TAKEHOLD", r, (x) =>
             {
-                MQ.Write("test");
             });
 
 

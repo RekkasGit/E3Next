@@ -27,6 +27,8 @@ namespace E3Core.Processors
 
         private static Int64 _nextResourceCheck = 0;
         private static Int64 _nextResourceCheckInterval = 1000;
+        private static Int64 _nextAutoMedCheck = 0;
+        private static Int64 _nextAutoMedCheckInterval = 1000;
         public static void Init()
         {
             RegisterEventsCasting();
@@ -183,7 +185,10 @@ namespace E3Core.Processors
             bool inCombat = MQ.Query<bool>("${Me.Combat}") || MQ.Query<bool>("${Me.CombatState.Equal[Combat]}") || Assist._isAssisting;
             return inCombat;
         }
-        public static void Check_Resources()
+
+       
+        [ClassInvoke(Data.Class.ManaUsers)]
+        public static void Check_ManaResources()
         {
             if (!e3util.ShouldCheck(ref _nextResourceCheck, _nextResourceCheckInterval)) return;
 
@@ -358,6 +363,33 @@ namespace E3Core.Processors
 
             }
 
+        }
+        [ClassInvoke(Data.Class.All)]
+        public static void Check_AutoMed()
+        {
+
+            if (_following || InCombat()) return;
+            Int32 autoMedPct = E3._generalSettings.General_AutoMedBreakPctMana;
+            if (autoMedPct == 0) return;
+
+            if (!e3util.ShouldCheck(ref _nextAutoMedCheck, _nextAutoMedCheckInterval)) return;
+
+            bool amIStanding = MQ.Query<bool>("${Me.Standing}");
+
+            if (!amIStanding && autoMedPct > 0)
+            {
+                Int32 pctMana = MQ.Query<Int32>("${Me.PctMana}");
+                Int32 pctEndurance = MQ.Query<Int32>("${Me.PctEndurance}");
+
+                if (pctMana < autoMedPct)
+                {
+                    MQ.Cmd("/sit");
+                }
+                if (pctEndurance < autoMedPct)
+                {
+                    MQ.Cmd("/sit");
+                }
+            }
         }
     }
 }
