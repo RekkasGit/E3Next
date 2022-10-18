@@ -413,6 +413,10 @@ namespace E3Core.Processors
                         }
                         else
                         {
+                            if (result == CastReturn.CAST_INTERRUPTED || result == CastReturn.CAST_INTERRUPTFORHEAL || result == CastReturn.CAST_FIZZLE)
+                            {
+                                return;
+                            }
                             if (result != CastReturn.CAST_SUCCESS)
                             {
                                 //zero it out

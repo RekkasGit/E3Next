@@ -1,4 +1,5 @@
-﻿using IniParser;
+﻿using E3Core.Utility;
+using IniParser;
 using IniParser.Model;
 using System;
 using System.Collections.Generic;
@@ -52,10 +53,7 @@ namespace E3Core.Settings.FeatureSettings
 
                 if (System.IO.File.Exists(configFile)) fullFileToUse = configFile;
 
-                FileIniDataParser fileIniData = new FileIniDataParser();
-                fileIniData.Parser.Configuration.AllowDuplicateKeys = true;
-                fileIniData.Parser.Configuration.OverrideDuplicateKeys = true;// so that the other ones will be put into a collection
-                fileIniData.Parser.Configuration.AssigmentSpacer = "";
+                FileIniDataParser fileIniData = e3util.CreateIniParser();
                 _log.Write($"Reading Genearl Settings:{fullFileToUse}");
                 var parsedData = fileIniData.ReadFile(fullFileToUse);
                 
@@ -170,10 +168,7 @@ namespace E3Core.Settings.FeatureSettings
         public static void SaveData()
         {
 
-            IniParser.FileIniDataParser parser = new IniParser.FileIniDataParser();
-            parser.Parser.Configuration.AllowDuplicateKeys = true;
-            parser.Parser.Configuration.OverrideDuplicateKeys = true;// so that the other ones will be put into a collection
-            parser.Parser.Configuration.AssigmentSpacer = "";
+            IniParser.FileIniDataParser parser = e3util.CreateIniParser();
             IniData newFile = new IniData();
             //lets create all the sections in alpha order.
 
@@ -221,10 +216,7 @@ namespace E3Core.Settings.FeatureSettings
 
             //Parse the ini file
             //Create an instance of a ini file parser
-            FileIniDataParser fileIniData = new FileIniDataParser();
-            fileIniData.Parser.Configuration.AllowDuplicateKeys = true;
-            fileIniData.Parser.Configuration.OverrideDuplicateKeys = true;// so that the other ones will be put into a collection
-            fileIniData.Parser.Configuration.AssigmentSpacer = "";
+            FileIniDataParser fileIniData = e3util.CreateIniParser();
             System.IO.File.Delete(fullFileToUse);
             parser.WriteFile(fullFileToUse, newFile);
 

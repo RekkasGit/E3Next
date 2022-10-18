@@ -42,7 +42,7 @@ namespace E3Core.Processors
 
         public static void Process()
         {
-            Burns.UseBurns();
+           
             Check_AssistStatus();
             
         }
@@ -75,10 +75,15 @@ namespace E3Core.Processors
                 _spawns.RefreshList();
                 if(_spawns.TryByID(targetId,out ct))
                 {
-                    if(ct.Aggressive)
+                    if(_allowControl)
                     {
                         _assistTargetID = targetId;
                     }
+                    else
+                    {
+                        Casting.TrueTarget(_assistTargetID);
+                    }
+
                 }
              
             }

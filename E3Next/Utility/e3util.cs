@@ -1,5 +1,7 @@
 ﻿using E3Core.Data;
 using E3Core.Processors;
+using IniParser;
+using IniParser.Parser;
 using MonoCore;
 using System;
 using System.Collections.Generic;
@@ -162,6 +164,16 @@ namespace E3Core.Utility
                 }
             });
 
+        }
+        public static FileIniDataParser CreateIniParser()
+        {
+            var fileIniData = new FileIniDataParser();
+            fileIniData.Parser.Configuration.AllowDuplicateKeys = true;
+            fileIniData.Parser.Configuration.OverrideDuplicateKeys = true;// so that the other ones will be put into a collection
+            fileIniData.Parser.Configuration.AssigmentSpacer = "";
+            fileIniData.Parser.Configuration.CaseInsensitive = true;
+
+            return fileIniData;
         }
 
       

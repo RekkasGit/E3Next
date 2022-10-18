@@ -1,5 +1,6 @@
 ﻿using E3Core.Data;
 using E3Core.Processors;
+using E3Core.Utility;
 using IniParser;
 using IniParser.Model;
 using System;
@@ -54,10 +55,7 @@ namespace E3Core.Settings
 
             string fullPathToUse = macroFile;
             
-            FileIniDataParser fileIniData = new FileIniDataParser();
-            fileIniData.Parser.Configuration.AllowDuplicateKeys = true;
-            fileIniData.Parser.Configuration.OverrideDuplicateKeys = true;// so that the other ones will be put into a collection
-            fileIniData.Parser.Configuration.AssigmentSpacer = "";
+            FileIniDataParser fileIniData = e3util.CreateIniParser();
             if (!System.IO.File.Exists(configFile) && !System.IO.File.Exists(macroFile))
             {
                 if (!System.IO.Directory.Exists(_configFolder+_botFolder))
@@ -199,10 +197,7 @@ namespace E3Core.Settings
         {
             //if we need to , its easier to just output the entire file. 
 
-            IniParser.FileIniDataParser parser = new IniParser.FileIniDataParser();
-            parser.Parser.Configuration.AllowDuplicateKeys = true;
-            parser.Parser.Configuration.OverrideDuplicateKeys = true;// so that the other ones will be put into a collection
-            parser.Parser.Configuration.AssigmentSpacer = "";
+            IniParser.FileIniDataParser parser = e3util.CreateIniParser();
             IniData newFile = new IniData();
 
 
@@ -390,10 +385,7 @@ namespace E3Core.Settings
 
                 //Parse the ini file
                 //Create an instance of a ini file parser
-                FileIniDataParser fileIniData = new FileIniDataParser();
-                fileIniData.Parser.Configuration.AllowDuplicateKeys = true;
-                fileIniData.Parser.Configuration.OverrideDuplicateKeys = true;// so that the other ones will be put into a collection
-                fileIniData.Parser.Configuration.AssigmentSpacer = "";
+                FileIniDataParser fileIniData = e3util.CreateIniParser();
                 IniData tParsedData = fileIniData.ReadFile(fullFileToUse);
 
                 //overwrite newfile with what was already there

@@ -1,4 +1,5 @@
 ﻿using E3Core.Processors;
+using E3Core.Utility;
 using IniParser;
 using IniParser.Model;
 using System;
@@ -84,10 +85,7 @@ namespace E3Core.Settings
 
                 //Parse the ini file
                 //Create an instance of a ini file parser
-                FileIniDataParser fileIniData = new FileIniDataParser();
-                fileIniData.Parser.Configuration.AllowDuplicateKeys = true;
-                fileIniData.Parser.Configuration.OverrideDuplicateKeys = true;// so that the other ones will be put into a collection
-                fileIniData.Parser.Configuration.AssigmentSpacer = "";
+                FileIniDataParser fileIniData = e3util.CreateIniParser();
                 _log.Write($"Reading Genearl Settings:{fullPathToUse}");
                 parsedData = fileIniData.ReadFile(fullPathToUse);
             }
@@ -159,10 +157,7 @@ namespace E3Core.Settings
         public IniData CreateOrUpdateSettings()
         {
 
-            IniParser.FileIniDataParser parser = new IniParser.FileIniDataParser();
-            parser.Parser.Configuration.AllowDuplicateKeys = true;
-            parser.Parser.Configuration.OverrideDuplicateKeys = true;// so that the other ones will be put into a collection
-            parser.Parser.Configuration.AssigmentSpacer = "";
+            IniParser.FileIniDataParser parser = e3util.CreateIniParser();
             IniData newFile = new IniData();
 
 
@@ -265,10 +260,7 @@ namespace E3Core.Settings
 
                 //Parse the ini file
                 //Create an instance of a ini file parser
-                FileIniDataParser fileIniData = new FileIniDataParser();
-                fileIniData.Parser.Configuration.AllowDuplicateKeys = true;
-                fileIniData.Parser.Configuration.OverrideDuplicateKeys = true;// so that the other ones will be put into a collection
-                fileIniData.Parser.Configuration.AssigmentSpacer = "";
+                FileIniDataParser fileIniData = e3util.CreateIniParser();
                 IniData parsedData = fileIniData.ReadFile(fullFileToUse);
 
                 //overwrite newfile with what was already there

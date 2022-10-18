@@ -25,6 +25,8 @@ namespace E3Core.Processors
         public static List<Data.Spell> _anguishBP = new List<Data.Spell>();
         public static string _epicWeaponName = String.Empty;
         public static string _anguishBPName = String.Empty;
+        private static Int64 _nextBurnCheck = 0;
+        private static Int64 _nextBurnCheckInterval = 500;
 
         public static void Init()
         {
@@ -68,8 +70,11 @@ namespace E3Core.Processors
 
 
         }
+        [ClassInvoke(Data.Class.All)]
         public static void UseBurns()
         {
+            if (!e3util.ShouldCheck(ref _nextBurnCheck, _nextBurnCheckInterval)) return;
+
             UseBurn(_epicWeapon, use_EPICBurns);
             UseBurn(_anguishBP, use_EPICBurns);
             UseBurn(E3._characterSettings.QuickBurns, use_QUICKBurns);

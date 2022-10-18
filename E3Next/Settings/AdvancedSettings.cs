@@ -1,4 +1,5 @@
 ﻿using E3Core.Processors;
+using E3Core.Utility;
 using IniParser;
 using IniParser.Model;
 using MonoCore;
@@ -61,10 +62,8 @@ namespace E3Core.Settings
                     System.IO.Directory.CreateDirectory(_configFolder + _settingsFolder);
                 }
 
-                FileIniDataParser fileIniData = new FileIniDataParser();
-                fileIniData.Parser.Configuration.AllowDuplicateKeys = true;
-                fileIniData.Parser.Configuration.OverrideDuplicateKeys = true;// so that the other ones will be put into a collection
-                fileIniData.Parser.Configuration.AssigmentSpacer = "";
+                FileIniDataParser fileIniData = e3util.CreateIniParser();
+      
 
                 fullPathToUse = configFile;
                 _log.Write($"Creating new General settings:{fullPathToUse}");
@@ -78,10 +77,7 @@ namespace E3Core.Settings
 
                 //Parse the ini file
                 //Create an instance of a ini file parser
-                FileIniDataParser fileIniData = new FileIniDataParser();
-                fileIniData.Parser.Configuration.AllowDuplicateKeys = true;
-                fileIniData.Parser.Configuration.OverrideDuplicateKeys = true;// so that the other ones will be put into a collection
-                fileIniData.Parser.Configuration.AssigmentSpacer = "";
+                FileIniDataParser fileIniData = e3util.CreateIniParser();
                 _log.Write($"Reading Genearl Settings:{fullPathToUse}");
                 parsedData = fileIniData.ReadFile(fullPathToUse);
             }
