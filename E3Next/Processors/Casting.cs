@@ -418,33 +418,37 @@ namespace E3Core.Processors
                         while (MQ.Query<bool>("${Window[CastingWindow].Open}"))
                         {
                             //means that we didn't fizzle and are now casting the spell
-                            if (interruptCheck != null && interruptCheck(currentMana, pctMana))
+                            if(!spell.NoInterrupt)
                             {
-                                MQ.Cmd("/interrupt");
-                                MQ.Delay(0);
-                                E3._actionTaken = true;
-                                return CastReturn.CAST_INTERRUPTFORHEAL;
-                            }
-                            //check to see if there is a nowcast queued up, if so we need to kickout.
-                            if (!isNowCast && EventProcessor._commandList.ContainsKey("/nowcast") && EventProcessor._commandList["/nowcast"].queuedEvents.Count > 0)
-                            {
-                                //we have a nowcast ready to be processed
-                                MQ.Cmd("/interrupt");
-                                MQ.Delay(0);
-                                return CastReturn.CAST_INTERRUPTED;
-                            }
-                            //check if we need to process any events,if healing tho, ignore. 
-                            if (spell.SpellType.Equals("Detrimental"))
-                            {
-                                EventProcessor.ProcessEventsInQueues("/backoff");
-                                EventProcessor.ProcessEventsInQueues("/followme");
-                                
-                                if (Assist._assistTargetID == 0)
+                                if (interruptCheck != null && interruptCheck(currentMana, pctMana))
                                 {
+                                    MQ.Cmd("/interrupt");
+                                    MQ.Delay(0);
+                                    E3._actionTaken = true;
+                                    return CastReturn.CAST_INTERRUPTFORHEAL;
+                                }
+                                //check to see if there is a nowcast queued up, if so we need to kickout.
+                                if (!isNowCast && EventProcessor._commandList.ContainsKey("/nowcast") && EventProcessor._commandList["/nowcast"].queuedEvents.Count > 0)
+                                {
+                                    //we have a nowcast ready to be processed
+                                    MQ.Cmd("/interrupt");
+                                    MQ.Delay(0);
                                     return CastReturn.CAST_INTERRUPTED;
                                 }
+                                //check if we need to process any events,if healing tho, ignore. 
+                                if (spell.SpellType.Equals("Detrimental"))
+                                {
+                                    EventProcessor.ProcessEventsInQueues("/backoff");
+                                    EventProcessor.ProcessEventsInQueues("/followme");
 
+                                    if (Assist._assistTargetID == 0)
+                                    {
+                                        return CastReturn.CAST_INTERRUPTED;
+                                    }
+
+                                }
                             }
+                            
 
                             MQ.Delay(50);
 
