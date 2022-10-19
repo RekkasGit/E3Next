@@ -27,8 +27,13 @@ namespace MQServerClient
             NetMQOnIncomingChat _incChat = new NetMQOnIncomingChat();
             _incChat.Start();
 
+            IBots bots = new DanBots();
+
+
+
             while (true)
             {
+
                 E3.Process();
                 EventProcessor.ProcessEventsInQueues();
                 System.Threading.Thread.Sleep(1000);

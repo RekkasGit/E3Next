@@ -13,7 +13,7 @@ namespace E3Core.Processors
         Boolean InZone(string Name);
         Int32 PctHealth(string name);
         List<string> BotsConnected();
-        Boolean HasShortBuff(string name, Int64 buffid);
+        Boolean HasShortBuff(string name, Int32 buffid);
         void BroadcastCommandToGroup(string command);
         void BroadcastCommandToPerson(string person, string command);
         void Broadcast(string message);
@@ -84,27 +84,9 @@ namespace E3Core.Processors
             }
         }
 
-        public bool HasShortBuff(string name, Int64 buffid)
+        public bool HasShortBuff(string name, Int32 buffid)
         {
-            string buffidAsString = buffid.ToString();
-            string buffList = MQ.Query<string>($"${{NetBots[{name}].ShortBuff}}");
-
-            if(buffList.Contains(buffidAsString))
-            {
-                if(buffList.Contains(" "+buffidAsString+ " "))
-                {
-                    return true;
-                }
-                if(buffList.StartsWith(buffidAsString + " "))
-                {
-                    return true;
-                }
-                if(buffList.EndsWith(" "+buffidAsString))
-                {
-                    return true;
-                }
-            }
-            return false;
+            return BuffList(name).Contains(buffid);
         }
 
         public  List<int> BuffList(string name)
@@ -137,6 +119,7 @@ namespace E3Core.Processors
                         StringsToNumbers(listString, ' ', _buffListCollection[kvp.Key]);
                     }
                 }
+
             }
             return _buffListCollection[name];
 
@@ -195,7 +178,10 @@ namespace E3Core.Processors
         public static string _lastSuccesfulCast = String.Empty;
         public static Logging _log = E3._log;
         private static IMQ MQ = E3.MQ;
-
+        private static Dictionary<string, List<Int32>> _buffListCollection = new Dictionary<string, List<int>>();
+        private static Dictionary<string, Int64> _buffListCollectionTimeStamps = new Dictionary<string, long>();
+        private static Int64 _nextBuffCheck = 0;
+        private static Int64 _nextBuffRefreshTimeInterval = 1000;
         public List<string> BotsConnected()
         {
             throw new NotImplementedException();
@@ -216,39 +202,97 @@ namespace E3Core.Processors
             MQ.Cmd($"/dex {person} {command}");
         }
 
+        private void RegisterBuffSlots(string name)
+        {
+            for(Int32 i=1;i<=50;i++)
+            {
+                MQ.Cmd($"/dobserve {name} -q Me.Buff[{i}].Spell.ID");
+            }
+            for (Int32 i = 1; i <= 25; i++)
+            {
+                MQ.Cmd($"/dobserve {name} -q Me.Song[{i}].Spell.ID");
+            }
+        }
         public List<int> BuffList(string name)
         {
-            throw new NotImplementedException();
+
+            List<Int32> buffList;
+            bool alreadyExisted = true;
+            if (!_buffListCollection.TryGetValue(name, out buffList))
+            {
+                alreadyExisted = false;
+                buffList = new List<int>();
+                _buffListCollection.Add(name, buffList);
+                _buffListCollectionTimeStamps.Add(name, 0);
+
+                //register this persons buff slots
+                RegisterBuffSlots(name);
+                //after regster we need to delay by 1 second to let the new values come down
+                //MQ.Delay(1200);
+            }
+            if (!e3util.ShouldCheck(ref _nextBuffCheck, _nextBuffRefreshTimeInterval) && alreadyExisted) return _buffListCollection[name];
+            //refresh all lists of all people
+            foreach (var kvp in _buffListCollection)
+            {
+                _buffListCollection[kvp.Key].Clear();
+                for (Int32 i=1;i<=50;i++)
+                {
+                   Int32 spellid= MQ.Query<Int32>($"${{DanNet[{name}].O[\"Me.Buff[{i}].Spell.ID\"]}}");
+                    if(spellid>0)
+                    {
+                        _buffListCollection[kvp.Key].Add(spellid);
+                    }
+                }
+                for (Int32 i = 1; i <= 25; i++)
+                {
+                    Int32 spellid = MQ.Query<Int32>($"${{DanNet[{name}].O[\"Me.Song[{i}].Spell.ID\"]}}");
+                    if (spellid > 0)
+                    {
+                        _buffListCollection[kvp.Key].Add(spellid);
+                    }
+                }
+            }
+            return _buffListCollection[name];   //need to register and get a buff list.
         }
 
         public int CursedCounters(string name)
         {
-            Int32 counters = MQ.Query<Int32>($"/dquery {name} -q Me.CountersCurse");
+            MQ.Cmd("/dquery {name} -q Me.CountersCurse");
+            Int32 counters = MQ.Query<Int32>("${DanNet.Q}");
             return counters;
+
         }
 
         public int DebuffCounters(string name)
         {
-            Int32 counters = MQ.Query<Int32>($"/dquery {name} -q Me.TotalCounters");
+            MQ.Cmd("/dquery {name} -q Me.TotalCounters");
+            Int32 counters = MQ.Query<Int32>("${DanNet.Q}");
             return counters;
+           
         }
 
         public int DiseasedCounters(string name)
         {
-            Int32 counters = MQ.Query<Int32>($"/dquery {name} -q Me.CountersDisease");
+            MQ.Cmd("/dquery {name} -q Me.CountersDisease");
+            Int32 counters = MQ.Query<Int32>("${DanNet.Q}");
             return counters;
         }
 
-        public bool HasShortBuff(string name, Int64 buffid)
+        public bool HasShortBuff(string name, Int32 buffid)
         {
-            throw new NotImplementedException();
+            return BuffList(name).Contains(buffid);
         }
 
         public Boolean InZone(string name)
         {
-            return false;
-           // return MQ.Query<bool>($"${{NetBots[{name}].InZone}}");
+            MQ.Cmd("/dquery {name} -q Zone.ID");
+            Int32 zoneid = MQ.Query<Int32>("${DanNet.Q}");
 
+            if(zoneid==E3._zoneID)
+            {
+                return true;
+            }
+            return false;
 
         }
         public Int32 PctHealth(string name)
@@ -258,7 +302,8 @@ namespace E3Core.Processors
 
         public int PoisonedCounters(string name)
         {
-            Int32 counters = MQ.Query<Int32>($"/dquery {name} -q Me.CountersPoison");
+            MQ.Cmd("/dquery {name} -q Me.CountersPoison");
+            Int32 counters = MQ.Query<Int32>("${DanNet.Q}");
             return counters;
         }
     }

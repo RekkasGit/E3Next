@@ -853,10 +853,10 @@ namespace MonoCore
                 Core.mq_DoCommand(_currentCommand);
                 _currentCommand = String.Empty;
 
-                if (Core.mq_GetRunNextCommand())
-                {
-                    goto RestartWait;
-                }
+                //if (Core.mq_GetRunNextCommand())
+                //{
+                //    goto RestartWait;
+                //}
             }
             if (_currentDelay > 0)
             {

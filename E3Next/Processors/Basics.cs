@@ -436,7 +436,7 @@ namespace E3Core.Processors
             Int32 maxLoop = 10;
 
             Int32 totalClicksToTry = 40;
-            Int32 minManaToTryAndHeal = 1000;
+            //Int32 minManaToTryAndHeal = 1000;
 
             if (!InCombat())
             {
