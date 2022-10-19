@@ -462,6 +462,7 @@ namespace E3Core.Data
             }
             else if (CastType == CastType.Disc)
             {
+                TargetType = MQ.Query<String>($"${{Spell[{CastName}].TargetType}}");
                 Duration = MQ.Query<Int32>($"${{Spell[{CastName}].Duration}}");
                 DurationTotalSeconds = MQ.Query<Int32>($"${{Spell[{CastName}].Duration.TotalSeconds}}");
                 EnduranceCost = MQ.Query<Int32>($"${{Spell[{CastName}].EnduranceCost}}");

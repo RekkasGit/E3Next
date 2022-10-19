@@ -15,7 +15,7 @@ namespace E3Core.Processors
         public static Logging _log = E3._log;
         private static IMQ MQ = E3.MQ;
         private static ISpawns _spawns = E3._spawns;
-        public static bool _waitingOnRez = true;
+        public static bool _waitingOnRez = false;
         public static void Init()
         {
             RegisterEvents();
@@ -254,11 +254,11 @@ namespace E3Core.Processors
                 {
                     _currentRezSpells.Add(new Spell(spellName));
                 }
-                if (MQ.Query<bool>($"${{Me.AltAbility[{spellName}].ID}}"))
+                if (MQ.Query<bool>($"${{Me.AltAbility[{spellName}]}}"))
                 {
                     _currentRezSpells.Add(new Spell(spellName));
                 }
-                if (MQ.Query<bool>($"${{Me.Book[{spellName}].ID}}"))
+                if (MQ.Query<bool>($"${{Me.Book[{spellName}]}}"))
                 {
                     _currentRezSpells.Add(new Spell(spellName));
                 }

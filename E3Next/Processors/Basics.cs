@@ -5,6 +5,7 @@ using MonoCore;
 using System;
 using System.Collections.Generic;
 using System.Linq;
+using System.Security.Cryptography.X509Certificates;
 using System.Text;
 using System.Threading.Tasks;
 
@@ -29,9 +30,16 @@ namespace E3Core.Processors
         private static Int64 _nextResourceCheckInterval = 1000;
         private static Int64 _nextAutoMedCheck = 0;
         private static Int64 _nextAutoMedCheckInterval = 1000;
+
+        private static Int64 _nextAnchorCheck = 0;
+        private static Int64 _nextAnchorCheckInterval = 1000;
         public static void Init()
         {
             RegisterEventsCasting();
+        }
+        public static void Reset()
+        {
+            _anchorTarget = 0;
         }
         static void RegisterEventsCasting()
         {
@@ -71,6 +79,96 @@ namespace E3Core.Processors
                 MQ.Delay(1000);
                 
             });
+            EventProcessor.RegisterCommand("/dropinvis", (x) =>
+            {
+                
+                
+                E3._bots.BroadcastCommandToGroup("/makemevisible");
+                MQ.Cmd("/makemevisible");
+           
+            });
+
+            EventProcessor.RegisterCommand("/bark", (x) =>
+            {
+
+                //rebuild the bark message, and do a /say
+                if(x.args.Count>0)
+                {
+                    Int32 targetid = MQ.Query<Int32>("${Target.ID}");
+                    if (targetid > 0)
+                    {
+                        Spawn s;
+                        if(_spawns.TryByID(targetid,out s))
+                        {
+                            e3util.TryMoveToLoc(s.X, s.Y);
+                            System.Text.StringBuilder sb = new StringBuilder();
+                            bool first = true;
+                            foreach (string arg in x.args)
+                            {
+                                if (!first) sb.Append(" ");
+                                sb.Append(arg);
+                                first = false;
+                            }
+                            string message = sb.ToString();
+                            E3._bots.BroadcastCommandToGroup($"/bark-send {targetid} \"{message}\"");
+                            Int32 currentZone = E3._zoneID;
+
+                            for (Int32 i = 0; i < 5; i++)
+                            {
+                                MQ.Cmd($"/say {message}");
+                                MQ.Delay(1500);
+                                Int32 tzone = MQ.Query<Int32>("${Zone.ID}");
+                                if (tzone != currentZone)
+                                {
+                                    break;
+                                }
+                            }
+
+                        }
+
+                      
+                    }
+                }
+            });
+            EventProcessor.RegisterCommand("/bark-send", (x) =>
+            {
+                if(x.args.Count>1)
+                {
+                    Int32 targetid;
+                    if(Int32.TryParse(x.args[0],out targetid))
+                    {
+                        if (targetid > 0)
+                        {
+                            Spawn s;
+                            if (_spawns.TryByID(targetid, out s))
+                            {
+                                Casting.TrueTarget(targetid);
+                                MQ.Delay(100);
+                                e3util.TryMoveToLoc(s.X, s.Y);
+
+                                string message = x.args[1];
+                                 Int32 currentZone = E3._zoneID;
+                                for (Int32 i = 0; i < 5; i++)
+                                {
+                                    MQ.Cmd($"/say {message}");
+                                    MQ.Delay(1000);
+                                    Int32 tzone = MQ.Query<Int32>("${Zone.ID}");
+                                    if (tzone != currentZone)
+                                    {
+                                        break;
+                                    }
+                                }
+                            }
+                        }
+                    }
+                }
+            });
+            //EventProcessor.RegisterCommand("/movetome", (x) =>
+            //{
+            //    E3._bots.BroadcastCommandToGroup("/makemevisible");
+            //    MQ.Cmd("/makemevisible");
+
+            //});
             EventProcessor.RegisterCommand("/followoff", (x) =>
             {
                 RemoveFollow();
@@ -80,13 +178,42 @@ namespace E3Core.Processors
                     E3._bots.BroadcastCommandToGroup("/followoff all");
                 }
             });
-
             EventProcessor.RegisterCommand("/e3p", (x) =>
             {
                 //swap them
                  _isPaused = _isPaused?false:true;
                 if(_isPaused) MQ.Write("\arPAUSING E3!");
                 if (!_isPaused) MQ.Write("\agRunning E3 again!");
+
+            });
+
+            //anchoron
+            EventProcessor.RegisterCommand("/anchoron", (x) =>
+            {
+                if(x.args.Count>0)
+                {
+                    Int32 targetid;
+                    if (Int32.TryParse(x.args[0], out targetid))
+                    {
+                        _anchorTarget = targetid;
+                    }
+                }
+                else
+                {
+                    Int32 targetid = MQ.Query<Int32>("${Target.ID}");
+                    if(targetid>0)
+                    {
+                        E3._bots.BroadcastCommandToGroup($"/anchoron {targetid}");
+                    }
+                }
+            });
+            EventProcessor.RegisterCommand("/anchoroff", (x) =>
+            {
+                _anchorTarget = 0;
+                if (x.args.Count==0)
+                {
+                    E3._bots.BroadcastCommandToGroup($"/anchoroff all");
+                }
 
             });
             EventProcessor.RegisterCommand("/followme", (x) =>
@@ -363,6 +490,26 @@ namespace E3Core.Processors
 
             }
 
+        }
+
+        public static Int32 _anchorTarget = 0;
+        [ClassInvoke(Data.Class.All)]
+        public static void Check_Anchor()
+        {
+            if (!e3util.ShouldCheck(ref _nextAnchorCheck, _nextAnchorCheckInterval)) return;
+
+            if (_anchorTarget>0 && !InCombat())
+            {
+                _spawns.RefreshList();
+                Spawn s;
+                if(_spawns.TryByID(_anchorTarget, out s))
+                {
+                    if(s.Distance>20 && s.Distance<150)
+                    {
+                        e3util.TryMoveToLoc(s.X, s.Y);
+                    }
+                }
+            }
         }
         [ClassInvoke(Data.Class.All)]
         public static void Check_AutoMed()

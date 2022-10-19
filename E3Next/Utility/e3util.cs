@@ -39,18 +39,18 @@ namespace E3Core.Utility
 
         public static void TryMoveToTarget()
         {
+            Double meX = MQ.Query<Double>("${Me.X}");
+            Double meY = MQ.Query<Double>("${Me.Y}");
 
             Double x = MQ.Query<Double>("${Target.X}");
             Double y = MQ.Query<Double>("${Target.Y}");
             MQ.Cmd($"/squelch /moveto loc {y} {x}");
             MQ.Delay(500);
 
-            Double meX = MQ.Query<Double>("${Me.X}");
-            Double meY = MQ.Query<Double>("${Me.Y}");
             Int64 endTime = Core._stopWatch.ElapsedMilliseconds + 10000;
             while(true)
             {
-                MQ.Delay(200);
+               
                 Double tmeX = MQ.Query<Double>("${Me.X}");
                 Double tmeY = MQ.Query<Double>("${Me.Y}");
 
@@ -67,17 +67,39 @@ namespace E3Core.Utility
                 {
                     break;
                 }
-                
+                MQ.Delay(200);
             }
 
         }
 
         public static void TryMoveToLoc(Double x, Double y)
         {
-
+            Double meX = MQ.Query<Double>("${Me.X}");
+            Double meY = MQ.Query<Double>("${Me.Y}");
             MQ.Cmd($"/squelch /moveto loc {y} {x}");
-            MQ.Delay(200);
-            MQ.Delay(5000, "!${Me.Moving}");
+            Int64 endTime = Core._stopWatch.ElapsedMilliseconds + 10000;
+            MQ.Delay(300);
+            while (true)
+            {
+                Double tmeX = MQ.Query<Double>("${Me.X}");
+                Double tmeY = MQ.Query<Double>("${Me.Y}");
+
+                if ((int)meX == (int)tmeX && (int)meY == (int)tmeY)
+                {
+                    //we are stuck, kick out
+                    break;
+                }
+
+                meX = tmeX;
+                meY = tmeY;
+
+                if (endTime < Core._stopWatch.ElapsedMilliseconds)
+                {
+                    break;
+                }
+
+                MQ.Delay(200);
+            }
 
 
         }

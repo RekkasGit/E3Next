@@ -33,6 +33,7 @@ namespace E3Core.Processors
                     //means we have zoned.
                     _spawns.RefreshList();//make sure we get a new refresh of this zone.
                     Loot.Reset();
+                    Basics.Reset();
                     _zoneID = zoneID;
                    
                 }
