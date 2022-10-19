@@ -130,18 +130,18 @@ namespace E3Core.Processors
                 _buffListCollection[kvp.Key].Clear();
                 if (listString != "NULL")
                 {  
-                    StrignsToNumbers(listString, ' ', _buffListCollection[kvp.Key]);
+                    StringsToNumbers(listString, ' ', _buffListCollection[kvp.Key]);
                     listString = MQ.Query<string>($"${{NetBots[{kvp.Key}].ShortBuff}}");
                     if (listString != "NULL")
                     {
-                        StrignsToNumbers(listString, ' ', _buffListCollection[kvp.Key]);
+                        StringsToNumbers(listString, ' ', _buffListCollection[kvp.Key]);
                     }
                 }
             }
             return _buffListCollection[name];
 
         }
-        private static void StrignsToNumbers(string s, char delim, List<Int32> list)
+        private static void StringsToNumbers(string s, char delim, List<Int32> list)
         {
             List<int> result = list;
             int start = 0;
@@ -203,17 +203,17 @@ namespace E3Core.Processors
 
         public void Broadcast(string message)
         {
-            throw new NotImplementedException();
+            MQ.Cmd($"/dg all {message}");
         }
 
         public void BroadcastCommandToGroup(string query)
         {
-            throw new NotImplementedException();
+            MQ.Cmd($"/dgge {query}");
         }
 
         public void BroadcastCommandToPerson(string person, string command)
         {
-            throw new NotImplementedException();
+            MQ.Cmd($"/dex {person} {command}");
         }
 
         public List<int> BuffList(string name)
@@ -223,17 +223,20 @@ namespace E3Core.Processors
 
         public int CursedCounters(string name)
         {
-            throw new NotImplementedException();
+            Int32 counters = MQ.Query<Int32>($"/dquery {name} -q Me.CountersCurse");
+            return counters;
         }
 
         public int DebuffCounters(string name)
         {
-            throw new NotImplementedException();
+            Int32 counters = MQ.Query<Int32>($"/dquery {name} -q Me.TotalCounters");
+            return counters;
         }
 
         public int DiseasedCounters(string name)
         {
-            throw new NotImplementedException();
+            Int32 counters = MQ.Query<Int32>($"/dquery {name} -q Me.CountersDisease");
+            return counters;
         }
 
         public bool HasShortBuff(string name, Int64 buffid)
@@ -250,12 +253,13 @@ namespace E3Core.Processors
         }
         public Int32 PctHealth(string name)
         {
-            return 0;
+            return MQ.Query<Int32>($"/dquery {name} -q Me.PctHPs");
         }
 
         public int PoisonedCounters(string name)
         {
-            throw new NotImplementedException();
+            Int32 counters = MQ.Query<Int32>($"/dquery {name} -q Me.CountersPoison");
+            return counters;
         }
     }
 
