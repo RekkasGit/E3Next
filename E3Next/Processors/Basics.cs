@@ -88,6 +88,38 @@ namespace E3Core.Processors
            
             });
 
+            EventProcessor.RegisterCommand("/armor", (x) =>
+            {
+                VetAA("Armor of Experience","/armor",x.args.Count);
+            });
+            EventProcessor.RegisterCommand("/intensity", (x) =>
+            {
+                VetAA("Intensity of the Resolute","/intensity", x.args.Count);
+            });
+            EventProcessor.RegisterCommand("/infusion", (x) =>
+            {
+                VetAA("Infusion of the Faithful", "/infusion", x.args.Count);
+            });
+            EventProcessor.RegisterCommand("/staunch", (x) =>
+            {
+                VetAA("Staunch Recovery", "/staunch", x.args.Count);
+            });
+            EventProcessor.RegisterCommand("/servant", (x) =>
+            {
+                VetAA("Steadfast Servant", "/servant", x.args.Count);
+            });
+            EventProcessor.RegisterCommand("/expedient", (x) =>
+            {
+                VetAA("Expedient Recovery", "/expedient", x.args.Count);
+            });
+            EventProcessor.RegisterCommand("/lesson", (x) =>
+            {
+                VetAA("Lesson of the Devoted", "/lesson", x.args.Count);
+            });
+            EventProcessor.RegisterCommand("/jester", (x) =>
+            {
+                VetAA("Chaotic Jester", "/jester", x.args.Count);
+            });
             EventProcessor.RegisterCommand("/bark", (x) =>
             {
 
@@ -163,12 +195,26 @@ namespace E3Core.Processors
                     }
                 }
             });
-            //EventProcessor.RegisterCommand("/movetome", (x) =>
-            //{
-            //    E3._bots.BroadcastCommandToGroup("/makemevisible");
-            //    MQ.Cmd("/makemevisible");
+            EventProcessor.RegisterCommand("/fds", (x) =>
+            {
 
-            //});
+                if(x.args.Count>0)
+                {
+                    string slot = x.args[0];
+                    if(FDSPrint(slot))
+                    {
+                        if (x.args.Count == 1)
+                        {
+                            E3._bots.BroadcastCommandToGroup($"/fds {slot} group");
+                        }
+
+                    }
+                  
+                    
+                }
+               
+            });
+            
             EventProcessor.RegisterCommand("/followoff", (x) =>
             {
                 RemoveFollow();
@@ -242,7 +288,67 @@ namespace E3Core.Processors
 
         }
 
+        private static void VetAA(string vetAASpell,string command, Int32 argCount)
+        {
+            Spell s;
+            if (!Spell._loadedSpellsByName.TryGetValue(vetAASpell, out s))
+            {
+                s = new Spell(vetAASpell);
+            }
+            if (argCount == 0)
+            {
+                if (Casting.CheckReady(s))
+                {
+                    Casting.Cast(0, s);
+                }
+                E3._bots.BroadcastCommandToGroup($"{command} all");
+            }
+            else
+            {
+                if (Casting.CheckReady(s))
+                {
+                    Casting.Cast(0, s);
+                }
+            }
+        }
+       
+        private static readonly List<string> _fdsSlots = new List<string>() { "charm", "leftear", "head", "face", "rightear", "neck", "shoulder", "arms", "back", "leftwrist", "rightwrist", "ranged", "hands", "mainhand", "offhand", "leftfinger", "rightfinger", "chest", "legs", "feet", "waist", "powersource", "ammo", "fingers", "wrists", "ears" };
+        /// <summary>
+        /// for the /fds command
+        /// </summary>
+        /// <param name="slot"></param>
+        /// 
+        private static bool FDSPrint(string slot)
+        {
+           
+            if (_fdsSlots.Contains(slot))
+            {
+                if (slot == "fingers")
+                {
+                    MQ.Cmd("/g Left:${InvSlot[leftfinger].Item.ItemLink[CLICKABLE]}   Right:${InvSlot[rightfinger].Item.ItemLink[CLICKABLE]} ");
+                }
+                else if (slot == "wrists")
+                {
+                    MQ.Cmd("/g Left:${InvSlot[leftwrist].Item.ItemLink[CLICKABLE]}   Right:${InvSlot[rightwrist].Item.ItemLink[CLICKABLE]} ");
 
+                }
+                else if (slot == "ears")
+                {
+                    MQ.Cmd("/g Left:${InvSlot[leftear].Item.ItemLink[CLICKABLE]}   Right:${InvSlot[rightear].Item.ItemLink[CLICKABLE]} ");
+                }
+                else
+                {
+                    MQ.Cmd($"/g {slot}:${{InvSlot[{slot}].Item.ItemLink[CLICKABLE]}}");
+
+                }
+                return true;
+            }
+            else
+            {
+                MQ.Broadcast("Cannot find slot. Valid slots are:" + String.Join(",", _fdsSlots));
+                return false;
+            }
+        }
         public static void RefreshGroupMembers()
         {
             if (!e3util.ShouldCheck(ref _nextGroupCheck, _nextGroupCheckInterval)) return;

@@ -687,7 +687,7 @@ namespace E3Core.Processors
         }
         public static Boolean CheckReady(Data.Spell spell)
         {
-
+            if (spell.CastType == CastType.None) return false;
             //do we need to memorize it?
             if(!MemorizeSpell(spell))
             {

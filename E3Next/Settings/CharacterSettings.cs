@@ -14,6 +14,8 @@ using System.Threading.Tasks;
 
 namespace E3Core.Settings
 {
+    //update all peg to laz
+    //get-childitem *_PEQTGC.ini | rename-item -newname {$_.name -replace '_PEQTGC.ini','_Lazarus.ini' }
     public class CharacterSettings : BaseSettings, IBaseSettings
     {
         public static IniData _parsedData;
