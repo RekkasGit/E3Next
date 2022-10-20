@@ -185,9 +185,13 @@ namespace IniParser.Model
             if (AddKey(keyName))
             {
                 _keyData[keyName].Value = keyValue;
+                
                 return true;
             }
-
+            if (!_keyData[keyName].ValueList.Contains(keyValue))
+            {
+                _keyData[keyName].ValueList.Add(keyValue);
+            }
             return false;
 
         }
@@ -236,6 +240,11 @@ namespace IniParser.Model
                 AddKey(keyData.KeyName);
                 GetKeyData(keyData.KeyName).Comments.AddRange(keyData.Comments);
                 this[keyData.KeyName] = keyData.Value;
+                foreach (var valueentry in keyData.ValueList)
+                {
+                    GetKeyData(keyData.KeyName).ValueList.Add(valueentry);
+                }
+               
             }
 
         }

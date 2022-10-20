@@ -33,6 +33,8 @@ namespace E3Core.Processors
 
         private static Int64 _nextAnchorCheck = 0;
         private static Int64 _nextAnchorCheckInterval = 1000;
+
+  
         public static void Init()
         {
             RegisterEventsCasting();
@@ -75,17 +77,13 @@ namespace E3Core.Processors
                 MQ.Cmd("/multiline ; /doortarget ; /timed 5 /click left door ");
                   //we are telling people to follow us
                 E3._bots.BroadcastCommandToGroup("/clickit");
-
                 MQ.Delay(1000);
                 
             });
             EventProcessor.RegisterCommand("/dropinvis", (x) =>
             {
-                
-                
                 E3._bots.BroadcastCommandToGroup("/makemevisible");
                 MQ.Cmd("/makemevisible");
-           
             });
 
             EventProcessor.RegisterCommand("/armor", (x) =>
@@ -644,5 +642,6 @@ namespace E3Core.Processors
                 }
             }
         }
+       
     }
 }

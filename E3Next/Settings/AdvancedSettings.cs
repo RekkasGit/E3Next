@@ -159,55 +159,7 @@ namespace E3Core.Settings
         }
 
        
-        //[AdvSettingInvoke]
-        //public void check_summonitems() { }
-        //[AdvSettingInvoke]
-        //public void check_charm() { }
-        //[AdvSettingInvoke]
-        //public void check_rune() { }
-        //[AdvSettingInvoke]
-        //public void check_mez() { }
-        //[AdvSettingInvoke]
-        //public void check_manadump() { }
-        //[AdvSettingInvoke]
-        //public void check_lifetap() { }
-        //[AdvSettingInvoke]
-        //public void check_ae() { }
-        //[AdvSettingInvoke]
-
-        //public void check_nukes() { }
-        //[AdvSettingInvoke]
-        //public void check_tanking() { }
-        //[AdvSettingInvoke]
-
-        //public void check_burns() { }
-        //[AdvSettingInvoke]
-        //public void check_buffs() { }
-        //[AdvSettingInvoke]
-        //public void check_food() { }
-        //[AdvSettingInvoke]
-        //public void check_gimme() { }
-        //[AdvSettingInvoke]
-        //public void check_bard_mez() { }
-        //[AdvSettingInvoke]
-        //public void check_debuffs() { }
-        //[AdvSettingInvoke]
-        //public void check_heals() { }
-        //[AdvSettingInvoke]
-        //public void check_cures() { }
-        //[AdvSettingInvoke]
-
-        //public void check_pets() { }
-        //[AdvSettingInvoke]
-        //public void check_dots() { }
-        //[AdvSettingInvoke]
-        //public void check_divinearb() { }
-        //[AdvSettingInvoke]
-        //public void check_celetialregen() { }
-        //[AdvSettingInvoke]
-        //public void check_yalp() { }
-        //[AdvSettingInvoke]
-        //public void check_offassistspells() { }
+      
 
        
         string filePayload =

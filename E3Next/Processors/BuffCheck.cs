@@ -30,6 +30,10 @@ namespace E3Core.Processors
         private static Data.Spell _selectAura = null;
         private static Int64 _nextBuffCheck = 0;
         private static Int64 _nextBuffCheckInterval = 250;
+        private static List<Int32> _xpBuffs = new List<int>() { 42962 /*xp6*/, 42617 /*xp5*/, 42616 /*xp4*/};
+        private static List<Int32> _gmBuffs = new List<int>() { 34835,35989,35361,25732,34567,36838,43040,36266,36423};
+        private static Int64 _nextBlockBuffCheck = 0;
+        private static Int64 _nextBlockBuffCheckInterval = 1000;
         public static void Init()
         {
             RegisterEvents();
@@ -37,10 +41,139 @@ namespace E3Core.Processors
         private static void RegisterEvents()
         {
 
-           
+            EventProcessor.RegisterCommand("/dropbuff", (x) =>
+            {
+                if(x.args.Count>0)
+                {
+                    string buffToDrop = x.args[0];
+                    DropBuff(buffToDrop);
+                    if (x.args.Count > 1 && x.args[1] == "all")
+                    {
+                        E3._bots.BroadcastCommandToGroup($"/dropbuff {buffToDrop}");
+                    }
+                }
+            });
+
+            EventProcessor.RegisterCommand("/blockbuff", (x) =>
+            {
+                if (x.args.Count > 0)
+                {
+                    string command = x.args[0];
+
+                    if (command == "add")
+                    {
+                        if (x.args.Count > 1)
+                        {
+                            string spellName = x.args[1];
+                            //check if it exists
+                            bool exists = false;
+                            foreach (var spell in E3._characterSettings.BockedBuffs)
+                            {
+
+                                if (spell.SpellName.Equals(spellName, StringComparison.OrdinalIgnoreCase))
+                                {
+                                    exists = true;
+                                }
+                            }
+                            if (!exists)
+                            {
+                                Spell s = new Spell(spellName);
+                                if (s.SpellID > 0)
+                                {
+                                    E3._characterSettings.BockedBuffs.Add(s);
+                                    E3._characterSettings.SaveData();
+                                }
+                            }
+                        }
+                    }
+                    else if (command == "remove")
+                    {
+                        if (x.args.Count > 1)
+                        {
+                            string spellName = x.args[1];
+                            List<Spell> newList = E3._characterSettings.BockedBuffs.Where(y => !y.SpellName.Equals(spellName, StringComparison.OrdinalIgnoreCase)).ToList();
+                            E3._characterSettings.BockedBuffs = newList;
+                            E3._characterSettings.SaveData();
+                        }
+                    }
+                    else if (command == "list")
+                    {
+                        MQ.Write("\aoBlocked Spell List");
+                        MQ.Write("\aw==================");
+                        foreach (var spell in E3._characterSettings.BockedBuffs)
+                        {
+                            MQ.Write("\at"+spell.SpellName);
+                        }
+                    }
+                }
+            });
         }
    
+        public static Boolean DropBuff(string buffToDrop)
+        {
+            //first look for exact match
+            Int32 buffID = MQ.Query<Int32>($"${{Spell[{buffToDrop}].ID}}");
+            if (buffID == 0)
+            {
+                //lets look for a partial match.
+                for (Int32 i = 1; i <= 40; i++)
+                {
+                    string buffName = MQ.Query<String>($"${{Me.Buff[{i}]}}");
+                    if (buffName.IndexOf(buffToDrop, StringComparison.OrdinalIgnoreCase) > 0)
+                    {
+                        //it matches 
+                        buffID = MQ.Query<Int32>($"${{Spell[{buffName}].ID}}");
+                        //make sure the partial isn't a bottle.
+                        if (_xpBuffs.Contains(buffID))
+                        {
+                            break;
+                        }
+                    }
 
+                }
+                //did we find it?
+                if (buffID == 0)
+                {
+                    for (Int32 i = 1; i <= 25; i++)
+                    {
+                        string buffName = MQ.Query<String>($"${{Me.Song[{i}]}}");
+                        if (buffName.IndexOf(buffToDrop, StringComparison.OrdinalIgnoreCase) > 0)
+                        {
+                            //it matches 
+                            buffID = MQ.Query<Int32>($"${{Spell[{buffName}].ID}}");
+                            if (_xpBuffs.Contains(buffID))
+                            {
+                                break;
+                            }
+                        }
+                    }
+                }
+            }
+
+            if (buffID > 0)
+            {
+                MQ.Cmd($"/blockspell add me {buffID}");
+                MQ.Cmd($"/blockspell remove me {buffID}");
+                MQ.Cmd($"/removebuff {buffToDrop}");
+                return true;
+            }
+            return false;
+        }
+        [ClassInvoke(Data.Class.All)]
+        public static void Check_BlockedBuffs()
+        {
+            if (!e3util.ShouldCheck(ref _nextBlockBuffCheck, _nextBlockBuffCheckInterval)) return;
+            foreach (var spell in E3._characterSettings.BockedBuffs)
+            {
+                if (spell.SpellID > 0)
+                {
+                    if (MQ.Query<bool>($"${{Me.Buff[{spell.CastName}]}}") || MQ.Query<bool>($"${{Me.Song[{spell.CastName}]}}"))
+                    {
+                        BuffCheck.DropBuff(spell.CastName);
+                    }
+                }
+            }
+        }
         [AdvSettingInvoke]
         public static void Check_Buffs()
         {

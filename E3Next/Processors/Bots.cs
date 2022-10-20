@@ -175,6 +175,8 @@ namespace E3Core.Processors
 
     public class DanBots : IBots
     {
+        private Int32 _maxBuffSlots = 37;
+        private Int32 _maxSongSlots = 25;
         public static string _lastSuccesfulCast = String.Empty;
         public static Logging _log = E3._log;
         private static IMQ MQ = E3.MQ;
@@ -204,11 +206,11 @@ namespace E3Core.Processors
 
         private void RegisterBuffSlots(string name)
         {
-            for(Int32 i=1;i<=50;i++)
+            for(Int32 i=1;i<= _maxBuffSlots; i++)
             {
                 MQ.Cmd($"/dobserve {name} -q Me.Buff[{i}].Spell.ID");
             }
-            for (Int32 i = 1; i <= 25; i++)
+            for (Int32 i = 1; i <= _maxSongSlots; i++)
             {
                 MQ.Cmd($"/dobserve {name} -q Me.Song[{i}].Spell.ID");
             }
@@ -227,15 +229,13 @@ namespace E3Core.Processors
 
                 //register this persons buff slots
                 RegisterBuffSlots(name);
-                //after regster we need to delay by 1 second to let the new values come down
-                //MQ.Delay(1200);
             }
             if (!e3util.ShouldCheck(ref _nextBuffCheck, _nextBuffRefreshTimeInterval) && alreadyExisted) return _buffListCollection[name];
             //refresh all lists of all people
             foreach (var kvp in _buffListCollection)
             {
                 _buffListCollection[kvp.Key].Clear();
-                for (Int32 i=1;i<=50;i++)
+                for (Int32 i=1;i<= _maxBuffSlots; i++)
                 {
                    Int32 spellid= MQ.Query<Int32>($"${{DanNet[{name}].O[\"Me.Buff[{i}].Spell.ID\"]}}");
                     if(spellid>0)
@@ -243,7 +243,7 @@ namespace E3Core.Processors
                         _buffListCollection[kvp.Key].Add(spellid);
                     }
                 }
-                for (Int32 i = 1; i <= 25; i++)
+                for (Int32 i = 1; i <= _maxSongSlots; i++)
                 {
                     Int32 spellid = MQ.Query<Int32>($"${{DanNet[{name}].O[\"Me.Song[{i}].Spell.ID\"]}}");
                     if (spellid > 0)

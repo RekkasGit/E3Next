@@ -175,7 +175,7 @@ namespace E3Core.Settings
             LoadKeyData("Cures", "RadiantCure", _parsedData, RadiantCure);
 
 
-           
+            LoadKeyData("Blocked Buffs", "BuffName", _parsedData, BockedBuffs);
 
             LoadKeyData("Heals", "Tank Heal", _parsedData, HealTanks);
             LoadKeyData("Heals", "Important Heal", _parsedData, HealImportantBots);
@@ -368,6 +368,9 @@ namespace E3Core.Settings
                 section = newFile.Sections.GetSectionData("Off Assist Spells");
                 section.Keys.AddKey("Main", "");
             }
+            newFile.Sections.AddSection("Blocked Buffs");
+            section = newFile.Sections.GetSectionData("Blocked Buffs");
+            section.Keys.AddKey("BuffName", "");
 
 
             newFile.Sections.AddSection("Gimme");
@@ -417,7 +420,35 @@ namespace E3Core.Settings
 
             return newFile;
         }
+        public void SaveData()
+        {
+            string filename = $"{_characterName}_{_serverName}.ini";
+        
+            string macroFile = _macroFolder + _botFolder + filename;
+            string configFile = _configFolder + _botFolder + filename;
+            string fullPathToUse = macroFile;
+            if (System.IO.File.Exists(configFile)) fullPathToUse = configFile;
 
+
+            var section =_parsedData.Sections["Blocked Buffs"];
+            if(section == null)
+            {
+                 _parsedData.Sections.AddSection("Blocked Buffs");
+                var newSection = _parsedData.Sections.GetSectionData("Blocked Buffs");
+                newSection.Keys.AddKey("BuffName", "");
+
+            }
+            section = _parsedData.Sections["Blocked Buffs"];
+            section.RemoveAllKeys();
+            foreach (var spell in BockedBuffs)
+            {
+                section.AddKey("BuffName", spell.SpellName);
+            }
+
+            FileIniDataParser fileIniData = e3util.CreateIniParser();
+            System.IO.File.Delete(fullPathToUse);
+            fileIniData.WriteFile(fullPathToUse, _parsedData);
+        }
 
         public readonly string _characterName;
         public readonly string _serverName;
@@ -499,6 +530,8 @@ namespace E3Core.Settings
         //life support
         public List<Data.Spell> LifeSupport = new List<Data.Spell>();
 
+        //blocked buffs
+        public List<Data.Spell> BockedBuffs = new List<Spell>();
 
 
 

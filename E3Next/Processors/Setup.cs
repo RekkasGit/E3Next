@@ -62,6 +62,7 @@ namespace E3Core.Processors
             NowCast.Init();
             Pets.Init();
             Alerts.Init();
+            BuffCheck.Init();
         }
         private static void LoadOrCreateCharacterSettings()
         {

@@ -99,7 +99,6 @@
     <Compile Include="Settings\GeneralSettings.cs" />
     <Compile Include="Utility\e3util.cs" />
   </ItemGroup>
-  <ItemGroup />
   <ItemGroup>
     <ProjectReference Include="..\IniFileParser\INIFileParser.csproj">
       <Project>{5e46dcf4-c473-4171-9f9b-f3910b5ec407}</Project>

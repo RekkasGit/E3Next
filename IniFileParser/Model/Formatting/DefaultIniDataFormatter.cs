@@ -86,19 +86,38 @@ namespace IniParser.Model.Formatting
 
             foreach (KeyData keyData in keyDataCollection)
             {
+
                 // Add a blank line if the key value pair has comments
                 if (keyData.Comments.Count > 0) sb.Append(Configuration.NewLineStr);
 
                 // Write key comments
                 WriteComments(keyData.Comments, sb);
 
-                //Write key and value
-                sb.Append(string.Format("{0}{3}{1}{3}{2}{4}", 
-                    keyData.KeyName,
-                    Configuration.KeyValueAssigmentChar, 
-                    keyData.Value, 
-                    Configuration.AssigmentSpacer, 
-                    Configuration.NewLineStr));
+                if(keyData.ValueList.Count>0)
+                {
+                    foreach (string value in keyData.ValueList)
+                    {
+                        //Write key and value
+                        sb.Append(string.Format("{0}{3}{1}{3}{2}{4}",
+                            keyData.KeyName,
+                            Configuration.KeyValueAssigmentChar,
+                            value,
+                            Configuration.AssigmentSpacer,
+                            Configuration.NewLineStr));
+                    }
+
+                }
+                else
+                {
+                    //Write key and value
+                    sb.Append(string.Format("{0}{3}{1}{3}{2}{4}",
+                        keyData.KeyName,
+                        Configuration.KeyValueAssigmentChar,
+                        keyData.Value,
+                        Configuration.AssigmentSpacer,
+                        Configuration.NewLineStr));
+                }
+               
             }
         }
 
