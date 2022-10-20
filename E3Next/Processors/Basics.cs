@@ -77,8 +77,8 @@ namespace E3Core.Processors
                 Assist.AssistOff();
                 //so following can get a new follow
                 Basics._following = false;
-                MQ.Cmd("/squelch /afollow off");
-                MQ.Cmd("/squelch /stick off");
+                //MQ.Cmd("/squelch /afollow off");
+                //MQ.Cmd("/squelch /stick off");
 
             });
             EventProcessor.RegisterEvent("InviteToDZ", "(.+) tells you, 'raidadd'", (x) => {
@@ -325,6 +325,7 @@ namespace E3Core.Processors
                     if(_spawns.TryByName(user,out s))
                     {
                         _followTargetName = user;
+                        _following = false;
                         Assist.AssistOff();
                         AcquireFollow();
                     }
@@ -441,21 +442,15 @@ namespace E3Core.Processors
                 if (s.Distance<=250)
                 {
                     if(!_following)
-                    {
+                    {  
                         //they are in range
                         if (MQ.Query<bool>($"${{Spawn[{_followTargetName}].LineOfSight}}"))
                         {
                             if (Casting.TrueTarget(s.ID))
                             {
+                                MQ.Delay(100);
                                 //if a bot, use afollow, else use stick
-                                if (E3._bots.InZone(_followTargetName))
-                                {
-                                    MQ.Cmd("/afollow on");
-                                }
-                                else
-                                {
-                                    MQ.Cmd("/squelch /stick hold 20 uw");
-                                }
+                                MQ.Cmd("/afollow on");
                                 _following = true;
                             }
                         }
