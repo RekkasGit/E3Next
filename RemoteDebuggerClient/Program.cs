@@ -465,10 +465,24 @@ namespace MQServerClient
 
             if (typeof(T) == typeof(Int32))
             {
-                Int32 value;
-                if (Int32.TryParse(mqReturnValue, out value))
+                if (!mqReturnValue.Contains("."))
                 {
-                    return (T)(object)value;
+                    Int32 value;
+                    if (Int32.TryParse(mqReturnValue, out value))
+                    {
+                        return (T)(object)value;
+                    }
+                    else { return (T)(object)-1; }
+                }
+                else
+                {
+                    Decimal value;
+                    if (decimal.TryParse(mqReturnValue, out value))
+                    {
+                        return (T)(object)value;
+                    }
+                    else { return (T)(object)-1; }
+
                 }
             }
             else if (typeof(T) == typeof(Boolean))
@@ -511,6 +525,7 @@ namespace MQServerClient
                 {
                     return (T)(object)value;
                 }
+                else { return (T)(object)-1M; }
             }
             else if (typeof(T) == typeof(double))
             {
@@ -519,6 +534,7 @@ namespace MQServerClient
                 {
                     return (T)(object)value;
                 }
+                else { return (T)(object)-1D; }
             }
             else if (typeof(T) == typeof(Int64))
             {
@@ -527,6 +543,7 @@ namespace MQServerClient
                 {
                     return (T)(object)value;
                 }
+                else { return (T)(object)-1L; }
             }
 
 

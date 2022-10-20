@@ -72,12 +72,12 @@ namespace E3Core.Utility
 
         }
 
-        public static void TryMoveToLoc(Double x, Double y)
+        public static void TryMoveToLoc(Double x, Double y,Int32 minDistance = 0,Int32 timeoutInMS = 10000 )
         {
             Double meX = MQ.Query<Double>("${Me.X}");
             Double meY = MQ.Query<Double>("${Me.Y}");
-            MQ.Cmd($"/squelch /moveto loc {y} {x}");
-            Int64 endTime = Core._stopWatch.ElapsedMilliseconds + 10000;
+            MQ.Cmd($"/squelch /moveto loc {y} {x} mdist {minDistance}");
+            Int64 endTime = Core._stopWatch.ElapsedMilliseconds + timeoutInMS;
             MQ.Delay(300);
             while (true)
             {
@@ -95,6 +95,7 @@ namespace E3Core.Utility
 
                 if (endTime < Core._stopWatch.ElapsedMilliseconds)
                 {
+                    MQ.Cmd($"/squelch /moveto off");
                     break;
                 }
 

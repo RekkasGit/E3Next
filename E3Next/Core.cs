@@ -900,6 +900,7 @@ namespace MonoCore
                     {
                         return (T)(object)value;
                     }
+                    else { return (T)(object)-1; }
                 }
                 else
                 {
@@ -908,6 +909,7 @@ namespace MonoCore
                     {
                         return (T)(object)value;
                     }
+                    else { return (T)(object)-1; }
 
                 }
             }
@@ -959,6 +961,7 @@ namespace MonoCore
                 {
                     return (T)(object)value;
                 }
+                else { return (T)(object)-1M; }
             }
             else if (typeof(T) == typeof(double))
             {
@@ -967,6 +970,7 @@ namespace MonoCore
                 {
                     return (T)(object)value;
                 }
+                else { return (T)(object)-1D; }
             }
             else if (typeof(T) == typeof(Int64))
             {
@@ -975,6 +979,7 @@ namespace MonoCore
                 {
                     return (T)(object)value;
                 }
+                else { return (T)(object)-1L; }
             }
 
 

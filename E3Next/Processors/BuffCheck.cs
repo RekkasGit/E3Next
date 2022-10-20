@@ -65,25 +65,8 @@ namespace E3Core.Processors
                         if (x.args.Count > 1)
                         {
                             string spellName = x.args[1];
-                            //check if it exists
-                            bool exists = false;
-                            foreach (var spell in E3._characterSettings.BockedBuffs)
-                            {
 
-                                if (spell.SpellName.Equals(spellName, StringComparison.OrdinalIgnoreCase))
-                                {
-                                    exists = true;
-                                }
-                            }
-                            if (!exists)
-                            {
-                                Spell s = new Spell(spellName);
-                                if (s.SpellID > 0)
-                                {
-                                    E3._characterSettings.BockedBuffs.Add(s);
-                                    E3._characterSettings.SaveData();
-                                }
-                            }
+                            BlockBuffAdd(spellName);
                         }
                     }
                     else if (command == "remove")
@@ -91,9 +74,7 @@ namespace E3Core.Processors
                         if (x.args.Count > 1)
                         {
                             string spellName = x.args[1];
-                            List<Spell> newList = E3._characterSettings.BockedBuffs.Where(y => !y.SpellName.Equals(spellName, StringComparison.OrdinalIgnoreCase)).ToList();
-                            E3._characterSettings.BockedBuffs = newList;
-                            E3._characterSettings.SaveData();
+                            BlockBuffRemove(spellName);
                         }
                     }
                     else if (command == "list")
@@ -108,7 +89,35 @@ namespace E3Core.Processors
                 }
             });
         }
-   
+        public static void BlockBuffRemove(string spellName)
+        {
+            List<Spell> newList = E3._characterSettings.BockedBuffs.Where(y => !y.SpellName.Equals(spellName, StringComparison.OrdinalIgnoreCase)).ToList();
+            E3._characterSettings.BockedBuffs = newList;
+            E3._characterSettings.SaveData();
+
+        }
+        public static void BlockBuffAdd(string spellName)
+        {
+            //check if it exists
+            bool exists = false;
+            foreach (var spell in E3._characterSettings.BockedBuffs)
+            {
+
+                if (spell.SpellName.Equals(spellName, StringComparison.OrdinalIgnoreCase))
+                {
+                    exists = true;
+                }
+            }
+            if (!exists)
+            {
+                Spell s = new Spell(spellName);
+                if (s.SpellID > 0)
+                {
+                    E3._characterSettings.BockedBuffs.Add(s);
+                    E3._characterSettings.SaveData();
+                }
+            }
+        }
         public static Boolean DropBuff(string buffToDrop)
         {
             //first look for exact match
@@ -155,6 +164,49 @@ namespace E3Core.Processors
                 MQ.Cmd($"/blockspell add me {buffID}");
                 MQ.Cmd($"/blockspell remove me {buffID}");
                 MQ.Cmd($"/removebuff {buffToDrop}");
+                return true;
+            }
+            return false;
+        }
+        public static Boolean DropBuff(Int32 buffId)
+        {
+            //first look for exact match
+            string buffName = String.Empty;
+            if (buffName == String.Empty)
+            {
+                //lets look for a partial match.
+                for (Int32 i = 1; i <= 40; i++)
+                {
+                    Int32 tbuffId = MQ.Query<Int32>($"${{Me.Buff[{i}].ID}}");
+                    if (tbuffId == buffId)
+                    {
+                        buffName = MQ.Query<string>($"${{Me.Buff[{i}]}}");
+                        break;
+                    }
+
+                }
+                //did we find it?
+                if(buffName==String.Empty)
+                {
+                    for (Int32 i = 1; i <= 40; i++)
+                    {
+                        Int32 tbuffId = MQ.Query<Int32>($"${{Me.Song[{i}].ID}}");
+                        if (tbuffId == buffId)
+                        {
+                            buffName = MQ.Query<string>($"${{Me.Song[{i}]}}");
+                            break;
+                        }
+
+                    }
+                }
+               
+            }
+
+            if (buffName!=String.Empty)
+            {
+                MQ.Cmd($"/blockspell add me {buffId}");
+                MQ.Cmd($"/blockspell remove me {buffId}");
+                MQ.Cmd($"/removebuff {buffName}");
                 return true;
             }
             return false;

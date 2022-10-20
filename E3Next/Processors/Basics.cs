@@ -1,5 +1,6 @@
 ﻿using E3Core.Data;
 using E3Core.Settings;
+using E3Core.Settings.FeatureSettings;
 using E3Core.Utility;
 using MonoCore;
 using System;
@@ -15,9 +16,9 @@ namespace E3Core.Processors
     {
 
         public static bool _following = false;
-        public static Int32 _followTargetID = 0;
+        //public static Int32 _followTargetID = 0;
         public static string _followTargetName = String.Empty;
-
+        public static DoorDataFile _doorData = new DoorDataFile();
         public static Logging _log = E3._log;
         private static IMQ MQ = E3.MQ;
         private static ISpawns _spawns = E3._spawns;
@@ -34,10 +35,12 @@ namespace E3Core.Processors
         private static Int64 _nextAnchorCheck = 0;
         private static Int64 _nextAnchorCheckInterval = 1000;
 
-  
+        private static Int64 _nextFollowCheck = 0;
+        private static Int64 _nextFollowCheckInterval = 1000;
         public static void Init()
         {
             RegisterEventsCasting();
+            _doorData.LoadData();
         }
         public static void Reset()
         {
@@ -65,6 +68,19 @@ namespace E3Core.Processors
                     MQ.Cmd($"/dzadd {x.match.Groups[1].Value}");
                 }
             });
+            EventProcessor.RegisterEvent("Zoned", @"You have entered (.+)\.", (x) => {
+
+                //means we have zoned.
+                _spawns.RefreshList();//make sure we get a new refresh of this zone.
+                Loot.Reset();
+                Basics.Reset();
+                Assist.AssistOff();
+                //so following can get a new follow
+                Basics._following = false;
+                MQ.Cmd("/squelch /afollow off");
+                MQ.Cmd("/squelch /stick off");
+
+            });
             EventProcessor.RegisterEvent("InviteToDZ", "(.+) tells you, 'raidadd'", (x) => {
                 if (x.match.Groups.Count > 1)
                 {
@@ -74,11 +90,50 @@ namespace E3Core.Processors
 
             EventProcessor.RegisterCommand("/clickit", (x) =>
             {
-                MQ.Cmd("/multiline ; /doortarget ; /timed 5 /click left door ");
-                  //we are telling people to follow us
-                E3._bots.BroadcastCommandToGroup("/clickit");
-                MQ.Delay(1000);
+                if(x.args.Count==0)
+                {
+                    //we are telling people to follow us
+                    E3._bots.BroadcastCommandToGroup($"/clickit {E3._zoneID}");
+
+                }
+                //read the ini file and pull the info we need.
                 
+                if(x.args.Count>0)
+                {
+                    Int32 zoneID;
+                    if(Int32.TryParse(x.args[0],out zoneID))
+                    {
+                        if(zoneID!=E3._zoneID)
+                        {
+                            //we are not in the same zone, ignore.
+                            return;
+                        }
+                    }
+                }
+
+                Int32 closestID =_doorData.ClosestDoorID();
+
+                if(closestID>0)
+                {
+                    MQ.Cmd($"/doortarget id {closestID}");
+                    double currentDistance = MQ.Query<Double>("${DoorTarget.Distance}");
+                    //need to move to its location
+                    if (currentDistance < 50)
+                    {
+                        MQ.Cmd($"/doortarget id {closestID}");
+
+                        Double doorX = MQ.Query<double>("${DoorTarget.X}");
+                        Double doorY = MQ.Query<double>("${DoorTarget.Y}");
+                        e3util.TryMoveToLoc(doorX, doorY, 8, 3000);
+                        MQ.Cmd("/squelch /click left door");
+                    }
+                    else
+                    {
+                        MQ.Write("\arMove Closer To Door");
+                    }
+                }
+              
+
             });
             EventProcessor.RegisterCommand("/dropinvis", (x) =>
             {
@@ -266,12 +321,10 @@ namespace E3Core.Processors
                 if(x.args.Count>0)
                 {
                     user = x.args[0];
-                    //we have someone to follow.
-                    _followTargetID = MQ.Query<Int32>($"${{Spawn[{user}].ID}}");
-                    if(_followTargetID > 0)
+                    Spawn s;
+                    if(_spawns.TryByName(user,out s))
                     {
                         _followTargetName = user;
-                        _following = true;
                         Assist.AssistOff();
                         AcquireFollow();
                     }
@@ -367,36 +420,52 @@ namespace E3Core.Processors
         }
         public static void RemoveFollow()
         {
-            _followTargetID = 0;
             _followTargetName = string.Empty;
+            _following = false;
             MQ.Cmd("/squelch /afollow off");
             MQ.Cmd("/squelch /stick off");
+
            
         }
-
+        [ClassInvoke(Data.Class.All)]
         public static void AcquireFollow()
         {
 
-            Int32 instanceCount = MQ.Query<Int32>($"${{SpawnCount[id {_followTargetID} radius 250]}}");
+            if (!e3util.ShouldCheck(ref _nextFollowCheck, _nextFollowCheckInterval)) return;
 
-            if (instanceCount > 0)
+            if (String.IsNullOrWhiteSpace(_followTargetName)) return;
+
+            Spawn s;
+            if(_spawns.TryByName(_followTargetName,out s))
             {
-                //they are in range
-                if (MQ.Query<bool>($"${{Spawn[{_followTargetName}].LineOfSight}}"))
+                if (s.Distance<=250)
                 {
-                    Casting.TrueTarget(_followTargetID);
-                    //if a bot, use afollow, else use stick
-                    if (E3._bots.InZone(_followTargetName))
+                    if(!_following)
                     {
-                        MQ.Cmd("/afollow on");
-                    }
-                    else
-                    {
-                        MQ.Cmd("/squelch /stick hold 20 uw");
+                        //they are in range
+                        if (MQ.Query<bool>($"${{Spawn[{_followTargetName}].LineOfSight}}"))
+                        {
+                            if (Casting.TrueTarget(s.ID))
+                            {
+                                //if a bot, use afollow, else use stick
+                                if (E3._bots.InZone(_followTargetName))
+                                {
+                                    MQ.Cmd("/afollow on");
+                                }
+                                else
+                                {
+                                    MQ.Cmd("/squelch /stick hold 20 uw");
+                                }
+                                _following = true;
+                            }
+                        }
                     }
                 }
+                else
+                {
+                    _following = false;
+                }
             }
-           
         }
         public static bool AmIDead()
         {

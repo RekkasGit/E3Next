@@ -30,12 +30,8 @@ namespace E3Core.Processors
                 Int32 zoneID = MQ.Query<Int32>("${Zone.ID}"); //to tell if we zone mid process
                 if(zoneID!=_zoneID)
                 {
-                    //means we have zoned.
-                    _spawns.RefreshList();//make sure we get a new refresh of this zone.
-                    Loot.Reset();
-                    Basics.Reset();
                     _zoneID = zoneID;
-                   
+
                 }
                 EventProcessor.ProcessEventsInQueues("/e3p");
                 if (Basics._isPaused)
@@ -322,6 +318,7 @@ namespace E3Core.Processors
         public static string _currentLongClassString;
         public static string _currentShortClassString;
         public static Int32 _zoneID;
+        private static Int32 _spawnID;
 
 
         public static ISpawns _spawns = Core.spawnInstance;

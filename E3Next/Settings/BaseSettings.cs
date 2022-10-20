@@ -29,6 +29,42 @@ namespace E3Core.Settings
 
 
         }
+        public static string GetBoTFilePath(string fileName)
+        {
+            string macroFile = _macroFolder + _botFolder + fileName;
+            string configFile = _configFolder + _botFolder + fileName;
+            string fullPathToUse = macroFile;
+
+            if (!System.IO.File.Exists(macroFile) && !System.IO.File.Exists(configFile))
+            {
+
+                fullPathToUse = configFile;
+            }
+            else
+            {
+                fullPathToUse = macroFile;
+                if (System.IO.File.Exists(configFile)) fullPathToUse = configFile;
+            }
+            return fullPathToUse;
+        }
+        public static string GetSettingsFilePath(string fileName)
+        {
+            string macroFile = _macroFolder + _settingsFolder + fileName;
+            string configFile = _configFolder + _settingsFolder + fileName;
+            string fullPathToUse = macroFile;
+
+            if (!System.IO.File.Exists(macroFile) && !System.IO.File.Exists(configFile))
+            {
+
+                fullPathToUse = configFile;
+            }
+            else
+            {
+                fullPathToUse = macroFile;
+                if (System.IO.File.Exists(configFile)) fullPathToUse = configFile;
+            }
+            return fullPathToUse;
+        }
         public String ToStringFields()
         {
             String output = "";

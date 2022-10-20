@@ -381,55 +381,41 @@ namespace E3Core.Settings
             newFile.Sections.AddSection("Events");
 
 
-            string filename = $"{_characterName}_{_serverName}.ini";
-            string macroFile = _macroFolder + _botFolder + filename;
-            string configFile = _configFolder + _botFolder + filename;
-            string fullPathToUse = macroFile;
+            string filename = GetBoTFilePath($"{_characterName}_{_serverName}.ini");
+        
             
-            if (!System.IO.File.Exists(macroFile) && !System.IO.File.Exists(configFile))
+            if (!System.IO.File.Exists(filename))
             {
                 if (!System.IO.Directory.Exists(_configFolder+_botFolder))
                 {
                     System.IO.Directory.CreateDirectory(_configFolder+_botFolder);
                 }
-                fullPathToUse = configFile;
                 //file straight up doesn't exist, lets create it
-                _log.Write($"Writing out new setting file: {fullPathToUse}");
-                parser.WriteFile(fullPathToUse, newFile);
+                parser.WriteFile(filename, newFile);
             }
             else
             {
                 //File already exists, may need to merge in new settings lets check
-                string fullFileToUse = macroFile;
-
-                if (System.IO.File.Exists(configFile)) fullFileToUse = configFile;
-
                 //Parse the ini file
                 //Create an instance of a ini file parser
                 FileIniDataParser fileIniData = e3util.CreateIniParser();
-                IniData tParsedData = fileIniData.ReadFile(fullFileToUse);
+                IniData tParsedData = fileIniData.ReadFile(filename);
 
                 //overwrite newfile with what was already there
-                _log.Write($"Merging new setting options for file: {fullFileToUse}");
                 newFile.Merge(tParsedData);
                 //save it it out now
-                System.IO.File.Delete(fullFileToUse);
-                parser.WriteFile(fullFileToUse, newFile);
+                System.IO.File.Delete(filename);
+                parser.WriteFile(filename, newFile);
             }
 
 
             return newFile;
         }
+
         public void SaveData()
         {
-            string filename = $"{_characterName}_{_serverName}.ini";
-        
-            string macroFile = _macroFolder + _botFolder + filename;
-            string configFile = _configFolder + _botFolder + filename;
-            string fullPathToUse = macroFile;
-            if (System.IO.File.Exists(configFile)) fullPathToUse = configFile;
-
-
+            string filename = GetBoTFilePath($"{_characterName}_{_serverName}.ini");
+          
             var section =_parsedData.Sections["Blocked Buffs"];
             if(section == null)
             {
@@ -446,8 +432,8 @@ namespace E3Core.Settings
             }
 
             FileIniDataParser fileIniData = e3util.CreateIniParser();
-            System.IO.File.Delete(fullPathToUse);
-            fileIniData.WriteFile(fullPathToUse, _parsedData);
+            System.IO.File.Delete(filename);
+            fileIniData.WriteFile(filename, _parsedData);
         }
 
         public readonly string _characterName;

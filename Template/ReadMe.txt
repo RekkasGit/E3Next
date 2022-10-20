@@ -161,3 +161,8 @@ foreach (var spawn in _spawns.Get())
         }
     }
 }
+
+WARNINGS-Pitfalls
+=====================
+Never issue your own registered command from code
+Be careful of boardcasting to other toons, that may in turn rebroadcast to you.

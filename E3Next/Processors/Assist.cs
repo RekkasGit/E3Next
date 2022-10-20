@@ -334,11 +334,6 @@ namespace E3Core.Processors
             DebuffDot.Reset();
             Burns.Reset();
 
-            //issue follow
-            if (Basics._following)
-            {
-                Basics.AcquireFollow();
-            }
         }
         public static void AssistOn(Int32 mobID)
         {
@@ -384,12 +379,12 @@ namespace E3Core.Processors
 
                 Spawn folTarget;
 
-                if (_spawns.TryByID(Basics._followTargetID, out folTarget))
+                if (_spawns.TryByName(Basics._followTargetName, out folTarget))
                 {
                     if (Basics._following && folTarget.Distance3D > 100 && MQ.Query<bool>("${Me.Moving}"))
                     {
                         //using a delay in awhile loop, use query for realtime info
-                        while (MQ.Query<bool>("${Me.Moving}") && MQ.Query<Decimal>($"${{Spawn[id {Basics._followTargetID}].Distance3D}}") > 100)
+                        while (MQ.Query<bool>("${Me.Moving}") && MQ.Query<Decimal>($"${{Spawn[{Basics._followTargetName}].Distance3D}}") > 100)
                         {
                             MQ.Delay(100);
                             //wait us to get close to our follow target and then we can engage
