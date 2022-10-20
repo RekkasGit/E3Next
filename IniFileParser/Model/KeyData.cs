@@ -54,7 +54,11 @@ namespace IniParser.Model
         public List<string> Comments
         {
             get { return _comments; }
-            set { _comments = new List<string> (value) ; }
+            set 
+            {
+                _comments.AddRange(value);
+                //_comments = new List<string> (value) ; 
+            }
         }
 
         /// <summary>

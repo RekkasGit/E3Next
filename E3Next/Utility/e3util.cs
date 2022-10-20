@@ -194,7 +194,7 @@ namespace E3Core.Utility
             fileIniData.Parser.Configuration.OverrideDuplicateKeys = true;// so that the other ones will be put into a collection
             fileIniData.Parser.Configuration.AssigmentSpacer = "";
             fileIniData.Parser.Configuration.CaseInsensitive = true;
-
+           
             return fileIniData;
         }
 
