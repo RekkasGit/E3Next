@@ -188,7 +188,7 @@ namespace E3Core.Processors
                 //did we find it?
                 if(buffName==String.Empty)
                 {
-                    for (Int32 i = 1; i <= 40; i++)
+                    for (Int32 i = 1; i <= 25; i++)
                     {
                         Int32 tbuffId = MQ.Query<Int32>($"${{Me.Song[{i}].ID}}");
                         if (tbuffId == buffId)
@@ -225,7 +225,20 @@ namespace E3Core.Processors
                     }
                 }
             }
+            //shoving this here for now
+            if(E3._characterSettings.Misc_RemoveTorporAfterCombat)
+            {
+                //auto remove torpor if not in combat and full health
+                if (MQ.Query<Int32>("${Me.PctHPs}") > 98 && !Basics.InCombat())
+                {
+                    if (MQ.Query<bool>("${Me.Song[Transcendent Torpor]}"))
+                    {
+                        DropBuff("Transcendent Torpor");
+                    }
+                }
+            }
         }
+
         [AdvSettingInvoke]
         public static void Check_Buffs()
         {
@@ -237,14 +250,12 @@ namespace E3Core.Processors
 
             if (!e3util.ShouldCheck(ref _nextBuffCheck,_nextBuffCheckInterval)) return;
 
-           
-            string combatState = MQ.Query<string>("${Me.CombatState}");
             bool moving = MQ.Query<bool>("${Me.Moving}");
 
 
-            e3util.PrintTimerStatus(_buffTimers, ref _printoutTimer, "Buffs");
+            //e3util.PrintTimerStatus(_buffTimers, ref _printoutTimer, "Buffs");
 
-            if (Assist._assistTargetID>0 || combatState=="COMBAT")
+            if (Basics.InCombat())
             {
                 BuffBots(E3._characterSettings.CombatBuffs);
 

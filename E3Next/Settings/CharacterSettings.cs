@@ -87,6 +87,7 @@ namespace E3Core.Settings
             LoadKeyData("Misc", "AutoMedBreak (On/Off)", _parsedData, ref Misc_AutoMedBreak);
             LoadKeyData("Misc", "Auto-Loot (On/Off)", _parsedData, ref Misc_AutoLootEnabled);
             LoadKeyData("Misc", "Anchor (Char to Anchor to)", _parsedData, ref Misc_AnchorChar);
+            LoadKeyData("Misc", "Remove Torpor After Combat", _parsedData, ref Misc_RemoveTorporAfterCombat);
 
             LoadKeyData("Assist Settings", "Assist Type (Melee/Ranged/Off)", _parsedData, ref Assist_Type);
             LoadKeyData("Assist Settings", "Melee Stick Point", _parsedData, ref Assist_MeleeStickPoint);
@@ -224,6 +225,7 @@ namespace E3Core.Settings
             section.Keys.AddKey("AutoMedBreak (On/Off)", "Off");
             section.Keys.AddKey("Auto-Loot (On/Off)", "Off");
             section.Keys.AddKey("Anchor (Char to Anchor to)", "");
+            section.Keys.AddKey("Remove Torpor After Combat", "On");
 
             newFile.Sections.AddSection("Assist Settings");
             section = newFile.Sections.GetSectionData("Assist Settings");
@@ -458,6 +460,7 @@ namespace E3Core.Settings
         public bool Misc_AutoMedBreak;
         public bool Misc_AutoLootEnabled;
         public string Misc_AnchorChar = String.Empty;
+        public bool Misc_RemoveTorporAfterCombat = true;
 
         public bool Rogue_AutoHide = false;
         public bool Rogue_AutoEvade = false;

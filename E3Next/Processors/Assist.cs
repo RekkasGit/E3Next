@@ -374,9 +374,6 @@ namespace E3Core.Processors
                     MQ.Cmd("/stand");
                 }
 
-
-                
-
                 Spawn folTarget;
 
                 if (_spawns.TryByName(Basics._followTargetName, out folTarget))

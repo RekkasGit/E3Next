@@ -182,16 +182,6 @@ namespace E3Core.Processors
                     }
                     
                 }
-                if (Basics._following)
-                {
-                    Basics.AcquireFollow();
-                }
-                else
-                {
-                    //go back to where we started
-                    e3util.TryMoveToLoc(startX, startY);
-                }
-
             }
         }
         private static void LootCorpse(Spawn corpse)
