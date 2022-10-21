@@ -77,6 +77,7 @@ namespace E3Core.Utility
             Double meX = MQ.Query<Double>("${Me.X}");
             Double meY = MQ.Query<Double>("${Me.Y}");
             MQ.Cmd($"/squelch /moveto loc {y} {x} mdist {minDistance}");
+            if (timeoutInMS == -1) return;
             Int64 endTime = Core._stopWatch.ElapsedMilliseconds + timeoutInMS;
             MQ.Delay(300);
             while (true)

@@ -37,6 +37,9 @@ namespace E3Core.Processors
 
         private static Int64 _nextFollowCheck = 0;
         private static Int64 _nextFollowCheckInterval = 1000;
+
+        private static Int64 _nextChaseCheck = 0;
+        private static Int64 _nextChaseCheckInterval = 10;
         public static void Init()
         {
             RegisterEventsCasting();
@@ -304,6 +307,37 @@ namespace E3Core.Processors
                     {
                         E3._bots.BroadcastCommandToGroup($"/anchoron {targetid}");
                     }
+                }
+            });
+            EventProcessor.RegisterCommand("/chaseme", (x) =>
+            {
+                //chaseme <toon name>
+                if (x.args.Count ==1 && x.args[0]!="off")
+                {
+                    Spawn s;
+                    if(_spawns.TryByName(x.args[0],out s))
+                    {
+                        _chaseTarget = x.args[0];
+                        _following = true;
+                    }
+                }
+                //chanseme off
+                else if(x.args.Count ==1 && x.args[0] == "off")
+                {
+                    E3._bots.BroadcastCommandToGroup($"/chaseme off {E3._currentName}");
+                    _chaseTarget = String.Empty;
+                    _following = false;
+                }
+                //chaseme off <toon name>
+                else if(x.args.Count==2 && x.args[0]=="off")
+                {
+                    _chaseTarget = String.Empty;
+                    _following = false;
+                }
+                else
+                {
+                    E3._bots.BroadcastCommandToGroup($"/chaseme {E3._currentName}");
+                    _following = false;
                 }
             });
             EventProcessor.RegisterCommand("/anchoroff", (x) =>
@@ -659,7 +693,28 @@ namespace E3Core.Processors
             }
 
         }
+        public static string _chaseTarget = String.Empty;
+        [ClassInvoke(Data.Class.All)]
+        public static void Check_Chase()
+        {
+            if (!e3util.ShouldCheck(ref _nextChaseCheck, _nextChaseCheckInterval)) return;
 
+            if (_chaseTarget!=String.Empty && !InCombat())
+            {
+                double distance = MQ.Query<double>($"${{Spawn[{_chaseTarget}].Distance}}");
+                if(distance!=-1)
+                {
+                    if (distance > 5 && distance < 150)
+                    {
+                        double x = MQ.Query<double>($"${{Spawn[{_chaseTarget}].X}}");
+                        double y = MQ.Query<double>($"${{Spawn[{_chaseTarget}].Y}}");
+                        e3util.TryMoveToLoc(x, y, 5,-1);
+                    }
+
+                }
+
+            }
+        }
         public static Int32 _anchorTarget = 0;
         [ClassInvoke(Data.Class.All)]
         public static void Check_Anchor()
