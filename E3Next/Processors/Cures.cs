@@ -18,7 +18,7 @@ namespace E3Core.Processors
         private static Data.Spell _RaidentCure;
         private static bool _shouldCastCure = true;
         private static Int64 _nextRCureCheck = 0;
-        private static Int64 _nexRCureCheckInterval = 1000;
+        private static Int64 _nexRCureCheckInterval = 500;
 
         public static void Init()
         {
@@ -46,6 +46,7 @@ namespace E3Core.Processors
             if (!e3util.ShouldCheck(ref _nextRCureCheck, _nexRCureCheckInterval)) return;
             if (!E3._actionTaken) CheckRaident();
             if (!E3._actionTaken) CheckNormalCures();
+            if (!E3._actionTaken) CheckCounterCures();
             if (!E3._actionTaken) CheckNormalCureAll();
 
         }
@@ -60,7 +61,7 @@ namespace E3Core.Processors
                          Spawn s;
                         if (_spawns.TryByID(id, out s))
                         {
-                            if (E3._bots.BuffList(s.CleanName).Contains(spell.SpellID))
+                            if (E3._bots.BuffList(s.CleanName).Contains(spell.CheckForID))
                             {
                                 Casting.Cast(s.ID, spell);
                                 return;
@@ -104,7 +105,54 @@ namespace E3Core.Processors
             }
             //end R-CURE
         }
+        private static void CheckCounterCures()
+        {
 
+            if (CheckCounterCure(E3._characterSettings.CurseCounterCure, E3._characterSettings.CurseCounterIgnore)) return;
+            if (CheckCounterCure(E3._characterSettings.PosionCounterCure, E3._characterSettings.PosionCounterIgnore)) return;
+            if (CheckCounterCure(E3._characterSettings.DiseaseCounterCure, E3._characterSettings.DiseaseCounterIgnore)) return;
+
+        }
+        private static bool CheckCounterCure(List<Data.Spell> curesSpells, List<Data.Spell> ignoreSpells)
+        {
+            foreach (var spell in curesSpells)
+            {
+                if (Casting.CheckReady(spell) && Casting.CheckMana(spell))
+                {
+                    //check each member of the group for counters
+                    List<string> targets = E3._bots.BotsConnected();
+                    foreach (var target in targets)
+                    {
+                        Spawn s;
+                        if (_spawns.TryByName(target, out s))
+                        {
+                            Int32 counters = E3._bots.CursedCounters(target);
+                            if (counters > 0 && s.Distance < spell.MyRange)
+                            {
+                                //check and make sure they don't have one of the 'ignored debuffs'
+                                List<Int32> badbuffs = E3._bots.BuffList(s.CleanName);
+
+                                bool foundBadBuff = false;
+                                foreach (var bb in ignoreSpells)
+                                {
+                                    if (badbuffs.Contains(bb.SpellID))
+                                    {
+                                        foundBadBuff = true;
+                                        break;
+                                    }
+                                }
+                                if (foundBadBuff) continue;
+
+                                Casting.Cast(s.ID, spell);
+                                return true;
+                            }
+                        }
+                    }
+                }
+            }
+            return false;
+
+        }
         private static void CheckNormalCures()
         {
             foreach(var spell in E3._characterSettings.Cures)
@@ -114,7 +162,7 @@ namespace E3Core.Processors
                     Spawn s;
                     if (_spawns.TryByName(spell.CastTarget, out s))
                     {
-                        if (s.Distance<spell.MyRange && E3._bots.BuffList(s.CleanName).Contains(spell.SpellID))
+                        if (s.Distance<spell.MyRange && E3._bots.BuffList(s.CleanName).Contains(spell.CheckForID))
                         {
                             Casting.Cast(s.ID, spell);
                             return;

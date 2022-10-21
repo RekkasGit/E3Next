@@ -173,7 +173,12 @@ namespace E3Core.Settings
             LoadKeyData("Cures", "Cure", _parsedData, Cures);
             LoadKeyData("Cures", "CureAll", _parsedData, CureAll);
             LoadKeyData("Cures", "RadiantCure", _parsedData, RadiantCure);
-
+            LoadKeyData("Cures", "CurseCounters", _parsedData, CurseCounterCure);
+            LoadKeyData("Cures", "CurseCountersIgnore", _parsedData, CurseCounterIgnore);
+            LoadKeyData("Cures", "PosionCounters", _parsedData, PosionCounterCure);
+            LoadKeyData("Cures", "PosionCountersIgnore", _parsedData, PosionCounterIgnore);
+            LoadKeyData("Cures", "DiseaseCounters", _parsedData, DiseaseCounterCure);
+            LoadKeyData("Cures", "DiseaseCountersIgnore", _parsedData, DiseaseCounterIgnore);
 
             LoadKeyData("Blocked Buffs", "BuffName", _parsedData, BockedBuffs);
 
@@ -341,6 +346,12 @@ namespace E3Core.Settings
                 section.Keys.AddKey("Cure", "");
                 section.Keys.AddKey("CureAll", "");
                 section.Keys.AddKey("RadiantCure", "");
+                section.Keys.AddKey("CurseCounters", "");
+                section.Keys.AddKey("CurseCountersIgnore", "");
+                section.Keys.AddKey("PoisonCounters", "");
+                section.Keys.AddKey("PoisonCountersIgnore", "");
+                section.Keys.AddKey("DiseaseCounters", "");
+                section.Keys.AddKey("DiseaseCountersIgnore", "");
             }
 
             if((_characterClass&Data.Class.Priest)==_characterClass|| (_characterClass&Data.Class.HealHybrid) ==_characterClass )
@@ -513,6 +524,12 @@ namespace E3Core.Settings
         public List<Data.Spell> Cures = new List<Data.Spell>();
         public List<Data.Spell> CureAll = new List<Data.Spell>();
         public List<Data.Spell> RadiantCure = new List<Data.Spell>();
+        public List<Data.Spell> CurseCounterCure = new List<Spell>();
+        public List<Data.Spell> CurseCounterIgnore = new List<Data.Spell>();
+        public List<Data.Spell> PosionCounterCure = new List<Spell>();
+        public List<Data.Spell> PosionCounterIgnore = new List<Data.Spell>();
+        public List<Data.Spell> DiseaseCounterCure = new List<Spell>();
+        public List<Data.Spell> DiseaseCounterIgnore = new List<Data.Spell>();
         //life support
         public List<Data.Spell> LifeSupport = new List<Data.Spell>();
 
