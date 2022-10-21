@@ -702,17 +702,49 @@ namespace E3Core.Processors
             if (_chaseTarget!=String.Empty && !InCombat())
             {
                 double distance = MQ.Query<double>($"${{Spawn[{_chaseTarget}].Distance}}");
-                if(distance!=-1)
+           
+                if (distance!=-1)
                 {
-                    if (distance > 5 && distance < 150)
+                    bool InLoS = MQ.Query<bool>($"${{Spawn[=${_chaseTarget}].LineOfSight}}");
+                    bool navLoaded = MQ.Query<bool>("${Bool[${Navigation.MeshLoaded}]}");
+                    if (navLoaded)
                     {
-                        double x = MQ.Query<double>($"${{Spawn[{_chaseTarget}].X}}");
-                        double y = MQ.Query<double>($"${{Spawn[{_chaseTarget}].Y}}");
-                        e3util.TryMoveToLoc(x, y, 5,-1);
+                        if (distance > 10)
+                        {
+                            bool navActive = MQ.Query<bool>("${Navigation.Active}");
+                            if (!navActive)
+                            {
+                                Int32 spawnID = MQ.Query<Int32>($"${{Spawn[={_chaseTarget}].ID}}");
+                                bool pathExists = MQ.Query<bool>($"${{Navigation.PathExists[id {spawnID}]}}");
+                                if (pathExists)
+                                {
+                                    MQ.Cmd($"/squelch /nav id {spawnID} log=error");
+                                }
+                                else
+                                {
+                                    //are they in LOS?
+                                    if (InLoS)
+                                    {
+                                        double x = MQ.Query<double>($"${{Spawn[{_chaseTarget}].X}}");
+                                        double y = MQ.Query<double>($"${{Spawn[{_chaseTarget}].Y}}");
+                                        e3util.TryMoveToLoc(x, y, 5, -1);
+                                    }
+
+                                }
+                            }
+                        }
+                       
                     }
-
+                    else
+                    {
+                        if (distance > 5 && distance < 150 && InLoS)
+                        {
+                            double x = MQ.Query<double>($"${{Spawn[{_chaseTarget}].X}}");
+                            double y = MQ.Query<double>($"${{Spawn[{_chaseTarget}].Y}}");
+                            e3util.TryMoveToLoc(x, y, 5, -1);
+                        }
+                    }
                 }
-
             }
         }
         public static Int32 _anchorTarget = 0;
