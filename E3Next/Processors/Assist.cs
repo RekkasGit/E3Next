@@ -544,9 +544,9 @@ namespace E3Core.Processors
                     _allowControl = true;
                    
                     AssistOn(targetID);
-                    E3._bots.BroadcastCommandToGroup($"/assistme {targetID}");
+                    E3._bots.BroadcastCommandToGroup($"/assistme {targetID}",x);
                 }
-                else
+                else if (!e3util.FilterMe(x))
                 {
                     Int32 mobid;
                     if (Int32.TryParse(x.args[0], out mobid))

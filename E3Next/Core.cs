@@ -10,6 +10,7 @@ using System.Collections.Concurrent;
 using System.Text.RegularExpressions;
 using E3Core.Processors;
 using System.Runtime.InteropServices;
+using System.Windows.Markup;
 
 /// <summary>
 /// Version 0.1
@@ -291,7 +292,9 @@ namespace MonoCore
                                     //need to split out the params
                                     List<String> args = ParseParms(line, ' ', '"').ToList();
                                     args.RemoveAt(0);
+                                      
                                     item.Value.queuedEvents.Enqueue(new CommandMatch() { eventName = item.Value.keyName, eventString = line, args = args });
+                                    
                                 }
                             }
                         }
@@ -302,6 +305,38 @@ namespace MonoCore
                     System.Threading.Thread.Sleep(1);
                 }
             }
+        }
+        private static List<string> GetCommandFilters(List<string> values)
+        {
+
+            ////Stop /Only|Soandoso
+            ////FollowOn /Only|Healers WIZ Soandoso
+            ////followon /Not|Healers /Exclude|Uberhealer1
+            /////Staunch /Only|Healers
+            /////Follow /Not|MNK
+            //things like this put into the filter collection.
+            List<string> returnValue = new List<string>();
+
+            foreach (string value in values)
+            {
+                if (value.StartsWith("/only", StringComparison.OrdinalIgnoreCase) )
+                {
+                    returnValue.Add(value);
+                }
+                else if (value.StartsWith("/not", StringComparison.OrdinalIgnoreCase) )
+                {
+                    returnValue.Add(value);
+                }
+                else if (value.StartsWith("/exclude",  StringComparison.OrdinalIgnoreCase))
+                {
+                    returnValue.Add(value);
+                }
+                else if (value.StartsWith("/include",StringComparison.OrdinalIgnoreCase))
+                {
+                    returnValue.Add(value);
+                }
+            }
+            return returnValue;
         }
         public static List<String> ParseParms(String line, Char delimiter, Char textQualifier)
         {
@@ -484,9 +519,32 @@ namespace MonoCore
         }
         public class CommandMatch
         {
-            public List<String> args;
+            public List<String> _args;
+       
+            public List<String> args
+            {
+                get { return _args; }
+                set 
+                {   //filter out any into filters.
+                    if (value != null)
+                    {
+                        filters = GetCommandFilters(value);
+                        if(filters.Count>0)
+                        {
+                            _args = value.Where(x => !filters.Any(y => y == x)).ToList();
+
+                        }
+                        else
+                        {
+                            _args = value;
+                        }
+                    }
+                }
+            }
+
             public string eventString;
             public string eventName;
+            public List<string> filters = new List<string>();
         }
         public class EventMatch
         {

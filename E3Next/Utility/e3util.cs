@@ -1,13 +1,12 @@
 ﻿using E3Core.Data;
 using E3Core.Processors;
 using IniParser;
-using IniParser.Parser;
 using MonoCore;
 using System;
 using System.Collections.Generic;
 using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
+using System.Runtime.CompilerServices;
+using static MonoCore.EventProcessor;
 
 namespace E3Core.Utility
 {
@@ -72,6 +71,213 @@ namespace E3Core.Utility
 
         }
 
+        public static bool FilterMe(CommandMatch x)
+        {
+            ////Stop /Only|Soandoso
+            ////FollowOn /Only|Healers WIZ Soandoso
+            ////followon /Not|Healers /Exclude|Uberhealer1
+            /////Staunch /Only|Healers
+            /////Follow /Not|MNK
+            //things like this put into the filter collection.
+            //process the filters for commands
+            bool returnValue = false;
+
+            //get any 'only' filter.
+            //get any 'include/exclude' filter with it.
+            string onlyFilter = string.Empty;
+            string notFilter = String.Empty;
+            string excludeFilter = string.Empty;
+            string includeFilter = String.Empty;
+            foreach (var filter in x.filters)
+            {
+                if (filter.StartsWith("/only", StringComparison.OrdinalIgnoreCase))
+                {
+                    onlyFilter = filter;
+                }
+                if (filter.StartsWith("/not", StringComparison.OrdinalIgnoreCase))
+                {
+                    notFilter = filter;
+                }
+                if (filter.StartsWith("/exclude", StringComparison.OrdinalIgnoreCase))
+                {
+                    excludeFilter = filter;
+                }
+                if (filter.StartsWith("/include", StringComparison.OrdinalIgnoreCase))
+                {
+                    includeFilter = filter;
+                }
+            }
+
+            List<string> includeInputs = new List<string>();
+            List<string> excludeInputs = new List<string>();
+            //get the include/exclude values first before we process /not/only
+
+            if (onlyFilter != string.Empty)
+            {
+                //assume we are excluded unless we match with an only filter
+                returnValue = true;
+
+                Int32 indexOfPipe = onlyFilter.IndexOf('|') + 1;
+                string input = onlyFilter.Substring(indexOfPipe, onlyFilter.Length - indexOfPipe);
+                //now split up into a list of values.
+                List<string> inputs = StringsToList(input, ' ');
+
+                if (!FilterReturnCheck(inputs, ref returnValue, false))
+                {
+                    return false;
+                }
+               
+                if (includeFilter != String.Empty)
+                {
+                    indexOfPipe = includeFilter.IndexOf('|') + 1;
+                    string icludeInput = includeFilter.Substring(indexOfPipe, includeFilter.Length - indexOfPipe);
+                    includeInputs = StringsToList(icludeInput, ' ');
+
+                    if (!FilterReturnCheck(includeInputs, ref returnValue, false))
+                    {
+                        return false;
+                    }
+                }
+                if (excludeFilter != String.Empty)
+                {
+                    indexOfPipe = excludeFilter.IndexOf('|') + 1;
+                    string excludeInput = excludeFilter.Substring(indexOfPipe, excludeFilter.Length - indexOfPipe);
+                    excludeInputs = StringsToList(excludeInput, ' ');
+
+                    if (FilterReturnCheck(excludeInputs, ref returnValue, true))
+                    {
+                        return true;
+                    }
+                }
+
+            }
+            else if (notFilter != string.Empty)
+            {
+                returnValue = false;
+                 Int32 indexOfPipe = notFilter.IndexOf('|') + 1;
+                string input = notFilter.Substring(indexOfPipe, notFilter.Length - indexOfPipe);
+                //now split up into a list of values.
+                List<string> inputs = StringsToList(input, ' ');
+
+                if (FilterReturnCheck(inputs, ref returnValue, true))
+                {
+                    return true;
+                }
+
+                if (includeFilter != String.Empty)
+                {
+                    indexOfPipe = includeFilter.IndexOf('|') + 1;
+                    string icludeInput = includeFilter.Substring(indexOfPipe, includeFilter.Length - indexOfPipe);
+                    includeInputs = StringsToList(icludeInput, ' ');
+
+                    if (!FilterReturnCheck(includeInputs, ref returnValue, false))
+                    {
+                        return false;
+                    }
+                }
+                if (excludeFilter != String.Empty)
+                {
+                    indexOfPipe = excludeFilter.IndexOf('|') + 1;
+                    string excludeInput = excludeFilter.Substring(indexOfPipe, excludeFilter.Length - indexOfPipe);
+                    excludeInputs = StringsToList(excludeInput, ' ');
+
+                    if (FilterReturnCheck(excludeInputs, ref returnValue, true))
+                    {
+                        return true;
+                    }
+                }
+            }
+
+
+            return returnValue;
+        }
+
+        private static bool FilterReturnCheck(List<string> inputs, ref bool returnValue, bool inputSetValue)
+        {
+            if (inputs.Contains(E3._currentName, StringComparer.OrdinalIgnoreCase))
+            {
+                return inputSetValue;
+            }
+            if (inputs.Contains(E3._currentShortClassString, StringComparer.OrdinalIgnoreCase))
+            {
+                returnValue = inputSetValue;
+            }
+            if (inputs.Contains("Healers", StringComparer.OrdinalIgnoreCase))
+            {
+                if ((E3._currentClass & Class.Priest) == E3._currentClass)
+                {
+                    returnValue = inputSetValue;
+                }
+            }
+            if (inputs.Contains("Tanks", StringComparer.OrdinalIgnoreCase))
+            {
+                if ((E3._currentClass & Class.Tank) == E3._currentClass)
+                {
+                    returnValue = inputSetValue;
+                }
+            }
+            if (inputs.Contains("Melee", StringComparer.OrdinalIgnoreCase))
+            {
+                if ((E3._currentClass & Class.Melee) == E3._currentClass)
+                {
+                    returnValue = inputSetValue;
+                }
+            }
+            if (inputs.Contains("Casters", StringComparer.OrdinalIgnoreCase))
+            {
+                if ((E3._currentClass & Class.Caster) == E3._currentClass)
+                {
+                    returnValue = inputSetValue;
+                }
+            }
+            if (inputs.Contains("Ranged", StringComparer.OrdinalIgnoreCase))
+            {
+                if ((E3._currentClass & Class.Ranged) == E3._currentClass)
+                {
+                    returnValue = inputSetValue;
+                }
+            }
+
+            return !inputSetValue;
+        }
+
+        public static void StringsToNumbers(string s, char delim, List<Int32> list)
+        {
+            List<int> result = list;
+            int start = 0;
+            int end = 0;
+            foreach (char x in s)
+            {
+                if (x == delim || end == s.Length - 1)
+                {
+                    if (end == s.Length - 1)
+                        end++;
+                    result.Add(int.Parse(s.Substring(start, end - start)));
+                    start = end + 1;
+                }
+                end++;
+            }
+
+        }
+        public static List<string> StringsToList(string s, char delim)
+        {
+            List<string> result = new List<string>();
+            int start = 0;
+            int end = 0;
+            foreach (char x in s)
+            {
+                if (x == delim || end == s.Length - 1)
+                {
+                    if (end == s.Length - 1)
+                        end++;
+                    result.Add((s.Substring(start, end - start)));
+                    start = end + 1;
+                }
+                end++;
+            }
+
+            return result;
+        }
         public static void TryMoveToLoc(Double x, Double y,Int32 minDistance = 0,Int32 timeoutInMS = 10000 )
         {
             Double meX = MQ.Query<Double>("${Me.X}");

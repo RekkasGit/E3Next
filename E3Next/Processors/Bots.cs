@@ -5,6 +5,7 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
+using static MonoCore.EventProcessor;
 
 namespace E3Core.Processors
 {
@@ -14,7 +15,7 @@ namespace E3Core.Processors
         Int32 PctHealth(string name);
         List<string> BotsConnected();
         Boolean HasShortBuff(string name, Int32 buffid);
-        void BroadcastCommandToGroup(string command);
+        void BroadcastCommandToGroup(string command, CommandMatch match=null);
         void BroadcastCommandToPerson(string person, string command);
         void Broadcast(string message);
         List<Int32> BuffList(string name);
@@ -36,9 +37,24 @@ namespace E3Core.Processors
         private static Dictionary<string, Int64> _buffListCollectionTimeStamps = new Dictionary<string, long>();
         private static Int64 _nextBuffCheck = 0;
         private static Int64 _nextBuffRefreshTimeInterval = 1000;
-        public void BroadcastCommandToGroup(string query)
+        private static StringBuilder _strinbBuilder = new StringBuilder();
+        public void BroadcastCommandToGroup(string query, CommandMatch match = null)
         {
-            MQ.Cmd($"/bcg /{query}");
+            if(match!=null && match.filters.Count>0)
+            {
+                //need to pass over the filters if they exist
+                _strinbBuilder.Clear();
+                _strinbBuilder.Append($"/bcg /{query}");
+                foreach(var filter in match.filters)
+                {
+                    _strinbBuilder.Append($" \"{filter}\"");
+                }
+                MQ.Cmd(_strinbBuilder.ToString());
+            }
+            else
+            {
+                MQ.Cmd($"/bcg /{query}");
+            }
         }
         public void BroadcastCommandToPerson(string person, string command)
         {
@@ -112,11 +128,11 @@ namespace E3Core.Processors
                 _buffListCollection[kvp.Key].Clear();
                 if (listString != "NULL")
                 {  
-                    StringsToNumbers(listString, ' ', _buffListCollection[kvp.Key]);
+                    e3util.StringsToNumbers(listString, ' ', _buffListCollection[kvp.Key]);
                     listString = MQ.Query<string>($"${{NetBots[{kvp.Key}].ShortBuff}}");
                     if (listString != "NULL")
                     {
-                        StringsToNumbers(listString, ' ', _buffListCollection[kvp.Key]);
+                        e3util.StringsToNumbers(listString, ' ', _buffListCollection[kvp.Key]);
                     }
                 }
 
@@ -124,24 +140,7 @@ namespace E3Core.Processors
             return _buffListCollection[name];
 
         }
-        private static void StringsToNumbers(string s, char delim, List<Int32> list)
-        {
-            List<int> result = list;
-            int start = 0;
-            int end = 0;
-            foreach (char x in s)
-            {
-                if (x == delim || end == s.Length - 1)
-                {
-                    if (end == s.Length - 1)
-                        end++;
-                    result.Add(int.Parse(s.Substring(start, end - start)));
-                    start = end + 1;
-                }
-                end++;
-            }
-            
-        }
+        
 
         public void Broadcast(string message)
         {
@@ -194,7 +193,7 @@ namespace E3Core.Processors
             MQ.Cmd($"/dg all {message}");
         }
 
-        public void BroadcastCommandToGroup(string query)
+        public void BroadcastCommandToGroup(string query, CommandMatch match = null)
         {
             MQ.Cmd($"/dgge {query}");
         }

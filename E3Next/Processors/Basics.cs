@@ -287,8 +287,6 @@ namespace E3Core.Processors
                         }
 
                     }
-
-
                 }
 
             });
@@ -356,19 +354,27 @@ namespace E3Core.Processors
                 string itemName = x.args[0];
                 if (x.args.Count == 1)
                 {
-                    E3._bots.BroadcastCommandToGroup($"/fic \"{itemName}\" all");
+                    E3._bots.BroadcastCommandToGroup($"/fic \"{itemName}\" all",x);
                 }
-                FindItemCompact(itemName);
-              
+
+                if (!e3util.FilterMe(x))
+                {
+                    FindItemCompact(itemName);
+                }
+
             });
             EventProcessor.RegisterCommand("/finditem", (x) =>
             {
                 string itemName = x.args[0];
                 if (x.args.Count == 1)
                 {
-                    E3._bots.BroadcastCommandToGroup($"/finditem \"{itemName}\" all");
+                    E3._bots.BroadcastCommandToGroup($"/finditem \"{itemName}\" all", x);
                 }
-                FindItemCompact(itemName);
+
+                if (!e3util.FilterMe(x))
+                {
+                    FindItemCompact(itemName);
+                }
 
             });
 
@@ -440,29 +446,37 @@ namespace E3Core.Processors
                 //chaseme <toon name>
                 if (x.args.Count == 1 && x.args[0] != "off")
                 {
-                    Spawn s;
-                    if (_spawns.TryByName(x.args[0], out s))
+                    if (!e3util.FilterMe(x))
                     {
-                        _chaseTarget = x.args[0];
-                        _following = true;
+                        Spawn s;
+                        if (_spawns.TryByName(x.args[0], out s))
+                        {
+                            _chaseTarget = x.args[0];
+                            _following = true;
+                        }
+
                     }
                 }
                 //chanseme off
                 else if (x.args.Count == 1 && x.args[0] == "off")
                 {
-                    E3._bots.BroadcastCommandToGroup($"/chaseme off {E3._currentName}");
+                    E3._bots.BroadcastCommandToGroup($"/chaseme off {E3._currentName}",x);
                     _chaseTarget = String.Empty;
                     _following = false;
                 }
                 //chaseme off <toon name>
                 else if (x.args.Count == 2 && x.args[0] == "off")
                 {
-                    _chaseTarget = String.Empty;
-                    _following = false;
+                    if (!e3util.FilterMe(x))
+                    {
+                        _chaseTarget = String.Empty;
+                        _following = false;
+
+                    }
                 }
                 else
                 {
-                    E3._bots.BroadcastCommandToGroup($"/chaseme {E3._currentName}");
+                    E3._bots.BroadcastCommandToGroup($"/chaseme {E3._currentName}",x);
                     _following = false;
                 }
             });
@@ -480,20 +494,24 @@ namespace E3Core.Processors
                 string user = string.Empty;
                 if (x.args.Count > 0)
                 {
-                    user = x.args[0];
-                    Spawn s;
-                    if (_spawns.TryByName(user, out s))
+                    if(!e3util.FilterMe(x))
                     {
-                        _followTargetName = user;
-                        _following = false;
-                        Assist.AssistOff();
-                        AcquireFollow();
+                        user = x.args[0];
+                        Spawn s;
+                        if (_spawns.TryByName(user, out s))
+                        {
+                            _followTargetName = user;
+                            _following = false;
+                            Assist.AssistOff();
+                            AcquireFollow();
+                        }
+
                     }
                 }
                 else
                 {
                     //we are telling people to follow us
-                    E3._bots.BroadcastCommandToGroup("/followme " + E3._characterSettings._characterName);
+                    E3._bots.BroadcastCommandToGroup("/followme " + E3._characterSettings._characterName,x);
                 }
             });
 
@@ -905,6 +923,8 @@ namespace E3Core.Processors
                     {
                         MQ.Cmd("/useitem \"Manastone\"");
                     }
+                    //allow mq to have the commands sent to the server
+                    MQ.Delay(0);
                     if ((E3._currentClass & Class.Priest) == E3._currentClass)
                     {
                         if (Heals.SomeoneNeedsHealing(currentMana, pctMana))
@@ -912,7 +932,6 @@ namespace E3Core.Processors
                             return;
                         }
                     }
-                    MQ.Delay(0);
                     if (currentLoop > maxLoop)
                     {
                         return;
