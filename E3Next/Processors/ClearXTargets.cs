@@ -19,55 +19,77 @@ namespace E3Core.Processors
         private static ISpawns _spawns = E3._spawns;
 
         public static bool _enabled = false;
-        public static Queue<Int32> _mobsToAttack = new Queue<int>();
+        public static Int32 _mobToAttack = 0;
 
         [ClassInvoke(Data.Class.All)]
         public static void Check_Xtargets()
         {
-            if (_enabled && !Assist._isAssisting)
+
+            if (_enabled)
             {
-                //lets see if we have anything on xtarget that is valid
-               
                 _spawns.RefreshList();
-                foreach (var s in _spawns.Get().OrderBy(x=>x.Distance))
+                if (_mobToAttack > 0)
                 {
-                    //find all mobs that are close
-                    if (!s.Targetable) continue;
-                    if (!s.Aggressive) continue;
-                    if (!MQ.Query<bool>($"${{Spawn[npc id {s.ID}].LineOfSight}}")) continue;
-                    if (s.Distance > 60) break;//mob is too far away, and since it is ordered, kick out.
-                    if (s.TypeDesc == "Corpse") continue;
-                    if (s.Name.Contains("'s pet'")) continue;
-                    if (s.Name.IndexOf("Chest", StringComparison.OrdinalIgnoreCase) > -1) continue;
-                    if (s.Name.IndexOf("a box", StringComparison.OrdinalIgnoreCase) > -1) continue;
-                    if (s.Name.IndexOf("crate", StringComparison.OrdinalIgnoreCase) > -1) continue;
-                    if (s.Name.IndexOf("hollow_tree", StringComparison.OrdinalIgnoreCase) > -1) continue;
-                    if (s.Name.IndexOf("wooden box", StringComparison.OrdinalIgnoreCase) > -1) continue;
-                    //its valid to attack!
-                    _mobsToAttack.Enqueue(s.ID);
-                    break;
-                }
-                if(_mobsToAttack.Count==0)
-                {
-                    //we are done, stop killing
-                    _enabled = false;
-                    MQ.Write("\agClear Targets complete.");
-                    return;
-                }
-                
-                //mobs to attack will be sorted by distance.
-                if (_mobsToAttack.Count > 0)
-                {
-                    //pop it off and start assisting.
-                    Int32 mobId = _mobsToAttack.Dequeue();
-                    Spawn s;
-                    if(_spawns.TryByID(mobId, out s))
+                    Spawn ts;
+                    if (_spawns.TryByID(_mobToAttack, out ts))
                     {
-                        Assist._allowControl = true;
-                        Assist.AssistOn(mobId);
-                        E3._bots.BroadcastCommandToGroup($"/assistme {mobId}");
+                        //is it still alive?
+                        if (ts.TypeDesc == "Corpse")
+                        {
+                            //its dead jim
+                            _mobToAttack = 0;
+
+                        }
+                    }
+
+                }
+                //lets see if we have anything on xtarget that is valid
+                if (_mobToAttack == 0)
+                {
+                    foreach (var s in _spawns.Get().OrderBy(x => x.Distance))
+                    {
+                        //find all mobs that are close
+                        if (!s.Targetable) continue;
+                        if (!s.Aggressive) continue;
+                        if (!MQ.Query<bool>($"${{Spawn[npc id {s.ID}].LineOfSight}}")) continue;
+                        if (s.Distance > 60) break;//mob is too far away, and since it is ordered, kick out.
+                        if (s.TypeDesc == "Corpse") continue;
+                        if (s.Name.Contains("'s pet'")) continue;
+                        if (s.Name.IndexOf("Chest", StringComparison.OrdinalIgnoreCase) > -1) continue;
+                        if (s.Name.IndexOf("a box", StringComparison.OrdinalIgnoreCase) > -1) continue;
+                        if (s.Name.IndexOf("crate", StringComparison.OrdinalIgnoreCase) > -1) continue;
+                        if (s.Name.IndexOf("hollow_tree", StringComparison.OrdinalIgnoreCase) > -1) continue;
+                        if (s.Name.IndexOf("wooden box", StringComparison.OrdinalIgnoreCase) > -1) continue;
+                        //its valid to attack!
+                        _mobToAttack = s.ID;
+                        break;
+                    }
+                    if (_mobToAttack == 0)
+                    {
+                        //we are done, stop killing
+                        _enabled = false;
+                        MQ.Write("\agClear Targets complete.");
+                        return;
+                    }
+
+                    //mobs to attack will be sorted by distance.
+                    if (_mobToAttack > 0)
+                    {
+                        //pop it off and start assisting.
+                        Int32 mobId = _mobToAttack;
+                        Spawn s;
+                        if (_spawns.TryByID(mobId, out s))
+                        {
+                            MQ.Write("\agClear Targets: \aoIssuing Assist.");
+                            Assist._allowControl = true;
+                            Assist.AssistOn(mobId);
+                            MQ.Delay(500);
+                            E3._bots.BroadcastCommandToGroup($"/assistme {mobId}");
+                        }
                     }
                 }
+
+               
             }
         }
     }

@@ -73,11 +73,9 @@ namespace E3Core.Processors
                     return;
                 }
             }
-            else if (targetId != _assistTargetID)
+            else if (targetId != _assistTargetID )
             {
 
-                //different target? most likely manual control kicked in, update our assist target.
-                //verify that its
                 Spawn ct;
                 _spawns.RefreshList();
                 if(_spawns.TryByID(targetId,out ct))
@@ -569,7 +567,7 @@ namespace E3Core.Processors
             {
                 if(x.args.Count==0)
                 {
-                    ClearXTargets._mobsToAttack.Clear();
+                    ClearXTargets._mobToAttack=0;
                     AssistOff();
                     E3._bots.BroadcastCommandToGroup($"/backoff all");
                     ClearXTargets._enabled = true;
