@@ -500,9 +500,9 @@ namespace MonoCore
             c.command = commandName;
             c.method = method;
             c.keyName = commandName;
-            Core.mqInstance.Write("Adding command:" + commandName);
+            //Core.mqInstance.Write("Adding command:" + commandName);
             bool returnvalue =  Core.mqInstance.AddCommand(commandName);
-            Core.mqInstance.Write("Return from adding command:" + returnvalue);
+            //Core.mqInstance.Write("Return from adding command:" + returnvalue);
 
             if (returnvalue)
             {   
@@ -705,14 +705,16 @@ namespace MonoCore
             }
             if (_currentCommand != String.Empty)
             {
+                //for mana stone usage, to allow spamming
+                bool isUseItem = _currentCommand.StartsWith("/useitem");
                 Core.mq_DoCommand(_currentCommand);
                 _currentCommand = String.Empty;
-                //if (Core.mq_GetRunNextCommand())
-                //{
-                //    goto RestartWait;
 
-                //}
-               
+                if (isUseItem)
+                {
+                    goto RestartWait;
+                }
+
             }
             if (_currentDelay > 0)
             {

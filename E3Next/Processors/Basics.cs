@@ -361,6 +361,16 @@ namespace E3Core.Processors
                 FindItemCompact(itemName);
               
             });
+            EventProcessor.RegisterCommand("/finditem", (x) =>
+            {
+                string itemName = x.args[0];
+                if (x.args.Count == 1)
+                {
+                    E3._bots.BroadcastCommandToGroup($"/finditem \"{itemName}\" all");
+                }
+                FindItemCompact(itemName);
+
+            });
 
             EventProcessor.RegisterCommand("/e3p", (x) =>
             {
@@ -750,17 +760,17 @@ namespace E3Core.Processors
             bool pok = MQ.Query<bool>("${Zone.ShortName.Equal[poknowledge]}");
             if (pok) return;
 
-            Int32 minMana = 35;
+            Int32 minMana = 60;
             Int32 minHP = 60;
-            Int32 maxMana = 65;
-            Int32 maxLoop = 10;
+            Int32 maxMana = 75;
+            Int32 maxLoop = 50;
 
-            Int32 totalClicksToTry = 40;
+            Int32 totalClicksToTry = 80;
             //Int32 minManaToTryAndHeal = 1000;
 
             if (!InCombat())
             {
-                minMana = 70;
+                minMana = 85;
                 maxMana = 95;
             }
 
@@ -902,14 +912,12 @@ namespace E3Core.Processors
                             return;
                         }
                     }
-                    MQ.Delay(50);
-                    if (Basics.InCombat())
+                    MQ.Delay(0);
+                    if (currentLoop > maxLoop)
                     {
-                        if (currentLoop > maxLoop)
-                        {
-                            return;
-                        }
+                        return;
                     }
+                    
                     pctHps = MQ.Query<Int32>("${Me.PctHPs}");
                     pctMana = MQ.Query<Int32>("${Me.PctMana}");
                 }

@@ -68,6 +68,7 @@
     <Compile Include="Processors\Burns.cs" />
     <Compile Include="Processors\DebuffDot.cs" />
     <Compile Include="Processors\Nukes.cs" />
+    <Compile Include="Processors\PrivateCode.cs" />
     <Compile Include="Settings\AdvancedSettings.cs" />
     <Compile Include="Settings\BaseSettings.cs" />
     <Compile Include="Settings\CharacterSettings.cs" />
