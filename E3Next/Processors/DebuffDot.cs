@@ -77,12 +77,19 @@ namespace E3Core.Processors
                     Spawn s;
                     if(_spawns.TryByID(mobId,out s))
                     {
-
+                        if (!s.Targetable) continue;
                         if (!s.Aggressive) continue;
+                        if (!s.Targetable) continue;
                         if (s.PctHps < 10) continue;
                         if (!MQ.Query<bool>($"${{Spawn[npc id {mobId}].LineOfSight}}")) continue;
                         if (s.Distance > 60) continue;
                         if (s.TypeDesc == "Corpse") continue;
+                        if (s.Name.Contains("'s pet'")) continue;
+                        if (s.Name.IndexOf("Chest", StringComparison.OrdinalIgnoreCase) > -1) continue;
+                        if (s.Name.IndexOf("a box", StringComparison.OrdinalIgnoreCase) > -1) continue;
+                        if (s.Name.IndexOf("crate", StringComparison.OrdinalIgnoreCase) > -1) continue;
+                        if (s.Name.IndexOf("hollow_tree", StringComparison.OrdinalIgnoreCase) > -1) continue;
+                        if (s.Name.IndexOf("wooden box", StringComparison.OrdinalIgnoreCase) > -1) continue;
                         _mobsToOffAsist.Add(mobId);
                     }
                 }

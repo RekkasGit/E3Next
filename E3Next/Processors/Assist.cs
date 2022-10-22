@@ -29,7 +29,7 @@ namespace E3Core.Processors
         private static Data.Spell _divineStun = new Data.Spell("Divine Stun");
         private static Data.Spell _terrorOfDiscord = new Data.Spell("Terror of Discord");
         private static IList<string> _tankTypes = new List<string>() { "WAR", "PAL", "SK" };
-        private static bool _allowControl = false;
+        public static bool _allowControl = false;
 
         private static Int64 _nextAssistCheck = 0;
         private static Int64 _nextAssistCheckInterval = 500;
@@ -58,8 +58,15 @@ namespace E3Core.Processors
 
             Int32 targetId = MQ.Query<Int32>("${Target.ID}");
 
+
             if (targetId == 0)
             {
+                bool isCorpse = MQ.Query<bool>($"${{Spawn[id {_assistTargetID}].Type.Equal[Corpse]}}");
+                if(isCorpse)
+                {
+                    AssistOff();
+                    return;
+                }
                 if (!Casting.TrueTarget(_assistTargetID))
                 {
                     AssistOff();
@@ -319,20 +326,22 @@ namespace E3Core.Processors
             if (MQ.Query<bool>("${Me.Combat}")) MQ.Cmd("/attack off");
             if (MQ.Query<bool>("${Me.AutoFire}")) MQ.Cmd("/autofire off");
             if (MQ.Query<Int32>("${Me.Pet.ID}") > 0) MQ.Cmd("/squelch /pet back off");
-            MQ.Delay(500, "${Bool[!${Me.Combat} && !${Me.AutoFire}]}");
+           // MQ.Delay(500, "${Bool[!${Me.Combat} && !${Me.AutoFire}]}");
             _isAssisting = false;
             _allowControl = false;
             _assistTargetID = 0;
             if (MQ.Query<bool>("${Stick.Status.Equal[ON]}")) MQ.Cmd("/squelch /stick off");
+          
+            
+            if(!Basics.InCombat())
+            {
+                _offAssistIgnore.Clear();
+                Casting.ResetResistCounters();
+                //put them back in their object pools
+                DebuffDot.Reset();
+                Burns.Reset();
 
-          
-          
-            _offAssistIgnore.Clear();
-       
-            Casting.ResetResistCounters();
-            //put them back in their object pools
-            DebuffDot.Reset();
-            Burns.Reset();
+            }
 
         }
         public static void AssistOn(Int32 mobID)
@@ -555,6 +564,24 @@ namespace E3Core.Processors
                         AssistOn(mobid);
                     }
                 }
+            });
+            EventProcessor.RegisterCommand("/cleartargets", (x) =>
+            {
+                if(x.args.Count==0)
+                {
+                    ClearXTargets._mobsToAttack.Clear();
+                    AssistOff();
+                    E3._bots.BroadcastCommandToGroup($"/backoff all");
+                    ClearXTargets._enabled = true;
+
+                } 
+                else if (x.args.Count == 1 && x.args[0] == "off")
+                {
+                    AssistOff();
+                    ClearXTargets._enabled = false;
+                    E3._bots.BroadcastCommandToGroup($"/backoff all");
+                }
+
             });
             EventProcessor.RegisterCommand("/backoff", (x) =>
             {

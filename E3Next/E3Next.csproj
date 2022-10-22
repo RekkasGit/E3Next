@@ -66,6 +66,7 @@
     <Compile Include="Processors\BaseProcessor.cs" />
     <Compile Include="Processors\Bots.cs" />
     <Compile Include="Processors\Burns.cs" />
+    <Compile Include="Processors\ClearXTargets.cs" />
     <Compile Include="Processors\DebuffDot.cs" />
     <Compile Include="Processors\Nukes.cs" />
     <Compile Include="Processors\PrivateCode.cs" />

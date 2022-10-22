@@ -395,7 +395,7 @@ namespace E3Core.Processors
                     if (double.TryParse(x.args[0], out heading))
                     {
                         Int32 currentZone = MQ.Query<Int32>("${Zone.ID}");
-                        MQ.Cmd($"/face fast heading {heading}");
+                        MQ.Cmd($"/face fast heading {heading*-1}");
                         MQ.Cmd("/keypress forward hold");
                         MQ.Delay(1000);
                         Int32 counter = 0;
@@ -416,7 +416,7 @@ namespace E3Core.Processors
                     double heading = MQ.Query<double>("${Me.Heading.Degrees}");
                     E3._bots.BroadcastCommandToGroup($"/rtz {heading}");
                     MQ.Delay(500);
-                    MQ.Cmd($"/face fast heading {heading}");
+                    MQ.Cmd($"/face fast heading {heading*-1}");
                     MQ.Cmd("/keypress forward hold");
 
                 }
@@ -528,7 +528,7 @@ namespace E3Core.Processors
 
 
             //search equiped items
-            for (int i = 1; i <= 22; i++)
+            for (int i = 0; i <= 22; i++)
             {
                 string name = MQ.Query<string>($"${{InvSlot[{i}].Item}}");
 
