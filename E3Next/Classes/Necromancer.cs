@@ -31,7 +31,7 @@ namespace E3Core.Classes
             for (Int32 i = 1; i <= 13; i++)
             {
                 bool autoHater = MQ.Query<bool>($"${{Me.XTarget[{i}].TargetType.Equal[Auto Hater]}}");
-                if (autoHater) continue;
+                if (!autoHater) continue;
                 Int32 mobId = MQ.Query<Int32>($"${{Me.XTarget[{i}].ID}}");
                 if (mobId > 0)
                 {

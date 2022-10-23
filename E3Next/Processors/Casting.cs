@@ -335,6 +335,8 @@ namespace E3Core.Processors
                         {
                             if (spell.CastType == Data.CastType.Spell)
                             {
+                                MQ.Write($"\ag{spell.CastName} \at{spell.SpellID} \am{targetName} \ao{targetID} \aw({spell.MyCastTime / 1000}sec)");
+
                                 MQ.Cmd($"/casting \"{spell.CastName}|{spell.SpellGem}\"");
                                 if (spell.MyCastTime > 500)
                                 {
@@ -345,6 +347,8 @@ namespace E3Core.Processors
                             {
                                 if (spell.CastType == CastType.AA)
                                 {
+                                    MQ.Write($"\ag{spell.CastName} \at{spell.SpellID} \am{targetName} \ao{targetID} \aw({spell.MyCastTime / 1000}sec)");
+
                                     MQ.Cmd($"/casting \"{spell.CastName}|alt\"");
                                     if (spell.MyCastTime > 500)
                                     {
@@ -353,6 +357,8 @@ namespace E3Core.Processors
                                 }
                                 else
                                 {
+                                    MQ.Write($"\ag{spell.CastName} \at{spell.SpellID} \am{targetName} \ao{targetID} \aw({spell.MyCastTime / 1000}sec)");
+
                                     //else its an item
                                     MQ.Cmd($"/casting \"{spell.CastName}|{spell.CastType.ToString()}\"");
                                     if (spell.MyCastTime > 500)
@@ -594,6 +600,14 @@ namespace E3Core.Processors
             {
                 spell.SpellGem = E3._generalSettings.Casting_DefaultSpellGem;
             }
+            foreach(var spellid in _currentSpellGems.Values)
+            {
+                if (spellid == spell.SpellID && spellid != 0)
+                {
+                    return true;
+                }
+            }
+
             Int32 spellID;
             if (_currentSpellGems.TryGetValue(spell.SpellGem, out spellID))
             {

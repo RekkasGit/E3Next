@@ -1091,7 +1091,7 @@ namespace MonoCore
             //Core.mq_Echo(query);
             //set the buffer for the C++ thread
             //Core._currentWrite = $"[{MainProcessor._applicationName}]\a-w{System.DateTime.Now.ToString("HH:mm:ss")} \aw- {query}";
-            Core._currentWrite = $"\a#336699[{MainProcessor._applicationName}] \aw- {query}";
+            Core._currentWrite = $"\a#336699[{MainProcessor._applicationName}]\a-w{System.DateTime.Now.ToString("HH:mm:ss")} \aw- {query}";
 
             //swap to the C++thread, and it will swap back after executing the current write becau of us setting _CurrentWrite before
             Core._coreResetEvent.Set();
