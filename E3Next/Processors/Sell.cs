@@ -124,7 +124,7 @@ namespace E3Core.Processors
                                 }
                                 if(sellingItemText != itemName)
                                 {
-                                    MQ.Broadcast($"\arERROR: Selling item cannot get vendor to select, exiting. Item:{itemName}");
+                                    E3._bots.Broadcast($"\arERROR: Selling item cannot get vendor to select, exiting. Item:{itemName}");
                                 }
                                 //we have the item selected via the vendor, sell it.
                                 bool sellButtonEnabled = MQ.Query<bool>("${Window[MerchantWnd].Child[MW_Sell_Button].Enabled}");
@@ -148,7 +148,7 @@ namespace E3Core.Processors
                                 string tItemName = MQ.Query<String>($"${{Me.Inventory[pack{i}].Item[{e}]}}");
                                 if(itemName==tItemName)
                                 {
-                                    MQ.Broadcast($"\arERROR: Selling item. Item:{itemName} Tried to sell but still in inventory. PrimarySlot:{i} bagslot:{e}");
+                                    E3._bots.Broadcast($"\arERROR: Selling item. Item:{itemName} Tried to sell but still in inventory. PrimarySlot:{i} bagslot:{e}");
 
                                 }
 

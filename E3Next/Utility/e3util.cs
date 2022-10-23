@@ -375,7 +375,7 @@ namespace E3Core.Utility
                     }
                     else
                     {
-                        MQ.Broadcast($"\aNeed a valid target to {command}.");
+                        MQ.Write($"\aNeed a valid target to {command}.");
                     }
                 }
                 else

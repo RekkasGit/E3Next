@@ -508,7 +508,7 @@ namespace E3Core.Processors
                         MQ.Delay(2000, "${Target.BuffsPopulated}");
                                           
                         bool willStack = MQ.Query<bool>($"${{Spell[{spell.SpellName}].StacksTarget}}");
-                        MQ.Write($"Will stack:{spell.SpellName}:" + willStack);
+                        //MQ.Write($"Will stack:{spell.SpellName}:" + willStack);
                         if(!willStack)
                         {
                             //won't stack don't check back for awhile
@@ -548,7 +548,7 @@ namespace E3Core.Processors
                                     }
                                     if (result != CastReturn.CAST_SUCCESS)
                                     {
-                                        //possibly some kind of issue/blocking. set a 90 sec timer to try and recast later.
+                                        //possibly some kind of issue/blocking. set a N sec timer to try and recast later.
                                         UpdateBuffTimers(s.ID, spell, 60 * 1000, true);
                                     }
                                     else

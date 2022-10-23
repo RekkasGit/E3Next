@@ -29,7 +29,7 @@ namespace E3Core.Processors
                
                 if (!MQ.Query<bool>("${Bool[${FindItem[=Mirrored Mask]}]}"))
                 {
-                    MQ.Broadcast("I don't have a mirrored mask, I dun messed up.");
+                    E3._bots.Broadcast("I don't have a mirrored mask, I dun messed up.");
                     MQ.Cmd("/beep");
                     return;
                 }

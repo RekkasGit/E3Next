@@ -117,7 +117,7 @@ namespace E3Core.Processors
                 }
                 else
                 {
-                    MQ.Broadcast($"\aNeed a valid target to {command}.");
+                    E3._bots.Broadcast($"\aNeed a valid target to {command}.");
                 }
             }
             else

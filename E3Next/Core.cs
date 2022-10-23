@@ -925,7 +925,7 @@ namespace MonoCore
         void TraceEnd(string methodName);
         void Delay(Int32 value);
         Boolean Delay(Int32 maxTimeToWait, string Condition);
-        void Broadcast(string query);
+        //void Broadcast(string query);
         bool AddCommand(string query);
         void ClearCommands();
         void RemoveCommand(string commandName);

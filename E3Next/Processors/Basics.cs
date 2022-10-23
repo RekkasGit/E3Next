@@ -682,7 +682,7 @@ namespace E3Core.Processors
             }
             else
             {
-                MQ.Broadcast("Cannot find slot. Valid slots are:" + String.Join(",", _fdsSlots));
+                E3._bots.Broadcast("Cannot find slot. Valid slots are:" + String.Join(",", _fdsSlots));
                 return false;
             }
         }

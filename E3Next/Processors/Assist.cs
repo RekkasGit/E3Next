@@ -204,7 +204,7 @@ namespace E3Core.Processors
                                     {
                                         MQ.Cmd("/doability Taunt");
 
-                                        MQ.Broadcast($"Taunting {s.CleanName}: {tt.ClassShortName} - {tt.CleanName} has agro and not a tank");
+                                        E3._bots.Broadcast($"Taunting {s.CleanName}: {tt.ClassShortName} - {tt.CleanName} has agro and not a tank");
 
                                     }
                                     else if (MQ.Query<bool>("${Me.AltAbilityReady[Divine Stun]}"))
@@ -351,7 +351,7 @@ namespace E3Core.Processors
             if (mobID == 0)
             {
                 //something wrong with the assist, kickout
-                MQ.Broadcast("Cannot assist, improper mobid");
+                E3._bots.Broadcast("Cannot assist, improper mobid");
                 return;
             }
             Spawn s;
@@ -361,18 +361,18 @@ namespace E3Core.Processors
 
                 if (s.TypeDesc == "Corpse")
                 {
-                    MQ.Broadcast("Cannot assist, a corpse");
+                    E3._bots.Broadcast("Cannot assist, a corpse");
                     return;
                 }
                 if (!(s.TypeDesc == "NPC" || s.TypeDesc == "Pet"))
                 {
-                    MQ.Broadcast("Cannot assist, not a NPC or Pet");
+                    E3._bots.Broadcast("Cannot assist, not a NPC or Pet");
                     return;
                 }
 
                 if (s.Distance3D > E3._generalSettings.Assists_MaxEngagedDistance)
                 {
-                    MQ.Broadcast($"{s.CleanName} is too far away.");
+                    E3._bots.Broadcast($"{s.CleanName} is too far away.");
                     return;
                 }
 
@@ -406,7 +406,7 @@ namespace E3Core.Processors
                     if (!Casting.TrueTarget(_assistTargetID))
                     {
                         //could not target
-                        MQ.Broadcast("\arCannot assist, Could not target");
+                        E3._bots.Broadcast("\arCannot assist, Could not target");
                         return;
                     }
                 }
