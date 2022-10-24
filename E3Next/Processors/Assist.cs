@@ -344,6 +344,7 @@ namespace E3Core.Processors
         }
         public static void AssistOn(Int32 mobID)
         {
+           
             //clear in case its not reset by other means
             //or you want to attack in enrage
             _assistIsEnraged = false;
@@ -548,8 +549,8 @@ namespace E3Core.Processors
                 if (x.args.Count == 0)
                 {
                     Int32 targetID = MQ.Query<Int32>("${Target.ID}");
+                    AssistOff();
                     _allowControl = true;
-                   
                     AssistOn(targetID);
                     E3._bots.BroadcastCommandToGroup($"/assistme {targetID}",x);
                 }
@@ -558,6 +559,7 @@ namespace E3Core.Processors
                     Int32 mobid;
                     if (Int32.TryParse(x.args[0], out mobid))
                     {
+                        AssistOff();
                         _allowControl = false;
                         AssistOn(mobid);
                     }

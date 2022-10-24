@@ -26,7 +26,7 @@ namespace E3Core.Processors
         private static Int64 _nextInstantBuffRefresh = 0;
         private static Int64 _nextInstantRefreshTimeInterval = 250;
         private static List<Int32> _keyList = new List<int>();
-        private static Int64 _printoutTimer;
+        //private static Int64 _printoutTimer;
         private static Data.Spell _selectAura = null;
         private static Int64 _nextBuffCheck = 0;
         private static Int64 _nextBuffCheckInterval = 250;

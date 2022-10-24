@@ -19,6 +19,8 @@ namespace E3Core.Processors
         public static Dictionary<Int32, Int64> _gemRecastLockForMem = new Dictionary<int, long>();
         public static Dictionary<Int32, ResistCounter> _resistCounters = new Dictionary<Int32, ResistCounter>();
         public static Dictionary<Int32, Int32> _currentSpellGems = new Dictionary<int, int>();
+
+
         public static Int64 _currentSpellGemsLastRefresh = 0;
         private static ISpawns _spawns = E3._spawns;
 
@@ -589,6 +591,24 @@ namespace E3Core.Processors
             }
 
         }
+        public static bool IsSpellMemed(string spellName)
+        {
+            foreach(Int32 spellid in _currentSpellGems.Values)
+            {
+                if(spellid>0)
+                {
+                    string spellGemName = MQ.Query<string>($"${{Spell[{spellid}]}}");
+
+                    if(spellGemName.Equals(spellName, StringComparison.OrdinalIgnoreCase))
+                    {
+                        return true;
+
+                    }
+                }
+            }
+            return false;
+        }
+
         public static bool MemorizeSpell(Data.Spell spell)
         {
             if (spell.CastType != CastType.Spell)
@@ -647,8 +667,7 @@ namespace E3Core.Processors
                 _currentSpellGems.Add(spell.SpellGem, spell.SpellID);
             }
             _currentSpellGems[spell.SpellGem] = spell.SpellID;
-
-
+      
             return true;
         }
 
@@ -861,14 +880,18 @@ namespace E3Core.Processors
             }
             _currentSpellGemsLastRefresh = Core._stopWatch.ElapsedMilliseconds + 2000;
             //need to get all the spellgems setup
+
             for (int i = 1; i < 13; i++)
             {
                 Int32 spellID = MQ.Query<Int32>($"${{Me.Gem[{i}].ID}}");
+             
+                string spellName = MQ.Query<string>($"${{Me.Gem[{i}]}}");
                 if (!_currentSpellGems.ContainsKey(i))
                 {
                     _currentSpellGems.Add(i, spellID);
                 }
                 _currentSpellGems[i] = spellID;
+               
             }
         }
         static void RegisterEventsCasting()

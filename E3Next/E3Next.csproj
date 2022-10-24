@@ -99,6 +99,7 @@
     <Compile Include="Properties\AssemblyInfo.cs" />
     <Compile Include="Settings\FeatureSettings\DoorDataFile.cs" />
     <Compile Include="Settings\FeatureSettings\LootDataFile.cs" />
+    <Compile Include="Settings\FeatureSettings\SpellAliasDataFile.cs" />
     <Compile Include="Settings\GeneralSettings.cs" />
     <Compile Include="Utility\e3util.cs" />
   </ItemGroup>

@@ -31,37 +31,28 @@ namespace E3Core.Classes
 
                 //lets check our aggro.
                 Int32 aggroPct = MQ.Query<Int32>("${Target.PctAggro}");
-
                 if (aggroPct > 95)
                 {
-                    E3._bots.Broadcast($"\ag<check_RangerAggro> \awI have stolen aggro again ({aggroPct}%), canceling assist and casting jolt. Recall assist to reengage");
-                    MQ.Cmd("/beep");
-                    Assist.AssistOff();
-                }
-
-            }
-            else
-            {
-                bool isAggressive = MQ.Query<bool>("${Target.Aggressive}");
-                if(isAggressive)
-                {
-
                     Spell s;
-                    if(Spell._loadedSpellsByName.TryGetValue("Jolt",out s))
+                    if (Spell._loadedSpellsByName.TryGetValue("Cover Tracks", out s))
                     {
-                        s = new Spell("Jolt");
+                        s = new Spell("Cover Tracks");
                     }
                     if (Casting.CheckReady(s) && Casting.CheckMana(s))
                     {
                         Casting.Cast(0, s);
-                       
+                        return;
                     }
+                    E3._bots.Broadcast($"\ag<check_RangerAggro> \awI have stolen aggro again ({aggroPct}%), Pausing for 5 seconds then going to reengage");
+                    Int32 assistid = Assist._assistTargetID;
+                    Assist.AssistOff();
+                    MQ.Delay(5000);
+                    Assist.AssistOn(assistid);
+                    
                 }
 
             }
-
-
-
+            
         }
 
 

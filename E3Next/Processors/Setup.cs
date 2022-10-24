@@ -63,6 +63,8 @@ namespace E3Core.Processors
             Pets.Init();
             Alerts.Init();
             BuffCheck.Init();
+            BegForBuffs.Init();
+            Cures.Init();
         }
         private static void LoadOrCreateCharacterSettings()
         {

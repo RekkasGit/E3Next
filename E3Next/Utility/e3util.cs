@@ -38,12 +38,18 @@ namespace E3Core.Utility
 
         public static void TryMoveToTarget()
         {
+            if(MQ.Query<bool>("${Target.LineOfSight}"))
+            {
+                MQ.Write("\arCannot move to target, not in LoS");
+                MQ.Cmd("/beep");
+                return;
+            }
             Double meX = MQ.Query<Double>("${Me.X}");
             Double meY = MQ.Query<Double>("${Me.Y}");
 
             Double x = MQ.Query<Double>("${Target.X}");
             Double y = MQ.Query<Double>("${Target.Y}");
-            MQ.Cmd($"/squelch /moveto loc {y} {x}");
+            MQ.Cmd($"/squelch /moveto loc {y} {x} mdist 5");
             MQ.Delay(500);
 
             Int64 endTime = Core._stopWatch.ElapsedMilliseconds + 10000;
@@ -361,6 +367,41 @@ namespace E3Core.Utility
                 printTimer = Core._stopWatch.ElapsedMilliseconds + delayInMS;
 
             }
+        }
+        public static void GiveItemOnCursorToTarget()
+        {
+
+            double currentX = MQ.Query<double>("${Me.X}");
+            double currentY = MQ.Query<double>("${Me.Y}");
+            TryMoveToTarget();
+            MQ.Cmd("/click left target");
+            MQ.Delay(3000, "${Window[TradeWnd].Open}");
+            bool windowOpen = MQ.Query<bool>("${Window[TradeWnd].Open}");
+            if(!windowOpen)
+            {
+                MQ.Write("\arError could not give target what is on our cursor, putting it in inventory");
+                MQ.Cmd("/beep");
+                MQ.Delay(100);
+                MQ.Cmd("/autoinv");
+                return;
+            }
+            Int32 waitCounter = 0;
+            waitAcceptLoop:
+            MQ.Cmd("/notify GiveWnd GVW_Give_Button LeftMouseUp");
+            MQ.Delay(1000, "!${Window[TradeWnd].Open}");
+            windowOpen = MQ.Query<bool>("${Window[TradeWnd].Open}");
+            if(windowOpen)
+            {
+                waitCounter++;
+                if(waitCounter<30)
+                {
+                    goto waitAcceptLoop;
+
+                }
+            }
+            MQ.Cmd("/keypress esc");
+            //lets go back to our location
+            e3util.TryMoveToLoc(currentX, currentY);
         }
         public static void RegisterCommandWithTarget(string command, Action<int> FunctionToExecute)
         {

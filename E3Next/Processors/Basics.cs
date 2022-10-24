@@ -778,12 +778,12 @@ namespace E3Core.Processors
             bool pok = MQ.Query<bool>("${Zone.ShortName.Equal[poknowledge]}");
             if (pok) return;
 
-            Int32 minMana = 60;
+            Int32 minMana = 40;
             Int32 minHP = 60;
             Int32 maxMana = 75;
-            Int32 maxLoop = 50;
+            Int32 maxLoop = 25;
 
-            Int32 totalClicksToTry = 80;
+            Int32 totalClicksToTry = 40;
             //Int32 minManaToTryAndHeal = 1000;
 
             if (!InCombat())

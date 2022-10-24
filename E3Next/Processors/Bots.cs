@@ -11,6 +11,7 @@ namespace E3Core.Processors
 {
     public interface IBots
     {
+        List<string> ClientsConnected();
         Boolean InZone(string Name);
         Int32 PctHealth(string name);
         List<string> BotsConnected();
@@ -170,6 +171,21 @@ namespace E3Core.Processors
             Int32 counters = MQ.Query<Int32>($"${{NetBots[{name}].Cursed}}");
             return counters;
         }
+
+        public List<string> ClientsConnected()
+        {
+            List<String> returnValue = null;
+            string playerList = MQ.Query<string>("${NetBots.Client}");
+            if(playerList!="NULL")
+            {
+                returnValue=e3util.StringsToList(playerList, ' ');
+            }
+            if (returnValue == null)
+            {
+                returnValue = new List<string>();
+            }
+            return returnValue;
+        }
     }
 
     public class DanBots : IBots
@@ -304,6 +320,11 @@ namespace E3Core.Processors
             MQ.Cmd("/dquery {name} -q Me.CountersPoison");
             Int32 counters = MQ.Query<Int32>("${DanNet.Q}");
             return counters;
+        }
+
+        public List<string> ClientsConnected()
+        {
+            throw new NotImplementedException();
         }
     }
 
