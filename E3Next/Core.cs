@@ -160,6 +160,7 @@ namespace MonoCore
         public static ConcurrentQueue<String> _eventProcessingQueue = new ConcurrentQueue<String>();
         public static ConcurrentQueue<String> _mqEventProcessingQueue = new ConcurrentQueue<string>();
         public static ConcurrentQueue<String> _mqCommandProcessingQueue = new ConcurrentQueue<string>();
+        public static List<Regex> _filterRegexes = new List<Regex>();
         private static StringBuilder _tokenBuilder = new StringBuilder();
         private static List<string> _tokenResult = new List<string>();
         //if matches take place, they are placed in this queue for the main C# thread to process. 
@@ -174,8 +175,18 @@ namespace MonoCore
         {
             if (!_isInit)
             {
+                //some filter regular expressions so we can quicly get rid of combat and "has cast a spell" stuff. 
+                //if your app needs them remove these :)
+                System.Text.RegularExpressions.Regex filterRegex = new Regex(".+ points of damage.");
+                _filterRegexes.Add(filterRegex);
+                filterRegex = new Regex(".+ points of non-melee damage.");
+                _filterRegexes.Add(filterRegex);
+                filterRegex = new Regex(@".+ begins to cast a spell\.");
+                _filterRegexes.Add(filterRegex);
+
                 _regExProcessingTask = Task.Factory.StartNew(() => { ProcessEventsIntoQueues(); }, CancellationToken.None, TaskCreationOptions.DenyChildAttach, TaskScheduler.Default);
                 _isInit = true;
+            
             }
 
         }
@@ -187,6 +198,7 @@ namespace MonoCore
             System.Text.RegularExpressions.Regex dannetRegex = new Regex("");
             char[] splitChars = new char[1] {' '};
 
+     
             ////WARNING DO NOT SEND COMMANDS/Writes/Echos, etc from this thread. 
             ///only the primary C# thread can do that.
             while (Core._isProcessing)
@@ -196,26 +208,48 @@ namespace MonoCore
                     string line;
                     if (_eventProcessingQueue.TryDequeue(out line))
                     {
-                        foreach (var item in _eventList)
+
+                        //does it match our filter ? if so we can leave
+                        bool matchFilter = false;
+                        //locl this so someone can clear/add more filters are runtime.
+                        lock (_filterRegexes)
                         {
-                            //prevent spamming of an event to a user
-                            if (item.Value.queuedEvents.Count > _eventLimiterPerRegisteredEvent)
+                            foreach (var filter in _filterRegexes)
                             {
-                                continue;
-                            }
-                            foreach (var regex in item.Value.regexs)
-                            {
-                                var match = regex.Match(line);
+                                var match = filter.Match(line);
                                 if (match.Success)
                                 {
-
-                                    item.Value.queuedEvents.Enqueue(new EventMatch() { eventName = item.Value.keyName, eventString = line, match = match });
-
+                                    matchFilter = true;
                                     break;
                                 }
                             }
-
                         }
+
+                        if (!matchFilter)
+                        {
+                            foreach (var item in _eventList)
+                            {
+                                //prevent spamming of an event to a user
+                                if (item.Value.queuedEvents.Count > _eventLimiterPerRegisteredEvent)
+                                {
+                                    continue;
+                                }
+                                foreach (var regex in item.Value.regexs)
+                                {
+                                    var match = regex.Match(line);
+                                    if (match.Success)
+                                    {
+
+                                        item.Value.queuedEvents.Enqueue(new EventMatch() { eventName = item.Value.keyName, eventString = line, match = match });
+
+                                        break;
+                                    }
+                                }
+
+                            }
+                        }
+
+                        
 
                     }
                 }

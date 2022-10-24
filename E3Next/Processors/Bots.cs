@@ -2,7 +2,9 @@
 using MonoCore;
 using System;
 using System.Collections.Generic;
+using System.Globalization;
 using System.Linq;
+using System.Net;
 using System.Text;
 using System.Threading.Tasks;
 using static MonoCore.EventProcessor;
@@ -11,7 +13,7 @@ namespace E3Core.Processors
 {
     public interface IBots
     {
-        List<string> ClientsConnected();
+       
         Boolean InZone(string Name);
         Int32 PctHealth(string name);
         List<string> BotsConnected();
@@ -32,7 +34,7 @@ namespace E3Core.Processors
         public static Logging _log = E3._log;
         private static IMQ MQ = E3.MQ;
 
-        private string netbotConnectionString = string.Empty;
+        private string _connectedBotsString = string.Empty;
         private List<string> _connectedBots = new List<string>();
         private static Dictionary<string, List<Int32>> _buffListCollection = new Dictionary<string, List<int>>();
         private static Dictionary<string, Int64> _buffListCollectionTimeStamps = new Dictionary<string, long>();
@@ -88,7 +90,7 @@ namespace E3Core.Processors
                 return _connectedBots;
             }
 
-            if(currentConnectedBots==netbotConnectionString)
+            if(currentConnectedBots==_connectedBotsString)
             {
                 //no chnage, return the current list
                 return _connectedBots;
@@ -96,7 +98,7 @@ namespace E3Core.Processors
             else
             {
                 //its different, update
-                _connectedBots = currentConnectedBots.Split(' ').ToList();
+                _connectedBots =e3util .StringsToList(currentConnectedBots, ' ');
                 return _connectedBots;
             }
         }
@@ -172,24 +174,13 @@ namespace E3Core.Processors
             return counters;
         }
 
-        public List<string> ClientsConnected()
-        {
-            List<String> returnValue = null;
-            string playerList = MQ.Query<string>("${NetBots.Client}");
-            if(playerList!="NULL")
-            {
-                returnValue=e3util.StringsToList(playerList, ' ');
-            }
-            if (returnValue == null)
-            {
-                returnValue = new List<string>();
-            }
-            return returnValue;
-        }
+       
     }
 
     public class DanBots : IBots
     {
+        private string _connectedBotsString = string.Empty;
+        private List<string> _connectedBots = new List<string>();
         private Int32 _maxBuffSlots = 37;
         private Int32 _maxSongSlots = 25;
         public static string _lastSuccesfulCast = String.Empty;
@@ -201,7 +192,40 @@ namespace E3Core.Processors
         private static Int64 _nextBuffRefreshTimeInterval = 1000;
         public List<string> BotsConnected()
         {
-            throw new NotImplementedException();
+            //project lazarus_alara|project lazarus_hordester|project lazarus_kusara|project lazarus_rekken|project lazarus_shadowvine|project lazarus_yona|
+             string playerList = MQ.Query<string>("${DanNet.Peers}");
+
+            if(playerList==_connectedBotsString)
+            {
+                //no change just return what we have
+                return _connectedBots;
+            }
+            _connectedBotsString = playerList;
+            if (playerList.EndsWith("|"))
+            {
+                playerList = playerList.Substring(0, playerList.Length - 1);
+            }
+            if (playerList != "NULL")
+            {
+                _connectedBots.Clear();
+                List<string> tmpList = e3util.StringsToList(playerList, '|');
+
+                foreach (var value in tmpList)
+                {
+                    //last index of 
+                    Int32 indexOfUnderScore = value.LastIndexOf('_');
+                    if (indexOfUnderScore == -1) continue;
+                    if(indexOfUnderScore+1==value.Length)
+                    {
+                        //nothing after the underscore, skip
+                        continue;
+                    }
+                    string newStr = value.Substring(indexOfUnderScore+1, value.Length - indexOfUnderScore-1);
+                    newStr= char.ToUpper(newStr[0]) + newStr.Substring(1);
+                    _connectedBots.Add(newStr);
+                }
+            }
+            return _connectedBots;
         }
 
         public void Broadcast(string message)
@@ -322,10 +346,7 @@ namespace E3Core.Processors
             return counters;
         }
 
-        public List<string> ClientsConnected()
-        {
-            throw new NotImplementedException();
-        }
+     
     }
 
    

@@ -29,11 +29,12 @@ namespace MQServerClient
 
             IBots bots = new DanBots();
 
+            List<string> tempList = bots.BotsConnected();
 
-
+            tempList = bots.BotsConnected();
             while (true)
             {
-
+                
                 E3.Process();
                 EventProcessor.ProcessEventsInQueues();
                 System.Threading.Thread.Sleep(1000);

@@ -57,10 +57,10 @@ namespace E3Core.Processors
                 if ((_currentClass& Data.Class.Priest)==_currentClass)
                 {
                     Heals.Check_Heals();
-                    if (_actionTaken) return;
+                    //if (_actionTaken) return;
                 }
 
-
+              
 
                 Assist.Process();
                 WaitForRez.Process();
@@ -69,30 +69,34 @@ namespace E3Core.Processors
                     //don't do anything if we are waiting on rez
                     return;
                 }
-                //now do the dynamic methods from Advanced ini. 
-                //rembmer check_heals is auto inserted, should probably just pull out here
-                List<string> _methodsToInvokeAsStrings;
-                if (AdvancedSettings._classMethodsAsStrings.TryGetValue(_currentShortClassString, out _methodsToInvokeAsStrings))
+                if (!_actionTaken)
                 {
-                    foreach (var methodName in _methodsToInvokeAsStrings)
+                    //rembmer check_heals is auto inserted, should probably just pull out here
+                    List<string> _methodsToInvokeAsStrings;
+                    if (AdvancedSettings._classMethodsAsStrings.TryGetValue(_currentShortClassString, out _methodsToInvokeAsStrings))
                     {
-                        //if an action was taken, start over
-                        if (_actionTaken)
+                        foreach (var methodName in _methodsToInvokeAsStrings)
                         {
-                            break;
+                            //if an action was taken, start over
+                            if (_actionTaken)
+                            {
+                                break;
+                            }
+                            Action methodToInvoke;
+                            if (AdvancedSettings._methodLookup.TryGetValue(methodName, out methodToInvoke))
+                            {
+                                methodToInvoke.Invoke();
+
+                            }
+                            //check backoff
+                            //check nowcast
+                            EventProcessor.ProcessEventsInQueues("/nowcast");
+                            EventProcessor.ProcessEventsInQueues("/backoff");
                         }
-                        Action methodToInvoke;
-                        if (AdvancedSettings._methodLookup.TryGetValue(methodName, out methodToInvoke))
-                        {
-                            methodToInvoke.Invoke();
-                        
-                        }
-                        //check backoff
-                        //check nowcast
-                        EventProcessor.ProcessEventsInQueues("/nowcast");
-                        EventProcessor.ProcessEventsInQueues("/backoff");
                     }
                 }
+                //now do the dynamic methods from Advanced ini. 
+                
                 //lets do our class methods, this is last because of bards
                 foreach (var kvp in AdvancedSettings._classMethodLookup)
                 {
