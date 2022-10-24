@@ -47,13 +47,23 @@ namespace E3Core.Processors
             
         }
 
+        public static void Reset()
+        {
+            _offAssistIgnore.Clear();
+            Casting.ResetResistCounters();
+            //put them back in their object pools
+            DebuffDot.Reset();
+            Burns.Reset();
+            AssistOff();
+
+        }
         //this can be invoked via advanced settings loop
-     
-       
+
+
         public static void Check_AssistStatus()
         {
             if (!e3util.ShouldCheck(ref _nextAssistCheck, _nextAssistCheckInterval)) return;
-
+                        
             if (_assistTargetID == 0) return;
 
             Int32 targetId = MQ.Query<Int32>("${Target.ID}");
@@ -320,25 +330,24 @@ namespace E3Core.Processors
         {
 
 
-            if (MQ.Query<bool>("${Window[CastingWindow].Open}")) MQ.Cmd("/interrupt");
-            if (MQ.Query<bool>("${Me.Combat}")) MQ.Cmd("/attack off");
-            if (MQ.Query<bool>("${Me.AutoFire}")) MQ.Cmd("/autofire off");
-            if (MQ.Query<Int32>("${Me.Pet.ID}") > 0) MQ.Cmd("/squelch /pet back off");
-           // MQ.Delay(500, "${Bool[!${Me.Combat} && !${Me.AutoFire}]}");
+            if (MQ.Query<bool>("${Window[CastingWindow].Open}")) MQ.Cmd("/interrupt");MQ.Delay(0);
+            if (MQ.Query<bool>("${Me.Combat}")) MQ.Cmd("/attack off"); MQ.Delay(0);
+            if (MQ.Query<bool>("${Me.AutoFire}")) MQ.Cmd("/autofire"); MQ.Delay(0);
+            if (MQ.Query<Int32>("${Me.Pet.ID}") > 0) MQ.Cmd("/squelch /pet back off"); MQ.Delay(0);
+            MQ.Delay(500,"!${Me.AutoFire}]}");
             _isAssisting = false;
             _allowControl = false;
             _assistTargetID = 0;
             if (MQ.Query<bool>("${Stick.Status.Equal[ON]}")) MQ.Cmd("/squelch /stick off");
-          
-            
-            if(!Basics.InCombat())
+           
+
+            if (!Basics.InCombat())
             {
                 _offAssistIgnore.Clear();
                 Casting.ResetResistCounters();
                 //put them back in their object pools
                 DebuffDot.Reset();
                 Burns.Reset();
-
             }
 
         }

@@ -49,6 +49,15 @@ namespace E3Core.Processors
         public static void Reset()
         {
             _anchorTarget = 0;
+            Basics._following = false;
+            Basics._followTargetName = String.Empty;
+            Basics._chaseTarget = String.Empty;
+        }
+        public static void ResetKeepFollow()
+        {
+            _anchorTarget = 0;
+            Basics._following = false;
+          
         }
         static void RegisterEventsCasting()
         {
@@ -83,14 +92,19 @@ namespace E3Core.Processors
                 //means we have zoned.
                 _spawns.RefreshList();//make sure we get a new refresh of this zone.
                 Loot.Reset();
+                Basics.ResetKeepFollow();
+                Assist.Reset();
+           
+            });
+            EventProcessor.RegisterEvent("Summoned", @"You have been summoned!", (x) =>
+            {
+                _spawns.RefreshList();//make sure we get a new refresh of this zone.
+                Loot.Reset();
                 Basics.Reset();
-                Assist.AssistOff();
-                //so following can get a new follow
-                Basics._following = false;
-                //MQ.Cmd("/squelch /afollow off");
-                //MQ.Cmd("/squelch /stick off");
+                Assist.Reset();
 
             });
+            //
             EventProcessor.RegisterEvent("InviteToDZ", "(.+) tells you, 'raidadd'", (x) =>
             {
                 if (x.match.Groups.Count > 1)
@@ -193,6 +207,26 @@ namespace E3Core.Processors
             EventProcessor.RegisterCommand("/lesson", (x) =>
             {
                 VetAA("Lesson of the Devoted", "/lesson", x.args.Count);
+            });
+            EventProcessor.RegisterCommand("/throne", (x) =>
+            {
+                if(x.args.Count==0)
+                {
+                    E3._bots.BroadcastCommandToGroup("/throne me");
+                }
+                MQ.Cmd("/interrupt");
+                MQ.Delay(500);
+                MQ.Cmd("/alt act 511");
+                MQ.Delay(500);
+                if (E3._currentClass == Class.Bard)
+                {
+                    MQ.Delay(17000);
+
+                }
+                else
+                {
+                    MQ.Delay(20000, "!${Window[CastingWindow].Open}");
+                }
             });
             EventProcessor.RegisterCommand("/jester", (x) =>
             {
@@ -736,7 +770,7 @@ namespace E3Core.Processors
                             {
                                 MQ.Delay(100);
                                 //if a bot, use afollow, else use stick
-                                MQ.Cmd("/afollow on");
+                                MQ.Cmd("/afollow on nodoor");
                                 _following = true;
                             }
                         }

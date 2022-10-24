@@ -22,7 +22,7 @@ namespace E3Core.Processors
 
             #region AnguishMask
             //Anguish mask swap
-            string pattern = "You feel a gaze of deadly power focusing on you.";
+            string pattern = @"You feel a gaze of deadly power focusing on you\.";
             EventProcessor.RegisterEvent("AnguishMask", pattern, (x) => {
 
                 string currentFace = MQ.Query<string>("${Me.Inventory[face].Name}");

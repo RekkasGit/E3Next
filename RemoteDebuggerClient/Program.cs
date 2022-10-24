@@ -29,9 +29,7 @@ namespace MQServerClient
 
             IBots bots = new DanBots();
 
-            List<string> tempList = bots.BotsConnected();
-
-            tempList = bots.BotsConnected();
+ 
             while (true)
             {
                 

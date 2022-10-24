@@ -94,16 +94,8 @@ namespace E3Core.Processors
         private static void NowCastSpell(string spellName, Int32 targetid)
         {
 
-            Spell spell;
-
-            if (Spell._loadedSpellsByName.ContainsKey(spellName))
-            {
-                spell = Spell._loadedSpellsByName[spellName];
-            }
-            else
-            {
-                spell = new Spell(spellName);
-            }
+            Spell spell = new Spell(spellName);
+            
             if(spell.SpellID>0)
             {
 
@@ -129,6 +121,10 @@ namespace E3Core.Processors
                 if(Casting.CheckReady(spell) && Casting.CheckMana(spell))
                 {
                     Casting.Cast(targetid, spell, null, true);
+                }
+                else
+                {
+                    //spell isn't quite ready yet pause for 1.5 sec
                 }
             }
         }

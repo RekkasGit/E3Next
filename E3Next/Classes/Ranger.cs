@@ -31,10 +31,11 @@ namespace E3Core.Classes
 
                 //lets check our aggro.
                 Int32 aggroPct = MQ.Query<Int32>("${Target.PctAggro}");
-                if (aggroPct > 95)
+                Int32 pctHps = MQ.Query<Int32>("${Target.PctHPs}");
+                if (aggroPct > 95 && pctHps<98)
                 {
                     Spell s;
-                    if (Spell._loadedSpellsByName.TryGetValue("Cover Tracks", out s))
+                    if (!Spell._loadedSpellsByName.TryGetValue("Cover Tracks", out s))
                     {
                         s = new Spell("Cover Tracks");
                     }

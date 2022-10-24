@@ -653,7 +653,8 @@ namespace E3Core.Processors
             MQ.Cmd($"/memorize \"{spell.SpellName}\" {spell.SpellGem}");
             MQ.Delay(2000);
             MQ.Delay(5000, "!${Window[SpellBookWnd].Open}");
-            MQ.Delay(1000);
+            MQ.Delay(3000, $"${{Me.SpellReady[${{Me.Gem[{spell.SpellGem}].Name}}]}}");
+        
             //make double sure the collectio has this spell gem. maybe purchased AA for new slots?
             if (!_gemRecastLockForMem.ContainsKey(spell.SpellGem))
             {
@@ -1041,7 +1042,7 @@ namespace E3Core.Processors
             r = new List<string>();
             r.Add("Your spell fizzles.");
             r.Add("Your .+ spell fizzles.");
-            r.Add("You miss a note, bringing your song to a close.");
+            r.Add(@"You miss a note, bringing your song to a close\.");
             EventProcessor.RegisterEvent("CAST_FIZZLE", r, (x) =>
             {
             });
@@ -1062,7 +1063,7 @@ namespace E3Core.Processors
             //});
 
             r = new List<string>();
-            r.Add("Your target resisted the .+ spell.");
+            r.Add(@"Your target resisted the .+ spell\.");
             //TODO deal with live vs non live
             //r.Add(".+ resisted your .+\!"); //for live?
             //r.Add(".+ avoided your .+!"); //for live?
@@ -1087,11 +1088,11 @@ namespace E3Core.Processors
             //});
 
             r = new List<string>();
-            r.Add(@".+ spell did not take hold. \(Blocked by.+");
-            r.Add(@".+ did not take hold on (.+) \(Blocked by.+");
-            r.Add("Your spell did not take hold.");
-            r.Add("Your spell would not have taken hold.");
-            r.Add("Your spell is too powerful for your intended target.");
+            r.Add(@" spell did not take hold. \(Blocked by");
+            r.Add(@" did not take hold on .+ \(Blocked by");
+            r.Add(@"Your spell did not take hold\.");
+            r.Add(@"Your spell would not have taken hold\.");
+            r.Add(@"Your spell is too powerful for your intended target\.");
             EventProcessor.RegisterEvent("CAST_TAKEHOLD", r, (x) =>
             {
             });

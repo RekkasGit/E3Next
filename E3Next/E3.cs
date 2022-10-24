@@ -51,7 +51,8 @@ namespace E3Core.Processors
 
                 //nowcast before all.
                 EventProcessor.ProcessEventsInQueues("/nowcast");
-
+                //use burns if able
+                Burns.UseBurns();
                 //do the basics first
                 //first and formost, do healing checks
                 if ((_currentClass& Data.Class.Priest)==_currentClass)
@@ -60,7 +61,6 @@ namespace E3Core.Processors
                     //if (_actionTaken) return;
                 }
 
-              
 
                 Assist.Process();
                 WaitForRez.Process();

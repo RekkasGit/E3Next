@@ -437,6 +437,8 @@ namespace E3Core.Processors
                         UpdateDotDebuffTimers(mobid, spell, totalTimeToWait, timers);
                     }
                     //onto the next debuff/dot!
+                    if (E3._actionTaken) return;
+
                 }
             }
         }

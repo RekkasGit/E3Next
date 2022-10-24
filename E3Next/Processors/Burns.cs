@@ -70,7 +70,7 @@ namespace E3Core.Processors
 
 
         }
-        [ClassInvoke(Data.Class.All)]
+        
         public static void UseBurns()
         {
             if (!e3util.ShouldCheck(ref _nextBurnCheck, _nextBurnCheckInterval)) return;

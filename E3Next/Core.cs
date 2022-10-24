@@ -177,11 +177,11 @@ namespace MonoCore
             {
                 //some filter regular expressions so we can quicly get rid of combat and "has cast a spell" stuff. 
                 //if your app needs them remove these :)
-                System.Text.RegularExpressions.Regex filterRegex = new Regex(".+ points of damage.");
+                System.Text.RegularExpressions.Regex filterRegex = new Regex(@" points of damage\.");
                 _filterRegexes.Add(filterRegex);
-                filterRegex = new Regex(".+ points of non-melee damage.");
+                filterRegex = new Regex(@" points of non-melee damage\.");
                 _filterRegexes.Add(filterRegex);
-                filterRegex = new Regex(@".+ begins to cast a spell\.");
+                filterRegex = new Regex(@" begins to cast a spell\.");
                 _filterRegexes.Add(filterRegex);
 
                 _regExProcessingTask = Task.Factory.StartNew(() => { ProcessEventsIntoQueues(); }, CancellationToken.None, TaskCreationOptions.DenyChildAttach, TaskScheduler.Default);
