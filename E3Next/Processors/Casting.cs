@@ -917,6 +917,7 @@ namespace E3Core.Processors
             CheckForResistByName("CAST_TAKEHOLD", endtime);
             CheckForResistByName("CAST_RESIST", endtime);
             CheckForResistByName("CAST_FIZZLE", endtime);
+            CheckForResistByName("CAST_IMMUNE", endtime);
         }
         public static CastReturn CheckForReist(Data.Spell spell)
         {
