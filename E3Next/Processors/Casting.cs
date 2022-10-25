@@ -460,15 +460,16 @@ namespace E3Core.Processors
                     if (returnValue == CastReturn.CAST_SUCCESS)
                     {
                         _lastSuccesfulCast = spell.CastName;
-                        //clear the counter for this pell on this mob?
+                        //clear the spell counter for this pell on this mob?
                         if (_resistCounters.ContainsKey(targetID))
                         {
-                            _resistCounters[targetID].Dispose();
-                            _resistCounters.Remove(targetID);
-
+                            if(_resistCounters[targetID]._spellCounters.ContainsKey(spell.SpellID))
+                            {
+                                _resistCounters[targetID]._spellCounters[spell.SpellID] = 0;
+                            }
                         }
                     }
-                    else if (returnValue == CastReturn.CAST_RESIST)
+                    else if (returnValue == CastReturn.CAST_RESIST || returnValue == CastReturn.CAST_TAKEHOLD)
                     {
                         if (!_resistCounters.ContainsKey(targetID))
                         {
@@ -483,14 +484,21 @@ namespace E3Core.Processors
                         resist._spellCounters[spell.SpellID]++;
 
                     }
-                    else if (returnValue == CastReturn.CAST_TAKEHOLD)
+                    else if (returnValue== CastReturn.CAST_IMMUNE)
                     {
-                        //TODO: Add timers
+                        if (!_resistCounters.ContainsKey(targetID))
+                        {
+                            ResistCounter tresist = ResistCounter.Aquire();
+                            _resistCounters.Add(targetID, tresist);
+                        }
+                        ResistCounter resist = _resistCounters[targetID];
+                        if (!resist._spellCounters.ContainsKey(spell.SpellID))
+                        {
+                            resist._spellCounters.Add(spell.SpellID, 0);
+                        }
+                        resist._spellCounters[spell.SpellID]=99;
                     }
-                    else if (returnValue == CastReturn.CAST_IMMUNE)
-                    {
-                        //TODO: deal with immunity
-                    }
+                   
 
                     //MQ.Write($"{spell.CastName} Result:{returnValue.ToString()}");
 
@@ -523,7 +531,8 @@ namespace E3Core.Processors
                     //TODO: bard resume twist
 
                     E3._actionTaken = true;
-
+                    //clear out the queues for the resist counters as they may have a few that lagged behind.
+                    ClearResistChecks();
                     return returnValue;
 
                 }
@@ -901,7 +910,14 @@ namespace E3Core.Processors
 
         }
 
-
+        public static void ClearResistChecks()
+        {
+            MQ.Delay(100);
+            Double endtime = 0;
+            CheckForResistByName("CAST_TAKEHOLD", endtime);
+            CheckForResistByName("CAST_RESIST", endtime);
+            CheckForResistByName("CAST_FIZZLE", endtime);
+        }
         public static CastReturn CheckForReist(Data.Spell spell)
         {
             //it takes time to wait for a spell resist, up to 2-400 millieconds.
@@ -917,20 +933,19 @@ namespace E3Core.Processors
             while (endtime > Core._stopWatch.Elapsed.TotalMilliseconds)
             {
 
-                string result = MQ.Query<string>("${Cast.Result}");
+                //string result = MQ.Query<string>("${Cast.Result}");
 
-                if (result != "CAST_SUCCESS")
-                {
-                    CastReturn r = CastReturn.CAST_INTERRUPTED;
-                    Enum.TryParse<CastReturn>(result, out r);
-                    return r;
-                }
+                //if (result != "CAST_SUCCESS")
+                //{
+                //    CastReturn r = CastReturn.CAST_INTERRUPTED;
+                //    Enum.TryParse<CastReturn>(result, out r);
+                //    return r;
+                //}
                 //frankly sometimes mq2cast is bad about getting events. do it ourselves as well
                 if (CheckForResistByName("CAST_TAKEHOLD", endtime)) return CastReturn.CAST_TAKEHOLD;
                 if (CheckForResistByName("CAST_RESIST", endtime)) return CastReturn.CAST_RESIST;
                 if (CheckForResistByName("CAST_FIZZLE", endtime)) return CastReturn.CAST_FIZZLE;
-
-                //if (CheckForResistByName("CAST_IMMUNE", endtime)) return CastReturn.CAST_IMMUNE;
+                if (CheckForResistByName("CAST_IMMUNE", endtime)) return CastReturn.CAST_IMMUNE;
                 //if (CheckForResistByName("CAST_COLLAPSE", endtime)) return CastReturn.CAST_COLLAPSE;
                 //if (CheckForResistByName("CAST_CANNOTSEE", endtime)) return CastReturn.CAST_NOTARGET;
                 //if (CheckForResistByName("CAST_COMPONENTS", endtime)) return CastReturn.CAST_COMPONENTS;
@@ -1084,16 +1099,17 @@ namespace E3Core.Processors
             //EventProcessor.RegisterEvent("CAST_DISTRACTED", r, (x) => {
             //});
 
-            //r = new List<string>();
-            //r.Add("Your target has no mana to affect.");
-            //r.Add("Your target looks unaffected.");
-            //r.Add("Your target is immune to changes in its attack speed.");
-            //r.Add("Your target is immune to changes in its run speed.");
-            //r.Add("Your target is immune to snare spells.");
-            //r.Add("Your target cannot be mesmerized.");
-            //r.Add("Your target looks unaffected.");
-            //EventProcessor.RegisterEvent("CAST_IMMUNE", r, (x) => {
-            //});
+            r = new List<string>();
+            r.Add("Your target has no mana to affect.");
+            r.Add("Your target looks unaffected.");
+            r.Add("Your target is immune to changes in its attack speed.");
+            r.Add("Your target is immune to changes in its run speed.");
+            r.Add("Your target is immune to snare spells.");
+            r.Add("Your target cannot be mesmerized.");
+            r.Add("Your target looks unaffected.");
+            EventProcessor.RegisterEvent("CAST_IMMUNE", r, (x) =>
+            {
+            });
 
 
             //r = new List<string>();

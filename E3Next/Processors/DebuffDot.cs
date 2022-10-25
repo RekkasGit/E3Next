@@ -77,6 +77,7 @@ namespace E3Core.Processors
                     Spawn s;
                     if(_spawns.TryByID(mobId,out s))
                     {
+                        if (s.ID == Assist._assistTargetID) continue;
                         if (!s.Targetable) continue;
                         if (!s.Aggressive) continue;
                         if (!s.Targetable) continue;
