@@ -93,7 +93,11 @@ namespace E3Core.Processors
 
         private static void NowCastSpell(string spellName, Int32 targetid)
         {
-
+            string realSpell = string.Empty;
+            if (BegForBuffs._spellAliases.TryGetValue(spellName, out realSpell))
+            {
+                spellName = realSpell;
+            }
             Spell spell = new Spell(spellName);
             
             if(spell.SpellID>0)

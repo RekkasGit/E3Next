@@ -113,10 +113,20 @@ namespace E3Core.Processors
                 }
             }
         }
+        private static bool _petMaxShrink = false;
+        private static Int32 _petMaxShrinkID = 0;
         private static void CheckPetShrink(Int32 petID)
         {
-
+            if (!E3._characterSettings.Pet_AutoShrink) return;
+            if (petID != _petMaxShrinkID)
+            {
+                _petMaxShrinkID = petID;
+                _petMaxShrink = false;
+            }
             double petHeight = MQ.Query<double>("${Me.Pet.Height}");
+          
+
+            if (_petMaxShrink) return;
 
             if(petHeight>1 && petHeight!=0)
             {
@@ -130,6 +140,16 @@ namespace E3Core.Processors
                     if (s.SpellID > 0 && s.CastType!= CastType.None)
                     {
                         Casting.Cast(petID, s);
+                        MQ.Delay(300);
+                        double newPetHeight = MQ.Query<double>("${Me.Pet.Height}");
+
+                        if(newPetHeight==petHeight)
+                        {
+                            _petMaxShrink = true;
+                            _petMaxShrinkID = petID;
+                        }
+
+
                         return;
                     }
                 }

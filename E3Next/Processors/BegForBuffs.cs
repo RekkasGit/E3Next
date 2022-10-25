@@ -31,7 +31,7 @@ namespace E3Core.Processors
         private static Int64 _nextBegCheckInterval = 1000;
         private static Queue<BuffQueuedItem> _queuedBuffs = new Queue<BuffQueuedItem>();
         private static SpellAliasDataFile _spellAliasesDataFile = new SpellAliasDataFile();
-        private static Dictionary<string, string> _spellAliases;
+        public static Dictionary<string, string> _spellAliases;
         public static void Init()
         {
             RegsterEvents();
@@ -65,7 +65,7 @@ namespace E3Core.Processors
                     }
                 }
             });
-
+            //queuecast almost works exactly the same so added it here.
             EventProcessor.RegisterCommand("/queuecast", (x) =>
             {
                 if (x.args.Count > 1)
