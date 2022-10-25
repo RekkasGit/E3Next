@@ -163,7 +163,7 @@ namespace E3Core.Settings
 
             LoadKeyData("Pets", "Pet Spell", _parsedData, PetSpell);
             LoadKeyData("Pets", "Pet Buff", _parsedData, PetBuffs);
-            LoadKeyData("Pets", "Pet Heal", _parsedData, PetBuffs);
+            LoadKeyData("Pets", "Pet Heal", _parsedData, PetHeals);
             LoadKeyData("Pets", "Pet Mend (Pct)", _parsedData, ref Pet_MendPercent);
             LoadKeyData("Pets", "Pet Taunt (On/Off)", _parsedData, ref Pet_TauntEnabled);
             LoadKeyData("Pets", "Pet Auto-Shrink (On/Off)", _parsedData, ref Pet_AutoShrink);
