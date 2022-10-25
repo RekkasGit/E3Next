@@ -34,6 +34,11 @@ namespace E3Core.Processors
 
 
         }
+        public static void Reset()
+        {
+              _petMaxShrink = false;
+              _petMaxShrinkID = 0;
+        }
         [ClassInvoke(Data.Class.PetClass)]
         public static void Check_Pets()
         {

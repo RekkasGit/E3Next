@@ -851,11 +851,15 @@ namespace E3Core.Processors
                 return -1;
             }
         }
+        //used to just store removed items, keep it around to not create garbage
+        private static List<Int32> _refreshBuffCacheRemovedItems = new List<int>();
         public static void RefresBuffCacheForBots()
         {
             if (Core._stopWatch.ElapsedMilliseconds > _nextBotCacheCheckTime)
             {
                 //this is so we can get up to date buff data from the bots, without having to target/etc.
+                _refreshBuffCacheRemovedItems.Clear();
+                //_spawns.RefreshList();
                 foreach (var kvp in _buffTimers)
                 {
 
@@ -887,7 +891,21 @@ namespace E3Core.Processors
 
                         }
                     }
+                    else
+                    {
+                        //remove them from the collection.
+                        _refreshBuffCacheRemovedItems.Add(kvp.Key);
+                    }
                 }
+                foreach(Int32 removedItem in _refreshBuffCacheRemovedItems)
+                {
+                    if (_buffTimers.ContainsKey(removedItem))
+                    {
+                        _buffTimers[removedItem].Dispose();
+                        _buffTimers.Remove(removedItem);
+                    }
+                }
+                _refreshBuffCacheRemovedItems.Clear();
                 _nextBotCacheCheckTime = Core._stopWatch.ElapsedMilliseconds + nextBotCacheCheckTimeInterval;
             }
         }

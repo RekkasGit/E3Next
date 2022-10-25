@@ -94,6 +94,7 @@ namespace E3Core.Processors
                 Loot.Reset();
                 Basics.ResetKeepFollow();
                 Assist.Reset();
+                Pets.Reset();
            
             });
             EventProcessor.RegisterEvent("Summoned", @"You have been summoned!", (x) =>
