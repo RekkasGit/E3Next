@@ -30,7 +30,7 @@ namespace E3Core.Processors
         {
             EventProcessor.RegisterCommand("/CastingRadiantCure", (x) =>
             {
-                if (x.args.Count >0)
+                if (x.args.Count > 0)
                 {
                     Boolean.TryParse(x.args[0], out _shouldCastCure);
                 }
@@ -42,7 +42,7 @@ namespace E3Core.Processors
         [AdvSettingInvoke]
         public static void Check_Cures()
         {
-            
+
             if (!e3util.ShouldCheck(ref _nextRCureCheck, _nexRCureCheckInterval)) return;
             if (!E3._actionTaken) CheckRaident();
             if (!E3._actionTaken) CheckNormalCures();
@@ -58,7 +58,7 @@ namespace E3Core.Processors
                 {
                     foreach (var id in Basics._groupMembers)
                     {
-                         Spawn s;
+                        Spawn s;
                         if (_spawns.TryByID(id, out s))
                         {
                             if (E3._bots.BuffList(s.CleanName).Contains(spell.CheckForID))
@@ -76,12 +76,12 @@ namespace E3Core.Processors
             //raidient cure cast
             if (MQ.Query<bool>("${Me.AltAbilityReady[Radiant Cure]}"))
             {
-                 //spell here is the spell debuff we are looking for
+                //spell here is the spell debuff we are looking for
                 foreach (var spell in E3._characterSettings.RadiantCure)
                 {
                     Int32 numberSick = 0;
 
-                    foreach(var id in Basics._groupMembers)
+                    foreach (var id in Basics._groupMembers)
                     {
                         Spawn s;
                         if (_spawns.TryByID(id, out s))
@@ -117,67 +117,69 @@ namespace E3Core.Processors
         {
             foreach (var spell in curesSpells)
             {
-                if (Casting.CheckReady(spell) && Casting.CheckMana(spell))
+
+                //check each member of the group for counters
+                List<string> targets = E3._bots.BotsConnected();
+                foreach (var target in targets)
                 {
-                    //check each member of the group for counters
-                    List<string> targets = E3._bots.BotsConnected();
-                    foreach (var target in targets)
+                    Spawn s;
+                    if (_spawns.TryByName(target, out s))
                     {
-                        Spawn s;
-                        if (_spawns.TryByName(target, out s))
+                        Int32 counters = E3._bots.CursedCounters(target);
+                        if (counters > 0 && s.Distance < spell.MyRange)
                         {
-                            Int32 counters = E3._bots.CursedCounters(target);
-                            if (counters > 0 && s.Distance < spell.MyRange)
+                            //check and make sure they don't have one of the 'ignored debuffs'
+                            List<Int32> badbuffs = E3._bots.BuffList(s.CleanName);
+
+                            bool foundBadBuff = false;
+                            foreach (var bb in ignoreSpells)
                             {
-                                //check and make sure they don't have one of the 'ignored debuffs'
-                                List<Int32> badbuffs = E3._bots.BuffList(s.CleanName);
-
-                                bool foundBadBuff = false;
-                                foreach (var bb in ignoreSpells)
+                                if (badbuffs.Contains(bb.SpellID))
                                 {
-                                    if (badbuffs.Contains(bb.SpellID))
-                                    {
-                                        foundBadBuff = true;
-                                        break;
-                                    }
+                                    foundBadBuff = true;
+                                    break;
                                 }
-                                if (foundBadBuff) continue;
-
+                            }
+                            if (foundBadBuff) continue;
+                            if (Casting.CheckReady(spell) && Casting.CheckMana(spell))
+                            {
                                 Casting.Cast(s.ID, spell);
                                 return true;
                             }
                         }
                     }
                 }
+
             }
             return false;
 
         }
         private static void CheckNormalCures()
         {
-            foreach(var spell in E3._characterSettings.Cures)
+            foreach (var spell in E3._characterSettings.Cures)
             {
-                if(Casting.CheckReady(spell) && Casting.CheckMana(spell))
+                Spawn s;
+                if (_spawns.TryByName(spell.CastTarget, out s))
                 {
-                    Spawn s;
-                    if (_spawns.TryByName(spell.CastTarget, out s))
+                    if (s.Distance < spell.MyRange && E3._bots.BuffList(s.CleanName).Contains(spell.CheckForID))
                     {
-                        if (s.Distance<spell.MyRange && E3._bots.BuffList(s.CleanName).Contains(spell.CheckForID))
+                        if (Casting.CheckReady(spell) && Casting.CheckMana(spell))
                         {
                             Casting.Cast(s.ID, spell);
                             return;
                         }
                     }
-
                 }
+
+
             }
         }
         private static void CastRadiantCure()
         {
-            
+
             //check the event queue
             EventProcessor.ProcessEventsInQueues("/CastingRadiantCure");
-            if(_shouldCastCure)
+            if (_shouldCastCure)
             {
                 E3._bots.BroadcastCommandToGroup("/CastingRadiantCure FALSE");
                 //did we find enough sick people? if so, cast cure.
