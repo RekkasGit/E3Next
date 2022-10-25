@@ -54,14 +54,15 @@ namespace E3Core.Processors
         {
             foreach (var spell in E3._characterSettings.CureAll)
             {
-                if (Casting.CheckReady(spell) && Casting.CheckMana(spell))
+
+                foreach (var id in Basics._groupMembers)
                 {
-                    foreach (var id in Basics._groupMembers)
+                    Spawn s;
+                    if (_spawns.TryByID(id, out s))
                     {
-                        Spawn s;
-                        if (_spawns.TryByID(id, out s))
+                        if (E3._bots.BuffList(s.CleanName).Contains(spell.CheckForID))
                         {
-                            if (E3._bots.BuffList(s.CleanName).Contains(spell.CheckForID))
+                            if (Casting.CheckReady(spell) && Casting.CheckMana(spell))
                             {
                                 Casting.Cast(s.ID, spell);
                                 return;
@@ -69,6 +70,7 @@ namespace E3Core.Processors
                         }
                     }
                 }
+
             }
         }
         private static void CheckRaident()
