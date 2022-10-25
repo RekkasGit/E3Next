@@ -968,15 +968,59 @@ namespace E3Core.Processors
         public static Int64 TimeLeftOnTargetBuff(Data.Spell spell)
         {
             Int64 millisecondsLeft = MQ.Query<Int64>($"${{Target.Buff[{spell.SpellName}].Duration}}");
+
+            if(millisecondsLeft==0)
+            {
+                bool spellExists = MQ.Query<bool>($"${{Spell[{spell.SpellName}]}}");
+                //doing this as -1 is a default 'bad' value for NULL, but in here a neg duration means perma.
+                if(spellExists)
+                {
+                    //check to see if its a perm buff
+                    Int32 duration = MQ.Query<Int32>($"${{Spell[{spell.SpellName}].Duration}}");
+                    if (duration < 0)
+                    {
+                        millisecondsLeft = Int32.MaxValue;
+                    }
+                }
+            }
             return millisecondsLeft;
         }
         public static Int64 TimeLeftOnMyBuff(Data.Spell spell)
         {
-            Int64 millisecondsLeft = MQ.Query<Int64>($"${{Me.Buff[{spell.SpellName}].Duration}}");
-            if (millisecondsLeft == 0)
+            Int64 millisecondsLeft = 0;
+            bool buffExists = MQ.Query<bool>($"${{Me.Buff[{spell.SpellName}]}}");
+            if(buffExists)
             {
-                millisecondsLeft = MQ.Query<Int64>($"${{Me.Song[{spell.SpellName}].Duration}}");
+                millisecondsLeft = MQ.Query<Int64>($"${{Me.Buff[{spell.SpellName}].Duration}}");
+                if (millisecondsLeft == 0)
+                {
+                    //check if perma spell
+                    Int32 duration = MQ.Query<Int32>($"${{Spell[{spell.SpellName}].Duration}}");
+                    if (duration < 0)
+                    {
+                        millisecondsLeft = Int32.MaxValue;
+                    }
+                }
             }
+            else
+            {
+                buffExists = MQ.Query<bool>($"${{Me.Song[{spell.SpellName}]}}");
+                if(buffExists)
+                {
+                    millisecondsLeft = MQ.Query<Int64>($"${{Me.Song[{spell.SpellName}].Duration}}");
+                    if (millisecondsLeft == 0)
+                    {
+                        //check if perma spell
+                        Int32 duration = MQ.Query<Int32>($"${{Spell[{spell.SpellName}].Duration}}");
+                        if (duration < 0)
+                        {
+                            millisecondsLeft = Int32.MaxValue;
+                        }
+                    }
+                }
+               
+            }
+  
             return millisecondsLeft;
         }
         private static bool CheckForResistByName(string name, Double time)
