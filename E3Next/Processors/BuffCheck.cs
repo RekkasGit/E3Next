@@ -389,7 +389,7 @@ namespace E3Core.Processors
                         }
                     }
                   
-                    if (s.CleanName == E3._currentName)
+                    if (s.ID == MQ.Query<Int32>("${Me.ID}"))
                     {
                         //self buffs!
                         bool hasBuff = MQ.Query<bool>($"${{Bool[${{Me.Buff[{spell.SpellName}]}}]}}");
@@ -497,6 +497,65 @@ namespace E3Core.Processors
                            
                             continue;
                         }
+                    }
+                    else if(s.ID == MQ.Query<Int32>("${Me.Pet.ID}"))
+                    {
+                        //its my pet
+                        bool hasBuff = MQ.Query<bool>($"${{Bool[${{Me.Pet.Buff[{spell.SpellName}]}}]}}");
+                        bool hasCheckFor = false;
+                        if (!String.IsNullOrWhiteSpace(spell.CheckFor))
+                        {
+                            hasCheckFor = MQ.Query<bool>($"${{Bool[${{Me.Pet.Buff[{spell.CheckFor}]}}]}}");
+                            if (hasCheckFor)
+                            {
+                                
+                                UpdateBuffTimers(s.ID, spell, 1500);
+                                continue;
+                            }
+                        }
+                        if (!(hasBuff))
+                        {
+                            bool willStack = MQ.Query<bool>($"${{Spell[{spell.SpellName}].WillLand}}");
+                            if (willStack && Casting.CheckReady(spell) && Casting.CheckMana(spell))
+                            {
+                                CastReturn result;
+                               
+                                result = Casting.Cast(s.ID, spell, Heals.SomeoneNeedsHealing);
+                                if (result == CastReturn.CAST_INTERRUPTED || result == CastReturn.CAST_INTERRUPTFORHEAL || result == CastReturn.CAST_FIZZLE)
+                                {
+                                    return;
+                                }
+                                if (result != CastReturn.CAST_SUCCESS)
+                                {
+                                    //possibly some kind of issue/blocking. set a 120 sec timer to try and recast later.
+                                    UpdateBuffTimers(s.ID, spell, 60 * 1000, true);
+                                }
+                                else
+                                {
+                                    //lets verify what we have.
+                                    MQ.Delay(100);
+                                    UpdateBuffTimers(s.ID, spell, 1500);
+                                }
+                                return;
+                            }
+                            else if (!willStack)
+                            {
+                                //won't stack don't check back for awhile
+                                UpdateBuffTimers(s.ID, spell, 1500);
+                            }
+                            else
+                            {
+                                //we don't have mana for this? or ifs failed? chill for 12 sec.
+                                UpdateBuffTimers(s.ID, spell, 12 * 1000, true);
+                            }
+                        }
+                        else
+                        {
+                            //they have the buff, update the time
+                            UpdateBuffTimers(s.ID, spell, 1500);
+                            continue;
+                        }
+
                     }
                     else
                     {

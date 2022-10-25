@@ -985,6 +985,26 @@ namespace E3Core.Processors
             }
             return millisecondsLeft;
         }
+        public static Int64 TimeLeftOnMyPetBuff(Data.Spell spell)
+        {
+
+            Int64 millisecondsLeft = 0;
+            bool buffExists = MQ.Query<bool>($"${{Me.Pet.Buff[{spell.SpellName}]}}");
+            if (buffExists)
+            {
+                millisecondsLeft = MQ.Query<Int64>($"${{Me.Pet.Buff[{spell.SpellName}].Duration}}");
+                if (millisecondsLeft == 0)
+                {
+                    //check if perma spell
+                    Int32 duration = MQ.Query<Int32>($"${{Spell[{spell.SpellName}].Duration}}");
+                    if (duration < 0)
+                    {
+                        millisecondsLeft = Int32.MaxValue;
+                    }
+                }
+            }
+            return millisecondsLeft;
+        }
         public static Int64 TimeLeftOnMyBuff(Data.Spell spell)
         {
             Int64 millisecondsLeft = 0;
