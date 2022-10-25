@@ -38,7 +38,7 @@ namespace E3Core.Processors
                 }
                 
 
-                MQ.Write($"Loading E3 Next v{_e3Version}...");
+                MQ.Write($"Loading nE³xt v{_e3Version}...");
 
                 InitPlugins();
                 InitServerNameForIni();
