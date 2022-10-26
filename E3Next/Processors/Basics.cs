@@ -809,11 +809,11 @@ namespace E3Core.Processors
         {
             if (!e3util.ShouldCheck(ref _nextResourceCheck, _nextResourceCheckInterval)) return;
 
+
             if (E3._isInvis) return;
+            if (Basics.AmIDead()) return;
 
-            bool pok = MQ.Query<bool>("${Zone.ShortName.Equal[poknowledge]}");
-            if (pok) return;
-
+            
             Int32 minMana = 40;
             Int32 minHP = 60;
             Int32 maxMana = 75;
@@ -909,7 +909,7 @@ namespace E3Core.Processors
 
             if (E3._currentClass == Data.Class.Necromancer)
             {
-                bool deathBloomReady = MQ.Query<bool>("${Me.AltAbilityReady[Death Bloom]}") && !AmIDead();
+                bool deathBloomReady = MQ.Query<bool>("${Me.AltAbilityReady[Death Bloom]}");
                 if (deathBloomReady && currentHps > 8000)
                 {
                     Spell s;
@@ -926,7 +926,7 @@ namespace E3Core.Processors
             }
             if (E3._currentClass == Data.Class.Enchanter)
             {
-                bool manaDrawReady = MQ.Query<bool>("${Me.AltAbilityReady[Mana Draw]}") && !AmIDead();
+                bool manaDrawReady = MQ.Query<bool>("${Me.AltAbilityReady[Mana Draw]}");
                 if (manaDrawReady)
                 {
                     Spell s;
@@ -941,6 +941,9 @@ namespace E3Core.Processors
                     }
                 }
             }
+            //no manastone in pok
+            bool pok = MQ.Query<bool>("${Zone.ShortName.Equal[poknowledge]}");
+            if (pok) return;
 
             bool hasManaStone = MQ.Query<bool>("${Bool[${FindItem[=Manastone]}]}");
 
