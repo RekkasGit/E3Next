@@ -2,6 +2,7 @@
 using E3Core.Settings;
 using E3Core.Settings.FeatureSettings;
 using E3Core.Utility;
+using IniParser;
 using MonoCore;
 using System;
 using System.Collections.Generic;
@@ -19,6 +20,7 @@ namespace E3Core.Processors
         //public static Int32 _followTargetID = 0;
         public static string _followTargetName = String.Empty;
         public static DoorDataFile _doorData = new DoorDataFile();
+        public static SavedGroupDataFile _savedGroupData = new SavedGroupDataFile();
         public static Logging _log = E3._log;
         private static IMQ MQ = E3.MQ;
         private static ISpawns _spawns = E3._spawns;
@@ -47,7 +49,7 @@ namespace E3Core.Processors
 
         public static void Init()
         {
-            RegisterEventsCasting();
+            RegisterEventsBasic();
             _doorData.LoadData();
         }
         public static void Reset()
@@ -63,7 +65,7 @@ namespace E3Core.Processors
             Basics._following = false;
           
         }
-        static void RegisterEventsCasting()
+        static void RegisterEventsBasic()
         {
 
             EventProcessor.RegisterEvent("InviteToGroup", "(.+) invites you to join a group.", (x) =>
@@ -554,7 +556,44 @@ namespace E3Core.Processors
                 }
             });
 
+            EventProcessor.RegisterCommand("/savegroup", (x) =>
+            {
+                var args = x.args;
+                if (args.Count == 0)
+                    return;
 
+                MQ.Write($"\agCreating new saved group by the name of {args[0]}");
+                _savedGroupData.SaveData(args[0]);
+                MQ.Write($"\agSuccessfully created {args[0]}");
+            });
+
+            EventProcessor.RegisterCommand("/group", (x) =>
+            {
+                var args = x.args;
+                if (args.Count == 0)
+                    return;
+
+                var server = MQ.Query<string>("${MacroQuest.Server}");
+                var groupKey = server + "_" + args[0];
+                var savedGroups = _savedGroupData.GetData();
+                if (!savedGroups.TryGetValue(groupKey, out var groupMembers))
+                { 
+                    MQ.Write($"\arNo group with the name of {args[0]} found in Saved Groups.ini. Use /savegroup groupName to create one"); 
+                }
+
+                E3._bots.BroadcastCommand("/raiddisband");
+                E3._bots.BroadcastCommand("/disband");
+
+                if (MQ.Query<int>("${Group}") > 0)
+                {
+                    MQ.Delay(2000);
+                }
+
+                foreach (var member in groupMembers)
+                {
+                    MQ.Cmd($"/invite {member}");
+                }
+            });
         }
         private static void FindItemCompact(string itemName)
         {
