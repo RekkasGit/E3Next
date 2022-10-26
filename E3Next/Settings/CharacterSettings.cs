@@ -143,6 +143,7 @@ namespace E3Core.Settings
 
 
             LoadKeyData("Nukes", "Main", _parsedData, Nukes);
+            LoadKeyData("Stuns", "Main", _parsedData, Stuns);
             LoadKeyData("TargetAE", "TargetAE", _parsedData, PBAE);
             LoadKeyData("PBAE", "PBAE", _parsedData, PBAE);
 
@@ -259,6 +260,9 @@ namespace E3Core.Settings
             {
                 newFile.Sections.AddSection("Nukes");
                 section = newFile.Sections.GetSectionData("Nukes");
+                section.Keys.AddKey("Main", "");
+                newFile.Sections.AddSection("Stuns");
+                section = newFile.Sections.GetSectionData("Stuns");
                 section.Keys.AddKey("Main", "");
 
                 newFile.Sections.AddSection("TargetAE");
@@ -491,6 +495,7 @@ namespace E3Core.Settings
         public List<Data.Spell> MeleeAbilities = new List<Data.Spell>();
         //nukes
         public List<Data.Spell> Nukes = new List<Data.Spell>();
+        public List<Data.Spell> Stuns = new List<Data.Spell>();
         //buffs
         public List<Data.Spell> InstantBuffs = new List<Data.Spell>();
         public List<Data.Spell> SelfBuffs = new List<Data.Spell>();

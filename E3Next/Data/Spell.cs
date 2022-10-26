@@ -144,7 +144,23 @@ namespace E3Core.Data
                     }
                     else if (value.StartsWith("Delay|", StringComparison.OrdinalIgnoreCase))
                     {
-                        Delay = GetArgument<Int32>(value);
+                        string tvalue = value;
+                        bool isMinute = false;
+                        if (value.EndsWith("s", StringComparison.OrdinalIgnoreCase))
+                        {
+                            tvalue = tvalue.Substring(0, value.Length - 1);
+                        } else if (value.EndsWith("m", StringComparison.OrdinalIgnoreCase))
+                        {
+                            isMinute = true;
+                            tvalue = tvalue.Substring(0, value.Length - 1);
+                        }
+
+                        Delay = GetArgument<Int32>(tvalue);
+                        if(isMinute)
+                        {
+                            Delay = Delay * 60;
+                        }
+
                     }
                     else if (value.Equals("GoM", StringComparison.OrdinalIgnoreCase))
                     {
@@ -242,6 +258,7 @@ namespace E3Core.Data
 
             if (typeof(T) == typeof(Int32))
             {
+                
                 Int32 value;
                 if (Int32.TryParse(input, out value))
                 {

@@ -118,15 +118,17 @@ namespace E3Core.Processors
         [AdvSettingInvoke]
         public static void Check_Debuffs()
         {
-            if (!e3util.ShouldCheck(ref _nextDebuffCheck, _nextDebuffCheckInterval)) return;
-
-            e3util.PrintTimerStatus(_debuffTimers, ref _nextDebuffCheck, "Debuffs");
 
             if (Assist._assistTargetID > 0)
             {
-                CastLongTermSpell(Assist._assistTargetID, E3._characterSettings.Debuffs_OnAssist,_debuffTimers);
+                CastLongTermSpell(Assist._assistTargetID, E3._characterSettings.Debuffs_OnAssist, _debuffTimers);
                 if (E3._actionTaken) return;
             }
+
+            if (!e3util.ShouldCheck(ref _nextDebuffCheck, _nextDebuffCheckInterval)) return;
+
+            //e3util.PrintTimerStatus(_debuffTimers, ref _nextDebuffCheck, "Debuffs");
+
             foreach (var mobid in _mobsToDebuff)
             {
 
@@ -152,16 +154,16 @@ namespace E3Core.Processors
         [AdvSettingInvoke]
         public static void check_Dots()
         {
-            if (!e3util.ShouldCheck(ref _nextDoTCheck, _nextDoTCheckInterval)) return;
-
-
-            e3util.PrintTimerStatus(_dotTimers, ref _nextDoTCheck, "Damage over Time");
 
             if (Assist._assistTargetID > 0)
             {
-                CastLongTermSpell(Assist._assistTargetID, E3._characterSettings.Dots_Assist,_dotTimers);
+                CastLongTermSpell(Assist._assistTargetID, E3._characterSettings.Dots_Assist, _dotTimers);
                 if (E3._actionTaken) return;
             }
+
+
+            if (!e3util.ShouldCheck(ref _nextDoTCheck, _nextDoTCheckInterval)) return;
+           // e3util.PrintTimerStatus(_dotTimers, ref _nextDoTCheck, "Damage over Time");
 
             foreach (var mobid in _mobsToDot)
             {

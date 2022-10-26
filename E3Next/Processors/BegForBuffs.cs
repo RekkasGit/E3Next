@@ -47,6 +47,8 @@ namespace E3Core.Processors
             {
                 if (x.match.Groups.Count > 2)
                 {
+                    if (Basics.AmIDead()) return;
+
                     string user = x.match.Groups[1].Value;
                     string spell = x.match.Groups[2].Value;
                     //check to see if its an alias.
@@ -129,6 +131,7 @@ namespace E3Core.Processors
         }
         public static void QueueCast(string spell, Int32 targetid,string user)
         {
+
             //check to see if its an alias.
             string realSpell = string.Empty;
             if (_spellAliases.TryGetValue(spell, out realSpell))

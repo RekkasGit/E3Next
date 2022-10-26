@@ -41,6 +41,7 @@ namespace E3Core.Processors
         private static Int64 _nextChaseCheck = 0;
         private static Int64 _nextChaseCheckInterval = 10;
 
+
         public static void Init()
         {
             RegisterEventsCasting();
@@ -855,7 +856,8 @@ namespace E3Core.Processors
             if (E3._currentClass == Data.Class.Shaman)
             {
                 bool canniReady = MQ.Query<bool>("${Me.AltAbilityReady[Cannibalization]}");
-                if (canniReady)
+                Int32 currentHP = MQ.Query<Int32>("${Me.CurrentHPs}"); 
+                if (canniReady && currentHP>7000)
                 {
                     Spell s;
                     if (!Spell._loadedSpellsByName.TryGetValue("Cannibalization", out s))
@@ -959,7 +961,7 @@ namespace E3Core.Processors
                         MQ.Cmd("/useitem \"Manastone\"");
                     }
                     //allow mq to have the commands sent to the server
-                    MQ.Delay(0);
+                    MQ.Delay(50);
                     if ((E3._currentClass & Class.Priest) == E3._currentClass)
                     {
                         if (Heals.SomeoneNeedsHealing(currentMana, pctMana))

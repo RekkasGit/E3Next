@@ -16,11 +16,22 @@ namespace E3Core.Processors
         private static IMQ MQ = E3.MQ;
         private static ISpawns _spawns = E3._spawns;
         private static Double _nukeDelayTimeStamp;
+        private static Double _stunDelayTimeStamp;
 
+        [AdvSettingInvoke]
+        public static void Check_Stuns()
+        {
+
+            Cast_Instasnt(E3._characterSettings.Stuns, ref _stunDelayTimeStamp);
+        }
         [AdvSettingInvoke]
         public static void Check_Nukes()
         {
 
+            Cast_Instasnt(E3._characterSettings.Nukes, ref _nukeDelayTimeStamp);
+        }
+        private static void Cast_Instasnt(List<Data.Spell> spells, ref Double delayTimeStamp)
+        {
             if (Assist._assistTargetID > 0)
             {
                 //we should be assisting, check_AssistStatus, verifies its not a corpse.
@@ -31,7 +42,7 @@ namespace E3Core.Processors
                     bool giftOfManaSet = false;
                     bool giftOfMana = false;
 
-                    foreach (var spell in E3._characterSettings.Nukes)
+                    foreach (var spell in spells)
                     {
                         //check Ifs on the spell
                         if (!String.IsNullOrWhiteSpace(spell.Ifs))
@@ -46,7 +57,7 @@ namespace E3Core.Processors
                         if (Casting.CheckReady(spell) && Casting.CheckMana(spell))
                         {
                             //we should have a valid target via check_assistStatus
-                            if (spell.Delay > 0 && _nukeDelayTimeStamp > 0 && Core._stopWatch.ElapsedMilliseconds < _nukeDelayTimeStamp)
+                            if (spell.Delay > 0 && delayTimeStamp > 0 && Core._stopWatch.ElapsedMilliseconds < delayTimeStamp)
                             {
                                 //delay has been specified, skip this spell
                                 continue;
@@ -55,7 +66,7 @@ namespace E3Core.Processors
                             //reset delay timestamp
                             if (spell.Delay > 0)
                             {
-                                _nukeDelayTimeStamp = 0;
+                                delayTimeStamp = 0;
                             }
 
 
@@ -111,7 +122,7 @@ namespace E3Core.Processors
                                     //delay time
                                     if (spell.Delay > 0)
                                     {
-                                        _nukeDelayTimeStamp = Core._stopWatch.ElapsedMilliseconds + (spell.Delay * 1000);
+                                        delayTimeStamp = Core._stopWatch.ElapsedMilliseconds + (spell.Delay * 1000);
                                     }
                                     return;
                                 }
@@ -123,5 +134,7 @@ namespace E3Core.Processors
                 }
             }
         }
+
+      
     }
 }

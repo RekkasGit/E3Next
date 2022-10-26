@@ -249,6 +249,7 @@ namespace E3Core.Processors
             BuffInstant(E3._characterSettings.InstantBuffs);
 
             if (!e3util.ShouldCheck(ref _nextBuffCheck,_nextBuffCheckInterval)) return;
+            if (Basics.AmIDead()) return;
 
             bool moving = MQ.Query<bool>("${Me.Moving}");
 

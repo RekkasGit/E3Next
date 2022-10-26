@@ -43,6 +43,7 @@ namespace E3Core.Processors
         public static void Check_Pets()
         {
             if (E3._isInvis) return;
+            if (Basics.AmIDead()) return;
 
             if (!e3util.ShouldCheck(ref _nextPetCheck, _nextPetCheckInterval)) return;
             //don't check if invs
