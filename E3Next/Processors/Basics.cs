@@ -856,8 +856,8 @@ namespace E3Core.Processors
             if (E3._currentClass == Data.Class.Shaman)
             {
                 bool canniReady = MQ.Query<bool>("${Me.AltAbilityReady[Cannibalization]}");
-                Int32 currentHP = MQ.Query<Int32>("${Me.CurrentHPs}"); 
-                if (canniReady && currentHP>7000)
+              
+                if (canniReady && currentHps > 7000)
                 {
                     Spell s;
                     if (!Spell._loadedSpellsByName.TryGetValue("Cannibalization", out s))
@@ -910,7 +910,7 @@ namespace E3Core.Processors
             if (E3._currentClass == Data.Class.Necromancer)
             {
                 bool deathBloomReady = MQ.Query<bool>("${Me.AltAbilityReady[Death Bloom]}") && !AmIDead();
-                if (deathBloomReady)
+                if (deathBloomReady && currentHps > 8000)
                 {
                     Spell s;
                     if (!Spell._loadedSpellsByName.TryGetValue("Death Bloom", out s))
@@ -1060,17 +1060,18 @@ namespace E3Core.Processors
             if (!e3util.ShouldCheck(ref _nextAutoMedCheck, _nextAutoMedCheckInterval)) return;
             Int32 autoMedPct = E3._generalSettings.General_AutoMedBreakPctMana;
             if (autoMedPct == 0) return;
+            if (!E3._characterSettings.Misc_AutoMedBreak) return;
 
             if (_following || InCombat()) return;
 
             bool amIStanding = MQ.Query<bool>("${Me.Standing}");
 
-            if (!amIStanding && autoMedPct > 0)
+            if (amIStanding && autoMedPct > 0)
             {
                 Int32 pctMana = MQ.Query<Int32>("${Me.PctMana}");
                 Int32 pctEndurance = MQ.Query<Int32>("${Me.PctEndurance}");
 
-                if (pctMana < autoMedPct)
+                if (pctMana < autoMedPct && (E3._currentClass & Class.ManaUsers)== E3._currentClass)
                 {
                     MQ.Cmd("/sit");
                 }
