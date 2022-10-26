@@ -41,6 +41,9 @@ namespace E3Core.Processors
         private static Int64 _nextChaseCheck = 0;
         private static Int64 _nextChaseCheckInterval = 10;
 
+        private static Int64 _nextFoodCheck = 0;
+        private static Int64 _nextFoodCheckInterval = 1000;
+
 
         public static void Init()
         {
@@ -1083,6 +1086,25 @@ namespace E3Core.Processors
                     MQ.Cmd("/sit");
                 }
             }
+        }
+
+        [ClassInvoke(Class.All)]
+        public static void Check_Food()
+        {
+            if (!e3util.ShouldCheck(ref _nextFoodCheck, _nextFoodCheckInterval)) 
+                return;
+
+            if(!E3._characterSettings.Misc_AutoFoodEnabled || Assist._isAssisting)
+                return;
+
+            var toEat = E3._characterSettings.Misc_AutoFood;
+            var toDrink = E3._characterSettings.Misc_AutoDrink;
+
+            if (MQ.Query<bool>($"${{FindItem[${toEat}].ID}}") && MQ.Query<int>("${Me.Hunger}") < 4500)
+                MQ.Cmd($"/useitem {toEat}");
+
+            if (MQ.Query<bool>($"${{FindItem[${toDrink}].ID}}") && MQ.Query<int>("${Me.Thirst}") < 4500)
+                MQ.Cmd($"/useitem {toDrink}");
         }
 
     }
