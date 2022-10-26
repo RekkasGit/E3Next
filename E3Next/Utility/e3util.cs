@@ -38,7 +38,7 @@ namespace E3Core.Utility
 
         public static void TryMoveToTarget()
         {
-            if(MQ.Query<bool>("${Target.LineOfSight}"))
+            if(!MQ.Query<bool>("${Target.LineOfSight}"))
             {
                 MQ.Write("\arCannot move to target, not in LoS");
                 MQ.Cmd("/beep");

@@ -595,6 +595,8 @@ namespace E3Core.Processors
             EventProcessor.RegisterCommand("/backoff", (x) =>
             {
                 AssistOff();
+                Burns.Reset();
+                DebuffDot.Reset();
                 if (x.args.Count == 0)
                 {     //we are telling people to back off
                     E3._bots.BroadcastCommandToGroup($"/backoff all");

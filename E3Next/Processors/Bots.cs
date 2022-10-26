@@ -190,6 +190,7 @@ namespace E3Core.Processors
         private static Dictionary<string, Int64> _buffListCollectionTimeStamps = new Dictionary<string, long>();
         private static Int64 _nextBuffCheck = 0;
         private static Int64 _nextBuffRefreshTimeInterval = 1000;
+        private static StringBuilder _strinbBuilder = new StringBuilder();
         public List<string> BotsConnected()
         {
             //project lazarus_alara|project lazarus_hordester|project lazarus_kusara|project lazarus_rekken|project lazarus_shadowvine|project lazarus_yona|
@@ -235,7 +236,22 @@ namespace E3Core.Processors
 
         public void BroadcastCommandToGroup(string query, CommandMatch match = null)
         {
-            MQ.Cmd($"/dgge {query}");
+            if (match != null && match.filters.Count > 0)
+            {
+                //need to pass over the filters if they exist
+                _strinbBuilder.Clear();
+                _strinbBuilder.Append($"/dgge {query}");
+                foreach (var filter in match.filters)
+                {
+                    _strinbBuilder.Append($" \"{filter}\"");
+                }
+                MQ.Cmd(_strinbBuilder.ToString());
+            }
+            else
+            {
+                MQ.Cmd($"/dgge {query}");
+            }
+            
         }
 
         public void BroadcastCommandToPerson(string person, string command)

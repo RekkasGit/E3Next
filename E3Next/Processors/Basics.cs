@@ -1091,20 +1091,18 @@ namespace E3Core.Processors
         [ClassInvoke(Class.All)]
         public static void Check_Food()
         {
-            if (!e3util.ShouldCheck(ref _nextFoodCheck, _nextFoodCheckInterval)) 
-                return;
+            if (!e3util.ShouldCheck(ref _nextFoodCheck, _nextFoodCheckInterval)) return;
 
-            if(!E3._characterSettings.Misc_AutoFoodEnabled || Assist._isAssisting)
-                return;
+            if (!E3._characterSettings.Misc_AutoFoodEnabled || Assist._isAssisting) return;
 
             var toEat = E3._characterSettings.Misc_AutoFood;
             var toDrink = E3._characterSettings.Misc_AutoDrink;
 
-            if (MQ.Query<bool>($"${{FindItem[${toEat}].ID}}") && MQ.Query<int>("${Me.Hunger}") < 4500)
-                MQ.Cmd($"/useitem {toEat}");
+            if (MQ.Query<bool>($"${{FindItem[{toEat}].ID}}") && MQ.Query<int>("${Me.Hunger}") < 4500)
+                MQ.Cmd($"/useitem \"{toEat}\"");
 
-            if (MQ.Query<bool>($"${{FindItem[${toDrink}].ID}}") && MQ.Query<int>("${Me.Thirst}") < 4500)
-                MQ.Cmd($"/useitem {toDrink}");
+            if (MQ.Query<bool>($"${{FindItem[{toDrink}].ID}}") && MQ.Query<int>("${Me.Thirst}") < 4500)
+                MQ.Cmd($"/useitem \"{toDrink}\"");
         }
 
     }
