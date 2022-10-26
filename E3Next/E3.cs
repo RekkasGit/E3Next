@@ -64,11 +64,7 @@ namespace E3Core.Processors
 
                 Assist.Process();
                 WaitForRez.Process();
-                if(WaitForRez._waitingOnRez)
-                {
-                    //don't do anything if we are waiting on rez
-                    return;
-                }
+                
                 if (!_actionTaken)
                 {
                     //rembmer check_heals is auto inserted, should probably just pull out here
