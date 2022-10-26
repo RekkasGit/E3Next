@@ -29,7 +29,9 @@ namespace MQServerClient
 
             IBots bots = new DanBots();
 
- 
+            Core.mqInstance.Cmd("/remotedebugdelay 100");
+            E3.Process();
+            Core.mqInstance.Cmd("/remotedebugdelay 1");
             while (true)
             {
                 

@@ -50,7 +50,7 @@ namespace MonoCore
         //how long we wait once a command has been seen
         //use this to tweak how much of heartbeat 'lag' you wish. careful this will
         //directly impact query performance if set too low. 
-        public readonly static Double CurrentWaitTimeWhenRequestFound = 100;
+        public static Double CurrentWaitTimeWhenRequestFound = 100;
     }
 
 
@@ -157,7 +157,25 @@ namespace MonoCore
                                 {
                                     //lets pull out the string
                                     string query = System.Text.Encoding.Default.GetString(message.payload, 0, message.payloadLength);
-                                    MQ.Cmd(query);
+                                    //is this a debug command
+                                    if(query.StartsWith("/remotedebugdelay "))
+                                    {
+                                        Int32 indexOfSpace = query.IndexOf(" ");
+                                        if(indexOfSpace>-1)
+                                        {
+                                            string delayAsString = query.Substring(indexOfSpace + 1, query.Length - indexOfSpace - 1);
+                                            Int32 delayToChange;
+                                            if (Int32.TryParse(delayAsString, out delayToChange))
+                                            {
+                                                RemoteDebugServerConfig.CurrentWaitTimeWhenRequestFound = delayToChange;
+                                            }
+                                        }
+                                    }
+                                    else
+                                    {
+                                        MQ.Cmd(query);
+                                    }
+
                                 }
                                 finally
                                 {

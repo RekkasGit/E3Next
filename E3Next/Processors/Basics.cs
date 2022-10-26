@@ -580,7 +580,8 @@ namespace E3Core.Processors
                 { 
                     MQ.Write($"\arNo group with the name of {args[0]} found in Saved Groups.ini. Use /savegroup groupName to create one"); 
                 }
-
+                MQ.Cmd("/disband");
+                MQ.Cmd("/raiddisband");
                 E3._bots.BroadcastCommand("/raiddisband");
                 E3._bots.BroadcastCommand("/disband");
 

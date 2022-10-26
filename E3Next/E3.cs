@@ -144,19 +144,6 @@ namespace E3Core.Processors
                 _isInit = true;
                 Spawns._refreshTimePeriodInMS = 3000;
 
-                if(!EventProcessor.RegisterCommand("/testcommand02", (x) => {
-
-                    MQ.Write("Command issued:" + x.eventString);
-                }))
-                {
-                    MQ.Write("ERROR couldn't register command /testcommand02");
-                    //terminate script?
-                }
-                
-
-
-                EventProcessor.UnRegisterCommand("/testcommand02");
-
             }
            
 
