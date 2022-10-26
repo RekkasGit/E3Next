@@ -63,34 +63,27 @@ namespace E3Core.Settings
         public void LoadData()
         {
 
-            string filename = $"General Settings.ini";
-            string macroFile = _macroFolder + _settingsFolder + filename;
-            string configFile = _configFolder +_settingsFolder+ filename;
-            string fullPathToUse = macroFile;
+            string filename = GetSettingsFilePath("General Settings.ini");
+
             IniData parsedData;
-            if (!System.IO.File.Exists(configFile) && !System.IO.File.Exists(macroFile))
+
+            FileIniDataParser fileIniData = e3util.CreateIniParser();
+
+            if (!System.IO.File.Exists(filename))
             {
-                if (!System.IO.Directory.Exists(_configFolder+_settingsFolder))
+                if (!System.IO.Directory.Exists(_configFolder + _settingsFolder))
                 {
                     System.IO.Directory.CreateDirectory(_configFolder + _settingsFolder);
                 }
-
-                fullPathToUse = configFile;
-                _log.Write($"Creating new General settings:{fullPathToUse}");
-                parsedData=CreateOrUpdateSettings();
+                _log.Write($"Creating new Adv settings:{filename}");
+               
+                parsedData = CreateSettings();
             }
             else
             {
-                if (System.IO.File.Exists(configFile)) fullPathToUse = configFile;
-
-                //Parse the ini file
-                //Create an instance of a ini file parser
-                FileIniDataParser fileIniData = e3util.CreateIniParser();
-                _log.Write($"Reading Genearl Settings:{fullPathToUse}");
-                parsedData = fileIniData.ReadFile(fullPathToUse);
+                parsedData = fileIniData.ReadFile(filename);
             }
-
-         
+           
             //have the data now!
             if(parsedData==null)
             {
@@ -154,7 +147,7 @@ namespace E3Core.Settings
 
         }
 
-        public IniData CreateOrUpdateSettings()
+        public IniData CreateSettings()
         {
 
             IniParser.FileIniDataParser parser = e3util.CreateIniParser();
@@ -237,38 +230,34 @@ namespace E3Core.Settings
             section.Keys.AddKey("Long Term Debuff Recast(s)", "30");
             section.Keys.AddKey("Short Term Debuff Recast(s)", "5");
 
-
-            string macroFile = _macroFolder +_settingsFolder+ @"General Settings.ini";
-            string configFile = _configFolder +_settingsFolder + @"General Settings.ini";
-            if (!System.IO.File.Exists(macroFile) && !System.IO.File.Exists(configFile))
+            string filename = GetSettingsFilePath("General Settings.ini");
+            if (!System.IO.File.Exists(filename))
             {
                 if (!System.IO.Directory.Exists(_configFolder + _settingsFolder))
                 {
                     System.IO.Directory.CreateDirectory(_configFolder + _settingsFolder);
                 }
-                _log.Write($"Creating new General Settings file:{configFile}");
+                _log.Write($"Creating new General Settings file:{filename}");
                 //file straight up doesn't exist, lets create it
-                parser.WriteFile(configFile, newFile);
+                parser.WriteFile(filename, newFile);
 
             }
             else
             {
                 //File already exists, may need to merge in new settings lets check
-                string fullFileToUse = macroFile;
-
-                if (System.IO.File.Exists(configFile)) fullFileToUse = configFile;
+             
 
                 //Parse the ini file
                 //Create an instance of a ini file parser
                 FileIniDataParser fileIniData = e3util.CreateIniParser();
-                IniData parsedData = fileIniData.ReadFile(fullFileToUse);
+                IniData parsedData = fileIniData.ReadFile(filename);
 
                 //overwrite newfile with what was already there
-                _log.Write($"Merging possible new options into :{fullFileToUse}");
+                _log.Write($"Merging possible new options into :{filename}");
                 newFile.Merge(parsedData);
                 //save it it out now
-                System.IO.File.Delete(fullFileToUse);
-                parser.WriteFile(fullFileToUse, newFile);
+                System.IO.File.Delete(filename);
+                parser.WriteFile(filename, newFile);
 
 
             }

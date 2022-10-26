@@ -32,7 +32,7 @@ namespace E3Core.Settings
         }
 
     }
-    public class AdvancedSettings : BaseSettings, IBaseSettings
+    public class AdvancedSettings : BaseSettings
     {
 
         //  public static Dictionary<string, Action> _methodLookup = new Dictionary<string, Action>(StringComparer.OrdinalIgnoreCase);
@@ -44,58 +44,38 @@ namespace E3Core.Settings
         public AdvancedSettings()
         {
             
-            initMethods();
+            InitMethods();
             LoadData();
         
         }
         public void LoadData()
         {
-            string filename = $"Advanced Settings.ini";
-            string macroFile = _macroFolder + _settingsFolder + filename;
-            string configFile = _configFolder + _settingsFolder + filename;
-            string fullPathToUse = macroFile;
+            string filename = GetSettingsFilePath("Advanced Settings.ini");
+      
             IniData parsedData;
-            if (!System.IO.File.Exists(configFile) && !System.IO.File.Exists(macroFile))
+
+            FileIniDataParser fileIniData = e3util.CreateIniParser();
+
+            if (!System.IO.File.Exists(filename))
             {
                 if (!System.IO.Directory.Exists(_configFolder + _settingsFolder))
                 {
                     System.IO.Directory.CreateDirectory(_configFolder + _settingsFolder);
                 }
-
-                FileIniDataParser fileIniData = e3util.CreateIniParser();
-      
-
-                fullPathToUse = configFile;
-                _log.Write($"Creating new General settings:{fullPathToUse}");
-                parsedData = CreateOrUpdateSettings();
-                parsedData = fileIniData.ReadFile(fullPathToUse);
-
+                _log.Write($"Creating new Adv settings:{filename}");
+                CreateSettings();
             }
-            else
-            {
-                if (System.IO.File.Exists(configFile)) fullPathToUse = configFile;
+            parsedData = fileIniData.ReadFile(filename);
 
-                //Parse the ini file
-                //Create an instance of a ini file parser
-                FileIniDataParser fileIniData = e3util.CreateIniParser();
-                _log.Write($"Reading Genearl Settings:{fullPathToUse}");
-                parsedData = fileIniData.ReadFile(fullPathToUse);
-            }
 
-            foreach(var shortname in Data.Classes._classShortNames)
+            foreach (var shortname in Data.Classes._classShortNames)
             {
                 _classMethodsAsStrings.Add(shortname, new List<string>());
-               
-                //if((E3._currentClass & Data.Class.Priest)== E3._currentClass)
-                //{
-                //    _classMethodsAsStrings[shortname].Add("check_Heals");
-                //}
-                
                 LoadKeyData($"{shortname} Functions", $"{shortname} Function", parsedData, _classMethodsAsStrings[shortname]);
             }
          
         }
-        public void initMethods()
+        public void InitMethods()
         {
 
 
@@ -134,8 +114,9 @@ namespace E3Core.Settings
                 }
             }
         }
-        public  IniData CreateOrUpdateSettings()
+        public  void CreateSettings()
         {
+            //in the begining we couldn't save multi key, we can now... this is a previous artificat of that situation.
             //not going to create the adv ini, as default /ini cannot create the multi key format. its almost never recreated from scratch anyway
             //if we need to , its easier to just output the entire file. 
 
@@ -153,8 +134,6 @@ namespace E3Core.Settings
                 System.IO.File.WriteAllText(configFile, filePayload);
 
             }
-
-            return null;
 
         }
 
@@ -191,8 +170,8 @@ BER Function=check_Buffs
 BER Function=check_Food
 [CLR Functions]
 CLR Function=check_DivineArb
-CLR Function=check_Nukes
 CLR Function=check_Cures
+CLR Function=check_Nukes
 CLR Function=check_celestialRegen
 CLR Function=check_Buffs
 CLR Function=check_Burns

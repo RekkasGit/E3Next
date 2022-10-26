@@ -67,7 +67,7 @@ namespace E3Core.Settings
 
                 fullPathToUse = configFile;
                 _log.Write($"Settings not found creating new settings: {fullPathToUse}");
-                _parsedData = CreateOrUpdateSettings();
+                _parsedData = CreateSettings();
             }
             else
             {
@@ -209,7 +209,7 @@ namespace E3Core.Settings
         }
         
 
-        public IniData CreateOrUpdateSettings()
+        public IniData CreateSettings()
         {
             //if we need to , its easier to just output the entire file. 
 

@@ -345,6 +345,6 @@ namespace E3Core.Settings
     }
     interface IBaseSettings
     {
-        IniData CreateOrUpdateSettings();
+        IniData CreateSettings();
     }
 }

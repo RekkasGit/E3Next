@@ -17,7 +17,7 @@ namespace E3Core.Settings.FeatureSettings
         public static HashSet<string> _skip = new HashSet<string>(10000, StringComparer.OrdinalIgnoreCase);
         public static bool _isDirty = false;
 
-
+        private static string _fileName = @"Loot Settings.ini";
 
         public static void Init()
         {
@@ -31,31 +31,26 @@ namespace E3Core.Settings.FeatureSettings
         }
         public static void LoadData()
         {
-            string macroFile = _macroFolder + _settingsFolder + @"Loot Settings.ini";
-            string configFile = _configFolder + _settingsFolder + @"Loot Settings.ini";
+            string fileNameFullPath = GetSettingsFilePath(_fileName);
+         
 
-
-            if (!System.IO.File.Exists(macroFile) && !System.IO.File.Exists(configFile))
+            if (!System.IO.File.Exists(fileNameFullPath))
             {
                 if (!System.IO.Directory.Exists(_configFolder + _settingsFolder))
                 {
                     System.IO.Directory.CreateDirectory(_configFolder + _settingsFolder);
                 }
-                _log.Write($"Creating new General Settings file:{configFile}");
-                //file straight up doesn't exist, lets create it
-                System.IO.File.CreateText(configFile);
-
+                 //file straight up doesn't exist, lets create it
+                System.IO.File.CreateText(fileNameFullPath);
             }
             else
             {
                 //File already exists, may need to merge in new settings lets check
-                string fullFileToUse = macroFile;
-
-                if (System.IO.File.Exists(configFile)) fullFileToUse = configFile;
+               
 
                 FileIniDataParser fileIniData = e3util.CreateIniParser();
-                _log.Write($"Reading Genearl Settings:{fullFileToUse}");
-                var parsedData = fileIniData.ReadFile(fullFileToUse);
+                _log.Write($"Reading Loot Settings:{fileNameFullPath}");
+                var parsedData = fileIniData.ReadFile(fileNameFullPath);
                 
                 //because of the old loot system, need to do 4 regex, and get more specific as we go down 
                 //before ew go non specific on regex4
@@ -207,18 +202,14 @@ namespace E3Core.Settings.FeatureSettings
                 }
 
             }
-            string macroFile = _macroFolder + _settingsFolder + @"Loot Settings.ini";
-            string configFile = _configFolder + _settingsFolder + @"Loot Settings.ini";
-            //File already exists, may need to merge in new settings lets check
-            string fullFileToUse = macroFile;
+            string fileNameFullPath = GetSettingsFilePath(_fileName);
 
-            if (System.IO.File.Exists(configFile)) fullFileToUse = configFile;
 
             //Parse the ini file
             //Create an instance of a ini file parser
             FileIniDataParser fileIniData = e3util.CreateIniParser();
-            System.IO.File.Delete(fullFileToUse);
-            parser.WriteFile(fullFileToUse, newFile);
+            System.IO.File.Delete(fileNameFullPath);
+            parser.WriteFile(fileNameFullPath, newFile);
 
         }
     }
