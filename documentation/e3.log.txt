@@ -1,0 +1,17 @@
+Microsoft HTML Help Compiler 4.74.8702
+
+Compiling c:\Projects\MQ2MonoSharp\documentation\e3.chm
+
+mq2mono_intro.html
+mq2mono_commands.html
+test.html
+
+Compile time: 0 minutes, 0 seconds
+3	Topics
+2	Local links
+0	Internet links
+0	Graphics
+
+
+Created c:\Projects\MQ2MonoSharp\documentation\e3.chm, 11,956 bytes
+Compression increased file by 9,694 bytes.
