@@ -311,12 +311,16 @@ namespace E3Core.Processors
                                             continue;
                                         }
                                     }
-                                    if (!MQ.Query<bool>("${Me.ActiveDisc.ID}"))
+                                    if (ability.TargetType == "Self")
                                     {
-                                        if (ability.TargetType == "Self")
+                                        if(!MQ.Query<bool>("${Me.ActiveDisc.ID}"))
                                         {
                                             Casting.Cast(0, ability);
                                         }
+                                    }
+                                    else
+                                    {
+                                        Casting.Cast(0, ability);
                                     }
 
                                 }
