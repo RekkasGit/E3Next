@@ -639,7 +639,7 @@ namespace E3Core.Processors
 
                                 }
 
-                                bool hasBuff = hasBuff = E3._bots.BuffList(spell.CastName).Contains(spell.SpellID);
+                                bool hasBuff = hasBuff = E3._bots.BuffList(spell.CastTarget).Contains(spell.SpellID);
 
                                 if (!hasBuff)
                                 {
