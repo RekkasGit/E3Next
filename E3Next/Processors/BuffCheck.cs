@@ -31,7 +31,7 @@ namespace E3Core.Processors
         private static Int64 _nextBuffCheck = 0;
         private static Int64 _nextBuffCheckInterval = 250;
         private static List<Int32> _xpBuffs = new List<int>() { 42962 /*xp6*/, 42617 /*xp5*/, 42616 /*xp4*/};
-        private static List<Int32> _gmBuffs = new List<int>() { 34835,35989,35361,25732,34567,36838,43040,36266,36423};
+        private static List<Int32> _gmBuffs = new List<int>() { 34835, 35989, 35361, 25732, 34567, 36838, 43040, 36266, 36423 };
         private static Int64 _nextBlockBuffCheck = 0;
         private static Int64 _nextBlockBuffCheckInterval = 1000;
         public static void Init()
@@ -43,7 +43,7 @@ namespace E3Core.Processors
 
             EventProcessor.RegisterCommand("/dropbuff", (x) =>
             {
-                if(x.args.Count>0)
+                if (x.args.Count > 0)
                 {
                     string buffToDrop = x.args[0];
                     DropBuff(buffToDrop);
@@ -83,7 +83,7 @@ namespace E3Core.Processors
                         MQ.Write("\aw==================");
                         foreach (var spell in E3._characterSettings.BockedBuffs)
                         {
-                            MQ.Write("\at"+spell.SpellName);
+                            MQ.Write("\at" + spell.SpellName);
                         }
                     }
                 }
@@ -186,7 +186,7 @@ namespace E3Core.Processors
 
                 }
                 //did we find it?
-                if(buffName==String.Empty)
+                if (buffName == String.Empty)
                 {
                     for (Int32 i = 1; i <= 25; i++)
                     {
@@ -199,10 +199,10 @@ namespace E3Core.Processors
 
                     }
                 }
-               
+
             }
 
-            if (buffName!=String.Empty)
+            if (buffName != String.Empty)
             {
                 MQ.Cmd($"/blockspell add me {buffId}");
                 MQ.Cmd($"/blockspell remove me {buffId}");
@@ -226,7 +226,7 @@ namespace E3Core.Processors
                 }
             }
             //shoving this here for now
-            if(E3._characterSettings.Misc_RemoveTorporAfterCombat)
+            if (E3._characterSettings.Misc_RemoveTorporAfterCombat)
             {
                 //auto remove torpor if not in combat and full health
                 if (MQ.Query<Int32>("${Me.PctHPs}") > 98 && !Basics.InCombat())
@@ -248,7 +248,7 @@ namespace E3Core.Processors
             //instant buffs have their own shouldcheck, need it snappy so check quickly.
             BuffInstant(E3._characterSettings.InstantBuffs);
 
-            if (!e3util.ShouldCheck(ref _nextBuffCheck,_nextBuffCheckInterval)) return;
+            if (!e3util.ShouldCheck(ref _nextBuffCheck, _nextBuffCheckInterval)) return;
             if (Basics.AmIDead()) return;
 
             bool moving = MQ.Query<bool>("${Me.Moving}");
@@ -261,12 +261,12 @@ namespace E3Core.Processors
                 BuffBots(E3._characterSettings.CombatBuffs);
 
             }
-            else if(!moving && !Basics._following)
+            else if (!moving && !Basics._following)
             {
                 if (!E3._actionTaken) BuffAuras();
                 if (!E3._actionTaken) BuffBots(E3._characterSettings.SelfBuffs);
                 if (!E3._actionTaken) BuffBots(E3._characterSettings.BotBuffs);
-                if (!E3._actionTaken) BuffBots(E3._characterSettings.PetBuffs,true);
+                if (!E3._actionTaken) BuffBots(E3._characterSettings.PetBuffs, true);
                 //TODO: Auras
             }
 
@@ -278,7 +278,7 @@ namespace E3Core.Processors
             if (!e3util.ShouldCheck(ref _nextInstantBuffRefresh, _nextInstantRefreshTimeInterval)) return;
             //self only, instacast buffs only
             Int32 id = MQ.Query<Int32>("${Me.ID}");
-            foreach(var spell in buffs)
+            foreach (var spell in buffs)
             {
                 bool hasBuff = MQ.Query<bool>($"${{Bool[${{Me.Buff[{spell.SpellName}]}}]}}");
                 bool hasSong = false;
@@ -293,7 +293,7 @@ namespace E3Core.Processors
                     hasCheckFor = MQ.Query<bool>($"${{Bool[${{Me.Buff[{spell.CheckFor}]}}]}}");
                     if (hasCheckFor)
                     {
-                        continue;   
+                        continue;
                     }
                     hasCheckFor = MQ.Query<bool>($"${{Bool[${{Me.Song[{spell.CheckFor}]}}]}}");
                     if (hasCheckFor)
@@ -314,7 +314,7 @@ namespace E3Core.Processors
                     bool willStack = MQ.Query<bool>($"${{Spell[{spell.SpellName}].WillLand}}");
                     if (willStack && Casting.CheckReady(spell) && Casting.CheckMana(spell))
                     {
-                        if(spell.TargetType=="Self" || spell.TargetType== "Group v1")
+                        if (spell.TargetType == "Self" || spell.TargetType == "Group v1")
                         {
                             Casting.Cast(0, spell);
 
@@ -329,7 +329,7 @@ namespace E3Core.Processors
                 }
             }
         }
-        private static void BuffBots(List<Data.Spell> buffs, bool usePets=false)
+        private static void BuffBots(List<Data.Spell> buffs, bool usePets = false)
         {
             //int currentid = MQ.Query<Int32>("${Target.ID}");
             foreach (var spell in buffs)
@@ -337,9 +337,9 @@ namespace E3Core.Processors
                 Spawn s;
 
                 string target = E3._currentName;
-                if(!String.IsNullOrWhiteSpace(spell.CastTarget))
+                if (!String.IsNullOrWhiteSpace(spell.CastTarget))
                 {
-                    if(spell.CastTarget.Equals("Self", StringComparison.OrdinalIgnoreCase))
+                    if (spell.CastTarget.Equals("Self", StringComparison.OrdinalIgnoreCase))
                     {
                         target = E3._currentName;
                     }
@@ -352,7 +352,7 @@ namespace E3Core.Processors
 
                 if (_spawns.TryByName(target, out s))
                 {
-                    if(usePets && s.PetID<1)
+                    if (usePets && s.PetID < 1)
                     {
                         continue;
                     }
@@ -389,7 +389,7 @@ namespace E3Core.Processors
                             continue;
                         }
                     }
-                  
+
                     if (s.ID == MQ.Query<Int32>("${Me.ID}"))
                     {
                         //self buffs!
@@ -446,8 +446,8 @@ namespace E3Core.Processors
                                 {
                                     result = Casting.Cast(s.ID, spell, Heals.SomeoneNeedsHealing);
                                 }
-                                
-                                if(result == CastReturn.CAST_INTERRUPTED || result== CastReturn.CAST_INTERRUPTFORHEAL || result == CastReturn.CAST_FIZZLE)
+
+                                if (result == CastReturn.CAST_INTERRUPTED || result == CastReturn.CAST_INTERRUPTFORHEAL || result == CastReturn.CAST_FIZZLE)
                                 {
                                     return;
                                 }
@@ -478,7 +478,7 @@ namespace E3Core.Processors
                             else
                             {
                                 //we don't have mana for this? or ifs failed? chill for 12 sec.
-                                UpdateBuffTimers(s.ID, spell, 12 * 1000,true);
+                                UpdateBuffTimers(s.ID, spell, 12 * 1000, true);
                             }
                         }
                         else
@@ -489,17 +489,17 @@ namespace E3Core.Processors
                             {
                                 //some issue, lets wait
                                 timeLeftInMS = 120 * 1000;
-                                UpdateBuffTimers(s.ID, spell, timeLeftInMS,true);
+                                UpdateBuffTimers(s.ID, spell, timeLeftInMS, true);
                             }
                             else
                             {
                                 UpdateBuffTimers(s.ID, spell, timeLeftInMS);
                             }
-                           
+
                             continue;
                         }
                     }
-                    else if(s.ID == MQ.Query<Int32>("${Me.Pet.ID}"))
+                    else if (s.ID == MQ.Query<Int32>("${Me.Pet.ID}"))
                     {
                         //its my pet
                         bool hasBuff = MQ.Query<bool>($"${{Bool[${{Me.Pet.Buff[{spell.SpellName}]}}]}}");
@@ -509,7 +509,7 @@ namespace E3Core.Processors
                             hasCheckFor = MQ.Query<bool>($"${{Bool[${{Me.Pet.Buff[{spell.CheckFor}]}}]}}");
                             if (hasCheckFor)
                             {
-                                
+
                                 UpdateBuffTimers(s.ID, spell, 1500);
                                 continue;
                             }
@@ -520,7 +520,7 @@ namespace E3Core.Processors
                             if (willStack && Casting.CheckReady(spell) && Casting.CheckMana(spell))
                             {
                                 CastReturn result;
-                               
+
                                 result = Casting.Cast(s.ID, spell, Heals.SomeoneNeedsHealing);
                                 if (result == CastReturn.CAST_INTERRUPTED || result == CastReturn.CAST_INTERRUPTFORHEAL || result == CastReturn.CAST_FIZZLE)
                                 {
@@ -586,12 +586,13 @@ namespace E3Core.Processors
 
                             if (!hasBuff)
                             {
-                                Casting.TrueTarget(s.ID);
-                                MQ.Delay(2000, "${Target.BuffsPopulated}");
-                                bool willStack = MQ.Query<bool>($"${{Spell[{spell.SpellName}].StacksTarget}}");
-                                if(willStack)
+
+                                if (Casting.CheckReady(spell) && Casting.CheckMana(spell))
                                 {
-                                    if (Casting.CheckReady(spell) && Casting.CheckMana(spell))
+                                    Casting.TrueTarget(s.ID);
+                                    MQ.Delay(2000, "${Target.BuffsPopulated}");
+                                    bool willStack = MQ.Query<bool>($"${{Spell[{spell.SpellName}].StacksTarget}}");
+                                    if (willStack)
                                     {
                                         //then we can cast!
                                         var result = Casting.Cast(s.ID, spell, Heals.SomeoneNeedsHealing);
@@ -612,13 +613,17 @@ namespace E3Core.Processors
                                         }
                                         return;
                                     }
+                                    else
+                                    {
+                                        //won't stack don't check back for awhile
+                                        UpdateBuffTimers(s.ID, spell, 30 * 1000);
+                                    }
                                 }
                                 else
-                                {
-                                    //won't stack don't check back for awhile
-                                    UpdateBuffTimers(s.ID, spell, 30 * 1000);
+                                {   //spell not ready, come back in 6 sec
+                                    UpdateBuffTimers(s.ID, spell, 6000);
+
                                 }
-                               
                             }
                             else
                             {
@@ -662,7 +667,7 @@ namespace E3Core.Processors
                                 //have to do netbots
                                 //looks live you get it in the target area. 
 
-                               
+
                                 //not one of our buffs uhh, try and cast and see if we get a non success message.
                                 if (Casting.CheckReady(spell) && Casting.CheckMana(spell))
                                 {
@@ -742,18 +747,18 @@ namespace E3Core.Processors
                                 }
                             }
                         }
-                     
+
                     }
                 }
             }
-           // Casting.TrueTarget(currentid, true);
+            // Casting.TrueTarget(currentid, true);
         }
         static bool _initAuras = false;
         private static void BuffAuras()
         {
-            if(_selectAura==null)
+            if (_selectAura == null)
             {
-                if(!_initAuras)
+                if (!_initAuras)
                 {
                     foreach (var aura in _auraList)
                     {
@@ -762,20 +767,20 @@ namespace E3Core.Processors
                         if (MQ.Query<bool>($"${{Me.AltAbility[{aura}]}}")) _selectAura = new Spell(aura);
                     }
                     _initAuras = true;
-                    if(_selectAura!=null)
+                    if (_selectAura != null)
                     {
                         _selectAura.SpellName = _selectAura.SpellName.Replace("'s", "s");
                     }
                 }
             }
             //we have something we want on!
-            if(_selectAura!=null)
+            if (_selectAura != null)
             {
                 string currentAura = MQ.Query<string>("${Me.Aura[1]}");
-                if(currentAura!= "NULL")
+                if (currentAura != "NULL")
                 {
                     //we already have an aura, check if its different
-                    if(currentAura.Equals(_selectAura.SpellName, StringComparison.OrdinalIgnoreCase))
+                    if (currentAura.Equals(_selectAura.SpellName, StringComparison.OrdinalIgnoreCase))
                     {
                         //don't need to do anything
                         return;
@@ -786,20 +791,20 @@ namespace E3Core.Processors
 
                 //need to put on new aura
                 Int32 meID = MQ.Query<Int32>("${Me.ID}");
-                if (_selectAura.CastType== CastType.Spell)
+                if (_selectAura.CastType == CastType.Spell)
                 {
                     //this is a spell, need to mem, then cast. 
-                    if(Casting.CheckReady(_selectAura) && Casting.CheckMana(_selectAura))
+                    if (Casting.CheckReady(_selectAura) && Casting.CheckMana(_selectAura))
                     {
                         Casting.Cast(meID, _selectAura);
                     }
-                   
+
 
                 }
-                else if(_selectAura.CastType== CastType.Disc)
+                else if (_selectAura.CastType == CastType.Disc)
                 {
                     Int32 endurance = MQ.Query<Int32>("${Me.Endurance}");
-                    if (_selectAura.EnduranceCost<endurance)
+                    if (_selectAura.EnduranceCost < endurance)
                     {
                         //alt ability or disc, just cast
                         Casting.Cast(meID, _selectAura);
@@ -906,7 +911,7 @@ namespace E3Core.Processors
                         _refreshBuffCacheRemovedItems.Add(kvp.Key);
                     }
                 }
-                foreach(Int32 removedItem in _refreshBuffCacheRemovedItems)
+                foreach (Int32 removedItem in _refreshBuffCacheRemovedItems)
                 {
                     if (_buffTimers.ContainsKey(removedItem))
                     {
@@ -925,11 +930,11 @@ namespace E3Core.Processors
         /// <param name="spell"></param>
         /// <param name="timeLeftInMS"></param>
         /// <param name="locked">Means the buff cache cannot override it</param>
-        private static void UpdateBuffTimers(Int32 mobid, Data.Spell spell, Int64 timeLeftInMS, bool locked=false)
+        private static void UpdateBuffTimers(Int32 mobid, Data.Spell spell, Int64 timeLeftInMS, bool locked = false)
         {
             SpellTimer s;
             //if we have no time left, as it was not found, just set it to 0 in ours
-        
+
             if (_buffTimers.TryGetValue(mobid, out s))
             {
                 if (!s._timestamps.ContainsKey(spell.SpellID))
@@ -939,11 +944,11 @@ namespace E3Core.Processors
 
                 s._timestamps[spell.SpellID] = Core._stopWatch.ElapsedMilliseconds + timeLeftInMS;
 
-                if(locked)
+                if (locked)
                 {
                     if (!s._lockedtimestamps.ContainsKey(spell.SpellID))
                     {
-                        s._lockedtimestamps.Add(spell.SpellID,timeLeftInMS);
+                        s._lockedtimestamps.Add(spell.SpellID, timeLeftInMS);
                     }
                 }
                 else
@@ -978,7 +983,7 @@ namespace E3Core.Processors
                 }
             }
         }
-        
+
 
     }
 }
