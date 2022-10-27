@@ -20,7 +20,11 @@ namespace E3Core.Processors
         public static void Check_Heals() 
         {
             if (E3._isInvis) return;
-            if (!e3util.ShouldCheck(ref _nextHealCheck, _nextHealCheckInterval)) return;
+            if(!Basics.InCombat())
+            {
+                if (!e3util.ShouldCheck(ref _nextHealCheck, _nextHealCheckInterval)) return;
+
+            }
             //using (_log.Trace())
             {
                 //grabbing these values now and reusing them
@@ -124,8 +128,7 @@ namespace E3Core.Processors
                             if (JustCheck) return true;
                             if (Casting.CheckReady(spell))
                             {
-                                
-
+                         
                                 if (Casting.Cast(lowestHealthTargetid, spell) == CastReturn.CAST_FIZZLE)
                                 {
                                     currentMana = MQ.Query<Int32>("${Me.CurrentMana}");

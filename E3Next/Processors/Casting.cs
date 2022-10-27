@@ -43,7 +43,7 @@ namespace E3Core.Processors
             else
             {
                 //block on waiting for the spell window to close
-                while (MQ.Query<bool>("${Window[CastingWindow].Open}"))
+                while (IsCasting())
                 {
                     if (!isNowCast && EventProcessor._commandList.ContainsKey("/nowcast") && EventProcessor._commandList["/nowcast"].queuedEvents.Count > 0)
                     {
@@ -414,7 +414,7 @@ namespace E3Core.Processors
                         currentMana = MQ.Query<Int32>("${Me.CurrentMana}");
                         pctMana = MQ.Query<Int32>("${Me.PctMana}");
                     }
-                    while (MQ.Query<bool>("${Window[CastingWindow].Open}"))
+                    while (IsCasting())
                     {
                         //means that we didn't fizzle and are now casting the spell
                         if (!spell.NoInterrupt)
@@ -562,8 +562,8 @@ namespace E3Core.Processors
                     MQ.Cmd("/stopsong");
                     MQ.Delay(10);
                     MQ.Cmd($"/cast \"{spell.CastName}\"");
-                    MQ.Delay(500, "${Window[CastingWindow].Open}");
-                    if (!MQ.Query<bool>("${Window[CastingWindow].Open}"))
+                    MQ.Delay(500, IsCasting);
+                    if (!IsCasting())
                     {
                         MQ.Write("Issuing stopcast as cast window isn't open");
                         MQ.Cmd("/stopsong");
@@ -703,12 +703,21 @@ namespace E3Core.Processors
             }
             return false;
         }
-
+        public static Boolean IsCasting()
+        {
+            if(MQ.Query<bool>("${Window[CastingWindow].Open}") || MQ.Query<bool>("${Me.Casting}"))
+            {
+                return true;
+            }
+            return false;
+        }
+        public static Boolean IsNotCasting()
+        {
+            return !IsCasting();
+        }
         public static Boolean InGlobalCooldown()
         {
-
-
-            if (MQ.Query<bool>("${Me.SpellReady[${Me.Gem[1].Name}]}") || MQ.Query<bool>("${Me.SpellReady[${Me.Gem[3].Name}]}") || MQ.Query<bool>("${Me.SpellReady[${Me.Gem[5].Name}]}") || MQ.Query<bool>("${Me.SpellReady[${Me.Gem[7].Name}]}"))
+        if (MQ.Query<bool>("${Me.SpellReady[${Me.Gem[1].Name}]}") || MQ.Query<bool>("${Me.SpellReady[${Me.Gem[3].Name}]}") || MQ.Query<bool>("${Me.SpellReady[${Me.Gem[5].Name}]}") || MQ.Query<bool>("${Me.SpellReady[${Me.Gem[7].Name}]}"))
             {
                 return false;
             }
@@ -727,12 +736,12 @@ namespace E3Core.Processors
 
             if (E3._currentClass == Data.Class.Bard && !MQ.Query<bool>("${Twist.Twisting}"))
             {
-                while (MQ.Query<bool>("${Window[CastingWindow].Open}"))
+                while (IsCasting())
                 {
                     MQ.Delay(20);
                 }
             }
-            while (MQ.Query<bool>("${Window[CastingWindow].Open}"))
+            while (IsCasting())
             {
 
                 MQ.Delay(20);

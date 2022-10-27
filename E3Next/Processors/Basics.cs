@@ -232,7 +232,7 @@ namespace E3Core.Processors
                 }
                 else
                 {
-                    MQ.Delay(20000, "!${Window[CastingWindow].Open}");
+                    MQ.Delay(20000, Casting.IsNotCasting);
                 }
             });
             EventProcessor.RegisterCommand("/jester", (x) =>

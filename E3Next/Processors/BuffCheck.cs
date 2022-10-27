@@ -639,8 +639,7 @@ namespace E3Core.Processors
 
                                 }
 
-                                bool hasBuff = E3._bots.HasShortBuff(spell.CastTarget, spell.SpellID);
-                                MQ.Write($"Has buff:{spell.SpellName}:" + hasBuff);
+                                bool hasBuff = hasBuff = E3._bots.BuffList(spell.CastName).Contains(spell.SpellID);
 
                                 if (!hasBuff)
                                 {
@@ -668,8 +667,6 @@ namespace E3Core.Processors
                                 }
                                 else
                                 {
-                                    MQ.Write($"Setting 6 sec timer:{spell.SpellName}:");
-
                                     //has the buff, no clue how much time is left, set a 6 sec retry.
                                     UpdateBuffTimers(s.ID, spell, 6000, true);
                                     continue;

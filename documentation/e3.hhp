@@ -1,0 +1,28 @@
+
+[INFOTYPES]
+
+[OPTIONS]
+Auto Index=No
+Binary Index=Yes
+Binary TOC=No
+Compatibility=1.1 or later
+Compiled File=e3.chm
+Contents File=e3.hhc
+Index File=e3.hhk
+Error log file=e3.log.txt
+Full-text search=Yes
+Language=0x409 English (United States)
+Title=Title
+Default Topic=mq2mono_intro.html
+Default Window=
+Default Font=Arial, 9, 000
+Create CHI file=No
+Full text search stop list file=
+Display compile notes=Yes
+Display compile progress=Yes
+
+[FILES]
+mq2mono_intro.html
+mq2mono_commands.html
+mq2mono_dev_introduction.html
+test.html
