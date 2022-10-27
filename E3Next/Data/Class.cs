@@ -66,7 +66,8 @@ namespace E3Core.Data
                                                                             "ENC",
                                                                             "BST",
                                                                             "BER",
-                                                                            "MER"};
+                                                                            "MER",
+                                                                            "CLR"};
 
         public static Dictionary<string, string> _classLongToShort = new Dictionary<string, string>(StringComparer.OrdinalIgnoreCase) {{"Warrior","WAR"},
                                                                                                         {"Cleric","CLR"},
