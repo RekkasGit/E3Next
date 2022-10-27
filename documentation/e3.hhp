@@ -24,4 +24,5 @@ Display compile progress=Yes
 [FILES]
 mq2mono_intro.html
 mq2mono_commands.html
+mq2mono_dev_introduction.html
 test.html

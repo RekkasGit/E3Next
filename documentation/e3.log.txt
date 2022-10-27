@@ -4,14 +4,15 @@ Compiling c:\Projects\MQ2MonoSharp\documentation\e3.chm
 
 mq2mono_intro.html
 mq2mono_commands.html
+mq2mono_dev_introduction.html
 test.html
 
 Compile time: 0 minutes, 0 seconds
-3	Topics
-2	Local links
+4	Topics
+3	Local links
 0	Internet links
 0	Graphics
 
 
-Created c:\Projects\MQ2MonoSharp\documentation\e3.chm, 11,956 bytes
-Compression increased file by 9,694 bytes.
+Created c:\Projects\MQ2MonoSharp\documentation\e3.chm, 15,606 bytes
+Compression decreased file by 40,435 bytes.

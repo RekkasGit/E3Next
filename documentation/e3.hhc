@@ -25,6 +25,15 @@
 			<param name="Name" value="Commands">
 			<param name="Local" value="mq2mono_commands.html">
 			</OBJECT>
+		<LI> <OBJECT type="text/sitemap">
+			<param name="Name" value="Development">
+			</OBJECT>
+		<UL>
+			<LI> <OBJECT type="text/sitemap">
+				<param name="Name" value="mq2mono_dev_introduction.html">
+				<param name="Local" value="mq2mono_dev_introduction.html">
+				</OBJECT>
+		</UL>
 	</UL>
 	<LI> <OBJECT type="text/sitemap">
 		<param name="Name" value="E3">
