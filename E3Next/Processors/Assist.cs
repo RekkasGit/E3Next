@@ -304,14 +304,14 @@ namespace E3Core.Processors
                             {
                                 if (endurance > enduranceCost)
                                 {
-                                    if (String.IsNullOrWhiteSpace(ability.Ifs))
+                                    if (!String.IsNullOrWhiteSpace(ability.Ifs))
                                     {
                                         if (!MQ.Query<bool>($"${{If[{ability.Ifs},TRUE,FALSE]}}"))
                                         {
                                             continue;
                                         }
                                     }
-                                    if (MQ.Query<bool>("${Me.ActiveDisc.ID}"))
+                                    if (!MQ.Query<bool>("${Me.ActiveDisc.ID}"))
                                     {
                                         if (ability.TargetType == "Self")
                                         {
