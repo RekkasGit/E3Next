@@ -105,7 +105,7 @@ namespace E3Core.Processors
 
                 //wait for GCD to be over.
                 bool wasCasting = false;
-                while (MQ.Query<bool>("${Window[CastingWindow].Open}"))
+                while (Casting.IsCasting())
                 {
                     wasCasting = true;
                     MQ.Delay(50);

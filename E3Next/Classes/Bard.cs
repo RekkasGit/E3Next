@@ -97,7 +97,7 @@ namespace E3Core.Classes
             {
                 return;
             }
-            if(MQ.Query<bool>("${Window[CastingWindow].Open}") && (MQ.Query<Int32>("${Cast.Timing}")>500))
+            if(Casting.IsCasting() && (MQ.Query<Int32>("${Cast.Timing}")>500))
             {
                 return;
             }

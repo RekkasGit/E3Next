@@ -393,6 +393,19 @@ namespace MQServerClient
             }
             return true;
         }
+        public bool Delay(int maxTimeToWait, Func<bool> methodToCheck)
+        {
+            Int64 startingTime = Core._stopWatch.ElapsedMilliseconds;
+            while (!methodToCheck.Invoke())
+            {
+                if (Core._stopWatch.ElapsedMilliseconds - startingTime > maxTimeToWait)
+                {
+                    return false;
+                }
+                System.Threading.Thread.Sleep(200);
+            }
+            return true;
+        }
 
         public T Query<T>(string query)
         {
@@ -790,7 +803,19 @@ namespace MQServerClient
             }
             return true;
         }
-
+        public bool Delay(int maxTimeToWait, Func<bool> methodToCheck)
+        {
+            Int64 startingTime = Core._stopWatch.ElapsedMilliseconds;
+            while (!methodToCheck.Invoke())
+            {
+                if (Core._stopWatch.ElapsedMilliseconds - startingTime > maxTimeToWait)
+                {
+                    return false;
+                }
+                System.Threading.Thread.Sleep(10);
+            }
+            return true;
+        }
         public T Query<T>(string query)
         {
             Console.WriteLine("<Query>:" + query);

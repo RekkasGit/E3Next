@@ -959,6 +959,7 @@ namespace MonoCore
         void TraceEnd(string methodName);
         void Delay(Int32 value);
         Boolean Delay(Int32 maxTimeToWait, string Condition);
+        Boolean Delay(Int32 maxTimeToWait, Func<Boolean> methodToCheck);
         //void Broadcast(string query);
         bool AddCommand(string query);
         void ClearCommands();
@@ -1189,6 +1190,19 @@ namespace MonoCore
             }
             return true;
         }
+        public bool Delay(int maxTimeToWait, Func<bool> methodToCheck)
+        {
+            Int64 startingTime = Core._stopWatch.ElapsedMilliseconds;
+            while (!methodToCheck.Invoke())
+            {
+                if (Core._stopWatch.ElapsedMilliseconds - startingTime > maxTimeToWait)
+                {
+                    return false;
+                }
+                this.Delay(10);
+            }
+            return true;
+        }
         public bool AddCommand(string commandName)
         {
             return Core.mq_AddCommand(commandName);
@@ -1202,6 +1216,7 @@ namespace MonoCore
             Core.mq_RemoveCommand(commandName);
         }
 
+        
     }
 
     public class Logging

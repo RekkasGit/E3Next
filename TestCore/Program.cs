@@ -151,6 +151,11 @@ namespace TestCore
                 return true;
             }
 
+            public bool Delay(int maxTimeToWait, Func<bool> methodToCheck)
+            {
+                return true;
+            }
+
             public T Query<T>(string query)
             {
 
