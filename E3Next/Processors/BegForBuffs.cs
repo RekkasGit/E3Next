@@ -169,7 +169,7 @@ namespace E3Core.Processors
                     {
                         s = new Spell(askedForSpell.SpellTouse);
                     }
-                    if (Casting.CheckReady(s) && Casting.CheckMana(s))
+                    if (Casting.InRange(spawn.ID, s) && Casting.CheckReady(s) && Casting.CheckMana(s))
                     {
                         //get the id of the requestor.
                         Int32 cursorID = MQ.Query<Int32>("${Cursor.ID}");

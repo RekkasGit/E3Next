@@ -143,7 +143,7 @@ namespace E3Core.Processors
                                 }
                             }
                             if (foundBadBuff) continue;
-                            if (Casting.CheckReady(spell) && Casting.CheckMana(spell))
+                            if (Casting.InRange(s.ID,spell) && Casting.CheckReady(spell) && Casting.CheckMana(spell))
                             {
                                 Casting.Cast(s.ID, spell);
                                 return true;
@@ -165,7 +165,7 @@ namespace E3Core.Processors
                 {
                     if (s.Distance < spell.MyRange && E3._bots.BuffList(s.CleanName).Contains(spell.CheckForID))
                     {
-                        if (Casting.CheckReady(spell) && Casting.CheckMana(spell))
+                        if (Casting.InRange(s.ID, spell) && Casting.CheckReady(spell) && Casting.CheckMana(spell))
                         {
                             Casting.Cast(s.ID, spell);
                             return;
