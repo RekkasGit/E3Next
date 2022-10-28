@@ -71,6 +71,7 @@
     <Compile Include="Processors\Burns.cs" />
     <Compile Include="Processors\ClearXTargets.cs" />
     <Compile Include="Processors\DebuffDot.cs" />
+    <Compile Include="Processors\GiveMe.cs" />
     <Compile Include="Processors\Nukes.cs" />
     <Compile Include="Processors\PrivateCode.cs" />
     <Compile Include="Settings\AdvancedSettings.cs" />

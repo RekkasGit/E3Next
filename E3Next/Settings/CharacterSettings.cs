@@ -203,6 +203,8 @@ namespace E3Core.Settings
             LoadKeyData("Heals", "Pet Owner", _parsedData, HealPetOwners);
             LoadKeyData("Heals", "Auto Cast Necro Heal Orbs (On/Off)", _parsedData, ref HealAutoNecroOrbs);
             LoadKeyData("Off Assist Spells", "Main", _parsedData, OffAssistSpells);
+            LoadKeyData("Gimme", "Gimme", _parsedData, Gimme);
+
 
             _log.Write($"Finished processing and loading: {fullPathToUse}");
 
@@ -504,7 +506,8 @@ namespace E3Core.Settings
         public List<Data.Spell> CombatBuffs = new List<Data.Spell>();
         public List<Data.Spell> PetBuffs = new List<Data.Spell>();
 
-
+        //gimme
+        public List<string> Gimme = new List<string>();
         //pets
         public List<Data.Spell> PetSpell = new List<Data.Spell>();
         public List<Data.Spell> PetHeals = new List<Data.Spell>();

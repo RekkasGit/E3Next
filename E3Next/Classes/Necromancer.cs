@@ -19,7 +19,7 @@ namespace E3Core.Classes
 
         private static Int64 _nextAggroCheck = 0;
         private static Int64 _nextAggroRefreshTimeInterval = 1000;
-        private static Int32 _maxAggroCap = 90;
+        private static Int32 _maxAggroCap = 75;
         [AdvSettingInvoke]
         public static void Check_NecroAggro()
         {
@@ -49,7 +49,7 @@ namespace E3Core.Classes
                     }
                 }
             }
-            if(tempMaxAggro>_maxAggroCap && !MQ.Query<bool>("${Bool[${Me.Song[Gathering Dusk]}]}"))
+            if(tempMaxAggro>_maxAggroCap)
             {
                 
                 Spell s;
@@ -60,8 +60,23 @@ namespace E3Core.Classes
                 if(Casting.CheckReady(s) && Casting.CheckMana(s))
                 {
                     Casting.Cast(0, s);
-                    MQ.Cmd("/stand");
-                    return;
+                    //check to see if we can stand based off the # of group members.
+                    Int32 GroupSize = MQ.Query<Int32>("${Group}");
+                    Int32 GroupInZone = MQ.Query<Int32>("${Group.Present}");
+
+                    if (GroupSize - GroupSize > 1)
+                    {
+                        Assist.AssistOff();
+                        E3._bots.Broadcast("<CheckNecroAggro> Have agro, someone is dead, staying down. Issue reassist when ready.");
+
+
+                    }
+                    else
+                    {
+                        MQ.Cmd("/stand");
+                        return;
+                    }
+
                 }
                 if (!Spell._loadedSpellsByName.TryGetValue("Death Peace", out s))
                 {
@@ -70,38 +85,51 @@ namespace E3Core.Classes
                 if (Casting.CheckReady(s) && Casting.CheckMana(s))
                 {
                     Casting.Cast(0, s);
-                    MQ.Cmd("/stand");
+                    //check to see if we can stand based off the # of group members.
+                    Int32 GroupSize = MQ.Query<Int32>("${Group}");
+                    Int32 GroupInZone = MQ.Query<Int32>("${Group.Present}");
+
+                    if (GroupSize - GroupSize > 1)
+                    {
+                        Assist.AssistOff();
+                        E3._bots.Broadcast("<CheckNecroAggro> Have agro, someone is dead, staying down. Issue reassist when ready.");
+                    }
+                    else
+                    {
+                        MQ.Cmd("/stand");
+                        return;
+                    }
                     return;
                 }
 
             } 
-            else if(tempMaxAggro>_maxAggroCap && !MQ.Query<bool>("${Bool[${Me.Song[Harmshield]}]}"))
-            {
+            //else if(tempMaxAggro>_maxAggroCap && !MQ.Query<bool>("${Bool[${Me.Song[Harmshield]}]}"))
+            //{
 
-                Spell s;
+            //    Spell s;
 
-                if (!Spell._loadedSpellsByName.TryGetValue("Embalmer's Carapace", out s))
-                {
-                    s = new Spell("Embalmer's Carapace");
-                }
-                if (Casting.CheckReady(s) && Casting.CheckMana(s))
-                {
-                    Casting.Cast(0, s);
-                    return;
-                }
+            //    if (!Spell._loadedSpellsByName.TryGetValue("Embalmer's Carapace", out s))
+            //    {
+            //        s = new Spell("Embalmer's Carapace");
+            //    }
+            //    if (Casting.CheckReady(s) && Casting.CheckMana(s))
+            //    {
+            //        Casting.Cast(0, s);
+            //        return;
+            //    }
 
-                if (!Spell._loadedSpellsByName.TryGetValue("Harmshield", out s))
-                {
-                    s = new Spell("Harmshield");
-                }
-                if (Casting.CheckReady(s) && Casting.CheckMana(s))
-                {
-                    Casting.Cast(0, s);
-                    return;
-                }
+            //    if (!Spell._loadedSpellsByName.TryGetValue("Harmshield", out s))
+            //    {
+            //        s = new Spell("Harmshield");
+            //    }
+            //    if (Casting.CheckReady(s) && Casting.CheckMana(s))
+            //    {
+            //        Casting.Cast(0, s);
+            //        return;
+            //    }
                
 
-            }
+            //}
 
 
 

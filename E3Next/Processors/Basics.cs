@@ -934,7 +934,7 @@ namespace E3Core.Processors
             }
             if (MQ.Query<bool>("${Me.ItemReady[Azure Mind Crystal III]}"))
             {
-                if (MQ.Query<Int32>("${Math.Calc[${Me.MaxMana} - ${Me.CurrentMana}]}") > 3500)
+                if (MQ.Query<Double>("${Math.Calc[${Me.MaxMana} - ${Me.CurrentMana}]}") > 3500)
                 {
                     Spell s;
                     if (!Spell._loadedSpellsByName.TryGetValue("Azure Mind Crystal III", out s))
