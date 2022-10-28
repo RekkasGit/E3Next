@@ -595,6 +595,68 @@ namespace E3Core.Processors
                     MQ.Cmd($"/invite {member}");
                 }
             });
+
+            EventProcessor.RegisterCommand("/getfrombank", (x) =>
+            {
+                var args = x.args;
+                if (args.Count == 0)
+                {
+                    MQ.Write("\arYou need to tell me what to get!");
+                    return;
+                }
+
+                var item = args[0];
+                if (!MQ.Query<bool>("${Window[BigBankWnd]}"))
+                {
+                    MQ.Write("\arYou need to open the bank window before issuing this command");
+                    return;
+                }
+
+                if (!MQ.Query<bool>($"${{FindItemBank[={item}]}}"))
+                {
+                    MQ.Write($"\arYou do not have any {item}s in the bank");
+                    return;
+                }
+
+                var slot = MQ.Query<int>($"${{FindItemBank[={item}].ItemSlot}}");
+                var slot2 = MQ.Query<int>($"${{FindItemBank[={item}].ItemSlot2}}");
+
+                // different syntax for if the item is in a bag vs if it's not
+                if (slot2 >= 0)
+                {
+                    MQ.Cmd($"/itemnotify bank{slot + 1} rightmouseup");
+                    MQ.Delay(100);
+                    MQ.Cmd($"/itemnotify in bank{slot + 1} {slot2 + 1} leftmouseup");
+                }
+                else
+                {
+                    MQ.Cmd($"/itemnotify bank{slot + 1} leftmouseup");
+                }
+
+                MQ.Delay(250);
+
+                if (args.Count() > 1)
+                {
+                    var myQuantity = MQ.Query<int>($"${{FindItemBank[={item}].Stack}}");
+                    if (!int.TryParse(args[1], out var requestedQuantity))
+                    {
+                        MQ.Write($"\arYou requested a quantity of {args[1]}, and that's not a number. Grabbing all {item}s");
+                    }
+                    else if (requestedQuantity > myQuantity)
+                    {
+                        MQ.Write($"\arYou requested {requestedQuantity} {item}s and you only have {myQuantity}. Grabbing all {item}s");
+                    }
+                    else
+                    {
+                        MQ.Cmd($"/notify QuantityWnd QTYW_slider newvalue {requestedQuantity}");
+                        MQ.Delay(250);
+                    }
+                }
+
+                MQ.Cmd("/notify QuantityWnd QTYW_Accept_Button leftmouseup");
+                MQ.Delay(50);
+                MQ.Cmd($"/itemnotify bank{slot + 1} rightmouseup");
+            });
         }
         private static void FindItemCompact(string itemName)
         {
