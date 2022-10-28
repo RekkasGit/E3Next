@@ -314,8 +314,11 @@ namespace E3Core.Processors
                         }
                         else
                         {
-                            Casting.Cast(id, spell);
-
+                            if(Casting.InRange(id, spell))
+                            {
+                                Casting.Cast(id, spell);
+                            }
+                   
                         }
 
                     }
@@ -393,7 +396,10 @@ namespace E3Core.Processors
                             continue;
                         }
                     }
-
+                    if (!Casting.InRange(s.ID, spell))
+                    {
+                        continue;
+                    }
                     if (s.ID == MQ.Query<Int32>("${Me.ID}"))
                     {
                         //self buffs!
@@ -612,7 +618,7 @@ namespace E3Core.Processors
                                         else
                                         {
                                             //lets verify what we have on that target.
-                                            UpdateBuffTimers(s.ID, spell, spell.Duration);
+                                            UpdateBuffTimers(s.ID, spell,6000,true);
 
                                         }
                                         return;

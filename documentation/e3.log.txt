@@ -14,5 +14,5 @@ Compile time: 0 minutes, 0 seconds
 0	Graphics
 
 
-Created c:\Projects\MQ2MonoSharp\documentation\e3.chm, 15,606 bytes
-Compression decreased file by 40,435 bytes.
+Created c:\Projects\MQ2MonoSharp\documentation\e3.chm, 13,638 bytes
+Compression increased file by 4,363 bytes.

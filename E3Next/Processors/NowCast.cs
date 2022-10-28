@@ -122,7 +122,7 @@ namespace E3Core.Processors
                     }
                 }
 
-                if(Casting.CheckReady(spell) && Casting.CheckMana(spell))
+                if(Casting.InRange(targetid, spell) && Casting.CheckReady(spell) && Casting.CheckMana(spell))
                 {
                     Casting.Cast(targetid, spell, null, true);
                 }

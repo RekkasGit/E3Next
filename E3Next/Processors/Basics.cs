@@ -917,7 +917,7 @@ namespace E3Core.Processors
 
             if (MQ.Query<bool>("${Me.ItemReady[Summoned: Large Modulation Shard]}"))
             {
-                if (MQ.Query<Int32>("${Math.Calc[${Me.MaxMana} - ${Me.CurrentMana}]") > 3500 && currentHps > 6000)
+                if (MQ.Query<Int32>("${Math.Calc[${Me.MaxMana} - ${Me.CurrentMana}]}") > 3500 && currentHps > 6000)
                 {
                     Spell s;
                     if (!Spell._loadedSpellsByName.TryGetValue("Summoned: Large Modulation Shard", out s))
@@ -934,7 +934,7 @@ namespace E3Core.Processors
             }
             if (MQ.Query<bool>("${Me.ItemReady[Azure Mind Crystal III]}"))
             {
-                if (MQ.Query<Int32>("${Math.Calc[${Me.MaxMana} - ${Me.CurrentMana}]") > 3500)
+                if (MQ.Query<Double>("${Math.Calc[${Me.MaxMana} - ${Me.CurrentMana}]}") > 3500)
                 {
                     Spell s;
                     if (!Spell._loadedSpellsByName.TryGetValue("Azure Mind Crystal III", out s))
@@ -950,7 +950,7 @@ namespace E3Core.Processors
                 }
             }
 
-            if (E3._currentClass == Data.Class.Necromancer)
+            if (E3._currentClass == Data.Class.Necromancer && pctMana < 50)
             {
                 bool deathBloomReady = MQ.Query<bool>("${Me.AltAbilityReady[Death Bloom]}");
                 if (deathBloomReady && currentHps > 8000)
@@ -967,7 +967,7 @@ namespace E3Core.Processors
                     }
                 }
             }
-            if (E3._currentClass == Data.Class.Enchanter)
+            if (E3._currentClass == Data.Class.Enchanter && pctMana < 50)
             {
                 bool manaDrawReady = MQ.Query<bool>("${Me.AltAbilityReady[Mana Draw]}");
                 if (manaDrawReady)

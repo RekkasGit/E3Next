@@ -24,6 +24,11 @@ namespace E3Core.Settings
             _characterName = MQ.Query<string>("${Me.CleanName}");
             _serverName = ProcessServerName(MQ.Query<string>("${MacroQuest.Server}"));
             string classValue = MQ.Query<String>("${Me.Class}");
+            if (classValue == "Shadow Knight")
+            {
+                classValue = "Shadowknight";
+            }
+
             Enum.TryParse<Data.Class>(classValue, out _characterClass);
             _log.Write("Name:" + _characterName);
             _log.Write("Class:" + classValue);
@@ -203,6 +208,8 @@ namespace E3Core.Settings
             LoadKeyData("Heals", "Pet Owner", _parsedData, HealPetOwners);
             LoadKeyData("Heals", "Auto Cast Necro Heal Orbs (On/Off)", _parsedData, ref HealAutoNecroOrbs);
             LoadKeyData("Off Assist Spells", "Main", _parsedData, OffAssistSpells);
+            LoadKeyData("Gimme", "Gimme", _parsedData, Gimme);
+
 
             _log.Write($"Finished processing and loading: {fullPathToUse}");
 
@@ -504,7 +511,8 @@ namespace E3Core.Settings
         public List<Data.Spell> CombatBuffs = new List<Data.Spell>();
         public List<Data.Spell> PetBuffs = new List<Data.Spell>();
 
-
+        //gimme
+        public List<string> Gimme = new List<string>();
         //pets
         public List<Data.Spell> PetSpell = new List<Data.Spell>();
         public List<Data.Spell> PetHeals = new List<Data.Spell>();

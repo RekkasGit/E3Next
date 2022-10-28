@@ -165,11 +165,11 @@ namespace E3Core.Processors
 
             //register events
             //Event Line:"Pyra tells the group, 'SWARM-Host of the Elements'"
-            EventProcessor.RegisterEvent("EverythingEvent", "(.+) tells the group, '(.+)'", (x) => {
+            //EventProcessor.RegisterEvent("EverythingEvent", "(.+) tells the group, '(.+)'", (x) => {
                 
-                _log.Write($"{ x.eventName}:Processed:{ x.eventString}");
+            //    _log.Write($"{ x.eventName}:Processed:{ x.eventString}");
 
-            });
+            //});
             //can also just pass it any method with signature
             ////static void ProcessEvent(EventProcessor.EventMatch x)
         }

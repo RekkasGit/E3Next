@@ -831,7 +831,19 @@ namespace E3Core.Processors
 
             return returnValue;
         }
-
+        public static bool InRange(Int32 targetId, Data.Spell spell)
+        {
+            Spawn s;
+            if (_spawns.TryByID(targetId, out s))
+            {
+                double targetDistance = s.Distance;
+                if (targetDistance < spell.MyRange)
+                {
+                    return true;
+                }
+            }
+            return false;
+        }
         public static bool TrueTarget(Int32 targetID, bool allowClear = false)
         {
 

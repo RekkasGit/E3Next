@@ -368,6 +368,26 @@ namespace E3Core.Utility
 
             }
         }
+        public static bool ClearCursor()
+        {
+            Int32 cursorID = MQ.Query<Int32>("${Cursor.ID}");
+            Int32 counter = 0;
+            while(cursorID>0)
+            {   
+                if (cursorID > 0)
+                {
+                    MQ.Cmd("/autoinventory");
+                    E3._bots.Broadcast("\agAutoInventory\aw:\ao${Cursor}");
+                }
+                cursorID = MQ.Query<Int32>("${Cursor.ID}");
+                if (counter > 5) break;
+                counter++;
+            }
+            if (cursorID > 0) return false;
+            return true;
+
+
+        }
         public static void GiveItemOnCursorToTarget()
         {
 
