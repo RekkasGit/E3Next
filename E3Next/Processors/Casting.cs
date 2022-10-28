@@ -705,7 +705,7 @@ namespace E3Core.Processors
         }
         public static Boolean IsCasting()
         {
-            if(MQ.Query<bool>("${Window[CastingWindow].Open}") || MQ.Query<bool>("${Me.Casting}"))
+            if(MQ.Query<bool>("${Window[CastingWindow].Open}"))
             {
                 return true;
             }
