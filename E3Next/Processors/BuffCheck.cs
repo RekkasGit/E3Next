@@ -47,10 +47,7 @@ namespace E3Core.Processors
                 {
                     string buffToDrop = x.args[0];
                     DropBuff(buffToDrop);
-                    if (x.args.Count > 1 && x.args[1] == "all")
-                    {
-                        E3._bots.BroadcastCommandToGroup($"/dropbuff {buffToDrop}");
-                    }
+                    E3._bots.BroadcastCommand($"/removebuff {buffToDrop}");
                 }
             });
 
@@ -161,8 +158,6 @@ namespace E3Core.Processors
 
             if (buffID > 0)
             {
-                MQ.Cmd($"/blockspell add me {buffID}");
-                MQ.Cmd($"/blockspell remove me {buffID}");
                 MQ.Cmd($"/removebuff {buffToDrop}");
                 return true;
             }
@@ -204,8 +199,6 @@ namespace E3Core.Processors
 
             if (buffName != String.Empty)
             {
-                MQ.Cmd($"/blockspell add me {buffId}");
-                MQ.Cmd($"/blockspell remove me {buffId}");
                 MQ.Cmd($"/removebuff {buffName}");
                 return true;
             }
@@ -349,7 +342,18 @@ namespace E3Core.Processors
                     else
                     {
                         target = spell.CastTarget;
+                        if (string.Equals(spell.TargetType, "Single in Group", StringComparison.OrdinalIgnoreCase))
+                        {
+                            if (!_spawns.TryByName(target, out var spawn))
+                            {
+                                return;
+                            }
 
+                            if (!Basics._groupMembers.Any() || !Basics._groupMembers.Contains(spawn.ID))
+                            {
+                                return;
+                            }
+                        }
                     }
                 }
 
