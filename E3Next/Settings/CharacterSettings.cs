@@ -24,6 +24,11 @@ namespace E3Core.Settings
             _characterName = MQ.Query<string>("${Me.CleanName}");
             _serverName = ProcessServerName(MQ.Query<string>("${MacroQuest.Server}"));
             string classValue = MQ.Query<String>("${Me.Class}");
+            if (classValue == "Shadow Knight")
+            {
+                classValue = "Shadowknight";
+            }
+
             Enum.TryParse<Data.Class>(classValue, out _characterClass);
             _log.Write("Name:" + _characterName);
             _log.Write("Class:" + classValue);
