@@ -614,7 +614,7 @@ namespace E3Core.Processors
                                         else
                                         {
                                             //lets verify what we have on that target.
-                                            UpdateBuffTimers(s.ID, spell, spell.Duration);
+                                            UpdateBuffTimers(s.ID, spell,6000,true);
 
                                         }
                                         return;
