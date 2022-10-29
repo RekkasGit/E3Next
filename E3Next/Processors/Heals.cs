@@ -79,7 +79,7 @@ namespace E3Core.Processors
                 return false;
             }
             //find the lowest health xtarget
-            const Int32 XtargetMax = 6;
+            const Int32 XtargetMax = 12;
             //dealing with index of 1.
             Int32 currentLowestHealth = 100;
             Int32 lowestHealthTargetid = -1;
@@ -93,7 +93,7 @@ namespace E3Core.Processors
                 {
                     
                     double targetDistance = MQ.Query<double>($"${{Spawn[id {targetID}].Distance}}");
-                    if(targetID<200)
+                    if(targetDistance < 200)
                     {
                         Int32 pctHealth = MQ.Query<Int32>($"${{Me.XTarget[{x}].PctHPs}}");
                         if (pctHealth <= currentLowestHealth)
