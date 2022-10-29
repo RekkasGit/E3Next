@@ -140,11 +140,14 @@ namespace E3Core.Processors
                             //delay is needed to give time for it to actually process
                             MQ.Delay(1000);
                         }
-
-                        if (!MQ.Query<bool>("${Me.Combat}"))
+                        if (!_allowControl)
                         {
-                            MQ.Cmd("/attack on");
+                            if (!MQ.Query<bool>("${Me.Combat}"))
+                            {
+                                MQ.Cmd("/attack on");
+                            }
                         }
+                       
 
                         //are we sticking?
                         if (!_allowControl && !MQ.Query<bool>("${Stick.Active}"))
