@@ -104,7 +104,7 @@ namespace E3Core.Processors
                 {
                     _tempOffAssistSpellList.Clear();
                     _tempOffAssistSpellList.Add(spell);
-                    foreach (Int32 mobid in _mobsToOffAsist)
+                    foreach (Int32 mobid in _mobsToOffAsist.ToList())
                     {
                         CastLongTermSpell(mobid, _tempOffAssistSpellList, _OffAssistTimers);
                         if (E3._actionTaken) return;

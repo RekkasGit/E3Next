@@ -557,10 +557,10 @@ namespace E3Core.Processors
 
             if (spell.CastType == CastType.Spell)
             {
-                if (MQ.Query<bool>($"${{Bool[${{Me.Book[{spell.CastName}]}}]}}"))
+                //if (MQ.Query<bool>($"${{Bool[${{Me.Book[{spell.CastName}]}}]}}"))
                 {
                     MQ.Cmd("/stopsong");
-                    MQ.Delay(10);
+                    MQ.Delay(0);
                     MQ.Cmd($"/cast \"{spell.CastName}\"");
                     MQ.Delay(500, IsCasting);
                     if (!IsCasting())
@@ -707,8 +707,10 @@ namespace E3Core.Processors
         {
             if(MQ.Query<bool>("${Window[CastingWindow].Open}"))
             {
+                //MQ.Delay(0);
                 return true;
             }
+           
             return false;
         }
         public static Boolean IsNotCasting()

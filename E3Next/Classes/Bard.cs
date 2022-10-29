@@ -86,7 +86,7 @@ namespace E3Core.Classes
             }
         }
 
-        [ClassInvoke(Data.Class.Bard)]
+        //[ClassInvoke(Data.Class.Bard)]
         public static void check_BardSongs()
         {
             if (!_playingMelody || _songs.Count==0) return;

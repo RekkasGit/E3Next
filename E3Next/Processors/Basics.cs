@@ -783,9 +783,19 @@ namespace E3Core.Processors
             }
             else
             {
+
                 if (Casting.CheckReady(s))
                 {
+                    //this is to deal with vet aa with bards not showing a cast window.
+                    //force a stop of any song, do the cast, wait for it to end, then continue back on your way.
+                    if (E3._currentClass == Class.Bard)
+                    {
+                        MQ.Cmd("/stopsong");
+                        MQ.Delay(0);
+                    }
                     Casting.Cast(0, s);
+                  
+
                 }
             }
         }
@@ -979,7 +989,7 @@ namespace E3Core.Processors
 
             if (MQ.Query<bool>("${Me.ItemReady[Summoned: Large Modulation Shard]}"))
             {
-                if (MQ.Query<Int32>("${Math.Calc[${Me.MaxMana} - ${Me.CurrentMana}]}") > 3500 && currentHps > 6000)
+                if (MQ.Query<Double>("${Math.Calc[${Me.MaxMana} - ${Me.CurrentMana}]}") > 3500 && currentHps > 6000)
                 {
                     Spell s;
                     if (!Spell._loadedSpellsByName.TryGetValue("Summoned: Large Modulation Shard", out s))

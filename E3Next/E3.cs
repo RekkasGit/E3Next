@@ -1,4 +1,5 @@
-﻿using E3Core.Processors;
+﻿using E3Core.Classes;
+using E3Core.Processors;
 using E3Core.Settings;
 using E3Core.Settings.FeatureSettings;
 using MonoCore;
@@ -47,8 +48,6 @@ namespace E3Core.Processors
                 RefreshCaches();
                 //Init is here to make sure we only Init while InGame, as some queries will fail if not in game
 
-
-
                 //nowcast before all.
                 EventProcessor.ProcessEventsInQueues("/nowcast");
                 //use burns if able
@@ -93,6 +92,11 @@ namespace E3Core.Processors
                 }
                 //now do the dynamic methods from Advanced ini. 
                 
+                if(E3._currentClass==Data.Class.Bard)
+                {
+                    Bard.check_BardSongs();
+                }
+
                 //lets do our class methods, this is last because of bards
                 foreach (var kvp in AdvancedSettings._classMethodLookup)
                 {
