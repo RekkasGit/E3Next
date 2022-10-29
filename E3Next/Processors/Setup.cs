@@ -44,9 +44,6 @@ namespace E3Core.Processors
                 MQ.Write($"Loading nE³xt v{_e3Version}...");
 
                 InitPlugins();
-                InitServerNameForIni();
-                //ValidateIniFiles();
-                //LoadOrCreateCharacterSettings();
                 InitSubSystems();
                 return true;
             }
@@ -66,78 +63,6 @@ namespace E3Core.Processors
                 var func = (Action)foundMethod.CreateDelegate(typeof(Action));
                 func.Invoke();
             }
-        }
-        private static void LoadOrCreateCharacterSettings()
-        {
-            using (_log.Trace())
-            {
-                //TODO: Remove all INI functionality out of MQ
-                string botIniVersion = MQ.Query<string>($"${{ini[{_macroData_Ini},${{Me.CleanName}}-{_serverNameForIni},Bot_Ini version]}}");
-                bool versionSame = String.Equals(botIniVersion, _e3Version, StringComparison.OrdinalIgnoreCase);
-                bool botIniExists = MQ.Query<bool>($"${{ini[{_character_Ini}]}}");
-
-                if (!versionSame || !botIniExists)
-                {
-                    //make new character setting
-                    MQ.Cmd("/echo Creating ${Me.CleanName}'${If[${Me.CleanName.Right[1].Equal[s]},,s]} settings file...");
-                }
-            }
-        }
-        private static void InitServerNameForIni()
-        {   //TODO: Remove all INI functionality out of MQ
-            using (_log.Trace())
-            {
-                if (!MQ.Query<Boolean>($"${{Ini[{_macroData_Ini}].Length}}"))
-                {
-                    MQ.Write("Welcome to e3 next! preforming first time setup...");
-                    MakeMacroDataInis();
-                }
-            }
-        }
-        private static void ValidateIniFiles()
-        {
-            using (_log.Trace())
-            {
-                //TODO: Remove all INI reads from MQ and just do it in C#
-                if (!MQ.Query<bool>($"${{ini[${_macroData_Ini},File Paths,General Settings].Length}}"))
-                {
-                    MQ.Write("ERROR: Could not find designated file path for [General Settings].  Please review review settings in [${MacroData_Ini} > File Paths].");
-                    MQ.Cmd("/beep");
-                    E3.Shutdown();
-                }
-                _generalSettings_Ini = MQ.Query<string>($"${{ini[${_macroData_Ini},File Paths,General Settings]}}");
-
-                if (!MQ.Query<bool>($"${{ini[${_macroData_Ini},File Paths,Advanced Settings].Length}}"))
-                {
-                    MQ.Write($"ERROR: Could not find designated file path for [Advanced Settings].  Please review review settings in [${_macroData_Ini} > File Paths].");
-                    MQ.Cmd("/beep");
-                    E3.Shutdown();
-                }
-                _advancedSettings_Ini = MQ.Query<string>($"${{ini[${_macroData_Ini},File Paths,Advanced Settings]}}");
-
-                if (!MQ.Query<bool>($"${{ini[${_macroData_Ini},File Paths,Bot Settings].Length}}"))
-                {
-                    MQ.Write($"ERROR: Could not find designated file path for  [Bot Settings].  Please review review settings in [${_macroData_Ini} > File Paths].");
-                    MQ.Cmd("/beep");
-                    E3.Shutdown();
-                }
-
-                _character_Ini = MQ.Query<string>($"${{ini[${_macroData_Ini},File Paths,Bot Settings]}}") + MQ.Query<string>("${Me.CleanName}") + $"_{_serverNameForIni}.ini";
-
-            }
-        }
-
-        private static void MakeMacroDataInis()
-        {
-            return;
-            //using (_log.Trace())
-            //{
-            //    //TODO:come back later and do this ourselves
-            //    MQ.Cmd("/ini \"e3 Macro Inis\\e3 Data.ini\" \"e3 Build\" \"Version\"");
-            //    MQ.Cmd("/ini \"e3 Macro Inis\\e3 Data.ini\" \"File Paths\" \"Bot Settings\" \"e3 Bot Inis\"");
-            //    MQ.Cmd("/ini \"e3 Macro Inis\\e3 Data.ini\" \"File Paths\" \"General Settings\" \"e3 Macro Inis\\General Settings.ini\"");
-            //    MQ.Cmd("/ini \"e3 Macro Inis\\e3 Data.ini\" \"File Paths\" \"Advanced Settings\" \"e3 Macro Inis\\Advanced Settings.ini\"");
-            //}
         }
         private static void InitPlugins()
         {
