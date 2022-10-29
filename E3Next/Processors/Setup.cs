@@ -67,6 +67,7 @@ namespace E3Core.Processors
             Cures.Init();
             GiveMe.Init();
             Movement.Init();
+            Inventory.Init();
         }
         private static void LoadOrCreateCharacterSettings()
         {
