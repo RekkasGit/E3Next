@@ -16,10 +16,8 @@ namespace E3Core.Processors
     public static class Basics
     {
 
-        public static bool _following = false;
-        //public static Int32 _followTargetID = 0;
-        public static string _followTargetName = String.Empty;
-        public static DoorDataFile _doorData = new DoorDataFile();
+    
+        
         public static SavedGroupDataFile _savedGroupData = new SavedGroupDataFile();
         public static Logging _log = E3._log;
         private static IMQ MQ = E3.MQ;
@@ -34,14 +32,6 @@ namespace E3Core.Processors
         private static Int64 _nextAutoMedCheck = 0;
         private static Int64 _nextAutoMedCheckInterval = 1000;
 
-        private static Int64 _nextAnchorCheck = 0;
-        private static Int64 _nextAnchorCheckInterval = 1000;
-
-        private static Int64 _nextFollowCheck = 0;
-        private static Int64 _nextFollowCheckInterval = 1000;
-
-        private static Int64 _nextChaseCheck = 0;
-        private static Int64 _nextChaseCheckInterval = 10;
 
         private static Int64 _nextFoodCheck = 0;
         private static Int64 _nextFoodCheckInterval = 1000;
@@ -49,23 +39,11 @@ namespace E3Core.Processors
 
         public static void Init()
         {
-            RegisterEventsBasic();
-            _doorData.LoadData();
+            RegisterEvents();
         }
-        public static void Reset()
-        {
-            _anchorTarget = 0;
-            Basics._following = false;
-            Basics._followTargetName = String.Empty;
-            Basics._chaseTarget = String.Empty;
-        }
-        public static void ResetKeepFollow()
-        {
-            _anchorTarget = 0;
-            Basics._following = false;
-          
-        }
-        static void RegisterEventsBasic()
+      
+       
+        static void RegisterEvents()
         {
 
             EventProcessor.RegisterEvent("InviteToGroup", "(.+) invites you to join a group.", (x) =>
@@ -98,7 +76,7 @@ namespace E3Core.Processors
                 //means we have zoned.
                 _spawns.RefreshList();//make sure we get a new refresh of this zone.
                 Loot.Reset();
-                Basics.ResetKeepFollow();
+                Movement.ResetKeepFollow();
                 Assist.Reset();
                 Pets.Reset();
            
@@ -107,7 +85,7 @@ namespace E3Core.Processors
             {
                 _spawns.RefreshList();//make sure we get a new refresh of this zone.
                 Loot.Reset();
-                Basics.Reset();
+                Movement.Reset();
                 Assist.Reset();
 
             });
@@ -120,53 +98,7 @@ namespace E3Core.Processors
                 }
             });
 
-            EventProcessor.RegisterCommand("/clickit", (x) =>
-            {
-                if (x.args.Count == 0)
-                {
-                    //we are telling people to follow us
-                    E3._bots.BroadcastCommandToGroup($"/clickit {E3._zoneID}");
-
-                }
-                //read the ini file and pull the info we need.
-
-                if (x.args.Count > 0)
-                {
-                    Int32 zoneID;
-                    if (Int32.TryParse(x.args[0], out zoneID))
-                    {
-                        if (zoneID != E3._zoneID)
-                        {
-                            //we are not in the same zone, ignore.
-                            return;
-                        }
-                    }
-                }
-
-                Int32 closestID = _doorData.ClosestDoorID();
-
-                if (closestID > 0)
-                {
-                    MQ.Cmd($"/doortarget id {closestID}");
-                    double currentDistance = MQ.Query<Double>("${DoorTarget.Distance}");
-                    //need to move to its location
-                    if (currentDistance < 50)
-                    {
-                        MQ.Cmd($"/doortarget id {closestID}");
-
-                        Double doorX = MQ.Query<double>("${DoorTarget.X}");
-                        Double doorY = MQ.Query<double>("${DoorTarget.Y}");
-                        e3util.TryMoveToLoc(doorX, doorY, 8, 3000);
-                        MQ.Cmd("/squelch /click left door");
-                    }
-                    else
-                    {
-                        MQ.Write("\arMove Closer To Door");
-                    }
-                }
-
-
-            });
+            
             EventProcessor.RegisterCommand("/dropinvis", (x) =>
             {
                 E3._bots.BroadcastCommandToGroup("/makemevisible");
@@ -236,6 +168,30 @@ namespace E3Core.Processors
                 }
             });
             EventProcessor.RegisterCommand("/jester", (x) =>
+            {
+                VetAA("Chaotic Jester", "/jester", x.args.Count);
+            });
+            EventProcessor.RegisterCommand("/yes", (x) =>
+            {
+               
+                if(x.args.Count==0)
+                {
+                    E3._bots.BroadcastCommandToGroup("/yes all");
+                }
+                ClickYesNo(true);
+
+            });
+            EventProcessor.RegisterCommand("/no", (x) =>
+            {
+
+                if (x.args.Count == 0)
+                {
+                    E3._bots.BroadcastCommandToGroup("/no all");
+                }
+                ClickYesNo(false);
+
+            });
+            EventProcessor.RegisterCommand("/no", (x) =>
             {
                 VetAA("Chaotic Jester", "/jester", x.args.Count);
             });
@@ -332,19 +288,10 @@ namespace E3Core.Processors
 
             });
 
-            EventProcessor.RegisterCommand("/followoff", (x) =>
-            {
-                RemoveFollow();
-                if (x.args.Count == 0)
-                {
-                    //we are telling people to follow us
-                    E3._bots.BroadcastCommandToGroup("/followoff all");
-                }
-            });
+           
 
             EventProcessor.RegisterCommand("/evac", (x) =>
             {
-
                 if (x.args.Count > 0)
                 {
                     //someone told us to gate
@@ -463,98 +410,7 @@ namespace E3Core.Processors
                 }
             });
             //anchoron
-            EventProcessor.RegisterCommand("/anchoron", (x) =>
-            {
-                if (x.args.Count > 0)
-                {
-                    Int32 targetid;
-                    if (Int32.TryParse(x.args[0], out targetid))
-                    {
-                        _anchorTarget = targetid;
-                    }
-                }
-                else
-                {
-                    Int32 targetid = MQ.Query<Int32>("${Target.ID}");
-                    if (targetid > 0)
-                    {
-                        E3._bots.BroadcastCommandToGroup($"/anchoron {targetid}");
-                    }
-                }
-            });
-            EventProcessor.RegisterCommand("/chaseme", (x) =>
-            {
-                //chaseme <toon name>
-                if (x.args.Count == 1 && x.args[0] != "off")
-                {
-                    if (!e3util.FilterMe(x))
-                    {
-                        Spawn s;
-                        if (_spawns.TryByName(x.args[0], out s))
-                        {
-                            _chaseTarget = x.args[0];
-                            _following = true;
-                        }
-
-                    }
-                }
-                //chanseme off
-                else if (x.args.Count == 1 && x.args[0] == "off")
-                {
-                    E3._bots.BroadcastCommandToGroup($"/chaseme off {E3._currentName}",x);
-                    _chaseTarget = String.Empty;
-                    _following = false;
-                }
-                //chaseme off <toon name>
-                else if (x.args.Count == 2 && x.args[0] == "off")
-                {
-                    if (!e3util.FilterMe(x))
-                    {
-                        _chaseTarget = String.Empty;
-                        _following = false;
-
-                    }
-                }
-                else
-                {
-                    E3._bots.BroadcastCommandToGroup($"/chaseme {E3._currentName}",x);
-                    _following = false;
-                }
-            });
-            EventProcessor.RegisterCommand("/anchoroff", (x) =>
-            {
-                _anchorTarget = 0;
-                if (x.args.Count == 0)
-                {
-                    E3._bots.BroadcastCommandToGroup($"/anchoroff all");
-                }
-
-            });
-            EventProcessor.RegisterCommand("/followme", (x) =>
-            {
-                string user = string.Empty;
-                if (x.args.Count > 0)
-                {
-                    if(!e3util.FilterMe(x))
-                    {
-                        user = x.args[0];
-                        Spawn s;
-                        if (_spawns.TryByName(user, out s))
-                        {
-                            _followTargetName = user;
-                            _following = false;
-                            Assist.AssistOff();
-                            AcquireFollow();
-                        }
-
-                    }
-                }
-                else
-                {
-                    //we are telling people to follow us
-                    E3._bots.BroadcastCommandToGroup("/followme " + E3._characterSettings._characterName,x);
-                }
-            });
+            
 
             EventProcessor.RegisterCommand("/savegroup", (x) =>
             {
@@ -657,6 +513,28 @@ namespace E3Core.Processors
                 MQ.Delay(50);
                 MQ.Cmd($"/itemnotify bank{slot + 1} rightmouseup");
             });
+        }
+        private static void ClickYesNo(bool YesClick)
+        {
+            string TypeToClick = "Yes";
+            if(!YesClick)
+            {
+                TypeToClick = "No";
+            }
+
+            bool windowOpen = MQ.Query<bool>("${Window[ConfirmationDialogBox].Open}");
+            if (windowOpen)
+            {
+                MQ.Cmd($"/notify ConfirmationDialogBox {TypeToClick}_Button leftmouseup");
+            }
+            else
+            {
+                windowOpen = MQ.Query<bool>("${Window[LargeDialogWindow].Open}");
+                if (windowOpen)
+                {
+                    MQ.Cmd($"/notify LargeDialogWindow LDW_{TypeToClick}Button leftmouseup");
+                }
+            }
         }
         private static void FindItemCompact(string itemName)
         {
@@ -855,50 +733,8 @@ namespace E3Core.Processors
                 }
             }
         }
-        public static void RemoveFollow()
-        {
-            _chaseTarget = String.Empty;
-            _followTargetName = string.Empty;
-            _following = false;
-            MQ.Cmd("/squelch /afollow off");
-            MQ.Cmd("/squelch /stick off");
-
-
-        }
-        [ClassInvoke(Data.Class.All)]
-        public static void AcquireFollow()
-        {
-
-            if (!e3util.ShouldCheck(ref _nextFollowCheck, _nextFollowCheckInterval)) return;
-
-            if (String.IsNullOrWhiteSpace(_followTargetName)) return;
-
-            Spawn s;
-            if (_spawns.TryByName(_followTargetName, out s))
-            {
-                if (s.Distance <= 250)
-                {
-                    if (!_following)
-                    {
-                        //they are in range
-                        if (MQ.Query<bool>($"${{Spawn[{_followTargetName}].LineOfSight}}"))
-                        {
-                            if (Casting.TrueTarget(s.ID))
-                            {
-                                MQ.Delay(100);
-                                //if a bot, use afollow, else use stick
-                                MQ.Cmd("/afollow on nodoor");
-                                _following = true;
-                            }
-                        }
-                    }
-                }
-                else
-                {
-                    _following = false;
-                }
-            }
-        }
+       
+        
         public static bool AmIDead()
         {
             //scan through our inventory looking for a container.
@@ -1099,79 +935,9 @@ namespace E3Core.Processors
             }
 
         }
-        public static string _chaseTarget = String.Empty;
-        [ClassInvoke(Data.Class.All)]
-        public static void Check_Chase()
-        {
-            if (!e3util.ShouldCheck(ref _nextChaseCheck, _nextChaseCheckInterval)) return;
-
-            if (_chaseTarget != String.Empty && !Assist._isAssisting)
-            {
-                double distance = MQ.Query<double>($"${{Spawn[={_chaseTarget}].Distance}}");
-
-                if (distance != -1)
-                {
-                    bool InLoS = MQ.Query<bool>($"${{Spawn[={_chaseTarget}].LineOfSight}}");
-                    bool navLoaded = MQ.Query<bool>("${Bool[${Navigation.MeshLoaded}]}");
-                    if (navLoaded)
-                    {
-                        if (distance > 10)
-                        {
-                            bool navActive = MQ.Query<bool>("${Navigation.Active}");
-                            if (!navActive)
-                            {
-                                Int32 spawnID = MQ.Query<Int32>($"${{Spawn[={_chaseTarget}].ID}}");
-                                bool pathExists = MQ.Query<bool>($"${{Navigation.PathExists[id {spawnID}]}}");
-                                if (pathExists)
-                                {
-                                    MQ.Cmd($"/squelch /nav id {spawnID} log=error");
-                                }
-                                else
-                                {
-                                    //are they in LOS?
-                                    if (InLoS)
-                                    {
-                                        double x = MQ.Query<double>($"${{Spawn[={_chaseTarget}].X}}");
-                                        double y = MQ.Query<double>($"${{Spawn[={_chaseTarget}].Y}}");
-                                        e3util.TryMoveToLoc(x, y, 5, -1);
-                                    }
-
-                                }
-                            }
-                        }
-
-                    }
-                    else
-                    {
-                        if (distance > 5 && distance < 150 && InLoS)
-                        {
-                            double x = MQ.Query<double>($"${{Spawn[={_chaseTarget}].X}}");
-                            double y = MQ.Query<double>($"${{Spawn[={_chaseTarget}].Y}}");
-                            e3util.TryMoveToLoc(x, y, 5, -1);
-                        }
-                    }
-                }
-            }
-        }
-        public static Int32 _anchorTarget = 0;
-        [ClassInvoke(Data.Class.All)]
-        public static void Check_Anchor()
-        {
-            if (!e3util.ShouldCheck(ref _nextAnchorCheck, _nextAnchorCheckInterval)) return;
-
-            if (_anchorTarget > 0 && !Assist._isAssisting)
-            {
-                _spawns.RefreshList();
-                Spawn s;
-                if (_spawns.TryByID(_anchorTarget, out s))
-                {
-                    if (s.Distance > 20 && s.Distance < 150)
-                    {
-                        e3util.TryMoveToLoc(s.X, s.Y);
-                    }
-                }
-            }
-        }
+        
+        
+        
         [ClassInvoke(Data.Class.All)]
         public static void Check_AutoMed()
         {
@@ -1180,7 +946,7 @@ namespace E3Core.Processors
             if (autoMedPct == 0) return;
             if (!E3._characterSettings.Misc_AutoMedBreak) return;
 
-            if (_following || InCombat()) return;
+            if (Movement._following || InCombat()) return;
 
             bool amIStanding = MQ.Query<bool>("${Me.Standing}");
 

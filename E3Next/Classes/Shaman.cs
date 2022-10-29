@@ -83,7 +83,7 @@ namespace E3Core.Classes
         public static void Check_MalosTotem()
         {
             if (!e3util.ShouldCheck(ref _nextTotemCheck, _nextTotemRefreshTimeInterval)) return;
-            if(Basics._anchorTarget>0)
+            if(Movement._anchorTarget>0)
             {
                 bool idolUp = MQ.Query<bool>("${Bool[${Spawn[Spirit Idol]}]}");
             

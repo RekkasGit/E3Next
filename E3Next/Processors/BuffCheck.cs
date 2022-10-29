@@ -254,7 +254,7 @@ namespace E3Core.Processors
                 BuffBots(E3._characterSettings.CombatBuffs);
 
             }
-            else if (!moving && !Basics._following)
+            else if (!moving && !Movement._following)
             {
                 if (!E3._actionTaken) BuffAuras();
                 if (!E3._actionTaken) BuffBots(E3._characterSettings.SelfBuffs);

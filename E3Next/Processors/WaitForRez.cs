@@ -179,7 +179,7 @@ namespace E3Core.Processors
                 return;
             }
 
-            Basics.RemoveFollow();
+            Movement.RemoveFollow();
 
             CreateCorpseList();
             List<Int32> corpsesRaised = new List<int>();

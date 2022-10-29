@@ -66,6 +66,7 @@ namespace E3Core.Processors
             BegForBuffs.Init();
             Cures.Init();
             GiveMe.Init();
+            Movement.Init();
         }
         private static void LoadOrCreateCharacterSettings()
         {

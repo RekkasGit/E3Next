@@ -91,18 +91,27 @@ namespace E3Core.Processors
                 Int32 targetID = MQ.Query<Int32>($"${{Me.XTarget[{x}].ID}}");
                 if (targetID > 0)
                 {
-                    
-                    double targetDistance = MQ.Query<double>($"${{Spawn[id {targetID}].Distance}}");
-                    if(targetDistance < 200)
+
+                    //check to see if they are in zone.
+                    Spawn s;
+                    if(_spawns.TryByID(targetID,out s))
                     {
-                        Int32 pctHealth = MQ.Query<Int32>($"${{Me.XTarget[{x}].PctHPs}}");
-                        if (pctHealth <= currentLowestHealth)
+                        if(s.TypeDesc!="Corpse")
                         {
-                            currentLowestHealth = pctHealth;
-                            lowestHealthTargetid = targetID;
-                            lowestHealthTargetDistance = targetDistance;
+                            if (s.Distance < 200)
+                            {
+                                Int32 pctHealth = MQ.Query<Int32>($"${{Me.XTarget[{x}].PctHPs}}");
+                                if (pctHealth <= currentLowestHealth)
+                                {
+                                    currentLowestHealth = pctHealth;
+                                    lowestHealthTargetid = targetID;
+                                    lowestHealthTargetDistance = s.Distance;
+                                }
+                            }
+
                         }
                     }
+                   
                 }
             }
             //found someone to heal
@@ -273,6 +282,14 @@ namespace E3Core.Processors
                     {
                         targetID= healPets ? s.PetID: s.ID;
                   
+                        if(s.ID!=targetID)
+                        {
+                            if(!_spawns.TryByID(targetID,out s))
+                            {
+                                //can't find pet, skip
+                                continue;
+                            }
+                        }
                         double targetDistance = s.Distance;
                         string targetType = s.TypeDesc;
 
@@ -280,7 +297,7 @@ namespace E3Core.Processors
                         bool inRange = false;
                         foreach (var spell in spells)
                         {
-                            if (targetDistance < spell.MyRange)
+                            if (Casting.InRange(targetID, spell))
                             {
                                 inRange = true;
                                 break;
@@ -332,7 +349,7 @@ namespace E3Core.Processors
                                         continue;
                                     }
 
-                                    if (targetDistance < spell.MyRange)
+                                    if (Casting.InRange(targetID, spell))
                                     {
                                         if (pctHealth < spell.HealPct)
                                         {
@@ -421,6 +438,14 @@ namespace E3Core.Processors
                     {
                         targetID = healPets ? s.PetID : s.ID;
                     }
+                    if (s.ID != targetID)
+                    {
+                        if (!_spawns.TryByID(targetID, out s))
+                        {
+                            //can't find pet, skip
+                            continue;
+                        }
+                    }
                     //they are in zone and have an id
                     if (targetID > 0)
                     {
@@ -431,7 +456,7 @@ namespace E3Core.Processors
                         bool inRange = false;
                         foreach (var spell in spells)
                         {
-                            if (targetDistance < spell.MyRange)
+                            if (Casting.InRange(targetID, spell))
                             {
                                 inRange = true;
                                 break;
@@ -463,7 +488,7 @@ namespace E3Core.Processors
                                         //mana is set too high, can't cast
                                         continue;
                                     }
-                                    if (targetDistance < spell.MyRange)
+                                    if (Casting.InRange(targetID, spell))
                                     {
                                         if (pctHealth <= spell.HealPct)
                                         {
