@@ -28,6 +28,7 @@ namespace E3Core.Processors
         private static Int64 _nextBurnCheck = 0;
         private static Int64 _nextBurnCheckInterval = 500;
 
+        [SubSystemInit]
         public static void Init()
         {
             RegisterEpicAndAnguishBP();

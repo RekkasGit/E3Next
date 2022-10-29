@@ -19,7 +19,7 @@ namespace E3Core.Processors
         private static ISpawns _spawns = E3._spawns;
 
 
-
+        [SubSystemInit]
         public static void Init()
         {
             RegisterEvents();

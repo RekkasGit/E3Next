@@ -22,6 +22,7 @@ namespace E3Core.Processors
         private static Int64 _nextPetCheck = 0;
         private static Int64 _nextPetCheckInterval = 1000;
 
+        [SubSystemInit]
         public static void Init()
         {
             RegisterEvents();

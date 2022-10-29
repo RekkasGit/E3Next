@@ -28,6 +28,7 @@ namespace E3Core.Processors
         private static Int64 _nextLootCheck = 0;
         private static Int64 _nextLootCheckInterval = 1000;
 
+        [SubSystemInit]
         public static void Init()
         {
             RegisterEvents();

@@ -20,6 +20,7 @@ namespace E3Core.Processors
         private static Int64 _nextRCureCheck = 0;
         private static Int64 _nexRCureCheckInterval = 500;
 
+        [SubSystemInit]
         public static void Init()
         {
             _RaidentCure = new Data.Spell("Radiant Cure");

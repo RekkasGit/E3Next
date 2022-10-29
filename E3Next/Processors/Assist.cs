@@ -33,6 +33,8 @@ namespace E3Core.Processors
 
         private static Int64 _nextAssistCheck = 0;
         private static Int64 _nextAssistCheckInterval = 500;
+
+        [SubSystemInit]
         public static void Init()
         {
             RegisterEvents();

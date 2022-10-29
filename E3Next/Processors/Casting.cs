@@ -892,6 +892,7 @@ namespace E3Core.Processors
             _resistCounters.Clear();
 
         }
+        [SubSystemInit]
         public static void Init()
         {
             RegisterEventsCasting();

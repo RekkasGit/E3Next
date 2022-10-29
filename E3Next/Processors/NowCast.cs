@@ -16,7 +16,7 @@ namespace E3Core.Processors
     {
         public static Logging _log = E3._log;
         private static IMQ MQ = E3.MQ;
-
+        [SubSystemInit]
         public static void Init()
         {
             RegisterEvents();

@@ -7,6 +7,9 @@ using System.Threading.Tasks;
 
 namespace E3Core.Processors
 {
+    public class SubSystemInitAttribute : Attribute
+    {
+    }
     public static class Setup
     {
 
@@ -51,23 +54,18 @@ namespace E3Core.Processors
         }
         private static void InitSubSystems()
         {
-            Casting.Init();
-            Basics.Init();
-            Assist.Init();
-            DebuffDot.Init();
-            Burns.Init();
-            Loot.Init();
-            WaitForRez.Init();
-            Sell.Init();
-            NowCast.Init();
-            Pets.Init();
-            Alerts.Init();
-            BuffCheck.Init();
-            BegForBuffs.Init();
-            Cures.Init();
-            GiveMe.Init();
-            Movement.Init();
-            Inventory.Init();
+            var methods = AppDomain.CurrentDomain.GetAssemblies()
+            .SelectMany(x => x.GetTypes())
+            .Where(x => x.IsClass)
+            .SelectMany(x => x.GetMethods())
+            .Where(x => x.GetCustomAttributes(typeof(SubSystemInitAttribute), false).FirstOrDefault() != null); // returns only methods that have the InvokeAttribute
+
+            foreach (var foundMethod in methods) // iterate through all found methods
+            {
+                //these are static don't need to create an instance
+                var func = (Action)foundMethod.CreateDelegate(typeof(Action));
+                func.Invoke();
+            }
         }
         private static void LoadOrCreateCharacterSettings()
         {

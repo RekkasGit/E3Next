@@ -33,7 +33,7 @@ namespace E3Core.Processors
         private static Int64 _nextFoodCheck = 0;
         private static Int64 _nextFoodCheckInterval = 1000;
 
-
+        [SubSystemInit]
         public static void Init()
         {
             RegisterEvents();

@@ -32,6 +32,7 @@ namespace E3Core.Processors
         private static Queue<BuffQueuedItem> _queuedBuffs = new Queue<BuffQueuedItem>();
         private static SpellAliasDataFile _spellAliasesDataFile = new SpellAliasDataFile();
         public static Dictionary<string, string> _spellAliases;
+        [SubSystemInit]
         public static void Init()
         {
             RegsterEvents();

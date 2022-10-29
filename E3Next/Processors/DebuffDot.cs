@@ -33,6 +33,8 @@ namespace E3Core.Processors
         private static Int64 _nextOffAssistCheckInterval = 500;
         private static bool _shouldOffAssist = true;
         private static List<Data.Spell> _tempOffAssistSpellList = new List<Spell>();
+
+        [SubSystemInit]
         public static void Init()
         {
             RegisterEvents();

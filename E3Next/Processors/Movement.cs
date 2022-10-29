@@ -30,6 +30,8 @@ namespace E3Core.Processors
         private static Int64 _nextChaseCheck = 0;
         private static Int64 _nextChaseCheckInterval = 10;
         public static string _chaseTarget = String.Empty;
+
+        [SubSystemInit]
         public static void Init()
         {
             RegisterEvents();

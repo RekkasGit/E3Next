@@ -19,7 +19,7 @@ namespace E3Core.Processors
         private static ISpawns _spawns = E3._spawns;
         private static Dictionary<string, Int32> _groupSpellLimits = new Dictionary<string, int>();
         private static Dictionary<string, Int32> _groupSpellCurrentRequests= new Dictionary<string, int>();
-
+        [SubSystemInit]
         public static void Init()
         {
             RegisterEvents();
