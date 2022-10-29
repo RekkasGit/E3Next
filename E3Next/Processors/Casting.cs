@@ -839,7 +839,7 @@ namespace E3Core.Processors
             if (_spawns.TryByID(targetId, out s))
             {
                 double targetDistance = s.Distance;
-                if (targetDistance < spell.MyRange)
+                if (targetDistance <= spell.MyRange)
                 {
                     return true;
                 }
