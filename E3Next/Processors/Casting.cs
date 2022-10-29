@@ -1,4 +1,5 @@
 ﻿using E3Core.Data;
+using E3Core.Utility;
 using MonoCore;
 using System;
 using System.Collections.Generic;
@@ -70,7 +71,7 @@ namespace E3Core.Processors
 
                 if (MQ.Query<bool>("${Cursor.ID}"))
                 {
-                    MQ.Cmd("/autoinv");
+                    e3util.ClearCursor();
                 }
 
                 if (targetID == 0)

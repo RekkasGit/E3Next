@@ -139,11 +139,10 @@ namespace E3Core.Processors
                 _generalSettings = new Settings.GeneralSettings();
                 _advancedSettings = new Settings.AdvancedSettings();
                 
-
+                //setup is done after the settings are setup.
+                //as there is an order dependecy
                 Setup.Init();
-                //LootDataFile.Init();
-              
-               
+                
                 _bots=new Bots();
                 _isInit = true;
                 Spawns._refreshTimePeriodInMS = 3000;

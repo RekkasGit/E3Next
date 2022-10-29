@@ -376,8 +376,12 @@ namespace E3Core.Utility
             {   
                 if (cursorID > 0)
                 {
+                    string autoinvItem = MQ.Query<string>("${Cursor}");
                     MQ.Cmd("/autoinventory");
-                    E3._bots.Broadcast("\agAutoInventory\aw:\ao${Cursor}");
+                    if(autoinvItem!="NULL")
+                    {
+                        E3._bots.Broadcast($"\agAutoInventory\aw:\ao{autoinvItem}");
+                    }
                 }
                 cursorID = MQ.Query<Int32>("${Cursor.ID}");
                 if (counter > 5) break;
@@ -387,6 +391,27 @@ namespace E3Core.Utility
             return true;
 
 
+        }
+        public static void DeleteNoRentItem(string itemName)
+        {
+            if(ClearCursor())
+            {
+                bool foundItem = MQ.Query<bool>($"${{Bool[${{FindItem[={itemName}]}}]}}");
+                if (!foundItem) return;
+                MQ.Cmd($"/itemnotify \"{itemName}\" leftmouseup");
+                MQ.Delay(2000, "${Bool[${Cursor.ID}]}");
+                bool itemOnCursor = MQ.Query<bool>("${Bool[${Cursor.ID}]}");
+                if(itemOnCursor)
+                {
+                    bool isNoRent = MQ.Query<bool>("${Cursor.NoRent}");
+                    if(isNoRent)
+                    {
+                        MQ.Cmd("/destroy");
+                        MQ.Delay(300);
+                    }
+                    ClearCursor();
+                }
+            }
         }
         public static void GiveItemOnCursorToTarget()
         {

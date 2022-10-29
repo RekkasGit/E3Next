@@ -93,6 +93,7 @@ namespace E3Core.Processors
 
         private static void NowCastSpell(string spellName, Int32 targetid)
         {
+
             string realSpell = string.Empty;
             if (BegForBuffs._spellAliases.TryGetValue(spellName, out realSpell))
             {
@@ -120,6 +121,11 @@ namespace E3Core.Processors
                     {
                         MQ.Delay(100);
                     }
+                }
+
+                if(targetid==0)
+                {
+                    targetid = MQ.Query<Int32>("${Me.ID}");
                 }
 
                 if(Casting.InRange(targetid, spell) && Casting.CheckReady(spell) && Casting.CheckMana(spell))

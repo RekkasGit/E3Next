@@ -18,13 +18,13 @@ namespace E3Core.Processors
         static public Int32 _numInventorySlots = 10;
         static public Int32 _previousSpellGemThatWasCast = -1;
         public const string _e3Version = "1.0";
-        public static Boolean _Debug = true;
+        public static Boolean _debug = true;
         public const string _macroData_Ini = @"e3 Macro Inis\e3 Data.ini";
         public static string _generalSettings_Ini = @"e3 Macro Inis\General Settings.ini";
         public static string _advancedSettings_Ini = @"e3 Macro Inis\Advanced Settingse.ini";
         public static string _character_Ini = @"e3 Bot Inis\{CharacterName}_{ServerName}.ini";
-        
-        public static string _serverNameForIni = "PEQTGC"; //project eq, the grand creation, where e3 was born i believe.
+
+        public static string _serverNameForIni = "PEQTGC"; //project eq, the grand creation, where legacy e3 was born i believe.
         public static Logging _log = E3._log;
         private static IMQ MQ = E3.MQ;
 
@@ -32,14 +32,13 @@ namespace E3Core.Processors
         {
             using (_log.Trace())
             {
-            
+
                 //lets init server name
                 //laz server specific,otherwise default
                 if (MQ.Query<bool>($"${{MacroQuest.Server.Equal[Project Lazarus]}}"))
                 {
                     _serverNameForIni = "Lazarus";
                 }
-                
 
                 MQ.Write($"Loading nE³xt v{_e3Version}...");
 

@@ -15,9 +15,6 @@ namespace E3Core.Processors
 {
     public static class Basics
     {
-
-    
-        
         public static SavedGroupDataFile _savedGroupData = new SavedGroupDataFile();
         public static Logging _log = E3._log;
         private static IMQ MQ = E3.MQ;
@@ -32,6 +29,8 @@ namespace E3Core.Processors
         private static Int64 _nextAutoMedCheckInterval = 1000;
         private static Int64 _nextFoodCheck = 0;
         private static Int64 _nextFoodCheckInterval = 1000;
+        private static Int64 _nextCursorCheck = 0;
+        private static Int64 _nextCursorCheckInterval = 1000;
 
         [SubSystemInit]
         public static void Init()
@@ -699,6 +698,40 @@ namespace E3Core.Processors
 
             if (MQ.Query<bool>($"${{FindItem[{toDrink}].ID}}") && MQ.Query<int>("${Me.Thirst}") < 4500)
                 MQ.Cmd($"/useitem \"{toDrink}\"");
+        }
+
+        [ClassInvoke(Class.All)]
+        public static void Check_Cursor()
+        {
+            if (!e3util.ShouldCheck(ref _nextCursorCheck, _nextCursorCheckInterval)) return;
+
+            bool itemOnCursor = MQ.Query<bool>("${Bool[${Cursor.ID}]}");
+            if(itemOnCursor)
+            {
+                bool regenItem = MQ.Query<bool>("${Cursor.Name.Equal[Azure Mind Crystal III]}") || MQ.Query<bool>("${Cursor.Name.Equal[Summoned: Large Modulation Shard]}") || MQ.Query<bool>("${Cursor.Name.Equal[Sanguine Mind Crystal III]}");
+           
+                if(regenItem)
+                {
+                    Int32 charges = MQ.Query<Int32>("${Cursor.Charges}");
+                    if (charges == 3)
+                    {
+                        e3util.ClearCursor();
+                    }
+                } 
+                else
+                {
+                    bool orb = MQ.Query<bool>("${Cursor.Name.Equal[Molten orb]}") || MQ.Query<bool>("${Cursor.Name.Equal[Lava orb]}");
+                    if(orb)
+                    {
+                        Int32 charges = MQ.Query<Int32>("${Cursor.Charges}");
+                        if (charges == 10)
+                        {
+                            e3util.ClearCursor();
+                        }
+                    }
+                }
+  
+            }
         }
 
     }
