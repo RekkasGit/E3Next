@@ -16,11 +16,11 @@ namespace E3Core.Processors
         private static IMQ MQ = E3.MQ;
         private static ISpawns _spawns = E3._spawns;
 
-        private static bool use_FULLBurns = false;
-        private static bool use_QUICKBurns = false;
-        private static bool use_EPICBurns = false;
-        private static bool use_LONGBurns = false;
-        private static bool use_Swarms = false;
+        public static bool use_FULLBurns = false;
+        public static bool use_QUICKBurns = false;
+        public static bool use_EPICBurns = false;
+        public static bool use_LONGBurns = false;
+        public static bool use_Swarms = false;
         public static List<Data.Spell> _epicWeapon = new List<Data.Spell>();
         public static List<Data.Spell> _anguishBP = new List<Data.Spell>();
         public static string _epicWeaponName = String.Empty;

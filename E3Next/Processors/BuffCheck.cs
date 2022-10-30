@@ -298,7 +298,7 @@ namespace E3Core.Processors
                 }
                 if (!String.IsNullOrWhiteSpace(spell.Ifs))
                 {
-                    if (!MQ.Query<bool>($"${{If[{spell.Ifs},TRUE,FALSE]}}"))
+                    if (!Casting.Ifs(spell))
                     {
                         continue;
                     }
@@ -389,7 +389,7 @@ namespace E3Core.Processors
                     }
                     if (!String.IsNullOrWhiteSpace(spell.Ifs))
                     {
-                        if (!MQ.Query<bool>($"${{If[{spell.Ifs},TRUE,FALSE]}}"))
+                        if (!Casting.Ifs(spell))
                         {
                             //ifs failed do a 30 sec`retry
 
@@ -660,7 +660,7 @@ namespace E3Core.Processors
                             //double ifs check, so if their if included Target, we have it
                             if (!String.IsNullOrWhiteSpace(spell.Ifs))
                             {
-                                if (!MQ.Query<bool>($"${{If[{spell.Ifs},TRUE,FALSE]}}"))
+                                if (!Casting.Ifs(spell))
                                 {
                                     MQ.Write($"Failed if:{spell.SpellName}:");
 

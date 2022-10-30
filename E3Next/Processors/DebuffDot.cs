@@ -359,7 +359,7 @@ namespace E3Core.Processors
                     //check if the if condition works
                     if (!String.IsNullOrWhiteSpace(spell.Ifs))
                     {
-                        if (!MQ.Query<bool>($"${{If[{spell.Ifs},TRUE,FALSE]}}"))
+                        if (!Casting.Ifs(spell))
                         {
                             continue;
                         }
