@@ -16,18 +16,28 @@ namespace E3Core.Processors
     {
         public static void Process()
         {
-
+          
             if (!ShouldRun())
             {
                 return;
             }
-
+            _actionTaken = false;
+            _isInvis = MQ.Query<bool>("${Me.Invis}");
+            RefreshCaches();
             //_startTimeStamp = Core._stopWatch.ElapsedMilliseconds;
             //using (_log.Trace())
             {
                 if (!_isInit) { Init(); }
                 //update on every loop
-               
+                _currentHps =MQ.Query<Int32>("${Me.PctHPs}");
+
+                if(_currentHps<90 && !_isInvis)
+                {
+                    //lets check our life support.
+                    Heals.Check_LifeSupport();
+                    if (_actionTaken) return; //allow time for the heals to update to determine if we should do it again.
+                }
+
                 Int32 zoneID = MQ.Query<Int32>("${Zone.ID}"); //to tell if we zone mid process
                 if(zoneID!=_zoneID)
                 {
@@ -41,11 +51,6 @@ namespace E3Core.Processors
                 }
 
                
-
-                _isInvis = MQ.Query<bool>("${Me.Invis}");
-                //action taken is always set to false at the start of the loop
-                _actionTaken = false;
-                RefreshCaches();
                 //Init is here to make sure we only Init while InGame, as some queries will fail if not in game
 
                 //nowcast before all.
@@ -56,8 +61,9 @@ namespace E3Core.Processors
                 //first and formost, do healing checks
                 if ((_currentClass& Data.Class.Priest)==_currentClass)
                 {
+                    _actionTaken = false;
                     Heals.Check_Heals();
-                    //if (_actionTaken) return;
+                    if (_actionTaken) return; //we did a heal, kick out as we may need to do another heal.
                 }
 
 
@@ -133,6 +139,7 @@ namespace E3Core.Processors
                 _currentClass = _characterSettings._characterClass;
                 _currentLongClassString = _currentClass.ToString();
                 _currentShortClassString = Data.Classes._classLongToShort[_currentLongClassString];
+               
                 
                 //end class information
 
@@ -200,6 +207,7 @@ namespace E3Core.Processors
         public static Data.Class _currentClass;
         public static string _currentLongClassString;
         public static string _currentShortClassString;
+        public static Int32 _currentHps;
         public static Int32 _zoneID;
        
 

@@ -498,7 +498,7 @@ namespace E3Core.Processors
 
             Int32 pctMana = MQ.Query<Int32>("${Me.PctMana}");
             Int32 currentHps = MQ.Query<Int32>("${Me.CurrentHPs}");
-            if (pctMana > minMana) return;
+            
 
             if (E3._currentClass == Data.Class.Enchanter)
             {
@@ -525,7 +525,7 @@ namespace E3Core.Processors
             {
                 bool canniReady = MQ.Query<bool>("${Me.AltAbilityReady[Cannibalization]}");
               
-                if (canniReady && currentHps > 7000)
+                if (canniReady && currentHps > 7000 && MQ.Query<Double>("${Math.Calc[${Me.MaxMana} - ${Me.CurrentMana}]}")>4500)
                 {
                     Spell s;
                     if (!Spell._loadedSpellsByName.TryGetValue("Cannibalization", out s))
@@ -609,6 +609,7 @@ namespace E3Core.Processors
                     }
                 }
             }
+            if (pctMana > minMana) return;
             //no manastone in pok
             bool pok = MQ.Query<bool>("${Zone.ShortName.Equal[poknowledge]}");
             if (pok) return;

@@ -156,6 +156,9 @@ namespace E3Core.Processors
                             Spawn s;
                             if (_spawns.TryByName(item.Supplier, out s))
                             {
+                                //can only request group spells for group members
+                                if (_groupSpellRequests.ContainsKey(item.ItemName) && !Basics._groupMembers.Contains(s.ID)) return;
+
                                 if (s.Distance < 100)
                                 {
                                     if (E3._bots.BotsConnected().Contains(s.CleanName))
@@ -179,7 +182,6 @@ namespace E3Core.Processors
                 DoGroupSpellGive(whoToGiveTo, whatToGive);
                 return;
             }
-
 
             Spawn s;
             if (_spawns.TryByName(whoToGiveTo, out s))
@@ -218,17 +220,23 @@ namespace E3Core.Processors
         }
         private static void DoGroupSpellGive(string whoToGiveTo, string whatToGive)
         {
-            //verify the AA is ready
-            Spell s;
-            if (_groupSpellRequests.TryGetValue(whatToGive, out s))
+            Spawn spawn;
+            if(_spawns.TryByName(whoToGiveTo, out spawn))
             {
-                if (Casting.CheckReady(s) && Casting.CheckMana(s))
+                //check if group member
+                if (!Basics._groupMembers.Contains(spawn.ID)) return;
+
+                Spell s;
+                if (_groupSpellRequests.TryGetValue(whatToGive, out s))
                 {
-                    //lets tell everyone else to destroy their items and destroy our own.
-                    E3._bots.BroadcastCommandToGroup($"/DestroyNoRent \"{whatToGive}\"");
-                    e3util.DeleteNoRentItem(whatToGive);
-                    MQ.Delay(2000);
-                    Casting.Cast(0, s);
+                    if (Casting.CheckReady(s) && Casting.CheckMana(s))
+                    {
+                        //lets tell everyone else to destroy their items and destroy our own.
+                        E3._bots.BroadcastCommandToGroup($"/DestroyNoRent \"{whatToGive}\"");
+                        e3util.DeleteNoRentItem(whatToGive);
+                        MQ.Delay(2000);
+                        Casting.Cast(0, s);
+                    }
                 }
             }
         }
