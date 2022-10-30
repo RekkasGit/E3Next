@@ -9,7 +9,7 @@ using System.Threading.Tasks;
 
 namespace E3Core.Processors
 {
-    public class Heals:BaseProcessor
+    public class Heals : BaseProcessor
     {
         public static ISpawns _spawns = E3._spawns;
 
@@ -17,10 +17,10 @@ namespace E3Core.Processors
         private static Int64 _nextHealCheckInterval = 250;
 
         [AdvSettingInvoke]
-        public static void Check_Heals() 
+        public static void Check_Heals()
         {
             if (E3._isInvis) return;
-            if(!Basics.InCombat())
+            if (!Basics.InCombat())
             {
                 if (!e3util.ShouldCheck(ref _nextHealCheck, _nextHealCheckInterval)) return;
 
@@ -55,10 +55,10 @@ namespace E3Core.Processors
         }
 
 
- 
+
         public static bool HealTanks(Int32 currentMana, Int32 pctMana)
         {
-            if(E3._characterSettings.WhoToHeal.Contains("Tanks"))
+            if (E3._characterSettings.WhoToHeal.Contains("Tanks"))
             {
                 return Heal(currentMana, pctMana, E3._characterSettings.HealTankTargets, E3._characterSettings.HealTanks);
             }
@@ -72,7 +72,7 @@ namespace E3Core.Processors
             }
             return false;
         }
-        public static bool HealXTargets(Int32 currentMana, Int32 pctMana, bool JustCheck=false)
+        public static bool HealXTargets(Int32 currentMana, Int32 pctMana, bool JustCheck = false)
         {
             if (!E3._characterSettings.WhoToHeal.Contains("XTargets"))
             {
@@ -84,9 +84,9 @@ namespace E3Core.Processors
             Int32 currentLowestHealth = 100;
             Int32 lowestHealthTargetid = -1;
             double lowestHealthTargetDistance = -1;
-            for(Int32 x =1;x<=XtargetMax;x++)
+            for (Int32 x = 1; x <= XtargetMax; x++)
             {
-                
+
                 if (!MQ.Query<bool>($"${{Me.XTarget[{x}].TargetType.Equal[Specific PC]}}")) continue;
                 Int32 targetID = MQ.Query<Int32>($"${{Me.XTarget[{x}].ID}}");
                 if (targetID > 0)
@@ -94,9 +94,9 @@ namespace E3Core.Processors
 
                     //check to see if they are in zone.
                     Spawn s;
-                    if(_spawns.TryByID(targetID,out s))
+                    if (_spawns.TryByID(targetID, out s))
                     {
-                        if(s.TypeDesc!="Corpse")
+                        if (s.TypeDesc != "Corpse")
                         {
                             if (s.Distance < 200)
                             {
@@ -111,13 +111,13 @@ namespace E3Core.Processors
 
                         }
                     }
-                   
+
                 }
             }
             //found someone to heal
-            if(lowestHealthTargetid>0 && currentLowestHealth<95)
+            if (lowestHealthTargetid > 0 && currentLowestHealth < 95)
             {
-                foreach(var spell in E3._characterSettings.HealXTarget)
+                foreach (var spell in E3._characterSettings.HealXTarget)
                 {
                     recastSpell:
                     if (spell.Mana > currentMana)
@@ -137,7 +137,7 @@ namespace E3Core.Processors
                             if (JustCheck) return true;
                             if (Casting.CheckReady(spell))
                             {
-                         
+
                                 if (Casting.Cast(lowestHealthTargetid, spell) == CastReturn.CAST_FIZZLE)
                                 {
                                     currentMana = MQ.Query<Int32>("${Me.CurrentMana}");
@@ -201,12 +201,12 @@ namespace E3Core.Processors
                 Heal(currentMana, pctMana, targets, E3._characterSettings.HealAll);
             }
         }
-        public static void GroupHeals(Int32 currentMana,Int32 pctMana)
-        {   
-            foreach(var spell in E3._characterSettings.HealGroup)
+        public static void GroupHeals(Int32 currentMana, Int32 pctMana)
+        {
+            foreach (var spell in E3._characterSettings.HealGroup)
             {
                 Int32 numberNeedingHeal = MQ.Query<Int32>($"${{Group.Injured[{spell.HealPct}]}}");
-                if(numberNeedingHeal>2)
+                if (numberNeedingHeal > 2)
                 {
                     recastSpell:
                     if (spell.Mana > currentMana)
@@ -230,7 +230,7 @@ namespace E3Core.Processors
                         E3._actionTaken = true;
                         return;
                     }
-                   
+
                 }
             }
         }
@@ -238,9 +238,9 @@ namespace E3Core.Processors
         /// used as an action to determine if a spell should be interrupted in case someone needs a heal.
         /// </summary>
         /// <returns>true if a heal is needed, otherwise false</returns>
-        public static bool SomeoneNeedsHealing(Int32 currentMana,Int32 pctMana)
+        public static bool SomeoneNeedsHealing(Int32 currentMana, Int32 pctMana)
         {
-            if(!((E3._currentClass &  Data.Class.Priest)==E3._currentClass))
+            if (!((E3._currentClass & Data.Class.Priest) == E3._currentClass))
             {
                 return false;
             }
@@ -270,21 +270,21 @@ namespace E3Core.Processors
             }
             return false;
         }
-        private static bool Heal(Int32 currentMana, Int32 pctMana, List<string> targets, List<Data.Spell> spells, bool healPets=false, bool JustCheck=false)
+        private static bool Heal(Int32 currentMana, Int32 pctMana, List<string> targets, List<Data.Spell> spells, bool healPets = false, bool JustCheck = false)
         {
             //using (_log.Trace())
             {
                 foreach (var name in targets)
                 {
-                    Int32 targetID=0;
+                    Int32 targetID = 0;
                     Spawn s;
                     if (_spawns.TryByName(name, out s))
                     {
-                        targetID= healPets ? s.PetID: s.ID;
-                  
-                        if(s.ID!=targetID)
+                        targetID = healPets ? s.PetID : s.ID;
+
+                        if (s.ID != targetID)
                         {
-                            if(!_spawns.TryByID(targetID,out s))
+                            if (!_spawns.TryByID(targetID, out s))
                             {
                                 //can't find pet, skip
                                 continue;
@@ -328,8 +328,8 @@ namespace E3Core.Processors
 
                                     if (!String.IsNullOrWhiteSpace(spell.CheckFor))
                                     {
-                                        
-                                        if(E3._bots.BuffList(name).Contains(spell.CheckForID))
+
+                                        if (E3._bots.BuffList(name).Contains(spell.CheckForID))
                                         {
                                             //they have the buff, kick out
                                             continue;
@@ -357,7 +357,7 @@ namespace E3Core.Processors
                                             //should cast a heal!
                                             if (Casting.CheckReady(spell))
                                             {
-                                                if(Casting.Cast(targetID, spell) == CastReturn.CAST_FIZZLE)
+                                                if (Casting.Cast(targetID, spell) == CastReturn.CAST_FIZZLE)
                                                 {
                                                     currentMana = MQ.Query<Int32>("${Me.CurrentMana}");
                                                     pctMana = MQ.Query<Int32>("${Me.PctMana}");
@@ -373,7 +373,7 @@ namespace E3Core.Processors
                             //check netbots
                             bool botInZone = E3._bots.InZone(name);
                             if (botInZone)
-                            {   
+                            {
                                 //they are a netbots and they are in zone
                                 Int32 pctHealth = E3._bots.PctHealth(name);
                                 foreach (var spell in spells)
@@ -418,7 +418,7 @@ namespace E3Core.Processors
                                     }
                                 }
                             }
-                            
+
                         }
                     }
                 }
@@ -437,73 +437,74 @@ namespace E3Core.Processors
                     if (_spawns.TryByName(name, out s))
                     {
                         targetID = healPets ? s.PetID : s.ID;
-                    }
-                    if (s.ID != targetID)
-                    {
-                        if (!_spawns.TryByID(targetID, out s))
-                        {
-                            //can't find pet, skip
-                            continue;
-                        }
-                    }
-                    //they are in zone and have an id
-                    if (targetID > 0)
-                    {
-                        double targetDistance = s.Distance;
-                        string targetType = s.TypeDesc;
 
-                        //first lets check the distance.
-                        bool inRange = false;
-                        foreach (var spell in spells)
+                        if (s.ID != targetID)
                         {
-                            if (Casting.InRange(targetID, spell))
+                            if (!_spawns.TryByID(targetID, out s))
                             {
-                                inRange = true;
-                                break;
+                                //can't find pet, skip
+                                continue;
                             }
                         }
-                        if (!inRange)
-                        {   //no spells in range next target
-                            continue;
-                        }
-                        //in range
-                        if (targetType == "PC")
+                        //they are in zone and have an id
+                        if (targetID > 0)
                         {
-                            //check bots
-                            bool botInZone = E3._bots.InZone(name);
-                            if (botInZone)
+                            double targetDistance = s.Distance;
+                            string targetType = s.TypeDesc;
+
+                            //first lets check the distance.
+                            bool inRange = false;
+                            foreach (var spell in spells)
                             {
-                                //they are a netbots and they are in zone
-                                Int32 pctHealth = E3._bots.PctHealth(name);
-                                foreach (var spell in spells)
+                                if (Casting.InRange(targetID, spell))
                                 {
-                                    recastSpell:
-                                    if (spell.Mana > currentMana)
+                                    inRange = true;
+                                    break;
+                                }
+                            }
+                            if (!inRange)
+                            {   //no spells in range next target
+                                continue;
+                            }
+                            //in range
+                            if (targetType == "PC")
+                            {
+                                //check bots
+                                bool botInZone = E3._bots.InZone(name);
+                                if (botInZone)
+                                {
+                                    //they are a netbots and they are in zone
+                                    Int32 pctHealth = E3._bots.PctHealth(name);
+                                    foreach (var spell in spells)
                                     {
-                                        //mana cost too high
-                                        continue;
-                                    }
-                                    if (spell.MinMana > pctMana)
-                                    {
-                                        //mana is set too high, can't cast
-                                        continue;
-                                    }
-                                    if (Casting.InRange(targetID, spell))
-                                    {
-                                        if (pctHealth <= spell.HealPct)
+                                        recastSpell:
+                                        if (spell.Mana > currentMana)
                                         {
-                                            if(!E3._bots.HasShortBuff(name,spell.SpellID))
+                                            //mana cost too high
+                                            continue;
+                                        }
+                                        if (spell.MinMana > pctMana)
+                                        {
+                                            //mana is set too high, can't cast
+                                            continue;
+                                        }
+                                        if (Casting.InRange(targetID, spell))
+                                        {
+                                            if (pctHealth <= spell.HealPct)
                                             {
-                                                if (Casting.CheckReady(spell))
+                                                if (!E3._bots.HasShortBuff(name, spell.SpellID))
                                                 {
-                                                    if (Casting.Cast(targetID, spell) == CastReturn.CAST_FIZZLE)
+                                                    if (Casting.CheckReady(spell))
                                                     {
-                                                        currentMana = MQ.Query<Int32>("${Me.CurrentMana}");
-                                                        pctMana = MQ.Query<Int32>("${Me.PctMana}");
-                                                        goto recastSpell;
+                                                        if (Casting.Cast(targetID, spell) == CastReturn.CAST_FIZZLE)
+                                                        {
+                                                            currentMana = MQ.Query<Int32>("${Me.CurrentMana}");
+                                                            pctMana = MQ.Query<Int32>("${Me.PctMana}");
+                                                            goto recastSpell;
+                                                        }
+                                                        E3._actionTaken = true;
+                                                        return;
                                                     }
-                                                    E3._actionTaken = true;
-                                                    return;
                                                 }
                                             }
                                         }
