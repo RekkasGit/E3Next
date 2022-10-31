@@ -8,12 +8,19 @@ using MonoCore;
 
 namespace E3Core.Classes
 {
+    /// <summary>
+    /// Properties and methods specific to the rogue class
+    /// </summary>
     public static class Rogue
     {
-        public static Logging _log = E3._log;
+        private static Logging _log = E3._log;
         private static IMQ MQ = E3.MQ;
         private static ISpawns _spawns = E3._spawns;
         private static Data.Spell _rogueSneakAttack = null;
+
+        /// <summary>
+        /// Performs a sneak attack.
+        /// </summary>
         public static void RogueStrike()
         {
             using(_log.Trace())
@@ -50,6 +57,10 @@ namespace E3Core.Classes
             }
             
         }
+
+        /// <summary>
+        /// Evades if over the specified aggro threshold from the toon's ini.
+        /// </summary>
         public static void AutoEvade()
         {
             using(_log.Trace())

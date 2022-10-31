@@ -6,7 +6,10 @@ using System.Threading.Tasks;
 
 namespace E3Core.Classes
 {
-    public static class Bezerker
+    /// <summary>
+    /// Properties and methods specific to the berserker class
+    /// </summary>
+    public static class Berserker
     {
     }
 }

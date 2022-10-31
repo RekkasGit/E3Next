@@ -11,14 +11,15 @@ using System.Linq;
 
 namespace E3Core.Classes
 {
+    /// <summary>
+    /// Properties and methods specific to the bard class
+    /// </summary>
     public static class Bard
     {
-
-        public static Logging _log = E3._log;
+        private static Logging _log = E3._log;
         private static IMQ MQ = E3.MQ;
         private static ISpawns _spawns = E3._spawns;
         private static Queue<Data.Spell> _songs = new Queue<Spell>();
-
         private static bool _isInit = false;
         private static bool _playingMelody = true;
         private static string _currentMelody = String.Empty;
@@ -26,21 +27,25 @@ namespace E3Core.Classes
         private static Int64 _nextMelodyIfRefreshTimeInterval = 1000;
         private static bool _forceOverride = false;
 
+        /// <summary>
+        /// Initializes this instance.
+        /// </summary>
         [ClassInvoke(Data.Class.Bard)]
         public static void Init()
         {
             if (_isInit) return;
-            RegisterEvents();
+            PlayMelody();
             _isInit = true;
-
         }
 
-        private static void RegisterEvents()
+        /// <summary>
+        /// /playmelody melodyName
+        /// </summary>
+        public static void PlayMelody()
         {
-
             EventProcessor.RegisterCommand("/playmelody", (x) =>
             {
-                if(x.args.Count>0)
+                if (x.args.Count > 0)
                 {
                     if (x.args[0].Equals("stop", StringComparison.OrdinalIgnoreCase))
                     {
@@ -49,9 +54,9 @@ namespace E3Core.Classes
                     }
                     else
                     {
-                        if(x.args.Count>1 && x.args[1].Equals("force", StringComparison.OrdinalIgnoreCase))
+                        if (x.args.Count > 1 && x.args[1].Equals("force", StringComparison.OrdinalIgnoreCase))
                         {
-                            StartMelody(x.args[0],true);
+                            StartMelody(x.args[0], true);
                         }
                         else
                         {
@@ -62,6 +67,10 @@ namespace E3Core.Classes
                 }
             });
         }
+
+        /// <summary>
+        /// Checks the melody ifs.
+        /// </summary>
         [ClassInvoke(Data.Class.Bard)]
         public static void checkMelodyIf()
         {
@@ -85,8 +94,10 @@ namespace E3Core.Classes
                 }
             }
         }
-
-        //[ClassInvoke(Data.Class.Bard)]
+        //[ClassInvoke(Data.Class.Bard)]        
+        /// <summary>
+        /// Checks the bard songs.
+        /// </summary>
         public static void check_BardSongs()
         {
             if (!_playingMelody || _songs.Count==0) return;
@@ -115,6 +126,11 @@ namespace E3Core.Classes
             }
         }
 
+        /// <summary>
+        /// Starts the melody.
+        /// </summary>
+        /// <param name="melodyName">Name of the melody.</param>
+        /// <param name="force">if set to <c>true</c> [force].</param>
         public static void StartMelody(string melodyName, bool force=false)
         {
              _songs.Clear();

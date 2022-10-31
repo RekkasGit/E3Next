@@ -12,21 +12,25 @@ using Microsoft.Win32;
 
 namespace E3Core.Classes
 {
+    /// <summary>
+    /// Properties and methods specific to the cleric class
+    /// </summary>
     public static class Cleric
     {
-        public static Logging _log = E3._log;
+        private static Logging _log = E3._log;
         private static IMQ MQ = E3.MQ;
         private static ISpawns _spawns = E3._spawns;
         private static bool _isInit = false;
 
 
-      
+        /// <summary>
+        /// Initializes this instance.
+        /// </summary>
         public static void Init()
         {
             if (_isInit) return;
             _isInit = true;
-        }
-        
+        }       
 
     }
 }

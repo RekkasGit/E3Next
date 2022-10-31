@@ -12,15 +12,21 @@ using System.Linq;
 
 namespace E3Core.Classes
 {
+    /// <summary>
+    /// Properties and methods specific to the ranger class
+    /// </summary>
     public static class Ranger
     {
-        public static Logging _log = E3._log;
+        private static Logging _log = E3._log;
         private static IMQ MQ = E3.MQ;
         private static ISpawns _spawns = E3._spawns;
 
         private static Int64 _nextAggroCheck = 0;
         private static Int64 _nextAggroRefreshTimeInterval = 1000;
 
+        /// <summary>
+        /// Checks aggro level and drops it if necessary.
+        /// </summary>
         [AdvSettingInvoke]
         public static void Check_RangerAggro()
         {
