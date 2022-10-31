@@ -46,73 +46,6 @@ namespace E3Core.Processors
             RegisterEvents();
         }
       
-        /// <summary>
-        /// The veteran aa commands.
-        /// /armor - uses Armor of Experience
-        /// /intensity - uses Intensity of the Resolute
-        /// /infusion - uses Infusion of the Faithful
-        /// /staunch - uses Staunch Recovery
-        /// /servant - uses Steadfast Servant
-        /// /expedient - uses Expedient Recovery
-        /// /lesson - uses Lesson of the Devoted
-        /// /throne - uses Throne of Heroes
-        /// /jester - uses Chaotic Jester
-        /// </summary>
-        public static void VeteranAAs()
-        {
-            EventProcessor.RegisterCommand("/armor", (x) =>
-            {
-                VetAA("Armor of Experience", "/armor", x.args.Count);
-            });
-            EventProcessor.RegisterCommand("/intensity", (x) =>
-            {
-                VetAA("Intensity of the Resolute", "/intensity", x.args.Count);
-            });
-            EventProcessor.RegisterCommand("/infusion", (x) =>
-            {
-                VetAA("Infusion of the Faithful", "/infusion", x.args.Count);
-            });
-            EventProcessor.RegisterCommand("/staunch", (x) =>
-            {
-                VetAA("Staunch Recovery", "/staunch", x.args.Count);
-            });
-            EventProcessor.RegisterCommand("/servant", (x) =>
-            {
-                VetAA("Steadfast Servant", "/servant", x.args.Count);
-            });
-            EventProcessor.RegisterCommand("/expedient", (x) =>
-            {
-                VetAA("Expedient Recovery", "/expedient", x.args.Count);
-            });
-            EventProcessor.RegisterCommand("/lesson", (x) =>
-            {
-                VetAA("Lesson of the Devoted", "/lesson", x.args.Count);
-            });
-            EventProcessor.RegisterCommand("/throne", (x) =>
-            {
-                if (x.args.Count == 0)
-                {
-                    E3._bots.BroadcastCommandToGroup("/throne me");
-                }
-                MQ.Cmd("/interrupt");
-                MQ.Delay(500);
-                MQ.Cmd("/alt act 511");
-                MQ.Delay(500);
-                if (E3._currentClass == Class.Bard)
-                {
-                    MQ.Delay(17000);
-       
-                }
-                else
-        {
-                    MQ.Delay(20000, Casting.IsNotCasting);
-                }
-            });
-            EventProcessor.RegisterCommand("/jester", (x) =>
-            {
-                VetAA("Chaotic Jester", "/jester", x.args.Count);
-            });
-        }
 
         public static void RegisterEvents()
         {
@@ -189,58 +122,6 @@ namespace E3Core.Processors
 
             });
 
-            EventProcessor.RegisterCommand("/armor", (x) =>
-            {
-                VetAA("Armor of Experience", "/armor", x.args.Count);
-            });
-            EventProcessor.RegisterCommand("/intensity", (x) =>
-            {
-                VetAA("Intensity of the Resolute", "/intensity", x.args.Count);
-            });
-            EventProcessor.RegisterCommand("/infusion", (x) =>
-            {
-                VetAA("Infusion of the Faithful", "/infusion", x.args.Count);
-            });
-            EventProcessor.RegisterCommand("/staunch", (x) =>
-            {
-                VetAA("Staunch Recovery", "/staunch", x.args.Count);
-            });
-            EventProcessor.RegisterCommand("/servant", (x) =>
-            {
-                VetAA("Steadfast Servant", "/servant", x.args.Count);
-            });
-            EventProcessor.RegisterCommand("/expedient", (x) =>
-            {
-                VetAA("Expedient Recovery", "/expedient", x.args.Count);
-            });
-            EventProcessor.RegisterCommand("/lesson", (x) =>
-            {
-                VetAA("Lesson of the Devoted", "/lesson", x.args.Count);
-            });
-            EventProcessor.RegisterCommand("/throne", (x) =>
-            {
-                if(x.args.Count==0)
-                {
-                    E3._bots.BroadcastCommandToGroup("/throne me");
-                }
-                MQ.Cmd("/interrupt");
-                MQ.Delay(500);
-                MQ.Cmd("/alt act 511");
-                MQ.Delay(500);
-                if (E3._currentClass == Class.Bard)
-                {
-                    MQ.Delay(17000);
-
-                }
-                else
-                {
-                    MQ.Delay(20000, Casting.IsNotCasting);
-                }
-            });
-            EventProcessor.RegisterCommand("/jester", (x) =>
-            {
-                VetAA("Chaotic Jester", "/jester", x.args.Count);
-            });
             EventProcessor.RegisterCommand("/yes", (x) =>
             {
                
@@ -261,10 +142,7 @@ namespace E3Core.Processors
                 ClickYesNo(false);
 
             });
-            EventProcessor.RegisterCommand("/no", (x) =>
-            {
-                VetAA("Chaotic Jester", "/jester", x.args.Count);
-            });
+           
             EventProcessor.RegisterCommand("/bark", (x) =>
             {
 
@@ -470,41 +348,6 @@ namespace E3Core.Processors
             }
         }
         
-
-        private static void VetAA(string vetAASpell, string command, Int32 argCount)
-        {
-            Spell s;
-            if (!Spell._loadedSpellsByName.TryGetValue(vetAASpell, out s))
-            {
-                s = new Spell(vetAASpell);
-            }
-            if (argCount == 0)
-            {
-                if (Casting.CheckReady(s))
-                {
-                    Casting.Cast(0, s);
-                }
-                E3._bots.BroadcastCommandToGroup($"{command} all");
-            }
-            else
-            {
-
-                if (Casting.CheckReady(s))
-                {
-                    //this is to deal with vet aa with bards not showing a cast window.
-                    //force a stop of any song, do the cast, wait for it to end, then continue back on your way.
-                    if (E3._currentClass == Class.Bard)
-                    {
-                        MQ.Cmd("/stopsong");
-                        MQ.Delay(0);
-                    }
-                    Casting.Cast(0, s);
-                  
-
-                }
-            }
-        }
-
         /// <summary>
         /// Refreshes the group member cache.
         /// </summary>
@@ -556,7 +399,7 @@ namespace E3Core.Processors
         }
 
         /// <summary>
-        /// Checks the mana resources.
+        /// Checks the mana resources, and does actions to regenerate mana during combat.
         /// </summary>
         [ClassInvoke(Data.Class.ManaUsers)]
         public static void CheckManaResources()
@@ -785,13 +628,14 @@ namespace E3Core.Processors
             var toDrink = E3._characterSettings.Misc_AutoDrink;
 
             if (MQ.Query<bool>($"${{FindItem[{toEat}].ID}}") && MQ.Query<int>("${Me.Hunger}") < 4500)
-            { 
+            {
                 MQ.Cmd($"/useitem \"{toEat}\"");
             }
 
             if (MQ.Query<bool>($"${{FindItem[{toDrink}].ID}}") && MQ.Query<int>("${Me.Thirst}") < 4500)
             {
                 MQ.Cmd($"/useitem \"{toDrink}\"");
+            }
         }
 
         [ClassInvoke(Class.All)]

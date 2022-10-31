@@ -79,6 +79,7 @@
     <Compile Include="Processors\Movement.cs" />
     <Compile Include="Processors\Nukes.cs" />
     <Compile Include="Processors\PrivateCode.cs" />
+    <Compile Include="Processors\VetAAs.cs" />
     <Compile Include="Settings\AdvancedSettings.cs" />
     <Compile Include="Settings\BaseSettings.cs" />
     <Compile Include="Settings\CharacterSettings.cs" />
