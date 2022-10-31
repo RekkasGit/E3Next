@@ -41,6 +41,7 @@ namespace E3Core.Processors
         /// <summary>
         /// Initializes this instance.
         /// </summary>
+        [SubSystemInit]
         public static void Init()
         {
             RegisterEvents();
