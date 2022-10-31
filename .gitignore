@@ -6,6 +6,7 @@ Mono
 *.symbols.nuspec
 .vscode
 .vs
+documentation/help
 
 # jetbrains
 .idea

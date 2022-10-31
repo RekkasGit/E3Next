@@ -22,9 +22,9 @@
       <DocumentationSource sourceFile="..\E3Next\bin\Debug\Core.xml" />
       <DocumentationSource sourceFile="..\E3Next\bin\Debug\Core.dll" />
     </DocumentationSources>
-    <HelpFileFormat>Website</HelpFileFormat>
+    <HelpFileFormat>HtmlHelp1</HelpFileFormat>
     <SyntaxFilters>Standard</SyntaxFilters>
-    <PresentationStyle>Default2022</PresentationStyle>
+    <PresentationStyle>VS2013</PresentationStyle>
     <CleanIntermediates>True</CleanIntermediates>
     <KeepLogFile>True</KeepLogFile>
     <DisableCodeBlockComponent>False</DisableCodeBlockComponent>
@@ -33,14 +33,16 @@
     <SaveComponentCacheCapacity>100</SaveComponentCacheCapacity>
     <NamespaceSummaries>
       <NamespaceSummaryItem name="(global)" isDocumented="False">Command processors.</NamespaceSummaryItem>
-<NamespaceSummaryItem name="E3Core.Classes" isDocumented="True" />
-<NamespaceSummaryItem name="E3Core.Data" isDocumented="False">E3 processor</NamespaceSummaryItem>
-<NamespaceSummaryItem name="E3Core.Processors" isDocumented="True" />
-<NamespaceSummaryItem name="E3Core.Settings" isDocumented="False" />
-<NamespaceSummaryItem name="E3Core.Settings.FeatureSettings" isDocumented="False" />
-<NamespaceSummaryItem name="E3Core.Utility" isDocumented="False" />
-<NamespaceSummaryItem name="MonoCore" isDocumented="False" /></NamespaceSummaries>
+      <NamespaceSummaryItem name="E3Core.Classes" isDocumented="True" />
+      <NamespaceSummaryItem name="E3Core.Data" isDocumented="False">E3 processor</NamespaceSummaryItem>
+      <NamespaceSummaryItem name="E3Core.Processors" isDocumented="True" />
+      <NamespaceSummaryItem name="E3Core.Settings" isDocumented="False" />
+      <NamespaceSummaryItem name="E3Core.Settings.FeatureSettings" isDocumented="False" />
+      <NamespaceSummaryItem name="E3Core.Utility" isDocumented="False" />
+      <NamespaceSummaryItem name="MonoCore" isDocumented="False" />
+    </NamespaceSummaries>
     <MissingTags>AutoDocumentCtors</MissingTags>
+    <VisibleItems>InheritedMembers, InheritedFrameworkMembers, Internals, Privates, PrivateFields, Protected, SealedProtected, ProtectedInternalAsProtected, NonBrowsable</VisibleItems>
   </PropertyGroup>
   <!-- There are no properties for these groups.  AnyCPU needs to appear in order for Visual Studio to perform
 			 the build.  The others are optional common platform types that may appear. -->
