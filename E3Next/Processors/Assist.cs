@@ -570,10 +570,15 @@ namespace E3Core.Processors
             {
                 if (x.args.Count == 0)
                 {
+                  
                     Int32 targetID = MQ.Query<Int32>("${Target.ID}");
-                    AssistOff();
-                    _allowControl = true;
-                    AssistOn(targetID);
+                    if(targetID!=_assistTargetID)
+                    {
+                        AssistOff();
+                        _allowControl = true;
+                        AssistOn(targetID);
+
+                    }
                     E3._bots.BroadcastCommandToGroup($"/assistme {targetID}",x);
                 }
                 else if (!e3util.FilterMe(x))
@@ -581,6 +586,7 @@ namespace E3Core.Processors
                     Int32 mobid;
                     if (Int32.TryParse(x.args[0], out mobid))
                     {
+                        if (mobid == _assistTargetID) return;
                         AssistOff();
                         _allowControl = false;
                         AssistOn(mobid);

@@ -176,64 +176,18 @@
 
 </style>
 
+<div>Issusing commands</div>
 
-<div>Intial Code base</div>
-<ul>
-<li>You can certainly have a smaller code start but this will get you started</li>
-<li>Process will be called once per OnPulse inside MQ. Assume every frame rendering</li>
-<li>You will want to init on the 1st pulse</li>
-<li>Set some sane values that you want to start with in the init. I have shown some common ones</li>
-</ul>
 <article id="ARTICLE_21">
 <div id="DIV_23">
 <pre id="PRE_25"><code class="  language-none" id="CODE_1">
-
-public static class MyCode
-{
-
-	public static Boolean _isInit = false;
-	public static IMQ MQ = Core.mqInstance;
-	public static Logging _log = Core._log;
-
-	//this will be called about once per frame if you have no delay, put a delay :)
-	//via MainProcessor._processDelay = 1000 in the setup method
-	public static void Process()
-	{
-		#region init
-		if (!_isInit) { Init(); }
-		#endregion
-		///Write your code here.
-		string name = MQ.Query<string>("${Me.Name}");
-		MQ.Write($"Hello {name}!");
-  
-	}
-
-	private static void Init()
-	{
-
-		if (!_isInit)
-		{   
-			Logging._traceLogLevel = Logging.LogLevels.None; //Trace or None. Others will simply be treated as if Trace was turned on.
-			Logging._minLogLevelTolog = Logging.LogLevels.Debug; //set to the min value to log. look at the int values. if set to Info, you will not log debugs.
-			Logging._defaultLogLevel = Logging.LogLevels.Debug; //the default if a level is not passed into the _log.write statement. useful to hide/show things.
-			MainProcessor._applicationName = "MyApplication"; //application name, used in some outputs
-			MainProcessor._processDelay = 1000; //how much time we will wait until we start our next processing once we are done with a loop. in milliseconds. 1000 = 1 second.
-			MonoCore.MQ._maxMillisecondsToWork = 40;  //how long you allow script to process before auto yield is engaged. generally should't need to mess with this, but an example.
-			EventProcessor._eventLimiterPerRegisteredEvent = 20;//max event count for each registered event before spilling over.
-			_isInit = true;
-		}
-	}
-}
+MQ.Cmd("/bccmd connect");
+MQ.Cmd("/attack on");
+MQ.Cmd($"/say {message}");
+MQ.Cmd("/interrupt");
+MQ.Cmd("/stopsong");
+MQ.Cmd("/loot");
 </code>
 </pre>
 </div>
 </article>	
-	
-
-<ul>
-<li>Other than that, you can add new libraries, classes, structures, etc.</li>
-<li>You can treat your program as if it was a procedural program in a game loop.</li>
-</ul>
-
-	
-
