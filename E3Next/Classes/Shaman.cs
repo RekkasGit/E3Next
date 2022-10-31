@@ -12,10 +12,13 @@ using System.Linq;
 
 namespace E3Core.Classes
 {
+    /// <summary>
+    /// Properties and methods specific to the shaman class
+    /// </summary>
     public static class Shaman
     {
 
-        public static Logging _log = E3._log;
+        private static Logging _log = E3._log;
         private static IMQ MQ = E3.MQ;
         private static ISpawns _spawns = E3._spawns;
 
@@ -26,6 +29,9 @@ namespace E3Core.Classes
 
         private static Int32 _maxAggroCap = 90;
 
+        /// <summary>
+        /// Checks aggro level and drops it if necessary.
+        /// </summary>
         [AdvSettingInvoke]
         public static void Check_ShamanAggro()
         {
@@ -79,6 +85,9 @@ namespace E3Core.Classes
 
         }
 
+        /// <summary>
+        /// Uses malos totem if necessary.
+        /// </summary>
         [AdvSettingInvoke]
         public static void Check_MalosTotem()
         {

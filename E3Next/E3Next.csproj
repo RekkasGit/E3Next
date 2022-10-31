@@ -13,6 +13,8 @@
     <FileAlignment>512</FileAlignment>
     <Deterministic>true</Deterministic>
     <TargetFrameworkProfile />
+    <NuGetPackageImportStamp>
+    </NuGetPackageImportStamp>
   </PropertyGroup>
   <PropertyGroup Condition=" '$(Configuration)|$(Platform)' == 'Debug|AnyCPU' ">
     <DebugSymbols>true</DebugSymbols>
@@ -22,6 +24,7 @@
     <DefineConstants>DEBUG;TRACE</DefineConstants>
     <ErrorReport>prompt</ErrorReport>
     <WarningLevel>4</WarningLevel>
+    <DocumentationFile>bin\Debug\Core.xml</DocumentationFile>
   </PropertyGroup>
   <PropertyGroup Condition=" '$(Configuration)|$(Platform)' == 'Release|AnyCPU' ">
     <DebugType>pdbonly</DebugType>
@@ -47,7 +50,7 @@
   <ItemGroup>
     <Compile Include="Classes\Bard.cs" />
     <Compile Include="Classes\Beastlord.cs" />
-    <Compile Include="Classes\Bezerker.cs" />
+    <Compile Include="Classes\Berserker.cs" />
     <Compile Include="Classes\Cleric.cs" />
     <Compile Include="Classes\Druid.cs" />
     <Compile Include="Classes\Enchanter.cs" />

@@ -13,6 +13,9 @@ using System.Threading.Tasks;
 
 namespace E3Core.Processors
 {
+    /// <summary>
+    /// A catch all for ancillary commands and functions.
+    /// </summary>
     public static class Basics
     {
         public static SavedGroupDataFile _savedGroupData = new SavedGroupDataFile();
@@ -32,16 +35,87 @@ namespace E3Core.Processors
         private static Int64 _nextCursorCheck = 0;
         private static Int64 _nextCursorCheckInterval = 1000;
 
-        [SubSystemInit]
+        private static Int64 _nextBoxCheck = 0;
+        private static Int64 _nextBoxCheckInterval = 10000;
+
+        /// <summary>
+        /// Initializes this instance.
+        /// </summary>
         public static void Init()
         {
             RegisterEvents();
         }
       
-       
-        static void RegisterEvents()
+        /// <summary>
+        /// The veteran aa commands.
+        /// /armor - uses Armor of Experience
+        /// /intensity - uses Intensity of the Resolute
+        /// /infusion - uses Infusion of the Faithful
+        /// /staunch - uses Staunch Recovery
+        /// /servant - uses Steadfast Servant
+        /// /expedient - uses Expedient Recovery
+        /// /lesson - uses Lesson of the Devoted
+        /// /throne - uses Throne of Heroes
+        /// /jester - uses Chaotic Jester
+        /// </summary>
+        public static void VeteranAAs()
         {
+            EventProcessor.RegisterCommand("/armor", (x) =>
+            {
+                VetAA("Armor of Experience", "/armor", x.args.Count);
+            });
+            EventProcessor.RegisterCommand("/intensity", (x) =>
+            {
+                VetAA("Intensity of the Resolute", "/intensity", x.args.Count);
+            });
+            EventProcessor.RegisterCommand("/infusion", (x) =>
+            {
+                VetAA("Infusion of the Faithful", "/infusion", x.args.Count);
+            });
+            EventProcessor.RegisterCommand("/staunch", (x) =>
+            {
+                VetAA("Staunch Recovery", "/staunch", x.args.Count);
+            });
+            EventProcessor.RegisterCommand("/servant", (x) =>
+            {
+                VetAA("Steadfast Servant", "/servant", x.args.Count);
+            });
+            EventProcessor.RegisterCommand("/expedient", (x) =>
+            {
+                VetAA("Expedient Recovery", "/expedient", x.args.Count);
+            });
+            EventProcessor.RegisterCommand("/lesson", (x) =>
+            {
+                VetAA("Lesson of the Devoted", "/lesson", x.args.Count);
+            });
+            EventProcessor.RegisterCommand("/throne", (x) =>
+            {
+                if (x.args.Count == 0)
+                {
+                    E3._bots.BroadcastCommandToGroup("/throne me");
+                }
+                MQ.Cmd("/interrupt");
+                MQ.Delay(500);
+                MQ.Cmd("/alt act 511");
+                MQ.Delay(500);
+                if (E3._currentClass == Class.Bard)
+                {
+                    MQ.Delay(17000);
+       
+                }
+                else
+        {
+                    MQ.Delay(20000, Casting.IsNotCasting);
+                }
+            });
+            EventProcessor.RegisterCommand("/jester", (x) =>
+            {
+                VetAA("Chaotic Jester", "/jester", x.args.Count);
+            });
+        }
 
+        public static void RegisterEvents()
+        {
             EventProcessor.RegisterEvent("InviteToGroup", "(.+) invites you to join a group.", (x) =>
             {
 
@@ -233,6 +307,7 @@ namespace E3Core.Processors
                     }
                 }
             });
+
             EventProcessor.RegisterCommand("/bark-send", (x) =>
             {
                 if (x.args.Count > 1)
@@ -430,8 +505,9 @@ namespace E3Core.Processors
             }
         }
 
-       
-        
+        /// <summary>
+        /// Refreshes the group member cache.
+        /// </summary>
         public static void RefreshGroupMembers()
         {
             if (!e3util.ShouldCheck(ref _nextGroupCheck, _nextGroupCheckInterval)) return;
@@ -451,7 +527,10 @@ namespace E3Core.Processors
             }
         }
        
-        
+        /// <summary>
+        /// Am I dead?
+        /// </summary>
+        /// <returns>Returns a bool indicating whether or not you're dead.</returns>
         public static bool AmIDead()
         {
             //scan through our inventory looking for a container.
@@ -465,15 +544,22 @@ namespace E3Core.Processors
             }
             return true;
         }
+
+        /// <summary>
+        /// Am I in combat?
+        /// </summary>
+        /// <returns>Returns a bool indicating whether or not you're in combat</returns>
         public static bool InCombat()
         {
             bool inCombat = MQ.Query<bool>("${Me.Combat}") || MQ.Query<bool>("${Me.CombatState.Equal[Combat]}") || Assist._isAssisting;
             return inCombat;
         }
 
-
+        /// <summary>
+        /// Checks the mana resources.
+        /// </summary>
         [ClassInvoke(Data.Class.ManaUsers)]
-        public static void Check_ManaResources()
+        public static void CheckManaResources()
         {
             if (!e3util.ShouldCheck(ref _nextResourceCheck, _nextResourceCheckInterval)) return;
 
@@ -542,7 +628,7 @@ namespace E3Core.Processors
 
             if (MQ.Query<bool>("${Me.ItemReady[Summoned: Large Modulation Shard]}"))
             {
-                if (MQ.Query<Double>("${Math.Calc[${Me.MaxMana} - ${Me.CurrentMana}]}") > 3500 && currentHps > 6000)
+                if (MQ.Query<double>("${Math.Calc[${Me.MaxMana} - ${Me.CurrentMana}]}") > 3500 && currentHps > 6000)
                 {
                     Spell s;
                     if (!Spell._loadedSpellsByName.TryGetValue("Summoned: Large Modulation Shard", out s))
@@ -559,7 +645,7 @@ namespace E3Core.Processors
             }
             if (MQ.Query<bool>("${Me.ItemReady[Azure Mind Crystal III]}"))
             {
-                if (MQ.Query<Double>("${Math.Calc[${Me.MaxMana} - ${Me.CurrentMana}]}") > 3500)
+                if (MQ.Query<double>("${Math.Calc[${Me.MaxMana} - ${Me.CurrentMana}]}") > 3500)
                 {
                     Spell s;
                     if (!Spell._loadedSpellsByName.TryGetValue("Azure Mind Crystal III", out s))
@@ -654,10 +740,11 @@ namespace E3Core.Processors
 
         }
         
-        
-        
+        /// <summary>
+        /// Do I need to med?
+        /// </summary>
         [ClassInvoke(Data.Class.All)]
-        public static void Check_AutoMed()
+        public static void CheckAutoMed()
         {
             if (!e3util.ShouldCheck(ref _nextAutoMedCheck, _nextAutoMedCheckInterval)) return;
             Int32 autoMedPct = E3._generalSettings.General_AutoMedBreakPctMana;
@@ -684,8 +771,11 @@ namespace E3Core.Processors
             }
         }
 
+        /// <summary>
+        /// Checks hunger and thirst levels, and eats the configured food and drink in order to save stat food.
+        /// </summary>
         [ClassInvoke(Class.All)]
-        public static void Check_Food()
+        public static void CheckFood()
         {
             if (!e3util.ShouldCheck(ref _nextFoodCheck, _nextFoodCheckInterval)) return;
 
@@ -695,9 +785,12 @@ namespace E3Core.Processors
             var toDrink = E3._characterSettings.Misc_AutoDrink;
 
             if (MQ.Query<bool>($"${{FindItem[{toEat}].ID}}") && MQ.Query<int>("${Me.Hunger}") < 4500)
+            { 
                 MQ.Cmd($"/useitem \"{toEat}\"");
+            }
 
             if (MQ.Query<bool>($"${{FindItem[{toDrink}].ID}}") && MQ.Query<int>("${Me.Thirst}") < 4500)
+            {
                 MQ.Cmd($"/useitem \"{toDrink}\"");
         }
 

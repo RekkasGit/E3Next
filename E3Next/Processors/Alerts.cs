@@ -7,11 +7,17 @@ using System.Threading.Tasks;
 
 namespace E3Core.Processors
 {
+    /// <summary>
+    /// Scans incoming chat messages for trigger phrases to act on
+    /// </summary>
     public static class Alerts
     {
-        public static Logging _log = E3._log;
+        private static Logging _log = E3._log;
         private static IMQ MQ = E3.MQ;
 
+        /// <summary>
+        /// Initializes this instance.
+        /// </summary>
         [SubSystemInit]
         public static void Init()
         {
@@ -63,6 +69,7 @@ namespace E3Core.Processors
 
             });
             #endregion
+
             #region PoTaticsStampeed
             pattern = "You hear the pounding of hooves.";
             EventProcessor.RegisterEvent("PoT_STAMPEDE", pattern, (x) => {

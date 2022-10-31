@@ -10,30 +10,36 @@ using System.Linq;
 
 namespace E3Core.Processors
 {
+    /// <summary>
+    /// Contains all the logic to make your toons assist you.
+    /// </summary>
     public static class Assist
     {
-        public static Logging _log = E3._log;
-        private static IMQ MQ = E3.MQ;
-        private static ISpawns _spawns = E3._spawns;
-
+        public static bool _allowControl = false;
         public static Boolean _isAssisting = false;
         public static Int32 _assistTargetID = 0;
-        public static Int32 _assistStickDistance = 10;
+
+        private static Logging _log = E3._log;
+        private static IMQ MQ = E3.MQ;
+        private static ISpawns _spawns = E3._spawns;
+        private static Int32 _assistStickDistance = 10;
         private static IList<string> _rangeTypes = new List<string>() { "Ranged", "Autofire" };
         private static IList<string> _meleeTypes = new List<string>() { "Melee" };
         private static IList<string> _assistDistanceTypes = new List<string> { "MaxMelee", "off" };
-        public static Int32 _assistDistance = 0;
-        public static bool _assistIsEnraged = false;
+        private static Int32 _assistDistance = 0;
+        private static bool _assistIsEnraged = false;
         private static Dictionary<string, Action> _stickSwitch;
         private static HashSet<Int32> _offAssistIgnore = new HashSet<Int32>();
         private static Data.Spell _divineStun = new Data.Spell("Divine Stun");
         private static Data.Spell _terrorOfDiscord = new Data.Spell("Terror of Discord");
         private static IList<string> _tankTypes = new List<string>() { "WAR", "PAL", "SK" };
-        public static bool _allowControl = false;
 
         private static Int64 _nextAssistCheck = 0;
         private static Int64 _nextAssistCheckInterval = 500;
 
+        /// <summary>
+        /// Initializes this instance.
+        /// </summary>
         [SubSystemInit]
         public static void Init()
         {
@@ -42,13 +48,17 @@ namespace E3Core.Processors
             //E3._bots.SetupAliases();
         }
 
+        /// <summary>
+        /// Processes this instance.
+        /// </summary>
         public static void Process()
-        {
-           
-            Check_AssistStatus();
-            
+        {           
+            CheckAssistStatus();            
         }
 
+        /// <summary>
+        /// Resets this instance.
+        /// </summary>
         public static void Reset()
         {
             _offAssistIgnore.Clear();
@@ -59,10 +69,11 @@ namespace E3Core.Processors
             AssistOff();
 
         }
-        //this can be invoked via advanced settings loop
 
-
-        public static void Check_AssistStatus()
+        /// <summary>
+        /// Checks the assist status.
+        /// </summary>
+        public static void CheckAssistStatus()
         {
             if (!e3util.ShouldCheck(ref _nextAssistCheck, _nextAssistCheckInterval)) return;
                         
@@ -195,7 +206,10 @@ namespace E3Core.Processors
             }
 
         }
-       
+
+        /// <summary>
+        /// Uses combat abilities.
+        /// </summary>
         public static void CombatAbilties()
         {
             //can we find our target?
@@ -338,6 +352,10 @@ namespace E3Core.Processors
                 }
             }
         }
+
+        /// <summary>
+        /// Turns assist off.
+        /// </summary>
         public static void AssistOff()
         {
 
@@ -363,6 +381,11 @@ namespace E3Core.Processors
             }
 
         }
+
+        /// <summary>
+        /// Turns assist on.
+        /// </summary>
+        /// <param name="mobID">The mob identifier.</param>
         public static void AssistOn(Int32 mobID)
         {
            
