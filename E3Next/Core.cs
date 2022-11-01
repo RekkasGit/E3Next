@@ -88,7 +88,11 @@ namespace MonoCore
 
                         ////MQ.Write("Calling e3process");
                         E3.Process();
-                        EventProcessor.ProcessEventsInQueues();
+                        using(_log.Trace("ProcessEvents-Outer"))
+                        {
+                            EventProcessor.ProcessEventsInQueues();
+
+                        }
 
                         ////***NOTE NOTE NOTE, Use M2.Delay(0) in your code to give control back to EQ if you have taken awhile in doing something
                         ////***NOTE NOTE NOTE, generally this isn't needed as there is an auto yield baked into every MQ method. Just be aware.
@@ -1261,7 +1265,7 @@ namespace MonoCore
 
             if (logLevel == LogLevels.Debug)
             {
-                MQ.Write($"{className}:{memberName}:({lineNumber}) {message}", "", "Logging");
+                MQ.Write($"\ag{className}:\ao{memberName}\aw:({lineNumber}) {message}", "", "Logging");
 
             }
             else
@@ -1292,7 +1296,7 @@ namespace MonoCore
             returnValue.StartTime = Core._stopWatch.Elapsed.TotalMilliseconds;
             if (!string.IsNullOrWhiteSpace(name))
             {
-                MQ.TraceEnd($"{name}:{memberName})");
+                MQ.TraceEnd($"\ag{memberName}:\ao{name})");
             }
             else
             {
@@ -1310,7 +1314,7 @@ namespace MonoCore
             //put event back into its object pool.
             if (!string.IsNullOrWhiteSpace(value.Method))
             {
-                MQ.TraceEnd($"{value.Name}:{value.Method}({totalMilliseconds}ms)");
+                MQ.TraceEnd($"\ag{value.Method}:\ao{value.Name}\aw({totalMilliseconds}ms)");
             }
 
         }

@@ -164,6 +164,15 @@ namespace E3Core.Processors
             }
             return false;
         }
+        public static Boolean HasBuff(string buffName)
+        {
+            bool hasBuff  = MQ.Query<bool>($"${{Me.Buff[{buffName}].ID}}");
+            if(!hasBuff)
+            {
+                hasBuff = MQ.Query<bool>($"${{Me.Song[{buffName}].ID}}");
+            }
+            return hasBuff;
+        }
         public static Boolean DropBuff(Int32 buffId)
         {
             //first look for exact match
@@ -238,6 +247,7 @@ namespace E3Core.Processors
         {
             if (E3._isInvis) return;
 
+
             RefresBuffCacheForBots();
             //instant buffs have their own shouldcheck, need it snappy so check quickly.
             BuffInstant(E3._characterSettings.InstantBuffs);
@@ -245,24 +255,32 @@ namespace E3Core.Processors
             if (!e3util.ShouldCheck(ref _nextBuffCheck, _nextBuffCheckInterval)) return;
             if (Basics.AmIDead()) return;
 
-            bool moving = MQ.Query<bool>("${Me.Moving}");
-
-
-            //e3util.PrintTimerStatus(_buffTimers, ref _printoutTimer, "Buffs");
-
-            if (Basics.InCombat())
+            using (_log.Trace())
             {
-                BuffBots(E3._characterSettings.CombatBuffs);
+
+                bool moving = MQ.Query<bool>("${Me.Moving}");
+
+
+                //e3util.PrintTimerStatus(_buffTimers, ref _printoutTimer, "Buffs");
+
+                if (Basics.InCombat())
+                {
+                    BuffBots(E3._characterSettings.CombatBuffs);
+
+                }
+                else if (!moving && !Movement._following)
+                {
+                    if (!E3._actionTaken) BuffAuras();
+                    if (!E3._actionTaken) BuffBots(E3._characterSettings.SelfBuffs);
+                    if (!E3._actionTaken) BuffBots(E3._characterSettings.BotBuffs);
+                    if (!E3._actionTaken) BuffBots(E3._characterSettings.PetBuffs, true);
+                    //TODO: Auras
+                }
+
 
             }
-            else if (!moving && !Movement._following)
-            {
-                if (!E3._actionTaken) BuffAuras();
-                if (!E3._actionTaken) BuffBots(E3._characterSettings.SelfBuffs);
-                if (!E3._actionTaken) BuffBots(E3._characterSettings.BotBuffs);
-                if (!E3._actionTaken) BuffBots(E3._characterSettings.PetBuffs, true);
-                //TODO: Auras
-            }
+                
+            
 
 
         }

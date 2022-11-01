@@ -735,7 +735,7 @@ namespace E3Core.Processors
                 return false;
             }
 
-            _log.Write($"CheckReady on {spell.CastName}");
+            //_log.Write($"CheckReady on {spell.CastName}");
 
             if (E3._currentClass == Data.Class.Bard && !MQ.Query<bool>("${Twist.Twisting}"))
             {

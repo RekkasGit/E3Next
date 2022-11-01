@@ -66,35 +66,41 @@ namespace E3Core.Processors
                     if (_actionTaken) return; //we did a heal, kick out as we may need to do another heal.
                 }
 
+                using (_log.Trace("Assist/WaitForRez"))
+                {
+                    Assist.Process();
+                    WaitForRez.Process();
+                }
 
-                Assist.Process();
-                WaitForRez.Process();
-                
                 if (!_actionTaken)
                 {
-                    //rembmer check_heals is auto inserted, should probably just pull out here
-                    List<string> _methodsToInvokeAsStrings;
-                    if (AdvancedSettings._classMethodsAsStrings.TryGetValue(_currentShortClassString, out _methodsToInvokeAsStrings))
+                    using(_log.Trace("AdvMethodCalls"))
                     {
-                        foreach (var methodName in _methodsToInvokeAsStrings)
+                        //rembmer check_heals is auto inserted, should probably just pull out here
+                        List<string> _methodsToInvokeAsStrings;
+                        if (AdvancedSettings._classMethodsAsStrings.TryGetValue(_currentShortClassString, out _methodsToInvokeAsStrings))
                         {
-                            //if an action was taken, start over
-                            if (_actionTaken)
+                            foreach (var methodName in _methodsToInvokeAsStrings)
                             {
-                                break;
-                            }
-                            Action methodToInvoke;
-                            if (AdvancedSettings._methodLookup.TryGetValue(methodName, out methodToInvoke))
-                            {
-                                methodToInvoke.Invoke();
+                                //if an action was taken, start over
+                                if (_actionTaken)
+                                {
+                                    break;
+                                }
+                                Action methodToInvoke;
+                                if (AdvancedSettings._methodLookup.TryGetValue(methodName, out methodToInvoke))
+                                {
+                                    methodToInvoke.Invoke();
 
+                                }
+                                //check backoff
+                                //check nowcast
+                                EventProcessor.ProcessEventsInQueues("/nowcast");
+                                EventProcessor.ProcessEventsInQueues("/backoff");
                             }
-                            //check backoff
-                            //check nowcast
-                            EventProcessor.ProcessEventsInQueues("/nowcast");
-                            EventProcessor.ProcessEventsInQueues("/backoff");
                         }
                     }
+                  
                 }
                 //now do the dynamic methods from Advanced ini. 
                 
@@ -102,14 +108,19 @@ namespace E3Core.Processors
                 {
                     Bard.check_BardSongs();
                 }
-
-                //lets do our class methods, this is last because of bards
-                foreach (var kvp in AdvancedSettings._classMethodLookup)
+                using (_log.Trace("ClassMethodCalls"))
                 {
-                    kvp.Value.Invoke();
+                    //lets do our class methods, this is last because of bards
+                    foreach (var kvp in AdvancedSettings._classMethodLookup)
+                    {
+                        kvp.Value.Invoke();
+                    }
                 }
             }
-            Loot.Process();
+            using (_log.Trace("LootProcessing"))
+            {
+                Loot.Process();
+            }
             //MQ.Write("Total Processing time in ms:" + (Core._stopWatch.ElapsedMilliseconds - _startTimeStamp));
         }
         private static void RefreshCaches()
@@ -128,7 +139,7 @@ namespace E3Core.Processors
                 Logging._minLogLevelTolog = Logging.LogLevels.Error; //log levels have integers assoicatd to them. you can set this to Error to only log errors. 
                 Logging._defaultLogLevel = Logging.LogLevels.Debug; //the default if a level is not passed into the _log.write statement. useful to hide/show things.
                 MainProcessor._applicationName = "E3"; //application name, used in some outputs
-                MainProcessor._processDelay = 50; //how much time we will wait until we start our next processing once we are done with a loop.
+                MainProcessor._processDelay = _processDelay; //how much time we will wait until we start our next processing once we are done with a loop.
                                                     //how long you allow script to process before auto yield is engaged. generally should't need to mess with this, but an example.
                 MonoCore.MQ._maxMillisecondsToWork = 40;
                 //max event count for each registered event before spilling over.
@@ -209,7 +220,7 @@ namespace E3Core.Processors
         public static string _currentShortClassString;
         public static Int32 _currentHps;
         public static Int32 _zoneID;
-       
+        public static Int32 _processDelay = 50;
 
 
         public static ISpawns _spawns = Core.spawnInstance;

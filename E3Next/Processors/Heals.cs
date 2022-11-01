@@ -25,7 +25,7 @@ namespace E3Core.Processors
                 if (!e3util.ShouldCheck(ref _nextHealCheck, _nextHealCheckInterval)) return;
 
             }
-            //using (_log.Trace())
+            using (_log.Trace())
             {
                 //grabbing these values now and reusing them
                 Int32 currentMana = MQ.Query<Int32>("${Me.CurrentMana}");

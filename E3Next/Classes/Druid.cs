@@ -31,18 +31,19 @@ namespace E3Core.Classes
             if (!e3util.ShouldCheck(ref _nextAutoCheetaCheck, 1000)) return;
             if (E3._characterSettings.Druid_AutoCheeta)
             {
-               if(Casting.CheckReady(_cheetaSpell))
-               {
-                    bool haveBardSong = MQ.Query<bool>("${Me.Buff[Selo's Sonata].ID}") || MQ.Query<bool>("${Me.Buff[Selo's Accelerating Chorus].ID}");
-                    if (!haveBardSong)
+                Int32 totalSecondsLeft = MQ.Query<Int32>("${Me.Buff[Spirit of Cheetah].Duration.TotalSeconds}");
+                if (totalSecondsLeft < 10)
+                {
+                    if (Casting.CheckReady(_cheetaSpell))
                     {
-                        Int32 totalSecondsLeft = MQ.Query<Int32>("${Me.Buff[Spirit of Cheetah].Duration.TotalSeconds}");
-                        if (totalSecondsLeft < 10)
+                        bool haveBardSong = MQ.Query<bool>("${Me.Buff[Selo's Sonata].ID}") || MQ.Query<bool>("${Me.Buff[Selo's Accelerating Chorus].ID}");
+                        if (!haveBardSong)
                         {
+
                             Casting.Cast(0, _cheetaSpell);
                         }
                     }
-               }
+                }
             }
         }
     }

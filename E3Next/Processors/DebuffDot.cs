@@ -24,7 +24,7 @@ namespace E3Core.Processors
         public static HashSet<Int32> _mobsToOffAsist = new HashSet<int>();
         public static HashSet<Int32> _mobsToIgnoreOffAsist = new HashSet<int>();
         public static List<Int32> _deadMobs = new List<int>();
-        
+
         private static Int64 _nextDebuffCheck = 0;
         private static Int64 _nextDebuffCheckInterval = 1000;
         private static Int64 _nextDoTCheck = 0;
@@ -56,7 +56,7 @@ namespace E3Core.Processors
             }
             _dotTimers.Clear();
 
-           
+
         }
         [AdvSettingInvoke]
         public static void Check_OffAssistSpells()
@@ -66,55 +66,56 @@ namespace E3Core.Processors
             if (!Assist._isAssisting) return;
             if (E3._characterSettings.OffAssistSpells.Count == 0) return;
             if (!e3util.ShouldCheck(ref _nextOffAssistCheck, _nextOffAssistCheckInterval)) return;
-
-            //check xtargets
-            for (Int32 i=1;i<=13;i++)
+            using (_log.Trace())
             {
-                bool autoHater = MQ.Query<bool>($"${{Me.XTarget[{i}].TargetType.Equal[Auto Hater]}}");
-                if (!autoHater) continue;
-                Int32 mobId = MQ.Query<Int32>($"${{Me.XTarget[{i}].ID}}");
-                if(mobId>0)
+                //check xtargets
+                for (Int32 i = 1; i <= 13; i++)
                 {
-                    if (_mobsToOffAsist.Contains(mobId) || _mobsToIgnoreOffAsist.Contains(mobId)) continue;
-                    Spawn s;
-                    if(_spawns.TryByID(mobId,out s))
+                    bool autoHater = MQ.Query<bool>($"${{Me.XTarget[{i}].TargetType.Equal[Auto Hater]}}");
+                    if (!autoHater) continue;
+                    Int32 mobId = MQ.Query<Int32>($"${{Me.XTarget[{i}].ID}}");
+                    if (mobId > 0)
                     {
-                        if (s.ID == Assist._assistTargetID) continue;
-                        if (!s.Targetable) continue;
-                        if (!s.Aggressive) continue;
-                        if (!s.Targetable) continue;
-                        if (s.PctHps < 10) continue;
-                        if (!MQ.Query<bool>($"${{Spawn[npc id {mobId}].LineOfSight}}")) continue;
-                        if (s.Distance > 100) continue;
-                        if (s.TypeDesc == "Corpse") continue;
-                        if (s.Name.Contains("'s pet'")) continue;
-                        if (s.Name.IndexOf("Chest", StringComparison.OrdinalIgnoreCase) > -1) continue;
-                        if (s.Name.IndexOf("a box", StringComparison.OrdinalIgnoreCase) > -1) continue;
-                        if (s.Name.IndexOf("crate", StringComparison.OrdinalIgnoreCase) > -1) continue;
-                        if (s.Name.IndexOf("hollow_tree", StringComparison.OrdinalIgnoreCase) > -1) continue;
-                        if (s.Name.IndexOf("wooden box", StringComparison.OrdinalIgnoreCase) > -1) continue;
-                        _mobsToOffAsist.Add(mobId);
+                        if (_mobsToOffAsist.Contains(mobId) || _mobsToIgnoreOffAsist.Contains(mobId)) continue;
+                        Spawn s;
+                        if (_spawns.TryByID(mobId, out s))
+                        {
+                            if (s.ID == Assist._assistTargetID) continue;
+                            if (!s.Targetable) continue;
+                            if (!s.Aggressive) continue;
+                            if (!s.Targetable) continue;
+                            if (s.PctHps < 10) continue;
+                            if (!MQ.Query<bool>($"${{Spawn[npc id {mobId}].LineOfSight}}")) continue;
+                            if (s.Distance > 100) continue;
+                            if (s.TypeDesc == "Corpse") continue;
+                            if (s.Name.Contains("'s pet'")) continue;
+                            if (s.Name.IndexOf("Chest", StringComparison.OrdinalIgnoreCase) > -1) continue;
+                            if (s.Name.IndexOf("a box", StringComparison.OrdinalIgnoreCase) > -1) continue;
+                            if (s.Name.IndexOf("crate", StringComparison.OrdinalIgnoreCase) > -1) continue;
+                            if (s.Name.IndexOf("hollow_tree", StringComparison.OrdinalIgnoreCase) > -1) continue;
+                            if (s.Name.IndexOf("wooden box", StringComparison.OrdinalIgnoreCase) > -1) continue;
+                            _mobsToOffAsist.Add(mobId);
+                        }
                     }
                 }
-            }
 
-            if (_mobsToOffAsist.Count == 0) return;
-            //lets place the 1st offensive spell on each mob, then the next, then the next
-            foreach (var spell in E3._characterSettings.OffAssistSpells)
-            {
-                if(Casting.CheckMana(spell))
+                if (_mobsToOffAsist.Count == 0) return;
+                //lets place the 1st offensive spell on each mob, then the next, then the next
+                foreach (var spell in E3._characterSettings.OffAssistSpells)
                 {
-                    _tempOffAssistSpellList.Clear();
-                    _tempOffAssistSpellList.Add(spell);
-                    foreach (Int32 mobid in _mobsToOffAsist.ToList())
+                    if (Casting.CheckMana(spell))
                     {
-                        CastLongTermSpell(mobid, _tempOffAssistSpellList, _OffAssistTimers);
-                        if (E3._actionTaken) return;
+                        _tempOffAssistSpellList.Clear();
+                        _tempOffAssistSpellList.Add(spell);
+                        foreach (Int32 mobid in _mobsToOffAsist.ToList())
+                        {
+                            CastLongTermSpell(mobid, _tempOffAssistSpellList, _OffAssistTimers);
+                            if (E3._actionTaken) return;
+                        }
                     }
+
                 }
-                
             }
-  
         }
 
         [AdvSettingInvoke]
@@ -128,28 +129,30 @@ namespace E3Core.Processors
             }
 
             if (!e3util.ShouldCheck(ref _nextDebuffCheck, _nextDebuffCheckInterval)) return;
-
-            //e3util.PrintTimerStatus(_debuffTimers, ref _nextDebuffCheck, "Debuffs");
-
-            foreach (var mobid in _mobsToDebuff)
+            using (_log.Trace())
             {
+                //e3util.PrintTimerStatus(_debuffTimers, ref _nextDebuffCheck, "Debuffs");
 
-                CastLongTermSpell(mobid, E3._characterSettings.Debuffs_Command, _debuffTimers);
-                if (E3._actionTaken) return;
-            }
-            foreach (var mobid in _deadMobs)
-            {
-                _mobsToDot.Remove(mobid);
-                _mobsToDebuff.Remove(mobid);
-            }
-            if (_deadMobs.Count > 0) _deadMobs.Clear();
+                foreach (var mobid in _mobsToDebuff)
+                {
 
-            //put us back to our assist target
-            Int32 targetId = MQ.Query<Int32>("${Target.ID}");
-            if (targetId != Assist._assistTargetID)
-            {
-                Casting.TrueTarget(Assist._assistTargetID);
+                    CastLongTermSpell(mobid, E3._characterSettings.Debuffs_Command, _debuffTimers);
+                    if (E3._actionTaken) return;
+                }
+                foreach (var mobid in _deadMobs)
+                {
+                    _mobsToDot.Remove(mobid);
+                    _mobsToDebuff.Remove(mobid);
+                }
+                if (_deadMobs.Count > 0) _deadMobs.Clear();
 
+                //put us back to our assist target
+                Int32 targetId = MQ.Query<Int32>("${Target.ID}");
+                if (targetId != Assist._assistTargetID)
+                {
+                    Casting.TrueTarget(Assist._assistTargetID);
+
+                }
             }
 
         }
@@ -165,26 +168,28 @@ namespace E3Core.Processors
 
 
             if (!e3util.ShouldCheck(ref _nextDoTCheck, _nextDoTCheckInterval)) return;
-           // e3util.PrintTimerStatus(_dotTimers, ref _nextDoTCheck, "Damage over Time");
-
-            foreach (var mobid in _mobsToDot)
+            // e3util.PrintTimerStatus(_dotTimers, ref _nextDoTCheck, "Damage over Time");
+            using (_log.Trace())
             {
-                CastLongTermSpell(mobid, E3._characterSettings.Dots_OnCommand, _dotTimers);
-                if (E3._actionTaken) return;
-            }
-            foreach (var mobid in _deadMobs)
-            {
-                _mobsToDot.Remove(mobid);
-                _mobsToDebuff.Remove(mobid);
-            }
-            if (_deadMobs.Count > 0) _deadMobs.Clear();
+                foreach (var mobid in _mobsToDot)
+                {
+                    CastLongTermSpell(mobid, E3._characterSettings.Dots_OnCommand, _dotTimers);
+                    if (E3._actionTaken) return;
+                }
+                foreach (var mobid in _deadMobs)
+                {
+                    _mobsToDot.Remove(mobid);
+                    _mobsToDebuff.Remove(mobid);
+                }
+                if (_deadMobs.Count > 0) _deadMobs.Clear();
 
-            //put us back to our assist target
-            Int32 targetId = MQ.Query<Int32>("${Target.ID}");
-            if (targetId != Assist._assistTargetID)
-            {
-                Casting.TrueTarget(Assist._assistTargetID);
+                //put us back to our assist target
+                Int32 targetId = MQ.Query<Int32>("${Target.ID}");
+                if (targetId != Assist._assistTargetID)
+                {
+                    Casting.TrueTarget(Assist._assistTargetID);
 
+                }
             }
         }
         public static void DotsOn(Int32 mobid)
@@ -253,7 +258,7 @@ namespace E3Core.Processors
 
             EventProcessor.RegisterCommand("/offassistignore", (x) =>
             {
-                if (x.args.Count ==3)
+                if (x.args.Count == 3)
                 {
                     string command = x.args[1].ToLower();
                     Int32 targetid;
@@ -262,7 +267,7 @@ namespace E3Core.Processors
                         if (command == "add")
                         {
                             E3._bots.Broadcast($"Trying to add {targetid} to the off assist ignore list.");
-                            if(!_mobsToIgnoreOffAsist.Contains(targetid))
+                            if (!_mobsToIgnoreOffAsist.Contains(targetid))
                             {
                                 _mobsToIgnoreOffAsist.Add(targetid);
                             }
@@ -274,8 +279,8 @@ namespace E3Core.Processors
                             _mobsToIgnoreOffAsist.Remove(targetid);
                         }
                     }
-                } 
-                else if(x.args.Count==2)
+                }
+                else if (x.args.Count == 2)
                 {
                     string command = x.args[0].ToLower();
                     Int32 targetid;
@@ -470,8 +475,8 @@ namespace E3Core.Processors
                 timers.Add(mobid, ts);
             }
         }
-       
-       
+
+
     }
 
 }
