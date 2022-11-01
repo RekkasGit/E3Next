@@ -8,9 +8,9 @@ namespace E3Core.Processors
 {
     public static class Sell
     {
-        public static Logging _log = E3._log;
-        private static IMQ MQ = E3.MQ;
-        private static ISpawns _spawns = E3._spawns;
+        public static Logging _log = E3.Log;
+        private static IMQ MQ = E3.Mq;
+        private static ISpawns _spawns = E3.Spawns;
 
 
         [SubSystemInit]
@@ -77,7 +77,7 @@ namespace E3Core.Processors
             bool merchantWindowOpen = MQ.Query<bool>("${Window[MerchantWnd].Open}");
             if (!merchantWindowOpen)
             {
-                E3._bots.Broadcast("\arError: <AutoSell> Merchant window not open. Exiting");
+                E3.Bots.Broadcast("\arError: <AutoSell> Merchant window not open. Exiting");
                 return;
             }
             //scan through our inventory looking for an item with a stackable
@@ -114,7 +114,7 @@ namespace E3Core.Processors
                                 }
                                 if (sellingItemText != itemName)
                                 {
-                                    E3._bots.Broadcast($"\arERROR: Selling item cannot get vendor to select, exiting. Item:{itemName}");
+                                    E3.Bots.Broadcast($"\arERROR: Selling item cannot get vendor to select, exiting. Item:{itemName}");
                                 }
                                 //we have the item selected via the vendor, sell it.
                                 bool sellButtonEnabled = MQ.Query<bool>("${Window[MerchantWnd].Child[MW_Sell_Button].Enabled}");
@@ -138,7 +138,7 @@ namespace E3Core.Processors
                                 string tItemName = MQ.Query<String>($"${{Me.Inventory[pack{i}].Item[{e}]}}");
                                 if (itemName == tItemName)
                                 {
-                                    E3._bots.Broadcast($"\arERROR: Selling item. Item:{itemName} Tried to sell but still in inventory. PrimarySlot:{i} bagslot:{e}");
+                                    E3.Bots.Broadcast($"\arERROR: Selling item. Item:{itemName} Tried to sell but still in inventory. PrimarySlot:{i} bagslot:{e}");
 
                                 }
                             }
@@ -153,7 +153,7 @@ namespace E3Core.Processors
             var windowOpen = MQ.Query<bool>("${Window[BigBankWnd].Open}");
             if (!windowOpen)
             {
-                E3._bots.Broadcast("\arError: <AutoStack> Merchant window not open. Exiting");
+                E3.Bots.Broadcast("\arError: <AutoStack> Merchant window not open. Exiting");
             }
 
             for (int i = 1; i <= 10; i++)

@@ -18,9 +18,9 @@ namespace E3Core.Classes
     public static class Shaman
     {
 
-        private static Logging _log = E3._log;
-        private static IMQ MQ = E3.MQ;
-        private static ISpawns _spawns = E3._spawns;
+        private static Logging _log = E3.Log;
+        private static IMQ MQ = E3.Mq;
+        private static ISpawns _spawns = E3.Spawns;
 
         private static Int64 _nextAggroCheck = 0;
         private static Int64 _nextAggroRefreshTimeInterval = 1000;
@@ -38,51 +38,61 @@ namespace E3Core.Classes
 
             if (!e3util.ShouldCheck(ref _nextAggroCheck, _nextAggroRefreshTimeInterval)) return;
 
-            BuffCheck.DropBuff("Inconspicuous Totem");
-
-            Int32 currentAggro = 0;
-            Int32 tempMaxAggro = 0;
-
-            for (Int32 i = 1; i <= 13; i++)
+            using(_log.Trace())
             {
-                bool autoHater = MQ.Query<bool>($"${{Me.XTarget[{i}].TargetType.Equal[Auto Hater]}}");
-                if (!autoHater) continue;
-                Int32 mobId = MQ.Query<Int32>($"${{Me.XTarget[{i}].ID}}");
-                if (mobId > 0)
+                using(_log.Trace("TotemDrop"))
                 {
-                    Spawn s;
-                    if (_spawns.TryByID(mobId, out s))
+                    if(BuffCheck.HasBuff("Inconspicuous Totem"))
                     {
-                        if (s.Aggressive)
+                        BuffCheck.DropBuff("Inconspicuous Totem");
+                    }
+                }
+                Int32 currentAggro = 0;
+                Int32 tempMaxAggro = 0;
+                using (_log.Trace("XTargetCheck"))
+                {
+                    for (Int32 i = 1; i <= 13; i++)
+                    {
+                        bool autoHater = MQ.Query<bool>($"${{Me.XTarget[{i}].TargetType.Equal[Auto Hater]}}");
+                        if (!autoHater) continue;
+                        Int32 mobId = MQ.Query<Int32>($"${{Me.XTarget[{i}].ID}}");
+                        if (mobId > 0)
                         {
-                            currentAggro = MQ.Query<Int32>($"${{Me.XTarget[{i}].PctAggro}}");
-                            if (tempMaxAggro < currentAggro)
+                            Spawn s;
+                            if (_spawns.TryByID(mobId, out s))
                             {
-                                tempMaxAggro = currentAggro;
+                                if (s.Aggressive)
+                                {
+                                    currentAggro = MQ.Query<Int32>($"${{Me.XTarget[{i}].PctAggro}}");
+                                    if (tempMaxAggro < currentAggro)
+                                    {
+                                        tempMaxAggro = currentAggro;
+                                    }
+                                }
                             }
                         }
                     }
                 }
-            }
-            if (tempMaxAggro > _maxAggroCap)
-            {
-
-                Spell s;
-                if (!Spell._loadedSpellsByName.TryGetValue("Inconspicuous Totem", out s))
-                {
-                    s = new Spell("Inconspicuous Totem");
-                }
-                if (Casting.CheckReady(s) && Casting.CheckMana(s))
-                {
-                    Casting.Cast(0, s);
-                    MQ.Delay(400);
-                    BuffCheck.DropBuff("Inconspicuous Totem");
-                    return;
-                }
                
-            }
-            
+                if (tempMaxAggro > _maxAggroCap)
+                {
 
+                    Spell s;
+                    if (!Spell._loadedSpellsByName.TryGetValue("Inconspicuous Totem", out s))
+                    {
+                        s = new Spell("Inconspicuous Totem");
+                    }
+                    if (Casting.CheckReady(s) && Casting.CheckMana(s))
+                    {
+                        Casting.Cast(0, s);
+                        MQ.Delay(400);
+                        BuffCheck.DropBuff("Inconspicuous Totem");
+                        return;
+                    }
+
+                }
+            }
+        
         }
 
         /// <summary>
@@ -94,21 +104,25 @@ namespace E3Core.Classes
             if (!e3util.ShouldCheck(ref _nextTotemCheck, _nextTotemRefreshTimeInterval)) return;
             if(Movement._anchorTarget>0)
             {
-                bool idolUp = MQ.Query<bool>("${Bool[${Spawn[Spirit Idol]}]}");
-            
-                if (!idolUp)
+                using (_log.Trace())
                 {
-                    Spell s;
-                    if (!Spell._loadedSpellsByName.TryGetValue("Idol of Malos", out s))
+                    bool idolUp = MQ.Query<bool>("${Bool[${Spawn[Spirit Idol]}]}");
+
+                    if (!idolUp)
                     {
-                        s = new Spell("Idol of Malos");
-                    }
-                    if (Casting.CheckReady(s) && Casting.CheckMana(s))
-                    {
-                        Casting.Cast(0, s);
-                        return;
+                        Spell s;
+                        if (!Spell._loadedSpellsByName.TryGetValue("Idol of Malos", out s))
+                        {
+                            s = new Spell("Idol of Malos");
+                        }
+                        if (Casting.CheckReady(s) && Casting.CheckMana(s))
+                        {
+                            Casting.Cast(0, s);
+                            return;
+                        }
                     }
                 }
+                
             }
 
 

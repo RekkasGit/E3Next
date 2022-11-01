@@ -11,7 +11,7 @@ namespace E3Core.Processors
 {
     public class Heals : BaseProcessor
     {
-        public static ISpawns _spawns = E3._spawns;
+        public static ISpawns _spawns = E3.Spawns;
 
         private static Int64 _nextHealCheck = 0;
         private static Int64 _nextHealCheckInterval = 250;
@@ -19,38 +19,38 @@ namespace E3Core.Processors
         [AdvSettingInvoke]
         public static void Check_Heals()
         {
-            if (E3._isInvis) return;
+            if (E3.IsInvis) return;
             if (!Basics.InCombat())
             {
                 if (!e3util.ShouldCheck(ref _nextHealCheck, _nextHealCheckInterval)) return;
 
             }
-            //using (_log.Trace())
+            using (_log.Trace())
             {
                 //grabbing these values now and reusing them
                 Int32 currentMana = MQ.Query<Int32>("${Me.CurrentMana}");
                 Int32 pctMana = MQ.Query<Int32>("${Me.PctMana}");
-                if (E3._characterSettings.HealTanks.Count > 0 && E3._characterSettings.HealTankTargets.Count > 0)
+                if (E3.CharacterSettings.HealTanks.Count > 0 && E3.CharacterSettings.HealTankTargets.Count > 0)
                 {
                     HealTanks(currentMana, pctMana);
-                    if (E3._actionTaken)
+                    if (E3.ActionTaken)
                     {   //update values
                         currentMana = MQ.Query<Int32>("${Me.CurrentMana}");
                         pctMana = MQ.Query<Int32>("${Me.PctMana}");
                     }
                 }
-                if (!E3._actionTaken && E3._characterSettings.HealXTarget.Count > 0)
+                if (!E3.ActionTaken && E3.CharacterSettings.HealXTarget.Count > 0)
                 {
                     HealXTargets(currentMana, pctMana);
                 }
-                if (!E3._actionTaken) GroupHeals(currentMana, pctMana);
-                if (!E3._actionTaken) HealImportant(currentMana, pctMana);
-                if (!E3._actionTaken) HealAll(currentMana, pctMana);
-                if (!E3._actionTaken) HoTTanks(currentMana, pctMana);
-                if (!E3._actionTaken) HoTImportant(currentMana, pctMana);
-                if (!E3._actionTaken) HoTAll(currentMana, pctMana);
-                if (!E3._actionTaken) HealPets(currentMana, pctMana);
-                if (!E3._actionTaken) HoTPets(currentMana, pctMana);
+                if (!E3.ActionTaken) GroupHeals(currentMana, pctMana);
+                if (!E3.ActionTaken) HealImportant(currentMana, pctMana);
+                if (!E3.ActionTaken) HealAll(currentMana, pctMana);
+                if (!E3.ActionTaken) HoTTanks(currentMana, pctMana);
+                if (!E3.ActionTaken) HoTImportant(currentMana, pctMana);
+                if (!E3.ActionTaken) HoTAll(currentMana, pctMana);
+                if (!E3.ActionTaken) HealPets(currentMana, pctMana);
+                if (!E3.ActionTaken) HoTPets(currentMana, pctMana);
             }
         }
 
@@ -58,23 +58,23 @@ namespace E3Core.Processors
 
         public static bool HealTanks(Int32 currentMana, Int32 pctMana)
         {
-            if (E3._characterSettings.WhoToHeal.Contains("Tanks"))
+            if (E3.CharacterSettings.WhoToHeal.Contains("Tanks"))
             {
-                return Heal(currentMana, pctMana, E3._characterSettings.HealTankTargets, E3._characterSettings.HealTanks);
+                return Heal(currentMana, pctMana, E3.CharacterSettings.HealTankTargets, E3.CharacterSettings.HealTanks);
             }
             return false;
         }
         public static bool HealImportant(Int32 currentMana, Int32 pctMana)
         {
-            if (E3._characterSettings.WhoToHeal.Contains("ImportantBots"))
+            if (E3.CharacterSettings.WhoToHeal.Contains("ImportantBots"))
             {
-                return Heal(currentMana, pctMana, E3._characterSettings.HealImportantBotTargets, E3._characterSettings.HealImportantBots);
+                return Heal(currentMana, pctMana, E3.CharacterSettings.HealImportantBotTargets, E3.CharacterSettings.HealImportantBots);
             }
             return false;
         }
         public static bool HealXTargets(Int32 currentMana, Int32 pctMana, bool JustCheck = false)
         {
-            if (!E3._characterSettings.WhoToHeal.Contains("XTargets"))
+            if (!E3.CharacterSettings.WhoToHeal.Contains("XTargets"))
             {
                 return false;
             }
@@ -117,7 +117,7 @@ namespace E3Core.Processors
             //found someone to heal
             if (lowestHealthTargetid > 0 && currentLowestHealth < 95)
             {
-                foreach (var spell in E3._characterSettings.HealXTarget)
+                foreach (var spell in E3.CharacterSettings.HealXTarget)
                 {
                     recastSpell:
                     if (spell.Mana > currentMana)
@@ -144,7 +144,7 @@ namespace E3Core.Processors
                                     pctMana = MQ.Query<Int32>("${Me.PctMana}");
                                     goto recastSpell;
                                 }
-                                E3._actionTaken = true;
+                                E3.ActionTaken = true;
                                 return true;
                             }
                         }
@@ -157,53 +157,53 @@ namespace E3Core.Processors
 
         public static void HoTPets(Int32 currentMana, Int32 pctMana)
         {
-            if (E3._characterSettings.WhoToHoT.Contains("Pets"))
+            if (E3.CharacterSettings.WhoToHoT.Contains("Pets"))
             {
-                HealOverTime(currentMana, pctMana, E3._characterSettings.HealPetOwners, E3._characterSettings.HealOverTime);
+                HealOverTime(currentMana, pctMana, E3.CharacterSettings.HealPetOwners, E3.CharacterSettings.HealOverTime);
             }
         }
         public static void HealPets(Int32 currentMana, Int32 pctMana)
         {
-            if (E3._characterSettings.WhoToHeal.Contains("Pets"))
+            if (E3.CharacterSettings.WhoToHeal.Contains("Pets"))
             {
-                Heal(currentMana, pctMana, E3._characterSettings.HealPetOwners, E3._characterSettings.HealPets);
+                Heal(currentMana, pctMana, E3.CharacterSettings.HealPetOwners, E3.CharacterSettings.HealPets);
 
             }
         }
         public static void HoTAll(Int32 currentMana, Int32 pctMana)
         {
-            if (E3._characterSettings.WhoToHoT.Contains("All"))
+            if (E3.CharacterSettings.WhoToHoT.Contains("All"))
             {
-                List<string> targets = E3._bots.BotsConnected();
-                HealOverTime(currentMana, pctMana, targets, E3._characterSettings.HealOverTime);
+                List<string> targets = E3.Bots.BotsConnected();
+                HealOverTime(currentMana, pctMana, targets, E3.CharacterSettings.HealOverTime);
             }
         }
         public static void HoTImportant(Int32 currentMana, Int32 pctMana)
         {
-            if (E3._characterSettings.WhoToHoT.Contains("ImportantBots"))
+            if (E3.CharacterSettings.WhoToHoT.Contains("ImportantBots"))
             {
-                HealOverTime(currentMana, pctMana, E3._characterSettings.HealImportantBotTargets, E3._characterSettings.HealOverTime);
+                HealOverTime(currentMana, pctMana, E3.CharacterSettings.HealImportantBotTargets, E3.CharacterSettings.HealOverTime);
             }
         }
         public static void HoTTanks(Int32 currentMana, Int32 pctMana)
         {
-            if (E3._characterSettings.WhoToHoT.Contains("Tanks"))
+            if (E3.CharacterSettings.WhoToHoT.Contains("Tanks"))
             {
-                HealOverTime(currentMana, pctMana, E3._characterSettings.HealTankTargets, E3._characterSettings.HealOverTime);
+                HealOverTime(currentMana, pctMana, E3.CharacterSettings.HealTankTargets, E3.CharacterSettings.HealOverTime);
             }
         }
         public static void HealAll(Int32 currentMana, Int32 pctMana)
         {
-            if (E3._characterSettings.WhoToHeal.Contains("All"))
+            if (E3.CharacterSettings.WhoToHeal.Contains("All"))
             {
                 //get a list from netbots
-                List<string> targets = E3._bots.BotsConnected();
-                Heal(currentMana, pctMana, targets, E3._characterSettings.HealAll);
+                List<string> targets = E3.Bots.BotsConnected();
+                Heal(currentMana, pctMana, targets, E3.CharacterSettings.HealAll);
             }
         }
         public static void GroupHeals(Int32 currentMana, Int32 pctMana)
         {
-            foreach (var spell in E3._characterSettings.HealGroup)
+            foreach (var spell in E3.CharacterSettings.HealGroup)
             {
                 Int32 numberNeedingHeal = MQ.Query<Int32>($"${{Group.Injured[{spell.HealPct}]}}");
                 if (numberNeedingHeal > 2)
@@ -227,7 +227,7 @@ namespace E3Core.Processors
                             pctMana = MQ.Query<Int32>("${Me.PctMana}");
                             goto recastSpell;
                         }
-                        E3._actionTaken = true;
+                        E3.ActionTaken = true;
                         return;
                     }
 
@@ -240,28 +240,28 @@ namespace E3Core.Processors
         /// <returns>true if a heal is needed, otherwise false</returns>
         public static bool SomeoneNeedsHealing(Int32 currentMana, Int32 pctMana)
         {
-            if (!((E3._currentClass & Data.Class.Priest) == E3._currentClass))
+            if (!((E3.CurrentClass & Data.Class.Priest) == E3.CurrentClass))
             {
                 return false;
             }
 
             //Int32 currentMana = MQ.Query<Int32>("${Me.CurrentMana}");
             //Int32 pctMana = MQ.Query<Int32>("${Me.PctMana}");
-            if (E3._characterSettings.WhoToHeal.Contains("Tanks"))
+            if (E3.CharacterSettings.WhoToHeal.Contains("Tanks"))
             {
-                if (Heal(currentMana, pctMana, E3._characterSettings.HealTankTargets, E3._characterSettings.HealTanks, false, true))
+                if (Heal(currentMana, pctMana, E3.CharacterSettings.HealTankTargets, E3.CharacterSettings.HealTanks, false, true))
                 {
                     return true;
                 }
             }
-            if (E3._characterSettings.WhoToHeal.Contains("ImportantBots"))
+            if (E3.CharacterSettings.WhoToHeal.Contains("ImportantBots"))
             {
-                if (Heal(currentMana, pctMana, E3._characterSettings.HealImportantBotTargets, E3._characterSettings.HealImportantBots, false, true))
+                if (Heal(currentMana, pctMana, E3.CharacterSettings.HealImportantBotTargets, E3.CharacterSettings.HealImportantBots, false, true))
                 {
                     return true;
                 }
             }
-            if (E3._characterSettings.HealXTarget.Count > 0)
+            if (E3.CharacterSettings.HealXTarget.Count > 0)
             {
                 if (HealXTargets(currentMana, pctMana, true))
                 {
@@ -329,7 +329,7 @@ namespace E3Core.Processors
                                     if (!String.IsNullOrWhiteSpace(spell.CheckFor))
                                     {
 
-                                        if (E3._bots.BuffList(name).Contains(spell.CheckForID))
+                                        if (E3.Bots.BuffList(name).Contains(spell.CheckForID))
                                         {
                                             //they have the buff, kick out
                                             continue;
@@ -363,7 +363,7 @@ namespace E3Core.Processors
                                                     pctMana = MQ.Query<Int32>("${Me.PctMana}");
                                                     goto recastSpell;
                                                 }
-                                                E3._actionTaken = true;
+                                                E3.ActionTaken = true;
                                                 return true;
                                             }
                                         }
@@ -371,16 +371,16 @@ namespace E3Core.Processors
                                 }
                             }
                             //check netbots
-                            bool botInZone = E3._bots.InZone(name);
+                            bool botInZone = E3.Bots.InZone(name);
                             if (botInZone)
                             {
                                 //they are a netbots and they are in zone
-                                Int32 pctHealth = E3._bots.PctHealth(name);
+                                Int32 pctHealth = E3.Bots.PctHealth(name);
                                 foreach (var spell in spells)
                                 {
                                     if (!String.IsNullOrWhiteSpace(spell.CheckFor))
                                     {
-                                        if (E3._bots.BuffList(name).Contains(spell.CheckForID))
+                                        if (E3.Bots.BuffList(name).Contains(spell.CheckForID))
                                         {
                                             //they have the buff, kick out
                                             continue;
@@ -411,7 +411,7 @@ namespace E3Core.Processors
                                                     pctMana = MQ.Query<Int32>("${Me.PctMana}");
                                                     goto recastSpell;
                                                 }
-                                                E3._actionTaken = true;
+                                                E3.ActionTaken = true;
                                                 return true;
                                             }
                                         }
@@ -470,11 +470,11 @@ namespace E3Core.Processors
                             if (targetType == "PC")
                             {
                                 //check bots
-                                bool botInZone = E3._bots.InZone(name);
+                                bool botInZone = E3.Bots.InZone(name);
                                 if (botInZone)
                                 {
                                     //they are a netbots and they are in zone
-                                    Int32 pctHealth = E3._bots.PctHealth(name);
+                                    Int32 pctHealth = E3.Bots.PctHealth(name);
                                     foreach (var spell in spells)
                                     {
                                         recastSpell:
@@ -492,7 +492,7 @@ namespace E3Core.Processors
                                         {
                                             if (pctHealth <= spell.HealPct)
                                             {
-                                                if (!E3._bots.HasShortBuff(name, spell.SpellID))
+                                                if (!E3.Bots.HasShortBuff(name, spell.SpellID))
                                                 {
                                                     if (Casting.CheckReady(spell))
                                                     {
@@ -502,7 +502,7 @@ namespace E3Core.Processors
                                                             pctMana = MQ.Query<Int32>("${Me.PctMana}");
                                                             goto recastSpell;
                                                         }
-                                                        E3._actionTaken = true;
+                                                        E3.ActionTaken = true;
                                                         return;
                                                     }
                                                 }
@@ -521,7 +521,7 @@ namespace E3Core.Processors
         {
             Int32 pctHps = MQ.Query<Int32>("${Me.PctHPs}");
             Int32 myID = MQ.Query<Int32>("${Me.ID}");
-            foreach(var spell in E3._characterSettings.LifeSupport)
+            foreach(var spell in E3.CharacterSettings.LifeSupport)
             {
                 if(pctHps<spell.HealPct)
                 {

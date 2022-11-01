@@ -17,9 +17,9 @@ namespace E3Core.Classes
     /// </summary>
     public static class Cleric
     {
-        private static Logging _log = E3._log;
-        private static IMQ MQ = E3.MQ;
-        private static ISpawns _spawns = E3._spawns;
+        private static Logging _log = E3.Log;
+        private static IMQ MQ = E3.Mq;
+        private static ISpawns _spawns = E3.Spawns;
         private static bool _isInit = false;
 
 

@@ -64,9 +64,9 @@ namespace E3Core.Processors
 
     public static class GiveMe
     {
-        public static Logging _log = E3._log;
-        private static IMQ MQ = E3.MQ;
-        private static ISpawns _spawns = E3._spawns;
+        public static Logging _log = E3.Log;
+        private static IMQ MQ = E3.Mq;
+        private static ISpawns _spawns = E3.Spawns;
         private static Dictionary<string, Int32> _groupSpellLimits = new Dictionary<string, int>();
         private static Dictionary<string, Data.Spell> _groupSpellRequests = new Dictionary<string, Data.Spell>(StringComparer.OrdinalIgnoreCase);
         private static Int64 _nextSupplyCheck = 0;
@@ -83,7 +83,7 @@ namespace E3Core.Processors
             _groupSpellRequests.Add("Sanguine Mind Crystal III", new Spell("Sanguine Mind Crystal"));
             _groupSpellRequests.Add("Molten orb", new Spell("Summon: Molten Orb"));
 
-            foreach (var input in E3._characterSettings.Gimme)
+            foreach (var input in E3.CharacterSettings.Gimme)
             {
                 var item = new GiveMeItem(input);
                 if (!(String.IsNullOrWhiteSpace(item.Supplier) || String.IsNullOrWhiteSpace(item.ItemName)))
@@ -122,7 +122,7 @@ namespace E3Core.Processors
                     {
                         Int32.TryParse(x.args[2], out qty);
                     }
-                    E3._bots.BroadcastCommandToPerson(user, $"/giveme {user} \"{something}\" {qty} {E3._currentName}");
+                    E3.Bots.BroadcastCommandToPerson(user, $"/giveme {user} \"{something}\" {qty} {E3.CurrentName}");
                 }
             });
 
@@ -161,10 +161,10 @@ namespace E3Core.Processors
 
                                 if (s.Distance < 100)
                                 {
-                                    if (E3._bots.BotsConnected().Contains(s.CleanName))
+                                    if (E3.Bots.BotsConnected().Contains(s.CleanName))
                                     {
                                         //lets ask for it!
-                                        E3._bots.BroadcastCommandToPerson(item.Supplier, $"/giveme {item.Supplier} \"{item.ItemName}\" {1} {E3._currentName}");
+                                        E3.Bots.BroadcastCommandToPerson(item.Supplier, $"/giveme {item.Supplier} \"{item.ItemName}\" {1} {E3.CurrentName}");
                                     }
                                 }
 
@@ -232,7 +232,7 @@ namespace E3Core.Processors
                     if (Casting.CheckReady(s) && Casting.CheckMana(s))
                     {
                         //lets tell everyone else to destroy their items and destroy our own.
-                        E3._bots.BroadcastCommandToGroup($"/DestroyNoRent \"{whatToGive}\"");
+                        E3.Bots.BroadcastCommandToGroup($"/DestroyNoRent \"{whatToGive}\"");
                         e3util.DeleteNoRentItem(whatToGive);
                         MQ.Delay(2000);
                         Casting.Cast(0, s);

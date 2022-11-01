@@ -14,9 +14,9 @@ namespace E3Core.Utility
     {
 
         public static string _lastSuccesfulCast = String.Empty;
-        public static Logging _log = E3._log;
-        private static IMQ MQ = E3.MQ;
-        private static ISpawns _spawns = E3._spawns;
+        public static Logging _log = E3.Log;
+        private static IMQ MQ = E3.Mq;
+        private static ISpawns _spawns = E3.Spawns;
         /// <summary>
         /// Use to see if a certain method should be running
         /// </summary>
@@ -200,45 +200,45 @@ namespace E3Core.Utility
 
         private static bool FilterReturnCheck(List<string> inputs, ref bool returnValue, bool inputSetValue)
         {
-            if (inputs.Contains(E3._currentName, StringComparer.OrdinalIgnoreCase))
+            if (inputs.Contains(E3.CurrentName, StringComparer.OrdinalIgnoreCase))
             {
                 return inputSetValue;
             }
-            if (inputs.Contains(E3._currentShortClassString, StringComparer.OrdinalIgnoreCase))
+            if (inputs.Contains(E3.CurrentShortClassString, StringComparer.OrdinalIgnoreCase))
             {
                 returnValue = inputSetValue;
             }
             if (inputs.Contains("Healers", StringComparer.OrdinalIgnoreCase))
             {
-                if ((E3._currentClass & Class.Priest) == E3._currentClass)
+                if ((E3.CurrentClass & Class.Priest) == E3.CurrentClass)
                 {
                     returnValue = inputSetValue;
                 }
             }
             if (inputs.Contains("Tanks", StringComparer.OrdinalIgnoreCase))
             {
-                if ((E3._currentClass & Class.Tank) == E3._currentClass)
+                if ((E3.CurrentClass & Class.Tank) == E3.CurrentClass)
                 {
                     returnValue = inputSetValue;
                 }
             }
             if (inputs.Contains("Melee", StringComparer.OrdinalIgnoreCase))
             {
-                if ((E3._currentClass & Class.Melee) == E3._currentClass)
+                if ((E3.CurrentClass & Class.Melee) == E3.CurrentClass)
                 {
                     returnValue = inputSetValue;
                 }
             }
             if (inputs.Contains("Casters", StringComparer.OrdinalIgnoreCase))
             {
-                if ((E3._currentClass & Class.Caster) == E3._currentClass)
+                if ((E3.CurrentClass & Class.Caster) == E3.CurrentClass)
                 {
                     returnValue = inputSetValue;
                 }
             }
             if (inputs.Contains("Ranged", StringComparer.OrdinalIgnoreCase))
             {
-                if ((E3._currentClass & Class.Ranged) == E3._currentClass)
+                if ((E3.CurrentClass & Class.Ranged) == E3.CurrentClass)
                 {
                     returnValue = inputSetValue;
                 }
@@ -380,7 +380,7 @@ namespace E3Core.Utility
                     MQ.Cmd("/autoinventory");
                     if(autoinvItem!="NULL")
                     {
-                        E3._bots.Broadcast($"\agAutoInventory\aw:\ao{autoinvItem}");
+                        E3.Bots.Broadcast($"\agAutoInventory\aw:\ao{autoinvItem}");
                     }
                 }
                 cursorID = MQ.Query<Int32>("${Cursor.ID}");
@@ -407,21 +407,25 @@ namespace E3Core.Utility
                     if(isNoRent)
                     {
                         MQ.Cmd("/destroy");
-                        MQ.Delay(300);
+                        MQ.Delay(300);                        
                     }
                     ClearCursor();
                 }
             }
         }
-        public static void GiveItemOnCursorToTarget()
+        public static void GiveItemOnCursorToTarget(bool moveBackToOriginalLocation = true)
         {
 
             double currentX = MQ.Query<double>("${Me.X}");
             double currentY = MQ.Query<double>("${Me.Y}");
             TryMoveToTarget();
             MQ.Cmd("/click left target");
-            MQ.Delay(3000, "${Window[TradeWnd].Open}");
-            bool windowOpen = MQ.Query<bool>("${Window[TradeWnd].Open}");
+            var targetType = MQ.Query<string>("${Target.Type}");
+            var windowType = string.Equals(targetType, "PC", StringComparison.OrdinalIgnoreCase) ? "TradeWnd" : "GiveWnd";
+            var buttonType = string.Equals(targetType, "PC", StringComparison.OrdinalIgnoreCase) ? "TRDW_Trade_Button" : "GVW_Give_Button";
+            var windowOpenQuery = $"${{Window[{windowType}].Open}}";
+            MQ.Delay(3000, windowOpenQuery);
+            bool windowOpen = MQ.Query<bool>(windowOpenQuery);
             if(!windowOpen)
             {
                 MQ.Write("\arError could not give target what is on our cursor, putting it in inventory");
@@ -432,9 +436,10 @@ namespace E3Core.Utility
             }
             Int32 waitCounter = 0;
             waitAcceptLoop:
-            MQ.Cmd("/notify GiveWnd GVW_Give_Button LeftMouseUp");
-            MQ.Delay(1000, "!${Window[TradeWnd].Open}");
-            windowOpen = MQ.Query<bool>("${Window[TradeWnd].Open}");
+            var command = $"/notify {windowType} {buttonType} leftmouseup";
+            MQ.Cmd(command);
+            MQ.Delay(1000, $"!{windowOpenQuery}");
+            windowOpen = MQ.Query<bool>(windowOpenQuery);
             if(windowOpen)
             {
                 waitCounter++;
@@ -446,7 +451,10 @@ namespace E3Core.Utility
             }
             MQ.Cmd("/keypress esc");
             //lets go back to our location
-            e3util.TryMoveToLoc(currentX, currentY);
+            if (moveBackToOriginalLocation)
+            {
+                e3util.TryMoveToLoc(currentX, currentY);
+            }
         }
         public static void RegisterCommandWithTarget(string command, Action<int> FunctionToExecute)
         {
@@ -470,7 +478,7 @@ namespace E3Core.Utility
                     if (targetID > 0)
                     {
                         //we are telling people to follow us
-                        E3._bots.BroadcastCommandToGroup($"{command} {targetID}");
+                        E3.Bots.BroadcastCommandToGroup($"{command} {targetID}");
                         FunctionToExecute(targetID);
                     }
                     else

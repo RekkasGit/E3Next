@@ -13,8 +13,8 @@ namespace E3Core.Settings
     public abstract class BaseSettings
     {
 
-        public static Logging _log = E3._log;
-        protected static IMQ MQ = E3.MQ;
+        public static Logging _log = E3.Log;
+        protected static IMQ MQ = E3.Mq;
 
         protected static string _macroFolder = MQ.Query<string>("${MacroQuest.Path[macros]}");
         protected static string _configFolder = MQ.Query<string>("${MacroQuest.Path[config]}");
@@ -163,6 +163,27 @@ namespace E3Core.Settings
                         if (!String.IsNullOrWhiteSpace(data))
                         {
                             valueToSet = data;
+                        }
+                    }
+                }
+            }
+        }
+        public static void LoadKeyData<K, V>(string sectionKey, string Key, IniData parsedData, Dictionary<K, V> dictionary)
+        {
+            _log.Write($"{sectionKey} {Key}");
+            var section = parsedData.Sections[sectionKey];
+            if (section != null)
+            {
+                var keyData = section.GetKeyData(Key);
+                if (keyData != null)
+                {
+                    foreach (var data in keyData.ValueList)
+                    {
+                        if (!string.IsNullOrWhiteSpace(data))
+                        {
+                            var splits = data.Split('/');
+                            if (!(splits.Length > 1)) continue;
+                            dictionary.Add((K)(object)splits[0], (V)(object)splits[1]);
                         }
                     }
                 }

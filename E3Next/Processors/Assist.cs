@@ -19,9 +19,9 @@ namespace E3Core.Processors
         public static Boolean _isAssisting = false;
         public static Int32 _assistTargetID = 0;
 
-        private static Logging _log = E3._log;
-        private static IMQ MQ = E3.MQ;
-        private static ISpawns _spawns = E3._spawns;
+        private static Logging _log = E3.Log;
+        private static IMQ MQ = E3.Mq;
+        private static ISpawns _spawns = E3.Spawns;
         private static Int32 _assistStickDistance = 10;
         private static IList<string> _rangeTypes = new List<string>() { "Ranged", "Autofire" };
         private static IList<string> _meleeTypes = new List<string>() { "Melee" };
@@ -76,135 +76,138 @@ namespace E3Core.Processors
         public static void CheckAssistStatus()
         {
             if (!e3util.ShouldCheck(ref _nextAssistCheck, _nextAssistCheckInterval)) return;
-                        
-            if (_assistTargetID == 0) return;
-
-            Int32 targetId = MQ.Query<Int32>("${Target.ID}");
-
-
-            if (targetId == 0)
-            {
-                bool isCorpse = MQ.Query<bool>($"${{Spawn[id {_assistTargetID}].Type.Equal[Corpse]}}");
-                if(isCorpse)
-                {
-                    AssistOff();
-                    return;
-                }
-                if (!Casting.TrueTarget(_assistTargetID))
-                {
-                    AssistOff();
-                    return;
-                }
-            }
-            else if (targetId != _assistTargetID )
+            using (_log.Trace())
             {
 
-                Spawn ct;
-                _spawns.RefreshList();
-                if(_spawns.TryByID(targetId,out ct))
+
+                if (_assistTargetID == 0) return;
+
+                Int32 targetId = MQ.Query<Int32>("${Target.ID}");
+
+
+                if (targetId == 0)
                 {
-                    if(_allowControl)
+                    bool isCorpse = MQ.Query<bool>($"${{Spawn[id {_assistTargetID}].Type.Equal[Corpse]}}");
+                    if (isCorpse)
                     {
-                        _assistTargetID = targetId;
+                        AssistOff();
+                        return;
                     }
-                    else
+                    if (!Casting.TrueTarget(_assistTargetID))
                     {
-                        Casting.TrueTarget(_assistTargetID);
+                        AssistOff();
+                        return;
                     }
-
                 }
-             
-            }
-
-            Spawn s;
-            if (_spawns.TryByID(_assistTargetID, out s))
-            {
-
-                if (s.TypeDesc == "Corpse")
+                else if (targetId != _assistTargetID)
                 {
-                    //its dead jim
-                    AssistOff();
-                    return;
-                }
 
-                if (MQ.Query<bool>("${Me.Feigning}") && (E3._currentClass & Data.Class.FeignDeathClass) != E3._currentClass)
-                {
-                    MQ.Cmd("/stand");
-                    return;
-                }
-
-                //if range/melee
-                if (_rangeTypes.Contains(E3._characterSettings.Assist_Type, StringComparer.OrdinalIgnoreCase) || _meleeTypes.Contains(E3._characterSettings.Assist_Type, StringComparer.OrdinalIgnoreCase))
-                {
-                    //if melee
-                    if (_meleeTypes.Contains(E3._characterSettings.Assist_Type, StringComparer.OrdinalIgnoreCase))
+                    Spawn ct;
+                    _spawns.RefreshList();
+                    if (_spawns.TryByID(targetId, out ct))
                     {
-                        //we are melee lets check for enrage
-                        if (_assistIsEnraged && MQ.Query<bool>("${Me.Combat}"))
+                        if (_allowControl)
                         {
-                            MQ.Cmd("/attack off");
-                            return;
+                            _assistTargetID = targetId;
+                        }
+                        else
+                        {
+                            Casting.TrueTarget(_assistTargetID);
                         }
 
-                        if (MQ.Query<bool>("${Me.AutoFire}"))
+                    }
+
+                }
+
+                Spawn s;
+                if (_spawns.TryByID(_assistTargetID, out s))
+                {
+
+                    if (s.TypeDesc == "Corpse")
+                    {
+                        //its dead jim
+                        AssistOff();
+                        return;
+                    }
+
+                    if (MQ.Query<bool>("${Me.Feigning}") && (E3.CurrentClass & Data.Class.FeignDeathClass) != E3.CurrentClass)
+                    {
+                        MQ.Cmd("/stand");
+                        return;
+                    }
+
+                    //if range/melee
+                    if (_rangeTypes.Contains(E3.CharacterSettings.Assist_Type, StringComparer.OrdinalIgnoreCase) || _meleeTypes.Contains(E3.CharacterSettings.Assist_Type, StringComparer.OrdinalIgnoreCase))
+                    {
+                        //if melee
+                        if (_meleeTypes.Contains(E3.CharacterSettings.Assist_Type, StringComparer.OrdinalIgnoreCase))
                         {
-                            MQ.Delay(1000);
-                            //turn off autofire
-                            MQ.Cmd("/autofire");
-                            //delay is needed to give time for it to actually process
-                            MQ.Delay(1000);
-                        }
-                        if (!_allowControl)
-                        {
-                            if (!MQ.Query<bool>("${Me.Combat}"))
+                            //we are melee lets check for enrage
+                            if (_assistIsEnraged && MQ.Query<bool>("${Me.Combat}"))
                             {
-                                MQ.Cmd("/attack on");
+                                MQ.Cmd("/attack off");
+                                return;
+                            }
+
+                            if (MQ.Query<bool>("${Me.AutoFire}"))
+                            {
+                                MQ.Delay(1000);
+                                //turn off autofire
+                                MQ.Cmd("/autofire");
+                                //delay is needed to give time for it to actually process
+                                MQ.Delay(1000);
+                            }
+                            if (!_allowControl)
+                            {
+                                if (!MQ.Query<bool>("${Me.Combat}"))
+                                {
+                                    MQ.Cmd("/attack on");
+                                }
+                            }
+
+
+                            //are we sticking?
+                            if (!_allowControl && !MQ.Query<bool>("${Stick.Active}"))
+                            {
+                                StickToAssistTarget();
+                            }
+
+                        }
+                        else
+                        {
+                            //we be ranged!
+                            MQ.Cmd($"/squelch /face fast id {_assistTargetID}");
+
+                            if (MQ.Query<Decimal>("${Target.Distance}") > 200)
+                            {
+                                MQ.Cmd("/squelch /stick moveback 195");
+                            }
+
+                            if (!MQ.Query<bool>("${Me.AutoFire}"))
+                            {
+                                //delay is needed to give time for it to actually process
+                                MQ.Delay(1000);
+                                //turn on autofire
+                                MQ.Cmd("/autofire");
+                                //delay is needed to give time for it to actually process
+                                MQ.Delay(1000);
                             }
                         }
-                       
-
-                        //are we sticking?
-                        if (!_allowControl && !MQ.Query<bool>("${Stick.Active}"))
-                        {
-                            StickToAssistTarget();
-                        }
+                        //call combat abilites
+                        CombatAbilties();
 
                     }
-                    else
-                    {
-                        //we be ranged!
-                        MQ.Cmd($"/squelch /face fast id {_assistTargetID}");
 
-                        if (MQ.Query<Decimal>("${Target.Distance}") > 200)
-                        {
-                            MQ.Cmd("/squelch /stick moveback 195");
-                        }
 
-                        if (!MQ.Query<bool>("${Me.AutoFire}"))
-                        {
-                            //delay is needed to give time for it to actually process
-                            MQ.Delay(1000);
-                            //turn on autofire
-                            MQ.Cmd("/autofire");
-                            //delay is needed to give time for it to actually process
-                            MQ.Delay(1000);
-                        }
-                    }
-                    //call combat abilites
-                    CombatAbilties();
 
                 }
-
-             
-
+                else if (_assistTargetID > 0)
+                {
+                    //can't find the mob, yet we have an assistID? remove assist.
+                    AssistOff();
+                    return;
+                }
             }
-            else if (_assistTargetID > 0)
-            {
-                //can't find the mob, yet we have an assistID? remove assist.
-                AssistOff();
-                return;
-            }
-
         }
 
         /// <summary>
@@ -219,7 +222,7 @@ namespace E3Core.Processors
                 //yes we can, lets grab our current agro
                 Int32 pctAggro = MQ.Query<Int32>("${Me.PctAggro}");
                 // just use smarttaunt instead of old taunt logic
-                if (E3._characterSettings.Assist_SmartTaunt || E3._characterSettings.Assist_TauntEnabled)
+                if (E3.CharacterSettings.Assist_SmartTaunt || E3.CharacterSettings.Assist_TauntEnabled)
                 {
                     if (pctAggro < 100)
                     {
@@ -236,7 +239,7 @@ namespace E3Core.Processors
                                     {
                                         MQ.Cmd("/doability Taunt");
 
-                                        E3._bots.Broadcast($"Taunting {s.CleanName}: {tt.ClassShortName} - {tt.CleanName} has agro and not a tank");
+                                        E3.Bots.Broadcast($"Taunting {s.CleanName}: {tt.ClassShortName} - {tt.CleanName} has agro and not a tank");
 
                                     }
                                     else if (MQ.Query<bool>("${Me.AltAbilityReady[Divine Stun]}"))
@@ -263,13 +266,13 @@ namespace E3Core.Processors
                 //end smart taunt
 
                 //rogue/bards are special
-                if (E3._currentClass == Data.Class.Rogue && E3._characterSettings.Rogue_AutoEvade)
+                if (E3.CurrentClass == Data.Class.Rogue && E3.CharacterSettings.Rogue_AutoEvade)
                 {
                     Rogue.AutoEvade();
                 }
 
                 //lets do our abilities!
-                foreach (var ability in E3._characterSettings.MeleeAbilities)
+                foreach (var ability in E3.CharacterSettings.MeleeAbilities)
                 {
                     //why even check, if its not ready?
                     if (Casting.CheckReady(ability))
@@ -396,7 +399,7 @@ namespace E3Core.Processors
             if (mobID == 0)
             {
                 //something wrong with the assist, kickout
-                E3._bots.Broadcast("Cannot assist, improper mobid");
+                E3.Bots.Broadcast("Cannot assist, improper mobid");
                 return;
             }
             Spawn s;
@@ -406,18 +409,18 @@ namespace E3Core.Processors
 
                 if (s.TypeDesc == "Corpse")
                 {
-                    E3._bots.Broadcast("Cannot assist, a corpse");
+                    E3.Bots.Broadcast("Cannot assist, a corpse");
                     return;
                 }
                 if (!(s.TypeDesc == "NPC" || s.TypeDesc == "Pet"))
                 {
-                    E3._bots.Broadcast("Cannot assist, not a NPC or Pet");
+                    E3.Bots.Broadcast("Cannot assist, not a NPC or Pet");
                     return;
                 }
 
-                if (s.Distance3D > E3._generalSettings.Assists_MaxEngagedDistance)
+                if (s.Distance3D > E3.GeneralSettings.Assists_MaxEngagedDistance)
                 {
-                    E3._bots.Broadcast($"{s.CleanName} is too far away.");
+                    E3.Bots.Broadcast($"{s.CleanName} is too far away.");
                     return;
                 }
 
@@ -451,7 +454,7 @@ namespace E3Core.Processors
                     if (!Casting.TrueTarget(_assistTargetID))
                     {
                         //could not target
-                        E3._bots.Broadcast("\arCannot assist, Could not target");
+                        E3.Bots.Broadcast("\arCannot assist, Could not target");
                         return;
                     }
                 }
@@ -464,15 +467,15 @@ namespace E3Core.Processors
                 }
 
                 //IF MELEE/Ranged
-                if (_meleeTypes.Contains(E3._characterSettings.Assist_Type, StringComparer.OrdinalIgnoreCase))
+                if (_meleeTypes.Contains(E3.CharacterSettings.Assist_Type, StringComparer.OrdinalIgnoreCase))
                 {
-                    if (_assistDistanceTypes.Contains(E3._characterSettings.Assist_MeleeDistance, StringComparer.OrdinalIgnoreCase))
+                    if (_assistDistanceTypes.Contains(E3.CharacterSettings.Assist_MeleeDistance, StringComparer.OrdinalIgnoreCase))
                     {
                         _assistDistance = (int)(s.MaxRangeTo * 0.75);
                     }
                     else
                     {
-                        if (!Int32.TryParse(E3._characterSettings.Assist_MeleeDistance, out _assistDistance))
+                        if (!Int32.TryParse(E3.CharacterSettings.Assist_MeleeDistance, out _assistDistance))
                         {
                             _assistDistance = (int)(s.MaxRangeTo * 0.75);
                         }
@@ -488,7 +491,7 @@ namespace E3Core.Processors
 
                     }
 
-                    if (E3._currentClass == Data.Class.Rogue)
+                    if (E3.CurrentClass == Data.Class.Rogue)
                     {
                         Rogue.RogueStrike();
 
@@ -496,7 +499,7 @@ namespace E3Core.Processors
                     MQ.Cmd("/attack on");
 
                 }
-                else if (_rangeTypes.Contains(E3._characterSettings.Assist_Type, StringComparer.OrdinalIgnoreCase))
+                else if (_rangeTypes.Contains(E3.CharacterSettings.Assist_Type, StringComparer.OrdinalIgnoreCase))
                 {
                     if (!MQ.Query<bool>("${Me.AutoFire}"))
                     {
@@ -505,9 +508,9 @@ namespace E3Core.Processors
                         MQ.Delay(1000);
                     }
 
-                    if (E3._characterSettings.Assist_Type.Equals("Ranged"))
+                    if (E3.CharacterSettings.Assist_Type.Equals("Ranged"))
                     {
-                        if (E3._characterSettings.Assist_RangeDistance.Equals("Clamped"))
+                        if (E3.CharacterSettings.Assist_RangeDistance.Equals("Clamped"))
                         {   //so we don't calc multiple times
                             double distance = s.Distance;
                             if (distance >= 30 && distance <= 200)
@@ -523,7 +526,7 @@ namespace E3Core.Processors
                         }
                         else
                         {
-                            MQ.Cmd($"/squelch /stick hold moveback {E3._characterSettings.Assist_RangeDistance}");
+                            MQ.Cmd($"/squelch /stick hold moveback {E3.CharacterSettings.Assist_RangeDistance}");
                         }
                     }
                 }
@@ -533,7 +536,7 @@ namespace E3Core.Processors
         private static void StickToAssistTarget()
         {
             //needed a case insensitive switch, that was easy to read, thus this.
-            string sp = E3._characterSettings.Assist_MeleeStickPoint;
+            string sp = E3.CharacterSettings.Assist_MeleeStickPoint;
             if (_stickSwitch == null)
             {
                 var stw = new Dictionary<string, Action>(10, StringComparer.OrdinalIgnoreCase);
@@ -602,7 +605,7 @@ namespace E3Core.Processors
                         AssistOn(targetID);
 
                     }
-                    E3._bots.BroadcastCommandToGroup($"/assistme {targetID}",x);
+                    E3.Bots.BroadcastCommandToGroup($"/assistme {targetID}",x);
                 }
                 else if (!e3util.FilterMe(x))
                 {
@@ -622,7 +625,7 @@ namespace E3Core.Processors
                 {
                     ClearXTargets._mobToAttack=0;
                     AssistOff();
-                    E3._bots.BroadcastCommandToGroup($"/backoff all");
+                    E3.Bots.BroadcastCommandToGroup($"/backoff all");
                     ClearXTargets._enabled = true;
 
                 } 
@@ -630,7 +633,7 @@ namespace E3Core.Processors
                 {
                     AssistOff();
                     ClearXTargets._enabled = false;
-                    E3._bots.BroadcastCommandToGroup($"/backoff all");
+                    E3.Bots.BroadcastCommandToGroup($"/backoff all");
                 }
 
             });
@@ -641,7 +644,7 @@ namespace E3Core.Processors
                 DebuffDot.Reset();
                 if (x.args.Count == 0)
                 {     //we are telling people to back off
-                    E3._bots.BroadcastCommandToGroup($"/backoff all");
+                    E3.Bots.BroadcastCommandToGroup($"/backoff all");
                 }
             });
             e3util.RegisterCommandWithTarget("/e3offassistignore", (x)=> { _offAssistIgnore.Add(x); });

@@ -16,9 +16,9 @@ namespace E3Core.Processors
 {
     public static class Inventory
     {
-        public static Logging _log = E3._log;
-        private static IMQ MQ = E3.MQ;
-        private static ISpawns _spawns = E3._spawns;
+        public static Logging _log = E3.Log;
+        private static IMQ MQ = E3.Mq;
+        private static ISpawns _spawns = E3.Spawns;
         private static readonly List<string> _fdsSlots = new List<string>() { "charm", "leftear", "head", "face", "rightear", "neck", "shoulder", "arms", "back", "leftwrist", "rightwrist", "ranged", "hands", "mainhand", "offhand", "leftfinger", "rightfinger", "chest", "legs", "feet", "waist", "powersource", "ammo", "fingers", "wrists", "ears" };
 
         [SubSystemInit]
@@ -53,7 +53,7 @@ namespace E3Core.Processors
             }
             else
             {
-                E3._bots.Broadcast("Cannot find slot. Valid slots are:" + String.Join(",", _fdsSlots));
+                E3.Bots.Broadcast("Cannot find slot. Valid slots are:" + String.Join(",", _fdsSlots));
                 return false;
             }
         }
@@ -160,7 +160,7 @@ namespace E3Core.Processors
 
             foreach (var value in report)
             {
-                E3._bots.Broadcast(value);
+                E3.Bots.Broadcast(value);
 
             }
         }
@@ -176,7 +176,7 @@ namespace E3Core.Processors
                     {
                         if (x.args.Count == 1)
                         {
-                            E3._bots.BroadcastCommandToGroup($"/fds {slot} group");
+                            E3.Bots.BroadcastCommandToGroup($"/fds {slot} group");
                         }
 
                     }
@@ -188,7 +188,7 @@ namespace E3Core.Processors
                 string itemName = x.args[0];
                 if (x.args.Count == 1)
                 {
-                    E3._bots.BroadcastCommandToGroup($"/fic \"{itemName}\" all", x);
+                    E3.Bots.BroadcastCommandToGroup($"/fic \"{itemName}\" all", x);
                 }
 
                 if (!e3util.FilterMe(x))
@@ -202,7 +202,7 @@ namespace E3Core.Processors
                 string itemName = x.args[0];
                 if (x.args.Count == 1)
                 {
-                    E3._bots.BroadcastCommandToGroup($"/finditem \"{itemName}\" all", x);
+                    E3.Bots.BroadcastCommandToGroup($"/finditem \"{itemName}\" all", x);
                 }
 
                 if (!e3util.FilterMe(x))

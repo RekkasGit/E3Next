@@ -15,15 +15,15 @@ namespace E3Core.Processors
     {
 
         public static string _lastSuccesfulCast = String.Empty;
-        public static Logging _log = E3._log;
-        private static IMQ MQ = E3.MQ;
+        public static Logging _log = E3.Log;
+        private static IMQ MQ = E3.Mq;
         public static Dictionary<Int32, Int64> _gemRecastLockForMem = new Dictionary<int, long>();
         public static Dictionary<Int32, ResistCounter> _resistCounters = new Dictionary<Int32, ResistCounter>();
         public static Dictionary<Int32, Int32> _currentSpellGems = new Dictionary<int, int>();
 
 
         public static Int64 _currentSpellGemsLastRefresh = 0;
-        private static ISpawns _spawns = E3._spawns;
+        private static ISpawns _spawns = E3.Spawns;
 
 
         public static CastReturn Cast(int targetID, Data.Spell spell, Func<Int32, Int32, bool> interruptCheck = null, bool isNowCast = false)
@@ -31,11 +31,11 @@ namespace E3Core.Processors
 
 
             //bard can cast insta cast items while singing, they be special.
-            if (E3._currentClass == Class.Bard && spell.MyCastTime <= 500 && spell.CastType == CastType.Item)
+            if (E3.CurrentClass == Class.Bard && spell.MyCastTime <= 500 && spell.CastType == CastType.Item)
             {
                 //instant cast item, can cast while singing
             }
-            else if (E3._currentClass == Class.Bard && spell.CastType == CastType.Spell)
+            else if (E3.CurrentClass == Class.Bard && spell.CastType == CastType.Spell)
             {
                 Sing(targetID, spell);
                 MQ.Delay((int)spell.MyCastTime);
@@ -89,7 +89,7 @@ namespace E3Core.Processors
                     if (!(spell.TargetType == "Self" || spell.TargetType == "Group v1"))
                     {
                         MQ.Write($"Invalid targetId for Casting. {targetID}");
-                        E3._actionTaken = true;
+                        E3.ActionTaken = true;
                         return CastReturn.CAST_NOTARGET;
                     }
                 }
@@ -114,7 +114,7 @@ namespace E3Core.Processors
                     if (!isNowCast && MQ.Query<bool>("${Me.Invis}"))
                     {
 
-                        E3._actionTaken = true;
+                        E3.ActionTaken = true;
 
                         _log.Write($"SkipCast-Invis ${spell.CastName} {targetName} : {targetID}");
                         return CastReturn.CAST_INVIS;
@@ -142,7 +142,7 @@ namespace E3Core.Processors
                     }
 
                     _log.Write("Checking for zoning...");
-                    if (E3._zoneID != MQ.Query<Int32>("${Zone.ID}"))
+                    if (E3.ZoneID != MQ.Query<Int32>("${Zone.ID}"))
                     {
                         _log.Write("Currently zoning, delaying for 1second");
                         //we are zoning, we need to chill for a bit.
@@ -153,23 +153,23 @@ namespace E3Core.Processors
                     _log.Write("Checking for Feigning....");
                     if (MQ.Query<bool>("${Me.Feigning}"))
                     {
-                        E3._bots.Broadcast($"skipping [{spell.CastName}] , i am feigned.");
+                        E3.Bots.Broadcast($"skipping [{spell.CastName}] , i am feigned.");
                         MQ.Delay(200);
                         return CastReturn.CAST_FEIGN;
                     }
                     _log.Write("Checking for Open spell book....");
                     if (MQ.Query<bool>("${Window[SpellBookWnd].Open}"))
                     {
-                        E3._actionTaken = true;
-                        E3._bots.Broadcast($"skipping [{spell.CastName}] , spellbook is open.");
+                        E3.ActionTaken = true;
+                        E3.Bots.Broadcast($"skipping [{spell.CastName}] , spellbook is open.");
                         MQ.Delay(200);
                         return CastReturn.CAST_SPELLBOOKOPEN;
                     }
                     _log.Write("Checking for Open corpse....");
                     if (MQ.Query<bool>("${Corpse.Open}"))
                     {
-                        E3._actionTaken = true;
-                        E3._bots.Broadcast($"skipping [{spell.CastName}] , I have a corpse open.");
+                        E3.ActionTaken = true;
+                        E3.Bots.Broadcast($"skipping [{spell.CastName}] , I have a corpse open.");
                         MQ.Delay(200);
                         return CastReturn.CAST_CORPSEOPEN;
                     }
@@ -248,7 +248,7 @@ namespace E3Core.Processors
                         {
                             //activate disc!
                             TrueTarget(targetID);
-                            E3._actionTaken = true;
+                            E3.ActionTaken = true;
                             _log.Write("Issuing Disc command:{spell.CastName}");
                             MQ.Cmd($"/disc {spell.CastName}");
                             MQ.Delay(300);
@@ -322,8 +322,8 @@ namespace E3Core.Processors
                         {
 
                             if (MQ.Query<bool>("${Stick.Status.Equal[on]}")) MQ.Cmd("/squelch /stick pause");
-                            if (MQ.Query<bool>("${AdvPath.Following}") && E3._following) MQ.Cmd("/squelch /afollow off");
-                            if (MQ.Query<bool>("${MoveTo.Moving}") && E3._following) MQ.Cmd("/moveto off");
+                            if (MQ.Query<bool>("${AdvPath.Following}") && E3.Following) MQ.Cmd("/squelch /afollow off");
+                            if (MQ.Query<bool>("${MoveTo.Moving}") && E3.Following) MQ.Cmd("/moveto off");
                             bool navActive = MQ.Query<bool>("${Navigation.Active}");
                             if (navActive)
                             {
@@ -424,7 +424,7 @@ namespace E3Core.Processors
                             {
                                 MQ.Cmd("/interrupt");
                                 MQ.Delay(0);
-                                E3._actionTaken = true;
+                                E3.ActionTaken = true;
                                 return CastReturn.CAST_INTERRUPTFORHEAL;
                             }
                             //check to see if there is a nowcast queued up, if so we need to kickout.
@@ -531,7 +531,7 @@ namespace E3Core.Processors
 
                     //TODO: bard resume twist
 
-                    E3._actionTaken = true;
+                    E3.ActionTaken = true;
                     //clear out the queues for the resist counters as they may have a few that lagged behind.
                     ClearResistChecks();
                     return returnValue;
@@ -539,7 +539,7 @@ namespace E3Core.Processors
                 }
                 MQ.Write($"\arInvalid targetId for Casting. {targetID}");
 
-                E3._actionTaken = true;
+                E3.ActionTaken = true;
                 return CastReturn.CAST_NOTARGET;
             }
 
@@ -547,7 +547,7 @@ namespace E3Core.Processors
 
         public static void Sing(Int32 targetid, Data.Spell spell)
         {
-            if (E3._currentClass != Data.Class.Bard) return;
+            if (E3.CurrentClass != Data.Class.Bard) return;
             //Stop following for spell/item/aa with a cast time > 0 MyCastTime, unless im a bard
             //anything under 300 is insta cast
 
@@ -628,7 +628,7 @@ namespace E3Core.Processors
             //if no spell gem is set, set it.
             if (spell.SpellGem == 0)
             {
-                spell.SpellGem = E3._generalSettings.Casting_DefaultSpellGem;
+                spell.SpellGem = E3.GeneralSettings.Casting_DefaultSpellGem;
             }
             foreach(var spellid in _currentSpellGems.Values)
             {
@@ -735,9 +735,9 @@ namespace E3Core.Processors
                 return false;
             }
 
-            _log.Write($"CheckReady on {spell.CastName}");
+            //_log.Write($"CheckReady on {spell.CastName}");
 
-            if (E3._currentClass == Data.Class.Bard && !MQ.Query<bool>("${Twist.Twisting}"))
+            if (E3.CurrentClass == Data.Class.Bard && !MQ.Query<bool>("${Twist.Twisting}"))
             {
                 while (IsCasting())
                 {
@@ -953,7 +953,7 @@ namespace E3Core.Processors
 
         public static void RefreshGemCache()
         {
-            if ((E3._currentClass & Class.PureMelee) == E3._currentClass)
+            if ((E3.CurrentClass & Class.PureMelee) == E3.CurrentClass)
             {
                 //class doesn't have spells
                 return;
@@ -1046,7 +1046,7 @@ namespace E3Core.Processors
                 {
                     //check if its mine
                     string casterName = MQ.Query<string>($"${{Target.Buff[{i}].Caster}}");
-                    if (E3._currentName == casterName)
+                    if (E3.CurrentName == casterName)
                     {
                         //its my spell!
                         Int64 millisecondsLeft = MQ.Query<Int64>($"${{Target.BuffDuration[{i}]}}");

@@ -19,9 +19,9 @@ namespace E3Core.Processors
     public static class Basics
     {
         public static SavedGroupDataFile _savedGroupData = new SavedGroupDataFile();
-        public static Logging _log = E3._log;
-        private static IMQ MQ = E3.MQ;
-        private static ISpawns _spawns = E3._spawns;
+        public static Logging _log = E3.Log;
+        private static IMQ MQ = E3.Mq;
+        private static ISpawns _spawns = E3.Spawns;
         public static bool _isPaused = false;
         public static List<Int32> _groupMembers = new List<int>();
         private static Int64 _nextGroupCheck = 0;
@@ -105,13 +105,30 @@ namespace E3Core.Processors
             
             EventProcessor.RegisterCommand("/dropinvis", (x) =>
             {
-                E3._bots.BroadcastCommandToGroup("/makemevisible");
+                E3.Bots.BroadcastCommandToGroup("/makemevisible");
                 MQ.Cmd("/makemevisible");
+            });
+            EventProcessor.RegisterCommand("/debug", (x) =>
+            {
+                if (Logging._minLogLevelTolog == Logging.LogLevels.Error)
+                {
+                    Logging._minLogLevelTolog = Logging.LogLevels.Debug;
+                    Logging._traceLogLevel = Logging.LogLevels.Trace;
+                    MainProcessor._processDelay = 1000;
+
+                }
+                else
+                {
+                    Logging._minLogLevelTolog = Logging.LogLevels.Error;
+                    Logging._traceLogLevel = Logging.LogLevels.None;
+                    MainProcessor._processDelay = E3.ProcessDelay;
+                }
+
             });
 
             EventProcessor.RegisterCommand("/pizza", (x) =>
             {
-                if (E3._currentName == "Reek")
+                if (E3.CurrentName == "Reek")
                 {
                     System.Diagnostics.Process.Start("https://ordering.orders2.me/menu/pontillos-pizzeria-hudson-ridge");
                 }
@@ -128,7 +145,7 @@ namespace E3Core.Processors
                
                 if(x.args.Count==0)
                 {
-                    E3._bots.BroadcastCommandToGroup("/yes all");
+                    E3.Bots.BroadcastCommandToGroup("/yes all");
                 }
                 ClickYesNo(true);
 
@@ -138,7 +155,7 @@ namespace E3Core.Processors
 
                 if (x.args.Count == 0)
                 {
-                    E3._bots.BroadcastCommandToGroup("/no all");
+                    E3.Bots.BroadcastCommandToGroup("/no all");
                 }
                 ClickYesNo(false);
 
@@ -166,8 +183,8 @@ namespace E3Core.Processors
                                 first = false;
                             }
                             string message = sb.ToString();
-                            E3._bots.BroadcastCommandToGroup($"/bark-send {targetid} \"{message}\"");
-                            Int32 currentZone = E3._zoneID;
+                            E3.Bots.BroadcastCommandToGroup($"/bark-send {targetid} \"{message}\"");
+                            Int32 currentZone = E3.ZoneID;
 
                             for (Int32 i = 0; i < 5; i++)
                             {
@@ -204,7 +221,7 @@ namespace E3Core.Processors
                                 e3util.TryMoveToLoc(s.X, s.Y);
 
                                 string message = x.args[1];
-                                Int32 currentZone = E3._zoneID;
+                                Int32 currentZone = E3.ZoneID;
                                 for (Int32 i = 0; i < 5; i++)
                                 {
                                     MQ.Cmd($"/say {message}");
@@ -243,11 +260,11 @@ namespace E3Core.Processors
 
                         //lets try and do evac spell?
                         string spellToCheck = string.Empty;
-                        if (E3._currentClass == Class.Wizard)
+                        if (E3.CurrentClass == Class.Wizard)
                         {
                             spellToCheck = "Evacuate";
                         }
-                        else if (E3._currentClass == Class.Druid)
+                        else if (E3.CurrentClass == Class.Druid)
                         {
                             spellToCheck = "Succor";
                         }
@@ -267,7 +284,7 @@ namespace E3Core.Processors
                 }
                 else
                 {
-                    E3._bots.BroadcastCommandToGroup("/evac me");
+                    E3.Bots.BroadcastCommandToGroup("/evac me");
                 }
             });
 
@@ -310,8 +327,8 @@ namespace E3Core.Processors
                 }
                 MQ.Cmd("/disband");
                 MQ.Cmd("/raiddisband");
-                E3._bots.BroadcastCommand("/raiddisband");
-                E3._bots.BroadcastCommand("/disband");
+                E3.Bots.BroadcastCommand("/raiddisband");
+                E3.Bots.BroadcastCommand("/disband");
 
                 if (MQ.Query<int>("${Group}") > 0)
                 {
@@ -395,7 +412,7 @@ namespace E3Core.Processors
         /// <returns>Returns a bool indicating whether or not you're in combat</returns>
         public static bool InCombat()
         {
-            bool inCombat = MQ.Query<bool>("${Me.Combat}") || MQ.Query<bool>("${Me.CombatState.Equal[Combat]}") || Assist._isAssisting;
+            bool inCombat = Assist._isAssisting ||MQ.Query<bool>("${Me.Combat}") || MQ.Query<bool>("${Me.CombatState.Equal[Combat]}");
             return inCombat;
         }
 
@@ -407,180 +424,183 @@ namespace E3Core.Processors
         {
             if (!e3util.ShouldCheck(ref _nextResourceCheck, _nextResourceCheckInterval)) return;
 
-
-            if (E3._isInvis) return;
-            if (Basics.AmIDead()) return;
-
-            
-            Int32 minMana = 40;
-            Int32 minHP = 60;
-            Int32 maxMana = 75;
-            Int32 maxLoop = 25;
-
-            Int32 totalClicksToTry = 40;
-            //Int32 minManaToTryAndHeal = 1000;
-
-            if (!InCombat())
+            using(_log.Trace())
             {
-                minMana = 85;
-                maxMana = 95;
-            }
+                if (E3.IsInvis) return;
+                if (Basics.AmIDead()) return;
 
-            Int32 pctMana = MQ.Query<Int32>("${Me.PctMana}");
-            Int32 currentHps = MQ.Query<Int32>("${Me.CurrentHPs}");
-            
 
-            if (E3._currentClass == Data.Class.Enchanter)
-            {
-                bool manaDrawBuff = MQ.Query<bool>("${Bool[${Me.Buff[Mana Draw]}]}") || MQ.Query<bool>("${Bool[${Me.Song[Mana Draw]}]}");
-                if (manaDrawBuff)
+                Int32 minMana = 40;
+                Int32 minHP = 60;
+                Int32 maxMana = 75;
+                Int32 maxLoop = 25;
+
+                Int32 totalClicksToTry = 40;
+                //Int32 minManaToTryAndHeal = 1000;
+
+                if (!InCombat())
                 {
-                    if (pctMana > 50)
-                    {
-                        return;
-                    }
+                    minMana = 85;
+                    maxMana = 95;
                 }
-            }
 
-            if (E3._currentClass == Data.Class.Necromancer)
-            {
-                bool deathBloom = MQ.Query<bool>("${Bool[${Me.Buff[Death Bloom]}]}") || MQ.Query<bool>("${Bool[${Me.Song[Death Bloom]}]}");
-                if (deathBloom)
+                Int32 pctMana = MQ.Query<Int32>("${Me.PctMana}");
+                Int32 currentHps = MQ.Query<Int32>("${Me.CurrentHPs}");
+
+
+                if (E3.CurrentClass == Data.Class.Enchanter)
                 {
-                    return;
-                }
-            }
-
-            if (E3._currentClass == Data.Class.Shaman)
-            {
-                bool canniReady = MQ.Query<bool>("${Me.AltAbilityReady[Cannibalization]}");
-              
-                if (canniReady && currentHps > 7000 && MQ.Query<Double>("${Math.Calc[${Me.MaxMana} - ${Me.CurrentMana}]}")>4500)
-                {
-                    Spell s;
-                    if (!Spell._loadedSpellsByName.TryGetValue("Cannibalization", out s))
+                    bool manaDrawBuff = MQ.Query<bool>("${Bool[${Me.Buff[Mana Draw]}]}") || MQ.Query<bool>("${Bool[${Me.Song[Mana Draw]}]}");
+                    if (manaDrawBuff)
                     {
-                        s = new Spell("Cannibalization");
-                    }
-                    if (s.CastType != CastType.None)
-                    {
-                        Casting.Cast(0, s);
-                        return;
-                    }
-                }
-            }
-
-            if (MQ.Query<bool>("${Me.ItemReady[Summoned: Large Modulation Shard]}"))
-            {
-                if (MQ.Query<double>("${Math.Calc[${Me.MaxMana} - ${Me.CurrentMana}]}") > 3500 && currentHps > 6000)
-                {
-                    Spell s;
-                    if (!Spell._loadedSpellsByName.TryGetValue("Summoned: Large Modulation Shard", out s))
-                    {
-                        s = new Spell("Summoned: Large Modulation Shard");
-                    }
-                    if (s.CastType != CastType.None)
-                    {
-                        Casting.Cast(0, s);
-                        return;
-                    }
-
-                }
-            }
-            if (MQ.Query<bool>("${Me.ItemReady[Azure Mind Crystal III]}"))
-            {
-                if (MQ.Query<double>("${Math.Calc[${Me.MaxMana} - ${Me.CurrentMana}]}") > 3500)
-                {
-                    Spell s;
-                    if (!Spell._loadedSpellsByName.TryGetValue("Azure Mind Crystal III", out s))
-                    {
-                        s = new Spell("Azure Mind Crystal III");
-                    }
-                    if (s.CastType != CastType.None)
-                    {
-                        Casting.Cast(0, s);
-                        return;
-                    }
-
-                }
-            }
-
-            if (E3._currentClass == Data.Class.Necromancer && pctMana < 50)
-            {
-                bool deathBloomReady = MQ.Query<bool>("${Me.AltAbilityReady[Death Bloom]}");
-                if (deathBloomReady && currentHps > 8000)
-                {
-                    Spell s;
-                    if (!Spell._loadedSpellsByName.TryGetValue("Death Bloom", out s))
-                    {
-                        s = new Spell("Death Bloom");
-                    }
-                    if (s.CastType != CastType.None)
-                    {
-                        Casting.Cast(0, s);
-                        return;
-                    }
-                }
-            }
-            if (E3._currentClass == Data.Class.Enchanter && pctMana < 50)
-            {
-                bool manaDrawReady = MQ.Query<bool>("${Me.AltAbilityReady[Mana Draw]}");
-                if (manaDrawReady)
-                {
-                    Spell s;
-                    if (!Spell._loadedSpellsByName.TryGetValue("Mana Draw", out s))
-                    {
-                        s = new Spell("Mana Draw");
-                    }
-                    if (s.CastType != CastType.None)
-                    {
-                        Casting.Cast(0, s);
-                        return;
-                    }
-                }
-            }
-            if (pctMana > minMana) return;
-            //no manastone in pok
-            bool pok = MQ.Query<bool>("${Zone.ShortName.Equal[poknowledge]}");
-            if (pok) return;
-
-            bool hasManaStone = MQ.Query<bool>("${Bool[${FindItem[=Manastone]}]}");
-
-            if (hasManaStone)
-            {
-
-                MQ.Write("\agUsing Manastone...");
-                Int32 pctHps = MQ.Query<Int32>("${Me.PctHPs}");
-                pctMana = MQ.Query<Int32>("${Me.PctMana}");
-                Int32 currentLoop = 0;
-                while (pctHps > minHP && pctMana < maxMana)
-                {
-                    currentLoop++;
-                    Int32 currentMana = MQ.Query<Int32>("${Me.CurrentMana}");
-
-                    for (Int32 i = 0; i < totalClicksToTry; i++)
-                    {
-                        MQ.Cmd("/useitem \"Manastone\"");
-                    }
-                    //allow mq to have the commands sent to the server
-                    MQ.Delay(50);
-                    if ((E3._currentClass & Class.Priest) == E3._currentClass)
-                    {
-                        if (Heals.SomeoneNeedsHealing(currentMana, pctMana))
+                        if (pctMana > 50)
                         {
                             return;
                         }
                     }
-                    if (currentLoop > maxLoop)
+                }
+
+                if (E3.CurrentClass == Data.Class.Necromancer)
+                {
+                    bool deathBloom = MQ.Query<bool>("${Bool[${Me.Buff[Death Bloom]}]}") || MQ.Query<bool>("${Bool[${Me.Song[Death Bloom]}]}");
+                    if (deathBloom)
                     {
                         return;
                     }
-                    
-                    pctHps = MQ.Query<Int32>("${Me.PctHPs}");
-                    pctMana = MQ.Query<Int32>("${Me.PctMana}");
                 }
 
+                if (E3.CurrentClass == Data.Class.Shaman)
+                {
+                    bool canniReady = MQ.Query<bool>("${Me.AltAbilityReady[Cannibalization]}");
+
+                    if (canniReady && currentHps > 7000 && MQ.Query<Double>("${Math.Calc[${Me.MaxMana} - ${Me.CurrentMana}]}") > 4500)
+                    {
+                        Spell s;
+                        if (!Spell._loadedSpellsByName.TryGetValue("Cannibalization", out s))
+                        {
+                            s = new Spell("Cannibalization");
+                        }
+                        if (s.CastType != CastType.None)
+                        {
+                            Casting.Cast(0, s);
+                            return;
+                        }
+                    }
+                }
+
+                if (MQ.Query<bool>("${Me.ItemReady[Summoned: Large Modulation Shard]}"))
+                {
+                    if (MQ.Query<double>("${Math.Calc[${Me.MaxMana} - ${Me.CurrentMana}]}") > 3500 && currentHps > 6000)
+                    {
+                        Spell s;
+                        if (!Spell._loadedSpellsByName.TryGetValue("Summoned: Large Modulation Shard", out s))
+                        {
+                            s = new Spell("Summoned: Large Modulation Shard");
+                        }
+                        if (s.CastType != CastType.None)
+                        {
+                            Casting.Cast(0, s);
+                            return;
+                        }
+
+                    }
+                }
+                if (MQ.Query<bool>("${Me.ItemReady[Azure Mind Crystal III]}"))
+                {
+                    if (MQ.Query<double>("${Math.Calc[${Me.MaxMana} - ${Me.CurrentMana}]}") > 3500)
+                    {
+                        Spell s;
+                        if (!Spell._loadedSpellsByName.TryGetValue("Azure Mind Crystal III", out s))
+                        {
+                            s = new Spell("Azure Mind Crystal III");
+                        }
+                        if (s.CastType != CastType.None)
+                        {
+                            Casting.Cast(0, s);
+                            return;
+                        }
+
+                    }
+                }
+
+                if (E3.CurrentClass == Data.Class.Necromancer && pctMana < 50)
+                {
+                    bool deathBloomReady = MQ.Query<bool>("${Me.AltAbilityReady[Death Bloom]}");
+                    if (deathBloomReady && currentHps > 8000)
+                    {
+                        Spell s;
+                        if (!Spell._loadedSpellsByName.TryGetValue("Death Bloom", out s))
+                        {
+                            s = new Spell("Death Bloom");
+                        }
+                        if (s.CastType != CastType.None)
+                        {
+                            Casting.Cast(0, s);
+                            return;
+                        }
+                    }
+                }
+                if (E3.CurrentClass == Data.Class.Enchanter && pctMana < 50)
+                {
+                    bool manaDrawReady = MQ.Query<bool>("${Me.AltAbilityReady[Mana Draw]}");
+                    if (manaDrawReady)
+                    {
+                        Spell s;
+                        if (!Spell._loadedSpellsByName.TryGetValue("Mana Draw", out s))
+                        {
+                            s = new Spell("Mana Draw");
+                        }
+                        if (s.CastType != CastType.None)
+                        {
+                            Casting.Cast(0, s);
+                            return;
+                        }
+                    }
+                }
+                if (pctMana > minMana) return;
+                //no manastone in pok
+                bool pok = MQ.Query<bool>("${Zone.ShortName.Equal[poknowledge]}");
+                if (pok) return;
+
+                bool hasManaStone = MQ.Query<bool>("${Bool[${FindItem[=Manastone]}]}");
+
+                if (hasManaStone)
+                {
+
+                    MQ.Write("\agUsing Manastone...");
+                    Int32 pctHps = MQ.Query<Int32>("${Me.PctHPs}");
+                    pctMana = MQ.Query<Int32>("${Me.PctMana}");
+                    Int32 currentLoop = 0;
+                    while (pctHps > minHP && pctMana < maxMana)
+                    {
+                        currentLoop++;
+                        Int32 currentMana = MQ.Query<Int32>("${Me.CurrentMana}");
+
+                        for (Int32 i = 0; i < totalClicksToTry; i++)
+                        {
+                            MQ.Cmd("/useitem \"Manastone\"");
+                        }
+                        //allow mq to have the commands sent to the server
+                        MQ.Delay(50);
+                        if ((E3.CurrentClass & Class.Priest) == E3.CurrentClass)
+                        {
+                            if (Heals.SomeoneNeedsHealing(currentMana, pctMana))
+                            {
+                                return;
+                            }
+                        }
+                        if (currentLoop > maxLoop)
+                        {
+                            return;
+                        }
+
+                        pctHps = MQ.Query<Int32>("${Me.PctHPs}");
+                        pctMana = MQ.Query<Int32>("${Me.PctMana}");
+                    }
+
+                }
             }
+           
 
         }
         
@@ -591,27 +611,30 @@ namespace E3Core.Processors
         public static void CheckAutoMed()
         {
             if (!e3util.ShouldCheck(ref _nextAutoMedCheck, _nextAutoMedCheckInterval)) return;
-            Int32 autoMedPct = E3._generalSettings.General_AutoMedBreakPctMana;
+            Int32 autoMedPct = E3.GeneralSettings.General_AutoMedBreakPctMana;
             if (autoMedPct == 0) return;
-            if (!E3._characterSettings.Misc_AutoMedBreak) return;
-
-            if (Movement._following || InCombat()) return;
-
-            bool amIStanding = MQ.Query<bool>("${Me.Standing}");
-
-            if (amIStanding && autoMedPct > 0)
+            if (!E3.CharacterSettings.Misc_AutoMedBreak) return;
+            using(_log.Trace())
             {
-                Int32 pctMana = MQ.Query<Int32>("${Me.PctMana}");
-                Int32 pctEndurance = MQ.Query<Int32>("${Me.PctEndurance}");
+                if (Movement._following || InCombat()) return;
 
-                if (pctMana < autoMedPct && (E3._currentClass & Class.ManaUsers)== E3._currentClass)
+                bool amIStanding = MQ.Query<bool>("${Me.Standing}");
+
+                if (amIStanding && autoMedPct > 0)
                 {
-                    MQ.Cmd("/sit");
+                    Int32 pctMana = MQ.Query<Int32>("${Me.PctMana}");
+                    Int32 pctEndurance = MQ.Query<Int32>("${Me.PctEndurance}");
+
+                    if (pctMana < autoMedPct && (E3.CurrentClass & Class.ManaUsers) == E3.CurrentClass)
+                    {
+                        MQ.Cmd("/sit");
+                    }
+                    if (pctEndurance < autoMedPct)
+                    {
+                        MQ.Cmd("/sit");
+                    }
                 }
-                if (pctEndurance < autoMedPct)
-                {
-                    MQ.Cmd("/sit");
-                }
+
             }
         }
 
@@ -623,54 +646,60 @@ namespace E3Core.Processors
         {
             if (!e3util.ShouldCheck(ref _nextFoodCheck, _nextFoodCheckInterval)) return;
 
-            if (!E3._characterSettings.Misc_AutoFoodEnabled || Assist._isAssisting) return;
-
-            var toEat = E3._characterSettings.Misc_AutoFood;
-            var toDrink = E3._characterSettings.Misc_AutoDrink;
-
-            if (MQ.Query<bool>($"${{FindItem[{toEat}].ID}}") && MQ.Query<int>("${Me.Hunger}") < 4500)
+            if (!E3.CharacterSettings.Misc_AutoFoodEnabled || Assist._isAssisting) return;
+            using (_log.Trace())
             {
-                MQ.Cmd($"/useitem \"{toEat}\"");
-            }
+                var toEat = E3.CharacterSettings.Misc_AutoFood;
+                var toDrink = E3.CharacterSettings.Misc_AutoDrink;
 
-            if (MQ.Query<bool>($"${{FindItem[{toDrink}].ID}}") && MQ.Query<int>("${Me.Thirst}") < 4500)
-            {
-                MQ.Cmd($"/useitem \"{toDrink}\"");
+                if (MQ.Query<bool>($"${{FindItem[{toEat}].ID}}") && MQ.Query<int>("${Me.Hunger}") < 4500)
+                {
+                    MQ.Cmd($"/useitem \"{toEat}\"");
+                }
+
+                if (MQ.Query<bool>($"${{FindItem[{toDrink}].ID}}") && MQ.Query<int>("${Me.Thirst}") < 4500)
+                {
+                    MQ.Cmd($"/useitem \"{toDrink}\"");
+                }
             }
+           
         }
 
         [ClassInvoke(Class.All)]
         public static void Check_Cursor()
         {
             if (!e3util.ShouldCheck(ref _nextCursorCheck, _nextCursorCheckInterval)) return;
-
-            bool itemOnCursor = MQ.Query<bool>("${Bool[${Cursor.ID}]}");
-            if(itemOnCursor)
+            using (_log.Trace())
             {
-                bool regenItem = MQ.Query<bool>("${Cursor.Name.Equal[Azure Mind Crystal III]}") || MQ.Query<bool>("${Cursor.Name.Equal[Summoned: Large Modulation Shard]}") || MQ.Query<bool>("${Cursor.Name.Equal[Sanguine Mind Crystal III]}");
-           
-                if(regenItem)
+                bool itemOnCursor = MQ.Query<bool>("${Bool[${Cursor.ID}]}");
+                if (itemOnCursor)
                 {
-                    Int32 charges = MQ.Query<Int32>("${Cursor.Charges}");
-                    if (charges == 3)
-                    {
-                        e3util.ClearCursor();
-                    }
-                } 
-                else
-                {
-                    bool orb = MQ.Query<bool>("${Cursor.Name.Equal[Molten orb]}") || MQ.Query<bool>("${Cursor.Name.Equal[Lava orb]}");
-                    if(orb)
+                    bool regenItem = MQ.Query<bool>("${Cursor.Name.Equal[Azure Mind Crystal III]}") || MQ.Query<bool>("${Cursor.Name.Equal[Summoned: Large Modulation Shard]}") || MQ.Query<bool>("${Cursor.Name.Equal[Sanguine Mind Crystal III]}");
+
+                    if (regenItem)
                     {
                         Int32 charges = MQ.Query<Int32>("${Cursor.Charges}");
-                        if (charges == 10)
+                        if (charges == 3)
                         {
                             e3util.ClearCursor();
                         }
                     }
+                    else
+                    {
+                        bool orb = MQ.Query<bool>("${Cursor.Name.Equal[Molten orb]}") || MQ.Query<bool>("${Cursor.Name.Equal[Lava orb]}");
+                        if (orb)
+                        {
+                            Int32 charges = MQ.Query<Int32>("${Cursor.Charges}");
+                            if (charges == 10)
+                            {
+                                e3util.ClearCursor();
+                            }
+                        }
+                    }
+
                 }
-  
             }
+            
         }
 
     }

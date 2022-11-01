@@ -1,47 +1,47 @@
 ﻿using E3Core.Classes;
-using E3Core.Processors;
 using E3Core.Settings;
-using E3Core.Settings.FeatureSettings;
 using MonoCore;
 using System;
 using System.Collections.Generic;
-using System.Linq;
-using System.Runtime.CompilerServices;
-using System.Text;
-using System.Threading.Tasks;
 
 namespace E3Core.Processors
 {
+    /// <summary>
+    /// The main file from which all other processing is called.
+    /// </summary>
     public static class E3
     {
+        /// <summary>
+        /// The main processing loop.
+        /// </summary>
         public static void Process()
         {
-          
+
             if (!ShouldRun())
             {
                 return;
             }
-            _actionTaken = false;
-            _isInvis = MQ.Query<bool>("${Me.Invis}");
+            ActionTaken = false;
+            IsInvis = Mq.Query<bool>("${Me.Invis}");
             RefreshCaches();
             //_startTimeStamp = Core._stopWatch.ElapsedMilliseconds;
             //using (_log.Trace())
             {
-                if (!_isInit) { Init(); }
+                if (!IsInit) { Init(); }
                 //update on every loop
-                _currentHps =MQ.Query<Int32>("${Me.PctHPs}");
+                CurrentHps = Mq.Query<int>("${Me.PctHPs}");
 
-                if(_currentHps<90 && !_isInvis)
+                if (CurrentHps < 90 && !IsInvis)
                 {
                     //lets check our life support.
                     Heals.Check_LifeSupport();
-                    if (_actionTaken) return; //allow time for the heals to update to determine if we should do it again.
+                    if (ActionTaken) return; //allow time for the heals to update to determine if we should do it again.
                 }
 
-                Int32 zoneID = MQ.Query<Int32>("${Zone.ID}"); //to tell if we zone mid process
-                if(zoneID!=_zoneID)
+                int zoneID = Mq.Query<int>("${Zone.ID}"); //to tell if we zone mid process
+                if (zoneID != ZoneID)
                 {
-                    _zoneID = zoneID;
+                    ZoneID = zoneID;
 
                 }
                 EventProcessor.ProcessEventsInQueues("/e3p");
@@ -50,7 +50,7 @@ namespace E3Core.Processors
                     return;
                 }
 
-               
+
                 //Init is here to make sure we only Init while InGame, as some queries will fail if not in game
 
                 //nowcast before all.
@@ -59,57 +59,68 @@ namespace E3Core.Processors
                 Burns.UseBurns();
                 //do the basics first
                 //first and formost, do healing checks
-                if ((_currentClass& Data.Class.Priest)==_currentClass)
+                if ((CurrentClass & Data.Class.Priest) == CurrentClass)
                 {
-                    _actionTaken = false;
+                    ActionTaken = false;
                     Heals.Check_Heals();
-                    if (_actionTaken) return; //we did a heal, kick out as we may need to do another heal.
+                    if (ActionTaken) return; //we did a heal, kick out as we may need to do another heal.
                 }
 
-
-                Assist.Process();
-                WaitForRez.Process();
-                
-                if (!_actionTaken)
+                using (Log.Trace("Assist/WaitForRez"))
                 {
-                    //rembmer check_heals is auto inserted, should probably just pull out here
-                    List<string> _methodsToInvokeAsStrings;
-                    if (AdvancedSettings._classMethodsAsStrings.TryGetValue(_currentShortClassString, out _methodsToInvokeAsStrings))
-                    {
-                        foreach (var methodName in _methodsToInvokeAsStrings)
-                        {
-                            //if an action was taken, start over
-                            if (_actionTaken)
-                            {
-                                break;
-                            }
-                            Action methodToInvoke;
-                            if (AdvancedSettings._methodLookup.TryGetValue(methodName, out methodToInvoke))
-                            {
-                                methodToInvoke.Invoke();
+                    Assist.Process();
+                    WaitForRez.Process();
+                }
 
+                if (!ActionTaken)
+                {
+                    using(Log.Trace("AdvMethodCalls"))
+                    {
+                        //rembmer check_heals is auto inserted, should probably just pull out here
+                        List<string> _methodsToInvokeAsStrings;
+                        if (AdvancedSettings._classMethodsAsStrings.TryGetValue(CurrentShortClassString, out _methodsToInvokeAsStrings))
+                        {
+                            foreach (var methodName in _methodsToInvokeAsStrings)
+                            {
+                                //if an action was taken, start over
+                                if (ActionTaken)
+                                {
+                                    break;
+                                }
+                                Action methodToInvoke;
+                                if (AdvancedSettings._methodLookup.TryGetValue(methodName, out methodToInvoke))
+                                {
+                                    methodToInvoke.Invoke();
+
+                                }
+                                //check backoff
+                                //check nowcast
+                                EventProcessor.ProcessEventsInQueues("/nowcast");
+                                EventProcessor.ProcessEventsInQueues("/backoff");
                             }
-                            //check backoff
-                            //check nowcast
-                            EventProcessor.ProcessEventsInQueues("/nowcast");
-                            EventProcessor.ProcessEventsInQueues("/backoff");
                         }
                     }
+                  
                 }
                 //now do the dynamic methods from Advanced ini. 
-                
-                if(E3._currentClass==Data.Class.Bard)
+
+                if (E3.CurrentClass == Data.Class.Bard)
                 {
                     Bard.check_BardSongs();
                 }
-
-                //lets do our class methods, this is last because of bards
-                foreach (var kvp in AdvancedSettings._classMethodLookup)
+                using (Log.Trace("ClassMethodCalls"))
                 {
-                    kvp.Value.Invoke();
+                    //lets do our class methods, this is last because of bards
+                    foreach (var kvp in AdvancedSettings._classMethodLookup)
+                    {
+                        kvp.Value.Invoke();
+                    }
                 }
             }
-            Loot.Process();
+            using (Log.Trace("LootProcessing"))
+            {
+                Loot.Process();
+            }
             //MQ.Write("Total Processing time in ms:" + (Core._stopWatch.ElapsedMilliseconds - _startTimeStamp));
         }
         private static void RefreshCaches()
@@ -120,50 +131,51 @@ namespace E3Core.Processors
         private static void Init()
         {
 
-            if(!_isInit)
+            if (!IsInit)
             {
-                MQ.ClearCommands();
-    
+                Mq.ClearCommands();
+
                 Logging._traceLogLevel = Logging.LogLevels.None; //log level we are currently at
                 Logging._minLogLevelTolog = Logging.LogLevels.Error; //log levels have integers assoicatd to them. you can set this to Error to only log errors. 
                 Logging._defaultLogLevel = Logging.LogLevels.Debug; //the default if a level is not passed into the _log.write statement. useful to hide/show things.
                 MainProcessor._applicationName = "E3"; //application name, used in some outputs
-                MainProcessor._processDelay = 50; //how much time we will wait until we start our next processing once we are done with a loop.
+                MainProcessor._processDelay = ProcessDelay; //how much time we will wait until we start our next processing once we are done with a loop.
                                                     //how long you allow script to process before auto yield is engaged. generally should't need to mess with this, but an example.
                 MonoCore.MQ._maxMillisecondsToWork = 40;
                 //max event count for each registered event before spilling over.
                 EventProcessor._eventLimiterPerRegisteredEvent = 20;
-                _currentName = MQ.Query<string>("${Me.CleanName}");
+                CurrentName = Mq.Query<string>("${Me.CleanName}");
+                CurrentId = Mq.Query<int>("${Me.ID}");
                 //do first to get class information
-                _characterSettings = new Settings.CharacterSettings();
-                _currentClass = _characterSettings._characterClass;
-                _currentLongClassString = _currentClass.ToString();
-                _currentShortClassString = Data.Classes._classLongToShort[_currentLongClassString];
-               
-                
+                CharacterSettings = new Settings.CharacterSettings();
+                CurrentClass = CharacterSettings._characterClass;
+                CurrentLongClassString = CurrentClass.ToString();
+                CurrentShortClassString = Data.Classes._classLongToShort[CurrentLongClassString];
+
+
                 //end class information
 
-                _generalSettings = new Settings.GeneralSettings();
-                _advancedSettings = new Settings.AdvancedSettings();
-                
+                GeneralSettings = new Settings.GeneralSettings();
+                AdvancedSettings = new Settings.AdvancedSettings();
+
                 //setup is done after the settings are setup.
                 //as there is an order dependecy
                 Setup.Init();
-                
-                _bots=new Bots();
-                _isInit = true;
-                Spawns._refreshTimePeriodInMS = 3000;
+
+                Bots = new Bots();
+                IsInit = true;
+                MonoCore.Spawns._refreshTimePeriodInMS = 3000;
 
             }
-           
+
 
         }
 
-      
+
         private static bool ShouldRun()
         {
 
-            if (_isBadState)
+            if (IsBadState)
             {
                 return false;
             }
@@ -176,7 +188,7 @@ namespace E3Core.Processors
             //register events
             //Event Line:"Pyra tells the group, 'SWARM-Host of the Elements'"
             //EventProcessor.RegisterEvent("EverythingEvent", "(.+) tells the group, '(.+)'", (x) => {
-                
+
             //    _log.Write($"{ x.eventName}:Processed:{ x.eventString}");
 
             //});
@@ -185,36 +197,33 @@ namespace E3Core.Processors
         }
         public static void Shutdown()
         {
-            MQ.Write($"Shutting down {MainProcessor._applicationName}....Reload to start gain");
-            _isBadState = true;
-           
+            Mq.Write($"Shutting down {MainProcessor._applicationName}....Reload to start gain");
+            IsBadState = true;
+
         }
-       
+
         //used throughout e3 per loop to allow kickout form methods
-        public static Boolean _actionTaken = false;
-        public static Boolean _following = false;
-        public static Int64 _startTimeStamp;
-        public static Boolean _isInit = false;
-        public static Boolean _isBadState = false;
-        public static IMQ MQ = Core.mqInstance;
+        public static bool ActionTaken = false;
+        public static bool Following = false;
+        public static long StartTimeStamp;
+        public static bool IsInit = false;
+        public static bool IsBadState = false;
+        public static IMQ Mq = Core.mqInstance;
         //public static IMQ MQ = new MoqMQ();
-        public static Logging _log = Core._log;
-        public static Settings.CharacterSettings _characterSettings = null;
-        public static Settings.GeneralSettings _generalSettings = null;
-        public static Settings.AdvancedSettings _advancedSettings = null;
-        public static IBots _bots = null;
-        public static string _currentName;
-        public static Data.Class _currentClass;
-        public static string _currentLongClassString;
-        public static string _currentShortClassString;
-        public static Int32 _currentHps;
-        public static Int32 _zoneID;
-       
-
-
-        public static ISpawns _spawns = Core.spawnInstance;
-        public static bool _isInvis;
-
-
+        public static Logging Log = Core._log;
+        public static Settings.CharacterSettings CharacterSettings = null;
+        public static Settings.GeneralSettings GeneralSettings = null;
+        public static Settings.AdvancedSettings AdvancedSettings = null;
+        public static IBots Bots = null;
+        public static string CurrentName;
+        public static int CurrentId;
+        public static Data.Class CurrentClass;
+        public static string CurrentLongClassString;
+        public static string CurrentShortClassString;
+        public static int CurrentHps;
+        public static int ZoneID;
+        public static int ProcessDelay = 50;
+        public static ISpawns Spawns = Core.spawnInstance;
+        public static bool IsInvis;
     }
 }

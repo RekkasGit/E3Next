@@ -23,9 +23,9 @@ namespace E3Core.Processors
         }
 
         public static string _lastSuccesfulCast = String.Empty;
-        public static Logging _log = E3._log;
-        private static IMQ MQ = E3.MQ;
-        private static ISpawns _spawns = E3._spawns;
+        public static Logging _log = E3.Log;
+        private static IMQ MQ = E3.Mq;
+        private static ISpawns _spawns = E3.Spawns;
         private static Dictionary<string, Int64> _DIStickCooldown = new Dictionary<string, long>();
         private static Int64 _nextBegCheck = 0;
         private static Int64 _nextBegCheckInterval = 1000;
@@ -90,13 +90,13 @@ namespace E3Core.Processors
                     {
                         if (targetid > 0)
                         {
-                            E3._bots.BroadcastCommandToGroup($"/queuecast me \"{spell}\" {targetid}");
+                            E3.Bots.BroadcastCommandToGroup($"/queuecast me \"{spell}\" {targetid}");
 
                             QueueCast(spell, targetid,"");
                         }
                         else
                         {
-                            E3._bots.BroadcastCommandToGroup($"/queuecast me \"{spell}\"");
+                            E3.Bots.BroadcastCommandToGroup($"/queuecast me \"{spell}\"");
                             QueueCast(spell, 0, "");
 
                         }
@@ -118,13 +118,13 @@ namespace E3Core.Processors
                         if (targetid > 0)
                         {
                             //send this to a person!
-                            E3._bots.BroadcastCommandToPerson(user, $"/queuecast me \"{spell}\" {targetid}");
+                            E3.Bots.BroadcastCommandToPerson(user, $"/queuecast me \"{spell}\" {targetid}");
 
                         }
                         else
                         {
                             //send this to a person!
-                            E3._bots.BroadcastCommandToPerson(user, $"/queuecast me \"{spell}\"");
+                            E3.Bots.BroadcastCommandToPerson(user, $"/queuecast me \"{spell}\"");
                         }
                     }
                 }

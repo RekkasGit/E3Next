@@ -14,8 +14,8 @@ namespace E3Core.Processors
 {
     public static class NowCast
     {
-        public static Logging _log = E3._log;
-        private static IMQ MQ = E3.MQ;
+        public static Logging _log = E3.Log;
+        private static IMQ MQ = E3.Mq;
         [SubSystemInit]
         public static void Init()
         {
@@ -47,12 +47,12 @@ namespace E3Core.Processors
                     {
                         if (targetid > 0)
                         {
-                            E3._bots.BroadcastCommandToGroup($"/nowcast me \"{spell}\" {targetid}");
+                            E3.Bots.BroadcastCommandToGroup($"/nowcast me \"{spell}\" {targetid}");
                             NowCastSpell(spell, targetid);
                         }
                         else
                         {
-                              E3._bots.BroadcastCommandToGroup($"/nowcast me \"{spell}\"");
+                              E3.Bots.BroadcastCommandToGroup($"/nowcast me \"{spell}\"");
                             NowCastSpell(spell, 0);
 
                         }
@@ -74,13 +74,13 @@ namespace E3Core.Processors
                         if (targetid > 0)
                         {
                             //send this to a person!
-                            E3._bots.BroadcastCommandToPerson(user, $"/nowcast me \"{spell}\" {targetid}");
+                            E3.Bots.BroadcastCommandToPerson(user, $"/nowcast me \"{spell}\" {targetid}");
 
                         }
                         else
                         {
                             //send this to a person!
-                            E3._bots.BroadcastCommandToPerson(user, $"/nowcast me \"{spell}\"");
+                            E3.Bots.BroadcastCommandToPerson(user, $"/nowcast me \"{spell}\"");
 
 
                         }

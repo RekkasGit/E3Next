@@ -15,9 +15,9 @@ namespace E3Core.Classes
     /// </summary>
     public static class Druid
     {
-        private static Logging _log = E3._log;
-        private static IMQ MQ = E3.MQ;
-        private static ISpawns _spawns = E3._spawns;
+        private static Logging _log = E3.Log;
+        private static IMQ MQ = E3.Mq;
+        private static ISpawns _spawns = E3.Spawns;
 
         private static Int64 _nextAutoCheetaCheck;
         private static Data.Spell _cheetaSpell = new Spell("Communion of the Cheetah");
@@ -29,20 +29,46 @@ namespace E3Core.Classes
         public static void AutoCheeta()
         {
             if (!e3util.ShouldCheck(ref _nextAutoCheetaCheck, 1000)) return;
-            if (E3._characterSettings.Druid_AutoCheeta)
+            if (E3.CharacterSettings.Druid_AutoCheetah)
             {
-               if(Casting.CheckReady(_cheetaSpell))
-               {
-                    bool haveBardSong = MQ.Query<bool>("${Me.Buff[Selo's Sonata].ID}") || MQ.Query<bool>("${Me.Buff[Selo's Accelerating Chorus].ID}");
-                    if (!haveBardSong)
+
+                bool needToCast = false;
+                //lets get group members
+                List<string> memberNames = E3.Bots.BotsConnected();
+                foreach (int memberid in Basics._groupMembers)
+                {
+                    Spawn s;
+                    if (_spawns.TryByID(memberid,out s))
                     {
-                        Int32 totalSecondsLeft = MQ.Query<Int32>("${Me.Buff[Spirit of Cheetah].Duration.TotalSeconds}");
-                        if (totalSecondsLeft < 10)
+                        if(memberNames.Contains(s.CleanName))
                         {
+                            List<Int32> buffList = E3.Bots.BuffList(s.CleanName);
+                           if (!buffList.Contains(23581))
+                            {
+                                needToCast = true;
+                                break;
+                            }
+                        }
+                    }
+                }
+                Int32 totalSecondsLeft = MQ.Query<Int32>("${Me.Buff[Spirit of Cheetah].Duration.TotalSeconds}");
+                if (totalSecondsLeft < 10)
+                {
+                    needToCast = true;
+                }
+                
+                if (needToCast)
+                {
+                    if (Casting.CheckReady(_cheetaSpell))
+                    {
+                        bool haveBardSong = MQ.Query<bool>("${Me.Buff[Selo's Sonata].ID}") || MQ.Query<bool>("${Me.Buff[Selo's Accelerating Chorus].ID}");
+                        if (!haveBardSong)
+                        {
+
                             Casting.Cast(0, _cheetaSpell);
                         }
                     }
-               }
+                }
             }
         }
     }
