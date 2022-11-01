@@ -2,6 +2,7 @@
 using E3Core.Settings;
 using E3Core.Settings.FeatureSettings;
 using E3Core.Utility;
+using E3Core.Processors;
 using IniParser;
 using MonoCore;
 using System;
@@ -271,6 +272,94 @@ namespace E3Core.Processors
                 MQ.Delay(50);
                 MQ.Cmd($"/itemnotify bank{slot + 1} rightmouseup");
             });
+            //restock generic reusable items from vendors
+            _ = EventProcessor.RegisterCommand("/restock", (x) =>
+              {
+                  var toEat = E3._characterSettings.Misc_AutoFood;
+                  var toDrink = E3._characterSettings.Misc_AutoDrink;
+                  var toEatQty = MQ.Query<int>($"${{FindItemCount[{toEat}]}}");
+                  var toDrinkQty = MQ.Query<int>($"${{FindItemCount[{toDrink}]}}");
+
+                  MQ.Write($"\agInitiating restock for {toEat} and {toDrink}");
+
+                  if (toEatQty >= 1000 && toDrinkQty >= 1000)
+                  {
+                      MQ.Write($"\arYou already have more than a stack of {toEat} and {toDrink}! Skipping restock. ");
+                      return;
+                  } else
+                  {
+                      int zoneID = E3._zoneID;
+                      int vendorID = 0;
+
+                      //zoneID 345 = Guild Hall
+                      if (zoneID == 345)
+                      {
+                          string vendorName = "Yenny Werlikanin";
+                          vendorID = MQ.Query<int>($"${{Spawn[{vendorName}].ID}}");
+                          
+                          if (vendorID > 0)
+                          {
+                              Casting.TrueTarget(vendorID);
+                              e3util.NavToSpawnID(vendorID);
+                              e3util.OpenMerchant();
+
+                              if (toEatQty < 1000)
+                              {
+                                  int eatQtyNeeded = 1000 - toEatQty;
+                                  Buy.BuyItem(toEat, eatQtyNeeded);
+                              }
+
+                              if (toDrinkQty < 1000)
+                              {
+                                  int drinkQtyNeeded = 1000 - toDrinkQty;
+                                  Buy.BuyItem(toDrink, drinkQtyNeeded);
+                              }
+
+
+                              e3util.CloseMerchant();
+                          } else
+                          {
+                              MQ.Write($"\arNo valid vendor ID available.");
+                          }
+
+
+                      }
+                      //zoneID 202 = Plane of Knowledge
+                      if (zoneID == 202)
+                      {
+                          string vendorName = "Vori";
+                          vendorID = MQ.Query<int>($"${{Spawn[{vendorName}].ID}}");
+
+                          if (vendorID > 0)
+                          {
+                              Casting.TrueTarget(vendorID);
+                              e3util.NavToSpawnID(vendorID);
+                              e3util.OpenMerchant();
+
+                              if (toEatQty < 1000)
+                              {
+                                  int eatQtyNeeded = 1000 - toEatQty;
+                                  Buy.BuyItem(toEat, eatQtyNeeded);
+                              }
+
+                              if (toDrinkQty < 1000)
+                              {
+                                  int drinkQtyNeeded = 1000 - toDrinkQty;
+                                  Buy.BuyItem(toDrink, drinkQtyNeeded);
+                              }
+
+
+                              e3util.CloseMerchant();
+                          }
+                          else
+                          {
+                              MQ.Write($"\arNo valid vendor ID available.");
+                          }
+
+
+                      }
+                  }
+              });
         }
     }
 }
