@@ -9,21 +9,26 @@ using System.Linq;
 
 namespace E3Core.Processors
 {
+    /// <summary>
+    /// Processor for automated curing of debuffs.
+    /// </summary>
     public static class Cures
     {
-
-        public static Logging _log = E3.Log;
+        public static Logging Log = E3.Log;
         private static IMQ MQ = E3.Mq;
         private static ISpawns _spawns = E3.Spawns;
-        private static Data.Spell _RaidentCure;
+        private static Spell _radiantCure;
         private static bool _shouldCastCure = true;
         private static Int64 _nextRCureCheck = 0;
         private static Int64 _nexRCureCheckInterval = 500;
 
+        /// <summary>
+        /// Initializes this instance.
+        /// </summary>
         [SubSystemInit]
         public static void Init()
         {
-            _RaidentCure = new Data.Spell("Radiant Cure");
+            _radiantCure = new Spell("Radiant Cure");
             RegisterEvents();
         }
 
@@ -37,15 +42,16 @@ namespace E3Core.Processors
                 }
             });
         }
-        //There are two types of cures
-        //counter cures
-        //buff cures.
+      
+        /// <summary>
+        /// Checks if any cures are needed. There are two types of cures: counter cures and buff cures
+        /// </summary>
         [AdvSettingInvoke]
         public static void Check_Cures()
         {
 
             if (!e3util.ShouldCheck(ref _nextRCureCheck, _nexRCureCheckInterval)) return;
-            if (!E3.ActionTaken) CheckRaident();
+            if (!E3.ActionTaken) CheckRadiant();
             if (!E3.ActionTaken) CheckNormalCures();
             if (!E3.ActionTaken) CheckCounterCures();
             if (!E3.ActionTaken) CheckNormalCureAll();
@@ -74,7 +80,7 @@ namespace E3Core.Processors
 
             }
         }
-        private static void CheckRaident()
+        private static void CheckRadiant()
         {
             //raidient cure cast
             if (MQ.Query<bool>("${Me.AltAbilityReady[Radiant Cure]}"))
@@ -91,7 +97,7 @@ namespace E3Core.Processors
                         {
                             if (E3.Bots.BuffList(s.CleanName).Contains(spell.SpellID))
                             {
-                                if (s.Distance < _RaidentCure.MyRange)
+                                if (s.Distance < _radiantCure.MyRange)
                                 {
                                     numberSick++;
 
@@ -111,24 +117,23 @@ namespace E3Core.Processors
         private static void CheckCounterCures()
         {
 
-            if (CheckCounterCure(E3.CharacterSettings.CurseCounterCure, E3.CharacterSettings.CurseCounterIgnore)) return;
-            if (CheckCounterCure(E3.CharacterSettings.PosionCounterCure, E3.CharacterSettings.PosionCounterIgnore)) return;
-            if (CheckCounterCure(E3.CharacterSettings.DiseaseCounterCure, E3.CharacterSettings.DiseaseCounterIgnore)) return;
+            if (CheckCounterCure(E3.CharacterSettings.CurseCounterCure, E3.CharacterSettings.CurseCounterIgnore, E3.Bots.CursedCounters)) return;
+            if (CheckCounterCure(E3.CharacterSettings.PoisonCounterCure, E3.CharacterSettings.PoisonCounterIgnore, E3.Bots.PoisonedCounters)) return;
+            if (CheckCounterCure(E3.CharacterSettings.DiseaseCounterCure, E3.CharacterSettings.DiseaseCounterIgnore, E3.Bots.DiseasedCounters)) return;
 
         }
-        private static bool CheckCounterCure(List<Data.Spell> curesSpells, List<Data.Spell> ignoreSpells)
+        private static bool CheckCounterCure(List<Spell> curesSpells, List<Spell> ignoreSpells, Func<string, int> counterFunc)
         {
             foreach (var spell in curesSpells)
             {
 
                 //check each member of the group for counters
-                List<string> targets = E3.Bots.BotsConnected();
-                foreach (var target in targets)
+                foreach (var target in E3.Bots.BotsConnected())
                 {
                     Spawn s;
                     if (_spawns.TryByName(target, out s))
                     {
-                        Int32 counters = E3.Bots.CursedCounters(target);
+                        Int32 counters = counterFunc(target);
                         if (counters > 0 && s.Distance < spell.MyRange)
                         {
                             //check and make sure they don't have one of the 'ignored debuffs'
@@ -186,7 +191,7 @@ namespace E3Core.Processors
             {
                 E3.Bots.BroadcastCommandToGroup("/CastingRadiantCure FALSE");
                 //did we find enough sick people? if so, cast cure.
-                Casting.Cast(0, _RaidentCure);
+                Casting.Cast(0, _radiantCure);
                 E3.Bots.BroadcastCommandToGroup("/CastingRadiantCure TRUE");
             }
         }
