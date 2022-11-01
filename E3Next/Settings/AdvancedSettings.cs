@@ -106,7 +106,7 @@ namespace E3Core.Settings
             {
                 //if the attribute class is the same as our current class.
                 Data.Class configClass = ((ClassInvokeAttribute)foundMethod.GetCustomAttribute(typeof(ClassInvokeAttribute), false)).CurrentClass;
-                if ((E3._currentClass &configClass) == E3._currentClass)
+                if ((E3.CurrentClass &configClass) == E3.CurrentClass)
                 { 
                     //these are static don't need to create an instance
                     var func = (Action)foundMethod.CreateDelegate(typeof(Action));

@@ -12,9 +12,9 @@ namespace E3Core.Processors
 {
     public static class DebuffDot
     {
-        public static Logging _log = E3._log;
-        private static IMQ MQ = E3.MQ;
-        private static ISpawns _spawns = E3._spawns;
+        public static Logging _log = E3.Log;
+        private static IMQ MQ = E3.Mq;
+        private static ISpawns _spawns = E3.Spawns;
         public static Dictionary<Int32, SpellTimer> _debuffTimers = new Dictionary<Int32, SpellTimer>();
         public static Dictionary<Int32, SpellTimer> _dotTimers = new Dictionary<Int32, SpellTimer>();
         public static Dictionary<Int32, SpellTimer> _OffAssistTimers = new Dictionary<Int32, SpellTimer>();
@@ -64,7 +64,7 @@ namespace E3Core.Processors
             //TODO: Test
             if (!_shouldOffAssist) return;
             if (!Assist._isAssisting) return;
-            if (E3._characterSettings.OffAssistSpells.Count == 0) return;
+            if (E3.CharacterSettings.OffAssistSpells.Count == 0) return;
             if (!e3util.ShouldCheck(ref _nextOffAssistCheck, _nextOffAssistCheckInterval)) return;
             using (_log.Trace())
             {
@@ -101,7 +101,7 @@ namespace E3Core.Processors
 
                 if (_mobsToOffAsist.Count == 0) return;
                 //lets place the 1st offensive spell on each mob, then the next, then the next
-                foreach (var spell in E3._characterSettings.OffAssistSpells)
+                foreach (var spell in E3.CharacterSettings.OffAssistSpells)
                 {
                     if (Casting.CheckMana(spell))
                     {
@@ -110,10 +110,9 @@ namespace E3Core.Processors
                         foreach (Int32 mobid in _mobsToOffAsist.ToList())
                         {
                             CastLongTermSpell(mobid, _tempOffAssistSpellList, _OffAssistTimers);
-                            if (E3._actionTaken) return;
+                            if (E3.ActionTaken) return;
                         }
                     }
-
                 }
             }
         }
@@ -124,20 +123,19 @@ namespace E3Core.Processors
 
             if (Assist._assistTargetID > 0)
             {
-                CastLongTermSpell(Assist._assistTargetID, E3._characterSettings.Debuffs_OnAssist, _debuffTimers);
-                if (E3._actionTaken) return;
+                CastLongTermSpell(Assist._assistTargetID, E3.CharacterSettings.Debuffs_OnAssist, _debuffTimers);
+                if (E3.ActionTaken) return;
             }
 
             if (!e3util.ShouldCheck(ref _nextDebuffCheck, _nextDebuffCheckInterval)) return;
             using (_log.Trace())
             {
                 //e3util.PrintTimerStatus(_debuffTimers, ref _nextDebuffCheck, "Debuffs");
-
                 foreach (var mobid in _mobsToDebuff)
                 {
 
-                    CastLongTermSpell(mobid, E3._characterSettings.Debuffs_Command, _debuffTimers);
-                    if (E3._actionTaken) return;
+                    CastLongTermSpell(mobid, E3.CharacterSettings.Debuffs_Command, _debuffTimers);
+                    if (E3.ActionTaken) return;
                 }
                 foreach (var mobid in _deadMobs)
                 {
@@ -162,8 +160,8 @@ namespace E3Core.Processors
 
             if (Assist._assistTargetID > 0)
             {
-                CastLongTermSpell(Assist._assistTargetID, E3._characterSettings.Dots_Assist, _dotTimers);
-                if (E3._actionTaken) return;
+                CastLongTermSpell(Assist._assistTargetID, E3.CharacterSettings.Dots_Assist, _dotTimers);
+                if (E3.ActionTaken) return;
             }
 
 
@@ -173,8 +171,8 @@ namespace E3Core.Processors
             {
                 foreach (var mobid in _mobsToDot)
                 {
-                    CastLongTermSpell(mobid, E3._characterSettings.Dots_OnCommand, _dotTimers);
-                    if (E3._actionTaken) return;
+                    CastLongTermSpell(mobid, E3.CharacterSettings.Dots_OnCommand, _dotTimers);
+                    if (E3.ActionTaken) return;
                 }
                 foreach (var mobid in _deadMobs)
                 {
@@ -210,7 +208,7 @@ namespace E3Core.Processors
                 if (x.args.Count == 0)
                 {
                     //we are telling people to back off
-                    E3._bots.BroadcastCommandToGroup($"/debuffsoff all");
+                    E3.Bots.BroadcastCommandToGroup($"/debuffsoff all");
                 }
 
             });
@@ -220,7 +218,7 @@ namespace E3Core.Processors
                 if (x.args.Count == 0)
                 {
                     //we are telling people to back off
-                    E3._bots.BroadcastCommandToGroup($"/dotsoff all");
+                    E3.Bots.BroadcastCommandToGroup($"/dotsoff all");
                 }
 
             });
@@ -232,13 +230,13 @@ namespace E3Core.Processors
                 if (x.args.Count == 0)
                 {
                     _shouldOffAssist = true;
-                    E3._bots.BroadcastCommandToGroup("/offassiston all");
+                    E3.Bots.BroadcastCommandToGroup("/offassiston all");
                 }
                 else
                 {
                     //we are turning our own loot on.
                     _shouldOffAssist = true;
-                    E3._bots.Broadcast("\a#336699Turning on OffAssist.");
+                    E3.Bots.Broadcast("\a#336699Turning on OffAssist.");
                 }
             });
             EventProcessor.RegisterCommand("/offassistoff", (x) =>
@@ -246,13 +244,13 @@ namespace E3Core.Processors
                 if (x.args.Count == 0)
                 {
                     _shouldOffAssist = false;
-                    E3._bots.BroadcastCommandToGroup("/offassistoff all");
+                    E3.Bots.BroadcastCommandToGroup("/offassistoff all");
                 }
                 else
                 {
                     //we are turning our own loot on.
                     _shouldOffAssist = false;
-                    E3._bots.Broadcast("\a-gTurning Off OffAssist.");
+                    E3.Bots.Broadcast("\a-gTurning Off OffAssist.");
                 }
             });
 
@@ -266,7 +264,7 @@ namespace E3Core.Processors
                     {
                         if (command == "add")
                         {
-                            E3._bots.Broadcast($"Trying to add {targetid} to the off assist ignore list.");
+                            E3.Bots.Broadcast($"Trying to add {targetid} to the off assist ignore list.");
                             if (!_mobsToIgnoreOffAsist.Contains(targetid))
                             {
                                 _mobsToIgnoreOffAsist.Add(targetid);
@@ -274,7 +272,7 @@ namespace E3Core.Processors
                         }
                         else if (command == "remove")
                         {
-                            E3._bots.Broadcast($"Removing {targetid} from the off assist ignore list.");
+                            E3.Bots.Broadcast($"Removing {targetid} from the off assist ignore list.");
 
                             _mobsToIgnoreOffAsist.Remove(targetid);
                         }
@@ -292,12 +290,12 @@ namespace E3Core.Processors
                             {
                                 _mobsToIgnoreOffAsist.Add(targetid);
                             }
-                            E3._bots.BroadcastCommandToGroup($"/offassistignore all {command} {targetid}");
+                            E3.Bots.BroadcastCommandToGroup($"/offassistignore all {command} {targetid}");
                         }
                         else if (command == "remove")
                         {
                             _mobsToIgnoreOffAsist.Remove(targetid);
-                            E3._bots.BroadcastCommandToGroup($"/offassistignore all {command} {targetid}");
+                            E3.Bots.BroadcastCommandToGroup($"/offassistignore all {command} {targetid}");
                         }
                     }
                 }
@@ -447,7 +445,7 @@ namespace E3Core.Processors
                         UpdateDotDebuffTimers(mobid, spell, totalTimeToWait, timers);
                     }
                     //onto the next debuff/dot!
-                    if (E3._actionTaken) return;
+                    if (E3.ActionTaken) return;
 
                 }
             }

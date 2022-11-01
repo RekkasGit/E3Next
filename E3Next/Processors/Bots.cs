@@ -32,8 +32,8 @@ namespace E3Core.Processors
     public class Bots: IBots
     {
         public static string _lastSuccesfulCast = String.Empty;
-        public static Logging _log = E3._log;
-        private static IMQ MQ = E3.MQ;
+        public static Logging _log = E3.Log;
+        private static IMQ MQ = E3.Mq;
 
         private string _connectedBotsString = string.Empty;
         private List<string> _connectedBots = new List<string>();
@@ -189,8 +189,8 @@ namespace E3Core.Processors
         private Int32 _maxBuffSlots = 37;
         private Int32 _maxSongSlots = 25;
         public static string _lastSuccesfulCast = String.Empty;
-        public static Logging _log = E3._log;
-        private static IMQ MQ = E3.MQ;
+        public static Logging _log = E3.Log;
+        private static IMQ MQ = E3.Mq;
         private static Dictionary<string, List<Int32>> _buffListCollection = new Dictionary<string, List<int>>();
         private static Dictionary<string, Int64> _buffListCollectionTimeStamps = new Dictionary<string, long>();
         private static Int64 _nextBuffCheck = 0;
@@ -353,7 +353,7 @@ namespace E3Core.Processors
             MQ.Cmd("/dquery {name} -q Zone.ID");
             Int32 zoneid = MQ.Query<Int32>("${DanNet.Q}");
 
-            if(zoneid==E3._zoneID)
+            if(zoneid==E3.ZoneID)
             {
                 return true;
             }

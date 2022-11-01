@@ -15,9 +15,9 @@ namespace E3Core.Processors
 {
     public static class VetAAs
     {
-        public static Logging _log = E3._log;
-        private static IMQ MQ = E3.MQ;
-        private static ISpawns _spawns = E3._spawns;
+        public static Logging _log = E3.Log;
+        private static IMQ MQ = E3.Mq;
+        private static ISpawns _spawns = E3.Spawns;
 
         [SubSystemInit]
         public static void Init()
@@ -70,13 +70,13 @@ namespace E3Core.Processors
             {
                 if (x.args.Count == 0)
                 {
-                    E3._bots.BroadcastCommandToGroup("/throne me");
+                    E3.Bots.BroadcastCommandToGroup("/throne me");
                 }
                 MQ.Cmd("/interrupt");
                 MQ.Delay(500);
                 MQ.Cmd("/alt act 511");
                 MQ.Delay(500);
-                if (E3._currentClass == Class.Bard)
+                if (E3.CurrentClass == Class.Bard)
                 {
                     MQ.Delay(17000);
 
@@ -105,7 +105,7 @@ namespace E3Core.Processors
                 {
                     Casting.Cast(0, s);
                 }
-                E3._bots.BroadcastCommandToGroup($"{command} all");
+                E3.Bots.BroadcastCommandToGroup($"{command} all");
             }
             else
             {
@@ -114,7 +114,7 @@ namespace E3Core.Processors
                 {
                     //this is to deal with vet aa with bards not showing a cast window.
                     //force a stop of any song, do the cast, wait for it to end, then continue back on your way.
-                    if (E3._currentClass == Class.Bard)
+                    if (E3.CurrentClass == Class.Bard)
                     {
                         MQ.Cmd("/stopsong");
                         MQ.Delay(0);

@@ -15,9 +15,9 @@ namespace E3Core.Classes
     /// </summary>
     public static class Druid
     {
-        private static Logging _log = E3._log;
-        private static IMQ MQ = E3.MQ;
-        private static ISpawns _spawns = E3._spawns;
+        private static Logging _log = E3.Log;
+        private static IMQ MQ = E3.Mq;
+        private static ISpawns _spawns = E3.Spawns;
 
         private static Int64 _nextAutoCheetaCheck;
         private static Data.Spell _cheetaSpell = new Spell("Communion of the Cheetah");
@@ -29,7 +29,7 @@ namespace E3Core.Classes
         public static void AutoCheeta()
         {
             if (!e3util.ShouldCheck(ref _nextAutoCheetaCheck, 1000)) return;
-            if (E3._characterSettings.Druid_AutoCheeta)
+            if (E3.CharacterSettings.Druid_AutoCheetah)
             {
                 Int32 totalSecondsLeft = MQ.Query<Int32>("${Me.Buff[Spirit of Cheetah].Duration.TotalSeconds}");
                 if (totalSecondsLeft < 10)

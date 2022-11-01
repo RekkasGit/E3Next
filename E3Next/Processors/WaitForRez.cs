@@ -12,9 +12,9 @@ namespace E3Core.Processors
     public static class WaitForRez
     {
 
-        public static Logging _log = E3._log;
-        private static IMQ MQ = E3.MQ;
-        private static ISpawns _spawns = E3._spawns;
+        public static Logging _log = E3.Log;
+        private static IMQ MQ = E3.Mq;
+        private static ISpawns _spawns = E3.Spawns;
         public static bool _waitingOnRez = false;
         [SubSystemInit]
         public static void Init()
@@ -71,7 +71,7 @@ namespace E3Core.Processors
                         {
                             _waitingOnRez = false;
                             MQ.Cmd("/beep");
-                            E3._bots.Broadcast("\agWaitForRez:\arERROR! \atLoot Window stuck open, please help.");
+                            E3.Bots.Broadcast("\agWaitForRez:\arERROR! \atLoot Window stuck open, please help.");
                             MQ.Delay(1000);
                             return;
 
@@ -80,7 +80,7 @@ namespace E3Core.Processors
                         //get all spawns within a 100 distance
                         //make sure we have the most up to date zones spawns, takes about 1-2ms so no real harm forcing the issue.
                         _spawns.RefreshList();
-                        string corpseName = E3._currentName + "'s corpse";
+                        string corpseName = E3.CurrentName + "'s corpse";
                         foreach (var spawn in _spawns.Get())
                         {
                             if (spawn.CleanName.StartsWith(corpseName))
@@ -97,7 +97,7 @@ namespace E3Core.Processors
                             }
                         }
                         _waitingOnRez = false;
-                        E3._bots.Broadcast("\atReady to die again!");
+                        E3.Bots.Broadcast("\atReady to die again!");
                     }
 
                 }
@@ -121,7 +121,7 @@ namespace E3Core.Processors
             else
             {
                 //dunno, error?
-                E3._bots.Broadcast("\agWaitForRez:\arERROR! \atUnsure if we can loot, assuming no.");
+                E3.Bots.Broadcast("\agWaitForRez:\arERROR! \atUnsure if we can loot, assuming no.");
                 return true;
             }
         }
@@ -176,7 +176,7 @@ namespace E3Core.Processors
 
             if (_currentRezSpells.Count==0)
             {
-                E3._bots.Broadcast("<\aoAERez\aw> \arI have no rez spells loaded");
+                E3.Bots.Broadcast("<\aoAERez\aw> \arI have no rez spells loaded");
                 return;
             }
 
@@ -234,7 +234,7 @@ namespace E3Core.Processors
                 Spawn s;
                 if(_spawns.TryByID(corpseid,out s))
                 {
-                    E3._bots.Broadcast($"<\aoAERez\aw> Wasn't able to rez \ap{s.CleanName}\aw due to cooldowns, try again.");
+                    E3.Bots.Broadcast($"<\aoAERez\aw> Wasn't able to rez \ap{s.CleanName}\aw due to cooldowns, try again.");
                 }
             }
 
@@ -329,14 +329,14 @@ namespace E3Core.Processors
                 {
                     string user = x.args[0];
 
-                    if (user == E3._currentName)
+                    if (user == E3.CurrentName)
                     {
                         //its a me!
                         AERez();
                     }
                     else
                     {
-                        E3._bots.BroadcastCommandToPerson(user, "/aerez");
+                        E3.Bots.BroadcastCommandToPerson(user, "/aerez");
                     }
 
                 }
@@ -352,7 +352,7 @@ namespace E3Core.Processors
                     Int32 targetid = MQ.Query<Int32>("${Target.ID}");
                     if (targetid>0)
                     {
-                        E3._bots.BroadcastCommandToPerson(user, $"/rezit {targetid}");
+                        E3.Bots.BroadcastCommandToPerson(user, $"/rezit {targetid}");
 
                     }
 
@@ -388,7 +388,7 @@ namespace E3Core.Processors
                 if(x.match.Groups.Count>1)
                 {
                     string user = x.match.Groups[1].Value;
-                    E3._bots.Broadcast("Being told to wait for rez by:" + user);
+                    E3.Bots.Broadcast("Being told to wait for rez by:" + user);
                     MQ.Cmd($"/consent {user}");
                     _waitingOnRez = true;
                 }
@@ -398,7 +398,7 @@ namespace E3Core.Processors
                 if(x.args.Count>0)
                 {
                     //is it us?
-                    if(x.args[0].Equals(E3._currentName, StringComparison.OrdinalIgnoreCase))
+                    if(x.args[0].Equals(E3.CurrentName, StringComparison.OrdinalIgnoreCase))
                     {
                         //its us! lets wait
                         _waitingOnRez = true;
@@ -410,7 +410,7 @@ namespace E3Core.Processors
             {
                 if (x.args.Count > 0)
                 {
-                    E3._bots.BroadcastCommandToGroup($"/WaitRez {x.args[0]}");
+                    E3.Bots.BroadcastCommandToGroup($"/WaitRez {x.args[0]}");
                 }
             });
         }

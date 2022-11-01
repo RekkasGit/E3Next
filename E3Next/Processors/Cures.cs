@@ -12,9 +12,9 @@ namespace E3Core.Processors
     public static class Cures
     {
 
-        public static Logging _log = E3._log;
-        private static IMQ MQ = E3.MQ;
-        private static ISpawns _spawns = E3._spawns;
+        public static Logging _log = E3.Log;
+        private static IMQ MQ = E3.Mq;
+        private static ISpawns _spawns = E3.Spawns;
         private static Data.Spell _RaidentCure;
         private static bool _shouldCastCure = true;
         private static Int64 _nextRCureCheck = 0;
@@ -45,15 +45,15 @@ namespace E3Core.Processors
         {
 
             if (!e3util.ShouldCheck(ref _nextRCureCheck, _nexRCureCheckInterval)) return;
-            if (!E3._actionTaken) CheckRaident();
-            if (!E3._actionTaken) CheckNormalCures();
-            if (!E3._actionTaken) CheckCounterCures();
-            if (!E3._actionTaken) CheckNormalCureAll();
+            if (!E3.ActionTaken) CheckRaident();
+            if (!E3.ActionTaken) CheckNormalCures();
+            if (!E3.ActionTaken) CheckCounterCures();
+            if (!E3.ActionTaken) CheckNormalCureAll();
 
         }
         private static void CheckNormalCureAll()
         {
-            foreach (var spell in E3._characterSettings.CureAll)
+            foreach (var spell in E3.CharacterSettings.CureAll)
             {
 
                 foreach (var id in Basics._groupMembers)
@@ -61,7 +61,7 @@ namespace E3Core.Processors
                     Spawn s;
                     if (_spawns.TryByID(id, out s))
                     {
-                        if (E3._bots.BuffList(s.CleanName).Contains(spell.CheckForID))
+                        if (E3.Bots.BuffList(s.CleanName).Contains(spell.CheckForID))
                         {
                             if (Casting.CheckReady(spell) && Casting.CheckMana(spell))
                             {
@@ -80,7 +80,7 @@ namespace E3Core.Processors
             if (MQ.Query<bool>("${Me.AltAbilityReady[Radiant Cure]}"))
             {
                 //spell here is the spell debuff we are looking for
-                foreach (var spell in E3._characterSettings.RadiantCure)
+                foreach (var spell in E3.CharacterSettings.RadiantCure)
                 {
                     Int32 numberSick = 0;
 
@@ -89,7 +89,7 @@ namespace E3Core.Processors
                         Spawn s;
                         if (_spawns.TryByID(id, out s))
                         {
-                            if (E3._bots.BuffList(s.CleanName).Contains(spell.SpellID))
+                            if (E3.Bots.BuffList(s.CleanName).Contains(spell.SpellID))
                             {
                                 if (s.Distance < _RaidentCure.MyRange)
                                 {
@@ -111,9 +111,9 @@ namespace E3Core.Processors
         private static void CheckCounterCures()
         {
 
-            if (CheckCounterCure(E3._characterSettings.CurseCounterCure, E3._characterSettings.CurseCounterIgnore)) return;
-            if (CheckCounterCure(E3._characterSettings.PosionCounterCure, E3._characterSettings.PosionCounterIgnore)) return;
-            if (CheckCounterCure(E3._characterSettings.DiseaseCounterCure, E3._characterSettings.DiseaseCounterIgnore)) return;
+            if (CheckCounterCure(E3.CharacterSettings.CurseCounterCure, E3.CharacterSettings.CurseCounterIgnore)) return;
+            if (CheckCounterCure(E3.CharacterSettings.PosionCounterCure, E3.CharacterSettings.PosionCounterIgnore)) return;
+            if (CheckCounterCure(E3.CharacterSettings.DiseaseCounterCure, E3.CharacterSettings.DiseaseCounterIgnore)) return;
 
         }
         private static bool CheckCounterCure(List<Data.Spell> curesSpells, List<Data.Spell> ignoreSpells)
@@ -122,17 +122,17 @@ namespace E3Core.Processors
             {
 
                 //check each member of the group for counters
-                List<string> targets = E3._bots.BotsConnected();
+                List<string> targets = E3.Bots.BotsConnected();
                 foreach (var target in targets)
                 {
                     Spawn s;
                     if (_spawns.TryByName(target, out s))
                     {
-                        Int32 counters = E3._bots.CursedCounters(target);
+                        Int32 counters = E3.Bots.CursedCounters(target);
                         if (counters > 0 && s.Distance < spell.MyRange)
                         {
                             //check and make sure they don't have one of the 'ignored debuffs'
-                            List<Int32> badbuffs = E3._bots.BuffList(s.CleanName);
+                            List<Int32> badbuffs = E3.Bots.BuffList(s.CleanName);
 
                             bool foundBadBuff = false;
                             foreach (var bb in ignoreSpells)
@@ -159,12 +159,12 @@ namespace E3Core.Processors
         }
         private static void CheckNormalCures()
         {
-            foreach (var spell in E3._characterSettings.Cures)
+            foreach (var spell in E3.CharacterSettings.Cures)
             {
                 Spawn s;
                 if (_spawns.TryByName(spell.CastTarget, out s))
                 {
-                    if (s.Distance < spell.MyRange && E3._bots.BuffList(s.CleanName).Contains(spell.CheckForID))
+                    if (s.Distance < spell.MyRange && E3.Bots.BuffList(s.CleanName).Contains(spell.CheckForID))
                     {
                         if (Casting.InRange(s.ID, spell) && Casting.CheckReady(spell) && Casting.CheckMana(spell))
                         {
@@ -184,10 +184,10 @@ namespace E3Core.Processors
             EventProcessor.ProcessEventsInQueues("/CastingRadiantCure");
             if (_shouldCastCure)
             {
-                E3._bots.BroadcastCommandToGroup("/CastingRadiantCure FALSE");
+                E3.Bots.BroadcastCommandToGroup("/CastingRadiantCure FALSE");
                 //did we find enough sick people? if so, cast cure.
                 Casting.Cast(0, _RaidentCure);
-                E3._bots.BroadcastCommandToGroup("/CastingRadiantCure TRUE");
+                E3.Bots.BroadcastCommandToGroup("/CastingRadiantCure TRUE");
             }
         }
     }

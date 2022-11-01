@@ -24,7 +24,7 @@ namespace E3Core.Settings.FeatureSettings
         public Dictionary<string,string> GetClassAliases()
         {
             Dictionary<string, string> returnValue = new Dictionary<string, string>();
-            var section = _doorData.Sections[E3._currentLongClassString];
+            var section = _doorData.Sections[E3.CurrentLongClassString];
             if (section != null)
             {
                 foreach(var kvp in section)

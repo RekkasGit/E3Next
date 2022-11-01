@@ -19,9 +19,9 @@ namespace E3Core.Processors
     public static class Basics
     {
         public static SavedGroupDataFile _savedGroupData = new SavedGroupDataFile();
-        public static Logging _log = E3._log;
-        private static IMQ MQ = E3.MQ;
-        private static ISpawns _spawns = E3._spawns;
+        public static Logging _log = E3.Log;
+        private static IMQ MQ = E3.Mq;
+        private static ISpawns _spawns = E3.Spawns;
         public static bool _isPaused = false;
         public static List<Int32> _groupMembers = new List<int>();
         private static Int64 _nextGroupCheck = 0;
@@ -105,7 +105,7 @@ namespace E3Core.Processors
             
             EventProcessor.RegisterCommand("/dropinvis", (x) =>
             {
-                E3._bots.BroadcastCommandToGroup("/makemevisible");
+                E3.Bots.BroadcastCommandToGroup("/makemevisible");
                 MQ.Cmd("/makemevisible");
             });
             EventProcessor.RegisterCommand("/debug", (x) =>
@@ -121,14 +121,14 @@ namespace E3Core.Processors
                 {
                     Logging._minLogLevelTolog = Logging.LogLevels.Error;
                     Logging._traceLogLevel = Logging.LogLevels.None;
-                    MainProcessor._processDelay = E3._processDelay;
+                    MainProcessor._processDelay = E3.ProcessDelay;
                 }
 
             });
 
             EventProcessor.RegisterCommand("/pizza", (x) =>
             {
-                if (E3._currentName == "Reek")
+                if (E3.CurrentName == "Reek")
                 {
                     System.Diagnostics.Process.Start("https://ordering.orders2.me/menu/pontillos-pizzeria-hudson-ridge");
                 }
@@ -145,7 +145,7 @@ namespace E3Core.Processors
                
                 if(x.args.Count==0)
                 {
-                    E3._bots.BroadcastCommandToGroup("/yes all");
+                    E3.Bots.BroadcastCommandToGroup("/yes all");
                 }
                 ClickYesNo(true);
 
@@ -155,7 +155,7 @@ namespace E3Core.Processors
 
                 if (x.args.Count == 0)
                 {
-                    E3._bots.BroadcastCommandToGroup("/no all");
+                    E3.Bots.BroadcastCommandToGroup("/no all");
                 }
                 ClickYesNo(false);
 
@@ -183,8 +183,8 @@ namespace E3Core.Processors
                                 first = false;
                             }
                             string message = sb.ToString();
-                            E3._bots.BroadcastCommandToGroup($"/bark-send {targetid} \"{message}\"");
-                            Int32 currentZone = E3._zoneID;
+                            E3.Bots.BroadcastCommandToGroup($"/bark-send {targetid} \"{message}\"");
+                            Int32 currentZone = E3.ZoneID;
 
                             for (Int32 i = 0; i < 5; i++)
                             {
@@ -221,7 +221,7 @@ namespace E3Core.Processors
                                 e3util.TryMoveToLoc(s.X, s.Y);
 
                                 string message = x.args[1];
-                                Int32 currentZone = E3._zoneID;
+                                Int32 currentZone = E3.ZoneID;
                                 for (Int32 i = 0; i < 5; i++)
                                 {
                                     MQ.Cmd($"/say {message}");
@@ -260,11 +260,11 @@ namespace E3Core.Processors
 
                         //lets try and do evac spell?
                         string spellToCheck = string.Empty;
-                        if (E3._currentClass == Class.Wizard)
+                        if (E3.CurrentClass == Class.Wizard)
                         {
                             spellToCheck = "Evacuate";
                         }
-                        else if (E3._currentClass == Class.Druid)
+                        else if (E3.CurrentClass == Class.Druid)
                         {
                             spellToCheck = "Succor";
                         }
@@ -284,7 +284,7 @@ namespace E3Core.Processors
                 }
                 else
                 {
-                    E3._bots.BroadcastCommandToGroup("/evac me");
+                    E3.Bots.BroadcastCommandToGroup("/evac me");
                 }
             });
 
@@ -327,8 +327,8 @@ namespace E3Core.Processors
                 }
                 MQ.Cmd("/disband");
                 MQ.Cmd("/raiddisband");
-                E3._bots.BroadcastCommand("/raiddisband");
-                E3._bots.BroadcastCommand("/disband");
+                E3.Bots.BroadcastCommand("/raiddisband");
+                E3.Bots.BroadcastCommand("/disband");
 
                 if (MQ.Query<int>("${Group}") > 0)
                 {
@@ -426,7 +426,7 @@ namespace E3Core.Processors
 
             using(_log.Trace())
             {
-                if (E3._isInvis) return;
+                if (E3.IsInvis) return;
                 if (Basics.AmIDead()) return;
 
 
@@ -448,7 +448,7 @@ namespace E3Core.Processors
                 Int32 currentHps = MQ.Query<Int32>("${Me.CurrentHPs}");
 
 
-                if (E3._currentClass == Data.Class.Enchanter)
+                if (E3.CurrentClass == Data.Class.Enchanter)
                 {
                     bool manaDrawBuff = MQ.Query<bool>("${Bool[${Me.Buff[Mana Draw]}]}") || MQ.Query<bool>("${Bool[${Me.Song[Mana Draw]}]}");
                     if (manaDrawBuff)
@@ -460,7 +460,7 @@ namespace E3Core.Processors
                     }
                 }
 
-                if (E3._currentClass == Data.Class.Necromancer)
+                if (E3.CurrentClass == Data.Class.Necromancer)
                 {
                     bool deathBloom = MQ.Query<bool>("${Bool[${Me.Buff[Death Bloom]}]}") || MQ.Query<bool>("${Bool[${Me.Song[Death Bloom]}]}");
                     if (deathBloom)
@@ -469,7 +469,7 @@ namespace E3Core.Processors
                     }
                 }
 
-                if (E3._currentClass == Data.Class.Shaman)
+                if (E3.CurrentClass == Data.Class.Shaman)
                 {
                     bool canniReady = MQ.Query<bool>("${Me.AltAbilityReady[Cannibalization]}");
 
@@ -523,7 +523,7 @@ namespace E3Core.Processors
                     }
                 }
 
-                if (E3._currentClass == Data.Class.Necromancer && pctMana < 50)
+                if (E3.CurrentClass == Data.Class.Necromancer && pctMana < 50)
                 {
                     bool deathBloomReady = MQ.Query<bool>("${Me.AltAbilityReady[Death Bloom]}");
                     if (deathBloomReady && currentHps > 8000)
@@ -540,7 +540,7 @@ namespace E3Core.Processors
                         }
                     }
                 }
-                if (E3._currentClass == Data.Class.Enchanter && pctMana < 50)
+                if (E3.CurrentClass == Data.Class.Enchanter && pctMana < 50)
                 {
                     bool manaDrawReady = MQ.Query<bool>("${Me.AltAbilityReady[Mana Draw]}");
                     if (manaDrawReady)
@@ -582,7 +582,7 @@ namespace E3Core.Processors
                         }
                         //allow mq to have the commands sent to the server
                         MQ.Delay(50);
-                        if ((E3._currentClass & Class.Priest) == E3._currentClass)
+                        if ((E3.CurrentClass & Class.Priest) == E3.CurrentClass)
                         {
                             if (Heals.SomeoneNeedsHealing(currentMana, pctMana))
                             {
@@ -611,9 +611,9 @@ namespace E3Core.Processors
         public static void CheckAutoMed()
         {
             if (!e3util.ShouldCheck(ref _nextAutoMedCheck, _nextAutoMedCheckInterval)) return;
-            Int32 autoMedPct = E3._generalSettings.General_AutoMedBreakPctMana;
+            Int32 autoMedPct = E3.GeneralSettings.General_AutoMedBreakPctMana;
             if (autoMedPct == 0) return;
-            if (!E3._characterSettings.Misc_AutoMedBreak) return;
+            if (!E3.CharacterSettings.Misc_AutoMedBreak) return;
             using(_log.Trace())
             {
                 if (Movement._following || InCombat()) return;
@@ -625,7 +625,7 @@ namespace E3Core.Processors
                     Int32 pctMana = MQ.Query<Int32>("${Me.PctMana}");
                     Int32 pctEndurance = MQ.Query<Int32>("${Me.PctEndurance}");
 
-                    if (pctMana < autoMedPct && (E3._currentClass & Class.ManaUsers) == E3._currentClass)
+                    if (pctMana < autoMedPct && (E3.CurrentClass & Class.ManaUsers) == E3.CurrentClass)
                     {
                         MQ.Cmd("/sit");
                     }
@@ -646,11 +646,11 @@ namespace E3Core.Processors
         {
             if (!e3util.ShouldCheck(ref _nextFoodCheck, _nextFoodCheckInterval)) return;
 
-            if (!E3._characterSettings.Misc_AutoFoodEnabled || Assist._isAssisting) return;
+            if (!E3.CharacterSettings.Misc_AutoFoodEnabled || Assist._isAssisting) return;
             using (_log.Trace())
             {
-                var toEat = E3._characterSettings.Misc_AutoFood;
-                var toDrink = E3._characterSettings.Misc_AutoDrink;
+                var toEat = E3.CharacterSettings.Misc_AutoFood;
+                var toDrink = E3.CharacterSettings.Misc_AutoDrink;
 
                 if (MQ.Query<bool>($"${{FindItem[{toEat}].ID}}") && MQ.Query<int>("${Me.Hunger}") < 4500)
                 {

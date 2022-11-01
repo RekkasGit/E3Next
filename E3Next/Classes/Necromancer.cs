@@ -16,9 +16,9 @@ namespace E3Core.Classes
     /// </summary>
     public static class Necromancer
     {
-        private static Logging _log = E3._log;
-        private static IMQ MQ = E3.MQ;
-        private static ISpawns _spawns = E3._spawns;
+        private static Logging _log = E3.Log;
+        private static IMQ MQ = E3.Mq;
+        private static ISpawns _spawns = E3.Spawns;
 
         private static Int64 _nextAggroCheck = 0;
         private static Int64 _nextAggroRefreshTimeInterval = 1000;
@@ -74,7 +74,7 @@ namespace E3Core.Classes
                     if (GroupSize - GroupSize > 1)
                     {
                         Assist.AssistOff();
-                        E3._bots.Broadcast("<CheckNecroAggro> Have agro, someone is dead, staying down. Issue reassist when ready.");
+                        E3.Bots.Broadcast("<CheckNecroAggro> Have agro, someone is dead, staying down. Issue reassist when ready.");
 
 
                     }
@@ -99,7 +99,7 @@ namespace E3Core.Classes
                     if (GroupSize - GroupSize > 1)
                     {
                         Assist.AssistOff();
-                        E3._bots.Broadcast("<CheckNecroAggro> Have agro, someone is dead, staying down. Issue reassist when ready.");
+                        E3.Bots.Broadcast("<CheckNecroAggro> Have agro, someone is dead, staying down. Issue reassist when ready.");
                     }
                     else
                     {

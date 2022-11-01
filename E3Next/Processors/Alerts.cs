@@ -12,8 +12,8 @@ namespace E3Core.Processors
     /// </summary>
     public static class Alerts
     {
-        private static Logging _log = E3._log;
-        private static IMQ MQ = E3.MQ;
+        private static Logging _log = E3.Log;
+        private static IMQ MQ = E3.Mq;
 
         /// <summary>
         /// Initializes this instance.
@@ -35,7 +35,7 @@ namespace E3Core.Processors
                
                 if (!MQ.Query<bool>("${Bool[${FindItem[=Mirrored Mask]}]}"))
                 {
-                    E3._bots.Broadcast("I don't have a mirrored mask, I dun messed up.");
+                    E3.Bots.Broadcast("I don't have a mirrored mask, I dun messed up.");
                     MQ.Cmd("/beep");
                     return;
                 }
@@ -85,7 +85,7 @@ namespace E3Core.Processors
             #region CharacterFlag
             pattern = "You receive a character flag.";
             EventProcessor.RegisterEvent("CharacterFlag", pattern, (x) => {
-                E3._bots.Broadcast("I have recieved a characer flag!");
+                E3.Bots.Broadcast("I have recieved a characer flag!");
             });
 
             #endregion

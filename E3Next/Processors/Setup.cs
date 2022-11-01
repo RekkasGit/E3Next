@@ -25,8 +25,8 @@ namespace E3Core.Processors
         public static string _character_Ini = @"e3 Bot Inis\{CharacterName}_{ServerName}.ini";
 
         public static string _serverNameForIni = "PEQTGC"; //project eq, the grand creation, where legacy e3 was born i believe.
-        public static Logging _log = E3._log;
-        private static IMQ MQ = E3.MQ;
+        public static Logging _log = E3.Log;
+        private static IMQ MQ = E3.Mq;
 
         public static Boolean Init()
         {
