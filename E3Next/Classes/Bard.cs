@@ -16,9 +16,9 @@ namespace E3Core.Classes
     /// </summary>
     public static class Bard
     {
-        private static Logging _log = E3._log;
-        private static IMQ MQ = E3.MQ;
-        private static ISpawns _spawns = E3._spawns;
+        private static Logging _log = E3.Log;
+        private static IMQ MQ = E3.Mq;
+        private static ISpawns _spawns = E3.Spawns;
         private static Queue<Data.Spell> _songs = new Queue<Spell>();
         private static bool _isInit = false;
         private static bool _playingMelody = true;
@@ -80,7 +80,7 @@ namespace E3Core.Classes
             if (!_playingMelody || _forceOverride) return;
 
             //go through the ifs and see if we should change the melodies
-            foreach(var melodyCheck in E3._characterSettings.Bard_MelodyIfs)
+            foreach(var melodyCheck in E3.CharacterSettings.Bard_MelodyIfs)
             {
                 bool melodyTrue = MQ.Query<bool>($"${{If[{melodyCheck.MelodyIf},TRUE,FALSE]}}");
                 if(melodyTrue)
@@ -104,7 +104,7 @@ namespace E3Core.Classes
 
             bool stunned = MQ.Query<bool>("${Me.Stunned}");
             bool windowOpen = MQ.Query<bool>("${Window[BigBankWnd].Open}") || MQ.Query<bool>("${Window[MerchantWnd].Open}") || MQ.Query<bool>("${Window[TradeWnd].Open}") || MQ.Query<bool>("${Window[GuildBankWnd].Open}");
-            if (E3._isInvis || windowOpen)
+            if (E3.IsInvis || windowOpen)
             {
                 return;
             }
@@ -135,7 +135,7 @@ namespace E3Core.Classes
         {
              _songs.Clear();
             //lets find the melody in the character ini.
-            CharacterSettings.LoadKeyData($"{melodyName} Melody", "Song", CharacterSettings._parsedData, _songs);
+            CharacterSettings.LoadKeyData($"{melodyName} Melody", "Song", CharacterSettings.ParsedData, _songs);
             if(_songs.Count>0)
             {
                 MQ.Write($"\aoStart Melody:\ag{melodyName}");

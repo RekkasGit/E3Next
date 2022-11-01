@@ -17,9 +17,9 @@ namespace E3Core.Classes
     /// </summary>
     public static class Ranger
     {
-        private static Logging _log = E3._log;
-        private static IMQ MQ = E3.MQ;
-        private static ISpawns _spawns = E3._spawns;
+        private static Logging _log = E3.Log;
+        private static IMQ MQ = E3.Mq;
+        private static ISpawns _spawns = E3.Spawns;
 
         private static Int64 _nextAggroCheck = 0;
         private static Int64 _nextAggroRefreshTimeInterval = 1000;
@@ -50,7 +50,7 @@ namespace E3Core.Classes
                         Casting.Cast(0, s);
                         return;
                     }
-                    E3._bots.Broadcast($"\ag<check_RangerAggro> \awI have stolen aggro again ({aggroPct}%), Pausing for 5 seconds then going to reengage");
+                    E3.Bots.Broadcast($"\ag<check_RangerAggro> \awI have stolen aggro again ({aggroPct}%), Pausing for 5 seconds then going to reengage");
                     Int32 assistid = Assist._assistTargetID;
                     Assist.AssistOff();
                     MQ.Delay(5000);

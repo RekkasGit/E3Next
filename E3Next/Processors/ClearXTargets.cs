@@ -14,9 +14,9 @@ namespace E3Core.Processors
 {
     public static class ClearXTargets
     {
-        public static Logging _log = E3._log;
-        private static IMQ MQ = E3.MQ;
-        private static ISpawns _spawns = E3._spawns;
+        public static Logging _log = E3.Log;
+        private static IMQ MQ = E3.Mq;
+        private static ISpawns _spawns = E3.Spawns;
 
         public static bool _enabled = false;
         public static Int32 _mobToAttack = 0;
@@ -84,7 +84,7 @@ namespace E3Core.Processors
                             Assist._allowControl = true;
                             Assist.AssistOn(mobId);
                             MQ.Delay(500);
-                            E3._bots.BroadcastCommandToGroup($"/assistme {mobId}");
+                            E3.Bots.BroadcastCommandToGroup($"/assistme {mobId}");
                         }
                     }
                 }

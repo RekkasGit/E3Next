@@ -12,9 +12,9 @@ namespace E3Core.Processors
 {
     public static class Burns
     {
-        public static Logging _log = E3._log;
-        private static IMQ MQ = E3.MQ;
-        private static ISpawns _spawns = E3._spawns;
+        public static Logging _log = E3.Log;
+        private static IMQ MQ = E3.Mq;
+        private static ISpawns _spawns = E3.Spawns;
 
         public static bool use_FULLBurns = false;
         public static bool use_QUICKBurns = false;
@@ -78,9 +78,9 @@ namespace E3Core.Processors
 
             UseBurn(_epicWeapon, use_EPICBurns);
             UseBurn(_anguishBP, use_EPICBurns);
-            UseBurn(E3._characterSettings.QuickBurns, use_QUICKBurns);
-            UseBurn(E3._characterSettings.FullBurns, use_FULLBurns);
-            UseBurn(E3._characterSettings.LongBurns, use_LONGBurns);
+            UseBurn(E3.CharacterSettings.QuickBurns, use_QUICKBurns);
+            UseBurn(E3.CharacterSettings.FullBurns, use_FULLBurns);
+            UseBurn(E3.CharacterSettings.LongBurns, use_LONGBurns);
 
         }
         private static void UseBurn(List<Data.Spell> burnList, bool use)
@@ -118,7 +118,7 @@ namespace E3Core.Processors
                 }
                 else
                 {
-                    E3._bots.Broadcast($"\aNeed a valid target to {command}.");
+                    E3.Bots.Broadcast($"\aNeed a valid target to {command}.");
                 }
             }
             else
@@ -127,7 +127,7 @@ namespace E3Core.Processors
                 if (targetID > 0)
                 {
                     //we are telling people to follow us
-                    E3._bots.BroadcastCommandToGroup($"{command} {targetID}");
+                    E3.Bots.BroadcastCommandToGroup($"{command} {targetID}");
                     burnType = true;
                 }
                 else

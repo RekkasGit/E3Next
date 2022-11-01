@@ -15,9 +15,9 @@ namespace E3Core.Processors
     {
 
 
-        public static Logging _log = E3._log;
-        private static IMQ MQ = E3.MQ;
-        private static ISpawns _spawns = E3._spawns;
+        public static Logging _log = E3.Log;
+        private static IMQ MQ = E3.Mq;
+        private static ISpawns _spawns = E3.Spawns;
         //needs to be refreshed every so often in case of dispels
         //maybe after combat?
         public static Dictionary<Int32, SpellTimer> _buffTimers = new Dictionary<Int32, SpellTimer>();
@@ -48,7 +48,7 @@ namespace E3Core.Processors
                 {
                     string buffToDrop = x.args[0];
                     DropBuff(buffToDrop);
-                    E3._bots.BroadcastCommand($"/removebuff {buffToDrop}");
+                    E3.Bots.BroadcastCommand($"/removebuff {buffToDrop}");
                 }
             });
 
@@ -79,7 +79,7 @@ namespace E3Core.Processors
                     {
                         MQ.Write("\aoBlocked Spell List");
                         MQ.Write("\aw==================");
-                        foreach (var spell in E3._characterSettings.BockedBuffs)
+                        foreach (var spell in E3.CharacterSettings.BockedBuffs)
                         {
                             MQ.Write("\at" + spell.SpellName);
                         }
@@ -89,16 +89,16 @@ namespace E3Core.Processors
         }
         public static void BlockBuffRemove(string spellName)
         {
-            List<Spell> newList = E3._characterSettings.BockedBuffs.Where(y => !y.SpellName.Equals(spellName, StringComparison.OrdinalIgnoreCase)).ToList();
-            E3._characterSettings.BockedBuffs = newList;
-            E3._characterSettings.SaveData();
+            List<Spell> newList = E3.CharacterSettings.BockedBuffs.Where(y => !y.SpellName.Equals(spellName, StringComparison.OrdinalIgnoreCase)).ToList();
+            E3.CharacterSettings.BockedBuffs = newList;
+            E3.CharacterSettings.SaveData();
 
         }
         public static void BlockBuffAdd(string spellName)
         {
             //check if it exists
             bool exists = false;
-            foreach (var spell in E3._characterSettings.BockedBuffs)
+            foreach (var spell in E3.CharacterSettings.BockedBuffs)
             {
 
                 if (spell.SpellName.Equals(spellName, StringComparison.OrdinalIgnoreCase))
@@ -111,8 +111,8 @@ namespace E3Core.Processors
                 Spell s = new Spell(spellName);
                 if (s.SpellID > 0)
                 {
-                    E3._characterSettings.BockedBuffs.Add(s);
-                    E3._characterSettings.SaveData();
+                    E3.CharacterSettings.BockedBuffs.Add(s);
+                    E3.CharacterSettings.SaveData();
                 }
             }
         }
@@ -218,7 +218,7 @@ namespace E3Core.Processors
         public static void Check_BlockedBuffs()
         {
             if (!e3util.ShouldCheck(ref _nextBlockBuffCheck, _nextBlockBuffCheckInterval)) return;
-            foreach (var spell in E3._characterSettings.BockedBuffs)
+            foreach (var spell in E3.CharacterSettings.BockedBuffs)
             {
                 if (spell.SpellID > 0)
                 {
@@ -229,7 +229,7 @@ namespace E3Core.Processors
                 }
             }
             //shoving this here for now
-            if (E3._characterSettings.Misc_RemoveTorporAfterCombat)
+            if (E3.CharacterSettings.Misc_RemoveTorporAfterCombat)
             {
                 //auto remove torpor if not in combat and full health
                 if (MQ.Query<Int32>("${Me.PctHPs}") > 98 && !Basics.InCombat())
@@ -245,19 +245,18 @@ namespace E3Core.Processors
         [AdvSettingInvoke]
         public static void Check_Buffs()
         {
-            if (E3._isInvis) return;
+            if (E3.IsInvis) return;
 
 
             RefresBuffCacheForBots();
             //instant buffs have their own shouldcheck, need it snappy so check quickly.
-            BuffInstant(E3._characterSettings.InstantBuffs);
+            BuffInstant(E3.CharacterSettings.InstantBuffs);
 
             if (!e3util.ShouldCheck(ref _nextBuffCheck, _nextBuffCheckInterval)) return;
             if (Basics.AmIDead()) return;
 
             using (_log.Trace())
             {
-
                 bool moving = MQ.Query<bool>("${Me.Moving}");
 
 
@@ -265,22 +264,20 @@ namespace E3Core.Processors
 
                 if (Basics.InCombat())
                 {
-                    BuffBots(E3._characterSettings.CombatBuffs);
+                    BuffBots(E3.CharacterSettings.CombatBuffs);
 
                 }
                 else if (!moving && !Movement._following)
                 {
-                    if (!E3._actionTaken) BuffAuras();
-                    if (!E3._actionTaken) BuffBots(E3._characterSettings.SelfBuffs);
-                    if (!E3._actionTaken) BuffBots(E3._characterSettings.BotBuffs);
-                    if (!E3._actionTaken) BuffBots(E3._characterSettings.PetBuffs, true);
+                    if (!E3.ActionTaken) BuffAuras();
+                    if (!E3.ActionTaken) BuffBots(E3.CharacterSettings.SelfBuffs);
+                    if (!E3.ActionTaken) BuffBots(E3.CharacterSettings.BotBuffs);
+                    if (!E3.ActionTaken) BuffBots(E3.CharacterSettings.PetBuffs, true);
                     //TODO: Auras
                 }
 
 
             }
-                
-            
 
 
         }
@@ -351,12 +348,12 @@ namespace E3Core.Processors
             {
                 Spawn s;
 
-                string target = E3._currentName;
+                string target = E3.CurrentName;
                 if (!String.IsNullOrWhiteSpace(spell.CastTarget))
                 {
                     if (spell.CastTarget.Equals("Self", StringComparison.OrdinalIgnoreCase))
                     {
-                        target = E3._currentName;
+                        target = E3.CurrentName;
                     }
                     else
                     {
@@ -592,14 +589,14 @@ namespace E3Core.Processors
                         //someone other than us.
                         //if its a netbots, we initially do target, then have the cache refreshed
                         bool botInZone = false;
-                        botInZone = E3._bots.InZone(spell.CastTarget);
+                        botInZone = E3.Bots.InZone(spell.CastTarget);
                         if (botInZone)
                         {
 
                             //its one of our bots, we can directly access short buffs
                             if (!String.IsNullOrWhiteSpace(spell.CheckFor))
                             {
-                                bool hasCheckFor = E3._bots.BuffList(spell.CastTarget).Contains(spell.CheckForID);
+                                bool hasCheckFor = E3.Bots.BuffList(spell.CastTarget).Contains(spell.CheckForID);
                                 //can't check for target song buffs, be aware. will have to check netbots. 
                                 if (hasCheckFor)
                                 {
@@ -611,7 +608,7 @@ namespace E3Core.Processors
 
                             }
 
-                            bool hasBuff = hasBuff = E3._bots.BuffList(spell.CastTarget).Contains(spell.SpellID);
+                            bool hasBuff = hasBuff = E3.Bots.BuffList(spell.CastTarget).Contains(spell.SpellID);
 
                             if (!hasBuff)
                             {
@@ -910,7 +907,7 @@ namespace E3Core.Processors
                     Spawn s;
                     if (_spawns.TryByID(userID, out s))
                     {
-                        List<Int32> list = E3._bots.BuffList(s.Name);
+                        List<Int32> list = E3.Bots.BuffList(s.Name);
                         if (list.Count == 0)
                         {
                             continue;

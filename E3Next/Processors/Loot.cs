@@ -13,9 +13,9 @@ namespace E3Core.Processors
 {
     public static class Loot
     {
-        public static Logging _log = E3._log;
-        private static IMQ MQ = E3.MQ;
-        private static ISpawns _spawns = E3._spawns;
+        public static Logging _log = E3.Log;
+        private static IMQ MQ = E3.Mq;
+        private static ISpawns _spawns = E3.Spawns;
         private static bool _shouldLoot = false;
         private static Int32 _seekRadius = 50;
         private static HashSet<Int32> _unlootableCorpses = new HashSet<int>();
@@ -33,16 +33,16 @@ namespace E3Core.Processors
         {
             RegisterEvents();
 
-            _shouldLoot =E3._characterSettings.Misc_AutoLootEnabled;
+            _shouldLoot =E3.CharacterSettings.Misc_AutoLootEnabled;
             //TODO: remove this line when done with debug
-            E3._generalSettings.Loot_LinkChannel = "say";
+            E3.GeneralSettings.Loot_LinkChannel = "say";
             //End TODO
 
-            _seekRadius = E3._generalSettings.Loot_CorpseSeekRadius;
-            _lootOnlyStackable = E3._generalSettings.Loot_OnlyStackableEnabled;
-            _lootOnlyStackableValue = E3._generalSettings.Loot_OnlyStackableValueGreaterThanInCopper;
-            _lootOnlyStackableAllTradeSkils = E3._generalSettings.Loot_OnlyStackableAllTradeSkillItems;
-            _lootOnlyStackableCommonTradeSkils = E3._generalSettings.Loot_OnlyStackableOnlyCommonTradeSkillItems;
+            _seekRadius = E3.GeneralSettings.Loot_CorpseSeekRadius;
+            _lootOnlyStackable = E3.GeneralSettings.Loot_OnlyStackableEnabled;
+            _lootOnlyStackableValue = E3.GeneralSettings.Loot_OnlyStackableValueGreaterThanInCopper;
+            _lootOnlyStackableAllTradeSkils = E3.GeneralSettings.Loot_OnlyStackableAllTradeSkillItems;
+            _lootOnlyStackableCommonTradeSkils = E3.GeneralSettings.Loot_OnlyStackableOnlyCommonTradeSkillItems;
 
             LootDataFile.LoadData();
         }
@@ -84,35 +84,35 @@ namespace E3Core.Processors
 
             EventProcessor.RegisterCommand("/looton", (x) =>
             {
-                if (x.args.Count > 0 && !x.args[0].Equals(E3._currentName, StringComparison.OrdinalIgnoreCase))
+                if (x.args.Count > 0 && !x.args[0].Equals(E3.CurrentName, StringComparison.OrdinalIgnoreCase))
                 {
-                    E3._bots.BroadcastCommandToPerson(x.args[0], "/looton");
+                    E3.Bots.BroadcastCommandToPerson(x.args[0], "/looton");
                 }
                 else
                 {
                     //we are turning our own loot on.
                     _shouldLoot = true;
-                    E3._bots.Broadcast("\agTurning on Loot.");
+                    E3.Bots.Broadcast("\agTurning on Loot.");
                 }
             });
             EventProcessor.RegisterCommand("/lootoff", (x) =>
             {
-                if (x.args.Count > 0 && !x.args[0].Equals(E3._currentName, StringComparison.OrdinalIgnoreCase))
+                if (x.args.Count > 0 && !x.args[0].Equals(E3.CurrentName, StringComparison.OrdinalIgnoreCase))
                 {
-                    E3._bots.BroadcastCommandToPerson(x.args[0], "/lootoff");
+                    E3.Bots.BroadcastCommandToPerson(x.args[0], "/lootoff");
                 }
                 else
                 {
                     //we are turning our own loot on.
                     _shouldLoot = false;
-                    E3._bots.Broadcast("\agTurning Off Loot.");
+                    E3.Bots.Broadcast("\agTurning Off Loot.");
                 }
             });
         }
 
         public static void Process()
         {
-            if (E3._isInvis) return;
+            if (E3.IsInvis) return;
             if (!e3util.ShouldCheck(ref _nextLootCheck, _nextLootCheckInterval)) return;
 
             if (!_shouldLoot) return;
@@ -194,7 +194,7 @@ namespace E3Core.Processors
             if(!_fullInventoryAlert && freeInventorySlots<1)
             {
                 _fullInventoryAlert = true;
-                E3._bots.Broadcast("\arMy inventory is full! \awI will continue to link items on corpses, but cannot loot anything else.");
+                E3.Bots.Broadcast("\arMy inventory is full! \awI will continue to link items on corpses, but cannot loot anything else.");
                 MQ.Cmd("/beep");
               
             }
@@ -241,7 +241,7 @@ namespace E3Core.Processors
                     if (stackable && !nodrop)
                     {
                         //check if in our always loot. 
-                        if (E3._generalSettings.Loot_OnlyStackableAlwaysLoot.Contains(corpseItem, StringComparer.OrdinalIgnoreCase))
+                        if (E3.GeneralSettings.Loot_OnlyStackableAlwaysLoot.Contains(corpseItem, StringComparer.OrdinalIgnoreCase))
                         {
                             importantItem = true;
                         }
@@ -256,7 +256,7 @@ namespace E3Core.Processors
                             if (corpseItem.Contains(" Ore")) importantItem = true;
                         }
 
-                        if (!importantItem & itemValue >= E3._generalSettings.Loot_OnlyStackableValueGreaterThanInCopper)
+                        if (!importantItem & itemValue >= E3.GeneralSettings.Loot_OnlyStackableValueGreaterThanInCopper)
                         {
                             importantItem = true;
                         }
@@ -282,7 +282,7 @@ namespace E3Core.Processors
                     {
                         importantItem = true;
                         LootDataFile._keep.Add(corpseItem);
-                        E3._bots.BroadcastCommandToGroup($"/E3LootAdd \"{corpseItem}\" KEEP");
+                        E3.Bots.BroadcastCommandToGroup($"/E3LootAdd \"{corpseItem}\" KEEP");
                         LootDataFile.SaveData();
                     }
 
@@ -331,9 +331,9 @@ namespace E3Core.Processors
             if (MQ.Query<Int32>("${Corpse.Items}")>0)
             {   //link what is ever left over.
                 //should we should notify if we have not looted.
-                if (!String.IsNullOrWhiteSpace(E3._generalSettings.Loot_LinkChannel))
+                if (!String.IsNullOrWhiteSpace(E3.GeneralSettings.Loot_LinkChannel))
                 {
-                    PrintLink($"{E3._generalSettings.Loot_LinkChannel} {corpse.ID} - ");
+                    PrintLink($"{E3.GeneralSettings.Loot_LinkChannel} {corpse.ID} - ");
                 }
             }
 

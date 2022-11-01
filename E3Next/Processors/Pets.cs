@@ -17,8 +17,8 @@ namespace E3Core.Processors
     public static class Pets
     {
 
-        public static Logging _log = E3._log;
-        private static IMQ MQ = E3.MQ;
+        public static Logging _log = E3.Log;
+        private static IMQ MQ = E3.Mq;
         private static Int64 _nextPetCheck = 0;
         private static Int64 _nextPetCheckInterval = 1000;
 
@@ -43,7 +43,7 @@ namespace E3Core.Processors
         [ClassInvoke(Data.Class.PetClass)]
         public static void Check_Pets()
         {
-            if (E3._isInvis) return;
+            if (E3.IsInvis) return;
             if (Basics.AmIDead()) return;
 
             if (!e3util.ShouldCheck(ref _nextPetCheck, _nextPetCheckInterval)) return;
@@ -64,11 +64,11 @@ namespace E3Core.Processors
         }
         private static void CheckPetSummon( ref Int32 petID)
         {
-            if (petID == 0 && E3._characterSettings.PetSpell.Count>0)
+            if (petID == 0 && E3.CharacterSettings.PetSpell.Count>0)
             {
                 //we have no pet, do we have a pet configurd to summon?
                
-                foreach (var spell in E3._characterSettings.PetSpell)
+                foreach (var spell in E3.CharacterSettings.PetSpell)
                 {
                     if (Casting.CheckReady(spell) && Casting.CheckMana(spell))
                     {
@@ -90,7 +90,7 @@ namespace E3Core.Processors
         {
 
             Int32 pctHps = MQ.Query<Int32>("${Me.Pet.PctHPs}");
-            Int32 pctMendHps = E3._characterSettings.Pet_MendPercent;
+            Int32 pctMendHps = E3.CharacterSettings.Pet_MendPercent;
             if(pctHps<pctMendHps)
             {
                 if(MQ.Query<bool>("${Me.AltAbilityReady[Replenish Companion]}"))
@@ -108,7 +108,7 @@ namespace E3Core.Processors
                 }
                
             }
-            foreach (var spell in E3._characterSettings.PetHeals)
+            foreach (var spell in E3.CharacterSettings.PetHeals)
             {
                 if (pctHps <= spell.HealPct)
                 {
@@ -124,7 +124,7 @@ namespace E3Core.Processors
         private static Int32 _petMaxShrinkID = 0;
         private static void CheckPetShrink(Int32 petID)
         {
-            if (!E3._characterSettings.Pet_AutoShrink) return;
+            if (!E3.CharacterSettings.Pet_AutoShrink) return;
             if (petID != _petMaxShrinkID)
             {
                 _petMaxShrinkID = petID;

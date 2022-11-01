@@ -12,9 +12,9 @@ namespace E3Core.Processors
 {
     public static class Nukes
     {
-        public static Logging _log = E3._log;
-        private static IMQ MQ = E3.MQ;
-        private static ISpawns _spawns = E3._spawns;
+        public static Logging _log = E3.Log;
+        private static IMQ MQ = E3.Mq;
+        private static ISpawns _spawns = E3.Spawns;
         private static Double _nukeDelayTimeStamp;
         private static Double _stunDelayTimeStamp;
 
@@ -22,13 +22,13 @@ namespace E3Core.Processors
         public static void Check_Stuns()
         {
 
-            Cast_Instasnt(E3._characterSettings.Stuns, ref _stunDelayTimeStamp);
+            Cast_Instasnt(E3.CharacterSettings.Stuns, ref _stunDelayTimeStamp);
         }
         [AdvSettingInvoke]
         public static void Check_Nukes()
         {
 
-            Cast_Instasnt(E3._characterSettings.Nukes, ref _nukeDelayTimeStamp);
+            Cast_Instasnt(E3.CharacterSettings.Nukes, ref _nukeDelayTimeStamp);
         }
         private static void Cast_Instasnt(List<Data.Spell> spells, ref Double delayTimeStamp)
         {
