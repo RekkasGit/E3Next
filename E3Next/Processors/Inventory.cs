@@ -275,13 +275,12 @@ namespace E3Core.Processors
             //restock generic reusable items from vendors
             _ = EventProcessor.RegisterCommand("/restock", (x) =>
               {
-                  var toEat = E3._characterSettings.Misc_AutoFood;
-                  var toDrink = E3._characterSettings.Misc_AutoDrink;
-                  var toEatQty = MQ.Query<int>($"${{FindItemCount[{toEat}]}}");
-                  var toDrinkQty = MQ.Query<int>($"${{FindItemCount[{toDrink}]}}");
+                  string toEat = E3._characterSettings.Misc_AutoFood;
+                  string toDrink = E3._characterSettings.Misc_AutoDrink;
+                  int toEatQty = MQ.Query<int>($"${{FindItemCount[{toEat}]}}");
+                  int toDrinkQty = MQ.Query<int>($"${{FindItemCount[{toDrink}]}}");
 
                   MQ.Write($"\agInitiating restock for {toEat} and {toDrink}");
-
                   if (toEatQty >= 1000 && toDrinkQty >= 1000)
                   {
                       MQ.Write($"\arYou already have more than a stack of {toEat} and {toDrink}! Skipping restock. ");
@@ -306,13 +305,28 @@ namespace E3Core.Processors
                               if (toEatQty < 1000)
                               {
                                   int eatQtyNeeded = 1000 - toEatQty;
-                                  Buy.BuyItem(toEat, eatQtyNeeded);
+                                  if (String.IsNullOrWhiteSpace(toEat))
+                                  {
+                                      MQ.Write($"\arNo Food item defined in ini, skipping food restock. ");
+                                  } else
+                                  {
+                                      Buy.BuyItem(toEat, eatQtyNeeded);
+                                  }
+                                  
                               }
 
                               if (toDrinkQty < 1000)
                               {
                                   int drinkQtyNeeded = 1000 - toDrinkQty;
-                                  Buy.BuyItem(toDrink, drinkQtyNeeded);
+                                  if (String.IsNullOrWhiteSpace(toDrink))
+                                  {
+                                      MQ.Write($"\arNo Drink item defined in ini, skipping food restock. ");
+                                  }
+                                  else
+                                  {
+                                      Buy.BuyItem(toDrink, drinkQtyNeeded);
+                                  }
+                                  
                               }
 
 

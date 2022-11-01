@@ -34,7 +34,9 @@ namespace E3Core.Processors
         /// <param name="itemQty"></param>
         public static void BuyItem(string itemName, int itemQty)
         {
+            //set listposition as the slot of the desired item on the vendor
             int listPosition = MQ.Query<int>($"${{Window[MerchantWnd].Child[ItemList].List[={itemName},2]}}");
+
 
             string buyingItemText = MQ.Query<string>("${Window[MerchantWnd].Child[MW_SelectedItemLabel].Text}");
 
@@ -43,7 +45,7 @@ namespace E3Core.Processors
             {
                 counter++;
                 MQ.Cmd($"/notify MerchantWnd ItemList listselect {listPosition}");
-                MQ.Delay(500);
+                MQ.Delay(200);
                 buyingItemText = MQ.Query<string>("${Window[MerchantWnd].Child[MW_SelectedItemLabel].Text}");
             }
             

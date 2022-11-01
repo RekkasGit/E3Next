@@ -543,7 +543,7 @@ namespace E3Core.Utility
         {
             e3util.TryMoveToTarget();
             MQ.Cmd("/click right target");
-            MQ.Delay(500);
+            MQ.Delay(2000, "${Merchant.ItemsReceived}");
         }
         public static void CloseMerchant()
         {
