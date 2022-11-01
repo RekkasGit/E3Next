@@ -275,8 +275,8 @@ namespace E3Core.Processors
             //restock generic reusable items from vendors
             _ = EventProcessor.RegisterCommand("/restock", (x) =>
               {
-                  string toEat = E3._characterSettings.Misc_AutoFood;
-                  string toDrink = E3._characterSettings.Misc_AutoDrink;
+                  string toEat = E3.CharacterSettings.Misc_AutoFood;
+                  string toDrink = E3.CharacterSettings.Misc_AutoDrink;
                   int toEatQty = MQ.Query<int>($"${{FindItemCount[{toEat}]}}");
                   int toDrinkQty = MQ.Query<int>($"${{FindItemCount[{toDrink}]}}");
 
@@ -287,7 +287,7 @@ namespace E3Core.Processors
                       return;
                   } else
                   {
-                      int zoneID = E3._zoneID;
+                      int zoneID = E3.ZoneID; 
                       int vendorID = 0;
 
                       //zoneID 345 = Guild Hall

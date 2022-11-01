@@ -12,9 +12,9 @@ namespace E3Core.Processors
 {
     public static class Buy
     {
-        public static Logging _log = E3._log;
-        private static IMQ MQ = E3.MQ;
-        private static ISpawns _spawns = E3._spawns;
+        public static Logging Log = E3.Log;
+        private static IMQ MQ = E3.Mq;
+        private static ISpawns Spawns = E3.Spawns;
 
         [SubSystemInit]
         public static void Init()
@@ -51,7 +51,7 @@ namespace E3Core.Processors
             
             if (buyingItemText != itemName)
             {
-                E3._bots.Broadcast($"\arERROR: Buying item cannot get vendor to select, exiting. Item:{itemName}");
+                E3.Bots.Broadcast($"\arERROR: Buying item cannot get vendor to select, exiting. Item:{itemName}");
             }
 
             //we have the item selected via the vendor, check we can buy.
@@ -60,7 +60,7 @@ namespace E3Core.Processors
             if (!buyButtonEnabled)
             {
                 //buy button not enabled for whatever reason
-                E3._bots.Broadcast($"\arERROR: Buy button for item on vendor is not active, exiting. Item:{itemName}");
+                E3.Bots.Broadcast($"\arERROR: Buy button for item on vendor is not active, exiting. Item:{itemName}");
                 return;
             }
 

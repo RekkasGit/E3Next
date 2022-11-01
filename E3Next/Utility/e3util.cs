@@ -1,5 +1,6 @@
 ﻿using E3Core.Data;
 using E3Core.Processors;
+using E3Core.Settings;
 using IniParser;
 using MonoCore;
 using System;
@@ -529,6 +530,7 @@ namespace E3Core.Utility
                 if (endTime < Core._stopWatch.ElapsedMilliseconds)
                 {
                     //stop nav if we exceed the timeout
+                    MQ.Write("Stopping because timeout exceeded for navigation");
                     MQ.Cmd($"/nav stop");
                     break;
                 }
@@ -540,10 +542,13 @@ namespace E3Core.Utility
                 if ((int)meX == (int)tmeX && (int)meY == (int)tmeY)
                 {
                     //we are stuck, kick out
+                    MQ.Write("Stopping because we appear to be stuck.");
+                    MQ.Cmd($"/nav stop");
                     break;
                 }
                 //add additional time to get to target
                 endTime += timeoutInMS;
+                navPathExists = MQ.Query<bool>($"${{Navigation.PathExists[id {spawnID}]}}");
             }
         }
 
