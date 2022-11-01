@@ -103,8 +103,8 @@ namespace E3Core.Settings
         public List<Spell> RadiantCure = new List<Spell>();
         public List<Spell> CurseCounterCure = new List<Spell>();
         public List<Spell> CurseCounterIgnore = new List<Spell>();
-        public List<Spell> PosionCounterCure = new List<Spell>();
-        public List<Spell> PosionCounterIgnore = new List<Spell>();
+        public List<Spell> PoisonCounterCure = new List<Spell>();
+        public List<Spell> PoisonCounterIgnore = new List<Spell>();
         public List<Spell> DiseaseCounterCure = new List<Spell>();
         public List<Spell> DiseaseCounterIgnore = new List<Spell>();
         //life support
@@ -347,8 +347,8 @@ namespace E3Core.Settings
             LoadKeyData("Cures", "RadiantCure", ParsedData, RadiantCure);
             LoadKeyData("Cures", "CurseCounters", ParsedData, CurseCounterCure);
             LoadKeyData("Cures", "CurseCountersIgnore", ParsedData, CurseCounterIgnore);
-            LoadKeyData("Cures", "PosionCounters", ParsedData, PosionCounterCure);
-            LoadKeyData("Cures", "PosionCountersIgnore", ParsedData, PosionCounterIgnore);
+            LoadKeyData("Cures", "PoisonCounters", ParsedData, PoisonCounterCure);
+            LoadKeyData("Cures", "PoisonCountersIgnore", ParsedData, PoisonCounterIgnore);
             LoadKeyData("Cures", "DiseaseCounters", ParsedData, DiseaseCounterCure);
             LoadKeyData("Cures", "DiseaseCountersIgnore", ParsedData, DiseaseCounterIgnore);
 
