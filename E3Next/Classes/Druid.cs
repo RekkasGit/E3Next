@@ -31,8 +31,33 @@ namespace E3Core.Classes
             if (!e3util.ShouldCheck(ref _nextAutoCheetaCheck, 1000)) return;
             if (E3.CharacterSettings.Druid_AutoCheetah)
             {
+
+                bool needToCast = false;
+                //lets get group members
+                List<string> memberNames = E3.Bots.BotsConnected();
+                foreach (int memberid in Basics._groupMembers)
+                {
+                    Spawn s;
+                    if (_spawns.TryByID(memberid,out s))
+                    {
+                        if(memberNames.Contains(s.CleanName))
+                        {
+                            List<Int32> buffList = E3.Bots.BuffList(s.CleanName);
+                           if (!buffList.Contains(23581))
+                            {
+                                needToCast = true;
+                                break;
+                            }
+                        }
+                    }
+                }
                 Int32 totalSecondsLeft = MQ.Query<Int32>("${Me.Buff[Spirit of Cheetah].Duration.TotalSeconds}");
                 if (totalSecondsLeft < 10)
+                {
+                    needToCast = true;
+                }
+                
+                if (needToCast)
                 {
                     if (Casting.CheckReady(_cheetaSpell))
                     {

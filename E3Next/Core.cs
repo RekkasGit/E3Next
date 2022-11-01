@@ -93,10 +93,8 @@ namespace MonoCore
                             EventProcessor.ProcessEventsInQueues();
 
                         }
-
                         ////***NOTE NOTE NOTE, Use M2.Delay(0) in your code to give control back to EQ if you have taken awhile in doing something
                         ////***NOTE NOTE NOTE, generally this isn't needed as there is an auto yield baked into every MQ method. Just be aware.
-
                     }
 
                     //MQ.TraceEnd("Process");
