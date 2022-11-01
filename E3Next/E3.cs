@@ -11,30 +11,6 @@ namespace E3Core.Processors
     /// </summary>
     public static class E3
     {
-        //used throughout e3 per loop to allow kickout form methods
-        public static bool ActionTaken = false;
-        public static bool Following = false;
-        public static long StartTimeStamp;
-        public static bool IsInit = false;
-        public static bool IsBadState = false;
-        public static IMQ Mq = Core.mqInstance;
-        //public static IMQ MQ = new MoqMQ();
-        public static Logging Log = Core._log;
-        public static Settings.CharacterSettings CharacterSettings = null;
-        public static Settings.GeneralSettings GeneralSettings = null;
-        public static Settings.AdvancedSettings AdvancedSettings = null;
-        public static IBots Bots = null;
-        public static string CurrentName;
-        public static int CurrentId;
-        public static Data.Class CurrentClass;
-        public static string CurrentLongClassString;
-        public static string CurrentShortClassString;
-        public static int CurrentHps;
-        public static int ZoneID;
-        public static int ProcessDelay = 50;
-        public static ISpawns Spawns = Core.spawnInstance;
-        public static bool IsInvis;
-
         /// <summary>
         /// The main processing loop.
         /// </summary>
@@ -225,5 +201,29 @@ namespace E3Core.Processors
             IsBadState = true;
 
         }
+
+        //used throughout e3 per loop to allow kickout form methods
+        public static bool ActionTaken = false;
+        public static bool Following = false;
+        public static long StartTimeStamp;
+        public static bool IsInit = false;
+        public static bool IsBadState = false;
+        public static IMQ Mq = Core.mqInstance;
+        //public static IMQ MQ = new MoqMQ();
+        public static Logging Log = Core._log;
+        public static Settings.CharacterSettings CharacterSettings = null;
+        public static Settings.GeneralSettings GeneralSettings = null;
+        public static Settings.AdvancedSettings AdvancedSettings = null;
+        public static IBots Bots = null;
+        public static string CurrentName;
+        public static int CurrentId;
+        public static Data.Class CurrentClass;
+        public static string CurrentLongClassString;
+        public static string CurrentShortClassString;
+        public static int CurrentHps;
+        public static int ZoneID;
+        public static int ProcessDelay = 50;
+        public static ISpawns Spawns = Core.spawnInstance;
+        public static bool IsInvis;
     }
 }
