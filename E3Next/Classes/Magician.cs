@@ -120,6 +120,15 @@ namespace E3Core.Classes
                 MQ.Cmd("/destroy");
             }
 
+            var bag = "Huge Disenchanted Backpack";
+            summonedItemCount = MQ.Query<int>($"${{FindItemCount[={bag}]}}");
+            for (int i = 1; i<=summonedItemCount; i++)
+            {
+                MQ.Cmd($"/itemnotify \"{bag}\" leftmouseup");
+                MQ.Delay(1000, "${Cursor.ID}");
+                MQ.Cmd("/destroy");
+            }
+
             // my pet
             var primary = MQ.Query<int>("${Me.Pet.Primary}");
             var myPetId = MQ.Query<int>("${Me.Pet.ID}");
