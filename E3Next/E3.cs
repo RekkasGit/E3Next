@@ -133,7 +133,9 @@ namespace E3Core.Processors
             {
                 Loot.Process();
             }
-            //MQ.Write("Total Processing time in ms:" + (Core._stopWatch.ElapsedMilliseconds - _startTimeStamp));
+
+            //process any tlo request from the UI, or anything really.
+            RouterServer.ProcessRequests();
         }
         private static void RefreshCaches()
         {

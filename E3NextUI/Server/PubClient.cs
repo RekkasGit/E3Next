@@ -40,20 +40,30 @@ namespace E3NextUI.Server
                     Console.WriteLine(messageReceived);
                     if (messageTopicReceived == "OnWriteChatColor")
                     {
-                        E3UI._consoleLines.Enqueue(messageReceived);
-                      
+                        if (Application.OpenForms.Count > 0)
+                        {
+                            ((E3UI)Application.OpenForms[0]).AddMQConsoleLine(messageReceived);
+                        }
+
                     }
                     else if (messageTopicReceived == "OnIncomingChat")
                     {
-                        ((E3UI)Application.OpenForms[0]).AddConsoleLine(messageReceived);
+                        if (Application.OpenForms.Count > 0)
+                        {
+                            ((E3UI)Application.OpenForms[0]).AddConsoleLine(messageReceived);
+                        }
                     }
                     else if (messageTopicReceived == "OnCommand")
                     {
-                        E3UI._consoleLines.Enqueue(messageReceived);
+                        //E3UI._consoleLines.Enqueue(messageReceived);
                     }
                     else if (messageTopicReceived == "HPValue")
                     {
-                        ((E3UI)Application.OpenForms[0]).SetPlayerHP(messageReceived);
+                        if(Application.OpenForms.Count>0)
+                        {
+                            ((E3UI)Application.OpenForms[0]).SetPlayerHP(messageReceived);
+                        }
+                       
                     }
                 }
             }

@@ -14,6 +14,19 @@ namespace E3NextUI
 {
     public partial class E3UI : Form
     {
+        private static System.Diagnostics.Stopwatch _stopWatch = new System.Diagnostics.Stopwatch();
+        private static volatile bool _shouldProcess = true;
+        public static System.Collections.Concurrent.ConcurrentQueue<string> _consoleLines = new System.Collections.Concurrent.ConcurrentQueue<string>();
+        public static System.Collections.Concurrent.ConcurrentQueue<string> _consoleMQLines = new System.Collections.Concurrent.ConcurrentQueue<string>();
+        Task _consoleTask;
+        Task _consoleMQTask;
+        static Int64 _nextConsoleProcess;
+        static Int64 _nextMQConsoleProcess;
+        private bool _consoleDataDirty = false;
+        private bool _consoleMQDataDirty = false;
+        private object _objLock = new object();
+        private DealerClient _dealClient;
+        private PubClient _pubClient;
 
         public E3UI()
         {
@@ -21,12 +34,28 @@ namespace E3NextUI
            
             _stopWatch.Start();
             string[] args = Environment.GetCommandLineArgs();
-            _pubClient = new PubClient();
-            Int32 port = Int32.Parse(args[1]);
-            _pubClient.Start(port);
+            
+            if(args.Length>1)
+            {
+                _pubClient = new PubClient();
+                Int32 port = Int32.Parse(args[1]);
+                _pubClient.Start(port);
+                port = Int32.Parse(args[2]);
+                _dealClient = new DealerClient(port);
+
+            }
 
             SetDoubleBuffered(richTextBoxConsole);
+            SetDoubleBuffered(richTextBoxMQConsole);
             _consoleTask = Task.Factory.StartNew(() => { ProcessConsole(); }, CancellationToken.None, TaskCreationOptions.DenyChildAttach, TaskScheduler.Default);
+            _consoleMQTask = Task.Factory.StartNew(() => { ProcessMQConsole(); }, CancellationToken.None, TaskCreationOptions.DenyChildAttach, TaskScheduler.Default);
+
+            if(_dealClient!=null)
+            {
+                labelPlayerName.Text = _dealClient.RequestData("${Me.CleanName}");
+            }
+            
+
         }
         public static void SetDoubleBuffered(System.Windows.Forms.Control c)
         {
@@ -43,15 +72,7 @@ namespace E3NextUI
 
             aProp.SetValue(c, true, null);
         }
-        private static System.Diagnostics.Stopwatch _stopWatch = new System.Diagnostics.Stopwatch();
-        private static volatile bool _shouldProcess = true;
-        public static System.Collections.Concurrent.ConcurrentQueue<string> _consoleLines = new System.Collections.Concurrent.ConcurrentQueue<string>();
-        Task _consoleTask;
-        static Int64 _nextConsoleProcess;
-        private bool _consoleDataDirty = false;
-        private object _objLock = new object();
-        private PubClient _pubClient;
-        
+       
         private  void ProcessConsole()
         {
            
@@ -61,6 +82,68 @@ namespace E3NextUI
                 System.Threading.Thread.Sleep(100);
             }
         }
+        private void ProcessMQConsole()
+        {
+
+            while (_shouldProcess)
+            {
+                ProcessMQConsoleUI();
+                System.Threading.Thread.Sleep(100);
+            }
+        }
+
+        private delegate void ProcessMQConsoleUIDelegate();
+        public void ProcessMQConsoleUI()
+        {
+            if (this.InvokeRequired)
+            {
+                this.Invoke(new ProcessMQConsoleUIDelegate(ProcessMQConsoleUI), null);
+            }
+            else
+            {
+                if (_nextMQConsoleProcess < _stopWatch.ElapsedMilliseconds)
+                {
+                    lock (_objLock)
+                    {
+                        if (_consoleMQDataDirty)
+                        {
+                            //delete from the top if needed
+                            string[] lines = richTextBoxMQConsole.Lines;
+                            if (lines.Length > 200)
+                            {
+                                richTextBoxMQConsole.ReadOnly = false;
+                                richTextBoxMQConsole.SelectionStart = richTextBoxMQConsole.GetFirstCharIndexFromLine(0);
+                                //ending length
+                                Int32 endLength = 0;
+                                for (Int32 i = 0; i < 50; i++)
+                                {
+                                    endLength = richTextBoxMQConsole.Lines[i].Length + 1;
+
+                                }
+                                richTextBoxMQConsole.SelectionLength = endLength;
+                                richTextBoxMQConsole.SelectedText = String.Empty;
+                                richTextBoxMQConsole.ReadOnly = true;
+
+                            }
+                            while (_consoleMQLines.Count > 0)
+                            {
+                                string line;
+                                if (_consoleMQLines.TryDequeue(out line))
+                                {
+                                    richTextBoxMQConsole.AppendText(line + "\r\n");
+
+                                }
+                            }
+                            richTextBoxMQConsole.SelectionStart = richTextBoxMQConsole.Text.Length;
+                            richTextBoxMQConsole.ScrollToCaret();
+                            _nextMQConsoleProcess = _stopWatch.ElapsedMilliseconds + 100;
+                            _consoleMQDataDirty = false;
+                        }
+                    }
+                }
+            }
+        }
+
         private delegate void ProcessConsoleUIDelegate();
         public void ProcessConsoleUI()
         {
@@ -78,7 +161,7 @@ namespace E3NextUI
                         {
                             //delete from the top if needed
                             string[] lines = richTextBoxConsole.Lines;
-                            if (lines.Length>100)
+                            if (lines.Length>200)
                             {
                                 richTextBoxConsole.ReadOnly = false;
                                 richTextBoxConsole.SelectionStart = richTextBoxConsole.GetFirstCharIndexFromLine(0);
@@ -100,11 +183,11 @@ namespace E3NextUI
                                 if(_consoleLines.TryDequeue(out line))
                                 {
                                     richTextBoxConsole.AppendText(line+"\r\n");
-                                    richTextBoxConsole.SelectionStart = richTextBoxConsole.Text.Length;
-                                    richTextBoxConsole.ScrollToCaret();
+                                    
                                 }
                             }
-                            
+                            richTextBoxConsole.SelectionStart = richTextBoxConsole.Text.Length;
+                            richTextBoxConsole.ScrollToCaret();
                             _nextConsoleProcess = _stopWatch.ElapsedMilliseconds + 100;
                             _consoleDataDirty = false;
                         }
@@ -169,13 +252,28 @@ namespace E3NextUI
                 {
                     _consoleDataDirty = true;
                     _consoleLines.Enqueue(value);
-                    if(_consoleLines.Count>300)
-                    {
-                        string outLine;
-                        _consoleLines.TryDequeue(out outLine);
-                    }
+                  
                 }
               
+
+            }
+        }
+        private delegate void AddMQConsoleLineDelegate(string name);
+        public void AddMQConsoleLine(string value)
+        {
+            if (this.InvokeRequired)
+            {
+                this.Invoke(new AddMQConsoleLineDelegate(AddMQConsoleLine), new object[] { value });
+            }
+            else
+            {
+                lock (_objLock)
+                {
+                    _consoleMQDataDirty = true;
+                    _consoleMQLines.Enqueue(value);
+                   
+                }
+
 
             }
         }

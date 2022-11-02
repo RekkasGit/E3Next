@@ -19,6 +19,7 @@ namespace E3Core.Server
         static RouterServer _routerServer;
         public static Int32 RouterPort;
         public static Int32 PubPort;
+        public static Int32 PubClientPort;
         public static System.Diagnostics.Process _uiProcess;
         private static IMQ MQ = E3.Mq;
 
@@ -27,19 +28,30 @@ namespace E3Core.Server
         {
             RouterPort = FreeTcpPort();
             PubPort = FreeTcpPort();
+            PubClientPort = FreeTcpPort();
+
             _pubServer = new PubServer();
 
             if(Debugger.IsAttached)
             {
                 PubPort = 51711;
+                RouterPort = 51712;
             }
 
-            //_routerServer = new RouterServer();
+            _routerServer = new RouterServer();
             _pubServer.Start(PubPort);
-            //_routerServer.Start(RouterPort);
+            _routerServer.Start(RouterPort);
             EventProcessor.RegisterUnfilteredEvent("NetMQData", ".+", (x) =>
             {
-                PubServer._pubMessages.Enqueue(x.eventString);
+                if(x.typeOfEvent== EventProcessor.eventType.EQEvent)
+                {
+                    PubServer._pubMessages.Enqueue(x.eventString);
+                } 
+                else if(x.typeOfEvent== EventProcessor.eventType.MQEvent)
+                {
+                    PubServer._pubWriteColorMessages.Enqueue(x.eventString);
+                }
+               
             });
 
             EventProcessor.RegisterCommand("/ui", (x) =>
@@ -55,7 +67,7 @@ namespace E3Core.Server
                 if (_uiProcess==null)
                 {
                     MQ.Write("Trying to start:" + dllFullPath + @"E3NextUI.exe");
-                    _uiProcess = System.Diagnostics.Process.Start(dllFullPath+ @"E3NextUI.exe",PubPort.ToString());
+                    _uiProcess = System.Diagnostics.Process.Start(dllFullPath+ @"E3NextUI.exe",$"{PubPort} {RouterPort}");
                 }
                 else
                 {
@@ -64,7 +76,7 @@ namespace E3Core.Server
                     {
                         //start up a new one.
                         MQ.Write("Trying to start:" + dllFullPath + @"E3NextUI.exe");
-                        _uiProcess = System.Diagnostics.Process.Start(dllFullPath + @"E3NextUI.exe",PubPort.ToString());
+                        _uiProcess = System.Diagnostics.Process.Start(dllFullPath + @"E3NextUI.exe", $"{PubPort} {RouterPort}");
 
                     }
                     else

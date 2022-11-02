@@ -1,4 +1,5 @@
-﻿using MonoCore;
+﻿using E3Core.Processors;
+using MonoCore;
 using NetMQ.Sockets;
 using System;
 using System.Collections.Concurrent;
@@ -38,6 +39,7 @@ namespace E3Core.Server
     }
     public class RouterServer
     {
+        private static IMQ MQ = E3.Mq;
         RouterSocket _rpcRouter = null;
         Task _serverThread = null;
         NetMQ.Msg routerResponse = new NetMQ.Msg();
@@ -48,13 +50,7 @@ namespace E3Core.Server
 
         public static ConcurrentQueue<RouterMessage> _tloRequets = new ConcurrentQueue<RouterMessage>();
         public static ConcurrentQueue<RouterMessage> _tloResposne = new ConcurrentQueue<RouterMessage>();
-        public static ConcurrentQueue<RouterMessage> _commandRequests = new ConcurrentQueue<RouterMessage>();
-        public static ConcurrentQueue<RouterMessage> _writeRequests = new ConcurrentQueue<RouterMessage>();
-        public static ConcurrentQueue<RouterMessage> _newCommandRequests = new ConcurrentQueue<RouterMessage>();
-        public static ConcurrentQueue<RouterMessage> _clearCommandRequests = new ConcurrentQueue<RouterMessage>();
-        public static ConcurrentQueue<RouterMessage> _removeCommandRequests = new ConcurrentQueue<RouterMessage>();
-        public static ConcurrentQueue<RouterMessage> _getSpawnsRequests = new ConcurrentQueue<RouterMessage>();
-        public static ConcurrentQueue<RouterMessage> _getSpawnsResponse = new ConcurrentQueue<RouterMessage>();
+        
 
         public Int32 RouterPort = 0;
 
@@ -63,6 +59,21 @@ namespace E3Core.Server
             RouterPort = port;
             _serverThread = Task.Factory.StartNew(() => { Process(); }, CancellationToken.None, TaskCreationOptions.DenyChildAttach, TaskScheduler.Default);
 
+        }
+        //called by the main C# thread
+        public static void ProcessRequests()
+        {
+            while (_tloRequets.Count > 0)
+            {
+                RouterMessage message;
+                _tloRequets.TryDequeue(out message);
+                //lets pull out the string
+                string query = System.Text.Encoding.Default.GetString(message.payload, 0, message.payloadLength);
+                string response = MQ.Query<string>(query);
+
+                message.payloadLength = System.Text.Encoding.Default.GetBytes(response, 0, response.Length, message.payload, 0);
+                _tloResposne.Enqueue(message);
+            }
         }
 
         private void Process()
@@ -83,8 +94,6 @@ namespace E3Core.Server
                     if (_rpcRouter.TryReceive(ref routerMessage, recieveTimeout))
                     {
                         RouterMessage message = RouterMessage.Aquire();
-
-
                         //first get identit identityJump:
                         unsafe
                         {
@@ -140,30 +149,6 @@ namespace E3Core.Server
                         {
                             _tloRequets.Enqueue(message);
                         }
-                        else if (message.commandType == 2)
-                        {
-                            _commandRequests.Enqueue(message);
-                        }
-                        else if (message.commandType == 3)
-                        {
-                            _writeRequests.Enqueue(message);
-                        }
-                        else if (message.commandType == 4)
-                        {
-                            _newCommandRequests.Enqueue(message);
-                        }
-                        else if (message.commandType == 5)
-                        {
-                            _clearCommandRequests.Enqueue(message);
-                        }
-                        else if (message.commandType == 6)
-                        {
-                            _removeCommandRequests.Enqueue(message);
-                        }
-                        else if (message.commandType == 7)
-                        {
-                            _getSpawnsRequests.Enqueue(message);
-                        }
                         else
                         {
                             message.Dispose();
@@ -217,49 +202,7 @@ namespace E3Core.Server
                             }
                         }
                     }
-                    while (_getSpawnsResponse.Count > 0)
-                    {
-                        RouterMessage message;
-                        _getSpawnsResponse.TryDequeue(out message);
-                        if (message != null && message.spawns != null)
-                        {
-                            try
-                            {
-                                foreach (var spawn in message.spawns)
-                                {
-                                    routerResponse.InitPool(message.identiyLength);
-                                    Buffer.BlockCopy(message.identity, 0, routerResponse.Data, 0, message.identiyLength);
-                                    _rpcRouter.TrySend(ref routerResponse, timeout, true);
-                                    routerResponse.Close();
-                                    routerResponse.InitEmpty();
-                                    _rpcRouter.TrySend(ref routerResponse, timeout, true);
-                                    routerResponse.Close();
-                                    routerResponse.InitPool(spawn._dataSize);
-                                    Buffer.BlockCopy(spawn._data, 0, routerResponse.Data, 0, spawn._dataSize);
-                                    _rpcRouter.TrySend(ref routerResponse, timeout, false);
-                                    routerResponse.Close();
-                                }
-                                //we need to send a 'done' response
-                                routerResponse.InitPool(message.identiyLength);
-                                Buffer.BlockCopy(message.identity, 0, routerResponse.Data, 0, message.identiyLength);
-                                _rpcRouter.TrySend(ref routerResponse, timeout, true);
-                                routerResponse.Close();
-                                routerResponse.InitEmpty();
-                                _rpcRouter.TrySend(ref routerResponse, timeout, true);
-                                routerResponse.Close();
-                                routerResponse.InitEmpty();
-                                _rpcRouter.TrySend(ref routerResponse, timeout, false);
-                                routerResponse.Close();
-
-                            }
-                            finally
-                            {
-                                //put back into the object pool.
-                                message.Dispose();
-                            }
-                        }
-                    }
-
+                    
                 }
             }
             catch (Exception)

@@ -33,8 +33,9 @@ namespace E3Core.Server
             using (var pubSocket = new PublisherSocket())
             {
                 pubSocket.Options.SendHighWatermark = 1000;
+                
                 pubSocket.Bind("tcp://127.0.0.1:" + PubPort.ToString());
-                // pubSocket.Bind("tcp://*:12347");
+                
                 while (Core._isProcessing)
                 {
                     if (_hpValues.Count > 0)
