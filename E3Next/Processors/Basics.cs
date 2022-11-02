@@ -108,6 +108,11 @@ namespace E3Core.Processors
                 E3.Bots.BroadcastCommandToGroup("/makemevisible");
                 MQ.Cmd("/makemevisible");
             });
+
+            //EventProcessor.RegisterCommand("/ui", (x) =>
+            //{
+            //    E3._uiForm.ToggleShow();
+            //});
             EventProcessor.RegisterCommand("/debug", (x) =>
             {
                 if (Logging._minLogLevelTolog == Logging.LogLevels.Error)

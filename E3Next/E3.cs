@@ -1,8 +1,17 @@
 ﻿using E3Core.Classes;
+using E3Core.Server;
 using E3Core.Settings;
 using MonoCore;
+using NetMQ;
 using System;
 using System.Collections.Generic;
+using System.Diagnostics;
+using System.Reflection;
+using System.Runtime.InteropServices;
+using System.Text;
+using System.Threading;
+using System.Threading.Tasks;
+using System.Windows.Forms;
 
 namespace E3Core.Processors
 {
@@ -30,7 +39,10 @@ namespace E3Core.Processors
                 if (!IsInit) { Init(); }
                 //update on every loop
                 CurrentHps = Mq.Query<int>("${Me.PctHPs}");
+                HitPointsCurrent = Mq.Query<int>("${Me.CurrentHPs}");
 
+                PubServer._hpValues.Enqueue(HitPointsCurrent.ToString("N0"));
+           
                 if (CurrentHps < 90 && !IsInvis)
                 {
                     //lets check our life support.
@@ -74,7 +86,7 @@ namespace E3Core.Processors
 
                 if (!ActionTaken)
                 {
-                    using(Log.Trace("AdvMethodCalls"))
+                    using (Log.Trace("AdvMethodCalls"))
                     {
                         //rembmer check_heals is auto inserted, should probably just pull out here
                         List<string> _methodsToInvokeAsStrings;
@@ -100,7 +112,7 @@ namespace E3Core.Processors
                             }
                         }
                     }
-                  
+
                 }
                 //now do the dynamic methods from Advanced ini. 
 
@@ -133,14 +145,17 @@ namespace E3Core.Processors
 
             if (!IsInit)
             {
+
+             
                 Mq.ClearCommands();
+                AsyncIO.ForceDotNet.Force();
 
                 Logging._traceLogLevel = Logging.LogLevels.None; //log level we are currently at
                 Logging._minLogLevelTolog = Logging.LogLevels.Error; //log levels have integers assoicatd to them. you can set this to Error to only log errors. 
                 Logging._defaultLogLevel = Logging.LogLevels.Debug; //the default if a level is not passed into the _log.write statement. useful to hide/show things.
                 MainProcessor._applicationName = "E3"; //application name, used in some outputs
                 MainProcessor._processDelay = ProcessDelay; //how much time we will wait until we start our next processing once we are done with a loop.
-                                                    //how long you allow script to process before auto yield is engaged. generally should't need to mess with this, but an example.
+                                                            //how long you allow script to process before auto yield is engaged. generally should't need to mess with this, but an example.
                 MonoCore.MQ._maxMillisecondsToWork = 40;
                 //max event count for each registered event before spilling over.
                 EventProcessor._eventLimiterPerRegisteredEvent = 20;
@@ -165,13 +180,84 @@ namespace E3Core.Processors
                 Bots = new Bots();
                 IsInit = true;
                 MonoCore.Spawns._refreshTimePeriodInMS = 3000;
+                //_uiThread = Task.Factory.StartNew(() => { ProcessUI(); }, CancellationToken.None, TaskCreationOptions.DenyChildAttach, TaskScheduler.Default);
 
             }
 
 
         }
+        //enum ClassStyle
+        //{
+        //    CS_VREDRAW = 0x00000001,
+        //    CS_HREDRAW = 0x00000002,
+        //    CS_KEYCVTWINDOW = 0x00000004,
+        //    CS_DBLCLKS = 0x00000008,
+        //    CS_OWNDC = 0x00000020,
+        //    CS_CLASSDC = 0x00000040,
+        //    CS_PARENTDC = 0x00000080,
+        //    CS_NOKEYCVT = 0x00000100,
+        //    CS_NOCLOSE = 0x00000200,
+        //    CS_SAVEBITS = 0x00000800,
+        //    CS_BYTEALIGNCLIENT = 0x00001000,
+        //    CS_BYTEALIGNWINDOW = 0x00002000,
+        //    CS_GLOBALCLASS = 0x00004000,
+        //    CS_IME = 0x00010000,
+        //    // Windows XP+
+        //    CS_DROPSHADOW = 0x00020000
+        //}
 
 
+        //private static System.Collections.Concurrent.ConcurrentQueue<string> _consoleLines = new System.Collections.Concurrent.ConcurrentQueue<string>();
+        //[STAThread]
+        //private static void ProcessUI()
+        //{
+        //   EventProcessor.RegisterEvent("ConsoleData",".+", (x) =>
+        //   {
+        //       _consoleLines.Enqueue(x.eventString);
+          
+        //   });
+
+        //    Application.EnableVisualStyles();
+        //    Application.SetCompatibleTextRenderingDefault(false);
+        //    _uiForm = new E3NextUI.E3UI();
+        //    _uiInit = true;
+        //    _uiForm.SetPlayerName(E3.CurrentName);
+        //    _uiForm.Show();
+        //    while (Core._isProcessing)
+        //    {
+        //        lock(_uiForm)
+        //        {
+        //            _uiForm.SetPlayerHP(CurrentHitPoints.ToString("N0"));
+        //            while(_consoleLines.Count>0)
+        //            {
+        //                string line;
+        //                if (_consoleLines.TryDequeue(out line))
+        //                {
+        //                    _uiForm.AddConsoleLine(line);
+        //                }
+        //            }
+        //            Application.DoEvents();
+        //         }
+        //        System.Threading.Thread.Sleep(50);
+        //    }
+        //    UnloadUI();
+
+        //}
+
+        //private static void UnloadUI()
+        //{
+        //    _uiForm.Shutdown();
+        //    StringBuilder ClassName = new StringBuilder(256);
+        //    Core.GetClassName(_uiForm.Handle, ClassName, ClassName.Capacity);
+        //    uint pid = 0;
+        //    Core.GetWindowThreadProcessId(_uiForm.Handle, out pid);
+        //    Process p = System.Diagnostics.Process.GetProcessById((int)pid);
+        //    IntPtr hinstance = Core.GetModuleHandle(p.MainModule.FileName);
+        //    _uiForm.Close();
+        //    _uiForm.Dispose();
+        //    Core.UnregisterClass(ClassName.ToString(), hinstance);
+        //    Application.Exit();
+        //}
         private static bool ShouldRun()
         {
 
@@ -197,11 +283,13 @@ namespace E3Core.Processors
         }
         public static void Shutdown()
         {
-            Mq.Write($"Shutting down {MainProcessor._applicationName}....Reload to start gain");
+            //Mq.Write($"Shutting down {MainProcessor._applicationName}....Reload to start gain");
             IsBadState = true;
-
+           
         }
-
+        //private static Task _uiThread;
+        //public static E3NextUI.E3UI _uiForm;
+        //public static volatile bool _uiInit = false;
         //used throughout e3 per loop to allow kickout form methods
         public static bool ActionTaken = false;
         public static bool Following = false;
@@ -221,6 +309,8 @@ namespace E3Core.Processors
         public static string CurrentLongClassString;
         public static string CurrentShortClassString;
         public static int CurrentHps;
+        public static int HitPointsCurrent;
+        public static int HitPointsPrevious;
         public static int ZoneID;
         public static int ProcessDelay = 50;
         public static ISpawns Spawns = Core.spawnInstance;

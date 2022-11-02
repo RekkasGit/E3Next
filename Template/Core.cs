@@ -8,6 +8,8 @@ using System.Threading;
 using System.Diagnostics;
 using System.Collections.Concurrent;
 using System.Text.RegularExpressions;
+using System.Runtime.InteropServices;
+using System.Windows.Markup;
 using Template;
 
 /// <summary>
@@ -86,11 +88,13 @@ namespace MonoCore
 
                         ////MQ.Write("Calling e3process");
                         MyCode.Process();
-                        EventProcessor.ProcessEventsInQueues();
+                        using (_log.Trace("ProcessEvents-Outer"))
+                        {
+                            EventProcessor.ProcessEventsInQueues();
 
+                        }
                         ////***NOTE NOTE NOTE, Use M2.Delay(0) in your code to give control back to EQ if you have taken awhile in doing something
                         ////***NOTE NOTE NOTE, generally this isn't needed as there is an auto yield baked into every MQ method. Just be aware.
-
                     }
 
                     //MQ.TraceEnd("Process");
@@ -138,9 +142,8 @@ namespace MonoCore
 
 
             }
-
+           
         }
-
     }
     /// <summary>
     /// Processor to handle Event strings
@@ -158,6 +161,7 @@ namespace MonoCore
         public static ConcurrentQueue<String> _eventProcessingQueue = new ConcurrentQueue<String>();
         public static ConcurrentQueue<String> _mqEventProcessingQueue = new ConcurrentQueue<string>();
         public static ConcurrentQueue<String> _mqCommandProcessingQueue = new ConcurrentQueue<string>();
+        public static List<Regex> _filterRegexes = new List<Regex>();
         private static StringBuilder _tokenBuilder = new StringBuilder();
         private static List<string> _tokenResult = new List<string>();
         //if matches take place, they are placed in this queue for the main C# thread to process. 
@@ -172,8 +176,18 @@ namespace MonoCore
         {
             if (!_isInit)
             {
+                //some filter regular expressions so we can quicly get rid of combat and "has cast a spell" stuff. 
+                //if your app needs them remove these :)
+                System.Text.RegularExpressions.Regex filterRegex = new Regex(@" points of damage\.");
+                _filterRegexes.Add(filterRegex);
+                filterRegex = new Regex(@" points of non-melee damage\.");
+                _filterRegexes.Add(filterRegex);
+                filterRegex = new Regex(@" begins to cast a spell\.");
+                _filterRegexes.Add(filterRegex);
+
                 _regExProcessingTask = Task.Factory.StartNew(() => { ProcessEventsIntoQueues(); }, CancellationToken.None, TaskCreationOptions.DenyChildAttach, TaskScheduler.Default);
                 _isInit = true;
+
             }
 
         }
@@ -185,6 +199,7 @@ namespace MonoCore
             System.Text.RegularExpressions.Regex dannetRegex = new Regex("");
             char[] splitChars = new char[1] { ' ' };
 
+
             ////WARNING DO NOT SEND COMMANDS/Writes/Echos, etc from this thread. 
             ///only the primary C# thread can do that.
             while (Core._isProcessing)
@@ -194,26 +209,48 @@ namespace MonoCore
                     string line;
                     if (_eventProcessingQueue.TryDequeue(out line))
                     {
-                        foreach (var item in _eventList)
+
+                        //does it match our filter ? if so we can leave
+                        bool matchFilter = false;
+                        //locl this so someone can clear/add more filters are runtime.
+                        lock (_filterRegexes)
                         {
-                            //prevent spamming of an event to a user
-                            if (item.Value.queuedEvents.Count > _eventLimiterPerRegisteredEvent)
+                            foreach (var filter in _filterRegexes)
                             {
-                                continue;
-                            }
-                            foreach (var regex in item.Value.regexs)
-                            {
-                                var match = regex.Match(line);
+                                var match = filter.Match(line);
                                 if (match.Success)
                                 {
-
-                                    item.Value.queuedEvents.Enqueue(new EventMatch() { eventName = item.Value.keyName, eventString = line, match = match });
-
+                                    matchFilter = true;
                                     break;
                                 }
                             }
-
                         }
+
+                        if (!matchFilter)
+                        {
+                            foreach (var item in _eventList)
+                            {
+                                //prevent spamming of an event to a user
+                                if (item.Value.queuedEvents.Count > _eventLimiterPerRegisteredEvent)
+                                {
+                                    continue;
+                                }
+                                foreach (var regex in item.Value.regexs)
+                                {
+                                    var match = regex.Match(line);
+                                    if (match.Success)
+                                    {
+
+                                        item.Value.queuedEvents.Enqueue(new EventMatch() { eventName = item.Value.keyName, eventString = line, match = match });
+
+                                        break;
+                                    }
+                                }
+
+                            }
+                        }
+
+
 
                     }
                 }
@@ -290,7 +327,9 @@ namespace MonoCore
                                     //need to split out the params
                                     List<String> args = ParseParms(line, ' ', '"').ToList();
                                     args.RemoveAt(0);
+
                                     item.Value.queuedEvents.Enqueue(new CommandMatch() { eventName = item.Value.keyName, eventString = line, args = args });
+
                                 }
                             }
                         }
@@ -301,6 +340,38 @@ namespace MonoCore
                     System.Threading.Thread.Sleep(1);
                 }
             }
+        }
+        private static List<string> GetCommandFilters(List<string> values)
+        {
+
+            ////Stop /Only|Soandoso
+            ////FollowOn /Only|Healers WIZ Soandoso
+            ////followon /Not|Healers /Exclude|Uberhealer1
+            /////Staunch /Only|Healers
+            /////Follow /Not|MNK
+            //things like this put into the filter collection.
+            List<string> returnValue = new List<string>();
+
+            foreach (string value in values)
+            {
+                if (value.StartsWith("/only", StringComparison.OrdinalIgnoreCase))
+                {
+                    returnValue.Add(value);
+                }
+                else if (value.StartsWith("/not", StringComparison.OrdinalIgnoreCase))
+                {
+                    returnValue.Add(value);
+                }
+                else if (value.StartsWith("/exclude", StringComparison.OrdinalIgnoreCase))
+                {
+                    returnValue.Add(value);
+                }
+                else if (value.StartsWith("/include", StringComparison.OrdinalIgnoreCase))
+                {
+                    returnValue.Add(value);
+                }
+            }
+            return returnValue;
         }
         public static List<String> ParseParms(String line, Char delimiter, Char textQualifier)
         {
@@ -483,9 +554,32 @@ namespace MonoCore
         }
         public class CommandMatch
         {
-            public List<String> args;
+            public List<String> _args;
+
+            public List<String> args
+            {
+                get { return _args; }
+                set
+                {   //filter out any into filters.
+                    if (value != null)
+                    {
+                        filters = GetCommandFilters(value);
+                        if (filters.Count > 0)
+                        {
+                            _args = value.Where(x => !filters.Any(y => y == x)).ToList();
+
+                        }
+                        else
+                        {
+                            _args = value;
+                        }
+                    }
+                }
+            }
+
             public string eventString;
             public string eventName;
+            public List<string> filters = new List<string>();
         }
         public class EventMatch
         {
@@ -499,9 +593,9 @@ namespace MonoCore
             c.command = commandName;
             c.method = method;
             c.keyName = commandName;
-            Core.mqInstance.Write("Adding command:" + commandName);
+            //Core.mqInstance.Write("Adding command:" + commandName);
             bool returnvalue = Core.mqInstance.AddCommand(commandName);
-            Core.mqInstance.Write("Return from adding command:" + returnvalue);
+            //Core.mqInstance.Write("Return from adding command:" + returnvalue);
 
             if (returnvalue)
             {
@@ -657,6 +751,7 @@ namespace MonoCore
         public static void OnStop()
         {
             _isProcessing = false;
+            System.Threading.Thread.Sleep(100);
         }
         public static void OnPulse()
         {
@@ -704,12 +799,14 @@ namespace MonoCore
             }
             if (_currentCommand != String.Empty)
             {
+                //for mana stone usage, to allow spamming
+                bool isUseItem = _currentCommand.StartsWith("/useitem");
                 Core.mq_DoCommand(_currentCommand);
                 _currentCommand = String.Empty;
-                if (Core.mq_GetRunNextCommand())
+
+                if (isUseItem)
                 {
                     goto RestartWait;
-
                 }
 
             }
@@ -864,7 +961,8 @@ namespace MonoCore
         void TraceEnd(string methodName);
         void Delay(Int32 value);
         Boolean Delay(Int32 maxTimeToWait, string Condition);
-        void Broadcast(string query);
+        Boolean Delay(Int32 maxTimeToWait, Func<Boolean> methodToCheck);
+        //void Broadcast(string query);
         bool AddCommand(string query);
         void ClearCommands();
         void RemoveCommand(string commandName);
@@ -899,6 +997,7 @@ namespace MonoCore
                     {
                         return (T)(object)value;
                     }
+                    else { return (T)(object)-1; }
                 }
                 else
                 {
@@ -907,6 +1006,7 @@ namespace MonoCore
                     {
                         return (T)(object)value;
                     }
+                    else { return (T)(object)-1; }
 
                 }
             }
@@ -958,6 +1058,7 @@ namespace MonoCore
                 {
                     return (T)(object)value;
                 }
+                else { return (T)(object)-1M; }
             }
             else if (typeof(T) == typeof(double))
             {
@@ -966,6 +1067,7 @@ namespace MonoCore
                 {
                     return (T)(object)value;
                 }
+                else { return (T)(object)-1D; }
             }
             else if (typeof(T) == typeof(Int64))
             {
@@ -974,6 +1076,7 @@ namespace MonoCore
                 {
                     return (T)(object)value;
                 }
+                else { return (T)(object)-1L; }
             }
 
 
@@ -1022,9 +1125,12 @@ namespace MonoCore
             //{
             //    Delay(0);
             //}
-            //Core.mq_Echo(query);
+            
+            Core.mq_Echo($"\a#336699[{MainProcessor._applicationName}]\a-w{System.DateTime.Now.ToString("HH:mm:ss")} \aw- {query}");
             //set the buffer for the C++ thread
-            Core._currentWrite = $"[{MainProcessor._applicationName}][{System.DateTime.Now.ToString("HH:mm:ss")}] {query}";
+            //Core._currentWrite = $"[{MainProcessor._applicationName}]\a-w{System.DateTime.Now.ToString("HH:mm:ss")} \aw- {query}";
+            //Core._currentWrite = $"\a#336699[{MainProcessor._applicationName}]\a-w{System.DateTime.Now.ToString("HH:mm:ss")} \aw- {query}";
+            return;
             //swap to the C++thread, and it will swap back after executing the current write becau of us setting _CurrentWrite before
             Core._coreResetEvent.Set();
             //we are now going to wait on the core
@@ -1087,6 +1193,19 @@ namespace MonoCore
             }
             return true;
         }
+        public bool Delay(int maxTimeToWait, Func<bool> methodToCheck)
+        {
+            Int64 startingTime = Core._stopWatch.ElapsedMilliseconds;
+            while (!methodToCheck.Invoke())
+            {
+                if (Core._stopWatch.ElapsedMilliseconds - startingTime > maxTimeToWait)
+                {
+                    return false;
+                }
+                this.Delay(10);
+            }
+            return true;
+        }
         public bool AddCommand(string commandName)
         {
             return Core.mq_AddCommand(commandName);
@@ -1099,6 +1218,7 @@ namespace MonoCore
         {
             Core.mq_RemoveCommand(commandName);
         }
+
 
     }
 
@@ -1144,7 +1264,7 @@ namespace MonoCore
 
             if (logLevel == LogLevels.Debug)
             {
-                MQ.Write($"{className}:{memberName}:({lineNumber}) {message}", "", "Logging");
+                MQ.Write($"\ag{className}:\ao{memberName}\aw:({lineNumber}) {message}", "", "Logging");
 
             }
             else
@@ -1175,7 +1295,7 @@ namespace MonoCore
             returnValue.StartTime = Core._stopWatch.Elapsed.TotalMilliseconds;
             if (!string.IsNullOrWhiteSpace(name))
             {
-                MQ.TraceEnd($"{name}:{memberName})");
+                MQ.TraceEnd($"\ag{memberName}:\ao{name})");
             }
             else
             {
@@ -1193,7 +1313,7 @@ namespace MonoCore
             //put event back into its object pool.
             if (!string.IsNullOrWhiteSpace(value.Method))
             {
-                MQ.TraceEnd($"{value.Name}:{value.Method}({totalMilliseconds}ms)");
+                MQ.TraceEnd($"\ag{value.Method}:\ao{value.Name}\aw({totalMilliseconds}ms)");
             }
 
         }

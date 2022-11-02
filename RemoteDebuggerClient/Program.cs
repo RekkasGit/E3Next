@@ -19,7 +19,7 @@ namespace MQServerClient
         public static Stopwatch _stopWatch = new Stopwatch();
         static void Main(string[] args)
         {
-            
+            AsyncIO.ForceDotNet.Force();
             MonoCore.Core.mqInstance = new NetMQMQ();
             MonoCore.Core.spawnInstance = new NetMQSpawns();
             MonoCore.Core.OnInit();
@@ -309,6 +309,7 @@ namespace MQServerClient
 
         public NetMQMQ()
         {
+           
             _requestSocket = new DealerSocket();
             _requestSocket.Options.Identity = Guid.NewGuid().ToByteArray();
             _requestSocket.Options.SendHighWatermark = 100;

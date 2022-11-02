@@ -812,6 +812,7 @@ namespace MonoCore
         public static void OnStop()
         {
             _isProcessing = false;
+            
             NetMQConfig.Cleanup(false);
         }
         public static void OnPulse()
