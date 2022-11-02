@@ -35,7 +35,7 @@ namespace E3Core.Classes
                 bool needToCast = false;
                 //lets get group members
                 List<string> memberNames = E3.Bots.BotsConnected();
-                foreach (int memberid in Basics._groupMembers)
+                foreach (int memberid in Basics.GroupMembers)
                 {
                     Spawn s;
                     if (_spawns.TryByID(memberid,out s))

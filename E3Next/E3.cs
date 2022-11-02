@@ -45,7 +45,7 @@ namespace E3Core.Processors
 
                 }
                 EventProcessor.ProcessEventsInQueues("/e3p");
-                if (Basics._isPaused)
+                if (Basics.IsPaused)
                 {
                     return;
                 }
