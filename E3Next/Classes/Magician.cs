@@ -45,6 +45,8 @@ namespace E3Core.Classes
             {_focusSpell, _focusItem },
         };
 
+        private static string _requester;
+
         /// <summary>
         /// Accepts a pet equipment request.
         /// </summary>
@@ -55,10 +57,10 @@ namespace E3Core.Classes
             {
                 if (!(x.match.Groups.Count > 1)) return;
                 var textInfo = new CultureInfo("en-US", false).TextInfo;
-                var requester = x.match.Groups[1].ToString();
+                _requester = x.match.Groups[1].ToString();
                 if (E3.CurrentClass != Class.Magician)
                 {
-                    MQ.Cmd($"/t {requester} Only magicians can give out pet weapons!");
+                    MQ.Cmd($"/t {_requester} Only magicians can give out pet weapons!");
                     return;
                 }
 
@@ -66,38 +68,38 @@ namespace E3Core.Classes
                 var weaponSplit = weapons.Split('|');
                 if (weaponSplit.Count() != 2)
                 {
-                    MQ.Cmd($"/t {requester} Invalid request. The request must be in the format of 'equippet Primary|Secondary'");
+                    MQ.Cmd($"/t {_requester} Invalid request. The request must be in the format of 'equippet Primary|Secondary'");
                     return;
                 }
 
                 if (!_weaponMap.TryGetValue(textInfo.ToTitleCase(weaponSplit[0]), out _))
                 {
-                    MQ.Cmd($"/t {requester} Invalid primary weapon selection. Valid values are {string.Join(", ", _weaponMap.Keys)}");
+                    MQ.Cmd($"/t {_requester} Invalid primary weapon selection. Valid values are {string.Join(", ", _weaponMap.Keys)}");
                     return;
                 }
 
                 if (!_weaponMap.TryGetValue(textInfo.ToTitleCase(weaponSplit[1]), out _))
                 {
-                    MQ.Cmd($"/t {requester} Invalid secondary weapon selection. Valid values are {string.Join(", ", _weaponMap.Keys)}");
+                    MQ.Cmd($"/t {_requester} Invalid secondary weapon selection. Valid values are {string.Join(", ", _weaponMap.Keys)}");
                     return;
                 }
 
-                if(_spawns.TryByName(requester, out var requesterSpawn))
+                if(_spawns.TryByName(_requester, out var requesterSpawn))
                 {
                     var theirPetId = requesterSpawn.PetID;
                     if(theirPetId < 0)
                     {
-                        MQ.Cmd($"/t {requester} You don't have a pet to equip!");
+                        MQ.Cmd($"/t {_requester} You don't have a pet to equip!");
                         return;
                     }
 
                     if (_spawns.Get().First(w => w.ID == theirPetId).Distance > 50)
                     {
-                        MQ.Cmd($"/t {requester} Your pet is too far away!");
+                        MQ.Cmd($"/t {_requester} Your pet is too far away!");
                         return;
                     }
 
-                    EquipPet(theirPetId, $"{weaponSplit[0]}|{weaponSplit[1]}");
+                    EquipPet(theirPetId, $"{weaponSplit[0]}|{weaponSplit[1]}", true);
                 }
             });
         }
@@ -111,31 +113,13 @@ namespace E3Core.Classes
             if (Assist._isAssisting) return;
             if (!E3.CharacterSettings.AutoPetWeapons) return;
 
-            // clean up any leftovers
-            var summonedItemCount = MQ.Query<int>($"${{FindItemCount[={_armorOrHeirloomBag}]}}");
-            for (int i = 1; i<=summonedItemCount; i++)
-            {
-                MQ.Cmd($"/itemnotify \"{_armorOrHeirloomBag}\" leftmouseup");
-                MQ.Delay(1000, "${Cursor.ID}");
-                MQ.Cmd("/destroy");
-            }
-
-            var bag = "Huge Disenchanted Backpack";
-            summonedItemCount = MQ.Query<int>($"${{FindItemCount[={bag}]}}");
-            for (int i = 1; i<=summonedItemCount; i++)
-            {
-                MQ.Cmd($"/itemnotify \"{bag}\" leftmouseup");
-                MQ.Delay(1000, "${Cursor.ID}");
-                MQ.Cmd("/destroy");
-            }
-
             // my pet
             var primary = MQ.Query<int>("${Me.Pet.Primary}");
             var myPetId = MQ.Query<int>("${Me.Pet.ID}");
             if (myPetId > 0 && primary == 0)
             {
                 E3.CharacterSettings.PetWeapons.TryGetValue(E3.CurrentName, out var weapons);
-                EquipPet(myPetId, weapons);
+                EquipPet(myPetId, weapons, false);
             }
 
             // bot pets
@@ -149,14 +133,28 @@ namespace E3Core.Classes
                     var theirPetPrimary = MQ.Query<int>($"${{Spawn[{ownerSpawn.Name}].Pet.Primary}}");
                     if (theirPetPrimary == 0)
                     {
-                        EquipPet(theirPetId, kvp.Value);
+                        EquipPet(theirPetId, kvp.Value, false);
                     }
                 }
             }
         }
 
-        private static void EquipPet(int petId, string weapons)
+        private static void EquipPet(int petId, string weapons, bool isExternalRequest)
         {
+            if (!CheckInventory())
+            {
+                if (isExternalRequest)
+                {
+                    MQ.Cmd($"/t {_requester} I was unable to free up inventory space to fulfill your request.");
+                }
+                else
+                {
+                    MQ.Write("\arUnable to free up inventory space to arm pets.");
+                }
+
+                return;
+            }
+
             // so we can move back
             var currentX = MQ.Query<double>("${Me.X}");
             var currentY = MQ.Query<double>("${Me.Y}");
@@ -233,11 +231,9 @@ namespace E3Core.Classes
         {
             if (Casting.TrueTarget(E3.CurrentId))
             {
-                if (Casting.Cast(E3.CurrentId, new Data.Spell(itemToSummon)) == CastReturn.CAST_SUCCESS)
-                {
-                    MQ.Delay(1000, "${Cursor.ID}");
-                    e3util.ClearCursor();
-                }
+                Casting.Cast(E3.CurrentId, new Spell(itemToSummon));
+                MQ.Delay(1000, "${Cursor.ID}");
+                e3util.ClearCursor();
 
                 if (_summonedItemMap.TryGetValue(itemToSummon, out var summonedItem))
                 {
@@ -249,6 +245,106 @@ namespace E3Core.Classes
                     }
                 }
             }
+        }
+
+        private static bool CheckInventory()
+        {
+            // clean up any leftovers
+            var summonedItemCount = MQ.Query<int>($"${{FindItemCount[={_armorOrHeirloomBag}]}}");
+            for (int i = 1; i <= summonedItemCount; i++)
+            {
+                MQ.Cmd($"/itemnotify \"{_armorOrHeirloomBag}\" leftmouseup");
+                MQ.Delay(1000, "${Cursor.ID}");
+                MQ.Cmd("/destroy");
+            }
+
+            var bag = "Huge Disenchanted Backpack";
+            summonedItemCount = MQ.Query<int>($"${{FindItemCount[={bag}]}}");
+            for (int i = 1; i <= summonedItemCount; i++)
+            {
+                MQ.Cmd($"/itemnotify \"{bag}\" leftmouseup");
+                MQ.Delay(1000, "${Cursor.ID}");
+                MQ.Cmd("/destroy");
+            }
+
+            int containerWithOpenSpace = -1;
+            int slotToMoveFrom = -1;
+            bool hasOpenInventorySlot = false;
+
+            // see if we have an open slot in a bag 
+            for (int i = 1; i <= 10; i++)
+            {
+                var containerSlots = MQ.Query<int>($"${{Me.Inventory[pack{i}].Container}}");
+                var containerItemCount = MQ.Query<int>($"${{InvSlot[pack{i}].Item.Items}}");
+                if (containerSlots - containerItemCount > 0)
+                {
+                    containerWithOpenSpace = i;
+                    break;
+                }
+            }
+
+            // see if we have an open bag slot
+            for (int i = 1; i <= 10; i++)
+            {
+                var currentSlot = i;
+                var containerSlots = MQ.Query<int>($"${{Me.Inventory[pack{i}].Container}}");
+                // the slot is empty, we're good!
+                if (containerSlots == -1)
+                {
+                    slotToMoveFrom = -1;
+                    hasOpenInventorySlot = true;
+                    break;
+                }
+
+                // it's not a container, we might have to move it
+                if (containerSlots == 0)
+                {
+                    slotToMoveFrom = currentSlot;
+                }
+            }
+
+            var freeInventory = MQ.Query<int>("${Me.FreeInventory}");
+            if (freeInventory > 0 && containerWithOpenSpace > 0 && slotToMoveFrom > 0)
+            {
+                MQ.Cmd($"/itemnotify pack{slotToMoveFrom} leftmouseup");
+                MQ.Delay(250);
+
+                if (MQ.Query<bool>("${Window[QuantityWnd].Open}"))
+                {
+                    MQ.Cmd("/notify QuantityWnd QTYW_Accept_Button leftmouseup");
+                }
+                MQ.Delay(1000, "${Cursor.ID}");
+            }
+
+            freeInventory = MQ.Query<int>("${Me.FreeInventory");
+            if (freeInventory > 0)
+            {
+                hasOpenInventorySlot = true;
+            }
+
+            if (MQ.Query<bool>("${Cursor.ID}") && containerWithOpenSpace > 0)
+            {
+                var slots = MQ.Query<int>($"${{Me.Inventory[pack{containerWithOpenSpace}].Container}}");
+                for (int i = 1; i <= slots; i++)
+                {
+                    var item = MQ.Query<string>($"${{Me.Inventory[pack{containerWithOpenSpace}].Item[{i}]}}");
+                    if (string.Equals(item, "NULL", StringComparison.OrdinalIgnoreCase))
+                    {
+                        MQ.Cmd($"/itemnotify in pack{containerWithOpenSpace} {i} leftmouseup");
+                        MQ.Delay(1000, "!${Cursor.ID}");
+                        hasOpenInventorySlot = true;
+                        break;
+                    }
+                }
+
+                // no room at the inn anymore, just put it back
+                if (MQ.Query<bool>("${Cursor.ID}"))
+                {
+                    e3util.ClearCursor();
+                }
+            }
+
+            return hasOpenInventorySlot;
         }
     }
 }

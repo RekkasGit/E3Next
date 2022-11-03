@@ -131,7 +131,7 @@ namespace E3Core.Processors
                 {
                     E3.Bots.BroadcastCommandToGroup("/yes all");
                 }
-                ClickYesNo(true);
+                e3util.ClickYesNo(true);
             });
             EventProcessor.RegisterCommand("/no", (x) =>
             {
@@ -139,7 +139,7 @@ namespace E3Core.Processors
                 {
                     E3.Bots.BroadcastCommandToGroup("/no all");
                 }
-                ClickYesNo(false);
+                e3util.ClickYesNo(false);
             });
 
             EventProcessor.RegisterCommand("/bark", (x) =>
@@ -308,28 +308,6 @@ namespace E3Core.Processors
                     _mq.Cmd($"/invite {member}");
                 }
             });
-        }
-        private static void ClickYesNo(bool YesClick)
-        {
-            string TypeToClick = "Yes";
-            if (!YesClick)
-            {
-                TypeToClick = "No";
-            }
-
-            bool windowOpen = _mq.Query<bool>("${Window[ConfirmationDialogBox].Open}");
-            if (windowOpen)
-            {
-                _mq.Cmd($"/notify ConfirmationDialogBox {TypeToClick}_Button leftmouseup");
-            }
-            else
-            {
-                windowOpen = _mq.Query<bool>("${Window[LargeDialogWindow].Open}");
-                if (windowOpen)
-                {
-                    _mq.Cmd($"/notify LargeDialogWindow LDW_{TypeToClick}Button leftmouseup");
-                }
-            }
         }
 
         /// <summary>
