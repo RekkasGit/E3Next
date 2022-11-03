@@ -229,9 +229,10 @@ namespace E3Core.Classes
 
         private static void SummonItem(string itemToSummon, bool inventoryTheSummonedItem)
         {
-            if (Casting.TrueTarget(E3.CurrentId))
+            var id = MQ.Query<int>("${Me.ID}");
+            if (Casting.TrueTarget(id))
             {
-                Casting.Cast(E3.CurrentId, new Spell(itemToSummon));
+                Casting.Cast(id, new Spell(itemToSummon));
                 MQ.Delay(1000, "${Cursor.ID}");
                 e3util.ClearCursor();
 
