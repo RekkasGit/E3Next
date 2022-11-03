@@ -1,4 +1,5 @@
-﻿using NetMQ;
+﻿using E3NextUI.Util;
+using NetMQ;
 using NetMQ.Sockets;
 using System;
 using System.Collections.Generic;
@@ -21,6 +22,11 @@ namespace E3NextUI.Server
             _port = port;
             _serverThread = Task.Factory.StartNew(() => { Process(); }, CancellationToken.None, TaskCreationOptions.DenyChildAttach, TaskScheduler.Default);
         }
+        List<string> _consoleContains = new List<string>(){ "You say, '"," says out of character, '", " tells you, '", " guild, '", " party, '", " raid, '", " group, '", " auctions, '" };
+        List<string> _spellContains = new List<string>() { "'s body is "," damage from ", "a critical blast!" };
+        List<string> _spellEndWith = new List<string>() { "begins to cast a spell.", "'s enchantments fades.", " was burned.",  "'s casting is interrupted!", "'s spell fizzles!", "non-melee damage." };
+        List<string> _spellStartsWith = new List<string>() { "You begin casting ", "Your spell is interrupted." };
+
         public void Process()
         {
 
@@ -42,7 +48,7 @@ namespace E3NextUI.Server
                     {
                         if (Application.OpenForms.Count > 0)
                         {
-                            ((E3UI)Application.OpenForms[0]).AddMQConsoleLine(messageReceived);
+                            ((E3UI)Application.OpenForms[0]).AddConsoleLine(messageReceived, E3UI._mqConsole);
                         }
 
                     }
@@ -50,7 +56,62 @@ namespace E3NextUI.Server
                     {
                         if (Application.OpenForms.Count > 0)
                         {
-                            ((E3UI)Application.OpenForms[0]).AddConsoleLine(messageReceived);
+                            bool found = false;
+                            foreach(var c in _consoleContains)
+                            {
+                                if(messageReceived.Contains(c))
+                                {
+                                    ((E3UI)Application.OpenForms[0]).AddConsoleLine(messageReceived, E3UI._console);
+                                    found = true;
+                                    break;
+                                }
+                            }
+
+                            if(!found) LineParser.ParseLine(messageReceived);
+
+                            if (!found)
+                            {
+                                foreach (var c in _spellContains)
+                                {
+                                    if (messageReceived.Contains(c))
+                                    {
+                                        ((E3UI)Application.OpenForms[0]).AddConsoleLine(messageReceived, E3UI._spellConsole);
+                                        found = true;
+                                        break;
+                                    }
+                                }
+                            }
+                            if(!found)
+                            {
+                                foreach (var c in _spellStartsWith)
+                                {
+                                    if (messageReceived.StartsWith(c))
+                                    {
+                                        ((E3UI)Application.OpenForms[0]).AddConsoleLine(messageReceived, E3UI._spellConsole);
+                                        found = true;
+                                        break;
+                                    }
+                                }
+                            }
+                            if(!found)
+                            {
+                                foreach (var c in _spellEndWith)
+                                {
+                                    if (messageReceived.EndsWith(c))
+                                    {
+                                        ((E3UI)Application.OpenForms[0]).AddConsoleLine(messageReceived, E3UI._spellConsole);
+                                        found = true;
+                                        break;
+                                    }
+                                }
+                            }
+                           
+                            if (!found)
+                            {
+                                //misc bucket
+                                ((E3UI)Application.OpenForms[0]).AddConsoleLine(messageReceived, E3UI._meleeConsole);
+                            }
+                          
                         }
                     }
                     else if (messageTopicReceived == "OnCommand")

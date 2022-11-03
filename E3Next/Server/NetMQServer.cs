@@ -17,6 +17,7 @@ namespace E3Core.Server
 
         static PubServer _pubServer;
         static RouterServer _routerServer;
+        static PubClient _pubClient;
         public static Int32 RouterPort;
         public static Int32 PubPort;
         public static Int32 PubClientPort;
@@ -30,17 +31,21 @@ namespace E3Core.Server
             PubPort = FreeTcpPort();
             PubClientPort = FreeTcpPort();
 
-            _pubServer = new PubServer();
+            
 
             if(Debugger.IsAttached)
             {
                 PubPort = 51711;
                 RouterPort = 51712;
+                PubClientPort = 51713;
             }
-
+            _pubServer = new PubServer();
             _routerServer = new RouterServer();
+            _pubClient = new PubClient();
+
             _pubServer.Start(PubPort);
             _routerServer.Start(RouterPort);
+            _pubClient.Start(PubClientPort);
             EventProcessor.RegisterUnfilteredEvent("NetMQData", ".+", (x) =>
             {
                 if(x.typeOfEvent== EventProcessor.eventType.EQEvent)
@@ -67,7 +72,7 @@ namespace E3Core.Server
                 if (_uiProcess==null)
                 {
                     MQ.Write("Trying to start:" + dllFullPath + @"E3NextUI.exe");
-                    _uiProcess = System.Diagnostics.Process.Start(dllFullPath+ @"E3NextUI.exe",$"{PubPort} {RouterPort}");
+                    _uiProcess = System.Diagnostics.Process.Start(dllFullPath+ @"E3NextUI.exe",$"{PubPort} {RouterPort} {PubClientPort}");
                 }
                 else
                 {
@@ -76,7 +81,7 @@ namespace E3Core.Server
                     {
                         //start up a new one.
                         MQ.Write("Trying to start:" + dllFullPath + @"E3NextUI.exe");
-                        _uiProcess = System.Diagnostics.Process.Start(dllFullPath + @"E3NextUI.exe", $"{PubPort} {RouterPort}");
+                        _uiProcess = System.Diagnostics.Process.Start(dllFullPath + @"E3NextUI.exe", $"{PubPort} {RouterPort} {PubClientPort}");
 
                     }
                     else

@@ -136,6 +136,8 @@ namespace E3Core.Processors
 
             //process any tlo request from the UI, or anything really.
             RouterServer.ProcessRequests();
+            //process any commands we need to process from the UI
+            PubClient.ProcessRequests();
         }
         private static void RefreshCaches()
         {

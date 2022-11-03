@@ -1,4 +1,5 @@
-﻿using MonoCore;
+﻿using E3Core.Processors;
+using MonoCore;
 using NetMQ;
 using NetMQ.Sockets;
 using System;
@@ -14,6 +15,7 @@ namespace E3Core.Server
     public class PubClient
     {
         public static ConcurrentQueue<string> _pubCommands = new ConcurrentQueue<string>();
+        private static IMQ MQ = E3.Mq;
 
         Task _serverThread;
         private Int32 _port;
@@ -21,6 +23,15 @@ namespace E3Core.Server
         {
             _port = port;
             _serverThread = Task.Factory.StartNew(() => { Process(); }, CancellationToken.None, TaskCreationOptions.DenyChildAttach, TaskScheduler.Default);
+        }
+        public static void ProcessRequests()
+        {
+            while (_pubCommands.Count > 0)
+            {
+                string message;
+                _pubCommands.TryDequeue(out message);
+                MQ.Cmd(message);
+            }
         }
         public void Process()
         {
