@@ -489,6 +489,58 @@ namespace E3Core.Utility
             });
 
         }
+
+        /// <summary>
+        /// Picks up an item via the find item tlo.
+        /// </summary>
+        /// <param name="itemName">Name of the item.</param>
+        /// <returns>a bool indicating whether the pickup was successful</returns>
+        public static bool PickUpItemViaFindItemTlo(string itemName)
+        {
+            MQ.Cmd($"/itemnotify \"${{FindItem[={itemName}]}}\" leftmouseup");
+            MQ.Delay(1000, "${Cursor.ID}");
+            return MQ.Query<bool>("${Cursor.ID}");
+        }
+
+        /// <summary>
+        /// Picks up an item via the inventory tlo.
+        /// </summary>
+        /// <param name="slotName">Name of the item.</param>
+        /// <returns>a bool indicating whether the pickup was successful</returns>
+        public static bool PickUpItemViaInventoryTlo(string slotName)
+        {
+            MQ.Cmd($"/itemnotify \"${{Me.Inventory[{slotName}]}}\" leftmouseup");
+            MQ.Delay(1000, "${Cursor.ID}");
+            return MQ.Query<bool>("${Cursor.ID}");
+        }
+
+        /// <summary>
+        /// Clicks yes or no on a dialog box.
+        /// </summary>
+        /// <param name="YesClick">if set to <c>true</c> [yes click].</param>
+        public static void ClickYesNo(bool YesClick)
+        {
+            string TypeToClick = "Yes";
+            if (!YesClick)
+            {
+                TypeToClick = "No";
+            }
+
+            bool windowOpen = MQ.Query<bool>("${Window[ConfirmationDialogBox].Open}");
+            if (windowOpen)
+            {
+                MQ.Cmd($"/notify ConfirmationDialogBox {TypeToClick}_Button leftmouseup");
+            }
+            else
+            {
+                windowOpen = MQ.Query<bool>("${Window[LargeDialogWindow].Open}");
+                if (windowOpen)
+                {
+                    MQ.Cmd($"/notify LargeDialogWindow LDW_{TypeToClick}Button leftmouseup");
+                }
+            }
+        }
+
         public static FileIniDataParser CreateIniParser()
         {
             var fileIniData = new FileIniDataParser();

@@ -145,7 +145,6 @@ namespace E3Core.Processors
                 //max event count for each registered event before spilling over.
                 EventProcessor._eventLimiterPerRegisteredEvent = 20;
                 CurrentName = Mq.Query<string>("${Me.CleanName}");
-                CurrentId = Mq.Query<int>("${Me.ID}");
                 //do first to get class information
                 CharacterSettings = new Settings.CharacterSettings();
                 CurrentClass = CharacterSettings._characterClass;
@@ -216,7 +215,6 @@ namespace E3Core.Processors
         public static Settings.AdvancedSettings AdvancedSettings = null;
         public static IBots Bots = null;
         public static string CurrentName;
-        public static int CurrentId;
         public static Data.Class CurrentClass;
         public static string CurrentLongClassString;
         public static string CurrentShortClassString;
