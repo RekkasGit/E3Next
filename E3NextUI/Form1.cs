@@ -4,6 +4,7 @@ using System;
 using System.Collections.Generic;
 using System.ComponentModel;
 using System.Data;
+using System.Diagnostics;
 using System.Drawing;
 using System.Linq;
 using System.Runtime.CompilerServices;
@@ -36,7 +37,8 @@ namespace E3NextUI
         public static TextBoxInfo _meleeConsole;
         public static TextBoxInfo _spellConsole;
         public static string CharacterName;
-
+        public static Int32 _parentProcess;
+       
         public E3UI()
         {
             InitializeComponent();
@@ -64,6 +66,7 @@ namespace E3NextUI
                 port = Int32.Parse(args[3]);
                 _pubServer = new PubServer();
                 _pubServer.Start(port);
+                _parentProcess = Int32.Parse(args[4]);
 
             }
 
@@ -80,9 +83,7 @@ namespace E3NextUI
             _consoleSpellTask = Task.Factory.StartNew(() => { ProcessUI(_spellConsole); }, CancellationToken.None, TaskCreationOptions.DenyChildAttach, TaskScheduler.Default);
             _updateParse = Task.Factory.StartNew(() => { ProcessParse(); }, CancellationToken.None, TaskCreationOptions.DenyChildAttach, TaskScheduler.Default);
 
-
-
-
+          
         }
         public static void SetDoubleBuffered(System.Windows.Forms.Control c)
         {
@@ -105,6 +106,14 @@ namespace E3NextUI
             while (_shouldProcess)
             {
                 ProcesssBaseParse();
+                if(_parentProcess>0)
+                {
+                    if (!ProcessExists(_parentProcess))
+                    {
+                        Application.Exit();
+
+                    }
+                }
                 System.Threading.Thread.Sleep(1000);
             }
         }
@@ -222,6 +231,8 @@ namespace E3NextUI
             }
             else
             {
+                
+
                 if (ti.nextProcess < _stopWatch.ElapsedMilliseconds)
                 {
 
@@ -271,13 +282,23 @@ namespace E3NextUI
             }
             else
             {
+               
                 if (this.Visible)
                 {
-                    this.Visible = false;
+                    this.Visible = false; // Hide form window.
+                   
                 }
                 else
                 {
+                    ShowInTaskbar = true; // Remove from taskbar.
+                    Opacity = 100;
                     this.Visible = true;
+                    //Keeps the current topmost status of form
+                    bool top = TopMost;
+                    //Brings the form to top
+                    TopMost = true;
+                    //Set form's topmost status back to whatever it was
+                    TopMost = top;
                 }
             }
         }
@@ -363,6 +384,24 @@ namespace E3NextUI
         {
             LineParser.Reset();
         }
+        protected override void OnLoad(EventArgs e)
+        {
+            this.Visible = false; // Hide form window.
+            ShowInTaskbar = false; // Remove from taskbar.
+            Opacity = 0;
+
+            base.OnLoad(e);
+        }
+
+        private void E3UI_Shown(object sender, EventArgs e)
+        {
+            this.Visible = false;
+        }
+        private bool ProcessExists(int id)
+        {
+            return Process.GetProcesses().Any(x => x.Id == id);
+        }
+
     }
     public class TextBoxInfo
     {

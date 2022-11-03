@@ -58,40 +58,44 @@ namespace E3Core.Server
                 }
                
             });
-
+            StartUI();
             EventProcessor.RegisterCommand("/ui", (x) =>
-            {   
-                //file:///G:/EQ/E3_ROF2_MQ2Next/Mono/macros/e3/Rekken/e3.dll
-                string dllFullPath = Assembly.GetExecutingAssembly().CodeBase.Replace("file:///", "").Replace("/", "\\").Replace("e3.dll", "");
-                if(Debugger.IsAttached)
-                {
-                    dllFullPath = @"G:\EQ\E3_ROF2_MQ2Next\mono\macros\e3\Rekken";
-
-                }
-
-                if (_uiProcess==null)
-                {
-                    MQ.Write("Trying to start:" + dllFullPath + @"E3NextUI.exe");
-                    _uiProcess = System.Diagnostics.Process.Start(dllFullPath+ @"E3NextUI.exe",$"{PubPort} {RouterPort} {PubClientPort}");
-                }
-                else
-                {
-                    //we have a process, is it up?
-                    if (_uiProcess.HasExited)
-                    {
-                        //start up a new one.
-                        MQ.Write("Trying to start:" + dllFullPath + @"E3NextUI.exe");
-                        _uiProcess = System.Diagnostics.Process.Start(dllFullPath + @"E3NextUI.exe", $"{PubPort} {RouterPort} {PubClientPort}");
-
-                    }
-                    else
-                    {
-                        //close it
-                        _uiProcess.Kill();
-                        _uiProcess = null;
-                    }
-                }
+            {
+                PubServer._pubCommands.Enqueue("#toggleshow");
             });
+        }
+        static void StartUI()
+        { 
+            //file:///G:/EQ/E3_ROF2_MQ2Next/Mono/macros/e3/Rekken/e3.dll
+            string dllFullPath = Assembly.GetExecutingAssembly().CodeBase.Replace("file:///", "").Replace("/", "\\").Replace("e3.dll", "");
+            if (Debugger.IsAttached)
+            {
+                dllFullPath = @"G:\EQ\E3_ROF2_MQ2Next\mono\macros\e3\Rekken";
+
+            }
+            Int32 processID = System.Diagnostics.Process.GetCurrentProcess().Id;
+            if (_uiProcess == null)
+            {
+                MQ.Write("Trying to start:" + dllFullPath + @"E3NextUI.exe");
+                _uiProcess = System.Diagnostics.Process.Start(dllFullPath + @"E3NextUI.exe", $"{PubPort} {RouterPort} {PubClientPort} {processID}");
+            }
+            else
+            {
+                //we have a process, is it up?
+                if (_uiProcess.HasExited)
+                { 
+                    //start up a new one.
+                    MQ.Write("Trying to start:" + dllFullPath + @"E3NextUI.exe");
+                    _uiProcess = System.Diagnostics.Process.Start(dllFullPath + @"E3NextUI.exe", $"{PubPort} {RouterPort} {PubClientPort} {processID}");
+                }
+                else 
+                {
+                    PubServer._pubCommands.Enqueue("#toggleshow");
+                   
+                }
+              
+            }
+
         }
         static int FreeTcpPort()
         {

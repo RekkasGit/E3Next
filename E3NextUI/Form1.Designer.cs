@@ -208,8 +208,7 @@ namespace E3NextUI
             // 
             // buttonResetParse
             // 
-            this.buttonResetParse.Anchor = ((System.Windows.Forms.AnchorStyles)((System.Windows.Forms.AnchorStyles.Bottom | System.Windows.Forms.AnchorStyles.Right)));
-            this.buttonResetParse.Location = new System.Drawing.Point(817, 138);
+            this.buttonResetParse.Location = new System.Drawing.Point(536, 73);
             this.buttonResetParse.Name = "buttonResetParse";
             this.buttonResetParse.Size = new System.Drawing.Size(75, 23);
             this.buttonResetParse.TabIndex = 8;
@@ -406,7 +405,6 @@ namespace E3NextUI
             this.AutoScaleDimensions = new System.Drawing.SizeF(6F, 13F);
             this.AutoScaleMode = System.Windows.Forms.AutoScaleMode.Font;
             this.AutoSize = true;
-            this.AutoSizeMode = System.Windows.Forms.AutoSizeMode.GrowAndShrink;
             this.ClientSize = new System.Drawing.Size(904, 609);
             this.ControlBox = false;
             this.Controls.Add(this.labelPetNameValue);
@@ -440,6 +438,7 @@ namespace E3NextUI
             this.Text = "E3UI";
             this.FormClosing += new System.Windows.Forms.FormClosingEventHandler(this.E3UI_FormClosing);
             this.Load += new System.EventHandler(this.E3UI_Load);
+            this.Shown += new System.EventHandler(this.E3UI_Shown);
             this.splitContainer1.Panel1.ResumeLayout(false);
             this.splitContainer1.Panel2.ResumeLayout(false);
             this.splitContainer1.Panel2.PerformLayout();
