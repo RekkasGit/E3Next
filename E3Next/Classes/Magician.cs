@@ -27,7 +27,7 @@ namespace E3Core.Classes
         private static string _focusItem = "Folded Pack of Enibik's Heirlooms";
         private static string _weaponBag = "Pouch of Quellious";
         private static string _armorOrHeirloomBag = "Phantom Satchel";
-        private static Dictionary<string, string> _weaponMap = new Dictionary<string, string> {
+        private static Dictionary<string, string> _weaponMap = new Dictionary<string, string>(StringComparer.OrdinalIgnoreCase) {
             {"Fire", "Summoned: Fist of Flame"},
             {"Water", "Summoned: Orb of Chilling Water" },
             {"Shield", "Summoned: Buckler of Draining Defense" },
@@ -53,10 +53,18 @@ namespace E3Core.Classes
         [SubSystemInit]
         public static void PetEquipmentRequest()
         {
+            if (E3.CurrentClass != Class.Magician)
+            {
+                return;
+            }
+
             EventProcessor.RegisterEvent("EquipPets", "(.+) tells you, 'equippet (.+)'", (x) =>
             {
-                if (!(x.match.Groups.Count > 1)) return;
-                var textInfo = new CultureInfo("en-US", false).TextInfo;
+                if (x.match.Groups.Count <= 1)
+                {
+                    return;
+                }
+
                 _requester = x.match.Groups[1].ToString();
                 if (E3.CurrentClass != Class.Magician)
                 {
@@ -64,21 +72,20 @@ namespace E3Core.Classes
                     return;
                 }
 
-                var weapons = textInfo.ToTitleCase(x.match.Groups[2].ToString());
-                var weaponSplit = weapons.Split('|');
+                var weaponSplit = x.match.Groups[2].ToString().Split('|');
                 if (weaponSplit.Count() != 2)
                 {
                     MQ.Cmd($"/t {_requester} Invalid request. The request must be in the format of 'equippet Primary|Secondary'");
                     return;
                 }
 
-                if (!_weaponMap.TryGetValue(textInfo.ToTitleCase(weaponSplit[0]), out _))
+                if (!_weaponMap.TryGetValue(weaponSplit[0], out _))
                 {
                     MQ.Cmd($"/t {_requester} Invalid primary weapon selection. Valid values are {string.Join(", ", _weaponMap.Keys)}");
                     return;
                 }
 
-                if (!_weaponMap.TryGetValue(textInfo.ToTitleCase(weaponSplit[1]), out _))
+                if (!_weaponMap.TryGetValue(weaponSplit[1], out _))
                 {
                     MQ.Cmd($"/t {_requester} Invalid secondary weapon selection. Valid values are {string.Join(", ", _weaponMap.Keys)}");
                     return;
@@ -149,7 +156,7 @@ namespace E3Core.Classes
                 }
                 else
                 {
-                    MQ.Write("\arUnable to free up inventory space to arm pets.");
+                    E3.Bots.Broadcast("\arUnable to free up inventory space to arm pets.");
                 }
 
                 return;
@@ -193,7 +200,11 @@ namespace E3Core.Classes
                 MQ.Cmd($"/itemnotify \"{primary}\" leftmouseup");
                 e3util.GiveItemOnCursorToTarget(false);
                 MQ.Delay(250);
-                Casting.TrueTarget(petId);
+                if (Casting.TrueTarget(petId))
+                {
+                    Casting.TrueTarget(petId);
+                }
+
                 MQ.Cmd($"/itemnotify \"{secondary}\" leftmouseup");
                 e3util.GiveItemOnCursorToTarget(false);
             }
@@ -232,18 +243,27 @@ namespace E3Core.Classes
             var id = MQ.Query<int>("${Me.ID}");
             if (Casting.TrueTarget(id))
             {
-                Casting.Cast(id, new Spell(itemToSummon));
-                MQ.Delay(1000, "${Cursor.ID}");
-                e3util.ClearCursor();
-
-                if (_summonedItemMap.TryGetValue(itemToSummon, out var summonedItem))
+                var spell = new Spell(itemToSummon);
+                if (Casting.CheckReady(spell))
                 {
-                    MQ.Cmd($"/itemnotify \"{summonedItem}\" rightmouseup");
-                    MQ.Delay(3000, "${Cursor.ID}");
-                    if (inventoryTheSummonedItem)
+                    Casting.Cast(id, spell);
+
+                    MQ.Delay(1000, "${Cursor.ID}");
+                    e3util.ClearCursor();
+
+                    if (_summonedItemMap.TryGetValue(itemToSummon, out var summonedItem))
                     {
-                        e3util.ClearCursor();
+                        MQ.Cmd($"/itemnotify \"{summonedItem}\" rightmouseup");
+                        MQ.Delay(3000, "${Cursor.ID}");
+                        if (inventoryTheSummonedItem)
+                        {
+                            e3util.ClearCursor();
+                        }
                     }
+                }
+                else
+                {
+                    E3.Bots.Broadcast($"\arUnable to cast {itemToSummon} because it wasn't ready");
                 }
             }
         }
