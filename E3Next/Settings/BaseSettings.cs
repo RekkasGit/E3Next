@@ -294,9 +294,9 @@ namespace E3Core.Settings
                     {
                         if (!String.IsNullOrWhiteSpace(data))
                         {
-                            if(!DoIHaveThis(data))
+                            if (!string.Equals(sectionKey, "Cures") && !DoIHaveThis(data))
                             {
-                                MQ.Write($"\arI do not have {data}. Skipping adding it to spell/item collection");
+                                E3.Bots.Broadcast($"\arI do not have {data}. Skipping adding it to spell/item collection");
                             }
 
                             collectionToAddTo.Add(new Data.Spell(data, parsedData));
@@ -321,7 +321,7 @@ namespace E3Core.Settings
                         {
                             if (!DoIHaveThis(data))
                             {
-                                MQ.Write($"\arI do not have {data}. Skipping adding it to song collection");
+                                E3.Bots.Broadcast($"\arI do not have {data}. Skipping adding it to song collection");
                             }
 
                             collectionToAddTo.Enqueue(new Data.Spell(data, parsedData));

@@ -146,6 +146,7 @@ namespace E3Core.Processors
                 EventProcessor._eventLimiterPerRegisteredEvent = 20;
                 CurrentName = Mq.Query<string>("${Me.CleanName}");
                 //do first to get class information
+                Bots = new Bots();
                 CharacterSettings = new Settings.CharacterSettings();
                 CurrentClass = CharacterSettings._characterClass;
                 CurrentLongClassString = CurrentClass.ToString();
@@ -161,7 +162,6 @@ namespace E3Core.Processors
                 //as there is an order dependecy
                 Setup.Init();
 
-                Bots = new Bots();
                 IsInit = true;
                 MonoCore.Spawns._refreshTimePeriodInMS = 3000;
 
