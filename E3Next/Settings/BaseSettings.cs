@@ -294,9 +294,9 @@ namespace E3Core.Settings
                     {
                         if (!String.IsNullOrWhiteSpace(data))
                         {
-                            if (!string.Equals(sectionKey, "Cures") && !DoIHaveThis(data))
+                            if (!string.Equals(sectionKey, "Cures"))
                             {
-                                E3.Bots.Broadcast($"\arI do not have {data}. Skipping adding it to spell/item collection");
+                                CheckFor(data);
                             }
 
                             collectionToAddTo.Add(new Data.Spell(data, parsedData));
@@ -319,9 +319,9 @@ namespace E3Core.Settings
                     {
                         if (!String.IsNullOrWhiteSpace(data))
                         {
-                            if (!DoIHaveThis(data))
+                            if (!string.Equals(sectionKey, "Cures"))
                             {
-                                E3.Bots.Broadcast($"\arI do not have {data}. Skipping adding it to song collection");
+                                CheckFor(data);
                             }
 
                             collectionToAddTo.Enqueue(new Data.Spell(data, parsedData));
@@ -375,11 +375,10 @@ namespace E3Core.Settings
         }
 
         /// <summary>
-        /// Checks if i have a thing.
+        /// Checks if i have a thing and broadcasts a warning message that i don't.
         /// </summary>
         /// <param name="thingToCheckFor">The thing.</param>
-        /// <returns>a boolean indicating that i have a thing</returns>
-        public static bool DoIHaveThis(string thingToCheckFor)
+        public static void CheckFor(string thingToCheckFor)
         {
             string thing = thingToCheckFor;
             if (thingToCheckFor.Contains('/'))
@@ -391,10 +390,8 @@ namespace E3Core.Settings
                 !MQ.Query<bool>($"${{Me.CombatAbility[{thing}]}}") && !MQ.Query<bool>($"${{Me.Ability[{thing}]}}") &&
                 !MQ.Query<bool>($"${{FindItem[={thing}]}}"))
             {
-                return false;
+                E3.Bots.Broadcast($"\ayI do not have {thing} that is configured in bot ini.");
             }
-
-            return true;
         }
     }
     interface IBaseSettings
