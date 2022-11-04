@@ -132,6 +132,20 @@ namespace E3NextUI.Server
                                     ((E3UI)Application.OpenForms[0]).SetPlayerHP(messageReceived);
                                 }
                             }
+                            else if (messageTopicReceived == "${Me.CurrentMana}")
+                            {
+                                if (Application.OpenForms.Count > 0)
+                                {
+                                    ((E3UI)Application.OpenForms[0]).SetPlayerMP(messageReceived);
+                                }
+                            }
+                            else if (messageTopicReceived == "${Me.CurrentEndurance}")
+                            {
+                                if (Application.OpenForms.Count > 0)
+                                {
+                                    ((E3UI)Application.OpenForms[0]).SetPlayerSP(messageReceived);
+                                }
+                            }
                             else if (messageTopicReceived == "${Me.Pet.CleanName}")
                             {
                                 LineParser.SetPetName(messageReceived);
@@ -145,8 +159,9 @@ namespace E3NextUI.Server
                                 }
 
                             }
+                           
                         }
-                        catch(Exception ex)
+                        catch (Exception ex)
                         {
                             ((E3UI)Application.OpenForms[0]).AddConsoleLine(ex.Message, E3UI._console);
 

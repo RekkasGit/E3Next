@@ -65,6 +65,10 @@ namespace E3NextUI
             this.labelMessageRecieved = new System.Windows.Forms.Label();
             this.labelInCombat = new System.Windows.Forms.Label();
             this.labelInCombatValue = new System.Windows.Forms.Label();
+            this.labelManaCurrent = new System.Windows.Forms.Label();
+            this.labelMana = new System.Windows.Forms.Label();
+            this.labelStaminaValue = new System.Windows.Forms.Label();
+            this.labelStaminia = new System.Windows.Forms.Label();
             ((System.ComponentModel.ISupportInitialize)(this.splitContainer1)).BeginInit();
             this.splitContainer1.Panel1.SuspendLayout();
             this.splitContainer1.Panel2.SuspendLayout();
@@ -80,7 +84,7 @@ namespace E3NextUI
             this.labelPlayer.AutoSize = true;
             this.labelPlayer.Font = new System.Drawing.Font("Microsoft Sans Serif", 14.25F, System.Drawing.FontStyle.Bold, System.Drawing.GraphicsUnit.Point, ((byte)(0)));
             this.labelPlayer.ForeColor = System.Drawing.SystemColors.MenuHighlight;
-            this.labelPlayer.Location = new System.Drawing.Point(13, 13);
+            this.labelPlayer.Location = new System.Drawing.Point(14, 13);
             this.labelPlayer.Name = "labelPlayer";
             this.labelPlayer.Size = new System.Drawing.Size(74, 24);
             this.labelPlayer.TabIndex = 0;
@@ -102,7 +106,7 @@ namespace E3NextUI
             this.labelHP.AutoSize = true;
             this.labelHP.Font = new System.Drawing.Font("Microsoft Sans Serif", 14.25F, System.Drawing.FontStyle.Bold, System.Drawing.GraphicsUnit.Point, ((byte)(0)));
             this.labelHP.ForeColor = System.Drawing.SystemColors.MenuHighlight;
-            this.labelHP.Location = new System.Drawing.Point(43, 49);
+            this.labelHP.Location = new System.Drawing.Point(13, 46);
             this.labelHP.Name = "labelHP";
             this.labelHP.Size = new System.Drawing.Size(44, 24);
             this.labelHP.TabIndex = 2;
@@ -113,7 +117,7 @@ namespace E3NextUI
             this.labelHPTotal.AutoSize = true;
             this.labelHPTotal.Font = new System.Drawing.Font("Microsoft Sans Serif", 15.75F, System.Drawing.FontStyle.Bold, System.Drawing.GraphicsUnit.Point, ((byte)(0)));
             this.labelHPTotal.ForeColor = System.Drawing.Color.FromArgb(((int)(((byte)(0)))), ((int)(((byte)(192)))), ((int)(((byte)(0)))));
-            this.labelHPTotal.Location = new System.Drawing.Point(93, 48);
+            this.labelHPTotal.Location = new System.Drawing.Point(63, 45);
             this.labelHPTotal.Name = "labelHPTotal";
             this.labelHPTotal.Size = new System.Drawing.Size(25, 25);
             this.labelHPTotal.TabIndex = 3;
@@ -387,7 +391,7 @@ namespace E3NextUI
             this.labelPetNameValue.AutoSize = true;
             this.labelPetNameValue.Font = new System.Drawing.Font("Microsoft Sans Serif", 12F, System.Drawing.FontStyle.Bold, System.Drawing.GraphicsUnit.Point, ((byte)(0)));
             this.labelPetNameValue.ForeColor = System.Drawing.Color.Crimson;
-            this.labelPetNameValue.Location = new System.Drawing.Point(92, 85);
+            this.labelPetNameValue.Location = new System.Drawing.Point(111, 137);
             this.labelPetNameValue.Name = "labelPetNameValue";
             this.labelPetNameValue.Size = new System.Drawing.Size(51, 20);
             this.labelPetNameValue.TabIndex = 28;
@@ -398,7 +402,7 @@ namespace E3NextUI
             this.labelPetName.AutoSize = true;
             this.labelPetName.Font = new System.Drawing.Font("Microsoft Sans Serif", 14.25F, System.Drawing.FontStyle.Bold, System.Drawing.GraphicsUnit.Point, ((byte)(0)));
             this.labelPetName.ForeColor = System.Drawing.SystemColors.MenuHighlight;
-            this.labelPetName.Location = new System.Drawing.Point(40, 82);
+            this.labelPetName.Location = new System.Drawing.Point(70, 134);
             this.labelPetName.Name = "labelPetName";
             this.labelPetName.Size = new System.Drawing.Size(46, 24);
             this.labelPetName.TabIndex = 27;
@@ -445,6 +449,50 @@ namespace E3NextUI
             this.labelInCombatValue.TabIndex = 32;
             this.labelInCombatValue.Text = "false";
             // 
+            // labelManaCurrent
+            // 
+            this.labelManaCurrent.AutoSize = true;
+            this.labelManaCurrent.Font = new System.Drawing.Font("Microsoft Sans Serif", 15.75F, System.Drawing.FontStyle.Bold, System.Drawing.GraphicsUnit.Point, ((byte)(0)));
+            this.labelManaCurrent.ForeColor = System.Drawing.Color.Blue;
+            this.labelManaCurrent.Location = new System.Drawing.Point(63, 69);
+            this.labelManaCurrent.Name = "labelManaCurrent";
+            this.labelManaCurrent.Size = new System.Drawing.Size(25, 25);
+            this.labelManaCurrent.TabIndex = 34;
+            this.labelManaCurrent.Text = "0";
+            // 
+            // labelMana
+            // 
+            this.labelMana.AutoSize = true;
+            this.labelMana.Font = new System.Drawing.Font("Microsoft Sans Serif", 14.25F, System.Drawing.FontStyle.Bold, System.Drawing.GraphicsUnit.Point, ((byte)(0)));
+            this.labelMana.ForeColor = System.Drawing.SystemColors.MenuHighlight;
+            this.labelMana.Location = new System.Drawing.Point(13, 70);
+            this.labelMana.Name = "labelMana";
+            this.labelMana.Size = new System.Drawing.Size(46, 24);
+            this.labelMana.TabIndex = 33;
+            this.labelMana.Text = "MP:";
+            // 
+            // labelStaminaValue
+            // 
+            this.labelStaminaValue.AutoSize = true;
+            this.labelStaminaValue.Font = new System.Drawing.Font("Microsoft Sans Serif", 15.75F, System.Drawing.FontStyle.Bold, System.Drawing.GraphicsUnit.Point, ((byte)(0)));
+            this.labelStaminaValue.ForeColor = System.Drawing.Color.FromArgb(((int)(((byte)(192)))), ((int)(((byte)(192)))), ((int)(((byte)(0)))));
+            this.labelStaminaValue.Location = new System.Drawing.Point(63, 92);
+            this.labelStaminaValue.Name = "labelStaminaValue";
+            this.labelStaminaValue.Size = new System.Drawing.Size(25, 25);
+            this.labelStaminaValue.TabIndex = 36;
+            this.labelStaminaValue.Text = "0";
+            // 
+            // labelStaminia
+            // 
+            this.labelStaminia.AutoSize = true;
+            this.labelStaminia.Font = new System.Drawing.Font("Microsoft Sans Serif", 14.25F, System.Drawing.FontStyle.Bold, System.Drawing.GraphicsUnit.Point, ((byte)(0)));
+            this.labelStaminia.ForeColor = System.Drawing.SystemColors.MenuHighlight;
+            this.labelStaminia.Location = new System.Drawing.Point(13, 93);
+            this.labelStaminia.Name = "labelStaminia";
+            this.labelStaminia.Size = new System.Drawing.Size(42, 24);
+            this.labelStaminia.TabIndex = 35;
+            this.labelStaminia.Text = "SP:";
+            // 
             // E3UI
             // 
             this.AutoScaleDimensions = new System.Drawing.SizeF(6F, 13F);
@@ -452,6 +500,10 @@ namespace E3NextUI
             this.AutoSize = true;
             this.ClientSize = new System.Drawing.Size(947, 659);
             this.ControlBox = false;
+            this.Controls.Add(this.labelStaminaValue);
+            this.Controls.Add(this.labelStaminia);
+            this.Controls.Add(this.labelManaCurrent);
+            this.Controls.Add(this.labelMana);
             this.Controls.Add(this.labelInCombatValue);
             this.Controls.Add(this.labelInCombat);
             this.Controls.Add(this.labelMessageRecieved);
@@ -486,7 +538,7 @@ namespace E3NextUI
             this.Name = "E3UI";
             this.Text = "E3UI";
             this.FormClosing += new System.Windows.Forms.FormClosingEventHandler(this.E3UI_FormClosing);
-            this.Shown += new System.EventHandler(this.E3UI_Shown);
+            
             this.splitContainer1.Panel1.ResumeLayout(false);
             this.splitContainer1.Panel2.ResumeLayout(false);
             this.splitContainer1.Panel2.PerformLayout();
@@ -539,6 +591,10 @@ namespace E3NextUI
         private System.Windows.Forms.Label labelMessageRecieved;
         private System.Windows.Forms.Label labelInCombat;
         private System.Windows.Forms.Label labelInCombatValue;
+        private System.Windows.Forms.Label labelManaCurrent;
+        private System.Windows.Forms.Label labelMana;
+        private System.Windows.Forms.Label labelStaminaValue;
+        private System.Windows.Forms.Label labelStaminia;
     }
 }
 

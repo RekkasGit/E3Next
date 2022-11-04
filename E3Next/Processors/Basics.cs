@@ -422,7 +422,11 @@ namespace E3Core.Processors
             bool inCombat = Assist._isAssisting ||MQ.Query<bool>("${Me.Combat}") || MQ.Query<bool>("${Me.CombatState.Equal[Combat]}");
             return inCombat;
         }
-
+        public static bool InGameCombat()
+        {
+            bool inCombat =  MQ.Query<bool>("${Me.CombatState.Equal[Combat]}");
+            return inCombat;
+        }
         /// <summary>
         /// Checks the mana resources, and does actions to regenerate mana during combat.
         /// </summary>

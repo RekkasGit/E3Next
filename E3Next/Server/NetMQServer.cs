@@ -47,25 +47,19 @@ namespace E3Core.Server
             _routerServer.Start(RouterPort);
             _pubClient.Start(PubClientPort);
    
-            StartUI();
+           
             EventProcessor.RegisterCommand("/ui", (x) =>
             {
-                PubServer._pubCommands.Enqueue("#toggleshow");
+                ToggleUI();
             });
         }
-        static void StartUI()
+        static void ToggleUI()
         { 
-            //file:///G:/EQ/E3_ROF2_MQ2Next/Mono/macros/e3/Rekken/e3.dll
-            string dllFullPath = Assembly.GetExecutingAssembly().CodeBase.Replace("file:///", "").Replace("/", "\\").Replace("e3.dll", "");
-            if (Debugger.IsAttached)
-            {
-                return;
-                dllFullPath = @"G:\EQ\E3_ROF2_MQ2Next\mono\macros\e3\Rekken";
-
-            }
-            Int32 processID = System.Diagnostics.Process.GetCurrentProcess().Id;
+          
             if (_uiProcess == null)
             {
+                string dllFullPath = Assembly.GetExecutingAssembly().CodeBase.Replace("file:///", "").Replace("/", "\\").Replace("e3.dll", "");
+                Int32 processID = System.Diagnostics.Process.GetCurrentProcess().Id;
                 MQ.Write("Trying to start:" + dllFullPath + @"E3NextUI.exe");
                 _uiProcess = System.Diagnostics.Process.Start(dllFullPath + @"E3NextUI.exe", $"{PubPort} {RouterPort} {PubClientPort} {processID}");
             }
@@ -73,7 +67,9 @@ namespace E3Core.Server
             {
                 //we have a process, is it up?
                 if (_uiProcess.HasExited)
-                { 
+                {
+                    string dllFullPath = Assembly.GetExecutingAssembly().CodeBase.Replace("file:///", "").Replace("/", "\\").Replace("e3.dll", "");
+                    Int32 processID = System.Diagnostics.Process.GetCurrentProcess().Id;
                     //start up a new one.
                     MQ.Write("Trying to start:" + dllFullPath + @"E3NextUI.exe");
                     _uiProcess = System.Diagnostics.Process.Start(dllFullPath + @"E3NextUI.exe", $"{PubPort} {RouterPort} {PubClientPort} {processID}");

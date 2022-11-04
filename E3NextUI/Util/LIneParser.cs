@@ -52,10 +52,18 @@ namespace E3NextUI.Util
         }
         public static void SetPetName(string petName)
         {
-            if (!String.IsNullOrWhiteSpace(petName))
+            if (String.IsNullOrWhiteSpace(PetName) && petName!="NULL")
             {
                 PetName = petName;
                 _yourPetMelee = new System.Text.RegularExpressions.Regex($"{PetName} .+ for ([0-9]+) points of damage.");
+            }
+            else
+            {
+                if(!PetName.Equals(petName))
+                {
+                    PetName = petName;
+                }
+
             }
         }
         public static void SetCombatState(bool inCombat)

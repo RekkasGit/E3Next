@@ -291,8 +291,6 @@ namespace E3NextUI
                 }
                 else
                 {
-                    ShowInTaskbar = true; // Remove from taskbar.
-                    Opacity = 100;
                     this.Visible = true;
                     //Keeps the current topmost status of form
                     bool top = TopMost;
@@ -316,20 +314,40 @@ namespace E3NextUI
                 labelPlayerName.Text = name;
             }
         }
-        private delegate void SetPlayerHPDelegate(string name);
+        private delegate void SetPlayerDataDelegate(string name);
         public void SetPlayerHP(string value)
         {
             if (this.InvokeRequired)
             {
-                this.Invoke(new SetPlayerHPDelegate(SetPlayerHP), new object[] { value });
+                this.Invoke(new SetPlayerDataDelegate(SetPlayerHP), new object[] { value });
             }
             else
             {
                 labelHPTotal.Text = value;
             }
         }
-
-
+        public void SetPlayerMP(string value)
+        {
+            if (this.InvokeRequired)
+            {
+                this.Invoke(new SetPlayerDataDelegate(SetPlayerMP), new object[] { value });
+            }
+            else
+            {
+                labelManaCurrent.Text = value;
+            }
+        }
+        public void SetPlayerSP(string value)
+        {
+            if (this.InvokeRequired)
+            {
+                this.Invoke(new SetPlayerDataDelegate(SetPlayerSP), new object[] { value });
+            }
+            else
+            {
+                labelStaminaValue.Text = value;
+            }
+        }
         public void AddConsoleLine(string value, TextBoxInfo ti)
         {
             lock (ti)
@@ -383,31 +401,31 @@ namespace E3NextUI
         /// I tried other ways but this worked the best
         /// </summary>
         /// <param name="e"></param>
-        protected override void OnLoad(EventArgs e)
-        {
-            if(!Debugger.IsAttached)
-            {
-                this.Visible = false; // Hide form window.
-                ShowInTaskbar = false; // Remove from taskbar.
-                Opacity = 0;
+        //protected override void OnLoad(EventArgs e)
+        //{
+        //    if(!Debugger.IsAttached)
+        //    {
+        //        this.Visible = false; // Hide form window.
+        //        ShowInTaskbar = false; // Remove from taskbar.
+        //        Opacity = 0;
 
-            }
+        //    }
 
-            base.OnLoad(e);
-        }
+        //    base.OnLoad(e);
+        //}
         /// <summary>
         /// used with the onload, to set the visable flag to false, after the form was opened, so logic
         /// will be correct on the toggle
         /// </summary>
         /// <param name="sender"></param>
         /// <param name="e"></param>
-        private void E3UI_Shown(object sender, EventArgs e)
-        {
-            if (!Debugger.IsAttached)
-            {
-                this.Visible = false;
-            }
-        }
+        //private void E3UI_Shown(object sender, EventArgs e)
+        //{
+        //    if (!Debugger.IsAttached)
+        //    {
+        //        this.Visible = false;
+        //    }
+        //}
         /// <summary>
         /// used to check if our parent process dies, so that we can close as well.
         /// </summary>

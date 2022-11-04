@@ -132,13 +132,24 @@ namespace E3Core.Processors
             IsInvis = Mq.Query<bool>("${Me.Invis}");
             CurrentHps = Mq.Query<int>("${Me.PctHPs}");
             HitPointsCurrent = Mq.Query<int>("${Me.CurrentHPs}");
-
+          
             if (HitPointsCurrent != HitPointsPrevious)
             {
                 PubServer.AddTopicMessage("${Me.CurrentHPs}", HitPointsCurrent.ToString("N0"));
                 HitPointsPrevious = HitPointsCurrent;
             }
-
+            MagicPointsCurrent = Mq.Query<int>("${Me.CurrentMana}");
+            if (MagicPointsCurrent != MagicPointsPrevious)
+            {
+                PubServer.AddTopicMessage("${Me.CurrentMana}", MagicPointsCurrent.ToString("N0"));
+                MagicPointsPrevious = MagicPointsCurrent;
+            }
+            StamPointsCurrent = Mq.Query<int>("${Me.CurrentEndurance}");
+            if (StamPointsCurrent != StamPointsPrevious)
+            {
+                PubServer.AddTopicMessage("${Me.CurrentEndurance}", StamPointsCurrent.ToString("N0"));
+                StamPointsPrevious = StamPointsCurrent;
+            }
             bool tCombat = Basics.InCombat();
             if(tCombat!= CurrentInCombat)
             {
@@ -146,27 +157,15 @@ namespace E3Core.Processors
                 PubServer.AddTopicMessage("${InCombat}", CurrentInCombat.ToString());
             }
 
-            if (String.IsNullOrEmpty(CurrentPetName))
+            string nameOfPet = Mq.Query<string>("${Me.Pet.CleanName}");
+            if(nameOfPet!="NULL")
             {
-                string nameOfPet = Mq.Query<string>("${Me.Pet.CleanName}");
-                if(nameOfPet!="NULL")
-                {
-                    //set the pet name
-                    CurrentPetName = nameOfPet;
-                    PubServer.AddTopicMessage("${Me.Pet.CleanName}", CurrentPetName);
+                //set the pet name
+                CurrentPetName = nameOfPet;
+                PubServer.AddTopicMessage("${Me.Pet.CleanName}", CurrentPetName);
 
-                }
             }
-            else
-            {
-                //we had/have pet?
-                string nameofPet = Mq.Query<string>("${Me.Pet.CleanName}");
-                if(nameofPet=="NULL")
-                {
-                    PubServer.AddTopicMessage("${Me.Pet.CleanName}", String.Empty);
-                    CurrentPetName = String.Empty;
-                }
-            }
+            
 
             int zoneID = Mq.Query<int>("${Zone.ID}"); //to tell if we zone mid process
             if (zoneID != ZoneID)
@@ -359,6 +358,10 @@ namespace E3Core.Processors
         public static int CurrentHps;
         public static int HitPointsCurrent;
         public static int HitPointsPrevious;
+        public static int MagicPointsCurrent;
+        public static int MagicPointsPrevious;
+        public static int StamPointsCurrent;
+        public static int StamPointsPrevious;
         public static int ZoneID;
         public static int ProcessDelay = 50;
         public static ISpawns Spawns = Core.spawnInstance;
