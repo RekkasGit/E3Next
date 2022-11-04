@@ -131,7 +131,7 @@ namespace E3Core.Processors
             using (_log.Trace())
             {
                 //e3util.PrintTimerStatus(_debuffTimers, ref _nextDebuffCheck, "Debuffs");
-                foreach (var mobid in _mobsToDebuff)
+                foreach (var mobid in _mobsToDebuff.ToList())
                 {
 
                     CastLongTermSpell(mobid, E3.CharacterSettings.Debuffs_Command, _debuffTimers);
@@ -169,7 +169,7 @@ namespace E3Core.Processors
             // e3util.PrintTimerStatus(_dotTimers, ref _nextDoTCheck, "Damage over Time");
             using (_log.Trace())
             {
-                foreach (var mobid in _mobsToDot)
+                foreach (var mobid in _mobsToDot.ToList())
                 {
                     CastLongTermSpell(mobid, E3.CharacterSettings.Dots_OnCommand, _dotTimers);
                     if (E3.ActionTaken) return;

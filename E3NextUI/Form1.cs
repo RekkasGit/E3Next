@@ -38,14 +38,18 @@ namespace E3NextUI
         public static TextBoxInfo _spellConsole;
         public static string CharacterName;
         public static Int32 _parentProcess;
-       
+        public static Int64 _messagesrecieved = 0;
+        public static object _objectLock = new object();
+
+
+
         public E3UI()
         {
             InitializeComponent();
 
             _stopWatch.Start();
             string[] args = Environment.GetCommandLineArgs();
-            AsyncIO.ForceDotNet.Force();
+            //AsyncIO.ForceDotNet.Force();
             if (args.Length > 1)
             {
                 Int32 port = Int32.Parse(args[2]);
@@ -83,7 +87,7 @@ namespace E3NextUI
             _consoleSpellTask = Task.Factory.StartNew(() => { ProcessUI(_spellConsole); }, CancellationToken.None, TaskCreationOptions.DenyChildAttach, TaskScheduler.Default);
             _updateParse = Task.Factory.StartNew(() => { ProcessParse(); }, CancellationToken.None, TaskCreationOptions.DenyChildAttach, TaskScheduler.Default);
 
-          
+
         }
         public static void SetDoubleBuffered(System.Windows.Forms.Control c)
         {
@@ -100,13 +104,20 @@ namespace E3NextUI
 
             aProp.SetValue(c, true, null);
         }
-
+        public static void IncrementMessageCount()
+        {
+            lock(_objectLock)
+            {
+                _messagesrecieved++;
+            }
+        }
         private void ProcessParse()
         {
             while (_shouldProcess)
             {
                 ProcesssBaseParse();
-                if(_parentProcess>0)
+                
+                if (_parentProcess > 0)
                 {
                     if (!ProcessExists(_parentProcess))
                     {
@@ -114,7 +125,8 @@ namespace E3NextUI
 
                     }
                 }
-                System.Threading.Thread.Sleep(1000);
+
+                System.Threading.Thread.Sleep(500);
             }
         }
         private delegate void ProcesssBaseParseDelegate();
@@ -127,10 +139,14 @@ namespace E3NextUI
             else
             {
                 //lets get the data from the line parser.
-
+                lock (_objectLock)
+                {
+                    labelMessageRecieved.Text = _messagesrecieved.ToString("N0");
+                    labelInCombatValue.Text = LineParser._currentlyCombat.ToString();
+                }
                 lock (LineParser._objectLock)
                 {
-                    if(!String.IsNullOrWhiteSpace(LineParser.PetName))
+                    if (!String.IsNullOrWhiteSpace(LineParser.PetName))
                     {
                         labelPetNameValue.Text = LineParser.PetName;
                     }
@@ -160,7 +176,7 @@ namespace E3NextUI
                     Int64 endTime = 0;
                     if (LineParser._yourDamage.Count > 0)
                     {
-                        if (startTime > LineParser._yourDamageTime[0] || startTime==0)
+                        if (startTime > LineParser._yourDamageTime[0] || startTime == 0)
                         {
                             startTime = LineParser._yourDamageTime[0];
                         }
@@ -191,7 +207,7 @@ namespace E3NextUI
                             endTime = LineParser._yourDamageShieldDamageTime[LineParser._yourDamageShieldDamageTime.Count - 1];
                         }
                     }
-                    Int64 totalTime = (endTime - startTime)/1000;
+                    Int64 totalTime = (endTime - startTime) / 1000;
 
                     labelTotalTimeValue.Text = (totalTime) + " seconds";
 
@@ -201,7 +217,7 @@ namespace E3NextUI
                     Int64 petDPS = petDamageTotal / totalTime;
                     Int64 dsDPS = dsDamage / totalTime;
 
-                    labelTotalDamageDPSValue.Text = totalDPS.ToString("N0")+" dps";
+                    labelTotalDamageDPSValue.Text = totalDPS.ToString("N0") + " dps";
                     labelYourDamageDPSValue.Text = yourDPS.ToString("N0") + " dps";
                     labelPetDamageDPSValue.Text = petDPS.ToString("N0") + " dps";
                     labelDamageShieldDPSValue.Text = dsDPS.ToString("N0") + " dps";
@@ -211,12 +227,10 @@ namespace E3NextUI
         }
         private void ProcessUI(TextBoxInfo textInfo)
         {
-
-
             while (_shouldProcess)
             {
                 ProcessBaseUI(textInfo);
-                System.Threading.Thread.Sleep(1);
+                System.Threading.Thread.Sleep(500);
             }
 
         }
@@ -231,42 +245,29 @@ namespace E3NextUI
             }
             else
             {
-                
-
-                if (ti.nextProcess < _stopWatch.ElapsedMilliseconds)
+                lock (ti)
                 {
-
-                    if (ti.isDirty)
+                    if (ti.nextProcess < _stopWatch.ElapsedMilliseconds)
                     {
-                        //delete from the top if needed
-                        string[] lines = richTextBoxConsole.Lines;
-                        if (lines.Length > 200)
-                        {
-                            ti.textBox.ReadOnly = false;
-                            ti.textBox.SelectionStart = ti.textBox.GetFirstCharIndexFromLine(0);
-                            //ending length
-                            Int32 endLength = 0;
-                            for (Int32 i = 0; i < 50; i++)
-                            {
-                                endLength = ti.textBox.Lines[i].Length + 1;
+                        if (ti.isPaused) return;
 
-                            }
-                            ti.textBox.SelectionLength = endLength;
-                            ti.textBox.SelectedText = String.Empty;
-                            ti.textBox.ReadOnly = true;
-                        }
-                        while (ti.consoleLines.Count > 0)
+                        if (ti.isDirty)
                         {
-                            string line;
-                            if (ti.consoleLines.TryDequeue(out line))
+                        
+                            ti.sb.Clear();
+                            Int32 count = ti.consoleBuffer.Size;
+                            if (count > 50) count = 50;
+                            for(Int32 i =count-1;i>=0;i--)
                             {
-                                ti.textBox.AppendText(line + "\r\n");
+                                ti.sb.AppendLine(ti.consoleBuffer[i]);
                             }
+                           
+                            ti.textBox.Text = ti.sb.ToString();
+                            ti.textBox.SelectionStart = ti.textBox.Text.Length;
+                            ti.textBox.ScrollToCaret();
+                            ti.nextProcess = _stopWatch.ElapsedMilliseconds + 100;
+                            ti.isDirty = false;
                         }
-                        ti.textBox.SelectionStart = ti.textBox.Text.Length;
-                        ti.textBox.ScrollToCaret();
-                        ti.nextProcess = _stopWatch.ElapsedMilliseconds + 100;
-                        ti.isDirty = false;
                     }
                 }
             }
@@ -282,11 +283,11 @@ namespace E3NextUI
             }
             else
             {
-               
+
                 if (this.Visible)
                 {
                     this.Visible = false; // Hide form window.
-                   
+
                 }
                 else
                 {
@@ -327,17 +328,14 @@ namespace E3NextUI
                 labelHPTotal.Text = value;
             }
         }
-        private delegate void AddConsoleLineDelegate(string value, TextBoxInfo ti);
+
+
         public void AddConsoleLine(string value, TextBoxInfo ti)
         {
-            if (this.InvokeRequired)
-            {
-                this.Invoke(new AddConsoleLineDelegate(AddConsoleLine), new object[] { value, ti });
-            }
-            else
+            lock (ti)
             {
                 ti.isDirty = true;
-                ti.consoleLines.Enqueue(value);
+                ti.consoleBuffer.PushFront(value);
             }
         }
 
@@ -347,10 +345,6 @@ namespace E3NextUI
             ft.Show();
         }
 
-        private void E3UI_Load(object sender, EventArgs e)
-        {
-
-        }
         public void Shutdown()
         {
             _shouldProcess = false;
@@ -384,31 +378,105 @@ namespace E3NextUI
         {
             LineParser.Reset();
         }
+        /// <summary>
+        /// needed to hide the UI at startup without flicker.
+        /// I tried other ways but this worked the best
+        /// </summary>
+        /// <param name="e"></param>
         protected override void OnLoad(EventArgs e)
         {
-            this.Visible = false; // Hide form window.
-            ShowInTaskbar = false; // Remove from taskbar.
-            Opacity = 0;
+            if(!Debugger.IsAttached)
+            {
+                this.Visible = false; // Hide form window.
+                ShowInTaskbar = false; // Remove from taskbar.
+                Opacity = 0;
+
+            }
 
             base.OnLoad(e);
         }
-
+        /// <summary>
+        /// used with the onload, to set the visable flag to false, after the form was opened, so logic
+        /// will be correct on the toggle
+        /// </summary>
+        /// <param name="sender"></param>
+        /// <param name="e"></param>
         private void E3UI_Shown(object sender, EventArgs e)
         {
-            this.Visible = false;
+            if (!Debugger.IsAttached)
+            {
+                this.Visible = false;
+            }
         }
+        /// <summary>
+        /// used to check if our parent process dies, so that we can close as well.
+        /// </summary>
+        /// <param name="id"></param>
+        /// <returns></returns>
         private bool ProcessExists(int id)
         {
             return Process.GetProcesses().Any(x => x.Id == id);
         }
 
+        private void buttonPauseConsoles_Click(object sender, EventArgs e)
+        {
+            lock (_spellConsole)
+            { 
+                if(_spellConsole.isPaused)
+                {
+                    buttonPauseConsoles.Text = "Pause Consoles";
+                }
+                else
+                {
+                    buttonPauseConsoles.Text = "Resume Consoles";
+
+                }
+            }
+            //pause all the consoles
+            PauseConsole(_spellConsole);
+            PauseConsole(_meleeConsole);
+            PauseConsole(_console);
+            PauseConsole(_mqConsole);
+            //print out the buffers to the text boxes
+        }
+        private void PauseConsole(TextBoxInfo ti)
+        {
+            lock (ti)
+            {
+                ti.isPaused = !ti.isPaused;
+                if (_spellConsole.isPaused)
+                {
+
+                    ti.sb.Clear();
+                    Int32 count = ti.consoleBuffer.Size;
+
+                    for (Int32 i = count - 1; i >= 0; i--)
+                    {
+                        ti.sb.AppendLine(ti.consoleBuffer[i]);
+                    }
+
+                    ti.textBox.Text = ti.sb.ToString();
+                    ti.textBox.SelectionStart = ti.textBox.Text.Length;
+                    ti.textBox.ScrollToCaret();
+                    ti.nextProcess = _stopWatch.ElapsedMilliseconds + 100;
+                    ti.isDirty = false;
+
+                }
+                else
+                {
+                    ti.isDirty = true;
+                }
+            }
+        }
     }
     public class TextBoxInfo
     {
+        public System.Text.StringBuilder sb = new StringBuilder();
         public RichTextBox textBox;
         public bool isDirty;
+        public bool isPaused = false;
         public Int64 nextProcess;
-        public System.Collections.Concurrent.ConcurrentQueue<string> consoleLines = new System.Collections.Concurrent.ConcurrentQueue<string>();
+        public CircularBuffer<string> consoleBuffer = new CircularBuffer<string>(1000);
     }
 
 }

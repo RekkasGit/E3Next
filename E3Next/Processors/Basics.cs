@@ -83,7 +83,9 @@ namespace E3Core.Processors
                 Movement.ResetKeepFollow();
                 Assist.Reset();
                 Pets.Reset();
-           
+                _groupMembers.Clear();
+
+
             });
             EventProcessor.RegisterEvent("Summoned", @"You have been summoned!", (x) =>
             {

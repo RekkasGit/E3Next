@@ -37,28 +37,11 @@ namespace E3Core.Processors
             //using (_log.Trace())
             {
                 if (!IsInit) { Init(); }
-                //update on every loop
-                CurrentHps = Mq.Query<int>("${Me.PctHPs}");
-                HitPointsCurrent = Mq.Query<int>("${Me.CurrentHPs}");
+                HeartBeatPump();
 
-                PubServer._hpValues.Enqueue(HitPointsCurrent.ToString("N0"));
-           
-                if (CurrentHps < 90 && !IsInvis)
-                {
-                    //lets check our life support.
-                    Heals.Check_LifeSupport();
-                    if (ActionTaken) return; //allow time for the heals to update to determine if we should do it again.
-                }
-
-                int zoneID = Mq.Query<int>("${Zone.ID}"); //to tell if we zone mid process
-                if (zoneID != ZoneID)
-                {
-                    ZoneID = zoneID;
-
-                }
                 EventProcessor.ProcessEventsInQueues("/e3p");
                 if (Basics._isPaused)
-                {
+                {   
                     return;
                 }
 
@@ -139,6 +122,63 @@ namespace E3Core.Processors
             //process any commands we need to process from the UI
             PubClient.ProcessRequests();
         }
+        /// <summary>
+        /// This is used during thigns like casting, while we are delaying a ton
+        /// so that we can keep things 'up to date' such as hp, invs status, pet name, etc. 
+        /// 
+        /// </summary>
+        public static void HeartBeatPump()
+        {
+            IsInvis = Mq.Query<bool>("${Me.Invis}");
+            CurrentHps = Mq.Query<int>("${Me.PctHPs}");
+            HitPointsCurrent = Mq.Query<int>("${Me.CurrentHPs}");
+
+            if (HitPointsCurrent != HitPointsPrevious)
+            {
+                PubServer.AddTopicMessage("${Me.CurrentHPs}", HitPointsCurrent.ToString("N0"));
+                HitPointsPrevious = HitPointsCurrent;
+            }
+
+            bool tCombat = Basics.InCombat();
+            if(tCombat!= CurrentInCombat)
+            {
+                CurrentInCombat = tCombat;
+                PubServer.AddTopicMessage("${InCombat}", CurrentInCombat.ToString());
+            }
+
+            if (String.IsNullOrEmpty(CurrentPetName))
+            {
+                string nameOfPet = Mq.Query<string>("${Me.Pet.CleanName}");
+                if(nameOfPet!="NULL")
+                {
+                    //set the pet name
+                    CurrentPetName = nameOfPet;
+                    PubServer.AddTopicMessage("${Me.Pet.CleanName}", CurrentPetName);
+
+                }
+            }
+            else
+            {
+                //we had/have pet?
+                string nameofPet = Mq.Query<string>("${Me.Pet.CleanName}");
+                if(nameofPet=="NULL")
+                {
+                    PubServer.AddTopicMessage("${Me.Pet.CleanName}", String.Empty);
+                    CurrentPetName = String.Empty;
+                }
+            }
+
+            int zoneID = Mq.Query<int>("${Zone.ID}"); //to tell if we zone mid process
+            if (zoneID != ZoneID)
+            {
+                ZoneID = zoneID;
+
+            }
+            //process any tlo request from the UI, or anything really.
+            RouterServer.ProcessRequests();
+            //process any commands we need to process from the UI
+            PubClient.ProcessRequests();
+        }
         private static void RefreshCaches()
         {
             Casting.RefreshGemCache();
@@ -164,6 +204,7 @@ namespace E3Core.Processors
                 //max event count for each registered event before spilling over.
                 EventProcessor._eventLimiterPerRegisteredEvent = 20;
                 CurrentName = Mq.Query<string>("${Me.CleanName}");
+               
                 CurrentId = Mq.Query<int>("${Me.ID}");
                 //do first to get class information
                 CharacterSettings = new Settings.CharacterSettings();
@@ -291,6 +332,7 @@ namespace E3Core.Processors
             IsBadState = true;
            
         }
+        public static Int32 PreviousHP;
         //private static Task _uiThread;
         //public static E3NextUI.E3UI _uiForm;
         //public static volatile bool _uiInit = false;
@@ -308,6 +350,8 @@ namespace E3Core.Processors
         public static Settings.AdvancedSettings AdvancedSettings = null;
         public static IBots Bots = null;
         public static string CurrentName;
+        public static string CurrentPetName = String.Empty;
+        public static bool CurrentInCombat = false;
         public static int CurrentId;
         public static Data.Class CurrentClass;
         public static string CurrentLongClassString;

@@ -46,18 +46,7 @@ namespace E3Core.Server
             _pubServer.Start(PubPort);
             _routerServer.Start(RouterPort);
             _pubClient.Start(PubClientPort);
-            EventProcessor.RegisterUnfilteredEvent("NetMQData", ".+", (x) =>
-            {
-                if(x.typeOfEvent== EventProcessor.eventType.EQEvent)
-                {
-                    PubServer._pubMessages.Enqueue(x.eventString);
-                } 
-                else if(x.typeOfEvent== EventProcessor.eventType.MQEvent)
-                {
-                    PubServer._pubWriteColorMessages.Enqueue(x.eventString);
-                }
-               
-            });
+   
             StartUI();
             EventProcessor.RegisterCommand("/ui", (x) =>
             {
@@ -70,6 +59,7 @@ namespace E3Core.Server
             string dllFullPath = Assembly.GetExecutingAssembly().CodeBase.Replace("file:///", "").Replace("/", "\\").Replace("e3.dll", "");
             if (Debugger.IsAttached)
             {
+                return;
                 dllFullPath = @"G:\EQ\E3_ROF2_MQ2Next\mono\macros\e3\Rekken";
 
             }

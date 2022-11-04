@@ -43,7 +43,7 @@ namespace E3Core.Server
         RouterSocket _rpcRouter = null;
         Task _serverThread = null;
         NetMQ.Msg routerResponse = new NetMQ.Msg();
-        TimeSpan recieveTimeout = new TimeSpan(0, 0, 0, 0, 1);
+        TimeSpan recieveTimeout = new TimeSpan(0, 0, 0, 0, 5);
         NetMQ.Msg routerMessage = new NetMQ.Msg();
         Int64 counter = 0;
         static TimeSpan timeout = new TimeSpan(0, 0, 0, 5);
@@ -80,8 +80,8 @@ namespace E3Core.Server
         {
             AsyncIO.ForceDotNet.Force();
             _rpcRouter = new RouterSocket();
-            _rpcRouter.Options.SendHighWatermark = 10000;
-            _rpcRouter.Options.ReceiveHighWatermark = 10000;
+            _rpcRouter.Options.SendHighWatermark = 50000;
+            _rpcRouter.Options.ReceiveHighWatermark = 50000;
             _rpcRouter.Bind("tcp://127.0.0.1:" + RouterPort.ToString());
             //_rpcRouter.Bind("tcp://127.0.0.1:12346");
             routerMessage.InitEmpty();

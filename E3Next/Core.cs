@@ -216,21 +216,9 @@ namespace MonoCore
                     string line;
                     if (_eventProcessingQueue.TryDequeue(out line))
                     {
-                        //do unfiltered matching
-                        foreach (var item in _unfilteredEventList)
-                        {
-                          
-                            foreach (var regex in item.Value.regexs)
-                            {
-                                var match = regex.Match(line);
-                                if (match.Success)
-                                {
-                                    item.Value.queuedEvents.Enqueue(new EventMatch() { eventName = item.Value.keyName, eventString = line, match = match, typeOfEvent = eventType.EQEvent });
-                                    break;
-                                }
-                            }
 
-                        }
+                        E3Core.Server.PubServer._pubMessages.Enqueue(line);
+
                         //do filter matching
                         //does it match our filter ? if so we can leave
                         bool matchFilter = false;
@@ -281,22 +269,8 @@ namespace MonoCore
                     if (_mqEventProcessingQueue.TryDequeue(out line))
                     {
                         //do unfiltered
-                        foreach (var item in _unfilteredEventList)
-                        {
-                           
-                            foreach (var regex in item.Value.regexs)
-                            {
-                                var match = regex.Match(line);
-                                if (match.Success)
-                                {
+                        E3Core.Server.PubServer._pubWriteColorMessages.Enqueue(line);
 
-                                    item.Value.queuedEvents.Enqueue(new EventMatch() { eventName = item.Value.keyName, eventString = line, match = match, typeOfEvent = eventType.MQEvent });
-
-                                    break;
-                                }
-                            }
-
-                        }
                         //do filtered
                         if (line.StartsWith("["))
                         {
@@ -559,24 +533,14 @@ namespace MonoCore
         /// </summary>
         /// <param name="line"></param>
         public static void ProcessEvent(string line)
-        {
-            
-            //to prevent spams
-            if (_eventList.Count > 0)
-            {
-                _eventProcessingQueue.Enqueue(line);
-            }
-
+        {   
+            _eventProcessingQueue.Enqueue(line);
         }
 
         public static void ProcessMQEvent(string line)
         {
            
-            //to prevent spams
-            if (_eventList.Count > 0)
-            {
-                _mqEventProcessingQueue.Enqueue(line);
-            }
+            _mqEventProcessingQueue.Enqueue(line);
 
         }
         public static void ProcessMQCommand(string line)
@@ -798,8 +762,6 @@ namespace MonoCore
 
         public static void OnInit()
         {
-
-
             if (!_isInit)
             {
                 _isProcessing = true;
@@ -1225,26 +1187,20 @@ namespace MonoCore
 
         public void Write(string query, [CallerMemberName] string memberName = "", [CallerFilePath] string fileName = "", [CallerLineNumber] int lineNumber = 0)
         {
-            //if(String.IsNullOrWhiteSpace(query))
-            //{
-            //    return;
-            //}
-            //check
-            //if (_sinceLastDelay + _maxMillisecondsToWork < Core._stopWatch.ElapsedMilliseconds)
-            //{
-            //    Delay(0);
-            //}
+           
+            //write on current thread, it will be queued up
             Core.mq_Echo($"\a#336699[{MainProcessor._applicationName}]\a-w{System.DateTime.Now.ToString("HH:mm:ss")} \aw- {query}");
             return;
-            //set the buffer for the C++ thread
-            //Core._currentWrite = $"[{MainProcessor._applicationName}]\a-w{System.DateTime.Now.ToString("HH:mm:ss")} \aw- {query}";
-            Core._currentWrite = $"\a#336699[{MainProcessor._applicationName}]\a-w{System.DateTime.Now.ToString("HH:mm:ss")} \aw- {query}";
 
-            //swap to the C++thread, and it will swap back after executing the current write becau of us setting _CurrentWrite before
-            Core._coreResetEvent.Set();
-            //we are now going to wait on the core
-            MainProcessor._processResetEvent.Wait();
-            MainProcessor._processResetEvent.Reset();
+            //set the buffer for the C++ thread
+            ////Core._currentWrite = $"[{MainProcessor._applicationName}]\a-w{System.DateTime.Now.ToString("HH:mm:ss")} \aw- {query}";
+            //Core._currentWrite = $"\a#336699[{MainProcessor._applicationName}]\a-w{System.DateTime.Now.ToString("HH:mm:ss")} \aw- {query}";
+
+            ////swap to the C++thread, and it will swap back after executing the current write becau of us setting _CurrentWrite before
+            //Core._coreResetEvent.Set();
+            ////we are now going to wait on the core
+            //MainProcessor._processResetEvent.Wait();
+            //MainProcessor._processResetEvent.Reset();
 
         }
 

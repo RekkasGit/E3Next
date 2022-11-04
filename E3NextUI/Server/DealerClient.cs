@@ -31,7 +31,7 @@ namespace E3NextUI.Server
 
             _requestSocket = new DealerSocket();
             _requestSocket.Options.Identity = Guid.NewGuid().ToByteArray();
-            _requestSocket.Options.SendHighWatermark = 100;
+            _requestSocket.Options.SendHighWatermark = 50000;
             _requestSocket.Connect("tcp://127.0.0.1:" + _port.ToString());
         }
 

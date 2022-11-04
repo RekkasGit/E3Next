@@ -11,15 +11,27 @@ using System.Threading.Tasks;
 
 namespace E3Core.Server
 {
+
     public class PubServer
     {
+
+        class topicMessagePair
+        {
+            public string topic;
+            public string message;
+        }
+
         Task _serverThread = null;
 
         public static ConcurrentQueue<string> _pubMessages = new ConcurrentQueue<string>();
         public static ConcurrentQueue<string> _pubWriteColorMessages = new ConcurrentQueue<string>();
         public static ConcurrentQueue<string> _pubCommands = new ConcurrentQueue<string>();
         public static ConcurrentQueue<string> _hpValues = new ConcurrentQueue<string>();
+        private static ConcurrentQueue<topicMessagePair> _topicMessages = new ConcurrentQueue<topicMessagePair>();
+
         public static Int32 PubPort = 0;
+
+
 
         public void Start(Int32 port)
         {
@@ -27,27 +39,32 @@ namespace E3Core.Server
             _serverThread = Task.Factory.StartNew(() => { Process(); }, CancellationToken.None, TaskCreationOptions.DenyChildAttach, TaskScheduler.Default);
 
         }
+        public  static void AddTopicMessage(string topic, string message)
+        {
+            topicMessagePair t = new topicMessagePair() { topic = topic, message = message };
+            _topicMessages.Enqueue(t);
+        }
         private void Process()
         {
             AsyncIO.ForceDotNet.Force();
             using (var pubSocket = new PublisherSocket())
             {
-                pubSocket.Options.SendHighWatermark = 1000;
+                pubSocket.Options.SendHighWatermark = 50000;
                 
                 pubSocket.Bind("tcp://127.0.0.1:" + PubPort.ToString());
                 
                 while (Core._isProcessing)
                 {
-                    if (_hpValues.Count > 0)
+                   
+                    while (_topicMessages.Count > 0)
                     {
-                        string message;
-                        if (_hpValues.TryDequeue(out message))
+                        if (_topicMessages.TryDequeue(out var value))
                         {
 
-                            pubSocket.SendMoreFrame("HPValue").SendFrame(message);
+                            pubSocket.SendMoreFrame(value.topic).SendFrame(value.message);
                         }
                     }
-                    else if(_pubMessages.Count > 0)
+                   while(_pubMessages.Count > 0)
                     {
                         string message;
                         if (_pubMessages.TryDequeue(out message))
@@ -56,7 +73,7 @@ namespace E3Core.Server
                             pubSocket.SendMoreFrame("OnIncomingChat").SendFrame(message);
                         }
                     }
-                    else if (_pubWriteColorMessages.Count > 0)
+                   while (_pubWriteColorMessages.Count > 0)
                     {
                         string message;
                         if (_pubWriteColorMessages.TryDequeue(out message))
@@ -66,7 +83,7 @@ namespace E3Core.Server
 
                         }
                     }
-                    else if (_pubCommands.Count > 0)
+                    while(_pubCommands.Count > 0)
                     {
                         string message;
                         if (_pubCommands.TryDequeue(out message))
@@ -76,10 +93,7 @@ namespace E3Core.Server
 
                         }
                     }
-                    else
-                    {
-                        System.Threading.Thread.Sleep(1);
-                    }
+                    System.Threading.Thread.Sleep(1);
                 }
             }
         }

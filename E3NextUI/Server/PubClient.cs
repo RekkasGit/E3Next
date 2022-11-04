@@ -29,114 +29,132 @@ namespace E3NextUI.Server
 
         public void Process()
         {
+            TimeSpan recieveTimeout = new TimeSpan(0, 0, 0, 0, 5);
 
             using (var subSocket = new SubscriberSocket())
             {
-                subSocket.Options.ReceiveHighWatermark = 1000;
-                subSocket.Connect("tcp://localhost:" + _port);
-                subSocket.Subscribe("OnIncomingChat");
-                subSocket.Subscribe("OnWriteChatColor");
-                subSocket.Subscribe("OnCommand");
-                subSocket.Subscribe("HPValue");
-                subSocket.Subscribe("#showWindow");
-                subSocket.Subscribe("#hidewindow");
+                subSocket.Options.ReceiveHighWatermark = 50000;
+                subSocket.Connect("tcp://127.0.0.1:" + _port);
+                subSocket.SubscribeToAnyTopic();
                 Console.WriteLine("Subscriber socket connecting...");
                 while (true)
                 {
-                    string messageTopicReceived = subSocket.ReceiveFrameString();
-                    string messageReceived = subSocket.ReceiveFrameString();
-                    Console.WriteLine(messageReceived);
-                    if (messageTopicReceived == "OnWriteChatColor")
+                    string messageTopicReceived;
+                        
+                    if(subSocket.TryReceiveFrameString(recieveTimeout,out messageTopicReceived))
                     {
-                        if (Application.OpenForms.Count > 0)
+                        string messageReceived = subSocket.ReceiveFrameString();
+                        try
                         {
-                            ((E3UI)Application.OpenForms[0]).AddConsoleLine(messageReceived, E3UI._mqConsole);
-                        }
-
-                    }
-                    else if (messageTopicReceived == "OnIncomingChat")
-                    {
-                        if (Application.OpenForms.Count > 0)
-                        {
-                            bool found = false;
-                            foreach(var c in _consoleContains)
+                            //Console.WriteLine(messageReceived);
+                            if (messageTopicReceived == "OnWriteChatColor")
                             {
-                                if(messageReceived.Contains(c))
+                                if (Application.OpenForms.Count > 0)
                                 {
-                                    ((E3UI)Application.OpenForms[0]).AddConsoleLine(messageReceived, E3UI._console);
-                                    found = true;
-                                    break;
+                                    ((E3UI)Application.OpenForms[0]).AddConsoleLine(messageReceived, E3UI._mqConsole);
                                 }
+
                             }
-
-                            if(!found) LineParser.ParseLine(messageReceived);
-
-                            if (!found)
+                            else if (messageTopicReceived == "OnIncomingChat")
                             {
-                                foreach (var c in _spellContains)
+                                if (Application.OpenForms.Count > 0)
                                 {
-                                    if (messageReceived.Contains(c))
+                                    bool found = false;
+                                    foreach (var c in _consoleContains)
                                     {
-                                        ((E3UI)Application.OpenForms[0]).AddConsoleLine(messageReceived, E3UI._spellConsole);
-                                        found = true;
-                                        break;
+                                        if (messageReceived.Contains(c))
+                                        {
+                                            ((E3UI)Application.OpenForms[0]).AddConsoleLine(messageReceived, E3UI._console);
+                                            found = true;
+                                            break;
+                                        }
+                                    }
+
+                                    if (!found) LineParser.ParseLine(messageReceived);
+
+                                    if (!found)
+                                    {
+                                        foreach (var c in _spellContains)
+                                        {
+                                            if (messageReceived.Contains(c))
+                                            {
+                                                ((E3UI)Application.OpenForms[0]).AddConsoleLine(messageReceived, E3UI._spellConsole);
+                                                found = true;
+                                                break;
+                                            }
+                                        }
+                                    }
+                                    if (!found)
+                                    {
+                                        foreach (var c in _spellStartsWith)
+                                        {
+                                            if (messageReceived.StartsWith(c))
+                                            {
+                                                ((E3UI)Application.OpenForms[0]).AddConsoleLine(messageReceived, E3UI._spellConsole);
+                                                found = true;
+                                                break;
+                                            }
+                                        }
+                                    }
+                                    if (!found)
+                                    {
+                                        foreach (var c in _spellEndWith)
+                                        {
+                                            if (messageReceived.EndsWith(c))
+                                            {
+                                                ((E3UI)Application.OpenForms[0]).AddConsoleLine(messageReceived, E3UI._spellConsole);
+                                                found = true;
+                                                break;
+                                            }
+                                        }
+                                    }
+                                    if (!found)
+                                    {
+                                        //misc bucket
+                                        ((E3UI)Application.OpenForms[0]).AddConsoleLine(messageReceived, E3UI._meleeConsole);
                                     }
                                 }
                             }
-                            if(!found)
+                            else if (messageTopicReceived == "OnCommand")
                             {
-                                foreach (var c in _spellStartsWith)
+                                if (messageReceived == "#toggleshow")
                                 {
-                                    if (messageReceived.StartsWith(c))
+                                    if (Application.OpenForms.Count > 0)
                                     {
-                                        ((E3UI)Application.OpenForms[0]).AddConsoleLine(messageReceived, E3UI._spellConsole);
-                                        found = true;
-                                        break;
+                                        ((E3UI)Application.OpenForms[0]).ToggleShow();
                                     }
                                 }
                             }
-                            if(!found)
+                            else if (messageTopicReceived == "${Me.CurrentHPs}")
                             {
-                                foreach (var c in _spellEndWith)
+                                if (Application.OpenForms.Count > 0)
                                 {
-                                    if (messageReceived.EndsWith(c))
-                                    {
-                                        ((E3UI)Application.OpenForms[0]).AddConsoleLine(messageReceived, E3UI._spellConsole);
-                                        found = true;
-                                        break;
-                                    }
+                                    ((E3UI)Application.OpenForms[0]).SetPlayerHP(messageReceived);
                                 }
                             }
-                           
-                            if (!found)
+                            else if (messageTopicReceived == "${Me.Pet.CleanName}")
                             {
-                                //misc bucket
-                                ((E3UI)Application.OpenForms[0]).AddConsoleLine(messageReceived, E3UI._meleeConsole);
+                                LineParser.SetPetName(messageReceived);
+
                             }
-                          
-                        }
-                    }
-                    else if (messageTopicReceived == "OnCommand")
-                    {
-                        if (messageReceived == "#toggleshow")
-                        {
-                            if (Application.OpenForms.Count > 0)
+                            else if (messageTopicReceived == "${InCombat}")
                             {
-                                 ((E3UI)Application.OpenForms[0]).ToggleShow();
+                                if(Boolean.TryParse(messageReceived, out var inCombat))
+                                {
+                                    LineParser.SetCombatState(inCombat);
+                                }
+
                             }
                         }
-                        //E3UI._consoleLines.Enqueue(messageReceived);
-                    }
-                    else if (messageTopicReceived == "HPValue")
-                    {
-                        if(Application.OpenForms.Count>0)
+                        catch(Exception ex)
                         {
-                            ((E3UI)Application.OpenForms[0]).SetPlayerHP(messageReceived);
+                            ((E3UI)Application.OpenForms[0]).AddConsoleLine(ex.Message, E3UI._console);
+
                         }
-                       
+                        
+
                     }
-                   
-                    
+
                 }
             }
         }

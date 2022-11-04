@@ -29,7 +29,7 @@ namespace E3NextUI.Server
             
             using (var pubSocket = new PublisherSocket())
             {
-                pubSocket.Options.SendHighWatermark = 1000;
+                pubSocket.Options.SendHighWatermark = 50000;
 
                 pubSocket.Bind("tcp://127.0.0.1:" + PubPort.ToString());
                 while (E3UI._shouldProcess)

@@ -61,6 +61,10 @@ namespace E3NextUI
             this.labelTotalDamageDPSValue = new System.Windows.Forms.Label();
             this.labelPetNameValue = new System.Windows.Forms.Label();
             this.labelPetName = new System.Windows.Forms.Label();
+            this.buttonPauseConsoles = new System.Windows.Forms.Button();
+            this.labelMessageRecieved = new System.Windows.Forms.Label();
+            this.labelInCombat = new System.Windows.Forms.Label();
+            this.labelInCombatValue = new System.Windows.Forms.Label();
             ((System.ComponentModel.ISupportInitialize)(this.splitContainer1)).BeginInit();
             this.splitContainer1.Panel1.SuspendLayout();
             this.splitContainer1.Panel2.SuspendLayout();
@@ -124,7 +128,7 @@ namespace E3NextUI
             this.richTextBoxConsole.Location = new System.Drawing.Point(0, 0);
             this.richTextBoxConsole.Name = "richTextBoxConsole";
             this.richTextBoxConsole.ReadOnly = true;
-            this.richTextBoxConsole.Size = new System.Drawing.Size(595, 236);
+            this.richTextBoxConsole.Size = new System.Drawing.Size(624, 236);
             this.richTextBoxConsole.TabIndex = 4;
             this.richTextBoxConsole.Text = "";
             // 
@@ -136,14 +140,14 @@ namespace E3NextUI
             this.richTextBoxMQConsole.ForeColor = System.Drawing.Color.FromArgb(((int)(((byte)(0)))), ((int)(((byte)(192)))), ((int)(((byte)(192)))));
             this.richTextBoxMQConsole.Location = new System.Drawing.Point(0, 0);
             this.richTextBoxMQConsole.Name = "richTextBoxMQConsole";
-            this.richTextBoxMQConsole.Size = new System.Drawing.Size(305, 236);
+            this.richTextBoxMQConsole.Size = new System.Drawing.Size(319, 236);
             this.richTextBoxMQConsole.TabIndex = 5;
             this.richTextBoxMQConsole.Text = "";
             // 
             // splitContainer1
             // 
             this.splitContainer1.Dock = System.Windows.Forms.DockStyle.Bottom;
-            this.splitContainer1.Location = new System.Drawing.Point(0, 373);
+            this.splitContainer1.Location = new System.Drawing.Point(0, 423);
             this.splitContainer1.Name = "splitContainer1";
             // 
             // splitContainer1.Panel1
@@ -154,8 +158,8 @@ namespace E3NextUI
             // 
             this.splitContainer1.Panel2.Controls.Add(this.textBoxConsoleInput);
             this.splitContainer1.Panel2.Controls.Add(this.richTextBoxConsole);
-            this.splitContainer1.Size = new System.Drawing.Size(904, 236);
-            this.splitContainer1.SplitterDistance = 305;
+            this.splitContainer1.Size = new System.Drawing.Size(947, 236);
+            this.splitContainer1.SplitterDistance = 319;
             this.splitContainer1.TabIndex = 6;
             // 
             // textBoxConsoleInput
@@ -163,14 +167,14 @@ namespace E3NextUI
             this.textBoxConsoleInput.Dock = System.Windows.Forms.DockStyle.Bottom;
             this.textBoxConsoleInput.Location = new System.Drawing.Point(0, 216);
             this.textBoxConsoleInput.Name = "textBoxConsoleInput";
-            this.textBoxConsoleInput.Size = new System.Drawing.Size(595, 20);
+            this.textBoxConsoleInput.Size = new System.Drawing.Size(624, 20);
             this.textBoxConsoleInput.TabIndex = 5;
             this.textBoxConsoleInput.KeyDown += new System.Windows.Forms.KeyEventHandler(this.textBoxConsoleInput_KeyDown);
             // 
             // splitContainer2
             // 
             this.splitContainer2.Dock = System.Windows.Forms.DockStyle.Bottom;
-            this.splitContainer2.Location = new System.Drawing.Point(0, 167);
+            this.splitContainer2.Location = new System.Drawing.Point(0, 217);
             this.splitContainer2.Name = "splitContainer2";
             // 
             // splitContainer2.Panel1
@@ -180,8 +184,8 @@ namespace E3NextUI
             // splitContainer2.Panel2
             // 
             this.splitContainer2.Panel2.Controls.Add(this.richTextBoxSpells);
-            this.splitContainer2.Size = new System.Drawing.Size(904, 206);
-            this.splitContainer2.SplitterDistance = 306;
+            this.splitContainer2.Size = new System.Drawing.Size(947, 206);
+            this.splitContainer2.SplitterDistance = 320;
             this.splitContainer2.TabIndex = 7;
             // 
             // richTextBoxMelee
@@ -191,7 +195,7 @@ namespace E3NextUI
             this.richTextBoxMelee.ForeColor = System.Drawing.Color.White;
             this.richTextBoxMelee.Location = new System.Drawing.Point(0, 0);
             this.richTextBoxMelee.Name = "richTextBoxMelee";
-            this.richTextBoxMelee.Size = new System.Drawing.Size(306, 206);
+            this.richTextBoxMelee.Size = new System.Drawing.Size(320, 206);
             this.richTextBoxMelee.TabIndex = 0;
             this.richTextBoxMelee.Text = "";
             // 
@@ -202,7 +206,7 @@ namespace E3NextUI
             this.richTextBoxSpells.ForeColor = System.Drawing.Color.LightSkyBlue;
             this.richTextBoxSpells.Location = new System.Drawing.Point(0, 0);
             this.richTextBoxSpells.Name = "richTextBoxSpells";
-            this.richTextBoxSpells.Size = new System.Drawing.Size(594, 206);
+            this.richTextBoxSpells.Size = new System.Drawing.Size(623, 206);
             this.richTextBoxSpells.TabIndex = 0;
             this.richTextBoxSpells.Text = "";
             // 
@@ -383,7 +387,7 @@ namespace E3NextUI
             this.labelPetNameValue.AutoSize = true;
             this.labelPetNameValue.Font = new System.Drawing.Font("Microsoft Sans Serif", 12F, System.Drawing.FontStyle.Bold, System.Drawing.GraphicsUnit.Point, ((byte)(0)));
             this.labelPetNameValue.ForeColor = System.Drawing.Color.Crimson;
-            this.labelPetNameValue.Location = new System.Drawing.Point(92, 100);
+            this.labelPetNameValue.Location = new System.Drawing.Point(92, 85);
             this.labelPetNameValue.Name = "labelPetNameValue";
             this.labelPetNameValue.Size = new System.Drawing.Size(51, 20);
             this.labelPetNameValue.TabIndex = 28;
@@ -394,19 +398,64 @@ namespace E3NextUI
             this.labelPetName.AutoSize = true;
             this.labelPetName.Font = new System.Drawing.Font("Microsoft Sans Serif", 14.25F, System.Drawing.FontStyle.Bold, System.Drawing.GraphicsUnit.Point, ((byte)(0)));
             this.labelPetName.ForeColor = System.Drawing.SystemColors.MenuHighlight;
-            this.labelPetName.Location = new System.Drawing.Point(40, 97);
+            this.labelPetName.Location = new System.Drawing.Point(40, 82);
             this.labelPetName.Name = "labelPetName";
             this.labelPetName.Size = new System.Drawing.Size(46, 24);
             this.labelPetName.TabIndex = 27;
             this.labelPetName.Text = "Pet:";
+            // 
+            // buttonPauseConsoles
+            // 
+            this.buttonPauseConsoles.Location = new System.Drawing.Point(0, 188);
+            this.buttonPauseConsoles.Name = "buttonPauseConsoles";
+            this.buttonPauseConsoles.Size = new System.Drawing.Size(118, 23);
+            this.buttonPauseConsoles.TabIndex = 29;
+            this.buttonPauseConsoles.Text = "Pause Consoles";
+            this.buttonPauseConsoles.UseVisualStyleBackColor = true;
+            this.buttonPauseConsoles.Click += new System.EventHandler(this.buttonPauseConsoles_Click);
+            // 
+            // labelMessageRecieved
+            // 
+            this.labelMessageRecieved.AutoSize = true;
+            this.labelMessageRecieved.Location = new System.Drawing.Point(556, 118);
+            this.labelMessageRecieved.Name = "labelMessageRecieved";
+            this.labelMessageRecieved.Size = new System.Drawing.Size(13, 13);
+            this.labelMessageRecieved.TabIndex = 30;
+            this.labelMessageRecieved.Text = "0";
+            // 
+            // labelInCombat
+            // 
+            this.labelInCombat.AutoSize = true;
+            this.labelInCombat.Font = new System.Drawing.Font("Microsoft Sans Serif", 14.25F, System.Drawing.FontStyle.Bold, System.Drawing.GraphicsUnit.Point, ((byte)(0)));
+            this.labelInCombat.ForeColor = System.Drawing.SystemColors.MenuHighlight;
+            this.labelInCombat.Location = new System.Drawing.Point(8, 161);
+            this.labelInCombat.Name = "labelInCombat";
+            this.labelInCombat.Size = new System.Drawing.Size(110, 24);
+            this.labelInCombat.TabIndex = 31;
+            this.labelInCombat.Text = "In Combat:";
+            // 
+            // labelInCombatValue
+            // 
+            this.labelInCombatValue.AutoSize = true;
+            this.labelInCombatValue.Font = new System.Drawing.Font("Microsoft Sans Serif", 12F, System.Drawing.FontStyle.Bold, System.Drawing.GraphicsUnit.Point, ((byte)(0)));
+            this.labelInCombatValue.ForeColor = System.Drawing.Color.Red;
+            this.labelInCombatValue.Location = new System.Drawing.Point(114, 164);
+            this.labelInCombatValue.Name = "labelInCombatValue";
+            this.labelInCombatValue.Size = new System.Drawing.Size(48, 20);
+            this.labelInCombatValue.TabIndex = 32;
+            this.labelInCombatValue.Text = "false";
             // 
             // E3UI
             // 
             this.AutoScaleDimensions = new System.Drawing.SizeF(6F, 13F);
             this.AutoScaleMode = System.Windows.Forms.AutoScaleMode.Font;
             this.AutoSize = true;
-            this.ClientSize = new System.Drawing.Size(904, 609);
+            this.ClientSize = new System.Drawing.Size(947, 659);
             this.ControlBox = false;
+            this.Controls.Add(this.labelInCombatValue);
+            this.Controls.Add(this.labelInCombat);
+            this.Controls.Add(this.labelMessageRecieved);
+            this.Controls.Add(this.buttonPauseConsoles);
             this.Controls.Add(this.labelPetNameValue);
             this.Controls.Add(this.labelPetName);
             this.Controls.Add(this.labelTotalDamageDPSValue);
@@ -437,7 +486,6 @@ namespace E3NextUI
             this.Name = "E3UI";
             this.Text = "E3UI";
             this.FormClosing += new System.Windows.Forms.FormClosingEventHandler(this.E3UI_FormClosing);
-            this.Load += new System.EventHandler(this.E3UI_Load);
             this.Shown += new System.EventHandler(this.E3UI_Shown);
             this.splitContainer1.Panel1.ResumeLayout(false);
             this.splitContainer1.Panel2.ResumeLayout(false);
@@ -487,6 +535,10 @@ namespace E3NextUI
         private System.Windows.Forms.Label labelTotalDamageDPSValue;
         private System.Windows.Forms.Label labelPetNameValue;
         private System.Windows.Forms.Label labelPetName;
+        private System.Windows.Forms.Button buttonPauseConsoles;
+        private System.Windows.Forms.Label labelMessageRecieved;
+        private System.Windows.Forms.Label labelInCombat;
+        private System.Windows.Forms.Label labelInCombatValue;
     }
 }
 

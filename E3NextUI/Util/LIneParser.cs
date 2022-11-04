@@ -13,20 +13,20 @@ namespace E3NextUI.Util
         //store the entire battle data?
 
 
-        public static List<Int32> _yourDamage = new List<int>();
-        public static List<Int64> _yourDamageTime = new List<Int64>();
+        public static List<Int32> _yourDamage = new List<int>(100000);
+        public static List<Int64> _yourDamageTime = new List<Int64>(1000000);
 
-        public static List<Int32> _yourPetDamage = new List<int>();
-        public static List<Int64> _yourPetDamageTime = new List<Int64>();
+        public static List<Int32> _yourPetDamage = new List<int>(1000000);
+        public static List<Int64> _yourPetDamageTime = new List<Int64>(1000000);
 
-        public static List<Int32> _yourDamageShieldDamage = new List<int>();
-        public static List<Int64> _yourDamageShieldDamageTime = new List<Int64>();
+        public static List<Int32> _yourDamageShieldDamage = new List<int>(1000000);
+        public static List<Int64> _yourDamageShieldDamageTime = new List<Int64>(1000000);
 
-        public static List<Int32> _damageToYou = new List<int>();
-        public static List<Int64> _damageToYouTime = new List<Int64>();
+        public static List<Int32> _damageToYou = new List<int>(1000000);
+        public static List<Int64> _damageToYouTime = new List<Int64>(1000000);
 
-        public static List<Int32> _healingToYou = new List<int>();
-        public static List<Int64> _healingToYouTime = new List<Int64>();
+        public static List<Int32> _healingToYou = new List<int>(1000000);
+        public static List<Int64> _healingToYouTime = new List<Int64>(1000000);
 
         public static Int64 _lastCombatCheck = 0;
         public static bool _currentlyCombat = false;
@@ -50,42 +50,28 @@ namespace E3NextUI.Util
             }
         
         }
-
-        public static void ParseLine(string line)
+        public static void SetPetName(string petName)
         {
-
-            if(_lastCombatCheck<E3UI._stopWatch.ElapsedMilliseconds)
+            if (!String.IsNullOrWhiteSpace(petName))
             {
-                string incombat;
-                lock (E3UI._dealClient)
-                {
-                    incombat = E3UI._dealClient.RequestData("${Me.CombatState.Equal[COMBAT]}");
-                   
-                }
-                if (incombat == "TRUE" && _currentlyCombat == false)
-                {
-                    _currentlyCombat = true;
-                    //reset our collections
-                    Reset();
-                }
-                else if (incombat == "FALSE" && _currentlyCombat == true)
-                {
-                    _currentlyCombat = false;
-                }
-
-                string tpetName = E3UI._dealClient.RequestData("${Me.Pet.CleanName}");
-
-                if(tpetName!="NULL")
-                {
-                    if(String.IsNullOrWhiteSpace(PetName))
-                    {
-                        PetName = tpetName;
-                        _yourPetMelee = new System.Text.RegularExpressions.Regex($"{PetName} .+ for ([0-9]+) points of damage.");
-                    }
-                }
-
-                _lastCombatCheck = E3UI._stopWatch.ElapsedMilliseconds + 3000;
+                PetName = petName;
+                _yourPetMelee = new System.Text.RegularExpressions.Regex($"{PetName} .+ for ([0-9]+) points of damage.");
             }
+        }
+        public static void SetCombatState(bool inCombat)
+        {
+            if (inCombat && _currentlyCombat == false)
+            {
+                _currentlyCombat = true;
+                //reset our collections
+                Reset();
+                return;
+            }
+
+            _currentlyCombat = inCombat;
+        }
+        public static void ParseLine(string line)
+        { 
             lock(_objectLock)
             { 
                 //E3UI._stopWatch;
@@ -103,9 +89,7 @@ namespace E3NextUI.Util
                 if (TryUpdateCollection(line, _damageshieldByYou, _yourDamageShieldDamage, _yourDamageShieldDamageTime)) return;
                 if (TryUpdateCollection(line, _healingYou, _healingToYou, _healingToYouTime)) return;
                 if (TryUpdateCollection(line, _selfHeals, _healingToYou, _healingToYouTime)) return;
-
             }
-          
         }
         private static bool TryUpdateCollection(string line,Regex reg, List<Int32> collection, List<Int64> timeCollection)
         {
@@ -127,7 +111,7 @@ namespace E3NextUI.Util
 
         //damage done by you
         static System.Text.RegularExpressions.Regex _yourdmg = new System.Text.RegularExpressions.Regex("You .+ for ([0-9]+) points of damage.");
-        static System.Text.RegularExpressions.Regex _yourdot = new System.Text.RegularExpressions.Regex("taken ([0-9]+) damagte from your");
+        static System.Text.RegularExpressions.Regex _yourdot = new System.Text.RegularExpressions.Regex("taken ([0-9]+) damage from your");
         static System.Text.RegularExpressions.Regex _yourspellDmg = new System.Text.RegularExpressions.Regex($"{E3UI.CharacterName} hit .+ for ([0-9]+) points of");
         //proc dmg by pet
         static System.Text.RegularExpressions.Regex _yourPetProcDmg = new System.Text.RegularExpressions.Regex(".+ was hit by non-melee for ([0-9]+) points of damage\\.");

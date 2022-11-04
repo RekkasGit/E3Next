@@ -39,7 +39,7 @@ namespace E3Core.Server
             {
                 //some type of delay if our sub errors out.
                 System.Threading.Thread.Sleep(100);
-                TimeSpan recieveTimeout = new TimeSpan(0, 0, 0, 0, 1);
+                TimeSpan recieveTimeout = new TimeSpan(0, 0, 0, 0, 5);
                 using (var subSocket = new SubscriberSocket())
                 {
                     try
@@ -61,6 +61,7 @@ namespace E3Core.Server
                                     _pubCommands.Enqueue(messageReceived);
                                 }
                             }
+                            System.Threading.Thread.Sleep(1);
                         }
                     }
                     catch(Exception)

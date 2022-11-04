@@ -445,13 +445,12 @@ namespace E3Core.Processors
                                 {
                                     return CastReturn.CAST_INTERRUPTED;
                                 }
-
-                            }
+                           }
                         }
 
-
                         MQ.Delay(50);
-
+                        //get updated information after delays
+                        E3.HeartBeatPump();
                     }
 
                     MQ.Delay(2000, "!${Cast.Status.Find[C]}");
@@ -1030,6 +1029,7 @@ namespace E3Core.Processors
                 //if (CheckForResistByName("CAST_NOTARGET", endtime)) return CastReturn.CAST_NOTARGET;
                 //if (CheckForResistByName("CAST_OUTDOORS", endtime)) return CastReturn.CAST_DISTRACTED;
                 MQ.Delay(100);
+                E3.HeartBeatPump();
 
             }
             //assume success at this point.
