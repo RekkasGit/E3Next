@@ -38,7 +38,6 @@ namespace E3NextUI
         public static TextBoxInfo _spellConsole;
         public static string CharacterName;
         public static Int32 _parentProcess;
-        public static Int64 _messagesrecieved = 0;
         public static object _objectLock = new object();
 
 
@@ -73,14 +72,16 @@ namespace E3NextUI
                 _parentProcess = Int32.Parse(args[4]);
 
             }
+            SetDoubleBuffered(richTextBoxConsole);
+            SetDoubleBuffered(richTextBoxMQConsole);
+            SetDoubleBuffered(richTextBoxMelee);
+            SetDoubleBuffered(richTextBoxSpells);
 
             _console = new TextBoxInfo() { textBox = richTextBoxConsole };
             _mqConsole = new TextBoxInfo() { textBox = richTextBoxMQConsole };
             _meleeConsole = new TextBoxInfo() { textBox = richTextBoxMelee };
             _spellConsole = new TextBoxInfo() { textBox = richTextBoxSpells };
-
-            SetDoubleBuffered(richTextBoxConsole);
-            SetDoubleBuffered(richTextBoxMQConsole);
+    
             _consoleTask = Task.Factory.StartNew(() => { ProcessUI(_console); }, CancellationToken.None, TaskCreationOptions.DenyChildAttach, TaskScheduler.Default);
             _consoleMQTask = Task.Factory.StartNew(() => { ProcessUI(_mqConsole); }, CancellationToken.None, TaskCreationOptions.DenyChildAttach, TaskScheduler.Default);
             _consoleMeleeTask = Task.Factory.StartNew(() => { ProcessUI(_meleeConsole); }, CancellationToken.None, TaskCreationOptions.DenyChildAttach, TaskScheduler.Default);
@@ -89,28 +90,8 @@ namespace E3NextUI
 
 
         }
-        public static void SetDoubleBuffered(System.Windows.Forms.Control c)
-        {
-            //Taxes: Remote Desktop Connection and painting
-            //http://blogs.msdn.com/oldnewthing/archive/2006/01/03/508694.aspx
-            if (System.Windows.Forms.SystemInformation.TerminalServerSession)
-                return;
-
-            System.Reflection.PropertyInfo aProp =
-                  typeof(System.Windows.Forms.Control).GetProperty(
-                        "DoubleBuffered",
-                        System.Reflection.BindingFlags.NonPublic |
-                        System.Reflection.BindingFlags.Instance);
-
-            aProp.SetValue(c, true, null);
-        }
-        public static void IncrementMessageCount()
-        {
-            lock(_objectLock)
-            {
-                _messagesrecieved++;
-            }
-        }
+  
+       
         private void ProcessParse()
         {
             while (_shouldProcess)
@@ -141,7 +122,6 @@ namespace E3NextUI
                 //lets get the data from the line parser.
                 lock (_objectLock)
                 {
-                    labelMessageRecieved.Text = _messagesrecieved.ToString("N0");
                     labelInCombatValue.Text = LineParser._currentlyCombat.ToString();
                 }
                 lock (LineParser._objectLock)
@@ -302,21 +282,21 @@ namespace E3NextUI
             }
         }
 
-        private delegate void SetPlayerNameDelegate(string name);
+        private delegate void SetPlayerDataDelegate(string name);
         public void SetPlayerName(string name)
         {
             if (this.InvokeRequired)
             {
-                this.Invoke(new SetPlayerNameDelegate(SetPlayerName), new object[] { name });
+                this.Invoke(new SetPlayerDataDelegate(SetPlayerName), new object[] { name });
             }
             else
             {
                 labelPlayerName.Text = name;
             }
         }
-        private delegate void SetPlayerDataDelegate(string name);
         public void SetPlayerHP(string value)
         {
+            if (value == labelHPTotal.Text) return;
             if (this.InvokeRequired)
             {
                 this.Invoke(new SetPlayerDataDelegate(SetPlayerHP), new object[] { value });
@@ -328,6 +308,7 @@ namespace E3NextUI
         }
         public void SetPlayerMP(string value)
         {
+            if (value == labelManaCurrent.Text) return;
             if (this.InvokeRequired)
             {
                 this.Invoke(new SetPlayerDataDelegate(SetPlayerMP), new object[] { value });
@@ -339,6 +320,7 @@ namespace E3NextUI
         }
         public void SetPlayerSP(string value)
         {
+            if (value == labelStaminaValue.Text) return;
             if (this.InvokeRequired)
             {
                 this.Invoke(new SetPlayerDataDelegate(SetPlayerSP), new object[] { value });
@@ -370,11 +352,10 @@ namespace E3NextUI
 
         private void textBoxConsoleInput_KeyDown(object sender, KeyEventArgs e)
         {
-
-
-            if (e.KeyData == Keys.Enter)
+        if (e.KeyData == Keys.Enter)
             {
                 //grab the data and send a command
+                //do this to stop the 'ding' sound
                 e.SuppressKeyPress = true;
                 string value = ((TextBox)sender).Text;
                 if (value.StartsWith("/"))
@@ -389,6 +370,7 @@ namespace E3NextUI
 
         private void E3UI_FormClosing(object sender, FormClosingEventArgs e)
         {
+            //set the variable that will stop all the while loops
             _shouldProcess = false;
         }
 
@@ -396,36 +378,7 @@ namespace E3NextUI
         {
             LineParser.Reset();
         }
-        /// <summary>
-        /// needed to hide the UI at startup without flicker.
-        /// I tried other ways but this worked the best
-        /// </summary>
-        /// <param name="e"></param>
-        //protected override void OnLoad(EventArgs e)
-        //{
-        //    if(!Debugger.IsAttached)
-        //    {
-        //        this.Visible = false; // Hide form window.
-        //        ShowInTaskbar = false; // Remove from taskbar.
-        //        Opacity = 0;
-
-        //    }
-
-        //    base.OnLoad(e);
-        //}
-        /// <summary>
-        /// used with the onload, to set the visable flag to false, after the form was opened, so logic
-        /// will be correct on the toggle
-        /// </summary>
-        /// <param name="sender"></param>
-        /// <param name="e"></param>
-        //private void E3UI_Shown(object sender, EventArgs e)
-        //{
-        //    if (!Debugger.IsAttached)
-        //    {
-        //        this.Visible = false;
-        //    }
-        //}
+      
         /// <summary>
         /// used to check if our parent process dies, so that we can close as well.
         /// </summary>
@@ -485,6 +438,21 @@ namespace E3NextUI
                     ti.isDirty = true;
                 }
             }
+        }
+        public static void SetDoubleBuffered(System.Windows.Forms.Control c)
+        {
+            //Taxes: Remote Desktop Connection and painting
+            //http://blogs.msdn.com/oldnewthing/archive/2006/01/03/508694.aspx
+            if (System.Windows.Forms.SystemInformation.TerminalServerSession)
+                return;
+
+            System.Reflection.PropertyInfo aProp =
+                  typeof(System.Windows.Forms.Control).GetProperty(
+                        "DoubleBuffered",
+                        System.Reflection.BindingFlags.NonPublic |
+                        System.Reflection.BindingFlags.Instance);
+
+            aProp.SetValue(c, true, null);
         }
     }
     public class TextBoxInfo

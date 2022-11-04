@@ -12,6 +12,9 @@ using System.Threading.Tasks;
 
 namespace E3Core.Server
 {
+    /// <summary>
+    /// This publishes out data to the UI client, but could be for anything that wants to pub/sub
+    /// </summary>
     public static class NetMQServer
     {
 
@@ -53,6 +56,9 @@ namespace E3Core.Server
                 ToggleUI();
             });
         }
+        /// <summary>
+        /// Turns on the UI program, and then from then on, hide/shows it as needed. To close restart e3.
+        /// </summary>
         static void ToggleUI()
         { 
           
@@ -79,10 +85,13 @@ namespace E3Core.Server
                     PubServer._pubCommands.Enqueue("#toggleshow");
                    
                 }
-              
             }
-
         }
+        /// <summary>
+        /// best way to find a free open port that i can figure out
+        /// windows won't reuse the port for a bit, so safe to open/close -> reuse.
+        /// </summary>
+        /// <returns></returns>
         static int FreeTcpPort()
         {
             TcpListener l = new TcpListener(IPAddress.Loopback, 0);

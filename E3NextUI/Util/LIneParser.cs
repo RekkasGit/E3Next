@@ -12,7 +12,7 @@ namespace E3NextUI.Util
 
         //store the entire battle data?
 
-
+        //1 million data entries should be neough for anything, about 3.8 megs per
         public static List<Int32> _yourDamage = new List<int>(100000);
         public static List<Int64> _yourDamageTime = new List<Int64>(1000000);
 
@@ -59,9 +59,14 @@ namespace E3NextUI.Util
             }
             else
             {
-                if(!PetName.Equals(petName))
+                if(petName!="NULL")
                 {
-                    PetName = petName;
+                    if (!PetName.Equals(petName))
+                    {
+                        PetName = petName;
+                        _yourPetMelee = new System.Text.RegularExpressions.Regex($"{PetName} .+ for ([0-9]+) points of damage.");
+                    }
+
                 }
 
             }
@@ -135,39 +140,6 @@ namespace E3NextUI.Util
 
         static System.Text.RegularExpressions.Regex _healingYou = new System.Text.RegularExpressions.Regex(".+ has healed you for ([0-9]+) points\\.");
         static System.Text.RegularExpressions.Regex _selfHeals = new System.Text.RegularExpressions.Regex("You have been healed for ([0-9]+) hit points");
-
-
-        //damage done by you
-        //You .+ for (^[0-9]+$) points of damage.
-        //taken (^[0-9]+$) damagte from your
-        //<Name> hit .+ for (^[0-9]+$) points of 
-
-        //proc dmg by pet
-        //Temple Diabo Xi Va was hit by non-melee for 635 points of damage.
-        //(.+) was hit by non-melee for (^[0-9]+$) points of damage\.
-
-        //damage to you
-        //.+ YOU for (^[0-9]+$) points of damage.
-        //damage to you via dots
-        //You have taken 2446 damage from a Tae Ew proselyte by HC Kedgefish Venom
-        //You have taken (^[0-9]+$) damage
-
-        //damage shield
-        //.+ was hit by non-melee for (^[0-9]+$) points of damage.
-
-        //healing done to you
-        //(.+) has healed you for (^[0-9]+$) points.
-        //You have been healed for (^[0-9]+$) hit points
-
-
-
-
-
-
-
-
-
-
 
     }
 }

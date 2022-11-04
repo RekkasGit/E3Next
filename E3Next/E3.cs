@@ -30,27 +30,20 @@ namespace E3Core.Processors
             {
                 return;
             }
-            ActionTaken = false;
-            IsInvis = Mq.Query<bool>("${Me.Invis}");
-            RefreshCaches();
-            //_startTimeStamp = Core._stopWatch.ElapsedMilliseconds;
             //using (_log.Trace())
             {
-                if (!IsInit) { Init(); }
-                HeartBeatPump();
-
-                EventProcessor.ProcessEventsInQueues("/e3p");
-                if (Basics._isPaused)
-                {   
-                    return;
-                }
-
-
                 //Init is here to make sure we only Init while InGame, as some queries will fail if not in game
-
+                if (!IsInit) { Init(); }
+                ActionTaken = false;
+                StateUpdates();
+                //kickout after updates if paused
+                if (IsPaused()) return;
+                
+                RefreshCaches();
+               
                 //nowcast before all.
                 EventProcessor.ProcessEventsInQueues("/nowcast");
-                //use burns if able
+                //use burns if able, this is high as some heals need burns as well
                 Burns.UseBurns();
                 //do the basics first
                 //first and formost, do healing checks
@@ -97,12 +90,13 @@ namespace E3Core.Processors
                     }
 
                 }
-                //now do the dynamic methods from Advanced ini. 
-
+              
+                //bard song player
                 if (E3.CurrentClass == Data.Class.Bard)
                 {
                     Bard.check_BardSongs();
                 }
+                //class attributes
                 using (Log.Trace("ClassMethodCalls"))
                 {
                     //lets do our class methods, this is last because of bards
@@ -117,61 +111,41 @@ namespace E3Core.Processors
                 Loot.Process();
             }
 
-            //process any tlo request from the UI, or anything really.
-            RouterServer.ProcessRequests();
-            //process any commands we need to process from the UI
-            PubClient.ProcessRequests();
+        }
+        private static bool IsPaused()
+        {
+            EventProcessor.ProcessEventsInQueues("/e3p");
+
+            if (Basics._isPaused)
+            {
+                return true;
+            }
+            return false;
         }
         /// <summary>
         /// This is used during thigns like casting, while we are delaying a ton
         /// so that we can keep things 'up to date' such as hp, invs status, pet name, etc. 
         /// 
         /// </summary>
-        public static void HeartBeatPump()
+        public static void StateUpdates()
         {
             IsInvis = Mq.Query<bool>("${Me.Invis}");
             CurrentHps = Mq.Query<int>("${Me.PctHPs}");
+            ZoneID = Mq.Query<int>("${Zone.ID}");
             HitPointsCurrent = Mq.Query<int>("${Me.CurrentHPs}");
-          
-            if (HitPointsCurrent != HitPointsPrevious)
-            {
-                PubServer.AddTopicMessage("${Me.CurrentHPs}", HitPointsCurrent.ToString("N0"));
-                HitPointsPrevious = HitPointsCurrent;
-            }
+            PubServer.AddTopicMessage("${Me.CurrentHPs}", HitPointsCurrent.ToString("N0"));
             MagicPointsCurrent = Mq.Query<int>("${Me.CurrentMana}");
-            if (MagicPointsCurrent != MagicPointsPrevious)
-            {
-                PubServer.AddTopicMessage("${Me.CurrentMana}", MagicPointsCurrent.ToString("N0"));
-                MagicPointsPrevious = MagicPointsCurrent;
-            }
+            PubServer.AddTopicMessage("${Me.CurrentMana}", MagicPointsCurrent.ToString("N0"));
             StamPointsCurrent = Mq.Query<int>("${Me.CurrentEndurance}");
-            if (StamPointsCurrent != StamPointsPrevious)
-            {
-                PubServer.AddTopicMessage("${Me.CurrentEndurance}", StamPointsCurrent.ToString("N0"));
-                StamPointsPrevious = StamPointsCurrent;
-            }
-            bool tCombat = Basics.InCombat();
-            if(tCombat!= CurrentInCombat)
-            {
-                CurrentInCombat = tCombat;
-                PubServer.AddTopicMessage("${InCombat}", CurrentInCombat.ToString());
-            }
-
+            PubServer.AddTopicMessage("${Me.CurrentEndurance}", StamPointsCurrent.ToString("N0"));
+            CurrentInCombat = Basics.InCombat();
+            PubServer.AddTopicMessage("${InCombat}", CurrentInCombat.ToString());
             string nameOfPet = Mq.Query<string>("${Me.Pet.CleanName}");
             if(nameOfPet!="NULL")
             {
                 //set the pet name
                 CurrentPetName = nameOfPet;
                 PubServer.AddTopicMessage("${Me.Pet.CleanName}", CurrentPetName);
-
-            }
-            
-
-            int zoneID = Mq.Query<int>("${Zone.ID}"); //to tell if we zone mid process
-            if (zoneID != ZoneID)
-            {
-                ZoneID = zoneID;
-
             }
             //process any tlo request from the UI, or anything really.
             RouterServer.ProcessRequests();
@@ -230,78 +204,7 @@ namespace E3Core.Processors
 
 
         }
-        //enum ClassStyle
-        //{
-        //    CS_VREDRAW = 0x00000001,
-        //    CS_HREDRAW = 0x00000002,
-        //    CS_KEYCVTWINDOW = 0x00000004,
-        //    CS_DBLCLKS = 0x00000008,
-        //    CS_OWNDC = 0x00000020,
-        //    CS_CLASSDC = 0x00000040,
-        //    CS_PARENTDC = 0x00000080,
-        //    CS_NOKEYCVT = 0x00000100,
-        //    CS_NOCLOSE = 0x00000200,
-        //    CS_SAVEBITS = 0x00000800,
-        //    CS_BYTEALIGNCLIENT = 0x00001000,
-        //    CS_BYTEALIGNWINDOW = 0x00002000,
-        //    CS_GLOBALCLASS = 0x00004000,
-        //    CS_IME = 0x00010000,
-        //    // Windows XP+
-        //    CS_DROPSHADOW = 0x00020000
-        //}
-
-
-        //private static System.Collections.Concurrent.ConcurrentQueue<string> _consoleLines = new System.Collections.Concurrent.ConcurrentQueue<string>();
-        //[STAThread]
-        //private static void ProcessUI()
-        //{
-        //   EventProcessor.RegisterEvent("ConsoleData",".+", (x) =>
-        //   {
-        //       _consoleLines.Enqueue(x.eventString);
-          
-        //   });
-
-        //    Application.EnableVisualStyles();
-        //    Application.SetCompatibleTextRenderingDefault(false);
-        //    _uiForm = new E3NextUI.E3UI();
-        //    _uiInit = true;
-        //    _uiForm.SetPlayerName(E3.CurrentName);
-        //    _uiForm.Show();
-        //    while (Core._isProcessing)
-        //    {
-        //        lock(_uiForm)
-        //        {
-        //            _uiForm.SetPlayerHP(CurrentHitPoints.ToString("N0"));
-        //            while(_consoleLines.Count>0)
-        //            {
-        //                string line;
-        //                if (_consoleLines.TryDequeue(out line))
-        //                {
-        //                    _uiForm.AddConsoleLine(line);
-        //                }
-        //            }
-        //            Application.DoEvents();
-        //         }
-        //        System.Threading.Thread.Sleep(50);
-        //    }
-        //    UnloadUI();
-
-        //}
-
-        //private static void UnloadUI()
-        //{
-        //    _uiForm.Shutdown();
-        //    StringBuilder ClassName = new StringBuilder(256);
-        //    Core.GetClassName(_uiForm.Handle, ClassName, ClassName.Capacity);
-        //    uint pid = 0;
-        //    Core.GetWindowThreadProcessId(_uiForm.Handle, out pid);
-        //    Process p = System.Diagnostics.Process.GetProcessById((int)pid);
-        //    IntPtr hinstance = Core.GetModuleHandle(p.MainModule.FileName);
-        //    _uiForm.Close();
-        //    _uiForm.Dispose();
-        //    Core.UnregisterClass(ClassName.ToString(), hinstance);
-        //    Application.Exit();
-        //}
+        
         private static bool ShouldRun()
         {
 
@@ -312,37 +215,18 @@ namespace E3Core.Processors
 
             return true;
         }
-        private static void RegisterEvents()
-        {
-
-            //register events
-            //Event Line:"Pyra tells the group, 'SWARM-Host of the Elements'"
-            //EventProcessor.RegisterEvent("EverythingEvent", "(.+) tells the group, '(.+)'", (x) => {
-
-            //    _log.Write($"{ x.eventName}:Processed:{ x.eventString}");
-
-            //});
-            //can also just pass it any method with signature
-            ////static void ProcessEvent(EventProcessor.EventMatch x)
-        }
         public static void Shutdown()
         {
             //Mq.Write($"Shutting down {MainProcessor._applicationName}....Reload to start gain");
             IsBadState = true;
            
         }
-        public static Int32 PreviousHP;
-        //private static Task _uiThread;
-        //public static E3NextUI.E3UI _uiForm;
-        //public static volatile bool _uiInit = false;
-        //used throughout e3 per loop to allow kickout form methods
         public static bool ActionTaken = false;
         public static bool Following = false;
         public static long StartTimeStamp;
         public static bool IsInit = false;
         public static bool IsBadState = false;
         public static IMQ Mq = Core.mqInstance;
-        //public static IMQ MQ = new MoqMQ();
         public static Logging Log = Core._log;
         public static Settings.CharacterSettings CharacterSettings = null;
         public static Settings.GeneralSettings GeneralSettings = null;
@@ -357,11 +241,8 @@ namespace E3Core.Processors
         public static string CurrentShortClassString;
         public static int CurrentHps;
         public static int HitPointsCurrent;
-        public static int HitPointsPrevious;
         public static int MagicPointsCurrent;
-        public static int MagicPointsPrevious;
         public static int StamPointsCurrent;
-        public static int StamPointsPrevious;
         public static int ZoneID;
         public static int ProcessDelay = 50;
         public static ISpawns Spawns = Core.spawnInstance;

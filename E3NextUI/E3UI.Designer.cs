@@ -62,7 +62,6 @@ namespace E3NextUI
             this.labelPetNameValue = new System.Windows.Forms.Label();
             this.labelPetName = new System.Windows.Forms.Label();
             this.buttonPauseConsoles = new System.Windows.Forms.Button();
-            this.labelMessageRecieved = new System.Windows.Forms.Label();
             this.labelInCombat = new System.Windows.Forms.Label();
             this.labelInCombatValue = new System.Windows.Forms.Label();
             this.labelManaCurrent = new System.Windows.Forms.Label();
@@ -418,15 +417,6 @@ namespace E3NextUI
             this.buttonPauseConsoles.UseVisualStyleBackColor = true;
             this.buttonPauseConsoles.Click += new System.EventHandler(this.buttonPauseConsoles_Click);
             // 
-            // labelMessageRecieved
-            // 
-            this.labelMessageRecieved.AutoSize = true;
-            this.labelMessageRecieved.Location = new System.Drawing.Point(556, 118);
-            this.labelMessageRecieved.Name = "labelMessageRecieved";
-            this.labelMessageRecieved.Size = new System.Drawing.Size(13, 13);
-            this.labelMessageRecieved.TabIndex = 30;
-            this.labelMessageRecieved.Text = "0";
-            // 
             // labelInCombat
             // 
             this.labelInCombat.AutoSize = true;
@@ -506,7 +496,6 @@ namespace E3NextUI
             this.Controls.Add(this.labelMana);
             this.Controls.Add(this.labelInCombatValue);
             this.Controls.Add(this.labelInCombat);
-            this.Controls.Add(this.labelMessageRecieved);
             this.Controls.Add(this.buttonPauseConsoles);
             this.Controls.Add(this.labelPetNameValue);
             this.Controls.Add(this.labelPetName);
@@ -538,7 +527,6 @@ namespace E3NextUI
             this.Name = "E3UI";
             this.Text = "E3UI";
             this.FormClosing += new System.Windows.Forms.FormClosingEventHandler(this.E3UI_FormClosing);
-            
             this.splitContainer1.Panel1.ResumeLayout(false);
             this.splitContainer1.Panel2.ResumeLayout(false);
             this.splitContainer1.Panel2.PerformLayout();
@@ -588,7 +576,6 @@ namespace E3NextUI
         private System.Windows.Forms.Label labelPetNameValue;
         private System.Windows.Forms.Label labelPetName;
         private System.Windows.Forms.Button buttonPauseConsoles;
-        private System.Windows.Forms.Label labelMessageRecieved;
         private System.Windows.Forms.Label labelInCombat;
         private System.Windows.Forms.Label labelInCombatValue;
         private System.Windows.Forms.Label labelManaCurrent;
