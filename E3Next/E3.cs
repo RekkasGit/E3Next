@@ -180,6 +180,7 @@ namespace E3Core.Processors
                
                 CurrentId = Mq.Query<int>("${Me.ID}");
                 //do first to get class information
+                Bots = new Bots();
                 CharacterSettings = new Settings.CharacterSettings();
                 CurrentClass = CharacterSettings._characterClass;
                 CurrentLongClassString = CurrentClass.ToString();
@@ -195,7 +196,6 @@ namespace E3Core.Processors
                 //as there is an order dependecy
                 Setup.Init();
 
-                Bots = new Bots();
                 IsInit = true;
                 MonoCore.Spawns._refreshTimePeriodInMS = 3000;
                 //_uiThread = Task.Factory.StartNew(() => { ProcessUI(); }, CancellationToken.None, TaskCreationOptions.DenyChildAttach, TaskScheduler.Default);

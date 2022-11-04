@@ -365,7 +365,7 @@ namespace E3Core.Processors
                                 return;
                             }
 
-                            if (!Basics._groupMembers.Any() || !Basics._groupMembers.Contains(spawn.ID))
+                            if (!Basics.GroupMembers.Any() || !Basics.GroupMembers.Contains(spawn.ID))
                             {
                                 return;
                             }

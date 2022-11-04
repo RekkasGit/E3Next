@@ -22,8 +22,8 @@ namespace E3Core.Processors
         private static bool _fullInventoryAlert = false;
         private static bool _lootOnlyStackable = false;
         private static Int32 _lootOnlyStackableValue = 1;
-        private static bool _lootOnlyStackableAllTradeSkils = false;
-        private static bool _lootOnlyStackableCommonTradeSkils = false;
+        private static bool _lootOnlyStackableAllTradeSkills = false;
+        private static bool _lootOnlyStackableCommonTradeSkills = false;
 
         private static Int64 _nextLootCheck = 0;
         private static Int64 _nextLootCheckInterval = 1000;
@@ -34,15 +34,11 @@ namespace E3Core.Processors
             RegisterEvents();
 
             _shouldLoot =E3.CharacterSettings.Misc_AutoLootEnabled;
-            //TODO: remove this line when done with debug
-            E3.GeneralSettings.Loot_LinkChannel = "say";
-            //End TODO
-
             _seekRadius = E3.GeneralSettings.Loot_CorpseSeekRadius;
             _lootOnlyStackable = E3.GeneralSettings.Loot_OnlyStackableEnabled;
             _lootOnlyStackableValue = E3.GeneralSettings.Loot_OnlyStackableValueGreaterThanInCopper;
-            _lootOnlyStackableAllTradeSkils = E3.GeneralSettings.Loot_OnlyStackableAllTradeSkillItems;
-            _lootOnlyStackableCommonTradeSkils = E3.GeneralSettings.Loot_OnlyStackableOnlyCommonTradeSkillItems;
+            _lootOnlyStackableAllTradeSkills = E3.GeneralSettings.Loot_OnlyStackableAllTradeSkillItems;
+            _lootOnlyStackableCommonTradeSkills = E3.GeneralSettings.Loot_OnlyStackableOnlyCommonTradeSkillItems;
 
             LootDataFile.LoadData();
         }
@@ -245,23 +241,25 @@ namespace E3Core.Processors
                         {
                             importantItem = true;
                         }
-                        if(!importantItem & itemValue>= _lootOnlyStackableValue)
+                        if (!importantItem && _lootOnlyStackableCommonTradeSkills)
                         {
-                            importantItem = true;   
+                            importantItem = true;
                         }
-                        if (!importantItem &  _lootOnlyStackableAllTradeSkils)
+                        if (!importantItem && itemValue >= _lootOnlyStackableValue)
                         {
-                            if(corpseItem.Contains(" Pelt")) importantItem = true;
+                            importantItem = true;
+                        }
+                        if (!importantItem && _lootOnlyStackableAllTradeSkills)
+                        {
+                            if (corpseItem.Contains(" Pelt")) importantItem = true;
                             if (corpseItem.Contains(" Silk")) importantItem = true;
                             if (corpseItem.Contains(" Ore")) importantItem = true;
                         }
 
-                        if (!importantItem & itemValue >= E3.GeneralSettings.Loot_OnlyStackableValueGreaterThanInCopper)
+                        if (!importantItem && itemValue >= E3.GeneralSettings.Loot_OnlyStackableValueGreaterThanInCopper)
                         {
                             importantItem = true;
                         }
-
-
                     }
                 }
                 else

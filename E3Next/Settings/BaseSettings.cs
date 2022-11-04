@@ -294,6 +294,11 @@ namespace E3Core.Settings
                     {
                         if (!String.IsNullOrWhiteSpace(data))
                         {
+                            if (!string.Equals(sectionKey, "Cures"))
+                            {
+                                CheckFor(data);
+                            }
+
                             collectionToAddTo.Add(new Data.Spell(data, parsedData));
                         }
 
@@ -314,6 +319,11 @@ namespace E3Core.Settings
                     {
                         if (!String.IsNullOrWhiteSpace(data))
                         {
+                            if (!string.Equals(sectionKey, "Cures"))
+                            {
+                                CheckFor(data);
+                            }
+
                             collectionToAddTo.Enqueue(new Data.Spell(data, parsedData));
                         }
 
@@ -362,6 +372,26 @@ namespace E3Core.Settings
                 }
             }
             spellToLoad = null;
+        }
+
+        /// <summary>
+        /// Checks if i have a thing and broadcasts a warning message that i don't.
+        /// </summary>
+        /// <param name="thingToCheckFor">The thing.</param>
+        public static void CheckFor(string thingToCheckFor)
+        {
+            string thing = thingToCheckFor;
+            if (thingToCheckFor.Contains('/'))
+            {
+                thing = thingToCheckFor.Split('/')[0];
+            }
+
+            if (!MQ.Query<bool>($"${{Me.Book[{thing}]}}") && !MQ.Query<bool>($"${{Me.AltAbility[{thing}]}}") &&
+                !MQ.Query<bool>($"${{Me.CombatAbility[{thing}]}}") && !MQ.Query<bool>($"${{Me.Ability[{thing}]}}") &&
+                !MQ.Query<bool>($"${{FindItem[={thing}]}}"))
+            {
+                E3.Bots.Broadcast($"\ayI do not have {thing} that is configured in bot ini.");
+            }
         }
     }
     interface IBaseSettings
