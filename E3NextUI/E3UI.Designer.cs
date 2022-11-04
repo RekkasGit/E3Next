@@ -68,6 +68,8 @@ namespace E3NextUI
             this.labelMana = new System.Windows.Forms.Label();
             this.labelStaminaValue = new System.Windows.Forms.Label();
             this.labelStaminia = new System.Windows.Forms.Label();
+            this.labelCastingValue = new System.Windows.Forms.Label();
+            this.labelCasting = new System.Windows.Forms.Label();
             ((System.ComponentModel.ISupportInitialize)(this.splitContainer1)).BeginInit();
             this.splitContainer1.Panel1.SuspendLayout();
             this.splitContainer1.Panel2.SuspendLayout();
@@ -143,7 +145,7 @@ namespace E3NextUI
             this.richTextBoxMQConsole.ForeColor = System.Drawing.Color.FromArgb(((int)(((byte)(0)))), ((int)(((byte)(192)))), ((int)(((byte)(192)))));
             this.richTextBoxMQConsole.Location = new System.Drawing.Point(0, 0);
             this.richTextBoxMQConsole.Name = "richTextBoxMQConsole";
-            this.richTextBoxMQConsole.Size = new System.Drawing.Size(319, 236);
+            this.richTextBoxMQConsole.Size = new System.Drawing.Size(623, 206);
             this.richTextBoxMQConsole.TabIndex = 5;
             this.richTextBoxMQConsole.Text = "";
             // 
@@ -155,7 +157,7 @@ namespace E3NextUI
             // 
             // splitContainer1.Panel1
             // 
-            this.splitContainer1.Panel1.Controls.Add(this.richTextBoxMQConsole);
+            this.splitContainer1.Panel1.Controls.Add(this.richTextBoxMelee);
             // 
             // splitContainer1.Panel2
             // 
@@ -182,11 +184,11 @@ namespace E3NextUI
             // 
             // splitContainer2.Panel1
             // 
-            this.splitContainer2.Panel1.Controls.Add(this.richTextBoxMelee);
+            this.splitContainer2.Panel1.Controls.Add(this.richTextBoxSpells);
             // 
             // splitContainer2.Panel2
             // 
-            this.splitContainer2.Panel2.Controls.Add(this.richTextBoxSpells);
+            this.splitContainer2.Panel2.Controls.Add(this.richTextBoxMQConsole);
             this.splitContainer2.Size = new System.Drawing.Size(947, 206);
             this.splitContainer2.SplitterDistance = 320;
             this.splitContainer2.TabIndex = 7;
@@ -198,7 +200,7 @@ namespace E3NextUI
             this.richTextBoxMelee.ForeColor = System.Drawing.Color.White;
             this.richTextBoxMelee.Location = new System.Drawing.Point(0, 0);
             this.richTextBoxMelee.Name = "richTextBoxMelee";
-            this.richTextBoxMelee.Size = new System.Drawing.Size(320, 206);
+            this.richTextBoxMelee.Size = new System.Drawing.Size(319, 236);
             this.richTextBoxMelee.TabIndex = 0;
             this.richTextBoxMelee.Text = "";
             // 
@@ -209,13 +211,13 @@ namespace E3NextUI
             this.richTextBoxSpells.ForeColor = System.Drawing.Color.LightSkyBlue;
             this.richTextBoxSpells.Location = new System.Drawing.Point(0, 0);
             this.richTextBoxSpells.Name = "richTextBoxSpells";
-            this.richTextBoxSpells.Size = new System.Drawing.Size(623, 206);
+            this.richTextBoxSpells.Size = new System.Drawing.Size(320, 206);
             this.richTextBoxSpells.TabIndex = 0;
             this.richTextBoxSpells.Text = "";
             // 
             // buttonResetParse
             // 
-            this.buttonResetParse.Location = new System.Drawing.Point(536, 73);
+            this.buttonResetParse.Location = new System.Drawing.Point(536, 66);
             this.buttonResetParse.Name = "buttonResetParse";
             this.buttonResetParse.Size = new System.Drawing.Size(75, 23);
             this.buttonResetParse.TabIndex = 8;
@@ -226,7 +228,7 @@ namespace E3NextUI
             // labelTotalDamage
             // 
             this.labelTotalDamage.AutoSize = true;
-            this.labelTotalDamage.Location = new System.Drawing.Point(256, 97);
+            this.labelTotalDamage.Location = new System.Drawing.Point(256, 90);
             this.labelTotalDamage.Name = "labelTotalDamage";
             this.labelTotalDamage.Size = new System.Drawing.Size(74, 13);
             this.labelTotalDamage.TabIndex = 9;
@@ -235,7 +237,7 @@ namespace E3NextUI
             // labelTotalDamageValue
             // 
             this.labelTotalDamageValue.AutoSize = true;
-            this.labelTotalDamageValue.Location = new System.Drawing.Point(336, 97);
+            this.labelTotalDamageValue.Location = new System.Drawing.Point(336, 90);
             this.labelTotalDamageValue.Name = "labelTotalDamageValue";
             this.labelTotalDamageValue.Size = new System.Drawing.Size(13, 13);
             this.labelTotalDamageValue.TabIndex = 10;
@@ -244,7 +246,7 @@ namespace E3NextUI
             // labelTotalTime
             // 
             this.labelTotalTime.AutoSize = true;
-            this.labelTotalTime.Location = new System.Drawing.Point(273, 119);
+            this.labelTotalTime.Location = new System.Drawing.Point(273, 112);
             this.labelTotalTime.Name = "labelTotalTime";
             this.labelTotalTime.Size = new System.Drawing.Size(57, 13);
             this.labelTotalTime.TabIndex = 11;
@@ -253,7 +255,7 @@ namespace E3NextUI
             // labelTotalTimeValue
             // 
             this.labelTotalTimeValue.AutoSize = true;
-            this.labelTotalTimeValue.Location = new System.Drawing.Point(336, 119);
+            this.labelTotalTimeValue.Location = new System.Drawing.Point(336, 112);
             this.labelTotalTimeValue.Name = "labelTotalTimeValue";
             this.labelTotalTimeValue.Size = new System.Drawing.Size(13, 13);
             this.labelTotalTimeValue.TabIndex = 12;
@@ -262,7 +264,7 @@ namespace E3NextUI
             // labelYourDamageValue
             // 
             this.labelYourDamageValue.AutoSize = true;
-            this.labelYourDamageValue.Location = new System.Drawing.Point(336, 21);
+            this.labelYourDamageValue.Location = new System.Drawing.Point(336, 14);
             this.labelYourDamageValue.Name = "labelYourDamageValue";
             this.labelYourDamageValue.Size = new System.Drawing.Size(13, 13);
             this.labelYourDamageValue.TabIndex = 14;
@@ -271,7 +273,7 @@ namespace E3NextUI
             // labelYourDamage
             // 
             this.labelYourDamage.AutoSize = true;
-            this.labelYourDamage.Location = new System.Drawing.Point(255, 21);
+            this.labelYourDamage.Location = new System.Drawing.Point(255, 14);
             this.labelYourDamage.Name = "labelYourDamage";
             this.labelYourDamage.Size = new System.Drawing.Size(75, 13);
             this.labelYourDamage.TabIndex = 13;
@@ -280,7 +282,7 @@ namespace E3NextUI
             // labelPetDamageValue
             // 
             this.labelPetDamageValue.AutoSize = true;
-            this.labelPetDamageValue.Location = new System.Drawing.Point(336, 41);
+            this.labelPetDamageValue.Location = new System.Drawing.Point(336, 34);
             this.labelPetDamageValue.Name = "labelPetDamageValue";
             this.labelPetDamageValue.Size = new System.Drawing.Size(13, 13);
             this.labelPetDamageValue.TabIndex = 16;
@@ -289,7 +291,7 @@ namespace E3NextUI
             // labelPetDamage
             // 
             this.labelPetDamage.AutoSize = true;
-            this.labelPetDamage.Location = new System.Drawing.Point(261, 41);
+            this.labelPetDamage.Location = new System.Drawing.Point(261, 34);
             this.labelPetDamage.Name = "labelPetDamage";
             this.labelPetDamage.Size = new System.Drawing.Size(69, 13);
             this.labelPetDamage.TabIndex = 15;
@@ -298,7 +300,7 @@ namespace E3NextUI
             // labelYourDamageShieldValue
             // 
             this.labelYourDamageShieldValue.AutoSize = true;
-            this.labelYourDamageShieldValue.Location = new System.Drawing.Point(336, 64);
+            this.labelYourDamageShieldValue.Location = new System.Drawing.Point(336, 57);
             this.labelYourDamageShieldValue.Name = "labelYourDamageShieldValue";
             this.labelYourDamageShieldValue.Size = new System.Drawing.Size(13, 13);
             this.labelYourDamageShieldValue.TabIndex = 18;
@@ -307,7 +309,7 @@ namespace E3NextUI
             // labelYourDamageShield
             // 
             this.labelYourDamageShield.AutoSize = true;
-            this.labelYourDamageShield.Location = new System.Drawing.Point(262, 64);
+            this.labelYourDamageShield.Location = new System.Drawing.Point(262, 57);
             this.labelYourDamageShield.Name = "labelYourDamageShield";
             this.labelYourDamageShield.Size = new System.Drawing.Size(68, 13);
             this.labelYourDamageShield.TabIndex = 17;
@@ -316,7 +318,7 @@ namespace E3NextUI
             // labelDamageToYouValue
             // 
             this.labelDamageToYouValue.AutoSize = true;
-            this.labelDamageToYouValue.Location = new System.Drawing.Point(598, 21);
+            this.labelDamageToYouValue.Location = new System.Drawing.Point(598, 14);
             this.labelDamageToYouValue.Name = "labelDamageToYouValue";
             this.labelDamageToYouValue.Size = new System.Drawing.Size(13, 13);
             this.labelDamageToYouValue.TabIndex = 20;
@@ -325,7 +327,7 @@ namespace E3NextUI
             // labelDamageToYou
             // 
             this.labelDamageToYou.AutoSize = true;
-            this.labelDamageToYou.Location = new System.Drawing.Point(500, 21);
+            this.labelDamageToYou.Location = new System.Drawing.Point(500, 14);
             this.labelDamageToYou.Name = "labelDamageToYou";
             this.labelDamageToYou.Size = new System.Drawing.Size(92, 13);
             this.labelDamageToYou.TabIndex = 19;
@@ -334,7 +336,7 @@ namespace E3NextUI
             // labelHealingYouValue
             // 
             this.labelHealingYouValue.AutoSize = true;
-            this.labelHealingYouValue.Location = new System.Drawing.Point(598, 46);
+            this.labelHealingYouValue.Location = new System.Drawing.Point(598, 39);
             this.labelHealingYouValue.Name = "labelHealingYouValue";
             this.labelHealingYouValue.Size = new System.Drawing.Size(13, 13);
             this.labelHealingYouValue.TabIndex = 22;
@@ -343,7 +345,7 @@ namespace E3NextUI
             // labelHealingYou
             // 
             this.labelHealingYou.AutoSize = true;
-            this.labelHealingYou.Location = new System.Drawing.Point(500, 46);
+            this.labelHealingYou.Location = new System.Drawing.Point(500, 39);
             this.labelHealingYou.Name = "labelHealingYou";
             this.labelHealingYou.Size = new System.Drawing.Size(88, 13);
             this.labelHealingYou.TabIndex = 21;
@@ -352,7 +354,7 @@ namespace E3NextUI
             // labelYourDamageDPSValue
             // 
             this.labelYourDamageDPSValue.AutoSize = true;
-            this.labelYourDamageDPSValue.Location = new System.Drawing.Point(393, 21);
+            this.labelYourDamageDPSValue.Location = new System.Drawing.Point(393, 14);
             this.labelYourDamageDPSValue.Name = "labelYourDamageDPSValue";
             this.labelYourDamageDPSValue.Size = new System.Drawing.Size(13, 13);
             this.labelYourDamageDPSValue.TabIndex = 23;
@@ -361,7 +363,7 @@ namespace E3NextUI
             // labelPetDamageDPSValue
             // 
             this.labelPetDamageDPSValue.AutoSize = true;
-            this.labelPetDamageDPSValue.Location = new System.Drawing.Point(393, 41);
+            this.labelPetDamageDPSValue.Location = new System.Drawing.Point(393, 34);
             this.labelPetDamageDPSValue.Name = "labelPetDamageDPSValue";
             this.labelPetDamageDPSValue.Size = new System.Drawing.Size(13, 13);
             this.labelPetDamageDPSValue.TabIndex = 24;
@@ -370,7 +372,7 @@ namespace E3NextUI
             // labelDamageShieldDPSValue
             // 
             this.labelDamageShieldDPSValue.AutoSize = true;
-            this.labelDamageShieldDPSValue.Location = new System.Drawing.Point(393, 64);
+            this.labelDamageShieldDPSValue.Location = new System.Drawing.Point(393, 57);
             this.labelDamageShieldDPSValue.Name = "labelDamageShieldDPSValue";
             this.labelDamageShieldDPSValue.Size = new System.Drawing.Size(13, 13);
             this.labelDamageShieldDPSValue.TabIndex = 25;
@@ -379,7 +381,7 @@ namespace E3NextUI
             // labelTotalDamageDPSValue
             // 
             this.labelTotalDamageDPSValue.AutoSize = true;
-            this.labelTotalDamageDPSValue.Location = new System.Drawing.Point(393, 97);
+            this.labelTotalDamageDPSValue.Location = new System.Drawing.Point(393, 90);
             this.labelTotalDamageDPSValue.Name = "labelTotalDamageDPSValue";
             this.labelTotalDamageDPSValue.Size = new System.Drawing.Size(13, 13);
             this.labelTotalDamageDPSValue.TabIndex = 26;
@@ -390,7 +392,7 @@ namespace E3NextUI
             this.labelPetNameValue.AutoSize = true;
             this.labelPetNameValue.Font = new System.Drawing.Font("Microsoft Sans Serif", 12F, System.Drawing.FontStyle.Bold, System.Drawing.GraphicsUnit.Point, ((byte)(0)));
             this.labelPetNameValue.ForeColor = System.Drawing.Color.Crimson;
-            this.labelPetNameValue.Location = new System.Drawing.Point(111, 137);
+            this.labelPetNameValue.Location = new System.Drawing.Point(239, 161);
             this.labelPetNameValue.Name = "labelPetNameValue";
             this.labelPetNameValue.Size = new System.Drawing.Size(51, 20);
             this.labelPetNameValue.TabIndex = 28;
@@ -401,7 +403,7 @@ namespace E3NextUI
             this.labelPetName.AutoSize = true;
             this.labelPetName.Font = new System.Drawing.Font("Microsoft Sans Serif", 14.25F, System.Drawing.FontStyle.Bold, System.Drawing.GraphicsUnit.Point, ((byte)(0)));
             this.labelPetName.ForeColor = System.Drawing.SystemColors.MenuHighlight;
-            this.labelPetName.Location = new System.Drawing.Point(70, 134);
+            this.labelPetName.Location = new System.Drawing.Point(198, 158);
             this.labelPetName.Name = "labelPetName";
             this.labelPetName.Size = new System.Drawing.Size(46, 24);
             this.labelPetName.TabIndex = 27;
@@ -422,7 +424,7 @@ namespace E3NextUI
             this.labelInCombat.AutoSize = true;
             this.labelInCombat.Font = new System.Drawing.Font("Microsoft Sans Serif", 14.25F, System.Drawing.FontStyle.Bold, System.Drawing.GraphicsUnit.Point, ((byte)(0)));
             this.labelInCombat.ForeColor = System.Drawing.SystemColors.MenuHighlight;
-            this.labelInCombat.Location = new System.Drawing.Point(8, 161);
+            this.labelInCombat.Location = new System.Drawing.Point(136, 185);
             this.labelInCombat.Name = "labelInCombat";
             this.labelInCombat.Size = new System.Drawing.Size(110, 24);
             this.labelInCombat.TabIndex = 31;
@@ -433,7 +435,7 @@ namespace E3NextUI
             this.labelInCombatValue.AutoSize = true;
             this.labelInCombatValue.Font = new System.Drawing.Font("Microsoft Sans Serif", 12F, System.Drawing.FontStyle.Bold, System.Drawing.GraphicsUnit.Point, ((byte)(0)));
             this.labelInCombatValue.ForeColor = System.Drawing.Color.Red;
-            this.labelInCombatValue.Location = new System.Drawing.Point(114, 164);
+            this.labelInCombatValue.Location = new System.Drawing.Point(242, 188);
             this.labelInCombatValue.Name = "labelInCombatValue";
             this.labelInCombatValue.Size = new System.Drawing.Size(48, 20);
             this.labelInCombatValue.TabIndex = 32;
@@ -483,6 +485,27 @@ namespace E3NextUI
             this.labelStaminia.TabIndex = 35;
             this.labelStaminia.Text = "SP:";
             // 
+            // labelCastingValue
+            // 
+            this.labelCastingValue.AutoSize = true;
+            this.labelCastingValue.Font = new System.Drawing.Font("Microsoft Sans Serif", 12F, System.Drawing.FontStyle.Bold, System.Drawing.GraphicsUnit.Point, ((byte)(0)));
+            this.labelCastingValue.ForeColor = System.Drawing.Color.DarkCyan;
+            this.labelCastingValue.Location = new System.Drawing.Point(426, 187);
+            this.labelCastingValue.Name = "labelCastingValue";
+            this.labelCastingValue.Size = new System.Drawing.Size(0, 20);
+            this.labelCastingValue.TabIndex = 38;
+            // 
+            // labelCasting
+            // 
+            this.labelCasting.AutoSize = true;
+            this.labelCasting.Font = new System.Drawing.Font("Microsoft Sans Serif", 14.25F, System.Drawing.FontStyle.Bold, System.Drawing.GraphicsUnit.Point, ((byte)(0)));
+            this.labelCasting.ForeColor = System.Drawing.SystemColors.MenuHighlight;
+            this.labelCasting.Location = new System.Drawing.Point(335, 184);
+            this.labelCasting.Name = "labelCasting";
+            this.labelCasting.Size = new System.Drawing.Size(85, 24);
+            this.labelCasting.TabIndex = 37;
+            this.labelCasting.Text = "Casting:";
+            // 
             // E3UI
             // 
             this.AutoScaleDimensions = new System.Drawing.SizeF(6F, 13F);
@@ -490,6 +513,8 @@ namespace E3NextUI
             this.AutoSize = true;
             this.ClientSize = new System.Drawing.Size(947, 659);
             this.ControlBox = false;
+            this.Controls.Add(this.labelCastingValue);
+            this.Controls.Add(this.labelCasting);
             this.Controls.Add(this.labelStaminaValue);
             this.Controls.Add(this.labelStaminia);
             this.Controls.Add(this.labelManaCurrent);
@@ -582,6 +607,8 @@ namespace E3NextUI
         private System.Windows.Forms.Label labelMana;
         private System.Windows.Forms.Label labelStaminaValue;
         private System.Windows.Forms.Label labelStaminia;
+        private System.Windows.Forms.Label labelCastingValue;
+        private System.Windows.Forms.Label labelCasting;
     }
 }
 

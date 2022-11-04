@@ -159,7 +159,15 @@ namespace E3NextUI.Server
                                 }
 
                             }
-                           
+                            else if (messageTopicReceived == "${Casting}")
+                            {
+                                if (Application.OpenForms.Count > 0)
+                                {
+                                    ((E3UI)Application.OpenForms[0]).SetPlayerCasting(messageReceived);
+                                }
+
+                            }
+
                         }
                         catch (Exception ex)
                         {

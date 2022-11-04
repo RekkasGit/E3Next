@@ -330,6 +330,18 @@ namespace E3NextUI
                 labelStaminaValue.Text = value;
             }
         }
+        public void SetPlayerCasting(string value)
+        {
+            if (value == labelStaminaValue.Text) return;
+            if (this.InvokeRequired)
+            {
+                this.Invoke(new SetPlayerDataDelegate(SetPlayerCasting), new object[] { value });
+            }
+            else
+            {
+                labelCastingValue.Text = value;
+            }
+        }
         public void AddConsoleLine(string value, TextBoxInfo ti)
         {
             lock (ti)
