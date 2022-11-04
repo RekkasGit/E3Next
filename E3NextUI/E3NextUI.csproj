@@ -97,7 +97,7 @@
     <Compile Include="Server\PubClient.cs" />
     <Compile Include="Server\PubServer.cs" />
     <Compile Include="Util\CircularBuffer.cs" />
-    <Compile Include="Util\LIneParser.cs" />
+    <Compile Include="Util\LineParser.cs" />
     <EmbeddedResource Include="E3UI.resx">
       <DependentUpon>E3UI.cs</DependentUpon>
     </EmbeddedResource>
