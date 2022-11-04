@@ -319,6 +319,11 @@ namespace E3Core.Settings
                     {
                         if (!String.IsNullOrWhiteSpace(data))
                         {
+                            if (!DoIHaveThis(data))
+                            {
+                                MQ.Write($"\arI do not have {data}. Skipping adding it to song collection");
+                            }
+
                             collectionToAddTo.Enqueue(new Data.Spell(data, parsedData));
                         }
 
