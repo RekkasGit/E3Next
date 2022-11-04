@@ -294,6 +294,11 @@ namespace E3Core.Settings
                     {
                         if (!String.IsNullOrWhiteSpace(data))
                         {
+                            if(!DoIHaveThis(data))
+                            {
+                                MQ.Write($"\arI do not have {data}. Skipping adding it to spell/item collection");
+                            }
+
                             collectionToAddTo.Add(new Data.Spell(data, parsedData));
                         }
 
@@ -362,6 +367,29 @@ namespace E3Core.Settings
                 }
             }
             spellToLoad = null;
+        }
+
+        /// <summary>
+        /// Checks if i have a thing.
+        /// </summary>
+        /// <param name="thingToCheckFor">The thing.</param>
+        /// <returns>a boolean indicating that i have a thing</returns>
+        public static bool DoIHaveThis(string thingToCheckFor)
+        {
+            string thing = thingToCheckFor;
+            if (thingToCheckFor.Contains('/'))
+            {
+                thing = thingToCheckFor.Split('/')[0];
+            }
+
+            if (!MQ.Query<bool>($"${{Me.Book[{thing}]}}") && !MQ.Query<bool>($"${{Me.AltAbility[{thing}]}}") &&
+                !MQ.Query<bool>($"${{Me.CombatAbility[{thing}]}}") && !MQ.Query<bool>($"${{Me.Ability[{thing}]}}") &&
+                !MQ.Query<bool>($"${{FindItem[={thing}]}}"))
+            {
+                return false;
+            }
+
+            return true;
         }
     }
     interface IBaseSettings
