@@ -75,7 +75,7 @@ namespace E3Core.Processors
                 Movement.ResetKeepFollow();
                 Assist.Reset();
                 Pets.Reset();
-                _groupMembers.Clear();
+                GroupMembers.Clear();
 
 
             });
@@ -369,7 +369,7 @@ namespace E3Core.Processors
         }
         public static bool InGameCombat()
         {
-            bool inCombat =  MQ.Query<bool>("${Me.CombatState.Equal[Combat]}");
+            bool inCombat =  _mq.Query<bool>("${Me.CombatState.Equal[Combat]}");
             return inCombat;
         }
         /// <summary>
