@@ -294,11 +294,7 @@ namespace E3Core.Settings
                     {
                         if (!String.IsNullOrWhiteSpace(data))
                         {
-                            if (!string.Equals(sectionKey, "Cures"))
-                            {
-                                CheckFor(data);
-                            }
-
+                            CheckFor(data, sectionKey);
                             collectionToAddTo.Add(new Data.Spell(data, parsedData));
                         }
 
@@ -319,10 +315,9 @@ namespace E3Core.Settings
                     {
                         if (!String.IsNullOrWhiteSpace(data))
                         {
-                            if (!string.Equals(sectionKey, "Cures"))
-                            {
-                                CheckFor(data);
-                            }
+                          
+                            CheckFor(data, sectionKey);
+                            
 
                             collectionToAddTo.Enqueue(new Data.Spell(data, parsedData));
                         }
@@ -378,8 +373,13 @@ namespace E3Core.Settings
         /// Checks if i have a thing and broadcasts a warning message that i don't.
         /// </summary>
         /// <param name="thingToCheckFor">The thing.</param>
-        public static void CheckFor(string thingToCheckFor)
+        public static void CheckFor(string thingToCheckFor, string sectionkey)
         {
+
+            if (sectionkey == "Cures") return;
+            if (sectionkey == "Blocked Buffs") return;
+
+
             string thing = thingToCheckFor;
             if (thingToCheckFor.Contains('/'))
             {
