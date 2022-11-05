@@ -92,11 +92,12 @@ namespace E3NextUI.Util
                 if (TryUpdateCollection(line, _yourdot, _yourDamage, _yourDamageTime)) return;
                 if (TryUpdateCollection(line, _yourspellDmg, _yourDamage, _yourDamageTime)) return;
                
-                if(!String.IsNullOrWhiteSpace(PetName))
+                if (!String.IsNullOrWhiteSpace(PetName))
                 {
                     if (TryUpdateCollection(line, _yourPetMelee, _yourPetDamage, _yourPetDamageTime)) return;
                     if (TryUpdateCollection(line, _yourPetProcDmg, _yourPetDamage, _yourPetDamageTime)) return;
                 }
+                if (TryUpdateCollection(line, _yourswarmDmg, _yourPetDamage, _yourPetDamageTime)) return;
                 if (TryUpdateCollection(line, _meleeDmgToYou, _damageToYou, _damageToYouTime)) return;
                 if (TryUpdateCollection(line, _dotDmgToYou, _damageToYou, _damageToYouTime)) return;
                 if (TryUpdateCollection(line, _damageshieldByYou, _yourDamageShieldDamage, _yourDamageShieldDamageTime)) return;
@@ -126,9 +127,11 @@ namespace E3NextUI.Util
         static System.Text.RegularExpressions.Regex _yourdmg = new System.Text.RegularExpressions.Regex("You .+ for ([0-9]+) points of damage.");
         static System.Text.RegularExpressions.Regex _yourdot = new System.Text.RegularExpressions.Regex("taken ([0-9]+) damage from your");
         static System.Text.RegularExpressions.Regex _yourspellDmg = new System.Text.RegularExpressions.Regex($"{E3UI.CharacterName} hit .+ for ([0-9]+) points of");
+       
         //proc dmg by pet
         static System.Text.RegularExpressions.Regex _yourPetProcDmg = new System.Text.RegularExpressions.Regex(".+ was hit by non-melee for ([0-9]+) points of damage\\.");
         static System.Text.RegularExpressions.Regex _yourPetMelee = new System.Text.RegularExpressions.Regex($"{PetName} .+ for ([0-9]+) points of damage.");
+        static System.Text.RegularExpressions.Regex _yourswarmDmg = new System.Text.RegularExpressions.Regex($"{E3UI.CharacterName}'s pet hits .+ for ([0-9]+) points of");
 
         //damage to you
         static System.Text.RegularExpressions.Regex _meleeDmgToYou = new System.Text.RegularExpressions.Regex(".+ YOU for ([0-9]+) points of damage\\.");
