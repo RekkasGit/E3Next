@@ -19,7 +19,8 @@ namespace Template
             #endregion
             ///Write your code here.
             string name = MQ.Query<string>("${Me.Name}");
-            MQ.Write($"Hello {name}!");
+
+            MQ.Write($"Hello {name}! DomainId:{System.Threading.Thread.GetDomainID()}");
        
         
         

@@ -89,6 +89,9 @@ namespace E3Core.Processors
             {
                 foreach (var burn in burnList)
                 {
+                    //can't do gathering dusk if not in combat, skip it
+                    if (burn.SpellName == "Gathering Dusk" && !Basics.InGameCombat()) continue;
+
                     if (Casting.CheckReady(burn))
                     {
                         if (burn.CastType == Data.CastType.Disc)

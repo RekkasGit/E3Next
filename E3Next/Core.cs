@@ -11,6 +11,7 @@ using System.Text.RegularExpressions;
 using E3Core.Processors;
 using System.Runtime.InteropServices;
 using System.Windows.Markup;
+using NetMQ;
 
 /// <summary>
 /// Version 0.1
@@ -128,7 +129,7 @@ namespace MonoCore
                     //test
                     Core._coreResetEvent.Set();
                     //we perma exit this thread loop a full reload will be necessary
-                    return;
+                    break;
                 }
 
                 //SET YOUR MACRO DELAY HERE
@@ -142,10 +143,13 @@ namespace MonoCore
 
 
             }
-
+            E3.Shutdown();
         }
 
+      
+
     }
+ 
     /// <summary>
     /// Processor to handle Event strings
     /// It spawns its own thread to do the inital regex parse, whatever matches will be 
@@ -156,6 +160,8 @@ namespace MonoCore
         //event is loaded at startup and then not modified anymore
         //so if we register events before Init, we can avoid locks on it
         //will need to add locks if you want to add events at runtime
+        public static System.Collections.Concurrent.ConcurrentDictionary<string, Action<EventMatch>> _unfilteredEventMethodList = new ConcurrentDictionary<string, Action<EventMatch>>();
+        public static System.Collections.Concurrent.ConcurrentDictionary<string, EventListItem> _unfilteredEventList = new ConcurrentDictionary<string, EventListItem>();
         public static System.Collections.Concurrent.ConcurrentDictionary<string, EventListItem> _eventList = new ConcurrentDictionary<string, EventListItem>();
         public static System.Collections.Concurrent.ConcurrentDictionary<string, CommandListItem> _commandList = new ConcurrentDictionary<string, CommandListItem>();
         //this is the first queue that strings get put into, will be processed by its own thread
@@ -167,6 +173,7 @@ namespace MonoCore
         private static List<string> _tokenResult = new List<string>();
         //if matches take place, they are placed in this queue for the main C# thread to process. 
         public static Int32 _eventLimiterPerRegisteredEvent = 10;
+       
         //this threads entire purpose, is to simply keep processing the event processing queue and place matches into
         //the eventfilteredqueue
         public static Task _regExProcessingTask;
@@ -210,7 +217,17 @@ namespace MonoCore
                     string line;
                     if (_eventProcessingQueue.TryDequeue(out line))
                     {
+                        foreach(var ueventMethod in _unfilteredEventMethodList)
+                        {
+                            ueventMethod.Value.Invoke(new EventMatch() { eventName = ueventMethod.Key, eventString = line, typeOfEvent = eventType.EQEvent });
+                        }
+           
+                        foreach(var uevent in _unfilteredEventList)
+                        {
+                            uevent.Value.queuedEvents.Enqueue(new EventMatch() { eventName = uevent.Value.keyName, eventString = line, typeOfEvent = eventType.EQEvent });
+                        }
 
+                        //do filter matching
                         //does it match our filter ? if so we can leave
                         bool matchFilter = false;
                         //locl this so someone can clear/add more filters are runtime.
@@ -241,9 +258,7 @@ namespace MonoCore
                                     var match = regex.Match(line);
                                     if (match.Success)
                                     {
-
-                                        item.Value.queuedEvents.Enqueue(new EventMatch() { eventName = item.Value.keyName, eventString = line, match = match });
-
+                                        item.Value.queuedEvents.Enqueue(new EventMatch() { eventName = item.Value.keyName, eventString = line, match = match, typeOfEvent= eventType.EQEvent});
                                         break;
                                     }
                                 }
@@ -261,6 +276,18 @@ namespace MonoCore
                     string line;
                     if (_mqEventProcessingQueue.TryDequeue(out line))
                     {
+
+                        foreach (var ueventMethod in _unfilteredEventMethodList)
+                        {
+                            ueventMethod.Value.Invoke(new EventMatch() { eventName = ueventMethod.Key, eventString = line, typeOfEvent = eventType.MQEvent });
+                        }
+
+                        foreach (var uevent in _unfilteredEventList)
+                        {
+                            uevent.Value.queuedEvents.Enqueue(new EventMatch() { eventName = uevent.Value.keyName, eventString = line, typeOfEvent = eventType.MQEvent });
+                        }
+                       
+                        //do filtered
                         if (line.StartsWith("["))
                         {
                             Int32 indexOfApp = line.IndexOf(MainProcessor._applicationName);
@@ -294,7 +321,7 @@ namespace MonoCore
                                 if (match.Success)
                                 {
 
-                                    item.Value.queuedEvents.Enqueue(new EventMatch() { eventName = item.Value.keyName, eventString = line, match = match });
+                                    item.Value.queuedEvents.Enqueue(new EventMatch() { eventName = item.Value.keyName, eventString = line, match = match, typeOfEvent= eventType.MQEvent});
 
                                     break;
                                 }
@@ -314,6 +341,7 @@ namespace MonoCore
                     {
                          if (!String.IsNullOrWhiteSpace(line))
                         {
+                          
                             foreach (var item in _commandList)
                             {
                                 //prevent spamming of an event to a user
@@ -344,7 +372,6 @@ namespace MonoCore
         }
         private static List<string> GetCommandFilters(List<string> values)
         {
-
             ////Stop /Only|Soandoso
             ////FollowOn /Only|Healers WIZ Soandoso
             ////followon /Not|Healers /Exclude|Uberhealer1
@@ -442,7 +469,11 @@ namespace MonoCore
                 return _tokenResult;
             }
         }
-
+        /// <summary>
+        /// Process all events in the queue on this current thread.
+        /// can specify keyname to only process certain keys
+        /// </summary>
+        /// <param name="keyName"></param>
         public static void ProcessEventsInQueues(string keyName = "")
         {
             foreach (var item in _eventList)
@@ -492,30 +523,43 @@ namespace MonoCore
                 }
 
             }
+            foreach (var item in _unfilteredEventList)
+            {
+                //check to see if we have to have a filter on the events to process
+                if (!String.IsNullOrWhiteSpace(keyName))
+                {
+                    //if keyName is specified, verify that its the key we want. 
+                    if (!item.Value.keyName.Equals(keyName, StringComparison.OrdinalIgnoreCase))
+                    {
+
+                        continue;
+                    }
+                }
+                while (item.Value.queuedEvents.Count > 0)
+                {
+
+                    EventMatch line;
+                    if (item.Value.queuedEvents.TryDequeue(out line))
+                    {
+                        item.Value.method.Invoke(line);
+                    }
+                }
+
+            }
         }
         /// <summary>
         /// main entry from the C++ thread to place the event string for processing
         /// </summary>
         /// <param name="line"></param>
         public static void ProcessEvent(string line)
-        {
-            
-            //to prevent spams
-            if (_eventList.Count > 0)
-            {
-                _eventProcessingQueue.Enqueue(line);
-            }
-
+        {   
+            _eventProcessingQueue.Enqueue(line);
         }
 
         public static void ProcessMQEvent(string line)
         {
            
-            //to prevent spams
-            if (_eventList.Count > 0)
-            {
-                _mqEventProcessingQueue.Enqueue(line);
-            }
+            _mqEventProcessingQueue.Enqueue(line);
 
         }
         public static void ProcessMQCommand(string line)
@@ -539,12 +583,20 @@ namespace MonoCore
                 }
             }
         }
+        public enum eventType
+        {
+            Unknown=0,
+            EQEvent=1,
+            MQEvent=2,
+           
+        }
         public class EventListItem
         {
             public String keyName;
             public List<System.Text.RegularExpressions.Regex> regexs;
             public System.Action<EventMatch> method;
             public ConcurrentQueue<EventMatch> queuedEvents = new ConcurrentQueue<EventMatch>();
+           
         }
         public class CommandListItem
         {
@@ -587,6 +639,7 @@ namespace MonoCore
             public string eventString;
             public Match match;
             public string eventName;
+            public eventType typeOfEvent=eventType.Unknown;
         }
         public static bool RegisterCommand(string commandName, Action<CommandMatch> method)
         {
@@ -629,6 +682,35 @@ namespace MonoCore
             eventToAdd.keyName = keyName;
 
             _eventList.TryAdd(keyName, eventToAdd);
+
+        }
+        /// <summary>
+        /// used by seperate threads of the main C# thread to get unfiltered events
+        /// directly to them without having to go through the normal procees loop
+        /// currently used by E3UI.
+        /// </summary>
+        /// <param name="keyName"></param>
+        /// <param name="method"></param>
+        public static void RegisterUnfilteredEventMethod(string keyName, Action<EventMatch> method)
+        {
+            _unfilteredEventMethodList.TryAdd(keyName, method);
+        }
+        /// <summary>
+        /// When you want an event to not be filtered by the default filtering
+        /// Do be careful of this, as you can loop yourself by accident.
+        /// </summary>
+        /// <param name="keyName"></param>
+        /// <param name="pattern"></param>
+        /// <param name="method"></param>
+        public static void RegisterUnfilteredEvent(string keyName, string pattern, Action<EventMatch> method)
+        {
+            EventListItem eventToAdd = new EventListItem();
+            eventToAdd.regexs = new List<Regex>();
+
+            eventToAdd.regexs.Add(new System.Text.RegularExpressions.Regex(pattern));
+            eventToAdd.method = method;
+            eventToAdd.keyName = keyName;
+            _unfilteredEventList.TryAdd(keyName, eventToAdd);
 
         }
         public static void RegisterEvent(string keyName, List<string> patterns, Action<EventMatch> method)
@@ -717,8 +799,6 @@ namespace MonoCore
 
         public static void OnInit()
         {
-
-
             if (!_isInit)
             {
                 _isProcessing = true;
@@ -752,6 +832,11 @@ namespace MonoCore
         public static void OnStop()
         {
             _isProcessing = false;
+            if(E3Core.Server.NetMQServer._uiProcess!=null)
+            {
+                E3Core.Server.NetMQServer._uiProcess.Kill();
+            }
+            NetMQConfig.Cleanup(false);
         }
         public static void OnPulse()
         {
@@ -890,6 +975,7 @@ namespace MonoCore
         public extern static void mq_GetSpawns();
         [MethodImpl(MethodImplOptions.InternalCall)]
         public extern static bool mq_GetRunNextCommand();
+
         
         #region IMGUI
         [MethodImpl(MethodImplOptions.InternalCall)]
@@ -905,6 +991,28 @@ namespace MonoCore
         #endregion
         #endregion
 
+        [DllImport("user32.dll")]
+        public static extern bool UnregisterClass(string lpClassName, IntPtr hInstance);
+        [DllImport("user32.dll", SetLastError = true, CharSet = CharSet.Auto)]
+        public static extern int GetClassName(IntPtr hWnd, StringBuilder lpClassName, int nMaxCount);
+        [DllImport("kernel32.dll", CharSet = CharSet.Unicode, SetLastError = true)]
+        public static extern IntPtr GetModuleHandle([MarshalAs(UnmanagedType.LPWStr)] string lpModuleName);
+        [DllImport("kernel32.dll", SetLastError = true)]
+        [PreserveSig]
+        public static extern uint GetModuleFileName
+        (
+            [In]
+            IntPtr hModule,
+
+            [Out]
+            StringBuilder lpFilename,
+
+            [In]
+            [MarshalAs(UnmanagedType.U4)]
+            int nSize
+        );
+        [DllImport("user32.dll")]
+        public static extern IntPtr GetWindowThreadProcessId(IntPtr hWnd,out uint ProcessId);
     }
 
 
@@ -1116,25 +1224,20 @@ namespace MonoCore
 
         public void Write(string query, [CallerMemberName] string memberName = "", [CallerFilePath] string fileName = "", [CallerLineNumber] int lineNumber = 0)
         {
-            //if(String.IsNullOrWhiteSpace(query))
-            //{
-            //    return;
-            //}
-            //check
-            //if (_sinceLastDelay + _maxMillisecondsToWork < Core._stopWatch.ElapsedMilliseconds)
-            //{
-            //    Delay(0);
-            //}
-            //Core.mq_Echo(query);
-            //set the buffer for the C++ thread
-            //Core._currentWrite = $"[{MainProcessor._applicationName}]\a-w{System.DateTime.Now.ToString("HH:mm:ss")} \aw- {query}";
-            Core._currentWrite = $"\a#336699[{MainProcessor._applicationName}]\a-w{System.DateTime.Now.ToString("HH:mm:ss")} \aw- {query}";
+           
+            //write on current thread, it will be queued up
+            Core.mq_Echo($"\a#336699[{MainProcessor._applicationName}]\a-w{System.DateTime.Now.ToString("HH:mm:ss")} \aw- {query}");
+            return;
 
-            //swap to the C++thread, and it will swap back after executing the current write becau of us setting _CurrentWrite before
-            Core._coreResetEvent.Set();
-            //we are now going to wait on the core
-            MainProcessor._processResetEvent.Wait();
-            MainProcessor._processResetEvent.Reset();
+            //set the buffer for the C++ thread
+            ////Core._currentWrite = $"[{MainProcessor._applicationName}]\a-w{System.DateTime.Now.ToString("HH:mm:ss")} \aw- {query}";
+            //Core._currentWrite = $"\a#336699[{MainProcessor._applicationName}]\a-w{System.DateTime.Now.ToString("HH:mm:ss")} \aw- {query}";
+
+            ////swap to the C++thread, and it will swap back after executing the current write becau of us setting _CurrentWrite before
+            //Core._coreResetEvent.Set();
+            ////we are now going to wait on the core
+            //MainProcessor._processResetEvent.Wait();
+            //MainProcessor._processResetEvent.Reset();
 
         }
 

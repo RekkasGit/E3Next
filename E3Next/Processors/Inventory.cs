@@ -2,6 +2,7 @@
 using E3Core.Settings;
 using E3Core.Settings.FeatureSettings;
 using E3Core.Utility;
+using E3Core.Processors;
 using IniParser;
 using MonoCore;
 using System;
@@ -386,6 +387,8 @@ namespace E3Core.Processors
             });
             EventProcessor.RegisterCommand("/getfrombank", (x) => GetFromBank(x.args));
             EventProcessor.RegisterCommand("/upgrade", (x) => Upgrade(x.args));
+            //restock generic reusable items from vendors
+            
         }
     }
 }

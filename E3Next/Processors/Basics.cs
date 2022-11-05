@@ -75,6 +75,7 @@ namespace E3Core.Processors
                 Movement.ResetKeepFollow();
                 Assist.Reset();
                 Pets.Reset();
+               
             });
             EventProcessor.RegisterEvent("Summoned", @"You have been summoned!", (x) =>
             {
@@ -97,6 +98,11 @@ namespace E3Core.Processors
                 E3.Bots.BroadcastCommandToGroup("/makemevisible");
                 _mq.Cmd("/makemevisible");
             });
+
+            //EventProcessor.RegisterCommand("/ui", (x) =>
+            //{
+            //    E3._uiForm.ToggleShow();
+            //});
             EventProcessor.RegisterCommand("/debug", (x) =>
             {
                 if (Logging._minLogLevelTolog == Logging.LogLevels.Error)
@@ -319,14 +325,14 @@ namespace E3Core.Processors
 
             int groupCount = _mq.Query<int>("${Group}");
             groupCount++;
-            if (groupCount != GroupMembers.Count)
+            GroupMembers.Clear();
+            //refresh group members.
+            
+            for (int i = 0; i < groupCount; i++)
             {
-                GroupMembers.Clear();
-                //refresh group members.
-                //see if any  of our members have it.
-                for (int i = 0; i < groupCount; i++)
+                int id = _mq.Query<int>($"${{Group.Member[{i}].ID}}");
+                if(id>0)
                 {
-                    int id = _mq.Query<int>($"${{Group.Member[{i}].ID}}");
                     GroupMembers.Add(id);
                 }
             }
@@ -359,7 +365,11 @@ namespace E3Core.Processors
             bool inCombat = Assist._isAssisting || _mq.Query<bool>("${Me.Combat}") || _mq.Query<bool>("${Me.CombatState.Equal[Combat]}");
             return inCombat;
         }
-
+        public static bool InGameCombat()
+        {
+            bool inCombat =  _mq.Query<bool>("${Me.CombatState.Equal[Combat]}");
+            return inCombat;
+        }
         /// <summary>
         /// Checks the mana resources, and does actions to regenerate mana during combat.
         /// </summary>

@@ -1,13 +1,7 @@
-﻿using E3Core.Data;
-using E3Core.Settings;
-using E3Core.Settings.FeatureSettings;
+﻿using E3Core.Settings.FeatureSettings;
 using E3Core.Utility;
 using MonoCore;
 using System;
-using System.Collections.Generic;
-using System.Collections.Specialized;
-using System.Dynamic;
-using System.Linq;
 
 
 namespace E3Core.Processors
@@ -29,7 +23,7 @@ namespace E3Core.Processors
         {
             EventProcessor.RegisterCommand("/autosell", (x) =>
             {
-                OpenMerchant();
+                e3util.OpenMerchant();
                 AutoSell();
                 MQ.Cmd("/notify MerchantWnd MW_Done_Button leftmouseup");
             });
@@ -39,7 +33,7 @@ namespace E3Core.Processors
             });
             EventProcessor.RegisterCommand("/autostack", (x) =>
             {
-                OpenMerchant();
+                e3util.OpenMerchant();
                 AutoStack();
             });
         }
@@ -76,13 +70,6 @@ namespace E3Core.Processors
                 }
             }
             LootDataFile.SaveData();
-        }
-
-        private static void OpenMerchant()
-        {
-            e3util.TryMoveToTarget();
-            MQ.Cmd("/click right target");
-            MQ.Delay(500);
         }
 
         private static void AutoSell()
@@ -134,7 +121,7 @@ namespace E3Core.Processors
 
                                 if (!sellButtonEnabled)
                                 {
-                                    //sell button not enabled for whaever reason
+                                    //sell button not enabled for whatever reason
                                     continue;
                                 }
 

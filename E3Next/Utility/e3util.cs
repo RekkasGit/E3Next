@@ -1,5 +1,6 @@
 ﻿using E3Core.Data;
 using E3Core.Processors;
+using E3Core.Settings;
 using IniParser;
 using MonoCore;
 using System;
@@ -551,8 +552,72 @@ namespace E3Core.Utility
            
             return fileIniData;
         }
+        /// <summary>
+        /// NavToSpawnID - use MQ2Nav to reach the specified spawn, right now just by ID, ideally by any valid nav command
+        /// </summary>
+        /// <param name="spawnID"></param>
+        public static void NavToSpawnID(int spawnID)
+        {
+            bool navPathExists = MQ.Query<bool>($"${{Navigation.PathExists[id {spawnID}]}}");
+            
+            if (!navPathExists)
+            {
+                //early return if no path available
+                MQ.Write($"\arNo nav path available to spawn ID: {spawnID}");
+                return;
+            }
 
-      
+            int timeoutInMS = 3000;
+
+            MQ.Cmd($"/nav id {spawnID}");
+            
+            Int64 endTime = Core._stopWatch.ElapsedMilliseconds + timeoutInMS;
+            MQ.Delay(300);
+
+            while (navPathExists && MQ.Query<int>("${Navigation.Velocity}") > 0)
+            {
+                Double meX = MQ.Query<Double>("${Me.X}");
+                Double meY = MQ.Query<Double>("${Me.Y}");
+
+                if (endTime < Core._stopWatch.ElapsedMilliseconds)
+                {
+                    //stop nav if we exceed the timeout
+                    MQ.Write("Stopping because timeout exceeded for navigation");
+                    MQ.Cmd($"/nav stop");
+                    break;
+                }
+                MQ.Delay(1000);
+                
+                Double tmeX = MQ.Query<Double>("${Me.X}");
+                Double tmeY = MQ.Query<Double>("${Me.Y}");
+                
+                if ((int)meX == (int)tmeX && (int)meY == (int)tmeY)
+                {
+                    //we are stuck, kick out
+                    MQ.Write("Stopping because we appear to be stuck.");
+                    MQ.Cmd($"/nav stop");
+                    break;
+                }
+                //add additional time to get to target
+                endTime += timeoutInMS;
+                navPathExists = MQ.Query<bool>($"${{Navigation.PathExists[id {spawnID}]}}");
+            }
+        }
+
+        public static void OpenMerchant()
+        {
+            e3util.TryMoveToTarget();
+            MQ.Cmd("/click right target");
+            MQ.Delay(2000, "${Merchant.ItemsReceived}");
+        }
+        public static void CloseMerchant()
+        {
+            bool merchantWindowOpen = MQ.Query<bool>("${Window[MerchantWnd].Open}");
+            
+            MQ.Cmd("/notify MerchantWnd MW_Done_Button leftmouseup");
+            MQ.Delay(200);
+        }
+
 
     }
 }

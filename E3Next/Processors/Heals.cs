@@ -517,7 +517,7 @@ namespace E3Core.Processors
             }
         }
 
-        public static void Check_LifeSupport()
+        public static bool Check_LifeSupport(bool JustCheck = false)
         {
             Int32 pctHps = MQ.Query<Int32>("${Me.PctHPs}");
             Int32 myID = MQ.Query<Int32>("${Me.ID}");
@@ -527,15 +527,17 @@ namespace E3Core.Processors
                 {
                     if(Casting.CheckReady(spell) && Casting.CheckMana(spell))
                     {
+                        if (JustCheck) return true;
                         Int32 targetIDToUse = myID;
                         //don't change your target if you are using a self healing item
                         if (spell.CastName.IndexOf("Divine Healing", 0, StringComparison.OrdinalIgnoreCase) > -1) targetIDToUse = 0;
                         if (spell.CastName.IndexOf("Sanguine Mind Crystal", 0, StringComparison.OrdinalIgnoreCase) > -1) targetIDToUse = 0;
                         Casting.Cast(targetIDToUse, spell);
-                        return;
+                        return true;
                     }
                 }
             }
+            return false;
         }
     }
 }
