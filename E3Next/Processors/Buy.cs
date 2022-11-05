@@ -33,8 +33,17 @@ namespace E3Core.Processors
         {
             string toEat = E3.CharacterSettings.Misc_AutoFood;
             string toDrink = E3.CharacterSettings.Misc_AutoDrink;
-            int toEatQty = MQ.Query<int>($"${{FindItemCount[{toEat}]}}");
-            int toDrinkQty = MQ.Query<int>($"${{FindItemCount[{toDrink}]}}");
+            int toEatQty = -1;
+            int toDrinkQty = -1;
+            
+            if(!String.IsNullOrWhiteSpace(toEat))
+            {
+                toEatQty = MQ.Query<int>($"${{FindItemCount[{toEat}]}}");
+            }
+            if(!String.IsNullOrWhiteSpace(toDrink))
+            {
+                toDrinkQty = MQ.Query<int>($"${{FindItemCount[{toDrink}]}}");
+            }
 
             MQ.Write($"\agInitiating restock for {toEat} and {toDrink}");
             if (toEatQty >= 1000 && toDrinkQty >= 1000)
@@ -42,8 +51,9 @@ namespace E3Core.Processors
                 MQ.Write($"\arYou already have more than a stack of {toEat} and {toDrink}! Skipping restock. ");
                 return;
             }
-            else
+            else if(toEatQty >-1 || toDrinkQty>-1)
             {
+                //we have something we need to get
                 int zoneID = E3.ZoneID;
                 int vendorID = 0;
 
@@ -68,7 +78,7 @@ namespace E3Core.Processors
                     e3util.NavToSpawnID(vendorID);
                     e3util.OpenMerchant();
 
-                    if (toEatQty < 1000)
+                    if (toEatQty < 1000 && toEatQty>-1)
                     {
                         int eatQtyNeeded = 1000 - toEatQty;
                         if (String.IsNullOrWhiteSpace(toEat))
@@ -80,7 +90,7 @@ namespace E3Core.Processors
                             Buy.BuyItem(toEat, eatQtyNeeded);
                         }
                     }
-                    if (toDrinkQty < 1000)
+                    if (toDrinkQty < 1000 && toDrinkQty > -1)
                     {
                         int drinkQtyNeeded = 1000 - toDrinkQty;
                         if (String.IsNullOrWhiteSpace(toDrink))
