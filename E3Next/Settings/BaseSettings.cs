@@ -376,8 +376,8 @@ namespace E3Core.Settings
         public static void CheckFor(string thingToCheckFor, string sectionkey)
         {
 
-            if (sectionkey == "Cures") return;
-            if (sectionkey == "Blocked Buffs") return;
+            if (sectionkey.Equals("Cures", StringComparison.OrdinalIgnoreCase)) return;
+            if (sectionkey.Equals("Blocked Buffs", StringComparison.OrdinalIgnoreCase)) return;
 
 
             string thing = thingToCheckFor;
