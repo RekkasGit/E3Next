@@ -75,9 +75,7 @@ namespace E3Core.Processors
                 Movement.ResetKeepFollow();
                 Assist.Reset();
                 Pets.Reset();
-                GroupMembers.Clear();
-
-
+               
             });
             EventProcessor.RegisterEvent("Summoned", @"You have been summoned!", (x) =>
             {
@@ -327,14 +325,14 @@ namespace E3Core.Processors
 
             int groupCount = _mq.Query<int>("${Group}");
             groupCount++;
-            if (groupCount != GroupMembers.Count)
+            GroupMembers.Clear();
+            //refresh group members.
+            
+            for (int i = 0; i < groupCount; i++)
             {
-                GroupMembers.Clear();
-                //refresh group members.
-                //see if any  of our members have it.
-                for (int i = 0; i < groupCount; i++)
+                int id = _mq.Query<int>($"${{Group.Member[{i}].ID}}");
+                if(id>0)
                 {
-                    int id = _mq.Query<int>($"${{Group.Member[{i}].ID}}");
                     GroupMembers.Add(id);
                 }
             }
