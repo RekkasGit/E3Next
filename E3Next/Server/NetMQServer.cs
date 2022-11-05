@@ -49,8 +49,18 @@ namespace E3Core.Server
             _pubServer.Start(PubPort);
             _routerServer.Start(RouterPort);
             _pubClient.Start(PubClientPort);
-   
-           
+
+            EventProcessor.RegisterUnfilteredEventMethod("E3UI", (x) => {
+
+                if(x.typeOfEvent== EventProcessor.eventType.EQEvent)
+                {
+                    PubServer._pubMessages.Enqueue(x.eventString);
+                }else if(x.typeOfEvent == EventProcessor.eventType.MQEvent)
+                {
+                    PubServer._pubWriteColorMessages.Enqueue(x.eventString);
+                }
+
+            });
             EventProcessor.RegisterCommand("/ui", (x) =>
             {
                 ToggleUI();

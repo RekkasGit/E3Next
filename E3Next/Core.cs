@@ -160,6 +160,7 @@ namespace MonoCore
         //event is loaded at startup and then not modified anymore
         //so if we register events before Init, we can avoid locks on it
         //will need to add locks if you want to add events at runtime
+        public static System.Collections.Concurrent.ConcurrentDictionary<string, Action<EventMatch>> _unfilteredEventMethodList = new ConcurrentDictionary<string, Action<EventMatch>>();
         public static System.Collections.Concurrent.ConcurrentDictionary<string, EventListItem> _unfilteredEventList = new ConcurrentDictionary<string, EventListItem>();
         public static System.Collections.Concurrent.ConcurrentDictionary<string, EventListItem> _eventList = new ConcurrentDictionary<string, EventListItem>();
         public static System.Collections.Concurrent.ConcurrentDictionary<string, CommandListItem> _commandList = new ConcurrentDictionary<string, CommandListItem>();
@@ -216,8 +217,15 @@ namespace MonoCore
                     string line;
                     if (_eventProcessingQueue.TryDequeue(out line))
                     {
-
-                        E3Core.Server.PubServer._pubMessages.Enqueue(line);
+                        foreach(var ueventMethod in _unfilteredEventMethodList)
+                        {
+                            ueventMethod.Value.Invoke(new EventMatch() { eventName = ueventMethod.Key, eventString = line, typeOfEvent = eventType.EQEvent });
+                        }
+           
+                        foreach(var uevent in _unfilteredEventList)
+                        {
+                            uevent.Value.queuedEvents.Enqueue(new EventMatch() { eventName = uevent.Value.keyName, eventString = line, typeOfEvent = eventType.EQEvent });
+                        }
 
                         //do filter matching
                         //does it match our filter ? if so we can leave
@@ -268,9 +276,17 @@ namespace MonoCore
                     string line;
                     if (_mqEventProcessingQueue.TryDequeue(out line))
                     {
-                        //do unfiltered
-                        E3Core.Server.PubServer._pubWriteColorMessages.Enqueue(line);
 
+                        foreach (var ueventMethod in _unfilteredEventMethodList)
+                        {
+                            ueventMethod.Value.Invoke(new EventMatch() { eventName = ueventMethod.Key, eventString = line, typeOfEvent = eventType.MQEvent });
+                        }
+
+                        foreach (var uevent in _unfilteredEventList)
+                        {
+                            uevent.Value.queuedEvents.Enqueue(new EventMatch() { eventName = uevent.Value.keyName, eventString = line, typeOfEvent = eventType.MQEvent });
+                        }
+                       
                         //do filtered
                         if (line.StartsWith("["))
                         {
@@ -325,6 +341,7 @@ namespace MonoCore
                     {
                          if (!String.IsNullOrWhiteSpace(line))
                         {
+                          
                             foreach (var item in _commandList)
                             {
                                 //prevent spamming of an event to a user
@@ -355,7 +372,6 @@ namespace MonoCore
         }
         private static List<string> GetCommandFilters(List<string> values)
         {
-
             ////Stop /Only|Soandoso
             ////FollowOn /Only|Healers WIZ Soandoso
             ////followon /Not|Healers /Exclude|Uberhealer1
@@ -453,7 +469,11 @@ namespace MonoCore
                 return _tokenResult;
             }
         }
-
+        /// <summary>
+        /// Process all events in the queue on this current thread.
+        /// can specify keyname to only process certain keys
+        /// </summary>
+        /// <param name="keyName"></param>
         public static void ProcessEventsInQueues(string keyName = "")
         {
             foreach (var item in _eventList)
@@ -515,7 +535,6 @@ namespace MonoCore
                         continue;
                     }
                 }
-                //_log.Write($"Checking Event queue. Total:{item.Value.queuedEvents.Count}");
                 while (item.Value.queuedEvents.Count > 0)
                 {
 
@@ -665,6 +684,24 @@ namespace MonoCore
             _eventList.TryAdd(keyName, eventToAdd);
 
         }
+        /// <summary>
+        /// used by seperate threads of the main C# thread to get unfiltered events
+        /// directly to them without having to go through the normal procees loop
+        /// currently used by E3UI.
+        /// </summary>
+        /// <param name="keyName"></param>
+        /// <param name="method"></param>
+        public static void RegisterUnfilteredEventMethod(string keyName, Action<EventMatch> method)
+        {
+            _unfilteredEventMethodList.TryAdd(keyName, method);
+        }
+        /// <summary>
+        /// When you want an event to not be filtered by the default filtering
+        /// Do be careful of this, as you can loop yourself by accident.
+        /// </summary>
+        /// <param name="keyName"></param>
+        /// <param name="pattern"></param>
+        /// <param name="method"></param>
         public static void RegisterUnfilteredEvent(string keyName, string pattern, Action<EventMatch> method)
         {
             EventListItem eventToAdd = new EventListItem();
