@@ -33,6 +33,18 @@
 				<param name="Name" value="mq2mono_dev_introduction.html">
 				<param name="Local" value="mq2mono_dev_introduction.html">
 				</OBJECT>
+			<LI> <OBJECT type="text/sitemap">
+				<param name="Name" value="mq2mono_dev_commands.html">
+				<param name="Local" value="mq2mono_dev_commands.html">
+				</OBJECT>
+			<LI> <OBJECT type="text/sitemap">
+				<param name="Name" value="mq2mono_dev_QueryTLO.html">
+				<param name="Local" value="mq2mono_dev_QueryTLO.html">
+				</OBJECT>
+			<LI> <OBJECT type="text/sitemap">
+				<param name="Name" value="mq2mono_dev_delay.html">
+				<param name="Local" value="mq2mono_dev_delay.html">
+				</OBJECT>
 		</UL>
 	</UL>
 	<LI> <OBJECT type="text/sitemap">

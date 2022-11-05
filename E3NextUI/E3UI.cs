@@ -8,6 +8,7 @@ using System.Diagnostics;
 using System.Drawing;
 using System.Linq;
 using System.Runtime.CompilerServices;
+using System.Runtime.InteropServices;
 using System.Text;
 using System.Threading;
 using System.Threading.Tasks;
@@ -45,7 +46,7 @@ namespace E3NextUI
         public E3UI()
         {
             InitializeComponent();
-
+            SetCurrentProcessExplicitAppUserModelID("E3.E3UI.1");
             _stopWatch.Start();
             string[] args = Environment.GetCommandLineArgs();
             //AsyncIO.ForceDotNet.Force();
@@ -59,6 +60,7 @@ namespace E3NextUI
                     lock (_dealClient)
                     {
                         CharacterName = _dealClient.RequestData("${Me.CleanName}");
+                        this.Text = $"E3UI ({CharacterName})";
                         labelPlayerName.Text = CharacterName;
 
                     }
@@ -467,6 +469,8 @@ namespace E3NextUI
 
             aProp.SetValue(c, true, null);
         }
+        [DllImport("shell32.dll", SetLastError = true)]
+        static extern void SetCurrentProcessExplicitAppUserModelID([MarshalAs(UnmanagedType.LPWStr)] string AppID);
     }
     public class TextBoxInfo
     {

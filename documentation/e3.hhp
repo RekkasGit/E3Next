@@ -25,4 +25,7 @@ Display compile progress=Yes
 mq2mono_intro.html
 mq2mono_commands.html
 mq2mono_dev_introduction.html
+mq2mono_dev_commands.html
+mq2mono_dev_QueryTLO.html
+mq2mono_dev_delay.html
 test.html

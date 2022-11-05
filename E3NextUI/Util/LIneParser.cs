@@ -100,6 +100,7 @@ namespace E3NextUI.Util
                 if (TryUpdateCollection(line, _yourswarmDmg, _yourPetDamage, _yourPetDamageTime)) return;
                 if (TryUpdateCollection(line, _meleeDmgToYou, _damageToYou, _damageToYouTime)) return;
                 if (TryUpdateCollection(line, _dotDmgToYou, _damageToYou, _damageToYouTime)) return;
+                if (TryUpdateCollection(line, _spellDmgToYou, _damageToYou, _damageToYouTime)) return;
                 if (TryUpdateCollection(line, _damageshieldByYou, _yourDamageShieldDamage, _yourDamageShieldDamageTime)) return;
                 if (TryUpdateCollection(line, _healingYou, _healingToYou, _healingToYouTime)) return;
                 if (TryUpdateCollection(line, _selfHeals, _healingToYou, _healingToYouTime)) return;
@@ -131,11 +132,12 @@ namespace E3NextUI.Util
         //proc dmg by pet
         static System.Text.RegularExpressions.Regex _yourPetProcDmg = new System.Text.RegularExpressions.Regex(".+ was hit by non-melee for ([0-9]+) points of damage\\.");
         static System.Text.RegularExpressions.Regex _yourPetMelee = new System.Text.RegularExpressions.Regex($"{PetName} .+ for ([0-9]+) points of damage.");
-        static System.Text.RegularExpressions.Regex _yourswarmDmg = new System.Text.RegularExpressions.Regex($"{E3UI.CharacterName}'s pet hits .+ for ([0-9]+) points of");
+        static System.Text.RegularExpressions.Regex _yourswarmDmg = new System.Text.RegularExpressions.Regex($"{E3UI.CharacterName}`s pet hits .+ for ([0-9]+) points of");
 
         //damage to you
         static System.Text.RegularExpressions.Regex _meleeDmgToYou = new System.Text.RegularExpressions.Regex(".+ YOU for ([0-9]+) points of damage\\.");
         static System.Text.RegularExpressions.Regex _dotDmgToYou = new System.Text.RegularExpressions.Regex("You have taken ([0-9]+) damage");
+        static System.Text.RegularExpressions.Regex _spellDmgToYou = new System.Text.RegularExpressions.Regex("You have taken ([0-9]+) points of damage");
 
         //damage shield
         static System.Text.RegularExpressions.Regex _damageshieldByYou = new System.Text.RegularExpressions.Regex(".+ was hit by non-melee for ([0-9]+) points of damage\\.");
