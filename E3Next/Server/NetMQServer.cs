@@ -65,6 +65,11 @@ namespace E3Core.Server
             {
                 ToggleUI();
             });
+            EventProcessor.RegisterCommand("/ui-debug", (x) =>
+            {
+                Int32 processID = System.Diagnostics.Process.GetCurrentProcess().Id;
+                MQ.Write($"{PubPort} {RouterPort} {PubClientPort} {processID}");
+            });
         }
         /// <summary>
         /// Turns on the UI program, and then from then on, hide/shows it as needed. To close restart e3.
