@@ -24,9 +24,82 @@ namespace E3Core.Processors
 
         private static void RegisterEvents()
         {
-
+            EventProcessor.RegisterCommand("/restock", (x) =>
+            {
+                Restock();
+            });
         }
-        
+        private static void Restock()
+        {
+            string toEat = E3.CharacterSettings.Misc_AutoFood;
+            string toDrink = E3.CharacterSettings.Misc_AutoDrink;
+            int toEatQty = MQ.Query<int>($"${{FindItemCount[{toEat}]}}");
+            int toDrinkQty = MQ.Query<int>($"${{FindItemCount[{toDrink}]}}");
+
+            MQ.Write($"\agInitiating restock for {toEat} and {toDrink}");
+            if (toEatQty >= 1000 && toDrinkQty >= 1000)
+            {
+                MQ.Write($"\arYou already have more than a stack of {toEat} and {toDrink}! Skipping restock. ");
+                return;
+            }
+            else
+            {
+                int zoneID = E3.ZoneID;
+                int vendorID = 0;
+
+                if (zoneID == 345)
+                {
+                    //zoneID 345 = Guild Hall
+                    string vendorName = "Yenny Werlikanin";
+                    vendorID = MQ.Query<int>($"${{Spawn[{vendorName}].ID}}");
+
+                }
+                else if (zoneID == 202 || zoneID == 386)
+                {                
+                    //zoneID 202 = Plane of Knowledge
+                    //zoneId 386 = Marr temple
+                    string vendorName = "Vori";
+                    vendorID = MQ.Query<int>($"${{Spawn[{vendorName}].ID}}");
+                }
+
+                if (vendorID > 0)
+                {
+                    Casting.TrueTarget(vendorID);
+                    e3util.NavToSpawnID(vendorID);
+                    e3util.OpenMerchant();
+
+                    if (toEatQty < 1000)
+                    {
+                        int eatQtyNeeded = 1000 - toEatQty;
+                        if (String.IsNullOrWhiteSpace(toEat))
+                        {
+                            MQ.Write($"\arNo Food item defined in ini, skipping food restock. ");
+                        }
+                        else
+                        {
+                            Buy.BuyItem(toEat, eatQtyNeeded);
+                        }
+                    }
+                    if (toDrinkQty < 1000)
+                    {
+                        int drinkQtyNeeded = 1000 - toDrinkQty;
+                        if (String.IsNullOrWhiteSpace(toDrink))
+                        {
+                            MQ.Write($"\arNo Drink item defined in ini, skipping food restock. ");
+                        }
+                        else
+                        {
+                            Buy.BuyItem(toDrink, drinkQtyNeeded);
+                        }
+                    }
+                    e3util.CloseMerchant();
+                }
+                else
+                {
+                    MQ.Write($"\arNo valid vendor ID available.");
+                }
+            }
+        }
         /// <summary>
         /// Buy specified item from an open vendor window
         /// </summary>
