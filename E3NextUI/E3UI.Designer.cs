@@ -36,9 +36,9 @@ namespace E3NextUI
             this.richTextBoxConsole = new System.Windows.Forms.RichTextBox();
             this.richTextBoxMQConsole = new System.Windows.Forms.RichTextBox();
             this.splitContainer1 = new System.Windows.Forms.SplitContainer();
+            this.richTextBoxMelee = new System.Windows.Forms.RichTextBox();
             this.textBoxConsoleInput = new System.Windows.Forms.TextBox();
             this.splitContainer2 = new System.Windows.Forms.SplitContainer();
-            this.richTextBoxMelee = new System.Windows.Forms.RichTextBox();
             this.richTextBoxSpells = new System.Windows.Forms.RichTextBox();
             this.buttonResetParse = new System.Windows.Forms.Button();
             this.labelTotalDamage = new System.Windows.Forms.Label();
@@ -133,6 +133,7 @@ namespace E3NextUI
             this.richTextBoxConsole.Location = new System.Drawing.Point(0, 0);
             this.richTextBoxConsole.Name = "richTextBoxConsole";
             this.richTextBoxConsole.ReadOnly = true;
+            this.richTextBoxConsole.ScrollBars = System.Windows.Forms.RichTextBoxScrollBars.None;
             this.richTextBoxConsole.Size = new System.Drawing.Size(624, 236);
             this.richTextBoxConsole.TabIndex = 4;
             this.richTextBoxConsole.Text = "";
@@ -145,6 +146,7 @@ namespace E3NextUI
             this.richTextBoxMQConsole.ForeColor = System.Drawing.Color.FromArgb(((int)(((byte)(0)))), ((int)(((byte)(192)))), ((int)(((byte)(192)))));
             this.richTextBoxMQConsole.Location = new System.Drawing.Point(0, 0);
             this.richTextBoxMQConsole.Name = "richTextBoxMQConsole";
+            this.richTextBoxMQConsole.ScrollBars = System.Windows.Forms.RichTextBoxScrollBars.None;
             this.richTextBoxMQConsole.Size = new System.Drawing.Size(623, 206);
             this.richTextBoxMQConsole.TabIndex = 5;
             this.richTextBoxMQConsole.Text = "";
@@ -166,6 +168,18 @@ namespace E3NextUI
             this.splitContainer1.Size = new System.Drawing.Size(947, 236);
             this.splitContainer1.SplitterDistance = 319;
             this.splitContainer1.TabIndex = 6;
+            // 
+            // richTextBoxMelee
+            // 
+            this.richTextBoxMelee.BackColor = System.Drawing.Color.Black;
+            this.richTextBoxMelee.Dock = System.Windows.Forms.DockStyle.Fill;
+            this.richTextBoxMelee.ForeColor = System.Drawing.Color.White;
+            this.richTextBoxMelee.Location = new System.Drawing.Point(0, 0);
+            this.richTextBoxMelee.Name = "richTextBoxMelee";
+            this.richTextBoxMelee.ScrollBars = System.Windows.Forms.RichTextBoxScrollBars.None;
+            this.richTextBoxMelee.Size = new System.Drawing.Size(319, 236);
+            this.richTextBoxMelee.TabIndex = 0;
+            this.richTextBoxMelee.Text = "";
             // 
             // textBoxConsoleInput
             // 
@@ -193,17 +207,6 @@ namespace E3NextUI
             this.splitContainer2.SplitterDistance = 320;
             this.splitContainer2.TabIndex = 7;
             // 
-            // richTextBoxMelee
-            // 
-            this.richTextBoxMelee.BackColor = System.Drawing.Color.Black;
-            this.richTextBoxMelee.Dock = System.Windows.Forms.DockStyle.Fill;
-            this.richTextBoxMelee.ForeColor = System.Drawing.Color.White;
-            this.richTextBoxMelee.Location = new System.Drawing.Point(0, 0);
-            this.richTextBoxMelee.Name = "richTextBoxMelee";
-            this.richTextBoxMelee.Size = new System.Drawing.Size(319, 236);
-            this.richTextBoxMelee.TabIndex = 0;
-            this.richTextBoxMelee.Text = "";
-            // 
             // richTextBoxSpells
             // 
             this.richTextBoxSpells.BackColor = System.Drawing.Color.Black;
@@ -211,6 +214,7 @@ namespace E3NextUI
             this.richTextBoxSpells.ForeColor = System.Drawing.Color.LightSkyBlue;
             this.richTextBoxSpells.Location = new System.Drawing.Point(0, 0);
             this.richTextBoxSpells.Name = "richTextBoxSpells";
+            this.richTextBoxSpells.ScrollBars = System.Windows.Forms.RichTextBoxScrollBars.None;
             this.richTextBoxSpells.Size = new System.Drawing.Size(320, 206);
             this.richTextBoxSpells.TabIndex = 0;
             this.richTextBoxSpells.Text = "";

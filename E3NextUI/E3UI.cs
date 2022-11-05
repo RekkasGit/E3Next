@@ -437,7 +437,7 @@ namespace E3NextUI
                     {
                         ti.sb.AppendLine(ti.consoleBuffer[i]);
                     }
-
+                    ti.textBox.ScrollBars = RichTextBoxScrollBars.Both;
                     ti.textBox.Text = ti.sb.ToString();
                     ti.textBox.SelectionStart = ti.textBox.Text.Length;
                     ti.textBox.ScrollToCaret();
@@ -447,6 +447,7 @@ namespace E3NextUI
                 }
                 else
                 {
+                    ti.textBox.ScrollBars = RichTextBoxScrollBars.None;
                     ti.isDirty = true;
                 }
             }

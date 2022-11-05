@@ -54,10 +54,10 @@ namespace E3Core.Server
 
                 if(x.typeOfEvent== EventProcessor.eventType.EQEvent)
                 {
-                    PubServer._pubMessages.Enqueue(x.eventString);
+                    PubServer.IncomingChatMessages.Enqueue(x.eventString);
                 }else if(x.typeOfEvent == EventProcessor.eventType.MQEvent)
                 {
-                    PubServer._pubWriteColorMessages.Enqueue(x.eventString);
+                    PubServer.MQChatMessages.Enqueue(x.eventString);
                 }
 
             });
@@ -92,7 +92,7 @@ namespace E3Core.Server
                 }
                 else 
                 {
-                    PubServer._pubCommands.Enqueue("#toggleshow");
+                    PubServer.CommandsToSend.Enqueue("#toggleshow");
                    
                 }
             }

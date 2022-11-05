@@ -23,11 +23,10 @@ namespace E3Core.Server
 
         Task _serverThread = null;
 
-        public static ConcurrentQueue<string> _pubMessages = new ConcurrentQueue<string>();
-        public static ConcurrentQueue<string> _pubWriteColorMessages = new ConcurrentQueue<string>();
-        public static ConcurrentQueue<string> _pubCommands = new ConcurrentQueue<string>();
-        public static ConcurrentQueue<string> _hpValues = new ConcurrentQueue<string>();
-        private static ConcurrentQueue<topicMessagePair> _topicMessages = new ConcurrentQueue<topicMessagePair>();
+        public static ConcurrentQueue<string> IncomingChatMessages = new ConcurrentQueue<string>();
+        public static ConcurrentQueue<string> MQChatMessages = new ConcurrentQueue<string>();
+        public static ConcurrentQueue<string> CommandsToSend = new ConcurrentQueue<string>();
+       private static ConcurrentQueue<topicMessagePair> _topicMessages = new ConcurrentQueue<topicMessagePair>();
 
         public static Int32 PubPort = 0;
 
@@ -64,29 +63,29 @@ namespace E3Core.Server
                             pubSocket.SendMoreFrame(value.topic).SendFrame(value.message);
                         }
                     }
-                   while(_pubMessages.Count > 0)
+                   while(IncomingChatMessages.Count > 0)
                     {
                         string message;
-                        if (_pubMessages.TryDequeue(out message))
+                        if (IncomingChatMessages.TryDequeue(out message))
                         {
 
                             pubSocket.SendMoreFrame("OnIncomingChat").SendFrame(message);
                         }
                     }
-                   while (_pubWriteColorMessages.Count > 0)
+                   while (MQChatMessages.Count > 0)
                     {
                         string message;
-                        if (_pubWriteColorMessages.TryDequeue(out message))
+                        if (MQChatMessages.TryDequeue(out message))
                         {
 
                             pubSocket.SendMoreFrame("OnWriteChatColor").SendFrame(message);
 
                         }
                     }
-                    while(_pubCommands.Count > 0)
+                    while(CommandsToSend.Count > 0)
                     {
                         string message;
-                        if (_pubCommands.TryDequeue(out message))
+                        if (CommandsToSend.TryDequeue(out message))
                         {
 
                             pubSocket.SendMoreFrame("OnCommand").SendFrame(message);
