@@ -28,7 +28,7 @@ namespace E3Core.Processors
         {
 
 
-            if (_waitingOnRez)
+            if (_waitingOnRez || Basics.AmIDead())
             {
                 //check for dialog box
                 if (MQ.Query<bool>("${Window[ConfirmationDialogBox].Open}"))
@@ -63,7 +63,7 @@ namespace E3Core.Processors
                         MQ.Cmd("/corpse");
                         MQ.Delay(1000);
                         MQ.Cmd("/loot");
-                        MQ.Delay(1000);
+                        MQ.Delay(1000, "${Window[LootWnd].Open}");
                         MQ.Cmd("/notify LootWnd LootAllButton leftmouseup");
                         MQ.Delay(20000, "!${Window[LootWnd].Open}");
 
@@ -182,7 +182,8 @@ namespace E3Core.Processors
 
             Movement.RemoveFollow();
 
-            CreateCorpseList();
+            _corpseList.Clear();
+            _corpseList = CreateCorpseList();
             List<Int32> corpsesRaised = new List<int>();
             foreach (var corpseid in _corpseList)
             {
@@ -266,12 +267,12 @@ namespace E3Core.Processors
             }
 
         }
-        private static void CreateCorpseList()
+        public static List<int> CreateCorpseList()
         {
-            _corpseList.Clear();
             //lets get a corpse list
             _spawns.RefreshList();
 
+            var corpseList = new List<int>();
             //lets find the clerics in range
             foreach (var spawn in _spawns.Get())
             {
@@ -281,7 +282,7 @@ namespace E3Core.Processors
                     MQ.Delay(500);
                     if (WaitForRez.CanRez())
                     {
-                        _corpseList.Add(spawn.ID);
+                        corpseList.Add(spawn.ID);
                     }
                 }
             }
@@ -293,7 +294,7 @@ namespace E3Core.Processors
                     MQ.Delay(500);
                     if (WaitForRez.CanRez())
                     {
-                        _corpseList.Add(spawn.ID);
+                        corpseList.Add(spawn.ID);
                     }
                 }
             }
@@ -307,13 +308,15 @@ namespace E3Core.Processors
                     if (WaitForRez.CanRez())
                     {
                         //lists are super small so contains is fine
-                        if (!_corpseList.Contains(spawn.ID))
+                        if (!corpseList.Contains(spawn.ID))
                         {
-                            _corpseList.Add(spawn.ID);
+                            corpseList.Add(spawn.ID);
                         }
                     }
                 }
             }
+
+            return corpseList;
         }
         private static void RegisterEvents()
         {
