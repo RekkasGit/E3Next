@@ -374,6 +374,7 @@ namespace E3Core.Processors
             _isAssisting = false;
             _allowControl = false;
             _assistTargetID = 0;
+            _assistIsEnraged = false;
             if (MQ.Query<bool>("${Stick.Status.Equal[ON]}")) MQ.Cmd("/squelch /stick off");
            
 
@@ -394,7 +395,7 @@ namespace E3Core.Processors
         /// <param name="mobID">The mob identifier.</param>
         public static void AssistOn(Int32 mobID)
         {
-           
+
             //clear in case its not reset by other means
             //or you want to attack in enrage
             _assistIsEnraged = false;
@@ -597,6 +598,10 @@ namespace E3Core.Processors
         {
              EventProcessor.RegisterCommand("/assistme", (x) =>
             {
+                //clear in case its not reset by other means
+                //or you want to attack in enrage
+                _assistIsEnraged = false;
+
                 if (x.args.Count == 0)
                 {
                   
