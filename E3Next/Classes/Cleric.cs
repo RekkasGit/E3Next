@@ -37,6 +37,7 @@ namespace E3Core.Classes
             "Revive",
             "Reparation"
         };
+        private static List<Spell> _currentRezSpells = new List<Spell>();
 
         /// <summary>
         /// Initializes this instance.
