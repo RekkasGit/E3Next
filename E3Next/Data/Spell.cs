@@ -334,14 +334,15 @@ namespace E3Core.Data
             else if (MQ.Query<bool>($"${{Me.Ability[{CastName}]}}")) {
                 CastType = CastType.Ability;
             }
+            else if (MQ.Query<bool>($"${{FindItem[={CastName}]}}"))
+            {
+
+                CastType = CastType.Item;
+            }
             else if (MQ.Query<bool>($"${{Spell[{CastName}]}}"))
             {
                 //final check to see if its a spell, that maybe a mob casts?
                 CastType = CastType.Spell;
-            }
-            else if (MQ.Query<bool>($"${{FindItem[={CastName}]}}")) {
-                
-                CastType = CastType.Item;
             } 
             else
             {
