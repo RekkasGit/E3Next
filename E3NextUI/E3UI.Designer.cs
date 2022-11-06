@@ -70,6 +70,8 @@ namespace E3NextUI
             this.labelStaminia = new System.Windows.Forms.Label();
             this.labelCastingValue = new System.Windows.Forms.Label();
             this.labelCasting = new System.Windows.Forms.Label();
+            this.labelHealingByYou = new System.Windows.Forms.Label();
+            this.labelHealingByYouValue = new System.Windows.Forms.Label();
             ((System.ComponentModel.ISupportInitialize)(this.splitContainer1)).BeginInit();
             this.splitContainer1.Panel1.SuspendLayout();
             this.splitContainer1.Panel2.SuspendLayout();
@@ -221,7 +223,7 @@ namespace E3NextUI
             // 
             // buttonResetParse
             // 
-            this.buttonResetParse.Location = new System.Drawing.Point(536, 66);
+            this.buttonResetParse.Location = new System.Drawing.Point(649, 9);
             this.buttonResetParse.Name = "buttonResetParse";
             this.buttonResetParse.Size = new System.Drawing.Size(75, 23);
             this.buttonResetParse.TabIndex = 8;
@@ -331,7 +333,7 @@ namespace E3NextUI
             // labelDamageToYou
             // 
             this.labelDamageToYou.AutoSize = true;
-            this.labelDamageToYou.Location = new System.Drawing.Point(500, 14);
+            this.labelDamageToYou.Location = new System.Drawing.Point(496, 14);
             this.labelDamageToYou.Name = "labelDamageToYou";
             this.labelDamageToYou.Size = new System.Drawing.Size(92, 13);
             this.labelDamageToYou.TabIndex = 19;
@@ -510,6 +512,24 @@ namespace E3NextUI
             this.labelCasting.TabIndex = 37;
             this.labelCasting.Text = "Casting:";
             // 
+            // labelHealingByYou
+            // 
+            this.labelHealingByYou.AutoSize = true;
+            this.labelHealingByYou.Location = new System.Drawing.Point(501, 63);
+            this.labelHealingByYou.Name = "labelHealingByYou";
+            this.labelHealingByYou.Size = new System.Drawing.Size(87, 13);
+            this.labelHealingByYou.TabIndex = 39;
+            this.labelHealingByYou.Text = "Healing By YOU:";
+            // 
+            // labelHealingByYouValue
+            // 
+            this.labelHealingByYouValue.AutoSize = true;
+            this.labelHealingByYouValue.Location = new System.Drawing.Point(598, 63);
+            this.labelHealingByYouValue.Name = "labelHealingByYouValue";
+            this.labelHealingByYouValue.Size = new System.Drawing.Size(13, 13);
+            this.labelHealingByYouValue.TabIndex = 40;
+            this.labelHealingByYouValue.Text = "0";
+            // 
             // E3UI
             // 
             this.AutoScaleDimensions = new System.Drawing.SizeF(6F, 13F);
@@ -517,6 +537,8 @@ namespace E3NextUI
             this.AutoSize = true;
             this.ClientSize = new System.Drawing.Size(947, 659);
             this.ControlBox = false;
+            this.Controls.Add(this.labelHealingByYouValue);
+            this.Controls.Add(this.labelHealingByYou);
             this.Controls.Add(this.labelCastingValue);
             this.Controls.Add(this.labelCasting);
             this.Controls.Add(this.labelStaminaValue);
@@ -613,6 +635,8 @@ namespace E3NextUI
         private System.Windows.Forms.Label labelStaminia;
         private System.Windows.Forms.Label labelCastingValue;
         private System.Windows.Forms.Label labelCasting;
+        private System.Windows.Forms.Label labelHealingByYou;
+        private System.Windows.Forms.Label labelHealingByYouValue;
     }
 }
 

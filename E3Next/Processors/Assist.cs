@@ -364,10 +364,13 @@ namespace E3Core.Processors
 
 
             if (Casting.IsCasting()) MQ.Cmd("/interrupt");
-            if (MQ.Query<bool>("${Me.Combat}")) MQ.Cmd("/attack off"); 
-            if (MQ.Query<bool>("${Me.AutoFire}")) MQ.Cmd("/autofire"); MQ.Delay(1000);
+            if (MQ.Query<bool>("${Me.Combat}")) MQ.Cmd("/attack off");
+            if (MQ.Query<bool>("${Me.AutoFire}"))
+            {
+                MQ.Cmd("/autofire"); 
+                MQ.Delay(1000);
+            }
             if (MQ.Query<Int32>("${Me.Pet.ID}") > 0) MQ.Cmd("/squelch /pet back off");
-            MQ.Delay(500,"!${Me.AutoFire}]}");
             _isAssisting = false;
             _allowControl = false;
             _assistTargetID = 0;

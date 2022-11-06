@@ -151,6 +151,9 @@ namespace E3NextUI
                     Int64 healingToyou = LineParser._healingToYou.Sum();
                     labelHealingYouValue.Text = healingToyou.ToString("N0");
 
+                    Int64 healingByYou = LineParser._healingByYou.Sum();
+                    labelHealingByYouValue.Text = healingByYou.ToString("N0");
+
                     //need to find the start of each colleciton
                     //and end of each collection taking the lowest of start
                     //and highest of end

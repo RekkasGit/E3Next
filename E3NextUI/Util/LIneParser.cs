@@ -28,6 +28,9 @@ namespace E3NextUI.Util
         public static List<Int32> _healingToYou = new List<int>(1000000);
         public static List<Int64> _healingToYouTime = new List<Int64>(1000000);
 
+        public static List<Int32> _healingByYou = new List<int>(1000000);
+        public static List<Int64> _healingByYouTime = new List<Int64>(1000000);
+
         public static Int64 _lastCombatCheck = 0;
         public static bool _currentlyCombat = false;
         public static object _objectLock = new object();
@@ -47,6 +50,8 @@ namespace E3NextUI.Util
                 _damageToYouTime.Clear();
                 _healingToYou.Clear();
                 _healingToYouTime.Clear();
+                _healingByYou.Clear();
+                _healingByYouTime.Clear();
             }
         
         }
@@ -104,6 +109,8 @@ namespace E3NextUI.Util
                 if (TryUpdateCollection(line, _damageshieldByYou, _yourDamageShieldDamage, _yourDamageShieldDamageTime)) return;
                 if (TryUpdateCollection(line, _healingYou, _healingToYou, _healingToYouTime)) return;
                 if (TryUpdateCollection(line, _selfHeals, _healingToYou, _healingToYouTime)) return;
+                if (TryUpdateCollection(line, _healingByYouRegex, _healingByYou, _healingByYouTime)) return;
+
             }
         }
         private static bool TryUpdateCollection(string line,Regex reg, List<Int32> collection, List<Int64> timeCollection)
@@ -145,6 +152,7 @@ namespace E3NextUI.Util
 
         static System.Text.RegularExpressions.Regex _healingYou = new System.Text.RegularExpressions.Regex(".+ has healed you for ([0-9]+) points\\.");
         static System.Text.RegularExpressions.Regex _selfHeals = new System.Text.RegularExpressions.Regex("You have been healed for ([0-9]+) hit points");
+        static System.Text.RegularExpressions.Regex _healingByYouRegex = new System.Text.RegularExpressions.Regex("You have healed .+ for ([0-9]+) points\\.");
 
     }
 }
