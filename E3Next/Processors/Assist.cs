@@ -143,7 +143,7 @@ namespace E3Core.Processors
                         if (_meleeTypes.Contains(E3.CharacterSettings.Assist_Type, StringComparer.OrdinalIgnoreCase))
                         {
                             //we are melee lets check for enrage
-                            if (_assistIsEnraged && MQ.Query<bool>("${Me.Combat}"))
+                            if (_assistIsEnraged && MQ.Query<bool>("${Me.Combat}") && !MQ.Query<bool>("${Stick.Behind}"))
                             {
                                 MQ.Cmd("/attack off");
                                 return;
