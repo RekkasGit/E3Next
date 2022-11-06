@@ -111,7 +111,18 @@ namespace E3Core.Processors
             {
                 Loot.Process();
             }
+            CheckModifiedSettings();
+        }
+        private static void CheckModifiedSettings()
+        {
+            if (!e3util.ShouldCheck(ref _nextReloadSettingsCheck, _nextReloadSettingsInterval)) return;
 
+            if (CharacterSettings.ShouldReload())
+            {
+                E3.Bots.Broadcast("\aoAuto-Reloading Character settings file...");
+                CharacterSettings = new CharacterSettings();
+                E3.Bots.Broadcast("\aoComplete!");
+            }
         }
         private static bool IsPaused()
         {
@@ -257,5 +268,7 @@ namespace E3Core.Processors
         public static int ProcessDelay = 50;
         public static ISpawns Spawns = Core.spawnInstance;
         public static bool IsInvis;
+        private static Int64 _nextReloadSettingsCheck = 0;
+        private static Int64 _nextReloadSettingsInterval = 2000;
     }
 }

@@ -57,6 +57,7 @@ namespace E3Core.Settings
         public string Assist_MeleeDistance = "MaxMelee";
         public string Assist_RangeDistance = "100";
         public int Assist_AutoAssistPercent = 98;
+      
 
         //abilities
         public List<Spell> MeleeAbilities = new List<Spell>();
@@ -174,7 +175,8 @@ namespace E3Core.Settings
         public List<Spell> OffAssistSpells = new List<Spell>();
 
 #pragma warning restore CS1591 // Missing XML comment for publicly visible type or member
-
+        private System.DateTime _fileLastModified;
+        private string _fileLastModifiedFileName;
         /// <summary>
         /// Initializes a new instance of the <see cref="CharacterSettings"/> class.
         /// </summary>
@@ -188,7 +190,14 @@ namespace E3Core.Settings
         }
 
       
-
+        public bool ShouldReload()
+        {
+            if(_fileLastModified != System.IO.File.GetLastWriteTime(_fileLastModifiedFileName))
+            {
+                return true;
+            }
+            return false;
+        }
         /// <summary>
         /// Loads the data.
         /// </summary>
@@ -228,6 +237,8 @@ namespace E3Core.Settings
                 _log.Write($"Loading up {fullPathToUse}");
                 ParsedData = fileIniData.ReadFile(fullPathToUse);
             }
+            _fileLastModified = System.IO.File.GetLastWriteTime(fullPathToUse);
+            _fileLastModifiedFileName = fullPathToUse;
 
             LoadKeyData("Misc", "AutoFood", ParsedData, ref Misc_AutoFoodEnabled);
             LoadKeyData("Misc", "Food", ParsedData, ref Misc_AutoFood);
