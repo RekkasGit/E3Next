@@ -315,12 +315,12 @@ namespace E3Core.Processors
                 if (importantItem)
                 {
                     //lets loot it if we can!
-                    MQ.Cmd($"/itemnotify loot{i} rightmouseup");
+                    MQ.Cmd($"/nomodkey /itemnotify loot{i} rightmouseup");
                     MQ.Delay(300);
                     bool qtyWindowUp = MQ.Query<bool>("${Window[QuantityWnd].Open}");
                     if(qtyWindowUp)
                     {
-                        MQ.Cmd($"/notify QuantityWnd QTYW_Accept_Button leftmouseup");
+                        MQ.Cmd($"/nomodkey /notify QuantityWnd QTYW_Accept_Button leftmouseup");
                         MQ.Delay(300);
                     }
                 }
@@ -339,7 +339,7 @@ namespace E3Core.Processors
 
         private static void PrintLink(string message)
         {
-            MQ.Cmd("/keypress /");
+            MQ.Cmd("/nomodkey /keypress /");
             foreach(char c in message)
             {
                 if(c==' ')
@@ -352,9 +352,9 @@ namespace E3Core.Processors
                 }
             }
             MQ.Delay(100);
-            MQ.Cmd("/notify LootWnd BroadcastButton leftmouseup");
+            MQ.Cmd("/nomodkey /notify LootWnd BroadcastButton leftmouseup");
             MQ.Delay(100);
-            MQ.Cmd("/keypress enter chat");
+            MQ.Cmd("/nomodkey /keypress enter chat");
             MQ.Delay(100);
         }
         private static bool FoundStackableFitInInventory(string corpseItem, Int32 count)
