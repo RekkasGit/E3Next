@@ -99,7 +99,7 @@ namespace E3Core.Processors
                 _mq.Cmd("/makemevisible");
             });
 
-            EventProcessor.RegisterCommand("/reload", (x) =>
+            EventProcessor.RegisterCommand("/e3reload", (x) =>
             {
                 E3.Bots.Broadcast("\aoReloading settings files...");
                 E3.CharacterSettings = new CharacterSettings();
