@@ -541,7 +541,18 @@ namespace E3Core.Utility
                 }
             }
         }
+        public static string FormatServerName(string serverName)
+        {
 
+            if (string.IsNullOrWhiteSpace(serverName)) return "Lazarus";
+
+            if (serverName.Equals("Project Lazarus"))
+            {
+                return "Lazarus";
+            }
+
+            return serverName.Replace(" ", "_");
+        }
         public static FileIniDataParser CreateIniParser()
         {
             var fileIniData = new FileIniDataParser();

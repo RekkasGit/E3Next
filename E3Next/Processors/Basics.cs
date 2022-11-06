@@ -99,6 +99,15 @@ namespace E3Core.Processors
                 _mq.Cmd("/makemevisible");
             });
 
+            EventProcessor.RegisterCommand("/reload", (x) =>
+            {
+                E3.Bots.Broadcast("\aoReloading settings files...");
+                E3.CharacterSettings = new CharacterSettings();
+                E3.AdvancedSettings = new AdvancedSettings();
+                E3.GeneralSettings = new GeneralSettings();
+                E3.Bots.Broadcast("\aoComplete!");
+
+            });
             //EventProcessor.RegisterCommand("/ui", (x) =>
             //{
             //    E3._uiForm.ToggleShow();

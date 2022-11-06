@@ -133,7 +133,11 @@ namespace TestCore
                 Console.WriteLine("CMD:"+query);
                //do work
             }
-
+            public void Cmd(string query,Int32 delay)
+            {
+                Console.WriteLine("CMD:" + query);
+                //do work
+            }
             public void Delay(int value)
             {
               

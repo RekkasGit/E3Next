@@ -43,13 +43,20 @@ namespace E3Core.Settings
 
         public AdvancedSettings()
         {
-            
-            InitMethods();
+
+            Reset();
             LoadData();
         
         }
+        private void Reset()
+        {
+            _methodLookup.Clear();
+            _classMethodLookup.Clear();
+            _classMethodsAsStrings.Clear();
+        }
         public void LoadData()
         {
+            InitMethods();
             string filename = GetSettingsFilePath("Advanced Settings.ini");
       
             IniData parsedData;

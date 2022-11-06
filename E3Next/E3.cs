@@ -1,6 +1,7 @@
 ﻿using E3Core.Classes;
 using E3Core.Server;
 using E3Core.Settings;
+using E3Core.Utility;
 using MonoCore;
 using NetMQ;
 using System;
@@ -181,14 +182,21 @@ namespace E3Core.Processors
                 CurrentId = Mq.Query<int>("${Me.ID}");
                 //do first to get class information
                 Bots = new Bots();
-                CharacterSettings = new Settings.CharacterSettings();
-                CurrentClass = CharacterSettings._characterClass;
+
+                CurrentName = Mq.Query<string>("${Me.CleanName}");
+                ServerName = e3util.FormatServerName(Mq.Query<string>("${MacroQuest.Server}"));
+                //deal with the Shadow Knight class issue.
+                string classValue = Mq.Query<string>("${Me.Class}");
+                if (classValue == "Shadow Knight")
+                {
+                    classValue = "Shadowknight";
+                }
+                Enum.TryParse(classValue, out CurrentClass);
                 CurrentLongClassString = CurrentClass.ToString();
                 CurrentShortClassString = Data.Classes._classLongToShort[CurrentLongClassString];
 
-
-                //end class information
-
+                //Init the settings
+                CharacterSettings = new Settings.CharacterSettings();
                 GeneralSettings = new Settings.GeneralSettings();
                 AdvancedSettings = new Settings.AdvancedSettings();
 
@@ -233,10 +241,12 @@ namespace E3Core.Processors
         public static Settings.AdvancedSettings AdvancedSettings = null;
         public static IBots Bots = null;
         public static string CurrentName;
+        public static Data.Class CurrentClass;
+        public static string ServerName;
         public static string CurrentPetName = String.Empty;
         public static bool CurrentInCombat = false;
         public static int CurrentId;
-        public static Data.Class CurrentClass;
+        
         public static string CurrentLongClassString;
         public static string CurrentShortClassString;
         public static int CurrentHps;

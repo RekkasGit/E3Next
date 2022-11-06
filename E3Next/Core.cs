@@ -1064,6 +1064,7 @@ namespace MonoCore
     {
         T Query<T>(string query);
         void Cmd(string query);
+        void Cmd(string query,Int32 delay);
         void Write(string query, [CallerMemberName] string memberName = "", [CallerFilePath] string fileName = "", [CallerLineNumber] int lineNumber = 0);
         void TraceStart(string methodName);
         void TraceEnd(string methodName);
@@ -1214,6 +1215,11 @@ namespace MonoCore
             //we are now going to wait on the core
             MainProcessor._processResetEvent.Wait();
             MainProcessor._processResetEvent.Reset();
+        }
+        public void Cmd(string query, Int32 delay)
+        {
+            Cmd(query);
+            Delay(delay);
         }
 
         public void Broadcast(string query)

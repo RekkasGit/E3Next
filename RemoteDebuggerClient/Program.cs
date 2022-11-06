@@ -367,7 +367,12 @@ namespace MQServerClient
             Console.WriteLine("CMD:" + query);
             //do work
         }
+        public void Cmd(string query, Int32 delay)
+        {
+            Cmd(query);
+            Delay(delay);
 
+        }
         public void Delay(int value)
         {
             //set so we don't lock up the screen
@@ -375,9 +380,7 @@ namespace MQServerClient
             {
                 value = 150;
             }
-
             System.Threading.Thread.Sleep(value);
-
         }
 
         public bool Delay(int maxTimeToWait, string Condition)
@@ -762,176 +765,4 @@ namespace MQServerClient
         }
     }
 
-    public class ClientMQ : MonoCore.IMQ
-    {
-        RestClient client = new RestClient("http://192.168.1.191:"+ RemoteDebugServerConfig.HTTPPort.ToString());
-        public void Broadcast(string query)
-        {
-            query = @"bc " + query;
-            Cmd(query);    
-        }
-
-        public void Cmd(string query)
-        {
-            if(query.StartsWith(@"/"))
-            {
-                query = query.Substring(1, query.Length - 1);
-            }
-            var request = new RestRequest("command/" + query, Method.Get);
-            RestResponse response = client.Execute(request);
-            client.Execute(request);
-            Console.WriteLine("CMD:" + query);
-            //do work
-        }
-
-        public void Delay(int value)
-        {
-
-            System.Threading.Thread.Sleep(value);
-           
-        }
-
-        public bool Delay(int maxTimeToWait, string Condition)
-        {
-            Int64 startingTime = Core._stopWatch.ElapsedMilliseconds;
-            while (!this.Query<bool>(Condition))
-            {
-                if (Core._stopWatch.ElapsedMilliseconds - startingTime > maxTimeToWait)
-                {
-                    return false;
-                }
-                System.Threading.Thread.Sleep(10);
-            }
-            return true;
-        }
-        public bool Delay(int maxTimeToWait, Func<bool> methodToCheck)
-        {
-            Int64 startingTime = Core._stopWatch.ElapsedMilliseconds;
-            while (!methodToCheck.Invoke())
-            {
-                if (Core._stopWatch.ElapsedMilliseconds - startingTime > maxTimeToWait)
-                {
-                    return false;
-                }
-                System.Threading.Thread.Sleep(10);
-            }
-            return true;
-        }
-        public T Query<T>(string query)
-        {
-            Console.WriteLine("<Query>:" + query);
-            var request = new RestRequest("/TLO/"+query, Method.Get);
-            RestResponse response = client.Execute(request);
-
-            string mqReturnValue = response.Content;
-            if (typeof(T) == typeof(Int32))
-            {
-                Int32 value;
-                if (Int32.TryParse(mqReturnValue, out value))
-                {
-                    return (T)(object)value;
-                }
-            }
-            else if (typeof(T) == typeof(Boolean))
-            {
-                Boolean booleanValue;
-                if (Boolean.TryParse(mqReturnValue, out booleanValue))
-                {
-                    return (T)(object)booleanValue;
-                }
-                if (mqReturnValue == "NULL")
-                {
-                    return (T)(object)false;
-                }
-                Int32 intValue;
-                if (Int32.TryParse(mqReturnValue, out intValue))
-                {
-                    if (intValue > 0)
-                    {
-                        return (T)(object)true;
-                    }
-                    return (T)(object)false;
-                }
-                if (string.IsNullOrWhiteSpace(mqReturnValue))
-                {
-                    return (T)(object)false;
-                }
-
-                return (T)(object)true;
-
-
-            }
-            else if (typeof(T) == typeof(string))
-            {
-                return (T)(object)mqReturnValue;
-            }
-            else if (typeof(T) == typeof(decimal))
-            {
-                Decimal value;
-                if (Decimal.TryParse(mqReturnValue, out value))
-                {
-                    return (T)(object)value;
-                }
-            }
-            else if (typeof(T) == typeof(double))
-            {
-                double value;
-                if (double.TryParse(mqReturnValue, out value))
-                {
-                    return (T)(object)value;
-                }
-            }
-            else if (typeof(T) == typeof(Int64))
-            {
-                Int64 value;
-                if (Int64.TryParse(mqReturnValue, out value))
-                {
-                    return (T)(object)value;
-                }
-            }
-
-
-            return default(T);
-
-        }
-
-        public void TraceStart(string methodName)
-        {
-            if (String.IsNullOrWhiteSpace(methodName))
-            {
-                return;
-            }
-            this.Write($"|- {methodName} ==>");
-        }
-        public void TraceEnd(string methodName)
-        {
-            if (String.IsNullOrWhiteSpace(methodName))
-            {
-                return;
-            }
-            this.Write($"<== {methodName} -|");
-        }
-
-        public void Write(string query, [CallerMemberName] string memberName = "", [CallerFilePath] string fileName = "", [CallerLineNumber] int lineNumber = 0)
-        {
-            var request = new RestRequest("write/" + query, Method.Get);
-            RestResponse response = client.Execute(request);
-            Console.WriteLine($"[{System.DateTime.Now.ToString("HH:mm:ss")}] {query}");
-        }
-
-        public bool AddCommand(string query)
-        {
-            throw new NotImplementedException();
-        }
-
-        public void ClearCommands()
-        {
-            throw new NotImplementedException();
-        }
-
-        public void RemoveCommand(string query)
-        {
-            throw new NotImplementedException();
-        }
-    }
 }

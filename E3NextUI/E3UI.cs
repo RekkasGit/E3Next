@@ -1,4 +1,5 @@
 ﻿using E3NextUI.Server;
+using E3NextUI.Settings;
 using E3NextUI.Util;
 using System;
 using System.Collections.Generic;
@@ -29,8 +30,9 @@ namespace E3NextUI
         Task _consoleMeleeTask;
         Task _consoleSpellTask;
         Task _updateParse;
+        Task _globalUpdate;
         private object _objLock = new object();
-        public static DealerClient _dealClient;
+        public static DealerClient _tloClient;
         private PubClient _pubClient;
         private PubServer _pubServer;
         public static TextBoxInfo _console;
@@ -40,31 +42,38 @@ namespace E3NextUI
         public static string CharacterName;
         public static Int32 _parentProcess;
         public static object _objectLock = new object();
-
-
+        public static GeneralSettings _genSettings;
+        public Image _collapseConsoleImage;
 
         public E3UI()
         {
             InitializeComponent();
+            pbCollapseConsole.Image.RotateFlip(RotateFlipType.Rotate180FlipNone);
+            _collapseConsoleImage = (Image)pbCollapseConsole.Image.Clone();
+            
             SetCurrentProcessExplicitAppUserModelID("E3.E3UI.1");
             _stopWatch.Start();
             string[] args = Environment.GetCommandLineArgs();
-            //AsyncIO.ForceDotNet.Force();
+
+
+            string configFolder = "";
+
             if (args.Length > 1)
             {
                 Int32 port = Int32.Parse(args[2]);
                 //get this first as its used in the regex for parsing for name.
-                _dealClient = new DealerClient(port);
-                if (_dealClient != null)
+                _tloClient = new DealerClient(port);
+                if (_tloClient != null)
                 {
-                    lock (_dealClient)
+                    lock (_tloClient)
                     {
-                        CharacterName = _dealClient.RequestData("${Me.CleanName}");
+                        CharacterName = _tloClient.RequestData("${Me.CleanName}");
                         this.Text = $"E3UI ({CharacterName})";
                         labelPlayerName.Text = CharacterName;
-
+                        configFolder = _tloClient.RequestData("${MacroQuest.Path[config]}");
                     }
                 }
+               
                 _pubClient = new PubClient();
                 port = Int32.Parse(args[1]);
                 _pubClient.Start(port);
@@ -73,7 +82,23 @@ namespace E3NextUI
                 _pubServer.Start(port);
                 _parentProcess = Int32.Parse(args[4]);
 
+
             }
+
+            _genSettings = new GeneralSettings(configFolder, CharacterName);
+            _genSettings.LoadData();
+
+
+            if(_genSettings.StartLocationX>0 || _genSettings.StartLocationY>0)
+            {
+                this.StartPosition = FormStartPosition.Manual;
+                var point = new Point(_genSettings.StartLocationX, _genSettings.StartLocationY);
+                var size = new Size(_genSettings.Width, _genSettings.Height);
+                this.DesktopBounds = new Rectangle(point, size);
+          
+            }
+           
+
             SetDoubleBuffered(richTextBoxConsole);
             SetDoubleBuffered(richTextBoxMQConsole);
             SetDoubleBuffered(richTextBoxMelee);
@@ -84,137 +109,214 @@ namespace E3NextUI
             _meleeConsole = new TextBoxInfo() { textBox = richTextBoxMelee };
             _spellConsole = new TextBoxInfo() { textBox = richTextBoxSpells };
     
-            _consoleTask = Task.Factory.StartNew(() => { ProcessUI(_console); }, CancellationToken.None, TaskCreationOptions.DenyChildAttach, TaskScheduler.Default);
-            _consoleMQTask = Task.Factory.StartNew(() => { ProcessUI(_mqConsole); }, CancellationToken.None, TaskCreationOptions.DenyChildAttach, TaskScheduler.Default);
-            _consoleMeleeTask = Task.Factory.StartNew(() => { ProcessUI(_meleeConsole); }, CancellationToken.None, TaskCreationOptions.DenyChildAttach, TaskScheduler.Default);
-            _consoleSpellTask = Task.Factory.StartNew(() => { ProcessUI(_spellConsole); }, CancellationToken.None, TaskCreationOptions.DenyChildAttach, TaskScheduler.Default);
+            _consoleTask = Task.Factory.StartNew(() => { ProcessConsoleUI(_console); }, CancellationToken.None, TaskCreationOptions.DenyChildAttach, TaskScheduler.Default);
+            _consoleMQTask = Task.Factory.StartNew(() => { ProcessConsoleUI(_mqConsole); }, CancellationToken.None, TaskCreationOptions.DenyChildAttach, TaskScheduler.Default);
+            _consoleMeleeTask = Task.Factory.StartNew(() => { ProcessConsoleUI(_meleeConsole); }, CancellationToken.None, TaskCreationOptions.DenyChildAttach, TaskScheduler.Default);
+            _consoleSpellTask = Task.Factory.StartNew(() => { ProcessConsoleUI(_spellConsole); }, CancellationToken.None, TaskCreationOptions.DenyChildAttach, TaskScheduler.Default);
             _updateParse = Task.Factory.StartNew(() => { ProcessParse(); }, CancellationToken.None, TaskCreationOptions.DenyChildAttach, TaskScheduler.Default);
 
+            _globalUpdate = Task.Factory.StartNew(() => { GlobalTimer(); }, CancellationToken.None, TaskCreationOptions.DenyChildAttach, TaskScheduler.Default);
 
         }
-  
-       
-        private void ProcessParse()
+
+        private void GlobalTimer()
         {
-            while (_shouldProcess)
+            while(_shouldProcess)
             {
-                ProcesssBaseParse();
-                
                 if (_parentProcess > 0)
                 {
                     if (!ProcessExists(_parentProcess))
                     {
                         Application.Exit();
-
                     }
                 }
+                //check to see if our position has changed.
+                GlobalUIProcess();    
 
+                System.Threading.Thread.Sleep(1000);
+            }
+        }
+        private delegate void GlobalDelegate();
+        public void GlobalUIProcess()
+        {
+            if (this.InvokeRequired)
+            {
+                this.Invoke(new GlobalDelegate(GlobalUIProcess), null);
+            }
+            else
+            {
+
+                int currentX = this.DesktopBounds.X;
+                int currentY = this.DesktopBounds.Y;
+                int height = this.DesktopBounds.Height;
+                int width = this.DesktopBounds.Width;
+
+
+                if (currentX != _genSettings.StartLocationX || currentY != _genSettings.StartLocationY || width!=_genSettings.Width | height != _genSettings.Height)
+                {
+
+                    _genSettings.StartLocationX = currentX;
+                    _genSettings.StartLocationY = currentY;
+                    _genSettings.Width = width;
+                    _genSettings.Height = height;
+                    _genSettings.SaveData();
+                }
+            }
+        }
+        private void pbCollapseConsole_Click(object sender, EventArgs e)
+        {
+            ToggleConsoles();
+        }
+        private void ToggleConsoles()
+        {
+            if (splitContainer2.Visible)
+            {
+                splitContainer2.Visible = false;
+                splitContainer1.Visible = false;
+                //need to collapse the window height to deal with the size poofing
+                Int32 newHeight = this.DesktopBounds.Height - (splitContainer2.Height + splitContainer1.Height);
+                var point = new Point(this.DesktopBounds.X, this.DesktopBounds.Y);
+                var size = new Size(this.DesktopBounds.Width, newHeight);
+                this.DesktopBounds = new Rectangle(point, size);
+                pbCollapseConsole.Image.RotateFlip(RotateFlipType.Rotate180FlipNone);
+                _genSettings.ConsoleCollapsed = true;
+                _genSettings.SaveData();
+
+            }
+            else
+            {
+
+                Int32 newHeight = this.DesktopBounds.Height + (splitContainer2.Height + splitContainer1.Height);
+                var point = new Point(this.DesktopBounds.X, this.DesktopBounds.Y);
+                var size = new Size(this.DesktopBounds.Width, newHeight);
+                this.DesktopBounds = new Rectangle(point, size);
+                splitContainer2.Visible = true;
+                splitContainer1.Visible = true;
+                _genSettings.ConsoleCollapsed = false;
+                _genSettings.SaveData();
+
+                pbCollapseConsole.Image = (Image)_collapseConsoleImage.Clone();
+
+            }
+        }
+        private void E3UI_Load(object sender, EventArgs e)
+        {
+            if (_genSettings.ConsoleCollapsed)
+            {
+                ToggleConsoles();
+            }
+        }
+        private void ProcessParse()
+        {
+            while (_shouldProcess)
+            {
+             
+                if(this.IsHandleCreated)
+                {
+                    this.Invoke(new ProcesssBaseParseDelegate(ProcesssBaseParse), null);
+
+                }
                 System.Threading.Thread.Sleep(500);
             }
         }
         private delegate void ProcesssBaseParseDelegate();
         private void ProcesssBaseParse()
         {
-            if (this.InvokeRequired)
+         
+            //lets get the data from the line parser.
+            lock (_objectLock)
             {
-                this.Invoke(new ProcesssBaseParseDelegate(ProcesssBaseParse), null);
+                labelInCombatValue.Text = LineParser._currentlyCombat.ToString();
             }
-            else
+            lock (LineParser._objectLock)
             {
-                //lets get the data from the line parser.
-                lock (_objectLock)
+                if (!String.IsNullOrWhiteSpace(LineParser.PetName))
                 {
-                    labelInCombatValue.Text = LineParser._currentlyCombat.ToString();
+                    labelPetNameValue.Text = LineParser.PetName;
                 }
-                lock (LineParser._objectLock)
+                Int64 yourDamageTotal = LineParser._yourDamage.Sum();
+                labelYourDamageValue.Text = yourDamageTotal.ToString("N0");
+
+                Int64 petDamageTotal = LineParser._yourPetDamage.Sum();
+                labelPetDamageValue.Text = petDamageTotal.ToString("N0");
+
+
+                Int64 dsDamage = LineParser._yourDamageShieldDamage.Sum();
+                labelYourDamageShieldValue.Text = dsDamage.ToString("N0");
+
+                Int64 totalDamage = yourDamageTotal + petDamageTotal + dsDamage;
+                labelTotalDamageValue.Text = totalDamage.ToString("N0");
+
+                Int64 damageToyou = LineParser._damageToYou.Sum();
+                labelDamageToYouValue.Text = damageToyou.ToString("N0");
+
+                Int64 healingToyou = LineParser._healingToYou.Sum();
+                labelHealingYouValue.Text = healingToyou.ToString("N0");
+
+                Int64 healingByYou = LineParser._healingByYou.Sum();
+                labelHealingByYouValue.Text = healingByYou.ToString("N0");
+
+                //need to find the start of each colleciton
+                //and end of each collection taking the lowest of start
+                //and highest of end
+                Int64 startTime = 0;
+                Int64 endTime = 0;
+                if (LineParser._yourDamage.Count > 0)
                 {
-                    if (!String.IsNullOrWhiteSpace(LineParser.PetName))
+                    if (startTime > LineParser._yourDamageTime[0] || startTime == 0)
                     {
-                        labelPetNameValue.Text = LineParser.PetName;
+                        startTime = LineParser._yourDamageTime[0];
                     }
-                    Int64 yourDamageTotal = LineParser._yourDamage.Sum();
-                    labelYourDamageValue.Text = yourDamageTotal.ToString("N0");
-
-                    Int64 petDamageTotal = LineParser._yourPetDamage.Sum();
-                    labelPetDamageValue.Text = petDamageTotal.ToString("N0");
-
-
-                    Int64 dsDamage = LineParser._yourDamageShieldDamage.Sum();
-                    labelYourDamageShieldValue.Text = dsDamage.ToString("N0");
-
-                    Int64 totalDamage = yourDamageTotal + petDamageTotal + dsDamage;
-                    labelTotalDamageValue.Text = totalDamage.ToString("N0");
-
-                    Int64 damageToyou = LineParser._damageToYou.Sum();
-                    labelDamageToYouValue.Text = damageToyou.ToString("N0");
-
-                    Int64 healingToyou = LineParser._healingToYou.Sum();
-                    labelHealingYouValue.Text = healingToyou.ToString("N0");
-
-                    Int64 healingByYou = LineParser._healingByYou.Sum();
-                    labelHealingByYouValue.Text = healingByYou.ToString("N0");
-
-                    //need to find the start of each colleciton
-                    //and end of each collection taking the lowest of start
-                    //and highest of end
-                    Int64 startTime = 0;
-                    Int64 endTime = 0;
-                    if (LineParser._yourDamage.Count > 0)
+                    if (endTime < LineParser._yourDamageTime[LineParser._yourDamageTime.Count - 1])
                     {
-                        if (startTime > LineParser._yourDamageTime[0] || startTime == 0)
-                        {
-                            startTime = LineParser._yourDamageTime[0];
-                        }
-                        if (endTime < LineParser._yourDamageTime[LineParser._yourDamageTime.Count - 1])
-                        {
-                            endTime = LineParser._yourDamageTime[LineParser._yourDamageTime.Count - 1];
-                        }
+                        endTime = LineParser._yourDamageTime[LineParser._yourDamageTime.Count - 1];
                     }
-                    if (LineParser._yourPetDamage.Count > 0)
-                    {
-                        if (startTime > LineParser._yourPetDamage[0] || startTime == 0)
-                        {
-                            startTime = LineParser._yourPetDamageTime[0];
-                        }
-                        if (endTime < LineParser._yourPetDamageTime[LineParser._yourPetDamageTime.Count - 1])
-                        {
-                            endTime = LineParser._yourPetDamageTime[LineParser._yourPetDamageTime.Count - 1];
-                        }
-                    }
-                    if (LineParser._yourDamageShieldDamage.Count > 0)
-                    {
-                        if (startTime > LineParser._yourDamageShieldDamageTime[0] || startTime == 0)
-                        {
-                            startTime = LineParser._yourDamageShieldDamageTime[0];
-                        }
-                        if (endTime < LineParser._yourDamageShieldDamageTime[LineParser._yourDamageShieldDamageTime.Count - 1])
-                        {
-                            endTime = LineParser._yourDamageShieldDamageTime[LineParser._yourDamageShieldDamageTime.Count - 1];
-                        }
-                    }
-                    Int64 totalTime = (endTime - startTime) / 1000;
-
-                    labelTotalTimeValue.Text = (totalTime) + " seconds";
-
-                    if (totalTime == 0) totalTime = 1;
-                    Int64 totalDPS = totalDamage / totalTime;
-                    Int64 yourDPS = yourDamageTotal / totalTime;
-                    Int64 petDPS = petDamageTotal / totalTime;
-                    Int64 dsDPS = dsDamage / totalTime;
-
-                    labelTotalDamageDPSValue.Text = totalDPS.ToString("N0") + " dps";
-                    labelYourDamageDPSValue.Text = yourDPS.ToString("N0") + " dps";
-                    labelPetDamageDPSValue.Text = petDPS.ToString("N0") + " dps";
-                    labelDamageShieldDPSValue.Text = dsDPS.ToString("N0") + " dps";
-
                 }
+                if (LineParser._yourPetDamage.Count > 0)
+                {
+                    if (startTime > LineParser._yourPetDamage[0] || startTime == 0)
+                    {
+                        startTime = LineParser._yourPetDamageTime[0];
+                    }
+                    if (endTime < LineParser._yourPetDamageTime[LineParser._yourPetDamageTime.Count - 1])
+                    {
+                        endTime = LineParser._yourPetDamageTime[LineParser._yourPetDamageTime.Count - 1];
+                    }
+                }
+                if (LineParser._yourDamageShieldDamage.Count > 0)
+                {
+                    if (startTime > LineParser._yourDamageShieldDamageTime[0] || startTime == 0)
+                    {
+                        startTime = LineParser._yourDamageShieldDamageTime[0];
+                    }
+                    if (endTime < LineParser._yourDamageShieldDamageTime[LineParser._yourDamageShieldDamageTime.Count - 1])
+                    {
+                        endTime = LineParser._yourDamageShieldDamageTime[LineParser._yourDamageShieldDamageTime.Count - 1];
+                    }
+                }
+                Int64 totalTime = (endTime - startTime) / 1000;
+
+                labelTotalTimeValue.Text = (totalTime) + " seconds";
+
+                if (totalTime == 0) totalTime = 1;
+                Int64 totalDPS = totalDamage / totalTime;
+                Int64 yourDPS = yourDamageTotal / totalTime;
+                Int64 petDPS = petDamageTotal / totalTime;
+                Int64 dsDPS = dsDamage / totalTime;
+
+                labelTotalDamageDPSValue.Text = totalDPS.ToString("N0") + " dps";
+                labelYourDamageDPSValue.Text = yourDPS.ToString("N0") + " dps";
+                labelPetDamageDPSValue.Text = petDPS.ToString("N0") + " dps";
+                labelDamageShieldDPSValue.Text = dsDPS.ToString("N0") + " dps";
+
             }
+            
         }
-        private void ProcessUI(TextBoxInfo textInfo)
+        private void ProcessConsoleUI(TextBoxInfo textInfo)
         {
             while (_shouldProcess)
             {
-                ProcessBaseUI(textInfo);
+                ProcessBaseConsoleUI(textInfo);
                 System.Threading.Thread.Sleep(500);
             }
 
@@ -222,11 +324,11 @@ namespace E3NextUI
 
 
         private delegate void ProcessBaseUIDelegate(TextBoxInfo textInfo);
-        private void ProcessBaseUI(TextBoxInfo ti)
+        private void ProcessBaseConsoleUI(TextBoxInfo ti)
         {
             if (this.InvokeRequired)
             {
-                this.Invoke(new ProcessBaseUIDelegate(ProcessBaseUI), new object[] { ti });
+                this.Invoke(new ProcessBaseUIDelegate(ProcessBaseConsoleUI), new object[] { ti });
             }
             else
             {
@@ -474,6 +576,8 @@ namespace E3NextUI
         }
         [DllImport("shell32.dll", SetLastError = true)]
         static extern void SetCurrentProcessExplicitAppUserModelID([MarshalAs(UnmanagedType.LPWStr)] string AppID);
+
+      
     }
     public class TextBoxInfo
     {

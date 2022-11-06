@@ -25,10 +25,9 @@ namespace E3Core.Settings
     {
 #pragma warning disable CS1591 // Missing XML comment for publicly visible type or member
         public static IniData ParsedData;
-        public readonly string _characterName;
-        public readonly string _serverName;
-        public readonly Class _characterClass;
-
+        private readonly string CharacterName;
+        private readonly string ServerName;
+        private readonly Class CharacterClass;
         public bool Misc_AutoFoodEnabled;
         public string Misc_AutoFood;
         public string Misc_AutoDrink;
@@ -181,34 +180,14 @@ namespace E3Core.Settings
         /// </summary>
         public CharacterSettings()
         {
-            _characterName = MQ.Query<string>("${Me.CleanName}");
-            _serverName = ProcessServerName(MQ.Query<string>("${MacroQuest.Server}"));
-            string classValue = MQ.Query<string>("${Me.Class}");
-            if (classValue == "Shadow Knight")
-            {
-                classValue = "Shadowknight";
-            }
-
-            Enum.TryParse(classValue, out _characterClass);
-            _log.Write("Name:" + _characterName);
-            _log.Write("Class:" + classValue);
-            _log.Write("ServerName:" + _serverName);
+            CharacterName = E3.CurrentName;
+            ServerName = E3.ServerName;
+            CharacterClass = E3.CurrentClass;
             LoadData();
 
         }
 
-        private string ProcessServerName(string serverName)
-        {
-
-            if (string.IsNullOrWhiteSpace(serverName)) return "Lazarus";
-
-            if (serverName.Equals("Project Lazarus"))
-            {
-                return "Lazarus";
-            }
-
-            return serverName.Replace(" ", "_");
-        }
+      
 
         /// <summary>
         /// Loads the data.
@@ -216,7 +195,7 @@ namespace E3Core.Settings
         public void LoadData()
         {
 
-            string filename = $"{_characterName}_{_serverName}.ini";
+            string filename = $"{CharacterName}_{ServerName}.ini";
             _log.Write($"Loading up {filename}");
 
             string macroFile = _macroFolder + _botFolder + filename;
@@ -267,7 +246,7 @@ namespace E3Core.Settings
             LoadKeyData("Assist Settings", "Ranged Distance", ParsedData, ref Assist_RangeDistance);
             LoadKeyData("Assist Settings", "Auto-Assist Engage Percent", ParsedData, ref Assist_AutoAssistPercent);
 
-            if (_characterClass == Class.Rogue)
+            if (CharacterClass == Class.Rogue)
             {
                 LoadKeyData("Rogue", "Auto-Hide (On/Off)", ParsedData, ref Rogue_AutoHide);
                 LoadKeyData("Rogue", "Auto-Evade (On/Off)", ParsedData, ref Rogue_AutoEvade);
@@ -278,18 +257,18 @@ namespace E3Core.Settings
                 LoadKeyData("Rogue", "PoisonFR", ParsedData, ref Rogue_PoisonFR);
             }
 
-            if (_characterClass == Class.Bard)
+            if (CharacterClass == Class.Bard)
             {
                 LoadKeyData("Bard", "MelodyIf", ParsedData, Bard_MelodyIfs);
             }
 
-            if ((_characterClass & Class.Druid) == _characterClass)
+            if ((CharacterClass & Class.Druid) == CharacterClass)
             {
                 LoadKeyData("Druid", "Evac Spell", ParsedData, Druid_Evacs);
                 LoadKeyData("Druid", "Auto-Cheetah (On/Off)", ParsedData, ref Druid_AutoCheetah);
             }
 
-            if (_characterClass == Class.Magician)
+            if (CharacterClass == Class.Magician)
             {
                 LoadKeyData("Magician", "Auto-Pet Weapons (On/Off)", ParsedData, ref AutoPetWeapons);
                 LoadKeyData("Magician", "Pet Weapons", ParsedData, PetWeapons);
@@ -300,7 +279,7 @@ namespace E3Core.Settings
             //set target on self buffs
             foreach (var buff in SelfBuffs)
             {
-                buff.CastTarget = _characterName;
+                buff.CastTarget = CharacterName;
             }
 
             LoadKeyData("Buffs", "Bot Buff", ParsedData, BotBuffs);
@@ -425,13 +404,13 @@ namespace E3Core.Settings
             section.Keys.AddKey("Pet Buff", "");
 
             //section.Keys.AddKey("Cast Aura Combat (On/Off)", "Off");
-            if ((_characterClass & Class.Caster) != _characterClass && (_characterClass & Class.Priest) != _characterClass)
+            if ((CharacterClass & Class.Caster) != CharacterClass && (CharacterClass & Class.Priest) != CharacterClass)
             {
                 newFile.Sections.AddSection("Melee Abilities");
                 section = newFile.Sections.GetSectionData("Melee Abilities");
                 section.Keys.AddKey("Ability", "");
             }
-            if ((_characterClass & Class.PureMelee) != _characterClass && _characterClass != Class.Bard)
+            if ((CharacterClass & Class.PureMelee) != CharacterClass && CharacterClass != Class.Bard)
             {
                 newFile.Sections.AddSection("Nukes");
                 section = newFile.Sections.GetSectionData("Nukes");
@@ -476,7 +455,7 @@ namespace E3Core.Settings
             section.Keys.AddKey("Full Burn", "");
 
 
-            if (_characterClass == Class.Rogue)
+            if (CharacterClass == Class.Rogue)
             {
                 newFile.Sections.AddSection("Rogue");
                 section = newFile.Sections.GetSectionData("Rogue");
@@ -489,14 +468,14 @@ namespace E3Core.Settings
                 section.Keys.AddKey("PoisonCR", "");
             }
 
-            if (_characterClass == Class.Bard)
+            if (CharacterClass == Class.Bard)
             {
                 newFile.Sections.AddSection("Bard");
                 section = newFile.Sections.GetSectionData("Bard");
                 section.Keys.AddKey("MelodyIf", "");
             }
 
-            if ((_characterClass & Class.PetClass) == _characterClass)
+            if ((CharacterClass & Class.PetClass) == CharacterClass)
             {
                 newFile.Sections.AddSection("Pets");
                 section = newFile.Sections.GetSectionData("Pets");
@@ -510,7 +489,7 @@ namespace E3Core.Settings
                 section.Keys.AddKey("Pet Buff Combat (On/Off)", "On");
             }
 
-            if ((_characterClass & Class.Druid) == _characterClass)
+            if ((CharacterClass & Class.Druid) == CharacterClass)
             {
                 newFile.Sections.AddSection("Druid");
                 section = newFile.Sections.GetSectionData("Druid");
@@ -520,7 +499,7 @@ namespace E3Core.Settings
             }
 
 
-            if ((_characterClass & Class.Priest) == _characterClass)
+            if ((CharacterClass & Class.Priest) == CharacterClass)
             {
                 newFile.Sections.AddSection("Cures");
                 section = newFile.Sections.GetSectionData("Cures");
@@ -535,7 +514,7 @@ namespace E3Core.Settings
                 section.Keys.AddKey("DiseaseCountersIgnore", "");
             }
 
-            if ((_characterClass & Class.Priest) == _characterClass || (_characterClass & Class.HealHybrid) == _characterClass)
+            if ((CharacterClass & Class.Priest) == CharacterClass || (CharacterClass & Class.HealHybrid) == CharacterClass)
             {
                 newFile.Sections.AddSection("Heals");
                 section = newFile.Sections.GetSectionData("Heals");
@@ -553,14 +532,14 @@ namespace E3Core.Settings
                 section.Keys.AddKey("Auto Cast Necro Heal Orbs (On/Off)", "On");
             }
 
-            if ((_characterClass & Class.Priest) == _characterClass || (_characterClass & Class.Caster) == _characterClass)
+            if ((CharacterClass & Class.Priest) == CharacterClass || (CharacterClass & Class.Caster) == CharacterClass)
             {
                 newFile.Sections.AddSection("Off Assist Spells");
                 section = newFile.Sections.GetSectionData("Off Assist Spells");
                 section.Keys.AddKey("Main", "");
             }
 
-            if (_characterClass == Class.Magician)
+            if (CharacterClass == Class.Magician)
             {
                 newFile.Sections.AddSection("Magician");
                 section.Keys.AddKey("Auto-Pet Weapons (On/Off", "On");
@@ -580,7 +559,7 @@ namespace E3Core.Settings
             newFile.Sections.AddSection("Events");
 
 
-            string filename = GetBoTFilePath($"{_characterName}_{_serverName}.ini");
+            string filename = GetBoTFilePath($"{CharacterName}_{ServerName}.ini");
 
 
             if (!File.Exists(filename))
@@ -616,7 +595,7 @@ namespace E3Core.Settings
         /// </summary>
         public void SaveData()
         {
-            string filename = GetBoTFilePath($"{_characterName}_{_serverName}.ini");
+            string filename = GetBoTFilePath($"{CharacterName}_{ServerName}.ini");
 
             var section = ParsedData.Sections["Blocked Buffs"];
             if (section == null)

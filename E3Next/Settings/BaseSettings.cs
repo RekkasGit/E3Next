@@ -120,35 +120,6 @@ namespace E3Core.Settings
             return sb.ToString();
         }
 
-
-        /// <summary>
-        /// 
-        /// </summary>
-        /// <param name="k1">Key1</param>
-        /// <param name="k2">Key2</param>
-        /// <param name="k3">Key3</param>
-        /// <param name="whatToWrite"></param>
-        /// <param name="overwrite">to overwrite the value in the ini</param>
-        public void WriteToIni(string k1,string k2,string k3, string whatToWrite, bool overwrite = false)
-        {
-            using(_log.Trace())
-            {
-                //| By switching ':'s to '*'s in arguemnt 3, to avoid issues when reading variables from the inis.
-                k3 = k3.Replace(":", ";");
-                string combinedKey = $"{k1},{k2},{k3}";
-                if(!MQ.Query<bool>($"${{Ini[{combinedKey}].Length}}") || overwrite)
-                {
-                    if (!string.IsNullOrWhiteSpace(whatToWrite))
-                    {
-                        MQ.Cmd($"/ini \"{k1}\" \"{k2}\" \"{k3}\" \"{whatToWrite}\"");
-                    }
-                    else
-                    {
-                        MQ.Cmd($"/ini \"{k1}\" \"{k2}\" \"{k3}\"");
-                    }
-                }
-            }
-        }
         public static void LoadKeyData(string sectionKey, string Key, IniData parsedData, ref string valueToSet)
         {
             _log.Write($"{sectionKey} {Key}");

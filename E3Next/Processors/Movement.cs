@@ -313,7 +313,7 @@ namespace E3Core.Processors
                 else
                 {
                     //we are telling people to follow us
-                    E3.Bots.BroadcastCommandToGroup("/followme " + E3.CharacterSettings._characterName, x);
+                    E3.Bots.BroadcastCommandToGroup("/followme " + E3.CurrentName, x);
                 }
             });
             EventProcessor.RegisterCommand("/followoff", (x) =>

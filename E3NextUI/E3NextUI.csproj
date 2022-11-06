@@ -96,6 +96,8 @@
     <Compile Include="Server\DealerClient.cs" />
     <Compile Include="Server\PubClient.cs" />
     <Compile Include="Server\PubServer.cs" />
+    <Compile Include="Settings\BaseSettings.cs" />
+    <Compile Include="Settings\GeneralSettings.cs" />
     <Compile Include="Util\CircularBuffer.cs" />
     <Compile Include="Util\LineParser.cs" />
     <EmbeddedResource Include="E3UI.resx">
@@ -126,6 +128,16 @@
   </ItemGroup>
   <ItemGroup>
     <None Include="App.config" />
+  </ItemGroup>
+  <ItemGroup>
+    <ProjectReference Include="..\IniFileParser\INIFileParser.csproj">
+      <Project>{5e46dcf4-c473-4171-9f9b-f3910b5ec407}</Project>
+      <Name>INIFileParser</Name>
+    </ProjectReference>
+  </ItemGroup>
+  <ItemGroup>
+    <Content Include="Resources\icon-expand.png" />
+    <Content Include="Resources\icon_struct_hide_collapsed.png" />
   </ItemGroup>
   <Import Project="$(MSBuildToolsPath)\Microsoft.CSharp.targets" />
 </Project>
