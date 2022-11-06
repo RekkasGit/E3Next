@@ -64,7 +64,7 @@ namespace E3Core.Processors
                         MQ.Delay(1000);
                         MQ.Cmd("/loot");
                         MQ.Delay(1000);
-                        MQ.Cmd("/notify LootWnd LootAllButton leftmouseup");
+                        MQ.Cmd("/nomodkey /notify LootWnd LootAllButton leftmouseup");
                         MQ.Delay(20000, "!${Window[LootWnd].Open}");
 
                         if (MQ.Query<bool>("${Window[LootWnd].Open}"))
