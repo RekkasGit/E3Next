@@ -21,6 +21,22 @@ namespace E3Core.Classes
         private static IMQ MQ = E3.Mq;
         private static ISpawns _spawns = E3.Spawns;
         private static bool _isInit = false;
+        private static long _nextRezCheck = 0;
+        private static long _nextRezCheckInterval = 10000;
+        private static List<string> _resSpellList = new List<string>()
+        {
+            "Blessing of Resurrection",
+            "Water Sprinkler of Nem Ankh",
+            "Reviviscence",
+            "Token of Resurrection",
+            "Spiritual Awakening",
+            "Resurrection",
+            "Restoration",
+            "Resuscitate",
+            "Renewal",
+            "Revive",
+            "Reparation"
+        };
 
         /// <summary>
         /// Initializes this instance.
@@ -29,6 +45,7 @@ namespace E3Core.Classes
         public static void Init()
         {
             if (_isInit) return;
+            InitRezSpells();
             _isInit = true;
         }
      
