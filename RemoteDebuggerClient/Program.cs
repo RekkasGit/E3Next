@@ -385,7 +385,7 @@ namespace MQServerClient
 
         public bool Delay(int maxTimeToWait, string Condition)
         {
-            Condition = $"${{Bool[{Condition}]}}";
+            Condition = $"${{If[{Condition},TRUE,FALSE]}}";
             Int64 startingTime = Core._stopWatch.ElapsedMilliseconds;
             while (!this.Query<bool>(Condition))
             {
