@@ -125,6 +125,12 @@ namespace E3Core.Processors
                 CharacterSettings = new CharacterSettings();
                 E3.Bots.Broadcast("\aoComplete!");
             }
+            if (GeneralSettings.ShouldReload())
+            {
+                E3.Bots.Broadcast("\aoAuto-Reloading General settings file...");
+                GeneralSettings = new GeneralSettings();
+                E3.Bots.Broadcast("\aoComplete!");
+            }
         }
         private static bool IsPaused()
         {

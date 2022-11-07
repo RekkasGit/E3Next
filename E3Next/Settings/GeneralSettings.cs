@@ -55,7 +55,9 @@ namespace E3Core.Settings
         public String Assists_AcceptableTargetTypes;
         public Int32 Assists_LongTermDebuffRecast = 30;
         public Int32 Assists_ShortTermDebuffRecast = 5;
-        
+
+        private System.DateTime _fileLastModified;
+        private string _fileLastModifiedFileName;
         public GeneralSettings()
         {
             LoadData();
@@ -75,17 +77,17 @@ namespace E3Core.Settings
                 {
                     System.IO.Directory.CreateDirectory(_configFolder + _settingsFolder);
                 }
-                _log.Write($"Creating new Adv settings:{filename}");
-               
+             
                 parsedData = CreateSettings();
             }
             else
             {
                 parsedData = fileIniData.ReadFile(filename);
             }
-           
+            _fileLastModifiedFileName = filename;
+            _fileLastModified = System.IO.File.GetLastWriteTime(filename);
             //have the data now!
-            if(parsedData==null)
+            if (parsedData==null)
             {
                 throw new Exception("Could not load General Settings file");
             }
@@ -264,6 +266,14 @@ namespace E3Core.Settings
 
             return newFile;
 
+        }
+        public bool ShouldReload()
+        {
+            if (_fileLastModified != System.IO.File.GetLastWriteTime(_fileLastModifiedFileName))
+            {
+                return true;
+            }
+            return false;
         }
     }
 }
