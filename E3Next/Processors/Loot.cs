@@ -8,6 +8,7 @@ using System.Collections.Generic;
 using System.Collections.Specialized;
 using System.Dynamic;
 using System.Linq;
+using System.Net.Configuration;
 
 namespace E3Core.Processors
 {
@@ -181,7 +182,7 @@ namespace E3Core.Processors
                 }
             }
         }
-        private static void LootCorpse(Spawn corpse)
+        public static void LootCorpse(Spawn corpse, bool bypassLootSettings = false)
         {
             
             Int32 freeInventorySlots = MQ.Query<Int32>("${Me.FreeInventory}");
@@ -312,7 +313,7 @@ namespace E3Core.Processors
                     }
                 }
 
-                if (importantItem)
+                if (importantItem || bypassLootSettings)
                 {
                     //lets loot it if we can!
                     MQ.Cmd($"/nomodkey /itemnotify loot{i} rightmouseup");
