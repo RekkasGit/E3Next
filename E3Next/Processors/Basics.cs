@@ -628,7 +628,8 @@ namespace E3Core.Processors
         [ClassInvoke(Class.All)]
         public static void CheckBox()
         {
-            if (!e3util.ShouldCheck(ref _nextBoxCheck, _nextBoxCheckInterval) || !E3.GeneralSettings.AutoMisfitBox) return;
+            if (!E3.GeneralSettings.AutoMisfitBox) return;
+            if (!e3util.ShouldCheck(ref _nextBoxCheck, _nextBoxCheckInterval)) return;
 
             var box = "Box of Misfit Prizes";
             if (!_mq.Query<bool>($"${{FindItem[={box}]}}")) return;
