@@ -7,6 +7,7 @@ using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Text;
+using System.Windows.Forms.VisualStyles;
 
 namespace E3Core.Processors
 {
@@ -627,7 +628,7 @@ namespace E3Core.Processors
         [ClassInvoke(Class.All)]
         public static void CheckBox()
         {
-            if (!e3util.ShouldCheck(ref _nextBoxCheck, _nextBoxCheckInterval)) return;
+            if (!e3util.ShouldCheck(ref _nextBoxCheck, _nextBoxCheckInterval) || !E3.GeneralSettings.AutoMisfitBox) return;
 
             var box = "Box of Misfit Prizes";
             if (!_mq.Query<bool>($"${{FindItem[={box}]}}")) return;
