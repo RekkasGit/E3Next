@@ -435,7 +435,7 @@ namespace E3Core.Processors
                                     return CastReturn.CAST_INTERRUPTFORHEAL;
                                 }
                                 //check to see if there is a nowcast queued up, if so we need to kickout.
-                                if (!isNowCast && EventProcessor._commandList.ContainsKey("/nowcast") && EventProcessor._commandList["/nowcast"].queuedEvents.Count > 0)
+                                if (!isNowCast && NowCastReady())
                                 {
                                     //we have a nowcast ready to be processed
                                     MQ.Cmd("/interrupt");
@@ -557,7 +557,14 @@ namespace E3Core.Processors
             
 
         }
-
+        private static bool NowCastReady()
+        {
+            if(((EventProcessor._commandList.ContainsKey("/nowcast") && EventProcessor._commandList["/nowcast"].queuedEvents.Count > 0) || PubClient.NowCastInQueue()))
+            {
+                return true;
+            }
+            return false;
+        }
         public static void Sing(Int32 targetid, Data.Spell spell)
         {
             if (E3.CurrentClass != Data.Class.Bard) return;

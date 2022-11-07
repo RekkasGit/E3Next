@@ -91,7 +91,8 @@ namespace E3Core.Processors
                     }
 
                 }
-              
+                //in case nowcasts are in the queue, process after advmethod calls
+                PubClient.ProcessRequests();
                 //bard song player
                 if (E3.CurrentClass == Data.Class.Bard)
                 {

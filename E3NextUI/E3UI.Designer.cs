@@ -156,7 +156,7 @@ namespace E3NextUI
             this.richTextBoxConsole.Name = "richTextBoxConsole";
             this.richTextBoxConsole.ReadOnly = true;
             this.richTextBoxConsole.ScrollBars = System.Windows.Forms.RichTextBoxScrollBars.None;
-            this.richTextBoxConsole.Size = new System.Drawing.Size(719, 392);
+            this.richTextBoxConsole.Size = new System.Drawing.Size(747, 274);
             this.richTextBoxConsole.TabIndex = 4;
             this.richTextBoxConsole.Text = "";
             // 
@@ -169,14 +169,14 @@ namespace E3NextUI
             this.richTextBoxMQConsole.Location = new System.Drawing.Point(0, 0);
             this.richTextBoxMQConsole.Name = "richTextBoxMQConsole";
             this.richTextBoxMQConsole.ScrollBars = System.Windows.Forms.RichTextBoxScrollBars.None;
-            this.richTextBoxMQConsole.Size = new System.Drawing.Size(718, 282);
+            this.richTextBoxMQConsole.Size = new System.Drawing.Size(746, 282);
             this.richTextBoxMQConsole.TabIndex = 5;
             this.richTextBoxMQConsole.Text = "";
             // 
             // splitContainer1
             // 
             this.splitContainer1.Dock = System.Windows.Forms.DockStyle.Bottom;
-            this.splitContainer1.Location = new System.Drawing.Point(0, 286);
+            this.splitContainer1.Location = new System.Drawing.Point(0, 288);
             this.splitContainer1.Name = "splitContainer1";
             // 
             // splitContainer1.Panel1
@@ -187,8 +187,8 @@ namespace E3NextUI
             // 
             this.splitContainer1.Panel2.Controls.Add(this.textBoxConsoleInput);
             this.splitContainer1.Panel2.Controls.Add(this.richTextBoxConsole);
-            this.splitContainer1.Size = new System.Drawing.Size(1087, 392);
-            this.splitContainer1.SplitterDistance = 364;
+            this.splitContainer1.Size = new System.Drawing.Size(1089, 274);
+            this.splitContainer1.SplitterDistance = 338;
             this.splitContainer1.TabIndex = 6;
             // 
             // richTextBoxMelee
@@ -199,23 +199,23 @@ namespace E3NextUI
             this.richTextBoxMelee.Location = new System.Drawing.Point(0, 0);
             this.richTextBoxMelee.Name = "richTextBoxMelee";
             this.richTextBoxMelee.ScrollBars = System.Windows.Forms.RichTextBoxScrollBars.None;
-            this.richTextBoxMelee.Size = new System.Drawing.Size(364, 392);
+            this.richTextBoxMelee.Size = new System.Drawing.Size(338, 274);
             this.richTextBoxMelee.TabIndex = 0;
             this.richTextBoxMelee.Text = "";
             // 
             // textBoxConsoleInput
             // 
             this.textBoxConsoleInput.Dock = System.Windows.Forms.DockStyle.Bottom;
-            this.textBoxConsoleInput.Location = new System.Drawing.Point(0, 372);
+            this.textBoxConsoleInput.Location = new System.Drawing.Point(0, 254);
             this.textBoxConsoleInput.Name = "textBoxConsoleInput";
-            this.textBoxConsoleInput.Size = new System.Drawing.Size(719, 20);
+            this.textBoxConsoleInput.Size = new System.Drawing.Size(747, 20);
             this.textBoxConsoleInput.TabIndex = 5;
             this.textBoxConsoleInput.KeyDown += new System.Windows.Forms.KeyEventHandler(this.textBoxConsoleInput_KeyDown);
             // 
             // splitContainer2
             // 
             this.splitContainer2.Dock = System.Windows.Forms.DockStyle.Bottom;
-            this.splitContainer2.Location = new System.Drawing.Point(0, 4);
+            this.splitContainer2.Location = new System.Drawing.Point(0, 6);
             this.splitContainer2.Name = "splitContainer2";
             // 
             // splitContainer2.Panel1
@@ -225,8 +225,8 @@ namespace E3NextUI
             // splitContainer2.Panel2
             // 
             this.splitContainer2.Panel2.Controls.Add(this.richTextBoxMQConsole);
-            this.splitContainer2.Size = new System.Drawing.Size(1087, 282);
-            this.splitContainer2.SplitterDistance = 365;
+            this.splitContainer2.Size = new System.Drawing.Size(1089, 282);
+            this.splitContainer2.SplitterDistance = 339;
             this.splitContainer2.TabIndex = 7;
             // 
             // richTextBoxSpells
@@ -237,7 +237,7 @@ namespace E3NextUI
             this.richTextBoxSpells.Location = new System.Drawing.Point(0, 0);
             this.richTextBoxSpells.Name = "richTextBoxSpells";
             this.richTextBoxSpells.ScrollBars = System.Windows.Forms.RichTextBoxScrollBars.None;
-            this.richTextBoxSpells.Size = new System.Drawing.Size(365, 282);
+            this.richTextBoxSpells.Size = new System.Drawing.Size(339, 282);
             this.richTextBoxSpells.TabIndex = 0;
             this.richTextBoxSpells.Text = "";
             // 
@@ -419,7 +419,7 @@ namespace E3NextUI
             this.labelPetNameValue.AutoSize = true;
             this.labelPetNameValue.Font = new System.Drawing.Font("Microsoft Sans Serif", 12F, System.Drawing.FontStyle.Bold, System.Drawing.GraphicsUnit.Point, ((byte)(0)));
             this.labelPetNameValue.ForeColor = System.Drawing.Color.Crimson;
-            this.labelPetNameValue.Location = new System.Drawing.Point(270, 24);
+            this.labelPetNameValue.Location = new System.Drawing.Point(108, 15);
             this.labelPetNameValue.Name = "labelPetNameValue";
             this.labelPetNameValue.Size = new System.Drawing.Size(51, 20);
             this.labelPetNameValue.TabIndex = 28;
@@ -431,7 +431,7 @@ namespace E3NextUI
             this.labelPetName.AutoSize = true;
             this.labelPetName.Font = new System.Drawing.Font("Microsoft Sans Serif", 14.25F, System.Drawing.FontStyle.Bold, System.Drawing.GraphicsUnit.Point, ((byte)(0)));
             this.labelPetName.ForeColor = System.Drawing.SystemColors.MenuHighlight;
-            this.labelPetName.Location = new System.Drawing.Point(229, 21);
+            this.labelPetName.Location = new System.Drawing.Point(67, 12);
             this.labelPetName.Name = "labelPetName";
             this.labelPetName.Size = new System.Drawing.Size(46, 24);
             this.labelPetName.TabIndex = 27;
@@ -440,9 +440,9 @@ namespace E3NextUI
             // buttonPauseConsoles
             // 
             this.buttonPauseConsoles.Anchor = System.Windows.Forms.AnchorStyles.Left;
-            this.buttonPauseConsoles.Location = new System.Drawing.Point(3, 49);
+            this.buttonPauseConsoles.Location = new System.Drawing.Point(595, 75);
             this.buttonPauseConsoles.Name = "buttonPauseConsoles";
-            this.buttonPauseConsoles.Size = new System.Drawing.Size(118, 23);
+            this.buttonPauseConsoles.Size = new System.Drawing.Size(98, 23);
             this.buttonPauseConsoles.TabIndex = 29;
             this.buttonPauseConsoles.Text = "Pause Consoles";
             this.buttonPauseConsoles.UseVisualStyleBackColor = true;
@@ -454,7 +454,7 @@ namespace E3NextUI
             this.labelInCombat.AutoSize = true;
             this.labelInCombat.Font = new System.Drawing.Font("Microsoft Sans Serif", 14.25F, System.Drawing.FontStyle.Bold, System.Drawing.GraphicsUnit.Point, ((byte)(0)));
             this.labelInCombat.ForeColor = System.Drawing.SystemColors.MenuHighlight;
-            this.labelInCombat.Location = new System.Drawing.Point(167, 48);
+            this.labelInCombat.Location = new System.Drawing.Point(3, 36);
             this.labelInCombat.Name = "labelInCombat";
             this.labelInCombat.Size = new System.Drawing.Size(110, 24);
             this.labelInCombat.TabIndex = 31;
@@ -466,7 +466,7 @@ namespace E3NextUI
             this.labelInCombatValue.AutoSize = true;
             this.labelInCombatValue.Font = new System.Drawing.Font("Microsoft Sans Serif", 12F, System.Drawing.FontStyle.Bold, System.Drawing.GraphicsUnit.Point, ((byte)(0)));
             this.labelInCombatValue.ForeColor = System.Drawing.Color.Red;
-            this.labelInCombatValue.Location = new System.Drawing.Point(273, 51);
+            this.labelInCombatValue.Location = new System.Drawing.Point(111, 42);
             this.labelInCombatValue.Name = "labelInCombatValue";
             this.labelInCombatValue.Size = new System.Drawing.Size(48, 20);
             this.labelInCombatValue.TabIndex = 32;
@@ -521,7 +521,7 @@ namespace E3NextUI
             this.labelCastingValue.AutoSize = true;
             this.labelCastingValue.Font = new System.Drawing.Font("Microsoft Sans Serif", 12F, System.Drawing.FontStyle.Bold, System.Drawing.GraphicsUnit.Point, ((byte)(0)));
             this.labelCastingValue.ForeColor = System.Drawing.Color.DarkCyan;
-            this.labelCastingValue.Location = new System.Drawing.Point(426, 187);
+            this.labelCastingValue.Location = new System.Drawing.Point(119, 76);
             this.labelCastingValue.Name = "labelCastingValue";
             this.labelCastingValue.Size = new System.Drawing.Size(0, 20);
             this.labelCastingValue.TabIndex = 38;
@@ -532,7 +532,7 @@ namespace E3NextUI
             this.labelCasting.AutoSize = true;
             this.labelCasting.Font = new System.Drawing.Font("Microsoft Sans Serif", 14.25F, System.Drawing.FontStyle.Bold, System.Drawing.GraphicsUnit.Point, ((byte)(0)));
             this.labelCasting.ForeColor = System.Drawing.SystemColors.MenuHighlight;
-            this.labelCasting.Location = new System.Drawing.Point(352, 47);
+            this.labelCasting.Location = new System.Drawing.Point(27, 67);
             this.labelCasting.Name = "labelCasting";
             this.labelCasting.Size = new System.Drawing.Size(85, 24);
             this.labelCasting.TabIndex = 37;
@@ -560,7 +560,7 @@ namespace E3NextUI
             // 
             this.pbCollapseConsoleButtons.Anchor = ((System.Windows.Forms.AnchorStyles)((System.Windows.Forms.AnchorStyles.Bottom | System.Windows.Forms.AnchorStyles.Right)));
             this.pbCollapseConsoleButtons.Image = ((System.Drawing.Image)(resources.GetObject("pbCollapseConsoleButtons.Image")));
-            this.pbCollapseConsoleButtons.Location = new System.Drawing.Point(699, 75);
+            this.pbCollapseConsoleButtons.Location = new System.Drawing.Point(699, 78);
             this.pbCollapseConsoleButtons.Name = "pbCollapseConsoleButtons";
             this.pbCollapseConsoleButtons.Size = new System.Drawing.Size(28, 26);
             this.pbCollapseConsoleButtons.SizeMode = System.Windows.Forms.PictureBoxSizeMode.StretchImage;
@@ -573,24 +573,26 @@ namespace E3NextUI
             this.panelStatusPannel2.AutoSize = true;
             this.panelStatusPannel2.AutoSizeMode = System.Windows.Forms.AutoSizeMode.GrowAndShrink;
             this.panelStatusPannel2.BackgroundImageLayout = System.Windows.Forms.ImageLayout.Zoom;
+            this.panelStatusPannel2.Controls.Add(this.labelCastingValue);
+            this.panelStatusPannel2.Controls.Add(this.labelCasting);
             this.panelStatusPannel2.Controls.Add(this.pbCollapseDynamicButtons);
             this.panelStatusPannel2.Controls.Add(this.buttonPauseConsoles);
             this.panelStatusPannel2.Controls.Add(this.pbCollapseConsoleButtons);
-            this.panelStatusPannel2.Controls.Add(this.labelCasting);
             this.panelStatusPannel2.Controls.Add(this.labelPetName);
             this.panelStatusPannel2.Controls.Add(this.labelPetNameValue);
             this.panelStatusPannel2.Controls.Add(this.labelInCombat);
             this.panelStatusPannel2.Controls.Add(this.labelInCombatValue);
             this.panelStatusPannel2.Location = new System.Drawing.Point(3, 143);
             this.panelStatusPannel2.Name = "panelStatusPannel2";
-            this.panelStatusPannel2.Size = new System.Drawing.Size(730, 104);
+            this.panelStatusPannel2.Size = new System.Drawing.Size(730, 107);
             this.panelStatusPannel2.TabIndex = 42;
+            this.panelStatusPannel2.Paint += new System.Windows.Forms.PaintEventHandler(this.panelStatusPannel2_Paint);
             // 
             // pbCollapseDynamicButtons
             // 
             this.pbCollapseDynamicButtons.Anchor = ((System.Windows.Forms.AnchorStyles)((System.Windows.Forms.AnchorStyles.Bottom | System.Windows.Forms.AnchorStyles.Right)));
             this.pbCollapseDynamicButtons.Image = ((System.Drawing.Image)(resources.GetObject("pbCollapseDynamicButtons.Image")));
-            this.pbCollapseDynamicButtons.Location = new System.Drawing.Point(699, 48);
+            this.pbCollapseDynamicButtons.Location = new System.Drawing.Point(699, 51);
             this.pbCollapseDynamicButtons.Name = "pbCollapseDynamicButtons";
             this.pbCollapseDynamicButtons.Size = new System.Drawing.Size(28, 26);
             this.pbCollapseDynamicButtons.SizeMode = System.Windows.Forms.PictureBoxSizeMode.StretchImage;
@@ -605,7 +607,7 @@ namespace E3NextUI
             this.settingsToolStripMenuItem});
             this.menuStrip1.Location = new System.Drawing.Point(0, 0);
             this.menuStrip1.Name = "menuStrip1";
-            this.menuStrip1.Size = new System.Drawing.Size(1090, 24);
+            this.menuStrip1.Size = new System.Drawing.Size(1092, 24);
             this.menuStrip1.TabIndex = 44;
             this.menuStrip1.Text = "menuStrip1";
             // 
@@ -708,24 +710,24 @@ namespace E3NextUI
             this.panelConsole.Anchor = ((System.Windows.Forms.AnchorStyles)((((System.Windows.Forms.AnchorStyles.Top | System.Windows.Forms.AnchorStyles.Bottom) 
             | System.Windows.Forms.AnchorStyles.Left) 
             | System.Windows.Forms.AnchorStyles.Right)));
+            this.panelConsole.AutoSize = true;
             this.panelConsole.Controls.Add(this.splitContainer2);
             this.panelConsole.Controls.Add(this.splitContainer1);
             this.panelConsole.Location = new System.Drawing.Point(3, 250);
             this.panelConsole.Name = "panelConsole";
-            this.panelConsole.Size = new System.Drawing.Size(1087, 678);
+            this.panelConsole.Size = new System.Drawing.Size(1089, 562);
             this.panelConsole.TabIndex = 46;
             // 
             // E3UI
             // 
             this.AutoScaleDimensions = new System.Drawing.SizeF(6F, 13F);
             this.AutoScaleMode = System.Windows.Forms.AutoScaleMode.Font;
-            this.ClientSize = new System.Drawing.Size(1090, 931);
+            this.ClientSize = new System.Drawing.Size(1092, 807);
             this.ControlBox = false;
             this.Controls.Add(this.panelConsole);
             this.Controls.Add(this.panelButtons);
             this.Controls.Add(this.panelStatusPannel2);
             this.Controls.Add(this.panelMain);
-            this.Controls.Add(this.labelCastingValue);
             this.Controls.Add(this.menuStrip1);
             this.MainMenuStrip = this.menuStrip1;
             this.Name = "E3UI";

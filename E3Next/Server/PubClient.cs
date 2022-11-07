@@ -24,13 +24,30 @@ namespace E3Core.Server
             _port = port;
             _serverThread = Task.Factory.StartNew(() => { Process(); }, CancellationToken.None, TaskCreationOptions.DenyChildAttach, TaskScheduler.Default);
         }
+        public static bool NowCastInQueue()
+        {
+            if(_pubCommands.Count>0)
+            {
+                if(_pubCommands.TryPeek(out var result))
+                {
+                    if(result.StartsWith("/nowcast "))
+                    {
+                        return true;
+                    }
+                }
+            }
+            return false;
+        }
         public static void ProcessRequests()
         {
             while (_pubCommands.Count > 0)
             {
                 string message;
-                _pubCommands.TryDequeue(out message);
-                MQ.Cmd(message);
+                if(_pubCommands.TryDequeue(out message))
+                {
+
+                    MQ.Cmd(message);
+                }
             }
         }
         public void Process()

@@ -312,14 +312,21 @@ namespace E3NextUI
         }
         private void ToggleConsoles(bool ignoreHeight = false)
         {
+            int BorderWidth = (this.Width - this.ClientSize.Width) / 2;
+            int TitlebarHeight = this.Height - this.ClientSize.Height - 2 * BorderWidth;
+
             if (splitContainer2.Visible)
             {
                 splitContainer2.Visible = false;
                 splitContainer1.Visible = false;
-                if(!ignoreHeight)
+              
+                if (!ignoreHeight)
                 {
                     //need to collapse the window height to deal with the size poofing
-                    Int32 newHeight = this.DesktopBounds.Height - (splitContainer2.Height + splitContainer1.Height);
+
+                    
+
+                    Int32 newHeight = TitlebarHeight + BorderWidth + panelStatusPannel2.Height + panelMain.Height + menuStrip1.Height +20;
                     var point = new Point(this.DesktopBounds.X, this.DesktopBounds.Y);
                     var size = new Size(this.DesktopBounds.Width, newHeight);
                     this.DesktopBounds = new Rectangle(point, size);
@@ -335,7 +342,7 @@ namespace E3NextUI
             else
             {
 
-                Int32 newHeight = this.DesktopBounds.Height + (splitContainer2.Height + splitContainer1.Height);
+                Int32 newHeight = TitlebarHeight + BorderWidth + panelStatusPannel2.Height + panelMain.Height+ menuStrip1.Height+20+ (splitContainer2.Height + splitContainer1.Height);
                 var point = new Point(this.DesktopBounds.X, this.DesktopBounds.Y);
                 var size = new Size(this.DesktopBounds.Width, newHeight);
                 this.DesktopBounds = new Rectangle(point, size);
@@ -486,15 +493,16 @@ namespace E3NextUI
             }
             else
             {
+                if(!ti.textBox.Visible) return;
+
                 lock (ti)
                 {
+                    if (ti.isPaused || !ti.textBox.Visible) return;
+
                     if (ti.nextProcess < _stopWatch.ElapsedMilliseconds)
                     {
-                        if (ti.isPaused) return;
-
                         if (ti.isDirty)
                         {
-                        
                             ti.sb.Clear();
                             Int32 count = ti.consoleBuffer.Size;
                             if (count > 50) count = 50;
@@ -502,7 +510,6 @@ namespace E3NextUI
                             {
                                 ti.sb.AppendLine(ti.consoleBuffer[i]);
                             }
-                           
                             ti.textBox.Text = ti.sb.ToString();
                             ti.textBox.SelectionStart = ti.textBox.Text.Length;
                             ti.textBox.ScrollToCaret();
@@ -731,7 +738,10 @@ namespace E3NextUI
         [DllImport("shell32.dll", SetLastError = true)]
         static extern void SetCurrentProcessExplicitAppUserModelID([MarshalAs(UnmanagedType.LPWStr)] string AppID);
 
-       
+        private void panelStatusPannel2_Paint(object sender, PaintEventArgs e)
+        {
+
+        }
     }
     public class TextBoxInfo
     {
