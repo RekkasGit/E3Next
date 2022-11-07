@@ -646,7 +646,7 @@ namespace E3Core.Processors
             Casting.Cast(0, new Spell(box));
             _mq.Delay(6000);
             var boxId = _mq.Query<int>($"${{NearestSpawn[radius 20 {box}].ID}}");
-            _mq.Delay(250);
+            _mq.Delay(100);
             if (!Casting.TrueTarget(boxId))
             {
                 _mq.Write("\arWhere box?");
@@ -654,8 +654,7 @@ namespace E3Core.Processors
             }
 
             _mq.Delay(100);
-            _mq.Cmd("/open");
-            _mq.Delay(500);
+            _mq.Cmd("/open", 500);
             _spawns.RefreshList();
             boxId = _mq.Query<int>($"${{NearestSpawn[corpse radius 20 {box}].ID}}");
             var boxSpawn = _spawns.Get().FirstOrDefault(f => f.ID == boxId);
