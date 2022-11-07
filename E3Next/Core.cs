@@ -1202,12 +1202,19 @@ namespace MonoCore
             {
                 Delay(0);
             }
-            //delays are not valid commands
-            if (query.StartsWith("/delay", StringComparison.OrdinalIgnoreCase))
+            //avoid using /delay, this was only made to deal with UI /delay commands.
+            if (query.StartsWith("/delay ", StringComparison.OrdinalIgnoreCase))
             {
+                string[] splitArray = query.Split(' ');
+                if(splitArray.Length>1)
+                {
+                    if (Int32.TryParse(splitArray[1], out var delayvalue))
+                    {
+                        Delay(delayvalue);
+                    }
+                }
                 return;
             }
-
             //Core._log.Write($"Sending command to EQ:{query}");
 
             Core._currentCommand = query;

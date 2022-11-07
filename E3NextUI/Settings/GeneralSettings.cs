@@ -2,6 +2,7 @@
 using IniParser;
 using IniParser.Model;
 using System;
+using System.Collections;
 using System.Collections.Generic;
 using System.Linq;
 using System.Text;
@@ -9,6 +10,11 @@ using System.Threading.Tasks;
 
 namespace E3NextUI.Settings
 {
+    public class DynamicButton
+    {
+        public string Name = String.Empty;
+        public List<string> Commands = new List<string>();
+    }
     public class GeneralSettings:BaseSettings
     {
 
@@ -24,6 +30,7 @@ namespace E3NextUI.Settings
         public Int32 Height;
         public bool ConsoleCollapsed;
         public bool DynamicButtonsCollapsed;
+        public Dictionary<string, DynamicButton> DynamicButtons = new Dictionary<string, DynamicButton>(StringComparer.OrdinalIgnoreCase);
 
         private IniData _parsedData;
 
@@ -61,7 +68,32 @@ namespace E3NextUI.Settings
             LoadKeyData("General", "ConsoleCollapsed", _parsedData, ref ConsoleCollapsed);
             LoadKeyData("General", "DynamicButtonsCollapsed", _parsedData, ref DynamicButtonsCollapsed);
 
+            for (Int32 i = 0; i < 25; i++)
+            {
+                var section = _parsedData.Sections[$"dynamicButton_{i+1}"];
+                if (section != null)
+                {
+                    var keyData = section.GetKeyData("Name");
+                    if (keyData != null)
+                    {
+                        DynamicButton b = new DynamicButton();
+                        b.Name = keyData.Value;
+                        keyData = section.GetKeyData("line");
+                        if (keyData!= null)
+                        {
+                            foreach (var data in keyData.ValueList)
+                            {
+                                if (!string.IsNullOrWhiteSpace(data))
+                                {
+                                    b.Commands.Add(data);
+                                }
+                            }
 
+                        }
+                        DynamicButtons.Add($"dynamicButton_{i + 1}", b);
+                    }
+                }
+            }
         }
         public void SaveData()
         {
@@ -81,6 +113,22 @@ namespace E3NextUI.Settings
             section["Height"] = Height.ToString();
             section["ConsoleCollapsed"] = ConsoleCollapsed.ToString();
             section["DynamicButtonsCollapsed"] = DynamicButtonsCollapsed.ToString();
+
+            foreach(var pair in DynamicButtons)
+            {
+                section = _parsedData.Sections[pair.Key];
+                if(section==null)
+                {
+                    _parsedData.Sections.AddSection(pair.Key);
+                    section = _parsedData.Sections[pair.Key];
+                }
+                section.RemoveAllKeys();
+                section.AddKey("name", pair.Value.Name);
+                foreach (var command in pair.Value.Commands)
+                {
+                    section.AddKey("line", command);
+                }
+            }
 
             FileIniDataParser fileIniData = CreateIniParser();
             fileIniData.WriteFile(filename, _parsedData);

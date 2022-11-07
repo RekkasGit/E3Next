@@ -137,11 +137,58 @@ namespace E3NextUI
             for(Int32 i=0;i<(row*col);i++)
             {
                 var b = new Button();
-                b.Text = (i + 1).ToString();
-                b.Name = $"dynamicButton_{i+1}";
+                b.Name = $"dynamicButton_{i + 1}";
+                if(_genSettings.DynamicButtons.TryGetValue(b.Name, out var db))
+                {
+                    b.Text = db.Name;
+                }else
+                {   
+                    b.Text = (i + 1).ToString();
+
+                }
                 b.Click += dynamicButtonClick;
+                b.MouseDown += dynamicButtonRightClick;
                 b.Dock = DockStyle.Fill;
                 tableLayoutPanelDynamicButtons.Controls.Add(b);
+            }
+
+
+        }
+        void dynamicButtonRightClick(object sender, MouseEventArgs e)
+        {
+            var b = sender as Button;
+            if(b!=null)
+            {
+                if (e.Button == MouseButtons.Right)
+                {
+                    if(_genSettings.DynamicButtons.TryGetValue(b.Name,out var db))
+                    {
+                        //already exists.
+                        var edit = new DynamicButtonEditor();
+                        edit.StartPosition = FormStartPosition.CenterParent;
+                        edit.textBoxName.Text = b.Text;
+                        edit.textBoxCommands.Text = String.Join("\r\n",db.Commands);
+
+                        if (edit.ShowDialog() == DialogResult.OK)
+                        {
+                            db.Name = edit.textBoxName.Text;
+                            string[] lines = edit.textBoxCommands.Text.Split(new string[] { Environment.NewLine }, StringSplitOptions.RemoveEmptyEntries);
+
+                            db.Commands.Clear();
+                            foreach (var line in lines)
+                            {
+                                if(!String.IsNullOrWhiteSpace(line))
+                                {
+                                    db.Commands.Add(line);
+                                }
+                            }
+                         
+                            _genSettings.SaveData();
+                            b.Text = db.Name;
+
+                        }
+                    }
+                }
             }
         }
         void dynamicButtonClick(object sender, EventArgs e)
@@ -149,8 +196,35 @@ namespace E3NextUI
             var b = sender as Button;
             if (b != null)
             {
-                MessageBox.Show(string.Format("{0} Clicked", b.Text));
+                if (_genSettings.DynamicButtons.TryGetValue(b.Name, out var db))
+                {
+                    foreach(var command in db.Commands)
+                    {
+                        Server.PubServer._pubCommands.Enqueue(command);
+                    }
+                }
+                else
+                {
+                    //edit the button
+                    var edit = new DynamicButtonEditor();
+                    edit.StartPosition = FormStartPosition.CenterParent;
+                    if (edit.ShowDialog() == DialogResult.OK)
+                    {
+                        DynamicButton tdb = new DynamicButton();
+                        tdb.Name=edit.textBoxName.Text;
+                        string[] lines = edit.textBoxCommands.Text.Split(new string[] { Environment.NewLine },StringSplitOptions.None);
+                        tdb.Commands = new List<string>(lines);
 
+                        if(!_genSettings.DynamicButtons.ContainsKey(b.Name))
+                        {
+                            _genSettings.DynamicButtons.Add(b.Name, tdb);
+                        }
+                        _genSettings.DynamicButtons[b.Name]= tdb;
+                        _genSettings.SaveData();
+                        b.Text = tdb.Name;
+                        
+                    }
+                }
             }
         }
         private void GlobalTimer()
@@ -540,7 +614,7 @@ namespace E3NextUI
 
         private void button1_Click(object sender, EventArgs e)
         {
-            Form2 ft = new Form2();
+            DynamicButtonEditor ft = new DynamicButtonEditor();
             ft.Show();
         }
 

@@ -85,11 +85,11 @@
     <Compile Include="E3UI.Designer.cs">
       <DependentUpon>E3UI.cs</DependentUpon>
     </Compile>
-    <Compile Include="Form2.cs">
+    <Compile Include="DynamicButtonEditor.cs">
       <SubType>Form</SubType>
     </Compile>
-    <Compile Include="Form2.Designer.cs">
-      <DependentUpon>Form2.cs</DependentUpon>
+    <Compile Include="DynamicButtonEditor.Designer.cs">
+      <DependentUpon>DynamicButtonEditor.cs</DependentUpon>
     </Compile>
     <Compile Include="Program.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
@@ -103,8 +103,8 @@
     <EmbeddedResource Include="E3UI.resx">
       <DependentUpon>E3UI.cs</DependentUpon>
     </EmbeddedResource>
-    <EmbeddedResource Include="Form2.resx">
-      <DependentUpon>Form2.cs</DependentUpon>
+    <EmbeddedResource Include="DynamicButtonEditor.resx">
+      <DependentUpon>DynamicButtonEditor.cs</DependentUpon>
     </EmbeddedResource>
     <EmbeddedResource Include="Properties\Resources.resx">
       <Generator>ResXFileCodeGenerator</Generator>
