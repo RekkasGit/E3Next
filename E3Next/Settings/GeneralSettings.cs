@@ -26,6 +26,7 @@ namespace E3Core.Settings
         public Int32 Misc_Gimmie_LargeModShardMinRequests;
         public Int32 Misc_Gimmie_MoltenOrbMinRequests;
         public bool Misc_DestroyUnsoldItems;
+        public bool AutoMisfitBox;
         public string Loot_LinkChannel = String.Empty;
         public List<string> Loot_LinkChannelValid = new List<string>() {"g","gu","say","rsay","shout"};
 
@@ -107,6 +108,7 @@ namespace E3Core.Settings
             LoadKeyData("Misc", "Gimmie Large Mod Shard Min Requests", parsedData, ref Misc_Gimmie_LargeModShardMinRequests);
             LoadKeyData("Misc", "Gimmie MoltenOrb Min Requests", parsedData, ref Misc_Gimmie_MoltenOrbMinRequests);
             LoadKeyData("Misc", "Destroy Unsold Items(On/Off)", parsedData, ref Misc_DestroyUnsoldItems);
+            LoadKeyData("Misc", "Automatically Use Misfit Box (On/Off)", parsedData, ref AutoMisfitBox);
 
             LoadKeyData("Loot", "Loot Link Channel", parsedData, ref Loot_LinkChannel);
             //check valid loot channels
@@ -177,6 +179,7 @@ namespace E3Core.Settings
             section.Keys.AddKey("Gimmie Large Mod Shard Min Requests","1");
             section.Keys.AddKey("Gimmie MoltenOrb Min Requests","3");
             section.Keys.AddKey("Destroy Unsold Items(On/Off)","Off");
+            section.Keys.AddKey("Automatically Use Misfit Box (On/Off)", "On");
             //Loot
             newFile.Sections.AddSection("Loot");
             section = newFile.Sections.GetSectionData("Loot");

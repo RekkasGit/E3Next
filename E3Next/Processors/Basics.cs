@@ -5,7 +5,9 @@ using E3Core.Utility;
 using MonoCore;
 using System;
 using System.Collections.Generic;
+using System.Linq;
 using System.Text;
+using System.Windows.Forms.VisualStyles;
 
 namespace E3Core.Processors
 {
@@ -30,6 +32,8 @@ namespace E3Core.Processors
         private static long _nextFoodCheckInterval = 1000;
         private static long _nextCursorCheck = 0;
         private static long _nextCursorCheckInterval = 1000;
+        private static long _nextBoxCheck = 0;
+        private static long _nextBoxCheckInterval = 10000;
         private static DateTime? _cursorOccupiedSince;
         private static TimeSpan _cursorOccupiedTime;
         private static TimeSpan _cursorOccupiedThreshold = new TimeSpan(0, 0, 0, 30);
@@ -615,6 +619,66 @@ namespace E3Core.Processors
                 {
                     _mq.Cmd($"/useitem \"{toDrink}\"");
                 }
+            }
+        }
+
+        /// <summary>
+        /// Uses box of misfit prizes on if necessary.
+        /// </summary>
+        [ClassInvoke(Class.All)]
+        public static void CheckBox()
+        {
+            if (!E3.GeneralSettings.AutoMisfitBox) return;
+            if (!e3util.ShouldCheck(ref _nextBoxCheck, _nextBoxCheckInterval)) return;
+
+            var box = "Box of Misfit Prizes";
+            if (!_mq.Query<bool>($"${{FindItem[={box}]}}")) return;
+            if (!_mq.Query<bool>($"${{Me.ItemReady[={box}]}}")) return;
+            if (_mq.Query<bool>("${Cursor.ID}"))
+            {
+                _mq.Cmd("/autoinv");
+            }
+
+            var ammoItem = _mq.Query<string>("${Me.Inventory[ammo]}");
+            if (!string.Equals(ammoItem, box, StringComparison.OrdinalIgnoreCase))
+            {
+                _mq.Cmd($"/exchange \"{box}\" ammo");
+            }
+
+            Casting.Cast(0, new Spell(box));
+            _mq.Delay(6000);
+            var boxId = _mq.Query<int>($"${{NearestSpawn[radius 20 {box}].ID}}");
+            _mq.Delay(100);
+            if (!Casting.TrueTarget(boxId))
+            {
+                _mq.Write("\arWhere box?");
+                return;
+            }
+
+            _mq.Delay(100);
+            _mq.Cmd("/open", 500);
+            _spawns.RefreshList();
+            boxId = _mq.Query<int>($"${{NearestSpawn[corpse radius 20 {box}].ID}}");
+            var boxSpawn = _spawns.Get().FirstOrDefault(f => f.ID == boxId);
+            if (!Casting.TrueTarget(boxSpawn?.ID ?? 0))
+            {
+                _mq.Write("\arWhere box?");
+                return;
+            }
+
+            if (boxSpawn != null)
+            {
+                Loot.LootCorpse(boxSpawn, true);
+                _mq.Cmd("/notify LootWnd DoneButton leftmouseup");
+            }
+            else
+            {
+                _mq.Write("\arUnable to find spawn for box in spawn cache; skipping looting");
+            }
+
+            if (!string.Equals(ammoItem, box))
+            {
+                _mq.Cmd($"/exchange \"{ammoItem}\" ammo");
             }
         }
 
