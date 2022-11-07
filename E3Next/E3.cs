@@ -111,6 +111,8 @@ namespace E3Core.Processors
             {
                 Loot.Process();
             }
+
+            //were modifications made to the settings files?
             CheckModifiedSettings();
         }
         private static void CheckModifiedSettings()

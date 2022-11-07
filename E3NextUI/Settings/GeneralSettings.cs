@@ -23,6 +23,7 @@ namespace E3NextUI.Settings
         public Int32 Width;
         public Int32 Height;
         public bool ConsoleCollapsed;
+        public bool DynamicButtonsCollapsed;
 
         private IniData _parsedData;
 
@@ -58,6 +59,7 @@ namespace E3NextUI.Settings
             LoadKeyData("General", "Width", _parsedData, ref Width);
             LoadKeyData("General", "Height", _parsedData, ref Height);
             LoadKeyData("General", "ConsoleCollapsed", _parsedData, ref ConsoleCollapsed);
+            LoadKeyData("General", "DynamicButtonsCollapsed", _parsedData, ref DynamicButtonsCollapsed);
 
 
         }
@@ -78,6 +80,7 @@ namespace E3NextUI.Settings
             section["Width"] = Width.ToString();
             section["Height"] = Height.ToString();
             section["ConsoleCollapsed"] = ConsoleCollapsed.ToString();
+            section["DynamicButtonsCollapsed"] = DynamicButtonsCollapsed.ToString();
 
             FileIniDataParser fileIniData = CreateIniParser();
             fileIniData.WriteFile(filename, _parsedData);
@@ -96,6 +99,7 @@ namespace E3NextUI.Settings
             section.Keys.AddKey("Width", "");
             section.Keys.AddKey("Height", "");
             section.Keys.AddKey("ConsoleCollapsed", "False");
+            section.Keys.AddKey("DynamicButtonsCollapsed", "False");
 
 
             if (!System.IO.File.Exists(filename))

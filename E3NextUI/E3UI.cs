@@ -14,6 +14,7 @@ using System.Text;
 using System.Threading;
 using System.Threading.Tasks;
 using System.Windows.Forms;
+using System.Xml;
 
 namespace E3NextUI
 {
@@ -44,13 +45,24 @@ namespace E3NextUI
         public static object _objectLock = new object();
         public static GeneralSettings _genSettings;
         public Image _collapseConsoleImage;
+        public Image _uncollapseConsoleImage;
+        public Image _collapseDynamicButtonImage;
+        public Image _uncollapseDynamicButtonImage;
 
         public E3UI()
         {
             InitializeComponent();
-            pbCollapseConsole.Image.RotateFlip(RotateFlipType.Rotate180FlipNone);
-            _collapseConsoleImage = (Image)pbCollapseConsole.Image.Clone();
-            
+            _collapseConsoleImage = (Image)pbCollapseConsoleButtons.Image.Clone();
+            pbCollapseConsoleButtons.Image.RotateFlip(RotateFlipType.Rotate180FlipNone);
+            _uncollapseConsoleImage = (Image)pbCollapseConsoleButtons.Image.Clone();
+
+
+            _collapseDynamicButtonImage = (Image)pbCollapseDynamicButtons.Image.Clone();
+            _collapseDynamicButtonImage.RotateFlip(RotateFlipType.Rotate270FlipNone);
+            _uncollapseDynamicButtonImage = (Image)pbCollapseDynamicButtons.Image.Clone();
+            _uncollapseDynamicButtonImage.RotateFlip(RotateFlipType.Rotate90FlipNone);
+            pbCollapseDynamicButtons.Image = (Image)_uncollapseDynamicButtonImage.Clone();
+
             SetCurrentProcessExplicitAppUserModelID("E3.E3UI.1");
             _stopWatch.Start();
             string[] args = Environment.GetCommandLineArgs();
@@ -97,8 +109,8 @@ namespace E3NextUI
                 this.DesktopBounds = new Rectangle(point, size);
           
             }
-           
 
+            LoadDynamicButtons();
             SetDoubleBuffered(richTextBoxConsole);
             SetDoubleBuffered(richTextBoxMQConsole);
             SetDoubleBuffered(richTextBoxMelee);
@@ -118,7 +130,29 @@ namespace E3NextUI
             _globalUpdate = Task.Factory.StartNew(() => { GlobalTimer(); }, CancellationToken.None, TaskCreationOptions.DenyChildAttach, TaskScheduler.Default);
 
         }
+        private void LoadDynamicButtons()
+        {
+            Int32 row = 5;
+            Int32 col = 5;
+            for(Int32 i=0;i<(row*col);i++)
+            {
+                var b = new Button();
+                b.Text = (i + 1).ToString();
+                b.Name = $"dynamicButton_{i+1}";
+                b.Click += dynamicButtonClick;
+                b.Dock = DockStyle.Fill;
+                tableLayoutPanelDynamicButtons.Controls.Add(b);
+            }
+        }
+        void dynamicButtonClick(object sender, EventArgs e)
+        {
+            var b = sender as Button;
+            if (b != null)
+            {
+                MessageBox.Show(string.Format("{0} Clicked", b.Text));
 
+            }
+        }
         private void GlobalTimer()
         {
             while(_shouldProcess)
@@ -163,22 +197,63 @@ namespace E3NextUI
                 }
             }
         }
-        private void pbCollapseConsole_Click(object sender, EventArgs e)
+        private void pbCollapseConsoleButtons_Click(object sender, EventArgs e)
         {
             ToggleConsoles();
         }
-        private void ToggleConsoles()
+        private void pbCollapseDynamicButtons_Click(object sender, EventArgs e)
+        {
+            ToggleButtons();
+        }
+        private void ToggleButtons(bool ignoreWidth = false)
+        {
+            if(tableLayoutPanelDynamicButtons.Visible)
+            {
+                tableLayoutPanelDynamicButtons.Visible = false;
+                if(!ignoreWidth)
+                {
+                    Int32 newWidth = this.DesktopBounds.Width - (tableLayoutPanelDynamicButtons.Width);
+                    var point = new Point(this.DesktopBounds.X, this.DesktopBounds.Y);
+                    var size = new Size(newWidth, this.DesktopBounds.Height);
+                    this.DesktopBounds = new Rectangle(point, size);
+
+                }
+                pbCollapseDynamicButtons.Image = (Image)_collapseDynamicButtonImage;
+                _genSettings.DynamicButtonsCollapsed = true;
+                _genSettings.SaveData();
+            }
+            else
+            {
+
+                 Int32 newWidth = this.DesktopBounds.Width + (tableLayoutPanelDynamicButtons.Width);
+                var point = new Point(this.DesktopBounds.X, this.DesktopBounds.Y);
+                var size = new Size(newWidth, this.DesktopBounds.Height);
+                this.DesktopBounds = new Rectangle(point, size);
+                tableLayoutPanelDynamicButtons.Visible = true;
+                pbCollapseDynamicButtons.Image = (Image)_uncollapseDynamicButtonImage;
+                _genSettings.DynamicButtonsCollapsed = false;
+                _genSettings.SaveData();
+
+            }
+        }
+        private void ToggleConsoles(bool ignoreHeight = false)
         {
             if (splitContainer2.Visible)
             {
                 splitContainer2.Visible = false;
                 splitContainer1.Visible = false;
-                //need to collapse the window height to deal with the size poofing
-                Int32 newHeight = this.DesktopBounds.Height - (splitContainer2.Height + splitContainer1.Height);
-                var point = new Point(this.DesktopBounds.X, this.DesktopBounds.Y);
-                var size = new Size(this.DesktopBounds.Width, newHeight);
-                this.DesktopBounds = new Rectangle(point, size);
-                pbCollapseConsole.Image.RotateFlip(RotateFlipType.Rotate180FlipNone);
+                if(!ignoreHeight)
+                {
+                    //need to collapse the window height to deal with the size poofing
+                    Int32 newHeight = this.DesktopBounds.Height - (splitContainer2.Height + splitContainer1.Height);
+                    var point = new Point(this.DesktopBounds.X, this.DesktopBounds.Y);
+                    var size = new Size(this.DesktopBounds.Width, newHeight);
+                    this.DesktopBounds = new Rectangle(point, size);
+
+                }
+
+                pbCollapseConsoleButtons.Image = (Image)_collapseConsoleImage.Clone();
+              
                 _genSettings.ConsoleCollapsed = true;
                 _genSettings.SaveData();
 
@@ -193,17 +268,22 @@ namespace E3NextUI
                 splitContainer2.Visible = true;
                 splitContainer1.Visible = true;
                 _genSettings.ConsoleCollapsed = false;
+                pbCollapseConsoleButtons.Image = (Image)_uncollapseConsoleImage.Clone();
                 _genSettings.SaveData();
 
-                pbCollapseConsole.Image = (Image)_collapseConsoleImage.Clone();
 
             }
         }
+    
         private void E3UI_Load(object sender, EventArgs e)
         {
             if (_genSettings.ConsoleCollapsed)
             {
-                ToggleConsoles();
+                ToggleConsoles(true);
+            }
+            if(_genSettings.DynamicButtonsCollapsed)
+            {
+                ToggleButtons(true);
             }
         }
         private void ProcessParse()
@@ -577,7 +657,7 @@ namespace E3NextUI
         [DllImport("shell32.dll", SetLastError = true)]
         static extern void SetCurrentProcessExplicitAppUserModelID([MarshalAs(UnmanagedType.LPWStr)] string AppID);
 
-      
+       
     }
     public class TextBoxInfo
     {
