@@ -106,7 +106,7 @@ namespace E3NextUI
             // 
             this.labelPlayer.AutoSize = true;
             this.labelPlayer.Font = new System.Drawing.Font("Microsoft Sans Serif", 14.25F, System.Drawing.FontStyle.Bold, System.Drawing.GraphicsUnit.Point, ((byte)(0)));
-            this.labelPlayer.ForeColor = System.Drawing.SystemColors.MenuHighlight;
+            this.labelPlayer.ForeColor = System.Drawing.Color.CornflowerBlue;
             this.labelPlayer.Location = new System.Drawing.Point(20, 0);
             this.labelPlayer.Name = "labelPlayer";
             this.labelPlayer.Size = new System.Drawing.Size(74, 24);
@@ -117,7 +117,7 @@ namespace E3NextUI
             // 
             this.labelPlayerName.AutoSize = true;
             this.labelPlayerName.Font = new System.Drawing.Font("Microsoft Sans Serif", 12F, System.Drawing.FontStyle.Bold, System.Drawing.GraphicsUnit.Point, ((byte)(0)));
-            this.labelPlayerName.ForeColor = System.Drawing.Color.Crimson;
+            this.labelPlayerName.ForeColor = System.Drawing.Color.FromArgb(((int)(((byte)(214)))), ((int)(((byte)(79)))), ((int)(((byte)(93)))));
             this.labelPlayerName.Location = new System.Drawing.Point(99, 3);
             this.labelPlayerName.Name = "labelPlayerName";
             this.labelPlayerName.Size = new System.Drawing.Size(93, 20);
@@ -128,7 +128,7 @@ namespace E3NextUI
             // 
             this.labelHP.AutoSize = true;
             this.labelHP.Font = new System.Drawing.Font("Microsoft Sans Serif", 14.25F, System.Drawing.FontStyle.Bold, System.Drawing.GraphicsUnit.Point, ((byte)(0)));
-            this.labelHP.ForeColor = System.Drawing.SystemColors.MenuHighlight;
+            this.labelHP.ForeColor = System.Drawing.Color.FromArgb(((int)(((byte)(0)))), ((int)(((byte)(192)))), ((int)(((byte)(0)))));
             this.labelHP.Location = new System.Drawing.Point(19, 33);
             this.labelHP.Name = "labelHP";
             this.labelHP.Size = new System.Drawing.Size(44, 24);
@@ -418,7 +418,7 @@ namespace E3NextUI
             this.labelPetNameValue.Anchor = System.Windows.Forms.AnchorStyles.Left;
             this.labelPetNameValue.AutoSize = true;
             this.labelPetNameValue.Font = new System.Drawing.Font("Microsoft Sans Serif", 12F, System.Drawing.FontStyle.Bold, System.Drawing.GraphicsUnit.Point, ((byte)(0)));
-            this.labelPetNameValue.ForeColor = System.Drawing.Color.Crimson;
+            this.labelPetNameValue.ForeColor = System.Drawing.Color.FromArgb(((int)(((byte)(214)))), ((int)(((byte)(79)))), ((int)(((byte)(93)))));
             this.labelPetNameValue.Location = new System.Drawing.Point(108, 15);
             this.labelPetNameValue.Name = "labelPetNameValue";
             this.labelPetNameValue.Size = new System.Drawing.Size(51, 20);
@@ -430,7 +430,7 @@ namespace E3NextUI
             this.labelPetName.Anchor = System.Windows.Forms.AnchorStyles.Left;
             this.labelPetName.AutoSize = true;
             this.labelPetName.Font = new System.Drawing.Font("Microsoft Sans Serif", 14.25F, System.Drawing.FontStyle.Bold, System.Drawing.GraphicsUnit.Point, ((byte)(0)));
-            this.labelPetName.ForeColor = System.Drawing.SystemColors.MenuHighlight;
+            this.labelPetName.ForeColor = System.Drawing.Color.CornflowerBlue;
             this.labelPetName.Location = new System.Drawing.Point(67, 12);
             this.labelPetName.Name = "labelPetName";
             this.labelPetName.Size = new System.Drawing.Size(46, 24);
@@ -453,7 +453,7 @@ namespace E3NextUI
             this.labelInCombat.Anchor = System.Windows.Forms.AnchorStyles.Left;
             this.labelInCombat.AutoSize = true;
             this.labelInCombat.Font = new System.Drawing.Font("Microsoft Sans Serif", 14.25F, System.Drawing.FontStyle.Bold, System.Drawing.GraphicsUnit.Point, ((byte)(0)));
-            this.labelInCombat.ForeColor = System.Drawing.SystemColors.MenuHighlight;
+            this.labelInCombat.ForeColor = System.Drawing.Color.CornflowerBlue;
             this.labelInCombat.Location = new System.Drawing.Point(3, 36);
             this.labelInCombat.Name = "labelInCombat";
             this.labelInCombat.Size = new System.Drawing.Size(110, 24);
@@ -465,7 +465,7 @@ namespace E3NextUI
             this.labelInCombatValue.Anchor = System.Windows.Forms.AnchorStyles.Left;
             this.labelInCombatValue.AutoSize = true;
             this.labelInCombatValue.Font = new System.Drawing.Font("Microsoft Sans Serif", 12F, System.Drawing.FontStyle.Bold, System.Drawing.GraphicsUnit.Point, ((byte)(0)));
-            this.labelInCombatValue.ForeColor = System.Drawing.Color.Red;
+            this.labelInCombatValue.ForeColor = System.Drawing.Color.FromArgb(((int)(((byte)(214)))), ((int)(((byte)(79)))), ((int)(((byte)(93)))));
             this.labelInCombatValue.Location = new System.Drawing.Point(111, 42);
             this.labelInCombatValue.Name = "labelInCombatValue";
             this.labelInCombatValue.Size = new System.Drawing.Size(48, 20);
@@ -476,7 +476,7 @@ namespace E3NextUI
             // 
             this.labelManaCurrent.AutoSize = true;
             this.labelManaCurrent.Font = new System.Drawing.Font("Microsoft Sans Serif", 15.75F, System.Drawing.FontStyle.Bold, System.Drawing.GraphicsUnit.Point, ((byte)(0)));
-            this.labelManaCurrent.ForeColor = System.Drawing.Color.Blue;
+            this.labelManaCurrent.ForeColor = System.Drawing.Color.CornflowerBlue;
             this.labelManaCurrent.Location = new System.Drawing.Point(69, 56);
             this.labelManaCurrent.Name = "labelManaCurrent";
             this.labelManaCurrent.Size = new System.Drawing.Size(25, 25);
@@ -487,7 +487,7 @@ namespace E3NextUI
             // 
             this.labelMana.AutoSize = true;
             this.labelMana.Font = new System.Drawing.Font("Microsoft Sans Serif", 14.25F, System.Drawing.FontStyle.Bold, System.Drawing.GraphicsUnit.Point, ((byte)(0)));
-            this.labelMana.ForeColor = System.Drawing.SystemColors.MenuHighlight;
+            this.labelMana.ForeColor = System.Drawing.Color.CornflowerBlue;
             this.labelMana.Location = new System.Drawing.Point(19, 57);
             this.labelMana.Name = "labelMana";
             this.labelMana.Size = new System.Drawing.Size(46, 24);
@@ -509,7 +509,7 @@ namespace E3NextUI
             // 
             this.labelStaminia.AutoSize = true;
             this.labelStaminia.Font = new System.Drawing.Font("Microsoft Sans Serif", 14.25F, System.Drawing.FontStyle.Bold, System.Drawing.GraphicsUnit.Point, ((byte)(0)));
-            this.labelStaminia.ForeColor = System.Drawing.SystemColors.MenuHighlight;
+            this.labelStaminia.ForeColor = System.Drawing.Color.FromArgb(((int)(((byte)(192)))), ((int)(((byte)(192)))), ((int)(((byte)(0)))));
             this.labelStaminia.Location = new System.Drawing.Point(19, 80);
             this.labelStaminia.Name = "labelStaminia";
             this.labelStaminia.Size = new System.Drawing.Size(42, 24);
@@ -521,7 +521,7 @@ namespace E3NextUI
             this.labelCastingValue.AutoSize = true;
             this.labelCastingValue.Font = new System.Drawing.Font("Microsoft Sans Serif", 12F, System.Drawing.FontStyle.Bold, System.Drawing.GraphicsUnit.Point, ((byte)(0)));
             this.labelCastingValue.ForeColor = System.Drawing.Color.DarkCyan;
-            this.labelCastingValue.Location = new System.Drawing.Point(119, 76);
+            this.labelCastingValue.Location = new System.Drawing.Point(118, 68);
             this.labelCastingValue.Name = "labelCastingValue";
             this.labelCastingValue.Size = new System.Drawing.Size(0, 20);
             this.labelCastingValue.TabIndex = 38;
@@ -531,7 +531,7 @@ namespace E3NextUI
             this.labelCasting.Anchor = System.Windows.Forms.AnchorStyles.Left;
             this.labelCasting.AutoSize = true;
             this.labelCasting.Font = new System.Drawing.Font("Microsoft Sans Serif", 14.25F, System.Drawing.FontStyle.Bold, System.Drawing.GraphicsUnit.Point, ((byte)(0)));
-            this.labelCasting.ForeColor = System.Drawing.SystemColors.MenuHighlight;
+            this.labelCasting.ForeColor = System.Drawing.Color.CornflowerBlue;
             this.labelCasting.Location = new System.Drawing.Point(27, 67);
             this.labelCasting.Name = "labelCasting";
             this.labelCasting.Size = new System.Drawing.Size(85, 24);
@@ -572,6 +572,7 @@ namespace E3NextUI
             // 
             this.panelStatusPannel2.AutoSize = true;
             this.panelStatusPannel2.AutoSizeMode = System.Windows.Forms.AutoSizeMode.GrowAndShrink;
+            this.panelStatusPannel2.BackColor = System.Drawing.SystemColors.Control;
             this.panelStatusPannel2.BackgroundImageLayout = System.Windows.Forms.ImageLayout.Zoom;
             this.panelStatusPannel2.Controls.Add(this.labelCastingValue);
             this.panelStatusPannel2.Controls.Add(this.labelCasting);
@@ -586,7 +587,6 @@ namespace E3NextUI
             this.panelStatusPannel2.Name = "panelStatusPannel2";
             this.panelStatusPannel2.Size = new System.Drawing.Size(730, 107);
             this.panelStatusPannel2.TabIndex = 42;
-            this.panelStatusPannel2.Paint += new System.Windows.Forms.PaintEventHandler(this.panelStatusPannel2_Paint);
             // 
             // pbCollapseDynamicButtons
             // 
@@ -636,8 +636,8 @@ namespace E3NextUI
             // dynamicButtonsToolStripMenuItem
             // 
             this.dynamicButtonsToolStripMenuItem.Name = "dynamicButtonsToolStripMenuItem";
-            this.dynamicButtonsToolStripMenuItem.Size = new System.Drawing.Size(165, 22);
-            this.dynamicButtonsToolStripMenuItem.Text = "Dynamic Buttons";
+            this.dynamicButtonsToolStripMenuItem.Size = new System.Drawing.Size(129, 22);
+            this.dynamicButtonsToolStripMenuItem.Text = "DarkMode";
             // 
             // panelMain
             // 

@@ -40,7 +40,7 @@ namespace E3NextUI
         public static TextBoxInfo _mqConsole;
         public static TextBoxInfo _meleeConsole;
         public static TextBoxInfo _spellConsole;
-        public static string CharacterName;
+        public static string _playerName;
         public static Int32 _parentProcess;
         public static object _objectLock = new object();
         public static GeneralSettings _genSettings;
@@ -48,6 +48,10 @@ namespace E3NextUI
         public Image _uncollapseConsoleImage;
         public Image _collapseDynamicButtonImage;
         public Image _uncollapseDynamicButtonImage;
+        public static String _playerHP;
+        public static String _playerMP;
+        public static String _playerSP;
+        
 
         public E3UI()
         {
@@ -79,9 +83,9 @@ namespace E3NextUI
                 {
                     lock (_tloClient)
                     {
-                        CharacterName = _tloClient.RequestData("${Me.CleanName}");
-                        this.Text = $"E3UI ({CharacterName})";
-                        labelPlayerName.Text = CharacterName;
+                        _playerName = _tloClient.RequestData("${Me.CleanName}");
+                        this.Text = $"E3UI ({_playerName})";
+                        labelPlayerName.Text = _playerName;
                         configFolder = _tloClient.RequestData("${MacroQuest.Path[config]}");
                     }
                 }
@@ -97,7 +101,7 @@ namespace E3NextUI
 
             }
 
-            _genSettings = new GeneralSettings(configFolder, CharacterName);
+            _genSettings = new GeneralSettings(configFolder, _playerName);
             _genSettings.LoadData();
 
 
@@ -129,6 +133,7 @@ namespace E3NextUI
 
             _globalUpdate = Task.Factory.StartNew(() => { GlobalTimer(); }, CancellationToken.None, TaskCreationOptions.DenyChildAttach, TaskScheduler.Default);
 
+           
         }
         private void LoadDynamicButtons()
         {
@@ -238,37 +243,29 @@ namespace E3NextUI
                         Application.Exit();
                     }
                 }
-                //check to see if our position has changed.
-                GlobalUIProcess();    
-
+                if (this.IsHandleCreated)
+                {
+                    //check to see if our position has changed.
+                    this.Invoke(new GlobalDelegate(GlobalUIProcess), null);
+                }
                 System.Threading.Thread.Sleep(1000);
             }
         }
         private delegate void GlobalDelegate();
         public void GlobalUIProcess()
         {
-            if (this.InvokeRequired)
+            int currentX = this.DesktopBounds.X;
+            int currentY = this.DesktopBounds.Y;
+            int height = this.DesktopBounds.Height;
+            int width = this.DesktopBounds.Width;
+
+            if (currentX != _genSettings.StartLocationX || currentY != _genSettings.StartLocationY || width!=_genSettings.Width | height != _genSettings.Height)
             {
-                this.Invoke(new GlobalDelegate(GlobalUIProcess), null);
-            }
-            else
-            {
-
-                int currentX = this.DesktopBounds.X;
-                int currentY = this.DesktopBounds.Y;
-                int height = this.DesktopBounds.Height;
-                int width = this.DesktopBounds.Width;
-
-
-                if (currentX != _genSettings.StartLocationX || currentY != _genSettings.StartLocationY || width!=_genSettings.Width | height != _genSettings.Height)
-                {
-
-                    _genSettings.StartLocationX = currentX;
-                    _genSettings.StartLocationY = currentY;
-                    _genSettings.Width = width;
-                    _genSettings.Height = height;
-                    _genSettings.SaveData();
-                }
+                _genSettings.StartLocationX = currentX;
+                _genSettings.StartLocationY = currentY;
+                _genSettings.Width = width;
+                _genSettings.Height = height;
+                _genSettings.SaveData();
             }
         }
         private void pbCollapseConsoleButtons_Click(object sender, EventArgs e)
@@ -366,6 +363,7 @@ namespace E3NextUI
             {
                 ToggleButtons(true);
             }
+            Themese.DarkMode.ChangeTheme(this, this.Controls);
         }
         private void ProcessParse()
         {
@@ -385,10 +383,22 @@ namespace E3NextUI
         {
          
             //lets get the data from the line parser.
-            lock (_objectLock)
+            
+
+            if(labelHPTotal.Text!=_playerHP)
             {
-                labelInCombatValue.Text = LineParser._currentlyCombat.ToString();
+                labelHPTotal.Text = _playerHP;
             }
+            if (labelManaCurrent.Text != _playerMP)
+            {
+                labelManaCurrent.Text = _playerMP;
+            }
+            if (labelStaminaValue.Text != _playerSP)
+            {
+                labelStaminaValue.Text = _playerSP;
+            }
+
+            labelInCombatValue.Text = LineParser._currentlyCombat.ToString();
             lock (LineParser._objectLock)
             {
                 if (!String.IsNullOrWhiteSpace(LineParser.PetName))
@@ -400,7 +410,6 @@ namespace E3NextUI
 
                 Int64 petDamageTotal = LineParser._yourPetDamage.Sum();
                 labelPetDamageValue.Text = petDamageTotal.ToString("N0");
-
 
                 Int64 dsDamage = LineParser._yourDamageShieldDamage.Sum();
                 labelYourDamageShieldValue.Text = dsDamage.ToString("N0");
@@ -477,7 +486,11 @@ namespace E3NextUI
         {
             while (_shouldProcess)
             {
-                ProcessBaseConsoleUI(textInfo);
+                if(this.IsHandleCreated)
+                {
+                    this.Invoke(new ProcessBaseUIDelegate(ProcessBaseConsoleUI), new object[] { textInfo });
+
+                }
                 System.Threading.Thread.Sleep(500);
             }
 
@@ -487,12 +500,6 @@ namespace E3NextUI
         private delegate void ProcessBaseUIDelegate(TextBoxInfo textInfo);
         private void ProcessBaseConsoleUI(TextBoxInfo ti)
         {
-            if (this.InvokeRequired)
-            {
-                this.Invoke(new ProcessBaseUIDelegate(ProcessBaseConsoleUI), new object[] { ti });
-            }
-            else
-            {
                 if(!ti.textBox.Visible) return;
 
                 lock (ti)
@@ -518,7 +525,6 @@ namespace E3NextUI
                         }
                     }
                 }
-            }
         }
 
 
@@ -531,11 +537,9 @@ namespace E3NextUI
             }
             else
             {
-
                 if (this.Visible)
                 {
                     this.Visible = false; // Hide form window.
-
                 }
                 else
                 {
@@ -553,50 +557,20 @@ namespace E3NextUI
         private delegate void SetPlayerDataDelegate(string name);
         public void SetPlayerName(string name)
         {
-            if (this.InvokeRequired)
-            {
-                this.Invoke(new SetPlayerDataDelegate(SetPlayerName), new object[] { name });
-            }
-            else
-            {
-                labelPlayerName.Text = name;
-            }
+            _playerName = name;
         }
         public void SetPlayerHP(string value)
         {
-            if (value == labelHPTotal.Text) return;
-            if (this.InvokeRequired)
-            {
-                this.Invoke(new SetPlayerDataDelegate(SetPlayerHP), new object[] { value });
-            }
-            else
-            {
-                labelHPTotal.Text = value;
-            }
+            _playerHP = value;
         }
         public void SetPlayerMP(string value)
         {
-            if (value == labelManaCurrent.Text) return;
-            if (this.InvokeRequired)
-            {
-                this.Invoke(new SetPlayerDataDelegate(SetPlayerMP), new object[] { value });
-            }
-            else
-            {
-                labelManaCurrent.Text = value;
-            }
+            _playerMP = value;
+           
         }
         public void SetPlayerSP(string value)
         {
-            if (value == labelStaminaValue.Text) return;
-            if (this.InvokeRequired)
-            {
-                this.Invoke(new SetPlayerDataDelegate(SetPlayerSP), new object[] { value });
-            }
-            else
-            {
-                labelStaminaValue.Text = value;
-            }
+            _playerSP = value;
         }
         public void SetPlayerCasting(string value)
         {
@@ -632,7 +606,7 @@ namespace E3NextUI
 
         private void textBoxConsoleInput_KeyDown(object sender, KeyEventArgs e)
         {
-        if (e.KeyData == Keys.Enter)
+            if (e.KeyData == Keys.Enter)
             {
                 //grab the data and send a command
                 //do this to stop the 'ding' sound
@@ -737,11 +711,6 @@ namespace E3NextUI
         }
         [DllImport("shell32.dll", SetLastError = true)]
         static extern void SetCurrentProcessExplicitAppUserModelID([MarshalAs(UnmanagedType.LPWStr)] string AppID);
-
-        private void panelStatusPannel2_Paint(object sender, PaintEventArgs e)
-        {
-
-        }
     }
     public class TextBoxInfo
     {

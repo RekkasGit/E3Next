@@ -98,6 +98,8 @@
     <Compile Include="Server\PubServer.cs" />
     <Compile Include="Settings\BaseSettings.cs" />
     <Compile Include="Settings\GeneralSettings.cs" />
+    <Compile Include="Themese\DarkMode.cs" />
+    <Compile Include="Themese\DefaultMode.cs" />
     <Compile Include="Util\CircularBuffer.cs" />
     <Compile Include="Util\LineParser.cs" />
     <EmbeddedResource Include="E3UI.resx">
