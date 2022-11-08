@@ -1,7 +1,9 @@
-﻿using System;
+﻿using Microsoft.Win32;
+using System;
 using System.Collections.Generic;
 using System.Drawing;
 using System.Linq;
+using System.Runtime.CompilerServices;
 using System.Runtime.InteropServices;
 using System.Text;
 using System.Threading.Tasks;
@@ -37,17 +39,46 @@ namespace E3NextUI.Themese
         DWMWA_SYSTEMBACKDROP_TYPE,
         DWMWA_LAST
     }
+
     public static class DarkMode
     {
+    
         public static void ChangeTheme(System.Windows.Forms.Form form, Control.ControlCollection container)
         {
-            var preference = Convert.ToInt32(true);
-            DwmSetWindowAttribute(form.Handle,
-                                  DWMWINDOWATTRIBUTE.DWMWA_USE_IMMERSIVE_DARK_MODE,
-                                  ref preference, sizeof(uint));
+            Int32 enabled = 1;
+            try
+            {
+                //old version of windows doesn't work
+                if (DwmSetWindowAttribute(form.Handle, 19, new[] { enabled }, 4) != 0)
+                {
+                    //try the newer version
+                    DwmSetWindowAttribute(form.Handle, 20, new[] { enabled }, 4);
+                }
 
+            }
+            catch(Exception)
+            {
+                //eat whatever exception
+            }
+            form.BackColor = Color.FromArgb(60, 60, 60);
+            if (form.ForeColor == SystemColors.ControlText)
+            {
+                form.ForeColor = System.Drawing.Color.LightGray;
+            }
             ChangeThemeRecursive(container);
         }
+        private static bool IsWindows10OrGreater(int build = -1)
+        {
+            string version = Environment.OSVersion.Version.Major + "." + Environment.OSVersion.Version.Minor;
+            if(Decimal.TryParse(version, out var verNumber))
+            {
+                return (verNumber>=6.2M) && Environment.OSVersion.Version.Build >= build;
+            }
+
+            return false;
+        }
+
+            
         public static void ChangeThemeRecursive(Control.ControlCollection container)
         {
             foreach (Control component in container)
@@ -88,11 +119,8 @@ namespace E3NextUI.Themese
             }
 
         }
-        [DllImport("dwmapi.dll", CharSet = CharSet.Unicode, PreserveSig = false)]
-        public static extern void DwmSetWindowAttribute(IntPtr hwnd,
-                                                DWMWINDOWATTRIBUTE attribute,
-                                                ref int pvAttribute,
-                                                uint cbAttribute);
+        [DllImport("DwmApi")] //System.Runtime.InteropServices
+        private static extern int DwmSetWindowAttribute(IntPtr hwnd, int attr, int[] attrValue, int attrSize);
 
     }
 }

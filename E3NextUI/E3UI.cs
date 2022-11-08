@@ -1,5 +1,6 @@
 ﻿using E3NextUI.Server;
 using E3NextUI.Settings;
+using E3NextUI.Themese;
 using E3NextUI.Util;
 using System;
 using System.Collections.Generic;
@@ -51,7 +52,7 @@ namespace E3NextUI
         public static String _playerHP;
         public static String _playerMP;
         public static String _playerSP;
-        
+       
 
         public E3UI()
         {
@@ -112,6 +113,11 @@ namespace E3NextUI
                 var size = new Size(_genSettings.Width, _genSettings.Height);
                 this.DesktopBounds = new Rectangle(point, size);
           
+            }
+
+            if (_genSettings.UseDarkMode)
+            {
+                darkModeMenuItem.Checked = true;
             }
 
             LoadDynamicButtons();
@@ -278,12 +284,14 @@ namespace E3NextUI
         }
         private void ToggleButtons(bool ignoreWidth = false)
         {
-            if(tableLayoutPanelDynamicButtons.Visible)
+            int BorderWidth = (this.Width - this.ClientSize.Width) / 2;
+
+            if (tableLayoutPanelDynamicButtons.Visible)
             {
                 tableLayoutPanelDynamicButtons.Visible = false;
                 if(!ignoreWidth)
                 {
-                    Int32 newWidth = this.DesktopBounds.Width - (tableLayoutPanelDynamicButtons.Width);
+                    Int32 newWidth = BorderWidth + (panelStatusPannel2.Width) + 10;
                     var point = new Point(this.DesktopBounds.X, this.DesktopBounds.Y);
                     var size = new Size(newWidth, this.DesktopBounds.Height);
                     this.DesktopBounds = new Rectangle(point, size);
@@ -296,7 +304,7 @@ namespace E3NextUI
             else
             {
 
-                 Int32 newWidth = this.DesktopBounds.Width + (tableLayoutPanelDynamicButtons.Width);
+                Int32 newWidth = BorderWidth + (panelStatusPannel2.Width) + tableLayoutPanelDynamicButtons.Width+10;
                 var point = new Point(this.DesktopBounds.X, this.DesktopBounds.Y);
                 var size = new Size(newWidth, this.DesktopBounds.Height);
                 this.DesktopBounds = new Rectangle(point, size);
@@ -363,7 +371,11 @@ namespace E3NextUI
             {
                 ToggleButtons(true);
             }
-            Themese.DarkMode.ChangeTheme(this, this.Controls);
+            if(_genSettings.UseDarkMode)
+            {
+                Themese.DarkMode.ChangeTheme(this, this.Controls);
+            }
+
         }
         private void ProcessParse()
         {
@@ -711,6 +723,30 @@ namespace E3NextUI
         }
         [DllImport("shell32.dll", SetLastError = true)]
         static extern void SetCurrentProcessExplicitAppUserModelID([MarshalAs(UnmanagedType.LPWStr)] string AppID);
+
+        private void darkModeToolStripMenuItem_Click(object sender, EventArgs e)
+        {
+            if(_genSettings.UseDarkMode)
+            {
+                DefaultMode.ChangeTheme(this, this.Controls);
+                _genSettings.UseDarkMode = false;
+                darkModeMenuItem.Checked = false;
+                this.Opacity = this.Opacity - 0.001;
+                Application.DoEvents();
+                this.Opacity = 100;
+                _genSettings.SaveData();
+            }
+            else
+            {
+                DarkMode.ChangeTheme(this, this.Controls);
+                _genSettings.UseDarkMode = true;
+                darkModeMenuItem.Checked = true;
+                this.Opacity = this.Opacity - 0.001;
+                Application.DoEvents();
+                this.Opacity = 100;
+                _genSettings.SaveData();
+            }
+        }
     }
     public class TextBoxInfo
     {
