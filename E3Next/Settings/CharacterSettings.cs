@@ -133,6 +133,8 @@ namespace E3Core.Settings
         public List<string> HealPetOwners = new List<string>();
         public Dictionary<string, string> PetWeapons = new Dictionary<string, string>();
         public bool AutoPetWeapons = false;
+        public bool AutoCanni = false;
+        public Spell CanniSpell;
 
         public HashSet<string> WhoToHeal = new HashSet<string>(10, StringComparer.OrdinalIgnoreCase);
         public bool HealAutoNecroOrbs = false;
@@ -287,6 +289,12 @@ namespace E3Core.Settings
             {
                 LoadKeyData("Magician", "Auto-Pet Weapons (On/Off)", ParsedData, ref AutoPetWeapons);
                 LoadKeyData("Magician", "Pet Weapons", ParsedData, PetWeapons);
+            }
+
+            if (CharacterClass == Class.Shaman)
+            {
+                LoadKeyData("Shaman", "Auto-Canni (On/Off)", ParsedData, ref AutoCanni);
+                LoadKeyData("Shaman", "Canni", ParsedData, out CanniSpell);
             }
 
             LoadKeyData("Buffs", "Instant Buff", ParsedData, InstantBuffs);

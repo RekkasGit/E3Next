@@ -1,4 +1,6 @@
 ﻿using E3Core.Data;
+using E3Core.Settings;
+using E3Core.Utility;
 using MonoCore;
 using System;
 using System.Collections.Generic;
@@ -9,13 +11,16 @@ using System.Threading.Tasks;
 
 namespace E3Core.Processors
 {
-    public static class WaitForRez
+    public static class Rez
     {
 
         public static Logging _log = E3.Log;
         private static IMQ MQ = E3.Mq;
         private static ISpawns _spawns = E3.Spawns;
         public static bool _waitingOnRez = false;
+        private static long _nextAutoRezCheck = 0;
+        private static long _nextAutoRezCheckInterval = 10000;
+
         [SubSystemInit]
         public static void Init()
         {
@@ -107,6 +112,57 @@ namespace E3Core.Processors
                         E3.Bots.Broadcast("\atReady to die again!");
                     }
 
+                }
+            }
+        }
+
+        [ClassInvoke(Class.Cleric)]
+        public static void AutoRez()
+        {
+            if (!e3util.ShouldCheck(ref _nextAutoRezCheck, _nextAutoRezCheckInterval)) return;
+            foreach (var corpse in CreateCorpseList())
+            {
+                if (_spawns.TryByID(corpse, out var spawn))
+                {
+                    // only care about group or raid members
+                    var inGroup = MQ.Query<bool>($"${{Group.Member[{spawn.DiplayName}]}}");
+                    var inRaid = MQ.Query<bool>($"${{Raid.Member[{spawn.DiplayName}]}}");
+
+                    if (!inGroup || !inRaid)
+                    {
+                        continue;
+                    }
+
+                    if (Assist._isAssisting)
+                    {
+                        var currentMana = MQ.Query<int>("${Me.CurrentMana}");
+                        var pctMana = MQ.Query<int>("${Me.PctMana}");
+                        if (Heals.SomeoneNeedsHealing(currentMana, pctMana))
+                        {
+                            return;
+                        }
+                    }
+
+                    if (Casting.TrueTarget(spawn.ID))
+                    {
+                        if (!CanRez())
+                        {
+                            continue;
+                        }
+
+                        MQ.Cmd($"/t {spawn.DiplayName} Wait4Rez");
+                        MQ.Delay(100);
+                        MQ.Cmd("/corpse");
+                        InitRezSpells();
+                        foreach (var spell in _currentRezSpells)
+                        {
+                            if (Casting.CheckReady(spell) && Casting.CheckMana(spell))
+                            {
+                                Casting.Cast(spawn.ID, spell, Heals.SomeoneNeedsHealing);
+                                break;
+                            }
+                        }
+                    }
                 }
             }
         }
@@ -287,10 +343,7 @@ namespace E3Core.Processors
                 {
                     Casting.TrueTarget(spawn.ID);
                     MQ.Delay(500);
-                    if (WaitForRez.CanRez())
-                    {
-                        corpseList.Add(spawn.ID);
-                    }
+                    corpseList.Add(spawn.ID);
                 }
             }
             foreach (var spawn in _spawns.Get())
@@ -299,10 +352,7 @@ namespace E3Core.Processors
                 {
                     Casting.TrueTarget(spawn.ID);
                     MQ.Delay(500);
-                    if (WaitForRez.CanRez())
-                    {
-                        corpseList.Add(spawn.ID);
-                    }
+                    corpseList.Add(spawn.ID);
                 }
             }
             //everyone else
@@ -312,13 +362,10 @@ namespace E3Core.Processors
                 {
                     Casting.TrueTarget(spawn.ID);
                     MQ.Delay(500);
-                    if (WaitForRez.CanRez())
+                    //lists are super small so contains is fine
+                    if (!corpseList.Contains(spawn.ID))
                     {
-                        //lists are super small so contains is fine
-                        if (!corpseList.Contains(spawn.ID))
-                        {
-                            corpseList.Add(spawn.ID);
-                        }
+                        corpseList.Add(spawn.ID);
                     }
                 }
             }

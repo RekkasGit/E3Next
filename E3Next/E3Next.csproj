@@ -147,7 +147,7 @@
     <Compile Include="Processors\Sell.cs" />
     <Compile Include="Processors\Setup.cs" />
     <Compile Include="Processors\Tanking.cs" />
-    <Compile Include="Processors\WaitForRez.cs" />
+    <Compile Include="Processors\Rez.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
     <Compile Include="Settings\FeatureSettings\DoorDataFile.cs" />
     <Compile Include="Settings\FeatureSettings\LootDataFile.cs" />
