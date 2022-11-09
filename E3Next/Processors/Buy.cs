@@ -42,14 +42,18 @@ namespace E3Core.Processors
 
                 switch(itemName)
                 {
-                    case Emerald:
+                    case "Emerald":
                         RestockItem(itemName, qtyNeeded);
-                    case Food:
+                        break;
+                    case "Food":
                         RestockFoodWater();
-                    case Water:
+                        break;
+                    case "Water":
                         RestockFoodWater();
+                        break;
                     default:
                         RestockFoodWater();
+                        break;
                 }
                     
             });
@@ -158,46 +162,7 @@ namespace E3Core.Processors
             else
             {
                 MQ.Write($"\agInitiating restock for {itemName}.");
-                //we have something we need to get
-                int zoneID = E3.ZoneID;
-                int vendorID = 0;
-
-                if (zoneID == 345)
-                {
-                    //zoneID 345 = Guild Hall
-                    string vendorName = "Yenny Werlikanin";
-                    vendorID = MQ.Query<int>($"${{Spawn[{vendorName}].ID}}");
-
-                }
-                else if (zoneID == 202 || zoneID == 386)
-                {
-                    //zoneID 202 = Plane of Knowledge
-                    //zoneId 386 = Marr temple
-                    string vendorName = "Vori";
-                    vendorID = MQ.Query<int>($"${{Spawn[{vendorName}].ID}}");
-                }
-
-                if (vendorID > 0)
-                {
-                    Casting.TrueTarget(vendorID);
-                    e3util.NavToSpawnID(vendorID);
-                    e3util.OpenMerchant();
-                    if (toEatQty > -1)
-                    {
-                        Buy.BuyItem(toEat, toEatQty);
-                    }
-
-
-                    if (toDrinkQty > -1)
-                    {
-                        Buy.BuyItem(toDrink, toDrinkQty);
-                    }
-                    e3util.CloseMerchant();
-                }
-                else
-                {
-                    MQ.Write($"\arNo valid vendor ID available.");
-                }
+                
             }
         }
         /// <summary>

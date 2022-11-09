@@ -187,7 +187,7 @@ namespace E3Core.Classes
                 var foundWeaponBag = MQ.Query<bool>($"${{FindItem[={_weaponBag}]}}");
                 if (foundWeaponBag)
                 {
-                    MQ.Cmd($"/itemnotify \"{_weaponBag}\" leftmouseup");
+                    MQ.Cmd($"/nomodkey /itemnotify \"{_weaponBag}\" leftmouseup");
                     MQ.Delay(1000, "${Cursor.ID}");
                     MQ.Cmd("/destroy");
                 }
@@ -197,7 +197,7 @@ namespace E3Core.Classes
 
             if (Casting.TrueTarget(petId))
             {
-                MQ.Cmd($"/itemnotify \"{primary}\" leftmouseup");
+                MQ.Cmd($"/nomodkey /itemnotify \"{primary}\" leftmouseup");
                 e3util.GiveItemOnCursorToTarget(false);
                 MQ.Delay(250);
                 if (Casting.TrueTarget(petId))
@@ -205,7 +205,7 @@ namespace E3Core.Classes
                     Casting.TrueTarget(petId);
                 }
 
-                MQ.Cmd($"/itemnotify \"{secondary}\" leftmouseup");
+                MQ.Cmd($"/nomodkey /itemnotify \"{secondary}\" leftmouseup");
                 e3util.GiveItemOnCursorToTarget(false);
             }
         }
@@ -253,7 +253,7 @@ namespace E3Core.Classes
 
                     if (_summonedItemMap.TryGetValue(itemToSummon, out var summonedItem))
                     {
-                        MQ.Cmd($"/itemnotify \"{summonedItem}\" rightmouseup");
+                        MQ.Cmd($"/nomodkey /itemnotify \"{summonedItem}\" rightmouseup");
                         MQ.Delay(3000, "${Cursor.ID}");
                         if (inventoryTheSummonedItem)
                         {
@@ -274,7 +274,7 @@ namespace E3Core.Classes
             var summonedItemCount = MQ.Query<int>($"${{FindItemCount[={_armorOrHeirloomBag}]}}");
             for (int i = 1; i <= summonedItemCount; i++)
             {
-                MQ.Cmd($"/itemnotify \"{_armorOrHeirloomBag}\" leftmouseup");
+                MQ.Cmd($"/nomodkey /itemnotify \"{_armorOrHeirloomBag}\" leftmouseup");
                 MQ.Delay(1000, "${Cursor.ID}");
                 MQ.Cmd("/destroy");
             }
@@ -283,7 +283,7 @@ namespace E3Core.Classes
             summonedItemCount = MQ.Query<int>($"${{FindItemCount[={bag}]}}");
             for (int i = 1; i <= summonedItemCount; i++)
             {
-                MQ.Cmd($"/itemnotify \"{bag}\" leftmouseup");
+                MQ.Cmd($"/nomodkey /itemnotify \"{bag}\" leftmouseup");
                 MQ.Delay(1000, "${Cursor.ID}");
                 MQ.Cmd("/destroy");
             }
@@ -327,7 +327,7 @@ namespace E3Core.Classes
             var freeInventory = MQ.Query<int>("${Me.FreeInventory}");
             if (freeInventory > 0 && containerWithOpenSpace > 0 && slotToMoveFrom > 0)
             {
-                MQ.Cmd($"/itemnotify pack{slotToMoveFrom} leftmouseup");
+                MQ.Cmd($"/nomodkey /itemnotify pack{slotToMoveFrom} leftmouseup");
                 MQ.Delay(250);
 
                 if (MQ.Query<bool>("${Window[QuantityWnd].Open}"))
@@ -351,7 +351,7 @@ namespace E3Core.Classes
                     var item = MQ.Query<string>($"${{Me.Inventory[pack{containerWithOpenSpace}].Item[{i}]}}");
                     if (string.Equals(item, "NULL", StringComparison.OrdinalIgnoreCase))
                     {
-                        MQ.Cmd($"/itemnotify in pack{containerWithOpenSpace} {i} leftmouseup");
+                        MQ.Cmd($"/nomodkey /itemnotify in pack{containerWithOpenSpace} {i} leftmouseup");
                         MQ.Delay(1000, "!${Cursor.ID}");
                         hasOpenInventorySlot = true;
                         break;

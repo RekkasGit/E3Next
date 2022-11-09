@@ -101,14 +101,14 @@ namespace E3Core.Processors
                             Int32 itemValue = MQ.Query<Int32>($"${{Me.Inventory[pack{i}].Item[{e}].Value}}");
                             if (LootDataFile._sell.Contains(itemName) && itemValue > 0)
                             {
-                                MQ.Cmd($"/itemnotify in pack{i} {e} leftmouseup");
+                                MQ.Cmd($"/nomodkey /itemnotify in pack{i} {e} leftmouseup");
                                 MQ.Delay(500);
                                 string sellingItemText = MQ.Query<string>("${Window[MerchantWnd].Child[MW_SelectedItemLabel].Text}");
                                 Int32 counter = 0;
                                 while (sellingItemText != itemName && counter < 10)
                                 {
                                     counter++;
-                                    MQ.Cmd($"/itemnotify in pack{i} {e} leftmouseup");
+                                    MQ.Cmd($"/nomodkey /itemnotify in pack{i} {e} leftmouseup");
                                     MQ.Delay(500);
                                     sellingItemText = MQ.Query<string>("${Window[MerchantWnd].Child[MW_SelectedItemLabel].Text}");
                                 }
@@ -172,7 +172,7 @@ namespace E3Core.Processors
 
                         if (MQ.Query<bool>($"${{FindItemBank[={item}]}}"))
                         {
-                            MQ.Cmd($"/itemnotify \"{item}\" leftmouseup");
+                            MQ.Cmd($"/nomodkey /itemnotify \"{item}\" leftmouseup");
                             MQ.Delay(250);
                             if (MQ.Query<bool>("${Window[QuantityWnd].Open}"))
                             {
@@ -185,11 +185,11 @@ namespace E3Core.Processors
                             // different syntax for if the item is in a bag vs if it's not
                             if (slot2 >= 0)
                             {
-                                MQ.Cmd($"/itemnotify in bank{slot + 1} {slot2 + 1} leftmouseup");
+                                MQ.Cmd($"/nomodkey /itemnotify in bank{slot + 1} {slot2 + 1} leftmouseup");
                             }
                             else
                             {
-                                MQ.Cmd($"/itemnotify bank{slot + 1} leftmouseup");
+                                MQ.Cmd($"/nomodkey /itemnotify bank{slot + 1} leftmouseup");
                             }
 
                             MQ.Delay(250);

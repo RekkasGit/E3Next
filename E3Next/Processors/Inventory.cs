@@ -191,13 +191,13 @@ namespace E3Core.Processors
             // different syntax for if the item is in a bag vs if it's not
             if (slot2 >= 0)
             {
-                MQ.Cmd($"/itemnotify bank{slot + 1} rightmouseup");
+                MQ.Cmd($"/nomodkey /itemnotify bank{slot + 1} rightmouseup");
                 MQ.Delay(100);
-                MQ.Cmd($"/itemnotify in bank{slot + 1} {slot2 + 1} leftmouseup");
+                MQ.Cmd($"/nomodkey /itemnotify in bank{slot + 1} {slot2 + 1} leftmouseup");
             }
             else
             {
-                MQ.Cmd($"/itemnotify bank{slot + 1} leftmouseup");
+                MQ.Cmd($"/nomodkey /itemnotify bank{slot + 1} leftmouseup");
             }
 
             MQ.Delay(250);
@@ -222,7 +222,7 @@ namespace E3Core.Processors
 
             MQ.Cmd("/nomodkey /notify QuantityWnd QTYW_Accept_Button leftmouseup");
             MQ.Delay(50);
-            MQ.Cmd($"/itemnotify bank{slot + 1} rightmouseup");
+            MQ.Cmd($"/nomodkey /itemnotify bank{slot + 1} rightmouseup");
         }
 
         private static void Upgrade(List<string> args)
@@ -274,7 +274,7 @@ namespace E3Core.Processors
                 return;
             }
 
-            MQ.Cmd($"/itemnotify \"${{Me.Inventory[{slotName}]}}\" rightmouseheld");
+            MQ.Cmd($"/nomodkey /itemnotify \"${{Me.Inventory[{slotName}]}}\" rightmouseheld");
 
             foreach(var kvp in slotsWithAugs)
             {
@@ -285,8 +285,8 @@ namespace E3Core.Processors
                 e3util.ClearCursor();
             }
 
-            MQ.Cmd("/keypress esc");
-            MQ.Cmd($"/itemnotify \"${{FindItem[={newItem}]}}\" rightmouseheld");
+            MQ.Cmd("/nomodkey /keypress esc");
+            MQ.Cmd($"/nomodkey /itemnotify \"${{FindItem[={newItem}]}}\" rightmouseheld");
             MQ.Delay(500);
 
             foreach (var kvp in slotsWithAugs)
@@ -306,7 +306,7 @@ namespace E3Core.Processors
                         var item = MQ.Query<string>($"${{Me.Inventory[pack{i}]}}");
                         if (string.Equals(item, kvp.Value))
                         {
-                            MQ.Cmd($"/itemnotify pack{i} leftmouseup");
+                            MQ.Cmd($"/nomodkey /itemnotify pack{i} leftmouseup");
                             break;
                         }
 
@@ -317,7 +317,7 @@ namespace E3Core.Processors
                             item = MQ.Query<string>($"${{Me.Inventory[pack{i}].Item[{j}]}}");
                             if (string.Equals(item, kvp.Value))
                             {
-                                MQ.Cmd($"/itemnotify in pack{i} {j} leftmouseup");
+                                MQ.Cmd($"/nomodkey /itemnotify in pack{i} {j} leftmouseup");
                                 foundItem = true;
                                 break;
                             }
@@ -334,7 +334,7 @@ namespace E3Core.Processors
 
             MQ.Delay(250);
             MQ.Cmd($"/exchange \"{newItem}\" {slotName}");
-            MQ.Cmd("/keypress esc");
+            MQ.Cmd("/nomodkey /keypress esc");
             MQ.Write("\agUpgrade complete!");
         }
 
