@@ -1327,8 +1327,8 @@ namespace E3Core.Processors
         CAST_SPELLBOOKOPEN,
         CAST_ACTIVEDISC,
         CAST_INTERRUPTFORHEAL,
-        CAST_CORPSEOPEN
-
+        CAST_CORPSEOPEN,
+        CAST_INVALID
     }
 
 }

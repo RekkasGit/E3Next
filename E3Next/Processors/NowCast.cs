@@ -43,17 +43,18 @@ namespace E3Core.Processors
                         Int32.TryParse(x.args[2], out targetid);
                     }
 
+                    CastReturn castResult = CastReturn.CAST_SUCCESS;
                     if (user.Equals("all", StringComparison.OrdinalIgnoreCase))
                     {
                         if (targetid > 0)
                         {
                             E3.Bots.BroadcastCommandToGroup($"/nowcast me \"{spell}\" {targetid}");
-                            NowCastSpell(spell, targetid);
+                            castResult = NowCastSpell(spell, targetid);
                         }
                         else
                         {
-                              E3.Bots.BroadcastCommandToGroup($"/nowcast me \"{spell}\"");
-                            NowCastSpell(spell, 0);
+                            E3.Bots.BroadcastCommandToGroup($"/nowcast me \"{spell}\"");
+                            castResult = NowCastSpell(spell, 0);
 
                         }
 
@@ -62,11 +63,11 @@ namespace E3Core.Processors
                     {
                         if (targetid > 0)
                         {
-                            NowCastSpell(spell, targetid);
+                            castResult = NowCastSpell(spell, targetid);
                         }
                         else
                         {
-                            NowCastSpell(spell, 0);
+                            castResult = NowCastSpell(spell, 0);
                         }
                     }
                     else
@@ -75,7 +76,6 @@ namespace E3Core.Processors
                         {
                             //send this to a person!
                             E3.Bots.BroadcastCommandToPerson(user, $"/nowcast me \"{spell}\" {targetid}");
-
                         }
                         else
                         {
@@ -86,12 +86,16 @@ namespace E3Core.Processors
                         }
                     }
 
+                    if (castResult != CastReturn.CAST_SUCCESS)
+                    {
+                        E3.Bots.Broadcast($"\arNowcast of {spell} unsuccessful due to {castResult}!");
+                    }
                 }
             });
 
         }
 
-        private static void NowCastSpell(string spellName, Int32 targetid)
+        private static CastReturn NowCastSpell(string spellName, Int32 targetid)
         {
 
             string realSpell = string.Empty;
@@ -130,13 +134,15 @@ namespace E3Core.Processors
 
                 if(Casting.InRange(targetid, spell) && Casting.CheckReady(spell) && Casting.CheckMana(spell))
                 {
-                    Casting.Cast(targetid, spell, null, true);
+                    return Casting.Cast(targetid, spell, null, true);
                 }
                 else
                 {
                     //spell isn't quite ready yet pause for 1.5 sec
                 }
             }
+
+            return CastReturn.CAST_INVALID;
         }
     }
 }
