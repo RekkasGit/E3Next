@@ -37,6 +37,11 @@ namespace E3Core.Processors
                 if (!IsInit) { Init(); }
                 ActionTaken = false;
                 StateUpdates();
+                if(CurrentHps<98)
+                {
+                    Heals.Check_LifeSupport();
+                }
+
                 //kickout after updates if paused
                 if (IsPaused()) return;
                 
@@ -152,6 +157,7 @@ namespace E3Core.Processors
         {
             IsInvis = Mq.Query<bool>("${Me.Invis}");
             CurrentHps = Mq.Query<int>("${Me.PctHPs}");
+            CurrentId = Mq.Query<int>("${Me.ID}");
             ZoneID = Mq.Query<int>("${Zone.ID}");
             HitPointsCurrent = Mq.Query<int>("${Me.CurrentHPs}");
             PubServer.AddTopicMessage("${Me.CurrentHPs}", HitPointsCurrent.ToString("N0"));

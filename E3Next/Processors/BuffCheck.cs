@@ -286,7 +286,7 @@ namespace E3Core.Processors
 
             if (!e3util.ShouldCheck(ref _nextInstantBuffRefresh, _nextInstantRefreshTimeInterval)) return;
             //self only, instacast buffs only
-            Int32 id = MQ.Query<Int32>("${Me.ID}");
+            Int32 id = E3.CurrentId;
             foreach (var spell in buffs)
             {
                 bool hasBuff = MQ.Query<bool>($"${{Bool[${{Me.Buff[{spell.SpellName}]}}]}}");
@@ -416,7 +416,7 @@ namespace E3Core.Processors
                     {
                         continue;
                     }
-                    if (s.ID == MQ.Query<Int32>("${Me.ID}"))
+                    if (s.ID == E3.CurrentId)
                     {
                         //self buffs!
                         bool hasBuff = MQ.Query<bool>($"${{Bool[${{Me.Buff[{spell.SpellName}]}}]}}");
@@ -816,7 +816,7 @@ namespace E3Core.Processors
                 }
 
                 //need to put on new aura
-                Int32 meID = MQ.Query<Int32>("${Me.ID}");
+                Int32 meID = E3.CurrentId;
                 if (_selectAura.CastType == CastType.Spell)
                 {
                     //this is a spell, need to mem, then cast. 

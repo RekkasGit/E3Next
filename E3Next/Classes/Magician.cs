@@ -240,7 +240,7 @@ namespace E3Core.Classes
 
         private static void SummonItem(string itemToSummon, bool inventoryTheSummonedItem)
         {
-            var id = MQ.Query<int>("${Me.ID}");
+            var id = E3.CurrentId;
             if (Casting.TrueTarget(id))
             {
                 var spell = new Spell(itemToSummon);

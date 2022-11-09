@@ -88,7 +88,7 @@ namespace E3Core.Processors
                             if (!MQ.Query<bool>($"${{Spawn[npc id {mobId}].LineOfSight}}")) continue;
                             if (s.Distance > 100) continue;
                             if (s.TypeDesc == "Corpse") continue;
-                            if (s.Name.Contains("'s pet'")) continue;
+                            if (s.Name.Contains("`s pet'")) continue;
                             if (s.Name.IndexOf("Chest", StringComparison.OrdinalIgnoreCase) > -1) continue;
                             if (s.Name.IndexOf("a box", StringComparison.OrdinalIgnoreCase) > -1) continue;
                             if (s.Name.IndexOf("crate", StringComparison.OrdinalIgnoreCase) > -1) continue;
