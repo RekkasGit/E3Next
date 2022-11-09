@@ -64,6 +64,10 @@ namespace E3Core.Settings
         //nukes
         public List<Spell> Nukes = new List<Spell>();
         public List<Spell> Stuns = new List<Spell>();
+        //dispel
+        public List<Spell> Dispels = new List<Spell>();
+        public List<Spell> DispelIgnore = new List<Spell>();
+
         //buffs
         public List<Spell> InstantBuffs = new List<Spell>();
         public List<Spell> SelfBuffs = new List<Spell>();
@@ -304,6 +308,10 @@ namespace E3Core.Settings
 
             LoadKeyData("Nukes", "Main", ParsedData, Nukes);
             LoadKeyData("Stuns", "Main", ParsedData, Stuns);
+
+            LoadKeyData("Dispel", "Main", ParsedData, Dispels);
+            LoadKeyData("Dispel", "Ignore", ParsedData, DispelIgnore);
+
             LoadKeyData("TargetAE", "TargetAE", ParsedData, PBAE);
             LoadKeyData("PBAE", "PBAE", ParsedData, PBAE);
 
@@ -451,6 +459,11 @@ namespace E3Core.Settings
                 section.Keys.AddKey("Debuff on Assist", "");
                 section.Keys.AddKey("Debuff on Command", "");
             }
+
+            newFile.Sections.AddSection("Dispel");
+            section = newFile.Sections.GetSectionData("Dispel");
+            section.Keys.AddKey("Main", "");
+            section.Keys.AddKey("Ignore", "");
 
 
             newFile.Sections.AddSection("Life Support");
