@@ -332,7 +332,7 @@ namespace E3Core.Classes
 
                 if (MQ.Query<bool>("${Window[QuantityWnd].Open}"))
                 {
-                    MQ.Cmd("/notify QuantityWnd QTYW_Accept_Button leftmouseup");
+                    MQ.Cmd("/nomodkey /notify QuantityWnd QTYW_Accept_Button leftmouseup");
                 }
                 MQ.Delay(1000, "${Cursor.ID}");
             }

@@ -215,12 +215,12 @@ namespace E3Core.Processors
                 }
                 else
                 {
-                    MQ.Cmd($"/notify QuantityWnd QTYW_slider newvalue {requestedQuantity}");
+                    MQ.Cmd($"/nomodkey /notify QuantityWnd QTYW_slider newvalue {requestedQuantity}");
                     MQ.Delay(250);
                 }
             }
 
-            MQ.Cmd("/notify QuantityWnd QTYW_Accept_Button leftmouseup");
+            MQ.Cmd("/nomodkey /notify QuantityWnd QTYW_Accept_Button leftmouseup");
             MQ.Delay(50);
             MQ.Cmd($"/itemnotify bank{slot + 1} rightmouseup");
         }
@@ -278,7 +278,7 @@ namespace E3Core.Processors
 
             foreach(var kvp in slotsWithAugs)
             {
-                MQ.Cmd($"/notify ItemDisplayWindow IDW_Socket_Slot_{kvp.Key}_Item leftmouseup");
+                MQ.Cmd($"/nomodkey /notify ItemDisplayWindow IDW_Socket_Slot_{kvp.Key}_Item leftmouseup");
                 MQ.Delay(500);
                 e3util.ClickYesNo(true);
                 MQ.Delay(3000, "${Cursor.ID}");
@@ -325,7 +325,7 @@ namespace E3Core.Processors
                     }
                 }
 
-                MQ.Cmd($"/notify ItemDisplayWindow IDW_Socket_Slot_{kvp.Key}_Item leftmouseup");
+                MQ.Cmd($"/nomodkey /notify ItemDisplayWindow IDW_Socket_Slot_{kvp.Key}_Item leftmouseup");
                 MQ.Delay(500);
                 e3util.ClickYesNo(true);
                 MQ.Delay(3000, "!${Cursor.ID}");

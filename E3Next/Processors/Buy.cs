@@ -15,7 +15,6 @@ namespace E3Core.Processors
         public static Logging Log = E3.Log;
         private static IMQ MQ = E3.Mq;
         private static ISpawns Spawns = E3.Spawns;
-
         [SubSystemInit]
         public static void Init()
         {
@@ -26,33 +25,81 @@ namespace E3Core.Processors
         {
             EventProcessor.RegisterCommand("/restock", (x) =>
             {
-                Restock();
+                string itemName = x.args[0];
+                int qtyNeeded = -1;
+
+                if (x.args.Count >= 2)
+                {
+                    if (!int.TryParse(x.args[1], out qtyNeeded))
+                    {
+                        return;
+                    }
+                    else
+                    {
+                        E3.Bots.BroadcastCommand($"You must pass a number value for the 2nd parameter to restock {itemName}.");
+                    }
+                }
+
+                switch(itemName)
+                {
+                    case Emerald:
+                        RestockItem(itemName, qtyNeeded);
+                    case Food:
+                        RestockFoodWater();
+                    case Water:
+                        RestockFoodWater();
+                    default:
+                        RestockFoodWater();
+                }
+                    
             });
         }
-        private static void Restock()
+        /// <summary>
+        /// Check how many are in a stack of the given item and give back how many of the item you need to make a full stack
+        /// </summary>
+        /// <param name="itemName"> Name of the item to check</param>
+        private static int CheckQtyStackSize(string itemName)
         {
-            string toEat = E3.CharacterSettings.Misc_AutoFood;
-            string toDrink = E3.CharacterSettings.Misc_AutoDrink;
-            int toEatQty = -1;
-            int toDrinkQty = -1;
             
-            if(!String.IsNullOrWhiteSpace(toEat))
+            int itemQtyStackSize = MQ.Query<int>($"${{FindItem[{itemName}].StackSize}}");
+            int qtyNeeded = -1;
+            int itemQty = -1;
+            
+            if (!String.IsNullOrWhiteSpace(itemName))
             {
-                toEatQty = MQ.Query<int>($"${{FindItemCount[{toEat}]}}");
-            }
-            if(!String.IsNullOrWhiteSpace(toDrink))
-            {
-                toDrinkQty = MQ.Query<int>($"${{FindItemCount[{toDrink}]}}");
+                itemQty = MQ.Query<int>($"${{FindItemCount[{itemName}]}}");
             }
 
-            MQ.Write($"\agInitiating restock for {toEat} and {toDrink}");
-            if (toEatQty >= 1000 && toDrinkQty >= 1000)
+            if (itemQty >= itemQtyStackSize )
+            {
+                MQ.Write($"\arYou already have more than a stack of {itemName}!");
+                return qtyNeeded;
+            }
+
+            qtyNeeded = itemQtyStackSize - itemQty;
+
+            return qtyNeeded;
+        }
+        
+        private static void RestockFoodWater()
+        {
+            string toEat = "Iron Ration";
+            string toDrink = "Water Flask";
+                        
+
+            //check how many items are needed to make a stack of the specified food and drink, return -1 if they already have more than a stack
+            int toEatQty = CheckQtyStackSize(toEat);
+            int toDrinkQty = CheckQtyStackSize(toDrink);
+
+
+            if (toEatQty <= 0 && toDrinkQty <= 0)
             {
                 MQ.Write($"\arYou already have more than a stack of {toEat} and {toDrink}! Skipping restock. ");
                 return;
             }
-            else if(toEatQty >-1 || toDrinkQty>-1)
+            else
             {
+                MQ.Write($"\agInitiating restock for {toEat} and {toDrink}");
                 //we have something we need to get
                 int zoneID = E3.ZoneID;
                 int vendorID = 0;
@@ -77,30 +124,73 @@ namespace E3Core.Processors
                     Casting.TrueTarget(vendorID);
                     e3util.NavToSpawnID(vendorID);
                     e3util.OpenMerchant();
-
-                    if (toEatQty < 1000 && toEatQty>-1)
+                    if (toEatQty > -1)
                     {
-                        int eatQtyNeeded = 1000 - toEatQty;
-                        if (String.IsNullOrWhiteSpace(toEat))
-                        {
-                            MQ.Write($"\arNo Food item defined in ini, skipping food restock. ");
-                        }
-                        else
-                        {
-                            Buy.BuyItem(toEat, eatQtyNeeded);
-                        }
+                        Buy.BuyItem(toEat, toEatQty);
                     }
-                    if (toDrinkQty < 1000 && toDrinkQty > -1)
+                    
+
+                    if (toDrinkQty > -1)
                     {
-                        int drinkQtyNeeded = 1000 - toDrinkQty;
-                        if (String.IsNullOrWhiteSpace(toDrink))
-                        {
-                            MQ.Write($"\arNo Drink item defined in ini, skipping food restock. ");
-                        }
-                        else
-                        {
-                            Buy.BuyItem(toDrink, drinkQtyNeeded);
-                        }
+                        Buy.BuyItem(toDrink, toDrinkQty);
+                    }
+                    e3util.CloseMerchant();
+                }
+                else
+                {
+                    MQ.Write($"\arNo valid vendor ID available.");
+                }
+            }
+        }
+
+        private static void RestockItem(string itemName, int qtyNeeded)
+        {
+            
+            //check how many items are needed to make a stack of the specified item, return -1 if they already have more than a stack
+            int restockQty = CheckQtyStackSize(itemName);
+            
+
+            if (restockQty <= 0)
+            {
+                MQ.Write($"\arYou already have more than a stack of {itemName}! Skipping restock. ");
+                return;
+            }
+            else
+            {
+                MQ.Write($"\agInitiating restock for {itemName}.");
+                //we have something we need to get
+                int zoneID = E3.ZoneID;
+                int vendorID = 0;
+
+                if (zoneID == 345)
+                {
+                    //zoneID 345 = Guild Hall
+                    string vendorName = "Yenny Werlikanin";
+                    vendorID = MQ.Query<int>($"${{Spawn[{vendorName}].ID}}");
+
+                }
+                else if (zoneID == 202 || zoneID == 386)
+                {
+                    //zoneID 202 = Plane of Knowledge
+                    //zoneId 386 = Marr temple
+                    string vendorName = "Vori";
+                    vendorID = MQ.Query<int>($"${{Spawn[{vendorName}].ID}}");
+                }
+
+                if (vendorID > 0)
+                {
+                    Casting.TrueTarget(vendorID);
+                    e3util.NavToSpawnID(vendorID);
+                    e3util.OpenMerchant();
+                    if (toEatQty > -1)
+                    {
+                        Buy.BuyItem(toEat, toEatQty);
+                    }
+
+
+                    if (toDrinkQty > -1)
+                    {
+                        Buy.BuyItem(toDrink, toDrinkQty);
                     }
                     e3util.CloseMerchant();
                 }
@@ -127,7 +217,7 @@ namespace E3Core.Processors
             while (buyingItemText != itemName && counter < 10)
             {
                 counter++;
-                MQ.Cmd($"/notify MerchantWnd ItemList listselect {listPosition}");
+                MQ.Cmd($"/nomodkey /notify MerchantWnd ItemList listselect {listPosition}");
                 MQ.Delay(200);
                 buyingItemText = MQ.Query<string>("${Window[MerchantWnd].Child[MW_SelectedItemLabel].Text}");
             }
@@ -148,13 +238,13 @@ namespace E3Core.Processors
             }
 
             //buy the item finally
-            MQ.Cmd("/notify MerchantWnd MW_Buy_Button leftmouseup");
+            MQ.Cmd("/nomodkey /notify MerchantWnd MW_Buy_Button leftmouseup");
             MQ.Delay(300);
             bool qtyWindowOpen = MQ.Query<bool>("${Window[QuantityWnd].Open}");
             if (qtyWindowOpen)
             {
-                MQ.Cmd($"/notify QuantityWnd QTYW_Slider newvalue {itemQty}");
-                MQ.Cmd($"/notify QuantityWnd QTYW_Accept_Button leftmouseup");
+                MQ.Cmd($"/nomodkey /notify QuantityWnd QTYW_Slider newvalue {itemQty}");
+                MQ.Cmd($"/nomodkey /notify QuantityWnd QTYW_Accept_Button leftmouseup");
                 MQ.Delay(300);
             }
 

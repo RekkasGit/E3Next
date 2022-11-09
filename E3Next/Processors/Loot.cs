@@ -174,7 +174,7 @@ namespace E3Core.Processors
                         LootCorpse(c);
                         if (MQ.Query<bool>("${Window[LootWnd].Open}"))
                         {
-                            MQ.Cmd("/notify LootWnd DoneButton leftmouseup");
+                            MQ.Cmd("/nomodkey /notify LootWnd DoneButton leftmouseup");
                         }
                         MQ.Delay(300);
                     }

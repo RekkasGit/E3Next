@@ -25,7 +25,7 @@ namespace E3Core.Processors
             {
                 e3util.OpenMerchant();
                 AutoSell();
-                MQ.Cmd("/notify MerchantWnd MW_Done_Button leftmouseup");
+                MQ.Cmd("/nomodkey /notify MerchantWnd MW_Done_Button leftmouseup");
             });
             EventProcessor.RegisterCommand("/syncinv", (x) =>
             {
@@ -126,12 +126,12 @@ namespace E3Core.Processors
                                 }
 
                                 //sell the item finally
-                                MQ.Cmd("/notify MerchantWnd MW_Sell_Button leftmouseup");
+                                MQ.Cmd("/nomodkey /notify MerchantWnd MW_Sell_Button leftmouseup");
                                 MQ.Delay(300);
                                 bool qtyWindowOpen = MQ.Query<bool>("${Window[QuantityWnd].Open}");
                                 if (qtyWindowOpen)
                                 {
-                                    MQ.Cmd("/notify QuantityWnd QTYW_Accept_Button leftmouseup");
+                                    MQ.Cmd("/nomodkey /notify QuantityWnd QTYW_Accept_Button leftmouseup");
                                     MQ.Delay(300);
                                 }
 
@@ -176,7 +176,7 @@ namespace E3Core.Processors
                             MQ.Delay(250);
                             if (MQ.Query<bool>("${Window[QuantityWnd].Open}"))
                             {
-                                MQ.Cmd("/notify QuantityWnd QTYW_Accept_Button leftmouseup");
+                                MQ.Cmd("/nomodkey /notify QuantityWnd QTYW_Accept_Button leftmouseup");
                                 MQ.Delay(250);
                             }
 
@@ -198,7 +198,7 @@ namespace E3Core.Processors
                 }
             }
 
-            MQ.Cmd("/notify BigBankWnd BIGB_DoneButton leftmouseup");
+            MQ.Cmd("/nomodkey /notify BigBankWnd BIGB_DoneButton leftmouseup");
             MQ.Write("\agFinished stacking items in bank");            
         }
     }

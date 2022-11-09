@@ -669,7 +669,7 @@ namespace E3Core.Processors
             if (boxSpawn != null)
             {
                 Loot.LootCorpse(boxSpawn, true);
-                _mq.Cmd("/notify LootWnd DoneButton leftmouseup");
+                _mq.Cmd("/nomodkey /notify LootWnd DoneButton leftmouseup");
             }
             else
             {

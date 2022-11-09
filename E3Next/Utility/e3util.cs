@@ -437,7 +437,7 @@ namespace E3Core.Utility
             }
             Int32 waitCounter = 0;
             waitAcceptLoop:
-            var command = $"/notify {windowType} {buttonType} leftmouseup";
+            var command = $"/nomodkey /notify {windowType} {buttonType} leftmouseup";
             MQ.Cmd(command);
             MQ.Delay(1000, $"!{windowOpenQuery}");
             windowOpen = MQ.Query<bool>(windowOpenQuery);
@@ -530,14 +530,14 @@ namespace E3Core.Utility
             bool windowOpen = MQ.Query<bool>("${Window[ConfirmationDialogBox].Open}");
             if (windowOpen)
             {
-                MQ.Cmd($"/notify ConfirmationDialogBox {TypeToClick}_Button leftmouseup");
+                MQ.Cmd($"/nomodkey /notify ConfirmationDialogBox {TypeToClick}_Button leftmouseup");
             }
             else
             {
                 windowOpen = MQ.Query<bool>("${Window[LargeDialogWindow].Open}");
                 if (windowOpen)
                 {
-                    MQ.Cmd($"/notify LargeDialogWindow LDW_{TypeToClick}Button leftmouseup");
+                    MQ.Cmd($"/nomodkey /notify LargeDialogWindow LDW_{TypeToClick}Button leftmouseup");
                 }
             }
         }
@@ -625,7 +625,7 @@ namespace E3Core.Utility
         {
             bool merchantWindowOpen = MQ.Query<bool>("${Window[MerchantWnd].Open}");
             
-            MQ.Cmd("/notify MerchantWnd MW_Done_Button leftmouseup");
+            MQ.Cmd("/nomodkey /notify MerchantWnd MW_Done_Button leftmouseup");
             MQ.Delay(200);
         }
 
