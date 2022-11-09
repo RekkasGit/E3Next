@@ -63,7 +63,7 @@ namespace E3Core.Processors
                 using (Log.Trace("Assist/WaitForRez"))
                 {
                     Assist.Process();
-                    WaitForRez.Process();
+                    Rez.Process();
                 }
 
                 if (!ActionTaken)
