@@ -349,6 +349,7 @@ namespace E3Core.Settings
 
             if (sectionkey.Equals("Cures", StringComparison.OrdinalIgnoreCase)) return;
             if (sectionkey.Equals("Blocked Buffs", StringComparison.OrdinalIgnoreCase)) return;
+            if (sectionkey.Equals("Dispel", StringComparison.OrdinalIgnoreCase)) return;
 
 
             string thing = thingToCheckFor;

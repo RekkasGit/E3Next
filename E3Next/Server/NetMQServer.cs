@@ -70,6 +70,14 @@ namespace E3Core.Server
                 Int32 processID = System.Diagnostics.Process.GetCurrentProcess().Id;
                 MQ.Write($"{PubPort} {RouterPort} {PubClientPort} {processID}");
             });
+            EventProcessor.RegisterCommand("/ui-kill", (x) =>
+            {
+               if(_uiProcess!=null)
+                {
+                    _uiProcess.Kill();
+                    _uiProcess = null;
+                }
+            });
         }
         /// <summary>
         /// Turns on the UI program, and then from then on, hide/shows it as needed. To close restart e3.

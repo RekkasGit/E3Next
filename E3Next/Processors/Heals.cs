@@ -519,8 +519,8 @@ namespace E3Core.Processors
 
         public static bool Check_LifeSupport(bool JustCheck = false)
         {
-            Int32 pctHps = MQ.Query<Int32>("${Me.PctHPs}");
-            Int32 myID = MQ.Query<Int32>("${Me.ID}");
+            Int32 pctHps = E3.CurrentHps;
+            Int32 myID = E3.CurrentId;
             foreach(var spell in E3.CharacterSettings.LifeSupport)
             {
                 if(pctHps<spell.HealPct)

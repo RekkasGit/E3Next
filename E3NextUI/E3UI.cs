@@ -1,5 +1,6 @@
 ﻿using E3NextUI.Server;
 using E3NextUI.Settings;
+using E3NextUI.Themese;
 using E3NextUI.Util;
 using System;
 using System.Collections.Generic;
@@ -40,7 +41,7 @@ namespace E3NextUI
         public static TextBoxInfo _mqConsole;
         public static TextBoxInfo _meleeConsole;
         public static TextBoxInfo _spellConsole;
-        public static string CharacterName;
+        public static string _playerName;
         public static Int32 _parentProcess;
         public static object _objectLock = new object();
         public static GeneralSettings _genSettings;
@@ -48,6 +49,10 @@ namespace E3NextUI
         public Image _uncollapseConsoleImage;
         public Image _collapseDynamicButtonImage;
         public Image _uncollapseDynamicButtonImage;
+        public static String _playerHP;
+        public static String _playerMP;
+        public static String _playerSP;
+       
 
         public E3UI()
         {
@@ -79,9 +84,9 @@ namespace E3NextUI
                 {
                     lock (_tloClient)
                     {
-                        CharacterName = _tloClient.RequestData("${Me.CleanName}");
-                        this.Text = $"E3UI ({CharacterName})";
-                        labelPlayerName.Text = CharacterName;
+                        _playerName = _tloClient.RequestData("${Me.CleanName}");
+                        this.Text = $"E3UI ({_playerName})";
+                        labelPlayerName.Text = _playerName;
                         configFolder = _tloClient.RequestData("${MacroQuest.Path[config]}");
                     }
                 }
@@ -97,7 +102,7 @@ namespace E3NextUI
 
             }
 
-            _genSettings = new GeneralSettings(configFolder, CharacterName);
+            _genSettings = new GeneralSettings(configFolder, _playerName);
             _genSettings.LoadData();
 
 
@@ -108,6 +113,11 @@ namespace E3NextUI
                 var size = new Size(_genSettings.Width, _genSettings.Height);
                 this.DesktopBounds = new Rectangle(point, size);
           
+            }
+
+            if (_genSettings.UseDarkMode)
+            {
+                darkModeMenuItem.Checked = true;
             }
 
             LoadDynamicButtons();
@@ -129,7 +139,35 @@ namespace E3NextUI
 
             _globalUpdate = Task.Factory.StartNew(() => { GlobalTimer(); }, CancellationToken.None, TaskCreationOptions.DenyChildAttach, TaskScheduler.Default);
 
+           
         }
+
+        private delegate void GlobalDelegate();
+        public void GlobalUIProcess()
+        {
+            int currentX = this.DesktopBounds.X;
+            int currentY = this.DesktopBounds.Y;
+            int height = this.DesktopBounds.Height;
+            int width = this.DesktopBounds.Width;
+
+            if (currentX != _genSettings.StartLocationX || currentY != _genSettings.StartLocationY || width != _genSettings.Width | height != _genSettings.Height)
+            {
+                _genSettings.StartLocationX = currentX;
+                _genSettings.StartLocationY = currentY;
+                _genSettings.Width = width;
+                _genSettings.Height = height;
+                _genSettings.SaveData();
+            }
+        }
+
+        public void Shutdown()
+        {
+            _shouldProcess = false;
+        }
+
+
+
+        #region dynamicButtons
         private void LoadDynamicButtons()
         {
             Int32 row = 5;
@@ -238,42 +276,13 @@ namespace E3NextUI
                         Application.Exit();
                     }
                 }
-                //check to see if our position has changed.
-                GlobalUIProcess();    
-
+                if (this.IsHandleCreated)
+                {
+                    //check to see if our position has changed.
+                    this.Invoke(new GlobalDelegate(GlobalUIProcess), null);
+                }
                 System.Threading.Thread.Sleep(1000);
             }
-        }
-        private delegate void GlobalDelegate();
-        public void GlobalUIProcess()
-        {
-            if (this.InvokeRequired)
-            {
-                this.Invoke(new GlobalDelegate(GlobalUIProcess), null);
-            }
-            else
-            {
-
-                int currentX = this.DesktopBounds.X;
-                int currentY = this.DesktopBounds.Y;
-                int height = this.DesktopBounds.Height;
-                int width = this.DesktopBounds.Width;
-
-
-                if (currentX != _genSettings.StartLocationX || currentY != _genSettings.StartLocationY || width!=_genSettings.Width | height != _genSettings.Height)
-                {
-
-                    _genSettings.StartLocationX = currentX;
-                    _genSettings.StartLocationY = currentY;
-                    _genSettings.Width = width;
-                    _genSettings.Height = height;
-                    _genSettings.SaveData();
-                }
-            }
-        }
-        private void pbCollapseConsoleButtons_Click(object sender, EventArgs e)
-        {
-            ToggleConsoles();
         }
         private void pbCollapseDynamicButtons_Click(object sender, EventArgs e)
         {
@@ -281,12 +290,14 @@ namespace E3NextUI
         }
         private void ToggleButtons(bool ignoreWidth = false)
         {
-            if(tableLayoutPanelDynamicButtons.Visible)
+            int BorderWidth = (this.Width - this.ClientSize.Width) / 2;
+
+            if (tableLayoutPanelDynamicButtons.Visible)
             {
                 tableLayoutPanelDynamicButtons.Visible = false;
-                if(!ignoreWidth)
+                if (!ignoreWidth)
                 {
-                    Int32 newWidth = this.DesktopBounds.Width - (tableLayoutPanelDynamicButtons.Width);
+                    Int32 newWidth = BorderWidth + (panelStatusPannel2.Width) + 10;
                     var point = new Point(this.DesktopBounds.X, this.DesktopBounds.Y);
                     var size = new Size(newWidth, this.DesktopBounds.Height);
                     this.DesktopBounds = new Rectangle(point, size);
@@ -299,7 +310,7 @@ namespace E3NextUI
             else
             {
 
-                 Int32 newWidth = this.DesktopBounds.Width + (tableLayoutPanelDynamicButtons.Width);
+                Int32 newWidth = BorderWidth + (panelStatusPannel2.Width) + tableLayoutPanelDynamicButtons.Width + 10;
                 var point = new Point(this.DesktopBounds.X, this.DesktopBounds.Y);
                 var size = new Size(newWidth, this.DesktopBounds.Height);
                 this.DesktopBounds = new Rectangle(point, size);
@@ -310,52 +321,37 @@ namespace E3NextUI
 
             }
         }
-        private void ToggleConsoles(bool ignoreHeight = false)
+        private void button1_Click(object sender, EventArgs e)
         {
-            int BorderWidth = (this.Width - this.ClientSize.Width) / 2;
-            int TitlebarHeight = this.Height - this.ClientSize.Height - 2 * BorderWidth;
-
-            if (splitContainer2.Visible)
+            DynamicButtonEditor ft = new DynamicButtonEditor();
+            ft.Show();
+        }
+        #endregion
+      
+        #region formevents
+        private void darkModeToolStripMenuItem_Click(object sender, EventArgs e)
+        {
+            if (_genSettings.UseDarkMode)
             {
-                splitContainer2.Visible = false;
-                splitContainer1.Visible = false;
-              
-                if (!ignoreHeight)
-                {
-                    //need to collapse the window height to deal with the size poofing
-
-                    
-
-                    Int32 newHeight = TitlebarHeight + BorderWidth + panelStatusPannel2.Height + panelMain.Height + menuStrip1.Height +20;
-                    var point = new Point(this.DesktopBounds.X, this.DesktopBounds.Y);
-                    var size = new Size(this.DesktopBounds.Width, newHeight);
-                    this.DesktopBounds = new Rectangle(point, size);
-
-                }
-
-                pbCollapseConsoleButtons.Image = (Image)_collapseConsoleImage.Clone();
-              
-                _genSettings.ConsoleCollapsed = true;
+                DefaultMode.ChangeTheme(this, this.Controls);
+                _genSettings.UseDarkMode = false;
+                darkModeMenuItem.Checked = false;
+                this.Opacity = this.Opacity - 0.001;
+                Application.DoEvents();
+                this.Opacity = 100;
                 _genSettings.SaveData();
-
             }
             else
             {
-
-                Int32 newHeight = TitlebarHeight + BorderWidth + panelStatusPannel2.Height + panelMain.Height+ menuStrip1.Height+20+ (splitContainer2.Height + splitContainer1.Height);
-                var point = new Point(this.DesktopBounds.X, this.DesktopBounds.Y);
-                var size = new Size(this.DesktopBounds.Width, newHeight);
-                this.DesktopBounds = new Rectangle(point, size);
-                splitContainer2.Visible = true;
-                splitContainer1.Visible = true;
-                _genSettings.ConsoleCollapsed = false;
-                pbCollapseConsoleButtons.Image = (Image)_uncollapseConsoleImage.Clone();
+                DarkMode.ChangeTheme(this, this.Controls);
+                _genSettings.UseDarkMode = true;
+                darkModeMenuItem.Checked = true;
+                this.Opacity = this.Opacity - 0.001;
+                Application.DoEvents();
+                this.Opacity = 100;
                 _genSettings.SaveData();
-
-
             }
         }
-    
         private void E3UI_Load(object sender, EventArgs e)
         {
             if (_genSettings.ConsoleCollapsed)
@@ -366,7 +362,45 @@ namespace E3NextUI
             {
                 ToggleButtons(true);
             }
+            if(_genSettings.UseDarkMode)
+            {
+                Themese.DarkMode.ChangeTheme(this, this.Controls);
+            }
+
         }
+        private void E3UI_FormClosing(object sender, FormClosingEventArgs e)
+        {
+            //set the variable that will stop all the while loops
+            _shouldProcess = false;
+        }
+        private delegate void ToggleShowDelegate();
+        public void ToggleShow()
+        {
+            if (this.InvokeRequired)
+            {
+                this.Invoke(new ToggleShowDelegate(ToggleShow), null);
+            }
+            else
+            {
+                if (this.Visible)
+                {
+                    this.Visible = false; // Hide form window.
+                }
+                else
+                {
+                    this.Visible = true;
+                    //Keeps the current topmost status of form
+                    bool top = TopMost;
+                    //Brings the form to top
+                    TopMost = true;
+                    //Set form's topmost status back to whatever it was
+                    TopMost = top;
+                }
+            }
+        }
+        #endregion
+
+        #region parseAndUIUpdates
         private void ProcessParse()
         {
             while (_shouldProcess)
@@ -385,10 +419,22 @@ namespace E3NextUI
         {
          
             //lets get the data from the line parser.
-            lock (_objectLock)
+            
+
+            if(labelHPTotal.Text!=_playerHP)
             {
-                labelInCombatValue.Text = LineParser._currentlyCombat.ToString();
+                labelHPTotal.Text = _playerHP;
             }
+            if (labelManaCurrent.Text != _playerMP)
+            {
+                labelManaCurrent.Text = _playerMP;
+            }
+            if (labelStaminaValue.Text != _playerSP)
+            {
+                labelStaminaValue.Text = _playerSP;
+            }
+
+            labelInCombatValue.Text = LineParser._currentlyCombat.ToString();
             lock (LineParser._objectLock)
             {
                 if (!String.IsNullOrWhiteSpace(LineParser.PetName))
@@ -400,7 +446,6 @@ namespace E3NextUI
 
                 Int64 petDamageTotal = LineParser._yourPetDamage.Sum();
                 labelPetDamageValue.Text = petDamageTotal.ToString("N0");
-
 
                 Int64 dsDamage = LineParser._yourDamageShieldDamage.Sum();
                 labelYourDamageShieldValue.Text = dsDamage.ToString("N0");
@@ -473,130 +518,23 @@ namespace E3NextUI
             }
             
         }
-        private void ProcessConsoleUI(TextBoxInfo textInfo)
-        {
-            while (_shouldProcess)
-            {
-                ProcessBaseConsoleUI(textInfo);
-                System.Threading.Thread.Sleep(500);
-            }
-
-        }
-
-
-        private delegate void ProcessBaseUIDelegate(TextBoxInfo textInfo);
-        private void ProcessBaseConsoleUI(TextBoxInfo ti)
-        {
-            if (this.InvokeRequired)
-            {
-                this.Invoke(new ProcessBaseUIDelegate(ProcessBaseConsoleUI), new object[] { ti });
-            }
-            else
-            {
-                if(!ti.textBox.Visible) return;
-
-                lock (ti)
-                {
-                    if (ti.isPaused || !ti.textBox.Visible) return;
-
-                    if (ti.nextProcess < _stopWatch.ElapsedMilliseconds)
-                    {
-                        if (ti.isDirty)
-                        {
-                            ti.sb.Clear();
-                            Int32 count = ti.consoleBuffer.Size;
-                            if (count > 50) count = 50;
-                            for(Int32 i =count-1;i>=0;i--)
-                            {
-                                ti.sb.AppendLine(ti.consoleBuffer[i]);
-                            }
-                            ti.textBox.Text = ti.sb.ToString();
-                            ti.textBox.SelectionStart = ti.textBox.Text.Length;
-                            ti.textBox.ScrollToCaret();
-                            ti.nextProcess = _stopWatch.ElapsedMilliseconds + 100;
-                            ti.isDirty = false;
-                        }
-                    }
-                }
-            }
-        }
-
-
-        private delegate void ToggleShowDelegate();
-        public void ToggleShow()
-        {
-            if (this.InvokeRequired)
-            {
-                this.Invoke(new ToggleShowDelegate(ToggleShow), null);
-            }
-            else
-            {
-
-                if (this.Visible)
-                {
-                    this.Visible = false; // Hide form window.
-
-                }
-                else
-                {
-                    this.Visible = true;
-                    //Keeps the current topmost status of form
-                    bool top = TopMost;
-                    //Brings the form to top
-                    TopMost = true;
-                    //Set form's topmost status back to whatever it was
-                    TopMost = top;
-                }
-            }
-        }
-
         private delegate void SetPlayerDataDelegate(string name);
         public void SetPlayerName(string name)
         {
-            if (this.InvokeRequired)
-            {
-                this.Invoke(new SetPlayerDataDelegate(SetPlayerName), new object[] { name });
-            }
-            else
-            {
-                labelPlayerName.Text = name;
-            }
+            _playerName = name;
         }
         public void SetPlayerHP(string value)
         {
-            if (value == labelHPTotal.Text) return;
-            if (this.InvokeRequired)
-            {
-                this.Invoke(new SetPlayerDataDelegate(SetPlayerHP), new object[] { value });
-            }
-            else
-            {
-                labelHPTotal.Text = value;
-            }
+            _playerHP = value;
         }
         public void SetPlayerMP(string value)
         {
-            if (value == labelManaCurrent.Text) return;
-            if (this.InvokeRequired)
-            {
-                this.Invoke(new SetPlayerDataDelegate(SetPlayerMP), new object[] { value });
-            }
-            else
-            {
-                labelManaCurrent.Text = value;
-            }
+            _playerMP = value;
+
         }
         public void SetPlayerSP(string value)
         {
-            if (value == labelStaminaValue.Text) return;
-            if (this.InvokeRequired)
-            {
-                this.Invoke(new SetPlayerDataDelegate(SetPlayerSP), new object[] { value });
-            }
-            else
-            {
-                labelStaminaValue.Text = value;
-            }
+            _playerSP = value;
         }
         public void SetPlayerCasting(string value)
         {
@@ -610,70 +548,18 @@ namespace E3NextUI
                 labelCastingValue.Text = value;
             }
         }
-        public void AddConsoleLine(string value, TextBoxInfo ti)
+        #endregion
+
+        #region Consoles
+        private void pbCollapseConsoleButtons_Click(object sender, EventArgs e)
         {
-            lock (ti)
-            {
-                ti.isDirty = true;
-                ti.consoleBuffer.PushFront(value);
-            }
+            ToggleConsoles();
         }
-
-        private void button1_Click(object sender, EventArgs e)
-        {
-            DynamicButtonEditor ft = new DynamicButtonEditor();
-            ft.Show();
-        }
-
-        public void Shutdown()
-        {
-            _shouldProcess = false;
-        }
-
-        private void textBoxConsoleInput_KeyDown(object sender, KeyEventArgs e)
-        {
-        if (e.KeyData == Keys.Enter)
-            {
-                //grab the data and send a command
-                //do this to stop the 'ding' sound
-                e.SuppressKeyPress = true;
-                string value = ((TextBox)sender).Text;
-                if (value.StartsWith("/"))
-                {
-                    PubServer._pubCommands.Enqueue(value);
-
-                }
-                ((TextBox)sender).Text = String.Empty;
-            }
-
-        }
-
-        private void E3UI_FormClosing(object sender, FormClosingEventArgs e)
-        {
-            //set the variable that will stop all the while loops
-            _shouldProcess = false;
-        }
-
-        private void buttonResetParse_Click(object sender, EventArgs e)
-        {
-            LineParser.Reset();
-        }
-      
-        /// <summary>
-        /// used to check if our parent process dies, so that we can close as well.
-        /// </summary>
-        /// <param name="id"></param>
-        /// <returns></returns>
-        private bool ProcessExists(int id)
-        {
-            return Process.GetProcesses().Any(x => x.Id == id);
-        }
-
         private void buttonPauseConsoles_Click(object sender, EventArgs e)
         {
             lock (_spellConsole)
-            { 
-                if(_spellConsole.isPaused)
+            {
+                if (_spellConsole.isPaused)
                 {
                     buttonPauseConsoles.Text = "Pause Consoles";
                 }
@@ -720,6 +606,143 @@ namespace E3NextUI
                 }
             }
         }
+        private void buttonResetParse_Click(object sender, EventArgs e)
+        {
+            LineParser.Reset();
+        }
+
+        private void ToggleConsoles(bool ignoreHeight = false)
+        {
+            int BorderWidth = (this.Width - this.ClientSize.Width) / 2;
+            int TitlebarHeight = this.Height - this.ClientSize.Height - 2 * BorderWidth;
+
+            if (splitContainer2.Visible)
+            {
+                splitContainer2.Visible = false;
+                splitContainer1.Visible = false;
+
+                if (!ignoreHeight)
+                {
+                    //need to collapse the window height to deal with the size poofing
+
+
+
+                    Int32 newHeight = TitlebarHeight + BorderWidth + panelStatusPannel2.Height + panelMain.Height + menuStrip1.Height + 20;
+                    var point = new Point(this.DesktopBounds.X, this.DesktopBounds.Y);
+                    var size = new Size(this.DesktopBounds.Width, newHeight);
+                    this.DesktopBounds = new Rectangle(point, size);
+
+                }
+
+                pbCollapseConsoleButtons.Image = (Image)_collapseConsoleImage.Clone();
+
+                _genSettings.ConsoleCollapsed = true;
+                _genSettings.SaveData();
+
+            }
+            else
+            {
+
+                Int32 newHeight = TitlebarHeight + BorderWidth + panelStatusPannel2.Height + panelMain.Height + menuStrip1.Height + 20 + (splitContainer2.Height + splitContainer1.Height);
+                var point = new Point(this.DesktopBounds.X, this.DesktopBounds.Y);
+                var size = new Size(this.DesktopBounds.Width, newHeight);
+                this.DesktopBounds = new Rectangle(point, size);
+                splitContainer2.Visible = true;
+                splitContainer1.Visible = true;
+                _genSettings.ConsoleCollapsed = false;
+                pbCollapseConsoleButtons.Image = (Image)_uncollapseConsoleImage.Clone();
+                _genSettings.SaveData();
+
+
+            }
+        }
+
+        private void ProcessConsoleUI(TextBoxInfo textInfo)
+        {
+            while (_shouldProcess)
+            {
+                if(this.IsHandleCreated)
+                {
+                    this.Invoke(new ProcessBaseUIDelegate(ProcessBaseConsoleUI), new object[] { textInfo });
+
+                }
+                System.Threading.Thread.Sleep(500);
+            }
+
+        }
+
+
+        private delegate void ProcessBaseUIDelegate(TextBoxInfo textInfo);
+        private void ProcessBaseConsoleUI(TextBoxInfo ti)
+        {
+                if(!ti.textBox.Visible) return;
+
+                lock (ti)
+                {
+                    if (ti.isPaused || !ti.textBox.Visible) return;
+
+                    if (ti.nextProcess < _stopWatch.ElapsedMilliseconds)
+                    {
+                        if (ti.isDirty)
+                        {
+                            ti.sb.Clear();
+                            Int32 count = ti.consoleBuffer.Size;
+                            if (count > 50) count = 50;
+                            for(Int32 i =count-1;i>=0;i--)
+                            {
+                                ti.sb.AppendLine(ti.consoleBuffer[i]);
+                            }
+                            ti.textBox.Text = ti.sb.ToString();
+                            ti.textBox.SelectionStart = ti.textBox.Text.Length;
+                            ti.textBox.ScrollToCaret();
+                            ti.nextProcess = _stopWatch.ElapsedMilliseconds + 100;
+                            ti.isDirty = false;
+                        }
+                    }
+                }
+        }
+        public void AddConsoleLine(string value, TextBoxInfo ti)
+        {
+            lock (ti)
+            {
+                ti.isDirty = true;
+                ti.consoleBuffer.PushFront(value);
+            }
+        }
+
+        private void textBoxConsoleInput_KeyDown(object sender, KeyEventArgs e)
+        {
+            if (e.KeyData == Keys.Enter)
+            {
+                //grab the data and send a command
+                //do this to stop the 'ding' sound
+                e.SuppressKeyPress = true;
+                string value = ((TextBox)sender).Text;
+                if (value.StartsWith("/"))
+                {
+                    PubServer._pubCommands.Enqueue(value);
+
+                }
+                ((TextBox)sender).Text = String.Empty;
+            }
+
+        }
+
+        #endregion
+
+      
+
+        /// <summary>
+        /// used to check if our parent process dies, so that we can close as well.
+        /// </summary>
+        /// <param name="id"></param>
+        /// <returns></returns>
+        private bool ProcessExists(int id)
+        {
+            return Process.GetProcesses().Any(x => x.Id == id);
+        }
+
+      
         public static void SetDoubleBuffered(System.Windows.Forms.Control c)
         {
             //Taxes: Remote Desktop Connection and painting
@@ -738,10 +761,7 @@ namespace E3NextUI
         [DllImport("shell32.dll", SetLastError = true)]
         static extern void SetCurrentProcessExplicitAppUserModelID([MarshalAs(UnmanagedType.LPWStr)] string AppID);
 
-        private void panelStatusPannel2_Paint(object sender, PaintEventArgs e)
-        {
-
-        }
+       
     }
     public class TextBoxInfo
     {

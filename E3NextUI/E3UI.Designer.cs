@@ -60,31 +60,31 @@ namespace E3NextUI
             this.labelPetDamageDPSValue = new System.Windows.Forms.Label();
             this.labelDamageShieldDPSValue = new System.Windows.Forms.Label();
             this.labelTotalDamageDPSValue = new System.Windows.Forms.Label();
-            this.labelPetNameValue = new System.Windows.Forms.Label();
-            this.labelPetName = new System.Windows.Forms.Label();
-            this.buttonPauseConsoles = new System.Windows.Forms.Button();
-            this.labelInCombat = new System.Windows.Forms.Label();
-            this.labelInCombatValue = new System.Windows.Forms.Label();
             this.labelManaCurrent = new System.Windows.Forms.Label();
             this.labelMana = new System.Windows.Forms.Label();
             this.labelStaminaValue = new System.Windows.Forms.Label();
             this.labelStaminia = new System.Windows.Forms.Label();
-            this.labelCastingValue = new System.Windows.Forms.Label();
-            this.labelCasting = new System.Windows.Forms.Label();
             this.labelHealingByYou = new System.Windows.Forms.Label();
             this.labelHealingByYouValue = new System.Windows.Forms.Label();
-            this.pbCollapseConsoleButtons = new System.Windows.Forms.PictureBox();
-            this.panelStatusPannel2 = new System.Windows.Forms.Panel();
-            this.pbCollapseDynamicButtons = new System.Windows.Forms.PictureBox();
             this.menuStrip1 = new System.Windows.Forms.MenuStrip();
             this.mainToolStripMenuItem = new System.Windows.Forms.ToolStripMenuItem();
             this.hideToolStripMenuItem = new System.Windows.Forms.ToolStripMenuItem();
             this.settingsToolStripMenuItem = new System.Windows.Forms.ToolStripMenuItem();
-            this.dynamicButtonsToolStripMenuItem = new System.Windows.Forms.ToolStripMenuItem();
+            this.darkModeMenuItem = new System.Windows.Forms.ToolStripMenuItem();
             this.panelMain = new System.Windows.Forms.Panel();
             this.panelButtons = new System.Windows.Forms.Panel();
             this.tableLayoutPanelDynamicButtons = new System.Windows.Forms.TableLayoutPanel();
             this.panelConsole = new System.Windows.Forms.Panel();
+            this.labelInCombatValue = new System.Windows.Forms.Label();
+            this.labelInCombat = new System.Windows.Forms.Label();
+            this.labelPetNameValue = new System.Windows.Forms.Label();
+            this.labelPetName = new System.Windows.Forms.Label();
+            this.pbCollapseConsoleButtons = new System.Windows.Forms.PictureBox();
+            this.buttonPauseConsoles = new System.Windows.Forms.Button();
+            this.pbCollapseDynamicButtons = new System.Windows.Forms.PictureBox();
+            this.labelCasting = new System.Windows.Forms.Label();
+            this.labelCastingValue = new System.Windows.Forms.Label();
+            this.panelStatusPannel2 = new System.Windows.Forms.Panel();
             ((System.ComponentModel.ISupportInitialize)(this.splitContainer1)).BeginInit();
             this.splitContainer1.Panel1.SuspendLayout();
             this.splitContainer1.Panel2.SuspendLayout();
@@ -93,20 +93,20 @@ namespace E3NextUI
             this.splitContainer2.Panel1.SuspendLayout();
             this.splitContainer2.Panel2.SuspendLayout();
             this.splitContainer2.SuspendLayout();
-            ((System.ComponentModel.ISupportInitialize)(this.pbCollapseConsoleButtons)).BeginInit();
-            this.panelStatusPannel2.SuspendLayout();
-            ((System.ComponentModel.ISupportInitialize)(this.pbCollapseDynamicButtons)).BeginInit();
             this.menuStrip1.SuspendLayout();
             this.panelMain.SuspendLayout();
             this.panelButtons.SuspendLayout();
             this.panelConsole.SuspendLayout();
+            ((System.ComponentModel.ISupportInitialize)(this.pbCollapseConsoleButtons)).BeginInit();
+            ((System.ComponentModel.ISupportInitialize)(this.pbCollapseDynamicButtons)).BeginInit();
+            this.panelStatusPannel2.SuspendLayout();
             this.SuspendLayout();
             // 
             // labelPlayer
             // 
             this.labelPlayer.AutoSize = true;
             this.labelPlayer.Font = new System.Drawing.Font("Microsoft Sans Serif", 14.25F, System.Drawing.FontStyle.Bold, System.Drawing.GraphicsUnit.Point, ((byte)(0)));
-            this.labelPlayer.ForeColor = System.Drawing.SystemColors.MenuHighlight;
+            this.labelPlayer.ForeColor = System.Drawing.Color.CornflowerBlue;
             this.labelPlayer.Location = new System.Drawing.Point(20, 0);
             this.labelPlayer.Name = "labelPlayer";
             this.labelPlayer.Size = new System.Drawing.Size(74, 24);
@@ -117,7 +117,7 @@ namespace E3NextUI
             // 
             this.labelPlayerName.AutoSize = true;
             this.labelPlayerName.Font = new System.Drawing.Font("Microsoft Sans Serif", 12F, System.Drawing.FontStyle.Bold, System.Drawing.GraphicsUnit.Point, ((byte)(0)));
-            this.labelPlayerName.ForeColor = System.Drawing.Color.Crimson;
+            this.labelPlayerName.ForeColor = System.Drawing.Color.FromArgb(((int)(((byte)(214)))), ((int)(((byte)(79)))), ((int)(((byte)(93)))));
             this.labelPlayerName.Location = new System.Drawing.Point(99, 3);
             this.labelPlayerName.Name = "labelPlayerName";
             this.labelPlayerName.Size = new System.Drawing.Size(93, 20);
@@ -128,7 +128,7 @@ namespace E3NextUI
             // 
             this.labelHP.AutoSize = true;
             this.labelHP.Font = new System.Drawing.Font("Microsoft Sans Serif", 14.25F, System.Drawing.FontStyle.Bold, System.Drawing.GraphicsUnit.Point, ((byte)(0)));
-            this.labelHP.ForeColor = System.Drawing.SystemColors.MenuHighlight;
+            this.labelHP.ForeColor = System.Drawing.Color.FromArgb(((int)(((byte)(0)))), ((int)(((byte)(192)))), ((int)(((byte)(0)))));
             this.labelHP.Location = new System.Drawing.Point(19, 33);
             this.labelHP.Name = "labelHP";
             this.labelHP.Size = new System.Drawing.Size(44, 24);
@@ -272,7 +272,7 @@ namespace E3NextUI
             // labelTotalTime
             // 
             this.labelTotalTime.AutoSize = true;
-            this.labelTotalTime.Location = new System.Drawing.Point(279, 103);
+            this.labelTotalTime.Location = new System.Drawing.Point(279, 101);
             this.labelTotalTime.Name = "labelTotalTime";
             this.labelTotalTime.Size = new System.Drawing.Size(57, 13);
             this.labelTotalTime.TabIndex = 11;
@@ -281,7 +281,7 @@ namespace E3NextUI
             // labelTotalTimeValue
             // 
             this.labelTotalTimeValue.AutoSize = true;
-            this.labelTotalTimeValue.Location = new System.Drawing.Point(342, 103);
+            this.labelTotalTimeValue.Location = new System.Drawing.Point(342, 101);
             this.labelTotalTimeValue.Name = "labelTotalTimeValue";
             this.labelTotalTimeValue.Size = new System.Drawing.Size(13, 13);
             this.labelTotalTimeValue.TabIndex = 12;
@@ -413,70 +413,11 @@ namespace E3NextUI
             this.labelTotalDamageDPSValue.TabIndex = 26;
             this.labelTotalDamageDPSValue.Text = "0";
             // 
-            // labelPetNameValue
-            // 
-            this.labelPetNameValue.Anchor = System.Windows.Forms.AnchorStyles.Left;
-            this.labelPetNameValue.AutoSize = true;
-            this.labelPetNameValue.Font = new System.Drawing.Font("Microsoft Sans Serif", 12F, System.Drawing.FontStyle.Bold, System.Drawing.GraphicsUnit.Point, ((byte)(0)));
-            this.labelPetNameValue.ForeColor = System.Drawing.Color.Crimson;
-            this.labelPetNameValue.Location = new System.Drawing.Point(108, 15);
-            this.labelPetNameValue.Name = "labelPetNameValue";
-            this.labelPetNameValue.Size = new System.Drawing.Size(51, 20);
-            this.labelPetNameValue.TabIndex = 28;
-            this.labelPetNameValue.Text = "None";
-            // 
-            // labelPetName
-            // 
-            this.labelPetName.Anchor = System.Windows.Forms.AnchorStyles.Left;
-            this.labelPetName.AutoSize = true;
-            this.labelPetName.Font = new System.Drawing.Font("Microsoft Sans Serif", 14.25F, System.Drawing.FontStyle.Bold, System.Drawing.GraphicsUnit.Point, ((byte)(0)));
-            this.labelPetName.ForeColor = System.Drawing.SystemColors.MenuHighlight;
-            this.labelPetName.Location = new System.Drawing.Point(67, 12);
-            this.labelPetName.Name = "labelPetName";
-            this.labelPetName.Size = new System.Drawing.Size(46, 24);
-            this.labelPetName.TabIndex = 27;
-            this.labelPetName.Text = "Pet:";
-            // 
-            // buttonPauseConsoles
-            // 
-            this.buttonPauseConsoles.Anchor = System.Windows.Forms.AnchorStyles.Left;
-            this.buttonPauseConsoles.Location = new System.Drawing.Point(595, 75);
-            this.buttonPauseConsoles.Name = "buttonPauseConsoles";
-            this.buttonPauseConsoles.Size = new System.Drawing.Size(98, 23);
-            this.buttonPauseConsoles.TabIndex = 29;
-            this.buttonPauseConsoles.Text = "Pause Consoles";
-            this.buttonPauseConsoles.UseVisualStyleBackColor = true;
-            this.buttonPauseConsoles.Click += new System.EventHandler(this.buttonPauseConsoles_Click);
-            // 
-            // labelInCombat
-            // 
-            this.labelInCombat.Anchor = System.Windows.Forms.AnchorStyles.Left;
-            this.labelInCombat.AutoSize = true;
-            this.labelInCombat.Font = new System.Drawing.Font("Microsoft Sans Serif", 14.25F, System.Drawing.FontStyle.Bold, System.Drawing.GraphicsUnit.Point, ((byte)(0)));
-            this.labelInCombat.ForeColor = System.Drawing.SystemColors.MenuHighlight;
-            this.labelInCombat.Location = new System.Drawing.Point(3, 36);
-            this.labelInCombat.Name = "labelInCombat";
-            this.labelInCombat.Size = new System.Drawing.Size(110, 24);
-            this.labelInCombat.TabIndex = 31;
-            this.labelInCombat.Text = "In Combat:";
-            // 
-            // labelInCombatValue
-            // 
-            this.labelInCombatValue.Anchor = System.Windows.Forms.AnchorStyles.Left;
-            this.labelInCombatValue.AutoSize = true;
-            this.labelInCombatValue.Font = new System.Drawing.Font("Microsoft Sans Serif", 12F, System.Drawing.FontStyle.Bold, System.Drawing.GraphicsUnit.Point, ((byte)(0)));
-            this.labelInCombatValue.ForeColor = System.Drawing.Color.Red;
-            this.labelInCombatValue.Location = new System.Drawing.Point(111, 42);
-            this.labelInCombatValue.Name = "labelInCombatValue";
-            this.labelInCombatValue.Size = new System.Drawing.Size(48, 20);
-            this.labelInCombatValue.TabIndex = 32;
-            this.labelInCombatValue.Text = "false";
-            // 
             // labelManaCurrent
             // 
             this.labelManaCurrent.AutoSize = true;
             this.labelManaCurrent.Font = new System.Drawing.Font("Microsoft Sans Serif", 15.75F, System.Drawing.FontStyle.Bold, System.Drawing.GraphicsUnit.Point, ((byte)(0)));
-            this.labelManaCurrent.ForeColor = System.Drawing.Color.Blue;
+            this.labelManaCurrent.ForeColor = System.Drawing.Color.CornflowerBlue;
             this.labelManaCurrent.Location = new System.Drawing.Point(69, 56);
             this.labelManaCurrent.Name = "labelManaCurrent";
             this.labelManaCurrent.Size = new System.Drawing.Size(25, 25);
@@ -487,7 +428,7 @@ namespace E3NextUI
             // 
             this.labelMana.AutoSize = true;
             this.labelMana.Font = new System.Drawing.Font("Microsoft Sans Serif", 14.25F, System.Drawing.FontStyle.Bold, System.Drawing.GraphicsUnit.Point, ((byte)(0)));
-            this.labelMana.ForeColor = System.Drawing.SystemColors.MenuHighlight;
+            this.labelMana.ForeColor = System.Drawing.Color.CornflowerBlue;
             this.labelMana.Location = new System.Drawing.Point(19, 57);
             this.labelMana.Name = "labelMana";
             this.labelMana.Size = new System.Drawing.Size(46, 24);
@@ -509,34 +450,12 @@ namespace E3NextUI
             // 
             this.labelStaminia.AutoSize = true;
             this.labelStaminia.Font = new System.Drawing.Font("Microsoft Sans Serif", 14.25F, System.Drawing.FontStyle.Bold, System.Drawing.GraphicsUnit.Point, ((byte)(0)));
-            this.labelStaminia.ForeColor = System.Drawing.SystemColors.MenuHighlight;
+            this.labelStaminia.ForeColor = System.Drawing.Color.FromArgb(((int)(((byte)(192)))), ((int)(((byte)(192)))), ((int)(((byte)(0)))));
             this.labelStaminia.Location = new System.Drawing.Point(19, 80);
             this.labelStaminia.Name = "labelStaminia";
             this.labelStaminia.Size = new System.Drawing.Size(42, 24);
             this.labelStaminia.TabIndex = 35;
             this.labelStaminia.Text = "SP:";
-            // 
-            // labelCastingValue
-            // 
-            this.labelCastingValue.AutoSize = true;
-            this.labelCastingValue.Font = new System.Drawing.Font("Microsoft Sans Serif", 12F, System.Drawing.FontStyle.Bold, System.Drawing.GraphicsUnit.Point, ((byte)(0)));
-            this.labelCastingValue.ForeColor = System.Drawing.Color.DarkCyan;
-            this.labelCastingValue.Location = new System.Drawing.Point(119, 76);
-            this.labelCastingValue.Name = "labelCastingValue";
-            this.labelCastingValue.Size = new System.Drawing.Size(0, 20);
-            this.labelCastingValue.TabIndex = 38;
-            // 
-            // labelCasting
-            // 
-            this.labelCasting.Anchor = System.Windows.Forms.AnchorStyles.Left;
-            this.labelCasting.AutoSize = true;
-            this.labelCasting.Font = new System.Drawing.Font("Microsoft Sans Serif", 14.25F, System.Drawing.FontStyle.Bold, System.Drawing.GraphicsUnit.Point, ((byte)(0)));
-            this.labelCasting.ForeColor = System.Drawing.SystemColors.MenuHighlight;
-            this.labelCasting.Location = new System.Drawing.Point(27, 67);
-            this.labelCasting.Name = "labelCasting";
-            this.labelCasting.Size = new System.Drawing.Size(85, 24);
-            this.labelCasting.TabIndex = 37;
-            this.labelCasting.Text = "Casting:";
             // 
             // labelHealingByYou
             // 
@@ -555,50 +474,6 @@ namespace E3NextUI
             this.labelHealingByYouValue.Size = new System.Drawing.Size(13, 13);
             this.labelHealingByYouValue.TabIndex = 40;
             this.labelHealingByYouValue.Text = "0";
-            // 
-            // pbCollapseConsoleButtons
-            // 
-            this.pbCollapseConsoleButtons.Anchor = ((System.Windows.Forms.AnchorStyles)((System.Windows.Forms.AnchorStyles.Bottom | System.Windows.Forms.AnchorStyles.Right)));
-            this.pbCollapseConsoleButtons.Image = ((System.Drawing.Image)(resources.GetObject("pbCollapseConsoleButtons.Image")));
-            this.pbCollapseConsoleButtons.Location = new System.Drawing.Point(699, 78);
-            this.pbCollapseConsoleButtons.Name = "pbCollapseConsoleButtons";
-            this.pbCollapseConsoleButtons.Size = new System.Drawing.Size(28, 26);
-            this.pbCollapseConsoleButtons.SizeMode = System.Windows.Forms.PictureBoxSizeMode.StretchImage;
-            this.pbCollapseConsoleButtons.TabIndex = 41;
-            this.pbCollapseConsoleButtons.TabStop = false;
-            this.pbCollapseConsoleButtons.Click += new System.EventHandler(this.pbCollapseConsoleButtons_Click);
-            // 
-            // panelStatusPannel2
-            // 
-            this.panelStatusPannel2.AutoSize = true;
-            this.panelStatusPannel2.AutoSizeMode = System.Windows.Forms.AutoSizeMode.GrowAndShrink;
-            this.panelStatusPannel2.BackgroundImageLayout = System.Windows.Forms.ImageLayout.Zoom;
-            this.panelStatusPannel2.Controls.Add(this.labelCastingValue);
-            this.panelStatusPannel2.Controls.Add(this.labelCasting);
-            this.panelStatusPannel2.Controls.Add(this.pbCollapseDynamicButtons);
-            this.panelStatusPannel2.Controls.Add(this.buttonPauseConsoles);
-            this.panelStatusPannel2.Controls.Add(this.pbCollapseConsoleButtons);
-            this.panelStatusPannel2.Controls.Add(this.labelPetName);
-            this.panelStatusPannel2.Controls.Add(this.labelPetNameValue);
-            this.panelStatusPannel2.Controls.Add(this.labelInCombat);
-            this.panelStatusPannel2.Controls.Add(this.labelInCombatValue);
-            this.panelStatusPannel2.Location = new System.Drawing.Point(3, 143);
-            this.panelStatusPannel2.Name = "panelStatusPannel2";
-            this.panelStatusPannel2.Size = new System.Drawing.Size(730, 107);
-            this.panelStatusPannel2.TabIndex = 42;
-            this.panelStatusPannel2.Paint += new System.Windows.Forms.PaintEventHandler(this.panelStatusPannel2_Paint);
-            // 
-            // pbCollapseDynamicButtons
-            // 
-            this.pbCollapseDynamicButtons.Anchor = ((System.Windows.Forms.AnchorStyles)((System.Windows.Forms.AnchorStyles.Bottom | System.Windows.Forms.AnchorStyles.Right)));
-            this.pbCollapseDynamicButtons.Image = ((System.Drawing.Image)(resources.GetObject("pbCollapseDynamicButtons.Image")));
-            this.pbCollapseDynamicButtons.Location = new System.Drawing.Point(699, 51);
-            this.pbCollapseDynamicButtons.Name = "pbCollapseDynamicButtons";
-            this.pbCollapseDynamicButtons.Size = new System.Drawing.Size(28, 26);
-            this.pbCollapseDynamicButtons.SizeMode = System.Windows.Forms.PictureBoxSizeMode.StretchImage;
-            this.pbCollapseDynamicButtons.TabIndex = 42;
-            this.pbCollapseDynamicButtons.TabStop = false;
-            this.pbCollapseDynamicButtons.Click += new System.EventHandler(this.pbCollapseDynamicButtons_Click);
             // 
             // menuStrip1
             // 
@@ -628,16 +503,17 @@ namespace E3NextUI
             // settingsToolStripMenuItem
             // 
             this.settingsToolStripMenuItem.DropDownItems.AddRange(new System.Windows.Forms.ToolStripItem[] {
-            this.dynamicButtonsToolStripMenuItem});
+            this.darkModeMenuItem});
             this.settingsToolStripMenuItem.Name = "settingsToolStripMenuItem";
             this.settingsToolStripMenuItem.Size = new System.Drawing.Size(61, 20);
             this.settingsToolStripMenuItem.Text = "Settings";
             // 
-            // dynamicButtonsToolStripMenuItem
+            // darkModeMenuItem
             // 
-            this.dynamicButtonsToolStripMenuItem.Name = "dynamicButtonsToolStripMenuItem";
-            this.dynamicButtonsToolStripMenuItem.Size = new System.Drawing.Size(165, 22);
-            this.dynamicButtonsToolStripMenuItem.Text = "Dynamic Buttons";
+            this.darkModeMenuItem.Name = "darkModeMenuItem";
+            this.darkModeMenuItem.Size = new System.Drawing.Size(129, 22);
+            this.darkModeMenuItem.Text = "DarkMode";
+            this.darkModeMenuItem.Click += new System.EventHandler(this.darkModeToolStripMenuItem_Click);
             // 
             // panelMain
             // 
@@ -674,7 +550,7 @@ namespace E3NextUI
             this.panelMain.Controls.Add(this.labelDamageToYou);
             this.panelMain.Location = new System.Drawing.Point(0, 24);
             this.panelMain.Name = "panelMain";
-            this.panelMain.Size = new System.Drawing.Size(733, 116);
+            this.panelMain.Size = new System.Drawing.Size(733, 114);
             this.panelMain.TabIndex = 45;
             // 
             // panelButtons
@@ -718,6 +594,130 @@ namespace E3NextUI
             this.panelConsole.Size = new System.Drawing.Size(1089, 562);
             this.panelConsole.TabIndex = 46;
             // 
+            // labelInCombatValue
+            // 
+            this.labelInCombatValue.Anchor = System.Windows.Forms.AnchorStyles.Left;
+            this.labelInCombatValue.AutoSize = true;
+            this.labelInCombatValue.Font = new System.Drawing.Font("Microsoft Sans Serif", 12F, System.Drawing.FontStyle.Bold, System.Drawing.GraphicsUnit.Point, ((byte)(0)));
+            this.labelInCombatValue.ForeColor = System.Drawing.Color.FromArgb(((int)(((byte)(214)))), ((int)(((byte)(79)))), ((int)(((byte)(93)))));
+            this.labelInCombatValue.Location = new System.Drawing.Point(111, 45);
+            this.labelInCombatValue.Name = "labelInCombatValue";
+            this.labelInCombatValue.Size = new System.Drawing.Size(48, 20);
+            this.labelInCombatValue.TabIndex = 32;
+            this.labelInCombatValue.Text = "false";
+            // 
+            // labelInCombat
+            // 
+            this.labelInCombat.Anchor = System.Windows.Forms.AnchorStyles.Left;
+            this.labelInCombat.AutoSize = true;
+            this.labelInCombat.Font = new System.Drawing.Font("Microsoft Sans Serif", 14.25F, System.Drawing.FontStyle.Bold, System.Drawing.GraphicsUnit.Point, ((byte)(0)));
+            this.labelInCombat.ForeColor = System.Drawing.Color.CornflowerBlue;
+            this.labelInCombat.Location = new System.Drawing.Point(3, 39);
+            this.labelInCombat.Name = "labelInCombat";
+            this.labelInCombat.Size = new System.Drawing.Size(110, 24);
+            this.labelInCombat.TabIndex = 31;
+            this.labelInCombat.Text = "In Combat:";
+            // 
+            // labelPetNameValue
+            // 
+            this.labelPetNameValue.Anchor = System.Windows.Forms.AnchorStyles.Left;
+            this.labelPetNameValue.AutoSize = true;
+            this.labelPetNameValue.Font = new System.Drawing.Font("Microsoft Sans Serif", 12F, System.Drawing.FontStyle.Bold, System.Drawing.GraphicsUnit.Point, ((byte)(0)));
+            this.labelPetNameValue.ForeColor = System.Drawing.Color.FromArgb(((int)(((byte)(214)))), ((int)(((byte)(79)))), ((int)(((byte)(93)))));
+            this.labelPetNameValue.Location = new System.Drawing.Point(108, 18);
+            this.labelPetNameValue.Name = "labelPetNameValue";
+            this.labelPetNameValue.Size = new System.Drawing.Size(51, 20);
+            this.labelPetNameValue.TabIndex = 28;
+            this.labelPetNameValue.Text = "None";
+            // 
+            // labelPetName
+            // 
+            this.labelPetName.Anchor = System.Windows.Forms.AnchorStyles.Left;
+            this.labelPetName.AutoSize = true;
+            this.labelPetName.Font = new System.Drawing.Font("Microsoft Sans Serif", 14.25F, System.Drawing.FontStyle.Bold, System.Drawing.GraphicsUnit.Point, ((byte)(0)));
+            this.labelPetName.ForeColor = System.Drawing.Color.CornflowerBlue;
+            this.labelPetName.Location = new System.Drawing.Point(67, 15);
+            this.labelPetName.Name = "labelPetName";
+            this.labelPetName.Size = new System.Drawing.Size(46, 24);
+            this.labelPetName.TabIndex = 27;
+            this.labelPetName.Text = "Pet:";
+            // 
+            // pbCollapseConsoleButtons
+            // 
+            this.pbCollapseConsoleButtons.Anchor = ((System.Windows.Forms.AnchorStyles)((System.Windows.Forms.AnchorStyles.Bottom | System.Windows.Forms.AnchorStyles.Right)));
+            this.pbCollapseConsoleButtons.Image = ((System.Drawing.Image)(resources.GetObject("pbCollapseConsoleButtons.Image")));
+            this.pbCollapseConsoleButtons.Location = new System.Drawing.Point(702, 84);
+            this.pbCollapseConsoleButtons.Name = "pbCollapseConsoleButtons";
+            this.pbCollapseConsoleButtons.Size = new System.Drawing.Size(28, 26);
+            this.pbCollapseConsoleButtons.SizeMode = System.Windows.Forms.PictureBoxSizeMode.StretchImage;
+            this.pbCollapseConsoleButtons.TabIndex = 41;
+            this.pbCollapseConsoleButtons.TabStop = false;
+            this.pbCollapseConsoleButtons.Click += new System.EventHandler(this.pbCollapseConsoleButtons_Click);
+            // 
+            // buttonPauseConsoles
+            // 
+            this.buttonPauseConsoles.Anchor = System.Windows.Forms.AnchorStyles.Left;
+            this.buttonPauseConsoles.Location = new System.Drawing.Point(595, 78);
+            this.buttonPauseConsoles.Name = "buttonPauseConsoles";
+            this.buttonPauseConsoles.Size = new System.Drawing.Size(98, 23);
+            this.buttonPauseConsoles.TabIndex = 29;
+            this.buttonPauseConsoles.Text = "Pause Consoles";
+            this.buttonPauseConsoles.UseVisualStyleBackColor = true;
+            this.buttonPauseConsoles.Click += new System.EventHandler(this.buttonPauseConsoles_Click);
+            // 
+            // pbCollapseDynamicButtons
+            // 
+            this.pbCollapseDynamicButtons.Anchor = ((System.Windows.Forms.AnchorStyles)((System.Windows.Forms.AnchorStyles.Bottom | System.Windows.Forms.AnchorStyles.Right)));
+            this.pbCollapseDynamicButtons.Image = ((System.Drawing.Image)(resources.GetObject("pbCollapseDynamicButtons.Image")));
+            this.pbCollapseDynamicButtons.Location = new System.Drawing.Point(702, 57);
+            this.pbCollapseDynamicButtons.Name = "pbCollapseDynamicButtons";
+            this.pbCollapseDynamicButtons.Size = new System.Drawing.Size(28, 26);
+            this.pbCollapseDynamicButtons.SizeMode = System.Windows.Forms.PictureBoxSizeMode.StretchImage;
+            this.pbCollapseDynamicButtons.TabIndex = 42;
+            this.pbCollapseDynamicButtons.TabStop = false;
+            this.pbCollapseDynamicButtons.Click += new System.EventHandler(this.pbCollapseDynamicButtons_Click);
+            // 
+            // labelCasting
+            // 
+            this.labelCasting.Anchor = System.Windows.Forms.AnchorStyles.Left;
+            this.labelCasting.AutoSize = true;
+            this.labelCasting.Font = new System.Drawing.Font("Microsoft Sans Serif", 14.25F, System.Drawing.FontStyle.Bold, System.Drawing.GraphicsUnit.Point, ((byte)(0)));
+            this.labelCasting.ForeColor = System.Drawing.Color.CornflowerBlue;
+            this.labelCasting.Location = new System.Drawing.Point(27, 70);
+            this.labelCasting.Name = "labelCasting";
+            this.labelCasting.Size = new System.Drawing.Size(85, 24);
+            this.labelCasting.TabIndex = 37;
+            this.labelCasting.Text = "Casting:";
+            // 
+            // labelCastingValue
+            // 
+            this.labelCastingValue.AutoSize = true;
+            this.labelCastingValue.Font = new System.Drawing.Font("Microsoft Sans Serif", 12F, System.Drawing.FontStyle.Bold, System.Drawing.GraphicsUnit.Point, ((byte)(0)));
+            this.labelCastingValue.ForeColor = System.Drawing.Color.DarkCyan;
+            this.labelCastingValue.Location = new System.Drawing.Point(118, 68);
+            this.labelCastingValue.Name = "labelCastingValue";
+            this.labelCastingValue.Size = new System.Drawing.Size(0, 20);
+            this.labelCastingValue.TabIndex = 38;
+            // 
+            // panelStatusPannel2
+            // 
+            this.panelStatusPannel2.AutoSizeMode = System.Windows.Forms.AutoSizeMode.GrowAndShrink;
+            this.panelStatusPannel2.BackColor = System.Drawing.SystemColors.Control;
+            this.panelStatusPannel2.BackgroundImageLayout = System.Windows.Forms.ImageLayout.Zoom;
+            this.panelStatusPannel2.Controls.Add(this.labelCastingValue);
+            this.panelStatusPannel2.Controls.Add(this.labelCasting);
+            this.panelStatusPannel2.Controls.Add(this.pbCollapseDynamicButtons);
+            this.panelStatusPannel2.Controls.Add(this.buttonPauseConsoles);
+            this.panelStatusPannel2.Controls.Add(this.pbCollapseConsoleButtons);
+            this.panelStatusPannel2.Controls.Add(this.labelPetName);
+            this.panelStatusPannel2.Controls.Add(this.labelPetNameValue);
+            this.panelStatusPannel2.Controls.Add(this.labelInCombat);
+            this.panelStatusPannel2.Controls.Add(this.labelInCombatValue);
+            this.panelStatusPannel2.Location = new System.Drawing.Point(0, 137);
+            this.panelStatusPannel2.Name = "panelStatusPannel2";
+            this.panelStatusPannel2.Size = new System.Drawing.Size(733, 113);
+            this.panelStatusPannel2.TabIndex = 42;
+            // 
             // E3UI
             // 
             this.AutoScaleDimensions = new System.Drawing.SizeF(6F, 13F);
@@ -744,16 +744,16 @@ namespace E3NextUI
             this.splitContainer2.Panel2.ResumeLayout(false);
             ((System.ComponentModel.ISupportInitialize)(this.splitContainer2)).EndInit();
             this.splitContainer2.ResumeLayout(false);
-            ((System.ComponentModel.ISupportInitialize)(this.pbCollapseConsoleButtons)).EndInit();
-            this.panelStatusPannel2.ResumeLayout(false);
-            this.panelStatusPannel2.PerformLayout();
-            ((System.ComponentModel.ISupportInitialize)(this.pbCollapseDynamicButtons)).EndInit();
             this.menuStrip1.ResumeLayout(false);
             this.menuStrip1.PerformLayout();
             this.panelMain.ResumeLayout(false);
             this.panelMain.PerformLayout();
             this.panelButtons.ResumeLayout(false);
             this.panelConsole.ResumeLayout(false);
+            ((System.ComponentModel.ISupportInitialize)(this.pbCollapseConsoleButtons)).EndInit();
+            ((System.ComponentModel.ISupportInitialize)(this.pbCollapseDynamicButtons)).EndInit();
+            this.panelStatusPannel2.ResumeLayout(false);
+            this.panelStatusPannel2.PerformLayout();
             this.ResumeLayout(false);
             this.PerformLayout();
 
@@ -791,31 +791,31 @@ namespace E3NextUI
         private System.Windows.Forms.Label labelPetDamageDPSValue;
         private System.Windows.Forms.Label labelDamageShieldDPSValue;
         private System.Windows.Forms.Label labelTotalDamageDPSValue;
-        private System.Windows.Forms.Label labelPetNameValue;
-        private System.Windows.Forms.Label labelPetName;
-        private System.Windows.Forms.Button buttonPauseConsoles;
-        private System.Windows.Forms.Label labelInCombat;
-        private System.Windows.Forms.Label labelInCombatValue;
         private System.Windows.Forms.Label labelManaCurrent;
         private System.Windows.Forms.Label labelMana;
         private System.Windows.Forms.Label labelStaminaValue;
         private System.Windows.Forms.Label labelStaminia;
-        private System.Windows.Forms.Label labelCastingValue;
-        private System.Windows.Forms.Label labelCasting;
         private System.Windows.Forms.Label labelHealingByYou;
         private System.Windows.Forms.Label labelHealingByYouValue;
-        private System.Windows.Forms.PictureBox pbCollapseConsoleButtons;
-        private System.Windows.Forms.Panel panelStatusPannel2;
         private System.Windows.Forms.MenuStrip menuStrip1;
         private System.Windows.Forms.ToolStripMenuItem settingsToolStripMenuItem;
-        private System.Windows.Forms.ToolStripMenuItem dynamicButtonsToolStripMenuItem;
+        private System.Windows.Forms.ToolStripMenuItem darkModeMenuItem;
         private System.Windows.Forms.ToolStripMenuItem mainToolStripMenuItem;
         private System.Windows.Forms.ToolStripMenuItem hideToolStripMenuItem;
         private System.Windows.Forms.Panel panelMain;
         private System.Windows.Forms.Panel panelButtons;
         private System.Windows.Forms.Panel panelConsole;
         private System.Windows.Forms.TableLayoutPanel tableLayoutPanelDynamicButtons;
+        private System.Windows.Forms.Label labelInCombatValue;
+        private System.Windows.Forms.Label labelInCombat;
+        private System.Windows.Forms.Label labelPetNameValue;
+        private System.Windows.Forms.Label labelPetName;
+        private System.Windows.Forms.PictureBox pbCollapseConsoleButtons;
+        private System.Windows.Forms.Button buttonPauseConsoles;
         private System.Windows.Forms.PictureBox pbCollapseDynamicButtons;
+        private System.Windows.Forms.Label labelCasting;
+        private System.Windows.Forms.Label labelCastingValue;
+        private System.Windows.Forms.Panel panelStatusPannel2;
     }
 }
 

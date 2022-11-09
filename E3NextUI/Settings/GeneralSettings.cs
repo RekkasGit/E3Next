@@ -31,6 +31,7 @@ namespace E3NextUI.Settings
         public bool ConsoleCollapsed;
         public bool DynamicButtonsCollapsed;
         public Dictionary<string, DynamicButton> DynamicButtons = new Dictionary<string, DynamicButton>(StringComparer.OrdinalIgnoreCase);
+        public bool UseDarkMode = true;
 
         private IniData _parsedData;
 
@@ -67,6 +68,7 @@ namespace E3NextUI.Settings
             LoadKeyData("General", "Height", _parsedData, ref Height);
             LoadKeyData("General", "ConsoleCollapsed", _parsedData, ref ConsoleCollapsed);
             LoadKeyData("General", "DynamicButtonsCollapsed", _parsedData, ref DynamicButtonsCollapsed);
+            LoadKeyData("General", "UseDarkMode", _parsedData, ref UseDarkMode);
 
             for (Int32 i = 0; i < 25; i++)
             {
@@ -113,8 +115,9 @@ namespace E3NextUI.Settings
             section["Height"] = Height.ToString();
             section["ConsoleCollapsed"] = ConsoleCollapsed.ToString();
             section["DynamicButtonsCollapsed"] = DynamicButtonsCollapsed.ToString();
+            section["UseDarkMode"] = UseDarkMode.ToString();
 
-            foreach(var pair in DynamicButtons)
+            foreach (var pair in DynamicButtons)
             {
                 section = _parsedData.Sections[pair.Key];
                 if(section==null)
@@ -148,6 +151,7 @@ namespace E3NextUI.Settings
             section.Keys.AddKey("Height", "");
             section.Keys.AddKey("ConsoleCollapsed", "False");
             section.Keys.AddKey("DynamicButtonsCollapsed", "False");
+            section.Keys.AddKey("UseDarkMode", "True");
 
 
             if (!System.IO.File.Exists(filename))

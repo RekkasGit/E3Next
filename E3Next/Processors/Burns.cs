@@ -85,6 +85,8 @@ namespace E3Core.Processors
         }
         private static void UseBurn(List<Data.Spell> burnList, bool use)
         {
+            if (!Assist._isAssisting) return;
+
             if (use)
             {
                 foreach (var burn in burnList)

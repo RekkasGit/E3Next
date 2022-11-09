@@ -125,7 +125,7 @@ namespace E3Core.Processors
 
                 if(targetid==0)
                 {
-                    targetid = MQ.Query<Int32>("${Me.ID}");
+                    targetid = E3.CurrentId;
                 }
 
                 if(Casting.InRange(targetid, spell) && Casting.CheckReady(spell) && Casting.CheckMana(spell))

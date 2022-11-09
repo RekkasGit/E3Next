@@ -82,7 +82,7 @@ namespace E3Core.Processors
                         targetID = MQ.Query<Int32>("${Target.ID}");
                         if (targetID == 0)
                         {
-                            targetID = MQ.Query<Int32>("${Me.ID}");
+                            targetID = E3.CurrentId;
                         }
                     }
 
@@ -942,6 +942,13 @@ namespace E3Core.Processors
             {
                 MQ.Cmd($"/target id {targetID}");
                 MQ.Delay(600, $"${{Target.ID}}=={targetID}");
+                //swapping targets turn off autofire
+                if (MQ.Query<bool>("${Me.AutoFire}"))
+                {
+                    MQ.Cmd("/autofire");
+                    //delay is needed to give time for it to actually process
+                    MQ.Delay(1000);
+                }
                 if (MQ.Query<Int32>("${Target.ID}") == targetID) return true;
                 return false;
             }
