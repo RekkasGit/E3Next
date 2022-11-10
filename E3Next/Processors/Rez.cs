@@ -56,7 +56,7 @@ namespace E3Core.Processors
                     MQ.Delay(2000);//start zone
                     //zone may to happen
                     MQ.Delay(30000, "${Spawn[${Me}'s].ID}");
-
+                    E3.ZoneID = MQ.Query<int>("${Zone.ID}");
                     if (!MQ.Query<bool>("${Spawn[${Me}'s].ID}"))
                     {
                         //something went rong kick out.
@@ -128,7 +128,7 @@ namespace E3Core.Processors
                     var inGroup = MQ.Query<bool>($"${{Group.Member[{spawn.DiplayName}]}}");
                     var inRaid = MQ.Query<bool>($"${{Raid.Member[{spawn.DiplayName}]}}");
 
-                    if (!inGroup || !inRaid)
+                    if (!inGroup && !inRaid)
                     {
                         continue;
                     }
