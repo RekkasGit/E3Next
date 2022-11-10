@@ -22,10 +22,10 @@ namespace E3Core.Classes
         private static ISpawns _spawns = E3.Spawns;
         private static bool _isInit = false;
 
+
         /// <summary>
         /// Initializes this instance.
         /// </summary>
-        [ClassInvoke(Class.Cleric)]
         public static void Init()
         {
             if (_isInit) return;
