@@ -218,7 +218,7 @@ namespace E3Core.Processors
                     MQ.Delay(100);
                     foreach (var spell in _currentRezSpells)
                     {
-                        if (Casting.CheckReady(spell) && Casting.CheckMana(spell))
+                        if (Casting.CheckReady(spell) && Casting.CheckMana(spell) && CanRez())
                         {
 
                             Casting.Cast(s.ID, spell);
@@ -254,6 +254,12 @@ namespace E3Core.Processors
                 if (_spawns.TryByID(corpseid, out s))
                 {
                     Casting.TrueTarget(s.ID);
+                    if (!CanRez())
+                    {
+                        corpsesRaised.Add(s.ID);
+                        continue;
+                    }
+
                     MQ.Cmd($"/tell {s.DiplayName} Wait4Rez");
                     MQ.Delay(1500); //long delays after tells
                     //assume consent was given
@@ -275,9 +281,9 @@ namespace E3Core.Processors
                 }
             }
 
-            foreach (var corspseId in corpsesRaised)
+            foreach (var corpseId in corpsesRaised)
             {
-                _corpseList.Remove(corspseId);
+                _corpseList.Remove(corpseId);
             }
 
             if(_corpseList.Count>0 && !Basics.InCombat())
