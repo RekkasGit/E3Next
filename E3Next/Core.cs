@@ -41,9 +41,6 @@ namespace MonoCore
         public static Int32 _processDelay = 200;
         private static Logging _log = Core._log;
         public static string _applicationName = "";
-        public static Int64 _startTimeStamp;
-        public static Int64 _processingCounts;
-        public static Int64 _totalProcessingCounts;
         public static void Init()
         {
 
@@ -60,7 +57,6 @@ namespace MonoCore
             //wait for the C++ thread thread to tell us we can go
             _processResetEvent.Wait();
             _processResetEvent.Reset();
-            _startTimeStamp = Core._stopWatch.ElapsedMilliseconds;
             
             //volatile variable, will eventually update to kill the thread on shutdown
             while (Core._isProcessing)
@@ -111,10 +107,10 @@ namespace MonoCore
         //***NOTE*** no _log.Write or MQ.Writes are allowed here. Use remote debugging.
         //YOU WILL LOCK the process :) don't do it. Remember this is a seperate thread.
         
-        public static System.Collections.Concurrent.ConcurrentDictionary<string, Action<EventMatch>> _unfilteredEventMethodList = new ConcurrentDictionary<string, Action<EventMatch>>();
-        public static System.Collections.Concurrent.ConcurrentDictionary<string, EventListItem> _unfilteredEventList = new ConcurrentDictionary<string, EventListItem>();
-        public static System.Collections.Concurrent.ConcurrentDictionary<string, EventListItem> _eventList = new ConcurrentDictionary<string, EventListItem>();
-        public static System.Collections.Concurrent.ConcurrentDictionary<string, CommandListItem> _commandList = new ConcurrentDictionary<string, CommandListItem>();
+        public static ConcurrentDictionary<string, Action<EventMatch>> _unfilteredEventMethodList = new ConcurrentDictionary<string, Action<EventMatch>>();
+        public static ConcurrentDictionary<string, EventListItem> _unfilteredEventList = new ConcurrentDictionary<string, EventListItem>();
+        public static ConcurrentDictionary<string, EventListItem> _eventList = new ConcurrentDictionary<string, EventListItem>();
+        public static ConcurrentDictionary<string, CommandListItem> _commandList = new ConcurrentDictionary<string, CommandListItem>();
         //this is the first queue that strings get put into, will be processed by its own thread
         public static ConcurrentQueue<String> _eventProcessingQueue = new ConcurrentQueue<String>();
         public static ConcurrentQueue<String> _mqEventProcessingQueue = new ConcurrentQueue<string>();
