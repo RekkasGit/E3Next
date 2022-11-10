@@ -399,7 +399,7 @@ namespace E3Core.Utility
             {
                 bool foundItem = MQ.Query<bool>($"${{Bool[${{FindItem[={itemName}]}}]}}");
                 if (!foundItem) return;
-                MQ.Cmd($"/itemnotify \"{itemName}\" leftmouseup");
+                MQ.Cmd($"/nomodkey /itemnotify \"{itemName}\" leftmouseup");
                 MQ.Delay(2000, "${Bool[${Cursor.ID}]}");
                 bool itemOnCursor = MQ.Query<bool>("${Bool[${Cursor.ID}]}");
                 if(itemOnCursor)
@@ -437,7 +437,7 @@ namespace E3Core.Utility
             }
             Int32 waitCounter = 0;
             waitAcceptLoop:
-            var command = $"/notify {windowType} {buttonType} leftmouseup";
+            var command = $"/nomodkey /notify {windowType} {buttonType} leftmouseup";
             MQ.Cmd(command);
             MQ.Delay(1000, $"!{windowOpenQuery}");
             windowOpen = MQ.Query<bool>(windowOpenQuery);
@@ -450,7 +450,7 @@ namespace E3Core.Utility
 
                 }
             }
-            MQ.Cmd("/keypress esc");
+            MQ.Cmd("/nomodkey /keypress esc");
             //lets go back to our location
             if (moveBackToOriginalLocation)
             {
@@ -498,7 +498,7 @@ namespace E3Core.Utility
         /// <returns>a bool indicating whether the pickup was successful</returns>
         public static bool PickUpItemViaFindItemTlo(string itemName)
         {
-            MQ.Cmd($"/itemnotify \"${{FindItem[={itemName}]}}\" leftmouseup");
+            MQ.Cmd($"/nomodkey /itemnotify \"${{FindItem[={itemName}]}}\" leftmouseup");
             MQ.Delay(1000, "${Cursor.ID}");
             return MQ.Query<bool>("${Cursor.ID}");
         }
@@ -510,7 +510,7 @@ namespace E3Core.Utility
         /// <returns>a bool indicating whether the pickup was successful</returns>
         public static bool PickUpItemViaInventoryTlo(string slotName)
         {
-            MQ.Cmd($"/itemnotify \"${{Me.Inventory[{slotName}]}}\" leftmouseup");
+            MQ.Cmd($"/nomodkey /itemnotify \"${{Me.Inventory[{slotName}]}}\" leftmouseup");
             MQ.Delay(1000, "${Cursor.ID}");
             return MQ.Query<bool>("${Cursor.ID}");
         }
@@ -530,14 +530,14 @@ namespace E3Core.Utility
             bool windowOpen = MQ.Query<bool>("${Window[ConfirmationDialogBox].Open}");
             if (windowOpen)
             {
-                MQ.Cmd($"/notify ConfirmationDialogBox {TypeToClick}_Button leftmouseup");
+                MQ.Cmd($"/nomodkey /notify ConfirmationDialogBox {TypeToClick}_Button leftmouseup");
             }
             else
             {
                 windowOpen = MQ.Query<bool>("${Window[LargeDialogWindow].Open}");
                 if (windowOpen)
                 {
-                    MQ.Cmd($"/notify LargeDialogWindow LDW_{TypeToClick}Button leftmouseup");
+                    MQ.Cmd($"/nomodkey /notify LargeDialogWindow LDW_{TypeToClick}Button leftmouseup");
                 }
             }
         }
@@ -625,7 +625,7 @@ namespace E3Core.Utility
         {
             bool merchantWindowOpen = MQ.Query<bool>("${Window[MerchantWnd].Open}");
             
-            MQ.Cmd("/notify MerchantWnd MW_Done_Button leftmouseup");
+            MQ.Cmd("/nomodkey /notify MerchantWnd MW_Done_Button leftmouseup");
             MQ.Delay(200);
         }
 
