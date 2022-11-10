@@ -578,6 +578,13 @@ namespace E3Core.Settings
                 section.Keys.AddKey("Pet Weapons", "");
             }
 
+            if (CharacterClass == Class.Shaman)
+            {
+                newFile.Sections.AddSection("Shaman");
+                section.Keys.AddKey("Auto-Canni (On/Off)", "On");
+                section.Keys.AddKey("Canni", "");
+            }
+
             newFile.Sections.AddSection("Blocked Buffs");
             section = newFile.Sections.GetSectionData("Blocked Buffs");
             section.Keys.AddKey("BuffName", "");

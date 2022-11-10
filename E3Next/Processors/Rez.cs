@@ -20,6 +20,8 @@ namespace E3Core.Processors
         public static bool _waitingOnRez = false;
         private static long _nextAutoRezCheck = 0;
         private static long _nextAutoRezCheckInterval = 10000;
+        private static long _nextCorpseCheck = 0;
+        private static long _nextCorpseCheckInterval = 10000;
 
         [SubSystemInit]
         public static void Init()
@@ -40,7 +42,7 @@ namespace E3Core.Processors
         {
 
 
-            if (_waitingOnRez || Basics.AmIDead())
+            if (_waitingOnRez)
             {
                 //check for dialog box
                 if (MQ.Query<bool>("${Window[ConfirmationDialogBox].Open}"))
@@ -117,10 +119,47 @@ namespace E3Core.Processors
         }
 
         [ClassInvoke(Class.Cleric)]
+        public static void RefreshCorpseList()
+        {
+            if (!e3util.ShouldCheck(ref _nextCorpseCheck, _nextCorpseCheckInterval)) return;
+            //lets get a corpse list
+            _spawns.RefreshList();
+            _corpseList.Clear();
+
+            //lets find the clerics in range
+            foreach (var spawn in _spawns.Get())
+            {
+                if (spawn.Distance3D < 100 && spawn.DeityID != 0 && spawn.TypeDesc == "Corpse" && spawn.ClassShortName == "CLR")
+                {
+                    _corpseList.Add(spawn.ID);
+                }
+            }
+            foreach (var spawn in _spawns.Get())
+            {
+                if (spawn.Distance3D < 100 && spawn.DeityID != 0 && spawn.TypeDesc == "Corpse" && (spawn.ClassShortName == "DRU" || spawn.ClassShortName == "SHM" || spawn.ClassShortName == "WAR"))
+                {
+                    _corpseList.Add(spawn.ID);
+                }
+            }
+            //everyone else
+            foreach (var spawn in _spawns.Get())
+            {
+                if (spawn.Distance3D < 100 && spawn.DeityID != 0 && spawn.TypeDesc == "Corpse")
+                {
+                    //lists are super small so contains is fine
+                    if (!_corpseList.Contains(spawn.ID))
+                    {
+                        _corpseList.Add(spawn.ID);
+                    }
+                }
+            }
+        }
+
+        [ClassInvoke(Class.Cleric)]
         public static void AutoRez()
         {
             if (!e3util.ShouldCheck(ref _nextAutoRezCheck, _nextAutoRezCheckInterval)) return;
-            foreach (var corpse in CreateCorpseList())
+            foreach (var corpse in _corpseList)
             {
                 if (_spawns.TryByID(corpse, out var spawn))
                 {
@@ -245,8 +284,6 @@ namespace E3Core.Processors
 
             Movement.RemoveFollow();
 
-            _corpseList.Clear();
-            _corpseList = CreateCorpseList();
             List<Int32> corpsesRaised = new List<int>();
             foreach (var corpseid in _corpseList)
             {
@@ -337,42 +374,6 @@ namespace E3Core.Processors
             }
 
         }
-        private static List<int> CreateCorpseList()
-        {
-            //lets get a corpse list
-            _spawns.RefreshList();
-
-            var corpseList = new List<int>();
-            //lets find the clerics in range
-            foreach (var spawn in _spawns.Get())
-            {
-                if (spawn.Distance3D < 100 && spawn.DeityID != 0 && spawn.TypeDesc == "Corpse" && spawn.ClassShortName == "CLR")
-                {
-                    corpseList.Add(spawn.ID);
-                }
-            }
-            foreach (var spawn in _spawns.Get())
-            {
-                if (spawn.Distance3D < 100 && spawn.DeityID != 0 && spawn.TypeDesc == "Corpse" && (spawn.ClassShortName == "DRU" || spawn.ClassShortName == "SHM" || spawn.ClassShortName == "WAR"))
-                {
-                    corpseList.Add(spawn.ID);
-                }
-            }
-            //everyone else
-            foreach (var spawn in _spawns.Get())
-            {
-                if (spawn.Distance3D < 100 && spawn.DeityID != 0 && spawn.TypeDesc == "Corpse")
-                {
-                    //lists are super small so contains is fine
-                    if (!corpseList.Contains(spawn.ID))
-                    {
-                        corpseList.Add(spawn.ID);
-                    }
-                }
-            }
-
-            return corpseList;
-        }
         private static void RegisterEvents()
         {
 
@@ -428,6 +429,12 @@ namespace E3Core.Processors
             });
 
             EventProcessor.RegisterEvent("YourDead", "You died.", (x) =>
+            {
+                Assist.AssistOff();
+                _waitingOnRez = true;
+            });
+
+            EventProcessor.RegisterEvent("Slain", "You have been slain by (.+)!", (x) =>
             {
                 Assist.AssistOff();
                 _waitingOnRez = true;
