@@ -196,22 +196,22 @@ namespace E3Core.Processors
                         if (!bagOpen)
                         {
                             //have to open the bag to get the qty count to work
-                            MQ.Cmd($"/itemnotify pack{packNumber} rightmouseup");
+                            MQ.Cmd($"/nomodkey /itemnotify pack{packNumber} rightmouseup");
                             MQ.Delay(200);
                         }
                         //put item on cursor
-                        MQ.Cmd($"/itemnotify \"{whatToGive}\" leftmouseup");
+                        MQ.Cmd($"/nomodkey /itemnotify \"{whatToGive}\" leftmouseup");
                         MQ.Delay(200);
                         bool qtyWindowOpen = MQ.Query<bool>("${Window[QuantityWnd].Open}");
                         if (qtyWindowOpen)
                         {
-                            MQ.Cmd($"/notify QuantityWnd QTYW_slider newvalue {qtyToGive}");
+                            MQ.Cmd($"/nomodkey /notify QuantityWnd QTYW_slider newvalue {qtyToGive}");
                             MQ.Delay(200);
-                            MQ.Cmd($"/notify QuantityWnd QTYW_Accept_Button leftmouseup");
+                            MQ.Cmd($"/nomodkey /notify QuantityWnd QTYW_Accept_Button leftmouseup");
                             MQ.Delay(200);
                         }
                         //close the bag
-                        MQ.Cmd($"/itemnotify pack{packNumber} rightmouseup");
+                        MQ.Cmd($"/nomodkey /itemnotify pack{packNumber} rightmouseup");
 
                         e3util.GiveItemOnCursorToTarget();
                     }

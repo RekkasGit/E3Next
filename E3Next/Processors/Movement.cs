@@ -335,7 +335,7 @@ namespace E3Core.Processors
                     {
                         Int32 currentZone = MQ.Query<Int32>("${Zone.ID}");
                         MQ.Cmd($"/face fast heading {heading * -1}");
-                        MQ.Cmd("/keypress forward hold");
+                        MQ.Cmd("/nomodkey /keypress forward hold");
                         MQ.Delay(1000);
                         Int32 counter = 0;
                         while (E3.ZoneID == currentZone && counter < 20)
@@ -344,7 +344,7 @@ namespace E3Core.Processors
                             MQ.Delay(100);
                             currentZone = MQ.Query<Int32>("${Zone.ID}");
                         }
-                        MQ.Cmd("/keypress forward");
+                        MQ.Cmd("/nomodkey /keypress forward");
 
                     }
                 }
@@ -356,7 +356,7 @@ namespace E3Core.Processors
                     E3.Bots.BroadcastCommandToGroup($"/rtz {heading}");
                     MQ.Delay(500);
                     MQ.Cmd($"/face fast heading {heading * -1}");
-                    MQ.Cmd("/keypress forward hold");
+                    MQ.Cmd("/nomodkey /keypress forward hold");
 
                 }
             });

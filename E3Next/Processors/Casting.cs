@@ -923,7 +923,7 @@ namespace E3Core.Processors
             //0 means don't change target
             if (allowClear && targetID == 0)
             {
-                MQ.Cmd("/keypress esc");
+                MQ.Cmd("/nomodkey /keypress esc");
                 MQ.Delay(200);
                 return true;
             }
