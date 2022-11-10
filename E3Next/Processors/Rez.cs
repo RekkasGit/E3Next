@@ -336,7 +336,7 @@ namespace E3Core.Processors
             }
 
         }
-        public static List<int> CreateCorpseList()
+        private static List<int> CreateCorpseList()
         {
             //lets get a corpse list
             _spawns.RefreshList();
