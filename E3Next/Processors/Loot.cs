@@ -210,7 +210,7 @@ namespace E3Core.Processors
 
             }
             MQ.Delay(500, "${Corpse.Items}");
-
+            MQ.Delay(300);//wait a little longer to let the items finish populating.
             Int32 corpseItems = MQ.Query<Int32>("${Corpse.Items}");
 
             if (corpseItems == 0)

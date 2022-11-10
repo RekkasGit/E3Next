@@ -23,7 +23,14 @@ namespace E3Core.Processors
             InitRezSpells();
         }
 
-
+        public static bool IsWaiting()
+        {
+            return _waitingOnRez;
+        }
+        public static void Reset()
+        {
+            _waitingOnRez = false;
+        }
         public static void Process()
         {
 

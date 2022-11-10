@@ -399,6 +399,8 @@ namespace E3Core.Processors
             //clear in case its not reset by other means
             //or you want to attack in enrage
             _assistIsEnraged = false;
+            WaitForRez.Reset();
+
 
             if (mobID == 0)
             {

@@ -62,9 +62,13 @@ namespace E3Core.Processors
 
                 using (Log.Trace("Assist/WaitForRez"))
                 {
-                    Assist.Process();
                     WaitForRez.Process();
+                    if (WaitForRez.IsWaiting()) return;
+
+                    Assist.Process();
                 }
+
+                
 
                 if (!ActionTaken)
                 {
@@ -159,6 +163,13 @@ namespace E3Core.Processors
             CurrentHps = Mq.Query<int>("${Me.PctHPs}");
             CurrentId = Mq.Query<int>("${Me.ID}");
             ZoneID = Mq.Query<int>("${Zone.ID}");
+
+            if(Mq.Query<bool>("${MoveUtils.GM}"))
+            {
+                Mq.Cmd("/squelch /stick imsafe");
+                Bots.Broadcast("GM Safe kicked in, issued /stick imsafe.  you may need to reissue /followme or /assiston");
+            }
+
             HitPointsCurrent = Mq.Query<int>("${Me.CurrentHPs}");
             PubServer.AddTopicMessage("${Me.CurrentHPs}", HitPointsCurrent.ToString("N0"));
             MagicPointsCurrent = Mq.Query<int>("${Me.CurrentMana}");
