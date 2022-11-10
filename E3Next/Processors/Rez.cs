@@ -428,13 +428,13 @@ namespace E3Core.Processors
                 }
             });
 
-            EventProcessor.RegisterEvent("YourDead", "You died.", (x) =>
+            var deathMessages = new List<string>
             {
-                Assist.AssistOff();
-                _waitingOnRez = true;
-            });
+                "You died.",
+                "You have been slain by"
+            };
 
-            EventProcessor.RegisterEvent("Slain", "You have been slain by (.+)!", (x) =>
+            EventProcessor.RegisterEvent("YourDead", deathMessages, (x) =>
             {
                 Assist.AssistOff();
                 _waitingOnRez = true;
