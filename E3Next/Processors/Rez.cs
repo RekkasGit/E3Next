@@ -133,7 +133,7 @@ namespace E3Core.Processors
                         continue;
                     }
 
-                    if (Assist._isAssisting)
+                    if (Basics.InCombat())
                     {
                         var currentMana = MQ.Query<int>("${Me.CurrentMana}");
                         var pctMana = MQ.Query<int>("${Me.PctMana}");
@@ -256,6 +256,7 @@ namespace E3Core.Processors
                     Casting.TrueTarget(s.ID);
                     if (!CanRez())
                     {
+                        // still add it anyway so we don't keep trying to rez unrezzable things
                         corpsesRaised.Add(s.ID);
                         continue;
                     }
