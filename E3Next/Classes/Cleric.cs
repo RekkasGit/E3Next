@@ -30,7 +30,7 @@ namespace E3Core.Classes
         {
             if (_isInit) return;
             _isInit = true;
-        }       
-
+        }
+     
     }
 }

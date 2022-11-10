@@ -1,4 +1,6 @@
 ﻿using E3Core.Data;
+using E3Core.Settings;
+using E3Core.Utility;
 using MonoCore;
 using System;
 using System.Collections.Generic;
@@ -9,13 +11,18 @@ using System.Threading.Tasks;
 
 namespace E3Core.Processors
 {
-    public static class WaitForRez
+    public static class Rez
     {
 
         public static Logging _log = E3.Log;
         private static IMQ MQ = E3.Mq;
         private static ISpawns _spawns = E3.Spawns;
         public static bool _waitingOnRez = false;
+        private static long _nextAutoRezCheck = 0;
+        private static long _nextAutoRezCheckInterval = 10000;
+        private static long _nextCorpseCheck = 0;
+        private static long _nextCorpseCheckInterval = 10000;
+
         [SubSystemInit]
         public static void Init()
         {
@@ -51,7 +58,7 @@ namespace E3Core.Processors
                     MQ.Delay(2000);//start zone
                     //zone may to happen
                     MQ.Delay(30000, "${Spawn[${Me}'s].ID}");
-
+                    E3.ZoneID = MQ.Query<int>("${Zone.ID}");
                     if (!MQ.Query<bool>("${Spawn[${Me}'s].ID}"))
                     {
                         //something went rong kick out.
@@ -70,7 +77,7 @@ namespace E3Core.Processors
                         MQ.Cmd("/corpse");
                         MQ.Delay(1000);
                         MQ.Cmd("/loot");
-                        MQ.Delay(1000);
+                        MQ.Delay(1000, "${Window[LootWnd].Open}");
                         MQ.Cmd("/nomodkey /notify LootWnd LootAllButton leftmouseup");
                         MQ.Delay(20000, "!${Window[LootWnd].Open}");
 
@@ -107,6 +114,94 @@ namespace E3Core.Processors
                         E3.Bots.Broadcast("\atReady to die again!");
                     }
 
+                }
+            }
+        }
+
+        [ClassInvoke(Class.Cleric)]
+        public static void RefreshCorpseList()
+        {
+            if (!e3util.ShouldCheck(ref _nextCorpseCheck, _nextCorpseCheckInterval)) return;
+            //lets get a corpse list
+            _spawns.RefreshList();
+            _corpseList.Clear();
+
+            //lets find the clerics in range
+            foreach (var spawn in _spawns.Get())
+            {
+                if (spawn.Distance3D < 100 && spawn.DeityID != 0 && spawn.TypeDesc == "Corpse" && spawn.ClassShortName == "CLR")
+                {
+                    _corpseList.Add(spawn.ID);
+                }
+            }
+            foreach (var spawn in _spawns.Get())
+            {
+                if (spawn.Distance3D < 100 && spawn.DeityID != 0 && spawn.TypeDesc == "Corpse" && (spawn.ClassShortName == "DRU" || spawn.ClassShortName == "SHM" || spawn.ClassShortName == "WAR"))
+                {
+                    _corpseList.Add(spawn.ID);
+                }
+            }
+            //everyone else
+            foreach (var spawn in _spawns.Get())
+            {
+                if (spawn.Distance3D < 100 && spawn.DeityID != 0 && spawn.TypeDesc == "Corpse")
+                {
+                    //lists are super small so contains is fine
+                    if (!_corpseList.Contains(spawn.ID))
+                    {
+                        _corpseList.Add(spawn.ID);
+                    }
+                }
+            }
+        }
+
+        [ClassInvoke(Class.Cleric)]
+        public static void AutoRez()
+        {
+            if (!e3util.ShouldCheck(ref _nextAutoRezCheck, _nextAutoRezCheckInterval)) return;
+            foreach (var corpse in _corpseList)
+            {
+                if (_spawns.TryByID(corpse, out var spawn))
+                {
+                    // only care about group or raid members
+                    var inGroup = MQ.Query<bool>($"${{Group.Member[{spawn.DiplayName}]}}");
+                    var inRaid = MQ.Query<bool>($"${{Raid.Member[{spawn.DiplayName}]}}");
+
+                    if (!inGroup && !inRaid)
+                    {
+                        continue;
+                    }
+
+                    if (Basics.InCombat())
+                    {
+                        var currentMana = MQ.Query<int>("${Me.CurrentMana}");
+                        var pctMana = MQ.Query<int>("${Me.PctMana}");
+                        if (Heals.SomeoneNeedsHealing(currentMana, pctMana))
+                        {
+                            return;
+                        }
+                    }
+
+                    if (Casting.TrueTarget(spawn.ID))
+                    {
+                        if (!CanRez())
+                        {
+                            continue;
+                        }
+
+                        MQ.Cmd($"/t {spawn.DiplayName} Wait4Rez");
+                        MQ.Delay(100);
+                        MQ.Cmd("/corpse");
+                        InitRezSpells();
+                        foreach (var spell in _currentRezSpells)
+                        {
+                            if (Casting.CheckReady(spell) && Casting.CheckMana(spell))
+                            {
+                                Casting.Cast(spawn.ID, spell, Heals.SomeoneNeedsHealing);
+                                break;
+                            }
+                        }
+                    }
                 }
             }
         }
@@ -162,7 +257,7 @@ namespace E3Core.Processors
                     MQ.Delay(100);
                     foreach (var spell in _currentRezSpells)
                     {
-                        if (Casting.CheckReady(spell) && Casting.CheckMana(spell))
+                        if (Casting.CheckReady(spell) && Casting.CheckMana(spell) && CanRez())
                         {
 
                             Casting.Cast(s.ID, spell);
@@ -189,7 +284,6 @@ namespace E3Core.Processors
 
             Movement.RemoveFollow();
 
-            CreateCorpseList();
             List<Int32> corpsesRaised = new List<int>();
             foreach (var corpseid in _corpseList)
             {
@@ -197,6 +291,13 @@ namespace E3Core.Processors
                 if (_spawns.TryByID(corpseid, out s))
                 {
                     Casting.TrueTarget(s.ID);
+                    if (!CanRez())
+                    {
+                        // still add it anyway so we don't keep trying to rez unrezzable things
+                        corpsesRaised.Add(s.ID);
+                        continue;
+                    }
+
                     MQ.Cmd($"/tell {s.DiplayName} Wait4Rez");
                     MQ.Delay(1500); //long delays after tells
                     //assume consent was given
@@ -218,9 +319,9 @@ namespace E3Core.Processors
                 }
             }
 
-            foreach (var corspseId in corpsesRaised)
+            foreach (var corpseId in corpsesRaised)
             {
-                _corpseList.Remove(corspseId);
+                _corpseList.Remove(corpseId);
             }
 
             if(_corpseList.Count>0 && !Basics.InCombat())
@@ -272,55 +373,6 @@ namespace E3Core.Processors
                 }
             }
 
-        }
-        private static void CreateCorpseList()
-        {
-            _corpseList.Clear();
-            //lets get a corpse list
-            _spawns.RefreshList();
-
-            //lets find the clerics in range
-            foreach (var spawn in _spawns.Get())
-            {
-                if (spawn.Distance3D < 100 && spawn.DeityID != 0 && spawn.TypeDesc == "Corpse" && spawn.ClassShortName == "CLR")
-                {
-                    Casting.TrueTarget(spawn.ID);
-                    MQ.Delay(500);
-                    if (WaitForRez.CanRez())
-                    {
-                        _corpseList.Add(spawn.ID);
-                    }
-                }
-            }
-            foreach (var spawn in _spawns.Get())
-            {
-                if (spawn.Distance3D < 100 && spawn.DeityID != 0 && spawn.TypeDesc == "Corpse" && (spawn.ClassShortName == "DRU" || spawn.ClassShortName == "SHM" || spawn.ClassShortName == "WAR"))
-                {
-                    Casting.TrueTarget(spawn.ID);
-                    MQ.Delay(500);
-                    if (WaitForRez.CanRez())
-                    {
-                        _corpseList.Add(spawn.ID);
-                    }
-                }
-            }
-            //everyone else
-            foreach (var spawn in _spawns.Get())
-            {
-                if (spawn.Distance3D < 100 && spawn.DeityID != 0 && spawn.TypeDesc == "Corpse")
-                {
-                    Casting.TrueTarget(spawn.ID);
-                    MQ.Delay(500);
-                    if (WaitForRez.CanRez())
-                    {
-                        //lists are super small so contains is fine
-                        if (!_corpseList.Contains(spawn.ID))
-                        {
-                            _corpseList.Add(spawn.ID);
-                        }
-                    }
-                }
-            }
         }
         private static void RegisterEvents()
         {
@@ -376,7 +428,13 @@ namespace E3Core.Processors
                 }
             });
 
-            EventProcessor.RegisterEvent("YourDead", "You died.", (x) =>
+            var deathMessages = new List<string>
+            {
+                "You died.",
+                "You have been slain by"
+            };
+
+            EventProcessor.RegisterEvent("YourDead", deathMessages, (x) =>
             {
                 Assist.AssistOff();
                 _waitingOnRez = true;

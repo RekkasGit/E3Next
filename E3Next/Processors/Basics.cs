@@ -4,6 +4,7 @@ using E3Core.Settings.FeatureSettings;
 using E3Core.Utility;
 using MonoCore;
 using System;
+using System.CodeDom;
 using System.Collections.Generic;
 using System.Linq;
 using System.Text;
@@ -449,6 +450,58 @@ namespace E3Core.Processors
                         {
                             Casting.Cast(0, s);
                             return;
+                        }
+                    }
+
+                    var canniSpell = E3.CharacterSettings.CanniSpell;
+                    if (canniSpell != null && E3.CharacterSettings.AutoCanni)
+                    {
+                        if (Casting.CheckReady(canniSpell))
+                        {
+                            var pctHps = _mq.Query<int>("${Me.PctHPs}");
+                            var hpThresholdDefined = canniSpell.MinHP > 0;
+                            var manaThresholdDefined = canniSpell.MaxMana > 0;
+                            bool castCanniSpell = false;                            
+                            bool hpThresholdMet = false;
+                            bool manaThresholdMet = false;
+
+                            if (hpThresholdDefined)
+                            {
+                                if (pctHps > canniSpell.MinHP)
+                                {
+                                    hpThresholdMet = true;
+                                }
+                            }
+
+                            if (manaThresholdDefined)
+                            {
+                                if (pctMana < canniSpell.MaxMana)
+                                {
+                                    manaThresholdMet = true;
+                                }
+                            }
+
+                            if (hpThresholdDefined && manaThresholdDefined)
+                            {
+                                castCanniSpell = hpThresholdMet && manaThresholdMet;
+                            }
+                            else if (hpThresholdDefined && !manaThresholdDefined)
+                            {
+                                castCanniSpell = hpThresholdMet;
+                            }
+                            else if (manaThresholdDefined && !hpThresholdDefined)
+                            {
+                                castCanniSpell = manaThresholdMet;
+                            }
+                            else
+                            {
+                                castCanniSpell = true;
+                            }
+
+                            if (castCanniSpell)
+                            {
+                                Casting.Cast(0, canniSpell);
+                            }
                         }
                     }
                 }
