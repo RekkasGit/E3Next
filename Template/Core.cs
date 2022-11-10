@@ -779,11 +779,6 @@ namespace MonoCore
         public static void OnStop()
         {
             _isProcessing = false;
-            if (E3Core.Server.NetMQServer._uiProcess != null)
-            {
-                E3Core.Server.NetMQServer._uiProcess.Kill();
-            }
-            NetMQConfig.Cleanup(false);
         }
         public static void OnPulse()
         {
