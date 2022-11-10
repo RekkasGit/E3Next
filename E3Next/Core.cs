@@ -10,7 +10,6 @@ using System.Collections.Concurrent;
 using System.Text.RegularExpressions;
 using E3Core.Processors;
 using System.Runtime.InteropServices;
-using System.Windows.Markup;
 using NetMQ;
 
 /// <summary>

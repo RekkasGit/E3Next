@@ -31,92 +31,94 @@ namespace E3Core.Processors
             {
                 return;
             }
-            //using (_log.Trace())
+
+            //Init is here to make sure we only Init while InGame, as some queries will fail if not in game
+            if (!IsInit) { Init(); }
+            ActionTaken = false;
+            //update all states, important.
+            StateUpdates();
+
+            if (CurrentHps < 98)
             {
-                //Init is here to make sure we only Init while InGame, as some queries will fail if not in game
-                if (!IsInit) { Init(); }
+                Heals.Check_LifeSupport();
+            }
+
+            //kickout after updates if paused
+            if (IsPaused()) return;
+
+            RefreshCaches();
+
+            //nowcast before all.
+            EventProcessor.ProcessEventsInQueues("/nowcast");
+            //use burns if able, this is high as some heals need burns as well
+            Burns.UseBurns();
+            //do the basics first
+            //first and formost, do healing checks
+            if ((CurrentClass & Data.Class.Priest) == CurrentClass)
+            {
                 ActionTaken = false;
-                StateUpdates();
-                if(CurrentHps<98)
+                Heals.Check_Heals();
+                if (ActionTaken) return; //we did a heal, kick out as we may need to do another heal.
+            }
+
+            using (Log.Trace("Assist/WaitForRez"))
+            {
+                Rez.Process();
+                if (Rez.IsWaiting()) return;
+
+                Assist.Process();
+            }
+
+
+
+            if (!ActionTaken)
+            {
+                using (Log.Trace("AdvMethodCalls"))
                 {
-                    Heals.Check_LifeSupport();
-                }
-
-                //kickout after updates if paused
-                if (IsPaused()) return;
-                
-                RefreshCaches();
-               
-                //nowcast before all.
-                EventProcessor.ProcessEventsInQueues("/nowcast");
-                //use burns if able, this is high as some heals need burns as well
-                Burns.UseBurns();
-                //do the basics first
-                //first and formost, do healing checks
-                if ((CurrentClass & Data.Class.Priest) == CurrentClass)
-                {
-                    ActionTaken = false;
-                    Heals.Check_Heals();
-                    if (ActionTaken) return; //we did a heal, kick out as we may need to do another heal.
-                }
-
-                using (Log.Trace("Assist/WaitForRez"))
-                {
-                    Rez.Process();
-                    if (Rez.IsWaiting()) return;
-
-                    Assist.Process();
-                }
-
-                
-
-                if (!ActionTaken)
-                {
-                    using (Log.Trace("AdvMethodCalls"))
+                    //rembmer check_heals is auto inserted, should probably just pull out here
+                    List<string> _methodsToInvokeAsStrings;
+                    if (AdvancedSettings._classMethodsAsStrings.TryGetValue(CurrentShortClassString, out _methodsToInvokeAsStrings))
                     {
-                        //rembmer check_heals is auto inserted, should probably just pull out here
-                        List<string> _methodsToInvokeAsStrings;
-                        if (AdvancedSettings._classMethodsAsStrings.TryGetValue(CurrentShortClassString, out _methodsToInvokeAsStrings))
+                        foreach (var methodName in _methodsToInvokeAsStrings)
                         {
-                            foreach (var methodName in _methodsToInvokeAsStrings)
+                            //if an action was taken, start over
+                            if (ActionTaken)
                             {
-                                //if an action was taken, start over
-                                if (ActionTaken)
-                                {
-                                    break;
-                                }
-                                Action methodToInvoke;
-                                if (AdvancedSettings._methodLookup.TryGetValue(methodName, out methodToInvoke))
-                                {
-                                    methodToInvoke.Invoke();
-
-                                }
-                                //check backoff
-                                //check nowcast
-                                EventProcessor.ProcessEventsInQueues("/nowcast");
-                                EventProcessor.ProcessEventsInQueues("/backoff");
+                                break;
                             }
+                            Action methodToInvoke;
+                            if (AdvancedSettings._methodLookup.TryGetValue(methodName, out methodToInvoke))
+                            {
+                                methodToInvoke.Invoke();
+
+                            }
+                            //check backoff
+                            //check nowcast
+                            EventProcessor.ProcessEventsInQueues("/nowcast");
+                            EventProcessor.ProcessEventsInQueues("/backoff");
                         }
                     }
+                }
 
-                }
-                //in case nowcasts are in the queue, process after advmethod calls
-                PubClient.ProcessRequests();
-                //bard song player
-                if (E3.CurrentClass == Data.Class.Bard)
+            }
+            //process any requests commands from the UI.
+            PubClient.ProcessRequests();
+
+            //bard song player
+            if (E3.CurrentClass == Data.Class.Bard)
+            {
+                Bard.check_BardSongs();
+            }
+            //class attribute method calls, call them all!
+            using (Log.Trace("ClassMethodCalls"))
+            {
+                //lets do our class methods, this is last because of bards
+                foreach (var kvp in AdvancedSettings._classMethodLookup)
                 {
-                    Bard.check_BardSongs();
-                }
-                //class attributes
-                using (Log.Trace("ClassMethodCalls"))
-                {
-                    //lets do our class methods, this is last because of bards
-                    foreach (var kvp in AdvancedSettings._classMethodLookup)
-                    {
-                        kvp.Value.Invoke();
-                    }
+                    kvp.Value.Invoke();
                 }
             }
+
             using (Log.Trace("LootProcessing"))
             {
                 Loot.Process();
@@ -164,7 +166,7 @@ namespace E3Core.Processors
             CurrentId = Mq.Query<int>("${Me.ID}");
             ZoneID = Mq.Query<int>("${Zone.ID}");
 
-            if(Mq.Query<bool>("${MoveUtils.GM}"))
+            if (Mq.Query<bool>("${MoveUtils.GM}"))
             {
                 Mq.Cmd("/squelch /stick imsafe");
                 Bots.Broadcast("GM Safe kicked in, issued /stick imsafe.  you may need to reissue /followme or /assiston");
@@ -179,7 +181,7 @@ namespace E3Core.Processors
             CurrentInCombat = Basics.InCombat();
             PubServer.AddTopicMessage("${InCombat}", CurrentInCombat.ToString());
             string nameOfPet = Mq.Query<string>("${Me.Pet.CleanName}");
-            if(nameOfPet!="NULL")
+            if (nameOfPet != "NULL")
             {
                 //set the pet name
                 CurrentPetName = nameOfPet;
@@ -201,7 +203,7 @@ namespace E3Core.Processors
             if (!IsInit)
             {
 
-             
+
                 Mq.ClearCommands();
                 AsyncIO.ForceDotNet.Force();
 
@@ -215,7 +217,7 @@ namespace E3Core.Processors
                 //max event count for each registered event before spilling over.
                 EventProcessor._eventLimiterPerRegisteredEvent = 20;
                 CurrentName = Mq.Query<string>("${Me.CleanName}");
-               
+
                 CurrentId = Mq.Query<int>("${Me.ID}");
                 //do first to get class information
                 Bots = new Bots();
@@ -243,13 +245,12 @@ namespace E3Core.Processors
 
                 IsInit = true;
                 MonoCore.Spawns._refreshTimePeriodInMS = 3000;
-                //_uiThread = Task.Factory.StartNew(() => { ProcessUI(); }, CancellationToken.None, TaskCreationOptions.DenyChildAttach, TaskScheduler.Default);
 
             }
 
 
         }
-        
+
         private static bool ShouldRun()
         {
 
@@ -264,7 +265,7 @@ namespace E3Core.Processors
         {
             //Mq.Write($"Shutting down {MainProcessor._applicationName}....Reload to start gain");
             IsBadState = true;
-           
+
         }
         public static bool ActionTaken = false;
         public static bool Following = false;
@@ -283,7 +284,7 @@ namespace E3Core.Processors
         public static string CurrentPetName = String.Empty;
         public static bool CurrentInCombat = false;
         public static int CurrentId;
-        
+
         public static string CurrentLongClassString;
         public static string CurrentShortClassString;
         public static int CurrentHps;
