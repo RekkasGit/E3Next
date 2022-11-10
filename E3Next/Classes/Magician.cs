@@ -262,6 +262,17 @@ namespace E3Core.Classes
             }
         }
 
+        private static bool ValidateCursor(int expected)
+        {
+            var cursorHasExpected = expected == MQ.Query<int>("${Cursor.ID}");
+            if (!cursorHasExpected)
+            {
+                E3.Bots.Broadcast("\arUnexpected item on cursor before destroy call.");
+            }
+
+            return cursorHasExpected;
+        }
+
         private static void SummonItem(string itemToSummon, bool inventoryTheSummonedItem)
         {
             var id = E3.CurrentId;
