@@ -12,6 +12,9 @@ using System.Threading.Tasks;
 namespace E3Core.Server
 {
 
+    /// <summary>
+    /// Sends events out to the UI client, or whoever
+    /// </summary>
     public class PubServer
     {
 

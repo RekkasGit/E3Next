@@ -16,14 +16,14 @@ using NetMQ;
 /// <summary>
 /// Version 0.1
 /// This file, is the 'core', or the mediator between you and MQ2Mono 
-/// MQ2Mono is just a simple C++ plugin to MQ, thus exposes the 
+/// MQ2Mono is just a simple C++ plugin to MQ, which exposes the 
 /// OnInit
 /// OnPulse
 /// OnIncomingChat
 /// etc
-/// Methods from the plugin, and meshes it in such a way to allow you to write rather straight forward C# code. 
+/// Methods from MQ event framework, and meshes it in such a way to allow you to write rather straight forward C# code. 
 /// 
-/// Included in this is a Logging/trace framework, Event Proecssor, MQ command object/etc
+/// Included in this is a Logging/trace framework, Event Proecssor, MQ command object, etc
 /// 
 /// Your class is included in here with a simple .Process Method. This methoid will be called once every OnPulse from the plugin, or basically every frame of the EQ client.
 /// All you code should *NOT* be in this file. 
@@ -50,17 +50,11 @@ namespace MonoCore
 
             //WARNING , you may not be in game yet, so careful what queries you run on MQ.Query. May cause a crash.
             //how long before auto yielding back to C++/EQ/MQ on the next query/command/etc
-            //Logging._currentLogLevel = Logging.LogLevels.None; //log level we are currently at
-            //Logging._minLogLevelTolog = Logging.LogLevels.Error; //log levels have integers assoicatd to them. you can set this to Error to only log errors. 
-            //Logging._defaultLogLevel = Logging.LogLevels.None; //the default if a level is not passed into the _log.write statement. useful to hide/show things.
-         
-
+     
         }
+        
         //we use this to tell the C++ thread that its okay to start processing gain
-        //public static EconomicResetEvent _processResetEvent = new EconomicResetEvent(false, Thread.CurrentThread);
-        //public static AutoResetEvent _processResetEvent = new AutoResetEvent(false);
         public static ManualResetEventSlim _processResetEvent = new ManualResetEventSlim(false);
-
 
         public static void Process()
         {
@@ -72,50 +66,18 @@ namespace MonoCore
             //volatile variable, will eventually update to kill the thread on shutdown
             while (Core._isProcessing)
             {
-                //_startLoopTime = Core._stopWatch.Elapsed.TotalMilliseconds;
-                //_processingCounts++;
-                //_totalProcessingCounts++;
                 try
                 {
-                    //MQ.TraceStart("Process");
                     using (_log.Trace())
                     {
                         //************************************************
                         //DO YOUR WORK HERE
                         //this loop executes once every OnPulse from C++
                         //************************************************
-                        //just have a class call a process method or such so you don't have to see this 
-                        //boiler plate code with all the threading.
-
-                        ////MQ.Write("Calling e3process");
                         E3.Process();
-                        using(_log.Trace("ProcessEvents-Outer"))
-                        {
-                            EventProcessor.ProcessEventsInQueues();
+                        EventProcessor.ProcessEventsInQueues();
 
-                        }
-                        ////***NOTE NOTE NOTE, Use M2.Delay(0) in your code to give control back to EQ if you have taken awhile in doing something
-                        ////***NOTE NOTE NOTE, generally this isn't needed as there is an auto yield baked into every MQ method. Just be aware.
                     }
-
-                    //MQ.TraceEnd("Process");
-                    //process all the events that have been registered
-                    //process all the events that have been registered
-
-                    //Double endLoopTimeInMS = Core._stopWatch.Elapsed.TotalMilliseconds - _startLoopTime;
-                    //_totalLoopTime += endLoopTimeInMS;
-
-                    ////every 5 seconds, print out the # processed and average time.
-                    //if ((Core._stopWatch.ElapsedMilliseconds > (_startTimeStamp + 5000)))
-                    //{
-
-
-                    //    MQ.Write($"Total Count:{_totalProcessingCounts}, Total this cycle {_processingCounts} average time {_totalLoopTime / _processingCounts}ms");
-                    //    _startTimeStamp = Core._stopWatch.ElapsedMilliseconds;
-                    //    _processingCounts = 0;
-                    //    _totalLoopTime = 0;
-                    //}
-
                 }
                 catch (Exception ex) when (!(ex is ThreadAbort))
                 {
@@ -125,23 +87,13 @@ namespace MonoCore
 
                     }
                     Core._isProcessing = false;
-                    //lets tell core that it can continue
-                    //test
                     Core._coreResetEvent.Set();
                     //we perma exit this thread loop a full reload will be necessary
                     break;
                 }
 
-                //SET YOUR MACRO DELAY HERE
-                //this is the pulse you will get on your call. 1 sec is generally fine unless you are a much bigger script
-                //like e3, that may change it to 10.
+                //give execution back to the C++ thread, to go back into MQ/EQ
                 MQ.Delay(_processDelay);//this calls the reset events and sets the delay to 10ms at min
-
-                //***********************************************
-                //END YOUR WORK
-                //**********************************************
-
-
             }
             E3.Shutdown();
         }
@@ -157,9 +109,9 @@ namespace MonoCore
     /// </summary>
     static public class EventProcessor
     {
-        //event is loaded at startup and then not modified anymore
-        //so if we register events before Init, we can avoid locks on it
-        //will need to add locks if you want to add events at runtime
+        //***NOTE*** no _log.Write or MQ.Writes are allowed here. Use remote debugging.
+        //YOU WILL LOCK the process :) don't do it. Remember this is a seperate thread.
+        
         public static System.Collections.Concurrent.ConcurrentDictionary<string, Action<EventMatch>> _unfilteredEventMethodList = new ConcurrentDictionary<string, Action<EventMatch>>();
         public static System.Collections.Concurrent.ConcurrentDictionary<string, EventListItem> _unfilteredEventList = new ConcurrentDictionary<string, EventListItem>();
         public static System.Collections.Concurrent.ConcurrentDictionary<string, EventListItem> _eventList = new ConcurrentDictionary<string, EventListItem>();
@@ -295,9 +247,7 @@ namespace MonoCore
                             {
                                 if (line.IndexOf("]") == MainProcessor._applicationName.Length + 1)
                                 {
-                                    //this starts with [appname], ignore it. 
                                     goto skipLine;
-                                    //return;
                                 }
                                 else
                                 {
@@ -370,6 +320,11 @@ namespace MonoCore
                 }
             }
         }
+        /// <summary>
+        /// This is so that things like /command /only|<toonName> and such work
+        /// </summary>
+        /// <param name="values"></param>
+        /// <returns></returns>
         private static List<string> GetCommandFilters(List<string> values)
         {
             ////Stop /Only|Soandoso
@@ -647,10 +602,9 @@ namespace MonoCore
             c.command = commandName;
             c.method = method;
             c.keyName = commandName;
-            //Core.mqInstance.Write("Adding command:" + commandName);
+     
             bool returnvalue =  Core.mqInstance.AddCommand(commandName);
-            //Core.mqInstance.Write("Return from adding command:" + returnvalue);
-
+     
             if (returnvalue)
             {   
                 if (_commandList.TryAdd(commandName, c))
@@ -731,6 +685,8 @@ namespace MonoCore
         }
 
     }
+    //used to abort the main C# thread so that it can finish up and exist
+    //try statemnts that catch expections need to exclude this error. 
     public class ThreadAbort : Exception
     {
         public ThreadAbort()
@@ -793,7 +749,6 @@ namespace MonoCore
         //as the reset events handle the syn needed between memory/caches.
         //this only works as we only have 2 threads, otherwise you need fairness from normal locks.
         //the event procesor, however does need a lock as its on its own thread, to sync back to the C# primary thread
-        //public static EconomicResetEvent _coreResetEvent = new EconomicResetEvent(false, Thread.CurrentThread);
         public static ManualResetEventSlim _coreResetEvent = new ManualResetEventSlim(false);
         static Task _taskThread;
 
@@ -824,10 +779,7 @@ namespace MonoCore
                     _taskThread = Task.Factory.StartNew(() => { MainProcessor.Process(); }, CancellationToken.None, TaskCreationOptions.DenyChildAttach, TaskScheduler.Default);
                 }
                 _isInit = true;
-
             }
-
-
         }
         public static void OnStop()
         {
@@ -1014,9 +966,6 @@ namespace MonoCore
         [DllImport("user32.dll")]
         public static extern IntPtr GetWindowThreadProcessId(IntPtr hWnd,out uint ProcessId);
     }
-
-
-
 
     enum ImGuiWindowFlags
     {
@@ -1238,7 +1187,8 @@ namespace MonoCore
         public void Write(string query, [CallerMemberName] string memberName = "", [CallerFilePath] string fileName = "", [CallerLineNumber] int lineNumber = 0)
         {
            
-            //write on current thread, it will be queued up
+            //write on current thread, it will be queued up by MQ. 
+            //needed to deal with certain lock situations and just keeps things simple. 
             Core.mq_Echo($"\a#336699[{MainProcessor._applicationName}]\a-w{System.DateTime.Now.ToString("HH:mm:ss")} \aw- {query}");
             return;
 
@@ -1539,7 +1489,9 @@ namespace MonoCore
             #endregion
         }
     }
-
+    /// <summary>
+    /// Used for object pooling objects to be reused
+    /// </summary>
     public static class StaticObjectPool
     {
         private static class Pool<T>
@@ -1672,7 +1624,9 @@ namespace MonoCore
         bool Contains(Int32 id);
        
     }
-
+    /// <summary>
+    /// Used to download spawns from MQ in a quick manner to be used in scripts. 
+    /// </summary>
     public class Spawns: ISpawns
     {
         //special list so we can get rid of the non dirty values
@@ -1778,7 +1732,9 @@ namespace MonoCore
 
         }
     }
-
+    /// <summary>
+    /// the actual object pooled spawn object that can be used in scripts. 
+    /// </summary>
     public class Spawn: IDisposable
     {
         public byte[] _data = new byte[1024];
@@ -2248,6 +2204,7 @@ namespace MonoCore
     /// http://www.boost.org/doc/libs/1_53_0/libs/circular_buffer/doc/circular_buffer.html
     /// because I liked their interface.
     /// </summary>
+    /// Not currently used, tho it is used in the E3IU. Thought it might be useful to some.
     public class CircularBuffer<T> : IEnumerable<T>
         {
             private readonly T[] _buffer;

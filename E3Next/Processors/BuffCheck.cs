@@ -479,7 +479,7 @@ namespace E3Core.Processors
                                 }
                                 if (result != CastReturn.CAST_SUCCESS)
                                 {
-                                    //possibly some kind of issue/blocking. set a 120 sec timer to try and recast later.
+                                    //possibly some kind of issue/blocking. set a 60 sec timer to try and recast later.
                                     UpdateBuffTimers(s.ID, spell, 60 * 1000, true);
                                 }
                                 else

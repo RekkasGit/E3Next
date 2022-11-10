@@ -12,6 +12,9 @@ using System.Threading.Tasks;
 
 namespace E3Core.Server
 {
+    /// <summary>
+    /// This reads commands from the UI client and queues them up for execution
+    /// </summary>
     public class PubClient
     {
         public static ConcurrentQueue<string> _pubCommands = new ConcurrentQueue<string>();

@@ -11,6 +11,9 @@ using System.Threading.Tasks;
 
 namespace E3Core.Server
 {
+    /// <summary>
+    /// handles request/reply from clients asking for TLO data
+    /// </summary>
     public class RouterMessage : IDisposable
     {
         public byte[] identity = new byte[1024 * 86]; //86k to get on the LOH
