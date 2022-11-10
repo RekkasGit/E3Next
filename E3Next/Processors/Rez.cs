@@ -347,8 +347,6 @@ namespace E3Core.Processors
             {
                 if (spawn.Distance3D < 100 && spawn.DeityID != 0 && spawn.TypeDesc == "Corpse" && spawn.ClassShortName == "CLR")
                 {
-                    Casting.TrueTarget(spawn.ID);
-                    MQ.Delay(500);
                     corpseList.Add(spawn.ID);
                 }
             }
@@ -356,8 +354,6 @@ namespace E3Core.Processors
             {
                 if (spawn.Distance3D < 100 && spawn.DeityID != 0 && spawn.TypeDesc == "Corpse" && (spawn.ClassShortName == "DRU" || spawn.ClassShortName == "SHM" || spawn.ClassShortName == "WAR"))
                 {
-                    Casting.TrueTarget(spawn.ID);
-                    MQ.Delay(500);
                     corpseList.Add(spawn.ID);
                 }
             }
@@ -366,8 +362,6 @@ namespace E3Core.Processors
             {
                 if (spawn.Distance3D < 100 && spawn.DeityID != 0 && spawn.TypeDesc == "Corpse")
                 {
-                    Casting.TrueTarget(spawn.ID);
-                    MQ.Delay(500);
                     //lists are super small so contains is fine
                     if (!corpseList.Contains(spawn.ID))
                     {
