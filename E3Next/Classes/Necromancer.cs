@@ -71,7 +71,7 @@ namespace E3Core.Classes
                     Int32 GroupSize = MQ.Query<Int32>("${Group}");
                     Int32 GroupInZone = MQ.Query<Int32>("${Group.Present}");
 
-                    if (GroupSize - GroupSize > 1)
+                    if (GroupSize - GroupInZone > 0)
                     {
                         Assist.AssistOff();
                         E3.Bots.Broadcast("<CheckNecroAggro> Have agro, someone is dead, staying down. Issue reassist when ready.");
@@ -96,7 +96,7 @@ namespace E3Core.Classes
                     Int32 GroupSize = MQ.Query<Int32>("${Group}");
                     Int32 GroupInZone = MQ.Query<Int32>("${Group.Present}");
 
-                    if (GroupSize - GroupSize > 1)
+                    if (GroupSize - GroupInZone > 0)
                     {
                         Assist.AssistOff();
                         E3.Bots.Broadcast("<CheckNecroAggro> Have agro, someone is dead, staying down. Issue reassist when ready.");
