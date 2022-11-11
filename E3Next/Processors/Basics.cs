@@ -84,10 +84,34 @@ namespace E3Core.Processors
             });
             EventProcessor.RegisterEvent("Summoned", @"You have been summoned!", (x) =>
             {
+
+
+                //coth, or summoned by a mob?
+                ///a Tae Ew warder says 'You will not evade me, Alara!' 
+                ///You have been summoned!
+                if (Assist._allowControl) return; //this is our driver and most likely a tank, ignore this.
+
                 _spawns.RefreshList();//make sure we get a new refresh of this zone.
-                Loot.Reset();
-                Movement.Reset();
-                Assist.Reset();
+                //check to see if your target is on top of you, if so... well, good luck!
+                Int32 targetID = _mq.Query<Int32>("${Target.ID}");
+                if(_spawns.TryByID(targetID, out var spawn))
+                {
+                    if(spawn.Distance<5 && spawn.Aggressive && spawn.TypeDesc=="NPC")
+                    {
+                        //oh dear, the mob is in your face, best of luck.
+                        if(Movement._anchorTarget>0)
+                        {
+                            Movement.MoveToAnchor();
+                        }
+                    }
+                    else
+                    {
+                        //you have been cothed, reset stuff
+                        Loot.Reset();
+                        Movement.Reset();
+                        Assist.Reset();
+                    }
+                }
             });
             //
             EventProcessor.RegisterEvent("InviteToDZ", "(.+) tells you, 'raidadd'", (x) =>
@@ -284,9 +308,28 @@ namespace E3Core.Processors
             EventProcessor.RegisterCommand("/e3p", (x) =>
             {
                 //swap them
-                IsPaused = IsPaused ? false : true;
-                if (IsPaused) _mq.Write("\arPAUSING E3!");
-                if (!IsPaused) _mq.Write("\agRunning E3 again!");
+
+                if (x.args.Count > 0)
+                {
+                    if (x.args[0].Equals("off", StringComparison.OrdinalIgnoreCase))
+                    {
+                        IsPaused = false;
+                        E3.Bots.Broadcast("\agRunning E3 again!");
+                    }
+                    else if (x.args[0].Equals("on", StringComparison.OrdinalIgnoreCase))
+                    {
+                        IsPaused = true;
+                        E3.Bots.Broadcast("\arPAUSING E3!");
+                    }
+                }
+                else
+                {
+                    IsPaused = IsPaused ? false : true;
+                    if (IsPaused) E3.Bots.Broadcast("\arPAUSING E3!");
+                    if (!IsPaused) E3.Bots.Broadcast("\agRunning E3 again!");
+
+                }
+
             });
 
             EventProcessor.RegisterCommand("/savegroup", (x) =>

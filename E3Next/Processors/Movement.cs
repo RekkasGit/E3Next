@@ -160,17 +160,21 @@ namespace E3Core.Processors
         public static void Check_Anchor()
         {
             if (!e3util.ShouldCheck(ref _nextAnchorCheck, _nextAnchorCheckInterval)) return;
-
             if (_anchorTarget > 0 && !Assist._isAssisting)
             {
-                _spawns.RefreshList();
-                Spawn s;
-                if (_spawns.TryByID(_anchorTarget, out s))
+                MoveToAnchor();
+            }
+        }
+
+        public static void MoveToAnchor()
+        {
+            _spawns.RefreshList();
+            Spawn s;
+            if (_spawns.TryByID(_anchorTarget, out s))
+            {
+                if (s.Distance > 15 && s.Distance < 150)
                 {
-                    if (s.Distance > 15 && s.Distance < 150)
-                    {
-                        e3util.TryMoveToLoc(s.X, s.Y);
-                    }
+                    e3util.TryMoveToLoc(s.X, s.Y);
                 }
             }
         }
