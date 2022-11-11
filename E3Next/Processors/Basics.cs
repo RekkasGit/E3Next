@@ -313,13 +313,20 @@ namespace E3Core.Processors
                 {
                     if (x.args[0].Equals("off", StringComparison.OrdinalIgnoreCase))
                     {
-                        IsPaused = false;
-                        E3.Bots.Broadcast("\agRunning E3 again!");
+                        if (IsPaused)
+                        {
+                            IsPaused = false;
+                            E3.Bots.Broadcast("\agRunning E3 again!");
+                        }
                     }
                     else if (x.args[0].Equals("on", StringComparison.OrdinalIgnoreCase))
                     {
-                        IsPaused = true;
-                        E3.Bots.Broadcast("\arPAUSING E3!");
+                        if(!IsPaused)
+                        {
+                            IsPaused = true;
+                            E3.Bots.Broadcast("\arPAUSING E3!");
+
+                        }
                     }
                 }
                 else
