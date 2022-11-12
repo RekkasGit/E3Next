@@ -147,9 +147,9 @@ namespace E3NextUI.Settings
             var section = newFile.Sections.GetSectionData("General");
             section.Keys.AddKey("StartLocationX", "");
             section.Keys.AddKey("StartLocationY", "");
-            section.Keys.AddKey("Width", "");
-            section.Keys.AddKey("Height", "");
-            section.Keys.AddKey("ConsoleCollapsed", "False");
+            section.Keys.AddKey("Width", "1103");
+            section.Keys.AddKey("Height", "302");
+            section.Keys.AddKey("ConsoleCollapsed", "True");
             section.Keys.AddKey("DynamicButtonsCollapsed", "False");
             section.Keys.AddKey("UseDarkMode", "True");
 
