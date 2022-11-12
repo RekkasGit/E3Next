@@ -36,6 +36,7 @@ namespace E3Core.Settings
         public bool Misc_AutoLootEnabled;
         public string Misc_AnchorChar = string.Empty;
         public bool Misc_RemoveTorporAfterCombat = true;
+        public bool Misc_AutoRez = false;
 
         public bool Rogue_AutoHide = false;
         public bool Rogue_AutoEvade = false;
@@ -210,41 +211,8 @@ namespace E3Core.Settings
         public void LoadData()
         {
 
-            string filename = $"{CharacterName}_{ServerName}.ini";
-            _log.Write($"Loading up {filename}");
-
-            string macroFile = _macroFolder + _botFolder + filename;
-            string configFile = _configFolder + _botFolder + filename;
-
-            _log.Write($"macrofile:{macroFile} config file:{configFile}");
-            _log.Write($"macrofolder:{_macroFolder} config folder:{_configFolder}");
-
-            string fullPathToUse = macroFile;
-
-            FileIniDataParser fileIniData = e3util.CreateIniParser();
-            if (!File.Exists(configFile) && !File.Exists(macroFile))
-            {
-                if (!Directory.Exists(_configFolder + _botFolder))
-                {
-                    Directory.CreateDirectory(_configFolder + _botFolder);
-                }
-
-                fullPathToUse = configFile;
-                _log.Write($"Settings not found creating new settings: {fullPathToUse}");
-                ParsedData = CreateSettings();
-            }
-            else
-            {
-                if (File.Exists(configFile)) fullPathToUse = configFile;
-
-                //Parse the ini file
-                //Create an instance of a ini file parser
-
-                _log.Write($"Loading up {fullPathToUse}");
-                ParsedData = fileIniData.ReadFile(fullPathToUse);
-            }
-            _fileLastModified = System.IO.File.GetLastWriteTime(fullPathToUse);
-            _fileLastModifiedFileName = fullPathToUse;
+            //this is so we can get the merged data as well. 
+            ParsedData = CreateSettings();
 
             LoadKeyData("Misc", "AutoFood", ParsedData, ref Misc_AutoFoodEnabled);
             LoadKeyData("Misc", "Food", ParsedData, ref Misc_AutoFood);
@@ -254,6 +222,7 @@ namespace E3Core.Settings
             LoadKeyData("Misc", "Auto-Loot (On/Off)", ParsedData, ref Misc_AutoLootEnabled);
             LoadKeyData("Misc", "Anchor (Char to Anchor to)", ParsedData, ref Misc_AnchorChar);
             LoadKeyData("Misc", "Remove Torpor After Combat", ParsedData, ref Misc_RemoveTorporAfterCombat);
+            LoadKeyData("Misc", "Remove Torpor After Combat", ParsedData, ref Misc_AutoRez);
 
             LoadKeyData("Assist Settings", "Assist Type (Melee/Ranged/Off)", ParsedData, ref Assist_Type);
             LoadKeyData("Assist Settings", "Melee Stick Point", ParsedData, ref Assist_MeleeStickPoint);
@@ -382,7 +351,7 @@ namespace E3Core.Settings
             LoadKeyData("Gimme", "Gimme", ParsedData, Gimme);
 
 
-            _log.Write($"Finished processing and loading: {fullPathToUse}");
+           // _log.Write($"Finished processing and loading: {fullPathToUse}");
 
         }
 
@@ -400,7 +369,7 @@ namespace E3Core.Settings
 
             newFile.Sections.AddSection("Misc");
             var section = newFile.Sections.GetSectionData("Misc");
-            section.Keys.AddKey("AutoFood", "ON");
+            section.Keys.AddKey("AutoFood", "Off");
             section.Keys.AddKey("Food", "");
             section.Keys.AddKey("Drink", "");
             section.Keys.AddKey("End MedBreak in Combat(On/Off)", "Off");
@@ -408,13 +377,18 @@ namespace E3Core.Settings
             section.Keys.AddKey("Auto-Loot (On/Off)", "Off");
             section.Keys.AddKey("Anchor (Char to Anchor to)", "");
             section.Keys.AddKey("Remove Torpor After Combat", "On");
+            section.Keys.AddKey("AutoRez", "Off");
 
             newFile.Sections.AddSection("Assist Settings");
             section = newFile.Sections.GetSectionData("Assist Settings");
             section.Keys.AddKey("Assist Type (Melee/Ranged/Off)", "Melee");
             section.Keys.AddKey("Melee Stick Point", "Back");
-            section.Keys.AddKey("Taunt(On/Off)", "Off");
-            section.Keys.AddKey("SmartTaunt(On/Off)", "On");
+            if ((CharacterClass & Class.Tank) == CharacterClass)
+            {
+                section.Keys.AddKey("Taunt(On/Off)", "Off");
+                section.Keys.AddKey("SmartTaunt(On/Off)", "On");
+            }
+
             section.Keys.AddKey("Melee Distance", "MaxMelee");
             section.Keys.AddKey("Ranged Distance", "100");
             section.Keys.AddKey("Auto-Assist Engage Percent", "98");
@@ -468,11 +442,14 @@ namespace E3Core.Settings
                 section.Keys.AddKey("Debuff on Command", "");
             }
 
-            newFile.Sections.AddSection("Dispel");
-            section = newFile.Sections.GetSectionData("Dispel");
-            section.Keys.AddKey("Main", "");
-            section.Keys.AddKey("Ignore", "");
-
+            //if not a tank class
+            if(!((CharacterClass & Class.Tank)==CharacterClass))
+            {
+                newFile.Sections.AddSection("Dispel");
+                section = newFile.Sections.GetSectionData("Dispel");
+                section.Keys.AddKey("Main", "");
+                section.Keys.AddKey("Ignore", "");
+            }
 
             newFile.Sections.AddSection("Life Support");
             section = newFile.Sections.GetSectionData("Life Support");
@@ -525,7 +502,7 @@ namespace E3Core.Settings
             {
                 newFile.Sections.AddSection("Druid");
                 section = newFile.Sections.GetSectionData("Druid");
-                section.Keys.AddKey("Evac Spell=", "");
+                section.Keys.AddKey("Evac Spell", "");
                 section.Keys.AddKey("Auto-Cheetah (On/Off)", "On");
 
             }
@@ -581,7 +558,7 @@ namespace E3Core.Settings
             if (CharacterClass == Class.Shaman)
             {
                 newFile.Sections.AddSection("Shaman");
-                section.Keys.AddKey("Auto-Canni (On/Off)", "On");
+                section.Keys.AddKey("Auto-Canni (On/Off)", "Off");
                 section.Keys.AddKey("Canni", "");
             }
 
@@ -609,6 +586,8 @@ namespace E3Core.Settings
                 }
                 //file straight up doesn't exist, lets create it
                 parser.WriteFile(filename, newFile);
+                _fileLastModified = System.IO.File.GetLastWriteTime(filename);
+                _fileLastModifiedFileName = filename;
             }
             else
             {
@@ -619,10 +598,14 @@ namespace E3Core.Settings
                 IniData tParsedData = fileIniData.ReadFile(filename);
 
                 //overwrite newfile with what was already there
-                newFile.Merge(tParsedData);
+                tParsedData.Merge(newFile);
+                newFile = tParsedData;
                 //save it it out now
                 File.Delete(filename);
-                parser.WriteFile(filename, newFile);
+                parser.WriteFile(filename, tParsedData);
+
+                _fileLastModified = System.IO.File.GetLastWriteTime(filename);
+                _fileLastModifiedFileName = filename;
             }
 
 

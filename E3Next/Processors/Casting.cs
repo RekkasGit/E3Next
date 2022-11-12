@@ -207,6 +207,9 @@ namespace E3Core.Processors
                         {
                             _log.Write($"Doing BeforeEvent:{spell.BeforeEvent}");
                             MQ.Cmd($"/docommand {spell.BeforeEvent}");
+                            if (spell.BeforeEvent.StartsWith("/exchange", StringComparison.OrdinalIgnoreCase)) MQ.Delay(500);
+                            if (spell.BeforeEvent.StartsWith("/equipset", StringComparison.OrdinalIgnoreCase)) MQ.Delay(500);
+
                         }
 
                         _log.Write("Checking BeforeSpell...");

@@ -589,7 +589,7 @@ namespace E3Core.Processors
                     }
                 }
 
-                if (E3.CurrentClass == Data.Class.Necromancer && pctMana < 50)
+                if (E3.CurrentClass == Data.Class.Necromancer && pctMana < 50 && E3.CurrentInCombat)
                 {
                     bool deathBloomReady = _mq.Query<bool>("${Me.AltAbilityReady[Death Bloom]}");
                     if (deathBloomReady && currentHps > 8000)
@@ -606,7 +606,7 @@ namespace E3Core.Processors
                         }
                     }
                 }
-                if (E3.CurrentClass == Data.Class.Enchanter && pctMana < 50)
+                if (E3.CurrentClass == Data.Class.Enchanter && pctMana < 50 && E3.CurrentInCombat)
                 {
                     bool manaDrawReady = _mq.Query<bool>("${Me.AltAbilityReady[Mana Draw]}");
                     if (manaDrawReady)

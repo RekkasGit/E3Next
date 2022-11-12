@@ -6,6 +6,7 @@ using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Runtime.CompilerServices;
+using System.Runtime.Serialization.Formatters;
 using System.Text;
 using System.Threading.Tasks;
 
@@ -211,14 +212,6 @@ namespace E3Core.Settings
             section.Keys.AddKey("Allowed PCs (When Requests [Off])","");
 
 
-            //ExpGroup
-            //newFile.Sections.AddSection("ExpGroup");
-            //section = newFile.Sections.GetSectionData("ExpGroup");
-            //section.Keys.AddKey("NoKS_WeaponSet","NoExp");
-	        //section.Keys.AddKey("NoKS_SpellSet","NoExp");
-	        //section.Keys.AddKey("KS_WeaponSet","Main");
-	        //section.Keys.AddKey("KS_SpellSet","Exp");
-
             //Auto-Tribute
             newFile.Sections.AddSection("Auto-Tribute");
             section = newFile.Sections.GetSectionData("Auto-Tribute");
@@ -248,22 +241,13 @@ namespace E3Core.Settings
             }
             else
             {
-                //File already exists, may need to merge in new settings lets check
-             
+                //some reason we were called when this already exists, just return what is there.
 
-                //Parse the ini file
-                //Create an instance of a ini file parser
                 FileIniDataParser fileIniData = e3util.CreateIniParser();
                 IniData parsedData = fileIniData.ReadFile(filename);
 
-                //overwrite newfile with what was already there
-                _log.Write($"Merging possible new options into :{filename}");
-                newFile.Merge(parsedData);
-                //save it it out now
-                System.IO.File.Delete(filename);
-                parser.WriteFile(filename, newFile);
-
-
+                return parsedData;
+               
             }
 
 

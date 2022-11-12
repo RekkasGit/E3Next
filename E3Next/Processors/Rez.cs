@@ -118,11 +118,10 @@ namespace E3Core.Processors
             }
         }
 
-        [ClassInvoke(Class.Cleric)]
+       
         public static void RefreshCorpseList()
         {
-            if (!e3util.ShouldCheck(ref _nextCorpseCheck, _nextCorpseCheckInterval)) return;
-            //lets get a corpse list
+              //lets get a corpse list
             _spawns.RefreshList();
             _corpseList.Clear();
 
@@ -155,10 +154,15 @@ namespace E3Core.Processors
             }
         }
 
-        [ClassInvoke(Class.Cleric)]
+        [ClassInvoke(Class.All)]
         public static void AutoRez()
         {
+            if (!E3.CharacterSettings.Misc_AutoRez) return;
+            
             if (!e3util.ShouldCheck(ref _nextAutoRezCheck, _nextAutoRezCheckInterval)) return;
+            
+            RefreshCorpseList();
+
             foreach (var corpse in _corpseList)
             {
                 if (_spawns.TryByID(corpse, out var spawn))
@@ -171,8 +175,13 @@ namespace E3Core.Processors
                     {
                         continue;
                     }
+                    //if not a cleric, and the person is in raid but no in group, let clerics deal with it.
+                    if(E3.CurrentClass!=Class.Cleric && inRaid && !inGroup)
+                    {
+                        continue;
+                    }
 
-                    if (Basics.InCombat())
+                    if (Basics.InCombat() && (E3.CurrentClass & Class.Priest) == E3.CurrentClass)
                     {
                         var currentMana = MQ.Query<int>("${Me.CurrentMana}");
                         var pctMana = MQ.Query<int>("${Me.PctMana}");
@@ -283,6 +292,7 @@ namespace E3Core.Processors
             }
 
             Movement.RemoveFollow();
+            RefreshCorpseList();
 
             List<Int32> corpsesRaised = new List<int>();
             foreach (var corpseid in _corpseList)

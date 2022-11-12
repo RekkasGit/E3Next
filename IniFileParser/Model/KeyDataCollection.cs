@@ -233,20 +233,21 @@ namespace IniParser.Model
             return null;
         }
 
+        /// <summary>
+        /// need to do special logic on merges
+        /// empty values do not get copied over
+        /// </summary>
+        /// <param name="keyDataToMerge"></param>
         public void Merge(KeyDataCollection keyDataToMerge)
         {
             foreach (var keyData in keyDataToMerge)
             {
-                AddKey(keyData.KeyName);
-                GetKeyData(keyData.KeyName).Comments.AddRange(keyData.Comments);
-                this[keyData.KeyName] = keyData.Value;
-                foreach (var valueentry in keyData.ValueList)
+                if(AddKey(keyData.KeyName))
                 {
-                    GetKeyData(keyData.KeyName).ValueList.Add(valueentry);
+                    this[keyData.KeyName] = keyData.Value;
                 }
-               
+                //don't merge over collections.
             }
-
         }
 
         /// <summary>
