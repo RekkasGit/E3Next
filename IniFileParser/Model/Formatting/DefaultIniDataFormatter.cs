@@ -88,7 +88,7 @@ namespace IniParser.Model.Formatting
             {
 
                 // Add a blank line if the key value pair has comments
-                if (keyData.Comments.Count > 0) sb.Append(Configuration.NewLineStr);
+                //if (keyData.Comments.Count > 0) sb.Append(Configuration.NewLineStr);
 
                 // Write key comments
                 WriteComments(keyData.Comments, sb);
