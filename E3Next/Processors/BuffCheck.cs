@@ -120,13 +120,13 @@ namespace E3Core.Processors
         {
             //first look for exact match
             Int32 buffID = MQ.Query<Int32>($"${{Spell[{buffToDrop}].ID}}");
-            if (buffID == 0)
+            if (buffID <1)
             {
                 //lets look for a partial match.
                 for (Int32 i = 1; i <= 40; i++)
                 {
                     string buffName = MQ.Query<String>($"${{Me.Buff[{i}]}}");
-                    if (buffName.IndexOf(buffToDrop, StringComparison.OrdinalIgnoreCase) > 0)
+                    if (buffName.IndexOf(buffToDrop, StringComparison.OrdinalIgnoreCase) > -1)
                     {
                         //it matches 
                         buffID = MQ.Query<Int32>($"${{Spell[{buffName}].ID}}");
@@ -139,12 +139,12 @@ namespace E3Core.Processors
 
                 }
                 //did we find it?
-                if (buffID == 0)
+                if (buffID <1)
                 {
                     for (Int32 i = 1; i <= 25; i++)
                     {
                         string buffName = MQ.Query<String>($"${{Me.Song[{i}]}}");
-                        if (buffName.IndexOf(buffToDrop, StringComparison.OrdinalIgnoreCase) > 0)
+                        if (buffName.IndexOf(buffToDrop, StringComparison.OrdinalIgnoreCase) >-1)
                         {
                             //it matches 
                             buffID = MQ.Query<Int32>($"${{Spell[{buffName}].ID}}");
