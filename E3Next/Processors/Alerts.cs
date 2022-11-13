@@ -90,6 +90,21 @@ namespace E3Core.Processors
 
             #endregion
 
+            pattern = @"(.+) spell has been reflected by (.+)\.";
+            EventProcessor.RegisterEvent("ReflectSpell", pattern, (x) => {
+
+                if(x.match.Groups.Count>2)
+                {
+                    string mobname = x.match.Groups[1].Value;
+                    string personName = x.match.Groups[2].Value;
+                    if(E3.CurrentName==personName)
+                    {
+                        MQ.Cmd($"/g I have reflected {mobname} spell!");
+                    }
+                }
+            });
+
+
         }
     }
 }

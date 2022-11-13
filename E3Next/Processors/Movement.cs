@@ -122,6 +122,8 @@ namespace E3Core.Processors
             if (!e3util.ShouldCheck(ref _nextFollowCheck, _nextFollowCheckInterval)) return;
 
             if (String.IsNullOrWhiteSpace(_followTargetName)) return;
+ 
+            if (Assist._isAssisting) return;
 
             Spawn s;
             if (_spawns.TryByName(_followTargetName, out s))

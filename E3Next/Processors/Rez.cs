@@ -32,6 +32,10 @@ namespace E3Core.Processors
 
         public static bool IsWaiting()
         {
+            if(Assist._isAssisting)
+            {
+                return false;
+            }
             return _waitingOnRez;
         }
         public static void Reset()

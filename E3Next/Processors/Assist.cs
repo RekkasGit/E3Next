@@ -399,9 +399,7 @@ namespace E3Core.Processors
             //clear in case its not reset by other means
             //or you want to attack in enrage
             _assistIsEnraged = false;
-            Rez.Reset();
-
-
+           
             if (mobID == 0)
             {
                 //something wrong with the assist, kickout
@@ -452,6 +450,8 @@ namespace E3Core.Processors
 
                 if (MQ.Query<bool>("${Stick.Active}")) MQ.Cmd("/squelch /stick off");
                 if (MQ.Query<bool>("${AdvPath.Following}")) MQ.Cmd("/squelch /afollow off ");
+                if (Movement._following) Movement._following = false;
+
 
                 _isAssisting = true;
                 _assistTargetID = mobID;
