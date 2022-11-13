@@ -199,9 +199,12 @@ namespace E3Core.Settings
       
         public bool ShouldReload()
         {
-            if(_fileLastModified != System.IO.File.GetLastWriteTime(_fileLastModifiedFileName))
+            if(System.IO.File.Exists(_fileLastModifiedFileName))
             {
-                return true;
+                if (_fileLastModified != System.IO.File.GetLastWriteTime(_fileLastModifiedFileName))
+                {
+                    return true;
+                }
             }
             return false;
         }
