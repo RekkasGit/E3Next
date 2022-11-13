@@ -186,6 +186,12 @@ namespace E3Core.Processors
                 e3util.ClickYesNo(false);
             });
 
+            EventProcessor.RegisterCommand("/reportaa", (x) =>
+            {
+                _mq.Cmd("/gu AA Spent-Available: ${Me.AAPointsSpent}-${Me.AAPoints}");
+                E3.Bots.BroadcastCommand("/gu AA Spent-Available: ${Me.AAPointsSpent}-${Me.AAPoints}",true);
+            });
+
             EventProcessor.RegisterCommand("/bark", (x) =>
             {
                 //rebuild the bark message, and do a /say

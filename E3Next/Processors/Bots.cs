@@ -18,7 +18,7 @@ namespace E3Core.Processors
         Int32 PctHealth(string name);
         List<string> BotsConnected();
         Boolean HasShortBuff(string name, Int32 buffid);
-        void BroadcastCommand(string command);
+        void BroadcastCommand(string command, bool noparse = false);
         void BroadcastCommandToGroup(string command, CommandMatch match=null);
         void BroadcastCommandToPerson(string person, string command);
         void Broadcast(string message);
@@ -64,9 +64,16 @@ namespace E3Core.Processors
         {
             MQ.Cmd($"/bct {person} /{command}");
         }
-        public void BroadcastCommand(string command)
+        public void BroadcastCommand(string command,bool noparse = false)
         {
-            MQ.Cmd($"/bca /{command}");
+            if(noparse)
+            {
+                MQ.Cmd($"/noparse /bca /{command}");
+            }
+            else
+            {
+                MQ.Cmd($"/bca /{command}");
+            }
         }
         public Boolean InZone(string name)
         {
@@ -239,9 +246,17 @@ namespace E3Core.Processors
             MQ.Cmd($"/dg all {message}");
         }
 
-        public void BroadcastCommand(string command)
+        public void BroadcastCommand(string command, bool noparse = false)
         {
-            MQ.Cmd($"/dge all /{command}");
+            if (noparse)
+            {
+                MQ.Cmd($"/noparse /dge all /{command}");
+            }
+            else
+            {
+                MQ.Cmd($"/dge all /{command}");
+            }
+           
         }
 
         public void BroadcastCommandToGroup(string query, CommandMatch match = null)
