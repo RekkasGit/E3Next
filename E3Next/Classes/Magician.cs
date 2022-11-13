@@ -182,7 +182,11 @@ namespace E3Core.Classes
             var currentX = MQ.Query<double>("${Me.X}");
             var currentY = MQ.Query<double>("${Me.Y}");
 
-            if (GiveWeapons(petId, weapons ?? "Water|Fire"))
+            if (!GiveWeapons(petId, weapons ?? "Water|Fire"))
+            {
+                E3.Bots.Broadcast("\arThere was an issue with pet weapon summoning and we are unable to continue.");
+            }
+            else
             {
                 GiveArmor(petId);
                 GiveFocusItems(petId);
@@ -207,7 +211,7 @@ namespace E3Core.Classes
                 {
                     MQ.Cmd($"/nomodkey /itemnotify \"{_weaponBag}\" leftmouseup");
                     MQ.Delay(1000, "${Cursor.ID}");
-                    if (!ValidateCursor(MQ.Query<int>($"${{FindItem[={_weaponBag}].ID}}")))
+                    if (!e3util.ValidateCursor(MQ.Query<int>($"${{FindItem[={_weaponBag}].ID}}")))
                     {
                         return false;
                     }
@@ -258,17 +262,6 @@ namespace E3Core.Classes
             }
         }
 
-        private static bool ValidateCursor(int expected)
-        {
-            var cursorHasExpected = expected == MQ.Query<int>("${Cursor.ID}");
-            if (!cursorHasExpected)
-            {
-                E3.Bots.Broadcast("\arUnexpected item on cursor before destroy call.");
-            }
-
-            return cursorHasExpected;
-        }
-
         private static void SummonItem(string itemToSummon, bool inventoryTheSummonedItem)
         {
             var id = E3.CurrentId;
@@ -307,7 +300,7 @@ namespace E3Core.Classes
             {
                 MQ.Cmd($"/nomodkey /itemnotify \"{_armorOrHeirloomBag}\" leftmouseup");
                 MQ.Delay(1000, "${Cursor.ID}");
-                if(!ValidateCursor(MQ.Query<int>($"${{FindItem[={_armorOrHeirloomBag}].ID}}")))
+                if(!e3util.ValidateCursor(MQ.Query<int>($"${{FindItem[={_armorOrHeirloomBag}].ID}}")))
                 {
                     return false;
                 }
@@ -321,7 +314,7 @@ namespace E3Core.Classes
             {
                 MQ.Cmd($"/nomodkey /itemnotify \"{bag}\" leftmouseup");
                 MQ.Delay(1000, "${Cursor.ID}");
-                if (!ValidateCursor(MQ.Query<int>($"${{FindItem[={bag}].ID}}")))
+                if (!e3util.ValidateCursor(MQ.Query<int>($"${{FindItem[={bag}].ID}}")))
                 {
                     return false;
                 }
