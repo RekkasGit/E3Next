@@ -634,6 +634,16 @@ namespace E3Core.Utility
             MQ.Delay(200);
         }
 
+        public static bool ValidateCursor(int expected)
+        {
+            var cursorHasExpected = expected == MQ.Query<int>("${Cursor.ID}");
+            if (!cursorHasExpected)
+            {
+                E3.Bots.Broadcast("\arUnexpected item on cursor before destroy call.");
+            }
+
+            return cursorHasExpected;
+        }
 
     }
 }
