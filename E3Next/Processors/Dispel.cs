@@ -29,9 +29,8 @@ namespace E3Core.Processors
             {
                 if (MQ.Query<bool>("${Target.Beneficial.ID}"))
                 {
-                    Int32 buffCount = MQ.Query<Int32>("${Target.BuffCount}");
-                    buffCount = 55;  //check all the buff slots
-
+                    Int32 buffCount=55;
+                  
                     for (Int32 i = 1; i <= buffCount; i++)
                     {
                         bool beneficial = MQ.Query<bool>($"${{Target.Buff[{i}].Beneficial}}");
