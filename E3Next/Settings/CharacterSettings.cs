@@ -222,7 +222,7 @@ namespace E3Core.Settings
             LoadKeyData("Misc", "Auto-Loot (On/Off)", ParsedData, ref Misc_AutoLootEnabled);
             LoadKeyData("Misc", "Anchor (Char to Anchor to)", ParsedData, ref Misc_AnchorChar);
             LoadKeyData("Misc", "Remove Torpor After Combat", ParsedData, ref Misc_RemoveTorporAfterCombat);
-            LoadKeyData("Misc", "Remove Torpor After Combat", ParsedData, ref Misc_AutoRez);
+            LoadKeyData("Misc", "AutoRez", ParsedData, ref Misc_AutoRez);
 
             LoadKeyData("Assist Settings", "Assist Type (Melee/Ranged/Off)", ParsedData, ref Assist_Type);
             LoadKeyData("Assist Settings", "Melee Stick Point", ParsedData, ref Assist_MeleeStickPoint);
