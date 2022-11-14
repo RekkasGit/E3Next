@@ -213,6 +213,7 @@ namespace E3Core.Classes
                     MQ.Delay(1000, "${Cursor.ID}");
                     if (!e3util.ValidateCursor(MQ.Query<int>($"${{FindItem[={_weaponBag}].ID}}")))
                     {
+                        E3.Bots.Broadcast($"\arUnexpected item on cursor when trying to destroy {_weaponBag}");
                         return false;
                     }
 
@@ -302,6 +303,7 @@ namespace E3Core.Classes
                 MQ.Delay(1000, "${Cursor.ID}");
                 if(!e3util.ValidateCursor(MQ.Query<int>($"${{FindItem[={_armorOrHeirloomBag}].ID}}")))
                 {
+                    E3.Bots.Broadcast($"\arUnexpected item on cursor when trying to destroy {_armorOrHeirloomBag}");
                     return false;
                 }
 
@@ -316,6 +318,7 @@ namespace E3Core.Classes
                 MQ.Delay(1000, "${Cursor.ID}");
                 if (!e3util.ValidateCursor(MQ.Query<int>($"${{FindItem[={bag}].ID}}")))
                 {
+                    E3.Bots.Broadcast($"\arUnexpected item on cursor when trying to destroy {bag}");
                     return false;
                 }
 

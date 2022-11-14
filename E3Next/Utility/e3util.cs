@@ -636,13 +636,13 @@ namespace E3Core.Utility
 
         public static bool ValidateCursor(int expected)
         {
-            var cursorHasExpected = expected == MQ.Query<int>("${Cursor.ID}");
-            if (!cursorHasExpected)
+            var cursorId = MQ.Query<int>("${Cursor.ID}");
+            if (cursorId == -1)
             {
-                E3.Bots.Broadcast("\arUnexpected item on cursor before destroy call.");
+                E3.Bots.Broadcast("\arError: Nothing on cursor when we something.");
             }
 
-            return cursorHasExpected;
+            return expected == cursorId;
         }
 
     }
