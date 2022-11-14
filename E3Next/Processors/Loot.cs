@@ -133,7 +133,7 @@ namespace E3Core.Processors
             foreach (var spawn in _spawns.Get())
             {
                 //only player corpses have a Deity
-                if (spawn.Distance3D < _seekRadius && spawn.DeityID==0 && spawn.TypeDesc == "Corpse")
+                if (spawn.Distance3D < _seekRadius && spawn.DeityID==0 && spawn.TypeDesc == "Corpse" && !spawn.CleanName.Contains("Misfit"))
                 {
                     if(!_unlootableCorpses.Contains(spawn.ID))
                     {
