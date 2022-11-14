@@ -639,7 +639,7 @@ namespace E3Core.Utility
             var cursorId = MQ.Query<int>("${Cursor.ID}");
             if (cursorId == -1)
             {
-                E3.Bots.Broadcast("\arError: Nothing on cursor when we something.");
+                E3.Bots.Broadcast("\arError: Nothing on cursor when we expected something.");
             }
 
             return expected == cursorId;
