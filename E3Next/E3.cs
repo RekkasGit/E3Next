@@ -244,7 +244,7 @@ namespace E3Core.Processors
 
                 IsInit = true;
                 MonoCore.Spawns._refreshTimePeriodInMS = 3000;
-
+                Zoning.Init();
             }
 
 

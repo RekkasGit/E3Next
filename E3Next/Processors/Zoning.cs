@@ -3,14 +3,17 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
+using MonoCore;
 
 namespace E3Core.Processors
 {
-    public class Zoning : BaseProcessor
+    public static class Zoning
     {
         public static Zone CurrentZone;
         public static Dictionary<string, Zone> ZoneLookup = new Dictionary<string, Zone>();
         private static HashSet<string> _safeZones = new HashSet<string> { "poknowledge", "potranquility", "nexus", "guildhall", "freeporttemple", "arena", "bazaar" };
+
+        private static IMQ MQ = E3.Mq;
 
         public class Zone
         {
@@ -28,9 +31,9 @@ namespace E3Core.Processors
             public bool IsSafeZone { get; set; }
         }
 
-        protected override void Init()
+        [SubSystemInit]
+        public static void Init()
         {
-            base.Init();
             InitZoneLookup();
         }
 
