@@ -144,7 +144,7 @@ namespace E3Core.Processors
                         }
 
                         _log.Write("Checking for zoning...");
-                        if (E3.ZoneID != MQ.Query<Int32>("${Zone.ID}"))
+                        if (E3.CurrentZone.Id != MQ.Query<Int32>("${Zone.ID}"))
                         {
                             _log.Write("Currently zoning, delaying for 1second");
                             //we are zoning, we need to chill for a bit.

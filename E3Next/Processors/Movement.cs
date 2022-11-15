@@ -187,7 +187,7 @@ namespace E3Core.Processors
                 if (x.args.Count == 0)
                 {
                     //we are telling people to follow us
-                    E3.Bots.BroadcastCommandToGroup($"/clickit {E3.ZoneID}");
+                    E3.Bots.BroadcastCommandToGroup($"/clickit {E3.CurrentZone.Id}");
 
                 }
                 //read the ini file and pull the info we need.
@@ -197,7 +197,7 @@ namespace E3Core.Processors
                     Int32 zoneID;
                     if (Int32.TryParse(x.args[0], out zoneID))
                     {
-                        if (zoneID != E3.ZoneID)
+                        if (zoneID != E3.CurrentZone.Id)
                         {
                             //we are not in the same zone, ignore.
                             return;
@@ -344,7 +344,7 @@ namespace E3Core.Processors
                         MQ.Cmd("/nomodkey /keypress forward hold");
                         MQ.Delay(1000);
                         Int32 counter = 0;
-                        while (E3.ZoneID == currentZone && counter < 20)
+                        while (E3.CurrentZone.Id == currentZone && counter < 20)
                         {
                             counter++;
                             MQ.Delay(100);

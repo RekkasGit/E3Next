@@ -62,7 +62,7 @@ namespace E3Core.Processors
                     MQ.Delay(2000);//start zone
                     //zone may to happen
                     MQ.Delay(30000, "${Spawn[${Me}'s].ID}");
-                    E3.ZoneID = MQ.Query<int>("${Zone.ID}");
+                    E3.Zoned(MQ.Query<string>("${Zone.ShortName}"));
                     if (!MQ.Query<bool>("${Spawn[${Me}'s].ID}"))
                     {
                         //something went rong kick out.

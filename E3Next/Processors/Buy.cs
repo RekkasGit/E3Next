@@ -105,7 +105,7 @@ namespace E3Core.Processors
             {
                 MQ.Write($"\agInitiating restock for {toEat} and {toDrink}");
                 //we have something we need to get
-                int zoneID = E3.ZoneID;
+                int zoneID = E3.CurrentZone.Id;
                 int vendorID = 0;
 
                 if (zoneID == 345)
