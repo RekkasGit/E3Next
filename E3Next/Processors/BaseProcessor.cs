@@ -11,5 +11,19 @@ namespace E3Core.Processors
     {
         protected static Logging _log = E3.Log;
         protected static IMQ MQ = E3.Mq;
+
+        /// <summary>
+        /// Initializes this instance.
+        /// </summary>
+        [SubSystemInit]
+        protected virtual void Init()
+        {
+            RegisterEvents();
+        }
+
+        protected virtual void RegisterEvents()
+        {
+
+        }
     }
 }

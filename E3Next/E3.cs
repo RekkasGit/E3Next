@@ -164,7 +164,6 @@ namespace E3Core.Processors
             IsInvis = Mq.Query<bool>("${Me.Invis}");
             CurrentHps = Mq.Query<int>("${Me.PctHPs}");
             CurrentId = Mq.Query<int>("${Me.ID}");
-            ZoneID = Mq.Query<int>("${Zone.ID}");
 
             if (Mq.Query<bool>("${MoveUtils.GM}"))
             {
@@ -267,6 +266,7 @@ namespace E3Core.Processors
             IsBadState = true;
 
         }
+
         public static bool ActionTaken = false;
         public static bool Following = false;
         public static long StartTimeStamp;
@@ -291,7 +291,6 @@ namespace E3Core.Processors
         public static int HitPointsCurrent;
         public static int MagicPointsCurrent;
         public static int StamPointsCurrent;
-        public static int ZoneID;
         public static int ProcessDelay = 50;
         public static ISpawns Spawns = Core.spawnInstance;
         public static bool IsInvis;
