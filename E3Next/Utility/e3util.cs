@@ -414,7 +414,7 @@ namespace E3Core.Utility
                 }
             }
         }
-        public static void GiveItemOnCursorToTarget(bool moveBackToOriginalLocation = true)
+        public static void GiveItemOnCursorToTarget(bool moveBackToOriginalLocation = true, bool clearTarget = true)
         {
 
             double currentX = MQ.Query<double>("${Me.X}");
@@ -450,7 +450,12 @@ namespace E3Core.Utility
 
                 }
             }
-            MQ.Cmd("/nomodkey /keypress esc");
+
+            if (clearTarget)
+            {
+                MQ.Cmd("/nomodkey /keypress esc");
+            }
+
             //lets go back to our location
             if (moveBackToOriginalLocation)
             {
@@ -629,6 +634,16 @@ namespace E3Core.Utility
             MQ.Delay(200);
         }
 
+        public static bool ValidateCursor(int expected)
+        {
+            var cursorId = MQ.Query<int>("${Cursor.ID}");
+            if (cursorId == -1)
+            {
+                E3.Bots.Broadcast("\arError: Nothing on cursor when we expected something.");
+            }
+
+            return expected == cursorId;
+        }
 
     }
 }

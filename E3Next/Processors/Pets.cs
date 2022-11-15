@@ -16,11 +16,13 @@ namespace E3Core.Processors
 {
     public static class Pets
     {
-
         public static Logging _log = E3.Log;
         private static IMQ MQ = E3.Mq;
+        private static bool _petMaxShrink = false;
+        private static Int32 _petMaxShrinkID = 0;
         private static Int64 _nextPetCheck = 0;
         private static Int64 _nextPetCheckInterval = 1000;
+        private static List<string> _petShrinkSpells = new List<string>() { "Gemstone of Dark Flame", "Symbol of Ancient Summoning", "Tiny Companion" };
 
         [SubSystemInit]
         public static void Init()
@@ -30,16 +32,15 @@ namespace E3Core.Processors
 
         private static void RegisterEvents()
         {
-
-
-
-
         }
+
         public static void Reset()
         {
-              _petMaxShrink = false;
-              _petMaxShrinkID = 0;
+            _petMaxShrink = false;
+            _petMaxShrinkID = 0;
+            MQ.Cmd("/squelch /pet ghold on");
         }
+
         [ClassInvoke(Data.Class.PetClass)]
         public static void Check_Pets()
         {
@@ -47,27 +48,22 @@ namespace E3Core.Processors
             if (Basics.AmIDead()) return;
 
             if (!e3util.ShouldCheck(ref _nextPetCheck, _nextPetCheckInterval)) return;
-            //don't check if invs
-           
             Int32 petId = MQ.Query<Int32>("${Me.Pet.ID}");
 
             CheckPetSummon(ref petId);
 
-            if(petId>0)
+            if (petId > 0)
             {
                 CheckPetHeal(petId);
                 CheckPetShrink(petId);
             }
-
-
-
         }
-        private static void CheckPetSummon( ref Int32 petID)
+
+        private static void CheckPetSummon(ref Int32 petID)
         {
-            if (petID == 0 && E3.CharacterSettings.PetSpell.Count>0)
+            if (petID == 0 && E3.CharacterSettings.PetSpell.Count > 0)
             {
-                //we have no pet, do we have a pet configurd to summon?
-               
+                //we have no pet, do we have a pet configurd to summon?               
                 foreach (var spell in E3.CharacterSettings.PetSpell)
                 {
                     if (Casting.CheckReady(spell) && Casting.CheckMana(spell))
@@ -76,7 +72,7 @@ namespace E3Core.Processors
                         break;
                     }
                 }
-               
+
                 //wait for the pet to appear
                 MQ.Delay(1000);
                 petID = MQ.Query<Int32>("${Me.Pet.ID}");
@@ -88,31 +84,29 @@ namespace E3Core.Processors
         }
         private static void CheckPetHeal(Int32 petID)
         {
-
             Int32 pctHps = MQ.Query<Int32>("${Me.Pet.PctHPs}");
             Int32 pctMendHps = E3.CharacterSettings.Pet_MendPercent;
-            if(pctHps<pctMendHps)
+            if (pctHps < pctMendHps)
             {
-                if(MQ.Query<bool>("${Me.AltAbilityReady[Replenish Companion]}"))
+                if (MQ.Query<bool>("${Me.AltAbilityReady[Replenish Companion]}"))
                 {
                     Spell s;
-                    if(!Spell._loadedSpellsByName.TryGetValue("Replenish Companion", out s))
+                    if (!Spell._loadedSpellsByName.TryGetValue("Replenish Companion", out s))
                     {
                         s = new Spell("Replenish Companion");
                     }
-                    if(s.SpellID>0)
+                    if (s.SpellID > 0)
                     {
                         Casting.Cast(petID, s);
                         return;
                     }
                 }
-               
             }
             foreach (var spell in E3.CharacterSettings.PetHeals)
             {
                 if (pctHps <= spell.HealPct)
                 {
-                    if(Casting.CheckReady(spell) && Casting.CheckMana(spell))
+                    if (Casting.CheckReady(spell) && Casting.CheckMana(spell))
                     {
                         Casting.Cast(petID, spell);
                         return;
@@ -120,8 +114,7 @@ namespace E3Core.Processors
                 }
             }
         }
-        private static bool _petMaxShrink = false;
-        private static Int32 _petMaxShrinkID = 0;
+
         private static void CheckPetShrink(Int32 petID)
         {
             if (!E3.CharacterSettings.Pet_AutoShrink) return;
@@ -131,11 +124,11 @@ namespace E3Core.Processors
                 _petMaxShrink = false;
             }
             double petHeight = MQ.Query<double>("${Me.Pet.Height}");
-          
+
 
             if (_petMaxShrink) return;
 
-            if(petHeight>1 && petHeight!=0)
+            if (petHeight > 1 && petHeight != 0)
             {
                 foreach (var spellName in _petShrinkSpells)
                 {
@@ -144,26 +137,22 @@ namespace E3Core.Processors
                     {
                         s = new Spell(spellName);
                     }
-                    if (s.SpellID > 0 && s.CastType!= CastType.None)
+                    if (s.SpellID > 0 && s.CastType != CastType.None)
                     {
                         Casting.Cast(petID, s);
                         MQ.Delay(300);
                         double newPetHeight = MQ.Query<double>("${Me.Pet.Height}");
 
-                        if(newPetHeight==petHeight)
+                        if (newPetHeight == petHeight)
                         {
                             _petMaxShrink = true;
                             _petMaxShrinkID = petID;
                         }
 
-
                         return;
                     }
                 }
             }
-         
         }
-        private static List<string> _petShrinkSpells = new List<string>() { "Gemstone of Dark Flame","Symbol of Ancient Summoning", "Tiny Companion" };
-
     }
 }

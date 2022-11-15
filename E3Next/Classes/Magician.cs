@@ -47,6 +47,9 @@ namespace E3Core.Classes
 
         private static string _requester;
 
+        private static long _nextWeaponCheck = 0;
+        private static long _nextWeaponCheckInterval = 10000;
+
         /// <summary>
         /// Accepts a pet equipment request.
         /// </summary>
@@ -119,6 +122,9 @@ namespace E3Core.Classes
         {
             if (Assist._isAssisting) return;
             if (!E3.CharacterSettings.AutoPetWeapons) return;
+            if (MQ.Query<bool>("${AdvPath.Following}") || MQ.Query<bool>("${Nav.Active}")) return;
+            if (MQ.Query<int>("${Cursor.ID}") > 0) return;
+            if (!e3util.ShouldCheck(ref _nextWeaponCheck, _nextWeaponCheckInterval)) return;
 
             // my pet
             var primary = MQ.Query<int>("${Me.Pet.Primary}");
@@ -136,7 +142,17 @@ namespace E3Core.Classes
                 {
                     if (string.Equals(ownerSpawn.Name, E3.CurrentName)) continue;
                     var theirPetId = ownerSpawn.PetID;
-                    if (theirPetId < 0) continue;
+                    if (theirPetId < 0)
+                    {
+                        continue;
+                    }
+
+                    var theirPetDistance = MQ.Query<double>($"${{Spawn[{ownerSpawn.Name}].Pet.Distance}}");
+                    if (theirPetDistance > 50)
+                    {
+                        continue;
+                    }
+
                     var theirPetPrimary = MQ.Query<int>($"${{Spawn[{ownerSpawn.Name}].Pet.Primary}}");
                     if (theirPetPrimary == 0)
                     {
@@ -166,15 +182,21 @@ namespace E3Core.Classes
             var currentX = MQ.Query<double>("${Me.X}");
             var currentY = MQ.Query<double>("${Me.Y}");
 
-            GiveWeapons(petId, weapons ?? "Water|Fire");
-            GiveArmor(petId);
-            GiveFocusItems(petId);
+            if (!GiveWeapons(petId, weapons ?? "Water|Fire"))
+            {
+                E3.Bots.Broadcast("\arThere was an issue with pet weapon summoning and we are unable to continue.");
+            }
+            else
+            {
+                GiveArmor(petId);
+                GiveFocusItems(petId);
+            }
 
             // move back to my original location
             e3util.TryMoveToLoc(currentX, currentY);
         }
 
-        private static void GiveWeapons(int petId, string weaponString)
+        private static bool GiveWeapons(int petId, string weaponString)
         {
             var weapons = weaponString.Split('|');
             _weaponMap.TryGetValue(weapons[0], out var primary);
@@ -189,6 +211,12 @@ namespace E3Core.Classes
                 {
                     MQ.Cmd($"/nomodkey /itemnotify \"{_weaponBag}\" leftmouseup");
                     MQ.Delay(1000, "${Cursor.ID}");
+                    if (!e3util.ValidateCursor(MQ.Query<int>($"${{FindItem[={_weaponBag}].ID}}")))
+                    {
+                        E3.Bots.Broadcast($"\arUnexpected item on cursor when trying to destroy {_weaponBag}");
+                        return false;
+                    }
+
                     MQ.Cmd("/destroy");
                 }
 
@@ -198,16 +226,13 @@ namespace E3Core.Classes
             if (Casting.TrueTarget(petId))
             {
                 MQ.Cmd($"/nomodkey /itemnotify \"{primary}\" leftmouseup");
-                e3util.GiveItemOnCursorToTarget(false);
+                e3util.GiveItemOnCursorToTarget(false, false);
                 MQ.Delay(250);
-                if (Casting.TrueTarget(petId))
-                {
-                    Casting.TrueTarget(petId);
-                }
-
                 MQ.Cmd($"/nomodkey /itemnotify \"{secondary}\" leftmouseup");
                 e3util.GiveItemOnCursorToTarget(false);
             }
+
+            return true;
         }
 
         private static void GiveArmor(int petId)
@@ -276,6 +301,12 @@ namespace E3Core.Classes
             {
                 MQ.Cmd($"/nomodkey /itemnotify \"{_armorOrHeirloomBag}\" leftmouseup");
                 MQ.Delay(1000, "${Cursor.ID}");
+                if(!e3util.ValidateCursor(MQ.Query<int>($"${{FindItem[={_armorOrHeirloomBag}].ID}}")))
+                {
+                    E3.Bots.Broadcast($"\arUnexpected item on cursor when trying to destroy {_armorOrHeirloomBag}");
+                    return false;
+                }
+
                 MQ.Cmd("/destroy");
             }
 
@@ -285,6 +316,12 @@ namespace E3Core.Classes
             {
                 MQ.Cmd($"/nomodkey /itemnotify \"{bag}\" leftmouseup");
                 MQ.Delay(1000, "${Cursor.ID}");
+                if (!e3util.ValidateCursor(MQ.Query<int>($"${{FindItem[={bag}].ID}}")))
+                {
+                    E3.Bots.Broadcast($"\arUnexpected item on cursor when trying to destroy {bag}");
+                    return false;
+                }
+
                 MQ.Cmd("/destroy");
             }
 

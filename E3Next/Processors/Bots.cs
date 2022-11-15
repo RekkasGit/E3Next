@@ -368,7 +368,7 @@ namespace E3Core.Processors
             MQ.Cmd("/dquery {name} -q Zone.ID");
             Int32 zoneid = MQ.Query<Int32>("${DanNet.Q}");
 
-            if(zoneid==E3.ZoneID)
+            if(zoneid==Zoning.CurrentZone.Id)
             {
                 return true;
             }

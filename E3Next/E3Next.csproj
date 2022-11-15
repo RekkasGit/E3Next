@@ -118,6 +118,7 @@
     <Compile Include="Processors\Nukes.cs" />
     <Compile Include="Processors\PrivateCode.cs" />
     <Compile Include="Processors\VetAAs.cs" />
+    <Compile Include="Processors\Zoning.cs" />
     <Compile Include="Server\NetMQServer.cs" />
     <Compile Include="Server\PubClient.cs" />
     <Compile Include="Server\PubServer.cs" />
