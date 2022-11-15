@@ -106,6 +106,7 @@
     <Compile Include="Data\MelodyIfs.cs" />
     <Compile Include="Data\ResistCounter.cs" />
     <Compile Include="Data\SpellTimer.cs" />
+    <Compile Include="Data\Zone.cs" />
     <Compile Include="Processors\BaseProcessor.cs" />
     <Compile Include="Processors\Bots.cs" />
     <Compile Include="Processors\Burns.cs" />

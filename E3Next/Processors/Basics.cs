@@ -80,7 +80,7 @@ namespace E3Core.Processors
                 Movement.ResetKeepFollow();
                 Assist.Reset();
                 Pets.Reset();
-                Zoning.Zoned(_mq.Query<string>("${Zone.ShortName}"));
+                Zoning.Zoned(_mq.Query<Int32>("${Zone.ID}"));
             });
             EventProcessor.RegisterEvent("Summoned", @"You have been summoned!", (x) =>
             {

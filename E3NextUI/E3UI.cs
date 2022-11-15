@@ -767,16 +767,16 @@ namespace E3NextUI
         {
 
 
-            GitHubClient client = new GitHubClient(new ProductHeaderValue("E3NextUpdater"));
-            var releases = client.Repository.Release.GetAll("RekkasGit", "E3Next");
-            releases.Wait();
-            var latest = releases.Result[0];
-            var assets = client.Repository.Release.GetAllAssets("RekkasGit", "E3Next", latest.Id).Result;
-            var zipFile = assets[0];
+            //GitHubClient client = new GitHubClient(new ProductHeaderValue("E3NextUpdater"));
+            //var releases = client.Repository.Release.GetAll("RekkasGit", "E3Next");
+            //releases.Wait();
+            //var latest = releases.Result[0];
+            //var assets = client.Repository.Release.GetAllAssets("RekkasGit", "E3Next", latest.Id).Result;
+            //var zipFile = assets[0];
 
-            var resp = client.Connection.Get<byte[]>(new Uri(zipFile.BrowserDownloadUrl), new Dictionary<string, string>(), null).Result;
-            var data = resp.Body;
-            var respData = resp.HttpResponse.Body;
+            //var resp = client.Connection.Get<byte[]>(new Uri(zipFile.BrowserDownloadUrl), new Dictionary<string, string>(), null).Result;
+            //var data = resp.Body;
+            //var respData = resp.HttpResponse.Body;
 
         }
     }
