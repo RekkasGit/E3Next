@@ -49,6 +49,7 @@ namespace E3Core.Classes
 
         private static long _nextWeaponCheck = 0;
         private static long _nextWeaponCheckInterval = 10000;
+        private static bool _isExternalRequest = false;
 
         /// <summary>
         /// Accepts a pet equipment request.
@@ -109,7 +110,8 @@ namespace E3Core.Classes
                         return;
                     }
 
-                    EquipPet(theirPetId, $"{weaponSplit[0]}|{weaponSplit[1]}", true);
+                    _isExternalRequest = true;
+                    EquipPet(theirPetId, $"{weaponSplit[0]}|{weaponSplit[1]}");
                 }
             });
         }
@@ -132,7 +134,7 @@ namespace E3Core.Classes
             if (myPetId > 0 && primary == 0)
             {
                 E3.CharacterSettings.PetWeapons.TryGetValue(E3.CurrentName, out var weapons);
-                EquipPet(myPetId, weapons, false);
+                EquipPet(myPetId, weapons);
             }
 
             // bot pets
@@ -156,28 +158,14 @@ namespace E3Core.Classes
                     var theirPetPrimary = MQ.Query<int>($"${{Spawn[{ownerSpawn.Name}].Pet.Primary}}");
                     if (theirPetPrimary == 0)
                     {
-                        EquipPet(theirPetId, kvp.Value, false);
+                        EquipPet(theirPetId, kvp.Value);
                     }
                 }
             }
         }
 
-        private static void EquipPet(int petId, string weapons, bool isExternalRequest)
+        private static void EquipPet(int petId, string weapons)
         {
-            if (!CheckInventory())
-            {
-                if (isExternalRequest)
-                {
-                    MQ.Cmd($"/t {_requester} I was unable to free up inventory space to fulfill your request.");
-                }
-                else
-                {
-                    E3.Bots.Broadcast("\arUnable to free up inventory space to arm pets.");
-                }
-
-                return;
-            }
-
             // so we can move back
             var currentX = MQ.Query<double>("${Me.X}");
             var currentY = MQ.Query<double>("${Me.Y}");
@@ -188,12 +176,22 @@ namespace E3Core.Classes
             }
             else
             {
-                GiveArmor(petId);
-                GiveFocusItems(petId);
+                GiveOther(petId, _armorItem);
+                GiveOther(petId, _focusItem);
             }
 
             // move back to my original location
             e3util.TryMoveToLoc(currentX, currentY);
+            var pet = _spawns.Get().FirstOrDefault(f => f.ID == petId);
+            if (_isExternalRequest)
+            {
+                MQ.Cmd($"/t {_requester} Finished arming {pet.CleanName}");
+            }
+            else
+            {
+                E3.Bots.Broadcast($"\agFinishing arming {pet.CleanName}");
+            }
+            _isExternalRequest = false;
         }
 
         private static bool GiveWeapons(int petId, string weaponString)
@@ -219,6 +217,22 @@ namespace E3Core.Classes
 
                     MQ.Cmd("/destroy");
                 }
+                else
+                {
+                    if (!CheckInventory())
+                    {
+                        if (_isExternalRequest)
+                        {
+                            MQ.Cmd($"/t {_requester} I was unable to free up inventory space to fulfill your request.");
+                        }
+                        else
+                        {
+                            E3.Bots.Broadcast("\arUnable to free up inventory space to arm pets.");
+                        }
+
+                        return false;
+                    }
+                }
 
                 SummonItem(_weaponSpell, true);
             }
@@ -231,30 +245,25 @@ namespace E3Core.Classes
                 MQ.Cmd($"/nomodkey /itemnotify \"{secondary}\" leftmouseup");
                 e3util.GiveItemOnCursorToTarget(false);
             }
+            else
+            {
+                return false;
+            }
 
             return true;
         }
 
-        private static void GiveArmor(int petId)
+        private static void GiveOther(int petId, string item)
         {
-            var foundSummonedItem = MQ.Query<bool>($"${{FindItem[={_armorItem}]}}");
+            var foundSummonedItem = MQ.Query<bool>($"${{FindItem[={item}]}}");
             if (!foundSummonedItem)
             {
                 SummonItem(_armorSpell, false);
             }
-
-            if (Casting.TrueTarget(petId))
+            else
             {
-                e3util.GiveItemOnCursorToTarget(false);
-            }
-        }
-
-        private static void GiveFocusItems(int petId)
-        {
-            var foundSummonedItem = MQ.Query<bool>($"${{FindItem[={_focusItem}]}}");
-            if (!foundSummonedItem)
-            {
-                SummonItem(_focusSpell, false);
+                MQ.Cmd($"/nomodkey /itemnotify \"{item}\" rightmouseup");
+                MQ.Delay(3000, "${Cursor.ID}");
             }
 
             if (Casting.TrueTarget(petId))
@@ -329,23 +338,13 @@ namespace E3Core.Classes
             int slotToMoveFrom = -1;
             bool hasOpenInventorySlot = false;
 
-            // see if we have an open slot in a bag 
-            for (int i = 1; i <= 10; i++)
-            {
-                var containerSlots = MQ.Query<int>($"${{Me.Inventory[pack{i}].Container}}");
-                var containerItemCount = MQ.Query<int>($"${{InvSlot[pack{i}].Item.Items}}");
-                if (containerSlots - containerItemCount > 0)
-                {
-                    containerWithOpenSpace = i;
-                    break;
-                }
-            }
-
-            // see if we have an open bag slot
+            // see if we need to do anything
             for (int i = 1; i <= 10; i++)
             {
                 var currentSlot = i;
                 var containerSlots = MQ.Query<int>($"${{Me.Inventory[pack{i}].Container}}");
+                var containerItemCount = MQ.Query<int>($"${{InvSlot[pack{i}].Item.Items}}");
+
                 // the slot is empty, we're good!
                 if (containerSlots == -1)
                 {
@@ -354,8 +353,20 @@ namespace E3Core.Classes
                     break;
                 }
 
-                // it's not a container, we might have to move it
-                if (containerSlots == 0)
+                // it's an empty bag
+                if (containerItemCount == 0)
+                {
+                    slotToMoveFrom = i;
+                    break;
+                }
+
+                if (containerSlots - containerItemCount > 0)
+                {
+                    containerWithOpenSpace = i;
+                }
+
+                // it's not a container, OR it's an empty container, we might have to move it
+                if (containerSlots == 0 || (containerSlots > 0 && containerItemCount == 0))
                 {
                     slotToMoveFrom = currentSlot;
                 }
@@ -374,7 +385,7 @@ namespace E3Core.Classes
                 MQ.Delay(1000, "${Cursor.ID}");
             }
 
-            freeInventory = MQ.Query<int>("${Me.FreeInventory");
+            freeInventory = MQ.Query<int>("${Me.FreeInventory}");
             if (freeInventory > 0)
             {
                 hasOpenInventorySlot = true;
