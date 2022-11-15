@@ -134,7 +134,7 @@ namespace E3Core.Processors
                 //only player corpses have a Deity
                 if (spawn.Distance3D < _seekRadius && spawn.DeityID == 0 && spawn.TypeDesc == "Corpse")
                 {
-                    if (!E3.CurrentZone.IsSafeZone)
+                    if (!Zoning.CurrentZone.IsSafeZone)
                     {
                         if (!_unlootableCorpses.Contains(spawn.ID))
                         {

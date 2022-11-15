@@ -80,7 +80,7 @@ namespace E3Core.Processors
                 Movement.ResetKeepFollow();
                 Assist.Reset();
                 Pets.Reset();
-                E3.Zoned(_mq.Query<string>("${Zone.ShortName}"));
+                Zoning.Zoned(_mq.Query<string>("${Zone.ShortName}"));
             });
             EventProcessor.RegisterEvent("Summoned", @"You have been summoned!", (x) =>
             {
@@ -214,7 +214,7 @@ namespace E3Core.Processors
                             }
                             string message = sb.ToString();
                             E3.Bots.BroadcastCommandToGroup($"/bark-send {targetid} \"{message}\"");
-                            int currentZone = E3.CurrentZone.Id;
+                            int currentZone = Zoning.CurrentZone.Id;
 
                             for (int i = 0; i < 5; i++)
                             {
@@ -248,7 +248,7 @@ namespace E3Core.Processors
                                 e3util.TryMoveToLoc(s.X, s.Y);
 
                                 string message = x.args[1];
-                                int currentZone = E3.CurrentZone.Id;
+                                int currentZone = Zoning.CurrentZone.Id;
                                 for (int i = 0; i < 5; i++)
                                 {
                                     _mq.Cmd($"/say {message}");
