@@ -134,6 +134,8 @@ namespace E3Core.Processors
                 E3.CharacterSettings = new CharacterSettings();
                 E3.AdvancedSettings = new AdvancedSettings();
                 E3.GeneralSettings = new GeneralSettings();
+                Rez.Reset();
+                Loot.Reset();
                 E3.Bots.Broadcast("\aoComplete!");
 
             });

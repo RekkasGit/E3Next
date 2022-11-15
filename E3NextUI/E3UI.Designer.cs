@@ -85,6 +85,7 @@ namespace E3NextUI
             this.labelCasting = new System.Windows.Forms.Label();
             this.labelCastingValue = new System.Windows.Forms.Label();
             this.panelStatusPannel2 = new System.Windows.Forms.Panel();
+            this.checkUpdatesToolStripMenuItem = new System.Windows.Forms.ToolStripMenuItem();
             ((System.ComponentModel.ISupportInitialize)(this.splitContainer1)).BeginInit();
             this.splitContainer1.Panel1.SuspendLayout();
             this.splitContainer1.Panel2.SuspendLayout();
@@ -489,7 +490,8 @@ namespace E3NextUI
             // mainToolStripMenuItem
             // 
             this.mainToolStripMenuItem.DropDownItems.AddRange(new System.Windows.Forms.ToolStripItem[] {
-            this.hideToolStripMenuItem});
+            this.hideToolStripMenuItem,
+            this.checkUpdatesToolStripMenuItem});
             this.mainToolStripMenuItem.Name = "mainToolStripMenuItem";
             this.mainToolStripMenuItem.Size = new System.Drawing.Size(46, 20);
             this.mainToolStripMenuItem.Text = "Main";
@@ -497,7 +499,7 @@ namespace E3NextUI
             // hideToolStripMenuItem
             // 
             this.hideToolStripMenuItem.Name = "hideToolStripMenuItem";
-            this.hideToolStripMenuItem.Size = new System.Drawing.Size(99, 22);
+            this.hideToolStripMenuItem.Size = new System.Drawing.Size(180, 22);
             this.hideToolStripMenuItem.Text = "Hide";
             // 
             // settingsToolStripMenuItem
@@ -511,7 +513,7 @@ namespace E3NextUI
             // darkModeMenuItem
             // 
             this.darkModeMenuItem.Name = "darkModeMenuItem";
-            this.darkModeMenuItem.Size = new System.Drawing.Size(129, 22);
+            this.darkModeMenuItem.Size = new System.Drawing.Size(180, 22);
             this.darkModeMenuItem.Text = "DarkMode";
             this.darkModeMenuItem.Click += new System.EventHandler(this.darkModeToolStripMenuItem_Click);
             // 
@@ -718,6 +720,13 @@ namespace E3NextUI
             this.panelStatusPannel2.Size = new System.Drawing.Size(733, 113);
             this.panelStatusPannel2.TabIndex = 42;
             // 
+            // checkUpdatesToolStripMenuItem
+            // 
+            this.checkUpdatesToolStripMenuItem.Name = "checkUpdatesToolStripMenuItem";
+            this.checkUpdatesToolStripMenuItem.Size = new System.Drawing.Size(180, 22);
+            this.checkUpdatesToolStripMenuItem.Text = "CheckUpdates";
+            this.checkUpdatesToolStripMenuItem.Click += new System.EventHandler(this.checkUpdatesToolStripMenuItem_Click);
+            // 
             // E3UI
             // 
             this.AutoScaleDimensions = new System.Drawing.SizeF(6F, 13F);
@@ -816,6 +825,7 @@ namespace E3NextUI
         private System.Windows.Forms.Label labelCasting;
         private System.Windows.Forms.Label labelCastingValue;
         private System.Windows.Forms.Panel panelStatusPannel2;
+        private System.Windows.Forms.ToolStripMenuItem checkUpdatesToolStripMenuItem;
     }
 }
 

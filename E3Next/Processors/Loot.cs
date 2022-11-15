@@ -46,6 +46,13 @@ namespace E3Core.Processors
         public static void Reset()
         {
             _unlootableCorpses.Clear();
+            //have to be careful to not get pointers to a settings file that may be auto updated, so refersh the pointers after every reset
+            _shouldLoot = E3.CharacterSettings.Misc_AutoLootEnabled;
+            _seekRadius = E3.GeneralSettings.Loot_CorpseSeekRadius;
+            _lootOnlyStackable = E3.GeneralSettings.Loot_OnlyStackableEnabled;
+            _lootOnlyStackableValue = E3.GeneralSettings.Loot_OnlyStackableValueGreaterThanInCopper;
+            _lootOnlyStackableAllTradeSkills = E3.GeneralSettings.Loot_OnlyStackableAllTradeSkillItems;
+            _lootOnlyStackableCommonTradeSkills = E3.GeneralSettings.Loot_OnlyStackableOnlyCommonTradeSkillItems;
         }
         private static void RegisterEvents()
         {

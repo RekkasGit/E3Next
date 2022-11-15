@@ -135,12 +135,15 @@ namespace E3Core.Processors
             {
                 E3.Bots.Broadcast("\aoAuto-Reloading Character settings file...");
                 CharacterSettings = new CharacterSettings();
+                Loot.Reset();
                 E3.Bots.Broadcast("\aoComplete!");
+               
             }
             if (GeneralSettings.ShouldReload())
             {
                 E3.Bots.Broadcast("\aoAuto-Reloading General settings file...");
                 GeneralSettings = new GeneralSettings();
+                Loot.Reset();
                 E3.Bots.Broadcast("\aoComplete!");
             }
         }

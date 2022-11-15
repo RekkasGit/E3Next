@@ -433,7 +433,6 @@ namespace E3Core.Processors
                                 if (interruptCheck != null && interruptCheck(currentMana, pctMana))
                                 {
                                     MQ.Cmd("/interrupt");
-                                    MQ.Delay(0);
                                     E3.ActionTaken = true;
                                     return CastReturn.CAST_INTERRUPTFORHEAL;
                                 }
@@ -442,7 +441,6 @@ namespace E3Core.Processors
                                 {
                                     //we have a nowcast ready to be processed
                                     MQ.Cmd("/interrupt");
-                                    MQ.Delay(0);
                                     return CastReturn.CAST_INTERRUPTED;
                                 }
                                 //check if we need to process any events,if healing tho, ignore. 

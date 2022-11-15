@@ -2,6 +2,7 @@
 using E3NextUI.Settings;
 using E3NextUI.Themese;
 using E3NextUI.Util;
+using Octokit;
 using System;
 using System.Collections.Generic;
 using System.ComponentModel;
@@ -24,6 +25,7 @@ namespace E3NextUI
 
     public partial class E3UI : Form
     {
+        public static string Version = "v1.0.0-beta";
         public static System.Diagnostics.Stopwatch _stopWatch = new System.Diagnostics.Stopwatch();
         public static volatile bool _shouldProcess = true;
 
@@ -273,7 +275,7 @@ namespace E3NextUI
                 {
                     if (!ProcessExists(_parentProcess))
                     {
-                        Application.Exit();
+                        System.Windows.Forms.Application.Exit();
                     }
                 }
                 if (this.IsHandleCreated)
@@ -337,7 +339,7 @@ namespace E3NextUI
                 _genSettings.UseDarkMode = false;
                 darkModeMenuItem.Checked = false;
                 this.Opacity = this.Opacity - 0.001;
-                Application.DoEvents();
+                System.Windows.Forms.Application.DoEvents();
                 this.Opacity = 100;
                 _genSettings.SaveData();
             }
@@ -347,7 +349,7 @@ namespace E3NextUI
                 _genSettings.UseDarkMode = true;
                 darkModeMenuItem.Checked = true;
                 this.Opacity = this.Opacity - 0.001;
-                Application.DoEvents();
+                System.Windows.Forms.Application.DoEvents();
                 this.Opacity = 100;
                 _genSettings.SaveData();
             }
@@ -761,7 +763,22 @@ namespace E3NextUI
         [DllImport("shell32.dll", SetLastError = true)]
         static extern void SetCurrentProcessExplicitAppUserModelID([MarshalAs(UnmanagedType.LPWStr)] string AppID);
 
-       
+        private void checkUpdatesToolStripMenuItem_Click(object sender, EventArgs e)
+        {
+
+
+            GitHubClient client = new GitHubClient(new ProductHeaderValue("E3NextUpdater"));
+            var releases = client.Repository.Release.GetAll("RekkasGit", "E3Next");
+            releases.Wait();
+            var latest = releases.Result[0];
+            var assets = client.Repository.Release.GetAllAssets("RekkasGit", "E3Next", latest.Id).Result;
+            var zipFile = assets[0];
+
+            var resp = client.Connection.Get<byte[]>(new Uri(zipFile.BrowserDownloadUrl), new Dictionary<string, string>(), null).Result;
+            var data = resp.Body;
+            var respData = resp.HttpResponse.Body;
+
+        }
     }
     public class TextBoxInfo
     {
