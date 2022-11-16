@@ -22,8 +22,10 @@ namespace E3Core.Processors
         private static long _nextAutoRezCheckInterval = 10000;
         private static long _nextCorpseCheck = 0;
         private static long _nextCorpseCheckInterval = 10000;
+        private static readonly Spell _divineRes = new Spell("Divine Resurrection");
+        private static readonly HashSet<string> _classesToDr = new HashSet<string> { "Cleric", "Warrior" };
 
-        [SubSystemInit]
+    [SubSystemInit]
         public static void Init()
         {
             RegisterEvents();
@@ -206,6 +208,17 @@ namespace E3Core.Processors
                         MQ.Delay(100);
                         MQ.Cmd("/corpse");
                         InitRezSpells();
+
+                        // if it's a cleric or warrior corpse and we're in combat, try to use divine res
+                        if (Basics.InCombat() && _classesToDr.Contains(spawn.ClassName))
+                        {
+                            if (Casting.CheckReady(_divineRes))
+                            {
+                                Casting.Cast(spawn.ID, _divineRes);
+                                break;
+                            }
+                        }
+
                         foreach (var spell in _currentRezSpells)
                         {
                             if (Casting.CheckReady(spell) && Casting.CheckMana(spell))
