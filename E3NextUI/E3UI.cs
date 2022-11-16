@@ -17,6 +17,8 @@ using System.Threading;
 using System.Threading.Tasks;
 using System.Windows.Forms;
 using System.Xml;
+using Ionic.Zip;
+using System.Reflection;
 
 namespace E3NextUI
 {
@@ -766,18 +768,55 @@ namespace E3NextUI
         private void checkUpdatesToolStripMenuItem_Click(object sender, EventArgs e)
         {
 
+            string exePath = Assembly.GetExecutingAssembly().CodeBase.Replace("file:///", "").Replace("/", "\\").Replace(@"\E3NextUI.exe", "");
 
-            //GitHubClient client = new GitHubClient(new ProductHeaderValue("E3NextUpdater"));
-            //var releases = client.Repository.Release.GetAll("RekkasGit", "E3Next");
-            //releases.Wait();
-            //var latest = releases.Result[0];
-            //var assets = client.Repository.Release.GetAllAssets("RekkasGit", "E3Next", latest.Id).Result;
-            //var zipFile = assets[0];
+            exePath = exePath.Substring(0, exePath.LastIndexOf(@"\")+1);
 
-            //var resp = client.Connection.Get<byte[]>(new Uri(zipFile.BrowserDownloadUrl), new Dictionary<string, string>(), null).Result;
-            //var data = resp.Body;
-            //var respData = resp.HttpResponse.Body;
 
+
+            GitHubClient client = new GitHubClient(new ProductHeaderValue("E3NextUpdater"));
+            var releases = client.Repository.Release.GetAll("RekkasGit", "E3Next");
+            releases.Wait();
+            var latest = releases.Result[0];
+
+            if(latest.TagName!=Version)
+            {
+                DialogResult dialogResult = MessageBox.Show("Do you wish to upgrade to:"+latest.TagName, "Upgrade E3", MessageBoxButtons.YesNo);
+                if (dialogResult == DialogResult.Yes)
+                {
+                    //do something
+
+                    var edit = new Update();
+                    edit.StartPosition = FormStartPosition.CenterParent;
+                    edit.textBoxInstallPath.Text = exePath;
+                   
+                    if (edit.ShowDialog() == DialogResult.OK)
+                    {
+                        exePath = edit.textBoxInstallPath.Text;
+                        var assets = client.Repository.Release.GetAllAssets("RekkasGit", "E3Next", latest.Id).Result;
+                        var zipFile = assets[0];
+                        var resp = client.Connection.Get<byte[]>(new Uri(zipFile.BrowserDownloadUrl), new Dictionary<string, string>(), null).Result;
+                        var data = resp.Body;
+                        var respData = resp.HttpResponse.Body;
+                        using (System.IO.Stream stream = new System.IO.MemoryStream(data))
+                        {
+                            using (ZipFile zip = ZipFile.Read(stream))
+                            {
+                                zip.ExtractAll(exePath, ExtractExistingFileAction.OverwriteSilently);
+                            }
+                        }
+                    }
+                }
+                else if (dialogResult == DialogResult.No)
+                {
+                    return;
+                }
+            }
+            else
+            {
+                MessageBox.Show("You are on the latest version:" + Version);
+                return;
+            }
         }
     }
     public class TextBoxInfo
