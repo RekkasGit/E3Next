@@ -603,22 +603,33 @@ namespace E3Core.Processors
             {
                 if (spell.MyCastTime > 500)
                 {
-                    MQ.Cmd("/stopsong");
-                    MQ.Delay(100);
+                    MQ.Cmd("/stopsong", 100);
 
                 }
-                MQ.Cmd($"/useitem \"{spell.CastName}\"");
-                MQ.Delay(300);
+                // special exception for this item
+                var luteName = "Lute of the Flowing Waters";
+                if (string.Equals(spell.CastName, luteName))
+                {
+                    var chorusSpell = MQ.Query<string>("${Me.Song[Chorus]}");
+                    if (!string.Equals("NULL", chorusSpell))
+                    {
+                        var stacks = MQ.Query<bool>($"${{Spell[{spell.SpellName}].StacksWith[{chorusSpell}]}}");
+                        if (!stacks)
+                        {
+                            return;
+                        }
+                    }
+                }
+
+                MQ.Cmd($"/useitem \"{spell.CastName}\"", 300);
             }
             else if (spell.CastType == CastType.AA)
             {
                 if (spell.MyCastTime > 500)
                 {
-                    MQ.Cmd("/stopsong");
-                    MQ.Delay(100);
+                    MQ.Cmd("/stopsong", 100);
                 }
-                MQ.Cmd($"/casting \"{spell.CastName}\" alt");
-                MQ.Delay(300);
+                MQ.Cmd($"/casting \"{spell.CastName}\" alt", 300);
             }
 
         }
