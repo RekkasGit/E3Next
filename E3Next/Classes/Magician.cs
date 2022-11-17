@@ -122,7 +122,7 @@ namespace E3Core.Classes
         [ClassInvoke(Data.Class.Magician)]
         public static void EquipPets()
         {
-            if (Assist._isAssisting) return;
+            if (Basics.InCombat()) return;
             if (!E3.CharacterSettings.AutoPetWeapons) return;
             if (MQ.Query<bool>("${AdvPath.Following}") || MQ.Query<bool>("${Nav.Active}")) return;
             if (MQ.Query<int>("${Cursor.ID}") > 0) return;
