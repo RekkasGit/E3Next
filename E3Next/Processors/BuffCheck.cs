@@ -34,6 +34,8 @@ namespace E3Core.Processors
         private static List<Int32> _gmBuffs = new List<int>() { 34835, 35989, 35361, 25732, 34567, 36838, 43040, 36266, 36423 };
         private static Int64 _nextBlockBuffCheck = 0;
         private static Int64 _nextBlockBuffCheckInterval = 1000;
+        static bool _initAuras = false;
+
         [SubSystemInit]
         public static void Init()
         {
@@ -283,7 +285,7 @@ namespace E3Core.Processors
         }
         private static void BuffInstant(List<Data.Spell> buffs)
         {
-
+            if (e3util.IsActionBlockingWindowOpen()) return;
             if (!e3util.ShouldCheck(ref _nextInstantBuffRefresh, _nextInstantRefreshTimeInterval)) return;
             //self only, instacast buffs only
             Int32 id = E3.CurrentId;
@@ -343,7 +345,7 @@ namespace E3Core.Processors
         }
         private static void BuffBots(List<Data.Spell> buffs, bool usePets = false)
         {
-            //int currentid = MQ.Query<Int32>("${Target.ID}");
+            if (e3util.IsActionBlockingWindowOpen()) return;
             foreach (var spell in buffs)
             {
                 Spawn s;
@@ -779,9 +781,10 @@ namespace E3Core.Processors
             }
             // Casting.TrueTarget(currentid, true);
         }
-        static bool _initAuras = false;
+
         private static void BuffAuras()
         {
+            if (e3util.IsActionBlockingWindowOpen()) return;
             if (_selectAura == null)
             {
                 if (!_initAuras)

@@ -645,5 +645,16 @@ namespace E3Core.Utility
             return expected == cursorId;
         }
 
+        public static bool IsActionBlockingWindowOpen()
+        {
+            var vendorOpen = MQ.Query<bool>("${Window[MerchantWnd]}");
+            var bankOpen = MQ.Query<bool>("${Window[BigBankWnd]}");
+            var guildBankOpen = MQ.Query<bool>("${Window[GuildBankWnd]}");
+            var tradeOpen = MQ.Query<bool>("${Window[TradeWnd]}");
+            var giveOpen = MQ.Query<bool>("${Window[GiveWnd]}");
+
+            return (vendorOpen || bankOpen || guildBankOpen || tradeOpen || giveOpen);
+        }
+
     }
 }

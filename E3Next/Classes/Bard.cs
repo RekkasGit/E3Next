@@ -100,11 +100,8 @@ namespace E3Core.Classes
         /// </summary>
         public static void check_BardSongs()
         {
-            if (!_playingMelody || _songs.Count==0) return;
-
-            bool stunned = MQ.Query<bool>("${Me.Stunned}");
-            bool windowOpen = MQ.Query<bool>("${Window[BigBankWnd].Open}") || MQ.Query<bool>("${Window[MerchantWnd].Open}") || MQ.Query<bool>("${Window[TradeWnd].Open}") || MQ.Query<bool>("${Window[GuildBankWnd].Open}");
-            if (E3.IsInvis || windowOpen)
+            if (!_playingMelody || _songs.Count==0) return;            
+            if (E3.IsInvis || e3util.IsActionBlockingWindowOpen())
             {
                 return;
             }

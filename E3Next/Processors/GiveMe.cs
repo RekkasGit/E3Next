@@ -140,6 +140,7 @@ namespace E3Core.Processors
         public static void CheckSupply()
         {
             if (!e3util.ShouldCheck(ref _nextSupplyCheck, _nextSupplyCheckInterval)) return;
+            if (Basics.AmIDead()) return;
             if (_supplyList.Count > 0)
             {
                 //make sure we have the items or we need to request.

@@ -176,7 +176,7 @@ namespace E3Core.Processors
                             return CastReturn.CAST_CORPSEOPEN;
                         }
                         _log.Write("Checking for LoS for non beneficial...");
-                        if (!spell.SpellType.Equals("Beneficial"))
+                        if (!spell.SpellType.Contains("Beneficial"))
                         {
                             _log.Write("Checking for LoS for non disc and not self...");
                             if (!(spell.CastType.Equals("Disc") && spell.TargetType.Equals("Self")))
