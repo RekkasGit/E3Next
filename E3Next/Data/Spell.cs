@@ -443,15 +443,35 @@ namespace E3Core.Data
                 MyCastTime = MQ.Query<Decimal>($"${{Me.AltAbility[{CastName}].Spell.MyCastTime}}");
 
                 Double AERange = MQ.Query<Double>($"${{Me.AltAbility[{CastName}].Spell.AERange}}");
-                MyRange = AERange;
-                if (MyRange == 0)
+                MyRange = MQ.Query<double>($"${{Me.AltAbility[{CastName}].Spell.MyRange}}");
+                SpellType = MQ.Query<String>($"${{Spell[{CastName}].SpellType}}");
+
+
+                if (SpellType.Equals("Detrimental", StringComparison.OrdinalIgnoreCase))
                 {
-                    MyRange = MQ.Query<double>($"${{Me.AltAbility[{CastName}].Spell.MyRange}}");
+
+                    if (AERange > 0)
+                    {
+                        if (MyRange == 0)
+                        {
+                            //set MyRange to AE range for spells that don't have a MyRange like PBAE nukes
+                            MyRange = AERange;
+                        }
+                    }
+
+                }
+                else
+                {
+                    //if the buff/heal has an AERange value, set MyRange to AE Range because otherwise the spell won't land on the target
+                    if (AERange > 0)
+                    {
+                        MyRange = AERange;
+                    }
+
                 }
                 SpellName = MQ.Query<String>($"${{Me.AltAbility[{CastName}].Spell}}");
                 SpellID = MQ.Query<Int32>($"${{Me.AltAbility[{CastName}].Spell.ID}}");
                 CastID = MQ.Query<Int32>($"${{Me.AltAbility[{CastName}].ID}}");
-                SpellType = MQ.Query<String>($"${{Me.AltAbility[{CastName}].Spell.SpellType}}");
             }
             else if(CastType==CastType.Spell)
             {
@@ -465,18 +485,35 @@ namespace E3Core.Data
                 MyCastTime = MQ.Query<Decimal>($"${{Spell[{CastName}].MyCastTime}}");
 
                 Double AERange = MQ.Query<Double>($"${{Spell[{CastName}].AERange}}");
-                MyRange = AERange;
-                if (MyRange == 0)
+                MyRange = MQ.Query<double>($"${{Spell[{CastName}].MyRange}}");
+                SpellType = MQ.Query<String>($"${{Spell[{CastName}].SpellType}}");
+
+                if (SpellType.Equals("Detrimental", StringComparison.OrdinalIgnoreCase))
                 {
-                    MyRange = MQ.Query<Double>($"${{Spell[{CastName}].MyRange}}");
+                    
+                    if (AERange > 0)
+                    {
+                        if (MyRange == 0)
+                        {
+                            //set MyRange to AE range for spells that don't have a MyRange like PBAE nukes
+                            MyRange = AERange;
+                        }
+                    }
+                    
+                }
+                else
+                {
+                    //if the buff/heal has an AERange value, set MyRange to AE Range because otherwise the spell won't land on the target
+                    if (AERange > 0)
+                    {
+                        MyRange = AERange;
+                    }
+
                 }
                 Mana = MQ.Query<Int32>($"${{Spell[{CastName}].Mana}}");
                 SpellName = CastName;
                 SpellID = MQ.Query<Int32>($"${{Spell[{CastName}].ID}}");
                 CastID = SpellID;
-                SpellType = MQ.Query<String>($"${{Spell[{CastName}].SpellType}}");
-
-
             }
             else if (CastType == CastType.Disc)
             {
