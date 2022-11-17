@@ -232,7 +232,7 @@ namespace E3Core.Processors
             if (E3.CharacterSettings.Misc_RemoveTorporAfterCombat)
             {
                 //auto remove torpor if not in combat and full health
-                if (MQ.Query<Int32>("${Me.PctHPs}") > 98 && !Basics.InCombat())
+                if (MQ.Query<Int32>("${Me.PctHPs}") > 95 && !Basics.InCombat())
                 {
                     if (MQ.Query<bool>("${Me.Song[Transcendent Torpor]}"))
                     {

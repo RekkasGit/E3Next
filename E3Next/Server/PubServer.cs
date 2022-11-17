@@ -1,4 +1,5 @@
-﻿using MonoCore;
+﻿using E3Core.Processors;
+using MonoCore;
 using NetMQ;
 using NetMQ.Sockets;
 using System;
@@ -17,7 +18,7 @@ namespace E3Core.Server
     /// </summary>
     public class PubServer
     {
-
+        private static IMQ MQ = E3.Mq;
         class topicMessagePair
         {
             public string topic;
@@ -97,6 +98,7 @@ namespace E3Core.Server
                     }
                     System.Threading.Thread.Sleep(1);
                 }
+                MQ.Write("Shutting down PubServer Thread.");
             }
         }
     }

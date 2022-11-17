@@ -92,7 +92,7 @@ namespace E3Core.Server
                 }
                
             }
-           
+            MQ.Write("Shutting down PubClient Thread.");
         }
     }
 }

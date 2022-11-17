@@ -93,7 +93,13 @@ namespace MonoCore
                     Delay(_processDelay);//this calls the reset events and sets the delay to 10ms at min
                 }
             }
+           
             E3.Shutdown();
+            MQ.Write("Shutting down E3 Main C# Thread.");
+            MQ.Write("Doing netmq cleanup.");
+            NetMQConfig.Cleanup(false);
+
+            Core._coreResetEvent.Set();
         }
 
         static public void Delay(Int32 value)
@@ -330,7 +336,7 @@ namespace MonoCore
                     System.Threading.Thread.Sleep(1);
                 }
             }
-            Core.mqInstance.Write("Ending Event Processing Thread");
+            Core.mqInstance.Write("Ending Event Processing Thread.");
         }
         /// <summary>
         /// This is so that things like /command /only|<toonName> and such work
@@ -445,6 +451,7 @@ namespace MonoCore
         {
             foreach (var item in _eventList)
             {
+                if (!Core._isProcessing) return;
                 //check to see if we have to have a filter on the events to process
                 if (!String.IsNullOrWhiteSpace(keyName))
                 {
@@ -458,7 +465,7 @@ namespace MonoCore
                 //_log.Write($"Checking Event queue. Total:{item.Value.queuedEvents.Count}");
                 while (item.Value.queuedEvents.Count > 0)
                 {
-
+                    if (!Core._isProcessing) return;
                     EventMatch line;
                     if (item.Value.queuedEvents.TryDequeue(out line))
                     {
@@ -469,6 +476,7 @@ namespace MonoCore
             }
             foreach (var item in _commandList)
             {
+                if (!Core._isProcessing) return;
                 //check to see if we have to have a filter on the events to process
                 if (!String.IsNullOrWhiteSpace(keyName))
                 {
@@ -481,7 +489,7 @@ namespace MonoCore
                 }
                 while (item.Value.queuedEvents.Count > 0)
                 {
-
+                    if (!Core._isProcessing) return;
                     CommandMatch line;
                     if (item.Value.queuedEvents.TryDequeue(out line))
                     {
@@ -492,6 +500,7 @@ namespace MonoCore
             }
             foreach (var item in _unfilteredEventList)
             {
+                if (!Core._isProcessing) return;
                 //check to see if we have to have a filter on the events to process
                 if (!String.IsNullOrWhiteSpace(keyName))
                 {
@@ -504,7 +513,7 @@ namespace MonoCore
                 }
                 while (item.Value.queuedEvents.Count > 0)
                 {
-
+                    if (!Core._isProcessing) return;
                     EventMatch line;
                     if (item.Value.queuedEvents.TryDequeue(out line))
                     {
@@ -794,21 +803,20 @@ namespace MonoCore
         }
         public static void OnStop()
         {
-           
             _isProcessing = false;
             //wait will issue a memory barrier, set will not, issue one
             System.Threading.Thread.MemoryBarrier();
             //tell the C# thread that it can now process and since processing is false, we can then end the application.
-            MainProcessor._processResetEvent.Set();
-            //_taskAbortThread.Abort();
-            //EventProcessor._regExProcessingTask.Abort();
+           MainProcessor._processResetEvent.Set();
             if (E3Core.Server.NetMQServer._uiProcess != null)
             {
                 E3Core.Server.NetMQServer._uiProcess.Kill();
             }
             NetMQConfig.Cleanup(false);
-            System.Threading.Thread.Sleep(100);
-            
+            GC.Collect();
+            System.Threading.Thread.Sleep(500);
+            ////NOTE , there are situations where the unload of the domain will lock up. I've done everything I can do to prevent this, but it 'can' and will happen. 
+            ////I've written a script to reload constantly for 5-6 min before lockup, but again its a % chance. 
         }
         public static void OnPulse()
         {
@@ -879,16 +887,28 @@ namespace MonoCore
         //Comment these out if you are not using events so that C++ doesn't waste time sending the string to C#
         public static void OnWriteChatColor(string line)
         {
+            if (!_isProcessing)
+            {
+                return;
+            }
             EventProcessor.ProcessMQEvent(line);
         }
         public static void OnCommand(string commandLine)
         {
+            if (!_isProcessing)
+            {
+                return;
+            }
             mq_Echo("command recieved:" + commandLine);
 
             EventProcessor.ProcessMQCommand(commandLine);
         }
         public static void OnIncomingChat(string line)
         {
+            if (!_isProcessing)
+            {
+                return;
+            }
             EventProcessor.ProcessEvent(line);
         }
         public static void OnSetSpawns(byte[] data, int size)
@@ -1671,6 +1691,7 @@ namespace MonoCore
 
         IEnumerable<Spawn> Get();
         void RefreshList();
+        void EmptyLists();
         bool TryByID(Int32 id, out Spawn s);
         bool TryByName(string name,out Spawn s);
         Int32 GetIDByName(string name);
@@ -1691,7 +1712,6 @@ namespace MonoCore
         public static Dictionary<Int32,Spawn> _spawnsByID = new Dictionary<int,Spawn>(2048);
         public static Int64 _lastRefesh = 0;
         public static Int64 _refreshTimePeriodInMS = 1000;
-
 
         public bool TryByID(Int32 id, out Spawn s)
         {
@@ -1741,6 +1761,15 @@ namespace MonoCore
                 RefreshList();
             }
         }
+        /// <summary>
+        /// warning, only do this during shutdown.
+        /// </summary>
+        public void EmptyLists()
+        {  
+            _spawnsByName.Clear();
+            _spawnsByID.Clear();
+            _spawns.Clear();
+        }
         public void RefreshList()
         {
             //need to mark everything not dirty so we know what get spawns gets us.
@@ -1779,8 +1808,6 @@ namespace MonoCore
             _tmpSpawnList = tmpPtr;
 
             //clear the dictionaries and rebuild.
-            
-          
             //_spawns should have fresh data now!
             _lastRefesh = Core._stopWatch.ElapsedMilliseconds;
 
@@ -1804,7 +1831,13 @@ namespace MonoCore
 
             return obj;
         }
+        ~Spawn()
+        {
+            //DO NOT CALL DISPOSE FROM THE FINALIZER! This should only ever be used in using statements
+            //if this is called, it will cause the domain to hang in the GC when shuttind down
+            //This is only here to warn you
 
+        }
         static Dictionary<string, string> _stringLookup = new Dictionary<string, string>();
        
         public void Init(byte[] data, Int32 length)

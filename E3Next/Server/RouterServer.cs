@@ -215,7 +215,7 @@ namespace E3Core.Server
 
 
             _rpcRouter.Dispose();
-
+            MQ.Write("Shutting down RouterServer Thread.");
 
         }
 

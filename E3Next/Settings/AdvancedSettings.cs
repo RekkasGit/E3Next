@@ -48,7 +48,7 @@ namespace E3Core.Settings
             LoadData();
         
         }
-        private void Reset()
+        public void Reset()
         {
             _methodLookup.Clear();
             _classMethodLookup.Clear();
