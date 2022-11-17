@@ -452,7 +452,7 @@ namespace E3Core.Data
 
                     if (AERange > 0)
                     {
-                        if (AERange < MyRange || MyRange == 0)
+                        if (MyRange == 0)
                         {
                             //set MyRange to AE range for spells that don't have a MyRange like PBAE nukes
                             MyRange = AERange;
