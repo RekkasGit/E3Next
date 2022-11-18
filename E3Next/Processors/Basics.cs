@@ -38,6 +38,7 @@ namespace E3Core.Processors
         private static DateTime? _cursorOccupiedSince;
         private static TimeSpan _cursorOccupiedTime;
         private static TimeSpan _cursorOccupiedThreshold = new TimeSpan(0, 0, 0, 30);
+        private static Int32 _cusrorPreviousID;
 
         /// <summary>
         /// Initializes this instance.
@@ -807,11 +808,15 @@ namespace E3Core.Processors
             using (Log.Trace())
             {
                 bool itemOnCursor = _mq.Query<bool>("${Bool[${Cursor.ID}]}");
+                
                 if (itemOnCursor)
                 {
-                    if (_cursorOccupiedSince == null)
+                    Int32 itemID = _mq.Query<Int32>("${Cursor.ID}");
+
+                    if (_cursorOccupiedSince == null || itemID!=_cusrorPreviousID)
                     {
                         _cursorOccupiedSince = DateTime.Now;
+                        _cusrorPreviousID = itemID;
                     }
 
                     bool regenItem = _mq.Query<bool>("${Cursor.Name.Equal[Azure Mind Crystal III]}") || _mq.Query<bool>("${Cursor.Name.Equal[Summoned: Large Modulation Shard]}") || _mq.Query<bool>("${Cursor.Name.Equal[Sanguine Mind Crystal III]}");
@@ -843,7 +848,6 @@ namespace E3Core.Processors
                             // if there's a thing on our cursor for > 30 seconds, inventory it
                             if (_cursorOccupiedTime > _cursorOccupiedThreshold)
                             {
-                                _cursorOccupiedTime = new TimeSpan();
                                 e3util.ClearCursor();
                                 _cursorOccupiedSince = null;
                             }
@@ -853,6 +857,7 @@ namespace E3Core.Processors
                 else
                 {
                     _cursorOccupiedSince = null;
+                    _cusrorPreviousID = -1;
                 }
             }
         }
