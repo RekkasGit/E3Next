@@ -183,14 +183,18 @@ namespace E3Core.Classes
             // move back to my original location
             e3util.TryMoveToLoc(currentX, currentY);
             var pet = _spawns.Get().FirstOrDefault(f => f.ID == petId);
-            if (_isExternalRequest)
+            if(pet!=null)
             {
-                MQ.Cmd($"/t {_requester} Finished arming {pet.CleanName}");
+                if (_isExternalRequest)
+                {
+                    MQ.Cmd($"/t {_requester} Finished arming {pet.CleanName}");
+                }
+                else
+                {
+                    E3.Bots.Broadcast($"\agFinishing arming {pet.CleanName}");
+                }
             }
-            else
-            {
-                E3.Bots.Broadcast($"\agFinishing arming {pet.CleanName}");
-            }
+           
             _isExternalRequest = false;
         }
 
