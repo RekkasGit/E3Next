@@ -222,15 +222,13 @@ namespace E3Core.Processors
                             }
                             string message = sb.ToString();
                             E3.Bots.BroadcastCommandToGroup($"/bark-send {targetid} \"{message}\"");
-                            int currentZone = Zoning.CurrentZone.Id;
-
                             for (int i = 0; i < 5; i++)
                             {
                                 _mq.Cmd($"/say {message}");
                                 _mq.Delay(1500);
-                                int tzone = _mq.Query<int>("${Zone.ID}");
-                                if (tzone != currentZone)
+                                if (EventProcessor._eventList["Zoned"].queuedEvents.Count > 0)
                                 {
+                                    //means we have zoned and can stop
                                     break;
                                 }
                             }
