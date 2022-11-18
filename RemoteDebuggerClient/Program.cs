@@ -114,6 +114,10 @@ namespace MQServerClient
                 RefreshList();
             }
         }
+        public void EmptyLists()
+        {
+
+        }
         public void RefreshList()
         {
             foreach (var spawn in _spawns)

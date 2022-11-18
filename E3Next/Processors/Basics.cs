@@ -114,7 +114,7 @@ namespace E3Core.Processors
                 }
             });
             //
-            EventProcessor.RegisterEvent("InviteToDZ", "(.+) tells you, 'raidadd'", (x) =>
+            EventProcessor.RegisterEvent("InviteToRaid", "(.+) tells you, 'raidadd'", (x) =>
             {
                 if (x.match.Groups.Count > 1)
                 {
@@ -127,7 +127,13 @@ namespace E3Core.Processors
                 E3.Bots.BroadcastCommandToGroup("/makemevisible");
                 _mq.Cmd("/makemevisible");
             });
+            EventProcessor.RegisterCommand("/shutdown", (x) =>
+            {
+                _mq.Write("Isussing shutdown, setting process to false.");
+                Core._isProcessing = false;
+                System.Threading.Thread.MemoryBarrier();
 
+            });
             EventProcessor.RegisterCommand("/e3reload", (x) =>
             {
                 E3.Bots.Broadcast("\aoReloading settings files...");

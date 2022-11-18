@@ -266,6 +266,12 @@ namespace E3Core.Processors
         {
             //Mq.Write($"Shutting down {MainProcessor._applicationName}....Reload to start gain");
             IsBadState = true;
+            AdvancedSettings.Reset();
+            CharacterSettings = null;
+            GeneralSettings = null;
+            AdvancedSettings = null;
+            Spawns.EmptyLists();
+           
 
         }
 
