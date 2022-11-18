@@ -172,18 +172,27 @@ namespace E3Core.Classes
 
             if (!GiveWeapons(petId, weapons ?? "Water|Fire"))
             {
-                E3.Bots.Broadcast("\arThere was an issue with pet weapon summoning and we are unable to continue.");
-            }
-            else
-            {
-                GiveOther(petId, _armorItem);
-                GiveOther(petId, _focusItem);
+                if (_isExternalRequest)
+                {
+                    MQ.Cmd($"/t {_requester} There was an issue with pet weapon summoning and we are unable to continue.");
+                }
+                else
+                {
+                    E3.Bots.Broadcast("\arThere was an issue with pet weapon summoning and we are unable to continue.");
+                }
+
+                // move back to my original location
+                e3util.TryMoveToLoc(currentX, currentY);
+                _isExternalRequest = false;
+
+                return;
             }
 
-            // move back to my original location
-            e3util.TryMoveToLoc(currentX, currentY);
+            GiveOther(petId, _armorItem);
+            GiveOther(petId, _focusItem);
+
             var pet = _spawns.Get().FirstOrDefault(f => f.ID == petId);
-            if(pet!=null)
+            if(pet != null)
             {
                 if (_isExternalRequest)
                 {
@@ -194,7 +203,9 @@ namespace E3Core.Classes
                     E3.Bots.Broadcast($"\agFinishing arming {pet.CleanName}");
                 }
             }
-           
+
+            // move back to my original location
+            e3util.TryMoveToLoc(currentX, currentY);
             _isExternalRequest = false;
         }
 
