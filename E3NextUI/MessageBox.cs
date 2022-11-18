@@ -10,21 +10,15 @@ using System.Windows.Forms;
 
 namespace E3NextUI
 {
-    public partial class DynamicButtonEditor : Form
+    public partial class MessageBox : Form
     {
-        public DynamicButtonEditor()
+        public MessageBox()
         {
             InitializeComponent();
         }
 
-        private void button1_Click(object sender, EventArgs e)
+        private void buttonOK_Click(object sender, EventArgs e)
         {
-            if(String.IsNullOrWhiteSpace(this.textBoxName.Text))
-            {
-                System.Windows.Forms.MessageBox.Show("Please enter a name or cancel");
-                return;
-            }
-
             this.DialogResult = DialogResult.OK;
             this.Close();
         }
@@ -32,6 +26,12 @@ namespace E3NextUI
         private void buttonCancel_Click(object sender, EventArgs e)
         {
             this.DialogResult = DialogResult.Cancel;
+            this.Close();
+        }
+
+        private void buttonOkayOnly_Click(object sender, EventArgs e)
+        {
+            this.DialogResult = DialogResult.OK;
             this.Close();
 
         }

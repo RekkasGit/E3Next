@@ -114,7 +114,7 @@ namespace E3Core.Processors
                 }
             });
             //
-            EventProcessor.RegisterEvent("InviteToDZ", "(.+) tells you, 'raidadd'", (x) =>
+            EventProcessor.RegisterEvent("InviteToRaid", "(.+) tells you, 'raidadd'", (x) =>
             {
                 if (x.match.Groups.Count > 1)
                 {

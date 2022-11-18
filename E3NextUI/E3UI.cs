@@ -27,7 +27,7 @@ namespace E3NextUI
 
     public partial class E3UI : Form
     {
-        public static string Version = "v1.0.0-beta";
+        public static string Version = "v1.0.0-beta2";
         public static System.Diagnostics.Stopwatch _stopWatch = new System.Diagnostics.Stopwatch();
         public static volatile bool _shouldProcess = true;
 
@@ -781,40 +781,35 @@ namespace E3NextUI
 
             if(latest.TagName!=Version)
             {
-                DialogResult dialogResult = MessageBox.Show("Do you wish to upgrade to:"+latest.TagName, "Upgrade E3", MessageBoxButtons.YesNo);
-                if (dialogResult == DialogResult.Yes)
+                var mb = new MessageBox();
+                mb.StartPosition = FormStartPosition.CenterParent;
+                mb.Text = "Upgrade E3";
+                mb.lblMessage.Text = "Do you wish to upgrade to: " + latest.TagName + "?";
+                
+                if (mb.ShowDialog() == DialogResult.OK)
                 {
                     //do something
 
                     var edit = new Update();
                     edit.StartPosition = FormStartPosition.CenterParent;
                     edit.textBoxInstallPath.Text = exePath;
-                   
-                    if (edit.ShowDialog() == DialogResult.OK)
-                    {
-                        exePath = edit.textBoxInstallPath.Text;
-                        var assets = client.Repository.Release.GetAllAssets("RekkasGit", "E3Next", latest.Id).Result;
-                        var zipFile = assets[0];
-                        var resp = client.Connection.Get<byte[]>(new Uri(zipFile.BrowserDownloadUrl), new Dictionary<string, string>(), null).Result;
-                        var data = resp.Body;
-                        var respData = resp.HttpResponse.Body;
-                        using (System.IO.Stream stream = new System.IO.MemoryStream(data))
-                        {
-                            using (ZipFile zip = ZipFile.Read(stream))
-                            {
-                                zip.ExtractAll(exePath, ExtractExistingFileAction.OverwriteSilently);
-                            }
-                        }
-                    }
+                    edit.client = client;
+                    edit.latestID = latest.Id;
+                    edit.ShowDialog();
+
                 }
-                else if (dialogResult == DialogResult.No)
-                {
-                    return;
-                }
+               
             }
             else
             {
-                MessageBox.Show("You are on the latest version:" + Version);
+                var mb = new MessageBox();
+                mb.StartPosition = FormStartPosition.CenterParent;
+                mb.Text = "Upgrade E3";
+                mb.lblMessage.Text = "You are on the latest version: " + Version;
+                mb.buttonOkayOnly.Visible = true;
+                mb.buttonOK.Visible = false;
+                mb.buttonCancel.Visible = false;
+                mb.ShowDialog();
                 return;
             }
         }
