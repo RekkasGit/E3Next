@@ -23,6 +23,7 @@ namespace E3Core.Processors
         public static bool use_Swarms = false;
         public static List<Data.Spell> _epicWeapon = new List<Data.Spell>();
         public static List<Data.Spell> _anguishBP = new List<Data.Spell>();
+        public static List<Data.Spell> _swarmPets = new List<Spell>();
         public static string _epicWeaponName = String.Empty;
         public static string _anguishBPName = String.Empty;
         private static Int64 _nextBurnCheck = 0;
@@ -32,6 +33,7 @@ namespace E3Core.Processors
         public static void Init()
         {
             RegisterEpicAndAnguishBP();
+            RegisterSwarppets();
             RegisterEvents();
         }
 
@@ -75,12 +77,13 @@ namespace E3Core.Processors
         public static void UseBurns()
         {
             if (!e3util.ShouldCheck(ref _nextBurnCheck, _nextBurnCheckInterval)) return;
-
+         
             UseBurn(_epicWeapon, use_EPICBurns);
             UseBurn(_anguishBP, use_EPICBurns);
             UseBurn(E3.CharacterSettings.QuickBurns, use_QUICKBurns);
             UseBurn(E3.CharacterSettings.FullBurns, use_FULLBurns);
             UseBurn(E3.CharacterSettings.LongBurns, use_LONGBurns);
+            UseBurn(_swarmPets, use_Swarms);
 
         }
         private static void UseBurn(List<Data.Spell> burnList, bool use)
@@ -169,6 +172,30 @@ namespace E3Core.Processors
             }
 
         }
+        private static void RegisterSwarppets()
+        {
+            foreach (string pet in _swarmPetList)
+            {
+                Data.Spell tSpell;
+                if (MQ.Query<bool>($"${{Me.AltAbility[{pet}]}}"))
+                {
+                    tSpell = new Spell(pet);
+                    _swarmPets.Add(tSpell);
+                    continue;
+                }
+                if (MQ.Query<Int32>($"${{FindItemCount[={pet}]}}") > 0)
+                {
+                    tSpell = new Spell(pet);
+                    _swarmPets.Add(tSpell);
+                }
+            }
+        }
+        private static List<string> _swarmPetList = new List<string>() {
+         "Swarm of Decay","Rise of Bones","Graverobber's Icon","Soulwhisper","Deathwhisper",
+         "Wake the Dead","Spirit Call", "Shattered Gnoll Slayer", "Call of Xuzl","Song of Stone",
+         "Tarnished Skeleton Key","Celestial Hammer","Graverobber's Icon","Battered Smuggler's Barrel",
+         "Phantasmal Opponent","Projection of Piety","Spirits of Nature", "Nature's Guardian"
+        };
         private static List<string> _anguishBPList = new List<string>() {
             "Bladewhisper Chain Vest of Journeys",
             "Farseeker's Plate Chestguard of Harmony",

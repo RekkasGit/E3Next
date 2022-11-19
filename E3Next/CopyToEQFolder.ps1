@@ -1,6 +1,7 @@
 
 if($Env:E3BuildDest)
 {
+    #Set-ExecutionPolicy -Scope CurrentUser Bypass
     $ValidPath = Test-Path -Path "$Env:E3BuildDest"
     if($ValidPath)
     {
