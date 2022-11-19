@@ -6,6 +6,7 @@ using MonoCore;
 using System;
 using System.CodeDom;
 using System.Collections.Generic;
+using System.Diagnostics;
 using System.Linq;
 using System.Text;
 using System.Windows.Forms.VisualStyles;
@@ -389,6 +390,18 @@ namespace E3Core.Processors
                 foreach (var member in groupMembers)
                 {
                     _mq.Cmd($"/invite {member}");
+                }
+            });
+
+            EventProcessor.RegisterCommand("/wiki", x =>
+            {
+                if (x.args.Count == 0)
+                {
+                    Process.Start(new ProcessStartInfo { FileName = "https://github.com/RekkasGit/E3Next/wiki", UseShellExecute = true });
+                }
+                else if (string.Equals(x.args[0], "Laz", StringComparison.OrdinalIgnoreCase))
+                {
+                    Process.Start(new ProcessStartInfo { FileName = "https://www.lazaruseq.com/Wiki/index.php/Main_Page", UseShellExecute = true });
                 }
             });
         }
