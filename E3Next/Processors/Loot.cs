@@ -63,25 +63,25 @@ namespace E3Core.Processors
                     //remove item from all collections and add to desired collection
                     if(x.args[1]=="KEEP")
                     {
-                        LootDataFile._keep.Remove(x.args[0]);
-                        LootDataFile._sell.Remove(x.args[0]);
-                        LootDataFile._skip.Remove(x.args[0]);
-                        LootDataFile._keep.Add(x.args[0]);
+                        LootDataFile.Keep.Remove(x.args[0]);
+                        LootDataFile.Sell.Remove(x.args[0]);
+                        LootDataFile.Skip.Remove(x.args[0]);
+                        LootDataFile.Keep.Add(x.args[0]);
 
                     }
                     else if(x.args[1]=="SELL")
                     {
-                        LootDataFile._keep.Remove(x.args[0]);
-                        LootDataFile._sell.Remove(x.args[0]);
-                        LootDataFile._skip.Remove(x.args[0]);
-                        LootDataFile._sell.Add(x.args[0]);
+                        LootDataFile.Keep.Remove(x.args[0]);
+                        LootDataFile.Sell.Remove(x.args[0]);
+                        LootDataFile.Skip.Remove(x.args[0]);
+                        LootDataFile.Sell.Add(x.args[0]);
                     }
                     else
                     {
-                        LootDataFile._keep.Remove(x.args[0]);
-                        LootDataFile._sell.Remove(x.args[0]);
-                        LootDataFile._skip.Remove(x.args[0]);
-                        LootDataFile._skip.Add(x.args[0]);
+                        LootDataFile.Keep.Remove(x.args[0]);
+                        LootDataFile.Sell.Remove(x.args[0]);
+                        LootDataFile.Skip.Remove(x.args[0]);
+                        LootDataFile.Skip.Add(x.args[0]);
                     }
                 } 
             });
@@ -124,10 +124,10 @@ namespace E3Core.Processors
                     return;
                 }
 
-                LootDataFile._keep.Remove(cursorItem);
-                LootDataFile._sell.Remove(cursorItem);
-                LootDataFile._skip.Remove(cursorItem);
-                LootDataFile._keep.Add(cursorItem);
+                LootDataFile.Keep.Remove(cursorItem);
+                LootDataFile.Sell.Remove(cursorItem);
+                LootDataFile.Skip.Remove(cursorItem);
+                LootDataFile.Keep.Add(cursorItem);
                 
                 MQ.Write($"\aoSetting {cursorItem} to KEEP");
                 E3.Bots.BroadcastCommand($"/E3LootAdd \"{cursorItem}\" KEEP");
@@ -147,10 +147,10 @@ namespace E3Core.Processors
                     return;
                 }
 
-                LootDataFile._keep.Remove(cursorItem);
-                LootDataFile._sell.Remove(cursorItem);
-                LootDataFile._skip.Remove(cursorItem);
-                LootDataFile._skip.Add(cursorItem);
+                LootDataFile.Keep.Remove(cursorItem);
+                LootDataFile.Sell.Remove(cursorItem);
+                LootDataFile.Skip.Remove(cursorItem);
+                LootDataFile.Skip.Add(cursorItem);
 
                 MQ.Write($"\arSetting {cursorItem} to SKIP");
                 E3.Bots.BroadcastCommand($"/E3LootAdd \"{cursorItem}\" SKIP");
@@ -168,10 +168,10 @@ namespace E3Core.Processors
                     return;
                 }
 
-                LootDataFile._keep.Remove(cursorItem);
-                LootDataFile._sell.Remove(cursorItem);
-                LootDataFile._skip.Remove(cursorItem);
-                LootDataFile._sell.Add(cursorItem);
+                LootDataFile.Keep.Remove(cursorItem);
+                LootDataFile.Sell.Remove(cursorItem);
+                LootDataFile.Skip.Remove(cursorItem);
+                LootDataFile.Sell.Add(cursorItem);
                 
                 MQ.Write($"\agSetting {cursorItem} to SELL");
                 E3.Bots.BroadcastCommand($"/E3LootAdd \"{cursorItem}\" SELL");
@@ -342,12 +342,12 @@ namespace E3Core.Processors
                 {
                     //use normal loot settings
                     bool foundInFile = false;
-                    if (LootDataFile._keep.Contains(corpseItem) || LootDataFile._sell.Contains(corpseItem))
+                    if (LootDataFile.Keep.Contains(corpseItem) || LootDataFile.Sell.Contains(corpseItem))
                     {
                         importantItem = true;
                         foundInFile = true;
                     }
-                    else if(LootDataFile._skip.Contains(corpseItem))
+                    else if(LootDataFile.Skip.Contains(corpseItem))
                     {
                         importantItem = false;
                         foundInFile = true;
@@ -355,7 +355,7 @@ namespace E3Core.Processors
                     if(!foundInFile)
                     {
                         importantItem = true;
-                        LootDataFile._keep.Add(corpseItem);
+                        LootDataFile.Keep.Add(corpseItem);
                         E3.Bots.BroadcastCommandToGroup($"/E3LootAdd \"{corpseItem}\" KEEP");
                         LootDataFile.SaveData();
                     }
