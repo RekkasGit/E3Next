@@ -243,18 +243,18 @@ namespace E3Core.Processors
 
         public void Broadcast(string message)
         {
-            MQ.Cmd($"/dg all {message}");
+            MQ.Cmd($"/dga {message}");
         }
 
         public void BroadcastCommand(string command, bool noparse = false)
         {
             if (noparse)
             {
-                MQ.Cmd($"/noparse /dge all /{command}");
+                MQ.Cmd($"/noparse /dgae /{command}");
             }
             else
             {
-                MQ.Cmd($"/dge all /{command}");
+                MQ.Cmd($"/dgae /{command}");
             }
            
         }
