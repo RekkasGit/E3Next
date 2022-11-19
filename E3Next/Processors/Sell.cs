@@ -60,10 +60,11 @@ namespace E3Core.Processors
 
                             bool nodrop = MQ.Query<bool>($"${{Me.Inventory[pack{i}].Item[{e}].NoDrop}}");
 
-                            if (!nodrop && !LootDataFile._sell.Contains(itemName) && !LootDataFile._keep.Contains(itemName) && !LootDataFile._keep.Contains(itemName))
+                            if (!nodrop && !LootDataFile.Sell.Contains(itemName) && !LootDataFile.Keep.Contains(itemName) && !LootDataFile.Skip.Contains(itemName))
                             {
                                 //we don't know about this , add to keep and save. 
-                                LootDataFile._keep.Add(itemName);
+                                LootDataFile.Keep.Add(itemName);
+
                             }
                         }
                     }
@@ -99,7 +100,7 @@ namespace E3Core.Processors
                                 continue;
                             }
                             Int32 itemValue = MQ.Query<Int32>($"${{Me.Inventory[pack{i}].Item[{e}].Value}}");
-                            if (LootDataFile._sell.Contains(itemName) && itemValue > 0)
+                            if (LootDataFile.Sell.Contains(itemName) && itemValue > 0)
                             {
                                 MQ.Cmd($"/nomodkey /itemnotify in pack{i} {e} leftmouseup");
                                 MQ.Delay(500);

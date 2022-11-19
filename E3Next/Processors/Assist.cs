@@ -395,7 +395,7 @@ namespace E3Core.Processors
         /// <param name="mobID">The mob identifier.</param>
         public static void AssistOn(Int32 mobID)
         {
-
+           
             //clear in case its not reset by other means
             //or you want to attack in enrage
             _assistIsEnraged = false;
@@ -603,7 +603,7 @@ namespace E3Core.Processors
                 //clear in case its not reset by other means
                 //or you want to attack in enrage
                 _assistIsEnraged = false;
-
+                MQ.Cmd("/makemevisible");
                 if (x.args.Count == 0)
                 {
                   

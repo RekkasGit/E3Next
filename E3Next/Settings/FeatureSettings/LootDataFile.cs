@@ -12,9 +12,9 @@ namespace E3Core.Settings.FeatureSettings
 {
     public class LootDataFile : BaseSettings
     {
-        public static HashSet<string> _keep = new HashSet<string>(10000, StringComparer.OrdinalIgnoreCase);
-        public static HashSet<string> _sell = new HashSet<string>(10000, StringComparer.OrdinalIgnoreCase);
-        public static HashSet<string> _skip = new HashSet<string>(10000, StringComparer.OrdinalIgnoreCase);
+        public static HashSet<string> Keep = new HashSet<string>(10000, StringComparer.OrdinalIgnoreCase);
+        public static HashSet<string> Sell = new HashSet<string>(10000, StringComparer.OrdinalIgnoreCase);
+        public static HashSet<string> Skip = new HashSet<string>(10000, StringComparer.OrdinalIgnoreCase);
         public static bool _isDirty = false;
 
         private static string _fileName = @"Loot Settings.ini";
@@ -77,21 +77,21 @@ namespace E3Core.Settings.FeatureSettings
                             //lets get the data out of the old format. 
                             string keyname = key.KeyName;//lets get rid of the junk
                             var match = regex1.Match(keyname);
-                            if (match.Success) { MatchSuccess(_sell, match); }
+                            if (match.Success) { MatchSuccess(Sell, match); }
                             if(!match.Success)
                             {
                                 match = regex2.Match(keyname);
-                                if (match.Success) { MatchSuccess(_sell, match); }
+                                if (match.Success) { MatchSuccess(Sell, match); }
                             }
                             if (!match.Success)
                             {
                                 match = regex3.Match(keyname);
-                                if (match.Success) { MatchSuccess(_sell, match); }
+                                if (match.Success) { MatchSuccess(Sell, match); }
                             }
                             if (!match.Success)
                             {
                                 match = regex4.Match(keyname);
-                                if (match.Success) { MatchSuccess(_sell, match); }
+                                if (match.Success) { MatchSuccess(Sell, match); }
                             }
 
 
@@ -101,21 +101,21 @@ namespace E3Core.Settings.FeatureSettings
                             //lets get the data out of the old format. 
                             string keyname = key.KeyName;//lets get rid of the junk
                             var match = regex1.Match(keyname);
-                            if (match.Success) { MatchSuccess(_keep, match); }
+                            if (match.Success) { MatchSuccess(Keep, match); }
                             if (!match.Success)
                             {
                                 match = regex2.Match(keyname);
-                                if (match.Success) { MatchSuccess(_keep, match); }
+                                if (match.Success) { MatchSuccess(Keep, match); }
                             }
                             if (!match.Success)
                             {
                                 match = regex3.Match(keyname);
-                                if (match.Success) { MatchSuccess(_keep, match); }
+                                if (match.Success) { MatchSuccess(Keep, match); }
                             }
                             if (!match.Success)
                             {
                                 match = regex4.Match(keyname);
-                                if (match.Success) { MatchSuccess(_keep, match); }
+                                if (match.Success) { MatchSuccess(Keep, match); }
                             }
                         }
                         else
@@ -123,21 +123,21 @@ namespace E3Core.Settings.FeatureSettings
                             //lets get the data out of the old format. 
                             string keyname = key.KeyName;//lets get rid of the junk
                             var match = regex1.Match(keyname);
-                            if (match.Success) { MatchSuccess(_skip, match); }
+                            if (match.Success) { MatchSuccess(Skip, match); }
                             if (!match.Success)
                             {
                                 match = regex2.Match(keyname);
-                                if (match.Success) { MatchSuccess(_skip, match); }
+                                if (match.Success) { MatchSuccess(Skip, match); }
                             }
                             if (!match.Success)
                             {
                                 match = regex3.Match(keyname);
-                                if (match.Success) { MatchSuccess(_skip, match); }
+                                if (match.Success) { MatchSuccess(Skip, match); }
                             }
                             if (!match.Success)
                             {
                                 match = regex4.Match(keyname);
-                                if (match.Success) { MatchSuccess(_skip, match); }
+                                if (match.Success) { MatchSuccess(Skip, match); }
                             }
 
                         }
@@ -169,9 +169,9 @@ namespace E3Core.Settings.FeatureSettings
 
             //create sorted lists
 
-            List<string> _keepSorted = _keep.OrderBy(x => x).ToList();
-            List<string> _sellSorted = _sell.OrderBy(x => x).ToList();
-            List<string> _skipSorted = _skip.OrderBy(x => x).ToList();
+            List<string> _keepSorted = Keep.OrderBy(x => x).ToList();
+            List<string> _sellSorted = Sell.OrderBy(x => x).ToList();
+            List<string> _skipSorted = Skip.OrderBy(x => x).ToList();
 
             for (char c = 'A'; c <= 'Z'; c++)
             {

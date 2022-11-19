@@ -62,23 +62,23 @@ namespace E3Core.Processors
                 {
                     if(x.args[1]=="KEEP")
                     {
-                        if (!LootDataFile._keep.Contains(x.args[0]))
+                        if (!LootDataFile.Keep.Contains(x.args[0]))
                         {
-                            LootDataFile._keep.Add(x.args[0]);
+                            LootDataFile.Keep.Add(x.args[0]);
                         }
                     }
                     else if(x.args[1]=="SELL")
                     {
-                        if (!LootDataFile._sell.Contains(x.args[0]))
+                        if (!LootDataFile.Sell.Contains(x.args[0]))
                         {
-                            LootDataFile._sell.Add(x.args[0]);
+                            LootDataFile.Sell.Add(x.args[0]);
                         }
                     }
                     else
                     {
-                        if (!LootDataFile._skip.Contains(x.args[0]))
+                        if (!LootDataFile.Skip.Contains(x.args[0]))
                         {
-                            LootDataFile._skip.Add(x.args[0]);
+                            LootDataFile.Skip.Add(x.args[0]);
                         }
                     }
                    
@@ -275,12 +275,12 @@ namespace E3Core.Processors
                 {
                     //use normal loot settings
                     bool foundInFile = false;
-                    if (LootDataFile._keep.Contains(corpseItem) || LootDataFile._sell.Contains(corpseItem))
+                    if (LootDataFile.Keep.Contains(corpseItem) || LootDataFile.Sell.Contains(corpseItem))
                     {
                         importantItem = true;
                         foundInFile = true;
                     }
-                    else if(LootDataFile._skip.Contains(corpseItem))
+                    else if(LootDataFile.Skip.Contains(corpseItem))
                     {
                         importantItem = false;
                         foundInFile = true;
@@ -288,7 +288,7 @@ namespace E3Core.Processors
                     if(!foundInFile)
                     {
                         importantItem = true;
-                        LootDataFile._keep.Add(corpseItem);
+                        LootDataFile.Keep.Add(corpseItem);
                         E3.Bots.BroadcastCommandToGroup($"/E3LootAdd \"{corpseItem}\" KEEP");
                         LootDataFile.SaveData();
                     }
