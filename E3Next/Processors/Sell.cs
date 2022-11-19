@@ -75,6 +75,7 @@ namespace E3Core.Processors
 
         private static void AutoSell()
         {
+            int platinumGain = MQ.Query<int>("${Me.Platinum}");
             bool merchantWindowOpen = MQ.Query<bool>("${Window[MerchantWnd].Open}");
             if (!merchantWindowOpen)
             {
@@ -102,15 +103,15 @@ namespace E3Core.Processors
                             Int32 itemValue = MQ.Query<Int32>($"${{Me.Inventory[pack{i}].Item[{e}].Value}}");
                             if (LootDataFile.Sell.Contains(itemName) && itemValue > 0)
                             {
-                                MQ.Cmd($"/nomodkey /itemnotify in pack{i} {e} leftmouseup");
-                                MQ.Delay(500);
+                                MQ.Cmd($"/nomodkey /itemnotify in pack{i} {e} leftmouseup",500);
+                                
                                 string sellingItemText = MQ.Query<string>("${Window[MerchantWnd].Child[MW_SelectedItemLabel].Text}");
                                 Int32 counter = 0;
                                 while (sellingItemText != itemName && counter < 10)
                                 {
                                     counter++;
-                                    MQ.Cmd($"/nomodkey /itemnotify in pack{i} {e} leftmouseup");
-                                    MQ.Delay(500);
+                                    MQ.Cmd($"/nomodkey /itemnotify in pack{i} {e} leftmouseup",500);
+                                    
                                     sellingItemText = MQ.Query<string>("${Window[MerchantWnd].Child[MW_SelectedItemLabel].Text}");
                                 }
                                 if (sellingItemText != itemName)
@@ -127,15 +128,9 @@ namespace E3Core.Processors
                                 }
 
                                 //sell the item finally
-                                MQ.Cmd("/nomodkey /notify MerchantWnd MW_Sell_Button leftmouseup");
-                                MQ.Delay(300);
-                                bool qtyWindowOpen = MQ.Query<bool>("${Window[QuantityWnd].Open}");
-                                if (qtyWindowOpen)
-                                {
-                                    MQ.Cmd("/nomodkey /notify QuantityWnd QTYW_Accept_Button leftmouseup");
-                                    MQ.Delay(300);
-                                }
-
+                                MQ.Cmd("/nomodkey /shift /notify MerchantWnd MW_Sell_Button leftmouseup",300);
+                                
+                                
                                 string tItemName = MQ.Query<String>($"${{Me.Inventory[pack{i}].Item[{e}]}}");
                                 if (itemName == tItemName)
                                 {
@@ -147,6 +142,8 @@ namespace E3Core.Processors
                     }
                 }
             }
+            platinumGain = MQ.Query<int>("${Me.Platinum}") - platinumGain;
+            MQ.Write($"\ag You made {platinumGain.ToString("N0")} platinum");
         }
 
         private static void AutoStack()
@@ -173,12 +170,11 @@ namespace E3Core.Processors
 
                         if (MQ.Query<bool>($"${{FindItemBank[={item}]}}"))
                         {
-                            MQ.Cmd($"/nomodkey /itemnotify \"{item}\" leftmouseup");
-                            MQ.Delay(250);
+                            MQ.Cmd($"/nomodkey /itemnotify \"{item}\" leftmouseup",250);
+                            
                             if (MQ.Query<bool>("${Window[QuantityWnd].Open}"))
                             {
-                                MQ.Cmd("/nomodkey /notify QuantityWnd QTYW_Accept_Button leftmouseup");
-                                MQ.Delay(250);
+                                MQ.Cmd("/nomodkey /notify QuantityWnd QTYW_Accept_Button leftmouseup",250);
                             }
 
                             var slot = MQ.Query<int>($"${{FindItemBank[={item}].ItemSlot}}");

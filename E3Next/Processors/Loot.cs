@@ -60,30 +60,30 @@ namespace E3Core.Processors
             {
                 if (x.args.Count > 1)
                 {
+                    //remove item from all collections and add to desired collection
                     if(x.args[1]=="KEEP")
                     {
-                        if (!LootDataFile.Keep.Contains(x.args[0]))
-                        {
-                            LootDataFile.Keep.Add(x.args[0]);
-                        }
+                        LootDataFile.Keep.Remove(x.args[0]);
+                        LootDataFile.Sell.Remove(x.args[0]);
+                        LootDataFile.Skip.Remove(x.args[0]);
+                        LootDataFile.Keep.Add(x.args[0]);
+
                     }
                     else if(x.args[1]=="SELL")
                     {
-                        if (!LootDataFile.Sell.Contains(x.args[0]))
-                        {
-                            LootDataFile.Sell.Add(x.args[0]);
-                        }
+                        LootDataFile.Keep.Remove(x.args[0]);
+                        LootDataFile.Sell.Remove(x.args[0]);
+                        LootDataFile.Skip.Remove(x.args[0]);
+                        LootDataFile.Sell.Add(x.args[0]);
                     }
                     else
                     {
-                        if (!LootDataFile.Skip.Contains(x.args[0]))
-                        {
-                            LootDataFile.Skip.Add(x.args[0]);
-                        }
+                        LootDataFile.Keep.Remove(x.args[0]);
+                        LootDataFile.Sell.Remove(x.args[0]);
+                        LootDataFile.Skip.Remove(x.args[0]);
+                        LootDataFile.Skip.Add(x.args[0]);
                     }
-                   
-
-                }
+                } 
             });
 
             EventProcessor.RegisterCommand("/looton", (x) =>
@@ -111,6 +111,73 @@ namespace E3Core.Processors
                     _shouldLoot = false;
                     E3.Bots.Broadcast("\agTurning Off Loot.");
                 }
+            });
+
+            EventProcessor.RegisterCommand("/lootkeep", (x) =>
+            {
+                string cursorItem = MQ.Query<string>("${Cursor.Name}");
+
+                if (cursorItem.Equals("NULL", StringComparison.OrdinalIgnoreCase) || String.IsNullOrWhiteSpace(cursorItem))
+                {
+                    MQ.Write("You don't have an item on your cursor, cannot modify the loot file.");
+                    MQ.Write("Place an item on your cursor and then give the proper /lootkeep, /lootsell, /lootskip command");
+                    return;
+                }
+
+                LootDataFile.Keep.Remove(cursorItem);
+                LootDataFile.Sell.Remove(cursorItem);
+                LootDataFile.Skip.Remove(cursorItem);
+                LootDataFile.Keep.Add(cursorItem);
+                
+                MQ.Write($"\aoSetting {cursorItem} to KEEP");
+                E3.Bots.BroadcastCommand($"/E3LootAdd \"{cursorItem}\" KEEP");
+                LootDataFile.SaveData();
+
+                MQ.Cmd("/autoinv");
+            });
+
+            EventProcessor.RegisterCommand("/lootskip", (x) =>
+            {
+                string cursorItem = MQ.Query<string>("${Cursor.Name}");
+
+                if (cursorItem.Equals("NULL", StringComparison.OrdinalIgnoreCase) || String.IsNullOrWhiteSpace(cursorItem))
+                {
+                    MQ.Write("You don't have an item on your cursor, cannot modify the loot file.");
+                    MQ.Write("Place an item on your cursor and then give the proper /lootkeep, /lootsell, /lootskip command");
+                    return;
+                }
+
+                LootDataFile.Keep.Remove(cursorItem);
+                LootDataFile.Sell.Remove(cursorItem);
+                LootDataFile.Skip.Remove(cursorItem);
+                LootDataFile.Skip.Add(cursorItem);
+
+                MQ.Write($"\arSetting {cursorItem} to SKIP");
+                E3.Bots.BroadcastCommand($"/E3LootAdd \"{cursorItem}\" SKIP");
+                LootDataFile.SaveData();
+            });
+
+            EventProcessor.RegisterCommand("/lootsell", (x) =>
+            {
+                string cursorItem = MQ.Query<string>("${Cursor.Name}");
+
+                if (cursorItem.Equals("NULL", StringComparison.OrdinalIgnoreCase) || String.IsNullOrWhiteSpace(cursorItem))
+                {
+                    MQ.Write("You don't have an item on your cursor, cannot modify the loot file.");
+                    MQ.Write("Place an item on your cursor and then give the proper /lootkeep, /lootsell, /lootskip command");
+                    return;
+                }
+
+                LootDataFile.Keep.Remove(cursorItem);
+                LootDataFile.Sell.Remove(cursorItem);
+                LootDataFile.Skip.Remove(cursorItem);
+                LootDataFile.Sell.Add(cursorItem);
+                
+                MQ.Write($"\agSetting {cursorItem} to SELL");
+                E3.Bots.BroadcastCommand($"/E3LootAdd \"{cursorItem}\" SELL");
+                LootDataFile.SaveData();
+
+                MQ.Cmd("/autoinv");
             });
         }
 
@@ -159,7 +226,7 @@ namespace E3Core.Processors
 
             if (corpses.Count > 0)
             {
-                MQ.Cmd("/squelch /hidecor looted");
+                MQ.Cmd("/squelch /hidecorpse looted");
                 MQ.Delay(100);
 
 
