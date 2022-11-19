@@ -63,7 +63,6 @@ namespace E3Core.Processors
                     //remove item from all collections and add to desired collection
                     if(x.args[1]=="KEEP")
                     {
-                        LootDataFile.Keep.Remove(x.args[0]);
                         LootDataFile.Sell.Remove(x.args[0]);
                         LootDataFile.Skip.Remove(x.args[0]);
                         LootDataFile.Keep.Add(x.args[0]);
@@ -72,7 +71,6 @@ namespace E3Core.Processors
                     else if(x.args[1]=="SELL")
                     {
                         LootDataFile.Keep.Remove(x.args[0]);
-                        LootDataFile.Sell.Remove(x.args[0]);
                         LootDataFile.Skip.Remove(x.args[0]);
                         LootDataFile.Sell.Add(x.args[0]);
                     }
@@ -80,7 +78,6 @@ namespace E3Core.Processors
                     {
                         LootDataFile.Keep.Remove(x.args[0]);
                         LootDataFile.Sell.Remove(x.args[0]);
-                        LootDataFile.Skip.Remove(x.args[0]);
                         LootDataFile.Skip.Add(x.args[0]);
                     }
                 } 
