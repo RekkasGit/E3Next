@@ -259,8 +259,8 @@ namespace E3Core.Processors
                                 int currentZone = Zoning.CurrentZone.Id;
                                 for (int i = 0; i < 5; i++)
                                 {
-                                    _mq.Cmd($"/say {message}");
-                                    _mq.Delay(1000);
+                                    _mq.Cmd($"/say {message}",1000);
+                                    
                                     int tzone = _mq.Query<int>("${Zone.ID}");
                                     if (tzone != currentZone)
                                     {
