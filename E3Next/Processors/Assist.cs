@@ -604,6 +604,7 @@ namespace E3Core.Processors
                 //or you want to attack in enrage
                 _assistIsEnraged = false;
                 MQ.Cmd("/makemevisible");
+                Rez.Reset();
                 if (x.args.Count == 0)
                 {
                   

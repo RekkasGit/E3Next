@@ -310,6 +310,7 @@ namespace E3Core.Processors
                         {
                             _followTargetName = user;
                             _following = false;
+                            Rez.Reset();
                             Assist.AssistOff();
                             AcquireFollow();
                         }
@@ -318,6 +319,7 @@ namespace E3Core.Processors
                 }
                 else
                 {
+                    Rez.Reset();
                     //we are telling people to follow us
                     E3.Bots.BroadcastCommandToGroup("/followme " + E3.CurrentName, x);
                 }
