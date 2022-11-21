@@ -24,6 +24,45 @@ namespace E3Core.Classes
         private static Int64 _nextAggroRefreshTimeInterval = 1000;
         private static Int32 _maxAggroCap = 75;
 
+
+        [AdvSettingInvoke]
+        public static void Check_NecroFD()
+        {
+
+            if (!Basics.InCombat()) return;
+
+            Int32 GroupSize = MQ.Query<Int32>("${Group}");
+            Int32 GroupInZone = MQ.Query<Int32>("${Group.Present}");
+            Spell s;
+
+            if (GroupSize - GroupInZone > 1)
+            {
+                Assist.AssistOff();
+                bool FD = false;
+                if (!Spell._loadedSpellsByName.TryGetValue("Improved Death Peace", out s))
+                {
+                    s = new Spell("Improved Death Peace");
+                }
+                if (Casting.CheckReady(s) && Casting.CheckMana(s))
+                {
+                    Casting.Cast(0, s);
+                    FD = true;
+              
+                }
+                else if (!Spell._loadedSpellsByName.TryGetValue("Death Peace", out s))
+                {
+                    s = new Spell("Death Peace");
+                    Casting.Cast(0, s);
+                    FD = true;
+                }
+
+                if (FD)
+                {
+                    E3.Bots.Broadcast("<Check_NecroFD>Two people are dead in group, FDing and staying down. Issue reassist when ready.");
+                }
+            }
+        }
+
         /// <summary>
         /// Checks aggro level and drops it if necessary.
         /// </summary>

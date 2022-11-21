@@ -43,7 +43,11 @@ namespace E3Core.Data
             if(!_loadedSpells.ContainsKey(this.SpellID))
             {
                 _loadedSpells.Add(this.SpellID, this);
-                _loadedSpellsByName.Add(this.SpellName, this);
+                if(!_loadedSpellsByName.ContainsKey(this.SpellName))
+                {
+                    _loadedSpellsByName.Add(this.SpellName, this);
+
+                }
             }
         }
 
