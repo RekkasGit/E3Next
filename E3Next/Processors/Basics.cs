@@ -109,7 +109,6 @@ namespace E3Core.Processors
                     else
                     {
                         //you have been cothed, reset stuff
-                        Loot.Reset();
                         Movement.Reset();
                         Assist.Reset();
                     }
@@ -655,8 +654,9 @@ namespace E3Core.Processors
                 if (pok) return;
 
                 bool hasManaStone = _mq.Query<bool>("${Bool[${FindItem[=Manastone]}]}");
+                bool amIStanding = _mq.Query<bool>("${Me.Standing}");
 
-                if (hasManaStone)
+                if (hasManaStone && amIStanding)
                 {
                     _mq.Write("\agUsing Manastone...");
                     int pctHps = _mq.Query<int>("${Me.PctHPs}");
@@ -707,8 +707,8 @@ namespace E3Core.Processors
                 if (Movement._following || InCombat()) return;
 
                 bool amIStanding = _mq.Query<bool>("${Me.Standing}");
-
-                if (amIStanding && autoMedPct > 0)
+                string combatState = _mq.Query<string>("${Me.CombatState}");
+                if (amIStanding && autoMedPct > 0 && combatState=="ACTIVE")
                 {
                     int pctMana = _mq.Query<int>("${Me.PctMana}");
                     int pctEndurance = _mq.Query<int>("${Me.PctEndurance}");
