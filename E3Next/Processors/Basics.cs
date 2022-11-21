@@ -704,7 +704,9 @@ namespace E3Core.Processors
             if (!E3.CharacterSettings.Misc_AutoMedBreak) return;
             using (Log.Trace())
             {
-                if (Movement._following || InCombat()) return;
+                bool onMount = _mq.Query<bool>("${Me.Mount.ID}");
+
+                if (onMount|| Movement._following || InCombat()) return;
 
                 bool amIStanding = _mq.Query<bool>("${Me.Standing}");
                 string combatState = _mq.Query<string>("${Me.CombatState}");
