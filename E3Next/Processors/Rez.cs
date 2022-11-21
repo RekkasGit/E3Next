@@ -60,8 +60,8 @@ namespace E3Core.Processors
                         MQ.Cmd("/nomodkey /notify ConfirmationDialogBox No_Button leftmouseup");
                         return; //not a rez dialog box, do not accept.
                     }
-                    MQ.Cmd("/nomodkey /notify ConfirmationDialogBox Yes_Button leftmouseup");
-                    MQ.Delay(2000);//start zone
+                    MQ.Cmd("/nomodkey /notify ConfirmationDialogBox Yes_Button leftmouseup",2000);//start zone
+                    
                     //zone may to happen
                     MQ.Delay(30000, "${Spawn[${Me}'s].ID}");
                     Zoning.Zoned(MQ.Query<Int32>("${Zone.ID}"));
@@ -80,8 +80,8 @@ namespace E3Core.Processors
                     if (!CanRez())
                     {
                         tryLootAgain:
-                        MQ.Cmd("/corpse");
-                        MQ.Delay(1000);
+                        MQ.Cmd("/corpse",1000);
+                        
                         MQ.Cmd("/loot");
                         MQ.Delay(1000, "${Window[LootWnd].Open}");
                         MQ.Cmd("/nomodkey /notify LootWnd LootAllButton leftmouseup");
@@ -204,8 +204,8 @@ namespace E3Core.Processors
                             continue;
                         }
 
-                        MQ.Cmd($"/t {spawn.DiplayName} Wait4Rez");
-                        MQ.Delay(100);
+                        MQ.Cmd($"/t {spawn.DiplayName} Wait4Rez",100);
+                        
                         MQ.Cmd("/corpse");
                         InitRezSpells();
 
@@ -234,8 +234,8 @@ namespace E3Core.Processors
 
         public static bool CanRez()
         {
-            MQ.Cmd("/consider");
-            MQ.Delay(500);
+            MQ.Cmd("/consider",500);
+            
             //check for the event.
             if(HasEventItem("CanRez"))
             {
@@ -279,13 +279,12 @@ namespace E3Core.Processors
                     //we do this to check if our rez tokens have been used up.
                     InitRezSpells();
                     Casting.TrueTarget(s.ID);
-                    MQ.Cmd($"/tell {s.DiplayName} Wait4Rez");
-                    MQ.Delay(100);
+                    
                     foreach (var spell in _currentRezSpells)
                     {
                         if (Casting.CheckReady(spell) && Casting.CheckMana(spell) && CanRez())
                         {
-
+                            MQ.Cmd($"/tell {s.DiplayName} Wait4Rez", 100);
                             Casting.Cast(s.ID, spell);
 
                             return;
@@ -325,8 +324,8 @@ namespace E3Core.Processors
                         continue;
                     }
 
-                    MQ.Cmd($"/tell {s.DiplayName} Wait4Rez");
-                    MQ.Delay(1500); //long delays after tells
+                    MQ.Cmd($"/tell {s.DiplayName} Wait4Rez",1500); //long delays after tells
+
                     //assume consent was given
                     MQ.Cmd("/corpse");
 
@@ -435,12 +434,28 @@ namespace E3Core.Processors
                 if (x.args.Count == 1)
                 {
                     string user = x.args[0];
-                    Int32 targetid = MQ.Query<Int32>("${Target.ID}");
-                    if (targetid>0)
+                    int targetid = 0;
+                    if (int.TryParse(x.args[0], out targetid))
+                    {
+                        if (targetid > 0)
+                        {
+                            Spawn s;
+                            if (_spawns.TryByID(targetid, out s))
+                            {
+                                SingleRez(targetid);
+                            }
+                            else
+                            {
+                                E3.Bots.Broadcast($"Rezit target {targetid} is not a valid spawn id.");
+                                return;
+                            }
+                        }
+                    }
+                    else
                     {
                         E3.Bots.BroadcastCommandToPerson(user, $"/rezit {targetid}");
-
                     }
+                    
 
                 }
                 else if (x.args.Count == 0)
