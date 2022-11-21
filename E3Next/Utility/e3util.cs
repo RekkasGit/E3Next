@@ -656,5 +656,9 @@ namespace E3Core.Utility
             return (vendorOpen || bankOpen || guildBankOpen || tradeOpen || giveOpen);
         }
 
+        public static void Exchange(string slotName, string itemName)
+        {
+            MQ.Cmd($"/exchange \"{itemName}\" \"{slotName}\"");
+        }
     }
 }
