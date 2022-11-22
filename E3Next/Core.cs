@@ -813,8 +813,8 @@ namespace MonoCore
                 E3Core.Server.NetMQServer._uiProcess.Kill();
             }
             NetMQConfig.Cleanup(false);
-            GC.Collect();
             System.Threading.Thread.Sleep(500);
+            GC.Collect();
             ////NOTE , there are situations where the unload of the domain will lock up. I've done everything I can do to prevent this, but it 'can' and will happen. 
             ////I've written a script to reload constantly for 5-6 min before lockup, but again its a % chance. 
         }
