@@ -393,11 +393,10 @@ namespace E3Core.Processors
         [ClassInvoke(Data.Class.All)]
         public static void CheckTradeAccept() 
         {
-            if (String.Equals(E3.GeneralSettings.AutoTrade, "Off", StringComparison.OrdinalIgnoreCase)) return;
             if (!e3util.ShouldCheck(ref _nextTradeCheck, _nextTradeCheckInterval)) return;
 
             bool tradeWndOpen = MQ.Query<bool>($"${{Window[TradeWnd].Open}}");
-            string autoTradeWith = E3.GeneralSettings.AutoTrade;
+            bool doTrade = false;
 
             if (!tradeWndOpen)
             {
@@ -409,39 +408,42 @@ namespace E3Core.Processors
                 Spawn trader;
                 if (_spawns.TryByName(traderName,out trader))
                 {
-                    if (autoTradeWith.Equals("ALL", StringComparison.OrdinalIgnoreCase))
+                                   
+                    if (E3.GeneralSettings.AutoTradeAll)
                     {
-                        MQ.Cmd($"/nomodkey /notify TradeWnd TRDW_Trade_Button leftmouseup", 500);
+                        doTrade = true;
                      
                     }
-                    else if (autoTradeWith.Equals("GUILD", StringComparison.OrdinalIgnoreCase))
+                    else if (E3.GeneralSettings.AutoTradeGuild)
                     {
                         if (MQ.Query<bool>($"${{Spawn[id {trader.ID}].Guild.Equal[${{Me.Guild}}]}}"))
                         {
-                            MQ.Cmd($"/nomodkey /notify TradeWnd TRDW_Trade_Button leftmouseup", 500);
+                            doTrade = true;
                         }
                     }
-                    else if (autoTradeWith.Equals("RAID", StringComparison.OrdinalIgnoreCase))
+                    else if (E3.GeneralSettings.AutoTradeRaid)
                     {
                         if (MQ.Query<bool>($"${{Raid.Member[{trader.DiplayName}]}}"))
                         {
-                            MQ.Cmd($"/nomodkey /notify TradeWnd TRDW_Trade_Button leftmouseup", 500);
+                            doTrade = true;
                         }
                     }
-                    else if (autoTradeWith.Equals("BOTS", StringComparison.OrdinalIgnoreCase))
+                    else if (E3.GeneralSettings.AutoTradeBots)
                     {
                         if (E3.Bots.BotsConnected().Contains(trader.CleanName))
                         {
-                            MQ.Cmd($"/nomodkey /notify TradeWnd TRDW_Trade_Button leftmouseup", 500);
+                            doTrade = true;
                         }
                     }
-                    else if (autoTradeWith.Equals("GROUP", StringComparison.OrdinalIgnoreCase))
+                    else if (E3.GeneralSettings.AutoTradeGroup)
                     {
                         if (Basics.GroupMembers.Contains(trader.ID))
                         {
-                            MQ.Cmd($"/nomodkey /notify TradeWnd TRDW_Trade_Button leftmouseup", 500);
+                            doTrade = true;
                         }
                     }
+
+                    if (doTrade) MQ.Cmd($"/nomodkey /notify TradeWnd TRDW_Trade_Button leftmouseup", 500);
                 }
             }
         }

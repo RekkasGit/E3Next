@@ -58,8 +58,11 @@ namespace E3Core.Settings
         public Int32 Assists_LongTermDebuffRecast = 30;
         public Int32 Assists_ShortTermDebuffRecast = 5;
 
-        public String AutoTrade;
-        public List<string> AutoTradeValid = new List<string>() { "All", "Bots", "Guild", "Group", "Raid" };
+        public bool AutoTradeAll = false;
+        public bool AutoTradeBots = false;
+        public bool AutoTradeGroup = false;
+        public bool AutoTradeGuild = false;
+        public bool AutoTradeRaid = false;
 
         private System.DateTime _fileLastModified;
         private string _fileLastModifiedFileName;
@@ -153,11 +156,11 @@ namespace E3Core.Settings
             LoadKeyData("Assists", "Long Term Debuff Recast(s)", parsedData, ref Assists_LongTermDebuffRecast);
             LoadKeyData("Assists", "Short Term Debuff Recast(s)", parsedData, ref Assists_ShortTermDebuffRecast);
 
-            LoadKeyData("AutoTrade", "AutoTrade (All,Bots,Guild,Group,Off,Raid)", parsedData, ref AutoTrade);
-            if (!AutoTradeValid.Contains(AutoTrade, StringComparer.OrdinalIgnoreCase))
-            {
-                AutoTrade = "Off";
-            }
+            LoadKeyData("AutoTrade", "All (On/Off)", parsedData, ref AutoTradeAll);
+            LoadKeyData("AutoTrade", "Bots (On/Off)", parsedData, ref AutoTradeBots);
+            LoadKeyData("AutoTrade", "Group (On/Off)", parsedData, ref AutoTradeGroup);
+            LoadKeyData("AutoTrade", "Guild (On/Off)", parsedData, ref AutoTradeGuild);
+            LoadKeyData("AutoTrade", "Raid (On/Off)", parsedData, ref AutoTradeRaid);
         }
 
         public IniData CreateSettings()
@@ -237,10 +240,14 @@ namespace E3Core.Settings
             section.Keys.AddKey("Short Term Debuff Recast(s)", "5");
 
             //Trade
-            newFile.Sections.AddSection("Trade");
-            section = newFile.Sections.GetSectionData("Trade");
-            section.Keys.AddKey("AutoTrade (All,Bots,Guild,Group,Off,Raid)", "Off");
-
+            newFile.Sections.AddSection("AutoTrade");
+            section = newFile.Sections.GetSectionData("AutoTrade");
+            section.Keys.AddKey("All (On/Off)", "Off");
+            section.Keys.AddKey("Bots (On/Off)", "Off");
+            section.Keys.AddKey("Group (On/Off)", "Off");
+            section.Keys.AddKey("Guild (On/Off)", "Off");
+            section.Keys.AddKey("Raid (On/Off)", "Off");
+            
             string filename = GetSettingsFilePath("General Settings.ini");
             if (!System.IO.File.Exists(filename))
             {
