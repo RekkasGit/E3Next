@@ -42,11 +42,12 @@ namespace E3Core.Data
             QueryMQ();
             if(!_loadedSpells.ContainsKey(this.SpellID))
             {
-                _loadedSpells.Add(this.SpellID, this);
+                //sometimes an item can have the same spellid of a spell. prevent duplicates. 
+                //should deal with this later tho, and make it off maybe castID
                 if(!_loadedSpellsByName.ContainsKey(this.SpellName))
                 {
                     _loadedSpellsByName.Add(this.SpellName, this);
-
+                    _loadedSpells.Add(this.SpellID, this);
                 }
             }
         }

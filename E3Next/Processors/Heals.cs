@@ -30,6 +30,7 @@ namespace E3Core.Processors
                 //grabbing these values now and reusing them
                 Int32 currentMana = MQ.Query<Int32>("${Me.CurrentMana}");
                 Int32 pctMana = MQ.Query<Int32>("${Me.PctMana}");
+                Int32 targetID = MQ.Query<Int32>("${Target.ID}");
                 if (E3.CharacterSettings.HealTanks.Count > 0 && E3.CharacterSettings.HealTankTargets.Count > 0)
                 {
                     HealTanks(currentMana, pctMana);
@@ -51,6 +52,16 @@ namespace E3Core.Processors
                 if (!E3.ActionTaken) HoTAll(currentMana, pctMana);
                 if (!E3.ActionTaken) HealPets(currentMana, pctMana);
                 if (!E3.ActionTaken) HoTPets(currentMana, pctMana);
+
+
+                if((E3.CurrentClass&Data.Class.Tank)== E3.CurrentClass)
+                {
+                    Int32 currentTargetID = MQ.Query<Int32>("${Target.ID}");
+                    if(targetID>0 && currentTargetID!=targetID)
+                    {
+                        Casting.TrueTarget(targetID);
+                    }
+                }
             }
         }
 
@@ -274,6 +285,7 @@ namespace E3Core.Processors
         {
             //using (_log.Trace())
             {
+
                 foreach (var name in targets)
                 {
                     Int32 targetID = 0;
@@ -521,7 +533,8 @@ namespace E3Core.Processors
         {
             Int32 pctHps = E3.CurrentHps;
             Int32 myID = E3.CurrentId;
-            foreach(var spell in E3.CharacterSettings.LifeSupport)
+            Int32 targetID = MQ.Query<Int32>("${Target.ID}");
+            foreach (var spell in E3.CharacterSettings.LifeSupport)
             {
                 if(pctHps<spell.HealPct)
                 {
@@ -533,6 +546,14 @@ namespace E3Core.Processors
                         if (spell.CastName.IndexOf("Divine Healing", 0, StringComparison.OrdinalIgnoreCase) > -1) targetIDToUse = 0;
                         if (spell.CastName.IndexOf("Sanguine Mind Crystal", 0, StringComparison.OrdinalIgnoreCase) > -1) targetIDToUse = 0;
                         Casting.Cast(targetIDToUse, spell);
+                        if((E3.CurrentClass& Data.Class.Tank)== E3.CurrentClass)
+                        {
+                           
+                            if(targetID>0)
+                            {
+                                Casting.TrueTarget(targetID);
+                            }
+                        }
                         return true;
                     }
                 }

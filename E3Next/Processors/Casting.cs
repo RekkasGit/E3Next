@@ -323,7 +323,7 @@ namespace E3Core.Processors
 
                             //TODO: SWAP ITEM
 
-                            if (spell.MyCastTime > 300)
+                            if (spell.MyCastTime > 500)
                             {
 
                                 if (MQ.Query<bool>("${Stick.Status.Equal[on]}")) MQ.Cmd("/squelch /stick pause");
