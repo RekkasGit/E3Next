@@ -394,7 +394,10 @@ namespace E3Core.Processors
         public static void CheckTradeAccept() 
         {
             if (!e3util.ShouldCheck(ref _nextTradeCheck, _nextTradeCheckInterval)) return;
+            if (Basics.InCombat)
+            {
 
+            }
             bool tradeWndOpen = MQ.Query<bool>($"${{Window[TradeWnd].Open}}");
             bool doTrade = false;
 
