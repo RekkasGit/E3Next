@@ -58,6 +58,9 @@ namespace E3Core.Settings
         public Int32 Assists_LongTermDebuffRecast = 30;
         public Int32 Assists_ShortTermDebuffRecast = 5;
 
+        public String AutoTrade;
+        public List<string> AutoTradeValid = new List<string>() { "All", "Bots", "Guild", "Group", "Raid" };
+
         private System.DateTime _fileLastModified;
         private string _fileLastModifiedFileName;
         public GeneralSettings()
@@ -149,6 +152,12 @@ namespace E3Core.Settings
             LoadKeyData("Assists", "Acceptable Target Types", parsedData, ref Assists_AcceptableTargetTypes);
             LoadKeyData("Assists", "Long Term Debuff Recast(s)", parsedData, ref Assists_LongTermDebuffRecast);
             LoadKeyData("Assists", "Short Term Debuff Recast(s)", parsedData, ref Assists_ShortTermDebuffRecast);
+
+            LoadKeyData("AutoTrade", "AutoTrade (All,Bots,Guild,Group,Off,Raid)", parsedData, ref AutoTrade);
+            if (!AutoTradeValid.Contains(AutoTrade, StringComparer.OrdinalIgnoreCase))
+            {
+                AutoTrade = "Off";
+            }
         }
 
         public IniData CreateSettings()
@@ -226,6 +235,11 @@ namespace E3Core.Settings
             section.Keys.AddKey("Acceptable Target Types", "NPC,Pet");
             section.Keys.AddKey("Long Term Debuff Recast(s)", "30");
             section.Keys.AddKey("Short Term Debuff Recast(s)", "5");
+
+            //Trade
+            newFile.Sections.AddSection("Trade");
+            section = newFile.Sections.GetSectionData("Trade");
+            section.Keys.AddKey("AutoTrade (All,Bots,Guild,Group,Off,Raid)", "Off");
 
             string filename = GetSettingsFilePath("General Settings.ini");
             if (!System.IO.File.Exists(filename))

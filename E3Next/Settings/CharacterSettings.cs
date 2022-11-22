@@ -37,7 +37,7 @@ namespace E3Core.Settings
         public string Misc_AnchorChar = string.Empty;
         public bool Misc_RemoveTorporAfterCombat = true;
         public bool Misc_AutoRez = false;
-
+        
         public bool Rogue_AutoHide = false;
         public bool Rogue_AutoEvade = false;
         public int Rogue_EvadePct = 0;
@@ -381,7 +381,7 @@ namespace E3Core.Settings
             section.Keys.AddKey("Anchor (Char to Anchor to)", "");
             section.Keys.AddKey("Remove Torpor After Combat", "On");
             section.Keys.AddKey("AutoRez", "Off");
-
+            
             newFile.Sections.AddSection("Assist Settings");
             section = newFile.Sections.GetSectionData("Assist Settings");
             section.Keys.AddKey("Assist Type (Melee/Ranged/Off)", "Melee");

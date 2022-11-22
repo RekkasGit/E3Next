@@ -332,7 +332,7 @@ namespace E3Core.Processors
                                 bool navActive = MQ.Query<bool>("${Navigation.Active}");
                                 if (navActive)
                                 {
-                                    MQ.Cmd("/nav stop log=error");
+                                    MQ.Cmd("/nav pause");
                                 }
                                 MQ.Delay(300, "${Bool[!${Me.Moving}]}");
 
@@ -541,11 +541,15 @@ namespace E3Core.Processors
                         E3.ActionTaken = true;
                         //clear out the queues for the resist counters as they may have a few that lagged behind.
                         ClearResistChecks();
-                      
+
+                        if (MQ.Query<bool>($"${{Navigation.Paused}}")) MQ.Cmd("/nav pause");
+
                         return returnValue;
 
                     }
                     MQ.Write($"\arInvalid targetId for Casting. {targetID}");
+
+                    if (MQ.Query<bool>($"${{Navigation.Paused}}")) MQ.Cmd("/nav pause");
 
                     E3.ActionTaken = true;
                     return CastReturn.CAST_NOTARGET;
@@ -555,8 +559,8 @@ namespace E3Core.Processors
             {
                 PubServer.AddTopicMessage("${Casting}", String.Empty);
             }
-            
 
+            
         }
         private static bool NowCastReady()
         {
