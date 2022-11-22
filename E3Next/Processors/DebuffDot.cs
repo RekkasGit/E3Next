@@ -390,6 +390,13 @@ namespace E3Core.Processors
                             continue;
                         }
                     }
+                    
+                    if (!MQ.Query<bool>($"${{Spell[{spell.CastName}].StacksTarget}}"))
+                    {
+                        //spell won't land based on stacking, move to next
+                        continue;
+                    }
+                    
                     var result = Casting.Cast(mobid, spell, Heals.SomeoneNeedsHealing);
                     if (result == CastReturn.CAST_INTERRUPTFORHEAL)
                     {

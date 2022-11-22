@@ -349,7 +349,7 @@ namespace E3Core.Processors
                         importantItem = false;
                         foundInFile = true;
                     }
-                    if(!foundInFile)
+                    if(!foundInFile && !nodrop)
                     {
                         importantItem = true;
                         LootDataFile.Keep.Add(corpseItem);
@@ -388,8 +388,8 @@ namespace E3Core.Processors
                 if (importantItem || bypassLootSettings)
                 {
                     //lets loot it if we can!
-                    MQ.Cmd($"/nomodkey /itemnotify loot{i} rightmouseup");
-                    MQ.Delay(300);
+                    MQ.Cmd($"/nomodkey /itemnotify loot{i} rightmouseup",300);
+                    
                     bool qtyWindowUp = MQ.Query<bool>("${Window[QuantityWnd].Open}");
                     if(qtyWindowUp)
                     {

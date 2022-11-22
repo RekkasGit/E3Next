@@ -760,6 +760,7 @@ namespace E3Core.Processors
         public static void CheckBox()
         {
             if (!E3.GeneralSettings.AutoMisfitBox) return;
+            if (InCombat()) return;
             if (!e3util.ShouldCheck(ref _nextBoxCheck, _nextBoxCheckInterval)) return;
 
             var box = "Box of Misfit Prizes";
@@ -783,6 +784,7 @@ namespace E3Core.Processors
             if (!Casting.TrueTarget(boxId))
             {
                 _mq.Write("\arWhere box?");
+                e3util.Exchange("ammo", ammoItem);
                 return;
             }
 
@@ -794,6 +796,7 @@ namespace E3Core.Processors
             if (!Casting.TrueTarget(boxSpawn?.ID ?? 0))
             {
                 _mq.Write("\arWhere box?");
+                e3util.Exchange("ammo", ammoItem);
                 return;
             }
 
@@ -809,7 +812,7 @@ namespace E3Core.Processors
 
             if (!string.Equals(ammoItem, box))
             {
-                _mq.Cmd($"/exchange \"{ammoItem}\" ammo");
+                e3util.Exchange("ammo", ammoItem);
             }
         }
 

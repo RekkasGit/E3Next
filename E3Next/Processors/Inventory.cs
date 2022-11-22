@@ -21,6 +21,8 @@ namespace E3Core.Processors
         private static ISpawns _spawns = E3.Spawns;
         private static readonly List<string> _invSlots = new List<string>() { "charm", "leftear", "head", "face", "rightear", "neck", "shoulder", "arms", "back", "leftwrist", "rightwrist", "ranged", "hands", "mainhand", "offhand", "leftfinger", "rightfinger", "chest", "legs", "feet", "waist", "powersource", "ammo" };
         private static readonly List<string> _fdsSlots = new List<string>(_invSlots) { "fingers", "wrists", "ears" };
+        private static long _nextTradeCheck = 0;
+        private static long _nextTradeCheckInterval = 1000;
 
         [SubSystemInit]
         public static void Init()
@@ -191,8 +193,7 @@ namespace E3Core.Processors
             // different syntax for if the item is in a bag vs if it's not
             if (slot2 >= 0)
             {
-                MQ.Cmd($"/nomodkey /itemnotify bank{slot + 1} rightmouseup");
-                MQ.Delay(100);
+                MQ.Cmd($"/nomodkey /itemnotify bank{slot + 1} rightmouseup",100);
                 MQ.Cmd($"/nomodkey /itemnotify in bank{slot + 1} {slot2 + 1} leftmouseup");
             }
             else
@@ -215,13 +216,12 @@ namespace E3Core.Processors
                 }
                 else
                 {
-                    MQ.Cmd($"/nomodkey /notify QuantityWnd QTYW_slider newvalue {requestedQuantity}");
-                    MQ.Delay(250);
+                    MQ.Cmd($"/nomodkey /notify QuantityWnd QTYW_slider newvalue {requestedQuantity}",250);
                 }
             }
 
-            MQ.Cmd("/nomodkey /notify QuantityWnd QTYW_Accept_Button leftmouseup");
-            MQ.Delay(50);
+            MQ.Cmd("/nomodkey /notify QuantityWnd QTYW_Accept_Button leftmouseup",50);
+            
             MQ.Cmd($"/nomodkey /itemnotify bank{slot + 1} rightmouseup");
         }
 
@@ -286,8 +286,8 @@ namespace E3Core.Processors
             }
 
             MQ.Cmd("/nomodkey /keypress esc");
-            MQ.Cmd($"/nomodkey /itemnotify \"${{FindItem[={newItem}]}}\" rightmouseheld");
-            MQ.Delay(500);
+            MQ.Cmd($"/nomodkey /itemnotify \"${{FindItem[={newItem}]}}\" rightmouseheld",500);
+            
 
             foreach (var kvp in slotsWithAugs)
             {
@@ -389,6 +389,72 @@ namespace E3Core.Processors
             EventProcessor.RegisterCommand("/upgrade", (x) => Upgrade(x.args));
             //restock generic reusable items from vendors
             
+        }
+        [ClassInvoke(Data.Class.All)]
+        public static void CheckTradeAccept() 
+        {
+            if (!e3util.ShouldCheck(ref _nextTradeCheck, _nextTradeCheckInterval)) return;
+            
+            bool tradeWndOpen = MQ.Query<bool>($"${{Window[TradeWnd].Open}}");
+            bool doTrade = false;
+
+            if (!tradeWndOpen)
+            {
+                return;
+            }
+            else
+            {
+                
+                string traderName = MQ.Query<string>($"${{Window[TradeWnd].Child[TRDW_HisName].Text}}");
+                Spawn trader;
+                
+                if (_spawns.TryByName(traderName,out trader))
+                {
+                    if (Basics.InCombat())
+                    {
+                        MQ.Cmd($"/nomodkey /notify TradeWnd TRDW_Cancel_Button leftmouseup");
+                        E3.Bots.Broadcast($"Cancelling trade with {trader.CleanName} because of combat");
+                    }
+                    if (E3.GeneralSettings.AutoTradeAll)
+                    {
+                        doTrade = true;
+                     
+                    }
+                    else if (E3.GeneralSettings.AutoTradeGuild)
+                    {
+                        if (MQ.Query<bool>($"${{Spawn[id {trader.ID}].Guild.Equal[${{Me.Guild}}]}}"))
+                        {
+                            doTrade = true;
+                        }
+                    }
+                    else if (E3.GeneralSettings.AutoTradeRaid)
+                    {
+                        if (MQ.Query<bool>($"${{Raid.Member[{trader.DiplayName}]}}"))
+                        {
+                            doTrade = true;
+                        }
+                    }
+                    else if (E3.GeneralSettings.AutoTradeBots)
+                    {
+                        if (E3.Bots.BotsConnected().Contains(trader.CleanName))
+                        {
+                            doTrade = true;
+                        }
+                    }
+                    else if (E3.GeneralSettings.AutoTradeGroup)
+                    {
+                        if (Basics.GroupMembers.Contains(trader.ID))
+                        {
+                            doTrade = true;
+                        }
+                    }
+
+                    if (doTrade)
+                    {
+                        MQ.Cmd($"/nomodkey /notify TradeWnd TRDW_Trade_Button leftmouseup", 500);
+                    }
+                }
+            }
         }
     }
 }
