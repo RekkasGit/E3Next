@@ -29,7 +29,9 @@ namespace E3Core.Processors
 
         public static CastReturn Cast(int targetID, Data.Spell spell, Func<Int32, Int32, bool> interruptCheck = null, bool isNowCast = false)
         {
-
+            bool navActive = MQ.Query<bool>("${Navigation.Active}");
+            bool navPaused = MQ.Query<bool>("${Navigation.Paused}");
+            bool e3PausedNav = false;
             try
             {
                 //bard can cast insta cast items while singing, they be special.
@@ -329,10 +331,14 @@ namespace E3Core.Processors
                                 if (MQ.Query<bool>("${Stick.Status.Equal[on]}")) MQ.Cmd("/squelch /stick pause");
                                 if (MQ.Query<bool>("${AdvPath.Following}") && E3.Following) MQ.Cmd("/squelch /afollow off");
                                 if (MQ.Query<bool>("${MoveTo.Moving}") && E3.Following) MQ.Cmd("/moveto off");
-                                bool navActive = MQ.Query<bool>("${Navigation.Active}");
-                                if (navActive)
+                                
+                                navActive = MQ.Query<bool>("${Navigation.Active}");
+                                navPaused = MQ.Query<bool>("${Navigation.Paused}");
+                                e3PausedNav = false;
+                                if (navActive && !navPaused)
                                 {
                                     MQ.Cmd("/nav pause");
+                                    e3PausedNav = true;
                                 }
                                 MQ.Delay(300, "${Bool[!${Me.Moving}]}");
 
@@ -542,14 +548,24 @@ namespace E3Core.Processors
                         //clear out the queues for the resist counters as they may have a few that lagged behind.
                         ClearResistChecks();
 
-                        if (MQ.Query<bool>($"${{Navigation.Paused}}")) MQ.Cmd("/nav pause");
+                        navPaused = MQ.Query<bool>("${Navigation.Paused}");
+
+                        if (navPaused && e3PausedNav)
+                        {
+                            MQ.Cmd("/nav pause");
+                        }
 
                         return returnValue;
 
                     }
                     MQ.Write($"\arInvalid targetId for Casting. {targetID}");
 
-                    if (MQ.Query<bool>($"${{Navigation.Paused}}")) MQ.Cmd("/nav pause");
+                    navPaused = MQ.Query<bool>("${Navigation.Paused}");
+
+                    if (navPaused && e3PausedNav)
+                    {
+                        MQ.Cmd("/nav pause");
+                    }
 
                     E3.ActionTaken = true;
                     return CastReturn.CAST_NOTARGET;

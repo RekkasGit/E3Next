@@ -220,8 +220,8 @@ namespace E3Core.Processors
                 }
             }
 
-            MQ.Cmd("/nomodkey /notify QuantityWnd QTYW_Accept_Button leftmouseup");
-            MQ.Delay(50);
+            MQ.Cmd("/nomodkey /notify QuantityWnd QTYW_Accept_Button leftmouseup",50);
+            
             MQ.Cmd($"/nomodkey /itemnotify bank{slot + 1} rightmouseup");
         }
 
@@ -286,8 +286,8 @@ namespace E3Core.Processors
             }
 
             MQ.Cmd("/nomodkey /keypress esc");
-            MQ.Cmd($"/nomodkey /itemnotify \"${{FindItem[={newItem}]}}\" rightmouseheld");
-            MQ.Delay(500);
+            MQ.Cmd($"/nomodkey /itemnotify \"${{FindItem[={newItem}]}}\" rightmouseheld",500);
+            
 
             foreach (var kvp in slotsWithAugs)
             {
@@ -394,10 +394,7 @@ namespace E3Core.Processors
         public static void CheckTradeAccept() 
         {
             if (!e3util.ShouldCheck(ref _nextTradeCheck, _nextTradeCheckInterval)) return;
-            if (Basics.InCombat)
-            {
-
-            }
+            
             bool tradeWndOpen = MQ.Query<bool>($"${{Window[TradeWnd].Open}}");
             bool doTrade = false;
 
@@ -407,11 +404,17 @@ namespace E3Core.Processors
             }
             else
             {
+                
                 string traderName = MQ.Query<string>($"${{Window[TradeWnd].Child[TRDW_HisName].Text}}");
                 Spawn trader;
+                
                 if (_spawns.TryByName(traderName,out trader))
                 {
-                                   
+                    if (Basics.InCombat())
+                    {
+                        MQ.Cmd($"/nomodkey /notify TradeWnd TRDW_Cancel_Button leftmouseup");
+                        E3.Bots.Broadcast($"Cancelling trade with {trader.CleanName} because of combat");
+                    }
                     if (E3.GeneralSettings.AutoTradeAll)
                     {
                         doTrade = true;
@@ -446,7 +449,10 @@ namespace E3Core.Processors
                         }
                     }
 
-                    if (doTrade) MQ.Cmd($"/nomodkey /notify TradeWnd TRDW_Trade_Button leftmouseup", 500);
+                    if (doTrade)
+                    {
+                        MQ.Cmd($"/nomodkey /notify TradeWnd TRDW_Trade_Button leftmouseup", 500);
+                    }
                 }
             }
         }
