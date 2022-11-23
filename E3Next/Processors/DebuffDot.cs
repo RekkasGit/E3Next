@@ -391,7 +391,7 @@ namespace E3Core.Processors
                         }
                     }
                     
-                    if (!MQ.Query<bool>($"${{Spell[{spell.CastName}].StacksTarget}}"))
+                    if (!MQ.Query<bool>($"${{Spell[{spell.SpellName}].StacksTarget}}"))
                     {
                         //spell won't land based on stacking, move to next
                         continue;
