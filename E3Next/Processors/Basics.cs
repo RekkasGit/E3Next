@@ -375,6 +375,7 @@ namespace E3Core.Processors
                 if (!savedGroups.TryGetValue(groupKey, out var groupMembers))
                 {
                     _mq.Write($"\arNo group with the name of {args[0]} found in Saved Groups.ini. Use /savegroup groupName to create one");
+                    return;
                 }
                 _mq.Cmd("/disband");
                 _mq.Cmd("/raiddisband");

@@ -130,6 +130,15 @@ namespace E3Core.Processors
             {
                 foreach (var spell in E3.CharacterSettings.HealXTarget)
                 {
+                    //check Ifs on the spell
+                    if (!String.IsNullOrWhiteSpace(spell.Ifs))
+                    {
+                        if (!Casting.Ifs(spell))
+                        {
+                            //failed check, onto the next
+                            continue;
+                        }
+                    }
                     recastSpell:
                     if (spell.Mana > currentMana)
                     {
@@ -216,6 +225,15 @@ namespace E3Core.Processors
         {
             foreach (var spell in E3.CharacterSettings.HealGroup)
             {
+                //check Ifs on the spell
+                if (!String.IsNullOrWhiteSpace(spell.Ifs))
+                {
+                    if (!Casting.Ifs(spell))
+                    {
+                        //failed check, onto the next
+                        continue;
+                    }
+                }
                 Int32 numberNeedingHeal = MQ.Query<Int32>($"${{Group.Injured[{spell.HealPct}]}}");
                 if (numberNeedingHeal > 2)
                 {
@@ -337,6 +355,15 @@ namespace E3Core.Processors
                                 }
                                 foreach (var spell in spells)
                                 {
+                                    //check Ifs on the spell
+                                    if (!String.IsNullOrWhiteSpace(spell.Ifs))
+                                    {
+                                        if (!Casting.Ifs(spell))
+                                        {
+                                            //failed check, onto the next
+                                            continue;
+                                        }
+                                    }
 
                                     if (!String.IsNullOrWhiteSpace(spell.CheckFor))
                                     {
@@ -390,6 +417,15 @@ namespace E3Core.Processors
                                 Int32 pctHealth = E3.Bots.PctHealth(name);
                                 foreach (var spell in spells)
                                 {
+                                    //check Ifs on the spell
+                                    if (!String.IsNullOrWhiteSpace(spell.Ifs))
+                                    {
+                                        if (!Casting.Ifs(spell))
+                                        {
+                                            //failed check, onto the next
+                                            continue;
+                                        }
+                                    }
                                     if (!String.IsNullOrWhiteSpace(spell.CheckFor))
                                     {
                                         if (E3.Bots.BuffList(name).Contains(spell.CheckForID))
@@ -489,6 +525,15 @@ namespace E3Core.Processors
                                     Int32 pctHealth = E3.Bots.PctHealth(name);
                                     foreach (var spell in spells)
                                     {
+                                        //check Ifs on the spell
+                                        if (!String.IsNullOrWhiteSpace(spell.Ifs))
+                                        {
+                                            if (!Casting.Ifs(spell))
+                                            {
+                                                //failed check, onto the next
+                                                continue;
+                                            }
+                                        }
                                         recastSpell:
                                         if (spell.Mana > currentMana)
                                         {

@@ -166,6 +166,7 @@ namespace E3Core.Processors
             if (!E3.CharacterSettings.Misc_AutoRez) return;
             
             if (!e3util.ShouldCheck(ref _nextAutoRezCheck, _nextAutoRezCheckInterval)) return;
+            if (Basics.AmIDead()) return;
             
             RefreshCorpseList();
 
@@ -173,6 +174,7 @@ namespace E3Core.Processors
             {
                 if (_spawns.TryByID(corpse, out var spawn))
                 {
+                    if (Basics.AmIDead()) return;
                     // only care about group or raid members
                     var inGroup = MQ.Query<bool>($"${{Group.Member[{spawn.DiplayName}]}}");
                     var inRaid = MQ.Query<bool>($"${{Raid.Member[{spawn.DiplayName}]}}");

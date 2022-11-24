@@ -471,7 +471,14 @@ namespace E3Core.Utility
                 {
                     if (Int32.TryParse(x.args[0], out mobid))
                     {
-                        FunctionToExecute(mobid);
+                        if(_spawns.TryByID(mobid, out var spawn))
+                        {
+                            if(spawn.TypeDesc=="NPC")
+                            {
+                                FunctionToExecute(mobid);
+
+                            }
+                        }
                     }
                     else
                     {
@@ -483,9 +490,15 @@ namespace E3Core.Utility
                     Int32 targetID = MQ.Query<Int32>("${Target.ID}");
                     if (targetID > 0)
                     {
-                        //we are telling people to follow us
-                        E3.Bots.BroadcastCommandToGroup($"{command} {targetID}");
-                        FunctionToExecute(targetID);
+                        if (_spawns.TryByID(targetID, out var spawn))
+                        {
+                            if (spawn.TypeDesc == "NPC")
+                            {
+                                //we are telling people to follow us
+                                E3.Bots.BroadcastCommandToGroup($"{command} {targetID}");
+                                FunctionToExecute(targetID);
+                            }
+                        }
                     }
                     else
                     {

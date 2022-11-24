@@ -59,7 +59,10 @@ namespace E3Core.Processors
                         spell = realSpell;
                     }
                     bool inBook = MQ.Query<bool>($"${{Me.Book[{spell}]}}");
-                    if(inBook)
+                    bool aa = MQ.Query<bool>($"${{Me.AltAbility[{spell}].Spell}}");
+                    bool item = MQ.Query<bool>($"${{FindItem[={spell}]}}");
+            
+                    if (inBook || aa || item)
                     {
                         MQ.Cmd($"/t {user} I'm queuing up {spell} to use on you, please wait.");
                         MQ.Delay(0);
@@ -176,14 +179,14 @@ namespace E3Core.Processors
                         Int32 cursorID = MQ.Query<Int32>("${Cursor.ID}");
                         Casting.Cast(spawn.ID, s);
                        
-                       
-                        if(!String.IsNullOrWhiteSpace(askedForSpell.Requester))
-                        {
-                            //tells are stupid slow, so put a delay in case the cast was instant
+                        //removing reply tell per reek about rate limiting
+                        //if(!String.IsNullOrWhiteSpace(askedForSpell.Requester))
+                        //{
+                        //    //tells are stupid slow, so put a delay in case the cast was instant
 
-                            MQ.Delay(300);
-                            MQ.Cmd($"/t {askedForSpell.Requester} {askedForSpell.SpellTouse} has been cast on you.");
-                        }
+                        //    MQ.Delay(300);
+                        //    MQ.Cmd($"/t {askedForSpell.Requester} {askedForSpell.SpellTouse} has been cast on you.");
+                        //}
                         if (cursorID<1)
                         {
                             cursorID = MQ.Query<Int32>("${Cursor.ID}");

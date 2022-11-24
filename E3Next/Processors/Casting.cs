@@ -82,7 +82,7 @@ namespace E3Core.Processors
                     {
                         //means don't change current target
                         targetID = MQ.Query<Int32>("${Target.ID}");
-                        if (targetID == 0)
+                        if (targetID < 1)
                         {
                             targetID = E3.CurrentId;
                         }
@@ -90,7 +90,7 @@ namespace E3Core.Processors
 
                     if (targetID < 1)
                     {
-                        if (!(spell.TargetType == "Self" || spell.TargetType == "Group v1"))
+                        if (!(spell.TargetType == "Self" || spell.TargetType == "Group v1" || spell.TargetType == "Group v2" || spell.TargetType == "PB AE"))
                         {
                             MQ.Write($"Invalid targetId for Casting. {targetID}");
                             E3.ActionTaken = true;
