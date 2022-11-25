@@ -11,7 +11,7 @@ namespace E3Core.Settings.FeatureSettings
 {
     public class SavedGroupDataFile : BaseSettings
     {
-        private Dictionary<string, string[]> _savedGroups = new Dictionary<string, string[]>();
+        private Dictionary<string, string[]> _savedGroups = new Dictionary<string, string[]>(StringComparer.OrdinalIgnoreCase);
 
         public SavedGroupDataFile()
         {
@@ -23,7 +23,7 @@ namespace E3Core.Settings.FeatureSettings
             var savedGroupFilePath = GetSettingsFilePath("Saved Groups.ini");
             var parser = e3util.CreateIniParser();
             var parsedData = parser.ReadFile(savedGroupFilePath);
-            _savedGroups = parsedData.Sections.ToDictionary(k => k.SectionName, v => v.Keys.Select(s => s.Value).ToArray());
+            _savedGroups = parsedData.Sections.ToDictionary(k => k.SectionName, v => v.Keys.Select(s => s.Value).ToArray(),StringComparer.OrdinalIgnoreCase);
         }
 
         public Dictionary<string, string[]> GetData()
