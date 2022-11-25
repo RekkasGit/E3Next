@@ -452,10 +452,11 @@ namespace E3Core.Processors
                                 //check if we need to process any events,if healing tho, ignore. 
                                 if (spell.SpellType.Equals("Detrimental"))
                                 {
-                                    EventProcessor.ProcessEventsInQueues("/backoff");
-                                    EventProcessor.ProcessEventsInQueues("/followme");
-
-                                    if (Assist._assistTargetID == 0)
+                                    if (EventProcessor._commandList["/backoff"].queuedEvents.Count > 0)
+                                    {
+                                        return CastReturn.CAST_INTERRUPTED;
+                                    }
+                                    if (EventProcessor._commandList["/followme"].queuedEvents.Count > 0)
                                     {
                                         return CastReturn.CAST_INTERRUPTED;
                                     }

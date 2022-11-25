@@ -465,7 +465,10 @@ namespace E3Core.Processors
                     }
                 }
 
-                MQ.Cmd($"/face fast id {_assistTargetID}");
+                if (!_allowControl)
+                {
+                    MQ.Cmd($"/face fast id {_assistTargetID}");
+                }
 
                 if (MQ.Query<Int32>("${Me.Pet.ID}") > 0)
                 {

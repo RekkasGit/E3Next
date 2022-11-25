@@ -190,7 +190,7 @@ namespace E3Core.Processors
                 }
             }
         }
-        private static List<string> _swarmPetList = new List<string>() {
+        private static List<string> _swarmPetList = new List<string>() {"Servant of Ro","Host of the Elements",
          "Swarm of Decay","Rise of Bones","Graverobber's Icon","Soulwhisper","Deathwhisper",
          "Wake the Dead","Spirit Call", "Shattered Gnoll Slayer", "Call of Xuzl","Song of Stone",
          "Tarnished Skeleton Key","Celestial Hammer","Graverobber's Icon","Battered Smuggler's Barrel",
