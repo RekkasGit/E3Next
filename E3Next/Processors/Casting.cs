@@ -462,6 +462,16 @@ namespace E3Core.Processors
                                     }
                                 }
                             }
+                            if (spell.SpellType.Equals("Detrimental"))
+                            {
+                                bool isCorpse = MQ.Query<bool>($"${{Spawn[id {targetID}].Type.Equal[Corpse]}}");
+
+                                if (isCorpse)
+                                {
+                                    //shouldn't nuke dead things
+                                    return CastReturn.CAST_INTERRUPTED;
+                                }
+                            }
 
                             MQ.Delay(50);
                             //get updated information after delays
