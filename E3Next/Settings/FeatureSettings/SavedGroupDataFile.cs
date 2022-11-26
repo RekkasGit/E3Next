@@ -1,11 +1,8 @@
 ﻿using E3Core.Utility;
 using IniParser;
-using IniParser.Model;
 using System;
 using System.Collections.Generic;
 using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
 
 namespace E3Core.Settings.FeatureSettings
 {
@@ -23,7 +20,7 @@ namespace E3Core.Settings.FeatureSettings
             var savedGroupFilePath = GetSettingsFilePath("Saved Groups.ini");
             var parser = e3util.CreateIniParser();
             var parsedData = parser.ReadFile(savedGroupFilePath);
-            _savedGroups = parsedData.Sections.ToDictionary(k => k.SectionName, v => v.Keys.Select(s => s.Value).ToArray(),StringComparer.OrdinalIgnoreCase);
+            _savedGroups = parsedData.Sections.ToDictionary(k => k.SectionName, v => v.Keys.Select(s => s.Value).ToArray(), StringComparer.OrdinalIgnoreCase);
         }
 
         public Dictionary<string, string[]> GetData()
@@ -38,6 +35,7 @@ namespace E3Core.Settings.FeatureSettings
             var groupMemberCount = MQ.Query<int>("${Group.Members}");
             var savedGroupFilePath = GetSettingsFilePath("Saved Groups.ini");
             var parser = new FileIniDataParser();
+            parser.Parser.Configuration.CaseInsensitive = true;
             var groupData = parser.ReadFile(savedGroupFilePath);
             groupData.Sections.RemoveSection(groupKey);
             groupData.Sections.AddSection(groupKey);

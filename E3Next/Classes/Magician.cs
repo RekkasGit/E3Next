@@ -62,7 +62,8 @@ namespace E3Core.Classes
                 return;
             }
 
-            EventProcessor.RegisterEvent("EquipPets", "(.+) tells you, 'equippet (.+)'", (x) =>
+            var armPetEvents = new List<string> { "(.+) tells you, 'armpet'", "(.+) tells you, 'armpet (.+)'", "(.+) tells the group, 'armpet (.+)'", };
+            EventProcessor.RegisterEvent("ArmPet", armPetEvents, (x) =>
             {
                 if (x.match.Groups.Count <= 1)
                 {
@@ -76,23 +77,33 @@ namespace E3Core.Classes
                     return;
                 }
 
-                var weaponSplit = x.match.Groups[2].ToString().Split('|');
-                if (weaponSplit.Count() != 2)
+                _isExternalRequest = !E3.Bots.BotsConnected().Contains(_requester);
+                var weaponSplit = new string[2];                
+                if (_isExternalRequest)
                 {
-                    MQ.Cmd($"/t {_requester} Invalid request. The request must be in the format of 'equippet Primary|Secondary'");
-                    return;
-                }
+                    weaponSplit = x.match.Groups[2].ToString().Split('|');
+                    if (weaponSplit.Count() != 2)
+                    {
+                        MQ.Cmd($"/t {_requester} Invalid request. The request must be in the format of armpet Primary|Secondary");
+                        return;
+                    }
 
-                if (!_weaponMap.TryGetValue(weaponSplit[0], out _))
-                {
-                    MQ.Cmd($"/t {_requester} Invalid primary weapon selection. Valid values are {string.Join(", ", _weaponMap.Keys)}");
-                    return;
-                }
+                    if (!_weaponMap.TryGetValue(weaponSplit[0], out _))
+                    {
+                        MQ.Cmd($"/t {_requester} Invalid primary weapon selection. Valid values are {string.Join(", ", _weaponMap.Keys)}");
+                        return;
+                    }
 
-                if (!_weaponMap.TryGetValue(weaponSplit[1], out _))
+                    if (!_weaponMap.TryGetValue(weaponSplit[1], out _))
+                    {
+                        MQ.Cmd($"/t {_requester} Invalid secondary weapon selection. Valid values are {string.Join(", ", _weaponMap.Keys)}");
+                        return;
+                    }
+                }
+                else
                 {
-                    MQ.Cmd($"/t {_requester} Invalid secondary weapon selection. Valid values are {string.Join(", ", _weaponMap.Keys)}");
-                    return;
+                    E3.CharacterSettings.PetWeapons.TryGetValue(_requester, out var weapons);
+                    weaponSplit = weapons.Split('|');
                 }
 
                 if(_spawns.TryByName(_requester, out var requesterSpawn))
@@ -110,23 +121,53 @@ namespace E3Core.Classes
                         return;
                     }
 
-                    _isExternalRequest = true;
-                    EquipPet(theirPetId, $"{weaponSplit[0]}|{weaponSplit[1]}");
+                    ArmPet(theirPetId, $"{weaponSplit[0]}|{weaponSplit[1]}");
                 }
             });
+
+            armPetEvents = new List<string> { "(.+) tells you, 'armpets'", "(.+) tells the group, 'armpets'", };
+            EventProcessor.RegisterEvent("ArmPets", armPetEvents, x =>
+            {
+                _requester = x.match.Groups[1].ToString();
+                if (!E3.Bots.BotsConnected().Contains(_requester))
+                {
+                    MQ.Cmd($"/t {_requester} the ArmPets command is only valid on your own bot network");
+                    return;
+                }
+
+                ArmPets();
+            });
         }
+
 
         /// <summary>
         /// Checks pets for items and re-equips if necessary.
         /// </summary>
         [ClassInvoke(Data.Class.Magician)]
-        public static void EquipPets()
+        public static void AutoArmPets()
         {
             if (Basics.InCombat()) return;
             if (!E3.CharacterSettings.AutoPetWeapons) return;
-            if (MQ.Query<bool>("${AdvPath.Following}") || MQ.Query<bool>("${Nav.Active}")) return;
-            if (MQ.Query<int>("${Cursor.ID}") > 0) return;
             if (!e3util.ShouldCheck(ref _nextWeaponCheck, _nextWeaponCheckInterval)) return;
+
+            ArmPets();
+        }
+
+        public static void ArmPets()
+        {
+            if (MQ.Query<bool>("${AdvPath.Following}") || MQ.Query<bool>("${Nav.Active}"))
+            {
+                E3.Bots.Broadcast("\arI am in following or navving and cannot continue.");
+                return;
+            }
+
+            if (MQ.Query<int>("${Cursor.ID}") > 0)
+            {
+                if (!e3util.ClearCursor())
+                {
+                    E3.Bots.Broadcast("\arI was unable to clear my cursor so I cannot continue.");
+                }
+            }
 
             // my pet
             var primary = MQ.Query<int>("${Me.Pet.Primary}");
@@ -134,7 +175,7 @@ namespace E3Core.Classes
             if (myPetId > 0 && primary == 0)
             {
                 E3.CharacterSettings.PetWeapons.TryGetValue(E3.CurrentName, out var weapons);
-                EquipPet(myPetId, weapons);
+                ArmPet(myPetId, weapons);
             }
 
             // bot pets
@@ -158,13 +199,13 @@ namespace E3Core.Classes
                     var theirPetPrimary = MQ.Query<int>($"${{Spawn[{ownerSpawn.Name}].Pet.Primary}}");
                     if (theirPetPrimary == 0)
                     {
-                        EquipPet(theirPetId, kvp.Value);
+                        ArmPet(theirPetId, kvp.Value);
                     }
                 }
             }
         }
 
-        private static void EquipPet(int petId, string weapons)
+        private static void ArmPet(int petId, string weapons)
         {
             // so we can move back
             var currentX = MQ.Query<double>("${Me.X}");
