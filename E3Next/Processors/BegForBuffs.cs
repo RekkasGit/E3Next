@@ -19,6 +19,7 @@ namespace E3Core.Processors
         {
             public String Requester = String.Empty;
             public String SpellTouse = String.Empty;
+            public Spell Spell;
             public Int32 TargetID = 0;
         }
 
@@ -43,6 +44,48 @@ namespace E3Core.Processors
 
         private static void RegsterEvents()
         {
+            EventProcessor.RegisterCommand("/buffme", (x) =>
+            {
+                if (x.args.Count > 0)
+                {
+                    if (Int32.TryParse(x.args[0], out var spawnid))
+                    {
+                        foreach (var spell in E3.CharacterSettings.GroupBuffs)
+                        {
+                            _queuedBuffs.Enqueue(new BuffQueuedItem() { TargetID=spawnid, Spell = spell });
+
+                        }
+                    }
+                }
+                else
+                {
+                    E3.Bots.BroadcastCommand($"/buffme {E3.CurrentId}");
+                }
+            });
+
+            EventProcessor.RegisterCommand("/buffit", (x) =>
+            {
+                if (x.args.Count > 0)
+                {
+                    if (Int32.TryParse(x.args[0], out var spawnid))
+                    {
+                        foreach (var spell in E3.CharacterSettings.GroupBuffs)
+                        {
+                            _queuedBuffs.Enqueue(new BuffQueuedItem() { TargetID = spawnid, Spell = spell });
+
+                        }
+                    }
+                }
+                else
+                {
+                    int targetid = MQ.Query<int>("${Target.ID}");
+                    if(targetid>0)
+                    {
+                        E3.Bots.BroadcastCommand($"/buffme {targetid}");
+
+                    }
+                }
+            });
 
             EventProcessor.RegisterEvent("BuffBeg", "(.+) tells you, '(.+)'", (x) =>
             {
@@ -164,12 +207,14 @@ namespace E3Core.Processors
                 var askedForSpell = _queuedBuffs.Peek();
                 Spawn spawn;
 
-
-
                 if (_spawns.TryByName(askedForSpell.Requester, out spawn) || _spawns.TryByID(askedForSpell.TargetID, out spawn))
                 {
-                    Spell s;
-                    if (!Spell._loadedSpellsByName.TryGetValue(askedForSpell.SpellTouse, out s))
+                    Spell s=null;
+
+                    //see if the spell was already supplied
+                    if (askedForSpell.Spell != null) s = askedForSpell.Spell;
+
+                    if (s is null && !Spell._loadedSpellsByName.TryGetValue(askedForSpell.SpellTouse, out s))
                     {
                         s = new Spell(askedForSpell.SpellTouse);
                     }
@@ -179,14 +224,6 @@ namespace E3Core.Processors
                         Int32 cursorID = MQ.Query<Int32>("${Cursor.ID}");
                         Casting.Cast(spawn.ID, s);
                        
-                        //removing reply tell per reek about rate limiting
-                        //if(!String.IsNullOrWhiteSpace(askedForSpell.Requester))
-                        //{
-                        //    //tells are stupid slow, so put a delay in case the cast was instant
-
-                        //    MQ.Delay(300);
-                        //    MQ.Cmd($"/t {askedForSpell.Requester} {askedForSpell.SpellTouse} has been cast on you.");
-                        //}
                         if (cursorID<1)
                         {
                             cursorID = MQ.Query<Int32>("${Cursor.ID}");

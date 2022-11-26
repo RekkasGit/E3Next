@@ -54,6 +54,7 @@ namespace E3Core.Processors
                 }
             });
 
+          
             EventProcessor.RegisterCommand("/blockbuff", (x) =>
             {
                 if (x.args.Count > 0)

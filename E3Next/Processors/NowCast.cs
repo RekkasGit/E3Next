@@ -131,8 +131,15 @@ namespace E3Core.Processors
                 {
                     targetid = E3.CurrentId;
                 }
-
-                if(Casting.InRange(targetid, spell) && Casting.CheckReady(spell) && Casting.CheckMana(spell))
+                if (!String.IsNullOrWhiteSpace(spell.CheckFor))
+                {
+                    Casting.TrueTarget(targetid);
+                    if (MQ.Query<bool>($"${{Bool[${{Target.Buff[{spell.CheckFor}]}}]}}"))
+                    {
+                        return CastReturn.CAST_TAKEHOLD;
+                    }
+                }
+                if (Casting.InRange(targetid, spell) && Casting.CheckReady(spell) && Casting.CheckMana(spell))
                 {
                     return Casting.Cast(targetid, spell, null, true);
                 }
