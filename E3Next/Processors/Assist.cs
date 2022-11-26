@@ -85,7 +85,7 @@ namespace E3Core.Processors
                 Int32 targetId = MQ.Query<Int32>("${Target.ID}");
 
 
-                if (targetId == 0)
+                if (targetId <1)
                 {
                     bool isCorpse = MQ.Query<bool>($"${{Spawn[id {_assistTargetID}].Type.Equal[Corpse]}}");
                     if (isCorpse)
