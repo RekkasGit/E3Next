@@ -265,7 +265,7 @@ namespace E3Core.Processors
 
                 //e3util.PrintTimerStatus(_buffTimers, ref _printoutTimer, "Buffs");
 
-                if (Basics.InCombat())
+                if (Assist._isAssisting)
                 {
                     BuffBots(E3.CharacterSettings.CombatBuffs);
 
