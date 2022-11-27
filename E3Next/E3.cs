@@ -151,7 +151,7 @@ namespace E3Core.Processors
             {
                 E3.Bots.Broadcast("\aoAuto-Reloading Tribute settings file...");
                 Zoning.TributeDataFile.LoadData();
-                Loot.Reset();
+                Zoning.TributeDataFile.ToggleTribute();
                 E3.Bots.Broadcast("\aoComplete!");
             }
         }
