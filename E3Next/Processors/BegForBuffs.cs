@@ -44,6 +44,25 @@ namespace E3Core.Processors
 
         private static void RegsterEvents()
         {
+
+            EventProcessor.RegisterEvent("BuffMe", "(.+) tells you, '(?i)buffme'", (x) => {
+
+                if (x.match.Groups.Count > 1)
+                {
+                    if (Basics.AmIDead()) return;
+                    string user = x.match.Groups[1].Value;
+                    if(_spawns.TryByName(user,out var spawn))
+                    {
+                        foreach (var spell in E3.CharacterSettings.GroupBuffs)
+                        {
+                            _queuedBuffs.Enqueue(new BuffQueuedItem() { TargetID = spawn.ID, Spell = spell });
+
+                        }
+                        E3.Bots.BroadcastCommand($"/buffme {spawn.ID}");
+                    }
+                }
+            });
+
             EventProcessor.RegisterCommand("/buffme", (x) =>
             {
                 if (x.args.Count > 0)
@@ -59,6 +78,13 @@ namespace E3Core.Processors
                 }
                 else
                 {
+                    
+                    foreach (var spell in E3.CharacterSettings.GroupBuffs)
+                    {
+                        _queuedBuffs.Enqueue(new BuffQueuedItem() { TargetID = E3.CurrentId, Spell = spell });
+
+                    }
+                    
                     E3.Bots.BroadcastCommand($"/buffme {E3.CurrentId}");
                 }
             });
