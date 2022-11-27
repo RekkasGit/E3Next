@@ -17,6 +17,50 @@ namespace E3Core.Processors
         private static ISpawns _spawns = E3.Spawns;
         private static Double _nukeDelayTimeStamp;
         private static Double _stunDelayTimeStamp;
+        private static Double _pbaeDelayTimeStamp;
+
+
+        private static bool _pbAEEnabled = false;
+
+        [SubSystemInit()]
+        public static void Init()
+        {
+            RegisterEvents();
+        }
+        private static void RegisterEvents()
+        {
+
+            EventProcessor.RegisterCommand("/pbaeon", (x) =>
+            {
+                _pbAEEnabled = true;
+                E3.Bots.Broadcast("Enabling PBAE");
+                if (x.args.Count == 0)
+                {
+                    E3.Bots.BroadcastCommand($"/pbaeon all");
+                }
+
+            });
+
+            EventProcessor.RegisterCommand("/pbaeoff", (x) =>
+            {
+                _pbAEEnabled = false;
+                E3.Bots.Broadcast("Disabling PBAE");
+                if (x.args.Count == 0)
+                {
+                    E3.Bots.BroadcastCommand($"/pbaeoff all");
+                }
+            });
+        }
+
+
+        [ClassInvoke(Data.Class.All)]
+        public static void CheckPBAE()
+        {
+            if (_pbAEEnabled)
+            {
+                Cast_PBAE(E3.CharacterSettings.PBAE, ref _pbaeDelayTimeStamp);
+            }
+        }
 
         [AdvSettingInvoke]
         public static void Check_Stuns()
@@ -136,7 +180,78 @@ namespace E3Core.Processors
                 }
             }
         }
+        private static void Cast_PBAE(List<Data.Spell> spells, ref Double delayTimeStamp)
+        {
+
+            //we should be assisting, check_AssistStatus, verifies its not a corpse.
+            using (_log.Trace())
+            {
+
+                bool giftOfManaSet = false;
+                bool giftOfMana = false;
+
+                foreach (var spell in spells)
+                {
+                    //check Ifs on the spell
+                    if (!String.IsNullOrWhiteSpace(spell.Ifs))
+                    {
+                        if (!Casting.Ifs(spell))
+                        {
+                            //failed check, onto the next
+                            continue;
+                        }
+                    }
+                    //can't cast if it isn't ready
+                    if (Casting.CheckReady(spell) && Casting.CheckMana(spell))
+                    {
+                        //we should have a valid target via check_assistStatus
+                        if (spell.Delay > 0 && delayTimeStamp > 0 && Core._stopWatch.ElapsedMilliseconds < delayTimeStamp)
+                        {
+                            //delay has been specified, skip this spell
+                            continue;
+
+                        }
+                        //reset delay timestamp
+                        if (spell.Delay > 0)
+                        {
+                            delayTimeStamp = 0;
+                        }
 
 
+                        if (spell.GiftOfMana)
+                        {
+                            //can only cast if we have gift of mana. do we have it?
+                            if (!(giftOfManaSet))
+                            {
+                                giftOfMana = (MQ.Query<bool>("${Me.Song[Gift of Mana].ID}") || MQ.Query<bool>("${Me.Song[Celestial Gift].ID}") || MQ.Query<bool>("${Me.Song[Celestial Boon].ID}"));
+                                giftOfManaSet = true;
+                            }
+                            if (!giftOfMana)
+                            {
+                                continue;
+                            }
+
+                        }
+                
+                    
+                        CastReturn result = Casting.Cast(0, spell, Heals.SomeoneNeedsHealing);
+                        if (result == CastReturn.CAST_INTERRUPTFORHEAL)
+                        {
+                            return;
+                        }
+                        if (result == CastReturn.CAST_SUCCESS)
+                        {
+                            //if the spell is a delay time, lets make sure all other delay types are blocked for the
+                            //delay time
+                            if (spell.Delay > 0)
+                            {
+                                delayTimeStamp = Core._stopWatch.ElapsedMilliseconds + (spell.Delay * 1000);
+                            }
+                            return;
+                        }
+                    }
+                }
+            }
+        }
     }
 }
