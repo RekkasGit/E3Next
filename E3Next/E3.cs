@@ -102,6 +102,7 @@ namespace E3Core.Processors
                 }
 
             }
+            Assist.Process();
             //process any requests commands from the UI.
             PubClient.ProcessRequests();
 
