@@ -181,9 +181,6 @@ namespace E3Core.Settings
         //offassist
         public List<Spell> OffAssistSpells = new List<Spell>();
 
-#pragma warning restore CS1591 // Missing XML comment for publicly visible type or member
-        private System.DateTime _fileLastModified;
-        private string _fileLastModifiedFileName;
         /// <summary>
         /// Initializes a new instance of the <see cref="CharacterSettings"/> class.
         /// </summary>
@@ -194,19 +191,6 @@ namespace E3Core.Settings
             CharacterClass = E3.CurrentClass;
             LoadData();
 
-        }
-
-      
-        public bool ShouldReload()
-        {
-            if(System.IO.File.Exists(_fileLastModifiedFileName))
-            {
-                if (_fileLastModified != System.IO.File.GetLastWriteTime(_fileLastModifiedFileName))
-                {
-                    return true;
-                }
-            }
-            return false;
         }
         /// <summary>
         /// Loads the data.

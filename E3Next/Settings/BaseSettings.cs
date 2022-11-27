@@ -22,7 +22,9 @@ namespace E3Core.Settings
         protected static string _settingsFolder = @"\e3 Macro Inis\";
         protected static string _botFolder = @"\e3 Bot Inis\";
 
-  
+        public DateTime _fileLastModified;
+        public string _fileLastModifiedFileName;
+
         static BaseSettings()
         {
 
@@ -364,6 +366,19 @@ namespace E3Core.Settings
             {
                 E3.Bots.Broadcast($"\ayI do not have {thing} that is configured in bot ini.");
             }
+        }
+
+        public bool ShouldReload()
+        {
+            if (!string.IsNullOrEmpty(_fileLastModifiedFileName))
+            {
+                if (_fileLastModified != System.IO.File.GetLastWriteTime(_fileLastModifiedFileName))
+                {
+                    return true;
+                }
+            }
+
+            return false;
         }
     }
     interface IBaseSettings

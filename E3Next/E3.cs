@@ -1,6 +1,7 @@
 ﻿using E3Core.Classes;
 using E3Core.Server;
 using E3Core.Settings;
+using E3Core.Settings.FeatureSettings;
 using E3Core.Utility;
 using MonoCore;
 using NetMQ;
@@ -143,6 +144,13 @@ namespace E3Core.Processors
             {
                 E3.Bots.Broadcast("\aoAuto-Reloading General settings file...");
                 GeneralSettings = new GeneralSettings();
+                Loot.Reset();
+                E3.Bots.Broadcast("\aoComplete!");
+            }
+            if (Zoning.TributeDataFile.ShouldReload())
+            {
+                E3.Bots.Broadcast("\aoAuto-Reloading Tribute settings file...");
+                Zoning.TributeDataFile.LoadData();
                 Loot.Reset();
                 E3.Bots.Broadcast("\aoComplete!");
             }
