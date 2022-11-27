@@ -97,6 +97,14 @@ namespace E3Core.Processors
                         AssistOff();
                         return;
                     }
+
+                    isCorpse = MQ.Query<bool>("${Target.Type.Equal[Corpse]}");
+                    if(isCorpse)
+                    {
+                        AssistOff();
+                        return;
+                    }
+
                 }
                 else if (targetId != _assistTargetID)
                 {
