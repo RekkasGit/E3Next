@@ -75,15 +75,15 @@ namespace E3Core.Processors
         /// </summary>
         public static void CheckAssistStatus()
         {
-            if (!e3util.ShouldCheck(ref _nextAssistCheck, _nextAssistCheckInterval)) return;
+            if(!_allowControl)
+            {
+                if (!e3util.ShouldCheck(ref _nextAssistCheck, _nextAssistCheckInterval)) return;
+            }
             using (_log.Trace())
             {
-
-
                 if (_assistTargetID == 0) return;
 
                 Int32 targetId = MQ.Query<Int32>("${Target.ID}");
-
 
                 if (targetId <1)
                 {
