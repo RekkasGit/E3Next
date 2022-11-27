@@ -35,7 +35,7 @@ namespace E3Core.Processors
         private static IList<string> _tankTypes = new List<string>() { "WAR", "PAL", "SK" };
 
         private static Int64 _nextAssistCheck = 0;
-        private static Int64 _nextAssistCheckInterval = 500;
+        private static Int64 _nextAssistCheckInterval = 250;
 
         /// <summary>
         /// Initializes this instance.
@@ -122,8 +122,8 @@ namespace E3Core.Processors
                 Spawn s;
                 if (_spawns.TryByID(_assistTargetID, out s))
                 {
-
-                    if (s.TypeDesc == "Corpse")
+                    bool isCorpse = MQ.Query<bool>($"${{Spawn[id {_assistTargetID}].Type.Equal[Corpse]}}");
+                    if (isCorpse)
                     {
                         //its dead jim
                         AssistOff();
