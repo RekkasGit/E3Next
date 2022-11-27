@@ -64,8 +64,6 @@ namespace E3Core.Settings
         public bool AutoTradeGuild = false;
         public bool AutoTradeRaid = false;
 
-        private System.DateTime _fileLastModified;
-        private string _fileLastModifiedFileName;
         public GeneralSettings()
         {
             LoadData();
@@ -274,14 +272,6 @@ namespace E3Core.Settings
 
             return newFile;
 
-        }
-        public bool ShouldReload()
-        {
-            if (_fileLastModified != System.IO.File.GetLastWriteTime(_fileLastModifiedFileName))
-            {
-                return true;
-            }
-            return false;
         }
     }
 }

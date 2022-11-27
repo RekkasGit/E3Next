@@ -252,6 +252,8 @@ namespace E3Core.Processors
                     }
                     
                 }
+
+                E3.Bots.Broadcast("\agFinished looting area");
             }
         }
         public static void LootCorpse(Spawn corpse, bool bypassLootSettings = false)
