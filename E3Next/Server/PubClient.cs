@@ -18,7 +18,7 @@ namespace E3Core.Server
     public class PubClient
     {
         public static ConcurrentQueue<string> _pubCommands = new ConcurrentQueue<string>();
-        private static IMQ MQ = E3.Mq;
+        private static IMQ MQ = E3.MQ;
 
         Task _serverThread;
         private Int32 _port;

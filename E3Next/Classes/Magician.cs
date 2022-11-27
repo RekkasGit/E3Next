@@ -17,7 +17,7 @@ namespace E3Core.Classes
     /// </summary>
     public static class Magician
     {
-        private static IMQ MQ = E3.Mq;
+        private static IMQ MQ = E3.MQ;
         private static ISpawns _spawns = E3.Spawns;
         private static string _weaponSpell = "Grant Spectral Armaments";
         private static string _weaponItem = "Folded Pack of Spectral Armaments";

@@ -17,7 +17,7 @@ namespace E3Core.Classes
     public static class Bard
     {
         private static Logging _log = E3.Log;
-        private static IMQ MQ = E3.Mq;
+        private static IMQ MQ = E3.MQ;
         private static ISpawns _spawns = E3.Spawns;
         private static Queue<Data.Spell> _songs = new Queue<Spell>();
         private static bool _isInit = false;

@@ -18,7 +18,7 @@ namespace E3Core.Server
     /// </summary>
     public class PubServer
     {
-        private static IMQ MQ = E3.Mq;
+        private static IMQ MQ = E3.MQ;
         class topicMessagePair
         {
             public string topic;

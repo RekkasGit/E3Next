@@ -17,7 +17,7 @@ namespace E3Core.Processors
     public static class Pets
     {
         public static Logging _log = E3.Log;
-        private static IMQ MQ = E3.Mq;
+        private static IMQ MQ = E3.MQ;
         private static bool _petMaxShrink = false;
         private static Int32 _petMaxShrinkID = 0;
         private static Int64 _nextPetCheck = 0;

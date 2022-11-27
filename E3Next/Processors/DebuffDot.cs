@@ -13,7 +13,7 @@ namespace E3Core.Processors
     public static class DebuffDot
     {
         public static Logging _log = E3.Log;
-        private static IMQ MQ = E3.Mq;
+        private static IMQ MQ = E3.MQ;
         private static ISpawns _spawns = E3.Spawns;
         public static Dictionary<Int32, SpellTimer> _debuffTimers = new Dictionary<Int32, SpellTimer>();
         public static Dictionary<Int32, SpellTimer> _dotTimers = new Dictionary<Int32, SpellTimer>();

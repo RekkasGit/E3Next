@@ -50,7 +50,7 @@ namespace E3Core.Server
     }
     public class RouterServer
     {
-        private static IMQ MQ = E3.Mq;
+        private static IMQ MQ = E3.MQ;
         RouterSocket _rpcRouter = null;
         Task _serverThread = null;
         NetMQ.Msg routerResponse = new NetMQ.Msg();

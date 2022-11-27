@@ -13,7 +13,7 @@ namespace E3Core.Processors
     public static class Buy
     {
         public static Logging Log = E3.Log;
-        private static IMQ MQ = E3.Mq;
+        private static IMQ MQ = E3.MQ;
         private static ISpawns Spawns = E3.Spawns;
         [SubSystemInit]
         public static void Init()

@@ -17,7 +17,7 @@ namespace E3Core.Processors
 
         public static string _lastSuccesfulCast = String.Empty;
         public static Logging _log = E3.Log;
-        private static IMQ MQ = E3.Mq;
+        private static IMQ MQ = E3.MQ;
         public static Dictionary<Int32, Int64> _gemRecastLockForMem = new Dictionary<int, long>();
         public static Dictionary<Int32, ResistCounter> _resistCounters = new Dictionary<Int32, ResistCounter>();
         public static Dictionary<Int32, Int32> _currentSpellGems = new Dictionary<int, int>();
@@ -50,7 +50,7 @@ namespace E3Core.Processors
                     //block on waiting for the spell window to close
                     while (IsCasting())
                     {
-                        if (!isNowCast && EventProcessor._commandList.ContainsKey("/nowcast") && EventProcessor._commandList["/nowcast"].queuedEvents.Count > 0)
+                        if (!isNowCast && EventProcessor._commandList["/nowcast"].queuedEvents.Count > 0)
                         {
                             //we have a nowcast ready to be processed
                             MQ.Cmd("/interrupt");
@@ -464,11 +464,12 @@ namespace E3Core.Processors
                             }
                             if (spell.SpellType.Equals("Detrimental"))
                             {
-                                bool isCorpse = MQ.Query<bool>($"${{Spawn[id {targetID}].Type.Equal[Corpse]}}");
+                                bool isCorpse = MQ.Query<bool>("${Target.Type.Equal[Corpse]}");
 
                                 if (isCorpse)
                                 {
                                     //shouldn't nuke dead things
+                                    Assist.AssistOff();
                                     return CastReturn.CAST_INTERRUPTED;
                                 }
                             }

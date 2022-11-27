@@ -20,7 +20,7 @@ namespace E3Core.Processors
         public static Int32 _assistTargetID = 0;
 
         private static Logging _log = E3.Log;
-        private static IMQ MQ = E3.Mq;
+        private static IMQ MQ = E3.MQ;
         private static ISpawns _spawns = E3.Spawns;
         private static Int32 _assistStickDistance = 10;
         private static IList<string> _rangeTypes = new List<string>() { "Ranged", "Autofire" };

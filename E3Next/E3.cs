@@ -110,6 +110,7 @@ namespace E3Core.Processors
             {
                 Bard.check_BardSongs();
             }
+
             //class attribute method calls, call them all!
             using (Log.Trace("ClassMethodCalls"))
             {
@@ -172,25 +173,25 @@ namespace E3Core.Processors
         /// </summary>
         public static void StateUpdates()
         {
-            IsInvis = Mq.Query<bool>("${Me.Invis}");
-            CurrentHps = Mq.Query<int>("${Me.PctHPs}");
-            CurrentId = Mq.Query<int>("${Me.ID}");
+            IsInvis = MQ.Query<bool>("${Me.Invis}");
+            CurrentHps = MQ.Query<int>("${Me.PctHPs}");
+            CurrentId = MQ.Query<int>("${Me.ID}");
 
-            if (Mq.Query<bool>("${MoveUtils.GM}"))
+            if (MQ.Query<bool>("${MoveUtils.GM}"))
             {
-                Mq.Cmd("/squelch /stick imsafe");
+                MQ.Cmd("/squelch /stick imsafe");
                 Bots.Broadcast("GM Safe kicked in, issued /stick imsafe.  you may need to reissue /followme or /assiston");
             }
 
-            HitPointsCurrent = Mq.Query<int>("${Me.CurrentHPs}");
+            HitPointsCurrent = MQ.Query<int>("${Me.CurrentHPs}");
             PubServer.AddTopicMessage("${Me.CurrentHPs}", HitPointsCurrent.ToString("N0"));
-            MagicPointsCurrent = Mq.Query<int>("${Me.CurrentMana}");
+            MagicPointsCurrent = MQ.Query<int>("${Me.CurrentMana}");
             PubServer.AddTopicMessage("${Me.CurrentMana}", MagicPointsCurrent.ToString("N0"));
-            StamPointsCurrent = Mq.Query<int>("${Me.CurrentEndurance}");
+            StamPointsCurrent = MQ.Query<int>("${Me.CurrentEndurance}");
             PubServer.AddTopicMessage("${Me.CurrentEndurance}", StamPointsCurrent.ToString("N0"));
             CurrentInCombat = Basics.InCombat();
             PubServer.AddTopicMessage("${InCombat}", CurrentInCombat.ToString());
-            string nameOfPet = Mq.Query<string>("${Me.Pet.CleanName}");
+            string nameOfPet = MQ.Query<string>("${Me.Pet.CleanName}");
             if (nameOfPet != "NULL")
             {
                 //set the pet name
@@ -214,7 +215,7 @@ namespace E3Core.Processors
             {
 
 
-                Mq.ClearCommands();
+                MQ.ClearCommands();
                 AsyncIO.ForceDotNet.Force();
 
                 Logging._traceLogLevel = Logging.LogLevels.None; //log level we are currently at
@@ -226,16 +227,16 @@ namespace E3Core.Processors
                 MonoCore.MQ._maxMillisecondsToWork = 40;
                 //max event count for each registered event before spilling over.
                 EventProcessor._eventLimiterPerRegisteredEvent = 20;
-                CurrentName = Mq.Query<string>("${Me.CleanName}");
+                CurrentName = MQ.Query<string>("${Me.CleanName}");
 
-                CurrentId = Mq.Query<int>("${Me.ID}");
+                CurrentId = MQ.Query<int>("${Me.ID}");
                 //do first to get class information
                 Bots = new Bots();
 
-                CurrentName = Mq.Query<string>("${Me.CleanName}");
-                ServerName = e3util.FormatServerName(Mq.Query<string>("${MacroQuest.Server}"));
+                CurrentName = MQ.Query<string>("${Me.CleanName}");
+                ServerName = e3util.FormatServerName(MQ.Query<string>("${MacroQuest.Server}"));
                 //deal with the Shadow Knight class issue.
-                string classValue = Mq.Query<string>("${Me.Class}");
+                string classValue = MQ.Query<string>("${Me.Class}");
                 if (classValue == "Shadow Knight")
                 {
                     classValue = "Shadowknight";
@@ -288,7 +289,7 @@ namespace E3Core.Processors
         public static long StartTimeStamp;
         public static bool IsInit = false;
         public static bool IsBadState = false;
-        public static IMQ Mq = Core.mqInstance;
+        public static IMQ MQ = Core.mqInstance;
         public static Logging Log = Core._log;
         public static Settings.CharacterSettings CharacterSettings = null;
         public static Settings.GeneralSettings GeneralSettings = null;

@@ -16,7 +16,7 @@ namespace E3Core.Processors
         public static Dictionary<Int32, Zone> ZoneLookup = new Dictionary<Int32, Zone>();
         public static TributeDataFile TributeDataFile = new TributeDataFile();
 
-        private static IMQ MQ = E3.Mq;
+        private static IMQ MQ = E3.MQ;
 
         [SubSystemInit]
         public static void Init()

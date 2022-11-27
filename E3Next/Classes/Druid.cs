@@ -16,7 +16,7 @@ namespace E3Core.Classes
     public static class Druid
     {
         private static Logging _log = E3.Log;
-        private static IMQ MQ = E3.Mq;
+        private static IMQ MQ = E3.MQ;
         private static ISpawns _spawns = E3.Spawns;
 
         private static Int64 _nextAutoCheetaCheck;

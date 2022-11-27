@@ -12,7 +12,7 @@ namespace E3Core.Processors
     public static class Dispel
     {
         public static Logging _log = E3.Log;
-        private static IMQ MQ = E3.Mq;
+        private static IMQ MQ = E3.MQ;
         private static ISpawns _spawns = E3.Spawns;
         private static Int64 _nextDispelCheck = 0;
         private static Int64 _nextDispelCheckInterval = 500;
@@ -27,6 +27,7 @@ namespace E3Core.Processors
 
             if (Casting.TrueTarget(Assist._assistTargetID))
             {
+                //let the game process to make sure we have a valid beneficial
                 if (MQ.Query<bool>("${Target.Beneficial.ID}"))
                 {
                     Int32 buffCount=55;

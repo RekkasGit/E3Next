@@ -10,7 +10,7 @@ namespace E3Core.Data
 {
     public class Zone
     {
-        public static IMQ MQ = E3.Mq;
+        public static IMQ MQ = E3.MQ;
         private static HashSet<string> _safeZones = new HashSet<string> { "poknowledge", "potranquility", "nexus", "guildhall", "freeporttemple", "arena", "bazaar" };
 
         public Zone(Int32 zoneId)

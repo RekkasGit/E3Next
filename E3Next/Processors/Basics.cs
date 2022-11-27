@@ -20,7 +20,7 @@ namespace E3Core.Processors
     {
         public static SavedGroupDataFile SavedGroupData = new SavedGroupDataFile();
         public static Logging Log = E3.Log;
-        private static IMQ _mq = E3.Mq;
+        private static IMQ _mq = E3.MQ;
         private static ISpawns _spawns = E3.Spawns;
         public static bool IsPaused = false;
         public static List<int> GroupMembers = new List<int>();

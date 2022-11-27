@@ -15,7 +15,7 @@ namespace E3Core.Processors
     public static class NowCast
     {
         public static Logging _log = E3.Log;
-        private static IMQ MQ = E3.Mq;
+        private static IMQ MQ = E3.MQ;
         [SubSystemInit]
         public static void Init()
         {

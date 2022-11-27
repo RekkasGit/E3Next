@@ -25,7 +25,7 @@ namespace E3Core.Server
         public static Int32 PubPort;
         public static Int32 PubClientPort;
         public static System.Diagnostics.Process _uiProcess;
-        private static IMQ MQ = E3.Mq;
+        private static IMQ MQ = E3.MQ;
 
         [SubSystemInit]
         public static void Init()

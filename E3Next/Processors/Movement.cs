@@ -20,7 +20,7 @@ namespace E3Core.Processors
         //public static Int32 _followTargetID = 0;
         public static string _followTargetName = String.Empty;
         public static Logging _log = E3.Log;
-        private static IMQ MQ = E3.Mq;
+        private static IMQ MQ = E3.MQ;
         private static ISpawns _spawns = E3.Spawns;
         public static DoorDataFile _doorData = new DoorDataFile();
         private static Int64 _nextAnchorCheck = 0;

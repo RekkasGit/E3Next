@@ -15,7 +15,7 @@ namespace E3Core.Processors
     public static class Cures
     {
         public static Logging Log = E3.Log;
-        private static IMQ MQ = E3.Mq;
+        private static IMQ MQ = E3.MQ;
         private static ISpawns _spawns = E3.Spawns;
         private static Spell _radiantCure;
         private static bool _shouldCastCure = true;

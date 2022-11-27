@@ -14,7 +14,7 @@ namespace E3Core.Settings
     {
 
         public static Logging _log = E3.Log;
-        protected static IMQ MQ = E3.Mq;
+        protected static IMQ MQ = E3.MQ;
 
         protected static string _macroFolder = MQ.Query<string>("${MacroQuest.Path[macros]}");
         protected static string _configFolder = MQ.Query<string>("${MacroQuest.Path[config]}");

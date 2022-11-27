@@ -16,7 +16,7 @@ namespace E3Core.Utility
 
         public static string _lastSuccesfulCast = String.Empty;
         public static Logging _log = E3.Log;
-        private static IMQ MQ = E3.Mq;
+        private static IMQ MQ = E3.MQ;
         private static ISpawns _spawns = E3.Spawns;
         /// <summary>
         /// Use to see if a certain method should be running

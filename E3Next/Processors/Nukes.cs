@@ -13,7 +13,7 @@ namespace E3Core.Processors
     public static class Nukes
     {
         public static Logging _log = E3.Log;
-        private static IMQ MQ = E3.Mq;
+        private static IMQ MQ = E3.MQ;
         private static ISpawns _spawns = E3.Spawns;
         private static Double _nukeDelayTimeStamp;
         private static Double _stunDelayTimeStamp;
