@@ -75,10 +75,9 @@ namespace E3Core.Processors
         /// </summary>
         public static void CheckAssistStatus()
         {
-            if(!_allowControl)
-            {
-                if (!e3util.ShouldCheck(ref _nextAssistCheck, _nextAssistCheckInterval)) return;
-            }
+            
+            //if (!e3util.ShouldCheck(ref _nextAssistCheck, _nextAssistCheckInterval)) return;
+            
             using (_log.Trace())
             {
                 if (_assistTargetID == 0) return;
