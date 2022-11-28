@@ -234,7 +234,8 @@ namespace E3Core.Processors
                 
                 foreach(var c in corpses)
                 {
-                    
+
+                    if (Basics.InCombat()) return;
                    
                     Casting.TrueTarget(c.ID);
                     MQ.Delay(2000, "${Target.ID}");
