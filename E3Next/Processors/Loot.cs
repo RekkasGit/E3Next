@@ -186,8 +186,8 @@ namespace E3Core.Processors
             if (!_shouldLoot) return;
             if(!Assist._isAssisting)
             {
-                
-                if(!Basics.InCombat())
+
+                if (!Basics.InCombat() || E3.GeneralSettings.Loot_LootInCombat)
                 {
                     LootArea();
                 }
@@ -235,8 +235,11 @@ namespace E3Core.Processors
                 foreach(var c in corpses)
                 {
 
-                    if (Basics.InCombat()) return;
-                   
+                    if(!E3.GeneralSettings.Loot_LootInCombat)
+                    {
+                        if (Basics.InCombat()) return;
+                    }
+
                     Casting.TrueTarget(c.ID);
                     MQ.Delay(2000, "${Target.ID}");
                    
