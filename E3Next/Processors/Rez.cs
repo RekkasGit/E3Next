@@ -20,12 +20,11 @@ namespace E3Core.Processors
         public static bool _waitingOnRez = false;
         private static long _nextAutoRezCheck = 0;
         private static long _nextAutoRezCheckInterval = 10000;
-        private static long _nextCorpseCheck = 0;
-        private static long _nextCorpseCheckInterval = 10000;
         private static readonly Spell _divineRes = new Spell("Divine Resurrection");
-        private static readonly HashSet<string> _classesToDr = new HashSet<string> { "Cleric", "Warrior" };
+        private static readonly HashSet<string> _classesToDr = new HashSet<string> { "Cleric", "Warrior", "Paladin", "Shadow Knight" };
+        private static bool _skipAutoRez = false;
 
-    [SubSystemInit]
+        [SubSystemInit]
         public static void Init()
         {
             RegisterEvents();
@@ -164,7 +163,7 @@ namespace E3Core.Processors
         public static void AutoRez()
         {
             if (!E3.CharacterSettings.Misc_AutoRez) return;
-            
+            if (_skipAutoRez) return;
             if (!e3util.ShouldCheck(ref _nextAutoRezCheck, _nextAutoRezCheckInterval)) return;
             if (Basics.AmIDead()) return;
             
@@ -174,6 +173,9 @@ namespace E3Core.Processors
             {
                 if (_spawns.TryByID(corpse, out var spawn))
                 {
+                    EventProcessor.ProcessEventsInQueues("/autorezoff");
+                    EventProcessor.ProcessEventsInQueues("/autorezon");
+                    if (_skipAutoRez) return;
                     if (Basics.AmIDead()) return;
                     // only care about group or raid members
                     var inGroup = MQ.Query<bool>($"${{Group.Member[{spawn.DiplayName}]}}");
@@ -255,6 +257,17 @@ namespace E3Core.Processors
                 return true;
             }
         }
+
+        public static void TurnOffAutoRezSkip()
+        {
+            if (_skipAutoRez)
+            {
+                E3.Bots.BroadcastCommand("\agTurning autorez back on.");
+            }
+
+            _skipAutoRez = false;
+        }
+
         private static bool HasEventItem(string name)
         {
             if (EventProcessor._eventList[name].queuedEvents.Count > 0)
@@ -470,6 +483,19 @@ namespace E3Core.Processors
                     }
 
                 }
+            });
+
+            EventProcessor.RegisterCommand("/autorezoff", x =>
+            {
+                if (!E3.CharacterSettings.Misc_AutoRez) return;
+                _skipAutoRez = true;
+                E3.Bots.BroadcastCommand("\agTemporarily turning autorez off. It will be turned back on next time I zone.");
+            });
+
+            EventProcessor.RegisterCommand("/autorezon", x =>
+            {
+                if (!E3.CharacterSettings.Misc_AutoRez) return;
+                TurnOffAutoRezSkip();
             });
 
             var deathMessages = new List<string>

@@ -34,6 +34,7 @@ namespace E3Core.Processors
             }
 
             TributeDataFile.ToggleTribute();
+            Rez.TurnOffAutoRezSkip();
         }
 
         private static void InitZoneLookup()
