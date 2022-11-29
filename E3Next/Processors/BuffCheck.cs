@@ -532,18 +532,23 @@ namespace E3Core.Processors
                     {
                         //its my pet
                         bool hasBuff = MQ.Query<bool>($"${{Bool[${{Me.Pet.Buff[{spell.SpellName}]}}]}}");
+                        //adding CachedBuff check from Spawn buffs since MQ/RoF only reports 30 pet.buff slots
+                        bool hasCachedBuff = MQ.Query<bool>($"${{Bool[${{Spawn[${{Me.Pet.ID}}].Buff[{spell.SpellName}]}}]}}");
+                        
                         bool hasCheckFor = false;
+                        bool hasCachedCheckFor = false;
                         if (!String.IsNullOrWhiteSpace(spell.CheckFor))
                         {
                             hasCheckFor = MQ.Query<bool>($"${{Bool[${{Me.Pet.Buff[{spell.CheckFor}]}}]}}");
-                            if (hasCheckFor)
+                            hasCachedCheckFor = MQ.Query<bool>($"${{Bool[${{Spawn[${{Me.Pet.ID}}].Buff[{spell.CheckFor}]}}]}}");
+                            if (hasCheckFor || hasCachedCheckFor)
                             {
 
                                 UpdateBuffTimers(s.ID, spell, 1500);
                                 continue;
                             }
                         }
-                        if (!(hasBuff))
+                        if (!(hasBuff) && !(hasCachedBuff))
                         {
                             bool willStack = MQ.Query<bool>($"${{Spell[{spell.SpellName}].WillLand}}");
                             if (willStack && Casting.CheckReady(spell) && Casting.CheckMana(spell))
