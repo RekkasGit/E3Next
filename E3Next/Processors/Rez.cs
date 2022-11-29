@@ -173,8 +173,10 @@ namespace E3Core.Processors
             {
                 if (_spawns.TryByID(corpse, out var spawn))
                 {
-                    EventProcessor.ProcessEventsInQueues("/autorezoff");
+                    EventProcessor.ProcessEventsInQueues("/wipe");
+                    EventProcessor.ProcessEventsInQueues("/wipe all");
                     EventProcessor.ProcessEventsInQueues("/autorezon");
+                    EventProcessor.ProcessEventsInQueues("/autorezon all");
                     if (_skipAutoRez) return;
                     if (Basics.AmIDead()) return;
                     // only care about group or raid members
@@ -262,7 +264,7 @@ namespace E3Core.Processors
         {
             if (_skipAutoRez)
             {
-                E3.Bots.BroadcastCommand("\agTurning autorez back on.");
+                E3.Bots.Broadcast("\agTurning autorez back on.");
             }
 
             _skipAutoRez = false;
@@ -487,6 +489,11 @@ namespace E3Core.Processors
 
             EventProcessor.RegisterCommand("/wipe", x =>
             {
+                if (x.args.Count == 0)
+                {
+                    E3.Bots.BroadcastCommand("/wipe all");
+                }
+
                 if (!E3.CharacterSettings.Misc_AutoRez) return;
                 _skipAutoRez = true;
                 E3.Bots.Broadcast("\agTemporarily turning autorez off. It will be turned back on next time I zone.");
@@ -494,6 +501,11 @@ namespace E3Core.Processors
 
             EventProcessor.RegisterCommand("/autorezon", x =>
             {
+                if (x.args.Count == 0)
+                {
+                    E3.Bots.BroadcastCommand("/autorezon all");
+                }
+
                 if (!E3.CharacterSettings.Misc_AutoRez) return;
                 TurnOffAutoRezSkip();
             });
