@@ -485,7 +485,7 @@ namespace E3Core.Processors
                 }
             });
 
-            EventProcessor.RegisterCommand("/autorezoff", x =>
+            EventProcessor.RegisterCommand("/wipe", x =>
             {
                 if (!E3.CharacterSettings.Misc_AutoRez) return;
                 _skipAutoRez = true;
