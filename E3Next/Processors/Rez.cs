@@ -489,7 +489,7 @@ namespace E3Core.Processors
             {
                 if (!E3.CharacterSettings.Misc_AutoRez) return;
                 _skipAutoRez = true;
-                E3.Bots.BroadcastCommand("\agTemporarily turning autorez off. It will be turned back on next time I zone.");
+                E3.Bots.Broadcast("\agTemporarily turning autorez off. It will be turned back on next time I zone.");
             });
 
             EventProcessor.RegisterCommand("/autorezon", x =>
