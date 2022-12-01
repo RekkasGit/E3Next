@@ -82,8 +82,6 @@ namespace E3Core.Processors
             {
                 if (_assistTargetID == 0) return;
 
-                //get most up to date data, so let the game do a full process loop.
-                MQ.Delay(0);
                 Int32 targetId = MQ.Query<Int32>("${Target.ID}");
 
                 if (targetId <1)

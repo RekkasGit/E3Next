@@ -110,7 +110,15 @@ namespace E3Core.Processors
                                 }
                             }
                         }
-                        Casting.Cast(0, burn);
+                        //so you don't target other groups or your pet for burns if your target happens to be on them.
+                        if(burn.TargetType == "Group v1" || burn.TargetType == "Group v2")
+                        {
+                            Casting.Cast(E3.CurrentId, burn);
+                        }
+                        else
+                        {
+                            Casting.Cast(0, burn);
+                        }
                     }
                 }
             }

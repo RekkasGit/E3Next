@@ -102,6 +102,8 @@ namespace E3Core.Processors
                 }
 
             }
+            //get most up to date data, so let the game do a full process loop.
+            MQ.Delay(0);
             Assist.Process();
             //process any requests commands from the UI.
             PubClient.ProcessRequests();
