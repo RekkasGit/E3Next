@@ -538,7 +538,7 @@ namespace E3Core.Settings
             if (CharacterClass == Class.Magician)
             {
                 newFile.Sections.AddSection("Magician");
-                section.Keys.AddKey("Auto-Pet Weapons (On/Off", "On");
+                section.Keys.AddKey("Auto-Pet Weapons (On/Off)", "On");
                 section.Keys.AddKey("Pet Weapons", "");
             }
 
