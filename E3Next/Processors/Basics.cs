@@ -719,7 +719,9 @@ namespace E3Core.Processors
                     if (pctMana < autoMedPct && (E3.CurrentClass & Class.ManaUsers) == E3.CurrentClass)
                     {
                         _mq.Cmd("/sit");
+                        return;
                     }
+
                     if (pctEndurance < autoMedPct)
                     {
                         _mq.Cmd("/sit");
