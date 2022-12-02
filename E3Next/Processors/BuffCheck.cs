@@ -467,7 +467,7 @@ namespace E3Core.Processors
                             if (willStack && Casting.CheckReady(spell) && Casting.CheckMana(spell))
                             {
                                 CastReturn result;
-                                if (spell.TargetType == "Self")
+                                if (spell.TargetType == "Self" || spell.TargetType == "Group v1" || spell.TargetType == "Group v2")
                                 {
                                     result = Casting.Cast(0, spell, Heals.SomeoneNeedsHealing);
                                 }
