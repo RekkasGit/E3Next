@@ -317,6 +317,14 @@ namespace E3Core.Processors
                                     continue;
                                 }
                             }
+                            if (ability.CastName == "Kick")
+                            {
+                                //check if we can actually kick
+                                if (MQ.Query<double>("${Target.Distance}") > 14)
+                                {
+                                    continue;
+                                }
+                            }
 
                             Casting.Cast(_assistTargetID, ability);
                         }
