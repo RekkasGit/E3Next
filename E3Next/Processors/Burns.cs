@@ -92,8 +92,8 @@ namespace E3Core.Processors
 
             if (use)
             {
-                Int32 previousTarget = MQ.Query<Int32>("${Target.ID}");
-                bool targetSwap = false;
+                //Int32 previousTarget = MQ.Query<Int32>("${Target.ID}");
+                //bool targetSwap = false;
                 foreach (var burn in burnList)
                 {
                     //can't do gathering dusk if not in combat, skip it
@@ -113,27 +113,27 @@ namespace E3Core.Processors
                             }
                         }
                         //so you don't target other groups or your pet for burns if your target happens to be on them.
-                        if(burn.TargetType == "Group v1" || burn.TargetType == "Group v2")
-                        {
-                            targetSwap = true;
-                            Casting.Cast(E3.CurrentId, burn);
+                        //if(burn.TargetType == "Group v1" || burn.TargetType == "Group v2")
+                        //{
+                        //    targetSwap = true;
+                        //    Casting.Cast(E3.CurrentId, burn);
                            
-                        }
-                        else
+                        //}
+                        //else
                         {
                             Casting.Cast(0, burn);
                         }
                     }
                 }
-                if (previousTarget > 0 && targetSwap)
-                {
-                    Int32 currentTarget = MQ.Query<Int32>("${Target.ID}");
-                    if(previousTarget!=currentTarget)
-                    {
-                        Casting.TrueTarget(previousTarget);
+                //if (previousTarget > 0 && targetSwap)
+                //{
+                //    Int32 currentTarget = MQ.Query<Int32>("${Target.ID}");
+                //    if(previousTarget!=currentTarget)
+                //    {
+                //        Casting.TrueTarget(previousTarget);
 
-                    }
-                }
+                //    }
+                //}
 
             }
         }
