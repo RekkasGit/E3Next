@@ -74,6 +74,14 @@ namespace E3Core.Processors
                 }
             });
 
+            EventProcessor.RegisterEvent("TellRelay", "(.+) tells you, '(.+)'", (x) =>
+            {
+                if (x.match.Groups.Count > 2)
+                {
+                    E3.Bots.Broadcast($"\agTell from: \ap{x.match.Groups[1].Value}\ag, message: \ao'{x.match.Groups[2].Value}'");
+                }
+            });
+
             EventProcessor.RegisterEvent("Zoned", @"You have entered (.+)\.", (x) =>
             {
                 //means we have zoned.

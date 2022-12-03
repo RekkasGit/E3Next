@@ -113,7 +113,12 @@ namespace E3Core.Processors
                         //so you don't target other groups or your pet for burns if your target happens to be on them.
                         if(burn.TargetType == "Group v1" || burn.TargetType == "Group v2")
                         {
+                            Int32 previousTarget = MQ.Query<Int32>("${Target.ID}");
                             Casting.Cast(E3.CurrentId, burn);
+                            if(previousTarget>0)
+                            {
+                                Casting.TrueTarget(previousTarget);
+                            }
                         }
                         else
                         {
