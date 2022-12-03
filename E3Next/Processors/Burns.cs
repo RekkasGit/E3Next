@@ -92,8 +92,7 @@ namespace E3Core.Processors
 
             if (use)
             {
-                //Int32 previousTarget = MQ.Query<Int32>("${Target.ID}");
-                //bool targetSwap = false;
+                Int32 previousTarget = MQ.Query<Int32>("${Target.ID}");
                 foreach (var burn in burnList)
                 {
                     //can't do gathering dusk if not in combat, skip it
@@ -112,29 +111,39 @@ namespace E3Core.Processors
                                 }
                             }
                         }
+
+                        bool targetPC = false;
+                        bool isMyPet = false;
+                        bool isGroupMember = false;
+                        if(_spawns.TryByID(previousTarget,out var spawn))
+                        {
+                            Int32 groupMemberIndex = MQ.Query<Int32>($"${{Group.Member[{spawn.CleanName}].Index}}");
+                            if (groupMemberIndex > 0) isGroupMember = true;
+                            targetPC = (spawn.TypeDesc == "PC");
+                            isMyPet = (previousTarget == MQ.Query<Int32>("${Me.Pet.ID}"));
+
+                        }
                         //so you don't target other groups or your pet for burns if your target happens to be on them.
-                        //if(burn.TargetType == "Group v1" || burn.TargetType == "Group v2")
-                        //{
-                        //    targetSwap = true;
-                        //    Casting.Cast(E3.CurrentId, burn);
-                           
-                        //}
-                        //else
+                        if (((isMyPet) || (targetPC && !isGroupMember)) && burn.TargetType == "Group v1" || burn.TargetType == "Group v2")
+                        {
+                            
+                            Casting.Cast(E3.CurrentId, burn);
+                            if (previousTarget > 0)
+                            {
+                                Int32 currentTarget = MQ.Query<Int32>("${Target.ID}");
+                                if (previousTarget != currentTarget)
+                                {
+                                    Casting.TrueTarget(previousTarget);
+                                }
+                            }
+                        }
+                        else
                         {
                             Casting.Cast(0, burn);
                         }
                     }
                 }
-                //if (previousTarget > 0 && targetSwap)
-                //{
-                //    Int32 currentTarget = MQ.Query<Int32>("${Target.ID}");
-                //    if(previousTarget!=currentTarget)
-                //    {
-                //        Casting.TrueTarget(previousTarget);
-
-                //    }
-                //}
-
+               
             }
         }
         private static void ProcessBurnRequest(string command, EventProcessor.CommandMatch x, ref bool burnType)
