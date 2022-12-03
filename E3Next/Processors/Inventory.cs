@@ -115,8 +115,23 @@ namespace E3Core.Processors
                             {
                                 report.Add($"\ag[Pack] \ap{bagItem}- \awbag({i}) slot({e}) count({stackCount})");
                             }
+                            Int32 augCount = MQ.Query<Int32>($"${{Me.Inventory[pack{i}].Item[{e}].Augs}}");
+                            if (augCount > 0)
+                            {
+                                for (int a = 1; a <= 6; a++)
+                                {
+                                    string augname = MQ.Query<string>($"${{Me.Inventory[pack{i}].Item[{e}].AugSlot[{a}].Name}}");
+
+                                    if (augname.IndexOf(itemName, 0, StringComparison.OrdinalIgnoreCase) > -1)
+                                    {
+                                        totalItems += 1;
+                                        report.Add($"\ag[Pack] \ap{bagItem}-\a-o{augname} \aw(aug-slot[{a}]) \awbag({i}) slot({e})");
+                                    }
+                                }
+                            }
                         }
                     }
+
                 }
             }
 
@@ -146,7 +161,7 @@ namespace E3Core.Processors
                     {
                         for (int a = 1; a <= 6; a++)
                         {
-                            string augname = MQ.Query<string>($"${{Bank[{i}].Item[{e}].AugSlot[{a}].Name}}");
+                            string augname = MQ.Query<string>($"${{Me.Bank[{i}].Item[{e}].AugSlot[{a}].Name}}");
 
                             if (augname.IndexOf(itemName, 0, StringComparison.OrdinalIgnoreCase) > -1)
                             {
