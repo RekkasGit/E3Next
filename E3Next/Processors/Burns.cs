@@ -126,7 +126,12 @@ namespace E3Core.Processors
                 }
                 if (previousTarget > 0)
                 {
-                    Casting.TrueTarget(previousTarget);
+                    Int32 currentTarget = MQ.Query<Int32>("${Target.ID}");
+                    if(previousTarget!=currentTarget)
+                    {
+                        Casting.TrueTarget(previousTarget);
+
+                    }
                 }
 
             }
