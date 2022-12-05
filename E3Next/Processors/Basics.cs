@@ -400,7 +400,7 @@ namespace E3Core.Processors
 
                 if (_mq.Query<int>("${Group}") > 0)
                 {
-                    _mq.Delay(2000);
+                    _mq.Delay(2000, "!${Group}");
                 }
 
                 foreach (var member in groupMembers)
