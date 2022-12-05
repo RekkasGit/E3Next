@@ -229,8 +229,8 @@ namespace E3Core.Classes
                 return;
             }
 
-            GiveOther(petId, _armorItem);
-            GiveOther(petId, _focusItem);
+            GiveOther(petId, _armorSpell);
+            GiveOther(petId, _focusSpell);
 
             var pet = _spawns.Get().FirstOrDefault(f => f.ID == petId);
             if(pet != null)
@@ -295,10 +295,10 @@ namespace E3Core.Classes
 
             if (Casting.TrueTarget(petId))
             {
-                MQ.Cmd($"/nomodkey /itemnotify \"{primary}\" leftmouseup");
+                PickUpWeapon(primary);
                 e3util.GiveItemOnCursorToTarget(false, false);
                 MQ.Delay(250);
-                MQ.Cmd($"/nomodkey /itemnotify \"{secondary}\" leftmouseup");
+                PickUpWeapon(secondary);
                 e3util.GiveItemOnCursorToTarget(false);
             }
             else
@@ -309,12 +309,23 @@ namespace E3Core.Classes
             return true;
         }
 
-        private static void GiveOther(int petId, string item)
+        private static void PickUpWeapon(string weaponName)
         {
+            var itemSlot = MQ.Query<int>($"${{FindItem[{weaponName}].ItemSlot}}");
+            var itemSlot2 = MQ.Query<int>($"${{FindItem[{weaponName}].ItemSlot2}}");
+            var packSlot = itemSlot - 22;
+            var inPackSlot = itemSlot2 + 1;
+
+            MQ.Cmd($"/nomodkey /itemnotify in pack{packSlot} {inPackSlot} leftmouseup");
+        }
+
+        private static void GiveOther(int petId, string spell)
+        {
+            _summonedItemMap.TryGetValue(spell, out var item);
             var foundSummonedItem = MQ.Query<bool>($"${{FindItem[={item}]}}");
             if (!foundSummonedItem)
             {
-                SummonItem(_armorSpell, false);
+                SummonItem(spell, false);
             }
             else
             {
