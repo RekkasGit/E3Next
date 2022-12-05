@@ -78,7 +78,15 @@ namespace E3Core.Processors
             {
                 if (x.match.Groups.Count > 2)
                 {
-                    E3.Bots.Broadcast($"\agTell from: \ap{x.match.Groups[1].Value}\ag, message: \ao'{x.match.Groups[2].Value}'");
+                    string name = x.match.Groups[1].Value;
+                    foreach (var spawn in _spawns.Get())
+                    {
+                        if(spawn.CleanName==name && spawn.TypeDesc=="NPC")
+                        {
+                            return;
+                        }
+                    }
+                    E3.Bots.Broadcast($"\agTell from: \ap{name}\ag, message: \ao'{x.match.Groups[2].Value}'");
                 }
             });
 
