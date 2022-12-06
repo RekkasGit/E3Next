@@ -667,13 +667,17 @@ namespace E3Core.Processors
 
             });
             EventProcessor.RegisterCommand("/backoff", (x) =>
-            {
-                AssistOff();
-                Burns.Reset();
-                DebuffDot.Reset();
+            {   
+                if (!e3util.FilterMe(x))
+                {
+                    AssistOff();
+                    Burns.Reset();
+                    DebuffDot.Reset();
+
+                }
                 if (x.args.Count == 0)
                 {     //we are telling people to back off
-                    E3.Bots.BroadcastCommandToGroup($"/backoff all");
+                    E3.Bots.BroadcastCommandToGroup($"/backoff all",x);
                 }
             });
             e3util.RegisterCommandWithTarget("/e3offassistignore", (x)=> { _offAssistIgnore.Add(x); });
