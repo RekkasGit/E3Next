@@ -110,10 +110,10 @@ namespace E3Core.Classes
 
                     if (!idolUp)
                     {
-                        Spell s;
+                        Spell s;                        
                         if (!Spell._loadedSpellsByName.TryGetValue("Idol of Malos", out s))
                         {
-                            s = new Spell("Idol of Malos");
+                            s = new Spell($"Idol of Malos/Gem|{E3.CharacterSettings.MalosTotemSpellGem}");
                         }
                         if (Casting.CheckReady(s) && Casting.CheckMana(s))
                         {

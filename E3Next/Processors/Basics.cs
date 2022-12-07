@@ -76,6 +76,7 @@ namespace E3Core.Processors
 
             EventProcessor.RegisterEvent("TellRelay", "(.+) tells you, '(.+)'", (x) =>
             {
+                if (!E3.GeneralSettings.RelayTells) return;
                 if (x.match.Groups.Count > 2)
                 {
                     string name = x.match.Groups[1].Value;
