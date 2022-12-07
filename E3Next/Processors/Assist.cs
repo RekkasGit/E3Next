@@ -688,7 +688,11 @@ namespace E3Core.Processors
                     string mobName = x.match.Groups[1].Value;
                     if (MQ.Query<Int32>("${Target.ID}") == MQ.Query<Int32>($"${{Spawn[{mobName}].ID}}"))
                     {
-                        _assistIsEnraged = true;
+                        if (E3.GeneralSettings.AttackOffOnEnrage)
+                        {
+                            _assistIsEnraged = true;
+                        }
+
                         if (MQ.Query<Int32>("${Me.Pet.ID}") > 0)
                         {
                             MQ.Cmd("/pet back off");
