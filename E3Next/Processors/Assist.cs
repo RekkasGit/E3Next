@@ -627,6 +627,12 @@ namespace E3Core.Processors
                 {
                   
                     Int32 targetID = MQ.Query<Int32>("${Target.ID}");
+
+                    if (targetID == E3.CurrentId)
+                    {
+                        E3.Bots.Broadcast("I cannot assist on myself.");
+                        return;
+                    }
                     if(targetID!=_assistTargetID)
                     {
                         AssistOff();
