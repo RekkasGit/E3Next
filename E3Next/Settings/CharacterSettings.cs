@@ -135,6 +135,7 @@ namespace E3Core.Settings
         public Dictionary<string, string> PetWeapons = new Dictionary<string, string>();
         public bool AutoPetWeapons = false;
         public bool AutoCanni = false;
+        public int MalosTotemSpellGem;
         public Spell CanniSpell;
 
         public HashSet<string> WhoToHeal = new HashSet<string>(10, StringComparer.OrdinalIgnoreCase);
@@ -251,6 +252,7 @@ namespace E3Core.Settings
             {
                 LoadKeyData("Shaman", "Auto-Canni (On/Off)", ParsedData, ref AutoCanni);
                 LoadKeyData("Shaman", "Canni", ParsedData, out CanniSpell);
+                LoadKeyData("Shaman", "Malos Totem Spell Gem", ParsedData, ref MalosTotemSpellGem);
             }
 
             LoadKeyData("Buffs", "Instant Buff", ParsedData, InstantBuffs);
@@ -538,6 +540,7 @@ namespace E3Core.Settings
             if (CharacterClass == Class.Magician)
             {
                 newFile.Sections.AddSection("Magician");
+                section = newFile.Sections.GetSectionData("Magician");
                 section.Keys.AddKey("Auto-Pet Weapons (On/Off)", "On");
                 section.Keys.AddKey("Pet Weapons", "");
             }
@@ -545,8 +548,10 @@ namespace E3Core.Settings
             if (CharacterClass == Class.Shaman)
             {
                 newFile.Sections.AddSection("Shaman");
+                section = newFile.Sections.GetSectionData("Shaman");
                 section.Keys.AddKey("Auto-Canni (On/Off)", "Off");
                 section.Keys.AddKey("Canni", "");
+                section.Keys.AddKey("Malos Totem Spell Gem", "8");
             }
 
             newFile.Sections.AddSection("Blocked Buffs");

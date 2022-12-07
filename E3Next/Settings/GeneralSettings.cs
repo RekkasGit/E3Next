@@ -28,6 +28,8 @@ namespace E3Core.Settings
         public Int32 Misc_Gimmie_MoltenOrbMinRequests;
         public bool Misc_DestroyUnsoldItems;
         public bool AutoMisfitBox;
+        public bool AttackOffOnEnrage;
+        public bool RelayTells;
         public string Loot_LinkChannel = String.Empty;
         public List<string> Loot_LinkChannelValid = new List<string>() {"g","gu","say","rsay","shout"};
 
@@ -114,6 +116,8 @@ namespace E3Core.Settings
             LoadKeyData("Misc", "Gimmie MoltenOrb Min Requests", parsedData, ref Misc_Gimmie_MoltenOrbMinRequests);
             LoadKeyData("Misc", "Destroy Unsold Items(On/Off)", parsedData, ref Misc_DestroyUnsoldItems);
             LoadKeyData("Misc", "Automatically Use Misfit Box (On/Off)", parsedData, ref AutoMisfitBox);
+            LoadKeyData("Misc", "Turn Player Attack Off During Enrage (On/Off)", parsedData, ref AttackOffOnEnrage);
+            LoadKeyData("Misc", "Relay Tells (On/Off)", parsedData, ref RelayTells);
 
             LoadKeyData("Loot", "Loot Link Channel", parsedData, ref Loot_LinkChannel);
             //check valid loot channels
@@ -140,7 +144,7 @@ namespace E3Core.Settings
             LoadKeyData("Casting", "Default Spell Gem", parsedData, ref spellGem);
             Casting_DefaultSpellGem = spellGem;
 
-                LoadKeyData("Buff Requests", "Allow Buff Requests (On/Off)", parsedData, ref BuffRequests_AllowBuffRequests);
+            LoadKeyData("Buff Requests", "Allow Buff Requests (On/Off)", parsedData, ref BuffRequests_AllowBuffRequests);
             LoadKeyData("Buff Requests", "Restricted PCs (When Requests [On])", parsedData, ref BuffRequests_RestrictedPCs);
             LoadKeyData("Buff Requests", "Allowed PCs (When Requests [Off])", parsedData, ref BuffRequests_AllowBuffRequests);
 
@@ -191,6 +195,8 @@ namespace E3Core.Settings
             section.Keys.AddKey("Gimmie MoltenOrb Min Requests","3");
             section.Keys.AddKey("Destroy Unsold Items(On/Off)","Off");
             section.Keys.AddKey("Automatically Use Misfit Box (On/Off)", "On");
+            section.Keys.AddKey("Turn Player Attack Off During Enrage (On/Off)", "On");
+            section.Keys.AddKey("Relay Tells (On/Off)", "Off");
             //Loot
             newFile.Sections.AddSection("Loot");
             section = newFile.Sections.GetSectionData("Loot");
