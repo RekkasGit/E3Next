@@ -224,12 +224,24 @@ namespace E3Core.Processors
                                 break;
                             }
                         }
-
+                        
                         foreach (var spell in _currentRezSpells)
                         {
                             if (Casting.CheckReady(spell) && Casting.CheckMana(spell))
                             {
-                                Casting.Cast(spawn.ID, spell, Heals.SomeoneNeedsHealing);
+                                if (Basics.InCombat())
+                                {
+                                    if (string.Equals(spell.SpellName, "Water Sprinkler of Nem Ankh"))
+                                    {
+                                        continue;
+                                    }
+
+                                    Casting.Cast(spawn.ID, spell, Heals.SomeoneNeedsHealing);
+                                }
+                                else
+                                {
+                                    Casting.Cast(spawn.ID, spell);
+                                }
                                 break;
                             }
                         }
