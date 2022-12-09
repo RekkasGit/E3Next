@@ -44,14 +44,14 @@ namespace E3Core.Data
 
         static Classes()
         {
-            foreach(var pair in _classLongToShort)
+            foreach(var pair in ClassLongToShort)
             {
                 _classShortToLong.Add(pair.Value, pair.Key);
             }
         
         }
 
-    public static List<string> _classShortNames = new List<string>() { "WAR",
+    public static List<string> ClassShortNames = new List<string>() { "WAR",
                                                                             "PAL",
                                                                             "RNG",
                                                                             "SHD",
@@ -69,7 +69,7 @@ namespace E3Core.Data
                                                                             "MER",
                                                                             "CLR"};
 
-        public static Dictionary<string, string> _classLongToShort = new Dictionary<string, string>(StringComparer.OrdinalIgnoreCase) {{"Warrior","WAR"},
+        public static Dictionary<string, string> ClassLongToShort = new Dictionary<string, string>(StringComparer.OrdinalIgnoreCase) {{"Warrior","WAR"},
                                                                                                         {"Cleric","CLR"},
                                                                                                         {"Paladin","PAL"},
                                                                                                         {"Ranger","RNG"},

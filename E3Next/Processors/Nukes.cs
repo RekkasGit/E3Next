@@ -76,13 +76,13 @@ namespace E3Core.Processors
         }
         private static void Cast_Instasnt(List<Data.Spell> spells, ref Double delayTimeStamp)
         {
-            if (Assist._assistTargetID > 0)
+            if (Assist.AssistTargetID > 0)
             {
                 //we should be assisting, check_AssistStatus, verifies its not a corpse.
                 using (_log.Trace())
                 {
                     Spawn s;
-                    if (_spawns.TryByID(Assist._assistTargetID, out s))
+                    if (_spawns.TryByID(Assist.AssistTargetID, out s))
                     {
                         bool giftOfManaSet = false;
                         bool giftOfMana = false;
@@ -99,10 +99,10 @@ namespace E3Core.Processors
                                 }
                             }
                             //can't cast if it isn't ready
-                            if (Casting.InRange(Assist._assistTargetID, spell) && Casting.CheckReady(spell) && Casting.CheckMana(spell))
+                            if (Casting.InRange(Assist.AssistTargetID, spell) && Casting.CheckReady(spell) && Casting.CheckMana(spell))
                             {
                                 //we should have a valid target via check_assistStatus
-                                if (spell.Delay > 0 && delayTimeStamp > 0 && Core._stopWatch.ElapsedMilliseconds < delayTimeStamp)
+                                if (spell.Delay > 0 && delayTimeStamp > 0 && Core.StopWatch.ElapsedMilliseconds < delayTimeStamp)
                                 {
                                     //delay has been specified, skip this spell
                                     continue;
@@ -156,7 +156,7 @@ namespace E3Core.Processors
                                 if (s.Distance < spell.MyRange)
                                 {
 
-                                    CastReturn result = Casting.Cast(Assist._assistTargetID, spell, Heals.SomeoneNeedsHealing);
+                                    CastReturn result = Casting.Cast(Assist.AssistTargetID, spell, Heals.SomeoneNeedsHealing);
                                     if (result == CastReturn.CAST_INTERRUPTFORHEAL)
                                     {
                                         return;
@@ -167,7 +167,7 @@ namespace E3Core.Processors
                                         //delay time
                                         if (spell.Delay > 0)
                                         {
-                                            delayTimeStamp = Core._stopWatch.ElapsedMilliseconds + (spell.Delay * 1000);
+                                            delayTimeStamp = Core.StopWatch.ElapsedMilliseconds + (spell.Delay * 1000);
                                         }
                                         return;
                                     }
@@ -205,7 +205,7 @@ namespace E3Core.Processors
                     if (Casting.CheckReady(spell) && Casting.CheckMana(spell))
                     {
                         //we should have a valid target via check_assistStatus
-                        if (spell.Delay > 0 && delayTimeStamp > 0 && Core._stopWatch.ElapsedMilliseconds < delayTimeStamp)
+                        if (spell.Delay > 0 && delayTimeStamp > 0 && Core.StopWatch.ElapsedMilliseconds < delayTimeStamp)
                         {
                             //delay has been specified, skip this spell
                             continue;
@@ -245,7 +245,7 @@ namespace E3Core.Processors
                             //delay time
                             if (spell.Delay > 0)
                             {
-                                delayTimeStamp = Core._stopWatch.ElapsedMilliseconds + (spell.Delay * 1000);
+                                delayTimeStamp = Core.StopWatch.ElapsedMilliseconds + (spell.Delay * 1000);
                             }
                             return;
                         }

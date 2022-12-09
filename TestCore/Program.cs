@@ -143,10 +143,10 @@ namespace TestCore
               
 
                 //lets tell core that it can continue
-                Core._coreResetEvent.Set();
+                Core.CoreResetEvent.Set();
                 //we are now going to wait on the core
-                MainProcessor._processResetEvent.Wait();
-                MainProcessor._processResetEvent.Reset();
+                MainProcessor.ProcessResetEvent.Wait();
+                MainProcessor.ProcessResetEvent.Reset();
                
             }
 

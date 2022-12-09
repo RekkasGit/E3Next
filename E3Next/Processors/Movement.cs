@@ -15,10 +15,10 @@ namespace E3Core.Processors
 {
     public static class Movement
     {
-        public static Int32 _anchorTarget = 0;
-        public static bool _following = false;
+        public static Int32 AnchorTarget = 0;
+        public static bool Following = false;
         //public static Int32 _followTargetID = 0;
-        public static string _followTargetName = String.Empty;
+        public static string FollowTargetName = String.Empty;
         public static Logging _log = E3.Log;
         private static IMQ MQ = E3.MQ;
         private static ISpawns _spawns = E3.Spawns;
@@ -40,9 +40,9 @@ namespace E3Core.Processors
         }
         public static void Reset()
         {
-            _anchorTarget = 0;
-            _following = false;
-            _followTargetName = String.Empty;
+            AnchorTarget = 0;
+            Following = false;
+            FollowTargetName = String.Empty;
             _chaseTarget = String.Empty;
         }
         [ClassInvoke(Data.Class.All)]
@@ -55,7 +55,7 @@ namespace E3Core.Processors
             {
 
 
-                if (_chaseTarget != String.Empty && !Assist._isAssisting)
+                if (_chaseTarget != String.Empty && !Assist.IsAssisting)
                 {
                     double distance = MQ.Query<double>($"${{Spawn[={_chaseTarget}].Distance}}");
 
@@ -108,8 +108,8 @@ namespace E3Core.Processors
         public static void RemoveFollow()
         {
             _chaseTarget = String.Empty;
-            _followTargetName = string.Empty;
-            _following = false;
+            FollowTargetName = string.Empty;
+            Following = false;
             MQ.Cmd("/squelch /afollow off");
             MQ.Cmd("/squelch /stick off");
 
@@ -121,48 +121,48 @@ namespace E3Core.Processors
 
             if (!e3util.ShouldCheck(ref _nextFollowCheck, _nextFollowCheckInterval)) return;
 
-            if (String.IsNullOrWhiteSpace(_followTargetName)) return;
+            if (String.IsNullOrWhiteSpace(FollowTargetName)) return;
  
-            if (Assist._isAssisting) return;
+            if (Assist.IsAssisting) return;
 
             Spawn s;
-            if (_spawns.TryByName(_followTargetName, out s))
+            if (_spawns.TryByName(FollowTargetName, out s))
             {
                 if (s.Distance <= 250)
                 {
-                    if (!_following)
+                    if (!Following)
                     {
                         //they are in range
-                        if (MQ.Query<bool>($"${{Spawn[{_followTargetName}].LineOfSight}}"))
+                        if (MQ.Query<bool>($"${{Spawn[{FollowTargetName}].LineOfSight}}"))
                         {
                             if (Casting.TrueTarget(s.ID))
                             {
                                 MQ.Delay(100);
                                 //if a bot, use afollow, else use stick
                                 MQ.Cmd("/afollow on nodoor");
-                                _following = true;
+                                Following = true;
                             }
                         }
                     }
                 }
                 else
                 {
-                    _following = false;
+                    Following = false;
                 }
             }
         }
         
         public static void ResetKeepFollow()
         {
-            _anchorTarget = 0;
-            _following = false;
+            AnchorTarget = 0;
+            Following = false;
 
         }
         [ClassInvoke(Data.Class.All)]
         public static void Check_Anchor()
         {
             if (!e3util.ShouldCheck(ref _nextAnchorCheck, _nextAnchorCheckInterval)) return;
-            if (_anchorTarget > 0 && !Assist._isAssisting)
+            if (AnchorTarget > 0 && !Assist.IsAssisting)
             {
                 MoveToAnchor();
             }
@@ -172,7 +172,7 @@ namespace E3Core.Processors
         {
             _spawns.RefreshList();
             Spawn s;
-            if (_spawns.TryByID(_anchorTarget, out s))
+            if (_spawns.TryByID(AnchorTarget, out s))
             {
                 if (s.Distance > 15 && s.Distance < 150)
                 {
@@ -237,7 +237,7 @@ namespace E3Core.Processors
                     Int32 targetid;
                     if (Int32.TryParse(x.args[0], out targetid))
                     {
-                        _anchorTarget = targetid;
+                        AnchorTarget = targetid;
                     }
                 }
                 else
@@ -260,7 +260,7 @@ namespace E3Core.Processors
                         if (_spawns.TryByName(x.args[0], out s))
                         {
                             _chaseTarget = x.args[0];
-                            _following = true;
+                            Following = true;
                         }
 
                     }
@@ -270,7 +270,7 @@ namespace E3Core.Processors
                 {
                     E3.Bots.BroadcastCommandToGroup($"/chaseme off {E3.CurrentName}", x);
                     _chaseTarget = String.Empty;
-                    _following = false;
+                    Following = false;
                 }
                 //chaseme off <toon name>
                 else if (x.args.Count == 2 && x.args[0] == "off")
@@ -278,19 +278,19 @@ namespace E3Core.Processors
                     if (!e3util.FilterMe(x))
                     {
                         _chaseTarget = String.Empty;
-                        _following = false;
+                        Following = false;
 
                     }
                 }
                 else
                 {
                     E3.Bots.BroadcastCommandToGroup($"/chaseme {E3.CurrentName}", x);
-                    _following = false;
+                    Following = false;
                 }
             });
             EventProcessor.RegisterCommand("/anchoroff", (x) =>
             {
-                _anchorTarget = 0;
+                AnchorTarget = 0;
                 if (x.args.Count == 0)
                 {
                     E3.Bots.BroadcastCommandToGroup($"/anchoroff all");
@@ -308,8 +308,8 @@ namespace E3Core.Processors
                         Spawn s;
                         if (_spawns.TryByName(user, out s))
                         {
-                            _followTargetName = user;
-                            _following = false;
+                            FollowTargetName = user;
+                            Following = false;
                             Rez.Reset();
                             Assist.AssistOff();
                             AcquireFollow();

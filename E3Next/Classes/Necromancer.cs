@@ -39,7 +39,7 @@ namespace E3Core.Classes
             {
                 Assist.AssistOff();
                 bool FD = false;
-                if (!Spell._loadedSpellsByName.TryGetValue("Improved Death Peace", out s))
+                if (!Spell.LoadedSpellsByName.TryGetValue("Improved Death Peace", out s))
                 {
                     s = new Spell("Improved Death Peace");
                 }
@@ -49,7 +49,7 @@ namespace E3Core.Classes
                     FD = true;
               
                 }
-                else if (!Spell._loadedSpellsByName.TryGetValue("Death Peace", out s))
+                else if (!Spell.LoadedSpellsByName.TryGetValue("Death Peace", out s))
                 {
                     s = new Spell("Death Peace");
                     Casting.Cast(0, s);
@@ -99,7 +99,7 @@ namespace E3Core.Classes
             {
                 
                 Spell s;
-                if(!Spell._loadedSpellsByName.TryGetValue("Improved Death Peace",out s))
+                if(!Spell.LoadedSpellsByName.TryGetValue("Improved Death Peace",out s))
                 {
                     s = new Spell("Improved Death Peace");
                 }
@@ -124,7 +124,7 @@ namespace E3Core.Classes
                     }
 
                 }
-                if (!Spell._loadedSpellsByName.TryGetValue("Death Peace", out s))
+                if (!Spell.LoadedSpellsByName.TryGetValue("Death Peace", out s))
                 {
                     s = new Spell("Death Peace");
                 }
@@ -149,36 +149,7 @@ namespace E3Core.Classes
                 }
 
             } 
-            //else if(tempMaxAggro>_maxAggroCap && !MQ.Query<bool>("${Bool[${Me.Song[Harmshield]}]}"))
-            //{
-
-            //    Spell s;
-
-            //    if (!Spell._loadedSpellsByName.TryGetValue("Embalmer's Carapace", out s))
-            //    {
-            //        s = new Spell("Embalmer's Carapace");
-            //    }
-            //    if (Casting.CheckReady(s) && Casting.CheckMana(s))
-            //    {
-            //        Casting.Cast(0, s);
-            //        return;
-            //    }
-
-            //    if (!Spell._loadedSpellsByName.TryGetValue("Harmshield", out s))
-            //    {
-            //        s = new Spell("Harmshield");
-            //    }
-            //    if (Casting.CheckReady(s) && Casting.CheckMana(s))
-            //    {
-            //        Casting.Cast(0, s);
-            //        return;
-            //    }
-               
-
-            //}
-
-
-
+            
         }
 
     }

@@ -56,7 +56,7 @@ namespace E3Core.Server
                 
                 pubSocket.Bind("tcp://127.0.0.1:" + PubPort.ToString());
                 
-                while (Core._isProcessing)
+                while (Core.IsProcessing)
                 {
                    
                     while (_topicMessages.Count > 0)

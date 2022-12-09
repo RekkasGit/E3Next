@@ -51,7 +51,7 @@ namespace E3NextUI.Server
                             {
                                 if (Application.OpenForms.Count > 0)
                                 {
-                                    ((E3UI)Application.OpenForms[0]).AddConsoleLine(messageReceived, E3UI._mqConsole);
+                                    ((E3UI)Application.OpenForms[0]).AddConsoleLine(messageReceived, E3UI.MQConsole);
                                 }
 
                             }
@@ -64,7 +64,7 @@ namespace E3NextUI.Server
                                     {
                                         if (messageReceived.Contains(c))
                                         {
-                                            ((E3UI)Application.OpenForms[0]).AddConsoleLine(messageReceived, E3UI._console);
+                                            ((E3UI)Application.OpenForms[0]).AddConsoleLine(messageReceived, E3UI.Console);
                                             found = true;
                                             break;
                                         }
@@ -78,7 +78,7 @@ namespace E3NextUI.Server
                                         {
                                             if (messageReceived.Contains(c))
                                             {
-                                                ((E3UI)Application.OpenForms[0]).AddConsoleLine(messageReceived, E3UI._spellConsole);
+                                                ((E3UI)Application.OpenForms[0]).AddConsoleLine(messageReceived, E3UI.SpellConsole);
                                                 found = true;
                                                 break;
                                             }
@@ -90,7 +90,7 @@ namespace E3NextUI.Server
                                         {
                                             if (messageReceived.StartsWith(c))
                                             {
-                                                ((E3UI)Application.OpenForms[0]).AddConsoleLine(messageReceived, E3UI._spellConsole);
+                                                ((E3UI)Application.OpenForms[0]).AddConsoleLine(messageReceived, E3UI.SpellConsole);
                                                 found = true;
                                                 break;
                                             }
@@ -102,7 +102,7 @@ namespace E3NextUI.Server
                                         {
                                             if (messageReceived.EndsWith(c))
                                             {
-                                                ((E3UI)Application.OpenForms[0]).AddConsoleLine(messageReceived, E3UI._spellConsole);
+                                                ((E3UI)Application.OpenForms[0]).AddConsoleLine(messageReceived, E3UI.SpellConsole);
                                                 found = true;
                                                 break;
                                             }
@@ -111,7 +111,7 @@ namespace E3NextUI.Server
                                     if (!found)
                                     {
                                         //misc bucket
-                                        ((E3UI)Application.OpenForms[0]).AddConsoleLine(messageReceived, E3UI._meleeConsole);
+                                        ((E3UI)Application.OpenForms[0]).AddConsoleLine(messageReceived, E3UI.MeleeConsole);
                                     }
                                 }
                             }
@@ -171,7 +171,7 @@ namespace E3NextUI.Server
                         }
                         catch (Exception ex)
                         {
-                            ((E3UI)Application.OpenForms[0]).AddConsoleLine(ex.Message, E3UI._console);
+                            ((E3UI)Application.OpenForms[0]).AddConsoleLine(ex.Message, E3UI.Console);
 
                         }
                         

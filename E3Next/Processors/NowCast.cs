@@ -99,7 +99,7 @@ namespace E3Core.Processors
         {
 
             string realSpell = string.Empty;
-            if (BegForBuffs._spellAliases.TryGetValue(spellName, out realSpell))
+            if (BegForBuffs.SpellAliases.TryGetValue(spellName, out realSpell))
             {
                 spellName = realSpell;
             }

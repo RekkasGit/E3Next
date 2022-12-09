@@ -15,9 +15,9 @@ namespace E3Core.Processors
     /// </summary>
     public static class Assist
     {
-        public static bool _allowControl = false;
-        public static Boolean _isAssisting = false;
-        public static Int32 _assistTargetID = 0;
+        public static bool AllowControl = false;
+        public static Boolean IsAssisting = false;
+        public static Int32 AssistTargetID = 0;
 
         private static Logging _log = E3.Log;
         private static IMQ MQ = E3.MQ;
@@ -34,9 +34,6 @@ namespace E3Core.Processors
         private static Data.Spell _terrorOfDiscord = new Data.Spell("Terror of Discord");
         private static IList<string> _tankTypes = new List<string>() { "WAR", "PAL", "SK" };
 
-        private static Int64 _nextAssistCheck = 0;
-        private static Int64 _nextAssistCheckInterval = 250;
-
         /// <summary>
         /// Initializes this instance.
         /// </summary>
@@ -45,7 +42,6 @@ namespace E3Core.Processors
         {
             RegisterEvents();
            
-            //E3._bots.SetupAliases();
         }
 
         /// <summary>
@@ -80,19 +76,19 @@ namespace E3Core.Processors
             
             using (_log.Trace())
             {
-                if (_assistTargetID == 0) return;
+                if (AssistTargetID == 0) return;
 
                 Int32 targetId = MQ.Query<Int32>("${Target.ID}");
 
                 if (targetId <1)
                 {
-                    bool isCorpse = MQ.Query<bool>($"${{Spawn[id {_assistTargetID}].Type.Equal[Corpse]}}");
+                    bool isCorpse = MQ.Query<bool>($"${{Spawn[id {AssistTargetID}].Type.Equal[Corpse]}}");
                     if (isCorpse)
                     {
                         AssistOff();
                         return;
                     }
-                    if (!Casting.TrueTarget(_assistTargetID))
+                    if (!Casting.TrueTarget(AssistTargetID))
                     {
                         AssistOff();
                         return;
@@ -106,20 +102,20 @@ namespace E3Core.Processors
                     }
 
                 }
-                else if (targetId != _assistTargetID)
+                else if (targetId != AssistTargetID)
                 {
 
                     Spawn ct;
                     _spawns.RefreshList();
                     if (_spawns.TryByID(targetId, out ct))
                     {
-                        if (_allowControl)
+                        if (AllowControl)
                         {
-                            _assistTargetID = targetId;
+                            AssistTargetID = targetId;
                         }
                         else
                         {
-                            Casting.TrueTarget(_assistTargetID);
+                            Casting.TrueTarget(AssistTargetID);
                         }
 
                     }
@@ -127,9 +123,9 @@ namespace E3Core.Processors
                 }
 
                 Spawn s;
-                if (_spawns.TryByID(_assistTargetID, out s))
+                if (_spawns.TryByID(AssistTargetID, out s))
                 {
-                    bool isCorpse = MQ.Query<bool>($"${{Spawn[id {_assistTargetID}].Type.Equal[Corpse]}}");
+                    bool isCorpse = MQ.Query<bool>($"${{Spawn[id {AssistTargetID}].Type.Equal[Corpse]}}");
                     if (isCorpse)
                     {
                         //its dead jim
@@ -164,7 +160,7 @@ namespace E3Core.Processors
                                 //delay is needed to give time for it to actually process
                                 MQ.Delay(1000);
                             }
-                            if (!_allowControl)
+                            if (!AllowControl)
                             {
                                 if (!MQ.Query<bool>("${Me.Combat}"))
                                 {
@@ -174,7 +170,7 @@ namespace E3Core.Processors
 
 
                             //are we sticking?
-                            if (!_allowControl && !MQ.Query<bool>("${Stick.Active}"))
+                            if (!AllowControl && !MQ.Query<bool>("${Stick.Active}"))
                             {
                                 StickToAssistTarget();
                             }
@@ -183,7 +179,7 @@ namespace E3Core.Processors
                         else
                         {
                             //we be ranged!
-                            MQ.Cmd($"/squelch /face fast id {_assistTargetID}");
+                            MQ.Cmd($"/squelch /face fast id {AssistTargetID}");
 
                             if (MQ.Query<Decimal>("${Target.Distance}") > 200)
                             {
@@ -208,7 +204,7 @@ namespace E3Core.Processors
 
 
                 }
-                else if (_assistTargetID > 0)
+                else if (AssistTargetID > 0)
                 {
                     //can't find the mob, yet we have an assistID? remove assist.
                     AssistOff();
@@ -224,7 +220,7 @@ namespace E3Core.Processors
         {
             //can we find our target?
             Spawn s;
-            if (_spawns.TryByID(_assistTargetID, out s))
+            if (_spawns.TryByID(AssistTargetID, out s))
             {
                 //yes we can, lets grab our current agro
                 Int32 pctAggro = MQ.Query<Int32>("${Me.PctAggro}");
@@ -253,7 +249,7 @@ namespace E3Core.Processors
                                     {
                                         if (Casting.CheckReady(_divineStun))
                                         {
-                                            Casting.Cast(_assistTargetID, _divineStun);
+                                            Casting.Cast(AssistTargetID, _divineStun);
                                         }
 
                                     }
@@ -261,7 +257,7 @@ namespace E3Core.Processors
                                     {
                                         if (Casting.CheckReady(_terrorOfDiscord))
                                         {
-                                            Casting.Cast(_assistTargetID, _terrorOfDiscord);
+                                            Casting.Cast(AssistTargetID, _terrorOfDiscord);
                                         }
 
                                     }
@@ -326,11 +322,11 @@ namespace E3Core.Processors
                                 }
                             }
 
-                            Casting.Cast(_assistTargetID, ability);
+                            Casting.Cast(AssistTargetID, ability);
                         }
                         else if (ability.CastType == Data.CastType.AA)
                         {
-                            Casting.Cast(_assistTargetID, ability);
+                            Casting.Cast(AssistTargetID, ability);
                         }
                         else if (ability.CastType == Data.CastType.Disc)
                         {
@@ -386,9 +382,9 @@ namespace E3Core.Processors
                 MQ.Delay(1000);
             }
             if (MQ.Query<Int32>("${Me.Pet.ID}") > 0) MQ.Cmd("/squelch /pet back off");
-            _isAssisting = false;
-            _allowControl = false;
-            _assistTargetID = 0;
+            IsAssisting = false;
+            AllowControl = false;
+            AssistTargetID = 0;
             _assistIsEnraged = false;
             if (MQ.Query<bool>("${Stick.Status.Equal[ON]}")) MQ.Cmd("/squelch /stick off");
            
@@ -450,12 +446,12 @@ namespace E3Core.Processors
 
                 Spawn folTarget;
 
-                if (_spawns.TryByName(Movement._followTargetName, out folTarget))
+                if (_spawns.TryByName(Movement.FollowTargetName, out folTarget))
                 {
-                    if (Movement._following && folTarget.Distance3D > 100 && MQ.Query<bool>("${Me.Moving}"))
+                    if (Movement.Following && folTarget.Distance3D > 100 && MQ.Query<bool>("${Me.Moving}"))
                     {
                         //using a delay in awhile loop, use query for realtime info
-                        while (MQ.Query<bool>("${Me.Moving}") && MQ.Query<Decimal>($"${{Spawn[{Movement._followTargetName}].Distance3D}}") > 100)
+                        while (MQ.Query<bool>("${Me.Moving}") && MQ.Query<Decimal>($"${{Spawn[{Movement.FollowTargetName}].Distance3D}}") > 100)
                         {
                             MQ.Delay(100);
                             //wait us to get close to our follow target and then we can engage
@@ -465,14 +461,14 @@ namespace E3Core.Processors
 
                 if (MQ.Query<bool>("${Stick.Active}")) MQ.Cmd("/squelch /stick off");
                 if (MQ.Query<bool>("${AdvPath.Following}")) MQ.Cmd("/squelch /afollow off ");
-                if (Movement._following) Movement._following = false;
+                if (Movement.Following) Movement.Following = false;
 
 
-                _isAssisting = true;
-                _assistTargetID = mobID;
-                if (MQ.Query<Int32>("${Target.ID}") != _assistTargetID)
+                IsAssisting = true;
+                AssistTargetID = mobID;
+                if (MQ.Query<Int32>("${Target.ID}") != AssistTargetID)
                 {
-                    if (!Casting.TrueTarget(_assistTargetID))
+                    if (!Casting.TrueTarget(AssistTargetID))
                     {
                         //could not target
                         E3.Bots.Broadcast("\arCannot assist, Could not target");
@@ -480,14 +476,14 @@ namespace E3Core.Processors
                     }
                 }
 
-                if (!_allowControl)
+                if (!AllowControl)
                 {
-                    MQ.Cmd($"/face fast id {_assistTargetID}");
+                    MQ.Cmd($"/face fast id {AssistTargetID}");
                 }
 
                 if (MQ.Query<Int32>("${Me.Pet.ID}") > 0)
                 {
-                    MQ.Cmd($"/pet attack {_assistTargetID}");
+                    MQ.Cmd($"/pet attack {AssistTargetID}");
                 }
 
                 //IF MELEE/Ranged
@@ -509,7 +505,7 @@ namespace E3Core.Processors
                     {
                         _assistDistance = 25;
                     }
-                    if(!_allowControl)
+                    if(!AllowControl)
                     {
                         StickToAssistTarget();
 
@@ -633,10 +629,10 @@ namespace E3Core.Processors
                         E3.Bots.Broadcast("I cannot assist on myself.");
                         return;
                     }
-                    if(targetID!=_assistTargetID)
+                    if(targetID!=AssistTargetID)
                     {
                         AssistOff();
-                        _allowControl = true;
+                        AllowControl = true;
                         AssistOn(targetID);
 
                     }
@@ -647,9 +643,9 @@ namespace E3Core.Processors
                     Int32 mobid;
                     if (Int32.TryParse(x.args[0], out mobid))
                     {
-                        if (mobid == _assistTargetID) return;
+                        if (mobid == AssistTargetID) return;
                         AssistOff();
-                        _allowControl = false;
+                        AllowControl = false;
                         AssistOn(mobid);
                     }
                 }
@@ -658,16 +654,16 @@ namespace E3Core.Processors
             {
                 if(x.args.Count==0)
                 {
-                    ClearXTargets._mobToAttack=0;
+                    ClearXTargets.MobToAttack=0;
                     AssistOff();
                     E3.Bots.BroadcastCommandToGroup($"/backoff all");
-                    ClearXTargets._enabled = true;
+                    ClearXTargets.Enabled = true;
 
                 } 
                 else if (x.args.Count == 1 && x.args[0] == "off")
                 {
                     AssistOff();
-                    ClearXTargets._enabled = false;
+                    ClearXTargets.Enabled = false;
                     E3.Bots.BroadcastCommandToGroup($"/backoff all");
                 }
 
@@ -723,7 +719,7 @@ namespace E3Core.Processors
             });
             EventProcessor.RegisterEvent("GetCloser", "Your target is too far away, get closer!", (x) =>
             {
-                if (_isAssisting&& !_allowControl)
+                if (IsAssisting&& !AllowControl)
                 {
                     if (_assistStickDistance > 5)
                     {

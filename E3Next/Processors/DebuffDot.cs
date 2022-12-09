@@ -63,7 +63,7 @@ namespace E3Core.Processors
         {
             //TODO: Test
             if (!_shouldOffAssist) return;
-            if (!Assist._isAssisting) return;
+            if (!Assist.IsAssisting) return;
             if (E3.CharacterSettings.OffAssistSpells.Count == 0) return;
             if (!e3util.ShouldCheck(ref _nextOffAssistCheck, _nextOffAssistCheckInterval)) return;
             using (_log.Trace())
@@ -80,7 +80,7 @@ namespace E3Core.Processors
                         Spawn s;
                         if (_spawns.TryByID(mobId, out s))
                         {
-                            if (s.ID == Assist._assistTargetID) continue;
+                            if (s.ID == Assist.AssistTargetID) continue;
                             if (!s.Targetable) continue;
                             if (!s.Aggressive) continue;
                             if (!s.Targetable) continue;
@@ -121,9 +121,9 @@ namespace E3Core.Processors
         public static void Check_Debuffs()
         {
 
-            if (Assist._assistTargetID > 0)
+            if (Assist.AssistTargetID > 0)
             {
-                CastLongTermSpell(Assist._assistTargetID, E3.CharacterSettings.Debuffs_OnAssist, _debuffTimers);
+                CastLongTermSpell(Assist.AssistTargetID, E3.CharacterSettings.Debuffs_OnAssist, _debuffTimers);
                 if (E3.ActionTaken) return;
             }
 
@@ -146,9 +146,9 @@ namespace E3Core.Processors
 
                 //put us back to our assist target
                 Int32 targetId = MQ.Query<Int32>("${Target.ID}");
-                if (targetId != Assist._assistTargetID)
+                if (targetId != Assist.AssistTargetID)
                 {
-                    Casting.TrueTarget(Assist._assistTargetID);
+                    Casting.TrueTarget(Assist.AssistTargetID);
 
                 }
             }
@@ -158,9 +158,9 @@ namespace E3Core.Processors
         public static void check_Dots()
         {
 
-            if (Assist._assistTargetID > 0)
+            if (Assist.AssistTargetID > 0)
             {
-                CastLongTermSpell(Assist._assistTargetID, E3.CharacterSettings.Dots_Assist, _dotTimers);
+                CastLongTermSpell(Assist.AssistTargetID, E3.CharacterSettings.Dots_Assist, _dotTimers);
                 if (E3.ActionTaken) return;
             }
 
@@ -183,9 +183,9 @@ namespace E3Core.Processors
 
                 //put us back to our assist target
                 Int32 targetId = MQ.Query<Int32>("${Target.ID}");
-                if (targetId != Assist._assistTargetID)
+                if (targetId != Assist.AssistTargetID)
                 {
-                    Casting.TrueTarget(Assist._assistTargetID);
+                    Casting.TrueTarget(Assist.AssistTargetID);
 
                 }
             }
@@ -319,9 +319,9 @@ namespace E3Core.Processors
                 if (timers.TryGetValue(mobid, out s))
                 {
                     Int64 timestamp;
-                    if (s._timestamps.TryGetValue(spell.SpellID, out timestamp))
+                    if (s.Timestamps.TryGetValue(spell.SpellID, out timestamp))
                     {
-                        if (Core._stopWatch.ElapsedMilliseconds < timestamp)
+                        if (Core.StopWatch.ElapsedMilliseconds < timestamp)
                         {
                             //debuff/dot is still on the mob, kick off
                             continue;
@@ -329,11 +329,11 @@ namespace E3Core.Processors
                     }
                 }
                 ResistCounter r;
-                if (Casting._resistCounters.TryGetValue(mobid, out r))
+                if (Casting.ResistCounters.TryGetValue(mobid, out r))
                 {
                     //have resist counters on this mob, lets check if this spell is on the list
                     Int32 counters;
-                    if (r._spellCounters.TryGetValue(spell.SpellID, out counters))
+                    if (r.SpellCounters.TryGetValue(spell.SpellID, out counters))
                     {
                         if (counters > spell.MaxTries)
                         {   //mob is resistant to this spell, kick out. 
@@ -463,20 +463,20 @@ namespace E3Core.Processors
             //if we have no time left, as it was not found, just set it to 0 in ours
             if (timers.TryGetValue(mobid, out s))
             {
-                if (!s._timestamps.ContainsKey(spell.SpellID))
+                if (!s.Timestamps.ContainsKey(spell.SpellID))
                 {
-                    s._timestamps.Add(spell.SpellID, 0);
+                    s.Timestamps.Add(spell.SpellID, 0);
                 }
 
-                s._timestamps[spell.SpellID] = Core._stopWatch.ElapsedMilliseconds + timeLeftInMS;
+                s.Timestamps[spell.SpellID] = Core.StopWatch.ElapsedMilliseconds + timeLeftInMS;
 
             }
             else
             {
                 SpellTimer ts = SpellTimer.Aquire();
-                ts._mobID = mobid;
+                ts.MobID = mobid;
 
-                ts._timestamps.Add(spell.SpellID, Core._stopWatch.ElapsedMilliseconds + timeLeftInMS);
+                ts.Timestamps.Add(spell.SpellID, Core.StopWatch.ElapsedMilliseconds + timeLeftInMS);
                 timers.Add(mobid, ts);
             }
         }

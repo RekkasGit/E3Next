@@ -37,9 +37,9 @@ namespace E3Core.Settings
 
         //  public static Dictionary<string, Action> _methodLookup = new Dictionary<string, Action>(StringComparer.OrdinalIgnoreCase);
 
-        public static Dictionary<string, Action> _methodLookup = new Dictionary<string, Action>(StringComparer.OrdinalIgnoreCase);
-        public static Dictionary<string,Action> _classMethodLookup = new Dictionary<string, Action>(StringComparer.OrdinalIgnoreCase);
-        public static Dictionary<string, List<string>> _classMethodsAsStrings = new Dictionary<string, List<string>>(StringComparer.OrdinalIgnoreCase);
+        public static Dictionary<string, Action> MethodLookup = new Dictionary<string, Action>(StringComparer.OrdinalIgnoreCase);
+        public static Dictionary<string,Action> ClassMethodLookup = new Dictionary<string, Action>(StringComparer.OrdinalIgnoreCase);
+        public static Dictionary<string, List<string>> ClassMethodsAsStrings = new Dictionary<string, List<string>>(StringComparer.OrdinalIgnoreCase);
 
         public AdvancedSettings()
         {
@@ -50,9 +50,9 @@ namespace E3Core.Settings
         }
         public void Reset()
         {
-            _methodLookup.Clear();
-            _classMethodLookup.Clear();
-            _classMethodsAsStrings.Clear();
+            MethodLookup.Clear();
+            ClassMethodLookup.Clear();
+            ClassMethodsAsStrings.Clear();
         }
         public void LoadData()
         {
@@ -75,10 +75,10 @@ namespace E3Core.Settings
             parsedData = fileIniData.ReadFile(filename);
 
 
-            foreach (var shortname in Data.Classes._classShortNames)
+            foreach (var shortname in Data.Classes.ClassShortNames)
             {
-                _classMethodsAsStrings.Add(shortname, new List<string>());
-                LoadKeyData($"{shortname} Functions", $"{shortname} Function", parsedData, _classMethodsAsStrings[shortname]);
+                ClassMethodsAsStrings.Add(shortname, new List<string>());
+                LoadKeyData($"{shortname} Functions", $"{shortname} Function", parsedData, ClassMethodsAsStrings[shortname]);
             }
          
         }
@@ -100,7 +100,7 @@ namespace E3Core.Settings
             {
                 //these are static don't need to create an instance
                 var func = (Action)foundMethod.CreateDelegate(typeof(Action));
-                _methodLookup.Add(foundMethod.Name, func);
+                MethodLookup.Add(foundMethod.Name, func);
                 
             }
             methods = AppDomain.CurrentDomain.GetAssemblies()
@@ -117,7 +117,7 @@ namespace E3Core.Settings
                 { 
                     //these are static don't need to create an instance
                     var func = (Action)foundMethod.CreateDelegate(typeof(Action));
-                    _classMethodLookup.Add(foundMethod.Name, func);
+                    ClassMethodLookup.Add(foundMethod.Name, func);
                 }
             }
         }

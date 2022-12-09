@@ -184,7 +184,7 @@ namespace E3Core.Processors
             if (!e3util.ShouldCheck(ref _nextLootCheck, _nextLootCheckInterval)) return;
 
             if (!_shouldLoot) return;
-            if(!Assist._isAssisting)
+            if(!Assist.IsAssisting)
             {
 
                 if (!Basics.InCombat() || E3.GeneralSettings.Loot_LootInCombat)

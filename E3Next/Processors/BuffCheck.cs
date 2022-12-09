@@ -265,12 +265,12 @@ namespace E3Core.Processors
 
                 //e3util.PrintTimerStatus(_buffTimers, ref _printoutTimer, "Buffs");
 
-                if (Assist._isAssisting)
+                if (Assist.IsAssisting)
                 {
                     BuffBots(E3.CharacterSettings.CombatBuffs);
 
                 }
-                else if (!moving && !Movement._following)
+                else if (!moving && !Movement.Following)
                 {
                     if (!E3.ActionTaken) BuffAuras();
                     if (!E3.ActionTaken) BuffBots(E3.CharacterSettings.SelfBuffs);
@@ -396,9 +396,9 @@ namespace E3Core.Processors
                     if (_buffTimers.TryGetValue(s.ID, out st))
                     {
                         Int64 timestamp;
-                        if (st._timestamps.TryGetValue(spell.SpellID, out timestamp))
+                        if (st.Timestamps.TryGetValue(spell.SpellID, out timestamp))
                         {
-                            if (Core._stopWatch.ElapsedMilliseconds < timestamp)
+                            if (Core.StopWatch.ElapsedMilliseconds < timestamp)
                             {
                                 //buff is still on the player, kick off
                                 continue;
@@ -887,12 +887,12 @@ namespace E3Core.Processors
             SpellTimer s;
             if (_buffTimers.TryGetValue(mobid, out s))
             {
-                if (!s._timestamps.ContainsKey(spell.SpellID))
+                if (!s.Timestamps.ContainsKey(spell.SpellID))
                 {
                     return -1;
                 }
 
-                return s._timestamps[spell.SpellID];
+                return s.Timestamps[spell.SpellID];
 
             }
             else
@@ -904,7 +904,7 @@ namespace E3Core.Processors
         private static List<Int32> _refreshBuffCacheRemovedItems = new List<int>();
         public static void RefresBuffCacheForBots()
         {
-            if (Core._stopWatch.ElapsedMilliseconds > _nextBotCacheCheckTime)
+            if (Core.StopWatch.ElapsedMilliseconds > _nextBotCacheCheckTime)
             {
                 //this is so we can get up to date buff data from the bots, without having to target/etc.
                 _refreshBuffCacheRemovedItems.Clear();
@@ -924,7 +924,7 @@ namespace E3Core.Processors
                         //this is one of our bots!
                         //doing it this way to not generate garbage by creating new lists.
                         _keyList.Clear();
-                        foreach (var pair in kvp.Value._timestamps)
+                        foreach (var pair in kvp.Value.Timestamps)
                         {
                             if (!list.Contains(pair.Key))
                             {
@@ -933,9 +933,9 @@ namespace E3Core.Processors
                         }
                         foreach (var key in _keyList)
                         {
-                            if (!kvp.Value._lockedtimestamps.ContainsKey(key))
+                            if (!kvp.Value.Lockedtimestamps.ContainsKey(key))
                             {
-                                kvp.Value._timestamps[key] = 0;
+                                kvp.Value.Timestamps[key] = 0;
                             }
 
                         }
@@ -955,7 +955,7 @@ namespace E3Core.Processors
                     }
                 }
                 _refreshBuffCacheRemovedItems.Clear();
-                _nextBotCacheCheckTime = Core._stopWatch.ElapsedMilliseconds + nextBotCacheCheckTimeInterval;
+                _nextBotCacheCheckTime = Core.StopWatch.ElapsedMilliseconds + nextBotCacheCheckTimeInterval;
             }
         }
         /// <summary>
@@ -972,25 +972,25 @@ namespace E3Core.Processors
 
             if (_buffTimers.TryGetValue(mobid, out s))
             {
-                if (!s._timestamps.ContainsKey(spell.SpellID))
+                if (!s.Timestamps.ContainsKey(spell.SpellID))
                 {
-                    s._timestamps.Add(spell.SpellID, 0);
+                    s.Timestamps.Add(spell.SpellID, 0);
                 }
 
-                s._timestamps[spell.SpellID] = Core._stopWatch.ElapsedMilliseconds + timeLeftInMS;
+                s.Timestamps[spell.SpellID] = Core.StopWatch.ElapsedMilliseconds + timeLeftInMS;
 
                 if (locked)
                 {
-                    if (!s._lockedtimestamps.ContainsKey(spell.SpellID))
+                    if (!s.Lockedtimestamps.ContainsKey(spell.SpellID))
                     {
-                        s._lockedtimestamps.Add(spell.SpellID, timeLeftInMS);
+                        s.Lockedtimestamps.Add(spell.SpellID, timeLeftInMS);
                     }
                 }
                 else
                 {
-                    if (s._lockedtimestamps.ContainsKey(spell.SpellID))
+                    if (s.Lockedtimestamps.ContainsKey(spell.SpellID))
                     {
-                        s._lockedtimestamps.Remove(spell.SpellID);
+                        s.Lockedtimestamps.Remove(spell.SpellID);
                     }
                 }
 
@@ -998,22 +998,22 @@ namespace E3Core.Processors
             else
             {
                 SpellTimer ts = SpellTimer.Aquire();
-                ts._mobID = mobid;
+                ts.MobID = mobid;
 
-                ts._timestamps.Add(spell.SpellID, Core._stopWatch.ElapsedMilliseconds + timeLeftInMS);
+                ts.Timestamps.Add(spell.SpellID, Core.StopWatch.ElapsedMilliseconds + timeLeftInMS);
                 _buffTimers.Add(mobid, ts);
                 if (locked)
                 {
-                    if (!ts._lockedtimestamps.ContainsKey(spell.SpellID))
+                    if (!ts.Lockedtimestamps.ContainsKey(spell.SpellID))
                     {
-                        ts._lockedtimestamps.Add(spell.SpellID, timeLeftInMS);
+                        ts.Lockedtimestamps.Add(spell.SpellID, timeLeftInMS);
                     }
                 }
                 else
                 {
-                    if (ts._lockedtimestamps.ContainsKey(spell.SpellID))
+                    if (ts.Lockedtimestamps.ContainsKey(spell.SpellID))
                     {
-                        ts._lockedtimestamps.Remove(spell.SpellID);
+                        ts.Lockedtimestamps.Remove(spell.SpellID);
                     }
                 }
             }

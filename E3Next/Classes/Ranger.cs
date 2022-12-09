@@ -32,7 +32,7 @@ namespace E3Core.Classes
         {
             if (!e3util.ShouldCheck(ref _nextAggroCheck, _nextAggroRefreshTimeInterval)) return;
 
-            if (Assist._isAssisting)
+            if (Assist.IsAssisting)
             {
 
                 //lets check our aggro.
@@ -41,7 +41,7 @@ namespace E3Core.Classes
                 if (aggroPct > 95 && pctHps<98)
                 {
                     Spell s;
-                    if (!Spell._loadedSpellsByName.TryGetValue("Cover Tracks", out s))
+                    if (!Spell.LoadedSpellsByName.TryGetValue("Cover Tracks", out s))
                     {
                         s = new Spell("Cover Tracks");
                     }
@@ -51,7 +51,7 @@ namespace E3Core.Classes
                         return;
                     }
                     E3.Bots.Broadcast($"\ag<check_RangerAggro> \awI have stolen aggro again ({aggroPct}%), Delaying for a bit till agro is below 75% or 5 seconds");
-                    Int32 assistid = Assist._assistTargetID;
+                    Int32 assistid = Assist.AssistTargetID;
                     Assist.AssistOff();
                     Int32 counter = 0;
                     while (MQ.Query<Int32>("${Target.PctAggro}") >= 75 && counter<50)

@@ -78,7 +78,7 @@ namespace E3Core.Classes
                 {
 
                     Spell s;
-                    if (!Spell._loadedSpellsByName.TryGetValue("Inconspicuous Totem", out s))
+                    if (!Spell.LoadedSpellsByName.TryGetValue("Inconspicuous Totem", out s))
                     {
                         s = new Spell("Inconspicuous Totem");
                     }
@@ -102,7 +102,7 @@ namespace E3Core.Classes
         public static void Check_MalosTotem()
         {
             if (!e3util.ShouldCheck(ref _nextTotemCheck, _nextTotemRefreshTimeInterval)) return;
-            if(Movement._anchorTarget>0)
+            if(Movement.AnchorTarget>0)
             {
                 using (_log.Trace())
                 {
@@ -111,7 +111,7 @@ namespace E3Core.Classes
                     if (!idolUp)
                     {
                         Spell s;                        
-                        if (!Spell._loadedSpellsByName.TryGetValue("Idol of Malos", out s))
+                        if (!Spell.LoadedSpellsByName.TryGetValue("Idol of Malos", out s))
                         {
                             s = new Spell($"Idol of Malos/Gem|{E3.CharacterSettings.MalosTotemSpellGem}");
                         }

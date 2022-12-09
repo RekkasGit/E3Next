@@ -11,7 +11,7 @@ namespace E3Core.Data
     {
 
         public Int32 _mobID;
-        public Dictionary<Int32, Int32> _spellCounters = new Dictionary<int, int>();
+        public Dictionary<Int32, Int32> SpellCounters = new Dictionary<int, int>();
 
         public static ResistCounter Aquire()
         {
@@ -26,7 +26,7 @@ namespace E3Core.Data
         public void Dispose()
         {
             _mobID = 0;
-            _spellCounters.Clear();
+            SpellCounters.Clear();
 
             StaticObjectPool.Push(this);
         }

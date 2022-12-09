@@ -33,7 +33,7 @@ namespace E3Core.Processors
 
         public static bool IsWaiting()
         {
-            if(Assist._isAssisting)
+            if(Assist.IsAssisting)
             {
                 return false;
             }
@@ -272,12 +272,12 @@ namespace E3Core.Processors
 
         private static bool HasEventItem(string name)
         {
-            if (EventProcessor._eventList[name].queuedEvents.Count > 0)
+            if (EventProcessor.EventList[name].queuedEvents.Count > 0)
             {
-                while (EventProcessor._eventList[name].queuedEvents.Count > 0)
+                while (EventProcessor.EventList[name].queuedEvents.Count > 0)
                 {
                     EventProcessor.EventMatch e;
-                    EventProcessor._eventList[name].queuedEvents.TryDequeue(out e);
+                    EventProcessor.EventList[name].queuedEvents.TryDequeue(out e);
                 }
 
                 return true;

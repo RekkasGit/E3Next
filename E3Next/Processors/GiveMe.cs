@@ -150,9 +150,9 @@ namespace E3Core.Processors
                     bool haveItem = MQ.Query<bool>($"${{FindItem[={item.ItemName}]}}");
                     if (!haveItem)
                     {
-                        if (item.NextCheck < Core._stopWatch.ElapsedMilliseconds)
+                        if (item.NextCheck < Core.StopWatch.ElapsedMilliseconds)
                         {
-                            item.NextCheck = Core._stopWatch.ElapsedMilliseconds + (item.Delay * 1000);
+                            item.NextCheck = Core.StopWatch.ElapsedMilliseconds + (item.Delay * 1000);
                             //does the person exist in group?
                             Spawn s;
                             if (_spawns.TryByName(item.Supplier, out s))

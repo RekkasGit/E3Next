@@ -26,13 +26,13 @@ namespace E3Core.Utility
         /// <returns></returns>
         public static bool ShouldCheck(ref Int64 nextCheck, Int64 nextCheckInterval)
         {  
-            if (Core._stopWatch.ElapsedMilliseconds < nextCheck)
+            if (Core.StopWatch.ElapsedMilliseconds < nextCheck)
             {
                 return false;
             }
             else
             {
-                nextCheck = Core._stopWatch.ElapsedMilliseconds + nextCheckInterval;
+                nextCheck = Core.StopWatch.ElapsedMilliseconds + nextCheckInterval;
                 return true;
             }
         }
@@ -53,7 +53,7 @@ namespace E3Core.Utility
             MQ.Cmd($"/squelch /moveto loc {y} {x} mdist 5");
             MQ.Delay(500);
 
-            Int64 endTime = Core._stopWatch.ElapsedMilliseconds + 10000;
+            Int64 endTime = Core.StopWatch.ElapsedMilliseconds + 10000;
             while(true)
             {
                
@@ -69,7 +69,7 @@ namespace E3Core.Utility
                 meX = tmeX;
                 meY = tmeY;
 
-                if (endTime < Core._stopWatch.ElapsedMilliseconds)
+                if (endTime < Core.StopWatch.ElapsedMilliseconds)
                 {
                     break;
                 }
@@ -291,7 +291,7 @@ namespace E3Core.Utility
             Double meY = MQ.Query<Double>("${Me.Y}");
             MQ.Cmd($"/squelch /moveto loc {y} {x} mdist {minDistance}");
             if (timeoutInMS == -1) return;
-            Int64 endTime = Core._stopWatch.ElapsedMilliseconds + timeoutInMS;
+            Int64 endTime = Core.StopWatch.ElapsedMilliseconds + timeoutInMS;
             MQ.Delay(300);
             while (true)
             {
@@ -307,7 +307,7 @@ namespace E3Core.Utility
                 meX = tmeX;
                 meY = tmeY;
 
-                if (endTime < Core._stopWatch.ElapsedMilliseconds)
+                if (endTime < Core.StopWatch.ElapsedMilliseconds)
                 {
                     MQ.Cmd($"/squelch /moveto off");
                     break;
@@ -322,7 +322,7 @@ namespace E3Core.Utility
         public static void PrintTimerStatus(Dictionary<Int32, SpellTimer> timers, ref Int64 printTimer, string Caption, Int64 delayInMS = 10000)
         {
             //Printing out debuff timers
-            if (printTimer < Core._stopWatch.ElapsedMilliseconds)
+            if (printTimer < Core.StopWatch.ElapsedMilliseconds)
             {
                 if (timers.Count > 0)
                 {
@@ -334,15 +334,15 @@ namespace E3Core.Utility
 
                 foreach (var kvp in timers)
                 {
-                    foreach (var kvp2 in kvp.Value._timestamps)
+                    foreach (var kvp2 in kvp.Value.Timestamps)
                     {
                         Data.Spell spell;
                         if (Spell._loadedSpells.TryGetValue(kvp2.Key, out spell))
                         {
                             Spawn s;
-                            if (_spawns.TryByID(kvp.Value._mobID, out s))
+                            if (_spawns.TryByID(kvp.Value.MobID, out s))
                             {
-                                MQ.Write($"\ap{s.CleanName} \aw: \ag{spell.CastName} \aw: {(kvp2.Value - Core._stopWatch.ElapsedMilliseconds) / 1000} seconds");
+                                MQ.Write($"\ap{s.CleanName} \aw: \ag{spell.CastName} \aw: {(kvp2.Value - Core.StopWatch.ElapsedMilliseconds) / 1000} seconds");
 
                             }
 
@@ -350,9 +350,9 @@ namespace E3Core.Utility
                         else
                         {
                             Spawn s;
-                            if (_spawns.TryByID(kvp.Value._mobID, out s))
+                            if (_spawns.TryByID(kvp.Value.MobID, out s))
                             {
-                                MQ.Write($"\ap{s.CleanName} \aw: \agspellid:{kvp2.Key} \aw: {(kvp2.Value - Core._stopWatch.ElapsedMilliseconds) / 1000} seconds");
+                                MQ.Write($"\ap{s.CleanName} \aw: \agspellid:{kvp2.Key} \aw: {(kvp2.Value - Core.StopWatch.ElapsedMilliseconds) / 1000} seconds");
 
                             }
 
@@ -365,7 +365,7 @@ namespace E3Core.Utility
                     MQ.Write("\aw===================");
 
                 }
-                printTimer = Core._stopWatch.ElapsedMilliseconds + delayInMS;
+                printTimer = Core.StopWatch.ElapsedMilliseconds + delayInMS;
 
             }
         }
@@ -600,7 +600,7 @@ namespace E3Core.Utility
 
             MQ.Cmd($"/nav id {spawnID}");
             
-            Int64 endTime = Core._stopWatch.ElapsedMilliseconds + timeoutInMS;
+            Int64 endTime = Core.StopWatch.ElapsedMilliseconds + timeoutInMS;
             MQ.Delay(300);
 
             while (navPathExists && MQ.Query<int>("${Navigation.Velocity}") > 0)
@@ -608,7 +608,7 @@ namespace E3Core.Utility
                 Double meX = MQ.Query<Double>("${Me.X}");
                 Double meY = MQ.Query<Double>("${Me.Y}");
 
-                if (endTime < Core._stopWatch.ElapsedMilliseconds)
+                if (endTime < Core.StopWatch.ElapsedMilliseconds)
                 {
                     //stop nav if we exceed the timeout
                     MQ.Write("Stopping because timeout exceeded for navigation");

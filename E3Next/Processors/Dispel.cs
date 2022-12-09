@@ -20,12 +20,12 @@ namespace E3Core.Processors
         [ClassInvoke(Data.Class.All)]
         public static void CheckDispel()
         {
-            if (!Assist._isAssisting) return;
+            if (!Assist.IsAssisting) return;
             if (E3.CharacterSettings.Dispels.Count == 0) return;
 
             if (!e3util.ShouldCheck(ref _nextDispelCheck, _nextDispelCheckInterval)) return;
 
-            if (Casting.TrueTarget(Assist._assistTargetID))
+            if (Casting.TrueTarget(Assist.AssistTargetID))
             {
                 //let the game process to make sure we have a valid beneficial
                 if (MQ.Query<bool>("${Target.Beneficial.ID}"))

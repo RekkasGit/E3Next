@@ -66,8 +66,7 @@ namespace MonoCore
         
         private static Double _startLoopTime = 0;
    
-        //web server
-        private static NancyHost _host;
+     
         //remote debugging server
         private static RouterServer _netmqServer;
         //remote debugging events
@@ -77,16 +76,7 @@ namespace MonoCore
         public static void Init()
         {
 
-            //Logging._currentLogLevel = Logging.LogLevels.None; //log level we are currently at
-            //Logging._minLogLevelTolog = Logging.LogLevels.Error; //log levels have integers assoicatd to them. you can set this to Error to only log errors. 
-            //Logging._defaultLogLevel = Logging.LogLevels.None; //the default if a level is not passed into the _log.write statement. useful to hide/show things.
-            //HostConfiguration hostConfigs = new HostConfiguration()
-            //{
-            //    UrlReservations = new UrlReservations() { CreateAutomatically = true }
-            //};
-            //_host = new NancyHost(new Uri("http://localhost:"+ RemoteDebugServerConfig.HTTPPort), new DefaultNancyBootstrapper(), hostConfigs);
-            //_host.Start();
-
+         
             _netmqServer = new RouterServer();
             _netmqServer.Start();
 
@@ -94,9 +84,7 @@ namespace MonoCore
             _pubServer.Start();
 
         }
-        //we use this to tell the C++ thread that its okay to start processing gain
-        //public static EconomicResetEvent _processResetEvent = new EconomicResetEvent(false, Thread.CurrentThread);
-        //public static AutoResetEvent _processResetEvent = new AutoResetEvent(false);
+      
         public static ManualResetEventSlim _processResetEvent = new ManualResetEventSlim(false);
         public static ConcurrentQueue<string> _queuedCommands = new ConcurrentQueue<string>();
         public static ConcurrentQueue<string> _queuedQuery = new ConcurrentQueue<string>();
@@ -338,7 +326,7 @@ namespace MonoCore
                     _currentWaitTime = 1;
                 }
             }
-            _host.Stop();
+            
 
         }
 
@@ -1097,22 +1085,13 @@ namespace MonoCore
         }
         public void Cmd(string query)
         {
-            //Int64 elapsedTime = Core._stopWatch.ElapsedMilliseconds;
-            //Int64 differenceTime = Core._stopWatch.ElapsedMilliseconds - _sinceLastDelay;
-
-
-            //if (_maxMillisecondsToWork < differenceTime)
-            //{
-            //    Delay(0);
-            //}
-            //delays are not valid commands
+        
             if (query.StartsWith("/delay", StringComparison.OrdinalIgnoreCase))
             {
                 return;
             }
 
-           // Core._log.Write($"Sending command to EQ:{query}");
-
+        
             Core._currentCommand = query;
             Core._coreResetEvent.Set();
             //we are now going to wait on the core
@@ -1127,17 +1106,7 @@ namespace MonoCore
 
         public void Write(string query, [CallerMemberName] string memberName = "", [CallerFilePath] string fileName = "", [CallerLineNumber] int lineNumber = 0)
         {
-            //if(String.IsNullOrWhiteSpace(query))
-            //{
-            //    return;
-            //}
-            //check
-            //if (_sinceLastDelay + _maxMillisecondsToWork < Core._stopWatch.ElapsedMilliseconds)
-            //{
-            //    Delay(0);
-            //}
-            //Core.mq_Echo(query);
-            //set the buffer for the C++ thread
+           
             Core._currentWrite = query;
             //swap to the C++thread, and it will swap back after executing the current write becau of us setting _CurrentWrite before
             Core._coreResetEvent.Set();

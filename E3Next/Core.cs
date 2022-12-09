@@ -38,9 +38,9 @@ namespace MonoCore
     public static class MainProcessor
     {
         public static IMQ MQ = Core.mqInstance;
-        public static Int32 _processDelay = 200;
-        private static Logging _log = Core._log;
-        public static string _applicationName = "";
+        public static Int32 ProcessDelay = 200;
+        private static Logging _log = Core.logInstance;
+        public static string ApplicationName = "";
         public static void Init()
         {
 
@@ -50,16 +50,16 @@ namespace MonoCore
         }
         
         //we use this to tell the C++ thread that its okay to start processing gain
-        public static ManualResetEventSlim _processResetEvent = new ManualResetEventSlim(false);
+        public static ManualResetEventSlim ProcessResetEvent = new ManualResetEventSlim(false);
 
         public static void Process()
         {
             //wait for the C++ thread thread to tell us we can go
-            _processResetEvent.Wait();
-            _processResetEvent.Reset();
+            ProcessResetEvent.Wait();
+            ProcessResetEvent.Reset();
             
             //volatile variable, will eventually update to kill the thread on shutdown
-            while (Core._isProcessing)
+            while (Core.IsProcessing)
             {
                 try
                 {
@@ -76,21 +76,21 @@ namespace MonoCore
                 }
                 catch (Exception ex)
                 {
-                    if(Core._isProcessing)
+                    if(Core.IsProcessing)
                     {
                         _log.Write("Error: Please reload. Terminating. \r\nExceptionMessage:" + ex.Message + " stack:" + ex.StackTrace.ToString(), Logging.LogLevels.CriticalError);
 
                     }
-                    Core._isProcessing = false;
-                    Core._coreResetEvent.Set();
+                    Core.IsProcessing = false;
+                    Core.CoreResetEvent.Set();
                     //we perma exit this thread loop a full reload will be necessary
                     break;
                 }
 
                 //give execution back to the C++ thread, to go back into MQ/EQ
-                if(Core._isProcessing)
+                if(Core.IsProcessing)
                 {
-                    Delay(_processDelay);//this calls the reset events and sets the delay to 10ms at min
+                    Delay(ProcessDelay);//this calls the reset events and sets the delay to 10ms at min
                 }
             }
            
@@ -99,22 +99,22 @@ namespace MonoCore
             MQ.Write("Doing netmq cleanup.");
             NetMQConfig.Cleanup(false);
 
-            Core._coreResetEvent.Set();
+            Core.CoreResetEvent.Set();
         }
 
         static public void Delay(Int32 value)
         {
             if (value > 0)
             {
-                Core._delayStartTime = Core._stopWatch.ElapsedMilliseconds;
-                Core._delayTime = value;
-                Core._currentDelay = value;//tell the C++ thread to send out a delay update
+                Core.DelayStartTime = Core.StopWatch.ElapsedMilliseconds;
+                Core.DelayTime = value;
+                Core.CurrentDelay = value;//tell the C++ thread to send out a delay update
             }
             //lets tell core that it can continue
-            Core._coreResetEvent.Set();
+            Core.CoreResetEvent.Set();
             //we are now going to wait on the core
-            MainProcessor._processResetEvent.Wait();
-            MainProcessor._processResetEvent.Reset();
+            MainProcessor.ProcessResetEvent.Wait();
+            MainProcessor.ProcessResetEvent.Reset();
         }
 
     }
@@ -131,8 +131,8 @@ namespace MonoCore
         
         public static ConcurrentDictionary<string, Action<EventMatch>> _unfilteredEventMethodList = new ConcurrentDictionary<string, Action<EventMatch>>();
         public static ConcurrentDictionary<string, EventListItem> _unfilteredEventList = new ConcurrentDictionary<string, EventListItem>();
-        public static ConcurrentDictionary<string, EventListItem> _eventList = new ConcurrentDictionary<string, EventListItem>();
-        public static ConcurrentDictionary<string, CommandListItem> _commandList = new ConcurrentDictionary<string, CommandListItem>();
+        public static ConcurrentDictionary<string, EventListItem> EventList = new ConcurrentDictionary<string, EventListItem>();
+        public static ConcurrentDictionary<string, CommandListItem> CommandList = new ConcurrentDictionary<string, CommandListItem>();
         //this is the first queue that strings get put into, will be processed by its own thread
         public static ConcurrentQueue<String> _eventProcessingQueue = new ConcurrentQueue<String>();
         public static ConcurrentQueue<String> _mqEventProcessingQueue = new ConcurrentQueue<string>();
@@ -141,12 +141,12 @@ namespace MonoCore
         private static StringBuilder _tokenBuilder = new StringBuilder();
         private static List<string> _tokenResult = new List<string>();
         //if matches take place, they are placed in this queue for the main C# thread to process. 
-        public static Int32 _eventLimiterPerRegisteredEvent = 10;
+        public static Int32 EventLimiterPerRegisteredEvent = 10;
        
         //this threads entire purpose, is to simply keep processing the event processing queue and place matches into
         //the eventfilteredqueue
         public static Task _regExProcessingTask;
-        private static Logging _log = Core._log;
+        private static Logging _log = Core.logInstance;
 
         private static Boolean _isInit = false;
         public static void Init()
@@ -179,7 +179,7 @@ namespace MonoCore
      
             ////WARNING DO NOT SEND COMMANDS/Writes/Echos, etc from this thread. 
             ///only the primary C# thread can do that.
-            while (Core._isProcessing)
+            while (Core.IsProcessing)
             {
                 if (_eventProcessingQueue.Count > 0)
                 {
@@ -215,10 +215,10 @@ namespace MonoCore
 
                         if (!matchFilter)
                         {
-                            foreach (var item in _eventList)
+                            foreach (var item in EventList)
                             {
                                 //prevent spamming of an event to a user
-                                if (item.Value.queuedEvents.Count > _eventLimiterPerRegisteredEvent)
+                                if (item.Value.queuedEvents.Count > EventLimiterPerRegisteredEvent)
                                 {
                                     continue;
                                 }
@@ -259,10 +259,10 @@ namespace MonoCore
                         //do filtered
                         if (line.StartsWith("["))
                         {
-                            Int32 indexOfApp = line.IndexOf(MainProcessor._applicationName);
+                            Int32 indexOfApp = line.IndexOf(MainProcessor.ApplicationName);
                             if (indexOfApp == 1)
                             {
-                                if (line.IndexOf("]") == MainProcessor._applicationName.Length + 1)
+                                if (line.IndexOf("]") == MainProcessor.ApplicationName.Length + 1)
                                 {
                                     goto skipLine;
                                 }
@@ -274,10 +274,10 @@ namespace MonoCore
                             }
                         }
                         processLine:
-                        foreach (var item in _eventList)
+                        foreach (var item in EventList)
                         {
                             //prevent spamming of an event to a user
-                            if (item.Value.queuedEvents.Count > _eventLimiterPerRegisteredEvent)
+                            if (item.Value.queuedEvents.Count > EventLimiterPerRegisteredEvent)
                             {
                                 continue;
                             }
@@ -309,10 +309,10 @@ namespace MonoCore
                          if (!String.IsNullOrWhiteSpace(line))
                         {
                           
-                            foreach (var item in _commandList)
+                            foreach (var item in CommandList)
                             {
                                 //prevent spamming of an event to a user
-                                if (item.Value.queuedEvents.Count > _eventLimiterPerRegisteredEvent)
+                                if (item.Value.queuedEvents.Count > EventLimiterPerRegisteredEvent)
                                 {
                                     Core.mqInstance.Write("event limiter");
 
@@ -449,9 +449,9 @@ namespace MonoCore
         /// <param name="keyName"></param>
         public static void ProcessEventsInQueues(string keyName = "")
         {
-            foreach (var item in _eventList)
+            foreach (var item in EventList)
             {
-                if (!Core._isProcessing) return;
+                if (!Core.IsProcessing) return;
                 //check to see if we have to have a filter on the events to process
                 if (!String.IsNullOrWhiteSpace(keyName))
                 {
@@ -465,7 +465,7 @@ namespace MonoCore
                 //_log.Write($"Checking Event queue. Total:{item.Value.queuedEvents.Count}");
                 while (item.Value.queuedEvents.Count > 0)
                 {
-                    if (!Core._isProcessing) return;
+                    if (!Core.IsProcessing) return;
                     EventMatch line;
                     if (item.Value.queuedEvents.TryDequeue(out line))
                     {
@@ -474,9 +474,9 @@ namespace MonoCore
                 }
 
             }
-            foreach (var item in _commandList)
+            foreach (var item in CommandList)
             {
-                if (!Core._isProcessing) return;
+                if (!Core.IsProcessing) return;
                 //check to see if we have to have a filter on the events to process
                 if (!String.IsNullOrWhiteSpace(keyName))
                 {
@@ -489,7 +489,7 @@ namespace MonoCore
                 }
                 while (item.Value.queuedEvents.Count > 0)
                 {
-                    if (!Core._isProcessing) return;
+                    if (!Core.IsProcessing) return;
                     CommandMatch line;
                     if (item.Value.queuedEvents.TryDequeue(out line))
                     {
@@ -500,7 +500,7 @@ namespace MonoCore
             }
             foreach (var item in _unfilteredEventList)
             {
-                if (!Core._isProcessing) return;
+                if (!Core.IsProcessing) return;
                 //check to see if we have to have a filter on the events to process
                 if (!String.IsNullOrWhiteSpace(keyName))
                 {
@@ -513,7 +513,7 @@ namespace MonoCore
                 }
                 while (item.Value.queuedEvents.Count > 0)
                 {
-                    if (!Core._isProcessing) return;
+                    if (!Core.IsProcessing) return;
                     EventMatch line;
                     if (item.Value.queuedEvents.TryDequeue(out line))
                     {
@@ -541,7 +541,7 @@ namespace MonoCore
         public static void ProcessMQCommand(string line)
         {
             //to prevent spams
-            if (_eventList.Count > 0)
+            if (EventList.Count > 0)
             {
                 _mqCommandProcessingQueue.Enqueue(line);
             }
@@ -550,7 +550,7 @@ namespace MonoCore
         public static void ClearEventQueue(string keyName)
         {
             EventListItem tEventItem;
-            if (_eventList.TryGetValue(keyName, out tEventItem))
+            if (EventList.TryGetValue(keyName, out tEventItem))
             {
                 EventMatch line;
                 while (!tEventItem.queuedEvents.IsEmpty)
@@ -628,7 +628,7 @@ namespace MonoCore
      
             if (returnvalue)
             {   
-                if (_commandList.TryAdd(commandName, c))
+                if (CommandList.TryAdd(commandName, c))
                 {
                     //now to register the command over.
                     return true;
@@ -641,7 +641,7 @@ namespace MonoCore
         public static void UnRegisterCommand(string commandName)
         {
             CommandListItem c;
-            if (_commandList.TryRemove(commandName, out c))
+            if (CommandList.TryRemove(commandName, out c))
             {
                 Core.mqInstance.RemoveCommand(commandName);
             }
@@ -656,7 +656,7 @@ namespace MonoCore
             eventToAdd.method = method;
             eventToAdd.keyName = keyName;
 
-            _eventList.TryAdd(keyName, eventToAdd);
+            EventList.TryAdd(keyName, eventToAdd);
 
         }
         /// <summary>
@@ -701,7 +701,7 @@ namespace MonoCore
             eventToAdd.method = method;
             eventToAdd.keyName = keyName;
 
-            _eventList.TryAdd(keyName, eventToAdd);
+            EventList.TryAdd(keyName, eventToAdd);
 
         }
 
@@ -730,8 +730,8 @@ namespace MonoCore
     {
         public static IMQ mqInstance; //needs to be declared first
         public static ISpawns spawnInstance;
-        public static Logging _log;
-        public volatile static bool _isProcessing = false;
+        public static Logging logInstance;
+        public volatile static bool IsProcessing = false;
         public const string _coreVersion = "0.1";
 
 
@@ -743,15 +743,15 @@ namespace MonoCore
 
         //this is protected by the lock, so that the primary C++ thread is the one that executes commands that the
         //processing thread has done.
-        public static string _currentCommand = string.Empty;
+        public static string CurrentCommand = string.Empty;
         public static string _currentWrite = String.Empty;
-        public static Int32 _currentDelay = 0;
+        public static Int32 CurrentDelay = 0;
 
         //delay in milliseconds
-        public static Int64 _delayTime = 0;
+        public static Int64 DelayTime = 0;
         //timestamp in milliseconds.
-        public static Int64 _delayStartTime = 0;
-        public static Stopwatch _stopWatch = new Stopwatch();
+        public static Int64 DelayStartTime = 0;
+        public static Stopwatch StopWatch = new Stopwatch();
         public static Int64 _onPulseCalls;
         public static bool _isInit = false;
 
@@ -770,13 +770,13 @@ namespace MonoCore
         //as the reset events handle the syn needed between memory/caches.
         //this only works as we only have 2 threads, otherwise you need fairness from normal locks.
         //the event procesor, however does need a lock as its on its own thread, to sync back to the C# primary thread
-        public static ManualResetEventSlim _coreResetEvent = new ManualResetEventSlim(false);
+        public static ManualResetEventSlim CoreResetEvent = new ManualResetEventSlim(false);
         static Task _taskThread;
         public static void OnInit()
         {
             if (!_isInit)
             {
-                _isProcessing = true;
+                IsProcessing = true;
                 if (mqInstance == null)
                 {
                     mqInstance = new MQ();
@@ -785,8 +785,8 @@ namespace MonoCore
                 {
                     spawnInstance = new Spawns();
                 }
-                _log = new Logging(mqInstance);
-                _stopWatch.Start();
+                logInstance = new Logging(mqInstance);
+                StopWatch.Start();
                 //do all necessary setups here
                 MainProcessor.Init();
                 //isProcessing needs to be true before the event processor has started
@@ -803,14 +803,14 @@ namespace MonoCore
         }
         public static void OnStop()
         {
-            _isProcessing = false;
+            IsProcessing = false;
             //wait will issue a memory barrier, set will not, issue one
             System.Threading.Thread.MemoryBarrier();
             //tell the C# thread that it can now process and since processing is false, we can then end the application.
-           MainProcessor._processResetEvent.Set();
-            if (E3Core.Server.NetMQServer._uiProcess != null)
+           MainProcessor.ProcessResetEvent.Set();
+            if (E3Core.Server.NetMQServer.UIProcess != null)
             {
-                E3Core.Server.NetMQServer._uiProcess.Kill();
+                E3Core.Server.NetMQServer.UIProcess.Kill();
             }
             NetMQConfig.Cleanup(false);
             System.Threading.Thread.Sleep(500);
@@ -821,36 +821,36 @@ namespace MonoCore
         public static void OnPulse()
         {
 
-            if (!_isProcessing)
+            if (!IsProcessing)
             {   
                 //allow the primary thread to finish terminating. 
-                MainProcessor._processResetEvent.Set();
+                MainProcessor.ProcessResetEvent.Set();
                 return;
 
             }//reset the last delay so we restart the procssing time since its a new OnPulse()
-            MQ._sinceLastDelay = _stopWatch.ElapsedMilliseconds;
+            MQ.SinceLastDelay = StopWatch.ElapsedMilliseconds;
 
             _onPulseCalls++;
             //if delay was issued, we need to honor it, kickout for no processing
-            if (_delayTime > 0)
+            if (DelayTime > 0)
             {
-                if ((_stopWatch.ElapsedMilliseconds - _delayStartTime) < _delayTime)
+                if ((StopWatch.ElapsedMilliseconds - DelayStartTime) < DelayTime)
                 {   //we are still under the delay time specified, don't do any processing
                     //don't really need to do a lock as there are only two threads and the set below will sync the cores
                     return;
 
                 }
                 //reset if we have bypassed the time value
-                _delayTime = 0;
+                DelayTime = 0;
             }
 
             RestartWait:
             //allow the processing thread to start its work.
             //and copy cache values to other cores so the thread can see the updated information in MQ
-            MainProcessor._processResetEvent.Set();
+            MainProcessor.ProcessResetEvent.Set();
             //Core.mq_Echo("Blocking on C++");
-            Core._coreResetEvent.Wait();
-            Core._coreResetEvent.Reset();
+            Core.CoreResetEvent.Wait();
+            Core.CoreResetEvent.Reset();
             //we need to block and chill out to let the other thread do its work
             //check to see if the 2nd thread has a command for us to send out
             //if so, we need to run the command, and then empty it
@@ -862,12 +862,12 @@ namespace MonoCore
                 _currentWrite = String.Empty;
                 goto RestartWait;
             }
-            if (_currentCommand != String.Empty)
+            if (CurrentCommand != String.Empty)
             {
                 //for mana stone usage, to allow spamming
-                bool isUseItem = _currentCommand.StartsWith("/useitem");
-                Core.mq_DoCommand(_currentCommand);
-                _currentCommand = String.Empty;
+                bool isUseItem = CurrentCommand.StartsWith("/useitem");
+                Core.mq_DoCommand(CurrentCommand);
+                CurrentCommand = String.Empty;
 
                 if (isUseItem)
                 {
@@ -875,10 +875,10 @@ namespace MonoCore
                 }
 
             }
-            if (_currentDelay > 0)
+            if (CurrentDelay > 0)
             {
-                Core.mq_Delay(_currentDelay);
-                _currentDelay = 0;
+                Core.mq_Delay(CurrentDelay);
+                CurrentDelay = 0;
             }
   
 
@@ -887,7 +887,7 @@ namespace MonoCore
         //Comment these out if you are not using events so that C++ doesn't waste time sending the string to C#
         public static void OnWriteChatColor(string line)
         {
-            if (!_isProcessing)
+            if (!IsProcessing)
             {
                 return;
             }
@@ -895,7 +895,7 @@ namespace MonoCore
         }
         public static void OnCommand(string commandLine)
         {
-            if (!_isProcessing)
+            if (!IsProcessing)
             {
                 return;
             }
@@ -905,7 +905,7 @@ namespace MonoCore
         }
         public static void OnIncomingChat(string line)
         {
-            if (!_isProcessing)
+            if (!IsProcessing)
             {
                 return;
             }
@@ -919,7 +919,7 @@ namespace MonoCore
             Int32 ID = BitConverter.ToInt32(data, 0);
           
             Spawn s;
-            if(Spawns._spawnsByID.TryGetValue(ID, out s))
+            if(Spawns.SpawnsByID.TryGetValue(ID, out s))
             {
                 //just update the value
                 s.Init(data, size);
@@ -1071,22 +1071,22 @@ namespace MonoCore
         //NONE OF THESE METHODS SHOULD BE CALLED ON THE C++ Thread, as it will cause a deadlock due to delay calls
         //**************************************************************************************************
 
-        public static Int64 _maxMillisecondsToWork = 40;
-        public static Int64 _sinceLastDelay = 0;
+        public static Int64 MaxMillisecondsToWork = 40;
+        public static Int64 SinceLastDelay = 0;
         public static Int64 _totalQueryCounts;
         public T Query<T>(string query)
         {
-            if (!Core._isProcessing)
+            if (!Core.IsProcessing)
             {
                 //we are terminating, kill this thread
                 throw new ThreadAbort("Terminating thread");
             }
             _totalQueryCounts++;
-            Int64 elapsedTime = Core._stopWatch.ElapsedMilliseconds;
-            Int64 differenceTime = Core._stopWatch.ElapsedMilliseconds - _sinceLastDelay;
+            Int64 elapsedTime = Core.StopWatch.ElapsedMilliseconds;
+            Int64 differenceTime = Core.StopWatch.ElapsedMilliseconds - SinceLastDelay;
 
 
-            if (_maxMillisecondsToWork < differenceTime)
+            if (MaxMillisecondsToWork < differenceTime)
             {
                 Delay(0);
             }
@@ -1188,17 +1188,17 @@ namespace MonoCore
         }
         public void Cmd(string query)
         {
-            if (!Core._isProcessing)
+            if (!Core.IsProcessing)
             {
                 //we are terminating, kill this thread
                 throw new ThreadAbort("Terminating thread");
             }
 
-            Int64 elapsedTime = Core._stopWatch.ElapsedMilliseconds;
-            Int64 differenceTime = Core._stopWatch.ElapsedMilliseconds - _sinceLastDelay;
+            Int64 elapsedTime = Core.StopWatch.ElapsedMilliseconds;
+            Int64 differenceTime = Core.StopWatch.ElapsedMilliseconds - SinceLastDelay;
 
 
-            if (_maxMillisecondsToWork < differenceTime)
+            if (MaxMillisecondsToWork < differenceTime)
             {
                 Delay(0);
             }
@@ -1215,14 +1215,13 @@ namespace MonoCore
                 }
                 return;
             }
-            //Core._log.Write($"Sending command to EQ:{query}");
-
-            Core._currentCommand = query;
-            Core._coreResetEvent.Set();
+         
+            Core.CurrentCommand = query;
+            Core.CoreResetEvent.Set();
             //we are now going to wait on the core
-            MainProcessor._processResetEvent.Wait();
-            MainProcessor._processResetEvent.Reset();
-            if (!Core._isProcessing)
+            MainProcessor.ProcessResetEvent.Wait();
+            MainProcessor.ProcessResetEvent.Reset();
+            if (!Core.IsProcessing)
             {
                 Write("Throwing exception for termination: CMD");
                 //we are terminating, kill this thread
@@ -1246,18 +1245,8 @@ namespace MonoCore
         {
               //write on current thread, it will be queued up by MQ. 
             //needed to deal with certain lock situations and just keeps things simple. 
-            Core.mq_Echo($"\a#336699[{MainProcessor._applicationName}]\a-w{System.DateTime.Now.ToString("HH:mm:ss")} \aw- {query}");
+            Core.mq_Echo($"\a#336699[{MainProcessor.ApplicationName}]\a-w{System.DateTime.Now.ToString("HH:mm:ss")} \aw- {query}");
             return;
-
-            //set the buffer for the C++ thread
-            ////Core._currentWrite = $"[{MainProcessor._applicationName}]\a-w{System.DateTime.Now.ToString("HH:mm:ss")} \aw- {query}";
-            //Core._currentWrite = $"\a#336699[{MainProcessor._applicationName}]\a-w{System.DateTime.Now.ToString("HH:mm:ss")} \aw- {query}";
-
-            ////swap to the C++thread, and it will swap back after executing the current write becau of us setting _CurrentWrite before
-            //Core._coreResetEvent.Set();
-            ////we are now going to wait on the core
-            //MainProcessor._processResetEvent.Wait();
-            //MainProcessor._processResetEvent.Reset();
 
         }
 
@@ -1279,7 +1268,7 @@ namespace MonoCore
         }
         public void Delay(Int32 value)
         {
-            if (!Core._isProcessing)
+            if (!Core.IsProcessing)
             {
                 //we are terminating, kill this thread
                 throw new ThreadAbort("Terminating thread: Delay enter");
@@ -1287,39 +1276,39 @@ namespace MonoCore
 
             if (value > 0)
             {
-                Core._delayStartTime = Core._stopWatch.ElapsedMilliseconds;
-                Core._delayTime = value;
-                Core._currentDelay = value;//tell the C++ thread to send out a delay update
+                Core.DelayStartTime = Core.StopWatch.ElapsedMilliseconds;
+                Core.DelayTime = value;
+                Core.CurrentDelay = value;//tell the C++ thread to send out a delay update
             }
 
             //lets tell core that it can continue
-            Core._coreResetEvent.Set();
+            Core.CoreResetEvent.Set();
             //we are now going to wait on the core
-            MainProcessor._processResetEvent.Wait();
-            MainProcessor._processResetEvent.Reset();
+            MainProcessor.ProcessResetEvent.Wait();
+            MainProcessor.ProcessResetEvent.Reset();
 
-            if(!Core._isProcessing)
+            if(!Core.IsProcessing)
             {
                 //we are terminating, kill this thread
                 Write("Throwing exception for termination: Delay exit");
                 throw new ThreadAbort("Terminating thread");
             }
 
-            _sinceLastDelay = Core._stopWatch.ElapsedMilliseconds;
+            SinceLastDelay = Core.StopWatch.ElapsedMilliseconds;
         }
 
         public Boolean Delay(Int32 maxTimeToWait, string Condition)
         {
-            if (!Core._isProcessing)
+            if (!Core.IsProcessing)
             {
                 //we are terminating, kill this thread
                 throw new ThreadAbort("Terminating thread: Delay Condition");
             }
             Condition = $"${{If[{Condition},TRUE,FALSE]}}";
-            Int64 startingTime = Core._stopWatch.ElapsedMilliseconds;
+            Int64 startingTime = Core.StopWatch.ElapsedMilliseconds;
             while (!this.Query<bool>(Condition))
             {
-                if (Core._stopWatch.ElapsedMilliseconds - startingTime > maxTimeToWait)
+                if (Core.StopWatch.ElapsedMilliseconds - startingTime > maxTimeToWait)
                 {
                     return false;
                 }
@@ -1329,15 +1318,15 @@ namespace MonoCore
         }
         public bool Delay(int maxTimeToWait, Func<bool> methodToCheck)
         {
-            if (!Core._isProcessing)
+            if (!Core.IsProcessing)
             {
                 //we are terminating, kill this thread
                 throw new ThreadAbort("Terminating thread: delay method ");
             }
-            Int64 startingTime = Core._stopWatch.ElapsedMilliseconds;
+            Int64 startingTime = Core.StopWatch.ElapsedMilliseconds;
             while (!methodToCheck.Invoke())
             {
-                if (Core._stopWatch.ElapsedMilliseconds - startingTime > maxTimeToWait)
+                if (Core.StopWatch.ElapsedMilliseconds - startingTime > maxTimeToWait)
                 {
                     return false;
                 }
@@ -1363,9 +1352,9 @@ namespace MonoCore
 
     public class Logging
     {
-        public static LogLevels _traceLogLevel = LogLevels.None;
-        public static LogLevels _minLogLevelTolog = LogLevels.Debug;
-        public static LogLevels _defaultLogLevel = LogLevels.Debug;
+        public static LogLevels TraceLogLevel = LogLevels.None;
+        public static LogLevels MinLogLevelTolog = LogLevels.Debug;
+        public static LogLevels DefaultLogLevel = LogLevels.Debug;
         private static ConcurrentDictionary<String, String> _classLookup = new ConcurrentDictionary<string, string>();
         public static IMQ MQ = Core.mqInstance;
 
@@ -1378,7 +1367,7 @@ namespace MonoCore
 
             if (logLevel == LogLevels.Default)
             {
-                logLevel = _defaultLogLevel;
+                logLevel = DefaultLogLevel;
             }
 
             WriteStatic(message, logLevel, eventName, memberName, fileName, lineNumber, headers);
@@ -1387,7 +1376,7 @@ namespace MonoCore
 
         public static void WriteStatic(string message, LogLevels logLevel = LogLevels.Info, string eventName = "Logging", [CallerMemberName] string memberName = "", [CallerFilePath] string fileName = "", [CallerLineNumber] int lineNumber = 0, Dictionary<String, String> headers = null)
         {
-            if ((Int32)logLevel < (Int32)_minLogLevelTolog)
+            if ((Int32)logLevel < (Int32)MinLogLevelTolog)
             {
                 return;//log level is too low to currently log. 
             }
@@ -1417,7 +1406,7 @@ namespace MonoCore
 
             BaseTrace returnValue = BaseTrace.Aquire();
 
-            if (_traceLogLevel != LogLevels.Trace)
+            if (TraceLogLevel != LogLevels.Trace)
             {
                 //if not debugging don't log stuff
                 returnValue.CallBackDispose = TraceSetTime;
@@ -1431,7 +1420,7 @@ namespace MonoCore
             returnValue.Name = name;
 
             //done at the very last of this
-            returnValue.StartTime = Core._stopWatch.Elapsed.TotalMilliseconds;
+            returnValue.StartTime = Core.StopWatch.Elapsed.TotalMilliseconds;
             if (!string.IsNullOrWhiteSpace(name))
             {
                 MQ.TraceEnd($"\ag{memberName}:\ao{name})");
@@ -1448,7 +1437,7 @@ namespace MonoCore
         {
             double totalMilliseconds = 0;
             //done first!
-            totalMilliseconds = Core._stopWatch.Elapsed.TotalMilliseconds - value.StartTime;
+            totalMilliseconds = Core.StopWatch.Elapsed.TotalMilliseconds - value.StartTime;
             //put event back into its object pool.
             if (!string.IsNullOrWhiteSpace(value.Method))
             {
@@ -1709,14 +1698,14 @@ namespace MonoCore
         
         public static List<Spawn> _spawns = new List<Spawn>(2048);
         public static Dictionary<string,Spawn> _spawnsByName = new Dictionary<string,Spawn>(2048);
-        public static Dictionary<Int32,Spawn> _spawnsByID = new Dictionary<int,Spawn>(2048);
+        public static Dictionary<Int32,Spawn> SpawnsByID = new Dictionary<int,Spawn>(2048);
         public static Int64 _lastRefesh = 0;
-        public static Int64 _refreshTimePeriodInMS = 1000;
+        public static Int64 RefreshTimePeriodInMS = 1000;
 
         public bool TryByID(Int32 id, out Spawn s)
         {
             RefreshListIfNeeded();
-            return _spawnsByID.TryGetValue(id,out s);
+            return SpawnsByID.TryGetValue(id,out s);
         }
         public bool TryByName(string name, out Spawn s)
         {
@@ -1741,7 +1730,7 @@ namespace MonoCore
         public bool Contains(Int32 id)
         {
             RefreshListIfNeeded();
-            return _spawnsByID.ContainsKey(id);
+            return SpawnsByID.ContainsKey(id);
         }
         public IEnumerable<Spawn> Get()
         {
@@ -1756,7 +1745,7 @@ namespace MonoCore
                 RefreshList();
                 return;
             }
-            if (Core._stopWatch.ElapsedMilliseconds - _lastRefesh > _refreshTimePeriodInMS)
+            if (Core.StopWatch.ElapsedMilliseconds - _lastRefesh > RefreshTimePeriodInMS)
             {
                 RefreshList();
             }
@@ -1767,7 +1756,7 @@ namespace MonoCore
         public void EmptyLists()
         {  
             _spawnsByName.Clear();
-            _spawnsByID.Clear();
+            SpawnsByID.Clear();
             _spawns.Clear();
         }
         public void RefreshList()
@@ -1783,7 +1772,7 @@ namespace MonoCore
             //spawns has new/updated data, get rid of the non dirty stuff.
             //can use the other dictionaries to help
             _spawnsByName.Clear();
-            _spawnsByID.Clear();
+            SpawnsByID.Clear();
             foreach (var spawn in _spawns)
             {
                 if(spawn.isDirty)
@@ -1794,7 +1783,7 @@ namespace MonoCore
                         _spawnsByName.Add(spawn.Name, spawn);
 
                     }
-                    _spawnsByID.Add(spawn.ID, spawn);
+                    SpawnsByID.Add(spawn.ID, spawn);
                 }
                 else
                 {
@@ -1809,7 +1798,7 @@ namespace MonoCore
 
             //clear the dictionaries and rebuild.
             //_spawns should have fresh data now!
-            _lastRefesh = Core._stopWatch.ElapsedMilliseconds;
+            _lastRefesh = Core.StopWatch.ElapsedMilliseconds;
 
         }
     }

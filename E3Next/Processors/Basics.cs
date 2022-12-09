@@ -108,7 +108,7 @@ namespace E3Core.Processors
                 //coth, or summoned by a mob?
                 ///a Tae Ew warder says 'You will not evade me, Alara!' 
                 ///You have been summoned!
-                if (Assist._allowControl) return; //this is our driver and most likely a tank, ignore this.
+                if (Assist.AllowControl) return; //this is our driver and most likely a tank, ignore this.
 
                 _spawns.RefreshList();//make sure we get a new refresh of this zone.
                 //check to see if your target is on top of you, if so... well, good luck!
@@ -118,7 +118,7 @@ namespace E3Core.Processors
                     if(spawn.Distance<5 && spawn.Aggressive && spawn.TypeDesc=="NPC")
                     {
                         //oh dear, the mob is in your face, best of luck.
-                        if(Movement._anchorTarget>0)
+                        if(Movement.AnchorTarget>0)
                         {
                             Movement.MoveToAnchor();
                         }
@@ -148,7 +148,7 @@ namespace E3Core.Processors
             EventProcessor.RegisterCommand("/shutdown", (x) =>
             {
                 _mq.Write("Isussing shutdown, setting process to false.");
-                Core._isProcessing = false;
+                Core.IsProcessing = false;
                 System.Threading.Thread.MemoryBarrier();
 
             });
@@ -164,23 +164,20 @@ namespace E3Core.Processors
                 E3.Bots.Broadcast("\aoComplete!");
 
             });
-            //EventProcessor.RegisterCommand("/ui", (x) =>
-            //{
-            //    E3._uiForm.ToggleShow();
-            //});
+           
             EventProcessor.RegisterCommand("/debug", (x) =>
             {
-                if (Logging._minLogLevelTolog == Logging.LogLevels.Error)
+                if (Logging.MinLogLevelTolog == Logging.LogLevels.Error)
                 {
-                    Logging._minLogLevelTolog = Logging.LogLevels.Debug;
-                    Logging._traceLogLevel = Logging.LogLevels.Trace;
-                    MainProcessor._processDelay = 1000;
+                    Logging.MinLogLevelTolog = Logging.LogLevels.Debug;
+                    Logging.TraceLogLevel = Logging.LogLevels.Trace;
+                    MainProcessor.ProcessDelay = 1000;
                 }
                 else
                 {
-                    Logging._minLogLevelTolog = Logging.LogLevels.Error;
-                    Logging._traceLogLevel = Logging.LogLevels.None;
-                    MainProcessor._processDelay = E3.ProcessDelay;
+                    Logging.MinLogLevelTolog = Logging.LogLevels.Error;
+                    Logging.TraceLogLevel = Logging.LogLevels.None;
+                    MainProcessor.ProcessDelay = E3.ProcessDelay;
                 }
             });
 
@@ -245,7 +242,7 @@ namespace E3Core.Processors
                             {
                                 _mq.Cmd($"/say {message}");
                                 _mq.Delay(1500);
-                                if (EventProcessor._eventList["Zoned"].queuedEvents.Count > 0)
+                                if (EventProcessor.EventList["Zoned"].queuedEvents.Count > 0)
                                 {
                                     //means we have zoned and can stop
                                     break;
@@ -296,7 +293,7 @@ namespace E3Core.Processors
                 {
                     //someone told us to gate
                     Spell s;
-                    if (!Spell._loadedSpellsByName.TryGetValue("Exodus", out s))
+                    if (!Spell.LoadedSpellsByName.TryGetValue("Exodus", out s))
                     {
                         s = new Spell("Exodus");
                     }
@@ -319,7 +316,7 @@ namespace E3Core.Processors
 
                         if (spellToCheck != string.Empty && _mq.Query<bool>($"${{Me.Book[{spellToCheck}]}}"))
                         {
-                            if (!Spell._loadedSpellsByName.TryGetValue(spellToCheck, out s))
+                            if (!Spell.LoadedSpellsByName.TryGetValue(spellToCheck, out s))
                             {
                                 s = new Spell(spellToCheck);
                             }
@@ -470,7 +467,7 @@ namespace E3Core.Processors
         /// <returns>Returns a bool indicating whether or not you're in combat</returns>
         public static bool InCombat()
         {
-            bool inCombat = Assist._isAssisting || _mq.Query<bool>("${Me.Combat}") || _mq.Query<bool>("${Me.CombatState.Equal[Combat]}");
+            bool inCombat = Assist.IsAssisting || _mq.Query<bool>("${Me.Combat}") || _mq.Query<bool>("${Me.CombatState.Equal[Combat]}");
             return inCombat;
         }
         public static bool InGameCombat()
@@ -536,7 +533,7 @@ namespace E3Core.Processors
                     if (canniReady && currentHps > 7000 && _mq.Query<double>("${Math.Calc[${Me.MaxMana} - ${Me.CurrentMana}]}") > 4500)
                     {
                         Spell s;
-                        if (!Spell._loadedSpellsByName.TryGetValue("Cannibalization", out s))
+                        if (!Spell.LoadedSpellsByName.TryGetValue("Cannibalization", out s))
                         {
                             s = new Spell("Cannibalization");
                         }
@@ -605,7 +602,7 @@ namespace E3Core.Processors
                     if (_mq.Query<double>("${Math.Calc[${Me.MaxMana} - ${Me.CurrentMana}]}") > 3500 && currentHps > 6000)
                     {
                         Spell s;
-                        if (!Spell._loadedSpellsByName.TryGetValue("Summoned: Large Modulation Shard", out s))
+                        if (!Spell.LoadedSpellsByName.TryGetValue("Summoned: Large Modulation Shard", out s))
                         {
                             s = new Spell("Summoned: Large Modulation Shard");
                         }
@@ -621,7 +618,7 @@ namespace E3Core.Processors
                     if (_mq.Query<double>("${Math.Calc[${Me.MaxMana} - ${Me.CurrentMana}]}") > 3500)
                     {
                         Spell s;
-                        if (!Spell._loadedSpellsByName.TryGetValue("Azure Mind Crystal III", out s))
+                        if (!Spell.LoadedSpellsByName.TryGetValue("Azure Mind Crystal III", out s))
                         {
                             s = new Spell("Azure Mind Crystal III");
                         }
@@ -639,7 +636,7 @@ namespace E3Core.Processors
                     if (deathBloomReady && currentHps > 8000)
                     {
                         Spell s;
-                        if (!Spell._loadedSpellsByName.TryGetValue("Death Bloom", out s))
+                        if (!Spell.LoadedSpellsByName.TryGetValue("Death Bloom", out s))
                         {
                             s = new Spell("Death Bloom");
                         }
@@ -656,7 +653,7 @@ namespace E3Core.Processors
                     if (manaDrawReady)
                     {
                         Spell s;
-                        if (!Spell._loadedSpellsByName.TryGetValue("Mana Draw", out s))
+                        if (!Spell.LoadedSpellsByName.TryGetValue("Mana Draw", out s))
                         {
                             s = new Spell("Mana Draw");
                         }
@@ -725,7 +722,7 @@ namespace E3Core.Processors
             {
                 bool onMount = _mq.Query<bool>("${Me.Mount.ID}");
 
-                if (onMount|| Movement._following || InCombat()) return;
+                if (onMount|| Movement.Following || InCombat()) return;
 
                 bool amIStanding = _mq.Query<bool>("${Me.Standing}");
                 string combatState = _mq.Query<string>("${Me.CombatState}");
@@ -756,7 +753,7 @@ namespace E3Core.Processors
         {
             if (!e3util.ShouldCheck(ref _nextFoodCheck, _nextFoodCheckInterval)) return;
 
-            if (!E3.CharacterSettings.Misc_AutoFoodEnabled || Assist._isAssisting) return;
+            if (!E3.CharacterSettings.Misc_AutoFoodEnabled || Assist.IsAssisting) return;
             using (Log.Trace())
             {
                 var toEat = E3.CharacterSettings.Misc_AutoFood;

@@ -18,33 +18,33 @@ namespace E3Core.Processors
         private static IMQ MQ = E3.MQ;
         private static ISpawns _spawns = E3.Spawns;
 
-        public static bool _enabled = false;
-        public static Int32 _mobToAttack = 0;
+        public static bool Enabled = false;
+        public static Int32 MobToAttack = 0;
 
         [ClassInvoke(Data.Class.All)]
         public static void Check_Xtargets()
         {
 
-            if (_enabled)
+            if (Enabled)
             {
                 _spawns.RefreshList();
-                if (_mobToAttack > 0)
+                if (MobToAttack > 0)
                 {
                     Spawn ts;
-                    if (_spawns.TryByID(_mobToAttack, out ts))
+                    if (_spawns.TryByID(MobToAttack, out ts))
                     {
                         //is it still alive?
                         if (ts.TypeDesc == "Corpse")
                         {
                             //its dead jim
-                            _mobToAttack = 0;
+                            MobToAttack = 0;
 
                         }
                     }
 
                 }
                 //lets see if we have anything on xtarget that is valid
-                if (_mobToAttack == 0)
+                if (MobToAttack == 0)
                 {
                     foreach (var s in _spawns.Get().OrderBy(x => x.Distance))
                     {
@@ -61,27 +61,27 @@ namespace E3Core.Processors
                         if (s.Name.IndexOf("hollow_tree", StringComparison.OrdinalIgnoreCase) > -1) continue;
                         if (s.Name.IndexOf("wooden box", StringComparison.OrdinalIgnoreCase) > -1) continue;
                         //its valid to attack!
-                        _mobToAttack = s.ID;
+                        MobToAttack = s.ID;
                         break;
                     }
-                    if (_mobToAttack == 0)
+                    if (MobToAttack == 0)
                     {
                         //we are done, stop killing
-                        _enabled = false;
+                        Enabled = false;
                         MQ.Write("\agClear Targets complete.");
                         return;
                     }
 
                     //mobs to attack will be sorted by distance.
-                    if (_mobToAttack > 0)
+                    if (MobToAttack > 0)
                     {
                         //pop it off and start assisting.
-                        Int32 mobId = _mobToAttack;
+                        Int32 mobId = MobToAttack;
                         Spawn s;
                         if (_spawns.TryByID(mobId, out s))
                         {
                             MQ.Write("\agClear Targets: \aoIssuing Assist.");
-                            Assist._allowControl = true;
+                            Assist.AllowControl = true;
                             Assist.AssistOn(mobId);
                             MQ.Delay(500);
                             E3.Bots.BroadcastCommandToGroup($"/assistme {mobId}");

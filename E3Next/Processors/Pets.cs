@@ -91,7 +91,7 @@ namespace E3Core.Processors
                 if (MQ.Query<bool>("${Me.AltAbilityReady[Replenish Companion]}"))
                 {
                     Spell s;
-                    if (!Spell._loadedSpellsByName.TryGetValue("Replenish Companion", out s))
+                    if (!Spell.LoadedSpellsByName.TryGetValue("Replenish Companion", out s))
                     {
                         s = new Spell("Replenish Companion");
                     }
@@ -133,7 +133,7 @@ namespace E3Core.Processors
                 foreach (var spellName in _petShrinkSpells)
                 {
                     Spell s;
-                    if (!Spell._loadedSpellsByName.TryGetValue(spellName, out s))
+                    if (!Spell.LoadedSpellsByName.TryGetValue(spellName, out s))
                     {
                         s = new Spell(spellName);
                     }

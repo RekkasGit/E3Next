@@ -32,13 +32,13 @@ namespace E3Core.Processors
         private static Int64 _nextBegCheckInterval = 1000;
         private static Queue<BuffQueuedItem> _queuedBuffs = new Queue<BuffQueuedItem>();
         private static SpellAliasDataFile _spellAliasesDataFile = new SpellAliasDataFile();
-        public static Dictionary<string, string> _spellAliases;
+        public static Dictionary<string, string> SpellAliases;
         [SubSystemInit]
         public static void Init()
         {
             RegsterEvents();
             _spellAliasesDataFile.LoadData();
-            _spellAliases = _spellAliasesDataFile.GetClassAliases();
+            SpellAliases = _spellAliasesDataFile.GetClassAliases();
 
         }
 
@@ -123,7 +123,7 @@ namespace E3Core.Processors
                     string spell = x.match.Groups[2].Value;
                     //check to see if its an alias.
                     string realSpell = string.Empty;
-                    if(_spellAliases.TryGetValue(spell,out realSpell))
+                    if(SpellAliases.TryGetValue(spell,out realSpell))
                     {
                         spell = realSpell;
                     }
@@ -207,7 +207,7 @@ namespace E3Core.Processors
 
             //check to see if its an alias.
             string realSpell = string.Empty;
-            if (_spellAliases.TryGetValue(spell, out realSpell))
+            if (SpellAliases.TryGetValue(spell, out realSpell))
             {
                 spell = realSpell;
             }
@@ -240,7 +240,7 @@ namespace E3Core.Processors
                     //see if the spell was already supplied
                     if (askedForSpell.Spell != null) s = askedForSpell.Spell;
 
-                    if (s is null && !Spell._loadedSpellsByName.TryGetValue(askedForSpell.SpellTouse, out s))
+                    if (s is null && !Spell.LoadedSpellsByName.TryGetValue(askedForSpell.SpellTouse, out s))
                     {
                         s = new Spell(askedForSpell.SpellTouse);
                     }

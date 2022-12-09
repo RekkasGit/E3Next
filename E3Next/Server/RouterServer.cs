@@ -99,7 +99,7 @@ namespace E3Core.Server
             try
             {
 
-                while (Core._isProcessing)
+                while (Core.IsProcessing)
                 {
 
                     if (_rpcRouter.TryReceive(ref routerMessage, recieveTimeout))

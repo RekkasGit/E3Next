@@ -95,7 +95,7 @@ namespace E3Core.Processors
         private static void VetAA(string vetAASpell, string command, Int32 argCount)
         {
             Spell s;
-            if (!Spell._loadedSpellsByName.TryGetValue(vetAASpell, out s))
+            if (!Spell.LoadedSpellsByName.TryGetValue(vetAASpell, out s))
             {
                 s = new Spell(vetAASpell);
             }

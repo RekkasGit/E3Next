@@ -15,7 +15,7 @@ namespace E3NextUI.Server
         Task _serverThread = null;
 
        
-        public static ConcurrentQueue<string> _pubCommands = new ConcurrentQueue<string>();
+        public static ConcurrentQueue<string> PubCommands = new ConcurrentQueue<string>();
         public static Int32 PubPort = 0;
 
         public void Start(Int32 port)
@@ -32,12 +32,12 @@ namespace E3NextUI.Server
                 pubSocket.Options.SendHighWatermark = 50000;
 
                 pubSocket.Bind("tcp://127.0.0.1:" + PubPort.ToString());
-                while (E3UI._shouldProcess)
+                while (E3UI.ShouldProcess)
                 {
-                    if (_pubCommands.Count > 0)
+                    if (PubCommands.Count > 0)
                     {
                         string message;
-                        if (_pubCommands.TryDequeue(out message))
+                        if (PubCommands.TryDequeue(out message))
                         {
                             pubSocket.SendMoreFrame("OnCommand").SendFrame(message);
                         }

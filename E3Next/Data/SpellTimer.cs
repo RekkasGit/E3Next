@@ -10,9 +10,9 @@ namespace E3Core.Data
 {
     public class SpellTimer
     {
-        public Int32 _mobID;
-        public Dictionary<Int32, Int64> _timestamps = new Dictionary<Int32, Int64>();
-        public Dictionary<Int32, Int64> _lockedtimestamps = new Dictionary<Int32, Int64>();
+        public Int32 MobID;
+        public Dictionary<Int32, Int64> Timestamps = new Dictionary<Int32, Int64>();
+        public Dictionary<Int32, Int64> Lockedtimestamps = new Dictionary<Int32, Int64>();
 
         public static SpellTimer Aquire()
         {
@@ -26,9 +26,9 @@ namespace E3Core.Data
         }
         public void Dispose()
         {
-            _mobID = 0;
-            _timestamps.Clear();
-            _lockedtimestamps.Clear();
+            MobID = 0;
+            Timestamps.Clear();
+            Lockedtimestamps.Clear();
             StaticObjectPool.Push(this);
         }
         ~SpellTimer()

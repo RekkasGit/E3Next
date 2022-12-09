@@ -24,7 +24,7 @@ namespace E3Core.Server
         public static Int32 RouterPort;
         public static Int32 PubPort;
         public static Int32 PubClientPort;
-        public static System.Diagnostics.Process _uiProcess;
+        public static System.Diagnostics.Process UIProcess;
         private static IMQ MQ = E3.MQ;
 
         [SubSystemInit]
@@ -72,10 +72,10 @@ namespace E3Core.Server
             });
             EventProcessor.RegisterCommand("/ui-kill", (x) =>
             {
-               if(_uiProcess!=null)
+               if(UIProcess!=null)
                 {
-                    _uiProcess.Kill();
-                    _uiProcess = null;
+                    UIProcess.Kill();
+                    UIProcess = null;
                 }
             });
         }
@@ -85,23 +85,23 @@ namespace E3Core.Server
         static void ToggleUI()
         { 
           
-            if (_uiProcess == null)
+            if (UIProcess == null)
             {
                 string dllFullPath = Assembly.GetExecutingAssembly().CodeBase.Replace("file:///", "").Replace("/", "\\").Replace("e3.dll", "");
                 Int32 processID = System.Diagnostics.Process.GetCurrentProcess().Id;
                 MQ.Write("Trying to start:" + dllFullPath + @"E3NextUI.exe");
-                _uiProcess = System.Diagnostics.Process.Start(dllFullPath + @"E3NextUI.exe", $"{PubPort} {RouterPort} {PubClientPort} {processID}");
+                UIProcess = System.Diagnostics.Process.Start(dllFullPath + @"E3NextUI.exe", $"{PubPort} {RouterPort} {PubClientPort} {processID}");
             }
             else
             {
                 //we have a process, is it up?
-                if (_uiProcess.HasExited)
+                if (UIProcess.HasExited)
                 {
                     string dllFullPath = Assembly.GetExecutingAssembly().CodeBase.Replace("file:///", "").Replace("/", "\\").Replace("e3.dll", "");
                     Int32 processID = System.Diagnostics.Process.GetCurrentProcess().Id;
                     //start up a new one.
                     MQ.Write("Trying to start:" + dllFullPath + @"E3NextUI.exe");
-                    _uiProcess = System.Diagnostics.Process.Start(dllFullPath + @"E3NextUI.exe", $"{PubPort} {RouterPort} {PubClientPort} {processID}");
+                    UIProcess = System.Diagnostics.Process.Start(dllFullPath + @"E3NextUI.exe", $"{PubPort} {RouterPort} {PubClientPort} {processID}");
                 }
                 else 
                 {

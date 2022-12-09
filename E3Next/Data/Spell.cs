@@ -24,7 +24,7 @@ namespace E3Core.Data
     public class Spell
     {
         public static Dictionary<Int32, Data.Spell> _loadedSpells = new Dictionary<int, Spell>();
-        public static Dictionary<string, Data.Spell> _loadedSpellsByName = new Dictionary<string, Spell>();
+        public static Dictionary<string, Data.Spell> LoadedSpellsByName = new Dictionary<string, Spell>();
         public static IMQ MQ = E3.MQ;
 
 
@@ -44,9 +44,9 @@ namespace E3Core.Data
             {
                 //sometimes an item can have the same spellid of a spell. prevent duplicates. 
                 //should deal with this later tho, and make it off maybe castID
-                if(!_loadedSpellsByName.ContainsKey(this.SpellName))
+                if(!LoadedSpellsByName.ContainsKey(this.SpellName))
                 {
-                    _loadedSpellsByName.Add(this.SpellName, this);
+                    LoadedSpellsByName.Add(this.SpellName, this);
                     _loadedSpells.Add(this.SpellID, this);
                 }
             }

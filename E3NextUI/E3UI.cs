@@ -29,7 +29,7 @@ namespace E3NextUI
     {
         public static string Version = "v1.0.8-beta";
         public static System.Diagnostics.Stopwatch _stopWatch = new System.Diagnostics.Stopwatch();
-        public static volatile bool _shouldProcess = true;
+        public static volatile bool ShouldProcess = true;
 
         Task _consoleTask;
         Task _consoleMQTask;
@@ -41,11 +41,11 @@ namespace E3NextUI
         public static DealerClient _tloClient;
         private PubClient _pubClient;
         private PubServer _pubServer;
-        public static TextBoxInfo _console;
-        public static TextBoxInfo _mqConsole;
-        public static TextBoxInfo _meleeConsole;
-        public static TextBoxInfo _spellConsole;
-        public static string _playerName;
+        public static TextBoxInfo Console;
+        public static TextBoxInfo MQConsole;
+        public static TextBoxInfo MeleeConsole;
+        public static TextBoxInfo SpellConsole;
+        public static string PlayerName;
         public static Int32 _parentProcess;
         public static object _objectLock = new object();
         public static GeneralSettings _genSettings;
@@ -88,9 +88,9 @@ namespace E3NextUI
                 {
                     lock (_tloClient)
                     {
-                        _playerName = _tloClient.RequestData("${Me.CleanName}");
-                        this.Text = $"E3UI ({_playerName})";
-                        labelPlayerName.Text = _playerName;
+                        PlayerName = _tloClient.RequestData("${Me.CleanName}");
+                        this.Text = $"E3UI ({PlayerName})";
+                        labelPlayerName.Text = PlayerName;
                         configFolder = _tloClient.RequestData("${MacroQuest.Path[config]}");
                     }
                 }
@@ -106,7 +106,7 @@ namespace E3NextUI
 
             }
 
-            _genSettings = new GeneralSettings(configFolder, _playerName);
+            _genSettings = new GeneralSettings(configFolder, PlayerName);
             _genSettings.LoadData();
 
 
@@ -130,15 +130,15 @@ namespace E3NextUI
             SetDoubleBuffered(richTextBoxMelee);
             SetDoubleBuffered(richTextBoxSpells);
 
-            _console = new TextBoxInfo() { textBox = richTextBoxConsole };
-            _mqConsole = new TextBoxInfo() { textBox = richTextBoxMQConsole };
-            _meleeConsole = new TextBoxInfo() { textBox = richTextBoxMelee };
-            _spellConsole = new TextBoxInfo() { textBox = richTextBoxSpells };
+            Console = new TextBoxInfo() { textBox = richTextBoxConsole };
+            MQConsole = new TextBoxInfo() { textBox = richTextBoxMQConsole };
+            MeleeConsole = new TextBoxInfo() { textBox = richTextBoxMelee };
+            SpellConsole = new TextBoxInfo() { textBox = richTextBoxSpells };
     
-            _consoleTask = Task.Factory.StartNew(() => { ProcessConsoleUI(_console); }, CancellationToken.None, TaskCreationOptions.DenyChildAttach, TaskScheduler.Default);
-            _consoleMQTask = Task.Factory.StartNew(() => { ProcessConsoleUI(_mqConsole); }, CancellationToken.None, TaskCreationOptions.DenyChildAttach, TaskScheduler.Default);
-            _consoleMeleeTask = Task.Factory.StartNew(() => { ProcessConsoleUI(_meleeConsole); }, CancellationToken.None, TaskCreationOptions.DenyChildAttach, TaskScheduler.Default);
-            _consoleSpellTask = Task.Factory.StartNew(() => { ProcessConsoleUI(_spellConsole); }, CancellationToken.None, TaskCreationOptions.DenyChildAttach, TaskScheduler.Default);
+            _consoleTask = Task.Factory.StartNew(() => { ProcessConsoleUI(Console); }, CancellationToken.None, TaskCreationOptions.DenyChildAttach, TaskScheduler.Default);
+            _consoleMQTask = Task.Factory.StartNew(() => { ProcessConsoleUI(MQConsole); }, CancellationToken.None, TaskCreationOptions.DenyChildAttach, TaskScheduler.Default);
+            _consoleMeleeTask = Task.Factory.StartNew(() => { ProcessConsoleUI(MeleeConsole); }, CancellationToken.None, TaskCreationOptions.DenyChildAttach, TaskScheduler.Default);
+            _consoleSpellTask = Task.Factory.StartNew(() => { ProcessConsoleUI(SpellConsole); }, CancellationToken.None, TaskCreationOptions.DenyChildAttach, TaskScheduler.Default);
             _updateParse = Task.Factory.StartNew(() => { ProcessParse(); }, CancellationToken.None, TaskCreationOptions.DenyChildAttach, TaskScheduler.Default);
 
             _globalUpdate = Task.Factory.StartNew(() => { GlobalTimer(); }, CancellationToken.None, TaskCreationOptions.DenyChildAttach, TaskScheduler.Default);
@@ -166,7 +166,7 @@ namespace E3NextUI
 
         public void Shutdown()
         {
-            _shouldProcess = false;
+            ShouldProcess = false;
         }
 
 
@@ -242,7 +242,7 @@ namespace E3NextUI
                 {
                     foreach(var command in db.Commands)
                     {
-                        Server.PubServer._pubCommands.Enqueue(command);
+                        Server.PubServer.PubCommands.Enqueue(command);
                     }
                 }
                 else
@@ -271,7 +271,7 @@ namespace E3NextUI
         }
         private void GlobalTimer()
         {
-            while(_shouldProcess)
+            while(ShouldProcess)
             {
                 if (_parentProcess > 0)
                 {
@@ -375,7 +375,7 @@ namespace E3NextUI
         private void E3UI_FormClosing(object sender, FormClosingEventArgs e)
         {
             //set the variable that will stop all the while loops
-            _shouldProcess = false;
+            ShouldProcess = false;
         }
         private delegate void ToggleShowDelegate();
         public void ToggleShow()
@@ -407,7 +407,7 @@ namespace E3NextUI
         #region parseAndUIUpdates
         private void ProcessParse()
         {
-            while (_shouldProcess)
+            while (ShouldProcess)
             {
              
                 if(this.IsHandleCreated)
@@ -438,32 +438,32 @@ namespace E3NextUI
                 labelStaminaValue.Text = _playerSP;
             }
 
-            labelInCombatValue.Text = LineParser._currentlyCombat.ToString();
+            labelInCombatValue.Text = LineParser.CurrentlyCombat.ToString();
             lock (LineParser._objectLock)
             {
                 if (!String.IsNullOrWhiteSpace(LineParser.PetName))
                 {
                     labelPetNameValue.Text = LineParser.PetName;
                 }
-                Int64 yourDamageTotal = LineParser._yourDamage.Sum();
+                Int64 yourDamageTotal = LineParser.YourDamage.Sum();
                 labelYourDamageValue.Text = yourDamageTotal.ToString("N0");
 
-                Int64 petDamageTotal = LineParser._yourPetDamage.Sum();
+                Int64 petDamageTotal = LineParser.YourPetDamage.Sum();
                 labelPetDamageValue.Text = petDamageTotal.ToString("N0");
 
-                Int64 dsDamage = LineParser._yourDamageShieldDamage.Sum();
+                Int64 dsDamage = LineParser.YourDamageShieldDamage.Sum();
                 labelYourDamageShieldValue.Text = dsDamage.ToString("N0");
 
                 Int64 totalDamage = yourDamageTotal + petDamageTotal + dsDamage;
                 labelTotalDamageValue.Text = totalDamage.ToString("N0");
 
-                Int64 damageToyou = LineParser._damageToYou.Sum();
+                Int64 damageToyou = LineParser.DamageToYou.Sum();
                 labelDamageToYouValue.Text = damageToyou.ToString("N0");
 
-                Int64 healingToyou = LineParser._healingToYou.Sum();
+                Int64 healingToyou = LineParser.HealingToYou.Sum();
                 labelHealingYouValue.Text = healingToyou.ToString("N0");
 
-                Int64 healingByYou = LineParser._healingByYou.Sum();
+                Int64 healingByYou = LineParser.HealingByYou.Sum();
                 labelHealingByYouValue.Text = healingByYou.ToString("N0");
 
                 //need to find the start of each colleciton
@@ -471,37 +471,37 @@ namespace E3NextUI
                 //and highest of end
                 Int64 startTime = 0;
                 Int64 endTime = 0;
-                if (LineParser._yourDamage.Count > 0)
+                if (LineParser.YourDamage.Count > 0)
                 {
-                    if (startTime > LineParser._yourDamageTime[0] || startTime == 0)
+                    if (startTime > LineParser.YourDamageTime[0] || startTime == 0)
                     {
-                        startTime = LineParser._yourDamageTime[0];
+                        startTime = LineParser.YourDamageTime[0];
                     }
-                    if (endTime < LineParser._yourDamageTime[LineParser._yourDamageTime.Count - 1])
+                    if (endTime < LineParser.YourDamageTime[LineParser.YourDamageTime.Count - 1])
                     {
-                        endTime = LineParser._yourDamageTime[LineParser._yourDamageTime.Count - 1];
+                        endTime = LineParser.YourDamageTime[LineParser.YourDamageTime.Count - 1];
                     }
                 }
-                if (LineParser._yourPetDamage.Count > 0)
+                if (LineParser.YourPetDamage.Count > 0)
                 {
-                    if (startTime > LineParser._yourPetDamage[0] || startTime == 0)
+                    if (startTime > LineParser.YourPetDamage[0] || startTime == 0)
                     {
-                        startTime = LineParser._yourPetDamageTime[0];
+                        startTime = LineParser.YourPetDamageTime[0];
                     }
-                    if (endTime < LineParser._yourPetDamageTime[LineParser._yourPetDamageTime.Count - 1])
+                    if (endTime < LineParser.YourPetDamageTime[LineParser.YourPetDamageTime.Count - 1])
                     {
-                        endTime = LineParser._yourPetDamageTime[LineParser._yourPetDamageTime.Count - 1];
+                        endTime = LineParser.YourPetDamageTime[LineParser.YourPetDamageTime.Count - 1];
                     }
                 }
-                if (LineParser._yourDamageShieldDamage.Count > 0)
+                if (LineParser.YourDamageShieldDamage.Count > 0)
                 {
-                    if (startTime > LineParser._yourDamageShieldDamageTime[0] || startTime == 0)
+                    if (startTime > LineParser.YourDamageShieldDamageTime[0] || startTime == 0)
                     {
-                        startTime = LineParser._yourDamageShieldDamageTime[0];
+                        startTime = LineParser.YourDamageShieldDamageTime[0];
                     }
-                    if (endTime < LineParser._yourDamageShieldDamageTime[LineParser._yourDamageShieldDamageTime.Count - 1])
+                    if (endTime < LineParser.YourDamageShieldDamageTime[LineParser.YourDamageShieldDamageTime.Count - 1])
                     {
-                        endTime = LineParser._yourDamageShieldDamageTime[LineParser._yourDamageShieldDamageTime.Count - 1];
+                        endTime = LineParser.YourDamageShieldDamageTime[LineParser.YourDamageShieldDamageTime.Count - 1];
                     }
                 }
                 Int64 totalTime = (endTime - startTime) / 1000;
@@ -525,7 +525,7 @@ namespace E3NextUI
         private delegate void SetPlayerDataDelegate(string name);
         public void SetPlayerName(string name)
         {
-            _playerName = name;
+            PlayerName = name;
         }
         public void SetPlayerHP(string value)
         {
@@ -561,9 +561,9 @@ namespace E3NextUI
         }
         private void buttonPauseConsoles_Click(object sender, EventArgs e)
         {
-            lock (_spellConsole)
+            lock (SpellConsole)
             {
-                if (_spellConsole.isPaused)
+                if (SpellConsole.isPaused)
                 {
                     buttonPauseConsoles.Text = "Pause Consoles";
                 }
@@ -574,10 +574,10 @@ namespace E3NextUI
                 }
             }
             //pause all the consoles
-            PauseConsole(_spellConsole);
-            PauseConsole(_meleeConsole);
-            PauseConsole(_console);
-            PauseConsole(_mqConsole);
+            PauseConsole(SpellConsole);
+            PauseConsole(MeleeConsole);
+            PauseConsole(Console);
+            PauseConsole(MQConsole);
             //print out the buffers to the text boxes
         }
         private void PauseConsole(TextBoxInfo ti)
@@ -585,7 +585,7 @@ namespace E3NextUI
             lock (ti)
             {
                 ti.isPaused = !ti.isPaused;
-                if (_spellConsole.isPaused)
+                if (SpellConsole.isPaused)
                 {
 
                     ti.sb.Clear();
@@ -663,7 +663,7 @@ namespace E3NextUI
 
         private void ProcessConsoleUI(TextBoxInfo textInfo)
         {
-            while (_shouldProcess)
+            while (ShouldProcess)
             {
                 if(this.IsHandleCreated)
                 {
@@ -724,7 +724,7 @@ namespace E3NextUI
                 string value = ((TextBox)sender).Text;
                 if (value.StartsWith("/"))
                 {
-                    PubServer._pubCommands.Enqueue(value);
+                    PubServer.PubCommands.Enqueue(value);
 
                 }
                 ((TextBox)sender).Text = String.Empty;

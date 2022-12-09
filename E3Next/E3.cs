@@ -78,7 +78,7 @@ namespace E3Core.Processors
                 {
                     //rembmer check_heals is auto inserted, should probably just pull out here
                     List<string> _methodsToInvokeAsStrings;
-                    if (AdvancedSettings._classMethodsAsStrings.TryGetValue(CurrentShortClassString, out _methodsToInvokeAsStrings))
+                    if (AdvancedSettings.ClassMethodsAsStrings.TryGetValue(CurrentShortClassString, out _methodsToInvokeAsStrings))
                     {
                         foreach (var methodName in _methodsToInvokeAsStrings)
                         {
@@ -88,7 +88,7 @@ namespace E3Core.Processors
                                 break;
                             }
                             Action methodToInvoke;
-                            if (AdvancedSettings._methodLookup.TryGetValue(methodName, out methodToInvoke))
+                            if (AdvancedSettings.MethodLookup.TryGetValue(methodName, out methodToInvoke))
                             {
                                 methodToInvoke.Invoke();
 
@@ -118,7 +118,7 @@ namespace E3Core.Processors
             using (Log.Trace("ClassMethodCalls"))
             {
                 //lets do our class methods, this is last because of bards
-                foreach (var kvp in AdvancedSettings._classMethodLookup)
+                foreach (var kvp in AdvancedSettings.ClassMethodLookup)
                 {
                     kvp.Value.Invoke();
                 }
@@ -221,15 +221,15 @@ namespace E3Core.Processors
                 MQ.ClearCommands();
                 AsyncIO.ForceDotNet.Force();
 
-                Logging._traceLogLevel = Logging.LogLevels.None; //log level we are currently at
-                Logging._minLogLevelTolog = Logging.LogLevels.Error; //log levels have integers assoicatd to them. you can set this to Error to only log errors. 
-                Logging._defaultLogLevel = Logging.LogLevels.Debug; //the default if a level is not passed into the _log.write statement. useful to hide/show things.
-                MainProcessor._applicationName = "E3"; //application name, used in some outputs
-                MainProcessor._processDelay = ProcessDelay; //how much time we will wait until we start our next processing once we are done with a loop.
+                Logging.TraceLogLevel = Logging.LogLevels.None; //log level we are currently at
+                Logging.MinLogLevelTolog = Logging.LogLevels.Error; //log levels have integers assoicatd to them. you can set this to Error to only log errors. 
+                Logging.DefaultLogLevel = Logging.LogLevels.Debug; //the default if a level is not passed into the _log.write statement. useful to hide/show things.
+                MainProcessor.ApplicationName = "E3"; //application name, used in some outputs
+                MainProcessor.ProcessDelay = ProcessDelay; //how much time we will wait until we start our next processing once we are done with a loop.
                                                             //how long you allow script to process before auto yield is engaged. generally should't need to mess with this, but an example.
-                MonoCore.MQ._maxMillisecondsToWork = 40;
+                MonoCore.MQ.MaxMillisecondsToWork = 40;
                 //max event count for each registered event before spilling over.
-                EventProcessor._eventLimiterPerRegisteredEvent = 20;
+                EventProcessor.EventLimiterPerRegisteredEvent = 20;
                 CurrentName = MQ.Query<string>("${Me.CleanName}");
 
                 CurrentId = MQ.Query<int>("${Me.ID}");
@@ -246,7 +246,7 @@ namespace E3Core.Processors
                 }
                 Enum.TryParse(classValue, out CurrentClass);
                 CurrentLongClassString = CurrentClass.ToString();
-                CurrentShortClassString = Data.Classes._classLongToShort[CurrentLongClassString];
+                CurrentShortClassString = Data.Classes.ClassLongToShort[CurrentLongClassString];
 
                 //Init the settings
                 CharacterSettings = new Settings.CharacterSettings();
@@ -258,7 +258,7 @@ namespace E3Core.Processors
                 Setup.Init();
 
                 IsInit = true;
-                MonoCore.Spawns._refreshTimePeriodInMS = 3000;
+                MonoCore.Spawns.RefreshTimePeriodInMS = 3000;
             }
 
 
@@ -276,7 +276,6 @@ namespace E3Core.Processors
         }
         public static void Shutdown()
         {
-            //Mq.Write($"Shutting down {MainProcessor._applicationName}....Reload to start gain");
             IsBadState = true;
             AdvancedSettings.Reset();
             CharacterSettings = null;
@@ -293,7 +292,7 @@ namespace E3Core.Processors
         public static bool IsInit = false;
         public static bool IsBadState = false;
         public static IMQ MQ = Core.mqInstance;
-        public static Logging Log = Core._log;
+        public static Logging Log = Core.logInstance;
         public static Settings.CharacterSettings CharacterSettings = null;
         public static Settings.GeneralSettings GeneralSettings = null;
         public static Settings.AdvancedSettings AdvancedSettings = null;

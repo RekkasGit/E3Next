@@ -101,7 +101,7 @@ namespace MQServerClient
         }
         public IEnumerable<Spawn> Get()
         {
-            if (Core._stopWatch.ElapsedMilliseconds - _lastRefesh > _refreshTimePeriodInMS)
+            if (Core.StopWatch.ElapsedMilliseconds - _lastRefesh > _refreshTimePeriodInMS)
             {
                 RefreshList();
             }
@@ -109,7 +109,7 @@ namespace MQServerClient
         }
         private void RefreshListIfNeeded()
         {
-            if (Core._stopWatch.ElapsedMilliseconds - _lastRefesh > _refreshTimePeriodInMS)
+            if (Core.StopWatch.ElapsedMilliseconds - _lastRefesh > _refreshTimePeriodInMS)
             {
                 RefreshList();
             }
@@ -126,7 +126,7 @@ namespace MQServerClient
             }
          
             //_spawns should have fresh data now!
-            _lastRefesh = Core._stopWatch.ElapsedMilliseconds;
+            _lastRefesh = Core.StopWatch.ElapsedMilliseconds;
             if (_requestMsg.IsInitialised)
             {
                 _requestMsg.Close();
@@ -240,7 +240,7 @@ namespace MQServerClient
             _tmpSpawnList = tmpPtr;
 
             //_spawns should have fresh data now!
-            _lastRefesh = Core._stopWatch.ElapsedMilliseconds;
+            _lastRefesh = Core.StopWatch.ElapsedMilliseconds;
 
         }
     }
@@ -390,10 +390,10 @@ namespace MQServerClient
         public bool Delay(int maxTimeToWait, string Condition)
         {
             Condition = $"${{If[{Condition},TRUE,FALSE]}}";
-            Int64 startingTime = Core._stopWatch.ElapsedMilliseconds;
+            Int64 startingTime = Core.StopWatch.ElapsedMilliseconds;
             while (!this.Query<bool>(Condition))
             {
-                if (Core._stopWatch.ElapsedMilliseconds - startingTime > maxTimeToWait)
+                if (Core.StopWatch.ElapsedMilliseconds - startingTime > maxTimeToWait)
                 {
                     return false;
                 }
@@ -403,10 +403,10 @@ namespace MQServerClient
         }
         public bool Delay(int maxTimeToWait, Func<bool> methodToCheck)
         {
-            Int64 startingTime = Core._stopWatch.ElapsedMilliseconds;
+            Int64 startingTime = Core.StopWatch.ElapsedMilliseconds;
             while (!methodToCheck.Invoke())
             {
-                if (Core._stopWatch.ElapsedMilliseconds - startingTime > maxTimeToWait)
+                if (Core.StopWatch.ElapsedMilliseconds - startingTime > maxTimeToWait)
                 {
                     return false;
                 }
@@ -592,7 +592,7 @@ namespace MQServerClient
 
         public void Write(string query, [CallerMemberName] string memberName = "", [CallerFilePath] string fileName = "", [CallerLineNumber] int lineNumber = 0)
         {
-            query = $"[{MainProcessor._applicationName}][{System.DateTime.Now.ToString("HH:mm:ss")}] {query}";
+            query = $"[{MainProcessor.ApplicationName}][{System.DateTime.Now.ToString("HH:mm:ss")}] {query}";
             if (_requestMsg.IsInitialised)
             {
                 _requestMsg.Close();

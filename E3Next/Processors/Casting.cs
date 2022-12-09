@@ -19,7 +19,7 @@ namespace E3Core.Processors
         public static Logging _log = E3.Log;
         private static IMQ MQ = E3.MQ;
         public static Dictionary<Int32, Int64> _gemRecastLockForMem = new Dictionary<int, long>();
-        public static Dictionary<Int32, ResistCounter> _resistCounters = new Dictionary<Int32, ResistCounter>();
+        public static Dictionary<Int32, ResistCounter> ResistCounters = new Dictionary<Int32, ResistCounter>();
         public static Dictionary<Int32, Int32> _currentSpellGems = new Dictionary<int, int>();
 
 
@@ -50,7 +50,7 @@ namespace E3Core.Processors
                     //block on waiting for the spell window to close
                     while (IsCasting())
                     {
-                        if (!isNowCast && EventProcessor._commandList["/nowcast"].queuedEvents.Count > 0)
+                        if (!isNowCast && EventProcessor.CommandList["/nowcast"].queuedEvents.Count > 0)
                         {
                             //we have a nowcast ready to be processed
                             MQ.Cmd("/interrupt");
@@ -59,7 +59,7 @@ namespace E3Core.Processors
                         }
                         EventProcessor.ProcessEventsInQueues("/backoff");
                         EventProcessor.ProcessEventsInQueues("/followme");
-                        if (Assist._assistTargetID == 0)
+                        if (Assist.AssistTargetID == 0)
                         {
                             return CastReturn.CAST_INTERRUPTED;
                         }
@@ -452,11 +452,11 @@ namespace E3Core.Processors
                                 //check if we need to process any events,if healing tho, ignore. 
                                 if (spell.SpellType.Equals("Detrimental"))
                                 {
-                                    if (EventProcessor._commandList["/backoff"].queuedEvents.Count > 0)
+                                    if (EventProcessor.CommandList["/backoff"].queuedEvents.Count > 0)
                                     {
                                         return CastReturn.CAST_INTERRUPTED;
                                     }
-                                    if (EventProcessor._commandList["/followme"].queuedEvents.Count > 0)
+                                    if (EventProcessor.CommandList["/followme"].queuedEvents.Count > 0)
                                     {
                                         return CastReturn.CAST_INTERRUPTED;
                                     }
@@ -487,42 +487,42 @@ namespace E3Core.Processors
                         {
                             _lastSuccesfulCast = spell.CastName;
                             //clear the spell counter for this pell on this mob?
-                            if (_resistCounters.ContainsKey(targetID))
+                            if (ResistCounters.ContainsKey(targetID))
                             {
-                                if (_resistCounters[targetID]._spellCounters.ContainsKey(spell.SpellID))
+                                if (ResistCounters[targetID].SpellCounters.ContainsKey(spell.SpellID))
                                 {
-                                    _resistCounters[targetID]._spellCounters[spell.SpellID] = 0;
+                                    ResistCounters[targetID].SpellCounters[spell.SpellID] = 0;
                                 }
                             }
                         }
                         else if (returnValue == CastReturn.CAST_RESIST || returnValue == CastReturn.CAST_TAKEHOLD)
                         {
-                            if (!_resistCounters.ContainsKey(targetID))
+                            if (!ResistCounters.ContainsKey(targetID))
                             {
                                 ResistCounter tresist = ResistCounter.Aquire();
-                                _resistCounters.Add(targetID, tresist);
+                                ResistCounters.Add(targetID, tresist);
                             }
-                            ResistCounter resist = _resistCounters[targetID];
-                            if (!resist._spellCounters.ContainsKey(spell.SpellID))
+                            ResistCounter resist = ResistCounters[targetID];
+                            if (!resist.SpellCounters.ContainsKey(spell.SpellID))
                             {
-                                resist._spellCounters.Add(spell.SpellID, 0);
+                                resist.SpellCounters.Add(spell.SpellID, 0);
                             }
-                            resist._spellCounters[spell.SpellID]++;
+                            resist.SpellCounters[spell.SpellID]++;
 
                         }
                         else if (returnValue == CastReturn.CAST_IMMUNE)
                         {
-                            if (!_resistCounters.ContainsKey(targetID))
+                            if (!ResistCounters.ContainsKey(targetID))
                             {
                                 ResistCounter tresist = ResistCounter.Aquire();
-                                _resistCounters.Add(targetID, tresist);
+                                ResistCounters.Add(targetID, tresist);
                             }
-                            ResistCounter resist = _resistCounters[targetID];
-                            if (!resist._spellCounters.ContainsKey(spell.SpellID))
+                            ResistCounter resist = ResistCounters[targetID];
+                            if (!resist.SpellCounters.ContainsKey(spell.SpellID))
                             {
-                                resist._spellCounters.Add(spell.SpellID, 0);
+                                resist.SpellCounters.Add(spell.SpellID, 0);
                             }
-                            resist._spellCounters[spell.SpellID] = 99;
+                            resist.SpellCounters[spell.SpellID] = 99;
                         }
 
 
@@ -552,8 +552,7 @@ namespace E3Core.Processors
                             _log.Write($"Doing AfterEvent:{spell.AfterEvent}");
                             MQ.Cmd($"/docommand {spell.AfterEvent}");
                         }
-                        //if (Basics._following && Assist._isAssisting) Basics.AcquireFollow();
-
+                     
                         //TODO: bard resume twist
 
                         E3.ActionTaken = true;
@@ -592,7 +591,7 @@ namespace E3Core.Processors
         }
         private static bool NowCastReady()
         {
-            if(((EventProcessor._commandList.ContainsKey("/nowcast") && EventProcessor._commandList["/nowcast"].queuedEvents.Count > 0) || PubClient.NowCastInQueue()))
+            if(((EventProcessor.CommandList.ContainsKey("/nowcast") && EventProcessor.CommandList["/nowcast"].queuedEvents.Count > 0) || PubClient.NowCastInQueue()))
             {
                 return true;
             }
@@ -717,7 +716,7 @@ namespace E3Core.Processors
             if (_gemRecastLockForMem.ContainsKey(spell.SpellGem))
             {
                 //there is a spell lock possibly on this gem, check
-                if (_gemRecastLockForMem[spell.SpellGem] > Core._stopWatch.ElapsedMilliseconds)
+                if (_gemRecastLockForMem[spell.SpellGem] > Core.StopWatch.ElapsedMilliseconds)
                 {
                     //this is still locked, return false
                     return false;
@@ -734,7 +733,7 @@ namespace E3Core.Processors
             {
                 _gemRecastLockForMem.Add(spell.SpellGem, 0);
             }
-            _gemRecastLockForMem[spell.SpellGem] = Core._stopWatch.ElapsedMilliseconds + spell.RecastTime + 2000;
+            _gemRecastLockForMem[spell.SpellGem] = Core.StopWatch.ElapsedMilliseconds + spell.RecastTime + 2000;
 
             //update spellgem collection
             if (!_currentSpellGems.ContainsKey(spell.SpellGem))
@@ -920,12 +919,12 @@ namespace E3Core.Processors
                 if(tIF.IndexOf("${Assisting}",0, StringComparison.OrdinalIgnoreCase)>-1)
                 {
                     //lets replace it with TRUE/FALSE
-                    tIF = tIF.Replace("${Assisting}", Assist._isAssisting.ToString());
+                    tIF = tIF.Replace("${Assisting}", Assist.IsAssisting.ToString());
                 }
                 if (tIF.IndexOf("${AssistTarget}", 0, StringComparison.OrdinalIgnoreCase) > -1)
                 {
                     //lets replace it with TRUE/FALSE
-                    tIF = tIF.Replace("${AssistTarget}", Assist._assistTargetID.ToString());
+                    tIF = tIF.Replace("${AssistTarget}", Assist.AssistTargetID.ToString());
                 }
                 if (tIF.IndexOf("${use_QUICKBurns}", 0, StringComparison.OrdinalIgnoreCase) > -1)
                 {
@@ -1007,11 +1006,11 @@ namespace E3Core.Processors
         public static void ResetResistCounters()
         {
             //put them back in their object pools
-            foreach (var kvp in Casting._resistCounters)
+            foreach (var kvp in Casting.ResistCounters)
             {
                 kvp.Value.Dispose();
             }
-            _resistCounters.Clear();
+            ResistCounters.Clear();
 
         }
         [SubSystemInit]
@@ -1030,11 +1029,11 @@ namespace E3Core.Processors
                 return;
             }
 
-            if (Core._stopWatch.ElapsedMilliseconds < _currentSpellGemsLastRefresh)
+            if (Core.StopWatch.ElapsedMilliseconds < _currentSpellGemsLastRefresh)
             {
                 return;
             }
-            _currentSpellGemsLastRefresh = Core._stopWatch.ElapsedMilliseconds + 2000;
+            _currentSpellGemsLastRefresh = Core.StopWatch.ElapsedMilliseconds + 2000;
             //need to get all the spellgems setup
 
             for (int i = 1; i < 13; i++)
@@ -1076,8 +1075,8 @@ namespace E3Core.Processors
                 return CastReturn.CAST_SUCCESS;
             }
 
-            Double endtime = Core._stopWatch.Elapsed.TotalMilliseconds + 500;
-            while (endtime > Core._stopWatch.Elapsed.TotalMilliseconds)
+            Double endtime = Core.StopWatch.Elapsed.TotalMilliseconds + 500;
+            while (endtime > Core.StopWatch.Elapsed.TotalMilliseconds)
             {
 
                 //string result = MQ.Query<string>("${Cast.Result}");
@@ -1208,15 +1207,14 @@ namespace E3Core.Processors
         }
         private static bool CheckForResistByName(string name, Double time)
         {
-            if (EventProcessor._eventList[name].queuedEvents.Count > 0)
+            if (EventProcessor.EventList[name].queuedEvents.Count > 0)
             {
-                while (EventProcessor._eventList[name].queuedEvents.Count > 0)
+                while (EventProcessor.EventList[name].queuedEvents.Count > 0)
                 {
                     EventProcessor.EventMatch e;
-                    EventProcessor._eventList[name].queuedEvents.TryDequeue(out e);
+                    EventProcessor.EventList[name].queuedEvents.TryDequeue(out e);
                 }
-                // MQ.Write($"*********Total Time for Internal result: {500 - (time - Core._stopWatch.Elapsed.TotalMilliseconds)} ms");
-
+      
                 return true;
             }
             return false;

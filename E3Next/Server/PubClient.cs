@@ -55,7 +55,7 @@ namespace E3Core.Server
         }
         public void Process()
         {
-            while(Core._isProcessing)
+            while(Core.IsProcessing)
             {
                 //some type of delay if our sub errors out.
                 System.Threading.Thread.Sleep(100);
@@ -70,7 +70,7 @@ namespace E3Core.Server
                         subSocket.Options.TcpKeepaliveInterval = TimeSpan.FromSeconds(1);
                         subSocket.Connect("tcp://127.0.0.1:" + _port);
                         subSocket.Subscribe("OnCommand");
-                        while (Core._isProcessing)
+                        while (Core.IsProcessing)
                         {
                             string messageTopicReceived;
                             if (subSocket.TryReceiveFrameString(recieveTimeout, out messageTopicReceived))
