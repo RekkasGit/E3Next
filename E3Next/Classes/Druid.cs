@@ -65,7 +65,7 @@ namespace E3Core.Classes
                         if (!haveBardSong)
                         {
 
-                            Casting.Cast(0, _cheetaSpell);
+                            Casting.Cast(E3.CurrentId, _cheetaSpell);
                         }
                     }
                 }
