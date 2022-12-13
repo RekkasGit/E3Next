@@ -813,6 +813,11 @@ namespace E3NextUI
                 return;
             }
         }
+
+        private void hideToolStripMenuItem_Click(object sender, EventArgs e)
+        {
+            ToggleShow();
+        }
     }
     public class TextBoxInfo
     {

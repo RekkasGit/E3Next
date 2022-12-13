@@ -109,7 +109,7 @@ namespace E3Core.Processors
                     _spawns.RefreshList();
                     if (_spawns.TryByID(targetId, out ct))
                     {
-                        if (AllowControl)
+                        if (AllowControl && targetId!=E3.CurrentId)
                         {
                             AssistTargetID = targetId;
                         }
@@ -280,6 +280,15 @@ namespace E3Core.Processors
                     //why even check, if its not ready?
                     if (Casting.CheckReady(ability))
                     {
+
+                        if (!String.IsNullOrWhiteSpace(ability.Ifs))
+                        {
+                            if (!Casting.Ifs(ability))
+                            {
+                                continue;
+                            }
+                        }
+
                         if (!String.IsNullOrWhiteSpace(ability.CastIF))
                         {
                             if (!MQ.Query<bool>($"${{Bool[${{Target.Buff[{ability.CastIF}]}}]}}"))
@@ -326,6 +335,7 @@ namespace E3Core.Processors
                         }
                         else if (ability.CastType == Data.CastType.AA)
                         {
+
                             Casting.Cast(AssistTargetID, ability);
                         }
                         else if (ability.CastType == Data.CastType.Disc)
@@ -340,13 +350,7 @@ namespace E3Core.Processors
                             {
                                 if (endurance > enduranceCost)
                                 {
-                                    if (!String.IsNullOrWhiteSpace(ability.Ifs))
-                                    {
-                                        if (!Casting.Ifs(ability))
-                                        {
-                                            continue;
-                                        }
-                                    }
+                                    
                                     if (ability.TargetType == "Self")
                                     {
                                         if(!MQ.Query<bool>("${Me.ActiveDisc.ID}"))
