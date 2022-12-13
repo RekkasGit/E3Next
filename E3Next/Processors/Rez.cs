@@ -91,6 +91,7 @@ namespace E3Core.Processors
                             _waitingOnRez = false;
                             MQ.Cmd("/beep");
                             E3.Bots.Broadcast("\agWaitForRez:\arERROR! \atLoot Window stuck open, please help.");
+                            E3.Bots.BroadcastCommand("/popup ${Me} loot window stuck open", false);
                             MQ.Delay(1000);
                             return;
 

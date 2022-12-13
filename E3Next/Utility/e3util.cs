@@ -473,6 +473,7 @@ namespace E3Core.Utility
             if(!windowOpen)
             {
                 MQ.Write("\arError could not give target what is on our cursor, putting it in inventory");
+                E3.Bots.BroadcastCommand($"/popup ${{Me}} cannot give ${{Cursor.Name}} to ${{Target}}", false);
                 MQ.Cmd("/beep");
                 MQ.Delay(100);
                 MQ.Cmd("/autoinv");

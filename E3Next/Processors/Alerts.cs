@@ -36,6 +36,7 @@ namespace E3Core.Processors
                 if (!MQ.Query<bool>("${Bool[${FindItem[=Mirrored Mask]}]}"))
                 {
                     E3.Bots.Broadcast("I don't have a mirrored mask, I dun messed up.");
+                    E3.Bots.BroadcastCommand("/popup ${Me} doesn't have a mirrored mask.");
                     MQ.Cmd("/beep");
                     return;
                 }
