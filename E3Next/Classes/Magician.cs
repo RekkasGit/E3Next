@@ -121,6 +121,12 @@ namespace E3Core.Classes
                         return;
                     }
 
+                    if (_spawns.Get().First(w => w.ID == theirPetId).Level == 1)
+                    {
+                        MQ.Cmd($"/t {_requester} Your pet is just a familiar!");
+                        return;
+                    }
+
                     ArmPet(theirPetId, $"{weaponSplit[0]}|{weaponSplit[1]}");
                 }
             });
@@ -264,6 +270,8 @@ namespace E3Core.Classes
 
             var foundPrimary = MQ.Query<bool>($"${{FindItem[={primary}]}}");
             var foundSecondary = MQ.Query<bool>($"${{FindItem[={secondary}]}}");
+            
+
             if (!foundPrimary || !foundSecondary)
             {
                 var foundWeaponBag = MQ.Query<bool>($"${{FindItem[={_weaponBag}]}}");
