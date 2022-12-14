@@ -195,6 +195,12 @@ namespace E3Core.Classes
                     {
                         continue;
                     }
+                    
+                    var theirPetLevel = MQ.Query<int>($"${{Spawn[{ownerSpawn.Name}].Pet.Level}}");
+                    if (theirPetLevel == 1)
+                    {
+                        continue;
+                    }
 
                     var theirPetPrimary = MQ.Query<int>($"${{Spawn[{ownerSpawn.Name}].Pet.Primary}}");
                     if (theirPetPrimary == 0)
