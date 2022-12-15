@@ -599,12 +599,14 @@ namespace E3Core.Processors
             var consentEvents = new List<string> { "(.+) tells you, '(?i)Consent'", "(.+) tells the raid,  '(?i)Consent'", "<(.+)> (?i)Consent" };
             EventProcessor.RegisterEvent("consent", consentEvents, x =>
             {
-                if (x.match.Groups.Count == 0) return;
-                var sender = x.match.Groups[1].Value;
-                // of course i know him. he's me
-                if (string.Equals(sender, E3.CurrentName)) return;
+                if (x.match.Groups.Count > 1)
+                {
+                    var sender = x.match.Groups[1].Value;
+                    // of course i know him. he's me
+                    if (string.Equals(sender, E3.CurrentName)) return;
 
-                MQ.Cmd($"/consent {sender}");
+                    MQ.Cmd($"/consent {sender}");
+                }
             });
         }
 
