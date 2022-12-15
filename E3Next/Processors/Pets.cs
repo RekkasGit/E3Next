@@ -44,6 +44,7 @@ namespace E3Core.Processors
         [ClassInvoke(Data.Class.PetClass)]
         public static void Check_Pets()
         {
+            if (Basics.InCombat() && !E3.CharacterSettings.Pet_SummonCombat) return;
             if (E3.IsInvis) return;
             if (Basics.AmIDead()) return;
 
