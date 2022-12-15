@@ -596,7 +596,7 @@ namespace E3Core.Processors
             });
 
             EventProcessor.RegisterCommand("/gathercorpses", x => GatherCorpses());
-            var consentEvents = new List<string> { "(.+) tells you, '(?i)Consent'", "(.+) tells the raid,  'Consent'", "<(.+)> Consent" };
+            var consentEvents = new List<string> { "(.+) tells you, '(?i)Consent'", "(.+) tells the raid,  '(?i)Consent'", "<(.+)> (?i)Consent" };
             EventProcessor.RegisterEvent("consent", consentEvents, x =>
             {
                 if (x.match.Groups.Count == 0) return;
