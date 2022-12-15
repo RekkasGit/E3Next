@@ -165,12 +165,6 @@ namespace E3Core.Classes
 
         public static void ArmPets()
         {
-            if (MQ.Query<bool>("${AdvPath.Following}") || MQ.Query<bool>("${Nav.Active}"))
-            {
-                E3.Bots.Broadcast("\arI am in following or navving and cannot continue.");
-                return;
-            }
-
             if (MQ.Query<int>("${Cursor.ID}") > 0)
             {
                 if (!e3util.ClearCursor())
