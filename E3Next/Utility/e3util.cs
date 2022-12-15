@@ -692,62 +692,6 @@ namespace E3Core.Utility
             }
         }
 
-        public static void NavToLocXYZ(int locX, int locY, int locZ)
-        {
-            bool navPathExists = MQ.Query<bool>($"${{Navigation.PathExists[locxyz {locX} {locY} {locZ}]}}");
-            bool navActive = MQ.Query<bool>("${Navigation.Active}");
-
-            if (!navPathExists)
-            {
-                //early return if no path available
-                MQ.Write($"\arNo nav path available to location X:{locX} Y:{locY} Z:{locZ}");
-                return;
-            }
-
-            int timeoutInMS = 3000;
-
-            MQ.Cmd($"/nav locxyz {locX} {locY} {locZ}");
-
-            Int64 endTime = Core.StopWatch.ElapsedMilliseconds + timeoutInMS;
-            MQ.Delay(300);
-
-            while (navPathExists && MQ.Query<int>("${Navigation.Velocity}") > 0)
-            {
-                Double meX = MQ.Query<Double>("${Me.X}");
-                Double meY = MQ.Query<Double>("${Me.Y}");
-
-                if (endTime < Core.StopWatch.ElapsedMilliseconds)
-                {
-                    //stop nav if we exceed the timeout
-                    MQ.Write("Stopping because timeout exceeded for navigation");
-                    MQ.Cmd($"/nav stop");
-                    break;
-                }
-                MQ.Delay(1000);
-
-                navActive = MQ.Query<bool>("${Navigation.Active}");
-                if (!navActive)
-                {
-                    //kick out if Nav ended during delay
-                    break;
-                }
-                
-                Double tmeX = MQ.Query<Double>("${Me.X}");
-                Double tmeY = MQ.Query<Double>("${Me.Y}");
-
-                if ((int)meX == (int)tmeX && (int)meY == (int)tmeY)
-                {
-                    //we are stuck, kick out
-                    E3.Bots.Broadcast("${Me} stopping Nav because we appear to be stuck.");
-                    MQ.Cmd($"/nav stop");
-                    break;
-                }
-                //add additional time to get to target
-                endTime += timeoutInMS;
-                navPathExists = MQ.Query<bool>($"${{Navigation.PathExists[locxyz {locX} {locY} {locZ}]}}");
-            }
-        }
-
         private static void NavToLoc(Double locX, Double locY, Double locZ=-1.00)
         {
             bool navPathExists;
@@ -836,53 +780,7 @@ namespace E3Core.Utility
                 }
             }
         }
-        public static void NavToLocXY(Double locX, Double locY)
-        {
-            bool navPathExists = MQ.Query<bool>($"${{Navigation.PathExists[locxy {locX} {locY}]}}");
-
-            if (!navPathExists)
-            {
-                //early return if no path available
-                MQ.Write($"\arNo nav path available to location X:{locX} Y:{locY}");
-                return;
-            }
-
-            int timeoutInMS = 3000;
-
-            MQ.Cmd($"/nav locxy {locX} {locY}");
-
-            Int64 endTime = Core.StopWatch.ElapsedMilliseconds + timeoutInMS;
-            MQ.Delay(300);
-
-            while (navPathExists && MQ.Query<int>("${Navigation.Velocity}") > 0)
-            {
-                Double meX = MQ.Query<Double>("${Me.X}");
-                Double meY = MQ.Query<Double>("${Me.Y}");
-
-                if (endTime < Core.StopWatch.ElapsedMilliseconds)
-                {
-                    //stop nav if we exceed the timeout
-                    MQ.Write("Stopping because timeout exceeded for navigation");
-                    MQ.Cmd($"/nav stop");
-                    break;
-                }
-                MQ.Delay(1000);
-
-                Double tmeX = MQ.Query<Double>("${Me.X}");
-                Double tmeY = MQ.Query<Double>("${Me.Y}");
-
-                if ((int)meX == (int)tmeX && (int)meY == (int)tmeY)
-                {
-                    //we are stuck, kick out
-                    E3.Bots.Broadcast("${Me} stopping Nav because we appear to be stuck.");
-                    MQ.Cmd($"/nav stop");
-                    break;
-                }
-                //add additional time to get to target
-                endTime += timeoutInMS;
-                navPathExists = MQ.Query<bool>($"${{Navigation.PathExists[locxy {locX} {locY}]}}");
-            }
-        }
+        
 
         public static void OpenMerchant()
         {
