@@ -103,7 +103,11 @@ namespace E3Core.Classes
                 else
                 {
                     E3.CharacterSettings.PetWeapons.TryGetValue(_requester, out var weapons);
-                    weaponSplit = weapons.Split('|');
+                    if (!String.IsNullOrWhiteSpace(weapons))
+                    {
+                        weaponSplit = weapons.Split('|');
+                    }
+                    
                 }
 
                 if(_spawns.TryByName(_requester, out var requesterSpawn))
