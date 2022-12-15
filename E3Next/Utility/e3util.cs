@@ -236,6 +236,7 @@ namespace E3Core.Utility
             if (inputs.Contains(E3.CurrentShortClassString, StringComparer.OrdinalIgnoreCase))
             {
                 returnValue = inputSetValue;
+                return returnValue;
             }
             if (inputs.Contains("Healers", StringComparer.OrdinalIgnoreCase))
             {
