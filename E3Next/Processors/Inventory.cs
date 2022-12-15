@@ -377,7 +377,7 @@ namespace E3Core.Processors
                 string itemName = x.args[0];
                 if (x.args.Count == 1)
                 {
-                    E3.Bots.BroadcastCommandToGroup($"/fic \"{itemName}\" all", x);
+                    E3.Bots.BroadcastCommand($"/fic \"{itemName}\" all");
                 }
 
                 if (!e3util.FilterMe(x))
@@ -391,7 +391,7 @@ namespace E3Core.Processors
                 string itemName = x.args[0];
                 if (x.args.Count == 1)
                 {
-                    E3.Bots.BroadcastCommandToGroup($"/finditem \"{itemName}\" all", x);
+                    E3.Bots.BroadcastCommand($"/finditem \"{itemName}\" all");
                 }
 
                 if (!e3util.FilterMe(x))

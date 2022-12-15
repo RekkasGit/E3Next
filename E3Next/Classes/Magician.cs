@@ -103,7 +103,11 @@ namespace E3Core.Classes
                 else
                 {
                     E3.CharacterSettings.PetWeapons.TryGetValue(_requester, out var weapons);
-                    weaponSplit = weapons.Split('|');
+                    if (!String.IsNullOrWhiteSpace(weapons))
+                    {
+                        weaponSplit = weapons.Split('|');
+                    }
+                    
                 }
 
                 if(_spawns.TryByName(_requester, out var requesterSpawn))
@@ -118,6 +122,12 @@ namespace E3Core.Classes
                     if (_spawns.Get().First(w => w.ID == theirPetId).Distance > 50)
                     {
                         MQ.Cmd($"/t {_requester} Your pet is too far away!");
+                        return;
+                    }
+
+                    if (_spawns.Get().First(w => w.ID == theirPetId).Level == 1)
+                    {
+                        MQ.Cmd($"/t {_requester} Your pet is just a familiar!");
                         return;
                     }
 
@@ -195,6 +205,12 @@ namespace E3Core.Classes
                     {
                         continue;
                     }
+                    
+                    var theirPetLevel = MQ.Query<int>($"${{Spawn[{ownerSpawn.Name}].Pet.Level}}");
+                    if (theirPetLevel == 1)
+                    {
+                        continue;
+                    }
 
                     var theirPetPrimary = MQ.Query<int>($"${{Spawn[{ownerSpawn.Name}].Pet.Primary}}");
                     if (theirPetPrimary == 0)
@@ -258,6 +274,8 @@ namespace E3Core.Classes
 
             var foundPrimary = MQ.Query<bool>($"${{FindItem[={primary}]}}");
             var foundSecondary = MQ.Query<bool>($"${{FindItem[={secondary}]}}");
+            
+
             if (!foundPrimary || !foundSecondary)
             {
                 var foundWeaponBag = MQ.Query<bool>($"${{FindItem[={_weaponBag}]}}");
