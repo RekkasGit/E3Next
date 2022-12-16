@@ -84,7 +84,7 @@ namespace E3Core.Processors
                 Int32 augCount = MQ.Query<Int32>($"${{Me.Inventory[{i}].Augs}}");
                 if (augCount > 0)
                 {
-                    for (int a = 1; a <= augCount; a++)
+                    for (int a = 1; a <= 6; a++)
                     {
                         string augname = MQ.Query<string>($"${{Me.Inventory[{i}].AugSlot[{a}].Name}}");
 
