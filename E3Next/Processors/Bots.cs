@@ -18,7 +18,7 @@ namespace E3Core.Processors
         Int32 PctHealth(string name);
         List<string> BotsConnected();
         Boolean HasShortBuff(string name, Int32 buffid);
-        void BroadcastCommand(string command, bool noparse = false);
+        void BroadcastCommand(string command, bool noparse = false, CommandMatch match = null);
         void BroadcastCommandToGroup(string command, CommandMatch match=null);
         void BroadcastCommandToPerson(string person, string command);
         void Broadcast(string message);
@@ -64,9 +64,27 @@ namespace E3Core.Processors
         {
             MQ.Cmd($"/bct {person} /{command}");
         }
-        public void BroadcastCommand(string command,bool noparse = false)
+        public void BroadcastCommand(string command,bool noparse = false, CommandMatch match = null)
         {
-            if(noparse)
+            if (match != null && match.filters.Count > 0)
+            {
+                //need to pass over the filters if they exist
+                _strinbBuilder.Clear();
+                _strinbBuilder.Append($"/bca /{command}");
+                foreach (var filter in match.filters)
+                {
+                    _strinbBuilder.Append($" \"{filter}\"");
+                }
+                if (noparse)
+                {
+                    MQ.Cmd($"/noparse {_strinbBuilder.ToString()}");
+                }
+                else
+                {
+                    MQ.Cmd(_strinbBuilder.ToString());
+                }
+            }
+            else if (noparse)
             {
                 MQ.Cmd($"/noparse /bca /{command}");
             }
@@ -246,9 +264,28 @@ namespace E3Core.Processors
             MQ.Cmd($"/dga {message}");
         }
 
-        public void BroadcastCommand(string command, bool noparse = false)
+        public void BroadcastCommand(string command, bool noparse = false, CommandMatch match = null)
         {
-            if (noparse)
+
+            if (match != null && match.filters.Count > 0)
+            {
+                //need to pass over the filters if they exist
+                _strinbBuilder.Clear();
+                _strinbBuilder.Append($"/dgae /{command}");
+                foreach (var filter in match.filters)
+                {
+                    _strinbBuilder.Append($" \"{filter}\"");
+                }
+                if (noparse)
+                {
+                    MQ.Cmd($"/noparse {_strinbBuilder.ToString()}");
+                }
+                else
+                {
+                    MQ.Cmd(_strinbBuilder.ToString());
+                }
+            }
+            else if (noparse)
             {
                 MQ.Cmd($"/noparse /dgae /{command}");
             }
@@ -256,7 +293,7 @@ namespace E3Core.Processors
             {
                 MQ.Cmd($"/dgae /{command}");
             }
-           
+
         }
 
         public void BroadcastCommandToGroup(string query, CommandMatch match = null)

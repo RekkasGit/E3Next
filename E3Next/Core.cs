@@ -11,6 +11,7 @@ using System.Text.RegularExpressions;
 using E3Core.Processors;
 using System.Runtime.InteropServices;
 using NetMQ;
+using System.Globalization;
 
 /// <summary>
 /// Version 0.1
@@ -54,6 +55,9 @@ namespace MonoCore
 
         public static void Process()
         {
+            //need to do this so double parses work in other languages
+            Thread.CurrentThread.CurrentCulture = new CultureInfo("en-US");
+
             //wait for the C++ thread thread to tell us we can go
             ProcessResetEvent.Wait();
             ProcessResetEvent.Reset();
@@ -173,6 +177,9 @@ namespace MonoCore
         /// </summary>
         public static void ProcessEventsIntoQueues()
         {
+            //need to do this so double parses work in other languages
+            Thread.CurrentThread.CurrentCulture = new CultureInfo("en-US");
+
             System.Text.RegularExpressions.Regex dannetRegex = new Regex("");
             char[] splitChars = new char[1] {' '};
 

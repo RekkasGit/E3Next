@@ -623,6 +623,20 @@ namespace E3Core.Processors
                 _assistIsEnraged = false;
                 MQ.Cmd("/makemevisible");
                 //Rez.Reset();
+
+                bool hasAllFlag = false;
+                foreach(var argValue in x.args)
+                {
+                    if(argValue.StartsWith("/all"))
+                    {
+                        hasAllFlag = true;
+                    }
+                }
+                if(hasAllFlag)
+                {
+                    x.args.Remove("/all");
+                }
+
                 if (x.args.Count == 0)
                 {
                   
@@ -640,7 +654,15 @@ namespace E3Core.Processors
                         AssistOn(targetID);
 
                     }
-                    E3.Bots.BroadcastCommandToGroup($"/assistme {targetID}",x);
+                    if(hasAllFlag)
+                    {
+                        E3.Bots.BroadcastCommand($"/assistme {targetID}",false, x);
+                    }
+                    else
+                    {
+                        E3.Bots.BroadcastCommandToGroup($"/assistme {targetID}", x);
+                    }
+                   
                 }
                 else if (!e3util.FilterMe(x))
                 {

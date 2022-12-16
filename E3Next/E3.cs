@@ -8,6 +8,7 @@ using NetMQ;
 using System;
 using System.Collections.Generic;
 using System.Diagnostics;
+using System.Globalization;
 using System.Reflection;
 using System.Runtime.InteropServices;
 using System.Text;
@@ -217,8 +218,6 @@ namespace E3Core.Processors
 
             if (!IsInit)
             {
-
-
                 MQ.ClearCommands();
                 AsyncIO.ForceDotNet.Force();
 

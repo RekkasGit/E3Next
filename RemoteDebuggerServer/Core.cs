@@ -12,6 +12,7 @@ using Nancy;
 using Nancy.Hosting.Self;
 using NetMQ.Sockets;
 using NetMQ;
+using System.Globalization;
 
 /// <summary>
 /// Version 0.1
@@ -76,7 +77,9 @@ namespace MonoCore
         public static void Init()
         {
 
-         
+            //need to do this so double parses work in other languages
+            Thread.CurrentThread.CurrentCulture = new CultureInfo("en-US");
+
             _netmqServer = new RouterServer();
             _netmqServer.Start();
 
