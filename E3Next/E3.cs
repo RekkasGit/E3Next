@@ -141,6 +141,7 @@ namespace E3Core.Processors
                 E3.Bots.Broadcast("\aoAuto-Reloading Character settings file...");
                 CharacterSettings = new CharacterSettings();
                 Loot.Reset();
+                GiveMe.Reset();
                 E3.Bots.Broadcast("\aoComplete!");
                
             }

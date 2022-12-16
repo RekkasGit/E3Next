@@ -92,6 +92,18 @@ namespace E3Core.Processors
                 }
             }
         }
+        public static void Reset()
+        {
+            _supplyList.Clear();
+            foreach (var input in E3.CharacterSettings.Gimme)
+            {
+                var item = new GiveMeItem(input);
+                if (!(String.IsNullOrWhiteSpace(item.Supplier) || String.IsNullOrWhiteSpace(item.ItemName)))
+                {
+                    _supplyList.Add(item);
+                }
+            }
+        }
 
         private static void RegisterEvents()
         {
