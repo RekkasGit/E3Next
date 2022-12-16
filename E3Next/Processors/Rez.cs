@@ -428,8 +428,29 @@ namespace E3Core.Processors
                     _currentRezSpells.Add(new Spell(spellName));
                 }
             }
-
         }
+
+        private static void GatherCorpses()
+        {
+            if (MQ.Query<bool>("${Raid.Members}"))
+            {
+                MQ.Cmd($"/rs Consent");
+            }
+            else
+            {
+                E3.Bots.Broadcast($"Consent");
+            }
+
+            RefreshCorpseList();
+            foreach(var corpse in _corpseList)
+            {
+                Casting.TrueTarget(corpse);
+                MQ.Cmd("/corpse");
+            }
+
+            MQ.Cmd("/squelch /target clear");
+        }
+
         private static void RegisterEvents()
         {
 
@@ -571,6 +592,20 @@ namespace E3Core.Processors
                 if (x.args.Count > 0)
                 {
                     E3.Bots.BroadcastCommandToGroup($"/WaitRez {x.args[0]}");
+                }
+            });
+
+            EventProcessor.RegisterCommand("/gathercorpses", x => GatherCorpses());
+            var consentEvents = new List<string> { "(.+) tells you, '(?i)Consent'", "(.+) tells the raid,  '(?i)Consent'", "<(.+)> (?i)Consent" };
+            EventProcessor.RegisterEvent("consent", consentEvents, x =>
+            {
+                if (x.match.Groups.Count > 1)
+                {
+                    var sender = x.match.Groups[1].Value;
+                    // of course i know him. he's me
+                    if (string.Equals(sender, E3.CurrentName)) return;
+
+                    MQ.Cmd($"/consent {sender}");
                 }
             });
         }
