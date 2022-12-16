@@ -19,7 +19,7 @@ namespace E3Core.Processors
         private static ISpawns _spawns = E3.Spawns;
         public static bool _waitingOnRez = false;
         private static long _nextAutoRezCheck = 0;
-        private static long _nextAutoRezCheckInterval = 10000;
+        private static long _nextAutoRezCheckInterval = 1000;
         private static readonly Spell _divineRes = new Spell("Divine Resurrection");
         private static readonly HashSet<string> _classesToDr = new HashSet<string> { "Cleric", "Warrior", "Paladin", "Shadow Knight" };
         private static bool _skipAutoRez = false;
