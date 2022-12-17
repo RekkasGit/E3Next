@@ -366,6 +366,10 @@ namespace E3Core.Processors
                                 }
                             }
                         }
+                        else if (ability.CastType == Data.CastType.Item)
+                        {
+                            Casting.Cast(AssistTargetID, ability);
+                        }
                     }
                 }
             }
