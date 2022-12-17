@@ -492,7 +492,7 @@ namespace E3Core.Settings
                 newFile.Sections.AddSection("Druid");
                 section = newFile.Sections.GetSectionData("Druid");
                 section.Keys.AddKey("Evac Spell", "");
-                section.Keys.AddKey("Auto-Cheetah (On/Off)", "On");
+                section.Keys.AddKey("Auto-Cheetah (On/Off)", "Off");
 
             }
 

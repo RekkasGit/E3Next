@@ -627,7 +627,7 @@ namespace E3Core.Processors
                 bool hasAllFlag = false;
                 foreach(var argValue in x.args)
                 {
-                    if(argValue.StartsWith("/all"))
+                    if(argValue.StartsWith("/all", StringComparison.OrdinalIgnoreCase))
                     {
                         hasAllFlag = true;
                     }
@@ -695,7 +695,21 @@ namespace E3Core.Processors
 
             });
             EventProcessor.RegisterCommand("/backoff", (x) =>
-            {   
+            {
+
+                bool hasAllFlag = false;
+                foreach (var argValue in x.args)
+                {
+                    if (argValue.StartsWith("/all", StringComparison.OrdinalIgnoreCase))
+                    {
+                        hasAllFlag = true;
+                    }
+                }
+                if (hasAllFlag)
+                {
+                    x.args.Remove("/all");
+                }
+
                 if (!e3util.FilterMe(x))
                 {
                     AssistOff();
@@ -705,7 +719,15 @@ namespace E3Core.Processors
                 }
                 if (x.args.Count == 0)
                 {     //we are telling people to back off
-                    E3.Bots.BroadcastCommandToGroup($"/backoff all",x);
+                    if(hasAllFlag)
+                    {
+                        E3.Bots.BroadcastCommand($"/backoff all",false, x);
+                    }
+                    else
+                    {
+                        E3.Bots.BroadcastCommandToGroup($"/backoff all", x);
+                    }
+                   
                 }
             });
             e3util.RegisterCommandWithTarget("/e3offassistignore", (x)=> { _offAssistIgnore.Add(x); });

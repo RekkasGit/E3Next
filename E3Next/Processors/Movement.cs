@@ -300,6 +300,20 @@ namespace E3Core.Processors
             EventProcessor.RegisterCommand("/followme", (x) =>
             {
                 string user = string.Empty;
+
+                bool hasAllFlag = false;
+                foreach (var argValue in x.args)
+                {
+                    if (argValue.StartsWith("/all", StringComparison.OrdinalIgnoreCase))
+                    {
+                        hasAllFlag = true;
+                    }
+                }
+                if (hasAllFlag)
+                {
+                    x.args.Remove("/all");
+                }
+
                 if (x.args.Count > 0)
                 {
                     if (!e3util.FilterMe(x))
@@ -321,16 +335,45 @@ namespace E3Core.Processors
                 {
                     Rez.Reset();
                     //we are telling people to follow us
-                    E3.Bots.BroadcastCommandToGroup("/followme " + E3.CurrentName, x);
+                    if(hasAllFlag)
+                    {
+                        E3.Bots.BroadcastCommand("/followme " + E3.CurrentName,false, x);
+                    }
+                    else
+                    {
+                        E3.Bots.BroadcastCommandToGroup("/followme " + E3.CurrentName, x);
+                    }
+                   
                 }
             });
             EventProcessor.RegisterCommand("/followoff", (x) =>
             {
+                bool hasAllFlag = false;
+                foreach (var argValue in x.args)
+                {
+                    if (argValue.StartsWith("/all", StringComparison.OrdinalIgnoreCase))
+                    {
+                        hasAllFlag = true;
+                    }
+                }
+                if (hasAllFlag)
+                {
+                    x.args.Remove("/all");
+                }
                 RemoveFollow();
                 if (x.args.Count == 0)
                 {
-                    //we are telling people to follow us
-                    E3.Bots.BroadcastCommandToGroup("/followoff all");
+                    if(hasAllFlag)
+                    {
+                        //we are telling people to follow us
+                        E3.Bots.BroadcastCommand("/followoff all");
+                    }
+                    else
+                    {
+                        //we are telling people to follow us
+                        E3.Bots.BroadcastCommandToGroup("/followoff all");
+                    }
+                   
                 }
             });
             EventProcessor.RegisterCommand("/rtz", (x) =>
