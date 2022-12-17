@@ -86,6 +86,12 @@ namespace E3Core.Processors
                         {
                             return;
                         }
+
+                        if(spawn.MasterID>0)
+                        {
+                            return;
+                        }
+
                     }
                     E3.Bots.Broadcast($"\agTell from: \ap{name}\ag, message: \ao'{x.match.Groups[2].Value}'");
                 }
