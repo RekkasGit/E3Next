@@ -263,7 +263,7 @@ namespace E3Core.Processors
        
                 if (!Movement.IsMoving() && !Movement.Following)
                 {
-                    if (Basics.InCombat())
+                    if (Assist.IsAssisting)
                     {
                         BuffBots(E3.CharacterSettings.CombatBuffs);
                     }
