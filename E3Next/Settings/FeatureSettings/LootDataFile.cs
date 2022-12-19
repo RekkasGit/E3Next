@@ -53,7 +53,7 @@ namespace E3Core.Settings.FeatureSettings
                 var parsedData = fileIniData.ReadFile(fileNameFullPath);
                 
                 //because of the old loot system, need to do 4 regex, and get more specific as we go down 
-                //before ew go non specific on regex4
+                //before we go non specific on regex4
 
                 //plat/copper exist
                 System.Text.RegularExpressions.Regex regex1 = new System.Text.RegularExpressions.Regex(@"(.+?)\d+p\d+c", System.Text.RegularExpressions.RegexOptions.Compiled);

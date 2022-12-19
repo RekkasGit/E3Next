@@ -170,6 +170,7 @@ namespace E3Core.Processors
         public static bool IsMoving()
         {
             bool moving = false;
+            if (!moving && MQ.Query<bool>("${Me.Moving}")) moving = true;
             if (!moving && MQ.Query<bool>("${AdvPath.Following}")) moving = true;
             if (!moving && MQ.Query<bool>("${MoveTo.Moving}")) moving = true;
             if (!moving && MQ.Query<bool>("${Navigation.Active}")) moving = true;
