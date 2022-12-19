@@ -260,12 +260,8 @@ namespace E3Core.Processors
 
             using (_log.Trace())
             {
-                bool moving = false;
-                if (MQ.Query<bool>("${Stick.Status.Equal[on]}")) moving = true;
-                if (MQ.Query<bool>("${AdvPath.Following}")) moving = true;
-                if (MQ.Query<bool>("${MoveTo.Moving}")) moving = true;
-
-                if(!moving && !Movement.Following)
+       
+                if (!Movement.IsMoving() && !Movement.Following)
                 {
                     if (Basics.InCombat())
                     {

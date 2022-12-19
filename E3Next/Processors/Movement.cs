@@ -167,7 +167,14 @@ namespace E3Core.Processors
                 MoveToAnchor();
             }
         }
-
+        public static bool IsMoving()
+        {
+            bool moving = false;
+            if (!moving && MQ.Query<bool>("${AdvPath.Following}")) moving = true;
+            if (!moving && MQ.Query<bool>("${MoveTo.Moving}")) moving = true;
+            if (!moving && MQ.Query<bool>("${Navigation.Active}")) moving = true;
+            return moving;
+        }
         public static void MoveToAnchor()
         {
             _spawns.RefreshList();
