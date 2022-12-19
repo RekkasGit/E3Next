@@ -30,6 +30,7 @@ namespace E3Core.Settings
         public bool AutoMisfitBox;
         public bool AttackOffOnEnrage;
         public bool RelayTells;
+        public Int32 Loot_LootItemDelay = 300;
         public string Loot_LinkChannel = String.Empty;
         public List<string> Loot_LinkChannelValid = new List<string>() {"g","gu","say","rsay","shout"};
 
@@ -128,6 +129,10 @@ namespace E3Core.Settings
 
 
             LoadKeyData("Loot", "Corpse Seek Radius", parsedData, ref Loot_CorpseSeekRadius);
+            LoadKeyData("Loot", "LootItemDelay", parsedData, ref Loot_LootItemDelay);
+            //no lower than 300ms
+            if (Loot_LootItemDelay < 300) Loot_LootItemDelay = 300;
+
             LoadKeyData("Loot", "Loot in Combat", parsedData, ref Loot_LootInCombat);
             LoadKeyData("Loot", "NumOfFreeSlotsOpen(1+)", parsedData, ref Loot_NumberOfFreeSlotsOpen);
             LoadKeyData("Loot", "Loot Only Stackable: Enable (On/Off)", parsedData, ref Loot_OnlyStackableEnabled);
@@ -208,6 +213,7 @@ namespace E3Core.Settings
             section.Keys.AddKey("Loot Only Stackable: With Value Greater Than Or Equal in Copper", "10000");
             section.Keys.AddKey("Loot Only Stackable: Loot common tradeskill items ie:pelts ores silks etc (On/Off)", "Off");
             section.Keys.AddKey("Loot Only Stackable: Loot all Tradeskill items (On/Off)", "Off");
+            section.Keys.AddKey("LootItemDelay", "300");
 
             //Corpse Summoning
             newFile.Sections.AddSection("Corpse Summoning");

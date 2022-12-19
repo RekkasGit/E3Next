@@ -291,7 +291,9 @@ namespace E3Core.Processors
 
             }
             MQ.Delay(500, "${Corpse.Items}");
-            MQ.Delay(300);//wait a little longer to let the items finish populating.
+
+            MQ.Delay(E3.GeneralSettings.Loot_LootItemDelay);//wait a little longer to let the items finish populating, for EU people they may need to increase this.
+
             Int32 corpseItems = MQ.Query<Int32>("${Corpse.Items}");
 
             if (corpseItems == 0)
