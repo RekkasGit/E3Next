@@ -104,7 +104,7 @@ namespace E3Core.Processors
                 }
                 else
                 {
-                    //we are turning our own loot on.
+                    //we are turning our own loot off.
                     _shouldLoot = false;
                     E3.Bots.Broadcast("\agTurning Off Loot.");
                 }
@@ -234,8 +234,10 @@ namespace E3Core.Processors
                 
                 foreach(var c in corpses)
                 {
+                    EventProcessor.ProcessEventsInQueues("/lootoff");
+                    if (!_shouldLoot) return;
 
-                    if(!E3.GeneralSettings.Loot_LootInCombat)
+                    if (!E3.GeneralSettings.Loot_LootInCombat)
                     {
                         if (Basics.InCombat()) return;
                     }

@@ -260,28 +260,28 @@ namespace E3Core.Processors
 
             using (_log.Trace())
             {
-                bool moving = MQ.Query<bool>("${Me.Moving}");
+                bool moving = false;
+                if (MQ.Query<bool>("${Stick.Status.Equal[on]}")) moving = true;
+                if (MQ.Query<bool>("${AdvPath.Following}")) moving = true;
+                if (MQ.Query<bool>("${MoveTo.Moving}")) moving = true;
 
-
-                //e3util.PrintTimerStatus(_buffTimers, ref _printoutTimer, "Buffs");
-
-                if (Basics.InCombat())
+                if(!moving && !Movement.Following)
                 {
-                    BuffBots(E3.CharacterSettings.CombatBuffs);
-
+                    if (Basics.InCombat())
+                    {
+                        BuffBots(E3.CharacterSettings.CombatBuffs);
+                    }
+                    else
+                    {
+                        if (!E3.ActionTaken) BuffAuras();
+                        if (!E3.ActionTaken) BuffBots(E3.CharacterSettings.SelfBuffs);
+                        if (!E3.ActionTaken) BuffBots(E3.CharacterSettings.BotBuffs);
+                        if (!E3.ActionTaken) BuffBots(E3.CharacterSettings.PetBuffs, true);
+                        //TODO: Auras
+                    }
                 }
-                else if (!moving && !Movement.Following)
-                {
-                    if (!E3.ActionTaken) BuffAuras();
-                    if (!E3.ActionTaken) BuffBots(E3.CharacterSettings.SelfBuffs);
-                    if (!E3.ActionTaken) BuffBots(E3.CharacterSettings.BotBuffs);
-                    if (!E3.ActionTaken) BuffBots(E3.CharacterSettings.PetBuffs, true);
-                    //TODO: Auras
-                }
-
-
+                
             }
-
 
         }
         private static void BuffInstant(List<Data.Spell> buffs)

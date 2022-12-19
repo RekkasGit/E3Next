@@ -525,8 +525,6 @@ namespace E3Core.Processors
                             }
                             resist.SpellCounters[spell.SpellID] = 99;
                         }
-
-
                         //MQ.Write($"{spell.CastName} Result:{returnValue.ToString()}");
 
                         //is an after spell configured? lets do that now.
@@ -559,26 +557,10 @@ namespace E3Core.Processors
                         E3.ActionTaken = true;
                         //clear out the queues for the resist counters as they may have a few that lagged behind.
                         ClearResistChecks();
-
-                        navPaused = MQ.Query<bool>("${Navigation.Paused}");
-
-                        if (navPaused && e3PausedNav)
-                        {
-                            MQ.Cmd("/nav pause");
-                        }
-
                         return returnValue;
 
                     }
                     MQ.Write($"\arInvalid targetId for Casting. {targetID}");
-
-                    navPaused = MQ.Query<bool>("${Navigation.Paused}");
-
-                    if (navPaused && e3PausedNav)
-                    {
-                        MQ.Cmd("/nav pause");
-                    }
-
                     E3.ActionTaken = true;
                     return CastReturn.CAST_NOTARGET;
                 }
@@ -586,9 +568,16 @@ namespace E3Core.Processors
             finally
             {
                 PubServer.AddTopicMessage("${Casting}", String.Empty);
+               
+                if (e3PausedNav)
+                {
+                    navPaused = MQ.Query<bool>("${Navigation.Paused}");
+                    if (navPaused)
+                    {
+                        MQ.Cmd("/nav pause");
+                    }
+                }
             }
-
-            
         }
         private static bool NowCastReady()
         {
