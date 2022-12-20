@@ -394,8 +394,9 @@ namespace E3Core.Processors
                     {
                         Int32 currentZone = MQ.Query<Int32>("${Zone.ID}");
                         MQ.Cmd($"/face fast heading {heading * -1}");
+                        MQ.Delay(600);
                         MQ.Cmd("/nomodkey /keypress forward hold");
-                        MQ.Delay(1000);
+                        MQ.Delay(3000);
                         Int32 counter = 0;
                         while (Zoning.CurrentZone.Id == currentZone && counter < 20)
                         {
@@ -403,7 +404,7 @@ namespace E3Core.Processors
                             MQ.Delay(100);
                             currentZone = MQ.Query<Int32>("${Zone.ID}");
                         }
-                        MQ.Cmd("/nomodkey /keypress forward");
+                        //MQ.Cmd("/nomodkey /keypress forward");
 
                     }
                 }
@@ -413,7 +414,7 @@ namespace E3Core.Processors
                     //get our faced heading
                     double heading = MQ.Query<double>("${Me.Heading.Degrees}");
                     E3.Bots.BroadcastCommandToGroup($"/rtz {heading}");
-                    MQ.Delay(500);
+                    MQ.Delay(1000);
                     MQ.Cmd($"/face fast heading {heading * -1}");
                     MQ.Cmd("/nomodkey /keypress forward hold");
 

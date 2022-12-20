@@ -973,16 +973,25 @@ namespace E3Core.Processors
             //now to get the target
             if (MQ.Query<Int32>($"${{SpawnCount[id {targetID}]}}") > 0)
             {
-                MQ.Cmd($"/target id {targetID}");
-                MQ.Delay(600, $"${{Target.ID}}=={targetID}");
-                //swapping targets turn off autofire
-                if (MQ.Query<bool>("${Me.AutoFire}"))
+                //try 3 times
+                for(Int32 i=0;i<3;i++)
                 {
-                    MQ.Cmd("/autofire");
-                    //delay is needed to give time for it to actually process
-                    MQ.Delay(1000);
+                    MQ.Cmd($"/target id {targetID}");
+                    MQ.Delay(300, $"${{Target.ID}}=={targetID}");
+                    //swapping targets turn off autofire
+                    if (MQ.Query<bool>("${Me.AutoFire}"))
+                    {
+                        MQ.Cmd("/autofire");
+                        //delay is needed to give time for it to actually process
+                        MQ.Delay(1000);
+                    }
+                    if (MQ.Query<Int32>("${Target.ID}") == targetID)
+                    {
+                        return true;
+
+                    }
+                    MQ.Delay(0);
                 }
-                if (MQ.Query<Int32>("${Target.ID}") == targetID) return true;
                 return false;
             }
             else
