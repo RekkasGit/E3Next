@@ -45,7 +45,7 @@ namespace E3Core.Processors
         private static void RegsterEvents()
         {
 
-            EventProcessor.RegisterEvent("BuffMe", "(.+) tells you, '(?i)buffme'", (x) => {
+            EventProcessor.RegisterEvent("BuffMe", "(.+) tells you, '(?i)buff me'", (x) => {
 
                 if (x.match.Groups.Count > 1)
                 {
