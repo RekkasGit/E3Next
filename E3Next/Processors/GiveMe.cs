@@ -110,6 +110,9 @@ namespace E3Core.Processors
 
             EventProcessor.RegisterCommand("/giveme", (x) =>
             {
+
+                if (Basics.InCombat() && !E3.CharacterSettings.Gimme_InCombat) return;
+
                 //giveme Alara "Something" qty Rekken
                 if (x.args.Count > 3)
                 {

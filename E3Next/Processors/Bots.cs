@@ -23,7 +23,6 @@ namespace E3Core.Processors
         void BroadcastCommandToPerson(string person, string command);
         void Broadcast(string message);
         List<Int32> BuffList(string name);
-
         Int32 DebuffCounters(string name);
         Int32 DiseasedCounters(string name);
         Int32 PoisonedCounters(string name);

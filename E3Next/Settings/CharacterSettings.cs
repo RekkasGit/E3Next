@@ -79,6 +79,7 @@ namespace E3Core.Settings
 
         //gimme
         public List<string> Gimme = new List<string>();
+        public bool Gimme_InCombat = true;
         //pets
         public List<Spell> PetSpell = new List<Spell>();
         public List<Spell> PetHeals = new List<Spell>();
@@ -338,6 +339,7 @@ namespace E3Core.Settings
             LoadKeyData("Heals", "Auto Cast Necro Heal Orbs (On/Off)", ParsedData, ref HealAutoNecroOrbs);
             LoadKeyData("Off Assist Spells", "Main", ParsedData, OffAssistSpells);
             LoadKeyData("Gimme", "Gimme", ParsedData, Gimme);
+            LoadKeyData("Gimme", "Gimme-InCombat", ParsedData, ref Gimme_InCombat);
 
 
            // _log.Write($"Finished processing and loading: {fullPathToUse}");
@@ -561,7 +563,9 @@ namespace E3Core.Settings
 
             newFile.Sections.AddSection("Gimme");
             section = newFile.Sections.GetSectionData("Gimme");
+            section.Keys.AddKey("Gimme-InCombat", "On");
             section.Keys.AddKey("Gimme", "");
+
 
             newFile.Sections.AddSection("Ifs");
             newFile.Sections.AddSection("Events");
