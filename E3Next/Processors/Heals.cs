@@ -54,10 +54,10 @@ namespace E3Core.Processors
                 if (!E3.ActionTaken) HoTPets(currentMana, pctMana);
 
 
-                if((E3.CurrentClass&Data.Class.Tank)== E3.CurrentClass)
+                if ((E3.CurrentClass & Data.Class.Tank) == E3.CurrentClass)
                 {
                     Int32 currentTargetID = MQ.Query<Int32>("${Target.ID}");
-                    if(targetID>0 && currentTargetID!=targetID)
+                    if (targetID > 0 && currentTargetID != targetID)
                     {
                         Casting.TrueTarget(targetID);
                     }
@@ -409,6 +409,8 @@ namespace E3Core.Processors
                                     }
                                 }
                             }
+
+
                             //check netbots
                             bool botInZone = E3.Bots.InZone(name);
                             if (botInZone)
@@ -581,9 +583,9 @@ namespace E3Core.Processors
             Int32 targetID = MQ.Query<Int32>("${Target.ID}");
             foreach (var spell in E3.CharacterSettings.LifeSupport)
             {
-                if(pctHps<spell.HealPct)
+                if (pctHps < spell.HealPct)
                 {
-                    if(Casting.CheckReady(spell) && Casting.CheckMana(spell))
+                    if (Casting.CheckReady(spell) && Casting.CheckMana(spell))
                     {
                         if (JustCheck) return true;
                         Int32 targetIDToUse = myID;
@@ -591,10 +593,10 @@ namespace E3Core.Processors
                         if (spell.CastName.IndexOf("Divine Healing", 0, StringComparison.OrdinalIgnoreCase) > -1) targetIDToUse = 0;
                         if (spell.CastName.IndexOf("Sanguine Mind Crystal", 0, StringComparison.OrdinalIgnoreCase) > -1) targetIDToUse = 0;
                         Casting.Cast(targetIDToUse, spell);
-                        if((E3.CurrentClass& Data.Class.Tank)== E3.CurrentClass)
+                        if ((E3.CurrentClass & Data.Class.Tank) == E3.CurrentClass)
                         {
-                           
-                            if(targetID>0)
+
+                            if (targetID > 0)
                             {
                                 Casting.TrueTarget(targetID);
                             }

@@ -220,6 +220,11 @@ namespace E3Core.Processors
         private static Int64 _nextBuffCheck = 0;
         private static Int64 _nextBuffRefreshTimeInterval = 1000;
         private static StringBuilder _strinbBuilder = new StringBuilder();
+        public DanBots()
+        {
+            //set the observe delay to be a bit faster
+            MQ.Cmd("/dnet observedelay 200");
+        }
         public List<string> BotsConnected()
         {
             //project lazarus_alara|project lazarus_hordester|project lazarus_kusara|project lazarus_rekken|project lazarus_shadowvine|project lazarus_yona|
@@ -260,7 +265,7 @@ namespace E3Core.Processors
 
         public void Broadcast(string message)
         {
-            MQ.Cmd($"/dga {message}");
+            MQ.Cmd($"/dgt {message}");
         }
 
         public void BroadcastCommand(string command, bool noparse = false, CommandMatch match = null)
@@ -353,7 +358,7 @@ namespace E3Core.Processors
                 _buffListCollection[kvp.Key].Clear();
                 for (Int32 i=1;i<= _maxBuffSlots; i++)
                 {
-                   Int32 spellid= MQ.Query<Int32>($"${{DanNet[{name}].O[\"Me.Buff[{i}].Spell.ID\"]}}");
+                   Int32 spellid= MQ.Query<Int32>($"${{DanNet[{kvp.Key}].O[\"Me.Buff[{i}].Spell.ID\"]}}");
                     if(spellid>0)
                     {
                         _buffListCollection[kvp.Key].Add(spellid);
@@ -361,7 +366,7 @@ namespace E3Core.Processors
                 }
                 for (Int32 i = 1; i <= _maxSongSlots; i++)
                 {
-                    Int32 spellid = MQ.Query<Int32>($"${{DanNet[{name}].O[\"Me.Song[{i}].Spell.ID\"]}}");
+                    Int32 spellid = MQ.Query<Int32>($"${{DanNet[{kvp.Key}].O[\"Me.Song[{i}].Spell.ID\"]}}");
                     if (spellid > 0)
                     {
                         _buffListCollection[kvp.Key].Add(spellid);
@@ -398,22 +403,34 @@ namespace E3Core.Processors
         {
             return BuffList(name).Contains(buffid);
         }
+        private HashSet<String> _inZoneObservers = new HashSet<string>();
 
         public Boolean InZone(string name)
         {
-            MQ.Cmd("/dquery {name} -q Zone.ID");
-            Int32 zoneid = MQ.Query<Int32>("${DanNet.Q}");
+            if (!_inZoneObservers.Contains(name))
+            {
+                MQ.Cmd($"/dobserve {name} -q Zone.ID");
+                _inZoneObservers.Add(name);
+            }
+            Int32 zoneid = MQ.Query<Int32>($"${{DanNet[{name}].O[\"Zone.ID\"]}}");
 
-            if(zoneid==Zoning.CurrentZone.Id)
+            if (zoneid==Zoning.CurrentZone.Id)
             {
                 return true;
             }
             return false;
-
         }
+        private HashSet<String> _pctHealthObservers = new HashSet<string>();
         public Int32 PctHealth(string name)
         {
-            return MQ.Query<Int32>($"/dquery {name} -q Me.PctHPs");
+            if(!_pctHealthObservers.Contains(name))
+            {
+                MQ.Cmd($"/dobserve {name} -q Me.PctHPs");
+                _pctHealthObservers.Add(name);
+                MQ.Delay(100);
+            }
+            Int32 pctHealth = MQ.Query<Int32>($"${{DanNet[{name}].O[\"Me.PctHPs\"]}}");
+            return pctHealth;
         }
 
         public int PoisonedCounters(string name)
