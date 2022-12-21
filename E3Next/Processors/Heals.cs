@@ -15,6 +15,7 @@ namespace E3Core.Processors
 
         private static Int64 _nextHealCheck = 0;
         private static Int64 _nextHealCheckInterval = 250;
+        private static bool _useEQGroupDataForHeals = false;
 
         [AdvSettingInvoke]
         public static void Check_Heals()
@@ -341,81 +342,82 @@ namespace E3Core.Processors
                         if (targetType == "PC")
                         {
                             //check group data
-
-                            Int32 groupMemberIndex = MQ.Query<Int32>($"${{Group.Member[{name}].Index}}");
-
-                            if (groupMemberIndex > 0)
+                            if(_useEQGroupDataForHeals)
                             {
-                                Int32 pctHealth = MQ.Query<Int32>($"${{Group.Member[{groupMemberIndex}].Spawn.CurrentHPs}}");
+                                Int32 groupMemberIndex = MQ.Query<Int32>($"${{Group.Member[{name}].Index}}");
 
-                                if (pctHealth < 1)
+                                if (groupMemberIndex > 0)
                                 {
-                                    //dead, no sense in casting. check the next person
-                                    continue;
-                                }
-                                foreach (var spell in spells)
-                                {
-                                    //check Ifs on the spell
-                                    if (!String.IsNullOrWhiteSpace(spell.Ifs))
+                                    Int32 pctHealth = MQ.Query<Int32>($"${{Group.Member[{groupMemberIndex}].Spawn.CurrentHPs}}");
+
+                                    if (pctHealth < 1)
                                     {
-                                        if (!Casting.Ifs(spell))
-                                        {
-                                            //failed check, onto the next
-                                            continue;
-                                        }
-                                    }
-
-                                    if (!String.IsNullOrWhiteSpace(spell.CheckFor))
-                                    {
-
-                                        if (E3.Bots.BuffList(name).Contains(spell.CheckForID))
-                                        {
-                                            //they have the buff, kick out
-                                            continue;
-                                        }
-
-                                    }
-
-                                    recastSpell:
-                                    if (spell.Mana > currentMana)
-                                    {
-                                        //mana cost too high
+                                        //dead, no sense in casting. check the next person
                                         continue;
                                     }
-                                    if (spell.MinMana > pctMana)
+                                    foreach (var spell in spells)
                                     {
-                                        //mana is set too high, can't cast
-                                        continue;
-                                    }
-
-                                    if (Casting.InRange(targetID, spell))
-                                    {
-                                        if (pctHealth < spell.HealPct)
+                                        //check Ifs on the spell
+                                        if (!String.IsNullOrWhiteSpace(spell.Ifs))
                                         {
-                                            if (JustCheck) return true;
-                                            //should cast a heal!
-                                            if (Casting.CheckReady(spell))
+                                            if (!Casting.Ifs(spell))
                                             {
-                                                if (Casting.Cast(targetID, spell) == CastReturn.CAST_FIZZLE)
+                                                //failed check, onto the next
+                                                continue;
+                                            }
+                                        }
+
+                                        if (!String.IsNullOrWhiteSpace(spell.CheckFor))
+                                        {
+
+                                            if (E3.Bots.BuffList(name).Contains(spell.CheckForID))
+                                            {
+                                                //they have the buff, kick out
+                                                continue;
+                                            }
+
+                                        }
+
+                                        recastSpell:
+                                        if (spell.Mana > currentMana)
+                                        {
+                                            //mana cost too high
+                                            continue;
+                                        }
+                                        if (spell.MinMana > pctMana)
+                                        {
+                                            //mana is set too high, can't cast
+                                            continue;
+                                        }
+
+                                        if (Casting.InRange(targetID, spell))
+                                        {
+                                            if (pctHealth < spell.HealPct)
+                                            {
+                                                if (JustCheck) return true;
+                                                //should cast a heal!
+                                                if (Casting.CheckReady(spell))
                                                 {
-                                                    currentMana = MQ.Query<Int32>("${Me.CurrentMana}");
-                                                    pctMana = MQ.Query<Int32>("${Me.PctMana}");
-                                                    goto recastSpell;
+                                                    if (Casting.Cast(targetID, spell) == CastReturn.CAST_FIZZLE)
+                                                    {
+                                                        currentMana = MQ.Query<Int32>("${Me.CurrentMana}");
+                                                        pctMana = MQ.Query<Int32>("${Me.PctMana}");
+                                                        goto recastSpell;
+                                                    }
+                                                    E3.ActionTaken = true;
+                                                    return true;
                                                 }
-                                                E3.ActionTaken = true;
-                                                return true;
                                             }
                                         }
                                     }
                                 }
                             }
-
-
+                    
                             //check netbots
-                            bool botInZone = E3.Bots.InZone(name);
-                            if (botInZone)
+                            bool isABot = E3.Bots.BotsConnected().Contains(name, StringComparer.OrdinalIgnoreCase);
+                            if (isABot)
                             {
-                                //they are a netbots and they are in zone
+                                //they are a bot and they are in zone
                                 Int32 pctHealth = E3.Bots.PctHealth(name);
                                 foreach (var spell in spells)
                                 {
@@ -520,8 +522,8 @@ namespace E3Core.Processors
                             if (targetType == "PC")
                             {
                                 //check bots
-                                bool botInZone = E3.Bots.InZone(name);
-                                if (botInZone)
+                                bool isABot = E3.Bots.BotsConnected().Contains(name, StringComparer.OrdinalIgnoreCase);
+                                if (isABot)
                                 {
                                     //they are a netbots and they are in zone
                                     Int32 pctHealth = E3.Bots.PctHealth(name);

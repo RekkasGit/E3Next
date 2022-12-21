@@ -234,7 +234,7 @@ namespace E3Core.Processors
 
                 CurrentId = MQ.Query<int>("${Me.ID}");
                 //do first to get class information
-                Bots = new Bots();
+                
 
                 CurrentName = MQ.Query<string>("${Me.CleanName}");
                 ServerName = e3util.FormatServerName(MQ.Query<string>("${MacroQuest.Server}"));
@@ -249,10 +249,18 @@ namespace E3Core.Processors
                 CurrentShortClassString = Data.Classes.ClassLongToShort[CurrentLongClassString];
 
                 //Init the settings
-                CharacterSettings = new Settings.CharacterSettings();
                 GeneralSettings = new Settings.GeneralSettings();
+                if ("DANNET".Equals(E3.GeneralSettings.General_NetworkMethod, StringComparison.OrdinalIgnoreCase))
+                {
+                    Bots = new DanBots();
+                }
+                else
+                {
+                    Bots = new Bots();
+                }
+                CharacterSettings = new Settings.CharacterSettings();
                 AdvancedSettings = new Settings.AdvancedSettings();
-
+                
                 //setup is done after the settings are setup.
                 //as there is an order dependecy
                 Setup.Init();

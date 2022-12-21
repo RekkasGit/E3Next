@@ -30,6 +30,7 @@ namespace E3Core.Settings
         public bool AutoMisfitBox;
         public bool AttackOffOnEnrage;
         public bool RelayTells;
+        public string General_NetworkMethod = "EQBC";
         public Int32 Loot_LootItemDelay = 300;
         public string Loot_LinkChannel = String.Empty;
         public List<string> Loot_LinkChannelValid = new List<string>() {"g","gu","say","rsay","shout"};
@@ -105,7 +106,9 @@ namespace E3Core.Settings
             LoadKeyData("General", "Leash Length", parsedData, ref General_LeashLength);
             LoadKeyData("General", "End MedBreak in Combat(On/Off)", parsedData, ref General_EndMedBreakInCombat);
             LoadKeyData("General", "AutoMedBreak PctMana", parsedData, ref General_AutoMedBreakPctMana);
+            //    section.Keys.AddKey("NetworkMethod", "EQBC");
 
+            LoadKeyData("General", "NetworkMethod",parsedData, ref General_NetworkMethod);
 
             LoadKeyData("Background", "Idle Time Out (Min)", parsedData, ref Background_IdleTimeout);
             LoadKeyData("Background", "Auto-Inventory Timer (Sec)", parsedData, ref Background_AutoInventoryTimer);
@@ -126,8 +129,7 @@ namespace E3Core.Settings
             {
                 Loot_LinkChannel = String.Empty;
             }
-
-
+          
             LoadKeyData("Loot", "Corpse Seek Radius", parsedData, ref Loot_CorpseSeekRadius);
             LoadKeyData("Loot", "LootItemDelay", parsedData, ref Loot_LootItemDelay);
             //no lower than 300ms
@@ -183,6 +185,7 @@ namespace E3Core.Settings
             section.Keys.AddKey("Leash Length", "250");
             section.Keys.AddKey("End MedBreak in Combat(On/Off)", "On");
             section.Keys.AddKey("AutoMedBreak PctMana", "0");
+            section.Keys.AddKey("NetworkMethod", "EQBC");
 
             newFile.Sections.AddSection("Background");
             section = newFile.Sections.GetSectionData("Background");

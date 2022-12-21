@@ -275,7 +275,7 @@ namespace E3Core.Processors
             {
                 //need to pass over the filters if they exist
                 _strinbBuilder.Clear();
-                _strinbBuilder.Append($"/dgae /{command}");
+                _strinbBuilder.Append($"/dge {command}");
                 foreach (var filter in match.filters)
                 {
                     _strinbBuilder.Append($" \"{filter}\"");
@@ -291,11 +291,11 @@ namespace E3Core.Processors
             }
             else if (noparse)
             {
-                MQ.Cmd($"/noparse /dgae /{command}");
+                MQ.Cmd($"/noparse /dge {command}");
             }
             else
             {
-                MQ.Cmd($"/dgae /{command}");
+                MQ.Cmd($"/dge {command}");
             }
 
         }
