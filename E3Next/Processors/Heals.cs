@@ -15,7 +15,7 @@ namespace E3Core.Processors
 
         private static Int64 _nextHealCheck = 0;
         private static Int64 _nextHealCheckInterval = 250;
-        private static bool _useEQGroupDataForHeals = false;
+        private static bool _useEQGroupDataForHeals = true;
 
         [AdvSettingInvoke]
         public static void Check_Heals()
