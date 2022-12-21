@@ -58,6 +58,8 @@ namespace E3Core.Processors
                             _queuedBuffs.Enqueue(new BuffQueuedItem() { TargetID = spawn.ID, Spell = spell });
 
                         }
+                        MQ.Cmd($"/t {user} casting buffs on you, please wait.");
+
                         E3.Bots.BroadcastCommand($"/buffme {spawn.ID}");
                     }
                 }
