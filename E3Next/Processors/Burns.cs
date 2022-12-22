@@ -78,15 +78,15 @@ namespace E3Core.Processors
         {
             if (!e3util.ShouldCheck(ref _nextBurnCheck, _nextBurnCheckInterval)) return;
          
-            UseBurn(_epicWeapon, use_EPICBurns);
-            UseBurn(_anguishBP, use_EPICBurns);
-            UseBurn(E3.CharacterSettings.QuickBurns, use_QUICKBurns);
-            UseBurn(E3.CharacterSettings.FullBurns, use_FULLBurns);
-            UseBurn(E3.CharacterSettings.LongBurns, use_LONGBurns);
-            UseBurn(_swarmPets, use_Swarms);
+            UseBurn(_epicWeapon, use_EPICBurns, "EpicBurns");
+            UseBurn(_anguishBP, use_EPICBurns, "AnguishBPBurns");
+            UseBurn(E3.CharacterSettings.QuickBurns, use_QUICKBurns, nameof(E3.CharacterSettings.QuickBurns));
+            UseBurn(E3.CharacterSettings.FullBurns, use_FULLBurns, nameof(E3.CharacterSettings.FullBurns));
+            UseBurn(E3.CharacterSettings.LongBurns, use_LONGBurns, nameof(E3.CharacterSettings.LongBurns));
+            UseBurn(_swarmPets, use_Swarms, "SwarmPets");
 
         }
-        private static void UseBurn(List<Data.Spell> burnList, bool use)
+        private static void UseBurn(List<Data.Spell> burnList, bool use, string burnType)
         {
             if (!Assist.IsAssisting) return;
 
@@ -123,10 +123,10 @@ namespace E3Core.Processors
                             isMyPet = (previousTarget == MQ.Query<Int32>("${Me.Pet.ID}"));
 
                         }
+                        var chatOutput = $"/g {burnType}: {burn.SpellName}";
                         //so you don't target other groups or your pet for burns if your target happens to be on them.
                         if (((isMyPet) || (targetPC && !isGroupMember)) && (burn.TargetType == "Group v1" || burn.TargetType == "Group v2"))
-                        {
-                            
+                        {                            
                             Casting.Cast(E3.CurrentId, burn);
                             if (previousTarget > 0)
                             {
@@ -136,10 +136,12 @@ namespace E3Core.Processors
                                     Casting.TrueTarget(previousTarget);
                                 }
                             }
+                            MQ.Cmd(chatOutput);
                         }
                         else
                         {
                             Casting.Cast(0, burn);
+                            MQ.Cmd(chatOutput);
                         }
                     }
                 }
@@ -148,6 +150,8 @@ namespace E3Core.Processors
         }
         private static void ProcessBurnRequest(string command, EventProcessor.CommandMatch x, ref bool burnType)
         {
+            if (e3util.FilterMe(x)) return;
+
             Int32 mobid;
             if (x.args.Count > 0)
             {
@@ -166,7 +170,7 @@ namespace E3Core.Processors
                 if (targetID > 0)
                 {
                     //we are telling people to follow us
-                    E3.Bots.BroadcastCommandToGroup($"{command} {targetID}");
+                    E3.Bots.BroadcastCommandToGroup($"{command} {targetID}", x);
                     burnType = true;
                 }
                 else
