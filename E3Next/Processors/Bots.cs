@@ -225,10 +225,6 @@ namespace E3Core.Processors
         {
             //set the observe delay to be a bit faster
             MQ.Cmd("/dnet observedelay 200");
-            EventProcessor.RegisterEvent("DanNet-Zoned", @"You have entered (.+)\.", (x) =>
-            {
-                ReRegisterObservations();
-            });
             EventProcessor.RegisterCommand("/e3danfix", (x) =>
             {
                 Broadcast("\agRe-Registering all observers");

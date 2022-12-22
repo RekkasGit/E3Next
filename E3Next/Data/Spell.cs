@@ -332,6 +332,7 @@ namespace E3Core.Data
             }
             else if (MQ.Query<bool>($"${{Me.Book[{CastName}]}}")) {
                 CastType = CastType.Spell;
+                SpellInBook = true;
             }
             else if (MQ.Query<bool>($"${{Me.CombatAbility[{CastName}]}}")) {
                 CastType = CastType.Disc;
@@ -629,6 +630,7 @@ namespace E3Core.Data
         public string Ifs = String.Empty;
         public string InitName = String.Empty;
         public bool ReagentOutOfStock = false;
+        public bool SpellInBook = false;
 
        
 

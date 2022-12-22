@@ -674,8 +674,9 @@ namespace E3Core.Processors
 
         public static bool MemorizeSpell(Data.Spell spell)
         {
-            if (spell.CastType != CastType.Spell)
+            if (!(spell.CastType == CastType.Spell && spell.SpellInBook))
             {
+                //we can't mem this just return true
                 return true;
             }
             //if no spell gem is set, set it.
@@ -773,7 +774,10 @@ namespace E3Core.Processors
         }
         public static Boolean InGlobalCooldown()
         {
-        if (MQ.Query<bool>("${Me.SpellReady[${Me.Gem[1].Name}]}") || MQ.Query<bool>("${Me.SpellReady[${Me.Gem[3].Name}]}") || MQ.Query<bool>("${Me.SpellReady[${Me.Gem[5].Name}]}") || MQ.Query<bool>("${Me.SpellReady[${Me.Gem[7].Name}]}"))
+            //pure melee don't have 
+            if ((E3.CurrentClass & Class.PureMelee) == E3.CurrentClass) return false;
+
+            if (MQ.Query<bool>("${Me.SpellReady[${Me.Gem[1].Name}]}") || MQ.Query<bool>("${Me.SpellReady[${Me.Gem[3].Name}]}") || MQ.Query<bool>("${Me.SpellReady[${Me.Gem[5].Name}]}") || MQ.Query<bool>("${Me.SpellReady[${Me.Gem[7].Name}]}"))
             {
                 return false;
             }
@@ -783,10 +787,12 @@ namespace E3Core.Processors
         {
             if (spell.CastType == CastType.None) return false;
             //do we need to memorize it?
+           
             if (!MemorizeSpell(spell))
             {
                 return false;
             }
+            
 
             //_log.Write($"CheckReady on {spell.CastName}");
 
@@ -804,7 +810,7 @@ namespace E3Core.Processors
             }
 
             bool returnValue = false;
-            if (spell.CastType == Data.CastType.Spell)
+            if (spell.CastType == Data.CastType.Spell && spell.SpellInBook)
             {
                 recheckCooldown:
 
