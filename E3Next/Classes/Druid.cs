@@ -43,6 +43,7 @@ namespace E3Core.Classes
                         if(memberNames.Contains(s.CleanName))
                         {
                             List<Int32> buffList = E3.Bots.BuffList(s.CleanName);
+                            _log.Write($"Bufflist for {s.CleanName}:" + String.Join(",", buffList));
                             if (!buffList.Contains(23581))
                             {
                                 needToCast = true;

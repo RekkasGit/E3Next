@@ -220,10 +220,20 @@ namespace E3Core.Processors
         private static Int64 _nextBuffCheck = 0;
         private static Int64 _nextBuffRefreshTimeInterval = 1000;
         private static StringBuilder _strinbBuilder = new StringBuilder();
+        private static HashSet<string> _registeredObservations = new HashSet<string>();
         public DanBots()
         {
             //set the observe delay to be a bit faster
             MQ.Cmd("/dnet observedelay 200");
+            EventProcessor.RegisterEvent("DanNet-Zoned", @"You have entered (.+)\.", (x) =>
+            {
+                ReRegisterObservations();
+            });
+            EventProcessor.RegisterCommand("/e3danfix", (x) =>
+            {
+                Broadcast("\agRe-Registering all observers");
+                ReRegisterObservations();
+            });
         }
         public List<string> BotsConnected()
         {
@@ -329,11 +339,11 @@ namespace E3Core.Processors
         {
             for(Int32 i=1;i<= _maxBuffSlots; i++)
             {
-                MQ.Cmd($"/dobserve {name} -q Me.Buff[{i}].Spell.ID");
+                RegisterObserve(name, $"Me.Buff[{i}].Spell.ID");
             }
             for (Int32 i = 1; i <= _maxSongSlots; i++)
             {
-                MQ.Cmd($"/dobserve {name} -q Me.Song[{i}].Spell.ID");
+                RegisterObserve(name, $"Me.Song[{i}].Spell.ID");
             }
         }
         public List<int> BuffList(string name)
@@ -375,30 +385,61 @@ namespace E3Core.Processors
             }
             return _buffListCollection[name];   //need to register and get a buff list.
         }
+        private HashSet<String> _curseCountersObservers = new HashSet<string>();
+
 
         public int CursedCounters(string name)
         {
-            MQ.Cmd("/dquery {name} -q Me.CountersCurse");
-            Int32 counters = MQ.Query<Int32>("${DanNet.Q}");
+            if (!_curseCountersObservers.Contains(name))
+            {
+                RegisterObserve(name, "Me.CountersCurse");
+                _curseCountersObservers.Add(name);
+                MQ.Delay(100);
+            }
+            Int32 counters = MQ.Query<Int32>($"${{DanNet[{name}].O[\"Me.CountersCurse\"]}}");
             return counters;
-
+     
         }
-
+        private HashSet<String> _debuffCountersObservers = new HashSet<string>();
         public int DebuffCounters(string name)
         {
-            MQ.Cmd("/dquery {name} -q Me.TotalCounters");
-            Int32 counters = MQ.Query<Int32>("${DanNet.Q}");
+            if (!_debuffCountersObservers.Contains(name))
+            {
+                RegisterObserve(name, "Me.TotalCounters");
+                _debuffCountersObservers.Add(name);
+                MQ.Delay(100);
+            }
+            Int32 counters = MQ.Query<Int32>($"${{DanNet[{name}].O[\"Me.TotalCounters\"]}}");
             return counters;
            
         }
+        private HashSet<String> _diseaseCountersObservers = new HashSet<string>();
 
         public int DiseasedCounters(string name)
         {
-            MQ.Cmd("/dquery {name} -q Me.CountersDisease");
-            Int32 counters = MQ.Query<Int32>("${DanNet.Q}");
+            if (!_diseaseCountersObservers.Contains(name))
+            {
+                RegisterObserve(name, "Me.CountersDisease");
+                _diseaseCountersObservers.Add(name);
+                MQ.Delay(100);
+            }
+            Int32 counters = MQ.Query<Int32>($"${{DanNet[{name}].O[\"Me.CountersDisease\"]}}");
+            return counters;
+      
+        }
+        private HashSet<String> _poisonCountersObservers = new HashSet<string>();
+
+        public int PoisonedCounters(string name)
+        {
+            if (!_poisonCountersObservers.Contains(name))
+            {
+                RegisterObserve(name, "Me.CountersPoison");
+                _poisonCountersObservers.Add(name);
+                MQ.Delay(100);
+            }
+            Int32 counters = MQ.Query<Int32>($"${{DanNet[{name}].O[\"Me.CountersPoison\"]}}");
             return counters;
         }
-
         public bool HasShortBuff(string name, Int32 buffid)
         {
             return BuffList(name).Contains(buffid);
@@ -407,12 +448,8 @@ namespace E3Core.Processors
 
         public Boolean InZone(string name)
         {
-            if (!_inZoneObservers.Contains(name))
-            {
-                MQ.Cmd($"/dobserve {name} -q Zone.ID");
-                _inZoneObservers.Add(name);
-            }
-            Int32 zoneid = MQ.Query<Int32>($"${{DanNet[{name}].O[\"Zone.ID\"]}}");
+            MQ.Cmd($"/dquery {name} -q Zone.ID");
+            Int32 zoneid = MQ.Query<Int32>("${DanNet.Q}");
 
             if (zoneid==Zoning.CurrentZone.Id)
             {
@@ -425,23 +462,28 @@ namespace E3Core.Processors
         {
             if(!_pctHealthObservers.Contains(name))
             {
-                MQ.Cmd($"/dobserve {name} -q Me.PctHPs");
+                RegisterObserve(name, "Me.PctHPs");
                 _pctHealthObservers.Add(name);
                 MQ.Delay(100);
             }
             Int32 pctHealth = MQ.Query<Int32>($"${{DanNet[{name}].O[\"Me.PctHPs\"]}}");
             return pctHealth;
         }
-
-        public int PoisonedCounters(string name)
+        private void RegisterObserve(string name, string query)
         {
-            MQ.Cmd("/dquery {name} -q Me.CountersPoison");
-            Int32 counters = MQ.Query<Int32>("${DanNet.Q}");
-            return counters;
+            string observeCommand = $"/dobserve {name} -q {query}";
+            MQ.Cmd(observeCommand);
+            if(!_registeredObservations.Contains(observeCommand))
+            {
+                _registeredObservations.Add(observeCommand);
+            }
         }
-
-     
+        private void ReRegisterObservations()
+        {
+            foreach(var command in _registeredObservations)
+            {
+                MQ.Cmd(command);
+            }
+        }
     }
-
-   
 }
