@@ -133,10 +133,9 @@ namespace E3Core.Processors
                         return;
                     }
 
-                    if (MQ.Query<bool>("${Me.Feigning}") && (E3.CurrentClass & Data.Class.FeignDeathClass) != E3.CurrentClass)
+                    if (MQ.Query<bool>("${Me.Feigning}"))
                     {
                         MQ.Cmd("/stand");
-                        return;
                     }
 
                     //if range/melee

@@ -73,25 +73,25 @@ namespace E3Core.Processors
             //search equiped items
             for (int i = 0; i <= 22; i++)
             {
-                string name = MQ.Query<string>($"${{InvSlot[{i}].Item}}");
+                string name = MQ.Query<string>($"${{Me.Inventory[{i}]}}");
 
-                if (MQ.Query<bool>($"${{InvSlot[{i}].Item.Name.Find[{itemName}]}}"))
+                if (MQ.Query<bool>($"${{Me.Inventory[{i}].Name.Find[{itemName}]}}"))
                 {
                     Int32 stackCount = MQ.Query<Int32>($"${{InvSlot[{i}].Item.Stack}}");
                     totalItems += stackCount;
-                    report.Add($"\ag[Worn] \ap{name}\aw ({stackCount})");
+                    report.Add($"\ag[Worn] ${{Me.Inventory[{i}].ItemLink[CLICKABLE]}}\aw ({stackCount})");
                 }
-                Int32 augCount = MQ.Query<Int32>($"${{InvSlot[{i}].Item.Augs}}");
+                Int32 augCount = MQ.Query<Int32>($"${{Me.Inventory[{i}].Augs}}");
                 if (augCount > 0)
                 {
                     for (int a = 1; a <= 6; a++)
                     {
-                        string augname = MQ.Query<string>($"${{InvSlot[{i}].Item.AugSlot[{a}].Name}}");
+                        string augname = MQ.Query<string>($"${{Me.Inventory[{i}].AugSlot[{a}].Name}}");
 
                         if (augname.IndexOf(itemName, 0, StringComparison.OrdinalIgnoreCase) > -1)
                         {
                             totalItems += 1;
-                            report.Add($"\ag[Worn] \ap{name}-\a-o{augname} \aw(aug-slot[{a}])");
+                            report.Add($"\ag[Worn] ${{InvSlot[{i}].Item.ItemLink[CLICKABLE]}} - ${{InvSlot[{i}].Item.AugSlot[{a}].Item.ItemLink[CLICKABLE]}} \aw(aug-slot[{a}])");
                         }
                     }
                 }
@@ -113,7 +113,7 @@ namespace E3Core.Processors
                             Int32 stackCount = MQ.Query<Int32>($"${{Me.Inventory[pack{i}].Item[{e}].Stack}}");
                             if (bagItem.IndexOf(itemName, 0, StringComparison.OrdinalIgnoreCase) > -1)
                             {
-                                report.Add($"\ag[Pack] \ap{bagItem}- \awbag({i}) slot({e}) count({stackCount})");
+                                report.Add($"\ag[Pack] ${{Me.Inventory[pack{i}].Item[{e}].ItemLink[CLICKABLE]}} - \awbag({i}) slot({e}) count({stackCount})");
                             }
                             Int32 augCount = MQ.Query<Int32>($"${{Me.Inventory[pack{i}].Item[{e}].Augs}}");
                             if (augCount > 0)
@@ -125,7 +125,7 @@ namespace E3Core.Processors
                                     if (augname.IndexOf(itemName, 0, StringComparison.OrdinalIgnoreCase) > -1)
                                     {
                                         totalItems += 1;
-                                        report.Add($"\ag[Pack] \ap{bagItem}-\a-o{augname} \aw(aug-slot[{a}]) \awbag({i}) slot({e})");
+                                        report.Add($"\ag[Pack] ${{Me.Inventory[pack{i}].Item[{e}].ItemLink[CLICKABLE]}} - ${{Me.Inventory[pack{i}].Item[{e}].AugSlot[{a}].Item.ItemLink[CLICKABLE]}} \aw(aug-slot[{a}]) \awbag({i}) slot({e})");
                                     }
                                 }
                             }
@@ -141,7 +141,7 @@ namespace E3Core.Processors
                 if (bankItemName.IndexOf(itemName, 0, StringComparison.OrdinalIgnoreCase) > -1)
                 {
                     Int32 bankStack = MQ.Query<Int32>($"${{Me.Bank[{i}].Stack}}");
-                    report.Add($"\ag[Bank] \ap{bankItemName} \aw- slot({i}) count({bankStack})");
+                    report.Add($"\ag[Bank] ${{Me.Bank[{i}].ItemLink[CLICKABLE]}} \aw- slot({i}) count({bankStack})");
                 }
 
 
@@ -154,7 +154,7 @@ namespace E3Core.Processors
                     if (bankItemName.IndexOf(itemName, 0, StringComparison.OrdinalIgnoreCase) > -1)
                     {
                         Int32 bankStack = MQ.Query<Int32>($"${{Me.Bank[{i}].Item[{e}].Stack}}");
-                        report.Add($"\ag[Bank] \ap{bankItemName} \aw- slot({i}) bagslot({e}) count({bankStack})");
+                        report.Add($"\ag[Bank] ${{Me.Bank[{i}].Item[{e}].ItemLink[CLICKABLE]}} \aw- slot({i}) bagslot({e}) count({bankStack})");
                     }
                     Int32 augCount = MQ.Query<Int32>($"${{Me.Bank[{i}].Item[{e}].Augs}}");
                     if (augCount > 0)
@@ -166,7 +166,7 @@ namespace E3Core.Processors
                             if (augname.IndexOf(itemName, 0, StringComparison.OrdinalIgnoreCase) > -1)
                             {
                                 totalItems += 1;
-                                report.Add($"\ag[Bank-Aug-Worn] \ap{bankItemName}-\ao{augname} slot({i}) bagslot({e}) (aug-slot[{a}])");
+                                report.Add($"\ag[Bank-Aug-Worn] ${{Me.Bank[{i}].Item[{e}].AugSlot[{a}].Item.ItemLink[CLICKABLE]}} - ${{Me.Bank[{i}].Item[{e}].AugSlot[{a}].Item.ItemLink[CLICKABLE]}} slot({i}) bagslot({e}) (aug-slot[{a}])");
                             }
 
                         }
@@ -181,8 +181,17 @@ namespace E3Core.Processors
             }
         }
 
-        private static void GetFromBank(List<string> args)
+        private static void GetFrom(string where, List<string> args)
         {
+            if (string.Equals(where, "Bank"))
+            {
+                if (!MQ.Query<bool>("${Window[BigBankWnd]}"))
+                {
+                    MQ.Write("\arYou need to open the bank window before issuing this command");
+                    return;
+                }
+            }
+
             if (args.Count == 0)
             {
                 MQ.Write("\arYou need to tell me what to get!");
@@ -190,37 +199,33 @@ namespace E3Core.Processors
             }
 
             var item = args[0];
-            if (!MQ.Query<bool>("${Window[BigBankWnd]}"))
+            var findTlo = string.Equals(where, "Bank") ? "FindItemBank" : "FindItem";
+            if (!MQ.Query<bool>($"${{{findTlo}[={item}]}}"))
             {
-                MQ.Write("\arYou need to open the bank window before issuing this command");
+                MQ.Write($"\arYou do not have any {item}s");
                 return;
             }
 
-            if (!MQ.Query<bool>($"${{FindItemBank[={item}]}}"))
-            {
-                MQ.Write($"\arYou do not have any {item}s in the bank");
-                return;
-            }
-
-            var slot = MQ.Query<int>($"${{FindItemBank[={item}].ItemSlot}}");
-            var slot2 = MQ.Query<int>($"${{FindItemBank[={item}].ItemSlot2}}");
+            var slot = MQ.Query<int>($"${{{findTlo}[={item}].ItemSlot}}");
+            var slot2 = MQ.Query<int>($"${{{findTlo}[={item}].ItemSlot2}}");
 
             // different syntax for if the item is in a bag vs if it's not
+            var itemNotifyArg = string.Equals(where, "Bank") ? "bank" : "pack";
+            var itemNotifyBagSlot = string.Equals(where, "Bank") ? slot + 1 : slot - 22;
             if (slot2 >= 0)
             {
-                MQ.Cmd($"/nomodkey /itemnotify bank{slot + 1} rightmouseup",100);
-                MQ.Cmd($"/nomodkey /itemnotify in bank{slot + 1} {slot2 + 1} leftmouseup");
+                MQ.Cmd($"/nomodkey /itemnotify in {itemNotifyArg}{itemNotifyBagSlot} {slot2 + 1} leftmouseup");
             }
             else
             {
-                MQ.Cmd($"/nomodkey /itemnotify bank{slot + 1} leftmouseup");
+                MQ.Cmd($"/nomodkey /itemnotify {itemNotifyArg}{itemNotifyBagSlot} leftmouseup");
             }
 
-            MQ.Delay(250);
+            MQ.Delay(250, "${Cursor.ID}");
 
             if (args.Count() > 1)
             {
-                var myQuantity = MQ.Query<int>($"${{FindItemBank[={item}].Stack}}");
+                var myQuantity = MQ.Query<int>($"${{{findTlo}[={item}].Stack}}");
                 if (!int.TryParse(args[1], out var requestedQuantity))
                 {
                     MQ.Write($"\arYou requested a quantity of {args[1]}, and that's not a number. Grabbing all {item}s");
@@ -236,8 +241,6 @@ namespace E3Core.Processors
             }
 
             MQ.Cmd("/nomodkey /notify QuantityWnd QTYW_Accept_Button leftmouseup",50);
-            
-            MQ.Cmd($"/nomodkey /itemnotify bank{slot + 1} rightmouseup");
         }
 
         private static void Upgrade(List<string> args)
@@ -400,7 +403,8 @@ namespace E3Core.Processors
                 }
 
             });
-            EventProcessor.RegisterCommand("/getfrombank", (x) => GetFromBank(x.args));
+            EventProcessor.RegisterCommand("/getfrombank", (x) => GetFrom("Bank", x.args));
+            EventProcessor.RegisterCommand("/getfrominv", (x) => GetFrom("Inventory", x.args));
             EventProcessor.RegisterCommand("/upgrade", (x) => Upgrade(x.args));
             //restock generic reusable items from vendors
             
