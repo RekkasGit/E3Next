@@ -24,6 +24,43 @@ namespace E3Core.Classes
         private static Int64 _nextAggroRefreshTimeInterval = 1000;
         private static Int32 _maxAggroCap = 75;
 
+        [SubSystemInit]
+        public static void Init()
+        {
+
+            if((E3.CurrentClass& Data.Class.Necromancer)==Data.Class.Necromancer)
+            {
+                EventProcessor.RegisterEvent("NecroFDBreak", "You are no longer feigning death, because a spell hit you.", (x) =>
+                {
+
+                    if (MQ.Query<bool>("${Me.Feigning}"))
+                    {
+                        E3.Bots.Broadcast("My Feign was broken, retrying...");
+                        MQ.Cmd("/stand");
+
+                        //recast FD
+                        bool FD = false;
+                        Spell s;
+                        if (!Spell.LoadedSpellsByName.TryGetValue("Improved Death Peace", out s))
+                        {
+                            s = new Spell("Improved Death Peace");
+                        }
+                        if (Casting.CheckReady(s) && Casting.CheckMana(s))
+                        {
+                            Casting.Cast(0, s);
+                            FD = true;
+
+                        }
+                        else if (!Spell.LoadedSpellsByName.TryGetValue("Death Peace", out s))
+                        {
+                            s = new Spell("Death Peace");
+                            Casting.Cast(0, s);
+                            FD = true;
+                        }
+                    }
+                });
+            }
+        }
 
         [AdvSettingInvoke]
         public static void Check_NecroFD()

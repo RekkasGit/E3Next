@@ -368,10 +368,10 @@ namespace E3Core.Processors
 
                                         MQ.Cmd($"/casting \"{spell.CastName}|alt\"");
                                         MQ.Delay(300);
-                                        //if (spell.MyCastTime > 500)
-                                        //{
-                                        //    MQ.Delay(1000);
-                                        //}
+                                        if (spell.MyCastTime > 500)
+                                        {
+                                            MQ.Delay(700);
+                                        }
                                     }
                                     else
                                     {
@@ -407,10 +407,10 @@ namespace E3Core.Processors
                                     {
                                         MQ.Cmd($"/casting \"{spell.CastName}|alt\" \"-targetid|{targetID}\"");
                                         MQ.Delay(300);
-                                        //if (spell.MyCastTime > 500)
-                                        //{
-                                        //    MQ.Delay(1000);
-                                        //}
+                                        if (spell.MyCastTime > 500)
+                                        {
+                                            MQ.Delay(700);
+                                        }
                                     }
                                     else
                                     {
