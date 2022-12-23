@@ -124,6 +124,7 @@
     <Compile Include="Server\PubClient.cs" />
     <Compile Include="Server\PubServer.cs" />
     <Compile Include="Server\RouterServer.cs" />
+    <Compile Include="Server\ShareData.cs" />
     <Compile Include="Settings\AdvancedSettings.cs" />
     <Compile Include="Settings\BaseSettings.cs" />
     <Compile Include="Settings\CharacterSettings.cs" />

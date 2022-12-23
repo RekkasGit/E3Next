@@ -367,10 +367,11 @@ namespace E3Core.Processors
                                         MQ.Write($"\ag{spell.CastName} \at{spell.SpellID} \am{targetName} \ao{targetID} \aw({spell.MyCastTime / 1000}sec)");
 
                                         MQ.Cmd($"/casting \"{spell.CastName}|alt\"");
-                                        if (spell.MyCastTime > 500)
-                                        {
-                                            MQ.Delay(1000);
-                                        }
+                                        MQ.Delay(300);
+                                        //if (spell.MyCastTime > 500)
+                                        //{
+                                        //    MQ.Delay(1000);
+                                        //}
                                     }
                                     else
                                     {
@@ -405,10 +406,11 @@ namespace E3Core.Processors
                                     if (spell.CastType == CastType.AA)
                                     {
                                         MQ.Cmd($"/casting \"{spell.CastName}|alt\" \"-targetid|{targetID}\"");
-                                        if (spell.MyCastTime > 500)
-                                        {
-                                            MQ.Delay(1000);
-                                        }
+                                        MQ.Delay(300);
+                                        //if (spell.MyCastTime > 500)
+                                        //{
+                                        //    MQ.Delay(1000);
+                                        //}
                                     }
                                     else
                                     {
