@@ -228,11 +228,9 @@ namespace E3Core.Processors
 
 
                 //lets check if we can loot.
-                if (MQ.Query<bool>("${Stick.Active}")) MQ.Cmd("/squelch /stick off");
-                if (MQ.Query<bool>("${AdvPath.Following}")) MQ.Cmd("/squelch /afollow off ");
-                
-                
-                foreach(var c in corpses)
+                Movement.PauseMovement();
+
+                foreach (var c in corpses)
                 {
                     EventProcessor.ProcessEventsInQueues("/lootoff");
                     if (!_shouldLoot) return;
