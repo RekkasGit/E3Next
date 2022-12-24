@@ -607,7 +607,7 @@ namespace E3Core.Processors
                     MQ.Cmd("/stopsong");
                     MQ.Delay(0);
                     MQ.Cmd($"/cast \"{spell.CastName}\"");
-                    MQ.Delay(500, IsCasting);
+                    MQ.Delay(300, IsCasting);
                     if (!IsCasting())
                     {
                         MQ.Write("Issuing stopcast as cast window isn't open");
