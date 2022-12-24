@@ -26,6 +26,7 @@ namespace E3Core.Classes
         private static Int64 _nextMelodyIfCheck = 0;
         private static Int64 _nextMelodyIfRefreshTimeInterval = 1000;
         private static bool _forceOverride = false;
+        private static string kSelosSongName = "Selo's Song of Travel";
 
         /// <summary>
         /// Initializes this instance.
@@ -78,6 +79,10 @@ namespace E3Core.Classes
 
             if (!_isInit) return;
             if (!_playingMelody || _forceOverride) return;
+            if (Spell.LoadedSpellsByName.ContainsKey(kSelosSongName)) {
+                Spell selosSpell = Spell.LoadedSpellsByName[kSelosSongName];
+                if (_songs.Contains(selosSpell)) return;
+            }
 
             //go through the ifs and see if we should change the melodies
             foreach(var melodyCheck in E3.CharacterSettings.Bard_MelodyIfs)
