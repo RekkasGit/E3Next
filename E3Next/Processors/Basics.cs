@@ -203,6 +203,16 @@ namespace E3Core.Processors
                 }
             });
 
+            if(E3.ServerName=="Lazarus")
+            {
+                EventProcessor.RegisterCommand("/baz", (x) =>
+                {
+
+                    System.Diagnostics.Process.Start("https://www.lazaruseq.com/Magelo/index.php?page=bazaar");
+
+                });
+            }
+        
             EventProcessor.RegisterCommand("/yes", (x) =>
             {
                 if (x.args.Count == 0)
