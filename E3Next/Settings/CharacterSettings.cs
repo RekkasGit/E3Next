@@ -37,6 +37,7 @@ namespace E3Core.Settings
         public string Misc_AnchorChar = string.Empty;
         public bool Misc_RemoveTorporAfterCombat = true;
         public bool Misc_AutoRez = false;
+        public bool Misc_AutoForage = false;
         
         public bool Rogue_AutoHide = false;
         public bool Rogue_AutoEvade = false;
@@ -212,6 +213,8 @@ namespace E3Core.Settings
             LoadKeyData("Misc", "Anchor (Char to Anchor to)", ParsedData, ref Misc_AnchorChar);
             LoadKeyData("Misc", "Remove Torpor After Combat", ParsedData, ref Misc_RemoveTorporAfterCombat);
             LoadKeyData("Misc", "AutoRez", ParsedData, ref Misc_AutoRez);
+            LoadKeyData("Misc", "Auto-Forage (On/Off)",ParsedData, ref Misc_AutoForage);
+
 
             LoadKeyData("Assist Settings", "Assist Type (Melee/Ranged/Off)", ParsedData, ref Assist_Type);
             LoadKeyData("Assist Settings", "Melee Stick Point", ParsedData, ref Assist_MeleeStickPoint);
@@ -369,7 +372,9 @@ namespace E3Core.Settings
             section.Keys.AddKey("Anchor (Char to Anchor to)", "");
             section.Keys.AddKey("Remove Torpor After Combat", "On");
             section.Keys.AddKey("AutoRez", "Off");
+            section.Keys.AddKey("Auto-Forage (On/Off)", "Off");
             
+
             newFile.Sections.AddSection("Assist Settings");
             section = newFile.Sections.GetSectionData("Assist Settings");
             section.Keys.AddKey("Assist Type (Melee/Ranged/Off)", "Melee");

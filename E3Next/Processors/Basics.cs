@@ -36,6 +36,8 @@ namespace E3Core.Processors
         private static long _nextCursorCheckInterval = 1000;
         private static long _nextBoxCheck = 0;
         private static long _nextBoxCheckInterval = 10000;
+        private static long _nextForageCheck = 0;
+        private static long _nextForageCheckInterval = 10000;
         private static DateTime? _cursorOccupiedSince;
         private static TimeSpan _cursorOccupiedTime;
         private static TimeSpan _cursorOccupiedThreshold = new TimeSpan(0, 0, 0, 30);
@@ -853,6 +855,32 @@ namespace E3Core.Processors
                 e3util.Exchange("ammo", ammoItem);
             }
         }
+
+        [ClassInvoke(Class.All)]
+        public static void CheckForage()
+        {
+            if (!E3.CharacterSettings.Misc_AutoForage) return;
+            if (!e3util.ShouldCheck(ref _nextForageCheck, _nextForageCheckInterval)) return;
+
+            bool forageReady = _mq.Query<bool>("${Me.AbilityReady[Forage]}");
+
+            if(forageReady)
+            {
+                _mq.Write("\agAuto Foraging....");
+                _mq.Cmd("/doability forage");
+                _mq.Delay(2000, "${Bool[${Cursor.ID}]}");
+                _mq.Delay(500);
+                bool cursorItem = _mq.Query<bool>("${Bool[${Cursor.ID}]}");
+                if(cursorItem)
+                {
+                    e3util.ClearCursor();
+                }
+            }
+         
+        }
+
+
+
 
         /// <summary>
         /// Checks the cursor and clears it if necessary.

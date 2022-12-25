@@ -434,6 +434,7 @@ namespace E3Core.Utility
                     {
                         E3.Bots.Broadcast($"\agAutoInventory\aw:\ao{autoinvItem}");
                     }
+                    MQ.Delay(300);
                 }
                 cursorID = MQ.Query<Int32>("${Cursor.ID}");
                 if (counter > 5) break;
