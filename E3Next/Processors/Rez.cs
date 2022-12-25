@@ -164,6 +164,7 @@ namespace E3Core.Processors
         public static void AutoRez()
         {
             if (E3.IsInvis) return;
+            if (Zoning.CurrentZone.IsSafeZone) return;
             if (!E3.CharacterSettings.Misc_AutoRez) return;
             if (_skipAutoRez) return;
             if (!e3util.ShouldCheck(ref _nextAutoRezCheck, _nextAutoRezCheckInterval)) return;
