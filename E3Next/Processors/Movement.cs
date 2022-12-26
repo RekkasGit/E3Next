@@ -265,6 +265,18 @@ namespace E3Core.Processors
             });
             EventProcessor.RegisterCommand("/chaseme", (x) =>
             {
+                bool hasAllFlag = false;
+                foreach (var argValue in x.args)
+                {
+                    if (argValue.StartsWith("/all", StringComparison.OrdinalIgnoreCase))
+                    {
+                        hasAllFlag = true;
+                    }
+                }
+                if (hasAllFlag)
+                {
+                    x.args.Remove("/all");
+                }
                 //chaseme <toon name>
                 if (x.args.Count == 1 && x.args[0] != "off")
                 {
@@ -282,7 +294,16 @@ namespace E3Core.Processors
                 //chanseme off
                 else if (x.args.Count == 1 && x.args[0] == "off")
                 {
-                    E3.Bots.BroadcastCommandToGroup($"/chaseme off {E3.CurrentName}", x);
+                    if(hasAllFlag)
+                    {
+                        E3.Bots.BroadcastCommand($"/chaseme off {E3.CurrentName}",false, x);
+
+                    }
+                    else
+                    {
+                        E3.Bots.BroadcastCommandToGroup($"/chaseme off {E3.CurrentName}", x);
+
+                    }
                     _chaseTarget = String.Empty;
                     Following = false;
                 }
@@ -298,7 +319,16 @@ namespace E3Core.Processors
                 }
                 else
                 {
-                    E3.Bots.BroadcastCommandToGroup($"/chaseme {E3.CurrentName}", x);
+                    if(hasAllFlag)
+                    {
+                        E3.Bots.BroadcastCommand($"/chaseme {E3.CurrentName}",false, x);
+                    }
+                    else
+                    {
+                        E3.Bots.BroadcastCommandToGroup($"/chaseme {E3.CurrentName}", x);
+
+                    }
+                   
                     Following = false;
                 }
             });
