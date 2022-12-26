@@ -695,6 +695,30 @@ namespace E3Core.Processors
                 }
 
             });
+            EventProcessor.RegisterCommand("/assisttype", (x) => {
+
+
+                if (x.args.Count>1)
+                {
+                    string user = x.args[0];
+                    string assisttype = x.args[1];
+                    if(_meleeTypes.Contains(assisttype, StringComparer.OrdinalIgnoreCase) || _rangeTypes.Contains(assisttype, StringComparer.OrdinalIgnoreCase))
+                    {
+                        E3.Bots.BroadcastCommandToPerson(user, $"/assisttype {assisttype}");
+                       
+                    }
+                }
+                else if(x.args.Count==1)
+                {
+                    string assisttype = x.args[0];
+                    if (_meleeTypes.Contains(assisttype, StringComparer.OrdinalIgnoreCase) || _rangeTypes.Contains(assisttype, StringComparer.OrdinalIgnoreCase))
+                    {
+                        E3.CharacterSettings.Assist_Type = assisttype;
+                        E3.Bots.Broadcast("\agChanging assist type to :\ao" + assisttype);
+                    }
+                }
+
+            });
             EventProcessor.RegisterCommand("/backoff", (x) =>
             {
 

@@ -157,7 +157,7 @@ namespace E3Core.Processors
                     }
                     if (!String.IsNullOrWhiteSpace(burn.CheckFor))
                     {
-                        if (MQ.Query<bool>($"${{Bool[${{Target.Buff[{burn.CheckFor}]}}]}}"))
+                        if (MQ.Query<bool>($"${{Bool[${{Me.Buff[{burn.CheckFor}]}}]}}") || MQ.Query<bool>($"${{Bool[${{Me.Song[{burn.CheckFor}]}}]}}"))
                         {
                             continue;
                         }
