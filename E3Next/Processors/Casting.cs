@@ -1391,7 +1391,8 @@ namespace E3Core.Processors
         CAST_ACTIVEDISC,
         CAST_INTERRUPTFORHEAL,
         CAST_CORPSEOPEN,
-        CAST_INVALID
+        CAST_INVALID,
+        CAST_IFFAILURE
     }
 
 }

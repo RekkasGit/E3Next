@@ -213,17 +213,15 @@ namespace E3Core.Processors
             {
                 spell = realSpell;
             }
-            bool inBook = MQ.Query<bool>($"${{Me.Book[{spell}]}}");
-            if (inBook)
-            { 
-                if(!String.IsNullOrWhiteSpace(user))
-                {
-                    MQ.Cmd($"/t {user} I'm queuing up {spell} to use on you, please wait.");
-                    MQ.Delay(0);
+           
+            if(!String.IsNullOrWhiteSpace(user))
+            {
+                MQ.Cmd($"/t {user} I'm queuing up {spell} to use on you, please wait.");
+                MQ.Delay(0);
 
-                }
-                _queuedBuffs.Enqueue(new BuffQueuedItem() { Requester = user, SpellTouse = spell, TargetID=targetid });
             }
+            _queuedBuffs.Enqueue(new BuffQueuedItem() { Requester = user, SpellTouse = spell, TargetID=targetid });
+            
         }
         [ClassInvoke(Data.Class.All)]
         public static void Check_QueuedBuffs()
@@ -242,9 +240,32 @@ namespace E3Core.Processors
                     //see if the spell was already supplied
                     if (askedForSpell.Spell != null) s = askedForSpell.Spell;
 
-                    if (s is null && !Spell.LoadedSpellsByName.TryGetValue(askedForSpell.SpellTouse, out s))
+                    s = new Spell(askedForSpell.SpellTouse,Settings.CharacterSettings.ParsedData);
+
+                    //not a valid spell
+                    if(s.CastType==CastType.None)
                     {
-                        s = new Spell(askedForSpell.SpellTouse);
+                        _queuedBuffs.Dequeue();
+                        return;
+                    }
+
+                    if (!String.IsNullOrWhiteSpace(s.Ifs))
+                    {
+                        Casting.TrueTarget(spawn.ID);
+                        if (!Casting.Ifs(s))
+                        {
+                            _queuedBuffs.Dequeue();
+                            return;
+                        }
+                    }
+                    if (!String.IsNullOrWhiteSpace(s.CheckFor))
+                    {
+                        Casting.TrueTarget(spawn.ID);
+                        if (MQ.Query<bool>($"${{Bool[${{Target.Buff[{s.CheckFor}]}}]}}"))
+                        {
+                            _queuedBuffs.Dequeue();
+                            return;
+                        }
                     }
                     if (Casting.InRange(spawn.ID, s) && Casting.CheckReady(s) && Casting.CheckMana(s))
                     {

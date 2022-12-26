@@ -103,11 +103,11 @@ namespace E3Core.Processors
             {
                 spellName = realSpell;
             }
-            Spell spell = new Spell(spellName);
+            Spell spell = new Spell(spellName, Settings.CharacterSettings.ParsedData);
             
             if(spell.SpellID>0)
             {
-
+                
                 //wait for GCD to be over.
                 bool wasCasting = false;
                 while (Casting.IsCasting())
@@ -130,6 +130,14 @@ namespace E3Core.Processors
                 if(targetid==0)
                 {
                     targetid = E3.CurrentId;
+                }
+                if (!String.IsNullOrWhiteSpace(spell.Ifs))
+                {
+                    Casting.TrueTarget(targetid);
+                    if (!Casting.Ifs(spell))
+                    {
+                        return CastReturn.CAST_IFFAILURE;
+                    }
                 }
                 if (!String.IsNullOrWhiteSpace(spell.CheckFor))
                 {
