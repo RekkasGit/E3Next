@@ -74,7 +74,7 @@ namespace E3Core.Processors
                                     bool pathExists = MQ.Query<bool>($"${{Navigation.PathExists[id {spawnID}]}}");
                                     if (pathExists)
                                     {
-                                        MQ.Cmd($"/squelch /nav id {spawnID} log=error");
+                                        MQ.Cmd($"/squelch /nav id {spawnID} dist=20 log=error");
                                     }
                                     else
                                     {
