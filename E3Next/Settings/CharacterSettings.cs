@@ -60,7 +60,8 @@ namespace E3Core.Settings
         public string Assist_RangeDistance = "100";
         public int Assist_AutoAssistPercent = 98;
       
-
+        //load lua or macro 
+        public List<string> Misc_CommandOnStartup = new List<string>();
         //abilities
         public List<Spell> MeleeAbilities = new List<Spell>();
         //nukes
@@ -214,7 +215,7 @@ namespace E3Core.Settings
             LoadKeyData("Misc", "Remove Torpor After Combat", ParsedData, ref Misc_RemoveTorporAfterCombat);
             LoadKeyData("Misc", "AutoRez", ParsedData, ref Misc_AutoRez);
             LoadKeyData("Misc", "Auto-Forage (On/Off)",ParsedData, ref Misc_AutoForage);
-
+            LoadKeyData("Misc", "Command On Startup", ParsedData, Misc_CommandOnStartup);
 
             LoadKeyData("Assist Settings", "Assist Type (Melee/Ranged/Off)", ParsedData, ref Assist_Type);
             LoadKeyData("Assist Settings", "Melee Stick Point", ParsedData, ref Assist_MeleeStickPoint);
@@ -373,6 +374,7 @@ namespace E3Core.Settings
             section.Keys.AddKey("Remove Torpor After Combat", "On");
             section.Keys.AddKey("AutoRez", "Off");
             section.Keys.AddKey("Auto-Forage (On/Off)", "Off");
+            section.Keys.AddKey("Command On Startup", "");
             
 
             newFile.Sections.AddSection("Assist Settings");
