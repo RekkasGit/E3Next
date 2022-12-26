@@ -7,6 +7,7 @@ using System;
 using System.Collections.Generic;
 using System.Dynamic;
 using System.Linq;
+using System.Runtime.CompilerServices;
 
 namespace E3Core.Processors
 {
@@ -29,6 +30,20 @@ namespace E3Core.Processors
         private static Int64 _nextBurnCheck = 0;
         private static Int64 _nextBurnCheckInterval = 500;
 
+
+        private static Int64 _quickburnStartTimeStamp = 0;
+        private static Int32 _quickburnTimeout = 0;
+        private static Int64 _longburnStartTimeStamp = 0;
+        private static Int32 _longburnTimeout = 0;
+        private static Int64 _fullburnStartTimeStamp = 0;
+        private static Int32 _fullburnTimeout = 0;
+        private static Int64 _swarmStartTimeStamp = 0;
+        private static Int32 _swarmburnTimeout = 0;
+        private static Int64 _epicStartTimeStamp = 0;
+        private static Int32 _epicburnTimeout = 0;
+
+
+
         [SubSystemInit]
         public static void Init()
         {
@@ -44,40 +59,51 @@ namespace E3Core.Processors
             use_EPICBurns = false;
             use_LONGBurns = false;
             use_Swarms = false;
+            _quickburnStartTimeStamp = 0;
+            _quickburnTimeout = 0;
+            _longburnStartTimeStamp = 0;
+            _longburnTimeout = 0;
+            _fullburnStartTimeStamp = 0;
+            _fullburnTimeout = 0;
+            _swarmStartTimeStamp = 0;
+            _swarmburnTimeout = 0;
+            _epicStartTimeStamp = 0;
+            _epicburnTimeout = 0;
         }
         private static void RegisterEvents()
         {
             EventProcessor.RegisterCommand("/swarmpets", (x) =>
             {
-                ProcessBurnRequest("/swarmpets", x, ref use_Swarms);
+                ProcessBurnRequest("/swarmpets", x, ref use_Swarms, ref _swarmburnTimeout, ref _swarmStartTimeStamp);
             });
             EventProcessor.RegisterCommand("/epicburns", (x) =>
             {
-                ProcessBurnRequest("/epicburns", x, ref use_EPICBurns);
+                ProcessBurnRequest("/epicburns", x, ref use_EPICBurns, ref _epicburnTimeout, ref _epicStartTimeStamp);
             });
             EventProcessor.RegisterCommand("/quickburns", (x) =>
             {
-                ProcessBurnRequest("/quickburns", x, ref use_QUICKBurns);
+                ProcessBurnRequest("/quickburns", x, ref use_QUICKBurns, ref _quickburnTimeout, ref _quickburnStartTimeStamp);
 
             });
             EventProcessor.RegisterCommand("/fullburns", (x) =>
             {
-                ProcessBurnRequest("/fullburns", x, ref use_FULLBurns);
+                ProcessBurnRequest("/fullburns", x, ref use_FULLBurns, ref _fullburnTimeout, ref _fullburnStartTimeStamp);
 
             });
             EventProcessor.RegisterCommand("/longburns", (x) =>
             {
-                ProcessBurnRequest("/longburns", x, ref use_LONGBurns);
-
+                ProcessBurnRequest("/longburns", x, ref use_LONGBurns, ref _longburnTimeout, ref _longburnStartTimeStamp);
             });
 
 
         }
-        
+
         public static void UseBurns()
         {
             if (!e3util.ShouldCheck(ref _nextBurnCheck, _nextBurnCheckInterval)) return;
-         
+
+            CheckTimeouts();
+
             UseBurn(_epicWeapon, use_EPICBurns, "EpicBurns");
             UseBurn(_anguishBP, use_EPICBurns, "AnguishBPBurns");
             UseBurn(E3.CharacterSettings.QuickBurns, use_QUICKBurns, nameof(E3.CharacterSettings.QuickBurns));
@@ -85,6 +111,30 @@ namespace E3Core.Processors
             UseBurn(E3.CharacterSettings.LongBurns, use_LONGBurns, nameof(E3.CharacterSettings.LongBurns));
             UseBurn(_swarmPets, use_Swarms, "SwarmPets");
 
+        }
+
+        public static void CheckTimeouts()
+        {
+           
+            if (use_QUICKBurns) CheckTimeouts_SubCheck(ref use_QUICKBurns, ref _quickburnTimeout, ref _quickburnStartTimeStamp, "QuickBurns");
+            if (use_LONGBurns) CheckTimeouts_SubCheck(ref use_LONGBurns, ref _longburnTimeout, ref _longburnStartTimeStamp, "LongBurns");
+            if (use_FULLBurns) CheckTimeouts_SubCheck(ref use_FULLBurns, ref _fullburnTimeout, ref _fullburnStartTimeStamp, "FullBurns");
+            if (use_EPICBurns) CheckTimeouts_SubCheck(ref use_EPICBurns, ref _epicburnTimeout, ref _epicStartTimeStamp,"EpicBurns");
+            if (use_Swarms) CheckTimeouts_SubCheck(ref use_Swarms, ref _swarmburnTimeout, ref _swarmStartTimeStamp, "SwarmPets");
+
+        }
+        private static void CheckTimeouts_SubCheck(ref bool burnType, ref Int32 timeoutForBurn, ref Int64 timeoutTimeStamp, string name)
+        {
+            if (burnType && timeoutTimeStamp > 0)
+            {   //turn off after 60 seconds
+                if (timeoutTimeStamp + (timeoutForBurn * 1000) < Core.StopWatch.ElapsedMilliseconds)
+                {
+                    E3.Bots.Broadcast($"Turning off {name} due to timeout of : {timeoutForBurn}");
+                    burnType = false;
+                    timeoutTimeStamp = 0;
+                    timeoutForBurn = 0;
+                }
+            }
         }
         private static void UseBurn(List<Data.Spell> burnList, bool use, string burnType)
         {
@@ -97,6 +147,21 @@ namespace E3Core.Processors
                 {
                     //can't do gathering dusk if not in combat, skip it
                     if (burn.SpellName == "Gathering Dusk" && !Basics.InGameCombat()) continue;
+
+                    if (!String.IsNullOrWhiteSpace(burn.Ifs))
+                    {
+                        if (!Casting.Ifs(burn))
+                        {
+                            continue;
+                        }
+                    }
+                    if (!String.IsNullOrWhiteSpace(burn.CheckFor))
+                    {
+                        if (MQ.Query<bool>($"${{Bool[${{Target.Buff[{burn.CheckFor}]}}]}}"))
+                        {
+                            continue;
+                        }
+                    }
 
                     if (Casting.CheckReady(burn))
                     {
@@ -115,7 +180,7 @@ namespace E3Core.Processors
                         bool targetPC = false;
                         bool isMyPet = false;
                         bool isGroupMember = false;
-                        if(_spawns.TryByID(previousTarget,out var spawn))
+                        if (_spawns.TryByID(previousTarget, out var spawn))
                         {
                             Int32 groupMemberIndex = MQ.Query<Int32>($"${{Group.Member[{spawn.CleanName}].Index}}");
                             if (groupMemberIndex > 0) isGroupMember = true;
@@ -126,7 +191,7 @@ namespace E3Core.Processors
                         var chatOutput = $"/g {burnType}: {burn.SpellName}";
                         //so you don't target other groups or your pet for burns if your target happens to be on them.
                         if (((isMyPet) || (targetPC && !isGroupMember)) && (burn.TargetType == "Group v1" || burn.TargetType == "Group v2"))
-                        {                            
+                        {
                             Casting.Cast(E3.CurrentId, burn);
                             if (previousTarget > 0)
                             {
@@ -145,23 +210,69 @@ namespace E3Core.Processors
                         }
                     }
                 }
-               
+
             }
         }
-        private static void ProcessBurnRequest(string command, EventProcessor.CommandMatch x, ref bool burnType)
+        private static void ProcessBurnRequest(string command, EventProcessor.CommandMatch x, ref bool burnType, ref Int32 timeoutForBurn, ref Int64 timeoutTimeStamp)
         {
-            if (e3util.FilterMe(x)) return;
-
             Int32 mobid;
+
+            Int32 timeout = 0;
+
+            bool containsTimeout = false;
+            foreach (var value in x.args)
+            {
+                if (value.StartsWith("timeout=", StringComparison.OrdinalIgnoreCase))
+                {
+                    containsTimeout = true;
+                    break;
+                }
+            }
+
+            if (containsTimeout)
+            {
+                List<string> newargs = new List<string>();
+                foreach (var value in x.args)
+                {
+                    if (!value.StartsWith("timeout=", StringComparison.OrdinalIgnoreCase))
+                    {
+                        newargs.Add(value);
+                    }
+                    else
+                    {
+                        //have a timeout specified
+                        string tmpTimeout = value.Split('=')[1];
+                        Int32.TryParse(tmpTimeout, out timeout);
+                    }
+                }
+                x.args.Clear();
+                x.args.AddRange(newargs);
+                newargs.Clear();
+            }
+
             if (x.args.Count > 0)
             {
                 if (Int32.TryParse(x.args[0], out mobid))
                 {
-                    burnType = true;
+                    if (!e3util.FilterMe(x))
+                    {
+                       
+                        burnType = true;
+                        if (timeout > 0)
+                        {
+                            timeoutForBurn = timeout;
+                            timeoutTimeStamp = Core.StopWatch.ElapsedMilliseconds;
+                        }
+                        else
+                        {
+                            timeoutForBurn = 0;
+                            timeoutTimeStamp = 0;
+                        }
+                    }
                 }
                 else
                 {
-                    E3.Bots.Broadcast($"\aNeed a valid target to {command}.");
+                    E3.Bots.Broadcast($"\arNeed a valid target to {command}.");
                 }
             }
             else
@@ -169,13 +280,33 @@ namespace E3Core.Processors
                 Int32 targetID = MQ.Query<Int32>("${Target.ID}");
                 if (targetID > 0)
                 {
-                    //we are telling people to follow us
-                    E3.Bots.BroadcastCommandToGroup($"{command} {targetID}", x);
-                    burnType = true;
+                   
+                    if(timeout>0)
+                    {
+                        E3.Bots.BroadcastCommandToGroup($"{command} {targetID} timeout={timeout}", x);
+                    }
+                    else
+                    {
+                        E3.Bots.BroadcastCommandToGroup($"{command} {targetID}", x);
+                    }
+                    if (!e3util.FilterMe(x))
+                    {
+                        burnType = true;
+                        if (timeout > 0)
+                        {
+                            timeoutForBurn = timeout;
+                            timeoutTimeStamp = Core.StopWatch.ElapsedMilliseconds;
+                        }
+                        else
+                        {
+                            timeoutForBurn = 0;
+                            timeoutTimeStamp = 0;
+                        }
+                    }
                 }
                 else
                 {
-                    MQ.Write($"\aNeed a target to {command}");
+                    MQ.Write($"\arNeed a target to {command}");
                 }
             }
         }
