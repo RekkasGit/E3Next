@@ -693,6 +693,7 @@ namespace E3Core.Processors
 
                 bool hasManaStone = _mq.Query<bool>("${Bool[${FindItem[=Manastone]}]}");
                 bool amIStanding = _mq.Query<bool>("${Me.Standing}");
+                if (_mq.Query<bool>("${Me.Invis}")) return;
 
                 if (hasManaStone && amIStanding)
                 {
@@ -711,6 +712,7 @@ namespace E3Core.Processors
                         }
                         //allow mq to have the commands sent to the server
                         _mq.Delay(50);
+                        if (_mq.Query<bool>("${Me.Invis}")) return;
                         if ((E3.CurrentClass & Class.Priest) == E3.CurrentClass)
                         {
                             if (Heals.SomeoneNeedsHealing(currentMana, pctMana))
