@@ -103,7 +103,7 @@ namespace E3Core.Processors
             {
                 spellName = realSpell;
             }
-            Spell spell = new Spell(spellName, Settings.CharacterSettings.ParsedData);
+            Spell spell = new Spell(spellName, E3.CharacterSettings.ParsedData);
             
             if(spell.SpellID>0)
             {

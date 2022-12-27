@@ -805,6 +805,17 @@ namespace E3Core.Processors
                 }
 
             });
+            EventProcessor.RegisterEvent("CannotSee", "You cannot see your target.", (x) =>
+            {
+                if (IsAssisting && !AllowControl)
+                {
+                    if (MQ.Query<bool>("${Stick.Active}"))
+                    {
+                        StickToAssistTarget();
+                    }
+                }
+
+            });
         }
        
 

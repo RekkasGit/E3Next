@@ -24,7 +24,7 @@ namespace E3Core.Settings
     public class CharacterSettings : BaseSettings, IBaseSettings
     {
 #pragma warning disable CS1591 // Missing XML comment for publicly visible type or member
-        public static IniData ParsedData;
+        public IniData ParsedData;
         private readonly string CharacterName;
         private readonly string ServerName;
         private readonly Class CharacterClass;

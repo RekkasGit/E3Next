@@ -132,7 +132,7 @@ namespace E3Core.Classes
         {
              _songs.Clear();
             //lets find the melody in the character ini.
-            CharacterSettings.LoadKeyData($"{melodyName} Melody", "Song", CharacterSettings.ParsedData, _songs);
+            CharacterSettings.LoadKeyData($"{melodyName} Melody", "Song", E3.CharacterSettings.ParsedData, _songs);
             if(_songs.Count>0)
             {
                 MQ.Write($"\aoStart Melody:\ag{melodyName}");

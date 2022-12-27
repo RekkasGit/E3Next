@@ -240,7 +240,7 @@ namespace E3Core.Processors
                     //see if the spell was already supplied
                     if (askedForSpell.Spell != null) s = askedForSpell.Spell;
 
-                    s = new Spell(askedForSpell.SpellTouse,Settings.CharacterSettings.ParsedData);
+                    s = new Spell(askedForSpell.SpellTouse,E3.CharacterSettings.ParsedData);
 
                     //not a valid spell
                     if(s.CastType==CastType.None)
