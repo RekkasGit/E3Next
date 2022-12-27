@@ -264,11 +264,14 @@ namespace E3Core.Processors
                 //setup is done after the settings are setup.
                 //as there is an order dependecy
                 Setup.Init();
-                foreach (var SendCommand in E3.CharacterSettings.Misc_CommandOnStartup)
+
+                //load custom settings into EQ on startup
+                foreach (var CommandToLoadOnEQStartup in E3.CharacterSettings.Misc_CommandOnStartup)
                 {
-                    MQ.Write(SendCommand);
-                    MQ.Cmd(SendCommand);
+                    MQ.Write("\a-gLoading " + CommandToLoadOnEQStartup + " on startup");
+                    MQ.Cmd(CommandToLoadOnEQStartup);
                 }
+
                 IsInit = true;
                 MonoCore.Spawns.RefreshTimePeriodInMS = 3000;
             }
