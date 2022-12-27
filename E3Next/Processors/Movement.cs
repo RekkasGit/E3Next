@@ -240,6 +240,11 @@ namespace E3Core.Processors
                         MQ.Write("\arMove Closer To Door");
                     }
                 }
+                else
+                {
+                    MQ.Cmd($"/doortarget");
+                    MQ.Cmd("/squelch /click left door");
+                }
 
 
             });
@@ -428,6 +433,7 @@ namespace E3Core.Processors
                     double heading;
                     if (double.TryParse(x.args[0], out heading))
                     {
+                        Movement.PauseMovement();
                         Int32 currentZone = MQ.Query<Int32>("${Zone.ID}");
                         MQ.Cmd($"/face fast heading {heading * -1}");
                         MQ.Delay(600);
