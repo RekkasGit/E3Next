@@ -68,6 +68,9 @@ namespace E3Core.Settings
         public bool AutoTradeGuild = false;
         public bool AutoTradeRaid = false;
 
+        public Int32 DistanceToChase = 50;
+        public Int32 NavStopDistance = 10;
+
         public GeneralSettings()
         {
             LoadData();
@@ -170,6 +173,9 @@ namespace E3Core.Settings
             LoadKeyData("AutoTrade", "Group (On/Off)", parsedData, ref AutoTradeGroup);
             LoadKeyData("AutoTrade", "Guild (On/Off)", parsedData, ref AutoTradeGuild);
             LoadKeyData("AutoTrade", "Raid (On/Off)", parsedData, ref AutoTradeRaid);
+
+            LoadKeyData("Chase", "DistanceToChase", parsedData, ref DistanceToChase);
+            LoadKeyData("Chase", "NavStopDistance", parsedData, ref NavStopDistance);
         }
 
         public IniData CreateSettings()

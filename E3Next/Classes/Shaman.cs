@@ -77,6 +77,8 @@ namespace E3Core.Classes
                 if (tempMaxAggro > _maxAggroCap)
                 {
 
+                    if (!Assist.IsAssisting) return;
+
                     Spell s;
                     if (!Spell.LoadedSpellsByName.TryGetValue("Inconspicuous Totem", out s))
                     {
@@ -106,7 +108,7 @@ namespace E3Core.Classes
             {
                 using (_log.Trace())
                 {
-                    bool idolUp = MQ.Query<bool>("${Bool[${Spawn[Spirit Idol]}]}");
+                    bool idolUp = MQ.Query<bool>("${Bool[${Spawn[Spirit Idol] radius 200}]}");
 
                     if (!idolUp)
                     {
