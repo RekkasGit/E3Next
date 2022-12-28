@@ -46,6 +46,8 @@ namespace E3Core.Processors
         {
 
             EventProcessor.RegisterEvent("BuffMe", "(.+) tells you, '(?i)buff me'", (x) => {
+               
+                if (!E3.GeneralSettings.BuffRequests_AllowBuffRequests) return;
 
                 if (x.match.Groups.Count > 1)
                 {
@@ -117,6 +119,7 @@ namespace E3Core.Processors
 
             EventProcessor.RegisterEvent("BuffBeg", "(.+) tells you, '(.+)'", (x) =>
             {
+                
                 if (x.match.Groups.Count > 2)
                 {
                     if (Basics.AmIDead()) return;

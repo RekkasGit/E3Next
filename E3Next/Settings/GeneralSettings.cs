@@ -40,7 +40,7 @@ namespace E3Core.Settings
         private Int32 casting_DefaultSpellGem = 8;
         public int Casting_DefaultSpellGem { get { return casting_DefaultSpellGem; } set { if (value > 0 && value < 15) { casting_DefaultSpellGem = value; } } }
 
-        public Boolean BuffRequests_AllowBuffRequests;
+        public Boolean BuffRequests_AllowBuffRequests = true;
         public String BuffRequests_RestrictedPCs;
         public String BuffRequests_AllowedPcs;
         //loot
