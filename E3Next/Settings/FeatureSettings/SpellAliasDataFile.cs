@@ -11,20 +11,20 @@ namespace E3Core.Settings.FeatureSettings
 {
     public class SpellAliasDataFile:BaseSettings
     {
-        IniData _doorData;
+        IniData _spellData;
         public void LoadData()
         {
             string fileName = GetSettingsFilePath(@"Spell Aliases.ini");
 
 
             FileIniDataParser fileIniData = e3util.CreateIniParser();
-            _doorData = fileIniData.ReadFile(fileName);
+            _spellData = fileIniData.ReadFile(fileName);
 
         }
         public Dictionary<string,string> GetClassAliases()
         {
-            Dictionary<string, string> returnValue = new Dictionary<string, string>();
-            var section = _doorData.Sections[E3.CurrentLongClassString];
+            Dictionary<string, string> returnValue = new Dictionary<string, string>(StringComparer.OrdinalIgnoreCase);
+            var section = _spellData.Sections[E3.CurrentLongClassString];
             if (section != null)
             {
                 foreach(var kvp in section)
