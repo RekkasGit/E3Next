@@ -108,7 +108,7 @@ namespace E3Core.Classes
             {
                 using (_log.Trace())
                 {
-                    bool idolUp = MQ.Query<bool>("${Bool[${Spawn[Spirit Idol] radius 200}]}");
+                    bool idolUp = MQ.Query<bool>("${Bool[${Spawn[Spirit Idol]}]}");
 
                     if (!idolUp)
                     {
