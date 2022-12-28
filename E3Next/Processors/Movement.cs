@@ -171,7 +171,7 @@ namespace E3Core.Processors
             Spawn s;
             if (_spawns.TryByID(AnchorTarget, out s))
             {
-                if (s.Distance > 15 && s.Distance < 150)
+                if (s.Distance > E3.GeneralSettings.AnchorMinDistance && s.Distance < E3.GeneralSettings.AnchorMaxDistance)
                 {
                     e3util.TryMoveToLoc(s.X, s.Y);
                 }

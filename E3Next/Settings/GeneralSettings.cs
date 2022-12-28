@@ -70,6 +70,8 @@ namespace E3Core.Settings
 
         public Int32 DistanceToChase = 50;
         public Int32 NavStopDistance = 10;
+        public Int32 AnchorMinDistance = 15;
+        public Int32 AnchorMaxDistance = 150;
 
         public GeneralSettings()
         {
@@ -174,8 +176,10 @@ namespace E3Core.Settings
             LoadKeyData("AutoTrade", "Guild (On/Off)", parsedData, ref AutoTradeGuild);
             LoadKeyData("AutoTrade", "Raid (On/Off)", parsedData, ref AutoTradeRaid);
 
-            LoadKeyData("Chase", "DistanceToChase", parsedData, ref DistanceToChase);
-            LoadKeyData("Chase", "NavStopDistance", parsedData, ref NavStopDistance);
+            LoadKeyData("Movement", "DistanceToChase", parsedData, ref DistanceToChase);
+            LoadKeyData("Movement", "NavStopDistance", parsedData, ref NavStopDistance);
+            LoadKeyData("Movement", "AnchorMinDistance", parsedData, ref AnchorMinDistance);
+            LoadKeyData("Movement", "AnchorMaxDistance", parsedData, ref AnchorMaxDistance);
         }
 
         public IniData CreateSettings()
@@ -266,7 +270,14 @@ namespace E3Core.Settings
             section.Keys.AddKey("Group (On/Off)", "Off");
             section.Keys.AddKey("Guild (On/Off)", "Off");
             section.Keys.AddKey("Raid (On/Off)", "Off");
-            
+
+            newFile.Sections.AddSection("Movement");
+            section = newFile.Sections.GetSectionData("Movement");
+            section.Keys.AddKey("DistanceToChase", "50");
+            section.Keys.AddKey("NavStopDistance", "10");
+            section.Keys.AddKey("MinAnchorDistance", "15");
+            section.Keys.AddKey("MaxAnchorDistance", "150");
+
             string filename = GetSettingsFilePath("General Settings.ini");
             if (!System.IO.File.Exists(filename))
             {

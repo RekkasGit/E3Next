@@ -56,7 +56,7 @@ namespace E3Core.Utility
                     
                     e3util.NavToSpawnID(targetID);
                     //exit from TryMoveToTarget if we've reached the target
-                    if(MQ.Query<Double>("${Target.Distance}") < 20)
+                    if(MQ.Query<Double>("${Target.Distance}") < E3.GeneralSettings.NavStopDistance)
                     {
                         return;
                     }
