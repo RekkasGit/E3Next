@@ -31,6 +31,8 @@ namespace E3Core.Processors
             {
                 CurrentZone = new Zone(zoneId);
                 ZoneLookup.Add(zoneId, new Zone(zoneId));
+            } else {
+                CurrentZone = ZoneLookup[zoneId];
             }
 
             TributeDataFile.ToggleTribute();
