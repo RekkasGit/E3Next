@@ -800,6 +800,17 @@ namespace E3Core.Processors
                         if (MQ.Query<bool>("${Stick.Active}"))
                         {
                             StickToAssistTarget();
+                            //cleaar out any events that are stilll queued up.
+                            if (EventProcessor.EventList.ContainsKey("GetCloser"))
+                            {
+                                var queuedEvents = EventProcessor.EventList["GetCloser"].queuedEvents;
+                                while (queuedEvents.Count > 0)
+                                {
+                                    queuedEvents.TryDequeue(out var output);
+                                }
+
+
+                            }
                         }
                     }
                 }
@@ -811,7 +822,19 @@ namespace E3Core.Processors
                 {
                     if (MQ.Query<bool>("${Stick.Active}"))
                     {
+                 
                         StickToAssistTarget();
+                        //cleaar out any events that are stilll queued up.
+                        if(EventProcessor.EventList.ContainsKey("CannotSee"))
+                        {
+                            var queuedEvents = EventProcessor.EventList["CannotSee"].queuedEvents;
+                            while(queuedEvents.Count>0)
+                            {
+                                queuedEvents.TryDequeue(out var output);
+                            }
+
+
+                        }
                     }
                 }
 
