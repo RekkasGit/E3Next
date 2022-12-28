@@ -138,10 +138,6 @@ namespace E3Core.Processors
                     {
                         continue;
                     }
-                    if (rezType == RezType.Raid && !MQ.Query<bool>($"${{Raid.Member[{spawn.DisplayName}]}}"))
-                    {
-                        continue;
-                    }
                     if(rezType == RezType.GroupOrRaid && !(E3.Bots.IsMyBot(spawn.DisplayName) || MQ.Query<bool>($"${{Raid.Member[{spawn.DisplayName}]}}")))
                     {
                         continue;
@@ -156,10 +152,6 @@ namespace E3Core.Processors
                 if (spawn.Distance3D < 100 && spawn.DeityID != 0 && spawn.TypeDesc == "Corpse" && (spawn.ClassShortName == "DRU" || spawn.ClassShortName == "SHM" || spawn.ClassShortName == "WAR"))
                 {
                     if (rezType == RezType.Group && !E3.Bots.IsMyBot(spawn.DisplayName))
-                    {
-                        continue;
-                    }
-                    if (rezType == RezType.Raid && !MQ.Query<bool>($"${{Raid.Member[{spawn.DisplayName}]}}"))
                     {
                         continue;
                     }
@@ -181,10 +173,6 @@ namespace E3Core.Processors
                     if (!_corpseList.Contains(spawn.ID))
                     {
                         if (rezType == RezType.Group && !E3.Bots.IsMyBot(spawn.DisplayName))
-                        {
-                            continue;
-                        }
-                        if (rezType == RezType.Raid && !MQ.Query<bool>($"${{Raid.Member[{spawn.DisplayName}]}}"))
                         {
                             continue;
                         }
@@ -369,7 +357,6 @@ namespace E3Core.Processors
         {
             AE,
             Group,
-            Raid,
             GroupOrRaid
         }
         private static void MultiRez(RezType rezType = RezType.AE)
