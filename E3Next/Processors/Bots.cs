@@ -27,6 +27,7 @@ namespace E3Core.Processors
         Int32 DiseasedCounters(string name);
         Int32 PoisonedCounters(string name);
         Int32 CursedCounters(string name);
+        bool IsMyBot(string name);
     }
     public class Bots: IBots
     {
@@ -108,7 +109,7 @@ namespace E3Core.Processors
 
             string currentConnectedBots = MQ.Query<string>("${NetBots.Client}");
 
-            if(currentConnectedBots=="NULL")
+            if(currentConnectedBots=="NULL" || string.IsNullOrEmpty(currentConnectedBots))
             {
                 //error?
                 if(_connectedBots.Count>0)
@@ -203,7 +204,10 @@ namespace E3Core.Processors
             return counters;
         }
 
-       
+        public bool IsMyBot(string name)
+        {
+            return BotsConnected().Contains(name);
+        }
     }
 
     public class DanBots : IBots
@@ -480,6 +484,11 @@ namespace E3Core.Processors
             {
                 MQ.Cmd(command);
             }
+        }
+
+        public bool IsMyBot(string name)
+        {
+            return BotsConnected().Contains(name);
         }
     }
 }

@@ -45,24 +45,25 @@ namespace E3Core.Processors
         private static void RegsterEvents()
         {
 
-            EventProcessor.RegisterEvent("BuffMe", "(.+) tells you, '(?i)buff me'", (x) => {
-               
-                if (!E3.GeneralSettings.BuffRequests_AllowBuffRequests) return;
-
+            EventProcessor.RegisterEvent("BuffMe", "(.+) tells you, '(?i)buff me'", (x) =>
+            {
                 if (x.match.Groups.Count > 1)
                 {
                     if (Basics.AmIDead()) return;
                     string user = x.match.Groups[1].Value;
-                    if(_spawns.TryByName(user,out var spawn))
+                    if (E3.GeneralSettings.BuffRequests_AllowBuffRequests || E3.Bots.IsMyBot(user))
                     {
-                        foreach (var spell in E3.CharacterSettings.GroupBuffs)
+                        if (_spawns.TryByName(user, out var spawn))
                         {
-                            _queuedBuffs.Enqueue(new BuffQueuedItem() { TargetID = spawn.ID, Spell = spell });
+                            foreach (var spell in E3.CharacterSettings.GroupBuffs)
+                            {
+                                _queuedBuffs.Enqueue(new BuffQueuedItem() { TargetID = spawn.ID, Spell = spell });
 
+                            }
+                            MQ.Cmd($"/t {user} casting buffs on you, please wait.");
+
+                            E3.Bots.BroadcastCommand($"/buffme {spawn.ID}");
                         }
-                        MQ.Cmd($"/t {user} casting buffs on you, please wait.");
-
-                        E3.Bots.BroadcastCommand($"/buffme {spawn.ID}");
                     }
                 }
             });
@@ -120,29 +121,30 @@ namespace E3Core.Processors
             var buffBegs = new List<string> { "(.+) tells you, '(.+)'", "(.+) tells the group, '(.+)'" };
             EventProcessor.RegisterEvent("BuffBeg", buffBegs, (x) =>
             {
-                
                 if (x.match.Groups.Count > 2)
                 {
                     if (Basics.AmIDead()) return;
-
                     string user = x.match.Groups[1].Value;
-                    string spell = x.match.Groups[2].Value;
-                    //check to see if its an alias.
-                    string realSpell = string.Empty;
-                    if(SpellAliases.TryGetValue(spell,out realSpell))
+                    if (E3.GeneralSettings.BuffRequests_AllowBuffRequests || E3.Bots.IsMyBot(user))
                     {
-                        spell = realSpell;
-                    }
-                    bool inBook = MQ.Query<bool>($"${{Me.Book[{spell}]}}");
-                    bool aa = MQ.Query<bool>($"${{Me.AltAbility[{spell}].Spell}}");
-                    bool item = MQ.Query<bool>($"${{FindItem[={spell}]}}");
-            
-                    if (inBook || aa || item)
-                    {
-                        MQ.Cmd($"/t {user} I'm queuing up {spell} to use on you, please wait.");
-                        MQ.Delay(0);
-                        _queuedBuffs.Enqueue(new BuffQueuedItem() { Requester = user, SpellTouse = spell });
+                        string spell = x.match.Groups[2].Value;
+                        //check to see if its an alias.
+                        string realSpell = string.Empty;
+                        if (SpellAliases.TryGetValue(spell, out realSpell))
+                        {
+                            spell = realSpell;
+                        }
+                        bool inBook = MQ.Query<bool>($"${{Me.Book[{spell}]}}");
+                        bool aa = MQ.Query<bool>($"${{Me.AltAbility[{spell}].Spell}}");
+                        bool item = MQ.Query<bool>($"${{FindItem[={spell}]}}");
 
+                        if (inBook || aa || item)
+                        {
+                            MQ.Cmd($"/t {user} I'm queueing up {spell} to use on you, please wait.");
+                            MQ.Delay(0);
+                            _queuedBuffs.Enqueue(new BuffQueuedItem() { Requester = user, SpellTouse = spell });
+
+                        }
                     }
                 }
             });
