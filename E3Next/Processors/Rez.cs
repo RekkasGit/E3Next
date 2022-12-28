@@ -134,7 +134,7 @@ namespace E3Core.Processors
             {
                 if (spawn.Distance3D < 100 && spawn.DeityID != 0 && spawn.TypeDesc == "Corpse" && spawn.ClassShortName == "CLR")
                 {
-                    if(rezType== RezType.Group && !E3.Bots.BotsConnected().Contains(spawn.DisplayName))
+                    if(rezType== RezType.Group && !E3.Bots.IsMyBot(spawn.DisplayName))
                     {
                         continue;
                     }
@@ -142,7 +142,7 @@ namespace E3Core.Processors
                     {
                         continue;
                     }
-                    if(rezType == RezType.GroupOrRaid && !(E3.Bots.BotsConnected().Contains(spawn.DisplayName) || MQ.Query<bool>($"${{Raid.Member[{spawn.DisplayName}]}}")))
+                    if(rezType == RezType.GroupOrRaid && !(E3.Bots.IsMyBot(spawn.DisplayName) || MQ.Query<bool>($"${{Raid.Member[{spawn.DisplayName}]}}")))
                     {
                         continue;
 
@@ -155,7 +155,7 @@ namespace E3Core.Processors
             {
                 if (spawn.Distance3D < 100 && spawn.DeityID != 0 && spawn.TypeDesc == "Corpse" && (spawn.ClassShortName == "DRU" || spawn.ClassShortName == "SHM" || spawn.ClassShortName == "WAR"))
                 {
-                    if (rezType == RezType.Group && !E3.Bots.BotsConnected().Contains(spawn.DisplayName))
+                    if (rezType == RezType.Group && !E3.Bots.IsMyBot(spawn.DisplayName))
                     {
                         continue;
                     }
@@ -163,7 +163,7 @@ namespace E3Core.Processors
                     {
                         continue;
                     }
-                    if (rezType == RezType.GroupOrRaid && !(E3.Bots.BotsConnected().Contains(spawn.DisplayName) || MQ.Query<bool>($"${{Raid.Member[{spawn.DisplayName}]}}")))
+                    if (rezType == RezType.GroupOrRaid && !(E3.Bots.IsMyBot(spawn.DisplayName) || MQ.Query<bool>($"${{Raid.Member[{spawn.DisplayName}]}}")))
                     {
                         continue;
 
@@ -180,7 +180,7 @@ namespace E3Core.Processors
                     //lists are super small so contains is fine
                     if (!_corpseList.Contains(spawn.ID))
                     {
-                        if (rezType == RezType.Group && !E3.Bots.BotsConnected().Contains(spawn.DisplayName))
+                        if (rezType == RezType.Group && !E3.Bots.IsMyBot(spawn.DisplayName))
                         {
                             continue;
                         }
@@ -188,7 +188,7 @@ namespace E3Core.Processors
                         {
                             continue;
                         }
-                        if (rezType == RezType.GroupOrRaid && !(E3.Bots.BotsConnected().Contains(spawn.DisplayName) || MQ.Query<bool>($"${{Raid.Member[{spawn.DisplayName}]}}")))
+                        if (rezType == RezType.GroupOrRaid && !(E3.Bots.IsMyBot(spawn.DisplayName) || MQ.Query<bool>($"${{Raid.Member[{spawn.DisplayName}]}}")))
                         {
                             continue;
 
