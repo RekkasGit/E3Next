@@ -117,7 +117,8 @@ namespace E3Core.Processors
                 }
             });
 
-            EventProcessor.RegisterEvent("BuffBeg", "(.+) tells you, '(.+)'", (x) =>
+            var buffBegs = new List<string> { "(.+) tells you, '(.+)'", "(.+) tells the group, '(.+)'" };
+            EventProcessor.RegisterEvent("BuffBeg", buffBegs, (x) =>
             {
                 
                 if (x.match.Groups.Count > 2)
