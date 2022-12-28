@@ -1897,10 +1897,10 @@ namespace MonoCore
             slength = BitConverter.ToInt32(data, cb);
             cb += 4;
             tstring = System.Text.Encoding.ASCII.GetString(data, cb, slength);
-            if (!_stringLookup.TryGetValue(tstring, out DiplayName))
+            if (!_stringLookup.TryGetValue(tstring, out DisplayName))
             {
                 _stringLookup.Add(tstring, tstring);
-                DiplayName = tstring;
+                DisplayName = tstring;
             }
             cb += slength;
             Ducking = BitConverter.ToBoolean(data, cb);
@@ -2083,7 +2083,7 @@ namespace MonoCore
 
         public bool Feigning;
         public bool Ducking;
-        public string DiplayName = string.Empty;
+        public string DisplayName = string.Empty;
         public bool Dead;
         public Int32 CurrentMana;
         public Int32 CurrentHPs;
