@@ -21,7 +21,7 @@ namespace E3Core.Processors
         private static long _nextAutoRezCheck = 0;
         private static long _nextAutoRezCheckInterval = 1000;
         private static readonly Spell _divineRes = new Spell("Divine Resurrection");
-        private static readonly HashSet<string> _classesToDr = new HashSet<string> { "Cleric", "Warrior", "Paladin", "Shadow Knight" };
+        private static readonly HashSet<string> _classesToDivineRez = new HashSet<string> { "Cleric", "Warrior", "Paladin", "Shadow Knight" };
         private static bool _skipAutoRez = false;
 
         [SubSystemInit]
@@ -45,8 +45,6 @@ namespace E3Core.Processors
         }
         public static void Process()
         {
-
-
             if (_waitingOnRez)
             {
                 //check for dialog box
@@ -66,7 +64,7 @@ namespace E3Core.Processors
                     Zoning.Zoned(MQ.Query<Int32>("${Zone.ID}"));
                     if (!MQ.Query<bool>("${Spawn[${Me}'s].ID}"))
                     {
-                        //something went rong kick out.
+                        //something went wrong kick out.
                         return;
                     }
 
@@ -125,7 +123,7 @@ namespace E3Core.Processors
         }
 
        
-        public static void RefreshCorpseList()
+        public static void RefreshCorpseList(RezType rezType = RezType.AE)
         {
               //lets get a corpse list
             _spawns.RefreshList();
@@ -136,6 +134,16 @@ namespace E3Core.Processors
             {
                 if (spawn.Distance3D < 100 && spawn.DeityID != 0 && spawn.TypeDesc == "Corpse" && spawn.ClassShortName == "CLR")
                 {
+                    if(rezType== RezType.Group && !E3.Bots.IsMyBot(spawn.DisplayName))
+                    {
+                        continue;
+                    }
+                    if(rezType == RezType.GroupOrRaid && !(E3.Bots.IsMyBot(spawn.DisplayName) || MQ.Query<bool>($"${{Raid.Member[{spawn.DisplayName}]}}")))
+                    {
+                        continue;
+
+                    }
+
                     _corpseList.Add(spawn.ID);
                 }
             }
@@ -143,6 +151,16 @@ namespace E3Core.Processors
             {
                 if (spawn.Distance3D < 100 && spawn.DeityID != 0 && spawn.TypeDesc == "Corpse" && (spawn.ClassShortName == "DRU" || spawn.ClassShortName == "SHM" || spawn.ClassShortName == "WAR"))
                 {
+                    if (rezType == RezType.Group && !E3.Bots.IsMyBot(spawn.DisplayName))
+                    {
+                        continue;
+                    }
+                    if (rezType == RezType.GroupOrRaid && !(E3.Bots.IsMyBot(spawn.DisplayName) || MQ.Query<bool>($"${{Raid.Member[{spawn.DisplayName}]}}")))
+                    {
+                        continue;
+
+                    }
+
                     _corpseList.Add(spawn.ID);
                 }
             }
@@ -154,6 +172,16 @@ namespace E3Core.Processors
                     //lists are super small so contains is fine
                     if (!_corpseList.Contains(spawn.ID))
                     {
+                        if (rezType == RezType.Group && !E3.Bots.IsMyBot(spawn.DisplayName))
+                        {
+                            continue;
+                        }
+                        if (rezType == RezType.GroupOrRaid && !(E3.Bots.IsMyBot(spawn.DisplayName) || MQ.Query<bool>($"${{Raid.Member[{spawn.DisplayName}]}}")))
+                        {
+                            continue;
+
+                        }
+
                         _corpseList.Add(spawn.ID);
                     }
                 }
@@ -183,8 +211,8 @@ namespace E3Core.Processors
                     if (_skipAutoRez) return;
                     if (Basics.AmIDead()) return;
                     // only care about group or raid members
-                    var inGroup = MQ.Query<bool>($"${{Group.Member[{spawn.DiplayName}]}}");
-                    var inRaid = MQ.Query<bool>($"${{Raid.Member[{spawn.DiplayName}]}}");
+                    var inGroup = MQ.Query<bool>($"${{Group.Member[{spawn.DisplayName}]}}");
+                    var inRaid = MQ.Query<bool>($"${{Raid.Member[{spawn.DisplayName}]}}");
 
                     if (!inGroup && !inRaid)
                     {
@@ -213,13 +241,13 @@ namespace E3Core.Processors
                             continue;
                         }
 
-                        MQ.Cmd($"/t {spawn.DiplayName} Wait4Rez",100);
+                        MQ.Cmd($"/t {spawn.DisplayName} Wait4Rez",100);
                         
                         MQ.Cmd("/corpse");
                         InitRezSpells();
 
                         // if it's a cleric or warrior corpse and we're in combat, try to use divine res
-                        if (Basics.InCombat() && _classesToDr.Contains(spawn.ClassName))
+                        if (Basics.InCombat() && _classesToDivineRez.Contains(spawn.ClassName))
                         {
                             if (Casting.CheckReady(_divineRes))
                             {
@@ -316,7 +344,7 @@ namespace E3Core.Processors
                     {
                         if (Casting.CheckReady(spell) && Casting.CheckMana(spell) && CanRez())
                         {
-                            MQ.Cmd($"/tell {s.DiplayName} Wait4Rez", 100);
+                            MQ.Cmd($"/tell {s.DisplayName} Wait4Rez", 100);
                             Casting.Cast(s.ID, spell);
 
                             return;
@@ -325,7 +353,13 @@ namespace E3Core.Processors
                 }
             }
         }
-        private static void AERez()
+        public enum RezType
+        {
+            AE,
+            Group,
+            GroupOrRaid
+        }
+        private static void MultiRez(RezType rezType = RezType.AE)
         {
             Int32 rezRetries = 0;
             retryRez:
@@ -340,7 +374,7 @@ namespace E3Core.Processors
             }
 
             Movement.RemoveFollow();
-            RefreshCorpseList();
+            RefreshCorpseList(rezType);
 
             List<Int32> corpsesRaised = new List<int>();
             foreach (var corpseid in _corpseList)
@@ -356,7 +390,7 @@ namespace E3Core.Processors
                         continue;
                     }
 
-                    MQ.Cmd($"/tell {s.DiplayName} Wait4Rez",1500); //long delays after tells
+                    MQ.Cmd($"/tell {s.DisplayName} Wait4Rez",1500); //long delays after tells
 
                     //assume consent was given
                     MQ.Cmd("/corpse");
@@ -460,7 +494,7 @@ namespace E3Core.Processors
             {
                 if (x.args.Count == 0)
                 {
-                    AERez();
+                    MultiRez();
 
                 }
                 else if (x.args.Count == 1)
@@ -470,11 +504,60 @@ namespace E3Core.Processors
                     if (user == E3.CurrentName)
                     {
                         //its a me!
-                        AERez();
+                        MultiRez();
                     }
                     else
                     {
                         E3.Bots.BroadcastCommandToPerson(user, "/aerez");
+                    }
+
+                }
+            });
+            EventProcessor.RegisterCommand("/grez", (x) =>
+            {
+                if (x.args.Count == 0)
+                {
+                    MultiRez(RezType.Group);
+
+                }
+                else if (x.args.Count == 1)
+                {
+                    string user = x.args[0];
+
+                    if (user == E3.CurrentName)
+                    {
+                        //its a me!
+                        MultiRez(RezType.Group);
+
+                    }
+                    else
+                    {
+                        E3.Bots.BroadcastCommandToPerson(user, "/grez");
+                    }
+
+                }
+            });
+
+            EventProcessor.RegisterCommand("/rrez", (x) =>
+            {
+                if (x.args.Count == 0)
+                {
+                    MultiRez(RezType.GroupOrRaid);
+
+                }
+                else if (x.args.Count == 1)
+                {
+                    string user = x.args[0];
+
+                    if (user == E3.CurrentName)
+                    {
+                        //its a me!
+                        MultiRez(RezType.GroupOrRaid);
+
+                    }
+                    else
+                    {
+                        E3.Bots.BroadcastCommandToPerson(user, "/rrez");
                     }
 
                 }

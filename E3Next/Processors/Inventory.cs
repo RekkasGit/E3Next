@@ -448,7 +448,7 @@ namespace E3Core.Processors
                     }
                     else if (E3.GeneralSettings.AutoTradeRaid)
                     {
-                        if (MQ.Query<bool>($"${{Raid.Member[{trader.DiplayName}]}}"))
+                        if (MQ.Query<bool>($"${{Raid.Member[{trader.DisplayName}]}}"))
                         {
                             doTrade = true;
                         }
