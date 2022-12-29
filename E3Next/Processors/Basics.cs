@@ -419,6 +419,7 @@ namespace E3Core.Processors
                 E3.Bots.BroadcastCommand("/raiddisband");
                 E3.Bots.BroadcastCommand("/disband");
 
+                MQ.Delay(1500);
                 if (MQ.Query<int>("${Group}") > 0)
                 {
                     MQ.Delay(2000, "!${Group}");

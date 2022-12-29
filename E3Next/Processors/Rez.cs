@@ -20,6 +20,10 @@ namespace E3Core.Processors
         public static bool _waitingOnRez = false;
         private static long _nextAutoRezCheck = 0;
         private static long _nextAutoRezCheckInterval = 1000;
+
+        private static long _nextRezDialogCheck = 0;
+        private static long _nextRezDialogCheckInterval = 1000;
+
         private static readonly Spell _divineRes = new Spell("Divine Resurrection");
         private static readonly HashSet<string> _classesToDivineRez = new HashSet<string> { "Cleric", "Warrior", "Paladin", "Shadow Knight" };
         private static bool _skipAutoRez = false;
@@ -45,81 +49,80 @@ namespace E3Core.Processors
         }
         public static void Process()
         {
-            if (_waitingOnRez)
+            if (!e3util.ShouldCheck(ref _nextRezDialogCheck, _nextRezDialogCheckInterval)) return;
+            //check for dialog box
+            if (MQ.Query<bool>("${Window[ConfirmationDialogBox].Open}"))
             {
-                //check for dialog box
-                if (MQ.Query<bool>("${Window[ConfirmationDialogBox].Open}"))
+                //check if its a valid confirmation box
+                string message = MQ.Query<string>("${Window[ConfirmationDialogBox].Child[cd_textoutput].Text}");
+                if (!(message.Contains("percent)")||message.Contains("RESURRECT you.")))
                 {
-                    //check if its a valid confirmation box
-                    string message = MQ.Query<string>("${Window[ConfirmationDialogBox].Child[cd_textoutput].Text}");
-                    if (!(message.Contains("percent)")||message.Contains("RESURRECT you.")))
-                    {
-                        MQ.Cmd("/nomodkey /notify ConfirmationDialogBox No_Button leftmouseup");
-                        return; //not a rez dialog box, do not accept.
-                    }
-                    MQ.Cmd("/nomodkey /notify ConfirmationDialogBox Yes_Button leftmouseup",2000);//start zone
+                    //MQ.Cmd("/nomodkey /notify ConfirmationDialogBox No_Button leftmouseup");
+                    return; //not a rez dialog box, do not accept.
+                }
+                MQ.Cmd("/nomodkey /notify ConfirmationDialogBox Yes_Button leftmouseup",2000);//start zone
                     
-                    //zone may to happen
-                    MQ.Delay(30000, "${Spawn[${Me}'s].ID}");
-                    Zoning.Zoned(MQ.Query<Int32>("${Zone.ID}"));
-                    if (!MQ.Query<bool>("${Spawn[${Me}'s].ID}"))
-                    {
-                        //something went wrong kick out.
-                        return;
-                    }
+                //zone may to happen
+                MQ.Delay(30000, "${Spawn[${Me}'s].ID}");
+                Zoning.Zoned(MQ.Query<Int32>("${Zone.ID}"));
+                if (!MQ.Query<bool>("${Spawn[${Me}'s].ID}"))
+                {
+                    //something went wrong kick out.
+                    return;
+                }
 
-                    //okay, we are rezed, and now need to loot our corpse. 
-                    //it should be the closest so we will use spawn as it will grab the closest first.
-                    Int32 corpseID = MQ.Query<Int32>("${Spawn[${Me}'s].ID}");
-                    Casting.TrueTarget(corpseID);
+                //okay, we are rezed, and now need to loot our corpse. 
+                //it should be the closest so we will use spawn as it will grab the closest first.
+                Int32 corpseID = MQ.Query<Int32>("${Spawn[${Me}'s].ID}");
+                Casting.TrueTarget(corpseID);
 
-                    //check if its rezable.
-                    if (!CanRez())
-                    {
-                        tryLootAgain:
-                        MQ.Cmd("/corpse",1000);
+                //check if its rezable.
+                if (!CanRez())
+                {
+                    tryLootAgain:
+                    MQ.Cmd("/corpse",1000);
                         
-                        MQ.Cmd("/loot");
-                        MQ.Delay(1000, "${Window[LootWnd].Open}");
-                        MQ.Cmd("/nomodkey /notify LootWnd LootAllButton leftmouseup");
-                        MQ.Delay(20000, "!${Window[LootWnd].Open}");
+                    MQ.Cmd("/loot");
+                    MQ.Delay(1000, "${Window[LootWnd].Open}");
+                    MQ.Cmd("/nomodkey /notify LootWnd LootAllButton leftmouseup");
+                    MQ.Delay(20000, "!${Window[LootWnd].Open}");
 
-                        if (MQ.Query<bool>("${Window[LootWnd].Open}"))
-                        {
-                            _waitingOnRez = false;
-                            MQ.Cmd("/beep");
-                            E3.Bots.Broadcast("\agWaitForRez:\arERROR! \atLoot Window stuck open, please help.");
-                            E3.Bots.BroadcastCommand("/popup ${Me} loot window stuck open", false);
-                            MQ.Delay(1000);
-                            return;
+                    if (MQ.Query<bool>("${Window[LootWnd].Open}"))
+                    {
+                        _waitingOnRez = false;
+                        MQ.Cmd("/beep");
+                        E3.Bots.Broadcast("\agWaitForRez:\arERROR! \atLoot Window stuck open, please help.");
+                        E3.Bots.BroadcastCommand("/popup ${Me} loot window stuck open", false);
+                        MQ.Delay(1000);
+                        return;
 
-                        }
-                        //maybe there is another corpse? lets find out.
-                        //get all spawns within a 100 distance
-                        //make sure we have the most up to date zones spawns, takes about 1-2ms so no real harm forcing the issue.
-                        _spawns.RefreshList();
-                        string corpseName = E3.CurrentName + "'s corpse";
-                        foreach (var spawn in _spawns.Get())
+                    }
+                    //maybe there is another corpse? lets find out.
+                    //get all spawns within a 100 distance
+                    //make sure we have the most up to date zones spawns, takes about 1-2ms so no real harm forcing the issue.
+                    _spawns.RefreshList();
+                    string corpseName = E3.CurrentName + "'s corpse";
+                    foreach (var spawn in _spawns.Get())
+                    {
+                        if (spawn.CleanName.StartsWith(corpseName))
                         {
-                            if (spawn.CleanName.StartsWith(corpseName))
+                            if (spawn.Distance < 100)
                             {
-                                if (spawn.Distance < 100)
+                                Casting.TrueTarget(spawn.ID);
+                                MQ.Delay(500);
+                                if (!CanRez())
                                 {
-                                    Casting.TrueTarget(spawn.ID);
-                                    MQ.Delay(500);
-                                    if (!CanRez())
-                                    {
-                                        goto tryLootAgain;
-                                    }
+                                    goto tryLootAgain;
                                 }
                             }
                         }
-                        _waitingOnRez = false;
-                        E3.Bots.Broadcast("\atReady to die again!");
                     }
-
+                    _waitingOnRez = false;
+                    E3.Bots.Broadcast("\atReady to die again!");
                 }
+
             }
+            
         }
 
        

@@ -359,7 +359,7 @@ namespace E3Core.Processors
         static void RegisterEvents()
         {
             EventProcessor.RegisterCommand("/fds", (x) =>
-            {
+            { 
 
                 if (x.args.Count > 0)
                 {
@@ -377,6 +377,9 @@ namespace E3Core.Processors
             });
             EventProcessor.RegisterCommand("/fic", (x) =>
             {
+                //check to make sure there is something to look for
+                if (x.args.Count == 0) return;
+
                 string itemName = x.args[0];
                 if (x.args.Count == 1)
                 {
@@ -391,6 +394,9 @@ namespace E3Core.Processors
             });
             EventProcessor.RegisterCommand("/finditem", (x) =>
             {
+                //check to make sure there is something to look for
+                if (x.args.Count == 0) return;
+
                 string itemName = x.args[0];
                 if (x.args.Count == 1)
                 {

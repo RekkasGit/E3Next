@@ -65,8 +65,8 @@ namespace E3Core.Classes
         [ClassInvoke(Data.Class.Rogue)]
         public static void AutoHide()
         {
-            if (!e3util.ShouldCheck(ref _nextHideCheck, _nextHideCheckInterval)) return;
             if (!E3.CharacterSettings.Rogue_AutoHide) return;
+            if (!e3util.ShouldCheck(ref _nextHideCheck, _nextHideCheckInterval)) return;
             if (MQ.Query<bool>("${Me.Invis}")) return;
             if (MQ.Query<bool>("${Me.Moving}")) return;
             if (Basics.InCombat()) return;
