@@ -147,6 +147,7 @@ namespace E3Core.Processors
                 {
                     //can't do gathering dusk if not in combat, skip it
                     if (burn.SpellName == "Gathering Dusk" && !Basics.InGameCombat()) continue;
+                    if (burn.TargetType == "Pet" && MQ.Query<int>("${Me.Pet.ID}") < 1) continue;
 
                     if (!String.IsNullOrWhiteSpace(burn.Ifs))
                     {
