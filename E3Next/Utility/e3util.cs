@@ -56,7 +56,7 @@ namespace E3Core.Utility
                     
                     e3util.NavToSpawnID(targetID);
                     //exit from TryMoveToTarget if we've reached the target
-                    if(MQ.Query<Double>("${Target.Distance}") < 20)
+                    if(MQ.Query<Double>("${Target.Distance}") < E3.GeneralSettings.Movement_NavStopDistance)
                     {
                         return;
                     }
@@ -638,10 +638,16 @@ namespace E3Core.Utility
         /// NavToSpawnID - use MQ2Nav to reach the specified spawn, right now just by ID, ideally by any valid nav command
         /// </summary>
         /// <param name="spawnID"></param>
-        public static void NavToSpawnID(int spawnID)
+        public static void NavToSpawnID(int spawnID, Int32 stopDistance=-1)
         {
             bool navPathExists = MQ.Query<bool>($"${{Navigation.PathExists[id {spawnID}]}}");
             bool navActive = MQ.Query<bool>("${Navigation.Active}");
+            
+            //if a specific stop distance isn't set, use the NavStopDistance from general settings
+            if(stopDistance == -1)
+            {
+                stopDistance = E3.GeneralSettings.Movement_NavStopDistance;
+            }
 
             if (!navPathExists)
             {
@@ -652,7 +658,8 @@ namespace E3Core.Utility
 
             int timeoutInMS = 3000;
 
-            MQ.Cmd($"/nav id {spawnID}");
+            
+            MQ.Cmd($"/nav id {spawnID} distance={stopDistance}");
             
             Int64 endTime = Core.StopWatch.ElapsedMilliseconds + timeoutInMS;
             MQ.Delay(300);
@@ -696,43 +703,27 @@ namespace E3Core.Utility
 
         private static void NavToLoc(Double locX, Double locY, Double locZ=-1.00)
         {
-            bool navPathExists;
             bool navActive = MQ.Query<bool>("${Navigation.Active}");
+            var navQuery = locZ == -1 ? $"locxy {locX} {locY}" : $"locxyz {locX} {locY} {locZ}";
 
-            if (locZ == -1.00)
-            {
-                navPathExists = MQ.Query<bool>($"${{Navigation.PathExists[locxy {locX} {locY}]}}"); 
-            }
-            else
-            {
-                navPathExists = MQ.Query<bool>($"${{Navigation.PathExists[locxyz {locX} {locY} {locZ}]}}");
-            }
-
+            var navPathExists = MQ.Query<bool>($"${{Navigation.PathExists[{navQuery}]}}");
+            
             if (!navPathExists)
             {
                 //early return if no path available
-                if (locZ == -1.00)
+                var message = $"\arNo navpath available to location X:{locX} Y:{locY}";
+                if (locZ > -1)
                 {
-                    MQ.Write($"\arNo nav path available to location X:{locX} Y:{locY}");
+                    message += $" Z:{locZ}";
                 }
-                else
-                {
-                    MQ.Write($"\arNo nav path available to location X:{locX} Y:{locY} Z:{locZ}");
-                }
-                    
+
+                MQ.Write(message);
                 return;
             }
 
             int timeoutInMS = 3000;
 
-            if (locZ == -1.00)
-            {
-                MQ.Cmd($"/nav locxy {locX} {locY}");
-            }
-            else
-            {
-                MQ.Cmd($"/nav locxyz {locX} {locY} {locZ}");
-            }
+            MQ.Cmd($"/nav {navQuery}");
             
 
             Int64 endTime = Core.StopWatch.ElapsedMilliseconds + timeoutInMS;
@@ -771,15 +762,8 @@ namespace E3Core.Utility
                 }
                 //add additional time to get to target
                 endTime += timeoutInMS;
-                
-                if (locZ == -1.00)
-                {
-                    navPathExists = MQ.Query<bool>($"${{Navigation.PathExists[locxy {locX} {locY}]}}");
-                }
-                else
-                {
-                    navPathExists = MQ.Query<bool>($"${{Navigation.PathExists[locxyz {locX} {locY} {locZ}]}}");
-                }
+
+                navPathExists = MQ.Query<bool>($"${{Navigation.PathExists[{navQuery}]}}");
             }
         }
         

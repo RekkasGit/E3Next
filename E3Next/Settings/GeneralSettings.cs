@@ -62,11 +62,17 @@ namespace E3Core.Settings
         public Int32 Assists_LongTermDebuffRecast = 30;
         public Int32 Assists_ShortTermDebuffRecast = 5;
 
-        public bool AutoTradeAll = false;
-        public bool AutoTradeBots = false;
-        public bool AutoTradeGroup = false;
-        public bool AutoTradeGuild = false;
-        public bool AutoTradeRaid = false;
+        public bool AutoTrade_All = false;
+        public bool AutoTrade_Bots = false;
+        public bool AutoTrade_Group = false;
+        public bool AutoTrade_Guild = false;
+        public bool AutoTrade_Raid = false;
+
+        public Int32 Movement_ChaseDistanceMin = 50;
+        public Int32 Movement_ChaseDistanceMax = 500;
+        public Int32 Movement_NavStopDistance = 10;
+        public Int32 Movement_AnchorDistanceMin = 15;
+        public Int32 Movement_AnchorDistanceMax = 150;
 
         public GeneralSettings()
         {
@@ -165,11 +171,17 @@ namespace E3Core.Settings
             LoadKeyData("Assists", "Long Term Debuff Recast(s)", parsedData, ref Assists_LongTermDebuffRecast);
             LoadKeyData("Assists", "Short Term Debuff Recast(s)", parsedData, ref Assists_ShortTermDebuffRecast);
 
-            LoadKeyData("AutoTrade", "All (On/Off)", parsedData, ref AutoTradeAll);
-            LoadKeyData("AutoTrade", "Bots (On/Off)", parsedData, ref AutoTradeBots);
-            LoadKeyData("AutoTrade", "Group (On/Off)", parsedData, ref AutoTradeGroup);
-            LoadKeyData("AutoTrade", "Guild (On/Off)", parsedData, ref AutoTradeGuild);
-            LoadKeyData("AutoTrade", "Raid (On/Off)", parsedData, ref AutoTradeRaid);
+            LoadKeyData("AutoTrade", "All (On/Off)", parsedData, ref AutoTrade_All);
+            LoadKeyData("AutoTrade", "Bots (On/Off)", parsedData, ref AutoTrade_Bots);
+            LoadKeyData("AutoTrade", "Group (On/Off)", parsedData, ref AutoTrade_Group);
+            LoadKeyData("AutoTrade", "Guild (On/Off)", parsedData, ref AutoTrade_Guild);
+            LoadKeyData("AutoTrade", "Raid (On/Off)", parsedData, ref AutoTrade_Raid);
+
+            LoadKeyData("Movement", "Chase Distance Minimum", parsedData, ref Movement_ChaseDistanceMin);
+            LoadKeyData("Movement", "Chase Distance Maximum", parsedData, ref Movement_ChaseDistanceMax);
+            LoadKeyData("Movement", "Nav Stop Distance", parsedData, ref Movement_NavStopDistance);
+            LoadKeyData("Movement", "Anchor Distance Minimum", parsedData, ref Movement_AnchorDistanceMin);
+            LoadKeyData("Movement", "Anchor Distance Maximum", parsedData, ref Movement_AnchorDistanceMax);
         }
 
         public IniData CreateSettings()
@@ -260,7 +272,15 @@ namespace E3Core.Settings
             section.Keys.AddKey("Group (On/Off)", "Off");
             section.Keys.AddKey("Guild (On/Off)", "Off");
             section.Keys.AddKey("Raid (On/Off)", "Off");
-            
+
+            newFile.Sections.AddSection("Movement");
+            section = newFile.Sections.GetSectionData("Movement");
+            section.Keys.AddKey("Chase Distance Minimum", "50");
+            section.Keys.AddKey("Chase Distance Maximum", "500");
+            section.Keys.AddKey("Nav Stop Distance", "10");
+            section.Keys.AddKey("Anchor Distance Minimum", "15");
+            section.Keys.AddKey("Anchor Distance Maximum", "150");
+
             string filename = GetSettingsFilePath("General Settings.ini");
             if (!System.IO.File.Exists(filename))
             {
