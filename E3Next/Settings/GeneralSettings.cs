@@ -62,17 +62,17 @@ namespace E3Core.Settings
         public Int32 Assists_LongTermDebuffRecast = 30;
         public Int32 Assists_ShortTermDebuffRecast = 5;
 
-        public bool AutoTradeAll = false;
-        public bool AutoTradeBots = false;
-        public bool AutoTradeGroup = false;
-        public bool AutoTradeGuild = false;
-        public bool AutoTradeRaid = false;
+        public bool AutoTrade_All = false;
+        public bool AutoTrade_Bots = false;
+        public bool AutoTrade_Group = false;
+        public bool AutoTrade_Guild = false;
+        public bool AutoTrade_Raid = false;
 
-        public Int32 MinDistanceToChase = 50;
-        public Int32 MaxDistanceToChase = 500;
-        public Int32 NavStopDistance = 10;
-        public Int32 AnchorMinDistance = 15;
-        public Int32 AnchorMaxDistance = 150;
+        public Int32 Movement_MinDistanceToChase = 50;
+        public Int32 Movement_MaxDistanceToChase = 500;
+        public Int32 Movement_NavStopDistance = 10;
+        public Int32 Movement_AnchorMinDistance = 15;
+        public Int32 Movement_AnchorMaxDistance = 150;
 
         public GeneralSettings()
         {
@@ -171,17 +171,17 @@ namespace E3Core.Settings
             LoadKeyData("Assists", "Long Term Debuff Recast(s)", parsedData, ref Assists_LongTermDebuffRecast);
             LoadKeyData("Assists", "Short Term Debuff Recast(s)", parsedData, ref Assists_ShortTermDebuffRecast);
 
-            LoadKeyData("AutoTrade", "All (On/Off)", parsedData, ref AutoTradeAll);
-            LoadKeyData("AutoTrade", "Bots (On/Off)", parsedData, ref AutoTradeBots);
-            LoadKeyData("AutoTrade", "Group (On/Off)", parsedData, ref AutoTradeGroup);
-            LoadKeyData("AutoTrade", "Guild (On/Off)", parsedData, ref AutoTradeGuild);
-            LoadKeyData("AutoTrade", "Raid (On/Off)", parsedData, ref AutoTradeRaid);
+            LoadKeyData("AutoTrade", "All (On/Off)", parsedData, ref AutoTrade_All);
+            LoadKeyData("AutoTrade", "Bots (On/Off)", parsedData, ref AutoTrade_Bots);
+            LoadKeyData("AutoTrade", "Group (On/Off)", parsedData, ref AutoTrade_Group);
+            LoadKeyData("AutoTrade", "Guild (On/Off)", parsedData, ref AutoTrade_Guild);
+            LoadKeyData("AutoTrade", "Raid (On/Off)", parsedData, ref AutoTrade_Raid);
 
-            LoadKeyData("Movement", "MinDistanceToChase", parsedData, ref MinDistanceToChase);
-            LoadKeyData("Movement", "MaxDistanceToChase", parsedData, ref MaxDistanceToChase);
-            LoadKeyData("Movement", "NavStopDistance", parsedData, ref NavStopDistance);
-            LoadKeyData("Movement", "AnchorMinDistance", parsedData, ref AnchorMinDistance);
-            LoadKeyData("Movement", "AnchorMaxDistance", parsedData, ref AnchorMaxDistance);
+            LoadKeyData("Movement", "MinDistanceToChase", parsedData, ref Movement_MinDistanceToChase);
+            LoadKeyData("Movement", "MaxDistanceToChase", parsedData, ref Movement_MaxDistanceToChase);
+            LoadKeyData("Movement", "NavStopDistance", parsedData, ref Movement_NavStopDistance);
+            LoadKeyData("Movement", "AnchorMinDistance", parsedData, ref Movement_AnchorMinDistance);
+            LoadKeyData("Movement", "AnchorMaxDistance", parsedData, ref Movement_AnchorMaxDistance);
         }
 
         public IniData CreateSettings()

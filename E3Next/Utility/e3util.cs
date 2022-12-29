@@ -56,7 +56,7 @@ namespace E3Core.Utility
                     
                     e3util.NavToSpawnID(targetID);
                     //exit from TryMoveToTarget if we've reached the target
-                    if(MQ.Query<Double>("${Target.Distance}") < E3.GeneralSettings.NavStopDistance)
+                    if(MQ.Query<Double>("${Target.Distance}") < E3.GeneralSettings.Movement_NavStopDistance)
                     {
                         return;
                     }
@@ -646,7 +646,7 @@ namespace E3Core.Utility
             //if a specific stop distance isn't set, use the NavStopDistance from general settings
             if(stopDistance == -1)
             {
-                stopDistance = E3.GeneralSettings.NavStopDistance;
+                stopDistance = E3.GeneralSettings.Movement_NavStopDistance;
             }
 
             if (!navPathExists)

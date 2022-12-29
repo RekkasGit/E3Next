@@ -434,33 +434,33 @@ namespace E3Core.Processors
                         MQ.Cmd($"/nomodkey /notify TradeWnd TRDW_Cancel_Button leftmouseup");
                         E3.Bots.Broadcast($"Cancelling trade with {trader.CleanName} because of combat");
                     }
-                    if (E3.GeneralSettings.AutoTradeAll)
+                    if (E3.GeneralSettings.AutoTrade_All)
                     {
                         doTrade = true;
                      
                     }
-                    else if (E3.GeneralSettings.AutoTradeGuild)
+                    else if (E3.GeneralSettings.AutoTrade_Guild)
                     {
                         if (MQ.Query<bool>($"${{Spawn[id {trader.ID}].Guild.Equal[${{Me.Guild}}]}}"))
                         {
                             doTrade = true;
                         }
                     }
-                    else if (E3.GeneralSettings.AutoTradeRaid)
+                    else if (E3.GeneralSettings.AutoTrade_Raid)
                     {
                         if (MQ.Query<bool>($"${{Raid.Member[{trader.DiplayName}]}}"))
                         {
                             doTrade = true;
                         }
                     }
-                    else if (E3.GeneralSettings.AutoTradeBots)
+                    else if (E3.GeneralSettings.AutoTrade_Bots)
                     {
                         if (E3.Bots.BotsConnected().Contains(trader.CleanName))
                         {
                             doTrade = true;
                         }
                     }
-                    else if (E3.GeneralSettings.AutoTradeGroup)
+                    else if (E3.GeneralSettings.AutoTrade_Group)
                     {
                         if (Basics.GroupMembers.Contains(trader.ID))
                         {
