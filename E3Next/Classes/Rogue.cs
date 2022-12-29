@@ -4,6 +4,8 @@ using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
 using E3Core.Processors;
+using E3Core.Settings;
+using E3Core.Utility;
 using MonoCore;
 
 namespace E3Core.Classes
@@ -17,6 +19,8 @@ namespace E3Core.Classes
         private static IMQ MQ = E3.MQ;
         private static ISpawns _spawns = E3.Spawns;
         private static Data.Spell _rogueSneakAttack = null;
+        private static long _nextHideCheck = 0;
+        private static long _nextHideCheckInterval = 1000;
 
         /// <summary>
         /// Performs a sneak attack.
@@ -56,6 +60,29 @@ namespace E3Core.Classes
                 }
             }
             
+        }
+
+        [ClassInvoke(Data.Class.Rogue)]
+        public static void AutoHide()
+        {
+            if (!e3util.ShouldCheck(ref _nextHideCheck, _nextHideCheckInterval)) return;
+            if (!E3.CharacterSettings.Rogue_AutoHide) return;
+            if (MQ.Query<bool>("${Me.Invis}")) return;
+            if (MQ.Query<bool>("${Me.Moving}")) return;
+            if (Basics.InCombat()) return;
+
+
+            var sneakQuery = "${Me.Sneaking}";
+            if (!MQ.Query<bool>(sneakQuery) && MQ.Query<bool>("${Me.AbilityReady[Sneak]"))
+            {
+                MQ.Cmd("/doability sneak");
+                MQ.Delay(1000, sneakQuery);
+            }
+
+            if (MQ.Query<bool>(sneakQuery) && MQ.Query<bool>("${Me.AbilityReady[Hide]"))
+            {
+                MQ.Cmd("/doability hide");
+            }
         }
 
         /// <summary>
