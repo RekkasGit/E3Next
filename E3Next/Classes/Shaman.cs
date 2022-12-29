@@ -77,6 +77,8 @@ namespace E3Core.Classes
                 if (tempMaxAggro > _maxAggroCap)
                 {
 
+                    if (!Assist.IsAssisting) return;
+
                     Spell s;
                     if (!Spell.LoadedSpellsByName.TryGetValue("Inconspicuous Totem", out s))
                     {
