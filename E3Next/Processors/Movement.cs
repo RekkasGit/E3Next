@@ -58,8 +58,8 @@ namespace E3Core.Processors
                 if (_chaseTarget != String.Empty && !Assist.IsAssisting)
                 {
                     double distance = MQ.Query<double>($"${{Spawn[={_chaseTarget}].Distance}}");
-                    double minDistanceToChase = E3.GeneralSettings.Movement_MinDistanceToChase;
-                    double maxDistanceToChase = E3.GeneralSettings.Movement_MaxDistanceToChase;
+                    double minDistanceToChase = E3.GeneralSettings.Movement_ChaseDistanceMin;
+                    double maxDistanceToChase = E3.GeneralSettings.Movement_ChaseDistanceMax;
 
                     if (distance != -1)
                     {
@@ -172,7 +172,7 @@ namespace E3Core.Processors
             Spawn s;
             if (_spawns.TryByID(AnchorTarget, out s))
             {
-                if (s.Distance > E3.GeneralSettings.Movement_AnchorMinDistance && s.Distance < E3.GeneralSettings.Movement_AnchorMaxDistance)
+                if (s.Distance > E3.GeneralSettings.Movement_AnchorDistanceMin && s.Distance < E3.GeneralSettings.Movement_AnchorDistanceMax)
                 {
                     e3util.TryMoveToLoc(s.X, s.Y);
                 }

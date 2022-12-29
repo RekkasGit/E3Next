@@ -68,11 +68,11 @@ namespace E3Core.Settings
         public bool AutoTrade_Guild = false;
         public bool AutoTrade_Raid = false;
 
-        public Int32 Movement_MinDistanceToChase = 50;
-        public Int32 Movement_MaxDistanceToChase = 500;
+        public Int32 Movement_ChaseDistanceMin = 50;
+        public Int32 Movement_ChaseDistanceMax = 500;
         public Int32 Movement_NavStopDistance = 10;
-        public Int32 Movement_AnchorMinDistance = 15;
-        public Int32 Movement_AnchorMaxDistance = 150;
+        public Int32 Movement_AnchorDistanceMin = 15;
+        public Int32 Movement_AnchorDistanceMax = 150;
 
         public GeneralSettings()
         {
@@ -177,11 +177,11 @@ namespace E3Core.Settings
             LoadKeyData("AutoTrade", "Guild (On/Off)", parsedData, ref AutoTrade_Guild);
             LoadKeyData("AutoTrade", "Raid (On/Off)", parsedData, ref AutoTrade_Raid);
 
-            LoadKeyData("Movement", "MinDistanceToChase", parsedData, ref Movement_MinDistanceToChase);
-            LoadKeyData("Movement", "MaxDistanceToChase", parsedData, ref Movement_MaxDistanceToChase);
-            LoadKeyData("Movement", "NavStopDistance", parsedData, ref Movement_NavStopDistance);
-            LoadKeyData("Movement", "AnchorMinDistance", parsedData, ref Movement_AnchorMinDistance);
-            LoadKeyData("Movement", "AnchorMaxDistance", parsedData, ref Movement_AnchorMaxDistance);
+            LoadKeyData("Movement", "Chase Distance Minimum", parsedData, ref Movement_ChaseDistanceMin);
+            LoadKeyData("Movement", "Chase Distance Maximum", parsedData, ref Movement_ChaseDistanceMax);
+            LoadKeyData("Movement", "Nav Stop Distance", parsedData, ref Movement_NavStopDistance);
+            LoadKeyData("Movement", "Anchor Distance Minimum", parsedData, ref Movement_AnchorDistanceMin);
+            LoadKeyData("Movement", "Anchor Distance Maximum", parsedData, ref Movement_AnchorDistanceMax);
         }
 
         public IniData CreateSettings()
@@ -275,11 +275,11 @@ namespace E3Core.Settings
 
             newFile.Sections.AddSection("Movement");
             section = newFile.Sections.GetSectionData("Movement");
-            section.Keys.AddKey("MinDistanceToChase", "50");
-            section.Keys.AddKey("MaxDistanceToChase", "500");
-            section.Keys.AddKey("NavStopDistance", "10");
-            section.Keys.AddKey("MinAnchorDistance", "15");
-            section.Keys.AddKey("MaxAnchorDistance", "150");
+            section.Keys.AddKey("Chase Distance Minimum", "50");
+            section.Keys.AddKey("Chase Distance Maximum", "500");
+            section.Keys.AddKey("Nav Stop Distance", "10");
+            section.Keys.AddKey("Anchor Distance Minimum", "15");
+            section.Keys.AddKey("Anchor Distance Maximum", "150");
 
             string filename = GetSettingsFilePath("General Settings.ini");
             if (!System.IO.File.Exists(filename))
