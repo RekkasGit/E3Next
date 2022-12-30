@@ -14,7 +14,7 @@ namespace E3Core.Settings
 {
     public class GeneralSettings : BaseSettings, IBaseSettings
     {
-
+        public Int32 VersionID = 1;
         public Int32 General_MaxResponseDistance;
         public Int32 General_LeashLength;
         public Boolean General_EndMedBreakInCombat;
@@ -57,7 +57,7 @@ namespace E3Core.Settings
 
         public Boolean Assists_AutoAssistEnabled;
         public Int32 Assists_MaxEngagedDistance;
-        public Int32 Assists_AEThreadRange;
+        public Int32 Assists_AEThreatRange=100;
         public String Assists_AcceptableTargetTypes;
         public Int32 Assists_LongTermDebuffRecast = 30;
         public Int32 Assists_ShortTermDebuffRecast = 5;
@@ -166,7 +166,10 @@ namespace E3Core.Settings
             LoadKeyData("Assists", "Auto-Assist (On/Off)", parsedData, ref Assists_AutoAssistEnabled);
 
             LoadKeyData("Assists", "Max Engage Distance", parsedData, ref Assists_MaxEngagedDistance);
-            LoadKeyData("Assists", "AE Threat Range", parsedData, ref Assists_AEThreadRange);
+            LoadKeyData("Assists", "AE Threat Range", parsedData, ref Assists_AEThreatRange);
+            if (Assists_AEThreatRange < 10) Assists_AEThreatRange = 10;
+            if (Assists_AEThreatRange > 300) Assists_AEThreatRange = 300;
+
             LoadKeyData("Assists", "Acceptable Target Types", parsedData, ref Assists_AcceptableTargetTypes);
             LoadKeyData("Assists", "Long Term Debuff Recast(s)", parsedData, ref Assists_LongTermDebuffRecast);
             LoadKeyData("Assists", "Short Term Debuff Recast(s)", parsedData, ref Assists_ShortTermDebuffRecast);

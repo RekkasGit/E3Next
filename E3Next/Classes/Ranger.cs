@@ -59,7 +59,7 @@ namespace E3Core.Classes
                         MQ.Delay(100);
                         counter++;
                     }
-                    Assist.AssistOn(assistid);
+                    Assist.AssistOn(assistid, Zoning.CurrentZone.Id);
                     
                 }
 

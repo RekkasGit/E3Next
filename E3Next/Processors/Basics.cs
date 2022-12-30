@@ -111,6 +111,7 @@ namespace E3Core.Processors
                 Movement.ResetKeepFollow();
                 Assist.Reset();
                 Pets.Reset();
+                Nukes.Reset();
                 Zoning.Zoned(MQ.Query<Int32>("${Zone.ID}"));
             });
             EventProcessor.RegisterEvent("Summoned", @"You have been summoned!", (x) =>

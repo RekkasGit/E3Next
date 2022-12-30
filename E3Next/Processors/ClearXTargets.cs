@@ -27,6 +27,7 @@ namespace E3Core.Processors
 
             if (Enabled)
             {
+                MQ.Delay(0);
                 _spawns.RefreshList();
                 if (MobToAttack > 0)
                 {
@@ -82,9 +83,9 @@ namespace E3Core.Processors
                         {
                             MQ.Write("\agClear Targets: \aoIssuing Assist.");
                             Assist.AllowControl = true;
-                            Assist.AssistOn(mobId);
+                            Assist.AssistOn(mobId,Zoning.CurrentZone.Id);
                             MQ.Delay(500);
-                            E3.Bots.BroadcastCommandToGroup($"/assistme {mobId}");
+                            E3.Bots.BroadcastCommandToGroup($"/assistme {mobId} {Zoning.CurrentZone.Id}");
                         }
                     }
                 }

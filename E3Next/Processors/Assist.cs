@@ -411,9 +411,9 @@ namespace E3Core.Processors
         /// Turns assist on.
         /// </summary>
         /// <param name="mobID">The mob identifier.</param>
-        public static void AssistOn(Int32 mobID)
+        public static void AssistOn(Int32 mobID, Int32 zoneId)
         {
-           
+            if (zoneId != Zoning.CurrentZone.Id) return;
             //clear in case its not reset by other means
             //or you want to attack in enrage
             _assistIsEnraged = false;
@@ -652,28 +652,36 @@ namespace E3Core.Processors
                     {
                         AssistOff();
                         AllowControl = true;
-                        AssistOn(targetID);
+                        AssistOn(targetID,Zoning.CurrentZone.Id);
 
                     }
                     if(hasAllFlag)
                     {
-                        E3.Bots.BroadcastCommand($"/assistme {targetID}",false, x);
+                        E3.Bots.BroadcastCommand($"/assistme {targetID} {Zoning.CurrentZone.Id}",false, x);
                     }
                     else
                     {
-                        E3.Bots.BroadcastCommandToGroup($"/assistme {targetID}", x);
+                        E3.Bots.BroadcastCommandToGroup($"/assistme {targetID} {Zoning.CurrentZone.Id}", x);
                     }
                    
                 }
                 else if (!e3util.FilterMe(x))
                 {
                     Int32 mobid;
+                    Int32 zoneid;
+                   
                     if (Int32.TryParse(x.args[0], out mobid))
                     {
-                        if (mobid == AssistTargetID) return;
-                        AssistOff();
-                        AllowControl = false;
-                        AssistOn(mobid);
+                        //make sure the target is in the same zone we are in
+                        if(Int32.TryParse(x.args[1],out zoneid))
+                        {
+                            if (mobid == AssistTargetID) return;
+                            AssistOff();
+                            AllowControl = false;
+                           
+                            AssistOn(mobid,zoneid);
+                            
+                        }
                     }
                 }
             });
