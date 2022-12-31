@@ -68,7 +68,7 @@ namespace E3Core.Settings
         public bool AutoTrade_Guild = false;
         public bool AutoTrade_Raid = false;
 
-        public Int32 Movement_ChaseDistanceMin = 50;
+        public Int32 Movement_ChaseDistanceMin = 10;
         public Int32 Movement_ChaseDistanceMax = 500;
         public Int32 Movement_NavStopDistance = 10;
         public Int32 Movement_AnchorDistanceMin = 15;
@@ -185,6 +185,30 @@ namespace E3Core.Settings
             LoadKeyData("Movement", "Nav Stop Distance", parsedData, ref Movement_NavStopDistance);
             LoadKeyData("Movement", "Anchor Distance Minimum", parsedData, ref Movement_AnchorDistanceMin);
             LoadKeyData("Movement", "Anchor Distance Maximum", parsedData, ref Movement_AnchorDistanceMax);
+
+            if (Movement_ChaseDistanceMin < 1)
+            {
+                MQ.Write($"Chase Distance Minimum can't be less than 1, defaulting to 10 units");
+                Movement_ChaseDistanceMin = 10;
+            }
+            if (Movement_ChaseDistanceMax < Movement_ChaseDistanceMin)
+            {
+                MQ.Write($"Chase Distance Max lower than Chase Distance Min, defaulting to min:10, max:500 units");
+                Movement_ChaseDistanceMin = 10;
+                Movement_ChaseDistanceMax = 500;
+            }
+            if (Movement_AnchorDistanceMin < 1)
+            {
+                MQ.Write($"Anchor Distance Minimum can't be less than 1, defaulting to 10 units");
+                Movement_AnchorDistanceMin = 10;
+            }
+            if (Movement_AnchorDistanceMax < Movement_AnchorDistanceMin)
+            {
+                MQ.Write($"Anchor Distance Max lower than Anchor Distance Min, defaulting to min:15, max:500 units");
+                Movement_AnchorDistanceMin = 15;
+                Movement_AnchorDistanceMax = 500;
+            }
+
         }
 
         public IniData CreateSettings()
@@ -278,7 +302,7 @@ namespace E3Core.Settings
 
             newFile.Sections.AddSection("Movement");
             section = newFile.Sections.GetSectionData("Movement");
-            section.Keys.AddKey("Chase Distance Minimum", "50");
+            section.Keys.AddKey("Chase Distance Minimum", "10");
             section.Keys.AddKey("Chase Distance Maximum", "500");
             section.Keys.AddKey("Nav Stop Distance", "10");
             section.Keys.AddKey("Anchor Distance Minimum", "15");
