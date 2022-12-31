@@ -112,6 +112,10 @@ namespace E3Core.Processors
                         if (AllowControl && targetId!=E3.CurrentId)
                         {
                             AssistTargetID = targetId;
+                            if (E3.GeneralSettings.Assists_AutoAssistEnabled)
+                            {
+                                MQ.Cmd("/assistme");
+                            }
                         }
                         else
                         {
@@ -368,6 +372,30 @@ namespace E3Core.Processors
                         else if (ability.CastType == Data.CastType.Item)
                         {
                             Casting.Cast(AssistTargetID, ability);
+                        }
+                    }
+                }
+            }
+        }
+
+
+        [ClassInvoke(Data.Class.All)]
+        public static void CheckAutoAssist()
+        {
+            if(E3.GeneralSettings.Assists_AutoAssistEnabled)
+            {
+                if (AssistTargetID > 0) return;
+                if (!MQ.Query<bool>("${Target.ID}")) return;
+                if (!MQ.Query<bool>("${Me.Combat}")) return;
+                Int32 mobid = MQ.Query<Int32>("${Target.ID}");
+                if (_spawns.TryByID(mobid,out var spawn))
+                {
+                    if(spawn.Aggressive && spawn.TypeDesc != "Corpse")
+                    {
+                        Int32 targetHPPct = MQ.Query<Int32>("${Target.PctHPs}");
+                        if(targetHPPct>0 && targetHPPct<= E3.CharacterSettings.Assist_AutoAssistPercent)
+                        {
+                            MQ.Cmd("/assistme");
                         }
                     }
                 }

@@ -159,7 +159,7 @@ namespace E3Core.Settings
 
             LoadKeyData("Buff Requests", "Allow Buff Requests (On/Off)", parsedData, ref BuffRequests_AllowBuffRequests);
             LoadKeyData("Buff Requests", "Restricted PCs (When Requests [On])", parsedData, ref BuffRequests_RestrictedPCs);
-            LoadKeyData("Buff Requests", "Allowed PCs (When Requests [Off])", parsedData, ref BuffRequests_AllowBuffRequests);
+            LoadKeyData("Buff Requests", "Allowed PCs (When Requests [Off])", parsedData, ref BuffRequests_AllowedPcs);
 
             LoadKeyData("Auto-Tribute", "Auto -Tribute (On/Off)", parsedData, ref AutoTribute_Enabled);
 
