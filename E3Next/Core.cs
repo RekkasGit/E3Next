@@ -73,6 +73,7 @@ namespace MonoCore
                         //DO YOUR WORK HERE
                         //this loop executes once every OnPulse from C++
                         //************************************************
+                        EventProcessor.ProcessEventsInQueues();
                         E3.Process();
                         EventProcessor.ProcessEventsInQueues();
 
@@ -319,7 +320,7 @@ namespace MonoCore
                             foreach (var item in CommandList)
                             {
                                 //prevent spamming of an event to a user
-                                if (item.Value.queuedEvents.Count > EventLimiterPerRegisteredEvent)
+                                if (item.Value.queuedEvents.Count > 50)
                                 {
                                     Core.mqInstance.Write("event limiter");
 
@@ -547,11 +548,9 @@ namespace MonoCore
         }
         public static void ProcessMQCommand(string line)
         {
-            //to prevent spams
-            if (EventList.Count > 0)
-            {
-                _mqCommandProcessingQueue.Enqueue(line);
-            }
+           
+           _mqCommandProcessingQueue.Enqueue(line);
+           
 
         }
         public static void ClearEventQueue(string keyName)

@@ -52,6 +52,7 @@ namespace E3Core.Processors
 
             //nowcast before all.
             EventProcessor.ProcessEventsInQueues("/nowcast");
+            EventProcessor.ProcessEventsInQueues("/backoff");
             //use burns if able, this is high as some heals need burns as well
             Burns.UseBurns();
             //do the basics first
@@ -122,6 +123,8 @@ namespace E3Core.Processors
                 foreach (var kvp in AdvancedSettings.ClassMethodLookup)
                 {
                     kvp.Value.Invoke();
+                    EventProcessor.ProcessEventsInQueues("/nowcast");
+                    EventProcessor.ProcessEventsInQueues("/backoff");
                 }
             }
 
