@@ -55,7 +55,7 @@ namespace E3Core.Settings
 
         public Boolean AutoTribute_Enabled;
 
-        public Boolean Assists_AutoAssistEnabled;
+        public Boolean Assists_AutoAssistEnabled=false;
         public Int32 Assists_MaxEngagedDistance;
         public Int32 Assists_AEThreatRange=100;
         public String Assists_AcceptableTargetTypes;
