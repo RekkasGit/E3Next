@@ -9,6 +9,7 @@ using System.Linq;
 using System.Runtime.CompilerServices;
 using static MonoCore.EventProcessor;
 
+
 namespace E3Core.Utility
 {
     public static class e3util
@@ -642,7 +643,10 @@ namespace E3Core.Utility
         {
             bool navPathExists = MQ.Query<bool>($"${{Navigation.PathExists[id {spawnID}]}}");
             bool navActive = MQ.Query<bool>("${Navigation.Active}");
-            
+
+            double minDistanceToChase = E3.GeneralSettings.Movement_ChaseDistanceMin;
+            double maxDistanceToChase = E3.GeneralSettings.Movement_ChaseDistanceMax;
+
             //if a specific stop distance isn't set, use the NavStopDistance from general settings
             if(stopDistance == -1)
             {
@@ -669,6 +673,17 @@ namespace E3Core.Utility
                 Double meX = MQ.Query<Double>("${Me.X}");
                 Double meY = MQ.Query<Double>("${Me.Y}");
 
+                Double navPathLength = MQ.Query<Double>($"${{Navigation.PathLength[id {spawnID}]}}");
+
+                if (Movement.Following && navPathLength > maxDistanceToChase)
+                {
+                    //Stop nav and break follow because distance is longer than max distance allowed
+                    MQ.Cmd("/nav stop");
+                    E3.Bots.Broadcast("${Me} stopping Nav because the path distance is greater than Chase Max distance.");
+                    //Movement.Following = false;
+                    break;
+                }
+                
                 if (endTime < Core.StopWatch.ElapsedMilliseconds)
                 {
                     //stop nav if we exceed the timeout
