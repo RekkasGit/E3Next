@@ -232,6 +232,8 @@ namespace E3Core.Processors
 
                 foreach (var c in corpses)
                 {
+                    //allow eq time to send the message to us
+                    MQ.Delay(0);
                     EventProcessor.ProcessEventsInQueues("/lootoff");
                     if (!_shouldLoot) return;
 

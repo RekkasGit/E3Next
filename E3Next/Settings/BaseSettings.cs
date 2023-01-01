@@ -195,11 +195,11 @@ namespace E3Core.Settings
                     {
                         if (!String.IsNullOrWhiteSpace(data))
                         {
-                            if (data.Equals("Off") || data.Equals("False"))
+                            if (data.Equals("Off", StringComparison.OrdinalIgnoreCase) || data.Equals("False", StringComparison.OrdinalIgnoreCase))
                             {
                                 valueToSet = false;
                             }
-                            else if (data.Equals("On") || data.Equals("True"))
+                            else if (data.Equals("On", StringComparison.OrdinalIgnoreCase) || data.Equals("True", StringComparison.OrdinalIgnoreCase))
                             {
                                 valueToSet = true;
                             }

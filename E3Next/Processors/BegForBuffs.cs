@@ -295,6 +295,12 @@ namespace E3Core.Processors
 
                         _queuedBuffs.Dequeue();
                     }
+                    else
+                    { 
+                        E3.Bots.Broadcast("Removing spell from queue due to it being not ready or out of range: " + s.CastName);
+                        //possibly long cooldown?
+                        _queuedBuffs.Dequeue();
+                    }
                 }
                 else
                 {
