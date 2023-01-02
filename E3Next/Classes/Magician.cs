@@ -179,7 +179,9 @@ namespace E3Core.Classes
             if (myPetId > 0 && primary == 0)
             {
                 E3.CharacterSettings.PetWeapons.TryGetValue(E3.CurrentName, out var weapons);
+                if (e3util.IsShuttingDown() || E3.IsPaused()) return;
                 ArmPet(myPetId, weapons);
+                if (e3util.IsShuttingDown() || E3.IsPaused()) return;
             }
 
             // bot pets
@@ -187,6 +189,8 @@ namespace E3Core.Classes
             {
                 if (_spawns.TryByName(kvp.Key, out var ownerSpawn))
                 {
+                    if (e3util.IsShuttingDown() || E3.IsPaused()) return;
+
                     if (string.Equals(ownerSpawn.Name, E3.CurrentName)) continue;
                     var theirPetId = ownerSpawn.PetID;
                     if (theirPetId < 0)
@@ -241,7 +245,7 @@ namespace E3Core.Classes
 
             GiveOther(petId, _armorSpell);
             GiveOther(petId, _focusSpell);
-
+     
             var pet = _spawns.Get().FirstOrDefault(f => f.ID == petId);
             if(pet != null)
             {
@@ -268,7 +272,6 @@ namespace E3Core.Classes
 
             var foundPrimary = MQ.Query<bool>($"${{FindItem[={primary}]}}");
             var foundSecondary = MQ.Query<bool>($"${{FindItem[={secondary}]}}");
-            
 
             if (!foundPrimary || !foundSecondary)
             {

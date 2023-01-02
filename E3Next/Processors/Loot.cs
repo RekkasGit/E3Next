@@ -234,6 +234,7 @@ namespace E3Core.Processors
                 {
                     //allow eq time to send the message to us
                     MQ.Delay(0);
+                    if (e3util.IsShuttingDown() || E3.IsPaused()) return;
                     EventProcessor.ProcessEventsInQueues("/lootoff");
                     if (!_shouldLoot) return;
 

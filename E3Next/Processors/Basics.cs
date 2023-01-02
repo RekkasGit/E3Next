@@ -695,10 +695,13 @@ namespace E3Core.Processors
 
                 bool hasManaStone = MQ.Query<bool>("${Bool[${FindItem[=Manastone]}]}");
                 bool amIStanding = MQ.Query<bool>("${Me.Standing}");
-                if (MQ.Query<bool>("${Me.Invis}")) return;
+               
 
                 if (hasManaStone && amIStanding)
                 {
+                    MQ.Delay(0);
+                    if (MQ.Query<bool>("${Me.Invis}")) return;
+
                     MQ.Write("\agUsing Manastone...");
                     int pctHps = MQ.Query<int>("${Me.PctHPs}");
                     pctMana = MQ.Query<int>("${Me.PctMana}");
@@ -779,7 +782,7 @@ namespace E3Core.Processors
         {
             if (!e3util.ShouldCheck(ref _nextFoodCheck, _nextFoodCheckInterval)) return;
 
-            if (!E3.CharacterSettings.Misc_AutoFoodEnabled || Assist.IsAssisting) return;
+            if (!E3.CharacterSettings.Misc_AutoFoodEnabled) return;
             using (Log.Trace())
             {
                 var toEat = E3.CharacterSettings.Misc_AutoFood;
