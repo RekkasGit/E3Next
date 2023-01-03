@@ -1,14 +1,10 @@
 ﻿using E3Core.Data;
 using E3Core.Settings;
-using E3Core.Settings.FeatureSettings;
 using E3Core.Utility;
-using Microsoft.Win32;
 using MonoCore;
 using System;
 using System.Collections.Generic;
 using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
 
 namespace E3Core.Processors
 {
@@ -113,12 +109,12 @@ namespace E3Core.Processors
 
                 if (Basics.InCombat() && !E3.CharacterSettings.Gimme_InCombat) return;
 
+                Int32 qty = int.MaxValue;
                 //giveme Alara "Something" qty Rekken
                 if (x.args.Count > 3)
                 {
                     string user = x.args[0];
                     string something = x.args[1];
-                    Int32 qty = 1;
                     string reciver = x.args[3];
                     if (x.args.Count > 2)
                     {
@@ -132,7 +128,6 @@ namespace E3Core.Processors
                     //need to broadcast 
                     string user = x.args[0];
                     string something = x.args[1];
-                    Int32 qty = 1;
                     if (x.args.Count > 2)
                     {
                         Int32.TryParse(x.args[2], out qty);
@@ -204,33 +199,86 @@ namespace E3Core.Processors
             {
                 if (Casting.TrueTarget(s.ID))
                 {
-                    bool weHaveItem = MQ.Query<bool>($"${{FindItemCount[={whatToGive}]}}");
-                    if (weHaveItem && e3util.ClearCursor())
+                    var platSynonyms = new List<string> { "plat", "pp", "platinum" };
+                    var dcSynonyms = new List<string> { "dc", "diamond coin", "diamond coins" };
+                    if (platSynonyms.Contains(whatToGive, StringComparer.OrdinalIgnoreCase))
                     {
-                        Int32 packNumber = MQ.Query<Int32>($"${{Math.Calc[${{FindItem[{whatToGive}].ItemSlot}}-22].Int}}");
-                        bool bagOpen = MQ.Query<bool>($"${{Bool[${{Window[Pack{packNumber}].Open}}]}}");
-                        if (!bagOpen)
+                        MQ.Cmd("/invoke ${Window[InventoryWindow].DoOpen}");
+                        MQ.Delay(1000, "${Window[InventoryWindow].Open");
+                        var moneyCommand = "/notify InventoryWindow IW_Money0 leftmouseup";
+                        if (qtyToGive == int.MaxValue)
                         {
-                            //have to open the bag to get the qty count to work
-                            MQ.Cmd($"/nomodkey /itemnotify pack{packNumber} rightmouseup");
-                            MQ.Delay(200);
+                            MQ.Cmd($"/shiftkey {moneyCommand}");
                         }
-                        //put item on cursor
-                        MQ.Cmd($"/nomodkey /itemnotify \"{whatToGive}\" leftmouseup");
-                        MQ.Delay(200);
-                        bool qtyWindowOpen = MQ.Query<bool>("${Window[QuantityWnd].Open}");
-                        if (qtyWindowOpen)
+                        else
                         {
+                            MQ.Cmd(moneyCommand);
+                            MQ.Delay(1000, "${Window[QuantityWnd].Open}");
                             MQ.Cmd($"/nomodkey /notify QuantityWnd QTYW_slider newvalue {qtyToGive}");
                             MQ.Delay(200);
                             MQ.Cmd($"/nomodkey /notify QuantityWnd QTYW_Accept_Button leftmouseup");
-                            MQ.Delay(200);
                         }
-                        //close the bag
-                        MQ.Cmd($"/nomodkey /itemnotify pack{packNumber} rightmouseup");
-
-                        e3util.GiveItemOnCursorToTarget();
                     }
+                    else if (dcSynonyms.Contains(whatToGive, StringComparer.OrdinalIgnoreCase))
+                    {
+                        MQ.Cmd("/invoke ${Window[InventoryWindow].DoOpen}");
+                        MQ.Cmd("/notify InventoryWindow IW_Subwindows tabselect 5", 100);
+                        MQ.Cmd("/notify InventoryWindow IW_AltCurr_ReclaimButton leftmouseup", 100);
+                        MQ.Cmd("/notify InventoryWindow AltCurr_PointList listselect ${Window[InventoryWindow].Child[AltCurr_PointList].List[=Diamond Coins,2]}", 100);
+                        for (int i = 1; i <= 8; i++)
+                        {
+                            MQ.Cmd("/shiftkey /notify InventoryWindow IW_AltCurr_CreateItemButton leftmouseup", 100);
+                        }
+
+                        for (int i = 1; i <= 8; i++)
+                        {
+                            if (MQ.Query<int>("${Cursor.ID}") <= -1) break;
+                            MQ.Cmd("/click left target", 250);
+                            MQ.Delay(2000, "${Cursor.ID}");
+                        }
+                       
+                        E3.Bots.Trade(whoToGiveTo);
+                        MQ.Cmd("/invoke ${Window[InventoryWindow].DoClose}");
+                        return;
+                    }
+                    else
+                    {
+                        bool weHaveItem = MQ.Query<bool>($"${{FindItemCount[={whatToGive}]}}");
+                        if (weHaveItem)
+                        {
+                            if (e3util.ClearCursor())
+                            {
+                                Int32 packNumber = MQ.Query<Int32>($"${{Math.Calc[${{FindItem[{whatToGive}].ItemSlot}}-22].Int}}");
+                                bool bagOpen = MQ.Query<bool>($"${{Bool[${{Window[Pack{packNumber}].Open}}]}}");
+                                if (!bagOpen)
+                                {
+                                    //have to open the bag to get the qty count to work
+                                    MQ.Cmd($"/nomodkey /itemnotify pack{packNumber} rightmouseup");
+                                    MQ.Delay(200);
+                                }
+                                //put item on cursor
+                                MQ.Cmd($"/nomodkey /itemnotify \"{whatToGive}\" leftmouseup");
+                                MQ.Delay(200);
+                                bool qtyWindowOpen = MQ.Query<bool>("${Window[QuantityWnd].Open}");
+                                if (qtyWindowOpen)
+                                {
+                                    MQ.Cmd($"/nomodkey /notify QuantityWnd QTYW_slider newvalue {qtyToGive}");
+                                    MQ.Delay(200);
+                                    MQ.Cmd($"/nomodkey /notify QuantityWnd QTYW_Accept_Button leftmouseup");
+                                    MQ.Delay(200);
+                                }
+                                //close the bag
+                                MQ.Cmd($"/nomodkey /itemnotify pack{packNumber} rightmouseup");
+                            }
+                        }
+                        else
+                        {
+                            MQ.Cmd($"/t {whoToGiveTo} I'm afraid I can't do that, as I don't have any {whatToGive}");
+                            return;
+                        }
+                    }
+
+                    e3util.GiveItemOnCursorToTarget();
                 }
             }
         }
