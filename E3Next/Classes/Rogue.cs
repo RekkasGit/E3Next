@@ -1,4 +1,4 @@
-﻿using System;
+using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Text;
@@ -96,15 +96,13 @@ namespace E3Core.Classes
                 {
                     if (MQ.Query<bool>("${Me.AbilityReady[Hide]}"))
                     {
-                        if (!MQ.Query<bool>("${Bool[${Me.ActiveDisc.ID}]}"))
-                        {
-                            MQ.Cmd("/attack off");
-                            MQ.Delay(1000, "${Bool[!${Me.Combat}]}");
-                            MQ.Delay(500);
-                            MQ.Cmd("/doability Hide");
-                            MQ.Delay(500, "${Me.Invis}");
-                            MQ.Cmd("/attack on");
-                        }
+                        MQ.Cmd("/attack off");
+                        MQ.Delay(1000, "${Bool[!${Me.Combat}]}");
+                        MQ.Delay(500);
+                        MQ.Cmd("/doability Hide");
+                        MQ.Delay(500, "${Me.Invis}");
+                        MQ.Cmd("/attack on");
+
                     }
                 }
             }
