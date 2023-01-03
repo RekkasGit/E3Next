@@ -141,7 +141,6 @@ namespace E3Core.Processors
                         if (inBook || aa || item)
                         {
                             MQ.Cmd($"/t {user} I'm queueing up {spell} to use on you, please wait.");
-                            MQ.Delay(0);
                             _queuedBuffs.Enqueue(new BuffQueuedItem() { Requester = user, SpellTouse = spell });
 
                         }
@@ -223,8 +222,7 @@ namespace E3Core.Processors
             if(!String.IsNullOrWhiteSpace(user))
             {
                 MQ.Cmd($"/t {user} I'm queuing up {spell} to use on you, please wait.");
-                MQ.Delay(0);
-
+               
             }
             _queuedBuffs.Enqueue(new BuffQueuedItem() { Requester = user, SpellTouse = spell, TargetID=targetid });
             

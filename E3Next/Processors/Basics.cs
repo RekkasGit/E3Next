@@ -699,7 +699,7 @@ namespace E3Core.Processors
 
                 if (hasManaStone && amIStanding)
                 {
-                    MQ.Delay(0);
+                    e3util.YieldToEQ();
                     if (MQ.Query<bool>("${Me.Invis}")) return;
 
                     MQ.Write("\agUsing Manastone...");

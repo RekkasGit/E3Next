@@ -524,6 +524,10 @@ namespace E3Core.Utility
             }
             return false;
         }
+        public static void YieldToEQ()
+        {
+            MQ.Delay(0);
+        }
         public static void RegisterCommandWithTarget(string command, Action<int> FunctionToExecute)
         {
             EventProcessor.RegisterCommand(command, (x) =>

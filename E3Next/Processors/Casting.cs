@@ -626,7 +626,6 @@ namespace E3Core.Processors
                 //if (MQ.Query<bool>($"${{Bool[${{Me.Book[{spell.CastName}]}}]}}"))
                 {
                     MQ.Cmd("/stopsong");
-                    MQ.Delay(0);
                     MQ.Cmd($"/cast \"{spell.CastName}\"");
                     MQ.Delay(300, IsCasting);
                     if (!IsCasting())
@@ -1028,7 +1027,7 @@ namespace E3Core.Processors
                         return true;
 
                     }
-                    MQ.Delay(0);
+                    e3util.YieldToEQ();
                 }
                 return false;
             }

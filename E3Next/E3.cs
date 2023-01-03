@@ -105,7 +105,7 @@ namespace E3Core.Processors
 
             }
             //get most up to date data, so let the game do a full process loop.
-            MQ.Delay(0);
+            e3util.YieldToEQ();
             EventProcessor.ProcessEventsInQueues("/backoff");
             Assist.Process();
             
