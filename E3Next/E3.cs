@@ -33,20 +33,20 @@ namespace E3Core.Processors
             {
                 return;
             }
+            //update all states, important.
+            StateUpdates();
+
+            //kickout after updates if paused
+            if (IsPaused()) return;
 
             //Init is here to make sure we only Init while InGame, as some queries will fail if not in game
             if (!IsInit) { Init(); }
             ActionTaken = false;
-            //update all states, important.
-            StateUpdates();
-
+            
             if (CurrentHps < 98)
             {
                 Heals.Check_LifeSupport();
             }
-
-            //kickout after updates if paused
-            if (IsPaused()) return;
 
             RefreshCaches();
 
@@ -105,8 +105,10 @@ namespace E3Core.Processors
 
             }
             //get most up to date data, so let the game do a full process loop.
-            MQ.Delay(0);
+            e3util.YieldToEQ();
+            EventProcessor.ProcessEventsInQueues("/backoff");
             Assist.Process();
+            
             //process any requests commands from the UI.
             PubClient.ProcessRequests();
 
@@ -164,7 +166,7 @@ namespace E3Core.Processors
                 E3.Bots.Broadcast("\aoComplete!");
             }
         }
-        private static bool IsPaused()
+        public static bool IsPaused()
         {
             EventProcessor.ProcessEventsInQueues("/e3p");
 

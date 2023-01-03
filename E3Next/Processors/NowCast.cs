@@ -95,6 +95,14 @@ namespace E3Core.Processors
 
         }
 
+        public static bool IsNowCastInQueue()
+        {
+            if(EventProcessor.CommandList["/nowcast"].queuedEvents.Count > 0)
+            {
+                return true;
+            }
+            return false;
+        }
         private static CastReturn NowCastSpell(string spellName, Int32 targetid)
         {
 

@@ -117,7 +117,7 @@ namespace E3Core.Processors
                     if (E3.CurrentClass == Class.Bard)
                     {
                         MQ.Cmd("/stopsong");
-                        MQ.Delay(0);
+                       
                     }
                     Casting.Cast(0, s);
 

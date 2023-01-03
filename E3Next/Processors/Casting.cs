@@ -50,11 +50,16 @@ namespace E3Core.Processors
                     //block on waiting for the spell window to close
                     while (IsCasting())
                     {
-                        if (!isNowCast && EventProcessor.CommandList["/nowcast"].queuedEvents.Count > 0)
+                        MQ.Delay(50);
+                        if (E3.IsPaused())
+                        {
+                            Interrupt();
+                            return CastReturn.CAST_INTERRUPTED;
+                        }
+                        if (!isNowCast && NowCast.IsNowCastInQueue())
                         {
                             //we have a nowcast ready to be processed
-                            MQ.Cmd("/interrupt");
-                            MQ.Delay(0);
+                            Interrupt();
                             return CastReturn.CAST_INTERRUPTED;
                         }
                         EventProcessor.ProcessEventsInQueues("/backoff");
@@ -63,7 +68,6 @@ namespace E3Core.Processors
                         {
                             return CastReturn.CAST_INTERRUPTED;
                         }
-                        MQ.Delay(50);
                     }
                 }
 
@@ -237,7 +241,7 @@ namespace E3Core.Processors
                         _log.Write("Checking for item on cursor...");
                         if (MQ.Query<bool>("${Cursor.ID}"))
                         {
-                            MQ.Write("Issuing auto inventory on ${Cursor} for spell: ${pendingCast}");
+                            MQ.Write($"Issuing auto inventory on {MQ.Query<string>("${Cursor}")} for spell: {spell.CastName}");
                             MQ.Cmd("/autoinventory");
                         }
 
@@ -441,7 +445,7 @@ namespace E3Core.Processors
                             {
                                 if (interruptCheck != null && interruptCheck(currentMana, pctMana))
                                 {
-                                    MQ.Cmd("/interrupt");
+                                    Interrupt();
                                     E3.ActionTaken = true;
                                     return CastReturn.CAST_INTERRUPTFORHEAL;
                                 }
@@ -449,7 +453,7 @@ namespace E3Core.Processors
                                 if (!isNowCast && NowCastReady())
                                 {
                                     //we have a nowcast ready to be processed
-                                    MQ.Cmd("/interrupt");
+                                    Interrupt();
                                     return CastReturn.CAST_INTERRUPTED;
                                 }
                                 //check if we need to process any events,if healing tho, ignore. 
@@ -478,6 +482,23 @@ namespace E3Core.Processors
                             }
 
                             MQ.Delay(50);
+                            if(E3.IsPaused())
+                            {
+                                Interrupt();
+                                return CastReturn.CAST_INTERRUPTED;
+                            }
+
+                            if(e3util.IsShuttingDown())
+                            {
+                                Interrupt();
+                                EventProcessor.ProcessEventsInQueues("/shutdown");
+                                return CastReturn.CAST_INTERRUPTED;
+                            }
+                            if (MQ.Query<bool>("${Me.Invis}"))
+                            {
+                                Interrupt();
+                                return CastReturn.CAST_INVIS;
+                            }
                             //get updated information after delays
                             E3.StateUpdates();
                         }
@@ -605,7 +626,6 @@ namespace E3Core.Processors
                 //if (MQ.Query<bool>($"${{Bool[${{Me.Book[{spell.CastName}]}}]}}"))
                 {
                     MQ.Cmd("/stopsong");
-                    MQ.Delay(0);
                     MQ.Cmd($"/cast \"{spell.CastName}\"");
                     MQ.Delay(300, IsCasting);
                     if (!IsCasting())
@@ -759,6 +779,15 @@ namespace E3Core.Processors
                 }
             }
             return false;
+        }
+        public static void Interrupt()
+        {
+            bool onMount = MQ.Query<bool>("${Me.Mount.ID}");
+            if(onMount)
+            {
+                MQ.Cmd("/dismount");
+            }
+            MQ.Cmd("/interrupt");
         }
         public static Boolean IsCasting()
         {
@@ -998,7 +1027,7 @@ namespace E3Core.Processors
                         return true;
 
                     }
-                    MQ.Delay(0);
+                    e3util.YieldToEQ();
                 }
                 return false;
             }

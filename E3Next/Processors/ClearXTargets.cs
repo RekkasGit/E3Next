@@ -27,7 +27,7 @@ namespace E3Core.Processors
 
             if (Enabled)
             {
-                MQ.Delay(0);
+                e3util.YieldToEQ();
                 _spawns.RefreshList();
                 if (MobToAttack > 0)
                 {

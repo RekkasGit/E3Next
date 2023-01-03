@@ -516,6 +516,18 @@ namespace E3Core.Utility
                 e3util.TryMoveToLoc(currentX, currentY);
             }
         }
+        public static bool IsShuttingDown()
+        {
+            if(EventProcessor.CommandList["/shutdown"].queuedEvents.Count > 0)
+            {
+                return true;
+            }
+            return false;
+        }
+        public static void YieldToEQ()
+        {
+            MQ.Delay(0);
+        }
         public static void RegisterCommandWithTarget(string command, Action<int> FunctionToExecute)
         {
             EventProcessor.RegisterCommand(command, (x) =>
