@@ -493,6 +493,10 @@ namespace E3Core.Utility
             waitAcceptLoop:
             var command = $"/nomodkey /notify {windowType} {buttonType} leftmouseup";
             MQ.Cmd(command);
+            if(string.Equals(targetType, "PC", StringComparison.OrdinalIgnoreCase))
+            {
+                E3.Bots.Trade(MQ.Query<string>("${Target.CleanName}"));
+            }
             MQ.Delay(1000, $"!{windowOpenQuery}");
             windowOpen = MQ.Query<bool>(windowOpenQuery);
             if(windowOpen)
