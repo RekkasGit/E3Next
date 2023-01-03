@@ -202,7 +202,10 @@ namespace E3Core.Processors
             if (Basics.AmIDead()) return;
             
             RefreshCorpseList();
+            InitRezSpells();
 
+            //don't rez if we cannot rez.
+            if (_resSpellList.Count == 0) return;
             foreach (var corpse in _corpseList)
             {
                 if (_spawns.TryByID(corpse, out var spawn))
@@ -248,6 +251,7 @@ namespace E3Core.Processors
                         
                         MQ.Cmd("/corpse");
                         InitRezSpells();
+                        if (_resSpellList.Count == 0) return;
 
                         // if it's a cleric or warrior corpse and we're in combat, try to use divine res
                         if (Basics.InCombat() && _classesToDivineRez.Contains(spawn.ClassName))
