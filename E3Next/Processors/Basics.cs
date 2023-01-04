@@ -250,7 +250,7 @@ namespace E3Core.Processors
                         Spawn s;
                         if (_spawns.TryByID(targetid, out s))
                         {
-                            e3util.TryMoveToLoc(s.X, s.Y);
+                            e3util.TryMoveToLoc(s.X, s.Y,s.Z);
                             System.Text.StringBuilder sb = new StringBuilder();
                             bool first = true;
                             foreach (string arg in x.args)
@@ -290,7 +290,7 @@ namespace E3Core.Processors
                             {
                                 Casting.TrueTarget(targetid);
                                 MQ.Delay(100);
-                                e3util.TryMoveToLoc(s.X, s.Y);
+                                e3util.TryMoveToLoc(s.X, s.Y,s.Z);
 
                                 string message = x.args[1];
                                 int currentZone = Zoning.CurrentZone.Id;

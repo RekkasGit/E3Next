@@ -315,7 +315,7 @@ namespace E3Core.Utility
 
             return result;
         }
-        public static void TryMoveToLoc(Double x, Double y,Int32 minDistance = 0,Int32 timeoutInMS = 10000 )
+        public static void TryMoveToLoc(Double x, Double y,Double z, Int32 minDistance = 0,Int32 timeoutInMS = 10000 )
         {
             //Check for Nav path if available and Nav is loaded
             bool navLoaded = MQ.Query<bool>("${Plugin[MQ2Nav].IsLoaded}");
@@ -327,7 +327,7 @@ namespace E3Core.Utility
 
                 if (meshLoaded)
                 {
-                    NavToLoc(x,y);
+                    NavToLoc(x,y,z);
                     //exit from TryMoveToLoc if we've reached the destination
                     Double distanceX = Math.Abs(x - MQ.Query<Double>("${Me.X}"));
                     Double distanceY = Math.Abs(y - MQ.Query<Double>("${Me.Y}"));
@@ -472,6 +472,7 @@ namespace E3Core.Utility
 
             double currentX = MQ.Query<double>("${Me.X}");
             double currentY = MQ.Query<double>("${Me.Y}");
+            double currentZ = MQ.Query<double>("${Me.Z}");
             TryMoveToTarget();
             MQ.Cmd("/click left target");
             var targetType = MQ.Query<string>("${Target.Type}");
@@ -513,7 +514,7 @@ namespace E3Core.Utility
             //lets go back to our location
             if (moveBackToOriginalLocation)
             {
-                e3util.TryMoveToLoc(currentX, currentY);
+                e3util.TryMoveToLoc(currentX, currentY,currentZ);
             }
         }
         public static bool IsShuttingDown()
@@ -728,10 +729,10 @@ namespace E3Core.Utility
             }
         }
 
-        private static void NavToLoc(Double locX, Double locY, Double locZ=-1.00)
+        private static void NavToLoc(Double locX, Double locY, Double locZ)
         {
             bool navActive = MQ.Query<bool>("${Navigation.Active}");
-            var navQuery = locZ == -1 ? $"locxy {locX} {locY}" : $"locxyz {locX} {locY} {locZ}";
+            var navQuery = $"locxyz {locX} {locY} {locZ}";
 
             var navPathExists = MQ.Query<bool>($"${{Navigation.PathExists[{navQuery}]}}");
             

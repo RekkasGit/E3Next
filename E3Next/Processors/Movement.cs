@@ -81,7 +81,8 @@ namespace E3Core.Processors
                             {
                                 double x = MQ.Query<double>($"${{Spawn[={_chaseTarget}].X}}");
                                 double y = MQ.Query<double>($"${{Spawn[={_chaseTarget}].Y}}");
-                                e3util.TryMoveToLoc(x, y, 5, -1);
+                                double z = MQ.Query<double>($"${{Spawn[={_chaseTarget}].Z}}");
+                                e3util.TryMoveToLoc(x, y,z, 5, -1);
                             }
                         }
                     }
@@ -174,7 +175,7 @@ namespace E3Core.Processors
             {
                 if (s.Distance > E3.GeneralSettings.Movement_AnchorDistanceMin && s.Distance < E3.GeneralSettings.Movement_AnchorDistanceMax)
                 {
-                    e3util.TryMoveToLoc(s.X, s.Y);
+                    e3util.TryMoveToLoc(s.X, s.Y,s.Z);
                 }
             }
         }
@@ -216,7 +217,8 @@ namespace E3Core.Processors
 
                         Double doorX = MQ.Query<double>("${DoorTarget.X}");
                         Double doorY = MQ.Query<double>("${DoorTarget.Y}");
-                        e3util.TryMoveToLoc(doorX, doorY, 8, 3000);
+                        Double doorZ = MQ.Query<double>("${DoorTarget.Z}");
+                        e3util.TryMoveToLoc(doorX, doorY,doorZ, 8, 3000);
                         MQ.Cmd("/squelch /click left door");
                     }
                     else

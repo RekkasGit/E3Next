@@ -224,6 +224,7 @@ namespace E3Core.Classes
             // so we can move back
             var currentX = MQ.Query<double>("${Me.X}");
             var currentY = MQ.Query<double>("${Me.Y}");
+            var currentZ = MQ.Query<double>("${Me.Z}");
 
             if (!GiveWeapons(petId, weapons ?? "Water|Fire"))
             {
@@ -237,7 +238,7 @@ namespace E3Core.Classes
                 }
 
                 // move back to my original location
-                e3util.TryMoveToLoc(currentX, currentY);
+                e3util.TryMoveToLoc(currentX, currentY,currentZ);
                 _isExternalRequest = false;
 
                 return;
@@ -260,7 +261,7 @@ namespace E3Core.Classes
             }
 
             // move back to my original location
-            e3util.TryMoveToLoc(currentX, currentY);
+            e3util.TryMoveToLoc(currentX, currentY,currentZ);
             _isExternalRequest = false;
         }
 
