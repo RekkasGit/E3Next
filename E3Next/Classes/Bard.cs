@@ -100,7 +100,14 @@ namespace E3Core.Classes
         /// </summary>
         public static void check_BardSongs()
         {
-            if (!_playingMelody || _songs.Count==0) return;            
+
+
+            if(!_playingMelody && !Assist.IsAssisting)
+            {
+                return;
+            }
+
+            if ( _songs.Count==0) return;            
             if (E3.IsInvis || e3util.IsActionBlockingWindowOpen())
             {
                 return;
@@ -109,9 +116,12 @@ namespace E3Core.Classes
             {
                 return;
             }
+            if (_songs.Count == 1 && MQ.Query<bool>("${Me.Casting}")) return;
+
             //lets play a song!
             Data.Spell songToPlay= _songs.Dequeue();
             _songs.Enqueue(songToPlay);
+
             if(Casting.CheckReady(songToPlay))
             {
                 MQ.Write($"\atTwist \ag{songToPlay.SpellName}");
@@ -136,7 +146,7 @@ namespace E3Core.Classes
             if(_songs.Count>0)
             {
                 MQ.Write($"\aoStart Melody:\ag{melodyName}");
-
+                MQ.Cmd("/stopsong");
                 _forceOverride = force;
                 _playingMelody = true;
                 _currentMelody = melodyName;
