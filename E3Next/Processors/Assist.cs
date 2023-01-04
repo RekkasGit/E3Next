@@ -22,7 +22,6 @@ namespace E3Core.Processors
         private static Logging _log = E3.Log;
         private static IMQ MQ = E3.MQ;
         private static ISpawns _spawns = E3.Spawns;
-        private static Int32 _assistStickDistance = 10;
         private static IList<string> _rangeTypes = new List<string>() { "Ranged", "Autofire" };
         private static IList<string> _meleeTypes = new List<string>() { "Melee" };
         private static IList<string> _assistDistanceTypes = new List<string> { "MaxMelee", "off" };
@@ -441,6 +440,7 @@ namespace E3Core.Processors
         /// <param name="mobID">The mob identifier.</param>
         public static void AssistOn(Int32 mobID, Int32 zoneId)
         {
+        
             if (zoneId != Zoning.CurrentZone.Id) return;
             //clear in case its not reset by other means
             //or you want to attack in enrage
@@ -595,7 +595,7 @@ namespace E3Core.Processors
                 var stw = new Dictionary<string, Action>(10, StringComparer.OrdinalIgnoreCase);
                 stw.Add("behind", () =>
                 {
-
+                    MQ.Write($"Sticking behind target with distance: {_assistDistance}");
                     MQ.Cmd("/stick snaproll uw");
                     MQ.Delay(200, $"${{Bool[${{Stick.Behind}} && ${{Stick.Stopped}}]}}");
                     MQ.Cmd($"/squelch /stick hold moveback behind {_assistDistance} uw");
@@ -839,9 +839,9 @@ namespace E3Core.Processors
             {
                 if (IsAssisting&& !AllowControl)
                 {
-                    if (_assistStickDistance > 5)
+                    if (_assistDistance > 5)
                     {
-                        _assistStickDistance -= 3;
+                        _assistDistance -= 3;
                         if (MQ.Query<bool>("${Stick.Active}"))
                         {
                             StickToAssistTarget();
@@ -867,7 +867,6 @@ namespace E3Core.Processors
                 {
                     if (MQ.Query<bool>("${Stick.Active}"))
                     {
-                 
                         StickToAssistTarget();
                         //cleaar out any events that are stilll queued up.
                         if(EventProcessor.EventList.ContainsKey("CannotSee"))
