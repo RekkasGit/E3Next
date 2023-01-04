@@ -20,6 +20,7 @@ namespace E3Core.Processors
 
         public static bool Enabled = false;
         public static Int32 MobToAttack = 0;
+        public static bool FaceTarget = false;
 
         [ClassInvoke(Data.Class.All)]
         public static void Check_Xtargets()
@@ -84,6 +85,10 @@ namespace E3Core.Processors
                             MQ.Write("\agClear Targets: \aoIssuing Assist.");
                             Assist.AllowControl = true;
                             Assist.AssistOn(mobId,Zoning.CurrentZone.Id);
+                            if (FaceTarget)
+                            {
+                                MQ.Cmd("/face fast");
+                            }
                             MQ.Delay(500);
                             E3.Bots.BroadcastCommandToGroup($"/assistme {mobId} {Zoning.CurrentZone.Id}");
                         }

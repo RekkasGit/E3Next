@@ -721,6 +721,7 @@ namespace E3Core.Processors
                     AssistOff();
                     E3.Bots.BroadcastCommandToGroup($"/backoff all");
                     ClearXTargets.Enabled = true;
+                    ClearXTargets.FaceTarget = true;
 
                 } 
                 else if (x.args.Count == 1 && x.args[0] == "off")
@@ -728,6 +729,14 @@ namespace E3Core.Processors
                     AssistOff();
                     ClearXTargets.Enabled = false;
                     E3.Bots.BroadcastCommandToGroup($"/backoff all");
+                }
+                else if (x.args.Count == 1 && x.args[0] == "noface")
+                {
+                    ClearXTargets.MobToAttack = 0;
+                    AssistOff();
+                    E3.Bots.BroadcastCommandToGroup($"/backoff all");
+                    ClearXTargets.Enabled = true;
+                    ClearXTargets.FaceTarget = false;
                 }
 
             });

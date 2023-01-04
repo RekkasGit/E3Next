@@ -60,6 +60,7 @@ namespace E3Core.Processors
                     double distance = MQ.Query<double>($"${{Spawn[={_chaseTarget}].Distance}}");
                     double minDistanceToChase = E3.GeneralSettings.Movement_ChaseDistanceMin;
                     double maxDistanceToChase = E3.GeneralSettings.Movement_ChaseDistanceMax;
+                    
 
                     if (distance != -1)
                     {
@@ -68,8 +69,9 @@ namespace E3Core.Processors
                         if (navLoaded)
                         {
                             Int32 spawnID = MQ.Query<Int32>($"${{Spawn[={_chaseTarget}].ID}}");
+                            Double navPathLength = MQ.Query<Double>($"${{Navigation.PathLength[id {spawnID}]}}");
 
-                            if (distance > minDistanceToChase && distance < maxDistanceToChase)
+                            if (distance > minDistanceToChase && navPathLength < maxDistanceToChase)
                             {
                                 e3util.NavToSpawnID(spawnID);
                             }
