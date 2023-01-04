@@ -28,6 +28,7 @@ namespace E3Core.Processors
         Int32 PoisonedCounters(string name);
         Int32 CursedCounters(string name);
         bool IsMyBot(string name);
+        void Trade(string name);
     }
     public class Bots: IBots
     {
@@ -207,6 +208,12 @@ namespace E3Core.Processors
         public bool IsMyBot(string name)
         {
             return BotsConnected().Contains(name);
+        }
+
+        public void Trade(string name)
+        {
+            MQ.Cmd("/notify TradeWnd TRDW_Trade_Button leftmouseup", 250);
+            MQ.Cmd($"/bct {name} //notify TradeWnd TRDW_Trade_Button leftmouseup");
         }
     }
 
@@ -489,6 +496,12 @@ namespace E3Core.Processors
         public bool IsMyBot(string name)
         {
             return BotsConnected().Contains(name);
+        }
+
+        public void Trade(string name)
+        {
+            MQ.Cmd("/notify TradeWnd TRDW_Trade_Button leftmouseup", 250);
+            MQ.Cmd($"/dex {name} /notify TradeWnd TRDW_Trade_Button leftmouseup");
         }
     }
 }
