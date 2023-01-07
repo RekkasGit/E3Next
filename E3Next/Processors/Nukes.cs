@@ -20,11 +20,11 @@ namespace E3Core.Processors
         private static Double _pbaeDelayTimeStamp;
 
 
-        private static bool _pbAEEnabled = false;
+        public static bool PBAEEnabled = false;
 
         public static void Reset()
         {
-            _pbAEEnabled = false;
+            PBAEEnabled = false;
         }
 
         [SubSystemInit()]
@@ -39,7 +39,7 @@ namespace E3Core.Processors
             {
                 if(E3.CharacterSettings.PBAE.Count > 0)
                 {
-                    _pbAEEnabled = true;
+                    PBAEEnabled = true;
                     E3.Bots.Broadcast("Enabling PBAE");
                    
                 }
@@ -54,7 +54,7 @@ namespace E3Core.Processors
             {
                 if (E3.CharacterSettings.PBAE.Count > 0)
                 {
-                    _pbAEEnabled = false;
+                    PBAEEnabled = false;
                     E3.Bots.Broadcast("Disabling PBAE");
                    
                 }
@@ -69,12 +69,12 @@ namespace E3Core.Processors
         [ClassInvoke(Data.Class.All)]
         public static void CheckPBAE()
         {
-            if (_pbAEEnabled  && E3.CharacterSettings.PBAE.Count>0&& MQ.Query<bool>($"!${{Bool[${{SpawnCount[npc radius {E3.GeneralSettings.Assists_AEThreatRange}]}}]}}"))
+            if (PBAEEnabled  && E3.CharacterSettings.PBAE.Count>0&& MQ.Query<bool>($"!${{Bool[${{SpawnCount[npc radius {E3.GeneralSettings.Assists_AEThreatRange}]}}]}}"))
             {
                 E3.Bots.Broadcast($"\aoDisabiling PBAE as no more mobs in {E3.GeneralSettings.Assists_AEThreatRange} radius");
-                _pbAEEnabled = false;
+                PBAEEnabled = false;
             }
-            if (_pbAEEnabled)
+            if (PBAEEnabled)
             {
                 Cast_PBAE(E3.CharacterSettings.PBAE, ref _pbaeDelayTimeStamp);
             }

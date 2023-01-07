@@ -263,7 +263,7 @@ namespace E3Core.Processors
        
                 if (!Movement.IsMoving() && !Movement.Following)
                 {
-                    if (Assist.IsAssisting)
+                    if (Assist.IsAssisting || Nukes.PBAEEnabled)
                     {
                         BuffBots(E3.CharacterSettings.CombatBuffs);
                     }

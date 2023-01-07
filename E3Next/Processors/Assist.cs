@@ -181,11 +181,13 @@ namespace E3Core.Processors
                         else
                         {
                             //we be ranged!
-                            MQ.Cmd($"/squelch /face fast id {AssistTargetID}");
-
-                            if (MQ.Query<Decimal>("${Target.Distance}") > 200)
+                            if (!AllowControl)
                             {
-                                MQ.Cmd("/squelch /stick moveback 195");
+                                MQ.Cmd($"/squelch /face fast id {AssistTargetID}");
+                                if (MQ.Query<Decimal>("${Target.Distance}") > 200)
+                                {
+                                    MQ.Cmd("/squelch /stick moveback 195");
+                                }
                             }
 
                             if (!MQ.Query<bool>("${Me.AutoFire}"))
@@ -561,7 +563,7 @@ namespace E3Core.Processors
                         MQ.Delay(1000);
                     }
 
-                    if (E3.CharacterSettings.Assist_Type.Equals("Ranged"))
+                    if (!AllowControl && E3.CharacterSettings.Assist_Type.Equals("Ranged"))
                     {
                         if (E3.CharacterSettings.Assist_RangeDistance.Equals("Clamped"))
                         {   //so we don't calc multiple times
@@ -865,6 +867,12 @@ namespace E3Core.Processors
             {
                 if (IsAssisting && !AllowControl)
                 {
+                    if (AssistTargetID > 0)
+                    {
+                        MQ.Cmd($"/squelch /face fast id {AssistTargetID}");
+
+                    }
+
                     if (MQ.Query<bool>("${Stick.Active}"))
                     {
                         StickToAssistTarget();
