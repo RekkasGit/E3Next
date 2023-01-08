@@ -268,6 +268,7 @@ namespace E3Core.Processors
             
             Int32 freeInventorySlots = MQ.Query<Int32>("${Me.FreeInventory}");
             bool importantItem = false;
+            bool nodropImportantItem = false;
 
             if(!_fullInventoryAlert && freeInventorySlots<1)
             {
@@ -319,13 +320,16 @@ namespace E3Core.Processors
 
                 if (_lootOnlyStackable)
                 {
+                    //check if in our always loot.
+                    if (E3.GeneralSettings.Loot_OnlyStackableAlwaysLoot.Contains(corpseItem, StringComparer.OrdinalIgnoreCase))
+                    {
+                        importantItem = true;
+                        nodropImportantItem = nodrop;
+                        MQ.Write("\ayStackable: always loot item " + corpseItem);
+                    }
+
                     if (stackable && !nodrop)
                     {
-                        //check if in our always loot. 
-                        if (E3.GeneralSettings.Loot_OnlyStackableAlwaysLoot.Contains(corpseItem, StringComparer.OrdinalIgnoreCase))
-                        {
-                            importantItem = true;
-                        }
                         if (!importantItem && _lootOnlyStackableCommonTradeSkills)
                         {
                             importantItem = true;
@@ -355,6 +359,8 @@ namespace E3Core.Processors
                     {
                         importantItem = true;
                         foundInFile = true;
+                        //loot nodrop items in inifile
+                        nodropImportantItem = nodrop;
                     }
                     else if(LootDataFile.Skip.Contains(corpseItem))
                     {
@@ -401,7 +407,13 @@ namespace E3Core.Processors
                 {
                     //lets loot it if we can!
                     MQ.Cmd($"/nomodkey /itemnotify loot{i} rightmouseup",300);
-                    
+                    //loot nodrop items if important
+                    if (nodropImportantItem)
+                    {
+                        bool confirmationBox = MQ.Query<bool>("${Window[ConfirmationDialogBox].Open}");
+                        if (confirmationBox) MQ.Cmd($"/nomodkey /notify ConfirmationDialogBox CD_Yes_Button leftmouseup", 300);
+                    }
+
                     bool qtyWindowUp = MQ.Query<bool>("${Window[QuantityWnd].Open}");
                     if(qtyWindowUp)
                     {
