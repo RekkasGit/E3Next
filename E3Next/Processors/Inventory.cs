@@ -419,7 +419,12 @@ namespace E3Core.Processors
         public static void CheckTradeAccept() 
         {
             if (!e3util.ShouldCheck(ref _nextTradeCheck, _nextTradeCheckInterval)) return;
-            
+
+            string WindowStatus = MQ.Query<string>("${FrameLimiter.Status}");
+
+            //don't trade if its the foreground window, as its user controlled.
+            if (WindowStatus == "Foreground") return;
+
             bool tradeWndOpen = MQ.Query<bool>($"${{Window[TradeWnd].Open}}");
             bool doTrade = false;
 
@@ -435,11 +440,7 @@ namespace E3Core.Processors
                 
                 if (_spawns.TryByName(traderName,out trader))
                 {
-                    if (Basics.InCombat())
-                    {
-                        MQ.Cmd($"/nomodkey /notify TradeWnd TRDW_Cancel_Button leftmouseup");
-                        E3.Bots.Broadcast($"Cancelling trade with {trader.CleanName} because of combat");
-                    }
+                   
                     if (E3.GeneralSettings.AutoTrade_All)
                     {
                         doTrade = true;
@@ -478,6 +479,12 @@ namespace E3Core.Processors
                     {
                         MQ.Cmd($"/nomodkey /notify TradeWnd TRDW_Trade_Button leftmouseup", 500);
                     }
+                    else if (Basics.InCombat())
+                    {
+                        MQ.Cmd($"/nomodkey /notify TradeWnd TRDW_Cancel_Button leftmouseup");
+                        E3.Bots.Broadcast($"Cancelling trade with {trader.CleanName} because of combat");
+                    }
+
                 }
             }
         }

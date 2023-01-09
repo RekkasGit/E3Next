@@ -511,6 +511,7 @@ namespace E3Core.Processors
             {
                 if (E3.IsInvis) return;
                 if (Basics.AmIDead()) return;
+                
 
                 int minMana = 40;
                 int minHP = 60;
@@ -568,57 +569,62 @@ namespace E3Core.Processors
                         }
                     }
 
-                    var canniSpell = E3.CharacterSettings.CanniSpell;
-                    if (canniSpell != null && E3.CharacterSettings.AutoCanni)
+                    //don't canni if we are moving/following
+                    if (!(Movement.IsMoving() || Movement.Following))
                     {
-                        if (Casting.CheckReady(canniSpell))
+                        var canniSpell = E3.CharacterSettings.CanniSpell;
+                        if (canniSpell != null && E3.CharacterSettings.AutoCanni)
                         {
-                            var pctHps = MQ.Query<int>("${Me.PctHPs}");
-                            var hpThresholdDefined = canniSpell.MinHP > 0;
-                            var manaThresholdDefined = canniSpell.MaxMana > 0;
-                            bool castCanniSpell = false;                            
-                            bool hpThresholdMet = false;
-                            bool manaThresholdMet = false;
-
-                            if (hpThresholdDefined)
+                            if (Casting.CheckReady(canniSpell))
                             {
-                                if (pctHps > canniSpell.MinHP)
+                                var pctHps = MQ.Query<int>("${Me.PctHPs}");
+                                var hpThresholdDefined = canniSpell.MinHP > 0;
+                                var manaThresholdDefined = canniSpell.MaxMana > 0;
+                                bool castCanniSpell = false;
+                                bool hpThresholdMet = false;
+                                bool manaThresholdMet = false;
+
+                                if (hpThresholdDefined)
                                 {
-                                    hpThresholdMet = true;
+                                    if (pctHps > canniSpell.MinHP)
+                                    {
+                                        hpThresholdMet = true;
+                                    }
                                 }
-                            }
 
-                            if (manaThresholdDefined)
-                            {
-                                if (pctMana < canniSpell.MaxMana)
+                                if (manaThresholdDefined)
                                 {
-                                    manaThresholdMet = true;
+                                    if (pctMana < canniSpell.MaxMana)
+                                    {
+                                        manaThresholdMet = true;
+                                    }
                                 }
-                            }
 
-                            if (hpThresholdDefined && manaThresholdDefined)
-                            {
-                                castCanniSpell = hpThresholdMet && manaThresholdMet;
-                            }
-                            else if (hpThresholdDefined && !manaThresholdDefined)
-                            {
-                                castCanniSpell = hpThresholdMet;
-                            }
-                            else if (manaThresholdDefined && !hpThresholdDefined)
-                            {
-                                castCanniSpell = manaThresholdMet;
-                            }
-                            else
-                            {
-                                castCanniSpell = true;
-                            }
+                                if (hpThresholdDefined && manaThresholdDefined)
+                                {
+                                    castCanniSpell = hpThresholdMet && manaThresholdMet;
+                                }
+                                else if (hpThresholdDefined && !manaThresholdDefined)
+                                {
+                                    castCanniSpell = hpThresholdMet;
+                                }
+                                else if (manaThresholdDefined && !hpThresholdDefined)
+                                {
+                                    castCanniSpell = manaThresholdMet;
+                                }
+                                else
+                                {
+                                    castCanniSpell = true;
+                                }
 
-                            if (castCanniSpell)
-                            {
-                                Casting.Cast(0, canniSpell);
+                                if (castCanniSpell)
+                                {
+                                    Casting.Cast(0, canniSpell);
+                                }
                             }
                         }
                     }
+                    
                 }
 
                 if (MQ.Query<bool>("${Me.ItemReady[Summoned: Large Modulation Shard]}"))
@@ -667,6 +673,23 @@ namespace E3Core.Processors
                         if (s.CastType != CastType.None)
                         {
                             Casting.Cast(0, s);
+                            return;
+                        }
+                    }
+                }
+                if (E3.CurrentClass == Data.Class.Cleric && pctMana < 30 && E3.CurrentInCombat)
+                {
+                    bool deathBloomReady = MQ.Query<bool>("${Me.AltAbilityReady[Quiet Miracle]}");
+                    if (deathBloomReady && currentHps > 8000)
+                    {
+                        Spell s;
+                        if (!Spell.LoadedSpellsByName.TryGetValue("Quiet Miracle", out s))
+                        {
+                            s = new Spell("Quiet Miracle");
+                        }
+                        if (s.CastType != CastType.None)
+                        {
+                            Casting.Cast(E3.CurrentId, s);
                             return;
                         }
                     }

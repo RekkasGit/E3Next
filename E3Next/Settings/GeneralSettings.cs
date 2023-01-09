@@ -63,7 +63,7 @@ namespace E3Core.Settings
         public Int32 Assists_ShortTermDebuffRecast = 5;
 
         public bool AutoTrade_All = false;
-        public bool AutoTrade_Bots = false;
+        public bool AutoTrade_Bots = true;
         public bool AutoTrade_Group = false;
         public bool AutoTrade_Guild = false;
         public bool AutoTrade_Raid = false;
@@ -295,7 +295,7 @@ namespace E3Core.Settings
             newFile.Sections.AddSection("AutoTrade");
             section = newFile.Sections.GetSectionData("AutoTrade");
             section.Keys.AddKey("All (On/Off)", "Off");
-            section.Keys.AddKey("Bots (On/Off)", "Off");
+            section.Keys.AddKey("Bots (On/Off)", "On");
             section.Keys.AddKey("Group (On/Off)", "Off");
             section.Keys.AddKey("Guild (On/Off)", "Off");
             section.Keys.AddKey("Raid (On/Off)", "Off");
