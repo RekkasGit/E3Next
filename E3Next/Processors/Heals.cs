@@ -580,7 +580,7 @@ namespace E3Core.Processors
 
         public static bool Check_LifeSupport(bool JustCheck = false)
         {
-            if (Zoning.CurrentZone.IsSafeZone) return;
+            if (Zoning.CurrentZone.IsSafeZone) return false;
             Int32 pctHps = E3.CurrentHps;
             Int32 myID = E3.CurrentId;
             Int32 targetID = MQ.Query<Int32>("${Target.ID}");
