@@ -40,7 +40,7 @@ namespace E3Core.Settings
         public static Dictionary<string, Action> MethodLookup = new Dictionary<string, Action>(StringComparer.OrdinalIgnoreCase);
         public static Dictionary<string,Action> ClassMethodLookup = new Dictionary<string, Action>(StringComparer.OrdinalIgnoreCase);
         public static Dictionary<string, List<string>> ClassMethodsAsStrings = new Dictionary<string, List<string>>(StringComparer.OrdinalIgnoreCase);
-
+        private string filename = string.Empty;
         public AdvancedSettings()
         {
 
@@ -57,8 +57,11 @@ namespace E3Core.Settings
         public void LoadData()
         {
             InitMethods();
-            string filename = GetSettingsFilePath("Advanced Settings.ini");
-      
+            filename = GetSettingsFilePath("Advanced Settings.ini");
+            if (!String.IsNullOrEmpty(CurrentSet))
+            {
+                filename = filename.Replace(".ini", "_" + CurrentSet + ".ini");
+            }
             IniData parsedData;
 
             FileIniDataParser fileIniData = e3util.CreateIniParser();
@@ -123,22 +126,15 @@ namespace E3Core.Settings
         }
         public  void CreateSettings()
         {
-            //in the begining we couldn't save multi key, we can now... this is a previous artificat of that situation.
-            //not going to create the adv ini, as default /ini cannot create the multi key format. its almost never recreated from scratch anyway
-            //if we need to , its easier to just output the entire file. 
-
-            string filename = $"Advanced Settings.ini";
-            string macroFile = _macroFolder + _settingsFolder + filename;
-            string configFile = _configFolder + _settingsFolder + filename;
-            string fullPathToUse = macroFile;
-            if (!System.IO.File.Exists(macroFile) && !System.IO.File.Exists(configFile))
+    
+            if (!System.IO.File.Exists(filename) && !System.IO.File.Exists(filename))
             {
                 if (!System.IO.Directory.Exists(_configFolder+_settingsFolder))
                 {   
                     System.IO.Directory.CreateDirectory(_configFolder+ _settingsFolder);
                 }
                 //file straight up doesn't exist, lets create it
-                System.IO.File.WriteAllText(configFile, filePayload);
+                System.IO.File.WriteAllText(filename, filePayload);
 
             }
 

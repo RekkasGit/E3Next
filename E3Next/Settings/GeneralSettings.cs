@@ -73,7 +73,7 @@ namespace E3Core.Settings
         public Int32 Movement_NavStopDistance = 10;
         public Int32 Movement_AnchorDistanceMin = 15;
         public Int32 Movement_AnchorDistanceMax = 150;
-
+        private string filename = String.Empty;
         public GeneralSettings()
         {
             LoadData();
@@ -81,8 +81,11 @@ namespace E3Core.Settings
         public void LoadData()
         {
 
-            string filename = GetSettingsFilePath("General Settings.ini");
-
+            filename = GetSettingsFilePath("General Settings.ini");
+            if (!String.IsNullOrEmpty(CurrentSet))
+            {
+                filename = filename.Replace(".ini", "_" + CurrentSet + ".ini");
+            }
             IniData parsedData;
 
             FileIniDataParser fileIniData = e3util.CreateIniParser();
@@ -241,7 +244,7 @@ namespace E3Core.Settings
             section.Keys.AddKey("Gimmie Large Mod Shard Min Requests","1");
             section.Keys.AddKey("Gimmie MoltenOrb Min Requests","3");
             section.Keys.AddKey("Destroy Unsold Items(On/Off)","Off");
-            section.Keys.AddKey("Automatically Use Misfit Box (On/Off)", "On");
+            section.Keys.AddKey("Automatically Use Misfit Box (On/Off)", "Off");
             section.Keys.AddKey("Turn Player Attack Off During Enrage (On/Off)", "On");
             section.Keys.AddKey("Relay Tells (On/Off)", "Off");
             //Loot
@@ -308,7 +311,7 @@ namespace E3Core.Settings
             section.Keys.AddKey("Anchor Distance Minimum", "15");
             section.Keys.AddKey("Anchor Distance Maximum", "150");
 
-            string filename = GetSettingsFilePath("General Settings.ini");
+           
             if (!System.IO.File.Exists(filename))
             {
                 if (!System.IO.Directory.Exists(_configFolder + _settingsFolder))

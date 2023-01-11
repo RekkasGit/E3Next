@@ -66,6 +66,13 @@ namespace E3Core.Processors
             if (!Assist.IsAssisting) return;
             if (E3.CharacterSettings.OffAssistSpells.Count == 0) return;
             if (!e3util.ShouldCheck(ref _nextOffAssistCheck, _nextOffAssistCheckInterval)) return;
+
+            //do not off assist if you are in the middle of gather dusk. It sucks to put it on an add. 
+            bool duskfall = MQ.Query<bool>("${$Bool[${Me.Song[Fading Light]}]}");
+            if (duskfall) return;
+            duskfall = MQ.Query<bool>("${$Bool[${Me.Song[Gathering Dusk]}]}");
+            if (duskfall) return;
+
             using (_log.Trace())
             {
                 //check xtargets

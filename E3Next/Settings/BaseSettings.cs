@@ -24,6 +24,10 @@ namespace E3Core.Settings
 
         public DateTime _fileLastModified;
         public string _fileLastModifiedFileName;
+        private static string _currentSet = String.Empty;
+
+        public static string CurrentSet { get { return _currentSet; } set { _currentSet = value; } }
+
 
         static BaseSettings()
         {
@@ -116,7 +120,7 @@ namespace E3Core.Settings
                     sb.Append(System.Environment.NewLine);
                 }
 
-               
+
             }
 
             return sb.ToString();
@@ -226,7 +230,7 @@ namespace E3Core.Settings
                     {
                         if (!String.IsNullOrWhiteSpace(data))
                         {
-                           valueToSet= Int32.Parse(data);
+                            valueToSet = Int32.Parse(data);
 
                         }
                     }
@@ -288,9 +292,9 @@ namespace E3Core.Settings
                     {
                         if (!String.IsNullOrWhiteSpace(data))
                         {
-                          
+
                             CheckFor(data, sectionKey);
-                            
+
 
                             collectionToAddTo.Enqueue(new Data.Spell(data, parsedData));
                         }
@@ -332,7 +336,7 @@ namespace E3Core.Settings
                     {
                         if (!String.IsNullOrWhiteSpace(data))
                         {
-                            spellToLoad=new Data.Spell(data, parsedData);
+                            spellToLoad = new Data.Spell(data, parsedData);
                             return;
                         }
 

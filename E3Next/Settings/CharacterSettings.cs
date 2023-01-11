@@ -59,7 +59,7 @@ namespace E3Core.Settings
         public string Assist_MeleeDistance = "MaxMelee";
         public string Assist_RangeDistance = "100";
         public int Assist_AutoAssistPercent = 98;
-      
+        private string fileName = String.Empty;
 
         //abilities
         public List<Spell> MeleeAbilities = new List<Spell>();
@@ -575,8 +575,11 @@ namespace E3Core.Settings
             newFile.Sections.AddSection("Ifs");
             newFile.Sections.AddSection("Events");
 
-
             string filename = GetBoTFilePath($"{CharacterName}_{ServerName}.ini");
+            if (!String.IsNullOrEmpty(CurrentSet))
+            {
+                filename = filename.Replace(".ini", "_" + CurrentSet + ".ini");
+            }
 
 
             if (!File.Exists(filename))
@@ -618,8 +621,6 @@ namespace E3Core.Settings
         /// </summary>
         public void SaveData()
         {
-            string filename = GetBoTFilePath($"{CharacterName}_{ServerName}.ini");
-
             var section = ParsedData.Sections["Blocked Buffs"];
             if (section == null)
             {
@@ -636,8 +637,8 @@ namespace E3Core.Settings
             }
 
             FileIniDataParser fileIniData = e3util.CreateIniParser();
-            File.Delete(filename);
-            fileIniData.WriteFile(filename, ParsedData);
+            File.Delete(fileName);
+            fileIniData.WriteFile(fileName, ParsedData);
         }
     }
 }

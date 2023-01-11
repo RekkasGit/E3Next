@@ -248,7 +248,7 @@ namespace E3Core.Processors
                         }
 
                         MQ.Cmd($"/t {spawn.DisplayName} Wait4Rez",100);
-                        
+                        MQ.Delay(1500);
                         MQ.Cmd("/corpse");
                         InitRezSpells();
                         if (_resSpellList.Count == 0) return;

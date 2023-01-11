@@ -580,6 +580,7 @@ namespace E3Core.Processors
 
         public static bool Check_LifeSupport(bool JustCheck = false)
         {
+            if (Zoning.CurrentZone.IsSafeZone) return;
             Int32 pctHps = E3.CurrentHps;
             Int32 myID = E3.CurrentId;
             Int32 targetID = MQ.Query<Int32>("${Target.ID}");
@@ -595,13 +596,9 @@ namespace E3Core.Processors
                         if (spell.CastName.IndexOf("Divine Healing", 0, StringComparison.OrdinalIgnoreCase) > -1) targetIDToUse = 0;
                         if (spell.CastName.IndexOf("Sanguine Mind Crystal", 0, StringComparison.OrdinalIgnoreCase) > -1) targetIDToUse = 0;
                         Casting.Cast(targetIDToUse, spell);
-                        if ((E3.CurrentClass & Data.Class.Tank) == E3.CurrentClass)
+                        if (targetID > 0)
                         {
-
-                            if (targetID > 0)
-                            {
-                                Casting.TrueTarget(targetID);
-                            }
+                            Casting.TrueTarget(targetID, true);
                         }
                         return true;
                     }

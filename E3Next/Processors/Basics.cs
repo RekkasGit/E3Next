@@ -168,6 +168,16 @@ namespace E3Core.Processors
             EventProcessor.RegisterCommand("/e3reload", (x) =>
             {
                 E3.Bots.Broadcast("\aoReloading settings files...");
+
+                if(x.args.Count>0)
+                {
+                    BaseSettings.CurrentSet = x.args[0].ToUpper();    
+                }
+                else
+                {
+                    BaseSettings.CurrentSet = String.Empty;
+                }
+
                 E3.CharacterSettings = new CharacterSettings();
                 E3.AdvancedSettings = new AdvancedSettings();
                 E3.GeneralSettings = new GeneralSettings();

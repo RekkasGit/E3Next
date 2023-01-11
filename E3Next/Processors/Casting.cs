@@ -1033,7 +1033,12 @@ namespace E3Core.Processors
             }
             else
             {
-                MQ.Write("TrueTarget has no spawncount");
+                if (allowClear)
+                {
+                    MQ.Cmd("/nomodkey /keypress esc");
+                    return false;
+                }
+                //MQ.Write("TrueTarget has no spawncount");
                 return false;
             }
 
