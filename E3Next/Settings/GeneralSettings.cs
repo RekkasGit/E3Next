@@ -73,7 +73,14 @@ namespace E3Core.Settings
         public Int32 Movement_NavStopDistance = 10;
         public Int32 Movement_AnchorDistanceMin = 15;
         public Int32 Movement_AnchorDistanceMax = 150;
-        private string filename = String.Empty;
+        public Int32 Manastone_NumerOfClicksPerLoop = 40;
+        public Int32 ManaStone_NumberOfLoops = 25;
+        public Int32 ManaStone_DelayBetweenLoops = 50;
+
+
+
+        private string _filename = String.Empty;
+
         public GeneralSettings()
         {
             LoadData();
@@ -81,30 +88,30 @@ namespace E3Core.Settings
         public void LoadData()
         {
 
-            filename = GetSettingsFilePath("General Settings.ini");
+            _filename = GetSettingsFilePath("General Settings.ini");
             if (!String.IsNullOrEmpty(CurrentSet))
             {
-                filename = filename.Replace(".ini", "_" + CurrentSet + ".ini");
+                _filename = _filename.Replace(".ini", "_" + CurrentSet + ".ini");
             }
             IniData parsedData;
 
             FileIniDataParser fileIniData = e3util.CreateIniParser();
 
-            if (!System.IO.File.Exists(filename))
+            if (!System.IO.File.Exists(_filename))
             {
                 if (!System.IO.Directory.Exists(_configFolder + _settingsFolder))
                 {
                     System.IO.Directory.CreateDirectory(_configFolder + _settingsFolder);
                 }
              
-                parsedData = CreateSettings();
+                parsedData = CreateSettings(_filename);
             }
             else
             {
-                parsedData = fileIniData.ReadFile(filename);
+                parsedData = fileIniData.ReadFile(_filename);
             }
-            _fileLastModifiedFileName = filename;
-            _fileLastModified = System.IO.File.GetLastWriteTime(filename);
+            _fileLastModifiedFileName = _filename;
+            _fileLastModified = System.IO.File.GetLastWriteTime(_filename);
             //have the data now!
             if (parsedData==null)
             {
@@ -153,6 +160,17 @@ namespace E3Core.Settings
             LoadKeyData("Loot", "Loot Only Stackable: Always Loot Item", parsedData, Loot_OnlyStackableAlwaysLoot);
             
             LoadKeyData("Corpse Summoning", "Corpse Summoning", parsedData, ref CorpseSummoning_LootAfterSummon);
+
+            LoadKeyData("Manastone", "NumerOfClicksPerLoop", parsedData, ref Manastone_NumerOfClicksPerLoop);
+            LoadKeyData("Manastone", "NumberOfLoops", parsedData, ref ManaStone_NumberOfLoops);
+            LoadKeyData("Manastone", "DelayBetweenLoops (in milliseconds)", parsedData, ref ManaStone_DelayBetweenLoops);
+
+            if(ManaStone_DelayBetweenLoops>1000 || ManaStone_DelayBetweenLoops < 1)
+            {
+                ManaStone_DelayBetweenLoops = 50;
+            }
+
+
             LoadKeyData("Casting", "Default Spell Set", parsedData, ref Casting_DefaultSpellSet);
 
             //so we can validate a default gem is always acceptable range
@@ -214,7 +232,7 @@ namespace E3Core.Settings
 
         }
 
-        public IniData CreateSettings()
+        public IniData CreateSettings(string filename)
         {
 
             IniParser.FileIniDataParser parser = e3util.CreateIniParser();
@@ -264,6 +282,14 @@ namespace E3Core.Settings
             newFile.Sections.AddSection("Corpse Summoning");
             section = newFile.Sections.GetSectionData("Corpse Summoning");
             section.Keys.AddKey("Loot After Summoning (On/Off)","Off");
+            
+            //Manastone
+            newFile.Sections.AddSection("Manastone");
+            section = newFile.Sections.GetSectionData("Manastone");
+            section.Keys.AddKey("NumerOfClicksPerLoop", "40");
+            section.Keys.AddKey("NumberOfLoops", "25");
+            section.Keys.AddKey("DelayBetweenLoops (in milliseconds)", "50");
+
 
             //Casting
             newFile.Sections.AddSection("Casting");

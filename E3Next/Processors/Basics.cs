@@ -57,6 +57,9 @@ namespace E3Core.Processors
         /// </summary>
         public static void RegisterEvents()
         {
+
+
+
             EventProcessor.RegisterEvent("InviteToGroup", "(.+) invites you to join a group.", (x) =>
             {
                 MQ.Cmd("/invite");
@@ -152,7 +155,22 @@ namespace E3Core.Processors
                     MQ.Cmd($"/raidinvite {x.match.Groups[1].Value}");
                 }
             });
+            EventProcessor.RegisterCommand("/e3settings", (x) =>
+            {
+                if(x.args.Count>0)
+                {
+                    if(x.args[0].Equals("createdefault", StringComparison.OrdinalIgnoreCase))
+                    {
+                        string newFileName = BaseSettings.GetSettingsFilePath("General Settings_default.ini");
+                        if(System.IO.File.Exists(newFileName))
+                        {
+                            System.IO.File.Delete(newFileName);
+                        }
+                        E3.GeneralSettings.CreateSettings(newFileName);
+                    }
+                }
 
+            });
             EventProcessor.RegisterCommand("/dropinvis", (x) =>
             {
                 E3.Bots.BroadcastCommandToGroup("/makemevisible");
@@ -523,20 +541,6 @@ namespace E3Core.Processors
                 if (Basics.AmIDead()) return;
                 
 
-                int minMana = 40;
-                int minHP = 60;
-                int maxMana = 75;
-                int maxLoop = 25;
-
-                int totalClicksToTry = 40;
-                //Int32 minManaToTryAndHeal = 1000;
-
-                if (!InCombat())
-                {
-                    minMana = 85;
-                    maxMana = 95;
-                }
-
                 int pctMana = MQ.Query<int>("${Me.PctMana}");
                 int currentHps = MQ.Query<int>("${Me.CurrentHPs}");
 
@@ -721,6 +725,21 @@ namespace E3Core.Processors
                         }
                     }
                 }
+
+                //manastone code
+                int minMana = 40;
+                int minHP = 60;
+                int maxMana = 75;
+                int maxLoop = E3.GeneralSettings.ManaStone_NumberOfLoops;
+
+                int totalClicksToTry =E3.GeneralSettings.Manastone_NumerOfClicksPerLoop;
+                //Int32 minManaToTryAndHeal = 1000;
+
+                if (!InCombat())
+                {
+                    minMana = 85;
+                    maxMana = 95;
+                }
                 if (pctMana > minMana) return;
                 //no manastone in pok
                 bool pok = MQ.Query<bool>("${Zone.ShortName.Equal[poknowledge]}");
@@ -749,7 +768,8 @@ namespace E3Core.Processors
                             MQ.Cmd("/useitem \"Manastone\"");
                         }
                         //allow mq to have the commands sent to the server
-                        MQ.Delay(50);
+                        MQ.Delay(E3.GeneralSettings.ManaStone_DelayBetweenLoops);
+
                         if (MQ.Query<bool>("${Me.Invis}")) return;
                         if ((E3.CurrentClass & Class.Priest) == E3.CurrentClass)
                         {

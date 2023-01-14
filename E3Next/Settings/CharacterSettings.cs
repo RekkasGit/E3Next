@@ -59,7 +59,7 @@ namespace E3Core.Settings
         public string Assist_MeleeDistance = "MaxMelee";
         public string Assist_RangeDistance = "100";
         public int Assist_AutoAssistPercent = 98;
-        private string fileName = String.Empty;
+        private string _fileName = String.Empty;
 
         //abilities
         public List<Spell> MeleeAbilities = new List<Spell>();
@@ -202,7 +202,8 @@ namespace E3Core.Settings
         {
 
             //this is so we can get the merged data as well. 
-            ParsedData = CreateSettings();
+            string filename = GetBoTFilePath($"{CharacterName}_{ServerName}.ini");
+            ParsedData = CreateSettings(filename);
 
             LoadKeyData("Misc", "AutoFood", ParsedData, ref Misc_AutoFoodEnabled);
             LoadKeyData("Misc", "Food", ParsedData, ref Misc_AutoFood);
@@ -353,7 +354,7 @@ namespace E3Core.Settings
         /// Creates the settings file.
         /// </summary>
         /// <returns></returns>
-        public IniData CreateSettings()
+        public IniData CreateSettings(string fileName)
         {
             //if we need to , its easier to just output the entire file. 
 
@@ -575,23 +576,23 @@ namespace E3Core.Settings
             newFile.Sections.AddSection("Ifs");
             newFile.Sections.AddSection("Events");
 
-            string filename = GetBoTFilePath($"{CharacterName}_{ServerName}.ini");
             if (!String.IsNullOrEmpty(CurrentSet))
             {
-                filename = filename.Replace(".ini", "_" + CurrentSet + ".ini");
+                fileName = fileName.Replace(".ini", "_" + CurrentSet + ".ini");
             }
 
 
-            if (!File.Exists(filename))
+            if (!File.Exists(fileName))
             {
                 if (!Directory.Exists(_configFolder + _botFolder))
                 {
                     Directory.CreateDirectory(_configFolder + _botFolder);
                 }
                 //file straight up doesn't exist, lets create it
-                parser.WriteFile(filename, newFile);
-                _fileLastModified = System.IO.File.GetLastWriteTime(filename);
-                _fileLastModifiedFileName = filename;
+                parser.WriteFile(fileName, newFile);
+                _fileLastModified = System.IO.File.GetLastWriteTime(fileName);
+                _fileLastModifiedFileName = fileName;
+                _fileName = fileName;
             }
             else
             {
@@ -599,17 +600,19 @@ namespace E3Core.Settings
                 //Parse the ini file
                 //Create an instance of a ini file parser
                 FileIniDataParser fileIniData = e3util.CreateIniParser();
-                IniData tParsedData = fileIniData.ReadFile(filename);
+                IniData tParsedData = fileIniData.ReadFile(fileName);
 
                 //overwrite newfile with what was already there
                 tParsedData.Merge(newFile);
                 newFile = tParsedData;
                 //save it it out now
-                File.Delete(filename);
-                parser.WriteFile(filename, tParsedData);
+                File.Delete(fileName);
+                parser.WriteFile(fileName, tParsedData);
 
-                _fileLastModified = System.IO.File.GetLastWriteTime(filename);
-                _fileLastModifiedFileName = filename;
+                _fileLastModified = System.IO.File.GetLastWriteTime(fileName);
+                _fileLastModifiedFileName = fileName;
+                _fileName = fileName;
+                
             }
 
 
@@ -637,8 +640,8 @@ namespace E3Core.Settings
             }
 
             FileIniDataParser fileIniData = e3util.CreateIniParser();
-            File.Delete(fileName);
-            fileIniData.WriteFile(fileName, ParsedData);
+            File.Delete(_fileName);
+            fileIniData.WriteFile(_fileName, ParsedData);
         }
     }
 }

@@ -387,6 +387,6 @@ namespace E3Core.Settings
     }
     interface IBaseSettings
     {
-        IniData CreateSettings();
+        IniData CreateSettings(string filename);
     }
 }

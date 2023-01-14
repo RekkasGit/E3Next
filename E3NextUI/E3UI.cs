@@ -56,6 +56,7 @@ namespace E3NextUI
         public static String _playerHP;
         public static String _playerMP;
         public static String _playerSP;
+        
        
 
         public E3UI()
@@ -122,6 +123,11 @@ namespace E3NextUI
             if (_genSettings.UseDarkMode)
             {
                 darkModeMenuItem.Checked = true;
+            }
+            if (_genSettings.UseOverlay)
+            {
+                overlayOntopToolStripMenuItem.Checked = true;
+                TopMost = true;
             }
 
             LoadDynamicButtons();
@@ -394,11 +400,10 @@ namespace E3NextUI
                 {
                     this.Visible = true;
                     //Keeps the current topmost status of form
-                    bool top = TopMost;
                     //Brings the form to top
                     TopMost = true;
                     //Set form's topmost status back to whatever it was
-                    TopMost = top;
+                    TopMost =_genSettings.UseOverlay;
                 }
             }
         }
@@ -817,6 +822,30 @@ namespace E3NextUI
         private void hideToolStripMenuItem_Click(object sender, EventArgs e)
         {
             ToggleShow();
+        }
+
+        private void overlayOntopToolStripMenuItem_Click(object sender, EventArgs e)
+        {
+            if (_genSettings.UseOverlay)
+            {
+                overlayOntopToolStripMenuItem.Checked = false;
+                _genSettings.UseOverlay = false;
+                TopMost = false;
+                this.Opacity = this.Opacity - 0.001;
+                System.Windows.Forms.Application.DoEvents();
+                this.Opacity = 100;
+                _genSettings.SaveData();
+            }
+            else
+            {
+                overlayOntopToolStripMenuItem.Checked = true;
+                _genSettings.UseOverlay = true;
+                TopMost = true;
+                this.Opacity = this.Opacity - 0.001;
+                System.Windows.Forms.Application.DoEvents();
+                this.Opacity = 100;
+                _genSettings.SaveData();
+            }
         }
     }
     public class TextBoxInfo

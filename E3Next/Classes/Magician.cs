@@ -238,7 +238,7 @@ namespace E3Core.Classes
                 }
 
                 // move back to my original location
-                e3util.TryMoveToLoc(currentX, currentY,currentZ);
+                e3util.TryMoveToLoc(currentX, currentY, currentZ);
                 _isExternalRequest = false;
 
                 return;
@@ -261,7 +261,7 @@ namespace E3Core.Classes
             }
 
             // move back to my original location
-            e3util.TryMoveToLoc(currentX, currentY,currentZ);
+            e3util.TryMoveToLoc(currentX, currentY, currentZ);
             _isExternalRequest = false;
         }
 

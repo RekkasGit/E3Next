@@ -72,6 +72,7 @@ namespace E3NextUI
             this.checkUpdatesToolStripMenuItem = new System.Windows.Forms.ToolStripMenuItem();
             this.settingsToolStripMenuItem = new System.Windows.Forms.ToolStripMenuItem();
             this.darkModeMenuItem = new System.Windows.Forms.ToolStripMenuItem();
+            this.overlayOntopToolStripMenuItem = new System.Windows.Forms.ToolStripMenuItem();
             this.panelMain = new System.Windows.Forms.Panel();
             this.panelButtons = new System.Windows.Forms.Panel();
             this.tableLayoutPanelDynamicButtons = new System.Windows.Forms.TableLayoutPanel();
@@ -499,21 +500,22 @@ namespace E3NextUI
             // hideToolStripMenuItem
             // 
             this.hideToolStripMenuItem.Name = "hideToolStripMenuItem";
-            this.hideToolStripMenuItem.Size = new System.Drawing.Size(180, 22);
+            this.hideToolStripMenuItem.Size = new System.Drawing.Size(171, 22);
             this.hideToolStripMenuItem.Text = "Hide";
             this.hideToolStripMenuItem.Click += new System.EventHandler(this.hideToolStripMenuItem_Click);
             // 
             // checkUpdatesToolStripMenuItem
             // 
             this.checkUpdatesToolStripMenuItem.Name = "checkUpdatesToolStripMenuItem";
-            this.checkUpdatesToolStripMenuItem.Size = new System.Drawing.Size(180, 22);
+            this.checkUpdatesToolStripMenuItem.Size = new System.Drawing.Size(171, 22);
             this.checkUpdatesToolStripMenuItem.Text = "Check for Updates";
             this.checkUpdatesToolStripMenuItem.Click += new System.EventHandler(this.checkUpdatesToolStripMenuItem_Click);
             // 
             // settingsToolStripMenuItem
             // 
             this.settingsToolStripMenuItem.DropDownItems.AddRange(new System.Windows.Forms.ToolStripItem[] {
-            this.darkModeMenuItem});
+            this.darkModeMenuItem,
+            this.overlayOntopToolStripMenuItem});
             this.settingsToolStripMenuItem.Name = "settingsToolStripMenuItem";
             this.settingsToolStripMenuItem.Size = new System.Drawing.Size(61, 20);
             this.settingsToolStripMenuItem.Text = "Settings";
@@ -521,9 +523,16 @@ namespace E3NextUI
             // darkModeMenuItem
             // 
             this.darkModeMenuItem.Name = "darkModeMenuItem";
-            this.darkModeMenuItem.Size = new System.Drawing.Size(129, 22);
+            this.darkModeMenuItem.Size = new System.Drawing.Size(180, 22);
             this.darkModeMenuItem.Text = "DarkMode";
             this.darkModeMenuItem.Click += new System.EventHandler(this.darkModeToolStripMenuItem_Click);
+            // 
+            // overlayOntopToolStripMenuItem
+            // 
+            this.overlayOntopToolStripMenuItem.Name = "overlayOntopToolStripMenuItem";
+            this.overlayOntopToolStripMenuItem.Size = new System.Drawing.Size(180, 22);
+            this.overlayOntopToolStripMenuItem.Text = "Overlay/Ontop";
+            this.overlayOntopToolStripMenuItem.Click += new System.EventHandler(this.overlayOntopToolStripMenuItem_Click);
             // 
             // panelMain
             // 
@@ -827,6 +836,7 @@ namespace E3NextUI
         private System.Windows.Forms.Label labelCastingValue;
         private System.Windows.Forms.Panel panelStatusPannel2;
         private System.Windows.Forms.ToolStripMenuItem checkUpdatesToolStripMenuItem;
+        private System.Windows.Forms.ToolStripMenuItem overlayOntopToolStripMenuItem;
     }
 }
 

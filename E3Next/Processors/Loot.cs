@@ -417,8 +417,7 @@ namespace E3Core.Processors
                     bool qtyWindowUp = MQ.Query<bool>("${Window[QuantityWnd].Open}");
                     if(qtyWindowUp)
                     {
-                        MQ.Cmd($"/nomodkey /notify QuantityWnd QTYW_Accept_Button leftmouseup");
-                        MQ.Delay(300);
+                        MQ.Cmd($"/nomodkey /notify QuantityWnd QTYW_Accept_Button leftmouseup",300);
                     }
                 }
                

@@ -32,6 +32,7 @@ namespace E3NextUI.Settings
         public bool DynamicButtonsCollapsed;
         public Dictionary<string, DynamicButton> DynamicButtons = new Dictionary<string, DynamicButton>(StringComparer.OrdinalIgnoreCase);
         public bool UseDarkMode = true;
+        public bool UseOverlay = false;
 
         private IniData _parsedData;
 
@@ -116,6 +117,7 @@ namespace E3NextUI.Settings
             section["ConsoleCollapsed"] = ConsoleCollapsed.ToString();
             section["DynamicButtonsCollapsed"] = DynamicButtonsCollapsed.ToString();
             section["UseDarkMode"] = UseDarkMode.ToString();
+            section["UseOverlay"] = UseOverlay.ToString();
 
             foreach (var pair in DynamicButtons)
             {
@@ -152,6 +154,7 @@ namespace E3NextUI.Settings
             section.Keys.AddKey("ConsoleCollapsed", "True");
             section.Keys.AddKey("DynamicButtonsCollapsed", "False");
             section.Keys.AddKey("UseDarkMode", "True");
+            section.Keys.AddKey("UseOverlay", "False");
 
 
             if (!System.IO.File.Exists(filename))
