@@ -64,23 +64,36 @@ namespace E3Core.Processors
         {
             if (petID == 0 && E3.CharacterSettings.PetSpell.Count > 0)
             {
+                bool castPet = false;
                 //we have no pet, do we have a pet configurd to summon?               
                 foreach (var spell in E3.CharacterSettings.PetSpell)
                 {
+                    if (!String.IsNullOrWhiteSpace(spell.Ifs))
+                    {
+                        if (!Casting.Ifs(spell))
+                        {
+                            continue;
+                        }
+                    }
+
                     if (Casting.CheckReady(spell) && Casting.CheckMana(spell))
                     {
                         Casting.Cast(0, spell);
+                        castPet = true;
                         break;
                     }
                 }
-
-                //wait for the pet to appear
-                MQ.Delay(1000);
-                petID = MQ.Query<Int32>("${Me.Pet.ID}");
-                if (petID > 0)
+                if(castPet)
                 {
-                    MQ.Cmd("/squelch /pet ghold on");
+                    //wait for the pet to appear
+                    MQ.Delay(1000);
+                    petID = MQ.Query<Int32>("${Me.Pet.ID}");
+                    if (petID > 0)
+                    {
+                        MQ.Cmd("/squelch /pet ghold on");
+                    }
                 }
+              
             }
         }
         private static void CheckPetHeal(Int32 petID)
