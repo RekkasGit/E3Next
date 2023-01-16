@@ -20,7 +20,8 @@ namespace E3Core.Processors
         [AdvSettingInvoke]
         public static void Check_Heals()
         {
-            if (E3.IsInvis) return;
+            //don't heal if invs, don't heal if not assiting yet moving around. 
+            if (E3.IsInvis || (!Assist.IsAssisting && Movement.IsMoving())) return;
             if (!Basics.InCombat())
             {
                 if (!e3util.ShouldCheck(ref _nextHealCheck, _nextHealCheckInterval)) return;
