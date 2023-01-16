@@ -329,6 +329,8 @@ namespace E3Core.Settings
             LoadKeyData("Heals", "XTarget Heal", ParsedData, HealXTarget);
             LoadKeyData("Heals", "Heal Over Time Spell", ParsedData, HealOverTime);
             LoadKeyData("Heals", "Group Heal", ParsedData, HealGroup);
+            LoadKeyData("Heals", "Pet Heal", ParsedData, HealPets);
+
 
             LoadKeyData("Heals", "Tank", ParsedData, HealTankTargets);
             LoadKeyData("Heals", "Important Bot", ParsedData, HealImportantBotTargets);

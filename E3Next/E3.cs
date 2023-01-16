@@ -67,7 +67,7 @@ namespace E3Core.Processors
             using (Log.Trace("Assist/WaitForRez"))
             {
                 Rez.Process();
-                if (Rez.IsWaiting()) return;
+                if (Basics.AmIDead()) return;
 
                 Assist.Process();
             }

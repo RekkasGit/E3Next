@@ -21,6 +21,7 @@ namespace E3Core.Processors
         public static bool Enabled = false;
         public static Int32 MobToAttack = 0;
         public static bool FaceTarget = false;
+        public static List<string> Filters = new List<string>();
 
         [ClassInvoke(Data.Class.All)]
         public static void Check_Xtargets()
@@ -90,7 +91,14 @@ namespace E3Core.Processors
                                 MQ.Cmd("/face fast");
                             }
                             MQ.Delay(500);
-                            E3.Bots.BroadcastCommandToGroup($"/assistme {mobId} {Zoning.CurrentZone.Id}");
+                            if(Filters.Count>0)
+                            {
+                                E3.Bots.BroadcastCommandToGroup($"/assistme {mobId} {Zoning.CurrentZone.Id} {string.Join(" ", Filters)}");
+                            }
+                            else
+                            {
+                                E3.Bots.BroadcastCommandToGroup($"/assistme {mobId} {Zoning.CurrentZone.Id}");
+                            }
                         }
                     }
                 }

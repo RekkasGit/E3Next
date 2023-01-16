@@ -187,7 +187,7 @@ namespace E3Core.Processors
         {
             if (E3.CharacterSettings.WhoToHeal.Contains("Pets"))
             {
-                Heal(currentMana, pctMana, E3.CharacterSettings.HealPetOwners, E3.CharacterSettings.HealPets);
+                Heal(currentMana, pctMana, E3.CharacterSettings.HealPetOwners, E3.CharacterSettings.HealPets, true);
 
             }
         }

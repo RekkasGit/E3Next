@@ -280,6 +280,14 @@ namespace E3Core.Processors
             }
 
         }
+        [AdvSettingInvoke]
+        public static void check_CombatBuffs()
+        {
+            if (Assist.IsAssisting || Nukes.PBAEEnabled)
+            {
+                BuffBots(E3.CharacterSettings.CombatBuffs);
+            }
+        }
         private static void BuffInstant(List<Data.Spell> buffs)
         {
             if (e3util.IsActionBlockingWindowOpen()) return;

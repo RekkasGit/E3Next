@@ -722,14 +722,22 @@ namespace E3Core.Processors
                     ClearXTargets.MobToAttack=0;
                     AssistOff();
                     E3.Bots.BroadcastCommandToGroup($"/backoff all");
+                    if (x.filters.Count > 0)
+                    {
+                        ClearXTargets.Filters.Clear();
+                        ClearXTargets.Filters.AddRange(x.filters);
+                    }
+
                     ClearXTargets.Enabled = true;
                     ClearXTargets.FaceTarget = true;
+
 
                 } 
                 else if (x.args.Count == 1 && x.args[0] == "off")
                 {
                     AssistOff();
                     ClearXTargets.Enabled = false;
+                    ClearXTargets.Filters.Clear();
                     E3.Bots.BroadcastCommandToGroup($"/backoff all");
                 }
                 else if (x.args.Count == 1 && x.args[0] == "noface")
@@ -737,6 +745,11 @@ namespace E3Core.Processors
                     ClearXTargets.MobToAttack = 0;
                     AssistOff();
                     E3.Bots.BroadcastCommandToGroup($"/backoff all");
+                    if (x.filters.Count > 0)
+                    {
+                        ClearXTargets.Filters.Clear();
+                        ClearXTargets.Filters.AddRange(x.filters);
+                    }
                     ClearXTargets.Enabled = true;
                     ClearXTargets.FaceTarget = false;
                 }
