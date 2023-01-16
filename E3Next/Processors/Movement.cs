@@ -450,7 +450,111 @@ namespace E3Core.Processors
 
                 }
             });
-            //anchoron
+            EventProcessor.RegisterCommand("/coth", (x) =>
+            {
+                string cothTarget = string.Empty;
+
+                if (x.args.Count > 0)
+                {
+                    cothTarget = x.args[0];
+                    
+                    if (cothTarget.Equals("group", StringComparison.OrdinalIgnoreCase))
+                    {
+                        PlayerSummon("group");
+                        return;
+                    }
+                    Spawn s;
+                    if (_spawns.TryByName(cothTarget, out s))
+                    {
+                        if (!Basics.GroupMembers.Contains(s.ID)) 
+                        {
+                            E3.Bots.Broadcast($"{s.CleanName} is not in our group, can't summon.");
+                            return;
+                        }
+                        
+                        PlayerSummon(s.CleanName);
+                    }
+                }
+            });
+        }
+        public static void PlayerSummon(string cothTarget)
+        {
+            // {FindItem[=Wayfarers Brotherhood Emblem].Clicky} == Call of the Hero, SpellID 1771
+            Spell summonSpell;
+            bool canSummon = false;
+            List<string> memberNames = E3.Bots.BotsConnected();
+            Spawn s;
+
+            if (MQ.Query<bool>($"${{Me.Book[Call of the Hero]}}") || MQ.Query<bool>($"${{Me.AltAbility[Call of the Hero].Spell}}"))
+            {
+                canSummon = true;
+                summonSpell = new Spell("Call of the Hero");
+            }
+            else if (MQ.Query<bool>($"${{Bool[${{FindItem[=Wayfarers Brotherhood Emblem].Clicky}}"))
+            {
+                canSummon = true;
+                summonSpell = new Spell("Wayfarers Brotherhood Emblem");
+            }
+            else
+            {
+                MQ.Write("No coth mechanism available, can't coth");
+                return;
+            }
+
+            if (cothTarget.Equals("group", StringComparison.OrdinalIgnoreCase))
+            {
+                MQ.Write("Summoning group members.");
+            }
+            else if (_spawns.TryByName(cothTarget, out s))
+            {
+                if (s.Distance < 50 && MQ.Query<bool>($"${{Spawn[id {s.ID}].LineOfSight}}"))
+                {
+                    E3.Bots.Broadcast($"{s.DisplayName} is within 50 units and in LOS, not summoning.");
+                    return;
+                }
+
+                if (s.TypeDesc == "NPC")
+                {
+                    E3.Bots.Broadcast($"{s.DisplayName} can't summon NPCs.");
+                    return;
+                }
+
+                if (Casting.CheckReady(summonSpell))
+                {
+                    Casting.Cast(s.ID, summonSpell);
+                }
+                return;
+            }
+
+            foreach (int memberid in Basics.GroupMembers)
+            {
+                if (_spawns.TryByID(memberid, out s))
+                {
+                    if (memberNames.Contains(s.CleanName))
+                    {
+                        if (s.Distance < 50 && MQ.Query<bool>($"${{Spawn[id {s.ID}].LineOfSight}}"))
+                        {
+                            E3.Bots.Broadcast($"{s.CleanName} is within 50 units and in LOS, not summoning.");
+                                continue;
+                        }
+
+                        if (Casting.CheckReady(summonSpell))
+                        {
+                            Casting.Cast(memberid, summonSpell);
+                            MQ.Delay(100);
+                        }
+                    }
+                }
+
+                while (MQ.Query<bool>("${Me.Casting.ID}"))
+                {
+                    if (Assist.IsAssisting || Basics.InCombat())
+                    {
+                        E3.Bots.Broadcast("In combat or assist was called, cancelling summon");
+                        return;
+                    }
+                }
+            }
         }
     }
 }
