@@ -458,6 +458,7 @@ namespace E3Core.Processors
                 {
                     cothTarget = x.args[0];
                     Basics.RefreshGroupMembers();
+
                     if (cothTarget.Equals("group", StringComparison.OrdinalIgnoreCase))
                     {
                         PlayerSummon("group");
