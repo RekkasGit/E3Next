@@ -70,6 +70,8 @@ namespace E3NextUI.Settings
             LoadKeyData("General", "ConsoleCollapsed", _parsedData, ref ConsoleCollapsed);
             LoadKeyData("General", "DynamicButtonsCollapsed", _parsedData, ref DynamicButtonsCollapsed);
             LoadKeyData("General", "UseDarkMode", _parsedData, ref UseDarkMode);
+            LoadKeyData("General", "UseOverlay", _parsedData, ref UseOverlay);
+
 
             for (Int32 i = 0; i < 25; i++)
             {

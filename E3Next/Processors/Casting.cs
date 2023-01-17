@@ -765,15 +765,16 @@ namespace E3Core.Processors
             Int32 pctMana = MQ.Query<Int32>("${Me.PctMana}");
             if (currentMana >= spell.Mana)
             {
+                if (spell.MaxMana > 0)
+                {
+                    if (pctMana > spell.MaxMana)
+                    {
+                        return false;
+                    }
+                }
                 if (pctMana >= spell.MinMana)
                 {
-                    if (spell.MaxMana > 0)
-                    {
-                        if (pctMana < spell.MaxMana)
-                        {
-                            return false;
-                        }
-                    }
+                    
                     return true;
 
                 }
