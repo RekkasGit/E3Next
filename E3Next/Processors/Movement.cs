@@ -555,6 +555,8 @@ namespace E3Core.Processors
                     }
                 }
             }
+
+            E3.Bots.Broadcast("Finished summoning group");
         }
     }
 }

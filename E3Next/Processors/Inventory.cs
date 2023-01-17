@@ -422,8 +422,8 @@ namespace E3Core.Processors
 
             string WindowStatus = MQ.Query<string>("${FrameLimiter.Status}");
 
-            //don't trade if its the foreground window, as its user controlled.
-            if (WindowStatus == "Foreground") return;
+            //don't trade if its the foreground window and WaitForTrade is set to true in the INI
+            if (WindowStatus == "Foreground" && E3.GeneralSettings.AutoTrade_WaitForTrade) return;
 
             bool tradeWndOpen = MQ.Query<bool>($"${{Window[TradeWnd].Open}}");
             bool doTrade = false;
