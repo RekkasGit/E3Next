@@ -457,7 +457,7 @@ namespace E3Core.Processors
                 if (x.args.Count > 0)
                 {
                     cothTarget = x.args[0];
-                    
+                    Basics.RefreshGroupMembers();
                     if (cothTarget.Equals("group", StringComparison.OrdinalIgnoreCase))
                     {
                         PlayerSummon("group");
