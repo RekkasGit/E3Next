@@ -218,6 +218,11 @@ namespace TestCore
             {
                 Console.WriteLine($"[{System.DateTime.Now.ToString("HH:mm:ss")}] {query}");
             }
+
+            public void Beep()
+            {
+                Cmd("/beep");
+            }
         }
 
     }

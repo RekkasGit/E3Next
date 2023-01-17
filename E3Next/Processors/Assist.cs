@@ -233,7 +233,7 @@ namespace E3Core.Processors
                 {
                     if (pctAggro < 100)
                     {
-                        Int32 targetOfTargetID = MQ.Query<Int32>("${Me.TargetOfTarget}");
+                        Int32 targetOfTargetID = MQ.Query<Int32>("${Me.TargetOfTarget.ID}");
                         if (targetOfTargetID > 0)
                         {
                             Spawn tt;

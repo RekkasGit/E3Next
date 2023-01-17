@@ -1070,6 +1070,7 @@ namespace MonoCore
         bool AddCommand(string query);
         void ClearCommands();
         void RemoveCommand(string commandName);
+        void Beep();
 
     }
     public class MQ : IMQ
@@ -1353,7 +1354,10 @@ namespace MonoCore
             Core.mq_RemoveCommand(commandName);
         }
 
-        
+        public void Beep()
+        {
+            Cmd("/beep");
+        }
     }
 
     public class Logging
