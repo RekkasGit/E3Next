@@ -26,7 +26,11 @@ namespace E3Core.Settings
 
         private Int32 casting_DefaultSpellGem = 8;
         public Int32 MaxGemSlots = 8 + MQ.Query<Int32>("${Me.AltAbility[Mnemonic Retention].Rank}");
-        public int Casting_DefaultSpellGem { get { return casting_DefaultSpellGem; } set { if (value > 0 && value <= MaxGemSlots) { casting_DefaultSpellGem = value; } } }
+        public int Casting_DefaultSpellGem 
+        { 
+            get { return casting_DefaultSpellGem; } 
+            set { if (value > 0 && value <= MaxGemSlots) { casting_DefaultSpellGem = value; } } 
+        }
 
         public Boolean BuffRequests_AllowBuffRequests = true;
         public String BuffRequests_RestrictedPCs;
