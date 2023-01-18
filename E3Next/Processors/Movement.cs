@@ -158,6 +158,11 @@ namespace E3Core.Processors
         }
         public static bool AnchorEnabled()
         {
+            var isInForeground = MQ.Query<bool>("${EverQuest.Foreground}");
+            if(isInForeground)
+            {
+                return false;
+            }
             if (AnchorTarget > 0 || Anchor_X != double.MinValue) return true;
             return false;
         }
