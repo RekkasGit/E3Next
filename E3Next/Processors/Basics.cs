@@ -19,7 +19,7 @@ namespace E3Core.Processors
     public static class Basics
     {
         public static SavedGroupDataFile SavedGroupData = new SavedGroupDataFile();
-        public static Logging Log = E3.Log;
+        public static Logging _log = E3.Log;
         private static IMQ MQ = E3.MQ;
         private static ISpawns _spawns = E3.Spawns;
         public static bool IsPaused = false;
@@ -208,14 +208,28 @@ namespace E3Core.Processors
            
             EventProcessor.RegisterCommand("/debug", (x) =>
             {
+
+                var traceLevel = Logging.LogLevels.Trace;
+
+                if(x.args.Count>0)
+                {
+                    if(String.Equals(x.args[0],"notrace", StringComparison.OrdinalIgnoreCase))
+                    {
+                        traceLevel = Logging.LogLevels.None;
+                    }
+
+                }
+
                 if (Logging.MinLogLevelTolog == Logging.LogLevels.Error)
                 {
                     Logging.MinLogLevelTolog = Logging.LogLevels.Debug;
-                    Logging.TraceLogLevel = Logging.LogLevels.Trace;
+                    Logging.TraceLogLevel = traceLevel;
                     MainProcessor.ProcessDelay = 1000;
+                    _log.Write("Debug has been turned on:");
                 }
                 else
                 {
+                    _log.Write("Debug has been turned off.");
                     Logging.MinLogLevelTolog = Logging.LogLevels.Error;
                     Logging.TraceLogLevel = Logging.LogLevels.None;
                     MainProcessor.ProcessDelay = E3.ProcessDelay;
@@ -535,7 +549,7 @@ namespace E3Core.Processors
         {
             if (!e3util.ShouldCheck(ref _nextResourceCheck, _nextResourceCheckInterval)) return;
 
-            using (Log.Trace())
+            using (_log.Trace())
             {
                 if (E3.IsInvis) return;
                 if (Basics.AmIDead()) return;
@@ -800,7 +814,7 @@ namespace E3Core.Processors
             int autoMedPct = E3.GeneralSettings.General_AutoMedBreakPctMana;
             if (autoMedPct == 0) return;
             if (!E3.CharacterSettings.Misc_AutoMedBreak) return;
-            using (Log.Trace())
+            using (_log.Trace())
             {
                 bool onMount = MQ.Query<bool>("${Me.Mount.ID}");
 
@@ -836,7 +850,7 @@ namespace E3Core.Processors
             if (!e3util.ShouldCheck(ref _nextFoodCheck, _nextFoodCheckInterval)) return;
 
             if (!E3.CharacterSettings.Misc_AutoFoodEnabled) return;
-            using (Log.Trace())
+            using (_log.Trace())
             {
                 var toEat = E3.CharacterSettings.Misc_AutoFood;
                 var toDrink = E3.CharacterSettings.Misc_AutoDrink;
@@ -950,7 +964,7 @@ namespace E3Core.Processors
         public static void CheckCursor()
         {
             if (!e3util.ShouldCheck(ref _nextCursorCheck, _nextCursorCheckInterval)) return;
-            using (Log.Trace())
+            using (_log.Trace())
             {
                 bool itemOnCursor = MQ.Query<bool>("${Bool[${Cursor.ID}]}");
                 
