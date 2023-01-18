@@ -21,7 +21,16 @@ namespace E3Core.Processors
         public static void Check_Heals()
         {
             //don't heal if invs, don't heal if not assiting yet naving around
-            if (E3.IsInvis || (!Assist.IsAssisting && Movement.IsNavigating())) return;
+            if (E3.IsInvis) return;
+            //if configured to not heal while naving check to see if we are naving
+            if(!E3.GeneralSettings.General_HealWhileNavigating)
+            {
+                if (!Assist.IsAssisting && Movement.IsNavigating())
+                {
+                    return;
+                }
+            }
+
             if (!Basics.InCombat())
             {
                 if (!e3util.ShouldCheck(ref _nextHealCheck, _nextHealCheckInterval)) return;
