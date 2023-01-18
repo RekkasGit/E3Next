@@ -99,6 +99,7 @@ namespace E3Core.Processors
                 if(!MQ.Query<bool>("${Me.Ducking}"))
                 {
                     MQ.Cmd("/nomodkey /keypress duck");
+                    E3.Bots.Broadcast("/ar Ducking to avoid arrow.");
                 }
             });
             pattern = "An arrow narrowly misses you\\.";
@@ -107,6 +108,7 @@ namespace E3Core.Processors
                 if (MQ.Query<bool>("${Me.Ducking}"))
                 {
                     MQ.Cmd("/nomodkey /keypress duck");
+                    E3.Bots.Broadcast("/ag Avoided arrow standing up!");
                 }
 
             });
