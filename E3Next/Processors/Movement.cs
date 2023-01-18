@@ -578,18 +578,16 @@ namespace E3Core.Processors
         {
             // {FindItem[=Wayfarers Brotherhood Emblem].Clicky} == Call of the Hero, SpellID 1771
             Spell summonSpell;
-            bool canSummon = false;
             List<string> memberNames = E3.Bots.BotsConnected();
             Spawn s;
 
             if (MQ.Query<bool>($"${{Me.Book[Call of the Hero]}}") || MQ.Query<bool>($"${{Me.AltAbility[Call of the Hero].Spell}}"))
             {
-                canSummon = true;
                 summonSpell = new Spell("Call of the Hero");
             }
             else if (MQ.Query<bool>($"${{Bool[${{FindItem[=Wayfarers Brotherhood Emblem].Clicky}}"))
             {
-                canSummon = true;
+              
                 summonSpell = new Spell("Wayfarers Brotherhood Emblem");
             }
             else
@@ -620,39 +618,38 @@ namespace E3Core.Processors
                 {
                     Casting.Cast(s.ID, summonSpell);
                 }
+                else
+                {
+                    E3.Bots.Broadcast($"{s.CleanName} not summoning. Issue with checkready on {summonSpell.CastName}");
+                }
                 return;
             }
 
             foreach (int memberid in Basics.GroupMembers)
             {
+                if (Basics.InCombat())
+                {
+                    E3.Bots.Broadcast("In combat or assist was called, cancelling summon");
+                    return;
+                }
                 if (_spawns.TryByID(memberid, out s))
                 {
-                    if (memberNames.Contains(s.CleanName))
+                    if (s.Distance < 50 && MQ.Query<bool>($"${{Spawn[id {s.ID}].LineOfSight}}"))
                     {
-                        if (s.Distance < 50 && MQ.Query<bool>($"${{Spawn[id {s.ID}].LineOfSight}}"))
-                        {
-                            E3.Bots.Broadcast($"{s.CleanName} is within 50 units and in LOS, not summoning.");
-                                continue;
-                        }
-
-                        if (Casting.CheckReady(summonSpell))
-                        {
-                            Casting.Cast(memberid, summonSpell);
-                            MQ.Delay(100);
-                        }
+                        E3.Bots.Broadcast($"{s.CleanName} is within 50 units and in LOS, not summoning.");
+                            continue;
                     }
-                }
-
-                while (MQ.Query<bool>("${Me.Casting.ID}"))
-                {
-                    if (Assist.IsAssisting || Basics.InCombat())
+                    if (Casting.CheckReady(summonSpell))
                     {
-                        E3.Bots.Broadcast("In combat or assist was called, cancelling summon");
-                        return;
+                        Casting.Cast(memberid, summonSpell);
+                        e3util.YieldToEQ();//not really needed as there are tons of delays in casting
+                    }
+                    else
+                    {
+                        E3.Bots.Broadcast($"{s.CleanName} not summoning. Issue with checkready on {summonSpell.CastName}");
                     }
                 }
             }
-
             E3.Bots.Broadcast("Finished summoning group");
         }
     }

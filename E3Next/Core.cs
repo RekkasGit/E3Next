@@ -1707,7 +1707,7 @@ namespace MonoCore
         private static List<Spawn> _tmpSpawnList = new List<Spawn>();
         
         public static List<Spawn> _spawns = new List<Spawn>(2048);
-        public static Dictionary<string,Spawn> _spawnsByName = new Dictionary<string,Spawn>(2048);
+        public static Dictionary<string, Spawn> _spawnsByName = new Dictionary<string, Spawn>(2048, StringComparer.OrdinalIgnoreCase);
         public static Dictionary<Int32,Spawn> SpawnsByID = new Dictionary<int,Spawn>(2048);
         public static Int64 _lastRefesh = 0;
         public static Int64 RefreshTimePeriodInMS = 1000;
@@ -1790,8 +1790,10 @@ namespace MonoCore
                     _tmpSpawnList.Add(spawn);
                     if(spawn.TypeDesc=="PC")
                     {
-                        _spawnsByName.Add(spawn.Name, spawn);
-
+                        if(!_spawnsByName.ContainsKey(spawn.Name))
+                        {
+                            _spawnsByName.Add(spawn.Name, spawn);
+                        }
                     }
                     SpawnsByID.Add(spawn.ID, spawn);
                 }

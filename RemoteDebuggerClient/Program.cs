@@ -55,7 +55,7 @@ namespace MQServerClient
         public TimeSpan RecieveTimeout = new TimeSpan(0, 5, 30);
         byte[] _payload = new byte[1000 * 86];
         Int32 _payloadLength = 0;
-        private static Dictionary<string, Spawn> _spawnsByName = new Dictionary<string, Spawn>(2048);
+        public static Dictionary<string, Spawn> _spawnsByName = new Dictionary<string, Spawn>(2048, StringComparer.OrdinalIgnoreCase);
         private static Dictionary<Int32, Spawn> _spawnsByID = new Dictionary<int, Spawn>(2048);
 
         public static List<Spawn> _spawns = new List<Spawn>(2048);
@@ -223,7 +223,10 @@ namespace MQServerClient
                     _tmpSpawnList.Add(spawn);
                     if (spawn.TypeDesc == "PC")
                     {
-                        _spawnsByName.Add(spawn.Name, spawn);
+                        if (!_spawnsByName.ContainsKey(spawn.Name))
+                        {
+                            _spawnsByName.Add(spawn.Name, spawn);
+                        }
 
                     }
                     _spawnsByID.Add(spawn.ID, spawn);
