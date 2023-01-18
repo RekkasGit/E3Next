@@ -32,15 +32,10 @@ namespace E3Core.Processors
                 _spawns.RefreshList();
                 if (MobToAttack > 0)
                 {
-                    Spawn ts;
-                    if (_spawns.TryByID(MobToAttack, out ts))
+                    if (_spawns.TryByID(MobToAttack, out var ts))
                     {
                         //is it still alive?
-                        if (ts.TypeDesc == "Corpse")
-                        {
-                            //its dead jim
-                            MobToAttack = 0;
-                        }
+                        if (ts.TypeDesc == "Corpse") MobToAttack = 0;//its dead jim
                     }
                     else
                     {
