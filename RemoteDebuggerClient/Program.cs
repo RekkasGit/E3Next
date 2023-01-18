@@ -767,6 +767,11 @@ namespace MQServerClient
 
             Console.WriteLine("RemoveCommand:" + commandName);
         }
+
+        public void Beep()
+        {
+            Cmd("/beep");
+        }
     }
 
 }
