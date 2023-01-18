@@ -241,6 +241,10 @@ namespace E3Core.Processors
                     {
                         DropBuff("Transcendent Torpor");
                     }
+                    if (MQ.Query<bool>("${Me.Song[Torpor]}"))
+                    {
+                        DropBuff("Torpor");
+                    }
                 }
             }
         }

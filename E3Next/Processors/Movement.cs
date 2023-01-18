@@ -16,6 +16,11 @@ namespace E3Core.Processors
     public static class Movement
     {
         public static Int32 AnchorTarget = 0;
+        public static double Anchor_X = double.MinValue;
+        public static double Anchor_Y = double.MinValue;
+        public static double Anchor_Z = double.MinValue;
+        public static List<string> AnchorFilters = new List<string>();
+
         public static bool Following = false;
         //public static Int32 _followTargetID = 0;
         public static string FollowTargetName = String.Empty;
@@ -151,11 +156,16 @@ namespace E3Core.Processors
             Following = false;
 
         }
+        public static bool AnchorEnabled()
+        {
+            if (AnchorTarget > 0 || Anchor_X != double.MinValue) return true;
+            return false;
+        }
         [ClassInvoke(Data.Class.All)]
         public static void Check_Anchor()
         {
             if (!e3util.ShouldCheck(ref _nextAnchorCheck, _nextAnchorCheckInterval)) return;
-            if (AnchorTarget > 0 && !Assist.IsAssisting)
+            if (AnchorEnabled() && !Assist.IsAssisting)
             {
                 MoveToAnchor();
             }
@@ -169,11 +179,33 @@ namespace E3Core.Processors
             if (!moving && MQ.Query<bool>("${Navigation.Active}")) moving = true;
             return moving;
         }
+        private static double GetDistance3D(double MyX, double MyY, double MyZ, double TargetX, double TargetY, double TargetZ)
+        {
+            double dx = TargetX - MyX;
+            double dy = TargetY - MyY;
+            double dz = TargetZ - MyZ;
+
+            return Math.Sqrt(dx * dx + dy * dy + dz * dz);
+        }
         public static void MoveToAnchor()
         {
+            if (!AnchorEnabled()) return;
+
             _spawns.RefreshList();
             Spawn s;
-            if (_spawns.TryByID(AnchorTarget, out s))
+            if(Anchor_X!=double.MinValue)
+            {
+                if(_spawns.TryByID(E3.CurrentId,out s))
+                {
+                    double distance = GetDistance3D(s.X, s.Y, s.Z,Anchor_X, Anchor_Y, Anchor_Z);
+                    if (distance > E3.GeneralSettings.Movement_AnchorDistanceMin && distance < E3.GeneralSettings.Movement_AnchorDistanceMax)
+                    {
+                        e3util.TryMoveToLoc(Anchor_X, Anchor_Y, Anchor_Z);
+                    }
+                }
+
+            }
+            else if (_spawns.TryByID(AnchorTarget, out s))
             {
                 if (s.Distance > E3.GeneralSettings.Movement_AnchorDistanceMin && s.Distance < E3.GeneralSettings.Movement_AnchorDistanceMax)
                 {
@@ -239,20 +271,68 @@ namespace E3Core.Processors
 
             EventProcessor.RegisterCommand("/anchoron", (x) =>
             {
+                
+
                 if (x.args.Count > 0)
                 {
-                    Int32 targetid;
-                    if (Int32.TryParse(x.args[0], out targetid))
+                    if (e3util.FilterMe(x)) return;
+                    AnchorFilters.Clear();
+                    if (x.filters.Count > 0)
                     {
-                        AnchorTarget = targetid;
+                        AnchorFilters.AddRange(x.filters);
+                    }
+                    if (x.args.Count==1)
+                    {
+                        Int32 targetid;
+                        if (Int32.TryParse(x.args[0], out targetid))
+                        {
+                            AnchorTarget = targetid;
+                            Anchor_X = double.MinValue;
+                            Anchor_Y = double.MinValue;
+                            Anchor_Z = double.MinValue;
+                        }
+
+                    }
+                    else if(x.args.Count==3)
+                    {
+                        double ax;
+                        if (double.TryParse(x.args[0], out ax))
+                        {
+                            double ay;
+                            if(double.TryParse(x.args[1], out ay))
+                            {
+                                double az;
+                                if (double.TryParse(x.args[2], out az))
+                                {
+                                    AnchorTarget = 0;
+                                    Anchor_X = ax;
+                                    Anchor_Y = ay;
+                                    Anchor_Z = az;
+                                }
+                            }
+                          
+                        }
                     }
                 }
                 else
                 {
                     Int32 targetid = MQ.Query<Int32>("${Target.ID}");
-                    if (targetid > 0)
+                    AnchorTarget = 0;
+                    Anchor_X = double.MinValue;
+                    Anchor_Y = double.MinValue;
+                    Anchor_Z = double.MinValue;
+
+                    if (targetid > 0 && targetid!=E3.CurrentId)
                     {
-                        E3.Bots.BroadcastCommandToGroup($"/anchoron {targetid}");
+                        E3.Bots.BroadcastCommandToGroup($"/anchoron {targetid}",x);
+                    }
+                    else
+                    {
+                        if(_spawns.TryByID(E3.CurrentId,out var s))
+                        {
+                            E3.Bots.BroadcastCommandToGroup($"/anchoron {s.X} {s.Y} {s.Z}",x);
+                            
+                        }
                     }
                 }
             });
@@ -327,10 +407,19 @@ namespace E3Core.Processors
             });
             EventProcessor.RegisterCommand("/anchoroff", (x) =>
             {
-                AnchorTarget = 0;
+               
                 if (x.args.Count == 0)
                 {
-                    E3.Bots.BroadcastCommandToGroup($"/anchoroff all");
+                    E3.Bots.BroadcastCommandToGroup($"/anchoroff all",x);
+                }
+
+                if (!e3util.FilterMe(x))
+                {
+                    AnchorTarget = 0;
+                    Anchor_X = double.MinValue;
+                    Anchor_Y = double.MinValue;
+                    Anchor_Z = double.MinValue;
+
                 }
 
             });
