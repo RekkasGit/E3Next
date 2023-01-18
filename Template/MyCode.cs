@@ -8,10 +8,7 @@ namespace Template
         public static Boolean _isInit = false;
         public static IMQ MQ = Core.mqInstance;
         public static Logging _log = Core.logInstance;
-
-
         //this will be called about once per frame if you have no delay, put a delay :) use MainProcessor.ProcessDelay
-
         public static void Process()
         {
             #region init
@@ -21,14 +18,10 @@ namespace Template
             string name = MQ.Query<string>("${Me.Name}");
 
             MQ.Write($"Hello {name}! DomainId:{System.Threading.Thread.GetDomainID()}");
-       
-        
-        
         }
 
         private static void Init()
         {
-
             if (!_isInit)
             {   
                 Logging.TraceLogLevel = Logging.LogLevels.None; //Trace or None. Others will simply be treated as if Trace was turned on.

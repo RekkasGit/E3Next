@@ -179,6 +179,13 @@ namespace E3Core.Processors
             if (!moving && MQ.Query<bool>("${Navigation.Active}")) moving = true;
             return moving;
         }
+        public static bool IsNavigating()
+        {
+            bool moving = false;
+            if (!moving && MQ.Query<bool>("${MoveTo.Moving}")) moving = true;
+            if (!moving && MQ.Query<bool>("${Navigation.Active}")) moving = true;
+            return moving;
+        }
         private static double GetDistance3D(double MyX, double MyY, double MyZ, double TargetX, double TargetY, double TargetZ)
         {
             double dx = TargetX - MyX;
