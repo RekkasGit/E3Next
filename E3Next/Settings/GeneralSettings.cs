@@ -15,18 +15,7 @@ namespace E3Core.Settings
     public class GeneralSettings : BaseSettings, IBaseSettings
     {
         public Int32 VersionID = 1;
-        public Int32 General_MaxResponseDistance;
-        public Int32 General_LeashLength;
-        public Boolean General_EndMedBreakInCombat;
         public Int32 General_AutoMedBreakPctMana;
-        public Int32 Background_IdleTimeout;
-        public Int32 Background_AutoInventoryTimer;
-        public Int32 Background_CloseSpellbookTimer;
-        public Int32 Misc_Gimmie_AzureMinRequests;
-        public Int32 Misc_Gimmie_SanguineMinRequests;
-        public Int32 Misc_Gimmie_LargeModShardMinRequests;
-        public Int32 Misc_Gimmie_MoltenOrbMinRequests;
-        public bool Misc_DestroyUnsoldItems;
         public bool AutoMisfitBox;
         public bool AttackOffOnEnrage;
         public bool RelayTells;
@@ -35,10 +24,13 @@ namespace E3Core.Settings
         public string Loot_LinkChannel = String.Empty;
         public List<string> Loot_LinkChannelValid = new List<string>() {"g","gu","say","rsay","shout"};
 
-        public bool CorpseSummoning_LootAfterSummon;
-        public string Casting_DefaultSpellSet = "Default";
         private Int32 casting_DefaultSpellGem = 8;
-        public int Casting_DefaultSpellGem { get { return casting_DefaultSpellGem; } set { if (value > 0 && value < 15) { casting_DefaultSpellGem = value; } } }
+        public Int32 MaxGemSlots = 8 + MQ.Query<Int32>("${Me.AltAbility[Mnemonic Retention].Rank}");
+        public int Casting_DefaultSpellGem 
+        { 
+            get { return casting_DefaultSpellGem; } 
+            set { if (value > 0 && value <= MaxGemSlots) { casting_DefaultSpellGem = value; } } 
+        }
 
         public Boolean BuffRequests_AllowBuffRequests = true;
         public String BuffRequests_RestrictedPCs;
@@ -53,20 +45,17 @@ namespace E3Core.Settings
         public Int32 Loot_OnlyStackableValueGreaterThanInCopper = 1;
         public Boolean Loot_OnlyStackableEnabled = false;
 
-        public Boolean AutoTribute_Enabled;
-
         public Boolean Assists_AutoAssistEnabled=false;
         public Int32 Assists_MaxEngagedDistance=250;
         public Int32 Assists_AEThreatRange=100;
-        public String Assists_AcceptableTargetTypes;
-        public Int32 Assists_LongTermDebuffRecast = 30;
-        public Int32 Assists_ShortTermDebuffRecast = 5;
 
+        public bool AutoTrade_WaitForTrade = true;
         public bool AutoTrade_All = false;
         public bool AutoTrade_Bots = true;
         public bool AutoTrade_Group = false;
         public bool AutoTrade_Guild = false;
         public bool AutoTrade_Raid = false;
+        
 
         public Int32 Movement_ChaseDistanceMin = 10;
         public Int32 Movement_ChaseDistanceMax = 500;
@@ -118,23 +107,11 @@ namespace E3Core.Settings
                 throw new Exception("Could not load General Settings file");
             }
 
-            LoadKeyData("General", "Max Response Distance",parsedData, ref General_MaxResponseDistance);
-            LoadKeyData("General", "Leash Length", parsedData, ref General_LeashLength);
-            LoadKeyData("General", "End MedBreak in Combat(On/Off)", parsedData, ref General_EndMedBreakInCombat);
             LoadKeyData("General", "AutoMedBreak PctMana", parsedData, ref General_AutoMedBreakPctMana);
             //    section.Keys.AddKey("NetworkMethod", "EQBC");
 
             LoadKeyData("General", "NetworkMethod",parsedData, ref General_NetworkMethod);
 
-            LoadKeyData("Background", "Idle Time Out (Min)", parsedData, ref Background_IdleTimeout);
-            LoadKeyData("Background", "Auto-Inventory Timer (Sec)", parsedData, ref Background_AutoInventoryTimer);
-            LoadKeyData("Background", "Close Spellbook Timer (Sec)", parsedData, ref Background_CloseSpellbookTimer);
-
-            LoadKeyData("Misc", "Gimmie Azure Min Requests", parsedData, ref Misc_Gimmie_AzureMinRequests);
-            LoadKeyData("Misc", "Gimmie Sanguine Min Requests", parsedData, ref Misc_Gimmie_SanguineMinRequests);
-            LoadKeyData("Misc", "Gimmie Large Mod Shard Min Requests", parsedData, ref Misc_Gimmie_LargeModShardMinRequests);
-            LoadKeyData("Misc", "Gimmie MoltenOrb Min Requests", parsedData, ref Misc_Gimmie_MoltenOrbMinRequests);
-            LoadKeyData("Misc", "Destroy Unsold Items(On/Off)", parsedData, ref Misc_DestroyUnsoldItems);
             LoadKeyData("Misc", "Automatically Use Misfit Box (On/Off)", parsedData, ref AutoMisfitBox);
             LoadKeyData("Misc", "Turn Player Attack Off During Enrage (On/Off)", parsedData, ref AttackOffOnEnrage);
             LoadKeyData("Misc", "Relay Tells (On/Off)", parsedData, ref RelayTells);
@@ -143,13 +120,18 @@ namespace E3Core.Settings
             //check valid loot channels
             if (!Loot_LinkChannelValid.Contains(Loot_LinkChannel, StringComparer.OrdinalIgnoreCase))
             {
+                MQ.Write("Invalid Loot Link Channel setting, loot will not be reported");
                 Loot_LinkChannel = String.Empty;
             }
           
             LoadKeyData("Loot", "Corpse Seek Radius", parsedData, ref Loot_CorpseSeekRadius);
             LoadKeyData("Loot", "LootItemDelay", parsedData, ref Loot_LootItemDelay);
             //no lower than 300ms
-            if (Loot_LootItemDelay < 300) Loot_LootItemDelay = 300;
+            if (Loot_LootItemDelay < 300)
+            {
+                MQ.Write("Minimum LootItemDelay is 300ms, defaulting to 300ms");
+                Loot_LootItemDelay = 300;
+            }
 
             LoadKeyData("Loot", "Loot in Combat", parsedData, ref Loot_LootInCombat);
             LoadKeyData("Loot", "NumOfFreeSlotsOpen(1+)", parsedData, ref Loot_NumberOfFreeSlotsOpen);
@@ -159,42 +141,42 @@ namespace E3Core.Settings
             LoadKeyData("Loot", "Loot Only Stackable: Loot common tradeskill items ie:pelts ores silks etc (On/Off)", parsedData, ref Loot_OnlyStackableOnlyCommonTradeSkillItems);
             LoadKeyData("Loot", "Loot Only Stackable: Always Loot Item", parsedData, Loot_OnlyStackableAlwaysLoot);
             
-            LoadKeyData("Corpse Summoning", "Corpse Summoning", parsedData, ref CorpseSummoning_LootAfterSummon);
-
+        
             LoadKeyData("Manastone", "NumerOfClicksPerLoop", parsedData, ref Manastone_NumerOfClicksPerLoop);
             LoadKeyData("Manastone", "NumberOfLoops", parsedData, ref ManaStone_NumberOfLoops);
             LoadKeyData("Manastone", "DelayBetweenLoops (in milliseconds)", parsedData, ref ManaStone_DelayBetweenLoops);
 
             if(ManaStone_DelayBetweenLoops>1000 || ManaStone_DelayBetweenLoops < 1)
             {
+                MQ.Write("Manastone DelayBetweenLoops has to be < 1000 and >1, defaulting to 50ms");
                 ManaStone_DelayBetweenLoops = 50;
             }
-
-
-            LoadKeyData("Casting", "Default Spell Set", parsedData, ref Casting_DefaultSpellSet);
 
             //so we can validate a default gem is always acceptable range
             Int32 spellGem = Casting_DefaultSpellGem;
             LoadKeyData("Casting", "Default Spell Gem", parsedData, ref spellGem);
             Casting_DefaultSpellGem = spellGem;
-
+            
             LoadKeyData("Buff Requests", "Allow Buff Requests (On/Off)", parsedData, ref BuffRequests_AllowBuffRequests);
             LoadKeyData("Buff Requests", "Restricted PCs (When Requests [On])", parsedData, ref BuffRequests_RestrictedPCs);
             LoadKeyData("Buff Requests", "Allowed PCs (When Requests [Off])", parsedData, ref BuffRequests_AllowedPcs);
-
-            LoadKeyData("Auto-Tribute", "Auto -Tribute (On/Off)", parsedData, ref AutoTribute_Enabled);
 
             LoadKeyData("Assists", "Auto-Assist (On/Off)", parsedData, ref Assists_AutoAssistEnabled);
 
             LoadKeyData("Assists", "Max Engage Distance", parsedData, ref Assists_MaxEngagedDistance);
             LoadKeyData("Assists", "AE Threat Range", parsedData, ref Assists_AEThreatRange);
-            if (Assists_AEThreatRange < 10) Assists_AEThreatRange = 10;
-            if (Assists_AEThreatRange > 300) Assists_AEThreatRange = 300;
+            if (Assists_AEThreatRange < 10)
+            {
+                Assists_AEThreatRange = 10;
+                MQ.Write("AE Threat Range can't be less than 10, defaulting to 10 units");
+            }
+            if (Assists_AEThreatRange > 300)
+            {
+                Assists_AEThreatRange = 300;
+                MQ.Write("AE Threat Range can't be more than 300, defaulting to 300 units");
+            }
 
-            LoadKeyData("Assists", "Acceptable Target Types", parsedData, ref Assists_AcceptableTargetTypes);
-            LoadKeyData("Assists", "Long Term Debuff Recast(s)", parsedData, ref Assists_LongTermDebuffRecast);
-            LoadKeyData("Assists", "Short Term Debuff Recast(s)", parsedData, ref Assists_ShortTermDebuffRecast);
-
+            LoadKeyData("AutoTrade", "Active Window Wait for Trade Accept (On/Off)", parsedData, ref AutoTrade_WaitForTrade);
             LoadKeyData("AutoTrade", "All (On/Off)", parsedData, ref AutoTrade_All);
             LoadKeyData("AutoTrade", "Bots (On/Off)", parsedData, ref AutoTrade_Bots);
             LoadKeyData("AutoTrade", "Group (On/Off)", parsedData, ref AutoTrade_Group);
@@ -241,27 +223,12 @@ namespace E3Core.Settings
 
             newFile.Sections.AddSection("General");
             var section = newFile.Sections.GetSectionData("General");
-            section.Keys.AddKey("Max Response Distance", "500");
-            section.Keys.AddKey("Leash Length", "250");
-            section.Keys.AddKey("End MedBreak in Combat(On/Off)", "On");
             section.Keys.AddKey("AutoMedBreak PctMana", "0");
             section.Keys.AddKey("NetworkMethod", "EQBC");
-
-            newFile.Sections.AddSection("Background");
-            section = newFile.Sections.GetSectionData("Background");
-            section.Keys.AddKey("Idle Time Out (Min)", "10");
-            section.Keys.AddKey("Auto-Inventory Timer (Sec)", "30");
-            section.Keys.AddKey("Close Spellbook Timer (Sec)", "30");
-            section.Keys.AddKey("AutoSetPctAAExp (On/Off)", "Off");
 
             //Misc
             newFile.Sections.AddSection("Misc");
             section = newFile.Sections.GetSectionData("Misc");
-            section.Keys.AddKey("Gimmie Azure Min Requests","2");
-            section.Keys.AddKey("Gimmie Sanguine Min Requests","1");
-            section.Keys.AddKey("Gimmie Large Mod Shard Min Requests","1");
-            section.Keys.AddKey("Gimmie MoltenOrb Min Requests","3");
-            section.Keys.AddKey("Destroy Unsold Items(On/Off)","Off");
             section.Keys.AddKey("Automatically Use Misfit Box (On/Off)", "Off");
             section.Keys.AddKey("Turn Player Attack Off During Enrage (On/Off)", "On");
             section.Keys.AddKey("Relay Tells (On/Off)", "Off");
@@ -278,11 +245,6 @@ namespace E3Core.Settings
             section.Keys.AddKey("Loot Only Stackable: Loot all Tradeskill items (On/Off)", "Off");
             section.Keys.AddKey("LootItemDelay", "300");
 
-            //Corpse Summoning
-            newFile.Sections.AddSection("Corpse Summoning");
-            section = newFile.Sections.GetSectionData("Corpse Summoning");
-            section.Keys.AddKey("Loot After Summoning (On/Off)","Off");
-            
             //Manastone
             newFile.Sections.AddSection("Manastone");
             section = newFile.Sections.GetSectionData("Manastone");
@@ -294,8 +256,7 @@ namespace E3Core.Settings
             //Casting
             newFile.Sections.AddSection("Casting");
             section = newFile.Sections.GetSectionData("Casting");
-            section.Keys.AddKey("Default Spell Set"," Default");
-	        section.Keys.AddKey("Default Spell Gem","8");
+            section.Keys.AddKey("Default Spell Gem","8");
 
             //Buff Requests
             newFile.Sections.AddSection("Buff Requests");
@@ -305,29 +266,24 @@ namespace E3Core.Settings
             section.Keys.AddKey("Allowed PCs (When Requests [Off])","");
 
 
-            //Auto-Tribute
-            newFile.Sections.AddSection("Auto-Tribute");
-            section = newFile.Sections.GetSectionData("Auto-Tribute");
-            section.Keys.AddKey("Auto -Tribute (On/Off)","Off");
-
             //Assists
             newFile.Sections.AddSection("Assists");
             section = newFile.Sections.GetSectionData("Assists");
             section.Keys.AddKey("Auto-Assist (On/Off)", "Off");
             section.Keys.AddKey("Max Engage Distance", "250");
             section.Keys.AddKey("AE Threat Range", "100");
-            section.Keys.AddKey("Acceptable Target Types", "NPC,Pet");
-            section.Keys.AddKey("Long Term Debuff Recast(s)", "30");
-            section.Keys.AddKey("Short Term Debuff Recast(s)", "5");
+            
 
             //Trade
             newFile.Sections.AddSection("AutoTrade");
             section = newFile.Sections.GetSectionData("AutoTrade");
+            section.Keys.AddKey("Active Window Wait for Trade Accept (On/Off)", "On");
             section.Keys.AddKey("All (On/Off)", "Off");
             section.Keys.AddKey("Bots (On/Off)", "On");
             section.Keys.AddKey("Group (On/Off)", "Off");
             section.Keys.AddKey("Guild (On/Off)", "Off");
             section.Keys.AddKey("Raid (On/Off)", "Off");
+            
 
             newFile.Sections.AddSection("Movement");
             section = newFile.Sections.GetSectionData("Movement");
