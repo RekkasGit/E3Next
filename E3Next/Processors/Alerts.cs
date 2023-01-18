@@ -91,6 +91,27 @@ namespace E3Core.Processors
 
             #endregion
 
+            #region Ducking
+
+            pattern = "From the corner of your eye, you notice a Kyv taking aim at your head. You should duck\\.";
+            EventProcessor.RegisterEvent("YouShouldDuck", pattern, (x) => {
+
+                if(!MQ.Query<bool>("${Me.Ducking}"))
+                {
+                    MQ.Cmd("/nomodkey /keypress duck");
+                }
+            });
+            pattern = "An arrow narrowly misses you\\.";
+            EventProcessor.RegisterEvent("YouShouldStand", pattern, (x) => {
+
+                if (MQ.Query<bool>("${Me.Ducking}"))
+                {
+                    MQ.Cmd("/nomodkey /keypress duck");
+                }
+
+            });
+            #endregion
+
             pattern = @"(.+) spell has been reflected by (.+)\.";
             EventProcessor.RegisterEvent("ReflectSpell", pattern, (x) => {
 
