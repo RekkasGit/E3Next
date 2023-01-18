@@ -48,11 +48,11 @@ namespace E3Core.Processors
                     foreach (var s in _spawns.Get().OrderBy(x => x.Distance))
                     {
                         //find all mobs that are close
+                        if (s.TypeDesc != "NPC") continue;
                         if (!s.Targetable) continue;
                         if (!s.Aggressive) continue;
                         if (!MQ.Query<bool>($"${{Spawn[npc id {s.ID}].LineOfSight}}")) continue;
                         if (s.Distance > 60) break;//mob is too far away, and since it is ordered, kick out.
-                        if (s.TypeDesc != "NPC") continue;
                         //its valid to attack!
                         MobToAttack = s.ID;
                         break;
