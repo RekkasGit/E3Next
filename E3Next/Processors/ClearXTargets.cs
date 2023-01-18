@@ -53,7 +53,7 @@ namespace E3Core.Processors
                         if (!MQ.Query<bool>($"${{Spawn[npc id {s.ID}].LineOfSight}}")) continue;
                         if (s.Distance > 60) break;//mob is too far away, and since it is ordered, kick out.
                         if (s.TypeDesc == "Corpse") continue;
-                        if (s.Name.Contains("'s pet'")) continue;
+                        if (s.Name.Contains("'s pet")) continue;
                         if (s.Name.IndexOf("Chest", StringComparison.OrdinalIgnoreCase) > -1) continue;
                         if (s.Name.IndexOf("a box", StringComparison.OrdinalIgnoreCase) > -1) continue;
                         if (s.Name.IndexOf("crate", StringComparison.OrdinalIgnoreCase) > -1) continue;
