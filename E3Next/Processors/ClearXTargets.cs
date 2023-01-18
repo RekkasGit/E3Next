@@ -26,7 +26,6 @@ namespace E3Core.Processors
         [ClassInvoke(Data.Class.All)]
         public static void Check_Xtargets()
         {
-
             if (Enabled)
             {
                 e3util.YieldToEQ();
@@ -41,10 +40,12 @@ namespace E3Core.Processors
                         {
                             //its dead jim
                             MobToAttack = 0;
-
                         }
                     }
-
+                    else
+                    {
+                        MobToAttack = 0;
+                    }
                 }
                 //lets see if we have anything on xtarget that is valid
                 if (MobToAttack == 0)
@@ -85,13 +86,13 @@ namespace E3Core.Processors
                         {
                             MQ.Write("\agClear Targets: \aoIssuing Assist.");
                             Assist.AllowControl = true;
-                            Assist.AssistOn(mobId,Zoning.CurrentZone.Id);
+                            Assist.AssistOn(mobId, Zoning.CurrentZone.Id);
                             if (FaceTarget)
                             {
                                 MQ.Cmd("/face fast");
                             }
                             MQ.Delay(500);
-                            if(Filters.Count>0)
+                            if (Filters.Count > 0)
                             {
                                 E3.Bots.BroadcastCommandToGroup($"/assistme {mobId} {Zoning.CurrentZone.Id} {string.Join(" ", Filters)}");
                             }
@@ -100,10 +101,14 @@ namespace E3Core.Processors
                                 E3.Bots.BroadcastCommandToGroup($"/assistme {mobId} {Zoning.CurrentZone.Id}");
                             }
                         }
+                        else
+                        {
+                            MobToAttack = 0;
+                        }
                     }
                 }
 
-               
+
             }
         }
     }
