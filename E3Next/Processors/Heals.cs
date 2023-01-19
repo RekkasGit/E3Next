@@ -598,6 +598,13 @@ namespace E3Core.Processors
             {
                 if (pctHps < spell.HealPct)
                 {
+                    if (!String.IsNullOrWhiteSpace(spell.Ifs))
+                    {
+                        if (!Casting.Ifs(spell))
+                        {
+                            continue;
+                        }
+                    }
                     if (Casting.CheckReady(spell) && Casting.CheckMana(spell))
                     {
                         if (JustCheck) return true;
