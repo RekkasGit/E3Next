@@ -88,19 +88,13 @@ namespace E3Core.Processors
                         if (_spawns.TryByID(mobId, out s))
                         {
                             if (s.ID == Assist.AssistTargetID) continue;
+                            if (s.PctHps < 10) continue;
+                            //find all mobs that are close
+                            if (s.TypeDesc != "NPC") continue;
                             if (!s.Targetable) continue;
                             if (!s.Aggressive) continue;
-                            if (!s.Targetable) continue;
-                            if (s.PctHps < 10) continue;
-                            if (!MQ.Query<bool>($"${{Spawn[npc id {mobId}].LineOfSight}}")) continue;
-                            if (s.Distance > 100) continue;
-                            if (s.TypeDesc == "Corpse") continue;
-                            if (s.Name.Contains("`s pet'")) continue;
-                            if (s.Name.IndexOf("Chest", StringComparison.OrdinalIgnoreCase) > -1) continue;
-                            if (s.Name.IndexOf("a box", StringComparison.OrdinalIgnoreCase) > -1) continue;
-                            if (s.Name.IndexOf("crate", StringComparison.OrdinalIgnoreCase) > -1) continue;
-                            if (s.Name.IndexOf("hollow_tree", StringComparison.OrdinalIgnoreCase) > -1) continue;
-                            if (s.Name.IndexOf("wooden box", StringComparison.OrdinalIgnoreCase) > -1) continue;
+                            if (!MQ.Query<bool>($"${{Spawn[npc id {s.ID}].LineOfSight}}")) continue;
+                            if (s.Distance > 100) break;//mob is too far away, and since it is ordered, kick out.
                             _mobsToOffAsist.Add(mobId);
                         }
                     }
