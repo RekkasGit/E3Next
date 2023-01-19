@@ -32,7 +32,6 @@ namespace E3Core.Processors
         public static void Init()
         {
             RegisterEvents();
-            InitRezSpells();
         }
 
         public static bool IsWaiting()
@@ -202,10 +201,9 @@ namespace E3Core.Processors
             if (Basics.AmIDead()) return;
             
             RefreshCorpseList();
-            InitRezSpells();
 
             //don't rez if we cannot rez.
-            if (_resSpellList.Count == 0) return;
+            if (E3.CharacterSettings.HealResurrection.Count == 0) return;
             foreach (var corpse in _corpseList)
             {
                 if (_spawns.TryByID(corpse, out var spawn))
@@ -250,8 +248,7 @@ namespace E3Core.Processors
                         MQ.Cmd($"/t {spawn.DisplayName} Wait4Rez",100);
                         MQ.Delay(1500);
                         MQ.Cmd("/corpse");
-                        InitRezSpells();
-                        if (_resSpellList.Count == 0) return;
+                        if (E3.CharacterSettings.HealResurrection.Count == 0) return;
 
                         // if it's a cleric or warrior corpse and we're in combat, try to use divine res
                         if (Basics.InCombat() && _classesToDivineRez.Contains(spawn.ClassName))
@@ -263,7 +260,7 @@ namespace E3Core.Processors
                             }
                         }
                         
-                        foreach (var spell in _currentRezSpells)
+                        foreach (var spell in E3.CharacterSettings.HealResurrection)
                         {
                             if (Casting.CheckReady(spell) && Casting.CheckMana(spell))
                             {
@@ -343,11 +340,8 @@ namespace E3Core.Processors
             {
                 if (s.DeityID != 0 && s.TypeDesc == "Corpse")
                 {
-                    //we do this to check if our rez tokens have been used up.
-                    InitRezSpells();
                     Casting.TrueTarget(s.ID);
-                    
-                    foreach (var spell in _currentRezSpells)
+                    foreach (var spell in E3.CharacterSettings.HealResurrection)
                     {
                         if (Casting.CheckReady(spell) && Casting.CheckMana(spell) && CanRez())
                         {
@@ -370,11 +364,8 @@ namespace E3Core.Processors
         {
             Int32 rezRetries = 0;
             retryRez:
-            //we do this to check if our rez tokens have been used up.
-            InitRezSpells();
-
-
-            if (_currentRezSpells.Count==0)
+            
+            if (!E3.CharacterSettings.HealResurrection.Any())
             {
                 E3.Bots.Broadcast("<\aoAERez\aw> \arI have no rez spells loaded");
                 return;
@@ -401,11 +392,9 @@ namespace E3Core.Processors
 
                     //assume consent was given
                     MQ.Cmd("/corpse");
-
-               
-                    foreach (var spell in _currentRezSpells)
+                    
+                    foreach (var spell in E3.CharacterSettings.HealResurrection)
                     {
-                   
                         if (Casting.CheckReady(spell) && Casting.CheckMana(spell))
                         {
                             
@@ -446,31 +435,6 @@ namespace E3Core.Processors
             }
 
 
-        }
-        private static List<string> _resSpellList = new List<string>()
-        {
-            "Blessing of Resurrection","Water Sprinkler of Nem Ankh","Reviviscence","Token of Resurrection","Spiritual Awakening","Resurrection","Restoration","Resuscitate","Renewal","Revive","Reparation"
-        };
-        private static List<Data.Spell> _currentRezSpells = new List<Spell>();
-
-        private static void InitRezSpells()
-        {
-            _currentRezSpells.Clear();
-            foreach (var spellName in _resSpellList)
-            {
-                if (MQ.Query<bool>($"${{FindItem[={spellName}]}}"))
-                {
-                    _currentRezSpells.Add(new Spell(spellName));
-                }
-                if (MQ.Query<bool>($"${{Me.AltAbility[{spellName}]}}"))
-                {
-                    _currentRezSpells.Add(new Spell(spellName));
-                }
-                if (MQ.Query<bool>($"${{Me.Book[{spellName}]}}"))
-                {
-                    _currentRezSpells.Add(new Spell(spellName));
-                }
-            }
         }
 
         private static void GatherCorpses()

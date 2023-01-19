@@ -133,6 +133,7 @@ namespace E3Core.Settings
         public List<Spell> HealXTarget = new List<Spell>();
         public List<Spell> HealPets = new List<Spell>();
         public List<Spell> HealOverTime = new List<Spell>();
+        public List<Spell> HealResurrection = new List<Spell>();
         public List<string> HealPetOwners = new List<string>();
         public Dictionary<string, string> PetWeapons = new Dictionary<string, string>();
         public bool AutoPetWeapons = false;
@@ -330,6 +331,7 @@ namespace E3Core.Settings
             LoadKeyData("Heals", "Heal Over Time Spell", ParsedData, HealOverTime);
             LoadKeyData("Heals", "Group Heal", ParsedData, HealGroup);
             LoadKeyData("Heals", "Pet Heal", ParsedData, HealPets);
+            LoadKeyData("Heals", "Resurrection", ParsedData, HealResurrection);
 
 
             LoadKeyData("Heals", "Tank", ParsedData, HealTankTargets);
@@ -538,6 +540,7 @@ namespace E3Core.Settings
                 section.Keys.AddKey("Who to HoT", "");
                 section.Keys.AddKey("Pet Owner", "");
                 section.Keys.AddKey("Auto Cast Necro Heal Orbs (On/Off)", "On");
+                section.Keys.AddKey("Resurrection", "");
             }
 
             if ((CharacterClass & Class.Priest) == CharacterClass || (CharacterClass & Class.Caster) == CharacterClass)
