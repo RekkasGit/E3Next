@@ -229,49 +229,51 @@ namespace E3Core.Processors
                 //yes we can, lets grab our current agro
                 Int32 pctAggro = MQ.Query<Int32>("${Me.PctAggro}");
                 // just use smarttaunt instead of old taunt logic
-                if (E3.CharacterSettings.Assist_SmartTaunt || E3.CharacterSettings.Assist_TauntEnabled)
+                if ((E3.CurrentClass & Class.Tank) == E3.CurrentClass)
                 {
-                    if (pctAggro < 100)
+                    if (E3.CharacterSettings.Assist_SmartTaunt || E3.CharacterSettings.Assist_TauntEnabled)
                     {
-                        Int32 targetOfTargetID = MQ.Query<Int32>("${Me.TargetOfTarget.ID}");
-                        if (targetOfTargetID > 0)
+                        if (pctAggro < 100)
                         {
-                            Spawn tt;
-                            if (_spawns.TryByID(targetOfTargetID, out tt))
+                            Int32 targetOfTargetID = MQ.Query<Int32>("${Me.TargetOfTarget.ID}");
+                            if (targetOfTargetID > 0)
                             {
-                                //if not a tank on target of target, taunt it!
-                                if (!_tankTypes.Contains(tt.ClassShortName))
+                                Spawn tt;
+                                if (_spawns.TryByID(targetOfTargetID, out tt))
                                 {
-                                    if (MQ.Query<bool>("${Me.AbilityReady[Taunt]}"))
+                                    //if not a tank on target of target, taunt it!
+                                    if (!_tankTypes.Contains(tt.ClassShortName))
                                     {
-                                        MQ.Cmd("/doability Taunt");
-
-                                        E3.Bots.Broadcast($"Taunting {s.CleanName}: {tt.ClassShortName} - {tt.CleanName} has agro and not a tank");
-
-                                    }
-                                    else if (MQ.Query<bool>("${Me.AltAbilityReady[Divine Stun]}"))
-                                    {
-                                        if (Casting.CheckReady(_divineStun))
+                                        if (MQ.Query<bool>("${Me.AbilityReady[Taunt]}"))
                                         {
-                                            Casting.Cast(AssistTargetID, _divineStun);
-                                        }
+                                            MQ.Cmd("/doability Taunt");
 
-                                    }
-                                    else if (MQ.Query<bool>("${Me.SpellReady[Terror of Discord]}"))
-                                    {
-                                        if (Casting.CheckReady(_terrorOfDiscord))
+                                            E3.Bots.Broadcast($"Taunting {s.CleanName}: {tt.ClassShortName} - {tt.CleanName} has agro and not a tank");
+
+                                        }
+                                        else if (MQ.Query<bool>("${Me.AltAbilityReady[Divine Stun]}"))
                                         {
-                                            Casting.Cast(AssistTargetID, _terrorOfDiscord);
-                                        }
+                                            if (Casting.CheckReady(_divineStun))
+                                            {
+                                                Casting.Cast(AssistTargetID, _divineStun);
+                                            }
 
+                                        }
+                                        else if (MQ.Query<bool>("${Me.SpellReady[Terror of Discord]}"))
+                                        {
+                                            if (Casting.CheckReady(_terrorOfDiscord))
+                                            {
+                                                Casting.Cast(AssistTargetID, _terrorOfDiscord);
+                                            }
+
+                                        }
                                     }
                                 }
                             }
                         }
                     }
+                    //end smart taunt
                 }
-                //end smart taunt
-
                 //rogue/bards are special
                 if (E3.CurrentClass == Data.Class.Rogue && E3.CharacterSettings.Rogue_AutoEvade)
                 {
