@@ -408,9 +408,7 @@ namespace E3Core.Processors
         /// </summary>
         public static void AssistOff()
         {
-
-
-            if (Casting.IsCasting()) MQ.Cmd("/interrupt");
+            if (Casting.IsCasting() && E3.CharacterSettings.Misc_InterruptOnAssist) MQ.Cmd("/interrupt");
             if (MQ.Query<bool>("${Me.Combat}")) MQ.Cmd("/attack off");
             if (MQ.Query<bool>("${Me.AutoFire}"))
             {
