@@ -24,7 +24,7 @@ namespace E3Core.Settings
         
         public Int32 Loot_LootItemDelay = 300;
         public string Loot_LinkChannel = String.Empty;
-        public List<string> Loot_LinkChannelValid = new List<string>() {"g","gu","say","rsay","shout"};
+        public List<string> Loot_LinkChannelValid = new List<string>() {"g","gu","say","rsay","shout","gsay", "rs"};
 
         private Int32 casting_DefaultSpellGem = 8;
         public Int32 MaxGemSlots = 8 + MQ.Query<Int32>("${Me.AltAbility[Mnemonic Retention].Rank}");
