@@ -85,14 +85,27 @@ namespace E3Core.Processors
 
             EventProcessor.RegisterCommand("/looton", (x) =>
             {
-                if (x.args.Count > 0 && !x.args[0].Equals(E3.CurrentName, StringComparison.OrdinalIgnoreCase))
+                
+                if (x.args.Count >0 && E3.Bots.BotsConnected().Contains(x.args[0], StringComparer.OrdinalIgnoreCase) && !x.args[0].Equals(E3.CurrentName, StringComparison.OrdinalIgnoreCase))
                 {
-                    E3.Bots.BroadcastCommandToPerson(x.args[0], "/looton");
+                    if (x.args.Count == 2 && x.args[1] == "force")
+                    {
+                        E3.Bots.BroadcastCommandToPerson(x.args[0], "/looton force");
+                    }
+                    else
+                    {
+                        E3.Bots.BroadcastCommandToPerson(x.args[0], "/looton");
+                    }
                 }
                 else
                 {
                     //we are turning our own loot on.
+                    if (x.args.Count == 1 && x.args[0] == "force")
+                    {
+                        MQ.Cmd("/hidecorpse none");
+                    }
                     _shouldLoot = true;
+                    
                     E3.Bots.Broadcast("\agTurning on Loot.");
                 }
             });
