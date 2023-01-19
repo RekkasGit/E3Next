@@ -102,6 +102,7 @@ namespace E3Core.Processors
                     //we are turning our own loot on.
                     if (x.args.Count == 1 && x.args[0] == "force")
                     {
+                        _unlootableCorpses.Clear();
                         MQ.Cmd("/hidecorpse none");
                     }
                     _shouldLoot = true;
