@@ -31,7 +31,7 @@ namespace E3Core.Processors
         private static HashSet<Int32> _offAssistIgnore = new HashSet<Int32>();
         private static Data.Spell _divineStun = new Data.Spell("Divine Stun");
         private static Data.Spell _terrorOfDiscord = new Data.Spell("Terror of Discord");
-        private static IList<string> _tankTypes = new List<string>() { "WAR", "PAL", "SK" };
+        private static IList<string> _tankTypes = new List<string>() { "WAR", "PAL", "SHD" };
 
         /// <summary>
         /// Initializes this instance.
