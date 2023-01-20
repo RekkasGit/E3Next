@@ -203,7 +203,7 @@ namespace E3Core.Processors
             RefreshCorpseList();
 
             //don't rez if we cannot rez.
-            if (E3.CharacterSettings.HealResurrection.Count == 0) return;
+            if (E3.CharacterSettings.RezSpells.Count == 0) return;
             foreach (var corpse in _corpseList)
             {
                 if (_spawns.TryByID(corpse, out var spawn))
@@ -248,7 +248,7 @@ namespace E3Core.Processors
                         MQ.Cmd($"/t {spawn.DisplayName} Wait4Rez",100);
                         MQ.Delay(1500);
                         MQ.Cmd("/corpse");
-                        if (E3.CharacterSettings.HealResurrection.Count == 0) return;
+                        if (E3.CharacterSettings.RezSpells.Count == 0) return;
 
                         // if it's a cleric or warrior corpse and we're in combat, try to use divine res
                         if (Basics.InCombat() && _classesToDivineRez.Contains(spawn.ClassName))
@@ -260,7 +260,7 @@ namespace E3Core.Processors
                             }
                         }
                         
-                        foreach (var spell in E3.CharacterSettings.HealResurrection)
+                        foreach (var spell in E3.CharacterSettings.RezSpells)
                         {
                             if (Casting.CheckReady(spell) && Casting.CheckMana(spell))
                             {
@@ -341,7 +341,7 @@ namespace E3Core.Processors
                 if (s.DeityID != 0 && s.TypeDesc == "Corpse")
                 {
                     Casting.TrueTarget(s.ID);
-                    foreach (var spell in E3.CharacterSettings.HealResurrection)
+                    foreach (var spell in E3.CharacterSettings.RezSpells)
                     {
                         if (Casting.CheckReady(spell) && Casting.CheckMana(spell) && CanRez())
                         {
@@ -365,7 +365,7 @@ namespace E3Core.Processors
             Int32 rezRetries = 0;
             retryRez:
             
-            if (!E3.CharacterSettings.HealResurrection.Any())
+            if (!E3.CharacterSettings.RezSpells.Any())
             {
                 E3.Bots.Broadcast("<\aoAERez\aw> \arI have no rez spells loaded");
                 return;
@@ -393,7 +393,7 @@ namespace E3Core.Processors
                     //assume consent was given
                     MQ.Cmd("/corpse");
                     
-                    foreach (var spell in E3.CharacterSettings.HealResurrection)
+                    foreach (var spell in E3.CharacterSettings.RezSpells)
                     {
                         if (Casting.CheckReady(spell) && Casting.CheckMana(spell))
                         {
