@@ -524,6 +524,11 @@ namespace E3Core.Processors
                     return false;
                 }
             }
+            if(MQ.Query<Int32>("${Me.Inventory[Chest].ID}")>0)
+            {
+                return false;
+            }
+
             return true;
         }
 

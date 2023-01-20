@@ -198,7 +198,7 @@ namespace E3Core.Settings
         /// <summary>
         /// Loads the data.
         /// </summary>
-        public void LoadData()
+        private void LoadData()
         {
 
             //this is so we can get the merged data as well. 
