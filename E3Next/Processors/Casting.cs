@@ -66,6 +66,7 @@ namespace E3Core.Processors
                         EventProcessor.ProcessEventsInQueues("/followme");
                         if (Assist.AssistTargetID == 0)
                         {
+                            Interrupt();
                             return CastReturn.CAST_INTERRUPTED;
                         }
                     }
@@ -461,10 +462,12 @@ namespace E3Core.Processors
                                 {
                                     if (EventProcessor.CommandList["/backoff"].queuedEvents.Count > 0)
                                     {
+                                        Interrupt();
                                         return CastReturn.CAST_INTERRUPTED;
                                     }
                                     if (EventProcessor.CommandList["/followme"].queuedEvents.Count > 0)
                                     {
+                                        Interrupt();
                                         return CastReturn.CAST_INTERRUPTED;
                                     }
                                 }
@@ -477,6 +480,7 @@ namespace E3Core.Processors
                                 {
                                     //shouldn't nuke dead things
                                     Assist.AssistOff();
+                                    Interrupt();
                                     return CastReturn.CAST_INTERRUPTED;
                                 }
                             }
@@ -495,8 +499,7 @@ namespace E3Core.Processors
                                 return CastReturn.CAST_INTERRUPTED;
                             }
                             if (MQ.Query<bool>("${Me.Invis}"))
-                            {
-                                Interrupt();
+                            {  
                                 return CastReturn.CAST_INVIS;
                             }
                             //get updated information after delays
@@ -788,7 +791,7 @@ namespace E3Core.Processors
             {
                 MQ.Cmd("/dismount");
             }
-            MQ.Cmd("/interrupt");
+            MQ.Cmd("/stopcast");
         }
         public static Boolean IsCasting()
         {

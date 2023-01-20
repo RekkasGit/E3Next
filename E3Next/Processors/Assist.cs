@@ -408,10 +408,7 @@ namespace E3Core.Processors
         /// Turns assist off.
         /// </summary>
         public static void AssistOff()
-        {
-
-
-            if (Casting.IsCasting()) MQ.Cmd("/interrupt");
+        {  
             if (MQ.Query<bool>("${Me.Combat}")) MQ.Cmd("/attack off");
             if (MQ.Query<bool>("${Me.AutoFire}"))
             {
@@ -424,8 +421,6 @@ namespace E3Core.Processors
             AssistTargetID = 0;
             _assistIsEnraged = false;
             if (MQ.Query<bool>("${Stick.Status.Equal[ON]}")) MQ.Cmd("/squelch /stick off");
-
-
             if (!Basics.InCombat())
             {
                 _offAssistIgnore.Clear();
@@ -434,7 +429,6 @@ namespace E3Core.Processors
                 DebuffDot.Reset();
                 Burns.Reset();
             }
-
         }
 
         /// <summary>

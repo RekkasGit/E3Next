@@ -158,8 +158,7 @@ namespace E3Core.Processors
         }
         public static bool AnchorEnabled()
         {
-            var isInForeground = MQ.Query<bool>("${EverQuest.Foreground}");
-            if(isInForeground)
+            if(e3util.IsManualControl())
             {
                 return false;
             }

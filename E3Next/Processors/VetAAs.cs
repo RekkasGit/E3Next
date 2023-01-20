@@ -72,7 +72,7 @@ namespace E3Core.Processors
                 {
                     E3.Bots.BroadcastCommandToGroup("/throne me");
                 }
-                MQ.Cmd("/interrupt");
+                Casting.Interrupt();
                 MQ.Delay(500);
                 MQ.Cmd("/alt act 511");
                 MQ.Delay(500);

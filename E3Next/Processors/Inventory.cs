@@ -420,9 +420,8 @@ namespace E3Core.Processors
         {
             if (!e3util.ShouldCheck(ref _nextTradeCheck, _nextTradeCheckInterval)) return;
 
-            var isInForeground = MQ.Query<bool>("${EverQuest.Foreground}");
             //don't trade if its the foreground window and WaitForTrade is set to true in the INI
-            if (isInForeground && E3.GeneralSettings.AutoTrade_WaitForTrade) return;
+            if (e3util.IsManualControl() && E3.GeneralSettings.AutoTrade_WaitForTrade) return;
 
             bool tradeWndOpen = MQ.Query<bool>($"${{Window[TradeWnd].Open}}");
             bool doTrade = false;

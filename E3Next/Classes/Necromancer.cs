@@ -67,6 +67,9 @@ namespace E3Core.Classes
         {
 
             if (!Basics.InCombat()) return;
+            //allow people to run to their death if they have the window focused. 
+          
+            if (e3util.IsManualControl()) return;
 
             Int32 GroupSize = MQ.Query<Int32>("${Group}");
             Int32 GroupInZone = MQ.Query<Int32>("${Group.Present}");
@@ -107,6 +110,12 @@ namespace E3Core.Classes
         public static void Check_NecroAggro()
         {
             if (!e3util.ShouldCheck(ref _nextAggroCheck, _nextAggroRefreshTimeInterval)) return;
+
+            //if manual control, kickout
+            if (e3util.IsManualControl()) return;
+
+            //if already FD, kickout
+            if (MQ.Query<bool>("${Me.Feigning}")) return;
 
             Int32 currentAggro = 0;
             Int32 tempMaxAggro = 0;

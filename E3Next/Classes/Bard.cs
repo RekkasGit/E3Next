@@ -50,7 +50,7 @@ namespace E3Core.Classes
                     if (x.args[0].Equals("stop", StringComparison.OrdinalIgnoreCase))
                     {
                         _playingMelody = false;
-                        MQ.Cmd("/interrupt");
+                        Casting.Interrupt();
                     }
                     else
                     {
