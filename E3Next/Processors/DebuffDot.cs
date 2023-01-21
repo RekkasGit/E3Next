@@ -70,8 +70,9 @@ namespace E3Core.Processors
             //do not off assist if you are in the middle of gather dusk. It sucks to put it on an add. 
             bool duskfall = MQ.Query<bool>("${$Bool[${Me.Song[Fading Light]}]}");
             if (duskfall) return;
-            duskfall = MQ.Query<bool>("${$Bool[${Me.Song[Gathering Dusk]}]}");
-            if (duskfall) return;
+            int gatheringDuskTicks = MQ.Query<int>("${Me.Song[Gathering Dusk].Duration.Ticks}");
+
+            if (gatheringDuskTicks <=2) return;
 
             using (_log.Trace())
             {
