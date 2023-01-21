@@ -37,8 +37,8 @@ namespace E3Core.Processors
                         bool beneficial = MQ.Query<bool>($"${{Target.Buff[{i}].Beneficial}}");
                         if (beneficial)
                         {
-                            string buffCategory = MQ.Query<string>($"${{Target.Buff[{i}].Category}}");
-                            if (buffCategory == "Disciplines") continue;
+                            bool buffDispellable = MQ.Query<bool>($"${{Target.Buff[{i}].Dispellable}}");
+                            if (!buffDispellable) continue;
 
                             string buffName = MQ.Query<string>($"${{Target.Buff[{i}]}}");
                             Int32 buffID = MQ.Query<Int32>($"${{Target.Buff[{i}].ID}}");
