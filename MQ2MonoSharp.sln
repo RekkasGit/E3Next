@@ -11,7 +11,7 @@ Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Template", "Template\Templa
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "RemoteDebuggerServer", "RemoteDebuggerServer\RemoteDebuggerServer.csproj", "{52B8077F-8A48-4244-8C3B-98EB84A4FECF}"
 EndProject
-Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "Cpp", "MQ2MonoTest\Source\Cpp.vcxproj", "{13D23E09-5DC4-430A-B122-70CB6D62DDD6}"
+Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "MQ2MonoTester", "MQ2MonoTest\Source\Cpp.vcxproj", "{13D23E09-5DC4-430A-B122-70CB6D62DDD6}"
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "RemoteDebuggerClient", "RemoteDebuggerClient\RemoteDebuggerClient.csproj", "{509B1FAE-545F-46AF-996D-6854C4D0C8DD}"
 EndProject
