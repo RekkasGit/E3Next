@@ -352,7 +352,7 @@ namespace E3Core.Processors
         {
             Int32 rezRetries = 0;
             retryRez:
-            
+
             if (!E3.CharacterSettings.RezSpells.Any())
             {
                 E3.Bots.Broadcast("<\aoAERez\aw> \arI have no rez spells loaded");
@@ -376,14 +376,14 @@ namespace E3Core.Processors
                         continue;
                     }
 
-                    MQ.Cmd($"/tell {s.DisplayName} Wait4Rez",1500); //long delays after tells
-
-                    //assume consent was given
-                    MQ.Cmd("/corpse");
-                    
                     var rezSpell = GetAvailableRezSpell();
                     if (rezSpell != null)
                     {
+                        MQ.Cmd($"/tell {s.DisplayName} Wait4Rez",1500); //long delays after tells
+
+                        //assume consent was given
+                        MQ.Cmd("/corpse");
+                        
                         Casting.Cast(s.ID, rezSpell);
                         corpsesRaised.Add(s.ID);
                         rezRetries = 0;
