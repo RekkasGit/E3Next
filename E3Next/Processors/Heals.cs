@@ -349,16 +349,24 @@ namespace E3Core.Processors
                             continue;
                         }
                         //in range
-                        if (targetType == "PC")
+                        if (targetType == "PC" || targetType=="Pet")
                         {
                             //check group data
-                            if(_useEQGroupDataForHeals)
+                            if(_useEQGroupDataForHeals || healPets)
                             {
                                 Int32 groupMemberIndex = MQ.Query<Int32>($"${{Group.Member[{name}].Index}}");
 
                                 if (groupMemberIndex > 0)
                                 {
-                                    Int32 pctHealth = MQ.Query<Int32>($"${{Group.Member[{groupMemberIndex}].Spawn.CurrentHPs}}");
+                                    Int32 pctHealth = 0;
+                                    if (healPets)
+                                    {
+                                        pctHealth= MQ.Query<Int32>($"${{Group.Member[{groupMemberIndex}].Spawn.Pet.CurrentHPs}}");
+                                    }
+                                    else
+                                    {
+                                        pctHealth = MQ.Query<Int32>($"${{Group.Member[{groupMemberIndex}].Spawn.CurrentHPs}}");
+                                    }
 
                                     if (pctHealth < 1)
                                     {
@@ -422,7 +430,9 @@ namespace E3Core.Processors
                                     }
                                 }
                             }
-                    
+                            //if a pet and we are here, kick out.
+                            if (healPets) return false;
+
                             //check netbots
                             bool isABot = E3.Bots.BotsConnected().Contains(name, StringComparer.OrdinalIgnoreCase);
                             if (isABot)
@@ -482,6 +492,7 @@ namespace E3Core.Processors
                             }
 
                         }
+                        
                     }
                 }
 
@@ -598,6 +609,13 @@ namespace E3Core.Processors
             {
                 if (pctHps < spell.HealPct)
                 {
+                    if (!String.IsNullOrWhiteSpace(spell.Ifs))
+                    {
+                        if (!Casting.Ifs(spell))
+                        {
+                            continue;
+                        }
+                    }
                     if (Casting.CheckReady(spell) && Casting.CheckMana(spell))
                     {
                         if (JustCheck) return true;

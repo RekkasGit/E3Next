@@ -40,15 +40,15 @@ namespace E3Core.Processors
         public static void Init()
         {
             RegisterEvents();
-           
+
         }
 
         /// <summary>
         /// Processes this instance.
         /// </summary>
         public static void Process()
-        {           
-            CheckAssistStatus();            
+        {
+            CheckAssistStatus();
         }
 
         /// <summary>
@@ -70,16 +70,16 @@ namespace E3Core.Processors
         /// </summary>
         public static void CheckAssistStatus()
         {
-            
-           // if (!e3util.ShouldCheck(ref _nextAssistCheck, _nextAssistCheckInterval)) return;
-            
+
+            // if (!e3util.ShouldCheck(ref _nextAssistCheck, _nextAssistCheckInterval)) return;
+
             using (_log.Trace())
             {
                 if (AssistTargetID == 0) return;
 
                 Int32 targetId = MQ.Query<Int32>("${Target.ID}");
 
-                if (targetId <1)
+                if (targetId < 1)
                 {
                     bool isCorpse = MQ.Query<bool>($"${{Spawn[id {AssistTargetID}].Type.Equal[Corpse]}}");
                     if (isCorpse)
@@ -94,7 +94,7 @@ namespace E3Core.Processors
                     }
 
                     isCorpse = MQ.Query<bool>("${Target.Type.Equal[Corpse]}");
-                    if(isCorpse)
+                    if (isCorpse)
                     {
                         AssistOff();
                         return;
@@ -108,7 +108,7 @@ namespace E3Core.Processors
                     _spawns.RefreshList();
                     if (_spawns.TryByID(targetId, out ct))
                     {
-                        if (AllowControl && targetId!=E3.CurrentId)
+                        if (AllowControl && targetId != E3.CurrentId)
                         {
                             AssistTargetID = targetId;
                             if (E3.GeneralSettings.Assists_AutoAssistEnabled)
@@ -229,51 +229,50 @@ namespace E3Core.Processors
                 //yes we can, lets grab our current agro
                 Int32 pctAggro = MQ.Query<Int32>("${Me.PctAggro}");
                 // just use smarttaunt instead of old taunt logic
-                if ((E3.CurrentClass & Class.Tank) == E3.CurrentClass)
+
+                if (E3.CharacterSettings.Assist_SmartTaunt || E3.CharacterSettings.Assist_TauntEnabled)
                 {
-                    if (E3.CharacterSettings.Assist_SmartTaunt || E3.CharacterSettings.Assist_TauntEnabled)
+                    if (pctAggro < 100)
                     {
-                        if (pctAggro < 100)
+                        Int32 targetOfTargetID = MQ.Query<Int32>("${Me.TargetOfTarget.ID}");
+                        if (targetOfTargetID > 0)
                         {
-                            Int32 targetOfTargetID = MQ.Query<Int32>("${Me.TargetOfTarget.ID}");
-                            if (targetOfTargetID > 0)
+                            Spawn tt;
+                            if (_spawns.TryByID(targetOfTargetID, out tt))
                             {
-                                Spawn tt;
-                                if (_spawns.TryByID(targetOfTargetID, out tt))
+                                //if not a tank on target of target, taunt it!
+                                if (!_tankTypes.Contains(tt.ClassShortName))
                                 {
-                                    //if not a tank on target of target, taunt it!
-                                    if (!_tankTypes.Contains(tt.ClassShortName))
+                                    if (MQ.Query<bool>("${Me.AbilityReady[Taunt]}"))
                                     {
-                                        if (MQ.Query<bool>("${Me.AbilityReady[Taunt]}"))
+                                        MQ.Cmd("/doability Taunt");
+
+                                        E3.Bots.Broadcast($"Taunting {s.CleanName}: {tt.ClassShortName} - {tt.CleanName} has agro and not a tank");
+
+                                    }
+                                    else if (MQ.Query<bool>("${Me.AltAbilityReady[Divine Stun]}"))
+                                    {
+                                        if (Casting.CheckReady(_divineStun))
                                         {
-                                            MQ.Cmd("/doability Taunt");
-
-                                            E3.Bots.Broadcast($"Taunting {s.CleanName}: {tt.ClassShortName} - {tt.CleanName} has agro and not a tank");
-
+                                            Casting.Cast(AssistTargetID, _divineStun);
                                         }
-                                        else if (MQ.Query<bool>("${Me.AltAbilityReady[Divine Stun]}"))
+
+                                    }
+                                    else if (MQ.Query<bool>("${Me.SpellReady[Terror of Discord]}"))
+                                    {
+                                        if (Casting.CheckReady(_terrorOfDiscord))
                                         {
-                                            if (Casting.CheckReady(_divineStun))
-                                            {
-                                                Casting.Cast(AssistTargetID, _divineStun);
-                                            }
-
+                                            Casting.Cast(AssistTargetID, _terrorOfDiscord);
                                         }
-                                        else if (MQ.Query<bool>("${Me.SpellReady[Terror of Discord]}"))
-                                        {
-                                            if (Casting.CheckReady(_terrorOfDiscord))
-                                            {
-                                                Casting.Cast(AssistTargetID, _terrorOfDiscord);
-                                            }
 
-                                        }
                                     }
                                 }
                             }
                         }
                     }
-                    //end smart taunt
                 }
+                //end smart taunt
+
                 //rogue/bards are special
                 if (E3.CurrentClass == Data.Class.Rogue && E3.CharacterSettings.Rogue_AutoEvade)
                 {
@@ -323,7 +322,7 @@ namespace E3Core.Processors
                             if (ability.CastName == "Bash")
                             {
                                 //check if we can actually bash
-                                if (MQ.Query<double>("${Target.Distance}")>14 || !(MQ.Query<bool>("${Select[${Me.Inventory[Offhand].Type},Shield]}") || MQ.Query<bool>("${Me.AltAbility[2 Hand Bash]}")))
+                                if (MQ.Query<double>("${Target.Distance}") > 14 || !(MQ.Query<bool>("${Select[${Me.Inventory[Offhand].Type},Shield]}") || MQ.Query<bool>("${Me.AltAbility[2 Hand Bash]}")))
                                 {
                                     continue;
                                 }
@@ -356,10 +355,10 @@ namespace E3Core.Processors
                             {
                                 if (endurance > enduranceCost)
                                 {
-                                    
+
                                     if (ability.TargetType == "Self")
                                     {
-                                        if(!MQ.Query<bool>("${Me.ActiveDisc.ID}"))
+                                        if (!MQ.Query<bool>("${Me.ActiveDisc.ID}"))
                                         {
                                             Casting.Cast(0, ability);
                                         }
@@ -385,18 +384,18 @@ namespace E3Core.Processors
         [ClassInvoke(Data.Class.All)]
         public static void CheckAutoAssist()
         {
-            if(E3.GeneralSettings.Assists_AutoAssistEnabled)
+            if (E3.GeneralSettings.Assists_AutoAssistEnabled)
             {
                 if (AssistTargetID > 0) return;
                 if (!MQ.Query<bool>("${Target.ID}")) return;
                 if (!MQ.Query<bool>("${Me.Combat}")) return;
                 Int32 mobid = MQ.Query<Int32>("${Target.ID}");
-                if (_spawns.TryByID(mobid,out var spawn))
+                if (_spawns.TryByID(mobid, out var spawn))
                 {
-                    if(spawn.Aggressive && spawn.TypeDesc != "Corpse")
+                    if (spawn.Aggressive && spawn.TypeDesc != "Corpse")
                     {
                         Int32 targetHPPct = MQ.Query<Int32>("${Target.PctHPs}");
-                        if(targetHPPct>0 && targetHPPct<= E3.CharacterSettings.Assist_AutoAssistPercent)
+                        if (targetHPPct > 0 && targetHPPct <= E3.CharacterSettings.Assist_AutoAssistPercent)
                         {
                             MQ.Cmd("/assistme");
                         }
@@ -409,14 +408,11 @@ namespace E3Core.Processors
         /// Turns assist off.
         /// </summary>
         public static void AssistOff()
-        {
-
-
-            if (Casting.IsCasting()) MQ.Cmd("/interrupt");
+        {  
             if (MQ.Query<bool>("${Me.Combat}")) MQ.Cmd("/attack off");
             if (MQ.Query<bool>("${Me.AutoFire}"))
             {
-                MQ.Cmd("/autofire"); 
+                MQ.Cmd("/autofire");
                 MQ.Delay(1000);
             }
             if (MQ.Query<Int32>("${Me.Pet.ID}") > 0) MQ.Cmd("/squelch /pet back off");
@@ -425,8 +421,6 @@ namespace E3Core.Processors
             AssistTargetID = 0;
             _assistIsEnraged = false;
             if (MQ.Query<bool>("${Stick.Status.Equal[ON]}")) MQ.Cmd("/squelch /stick off");
-           
-
             if (!Basics.InCombat())
             {
                 _offAssistIgnore.Clear();
@@ -435,7 +429,6 @@ namespace E3Core.Processors
                 DebuffDot.Reset();
                 Burns.Reset();
             }
-
         }
 
         /// <summary>
@@ -444,12 +437,12 @@ namespace E3Core.Processors
         /// <param name="mobID">The mob identifier.</param>
         public static void AssistOn(Int32 mobID, Int32 zoneId)
         {
-        
+
             if (zoneId != Zoning.CurrentZone.Id) return;
             //clear in case its not reset by other means
             //or you want to attack in enrage
             _assistIsEnraged = false;
-           
+
             if (mobID == 0)
             {
                 //something wrong with the assist, kickout
@@ -459,7 +452,7 @@ namespace E3Core.Processors
             Spawn s;
             if (_spawns.TryByID(mobID, out s))
             {
-               
+
 
                 if (s.TypeDesc == "Corpse")
                 {
@@ -542,7 +535,7 @@ namespace E3Core.Processors
                     {
                         _assistDistance = 25;
                     }
-                    if(!AllowControl)
+                    if (!AllowControl)
                     {
                         StickToAssistTarget();
 
@@ -589,7 +582,7 @@ namespace E3Core.Processors
                 }
             }
         }
-       
+
         private static void StickToAssistTarget()
         {
             //needed a case insensitive switch, that was easy to read, thus this.
@@ -646,82 +639,82 @@ namespace E3Core.Processors
 
         }
 
-        
+
         private static void RegisterEvents()
         {
-             EventProcessor.RegisterCommand("/assistme", (x) =>
-            {
+            EventProcessor.RegisterCommand("/assistme", (x) =>
+           {
                 //clear in case its not reset by other means
                 //or you want to attack in enrage
                 _assistIsEnraged = false;
-                MQ.Cmd("/makemevisible");
+               MQ.Cmd("/makemevisible");
                 //Rez.Reset();
 
                 bool hasAllFlag = false;
-                foreach(var argValue in x.args)
-                {
-                    if(argValue.StartsWith("/all", StringComparison.OrdinalIgnoreCase))
-                    {
-                        hasAllFlag = true;
-                    }
-                }
-                if(hasAllFlag)
-                {
-                    x.args.Remove("/all");
-                }
+               foreach (var argValue in x.args)
+               {
+                   if (argValue.StartsWith("/all", StringComparison.OrdinalIgnoreCase))
+                   {
+                       hasAllFlag = true;
+                   }
+               }
+               if (hasAllFlag)
+               {
+                   x.args.Remove("/all");
+               }
 
-                if (x.args.Count == 0)
-                {
-                  
-                    Int32 targetID = MQ.Query<Int32>("${Target.ID}");
+               if (x.args.Count == 0)
+               {
 
-                    if (targetID == E3.CurrentId)
-                    {
-                        E3.Bots.Broadcast("I cannot assist on myself.");
-                        return;
-                    }
-                    if(targetID!=AssistTargetID)
-                    {
-                        AssistOff();
-                        AllowControl = true;
-                        AssistOn(targetID,Zoning.CurrentZone.Id);
+                   Int32 targetID = MQ.Query<Int32>("${Target.ID}");
 
-                    }
-                    if(hasAllFlag)
-                    {
-                        E3.Bots.BroadcastCommand($"/assistme {targetID} {Zoning.CurrentZone.Id}",false, x);
-                    }
-                    else
-                    {
-                        E3.Bots.BroadcastCommandToGroup($"/assistme {targetID} {Zoning.CurrentZone.Id}", x);
-                    }
-                   
-                }
-                else if (!e3util.FilterMe(x))
-                {
-                    Int32 mobid;
-                    Int32 zoneid;
-                   
-                    if (Int32.TryParse(x.args[0], out mobid))
-                    {
+                   if (targetID == E3.CurrentId)
+                   {
+                       E3.Bots.Broadcast("I cannot assist on myself.");
+                       return;
+                   }
+                   if (targetID != AssistTargetID)
+                   {
+                       AssistOff();
+                       AllowControl = true;
+                       AssistOn(targetID, Zoning.CurrentZone.Id);
+
+                   }
+                   if (hasAllFlag)
+                   {
+                       E3.Bots.BroadcastCommand($"/assistme {targetID} {Zoning.CurrentZone.Id}", false, x);
+                   }
+                   else
+                   {
+                       E3.Bots.BroadcastCommandToGroup($"/assistme {targetID} {Zoning.CurrentZone.Id}", x);
+                   }
+
+               }
+               else if (!e3util.FilterMe(x))
+               {
+                   Int32 mobid;
+                   Int32 zoneid;
+
+                   if (Int32.TryParse(x.args[0], out mobid))
+                   {
                         //make sure the target is in the same zone we are in
-                        if(Int32.TryParse(x.args[1],out zoneid))
-                        {
-                            if (mobid == AssistTargetID) return;
-                            AssistOff();
-                            AllowControl = false;
-                           
-                            AssistOn(mobid,zoneid);
-                            
-                        }
-                    }
-                }
-            });
+                        if (Int32.TryParse(x.args[1], out zoneid))
+                       {
+                           if (mobid == AssistTargetID) return;
+                           AssistOff();
+                           AllowControl = false;
+
+                           AssistOn(mobid, zoneid);
+
+                       }
+                   }
+               }
+           });
             EventProcessor.RegisterCommand("/cleartargets", (x) =>
             {
-                if(x.args.Count==0)
+                if (x.args.Count == 0)
                 {
-                    ClearXTargets.MobToAttack=0;
+                    ClearXTargets.MobToAttack = 0;
                     AssistOff();
                     E3.Bots.BroadcastCommandToGroup($"/backoff all");
                     if (x.filters.Count > 0)
@@ -734,7 +727,7 @@ namespace E3Core.Processors
                     ClearXTargets.FaceTarget = true;
 
 
-                } 
+                }
                 else if (x.args.Count == 1 && x.args[0] == "off")
                 {
                     AssistOff();
@@ -757,20 +750,21 @@ namespace E3Core.Processors
                 }
 
             });
-            EventProcessor.RegisterCommand("/assisttype", (x) => {
+            EventProcessor.RegisterCommand("/assisttype", (x) =>
+            {
 
 
-                if (x.args.Count>1)
+                if (x.args.Count > 1)
                 {
                     string user = x.args[0];
                     string assisttype = x.args[1];
-                    if(_meleeTypes.Contains(assisttype, StringComparer.OrdinalIgnoreCase) || _rangeTypes.Contains(assisttype, StringComparer.OrdinalIgnoreCase))
+                    if (_meleeTypes.Contains(assisttype, StringComparer.OrdinalIgnoreCase) || _rangeTypes.Contains(assisttype, StringComparer.OrdinalIgnoreCase))
                     {
                         E3.Bots.BroadcastCommandToPerson(user, $"/assisttype {assisttype}");
-                       
+
                     }
                 }
-                else if(x.args.Count==1)
+                else if (x.args.Count == 1)
                 {
                     string assisttype = x.args[0];
                     if (_meleeTypes.Contains(assisttype, StringComparer.OrdinalIgnoreCase) || _rangeTypes.Contains(assisttype, StringComparer.OrdinalIgnoreCase))
@@ -806,18 +800,18 @@ namespace E3Core.Processors
                 }
                 if (x.args.Count == 0)
                 {     //we are telling people to back off
-                    if(hasAllFlag)
+                    if (hasAllFlag)
                     {
-                        E3.Bots.BroadcastCommand($"/backoff all",false, x);
+                        E3.Bots.BroadcastCommand($"/backoff all", false, x);
                     }
                     else
                     {
                         E3.Bots.BroadcastCommandToGroup($"/backoff all", x);
                     }
-                   
+
                 }
             });
-            e3util.RegisterCommandWithTarget("/e3offassistignore", (x)=> { _offAssistIgnore.Add(x); });
+            e3util.RegisterCommandWithTarget("/e3offassistignore", (x) => { _offAssistIgnore.Add(x); });
             EventProcessor.RegisterEvent("EnrageOn", "(.)+ has become ENRAGED.", (x) =>
             {
                 if (x.match.Groups.Count > 1)
@@ -854,7 +848,7 @@ namespace E3Core.Processors
             });
             EventProcessor.RegisterEvent("GetCloser", "Your target is too far away, get closer!", (x) =>
             {
-                if (IsAssisting&& !AllowControl)
+                if (IsAssisting && !AllowControl)
                 {
                     if (_assistDistance > 5)
                     {
@@ -892,10 +886,10 @@ namespace E3Core.Processors
                     {
                         StickToAssistTarget();
                         //cleaar out any events that are stilll queued up.
-                        if(EventProcessor.EventList.ContainsKey("CannotSee"))
+                        if (EventProcessor.EventList.ContainsKey("CannotSee"))
                         {
                             var queuedEvents = EventProcessor.EventList["CannotSee"].queuedEvents;
-                            while(queuedEvents.Count>0)
+                            while (queuedEvents.Count > 0)
                             {
                                 queuedEvents.TryDequeue(out var output);
                             }
@@ -907,8 +901,8 @@ namespace E3Core.Processors
 
             });
         }
-       
 
-       
+
+
     }
 }

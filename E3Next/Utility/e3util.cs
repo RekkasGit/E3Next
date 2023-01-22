@@ -106,7 +106,13 @@ namespace E3Core.Utility
             }
 
         }
+        public static bool IsManualControl()
+        {
+            var isInForeground = MQ.Query<bool>("${EverQuest.Foreground}");
+            if (isInForeground) return true;
 
+            return false;
+        }
         public static bool FilterMe(CommandMatch x)
         {
             ////Stop /Only|Soandoso

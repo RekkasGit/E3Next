@@ -46,6 +46,9 @@ namespace E3Core.Processors
         public static void Reset()
         {
             AnchorTarget = 0;
+            Anchor_X = double.MinValue;
+            Anchor_Y = double.MinValue;
+            Anchor_Z = double.MinValue;
             Following = false;
             FollowTargetName = String.Empty;
             _chaseTarget = String.Empty;
@@ -153,13 +156,15 @@ namespace E3Core.Processors
         public static void ResetKeepFollow()
         {
             AnchorTarget = 0;
+            Anchor_X = double.MinValue;
+            Anchor_Y = double.MinValue;
+            Anchor_Z = double.MinValue;
             Following = false;
 
         }
         public static bool AnchorEnabled()
         {
-            var isInForeground = MQ.Query<bool>("${EverQuest.Foreground}");
-            if(isInForeground)
+            if(e3util.IsManualControl())
             {
                 return false;
             }

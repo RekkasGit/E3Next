@@ -524,6 +524,11 @@ namespace E3Core.Processors
                     return false;
                 }
             }
+            if(MQ.Query<Int32>("${Me.Inventory[Chest].ID}")>0)
+            {
+                return false;
+            }
+
             return true;
         }
 
@@ -978,24 +983,14 @@ namespace E3Core.Processors
                         _cusrorPreviousID = itemID;
                     }
 
-                    bool regenItem = MQ.Query<bool>("${Cursor.Name.Equal[Azure Mind Crystal III]}") || MQ.Query<bool>("${Cursor.Name.Equal[Summoned: Large Modulation Shard]}") || MQ.Query<bool>("${Cursor.Name.Equal[Sanguine Mind Crystal III]}");
+                    if(!e3util.IsManualControl() || Basics.InCombat())
+                    {
+                        bool regenItem = MQ.Query<bool>("${Cursor.Name.Equal[Azure Mind Crystal III]}") || MQ.Query<bool>("${Cursor.Name.Equal[Summoned: Large Modulation Shard]}") || MQ.Query<bool>("${Cursor.Name.Equal[Sanguine Mind Crystal III]}");
 
-                    if (regenItem)
-                    {
-                        int charges = MQ.Query<int>("${Cursor.Charges}");
-                        if (charges == 3)
-                        {
-                            e3util.ClearCursor();
-                            _cursorOccupiedSince = null;
-                        }
-                    }
-                    else
-                    {
-                        bool orb = MQ.Query<bool>("${Cursor.Name.Equal[Molten orb]}") || MQ.Query<bool>("${Cursor.Name.Equal[Lava orb]}");
-                        if (orb)
+                        if (regenItem)
                         {
                             int charges = MQ.Query<int>("${Cursor.Charges}");
-                            if (charges == 10)
+                            if (charges == 3)
                             {
                                 e3util.ClearCursor();
                                 _cursorOccupiedSince = null;
@@ -1003,15 +998,29 @@ namespace E3Core.Processors
                         }
                         else
                         {
-                            _cursorOccupiedTime = DateTime.Now - _cursorOccupiedSince.GetValueOrDefault();
-                            // if there's a thing on our cursor for > 30 seconds, inventory it
-                            if (_cursorOccupiedTime > _cursorOccupiedThreshold)
+                            bool orb = MQ.Query<bool>("${Cursor.Name.Equal[Molten orb]}") || MQ.Query<bool>("${Cursor.Name.Equal[Lava orb]}");
+                            if (orb)
                             {
-                                e3util.ClearCursor();
-                                _cursorOccupiedSince = null;
+                                int charges = MQ.Query<int>("${Cursor.Charges}");
+                                if (charges == 10)
+                                {
+                                    e3util.ClearCursor();
+                                    _cursorOccupiedSince = null;
+                                }
+                            }
+                            else
+                            {
+                                _cursorOccupiedTime = DateTime.Now - _cursorOccupiedSince.GetValueOrDefault();
+                                // if there's a thing on our cursor for > 30 seconds, inventory it
+                                if (_cursorOccupiedTime > _cursorOccupiedThreshold)
+                                {
+                                    e3util.ClearCursor();
+                                    _cursorOccupiedSince = null;
+                                }
                             }
                         }
                     }
+                    
                 }
                 else
                 {

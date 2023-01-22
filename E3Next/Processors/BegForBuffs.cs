@@ -128,6 +128,15 @@ namespace E3Core.Processors
                     if (E3.GeneralSettings.BuffRequests_AllowBuffRequests || E3.Bots.IsMyBot(user))
                     {
                         string spell = x.match.Groups[2].Value;
+
+
+                        if(Int32.TryParse(spell, out var temp))
+                        {
+                            //me.book returns the spell that is memed in that slot in your book
+                            //this isnt what we want, to just ignore the request
+                            return;
+                        }
+
                         //check to see if its an alias.
                         string realSpell = string.Empty;
                         if (SpellAliases.TryGetValue(spell, out realSpell))

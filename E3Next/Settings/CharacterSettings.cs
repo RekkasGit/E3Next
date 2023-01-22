@@ -55,7 +55,7 @@ namespace E3Core.Settings
         public string Assist_Type = string.Empty;
         public string Assist_MeleeStickPoint = string.Empty;
         public bool Assist_TauntEnabled = false;
-        public bool Assist_SmartTaunt = true;
+        public bool Assist_SmartTaunt = false;
         public string Assist_MeleeDistance = "MaxMelee";
         public string Assist_RangeDistance = "100";
         public int Assist_AutoAssistPercent = 98;
@@ -205,7 +205,7 @@ namespace E3Core.Settings
         /// <summary>
         /// Loads the data.
         /// </summary>
-        public void LoadData()
+        private void LoadData()
         {
 
             //this is so we can get the merged data as well. 
@@ -390,7 +390,7 @@ namespace E3Core.Settings
             section = newFile.Sections.GetSectionData("Assist Settings");
             section.Keys.AddKey("Assist Type (Melee/Ranged/Off)", "Melee");
             section.Keys.AddKey("Melee Stick Point", "Back");
-            if ((CharacterClass & Class.Tank) == CharacterClass)
+            if (((CharacterClass & Class.Tank) == CharacterClass) || CharacterClass== Class.Ranger)
             {
                 section.Keys.AddKey("Taunt(On/Off)", "Off");
                 section.Keys.AddKey("SmartTaunt(On/Off)", "On");
@@ -542,7 +542,7 @@ namespace E3Core.Settings
                 section.Keys.AddKey("Tank", "");
                 section.Keys.AddKey("Important Bot", "");
                 section.Keys.AddKey("Pet Heal", "");
-                section.Keys.AddKey("Who to Heal", "");
+                section.Keys.AddKey("Who to Heal", "Tanks/ImportantBots/XTargets/Pets");
                 section.Keys.AddKey("Who to HoT", "");
                 section.Keys.AddKey("Pet Owner", "");
                 section.Keys.AddKey("Auto Cast Necro Heal Orbs (On/Off)", "On");

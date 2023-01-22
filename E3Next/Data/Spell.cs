@@ -381,7 +381,7 @@ namespace E3Core.Data
 
                 if(bagSlot==-1)
                 {
-                    //Means this is not in a bag and in the root inventory
+                    //Means this is not in a bag and in the root inventory, OR we are wearing it
                     TargetType = MQ.Query<String>($"${{Me.Inventory[{invSlot}].Spell.TargetType}}");
                     Duration= MQ.Query<Int32>($"${{Me.Inventory[{invSlot}].Spell.Duration}}");
                     DurationTotalSeconds = MQ.Query<Int32>($"${{Me.Inventory[{invSlot}].Spell.Duration.TotalSeconds}}");
@@ -406,7 +406,8 @@ namespace E3Core.Data
                     SpellID = MQ.Query<Int32>($"${{Me.Inventory[{invSlot}].Spell.ID}}");
                     CastID = MQ.Query<Int32>($"${{Me.Inventory[{invSlot}].ID}}");
                     SpellType= MQ.Query<String>($"${{Me.Inventory[{invSlot}].Spell.SpellType}}");
-                }else
+                }
+                else
                 {
                     //1 index vs 0 index
                     bagSlot += 1;
@@ -437,6 +438,7 @@ namespace E3Core.Data
                     SpellType = MQ.Query<String>($"${{Me.Inventory[{invSlot}].Item[{bagSlot}].Spell.SpellType}}");
 
                 }
+              
             }
             else if(CastType==CastType.AA)
             {
