@@ -72,9 +72,10 @@ namespace E3Core.Settings
 
         private string _filename = String.Empty;
 
-        public GeneralSettings()
+        public GeneralSettings() : this(true) { }
+        public GeneralSettings(bool loadFromFile)
         {
-            LoadData();
+            if (loadFromFile) LoadData();
         }
         public void LoadData()
         {

@@ -1,7 +1,7 @@
 ﻿
 Microsoft Visual Studio Solution File, Format Version 12.00
-# Visual Studio Version 16
-VisualStudioVersion = 16.0.32901.82
+# Visual Studio Version 17
+VisualStudioVersion = 17.4.33213.308
 MinimumVisualStudioVersion = 10.0.40219.1
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "TestCore", "TestCore\TestCore.csproj", "{0F294001-E21D-498A-BB3B-8430F7EBFBC6}"
 EndProject
@@ -11,13 +11,17 @@ Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Template", "Template\Templa
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "RemoteDebuggerServer", "RemoteDebuggerServer\RemoteDebuggerServer.csproj", "{52B8077F-8A48-4244-8C3B-98EB84A4FECF}"
 EndProject
-Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "MQ2MonoTester", "MQ2MonoTest\Source\Cpp.vcxproj", "{13D23E09-5DC4-430A-B122-70CB6D62DDD6}"
+Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "Cpp", "MQ2MonoTest\Source\Cpp.vcxproj", "{13D23E09-5DC4-430A-B122-70CB6D62DDD6}"
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "RemoteDebuggerClient", "RemoteDebuggerClient\RemoteDebuggerClient.csproj", "{509B1FAE-545F-46AF-996D-6854C4D0C8DD}"
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "E3Next", "E3Next\E3Next.csproj", "{CA025B4A-D09D-48AD-BF6C-7C303C8B5CB9}"
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "E3NextUI", "E3NextUI\E3NextUI.csproj", "{B2F73DBF-6758-48D3-8258-599BF07FA731}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "INIFileParser.Tests", "INIFileParser.Tests\INIFileParser.Tests.csproj", "{1957D541-6E46-4229-B2A2-6A56A4B0749F}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "E3Next.Tests", "E3Next.Tests\E3Next.Tests.csproj", "{526B94A1-6057-44F8-B27C-49C88BD8CE8D}"
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
@@ -123,6 +127,30 @@ Global
 		{B2F73DBF-6758-48D3-8258-599BF07FA731}.Release|x64.Build.0 = Release|Any CPU
 		{B2F73DBF-6758-48D3-8258-599BF07FA731}.Release|x86.ActiveCfg = Release|Any CPU
 		{B2F73DBF-6758-48D3-8258-599BF07FA731}.Release|x86.Build.0 = Release|Any CPU
+		{1957D541-6E46-4229-B2A2-6A56A4B0749F}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{1957D541-6E46-4229-B2A2-6A56A4B0749F}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{1957D541-6E46-4229-B2A2-6A56A4B0749F}.Debug|x64.ActiveCfg = Debug|Any CPU
+		{1957D541-6E46-4229-B2A2-6A56A4B0749F}.Debug|x64.Build.0 = Debug|Any CPU
+		{1957D541-6E46-4229-B2A2-6A56A4B0749F}.Debug|x86.ActiveCfg = Debug|Any CPU
+		{1957D541-6E46-4229-B2A2-6A56A4B0749F}.Debug|x86.Build.0 = Debug|Any CPU
+		{1957D541-6E46-4229-B2A2-6A56A4B0749F}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{1957D541-6E46-4229-B2A2-6A56A4B0749F}.Release|Any CPU.Build.0 = Release|Any CPU
+		{1957D541-6E46-4229-B2A2-6A56A4B0749F}.Release|x64.ActiveCfg = Release|Any CPU
+		{1957D541-6E46-4229-B2A2-6A56A4B0749F}.Release|x64.Build.0 = Release|Any CPU
+		{1957D541-6E46-4229-B2A2-6A56A4B0749F}.Release|x86.ActiveCfg = Release|Any CPU
+		{1957D541-6E46-4229-B2A2-6A56A4B0749F}.Release|x86.Build.0 = Release|Any CPU
+		{526B94A1-6057-44F8-B27C-49C88BD8CE8D}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{526B94A1-6057-44F8-B27C-49C88BD8CE8D}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{526B94A1-6057-44F8-B27C-49C88BD8CE8D}.Debug|x64.ActiveCfg = Debug|Any CPU
+		{526B94A1-6057-44F8-B27C-49C88BD8CE8D}.Debug|x64.Build.0 = Debug|Any CPU
+		{526B94A1-6057-44F8-B27C-49C88BD8CE8D}.Debug|x86.ActiveCfg = Debug|Any CPU
+		{526B94A1-6057-44F8-B27C-49C88BD8CE8D}.Debug|x86.Build.0 = Debug|Any CPU
+		{526B94A1-6057-44F8-B27C-49C88BD8CE8D}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{526B94A1-6057-44F8-B27C-49C88BD8CE8D}.Release|Any CPU.Build.0 = Release|Any CPU
+		{526B94A1-6057-44F8-B27C-49C88BD8CE8D}.Release|x64.ActiveCfg = Release|Any CPU
+		{526B94A1-6057-44F8-B27C-49C88BD8CE8D}.Release|x64.Build.0 = Release|Any CPU
+		{526B94A1-6057-44F8-B27C-49C88BD8CE8D}.Release|x86.ActiveCfg = Release|Any CPU
+		{526B94A1-6057-44F8-B27C-49C88BD8CE8D}.Release|x86.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE

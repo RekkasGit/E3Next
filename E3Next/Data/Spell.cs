@@ -632,8 +632,6 @@ namespace E3Core.Data
         public bool ReagentOutOfStock = false;
         public bool SpellInBook = false;
 
-       
-
         public override string ToString()
         {
             StringBuilder sb = new StringBuilder();
@@ -642,26 +640,36 @@ namespace E3Core.Data
             sb.Append(this.GetType().Name);
             sb.AppendLine();
             sb.AppendLine("==============");
-            foreach (FieldInfo property in this.GetType().GetFields(BindingFlags.NonPublic | BindingFlags.Public | BindingFlags.Instance | BindingFlags.Static))
+            foreach (FieldInfo property in this.GetType().GetFields(BindingFlags.NonPublic | BindingFlags.Public |
+                                                                    BindingFlags.Instance | BindingFlags.Static))
             {
                 var value = property.GetValue(this);
-                if (value is System.Collections.IEnumerable && !(value is string))
+                if (value is System.Collections.IEnumerable enumerable && !(enumerable is string))
                 {
                     sb.AppendLine();
                     sb.Append("Collection:" + property.Name);
                     sb.AppendLine();
                     sb.AppendLine("==============");
 
-                    foreach (var listitem in value as System.Collections.IEnumerable)
+                    foreach (var listitem in enumerable)
                     {
-                        sb.Append("Item: " + listitem.ToString());
+                        sb.Append("Item: " + listitem);
                     }
+                }
+                // potential for infinite recursion on Spell props, just simplify them to the spell name
+                else if (value is Spell spell)
+                {
+                    sb.Append(property.Name);
+                    sb.Append(": ");
+                    sb.Append(spell.SpellName);
+
+                    sb.Append(System.Environment.NewLine);
                 }
                 else
                 {
                     sb.Append(property.Name);
                     sb.Append(": ");
-                    sb.Append(property.GetValue(this));
+                    sb.Append(value);
 
                     sb.Append(System.Environment.NewLine);
                 }

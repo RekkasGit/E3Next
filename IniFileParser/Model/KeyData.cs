@@ -1,6 +1,7 @@
 using System;
 using System.Collections.Generic;
 using System.Data;
+using System.Linq;
 
 namespace IniParser.Model
 {
@@ -21,7 +22,7 @@ namespace IniParser.Model
                 throw new ArgumentException("key name can not be empty");
 
             _comments = new List<string>();
-            _value = string.Empty;
+            ValueList = new List<string>();
             _keyName = keyName;
         }
 
@@ -38,8 +39,7 @@ namespace IniParser.Model
         /// </param>
         public KeyData(KeyData ori)
         {
-            _value = ori._value;
-            _valueList = new List<string>(ori._valueList);
+            ValueList = new List<string>(ori.ValueList);
             _keyName = ori._keyName;
             _comments = new List<string>(ori._comments);
         }
@@ -53,12 +53,8 @@ namespace IniParser.Model
         /// </summary>
         public List<string> Comments
         {
-            get { return _comments; }
-            set 
-            {
-                _comments.AddRange(value);
-                //_comments = new List<string> (value) ; 
-            }
+            get => _comments;
+            set => _comments.AddRange(value);
         }
 
         /// <summary>
@@ -66,30 +62,19 @@ namespace IniParser.Model
         /// </summary>
         public string Value
         {
-            get { return _value; }
-            set {
-                _value = value;
-                _valueList.Add(value);
-            }
+            get => ValueList.LastOrDefault() ?? string.Empty;
+            set => ValueList.Add(value);
         }
        
 
-        public List<string> ValueList
-        {
-            get { return _valueList; }
-            set { _valueList = value; }
-        }
+        public List<string> ValueList { get; private set; }
 
         /// <summary>
         ///     Gets or sets the name of the key.
         /// </summary>
         public string KeyName
         {
-            get
-            {
-                return _keyName;
-            }
-
+            get => _keyName;
             set
             {
                 if (value != string.Empty)
@@ -120,12 +105,8 @@ namespace IniParser.Model
         // List with comment lines associated to this key 
         private List<string> _comments;
 
-        // Unique value associated to this key
-        private string _value;
-
         // Name of the current key
         private string _keyName;
-        private List<string> _valueList = new List<string>();
 
         #endregion
     }

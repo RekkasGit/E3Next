@@ -167,6 +167,7 @@ namespace IniParser.Model
 
             return false;
         }
+        
         /// <summary>
         ///     Adds a new key with the specified name and value to the collection
         /// </summary>
@@ -194,6 +195,33 @@ namespace IniParser.Model
             }
             return false;
 
+        }
+        
+        /// <summary>
+        ///     Adds a new key with the specified name and values to the collection
+        /// </summary>
+        /// <param name="keyName">
+        ///     Name of the new key to be added.
+        /// </param>
+        /// <param name="values">
+        ///     Values to be assigned to the key.
+        /// </param>
+        /// <returns>
+        ///     <c>true</c> if the key was added  <c>false</c> if a key with the same name already exist 
+        ///     in the collection.
+        /// </returns>
+        public bool AddKey(string keyName, params string[] values)
+        {
+            if (_keyData.TryGetValue(keyName, out var data))
+            {
+                data.ValueList.AddRange(values);
+                return false;
+            }
+
+            data = new KeyData(keyName);
+            data.ValueList.AddRange(values);
+            _keyData[keyName] = data;
+            return true;
         }
 
         /// <summary>
@@ -244,7 +272,7 @@ namespace IniParser.Model
             {
                 if(AddKey(keyData.KeyName))
                 {
-                    this[keyData.KeyName] = keyData.Value;
+                    _keyData[keyData.KeyName].ValueList.AddRange(keyData.ValueList);
                 }
                 //don't merge over collections.
             }

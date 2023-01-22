@@ -203,7 +203,9 @@ namespace E3Core.Processors
             RefreshCorpseList();
 
             //don't rez if we cannot rez.
-            if (E3.CharacterSettings.RezSpells.Count == 0) return;
+            var rezSpell = GetAvailableRezSpell();
+            if (rezSpell == null) return;
+            
             foreach (var corpse in _corpseList)
             {
                 if (_spawns.TryByID(corpse, out var spawn))
@@ -248,7 +250,6 @@ namespace E3Core.Processors
                         MQ.Cmd($"/t {spawn.DisplayName} Wait4Rez",100);
                         MQ.Delay(1500);
                         MQ.Cmd("/corpse");
-                        if (E3.CharacterSettings.RezSpells.Count == 0) return;
 
                         // if it's a cleric or warrior corpse and we're in combat, try to use divine res
                         if (Basics.InCombat() && _classesToDivineRez.Contains(spawn.ClassName))
@@ -259,26 +260,19 @@ namespace E3Core.Processors
                                 break;
                             }
                         }
-                        
-                        foreach (var spell in E3.CharacterSettings.RezSpells)
-                        {
-                            if (Casting.CheckReady(spell) && Casting.CheckMana(spell))
-                            {
-                                if (Basics.InCombat())
-                                {
-                                    if (string.Equals(spell.SpellName, "Water Sprinkler of Nem Ankh"))
-                                    {
-                                        continue;
-                                    }
 
-                                    Casting.Cast(spawn.ID, spell, Heals.SomeoneNeedsHealing);
-                                }
-                                else
-                                {
-                                    Casting.Cast(spawn.ID, spell);
-                                }
-                                break;
+                        if (Basics.InCombat())
+                        {
+                            if (string.Equals(rezSpell.SpellName, "Water Sprinkler of Nem Ankh"))
+                            {
+                                continue;
                             }
+
+                            Casting.Cast(spawn.ID, rezSpell, Heals.SomeoneNeedsHealing);
+                        }
+                        else
+                        {
+                            Casting.Cast(spawn.ID, rezSpell);
                         }
                     }
                 }
@@ -341,16 +335,10 @@ namespace E3Core.Processors
                 if (s.DeityID != 0 && s.TypeDesc == "Corpse")
                 {
                     Casting.TrueTarget(s.ID);
-                    foreach (var spell in E3.CharacterSettings.RezSpells)
-                    {
-                        if (Casting.CheckReady(spell) && Casting.CheckMana(spell) && CanRez())
-                        {
-                            MQ.Cmd($"/tell {s.DisplayName} Wait4Rez", 100);
-                            Casting.Cast(s.ID, spell);
-
-                            return;
-                        }
-                    }
+                    var rezSpell = GetAvailableRezSpell();
+                    if (rezSpell == null || !CanRez()) return;
+                    MQ.Cmd($"/tell {s.DisplayName} Wait4Rez", 100);
+                    Casting.Cast(s.ID, rezSpell);
                 }
             }
         }
@@ -393,16 +381,12 @@ namespace E3Core.Processors
                     //assume consent was given
                     MQ.Cmd("/corpse");
                     
-                    foreach (var spell in E3.CharacterSettings.RezSpells)
+                    var rezSpell = GetAvailableRezSpell();
+                    if (rezSpell != null)
                     {
-                        if (Casting.CheckReady(spell) && Casting.CheckMana(spell))
-                        {
-                            
-                            Casting.Cast(s.ID, spell);
-                            corpsesRaised.Add(s.ID);
-                            rezRetries = 0;
-                            break;
-                        }
+                        Casting.Cast(s.ID, rezSpell);
+                        corpsesRaised.Add(s.ID);
+                        rezRetries = 0;
                     }
                 }
             }
@@ -435,6 +419,23 @@ namespace E3Core.Processors
             }
 
 
+        }
+        
+        /// <summary>
+        /// Provides the highest priority available rez spell. Priority order is defined by the list `Rez Spells`
+        /// in the character ini. For a spell to be considered `Available` there must be a valid item in the case of using
+        /// item based rez's (such as rez tokens), the AA ability must be known, or the spell must be scribed. In the case
+        /// of spells, they must additionally be off cooldown and the character must have enough mana.
+        /// </summary>
+        /// <returns>The highest priority rez spell, AA, or item that can be used. Null if no valid options.</returns>
+        public static Spell GetAvailableRezSpell()
+        {
+            return E3.CharacterSettings.RezSpells
+                .Where(spellName => MQ.Query<bool>($"${{FindItem[={spellName}]}}") ||
+                                    MQ.Query<bool>($"${{Me.AltAbility[{spellName}]}}") ||
+                                    MQ.Query<bool>($"${{Me.Book[{spellName}]}}"))
+                .Select(spellName => new Spell(spellName))
+                .FirstOrDefault(spell => Casting.CheckReady(spell) && Casting.CheckMana(spell));
         }
 
         private static void GatherCorpses()

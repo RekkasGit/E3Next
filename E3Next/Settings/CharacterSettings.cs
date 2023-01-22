@@ -133,7 +133,7 @@ namespace E3Core.Settings
         public List<Spell> HealXTarget = new List<Spell>();
         public List<Spell> HealPets = new List<Spell>();
         public List<Spell> HealOverTime = new List<Spell>();
-        public List<Spell> RezSpells = new List<Spell>();
+        public List<string> RezSpells = new List<string>();
         public List<string> HealPetOwners = new List<string>();
         public Dictionary<string, string> PetWeapons = new Dictionary<string, string>();
         public bool AutoPetWeapons = false;
@@ -188,14 +188,20 @@ namespace E3Core.Settings
         /// <summary>
         /// Initializes a new instance of the <see cref="CharacterSettings"/> class.
         /// </summary>
-        public CharacterSettings()
+        public CharacterSettings() : this(true) {}
+
+        /// <summary>
+        /// Initializes a new instance of the <see cref="CharacterSettings"/> class.
+        /// </summary>
+        /// <param name="loadFromFile">Indicates if character data should be loaded from disk on initialization</param>
+        public CharacterSettings(bool loadFromFile)
         {
             CharacterName = E3.CurrentName;
             ServerName = E3.ServerName;
             CharacterClass = E3.CurrentClass;
-            LoadData();
-
+            if (loadFromFile) LoadData();
         }
+        
         /// <summary>
         /// Loads the data.
         /// </summary>
@@ -540,7 +546,18 @@ namespace E3Core.Settings
                 section.Keys.AddKey("Who to HoT", "");
                 section.Keys.AddKey("Pet Owner", "");
                 section.Keys.AddKey("Auto Cast Necro Heal Orbs (On/Off)", "On");
-                section.Keys.AddKey("Rez Spells", "");
+                section.Keys.AddKey("Rez Spells", 
+                    "Blessing of Resurrection",
+                    "Water Sprinkler of Nem Ankh",
+                    "Reviviscence",
+                    "Token of Resurrection",
+                    "Spiritual Awakening",
+                    "Resurrection",
+                    "Restoration",
+                    "Resuscitate",
+                    "Renewal",
+                    "Revive",
+                    "Reparation");
             }
 
             if ((CharacterClass & Class.Priest) == CharacterClass || (CharacterClass & Class.Caster) == CharacterClass)
