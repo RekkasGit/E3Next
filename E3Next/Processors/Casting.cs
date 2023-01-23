@@ -62,13 +62,7 @@ namespace E3Core.Processors
                             Interrupt();
                             return CastReturn.CAST_INTERRUPTED;
                         }
-                        EventProcessor.ProcessEventsInQueues("/backoff");
-                        EventProcessor.ProcessEventsInQueues("/followme");
-                        if (Assist.AssistTargetID == 0)
-                        {
-                            Interrupt();
-                            return CastReturn.CAST_INTERRUPTED;
-                        }
+                        
                     }
                 }
 
