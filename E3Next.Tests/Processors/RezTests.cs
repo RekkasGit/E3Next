@@ -2,6 +2,7 @@
 using System.Collections.Generic;
 using System.IO;
 using System.Linq;
+using System.Reflection;
 using E3Core.Data;
 using E3Core.Processors;
 using E3Core.Settings;
@@ -11,6 +12,7 @@ using Xunit;
 
 namespace E3Next.Tests.Processors
 {
+    [CollectionDefinition("Rez Tests", DisableParallelization = true)]
     public class RezTests
     {
         public class MQMock : Mock<IMQ>, IDisposable
@@ -65,9 +67,11 @@ namespace E3Next.Tests.Processors
                     break;
                 case CastType.AA:
                     mq.Setup(m => m.Query<bool>($"${{Me.AltAbility[{args.Name}].Spell}}"))
-                        .Returns(args.Type == CastType.AA && args.Ready && args.Learned);
+                        .Returns(args.Type == CastType.AA && args.Learned);
                     mq.Setup(m => m.Query<bool>($"${{Me.AltAbility[{args.Name}]}}"))
                         .Returns(args.Type == CastType.AA && args.Ready && args.Learned);
+                    mq.Setup(m => m.Query<bool>($"${{Spell[{args.Name}]}}"))
+                        .Returns(args.Type == CastType.AA && args.Learned);
                     mq.Setup(m => m.Query<string>($"${{Spell[{args.Name}].SpellType}}"))
                         .Returns(args.SpellType);
                     mq.Setup(m => m.Query<bool>($"${{Me.AltAbilityReady[{args.Name}]}}"))
@@ -76,6 +80,8 @@ namespace E3Next.Tests.Processors
                 case CastType.Spell:
                     mq.Setup(m => m.Query<bool>($"${{Me.Book[{args.Name}]}}"))
                         .Returns(args.Type == CastType.Spell && args.Ready && args.Learned);
+                    mq.Setup(m => m.Query<bool>($"${{Spell[{args.Name}]}}"))
+                        .Returns(args.Type == CastType.Spell && args.Learned);
                     mq.Setup(m => m.Query<string>($"${{Spell[{args.Name}].SpellType}}"))
                         .Returns(args.SpellType);
                     mq.Setup(m => m.Query<bool>($"${{Me.SpellReady[{args.Name}]}}"))
@@ -165,21 +171,38 @@ namespace E3Next.Tests.Processors
             };
         }
 
+        private static void Setup(IMQ mqInstance)
+        {
+            E3.MQ = mqInstance;
+            E3.Log = new Logging(mqInstance);
+                
+            Spell.MQ = mqInstance;
+            // HACK: We are keeping a private static reference to a public static property for both E3.MQ and E3.Spawns, this is really asking
+            // for trouble with initialization order down the line. For now just force set the value via reflection for testing purposes.
+            typeof(Rez).GetField("MQ", BindingFlags.NonPublic | BindingFlags.Static).SetValue(null, mqInstance);
+            typeof(Casting).GetField("MQ", BindingFlags.NonPublic | BindingFlags.Static).SetValue(null, mqInstance);
+
+            // Setup rez spell list
+            E3.GeneralSettings = new GeneralSettings(false);
+                
+            E3.CharacterSettings = new CharacterSettings(false);
+        }
+
         [Fact]
         public void GetAvailableRezSpell_ExcludesSpellsOnCD()
         {
             var mqMock = GetMQMock();
             try
             {
-                E3.MQ = mqMock.Object;
-                E3.Log = new Logging(mqMock.Object);
-                // Setup rez spell list
-                E3.GeneralSettings = new GeneralSettings(false);
-                
-                E3.CharacterSettings = new CharacterSettings(false);
+                Setup(mqMock.Object);
                 var args = GetTestingSpellArgs();
+                foreach (var arg in args)
+                {
+                    arg.Name += "__";
+                }
+                
                 E3.CharacterSettings.RezSpells = new List<string>(args.Select(a => a.Name).ToList());
-
+                
                 // Know both "Spell on CD and Spell off CD" but on cd is ...on CD
                 args[2].Learned = true;
                 args[2].Ready = false;
@@ -207,12 +230,7 @@ namespace E3Next.Tests.Processors
             var mqMock = GetMQMock();
             try
             {
-                E3.MQ = mqMock.Object;
-                E3.Log = new Logging(mqMock.Object);
-                // Setup rez spell list
-                E3.GeneralSettings = new GeneralSettings(false);
-                
-                E3.CharacterSettings = new CharacterSettings(false);
+                Setup(mqMock.Object);
                 var args = GetTestingSpellArgs();
                 E3.CharacterSettings.RezSpells = new List<string>(args.Select(a => a.Name).ToList());
 
@@ -240,12 +258,7 @@ namespace E3Next.Tests.Processors
             var mqMock = GetMQMock();
             try
             {
-                E3.MQ = mqMock.Object;
-                E3.Log = new Logging(mqMock.Object);
-                // Setup rez spell list
-                E3.GeneralSettings = new GeneralSettings(false);
-                
-                E3.CharacterSettings = new CharacterSettings(false);
+                Setup(mqMock.Object);
                 var args = GetTestingSpellArgs();
                 E3.CharacterSettings.RezSpells = new List<string>(args.Select(a => a.Name).ToList());
 
@@ -273,12 +286,7 @@ namespace E3Next.Tests.Processors
             var mqMock = GetMQMock();
             try
             {
-                E3.MQ = mqMock.Object;
-                E3.Log = new Logging(mqMock.Object);
-                // Setup rez spell list
-                E3.GeneralSettings = new GeneralSettings(false);
-                
-                E3.CharacterSettings = new CharacterSettings(false);
+                Setup(mqMock.Object);
                 var args = GetTestingSpellArgs();
                 E3.CharacterSettings.RezSpells = new List<string>(args.Select(a => a.Name).ToList());
 
