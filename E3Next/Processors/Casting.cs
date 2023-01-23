@@ -461,13 +461,14 @@ namespace E3Core.Processors
                                 {
                                     if (EventProcessor.CommandList["/backoff"].queuedEvents.Count > 0)
                                     {
-                                        Interrupt();
-                                        return CastReturn.CAST_INTERRUPTED;
+                                        EventProcessor.ProcessEventsInQueues("/backoff");
+                                        if(!IsCasting()) return CastReturn.CAST_INTERRUPTED;
+                                       
                                     }
                                     if (EventProcessor.CommandList["/followme"].queuedEvents.Count > 0)
                                     {
-                                        Interrupt();
-                                        return CastReturn.CAST_INTERRUPTED;
+                                        EventProcessor.ProcessEventsInQueues("/followme");
+                                        if (!IsCasting()) return CastReturn.CAST_INTERRUPTED;
                                     }
                                 }
                             }
@@ -785,6 +786,8 @@ namespace E3Core.Processors
         }
         public static void Interrupt()
         {
+            if (!IsCasting()) return;
+
             bool onMount = MQ.Query<bool>("${Me.Mount.ID}");
             if(onMount)
             {
