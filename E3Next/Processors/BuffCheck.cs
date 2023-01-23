@@ -264,14 +264,15 @@ namespace E3Core.Processors
 
             using (_log.Trace())
             {
-       
+
+                if (Assist.IsAssisting || Nukes.PBAEEnabled)
+                {
+                    BuffBots(E3.CharacterSettings.CombatBuffs);
+                }
+
                 if (!Movement.IsMoving() && !Movement.Following)
                 {
-                    if (Assist.IsAssisting || Nukes.PBAEEnabled)
-                    {
-                        BuffBots(E3.CharacterSettings.CombatBuffs);
-                    }
-                    else if(!Basics.InCombat())
+                    if(!Basics.InCombat())
                     {
                         if (!E3.ActionTaken) BuffAuras();
                         if (!E3.ActionTaken) BuffBots(E3.CharacterSettings.SelfBuffs);
