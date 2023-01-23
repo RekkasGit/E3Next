@@ -181,10 +181,8 @@ namespace E3Next.Tests.Processors
             // for trouble with initialization order down the line. For now just force set the value via reflection for testing purposes.
             typeof(Rez).GetField("MQ", BindingFlags.NonPublic | BindingFlags.Static).SetValue(null, mqInstance);
             typeof(Casting).GetField("MQ", BindingFlags.NonPublic | BindingFlags.Static).SetValue(null, mqInstance);
-
-            // Setup rez spell list
+            
             E3.GeneralSettings = new GeneralSettings(false);
-                
             E3.CharacterSettings = new CharacterSettings(false);
         }
 
@@ -196,11 +194,6 @@ namespace E3Next.Tests.Processors
             {
                 Setup(mqMock.Object);
                 var args = GetTestingSpellArgs();
-                foreach (var arg in args)
-                {
-                    arg.Name += "__";
-                }
-                
                 E3.CharacterSettings.RezSpells = new List<string>(args.Select(a => a.Name).ToList());
                 
                 // Know both "Spell on CD and Spell off CD" but on cd is ...on CD
