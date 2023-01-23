@@ -89,6 +89,11 @@ namespace E3Core.Processors
                         targetID = MQ.Query<Int32>("${Target.ID}");
                         if (targetID < 1)
                         {
+                            if (spell.SpellType == "Detrimental" && spell.TargetType == "Single")
+                            {
+                                return CastReturn.CAST_UNKNOWN;
+                            }
+
                             targetID = E3.CurrentId;
                         }
                     }
