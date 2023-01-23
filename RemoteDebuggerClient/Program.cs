@@ -521,6 +521,14 @@ namespace MQServerClient
                 {
                     return (T)(object)false;
                 }
+                if (mqReturnValue == "!FALSE")
+                {
+                    return (T)(object)true;
+                }
+                if (mqReturnValue == "!TRUE")
+                {
+                    return (T)(object)false;
+                }
                 Int32 intValue;
                 if (Int32.TryParse(mqReturnValue, out intValue))
                 {

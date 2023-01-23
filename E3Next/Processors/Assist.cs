@@ -711,12 +711,12 @@ namespace E3Core.Processors
                }
            });
             EventProcessor.RegisterCommand("/cleartargets", (x) =>
-            {
+            {  
                 if (x.args.Count == 0)
                 {
                     ClearXTargets.MobToAttack = 0;
                     AssistOff();
-                    E3.Bots.BroadcastCommandToGroup($"/backoff all");
+                    E3.Bots.BroadcastCommandToGroup($"/backoff all",x);
                     if (x.filters.Count > 0)
                     {
                         ClearXTargets.Filters.Clear();
@@ -733,13 +733,13 @@ namespace E3Core.Processors
                     AssistOff();
                     ClearXTargets.Enabled = false;
                     ClearXTargets.Filters.Clear();
-                    E3.Bots.BroadcastCommandToGroup($"/backoff all");
+                    E3.Bots.BroadcastCommandToGroup($"/backoff all",x);
                 }
                 else if (x.args.Count == 1 && x.args[0] == "noface")
                 {
                     ClearXTargets.MobToAttack = 0;
                     AssistOff();
-                    E3.Bots.BroadcastCommandToGroup($"/backoff all");
+                    E3.Bots.BroadcastCommandToGroup($"/backoff all",x);
                     if (x.filters.Count > 0)
                     {
                         ClearXTargets.Filters.Clear();
@@ -793,6 +793,7 @@ namespace E3Core.Processors
 
                 if (!e3util.FilterMe(x))
                 {
+                    Casting.Interrupt();
                     AssistOff();
                     Burns.Reset();
                     DebuffDot.Reset();

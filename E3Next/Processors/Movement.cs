@@ -465,8 +465,10 @@ namespace E3Core.Processors
                         Spawn s;
                         if (_spawns.TryByName(user, out s))
                         {
+                           
                             FollowTargetName = user;
                             Following = false;
+                            Casting.Interrupt();
                             Rez.Reset();
                             Assist.AssistOff();
                             AcquireFollow();
