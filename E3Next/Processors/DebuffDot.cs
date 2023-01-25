@@ -68,11 +68,14 @@ namespace E3Core.Processors
             if (!e3util.ShouldCheck(ref _nextOffAssistCheck, _nextOffAssistCheckInterval)) return;
 
             //do not off assist if you are in the middle of gather dusk. It sucks to put it on an add. 
-            bool duskfall = MQ.Query<bool>("${$Bool[${Me.Song[Fading Light]}]}");
-            if (duskfall) return;
-            int gatheringDuskTicks = MQ.Query<int>("${Me.Song[Gathering Dusk].Duration.Ticks}");
+            if (E3.CurrentClass == Data.Class.Necromancer)
+            {
+                bool duskfall = MQ.Query<bool>("${$Bool[${Me.Song[Fading Light]}]}");
+                if (duskfall) return;
+                int gatheringDuskTicks = MQ.Query<int>("${Me.Song[Gathering Dusk].Duration.Ticks}");
 
-            if (gatheringDuskTicks <=2) return;
+                if (gatheringDuskTicks > 0 && gatheringDuskTicks <= 2) return;
+            }
 
             using (_log.Trace())
             {

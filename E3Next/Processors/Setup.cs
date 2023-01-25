@@ -28,6 +28,8 @@ namespace E3Core.Processors
         public static Logging _log = E3.Log;
         private static IMQ MQ = E3.MQ;
 
+        public static bool DispellableTLOEnabled = MQ.Query<bool>("${Spell[Courage].Dispellable}");
+
         public static Boolean Init()
         {
             using (_log.Trace())
@@ -173,7 +175,6 @@ namespace E3Core.Processors
 
             }
         }
-
-
+        
     }
 }
