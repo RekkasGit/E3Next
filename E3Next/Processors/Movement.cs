@@ -622,6 +622,7 @@ namespace E3Core.Processors
                 if (Casting.CheckReady(summonSpell))
                 {
                     MQ.Cmd($"/g E3 Single Coth: Casting \"Call of the Hero\" on: {s.CleanName}");
+                    if (MQ.Query<bool>("${Me.Invis}")) MQ.Cmd("/makemevisible");
                     Casting.Cast(s.ID, summonSpell);
                 }
                 else
@@ -648,6 +649,7 @@ namespace E3Core.Processors
                     if (Casting.CheckReady(summonSpell))
                     {
                         MQ.Cmd($"/g E3 Group Coth: Casting \"Call of the Hero\" on: {s.CleanName}");
+                        if (MQ.Query<bool>("${Me.Invis}")) MQ.Cmd("/makemevisible");
                         Casting.Cast(memberid, summonSpell);
                         e3util.YieldToEQ();//not really needed as there are tons of delays in casting
                     }
