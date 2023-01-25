@@ -16,12 +16,14 @@ namespace E3Core.Processors
         private static ISpawns _spawns = E3.Spawns;
         private static Int64 _nextDispelCheck = 0;
         private static Int64 _nextDispelCheckInterval = 500;
+        
 
         [ClassInvoke(Data.Class.All)]
         public static void CheckDispel()
         {
             if (!Assist.IsAssisting) return;
             if (E3.CharacterSettings.Dispels.Count == 0) return;
+            
 
             if (!e3util.ShouldCheck(ref _nextDispelCheck, _nextDispelCheckInterval)) return;
 
@@ -37,8 +39,17 @@ namespace E3Core.Processors
                         bool beneficial = MQ.Query<bool>($"${{Target.Buff[{i}].Beneficial}}");
                         if (beneficial)
                         {
-                            string buffCategory = MQ.Query<string>($"${{Target.Buff[{i}].Category}}");
-                            if (buffCategory == "Disciplines") continue;
+
+                            if (Setup.DispellableTLOEnabled)
+                            {
+                                bool buffDispellable = MQ.Query<bool>($"${{Target.Buff[{i}].Dispellable}}");
+                                if (!buffDispellable) continue;
+                            }
+                            else
+                            {
+                                string buffCategory = MQ.Query<string>($"${{Target.Buff[{i}].Category}}");
+                                if (buffCategory == "Disciplines") continue;
+                            }
 
                             string buffName = MQ.Query<string>($"${{Target.Buff[{i}]}}");
                             Int32 buffID = MQ.Query<Int32>($"${{Target.Buff[{i}].ID}}");

@@ -594,7 +594,7 @@ namespace E3Core.Processors
                 {
                     MQ.Write($"Sticking behind target with distance: {_assistDistance}");
                     MQ.Cmd("/stick snaproll uw");
-                    MQ.Delay(200, $"${{Bool[${{Stick.Behind}} && ${{Stick.Stopped}}]}}");
+                    MQ.Delay(2000, $"${{Bool[${{Stick.Behind}} && ${{Stick.Stopped}}]}}");
                     MQ.Cmd($"/squelch /stick hold moveback behind {_assistDistance} uw");
                 });
                 stw.Add("front", () =>
@@ -608,21 +608,21 @@ namespace E3Core.Processors
                 {
 
                     MQ.Cmd("/stick snaproll uw");
-                    MQ.Delay(200, $"${{Bool[${{Stick.Behind}} && ${{Stick.Stopped}}]}}");
+                    MQ.Delay(2000, $"${{Bool[${{Stick.Behind}} && ${{Stick.Stopped}}]}}");
                     MQ.Cmd($"/squelch /stick hold moveback behindonce {_assistDistance} uw");
                 });
                 stw.Add("pin", () =>
                 {
 
                     MQ.Cmd("/stick snaproll uw");
-                    MQ.Delay(200, $"${{Bool[${{Stick.Behind}} && ${{Stick.Stopped}}]}}");
+                    MQ.Delay(2000, $"${{Bool[${{Stick.Behind}} && ${{Stick.Stopped}}]}}");
                     MQ.Cmd($"/squelch /stick hold moveback pin {_assistDistance} uw");
                 });
                 stw.Add("!front", () =>
                 {
 
                     MQ.Cmd("/stick snaproll uw");
-                    MQ.Delay(200, $"${{Bool[${{Stick.Behind}} && ${{Stick.Stopped}}]}}");
+                    MQ.Delay(2000, $"${{Bool[${{Stick.Behind}} && ${{Stick.Stopped}}]}}");
                     MQ.Cmd($"/squelch /stick hold moveback !front {_assistDistance} uw");
                 });
                 _stickSwitch = stw;
