@@ -21,6 +21,7 @@ namespace E3Core.Processors
             public String SpellTouse = String.Empty;
             public Spell Spell;
             public Int32 TargetID = 0;
+            public Int64 TimeStamp = 0;
         }
 
         public static string _lastSuccesfulCast = String.Empty;
@@ -57,7 +58,7 @@ namespace E3Core.Processors
                         {
                             foreach (var spell in E3.CharacterSettings.GroupBuffs)
                             {
-                                _queuedBuffs.Enqueue(new BuffQueuedItem() { TargetID = spawn.ID, Spell = spell });
+                                _queuedBuffs.Enqueue(new BuffQueuedItem() { TargetID = spawn.ID, Spell = spell, TimeStamp=Core.StopWatch.ElapsedMilliseconds });
 
                             }
                             MQ.Cmd($"/t {user} casting buffs on you, please wait.");
@@ -76,7 +77,7 @@ namespace E3Core.Processors
                     {
                         foreach (var spell in E3.CharacterSettings.GroupBuffs)
                         {
-                            _queuedBuffs.Enqueue(new BuffQueuedItem() { TargetID=spawnid, Spell = spell });
+                            _queuedBuffs.Enqueue(new BuffQueuedItem() { TargetID=spawnid, Spell = spell, TimeStamp = Core.StopWatch.ElapsedMilliseconds });
 
                         }
                     }
@@ -86,7 +87,7 @@ namespace E3Core.Processors
                     
                     foreach (var spell in E3.CharacterSettings.GroupBuffs)
                     {
-                        _queuedBuffs.Enqueue(new BuffQueuedItem() { TargetID = E3.CurrentId, Spell = spell });
+                        _queuedBuffs.Enqueue(new BuffQueuedItem() { TargetID = E3.CurrentId, Spell = spell, TimeStamp = Core.StopWatch.ElapsedMilliseconds });
 
                     }
                     
@@ -102,7 +103,7 @@ namespace E3Core.Processors
                     {
                         foreach (var spell in E3.CharacterSettings.GroupBuffs)
                         {
-                            _queuedBuffs.Enqueue(new BuffQueuedItem() { TargetID = spawnid, Spell = spell });
+                            _queuedBuffs.Enqueue(new BuffQueuedItem() { TargetID = spawnid, Spell = spell, TimeStamp = Core.StopWatch.ElapsedMilliseconds });
 
                         }
                     }
@@ -150,7 +151,7 @@ namespace E3Core.Processors
                         if (inBook || aa || item)
                         {
                             MQ.Cmd($"/t {user} I'm queueing up {spell} to use on you, please wait.");
-                            _queuedBuffs.Enqueue(new BuffQueuedItem() { Requester = user, SpellTouse = spell });
+                            _queuedBuffs.Enqueue(new BuffQueuedItem() { Requester = user, SpellTouse = spell , TimeStamp = Core.StopWatch.ElapsedMilliseconds });
 
                         }
                     }
@@ -233,7 +234,7 @@ namespace E3Core.Processors
                 MQ.Cmd($"/t {user} I'm queuing up {spell} to use on you, please wait.");
                
             }
-            _queuedBuffs.Enqueue(new BuffQueuedItem() { Requester = user, SpellTouse = spell, TargetID=targetid });
+            _queuedBuffs.Enqueue(new BuffQueuedItem() { Requester = user, SpellTouse = spell, TargetID=targetid, TimeStamp = Core.StopWatch.ElapsedMilliseconds });
             
         }
         [ClassInvoke(Data.Class.All)]
@@ -304,9 +305,15 @@ namespace E3Core.Processors
                     }
                     else
                     { 
-                        E3.Bots.Broadcast("Removing spell from queue due to it being not ready or out of range: " + s.CastName);
-                        //possibly long cooldown?
-                        _queuedBuffs.Dequeue();
+                        //give the buff at least 30 sec for us to be able to cast. 
+                        if(Core.StopWatch.ElapsedMilliseconds - askedForSpell.TimeStamp > 30000 )
+                        {
+                            E3.Bots.Broadcast("Removing spell from queue due to it being not ready or out of range: " + s.CastName);
+                            //possibly long cooldown?
+                            _queuedBuffs.Dequeue();
+
+                        }
+
                     }
                 }
                 else
