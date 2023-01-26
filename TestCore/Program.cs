@@ -224,7 +224,7 @@ namespace TestCore
                 Cmd("/beep");
             }
 
-            public bool FeaureEnabled(MQFeature feature)
+            public bool FeatureEnabled(MQFeature feature)
             {
                 return true;
             }

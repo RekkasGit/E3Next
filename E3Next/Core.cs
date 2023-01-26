@@ -1077,7 +1077,7 @@ namespace MonoCore
         void RemoveCommand(string commandName);
         void Beep();
 
-        bool FeaureEnabled(MQFeature feature);
+        bool FeatureEnabled(MQFeature feature);
 
     }
     public class MQ : IMQ
@@ -1366,7 +1366,7 @@ namespace MonoCore
             Cmd("/beep");
         }
         private bool? Feature_TLO_Dispellable = null;
-        public bool FeaureEnabled(MQFeature feature)
+        public bool FeatureEnabled(MQFeature feature)
         {
             if(feature == MQFeature.TLO_Dispellable)
             {
