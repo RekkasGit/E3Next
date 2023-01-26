@@ -1054,6 +1054,11 @@ namespace MonoCore
         // [Obsolete]
         //ImGuiWindowFlags_ResizeFromAnySide    = 1 << 17,  // --> Set io.ConfigWindowsResizeFromEdges=true and make sure mouse cursors are supported by backend (io.BackendFlags & ImGuiBackendFlags_HasMouseCursors)
     };
+    public enum MQFeature
+    { 
+        TLO_Dispellable
+    
+    }
 
     public interface IMQ
     {
@@ -1071,6 +1076,8 @@ namespace MonoCore
         void ClearCommands();
         void RemoveCommand(string commandName);
         void Beep();
+
+        bool FeaureEnabled(MQFeature feature);
 
     }
     public class MQ : IMQ
@@ -1357,6 +1364,19 @@ namespace MonoCore
         public void Beep()
         {
             Cmd("/beep");
+        }
+        private bool? Feature_TLO_Dispellable = null;
+        public bool FeaureEnabled(MQFeature feature)
+        {
+            if(feature == MQFeature.TLO_Dispellable)
+            {
+               if(Feature_TLO_Dispellable==null)
+               {
+                    Feature_TLO_Dispellable = Query<bool>("${Spell[Courage].Dispellable}");
+               }
+                return Feature_TLO_Dispellable.Value;
+            }
+            return true;
         }
     }
 
