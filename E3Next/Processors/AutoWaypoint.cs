@@ -27,7 +27,8 @@ namespace E3Core.Processors
     {
         Move,
         Pause,
-        ClearTargets
+        ClearTargets,
+        Port
     }
 
     public class Instruction 
@@ -55,7 +56,7 @@ namespace E3Core.Processors
         public static void Init()
         {
             RegisterEvents();
-            CreateWaypoints();
+            // CreateWaypoints();
         }
         private static void RegisterEvents()
         {
@@ -84,6 +85,7 @@ namespace E3Core.Processors
 
         private static void startRunWaypoints()
         {
+            CreateWaypoints();
             /// Don't use Zoning.CurrentZone in case the event handler it hasn't processed the zoning event yet.
             string zoneName = MQ.Query<string>("${Zone.ShortName}");
            if (zoneWaypoints.TryGetValue(zoneName, out currentZone)) {
@@ -108,15 +110,17 @@ namespace E3Core.Processors
                 case InstructionType.Move:
                     {
                         Coordinate coord = (Coordinate)curInstruction.value;
+                        MQ.Cmd("/timed 50 /dgge /nav id ${Me.ID}");
                         e3util.TryMoveToLoc(coord.X, coord.Y, coord.Z);
                         break;
                     }
                 case InstructionType.ClearTargets:
                     {
 
-
+                        MQ.Cmd("/dgge /nav id ${Me.ID}");
                         ClearXTargets.MobToAttack = 0;
                         ClearXTargets.Enabled = true;
+                        ClearXTargets.FaceTarget = true;
                         break;
                     }
                 case InstructionType.Pause:
@@ -125,7 +129,20 @@ namespace E3Core.Processors
                         MQ.Delay(delayAmount);
                         break;
                     }
-                }        
+                case InstructionType.Port:
+                    {
+                        bool ldonTimeRemaining = MQ.Query<bool>("${Bool[${Window[AdventureRequestWnd].Child[AdvRqst_CompleteTimeLeftLabel].Text.Length}]}");
+                        if (!ldonTimeRemaining)
+                        {
+                            MQ.Cmd("/dgge /nav id ${Me.ID}");
+                            MQ.Delay(1000);
+                            string user = "Shendru";
+                            var chatOutput = $"/g {currentZone.name} finished";
+                            E3.Bots.BroadcastCommandToPerson(user, $"/queuecast me \"Teleport Bind\"");
+                        }
+                        break;
+                    }
+            }        
         }
 
         private static IniData ReadAutoNavIni()
@@ -133,9 +150,15 @@ namespace E3Core.Processors
             FileIniDataParser fileIniData = e3util.CreateIniParser();
             string filename = BaseSettings.GetSettingsFilePath(kAutoNavSettingsFilename);
             IniData parsedData = new IniData();
+            MQ.Write($"{kLoggingPrefix} Looking for file at ${filename}");
             if (System.IO.File.Exists(filename))
             {
+                MQ.Write($"{kLoggingPrefix} found settings file at: ${filename}");
                 parsedData = fileIniData.ReadFile(filename);
+            }
+            else
+            {
+                MQ.Write($"{kLoggingPrefix} could not find settings file at: ${filename}");
             }
             return parsedData;
         }
@@ -161,7 +184,7 @@ namespace E3Core.Processors
                     string instructionValue = instructionSplit[1];
                     if (instructionName.Equals("Move"))
                     {
-                        string[] valueSplit = instructionValue.Split(',');
+                        string[] valueSplit = instructionValue.Split(' ');
                         if (valueSplit.Count() != 3) continue;
                         double xVal;
                         double yVal;
@@ -187,6 +210,10 @@ namespace E3Core.Processors
                     else if (instructionName.Equals("ClearTargets"))
                     {
                         curInstruction = new Instruction() { type = InstructionType.ClearTargets, value = 0 };
+                    }
+                    else if(instructionName.Equals("Port"))
+                    {
+                        curInstruction = new Instruction() { type = InstructionType.Port, value = 0 };
                     }
                     else
                     {
