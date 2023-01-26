@@ -110,7 +110,7 @@ namespace TestCore
         }
 
 
-        public class MoqMQ : MonoCore.IMQ
+        public class MoqMQ : IMQ
         {
             public bool AddCommand(string query)
             {
@@ -222,6 +222,11 @@ namespace TestCore
             public void Beep()
             {
                 Cmd("/beep");
+            }
+
+            public bool FeaureEnabled(MQFeature feature)
+            {
+                return true;
             }
         }
 

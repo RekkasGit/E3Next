@@ -783,6 +783,11 @@ namespace MQServerClient
         {
             Cmd("/beep");
         }
+
+        public bool FeaureEnabled(MQFeature feature)
+        {
+            return true;
+        }
     }
 
 }

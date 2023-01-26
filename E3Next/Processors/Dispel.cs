@@ -40,7 +40,7 @@ namespace E3Core.Processors
                         if (beneficial)
                         {
 
-                            if (Setup.DispellableTLOEnabled)
+                            if (MQ.FeaureEnabled(MQFeature.TLO_Dispellable))
                             {
                                 bool buffDispellable = MQ.Query<bool>($"${{Target.Buff[{i}].Dispellable}}");
                                 if (!buffDispellable) continue;

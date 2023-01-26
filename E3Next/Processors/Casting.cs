@@ -1114,7 +1114,7 @@ namespace E3Core.Processors
         public static CastReturn CheckForReist(Data.Spell spell)
         {
             //it takes time to wait for a spell resist, up to 2-400 millieconds.
-            //basically 0 or is non determential to not resist, mostly nukes/spells
+            //basically 0 or is non detrimental to not resist, mostly nukes/spells
             //what this buys is is a much faster nuke/heal cycle, at the expense of checking for their resist status
             //tho debuffs/dots/buffs its more important as we have to keep track of timers, so we will pay the cost of waiting for resist checks.
             if (spell.Duration == 0)
