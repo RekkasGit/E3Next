@@ -51,6 +51,7 @@ namespace E3Core.Settings
 
         public List<Spell> Druid_Evacs = new List<Spell>();
         public bool Druid_AutoCheetah = true;
+        public bool Bard_AutoSonata = true;
 
         public string Assist_Type = string.Empty;
         public string Assist_MeleeStickPoint = string.Empty;
@@ -239,6 +240,8 @@ namespace E3Core.Settings
             if (CharacterClass == Class.Bard)
             {
                 LoadKeyData("Bard", "MelodyIf", ParsedData, Bard_MelodyIfs);
+                LoadKeyData("Bard", "Auto-Sonata (On/Off)", ParsedData, ref Bard_AutoSonata);
+
             }
 
             if ((CharacterClass & Class.Druid) == CharacterClass)
@@ -482,6 +485,7 @@ namespace E3Core.Settings
                 newFile.Sections.AddSection("Bard");
                 section = newFile.Sections.GetSectionData("Bard");
                 section.Keys.AddKey("MelodyIf", "");
+                section.Keys.AddKey("Auto-Sonata (On/Off)", "Off");
             }
 
             if ((CharacterClass & Class.PetClass) == CharacterClass)
