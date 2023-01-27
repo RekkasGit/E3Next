@@ -121,8 +121,16 @@ namespace E3Core.Classes
             //lets play a song!
             Data.Spell songToPlay= _songs.Dequeue();
             _songs.Enqueue(songToPlay);
+            //request by Dan Wren to skip song if it has more than 9 sec left. 
+            //2023/01/26
+            string BuffSecondsLeftQuery = "${Me.Buff[" + songToPlay.SpellName + "].Duration.TotalSeconds}";
+            string SongSecondsLeftQuery = "${Me.Song[" + songToPlay.SpellName + "].Duration.TotalSeconds}";
+            if (MQ.Query<Int32>(BuffSecondsLeftQuery) > 9 || MQ.Query<Int32>(SongSecondsLeftQuery) > 9)
+            {
+                return;
+            }
 
-            if(Casting.CheckReady(songToPlay))
+            if (Casting.CheckReady(songToPlay))
             {
                 MQ.Write($"\atTwist \ag{songToPlay.SpellName}");
                 Casting.Sing(0, songToPlay);
