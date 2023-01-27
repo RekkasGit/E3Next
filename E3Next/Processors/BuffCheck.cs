@@ -798,6 +798,7 @@ namespace E3Core.Processors
 
         private static void BuffAuras()
         {
+            if (!E3.CharacterSettings.Buffs_CastAuras) return;
             if (e3util.IsActionBlockingWindowOpen()) return;
             if (_selectAura == null)
             {
