@@ -26,7 +26,8 @@ namespace E3Core.Classes
         private static Int64 _nextMelodyIfCheck = 0;
         private static Int64 _nextMelodyIfRefreshTimeInterval = 1000;
         private static bool _forceOverride = false;
-
+        private static Int64 _nextAutoSonataCheck;
+        private static Data.Spell _sonataSpell = new Spell("Selo's Sonata");
         /// <summary>
         /// Initializes this instance.
         /// </summary>
@@ -37,7 +38,55 @@ namespace E3Core.Classes
             PlayMelody();
             _isInit = true;
         }
+        /// <summary>
+        /// Checks and re-applies Communion of the Cheetah if necessary.
+        /// </summary>
+        [ClassInvoke(Data.Class.Bard)]
+        public static void AutoSonata()
+        {
+            if (!e3util.ShouldCheck(ref _nextAutoSonataCheck, 1000)) return;
+            if (E3.CharacterSettings.Bard_AutoSonata)
+            {
 
+                bool needToCast = false;
+                //lets get group members
+                List<string> memberNames = E3.Bots.BotsConnected();
+                foreach (int memberid in Basics.GroupMembers)
+                {
+                    Spawn s;
+                    if (_spawns.TryByID(memberid, out s))
+                    {
+                        if (memberNames.Contains(s.CleanName))
+                        {
+                            List<Int32> buffList = E3.Bots.BuffList(s.CleanName);
+                            if (!buffList.Contains(12712))
+                            {
+                                needToCast = true;
+                                break;
+                            }
+                        }
+                    }
+                }
+                Int32 totalSecondsLeft = MQ.Query<Int32>("${Me.Buff[Selo's Sonata].Duration.TotalSeconds}");
+                if (totalSecondsLeft < 10)
+                {
+                    needToCast = true;
+                }
+
+                if (needToCast)
+                {
+                    if (Casting.CheckReady(_sonataSpell))
+                    {
+                        bool haveBardSong =MQ.Query<bool>("${Me.Buff[Selo's Accelerating Chorus].ID}");
+                        if (!haveBardSong)
+                        {
+
+                            Casting.Cast(E3.CurrentId, _sonataSpell);
+                        }
+                    }
+                }
+            }
+        }
         /// <summary>
         /// /playmelody melodyName
         /// </summary>
@@ -121,13 +170,17 @@ namespace E3Core.Classes
             //lets play a song!
             Data.Spell songToPlay= _songs.Dequeue();
             _songs.Enqueue(songToPlay);
-            //request by Dan Wren to skip song if it has more than 9 sec left. 
-            //2023/01/26
-            string BuffSecondsLeftQuery = "${Me.Buff[" + songToPlay.SpellName + "].Duration.TotalSeconds}";
-            string SongSecondsLeftQuery = "${Me.Song[" + songToPlay.SpellName + "].Duration.TotalSeconds}";
-            if (MQ.Query<Int32>(BuffSecondsLeftQuery) > 9 || MQ.Query<Int32>(SongSecondsLeftQuery) > 9)
+            
+            //if this base song duration > 18 seconds check to see if we have it as a buff, otherwise recast. 
+            if(songToPlay.DurationTotalSeconds>18)
             {
-                return;
+                string BuffSecondsLeftQuery = "${Me.Buff[" + songToPlay.SpellName + "].Duration.TotalSeconds}";
+                string SongSecondsLeftQuery = "${Me.Song[" + songToPlay.SpellName + "].Duration.TotalSeconds}";
+                if (MQ.Query<Int32>(BuffSecondsLeftQuery) > 18 || MQ.Query<Int32>(SongSecondsLeftQuery) > 18)
+                {
+                    return;
+                }
+
             }
 
             if (Casting.CheckReady(songToPlay))
