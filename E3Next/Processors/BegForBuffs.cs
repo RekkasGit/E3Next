@@ -58,7 +58,7 @@ namespace E3Core.Processors
                         {
                             foreach (var spell in E3.CharacterSettings.GroupBuffs)
                             {
-                                _queuedBuffs.Enqueue(new BuffQueuedItem() { TargetID = spawn.ID, Spell = spell, TimeStamp=Core.StopWatch.ElapsedMilliseconds });
+                                _queuedBuffs.Enqueue(new BuffQueuedItem() { TargetID = spawn.ID, Spell = spell});
 
                             }
                             MQ.Cmd($"/t {user} casting buffs on you, please wait.");
@@ -77,7 +77,7 @@ namespace E3Core.Processors
                     {
                         foreach (var spell in E3.CharacterSettings.GroupBuffs)
                         {
-                            _queuedBuffs.Enqueue(new BuffQueuedItem() { TargetID=spawnid, Spell = spell, TimeStamp = Core.StopWatch.ElapsedMilliseconds });
+                            _queuedBuffs.Enqueue(new BuffQueuedItem() { TargetID=spawnid, Spell = spell });
 
                         }
                     }
@@ -87,7 +87,7 @@ namespace E3Core.Processors
                     
                     foreach (var spell in E3.CharacterSettings.GroupBuffs)
                     {
-                        _queuedBuffs.Enqueue(new BuffQueuedItem() { TargetID = E3.CurrentId, Spell = spell, TimeStamp = Core.StopWatch.ElapsedMilliseconds });
+                        _queuedBuffs.Enqueue(new BuffQueuedItem() { TargetID = E3.CurrentId, Spell = spell });
 
                     }
                     
@@ -103,7 +103,7 @@ namespace E3Core.Processors
                     {
                         foreach (var spell in E3.CharacterSettings.GroupBuffs)
                         {
-                            _queuedBuffs.Enqueue(new BuffQueuedItem() { TargetID = spawnid, Spell = spell, TimeStamp = Core.StopWatch.ElapsedMilliseconds });
+                            _queuedBuffs.Enqueue(new BuffQueuedItem() { TargetID = spawnid, Spell = spell });
 
                         }
                     }
@@ -151,7 +151,7 @@ namespace E3Core.Processors
                         if (inBook || aa || item)
                         {
                             MQ.Cmd($"/t {user} I'm queueing up {spell} to use on you, please wait.");
-                            _queuedBuffs.Enqueue(new BuffQueuedItem() { Requester = user, SpellTouse = spell , TimeStamp = Core.StopWatch.ElapsedMilliseconds });
+                            _queuedBuffs.Enqueue(new BuffQueuedItem() { Requester = user, SpellTouse = spell});
 
                         }
                     }
@@ -234,7 +234,7 @@ namespace E3Core.Processors
                 MQ.Cmd($"/t {user} I'm queuing up {spell} to use on you, please wait.");
                
             }
-            _queuedBuffs.Enqueue(new BuffQueuedItem() { Requester = user, SpellTouse = spell, TargetID=targetid, TimeStamp = Core.StopWatch.ElapsedMilliseconds });
+            _queuedBuffs.Enqueue(new BuffQueuedItem() { Requester = user, SpellTouse = spell, TargetID=targetid});
             
         }
         [ClassInvoke(Data.Class.All)]
@@ -306,6 +306,10 @@ namespace E3Core.Processors
                     else
                     { 
                         //give the buff at least 30 sec for us to be able to cast. 
+                        if(askedForSpell.TimeStamp==0)
+                        {
+                            askedForSpell.TimeStamp = Core.StopWatch.ElapsedMilliseconds;
+                        }
                         if(Core.StopWatch.ElapsedMilliseconds - askedForSpell.TimeStamp > 30000 )
                         {
                             E3.Bots.Broadcast("Removing spell from queue due to it being not ready or out of range: " + s.CastName);
