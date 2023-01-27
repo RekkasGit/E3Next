@@ -77,7 +77,7 @@ namespace E3Core.Settings
         public List<Spell> GroupBuffs = new List<Spell>();
         public List<Spell> CombatBuffs = new List<Spell>();
         public List<Spell> PetBuffs = new List<Spell>();
-
+        public bool Buffs_CastAuras = true;
         //gimme
         public List<string> Gimme = new List<string>();
         public bool Gimme_InCombat = true;
@@ -272,7 +272,8 @@ namespace E3Core.Settings
             LoadKeyData("Buffs", "Combat Buff", ParsedData, CombatBuffs);
             LoadKeyData("Buffs", "Group Buff", ParsedData, GroupBuffs);
             LoadKeyData("Buffs", "Pet Buff", ParsedData, PetBuffs);
-
+            LoadKeyData("Buffs", "Cast Aura(On/Off)", ParsedData,ref Buffs_CastAuras);
+          
 
             LoadKeyData("Melee Abilities", "Ability", ParsedData, MeleeAbilities);
 
@@ -402,8 +403,8 @@ namespace E3Core.Settings
             section.Keys.AddKey("Combat Buff", "");
             section.Keys.AddKey("Group Buff", "");
             section.Keys.AddKey("Pet Buff", "");
+            section.Keys.AddKey("Cast Aura(On/Off)", "On");
 
-            //section.Keys.AddKey("Cast Aura Combat (On/Off)", "Off");
             if ((CharacterClass & Class.Caster) != CharacterClass && (CharacterClass & Class.Priest) != CharacterClass)
             {
                 newFile.Sections.AddSection("Melee Abilities");
