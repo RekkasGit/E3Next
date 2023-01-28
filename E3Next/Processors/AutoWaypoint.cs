@@ -110,7 +110,7 @@ namespace E3Core.Processors
                 case InstructionType.Move:
                     {
                         Coordinate coord = (Coordinate)curInstruction.value;
-                        MQ.Cmd("/timed 50 /dgge /nav id ${Me.ID}");
+                        MQ.Cmd("/timed 90 /dgge /nav id ${Me.ID}");
                         e3util.TryMoveToLoc(coord.X, coord.Y, coord.Z);
                         break;
                     }
@@ -121,6 +121,7 @@ namespace E3Core.Processors
                         ClearXTargets.MobToAttack = 0;
                         ClearXTargets.Enabled = true;
                         ClearXTargets.FaceTarget = true;
+                        ClearXTargets.StickTarget = true;
                         break;
                     }
                 case InstructionType.Pause:
