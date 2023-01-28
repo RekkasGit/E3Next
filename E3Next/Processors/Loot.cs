@@ -17,15 +17,9 @@ namespace E3Core.Processors
         public static Logging _log = E3.Log;
         private static IMQ MQ = E3.MQ;
         private static ISpawns _spawns = E3.Spawns;
-        private static bool _shouldLoot = false;
-        private static Int32 _seekRadius = 50;
+      
         private static HashSet<Int32> _unlootableCorpses = new HashSet<int>();
         private static bool _fullInventoryAlert = false;
-        private static bool _lootOnlyStackable = false;
-        private static Int32 _lootOnlyStackableValue = 1;
-        private static bool _lootOnlyStackableAllTradeSkills = false;
-        private static bool _lootOnlyStackableCommonTradeSkills = false;
-
         private static Int64 _nextLootCheck = 0;
         private static Int64 _nextLootCheckInterval = 1000;
 
@@ -34,25 +28,11 @@ namespace E3Core.Processors
         {
             RegisterEvents();
 
-            _shouldLoot =E3.CharacterSettings.Misc_AutoLootEnabled;
-            _seekRadius = E3.GeneralSettings.Loot_CorpseSeekRadius;
-            _lootOnlyStackable = E3.GeneralSettings.Loot_OnlyStackableEnabled;
-            _lootOnlyStackableValue = E3.GeneralSettings.Loot_OnlyStackableValueGreaterThanInCopper;
-            _lootOnlyStackableAllTradeSkills = E3.GeneralSettings.Loot_OnlyStackableAllTradeSkillItems;
-            _lootOnlyStackableCommonTradeSkills = E3.GeneralSettings.Loot_OnlyStackableOnlyCommonTradeSkillItems;
-
             LootDataFile.LoadData();
         }
         public static void Reset()
         {
             _unlootableCorpses.Clear();
-            //have to be careful to not get pointers to a settings file that may be auto updated, so refersh the pointers after every reset
-            _shouldLoot = E3.CharacterSettings.Misc_AutoLootEnabled;
-            _seekRadius = E3.GeneralSettings.Loot_CorpseSeekRadius;
-            _lootOnlyStackable = E3.GeneralSettings.Loot_OnlyStackableEnabled;
-            _lootOnlyStackableValue = E3.GeneralSettings.Loot_OnlyStackableValueGreaterThanInCopper;
-            _lootOnlyStackableAllTradeSkills = E3.GeneralSettings.Loot_OnlyStackableAllTradeSkillItems;
-            _lootOnlyStackableCommonTradeSkills = E3.GeneralSettings.Loot_OnlyStackableOnlyCommonTradeSkillItems;
         }
         private static void RegisterEvents()
         {
@@ -105,7 +85,7 @@ namespace E3Core.Processors
                         _unlootableCorpses.Clear();
                         MQ.Cmd("/hidecorpse none");
                     }
-                    _shouldLoot = true;
+                    E3.CharacterSettings.Misc_AutoLootEnabled = true;
                     
                     E3.Bots.Broadcast("\agTurning on Loot.");
                 }
@@ -119,7 +99,7 @@ namespace E3Core.Processors
                 else
                 {
                     //we are turning our own loot off.
-                    _shouldLoot = false;
+                    E3.CharacterSettings.Misc_AutoLootEnabled = false;
                     E3.Bots.Broadcast("\agTurning Off Loot.");
                 }
             });
@@ -197,7 +177,7 @@ namespace E3Core.Processors
             if (E3.IsInvis) return;
             if (!e3util.ShouldCheck(ref _nextLootCheck, _nextLootCheckInterval)) return;
 
-            if (!_shouldLoot) return;
+            if (!E3.CharacterSettings.Misc_AutoLootEnabled) return;
             if(!Assist.IsAssisting)
             {
 
@@ -217,7 +197,7 @@ namespace E3Core.Processors
             foreach (var spawn in _spawns.Get())
             {
                 //only player corpses have a Deity
-                if (spawn.Distance3D < _seekRadius && spawn.DeityID == 0 && spawn.TypeDesc == "Corpse")
+                if (spawn.Distance3D < E3.GeneralSettings.Loot_CorpseSeekRadius && spawn.DeityID == 0 && spawn.TypeDesc == "Corpse")
                 {
                     if (!Zoning.CurrentZone.IsSafeZone)
                     {
@@ -250,7 +230,7 @@ namespace E3Core.Processors
                     e3util.YieldToEQ();
                     if (e3util.IsShuttingDown() || E3.IsPaused()) return;
                     EventProcessor.ProcessEventsInQueues("/lootoff");
-                    if (!_shouldLoot) return;
+                    if (!E3.CharacterSettings.Misc_AutoLootEnabled) return;
 
                     if (!E3.GeneralSettings.Loot_LootInCombat)
                     {
@@ -332,7 +312,7 @@ namespace E3Core.Processors
                 Int32 itemValue = MQ.Query<Int32>($"${{Corpse.Item[{i}].Value}}");
                 Int32 stackCount = MQ.Query<Int32>($"${{Corpse.Item[{i}].Stack}}");
 
-                if (_lootOnlyStackable)
+                if (E3.GeneralSettings.Loot_OnlyStackableEnabled)
                 {
                     //check if in our always loot.
                     if (E3.GeneralSettings.Loot_OnlyStackableAlwaysLoot.Contains(corpseItem, StringComparer.OrdinalIgnoreCase))
@@ -344,15 +324,15 @@ namespace E3Core.Processors
 
                     if (stackable && !nodrop)
                     {
-                        if (!importantItem && _lootOnlyStackableCommonTradeSkills)
+                        if (!importantItem && E3.GeneralSettings.Loot_OnlyStackableOnlyCommonTradeSkillItems)
                         {
                             importantItem = true;
                         }
-                        if (!importantItem && itemValue >= _lootOnlyStackableValue)
+                        if (!importantItem && itemValue >= E3.GeneralSettings.Loot_OnlyStackableValueGreaterThanInCopper)
                         {
                             importantItem = true;
                         }
-                        if (!importantItem && _lootOnlyStackableAllTradeSkills)
+                        if (!importantItem && E3.GeneralSettings.Loot_OnlyStackableAllTradeSkillItems)
                         {
                             if (corpseItem.Contains(" Pelt")) importantItem = true;
                             if (corpseItem.Contains(" Silk")) importantItem = true;
