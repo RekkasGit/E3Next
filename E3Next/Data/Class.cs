@@ -6,6 +6,7 @@ using System.Threading.Tasks;
 
 namespace E3Core.Data
 {
+    [Flags]
     public enum Class
     {
         Warrior = 0x1,

@@ -846,5 +846,14 @@ namespace E3Core.Utility
         {
             MQ.Cmd($"/exchange \"{itemName}\" \"{slotName}\"");
         }
+        public static string FirstCharToUpper(string input)
+        {
+            switch (input)
+            {
+                case null: return null;
+                case "": return String.Empty;
+                default: return input[0].ToString().ToUpper() + input.Substring(1);
+            }
+        }
     }
 }

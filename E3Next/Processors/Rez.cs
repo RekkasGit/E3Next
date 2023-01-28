@@ -196,7 +196,7 @@ namespace E3Core.Processors
         {
             if (E3.IsInvis) return;
             if (Zoning.CurrentZone.IsSafeZone) return;
-            if (!E3.CharacterSettings.Misc_AutoRez) return;
+            if (!E3.CharacterSettings.Rez_AutoRez) return;
             if (_skipAutoRez) return;
             if (!e3util.ShouldCheck(ref _nextAutoRezCheck, _nextAutoRezCheckInterval)) return;
             if (Basics.AmIDead()) return;
@@ -205,7 +205,7 @@ namespace E3Core.Processors
             InitRezSpells();
 
             //don't rez if we cannot rez.
-            if (_resSpellList.Count == 0) return;
+            if (_currentRezSpells.Count == 0) return;
             foreach (var corpse in _corpseList)
             {
                 if (_spawns.TryByID(corpse, out var spawn))
@@ -251,7 +251,7 @@ namespace E3Core.Processors
                         MQ.Delay(1500);
                         MQ.Cmd("/corpse");
                         InitRezSpells();
-                        if (_resSpellList.Count == 0) return;
+                        if (_currentRezSpells.Count == 0) return;
 
                         // if it's a cleric or warrior corpse and we're in combat, try to use divine res
                         if (Basics.InCombat() && _classesToDivineRez.Contains(spawn.ClassName))
@@ -447,16 +447,13 @@ namespace E3Core.Processors
 
 
         }
-        private static List<string> _resSpellList = new List<string>()
-        {
-            "Blessing of Resurrection","Water Sprinkler of Nem Ankh","Reviviscence","Token of Resurrection","Spiritual Awakening","Resurrection","Restoration","Resuscitate","Renewal","Revive","Reparation"
-        };
+       
         private static List<Data.Spell> _currentRezSpells = new List<Spell>();
 
         private static void InitRezSpells()
         {
             _currentRezSpells.Clear();
-            foreach (var spellName in _resSpellList)
+            foreach (var spellName in E3.CharacterSettings.Rez_RezSpells)
             {
                 if (MQ.Query<bool>($"${{FindItem[={spellName}]}}"))
                 {
@@ -620,7 +617,7 @@ namespace E3Core.Processors
                     E3.Bots.BroadcastCommand("/wipe all");
                 }
 
-                if (!E3.CharacterSettings.Misc_AutoRez) return;
+                if (!E3.CharacterSettings.Rez_AutoRez) return;
                 _skipAutoRez = true;
                 E3.Bots.Broadcast("\agTemporarily turning autorez off. It will be turned back on next time I zone.");
             });
@@ -632,7 +629,7 @@ namespace E3Core.Processors
                     E3.Bots.BroadcastCommand("/autorezon all");
                 }
 
-                if (!E3.CharacterSettings.Misc_AutoRez) return;
+                if (!E3.CharacterSettings.Rez_AutoRez) return;
                 TurnOffAutoRezSkip();
             });
 

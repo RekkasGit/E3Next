@@ -1,6 +1,7 @@
 using System;
 using System.Collections.Generic;
 using System.Data;
+using System.Linq;
 
 namespace IniParser.Model
 {
@@ -21,7 +22,7 @@ namespace IniParser.Model
                 throw new ArgumentException("key name can not be empty");
 
             _comments = new List<string>();
-            _value = string.Empty;
+            ValueList = new List<string>();
             _keyName = keyName;
         }
 
@@ -38,8 +39,7 @@ namespace IniParser.Model
         /// </param>
         public KeyData(KeyData ori)
         {
-            _value = ori._value;
-            _valueList = new List<string>(ori._valueList);
+            ValueList = new List<string>(ori.ValueList);
             _keyName = ori._keyName;
             _comments = new List<string>(ori._comments);
         }
@@ -66,9 +66,9 @@ namespace IniParser.Model
         /// </summary>
         public string Value
         {
-            get { return _value; }
+            get { return ValueList.LastOrDefault() ?? string.Empty;}
             set {
-                _value = value;
+             
                 _valueList.Add(value);
             }
         }
@@ -77,7 +77,7 @@ namespace IniParser.Model
         public List<string> ValueList
         {
             get { return _valueList; }
-            set { _valueList = value; }
+            private set { _valueList = value; }
         }
 
         /// <summary>
@@ -119,9 +119,6 @@ namespace IniParser.Model
 
         // List with comment lines associated to this key 
         private List<string> _comments;
-
-        // Unique value associated to this key
-        private string _value;
 
         // Name of the current key
         private string _keyName;
