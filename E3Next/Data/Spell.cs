@@ -20,7 +20,7 @@ namespace E3Core.Data
         Item,
         None
     }
-    
+
     public class Spell
     {
         public static Dictionary<Int32, Data.Spell> _loadedSpells = new Dictionary<int, Spell>();
@@ -28,23 +28,23 @@ namespace E3Core.Data
         public static IMQ MQ = E3.MQ;
 
 
-        public Spell(string spellName, IniData parsedData=null)
+        public Spell(string spellName, IniData parsedData = null)
         {
-            
+
             SpellName = spellName; //what the thing actually casts
             CastName = spellName;//required to send command
             InitName = spellName;
 
             Parse(parsedData);
 
-           
+
 
             QueryMQ();
-            if(!_loadedSpells.ContainsKey(this.SpellID))
+            if (!_loadedSpells.ContainsKey(this.SpellID))
             {
                 //sometimes an item can have the same spellid of a spell. prevent duplicates. 
                 //should deal with this later tho, and make it off maybe castID
-                if(!LoadedSpellsByName.ContainsKey(this.SpellName))
+                if (!LoadedSpellsByName.ContainsKey(this.SpellName))
                 {
                     LoadedSpellsByName.Add(this.SpellName, this);
                     _loadedSpells.Add(this.SpellID, this);
@@ -53,16 +53,16 @@ namespace E3Core.Data
         }
 
         void Parse(IniData parsedData)
-        { 
-            
-            if(SpellName.Contains("/"))
+        {
+
+            if (SpellName.Contains("/"))
             {
 
                 string[] splitList = SpellName.Split('/');
                 SpellName = splitList[0];
                 CastName = SpellName;
                 Int32 counter = 0;
-                foreach(var value in splitList)
+                foreach (var value in splitList)
                 {
                     //skip the 1st one
                     if (counter == 0)
@@ -74,8 +74,8 @@ namespace E3Core.Data
                     if (value.StartsWith("Gem|", StringComparison.OrdinalIgnoreCase))
                     {
                         SpellGem = GetArgument<Int32>(value);
-                    } 
-                    else if(value.Equals("NoInterrupt", StringComparison.OrdinalIgnoreCase))
+                    }
+                    else if (value.Equals("NoInterrupt", StringComparison.OrdinalIgnoreCase))
                     {
                         NoInterrupt = true;
                     }
@@ -137,7 +137,7 @@ namespace E3Core.Data
                     }
                     else if (value.Equals("NoBurn", StringComparison.OrdinalIgnoreCase))
                     {
-                        NoBurn=true;
+                        NoBurn = true;
                     }
                     else if (value.Equals("NoAggro", StringComparison.OrdinalIgnoreCase))
                     {
@@ -154,14 +154,15 @@ namespace E3Core.Data
                         if (value.EndsWith("s", StringComparison.OrdinalIgnoreCase))
                         {
                             tvalue = tvalue.Substring(0, value.Length - 1);
-                        } else if (value.EndsWith("m", StringComparison.OrdinalIgnoreCase))
+                        }
+                        else if (value.EndsWith("m", StringComparison.OrdinalIgnoreCase))
                         {
                             isMinute = true;
                             tvalue = tvalue.Substring(0, value.Length - 1);
                         }
 
                         Delay = GetArgument<Int32>(tvalue);
-                        if(isMinute)
+                        if (isMinute)
                         {
                             Delay = Delay * 60;
                         }
@@ -210,7 +211,7 @@ namespace E3Core.Data
                         if (section != null)
                         {
                             var keyData = section[ifKey];
-                            if(!String.IsNullOrWhiteSpace(keyData))
+                            if (!String.IsNullOrWhiteSpace(keyData))
                             {
                                 Ifs = keyData;
                             }
@@ -254,16 +255,16 @@ namespace E3Core.Data
                 }
 
             }
-         
+
         }
         public static T GetArgument<T>(string query)
         {
-            Int32 indexOfPipe = query.IndexOf('|')+1;
+            Int32 indexOfPipe = query.IndexOf('|') + 1;
             string input = query.Substring(indexOfPipe, query.Length - indexOfPipe);
 
             if (typeof(T) == typeof(Int32))
             {
-                
+
                 Int32 value;
                 if (Int32.TryParse(input, out value))
                 {
@@ -327,17 +328,21 @@ namespace E3Core.Data
         void QueryMQ()
         {
 
-            if (MQ.Query<bool>($"${{Me.AltAbility[{CastName}].Spell}}")) {
+            if (MQ.Query<bool>($"${{Me.AltAbility[{CastName}].Spell}}"))
+            {
                 CastType = CastType.AA;
             }
-            else if (MQ.Query<bool>($"${{Me.Book[{CastName}]}}")) {
+            else if (MQ.Query<bool>($"${{Me.Book[{CastName}]}}"))
+            {
                 CastType = CastType.Spell;
                 SpellInBook = true;
             }
-            else if (MQ.Query<bool>($"${{Me.CombatAbility[{CastName}]}}")) {
+            else if (MQ.Query<bool>($"${{Me.CombatAbility[{CastName}]}}"))
+            {
                 CastType = CastType.Disc;
             }
-            else if (MQ.Query<bool>($"${{Me.Ability[{CastName}]}}")) {
+            else if (MQ.Query<bool>($"${{Me.Ability[{CastName}]}}"))
+            {
                 CastType = CastType.Ability;
             }
             else if (MQ.Query<bool>($"${{FindItem[={CastName}]}}"))
@@ -349,23 +354,23 @@ namespace E3Core.Data
             {
                 //final check to see if its a spell, that maybe a mob casts?
                 CastType = CastType.Spell;
-            } 
+            }
             else
             {
                 //bad spell/item/etc
                 CastType = CastType.None;
             }
-       
 
 
-            if(CastType==CastType.Item)
+
+            if (CastType == CastType.Item)
             {
                 Int32 invSlot;
                 Int32 bagSlot;
                 //check if this is an itemID
 
                 Int32 itemID = -1;
-               
+
 
                 if (Int32.TryParse(CastName, out itemID))
                 {
@@ -379,22 +384,23 @@ namespace E3Core.Data
 
                 }
 
-                if(bagSlot==-1)
+                if (bagSlot == -1)
                 {
                     //Means this is not in a bag and in the root inventory, OR we are wearing it
                     TargetType = MQ.Query<String>($"${{Me.Inventory[{invSlot}].Spell.TargetType}}");
-                    Duration= MQ.Query<Int32>($"${{Me.Inventory[{invSlot}].Spell.Duration}}");
+                    Duration = MQ.Query<Int32>($"${{Me.Inventory[{invSlot}].Spell.Duration}}");
                     DurationTotalSeconds = MQ.Query<Int32>($"${{Me.Inventory[{invSlot}].Spell.Duration.TotalSeconds}}");
                     RecastTime = MQ.Query<Int32>($"${{Me.Inventory[{invSlot}].Spell.RecastTime}}");
-                    RecoveryTime= MQ.Query<Decimal>($"${{Me.Inventory[{invSlot}].Spell.RecoveryTime}}");
-                    MyCastTime= MQ.Query<Decimal>($"${{Me.Inventory[{invSlot}].Spell.CastTime}}");
+                    RecoveryTime = MQ.Query<Decimal>($"${{Me.Inventory[{invSlot}].Spell.RecoveryTime}}");
+                    MyCastTime = MQ.Query<Decimal>($"${{Me.Inventory[{invSlot}].Spell.CastTime}}");
 
                     double AERange = MQ.Query<double>($"${{Me.Inventory[{invSlot}].Spell.AERange}}");
                     MyRange = AERange;
-                    if(MyRange == 0) {
+                    if (MyRange == 0)
+                    {
                         MyRange = MQ.Query<double>($"${{Me.Inventory[{invSlot}].Spell.MyRange}}"); ;
                     }
-                   
+
                     string et = MQ.Query<String>($"${{Me.Inventory[{invSlot}].EffectType}}");
 
                     if (et.Equals("Click Worn", StringComparison.OrdinalIgnoreCase))
@@ -405,7 +411,7 @@ namespace E3Core.Data
                     SpellName = MQ.Query<String>($"${{Me.Inventory[{invSlot}].Spell}}");
                     SpellID = MQ.Query<Int32>($"${{Me.Inventory[{invSlot}].Spell.ID}}");
                     CastID = MQ.Query<Int32>($"${{Me.Inventory[{invSlot}].ID}}");
-                    SpellType= MQ.Query<String>($"${{Me.Inventory[{invSlot}].Spell.SpellType}}");
+                    SpellType = MQ.Query<String>($"${{Me.Inventory[{invSlot}].Spell.SpellType}}");
                 }
                 else
                 {
@@ -438,12 +444,12 @@ namespace E3Core.Data
                     SpellType = MQ.Query<String>($"${{Me.Inventory[{invSlot}].Item[{bagSlot}].Spell.SpellType}}");
 
                 }
-              
+
             }
-            else if(CastType==CastType.AA)
+            else if (CastType == CastType.AA)
             {
                 TargetType = MQ.Query<String>($"${{Me.AltAbility[{CastName}].Spell.TargetType}}");
-                Duration= MQ.Query<Int32>($"${{Me.AltAbility[{CastName}].Spell.Duration}}");
+                Duration = MQ.Query<Int32>($"${{Me.AltAbility[{CastName}].Spell.Duration}}");
                 DurationTotalSeconds = MQ.Query<Int32>($"${{Me.AltAbility[{CastName}].Spell.Duration.TotalSeconds}}");
 
                 RecastTime = MQ.Query<Int32>($"${{Me.AltAbility[{CastName}].ReuseTime}}");
@@ -481,7 +487,7 @@ namespace E3Core.Data
                 SpellID = MQ.Query<Int32>($"${{Me.AltAbility[{CastName}].Spell.ID}}");
                 CastID = MQ.Query<Int32>($"${{Me.AltAbility[{CastName}].ID}}");
             }
-            else if(CastType==CastType.Spell)
+            else if (CastType == CastType.Spell)
             {
 
                 TargetType = MQ.Query<String>($"${{Spell[{CastName}].TargetType}}");
@@ -498,7 +504,7 @@ namespace E3Core.Data
 
                 if (SpellType.Equals("Detrimental", StringComparison.OrdinalIgnoreCase))
                 {
-                    
+
                     if (AERange > 0)
                     {
                         if (MyRange == 0)
@@ -507,7 +513,7 @@ namespace E3Core.Data
                             MyRange = AERange;
                         }
                     }
-                    
+
                 }
                 else
                 {
@@ -552,12 +558,12 @@ namespace E3Core.Data
                 {
                     CheckForID = MQ.Query<Int32>($"${{AltAbility[{CheckFor}].Spell.ID}}");
                 }
-                else if(MQ.Query<bool>($"${{Bool[${{Spell[{CheckFor}].ID}}]}}"))
+                else if (MQ.Query<bool>($"${{Bool[${{Spell[{CheckFor}].ID}}]}}"))
                 {
                     CheckForID = MQ.Query<Int32>($"${{Spell[{CheckFor}].ID}}");
                 }
             }
-           
+
         }
         //override public String ToString()
         //{
@@ -609,14 +615,14 @@ namespace E3Core.Data
         public Int32 CastID;
         public Int32 MinEnd;
         public Boolean CastInvis;
-        public String SpellType=String.Empty;
-        public String CastTarget= String.Empty;
+        public String SpellType = String.Empty;
+        public String CastTarget = String.Empty;
         public Boolean GiftOfMana;
         public Int32 CheckForID;
         public Int32 SpellID;
         public Int32 PctAggro;
         public String Zone = "All";
-        public Int32 MinSick=2;
+        public Int32 MinSick = 2;
         public Boolean AllowSpellSwap;
         public Boolean NoEarlyRecast;
         public Boolean NoStack;
@@ -634,43 +640,24 @@ namespace E3Core.Data
         public bool ReagentOutOfStock = false;
         public bool SpellInBook = false;
 
-       
+
 
         public override string ToString()
         {
             StringBuilder sb = new StringBuilder();
-
-            //sb.AppendLine();
             sb.Append(this.GetType().Name);
             sb.AppendLine();
             sb.AppendLine("==============");
-            foreach (FieldInfo property in this.GetType().GetFields(BindingFlags.NonPublic | BindingFlags.Public | BindingFlags.Instance | BindingFlags.Static))
+            foreach (FieldInfo property in this.GetType().GetFields(BindingFlags.NonPublic | BindingFlags.Public |
+                                                                    BindingFlags.Instance | BindingFlags.Static))
             {
                 var value = property.GetValue(this);
-                if (value is System.Collections.IEnumerable && !(value is string))
-                {
-                    sb.AppendLine();
-                    sb.Append("Collection:" + property.Name);
-                    sb.AppendLine();
-                    sb.AppendLine("==============");
-
-                    foreach (var listitem in value as System.Collections.IEnumerable)
-                    {
-                        sb.Append("Item: " + listitem.ToString());
-                    }
-                }
-                else
-                {
-                    sb.Append(property.Name);
-                    sb.Append(": ");
-                    sb.Append(property.GetValue(this));
-
-                    sb.Append(System.Environment.NewLine);
-                }
-
-
+                sb.Append(property.Name);
+                sb.Append(": ");
+                sb.Append(value);
+                sb.Append(System.Environment.NewLine);
+               
             }
-
             return sb.ToString();
         }
     }
