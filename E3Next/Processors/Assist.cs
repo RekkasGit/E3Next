@@ -711,7 +711,10 @@ namespace E3Core.Processors
                }
            });
             EventProcessor.RegisterCommand("/cleartargets", (x) =>
-            {  
+            {
+                ClearXTargets.FaceTarget = false;
+                ClearXTargets.StickTarget = false;
+
                 if (x.args.Count == 0)
                 {
                     ClearXTargets.MobToAttack = 0;
