@@ -37,7 +37,7 @@ namespace E3Core.Processors
                 {
                     E3.Bots.Broadcast("I don't have a mirrored mask, I dun messed up.");
                     E3.Bots.BroadcastCommand("/popup ${Me} doesn't have a mirrored mask.");
-                    MQ.Cmd("/beep");
+                    MQ.Beep();
                     return;
                 }
                 else

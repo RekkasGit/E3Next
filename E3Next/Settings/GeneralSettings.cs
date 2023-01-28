@@ -21,6 +21,7 @@ namespace E3Core.Settings
         public bool RelayTells;
         public string General_NetworkMethod = "EQBC";
         public bool General_HealWhileNavigating = true;
+        public bool General_NoBeepMode = false;
         
         public Int32 Loot_LootItemDelay = 300;
         public string Loot_LinkChannel = String.Empty;
@@ -114,7 +115,7 @@ namespace E3Core.Settings
 
             LoadKeyData("General", "NetworkMethod",parsedData, ref General_NetworkMethod);
             LoadKeyData("General", "Heal While Navigating (On/Off)", parsedData, ref General_HealWhileNavigating);
-
+            LoadKeyData("General", "Disable e3 Beeps (On for no beep mode)", parsedData, ref General_NoBeepMode);
             LoadKeyData("Misc", "Automatically Use Misfit Box (On/Off)", parsedData, ref AutoMisfitBox);
             LoadKeyData("Misc", "Turn Player Attack Off During Enrage (On/Off)", parsedData, ref AttackOffOnEnrage);
             LoadKeyData("Misc", "Relay Tells (On/Off)", parsedData, ref RelayTells);
@@ -229,7 +230,7 @@ namespace E3Core.Settings
             section.Keys.AddKey("AutoMedBreak PctMana", "0");
             section.Keys.AddKey("NetworkMethod", "EQBC");
             section.Keys.AddKey("Heal While Navigating (On/Off)","On");
-
+            section.Keys.AddKey("Disable e3 Beeps (On for no beep mode)", "Off");
 
             //Misc
             newFile.Sections.AddSection("Misc");

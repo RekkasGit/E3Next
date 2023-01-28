@@ -69,7 +69,7 @@ namespace E3Core.Utility
             {
                 E3.Bots.Broadcast("\arCannot move to target, not in LoS");
                 E3.Bots.BroadcastCommand("/popup ${Me} cannot move to ${Target}, not in LoS", false);
-                MQ.Cmd("/beep");
+                MQ.Beep();
                 return;
             }
 
@@ -491,7 +491,7 @@ namespace E3Core.Utility
             {
                 MQ.Write("\arError could not give target what is on our cursor, putting it in inventory");
                 E3.Bots.BroadcastCommand($"/popup ${{Me}} cannot give ${{Cursor.Name}} to ${{Target}}", false);
-                MQ.Cmd("/beep");
+                MQ.Beep();
                 MQ.Delay(100);
                 MQ.Cmd("/autoinv");
                 return;

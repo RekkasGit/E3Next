@@ -1356,7 +1356,10 @@ namespace MonoCore
 
         public void Beep()
         {
-            Cmd("/beep");
+            if (!E3.GeneralSettings.General_NoBeepMode)
+            {
+                Cmd("/beep");
+            }
         }
     }
 
