@@ -176,6 +176,11 @@ namespace E3Core.Processors
                 E3.Bots.BroadcastCommandToGroup("/makemevisible");
                 MQ.Cmd("/makemevisible");
             });
+            EventProcessor.RegisterCommand("/droplev", (x) =>
+            {
+                E3.Bots.BroadcastCommandToGroup("/removelev");
+                MQ.Cmd("/removelev");
+            });
             EventProcessor.RegisterCommand("/shutdown", (x) =>
             {
                 MQ.Write("Isussing shutdown, setting process to false.");
