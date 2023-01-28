@@ -22,6 +22,7 @@ namespace E3Core.Processors
         public static Int32 MobToAttack = 0;
         public static bool FaceTarget = false;
         public static List<string> Filters = new List<string>();
+        public static bool StickTarget = false;
 
         [ClassInvoke(Data.Class.All)]
         public static void Check_Xtargets()
@@ -79,6 +80,10 @@ namespace E3Core.Processors
                             if (FaceTarget)
                             {
                                 MQ.Cmd("/face fast");
+                            }
+                            if (StickTarget)
+                            {
+                                MQ.Cmd($"/squelch /stick {E3.CharacterSettings.Assist_MeleeStickPoint} {E3.CharacterSettings.Assist_MeleeDistance}");
                             }
                             MQ.Delay(500);
                             if (Filters.Count > 0)

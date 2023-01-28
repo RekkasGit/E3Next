@@ -725,7 +725,7 @@ namespace E3Core.Processors
 
                     ClearXTargets.Enabled = true;
                     ClearXTargets.FaceTarget = true;
-
+                    ClearXTargets.StickTarget = false;
 
                 }
                 else if (x.args.Count == 1 && x.args[0] == "off")
@@ -735,18 +735,29 @@ namespace E3Core.Processors
                     ClearXTargets.Filters.Clear();
                     E3.Bots.BroadcastCommandToGroup($"/backoff all",x);
                 }
-                else if (x.args.Count == 1 && x.args[0] == "noface")
+                else if (x.args.Count >= 1)
                 {
                     ClearXTargets.MobToAttack = 0;
                     AssistOff();
-                    E3.Bots.BroadcastCommandToGroup($"/backoff all",x);
+                    E3.Bots.BroadcastCommandToGroup($"/backoff all", x);
                     if (x.filters.Count > 0)
                     {
                         ClearXTargets.Filters.Clear();
                         ClearXTargets.Filters.AddRange(x.filters);
                     }
+                    foreach (var argValue in x.args)
+                    {
+                        if (argValue.Equals("noface", StringComparison.OrdinalIgnoreCase))
+                        {
+                            ClearXTargets.FaceTarget = false;
+                        }
+                        else if (argValue.Equals("stick", StringComparison.OrdinalIgnoreCase))
+                        {
+                            ClearXTargets.StickTarget = true;
+                        }
+                    }
                     ClearXTargets.Enabled = true;
-                    ClearXTargets.FaceTarget = false;
+
                 }
 
             });
