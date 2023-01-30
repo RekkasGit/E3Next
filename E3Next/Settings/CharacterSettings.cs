@@ -5,12 +5,8 @@ using IniParser;
 using IniParser.Model;
 using System;
 using System.Collections.Generic;
-using System.Collections.Specialized;
 using System.IO;
 using System.Linq;
-using System.Runtime.InteropServices;
-using System.Text;
-using System.Threading.Tasks;
 
 namespace E3Core.Settings
 {
@@ -36,7 +32,7 @@ namespace E3Core.Settings
         public bool Misc_AutoLootEnabled;
         public string Misc_AnchorChar = string.Empty;
         public bool Misc_RemoveTorporAfterCombat = true;
-        public bool Misc_AutoRez = false;
+       
         public bool Misc_AutoForage = false;
         
         public bool Rogue_AutoHide = false;
@@ -135,6 +131,10 @@ namespace E3Core.Settings
         public List<Spell> HealPets = new List<Spell>();
         public List<Spell> HealOverTime = new List<Spell>();
         public List<string> HealPetOwners = new List<string>();
+        //rez spells
+        public List<string> Rez_AutoRezSpells = new List<string>();
+        public bool Rez_AutoRez = false;
+
         public Dictionary<string, string> PetWeapons = new Dictionary<string, string>();
         public bool AutoPetWeapons = false;
         public bool AutoCanni = false;
@@ -214,8 +214,7 @@ namespace E3Core.Settings
             LoadKeyData("Misc", "Auto-Loot (On/Off)", ParsedData, ref Misc_AutoLootEnabled);
             LoadKeyData("Misc", "Anchor (Char to Anchor to)", ParsedData, ref Misc_AnchorChar);
             LoadKeyData("Misc", "Remove Torpor After Combat", ParsedData, ref Misc_RemoveTorporAfterCombat);
-            LoadKeyData("Misc", "AutoRez", ParsedData, ref Misc_AutoRez);
-            LoadKeyData("Misc", "Auto-Forage (On/Off)",ParsedData, ref Misc_AutoForage);
+            LoadKeyData("Misc", "Auto-Forage (On/Off)", ParsedData, ref Misc_AutoForage);
 
 
             LoadKeyData("Assist Settings", "Assist Type (Melee/Ranged/Off)", ParsedData, ref Assist_Type);
@@ -275,8 +274,8 @@ namespace E3Core.Settings
             LoadKeyData("Buffs", "Combat Buff", ParsedData, CombatBuffs);
             LoadKeyData("Buffs", "Group Buff", ParsedData, GroupBuffs);
             LoadKeyData("Buffs", "Pet Buff", ParsedData, PetBuffs);
-            LoadKeyData("Buffs", "Cast Aura(On/Off)", ParsedData,ref Buffs_CastAuras);
-          
+            LoadKeyData("Buffs", "Cast Aura(On/Off)", ParsedData, ref Buffs_CastAuras);
+
 
             LoadKeyData("Melee Abilities", "Ability", ParsedData, MeleeAbilities);
 
@@ -314,6 +313,8 @@ namespace E3Core.Settings
             LoadKeyData("Pets", "Pet Summon Combat (On/Off)", ParsedData, ref Pet_SummonCombat);
             LoadKeyData("Pets", "Pet Buff Combat (On/Off)", ParsedData, ref Pet_BuffCombat);
 
+            LoadKeyData("Rez", "AutoRez", ParsedData, ref Rez_AutoRez);
+            LoadKeyData("Rez", "Auto Rez Spells", ParsedData, Rez_AutoRezSpells);
 
             LoadKeyData("Cures", "Cure", ParsedData, Cures);
             LoadKeyData("Cures", "CureAll", ParsedData, CureAll);
@@ -337,7 +338,17 @@ namespace E3Core.Settings
 
 
             LoadKeyData("Heals", "Tank", ParsedData, HealTankTargets);
+            for (Int32 i = 0; i < HealTankTargets.Count; i++)
+            {
+                HealTankTargets[i] = e3util.FirstCharToUpper(HealTankTargets[i]);
+            }
+
             LoadKeyData("Heals", "Important Bot", ParsedData, HealImportantBotTargets);
+            //upper case first letter on all important bots, netbots bug that doesn't like lower case.
+            for (Int32 i = 0; i < HealImportantBotTargets.Count; i++)
+            {
+                HealImportantBotTargets[i] = e3util.FirstCharToUpper(HealImportantBotTargets[i]);
+            }
 
             LoadKeyData("Heals", "Pet Heal", ParsedData, PetHeals);
 
@@ -346,6 +357,7 @@ namespace E3Core.Settings
             WhoToHealString = LoadKeyData("Heals", "Who to Heal", ParsedData);
             WhoToHoTString = LoadKeyData("Heals", "Who to HoT", ParsedData);
             LoadKeyData("Heals", "Pet Owner", ParsedData, HealPetOwners);
+
             LoadKeyData("Heals", "Auto Cast Necro Heal Orbs (On/Off)", ParsedData, ref HealAutoNecroOrbs);
             LoadKeyData("Off Assist Spells", "Main", ParsedData, OffAssistSpells);
             LoadKeyData("Gimme", "Gimme", ParsedData, Gimme);
@@ -378,7 +390,6 @@ namespace E3Core.Settings
             section.Keys.AddKey("Auto-Loot (On/Off)", "Off");
             section.Keys.AddKey("Anchor (Char to Anchor to)", "");
             section.Keys.AddKey("Remove Torpor After Combat", "On");
-            section.Keys.AddKey("AutoRez", "Off");
             section.Keys.AddKey("Auto-Forage (On/Off)", "Off");
             
 
@@ -458,7 +469,10 @@ namespace E3Core.Settings
             section = newFile.Sections.GetSectionData("Life Support");
             section.Keys.AddKey("Life Support", "");
 
-
+            newFile.Sections.AddSection("Rez");
+            section = newFile.Sections.GetSectionData("Rez");
+            section.Keys.AddKey("AutoRez", "Off");
+            section.Keys.AddKey("Auto Rez Spells", "Token of Resurrection");
 
             newFile.Sections.AddSection("Burn");
             section = newFile.Sections.GetSectionData("Burn");
