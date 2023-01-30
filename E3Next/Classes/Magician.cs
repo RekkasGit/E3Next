@@ -211,7 +211,7 @@ namespace E3Core.Classes
                     }
 
                     var theirPetPrimary = MQ.Query<int>($"${{Spawn[{ownerSpawn.Name}].Pet.Primary}}");
-                    if (theirPetPrimary == 0)
+                    if (theirPetPrimary == 0 || theirPetPrimary == 10702)
                     {
                         ArmPet(theirPetId, kvp.Value);
                     }
