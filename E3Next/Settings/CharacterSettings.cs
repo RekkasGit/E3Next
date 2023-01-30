@@ -5,12 +5,8 @@ using IniParser;
 using IniParser.Model;
 using System;
 using System.Collections.Generic;
-using System.Collections.Specialized;
 using System.IO;
 using System.Linq;
-using System.Runtime.InteropServices;
-using System.Text;
-using System.Threading.Tasks;
 
 namespace E3Core.Settings
 {
@@ -136,7 +132,7 @@ namespace E3Core.Settings
         public List<Spell> HealOverTime = new List<Spell>();
         public List<string> HealPetOwners = new List<string>();
         //rez spells
-        public List<string> Rez_RezSpells = new List<string>();
+        public List<string> Rez_AutoRezSpells = new List<string>();
         public bool Rez_AutoRez = false;
 
         public Dictionary<string, string> PetWeapons = new Dictionary<string, string>();
@@ -318,7 +314,7 @@ namespace E3Core.Settings
             LoadKeyData("Pets", "Pet Buff Combat (On/Off)", ParsedData, ref Pet_BuffCombat);
 
             LoadKeyData("Rez", "AutoRez", ParsedData, ref Rez_AutoRez);
-            LoadKeyData("Rez", "Auto Rez Spells", ParsedData, Rez_RezSpells);
+            LoadKeyData("Rez", "Auto Rez Spells", ParsedData, Rez_AutoRezSpells);
 
             LoadKeyData("Cures", "Cure", ParsedData, Cures);
             LoadKeyData("Cures", "CureAll", ParsedData, CureAll);
