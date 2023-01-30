@@ -51,6 +51,8 @@ namespace E3Core.Classes
         private static long _nextWeaponCheckInterval = 10000;
         private static bool _isExternalRequest = false;
 
+        private const int StupidEnchanterPetWeapon = 10702;
+
         /// <summary>
         /// Accepts a pet equipment request.
         /// </summary>
@@ -212,7 +214,7 @@ namespace E3Core.Classes
 
                     var theirPetPrimary = MQ.Query<int>($"${{Spawn[{ownerSpawn.Name}].Pet.Primary}}");
                     // enchanter pets are stupid and they are summoned with mythical weapons
-                    if (theirPetPrimary == 0 || theirPetPrimary == 10702)
+                    if (theirPetPrimary == 0 || theirPetPrimary == StupidEnchanterPetWeapon)
                     {
                         ArmPet(theirPetId, kvp.Value);
                     }
