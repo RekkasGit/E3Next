@@ -806,11 +806,24 @@ namespace E3Core.Utility
         }
         
 
-        public static void OpenMerchant()
+        public static bool OpenMerchant()
         {
-            e3util.TryMoveToTarget();
+            var target = MQ.Query<int>("${Target.ID}");
+            if (target <= 0)
+            {
+                var merchantId = MQ.Query<int>("${Spawn[merchant los].ID}");
+                if (merchantId <= 0)
+                {
+                    return false;
+                }
+
+                Casting.TrueTarget(merchantId);
+            }
+
+            TryMoveToTarget();
             MQ.Cmd("/click right target");
             MQ.Delay(2000, "${Merchant.ItemsReceived}");
+            return true;
         }
         public static void CloseMerchant()
         {

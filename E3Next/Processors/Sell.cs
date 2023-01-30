@@ -23,7 +23,12 @@ namespace E3Core.Processors
         {
             EventProcessor.RegisterCommand("/autosell", (x) =>
             {
-                e3util.OpenMerchant();
+                if (!e3util.OpenMerchant())
+                {
+                    E3.Bots.Broadcast("\arNo merchant targeted and no merchant found; exiting autosell");
+                    return;
+                }
+
                 AutoSell();
                 MQ.Cmd("/nomodkey /notify MerchantWnd MW_Done_Button leftmouseup");
             });
