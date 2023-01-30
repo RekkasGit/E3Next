@@ -15,6 +15,7 @@ namespace E3Core.Classes
     /// </summary>
     public static class Druid
     {
+        private const int CheetahBuffID = 23581;
         private static Logging _log = E3.Log;
         private static IMQ MQ = E3.MQ;
         private static ISpawns _spawns = E3.Spawns;
@@ -44,7 +45,7 @@ namespace E3Core.Classes
                         {
                             List<Int32> buffList = E3.Bots.BuffList(s.CleanName);
                             _log.Write($"Bufflist for {s.CleanName}:" + String.Join(",", buffList));
-                            if (!buffList.Contains(23581))
+                            if (!buffList.Contains(CheetahBuffID))
                             {
                                 needToCast = true;
                                 break;

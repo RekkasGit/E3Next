@@ -16,6 +16,7 @@ namespace E3Core.Classes
     /// </summary>
     public static class Bard
     {
+        private const int SelosBuffID = 12712;
         private static Logging _log = E3.Log;
         private static IMQ MQ = E3.MQ;
         private static ISpawns _spawns = E3.Spawns;
@@ -59,7 +60,7 @@ namespace E3Core.Classes
                         if (memberNames.Contains(s.CleanName))
                         {
                             List<Int32> buffList = E3.Bots.BuffList(s.CleanName);
-                            if (!buffList.Contains(12712))
+                            if (!buffList.Contains(SelosBuffID))
                             {
                                 needToCast = true;
                                 break;
