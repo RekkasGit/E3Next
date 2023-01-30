@@ -453,7 +453,7 @@ namespace E3Core.Processors
         private static void InitRezSpells()
         {
             _currentRezSpells.Clear();
-            foreach (var spellName in E3.CharacterSettings.Rez_RezSpells)
+            foreach (var spellName in E3.CharacterSettings.Rez_AutoRezSpells)
             {
                 if (MQ.Query<bool>($"${{FindItem[={spellName}]}}"))
                 {
