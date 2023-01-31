@@ -275,10 +275,20 @@ namespace E3Core.Processors
                 e3util.ClickYesNo(false);
             });
 
+          
             EventProcessor.RegisterCommand("/reportaa", (x) =>
             {
-                MQ.Cmd("/gu AA Spent-Available: ${Me.AAPointsSpent}-${Me.AAPoints}");
-                E3.Bots.BroadcastCommand("/gu AA Spent-Available: ${Me.AAPointsSpent}-${Me.AAPoints}",true);
+                List<string> validReportChannels = new List<string>() { "/g", "/gu", "/say", "/rsay","/gsay", "/rs" };
+
+                string channel = "/gu";
+                if(x.args.Count>0 && validReportChannels.Contains(x.args[0], StringComparer.OrdinalIgnoreCase))
+                {
+
+                    channel = x.args[0];
+                }
+                MQ.Cmd($"{channel} AA Spent-Available: ${{Me.AAPointsSpent}}-${{Me.AAPoints}}");
+                E3.Bots.BroadcastCommand($"{channel} AA Spent-Available: ${{Me.AAPointsSpent}}-${{Me.AAPoints}}", true);
+
             });
 
             EventProcessor.RegisterCommand("/bark", (x) =>
