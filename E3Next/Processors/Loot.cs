@@ -311,6 +311,7 @@ namespace E3Core.Processors
                 bool nodrop = MQ.Query<bool>($"${{Corpse.Item[{i}].NoDrop}}");
                 Int32 itemValue = MQ.Query<Int32>($"${{Corpse.Item[{i}].Value}}");
                 Int32 stackCount = MQ.Query<Int32>($"${{Corpse.Item[{i}].Stack}}");
+                bool tradeskillItem = MQ.Query<bool>($"${{Corpse.Item[{i}].Tradeskills}}");
 
                 if (E3.GeneralSettings.Loot_OnlyStackableEnabled)
                 {
@@ -326,7 +327,9 @@ namespace E3Core.Processors
                     {
                         if (!importantItem && E3.GeneralSettings.Loot_OnlyStackableOnlyCommonTradeSkillItems)
                         {
-                            importantItem = true;
+                            if (corpseItem.Contains(" Pelt")) importantItem = true;
+                            if (corpseItem.Contains(" Silk")) importantItem = true;
+                            if (corpseItem.Contains(" Ore")) importantItem = true;
                         }
                         if (!importantItem && itemValue >= E3.GeneralSettings.Loot_OnlyStackableValueGreaterThanInCopper)
                         {
@@ -334,9 +337,7 @@ namespace E3Core.Processors
                         }
                         if (!importantItem && E3.GeneralSettings.Loot_OnlyStackableAllTradeSkillItems)
                         {
-                            if (corpseItem.Contains(" Pelt")) importantItem = true;
-                            if (corpseItem.Contains(" Silk")) importantItem = true;
-                            if (corpseItem.Contains(" Ore")) importantItem = true;
+                            if (tradeskillItem) importantItem = true;
                         }
 
                         if (!importantItem && itemValue >= E3.GeneralSettings.Loot_OnlyStackableValueGreaterThanInCopper)
