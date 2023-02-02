@@ -29,27 +29,27 @@ namespace E3Core.Processors
         {
             RegisterEvents();
         }
-        private static bool FDSPrint(string slot)
+        private static bool FDSPrint(string slot,string channel="/gsay")
         {
 
             if (_fdsSlots.Contains(slot))
             {
                 if (slot == "fingers")
                 {
-                    MQ.Cmd("/g Left:${InvSlot[leftfinger].Item.ItemLink[CLICKABLE]}   Right:${InvSlot[rightfinger].Item.ItemLink[CLICKABLE]} ");
+                    MQ.Cmd($"{channel} Left:${{InvSlot[leftfinger].Item.ItemLink[CLICKABLE]}}   Right:${{InvSlot[rightfinger].Item.ItemLink[CLICKABLE]}}");
                 }
                 else if (slot == "wrists")
                 {
-                    MQ.Cmd("/g Left:${InvSlot[leftwrist].Item.ItemLink[CLICKABLE]}   Right:${InvSlot[rightwrist].Item.ItemLink[CLICKABLE]} ");
+                    MQ.Cmd($"{channel} Left:${{InvSlot[leftwrist].Item.ItemLink[CLICKABLE]}}   Right:${{InvSlot[rightwrist].Item.ItemLink[CLICKABLE]}} ");
 
                 }
                 else if (slot == "ears")
                 {
-                    MQ.Cmd("/g Left:${InvSlot[leftear].Item.ItemLink[CLICKABLE]}   Right:${InvSlot[rightear].Item.ItemLink[CLICKABLE]} ");
+                    MQ.Cmd($"{channel} Left:${{InvSlot[leftear].Item.ItemLink[CLICKABLE]}}   Right:${{InvSlot[rightear].Item.ItemLink[CLICKABLE]}} ");
                 }
                 else
                 {
-                    MQ.Cmd($"/g {slot}:${{InvSlot[{slot}].Item.ItemLink[CLICKABLE]}}");
+                    MQ.Cmd($"{channel} {slot}:${{InvSlot[{slot}].Item.ItemLink[CLICKABLE]}}");
 
                 }
                 return true;
@@ -359,16 +359,47 @@ namespace E3Core.Processors
         static void RegisterEvents()
         {
             EventProcessor.RegisterCommand("/fds", (x) =>
-            { 
+            {
+               
+                bool hasAllFlag = false;
+                foreach (var argValue in x.args)
+                {
+                    if (argValue.StartsWith("/all", StringComparison.OrdinalIgnoreCase))
+                    {
+                        hasAllFlag = true;
+                    }
+                }
+                if (hasAllFlag)
+                {
+                    x.args.Remove("/all");
+                }
 
+                if (e3util.FilterMe(x)) return;
+                
+                List<string> validReportChannels = new List<string>() { "/g", "/gu", "/say", "/rsay", "/gsay", "/rs", "/bc" };
+
+                string channel = "/gsay";
+                if (x.args.Count > 1 && validReportChannels.Contains(x.args[1], StringComparer.OrdinalIgnoreCase))
+                {
+
+                    channel = x.args[1];
+                }
                 if (x.args.Count > 0)
                 {
                     string slot = x.args[0];
-                    if (FDSPrint(slot))
+                    if (FDSPrint(slot,channel))
                     {
                         if (x.args.Count == 1)
                         {
-                            E3.Bots.BroadcastCommandToGroup($"/fds {slot} group");
+                            if (hasAllFlag)
+                            {
+                                E3.Bots.BroadcastCommand($"/fds {slot} group",false,x);
+                            }
+                            else
+                            {
+                                E3.Bots.BroadcastCommandToGroup($"/fds {slot} group",x);
+                            }
+                           
                         }
 
                     }

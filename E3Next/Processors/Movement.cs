@@ -639,7 +639,8 @@ namespace E3Core.Processors
                 return;
             }
 
-            foreach (int memberid in Basics.GroupMembers)
+            //randomly pick group member
+            foreach (int memberid in Basics.GroupMembers.OrderBy(x=>Guid.NewGuid()).ToList())
             {
                 if (Basics.InCombat())
                 {

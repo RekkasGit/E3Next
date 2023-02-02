@@ -495,9 +495,7 @@ namespace E3Core.Processors
 
                         }
                     }
-
                 }
-
             }
             return false;
         }
