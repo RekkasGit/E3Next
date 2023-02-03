@@ -51,6 +51,8 @@ namespace E3Core.Classes
         private static long _nextWeaponCheckInterval = 10000;
         private static bool _isExternalRequest = false;
 
+        private const int EnchanterPetPrimaryWeaponId = 10702;
+
         /// <summary>
         /// Accepts a pet equipment request.
         /// </summary>
@@ -77,37 +79,24 @@ namespace E3Core.Classes
                     return;
                 }
 
-                _isExternalRequest = !E3.Bots.BotsConnected().Contains(_requester);
-                var weaponSplit = new string[2];                
-                if (_isExternalRequest)
+                _isExternalRequest = !E3.Bots.BotsConnected().Contains(_requester);               
+                var weaponSplit = x.match.Groups[2].ToString().Split('|');
+                if (weaponSplit.Count() != 2)
                 {
-                    weaponSplit = x.match.Groups[2].ToString().Split('|');
-                    if (weaponSplit.Count() != 2)
-                    {
-                        MQ.Cmd($"/t {_requester} Invalid request. The request must be in the format of armpet Primary|Secondary");
-                        return;
-                    }
-
-                    if (!_weaponMap.TryGetValue(weaponSplit[0], out _))
-                    {
-                        MQ.Cmd($"/t {_requester} Invalid primary weapon selection. Valid values are {string.Join(", ", _weaponMap.Keys)}");
-                        return;
-                    }
-
-                    if (!_weaponMap.TryGetValue(weaponSplit[1], out _))
-                    {
-                        MQ.Cmd($"/t {_requester} Invalid secondary weapon selection. Valid values are {string.Join(", ", _weaponMap.Keys)}");
-                        return;
-                    }
+                    MQ.Cmd($"/t {_requester} Invalid request. The request must be in the format of armpet Primary|Secondary");
+                    return;
                 }
-                else
+
+                if (!_weaponMap.TryGetValue(weaponSplit[0], out _))
                 {
-                    E3.CharacterSettings.PetWeapons.TryGetValue(_requester, out var weapons);
-                    if (!String.IsNullOrWhiteSpace(weapons))
-                    {
-                        weaponSplit = weapons.Split('|');
-                    }
-                    
+                    MQ.Cmd($"/t {_requester} Invalid primary weapon selection. Valid values are {string.Join(", ", _weaponMap.Keys)}");
+                    return;
+                }
+
+                if (!_weaponMap.TryGetValue(weaponSplit[1], out _))
+                {
+                    MQ.Cmd($"/t {_requester} Invalid secondary weapon selection. Valid values are {string.Join(", ", _weaponMap.Keys)}");
+                    return;
                 }
 
                 if(_spawns.TryByName(_requester, out var requesterSpawn))
@@ -211,7 +200,7 @@ namespace E3Core.Classes
                     }
 
                     var theirPetPrimary = MQ.Query<int>($"${{Spawn[{ownerSpawn.Name}].Pet.Primary}}");
-                    if (theirPetPrimary == 0)
+                    if (theirPetPrimary == 0 || theirPetPrimary == EnchanterPetPrimaryWeaponId)
                     {
                         ArmPet(theirPetId, kvp.Value);
                     }
@@ -244,11 +233,11 @@ namespace E3Core.Classes
                 return;
             }
 
-            GiveOther(petId, _armorSpell);
-            GiveOther(petId, _focusSpell);
-     
+            if (!GiveOther(petId, _armorSpell)) return;
+            if (!GiveOther(petId, _focusSpell)) return;
+
             var pet = _spawns.Get().FirstOrDefault(f => f.ID == petId);
-            if(pet != null)
+            if (pet != null)
             {
                 if (_isExternalRequest)
                 {
@@ -271,6 +260,33 @@ namespace E3Core.Classes
             _weaponMap.TryGetValue(weapons[0], out var primary);
             _weaponMap.TryGetValue(weapons[1], out var secondary);
 
+            if (!CheckForWeapons(primary, secondary))
+            {
+                return false;
+            }
+
+            if (Casting.TrueTarget(petId))
+            {
+                PickUpWeapon(primary);
+                e3util.GiveItemOnCursorToTarget(false, false);
+                if (!CheckForWeapons(primary, secondary))
+                {
+                    return false;
+                }
+                Casting.TrueTarget(petId);
+                PickUpWeapon(secondary);
+                e3util.GiveItemOnCursorToTarget(false);
+            }
+            else
+            {
+                return false;
+            }
+
+            return true;
+        }
+
+        private static bool CheckForWeapons(string primary, string secondary)
+        {
             var foundPrimary = MQ.Query<bool>($"${{FindItem[={primary}]}}");
             var foundSecondary = MQ.Query<bool>($"${{FindItem[={secondary}]}}");
 
@@ -306,20 +322,12 @@ namespace E3Core.Classes
                     }
                 }
 
-                SummonItem(_weaponSpell, true);
-            }
-
-            if (Casting.TrueTarget(petId))
-            {
-                PickUpWeapon(primary);
-                e3util.GiveItemOnCursorToTarget(false, false);
-                MQ.Delay(250);
-                PickUpWeapon(secondary);
-                e3util.GiveItemOnCursorToTarget(false);
-            }
-            else
-            {
-                return false;
+                var summonResult = SummonItem(_weaponSpell, true);
+                if (!summonResult.success)
+                {
+                    E3.Bots.Broadcast($"\ar{summonResult.error}");
+                    return false;
+                }
             }
 
             return true;
@@ -335,13 +343,18 @@ namespace E3Core.Classes
             MQ.Cmd($"/nomodkey /itemnotify in pack{packSlot} {inPackSlot} leftmouseup");
         }
 
-        private static void GiveOther(int petId, string spell)
+        private static bool GiveOther(int petId, string spell)
         {
             _summonedItemMap.TryGetValue(spell, out var item);
             var foundSummonedItem = MQ.Query<bool>($"${{FindItem[={item}]}}");
             if (!foundSummonedItem)
             {
-                SummonItem(spell, false);
+                var summonResult = SummonItem(spell, false);
+                if (!summonResult.success)
+                {
+                    E3.Bots.Broadcast($"\ar{summonResult.error}");
+                    return false;
+                }
             }
             else
             {
@@ -352,36 +365,51 @@ namespace E3Core.Classes
             if (Casting.TrueTarget(petId))
             {
                 e3util.GiveItemOnCursorToTarget(false);
+                return true;
             }
+
+            return false;
         }
 
-        private static void SummonItem(string itemToSummon, bool inventoryTheSummonedItem)
+        private static (bool success, string error) SummonItem(string itemToSummon, bool inventoryTheSummonedItem)
         {
             var id = E3.CurrentId;
-            if (Casting.TrueTarget(id))
+            Casting.TrueTarget(id);
+            var spell = new Spell(itemToSummon);
+            if (Casting.CheckReady(spell))
             {
-                var spell = new Spell(itemToSummon);
-                if (Casting.CheckReady(spell))
+                int cursorId = 0;
+                // try several times to summon
+                for (int i = 1; i <= 5; i++)
                 {
                     Casting.Cast(id, spell);
+                    e3util.YieldToEQ();
+                    cursorId = MQ.Query<int>("${Cursor.ID}");
+                    if (cursorId > 0) break;
+                }
 
-                    MQ.Delay(1000, "${Cursor.ID}");
-                    e3util.ClearCursor();
+                if (cursorId == 0)
+                {
+                    return (false, "Unable to complete spell cast");
+                }
 
-                    if (_summonedItemMap.TryGetValue(itemToSummon, out var summonedItem))
+                e3util.ClearCursor();
+
+                if (_summonedItemMap.TryGetValue(itemToSummon, out var summonedItem))
+                {
+                    MQ.Cmd($"/nomodkey /itemnotify \"{summonedItem}\" rightmouseup");
+                    MQ.Delay(3000, "${Cursor.ID}");
+                    if (inventoryTheSummonedItem)
                     {
-                        MQ.Cmd($"/nomodkey /itemnotify \"{summonedItem}\" rightmouseup");
-                        MQ.Delay(3000, "${Cursor.ID}");
-                        if (inventoryTheSummonedItem)
-                        {
-                            e3util.ClearCursor();
-                        }
+                        e3util.ClearCursor();
                     }
                 }
-                else
-                {
-                    E3.Bots.Broadcast($"\arUnable to cast {itemToSummon} because it wasn't ready");
-                }
+
+                return (true, null);
+            }
+            else
+            {
+                return (false, $"Unable to cast {itemToSummon} because it wasn't ready");
             }
         }
 
