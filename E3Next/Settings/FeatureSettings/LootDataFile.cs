@@ -62,7 +62,7 @@ namespace E3Core.Settings.FeatureSettings
                 //only copper exists
                 System.Text.RegularExpressions.Regex regex3 = new System.Text.RegularExpressions.Regex(@"(.+?)\d+c", System.Text.RegularExpressions.RegexOptions.Compiled);
                 //no money exists, safely to look for digits in the text.
-                System.Text.RegularExpressions.Regex regex4 = new System.Text.RegularExpressions.Regex(@"([a-zA-Z\s':;`.\d]+)", System.Text.RegularExpressions.RegexOptions.Compiled);
+                System.Text.RegularExpressions.Regex regex4 = new System.Text.RegularExpressions.Regex(@"([a-zA-Z-\s':;`.\d]+)", System.Text.RegularExpressions.RegexOptions.Compiled);
 
                 //(.+?)\d+p\d+c
                 //(.+?)\d+p
