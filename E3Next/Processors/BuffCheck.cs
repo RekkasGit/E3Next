@@ -374,12 +374,12 @@ namespace E3Core.Processors
                         {
                             if (!_spawns.TryByName(target, out var spawn))
                             {
-                                return;
+                                continue;
                             }
 
                             if (!Basics.GroupMembers.Any() || !Basics.GroupMembers.Contains(spawn.ID))
                             {
-                                return;
+                                continue;
                             }
                         }
                     }
