@@ -1,4 +1,5 @@
 ﻿using E3Core.Processors;
+using E3Core.Utility;
 using IniParser.Model;
 using MonoCore;
 using System;
@@ -248,7 +249,7 @@ namespace E3Core.Data
                         //doesn't match anything, so we assume its the target for the 1st one
                         if (String.IsNullOrWhiteSpace(CastTarget) && !value.Contains("|"))
                         {
-                            CastTarget = value;
+                            CastTarget = e3util.FirstCharToUpper(value);
                         }
 
                     }

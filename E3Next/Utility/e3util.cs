@@ -852,7 +852,7 @@ namespace E3Core.Utility
             {
                 case null: return null;
                 case "": return String.Empty;
-                default: return input[0].ToString().ToUpper() + input.Substring(1);
+                default: return input[0].ToString().ToUpper() + input.ToLower().Substring(1);
             }
         }
     }
