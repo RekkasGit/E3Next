@@ -389,15 +389,15 @@ namespace E3Core.Processors
                     string slot = x.args[0];
                     if (FDSPrint(slot,channel))
                     {
-                        if (x.args.Count == 1)
+                        if (!x.args.Contains("group"))
                         {
                             if (hasAllFlag)
                             {
-                                E3.Bots.BroadcastCommand($"/fds {slot} group",false,x);
+                                E3.Bots.BroadcastCommand($"/fds {slot} {channel} group",false,x);
                             }
                             else
                             {
-                                E3.Bots.BroadcastCommandToGroup($"/fds {slot} group",x);
+                                E3.Bots.BroadcastCommandToGroup($"/fds {slot} {channel} group",x);
                             }
                            
                         }
