@@ -128,14 +128,11 @@ namespace E3Core.Processors
                                 }
 
                                 //sell the item finally
-                                MQ.Cmd("/nomodkey /shift /notify MerchantWnd MW_Sell_Button leftmouseup",300);
-                                
-                                
+                                MQ.Cmd("/shift /notify MerchantWnd MW_Sell_Button leftmouseup",300);
                                 string tItemName = MQ.Query<String>($"${{Me.Inventory[pack{i}].Item[{e}]}}");
                                 if (itemName == tItemName)
                                 {
                                     E3.Bots.Broadcast($"\arERROR: Selling item. Item:{itemName} Tried to sell but still in inventory. PrimarySlot:{i} bagslot:{e}");
-
                                 }
                             }
                         }

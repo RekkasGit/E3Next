@@ -401,18 +401,12 @@ namespace E3Core.Processors
                 if (importantItem || bypassLootSettings)
                 {
                     //lets loot it if we can!
-                    MQ.Cmd($"/nomodkey /itemnotify loot{i} rightmouseup",300);
+                    MQ.Cmd($"/shift /itemnotify loot{i} rightmouseup",300);
                     //loot nodrop items if important
                     if (nodropImportantItem)
                     {
                         bool confirmationBox = MQ.Query<bool>("${Window[ConfirmationDialogBox].Open}");
                         if (confirmationBox) MQ.Cmd($"/nomodkey /notify ConfirmationDialogBox CD_Yes_Button leftmouseup", 300);
-                    }
-
-                    bool qtyWindowUp = MQ.Query<bool>("${Window[QuantityWnd].Open}");
-                    if(qtyWindowUp)
-                    {
-                        MQ.Cmd($"/nomodkey /notify QuantityWnd QTYW_Accept_Button leftmouseup",300);
                     }
                 }
                
