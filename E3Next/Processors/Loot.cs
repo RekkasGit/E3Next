@@ -401,7 +401,7 @@ namespace E3Core.Processors
                 if (importantItem || bypassLootSettings)
                 {
                     //lets loot it if we can!
-                    MQ.Cmd($"/shift /itemnotify loot{i} rightmouseup",300);
+                    MQ.Cmd($"/nomodkey /shift /itemnotify loot{i} rightmouseup",300);
                     //loot nodrop items if important
                     if (nodropImportantItem)
                     {
