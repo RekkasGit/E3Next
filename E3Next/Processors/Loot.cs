@@ -269,8 +269,8 @@ namespace E3Core.Processors
                 _fullInventoryAlert = true;
                 E3.Bots.Broadcast("\arMy inventory is full! \awI will continue to link items on corpses, but cannot loot anything else.");
                 E3.Bots.BroadcastCommand("/popup ${Me}'s inventory is full.", false);
-                MQ.Cmd("/beep");
-              
+                e3util.Beep();
+
             }
            
             MQ.Cmd("/loot");
