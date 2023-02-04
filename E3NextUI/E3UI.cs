@@ -27,7 +27,7 @@ namespace E3NextUI
 
     public partial class E3UI : Form
     {
-        public static string Version = "v1.0.32-beta";
+        public static string Version = "v1.0.33-beta";
         public static System.Diagnostics.Stopwatch _stopWatch = new System.Diagnostics.Stopwatch();
         public static volatile bool ShouldProcess = true;
 
@@ -852,7 +852,7 @@ namespace E3NextUI
         {
             var mb = new MessageBox();
             mb.StartPosition = FormStartPosition.CenterParent;
-            mb.Text = "Donate for github and pizza (paypal)";
+            mb.Text = "Donate for Github and Pizza (Paypal)";
             mb.lblMessage.Text = "If you wish to donate, please use friends and family. Otherwise it will be returned.";
 
             if (mb.ShowDialog() == DialogResult.OK)
