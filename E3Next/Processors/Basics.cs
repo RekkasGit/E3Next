@@ -761,9 +761,9 @@ namespace E3Core.Processors
                 }
 
                 //manastone code
-                int minMana = 40;
-                int minHP = 60;
-                int maxMana = 75;
+                int minMana = E3.GeneralSettings.ManaStone_InCombatMinMana;
+                int minHP = E3.GeneralSettings.ManaStone_MinHP;
+                int maxMana = E3.GeneralSettings.ManaStone_InCombatMaxMana;
                 int maxLoop = E3.GeneralSettings.ManaStone_NumberOfLoops;
 
                 int totalClicksToTry =E3.GeneralSettings.Manastone_NumerOfClicksPerLoop;
@@ -771,8 +771,8 @@ namespace E3Core.Processors
 
                 if (!InCombat())
                 {
-                    minMana = 85;
-                    maxMana = 95;
+                    minMana = E3.GeneralSettings.ManaStone_OutOfCombatMinMana;
+                    maxMana = E3.GeneralSettings.ManaStone_OutOfCombatMaxMana;
                 }
                 if (pctMana > minMana) return;
                 //no manastone in pok

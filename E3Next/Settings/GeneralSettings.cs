@@ -68,6 +68,11 @@ namespace E3Core.Settings
         public Int32 ManaStone_NumberOfLoops = 25;
         public Int32 ManaStone_DelayBetweenLoops = 50;
 
+        public Int32 ManaStone_InCombatMinMana = 40;
+        public Int32 ManaStone_InCombatMaxMana = 75;
+        public Int32 ManaStone_MinHP = 60;
+        public Int32 ManaStone_OutOfCombatMinMana = 85;
+        public Int32 ManaStone_OutOfCombatMaxMana = 95;
 
 
         private string _filename = String.Empty;
@@ -148,12 +153,13 @@ namespace E3Core.Settings
             LoadKeyData("Manastone", "NumerOfClicksPerLoop", parsedData, ref Manastone_NumerOfClicksPerLoop);
             LoadKeyData("Manastone", "NumberOfLoops", parsedData, ref ManaStone_NumberOfLoops);
             LoadKeyData("Manastone", "DelayBetweenLoops (in milliseconds)", parsedData, ref ManaStone_DelayBetweenLoops);
+            LoadKeyData("Manastone", "In Combat MinMana", parsedData, ref ManaStone_InCombatMinMana);
+            LoadKeyData("Manastone", "In Combat MaxMana", parsedData, ref ManaStone_InCombatMaxMana);
+            LoadKeyData("Manastone", "Min HP", parsedData, ref ManaStone_MinHP);
+            LoadKeyData("Manastone", "Out of Combat MinMana", parsedData, ref ManaStone_OutOfCombatMinMana);
+            LoadKeyData("Manastone", "Out of Combat MaxMana", parsedData, ref ManaStone_OutOfCombatMaxMana);
 
-            if(ManaStone_DelayBetweenLoops>1000 || ManaStone_DelayBetweenLoops < 1)
-            {
-                MQ.Write("Manastone DelayBetweenLoops has to be < 1000 and >1, defaulting to 50ms");
-                ManaStone_DelayBetweenLoops = 50;
-            }
+            CheckManastoneValues();
 
             //so we can validate a default gem is always acceptable range
             Int32 spellGem = Casting_DefaultSpellGem;
@@ -168,16 +174,7 @@ namespace E3Core.Settings
 
             LoadKeyData("Assists", "Max Engage Distance", parsedData, ref Assists_MaxEngagedDistance);
             LoadKeyData("Assists", "AE Threat Range", parsedData, ref Assists_AEThreatRange);
-            if (Assists_AEThreatRange < 10)
-            {
-                Assists_AEThreatRange = 10;
-                MQ.Write("AE Threat Range can't be less than 10, defaulting to 10 units");
-            }
-            if (Assists_AEThreatRange > 300)
-            {
-                Assists_AEThreatRange = 300;
-                MQ.Write("AE Threat Range can't be more than 300, defaulting to 300 units");
-            }
+            CheckAssistValues();
 
             LoadKeyData("AutoTrade", "Active Window Wait for Trade Accept (On/Off)", parsedData, ref AutoTrade_WaitForTrade);
             LoadKeyData("AutoTrade", "All (On/Off)", parsedData, ref AutoTrade_All);
@@ -192,6 +189,24 @@ namespace E3Core.Settings
             LoadKeyData("Movement", "Anchor Distance Minimum", parsedData, ref Movement_AnchorDistanceMin);
             LoadKeyData("Movement", "Anchor Distance Maximum", parsedData, ref Movement_AnchorDistanceMax);
 
+            CheckMovementValues();
+        }
+
+        private void CheckAssistValues()
+        {
+            if (Assists_AEThreatRange < 10)
+            {
+                Assists_AEThreatRange = 10;
+                MQ.Write("AE Threat Range can't be less than 10, defaulting to 10 units");
+            }
+            if (Assists_AEThreatRange > 300)
+            {
+                Assists_AEThreatRange = 300;
+                MQ.Write("AE Threat Range can't be more than 300, defaulting to 300 units");
+            }
+        }
+        private void CheckMovementValues()
+        {
             if (Movement_ChaseDistanceMin < 1)
             {
                 MQ.Write($"Chase Distance Minimum can't be less than 1, defaulting to 10 units");
@@ -216,7 +231,41 @@ namespace E3Core.Settings
             }
 
         }
+        private void CheckManastoneValues()
+        {
 
+            if (ManaStone_DelayBetweenLoops > 1000 || ManaStone_DelayBetweenLoops < 1)
+            {
+                MQ.Write("Manastone DelayBetweenLoops has to be < 1000 and >1, defaulting to 50ms");
+                ManaStone_DelayBetweenLoops = 50;
+            }
+            if (ManaStone_MinHP < 15 || ManaStone_MinHP > 100)
+            {
+                MQ.Write("Manastone ManaStone_MinHP has to be < 100 and >15, defaulting to 60");
+                ManaStone_MinHP = 60;
+            }
+            if (ManaStone_OutOfCombatMinMana < 15 || ManaStone_OutOfCombatMinMana > 100)
+            {
+                MQ.Write("Manastone ManaStone_OutOfCombatMinMana has to be >15, defaulting to 85");
+                ManaStone_OutOfCombatMinMana = 85;
+            }
+            if (ManaStone_OutOfCombatMaxMana < 15 || ManaStone_OutOfCombatMaxMana > 100)
+            {
+                MQ.Write("Manastone ManaStone_OutOfCombatMaxMana has to be < 100 and >15, defaulting to 95");
+                ManaStone_DelayBetweenLoops = 95;
+            }
+
+            if (ManaStone_InCombatMinMana < 15 || ManaStone_InCombatMinMana > 100)
+            {
+                MQ.Write("Manastone ManaStone_InCombatMinMana has to be >15, defaulting to 85");
+                ManaStone_InCombatMinMana = 40;
+            }
+            if (ManaStone_InCombatMaxMana < 15 || ManaStone_InCombatMaxMana > 100)
+            {
+                MQ.Write("Manastone ManaStone_InCombatMaxMana has to be < 100 and >15, defaulting to 75");
+                ManaStone_DelayBetweenLoops = 75;
+            }
+        }
         public IniData CreateSettings(string filename)
         {
 
@@ -256,8 +305,12 @@ namespace E3Core.Settings
             section.Keys.AddKey("NumerOfClicksPerLoop", "40");
             section.Keys.AddKey("NumberOfLoops", "25");
             section.Keys.AddKey("DelayBetweenLoops (in milliseconds)", "50");
-
-
+            section.Keys.AddKey("In Combat MinMana", "40");
+            section.Keys.AddKey("In Combat MaxMana", "75");
+            section.Keys.AddKey("Min HP", "60");
+            section.Keys.AddKey("Out of Combat MinMana", "85");
+            section.Keys.AddKey("Out of Combat MaxMana", "95");
+        
             //Casting
             newFile.Sections.AddSection("Casting");
             section = newFile.Sections.GetSectionData("Casting");
