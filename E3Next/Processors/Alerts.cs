@@ -114,6 +114,24 @@ namespace E3Core.Processors
             });
             #endregion
 
+            #region Uqua
+            pattern = "The (.+) must unlock the door to the next room\\.";
+            EventProcessor.RegisterEvent("AlertUquaChamberKey", pattern, (x) => {
+
+                if(x.match.Groups.Count>1)
+                {
+                    string classValue = x.match.Groups[1].Value;
+                    MQ.Cmd($"/rsay >>^<< The {classValue} unlocks the door >>^<<");
+                    MQ.Cmd($"/g >>^<< The {classValue} unlocks the door >>^<<");
+                    E3.Bots.Broadcast($"\ar >>^<< \agThe \ap{classValue}\ag unlocks the door \ar>>^<<");
+                    MQ.Cmd($"/popup \ar>>^<< The {classValue} unlocks the door >>^<<");
+                }
+
+
+            });
+
+            #endregion
+
             pattern = @"(.+) spell has been reflected by (.+)\.";
             EventProcessor.RegisterEvent("ReflectSpell", pattern, (x) => {
 
