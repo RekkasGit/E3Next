@@ -38,7 +38,7 @@ namespace E3NextUI
             // buttonOK
             // 
             this.buttonOK.Font = new System.Drawing.Font("Microsoft Sans Serif", 12F, System.Drawing.FontStyle.Bold, System.Drawing.GraphicsUnit.Point, ((byte)(0)));
-            this.buttonOK.Location = new System.Drawing.Point(96, 66);
+            this.buttonOK.Location = new System.Drawing.Point(127, 97);
             this.buttonOK.Name = "buttonOK";
             this.buttonOK.Size = new System.Drawing.Size(77, 27);
             this.buttonOK.TabIndex = 0;
@@ -49,7 +49,7 @@ namespace E3NextUI
             // buttonCancel
             // 
             this.buttonCancel.Font = new System.Drawing.Font("Microsoft Sans Serif", 12F, System.Drawing.FontStyle.Bold, System.Drawing.GraphicsUnit.Point, ((byte)(0)));
-            this.buttonCancel.Location = new System.Drawing.Point(197, 66);
+            this.buttonCancel.Location = new System.Drawing.Point(228, 97);
             this.buttonCancel.Name = "buttonCancel";
             this.buttonCancel.Size = new System.Drawing.Size(77, 27);
             this.buttonCancel.TabIndex = 1;
@@ -63,14 +63,14 @@ namespace E3NextUI
             this.lblMessage.ForeColor = System.Drawing.Color.CornflowerBlue;
             this.lblMessage.Location = new System.Drawing.Point(12, 19);
             this.lblMessage.Name = "lblMessage";
-            this.lblMessage.Size = new System.Drawing.Size(358, 27);
+            this.lblMessage.Size = new System.Drawing.Size(423, 62);
             this.lblMessage.TabIndex = 2;
             this.lblMessage.TextAlign = System.Drawing.ContentAlignment.MiddleCenter;
             // 
             // buttonOkayOnly
             // 
             this.buttonOkayOnly.Font = new System.Drawing.Font("Microsoft Sans Serif", 12F, System.Drawing.FontStyle.Bold, System.Drawing.GraphicsUnit.Point, ((byte)(0)));
-            this.buttonOkayOnly.Location = new System.Drawing.Point(154, 66);
+            this.buttonOkayOnly.Location = new System.Drawing.Point(185, 97);
             this.buttonOkayOnly.Name = "buttonOkayOnly";
             this.buttonOkayOnly.Size = new System.Drawing.Size(77, 27);
             this.buttonOkayOnly.TabIndex = 3;
@@ -83,7 +83,7 @@ namespace E3NextUI
             // 
             this.AutoScaleDimensions = new System.Drawing.SizeF(6F, 13F);
             this.AutoScaleMode = System.Windows.Forms.AutoScaleMode.Font;
-            this.ClientSize = new System.Drawing.Size(382, 119);
+            this.ClientSize = new System.Drawing.Size(447, 146);
             this.ControlBox = false;
             this.Controls.Add(this.buttonOkayOnly);
             this.Controls.Add(this.lblMessage);

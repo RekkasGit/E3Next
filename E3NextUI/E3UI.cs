@@ -847,6 +847,20 @@ namespace E3NextUI
                 _genSettings.SaveData();
             }
         }
+
+        private void donateToolStripMenuItem_Click(object sender, EventArgs e)
+        {
+            var mb = new MessageBox();
+            mb.StartPosition = FormStartPosition.CenterParent;
+            mb.Text = "Donate for github and pizza (paypal)";
+            mb.lblMessage.Text = "If you wish to donate, please use friends and family. Otherwise it will be returned.";
+
+            if (mb.ShowDialog() == DialogResult.OK)
+            {
+                System.Diagnostics.Process.Start("https://www.paypal.com/paypalme/RekkaSoftware");
+
+            }
+        }
     }
     public class TextBoxInfo
     {

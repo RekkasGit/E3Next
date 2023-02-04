@@ -70,6 +70,7 @@ namespace E3NextUI
             this.mainToolStripMenuItem = new System.Windows.Forms.ToolStripMenuItem();
             this.hideToolStripMenuItem = new System.Windows.Forms.ToolStripMenuItem();
             this.checkUpdatesToolStripMenuItem = new System.Windows.Forms.ToolStripMenuItem();
+            this.donateToolStripMenuItem = new System.Windows.Forms.ToolStripMenuItem();
             this.settingsToolStripMenuItem = new System.Windows.Forms.ToolStripMenuItem();
             this.darkModeMenuItem = new System.Windows.Forms.ToolStripMenuItem();
             this.overlayOntopToolStripMenuItem = new System.Windows.Forms.ToolStripMenuItem();
@@ -492,7 +493,8 @@ namespace E3NextUI
             // 
             this.mainToolStripMenuItem.DropDownItems.AddRange(new System.Windows.Forms.ToolStripItem[] {
             this.hideToolStripMenuItem,
-            this.checkUpdatesToolStripMenuItem});
+            this.checkUpdatesToolStripMenuItem,
+            this.donateToolStripMenuItem});
             this.mainToolStripMenuItem.Name = "mainToolStripMenuItem";
             this.mainToolStripMenuItem.Size = new System.Drawing.Size(46, 20);
             this.mainToolStripMenuItem.Text = "Main";
@@ -500,16 +502,23 @@ namespace E3NextUI
             // hideToolStripMenuItem
             // 
             this.hideToolStripMenuItem.Name = "hideToolStripMenuItem";
-            this.hideToolStripMenuItem.Size = new System.Drawing.Size(171, 22);
+            this.hideToolStripMenuItem.Size = new System.Drawing.Size(180, 22);
             this.hideToolStripMenuItem.Text = "Hide";
             this.hideToolStripMenuItem.Click += new System.EventHandler(this.hideToolStripMenuItem_Click);
             // 
             // checkUpdatesToolStripMenuItem
             // 
             this.checkUpdatesToolStripMenuItem.Name = "checkUpdatesToolStripMenuItem";
-            this.checkUpdatesToolStripMenuItem.Size = new System.Drawing.Size(171, 22);
+            this.checkUpdatesToolStripMenuItem.Size = new System.Drawing.Size(180, 22);
             this.checkUpdatesToolStripMenuItem.Text = "Check for Updates";
             this.checkUpdatesToolStripMenuItem.Click += new System.EventHandler(this.checkUpdatesToolStripMenuItem_Click);
+            // 
+            // donateToolStripMenuItem
+            // 
+            this.donateToolStripMenuItem.Name = "donateToolStripMenuItem";
+            this.donateToolStripMenuItem.Size = new System.Drawing.Size(180, 22);
+            this.donateToolStripMenuItem.Text = "Donate (paypal)";
+            this.donateToolStripMenuItem.Click += new System.EventHandler(this.donateToolStripMenuItem_Click);
             // 
             // settingsToolStripMenuItem
             // 
@@ -523,14 +532,14 @@ namespace E3NextUI
             // darkModeMenuItem
             // 
             this.darkModeMenuItem.Name = "darkModeMenuItem";
-            this.darkModeMenuItem.Size = new System.Drawing.Size(180, 22);
+            this.darkModeMenuItem.Size = new System.Drawing.Size(153, 22);
             this.darkModeMenuItem.Text = "DarkMode";
             this.darkModeMenuItem.Click += new System.EventHandler(this.darkModeToolStripMenuItem_Click);
             // 
             // overlayOntopToolStripMenuItem
             // 
             this.overlayOntopToolStripMenuItem.Name = "overlayOntopToolStripMenuItem";
-            this.overlayOntopToolStripMenuItem.Size = new System.Drawing.Size(180, 22);
+            this.overlayOntopToolStripMenuItem.Size = new System.Drawing.Size(153, 22);
             this.overlayOntopToolStripMenuItem.Text = "Overlay/Ontop";
             this.overlayOntopToolStripMenuItem.Click += new System.EventHandler(this.overlayOntopToolStripMenuItem_Click);
             // 
@@ -837,6 +846,7 @@ namespace E3NextUI
         private System.Windows.Forms.Panel panelStatusPannel2;
         private System.Windows.Forms.ToolStripMenuItem checkUpdatesToolStripMenuItem;
         private System.Windows.Forms.ToolStripMenuItem overlayOntopToolStripMenuItem;
+        private System.Windows.Forms.ToolStripMenuItem donateToolStripMenuItem;
     }
 }
 
