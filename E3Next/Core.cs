@@ -1363,7 +1363,11 @@ namespace MonoCore
 
         public void Beep()
         {
-            Cmd("/beep");
+            if (E3.GeneralSettings.General_BeepsEnabled)
+            {
+                Cmd("/beep");
+            }
+            
         }
         private bool? Feature_TLO_Dispellable = null;
         public bool FeatureEnabled(MQFeature feature)
