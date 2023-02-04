@@ -246,12 +246,13 @@ namespace E3Core.Processors
                         {
                             continue;
                         }
+                        InitRezSpells();
+                        if (_currentRezSpells.Count == 0) return;
 
                         MQ.Cmd($"/t {spawn.DisplayName} Wait4Rez",100);
                         MQ.Delay(1500);
                         MQ.Cmd("/corpse");
-                        InitRezSpells();
-                        if (_currentRezSpells.Count == 0) return;
+                        
 
                         // if it's a cleric or warrior corpse and we're in combat, try to use divine res
                         if (Basics.InCombat() && _classesToDivineRez.Contains(spawn.ClassName))
