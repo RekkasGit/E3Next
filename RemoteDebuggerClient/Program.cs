@@ -779,11 +779,6 @@ namespace MQServerClient
             Console.WriteLine("RemoveCommand:" + commandName);
         }
 
-        public void Beep()
-        {
-            Cmd("/beep");
-        }
-
         public bool FeatureEnabled(MQFeature feature)
         {
             return true;

@@ -1075,8 +1075,7 @@ namespace MonoCore
         bool AddCommand(string query);
         void ClearCommands();
         void RemoveCommand(string commandName);
-        void Beep();
-
+        
         bool FeatureEnabled(MQFeature feature);
 
     }
@@ -1361,14 +1360,6 @@ namespace MonoCore
             Core.mq_RemoveCommand(commandName);
         }
 
-        public void Beep()
-        {
-            if (E3.GeneralSettings.General_BeepsEnabled)
-            {
-                Cmd("/beep");
-            }
-            
-        }
         private bool? Feature_TLO_Dispellable = null;
         public bool FeatureEnabled(MQFeature feature)
         {

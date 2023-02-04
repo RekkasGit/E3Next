@@ -219,11 +219,6 @@ namespace TestCore
                 Console.WriteLine($"[{System.DateTime.Now.ToString("HH:mm:ss")}] {query}");
             }
 
-            public void Beep()
-            {
-                Cmd("/beep");
-            }
-
             public bool FeatureEnabled(MQFeature feature)
             {
                 return true;

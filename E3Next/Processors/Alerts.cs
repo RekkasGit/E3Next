@@ -4,6 +4,7 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
+using E3Core.Utility;
 
 namespace E3Core.Processors
 {
@@ -37,7 +38,7 @@ namespace E3Core.Processors
                 {
                     E3.Bots.Broadcast("I don't have a mirrored mask, I dun messed up.");
                     E3.Bots.BroadcastCommand("/popup ${Me} doesn't have a mirrored mask.");
-                    MQ.Beep();
+                    e3util.Beep();
                     return;
                 }
                 else

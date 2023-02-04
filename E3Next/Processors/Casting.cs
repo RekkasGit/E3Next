@@ -139,7 +139,7 @@ namespace E3Core.Processors
                                 spell.ReagentOutOfStock = true;
                                 _log.Write($"Cannot cast [{spell.CastName}], I do not have any [{spell.Reagent}], removing this spell from array. Restock and Reload Macro", Logging.LogLevels.Error);
                                 E3.Bots.BroadcastCommand($"/popup ${{Me}} does not have {spell.Reagent}", false);
-                                MQ.Beep();
+                                e3util.Beep();
                                 return CastReturn.CAST_REAGENT;
                             }
                             else
