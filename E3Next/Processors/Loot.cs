@@ -261,6 +261,9 @@ namespace E3Core.Processors
         {
             
             Int32 freeInventorySlots = MQ.Query<Int32>("${Me.FreeInventory}");
+            //keep some free if configured to do so.
+            freeInventorySlots -= E3.GeneralSettings.Loot_NumberOfFreeSlotsOpen;
+
             bool importantItem = false;
             bool nodropImportantItem = false;
 
