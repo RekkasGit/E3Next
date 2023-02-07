@@ -81,6 +81,14 @@ namespace E3Core.Classes
 
                 _isExternalRequest = !E3.Bots.BotsConnected().Contains(_requester);               
                 var weaponSplit = x.match.Groups[2].ToString().Split('|');
+                if (!_isExternalRequest && weaponSplit.Length != 2) 
+                {
+                    if (E3.CharacterSettings.PetWeapons.TryGetValue(_requester, out var weaponConfig))
+                    {
+                        weaponSplit = weaponConfig.Split('|');
+                    }
+                }
+
                 if (weaponSplit.Count() != 2)
                 {
                     MQ.Cmd($"/t {_requester} Invalid request. The request must be in the format of armpet Primary|Secondary");
