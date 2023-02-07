@@ -215,8 +215,7 @@ namespace E3Core.Processors
                             _log.Write($"Doing BeforeEvent:{spell.BeforeEvent}");
                             MQ.Cmd($"/docommand {spell.BeforeEvent}");
                             if (spell.BeforeEvent.StartsWith("/exchange", StringComparison.OrdinalIgnoreCase)) MQ.Delay(500);
-                            if (spell.BeforeEvent.StartsWith("/equipset", StringComparison.OrdinalIgnoreCase)) MQ.Delay(500);
-
+ 
                         }
 
                         _log.Write("Checking BeforeSpell...");
@@ -636,7 +635,6 @@ namespace E3Core.Processors
                         _log.Write($"Doing BeforeEvent:{spell.BeforeEvent}");
                         MQ.Cmd($"/docommand {spell.BeforeEvent}");
                         if (spell.BeforeEvent.StartsWith("/exchange", StringComparison.OrdinalIgnoreCase)) MQ.Delay(300);
-                        if (spell.BeforeEvent.StartsWith("/equipset", StringComparison.OrdinalIgnoreCase)) MQ.Delay(300);
                     }
 
                     MQ.Cmd($"/cast \"{spell.CastName}\"");
@@ -690,7 +688,6 @@ namespace E3Core.Processors
                     _log.Write($"Doing BeforeEvent:{spell.BeforeEvent}");
                     MQ.Cmd($"/docommand {spell.BeforeEvent}");
                     if (spell.BeforeEvent.StartsWith("/exchange", StringComparison.OrdinalIgnoreCase)) MQ.Delay(300);
-                    if (spell.BeforeEvent.StartsWith("/equipset", StringComparison.OrdinalIgnoreCase)) MQ.Delay(300);
                 }
                 MQ.Cmd($"/useitem \"{spell.CastName}\"", 300);
                 //after event, after all things are done               
@@ -711,7 +708,6 @@ namespace E3Core.Processors
                     _log.Write($"Doing BeforeEvent:{spell.BeforeEvent}");
                     MQ.Cmd($"/docommand {spell.BeforeEvent}");
                     if (spell.BeforeEvent.StartsWith("/exchange", StringComparison.OrdinalIgnoreCase)) MQ.Delay(300);
-                    if (spell.BeforeEvent.StartsWith("/equipset", StringComparison.OrdinalIgnoreCase)) MQ.Delay(300);
                 }
                 MQ.Cmd($"/casting \"{spell.CastName}\" alt", 300);
 
