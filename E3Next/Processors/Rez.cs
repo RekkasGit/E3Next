@@ -125,6 +125,38 @@ namespace E3Core.Processors
             
         }
 
+        public static void LootAllCorpses()
+        {
+            _spawns.RefreshList();
+            string corpseName = E3.CurrentName + "'s corpse";
+            foreach (var spawn in _spawns.Get())
+            {
+                if (spawn.CleanName.StartsWith(corpseName))
+                {
+                    if (spawn.Distance < 100)
+                    {
+                        Casting.TrueTarget(spawn.ID);
+                        MQ.Delay(500);
+                        MQ.Cmd("/corpse", 1000);
+
+                        MQ.Cmd("/loot");
+                        MQ.Delay(1000, "${Window[LootWnd].Open}");
+                        MQ.Cmd("/nomodkey /notify LootWnd LootAllButton leftmouseup");
+                        MQ.Delay(20000, "!${Window[LootWnd].Open}");
+
+                        if (MQ.Query<bool>("${Window[LootWnd].Open}"))
+                        {
+                            _waitingOnRez = false;
+                            e3util.Beep();
+                            E3.Bots.Broadcast("\agWaitForRez:\arERROR! \atLoot Window stuck open, please help.");
+                            E3.Bots.BroadcastCommand("/popup ${Me} loot window stuck open", false);
+                            MQ.Delay(1000);
+                            return;
+                        }
+                    }
+                }
+            }
+        }
        
         public static void RefreshCorpseList(RezType rezType = RezType.AE)
         {
@@ -684,7 +716,7 @@ namespace E3Core.Processors
                     E3.Bots.BroadcastCommandToGroup($"/WaitRez {x.args[0]}");
                 }
             });
-
+            EventProcessor.RegisterCommand("/lootcorpses", x => LootAllCorpses());
             EventProcessor.RegisterCommand("/gathercorpses", x => GatherCorpses());
             var consentEvents = new List<string> { "(.+) tells you, '(?i)Consent'", "(.+) tells the raid,  '(?i)Consent'", "<(.+)> (?i)Consent" };
             EventProcessor.RegisterEvent("consent", consentEvents, x =>

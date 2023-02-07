@@ -109,7 +109,7 @@ namespace E3Core.Processors
             {
 
                 if (Basics.InCombat() && !E3.CharacterSettings.Gimme_InCombat) return;
-
+               
                 Int32 qty = int.MaxValue;
                 //giveme Alara "Something" qty Rekken
                 if (x.args.Count > 3)
@@ -191,6 +191,7 @@ namespace E3Core.Processors
             //exceptions for group spells
             if (_groupSpellRequests.ContainsKey(whatToGive))
             {
+                if (Basics.AmIDead()) return;
                 DoGroupSpellGive(whoToGiveTo, whatToGive);
                 return;
             }

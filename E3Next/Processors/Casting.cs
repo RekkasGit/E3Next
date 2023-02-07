@@ -215,8 +215,7 @@ namespace E3Core.Processors
                             _log.Write($"Doing BeforeEvent:{spell.BeforeEvent}");
                             MQ.Cmd($"/docommand {spell.BeforeEvent}");
                             if (spell.BeforeEvent.StartsWith("/exchange", StringComparison.OrdinalIgnoreCase)) MQ.Delay(500);
-                            if (spell.BeforeEvent.StartsWith("/equipset", StringComparison.OrdinalIgnoreCase)) MQ.Delay(500);
-
+ 
                         }
 
                         _log.Write("Checking BeforeSpell...");
@@ -628,7 +627,16 @@ namespace E3Core.Processors
             {
                 //if (MQ.Query<bool>($"${{Bool[${{Me.Book[{spell.CastName}]}}]}}"))
                 {
+                    
                     MQ.Cmd("/stopsong");
+
+                    if (!String.IsNullOrWhiteSpace(spell.BeforeEvent))
+                    {
+                        _log.Write($"Doing BeforeEvent:{spell.BeforeEvent}");
+                        MQ.Cmd($"/docommand {spell.BeforeEvent}");
+                        if (spell.BeforeEvent.StartsWith("/exchange", StringComparison.OrdinalIgnoreCase)) MQ.Delay(300);
+                    }
+
                     MQ.Cmd($"/cast \"{spell.CastName}\"");
                     MQ.Delay(300, IsCasting);
                     if (!IsCasting())
@@ -643,6 +651,15 @@ namespace E3Core.Processors
                             MQ.Delay(1000);
                         }
                     }
+
+                    //after event, after all things are done               
+                     if (!String.IsNullOrWhiteSpace(spell.AfterEvent))
+                    {
+                        _log.Write($"Doing AfterEvent:{spell.AfterEvent}");
+                        MQ.Cmd($"/docommand {spell.AfterEvent}");
+                    }
+
+
                 }
             }
             else if (spell.CastType == CastType.Item)
@@ -666,8 +683,19 @@ namespace E3Core.Processors
                         }
                     }
                 }
-
+                if (!String.IsNullOrWhiteSpace(spell.BeforeEvent))
+                {
+                    _log.Write($"Doing BeforeEvent:{spell.BeforeEvent}");
+                    MQ.Cmd($"/docommand {spell.BeforeEvent}");
+                    if (spell.BeforeEvent.StartsWith("/exchange", StringComparison.OrdinalIgnoreCase)) MQ.Delay(300);
+                }
                 MQ.Cmd($"/useitem \"{spell.CastName}\"", 300);
+                //after event, after all things are done               
+                if (!String.IsNullOrWhiteSpace(spell.AfterEvent))
+                {
+                    _log.Write($"Doing AfterEvent:{spell.AfterEvent}");
+                    MQ.Cmd($"/docommand {spell.AfterEvent}");
+                }
             }
             else if (spell.CastType == CastType.AA)
             {
@@ -675,7 +703,20 @@ namespace E3Core.Processors
                 {
                     MQ.Cmd("/stopsong", 100);
                 }
+                if (!String.IsNullOrWhiteSpace(spell.BeforeEvent))
+                {
+                    _log.Write($"Doing BeforeEvent:{spell.BeforeEvent}");
+                    MQ.Cmd($"/docommand {spell.BeforeEvent}");
+                    if (spell.BeforeEvent.StartsWith("/exchange", StringComparison.OrdinalIgnoreCase)) MQ.Delay(300);
+                }
                 MQ.Cmd($"/casting \"{spell.CastName}\" alt", 300);
+
+                //after event, after all things are done               
+                if (!String.IsNullOrWhiteSpace(spell.AfterEvent))
+                {
+                    _log.Write($"Doing AfterEvent:{spell.AfterEvent}");
+                    MQ.Cmd($"/docommand {spell.AfterEvent}");
+                }
             }
 
         }
