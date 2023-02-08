@@ -390,7 +390,7 @@ namespace E3Core.Processors
                 {
                     importantItem = false;
                 }
-
+                
                 //stackable but we don't have room but we already have an item, lets see if we have room.
                 if (freeInventorySlots < 1 && stackable && weHaveItem)
                 {
@@ -399,6 +399,11 @@ namespace E3Core.Processors
                     {
                         importantItem = true;
                     }
+                }
+
+                if (freeInventorySlots < 1 && !stackable)
+                {
+                    importantItem = false;
                 }
 
                 if (importantItem || bypassLootSettings)
