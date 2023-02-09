@@ -37,18 +37,7 @@ namespace E3Core.Processors
 
             EventProcessor.RegisterCommand("/pbaeon", (x) =>
             {
-                bool hasAllFlag = false;
-                foreach (var argValue in x.args)
-                {
-                    if (argValue.StartsWith("/all", StringComparison.OrdinalIgnoreCase))
-                    {
-                        hasAllFlag = true;
-                    }
-                }
-                if (hasAllFlag)
-                {
-                    x.args.Remove("/all");
-                }
+                bool hasAllFlag = e3util.HasAllFlag(x);
 
                 if (E3.CharacterSettings.PBAE.Count > 0)
                 {

@@ -19,6 +19,25 @@ namespace E3Core.Utility
         public static Logging _log = E3.Log;
         private static IMQ MQ = E3.MQ;
         private static ISpawns _spawns = E3.Spawns;
+
+
+        public static bool HasAllFlag(EventProcessor.CommandMatch x)
+        {
+            bool hasAllFlag = false;
+            foreach (var argValue in x.args)
+            {
+                if (argValue.StartsWith("/all", StringComparison.OrdinalIgnoreCase))
+                {
+                    hasAllFlag = true;
+                }
+            }
+            if (hasAllFlag)
+            {
+                x.args.Remove("/all");
+            }
+            return hasAllFlag;
+        }
+
         /// <summary>
         /// Use to see if a certain method should be running
         /// </summary>

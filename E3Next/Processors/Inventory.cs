@@ -360,19 +360,8 @@ namespace E3Core.Processors
         {
             EventProcessor.RegisterCommand("/fds", (x) =>
             {
-               
-                bool hasAllFlag = false;
-                foreach (var argValue in x.args)
-                {
-                    if (argValue.StartsWith("/all", StringComparison.OrdinalIgnoreCase))
-                    {
-                        hasAllFlag = true;
-                    }
-                }
-                if (hasAllFlag)
-                {
-                    x.args.Remove("/all");
-                }
+
+                bool hasAllFlag = e3util.HasAllFlag(x);
 
                 if (e3util.FilterMe(x)) return;
                 

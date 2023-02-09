@@ -355,18 +355,7 @@ namespace E3Core.Processors
             });
             EventProcessor.RegisterCommand("/chaseme", (x) =>
             {
-                bool hasAllFlag = false;
-                foreach (var argValue in x.args)
-                {
-                    if (argValue.StartsWith("/all", StringComparison.OrdinalIgnoreCase))
-                    {
-                        hasAllFlag = true;
-                    }
-                }
-                if (hasAllFlag)
-                {
-                    x.args.Remove("/all");
-                }
+                bool hasAllFlag = e3util.HasAllFlag(x);
                 //chaseme <toon name>
                 if (x.args.Count == 1 && x.args[0] != "off")
                 {
@@ -444,18 +433,7 @@ namespace E3Core.Processors
             {
                 string user = string.Empty;
 
-                bool hasAllFlag = false;
-                foreach (var argValue in x.args)
-                {
-                    if (argValue.StartsWith("/all", StringComparison.OrdinalIgnoreCase))
-                    {
-                        hasAllFlag = true;
-                    }
-                }
-                if (hasAllFlag)
-                {
-                    x.args.Remove("/all");
-                }
+                bool hasAllFlag = e3util.HasAllFlag(x);
 
                 if (x.args.Count > 0)
                 {
@@ -493,18 +471,7 @@ namespace E3Core.Processors
             });
             EventProcessor.RegisterCommand("/followoff", (x) =>
             {
-                bool hasAllFlag = false;
-                foreach (var argValue in x.args)
-                {
-                    if (argValue.StartsWith("/all", StringComparison.OrdinalIgnoreCase))
-                    {
-                        hasAllFlag = true;
-                    }
-                }
-                if (hasAllFlag)
-                {
-                    x.args.Remove("/all");
-                }
+                bool hasAllFlag = e3util.HasAllFlag(x);
                 RemoveFollow();
                 if (x.args.Count == 0)
                 {
