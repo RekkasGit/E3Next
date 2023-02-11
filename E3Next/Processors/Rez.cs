@@ -626,6 +626,7 @@ namespace E3Core.Processors
                     }
                     else
                     {
+                        targetid = MQ.Query<Int32>("${Target.ID}");
                         E3.Bots.BroadcastCommandToPerson(user, $"/rezit {targetid}");
                     }
                     
