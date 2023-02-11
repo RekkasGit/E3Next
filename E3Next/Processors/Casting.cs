@@ -984,26 +984,84 @@ namespace E3Core.Processors
             }
             return false;
         }
+
+        public static Dictionary<string, string> VarsetValues = new Dictionary<string, string>(StringComparer.OrdinalIgnoreCase);
+        [SubSystemInit]
+        public static void InitVarSets()
+        {
+            EventProcessor.RegisterCommand("/e3varset", (x) => {
+                //key/value
+                if (x.args.Count > 1)
+                {
+                    string key = x.args[0];
+                    string value = x.args[1];
+                    if(!VarsetValues.ContainsKey(key))
+                    {
+                        VarsetValues.Add(key, value);
+                    }
+                    else
+                    {
+                        VarsetValues[key] = value;
+                    }
+                }
+            });
+            EventProcessor.RegisterCommand("/e3varclear", (x) => {
+                //key
+                if (x.args.Count > 0)
+                {
+                    string key = x.args[0];
+                    if (key == "all")
+                    {
+                        VarsetValues.Clear();
+                    }
+                    else
+                    {
+                        VarsetValues.Remove(key);
+                    }
+                }
+            });
+            EventProcessor.RegisterCommand("/e3varlist", (x) => {
+                if(VarsetValues.Count==0)
+                {
+                    E3.Bots.Broadcast("No vars set.");
+                }
+                foreach (var pair in VarsetValues)
+                {
+                    E3.Bots.Broadcast($"{pair.Key} = {pair.Value}");
+                }
+            });
+        }
         public static bool Ifs(Data.Spell spell)
         {
             if (!String.IsNullOrWhiteSpace(spell.Ifs))
             {
                 string tIF = spell.Ifs;
-                //need to do some legacy compatability checks for old varaibles that were used in Ifs.
-                if(tIF.IndexOf("${Assisting}",0, StringComparison.OrdinalIgnoreCase)>-1)
+
+                if(VarsetValues.Count>0)
+                {
+                    foreach (var key in VarsetValues.Keys)
+                    {
+                        if (tIF.IndexOf($"${{{key}}}", 0, StringComparison.OrdinalIgnoreCase) > -1)
+                        {
+                            tIF = tIF.ReplaceInsensitive($"${{{key}}}", VarsetValues[key]);
+                        }
+                    }
+                }
+                //need to do some legacy compatability checksraibles that were used in Ifs.
+                if (tIF.IndexOf("${Assisting}",0, StringComparison.OrdinalIgnoreCase)>-1)
                 {
                     //lets replace it with TRUE/FALSE
-                    tIF = tIF.Replace("${Assisting}", Assist.IsAssisting.ToString());
+                    tIF = tIF.ReplaceInsensitive("${Assisting}", Assist.IsAssisting.ToString());
                 }
                 if (tIF.IndexOf("${AssistTarget}", 0, StringComparison.OrdinalIgnoreCase) > -1)
                 {
                     //lets replace it with TRUE/FALSE
-                    tIF = tIF.Replace("${AssistTarget}", Assist.AssistTargetID.ToString());
+                    tIF = tIF.ReplaceInsensitive("${AssistTarget}", Assist.AssistTargetID.ToString());
                 }
                 if (tIF.IndexOf("${use_QUICKBurns}", 0, StringComparison.OrdinalIgnoreCase) > -1)
                 {
                     //lets replace it with TRUE/FALSE
-                    tIF = tIF.Replace("${use_QUICKBurns}", Burns.use_QUICKBurns.ToString());
+                    tIF = tIF.ReplaceInsensitive("${use_QUICKBurns}", Burns.use_QUICKBurns.ToString());
                 }
                 if (tIF.IndexOf("${use_LONGBurns}", 0, StringComparison.OrdinalIgnoreCase) > -1)
                 {
@@ -1013,22 +1071,22 @@ namespace E3Core.Processors
                 if (tIF.IndexOf("${use_FULLBurns}", 0, StringComparison.OrdinalIgnoreCase) > -1)
                 {
                     //lets replace it with TRUE/FALSE
-                    tIF = tIF.Replace("${use_FULLBurns}", Burns.use_FULLBurns.ToString());
+                    tIF = tIF.ReplaceInsensitive("${use_FULLBurns}", Burns.use_FULLBurns.ToString());
                 }
                 if (tIF.IndexOf("${use_EPICBurns}", 0, StringComparison.OrdinalIgnoreCase) > -1)
                 {
                     //lets replace it with TRUE/FALSE
-                    tIF = tIF.Replace("${use_EPICBurns}", Burns.use_EPICBurns.ToString());
+                    tIF = tIF.ReplaceInsensitive("${use_EPICBurns}", Burns.use_EPICBurns.ToString());
                 }
                 if (tIF.IndexOf("${use_Swarms}", 0, StringComparison.OrdinalIgnoreCase) > -1)
                 {
                     //lets replace it with TRUE/FALSE
-                    tIF = tIF.Replace("${use_Swarms}", Burns.use_Swarms.ToString());
+                    tIF = tIF.ReplaceInsensitive("${use_Swarms}", Burns.use_Swarms.ToString());
                 }
                 if (tIF.IndexOf("${charmTarget}", 0, StringComparison.OrdinalIgnoreCase) > -1)
                 {
                     //lets replace it with TRUE/FALSE
-                    tIF = tIF.Replace("${charmTarget}", "false");
+                    tIF = tIF.ReplaceInsensitive("${charmTarget}", "false");
                 }
                 return MQ.Query<bool>($"${{If[{tIF},TRUE,FALSE]}}");
             }

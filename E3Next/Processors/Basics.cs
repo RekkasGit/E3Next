@@ -4,12 +4,10 @@ using E3Core.Settings.FeatureSettings;
 using E3Core.Utility;
 using MonoCore;
 using System;
-using System.CodeDom;
 using System.Collections.Generic;
 using System.Diagnostics;
 using System.Linq;
 using System.Text;
-using System.Windows.Forms.VisualStyles;
 
 namespace E3Core.Processors
 {
@@ -727,8 +725,8 @@ namespace E3Core.Processors
                 }
                 if (E3.CurrentClass == Data.Class.Cleric && pctMana < 30 && E3.CurrentInCombat)
                 {
-                    bool deathBloomReady = MQ.Query<bool>("${Me.AltAbilityReady[Quiet Miracle]}");
-                    if (deathBloomReady && currentHps > 8000)
+                    bool miracleReady = MQ.Query<bool>("${Me.AltAbilityReady[Quiet Miracle]}");
+                    if (miracleReady)
                     {
                         Spell s;
                         if (!Spell.LoadedSpellsByName.TryGetValue("Quiet Miracle", out s))
@@ -738,6 +736,23 @@ namespace E3Core.Processors
                         if (s.CastType != CastType.None)
                         {
                             Casting.Cast(E3.CurrentId, s);
+                            return;
+                        }
+                    }
+                }
+                if (E3.CurrentClass == Data.Class.Wizard && pctMana < 40 && E3.CurrentInCombat)
+                {
+                    bool harvestReady = MQ.Query<bool>("${Me.AltAbilityReady[Harvest of Druzzil]}");
+                    if (harvestReady)
+                    {
+                        Spell s;
+                        if (!Spell.LoadedSpellsByName.TryGetValue("Harvest of Druzzil", out s))
+                        {
+                            s = new Spell("Harvest of Druzzil");
+                        }
+                        if (s.CastType != CastType.None)
+                        {
+                            Casting.Cast(0, s);
                             return;
                         }
                     }

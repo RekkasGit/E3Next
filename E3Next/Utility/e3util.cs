@@ -7,6 +7,7 @@ using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Runtime.CompilerServices;
+using System.Text;
 using static MonoCore.EventProcessor;
 
 
@@ -20,6 +21,80 @@ namespace E3Core.Utility
         private static IMQ MQ = E3.MQ;
         private static ISpawns _spawns = E3.Spawns;
 
+
+
+        //share this as we can reuse as its only 1 thread
+        private static StringBuilder resultStringBuilder = new StringBuilder(1024);
+        //modified from https://stackoverflow.com/questions/6275980/string-replace-ignoring-case
+        public static string ReplaceInsensitive(this string str,
+            string oldValue, string newValue)
+        {
+            StringComparison comparisonType = StringComparison.OrdinalIgnoreCase;
+            // Check inputs.
+            if (str == null)
+            {
+                // Same as original .NET C# string.Replace behavior.
+                throw new ArgumentNullException(nameof(str));
+            }
+            if (str.Length == 0)
+            {
+                // Same as original .NET C# string.Replace behavior.
+                return str;
+            }
+            if (oldValue == null)
+            {
+                // Same as original .NET C# string.Replace behavior.
+                throw new ArgumentNullException(nameof(oldValue));
+            }
+            if (oldValue.Length == 0)
+            {
+                // Same as original .NET C# string.Replace behavior.
+                throw new ArgumentException("String cannot be of zero length.");
+            }
+
+            resultStringBuilder.Clear();
+          
+            // Analyze the replacement: replace or remove.
+            bool isReplacementNullOrEmpty = string.IsNullOrEmpty(newValue);
+
+            // Replace all values.
+            const int valueNotFound = -1;
+            int foundAt;
+            int startSearchFromIndex = 0;
+            while ((foundAt = str.IndexOf(oldValue, startSearchFromIndex, comparisonType)) != valueNotFound)
+            {
+                // Append all characters until the found replacement.
+                int charsUntilReplacment = foundAt - startSearchFromIndex;
+                bool isNothingToAppend = charsUntilReplacment == 0;
+                if (!isNothingToAppend)
+                {
+                    resultStringBuilder.Append(str, startSearchFromIndex, charsUntilReplacment);
+                }
+
+                // Process the replacement.
+                if (!isReplacementNullOrEmpty)
+                {
+                    resultStringBuilder.Append(newValue);
+                }
+                // Prepare start index for the next search.
+                // This needed to prevent infinite loop, otherwise method always start search 
+                // from the start of the string. For example: if an oldValue == "EXAMPLE", newValue == "example"
+                // and comparisonType == "any ignore case" will conquer to replacing:
+                // "EXAMPLE" to "example" to "example" to "example" … infinite loop.
+                startSearchFromIndex = foundAt + oldValue.Length;
+                if (startSearchFromIndex == str.Length)
+                {
+                    // It is end of the input string: no more space for the next search.
+                    // The input string ends with a value that has already been replaced. 
+                    // Therefore, the string builder with the result is complete and no further action is required.
+                    return resultStringBuilder.ToString();
+                }
+            }
+            // Append the last part to the result.
+            int charsUntilStringEnd = str.Length - startSearchFromIndex;
+            resultStringBuilder.Append(str, startSearchFromIndex, charsUntilStringEnd);
+            return resultStringBuilder.ToString();
+        }
 
         public static bool HasAllFlag(EventProcessor.CommandMatch x)
         {
