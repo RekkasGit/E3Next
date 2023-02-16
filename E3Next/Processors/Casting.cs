@@ -29,8 +29,8 @@ namespace E3Core.Processors
 
         public static CastReturn Cast(int targetID, Data.Spell spell, Func<Int32, Int32, bool> interruptCheck = null, bool isNowCast = false)
         {
-            bool navActive = MQ.Query<bool>("${Navigation.Active}");
-            bool navPaused = MQ.Query<bool>("${Navigation.Paused}");
+            bool navActive = false;
+            bool navPaused = false;
             bool e3PausedNav = false;
             try
             {
@@ -1043,6 +1043,7 @@ namespace E3Core.Processors
                     {
                         if (tIF.IndexOf($"${{{key}}}", 0, StringComparison.OrdinalIgnoreCase) > -1)
                         {
+                           
                             tIF = tIF.ReplaceInsensitive($"${{{key}}}", VarsetValues[key]);
                         }
                     }

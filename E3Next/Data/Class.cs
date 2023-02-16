@@ -30,7 +30,7 @@ namespace E3Core.Data
         Priest = Cleric | Druid | Shaman,
         Caster = Wizard | Magician | Enchanter | Necromancer,
         Melee = Beastlord | Berserker | Bard | Rogue | Ranger | Monk,
-        PureMelee = Warrior | Rogue | Berserker,
+        PureMelee = Warrior | Rogue | Berserker | Monk,
         All = Tank | Priest | Caster | Melee,
         PetClass = Shadowknight | Druid | Necromancer | Magician | Enchanter | Beastlord | Shaman,
         HealHybrid = Paladin | Ranger | Beastlord,

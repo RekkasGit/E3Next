@@ -72,6 +72,7 @@ namespace E3Core.Processors
 
                     if (distance != -1)
                     {
+                        Following = true;
                         bool InLoS = MQ.Query<bool>($"${{Spawn[={_chaseTarget}].LineOfSight}}");
                         bool navLoaded = MQ.Query<bool>("${Bool[${Navigation.MeshLoaded}]}");
                         if (navLoaded)
