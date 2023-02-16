@@ -472,21 +472,37 @@ namespace E3Core.Processors
             });
             EventProcessor.RegisterCommand("/followoff", (x) =>
             {
+                
                 bool hasAllFlag = e3util.HasAllFlag(x);
-                RemoveFollow();
+               
                 if (x.args.Count == 0)
                 {
-                    if(hasAllFlag)
+                    _chaseTarget = String.Empty;
+                    FollowTargetName = string.Empty;
+                    Following = false;
+
+                    if (hasAllFlag)
                     {
-                        //we are telling people to follow us
+                        //we are telling people to stop following us
                         E3.Bots.BroadcastCommand("/followoff all");
                     }
                     else
                     {
-                        //we are telling people to follow us
+                        //we are telling everyone to stop following us
                         E3.Bots.BroadcastCommandToGroup("/followoff all");
                     }
-                   
+                }
+                else
+                {
+                    if (!String.IsNullOrWhiteSpace(FollowTargetName))
+                    {
+                        if (_spawns.TryByName(FollowTargetName, out var s))
+                        {
+                            MQ.Delay(2000, $"${{Spawn[${FollowTargetName}].Distance}} >25");
+                        }
+                    }
+                    RemoveFollow();
+
                 }
             });
             EventProcessor.RegisterCommand("/rtz", (x) =>
