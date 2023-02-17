@@ -44,20 +44,27 @@ namespace E3Core.Processors
         [ClassInvoke(Data.Class.PetClass)]
         public static void Check_Pets()
         {
-            if (Basics.InCombat() && !E3.CharacterSettings.Pet_SummonCombat) return;
             if (E3.IsInvis) return;
             if (Basics.AmIDead()) return;
-
             if (!e3util.ShouldCheck(ref _nextPetCheck, _nextPetCheckInterval)) return;
+
             Int32 petId = MQ.Query<Int32>("${Me.Pet.ID}");
 
-            CheckPetSummon(ref petId);
 
             if (petId > 0)
             {
                 CheckPetHeal(petId);
                 CheckPetShrink(petId);
+
             }
+
+            if (petId < 1 && Basics.InCombat() && !E3.CharacterSettings.Pet_SummonCombat)
+            {
+                return;
+            }
+
+            CheckPetSummon(ref petId);
+
         }
 
         private static void CheckPetSummon(ref Int32 petID)
