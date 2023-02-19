@@ -40,37 +40,37 @@ namespace E3Core.Processors
         {
             EventProcessor.RegisterCommand("/armor", (x) =>
             {
-                VetAA("Armor of Experience", "/armor", x.args.Count);
+                VetAA("Armor of Experience", "/armor", x);
             });
             EventProcessor.RegisterCommand("/intensity", (x) =>
             {
-                VetAA("Intensity of the Resolute", "/intensity", x.args.Count);
+                VetAA("Intensity of the Resolute", "/intensity", x);
             });
             EventProcessor.RegisterCommand("/infusion", (x) =>
             {
-                VetAA("Infusion of the Faithful", "/infusion", x.args.Count);
+                VetAA("Infusion of the Faithful", "/infusion", x);
             });
             EventProcessor.RegisterCommand("/staunch", (x) =>
             {
-                VetAA("Staunch Recovery", "/staunch", x.args.Count);
+                VetAA("Staunch Recovery", "/staunch", x);
             });
             EventProcessor.RegisterCommand("/servant", (x) =>
             {
-                VetAA("Steadfast Servant", "/servant", x.args.Count);
+                VetAA("Steadfast Servant", "/servant", x);
             });
             EventProcessor.RegisterCommand("/expedient", (x) =>
             {
-                VetAA("Expedient Recovery", "/expedient", x.args.Count);
+                VetAA("Expedient Recovery", "/expedient", x);
             });
             EventProcessor.RegisterCommand("/lesson", (x) =>
             {
-                VetAA("Lesson of the Devoted", "/lesson", x.args.Count);
+                VetAA("Lesson of the Devoted", "/lesson", x);
             });
             EventProcessor.RegisterCommand("/throne", (x) =>
             {
                 if (x.args.Count == 0)
                 {
-                    E3.Bots.BroadcastCommandToGroup("/throne me");
+                    E3.Bots.BroadcastCommandToGroup("/throne me",x);
                 }
                 Casting.Interrupt();
                 MQ.Delay(500);
@@ -88,24 +88,24 @@ namespace E3Core.Processors
             });
             EventProcessor.RegisterCommand("/jester", (x) =>
             {
-                VetAA("Chaotic Jester", "/jester", x.args.Count);
+                VetAA("Chaotic Jester", "/jester", x);
             });
         }
 
-        private static void VetAA(string vetAASpell, string command, Int32 argCount)
+        private static void VetAA(string vetAASpell, string command,EventProcessor.CommandMatch x)
         {
             Spell s;
             if (!Spell.LoadedSpellsByName.TryGetValue(vetAASpell, out s))
             {
                 s = new Spell(vetAASpell);
             }
-            if (argCount == 0)
+            if (x.args.Count == 0)
             {
                 if (Casting.CheckReady(s))
                 {
                     Casting.Cast(0, s);
                 }
-                E3.Bots.BroadcastCommandToGroup($"{command} all");
+                E3.Bots.BroadcastCommandToGroup($"{command} all",x);
             }
             else
             {

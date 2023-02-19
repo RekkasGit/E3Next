@@ -96,23 +96,7 @@ namespace E3Core.Utility
             return resultStringBuilder.ToString();
         }
 
-        public static bool HasAllFlag(EventProcessor.CommandMatch x)
-        {
-            bool hasAllFlag = false;
-            foreach (var argValue in x.args)
-            {
-                if (argValue.StartsWith("/all", StringComparison.OrdinalIgnoreCase))
-                {
-                    hasAllFlag = true;
-                }
-            }
-            if (hasAllFlag)
-            {
-                x.args.Remove("/all");
-            }
-            return hasAllFlag;
-        }
-
+       
         /// <summary>
         /// Use to see if a certain method should be running
         /// </summary>
@@ -637,6 +621,7 @@ namespace E3Core.Utility
         {
             EventProcessor.RegisterCommand(command, (x) =>
             {
+              
                  Int32 mobid;
                 if (x.args.Count > 0)
                 {
@@ -665,8 +650,8 @@ namespace E3Core.Utility
                         {
                             if (spawn.TypeDesc == "NPC")
                             {
-                                //we are telling people to follow us
-                                E3.Bots.BroadcastCommandToGroup($"{command} {targetID}");
+                                 //we are telling people to follow us
+                                E3.Bots.BroadcastCommandToGroup($"{command} {targetID}",x);
                                 FunctionToExecute(targetID);
                             }
                         }

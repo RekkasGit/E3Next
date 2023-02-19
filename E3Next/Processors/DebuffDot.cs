@@ -212,8 +212,9 @@ namespace E3Core.Processors
                 _mobsToDebuff.Clear();
                 if (x.args.Count == 0)
                 {
-                    //we are telling people to back off
-                    E3.Bots.BroadcastCommandToGroup($"/debuffsoff all");
+                   //we are telling people to back off
+                   E3.Bots.BroadcastCommandToGroup($"/debuffsoff all",x);
+                   
                 }
 
             });
@@ -223,7 +224,7 @@ namespace E3Core.Processors
                 if (x.args.Count == 0)
                 {
                     //we are telling people to back off
-                    E3.Bots.BroadcastCommandToGroup($"/dotsoff all");
+                    E3.Bots.BroadcastCommandToGroup($"/dotsoff all",x);
                 }
 
             });
@@ -235,7 +236,7 @@ namespace E3Core.Processors
                 if (x.args.Count == 0)
                 {
                     _shouldOffAssist = true;
-                    E3.Bots.BroadcastCommandToGroup("/offassiston all");
+                    E3.Bots.BroadcastCommandToGroup("/offassiston all",x);
                 }
                 else
                 {
@@ -295,12 +296,12 @@ namespace E3Core.Processors
                             {
                                 _mobsToIgnoreOffAsist.Add(targetid);
                             }
-                            E3.Bots.BroadcastCommandToGroup($"/offassistignore all {command} {targetid}");
+                            E3.Bots.BroadcastCommandToGroup($"/offassistignore all {command} {targetid}",x);
                         }
                         else if (command == "remove")
                         {
                             _mobsToIgnoreOffAsist.Remove(targetid);
-                            E3.Bots.BroadcastCommandToGroup($"/offassistignore all {command} {targetid}");
+                            E3.Bots.BroadcastCommandToGroup($"/offassistignore all {command} {targetid}",x);
                         }
                     }
                 }

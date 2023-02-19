@@ -171,12 +171,12 @@ namespace E3Core.Processors
             });
             EventProcessor.RegisterCommand("/dropinvis", (x) =>
             {
-                E3.Bots.BroadcastCommandToGroup("/makemevisible");
+                E3.Bots.BroadcastCommandToGroup("/makemevisible",x);
                 MQ.Cmd("/makemevisible");
             });
             EventProcessor.RegisterCommand("/droplev", (x) =>
             {
-                E3.Bots.BroadcastCommandToGroup("/removelev");
+                E3.Bots.BroadcastCommandToGroup("/removelev",x);
                 MQ.Cmd("/removelev");
             });
             EventProcessor.RegisterCommand("/shutdown", (x) =>
@@ -265,7 +265,7 @@ namespace E3Core.Processors
             {
                 if (x.args.Count == 0)
                 {
-                    E3.Bots.BroadcastCommandToGroup("/yes all");
+                    E3.Bots.BroadcastCommandToGroup("/yes all",x);
                 }
                 e3util.ClickYesNo(true);
             });
@@ -273,7 +273,7 @@ namespace E3Core.Processors
             {
                 if (x.args.Count == 0)
                 {
-                    E3.Bots.BroadcastCommandToGroup("/no all");
+                    E3.Bots.BroadcastCommandToGroup("/no all",x);
                 }
                 e3util.ClickYesNo(false);
             });
@@ -315,7 +315,7 @@ namespace E3Core.Processors
                                 first = false;
                             }
                             string message = sb.ToString();
-                            E3.Bots.BroadcastCommandToGroup($"/bark-send {targetid} \"{message}\"");
+                            E3.Bots.BroadcastCommandToGroup($"/bark-send {targetid} \"{message}\"",x);
                             for (int i = 0; i < 5; i++)
                             {
                                 MQ.Cmd($"/say {message}");

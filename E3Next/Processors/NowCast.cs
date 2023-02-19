@@ -48,12 +48,12 @@ namespace E3Core.Processors
                     {
                         if (targetid > 0)
                         {
-                            E3.Bots.BroadcastCommandToGroup($"/nowcast me \"{spell}\" {targetid}");
+                            E3.Bots.BroadcastCommandToGroup($"/nowcast me \"{spell}\" {targetid}",x);
                             castResult = NowCastSpell(spell, targetid);
                         }
                         else
                         {
-                            E3.Bots.BroadcastCommandToGroup($"/nowcast me \"{spell}\"");
+                            E3.Bots.BroadcastCommandToGroup($"/nowcast me \"{spell}\"", x);
                             castResult = NowCastSpell(spell, 0);
 
                         }

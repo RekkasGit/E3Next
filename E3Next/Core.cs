@@ -331,8 +331,10 @@ namespace MonoCore
                                     //need to split out the params
                                     List<String> args = ParseParms(line, ' ', '"').ToList();
                                     args.RemoveAt(0);
-                                      
-                                    item.Value.queuedEvents.Enqueue(new CommandMatch() { eventName = item.Value.keyName, eventString = line, args = args });
+
+                                    bool hasAllFlag = HasAllFlag(args);
+                                                                        
+                                    item.Value.queuedEvents.Enqueue(new CommandMatch() { eventName = item.Value.keyName, eventString = line, args = args, hasAllFlag=hasAllFlag });
                                     
                                 }
                             }
@@ -346,6 +348,24 @@ namespace MonoCore
             }
             Core.mqInstance.Write("Ending Event Processing Thread.");
         }
+        ///checks for all flag and then removes it
+        private static bool HasAllFlag(List<String> x)
+        {
+            bool hasAllFlag = false;
+            foreach (var argValue in x)
+            {
+                if (argValue.StartsWith("/all", StringComparison.OrdinalIgnoreCase))
+                {
+                    hasAllFlag = true;
+                }
+            }
+            if (hasAllFlag)
+            {
+                x.Remove("/all");
+            }
+            return hasAllFlag;
+        }
+
         /// <summary>
         /// This is so that things like /command /only|<toonName> and such work
         /// </summary>
@@ -611,7 +631,7 @@ namespace MonoCore
                     }
                 }
             }
-
+            public bool hasAllFlag;
             public string eventString;
             public string eventName;
             public List<string> filters = new List<string>();

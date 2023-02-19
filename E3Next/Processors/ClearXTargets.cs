@@ -22,6 +22,7 @@ namespace E3Core.Processors
         public static Int32 MobToAttack = 0;
         public static bool FaceTarget = false;
         public static List<string> Filters = new List<string>();
+        public static bool HasAllFlag = false;
         public static bool StickTarget = false;
 
         [ClassInvoke(Data.Class.All)]
@@ -86,14 +87,30 @@ namespace E3Core.Processors
                                 MQ.Cmd($"/squelch /stick {E3.CharacterSettings.Assist_MeleeStickPoint} {E3.CharacterSettings.Assist_MeleeDistance}");
                             }
                             MQ.Delay(500);
-                            if (Filters.Count > 0)
+
+                            if(HasAllFlag)
                             {
-                                E3.Bots.BroadcastCommandToGroup($"/assistme {mobId} {Zoning.CurrentZone.Id} {string.Join(" ", Filters)}");
+                                if (Filters.Count > 0)
+                                {
+                                    E3.Bots.BroadcastCommand($"/assistme {mobId} {Zoning.CurrentZone.Id} {string.Join(" ", Filters)}");
+                                }
+                                else
+                                {
+                                    E3.Bots.BroadcastCommand($"/assistme {mobId} {Zoning.CurrentZone.Id}");
+                                }
                             }
                             else
                             {
-                                E3.Bots.BroadcastCommandToGroup($"/assistme {mobId} {Zoning.CurrentZone.Id}");
+                                if (Filters.Count > 0)
+                                {
+                                    E3.Bots.BroadcastCommandToGroup($"/assistme {mobId} {Zoning.CurrentZone.Id} {string.Join(" ", Filters)}");
+                                }
+                                else
+                                {
+                                    E3.Bots.BroadcastCommandToGroup($"/assistme {mobId} {Zoning.CurrentZone.Id}");
+                                }
                             }
+
                         }
                         else
                         {

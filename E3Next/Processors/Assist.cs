@@ -649,9 +649,6 @@ namespace E3Core.Processors
                 _assistIsEnraged = false;
                MQ.Cmd("/makemevisible");
                //Rez.Reset();
-
-               bool hasAllFlag = e3util.HasAllFlag(x);
-
                if (x.args.Count == 0)
                {
 
@@ -669,15 +666,8 @@ namespace E3Core.Processors
                        AssistOn(targetID, Zoning.CurrentZone.Id);
 
                    }
-                   if (hasAllFlag)
-                   {
-                       E3.Bots.BroadcastCommand($"/assistme {targetID} {Zoning.CurrentZone.Id}", false, x);
-                   }
-                   else
-                   {
-                       E3.Bots.BroadcastCommandToGroup($"/assistme {targetID} {Zoning.CurrentZone.Id}", x);
-                   }
-
+                   E3.Bots.BroadcastCommandToGroup($"/assistme {targetID} {Zoning.CurrentZone.Id}", x);
+              
                }
                else if (!e3util.FilterMe(x))
                {
@@ -714,7 +704,7 @@ namespace E3Core.Processors
                         ClearXTargets.Filters.Clear();
                         ClearXTargets.Filters.AddRange(x.filters);
                     }
-
+                    ClearXTargets.HasAllFlag = x.hasAllFlag;
                     ClearXTargets.Enabled = true;
                     ClearXTargets.FaceTarget = true;
                     ClearXTargets.StickTarget = false;
@@ -725,6 +715,7 @@ namespace E3Core.Processors
                     AssistOff();
                     ClearXTargets.Enabled = false;
                     ClearXTargets.Filters.Clear();
+                    ClearXTargets.HasAllFlag = false;
                     E3.Bots.BroadcastCommandToGroup($"/backoff all",x);
                 }
                 else if (x.args.Count >= 1)
@@ -737,6 +728,7 @@ namespace E3Core.Processors
                         ClearXTargets.Filters.Clear();
                         ClearXTargets.Filters.AddRange(x.filters);
                     }
+                    ClearXTargets.HasAllFlag = x.hasAllFlag;
                     foreach (var argValue in x.args)
                     {
                         if (argValue.Equals("noface", StringComparison.OrdinalIgnoreCase))
@@ -748,6 +740,7 @@ namespace E3Core.Processors
                             ClearXTargets.StickTarget = true;
                         }
                     }
+
                     ClearXTargets.Enabled = true;
 
                 }
@@ -780,9 +773,6 @@ namespace E3Core.Processors
             });
             EventProcessor.RegisterCommand("/backoff", (x) =>
             {
-
-                bool hasAllFlag = e3util.HasAllFlag(x);
-
                 if (!e3util.FilterMe(x))
                 {
                     Casting.Interrupt();
@@ -792,16 +782,9 @@ namespace E3Core.Processors
 
                 }
                 if (x.args.Count == 0)
-                {     //we are telling people to back off
-                    if (hasAllFlag)
-                    {
-                        E3.Bots.BroadcastCommand($"/backoff all", false, x);
-                    }
-                    else
-                    {
-                        E3.Bots.BroadcastCommandToGroup($"/backoff all", x);
-                    }
-
+                {     
+                    //we are telling people to back off
+                    E3.Bots.BroadcastCommandToGroup($"/backoff all", x);
                 }
             });
             e3util.RegisterCommandWithTarget("/e3offassistignore", (x) => { _offAssistIgnore.Add(x); });

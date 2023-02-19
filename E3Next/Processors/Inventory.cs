@@ -361,8 +361,6 @@ namespace E3Core.Processors
             EventProcessor.RegisterCommand("/fds", (x) =>
             {
 
-                bool hasAllFlag = e3util.HasAllFlag(x);
-
                 if (e3util.FilterMe(x)) return;
                 
                 List<string> validReportChannels = new List<string>() { "/g", "/gu", "/say", "/rsay", "/gsay", "/rs", "/bc" };
@@ -380,17 +378,8 @@ namespace E3Core.Processors
                     {
                         if (!x.args.Contains("group"))
                         {
-                            if (hasAllFlag)
-                            {
-                                E3.Bots.BroadcastCommand($"/fds {slot} {channel} group",false,x);
-                            }
-                            else
-                            {
-                                E3.Bots.BroadcastCommandToGroup($"/fds {slot} {channel} group",x);
-                            }
-                           
+                            E3.Bots.BroadcastCommandToGroup($"/fds {slot} {channel} group",x);
                         }
-
                     }
                 }
 

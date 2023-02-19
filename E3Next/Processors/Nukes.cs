@@ -37,9 +37,7 @@ namespace E3Core.Processors
 
             EventProcessor.RegisterCommand("/pbaeon", (x) =>
             {
-                bool hasAllFlag = e3util.HasAllFlag(x);
-
-                if (E3.CharacterSettings.PBAE.Count > 0)
+                 if (E3.CharacterSettings.PBAE.Count > 0)
                 {
                     PBAEEnabled = true;
                     E3.Bots.Broadcast("Enabling PBAE");
@@ -47,14 +45,7 @@ namespace E3Core.Processors
                 }
                 if (x.args.Count == 0)
                 {
-                    if (hasAllFlag)
-                    {
-                        E3.Bots.BroadcastCommand($"/pbaeon all");
-                    }
-                    else
-                    {
-                        E3.Bots.BroadcastCommandToGroup($"/pbaeon all");
-                    }
+                   E3.Bots.BroadcastCommandToGroup($"/pbaeon all",x);
                 }
 
             });

@@ -45,11 +45,28 @@ namespace E3Core.Processors
         private static StringBuilder _strinbBuilder = new StringBuilder();
         public void BroadcastCommandToGroup(string query, CommandMatch match = null)
         {
+
+            bool hasAllFlag = false;
+
+            if(match!=null)
+            {
+                hasAllFlag = match.hasAllFlag;
+            }
+
+
             if(match!=null && match.filters.Count>0)
             {
                 //need to pass over the filters if they exist
                 _strinbBuilder.Clear();
-                _strinbBuilder.Append($"/bcg /{query}");
+                if(hasAllFlag)
+                {
+                    _strinbBuilder.Append($"/bca /{query}");
+                }
+                else
+                {
+                    _strinbBuilder.Append($"/bcg /{query}");
+                }
+                
                 foreach(var filter in match.filters)
                 {
                     _strinbBuilder.Append($" \"{filter}\"");
@@ -58,7 +75,15 @@ namespace E3Core.Processors
             }
             else
             {
-                MQ.Cmd($"/bcg /{query}");
+                if(hasAllFlag)
+                {
+                    MQ.Cmd($"/bca /{query}");
+                }
+                else
+                {
+                    MQ.Cmd($"/bcg /{query}");
+                }
+                
             }
         }
         public void BroadcastCommandToPerson(string person, string command)

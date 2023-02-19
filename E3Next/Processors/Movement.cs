@@ -238,7 +238,7 @@ namespace E3Core.Processors
                 if (x.args.Count == 0)
                 {
                     //we are telling people to follow us
-                    E3.Bots.BroadcastCommandToGroup($"/clickit {Zoning.CurrentZone.Id}");
+                    E3.Bots.BroadcastCommandToGroup($"/clickit {Zoning.CurrentZone.Id}",x);
 
                 }
                 //read the ini file and pull the info we need.
@@ -356,7 +356,6 @@ namespace E3Core.Processors
             });
             EventProcessor.RegisterCommand("/chaseme", (x) =>
             {
-                bool hasAllFlag = e3util.HasAllFlag(x);
                 //chaseme <toon name>
                 if (x.args.Count == 1 && x.args[0] != "off")
                 {
@@ -374,16 +373,7 @@ namespace E3Core.Processors
                 //chaseme off
                 else if (x.args.Count == 1 && x.args[0] == "off")
                 {
-                    if(hasAllFlag)
-                    {
-                        E3.Bots.BroadcastCommand($"/chaseme off {E3.CurrentName}",false, x);
-
-                    }
-                    else
-                    {
-                        E3.Bots.BroadcastCommandToGroup($"/chaseme off {E3.CurrentName}", x);
-
-                    }
+                    E3.Bots.BroadcastCommandToGroup($"/chaseme off {E3.CurrentName}", x);
                     _chaseTarget = String.Empty;
                     Following = false;
                 }
@@ -399,16 +389,7 @@ namespace E3Core.Processors
                 }
                 else
                 {
-                    if(hasAllFlag)
-                    {
-                        E3.Bots.BroadcastCommand($"/chaseme {E3.CurrentName}",false, x);
-                    }
-                    else
-                    {
-                        E3.Bots.BroadcastCommandToGroup($"/chaseme {E3.CurrentName}", x);
-
-                    }
-                   
+                    E3.Bots.BroadcastCommandToGroup($"/chaseme {E3.CurrentName}", x);
                     Following = false;
                 }
             });
@@ -434,8 +415,6 @@ namespace E3Core.Processors
             {
                 string user = string.Empty;
 
-                bool hasAllFlag = e3util.HasAllFlag(x);
-
                 if (x.args.Count > 0)
                 {
                     if (!e3util.FilterMe(x))
@@ -459,38 +438,20 @@ namespace E3Core.Processors
                 {
                     Rez.Reset();
                     //we are telling people to follow us
-                    if(hasAllFlag)
-                    {
-                        E3.Bots.BroadcastCommand("/followme " + E3.CurrentName,false, x);
-                    }
-                    else
-                    {
-                        E3.Bots.BroadcastCommandToGroup("/followme " + E3.CurrentName, x);
-                    }
+                    E3.Bots.BroadcastCommandToGroup("/followme " + E3.CurrentName, x);
                    
                 }
             });
             EventProcessor.RegisterCommand("/followoff", (x) =>
             {
-                
-                bool hasAllFlag = e3util.HasAllFlag(x);
-               
                 if (x.args.Count == 0)
                 {
                     _chaseTarget = String.Empty;
                     FollowTargetName = string.Empty;
                     Following = false;
 
-                    if (hasAllFlag)
-                    {
-                        //we are telling people to stop following us
-                        E3.Bots.BroadcastCommand("/followoff all");
-                    }
-                    else
-                    {
-                        //we are telling everyone to stop following us
-                        E3.Bots.BroadcastCommandToGroup("/followoff all");
-                    }
+                    //we are telling everyone to stop following us
+                    E3.Bots.BroadcastCommandToGroup("/followoff all",x);
                 }
                 else
                 {

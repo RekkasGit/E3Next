@@ -69,6 +69,40 @@ namespace E3Core.Processors
                 }
             });
 
+            EventProcessor.RegisterEvent("BuffMyPet", "(.+) tells you, '(?i)buff my pet'", (x) =>
+            {
+                if (x.match.Groups.Count > 1)
+                {
+                    if (Basics.AmIDead()) return;
+                    string user = x.match.Groups[1].Value;
+                    if (E3.GeneralSettings.BuffRequests_AllowBuffRequests || E3.Bots.IsMyBot(user))
+                    {
+                        if (_spawns.TryByName(user, out var spawn))
+                        {
+                            Int32 petid = spawn.PetID;
+
+                            if(petid>0)
+                            {
+                                foreach (var spell in E3.CharacterSettings.GroupBuffs)
+                                {
+                                    _queuedBuffs.Enqueue(new BuffQueuedItem() { TargetID = petid, Spell = spell });
+
+                                }
+                                MQ.Cmd($"/t {user} casting buffs on your pet, please wait.");
+
+                                E3.Bots.BroadcastCommand($"/buffme {petid}");
+                            }
+                            else
+                            {
+                                MQ.Cmd($"/t {user} you have no pet.");
+                            }
+                           
+                            
+                        }
+                    }
+                }
+            });
+
             EventProcessor.RegisterCommand("/buffme", (x) =>
             {
                 if (x.args.Count > 0)
