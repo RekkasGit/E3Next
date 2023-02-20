@@ -19,7 +19,7 @@ namespace E3Core.Processors
         List<string> BotsConnected();
         Boolean HasShortBuff(string name, Int32 buffid);
         void BroadcastCommand(string command, bool noparse = false, CommandMatch match = null);
-        void BroadcastCommandToGroup(string command, CommandMatch match=null);
+        void BroadcastCommandToGroup(string command, CommandMatch match=null, bool noparse = false);
         void BroadcastCommandToPerson(string person, string command);
         void Broadcast(string message);
         List<Int32> BuffList(string name);
@@ -43,7 +43,7 @@ namespace E3Core.Processors
         private static Int64 _nextBuffCheck = 0;
         private static Int64 _nextBuffRefreshTimeInterval = 1000;
         private static StringBuilder _strinbBuilder = new StringBuilder();
-        public void BroadcastCommandToGroup(string query, CommandMatch match = null)
+        public void BroadcastCommandToGroup(string query, CommandMatch match = null, bool noparse = false)
         {
 
             bool hasAllFlag = false;
@@ -53,6 +53,12 @@ namespace E3Core.Processors
                 hasAllFlag = match.hasAllFlag;
             }
 
+            string noparseCommand = string.Empty;
+            if(noparse)
+            {
+                //space after is required
+                noparseCommand = "/noparse ";
+            }
 
             if(match!=null && match.filters.Count>0)
             {
@@ -60,7 +66,7 @@ namespace E3Core.Processors
                 _strinbBuilder.Clear();
                 if(hasAllFlag)
                 {
-                    _strinbBuilder.Append($"/bca /{query}");
+                    _strinbBuilder.Append($"{noparseCommand}/bca /{query}");
                 }
                 else
                 {
@@ -77,11 +83,11 @@ namespace E3Core.Processors
             {
                 if(hasAllFlag)
                 {
-                    MQ.Cmd($"/bca /{query}");
+                    MQ.Cmd($"{noparseCommand}/bca /{query}");
                 }
                 else
                 {
-                    MQ.Cmd($"/bcg /{query}");
+                    MQ.Cmd($"{noparseCommand}/bcg /{query}");
                 }
                 
             }
@@ -342,13 +348,19 @@ namespace E3Core.Processors
 
         }
 
-        public void BroadcastCommandToGroup(string query, CommandMatch match = null)
+        public void BroadcastCommandToGroup(string query, CommandMatch match = null,bool noparse =false)
         {
+            string noparseCommand = string.Empty;
+            if (noparse)
+            {
+                //space after is required
+                noparseCommand = "/noparse ";
+            }
             if (match != null && match.filters.Count > 0)
             {
                 //need to pass over the filters if they exist
                 _strinbBuilder.Clear();
-                _strinbBuilder.Append($"/dgge {query}");
+                _strinbBuilder.Append($"{noparseCommand}/dgge {query}");
                 foreach (var filter in match.filters)
                 {
                     _strinbBuilder.Append($" \"{filter}\"");
@@ -357,7 +369,7 @@ namespace E3Core.Processors
             }
             else
             {
-                MQ.Cmd($"/dgge {query}");
+                MQ.Cmd($"{noparseCommand}/dgge {query}");
             }
             
         }

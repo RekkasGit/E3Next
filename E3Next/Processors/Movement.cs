@@ -233,6 +233,18 @@ namespace E3Core.Processors
         }
         static void RegisterEvents()
         {
+
+            EventProcessor.RegisterCommand("/scatter", (x) => {
+
+                Int32 Distance = 10;
+                if(x.args.Count>0)
+                {
+                    Int32.TryParse(x.args[0], out Distance);
+                }
+                E3.Bots.BroadcastCommandToGroup($"/nav locxy ${{Math.Calc[${{Me.X}}+${{Math.Rand[-{Distance},{Distance}]}}]}} ${{Math.Calc[${{Me.Y}}+${{Math.Rand[-{Distance},{Distance}]}}]}}",x,true);
+            
+            });
+
             EventProcessor.RegisterCommand("/clickit", (x) =>
             {
                 if (x.args.Count == 0)
