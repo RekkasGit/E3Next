@@ -207,6 +207,10 @@ namespace E3Core.Processors
                         _log.Write("Checking to see if we need to aquire a target for non self /pbaoe");
                         if (spell.TargetType != "PB AE" && spell.TargetType != "Self")
                         {
+                            if(Basics.InCombat() && targetID!=Assist.AssistTargetID && MQ.Query<bool>("${Stick.Active}"))
+                            {
+                                MQ.Cmd("/stick pause");
+                            }
                             TrueTarget(targetID);
                         }
                         _log.Write("Checking BeforeEvent...");
@@ -332,7 +336,7 @@ namespace E3Core.Processors
                             if (spell.MyCastTime > 500)
                             {
 
-                                if (MQ.Query<bool>("${Stick.Status.Equal[on]}")) MQ.Cmd("/squelch /stick pause");
+                                //if (MQ.Query<bool>("${Stick.Status.Equal[on]}")) MQ.Cmd("/squelch /stick pause");
                                 if (MQ.Query<bool>("${AdvPath.Following}") && E3.Following) MQ.Cmd("/squelch /afollow off");
                                 if (MQ.Query<bool>("${MoveTo.Moving}") && E3.Following) MQ.Cmd("/moveto off");
                                 
