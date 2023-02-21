@@ -202,6 +202,35 @@ namespace E3Core.Settings.FeatureSettings
                 }
 
             }
+            for (char c = '0'; c <= '9'; c++)
+            {
+                string tc = c.ToString();
+                newFile.Sections.AddSection(tc);
+                var section = newFile.Sections.GetSectionData(tc);
+
+                foreach (string hashvalue in _keepSorted)
+                {
+                    if (hashvalue.StartsWith(tc))
+                    {
+                        section.Keys.AddKey(hashvalue, "Keep");
+                    }
+                }
+                foreach (string hashvalue in _sellSorted)
+                {
+                    if (hashvalue.StartsWith(tc))
+                    {
+                        section.Keys.AddKey(hashvalue, "Sell");
+                    }
+                }
+                foreach (string hashvalue in _skipSorted)
+                {
+                    if (hashvalue.StartsWith(tc))
+                    {
+                        section.Keys.AddKey(hashvalue, "Skip");
+                    }
+                }
+
+            }
             string fileNameFullPath = GetSettingsFilePath(_fileName);
 
 
