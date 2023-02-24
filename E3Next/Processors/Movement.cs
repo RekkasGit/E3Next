@@ -456,26 +456,35 @@ namespace E3Core.Processors
             });
             EventProcessor.RegisterCommand("/followoff", (x) =>
             {
-                if (x.args.Count == 0)
+                if (!x.args.Contains("all",StringComparer.OrdinalIgnoreCase))
                 {
                     _chaseTarget = String.Empty;
                     FollowTargetName = string.Empty;
                     Following = false;
 
                     //we are telling everyone to stop following us
-                    E3.Bots.BroadcastCommandToGroup("/followoff all",x);
+                    string extraArgs = String.Empty;
+
+                    if(x.args.Contains("tome", StringComparer.OrdinalIgnoreCase))
+                    {   
+                        extraArgs += " tome";
+                    }
+                    E3.Bots.BroadcastCommandToGroup($"/followoff all{extraArgs}",x);
                 }
                 else
                 {
                     if (!String.IsNullOrWhiteSpace(FollowTargetName))
                     {
-                        if (_spawns.TryByName(FollowTargetName, out var s))
+                        if (x.args.Contains("tome", StringComparer.OrdinalIgnoreCase))
                         {
-                            MQ.Delay(2000, $"${{Spawn[${FollowTargetName}].Distance}} >25");
+                            if (_spawns.TryByName(FollowTargetName, out var s))
+                            {
+                                Casting.TrueTarget(s.ID);
+                                e3util.TryMoveToTarget();
+                            }
                         }
                     }
                     RemoveFollow();
-
                 }
             });
             EventProcessor.RegisterCommand("/rtz", (x) =>
