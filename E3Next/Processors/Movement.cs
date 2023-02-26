@@ -517,7 +517,7 @@ namespace E3Core.Processors
                     //tell others to rtz
                     //get our faced heading
                     double heading = MQ.Query<double>("${Me.Heading.Degrees}");
-                    E3.Bots.BroadcastCommandToGroup($"/rtz {heading}");
+                    E3.Bots.BroadcastCommandToGroup($"/rtz {heading}",x);
                     MQ.Delay(1000);
                     MQ.Cmd($"/face fast heading {heading * -1}");
                     MQ.Cmd("/nomodkey /keypress forward hold");
