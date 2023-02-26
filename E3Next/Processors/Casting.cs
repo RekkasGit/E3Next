@@ -657,7 +657,7 @@ namespace E3Core.Processors
                     }
 
                     //after event, after all things are done               
-                     if (!String.IsNullOrWhiteSpace(spell.AfterEvent))
+                    if (!String.IsNullOrWhiteSpace(spell.AfterEvent))
                     {
                         _log.Write($"Doing AfterEvent:{spell.AfterEvent}");
                         MQ.Cmd($"/docommand {spell.AfterEvent}");
