@@ -454,6 +454,23 @@ namespace E3Core.Processors
                    
                 }
             });
+
+            EventProcessor.RegisterCommand("/mtm", (x) => {
+
+                if (x.args.Count==0)
+                {
+                    E3.Bots.BroadcastCommandToGroup($"/mtm {E3.CurrentName}", x);
+                }
+                else
+                {
+                    if (_spawns.TryByName(x.args[0], out var s))
+                    {
+                        Casting.TrueTarget(s.ID);
+                        e3util.TryMoveToTarget();
+                    }
+                }
+            }
+            );
             EventProcessor.RegisterCommand("/followoff", (x) =>
             {
                 if (!x.args.Contains("all",StringComparer.OrdinalIgnoreCase))
