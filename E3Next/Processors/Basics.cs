@@ -918,7 +918,7 @@ namespace E3Core.Processors
             if (!MQ.Query<bool>($"${{Me.ItemReady[={box}]}}")) return;
             if (MQ.Query<bool>("${Cursor.ID}"))
             {
-                MQ.Cmd("/autoinv");
+                e3util.ClearCursor();
             }
 
             var ammoItem = MQ.Query<string>("${Me.Inventory[ammo]}");
@@ -1005,6 +1005,20 @@ namespace E3Core.Processors
                 
                 if (itemOnCursor)
                 {
+                    //auto delete stuff on cursor that is configured to do so
+                    string autoinvItem = MQ.Query<string>("${Cursor}");
+                    if (E3.CharacterSettings.Cursor_Delete.Contains(autoinvItem, StringComparer.OrdinalIgnoreCase))
+                    {
+                        //configured to delete this item.
+                        MQ.Cmd("/destroy");
+                        if (autoinvItem != "NULL")
+                        {
+                            E3.Bots.Broadcast($"\agAutoDestroy\aw:\ao{autoinvItem}");
+                        }
+                        MQ.Delay(300);
+                        return;
+                    }
+
                     Int32 itemID = MQ.Query<Int32>("${Cursor.ID}");
 
                     if (_cursorOccupiedSince == null || itemID!=_cusrorPreviousID)
@@ -1013,7 +1027,8 @@ namespace E3Core.Processors
                         _cusrorPreviousID = itemID;
                     }
 
-                    if(!e3util.IsManualControl() || Basics.InCombat())
+                   
+                    if (!e3util.IsManualControl() || Basics.InCombat())
                     {
                         bool regenItem = MQ.Query<bool>("${Cursor.Name.Equal[Azure Mind Crystal III]}") || MQ.Query<bool>("${Cursor.Name.Equal[Summoned: Large Modulation Shard]}") || MQ.Query<bool>("${Cursor.Name.Equal[Sanguine Mind Crystal III]}");
 

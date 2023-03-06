@@ -185,6 +185,9 @@ namespace E3Core.Settings
         //offassist
         public List<Spell> OffAssistSpells = new List<Spell>();
 
+        //clearcursor delete
+        public List<String> Cursor_Delete = new List<string>();
+
         /// <summary>
         /// Initializes a new instance of the <see cref="CharacterSettings"/> class.
         /// </summary>
@@ -279,6 +282,7 @@ namespace E3Core.Settings
 
             LoadKeyData("Melee Abilities", "Ability", ParsedData, MeleeAbilities);
 
+            LoadKeyData("Cursor Delete", "Delete", ParsedData, Cursor_Delete);
 
             LoadKeyData("Nukes", "Main", ParsedData, Nukes);
             LoadKeyData("Stuns", "Main", ParsedData, Stuns);
@@ -587,6 +591,9 @@ namespace E3Core.Settings
             section = newFile.Sections.GetSectionData("Blocked Buffs");
             section.Keys.AddKey("BuffName", "");
 
+            newFile.Sections.AddSection("Cursor Delete");
+            section = newFile.Sections.GetSectionData("Cursor Delete");
+            section.Keys.AddKey("Delete", "");
 
             newFile.Sections.AddSection("Gimme");
             section = newFile.Sections.GetSectionData("Gimme");

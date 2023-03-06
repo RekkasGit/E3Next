@@ -245,7 +245,7 @@ namespace E3Core.Processors
                         if (MQ.Query<bool>("${Cursor.ID}"))
                         {
                             MQ.Write($"Issuing auto inventory on {MQ.Query<string>("${Cursor}")} for spell: {spell.CastName}");
-                            MQ.Cmd("/autoinventory");
+                            e3util.ClearCursor();
                         }
 
 

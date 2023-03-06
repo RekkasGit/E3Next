@@ -514,12 +514,26 @@ namespace E3Core.Utility
                 if (cursorID > 0)
                 {
                     string autoinvItem = MQ.Query<string>("${Cursor}");
-                    MQ.Cmd("/autoinventory");
-                    if(autoinvItem!="NULL")
+
+                    if(E3.CharacterSettings.Cursor_Delete.Contains(autoinvItem, StringComparer.OrdinalIgnoreCase))
                     {
-                        E3.Bots.Broadcast($"\agAutoInventory\aw:\ao{autoinvItem}");
+                        //configured to delete this item.
+                        MQ.Cmd("/destroy");
+                        if (autoinvItem != "NULL")
+                        {
+                            E3.Bots.Broadcast($"\agAutoDestroy\aw:\ao{autoinvItem}");
+                        }
+                        MQ.Delay(300);
                     }
-                    MQ.Delay(300);
+                    else
+                    {
+                        MQ.Cmd("/autoinventory");
+                        if (autoinvItem != "NULL")
+                        {
+                            E3.Bots.Broadcast($"\agAutoInventory\aw:\ao{autoinvItem}");
+                        }
+                        MQ.Delay(300);
+                    }
                 }
                 cursorID = MQ.Query<Int32>("${Cursor.ID}");
                 if (counter > 5) break;
@@ -571,7 +585,7 @@ namespace E3Core.Utility
                 E3.Bots.BroadcastCommand($"/popup ${{Me}} cannot give ${{Cursor.Name}} to ${{Target}}", false);
                 e3util.Beep();
                 MQ.Delay(100);
-                MQ.Cmd("/autoinv");
+                e3util.ClearCursor();
                 return;
             }
             Int32 waitCounter = 0;

@@ -124,7 +124,7 @@ namespace E3Core.Processors
                 E3.Bots.BroadcastCommand($"/E3LootAdd \"{cursorItem}\" KEEP");
                 LootDataFile.SaveData();
 
-                MQ.Cmd("/autoinv");
+                e3util.ClearCursor();
             });
 
             EventProcessor.RegisterCommand("/lootskip", (x) =>
@@ -168,7 +168,7 @@ namespace E3Core.Processors
                 E3.Bots.BroadcastCommand($"/E3LootAdd \"{cursorItem}\" SELL");
                 LootDataFile.SaveData();
 
-                MQ.Cmd("/autoinv");
+                e3util.ClearCursor();
             });
         }
 
