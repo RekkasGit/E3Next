@@ -25,6 +25,7 @@ namespace E3Core.Settings
         private readonly string ServerName;
         private readonly Class CharacterClass;
         public bool Misc_AutoFoodEnabled;
+        public bool Misc_DismountOnInterrupt = true;
         public string Misc_AutoFood;
         public string Misc_AutoDrink;
         public bool Misc_EndMedBreakInCombat;
@@ -218,6 +219,7 @@ namespace E3Core.Settings
             LoadKeyData("Misc", "Anchor (Char to Anchor to)", ParsedData, ref Misc_AnchorChar);
             LoadKeyData("Misc", "Remove Torpor After Combat", ParsedData, ref Misc_RemoveTorporAfterCombat);
             LoadKeyData("Misc", "Auto-Forage (On/Off)", ParsedData, ref Misc_AutoForage);
+            LoadKeyData("Misc", "Dismount On Interrupt (On/Off)", ParsedData, ref Misc_DismountOnInterrupt);
 
 
             LoadKeyData("Assist Settings", "Assist Type (Melee/Ranged/Off)", ParsedData, ref Assist_Type);
@@ -395,7 +397,9 @@ namespace E3Core.Settings
             section.Keys.AddKey("Anchor (Char to Anchor to)", "");
             section.Keys.AddKey("Remove Torpor After Combat", "On");
             section.Keys.AddKey("Auto-Forage (On/Off)", "Off");
-            
+            section.Keys.AddKey("Dismount On Interrupt (On/Off)","On");
+
+
 
             newFile.Sections.AddSection("Assist Settings");
             section = newFile.Sections.GetSectionData("Assist Settings");

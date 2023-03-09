@@ -606,7 +606,7 @@ namespace E3Core.Processors
                         //someone other than us.
                         //if its a netbots, we initially do target, then have the cache refreshed
                         bool isABot = E3.Bots.BotsConnected().Contains(spell.CastTarget, StringComparer.OrdinalIgnoreCase);
-                        if (isABot)
+                        if (isABot && !usePets)
                         {
 
                             //its one of our bots, we can directly access short buffs

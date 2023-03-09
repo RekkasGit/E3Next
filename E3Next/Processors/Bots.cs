@@ -189,7 +189,14 @@ namespace E3Core.Processors
 
             foreach(var kvp in _buffListCollection)
             {
+                if(kvp.Key.Contains("\""))
+                {
+                    //ignore pets with quotes. 
+                    continue;
+                }
                 string listString = MQ.Query<string>($"${{NetBots[{kvp.Key}].Buff}}");
+
+
                 _buffListCollection[kvp.Key].Clear();
                 if (listString != "NULL")
                 {  

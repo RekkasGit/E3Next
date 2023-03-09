@@ -836,7 +836,19 @@ namespace E3Core.Processors
             bool onMount = MQ.Query<bool>("${Me.Mount.ID}");
             if(onMount)
             {
-                MQ.Cmd("/dismount");
+                if (E3.CharacterSettings.Misc_DismountOnInterrupt)
+                {
+                    MQ.Cmd("/dismount");
+                }
+                else
+                {
+                    //have to wait for the spell to be done
+                    while(IsCasting())
+                    {
+                        MQ.Delay(50);
+                    }
+                    return;
+                }
             }
             MQ.Cmd("/stopcast");
         }
