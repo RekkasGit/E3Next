@@ -775,13 +775,18 @@ namespace E3Core.Processors
                     }
                 }
 
+                if(!E3.GeneralSettings.ManaStone_EnabledInCombat)
+                {
+                    if (InCombat()) return;
+                }
+
                 //manastone code
                 int minMana = E3.GeneralSettings.ManaStone_InCombatMinMana;
                 int minHP = E3.GeneralSettings.ManaStone_MinHP;
                 int maxMana = E3.GeneralSettings.ManaStone_InCombatMaxMana;
                 int maxLoop = E3.GeneralSettings.ManaStone_NumberOfLoops;
 
-                int totalClicksToTry =E3.GeneralSettings.Manastone_NumerOfClicksPerLoop;
+                int totalClicksToTry =E3.GeneralSettings.ManaStone_NumerOfClicksPerLoop;
                 //Int32 minManaToTryAndHeal = 1000;
 
                 if (!InCombat())

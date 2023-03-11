@@ -65,10 +65,11 @@ namespace E3Core.Settings
         public Int32 Movement_NavStopDistance = 10;
         public Int32 Movement_AnchorDistanceMin = 15;
         public Int32 Movement_AnchorDistanceMax = 150;
-        public Int32 Manastone_NumerOfClicksPerLoop = 40;
+        public Int32 ManaStone_NumerOfClicksPerLoop = 40;
         public Int32 ManaStone_NumberOfLoops = 25;
         public Int32 ManaStone_DelayBetweenLoops = 50;
 
+        public bool ManaStone_EnabledInCombat = true;
         public Int32 ManaStone_InCombatMinMana = 40;
         public Int32 ManaStone_InCombatMaxMana = 75;
         public Int32 ManaStone_MinHP = 60;
@@ -152,11 +153,12 @@ namespace E3Core.Settings
             LoadKeyData("Loot", "Loot Only Stackable: Always Loot Item", parsedData, Loot_OnlyStackableAlwaysLoot);
             
         
-            LoadKeyData("Manastone", "NumerOfClicksPerLoop", parsedData, ref Manastone_NumerOfClicksPerLoop);
+            LoadKeyData("Manastone", "NumerOfClicksPerLoop", parsedData, ref ManaStone_NumerOfClicksPerLoop);
             LoadKeyData("Manastone", "NumberOfLoops", parsedData, ref ManaStone_NumberOfLoops);
             LoadKeyData("Manastone", "DelayBetweenLoops (in milliseconds)", parsedData, ref ManaStone_DelayBetweenLoops);
             LoadKeyData("Manastone", "In Combat MinMana", parsedData, ref ManaStone_InCombatMinMana);
             LoadKeyData("Manastone", "In Combat MaxMana", parsedData, ref ManaStone_InCombatMaxMana);
+            LoadKeyData("Manastone", "Use In Combat", parsedData, ref ManaStone_EnabledInCombat);
             LoadKeyData("Manastone", "Min HP", parsedData, ref ManaStone_MinHP);
             LoadKeyData("Manastone", "Out of Combat MinMana", parsedData, ref ManaStone_OutOfCombatMinMana);
             LoadKeyData("Manastone", "Out of Combat MaxMana", parsedData, ref ManaStone_OutOfCombatMaxMana);
@@ -309,10 +311,11 @@ namespace E3Core.Settings
             section.Keys.AddKey("DelayBetweenLoops (in milliseconds)", "50");
             section.Keys.AddKey("In Combat MinMana", "40");
             section.Keys.AddKey("In Combat MaxMana", "75");
+            section.Keys.AddKey("Use In Combat", "On");
             section.Keys.AddKey("Min HP", "60");
             section.Keys.AddKey("Out of Combat MinMana", "85");
             section.Keys.AddKey("Out of Combat MaxMana", "95");
-        
+          
             //Casting
             newFile.Sections.AddSection("Casting");
             section = newFile.Sections.GetSectionData("Casting");

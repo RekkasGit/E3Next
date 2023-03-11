@@ -483,25 +483,47 @@ namespace E3Core.Processors
                     string extraArgs = String.Empty;
 
                     if(x.args.Contains("tome", StringComparer.OrdinalIgnoreCase))
-                    {   
-                        extraArgs += " tome";
+                    {
+                        double currentX = MQ.Query<double>("${Me.X}");
+                        double currentY = MQ.Query<double>("${Me.Y}");
+                        double currentZ = MQ.Query<double>("${Me.Z}");
+                        extraArgs += $" tome={currentX}/{currentY}/{currentZ}";
                     }
                     E3.Bots.BroadcastCommandToGroup($"/followoff all{extraArgs}",x);
                 }
                 else
                 {
-                    if (!String.IsNullOrWhiteSpace(FollowTargetName))
+                    RemoveFollow();
+                    foreach (var arg in x.args)
                     {
-                        if (x.args.Contains("tome", StringComparer.OrdinalIgnoreCase))
+                        if (arg.StartsWith("tome="))
                         {
-                            if (_spawns.TryByName(FollowTargetName, out var s))
+                            //if (_spawns.TryByName(FollowTargetName, out var s))
                             {
-                                Casting.TrueTarget(s.ID);
-                                e3util.TryMoveToTarget();
+                                string[] strings = arg.Split(new char[] { '=' });
+                                string[] xyz = strings[1].Split(new char[] { '/' });
+
+                                if (xyz.Length>2)
+                                {
+                                    double xval;
+                                    double yval;
+                                    double zval;
+                                    if(double.TryParse(xyz[0], out xval))
+                                    {
+                                        if (double.TryParse(xyz[1], out yval))
+                                        {
+                                            if (double.TryParse(xyz[2], out zval))
+                                            {
+                                                e3util.TryMoveToLoc(xval, yval, zval);
+                                                break;
+                                            }
+                                        }
+                                    }
+                                }
                             }
                         }
                     }
-                    RemoveFollow();
+                   
                 }
             });
             EventProcessor.RegisterCommand("/rtz", (x) =>

@@ -270,7 +270,7 @@ namespace E3Core.Processors
                     BuffBots(E3.CharacterSettings.CombatBuffs);
                 }
 
-                if (!Movement.IsMoving() && !Movement.Following)
+                if (!Movement.IsMoving() && String.IsNullOrWhiteSpace(Movement.FollowTargetName))
                 {
                     if(!Basics.InCombat())
                     {
@@ -278,7 +278,7 @@ namespace E3Core.Processors
                         if (!E3.ActionTaken) BuffBots(E3.CharacterSettings.SelfBuffs);
                         if (!E3.ActionTaken) BuffBots(E3.CharacterSettings.BotBuffs);
                         if (!E3.ActionTaken) BuffBots(E3.CharacterSettings.PetBuffs, true);
-                        //TODO: Auras
+                        
                     }
                 }
                 
