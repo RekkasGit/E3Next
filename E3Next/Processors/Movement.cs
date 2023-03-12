@@ -241,8 +241,27 @@ namespace E3Core.Processors
                 {
                     Int32.TryParse(x.args[0], out Distance);
                 }
-                E3.Bots.BroadcastCommandToGroup($"/nav locxy ${{Math.Calc[${{Me.X}}+${{Math.Rand[-{Distance},{Distance}]}}]}} ${{Math.Calc[${{Me.Y}}+${{Math.Rand[-{Distance},{Distance}]}}]}}",x,true);
+                
+                E3.Bots.BroadcastCommandToGroup($"/e3movetoloc ${{Math.Calc[${{Me.X}}+${{Math.Rand[-{Distance},{Distance}]}}]}} ${{Math.Calc[${{Me.Y}}+${{Math.Rand[-{Distance},{Distance}]}}]}}",x,true);
             
+
+            });
+            EventProcessor.RegisterCommand("/e3movetoloc", (x) => {
+
+                double currentX = 0;
+                double currentY = 0;
+                if (x.args.Count > 1)
+                {
+                    if (!Double.TryParse(x.args[0], out currentX)) return;
+                    if (!Double.TryParse(x.args[1], out currentY)) return;
+                }
+                else
+                {
+                    return;
+                }
+                double currentZ = MQ.Query<double>("${Me.Z}");
+                e3util.TryMoveToLoc(currentX, currentY, currentZ);
+        
             });
 
             EventProcessor.RegisterCommand("/clickit", (x) =>

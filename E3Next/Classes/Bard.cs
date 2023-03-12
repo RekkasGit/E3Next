@@ -40,7 +40,7 @@ namespace E3Core.Classes
             _isInit = true;
         }
         /// <summary>
-        /// Checks and re-applies Communion of the Cheetah if necessary.
+        /// Checks and re-applies Sonata if necessary.
         /// </summary>
         [ClassInvoke(Data.Class.Bard)]
         public static void AutoSonata()
