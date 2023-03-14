@@ -162,7 +162,7 @@ namespace E3Core.Classes
             {
                 return;
             }
-            if(Casting.IsCasting() && (MQ.Query<Int32>("${Cast.Timing}")>500))
+            if(Casting.IsCasting())
             {
                 return;
             }
@@ -181,9 +181,7 @@ namespace E3Core.Classes
                 {
                     return;
                 }
-
             }
-
             if (Casting.CheckReady(songToPlay))
             {
                 MQ.Write($"\atTwist \ag{songToPlay.SpellName}");

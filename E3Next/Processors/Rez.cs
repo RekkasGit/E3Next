@@ -234,7 +234,7 @@ namespace E3Core.Processors
             if (Basics.AmIDead()) return;
             
             RefreshCorpseList();
-            InitRezSpells();
+            InitRezSpells(RezType.Auto);
 
             //don't rez if we cannot rez.
             if (_currentRezSpells.Count == 0) return;
@@ -278,7 +278,7 @@ namespace E3Core.Processors
                         {
                             continue;
                         }
-                        InitRezSpells();
+                        InitRezSpells(RezType.Auto);
                         if (_currentRezSpells.Count == 0) return;
 
                         MQ.Cmd($"/t {spawn.DisplayName} Wait4Rez",100);
@@ -397,7 +397,9 @@ namespace E3Core.Processors
         {
             AE,
             Group,
-            GroupOrRaid
+            GroupOrRaid,
+            Auto,
+            Normal
         }
         private static void MultiRez(RezType rezType = RezType.AE)
         {
@@ -412,8 +414,8 @@ namespace E3Core.Processors
                 E3.Bots.Broadcast("<\aoAERez\aw> \arI have no rez spells loaded");
                 return;
             }
-
-            Movement.RemoveFollow();
+            Movement.PauseMovement();
+           
             RefreshCorpseList(rezType);
 
             List<Int32> corpsesRaised = new List<int>();
@@ -429,25 +431,31 @@ namespace E3Core.Processors
                         corpsesRaised.Add(s.ID);
                         continue;
                     }
+                    //wait up to 6 sec for a spell to be ready
+                    MQ.Delay(6000, SpellListReady);
+                    if(!SpellListReady())
+                    {
+                        //no spells ready, break out of loop. 
+                        break;
+                    }
 
                     MQ.Cmd($"/tell {s.DisplayName} Wait4Rez",1500); //long delays after tells
 
                     //assume consent was given
                     MQ.Cmd("/corpse");
 
-               
                     foreach (var spell in _currentRezSpells)
                     {
                    
                         if (Casting.CheckReady(spell) && Casting.CheckMana(spell))
                         {
-                            
                             Casting.Cast(s.ID, spell);
                             corpsesRaised.Add(s.ID);
                             rezRetries = 0;
                             break;
                         }
                     }
+                   
                 }
             }
 
@@ -474,34 +482,46 @@ namespace E3Core.Processors
                 Spawn s;
                 if(_spawns.TryByID(corpseid,out s))
                 {
-                    E3.Bots.Broadcast($"<\aoAERez\aw> Wasn't able to rez \ap{s.CleanName}\aw due to cooldowns, try again.");
+                    E3.Bots.Broadcast($"<\aoRez\aw> Wasn't able to rez \ap{s.CleanName}\aw due to cooldowns, try again.");
                 }
             }
-
+           
 
         }
-       
+        private static bool SpellListReady()
+        {
+            foreach (var spell in _currentRezSpells)
+            {
+                if (Casting.CheckReady(spell) && Casting.CheckMana(spell))
+                {
+                    return true;
+                }
+            }
+            return false;
+        }
         private static List<Data.Spell> _currentRezSpells = new List<Spell>();
 
-        private static void InitRezSpells()
+        private static void InitRezSpells(RezType rezType = RezType.Normal)
         {
             _currentRezSpells.Clear();
-            foreach (var spellName in E3.CharacterSettings.Rez_AutoRezSpells)
+            List<String> spellList = E3.CharacterSettings.Rez_RezSpells;
+
+            if(rezType== RezType.Auto) spellList= E3.CharacterSettings.Rez_AutoRezSpells;
+
+            foreach (var spellName in spellList)
             {
-                if (MQ.Query<bool>($"${{FindItem[={spellName}]}}"))
+                if (MQ.Query<bool>($"${{FindItem[={spellName}]}}") || MQ.Query<bool>($"${{Me.AltAbility[{spellName}]}}") || MQ.Query<bool>($"${{Me.Book[{spellName}]}}"))
                 {
-                    _currentRezSpells.Add(new Spell(spellName));
-                }
-                if (MQ.Query<bool>($"${{Me.AltAbility[{spellName}]}}"))
-                {
-                    _currentRezSpells.Add(new Spell(spellName));
-                }
-                if (MQ.Query<bool>($"${{Me.Book[{spellName}]}}"))
-                {
-                    _currentRezSpells.Add(new Spell(spellName));
+                    Data.Spell s;
+                    if(!Spell.LoadedSpellsByName.TryGetValue(spellName,out s))
+                    {
+                        s = new Spell(spellName);
+                    }
+                    _currentRezSpells.Add(s);
                 }
             }
         }
+
 
         private static void GatherCorpses()
         {

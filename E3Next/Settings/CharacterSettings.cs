@@ -134,6 +134,7 @@ namespace E3Core.Settings
         public List<string> HealPetOwners = new List<string>();
         //rez spells
         public List<string> Rez_AutoRezSpells = new List<string>();
+        public List<string> Rez_RezSpells = new List<string>();
         public bool Rez_AutoRez = false;
 
         public Dictionary<string, string> PetWeapons = new Dictionary<string, string>();
@@ -321,6 +322,7 @@ namespace E3Core.Settings
 
             LoadKeyData("Rez", "AutoRez", ParsedData, ref Rez_AutoRez);
             LoadKeyData("Rez", "Auto Rez Spells", ParsedData, Rez_AutoRezSpells);
+            LoadKeyData("Rez", "Rez Spells", ParsedData, Rez_RezSpells);
 
             LoadKeyData("Cures", "Cure", ParsedData, Cures);
             LoadKeyData("Cures", "CureAll", ParsedData, CureAll);
@@ -481,6 +483,7 @@ namespace E3Core.Settings
             section = newFile.Sections.GetSectionData("Rez");
             section.Keys.AddKey("AutoRez", "Off");
             section.Keys.AddKey("Auto Rez Spells", "Token of Resurrection");
+            section.Keys.AddKey("Rez Spells", "Token of Resurrection");
 
             newFile.Sections.AddSection("Burn");
             section = newFile.Sections.GetSectionData("Burn");

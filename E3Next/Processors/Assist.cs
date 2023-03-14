@@ -103,12 +103,23 @@ namespace E3Core.Processors
                 }
                 else if (targetId != AssistTargetID)
                 {
-
                     Spawn ct;
                     _spawns.RefreshList();
                     if (_spawns.TryByID(targetId, out ct))
                     {
-                        if (AllowControl && targetId != E3.CurrentId)
+                        bool isAPCPet = false;
+                        if(ct.MasterID>0)
+                        {
+                            Spawn master;
+                            if(_spawns.TryByID(ct.MasterID,out master))
+                            {
+                                if(master.TypeDesc=="PC")
+                                {
+                                    isAPCPet=true;
+                                }
+                            }
+                        }
+                        if (AllowControl && targetId != E3.CurrentId && ct.DeityID==0 && isAPCPet==false)
                         {
                             AssistTargetID = targetId;
                             if (E3.GeneralSettings.Assists_AutoAssistEnabled)
@@ -116,13 +127,21 @@ namespace E3Core.Processors
                                 MQ.Cmd("/assistme");
                             }
                         }
+                        else if(AllowControl)
+                        {
+                            bool isCorpse = MQ.Query<bool>($"${{Spawn[id {AssistTargetID}].Type.Equal[Corpse]}}");
+                            if (isCorpse)
+                            {
+                                //its dead jim
+                                AssistOff();
+                            }
+                            return;
+                        }
                         else
                         {
                             Casting.TrueTarget(AssistTargetID);
                         }
-
                     }
-
                 }
 
                 Spawn s;
@@ -778,10 +797,14 @@ namespace E3Core.Processors
             {
                 if (!e3util.FilterMe(x))
                 {
-                    Casting.Interrupt();
+                    if(E3.CurrentClass!=Class.Bard)
+                    {
+                        Casting.Interrupt();
+                    }
                     AssistOff();
                     Burns.Reset();
                     DebuffDot.Reset();
+                    Movement.AcquireFollow();
 
                 }
                 if (x.args.Count == 0)
@@ -789,6 +812,7 @@ namespace E3Core.Processors
                     //we are telling people to back off
                     E3.Bots.BroadcastCommandToGroup($"/backoff all", x);
                 }
+
             });
             e3util.RegisterCommandWithTarget("/e3offassistignore", (x) => { _offAssistIgnore.Add(x); });
             EventProcessor.RegisterEvent("EnrageOn", "(.)+ has become ENRAGED.", (x) =>

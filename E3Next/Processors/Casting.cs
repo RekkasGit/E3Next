@@ -62,7 +62,14 @@ namespace E3Core.Processors
                             Interrupt();
                             return CastReturn.CAST_INTERRUPTED;
                         }
-                        
+                        if (EventProcessor.CommandList["/backoff"].queuedEvents.Count > 0)
+                        {
+                            EventProcessor.ProcessEventsInQueues("/backoff");
+                            Interrupt();
+                            if (!IsCasting()) return CastReturn.CAST_INTERRUPTED;
+
+                        }
+
                     }
                 }
 
@@ -387,6 +394,7 @@ namespace E3Core.Processors
 
                                         //else its an item
                                         MQ.Cmd($"/casting \"{spell.CastName}|{spell.CastType.ToString()}\"");
+                                        UpdateItemInCooldown(spell);
                                         if (spell.MyCastTime > 500)
                                         {
                                             MQ.Delay(1000);
@@ -423,6 +431,7 @@ namespace E3Core.Processors
                                     {
                                         //else its an item
                                         MQ.Cmd($"/casting \"{spell.CastName}|item\" \"-targetid|{targetID}\"");
+                                        UpdateItemInCooldown(spell);
                                         if (spell.MyCastTime > 500)
                                         {
                                             MQ.Delay(1000);
@@ -460,7 +469,7 @@ namespace E3Core.Processors
                                     return CastReturn.CAST_INTERRUPTED;
                                 }
                                 //check if we need to process any events,if healing tho, ignore. 
-                                if (spell.SpellType.Equals("Detrimental"))
+                                if (spell.SpellType.Equals("Detrimental") || E3.CurrentClass==Class.Bard)
                                 {
                                     if (EventProcessor.CommandList["/backoff"].queuedEvents.Count > 0)
                                     {
@@ -877,6 +886,58 @@ namespace E3Core.Processors
             }
             return true;
         }
+
+        private static System.Collections.Generic.Dictionary<String, Int64> _ItemCooldowns = new Dictionary<string, long>() { { "Invocation Rune: Vulka's Chant of Lightning", 18000 } };
+        private static System.Collections.Generic.Dictionary<String, Int64> _ItemInCooldowns = new Dictionary<string, long>() {};
+
+        public static void UpdateItemInCooldown(Data.Spell spell)
+        {
+
+            //check to see if its one of the items we are tracking
+
+            if (!_ItemCooldowns.ContainsKey(spell.CastName)) return;
+
+            if(!_ItemInCooldowns.ContainsKey(spell.CastName))
+            {
+                _ItemInCooldowns.Add(spell.CastName, 0);
+            }
+            _ItemInCooldowns[spell.CastName] = Core.StopWatch.ElapsedMilliseconds;
+        }
+        public static bool ItemInCooldown(Data.Spell spell)
+        {
+            if (_ItemCooldowns.ContainsKey(spell.CastName))
+            {
+                if(!_ItemInCooldowns.ContainsKey(spell.CastName))
+                {
+                    return false;
+                }
+                else
+                {
+                    //we have it in cooldown, lets check if its greater than what we have 
+                    Int64 timestampOfLastCast = _ItemInCooldowns[spell.CastName];
+                    Int64 numberOfMilliSecondCooldown = _ItemCooldowns[spell.CastName];
+                    if(Core.StopWatch.ElapsedMilliseconds -timestampOfLastCast < numberOfMilliSecondCooldown)
+                    {
+                        //still in cooldown
+                        return true;
+                    }
+                    else
+                    {
+                        return false;
+                    }
+                }
+            }
+            else
+            {
+
+                if (MQ.Query<bool>($"${{Me.ItemReady[{spell.CastName}]}}"))
+                {
+                    return false;
+                }
+            }
+
+            return true;
+        }
         public static Boolean CheckReady(Data.Spell spell)
         {
             if (spell.CastType == CastType.None) return false;
@@ -890,17 +951,12 @@ namespace E3Core.Processors
 
             //_log.Write($"CheckReady on {spell.CastName}");
 
-            if (E3.CurrentClass == Data.Class.Bard && !MQ.Query<bool>("${Twist.Twisting}"))
-            {
+            if (E3.CurrentClass != Data.Class.Bard)
+            {  
                 while (IsCasting())
                 {
                     MQ.Delay(20);
                 }
-            }
-            while (IsCasting())
-            {
-
-                MQ.Delay(20);
             }
 
             bool returnValue = false;
@@ -955,7 +1011,7 @@ namespace E3Core.Processors
             }
             else if (spell.CastType == Data.CastType.Item)
             {
-                if (MQ.Query<bool>($"${{Me.ItemReady[{spell.CastName}]}}"))
+                if (!ItemInCooldown(spell))
                 {
                     return true;
                 }

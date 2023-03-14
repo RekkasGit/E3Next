@@ -457,7 +457,10 @@ namespace E3Core.Processors
                            
                             FollowTargetName = user;
                             Following = false;
-                            Casting.Interrupt();
+                            if(E3.CurrentClass!=Class.Bard)
+                            {
+                                Casting.Interrupt();
+                            }
                             Rez.Reset();
                             Assist.AssistOff();
                             AcquireFollow();
