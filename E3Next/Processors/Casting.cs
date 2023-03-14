@@ -85,7 +85,7 @@ namespace E3Core.Processors
                         if (spell.CastType == CastType.AA)
                         {
                             MQ.Cmd($"/alt activate {spell.CastID}");
-                            //MQ.Delay(300);
+                            UpdateAAInCooldown(spell);
                             E3.ActionTaken = true;
                             return CastReturn.CAST_SUCCESS;
                         }
@@ -422,6 +422,7 @@ namespace E3Core.Processors
                                         MQ.Write($"\ag{spell.CastName} \at{spell.SpellID} \am{targetName} \ao{targetID} \aw({spell.MyCastTime / 1000}sec)");
 
                                         MQ.Cmd($"/casting \"{spell.CastName}|alt\"");
+                                        UpdateAAInCooldown(spell);
                                         MQ.Delay(300);
                                         if (spell.MyCastTime > 500)
                                         {
@@ -462,6 +463,7 @@ namespace E3Core.Processors
                                     if (spell.CastType == CastType.AA)
                                     {
                                         MQ.Cmd($"/casting \"{spell.CastName}|alt\" \"-targetid|{targetID}\"");
+                                        UpdateAAInCooldown(spell);
                                         MQ.Delay(300);
                                         if (spell.MyCastTime > 500)
                                         {
@@ -930,35 +932,73 @@ namespace E3Core.Processors
             return true;
         }
 
-        private static System.Collections.Generic.Dictionary<String, Int64> _ItemCooldowns = new Dictionary<string, long>() { { "Invocation Rune: Vulka's Chant of Lightning", 18000 } };
-        private static System.Collections.Generic.Dictionary<String, Int64> _ItemInCooldowns = new Dictionary<string, long>() {};
+        private static System.Collections.Generic.Dictionary<String, Int64> _ItemCooldownLookup = new Dictionary<string, long>() { { "Invocation Rune: Vulka's Chant of Lightning", 18000 } };
+        private static System.Collections.Generic.Dictionary<String, Int64> _ItemsInCooldown = new Dictionary<string, long>() {};
+        private static System.Collections.Generic.Dictionary<String, Int64> _AAInCooldown = new Dictionary<string, long>() { };
+
+        public static void UpdateAAInCooldown(Data.Spell spell)
+        {
+            //check to see if its one of the items we are tracking
+            if (!_AAInCooldown.ContainsKey(spell.CastName))
+            {
+                _AAInCooldown.Add(spell.CastName, 0);
+            }
+            _AAInCooldown[spell.CastName] = Core.StopWatch.ElapsedMilliseconds;
+        }
+        public static bool AAInCooldown(Data.Spell spell)
+        {
+            if (_AAInCooldown.ContainsKey(spell.CastName))
+            {
+                //going to hard code a 1 sec cooldown on all AA's to allow time for the client to get updated info for ability ready
+                Int64 timestampOfLastCast = _AAInCooldown[spell.CastName];
+                Int64 numberOfMilliSecondCooldown = 1000;
+                if (Core.StopWatch.ElapsedMilliseconds - timestampOfLastCast < numberOfMilliSecondCooldown)
+                {
+                    //still in cooldown
+                    return true;
+                }
+                else
+                {
+                    if (MQ.Query<bool>($"${{Me.AltAbilityReady[{spell.CastName}]}}"))
+                    {
+                        return false;
+                    }
+                }
+            }
+            else
+            {
+                if (MQ.Query<bool>($"${{Me.AltAbilityReady[{spell.CastName}]}}"))
+                {
+                    return false;
+                }
+            }
+            return true;
+        }
 
         public static void UpdateItemInCooldown(Data.Spell spell)
         {
-
             //check to see if its one of the items we are tracking
+            if (!_ItemCooldownLookup.ContainsKey(spell.CastName)) return;
 
-            if (!_ItemCooldowns.ContainsKey(spell.CastName)) return;
-
-            if(!_ItemInCooldowns.ContainsKey(spell.CastName))
+            if(!_ItemsInCooldown.ContainsKey(spell.CastName))
             {
-                _ItemInCooldowns.Add(spell.CastName, 0);
+                _ItemsInCooldown.Add(spell.CastName, 0);
             }
-            _ItemInCooldowns[spell.CastName] = Core.StopWatch.ElapsedMilliseconds;
+            _ItemsInCooldown[spell.CastName] = Core.StopWatch.ElapsedMilliseconds;
         }
         public static bool ItemInCooldown(Data.Spell spell)
         {
-            if (_ItemCooldowns.ContainsKey(spell.CastName))
+            if (_ItemCooldownLookup.ContainsKey(spell.CastName))
             {
-                if(!_ItemInCooldowns.ContainsKey(spell.CastName))
+                if(!_ItemsInCooldown.ContainsKey(spell.CastName))
                 {
                     return false;
                 }
                 else
                 {
                     //we have it in cooldown, lets check if its greater than what we have 
-                    Int64 timestampOfLastCast = _ItemInCooldowns[spell.CastName];
-                    Int64 numberOfMilliSecondCooldown = _ItemCooldowns[spell.CastName];
+                    Int64 timestampOfLastCast = _ItemsInCooldown[spell.CastName];
+                    Int64 numberOfMilliSecondCooldown = _ItemCooldownLookup[spell.CastName];
                     if(Core.StopWatch.ElapsedMilliseconds -timestampOfLastCast < numberOfMilliSecondCooldown)
                     {
                         //still in cooldown
@@ -972,13 +1012,11 @@ namespace E3Core.Processors
             }
             else
             {
-
                 if (MQ.Query<bool>($"${{Me.ItemReady[{spell.CastName}]}}"))
                 {
                     return false;
                 }
             }
-
             return true;
         }
         public static Boolean CheckReady(Data.Spell spell)
@@ -1061,10 +1099,11 @@ namespace E3Core.Processors
             }
             else if (spell.CastType == Data.CastType.AA)
             {
-                if (MQ.Query<bool>($"${{Me.AltAbilityReady[{spell.CastName}]}}"))
+                if (!AAInCooldown(spell))
                 {
                     return true;
                 }
+
             }
             else if (spell.CastType == Data.CastType.Disc)
             {
