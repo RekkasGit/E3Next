@@ -574,6 +574,7 @@ namespace E3Core.Processors
                 
 
                 int pctMana = MQ.Query<int>("${Me.PctMana}");
+                var pctHps = MQ.Query<int>("${Me.PctHPs}");
                 int currentHps = MQ.Query<int>("${Me.CurrentHPs}");
 
                 if (E3.CurrentClass == Data.Class.Enchanter)
@@ -623,7 +624,7 @@ namespace E3Core.Processors
                         {
                             if (Casting.CheckReady(canniSpell))
                             {
-                                var pctHps = MQ.Query<int>("${Me.PctHPs}");
+                                pctHps = MQ.Query<int>("${Me.PctHPs}");
                                 var hpThresholdDefined = canniSpell.MinHP > 0;
                                 var manaThresholdDefined = canniSpell.MaxMana > 0;
                                 bool castCanniSpell = false;
@@ -795,6 +796,8 @@ namespace E3Core.Processors
                     maxMana = E3.GeneralSettings.ManaStone_OutOfCombatMaxMana;
                 }
                 if (pctMana > minMana) return;
+                pctHps = MQ.Query<int>("${Me.PctHPs}");
+                if (pctHps < minHP) return;
                 //no manastone in pok
                 bool pok = MQ.Query<bool>("${Zone.ShortName.Equal[poknowledge]}");
                 if (pok) return;
@@ -809,7 +812,7 @@ namespace E3Core.Processors
                     if (MQ.Query<bool>("${Me.Invis}")) return;
 
                     MQ.Write("\agUsing Manastone...");
-                    int pctHps = MQ.Query<int>("${Me.PctHPs}");
+                    pctHps = MQ.Query<int>("${Me.PctHPs}");
                     pctMana = MQ.Query<int>("${Me.PctMana}");
                     int currentLoop = 0;
                     while (pctHps > minHP && pctMana < maxMana)

@@ -34,10 +34,74 @@ namespace E3Core.Processors
             bool e3PausedNav = false;
             try
             {
+
+                if (targetID == 0)
+                {
+                    //means don't change current target
+                    targetID = MQ.Query<Int32>("${Target.ID}");
+                    if (targetID < 1)
+                    {
+                        if (spell.SpellType == "Detrimental" && spell.TargetType == "Single")
+                        {
+                            return CastReturn.CAST_UNKNOWN;
+                        }
+
+                        targetID = E3.CurrentId;
+                    }
+                }
+
+                if (targetID < 1)
+                {
+                    if (!(spell.TargetType == "Self" || spell.TargetType == "Group v1" || spell.TargetType == "Group v2" || spell.TargetType == "PB AE"))
+                    {
+                        MQ.Write($"Invalid targetId for Casting. {targetID}");
+                        E3.ActionTaken = true;
+                        return CastReturn.CAST_NOTARGET;
+                    }
+                }
+
+
                 //bard can cast insta cast items while singing, they be special.
-                if (E3.CurrentClass == Class.Bard && spell.MyCastTime <= 500 && spell.CastType == CastType.Item)
+                if (E3.CurrentClass == Class.Bard && spell.MyCastTime <= 500 && (spell.CastType == CastType.Item || spell.CastType== CastType.AA))
                 {
                     //instant cast item, can cast while singing
+                    //note bards are special and cast do insta casts while doing normal singing. they have their own 
+                    //sing area, so only go here to do item/aa casts while singing. can't do IsCasting checks as it will catch
+                    //on the singing... so just kick out and assume all is well.
+                    if (_spawns.TryByID(targetID, out var s))
+                    {
+
+                        String targetName = String.Empty;
+                        //targets of 0 means keep current target
+                        if (targetID > 0)
+                        {
+                            targetName = s.CleanName;
+                        }
+                        else
+                        {
+                            targetName = MQ.Query<string>($"${{Spawn[id ${{Target.ID}}].CleanName}}");
+                        }
+                        MQ.Write($"\agBardCast {spell.CastName} \at{spell.SpellID} \am{targetName} \ao{targetID} \aw({spell.MyCastTime / 1000}sec)");
+                        if (spell.CastType == CastType.AA)
+                        {
+                            MQ.Cmd($"/alt activate {spell.CastID}");
+                            //MQ.Delay(300);
+                            E3.ActionTaken = true;
+                            return CastReturn.CAST_SUCCESS;
+                        }
+                        else
+                        {
+                            //else its an item
+                            MQ.Cmd($"/useitem \"{spell.CastName}\"", 300);
+                            UpdateItemInCooldown(spell);
+                            E3.ActionTaken = true;
+                            return CastReturn.CAST_SUCCESS;
+                        }
+                    }
+                    else
+                    {
+                        return CastReturn.CAST_NOTARGET;
+                    }
                 }
                 else if (E3.CurrentClass == Class.Bard && spell.CastType == CastType.Spell)
                 {
@@ -84,33 +148,10 @@ namespace E3Core.Processors
                         e3util.ClearCursor();
                     }
 
-                    if (targetID == 0)
-                    {
-                        //means don't change current target
-                        targetID = MQ.Query<Int32>("${Target.ID}");
-                        if (targetID < 1)
-                        {
-                            if (spell.SpellType == "Detrimental" && spell.TargetType == "Single")
-                            {
-                                return CastReturn.CAST_UNKNOWN;
-                            }
+                    
 
-                            targetID = E3.CurrentId;
-                        }
-                    }
-
-                    if (targetID < 1)
-                    {
-                        if (!(spell.TargetType == "Self" || spell.TargetType == "Group v1" || spell.TargetType == "Group v2" || spell.TargetType == "PB AE"))
-                        {
-                            MQ.Write($"Invalid targetId for Casting. {targetID}");
-                            E3.ActionTaken = true;
-                            return CastReturn.CAST_NOTARGET;
-                        }
-                    }
-
-                    Spawn s;
-                    if (_spawns.TryByID(targetID, out s))
+                    
+                    if (_spawns.TryByID(targetID, out var s))
                     {
 
                         String targetName = String.Empty;
@@ -442,6 +483,7 @@ namespace E3Core.Processors
                         }
 
                         startCasting:
+
                         //needed for heal interrupt check
                         Int32 currentMana = 0;
                         Int32 pctMana = 0;
@@ -450,6 +492,7 @@ namespace E3Core.Processors
                             currentMana = MQ.Query<Int32>("${Me.CurrentMana}");
                             pctMana = MQ.Query<Int32>("${Me.PctMana}");
                         }
+
                         while (IsCasting())
                         {
                             //means that we didn't fizzle and are now casting the spell
