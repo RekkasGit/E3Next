@@ -139,7 +139,7 @@ namespace E3Core.Processors
 
 
                 CastReturn returnValue = CastReturn.CAST_RESIST;
-                //TODO: Add bard logic back in
+                
                 //using (_log.Trace())
                 {
 
@@ -862,7 +862,6 @@ namespace E3Core.Processors
 
         public static Boolean CheckMana(Data.Spell spell)
         {
-
             Int32 currentMana = MQ.Query<Int32>("${Me.CurrentMana}");
             Int32 pctMana = MQ.Query<Int32>("${Me.PctMana}");
             if (currentMana >= spell.Mana)
@@ -1019,6 +1018,64 @@ namespace E3Core.Processors
             }
             return true;
         }
+
+      
+        public static bool SpellInCooldown(Data.Spell spell)
+        {
+ 
+                recheckCooldown:
+                bool returnValue = false;
+
+                //if (SpellInSharedCooldown(spell)) return true;
+
+                _log.Write($"Checking if spell is ready on {spell.CastName}");
+
+                if (MQ.Query<bool>($"${{Me.SpellReady[{spell.CastName}]}}") && MQ.Query<Int32>($"${{Me.GemTimer[{spell.CastName}]}}")<1)
+                {
+                    _log.Write($"CheckReady Success! on {spell.CastName}");
+
+                    returnValue = false;
+                    return returnValue;
+                }
+                _log.Write($"Checking if spell are on cooldown for {spell.CastName}");
+
+                //if (MQ.Query<bool>("${Me.SpellInCooldown}") && MQ.Query<bool>($"${{Bool[${{Me.Gem[{spell.CastName}]}}]}}"))
+                if (InGlobalCooldown())
+                {
+                    _log.Write("Spells in cooldown, redoing check.");
+                    MQ.Delay(20);
+                    goto recheckCooldown;
+                }
+            
+            return true;
+        }
+        private static Dictionary<string, List<string>> _sharedCooldownLookup = new Dictionary<string, List<string>>() { 
+            { "Miasmic Spear", new List<string>() { "Spear of Muram" } }, 
+            { "Spear of Muram", new List<string>() { "Miasmic Spear" } },
+            { "Focused Hail of Arrows", new List<string>() { "Hail of Arrows" } },
+            { "Hail of Arrows", new List<string>() { "Focused Hail of Arrows" } },
+            { "Mana Flare", new List<string>() { "Mana Recursion" } },
+            { "Mana Recursion", new List<string>() { "Mana Flare" } }
+        };
+        private static bool SpellInSharedCooldown(Spell spell)
+        {
+            if (!_sharedCooldownLookup.ContainsKey(spell.CastName)) return false;
+
+            if (MQ.Query<bool>($"${{Bool[${{Me.Gem[{spell.CastName}]}}]}}"))
+            {
+                if (!MQ.Query<bool>($"${{Me.SpellReady[{spell.CastName}]}}")) { return true; }
+                foreach (string spellName in _sharedCooldownLookup[spell.CastName])
+                {
+                    if(MQ.Query<bool>($"${{Bool[${{Me.Gem[{spellName}]}}]}}"))
+                    {
+                        if (!MQ.Query<bool>($"${{Me.SpellReady[{spellName}]}}")) { return true; }
+                    }
+                }
+            }
+            return false;
+        }
+      
+
         public static Boolean CheckReady(Data.Spell spell)
         {
             if (spell.CastType == CastType.None) return false;
@@ -1043,51 +1100,11 @@ namespace E3Core.Processors
             bool returnValue = false;
             if (spell.CastType == Data.CastType.Spell && spell.SpellInBook)
             {
-                recheckCooldown:
 
-                //deal with grouped spells should put in a method if it gets bigger than these two
-                if (spell.CastName == "Focused Hail of Arrows" || spell.CastName == "Hail of Arrows")
+                if (!SpellInCooldown(spell))
                 {
-                    if (MQ.Query<bool>("${Bool[${Me.Gem[Focused Hail of Arrows]}]}") && MQ.Query<bool>("${Bool[${Me.Gem[Hail of Arrows]}]}"))
-                    {
-                        returnValue = true;
-                        if (!MQ.Query<bool>("${Me.SpellReady[Focused Hail of Arrows]}")) { returnValue = false; }
-                        if (!MQ.Query<bool>("${Me.SpellReady[Hail of Arrows]}")) { returnValue = false; }
-
-                        return returnValue;
-                    }
+                    return true;
                 }
-                if (spell.CastName == "Mana Flare" || spell.CastName == "Mana Recursion")
-                {
-                    if (MQ.Query<bool>("${Bool[${Me.Gem[Mana Flare]}]}") && MQ.Query<bool>("${Bool[${Me.Gem[Mana Recursion]}]}"))
-                    {
-                        returnValue = true;
-                        if (!MQ.Query<bool>("${Me.SpellReady[Mana Flare]}")) { returnValue = false; }
-                        if (!MQ.Query<bool>("${Me.SpellReady[Mana Recursion]}")) { returnValue = false; }
-
-                        return returnValue;
-                    }
-                }
-
-                _log.Write($"Checking if spell is ready on {spell.CastName}");
-
-                if (MQ.Query<bool>($"${{Me.SpellReady[{spell.CastName}]}}"))
-                {
-                    _log.Write($"CheckReady Success! on {spell.CastName}");
-
-                    returnValue = true;
-                    return returnValue;
-                }
-                _log.Write($"Checking if spell are on cooldown for {spell.CastName}");
-
-                //if (MQ.Query<bool>("${Me.SpellInCooldown}") && MQ.Query<bool>($"${{Bool[${{Me.Gem[{spell.CastName}]}}]}}"))
-                if (InGlobalCooldown())
-                {
-                    _log.Write("Spells in cooldown, redoing check.");
-                    MQ.Delay(20);
-                    goto recheckCooldown;
-                }
-
 
             }
             else if (spell.CastType == Data.CastType.Item)
