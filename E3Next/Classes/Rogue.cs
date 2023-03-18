@@ -98,10 +98,10 @@ namespace E3Core.Classes
                     if (MQ.Query<bool>("${Me.AbilityReady[Hide]}"))
                     {
                         MQ.Cmd("/attack off");
-                        MQ.Delay(1000, "${Bool[!${Me.Combat}]}");
+                        MQ.Delay(1000, "${If[${Me.Combat},FALSE,TRUE]}");
                         MQ.Delay(500);
                         MQ.Cmd("/doability Hide");
-                        MQ.Delay(500, "${Me.Invis}");
+                        MQ.Delay(1500, "${Me.Invis}");
                         MQ.Cmd("/attack on");
 
                     }
