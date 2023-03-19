@@ -231,6 +231,7 @@ namespace E3Core.Processors
                 }
             }
         }
+        static System.Random rnd = new System.Random();
         static void RegisterEvents()
         {
 
@@ -241,15 +242,41 @@ namespace E3Core.Processors
                 {
                     Int32.TryParse(x.args[0], out Distance);
                 }
-                
-                E3.Bots.BroadcastCommandToGroup($"/e3movetoloc ${{Math.Calc[${{Me.X}}+${{Math.Rand[-{Distance},{Distance}]}}]}} ${{Math.Calc[${{Me.Y}}+${{Math.Rand[-{Distance},{Distance}]}}]}}",x,true);
+
+                double currentX = MQ.Query<double>("${Me.X}");
+                double currentY = MQ.Query<double>("${Me.Y}");
+             
+                E3.Bots.BroadcastCommandToGroup($"/e3movetorandomloc \"{currentX}\" \"{currentY}\" \"{Distance}\"",x,true);
             
+
+            });
+            EventProcessor.RegisterCommand("/e3movetorandomloc", (x) => {
+
+
+                double currentX = 0;
+                double currentY = 0;
+                Int32 distance = 10;
+                if (e3util.FilterMe(x)) return;
+                if (x.args.Count > 2)
+                {
+                    if (!Double.TryParse(x.args[0], out currentX)) return;
+                    if (!Double.TryParse(x.args[1], out currentY)) return;
+                    if (!Int32.TryParse(x.args[2], out distance)) return;
+                }
+                else
+                {
+                    return;
+                }
+                double currentZ = MQ.Query<double>("${Me.Z}");
+                e3util.TryMoveToLoc(currentX+rnd.Next(-1*distance,distance), currentY + rnd.Next(-1 * distance, distance), currentZ);
 
             });
             EventProcessor.RegisterCommand("/e3movetoloc", (x) => {
 
+
                 double currentX = 0;
                 double currentY = 0;
+                if (e3util.FilterMe(x)) return;
                 if (x.args.Count > 1)
                 {
                     if (!Double.TryParse(x.args[0], out currentX)) return;
@@ -272,8 +299,8 @@ namespace E3Core.Processors
                     E3.Bots.BroadcastCommandToGroup($"/clickit {Zoning.CurrentZone.Id}",x);
 
                 }
+                if (e3util.FilterMe(x)) return;
                 //read the ini file and pull the info we need.
-
                 if (x.args.Count > 0)
                 {
                     Int32 zoneID;
@@ -485,6 +512,7 @@ namespace E3Core.Processors
                 }
                 else
                 {
+                    if (e3util.FilterMe(x)) return;
                     if (_spawns.TryByName(x.args[0], out var s))
                     {
                         Casting.TrueTarget(s.ID);
@@ -515,6 +543,7 @@ namespace E3Core.Processors
                 }
                 else
                 {
+                    if (e3util.FilterMe(x)) return;
                     RemoveFollow();
                     foreach (var arg in x.args)
                     {
@@ -552,6 +581,7 @@ namespace E3Core.Processors
             {
                 if (x.args.Count > 0)
                 {
+                    if (e3util.FilterMe(x)) return;
                     //someone telling us to rtz
                     double heading;
                     if (double.TryParse(x.args[0], out heading))
@@ -579,6 +609,7 @@ namespace E3Core.Processors
                     //get our faced heading
                     double heading = MQ.Query<double>("${Me.Heading.Degrees}");
                     E3.Bots.BroadcastCommandToGroup($"/rtz {heading}",x);
+                    if (e3util.FilterMe(x)) return;
                     MQ.Delay(1000);
                     MQ.Cmd($"/face fast heading {heading * -1}");
                     MQ.Cmd("/nomodkey /keypress forward hold");
