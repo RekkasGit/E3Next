@@ -78,7 +78,9 @@ namespace E3Core.Processors
             _groupSpellRequests.Add("Summoned: Large Modulation Shard", new Spell("Large Modulation Shard"));
             _groupSpellRequests.Add("Sanguine Mind Crystal III", new Spell("Sanguine Mind Crystal"));
             _groupSpellRequests.Add("Molten orb", new Spell("Summon: Molten Orb"));
+            _groupSpellRequests.Add("Lava orb", new Spell("Summon: Lava Orb"));
             _groupSpellRequests.Add("Rod of Mystical Transvergence", new Spell("Mass Mystical Transvergence"));
+          
 
             foreach (var input in E3.CharacterSettings.Gimme)
             {
