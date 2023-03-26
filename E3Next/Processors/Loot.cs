@@ -9,6 +9,7 @@ using System.Collections.Specialized;
 using System.Dynamic;
 using System.Linq;
 using System.Net.Configuration;
+using System.Windows.Forms;
 
 namespace E3Core.Processors
 {
@@ -224,6 +225,8 @@ namespace E3Core.Processors
                 //lets check if we can loot.
                 Movement.PauseMovement();
 
+                bool destroyCorpses = false;
+
                 foreach (var c in corpses)
                 {
                     //allow eq time to send the message to us
@@ -245,10 +248,19 @@ namespace E3Core.Processors
                         e3util.TryMoveToTarget();
 
                         LootCorpse(c);
+                        //now lets check to see if the corpse has anything important left
+                        if (destroyCorpses)
+                        {
+                            if(!ImportantItemOnCorpse(c))
+                            {
+                                DestroyCorpse(c);
+                            }
+                        }
                         if (MQ.Query<bool>("${Window[LootWnd].Open}"))
                         {
                             MQ.Cmd("/nomodkey /notify LootWnd DoneButton leftmouseup");
                         }
+
                         MQ.Delay(300);
                     }
                     
@@ -256,6 +268,187 @@ namespace E3Core.Processors
 
                 E3.Bots.Broadcast("\agFinished looting area");
             }
+        }
+        public static void DestroyCorpse(Spawn corpse)
+        {
+            bool importantItem = false;
+            bool nodropImportantItem = false;
+
+            MQ.Cmd("/loot");
+            MQ.Delay(1000, "${Window[LootWnd].Open}");
+            MQ.Delay(100);
+            if (!MQ.Query<bool>("${Window[LootWnd].Open}"))
+            {
+                MQ.Write($"\arERROR, Loot Window not opening, adding {corpse.CleanName}-{corpse.ID} to ignore corpse list.");
+                if (!_unlootableCorpses.Contains(corpse.ID))
+                {
+                    _unlootableCorpses.Add(corpse.ID);
+                }
+                return;
+
+            }
+            MQ.Delay(500, "${Corpse.Items}");
+
+            MQ.Delay(E3.GeneralSettings.Loot_LootItemDelay);//wait a little longer to let the items finish populating, for EU people they may need to increase this.
+
+            Int32 corpseItems = MQ.Query<Int32>("${Corpse.Items}");
+
+            if (corpseItems == 0)
+            {
+                //no items on the corpse, kick out
+                return;
+            }
+
+            for (Int32 i = 1; i <= corpseItems; i++)
+            {
+              
+                //lets loot it if we can!
+                MQ.Cmd($"/nomodkey /shift /itemnotify loot${i} leftmouseup", 300);
+                MQ.Delay(1000, "${Cursor.ID}");
+                Int32 cursorid = MQ.Query<Int32>("${Cursor.ID}");
+                if(cursorid>0)
+                {
+                    //have it on our cursor, lets destroy
+                    MQ.Cmd("/destroy");
+                    //delay until the cursor is empty
+                    MQ.Delay(1000, "${If[${Cursor.ID},FALSE,TRUE]}");
+                }
+
+            }
+            
+        }
+        public static bool ImportantItemOnCorpse(Spawn corpse)
+        {
+            bool importantItem = false;
+            bool nodropImportantItem = false;
+
+            MQ.Cmd("/loot");
+            MQ.Delay(1000, "${Window[LootWnd].Open}");
+            MQ.Delay(100);
+            if (!MQ.Query<bool>("${Window[LootWnd].Open}"))
+            {
+                MQ.Write($"\arERROR, Loot Window not opening, adding {corpse.CleanName}-{corpse.ID} to ignore corpse list.");
+                if (!_unlootableCorpses.Contains(corpse.ID))
+                {
+                    _unlootableCorpses.Add(corpse.ID);
+                }
+                return true;
+
+            }
+            MQ.Delay(500, "${Corpse.Items}");
+
+            MQ.Delay(E3.GeneralSettings.Loot_LootItemDelay);//wait a little longer to let the items finish populating, for EU people they may need to increase this.
+
+            Int32 corpseItems = MQ.Query<Int32>("${Corpse.Items}");
+
+            if (corpseItems == 0)
+            {
+                //no items on the corpse, kick out
+                return false;
+            }
+
+            for (Int32 i = 1; i <= corpseItems; i++)
+            {
+                //lets try and loot them.
+                importantItem = false;
+
+                MQ.Delay(1000, $"${{Corpse.Item[{i}].ID}}");
+
+                string corpseItem = MQ.Query<string>($"${{Corpse.Item[{i}].Name}}");
+                bool stackable = MQ.Query<bool>($"${{Corpse.Item[{i}].Stackable}}");
+                bool nodrop = MQ.Query<bool>($"${{Corpse.Item[{i}].NoDrop}}");
+                Int32 itemValue = MQ.Query<Int32>($"${{Corpse.Item[{i}].Value}}");
+                Int32 stackCount = MQ.Query<Int32>($"${{Corpse.Item[{i}].Stack}}");
+                bool tradeskillItem = MQ.Query<bool>($"${{Corpse.Item[{i}].Tradeskills}}");
+
+                if (E3.GeneralSettings.Loot_OnlyStackableEnabled)
+                {
+                    //check if in our always loot.
+                    if (E3.GeneralSettings.Loot_OnlyStackableAlwaysLoot.Contains(corpseItem, StringComparer.OrdinalIgnoreCase))
+                    {
+                        importantItem = true;
+                        nodropImportantItem = nodrop;
+                        MQ.Write("\ayStackable: always loot item " + corpseItem);
+                    }
+
+                    if (stackable && !nodrop)
+                    {
+                        if (!importantItem && E3.GeneralSettings.Loot_OnlyStackableOnlyCommonTradeSkillItems)
+                        {
+                            if (corpseItem.Contains(" Pelt")) importantItem = true;
+                            if (corpseItem.Contains(" Silk")) importantItem = true;
+                            if (corpseItem.Contains(" Ore")) importantItem = true;
+                        }
+                        if (!importantItem && itemValue >= E3.GeneralSettings.Loot_OnlyStackableValueGreaterThanInCopper)
+                        {
+                            importantItem = true;
+                        }
+                        if (!importantItem && E3.GeneralSettings.Loot_OnlyStackableAllTradeSkillItems)
+                        {
+                            if (tradeskillItem) importantItem = true;
+                        }
+
+                        if (!importantItem && itemValue >= E3.GeneralSettings.Loot_OnlyStackableValueGreaterThanInCopper)
+                        {
+                            importantItem = true;
+                        }
+                    }
+                }
+                else
+                {
+                    //use normal loot settings
+                    bool foundInFile = false;
+                    if (LootDataFile.Keep.Contains(corpseItem) || LootDataFile.Sell.Contains(corpseItem))
+                    {
+                        importantItem = true;
+                        foundInFile = true;
+                        //loot nodrop items in inifile
+                        nodropImportantItem = nodrop;
+                    }
+                    else if (LootDataFile.Skip.Contains(corpseItem))
+                    {
+                        importantItem = false;
+                        foundInFile = true;
+                    }
+                    if (!foundInFile && !nodrop)
+                    {
+                        importantItem = true;
+                        LootDataFile.Keep.Add(corpseItem);
+                        E3.Bots.BroadcastCommandToGroup($"/E3LootAdd \"{corpseItem}\" KEEP");
+                        LootDataFile.SaveData();
+                    }
+
+                }
+
+                //check if its lore
+                bool isLore = MQ.Query<bool>($"${{Corpse.Item[{i}].Lore}}");
+                //if in bank or on our person
+                bool weHaveItem = MQ.Query<bool>($"${{FindItemCount[={corpseItem}]}}");
+                bool weHaveItemInBank = MQ.Query<bool>($"${{FindItemBankCount[={corpseItem}]}}");
+                if (isLore && (weHaveItem || weHaveItemInBank))
+                {
+                    importantItem = false;
+                }
+
+                //stackable but we don't have room and don't have the item yet
+                if (stackable && !weHaveItem)
+                {
+                    importantItem = false;
+                }
+
+                //stackable but we don't have room but we already have an item, lets see if we have room.
+                if (stackable && weHaveItem)
+                {
+                    //does it have free stacks?
+                    if (FoundStackableFitInInventory(corpseItem, stackCount))
+                    {
+                        importantItem = true;
+                    }
+                }
+
+                if (importantItem) return true;
+            }
+            return false;
         }
         public static void LootCorpse(Spawn corpse, bool bypassLootSettings = false)
         {

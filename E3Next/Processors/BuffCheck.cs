@@ -257,7 +257,7 @@ namespace E3Core.Processors
 
             RefresBuffCacheForBots();
             //instant buffs have their own shouldcheck, need it snappy so check quickly.
-            BuffInstant(E3.CharacterSettings.InstantBuffs);
+            //BuffInstant(E3.CharacterSettings.InstantBuffs);
 
             if (!e3util.ShouldCheck(ref _nextBuffCheck, _nextBuffCheckInterval)) return;
             if (Basics.AmIDead()) return;
@@ -293,8 +293,9 @@ namespace E3Core.Processors
                 BuffBots(E3.CharacterSettings.CombatBuffs);
             }
         }
-        private static void BuffInstant(List<Data.Spell> buffs)
+        public static void BuffInstant(List<Data.Spell> buffs)
         {
+            if (E3.IsInvis) return;
             if (e3util.IsActionBlockingWindowOpen()) return;
             if (!e3util.ShouldCheck(ref _nextInstantBuffRefresh, _nextInstantRefreshTimeInterval)) return;
             //self only, instacast buffs only

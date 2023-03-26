@@ -8,6 +8,7 @@ using System.Linq;
 using System.Runtime.CompilerServices;
 using System.Text;
 using System.Threading.Tasks;
+using static System.Windows.Forms.VisualStyles.VisualStyleElement;
 
 namespace E3Core.Processors
 {
@@ -164,6 +165,8 @@ namespace E3Core.Processors
             _spawns.RefreshList();
             _corpseList.Clear();
 
+            bool rezOurself = false;
+
             //lets find the clerics in range
             foreach (var spawn in _spawns.Get())
             {
@@ -178,7 +181,12 @@ namespace E3Core.Processors
                         continue;
 
                     }
-
+                    if(spawn.DisplayName == E3.CurrentName)
+                    {
+                        //rez ourself last
+                        rezOurself = true;
+                        continue;
+                    }
                     _corpseList.Add(spawn.ID);
                 }
             }
@@ -195,7 +203,12 @@ namespace E3Core.Processors
                         continue;
 
                     }
-
+                    if (spawn.DisplayName == E3.CurrentName)
+                    {
+                        //rez ourself last
+                        rezOurself = true;
+                        continue;
+                    }
                     _corpseList.Add(spawn.ID);
                 }
             }
@@ -216,11 +229,35 @@ namespace E3Core.Processors
                             continue;
 
                         }
-
+                        if(spawn.DisplayName == E3.CurrentName)
+                        {
+                            //rez ourself last
+                            rezOurself = true;
+                            continue;
+                        }
                         _corpseList.Add(spawn.ID);
                     }
                 }
             }
+            if(rezOurself)
+            {
+                foreach (var spawn in _spawns.Get())
+                {
+                    if (spawn.Distance3D < 100 && spawn.DeityID != 0 && spawn.TypeDesc == "Corpse")
+                    {
+                        //lists are super small so contains is fine
+                        if (!_corpseList.Contains(spawn.ID))
+                        {
+                            if (spawn.DisplayName == E3.CurrentName)
+                            {
+                                _corpseList.Add(spawn.ID);
+                            }
+
+                        }
+                    }
+                }
+            }
+            
         }
 
         [ClassInvoke(Class.All)]

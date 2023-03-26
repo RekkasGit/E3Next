@@ -33,6 +33,7 @@ namespace E3Core.Processors
             {
                 return;
             }
+            CheckGC();
             //update all states, important.
             StateUpdates();
 
@@ -72,6 +73,8 @@ namespace E3Core.Processors
                 Assist.Process();
             }
 
+            //instant buffs have their own shouldcheck, need it snappy so check quickly.
+            BuffCheck.BuffInstant(E3.CharacterSettings.InstantBuffs);
 
 
             if (!ActionTaken)
@@ -134,6 +137,8 @@ namespace E3Core.Processors
             {
                 Loot.Process();
             }
+            //instant buffs have their own shouldcheck, need it snappy so check quickly.
+            BuffCheck.BuffInstant(E3.CharacterSettings.InstantBuffs);
 
             //were modifications made to the settings files?
             CheckModifiedSettings();
@@ -298,6 +303,21 @@ namespace E3Core.Processors
            
 
         }
+        //test to see if we need to GC every 5 min to maintain proper memory profile
+        private static void CheckGC()
+        {
+            if(_lastGCCollect==0)
+            {
+                _lastGCCollect = Core.StopWatch.ElapsedMilliseconds;
+            }
+
+            if(Core.StopWatch.ElapsedMilliseconds - _lastGCCollect> 300000)
+            {
+                //GC collect every 5 min
+                GC.Collect();
+                _lastGCCollect = Core.StopWatch.ElapsedMilliseconds;
+            }
+        }
 
         public static bool ActionTaken = false;
         public static bool Following = false;
@@ -328,5 +348,6 @@ namespace E3Core.Processors
         public static bool IsInvis;
         private static Int64 _nextReloadSettingsCheck = 0;
         private static Int64 _nextReloadSettingsInterval = 2000;
+        private static Int64 _lastGCCollect = 0;
     }
 }
