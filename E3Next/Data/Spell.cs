@@ -41,7 +41,7 @@ namespace E3Core.Data
 
 
             QueryMQ();
-            if (!_loadedSpells.ContainsKey(this.SpellID))
+            if (this.SpellID>0 && !_loadedSpells.ContainsKey(this.SpellID))
             {
                 //sometimes an item can have the same spellid of a spell. prevent duplicates. 
                 //should deal with this later tho, and make it off maybe castID
@@ -342,7 +342,7 @@ namespace E3Core.Data
             {
                 CastType = CastType.Disc;
             }
-            else if (MQ.Query<bool>($"${{Me.Ability[{CastName}]}}"))
+            else if (MQ.Query<bool>($"${{Me.Ability[{CastName}]}}")|| String.Compare("Slam",CastName,true)==0)
             {
                 CastType = CastType.Ability;
             }

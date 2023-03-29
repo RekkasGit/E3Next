@@ -320,8 +320,21 @@ namespace E3Core.Processors
                             }
 
                         }
-                        else if (spell.CastType == Data.CastType.Ability && MQ.Query<bool>($"${{Me.AbilityReady[{spell.CastName}]}}"))
+                        else if (spell.CastType == Data.CastType.Ability)
                         {
+
+                            string abilityToCheck = spell.CastName;
+
+                            if(abilityToCheck.Equals("Slam", StringComparison.OrdinalIgnoreCase))
+                            {
+                                abilityToCheck = "Bash";
+                            }
+
+                            if(!MQ.Query<bool>($"${{Me.AbilityReady[{abilityToCheck}]}}"))
+                            {
+                                return CastReturn.CAST_NOTREADY;
+
+                            }
                             _log.Write("Doing Ability based logic checks...");
                             //to deal with a slam bug
                             if (spell.CastName.Equals("Slam"))
@@ -1138,7 +1151,14 @@ namespace E3Core.Processors
             }
             else if (spell.CastType == Data.CastType.Ability)
             {
-                if (MQ.Query<bool>($"${{Me.AbilityReady[{spell.CastName}]}}"))
+                string abilityToCheck = spell.CastName;
+
+                //work around due to MQ bug with Slam
+                if (abilityToCheck.Equals("Slam", StringComparison.OrdinalIgnoreCase))
+                {
+                    abilityToCheck = "Bash";
+                }
+                if (MQ.Query<bool>($"${{Me.AbilityReady[{abilityToCheck}]}}"))
                 {
                     return true;
                 }
