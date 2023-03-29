@@ -541,10 +541,15 @@ namespace E3Core.Processors
                     else if (s.ID == MQ.Query<Int32>("${Me.Pet.ID}"))
                     {
                         //its my pet
-                        bool hasBuff = MQ.Query<bool>($"${{Bool[${{Me.Pet.Buff[{spell.SpellName}]}}]}}");
-                        //adding CachedBuff check from Spawn buffs since MQ/RoF only reports 30 pet.buff slots
-                        bool hasCachedBuff = MQ.Query<bool>($"${{Bool[${{Spawn[${{Me.Pet.ID}}].Buff[{spell.SpellName}]}}]}}");
-                        
+                        Int32 buffCount = MQ.Query<Int32>("${Me.Pet.BuffCount}");
+
+                        bool hasBuff = false;
+
+                        if(buffCount<31)
+                        {
+                            hasBuff = MQ.Query<bool>($"${{Bool[${{Me.Pet.Buff[{spell.SpellName}]}}]}}");
+                        }
+                       
                         bool hasCheckFor = false;
                         bool hasCachedCheckFor = false;
                         if (!String.IsNullOrWhiteSpace(spell.CheckFor))
@@ -558,9 +563,9 @@ namespace E3Core.Processors
                                 continue;
                             }
                         }
-                        if (!(hasBuff) && !(hasCachedBuff))
+                        if (!(hasBuff))
                         {
-                            bool willStack = MQ.Query<bool>($"${{Spell[{spell.SpellName}].WillLand}}");
+                            bool willStack = MQ.Query<bool>($"${{Spell[{spell.SpellName}].WillLandPet}}");
                             if (willStack && Casting.CheckReady(spell) && Casting.CheckMana(spell))
                             {
                                 CastReturn result;
@@ -579,7 +584,15 @@ namespace E3Core.Processors
                                 {
                                     //lets verify what we have.
                                     MQ.Delay(100);
-                                    UpdateBuffTimers(s.ID, spell, 1500);
+                                    if (buffCount < 31)
+                                    {
+                                        UpdateBuffTimers(s.ID, spell, 1500);
+                                    }
+                                    else
+                                    {
+                                        UpdateBuffTimers(s.ID, spell, (spell.DurationTotalSeconds * 1000));
+                                    }
+                                   
                                 }
                                 return;
                             }

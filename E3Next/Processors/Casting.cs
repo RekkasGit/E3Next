@@ -362,6 +362,10 @@ namespace E3Core.Processors
                                     MQ.Write($"\ag{spell.CastName} \am{targetName} \ao{targetID}");
                                     MQ.Cmd("/doability 6");
                                 }
+                                else
+                                {
+                                    return CastReturn.CAST_INVALID;
+                                }
                             }
                             else
                             {

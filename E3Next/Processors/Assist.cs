@@ -354,7 +354,7 @@ namespace E3Core.Processors
                                     continue;
                                 }
                             }
-
+                           
                             Casting.Cast(AssistTargetID, ability);
                         }
                         else if (ability.CastType == Data.CastType.AA)
@@ -664,11 +664,19 @@ namespace E3Core.Processors
 
         private static void RegisterEvents()
         {
-            EventProcessor.RegisterCommand("/assistme", (x) =>
+           EventProcessor.RegisterCommand("/assistme", (x) =>
            {
                 //clear in case its not reset by other means
                 //or you want to attack in enrage
                 _assistIsEnraged = false;
+
+               bool ignoreme = false;
+               if(x.args.Contains("/ignoreme"))
+               {
+                   ignoreme = true;
+                   x.args.Remove("/ignoreme");
+               }
+
                MQ.Cmd("/makemevisible");
                //Rez.Reset();
                if (x.args.Count == 0)
@@ -681,12 +689,14 @@ namespace E3Core.Processors
                        E3.Bots.Broadcast("I cannot assist on myself.");
                        return;
                    }
-                   if (targetID != AssistTargetID)
+                   if(!ignoreme)
                    {
-                       AssistOff();
-                       AllowControl = true;
-                       AssistOn(targetID, Zoning.CurrentZone.Id);
-
+                       if (targetID != AssistTargetID)
+                       {
+                           AssistOff();
+                           AllowControl = true;
+                           AssistOn(targetID, Zoning.CurrentZone.Id);
+                       }
                    }
                    E3.Bots.BroadcastCommandToGroup($"/assistme {targetID} {Zoning.CurrentZone.Id}", x);
               
@@ -711,6 +721,7 @@ namespace E3Core.Processors
                    }
                }
            });
+
             EventProcessor.RegisterCommand("/cleartargets", (x) =>
             {
                 ClearXTargets.FaceTarget = false;
