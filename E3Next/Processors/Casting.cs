@@ -550,7 +550,7 @@ namespace E3Core.Processors
                             {
                                 bool isCorpse = MQ.Query<bool>("${Target.Type.Equal[Corpse]}");
 
-                                if (isCorpse)
+                                if (isCorpse || !MQ.Query<bool>("${Target.ID}"))
                                 {
                                     //shouldn't nuke dead things
                                     Assist.AssistOff();
