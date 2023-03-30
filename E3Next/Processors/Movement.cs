@@ -43,6 +43,16 @@ namespace E3Core.Processors
              _doorData.LoadData();
     
         }
+
+        public static bool StandingStillForTimePeriod()
+        {
+            if(Core.StopWatch.ElapsedMilliseconds - E3.LastMovementTimeStamp > E3.GeneralSettings.Movement_StandingStill)
+            {
+                return true;
+            }
+            return false;
+        }
+
         public static void Reset()
         {
             AnchorTarget = 0;

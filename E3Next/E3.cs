@@ -191,7 +191,12 @@ namespace E3Core.Processors
             IsInvis = MQ.Query<bool>("${Me.Invis}");
             CurrentHps = MQ.Query<int>("${Me.PctHPs}");
             CurrentId = MQ.Query<int>("${Me.ID}");
+            bool IsMoving = MQ.Query<bool>("${Me.Moving}");
 
+            if(IsMoving)
+            {
+                LastMovementTimeStamp = Core.StopWatch.ElapsedMilliseconds;
+            }
             if (MQ.Query<bool>("${MoveUtils.GM}"))
             {
                 MQ.Cmd("/squelch /stick imsafe");
@@ -336,7 +341,7 @@ namespace E3Core.Processors
         public static string CurrentPetName = String.Empty;
         public static bool CurrentInCombat = false;
         public static int CurrentId;
-
+        public static Int64 LastMovementTimeStamp;
         public static string CurrentLongClassString;
         public static string CurrentShortClassString;
         public static int CurrentHps;

@@ -270,7 +270,7 @@ namespace E3Core.Processors
                     BuffBots(E3.CharacterSettings.CombatBuffs);
                 }
 
-                if (!Movement.IsMoving() && String.IsNullOrWhiteSpace(Movement.FollowTargetName))
+                if ((!Movement.IsMoving() && String.IsNullOrWhiteSpace(Movement.FollowTargetName))|| Movement.StandingStillForTimePeriod())
                 {
                     if(!Basics.InCombat())
                     {

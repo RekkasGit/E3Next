@@ -861,7 +861,13 @@ namespace E3Core.Processors
             {
                 bool onMount = MQ.Query<bool>("${Me.Mount.ID}");
 
-                if (onMount|| Movement.Following || Assist.IsAssisting || Movement.IsMoving()) return;
+                
+                if (onMount|| Assist.IsAssisting ) return;
+
+                if(!Movement.StandingStillForTimePeriod())
+                {
+                    if (Movement.Following || Movement.IsMoving()) return;
+                }
 
                 bool amIStanding = MQ.Query<bool>("${Me.Standing}");
                 string combatState = MQ.Query<string>("${Me.CombatState}");

@@ -9,6 +9,7 @@ using System.Runtime.CompilerServices;
 using System.Runtime.Serialization.Formatters;
 using System.Text;
 using System.Threading.Tasks;
+using static System.Collections.Specialized.BitVector32;
 
 namespace E3Core.Settings
 {
@@ -58,8 +59,10 @@ namespace E3Core.Settings
         public bool AutoTrade_Group = false;
         public bool AutoTrade_Guild = false;
         public bool AutoTrade_Raid = false;
-        
 
+
+
+        public Int32 Movement_StandingStill = 10000;
         public Int32 Movement_ChaseDistanceMin = 10;
         public Int32 Movement_ChaseDistanceMax = 500;
         public Int32 Movement_NavStopDistance = 10;
@@ -192,7 +195,7 @@ namespace E3Core.Settings
             LoadKeyData("Movement", "Nav Stop Distance", parsedData, ref Movement_NavStopDistance);
             LoadKeyData("Movement", "Anchor Distance Minimum", parsedData, ref Movement_AnchorDistanceMin);
             LoadKeyData("Movement", "Anchor Distance Maximum", parsedData, ref Movement_AnchorDistanceMax);
-
+            LoadKeyData("Movement", "Milliseconds till standing Still",parsedData,ref Movement_StandingStill);
             CheckMovementValues();
         }
 
@@ -355,6 +358,7 @@ namespace E3Core.Settings
             section.Keys.AddKey("Nav Stop Distance", "10");
             section.Keys.AddKey("Anchor Distance Minimum", "15");
             section.Keys.AddKey("Anchor Distance Maximum", "150");
+            section.Keys.AddKey("Milliseconds till standing Still", "10000");
 
            
             if (!System.IO.File.Exists(filename))
