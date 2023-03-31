@@ -23,6 +23,7 @@ namespace E3Core.Processors
         void BroadcastCommandToPerson(string person, string command);
         void Broadcast(string message);
         List<Int32> BuffList(string name);
+        List<Int32> PetBuffList(string name);
         Int32 DebuffCounters(string name);
         Int32 DiseasedCounters(string name);
         Int32 PoisonedCounters(string name);
@@ -42,6 +43,14 @@ namespace E3Core.Processors
         private static Dictionary<string, Int64> _buffListCollectionTimeStamps = new Dictionary<string, long>();
         private static Int64 _nextBuffCheck = 0;
         private static Int64 _nextBuffRefreshTimeInterval = 1000;
+
+        private static Dictionary<string, List<Int32>> _petBuffListCollection = new Dictionary<string, List<int>>();
+        private static Dictionary<string, Int64> _petBuffListCollectionTimeStamps = new Dictionary<string, long>();
+        private static Int64 _nextPetBuffCheck = 0;
+        private static Int64 _nextPetBuffRefreshTimeInterval = 1000;
+     
+
+  
         private static StringBuilder _strinbBuilder = new StringBuilder();
         public void BroadcastCommandToGroup(string query, CommandMatch match = null, bool noparse = false)
         {
@@ -194,9 +203,9 @@ namespace E3Core.Processors
                     //ignore pets with quotes. 
                     continue;
                 }
-                string listString = MQ.Query<string>($"${{NetBots[{kvp.Key}].Buff}}");
-
-
+                string listString = string.Empty;
+                
+                listString=MQ.Query<string>($"${{NetBots[{kvp.Key}].Buff}}");
                 _buffListCollection[kvp.Key].Clear();
                 if (listString != "NULL")
                 {  
@@ -212,7 +221,43 @@ namespace E3Core.Processors
             return _buffListCollection[name];
 
         }
-        
+        public List<int> PetBuffList(string name)
+        {
+
+            List<Int32> buffList;
+            bool alreadyExisted = true;
+            if (!_petBuffListCollection.TryGetValue(name, out buffList))
+            {
+                alreadyExisted = false;
+                buffList = new List<int>();
+                _petBuffListCollection.Add(name, buffList);
+                _petBuffListCollectionTimeStamps.Add(name, 0);
+            }
+
+            if (!e3util.ShouldCheck(ref _nextPetBuffCheck, _nextPetBuffRefreshTimeInterval) && alreadyExisted) return _petBuffListCollection[name];
+
+            //refresh all lists of all people
+
+            foreach (var kvp in _petBuffListCollection)
+            {
+                if (kvp.Key.Contains("\""))
+                {
+                    //ignore pets with quotes. 
+                    continue;
+                }
+                string listString = string.Empty;
+
+                listString = MQ.Query<string>($"${{NetBots[{kvp.Key}].PetBuff}}");
+                _petBuffListCollection[kvp.Key].Clear();
+                if (listString != "NULL")
+                {
+                    e3util.StringsToNumbers(listString, ' ', _petBuffListCollection[kvp.Key]);
+                }
+
+            }
+            return _petBuffListCollection[name];
+
+        }
 
         public void Broadcast(string message)
         {
@@ -268,6 +313,12 @@ namespace E3Core.Processors
         private static Dictionary<string, Int64> _buffListCollectionTimeStamps = new Dictionary<string, long>();
         private static Int64 _nextBuffCheck = 0;
         private static Int64 _nextBuffRefreshTimeInterval = 1000;
+
+        private static Dictionary<string, List<Int32>> _petBuffListCollection = new Dictionary<string, List<int>>();
+        private static Dictionary<string, Int64> _petBuffListCollectionTimeStamps = new Dictionary<string, long>();
+        private static Int64 _nextPetBuffCheck = 0;
+        private static Int64 _nextPetBuffRefreshTimeInterval = 1000;
+
         private static StringBuilder _strinbBuilder = new StringBuilder();
         private static HashSet<string> _registeredObservations = new HashSet<string>();
         public DanBots()
@@ -435,6 +486,42 @@ namespace E3Core.Processors
                 }
             }
             return _buffListCollection[name];   //need to register and get a buff list.
+        }
+        public List<int> PetBuffList(string name)
+        {
+            List<Int32> buffList;
+            bool alreadyExisted = true;
+            if (!_petBuffListCollection.TryGetValue(name, out buffList))
+            {
+                alreadyExisted = false;
+                buffList = new List<int>();
+                _petBuffListCollection.Add(name, buffList);
+                _petBuffListCollectionTimeStamps.Add(name, 0);
+            }
+
+            if (!e3util.ShouldCheck(ref _nextPetBuffCheck, _nextPetBuffRefreshTimeInterval) && alreadyExisted) return _petBuffListCollection[name];
+
+            //refresh all lists of all people
+
+            foreach (var kvp in _petBuffListCollection)
+            {
+                if (kvp.Key.Contains("\""))
+                {
+                    //ignore pets with quotes. 
+                    continue;
+                }
+                for (Int32 i = 1; i <= _maxBuffSlots; i++)
+                {
+                    Int32 spellid = MQ.Query<Int32>($"${{DanNet[{kvp.Key}].O[\"Me.Pet.Buff[{i}].Spell.ID\"]}}");
+                    if (spellid > 0)
+                    {
+                        _petBuffListCollection[kvp.Key].Add(spellid);
+                    }
+                }
+
+            }
+            return _petBuffListCollection[name];
+            
         }
         private HashSet<String> _curseCountersObservers = new HashSet<string>();
 

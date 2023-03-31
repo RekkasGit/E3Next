@@ -803,11 +803,18 @@ namespace E3Core.Processors
                 if (pok) return;
 
                 bool hasManaStone = MQ.Query<bool>("${Bool[${FindItem[=Manastone]}]}");
+                
+                string manastoneName = "Manastone";
+                if(!hasManaStone)
+                {
+                    hasManaStone = MQ.Query<bool>("${Bool[${FindItem[=Apocryphal Manastone]}]}");
+                    if(hasManaStone) manastoneName = "Apocryphal Manastone";
+                }
                 bool amIStanding = MQ.Query<bool>("${Me.Standing}");
-               
 
                 if (hasManaStone && amIStanding)
                 {
+                    string manastoneCommand = $"/useitem \"{manastoneName}\"";
                     e3util.YieldToEQ();
                     if (MQ.Query<bool>("${Me.Invis}")) return;
 
@@ -822,7 +829,7 @@ namespace E3Core.Processors
 
                         for (int i = 0; i < totalClicksToTry; i++)
                         {
-                            MQ.Cmd("/useitem \"Manastone\"");
+                            MQ.Cmd(manastoneCommand);
                         }
                         //allow mq to have the commands sent to the server
                         MQ.Delay(E3.GeneralSettings.ManaStone_DelayBetweenLoops);

@@ -255,7 +255,7 @@ namespace E3Core.Processors
             if (E3.IsInvis) return;
 
 
-            RefresBuffCacheForBots();
+            //RefresBuffCacheForBots();
             //instant buffs have their own shouldcheck, need it snappy so check quickly.
             //BuffInstant(E3.CharacterSettings.InstantBuffs);
 
@@ -360,6 +360,7 @@ namespace E3Core.Processors
             foreach (var spell in buffs)
             {
                 Spawn s;
+                Spawn master = null; 
 
                 string target = E3.CurrentName;
                 if (!String.IsNullOrWhiteSpace(spell.CastTarget))
@@ -398,6 +399,7 @@ namespace E3Core.Processors
                         Spawn ts;
                         if (_spawns.TryByID(s.PetID, out ts))
                         {
+                            master = s;
                             s = ts;
                         }
                     }
@@ -454,7 +456,7 @@ namespace E3Core.Processors
                                         buffDuration = 1000;
                                     }
                                     //don't let the refresh update this
-                                    UpdateBuffTimers(s.ID, spell, buffDuration);
+                                    UpdateBuffTimers(s.ID, spell, 1500);
                                     continue;
                                 }
                             }
@@ -465,7 +467,7 @@ namespace E3Core.Processors
                                 {
                                     buffDuration = 1000;
                                 }
-                                UpdateBuffTimers(s.ID, spell, buffDuration);
+                                UpdateBuffTimers(s.ID, spell, 1500);
                                 continue;
                             }
 
@@ -498,21 +500,21 @@ namespace E3Core.Processors
                                 else
                                 {
                                     //lets verify what we have.
-                                    MQ.Delay(100);
-                                    Int64 timeLeftInMS = Casting.TimeLeftOnMyBuff(spell);
-                                    if (timeLeftInMS < 0)
-                                    {
-                                        //some issue, lets wait
-                                        timeLeftInMS = 60 * 1000;
-                                    }
-                                    UpdateBuffTimers(s.ID, spell, timeLeftInMS);
+                                    //MQ.Delay(100);
+                                    //Int64 timeLeftInMS = Casting.TimeLeftOnMyBuff(spell);
+                                    //if (timeLeftInMS < 0)
+                                    //{
+                                    //    //some issue, lets wait
+                                    //    timeLeftInMS = 60 * 1000;
+                                    //}
+                                    UpdateBuffTimers(s.ID, spell, 1500);
                                 }
                                 return;
                             }
                             else if (!willStack)
                             {
                                 //won't stack don't check back for awhile
-                                UpdateBuffTimers(s.ID, spell, spell.Duration);
+                                UpdateBuffTimers(s.ID, spell, 1500);
                             }
                             else
                             {
@@ -523,18 +525,18 @@ namespace E3Core.Processors
                         else
                         {
                             //they have the buff, update the time
-                            Int64 timeLeftInMS = Casting.TimeLeftOnMyBuff(spell);
-                            if (timeLeftInMS < 0)
-                            {
-                                //some issue, lets wait
-                                timeLeftInMS = 120 * 1000;
-                                UpdateBuffTimers(s.ID, spell, timeLeftInMS, true);
-                            }
-                            else
-                            {
-                                UpdateBuffTimers(s.ID, spell, timeLeftInMS);
-                            }
-
+                            //Int64 timeLeftInMS = Casting.TimeLeftOnMyBuff(spell);
+                            //if (timeLeftInMS < 0)
+                            //{
+                            //    //some issue, lets wait
+                            //    timeLeftInMS = 120 * 1000;
+                            //    UpdateBuffTimers(s.ID, spell, timeLeftInMS, true);
+                            //}
+                            //else
+                            //{
+                            //    UpdateBuffTimers(s.ID, spell, timeLeftInMS);
+                            //}
+                            UpdateBuffTimers(s.ID, spell, 1500);
                             continue;
                         }
                     }
@@ -619,26 +621,33 @@ namespace E3Core.Processors
                     {
                         //someone other than us.
                         //if its a netbots, we initially do target, then have the cache refreshed
+                        //using a func here so that we can swap out the logic of Pet buff vs normal buffs
+                        Func<String,List<Int32>> findBuffList = E3.Bots.BuffList;
+                        if (usePets)
+                        {
+                            findBuffList = E3.Bots.PetBuffList;
+                        }
+
                         bool isABot = E3.Bots.BotsConnected().Contains(spell.CastTarget, StringComparer.OrdinalIgnoreCase);
-                        if (isABot && !usePets)
+                        if (isABot)
                         {
 
                             //its one of our bots, we can directly access short buffs
                             if (!String.IsNullOrWhiteSpace(spell.CheckFor))
                             {
-                                bool hasCheckFor = E3.Bots.BuffList(spell.CastTarget).Contains(spell.CheckForID);
+                                bool hasCheckFor = findBuffList(spell.CastTarget).Contains(spell.CheckForID);
                                 //can't check for target song buffs, be aware. will have to check netbots. 
                                 if (hasCheckFor)
                                 {
                                     //can't see the time, just set it for this time to recheck
                                     //6 seconds
-                                    UpdateBuffTimers(s.ID, spell, 6 * 1000);
+                                    UpdateBuffTimers(s.ID, spell, 3 * 1000);
                                     continue;
                                 }
 
                             }
 
-                            bool hasBuff = hasBuff = E3.Bots.BuffList(spell.CastTarget).Contains(spell.SpellID);
+                            bool hasBuff = hasBuff = findBuffList(spell.CastTarget).Contains(spell.SpellID);
 
                             if (!hasBuff)
                             {
@@ -664,7 +673,7 @@ namespace E3Core.Processors
                                         else
                                         {
                                             //lets verify what we have on that target.
-                                            UpdateBuffTimers(s.ID, spell,6000,true);
+                                            UpdateBuffTimers(s.ID, spell,3000,true);
 
                                         }
                                         return;
@@ -676,15 +685,15 @@ namespace E3Core.Processors
                                     }
                                 }
                                 else
-                                {   //spell not ready, come back in 6 sec
-                                    UpdateBuffTimers(s.ID, spell, 6000);
+                                {   //spell not ready, come back in 3 sec
+                                    UpdateBuffTimers(s.ID, spell, 3000);
 
                                 }
                             }
                             else
                             {
-                                //has the buff set a 6 sec retry
-                                UpdateBuffTimers(s.ID, spell, 6000, true);
+                                //has the buff set a 3 sec retry
+                                UpdateBuffTimers(s.ID, spell, 3000, true);
                                 continue;
                             }
 

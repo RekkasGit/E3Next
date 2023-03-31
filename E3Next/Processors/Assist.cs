@@ -707,6 +707,14 @@ namespace E3Core.Processors
                            AssistOn(targetID, Zoning.CurrentZone.Id);
                        }
                    }
+                   else
+                   {
+                       //we are asking to ignore ourself, but might want to send out our pet still
+                       if (MQ.Query<Int32>("${Me.Pet.ID}") > 0)
+                       {
+                           MQ.Cmd($"/pet attack {targetID}");
+                       }
+                   }
                    E3.Bots.BroadcastCommandToGroup($"/assistme {targetID} {Zoning.CurrentZone.Id}", x);
               
                }
