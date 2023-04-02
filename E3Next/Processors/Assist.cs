@@ -700,6 +700,8 @@ namespace E3Core.Processors
                    }
                    if(!ignoreme)
                    {
+                       if (e3util.FilterMe(x)) return;
+
                        if (targetID != AssistTargetID)
                        {
                            AssistOff();

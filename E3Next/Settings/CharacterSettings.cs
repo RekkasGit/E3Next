@@ -581,7 +581,7 @@ namespace E3Core.Settings
             {
                 newFile.Sections.AddSection("Magician");
                 section = newFile.Sections.GetSectionData("Magician");
-                section.Keys.AddKey("Auto-Pet Weapons (On/Off)", "On");
+                section.Keys.AddKey("Auto-Pet Weapons (On/Off)", "Off");
                 section.Keys.AddKey("Pet Weapons", "");
             }
 

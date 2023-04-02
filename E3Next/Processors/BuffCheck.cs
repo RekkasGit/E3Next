@@ -423,7 +423,7 @@ namespace E3Core.Processors
                         {
                             //ifs failed do a 30 sec`retry
 
-                            //UpdateBuffTimers(s.ID, spell, 30 * 1000, true);
+                            UpdateBuffTimers(s.ID, spell, 1500, true);
                             continue;
                         }
                     }
@@ -641,7 +641,7 @@ namespace E3Core.Processors
                                 {
                                     //can't see the time, just set it for this time to recheck
                                     //6 seconds
-                                    UpdateBuffTimers(s.ID, spell, 3 * 1000);
+                                    UpdateBuffTimers(s.ID, spell, 1500);
                                     continue;
                                 }
 
@@ -667,13 +667,13 @@ namespace E3Core.Processors
                                         }
                                         if (result != CastReturn.CAST_SUCCESS)
                                         {
-                                            //possibly some kind of issue/blocking. set a 90 sec timer to try and recast later.
-                                            UpdateBuffTimers(s.ID, spell, 90 * 1000, true);
+                                            //possibly some kind of issue/blocking.
+                                            UpdateBuffTimers(s.ID, spell, 10000, true);
                                         }
                                         else
                                         {
                                             //lets verify what we have on that target.
-                                            UpdateBuffTimers(s.ID, spell,3000,true);
+                                            UpdateBuffTimers(s.ID, spell, 1500, true);
 
                                         }
                                         return;
@@ -681,19 +681,19 @@ namespace E3Core.Processors
                                     else
                                     {
                                         //won't stack don't check back for awhile
-                                        UpdateBuffTimers(s.ID, spell, 30 * 1000);
+                                        UpdateBuffTimers(s.ID, spell, 1500);
                                     }
                                 }
                                 else
-                                {   //spell not ready, come back in 3 sec
-                                    UpdateBuffTimers(s.ID, spell, 3000);
+                                {   //spell not ready
+                                    UpdateBuffTimers(s.ID, spell, 1500);
 
                                 }
                             }
                             else
                             {
-                                //has the buff set a 3 sec retry
-                                UpdateBuffTimers(s.ID, spell, 3000, true);
+                                //has the buff
+                                UpdateBuffTimers(s.ID, spell, 1500, true);
                                 continue;
                             }
 

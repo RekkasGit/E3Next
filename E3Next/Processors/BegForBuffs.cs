@@ -52,18 +52,33 @@ namespace E3Core.Processors
                 {
                     if (Basics.AmIDead()) return;
                     string user = x.match.Groups[1].Value;
+
+             
                     if (E3.GeneralSettings.BuffRequests_AllowBuffRequests || E3.Bots.IsMyBot(user))
                     {
+                        Int32 totalQueuedSpells = 0;
                         if (_spawns.TryByName(user, out var spawn))
                         {
+                            Casting.TrueTarget(spawn.ID);
+                           
                             foreach (var spell in E3.CharacterSettings.GroupBuffs)
                             {
+                                if (!String.IsNullOrWhiteSpace(spell.Ifs))
+                                {
+                                    if (!Casting.Ifs(spell))
+                                    {
+                                        continue;
+                                    }
+                                }
                                 _queuedBuffs.Enqueue(new BuffQueuedItem() { TargetID = spawn.ID, Spell = spell});
+                                totalQueuedSpells++;
+                            }
+                            if(totalQueuedSpells > 0)
+                            {
+                                MQ.Cmd($"/t {user} casting buffs on you, please wait.");
+                                E3.Bots.BroadcastCommand($"/buffme {spawn.ID}");
 
                             }
-                            MQ.Cmd($"/t {user} casting buffs on you, please wait.");
-
-                            E3.Bots.BroadcastCommand($"/buffme {spawn.ID}");
                         }
                     }
                 }
@@ -77,20 +92,32 @@ namespace E3Core.Processors
                     string user = x.match.Groups[1].Value;
                     if (E3.GeneralSettings.BuffRequests_AllowBuffRequests || E3.Bots.IsMyBot(user))
                     {
+                        Int32 totalQueuedSpells = 0;
                         if (_spawns.TryByName(user, out var spawn))
                         {
                             Int32 petid = spawn.PetID;
-
-                            if(petid>0)
+                            Casting.TrueTarget(spawn.ID);
+                            if (petid>0)
                             {
                                 foreach (var spell in E3.CharacterSettings.GroupBuffs)
                                 {
+                                    if (!String.IsNullOrWhiteSpace(spell.Ifs))
+                                    {
+                                        if (!Casting.Ifs(spell))
+                                        {
+                                            continue;
+                                        }
+                                    }
                                     _queuedBuffs.Enqueue(new BuffQueuedItem() { TargetID = petid, Spell = spell });
-
+                                    totalQueuedSpells++;
                                 }
-                                MQ.Cmd($"/t {user} casting buffs on your pet, please wait.");
-
-                                E3.Bots.BroadcastCommand($"/buffme {petid}");
+                               
+                                if (totalQueuedSpells > 0)
+                                {
+                                    MQ.Cmd($"/t {user} casting buffs on your pet, please wait.");
+                                    E3.Bots.BroadcastCommand($"/buffme {petid}");
+                                }
+                                    
                             }
                             else
                             {

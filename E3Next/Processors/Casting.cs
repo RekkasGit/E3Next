@@ -1286,7 +1286,7 @@ namespace E3Core.Processors
                 }
                 return MQ.Query<bool>($"${{If[{tIF},TRUE,FALSE]}}");
             }
-            return false;
+            return true;
         }
         public static bool TrueTarget(Int32 targetID, bool allowClear = false)
         {

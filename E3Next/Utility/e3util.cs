@@ -639,6 +639,8 @@ namespace E3Core.Utility
                  Int32 mobid;
                 if (x.args.Count > 0)
                 {
+                    if (e3util.FilterMe(x)) return;
+
                     if (Int32.TryParse(x.args[0], out mobid))
                     {
                         if(_spawns.TryByID(mobid, out var spawn))
@@ -666,6 +668,7 @@ namespace E3Core.Utility
                             {
                                  //we are telling people to follow us
                                 E3.Bots.BroadcastCommandToGroup($"{command} {targetID}",x);
+                                if (e3util.FilterMe(x)) return;
                                 FunctionToExecute(targetID);
                             }
                         }
