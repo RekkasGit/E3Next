@@ -449,6 +449,10 @@ namespace E3Core.Processors
             EventProcessor.RegisterCommand("/savegroup", (x) =>
             {
                 var args = x.args;
+
+                if (args.Count == 0)
+                    return;
+
                 if (x.args.Count > 0)
                 {
                     if (x.args[0].Equals("all", StringComparison.OrdinalIgnoreCase))
