@@ -518,7 +518,7 @@ namespace E3Core.Processors
                         MQ.Write($"\ag          {member}");
                     }
 
-                    MQ.Write($"\ap  Command: \ap/group {groupName}");
+                    MQ.Write($"     Command: \ap/group {groupName}");
                 }
             });
 
