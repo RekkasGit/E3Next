@@ -25,6 +25,13 @@ namespace E3Core.Settings.FeatureSettings
         {
             Dictionary<string, string> returnValue = new Dictionary<string, string>(StringComparer.OrdinalIgnoreCase);
             var section = _spellData.Sections[E3.CurrentLongClassString];
+            if(section==null)
+            {
+                if(E3.CurrentLongClassString=="Shadowknight")
+                {
+                    section = _spellData.Sections["Shadow Knight"];
+                }
+            }
             if (section != null)
             {
                 foreach(var kvp in section)

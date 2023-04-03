@@ -66,7 +66,11 @@ namespace E3Core.Processors
             if (!Assist.IsAssisting) return;
             if (E3.CharacterSettings.OffAssistSpells.Count == 0) return;
             if (!e3util.ShouldCheck(ref _nextOffAssistCheck, _nextOffAssistCheckInterval)) return;
-
+            Int32 targetId = MQ.Query<Int32>("${Target.ID}");
+            if (targetId != Assist.AssistTargetID && e3util.IsManualControl())
+            {
+                return;
+            }
             //do not off assist if you are in the middle of gather dusk. It sucks to put it on an add. 
             if (E3.CurrentClass == Data.Class.Necromancer)
             {
@@ -105,20 +109,32 @@ namespace E3Core.Processors
                 }
 
                 if (_mobsToOffAsist.Count == 0) return;
-                //lets place the 1st offensive spell on each mob, then the next, then the next
-                foreach (var spell in E3.CharacterSettings.OffAssistSpells)
+                try
                 {
-                    if (Casting.CheckMana(spell))
+                    //lets place the 1st offensive spell on each mob, then the next, then the next
+                    foreach (var spell in E3.CharacterSettings.OffAssistSpells)
                     {
-                        _tempOffAssistSpellList.Clear();
-                        _tempOffAssistSpellList.Add(spell);
-                        foreach (Int32 mobid in _mobsToOffAsist.ToList())
+                        if (Casting.CheckMana(spell))
                         {
-                            CastLongTermSpell(mobid, _tempOffAssistSpellList, _OffAssistTimers);
-                            if (E3.ActionTaken) return;
+                            _tempOffAssistSpellList.Clear();
+                            _tempOffAssistSpellList.Add(spell);
+                            foreach (Int32 mobid in _mobsToOffAsist.ToList())
+                            {
+                                CastLongTermSpell(mobid, _tempOffAssistSpellList, _OffAssistTimers);
+                                if (E3.ActionTaken) return;
+                            }
                         }
                     }
                 }
+                finally
+                {
+                    Int32 currentTargetID = MQ.Query<Int32>("${Target.ID}");
+                    if (targetId > 0 && currentTargetID != targetId)
+                    {
+                        Casting.TrueTarget(targetId);
+                    }
+                }
+               
             }
         }
 
@@ -126,8 +142,15 @@ namespace E3Core.Processors
         public static void Check_Debuffs()
         {
 
+            Int32 targetId = MQ.Query<Int32>("${Target.ID}");
             if (Assist.AssistTargetID > 0)
             {
+                //person in manual control and they are not on the assist target, chill.
+
+                if (targetId != Assist.AssistTargetID && e3util.IsManualControl())
+                {
+                    return;
+                }
                 CastLongTermSpell(Assist.AssistTargetID, E3.CharacterSettings.Debuffs_OnAssist, _debuffTimers);
                 if (E3.ActionTaken) return;
             }
@@ -136,62 +159,82 @@ namespace E3Core.Processors
             using (_log.Trace())
             {
                 //e3util.PrintTimerStatus(_debuffTimers, ref _nextDebuffCheck, "Debuffs");
-                foreach (var mobid in _mobsToDebuff.ToList())
+                try
                 {
+                    foreach (var mobid in _mobsToDebuff.ToList())
+                    {
 
-                    CastLongTermSpell(mobid, E3.CharacterSettings.Debuffs_Command, _debuffTimers);
-                    if (E3.ActionTaken) return;
+                        CastLongTermSpell(mobid, E3.CharacterSettings.Debuffs_Command, _debuffTimers);
+                        if (E3.ActionTaken) return;
+                    }
                 }
-                foreach (var mobid in _deadMobs)
+                finally
                 {
-                    _mobsToDot.Remove(mobid);
-                    _mobsToDebuff.Remove(mobid);
-                }
-                if (_deadMobs.Count > 0) _deadMobs.Clear();
-
-                //put us back to our assist target
-                Int32 targetId = MQ.Query<Int32>("${Target.ID}");
-                if (targetId != Assist.AssistTargetID)
-                {
-                    Casting.TrueTarget(Assist.AssistTargetID);
-
+                    foreach (var mobid in _deadMobs)
+                    {
+                        _mobsToDot.Remove(mobid);
+                        _mobsToDebuff.Remove(mobid);
+                    }
+                    if (_deadMobs.Count > 0) _deadMobs.Clear();
+                    //put us back to our assist target
+                    targetId = MQ.Query<Int32>("${Target.ID}");
+                    if (targetId != Assist.AssistTargetID)
+                    {
+                        Casting.TrueTarget(Assist.AssistTargetID);
+                    }
                 }
             }
-
         }
         [AdvSettingInvoke]
         public static void check_Dots()
         {
-
+            Int32 targetId = MQ.Query<Int32>("${Target.ID}");
             if (Assist.AssistTargetID > 0)
             {
+                //person in manual control and they are not on the assist target, chill.
+               
+                if (targetId != Assist.AssistTargetID && e3util.IsManualControl())
+                {
+                    return;
+                }
                 CastLongTermSpell(Assist.AssistTargetID, E3.CharacterSettings.Dots_Assist, _dotTimers);
                 if (E3.ActionTaken) return;
             }
 
-
             if (!e3util.ShouldCheck(ref _nextDoTCheck, _nextDoTCheckInterval)) return;
             // e3util.PrintTimerStatus(_dotTimers, ref _nextDoTCheck, "Damage over Time");
+            //person in manual control and they are not on the assist target, chill.
+           
+            if (targetId != Assist.AssistTargetID && e3util.IsManualControl())
+            {
+                return;
+            }
             using (_log.Trace())
             {
-                foreach (var mobid in _mobsToDot.ToList())
+                try
                 {
-                    CastLongTermSpell(mobid, E3.CharacterSettings.Dots_OnCommand, _dotTimers);
-                    if (E3.ActionTaken) return;
+                    foreach (var mobid in _mobsToDot.ToList())
+                    {
+                        CastLongTermSpell(mobid, E3.CharacterSettings.Dots_OnCommand, _dotTimers);
+                        if (E3.ActionTaken) return;
+                    }
+                   
                 }
-                foreach (var mobid in _deadMobs)
+                finally
                 {
-                    _mobsToDot.Remove(mobid);
-                    _mobsToDebuff.Remove(mobid);
-                }
-                if (_deadMobs.Count > 0) _deadMobs.Clear();
+                    foreach (var mobid in _deadMobs)
+                    {
+                        _mobsToDot.Remove(mobid);
+                        _mobsToDebuff.Remove(mobid);
+                    }
+                    if (_deadMobs.Count > 0) _deadMobs.Clear();
+                    //put us back to our assist target
+                    targetId = MQ.Query<Int32>("${Target.ID}");
+                    if (targetId != Assist.AssistTargetID)
+                    {
+                        Casting.TrueTarget(Assist.AssistTargetID);
 
-                //put us back to our assist target
-                Int32 targetId = MQ.Query<Int32>("${Target.ID}");
-                if (targetId != Assist.AssistTargetID)
-                {
-                    Casting.TrueTarget(Assist.AssistTargetID);
-
+                    }
                 }
             }
         }

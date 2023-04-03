@@ -64,6 +64,10 @@ namespace E3Core.Processors
                 Heals.Check_Heals();
                 if (ActionTaken) return; //we did a heal, kick out as we may need to do another heal.
             }
+            
+            //instant buffs have their own shouldcheck, need it snappy so check quickly.
+            BuffCheck.BuffInstant(E3.CharacterSettings.InstantBuffs);
+
 
             using (Log.Trace("Assist/WaitForRez"))
             {
@@ -73,9 +77,7 @@ namespace E3Core.Processors
                 Assist.Process();
             }
 
-            //instant buffs have their own shouldcheck, need it snappy so check quickly.
-            BuffCheck.BuffInstant(E3.CharacterSettings.InstantBuffs);
-
+            
 
             if (!ActionTaken)
             {
@@ -122,14 +124,23 @@ namespace E3Core.Processors
             }
 
             //class attribute method calls, call them all!
+            //in case any of them change the target, put it back after called
+            Int32 orgTargetID = MQ.Query<Int32>("${Target.ID}");
             using (Log.Trace("ClassMethodCalls"))
             {
+
                 //lets do our class methods, this is last because of bards
                 foreach (var kvp in AdvancedSettings.ClassMethodLookup)
                 {
                     kvp.Value.Invoke();
                     EventProcessor.ProcessEventsInQueues("/nowcast");
                     EventProcessor.ProcessEventsInQueues("/backoff");
+                }
+                //put the target back to where it was
+                Int32 currentTargetID = MQ.Query<Int32>("${Target.ID}");
+                if (orgTargetID > 0 && currentTargetID != orgTargetID)
+                {
+                    Casting.TrueTarget(orgTargetID);
                 }
             }
 

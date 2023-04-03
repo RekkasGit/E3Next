@@ -6,6 +6,7 @@ using MonoCore;
 using System;
 using System.Collections.Generic;
 using System.Linq;
+using System.Reflection.Emit;
 using System.Runtime.CompilerServices;
 using System.Text;
 using static MonoCore.EventProcessor;
@@ -183,6 +184,32 @@ namespace E3Core.Utility
                 MQ.Delay(200);
             }
 
+        }
+        public static bool TargetIsPCOrPCPet()
+        {
+            Spawn ct;
+            Int32 targetId = MQ.Query<Int32>("${Target.ID}");
+            if (_spawns.TryByID(targetId, out ct))
+            {
+                bool isAPCPet = false;
+                if (ct.MasterID > 0)
+                {
+                    Spawn master;
+                    if (_spawns.TryByID(ct.MasterID, out master))
+                    {
+                        if (master.TypeDesc == "PC")
+                        {
+                            isAPCPet = true;
+                        }
+                    }
+                }
+                if (ct.DeityID == 0 && isAPCPet == false)
+                {
+                    return false;
+                }
+                return true;
+            }
+            return false;
         }
         public static bool IsManualControl()
         {
