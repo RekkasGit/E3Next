@@ -8,6 +8,7 @@ using System.Collections.Generic;
 using System.Diagnostics;
 using System.Linq;
 using System.Text;
+using System.Text.RegularExpressions;
 
 namespace E3Core.Processors
 {
@@ -86,7 +87,7 @@ namespace E3Core.Processors
                     Int32 petID = MQ.Query<Int32>("${Me.Pet.ID");
                     foreach (var spawn in _spawns.Get())
                     {
-                        if(spawn.CleanName==name && spawn.TypeDesc=="NPC")
+                        if (spawn.CleanName == name && spawn.TypeDesc == "NPC")
                         {
                             return;
                         }
@@ -127,12 +128,12 @@ namespace E3Core.Processors
                 _spawns.RefreshList();//make sure we get a new refresh of this zone.
                 //check to see if your target is on top of you, if so... well, good luck!
                 Int32 targetID = MQ.Query<Int32>("${Target.ID}");
-                if(_spawns.TryByID(targetID, out var spawn))
+                if (_spawns.TryByID(targetID, out var spawn))
                 {
-                    if(spawn.Distance<5 && spawn.Aggressive && spawn.TypeDesc=="NPC")
+                    if (spawn.Distance < 5 && spawn.Aggressive && spawn.TypeDesc == "NPC")
                     {
                         //oh dear, the mob is in your face, best of luck.
-                        if(Movement.AnchorTarget>0)
+                        if (Movement.AnchorTarget > 0)
                         {
                             Movement.MoveToAnchor();
                         }
@@ -155,12 +156,12 @@ namespace E3Core.Processors
             });
             EventProcessor.RegisterCommand("/e3settings", (x) =>
             {
-                if(x.args.Count>0)
+                if (x.args.Count > 0)
                 {
-                    if(x.args[0].Equals("createdefault", StringComparison.OrdinalIgnoreCase))
+                    if (x.args[0].Equals("createdefault", StringComparison.OrdinalIgnoreCase))
                     {
                         string newFileName = BaseSettings.GetSettingsFilePath("General Settings_default.ini");
-                        if(System.IO.File.Exists(newFileName))
+                        if (System.IO.File.Exists(newFileName))
                         {
                             System.IO.File.Delete(newFileName);
                         }
@@ -171,12 +172,12 @@ namespace E3Core.Processors
             });
             EventProcessor.RegisterCommand("/dropinvis", (x) =>
             {
-                E3.Bots.BroadcastCommandToGroup("/makemevisible",x);
+                E3.Bots.BroadcastCommandToGroup("/makemevisible", x);
                 MQ.Cmd("/makemevisible");
             });
             EventProcessor.RegisterCommand("/droplev", (x) =>
             {
-                E3.Bots.BroadcastCommandToGroup("/removelev",x);
+                E3.Bots.BroadcastCommandToGroup("/removelev", x);
                 MQ.Cmd("/removelev");
             });
             EventProcessor.RegisterCommand("/shutdown", (x) =>
@@ -190,9 +191,9 @@ namespace E3Core.Processors
             {
                 E3.Bots.Broadcast("\aoReloading settings files...");
 
-                if(x.args.Count>0)
+                if (x.args.Count > 0)
                 {
-                    BaseSettings.CurrentSet = x.args[0].ToUpper();    
+                    BaseSettings.CurrentSet = x.args[0].ToUpper();
                 }
                 else
                 {
@@ -208,15 +209,15 @@ namespace E3Core.Processors
                 E3.Bots.Broadcast("\aoComplete!");
 
             });
-           
+
             EventProcessor.RegisterCommand("/debug", (x) =>
             {
 
                 var traceLevel = Logging.LogLevels.Trace;
 
-                if(x.args.Count>0)
+                if (x.args.Count > 0)
                 {
-                    if(String.Equals(x.args[0],"notrace", StringComparison.OrdinalIgnoreCase))
+                    if (String.Equals(x.args[0], "notrace", StringComparison.OrdinalIgnoreCase))
                     {
                         traceLevel = Logging.LogLevels.None;
                     }
@@ -251,7 +252,7 @@ namespace E3Core.Processors
                 }
             });
 
-            if(E3.ServerName=="Lazarus")
+            if (E3.ServerName == "Lazarus")
             {
                 EventProcessor.RegisterCommand("/baz", (x) =>
                 {
@@ -260,12 +261,12 @@ namespace E3Core.Processors
 
                 });
             }
-        
+
             EventProcessor.RegisterCommand("/yes", (x) =>
             {
                 if (x.args.Count == 0)
                 {
-                    E3.Bots.BroadcastCommandToGroup("/yes all",x);
+                    E3.Bots.BroadcastCommandToGroup("/yes all", x);
                 }
                 e3util.ClickYesNo(true);
             });
@@ -273,18 +274,18 @@ namespace E3Core.Processors
             {
                 if (x.args.Count == 0)
                 {
-                    E3.Bots.BroadcastCommandToGroup("/no all",x);
+                    E3.Bots.BroadcastCommandToGroup("/no all", x);
                 }
                 e3util.ClickYesNo(false);
             });
 
-          
+
             EventProcessor.RegisterCommand("/reportaa", (x) =>
             {
-                List<string> validReportChannels = new List<string>() { "/g", "/gu", "/say", "/rsay","/gsay", "/rs" };
+                List<string> validReportChannels = new List<string>() { "/g", "/gu", "/say", "/rsay", "/gsay", "/rs" };
 
                 string channel = "/gu";
-                if(x.args.Count>0 && validReportChannels.Contains(x.args[0], StringComparer.OrdinalIgnoreCase))
+                if (x.args.Count > 0 && validReportChannels.Contains(x.args[0], StringComparer.OrdinalIgnoreCase))
                 {
 
                     channel = x.args[0];
@@ -305,7 +306,7 @@ namespace E3Core.Processors
                         Spawn s;
                         if (_spawns.TryByID(targetid, out s))
                         {
-                            e3util.TryMoveToLoc(s.X, s.Y,s.Z);
+                            e3util.TryMoveToLoc(s.X, s.Y, s.Z);
                             System.Text.StringBuilder sb = new StringBuilder();
                             bool first = true;
                             foreach (string arg in x.args)
@@ -315,7 +316,7 @@ namespace E3Core.Processors
                                 first = false;
                             }
                             string message = sb.ToString();
-                            E3.Bots.BroadcastCommandToGroup($"/bark-send {targetid} \"{message}\"",x);
+                            E3.Bots.BroadcastCommandToGroup($"/bark-send {targetid} \"{message}\"", x);
                             for (int i = 0; i < 5; i++)
                             {
                                 MQ.Cmd($"/say {message}");
@@ -345,14 +346,14 @@ namespace E3Core.Processors
                             {
                                 Casting.TrueTarget(targetid);
                                 MQ.Delay(100);
-                                e3util.TryMoveToLoc(s.X, s.Y,s.Z);
+                                e3util.TryMoveToLoc(s.X, s.Y, s.Z);
 
                                 string message = x.args[1];
                                 int currentZone = Zoning.CurrentZone.Id;
                                 for (int i = 0; i < 5; i++)
                                 {
-                                    MQ.Cmd($"/say {message}",1000);
-                                    
+                                    MQ.Cmd($"/say {message}", 1000);
+
                                     int tzone = MQ.Query<int>("${Zone.ID}");
                                     if (tzone != currentZone)
                                     {
@@ -427,7 +428,7 @@ namespace E3Core.Processors
                     }
                     else if (x.args[0].Equals("on", StringComparison.OrdinalIgnoreCase))
                     {
-                        if(!IsPaused)
+                        if (!IsPaused)
                         {
                             IsPaused = true;
                             E3.Bots.Broadcast("\arPAUSING E3!");
@@ -454,6 +455,25 @@ namespace E3Core.Processors
                 MQ.Write($"\agCreating new saved group by the name of {args[0]}");
                 SavedGroupData.SaveData(args[0]);
                 MQ.Write($"\agSuccessfully created {args[0]}");
+            });
+
+            EventProcessor.RegisterCommand("/listgroups", (x) =>
+            {
+                MQ.Write($"\agSaved Groups:");
+                var savedGroups = SavedGroupData.GetData();
+                foreach (var group in savedGroups)
+                {
+                    var serverAndGroupName = group.Key.Split('_');
+                    MQ.Write($"\ag  Server: {serverAndGroupName[0]}");
+                    MQ.Write($"\ag      Group Name: {serverAndGroupName[1]}");
+                    MQ.Write($"\ag      Members:");
+                    var members = group.Value;
+                    foreach (var member in members)
+                    {
+                        MQ.Write($"\ag          {member}");
+                    }
+                    MQ.Write($"\ap  Command: \ap/group {serverAndGroupName[1]}");
+                }
             });
 
             EventProcessor.RegisterCommand("/group", (x) =>
@@ -511,11 +531,11 @@ namespace E3Core.Processors
             groupCount++;
             GroupMembers.Clear();
             //refresh group members.
-            
+
             for (int i = 0; i < groupCount; i++)
             {
                 int id = MQ.Query<int>($"${{Group.Member[{i}].ID}}");
-                if(id>0)
+                if (id > 0)
                 {
                     GroupMembers.Add(id);
                 }
@@ -537,7 +557,7 @@ namespace E3Core.Processors
                     return false;
                 }
             }
-            if(MQ.Query<Int32>("${Me.Inventory[Chest].ID}")>0)
+            if (MQ.Query<Int32>("${Me.Inventory[Chest].ID}") > 0)
             {
                 return false;
             }
@@ -556,7 +576,7 @@ namespace E3Core.Processors
         }
         public static bool InGameCombat()
         {
-            bool inCombat =  MQ.Query<bool>("${Me.CombatState.Equal[Combat]}");
+            bool inCombat = MQ.Query<bool>("${Me.CombatState.Equal[Combat]}");
             return inCombat;
         }
         /// <summary>
@@ -571,7 +591,7 @@ namespace E3Core.Processors
             {
                 if (E3.IsInvis) return;
                 if (Basics.AmIDead()) return;
-                
+
 
                 int pctMana = MQ.Query<int>("${Me.PctMana}");
                 var pctHps = MQ.Query<int>("${Me.PctHPs}");
@@ -671,7 +691,7 @@ namespace E3Core.Processors
                             }
                         }
                     }
-                    
+
                 }
 
                 if (MQ.Query<bool>("${Me.ItemReady[Summoned: Large Modulation Shard]}"))
@@ -776,7 +796,7 @@ namespace E3Core.Processors
                     }
                 }
 
-                if(!E3.GeneralSettings.ManaStone_EnabledInCombat)
+                if (!E3.GeneralSettings.ManaStone_EnabledInCombat)
                 {
                     if (InCombat()) return;
                 }
@@ -787,7 +807,7 @@ namespace E3Core.Processors
                 int maxMana = E3.GeneralSettings.ManaStone_InCombatMaxMana;
                 int maxLoop = E3.GeneralSettings.ManaStone_NumberOfLoops;
 
-                int totalClicksToTry =E3.GeneralSettings.ManaStone_NumerOfClicksPerLoop;
+                int totalClicksToTry = E3.GeneralSettings.ManaStone_NumerOfClicksPerLoop;
                 //Int32 minManaToTryAndHeal = 1000;
 
                 if (!InCombat())
@@ -803,12 +823,12 @@ namespace E3Core.Processors
                 if (pok) return;
 
                 bool hasManaStone = MQ.Query<bool>("${Bool[${FindItem[=Manastone]}]}");
-                
+
                 string manastoneName = "Manastone";
-                if(!hasManaStone)
+                if (!hasManaStone)
                 {
                     hasManaStone = MQ.Query<bool>("${Bool[${FindItem[=Apocryphal Manastone]}]}");
-                    if(hasManaStone) manastoneName = "Apocryphal Manastone";
+                    if (hasManaStone) manastoneName = "Apocryphal Manastone";
                 }
                 bool amIStanding = MQ.Query<bool>("${Me.Standing}");
 
@@ -868,17 +888,17 @@ namespace E3Core.Processors
             {
                 bool onMount = MQ.Query<bool>("${Me.Mount.ID}");
 
-                
-                if (onMount|| Assist.IsAssisting ) return;
 
-                if(!Movement.StandingStillForTimePeriod())
+                if (onMount || Assist.IsAssisting) return;
+
+                if (!Movement.StandingStillForTimePeriod())
                 {
                     if (Movement.Following || Movement.IsMoving()) return;
                 }
 
                 bool amIStanding = MQ.Query<bool>("${Me.Standing}");
                 string combatState = MQ.Query<string>("${Me.CombatState}");
-                if (amIStanding && autoMedPct > 0 && combatState=="ACTIVE")
+                if (amIStanding && autoMedPct > 0 && combatState == "ACTIVE")
                 {
                     int pctMana = MQ.Query<int>("${Me.PctMana}");
                     int pctEndurance = MQ.Query<int>("${Me.PctEndurance}");
@@ -995,19 +1015,19 @@ namespace E3Core.Processors
 
             bool forageReady = MQ.Query<bool>("${Me.AbilityReady[Forage]}");
 
-            if(forageReady)
+            if (forageReady)
             {
                 MQ.Write("\agAuto Foraging....");
                 MQ.Cmd("/doability forage");
                 MQ.Delay(2000, "${Bool[${Cursor.ID}]}");
                 MQ.Delay(500);
                 bool cursorItem = MQ.Query<bool>("${Bool[${Cursor.ID}]}");
-                if(cursorItem)
+                if (cursorItem)
                 {
                     e3util.ClearCursor();
                 }
             }
-         
+
         }
 
 
@@ -1023,7 +1043,7 @@ namespace E3Core.Processors
             using (_log.Trace())
             {
                 bool itemOnCursor = MQ.Query<bool>("${Bool[${Cursor.ID}]}");
-                
+
                 if (itemOnCursor)
                 {
                     //auto delete stuff on cursor that is configured to do so
@@ -1042,13 +1062,13 @@ namespace E3Core.Processors
 
                     Int32 itemID = MQ.Query<Int32>("${Cursor.ID}");
 
-                    if (_cursorOccupiedSince == null || itemID!=_cusrorPreviousID)
+                    if (_cursorOccupiedSince == null || itemID != _cusrorPreviousID)
                     {
                         _cursorOccupiedSince = DateTime.Now;
                         _cusrorPreviousID = itemID;
                     }
 
-                   
+
                     if (!e3util.IsManualControl() || Basics.InCombat())
                     {
                         bool regenItem = MQ.Query<bool>("${Cursor.Name.Equal[Azure Mind Crystal III]}") || MQ.Query<bool>("${Cursor.Name.Equal[Summoned: Large Modulation Shard]}") || MQ.Query<bool>("${Cursor.Name.Equal[Sanguine Mind Crystal III]}");
@@ -1086,7 +1106,7 @@ namespace E3Core.Processors
                             }
                         }
                     }
-                    
+
                 }
                 else
                 {
