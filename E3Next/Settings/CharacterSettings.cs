@@ -76,6 +76,9 @@ namespace E3Core.Settings
         public List<Spell> CombatBuffs = new List<Spell>();
         public List<Spell> PetBuffs = new List<Spell>();
         public bool Buffs_CastAuras = true;
+        public List<SpellRequest> GroupBuffRequests = new List<SpellRequest>();
+        public List<SpellRequest> RaidBuffRequests = new List<SpellRequest>();
+
         //gimme
         public List<string> Gimme = new List<string>();
         public bool Gimme_InCombat = true;
@@ -280,6 +283,9 @@ namespace E3Core.Settings
             LoadKeyData("Buffs", "Combat Buff", ParsedData, CombatBuffs);
             LoadKeyData("Buffs", "Group Buff", ParsedData, GroupBuffs);
             LoadKeyData("Buffs", "Pet Buff", ParsedData, PetBuffs);
+            LoadKeyData("Buffs", "Group Buff Request", ParsedData, GroupBuffRequests);
+            LoadKeyData("Buffs", "Raid Buff Request", ParsedData, RaidBuffRequests);
+
             LoadKeyData("Buffs", "Cast Aura(On/Off)", ParsedData, ref Buffs_CastAuras);
 
 
@@ -427,6 +433,8 @@ namespace E3Core.Settings
             section.Keys.AddKey("Combat Buff", "");
             section.Keys.AddKey("Group Buff", "");
             section.Keys.AddKey("Pet Buff", "");
+            section.Keys.AddKey("Group Buff Request", "");
+            section.Keys.AddKey("Raid Buff Request", "");
             section.Keys.AddKey("Cast Aura(On/Off)", "On");
 
             if ((CharacterClass & Class.Caster) != CharacterClass && (CharacterClass & Class.Priest) != CharacterClass)

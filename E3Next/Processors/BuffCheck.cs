@@ -8,6 +8,8 @@ using System.Collections.Generic;
 using System.Dynamic;
 using System.Linq;
 using System.Net.Security;
+using System.Xml.Linq;
+using static System.Windows.Forms.VisualStyles.VisualStyleElement;
 
 namespace E3Core.Processors
 {
@@ -21,6 +23,12 @@ namespace E3Core.Processors
         //needs to be refreshed every so often in case of dispels
         //maybe after combat?
         public static Dictionary<Int32, SpellTimer> _buffTimers = new Dictionary<Int32, SpellTimer>();
+
+        private static Int64 _nextGroupBuffRequestCheckTime = 0;
+        private static Int64 nextGroupBuffRequestCheckTimeInterval = 1000;
+        private static Int64 _nextRaidBuffRequestCheckTime = 0;
+        private static Int64 nextRaidBuffRequestCheckTimeInterval = 1000;
+
         private static Int64 _nextBotCacheCheckTime = 0;
         private static Int64 nextBotCacheCheckTimeInterval = 1000;
         private static Int64 _nextInstantBuffRefresh = 0;
@@ -248,7 +256,88 @@ namespace E3Core.Processors
                 }
             }
         }
+        [ClassInvoke(Data.Class.All)]
+        public static void Check_GroupBuffRequests()
+        {
 
+            if (E3.IsInvis) return;
+            if (!e3util.ShouldCheck(ref _nextGroupBuffRequestCheckTime, nextGroupBuffRequestCheckTimeInterval)) return;
+
+            foreach (var spell in E3.CharacterSettings.GroupBuffRequests)
+            {
+                if(spell.LastRequestTimeStamp>0)
+                {
+                    if ((Core.StopWatch.ElapsedMilliseconds - spell.LastRequestTimeStamp) < 15000) continue;
+                }
+                if (_spawns.TryByName(spell.CastTarget, out var spawn))
+                {
+                    if (!String.IsNullOrWhiteSpace(spell.Ifs))
+                    {
+                        if (!Casting.Ifs(spell))
+                        {
+                            continue;
+                        }
+                    }
+                    if (spawn.Distance > 199) continue;
+                    //self buffs!
+                    Int32 groupMemberIndex = MQ.Query<Int32>($"${{Group.Member[{spell.CastTarget}].Index}}");
+                    if (groupMemberIndex > 0)
+                    {
+                        bool hasBuff = MQ.Query<bool>($"${{Bool[${{Me.Buff[{spell.SpellName}]}}]}}");
+
+                        if (!hasBuff)
+                        {
+                            //request it then
+                            MQ.Cmd($"/gsay {spell.SpellName}");
+                            spell.LastRequestTimeStamp = Core.StopWatch.ElapsedMilliseconds;
+                        }
+                    }
+                }
+            }
+
+        }
+        [ClassInvoke(Data.Class.All)]
+        public static void Check_RaidBuffRequests()
+        {
+
+            if (E3.IsInvis) return;
+            if (!e3util.ShouldCheck(ref _nextRaidBuffRequestCheckTime, nextRaidBuffRequestCheckTimeInterval)) return;
+
+            foreach (var spell in E3.CharacterSettings.RaidBuffRequests)
+            {
+                if (spell.LastRequestTimeStamp > 0)
+                {
+                    if ((Core.StopWatch.ElapsedMilliseconds - spell.LastRequestTimeStamp) < 15000) continue;
+                }
+
+                if (_spawns.TryByName(spell.CastTarget, out var spawn))
+                {
+                    if (!String.IsNullOrWhiteSpace(spell.Ifs))
+                    {
+                        if (!Casting.Ifs(spell))
+                        {
+                            continue;
+                        }
+                    }
+                    if (spawn.Distance > 199) continue;
+                    //self buffs!
+                    var inRaid = MQ.Query<bool>($"${{Raid.Member[{spell.CastTarget}]}}");
+
+                    if (inRaid)
+                    {
+                        bool hasBuff = MQ.Query<bool>($"${{Bool[${{Me.Buff[{spell.SpellName}]}}]}}");
+
+                        if (!hasBuff)
+                        {
+                            //request it then
+                            MQ.Cmd($"/rsay {spell.CastTarget}:{spell.SpellName}");
+                            spell.LastRequestTimeStamp = Core.StopWatch.ElapsedMilliseconds;
+                        }
+                    }
+                }
+            }
+
+        }
         [AdvSettingInvoke]
         public static void Check_Buffs()
         {
