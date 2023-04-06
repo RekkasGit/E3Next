@@ -836,7 +836,7 @@ namespace E3Core.Processors
                 if (x.match.Groups.Count > 1)
                 {
                     string mobName = x.match.Groups[1].Value;
-                    if (MQ.Query<Int32>("${Target.ID}") == MQ.Query<Int32>($"${{Spawn[{mobName}].ID}}"))
+                    if (MQ.Query<string>("${Target.CleanName}") == mobName)
                     {
                         if (E3.GeneralSettings.AttackOffOnEnrage)
                         {
@@ -855,7 +855,7 @@ namespace E3Core.Processors
                 if (x.match.Groups.Count > 1)
                 {
                     string mobName = x.match.Groups[1].Value;
-                    if (MQ.Query<Int32>("${Target.ID}") == MQ.Query<Int32>($"${{Spawn[{mobName}].ID}}"))
+                    if (MQ.Query<string>("${Target.CleanName}") == mobName)
                     {
                         _assistIsEnraged = false;
                         if (MQ.Query<Int32>("${Me.Pet.ID}") > 0)

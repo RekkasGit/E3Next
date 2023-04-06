@@ -13,14 +13,20 @@ using static System.Collections.Specialized.BitVector32;
 
 namespace E3Core.Settings
 {
+ 
+
+
     public class GeneralSettings : BaseSettings, IBaseSettings
     {
+        
+
         public Int32 VersionID = 1;
         public Int32 General_AutoMedBreakPctMana;
         public bool AutoMisfitBox;
         public bool AttackOffOnEnrage;
         public bool RelayTells;
         public string General_NetworkMethod = "EQBC";
+        public DefaultBroadcast General_BroadCast_Default = DefaultBroadcast.Group;
         public bool General_HealWhileNavigating = true;
         public bool General_BeepNotifications = true;
 
@@ -60,7 +66,7 @@ namespace E3Core.Settings
         public bool AutoTrade_Guild = false;
         public bool AutoTrade_Raid = false;
 
-
+        
 
         public Int32 Movement_StandingStill = 10000;
         public Int32 Movement_ChaseDistanceMin = 10;
@@ -123,6 +129,8 @@ namespace E3Core.Settings
             //    section.Keys.AddKey("NetworkMethod", "EQBC");
 
             LoadKeyData("General", "NetworkMethod",parsedData, ref General_NetworkMethod);
+            LoadKeyData("General", "Network Default Broadcast (Group,All,AllInZoneOrRaid)", parsedData, ref General_BroadCast_Default);
+
             LoadKeyData("General", "Heal While Navigating (On/Off)", parsedData, ref General_HealWhileNavigating);
             LoadKeyData("General", "Beep Notifications (On/Off)", parsedData, ref General_BeepNotifications);
 
@@ -284,6 +292,8 @@ namespace E3Core.Settings
             var section = newFile.Sections.GetSectionData("General");
             section.Keys.AddKey("AutoMedBreak PctMana", "0");
             section.Keys.AddKey("NetworkMethod", "EQBC");
+            section.Keys.AddKey("Network Default Broadcast (Group,All,AllInZoneOrRaid)", "Group");
+
             section.Keys.AddKey("Heal While Navigating (On/Off)","On");
             section.Keys.AddKey("Beep Notifications (On/Off)", "On");
             
@@ -387,5 +397,12 @@ namespace E3Core.Settings
             return newFile;
 
         }
+    }
+    public enum DefaultBroadcast
+    {
+        Group,
+        All,
+        AllInZoneOrRaid
+
     }
 }

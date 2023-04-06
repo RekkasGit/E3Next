@@ -48,9 +48,20 @@ namespace E3Core.Processors
         private static Dictionary<string, Int64> _petBuffListCollectionTimeStamps = new Dictionary<string, long>();
         private static Int64 _nextPetBuffCheck = 0;
         private static Int64 _nextPetBuffRefreshTimeInterval = 1000;
-     
 
-  
+        private static string GetGroupCommand()
+        {
+            if (E3.GeneralSettings.General_BroadCast_Default == Settings.DefaultBroadcast.All)
+            {
+                return "/bca";
+            }
+            else if (E3.GeneralSettings.General_BroadCast_Default == Settings.DefaultBroadcast.AllInZoneOrRaid)
+            {
+                return "/bca";
+            }
+
+            return "/bcg";
+        }
         private static StringBuilder _strinbBuilder = new StringBuilder();
         public void BroadcastCommandToGroup(string query, CommandMatch match = null, bool noparse = false)
         {
@@ -79,7 +90,7 @@ namespace E3Core.Processors
                 }
                 else
                 {
-                    _strinbBuilder.Append($"/bcg /{query}");
+                    _strinbBuilder.Append($"{GetGroupCommand()} /{query}");
                 }
                 
                 foreach(var filter in match.filters)
@@ -96,7 +107,7 @@ namespace E3Core.Processors
                 }
                 else
                 {
-                    MQ.Cmd($"{noparseCommand}/bcg /{query}");
+                    MQ.Cmd($"{noparseCommand}{GetGroupCommand()} /{query}");
                 }
                 
             }
@@ -321,6 +332,19 @@ namespace E3Core.Processors
 
         private static StringBuilder _strinbBuilder = new StringBuilder();
         private static HashSet<string> _registeredObservations = new HashSet<string>();
+         private static string GetGroupCommand()
+        {
+            if (E3.GeneralSettings.General_BroadCast_Default == Settings.DefaultBroadcast.All)
+            {
+                return "/dge";
+            }
+            else if (E3.GeneralSettings.General_BroadCast_Default == Settings.DefaultBroadcast.AllInZoneOrRaid)
+            {
+                return "/dgre";
+            }
+
+            return "/dgge";
+        }
         public DanBots()
         {
             //set the observe delay to be a bit faster
@@ -330,6 +354,7 @@ namespace E3Core.Processors
                 Broadcast("\agRe-Registering all observers");
                 ReRegisterObservations();
             });
+
         }
         public List<string> BotsConnected()
         {
@@ -381,7 +406,7 @@ namespace E3Core.Processors
             {
                 //need to pass over the filters if they exist
                 _strinbBuilder.Clear();
-                _strinbBuilder.Append($"/dge {command}");
+                _strinbBuilder.Append($"{GetGroupCommand()} {command}");
                 foreach (var filter in match.filters)
                 {
                     _strinbBuilder.Append($" \"{filter}\"");
@@ -397,11 +422,11 @@ namespace E3Core.Processors
             }
             else if (noparse)
             {
-                MQ.Cmd($"/noparse /dge {command}");
+                MQ.Cmd($"/noparse {GetGroupCommand()} {command}");
             }
             else
             {
-                MQ.Cmd($"/dge {command}");
+                MQ.Cmd($"{GetGroupCommand()} {command}");
             }
 
         }
@@ -418,7 +443,7 @@ namespace E3Core.Processors
             {
                 //need to pass over the filters if they exist
                 _strinbBuilder.Clear();
-                _strinbBuilder.Append($"{noparseCommand}/dgge {query}");
+                _strinbBuilder.Append($"{noparseCommand}{GetGroupCommand()} {query}");
                 foreach (var filter in match.filters)
                 {
                     _strinbBuilder.Append($" \"{filter}\"");
@@ -427,7 +452,7 @@ namespace E3Core.Processors
             }
             else
             {
-                MQ.Cmd($"{noparseCommand}/dgge {query}");
+                MQ.Cmd($"{noparseCommand}{GetGroupCommand()} {query}");
             }
             
         }
