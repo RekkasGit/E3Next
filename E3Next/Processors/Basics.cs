@@ -1004,7 +1004,27 @@ namespace E3Core.Processors
                 bool cursorItem = MQ.Query<bool>("${Bool[${Cursor.ID}]}");
                 if(cursorItem)
                 {
-                    e3util.ClearCursor();
+
+                    //auto delete stuff on cursor that is configured to do so
+                    string autoinvItem = MQ.Query<string>("${Cursor}");
+                    if (E3.CharacterSettings.Cursor_Delete.Contains(autoinvItem, StringComparer.OrdinalIgnoreCase))
+                    {
+                        //configured to delete this item.
+                        MQ.Cmd("/destroy");
+                        if (autoinvItem != "NULL")
+                        {
+                            E3.Bots.Broadcast($"\agAutoDestroy\aw:\ao{autoinvItem}");
+                        }
+                        MQ.Delay(300);
+                        return;
+                    }
+                    else
+                    {
+
+                        e3util.ClearCursor();
+
+                    }
+
                 }
             }
          

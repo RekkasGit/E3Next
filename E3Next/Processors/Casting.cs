@@ -62,7 +62,7 @@ namespace E3Core.Processors
 
 
                 //bard can cast insta cast items while singing, they be special.
-                if (E3.CurrentClass == Class.Bard && spell.MyCastTime <= 500 && (spell.CastType == CastType.Item || spell.CastType== CastType.AA))
+                if (E3.CurrentClass == Class.Bard && spell.NoMidSongCast == false && spell.MyCastTime <= 500 && (spell.CastType == CastType.Item || spell.CastType== CastType.AA))
                 {
                     //instant cast item, can cast while singing
                     //note bards are special and cast do insta casts while doing normal singing. they have their own 

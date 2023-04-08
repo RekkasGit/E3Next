@@ -148,6 +148,10 @@ namespace E3Core.Data
                     {
                         Rotate = true;
                     }
+                    else if (value.Equals("NoMidSongCast", StringComparison.OrdinalIgnoreCase))
+                    {
+                        NoMidSongCast = true;
+                    }
                     else if (value.StartsWith("Delay|", StringComparison.OrdinalIgnoreCase))
                     {
                         string tvalue = value;
@@ -689,6 +693,7 @@ namespace E3Core.Data
         public string InitName = String.Empty;
         public bool ReagentOutOfStock = false;
         public bool SpellInBook = false;
+        public bool NoMidSongCast = false;
 
 
 
