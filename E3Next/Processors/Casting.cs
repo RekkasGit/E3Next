@@ -1304,7 +1304,7 @@ namespace E3Core.Processors
 
             }
 
-            _log.Write("Trying to Aquire target");
+            _log.Write("Trying to Aquire true target on :"+targetID);
 
             if (MQ.Query<Int32>("${Target.ID}") == targetID) return true;
 

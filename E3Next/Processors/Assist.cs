@@ -115,7 +115,7 @@ namespace E3Core.Processors
                 }
                 else if (targetId != AssistTargetID)
                 {
-                   //somehow we are not oin the proper target and not in manual control and not the issuer of /assistme, put us back on target.
+                   //somehow we are not on the proper target and not in manual control and not the issuer of /assistme, put us back on target.
                     if(!AllowControl)
                     {
                         Casting.TrueTarget(AssistTargetID);

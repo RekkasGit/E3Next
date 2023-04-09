@@ -131,7 +131,11 @@ namespace E3Core.Processors
                     Int32 currentTargetID = MQ.Query<Int32>("${Target.ID}");
                     if (targetId > 0 && currentTargetID != targetId)
                     {
-                        Casting.TrueTarget(targetId);
+                        bool orgTargetCorpse = MQ.Query<bool>($"${{Spawn[id {targetId}].Type.Equal[Corpse]}}");
+                        if (!orgTargetCorpse)
+                        {
+                            Casting.TrueTarget(targetId);
+                        }
                     }
                 }
                
@@ -180,7 +184,11 @@ namespace E3Core.Processors
                     targetId = MQ.Query<Int32>("${Target.ID}");
                     if (targetId != Assist.AssistTargetID)
                     {
-                        Casting.TrueTarget(Assist.AssistTargetID);
+                        bool orgTargetCorpse = MQ.Query<bool>($"${{Spawn[id {targetId}].Type.Equal[Corpse]}}");
+                        if (!orgTargetCorpse)
+                        {
+                            Casting.TrueTarget(Assist.AssistTargetID);
+                        }
                     }
                 }
             }
@@ -232,7 +240,11 @@ namespace E3Core.Processors
                     targetId = MQ.Query<Int32>("${Target.ID}");
                     if (targetId != Assist.AssistTargetID)
                     {
-                        Casting.TrueTarget(Assist.AssistTargetID);
+                        bool orgTargetCorpse = MQ.Query<bool>($"${{Spawn[id {targetId}].Type.Equal[Corpse]}}");
+                        if (!orgTargetCorpse)
+                        {
+                            Casting.TrueTarget(Assist.AssistTargetID);
+                        }
 
                     }
                 }

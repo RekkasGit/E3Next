@@ -126,6 +126,7 @@ namespace E3Core.Processors
             //class attribute method calls, call them all!
             //in case any of them change the target, put it back after called
             Int32 orgTargetID = MQ.Query<Int32>("${Target.ID}");
+           
             using (Log.Trace("ClassMethodCalls"))
             {
 
@@ -140,7 +141,11 @@ namespace E3Core.Processors
                 Int32 currentTargetID = MQ.Query<Int32>("${Target.ID}");
                 if (orgTargetID > 0 && currentTargetID != orgTargetID)
                 {
-                    Casting.TrueTarget(orgTargetID);
+                    bool orgTargetCorpse = MQ.Query<bool>($"${{Spawn[id {orgTargetID}].Type.Equal[Corpse]}}");
+                    if (!orgTargetCorpse)
+                    {
+                        Casting.TrueTarget(orgTargetID);
+                    }
                 }
             }
 

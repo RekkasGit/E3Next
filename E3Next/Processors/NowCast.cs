@@ -176,7 +176,11 @@ namespace E3Core.Processors
                 Int32 currentTargetID = MQ.Query<Int32>("${Target.ID}");
                 if (orgTargetID > 0 && currentTargetID != orgTargetID)
                 {
-                    Casting.TrueTarget(orgTargetID);
+                    bool orgTargetCorpse = MQ.Query<bool>($"${{Spawn[id {orgTargetID}].Type.Equal[Corpse]}}");
+                    if (!orgTargetCorpse)
+                    {
+                        Casting.TrueTarget(orgTargetID);
+                    }
                 }
 
             }
