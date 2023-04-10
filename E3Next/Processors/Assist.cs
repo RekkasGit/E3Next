@@ -161,7 +161,7 @@ namespace E3Core.Processors
                             //delay is needed to give time for it to actually process
                             MQ.Delay(1000);
                         }
-                        if (!AllowControl)
+                        if (!AllowControl && !_assistIsEnraged)
                         {
                             if (!MQ.Query<bool>("${Me.Combat}"))
                             {
@@ -840,6 +840,7 @@ namespace E3Core.Processors
                     {
                         if (E3.GeneralSettings.AttackOffOnEnrage)
                         {
+                            E3.Bots.Broadcast("Enabling Assist Is Enraged");
                             _assistIsEnraged = true;
                         }
 
@@ -857,6 +858,10 @@ namespace E3Core.Processors
                     string mobName = x.match.Groups[1].Value;
                     if (MQ.Query<string>("${Target.CleanName}") == mobName)
                     {
+                        if (_assistIsEnraged)
+                        {
+                            E3.Bots.Broadcast("Disabling Assist Is Enraged");
+                        }
                         _assistIsEnraged = false;
                         if (MQ.Query<Int32>("${Me.Pet.ID}") > 0)
                         {
