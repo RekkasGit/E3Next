@@ -831,7 +831,7 @@ namespace E3Core.Processors
 
             });
             e3util.RegisterCommandWithTarget("/e3offassistignore", (x) => { _offAssistIgnore.Add(x); });
-            EventProcessor.RegisterEvent("EnrageOn", "(.)+ has become ENRAGED.", (x) =>
+            EventProcessor.RegisterEvent("EnrageOn", "(.+) has become ENRAGED.", (x) =>
             {
                 if (x.match.Groups.Count > 1)
                 {
@@ -850,7 +850,7 @@ namespace E3Core.Processors
                     }
                 }
             });
-            EventProcessor.RegisterEvent("EnrageOff", "(.)+  is no longer enraged.", (x) =>
+            EventProcessor.RegisterEvent("EnrageOff", "(.+)  is no longer enraged.", (x) =>
             {
                 if (x.match.Groups.Count > 1)
                 {

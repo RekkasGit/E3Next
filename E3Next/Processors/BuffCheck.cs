@@ -61,8 +61,22 @@ namespace E3Core.Processors
                     E3.Bots.BroadcastCommand($"/removebuff {buffToDrop}");
                 }
             });
+            EventProcessor.RegisterCommand("/dropbuffid", (x) =>
+            {
+                if (x.args.Count > 0)
+                {
+                    Int32 buffToDrop;
+                    if(Int32.TryParse(x.args[0], out buffToDrop))
+                    {
+                        DropBuff(buffToDrop);
+                        E3.Bots.BroadcastCommand($"/removebuff {buffToDrop}");
 
-          
+                    }
+                }
+            });
+
+
+
             EventProcessor.RegisterCommand("/blockbuff", (x) =>
             {
                 if (x.args.Count > 0)
