@@ -100,7 +100,7 @@ namespace E3Core.Data
                     {
                         GiveUpTimer = GetArgument<Int32>(value);
                     }
-                    else if (value.StartsWith("GiveUpTimer|", StringComparison.OrdinalIgnoreCase))
+                    else if (value.StartsWith("MaxTries|", StringComparison.OrdinalIgnoreCase))
                     {
                         MaxTries = GetArgument<Int32>(value);
                     }

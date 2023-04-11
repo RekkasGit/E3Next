@@ -396,7 +396,7 @@ namespace E3Core.Processors
                     Int32 counters;
                     if (r.SpellCounters.TryGetValue(spell.SpellID, out counters))
                     {
-                        if (counters > spell.MaxTries)
+                        if (counters >= spell.MaxTries)
                         {   //mob is resistant to this spell, kick out. 
                             continue;
                         }
