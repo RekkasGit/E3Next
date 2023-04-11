@@ -137,16 +137,7 @@ namespace E3Core.Processors
                     EventProcessor.ProcessEventsInQueues("/nowcast");
                     EventProcessor.ProcessEventsInQueues("/backoff");
                 }
-                //put the target back to where it was
-                Int32 currentTargetID = MQ.Query<Int32>("${Target.ID}");
-                if (orgTargetID > 0 && currentTargetID != orgTargetID)
-                {
-                    bool orgTargetCorpse = MQ.Query<bool>($"${{Spawn[id {orgTargetID}].Type.Equal[Corpse]}}");
-                    if (!orgTargetCorpse)
-                    {
-                        Casting.TrueTarget(orgTargetID);
-                    }
-                }
+                e3util.PutOriginalTargetBackIfNeeded(orgTargetID);
             }
 
             using (Log.Trace("LootProcessing"))

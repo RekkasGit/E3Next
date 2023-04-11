@@ -6,6 +6,7 @@ using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Net.Http.Headers;
+using System.Runtime.CompilerServices;
 using System.Security.Cryptography;
 using System.Text;
 using System.Threading.Tasks;
@@ -1290,8 +1291,7 @@ namespace E3Core.Processors
         }
         public static bool TrueTarget(Int32 targetID, bool allowClear = false)
         {
-
-            //0 means don't change target
+             //0 means don't change target
             if (allowClear && targetID == 0)
             {
                 MQ.Cmd("/nomodkey /keypress esc");

@@ -63,17 +63,8 @@ namespace E3Core.Processors
                 if (!E3.ActionTaken) HoTAll(currentMana, pctMana);
                 if (!E3.ActionTaken) HealPets(currentMana, pctMana);
                 if (!E3.ActionTaken) HoTPets(currentMana, pctMana);
-                
-                //put the target back to where it was
-                Int32 currentTargetID = MQ.Query<Int32>("${Target.ID}");
-                if (targetID > 0 && currentTargetID != targetID)
-                {
-                    bool orgTargetCorpse = MQ.Query<bool>($"${{Spawn[id {targetID}].Type.Equal[Corpse]}}");
-                    if (!orgTargetCorpse)
-                    {
-                        Casting.TrueTarget(targetID);
-                    }
-                }
+
+                e3util.PutOriginalTargetBackIfNeeded(targetID);
             }
         }
 

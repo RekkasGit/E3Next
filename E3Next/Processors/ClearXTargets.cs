@@ -77,7 +77,7 @@ namespace E3Core.Processors
                         {
                             MQ.Write($"\agClear Targets: \aoIssuing Assist on {s.DisplayName} with id:{s.ID}.");
                             Assist.AllowControl = true;
-                            Assist.AssistOn(mobId, Zoning.CurrentZone.Id);
+                            Assist.AssistOn(s.ID, Zoning.CurrentZone.Id);
                             if (FaceTarget)
                             {
                                 MQ.Cmd("/face fast");

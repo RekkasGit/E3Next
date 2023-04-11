@@ -27,6 +27,23 @@ namespace E3Core.Utility
         //share this as we can reuse as its only 1 thread
         private static StringBuilder resultStringBuilder = new StringBuilder(1024);
         //modified from https://stackoverflow.com/questions/6275980/string-replace-ignoring-case
+        
+        public static void PutOriginalTargetBackIfNeeded(Int32 targetid)
+        {
+            //put the target back to where it was
+            Int32 currentTargetID = MQ.Query<Int32>("${Target.ID}");
+            if (targetid > 0 && currentTargetID != targetid)
+            {
+                bool orgTargetCorpse = MQ.Query<bool>($"${{Spawn[id {targetid}].Type.Equal[Corpse]}}");
+                if (!orgTargetCorpse)
+                {
+                    if (currentTargetID != Assist.AssistTargetID)
+                    {
+                        Casting.TrueTarget(targetid);
+                    }
+                }
+            }
+        }
         public static string ReplaceInsensitive(this string str,
             string oldValue, string newValue)
         {

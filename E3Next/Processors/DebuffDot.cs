@@ -128,15 +128,7 @@ namespace E3Core.Processors
                 }
                 finally
                 {
-                    Int32 currentTargetID = MQ.Query<Int32>("${Target.ID}");
-                    if (targetId > 0 && currentTargetID != targetId)
-                    {
-                        bool orgTargetCorpse = MQ.Query<bool>($"${{Spawn[id {targetId}].Type.Equal[Corpse]}}");
-                        if (!orgTargetCorpse)
-                        {
-                            Casting.TrueTarget(targetId);
-                        }
-                    }
+                    e3util.PutOriginalTargetBackIfNeeded(targetId);
                 }
                
             }
@@ -180,16 +172,7 @@ namespace E3Core.Processors
                         _mobsToDebuff.Remove(mobid);
                     }
                     if (_deadMobs.Count > 0) _deadMobs.Clear();
-                    //put us back to our assist target
-                    targetId = MQ.Query<Int32>("${Target.ID}");
-                    if (targetId != Assist.AssistTargetID)
-                    {
-                        bool orgTargetCorpse = MQ.Query<bool>($"${{Spawn[id {targetId}].Type.Equal[Corpse]}}");
-                        if (!orgTargetCorpse)
-                        {
-                            Casting.TrueTarget(Assist.AssistTargetID);
-                        }
-                    }
+                    e3util.PutOriginalTargetBackIfNeeded(targetId);
                 }
             }
         }
@@ -236,17 +219,7 @@ namespace E3Core.Processors
                         _mobsToDebuff.Remove(mobid);
                     }
                     if (_deadMobs.Count > 0) _deadMobs.Clear();
-                    //put us back to our assist target
-                    targetId = MQ.Query<Int32>("${Target.ID}");
-                    if (targetId != Assist.AssistTargetID)
-                    {
-                        bool orgTargetCorpse = MQ.Query<bool>($"${{Spawn[id {targetId}].Type.Equal[Corpse]}}");
-                        if (!orgTargetCorpse)
-                        {
-                            Casting.TrueTarget(Assist.AssistTargetID);
-                        }
-
-                    }
+                    e3util.PutOriginalTargetBackIfNeeded(targetId);
                 }
             }
         }

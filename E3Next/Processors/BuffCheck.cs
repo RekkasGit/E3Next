@@ -391,16 +391,7 @@ namespace E3Core.Processors
             }
             finally
             {
-                //put the target back to where it was
-                Int32 currentTargetID = MQ.Query<Int32>("${Target.ID}");
-                if (targetID > 0 && currentTargetID != targetID)
-                {
-                    bool orgTargetCorpse = MQ.Query<bool>($"${{Spawn[id {targetID}].Type.Equal[Corpse]}}");
-                    if (!orgTargetCorpse)
-                    {
-                        Casting.TrueTarget(targetID);
-                    }
-                }
+                e3util.PutOriginalTargetBackIfNeeded(targetID);
             }
             
 
@@ -414,17 +405,9 @@ namespace E3Core.Processors
                     Int32 targetID = MQ.Query<Int32>("${Target.ID}");
 
                     BuffBots(E3.CharacterSettings.CombatBuffs);
-                    //put the target back to where it was
-                    Int32 currentTargetID = MQ.Query<Int32>("${Target.ID}");
-                    if (targetID > 0 && currentTargetID != targetID)
-                    {
-                        bool orgTargetCorpse = MQ.Query<bool>($"${{Spawn[id {targetID}].Type.Equal[Corpse]}}");
-                        if (!orgTargetCorpse)
-                        {
-                            Casting.TrueTarget(targetID);
-                        }
-                    }
-                }
+                //put the target back to where it was
+                e3util.PutOriginalTargetBackIfNeeded(targetID);
+            }
     
             
         }
@@ -504,16 +487,7 @@ namespace E3Core.Processors
             }
             finally
             {
-                //put the target back to where it was
-                Int32 currentTargetID = MQ.Query<Int32>("${Target.ID}");
-                if (targetID > 0 && currentTargetID != targetID)
-                {
-                    bool orgTargetCorpse = MQ.Query<bool>($"${{Spawn[id {targetID}].Type.Equal[Corpse]}}");
-                    if (!orgTargetCorpse)
-                    {
-                        Casting.TrueTarget(targetID);
-                    }
-                }
+                e3util.PutOriginalTargetBackIfNeeded(targetID);
             }
             
         }
