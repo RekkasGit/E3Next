@@ -146,11 +146,17 @@ namespace E3Core.Processors
                 }
             });
             //
-            EventProcessor.RegisterEvent("InviteToRaid", "(.+) tells you, 'raidadd'", (x) =>
+            EventProcessor.RegisterEvent("AskedForRaidInvite", "(.+) tells you, 'raidadd'", (x) =>
             {
                 if (x.match.Groups.Count > 1)
                 {
-                    MQ.Cmd($"/raidinvite {x.match.Groups[1].Value}");
+                    string  user = x.match.Groups[1].Value;
+
+                    //need to be in the same zone
+                    if(_spawns.TryByName(user,out var s))
+                    {
+                        MQ.Cmd($"/raidinvite {user}");
+                    }
                 }
             });
             EventProcessor.RegisterCommand("/e3settings", (x) =>

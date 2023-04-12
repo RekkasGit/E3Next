@@ -1145,6 +1145,10 @@ namespace E3Core.Processors
                 //bug with thiefs eyes, always return true
                 if (spell.SpellID == 8001) return true;
 
+                if (MQ.Query<Int32>($"${{Me.CombatAbilityTimer[{spell.CastName}]}}")==0)
+                {
+                    return true;
+                }
                 if (MQ.Query<bool>($"${{Me.CombatAbilityReady[{spell.CastName}]}}"))
                 {
                     return true;
