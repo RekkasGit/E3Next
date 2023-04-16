@@ -8,6 +8,8 @@ using System.Collections.Generic;
 using System.Dynamic;
 using System.Linq;
 using System.Net.Security;
+using System.Xml.Linq;
+using static System.Windows.Forms.VisualStyles.VisualStyleElement;
 
 namespace E3Core.Processors
 {
@@ -21,6 +23,12 @@ namespace E3Core.Processors
         //needs to be refreshed every so often in case of dispels
         //maybe after combat?
         public static Dictionary<Int32, SpellTimer> _buffTimers = new Dictionary<Int32, SpellTimer>();
+
+        private static Int64 _nextGroupBuffRequestCheckTime = 0;
+        private static Int64 nextGroupBuffRequestCheckTimeInterval = 1000;
+        private static Int64 _nextRaidBuffRequestCheckTime = 0;
+        private static Int64 nextRaidBuffRequestCheckTimeInterval = 1000;
+
         private static Int64 _nextBotCacheCheckTime = 0;
         private static Int64 nextBotCacheCheckTimeInterval = 1000;
         private static Int64 _nextInstantBuffRefresh = 0;
@@ -53,8 +61,22 @@ namespace E3Core.Processors
                     E3.Bots.BroadcastCommand($"/removebuff {buffToDrop}");
                 }
             });
+            EventProcessor.RegisterCommand("/dropbuffid", (x) =>
+            {
+                if (x.args.Count > 0)
+                {
+                    Int32 buffToDrop;
+                    if(Int32.TryParse(x.args[0], out buffToDrop))
+                    {
+                        DropBuff(buffToDrop);
+                        E3.Bots.BroadcastCommand($"/removebuff {buffToDrop}");
 
-          
+                    }
+                }
+            });
+
+
+
             EventProcessor.RegisterCommand("/blockbuff", (x) =>
             {
                 if (x.args.Count > 0)
@@ -248,7 +270,88 @@ namespace E3Core.Processors
                 }
             }
         }
+        [ClassInvoke(Data.Class.All)]
+        public static void Check_GroupBuffRequests()
+        {
 
+            if (E3.IsInvis) return;
+            if (!e3util.ShouldCheck(ref _nextGroupBuffRequestCheckTime, nextGroupBuffRequestCheckTimeInterval)) return;
+
+            foreach (var spell in E3.CharacterSettings.GroupBuffRequests)
+            {
+                if(spell.LastRequestTimeStamp>0)
+                {
+                    if ((Core.StopWatch.ElapsedMilliseconds - spell.LastRequestTimeStamp) < 15000) continue;
+                }
+                if (_spawns.TryByName(spell.CastTarget, out var spawn))
+                {
+                    if (!String.IsNullOrWhiteSpace(spell.Ifs))
+                    {
+                        if (!Casting.Ifs(spell))
+                        {
+                            continue;
+                        }
+                    }
+                    if (spawn.Distance > 199) continue;
+                    //self buffs!
+                    Int32 groupMemberIndex = MQ.Query<Int32>($"${{Group.Member[{spell.CastTarget}].Index}}");
+                    if (groupMemberIndex > 0)
+                    {
+                        bool hasBuff = MQ.Query<bool>($"${{Bool[${{Me.Buff[{spell.SpellName}]}}]}}");
+
+                        if (!hasBuff)
+                        {
+                            //request it then
+                            MQ.Cmd($"/gsay {spell.SpellName}");
+                            spell.LastRequestTimeStamp = Core.StopWatch.ElapsedMilliseconds;
+                        }
+                    }
+                }
+            }
+
+        }
+        [ClassInvoke(Data.Class.All)]
+        public static void Check_RaidBuffRequests()
+        {
+
+            if (E3.IsInvis) return;
+            if (!e3util.ShouldCheck(ref _nextRaidBuffRequestCheckTime, nextRaidBuffRequestCheckTimeInterval)) return;
+
+            foreach (var spell in E3.CharacterSettings.RaidBuffRequests)
+            {
+                if (spell.LastRequestTimeStamp > 0)
+                {
+                    if ((Core.StopWatch.ElapsedMilliseconds - spell.LastRequestTimeStamp) < 15000) continue;
+                }
+
+                if (_spawns.TryByName(spell.CastTarget, out var spawn))
+                {
+                    if (!String.IsNullOrWhiteSpace(spell.Ifs))
+                    {
+                        if (!Casting.Ifs(spell))
+                        {
+                            continue;
+                        }
+                    }
+                    if (spawn.Distance > 199) continue;
+                    //self buffs!
+                    var inRaid = MQ.Query<bool>($"${{Raid.Member[{spell.CastTarget}]}}");
+
+                    if (inRaid)
+                    {
+                        bool hasBuff = MQ.Query<bool>($"${{Bool[${{Me.Buff[{spell.SpellName}]}}]}}");
+
+                        if (!hasBuff)
+                        {
+                            //request it then
+                            MQ.Cmd($"/rsay {spell.CastTarget}:{spell.SpellName}");
+                            spell.LastRequestTimeStamp = Core.StopWatch.ElapsedMilliseconds;
+                        }
+                    }
+                }
+            }
+
+        }
         [AdvSettingInvoke]
         public static void Check_Buffs()
         {
@@ -261,37 +364,52 @@ namespace E3Core.Processors
 
             if (!e3util.ShouldCheck(ref _nextBuffCheck, _nextBuffCheckInterval)) return;
             if (Basics.AmIDead()) return;
-
-            using (_log.Trace())
+            Int32 targetID = MQ.Query<Int32>("${Target.ID}");
+            try
             {
-
-                if (Assist.IsAssisting || Nukes.PBAEEnabled)
+                using (_log.Trace())
                 {
-                    BuffBots(E3.CharacterSettings.CombatBuffs);
-                }
 
-                if ((!Movement.IsMoving() && String.IsNullOrWhiteSpace(Movement.FollowTargetName))|| Movement.StandingStillForTimePeriod())
-                {
-                    if(!Basics.InCombat())
+                    if (Assist.IsAssisting || Nukes.PBAEEnabled)
                     {
-                        if (!E3.ActionTaken) BuffAuras();
-                        if (!E3.ActionTaken) BuffBots(E3.CharacterSettings.SelfBuffs);
-                        if (!E3.ActionTaken) BuffBots(E3.CharacterSettings.BotBuffs);
-                        if (!E3.ActionTaken) BuffBots(E3.CharacterSettings.PetBuffs, true);
-                        
+                        BuffBots(E3.CharacterSettings.CombatBuffs);
                     }
+
+                    if ((!Movement.IsMoving() && String.IsNullOrWhiteSpace(Movement.FollowTargetName)) || Movement.StandingStillForTimePeriod())
+                    {
+                        if (!Basics.InCombat())
+                        {
+                            if (!E3.ActionTaken) BuffAuras();
+                            if (!E3.ActionTaken) BuffBots(E3.CharacterSettings.SelfBuffs);
+                            if (!E3.ActionTaken) BuffBots(E3.CharacterSettings.BotBuffs);
+                            if (!E3.ActionTaken) BuffBots(E3.CharacterSettings.PetBuffs, true);
+
+                        }
+                    }
+
                 }
-                
             }
+            finally
+            {
+                e3util.PutOriginalTargetBackIfNeeded(targetID);
+            }
+            
 
         }
         [AdvSettingInvoke]
         public static void check_CombatBuffs()
         {
-            if (Assist.IsAssisting || Nukes.PBAEEnabled)
-            {
-                BuffBots(E3.CharacterSettings.CombatBuffs);
+            
+                if (Assist.IsAssisting || Nukes.PBAEEnabled)
+                {
+                    Int32 targetID = MQ.Query<Int32>("${Target.ID}");
+
+                    BuffBots(E3.CharacterSettings.CombatBuffs);
+                //put the target back to where it was
+                e3util.PutOriginalTargetBackIfNeeded(targetID);
             }
+    
+            
         }
         public static void BuffInstant(List<Data.Spell> buffs)
         {
@@ -300,59 +418,78 @@ namespace E3Core.Processors
             if (!e3util.ShouldCheck(ref _nextInstantBuffRefresh, _nextInstantRefreshTimeInterval)) return;
             //self only, instacast buffs only
             Int32 id = E3.CurrentId;
-            foreach (var spell in buffs)
+
+            Int32 targetID = MQ.Query<Int32>("${Target.ID}");
+
+            if(Assist.AssistTargetID>0)
             {
-                bool hasBuff = MQ.Query<bool>($"${{Bool[${{Me.Buff[{spell.SpellName}]}}]}}");
-                bool hasSong = false;
-                if (!hasBuff)
+                //if we are assisting, see if we shoudl skip buffs if under manual control
+                if (targetID != Assist.AssistTargetID && e3util.IsManualControl())
                 {
-                    hasSong = MQ.Query<bool>($"${{Bool[${{Me.Song[{spell.SpellName}]}}]}}");
+                    return;
                 }
-
-                bool hasCheckFor = false;
-                if (!String.IsNullOrWhiteSpace(spell.CheckFor))
+            }
+            try
+            {
+                foreach (var spell in buffs)
                 {
-                    hasCheckFor = MQ.Query<bool>($"${{Bool[${{Me.Buff[{spell.CheckFor}]}}]}}");
-                    if (hasCheckFor)
+                    bool hasBuff = MQ.Query<bool>($"${{Bool[${{Me.Buff[{spell.SpellName}]}}]}}");
+                    bool hasSong = false;
+                    if (!hasBuff)
                     {
-                        continue;
-                    }
-                    hasCheckFor = MQ.Query<bool>($"${{Bool[${{Me.Song[{spell.CheckFor}]}}]}}");
-                    if (hasCheckFor)
-                    {
-                        continue;
+                        hasSong = MQ.Query<bool>($"${{Bool[${{Me.Song[{spell.SpellName}]}}]}}");
                     }
 
-                }
-                if (!String.IsNullOrWhiteSpace(spell.Ifs))
-                {
-                    if (!Casting.Ifs(spell))
+                    bool hasCheckFor = false;
+                    if (!String.IsNullOrWhiteSpace(spell.CheckFor))
                     {
-                        continue;
-                    }
-                }
-                if (!(hasBuff || hasSong))
-                {
-                    bool willStack = MQ.Query<bool>($"${{Spell[{spell.SpellName}].WillLand}}");
-                    if (willStack && Casting.CheckReady(spell) && Casting.CheckMana(spell))
-                    {
-                        if (spell.TargetType == "Self" || spell.TargetType == "Group v1")
+                        hasCheckFor = MQ.Query<bool>($"${{Bool[${{Me.Buff[{spell.CheckFor}]}}]}}");
+                        if (hasCheckFor)
                         {
-                            Casting.Cast(0, spell);
-
+                            continue;
                         }
-                        else
+                        hasCheckFor = MQ.Query<bool>($"${{Bool[${{Me.Song[{spell.CheckFor}]}}]}}");
+                        if (hasCheckFor)
                         {
-                            if(Casting.InRange(id, spell))
+                            continue;
+                        }
+
+                    }
+                    if (!String.IsNullOrWhiteSpace(spell.Ifs))
+                    {
+                        if (!Casting.Ifs(spell))
+                        {
+                            continue;
+                        }
+                    }
+                    if (!(hasBuff || hasSong))
+                    {
+                        bool willStack = MQ.Query<bool>($"${{Spell[{spell.SpellName}].WillLand}}");
+                        if (willStack && Casting.CheckReady(spell) && Casting.CheckMana(spell))
+                        {
+                            if (spell.TargetType == "Self" || spell.TargetType == "Group v1")
                             {
-                                Casting.Cast(id, spell);
-                            }
-                   
-                        }
+                                Casting.Cast(0, spell);
 
+                            }
+                            else
+                            {
+                                if (Casting.InRange(id, spell))
+                                {
+                                    Casting.Cast(id, spell);
+                                }
+
+                            }
+
+                        }
                     }
                 }
             }
+            finally
+            {
+                e3util.PutOriginalTargetBackIfNeeded(targetID);
+            }
+            
         }
         private static void BuffBots(List<Data.Spell> buffs, bool usePets = false)
         {

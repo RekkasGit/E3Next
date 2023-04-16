@@ -190,9 +190,13 @@ namespace E3Core.Processors
                     if (E3.GeneralSettings.BuffRequests_AllowBuffRequests || E3.Bots.IsMyBot(user))
                     {
                         string spell = x.match.Groups[2].Value;
-
-
-                        if(Int32.TryParse(spell, out var temp))
+                        bool groupReply = false;
+                        if (x.match.Groups[0].Value.Contains(" tells the group,"))
+                        {
+                            groupReply = true;
+                        }
+                        
+                        if (Int32.TryParse(spell, out var temp))
                         {
                             //me.book returns the spell that is memed in that slot in your book
                             //this isnt what we want, to just ignore the request
@@ -211,11 +215,60 @@ namespace E3Core.Processors
 
                         if (inBook || aa || item)
                         {
-                            MQ.Cmd($"/t {user} I'm queueing up {spell} to use on you, please wait.");
+                            if(groupReply)
+                            {
+                                MQ.Cmd($"/gsay {user}: putting in queue {spell}");
+
+                            }
+                            else
+                            {
+                                MQ.Cmd($"/t {user} I'm queueing up {spell} to use on you, please wait.");
+
+                            }
                             _queuedBuffs.Enqueue(new BuffQueuedItem() { Requester = user, SpellTouse = spell});
 
                         }
                     }
+                }
+            });
+            var raidbuffBeg = new List<string> {"(.+) tells the raid,  '"+E3.CurrentName+@":(.+)'" };
+            EventProcessor.RegisterEvent("RaidBuffBeg", raidbuffBeg, (x) =>
+            {
+                if (x.match.Groups.Count > 2)
+                {
+                    if (Basics.AmIDead()) return;
+                    string user = x.match.Groups[1].Value;
+                    if(_spawns.TryByName(user, out var spawn))
+                    {
+                        if (E3.GeneralSettings.BuffRequests_AllowBuffRequests || E3.Bots.IsMyBot(user))
+                        {
+                            string spell = x.match.Groups[2].Value;
+                            if (Int32.TryParse(spell, out var temp))
+                            {
+                                //me.book returns the spell that is memed in that slot in your book
+                                //this isnt what we want, to just ignore the request
+                                return;
+                            }
+
+                            //check to see if its an alias.
+                            string realSpell = string.Empty;
+                            if (SpellAliases.TryGetValue(spell, out realSpell))
+                            {
+                                spell = realSpell;
+                            }
+                            bool inBook = MQ.Query<bool>($"${{Me.Book[{spell}]}}");
+                            bool aa = MQ.Query<bool>($"${{Me.AltAbility[{spell}].Spell}}");
+                            bool item = MQ.Query<bool>($"${{FindItem[={spell}]}}");
+
+                            if (inBook || aa || item)
+                            {
+                                MQ.Cmd($"/rsay {user}: queueing {spell}, please wait.");
+                                _queuedBuffs.Enqueue(new BuffQueuedItem() { Requester = user, SpellTouse = spell });
+
+                            }
+                        }
+                    }
+                    
                 }
             });
             //queuecast almost works exactly the same so added it here.
@@ -349,8 +402,11 @@ namespace E3Core.Processors
                     {
                         //get the id of the requestor.
                         Int32 cursorID = MQ.Query<Int32>("${Cursor.ID}");
-                        Casting.Cast(spawn.ID, s);
-                       
+                        var result = Casting.Cast(spawn.ID, s, Heals.SomeoneNeedsHealing);
+                        if (result == CastReturn.CAST_INTERRUPTFORHEAL)
+                        {
+                            return;
+                        }
                         if (cursorID<1)
                         {
                             cursorID = MQ.Query<Int32>("${Cursor.ID}");
@@ -370,6 +426,8 @@ namespace E3Core.Processors
                         if(askedForSpell.TimeStamp==0)
                         {
                             askedForSpell.TimeStamp = Core.StopWatch.ElapsedMilliseconds;
+                            var result = _queuedBuffs.Dequeue();
+                            _queuedBuffs.Enqueue(result);
                         }
                         if(Core.StopWatch.ElapsedMilliseconds - askedForSpell.TimeStamp > 30000 )
                         {

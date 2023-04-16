@@ -145,6 +145,25 @@ namespace E3Core.Settings
                 }
             }
         }
+        public static void LoadKeyData(string sectionKey, string Key, IniData parsedData, ref DefaultBroadcast valueToSet)
+        {
+            _log.Write($"{sectionKey} {Key}");
+            var section = parsedData.Sections[sectionKey];
+            if (section != null)
+            {
+                var keyData = section.GetKeyData(Key);
+                if (keyData != null)
+                {
+                    foreach (var data in keyData.ValueList)
+                    {
+                        if (!String.IsNullOrWhiteSpace(data))
+                        {
+                            Enum.TryParse<DefaultBroadcast>(data, out valueToSet);
+                        }
+                    }
+                }
+            }
+        }
         public static void LoadKeyData<K, V>(string sectionKey, string Key, IniData parsedData, Dictionary<K, V> dictionary)
         {
             _log.Write($"{sectionKey} {Key}");
@@ -273,6 +292,27 @@ namespace E3Core.Settings
                         {
                             CheckFor(data, sectionKey);
                             collectionToAddTo.Add(new Data.Spell(data, parsedData));
+                        }
+
+                    }
+                }
+            }
+        }
+        public static void LoadKeyData(string sectionKey, string Key, IniData parsedData, List<Data.SpellRequest> collectionToAddTo)
+        {
+            _log.Write($"{sectionKey} {Key}");
+            var section = parsedData.Sections[sectionKey];
+            if (section != null)
+            {
+                var keyData = section.GetKeyData(Key);
+                if (keyData != null)
+                {
+                    foreach (var data in keyData.ValueList)
+                    {
+                        if (!String.IsNullOrWhiteSpace(data))
+                        {
+                            CheckFor(data, sectionKey);
+                            collectionToAddTo.Add(new Data.SpellRequest(data, parsedData));
                         }
 
                     }

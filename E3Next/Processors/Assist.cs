@@ -49,6 +49,7 @@ namespace E3Core.Processors
         public static void Process()
         {
             CheckAssistStatus();
+            ProcessCombat();
         }
 
         /// <summary>
@@ -79,163 +80,136 @@ namespace E3Core.Processors
 
                 Int32 targetId = MQ.Query<Int32>("${Target.ID}");
 
-                if (targetId < 1)
+                bool manualControl = e3util.IsManualControl();
+
+                bool isCorpse = MQ.Query<bool>($"${{Spawn[id {AssistTargetID}].Type.Equal[Corpse]}}");
+                if (isCorpse)
                 {
-                    bool isCorpse = MQ.Query<bool>($"${{Spawn[id {AssistTargetID}].Type.Equal[Corpse]}}");
-                    if (isCorpse)
-                    {
-                        AssistOff();
-                        return;
-                    }
+                    AssistOff();
+                    return;
+                }
+                //changing targets while auto assisting
+                if (AssistTargetID != targetId && E3.GeneralSettings.Assists_AutoAssistEnabled && AllowControl && !e3util.TargetIsPCOrPCPet())
+                {
+                    AssistTargetID = targetId;
+                    MQ.Cmd("/assistme");
+                }
+                //else if the user  has this window focused don't do anything if they have changed targets or what not.
+                else if (manualControl && targetId >0) return;
+
+                //deal with dead mob
+                if (targetId < 1)
+                {  
                     if (!Casting.TrueTarget(AssistTargetID))
                     {
                         AssistOff();
                         return;
                     }
-
+                    //just sanity check code, will normally not get here
                     isCorpse = MQ.Query<bool>("${Target.Type.Equal[Corpse]}");
                     if (isCorpse)
                     {
                         AssistOff();
                         return;
                     }
-
                 }
                 else if (targetId != AssistTargetID)
                 {
-                    Spawn ct;
-                    _spawns.RefreshList();
-                    if (_spawns.TryByID(targetId, out ct))
+                   //somehow we are not on the proper target and not in manual control and not the issuer of /assistme, put us back on target.
+                    if(!AllowControl)
                     {
-                        bool isAPCPet = false;
-                        if(ct.MasterID>0)
-                        {
-                            Spawn master;
-                            if(_spawns.TryByID(ct.MasterID,out master))
-                            {
-                                if(master.TypeDesc=="PC")
-                                {
-                                    isAPCPet=true;
-                                }
-                            }
-                        }
-                        if (AllowControl && targetId != E3.CurrentId && ct.DeityID==0 && isAPCPet==false)
-                        {
-                            AssistTargetID = targetId;
-                            if (E3.GeneralSettings.Assists_AutoAssistEnabled)
-                            {
-                                MQ.Cmd("/assistme");
-                            }
-                        }
-                        else if(AllowControl)
-                        {
-                            bool isCorpse = MQ.Query<bool>($"${{Spawn[id {AssistTargetID}].Type.Equal[Corpse]}}");
-                            if (isCorpse)
-                            {
-                                //its dead jim
-                                AssistOff();
-                            }
-                            return;
-                        }
-                        else
-                        {
-                            Casting.TrueTarget(AssistTargetID);
-                        }
+                        Casting.TrueTarget(AssistTargetID);
                     }
-                }
-
-                Spawn s;
-                if (_spawns.TryByID(AssistTargetID, out s))
-                {
-                    bool isCorpse = MQ.Query<bool>($"${{Spawn[id {AssistTargetID}].Type.Equal[Corpse]}}");
-                    if (isCorpse)
-                    {
-                        //its dead jim
-                        AssistOff();
-                        return;
-                    }
-
-                    if (MQ.Query<bool>("${Me.Feigning}"))
-                    {
-                        MQ.Cmd("/stand");
-                    }
-
-                    //if range/melee
-                    if (_rangeTypes.Contains(E3.CharacterSettings.Assist_Type, StringComparer.OrdinalIgnoreCase) || _meleeTypes.Contains(E3.CharacterSettings.Assist_Type, StringComparer.OrdinalIgnoreCase))
-                    {
-                        //if melee
-                        if (_meleeTypes.Contains(E3.CharacterSettings.Assist_Type, StringComparer.OrdinalIgnoreCase))
-                        {
-                            //we are melee lets check for enrage
-                            if (_assistIsEnraged && MQ.Query<bool>("${Me.Combat}") && !MQ.Query<bool>("${Stick.Behind}"))
-                            {
-                                MQ.Cmd("/attack off");
-                                return;
-                            }
-
-                            if (MQ.Query<bool>("${Me.AutoFire}"))
-                            {
-                                MQ.Delay(1000);
-                                //turn off autofire
-                                MQ.Cmd("/autofire");
-                                //delay is needed to give time for it to actually process
-                                MQ.Delay(1000);
-                            }
-                            if (!AllowControl)
-                            {
-                                if (!MQ.Query<bool>("${Me.Combat}"))
-                                {
-                                    MQ.Cmd("/attack on");
-                                }
-                            }
-
-
-                            //are we sticking?
-                            if (!AllowControl && (!MQ.Query<bool>("${Stick.Active}") || MQ.Query<string>("${Stick.Status}")=="PAUSED"))
-                            {
-                                StickToAssistTarget();
-                            }
-
-                        }
-                        else
-                        {
-                            //we be ranged!
-                            if (!AllowControl)
-                            {
-                                MQ.Cmd($"/squelch /face fast id {AssistTargetID}");
-                                if (MQ.Query<Decimal>("${Target.Distance}") > 200)
-                                {
-                                    MQ.Cmd("/squelch /stick moveback 195");
-                                }
-                            }
-
-                            if (!MQ.Query<bool>("${Me.AutoFire}"))
-                            {
-                                //delay is needed to give time for it to actually process
-                                MQ.Delay(1000);
-                                //turn on autofire
-                                MQ.Cmd("/autofire");
-                                //delay is needed to give time for it to actually process
-                                MQ.Delay(1000);
-                            }
-                        }
-                        //call combat abilites
-                        CombatAbilties();
-
-                    }
-
-
-
-                }
-                else if (AssistTargetID > 0)
-                {
-                    //can't find the mob, yet we have an assistID? remove assist.
-                    AssistOff();
-                    return;
                 }
             }
         }
+        public static void ProcessCombat()
+        {
+            if (AssistTargetID == 0) return;
+            Spawn s;
+            Int32 targetId = MQ.Query<Int32>("${Target.ID}");
+            bool manualControl = e3util.IsManualControl();
 
+            if (targetId != AssistTargetID && manualControl) return;
+
+            _spawns.RefreshList();
+            if (_spawns.TryByID(AssistTargetID, out s))
+            {
+                if (MQ.Query<bool>("${Me.Feigning}"))
+                {
+                    MQ.Cmd("/stand");
+                }
+
+                //if range/melee
+                if (_rangeTypes.Contains(E3.CharacterSettings.Assist_Type, StringComparer.OrdinalIgnoreCase) || _meleeTypes.Contains(E3.CharacterSettings.Assist_Type, StringComparer.OrdinalIgnoreCase))
+                {
+                    //if melee
+                    if (_meleeTypes.Contains(E3.CharacterSettings.Assist_Type, StringComparer.OrdinalIgnoreCase))
+                    {
+                        //we are melee lets check for enrage
+                        if (_assistIsEnraged && MQ.Query<bool>("${Me.Combat}") && !MQ.Query<bool>("${Stick.Behind}"))
+                        {
+                            MQ.Cmd("/attack off");
+                            return;
+                        }
+
+                        if (MQ.Query<bool>("${Me.AutoFire}"))
+                        {
+                            MQ.Delay(1000);
+                            //turn off autofire
+                            MQ.Cmd("/autofire");
+                            //delay is needed to give time for it to actually process
+                            MQ.Delay(1000);
+                        }
+                        if (!AllowControl && !_assistIsEnraged)
+                        {
+                            if (!MQ.Query<bool>("${Me.Combat}"))
+                            {
+                                MQ.Cmd("/attack on");
+                            }
+                        }
+
+
+                        //are we sticking?
+                        if (!AllowControl && (!MQ.Query<bool>("${Stick.Active}") || MQ.Query<string>("${Stick.Status}") == "PAUSED"))
+                        {
+                            StickToAssistTarget();
+                        }
+
+                    }
+                    else
+                    {
+                        //we be ranged!
+                        if (!AllowControl)
+                        {
+                            MQ.Cmd($"/squelch /face fast id {AssistTargetID}");
+                            if (MQ.Query<Decimal>("${Target.Distance}") > 200)
+                            {
+                                MQ.Cmd("/squelch /stick moveback 195");
+                            }
+                        }
+
+                        if (!MQ.Query<bool>("${Me.AutoFire}"))
+                        {
+                            //delay is needed to give time for it to actually process
+                            MQ.Delay(1000);
+                            //turn on autofire
+                            MQ.Cmd("/autofire");
+                            //delay is needed to give time for it to actually process
+                            MQ.Delay(1000);
+                        }
+                    }
+                    //call combat abilites
+                    CombatAbilties();
+                }
+            }
+            else if (AssistTargetID > 0)
+            {
+                //can't find the mob, yet we have an assistID? remove assist.
+                AssistOff();
+                return;
+            }
+        }
         /// <summary>
         /// Uses combat abilities.
         /// </summary>
@@ -526,6 +500,7 @@ namespace E3Core.Processors
                 AssistTargetID = mobID;
                 if (MQ.Query<Int32>("${Target.ID}") != AssistTargetID)
                 {
+                    MQ.Write("AssistOn Fix TargetID:" + AssistTargetID);
                     if (!Casting.TrueTarget(AssistTargetID))
                     {
                         //could not target
@@ -700,13 +675,14 @@ namespace E3Core.Processors
                    }
                    if(!ignoreme)
                    {
-                       if (e3util.FilterMe(x)) return;
-
-                       if (targetID != AssistTargetID)
+                       if (!e3util.FilterMe(x))
                        {
-                           AssistOff();
-                           AllowControl = true;
-                           AssistOn(targetID, Zoning.CurrentZone.Id);
+                           if (targetID != AssistTargetID)
+                           {
+                               AssistOff();
+                               AllowControl = true;
+                               AssistOn(targetID, Zoning.CurrentZone.Id);
+                           }
                        }
                    }
                    else
@@ -716,9 +692,10 @@ namespace E3Core.Processors
                        {
                            MQ.Cmd($"/pet attack {targetID}");
                        }
-                   }
+                    }
                    E3.Bots.BroadcastCommandToGroup($"/assistme {targetID} {Zoning.CurrentZone.Id}", x);
-              
+
+
                }
                else if (!e3util.FilterMe(x))
                {
@@ -728,7 +705,7 @@ namespace E3Core.Processors
                    if (Int32.TryParse(x.args[0], out mobid))
                    {
                         //make sure the target is in the same zone we are in
-                        if (Int32.TryParse(x.args[1], out zoneid))
+                       if (Int32.TryParse(x.args[1], out zoneid))
                        {
                            if (mobid == AssistTargetID) return;
                            AssistOff();
@@ -844,16 +821,29 @@ namespace E3Core.Processors
                 }
 
             });
+            EventProcessor.RegisterCommand("/backoffme", (x) =>
+            {
+                    if (E3.CurrentClass != Class.Bard)
+                    {
+                        Casting.Interrupt();
+                    }
+                    AssistOff();
+                    Burns.Reset();
+                    DebuffDot.Reset();
+                    Movement.AcquireFollow();
+
+            });
             e3util.RegisterCommandWithTarget("/e3offassistignore", (x) => { _offAssistIgnore.Add(x); });
-            EventProcessor.RegisterEvent("EnrageOn", "(.)+ has become ENRAGED.", (x) =>
+            EventProcessor.RegisterEvent("EnrageOn", "(.+) has become ENRAGED.", (x) =>
             {
                 if (x.match.Groups.Count > 1)
                 {
                     string mobName = x.match.Groups[1].Value;
-                    if (MQ.Query<Int32>("${Target.ID}") == MQ.Query<Int32>($"${{Spawn[{mobName}].ID}}"))
+                    if (MQ.Query<string>("${Target.CleanName}") == mobName)
                     {
                         if (E3.GeneralSettings.AttackOffOnEnrage)
                         {
+                            E3.Bots.Broadcast("Enabling Assist Is Enraged");
                             _assistIsEnraged = true;
                         }
 
@@ -864,13 +854,17 @@ namespace E3Core.Processors
                     }
                 }
             });
-            EventProcessor.RegisterEvent("EnrageOff", "(.)+  is no longer enraged.", (x) =>
+            EventProcessor.RegisterEvent("EnrageOff", "(.+)  is no longer enraged.", (x) =>
             {
                 if (x.match.Groups.Count > 1)
                 {
                     string mobName = x.match.Groups[1].Value;
-                    if (MQ.Query<Int32>("${Target.ID}") == MQ.Query<Int32>($"${{Spawn[{mobName}].ID}}"))
+                    if (MQ.Query<string>("${Target.CleanName}") == mobName)
                     {
+                        if (_assistIsEnraged)
+                        {
+                            E3.Bots.Broadcast("Disabling Assist Is Enraged");
+                        }
                         _assistIsEnraged = false;
                         if (MQ.Query<Int32>("${Me.Pet.ID}") > 0)
                         {

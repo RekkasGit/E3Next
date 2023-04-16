@@ -105,67 +105,86 @@ namespace E3Core.Processors
         }
         private static CastReturn NowCastSpell(string spellName, Int32 targetid)
         {
+            Int32 orgTargetID = MQ.Query<Int32>("${Target.ID}");
 
-            string realSpell = string.Empty;
-            if (BegForBuffs.SpellAliases.TryGetValue(spellName, out realSpell))
+            try
             {
-                spellName = realSpell;
+                string realSpell = string.Empty;
+                if (BegForBuffs.SpellAliases.TryGetValue(spellName, out realSpell))
+                {
+                    spellName = realSpell;
+                }
+                Spell spell = new Spell(spellName, E3.CharacterSettings.ParsedData);
+
+                if (spell.SpellID > 0)
+                {
+
+                    //wait for GCD to be over.
+                    bool wasCasting = false;
+                    while (Casting.IsCasting())
+                    {
+                        wasCasting = true;
+                        MQ.Delay(50);
+                    }
+                    if (wasCasting)
+                    {
+                        MQ.Delay(600);
+                    }
+                    if (MQ.Query<Int32>("${Me.CurrentMana}") > 0)
+                    {
+                        while (Casting.InGlobalCooldown())
+                        {
+                            MQ.Delay(100);
+                        }
+                    }
+
+                    if (targetid == 0)
+                    {
+                        targetid = E3.CurrentId;
+                    }
+                    if (!String.IsNullOrWhiteSpace(spell.Ifs))
+                    {
+                        Casting.TrueTarget(targetid);
+                        if (!Casting.Ifs(spell))
+                        {
+                            return CastReturn.CAST_IFFAILURE;
+                        }
+                    }
+                    if (!String.IsNullOrWhiteSpace(spell.CheckFor))
+                    {
+                        Casting.TrueTarget(targetid);
+                        if (MQ.Query<bool>($"${{Bool[${{Target.Buff[{spell.CheckFor}]}}]}}"))
+                        {
+                            return CastReturn.CAST_TAKEHOLD;
+                        }
+                    }
+                    if (Casting.InRange(targetid, spell) && Casting.CheckReady(spell) && Casting.CheckMana(spell))
+                    {
+                        return Casting.Cast(targetid, spell, null, true);
+                    }
+                    else
+                    {
+                        //spell isn't quite ready yet pause for 1.5 sec
+                    }
+                }
+
+                return CastReturn.CAST_INVALID;
             }
-            Spell spell = new Spell(spellName, E3.CharacterSettings.ParsedData);
+            finally
+            { 
+                //put the target back to where it was
+                Int32 currentTargetID = MQ.Query<Int32>("${Target.ID}");
+                if (orgTargetID > 0 && currentTargetID != orgTargetID)
+                {
+                    bool orgTargetCorpse = MQ.Query<bool>($"${{Spawn[id {orgTargetID}].Type.Equal[Corpse]}}");
+                    if (!orgTargetCorpse)
+                    {
+                        Casting.TrueTarget(orgTargetID);
+                    }
+                }
+
+            }
             
-            if(spell.SpellID>0)
-            {
-                
-                //wait for GCD to be over.
-                bool wasCasting = false;
-                while (Casting.IsCasting())
-                {
-                    wasCasting = true;
-                    MQ.Delay(50);
-                }
-                if(wasCasting)
-                {
-                    MQ.Delay(600);
-                }
-                if (MQ.Query<Int32>("${Me.CurrentMana}") >0)
-                {
-                    while (Casting.InGlobalCooldown())
-                    {
-                        MQ.Delay(100);
-                    }
-                }
-
-                if(targetid==0)
-                {
-                    targetid = E3.CurrentId;
-                }
-                if (!String.IsNullOrWhiteSpace(spell.Ifs))
-                {
-                    Casting.TrueTarget(targetid);
-                    if (!Casting.Ifs(spell))
-                    {
-                        return CastReturn.CAST_IFFAILURE;
-                    }
-                }
-                if (!String.IsNullOrWhiteSpace(spell.CheckFor))
-                {
-                    Casting.TrueTarget(targetid);
-                    if (MQ.Query<bool>($"${{Bool[${{Target.Buff[{spell.CheckFor}]}}]}}"))
-                    {
-                        return CastReturn.CAST_TAKEHOLD;
-                    }
-                }
-                if (Casting.InRange(targetid, spell) && Casting.CheckReady(spell) && Casting.CheckMana(spell))
-                {
-                    return Casting.Cast(targetid, spell, null, true);
-                }
-                else
-                {
-                    //spell isn't quite ready yet pause for 1.5 sec
-                }
-            }
-
-            return CastReturn.CAST_INVALID;
         }
     }
 }

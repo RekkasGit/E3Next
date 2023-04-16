@@ -6,6 +6,7 @@ using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Net.Http.Headers;
+using System.Runtime.CompilerServices;
 using System.Security.Cryptography;
 using System.Text;
 using System.Threading.Tasks;
@@ -62,7 +63,7 @@ namespace E3Core.Processors
 
 
                 //bard can cast insta cast items while singing, they be special.
-                if (E3.CurrentClass == Class.Bard && spell.MyCastTime <= 500 && (spell.CastType == CastType.Item || spell.CastType== CastType.AA))
+                if (E3.CurrentClass == Class.Bard && spell.NoMidSongCast == false && spell.MyCastTime <= 500 && (spell.CastType == CastType.Item || spell.CastType== CastType.AA))
                 {
                     //instant cast item, can cast while singing
                     //note bards are special and cast do insta casts while doing normal singing. they have their own 
@@ -1144,6 +1145,10 @@ namespace E3Core.Processors
                 //bug with thiefs eyes, always return true
                 if (spell.SpellID == 8001) return true;
 
+                if (MQ.Query<Int32>($"${{Me.CombatAbilityTimer[{spell.CastName}]}}")==0)
+                {
+                    return true;
+                }
                 if (MQ.Query<bool>($"${{Me.CombatAbilityReady[{spell.CastName}]}}"))
                 {
                     return true;
@@ -1290,8 +1295,7 @@ namespace E3Core.Processors
         }
         public static bool TrueTarget(Int32 targetID, bool allowClear = false)
         {
-
-            //0 means don't change target
+             //0 means don't change target
             if (allowClear && targetID == 0)
             {
                 MQ.Cmd("/nomodkey /keypress esc");
@@ -1304,7 +1308,7 @@ namespace E3Core.Processors
 
             }
 
-            _log.Write("Trying to Aquire target");
+            _log.Write("Trying to Aquire true target on :"+targetID);
 
             if (MQ.Query<Int32>("${Target.ID}") == targetID) return true;
 

@@ -96,6 +96,12 @@ namespace E3Core.Processors
         {
             if (Assist.AssistTargetID > 0)
             {
+                //person in manual control and they are not on the assist target, chill.
+                Int32 targetId = MQ.Query<Int32>("${Target.ID}");
+                if(targetId!=Assist.AssistTargetID && e3util.IsManualControl())
+                {
+                    return;
+                }
                 //we should be assisting, check_AssistStatus, verifies its not a corpse.
                 using (_log.Trace())
                 {

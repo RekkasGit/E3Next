@@ -25,7 +25,11 @@ namespace E3Core.Processors
         {
             EventProcessor.RegisterCommand("/restock", (x) =>
             {
-                string itemName = x.args[0];
+                string itemName = "food";
+                if(x.args.Count>1)
+                {
+                    itemName = x.args[0];
+                }
                 int qtyNeeded = -1;
 
                 if (x.args.Count >= 2)
@@ -39,16 +43,16 @@ namespace E3Core.Processors
                         E3.Bots.BroadcastCommand($"You must pass a number value for the 2nd parameter to restock {itemName}.");
                     }
                 }
-
+                itemName = itemName.ToLower();
                 switch(itemName)
                 {
-                    case "Emerald":
+                    case "emerald":
                         RestockItem(itemName, qtyNeeded);
                         break;
-                    case "Food":
+                    case "food":
                         RestockFoodWater();
                         break;
-                    case "Water":
+                    case "water":
                         RestockFoodWater();
                         break;
                     default:
@@ -92,8 +96,21 @@ namespace E3Core.Processors
                         
 
             //check how many items are needed to make a stack of the specified food and drink, return -1 if they already have more than a stack
-            int toEatQty = CheckQtyStackSize(toEat);
-            int toDrinkQty = CheckQtyStackSize(toDrink);
+
+            Int32 foodAvail = MQ.Query<int>($"${{FindItemCount[{toEat}]}}");
+            Int32 drinkAvail = MQ.Query<int>($"${{FindItemCount[{toDrink}]}}");
+
+            int toEatQty = 20;
+            if (foodAvail > 0)
+            {
+                toEatQty=CheckQtyStackSize(toEat);
+            }
+            int toDrinkQty = 20;
+            if (drinkAvail > 0)
+            {
+                toDrinkQty=CheckQtyStackSize(toDrink);
+
+            }
 
 
             if (toEatQty <= 0 && toDrinkQty <= 0)
@@ -132,8 +149,8 @@ namespace E3Core.Processors
                     {
                         Buy.BuyItem(toEat, toEatQty);
                     }
-                    
 
+                    MQ.Delay(500);
                     if (toDrinkQty > -1)
                     {
                         Buy.BuyItem(toDrink, toDrinkQty);

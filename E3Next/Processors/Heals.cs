@@ -64,15 +64,7 @@ namespace E3Core.Processors
                 if (!E3.ActionTaken) HealPets(currentMana, pctMana);
                 if (!E3.ActionTaken) HoTPets(currentMana, pctMana);
 
-
-                if ((E3.CurrentClass & Data.Class.Tank) == E3.CurrentClass)
-                {
-                    Int32 currentTargetID = MQ.Query<Int32>("${Target.ID}");
-                    if (targetID > 0 && currentTargetID != targetID)
-                    {
-                        Casting.TrueTarget(targetID);
-                    }
-                }
+                e3util.PutOriginalTargetBackIfNeeded(targetID);
             }
         }
 

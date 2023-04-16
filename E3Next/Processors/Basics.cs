@@ -146,11 +146,17 @@ namespace E3Core.Processors
                 }
             });
             //
-            EventProcessor.RegisterEvent("InviteToRaid", "(.+) tells you, 'raidadd'", (x) =>
+            EventProcessor.RegisterEvent("AskedForRaidInvite", "(.+) tells you, 'raidadd'", (x) =>
             {
                 if (x.match.Groups.Count > 1)
                 {
-                    MQ.Cmd($"/raidinvite {x.match.Groups[1].Value}");
+                    string  user = x.match.Groups[1].Value;
+
+                    //need to be in the same zone
+                    if(_spawns.TryByName(user,out var s))
+                    {
+                        MQ.Cmd($"/raidinvite {user}");
+                    }
                 }
             });
             EventProcessor.RegisterCommand("/e3settings", (x) =>
@@ -1039,7 +1045,27 @@ namespace E3Core.Processors
                 bool cursorItem = MQ.Query<bool>("${Bool[${Cursor.ID}]}");
                 if(cursorItem)
                 {
-                    e3util.ClearCursor();
+
+                    //auto delete stuff on cursor that is configured to do so
+                    string autoinvItem = MQ.Query<string>("${Cursor}");
+                    if (E3.CharacterSettings.Cursor_Delete.Contains(autoinvItem, StringComparer.OrdinalIgnoreCase))
+                    {
+                        //configured to delete this item.
+                        MQ.Cmd("/destroy");
+                        if (autoinvItem != "NULL")
+                        {
+                            E3.Bots.Broadcast($"\agAutoDestroy\aw:\ao{autoinvItem}");
+                        }
+                        MQ.Delay(300);
+                        return;
+                    }
+                    else
+                    {
+
+                        e3util.ClearCursor();
+
+                    }
+
                 }
             }
          

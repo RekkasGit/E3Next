@@ -100,7 +100,7 @@ namespace E3Core.Data
                     {
                         GiveUpTimer = GetArgument<Int32>(value);
                     }
-                    else if (value.StartsWith("GiveUpTimer|", StringComparison.OrdinalIgnoreCase))
+                    else if (value.StartsWith("MaxTries|", StringComparison.OrdinalIgnoreCase))
                     {
                         MaxTries = GetArgument<Int32>(value);
                     }
@@ -147,6 +147,10 @@ namespace E3Core.Data
                     else if (value.Equals("Rotate", StringComparison.OrdinalIgnoreCase))
                     {
                         Rotate = true;
+                    }
+                    else if (value.Equals("NoMidSongCast", StringComparison.OrdinalIgnoreCase))
+                    {
+                        NoMidSongCast = true;
                     }
                     else if (value.StartsWith("Delay|", StringComparison.OrdinalIgnoreCase))
                     {
@@ -490,45 +494,94 @@ namespace E3Core.Data
             }
             else if (CastType == CastType.Spell)
             {
-
-                TargetType = MQ.Query<String>($"${{Spell[{CastName}].TargetType}}");
-                Duration = MQ.Query<Int32>($"${{Spell[{CastName}].Duration}}");
-                DurationTotalSeconds = MQ.Query<Int32>($"${{Spell[{CastName}].Duration.TotalSeconds}}");
-
-                RecastTime = MQ.Query<Int32>($"${{Spell[{CastName}].RecastTime}}");
-                RecoveryTime = MQ.Query<Decimal>($"${{Spell[{CastName}].RecoveryTime}}");
-                MyCastTime = MQ.Query<Decimal>($"${{Spell[{CastName}].MyCastTime}}");
-
-                Double AERange = MQ.Query<Double>($"${{Spell[{CastName}].AERange}}");
-                MyRange = MQ.Query<double>($"${{Spell[{CastName}].MyRange}}");
-                SpellType = MQ.Query<String>($"${{Spell[{CastName}].SpellType}}");
-
-                if (SpellType.Equals("Detrimental", StringComparison.OrdinalIgnoreCase))
+              
+                if(SpellInBook)
                 {
+                    string bookNumber = MQ.Query<string>($"${{Me.Book[{CastName}]}}");
 
-                    if (AERange > 0)
+                    TargetType = MQ.Query<String>($"${{Me.Book[{bookNumber}].TargetType}}");
+                    Duration = MQ.Query<Int32>($"${{Me.Book[{bookNumber}].Duration}}");
+                    DurationTotalSeconds = MQ.Query<Int32>($"${{Me.Book[{bookNumber}].Duration.TotalSeconds}}");
+
+                    RecastTime = MQ.Query<Int32>($"${{Me.Book[{bookNumber}].RecastTime}}");
+                    RecoveryTime = MQ.Query<Decimal>($"${{Me.Book[{bookNumber}].RecoveryTime}}");
+                    MyCastTime = MQ.Query<Decimal>($"${{Me.Book[{bookNumber}].MyCastTime}}");
+
+                    Double AERange = MQ.Query<Double>($"${{Me.Book[{bookNumber}].AERange}}");
+                    MyRange = MQ.Query<double>($"${{Me.Book[{bookNumber}].MyRange}}");
+                    SpellType = MQ.Query<String>($"${{Me.Book[{bookNumber}].SpellType}}");
+
+                    if (SpellType.Equals("Detrimental", StringComparison.OrdinalIgnoreCase))
                     {
-                        if (MyRange == 0)
+
+                        if (AERange > 0)
                         {
-                            //set MyRange to AE range for spells that don't have a MyRange like PBAE nukes
+                            if (MyRange == 0)
+                            {
+                                //set MyRange to AE range for spells that don't have a MyRange like PBAE nukes
+                                MyRange = AERange;
+                            }
+                        }
+
+                    }
+                    else
+                    {
+                        //if the buff/heal has an AERange value, set MyRange to AE Range because otherwise the spell won't land on the target
+                        if (AERange > 0)
+                        {
                             MyRange = AERange;
                         }
-                    }
 
+                    }
+                    Mana = MQ.Query<Int32>($"${{Me.Book[{bookNumber}].Mana}}");
+                    SpellName = CastName;
+                    SpellID = MQ.Query<Int32>($"${{Me.Book[{bookNumber}].ID}}");
+                    CastID = SpellID;
                 }
                 else
                 {
-                    //if the buff/heal has an AERange value, set MyRange to AE Range because otherwise the spell won't land on the target
-                    if (AERange > 0)
+                    TargetType = MQ.Query<String>($"${{Spell[{CastName}].TargetType}}");
+                    Duration = MQ.Query<Int32>($"${{Spell[{CastName}].Duration}}");
+                    DurationTotalSeconds = MQ.Query<Int32>($"${{Spell[{CastName}].Duration.TotalSeconds}}");
+
+                    RecastTime = MQ.Query<Int32>($"${{Spell[{CastName}].RecastTime}}");
+                    RecoveryTime = MQ.Query<Decimal>($"${{Spell[{CastName}].RecoveryTime}}");
+                    MyCastTime = MQ.Query<Decimal>($"${{Spell[{CastName}].MyCastTime}}");
+
+                    Double AERange = MQ.Query<Double>($"${{Spell[{CastName}].AERange}}");
+                    MyRange = MQ.Query<double>($"${{Spell[{CastName}].MyRange}}");
+                    SpellType = MQ.Query<String>($"${{Spell[{CastName}].SpellType}}");
+
+                    if (SpellType.Equals("Detrimental", StringComparison.OrdinalIgnoreCase))
                     {
-                        MyRange = AERange;
+
+                        if (AERange > 0)
+                        {
+                            if (MyRange == 0)
+                            {
+                                //set MyRange to AE range for spells that don't have a MyRange like PBAE nukes
+                                MyRange = AERange;
+                            }
+                        }
+
                     }
+                    else
+                    {
+                        //if the buff/heal has an AERange value, set MyRange to AE Range because otherwise the spell won't land on the target
+                        if (AERange > 0)
+                        {
+                            MyRange = AERange;
+                        }
+
+                    }
+                    Mana = MQ.Query<Int32>($"${{Spell[{CastName}].Mana}}");
+                    SpellName = CastName;
+                    SpellID = MQ.Query<Int32>($"${{Spell[{CastName}].ID}}");
+                    CastID = SpellID;
 
                 }
-                Mana = MQ.Query<Int32>($"${{Spell[{CastName}].Mana}}");
-                SpellName = CastName;
-                SpellID = MQ.Query<Int32>($"${{Spell[{CastName}].ID}}");
-                CastID = SpellID;
+
+                
             }
             else if (CastType == CastType.Disc)
             {
@@ -640,6 +693,7 @@ namespace E3Core.Data
         public string InitName = String.Empty;
         public bool ReagentOutOfStock = false;
         public bool SpellInBook = false;
+        public bool NoMidSongCast = false;
 
 
 
