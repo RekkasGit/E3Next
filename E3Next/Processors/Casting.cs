@@ -405,7 +405,7 @@ namespace E3Core.Processors
                                 //if (MQ.Query<bool>("${Stick.Status.Equal[on]}")) MQ.Cmd("/squelch /stick pause");
                                 if (MQ.Query<bool>("${AdvPath.Following}") && E3.Following) MQ.Cmd("/squelch /afollow off");
                                 if (MQ.Query<bool>("${MoveTo.Moving}") && E3.Following) MQ.Cmd("/moveto off");
-                                
+                                MQ.Cmd("/stick pause");
                                 navActive = MQ.Query<bool>("${Navigation.Active}");
                                 navPaused = MQ.Query<bool>("${Navigation.Paused}");
                                 e3PausedNav = false;
@@ -669,7 +669,7 @@ namespace E3Core.Processors
             finally
             {
                 PubServer.AddTopicMessage("${Casting}", String.Empty);
-               
+                MQ.Cmd("/stick unpause");
                 if (e3PausedNav)
                 {
                     navPaused = MQ.Query<bool>("${Navigation.Paused}");

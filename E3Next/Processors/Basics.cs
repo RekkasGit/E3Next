@@ -1,4 +1,5 @@
-﻿using E3Core.Data;
+﻿using E3Core.Classes;
+using E3Core.Data;
 using E3Core.Settings;
 using E3Core.Settings.FeatureSettings;
 using E3Core.Utility;
@@ -373,9 +374,25 @@ namespace E3Core.Processors
 
             EventProcessor.RegisterCommand("/evac", (x) =>
             {
-                if (x.args.Count > 0)
+                if (E3.CurrentClass == Class.Druid || E3.CurrentClass == Class.Wizard)
                 {
                     //someone told us to gate
+
+                    if (E3.CharacterSettings.CasterEvacs.Count > 0)
+                    {
+                        foreach (var spell in E3.CharacterSettings.CasterEvacs)
+                        {
+                            if (!Casting.SpellInCooldown(spell))
+                            {
+                                if (Casting.CheckReady(spell) && Casting.CheckMana(spell))
+                                {
+                                    Casting.Cast(0, spell);
+                                    return;
+                                }
+                            }
+                        }
+                    }
+
                     Spell s;
                     if (!Spell.LoadedSpellsByName.TryGetValue("Exodus", out s))
                     {
@@ -400,6 +417,7 @@ namespace E3Core.Processors
 
                         if (spellToCheck != string.Empty && MQ.Query<bool>($"${{Me.Book[{spellToCheck}]}}"))
                         {
+
                             if (!Spell.LoadedSpellsByName.TryGetValue(spellToCheck, out s))
                             {
                                 s = new Spell(spellToCheck);

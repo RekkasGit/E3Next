@@ -46,7 +46,7 @@ namespace E3Core.Settings
 
         public List<MelodyIfs> Bard_MelodyIfs = new List<MelodyIfs>();
 
-        public List<Spell> Druid_Evacs = new List<Spell>();
+        public List<Spell> CasterEvacs = new List<Spell>();
         public bool Druid_AutoCheetah = true;
         public bool Bard_AutoSonata = true;
 
@@ -254,10 +254,13 @@ namespace E3Core.Settings
 
             if ((CharacterClass & Class.Druid) == CharacterClass)
             {
-                LoadKeyData("Druid", "Evac Spell", ParsedData, Druid_Evacs);
+                LoadKeyData("Druid", "Evac Spell", ParsedData, CasterEvacs);
                 LoadKeyData("Druid", "Auto-Cheetah (On/Off)", ParsedData, ref Druid_AutoCheetah);
             }
-
+            if ((CharacterClass & Class.Wizard) == CharacterClass)
+            {
+                LoadKeyData("Wizard", "Evac Spell", ParsedData, CasterEvacs);
+            }
             if (CharacterClass == Class.Magician)
             {
                 LoadKeyData("Magician", "Auto-Pet Weapons (On/Off)", ParsedData, ref AutoPetWeapons);
@@ -543,7 +546,12 @@ namespace E3Core.Settings
                 section.Keys.AddKey("Auto-Cheetah (On/Off)", "Off");
 
             }
-
+            if ((CharacterClass & Class.Wizard) == CharacterClass)
+            {
+                newFile.Sections.AddSection("Wizard");
+                section = newFile.Sections.GetSectionData("Wizard");
+                section.Keys.AddKey("Evac Spell", "");
+            }
 
             if ((CharacterClass & Class.Priest) == CharacterClass)
             {
