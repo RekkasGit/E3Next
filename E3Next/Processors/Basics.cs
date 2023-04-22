@@ -495,36 +495,23 @@ namespace E3Core.Processors
 
             EventProcessor.RegisterCommand("/listgroups", (x) =>
             {
-                bool all = false;
-                var args = x.args;
-                if (x.args.Count > 0)
-                {
-                    if (x.args[0].Equals("all", StringComparison.OrdinalIgnoreCase))
-                    {
-                        all = true;
-                    }
-                }
-
-                MQ.Write($"\agSaved Groups:");
                 var savedGroups = SavedGroupData.GetData();
+
                 foreach (var group in savedGroups)
                 {
                     var serverAndGroupName = group.Key.Split('_');
                     var serverName = serverAndGroupName[0];
                     var groupName = serverAndGroupName[1];
 
-                    if (!all && E3.ServerName != serverName) continue;
+                    if (E3.ServerName != serverName) continue;
 
-                    MQ.Write($"\ag  Server: {serverName}");
-                    MQ.Write($"\ag      Group Name: {groupName}");
-                    MQ.Write($"\ag      Members:");
+                    MQ.Write($"\agGroup Name: \ap{groupName}");
+
                     var members = group.Value;
                     foreach (var member in members)
                     {
                         MQ.Write($"\ag          {member}");
                     }
-
-                    MQ.Write($"     Command: \ap/group {groupName}");
                 }
             });
 
