@@ -523,12 +523,12 @@ namespace E3Core.Processors
 
                     if (E3.ServerName != serverName) continue;
 
-                    MQ.Write($"\agGroup Name: \ap{groupName}");
+                    MQ.Write($"\ap[{groupName}]");
 
                     var members = group.Value;
                     foreach (var member in members)
                     {
-                        MQ.Write($"\ag          {member}");
+                        MQ.Write($"\ag{member}");
                     }
                 }
             });
