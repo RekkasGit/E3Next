@@ -1289,6 +1289,16 @@ namespace E3Core.Processors
                     //lets replace it with TRUE/FALSE
                     tIF = tIF.ReplaceInsensitive("${charmTarget}", "false");
                 }
+                if (tIF.IndexOf("${NotCombat}", 0, StringComparison.OrdinalIgnoreCase) > -1)
+                {
+                    //lets replace it with TRUE/FALSE
+                    tIF = tIF.ReplaceInsensitive("${NotCombat}", (!Basics.InCombat()).ToString());
+                }
+                if (tIF.IndexOf("${InCombat}", 0, StringComparison.OrdinalIgnoreCase) > -1)
+                {
+                    //lets replace it with TRUE/FALSE
+                    tIF = tIF.ReplaceInsensitive("${InCombat}", (Basics.InCombat()).ToString());
+                }
                 return MQ.Query<bool>($"${{If[{tIF},TRUE,FALSE]}}");
             }
             return true;

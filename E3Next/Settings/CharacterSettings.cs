@@ -122,6 +122,7 @@ namespace E3Core.Settings
         public List<Spell> BockedBuffs = new List<Spell>();
 
         //manastone
+        public bool Manastone_Enabled = true;
         public bool Manastone_OverrideGeneralSettings = false;
         public Int32 ManaStone_NumerOfClicksPerLoop = 40;
         public Int32 ManaStone_NumberOfLoops = 25;
@@ -239,6 +240,8 @@ namespace E3Core.Settings
             LoadKeyData("Misc", "Dismount On Interrupt (On/Off)", ParsedData, ref Misc_DismountOnInterrupt);
 
             LoadKeyData("Manastone", "Override General Settings (On/Off)", ParsedData, ref Manastone_OverrideGeneralSettings);
+            LoadKeyData("Manastone", "Manastone Enabled (On/Off)", ParsedData, ref Manastone_Enabled);
+
             LoadKeyData("Manastone", "NumerOfClicksPerLoop", ParsedData, ref ManaStone_NumerOfClicksPerLoop);
             LoadKeyData("Manastone", "NumberOfLoops", ParsedData, ref ManaStone_NumberOfLoops);
             LoadKeyData("Manastone", "DelayBetweenLoops (in milliseconds)", ParsedData, ref ManaStone_DelayBetweenLoops);
@@ -651,7 +654,9 @@ namespace E3Core.Settings
 
             newFile.Sections.AddSection("Manastone");
             section = newFile.Sections.GetSectionData("Manastone");
+
             section.Keys.AddKey("Override General Settings (On/Off)", "Off");
+            section.Keys.AddKey("Manastone Enabled (On/Off)","On");
             section.Keys.AddKey("NumerOfClicksPerLoop", "40");
             section.Keys.AddKey("NumberOfLoops", "25");
             section.Keys.AddKey("DelayBetweenLoops (in milliseconds)", "50");

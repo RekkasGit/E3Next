@@ -800,10 +800,7 @@ namespace E3Core.Processors
                     }
                 }
 
-                if(!E3.GeneralSettings.ManaStone_EnabledInCombat)
-                {
-                    if (InCombat()) return;
-                }
+               
 
                 //manastone code
                 int minMana = E3.GeneralSettings.ManaStone_InCombatMinMana;
@@ -813,6 +810,7 @@ namespace E3Core.Processors
                 int totalClicksToTry =E3.GeneralSettings.ManaStone_NumerOfClicksPerLoop;
                 int delayBetweenClicks = E3.GeneralSettings.ManaStone_DelayBetweenLoops;
                 //Int32 minManaToTryAndHeal = 1000;
+                bool manastone_UseInCombat = E3.GeneralSettings.ManaStone_EnabledInCombat;
 
                 if (!InCombat())
                 {
@@ -835,7 +833,12 @@ namespace E3Core.Processors
                         minMana = E3.CharacterSettings.ManaStone_OutOfCombatMinMana;
                         maxMana = E3.CharacterSettings.ManaStone_OutOfCombatMaxMana;
                     }
+                    manastone_UseInCombat = E3.CharacterSettings.ManaStone_EnabledInCombat;
+                }
 
+                if (!manastone_UseInCombat)
+                {
+                    if (InCombat()) return;
                 }
 
                 if (pctMana > minMana) return;
@@ -883,7 +886,7 @@ namespace E3Core.Processors
                         MQ.Delay(delayBetweenClicks);
 
                         if (MQ.Query<bool>("${Me.Invis}")) return;
-                        if ((E3.CurrentClass & Class.Priest) == E3.CurrentClass)
+                        if ((E3.CurrentClass & Class.Priest) == E3.CurrentClass && Basics.InCombat())
                         {
                             if (Heals.SomeoneNeedsHealing(currentMana, pctMana))
                             {
