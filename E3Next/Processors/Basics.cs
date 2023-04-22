@@ -810,8 +810,8 @@ namespace E3Core.Processors
                 int minHP = E3.GeneralSettings.ManaStone_MinHP;
                 int maxMana = E3.GeneralSettings.ManaStone_InCombatMaxMana;
                 int maxLoop = E3.GeneralSettings.ManaStone_NumberOfLoops;
-
                 int totalClicksToTry =E3.GeneralSettings.ManaStone_NumerOfClicksPerLoop;
+                int delayBetweenClicks = E3.GeneralSettings.ManaStone_DelayBetweenLoops;
                 //Int32 minManaToTryAndHeal = 1000;
 
                 if (!InCombat())
@@ -819,6 +819,25 @@ namespace E3Core.Processors
                     minMana = E3.GeneralSettings.ManaStone_OutOfCombatMinMana;
                     maxMana = E3.GeneralSettings.ManaStone_OutOfCombatMaxMana;
                 }
+
+                if(E3.CharacterSettings.Manastone_OverrideGeneralSettings)
+                {
+                    minMana = E3.CharacterSettings.ManaStone_InCombatMinMana;
+                    minHP = E3.CharacterSettings.ManaStone_MinHP;
+                    maxMana = E3.CharacterSettings.ManaStone_InCombatMaxMana;
+                    maxLoop = E3.CharacterSettings.ManaStone_NumberOfLoops;
+                    totalClicksToTry = E3.CharacterSettings.ManaStone_NumerOfClicksPerLoop;
+                    delayBetweenClicks = E3.CharacterSettings.ManaStone_DelayBetweenLoops;
+                    //Int32 minManaToTryAndHeal = 1000;
+
+                    if (!InCombat())
+                    {
+                        minMana = E3.CharacterSettings.ManaStone_OutOfCombatMinMana;
+                        maxMana = E3.CharacterSettings.ManaStone_OutOfCombatMaxMana;
+                    }
+
+                }
+
                 if (pctMana > minMana) return;
                 pctHps = MQ.Query<int>("${Me.PctHPs}");
                 if (pctHps < minHP) return;
@@ -833,6 +852,11 @@ namespace E3Core.Processors
                 {
                     hasManaStone = MQ.Query<bool>("${Bool[${FindItem[=Apocryphal Manastone]}]}");
                     if(hasManaStone) manastoneName = "Apocryphal Manastone";
+                    if(!hasManaStone)
+                    {
+                        hasManaStone = MQ.Query<bool>("${Bool[${FindItem[=Rose Colored Manastone]}]}");
+                        if (hasManaStone) manastoneName = "Rose Colored Manastone";
+                    }
                 }
                 bool amIStanding = MQ.Query<bool>("${Me.Standing}");
 
@@ -856,7 +880,7 @@ namespace E3Core.Processors
                             MQ.Cmd(manastoneCommand);
                         }
                         //allow mq to have the commands sent to the server
-                        MQ.Delay(E3.GeneralSettings.ManaStone_DelayBetweenLoops);
+                        MQ.Delay(delayBetweenClicks);
 
                         if (MQ.Query<bool>("${Me.Invis}")) return;
                         if ((E3.CurrentClass & Class.Priest) == E3.CurrentClass)
@@ -902,7 +926,7 @@ namespace E3Core.Processors
 
                 bool amIStanding = MQ.Query<bool>("${Me.Standing}");
                 string combatState = MQ.Query<string>("${Me.CombatState}");
-                if (amIStanding && autoMedPct > 0 && combatState=="ACTIVE")
+                if (amIStanding && autoMedPct > 0 && combatState!="COMBAT")
                 {
                     int pctMana = MQ.Query<int>("${Me.PctMana}");
                     int pctEndurance = MQ.Query<int>("${Me.PctEndurance}");

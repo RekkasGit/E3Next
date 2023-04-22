@@ -121,6 +121,19 @@ namespace E3Core.Settings
         //blocked buffs
         public List<Spell> BockedBuffs = new List<Spell>();
 
+        //manastone
+        public bool Manastone_OverrideGeneralSettings = false;
+        public Int32 ManaStone_NumerOfClicksPerLoop = 40;
+        public Int32 ManaStone_NumberOfLoops = 25;
+        public Int32 ManaStone_DelayBetweenLoops = 50;
+
+        public bool ManaStone_EnabledInCombat = true;
+        public Int32 ManaStone_InCombatMinMana = 40;
+        public Int32 ManaStone_InCombatMaxMana = 75;
+        public Int32 ManaStone_MinHP = 60;
+        public Int32 ManaStone_OutOfCombatMinMana = 85;
+        public Int32 ManaStone_OutOfCombatMaxMana = 95;
+
         //heals
         public List<string> HealTankTargets = new List<string>();
         public List<Spell> HealTanks = new List<Spell>();
@@ -225,6 +238,16 @@ namespace E3Core.Settings
             LoadKeyData("Misc", "Auto-Forage (On/Off)", ParsedData, ref Misc_AutoForage);
             LoadKeyData("Misc", "Dismount On Interrupt (On/Off)", ParsedData, ref Misc_DismountOnInterrupt);
 
+            LoadKeyData("Manastone", "Override General Settings (On/Off)", ParsedData, ref Manastone_OverrideGeneralSettings);
+            LoadKeyData("Manastone", "NumerOfClicksPerLoop", ParsedData, ref ManaStone_NumerOfClicksPerLoop);
+            LoadKeyData("Manastone", "NumberOfLoops", ParsedData, ref ManaStone_NumberOfLoops);
+            LoadKeyData("Manastone", "DelayBetweenLoops (in milliseconds)", ParsedData, ref ManaStone_DelayBetweenLoops);
+            LoadKeyData("Manastone", "In Combat MinMana", ParsedData, ref ManaStone_InCombatMinMana);
+            LoadKeyData("Manastone", "In Combat MaxMana", ParsedData, ref ManaStone_InCombatMaxMana);
+            LoadKeyData("Manastone", "Use In Combat", ParsedData, ref ManaStone_EnabledInCombat);
+            LoadKeyData("Manastone", "Min HP", ParsedData, ref ManaStone_MinHP);
+            LoadKeyData("Manastone", "Out of Combat MinMana", ParsedData, ref ManaStone_OutOfCombatMinMana);
+            LoadKeyData("Manastone", "Out of Combat MaxMana", ParsedData, ref ManaStone_OutOfCombatMaxMana);
 
             LoadKeyData("Assist Settings", "Assist Type (Melee/Ranged/Off)", ParsedData, ref Assist_Type);
             LoadKeyData("Assist Settings", "Melee Stick Point", ParsedData, ref Assist_MeleeStickPoint);
@@ -409,7 +432,6 @@ namespace E3Core.Settings
             section.Keys.AddKey("Remove Torpor After Combat", "On");
             section.Keys.AddKey("Auto-Forage (On/Off)", "Off");
             section.Keys.AddKey("Dismount On Interrupt (On/Off)","On");
-
 
 
             newFile.Sections.AddSection("Assist Settings");
@@ -626,6 +648,19 @@ namespace E3Core.Settings
 
             newFile.Sections.AddSection("Ifs");
             newFile.Sections.AddSection("Events");
+
+            newFile.Sections.AddSection("Manastone");
+            section = newFile.Sections.GetSectionData("Manastone");
+            section.Keys.AddKey("Override General Settings (On/Off)", "Off");
+            section.Keys.AddKey("NumerOfClicksPerLoop", "40");
+            section.Keys.AddKey("NumberOfLoops", "25");
+            section.Keys.AddKey("DelayBetweenLoops (in milliseconds)", "50");
+            section.Keys.AddKey("In Combat MinMana", "40");
+            section.Keys.AddKey("In Combat MaxMana", "75");
+            section.Keys.AddKey("Use In Combat", "On");
+            section.Keys.AddKey("Min HP", "60");
+            section.Keys.AddKey("Out of Combat MinMana", "85");
+            section.Keys.AddKey("Out of Combat MaxMana", "95");
 
             if (!String.IsNullOrEmpty(CurrentSet))
             {
