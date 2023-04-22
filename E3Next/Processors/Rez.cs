@@ -547,14 +547,18 @@ namespace E3Core.Processors
 
             foreach (var spellName in spellList)
             {
-                if (MQ.Query<bool>($"${{FindItem[={spellName}]}}") || MQ.Query<bool>($"${{Me.AltAbility[{spellName}]}}") || MQ.Query<bool>($"${{Me.Book[{spellName}]}}"))
+                //if (MQ.Query<bool>($"${{FindItem[={spellName}]}}") || MQ.Query<bool>($"${{Me.AltAbility[{spellName}]}}") || MQ.Query<bool>($"${{Me.Book[{spellName}]}}"))
                 {
                     Data.Spell s;
                     if(!Spell.LoadedSpellsByName.TryGetValue(spellName,out s))
                     {
                         s = new Spell(spellName);
                     }
-                    _currentRezSpells.Add(s);
+                    if(s.CastType!= CastType.None)
+                    {
+                        _currentRezSpells.Add(s);
+
+                    }
                 }
             }
         }

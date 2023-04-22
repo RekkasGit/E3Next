@@ -45,6 +45,7 @@ namespace E3Core.Classes
         [ClassInvoke(Data.Class.Bard)]
         public static void AutoSonata()
         {
+            if (E3.IsInvis) return;
             if (!e3util.ShouldCheck(ref _nextAutoSonataCheck, 1000)) return;
             if (E3.CharacterSettings.Bard_AutoSonata)
             {
