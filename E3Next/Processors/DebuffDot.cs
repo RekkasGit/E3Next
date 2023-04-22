@@ -61,8 +61,7 @@ namespace E3Core.Processors
         [AdvSettingInvoke]
         public static void Check_OffAssistSpells()
         {
-            //TODO: Test
-            if (!_shouldOffAssist) return;
+             if (!_shouldOffAssist) return;
             if (!Assist.IsAssisting) return;
             if (E3.CharacterSettings.OffAssistSpells.Count == 0) return;
             if (!e3util.ShouldCheck(ref _nextOffAssistCheck, _nextOffAssistCheckInterval)) return;
@@ -268,7 +267,6 @@ namespace E3Core.Processors
                 }
                 else
                 {
-                    //we are turning our own loot on.
                     _shouldOffAssist = true;
                     E3.Bots.Broadcast("\a#336699Turning on OffAssist.");
                 }
@@ -282,8 +280,7 @@ namespace E3Core.Processors
                 }
                 else
                 {
-                    //we are turning our own loot on.
-                    _shouldOffAssist = false;
+                      _shouldOffAssist = false;
                     E3.Bots.Broadcast("\a-gTurning Off OffAssist.");
                 }
             });
