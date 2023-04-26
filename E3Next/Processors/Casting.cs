@@ -1233,76 +1233,81 @@ namespace E3Core.Processors
         }
         public static bool Ifs(Data.Spell spell)
         {
-            if (!String.IsNullOrWhiteSpace(spell.Ifs))
-            {
-                string tIF = spell.Ifs;
-
-                if(VarsetValues.Count>0)
-                {
-                    foreach (var key in VarsetValues.Keys)
-                    {
-                        if (tIF.IndexOf($"${{{key}}}", 0, StringComparison.OrdinalIgnoreCase) > -1)
-                        {
-                           
-                            tIF = tIF.ReplaceInsensitive($"${{{key}}}", VarsetValues[key]);
-                        }
-                    }
-                }
-                //need to do some legacy compatability checksraibles that were used in Ifs.
-                if (tIF.IndexOf("${Assisting}",0, StringComparison.OrdinalIgnoreCase)>-1)
-                {
-                    //lets replace it with TRUE/FALSE
-                    tIF = tIF.ReplaceInsensitive("${Assisting}", Assist.IsAssisting.ToString());
-                }
-                if (tIF.IndexOf("${AssistTarget}", 0, StringComparison.OrdinalIgnoreCase) > -1)
-                {
-                    //lets replace it with TRUE/FALSE
-                    tIF = tIF.ReplaceInsensitive("${AssistTarget}", Assist.AssistTargetID.ToString());
-                }
-                if (tIF.IndexOf("${use_QUICKBurns}", 0, StringComparison.OrdinalIgnoreCase) > -1)
-                {
-                    //lets replace it with TRUE/FALSE
-                    tIF = tIF.ReplaceInsensitive("${use_QUICKBurns}", Burns.use_QUICKBurns.ToString());
-                }
-                if (tIF.IndexOf("${use_LONGBurns}", 0, StringComparison.OrdinalIgnoreCase) > -1)
-                {
-                    //lets replace it with TRUE/FALSE
-                    tIF = tIF.Replace("${use_LONGBurns}", Burns.use_LONGBurns.ToString());
-                }
-                if (tIF.IndexOf("${use_FULLBurns}", 0, StringComparison.OrdinalIgnoreCase) > -1)
-                {
-                    //lets replace it with TRUE/FALSE
-                    tIF = tIF.ReplaceInsensitive("${use_FULLBurns}", Burns.use_FULLBurns.ToString());
-                }
-                if (tIF.IndexOf("${use_EPICBurns}", 0, StringComparison.OrdinalIgnoreCase) > -1)
-                {
-                    //lets replace it with TRUE/FALSE
-                    tIF = tIF.ReplaceInsensitive("${use_EPICBurns}", Burns.use_EPICBurns.ToString());
-                }
-                if (tIF.IndexOf("${use_Swarms}", 0, StringComparison.OrdinalIgnoreCase) > -1)
-                {
-                    //lets replace it with TRUE/FALSE
-                    tIF = tIF.ReplaceInsensitive("${use_Swarms}", Burns.use_Swarms.ToString());
-                }
-                if (tIF.IndexOf("${charmTarget}", 0, StringComparison.OrdinalIgnoreCase) > -1)
-                {
-                    //lets replace it with TRUE/FALSE
-                    tIF = tIF.ReplaceInsensitive("${charmTarget}", "false");
-                }
-                if (tIF.IndexOf("${NotCombat}", 0, StringComparison.OrdinalIgnoreCase) > -1)
-                {
-                    //lets replace it with TRUE/FALSE
-                    tIF = tIF.ReplaceInsensitive("${NotCombat}", (!Basics.InCombat()).ToString());
-                }
-                if (tIF.IndexOf("${InCombat}", 0, StringComparison.OrdinalIgnoreCase) > -1)
-                {
-                    //lets replace it with TRUE/FALSE
-                    tIF = tIF.ReplaceInsensitive("${InCombat}", (Basics.InCombat()).ToString());
-                }
-                return MQ.Query<bool>($"${{If[{tIF},TRUE,FALSE]}}");
-            }
-            return true;
+            return Ifs(spell.Ifs);
         }
+
+        public static bool Ifs(string IfsExpression)
+        {
+			if (!String.IsNullOrWhiteSpace(IfsExpression))
+			{
+				string tIF = IfsExpression;
+
+				if (VarsetValues.Count > 0)
+				{
+					foreach (var key in VarsetValues.Keys)
+					{
+						if (tIF.IndexOf($"${{{key}}}", 0, StringComparison.OrdinalIgnoreCase) > -1)
+						{
+
+							tIF = tIF.ReplaceInsensitive($"${{{key}}}", VarsetValues[key]);
+						}
+					}
+				}
+				//need to do some legacy compatability checksraibles that were used in Ifs.
+				if (tIF.IndexOf("${Assisting}", 0, StringComparison.OrdinalIgnoreCase) > -1)
+				{
+					//lets replace it with TRUE/FALSE
+					tIF = tIF.ReplaceInsensitive("${Assisting}", Assist.IsAssisting.ToString());
+				}
+				if (tIF.IndexOf("${AssistTarget}", 0, StringComparison.OrdinalIgnoreCase) > -1)
+				{
+					//lets replace it with TRUE/FALSE
+					tIF = tIF.ReplaceInsensitive("${AssistTarget}", Assist.AssistTargetID.ToString());
+				}
+				if (tIF.IndexOf("${use_QUICKBurns}", 0, StringComparison.OrdinalIgnoreCase) > -1)
+				{
+					//lets replace it with TRUE/FALSE
+					tIF = tIF.ReplaceInsensitive("${use_QUICKBurns}", Burns.use_QUICKBurns.ToString());
+				}
+				if (tIF.IndexOf("${use_LONGBurns}", 0, StringComparison.OrdinalIgnoreCase) > -1)
+				{
+					//lets replace it with TRUE/FALSE
+					tIF = tIF.Replace("${use_LONGBurns}", Burns.use_LONGBurns.ToString());
+				}
+				if (tIF.IndexOf("${use_FULLBurns}", 0, StringComparison.OrdinalIgnoreCase) > -1)
+				{
+					//lets replace it with TRUE/FALSE
+					tIF = tIF.ReplaceInsensitive("${use_FULLBurns}", Burns.use_FULLBurns.ToString());
+				}
+				if (tIF.IndexOf("${use_EPICBurns}", 0, StringComparison.OrdinalIgnoreCase) > -1)
+				{
+					//lets replace it with TRUE/FALSE
+					tIF = tIF.ReplaceInsensitive("${use_EPICBurns}", Burns.use_EPICBurns.ToString());
+				}
+				if (tIF.IndexOf("${use_Swarms}", 0, StringComparison.OrdinalIgnoreCase) > -1)
+				{
+					//lets replace it with TRUE/FALSE
+					tIF = tIF.ReplaceInsensitive("${use_Swarms}", Burns.use_Swarms.ToString());
+				}
+				if (tIF.IndexOf("${charmTarget}", 0, StringComparison.OrdinalIgnoreCase) > -1)
+				{
+					//lets replace it with TRUE/FALSE
+					tIF = tIF.ReplaceInsensitive("${charmTarget}", "false");
+				}
+				if (tIF.IndexOf("${NotCombat}", 0, StringComparison.OrdinalIgnoreCase) > -1)
+				{
+					//lets replace it with TRUE/FALSE
+					tIF = tIF.ReplaceInsensitive("${NotCombat}", (!Basics.InCombat()).ToString());
+				}
+				if (tIF.IndexOf("${InCombat}", 0, StringComparison.OrdinalIgnoreCase) > -1)
+				{
+					//lets replace it with TRUE/FALSE
+					tIF = tIF.ReplaceInsensitive("${InCombat}", (Basics.InCombat()).ToString());
+				}
+				return MQ.Query<bool>($"${{If[{tIF},TRUE,FALSE]}}");
+			}
+			return true;
+		}
         public static bool TrueTarget(Int32 targetID, bool allowClear = false)
         {
              //0 means don't change target

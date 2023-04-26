@@ -800,8 +800,11 @@ namespace E3Core.Processors
                     }
                 }
 
-               
 
+                if (E3.CharacterSettings.Manastone_OverrideGeneralSettings && !E3.CharacterSettings.Manastone_Enabled)
+                {
+                    return;
+                }
                 //manastone code
                 int minMana = E3.GeneralSettings.ManaStone_InCombatMinMana;
                 int minHP = E3.GeneralSettings.ManaStone_MinHP;
