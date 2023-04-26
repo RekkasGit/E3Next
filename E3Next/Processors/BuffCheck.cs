@@ -29,7 +29,10 @@ namespace E3Core.Processors
         private static Int64 _nextRaidBuffRequestCheckTime = 0;
         private static Int64 nextRaidBuffRequestCheckTimeInterval = 1000;
 
-        private static Int64 _nextBotCacheCheckTime = 0;
+		private static Int64 _nextBandoBuffCheck = 0;
+		private static Int64 _nextBandoBuffCheckInterval = 1000;
+
+		private static Int64 _nextBotCacheCheckTime = 0;
         private static Int64 nextBotCacheCheckTimeInterval = 1000;
         private static Int64 _nextInstantBuffRefresh = 0;
         private static Int64 _nextInstantRefreshTimeInterval = 250;
@@ -1187,7 +1190,39 @@ namespace E3Core.Processors
                 }
             }
         }
+		[ClassInvoke(Data.Class.All)]
+		public static void Check_BuffBando()
+		{
+		
+            //ask our group for DI from DI sticks.
+			if (!e3util.ShouldCheck(ref _nextBandoBuffCheck, _nextBandoBuffCheckInterval)) return;
 
+            if (!E3.CharacterSettings.BandoBuff_Enabled) return;
+            if (String.IsNullOrWhiteSpace(E3.CharacterSettings.BandoBuff_BuffName)) return;
+			if (String.IsNullOrWhiteSpace(E3.CharacterSettings.BandoBuff_Primary)) return;
+			if (String.IsNullOrWhiteSpace(E3.CharacterSettings.BandoBuff_PrimaryWithoutBuff)) return;
+			if (String.IsNullOrWhiteSpace(E3.CharacterSettings.BandoBuff_BandoName)) return;
+			if (String.IsNullOrWhiteSpace(E3.CharacterSettings.BandoBuff_BandoNameWithoutBuff)) return;
 
-    }
+			bool hasBuff = MQ.Query<bool>($"${{Bool[${{Me.Buff[{E3.CharacterSettings.BandoBuff_BuffName}]}}]}}");
+			string primaryName = MQ.Query<String>("${Me.Inventory[13]}");
+
+			if (hasBuff)
+			{
+
+				if (!String.Equals(primaryName,E3.CharacterSettings.BandoBuff_Primary,StringComparison.OrdinalIgnoreCase))
+				{
+					MQ.Cmd($"/bando activate {E3.CharacterSettings.BandoBuff_BandoName}");
+				}
+			}
+			else
+			{
+				if (!String.Equals(primaryName, E3.CharacterSettings.BandoBuff_PrimaryWithoutBuff, StringComparison.OrdinalIgnoreCase))
+				{
+					MQ.Cmd($"/bando activate {E3.CharacterSettings.BandoBuff_BandoNameWithoutBuff}");
+				}
+			}
+		}
+
+	}
 }

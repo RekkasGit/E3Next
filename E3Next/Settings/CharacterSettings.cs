@@ -121,8 +121,16 @@ namespace E3Core.Settings
         //blocked buffs
         public List<Spell> BockedBuffs = new List<Spell>();
 
-        //manastone
-        public bool Manastone_Enabled = true;
+        //bando buffs
+        public bool BandoBuff_Enabled = false;
+		public string BandoBuff_BuffName = "";
+		public string BandoBuff_Primary = "";
+		public string BandoBuff_BandoName = "";
+		public string BandoBuff_PrimaryWithoutBuff = "";
+		public string BandoBuff_BandoNameWithoutBuff = "";
+
+		//manastone
+		public bool Manastone_Enabled = true;
         public bool Manastone_OverrideGeneralSettings = false;
         public Int32 ManaStone_NumerOfClicksPerLoop = 40;
         public Int32 ManaStone_NumberOfLoops = 25;
@@ -252,7 +260,14 @@ namespace E3Core.Settings
             LoadKeyData("Manastone", "Out of Combat MinMana", ParsedData, ref ManaStone_OutOfCombatMinMana);
             LoadKeyData("Manastone", "Out of Combat MaxMana", ParsedData, ref ManaStone_OutOfCombatMaxMana);
 
-            LoadKeyData("Assist Settings", "Assist Type (Melee/Ranged/Off)", ParsedData, ref Assist_Type);
+			LoadKeyData("Bando Buff", "Enabled", ParsedData, ref BandoBuff_Enabled);
+			LoadKeyData("Bando Buff", "BuffName", ParsedData, ref BandoBuff_BuffName);
+			LoadKeyData("Bando Buff", "PrimaryWithBuff", ParsedData, ref BandoBuff_Primary);
+			LoadKeyData("Bando Buff", "PrimaryWithoutBuff", ParsedData, ref BandoBuff_PrimaryWithoutBuff);
+			LoadKeyData("Bando Buff", "BandoNameWithBuff", ParsedData, ref BandoBuff_BandoName);
+			LoadKeyData("Bando Buff", "BandoNameWithoutBuff", ParsedData, ref BandoBuff_BandoNameWithoutBuff);
+
+			LoadKeyData("Assist Settings", "Assist Type (Melee/Ranged/Off)", ParsedData, ref Assist_Type);
             LoadKeyData("Assist Settings", "Melee Stick Point", ParsedData, ref Assist_MeleeStickPoint);
             LoadKeyData("Assist Settings", "Taunt(On/Off)", ParsedData, ref Assist_TauntEnabled);
             LoadKeyData("Assist Settings", "SmartTaunt(On/Off)", ParsedData, ref Assist_SmartTaunt);
@@ -635,7 +650,17 @@ namespace E3Core.Settings
                 section.Keys.AddKey("Malos Totem Spell Gem", "8");
             }
 
-            newFile.Sections.AddSection("Blocked Buffs");
+			newFile.Sections.AddSection("Bando Buff");
+			section = newFile.Sections.GetSectionData("Bando Buff");
+            section.Keys.AddKey("Enabled", "Off");
+			section.Keys.AddKey("BuffName", "");
+			section.Keys.AddKey("PrimaryWithBuff", "");
+			section.Keys.AddKey("PrimaryWithoutBuff", "");
+			section.Keys.AddKey("BandoNameWithBuff", "");
+			section.Keys.AddKey("BandoNameWithoutBuff", "");
+
+
+			newFile.Sections.AddSection("Blocked Buffs");
             section = newFile.Sections.GetSectionData("Blocked Buffs");
             section.Keys.AddKey("BuffName", "");
 
