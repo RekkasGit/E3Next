@@ -511,6 +511,28 @@ namespace E3Core.Processors
                 }
             });
 
+            EventProcessor.RegisterCommand("/listgroups", (x) =>
+            {
+                var savedGroups = SavedGroupData.GetData();
+
+                foreach (var group in savedGroups)
+                {
+                    var serverAndGroupName = group.Key.Split('_');
+                    var serverName = serverAndGroupName[0];
+                    var groupName = serverAndGroupName[1];
+
+                    if (E3.ServerName != serverName) continue;
+
+                    MQ.Write($"\ap[{groupName}]");
+
+                    var members = group.Value;
+                    foreach (var member in members)
+                    {
+                        MQ.Write($"\ag{member}");
+                    }
+                }
+            });
+
             EventProcessor.RegisterCommand("/wiki", x =>
             {
                 if (x.args.Count == 0)
