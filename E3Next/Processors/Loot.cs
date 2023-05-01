@@ -229,12 +229,13 @@ namespace E3Core.Processors
 
                 foreach (var c in corpses)
                 {
-                    //allow eq time to send the message to us
-                    e3util.YieldToEQ();
+					
+					//allow eq time to send the message to us
+					e3util.YieldToEQ();
                     if (e3util.IsShuttingDown() || E3.IsPaused()) return;
                     EventProcessor.ProcessEventsInQueues("/lootoff");
-                    if (!E3.CharacterSettings.Misc_AutoLootEnabled) return;
-
+					EventProcessor.ProcessEventsInQueues("/assistme");
+					if (!E3.CharacterSettings.Misc_AutoLootEnabled) return;
                     if (!E3.GeneralSettings.Loot_LootInCombat)
                     {
                         if (Basics.InCombat()) return;
