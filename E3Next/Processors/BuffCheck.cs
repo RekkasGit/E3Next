@@ -791,42 +791,33 @@ namespace E3Core.Processors
 
                             if (!hasBuff)
                             {
-
-                                if (Casting.CheckReady(spell) && Casting.CheckMana(spell))
+								Casting.TrueTarget(s.ID);
+								MQ.Delay(2000, "${Target.BuffsPopulated}");
+								bool willStack = MQ.Query<bool>($"${{Spell[{spell.SpellName}].StacksTarget}}");
+								if (willStack && Casting.CheckReady(spell) && Casting.CheckMana(spell))
                                 {
-                                    Casting.TrueTarget(s.ID);
-                                    MQ.Delay(2000, "${Target.BuffsPopulated}");
-                                    bool willStack = MQ.Query<bool>($"${{Spell[{spell.SpellName}].StacksTarget}}");
-                                    if (willStack)
+                                    //then we can cast!
+                                    var result = Casting.Cast(s.ID, spell, Heals.SomeoneNeedsHealing);
+                                    if (result == CastReturn.CAST_INTERRUPTED || result == CastReturn.CAST_INTERRUPTFORHEAL || result == CastReturn.CAST_FIZZLE)
                                     {
-                                        //then we can cast!
-                                        var result = Casting.Cast(s.ID, spell, Heals.SomeoneNeedsHealing);
-                                        if (result == CastReturn.CAST_INTERRUPTED || result == CastReturn.CAST_INTERRUPTFORHEAL || result == CastReturn.CAST_FIZZLE)
-                                        {
-                                            return;
-                                        }
-                                        if (result != CastReturn.CAST_SUCCESS)
-                                        {
-                                            //possibly some kind of issue/blocking.
-                                            UpdateBuffTimers(s.ID, spell, 10000, true);
-                                        }
-                                        else
-                                        {
-                                            //lets verify what we have on that target.
-                                            UpdateBuffTimers(s.ID, spell, 1500, true);
-
-                                        }
                                         return;
+                                    }
+                                    if (result != CastReturn.CAST_SUCCESS)
+                                    {
+                                        //possibly some kind of issue/blocking.
+                                        UpdateBuffTimers(s.ID, spell, 10000, true);
                                     }
                                     else
                                     {
-                                        //won't stack don't check back for awhile
-                                        UpdateBuffTimers(s.ID, spell, 1500);
+                                        //lets verify what we have on that target.
+                                        UpdateBuffTimers(s.ID, spell, 1500, true);
+
                                     }
+                                    return;
                                 }
                                 else
                                 {   //spell not ready
-                                    UpdateBuffTimers(s.ID, spell, 1500);
+                                    UpdateBuffTimers(s.ID, spell, 6000);
 
                                 }
                             }
