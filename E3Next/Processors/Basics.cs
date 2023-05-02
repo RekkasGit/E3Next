@@ -496,9 +496,6 @@ namespace E3Core.Processors
                 }
                 MQ.Cmd("/disband");
                 MQ.Cmd("/raiddisband");
-                E3.Bots.BroadcastCommand("/raiddisband");
-                E3.Bots.BroadcastCommand("/disband");
-
                 MQ.Delay(1500);
                 if (MQ.Query<int>("${Group}") > 0)
                 {
@@ -507,7 +504,36 @@ namespace E3Core.Processors
 
                 foreach (var member in groupMembers)
                 {
+                    E3.Bots.BroadcastCommandToPerson(member,"/raiddisband");
+                    E3.Bots.BroadcastCommandToPerson(member,"/disband");
+                }
+                
+                MQ.Delay(1500);
+                foreach (var member in groupMembers)
+                {
                     MQ.Cmd($"/invite {member}");
+                }
+            });
+
+            EventProcessor.RegisterCommand("/listgroups", (x) =>
+            {
+                var savedGroups = SavedGroupData.GetData();
+
+                foreach (var group in savedGroups)
+                {
+                    var serverAndGroupName = group.Key.Split('_');
+                    var serverName = serverAndGroupName[0];
+                    var groupName = serverAndGroupName[1];
+
+                    if (E3.ServerName != serverName) continue;
+
+                    MQ.Write($"\ap[{groupName}]");
+
+                    var members = group.Value;
+                    foreach (var member in members)
+                    {
+                        MQ.Write($"\ag{member}");
+                    }
                 }
             });
 

@@ -272,9 +272,6 @@ namespace E3Core.Processors
         }
         public static void DestroyCorpse(Spawn corpse)
         {
-            bool importantItem = false;
-            bool nodropImportantItem = false;
-
             MQ.Cmd("/loot");
             MQ.Delay(1000, "${Window[LootWnd].Open}");
             MQ.Delay(100);
