@@ -166,7 +166,7 @@ namespace E3Core.Settings
         public bool AutoPetWeapons = false;
         public bool AutoCanni = false;
         public int MalosTotemSpellGem;
-        public Spell CanniSpell;
+        public List<Spell> CanniSpell = new List<Spell>();
 
         public HashSet<string> WhoToHeal = new HashSet<string>(10, StringComparer.OrdinalIgnoreCase);
         public bool HealAutoNecroOrbs = false;
@@ -311,7 +311,7 @@ namespace E3Core.Settings
             if (CharacterClass == Class.Shaman)
             {
                 LoadKeyData("Shaman", "Auto-Canni (On/Off)", ParsedData, ref AutoCanni);
-                LoadKeyData("Shaman", "Canni", ParsedData, out CanniSpell);
+                LoadKeyData("Shaman", "Canni", ParsedData, CanniSpell);
                 LoadKeyData("Shaman", "Malos Totem Spell Gem", ParsedData, ref MalosTotemSpellGem);
             }
 

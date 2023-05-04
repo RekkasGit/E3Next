@@ -667,59 +667,65 @@ namespace E3Core.Processors
                     }
 
                     //don't canni if we are moving/following
-                    if (!(Movement.IsMoving() || Movement.Following))
+                    if (E3.CharacterSettings.AutoCanni && Movement.StandingStillForTimePeriod())
                     {
-                        var canniSpell = E3.CharacterSettings.CanniSpell;
-                        if (canniSpell != null && E3.CharacterSettings.AutoCanni)
+                        foreach(var canniSpell in E3.CharacterSettings.CanniSpell)
                         {
-                            if (Casting.CheckReady(canniSpell))
-                            {
-                                pctHps = MQ.Query<int>("${Me.PctHPs}");
-                                var hpThresholdDefined = canniSpell.MinHP > 0;
-                                var manaThresholdDefined = canniSpell.MaxMana > 0;
-                                bool castCanniSpell = false;
-                                bool hpThresholdMet = false;
-                                bool manaThresholdMet = false;
+							if (Casting.CheckReady(canniSpell))
+							{
+								pctHps = MQ.Query<int>("${Me.PctHPs}");
+								var hpThresholdDefined = canniSpell.MinHP > 0;
+								var manaThresholdDefined = canniSpell.MaxMana > 0;
+								bool castCanniSpell = false;
+								bool hpThresholdMet = false;
+								bool manaThresholdMet = false;
 
-                                if (hpThresholdDefined)
-                                {
-                                    if (pctHps > canniSpell.MinHP)
+								if (hpThresholdDefined)
+								{
+									if (pctHps > canniSpell.MinHP)
+									{
+										hpThresholdMet = true;
+									}
+								}
+
+								if (manaThresholdDefined)
+								{
+									if (pctMana < canniSpell.MaxMana)
+									{
+										manaThresholdMet = true;
+									}
+								}
+
+								if (hpThresholdDefined && manaThresholdDefined)
+								{
+									castCanniSpell = hpThresholdMet && manaThresholdMet;
+								}
+								else if (hpThresholdDefined && !manaThresholdDefined)
+								{
+									castCanniSpell = hpThresholdMet;
+								}
+								else if (manaThresholdDefined && !hpThresholdDefined)
+								{
+									castCanniSpell = manaThresholdMet;
+								}
+								else
+								{
+									castCanniSpell = true;
+								}
+
+								if (castCanniSpell)
+								{
+									var result = Casting.Cast(0, canniSpell);
+								    if(result== CastReturn.CAST_SUCCESS)
                                     {
-                                        hpThresholdMet = true;
+                                        break;
                                     }
                                 }
-
-                                if (manaThresholdDefined)
-                                {
-                                    if (pctMana < canniSpell.MaxMana)
-                                    {
-                                        manaThresholdMet = true;
-                                    }
-                                }
-
-                                if (hpThresholdDefined && manaThresholdDefined)
-                                {
-                                    castCanniSpell = hpThresholdMet && manaThresholdMet;
-                                }
-                                else if (hpThresholdDefined && !manaThresholdDefined)
-                                {
-                                    castCanniSpell = hpThresholdMet;
-                                }
-                                else if (manaThresholdDefined && !hpThresholdDefined)
-                                {
-                                    castCanniSpell = manaThresholdMet;
-                                }
-                                else
-                                {
-                                    castCanniSpell = true;
-                                }
-
-                                if (castCanniSpell)
-                                {
-                                    Casting.Cast(0, canniSpell);
-                                }
-                            }
-                        }
+							}
+							
+						}
+                        
+                        
                     }
                     
                 }
