@@ -1259,6 +1259,12 @@ namespace E3Core.Processors
 					//lets replace it with TRUE/FALSE
 					tIF = tIF.ReplaceInsensitive("${Assisting}", Assist.IsAssisting.ToString());
 				}
+				//need to do some legacy compatability checksraibles that were used in Ifs.
+				if (tIF.IndexOf("${PBAEON}", 0, StringComparison.OrdinalIgnoreCase) > -1)
+				{
+                    //lets replace it with TRUE/FALSE
+                    tIF = tIF.ReplaceInsensitive("${PBAEON}", Nukes.PBAEEnabled.ToString()) ;
+				}
 				if (tIF.IndexOf("${AssistTarget}", 0, StringComparison.OrdinalIgnoreCase) > -1)
 				{
 					//lets replace it with TRUE/FALSE

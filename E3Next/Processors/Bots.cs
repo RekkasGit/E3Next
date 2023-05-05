@@ -114,7 +114,8 @@ namespace E3Core.Processors
         }
         public void BroadcastCommandToPerson(string person, string command)
         {
-            MQ.Cmd($"/bct {person} /{command}");
+            person = e3util.FirstCharToUpper(person);
+			MQ.Cmd($"/bct {person} /{command}");
         }
         public void BroadcastCommand(string command,bool noparse = false, CommandMatch match = null)
         {
