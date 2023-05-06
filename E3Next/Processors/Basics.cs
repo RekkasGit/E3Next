@@ -547,7 +547,11 @@ namespace E3Core.Processors
                 {
                     Process.Start(new ProcessStartInfo { FileName = "https://www.lazaruseq.com/Wiki/index.php/Main_Page", UseShellExecute = true });
                 }
-            });
+				else if (string.Equals(x.args[0], "Ret", StringComparison.OrdinalIgnoreCase))
+				{
+					Process.Start(new ProcessStartInfo { FileName = "https://retributioneq.com/", UseShellExecute = true });
+				}
+			});
         }
 
         /// <summary>
