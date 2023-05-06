@@ -518,14 +518,14 @@ namespace E3Core.Processors
             EventProcessor.RegisterCommand("/listgroups", (x) =>
             {
                 var savedGroups = SavedGroupData.GetData();
-
-                foreach (var group in savedGroups)
+				var server = MQ.Query<string>("${MacroQuest.Server}");
+				foreach (var group in savedGroups)
                 {
                     var serverAndGroupName = group.Key.Split('_');
                     var serverName = serverAndGroupName[0];
                     var groupName = serverAndGroupName[1];
 
-                    if (E3.ServerName != serverName) continue;
+                    if (server != serverName) continue;
 
                     MQ.Write($"\ap[{groupName}]");
 
