@@ -429,8 +429,8 @@ namespace E3Core.Processors
                         }
                     }
                 }
-                else
-                {
+                else if(x.args.Count==0)
+                {   //let someone else try it out
                     E3.Bots.BroadcastCommandToGroup("/evac me");
                 }
             });
@@ -923,8 +923,15 @@ namespace E3Core.Processors
                         }
                         //allow mq to have the commands sent to the server
                         MQ.Delay(delayBetweenClicks);
-
-                        if (MQ.Query<bool>("${Me.Invis}")) return;
+						if (EventProcessor.CommandList["/followme"].queuedEvents.Count > 0)
+						{
+                            return;
+						}
+						if (EventProcessor.CommandList["/chaseme"].queuedEvents.Count > 0)
+						{
+							return;
+						}
+						if (MQ.Query<bool>("${Me.Invis}")) return;
                         if ((E3.CurrentClass & Class.Priest) == E3.CurrentClass && Basics.InCombat())
                         {
                             if (Heals.SomeoneNeedsHealing(currentMana, pctMana))
