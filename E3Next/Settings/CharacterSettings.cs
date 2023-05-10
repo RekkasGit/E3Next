@@ -132,7 +132,7 @@ namespace E3Core.Settings
 		//manastone
 		public bool Manastone_Enabled = true;
         public bool Manastone_OverrideGeneralSettings = false;
-        public Int32 ManaStone_NumerOfClicksPerLoop = 40;
+        public Int32 ManaStone_NumberOfClicksPerLoop = 40;
         public Int32 ManaStone_NumberOfLoops = 25;
         public Int32 ManaStone_DelayBetweenLoops = 50;
 
@@ -250,7 +250,7 @@ namespace E3Core.Settings
             LoadKeyData("Manastone", "Override General Settings (On/Off)", ParsedData, ref Manastone_OverrideGeneralSettings);
             LoadKeyData("Manastone", "Manastone Enabled (On/Off)", ParsedData, ref Manastone_Enabled);
 
-            LoadKeyData("Manastone", "NumerOfClicksPerLoop", ParsedData, ref ManaStone_NumerOfClicksPerLoop);
+            LoadKeyData("Manastone", "NumberOfClicksPerLoop", ParsedData, ref ManaStone_NumberOfClicksPerLoop);
             LoadKeyData("Manastone", "NumberOfLoops", ParsedData, ref ManaStone_NumberOfLoops);
             LoadKeyData("Manastone", "DelayBetweenLoops (in milliseconds)", ParsedData, ref ManaStone_DelayBetweenLoops);
             LoadKeyData("Manastone", "In Combat MinMana", ParsedData, ref ManaStone_InCombatMinMana);
@@ -682,7 +682,7 @@ namespace E3Core.Settings
 
             section.Keys.AddKey("Override General Settings (On/Off)", "Off");
             section.Keys.AddKey("Manastone Enabled (On/Off)","On");
-            section.Keys.AddKey("NumerOfClicksPerLoop", "40");
+            section.Keys.AddKey("NumberOfClicksPerLoop", "40");
             section.Keys.AddKey("NumberOfLoops", "25");
             section.Keys.AddKey("DelayBetweenLoops (in milliseconds)", "50");
             section.Keys.AddKey("In Combat MinMana", "40");
