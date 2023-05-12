@@ -54,7 +54,7 @@ namespace E3Core.Settings
         public List<string> Loot_OnlyStackableAlwaysLoot = new List<string>();
         public Int32 Loot_OnlyStackableValueGreaterThanInCopper = 1;
         public Boolean Loot_OnlyStackableEnabled = false;
-        public Int32 Loot_TimeToWaitAfterAssist = 0;
+        public Int32 Loot_TimeToWaitAfterAssist = 10000;
 
         public Boolean Assists_AutoAssistEnabled=false;
         public Int32 Assists_MaxEngagedDistance=250;
