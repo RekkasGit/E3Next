@@ -54,7 +54,7 @@ namespace E3Core.Settings
         public List<string> Loot_OnlyStackableAlwaysLoot = new List<string>();
         public Int32 Loot_OnlyStackableValueGreaterThanInCopper = 1;
         public Boolean Loot_OnlyStackableEnabled = false;
-        public Int32 Loot_TimeToWaitAfterAssist = 10000;
+        public Int32 Loot_TimeToWaitAfterAssist = 2000;
 
         public Boolean Assists_AutoAssistEnabled=false;
         public Int32 Assists_MaxEngagedDistance=250;
@@ -371,7 +371,7 @@ namespace E3Core.Settings
             section.Keys.AddKey("Nav Stop Distance", "10");
             section.Keys.AddKey("Anchor Distance Minimum", "15");
             section.Keys.AddKey("Anchor Distance Maximum", "150");
-            section.Keys.AddKey("Milliseconds till standing Still", "10000");
+            section.Keys.AddKey("Milliseconds till standing Still", "2000");
 
            
             if (!System.IO.File.Exists(filename))
