@@ -455,7 +455,7 @@ namespace E3Core.Settings
             newFile.Sections.AddSection("Assist Settings");
             section = newFile.Sections.GetSectionData("Assist Settings");
             section.Keys.AddKey("Assist Type (Melee/Ranged/Off)", "Melee");
-            section.Keys.AddKey("Melee Stick Point", "Back");
+            section.Keys.AddKey("Melee Stick Point", "Behind");
             if (((CharacterClass & Class.Tank) == CharacterClass) || CharacterClass== Class.Ranger)
             {
                 section.Keys.AddKey("Taunt(On/Off)", "Off");

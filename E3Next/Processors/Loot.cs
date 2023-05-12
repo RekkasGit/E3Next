@@ -181,8 +181,8 @@ namespace E3Core.Processors
             if (!E3.CharacterSettings.Misc_AutoLootEnabled) return;
             if(!Assist.IsAssisting)
             {
-
-                if (!Basics.InCombat() || E3.GeneralSettings.Loot_LootInCombat)
+                long currentTimestamp = Core.StopWatch.ElapsedMilliseconds;
+                if ((!Basics.InCombat() && currentTimestamp - Assist.LastAssistTimestamp > E3.GeneralSettings.Loot_TimeToWaitAfterAssist) || E3.GeneralSettings.Loot_LootInCombat)
                 {
                     LootArea();
                 }
