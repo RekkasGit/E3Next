@@ -54,6 +54,7 @@ namespace E3Core.Settings
         public List<string> Loot_OnlyStackableAlwaysLoot = new List<string>();
         public Int32 Loot_OnlyStackableValueGreaterThanInCopper = 1;
         public Boolean Loot_OnlyStackableEnabled = false;
+        public Int32 Loot_TimeToWaitAfterAssist = 2000;
 
         public Boolean Assists_AutoAssistEnabled=false;
         public Int32 Assists_MaxEngagedDistance=250;
@@ -156,6 +157,7 @@ namespace E3Core.Settings
             }
 
             LoadKeyData("Loot", "Loot in Combat", parsedData, ref Loot_LootInCombat);
+            LoadKeyData("Loot", "Milliseconds To Wait To Loot", parsedData, ref Loot_TimeToWaitAfterAssist);
             LoadKeyData("Loot", "NumOfFreeSlotsOpen(1+)", parsedData, ref Loot_NumberOfFreeSlotsOpen);
             LoadKeyData("Loot", "Loot Only Stackable: Enable (On/Off)", parsedData, ref Loot_OnlyStackableEnabled);
             LoadKeyData("Loot", "Loot Only Stackable: With Value Greater Than Or Equal in Copper", parsedData, ref Loot_OnlyStackableValueGreaterThanInCopper);
@@ -309,6 +311,7 @@ namespace E3Core.Settings
             section.Keys.AddKey("Loot Link Channel","say");
 	        section.Keys.AddKey("Corpse Seek Radius","125");
             section.Keys.AddKey("Loot in Combat","TRUE");
+            section.Keys.AddKey("Milliseconds To Wait To Loot", "2000");
             section.Keys.AddKey("NumOfFreeSlotsOpen(1+)","0");
             section.Keys.AddKey("Loot Only Stackable: Enable (On/Off)", "Off");
             section.Keys.AddKey("Loot Only Stackable: With Value Greater Than Or Equal in Copper", "10000");

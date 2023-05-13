@@ -238,7 +238,7 @@ namespace E3Core.Processors
                     }
                 }
                 Int32 numberNeedingHeal = MQ.Query<Int32>($"${{Group.Injured[{spell.HealPct}]}}");
-                if (numberNeedingHeal > 2)
+                if (numberNeedingHeal >= E3.CharacterSettings.HealGroup_NumberOfInjuredMembers)
                 {
                     recastSpell:
                     if (spell.Mana > currentMana)
