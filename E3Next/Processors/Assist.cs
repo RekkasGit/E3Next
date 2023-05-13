@@ -19,7 +19,7 @@ namespace E3Core.Processors
         public static Boolean IsAssisting = false;
         public static Int32 AssistTargetID = 0;
 
-        public static long LastAssistTimestamp = 0;
+        public static long LastAssistEndedTimestamp = 0;
 
         private static Logging _log = E3.Log;
         private static IMQ MQ = E3.MQ;
@@ -433,6 +433,7 @@ namespace E3Core.Processors
                 DebuffDot.Reset();
                 Burns.Reset();
             }
+            LastAssistEndedTimestamp = Core.StopWatch.ElapsedMilliseconds;
         }
 
         /// <summary>
@@ -652,7 +653,6 @@ namespace E3Core.Processors
         {
            EventProcessor.RegisterCommand("/assistme", (x) =>
            {
-            LastAssistTimestamp = Core.StopWatch.ElapsedMilliseconds;
                 //clear in case its not reset by other means
                 //or you want to attack in enrage
                 _assistIsEnraged = false;

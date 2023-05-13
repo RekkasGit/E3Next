@@ -182,7 +182,7 @@ namespace E3Core.Processors
             if(!Assist.IsAssisting)
             {
                 long currentTimestamp = Core.StopWatch.ElapsedMilliseconds;
-                if ((!Basics.InCombat() && currentTimestamp - Assist.LastAssistTimestamp > E3.GeneralSettings.Loot_TimeToWaitAfterAssist) || E3.GeneralSettings.Loot_LootInCombat)
+                if ((!Basics.InCombat() && currentTimestamp - Assist.LastAssistEndedTimestamp > E3.GeneralSettings.Loot_TimeToWaitAfterAssist) || E3.GeneralSettings.Loot_LootInCombat)
                 {
                     LootArea();
                 }
