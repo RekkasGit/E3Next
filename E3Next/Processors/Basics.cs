@@ -863,7 +863,7 @@ namespace E3Core.Processors
                     minHP = E3.CharacterSettings.ManaStone_MinHP;
                     maxMana = E3.CharacterSettings.ManaStone_InCombatMaxMana;
                     maxLoop = E3.CharacterSettings.ManaStone_NumberOfLoops;
-                    totalClicksToTry = E3.CharacterSettings.ManaStone_NumerOfClicksPerLoop;
+                    totalClicksToTry = E3.CharacterSettings.ManaStone_NumberOfClicksPerLoop;
                     delayBetweenClicks = E3.CharacterSettings.ManaStone_DelayBetweenLoops;
                     //Int32 minManaToTryAndHeal = 1000;
 

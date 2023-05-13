@@ -266,11 +266,25 @@ namespace E3Core.Processors
                 }
             }
         }
-        /// <summary>
-        /// used as an action to determine if a spell should be interrupted in case someone needs a heal.
-        /// </summary>
-        /// <returns>true if a heal is needed, otherwise false</returns>
-        public static bool SomeoneNeedsHealing(Int32 currentMana, Int32 pctMana)
+
+		public static bool TargetDoesNotNeedHeals(Int32 currentMana, Int32 pctMana)
+		{
+			
+			//Int32 currentMana = MQ.Query<Int32>("${Me.CurrentMana}");
+			//Int32 pctMana = MQ.Query<Int32>("${Me.PctMana}");
+
+            if(MQ.Query<Int32>("${Target.PctHPs}")>98)
+            {
+                return true;
+            }
+			return false;
+		}
+
+		/// <summary>
+		/// used as an action to determine if a spell should be interrupted in case someone needs a heal.
+		/// </summary>
+		/// <returns>true if a heal is needed, otherwise false</returns>
+		public static bool SomeoneNeedsHealing(Int32 currentMana, Int32 pctMana)
         {
             if (!((E3.CurrentClass & Data.Class.Priest) == E3.CurrentClass))
             {
@@ -469,7 +483,7 @@ namespace E3Core.Processors
                                             //should cast a heal!
                                             if (Casting.CheckReady(spell))
                                             {
-                                                if (Casting.Cast(targetID, spell) == CastReturn.CAST_FIZZLE)
+                                                if (Casting.Cast(targetID, spell,TargetDoesNotNeedHeals) == CastReturn.CAST_FIZZLE)
                                                 {
                                                     currentMana = MQ.Query<Int32>("${Me.CurrentMana}");
                                                     pctMana = MQ.Query<Int32>("${Me.PctMana}");
