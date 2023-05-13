@@ -151,7 +151,7 @@ namespace E3Core.Settings
         public List<Spell> HealImportantBots = new List<Spell>();
 
         public List<Spell> HealGroup = new List<Spell>();
-
+        public Int32 HealGroup_NumberOfInjuredMembers = 3;
         public List<Spell> HealAll = new List<Spell>();
         public List<Spell> HealXTarget = new List<Spell>();
         public List<Spell> HealPets = new List<Spell>();
@@ -393,6 +393,7 @@ namespace E3Core.Settings
             LoadKeyData("Heals", "Heal Over Time Spell", ParsedData, HealOverTime);
             LoadKeyData("Heals", "Group Heal", ParsedData, HealGroup);
             LoadKeyData("Heals", "Pet Heal", ParsedData, HealPets);
+            LoadKeyData("Heals", "Number Of Injured Members For Group Heal", ParsedData, ref HealGroup_NumberOfInjuredMembers);
 
 
             LoadKeyData("Heals", "Tank", ParsedData, HealTankTargets);
@@ -624,6 +625,7 @@ namespace E3Core.Settings
                 section.Keys.AddKey("Who to HoT", "");
                 section.Keys.AddKey("Pet Owner", "");
                 section.Keys.AddKey("Auto Cast Necro Heal Orbs (On/Off)", "On");
+                section.Keys.AddKey("Number Of Injured Members For Group Heal", "3");
             }
 
             if ((CharacterClass & Class.Priest) == CharacterClass || (CharacterClass & Class.Caster) == CharacterClass)
