@@ -311,7 +311,7 @@ namespace E3Core.Settings
             section.Keys.AddKey("Loot Link Channel","say");
 	        section.Keys.AddKey("Corpse Seek Radius","125");
             section.Keys.AddKey("Loot in Combat","TRUE");
-            section.Keys.AddKey("Milliseconds To Wait To Loot", "10000");
+            section.Keys.AddKey("Milliseconds To Wait To Loot", "2000");
             section.Keys.AddKey("NumOfFreeSlotsOpen(1+)","0");
             section.Keys.AddKey("Loot Only Stackable: Enable (On/Off)", "Off");
             section.Keys.AddKey("Loot Only Stackable: With Value Greater Than Or Equal in Copper", "10000");
@@ -371,7 +371,7 @@ namespace E3Core.Settings
             section.Keys.AddKey("Nav Stop Distance", "10");
             section.Keys.AddKey("Anchor Distance Minimum", "15");
             section.Keys.AddKey("Anchor Distance Maximum", "150");
-            section.Keys.AddKey("Milliseconds till standing Still", "2000");
+            section.Keys.AddKey("Milliseconds till standing Still", "10000");
 
            
             if (!System.IO.File.Exists(filename))
