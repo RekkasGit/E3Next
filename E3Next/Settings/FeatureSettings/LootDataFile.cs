@@ -15,7 +15,8 @@ namespace E3Core.Settings.FeatureSettings
         public static HashSet<string> Keep = new HashSet<string>(10000, StringComparer.OrdinalIgnoreCase);
         public static HashSet<string> Sell = new HashSet<string>(10000, StringComparer.OrdinalIgnoreCase);
         public static HashSet<string> Skip = new HashSet<string>(10000, StringComparer.OrdinalIgnoreCase);
-        public static bool _isDirty = false;
+		public static HashSet<string> Destroy = new HashSet<string>(10000, StringComparer.OrdinalIgnoreCase);
+		public static bool _isDirty = false;
 
         private static string _fileName = @"Loot Settings.ini";
 
@@ -118,7 +119,29 @@ namespace E3Core.Settings.FeatureSettings
                                 if (match.Success) { MatchSuccess(Keep, match); }
                             }
                         }
-                        else
+						else if (key.Value.StartsWith("Destroy", StringComparison.OrdinalIgnoreCase))
+						{
+							//lets get the data out of the old format. 
+							string keyname = key.KeyName;//lets get rid of the junk
+							var match = regex1.Match(keyname);
+							if (match.Success) { MatchSuccess(Destroy, match); }
+							if (!match.Success)
+							{
+								match = regex2.Match(keyname);
+								if (match.Success) { MatchSuccess(Destroy, match); }
+							}
+							if (!match.Success)
+							{
+								match = regex3.Match(keyname);
+								if (match.Success) { MatchSuccess(Destroy, match); }
+							}
+							if (!match.Success)
+							{
+								match = regex4.Match(keyname);
+								if (match.Success) { MatchSuccess(Destroy, match); }
+							}
+						}
+						else
                         {
                             //lets get the data out of the old format. 
                             string keyname = key.KeyName;//lets get rid of the junk
@@ -172,8 +195,9 @@ namespace E3Core.Settings.FeatureSettings
             List<string> _keepSorted = Keep.OrderBy(x => x).ToList();
             List<string> _sellSorted = Sell.OrderBy(x => x).ToList();
             List<string> _skipSorted = Skip.OrderBy(x => x).ToList();
+			List<string> _destroySorted = Destroy.OrderBy(x => x).ToList();
 
-            for (char c = 'A'; c <= 'Z'; c++)
+			for (char c = 'A'; c <= 'Z'; c++)
             {
                 string tc = c.ToString();
                 newFile.Sections.AddSection(tc);
@@ -200,8 +224,15 @@ namespace E3Core.Settings.FeatureSettings
                         section.Keys.AddKey(hashvalue, "Skip");
                     }
                 }
+				foreach (string hashvalue in _destroySorted)
+				{
+					if (hashvalue.StartsWith(tc))
+					{
+						section.Keys.AddKey(hashvalue, "Destroy");
+					}
+				}
 
-            }
+			}
             for (char c = '0'; c <= '9'; c++)
             {
                 string tc = c.ToString();
@@ -229,8 +260,15 @@ namespace E3Core.Settings.FeatureSettings
                         section.Keys.AddKey(hashvalue, "Skip");
                     }
                 }
+				foreach (string hashvalue in _destroySorted)
+				{
+					if (hashvalue.StartsWith(tc))
+					{
+						section.Keys.AddKey(hashvalue, "Destroy");
+					}
+				}
 
-            }
+			}
             string fileNameFullPath = GetSettingsFilePath(_fileName);
 
 

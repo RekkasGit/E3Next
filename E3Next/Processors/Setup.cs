@@ -120,8 +120,15 @@ namespace E3Core.Processors
                     }
                 }
 
-                
-                if (!MQ.Query<bool>($"${{Plugin[MQ2AdvPath].Name.Length}}"))
+                if (!MQ.Query<bool>("${Plugin[MQ2Debuffs]}"))
+                {
+					MQ.Cmd("/plugin mq2debuffs");
+					if (!MQ.Delay(3000, "${Plugin[MQ2Debuffs]}"))
+					{
+						MQ.Write("***WARNING*** Could not load MQ2Debuffs! Macro functionality may be limited.");
+					}
+				}
+				if (!MQ.Query<bool>($"${{Plugin[MQ2AdvPath].Name.Length}}"))
                 {
                     MQ.Write("Plugin MQ2AdvPath is not loaded, attempting to resolve...");
                     MQ.Cmd("/plugin MQ2AdvPath");

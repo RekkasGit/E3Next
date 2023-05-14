@@ -1102,7 +1102,9 @@ namespace E3Core.Processors
         {
             if (spell.CastType == CastType.None) return false;
             //do we need to memorize it?
-           
+
+            if ((spell.CastType == CastType.Spell|| spell.CastType== CastType.Item || spell.CastType== CastType.AA)  && MQ.Query<bool>("${Debuff.Silenced}")) return false;
+
             if (!MemorizeSpell(spell))
             {
                 return false;

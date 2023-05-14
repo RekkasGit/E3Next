@@ -9,6 +9,7 @@ using System.Collections.Specialized;
 using System.Dynamic;
 using System.Linq;
 using System.Net.Configuration;
+using System.ServiceModel.PeerResolvers;
 using System.Windows.Forms;
 
 namespace E3Core.Processors
@@ -46,20 +47,30 @@ namespace E3Core.Processors
                     {
                         LootDataFile.Sell.Remove(x.args[0]);
                         LootDataFile.Skip.Remove(x.args[0]);
-                        LootDataFile.Keep.Add(x.args[0]);
+						LootDataFile.Destroy.Remove(x.args[0]);
+						LootDataFile.Keep.Add(x.args[0]);
 
                     }
                     else if(x.args[1]=="SELL")
                     {
                         LootDataFile.Keep.Remove(x.args[0]);
                         LootDataFile.Skip.Remove(x.args[0]);
-                        LootDataFile.Sell.Add(x.args[0]);
+						LootDataFile.Destroy.Remove(x.args[0]);
+						LootDataFile.Sell.Add(x.args[0]);
                     }
-                    else
+					else if (x.args[1] == "DESTROY")
+					{
+						LootDataFile.Keep.Remove(x.args[0]);
+						LootDataFile.Skip.Remove(x.args[0]);
+						LootDataFile.Sell.Remove(x.args[0]);
+						LootDataFile.Destroy.Add(x.args[0]);
+					}
+					else
                     {
                         LootDataFile.Keep.Remove(x.args[0]);
                         LootDataFile.Sell.Remove(x.args[0]);
-                        LootDataFile.Skip.Add(x.args[0]);
+						LootDataFile.Destroy.Remove(x.args[0]);
+						LootDataFile.Skip.Add(x.args[0]);
                     }
                 } 
             });
@@ -112,14 +123,15 @@ namespace E3Core.Processors
                 if (cursorItem.Equals("NULL", StringComparison.OrdinalIgnoreCase) || String.IsNullOrWhiteSpace(cursorItem))
                 {
                     MQ.Write("You don't have an item on your cursor, cannot modify the loot file.");
-                    MQ.Write("Place an item on your cursor and then give the proper /lootkeep, /lootsell, /lootskip command");
+                    MQ.Write("Place an item on your cursor and then give the proper /lootkeep, /lootsell, /lootskip /lootdestroy command");
                     return;
                 }
 
                 LootDataFile.Keep.Remove(cursorItem);
                 LootDataFile.Sell.Remove(cursorItem);
                 LootDataFile.Skip.Remove(cursorItem);
-                LootDataFile.Keep.Add(cursorItem);
+				LootDataFile.Destroy.Remove(cursorItem);
+				LootDataFile.Keep.Add(cursorItem);
                 
                 MQ.Write($"\aoSetting {cursorItem} to KEEP");
                 E3.Bots.BroadcastCommand($"/E3LootAdd \"{cursorItem}\" KEEP");
@@ -128,7 +140,31 @@ namespace E3Core.Processors
                 e3util.ClearCursor();
             });
 
-            EventProcessor.RegisterCommand("/lootskip", (x) =>
+			EventProcessor.RegisterCommand("/lootdestroy", (x) =>
+			{
+				string cursorItem = MQ.Query<string>("${Cursor.Name}");
+
+				if (cursorItem.Equals("NULL", StringComparison.OrdinalIgnoreCase) || String.IsNullOrWhiteSpace(cursorItem))
+				{
+					MQ.Write("You don't have an item on your cursor, cannot modify the loot file.");
+					MQ.Write("Place an item on your cursor and then give the proper /lootkeep, /lootsell, /lootskip,/lootdestroy command");
+					return;
+				}
+
+				LootDataFile.Keep.Remove(cursorItem);
+				LootDataFile.Sell.Remove(cursorItem);
+				LootDataFile.Skip.Remove(cursorItem);
+				LootDataFile.Keep.Remove(cursorItem);
+				LootDataFile.Destroy.Add(cursorItem);
+			
+                MQ.Write($"\aoSetting {cursorItem} to DESTROY");
+				E3.Bots.BroadcastCommand($"/E3LootAdd \"{cursorItem}\" DESTROY");
+				LootDataFile.SaveData();
+
+				MQ.Cmd("/destroy");
+			});
+
+			EventProcessor.RegisterCommand("/lootskip", (x) =>
             {
                 string cursorItem = MQ.Query<string>("${Cursor.Name}");
 
@@ -142,7 +178,8 @@ namespace E3Core.Processors
                 LootDataFile.Keep.Remove(cursorItem);
                 LootDataFile.Sell.Remove(cursorItem);
                 LootDataFile.Skip.Remove(cursorItem);
-                LootDataFile.Skip.Add(cursorItem);
+				LootDataFile.Destroy.Remove(cursorItem);
+				LootDataFile.Skip.Add(cursorItem);
 
                 MQ.Write($"\arSetting {cursorItem} to SKIP");
                 E3.Bots.BroadcastCommand($"/E3LootAdd \"{cursorItem}\" SKIP");
@@ -156,7 +193,7 @@ namespace E3Core.Processors
                 if (cursorItem.Equals("NULL", StringComparison.OrdinalIgnoreCase) || String.IsNullOrWhiteSpace(cursorItem))
                 {
                     MQ.Write("You don't have an item on your cursor, cannot modify the loot file.");
-                    MQ.Write("Place an item on your cursor and then give the proper /lootkeep, /lootsell, /lootskip command");
+                    MQ.Write("Place an item on your cursor and then give the proper /lootkeep, /lootsell, /lootskip /lootdestroy command");
                     return;
                 }
 
@@ -249,14 +286,7 @@ namespace E3Core.Processors
                         e3util.TryMoveToTarget();
 
                         LootCorpse(c);
-                        //now lets check to see if the corpse has anything important left
-                        if (destroyCorpses)
-                        {
-                            if(!ImportantItemOnCorpse(c))
-                            {
-                                DestroyCorpse(c);
-                            }
-                        }
+                       
                         if (MQ.Query<bool>("${Window[LootWnd].Open}"))
                         {
                             MQ.Cmd("/nomodkey /notify LootWnd DoneButton leftmouseup");
@@ -301,11 +331,12 @@ namespace E3Core.Processors
             {
               
                 //lets loot it if we can!
-                MQ.Cmd($"/nomodkey /shift /itemnotify loot${i} leftmouseup", 300);
+                MQ.Cmd($"/nomodkey /shift /itemnotify loot{i} leftmouseup", 300);
                 MQ.Delay(1000, "${Cursor.ID}");
                 Int32 cursorid = MQ.Query<Int32>("${Cursor.ID}");
                 if(cursorid>0)
                 {
+                    E3.Bots.Broadcast($"Deleting from corpse [] [{MQ.Query<string>("${Cursor}")}]");
                     //have it on our cursor, lets destroy
                     MQ.Cmd("/destroy");
                     //delay until the cursor is empty
@@ -320,19 +351,24 @@ namespace E3Core.Processors
             bool importantItem = false;
             bool nodropImportantItem = false;
 
-            MQ.Cmd("/loot");
-            MQ.Delay(1000, "${Window[LootWnd].Open}");
-            MQ.Delay(100);
-            if (!MQ.Query<bool>("${Window[LootWnd].Open}"))
+            if(!MQ.Query<bool>("${Window[LootWnd].Open}"))
             {
-                MQ.Write($"\arERROR, Loot Window not opening, adding {corpse.CleanName}-{corpse.ID} to ignore corpse list.");
-                if (!_unlootableCorpses.Contains(corpse.ID))
-                {
-                    _unlootableCorpses.Add(corpse.ID);
-                }
-                return true;
+				MQ.Cmd("/loot");
+				MQ.Delay(1000, "${Window[LootWnd].Open}");
+				MQ.Delay(100);
+				if (!MQ.Query<bool>("${Window[LootWnd].Open}"))
+				{
+					MQ.Write($"\arERROR, Loot Window not opening, adding {corpse.CleanName}-{corpse.ID} to ignore corpse list.");
+					if (!_unlootableCorpses.Contains(corpse.ID))
+					{
+						_unlootableCorpses.Add(corpse.ID);
+					}
+					return true;
 
-            }
+				}
+			}
+
+           
             MQ.Delay(500, "${Corpse.Items}");
 
             MQ.Delay(E3.GeneralSettings.Loot_LootItemDelay);//wait a little longer to let the items finish populating, for EU people they may need to increase this.
@@ -466,20 +502,23 @@ namespace E3Core.Processors
                 e3util.Beep();
 
             }
-           
-            MQ.Cmd("/loot");
-            MQ.Delay(1000, "${Window[LootWnd].Open}");
-            MQ.Delay(100);
-            if(!MQ.Query<bool>("${Window[LootWnd].Open}"))
-            {
-                MQ.Write($"\arERROR, Loot Window not opening, adding {corpse.CleanName}-{corpse.ID} to ignore corpse list.");
-                if(!_unlootableCorpses.Contains(corpse.ID))
-                {
-                    _unlootableCorpses.Add(corpse.ID);
-                }
-                return;
+			if (!MQ.Query<bool>("${Window[LootWnd].Open}"))
+			{
+				MQ.Cmd("/loot");
+				MQ.Delay(1000, "${Window[LootWnd].Open}");
+				MQ.Delay(100);
+				if (!MQ.Query<bool>("${Window[LootWnd].Open}"))
+				{
+					MQ.Write($"\arERROR, Loot Window not opening, adding {corpse.CleanName}-{corpse.ID} to ignore corpse list.");
+					if (!_unlootableCorpses.Contains(corpse.ID))
+					{
+						_unlootableCorpses.Add(corpse.ID);
+					}
+					return;
 
-            }
+				}
+			}
+            
             MQ.Delay(500, "${Corpse.Items}");
 
             MQ.Delay(E3.GeneralSettings.Loot_LootItemDelay);//wait a little longer to let the items finish populating, for EU people they may need to increase this.
@@ -507,7 +546,27 @@ namespace E3Core.Processors
                 Int32 stackCount = MQ.Query<Int32>($"${{Corpse.Item[{i}].Stack}}");
                 bool tradeskillItem = MQ.Query<bool>($"${{Corpse.Item[{i}].Tradeskills}}");
 
-                if (E3.GeneralSettings.Loot_OnlyStackableEnabled)
+                
+                //destroy things we don't like
+				if (LootDataFile.Destroy.Contains(corpseItem))
+				{
+					//lets loot it if we can!
+					MQ.Cmd($"/nomodkey /shift /itemnotify loot{i} leftmouseup", 300);
+					MQ.Delay(1000, "${Cursor.ID}");
+					Int32 cursorid = MQ.Query<Int32>("${Cursor.ID}");
+					if (cursorid > 0)
+					{
+						E3.Bots.Broadcast($"Deleting from corpse [{MQ.Query<string>("${Cursor}")}]");
+						//have it on our cursor, lets destroy
+						MQ.Cmd("/destroy");
+						//delay until the cursor is empty
+						MQ.Delay(1000, "${If[${Cursor.ID},FALSE,TRUE]}");
+
+					}
+					continue;
+				}
+
+				if (E3.GeneralSettings.Loot_OnlyStackableEnabled)
                 {
                     //check if in our always loot.
                     if (E3.GeneralSettings.Loot_OnlyStackableAlwaysLoot.Contains(corpseItem, StringComparer.OrdinalIgnoreCase))
@@ -556,7 +615,7 @@ namespace E3Core.Processors
                         importantItem = false;
                         foundInFile = true;
                     }
-                    if(!foundInFile && !nodrop)
+					if (!foundInFile && !nodrop)
                     {
                         importantItem = true;
                         LootDataFile.Keep.Add(corpseItem);
@@ -608,6 +667,7 @@ namespace E3Core.Processors
                         if (confirmationBox) MQ.Cmd($"/nomodkey /notify ConfirmationDialogBox CD_Yes_Button leftmouseup", 300);
                     }
                 }
+                
                
             }
             if (MQ.Query<Int32>("${Corpse.Items}")>0)
