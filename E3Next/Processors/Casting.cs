@@ -422,10 +422,14 @@ namespace E3Core.Processors
                             if (spell.TargetType.Equals("Self") || spell.TargetType.Equals("PB AE"))
 							{
 
-                                //clear our target
-                                TrueTarget(0, true);
+                                //clear our target if your trying to nuke yoruself
+                                if(spell.SpellType.Equals("Detrimental") && MQ.Query<Int32>("${Target.ID}")==E3.CurrentId)
+                                {
+									TrueTarget(0, true);
 
-                                if (spell.CastType == Data.CastType.Spell)
+								}
+
+								if (spell.CastType == Data.CastType.Spell)
                                 {
                                     PubServer.AddTopicMessage("${Casting}", $"{spell.CastName} on {targetName}");
                                     MQ.Write($"\ag{spell.CastName} \at{spell.SpellID} \am{targetName} \ao{targetID} \aw({spell.MyCastTime / 1000}sec)");

@@ -113,7 +113,15 @@ namespace E3Core.Processors
                     //lets place the 1st offensive spell on each mob, then the next, then the next
                     foreach (var spell in E3.CharacterSettings.OffAssistSpells)
                     {
-                        if (Casting.CheckMana(spell))
+						//check if the if condition works
+						if (!String.IsNullOrWhiteSpace(spell.Ifs))
+						{
+							if (!Casting.Ifs(spell))
+							{
+								continue;
+							}
+						}
+						if (Casting.CheckMana(spell))
                         {
                             _tempOffAssistSpellList.Clear();
                             _tempOffAssistSpellList.Add(spell);

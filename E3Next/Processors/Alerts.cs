@@ -147,7 +147,12 @@ namespace E3Core.Processors
                 }
             });
 
+			pattern = @"It will take about 20 more seconds to prepare your camp\.";
+			EventProcessor.RegisterEvent("ShutdownForCamp", pattern, (x) => {
 
-        }
+                Basics.IsPaused = true;
+				E3.Bots.Broadcast("\arPAUSING E3!");
+			});
+		}
     }
 }

@@ -1196,6 +1196,12 @@ namespace E3Core.Processors
 			if (String.IsNullOrWhiteSpace(E3.CharacterSettings.BandoBuff_BandoNameWithoutBuff)) return;
 
 			bool hasBuff = MQ.Query<bool>($"${{Bool[${{Me.Buff[{E3.CharacterSettings.BandoBuff_BuffName}]}}]}}");
+
+            if (!hasBuff)
+            {
+				hasBuff = MQ.Query<bool>($"${{Bool[${{Me.Song[{E3.CharacterSettings.BandoBuff_BuffName}]}}]}}");
+
+			}
 			string primaryName = MQ.Query<String>("${Me.Inventory[13]}");
 
 			if (hasBuff)
