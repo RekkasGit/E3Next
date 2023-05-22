@@ -683,10 +683,11 @@ namespace E3Core.Processors
                            if (targetID != AssistTargetID)
                            {
                                AssistOff();
-                               AllowControl = true;
-                               AssistOn(targetID, Zoning.CurrentZone.Id);
+                              
                            }
-                       }
+						   AllowControl = true;
+						   AssistOn(targetID, Zoning.CurrentZone.Id);
+					   }
                    }
                    else
                    {
@@ -710,10 +711,11 @@ namespace E3Core.Processors
                         //make sure the target is in the same zone we are in
                        if (Int32.TryParse(x.args[1], out zoneid))
                        {
-                           if (mobid == AssistTargetID) return;
-                           AssistOff();
+                           if (mobid != AssistTargetID)
+						   {
+							   AssistOff();
+				           }
                            AllowControl = false;
-
                            AssistOn(mobid, zoneid);
 
                        }
@@ -731,7 +733,8 @@ namespace E3Core.Processors
                     ClearXTargets.MobToAttack = 0;
                     AssistOff();
                     E3.Bots.BroadcastCommandToGroup($"/backoff all",x);
-                    if (x.filters.Count > 0)
+					ClearXTargets.Filters.Clear();
+					if (x.filters.Count > 0)
                     {
                         ClearXTargets.Filters.Clear();
                         ClearXTargets.Filters.AddRange(x.filters);

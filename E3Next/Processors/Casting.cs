@@ -397,12 +397,9 @@ namespace E3Core.Processors
                             _log.Write("Doing Spell based logic checks...");
 
 
-                            //TODO: SWAP ITEM
-
                             if (spell.MyCastTime > 500)
                             {
 
-                                //if (MQ.Query<bool>("${Stick.Status.Equal[on]}")) MQ.Cmd("/squelch /stick pause");
                                 if (MQ.Query<bool>("${AdvPath.Following}") && E3.Following) MQ.Cmd("/squelch /afollow off");
                                 if (MQ.Query<bool>("${MoveTo.Moving}") && E3.Following) MQ.Cmd("/moveto off");
                                 MQ.Cmd("/stick pause");
@@ -588,6 +585,12 @@ namespace E3Core.Processors
                             //get updated information after delays
                             E3.StateUpdates();
                         }
+                        //sometimes the cast isn't fully complete even if the window is done
+                        ///allow the player to 'tweak' this value.
+                        if(E3.CharacterSettings.Misc_DelayAfterCastWindowDropsForSpellCompletion>0)
+                        {
+                            MQ.Delay(E3.CharacterSettings.Misc_DelayAfterCastWindowDropsForSpellCompletion);
+                        }
 
                         MQ.Delay(2000, "!${Cast.Status.Find[C]}");
 
@@ -676,8 +679,11 @@ namespace E3Core.Processors
             }
             finally
             {
+                //send message to the ui to clear their casting information
                 PubServer.AddTopicMessage("${Casting}", String.Empty);
+                //unpause any stick command that may be paused
                 MQ.Cmd("/stick unpause");
+                //resume navigation.
                 if (e3PausedNav)
                 {
                     navPaused = MQ.Query<bool>("${Navigation.Paused}");
@@ -723,7 +729,13 @@ namespace E3Core.Processors
 
                     MQ.Cmd($"/cast \"{spell.CastName}\"");
                     MQ.Delay(300, IsCasting);
-                    if (!IsCasting())
+					//sometimes the cast isn't fully complete even if the window is done
+					///allow the player to 'tweak' this value.
+					if (E3.CharacterSettings.Misc_DelayAfterCastWindowDropsForSpellCompletion > 0)
+					{
+						MQ.Delay(E3.CharacterSettings.Misc_DelayAfterCastWindowDropsForSpellCompletion);
+					}
+					if (!IsCasting())
                     {
                         MQ.Write("Issuing stopcast as cast window isn't open");
                         MQ.Cmd("/stopsong");

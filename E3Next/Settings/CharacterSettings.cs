@@ -7,6 +7,7 @@ using System;
 using System.Collections.Generic;
 using System.IO;
 using System.Linq;
+using static System.Collections.Specialized.BitVector32;
 
 namespace E3Core.Settings
 {
@@ -33,6 +34,7 @@ namespace E3Core.Settings
         public bool Misc_AutoLootEnabled;
         public string Misc_AnchorChar = string.Empty;
         public bool Misc_RemoveTorporAfterCombat = true;
+        public Int32 Misc_DelayAfterCastWindowDropsForSpellCompletion = 0;
        
         public bool Misc_AutoForage = false;
         
@@ -246,8 +248,9 @@ namespace E3Core.Settings
             LoadKeyData("Misc", "Remove Torpor After Combat", ParsedData, ref Misc_RemoveTorporAfterCombat);
             LoadKeyData("Misc", "Auto-Forage (On/Off)", ParsedData, ref Misc_AutoForage);
             LoadKeyData("Misc", "Dismount On Interrupt (On/Off)", ParsedData, ref Misc_DismountOnInterrupt);
+            LoadKeyData("Misc", "Delay in MS After CastWindow Drops For Spell Completion",ParsedData, ref Misc_DelayAfterCastWindowDropsForSpellCompletion);
 
-            LoadKeyData("Manastone", "Override General Settings (On/Off)", ParsedData, ref Manastone_OverrideGeneralSettings);
+			LoadKeyData("Manastone", "Override General Settings (On/Off)", ParsedData, ref Manastone_OverrideGeneralSettings);
             LoadKeyData("Manastone", "Manastone Enabled (On/Off)", ParsedData, ref Manastone_Enabled);
 
             LoadKeyData("Manastone", "NumberOfClicksPerLoop", ParsedData, ref ManaStone_NumberOfClicksPerLoop);
@@ -451,9 +454,10 @@ namespace E3Core.Settings
             section.Keys.AddKey("Remove Torpor After Combat", "On");
             section.Keys.AddKey("Auto-Forage (On/Off)", "Off");
             section.Keys.AddKey("Dismount On Interrupt (On/Off)","On");
+            section.Keys.AddKey("Delay in MS After CastWindow Drops For Spell Completion", "0");
 
 
-            newFile.Sections.AddSection("Assist Settings");
+			newFile.Sections.AddSection("Assist Settings");
             section = newFile.Sections.GetSectionData("Assist Settings");
             section.Keys.AddKey("Assist Type (Melee/Ranged/Off)", "Melee");
             section.Keys.AddKey("Melee Stick Point", "Behind");

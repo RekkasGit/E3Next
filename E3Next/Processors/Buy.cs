@@ -140,6 +140,11 @@ namespace E3Core.Processors
                     vendorID = MQ.Query<int>($"${{Spawn[{vendorName}].ID}}");
                 }
 
+                if(vendorID==0)
+                {
+                    vendorID = MQ.Query<Int32>("${Target.ID}");
+                }
+
                 if (vendorID > 0)
                 {
                     Casting.TrueTarget(vendorID);
