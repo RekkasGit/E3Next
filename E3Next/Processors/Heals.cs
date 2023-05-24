@@ -1,5 +1,6 @@
 ﻿using E3Core.Settings;
 using E3Core.Utility;
+using IniParser;
 using MonoCore;
 using System;
 using System.Collections.Generic;
@@ -55,9 +56,10 @@ namespace E3Core.Processors
                 {
                     HealXTargets(currentMana, pctMana);
                 }
-                if (!E3.ActionTaken) GroupHeals(currentMana, pctMana);
-                if (!E3.ActionTaken) HealImportant(currentMana, pctMana);
-                if (!E3.ActionTaken) HealAll(currentMana, pctMana);
+				if (!E3.ActionTaken) GroupHeals(currentMana, pctMana);
+				if (!E3.ActionTaken) HealImportant(currentMana, pctMana);
+				if (!E3.ActionTaken) HealParty(currentMana, pctMana);
+			    if (!E3.ActionTaken) HealAll(currentMana, pctMana);
                 if (!E3.ActionTaken) HoTTanks(currentMana, pctMana);
                 if (!E3.ActionTaken) HoTImportant(currentMana, pctMana);
                 if (!E3.ActionTaken) HoTAll(currentMana, pctMana);
@@ -86,7 +88,15 @@ namespace E3Core.Processors
             }
             return false;
         }
-        public static bool HealXTargets(Int32 currentMana, Int32 pctMana, bool JustCheck = false)
+		public static bool HealParty(Int32 currentMana, Int32 pctMana)
+		{
+			if (E3.CharacterSettings.HealParty.Count>0)
+			{
+				return HealParty(currentMana, pctMana, E3.CharacterSettings.HealParty);
+			}
+			return false;
+		}
+		public static bool HealXTargets(Int32 currentMana, Int32 pctMana, bool JustCheck = false)
         {
             if (!E3.CharacterSettings.WhoToHeal.Contains("XTargets"))
             {
@@ -222,7 +232,8 @@ namespace E3Core.Processors
                 //get a list from netbots
                 List<string> targets = E3.Bots.BotsConnected();
                 Heal(currentMana, pctMana, targets, E3.CharacterSettings.HealAll);
-            }
+				
+			}
         }
         public static void GroupHeals(Int32 currentMana, Int32 pctMana)
         {
@@ -314,7 +325,14 @@ namespace E3Core.Processors
                     return true;
                 }
             }
-            return false;
+			if (E3.CharacterSettings.HealParty.Count>0)
+			{
+				if (HealParty(currentMana, pctMana, E3.CharacterSettings.HealParty, true))
+				{
+					return true;
+				}
+			}
+			return false;
         }
         private static bool Heal(Int32 currentMana, Int32 pctMana, List<string> targets, List<Data.Spell> spells, bool healPets = false, bool JustCheck = false)
         {
@@ -505,7 +523,122 @@ namespace E3Core.Processors
                 return false;
             }
         }
-        private static void HealOverTime(Int32 currentMana, Int32 pctMana, List<string> targets, List<Data.Spell> spells, bool healPets = false)
+		private static bool HealParty(Int32 currentMana, Int32 pctMana, List<Data.Spell> spells, bool healPets = false, bool JustCheck = false)
+		{
+			//using (_log.Trace())
+			{
+
+				foreach (var name in Basics.GroupMembers)
+				{
+					Int32 targetID = 0;
+					Spawn s;
+					if (_spawns.TryByID(name, out s))
+					{
+						targetID = healPets ? s.PetID : s.ID;
+
+						if (s.ID != targetID)
+						{
+							if (!_spawns.TryByID(targetID, out s))
+							{
+								//can't find pet, skip
+								continue;
+							}
+						}
+						double targetDistance = s.Distance;
+						string targetType = s.TypeDesc;
+
+						//first lets check the distance.
+						bool inRange = false;
+						foreach (var spell in spells)
+						{
+							if (Casting.InRange(targetID, spell))
+							{
+								inRange = true;
+								break;
+							}
+						}
+						if (!inRange)
+						{   //no spells in range next target
+							continue;
+						}
+						//in range
+						if (targetType == "PC" || targetType == "Pet")
+						{
+							//check group data
+							if (_useEQGroupDataForHeals || healPets)
+							{
+								Int32 groupMemberIndex = MQ.Query<Int32>($"${{Group.Member[{s.Name}].Index}}");
+
+								if (groupMemberIndex > 0)
+								{
+									Int32 pctHealth = 0;
+									if (healPets)
+									{
+										pctHealth = MQ.Query<Int32>($"${{Group.Member[{groupMemberIndex}].Spawn.Pet.CurrentHPs}}");
+									}
+									else
+									{
+										pctHealth = MQ.Query<Int32>($"${{Group.Member[{groupMemberIndex}].Spawn.CurrentHPs}}");
+									}
+
+									if (pctHealth < 1)
+									{
+										//dead, no sense in casting. check the next person
+										continue;
+									}
+									foreach (var spell in spells)
+									{
+										//check Ifs on the spell
+										if (!String.IsNullOrWhiteSpace(spell.Ifs))
+										{
+											if (!Casting.Ifs(spell))
+											{
+												//failed check, onto the next
+												continue;
+											}
+										}
+
+									recastSpell:
+										if (spell.Mana > currentMana)
+										{
+											//mana cost too high
+											continue;
+										}
+										if (spell.MinMana > pctMana)
+										{
+											//mana is set too high, can't cast
+											continue;
+										}
+
+										if (Casting.InRange(targetID, spell))
+										{
+											if (pctHealth < spell.HealPct)
+											{
+												if (JustCheck) return true;
+												//should cast a heal!
+												if (Casting.CheckReady(spell))
+												{
+													if (Casting.Cast(targetID, spell) == CastReturn.CAST_FIZZLE)
+													{
+														currentMana = MQ.Query<Int32>("${Me.CurrentMana}");
+														pctMana = MQ.Query<Int32>("${Me.PctMana}");
+														goto recastSpell;
+													}
+													E3.ActionTaken = true;
+													return true;
+												}
+											}
+										}
+									}
+								}
+							}
+						}
+					}
+				}
+				return false;
+			}
+		}
+		private static void HealOverTime(Int32 currentMana, Int32 pctMana, List<string> targets, List<Data.Spell> spells, bool healPets = false)
         {
             //using (_log.Trace())
             {

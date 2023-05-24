@@ -155,6 +155,7 @@ namespace E3Core.Settings
         public List<Spell> HealGroup = new List<Spell>();
         public Int32 HealGroup_NumberOfInjuredMembers = 3;
         public List<Spell> HealAll = new List<Spell>();
+        public List<Spell> HealParty = new List<Spell>();
         public List<Spell> HealXTarget = new List<Spell>();
         public List<Spell> HealPets = new List<Spell>();
         public List<Spell> HealOverTime = new List<Spell>();
@@ -395,7 +396,9 @@ namespace E3Core.Settings
             LoadKeyData("Heals", "XTarget Heal", ParsedData, HealXTarget);
             LoadKeyData("Heals", "Heal Over Time Spell", ParsedData, HealOverTime);
             LoadKeyData("Heals", "Group Heal", ParsedData, HealGroup);
-            LoadKeyData("Heals", "Pet Heal", ParsedData, HealPets);
+			LoadKeyData("Heals", "Party Heal", ParsedData, HealParty);
+
+			LoadKeyData("Heals", "Pet Heal", ParsedData, HealPets);
             LoadKeyData("Heals", "Number Of Injured Members For Group Heal", ParsedData, ref HealGroup_NumberOfInjuredMembers);
 
 
@@ -620,12 +623,13 @@ namespace E3Core.Settings
                 section.Keys.AddKey("Tank Heal", "");
                 section.Keys.AddKey("Important Heal", "");
                 section.Keys.AddKey("Group Heal", "");
-                section.Keys.AddKey("All Heal", "");
+				section.Keys.AddKey("Party Heal", "");
+				section.Keys.AddKey("All Heal", "");
                 section.Keys.AddKey("XTarget Heal", "");
                 section.Keys.AddKey("Tank", "");
                 section.Keys.AddKey("Important Bot", "");
                 section.Keys.AddKey("Pet Heal", "");
-                section.Keys.AddKey("Who to Heal", "Tanks/ImportantBots/XTargets/Pets");
+                section.Keys.AddKey("Who to Heal", "Tanks/ImportantBots/XTargets/Pets/Party");
                 section.Keys.AddKey("Who to HoT", "");
                 section.Keys.AddKey("Pet Owner", "");
                 section.Keys.AddKey("Auto Cast Necro Heal Orbs (On/Off)", "On");
