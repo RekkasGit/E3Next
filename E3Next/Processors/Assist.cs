@@ -527,21 +527,25 @@ namespace E3Core.Processors
                 {
                     if (_assistDistanceTypes.Contains(E3.CharacterSettings.Assist_MeleeDistance, StringComparer.OrdinalIgnoreCase))
                     {
-                        _assistDistance = (int)(s.MaxRangeTo * 0.75);
+                        _assistDistance = (int)(s.MaxRangeTo);
                     }
                     else
                     {
                         if (!Int32.TryParse(E3.CharacterSettings.Assist_MeleeDistance, out _assistDistance))
                         {
-                            _assistDistance = (int)(s.MaxRangeTo * 0.75);
+                            _assistDistance = (int)(s.MaxRangeTo);
                         }
                     }
                     //make sure its not too out of bounds
-                    if (_assistDistance > 25 || _assistDistance < 1)
+                    if (_assistDistance > 33)
                     {
-                        _assistDistance = 25;
+                        _assistDistance = 33;
                     }
-                    if (!AllowControl)
+					if (_assistDistance < 1)
+					{
+						_assistDistance = 25;
+					}
+					if (!AllowControl)
                     {
                         StickToAssistTarget();
 
@@ -593,6 +597,8 @@ namespace E3Core.Processors
         {
             //needed a case insensitive switch, that was easy to read, thus this.
             string sp = E3.CharacterSettings.Assist_MeleeStickPoint;
+
+            E3.Bots.Broadcast("Setting assist range to: " + _assistDistance);
             if (_stickSwitch == null)
             {
                 var stw = new Dictionary<string, Action>(10, StringComparer.OrdinalIgnoreCase);
