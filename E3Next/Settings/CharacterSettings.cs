@@ -59,6 +59,8 @@ namespace E3Core.Settings
         public string Assist_MeleeDistance = "MaxMelee";
         public string Assist_RangeDistance = "100";
         public int Assist_AutoAssistPercent = 98;
+        public bool Assist_DelayStrafeEnabled = true;
+        public Int32 Assist_DelayStrafeDelay = 1500;
         private string _fileName = String.Empty;
 
         //abilities
@@ -278,8 +280,11 @@ namespace E3Core.Settings
             LoadKeyData("Assist Settings", "Melee Distance", ParsedData, ref Assist_MeleeDistance);
             LoadKeyData("Assist Settings", "Ranged Distance", ParsedData, ref Assist_RangeDistance);
             LoadKeyData("Assist Settings", "Auto-Assist Engage Percent", ParsedData, ref Assist_AutoAssistPercent);
+			LoadKeyData("Assist Settings", "Delayed Strafe Enabled (On/Off)", ParsedData, ref Assist_DelayStrafeEnabled);
+			
 
-            if (CharacterClass == Class.Rogue)
+
+			if (CharacterClass == Class.Rogue)
             {
                 LoadKeyData("Rogue", "Auto-Hide (On/Off)", ParsedData, ref Rogue_AutoHide);
                 LoadKeyData("Rogue", "Auto-Evade (On/Off)", ParsedData, ref Rogue_AutoEvade);
@@ -464,19 +469,18 @@ namespace E3Core.Settings
             section = newFile.Sections.GetSectionData("Assist Settings");
             section.Keys.AddKey("Assist Type (Melee/Ranged/Off)", "Melee");
             section.Keys.AddKey("Melee Stick Point", "Behind");
-            if (((CharacterClass & Class.Tank) == CharacterClass) || CharacterClass== Class.Ranger)
+			section.Keys.AddKey("Delayed Strafe Enabled (On/Off)", "On");
+			if (((CharacterClass & Class.Tank) == CharacterClass) || CharacterClass== Class.Ranger)
             {
-                section.Keys.AddKey("Taunt(On/Off)", "Off");
                 section.Keys.AddKey("SmartTaunt(On/Off)", "On");
             }
-
             section.Keys.AddKey("Melee Distance", "MaxMelee");
             section.Keys.AddKey("Ranged Distance", "100");
             section.Keys.AddKey("Auto-Assist Engage Percent", "98");
+			
 
 
-
-            newFile.Sections.AddSection("Buffs");
+			newFile.Sections.AddSection("Buffs");
             section = newFile.Sections.GetSectionData("Buffs");
             section.Keys.AddKey("Instant Buff", "");
             section.Keys.AddKey("Self Buff", "");
