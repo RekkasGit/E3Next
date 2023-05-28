@@ -856,14 +856,12 @@ namespace E3Core.Processors
                             }
                             //greater than 0, so we don't get things like shrink that don't have a duration
                             bool isShortDuration = spell.DurationTotalSeconds <= 60 && spell.DurationTotalSeconds > 0;
+							Int64 timeLeftInMS = Casting.TimeLeftOnTargetBuff(spell);
 
-                            if (isShortDuration)
+							if (isShortDuration && timeLeftInMS <1)
                             {
                                 //we cannot do target based checks if a short duration type.
-                                //have to do netbots
-                                //looks live you get it in the target area. 
-
-
+                                
                                 //not one of our buffs uhh, try and cast and see if we get a non success message.
                                 if (Casting.CheckReady(spell) && Casting.CheckMana(spell))
                                 {
@@ -879,7 +877,7 @@ namespace E3Core.Processors
                                     }
                                     else
                                     {
-                                        UpdateBuffTimers(s.ID, spell, spell.Duration);
+                                        UpdateBuffTimers(s.ID, spell, spell.DurationTotalSeconds * 1000);
                                     }
                                     return;
                                 }
@@ -888,10 +886,7 @@ namespace E3Core.Processors
                             }
                             else
                             {
-
-                                Int64 timeLeftInMS = Casting.TimeLeftOnTargetBuff(spell);
-
-                                if (timeLeftInMS < 30000)
+                                if (timeLeftInMS < 15000)
                                 {
                                     if (Casting.CheckReady(spell) && Casting.CheckMana(spell))
                                     {

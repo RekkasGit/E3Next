@@ -22,7 +22,7 @@ namespace E3Core.Processors
         private static Int32 _petMaxShrinkID = 0;
         private static Int64 _nextPetCheck = 0;
         private static Int64 _nextPetCheckInterval = 1000;
-        private static List<string> _petShrinkSpells = new List<string>() { "Gemstone of Dark Flame", "Symbol of Ancient Summoning", "Tiny Companion" };
+        private static List<string> _petShrinkSpells = new List<string>() { "Diminutive Companion", "Gemstone of Dark Flame", "Symbol of Ancient Summoning", "Tiny Companion",  };
 
         [SubSystemInit]
         public static void Init()

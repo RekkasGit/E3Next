@@ -90,6 +90,9 @@ namespace E3Core.Processors
                 {
                     if (Basics.AmIDead()) return;
                     string user = x.match.Groups[1].Value;
+
+
+
                     if (E3.GeneralSettings.BuffRequests_AllowBuffRequests || E3.Bots.IsMyBot(user))
                     {
                         Int32 totalQueuedSpells = 0;
@@ -187,48 +190,53 @@ namespace E3Core.Processors
                 {
                     if (Basics.AmIDead()) return;
                     string user = x.match.Groups[1].Value;
-                    if (E3.GeneralSettings.BuffRequests_AllowBuffRequests || E3.Bots.IsMyBot(user))
+
+                    if (_spawns.TryByName(user, out var spawn)) //same zone?
                     {
-                        string spell = x.match.Groups[2].Value;
-                        bool groupReply = false;
-                        if (x.match.Groups[0].Value.Contains(" tells the group,"))
-                        {
-                            groupReply = true;
-                        }
-                        
-                        if (Int32.TryParse(spell, out var temp))
-                        {
-                            //me.book returns the spell that is memed in that slot in your book
-                            //this isnt what we want, to just ignore the request
-                            return;
-                        }
+						if (E3.GeneralSettings.BuffRequests_AllowBuffRequests || E3.Bots.IsMyBot(user))
+						{
+							string spell = x.match.Groups[2].Value;
+							bool groupReply = false;
+							if (x.match.Groups[0].Value.Contains(" tells the group,"))
+							{
+								groupReply = true;
+							}
 
-                        //check to see if its an alias.
-                        string realSpell = string.Empty;
-                        if (SpellAliases.TryGetValue(spell, out realSpell))
-                        {
-                            spell = realSpell;
-                        }
-                        bool inBook = MQ.Query<bool>($"${{Me.Book[{spell}]}}");
-                        bool aa = MQ.Query<bool>($"${{Me.AltAbility[{spell}].Spell}}");
-                        bool item = MQ.Query<bool>($"${{FindItem[={spell}]}}");
+							if (Int32.TryParse(spell, out var temp))
+							{
+								//me.book returns the spell that is memed in that slot in your book
+								//this isnt what we want, to just ignore the request
+								return;
+							}
 
-                        if (inBook || aa || item)
-                        {
-                            if(groupReply)
-                            {
-                                MQ.Cmd($"/gsay {user}: putting in queue {spell}");
+							//check to see if its an alias.
+							string realSpell = string.Empty;
+							if (SpellAliases.TryGetValue(spell, out realSpell))
+							{
+								spell = realSpell;
+							}
+							bool inBook = MQ.Query<bool>($"${{Me.Book[{spell}]}}");
+							bool aa = MQ.Query<bool>($"${{Me.AltAbility[{spell}].Spell}}");
+							bool item = MQ.Query<bool>($"${{FindItem[={spell}]}}");
 
-                            }
-                            else
-                            {
-                                MQ.Cmd($"/t {user} I'm queueing up {spell} to use on you, please wait.");
+							if (inBook || aa || item)
+							{
+								if (groupReply)
+								{
+									MQ.Cmd($"/gsay {user}: putting in queue {spell}");
 
-                            }
-                            _queuedBuffs.Enqueue(new BuffQueuedItem() { Requester = user, SpellTouse = spell});
+								}
+								else
+								{
+									MQ.Cmd($"/t {user} I'm queueing up {spell} to use on you, please wait.");
 
-                        }
-                    }
+								}
+								_queuedBuffs.Enqueue(new BuffQueuedItem() { Requester = user, SpellTouse = spell });
+
+							}
+						}
+					}
+					
                 }
             });
             var raidbuffBeg = new List<string> {"(.+) tells the raid,  '"+E3.CurrentName+@":(.+)'" };

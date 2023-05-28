@@ -89,8 +89,9 @@ namespace E3Core.Processors
                     {
                         foreach (var methodName in _methodsToInvokeAsStrings)
                         {
-                            //if an action was taken, start over
-                            if (ActionTaken)
+							Burns.UseBurns();
+							//if an action was taken, start over
+							if (ActionTaken)
                             {
                                 break;
                             }
@@ -133,7 +134,8 @@ namespace E3Core.Processors
                 //lets do our class methods, this is last because of bards
                 foreach (var kvp in AdvancedSettings.ClassMethodLookup)
                 {
-                    kvp.Value.Invoke();
+					Burns.UseBurns();
+					kvp.Value.Invoke();
                     EventProcessor.ProcessEventsInQueues("/nowcast");
                     EventProcessor.ProcessEventsInQueues("/backoff");
                 }
