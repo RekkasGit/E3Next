@@ -25,7 +25,7 @@ namespace E3Core.Processors
         private static IMQ MQ = E3.MQ;
         private static ISpawns _spawns = E3.Spawns;
         private static IList<string> _rangeTypes = new List<string>() { "Ranged", "Autofire" };
-        private static IList<string> _meleeTypes = new List<string>() { "Melee" };
+        private static IList<string> _meleeTypes = new List<string>() { "Melee","AutoAttack" };
         private static IList<string> _assistDistanceTypes = new List<string> { "MaxMelee", "off" };
         private static Int32 _assistDistance = 0;
         private static bool _assistIsEnraged = false;
@@ -171,12 +171,15 @@ namespace E3Core.Processors
                             }
                         }
 
-
-                        //are we sticking?
-                        if (!AllowControl && (!MQ.Query<bool>("${Stick.Active}") || MQ.Query<string>("${Stick.Status}") == "PAUSED"))
+                        if(!E3.CharacterSettings.Assist_Type.Equals("AutoAttack", StringComparison.OrdinalIgnoreCase))
                         {
-                            StickToAssistTarget();
-                        }
+							//are we sticking?
+							if (!AllowControl && (!MQ.Query<bool>("${Stick.Active}") || MQ.Query<string>("${Stick.Status}") == "PAUSED"))
+							{
+								StickToAssistTarget();
+							}
+						}
+                       
 
                     }
                     else
@@ -545,12 +548,14 @@ namespace E3Core.Processors
 					{
 						_assistDistance = 25;
 					}
-					if (!AllowControl)
+                    if (!E3.CharacterSettings.Assist_Type.Equals("AutoAttack", StringComparison.OrdinalIgnoreCase))
                     {
-                        StickToAssistTarget();
+                        if (!AllowControl)
+                        {
+                            StickToAssistTarget();
 
+                        }
                     }
-
                     if (E3.CurrentClass == Data.Class.Rogue)
                     {
                         Rogue.RogueStrike();
@@ -736,7 +741,7 @@ namespace E3Core.Processors
 
             EventProcessor.RegisterCommand("/cleartargets", (x) =>
             {
-                ClearXTargets.FaceTarget = false;
+                ClearXTargets.FaceTarget = true;
                 ClearXTargets.StickTarget = false;
 
                 if (x.args.Count == 0)

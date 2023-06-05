@@ -406,10 +406,12 @@ namespace E3Core.Processors
                             return;
                         }
                     }
-                    if (Casting.InRange(spawn.ID, s) && Casting.CheckReady(s) && Casting.CheckMana(s))
+
+                    if ((s.TargetType=="Self" ||Casting.InRange(spawn.ID, s)) && Casting.CheckReady(s) && Casting.CheckMana(s))
                     {
-                        //get the id of the requestor.
+                        //so we can be sure our cursor was empty before we cast
                         Int32 cursorID = MQ.Query<Int32>("${Cursor.ID}");
+                     
                         var result = Casting.Cast(spawn.ID, s, Heals.SomeoneNeedsHealing);
                         if (result == CastReturn.CAST_INTERRUPTFORHEAL)
                         {
@@ -417,6 +419,7 @@ namespace E3Core.Processors
                         }
                         if (cursorID<1)
                         {
+                            Casting.TrueTarget(spawn.ID);
                             cursorID = MQ.Query<Int32>("${Cursor.ID}");
                             if(cursorID>0)
                             {

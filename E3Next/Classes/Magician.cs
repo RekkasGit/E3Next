@@ -135,6 +135,7 @@ namespace E3Core.Classes
             armPetEvents = new List<string> { "(.+) tells you, 'armpets'", "(.+) tells the group, 'armpets'", };
             EventProcessor.RegisterEvent("ArmPets", armPetEvents, x =>
             {
+                E3.Bots.Broadcast("I hear you I hear you one moment please....");
                 _requester = x.match.Groups[1].ToString();
                 if (!E3.Bots.BotsConnected().Contains(_requester))
                 {
@@ -240,11 +241,35 @@ namespace E3Core.Classes
 
                 return;
             }
+			Casting.TrueTarget(petId);
+           
+			var spell = new Spell(_armorSpell);
+            Int32 castAttempts = 0;
+            if(Casting.CheckReady(spell) && Casting.CheckMana(spell))
+			{
+				while(Casting.Cast(petId, spell) == CastReturn.CAST_FIZZLE)
+				{
+                    if (castAttempts > 7) break;
+					MQ.Delay(1500);
+                    castAttempts++;
+				}
+			}
+			castAttempts = 0;
+			spell = new Spell(_focusSpell);
+			if (Casting.CheckReady(spell) && Casting.CheckMana(spell))
+			{
+				while (Casting.Cast(petId, spell) == CastReturn.CAST_FIZZLE)
+				{
+					if (castAttempts > 7) break;
+					MQ.Delay(1500);
+					castAttempts++;
+				}
+			}
+			//if (!GiveOther(petId, _armorSpell)) return;
+			//if (!GiveOther(petId, _focusSpell)) return;
 
-            if (!GiveOther(petId, _armorSpell)) return;
-            if (!GiveOther(petId, _focusSpell)) return;
 
-            var pet = _spawns.Get().FirstOrDefault(f => f.ID == petId);
+			var pet = _spawns.Get().FirstOrDefault(f => f.ID == petId);
             if (pet != null)
             {
                 if (_isExternalRequest)
@@ -268,29 +293,51 @@ namespace E3Core.Classes
             _weaponMap.TryGetValue(weapons[0], out var primary);
             _weaponMap.TryGetValue(weapons[1], out var secondary);
 
-            if (!CheckForWeapons(primary, secondary))
+            try
             {
-                return false;
-            }
+				if (!CheckForWeapons(primary, secondary))
+				{
+					return false;
+				}
 
-            if (Casting.TrueTarget(petId))
+				if (Casting.TrueTarget(petId))
+				{
+					PickUpWeapon(primary);
+					e3util.GiveItemOnCursorToTarget(false, false);
+					if (!CheckForWeapons(primary, secondary))
+					{
+						return false;
+					}
+					Casting.TrueTarget(petId);
+					PickUpWeapon(secondary);
+					e3util.GiveItemOnCursorToTarget(false);
+				}
+				else
+				{
+					return false;
+				}
+			}
+            finally
             {
-                PickUpWeapon(primary);
-                e3util.GiveItemOnCursorToTarget(false, false);
-                if (!CheckForWeapons(primary, secondary))
-                {
-                    return false;
-                }
-                Casting.TrueTarget(petId);
-                PickUpWeapon(secondary);
-                e3util.GiveItemOnCursorToTarget(false);
-            }
-            else
-            {
-                return false;
-            }
-
-            return true;
+                //clean up after outselves
+				var foundWeaponBag = MQ.Query<bool>($"${{FindItem[={_weaponBag}]}}");
+				if (foundWeaponBag)
+				{
+					MQ.Cmd($"/nomodkey /itemnotify \"{_weaponBag}\" leftmouseup");
+					MQ.Delay(1000, "${Cursor.ID}");
+					if (!e3util.ValidateCursor(MQ.Query<int>($"${{FindItem[={_weaponBag}].ID}}")))
+					{
+						E3.Bots.Broadcast($"\arUnexpected item on cursor when trying to destroy {_weaponBag}");
+					}
+                    else
+                    {
+						MQ.Cmd("/destroy");
+					}
+				}
+			}
+            
+			
+			return true;
         }
 
         private static bool CheckForWeapons(string primary, string secondary)

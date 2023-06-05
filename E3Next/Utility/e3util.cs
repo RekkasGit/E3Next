@@ -590,6 +590,10 @@ namespace E3Core.Utility
         }
         public static void DeleteNoRentItem(string itemName)
         {
+            while(Casting.IsCasting())
+            {
+                MQ.Delay(100);
+            }
             if(ClearCursor())
             {
                 bool foundItem = MQ.Query<bool>($"${{Bool[${{FindItem[={itemName}]}}]}}");

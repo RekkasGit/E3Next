@@ -67,6 +67,7 @@ namespace E3NextUI
             _uncollapseConsoleImage = (Image)pbCollapseConsoleButtons.Image.Clone();
 
 
+
             _collapseDynamicButtonImage = (Image)pbCollapseDynamicButtons.Image.Clone();
             _collapseDynamicButtonImage.RotateFlip(RotateFlipType.Rotate270FlipNone);
             _uncollapseDynamicButtonImage = (Image)pbCollapseDynamicButtons.Image.Clone();
@@ -90,7 +91,7 @@ namespace E3NextUI
                     lock (_tloClient)
                     {
                         PlayerName = _tloClient.RequestData("${Me.CleanName}");
-                        this.Text = $"E3UI ({PlayerName})";
+                        this.Text = $"E3UI ({PlayerName}) ({Version})";
                         labelPlayerName.Text = PlayerName;
                         configFolder = _tloClient.RequestData("${MacroQuest.Path[config]}");
                     }

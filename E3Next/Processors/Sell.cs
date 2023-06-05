@@ -28,9 +28,13 @@ namespace E3Core.Processors
                     E3.Bots.Broadcast("\arNo merchant targeted and no merchant found; exiting autosell");
                     return;
                 }
-
-                AutoSell();
-                MQ.Cmd("/nomodkey /notify MerchantWnd MW_Done_Button leftmouseup");
+                bool destroyOnSell = false;
+                if(x.args.Count>0 && x.args[0] =="destroy")
+                {
+                    destroyOnSell = true;
+                }
+                AutoSell(destroyOnSell);
+                
             });
             EventProcessor.RegisterCommand("/syncinv", (x) =>
             {
@@ -78,7 +82,7 @@ namespace E3Core.Processors
             LootDataFile.SaveData();
         }
 
-        private static void AutoSell()
+        private static void AutoSell(bool useDestroy = false)
         {
             int platinumGain = MQ.Query<int>("${Me.Platinum}");
             bool merchantWindowOpen = MQ.Query<bool>("${Window[MerchantWnd].Open}");
@@ -140,13 +144,53 @@ namespace E3Core.Processors
                                     E3.Bots.Broadcast($"\arERROR: Selling item. Item:{itemName} Tried to sell but still in inventory. PrimarySlot:{i} bagslot:{e}");
                                 }
                             }
-                        }
+     					}
                     }
                 }
             }
             platinumGain = MQ.Query<int>("${Me.Platinum}") - platinumGain;
             MQ.Write($"\ag You made {platinumGain.ToString("N0")} platinum");
-        }
+			MQ.Cmd("/nomodkey /notify MerchantWnd MW_Done_Button leftmouseup");
+            MQ.Delay(500);
+            if(useDestroy)
+            {
+				//scan through our inventory looking for an item with a stackable
+				for (Int32 i = 1; i <= 10; i++)
+				{
+					bool SlotExists = MQ.Query<bool>($"${{Me.Inventory[pack{i}]}}");
+					if (SlotExists)
+					{
+						Int32 ContainerSlots = MQ.Query<Int32>($"${{Me.Inventory[pack{i}].Container}}");
+
+						if (ContainerSlots > 0)
+						{
+							for (Int32 e = 1; e <= ContainerSlots; e++)
+							{
+								//${Me.Inventory[${itemSlot}].Item[${j}].Name.Equal[${itemName}]}
+								String itemName = MQ.Query<String>($"${{Me.Inventory[pack{i}].Item[{e}]}}");
+								if (itemName == "NULL")
+								{
+									continue;
+								}
+
+								if (LootDataFile.Destroy.Contains(itemName))
+								{
+									MQ.Cmd($"/shiftkey /itemnotify in pack{i} {e} leftmouseup", 500);
+
+									if (e3util.ValidateCursor(MQ.Query<int>($"${{FindItem[={itemName}].ID}}")))
+									{
+										E3.Bots.Broadcast("<AutoSell> Destroying: " + itemName);
+										MQ.Cmd("/destroy",300);
+                                       
+									}
+								}
+							}
+						}
+					}
+				}
+			}
+			
+		}
 
         private static void AutoStack()
         {
