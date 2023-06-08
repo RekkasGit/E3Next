@@ -129,8 +129,10 @@ namespace E3Core.Settings
         public bool BandoBuff_Enabled = false;
 		public string BandoBuff_BuffName = "";
 		public string BandoBuff_Primary = "";
+		public string BandoBuff_Secondary = "";
 		public string BandoBuff_BandoName = "";
 		public string BandoBuff_PrimaryWithoutBuff = "";
+		public string BandoBuff_SecondaryWithoutBuff = "";
 		public string BandoBuff_BandoNameWithoutBuff = "";
 
 		//manastone
@@ -269,7 +271,9 @@ namespace E3Core.Settings
 			LoadKeyData("Bando Buff", "Enabled", ParsedData, ref BandoBuff_Enabled);
 			LoadKeyData("Bando Buff", "BuffName", ParsedData, ref BandoBuff_BuffName);
 			LoadKeyData("Bando Buff", "PrimaryWithBuff", ParsedData, ref BandoBuff_Primary);
+			LoadKeyData("Bando Buff", "SecondaryWithBuff", ParsedData, ref BandoBuff_Secondary);
 			LoadKeyData("Bando Buff", "PrimaryWithoutBuff", ParsedData, ref BandoBuff_PrimaryWithoutBuff);
+			LoadKeyData("Bando Buff", "SecondaryWithoutBuff", ParsedData, ref BandoBuff_SecondaryWithoutBuff);
 			LoadKeyData("Bando Buff", "BandoNameWithBuff", ParsedData, ref BandoBuff_BandoName);
 			LoadKeyData("Bando Buff", "BandoNameWithoutBuff", ParsedData, ref BandoBuff_BandoNameWithoutBuff);
 
@@ -669,7 +673,9 @@ namespace E3Core.Settings
             section.Keys.AddKey("Enabled", "Off");
 			section.Keys.AddKey("BuffName", "");
 			section.Keys.AddKey("PrimaryWithBuff", "");
+			section.Keys.AddKey("SecondaryWithBuff", "");
 			section.Keys.AddKey("PrimaryWithoutBuff", "");
+			section.Keys.AddKey("SecondaryWithoutBuff", "");
 			section.Keys.AddKey("BandoNameWithBuff", "");
 			section.Keys.AddKey("BandoNameWithoutBuff", "");
 

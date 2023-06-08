@@ -505,7 +505,7 @@ namespace E3Core.Processors
 			if (!MQ.Query<bool>("${Window[LootWnd].Open}"))
 			{
 				MQ.Cmd("/loot");
-				MQ.Delay(1000, "${Window[LootWnd].Open}");
+				MQ.Delay(3000, "${Window[LootWnd].Open}");
 				MQ.Delay(100);
 				if (!MQ.Query<bool>("${Window[LootWnd].Open}"))
 				{
@@ -515,7 +515,7 @@ namespace E3Core.Processors
 						_unlootableCorpses.Add(corpse.ID);
 					}
 					return;
-
+                    
 				}
 			}
             

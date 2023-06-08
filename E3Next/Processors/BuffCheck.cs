@@ -1198,19 +1198,22 @@ namespace E3Core.Processors
 
 			}
 			string primaryName = MQ.Query<String>("${Me.Inventory[13]}");
-
+			string secondaryName = MQ.Query<String>("${Me.Inventory[14]}");
 			if (hasBuff)
 			{
 
-				if (!String.Equals(primaryName,E3.CharacterSettings.BandoBuff_Primary,StringComparison.OrdinalIgnoreCase))
+				if (!(String.Equals(primaryName,E3.CharacterSettings.BandoBuff_Primary,StringComparison.OrdinalIgnoreCase) && String.Equals(secondaryName, E3.CharacterSettings.BandoBuff_Secondary, StringComparison.OrdinalIgnoreCase)))
 				{
+                    E3.Bots.Broadcast($"Swapping to {E3.CharacterSettings.BandoBuff_BandoName}");
 					MQ.Cmd($"/bando activate {E3.CharacterSettings.BandoBuff_BandoName}");
 				}
 			}
 			else
 			{
-				if (!String.Equals(primaryName, E3.CharacterSettings.BandoBuff_PrimaryWithoutBuff, StringComparison.OrdinalIgnoreCase))
+				if (!(String.Equals(primaryName, E3.CharacterSettings.BandoBuff_PrimaryWithoutBuff, StringComparison.OrdinalIgnoreCase)&& String.Equals(secondaryName, E3.CharacterSettings.BandoBuff_SecondaryWithoutBuff, StringComparison.OrdinalIgnoreCase)))
 				{
+					E3.Bots.Broadcast($"Swapping to {E3.CharacterSettings.BandoBuff_BandoNameWithoutBuff}");
+
 					MQ.Cmd($"/bando activate {E3.CharacterSettings.BandoBuff_BandoNameWithoutBuff}");
 				}
 			}
