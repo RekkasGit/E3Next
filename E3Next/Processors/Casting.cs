@@ -1252,7 +1252,21 @@ namespace E3Core.Processors
                     E3.Bots.Broadcast($"{pair.Key} = {pair.Value}");
                 }
             });
-        }
+			EventProcessor.RegisterCommand("/e3varvalue", (x) => {
+				
+                if(x.args.Count==1)
+                {
+                    if (VarsetValues.ContainsKey(x.args[0]))
+                    {
+						E3.MQ.Cmd($"/varset E3N_var {VarsetValues[x.args[0]]}");
+                        return;
+					}
+				}
+                
+                E3.MQ.Cmd("/varset E3N_var NULL");
+
+			});
+		}
         public static bool Ifs(Data.Spell spell)
         {
             return Ifs(spell.Ifs);

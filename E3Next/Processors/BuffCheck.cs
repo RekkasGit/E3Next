@@ -1190,18 +1190,38 @@ namespace E3Core.Processors
 			if (String.IsNullOrWhiteSpace(E3.CharacterSettings.BandoBuff_BandoName)) return;
 			if (String.IsNullOrWhiteSpace(E3.CharacterSettings.BandoBuff_BandoNameWithoutBuff)) return;
 
-			bool hasBuff = MQ.Query<bool>($"${{Bool[${{Me.Buff[{E3.CharacterSettings.BandoBuff_BuffName}]}}]}}");
+            bool hasBuff = true;
 
-            if (!hasBuff)
-            {
-				hasBuff = MQ.Query<bool>($"${{Bool[${{Me.Song[{E3.CharacterSettings.BandoBuff_BuffName}]}}]}}");
-
+			if (E3.CharacterSettings.BandoBuff_BuffName != String.Empty)
+			{
+				hasBuff = MQ.Query<bool>($"${{Bool[${{Me.Buff[{E3.CharacterSettings.BandoBuff_BuffName}]}}]}}");
+				if (!hasBuff)
+				{
+					hasBuff = MQ.Query<bool>($"${{Bool[${{Me.Song[{E3.CharacterSettings.BandoBuff_BuffName}]}}]}}");
+				}
 			}
+			if (hasBuff && Basics.InCombat() && MQ.Query<Int32>("${Target.ID}")>0)
+            {
+				bool hasDebuff = MQ.Query<bool>($"${{Bool[${{Target.Buff[{E3.CharacterSettings.BandoBuff_DebuffName}]}}]}}");
+				if (!hasDebuff )
+				{
+					bool willStack = MQ.Query<bool>($"${{Spell[{E3.CharacterSettings.BandoBuff_DebuffName}].StacksTarget}}");
+
+					if (willStack)
+					{
+						E3.Bots.Broadcast($"Swapping to {E3.CharacterSettings.BandoBuff_BandoNameWithoutDeBuff}");
+
+						MQ.Cmd($"/bando activate {E3.CharacterSettings.BandoBuff_BandoNameWithoutDeBuff}");
+						return;
+					}
+				}
+			}
+		
+			//we have the debuff or we have the buff.
 			string primaryName = MQ.Query<String>("${Me.Inventory[13]}");
 			string secondaryName = MQ.Query<String>("${Me.Inventory[14]}");
 			if (hasBuff)
 			{
-
 				if (!(String.Equals(primaryName,E3.CharacterSettings.BandoBuff_Primary,StringComparison.OrdinalIgnoreCase) && String.Equals(secondaryName, E3.CharacterSettings.BandoBuff_Secondary, StringComparison.OrdinalIgnoreCase)))
 				{
                     E3.Bots.Broadcast($"Swapping to {E3.CharacterSettings.BandoBuff_BandoName}");

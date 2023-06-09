@@ -127,13 +127,15 @@ namespace E3Core.Settings
 
         //bando buffs
         public bool BandoBuff_Enabled = false;
-		public string BandoBuff_BuffName = "";
-		public string BandoBuff_Primary = "";
-		public string BandoBuff_Secondary = "";
-		public string BandoBuff_BandoName = "";
-		public string BandoBuff_PrimaryWithoutBuff = "";
-		public string BandoBuff_SecondaryWithoutBuff = "";
-		public string BandoBuff_BandoNameWithoutBuff = "";
+		public string BandoBuff_BuffName = String.Empty;
+		public string BandoBuff_DebuffName = String.Empty;
+		public string BandoBuff_Primary = String.Empty;
+		public string BandoBuff_Secondary = String.Empty;
+		public string BandoBuff_PrimaryWithoutBuff = String.Empty;
+		public string BandoBuff_SecondaryWithoutBuff = String.Empty;
+	    public string BandoBuff_BandoName = String.Empty;
+		public string BandoBuff_BandoNameWithoutBuff = String.Empty;
+		public string BandoBuff_BandoNameWithoutDeBuff = String.Empty;
 
 		//manastone
 		public bool Manastone_Enabled = true;
@@ -269,6 +271,7 @@ namespace E3Core.Settings
             LoadKeyData("Manastone", "Out of Combat MaxMana", ParsedData, ref ManaStone_OutOfCombatMaxMana);
 
 			LoadKeyData("Bando Buff", "Enabled", ParsedData, ref BandoBuff_Enabled);
+			LoadKeyData("Bando Buff", "DebuffName", ParsedData, ref BandoBuff_DebuffName);
 			LoadKeyData("Bando Buff", "BuffName", ParsedData, ref BandoBuff_BuffName);
 			LoadKeyData("Bando Buff", "PrimaryWithBuff", ParsedData, ref BandoBuff_Primary);
 			LoadKeyData("Bando Buff", "SecondaryWithBuff", ParsedData, ref BandoBuff_Secondary);
@@ -276,7 +279,7 @@ namespace E3Core.Settings
 			LoadKeyData("Bando Buff", "SecondaryWithoutBuff", ParsedData, ref BandoBuff_SecondaryWithoutBuff);
 			LoadKeyData("Bando Buff", "BandoNameWithBuff", ParsedData, ref BandoBuff_BandoName);
 			LoadKeyData("Bando Buff", "BandoNameWithoutBuff", ParsedData, ref BandoBuff_BandoNameWithoutBuff);
-
+			LoadKeyData("Bando Buff", "BandoNameWithoutDeBuff", ParsedData, ref BandoBuff_BandoNameWithoutDeBuff);
 			LoadKeyData("Assist Settings", "Assist Type (Melee/Ranged/Off)", ParsedData, ref Assist_Type);
             LoadKeyData("Assist Settings", "Melee Stick Point", ParsedData, ref Assist_MeleeStickPoint);
             LoadKeyData("Assist Settings", "Taunt(On/Off)", ParsedData, ref Assist_TauntEnabled);
@@ -672,12 +675,14 @@ namespace E3Core.Settings
 			section = newFile.Sections.GetSectionData("Bando Buff");
             section.Keys.AddKey("Enabled", "Off");
 			section.Keys.AddKey("BuffName", "");
+			section.Keys.AddKey("DebuffName", "");
 			section.Keys.AddKey("PrimaryWithBuff", "");
 			section.Keys.AddKey("SecondaryWithBuff", "");
 			section.Keys.AddKey("PrimaryWithoutBuff", "");
 			section.Keys.AddKey("SecondaryWithoutBuff", "");
 			section.Keys.AddKey("BandoNameWithBuff", "");
 			section.Keys.AddKey("BandoNameWithoutBuff", "");
+			section.Keys.AddKey("BandoNameWithoutDeBuff", "");
 
 
 			newFile.Sections.AddSection("Blocked Buffs");

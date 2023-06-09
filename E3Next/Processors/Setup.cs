@@ -33,6 +33,11 @@ namespace E3Core.Processors
             using (_log.Trace())
             {
 
+                if(MQ.Query<bool>("!${Defined[E3N_var]})"))
+                {
+                    MQ.Cmd("/declare E3N_var string global false");
+                }
+
                 //lets init server name
                 //laz server specific,otherwise default
                 if (MQ.Query<bool>($"${{MacroQuest.Server.Equal[Project Lazarus]}}"))
