@@ -107,6 +107,7 @@ namespace E3Core.Processors
 
             EventProcessor.RegisterEvent("Zoned", @"You have entered (.+)\.", (x) =>
             {
+               
                 //means we have zoned.
                 _spawns.RefreshList();//make sure we get a new refresh of this zone.
                 Loot.Reset();
@@ -118,12 +119,12 @@ namespace E3Core.Processors
             });
             EventProcessor.RegisterEvent("Summoned", @"You have been summoned!", (x) =>
             {
+				return;
 
-
-                //coth, or summoned by a mob?
-                ///a Tae Ew warder says 'You will not evade me, Alara!' 
-                ///You have been summoned!
-                if (Assist.AllowControl) return; //this is our driver and most likely a tank, ignore this.
+				//coth, or summoned by a mob?
+				///a Tae Ew warder says 'You will not evade me, Alara!' 
+				///You have been summoned!
+				if (Assist.AllowControl) return; //this is our driver and most likely a tank, ignore this.
 
                 _spawns.RefreshList();//make sure we get a new refresh of this zone.
                 //check to see if your target is on top of you, if so... well, good luck!

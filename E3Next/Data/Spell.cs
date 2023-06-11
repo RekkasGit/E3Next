@@ -488,6 +488,11 @@ namespace E3Core.Data
                     }
 
                 }
+                int tmpMana = MQ.Query<Int32>($"${{Me.AltAbility[{CastName}].Spell.Mana}}");
+                if(tmpMana>0)
+                {
+                    Mana = tmpMana;
+                }
                 SpellName = MQ.Query<String>($"${{Me.AltAbility[{CastName}].Spell}}");
                 SpellID = MQ.Query<Int32>($"${{Me.AltAbility[{CastName}].Spell.ID}}");
                 CastID = MQ.Query<Int32>($"${{Me.AltAbility[{CastName}].ID}}");

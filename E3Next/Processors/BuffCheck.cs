@@ -246,6 +246,8 @@ namespace E3Core.Processors
         public static void Check_BlockedBuffs()
         {
             if (!e3util.ShouldCheck(ref _nextBlockBuffCheck, _nextBlockBuffCheckInterval)) return;
+
+
             foreach (var spell in E3.CharacterSettings.BockedBuffs)
             {
                 if (spell.SpellID > 0)

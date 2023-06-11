@@ -33,7 +33,7 @@ namespace E3Core.Processors
             using (_log.Trace())
             {
 
-                if(MQ.Query<bool>("!${Defined[E3N_var]})"))
+                if(MQ.Query<bool>("!${Defined[E3N_var]}"))
                 {
                     MQ.Cmd("/declare E3N_var string global false");
                 }
