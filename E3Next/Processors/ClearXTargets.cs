@@ -47,6 +47,7 @@ namespace E3Core.Processors
                 //lets see if we have anything on xtarget that is valid
                 if (MobToAttack == 0)
                 {
+                  
                     foreach (var s in _spawns.Get().OrderBy(x => x.Distance))
                     {
                         //find all mobs that are close

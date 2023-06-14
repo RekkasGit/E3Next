@@ -48,6 +48,17 @@ namespace E3Core.Processors
         private static Dictionary<string, Int64> _petBuffListCollectionTimeStamps = new Dictionary<string, long>();
         private static Int64 _nextPetBuffCheck = 0;
         private static Int64 _nextPetBuffRefreshTimeInterval = 1000;
+        private static bool GlobalAllEnabled = false;
+
+        public Bots()
+        {
+			EventProcessor.RegisterCommand("/e3GlobalBroadcast", (x) =>
+			{
+                GlobalAllEnabled = !GlobalAllEnabled;
+                Broadcast($"\agSetting Global Boradcast to {GlobalAllEnabled}");
+				
+			});
+		}
 
         private static string GetGroupCommand()
         {
@@ -71,6 +82,10 @@ namespace E3Core.Processors
             if(match!=null)
             {
                 hasAllFlag = match.hasAllFlag;
+            }
+            if(GlobalAllEnabled)
+            {
+                hasAllFlag = GlobalAllEnabled;
             }
 
             string noparseCommand = string.Empty;

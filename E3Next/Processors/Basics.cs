@@ -115,6 +115,7 @@ namespace E3Core.Processors
                 Assist.Reset();
                 Pets.Reset();
                 Nukes.Reset();
+                BuffCheck.AddToBuffCheckTimer(2000);
                 Zoning.Zoned(MQ.Query<Int32>("${Zone.ID}"));
             });
             EventProcessor.RegisterEvent("Summoned", @"You have been summoned!", (x) =>
