@@ -58,14 +58,18 @@ namespace E3Core.Processors
 
             }
 
-            if (petId < 1 && Basics.InCombat() && !E3.CharacterSettings.Pet_SummonCombat)
-            {
-                return;
-            }
+			if (Basics.InCombat() && !E3.CharacterSettings.Pet_SummonCombat)
+			{
+				return;
+			}
+			if (petId<1)
+			{
+				
+				CheckPetSummon(ref petId);
 
-            CheckPetSummon(ref petId);
+			}
 
-        }
+		}
 
         private static void CheckPetSummon(ref Int32 petID)
         {

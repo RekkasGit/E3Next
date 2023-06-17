@@ -635,6 +635,7 @@ namespace E3Core.Settings
                 section.Keys.AddKey("Important Heal", "");
                 section.Keys.AddKey("Group Heal", "");
 				section.Keys.AddKey("Party Heal", "");
+                section.Keys.AddKey("Heal Over Time Spell", "");
 				section.Keys.AddKey("All Heal", "");
                 section.Keys.AddKey("XTarget Heal", "");
                 section.Keys.AddKey("Tank", "");
