@@ -287,6 +287,11 @@ namespace E3Core.Processors
                 
                 //setup is done after the settings are setup.
                 //as there is an order dependecy
+                foreach (var SendCommand in E3.CharacterSettings.Misc_CommandOnStartup)
+                {
+                    MQ.Write(SendCommand);
+                    MQ.Cmd(SendCommand);
+                }
                 Setup.Init();
 
                 IsInit = true;

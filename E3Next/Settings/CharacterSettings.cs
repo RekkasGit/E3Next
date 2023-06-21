@@ -63,6 +63,8 @@ namespace E3Core.Settings
         public Int32 Assist_DelayStrafeDelay = 1500;
         private string _fileName = String.Empty;
 
+        //load lua or macro 
+        public List<string> Misc_CommandOnStartup = new List<string>();
         //abilities
         public List<Spell> MeleeAbilities = new List<Spell>();
         //nukes
@@ -256,6 +258,7 @@ namespace E3Core.Settings
             LoadKeyData("Misc", "Auto-Forage (On/Off)", ParsedData, ref Misc_AutoForage);
             LoadKeyData("Misc", "Dismount On Interrupt (On/Off)", ParsedData, ref Misc_DismountOnInterrupt);
             LoadKeyData("Misc", "Delay in MS After CastWindow Drops For Spell Completion",ParsedData, ref Misc_DelayAfterCastWindowDropsForSpellCompletion);
+            LoadKeyData("Misc", "Command On Startup", ParsedData, Misc_CommandOnStartup);
 
 			LoadKeyData("Manastone", "Override General Settings (On/Off)", ParsedData, ref Manastone_OverrideGeneralSettings);
             LoadKeyData("Manastone", "Manastone Enabled (On/Off)", ParsedData, ref Manastone_Enabled);
@@ -470,7 +473,7 @@ namespace E3Core.Settings
             section.Keys.AddKey("Auto-Forage (On/Off)", "Off");
             section.Keys.AddKey("Dismount On Interrupt (On/Off)","On");
             section.Keys.AddKey("Delay in MS After CastWindow Drops For Spell Completion", "0");
-
+            section.Keys.AddKey("Command On Startup", "");
 
 			newFile.Sections.AddSection("Assist Settings");
             section = newFile.Sections.GetSectionData("Assist Settings");
