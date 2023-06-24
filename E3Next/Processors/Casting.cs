@@ -134,8 +134,10 @@ namespace E3Core.Processors
                             if (!IsCasting()) return CastReturn.CAST_INTERRUPTED;
 
                         }
+						//process any commands we need to process from the UI
+						PubClient.ProcessRequests();
 
-                    }
+					}
                 }
 
 
@@ -564,8 +566,9 @@ namespace E3Core.Processors
                                     return CastReturn.CAST_INTERRUPTED;
                                 }
                             }
-
-                            MQ.Delay(50);
+							//process any commands we need to process from the UI
+							PubClient.ProcessRequests();
+							MQ.Delay(50);
                             if(E3.IsPaused())
                             {
                                 Interrupt();

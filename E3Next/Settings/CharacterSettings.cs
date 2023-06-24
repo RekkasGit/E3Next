@@ -513,11 +513,7 @@ namespace E3Core.Settings
                 newFile.Sections.AddSection("Stuns");
                 section = newFile.Sections.GetSectionData("Stuns");
                 section.Keys.AddKey("Main", "");
-
-                newFile.Sections.AddSection("TargetAE");
-                section = newFile.Sections.GetSectionData("TargetAE");
-                section.Keys.AddKey("TargetAE", "");
-
+                
                 newFile.Sections.AddSection("PBAE");
                 section = newFile.Sections.GetSectionData("PBAE");
                 section.Keys.AddKey("PBAE", "");

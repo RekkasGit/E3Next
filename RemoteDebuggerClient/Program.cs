@@ -783,6 +783,11 @@ namespace MQServerClient
         {
             return true;
         }
-    }
+
+		public string GetFocusedWindowName()
+		{
+            return "NULL";
+		}
+	}
 
 }
