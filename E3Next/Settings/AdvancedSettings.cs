@@ -238,6 +238,7 @@ NEC Function=check_Gimme
 [PAL Functions]
 PAL Function=check_Tanking
 PAL Function=check_Yaulp
+PAL Function=check_Debuffs
 PAL Function=check_Burns
 PAL Function=check_Heals
 PAL Function=check_Cures
@@ -248,6 +249,7 @@ PAL Function=check_Food
 RNG Function=check_Burns
 RNG Function=check_Heals
 RNG Function=check_DoTs
+RNG Function=check_Debuffs
 RNG Function=check_Nukes
 RNG Function=check_Buffs
 RNG Function=check_Food
