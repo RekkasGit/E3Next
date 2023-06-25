@@ -553,11 +553,11 @@ namespace E3Core.Processors
                         
             EventProcessor.RegisterCommand("/peqeditor", x =>
             {
-                if (string.Equals(x.args[0], "kunark", StringComparison.OrdinalIgnoreCase))
+                if (x.args.Count == 0)
                 {
-                    Process.Start(new ProcessStartInfo { FileName = "https://editor.fvproject.com/index.php", UseShellExecute = true });
+                    Process.Start(new ProcessStartInfo { FileName = "https://editor.fvproject.com/", UseShellExecute = true });
                 }
-                else if (string.Equals(x.args[0], "classic", StringComparison.OrdinalIgnoreCase))
+                else if (string.Equals(x.args[0], "kunark", StringComparison.OrdinalIgnoreCase))
                 {
                     Process.Start(new ProcessStartInfo { FileName = "https://fvproject.com/peqedit/peqphpeditor/index.php", UseShellExecute = true });
                 }
