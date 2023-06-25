@@ -20,7 +20,7 @@ bool ShowMQ2MonoWindow = true;
 std::string monoDir;
 bool initialized = false;
 std::string currentDirectory;
-std::string version = "0.2";
+
 #pragma region string_methods
 struct ci_less
 {
@@ -368,15 +368,7 @@ std::string get_current_dir() {
 	return current_working_dir;
 }
 
-static MonoString* mono_GetMQ2MonoVersion()
-{
-	return mono_string_new_wrapper(version.c_str());
-}
-static MonoString* mono_GetFocusedWindowName()
-{
-	
-	return mono_string_new_wrapper("NULL");
-}
+
 static void mono_GetSpawns()
 {
 	MonoDomain* currentDomain = mono_domain_get();
@@ -467,8 +459,7 @@ void InitMono()
 	mono_add_internal_call("MonoCore.Core::mq_ClearCommands", &mono_ClearCommands);
 	mono_add_internal_call("MonoCore.Core::mq_RemoveCommand", &mono_RemoveCommand);
 	mono_add_internal_call("MonoCore.Core::mq_GetSpawns", &mono_GetSpawns);
-	mono_add_internal_call("MonoCore.Core::mq_GetFocusedWindowName", &mono_GetFocusedWindowName);
-	mono_add_internal_call("MonoCore.Core::mq_GetMQ2MonoVersion", &mono_GetMQ2MonoVersion);
+
 
 	//I'm GUI stuff
 	mono_add_internal_call("MonoCore.Core::imgui_Begin", &mono_ImGUI_Begin);
@@ -553,7 +544,7 @@ void InitE3()
 
 
 
-	std::string fileName = "E3.dll";
+	std::string fileName = "Core.dll";
 	std::string assemblypath = (currentDirectory + "\\E3Next\\bin\\Debug\\");
 
 	bool filepathExists = std::filesystem::exists(assemblypath+fileName);

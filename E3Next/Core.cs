@@ -759,7 +759,7 @@ namespace MonoCore
         public static Logging logInstance;
         public volatile static bool IsProcessing = false;
         public const string _coreVersion = "0.1";
-        public static Decimal _MQ2Version = 0.1M;
+
 
         //Note, if you comment out a method, this will tell MQ2Mono to not try and execute it
         //only use the events you need to prevent string allocations to be passed in
@@ -800,16 +800,7 @@ namespace MonoCore
         static Task _taskThread;
         public static void OnInit()
         {
-			try
-			{
-				_MQ2Version = Decimal.Parse(Core.mq_GetMQ2MonoVersion());
-			}
-			catch (Exception ex)
-			{
-				//old version, does not have mq2mono method, warn user
-			}
-
-			if (!_isInit)
+            if (!_isInit)
             {
                 IsProcessing = true;
                 if (mqInstance == null)
@@ -1002,15 +993,10 @@ namespace MonoCore
         public extern static void mq_GetSpawns();
         [MethodImpl(MethodImplOptions.InternalCall)]
         public extern static bool mq_GetRunNextCommand();
-        [MethodImpl(MethodImplOptions.InternalCall)]
-        public extern static string mq_GetFocusedWindowName();
-		[MethodImpl(MethodImplOptions.InternalCall)]
-		private extern static string mq_GetMQ2MonoVersion();
-		[MethodImpl(MethodImplOptions.InternalCall)]
-		public extern static string mq_DoesNotExist();
 
-		#region IMGUI
-		[MethodImpl(MethodImplOptions.InternalCall)]
+        
+        #region IMGUI
+        [MethodImpl(MethodImplOptions.InternalCall)]
         public extern static bool imgui_Begin(string name, int flags);
         [MethodImpl(MethodImplOptions.InternalCall)]
         public extern static void imgui_Begin_OpenFlagSet(string name, bool value);
@@ -1111,7 +1097,6 @@ namespace MonoCore
         void RemoveCommand(string commandName);
         
         bool FeatureEnabled(MQFeature feature);
-        string GetFocusedWindowName();
 
     }
     public class MQ : IMQ
@@ -1408,20 +1393,7 @@ namespace MonoCore
             }
             return true;
         }
-
-		public string GetFocusedWindowName()
-		{
-            if(Core._MQ2Version>0.1M)
-            {
-                return Core.mq_GetFocusedWindowName();
-            }
-            else
-            {
-                return "NULL";
-            }
-			
-		}
-	}
+    }
 
     public class Logging
     {

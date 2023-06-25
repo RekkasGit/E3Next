@@ -13,9 +13,6 @@ namespace E3NextUI.Settings
     public class DynamicButton
     {
         public string Name = String.Empty;
-        public string Hotkey = String.Empty;
-        public bool HotKeyAlt = false;
-        public bool HotKeyCtrl = false;
         public List<string> Commands = new List<string>();
     }
     public class GeneralSettings:BaseSettings
@@ -98,23 +95,6 @@ namespace E3NextUI.Settings
                             }
 
                         }
-						keyData = section.GetKeyData("hotkey");
-                        if(keyData!= null)
-                        {
-                            b.Hotkey = keyData.Value;
-							keyData = section.GetKeyData("hotkeyalt");
-                            if(keyData!= null)
-                            {
-                                b.HotKeyAlt=Boolean.Parse(keyData.Value);
-
-                            }
-							keyData = section.GetKeyData("hotkeyctrl");
-							if (keyData != null)
-							{
-								b.HotKeyCtrl = Boolean.Parse(keyData.Value);
-
-							}
-						}
                         DynamicButtons.Add($"dynamicButton_{i + 1}", b);
                     }
                 }
@@ -155,10 +135,7 @@ namespace E3NextUI.Settings
                 {
                     section.AddKey("line", command);
                 }
-                section.AddKey("hotkey", pair.Value.Hotkey.ToString());
-				section.AddKey("hotkeyalt", pair.Value.HotKeyAlt.ToString());
-				section.AddKey("hotkeyctrl", pair.Value.HotKeyCtrl.ToString());
-			}
+            }
 
             FileIniDataParser fileIniData = CreateIniParser();
             fileIniData.WriteFile(filename, _parsedData);
