@@ -930,9 +930,13 @@ namespace MonoCore
         public extern static void mq_GetSpawns();
         [MethodImpl(MethodImplOptions.InternalCall)]
         public extern static bool mq_GetRunNextCommand();
+		[MethodImpl(MethodImplOptions.InternalCall)]
+		public extern static string mq_GetFocusedWindowName();
+		[MethodImpl(MethodImplOptions.InternalCall)]
+		public extern static string mq_GetMQ2MonoVersion();
 
-        #region IMGUI
-        [MethodImpl(MethodImplOptions.InternalCall)]
+		#region IMGUI
+		[MethodImpl(MethodImplOptions.InternalCall)]
         public extern static bool imgui_Begin(string name, int flags);
         [MethodImpl(MethodImplOptions.InternalCall)]
         public extern static void imgui_Begin_OpenFlagSet(string name, bool value);

@@ -24,10 +24,10 @@ namespace E3Core.Processors
         void Broadcast(string message);
         List<Int32> BuffList(string name);
         List<Int32> PetBuffList(string name);
-        Int32 DebuffCounters(string name);
-        Int32 DiseasedCounters(string name);
-        Int32 PoisonedCounters(string name);
-        Int32 CursedCounters(string name);
+        Int32 BaseDebuffCounters(string name);
+        Int32 BaseDiseasedCounters(string name);
+        Int32 BasePoisonedCounters(string name);
+        Int32 BaseCursedCounters(string name);
         bool IsMyBot(string name);
         void Trade(string name);
     }
@@ -291,25 +291,30 @@ namespace E3Core.Processors
             MQ.Cmd($"/bc {message}");
         }
 
-        public int DebuffCounters(string name)
+		//NOTE* these are the counters on the original spell , not the CURRENT counter value.
+		//can't currently get counter totals on EMu due to a but in MQ
+		//per Dannuic
+		//There are more spells (especially on emu) that can be cured that don't use counters, you should be checking SPA (which is what ${Me.Diseased} does)
+
+		public int BaseDebuffCounters(string name)
         {
             Int32 counters = MQ.Query<Int32>($"${{NetBots[{name}].Counters}}");
             return counters;
         }
 
-        public int DiseasedCounters(string name)
+        public int BaseDiseasedCounters(string name)
         {
             Int32 counters = MQ.Query<Int32>($"${{NetBots[{name}].Diseased}}");
             return counters;
         }
 
-        public int PoisonedCounters(string name)
+        public int BasePoisonedCounters(string name)
         {
             Int32 counters = MQ.Query<Int32>($"${{NetBots[{name}].Poisoned}}");
             return counters;
         }
 
-        public int CursedCounters(string name)
+        public int BaseCursedCounters(string name)
         {
             Int32 counters = MQ.Query<Int32>($"${{NetBots[{name}].Cursed}}");
             return counters;
@@ -566,8 +571,11 @@ namespace E3Core.Processors
         }
         private HashSet<String> _curseCountersObservers = new HashSet<string>();
 
-
-        public int CursedCounters(string name)
+		//NOTE* these are the counters on the original spell , not the CURRENT counter value.
+		//can't currently get counter totals on EMu due to a but in MQ
+        //per Dannuic
+		//There are more spells (especially on emu) that can be cured that don't use counters, you should be checking SPA (which is what ${Me.Diseased} does)
+		public int BaseCursedCounters(string name)
         {
             if (!_curseCountersObservers.Contains(name))
             {
@@ -580,7 +588,7 @@ namespace E3Core.Processors
      
         }
         private HashSet<String> _debuffCountersObservers = new HashSet<string>();
-        public int DebuffCounters(string name)
+        public int BaseDebuffCounters(string name)
         {
             if (!_debuffCountersObservers.Contains(name))
             {
@@ -594,7 +602,7 @@ namespace E3Core.Processors
         }
         private HashSet<String> _diseaseCountersObservers = new HashSet<string>();
 
-        public int DiseasedCounters(string name)
+        public int BaseDiseasedCounters(string name)
         {
             if (!_diseaseCountersObservers.Contains(name))
             {
@@ -608,7 +616,7 @@ namespace E3Core.Processors
         }
         private HashSet<String> _poisonCountersObservers = new HashSet<string>();
 
-        public int PoisonedCounters(string name)
+        public int BasePoisonedCounters(string name)
         {
             if (!_poisonCountersObservers.Contains(name))
             {
