@@ -220,9 +220,7 @@ namespace E3Core.Processors
             PubServer.AddTopicMessage("${Me.CurrentEndurance}", StamPointsCurrent.ToString("N0"));
             CurrentInCombat = Basics.InCombat();
             PubServer.AddTopicMessage("${InCombat}", CurrentInCombat.ToString());
-			PubServer.AddTopicMessage("${EQ.CurrentFocusedWindowName}", MQ.GetFocusedWindowName());
-
-			string nameOfPet = MQ.Query<string>("${Me.Pet.CleanName}");
+            string nameOfPet = MQ.Query<string>("${Me.Pet.CleanName}");
             if (nameOfPet != "NULL")
             {
                 //set the pet name

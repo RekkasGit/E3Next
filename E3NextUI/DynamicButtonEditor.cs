@@ -7,33 +7,17 @@ using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
 using System.Windows.Forms;
-using static System.Windows.Forms.VisualStyles.VisualStyleElement;
 
 namespace E3NextUI
 {
     public partial class DynamicButtonEditor : Form
-	{
-		static List<string> keyboardKeys = new List<string>();
-		static DynamicButtonEditor()
-        {
-	        //initlize the values from the enum
-            foreach (Keys keyValue in (Keys[])Enum.GetValues(typeof(System.Windows.Forms.Keys)))
-			{
-                keyboardKeys.Add(keyValue.ToString());
-			}
-
-		}
-		public DynamicButtonEditor()
+    {
+        public DynamicButtonEditor()
         {
             InitializeComponent();
+        }
 
-
-            comboBoxKeyValues.DataSource = keyboardKeys;
-
-           
-		}
-
-		private void button1_Click(object sender, EventArgs e)
+        private void button1_Click(object sender, EventArgs e)
         {
             if(String.IsNullOrWhiteSpace(this.textBoxName.Text))
             {
@@ -51,7 +35,5 @@ namespace E3NextUI
             this.Close();
 
         }
-
-		
-	}
+    }
 }
