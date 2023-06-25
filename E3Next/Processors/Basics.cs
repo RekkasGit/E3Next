@@ -543,16 +543,12 @@ namespace E3Core.Processors
             {
                 if (x.args.Count == 0)
                 {
-                    Process.Start(new ProcessStartInfo { FileName = "https://github.com/RekkasGit/E3Next/wiki", UseShellExecute = true });
+                    Process.Start(new ProcessStartInfo { FileName = "https://github.com/Manwe-fv/E3Next-FVP/wiki", UseShellExecute = true });
                 }
-                else if (string.Equals(x.args[0], "Laz", StringComparison.OrdinalIgnoreCase))
+                else if (string.Equals(x.args[0], "FVP", StringComparison.OrdinalIgnoreCase))
                 {
-                    Process.Start(new ProcessStartInfo { FileName = "https://www.lazaruseq.com/Wiki/index.php/Main_Page", UseShellExecute = true });
+                    Process.Start(new ProcessStartInfo { FileName = "https://fvproject.com/index.php/Main_Page", UseShellExecute = true });
                 }
-				else if (string.Equals(x.args[0], "Ret", StringComparison.OrdinalIgnoreCase))
-				{
-					Process.Start(new ProcessStartInfo { FileName = "https://retributioneq.com/", UseShellExecute = true });
-				}
 			});
         }
 
