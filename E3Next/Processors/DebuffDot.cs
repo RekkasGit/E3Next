@@ -106,8 +106,10 @@ namespace E3Core.Processors
                         }
                     }
                 }
-
+				if (_mobsToOffAsist.Count == 0) return;
+				_mobsToOffAsist.Remove(Assist.AssistTargetID);
                 if (_mobsToOffAsist.Count == 0) return;
+
                 try
                 {
                     //lets place the 1st offensive spell on each mob, then the next, then the next
