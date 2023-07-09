@@ -909,9 +909,8 @@ namespace E3Core.Processors
                         if (hasManaStone) manastoneName = "Rose Colored Manastone";
                     }
                 }
-                bool amIStanding = MQ.Query<bool>("${Me.Standing}");
 
-                if (hasManaStone && amIStanding)
+                if (hasManaStone)
                 {
                     string manastoneCommand = $"/useitem \"{manastoneName}\"";
                     e3util.YieldToEQ();
