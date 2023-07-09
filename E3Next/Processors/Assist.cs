@@ -451,12 +451,12 @@ namespace E3Core.Processors
             //or you want to attack in enrage
             _assistIsEnraged = false;
 
-            if (mobID == 0)
-            {
+            //if (mobID == 0)
+            //{
                 //something wrong with the assist, kickout
-                E3.Bots.Broadcast("Cannot assist, improper mobid");
-                return;
-            }
+            //    E3.Bots.Broadcast("Cannot assist, improper mobid");
+            //    return;
+            //}
             Spawn s;
             if (_spawns.TryByID(mobID, out s))
             {
@@ -603,7 +603,8 @@ namespace E3Core.Processors
             //needed a case insensitive switch, that was easy to read, thus this.
             string sp = E3.CharacterSettings.Assist_MeleeStickPoint;
 
-            E3.Bots.Broadcast("Setting assist range to: " + _assistDistance);
+            //Removed broadcast as it was causing lag with lots of bots
+            //E3.Bots.Broadcast("Setting assist range to: " + _assistDistance);
            
             if (_stickSwitch == null)
             {
