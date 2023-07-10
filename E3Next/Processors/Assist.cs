@@ -464,12 +464,12 @@ namespace E3Core.Processors
 
                 if (s.TypeDesc == "Corpse")
                 {
-                    E3.Bots.Broadcast("Cannot assist, a corpse");
+                    //E3.Bots.Broadcast("Cannot assist, a corpse");
                     return;
                 }
                 if (!(s.TypeDesc == "NPC" || s.TypeDesc == "Pet"))
                 {
-                    E3.Bots.Broadcast("Cannot assist, not a NPC or Pet");
+                //    E3.Bots.Broadcast("Cannot assist, not a NPC or Pet");
                     return;
                 }
 
