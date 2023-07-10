@@ -19,8 +19,8 @@ namespace E3Core.Classes
     {
         private static IMQ MQ = E3.MQ;
         private static ISpawns _spawns = E3.Spawns;
-        private static string _weaponSpell = "Grant Spectral Armaments";
-        private static string _weaponItem = "Folded Pack of Spectral Armaments";
+        private static string _weaponSpell = "Sword of Runes";
+        private static string _weaponItem = "Sword of Runes";
         private static string _armorSpell = "Grant Spectral Plate";
         private static string _armorItem = "Folded Pack of Spectral Plate";
         private static string _focusSpell = "Grant Enibik's Heirlooms";
@@ -28,9 +28,9 @@ namespace E3Core.Classes
         private static string _weaponBag = "Pouch of Quellious";
         private static string _armorOrHeirloomBag = "Phantom Satchel";
         private static Dictionary<string, string> _weaponMap = new Dictionary<string, string>(StringComparer.OrdinalIgnoreCase) {
-            {"Fire", "Summoned: Fist of Flame"},
-            {"Water", "Summoned: Orb of Chilling Water" },
-            {"Shield", "Summoned: Buckler of Draining Defense" },
+            {"Fire", "Summoned: Sword of Runes"},
+            {"Water", "Summoned: Sword of Runes" },
+            {"Shield", "Summoned: Sword of Runes" },
             {"Taunt", "Summoned: Short Sword of Warding" },
             {"Slow", "Summoned: Mace of Temporal Distortion" },
             {"Malo", "Summoned: Spear of Maliciousness" },
