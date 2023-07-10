@@ -119,6 +119,7 @@
       <DependentUpon>Update.cs</DependentUpon>
     </Compile>
     <Compile Include="Util\CircularBuffer.cs" />
+    <Compile Include="Util\GlobalKeyboard.cs" />
     <Compile Include="Util\LineParser.cs" />
     <EmbeddedResource Include="E3UI.resx">
       <DependentUpon>E3UI.cs</DependentUpon>

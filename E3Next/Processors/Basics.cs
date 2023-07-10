@@ -811,7 +811,7 @@ namespace E3Core.Processors
                         }
                     }
                 }
-                if (E3.CurrentClass == Data.Class.Wizard && pctMana < 40 && E3.CurrentInCombat)
+                if (E3.CurrentClass == Data.Class.Wizard && pctMana < 15 && E3.CurrentInCombat)
                 {
                     bool harvestReady = MQ.Query<bool>("${Me.AltAbilityReady[Harvest of Druzzil]}");
                     if (harvestReady)

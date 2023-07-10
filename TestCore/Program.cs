@@ -223,7 +223,12 @@ namespace TestCore
             {
                 return true;
             }
-        }
+
+			public string GetFocusedWindowName()
+			{
+                return "NULL";
+			}
+		}
 
     }
 }

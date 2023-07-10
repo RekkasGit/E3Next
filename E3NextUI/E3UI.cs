@@ -49,6 +49,7 @@ namespace E3NextUI
         public static Int32 _parentProcess;
         public static object _objectLock = new object();
         public static GeneralSettings _genSettings;
+        public static bool _buttonMode = false;
         public Image _collapseConsoleImage;
         public Image _uncollapseConsoleImage;
         public Image _collapseDynamicButtonImage;
@@ -56,12 +57,14 @@ namespace E3NextUI
         public static String _playerHP;
         public static String _playerMP;
         public static String _playerSP;
-        
+        private globalKeyboardHook _globalKeyboard;
+        public static string _currentWindowName = "NULL";
        
 
         public E3UI()
         {
             InitializeComponent();
+            
             _collapseConsoleImage = (Image)pbCollapseConsoleButtons.Image.Clone();
             pbCollapseConsoleButtons.Image.RotateFlip(RotateFlipType.Rotate180FlipNone);
             _uncollapseConsoleImage = (Image)pbCollapseConsoleButtons.Image.Clone();
@@ -104,9 +107,11 @@ namespace E3NextUI
                 _pubServer = new PubServer();
                 _pubServer.Start(port);
                 _parentProcess = Int32.Parse(args[4]);
+				_globalKeyboard = new globalKeyboardHook((uint)_parentProcess);
+				_globalKeyboard.KeyDown += new KeyEventHandler(globalKeyboard_KeyDown);
+				_globalKeyboard.KeyUp += new KeyEventHandler(globalKeyboard_KeyUp);
 
-
-            }
+			}
 
             _genSettings = new GeneralSettings(configFolder, PlayerName);
             _genSettings.LoadData();
@@ -153,7 +158,9 @@ namespace E3NextUI
            
         }
 
-        private delegate void GlobalDelegate();
+		
+
+		private delegate void GlobalDelegate();
         public void GlobalUIProcess()
         {
             int currentX = this.DesktopBounds.X;
@@ -201,8 +208,25 @@ namespace E3NextUI
                 tableLayoutPanelDynamicButtons.Controls.Add(b);
             }
 
+			dyanmicButtonsLoadKeyBoardShortcuts();
+		}
+        void dyanmicButtonsLoadKeyBoardShortcuts()
+        {
+			_globalKeyboard.HookedKeys.Clear();
+			//register the keys
+			foreach (var pair in _genSettings.DynamicButtons)
+			{
 
-        }
+				if (pair.Value.Hotkey == String.Empty) continue;
+				Keys key;
+				Enum.TryParse(pair.Value.Hotkey, out key);
+
+				if (!_globalKeyboard.HookedKeys.Contains(key))
+				{
+					_globalKeyboard.HookedKeys.Add(key);
+				}
+			}
+		}
         void dynamicButtonRightClick(object sender, MouseEventArgs e)
         {
             var b = sender as Button;
@@ -217,8 +241,13 @@ namespace E3NextUI
                         edit.StartPosition = FormStartPosition.CenterParent;
                         edit.textBoxName.Text = b.Text;
                         edit.textBoxCommands.Text = String.Join("\r\n",db.Commands);
-
-                        if (edit.ShowDialog() == DialogResult.OK)
+						edit.checkBoxHotkeyAlt.Checked = db.HotKeyAlt;
+						edit.checkBoxHotkeyCtrl.Checked = db.HotKeyCtrl;
+                        if(!String.IsNullOrWhiteSpace(db.Hotkey))
+                        {
+							edit.comboBoxKeyValues.SelectedItem = db.Hotkey;
+						}
+						if (edit.ShowDialog() == DialogResult.OK)
                         {
                             db.Name = edit.textBoxName.Text;
                             string[] lines = edit.textBoxCommands.Text.Split(new string[] { Environment.NewLine }, StringSplitOptions.RemoveEmptyEntries);
@@ -231,16 +260,76 @@ namespace E3NextUI
                                     db.Commands.Add(line);
                                 }
                             }
-                         
-                            _genSettings.SaveData();
-                            b.Text = db.Name;
+                            db.HotKeyAlt = edit.checkBoxHotkeyAlt.Checked;
+                            db.HotKeyCtrl = edit.checkBoxHotkeyCtrl.Checked;
+                            string text = (string)edit.comboBoxKeyValues.SelectedItem;
+                            if (text != "None")
+                            {
+                                db.Hotkey = text;
 
-                        }
-                    }
+							}
+                            else
+                            {
+                                db.Hotkey = String.Empty;
+                            }
+							
+                            b.Text = db.Name;
+							_genSettings.SaveData();
+							dyanmicButtonsLoadKeyBoardShortcuts();
+						}
+
+                       
+
+					}
                 }
             }
+           
         }
-        void dynamicButtonClick(object sender, EventArgs e)
+		private void globalKeyboard_KeyUp(object sender, KeyEventArgs e)
+		{
+
+
+			Debug.WriteLine("Debug");
+
+		}
+
+		private void globalKeyboard_KeyDown(object sender, KeyEventArgs e)
+		{
+            //one of the keys we are looking for!
+
+			
+            if(_currentWindowName.Equals("CW_ChatInput",StringComparison.OrdinalIgnoreCase))
+            {
+                //they are typing in game, do not capture events.
+                return;
+            }
+
+			foreach (var pair in _genSettings.DynamicButtons)
+			{
+
+				if (pair.Value.Hotkey == String.Empty) continue;
+				Keys key;
+				Enum.TryParse(pair.Value.Hotkey.ToString(), out key);
+
+				if (key==e.KeyCode)
+				{
+                    if(pair.Value.HotKeyAlt && e.Modifiers!= Keys.Alt)
+                    {
+                        continue;
+                    }
+					if (pair.Value.HotKeyCtrl && e.Modifiers != Keys.Control)
+					{
+						continue;
+					}
+					foreach (var command in pair.Value.Commands)
+					{
+						Server.PubServer.PubCommands.Enqueue(command);
+					}
+				}
+			}
+
+		}
+		void dynamicButtonClick(object sender, EventArgs e)
         {
             var b = sender as Button;
             if (b != null)
@@ -251,7 +340,8 @@ namespace E3NextUI
                     {
                         Server.PubServer.PubCommands.Enqueue(command);
                     }
-                }
+                    SetForground(_parentProcess);
+				}
                 else
                 {
                     //edit the button
@@ -378,7 +468,8 @@ namespace E3NextUI
                 Themese.DarkMode.ChangeTheme(this, this.Controls);
             }
 
-        }
+
+		}
         private void E3UI_FormClosing(object sender, FormClosingEventArgs e)
         {
             //set the variable that will stop all the while loops
@@ -548,7 +639,7 @@ namespace E3NextUI
         }
         public void SetPlayerCasting(string value)
         {
-            if (value == labelStaminaValue.Text) return;
+            if (value == labelCastingValue.Text) return;
             if (this.InvokeRequired)
             {
                 this.Invoke(new SetPlayerDataDelegate(SetPlayerCasting), new object[] { value });
@@ -558,10 +649,15 @@ namespace E3NextUI
                 labelCastingValue.Text = value;
             }
         }
-        #endregion
+		public void SetCurrentWindow(string value)
+		{
+			if (value == labelCastingValue.Text) return;
+            _currentWindowName = value;
+		}
+		#endregion
 
-        #region Consoles
-        private void pbCollapseConsoleButtons_Click(object sender, EventArgs e)
+		#region Consoles
+		private void pbCollapseConsoleButtons_Click(object sender, EventArgs e)
         {
             ToggleConsoles();
         }
@@ -751,9 +847,16 @@ namespace E3NextUI
         {
             return Process.GetProcesses().Any(x => x.Id == id);
         }
+		private void SetForground(int id)
+		{
+			Process p  = Process.GetProcessById(id);
+			if (p!=null)
+            {
+				SetForegroundWindow(p.MainWindowHandle);
+			}
+		}
 
-      
-        public static void SetDoubleBuffered(System.Windows.Forms.Control c)
+		public static void SetDoubleBuffered(System.Windows.Forms.Control c)
         {
             //Taxes: Remote Desktop Connection and painting
             //http://blogs.msdn.com/oldnewthing/archive/2006/01/03/508694.aspx
@@ -770,8 +873,10 @@ namespace E3NextUI
         }
         [DllImport("shell32.dll", SetLastError = true)]
         static extern void SetCurrentProcessExplicitAppUserModelID([MarshalAs(UnmanagedType.LPWStr)] string AppID);
+		[DllImport("user32.dll", SetLastError = true)]
+		private static extern bool SetForegroundWindow(IntPtr hwnd);
 
-        private void checkUpdatesToolStripMenuItem_Click(object sender, EventArgs e)
+		private void checkUpdatesToolStripMenuItem_Click(object sender, EventArgs e)
         {
 
             string exePath = Assembly.GetExecutingAssembly().CodeBase.Replace("file:///", "").Replace("/", "\\").Replace(@"\E3NextUI.exe", "");
@@ -862,8 +967,29 @@ namespace E3NextUI
 
             }
         }
-    }
-    public class TextBoxInfo
+
+		private void buttonModeToolStripMenuItem_Click(object sender, EventArgs e)
+		{
+            if(_buttonMode)
+            {
+                _buttonMode = false;
+				panelMain.Show();
+				panelStatusPannel2.Show();
+				panelButtons.Location = new Point(736, 24);
+
+			}
+			else
+            {
+                _buttonMode = true;
+				panelMain.Hide();
+				panelStatusPannel2.Hide();
+				panelButtons.Location = new Point(0, 24);
+
+			}
+
+		}
+	}
+	public class TextBoxInfo
     {
         public System.Text.StringBuilder sb = new StringBuilder();
         public RichTextBox textBox;

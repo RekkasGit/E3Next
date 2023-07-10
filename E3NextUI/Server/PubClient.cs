@@ -167,8 +167,16 @@ namespace E3NextUI.Server
                                 }
 
                             }
+                            else if(messageTopicReceived== "${EQ.CurrentFocusedWindowName}")
+                            {
 
-                        }
+								if (Application.OpenForms.Count > 0)
+								{
+								    ((E3UI)Application.OpenForms[0]).SetCurrentWindow(messageReceived);
+								}
+							}
+
+						}
                         catch (Exception ex)
                         {
                             ((E3UI)Application.OpenForms[0]).AddConsoleLine(ex.Message, E3UI.Console);
