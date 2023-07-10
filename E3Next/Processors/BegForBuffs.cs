@@ -321,7 +321,7 @@ namespace E3Core.Processors
                         }
                         else
                         {
-                            QueueCast(spell, 0, "");
+                            QueueCast(spell, 0, E3.CurrentName);
                         }
                     }
                     else
