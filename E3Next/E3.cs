@@ -62,7 +62,8 @@ namespace E3Core.Processors
             {
                 ActionTaken = false;
                 Heals.Check_Heals();
-                if (ActionTaken) return; //we did a heal, kick out as we may need to do another heal.
+                Basics.CheckManaResources();
+				if (ActionTaken) return; //we did a heal, kick out as we may need to do another heal.
             }
             
             //instant buffs have their own shouldcheck, need it snappy so check quickly.
