@@ -357,7 +357,6 @@ namespace E3Core.Processors
                                 e3util.TryMoveToLoc(s.X, s.Y,s.Z);
 
                                 string message = x.args[1];
-                                int currentZone = Zoning.CurrentZone.Id;
                                 for (int i = 0; i < 5; i++)
                                 {
                                     MQ.Cmd($"/say {message}",1000);
