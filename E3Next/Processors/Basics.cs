@@ -361,13 +361,13 @@ namespace E3Core.Processors
                                 for (int i = 0; i < 5; i++)
                                 {
                                     MQ.Cmd($"/say {message}",1000);
-                                    
-                                    int tzone = MQ.Query<int>("${Zone.ID}");
-                                    if (tzone != currentZone)
-                                    {
-                                        break;
-                                    }
-                                }
+
+									if (EventProcessor.EventList["Zoned"].queuedEvents.Count > 0)
+									{
+										//means we have zoned and can stop
+										break;
+									}
+								}
                             }
                         }
                     }
