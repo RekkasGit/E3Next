@@ -603,7 +603,7 @@ namespace E3Core.Processors
             //needed a case insensitive switch, that was easy to read, thus this.
             string sp = E3.CharacterSettings.Assist_MeleeStickPoint;
 
-            E3.Bots.Broadcast("Setting assist range to: " + _assistDistance);
+           // E3.Bots.Broadcast("Setting assist range to: " + _assistDistance);
            
             if (_stickSwitch == null)
             {
