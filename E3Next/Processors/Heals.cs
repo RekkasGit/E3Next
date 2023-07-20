@@ -432,13 +432,14 @@ namespace E3Core.Processors
                                             continue;
                                         }
 
+
                                         if (Casting.InRange(targetID, spell))
                                         {
                                             if (pctHealth < spell.HealPct)
                                             {
                                                 if (JustCheck) return true;
                                                 //should cast a heal!
-                                                if (Casting.CheckReady(spell))
+                                                if (Casting.CheckReady(spell) && Casting.CheckMana(spell))
                                                 {
                                                     if (Casting.Cast(targetID, spell) == CastReturn.CAST_FIZZLE)
                                                     {
@@ -499,7 +500,7 @@ namespace E3Core.Processors
                                         {
                                             if (JustCheck) return true;
                                             //should cast a heal!
-                                            if (Casting.CheckReady(spell))
+                                            if (Casting.CheckReady(spell) && Casting.CheckMana(spell))
                                             {
                                                 if (Casting.Cast(targetID, spell,TargetDoesNotNeedHeals) == CastReturn.CAST_FIZZLE)
                                                 {
@@ -616,7 +617,7 @@ namespace E3Core.Processors
 											{
 												if (JustCheck) return true;
 												//should cast a heal!
-												if (Casting.CheckReady(spell))
+												if (Casting.CheckReady(spell) && Casting.CheckMana(spell))
 												{
 													if (Casting.Cast(targetID, spell) == CastReturn.CAST_FIZZLE)
 													{
@@ -715,7 +716,7 @@ namespace E3Core.Processors
                                             {
                                                 if (!E3.Bots.HasShortBuff(name, spell.SpellID))
                                                 {
-                                                    if (Casting.CheckReady(spell))
+                                                    if (Casting.CheckReady(spell) && Casting.CheckMana(spell))
                                                     {
                                                         if (Casting.Cast(targetID, spell) == CastReturn.CAST_FIZZLE)
                                                         {

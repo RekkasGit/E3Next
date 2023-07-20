@@ -134,6 +134,14 @@ namespace E3Core.Processors
                             if (!IsCasting()) return CastReturn.CAST_INTERRUPTED;
 
                         }
+						if (EventProcessor.CommandList["/followme"].queuedEvents.Count > 0)
+						{
+							EventProcessor.ProcessEventsInQueues("/followme");
+							Interrupt();
+							if (!IsCasting()) return CastReturn.CAST_INTERRUPTED;
+
+						}
+
 						//process any commands we need to process from the UI
 						PubClient.ProcessRequests();
 
@@ -436,7 +444,7 @@ namespace E3Core.Processors
                                     MQ.Cmd($"/casting \"{spell.CastName}|{spell.SpellGem}\"");
                                     if (spell.MyCastTime > 500)
                                     {
-                                        MQ.Delay(1000);
+                                        MQ.Delay(500);
                                     }
                                 }
                                 else
@@ -448,11 +456,15 @@ namespace E3Core.Processors
 
                                         MQ.Cmd($"/casting \"{spell.CastName}|alt\"");
                                         UpdateAAInCooldown(spell);
-                                        MQ.Delay(300);
+                                       
                                         if (spell.MyCastTime > 500)
                                         {
-                                            MQ.Delay(700);
+                                            MQ.Delay(500);
                                         }
+                                        else
+                                        {
+											MQ.Delay(300);
+										}
                                     }
                                     else
                                     {
@@ -464,7 +476,7 @@ namespace E3Core.Processors
                                         UpdateItemInCooldown(spell);
                                         if (spell.MyCastTime > 500)
                                         {
-                                            MQ.Delay(1000);
+                                            MQ.Delay(500);
                                         }
                                     }
                                 }
@@ -478,7 +490,7 @@ namespace E3Core.Processors
                                     MQ.Cmd($"/casting \"{spell.CastName}|{spell.SpellGem}\" \"-targetid|{targetID}\"");
                                     if (spell.MyCastTime > 500)
                                     {
-                                        MQ.Delay(1000);
+                                        MQ.Delay(500);
                                     }
                                 }
                                 else
@@ -489,10 +501,14 @@ namespace E3Core.Processors
                                     {
                                         MQ.Cmd($"/casting \"{spell.CastName}|alt\" \"-targetid|{targetID}\"");
                                         UpdateAAInCooldown(spell);
-                                        MQ.Delay(300);
+                                      
                                         if (spell.MyCastTime > 500)
                                         {
-                                            MQ.Delay(700);
+                                            MQ.Delay(500);
+                                        }
+                                        else 
+                                        { 
+                                            MQ.Delay(300);
                                         }
                                     }
                                     else
@@ -502,7 +518,7 @@ namespace E3Core.Processors
                                         UpdateItemInCooldown(spell);
                                         if (spell.MyCastTime > 500)
                                         {
-                                            MQ.Delay(1000);
+                                            MQ.Delay(500);
                                         }
                                     }
                                 }
@@ -582,8 +598,9 @@ namespace E3Core.Processors
                                 return CastReturn.CAST_INTERRUPTED;
                             }
                             if (MQ.Query<bool>("${Me.Invis}"))
-                            {  
-                                return CastReturn.CAST_INVIS;
+                            {
+								Interrupt();
+								return CastReturn.CAST_INVIS;
                             }
                             //get updated information after delays
                             E3.StateUpdates();

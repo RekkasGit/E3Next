@@ -327,6 +327,7 @@ namespace E3Core.Processors
                             E3.Bots.BroadcastCommandToGroup($"/bark-send {targetid} \"{message}\"",x);
                             for (int i = 0; i < 5; i++)
                             {
+
                                 MQ.Cmd($"/say {message}");
                                 MQ.Delay(1500);
                                 if (EventProcessor.EventList["Zoned"].queuedEvents.Count > 0)
