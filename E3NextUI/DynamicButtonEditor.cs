@@ -35,11 +35,11 @@ namespace E3NextUI
 
 		private void button1_Click(object sender, EventArgs e)
         {
-            if(String.IsNullOrWhiteSpace(this.textBoxName.Text))
-            {
-                System.Windows.Forms.MessageBox.Show("Please enter a name or cancel");
-                return;
-            }
+            //if(String.IsNullOrWhiteSpace(this.textBoxName.Text))
+            //{
+            //    System.Windows.Forms.MessageBox.Show("Please enter a name or cancel");
+            //    return;
+            //}
 
             this.DialogResult = DialogResult.OK;
             this.Close();

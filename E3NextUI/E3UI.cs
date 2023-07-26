@@ -19,6 +19,7 @@ using System.Windows.Forms;
 using System.Xml;
 using Ionic.Zip;
 using System.Reflection;
+using static System.Windows.Forms.VisualStyles.VisualStyleElement;
 
 namespace E3NextUI
 {
@@ -192,7 +193,7 @@ namespace E3NextUI
             Int32 col = 5;
             for(Int32 i=0;i<(row*col);i++)
             {
-                var b = new Button();
+                var b = new System.Windows.Forms.Button();
                 b.Name = $"dynamicButton_{i + 1}";
                 if(_genSettings.DynamicButtons.TryGetValue(b.Name, out var db))
                 {
@@ -229,7 +230,7 @@ namespace E3NextUI
 		}
         void dynamicButtonRightClick(object sender, MouseEventArgs e)
         {
-            var b = sender as Button;
+            var b = sender as System.Windows.Forms.Button;
             if(b!=null)
             {
                 if (e.Button == MouseButtons.Right)
@@ -243,43 +244,28 @@ namespace E3NextUI
                         edit.textBoxCommands.Text = String.Join("\r\n",db.Commands);
 						edit.checkBoxHotkeyAlt.Checked = db.HotKeyAlt;
 						edit.checkBoxHotkeyCtrl.Checked = db.HotKeyCtrl;
+                        edit.checkBoxHotkeyEat.Checked = db.HotKeyEat;
+
                         if(!String.IsNullOrWhiteSpace(db.Hotkey))
                         {
 							edit.comboBoxKeyValues.SelectedItem = db.Hotkey;
 						}
 						if (edit.ShowDialog() == DialogResult.OK)
                         {
-                            db.Name = edit.textBoxName.Text;
-                            string[] lines = edit.textBoxCommands.Text.Split(new string[] { Environment.NewLine }, StringSplitOptions.RemoveEmptyEntries);
-
-                            db.Commands.Clear();
-                            foreach (var line in lines)
-                            {
-                                if(!String.IsNullOrWhiteSpace(line))
-                                {
-                                    db.Commands.Add(line);
-                                }
-                            }
-                            db.HotKeyAlt = edit.checkBoxHotkeyAlt.Checked;
-                            db.HotKeyCtrl = edit.checkBoxHotkeyCtrl.Checked;
-                            string text = (string)edit.comboBoxKeyValues.SelectedItem;
-                            if (text != "None")
-                            {
-                                db.Hotkey = text;
+							if (!String.IsNullOrWhiteSpace(edit.textBoxName.Text))
+							{
+								UpdateDyanmicButton(edit, b);
+								_genSettings.SaveData();
 
 							}
-                            else
-                            {
-                                db.Hotkey = String.Empty;
-                            }
-							
-                            b.Text = db.Name;
-							_genSettings.SaveData();
+							else
+							{
+								_genSettings.DynamicButtons.Remove(b.Name);
+								b.Text = b.Name.Replace("dynamicButton_", "");
+
+							}
 							dyanmicButtonsLoadKeyBoardShortcuts();
 						}
-
-                       
-
 					}
                 }
             }
@@ -295,15 +281,23 @@ namespace E3NextUI
 
 		private void globalKeyboard_KeyDown(object sender, KeyEventArgs e)
 		{
-            //one of the keys we are looking for!
-
+			//one of the keys we are looking for!
 			
-            if(_currentWindowName.Equals("CW_ChatInput",StringComparison.OrdinalIgnoreCase))
+            if (_currentWindowName.EndsWith("Input", StringComparison.OrdinalIgnoreCase))
+			{
+				//they are typing in game, do not capture events.
+				return;
+			}
+			if (_currentWindowName.Equals("CW_ChatInput",StringComparison.OrdinalIgnoreCase))
             {
                 //they are typing in game, do not capture events.
                 return;
             }
-
+			if (_currentWindowName.Equals("QTYW_SliderInput", StringComparison.OrdinalIgnoreCase))
+			{
+				//they are typing in game, do not capture events.
+				return;
+			}
 			foreach (var pair in _genSettings.DynamicButtons)
 			{
 
@@ -312,7 +306,7 @@ namespace E3NextUI
 				Enum.TryParse(pair.Value.Hotkey.ToString(), out key);
 
 				if (key==e.KeyCode)
-				{
+				{ 
                     if(pair.Value.HotKeyAlt && e.Modifiers!= Keys.Alt)
                     {
                         continue;
@@ -320,6 +314,10 @@ namespace E3NextUI
 					if (pair.Value.HotKeyCtrl && e.Modifiers != Keys.Control)
 					{
 						continue;
+					}
+                    if(pair.Value.HotKeyEat)
+                    {
+						e.Handled = true;
 					}
 					foreach (var command in pair.Value.Commands)
 					{
@@ -331,7 +329,7 @@ namespace E3NextUI
 		}
 		void dynamicButtonClick(object sender, EventArgs e)
         {
-            var b = sender as Button;
+            var b = sender as System.Windows.Forms.Button;
             if (b != null)
             {
                 if (_genSettings.DynamicButtons.TryGetValue(b.Name, out var db))
@@ -349,23 +347,52 @@ namespace E3NextUI
                     edit.StartPosition = FormStartPosition.CenterParent;
                     if (edit.ShowDialog() == DialogResult.OK)
                     {
-                        DynamicButton tdb = new DynamicButton();
-                        tdb.Name=edit.textBoxName.Text;
-                        string[] lines = edit.textBoxCommands.Text.Split(new string[] { Environment.NewLine },StringSplitOptions.None);
-                        tdb.Commands = new List<string>(lines);
+                        if(!String.IsNullOrWhiteSpace(edit.textBoxName.Text))
+						{
+                            UpdateDyanmicButton(edit,b);
+							_genSettings.SaveData();
+							
 
-                        if(!_genSettings.DynamicButtons.ContainsKey(b.Name))
+						}
+                        else
                         {
-                            _genSettings.DynamicButtons.Add(b.Name, tdb);
-                        }
-                        _genSettings.DynamicButtons[b.Name]= tdb;
-                        _genSettings.SaveData();
-                        b.Text = tdb.Name;
-                        
-                    }
+							_genSettings.DynamicButtons.Remove(b.Name);
+                            b.Text = b.Name.Replace("dynamicButton_", "");
+
+						}
+						dyanmicButtonsLoadKeyBoardShortcuts();
+					}
                 }
             }
         }
+
+        private void UpdateDyanmicButton(DynamicButtonEditor edit, System.Windows.Forms.Button b)
+        {
+			DynamicButton tdb = new DynamicButton();
+			tdb.Name = edit.textBoxName.Text;
+			string[] lines = edit.textBoxCommands.Text.Split(new string[] { Environment.NewLine }, StringSplitOptions.None);
+			tdb.Commands = new List<string>(lines);
+
+			if (!_genSettings.DynamicButtons.ContainsKey(b.Name))
+			{
+				_genSettings.DynamicButtons.Add(b.Name, tdb);
+			}
+			_genSettings.DynamicButtons[b.Name] = tdb;
+
+			tdb.HotKeyAlt = edit.checkBoxHotkeyAlt.Checked;
+			tdb.HotKeyCtrl = edit.checkBoxHotkeyCtrl.Checked;
+			tdb.HotKeyEat = edit.checkBoxHotkeyEat.Checked;
+			string text = (string)edit.comboBoxKeyValues.SelectedItem;
+			if (text != "None")
+			{
+				tdb.Hotkey = text;
+			}
+			else
+			{
+				tdb.Hotkey = String.Empty;
+			}
+			b.Text = tdb.Name;
+		}
         private void GlobalTimer()
         {
             while(ShouldProcess)
@@ -823,13 +850,13 @@ namespace E3NextUI
                 //grab the data and send a command
                 //do this to stop the 'ding' sound
                 e.SuppressKeyPress = true;
-                string value = ((TextBox)sender).Text;
+                string value = ((System.Windows.Forms.TextBox)sender).Text;
                 if (value.StartsWith("/"))
                 {
                     PubServer.PubCommands.Enqueue(value);
 
                 }
-                ((TextBox)sender).Text = String.Empty;
+                ((System.Windows.Forms.TextBox)sender).Text = String.Empty;
             }
 
         }

@@ -39,6 +39,7 @@ namespace E3NextUI
 			this.checkBoxHotkeyAlt = new System.Windows.Forms.CheckBox();
 			this.checkBoxHotkeyCtrl = new System.Windows.Forms.CheckBox();
 			this.comboBoxKeyValues = new System.Windows.Forms.ComboBox();
+			this.checkBoxHotkeyEat = new System.Windows.Forms.CheckBox();
 			this.SuspendLayout();
 			// 
 			// textBoxCommands
@@ -135,6 +136,15 @@ namespace E3NextUI
 			this.comboBoxKeyValues.Size = new System.Drawing.Size(121, 21);
 			this.comboBoxKeyValues.TabIndex = 8;
 			// 
+			// checkBoxHotkeyEat
+			// 
+			this.checkBoxHotkeyEat.Location = new System.Drawing.Point(333, 66);
+			this.checkBoxHotkeyEat.Name = "checkBoxHotkeyEat";
+			this.checkBoxHotkeyEat.Size = new System.Drawing.Size(53, 24);
+			this.checkBoxHotkeyEat.TabIndex = 9;
+			this.checkBoxHotkeyEat.Text = "Eat";
+			this.checkBoxHotkeyEat.UseVisualStyleBackColor = true;
+			// 
 			// DynamicButtonEditor
 			// 
 			this.AutoScaleDimensions = new System.Drawing.SizeF(6F, 13F);
@@ -142,6 +152,7 @@ namespace E3NextUI
 			this.CancelButton = this.buttonCancel;
 			this.ClientSize = new System.Drawing.Size(398, 436);
 			this.ControlBox = false;
+			this.Controls.Add(this.checkBoxHotkeyEat);
 			this.Controls.Add(this.comboBoxKeyValues);
 			this.Controls.Add(this.checkBoxHotkeyCtrl);
 			this.Controls.Add(this.checkBoxHotkeyAlt);
@@ -172,5 +183,6 @@ namespace E3NextUI
 		public System.Windows.Forms.CheckBox checkBoxHotkeyAlt;
 		public System.Windows.Forms.CheckBox checkBoxHotkeyCtrl;
 		public System.Windows.Forms.ComboBox comboBoxKeyValues;
+		public System.Windows.Forms.CheckBox checkBoxHotkeyEat;
 	}
 }

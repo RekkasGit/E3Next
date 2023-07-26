@@ -82,6 +82,7 @@ namespace E3Core.Classes
 
             if (MQ.Query<bool>(sneakQuery) && MQ.Query<bool>("${Me.AbilityReady[Hide]"))
             {
+                BuffCheck.Check_Buffs();
                 MQ.Cmd("/doability hide");
             }
         }

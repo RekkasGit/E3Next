@@ -134,6 +134,14 @@ namespace E3Core.Processors
 						MQ.Write("***WARNING*** Could not load MQ2Debuffs! Macro functionality may be limited.");
 					}
 				}
+				if (!MQ.Query<bool>("${Plugin[MQ2Cast]}"))
+				{
+					MQ.Cmd("/plugin mq2cast");
+					if (!MQ.Delay(3000, "${Plugin[MQ2Cast]}"))
+					{
+						MQ.Write("***WARNING*** Could not load MQ2Cast! Macro functionality may be limited.");
+					}
+				}
 				if (!MQ.Query<bool>($"${{Plugin[MQ2AdvPath].Name.Length}}"))
                 {
                     MQ.Write("Plugin MQ2AdvPath is not loaded, attempting to resolve...");

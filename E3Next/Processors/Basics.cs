@@ -3,6 +3,7 @@ using E3Core.Data;
 using E3Core.Settings;
 using E3Core.Settings.FeatureSettings;
 using E3Core.Utility;
+using IniParser.Model;
 using MonoCore;
 using System;
 using System.Collections.Generic;
@@ -57,9 +58,27 @@ namespace E3Core.Processors
         public static void RegisterEvents()
         {
 
+			
+			EventProcessor.RegisterCommand("/e3printini", (x) =>
+			{
+                // Print Character InI file 
+                CharacterSettings settings = E3.CharacterSettings;
+				IniData newFile = settings.ParsedData;
+				List<string> sections = newFile.Sections.Select(s => s.SectionName).ToList();
 
+				foreach (string elements in sections)
+				{
+					var KeyData = newFile.Sections[elements];
+					MQ.Write("\ag" + elements + ":");
+					foreach (var key in KeyData)
+					{
+						MQ.Write("---" + key.KeyName + " = " + key.Value);
+					}
+				}
+			});
+			
 
-            EventProcessor.RegisterEvent("InviteToGroup", "(.+) invites you to join a group.", (x) =>
+			EventProcessor.RegisterEvent("InviteToGroup", "(.+) invites you to join a group.", (x) =>
             {
                 MQ.Cmd("/invite");
                 MQ.Delay(300);

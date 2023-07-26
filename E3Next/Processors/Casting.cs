@@ -26,13 +26,20 @@ namespace E3Core.Processors
 
         public static Int64 _currentSpellGemsLastRefresh = 0;
         private static ISpawns _spawns = E3.Spawns;
-
+        private static Logging.LogLevels _previousLogLevel = Logging.LogLevels.Error;
 
         public static CastReturn Cast(int targetID, Data.Spell spell, Func<Int32, Int32, bool> interruptCheck = null, bool isNowCast = false)
         {
             bool navActive = false;
             bool navPaused = false;
             bool e3PausedNav = false;
+
+            if(spell.Debug)
+            {
+                _previousLogLevel = Logging.MinLogLevelTolog;
+                Logging.MinLogLevelTolog = Logging.DefaultLogLevel;
+
+			}
             try
             {
 
@@ -158,10 +165,6 @@ namespace E3Core.Processors
                     {
                         e3util.ClearCursor();
                     }
-
-                    
-
-                    
                     if (_spawns.TryByID(targetID, out var s))
                     {
 
@@ -611,6 +614,10 @@ namespace E3Core.Processors
                         {
                             MQ.Delay(E3.CharacterSettings.Misc_DelayAfterCastWindowDropsForSpellCompletion);
                         }
+                        if(spell.DelayAfterCast>0)
+                        {
+                            MQ.Delay(spell.DelayAfterCast);
+                        }
 
                         MQ.Delay(2000, "!${Cast.Status.Find[C]}");
 
@@ -712,7 +719,12 @@ namespace E3Core.Processors
                         MQ.Cmd("/nav pause");
                     }
                 }
-            }
+				if (spell.Debug)
+				{
+					Logging.MinLogLevelTolog = _previousLogLevel;
+
+				}
+			}
         }
         private static bool NowCastReady()
         {

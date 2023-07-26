@@ -80,7 +80,11 @@ namespace E3Core.Data
                     {
                         NoInterrupt = true;
                     }
-                    else if (value.StartsWith("AfterSpell|", StringComparison.OrdinalIgnoreCase))
+					else if (value.Equals("Debug", StringComparison.OrdinalIgnoreCase))
+					{
+						Debug = true;
+					}
+					else if (value.StartsWith("AfterSpell|", StringComparison.OrdinalIgnoreCase))
                     {
                         AfterSpell = GetArgument<String>(value);
                     }
@@ -173,7 +177,13 @@ namespace E3Core.Data
                         }
 
                     }
-                    else if (value.Equals("GoM", StringComparison.OrdinalIgnoreCase))
+					else if (value.StartsWith("DelayAfterCast|", StringComparison.OrdinalIgnoreCase))
+					{
+						
+						DelayAfterCast = GetArgument<Int32>(value);
+						
+					}
+					else if (value.Equals("GoM", StringComparison.OrdinalIgnoreCase))
                     {
                         GiftOfMana = true;
                     }
@@ -663,6 +673,7 @@ namespace E3Core.Data
         public Int32 MaxMana;
         public Int32 MinHP;
         public Int32 HealPct;
+        public bool Debug;
         public String Reagent = String.Empty;
         public Boolean ItemMustEquip;
         public Boolean NoBurn;
@@ -671,6 +682,7 @@ namespace E3Core.Data
         public Boolean Rotate;
         public Int32 EnduranceCost;
         public Int32 Delay;
+        public Int32 DelayAfterCast = 0;
         public Int32 CastID;
         public Int32 MinEnd;
         public Boolean CastInvis;

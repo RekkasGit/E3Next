@@ -16,6 +16,7 @@ namespace E3NextUI.Settings
         public string Hotkey = String.Empty;
         public bool HotKeyAlt = false;
         public bool HotKeyCtrl = false;
+        public bool HotKeyEat = false;
         public List<string> Commands = new List<string>();
     }
     public class GeneralSettings:BaseSettings
@@ -114,6 +115,12 @@ namespace E3NextUI.Settings
 								b.HotKeyCtrl = Boolean.Parse(keyData.Value);
 
 							}
+							keyData = section.GetKeyData("hotkeyeat");
+							if (keyData != null)
+							{
+								b.HotKeyEat = Boolean.Parse(keyData.Value);
+
+							}
 						}
                         DynamicButtons.Add($"dynamicButton_{i + 1}", b);
                     }
@@ -158,6 +165,7 @@ namespace E3NextUI.Settings
                 section.AddKey("hotkey", pair.Value.Hotkey.ToString());
 				section.AddKey("hotkeyalt", pair.Value.HotKeyAlt.ToString());
 				section.AddKey("hotkeyctrl", pair.Value.HotKeyCtrl.ToString());
+				section.AddKey("hotkeyeat", pair.Value.HotKeyEat.ToString());
 			}
 
             FileIniDataParser fileIniData = CreateIniParser();
