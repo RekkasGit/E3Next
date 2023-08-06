@@ -862,6 +862,8 @@ namespace E3Core.Processors
                 {
                     return;
                 }
+                var manastoneExceptionZones = new HashSet<string> { "poknowledge", "thevoida" };
+                if (manastoneExceptionZones.Contains(Zoning.CurrentZone.ShortName)) return;
                 //manastone code
                 int minMana = E3.GeneralSettings.ManaStone_InCombatMinMana;
                 int minHP = E3.GeneralSettings.ManaStone_MinHP;
@@ -903,9 +905,6 @@ namespace E3Core.Processors
                 if (pctMana > minMana) return;
                 pctHps = MQ.Query<int>("${Me.PctHPs}");
                 if (pctHps < minHP) return;
-                //no manastone in pok
-                bool pok = MQ.Query<bool>("${Zone.ShortName.Equal[poknowledge]}");
-                if (pok) return;
 
                 bool hasManaStone = MQ.Query<bool>("${Bool[${FindItem[=Manastone]}]}");
                 
