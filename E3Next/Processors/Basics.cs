@@ -343,7 +343,7 @@ namespace E3Core.Processors
                                 first = false;
                             }
                             string message = sb.ToString();
-                            E3.Bots.BroadcastCommandToGroup($"/bark-send {targetid} \"{message}\"",x);
+                            E3.Bots.BroadcastCommandToGroup($"/bark-send {targetid} \"{message}\" {Zoning.CurrentZone.Id}",x);
                             for (int i = 0; i < 5; i++)
                             {
 
@@ -364,11 +364,20 @@ namespace E3Core.Processors
             {
                 if (x.args.Count > 1)
                 {
-                    int targetid;
+                    if (x.args.Count > 2)
+                    {
+						string zoneid = x.args[3];
+                        if (zoneid != Zoning.CurrentZone.Id.ToString())
+                        {
+                            return;
+                        }
+					}
+					int targetid;
                     if (int.TryParse(x.args[0], out targetid))
                     {
                         if (targetid > 0)
                         {
+
                             Spawn s;
                             if (_spawns.TryByID(targetid, out s))
                             {

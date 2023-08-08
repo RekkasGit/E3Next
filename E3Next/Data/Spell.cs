@@ -88,7 +88,27 @@ namespace E3Core.Data
                     {
                         AfterSpell = GetArgument<String>(value);
                     }
-                    else if (value.StartsWith("AfterCast|", StringComparison.OrdinalIgnoreCase))
+					else if (value.StartsWith("StackRequetTargets|", StringComparison.OrdinalIgnoreCase))
+					{
+                        string targetString = GetArgument<String>(value);
+                        string[] targets = targetString.Split(new char[] { ',' }, StringSplitOptions.RemoveEmptyEntries);
+                        foreach(var target in targets)
+                        {
+                            StackRequestTargets.Add(e3util.FirstCharToUpper(target.Trim()));
+                        }
+						//StackIntervalCheck
+					}
+					else if (value.StartsWith("StackCheckInterval|", StringComparison.OrdinalIgnoreCase))
+					{
+						StackIntervalCheck = GetArgument<Int64>(value);
+                        StackIntervalCheck *= 1000;
+					}
+					else if (value.StartsWith("StackRecastDelay|", StringComparison.OrdinalIgnoreCase))
+					{
+						StackRecastDelay = GetArgument<Int64>(value);
+						StackRecastDelay *= 1000;
+					}
+					else if (value.StartsWith("AfterCast|", StringComparison.OrdinalIgnoreCase))
                     {
                         AfterSpell = GetArgument<String>(value);
                     }
@@ -688,7 +708,12 @@ namespace E3Core.Data
         public Boolean CastInvis;
         public String SpellType = String.Empty;
         public String CastTarget = String.Empty;
-        public Boolean GiftOfMana;
+        public List<string> StackRequestTargets = new List<string>();
+        public Int64 StackIntervalCheck = 10000;
+        public Int64 StackIntervalNextCheck = 0;
+        public Int64 StackRecastDelay = 1860000;
+		public Dictionary<string, Int64> StackSpellCooldown = new Dictionary<string, long>();
+		public Boolean GiftOfMana;
         public Int32 CheckForID;
         public Int32 SpellID;
         public Int32 PctAggro;
@@ -711,8 +736,7 @@ namespace E3Core.Data
         public bool ReagentOutOfStock = false;
         public bool SpellInBook = false;
         public bool NoMidSongCast = false;
-
-
+      
 
         public override string ToString()
         {

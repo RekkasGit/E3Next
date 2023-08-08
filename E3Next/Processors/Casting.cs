@@ -1321,7 +1321,24 @@ namespace E3Core.Processors
 						}
 					}
 				}
-				//need to do some legacy compatability checksraibles that were used in Ifs.
+                var parsedData = E3.CharacterSettings.ParsedData;
+				var section = parsedData.Sections["Ifs"];
+				if (section != null)
+				{
+                    foreach(var key in section)
+                    {
+                        if (tIF.IndexOf(key.KeyName, 0, StringComparison.OrdinalIgnoreCase) > -1)
+                        {
+                            var tkeyName = $"${{{key.KeyName}}}";
+
+							if (tIF.IndexOf(tkeyName, 0, StringComparison.OrdinalIgnoreCase) > -1)
+                            {
+                                tIF = tIF.ReplaceInsensitive(tkeyName, key.Value);
+                            }
+                        }
+                    }
+				}
+                //need to do some legacy compatability checksraibles that were used in Ifs.
 				if (tIF.IndexOf("${Assisting}", 0, StringComparison.OrdinalIgnoreCase) > -1)
 				{
 					//lets replace it with TRUE/FALSE

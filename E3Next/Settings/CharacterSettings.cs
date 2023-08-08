@@ -83,6 +83,8 @@ namespace E3Core.Settings
         public List<SpellRequest> GroupBuffRequests = new List<SpellRequest>();
         public List<SpellRequest> RaidBuffRequests = new List<SpellRequest>();
 
+        public List<SpellRequest> StackBuffRequest = new List<SpellRequest>();
+
         //gimme
         public List<string> Gimme = new List<string>();
         public bool Gimme_InCombat = true;
@@ -176,8 +178,9 @@ namespace E3Core.Settings
         public bool AutoCanni = false;
         public int MalosTotemSpellGem;
         public List<Spell> CanniSpell = new List<Spell>();
+		
 
-        public HashSet<string> WhoToHeal = new HashSet<string>(10, StringComparer.OrdinalIgnoreCase);
+		public HashSet<string> WhoToHeal = new HashSet<string>(10, StringComparer.OrdinalIgnoreCase);
         public bool HealAutoNecroOrbs = false;
         private string _whoToHealString;
         public string WhoToHealString
@@ -345,8 +348,9 @@ namespace E3Core.Settings
             LoadKeyData("Buffs", "Pet Buff", ParsedData, PetBuffs);
             LoadKeyData("Buffs", "Group Buff Request", ParsedData, GroupBuffRequests);
             LoadKeyData("Buffs", "Raid Buff Request", ParsedData, RaidBuffRequests);
+			LoadKeyData("Buffs", "Statck Buff Request", ParsedData, StackBuffRequest);
 
-            LoadKeyData("Buffs", "Cast Aura(On/Off)", ParsedData, ref Buffs_CastAuras);
+			LoadKeyData("Buffs", "Cast Aura(On/Off)", ParsedData, ref Buffs_CastAuras);
 
 
             LoadKeyData("Melee Abilities", "Ability", ParsedData, MeleeAbilities);
@@ -497,7 +501,8 @@ namespace E3Core.Settings
             section.Keys.AddKey("Pet Buff", "");
             section.Keys.AddKey("Group Buff Request", "");
             section.Keys.AddKey("Raid Buff Request", "");
-            section.Keys.AddKey("Cast Aura(On/Off)", "On");
+			section.Keys.AddKey("Statck Buff Request", "");
+			section.Keys.AddKey("Cast Aura(On/Off)", "On");
 
             if ((CharacterClass & Class.Caster) != CharacterClass && (CharacterClass & Class.Priest) != CharacterClass)
             {
@@ -681,6 +686,7 @@ namespace E3Core.Settings
 			section.Keys.AddKey("BandoNameWithoutBuff", "");
 			section.Keys.AddKey("BandoNameWithoutDeBuff", "");
 
+		
 
 			newFile.Sections.AddSection("Blocked Buffs");
             section = newFile.Sections.GetSectionData("Blocked Buffs");

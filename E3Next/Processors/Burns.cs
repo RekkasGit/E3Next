@@ -28,7 +28,7 @@ namespace E3Core.Processors
         public static string _epicWeaponName = String.Empty;
         public static string _anguishBPName = String.Empty;
         private static Int64 _nextBurnCheck = 0;
-        private static Int64 _nextBurnCheckInterval = 500;
+        private static Int64 _nextBurnCheckInterval = 50;
 
 
         private static Int64 _quickburnStartTimeStamp = 0;
@@ -100,9 +100,13 @@ namespace E3Core.Processors
 
         public static void UseBurns()
         {
-            if (!e3util.ShouldCheck(ref _nextBurnCheck, _nextBurnCheckInterval)) return;
-
-            CheckTimeouts();
+            //  if (!e3util.ShouldCheck(ref _nextBurnCheck, _nextBurnCheckInterval)) return;
+            //lets check if there are any events in the queue that we need to check on. 
+            EventProcessor.ProcessEventsInQueues("/quickburns");
+			EventProcessor.ProcessEventsInQueues("/epicburns");
+			EventProcessor.ProcessEventsInQueues("/fullburns");
+			EventProcessor.ProcessEventsInQueues("/longburns");
+			CheckTimeouts();
 
             UseBurn(_epicWeapon, use_EPICBurns, "EpicBurns");
             UseBurn(_anguishBP, use_EPICBurns, "AnguishBPBurns");

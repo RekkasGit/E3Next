@@ -25,15 +25,17 @@ namespace E3Core.Processors
         public static Dictionary<Int32, SpellTimer> _buffTimers = new Dictionary<Int32, SpellTimer>();
 
         private static Int64 _nextGroupBuffRequestCheckTime = 0;
-        private static Int64 nextGroupBuffRequestCheckTimeInterval = 1000;
+        private static Int64 _nextGroupBuffRequestCheckTimeInterval = 1000;
         private static Int64 _nextRaidBuffRequestCheckTime = 0;
-        private static Int64 nextRaidBuffRequestCheckTimeInterval = 1000;
+        private static Int64 _nextRaidBuffRequestCheckTimeInterval = 1000;
+		private static Int64 _nextStackBuffRequestCheckTime = 0;
+		private static Int64 _nextStackBuffRequestCheckTimeInterval = 1000;
 
 		private static Int64 _nextBandoBuffCheck = 0;
 		private static Int64 _nextBandoBuffCheckInterval = 1000;
 
 		private static Int64 _nextBotCacheCheckTime = 0;
-        private static Int64 nextBotCacheCheckTimeInterval = 1000;
+        private static Int64 _nextBotCacheCheckTimeInterval = 1000;
         private static Int64 _nextInstantBuffRefresh = 0;
         private static Int64 _nextInstantRefreshTimeInterval = 250;
         private static List<Int32> _keyList = new List<int>();
@@ -286,7 +288,7 @@ namespace E3Core.Processors
         {
 
             if (E3.IsInvis) return;
-            if (!e3util.ShouldCheck(ref _nextGroupBuffRequestCheckTime, nextGroupBuffRequestCheckTimeInterval)) return;
+            if (!e3util.ShouldCheck(ref _nextGroupBuffRequestCheckTime, _nextGroupBuffRequestCheckTimeInterval)) return;
 
             foreach (var spell in E3.CharacterSettings.GroupBuffRequests)
             {
@@ -321,12 +323,62 @@ namespace E3Core.Processors
             }
 
         }
-        [ClassInvoke(Data.Class.All)]
+		[ClassInvoke(Data.Class.All)]
+		public static void Check_StackBuffRequests()
+		{
+			if (E3.IsInvis) return;
+			if (!e3util.ShouldCheck(ref _nextStackBuffRequestCheckTime, _nextStackBuffRequestCheckTimeInterval)) return;
+
+			foreach (var spell in E3.CharacterSettings.StackBuffRequest)
+			{
+				if (!e3util.ShouldCheck(ref spell.StackIntervalNextCheck, spell.StackIntervalCheck)) continue;
+				bool haveBuff = MQ.Query<bool>($"${{Bool[${{Me.Buff[{spell.SpellName}]}}]}}");
+				if (haveBuff) continue;
+
+            	List<string> castersInGroup = E3.Bots.BotsConnected();
+			
+				foreach (var caster in spell.StackRequestTargets)
+				{
+                    if (!castersInGroup.Contains(caster)) continue;
+                    //make sure they are in zone
+                    if (MQ.Query<Int32>($"${{Spawn[{caster}].ID}}")<1) continue;
+
+					Int64 timeTillNextCast;
+					if (!spell.StackSpellCooldown.TryGetValue(caster, out timeTillNextCast))
+					{
+						timeTillNextCast = -1;
+					}
+
+					if (timeTillNextCast < Core.StopWatch.ElapsedMilliseconds)
+					{
+						//we can cast,maybe.
+
+						E3.Bots.BroadcastCommandToPerson(caster, $"/nowcast me \"{spell.CastName}\" ${{Me.ID}}");
+						Int64 recastDelay = spell.RecastTime;
+						if (spell.CastType == CastType.Item)
+						{
+							recastDelay = spell.StackRecastDelay;
+						}
+						if (spell.StackSpellCooldown.ContainsKey(caster))
+						{
+                           
+							spell.StackSpellCooldown[caster] = Core.StopWatch.ElapsedMilliseconds + recastDelay;
+						}
+						else
+						{
+							spell.StackSpellCooldown.Add(caster, Core.StopWatch.ElapsedMilliseconds + recastDelay);
+						}
+						break;
+					}
+				}
+			}
+		}
+		[ClassInvoke(Data.Class.All)]
         public static void Check_RaidBuffRequests()
         {
 
             if (E3.IsInvis) return;
-            if (!e3util.ShouldCheck(ref _nextRaidBuffRequestCheckTime, nextRaidBuffRequestCheckTimeInterval)) return;
+            if (!e3util.ShouldCheck(ref _nextRaidBuffRequestCheckTime, _nextRaidBuffRequestCheckTimeInterval)) return;
 
             foreach (var spell in E3.CharacterSettings.RaidBuffRequests)
             {
@@ -1121,7 +1173,7 @@ namespace E3Core.Processors
                     }
                 }
                 _refreshBuffCacheRemovedItems.Clear();
-                _nextBotCacheCheckTime = Core.StopWatch.ElapsedMilliseconds + nextBotCacheCheckTimeInterval;
+                _nextBotCacheCheckTime = Core.StopWatch.ElapsedMilliseconds + _nextBotCacheCheckTimeInterval;
             }
         }
         /// <summary>
