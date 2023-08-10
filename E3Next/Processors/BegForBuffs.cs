@@ -141,9 +141,12 @@ namespace E3Core.Processors
                     {
                         foreach (var spell in E3.CharacterSettings.GroupBuffs)
                         {
-                            _queuedBuffs.Enqueue(new BuffQueuedItem() { TargetID=spawnid, Spell = spell });
+                            if(_spawns.TryByID(spawnid, out var spawn))
+                            {
+								_queuedBuffs.Enqueue(new BuffQueuedItem() { TargetID = spawnid, Spell = spell });
+							}
 
-                        }
+						}
                     }
                 }
                 else

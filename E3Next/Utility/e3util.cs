@@ -415,7 +415,7 @@ namespace E3Core.Utility
             {
                 if (x == delim || end == s.Length - 1)
                 {
-                    if (end == s.Length - 1)
+                    if (end == s.Length - 1 && x!=delim)
                         end++;
                     result.Add(int.Parse(s.Substring(start, end - start)));
                     start = end + 1;
@@ -714,7 +714,7 @@ namespace E3Core.Utility
                         {
                             if (spawn.TypeDesc == "NPC")
                             {
-                                 //we are telling people to follow us
+                              
                                 E3.Bots.BroadcastCommandToGroup($"{command} {targetID}",x);
                                 if (e3util.FilterMe(x)) return;
                                 FunctionToExecute(targetID);

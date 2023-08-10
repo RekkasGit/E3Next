@@ -497,42 +497,43 @@ namespace E3Core.Processors
         public List<int> BuffList(string name)
         {
 
-            List<Int32> buffList;
-            bool alreadyExisted = true;
-            if (!_buffListCollection.TryGetValue(name, out buffList))
-            {
-                alreadyExisted = false;
-                buffList = new List<int>();
-                _buffListCollection.Add(name, buffList);
-                _buffListCollectionTimeStamps.Add(name, 0);
+			List<Int32> buffList;
+			bool alreadyExisted = true;
+			if (!_buffListCollection.TryGetValue(name, out buffList))
+			{
+				alreadyExisted = false;
+				buffList = new List<int>();
+				_buffListCollection.Add(name, buffList);
+				_buffListCollectionTimeStamps.Add(name, 0);
+			}
 
-                //register this persons buff slots
-                RegisterBuffSlots(name);
-            }
-            if (!e3util.ShouldCheck(ref _nextBuffCheck, _nextBuffRefreshTimeInterval) && alreadyExisted) return _buffListCollection[name];
-            //refresh all lists of all people
-            foreach (var kvp in _buffListCollection)
-            {
-                _buffListCollection[kvp.Key].Clear();
-                for (Int32 i=1;i<= _maxBuffSlots; i++)
-                {
-                   Int32 spellid= MQ.Query<Int32>($"${{DanNet[{kvp.Key}].O[\"Me.Buff[{i}].Spell.ID\"]}}");
-                    if(spellid>0)
-                    {
-                        _buffListCollection[kvp.Key].Add(spellid);
-                    }
-                }
-                for (Int32 i = 1; i <= _maxSongSlots; i++)
-                {
-                    Int32 spellid = MQ.Query<Int32>($"${{DanNet[{kvp.Key}].O[\"Me.Song[{i}].Spell.ID\"]}}");
-                    if (spellid > 0)
-                    {
-                        _buffListCollection[kvp.Key].Add(spellid);
-                    }
-                }
-            }
-            return _buffListCollection[name];   //need to register and get a buff list.
-        }
+			if (!e3util.ShouldCheck(ref _nextBuffCheck, _nextBuffRefreshTimeInterval) && alreadyExisted) return _buffListCollection[name];
+
+			//refresh all lists of all people
+			foreach (var kvp in _buffListCollection)
+			{
+				if (kvp.Key.Contains("\""))
+				{
+					//ignore pets with quotes. 
+					continue;
+				}
+				MQ.Cmd($"/dquery {name} -q MonoBuffInfo.Buffs");
+				string listString = MQ.Query<String>("${DanNet.Q}");
+				_buffListCollection[kvp.Key].Clear();
+				if (listString!="NULL" && !String.IsNullOrWhiteSpace(listString))
+				{
+					e3util.StringsToNumbers(listString, ':', _buffListCollection[kvp.Key]);
+					MQ.Cmd($"/dquery {name} -q MonoBuffInfo.ShortBuffs");
+					listString = MQ.Query<String>("${DanNet.Q}");
+					if (listString != "NULL" && !String.IsNullOrWhiteSpace(listString))
+					{
+						e3util.StringsToNumbers(listString, ':', _buffListCollection[kvp.Key]);
+					}
+				}
+
+			}
+			return _buffListCollection[name];
+		}
         public List<int> PetBuffList(string name)
         {
             List<Int32> buffList;
@@ -556,15 +557,12 @@ namespace E3Core.Processors
                     //ignore pets with quotes. 
                     continue;
                 }
-                for (Int32 i = 1; i <= _maxBuffSlots; i++)
-                {
-                    Int32 spellid = MQ.Query<Int32>($"${{DanNet[{kvp.Key}].O[\"Me.Pet.Buff[{i}].Spell.ID\"]}}");
-                    if (spellid > 0)
-                    {
-                        _petBuffListCollection[kvp.Key].Add(spellid);
-                    }
-                }
-
+				MQ.Cmd($"/dquery {name} -q MonoBuffInfo.PetBuffs");
+				string listString = MQ.Query<String>("${DanNet.Q}");
+				if (listString != "NULL" && !String.IsNullOrWhiteSpace(listString))
+				{
+					e3util.StringsToNumbers(listString, ':', _petBuffListCollection[kvp.Key]);
+				}
             }
             return _petBuffListCollection[name];
             
