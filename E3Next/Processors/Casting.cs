@@ -68,9 +68,17 @@ namespace E3Core.Processors
                     }
                 }
 
-
+                //if this is a non bard, as we are not casting and its just an /alt activate, kick it off so it can queue up quickly. 
+                if(E3.CurrentClass != Class.Bard && spell.CastType== CastType.AA && spell.MyCastTime <= 500 && !IsCasting())
+                {
+					TrueTarget(targetID);
+					MQ.Cmd($"/alt activate {spell.CastID}");
+					UpdateAAInCooldown(spell);
+					E3.ActionTaken = true;
+					return CastReturn.CAST_SUCCESS;
+				}
                 //bard can cast insta cast items while singing, they be special.
-                if (E3.CurrentClass == Class.Bard && spell.NoMidSongCast == false && spell.MyCastTime <= 500 && (spell.CastType == CastType.Item || spell.CastType== CastType.AA))
+                else if (E3.CurrentClass == Class.Bard && spell.NoMidSongCast == false && spell.MyCastTime <= 500 && (spell.CastType == CastType.Item || spell.CastType== CastType.AA))
                 {
                     //instant cast item, can cast while singing
                     //note bards are special and cast do insta casts while doing normal singing. they have their own 

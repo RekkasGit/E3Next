@@ -367,7 +367,7 @@ namespace E3Core.Processors
                 {
                     if (x.args.Count > 2)
                     {
-						string zoneid = x.args[3];
+						string zoneid = x.args[2];
                         if (zoneid != Zoning.CurrentZone.Id.ToString())
                         {
                             return;
