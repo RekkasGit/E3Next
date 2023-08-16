@@ -348,7 +348,7 @@ namespace E3Core.Settings
             LoadKeyData("Buffs", "Pet Buff", ParsedData, PetBuffs);
             LoadKeyData("Buffs", "Group Buff Request", ParsedData, GroupBuffRequests);
             LoadKeyData("Buffs", "Raid Buff Request", ParsedData, RaidBuffRequests);
-			LoadKeyData("Buffs", "Statck Buff Request", ParsedData, StackBuffRequest);
+			LoadKeyData("Buffs", "Stack Buff Request", ParsedData, StackBuffRequest);
 
 			LoadKeyData("Buffs", "Cast Aura(On/Off)", ParsedData, ref Buffs_CastAuras);
 
