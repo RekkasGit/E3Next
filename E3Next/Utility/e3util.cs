@@ -792,7 +792,57 @@ namespace E3Core.Utility
 				}
 			}
 		}
-        public static string FormatServerName(string serverName)
+		public static string ClassNameFix(string className)
+		{
+            //fix for the MQ ShadowKnight vs the enum "shadowknight"
+			if (className == "Shadow Knight")
+			{
+				return "Shadowknight";
+			}
+			//Sanctuary EQ has custom classes ,that need to be mapped. 
+			if (className == "Adventurer")
+			{
+				return "Warrior";
+			}
+			if (className == "Alchemist")
+			{
+				return "Shaman";
+			}
+			if (className == "Archer")
+			{
+				return "Ranger";
+			}
+			if (className == "Assassin")
+			{
+				return "Rogue";
+			}
+			if (className == "Dragoon")
+			{
+				return "Paladin";
+			}
+			if (className == "Priest")
+			{
+				return "Cleric";
+			}
+			if (className == "Summoner")
+			{
+				return "Magician";
+			}
+			if (className == "Tamer")
+			{
+				return "Beastlord";
+			}
+			if (className == "Witch")
+			{
+				return "Druid";
+			}
+			if (className == "Sorcerer")
+			{
+				return "Wizard";
+			}
+			return className;
+		}
+		public static string FormatServerName(string serverName)
         {
 
             if (string.IsNullOrWhiteSpace(serverName)) return "Lazarus";

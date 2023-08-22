@@ -11,6 +11,7 @@ using System.Diagnostics;
 using System.Globalization;
 using System.Reflection;
 using System.Runtime.InteropServices;
+using System.ServiceModel.Channels;
 using System.Text;
 using System.Threading;
 using System.Threading.Tasks;
@@ -266,11 +267,7 @@ namespace E3Core.Processors
                 CurrentName = MQ.Query<string>("${Me.CleanName}");
                 ServerName = e3util.FormatServerName(MQ.Query<string>("${MacroQuest.Server}"));
                 //deal with the Shadow Knight class issue.
-                string classValue = MQ.Query<string>("${Me.Class}");
-                if (classValue == "Shadow Knight")
-                {
-                    classValue = "Shadowknight";
-                }
+                string classValue =e3util.ClassNameFix(MQ.Query<string>("${Me.Class}"));
                 Enum.TryParse(classValue, out CurrentClass);
                 CurrentLongClassString = CurrentClass.ToString();
                 CurrentShortClassString = Data.Classes.ClassLongToShort[CurrentLongClassString];
@@ -302,7 +299,7 @@ namespace E3Core.Processors
 
 
         }
-
+      
         private static bool ShouldRun()
         {
 
