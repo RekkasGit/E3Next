@@ -760,26 +760,38 @@ namespace E3Core.Utility
         /// <param name="YesClick">if set to <c>true</c> [yes click].</param>
         public static void ClickYesNo(bool YesClick)
         {
-            string TypeToClick = "Yes";
-            if (!YesClick)
-            {
-                TypeToClick = "No";
-            }
+			string TypeToClick = "Yes";
 
-            bool windowOpen = MQ.Query<bool>("${Window[ConfirmationDialogBox].Open}");
-            if (windowOpen)
+			if (!YesClick)
+			{
+				TypeToClick = "No";
+			}
+            if (MQ.Query<bool>("${Window[ConfirmationDialogBox].Open}"))
             {
                 MQ.Cmd($"/nomodkey /notify ConfirmationDialogBox {TypeToClick}_Button leftmouseup");
             }
-            else
+            else if (MQ.Query<bool>("${Window[LargeDialogWindow].Open}"))
             {
-                windowOpen = MQ.Query<bool>("${Window[LargeDialogWindow].Open}");
-                if (windowOpen)
-                {
-                    MQ.Cmd($"/nomodkey /notify LargeDialogWindow LDW_{TypeToClick}Button leftmouseup");
-                }
+                MQ.Cmd($"/nomodkey /notify LargeDialogWindow LDW_{TypeToClick}Button leftmouseup");
             }
-        }
+            else {
+
+				TypeToClick = "Accept";
+				if (!YesClick)
+				{
+					TypeToClick = "Decline";
+				}
+
+				if (MQ.Query<bool>("${Window[TaskSelectWnd].Open}"))
+				{
+					MQ.Cmd($"/nomodkey /notify TaskSelectWnd TSEL_{TypeToClick}Button leftmouseup");
+				}
+				else if (MQ.Query<bool>("${Window[ProgressionSelectionWnd].Open}"))
+				{
+					MQ.Cmd($"/nomodkey /notify ProgressionSelectionWnd ProgressionTemplateSelect{TypeToClick}Button leftmouseup");
+				}
+			}
+		}
         public static string FormatServerName(string serverName)
         {
 
