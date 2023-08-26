@@ -127,6 +127,8 @@ namespace E3Core.Settings
         //blocked buffs
         public List<Spell> BockedBuffs = new List<Spell>();
 
+        public bool IfFDStayDown = false;
+
         //bando buffs
         public bool BandoBuff_Enabled = false;
 		public string BandoBuff_BuffName = String.Empty;
@@ -259,6 +261,7 @@ namespace E3Core.Settings
             LoadKeyData("Misc", "Auto-Forage (On/Off)", ParsedData, ref Misc_AutoForage);
             LoadKeyData("Misc", "Dismount On Interrupt (On/Off)", ParsedData, ref Misc_DismountOnInterrupt);
             LoadKeyData("Misc", "Delay in MS After CastWindow Drops For Spell Completion",ParsedData, ref Misc_DelayAfterCastWindowDropsForSpellCompletion);
+			LoadKeyData("Misc", "If FD stay down", ParsedData, ref IfFDStayDown);
 
 			LoadKeyData("Manastone", "Override General Settings (On/Off)", ParsedData, ref Manastone_OverrideGeneralSettings);
             LoadKeyData("Manastone", "Manastone Enabled (On/Off)", ParsedData, ref Manastone_Enabled);
@@ -474,7 +477,8 @@ namespace E3Core.Settings
             section.Keys.AddKey("Auto-Forage (On/Off)", "Off");
             section.Keys.AddKey("Dismount On Interrupt (On/Off)","On");
             section.Keys.AddKey("Delay in MS After CastWindow Drops For Spell Completion", "0");
-
+			section.Keys.AddKey("\"If FD stay down (true/false)", "False");
+		
 
 			newFile.Sections.AddSection("Assist Settings");
             section = newFile.Sections.GetSectionData("Assist Settings");

@@ -139,7 +139,8 @@ namespace E3Core.Processors
             {
                 if (MQ.Query<bool>("${Me.Feigning}"))
                 {
-                    MQ.Cmd("/stand");
+					if (E3.CharacterSettings.IfFDStayDown) return;
+					MQ.Cmd("/stand");
                 }
 
                 //if range/melee
@@ -481,6 +482,7 @@ namespace E3Core.Processors
 
                 if (MQ.Query<bool>("${Me.Feigning}"))
                 {
+                    if (E3.CharacterSettings.IfFDStayDown) return;
                     MQ.Cmd("/stand");
                 }
 

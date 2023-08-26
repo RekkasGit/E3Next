@@ -137,7 +137,8 @@ namespace E3Core.Processors
                 Nukes.Reset();
                 BuffCheck.AddToBuffCheckTimer(2000);
                 Zoning.Zoned(MQ.Query<Int32>("${Zone.ID}"));
-            });
+				E3.StateUpdates();
+			});
             EventProcessor.RegisterEvent("Summoned", @"You have been summoned!", (x) =>
             {
 				return;
