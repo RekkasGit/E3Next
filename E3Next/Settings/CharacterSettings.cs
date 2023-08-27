@@ -708,8 +708,10 @@ namespace E3Core.Settings
 
             newFile.Sections.AddSection("Ifs");
             newFile.Sections.AddSection("Events");
+			newFile.Sections.AddSection("EventLoop");
 
-            newFile.Sections.AddSection("Manastone");
+
+			newFile.Sections.AddSection("Manastone");
             section = newFile.Sections.GetSectionData("Manastone");
 
             section.Keys.AddKey("Override General Settings (On/Off)", "Off");

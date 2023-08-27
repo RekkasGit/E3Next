@@ -38,7 +38,10 @@ namespace E3Core.Processors
         private static long _nextBoxCheckInterval = 10000;
         private static long _nextForageCheck = 0;
         private static long _nextForageCheckInterval = 10000;
-        private static DateTime? _cursorOccupiedSince;
+
+		private static long _nextEventLoopCheck = 0;
+		private static long _nextEventLoopCheckInterval = 1000;
+		private static DateTime? _cursorOccupiedSince;
         private static TimeSpan _cursorOccupiedTime;
         private static TimeSpan _cursorOccupiedThreshold = new TimeSpan(0, 0, 0, 30);
         private static Int32 _cusrorPreviousID;
@@ -1113,7 +1116,39 @@ namespace E3Core.Processors
             }
         }
 
-        [ClassInvoke(Class.All)]
+		[ClassInvoke(Class.All)]
+        public static void EventLoop()
+        {
+			if (!e3util.ShouldCheck(ref _nextEventLoopCheck, _nextEventLoopCheckInterval)) return;
+
+			var section = E3.CharacterSettings.ParsedData.Sections["EventLoop"];
+			if (section != null)
+			{
+                foreach(var key in section)
+                {
+                    var keyData = section[key.KeyName];
+					if (!String.IsNullOrWhiteSpace(keyData))
+					{
+                        string EventToParse = keyData;
+                        if(Casting.Ifs(EventToParse))
+                        {
+							string ifKey = key.KeyName;
+							var eventSection = E3.CharacterSettings.ParsedData.Sections["Events"];
+							if (eventSection != null)
+							{
+								var eventToExecute = eventSection[ifKey];
+								if (!String.IsNullOrWhiteSpace(eventToExecute))
+								{
+									MQ.Cmd($"/docommand {eventToExecute}");
+								}
+							}
+						}
+					}
+				}
+			}
+		}
+
+		[ClassInvoke(Class.All)]
         public static void CheckForage()
         {
             if (!E3.CharacterSettings.Misc_AutoForage) return;
