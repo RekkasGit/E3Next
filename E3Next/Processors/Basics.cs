@@ -515,7 +515,22 @@ namespace E3Core.Processors
                 MQ.Write($"\agSuccessfully created {args[0]}");
             });
 
-            EventProcessor.RegisterCommand("/group", (x) =>
+			EventProcessor.RegisterCommand("/e3manastone", (x) =>
+			{
+				var args = x.args;
+				if (args.Count == 0)
+					return;
+
+                bool manastoneon;
+
+                bool.TryParse(args[0], out manastoneon);
+				E3.CharacterSettings.Manastone_Enabled = manastoneon;
+                				
+				MQ.Write($"\ag ManaStone Enabled: {manastoneon}");
+			
+			});
+
+			EventProcessor.RegisterCommand("/group", (x) =>
             {
                 var args = x.args;
                 if (args.Count == 0)
