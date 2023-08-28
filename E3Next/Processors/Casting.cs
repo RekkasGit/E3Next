@@ -1363,6 +1363,10 @@ namespace E3Core.Processors
 					//lets replace it with TRUE/FALSE
 					tIF = tIF.ReplaceInsensitive("${AssistTarget}", Assist.AssistTargetID.ToString());
 				}
+				if (tIF.IndexOf("${AssistType}", 0, StringComparison.OrdinalIgnoreCase) > -1)
+				{
+					tIF = tIF.ReplaceInsensitive("${AssistType}", E3.CharacterSettings.Assist_Type);
+				}
 				if (tIF.IndexOf("${use_QUICKBurns}", 0, StringComparison.OrdinalIgnoreCase) > -1)
 				{
 					//lets replace it with TRUE/FALSE
