@@ -155,6 +155,7 @@ namespace E3Core.Settings
         public Int32 ManaStone_OutOfCombatMinMana = 85;
         public Int32 ManaStone_OutOfCombatMaxMana = 95;
 		public HashSet<string> ManaStone_ExceptionZones = new HashSet<string> {};
+        public List<string> ManaStone_ExceptionMQQuery = new List<string>();
 
 		//heals
 		public List<string> HealTankTargets = new List<string>();
@@ -287,6 +288,9 @@ namespace E3Core.Settings
 					ManaStone_ExceptionZones.Add(zone);
 				}
 			}
+
+			LoadKeyData("Manastone", "ExceptionMQQuery", ParsedData, ManaStone_ExceptionMQQuery);
+
 			LoadKeyData("Bando Buff", "Enabled", ParsedData, ref BandoBuff_Enabled);
 			LoadKeyData("Bando Buff", "DebuffName", ParsedData, ref BandoBuff_DebuffName);
 			LoadKeyData("Bando Buff", "BuffName", ParsedData, ref BandoBuff_BuffName);
@@ -738,7 +742,7 @@ namespace E3Core.Settings
             section.Keys.AddKey("Out of Combat MaxMana", "95");
             section.Keys.AddKey("ExceptionZone", "poknowledge");
 			section.Keys.AddKey("ExceptionZone", "thevoida");
-
+			section.Keys.AddKey("ExceptionMQQuery", "");
 
 
 			if (!String.IsNullOrEmpty(CurrentSet))

@@ -891,8 +891,22 @@ namespace E3Core.Processors
                     return;
                 }
                 if (E3.CharacterSettings.ManaStone_ExceptionZones.Contains(Zoning.CurrentZone.ShortName)) return;
-                //manastone code
-                int minMana = E3.GeneralSettings.ManaStone_InCombatMinMana;
+
+				if (E3.CharacterSettings.ManaStone_ExceptionMQQuery.Count > 0)
+                {
+                    foreach(var query in E3.CharacterSettings.ManaStone_ExceptionMQQuery)
+                    {
+                        if (String.IsNullOrEmpty(query)) continue;
+
+                        if(Casting.Ifs(query))
+                        {
+                            return;
+                        }
+                    }
+                }
+
+				//manastone code
+				int minMana = E3.GeneralSettings.ManaStone_InCombatMinMana;
                 int minHP = E3.GeneralSettings.ManaStone_MinHP;
                 int maxMana = E3.GeneralSettings.ManaStone_InCombatMaxMana;
                 int maxLoop = E3.GeneralSettings.ManaStone_NumberOfLoops;
