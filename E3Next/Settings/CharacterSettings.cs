@@ -154,9 +154,10 @@ namespace E3Core.Settings
         public Int32 ManaStone_MinHP = 60;
         public Int32 ManaStone_OutOfCombatMinMana = 85;
         public Int32 ManaStone_OutOfCombatMaxMana = 95;
+		public HashSet<string> ManaStone_ExceptionZones = new HashSet<string> {};
 
-        //heals
-        public List<string> HealTankTargets = new List<string>();
+		//heals
+		public List<string> HealTankTargets = new List<string>();
         public List<Spell> HealTanks = new List<Spell>();
 
         public List<string> HealImportantBotTargets = new List<string>();
@@ -175,6 +176,7 @@ namespace E3Core.Settings
         public List<string> Rez_RezSpells = new List<string>();
         public bool Rez_AutoRez = false;
 
+    
         public Dictionary<string, string> PetWeapons = new Dictionary<string, string>();
         public bool AutoPetWeapons = false;
         public bool AutoCanni = false;
@@ -275,7 +277,16 @@ namespace E3Core.Settings
             LoadKeyData("Manastone", "Min HP", ParsedData, ref ManaStone_MinHP);
             LoadKeyData("Manastone", "Out of Combat MinMana", ParsedData, ref ManaStone_OutOfCombatMinMana);
             LoadKeyData("Manastone", "Out of Combat MaxMana", ParsedData, ref ManaStone_OutOfCombatMaxMana);
+            List<string> zoneList = new List<string>();
+            LoadKeyData("Manastone", "ExceptionZone", ParsedData, zoneList);
 
+            foreach(var zone in zoneList)
+            {
+                if(!ManaStone_ExceptionZones.Contains(zone))
+                {
+					ManaStone_ExceptionZones.Add(zone);
+				}
+			}
 			LoadKeyData("Bando Buff", "Enabled", ParsedData, ref BandoBuff_Enabled);
 			LoadKeyData("Bando Buff", "DebuffName", ParsedData, ref BandoBuff_DebuffName);
 			LoadKeyData("Bando Buff", "BuffName", ParsedData, ref BandoBuff_BuffName);
@@ -563,7 +574,7 @@ namespace E3Core.Settings
             newFile.Sections.AddSection("Burn");
             section = newFile.Sections.GetSectionData("Burn");
             section.Keys.AddKey("Quick Burn", "");
-            section.Keys.AddKey("Quick Burn", "");
+            section.Keys.AddKey("Long Burn", "");
             section.Keys.AddKey("Full Burn", "");
 
 
@@ -725,8 +736,12 @@ namespace E3Core.Settings
             section.Keys.AddKey("Min HP", "60");
             section.Keys.AddKey("Out of Combat MinMana", "85");
             section.Keys.AddKey("Out of Combat MaxMana", "95");
+            section.Keys.AddKey("ExceptionZone", "poknowledge");
+			section.Keys.AddKey("ExceptionZone", "thevoida");
 
-            if (!String.IsNullOrEmpty(CurrentSet))
+
+
+			if (!String.IsNullOrEmpty(CurrentSet))
             {
                 fileName = fileName.Replace(".ini", "_" + CurrentSet + ".ini");
             }

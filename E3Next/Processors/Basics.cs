@@ -45,8 +45,7 @@ namespace E3Core.Processors
         private static TimeSpan _cursorOccupiedTime;
         private static TimeSpan _cursorOccupiedThreshold = new TimeSpan(0, 0, 0, 30);
         private static Int32 _cusrorPreviousID;
-        private static HashSet<string> _manastoneExceptionZones = new HashSet<string> { "poknowledge", "thevoida" };
-
+     
         /// <summary>
         /// Initializes this instance.
         /// </summary>
@@ -891,7 +890,7 @@ namespace E3Core.Processors
                 {
                     return;
                 }
-                if (_manastoneExceptionZones.Contains(Zoning.CurrentZone.ShortName)) return;
+                if (E3.CharacterSettings.ManaStone_ExceptionZones.Contains(Zoning.CurrentZone.ShortName)) return;
                 //manastone code
                 int minMana = E3.GeneralSettings.ManaStone_InCombatMinMana;
                 int minHP = E3.GeneralSettings.ManaStone_MinHP;
