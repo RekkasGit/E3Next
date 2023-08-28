@@ -468,8 +468,13 @@ namespace E3Core.Processors
                         corpsesRaised.Add(s.ID);
                         continue;
                     }
-                    //wait up to 6 sec for a spell to be ready
-                    MQ.Delay(6000, SpellListReady);
+                    //wait up to 12 sec for a spell to be ready
+                    //maybe sit to med while waiting on spell?
+                    if(!SpellListReady())
+                    {
+						Basics.CheckAutoMed();
+					}
+					MQ.Delay(12000, SpellListReady);
                     if(!SpellListReady())
                     {
                         //no spells ready, break out of loop. 
