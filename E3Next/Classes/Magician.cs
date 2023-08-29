@@ -295,18 +295,39 @@ namespace E3Core.Classes
             if (primary != null) weaponsToEquip.Add(primary);
             if (secondary != null) weaponsToEquip.Add(secondary);
 
-            foreach (var weapon in weaponsToEquip)
+            try
             {
-                if (!CheckForWeapon(weapon)) continue;
+                foreach (var weapon in weaponsToEquip)
+                {
+                    if (!CheckForWeapon(weapon)) continue;
 
-                if (Casting.TrueTarget(petId))
-                {
-                    PickUpWeapon(weapon);
-                    e3util.GiveItemOnCursorToTarget(false, false);
+                    if (Casting.TrueTarget(petId))
+                    {
+                        PickUpWeapon(weapon);
+                        e3util.GiveItemOnCursorToTarget(false, false);
+                    }
+                    else
+                    {
+                        return false;
+                    }
                 }
-                else
+            }
+            finally
+            {
+                //clean up after outselves
+                var foundWeaponBag = MQ.Query<bool>($"${{FindItem[={_weaponBag}]}}");
+                if (foundWeaponBag)
                 {
-                    return false;
+                    MQ.Cmd($"/nomodkey /itemnotify \"{_weaponBag}\" leftmouseup");
+                    MQ.Delay(1000, "${Cursor.ID}");
+                    if (!e3util.ValidateCursor(MQ.Query<int>($"${{FindItem[={_weaponBag}].ID}}")))
+                    {
+                        E3.Bots.Broadcast($"\arUnexpected item on cursor when trying to destroy {_weaponBag}");
+                    }
+                    else
+                    {
+                        MQ.Cmd("/destroy");
+                    }
                 }
             }
 
