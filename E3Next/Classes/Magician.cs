@@ -36,6 +36,7 @@ namespace E3Core.Classes
             {"Malo", "Summoned: Spear of Maliciousness" },
             {"Dispel", "Summoned: Wand of Dismissal" },
             {"Snare", "Summoned: Tendon Carver" },
+            {"None", null }
         };
 
         private static Dictionary<string, string> _summonedItemMap = new Dictionary<string, string>
@@ -265,9 +266,6 @@ namespace E3Core.Classes
 					castAttempts++;
 				}
 			}
-			//if (!GiveOther(petId, _armorSpell)) return;
-			//if (!GiveOther(petId, _focusSpell)) return;
-
 
 			var pet = _spawns.Get().FirstOrDefault(f => f.ID == petId);
             if (pet != null)
@@ -290,62 +288,36 @@ namespace E3Core.Classes
         private static bool GiveWeapons(int petId, string weaponString)
         {
             var weapons = weaponString.Split('|');
+            var weaponsToEquip = new List<string>();
             _weaponMap.TryGetValue(weapons[0], out var primary);
             _weaponMap.TryGetValue(weapons[1], out var secondary);
 
-            try
-            {
-				if (!CheckForWeapons(primary, secondary))
-				{
-					return false;
-				}
+            if (primary != null) weaponsToEquip.Add(primary);
+            if (secondary != null) weaponsToEquip.Add(secondary);
 
-				if (Casting.TrueTarget(petId))
-				{
-					PickUpWeapon(primary);
-					e3util.GiveItemOnCursorToTarget(false, false);
-					if (!CheckForWeapons(primary, secondary))
-					{
-						return false;
-					}
-					Casting.TrueTarget(petId);
-					PickUpWeapon(secondary);
-					e3util.GiveItemOnCursorToTarget(false);
-				}
-				else
-				{
-					return false;
-				}
-			}
-            finally
+            foreach (var weapon in weaponsToEquip)
             {
-                //clean up after outselves
-				var foundWeaponBag = MQ.Query<bool>($"${{FindItem[={_weaponBag}]}}");
-				if (foundWeaponBag)
-				{
-					MQ.Cmd($"/nomodkey /itemnotify \"{_weaponBag}\" leftmouseup");
-					MQ.Delay(1000, "${Cursor.ID}");
-					if (!e3util.ValidateCursor(MQ.Query<int>($"${{FindItem[={_weaponBag}].ID}}")))
-					{
-						E3.Bots.Broadcast($"\arUnexpected item on cursor when trying to destroy {_weaponBag}");
-					}
-                    else
-                    {
-						MQ.Cmd("/destroy");
-					}
-				}
-			}
-            
-			
-			return true;
+                if (!CheckForWeapon(weapon)) continue;
+
+                if (Casting.TrueTarget(petId))
+                {
+                    PickUpWeapon(weapon);
+                    e3util.GiveItemOnCursorToTarget(false, false);
+                }
+                else
+                {
+                    return false;
+                }
+            }
+
+            return true;
         }
 
-        private static bool CheckForWeapons(string primary, string secondary)
+        private static bool CheckForWeapon(string weapon)
         {
-            var foundPrimary = MQ.Query<bool>($"${{FindItem[={primary}]}}");
-            var foundSecondary = MQ.Query<bool>($"${{FindItem[={secondary}]}}");
+            var found = MQ.Query<bool>($"${{FindItem[={weapon}]}}");
 
-            if (!foundPrimary || !foundSecondary)
+            if (!found)
             {
                 var foundWeaponBag = MQ.Query<bool>($"${{FindItem[={_weaponBag}]}}");
                 if (foundWeaponBag)
@@ -396,34 +368,6 @@ namespace E3Core.Classes
             var inPackSlot = itemSlot2 + 1;
 
             MQ.Cmd($"/nomodkey /itemnotify in pack{packSlot} {inPackSlot} leftmouseup");
-        }
-
-        private static bool GiveOther(int petId, string spell)
-        {
-            _summonedItemMap.TryGetValue(spell, out var item);
-            var foundSummonedItem = MQ.Query<bool>($"${{FindItem[={item}]}}");
-            if (!foundSummonedItem)
-            {
-                var summonResult = SummonItem(spell, false);
-                if (!summonResult.success)
-                {
-                    E3.Bots.Broadcast($"\ar{summonResult.error}");
-                    return false;
-                }
-            }
-            else
-            {
-                MQ.Cmd($"/nomodkey /itemnotify \"{item}\" rightmouseup");
-                MQ.Delay(3000, "${Cursor.ID}");
-            }
-
-            if (Casting.TrueTarget(petId))
-            {
-                e3util.GiveItemOnCursorToTarget(false);
-                return true;
-            }
-
-            return false;
         }
 
         private static (bool success, string error) SummonItem(string itemToSummon, bool inventoryTheSummonedItem)
