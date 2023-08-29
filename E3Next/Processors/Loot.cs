@@ -600,15 +600,10 @@ namespace E3Core.Processors
                             if (corpseItem.Contains(" Silk")) importantItem = true;
                             if (corpseItem.Contains(" Ore")) importantItem = true;
                         }
-                        if (!importantItem && itemValue >= E3.GeneralSettings.Loot_OnlyStackableValueGreaterThanInCopper)
-                        {
-                            importantItem = true;
-                        }
                         if (!importantItem && E3.GeneralSettings.Loot_OnlyStackableAllTradeSkillItems)
                         {
                             if (tradeskillItem) importantItem = true;
                         }
-
                         if (!importantItem && itemValue >= E3.GeneralSettings.Loot_OnlyStackableValueGreaterThanInCopper)
                         {
                             importantItem = true;
