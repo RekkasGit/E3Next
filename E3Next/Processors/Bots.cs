@@ -2,6 +2,7 @@
 using MonoCore;
 using System;
 using System.Collections.Generic;
+using System.Diagnostics;
 using System.Globalization;
 using System.Linq;
 using System.Net;
@@ -14,7 +15,7 @@ namespace E3Core.Processors
     public interface IBots
     {
        
-        Boolean InZone(string Name);
+     //   Boolean InZone(string Name);
         Int32 PctHealth(string name);
         List<string> BotsConnected();
         Boolean HasShortBuff(string name, Int32 buffid);
@@ -401,7 +402,12 @@ namespace E3Core.Processors
                 {
                     //last index of 
                     Int32 indexOfUnderScore = value.LastIndexOf('_');
-                    if (indexOfUnderScore == -1) continue;
+                    if (indexOfUnderScore == -1)
+                    {
+                        string newName = e3util.FirstCharToUpper(value);
+						_connectedBots.Add(newName);
+						continue;
+                    }
                     if(indexOfUnderScore+1==value.Length)
                     {
                         //nothing after the underscore, skip
@@ -512,25 +518,29 @@ namespace E3Core.Processors
 			//refresh all lists of all people
 			foreach (var kvp in _buffListCollection)
 			{
+				if (!_buffListObservers.Contains(kvp.Key))
+				{
+					RegisterObserve(kvp.Key, "MonoBuffInfo.Buffs");
+					RegisterObserve(kvp.Key, "MonoBuffInfo.ShortBuffs");
+					_buffListObservers.Add(kvp.Key);
+					MQ.Delay(200); //need time for the observer to startup
+				}
 				if (kvp.Key.Contains("\""))
 				{
 					//ignore pets with quotes. 
 					continue;
 				}
-				MQ.Cmd($"/dquery {name} -q MonoBuffInfo.Buffs");
-				string listString = MQ.Query<String>("${DanNet.Q}");
+				string listString = MQ.Query<String>($"${{DanNet[{kvp.Key}].O[\"MonoBuffInfo.Buffs\"]}}");
 				_buffListCollection[kvp.Key].Clear();
 				if (listString!="NULL" && !String.IsNullOrWhiteSpace(listString))
 				{
 					e3util.StringsToNumbers(listString, ':', _buffListCollection[kvp.Key]);
-					MQ.Cmd($"/dquery {name} -q MonoBuffInfo.ShortBuffs");
-					listString = MQ.Query<String>("${DanNet.Q}");
+					listString = MQ.Query<String>($"${{DanNet[{kvp.Key}].O[\"MonoBuffInfo.ShortBuffs\"]}}");
 					if (listString != "NULL" && !String.IsNullOrWhiteSpace(listString))
 					{
 						e3util.StringsToNumbers(listString, ':', _buffListCollection[kvp.Key]);
 					}
 				}
-
 			}
 			return _buffListCollection[name];
 		}
@@ -552,13 +562,18 @@ namespace E3Core.Processors
 
             foreach (var kvp in _petBuffListCollection)
             {
-                if (kvp.Key.Contains("\""))
+				if (!_petBuffListObservers.Contains(kvp.Key))
+				{
+					RegisterObserve(kvp.Key, "MonoBuffInfo.PetBuffs");
+					_petBuffListObservers.Add(kvp.Key);
+					MQ.Delay(200); //need time for the observer to startup
+				}
+				if (kvp.Key.Contains("\""))
                 {
                     //ignore pets with quotes. 
                     continue;
                 }
-				MQ.Cmd($"/dquery {name} -q MonoBuffInfo.PetBuffs");
-				string listString = MQ.Query<String>("${DanNet.Q}");
+				string listString = MQ.Query<String>($"${{DanNet[{kvp.Key}].O[\"MonoBuffInfo.PetBuffs\"]}}");
 				if (listString != "NULL" && !String.IsNullOrWhiteSpace(listString))
 				{
 					e3util.StringsToNumbers(listString, ':', _petBuffListCollection[kvp.Key]);
@@ -633,7 +648,7 @@ namespace E3Core.Processors
 
         public Boolean InZone(string name)
         {
-            MQ.Cmd($"/dquery {name} -q Zone.ID");
+            MQ.Cmd($"/dquery {name} -q Zone.ID",100);
             Int32 zoneid = MQ.Query<Int32>("${DanNet.Q}");
 
             if (zoneid==Zoning.CurrentZone.Id)
@@ -654,7 +669,10 @@ namespace E3Core.Processors
             Int32 pctHealth = MQ.Query<Int32>($"${{DanNet[{name}].O[\"Me.PctHPs\"]}}");
             return pctHealth;
         }
-        private void RegisterObserve(string name, string query)
+
+		private HashSet<String> _buffListObservers = new HashSet<string>();
+		private HashSet<String> _petBuffListObservers = new HashSet<string>();
+		private void RegisterObserve(string name, string query)
         {
             string observeCommand = $"/dobserve {name} -q {query}";
             MQ.Cmd(observeCommand);

@@ -39,7 +39,7 @@ namespace E3Core.Processors
         private static Int64 _nextInstantBuffRefresh = 0;
         private static Int64 _nextInstantRefreshTimeInterval = 250;
         private static List<Int32> _keyList = new List<int>();
-        //private static Int64 _printoutTimer;
+        private static Int64 _printoutTimer;
         private static Data.Spell _selectAura = null;
         private static Int64 _nextBuffCheck = 0;
 
@@ -420,7 +420,7 @@ namespace E3Core.Processors
         {
             if (E3.IsInvis) return;
 
-
+            //e3util.PrintTimerStatus(_buffTimers, ref _printoutTimer, "Buff timers");
             //RefresBuffCacheForBots();
             //instant buffs have their own shouldcheck, need it snappy so check quickly.
             //BuffInstant(E3.CharacterSettings.InstantBuffs);
@@ -623,7 +623,7 @@ namespace E3Core.Processors
                         {
                             //ifs failed do a 30 sec`retry
 
-                            UpdateBuffTimers(s.ID, spell, 1500, true);
+                            UpdateBuffTimers(s.ID, spell, 1500,-1, true);
                             continue;
                         }
                     }
@@ -656,7 +656,7 @@ namespace E3Core.Processors
                                         buffDuration = 1000;
                                     }
                                     //don't let the refresh update this
-                                    UpdateBuffTimers(s.ID, spell, 1500);
+                                    UpdateBuffTimers(s.ID, spell, 1500, buffDuration);
                                     continue;
                                 }
                             }
@@ -667,7 +667,7 @@ namespace E3Core.Processors
                                 {
                                     buffDuration = 1000;
                                 }
-                                UpdateBuffTimers(s.ID, spell, 1500);
+                                UpdateBuffTimers(s.ID, spell, 1500, buffDuration);
                                 continue;
                             }
 
@@ -695,48 +695,34 @@ namespace E3Core.Processors
                                 if (result != CastReturn.CAST_SUCCESS)
                                 {
                                     //possibly some kind of issue/blocking. set a 60 sec timer to try and recast later.
-                                    UpdateBuffTimers(s.ID, spell, 60 * 1000, true);
+                                    UpdateBuffTimers(s.ID, spell, 60 * 1000,-1, true);
                                 }
                                 else
                                 {
                                     //lets verify what we have.
-                                    //MQ.Delay(100);
-                                    //Int64 timeLeftInMS = Casting.TimeLeftOnMyBuff(spell);
-                                    //if (timeLeftInMS < 0)
-                                    //{
-                                    //    //some issue, lets wait
-                                    //    timeLeftInMS = 60 * 1000;
-                                    //}
-                                    UpdateBuffTimers(s.ID, spell, 1500);
+                                    MQ.Delay(100);
+                                    Int64 timeLeftInMS = Casting.TimeLeftOnMyBuff(spell);
+                                    UpdateBuffTimers(s.ID, spell, 1500, timeLeftInMS);
                                 }
                                 return;
                             }
                             else if (!willStack)
                             {
                                 //won't stack don't check back for awhile
-                                UpdateBuffTimers(s.ID, spell, 1500);
+                                UpdateBuffTimers(s.ID, spell, 1500,-1);
                             }
                             else
                             {
                                 //we don't have mana for this? or ifs failed? chill for 12 sec.
-                                UpdateBuffTimers(s.ID, spell, 12 * 1000, true);
+                                UpdateBuffTimers(s.ID, spell, 12 * 1000,-1, true);
                             }
                         }
                         else
                         {
                             //they have the buff, update the time
-                            //Int64 timeLeftInMS = Casting.TimeLeftOnMyBuff(spell);
-                            //if (timeLeftInMS < 0)
-                            //{
-                            //    //some issue, lets wait
-                            //    timeLeftInMS = 120 * 1000;
-                            //    UpdateBuffTimers(s.ID, spell, timeLeftInMS, true);
-                            //}
-                            //else
-                            //{
-                            //    UpdateBuffTimers(s.ID, spell, timeLeftInMS);
-                            //}
-                            UpdateBuffTimers(s.ID, spell, 1500);
+                            Int64 timeLeftInMS = Casting.TimeLeftOnMyBuff(spell);
+                           
+                            UpdateBuffTimers(s.ID, spell, 1500,timeLeftInMS);
                             continue;
                         }
                     }
@@ -761,7 +747,7 @@ namespace E3Core.Processors
                             if (hasCheckFor || hasCachedCheckFor)
                             {
 
-                                UpdateBuffTimers(s.ID, spell, 1500);
+                                UpdateBuffTimers(s.ID, spell, 1500, -1);
                                 continue;
                             }
                         }
@@ -780,19 +766,21 @@ namespace E3Core.Processors
                                 if (result != CastReturn.CAST_SUCCESS)
                                 {
                                     //possibly some kind of issue/blocking. set a 120 sec timer to try and recast later.
-                                    UpdateBuffTimers(s.ID, spell, 60 * 1000, true);
+                                    UpdateBuffTimers(s.ID, spell, 60 * 1000,-1, true);
                                 }
                                 else
                                 {
                                     //lets verify what we have.
                                     MQ.Delay(100);
+
                                     if (buffCount < 31)
-                                    {
-                                        UpdateBuffTimers(s.ID, spell, 1500);
+									{
+                                        Int64 timeLeftInMS = Casting.TimeLeftOnMyPetBuff(spell);
+										UpdateBuffTimers(s.ID, spell, 1500, timeLeftInMS);
                                     }
                                     else
                                     {
-                                        UpdateBuffTimers(s.ID, spell, (spell.DurationTotalSeconds * 1000));
+                                        UpdateBuffTimers(s.ID, spell, (spell.DurationTotalSeconds * 1000), (spell.DurationTotalSeconds * 1000));
                                     }
                                    
                                 }
@@ -801,18 +789,18 @@ namespace E3Core.Processors
                             else if (!willStack)
                             {
                                 //won't stack don't check back for awhile
-                                UpdateBuffTimers(s.ID, spell, 1500);
+                                UpdateBuffTimers(s.ID, spell, 1500, -1);
                             }
                             else
                             {
                                 //we don't have mana for this? or ifs failed? chill for 12 sec.
-                                UpdateBuffTimers(s.ID, spell, 12 * 1000, true);
+                                UpdateBuffTimers(s.ID, spell, 12 * 1000,-1, true);
                             }
                         }
                         else
                         {
                             //they have the buff, update the time
-                            UpdateBuffTimers(s.ID, spell, 1500);
+                            UpdateBuffTimers(s.ID, spell, 1500, -1);
                             continue;
                         }
 
@@ -841,23 +829,26 @@ namespace E3Core.Processors
                                 {
                                     //can't see the time, just set it for this time to recheck
                                     //6 seconds
-                                    UpdateBuffTimers(s.ID, spell, 1500);
+                                    UpdateBuffTimers(s.ID, spell, 1500, -1);
                                     continue;
                                 }
 
                             }
 
-                            bool hasBuff = hasBuff = findBuffList(spell.CastTarget).Contains(spell.SpellID);
+                            var list = findBuffList(spell.CastTarget);
+                            bool hasBuff = hasBuff = list.Contains(spell.SpellID);
 
                             if (!hasBuff)
                             {
-								Casting.TrueTarget(s.ID);
+                         		Casting.TrueTarget(s.ID);
 								MQ.Delay(2000, "${Target.BuffsPopulated}");
 								bool willStack = MQ.Query<bool>($"${{Spell[{spell.SpellName}].StacksTarget}}");
 								if (willStack && Casting.CheckReady(spell) && Casting.CheckMana(spell))
-                                {
-                                    //then we can cast!
-                                    var result = Casting.Cast(s.ID, spell, Heals.SomeoneNeedsHealing);
+								{
+									//E3.Bots.Broadcast($"{spell.CastTarget} is missing the buff {spell.CastName} with id:{spell.SpellID}. current list:{String.Join(",",list)}");
+								
+									//then we can cast!
+									var result = Casting.Cast(s.ID, spell, Heals.SomeoneNeedsHealing);
                                     if (result == CastReturn.CAST_INTERRUPTED || result == CastReturn.CAST_INTERRUPTFORHEAL || result == CastReturn.CAST_FIZZLE)
                                     {
                                         return;
@@ -865,26 +856,29 @@ namespace E3Core.Processors
                                     if (result != CastReturn.CAST_SUCCESS)
                                     {
                                         //possibly some kind of issue/blocking.
-                                        UpdateBuffTimers(s.ID, spell, 10000, true);
+                                        UpdateBuffTimers(s.ID, spell, 10000,-1, true);
                                     }
                                     else
                                     {
-                                        //lets verify what we have on that target.
-                                        UpdateBuffTimers(s.ID, spell, 1500, true);
+                                        MQ.Delay(100);
+										Int64 timeLeftInMS = Casting.TimeLeftOnTargetBuff(spell);
+										//lets verify what we have on that target.
+										UpdateBuffTimers(s.ID, spell, 1500, timeLeftInMS,true);
 
                                     }
                                     return;
                                 }
                                 else
                                 {   //spell not ready
-                                    UpdateBuffTimers(s.ID, spell, 6000);
+                                    UpdateBuffTimers(s.ID, spell, 6000, -1,false,true);
 
                                 }
                             }
                             else
                             {
-                                //has the buff
-                                UpdateBuffTimers(s.ID, spell, 1500, true);
+								
+								//has the buff
+								UpdateBuffTimers(s.ID, spell, 1500,-1, true,true);
                                 continue;
                             }
 
@@ -900,7 +894,7 @@ namespace E3Core.Processors
                             if (!willStack)
                             {
                                 //won't stack don't check back for awhile
-                                UpdateBuffTimers(s.ID, spell, 30 * 1000);
+                                UpdateBuffTimers(s.ID, spell, 30 * 1000,-1);
                             }
                             //double ifs check, so if their if included Target, we have it
                             if (!String.IsNullOrWhiteSpace(spell.Ifs))
@@ -910,7 +904,7 @@ namespace E3Core.Processors
                                     MQ.Write($"Failed if:{spell.SpellName}:");
 
                                     //ifs failed do a 30 sec retry, so we don't keep swapping targets
-                                    UpdateBuffTimers(s.ID, spell, 30 * 1000, true);
+                                    UpdateBuffTimers(s.ID, spell, 30 * 1000,-1, true);
                                     continue;
                                 }
                             }
@@ -933,11 +927,16 @@ namespace E3Core.Processors
                                     if (result != CastReturn.CAST_SUCCESS)
                                     {
                                         //possibly some kind of issue/blocking. set a N sec timer to try and recast later.
-                                        UpdateBuffTimers(s.ID, spell, 60 * 1000, true);
+                                        UpdateBuffTimers(s.ID, spell, 60 * 1000,-1, true);
                                     }
                                     else
                                     {
-                                        UpdateBuffTimers(s.ID, spell, spell.DurationTotalSeconds * 1000);
+
+										Casting.TrueTarget(s.ID);
+										MQ.Delay(2000, "${Target.BuffsPopulated}");
+										MQ.Delay(100);
+										Int64 timeinMS = Casting.TimeLeftOnTargetBuff(spell);
+                                        UpdateBuffTimers(s.ID, spell, spell.DurationTotalSeconds * 1000,timeinMS);
                                     }
                                     return;
                                 }
@@ -958,7 +957,7 @@ namespace E3Core.Processors
                                         if (result != CastReturn.CAST_SUCCESS)
                                         {
                                             //possibly some kind of issue/blocking. set a 120 sec timer to try and recast later.
-                                            UpdateBuffTimers(s.ID, spell, 120 * 1000, true);
+                                            UpdateBuffTimers(s.ID, spell, 120 * 1000, -1,true);
                                             continue;
                                         }
                                         else
@@ -973,12 +972,12 @@ namespace E3Core.Processors
                                                 if (timeLeftInMS < 0)
                                                 {
                                                     timeLeftInMS = 120 * 1000;
-                                                    UpdateBuffTimers(s.ID, spell, timeLeftInMS, true);
+                                                    UpdateBuffTimers(s.ID, spell, timeLeftInMS,timeLeftInMS, true);
 
                                                 }
                                                 else
                                                 {
-                                                    UpdateBuffTimers(s.ID, spell, timeLeftInMS);
+                                                    UpdateBuffTimers(s.ID, spell, timeLeftInMS,timeLeftInMS);
                                                 }
 
                                                 continue;
@@ -993,7 +992,7 @@ namespace E3Core.Processors
                                 }
                                 else
                                 {
-                                    UpdateBuffTimers(s.ID, spell, timeLeftInMS);
+                                    UpdateBuffTimers(s.ID, spell, timeLeftInMS, timeLeftInMS);
                                     continue;
                                 }
                             }
@@ -1183,7 +1182,7 @@ namespace E3Core.Processors
         /// <param name="spell"></param>
         /// <param name="timeLeftInMS"></param>
         /// <param name="locked">Means the buff cache cannot override it</param>
-        private static void UpdateBuffTimers(Int32 mobid, Data.Spell spell, Int64 timeLeftInMS, bool locked = false)
+        private static void UpdateBuffTimers(Int32 mobid, Data.Spell spell, Int64 timeLeftInMS, Int64 realDurationLeft,bool locked = false,bool ignoreRealDuration=false)
         {
             SpellTimer s;
             //if we have no time left, as it was not found, just set it to 0 in ours
@@ -1193,11 +1192,16 @@ namespace E3Core.Processors
                 if (!s.Timestamps.ContainsKey(spell.SpellID))
                 {
                     s.Timestamps.Add(spell.SpellID, 0);
-                }
+					s.TimestampBySpellDuration.Add(spell.SpellID, 0);
+				}
 
                 s.Timestamps[spell.SpellID] = Core.StopWatch.ElapsedMilliseconds + timeLeftInMS;
+                if (!ignoreRealDuration)
+                {
+					s.TimestampBySpellDuration[spell.SpellID] = Core.StopWatch.ElapsedMilliseconds + realDurationLeft;
 
-                if (locked)
+				}
+				if (locked)
                 {
                     if (!s.Lockedtimestamps.ContainsKey(spell.SpellID))
                     {
@@ -1219,7 +1223,8 @@ namespace E3Core.Processors
                 ts.MobID = mobid;
 
                 ts.Timestamps.Add(spell.SpellID, Core.StopWatch.ElapsedMilliseconds + timeLeftInMS);
-                _buffTimers.Add(mobid, ts);
+				ts.TimestampBySpellDuration.Add(spell.SpellID,spell.DurationTotalSeconds * 1000);
+				_buffTimers.Add(mobid, ts);
                 if (locked)
                 {
                     if (!ts.Lockedtimestamps.ContainsKey(spell.SpellID))

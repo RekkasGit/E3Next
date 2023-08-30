@@ -12,7 +12,8 @@ namespace E3Core.Data
     {
         public Int32 MobID;
         public Dictionary<Int32, Int64> Timestamps = new Dictionary<Int32, Int64>();
-        public Dictionary<Int32, Int64> Lockedtimestamps = new Dictionary<Int32, Int64>();
+		public Dictionary<Int32, Int64> TimestampBySpellDuration = new Dictionary<Int32, Int64>();
+		public Dictionary<Int32, Int64> Lockedtimestamps = new Dictionary<Int32, Int64>();
 
         public static SpellTimer Aquire()
         {
@@ -28,7 +29,9 @@ namespace E3Core.Data
         {
             MobID = 0;
             Timestamps.Clear();
-            Lockedtimestamps.Clear();
+            TimestampBySpellDuration.Clear();
+
+			Lockedtimestamps.Clear();
             StaticObjectPool.Push(this);
         }
         ~SpellTimer()

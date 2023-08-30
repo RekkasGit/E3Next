@@ -514,7 +514,7 @@ namespace E3Core.Utility
 
                 foreach (var kvp in timers)
                 {
-                    foreach (var kvp2 in kvp.Value.Timestamps)
+                    foreach (var kvp2 in kvp.Value.TimestampBySpellDuration)
                     {
                         Data.Spell spell;
                         if (Spell._loadedSpells.TryGetValue(kvp2.Key, out spell))
