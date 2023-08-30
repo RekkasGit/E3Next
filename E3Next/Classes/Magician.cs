@@ -93,6 +93,12 @@ namespace E3Core.Classes
                 }
 
                 _requester = x.match.Groups[1].ToString();
+                if (E3.CharacterSettings.IgnorePetWeaponRequests)
+                {
+                    MQ.Cmd($"/t {_requester} Sorry, I am not currently accepting requests for pet weapons");
+                    return;
+                }
+
                 if (E3.CurrentClass != Class.Magician)
                 {
                     MQ.Cmd($"/t {_requester} Only magicians can give out pet weapons!");
