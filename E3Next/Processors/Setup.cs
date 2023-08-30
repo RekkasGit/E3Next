@@ -17,7 +17,7 @@ namespace E3Core.Processors
         static public string _missingSpellItem = string.Empty;
         static public Int32 _numInventorySlots = 10;
         static public Int32 _previousSpellGemThatWasCast = -1;
-        public const string _e3Version = "1.0.43-beta";
+        public const string _e3Version = "1.0.44-beta";
         public static Boolean _debug = true;
         public const string _macroData_Ini = @"e3 Macro Inis\e3 Data.ini";
         public static string _generalSettings_Ini = @"e3 Macro Inis\General Settings.ini";
