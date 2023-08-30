@@ -759,7 +759,7 @@ namespace MonoCore
         public static Logging logInstance;
         public volatile static bool IsProcessing = false;
         public const string _coreVersion = "0.1";
-        public static Decimal _MQ2Version = 0.1M;
+        public static Decimal _MQ2MonoVersion = 0.1M;
 
         //Note, if you comment out a method, this will tell MQ2Mono to not try and execute it
         //only use the events you need to prevent string allocations to be passed in
@@ -802,7 +802,7 @@ namespace MonoCore
         {
 			try
 			{
-				_MQ2Version = Decimal.Parse(Core.mq_GetMQ2MonoVersion());
+				_MQ2MonoVersion = Decimal.Parse(Core.mq_GetMQ2MonoVersion());
 			}
 			catch (Exception ex)
 			{
@@ -1411,7 +1411,7 @@ namespace MonoCore
 
 		public string GetFocusedWindowName()
 		{
-            if(Core._MQ2Version>0.1M)
+            if(Core._MQ2MonoVersion>0.1M)
             {
                 return Core.mq_GetFocusedWindowName();
             }

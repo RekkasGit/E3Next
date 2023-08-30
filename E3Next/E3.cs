@@ -276,7 +276,7 @@ namespace E3Core.Processors
                 GeneralSettings = new Settings.GeneralSettings();
                 if(Bots==null)
                 {
-					if ("DANNET".Equals(E3.GeneralSettings.General_NetworkMethod, StringComparison.OrdinalIgnoreCase) && Core._MQ2Version > 0.20m)
+					if ("DANNET".Equals(E3.GeneralSettings.General_NetworkMethod, StringComparison.OrdinalIgnoreCase) && Core._MQ2MonoVersion > 0.20m)
 					{
 						Bots = new DanBots();
 					}

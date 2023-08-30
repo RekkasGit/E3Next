@@ -45,7 +45,7 @@ namespace E3Core.Processors
                     _serverNameForIni = "Lazarus";
                 }
 
-                MQ.Write($"Loading nE³xt v{_e3Version}...Mq2Mono v{Core._MQ2Version}");
+                MQ.Write($"Loading nE³xt v{_e3Version}...Mq2Mono v{Core._MQ2MonoVersion}");
              
 
                 InitPlugins();
