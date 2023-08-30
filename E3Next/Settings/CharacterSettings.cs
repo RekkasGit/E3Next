@@ -520,7 +520,7 @@ namespace E3Core.Settings
             section.Keys.AddKey("Pet Buff", "");
             section.Keys.AddKey("Group Buff Request", "");
             section.Keys.AddKey("Raid Buff Request", "");
-			section.Keys.AddKey("Statck Buff Request", "");
+			section.Keys.AddKey("Stack Buff Request", "");
 			section.Keys.AddKey("Cast Aura(On/Off)", "On");
 
             if ((CharacterClass & Class.Caster) != CharacterClass && (CharacterClass & Class.Priest) != CharacterClass)
