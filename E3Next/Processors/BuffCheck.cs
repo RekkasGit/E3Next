@@ -898,8 +898,7 @@ namespace E3Core.Processors
 										Casting.TrueTarget(s.ID);
 										MQ.Delay(2000, "${Target.BuffsPopulated}");
 										MQ.Delay(300);
-										Int64 timeinMS = Casting.TimeLeftOnTargetBuff(spell);
-										UpdateBuffTimers(s.ID, spell, spell.DurationTotalSeconds * 1000, timeinMS);
+										UpdateBuffTimers(s.ID, spell, spell.DurationTotalSeconds * 1000, timeLeftInMS);
 									}
 									return;
 								}
@@ -1107,12 +1106,11 @@ namespace E3Core.Processors
 						else if (E3.Bots.BotsConnected().Contains(spell.CastTarget, StringComparer.OrdinalIgnoreCase))
 						{
 							//clear target to be sure we get a new updated duration
-							MQ.Cmd("/nomodkey /keypress esc");
+							MQ.Cmd("/squelch /target clear");
 							if (Casting.TrueTarget(s.ID))
 							{
 								MQ.Delay(2000, "${Target.BuffsPopulated}");
 								Int64 timeinMS = Casting.TimeLeftOnTargetBuff(spell);
-
 
 								//its a bot
 								//check to see if the buff actually exists
@@ -1126,10 +1124,10 @@ namespace E3Core.Processors
 
 								if(hasBuff && timeinMS<1 && spell.MinDurationBeforeRecast==0)
 								{
-									//check again in 6 seconds, if they have the buff but the time is off.
+									//check again , if they have the buff but the time is off.
 									//most likely a zone that has buffs locked and don't count down.
 									//MQ still counts down on the duration
-									UpdateBuffTimers(s.ID, spell, 15*1000, timeinMS);
+									UpdateBuffTimers(s.ID, spell, spell.DurationTotalSeconds*1000, timeinMS,true);
 									return true;
 								}
 

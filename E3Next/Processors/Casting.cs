@@ -1443,7 +1443,7 @@ namespace E3Core.Processors
              //0 means don't change target
             if (allowClear && targetID == 0)
             {
-                MQ.Cmd("/nomodkey /keypress esc");
+                MQ.Cmd("/squelch /target clear");
                 return true;
             }
             else
@@ -1484,7 +1484,7 @@ namespace E3Core.Processors
             {
                 if (allowClear)
                 {
-                    MQ.Cmd("/nomodkey /keypress esc");
+                    MQ.Cmd("/squelch /target clear");
                     return false;
                 }
                 //MQ.Write("TrueTarget has no spawncount");
