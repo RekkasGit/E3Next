@@ -1104,6 +1104,52 @@ namespace E3Core.Processors
 							}
 
 						}
+						else if (E3.Bots.BotsConnected().Contains(spell.CastTarget, StringComparer.OrdinalIgnoreCase))
+						{
+							//clear target to be sure we get a new updated duration
+							MQ.Cmd("/nomodkey /keypress esc");
+							if (Casting.TrueTarget(s.ID))
+							{
+								MQ.Delay(2000, "${Target.BuffsPopulated}");
+								Int64 timeinMS = Casting.TimeLeftOnTargetBuff(spell);
+
+
+								//its a bot
+								//check to see if the buff actually exists
+								Func<String, List<Int32>> findBuffList = E3.Bots.BuffList;
+								if (usePets)
+								{
+									findBuffList = E3.Bots.PetBuffList;
+								}
+								var list = findBuffList(spell.CastTarget);
+								bool hasBuff = hasBuff = list.Contains(spell.SpellID);
+
+								if(hasBuff && timeinMS<1 && spell.MinDurationBeforeRecast==0)
+								{
+									//check again in 6 seconds, if they have the buff but the time is off.
+									//most likely a zone that has buffs locked and don't count down.
+									//MQ still counts down on the duration
+									UpdateBuffTimers(s.ID, spell, 15*1000, timeinMS);
+									return true;
+								}
+
+								if (timeinMS < 1 && !hasBuff)
+								{
+									//buff doesn't exist
+									return false;
+								}
+								if (timeinMS <= (spell.MinDurationBeforeRecast))
+								{
+									return false;
+								}
+
+								if (timeinMS > 0)
+								{
+									UpdateBuffTimers(s.ID, spell, timeinMS, timeinMS);
+									return true;
+								}
+							}
+						}
 						else
 						{
 							if (Casting.TrueTarget(s.ID))
@@ -1120,7 +1166,6 @@ namespace E3Core.Processors
 									return false;
 								}
 
-								UpdateBuffTimers(s.ID, spell, timeinMS, timeinMS);
 								if (timeinMS > 0)
 								{
 									UpdateBuffTimers(s.ID, spell, timeinMS, timeinMS);
