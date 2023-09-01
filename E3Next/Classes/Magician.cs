@@ -7,8 +7,10 @@ using System;
 using System.Collections.Generic;
 using System.Globalization;
 using System.Linq;
+using System.Security.Cryptography;
 using System.Text;
 using System.Threading.Tasks;
+using System.Windows.Forms.VisualStyles;
 
 namespace E3Core.Classes
 {
@@ -39,6 +41,20 @@ namespace E3Core.Classes
             {"None", null }
         };
 
+        private static Dictionary<int, string> _inventorySlotToPackMap = new Dictionary<int, string>
+        {
+            {23, "pack1" },
+            {24, "pack2" },
+            {25, "pack3" },
+            {26, "pack4" },
+            {27, "pack5" },
+            {28, "pack6" },
+            {29, "pack7" },
+            {30, "pack8" },
+            {31, "pack9" },
+            {32, "pack10" },
+        };
+
         private static Dictionary<string, string> _summonedItemMap = new Dictionary<string, string>
         {
             {_weaponSpell, _weaponItem },
@@ -51,6 +67,9 @@ namespace E3Core.Classes
         private static long _nextWeaponCheck = 0;
         private static long _nextWeaponCheckInterval = 10000;
         private static bool _isExternalRequest = false;
+
+        private static long _nextInventoryCheck = 0;
+        private static long _nextInventoryCheckInterval = 5000;
 
         private const int EnchanterPetPrimaryWeaponId = 10702;
 
@@ -74,6 +93,12 @@ namespace E3Core.Classes
                 }
 
                 _requester = x.match.Groups[1].ToString();
+                if (E3.CharacterSettings.IgnorePetWeaponRequests)
+                {
+                    MQ.Cmd($"/t {_requester} Sorry, I am not currently accepting requests for pet weapons");
+                    return;
+                }
+
                 if (E3.CurrentClass != Class.Magician)
                 {
                     MQ.Cmd($"/t {_requester} Only magicians can give out pet weapons!");
@@ -218,6 +243,88 @@ namespace E3Core.Classes
             }
         }
 
+        /// <summary>
+        /// Keeps an inventory slot open for summoned shit.
+        /// </summary>
+        [ClassInvoke(Data.Class.Magician)]
+        public static void KeepOpenInvSlot()
+        {
+            if (Basics.InCombat()) return;
+            if (!e3util.ShouldCheck(ref _nextInventoryCheck, _nextInventoryCheckInterval)) return;
+
+            var slotToKeepOpen = "pack10";
+
+            // if we have no open inventory slots, return
+            var freeInv = MQ.Query<int>("${Me.FreeInventory}");
+            if (freeInv == 0)
+            {
+                if (E3.CharacterSettings.AutoPetWeapons)
+                {
+                    E3.Bots.Broadcast("No free inventory space and auto pet weapons is on - toggling off so inventory space can be freed up");
+                    E3.CharacterSettings.AutoPetWeapons = false;
+                }
+
+                return;
+            }
+
+            // check if there's anything there
+            var slotQueryResult = MQ.Query<string>($"${{Me.Inventory[{slotToKeepOpen}]}}");
+            if (slotQueryResult == "NULL") return;
+
+            // find a spot to move it to
+            var containerWithOpenSpace = 0;
+            for (int i = 1; i <= 9; i++)
+            {
+                var containerSlots = MQ.Query<int>($"${{Me.Inventory[pack{i}].Container}}");
+                if (containerSlots == 0) continue;
+
+                var containerItemCount = Math.Abs(MQ.Query<int>($"${{InvSlot[pack{i}].Item.Items}}"));
+                if (containerItemCount < containerSlots)
+                {
+                    containerWithOpenSpace = i;
+                    break;
+                }
+            }
+
+            // find out if it's a container or an item
+            var bagQueryResult = MQ.Query<int>($"${{Me.Inventory[{slotToKeepOpen}].Container}}");
+            if (bagQueryResult == 0)
+            {
+                // it's an item; find the first open container and move it there
+                MQ.Cmd($"/shiftkey /itemnotify \"{slotQueryResult}\" leftmouseup");
+                var slotsInContainer = MQ.Query<int>($"${{Me.Inventory[pack{containerWithOpenSpace}].Container}}");
+                for (int i = 1; i <= slotsInContainer; i++)
+                {
+                    var item = MQ.Query<string>($"${{Me.Inventory[pack{containerWithOpenSpace}].Item[{i}]}}");
+                    if (string.Equals(item, "NULL", StringComparison.OrdinalIgnoreCase))
+                    {
+                        MQ.Cmd($"/nomodkey /itemnotify in pack{containerWithOpenSpace} {i} leftmouseup");
+                        MQ.Delay(1000, "!${Cursor.ID}");
+                        break;
+                    }
+                }
+            }
+            else
+            {
+                // it's a container - move it if it's empty
+                if (MQ.Query<int>($"${{InvSlot[{slotToKeepOpen}].Item.Items}}") == 0)
+                {
+                    MQ.Cmd($"/itemnotify \"{slotToKeepOpen}\" leftmouseup");
+                    var slotsInContainer = MQ.Query<int>($"${{Me.Inventory[pack{containerWithOpenSpace}].Container}}");
+                    for (int i = 1; i <= slotsInContainer; i++)
+                    {
+                        var item = MQ.Query<string>($"${{Me.Inventory[pack{containerWithOpenSpace}].Item[{i}]}}");
+                        if (string.Equals(item, "NULL", StringComparison.OrdinalIgnoreCase))
+                        {
+                            MQ.Cmd($"/nomodkey /itemnotify in pack{containerWithOpenSpace} {i} leftmouseup");
+                            MQ.Delay(1000, "!${Cursor.ID}");
+                            break;
+                        }
+                    }
+                }
+            }
+        }
+
         private static void ArmPet(int petId, string weapons)
         {
             // so we can move back
@@ -299,7 +406,7 @@ namespace E3Core.Classes
             {
                 foreach (var weapon in weaponsToEquip)
                 {
-                    if (!CheckForWeapon(weapon)) continue;
+                    if (!CheckForWeapon(weapon)) return false;
 
                     if (Casting.TrueTarget(petId))
                     {
@@ -436,77 +543,103 @@ namespace E3Core.Classes
         private static bool CheckInventory()
         {
             // clean up any leftovers
-            var summonedItemCount = MQ.Query<int>($"${{FindItemCount[={_armorOrHeirloomBag}]}}");
-            for (int i = 1; i <= summonedItemCount; i++)
+            var bag = _armorOrHeirloomBag;
+            while (MQ.Query<int>($"${{FindItemCount[={bag}]}}") > 0)
             {
-                MQ.Cmd($"/nomodkey /itemnotify \"{_armorOrHeirloomBag}\" leftmouseup");
-                MQ.Delay(1000, "${Cursor.ID}");
-                if(!e3util.ValidateCursor(MQ.Query<int>($"${{FindItem[={_armorOrHeirloomBag}].ID}}")))
-                {
-                    E3.Bots.Broadcast($"\arUnexpected item on cursor when trying to destroy {_armorOrHeirloomBag}");
-                    return false;
-                }
-
-                MQ.Cmd("/destroy");
+                if (!DestroyIfEmpty(bag)) return false;
             }
 
-            var bag = "Huge Disenchanted Backpack";
-            summonedItemCount = MQ.Query<int>($"${{FindItemCount[={bag}]}}");
-            for (int i = 1; i <= summonedItemCount; i++)
+            bag = "Huge Disenchanted Backpack";
+            while (MQ.Query<int>($"${{FindItemCount[={bag}]}}") > 0)
             {
-                MQ.Cmd($"/nomodkey /itemnotify \"{bag}\" leftmouseup");
-                MQ.Delay(1000, "${Cursor.ID}");
-                if (!e3util.ValidateCursor(MQ.Query<int>($"${{FindItem[={bag}].ID}}")))
+                if (!DestroyIfEmpty(bag)) return false;
+            }
+
+            bool DestroyIfEmpty(string containerName)
+            {
+                var itemSlot = MQ.Query<int>($"${{FindItem[={containerName}].ItemSlot}}");
+                var itemSlot2 = MQ.Query<int>($"${{FindItem[={containerName}].ItemSlot2}}");
+                // it's in another container
+                if (itemSlot2 >= 0)
                 {
-                    E3.Bots.Broadcast($"\arUnexpected item on cursor when trying to destroy {bag}");
-                    return false;
+                    MQ.Cmd($"/nomodkey /itemnotify in {_inventorySlotToPackMap[itemSlot]} {itemSlot + 1} leftmouseup");
+                    if (!e3util.ValidateCursor(MQ.Query<int>($"${{FindItem[={containerName}].ID}}")))
+                    {
+                        E3.Bots.Broadcast($"\arUnexpected item on cursor when trying to destroy {containerName}");
+                        return false;
+                    }
+
+                    MQ.Cmd("/destroy");
+                    return true;
                 }
 
-                MQ.Cmd("/destroy");
+                if (MQ.Query<int>($"${{InvSlot[{itemSlot}].Item.Items}}") == 0)
+                {
+                    MQ.Cmd($"/nomodkey /itemnotify {itemSlot} leftmouseup");
+                    MQ.Delay(1000, "${Cursor.ID}");
+                    if (!e3util.ValidateCursor(MQ.Query<int>($"${{FindItem[={containerName}].ID}}")))
+                    {
+                        E3.Bots.Broadcast($"\arUnexpected item on cursor when trying to destroy {containerName}");
+                        return false;
+                    }
+
+                    MQ.Cmd("/destroy");
+                    return true;
+                }
+
+                return false;
             }
 
             int containerWithOpenSpace = -1;
             int slotToMoveFrom = -1;
             bool hasOpenInventorySlot = false;
 
-            // see if we need to do anything
+            // check top level inventory slots 
             for (int i = 1; i <= 10; i++)
             {
-                var currentSlot = i;
-                var containerSlots = MQ.Query<int>($"${{Me.Inventory[pack{i}].Container}}");
-                var containerItemCount = MQ.Query<int>($"${{InvSlot[pack{i}].Item.Items}}");
-
-                // the slot is empty, we're good!
-                if (containerSlots == -1)
+                var item = MQ.Query<string>($"${{Me.Inventory[pack{i}]}}");
+                if (item == "NULL")
                 {
-                    slotToMoveFrom = -1;
                     hasOpenInventorySlot = true;
                     break;
                 }
+            }
 
-                // it's an empty bag
-                if (containerItemCount == 0)
+            // if no top level slot open, find out if we have containers with space
+            if (!hasOpenInventorySlot)
+            {
+                for (int i = 1; i <= 10; i++)
                 {
-                    slotToMoveFrom = i;
+                    var containerSlotCount = MQ.Query<int>($"${{Me.Inventory[pack{i}].Container}}");
+                    if (containerSlotCount == 0) continue;
+                    var itemsInContainer = MQ.Query<int>($"${{InvSlot[pack{i}].Item.Items}}");
+                    if (itemsInContainer == containerSlotCount) continue;
+
+                    containerWithOpenSpace = i;
                     break;
                 }
 
-                if (containerSlots - containerItemCount > 0)
+                for (int i = 10; i >= 1; i--)
                 {
-                    containerWithOpenSpace = i;
-                }
+                    var containerSlotCount = MQ.Query<int>($"${{Me.Inventory[pack{i}].Container}}");
+                    if (containerSlotCount <= 0)
+                    {
+                        slotToMoveFrom = i;
+                        break;
+                    }
 
-                // it's not a container, OR it's an empty container, we might have to move it
-                if (containerSlots == 0 || (containerSlots > 0 && containerItemCount == 0))
-                {
-                    slotToMoveFrom = currentSlot;
+                    var itemsInContainer = MQ.Query<int>($"${{InvSlot[pack{i}].Item.Items}}");
+                    if (itemsInContainer == 0)
+                    {
+                        slotToMoveFrom = i;
+                    }
                 }
             }
 
             var freeInventory = MQ.Query<int>("${Me.FreeInventory}");
             if (freeInventory > 0 && containerWithOpenSpace > 0 && slotToMoveFrom > 0)
             {
-                MQ.Cmd($"/nomodkey /itemnotify pack{slotToMoveFrom} leftmouseup");
+                MQ.Cmd($"/shiftkey /itemnotify pack{slotToMoveFrom} leftmouseup");
                 MQ.Delay(250);
 
                 if (MQ.Query<bool>("${Window[QuantityWnd].Open}"))
@@ -514,12 +647,6 @@ namespace E3Core.Classes
                     MQ.Cmd("/nomodkey /notify QuantityWnd QTYW_Accept_Button leftmouseup");
                 }
                 MQ.Delay(1000, "${Cursor.ID}");
-            }
-
-            freeInventory = MQ.Query<int>("${Me.FreeInventory}");
-            if (freeInventory > 0)
-            {
-                hasOpenInventorySlot = true;
             }
 
             if (MQ.Query<bool>("${Cursor.ID}") && containerWithOpenSpace > 0)
