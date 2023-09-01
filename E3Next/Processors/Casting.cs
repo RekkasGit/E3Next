@@ -1641,14 +1641,16 @@ namespace E3Core.Processors
         {
 
             Int64 millisecondsLeft = 0;
-            bool buffExists = MQ.Query<bool>($"${{Me.Pet.Buff[{spell.SpellName}]}}");
-            if (buffExists)
+            int buffIndex = MQ.Query<Int32>($"${{Me.Pet.Buff[{spell.SpellName}]}}");
+
+
+            if (buffIndex>0)
             {
-                millisecondsLeft = MQ.Query<Int64>($"${{Me.Pet.Buff[{spell.SpellName}].Duration}}");
+                millisecondsLeft = MQ.Query<Int64>($"${{Me.Pet.Buff[{buffIndex}].Duration}}");
                 if (millisecondsLeft == 0)
                 {
                     //check if perma spell
-                    Int32 duration = MQ.Query<Int32>($"${{Spell[{spell.SpellName}].Duration}}");
+                    Int32 duration = MQ.Query<Int32>($"${{Spell[{buffIndex}].Duration}}");
                     if (duration < 0)
                     {
                         millisecondsLeft = Int32.MaxValue;
