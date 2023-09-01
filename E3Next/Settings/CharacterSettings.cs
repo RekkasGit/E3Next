@@ -343,7 +343,7 @@ namespace E3Core.Settings
             if (CharacterClass == Class.Magician)
             {
                 LoadKeyData("Magician", "Auto-Pet Weapons (On/Off)", ParsedData, ref AutoPetWeapons);
-                LoadKeyData("Magician", "Ignore Pet Weapon Requests (On/Off)", ParsedData, ref AutoPetWeapons);
+                LoadKeyData("Magician", "Ignore Pet Weapon Requests (On/Off)", ParsedData, ref IgnorePetWeaponRequests);
                 LoadKeyData("Magician", "Pet Weapons", ParsedData, PetWeapons);
             }
 
