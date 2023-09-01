@@ -63,6 +63,15 @@ namespace E3Core.Processors
 		{
 			RegisterEvents();
 		}
+		public static void Reset()
+		{
+			foreach(var pair in _buffTimers)
+			{
+				pair.Value.Dispose();
+
+			}
+			_buffTimers.Clear();
+		}
 		private static void RegisterEvents()
 		{
 
@@ -1177,11 +1186,12 @@ namespace E3Core.Processors
 				}
 				else
 				{
-					//we have no buff timer? lets create one by targeting and getting the information
-					if (Casting.TrueTarget(s.ID))
-					{
-						MQ.Delay(2000, "${Target.BuffsPopulated}");
-						Int64 timeinMS = Casting.TimeLeftOnTargetBuff(spell);
+					//we have no buff timer? lets create one
+
+					if (s.ID == E3.CurrentId)
+					{   //its US!
+
+						Int64 timeinMS = Casting.TimeLeftOnMyBuff(spell);
 						if (timeinMS < 1)
 						{
 							//buff doesn't exist
@@ -1191,10 +1201,60 @@ namespace E3Core.Processors
 						{
 							return false;
 						}
-						UpdateBuffTimers(s.ID, spell, timeinMS, timeinMS);
-					
+						if (timeinMS > 0)
+						{
+							UpdateBuffTimers(s.ID, spell, timeinMS, timeinMS);
+							return true;
+						}
 
 					}
+					else if (s.ID == MQ.Query<Int32>("${Me.Pet.ID}"))
+					{
+						//is our pet
+						Int64 timeinMS = Casting.TimeLeftOnMyPetBuff(spell);
+						if (timeinMS < 1)
+						{
+							return false;
+						}
+						if (spell.MinDurationBeforeRecast > 0)
+						{
+
+							if (timeinMS < spell.MinDurationBeforeRecast)
+							{
+								return false;
+							}
+
+						}
+						if (timeinMS > 0)
+						{
+							UpdateBuffTimers(s.ID, spell, timeinMS, timeinMS);
+							return true;
+						}
+
+					}
+					else
+					{
+						// by targeting and getting the information
+
+						if (Casting.TrueTarget(s.ID))
+						{
+							MQ.Delay(2000, "${Target.BuffsPopulated}");
+							Int64 timeinMS = Casting.TimeLeftOnTargetBuff(spell);
+							if (timeinMS < 1)
+							{
+								//buff doesn't exist
+								return false;
+							}
+							if (timeinMS <= (spell.MinDurationBeforeRecast))
+							{
+								return false;
+							}
+							UpdateBuffTimers(s.ID, spell, timeinMS, timeinMS);
+
+
+						}
+					}
+					
 
 					return true;
 
