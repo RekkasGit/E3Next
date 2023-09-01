@@ -72,9 +72,36 @@ namespace E3Core.Processors
                 if(E3.CurrentClass != Class.Bard && spell.CastType== CastType.AA && spell.MyCastTime <= 500 && !IsCasting())
                 {
 					TrueTarget(targetID);
+					String targetName = String.Empty;
+
+                    if (_spawns.TryByID(targetID, out var s))
+                    {
+
+                        //targets of 0 means keep current target
+                        if (targetID > 0)
+                        {
+                            targetName = s.CleanName;
+                        }
+                        else
+                        {
+                            targetName = MQ.Query<string>($"${{Spawn[id ${{Target.ID}}].CleanName}}");
+                        }
+						MQ.Write($"\ag{spell.CastName} \am{targetName} \ao{targetID}");
+					}
+						
 					MQ.Cmd($"/alt activate {spell.CastID}");
 					UpdateAAInCooldown(spell);
 					E3.ActionTaken = true;
+                    MQ.Delay(200); //necessary to keep things... in order
+					///allow the player to 'tweak' this value.
+					if (E3.CharacterSettings.Misc_DelayAfterCastWindowDropsForSpellCompletion > 0)
+					{
+						MQ.Delay(E3.CharacterSettings.Misc_DelayAfterCastWindowDropsForSpellCompletion);
+					}
+					if (spell.DelayAfterCast > 0)
+					{
+						MQ.Delay(spell.DelayAfterCast);
+					}
 					return CastReturn.CAST_SUCCESS;
 				}
                 //bard can cast insta cast items while singing, they be special.

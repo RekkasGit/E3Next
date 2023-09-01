@@ -116,7 +116,11 @@ namespace E3Core.Data
                     {
                         BeforeSpell = GetArgument<String>(value);
                     }
-                    else if (value.StartsWith("BeforeCast|", StringComparison.OrdinalIgnoreCase))
+					else if (value.StartsWith("MinDurationBeforeRecast|", StringComparison.OrdinalIgnoreCase))
+					{
+						MinDurationBeforeRecast = GetArgument<Int64>(value) *1000;
+					}
+					else if (value.StartsWith("BeforeCast|", StringComparison.OrdinalIgnoreCase))
                     {
                         BeforeSpell = GetArgument<String>(value);
                     }
@@ -736,6 +740,7 @@ namespace E3Core.Data
         public bool ReagentOutOfStock = false;
         public bool SpellInBook = false;
         public bool NoMidSongCast = false;
+        public Int64 MinDurationBeforeRecast = 0;
       
 
         public override string ToString()
