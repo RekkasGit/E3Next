@@ -10,6 +10,8 @@ using System.Globalization;
 using System.Linq;
 using System.Net;
 using System.Text;
+using System.Text.RegularExpressions;
+using System.Threading;
 using System.Threading.Tasks;
 using System.Xml.Linq;
 using static MonoCore.EventProcessor;
@@ -345,32 +347,36 @@ namespace E3Core.Processors
         private string settingsFilePath = String.Empty;
         private static Dictionary<string, CharacterBuffs> _characterBuffs = new Dictionary<string, CharacterBuffs>();
         private static Dictionary<string, CharacterBuffs> _petBuffs = new Dictionary<string, CharacterBuffs>();
+        Task _autoRegisrationTask;
         public SharedDataBots()
         {
             settingsFilePath = BaseSettings.GetSettingsFilePath("");
 
-        }
-        private bool IsRegistered(string name)
-        {
-            return NetMQServer.SharedDataClient.TopicUpdates.ContainsKey(name);
+			_autoRegisrationTask = Task.Factory.StartNew(() => { AutoRegisterUsers(settingsFilePath); }, CancellationToken.None, TaskCreationOptions.DenyChildAttach, TaskScheduler.Default);
+			
+		}
 
-        }
-        private bool RegisterUser(string name)
+        private void AutoRegisterUsers(string settingsPath)
         {
-            //register the user to get their buff data if its not already there
-            if (!NetMQServer.SharedDataClient.TopicUpdates.ContainsKey(name))
+            string searchPattern = $"*_{E3.ServerName}_pubsubport.txt";
+			while (Core.IsProcessing)
             {
-                if (NetMQServer.SharedDataClient.RegisterUser(name))
+                //look for files that start with $"{user}_{E3.ServerName}_pubsubport.txt"
+                string[] fileNames = System.IO.Directory.GetFiles(settingsFilePath, searchPattern);
+                foreach (string file in fileNames)
                 {
-                    //we registered the user, lets wait just a moment to get the data. 
-                    MQ.Write($"\agConnecting to shared data for user:\ap{name}");
-                    MQ.Delay(500);
-                    return true;
-
-                }
-
+                    //D:\\EQ\\E3_ROF2_MQ2Next\\Config\\e3 Macro Inis\\Rekken_Lazarus_pubsubport.txt
+                    Int32 currentIndex = file.LastIndexOf(@"\") + 1;
+                    Int32 indexOfUnderline = file.IndexOf('_', currentIndex);
+					string name = file.Substring(currentIndex,indexOfUnderline- currentIndex);
+                   
+					if (!NetMQServer.SharedDataClient.TopicUpdates.ContainsKey(name))
+                    {
+                        NetMQServer.SharedDataClient.RegisterUser(name);
+					}
+				}
+				System.Threading.Thread.Sleep(1000);
             }
-            return false;
         }
         /// <summary>
         /// 
@@ -406,10 +412,9 @@ namespace E3Core.Processors
             //register the user to get their buff data if its not already there
 			if (!NetMQServer.SharedDataClient.TopicUpdates.ContainsKey(name))
 			{
-				if (RegisterUser(name))
-				{
-					return 0; //dunno just say 0
-				}
+				//don't have the data yet
+				return 0; //dunno just say 0
+				
 			}
 			var userTopics = NetMQServer.SharedDataClient.TopicUpdates[name];
 			//check to see if it has been filled out yet.
@@ -462,43 +467,64 @@ namespace E3Core.Processors
 			return DebuffCounterFunction(name, "${Me.CountersPoison}", _debuffPoisonCounterCollection);
 
 		}
+       
 		public List<string> BotsConnected()
         {
-            throw new NotImplementedException();
-        }
+            return NetMQServer.SharedDataClient.TopicUpdates.Keys.ToList();
+		}
 
         public void Broadcast(string message)
         {
-            throw new NotImplementedException();
-        }
-
+			PubServer.AddTopicMessage("BroadCastMessage", $"{E3.CurrentName}:{message}");
+		}
+        private System.Text.StringBuilder _stringBuilder = new System.Text.StringBuilder();
         public void BroadcastCommand(string command, bool noparse = false, CommandMatch match = null)
         {
-            throw new NotImplementedException();
-        }
+			if (match != null && match.filters.Count > 0)
+			{
+				//need to pass over the filters if they exist
+				_stringBuilder.Clear();
+				_stringBuilder.Append($"{command}");
+				foreach (var filter in match.filters)
+				{
+					_stringBuilder.Append($" \"{filter}\"");
+				}
+                command = _stringBuilder.ToString();
+			}
+			PubServer.AddTopicMessage("OnCommand-All", $"{E3.CurrentName}:{noparse}:{command}");
+		}
 
         public void BroadcastCommandToGroup(string command, CommandMatch match = null, bool noparse = false)
         {
-            throw new NotImplementedException();
-        }
+			if (match != null && match.filters.Count > 0)
+			{
+				//need to pass over the filters if they exist
+				_stringBuilder.Clear();
+				_stringBuilder.Append($"{command}");
+				foreach (var filter in match.filters)
+				{
+					_stringBuilder.Append($" \"{filter}\"");
+				}
+				command = _stringBuilder.ToString();
+			}
+			PubServer.AddTopicMessage("OnCommand-Group", $"{E3.CurrentName}:{noparse}:{command}");
+		}
 
         public void BroadcastCommandToPerson(string person, string command)
-        {
-            throw new NotImplementedException();
-        }
+		{
+			PubServer.AddTopicMessage("OnCommand-" + person, $"{E3.CurrentName}:{false}:{command}");
+		}
         List<int> _buffListReturnValue = new List<int>();
 
         public List<int> BuffList(string name)
         {
             _buffListReturnValue.Clear();
-            //register the user to get their buff data if its not already there
-            if (!IsRegistered(name))
-            {
-                if (!RegisterUser(name))
-                {
-                    //couldn't register, no file avilable assume they are not online yet
-                    return _buffListReturnValue;
-                }
+			//register the user to get their buff data if its not already there
+			if (!NetMQServer.SharedDataClient.TopicUpdates.ContainsKey(name))
+			{
+                //couldn't register, no file avilable assume they are not online yet
+                return _buffListReturnValue;
+               
             }
             var userTopics = NetMQServer.SharedDataClient.TopicUpdates[name];
             //check to see if it has been filled out yet.
@@ -524,10 +550,9 @@ namespace E3Core.Processors
             //register the user to get their buff data if its not already there
             if (!NetMQServer.SharedDataClient.TopicUpdates.ContainsKey(name))
             {
-                if (RegisterUser(name))
-                {
-                    return false;
-                }
+                //don't have data yet
+                return false;
+                
             }
             var userTopics = NetMQServer.SharedDataClient.TopicUpdates[name];
             //check to see if it has been filled out yet.
@@ -546,7 +571,7 @@ namespace E3Core.Processors
 
         public bool IsMyBot(string name)
         {
-            string filePath = $"{settingsFilePath}{name}_pubsubport.txt";
+            string filePath = $"{settingsFilePath}{name}_{E3.ServerName}_pubsubport.txt";
             if (System.IO.File.Exists(filePath))
             {
                 return true;
@@ -560,10 +585,7 @@ namespace E3Core.Processors
 			//register the user to get their buff data if its not already there
 			if (!NetMQServer.SharedDataClient.TopicUpdates.ContainsKey(name))
 			{
-				if (RegisterUser(name))
-				{
-					return 100; //dunno just say full health
-				}
+				return 100; //dunno just say full health
 			}
 			var userTopics = NetMQServer.SharedDataClient.TopicUpdates[name];
 			//check to see if it has been filled out yet.
@@ -595,13 +617,9 @@ namespace E3Core.Processors
 		{
 			_buffListReturnValue.Clear();
 			//register the user to get their buff data if its not already there
-			if (!IsRegistered(name))
-			{
-				if (!RegisterUser(name))
-				{
-					//couldn't register, no file avilable assume they are not online yet
-					return _buffListReturnValue;
-				}
+			if (!NetMQServer.SharedDataClient.TopicUpdates.ContainsKey(name))
+			{  //no data assume not online yet.
+				return _buffListReturnValue;
 			}
 			var userTopics = NetMQServer.SharedDataClient.TopicUpdates[name];
 			//check to see if it has been filled out yet.
@@ -622,7 +640,8 @@ namespace E3Core.Processors
 
 		public void Trade(string name)
 		{
-			throw new NotImplementedException();
+			MQ.Cmd("/notify TradeWnd TRDW_Trade_Button leftmouseup", 250);
+			MQ.Cmd($"/bct {name} //notify TradeWnd TRDW_Trade_Button leftmouseup");
 		}
         class SharedNumericDataInt32
         {

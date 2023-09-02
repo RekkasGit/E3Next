@@ -35,14 +35,16 @@ namespace E3Core.Processors
                 return;
             }
             CheckGC();
-            //update all states, important.
-            StateUpdates();
+			//Init is here to make sure we only Init while InGame, as some queries will fail if not in game
+			if (!IsInit) { Init(); }
+
+			//update all states, important.
+			StateUpdates();
 
             //kickout after updates if paused
             if (IsPaused()) return;
 
-            //Init is here to make sure we only Init while InGame, as some queries will fail if not in game
-            if (!IsInit) { Init(); }
+          
             ActionTaken = false;
             
             if (CurrentHps < 98)
@@ -265,6 +267,7 @@ namespace E3Core.Processors
 			RouterServer.ProcessRequests();
             //process any commands we need to process from the UI
             PubClient.ProcessRequests();
+            NetMQServer.SharedDataClient.ProcessCommands();
         }
         private static void RefreshCaches()
         {
@@ -304,24 +307,27 @@ namespace E3Core.Processors
 
                 //Init the settings
                 GeneralSettings = new Settings.GeneralSettings();
-                if(Bots==null)
-                {
-					if ("DANNET".Equals(E3.GeneralSettings.General_NetworkMethod, StringComparison.OrdinalIgnoreCase) && Core._MQ2MonoVersion > 0.20m)
-					{
-						Bots = new DanBots();
-					}
-					else
-					{
-						Bots = new Bots();
-					}
-				}
-                
-                CharacterSettings = new Settings.CharacterSettings();
+
+				NetMQServer.Init();
+				if (Bots == null)
+				{
+                   	Bots = new SharedDataBots();
+
+                    //if ("DANNET".Equals(E3.GeneralSettings.General_NetworkMethod, StringComparison.OrdinalIgnoreCase) && Core._MQ2MonoVersion > 0.20m)
+                    //{
+                    //    Bots = new DanBots();
+                    //}
+                    //else
+                    //{
+                    //    Bots = new Bots();
+                    //}
+                }
+				CharacterSettings = new Settings.CharacterSettings();
                 AdvancedSettings = new Settings.AdvancedSettings();
-                
-                //setup is done after the settings are setup.
-                //as there is an order dependecy
-                Setup.Init();
+				
+				//setup is done after the settings are setup.
+				//as there is an order dependecy
+				Setup.Init();
 
                 IsInit = true;
                 MonoCore.Spawns.RefreshTimePeriodInMS = 3000;

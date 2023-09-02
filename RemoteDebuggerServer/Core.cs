@@ -13,6 +13,8 @@ using Nancy.Hosting.Self;
 using NetMQ.Sockets;
 using NetMQ;
 using System.Globalization;
+using System.Collections;
+
 
 /// <summary>
 /// Version 0.1
@@ -742,6 +744,7 @@ namespace MonoCore
         //processing thread has done.
         public static string _currentCommand = string.Empty;
         public static string _currentWrite = String.Empty;
+        public static string _currentAddCommand = String.Empty;
         public static Int32 _currentDelay = 0;
 
         //delay in milliseconds
@@ -867,7 +870,13 @@ namespace MonoCore
                 //    goto RestartWait;
                 //}
             }
-            if (_currentDelay > 0)
+			if (_currentAddCommand != String.Empty)
+			{
+				Core.mq_AddCommand(_currentAddCommand);
+				_currentAddCommand = String.Empty;
+
+			}
+			if (_currentDelay > 0)
             {
                 // Core.mq_Echo("Unblocked on C++:: Doing a Delay");
                 Core.mq_Delay(_currentDelay);
@@ -1172,7 +1181,13 @@ namespace MonoCore
         }
         public bool AddCommand(string commandName)
         {
-            return Core.mq_AddCommand(commandName);
+			
+			Core._currentAddCommand = commandName;
+			Core._coreResetEvent.Set();
+			//we are now going to wait on the core
+			MainProcessor._processResetEvent.Wait();
+			MainProcessor._processResetEvent.Reset();
+            return true;
         }
         public void ClearCommands()
         {

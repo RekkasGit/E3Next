@@ -24,7 +24,7 @@ namespace MQServerClient
             MonoCore.Core.mqInstance = new NetMQMQ();
             MonoCore.Core.spawnInstance = new NetMQSpawns();
             MonoCore.Core.OnInit();
-           
+
             NetMQOnIncomingChat _incChat = new NetMQOnIncomingChat();
             _incChat.Start();
 
@@ -32,8 +32,6 @@ namespace MQServerClient
             E3.Log = Core.logInstance;
             E3.Spawns = Core.spawnInstance;
 
-			IBots bots = new DanBots();
-            E3.Bots = bots;//change it to use dannet
             Core.mqInstance.Cmd("/remotedebugdelay 100");
             E3.Process();
             Core.mqInstance.Cmd("/remotedebugdelay 1");

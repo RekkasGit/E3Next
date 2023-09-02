@@ -23,16 +23,18 @@ namespace E3Core.Server
         static PubClient _pubClient;
         public static SharedDataClient SharedDataClient;
 
-        public static Int32 RouterPort;
+		public static Int32 RouterPort;
         public static Int32 PubPort;
         public static Int32 PubClientPort;
         public static System.Diagnostics.Process UIProcess;
         private static IMQ MQ = E3.MQ;
 
-        [SubSystemInit]
+        
         public static void Init()
         {
-            RouterPort = FreeTcpPort();
+			SharedDataClient = new SharedDataClient();
+
+			RouterPort = FreeTcpPort();
             PubPort = FreeTcpPort();
             PubClientPort = FreeTcpPort();
 
@@ -51,9 +53,9 @@ namespace E3Core.Server
             _pubServer.Start(PubPort);
             _routerServer.Start(RouterPort);
             _pubClient.Start(PubClientPort);
-			SharedDataClient = new SharedDataClient();
+			
 
-            EventProcessor.RegisterUnfilteredEventMethod("E3UI", (x) => {
+			EventProcessor.RegisterUnfilteredEventMethod("E3UI", (x) => {
 
                 if(x.typeOfEvent== EventProcessor.eventType.EQEvent)
                 {

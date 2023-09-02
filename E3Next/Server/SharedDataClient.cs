@@ -24,7 +24,8 @@ namespace E3Core.Server
 	public class SharedDataClient
     {
 		public ConcurrentDictionary<string, ConcurrentDictionary<string, ShareDataEntry>> TopicUpdates = new ConcurrentDictionary<string, ConcurrentDictionary<string, ShareDataEntry>>(StringComparer.OrdinalIgnoreCase);
-		
+		public ConcurrentQueue<string> CommandQueue = new ConcurrentQueue<string>();
+
 		private static IMQ MQ = E3.MQ;
 
 
@@ -36,7 +37,7 @@ namespace E3Core.Server
 			if(!TopicUpdates.ContainsKey(user))
 			{
 				//lets see if the file exists
-				string filePath = BaseSettings.GetSettingsFilePath(user + "_pubsubport.txt");
+				string filePath = BaseSettings.GetSettingsFilePath($"{user}_{E3.ServerName}_pubsubport.txt");
 
 				if (System.IO.File.Exists(filePath))
 				{
@@ -53,7 +54,38 @@ namespace E3Core.Server
 			return false;
 		}
 
+		public void ProcessCommands()
+		{
+			while (CommandQueue.Count > 0)
+			{
+				string message;
+				if (CommandQueue.TryDequeue(out message))
+				{
+					//command format
+					//$"{E3.CurrentName}:{noparse}:{command}"
 
+					Int32 indexOfSeperator = message.IndexOf(':');
+					Int32 currentIndex = 0;
+					string user = message.Substring(currentIndex, indexOfSeperator);
+					currentIndex = indexOfSeperator + 1;
+					indexOfSeperator = message.IndexOf(':', indexOfSeperator + 1);
+					string noparseString = message.Substring(currentIndex, message.Length - indexOfSeperator);
+					currentIndex = indexOfSeperator + 1;
+					indexOfSeperator = message.IndexOf(':', indexOfSeperator + 1);
+					string command = message.Substring(currentIndex, message.Length - indexOfSeperator);
+
+					MQ.Write($"\ag<\ap{user}\ag> Command:"+command);
+					if(noparseString=="true")
+					{
+						MQ.Cmd("/noparse "+message);
+					}
+					else
+					{
+						MQ.Cmd(message);
+					}
+				}
+			}
+		}
 		public void Process(string user,string port,string fileName)
 		{
 			System.DateTime lastFileUpdate = System.IO.File.GetLastWriteTime(fileName);
@@ -80,7 +112,7 @@ namespace E3Core.Server
 						subSocket.Subscribe("OnCommand-All");
 						subSocket.Subscribe("OnCommand-Group");
 						subSocket.Subscribe("OnCommand-Raid");
-
+						subSocket.Subscribe("BroadCastMessage");
 						MQ.Write("\agShared Data Client: Connecting to user:" + user + " on port:" + port); ;
 
 						Int32 messageCount = 0;
@@ -89,17 +121,46 @@ namespace E3Core.Server
 							string messageTopicReceived;
 							if (subSocket.TryReceiveFrameString(recieveTimeout, out messageTopicReceived))
 							{
+
+
 								string messageReceived = subSocket.ReceiveFrameString();
-								
-								Int64 updateTime = Core.StopWatch.ElapsedMilliseconds;
-								if (!TopicUpdates[user].ContainsKey(messageTopicReceived))
+
+								if (messageTopicReceived=="OnCommand-All")
 								{
-									TopicUpdates[user].TryAdd(messageTopicReceived, new ShareDataEntry() { Data = messageReceived,LastUpdate= updateTime });
+
+									CommandQueue.Enqueue(messageReceived);
 								}
-								var entry = TopicUpdates[user][messageTopicReceived];
-								entry.Data = messageReceived;
-								entry.LastUpdate = updateTime;
-								
+								else if(messageTopicReceived== "OnCommand-Group")
+								{
+
+								}
+								else if (messageTopicReceived == "OnCommand-Raid")
+								{
+
+								}
+								else if (messageTopicReceived == "BroadCastMessage")
+								{
+
+								}
+								else if (messageTopicReceived == OnCommandName)
+								{
+
+
+								}
+								else
+								{
+									Int64 updateTime = Core.StopWatch.ElapsedMilliseconds;
+									if (!TopicUpdates[user].ContainsKey(messageTopicReceived))
+									{
+										TopicUpdates[user].TryAdd(messageTopicReceived, new ShareDataEntry() { Data = messageReceived, LastUpdate = updateTime });
+									}
+									var entry = TopicUpdates[user][messageTopicReceived];
+									entry.Data = messageReceived;
+									entry.LastUpdate = updateTime;
+
+								}
+
+
 
 							}
 							else

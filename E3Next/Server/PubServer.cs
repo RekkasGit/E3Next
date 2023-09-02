@@ -40,7 +40,7 @@ namespace E3Core.Server
         public void Start(Int32 port)
         {
             PubPort = port;
-            string filePath = BaseSettings.GetSettingsFilePath(E3.CurrentName + "_pubsubport.txt");
+            string filePath = BaseSettings.GetSettingsFilePath($"{E3.CurrentName}_{E3.ServerName}_pubsubport.txt");
 
             System.IO.File.Delete(filePath);
             System.IO.File.WriteAllText(filePath, port.ToString());

@@ -19,6 +19,8 @@ Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "E3Next", "E3Next\E3Next.csp
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "E3NextUI", "E3NextUI\E3NextUI.csproj", "{B2F73DBF-6758-48D3-8258-599BF07FA731}"
 EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "RemoteDebugServerTester", "RemoteDebugServerTester\RemoteDebugServerTester.csproj", "{BB70C008-A243-4516-BE24-010C2415429B}"
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Any CPU = Debug|Any CPU
@@ -123,6 +125,18 @@ Global
 		{B2F73DBF-6758-48D3-8258-599BF07FA731}.Release|x64.Build.0 = Release|Any CPU
 		{B2F73DBF-6758-48D3-8258-599BF07FA731}.Release|x86.ActiveCfg = Release|Any CPU
 		{B2F73DBF-6758-48D3-8258-599BF07FA731}.Release|x86.Build.0 = Release|Any CPU
+		{BB70C008-A243-4516-BE24-010C2415429B}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{BB70C008-A243-4516-BE24-010C2415429B}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{BB70C008-A243-4516-BE24-010C2415429B}.Debug|x64.ActiveCfg = Debug|Any CPU
+		{BB70C008-A243-4516-BE24-010C2415429B}.Debug|x64.Build.0 = Debug|Any CPU
+		{BB70C008-A243-4516-BE24-010C2415429B}.Debug|x86.ActiveCfg = Debug|Any CPU
+		{BB70C008-A243-4516-BE24-010C2415429B}.Debug|x86.Build.0 = Debug|Any CPU
+		{BB70C008-A243-4516-BE24-010C2415429B}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{BB70C008-A243-4516-BE24-010C2415429B}.Release|Any CPU.Build.0 = Release|Any CPU
+		{BB70C008-A243-4516-BE24-010C2415429B}.Release|x64.ActiveCfg = Release|Any CPU
+		{BB70C008-A243-4516-BE24-010C2415429B}.Release|x64.Build.0 = Release|Any CPU
+		{BB70C008-A243-4516-BE24-010C2415429B}.Release|x86.ActiveCfg = Release|Any CPU
+		{BB70C008-A243-4516-BE24-010C2415429B}.Release|x86.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE
