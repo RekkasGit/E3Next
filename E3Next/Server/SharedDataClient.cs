@@ -141,6 +141,10 @@ namespace E3Core.Server
 						}
 						
 					}
+					catch(Exception ex)
+					{
+						MQ.Write("Exception that was caught: " + ex.Message + " stack:" + ex.StackTrace.ToString());
+					}
 					finally
 					{
 						data.Dispose();

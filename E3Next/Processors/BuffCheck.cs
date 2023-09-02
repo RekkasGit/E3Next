@@ -1004,26 +1004,17 @@ namespace E3Core.Processors
 
 		private static bool BuffTimerIsGood_CheckBotData(Data.Spell spell, Spawn s, bool usePets)
 		{
-			//register the user to get their buff data if its not already there
-			if (!NetMQServer.SharedDataClient.TopicUpdates.ContainsKey(spell.CastTarget))
-			{
-				NetMQServer.SharedDataClient.RegisterUser(spell.CastTarget);
-			}
-
 			string keyToUse = "${Me.BuffInfo}";
 			if (usePets)
 			{
 				keyToUse = "${Me.PetBuffInfo}";
 			}
-
 			string keyNameToUse = s.Name; //to get the pet or the owner
-
 			if(!NetMQServer.SharedDataClient.TopicUpdates.ContainsKey(spell.CastTarget))
 			{
 				//don't have it registered, asssume good for now.
 				return true;
 			}
-
 			var userTopics = NetMQServer.SharedDataClient.TopicUpdates[spell.CastTarget];
 			//check to see if it has been filled out yet.
 			if (!userTopics.ContainsKey(keyToUse))
@@ -1031,9 +1022,7 @@ namespace E3Core.Processors
 				//don't have the data yet kick out and assume everything is ok.
 				return true;
 			}
-
 			//we have the data, lets check on it. 
-
 			//we don't have it in our memeory, so lets add it
 			if (!_characterBuffs.ContainsKey(keyNameToUse))
 			{
