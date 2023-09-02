@@ -741,6 +741,7 @@ namespace E3Core.Data
         public bool SpellInBook = false;
         public bool NoMidSongCast = false;
         public Int64 MinDurationBeforeRecast = 0;
+        public Int64 LastUpdateCheckFromTopicUpdate = 0;
       
 
         public override string ToString()

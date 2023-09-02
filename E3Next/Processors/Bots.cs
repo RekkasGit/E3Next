@@ -337,8 +337,7 @@ namespace E3Core.Processors
     {
         private string _connectedBotsString = string.Empty;
         private List<string> _connectedBots = new List<string>();
-        private Int32 _maxBuffSlots = 37;
-        private Int32 _maxSongSlots = 25;
+
         public static string _lastSuccesfulCast = String.Empty;
         public static Logging _log = E3.Log;
         private static IMQ MQ = E3.MQ;
@@ -491,11 +490,11 @@ namespace E3Core.Processors
 
         private void RegisterBuffSlots(string name)
         {
-            for(Int32 i=1;i<= _maxBuffSlots; i++)
+            for(Int32 i=1;i<= e3util.MaxBuffSlots; i++)
             {
                 RegisterObserve(name, $"Me.Buff[{i}].Spell.ID");
             }
-            for (Int32 i = 1; i <= _maxSongSlots; i++)
+            for (Int32 i = 1; i <= e3util.MaxSongSlots; i++)
             {
                 RegisterObserve(name, $"Me.Song[{i}].Spell.ID");
             }

@@ -21,6 +21,8 @@ namespace E3Core.Server
         static PubServer _pubServer;
         static RouterServer _routerServer;
         static PubClient _pubClient;
+        public static SharedDataClient SharedDataClient;
+
         public static Int32 RouterPort;
         public static Int32 PubPort;
         public static Int32 PubClientPort;
@@ -49,6 +51,7 @@ namespace E3Core.Server
             _pubServer.Start(PubPort);
             _routerServer.Start(RouterPort);
             _pubClient.Start(PubClientPort);
+			SharedDataClient = new SharedDataClient();
 
             EventProcessor.RegisterUnfilteredEventMethod("E3UI", (x) => {
 

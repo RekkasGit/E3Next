@@ -23,11 +23,11 @@ namespace E3Core.Processors
     /// The main file from which all other processing is called.
     /// </summary>
     public static class E3
-    {
-        /// <summary>
-        /// The main processing loop.
-        /// </summary>
-        public static void Process()
+	{
+		/// <summary>
+		/// The main processing loop.
+		/// </summary>
+		public static void Process()
         {
 
             if (!ShouldRun())
@@ -192,14 +192,30 @@ namespace E3Core.Processors
             }
             return false;
         }
-        /// <summary>
-        /// This is used during thigns like casting, while we are delaying a ton
-        /// so that we can keep things 'up to date' such as hp, invs status, pet name, etc. 
-        /// 
-        /// </summary>
-        public static void StateUpdates()
+		/// <summary>
+		/// This is used during thigns like casting, while we are delaying a ton
+		/// so that we can keep things 'up to date' such as hp, invs status, pet name, etc. 
+		/// 
+		/// </summary>
+		/// 
+		private static Int64 _nextStateUpdateCheckTime = 0;
+		private static Int64 _nextStateUpdateTimeInterval = 500;
+
+		private static Int64 _nextBuffUpdateCheckTime = 0;
+		private static Int64 _nextBuffUpdateTimeInterval = 1000;
+
+		public static void StateUpdates()
         {
-            IsInvis = MQ.Query<bool>("${Me.Invis}");
+			
+            if(e3util.ShouldCheck(ref _nextBuffUpdateCheckTime, _nextBuffUpdateTimeInterval))
+            {
+				PubServer.AddTopicMessage("${Me.BuffInfo}", e3util.GenerateBuffInfoForPubSub());
+				PubServer.AddTopicMessage("${Me.PetBuffInfo}", e3util.GeneratePetBuffInfoForPubSub());
+			}
+            
+            if (!e3util.ShouldCheck(ref _nextStateUpdateCheckTime, _nextStateUpdateTimeInterval)) return;
+
+			IsInvis = MQ.Query<bool>("${Me.Invis}");
             CurrentHps = MQ.Query<int>("${Me.PctHPs}");
             CurrentId = MQ.Query<int>("${Me.ID}");
             bool IsMoving = MQ.Query<bool>("${Me.Moving}");
@@ -223,7 +239,7 @@ namespace E3Core.Processors
             CurrentInCombat = Basics.InCombat();
             PubServer.AddTopicMessage("${InCombat}", CurrentInCombat.ToString());
 			PubServer.AddTopicMessage("${EQ.CurrentFocusedWindowName}", MQ.GetFocusedWindowName());
-
+            
 			string nameOfPet = MQ.Query<string>("${Me.Pet.CleanName}");
             if (nameOfPet != "NULL")
             {

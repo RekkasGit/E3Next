@@ -22,10 +22,12 @@ namespace E3Core.Utility
         private static IMQ MQ = E3.MQ;
         private static ISpawns _spawns = E3.Spawns;
 
+		public static Int32 MaxBuffSlots = 38;
+		public static Int32 MaxSongSlots = 20;
+        public static Int32 MaxPetBuffSlots = 30;
 
-
-        //share this as we can reuse as its only 1 thread
-        private static StringBuilder resultStringBuilder = new StringBuilder(1024);
+		//share this as we can reuse as its only 1 thread
+		private static StringBuilder resultStringBuilder = new StringBuilder(1024);
         //modified from https://stackoverflow.com/questions/6275980/string-replace-ignoring-case
         
         public static void PutOriginalTargetBackIfNeeded(Int32 targetid)
@@ -424,7 +426,51 @@ namespace E3Core.Utility
             }
 
         }
-        public static List<string> StringsToList(string s, char delim)
+		public static void StringsToNumbers(string s, char delim, List<Int64> list)
+		{
+			List<Int64> result = list;
+			int start = 0;
+			int end = 0;
+			foreach (char x in s)
+			{
+				if (x == delim || end == s.Length - 1)
+				{
+					if (end == s.Length - 1 && x != delim)
+						end++;
+					result.Add(Int64.Parse(s.Substring(start, end - start)));
+					start = end + 1;
+				}
+				end++;
+			}
+
+		}
+		private static List<Int64> _buffInfoTempList = new List<Int64>();
+		public static void BuffInfoToDictonary(string s, Dictionary<Int32, Int64> list, char delim=':')
+		{
+            list.Clear();
+			Dictionary<Int32, Int64> result = list;
+            
+			int start = 0;
+			int end = 0;
+			foreach (char x in s)
+			{
+				if (x == delim || end == s.Length - 1)
+				{
+					if (end == s.Length - 1 && x != delim)
+						end++;
+                    //number,number
+                    _buffInfoTempList.Clear();
+                    string tstring = s.Substring(start, end - start);
+                    StringsToNumbers(tstring, ',', _buffInfoTempList);
+                    result.Add((Int32)_buffInfoTempList[0], _buffInfoTempList[1]);
+
+					start = end + 1;
+				}
+				end++;
+			}
+
+		}
+		public static List<string> StringsToList(string s, char delim)
         {
             List<string> result = new List<string>();
             int start = 0;
@@ -613,7 +659,69 @@ namespace E3Core.Utility
                 }
             }
         }
-        public static void GiveItemOnCursorToTarget(bool moveBackToOriginalLocation = true, bool clearTarget = true)
+        static System.Text.StringBuilder buffInfoStringBuilder = new StringBuilder();
+        public static string GenerateBuffInfoForPubSub()
+        {
+            using(_log.Trace())
+            {
+				buffInfoStringBuilder.Clear();
+				//lets look for a partial match.
+				for (Int32 i = 1; i <= MaxBuffSlots; i++)
+				{
+					string spellID = MQ.Query<string>($"${{Me.Buff[{i}].Spell.ID}}");
+					if (spellID != "NULL")
+					{
+						string duration = MQ.Query<string>($"${{Me.Buff[{i}].Duration}}");
+						buffInfoStringBuilder.Append(spellID);
+						buffInfoStringBuilder.Append(",");
+						buffInfoStringBuilder.Append(duration);
+						buffInfoStringBuilder.Append(":");
+					}
+				}
+				for (Int32 i = 1; i <= MaxSongSlots; i++)
+				{
+					string spellID = MQ.Query<String>($"${{Me.Song[{i}].Spell.ID}}");
+
+					if (spellID != "NULL")
+					{
+						string duration = MQ.Query<string>($"${{Me.Song[{i}].Duration}}");
+						buffInfoStringBuilder.Append(spellID);
+						buffInfoStringBuilder.Append(",");
+						buffInfoStringBuilder.Append(duration);
+						buffInfoStringBuilder.Append(":");
+					}
+				}
+				return buffInfoStringBuilder.ToString();
+
+			}
+            
+		}
+		public static string GeneratePetBuffInfoForPubSub()
+		{
+			using (_log.Trace())
+			{
+				buffInfoStringBuilder.Clear();
+				//lets look for a partial match.
+                if(MQ.Query<bool>("${Me.Pet.ID}"))
+                {
+					for (Int32 i = 1; i <= MaxPetBuffSlots; i++)
+					{
+						string spellID = MQ.Query<string>($"${{Me.Pet.Buff[{i}].ID}}");
+						if (spellID != "NULL")
+						{
+							string duration = MQ.Query<string>($"${{Me.Pet.Buff[{i}].Duration}}");
+							buffInfoStringBuilder.Append(spellID);
+							buffInfoStringBuilder.Append(",");
+							buffInfoStringBuilder.Append(duration);
+							buffInfoStringBuilder.Append(":");
+						}
+					}
+				}
+				return buffInfoStringBuilder.ToString();
+			}
+
+		}
+		public static void GiveItemOnCursorToTarget(bool moveBackToOriginalLocation = true, bool clearTarget = true)
         {
 
             double currentX = MQ.Query<double>("${Me.X}");

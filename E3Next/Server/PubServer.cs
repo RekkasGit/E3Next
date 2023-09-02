@@ -1,4 +1,5 @@
 ﻿using E3Core.Processors;
+using E3Core.Settings;
 using MonoCore;
 using NetMQ;
 using NetMQ.Sockets;
@@ -30,7 +31,7 @@ namespace E3Core.Server
         public static ConcurrentQueue<string> IncomingChatMessages = new ConcurrentQueue<string>();
         public static ConcurrentQueue<string> MQChatMessages = new ConcurrentQueue<string>();
         public static ConcurrentQueue<string> CommandsToSend = new ConcurrentQueue<string>();
-       private static ConcurrentQueue<topicMessagePair> _topicMessages = new ConcurrentQueue<topicMessagePair>();
+        private static ConcurrentQueue<topicMessagePair> _topicMessages = new ConcurrentQueue<topicMessagePair>();
 
         public static Int32 PubPort = 0;
 
@@ -39,7 +40,12 @@ namespace E3Core.Server
         public void Start(Int32 port)
         {
             PubPort = port;
-            _serverThread = Task.Factory.StartNew(() => { Process(); }, CancellationToken.None, TaskCreationOptions.DenyChildAttach, TaskScheduler.Default);
+            string filePath = BaseSettings.GetSettingsFilePath(E3.CurrentName + "_pubsubport.txt");
+
+            System.IO.File.Delete(filePath);
+            System.IO.File.WriteAllText(filePath, port.ToString());
+
+            _serverThread = Task.Factory.StartNew(() => { Process(filePath); }, CancellationToken.None, TaskCreationOptions.DenyChildAttach, TaskScheduler.Default);
 
         }
         public  static void AddTopicMessage(string topic, string message)
@@ -47,7 +53,7 @@ namespace E3Core.Server
             topicMessagePair t = new topicMessagePair() { topic = topic, message = message };
             _topicMessages.Enqueue(t);
         }
-        private void Process()
+        private void Process(string filePath)
         {
             AsyncIO.ForceDotNet.Force();
             using (var pubSocket = new PublisherSocket())
@@ -98,7 +104,8 @@ namespace E3Core.Server
                     }
                     System.Threading.Thread.Sleep(1);
                 }
-                MQ.Write("Shutting down PubServer Thread.");
+				System.IO.File.Delete(filePath);
+				MQ.Write("Shutting down PubServer Thread.");
             }
         }
     }

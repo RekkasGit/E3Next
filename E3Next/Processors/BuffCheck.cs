@@ -1,5 +1,6 @@
 ﻿using E3Core.Classes;
 using E3Core.Data;
+using E3Core.Server;
 using E3Core.Settings;
 using E3Core.Utility;
 using MonoCore;
@@ -973,6 +974,126 @@ namespace E3Core.Processors
 			}
 			// Casting.TrueTarget(currentid, true);
 		}
+		private static Dictionary<string, CharacterBuffs> _characterBuffs = new Dictionary<string, CharacterBuffs>();
+
+		private static bool BuffTimerIsGood_CheckLocalData(Data.Spell spell, Spawn s, bool usePets, bool updateTImers = false)
+		{
+			if (s.ID == E3.CurrentId)
+			{   //its US!
+
+				Int64 timeinMS = Casting.TimeLeftOnMyBuff(spell);
+				if (timeinMS < 1)
+				{
+					return false;
+				}
+				if (spell.MinDurationBeforeRecast > 0)
+				{
+
+					if (timeinMS < spell.MinDurationBeforeRecast)
+					{
+						return false;
+					}
+
+				}
+				if (updateTImers && timeinMS > 0)
+				{
+					UpdateBuffTimers(s.ID, spell, timeinMS, timeinMS);
+				}
+				return true;
+			}
+			else if (s.ID == MQ.Query<Int32>("${Me.Pet.ID}"))
+			{
+				//is our pet, again easy!
+				Int64 timeinMS = Casting.TimeLeftOnMyPetBuff(spell);
+				if (timeinMS < 1)
+				{
+					return false;
+				}
+				if (spell.MinDurationBeforeRecast > 0)
+				{
+
+					if (timeinMS < spell.MinDurationBeforeRecast)
+					{
+						return false;
+					}
+
+				}
+				if(updateTImers && timeinMS >0)
+				{
+					UpdateBuffTimers(s.ID, spell, timeinMS, timeinMS);
+				}
+				return true;
+
+			}
+			return false;
+		}
+		private static bool BuffTimerIsGood_CheckBotData(Data.Spell spell, Spawn s, bool usePets)
+		{
+			//register the user to get their buff data if its not already there
+			if (!NetMQServer.SharedDataClient.TopicUpdates.ContainsKey(spell.CastTarget))
+			{
+				NetMQServer.SharedDataClient.RegisterUser(spell.CastTarget);
+			}
+
+			string keyToUse = "${Me.BuffInfo}";
+			if (usePets)
+			{
+				keyToUse = "${Me.PetBuffInfo}";
+			}
+
+			string keyNameToUse = s.Name; //to get the pet or the owner
+
+			var userTopics = NetMQServer.SharedDataClient.TopicUpdates[spell.CastTarget];
+			//check to see if it has been filled out yet.
+			if (!userTopics.ContainsKey(keyToUse))
+			{
+				//don't have the data yet kick out and assume everything is ok.
+				return true;
+			}
+
+			//we have the data, lets check on it. 
+
+			//we don't have it in our memeory, so lets add it
+			if (!_characterBuffs.ContainsKey(keyNameToUse))
+			{
+				var buffInfo = CharacterBuffs.Aquire();
+
+				e3util.BuffInfoToDictonary(userTopics[keyToUse].Data, buffInfo.BuffDurations);
+				buffInfo.LastUpdate = userTopics[keyToUse].LastUpdate;
+				_characterBuffs.Add(keyNameToUse, buffInfo);
+			}
+			//do we have updated information that is newer than what we already have?
+			if (userTopics[keyToUse].LastUpdate > _characterBuffs[keyNameToUse].LastUpdate)
+			{
+				//new info, lets update!
+				var buffInfo = _characterBuffs[keyNameToUse];
+				e3util.BuffInfoToDictonary(userTopics[keyToUse].Data, buffInfo.BuffDurations);
+				buffInfo.LastUpdate = userTopics[keyToUse].LastUpdate;
+			}
+			//done with updates, now lets check the data.
+			//pets have a cap of MaxPetBuffSlots if equal to or greater, we just can't buff because well.. we can't see it!
+			if (usePets && _characterBuffs[keyNameToUse].BuffDurations.Count >= e3util.MaxPetBuffSlots)
+			{
+				return true;//assume that its on we can't see past the buff count of 30
+			}
+			if (_characterBuffs[keyNameToUse].BuffDurations.ContainsKey(spell.SpellID))
+			{
+				
+				//check if the duratino is ok
+				Int64 timeLeft = _characterBuffs[keyNameToUse].BuffDurations[spell.SpellID];
+				if (timeLeft <= (spell.MinDurationBeforeRecast))
+				{
+					return false;
+				}
+				else
+				{
+					UpdateBuffTimers(s.ID, spell, timeLeft, timeLeft);
+					return true;
+				}
+			}
+			//doesn't have the buff, or its expired
+			return false;
+		}
 		private static bool BuffTimerIsGood(Data.Spell spell, Spawn s, bool usePets)
 		{
 			SpellTimer st;
@@ -981,83 +1102,30 @@ namespace E3Core.Processors
 				Int64 timestamp;
 				if (st.Timestamps.TryGetValue(spell.SpellID, out timestamp))
 				{
-
-
+					//our timer says the buff is still good, but lets make sure in case of dispel.
 					if (Core.StopWatch.ElapsedMilliseconds < timestamp)
 					{
-
 						///check for locked timestamps, just assume they are good period.
 						if (st.Lockedtimestamps.ContainsKey(spell.SpellID))
 						{
 							return true;
 						}
-
+						//easy to check on just ourself
 						if (s.ID == E3.CurrentId)
-						{   //its US!
-
-							Int64 timeinMS = Casting.TimeLeftOnMyBuff(spell);
-							if (timeinMS < 1)
-							{
-								return false;
-							}
-							if (spell.MinDurationBeforeRecast > 0)
-							{
-
-								if (timeinMS < spell.MinDurationBeforeRecast)
-								{
-									return false;
-								}
-
-							}
-							return true;
+						{
+							return BuffTimerIsGood_CheckLocalData(spell, s, usePets);
 						}
 						else if (s.ID == MQ.Query<Int32>("${Me.Pet.ID}"))
 						{
-							//is our pet
-							Int64 timeinMS = Casting.TimeLeftOnMyPetBuff(spell);
-							if (timeinMS < 1)
-							{
-								return false;
-							}
-							if (spell.MinDurationBeforeRecast > 0)
-							{
-
-								if (timeinMS < spell.MinDurationBeforeRecast)
-								{
-									return false;
-								}
-
-							}
-							return true;
-
+							return BuffTimerIsGood_CheckLocalData(spell, s, usePets);
 						}
 						else
 						{   //if a bot, check to see if the buff still exists
 							bool isABot = E3.Bots.BotsConnected().Contains(spell.CastTarget, StringComparer.OrdinalIgnoreCase);
 							if (isABot)
 							{
-								//check to see if the buff actually exists
-								Func<String, List<Int32>> findBuffList = E3.Bots.BuffList;
-								if (usePets)
-								{
-									findBuffList = E3.Bots.PetBuffList;
-								}
-								var list = findBuffList(spell.CastTarget);
-								bool hasBuff = hasBuff = list.Contains(spell.SpellID);
-
-								//don't have the buff, let the code go down to recast it.
-								//else we have the buff, honor the time period we have
-
-								//is the spell low enough that we should recast anyway?
-								if (hasBuff && timestamp < (Core.StopWatch.ElapsedMilliseconds + spell.MinDurationBeforeRecast))
-								{
-									return false;
-								}
-								if (hasBuff)
-								{
-									return true;
-								}
-
+								//register the user to get their buff data if its not already there
+								return BuffTimerIsGood_CheckBotData(spell,s, usePets);
 							}
 							else
 							{
@@ -1068,97 +1136,23 @@ namespace E3Core.Processors
 					}
 					else
 					{
+						//our data shows that the time has elapsed, lets be sure.
 						if (s.ID == E3.CurrentId)
 						{   //its US!
 
-							Int64 timeinMS = Casting.TimeLeftOnMyBuff(spell);
-							if (timeinMS < 1)
-							{
-								//buff doesn't exist
-								return false;
-							}
-							if (timeinMS <= (spell.MinDurationBeforeRecast))
-							{
-								return false;
-							}
-							if(timeinMS>0)
-							{
-								UpdateBuffTimers(s.ID, spell, timeinMS, timeinMS);
-								return true;
-							}
-
+							return BuffTimerIsGood_CheckLocalData(spell, s, usePets,true);
 						}
 						else if (s.ID == MQ.Query<Int32>("${Me.Pet.ID}"))
 						{
-							//is our pet
-							Int64 timeinMS = Casting.TimeLeftOnMyPetBuff(spell);
-							if (timeinMS < 1)
-							{
-								return false;
-							}
-							if (spell.MinDurationBeforeRecast > 0)
-							{
-
-								if (timeinMS < spell.MinDurationBeforeRecast)
-								{
-									return false;
-								}
-
-							}
-							if (timeinMS > 0)
-							{
-								UpdateBuffTimers(s.ID, spell, timeinMS, timeinMS);
-								return true;
-							}
-
+							return BuffTimerIsGood_CheckLocalData(spell, s, usePets, true);
 						}
 						else if (E3.Bots.BotsConnected().Contains(spell.CastTarget, StringComparer.OrdinalIgnoreCase))
 						{
-							//clear target to be sure we get a new updated duration
-							MQ.Cmd("/squelch /target clear");
-							if (Casting.TrueTarget(s.ID))
-							{
-								MQ.Delay(2000, "${Target.BuffsPopulated}");
-								Int64 timeinMS = Casting.TimeLeftOnTargetBuff(spell);
-
-								//its a bot
-								//check to see if the buff actually exists
-								Func<String, List<Int32>> findBuffList = E3.Bots.BuffList;
-								if (usePets)
-								{
-									findBuffList = E3.Bots.PetBuffList;
-								}
-								var list = findBuffList(spell.CastTarget);
-								bool hasBuff = hasBuff = list.Contains(spell.SpellID);
-
-								if(hasBuff && timeinMS<1 && spell.MinDurationBeforeRecast==0)
-								{
-									//check again , if they have the buff but the time is off.
-									//most likely a zone that has buffs locked and don't count down.
-									//MQ still counts down on the duration
-									UpdateBuffTimers(s.ID, spell, spell.DurationTotalSeconds*1000, timeinMS,true);
-									return true;
-								}
-
-								if (timeinMS < 1 && !hasBuff)
-								{
-									//buff doesn't exist
-									return false;
-								}
-								if (timeinMS <= (spell.MinDurationBeforeRecast))
-								{
-									return false;
-								}
-
-								if (timeinMS > 0)
-								{
-									UpdateBuffTimers(s.ID, spell, timeinMS, timeinMS);
-									return true;
-								}
-							}
+							return BuffTimerIsGood_CheckBotData(spell, s, usePets);
 						}
 						else
 						{
+							//its not a bot or our pet or a bots pet. someone else.
 							if (Casting.TrueTarget(s.ID))
 							{
 								MQ.Delay(2000, "${Target.BuffsPopulated}");
@@ -1172,7 +1166,6 @@ namespace E3Core.Processors
 								{
 									return false;
 								}
-
 								if (timeinMS > 0)
 								{
 									UpdateBuffTimers(s.ID, spell, timeinMS, timeinMS);
@@ -1180,60 +1173,30 @@ namespace E3Core.Processors
 								}
 							}
 						}
-						
 					}
-
 				}
 				else
 				{
-					//we have no buff timer? lets create one
-
+					//we have an entry for the mob but no entry for the spell ID in question
+					//so we have to create one. 
 					if (s.ID == E3.CurrentId)
 					{   //its US!
 
-						Int64 timeinMS = Casting.TimeLeftOnMyBuff(spell);
-						if (timeinMS < 1)
-						{
-							//buff doesn't exist
-							return false;
-						}
-						if (timeinMS <= (spell.MinDurationBeforeRecast))
-						{
-							return false;
-						}
-						if (timeinMS > 0)
-						{
-							UpdateBuffTimers(s.ID, spell, timeinMS, timeinMS);
-							return true;
-						}
-
+						return BuffTimerIsGood_CheckLocalData(spell, s, usePets, true);
 					}
 					else if (s.ID == MQ.Query<Int32>("${Me.Pet.ID}"))
 					{
 						//is our pet
-						Int64 timeinMS = Casting.TimeLeftOnMyPetBuff(spell);
-						if (timeinMS < 1)
-						{
-							return false;
-						}
-						if (spell.MinDurationBeforeRecast > 0)
-						{
-
-							if (timeinMS < spell.MinDurationBeforeRecast)
-							{
-								return false;
-							}
-
-						}
-						if (timeinMS > 0)
-						{
-							UpdateBuffTimers(s.ID, spell, timeinMS, timeinMS);
-							return true;
-						}
-
+						return BuffTimerIsGood_CheckLocalData(spell, s, usePets, true);
+					}
+					else if (E3.Bots.BotsConnected().Contains(spell.CastTarget, StringComparer.OrdinalIgnoreCase))
+					{
+						//bot
+						return BuffTimerIsGood_CheckBotData(spell, s, usePets);
 					}
 					else
 					{
+						// someone else
 						// by targeting and getting the information
 
 						if (Casting.TrueTarget(s.ID))
@@ -1254,33 +1217,45 @@ namespace E3Core.Processors
 
 						}
 					}
-					
-
 					return true;
-
 				}
 			}
 			else
 			{
-				//we have no buff timer? lets create one by targeting and getting the information
-				if (Casting.TrueTarget(s.ID))
-				{
-					MQ.Delay(2000, "${Target.BuffsPopulated}");
-					Int64 timeinMS = Casting.TimeLeftOnTargetBuff(spell);
-					if (timeinMS < 1)
-					{
-						//buff doesn't exist
-						return false;
-					}if (timeinMS <= (spell.MinDurationBeforeRecast))
-					{
-						return false;
-					}
-					UpdateBuffTimers(s.ID, spell, timeinMS, timeinMS);
-					
+				if (s.ID == E3.CurrentId)
+				{   //its US!
 
+					return BuffTimerIsGood_CheckLocalData(spell, s, usePets, true);
+				}
+				else if (s.ID == MQ.Query<Int32>("${Me.Pet.ID}"))
+				{
+					//is our pet
+					return BuffTimerIsGood_CheckLocalData(spell, s, usePets, true);
+				}
+				else if (E3.Bots.BotsConnected().Contains(spell.CastTarget, StringComparer.OrdinalIgnoreCase))
+				{
+					return BuffTimerIsGood_CheckBotData(spell, s, usePets);
+				}
+				else
+				{
+					// by targeting and getting the information
+					if (Casting.TrueTarget(s.ID))
+					{
+						MQ.Delay(2000, "${Target.BuffsPopulated}");
+						Int64 timeinMS = Casting.TimeLeftOnTargetBuff(spell);
+						if (timeinMS < 1)
+						{
+							//buff doesn't exist
+							return false;
+						}
+						if (timeinMS <= (spell.MinDurationBeforeRecast))
+						{
+							return false;
+						}
+						UpdateBuffTimers(s.ID, spell, timeinMS, timeinMS);
+					}
 				}
 				return true;
-
 			}
 			return false;
 		}
