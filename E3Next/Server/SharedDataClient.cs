@@ -29,7 +29,7 @@ namespace E3Core.Server
 
 
 		List<Task> _processTasks = new List<Task>();
-		public void RegisterUser(string user)
+		public bool RegisterUser(string user)
 		{
 
 			//see if they exist in the collection
@@ -46,18 +46,25 @@ namespace E3Core.Server
 
 					var newTask = Task.Factory.StartNew(() => { Process(user,port, filePath); }, CancellationToken.None, TaskCreationOptions.DenyChildAttach, TaskScheduler.Default);
 					_processTasks.Add(newTask);
+					return true;
 					
 				}
 			}
+			return false;
 		}
+
+
 		public void Process(string user,string port,string fileName)
 		{
 			System.DateTime lastFileUpdate = System.IO.File.GetLastWriteTime(fileName);
+			string OnCommandName = "OnCommand-" + E3.CurrentName;
+
 			while (Core.IsProcessing)
 			{
 				//some type of delay if our sub errors out.
 				System.Threading.Thread.Sleep(100);
-				TimeSpan recieveTimeout = new TimeSpan(0, 0, 0, 0, 5);
+				//timespan we expect to have some type of message
+				TimeSpan recieveTimeout = new TimeSpan(0, 0, 0, 0, 2);
 				using (var subSocket = new SubscriberSocket())
 				{
 					try
@@ -69,8 +76,14 @@ namespace E3Core.Server
 						subSocket.Connect("tcp://127.0.0.1:" + port);
 						subSocket.Subscribe("${Me.BuffInfo}");
 						subSocket.Subscribe("${Me.PetBuffInfo}");
+						subSocket.Subscribe(OnCommandName);
+						subSocket.Subscribe("OnCommand-All");
+						subSocket.Subscribe("OnCommand-Group");
+						subSocket.Subscribe("OnCommand-Raid");
+
 						MQ.Write("\agShared Data Client: Connecting to user:" + user + " on port:" + port); ;
 
+						Int32 messageCount = 0;
 						while (Core.IsProcessing)
 						{
 							string messageTopicReceived;
@@ -86,36 +99,42 @@ namespace E3Core.Server
 								var entry = TopicUpdates[user][messageTopicReceived];
 								entry.Data = messageReceived;
 								entry.LastUpdate = updateTime;
-							}
-							System.Threading.Thread.Sleep(1);
-							try
-							{
-								System.DateTime currentTime = System.IO.File.GetLastWriteTime(fileName);
-								if (currentTime > lastFileUpdate)
-								{
-									MQ.Write("\agShared Data Client: Disconnecting port:" + port + "for toon:"+user);
-									//shutown the socket and restart it
-									subSocket.Disconnect("tcp://127.0.0.1:" + port);
-									port = System.IO.File.ReadAllText(fileName);
-									MQ.Write("\agShared Data Client: Reconnecting to port:" + port + "for toon:" + user);
-									subSocket.Connect("tcp://127.0.0.1:" + port);
-									lastFileUpdate = currentTime;
-								}
-							}
-							catch(Exception ex)
-							{
-								//file deleted most likely, kill the thread
-								MQ.Write("\agShared Data Client: Issue reading port file, shutting down thread for toon:" + user);
-
-								subSocket.Dispose();
-								if(TopicUpdates.TryRemove(user, out var tout))
-								{
-									
-								}
 								
-								break;
 
 							}
+							else
+							{	//we didn't get a message in the timespan we were expecting, verify if we need to reconnect
+								try
+								{
+									System.DateTime currentTime = System.IO.File.GetLastWriteTime(fileName);
+									if (currentTime > lastFileUpdate)
+									{
+										MQ.Write("\agShared Data Client: Disconnecting port:" + port + "for toon:" + user);
+										//shutown the socket and restart it
+										subSocket.Disconnect("tcp://127.0.0.1:" + port);
+										port = System.IO.File.ReadAllText(fileName);
+										MQ.Write("\agShared Data Client: Reconnecting to port:" + port + "for toon:" + user);
+										subSocket.Connect("tcp://127.0.0.1:" + port);
+										lastFileUpdate = currentTime;
+									}
+								}
+								catch (Exception ex)
+								{
+									//file deleted most likely, kill the thread
+									MQ.Write("\agShared Data Client: Issue reading port file, shutting down thread for toon:" + user);
+
+									subSocket.Dispose();
+									if (TopicUpdates.TryRemove(user, out var tout))
+									{
+
+									}
+
+									break;
+
+								}
+							}
+							
+
 						}
 						
 					}

@@ -218,19 +218,21 @@ namespace E3Core.Processors
 			IsInvis = MQ.Query<bool>("${Me.Invis}");
             CurrentHps = MQ.Query<int>("${Me.PctHPs}");
             CurrentId = MQ.Query<int>("${Me.ID}");
-            bool IsMoving = MQ.Query<bool>("${Me.Moving}");
+            PctHPs = MQ.Query<Int32>("${Me.PctHPs}");
 
-            if(IsMoving)
-            {
-                LastMovementTimeStamp = Core.StopWatch.ElapsedMilliseconds;
-            }
-            if (MQ.Query<bool>("${MoveUtils.GM}"))
-            {
-                MQ.Cmd("/squelch /stick imsafe");
-                Bots.Broadcast("GM Safe kicked in, issued /stick imsafe.  you may need to reissue /followme or /assiston");
-            }
+            //cure counters
+            Debuff_TotalCounters = MQ.Query<Int32>("${Me.TotalCounters}");
+			Debuff_PoisonCounters = MQ.Query<Int32>("${Me.CountersPoison}");
+			Debuff_DiseaseCounters = MQ.Query<Int32>("${Me.CountersDisease}");
+			Debuff_CurseCounters = MQ.Query<Int32>("${Me.CountersCurse}");
+			PubServer.AddTopicMessage("${Me.TotalCounters}", Debuff_TotalCounters.ToString("N0"));
+			PubServer.AddTopicMessage("${Me.CountersPoison}", Debuff_PoisonCounters.ToString("N0"));
+			PubServer.AddTopicMessage("${Me.CountersDisease}", Debuff_DiseaseCounters.ToString("N0"));
+			PubServer.AddTopicMessage("${Me.CountersCurse}", Debuff_CurseCounters.ToString("N0"));
+            //end cure counters
 
-            HitPointsCurrent = MQ.Query<int>("${Me.CurrentHPs}");
+			PubServer.AddTopicMessage("${Me.PctHPs}", HitPointsCurrent.ToString("N0"));
+			HitPointsCurrent = MQ.Query<int>("${Me.CurrentHPs}");
             PubServer.AddTopicMessage("${Me.CurrentHPs}", HitPointsCurrent.ToString("N0"));
             MagicPointsCurrent = MQ.Query<int>("${Me.CurrentMana}");
             PubServer.AddTopicMessage("${Me.CurrentMana}", MagicPointsCurrent.ToString("N0"));
@@ -247,8 +249,20 @@ namespace E3Core.Processors
                 CurrentPetName = nameOfPet;
                 PubServer.AddTopicMessage("${Me.Pet.CleanName}", CurrentPetName);
             }
-            //process any tlo request from the UI, or anything really.
-            RouterServer.ProcessRequests();
+
+			bool IsMoving = MQ.Query<bool>("${Me.Moving}");
+			if (IsMoving)
+			{
+				LastMovementTimeStamp = Core.StopWatch.ElapsedMilliseconds;
+			}
+			if (MQ.Query<bool>("${MoveUtils.GM}"))
+			{
+				MQ.Cmd("/squelch /stick imsafe");
+				Bots.Broadcast("GM Safe kicked in, issued /stick imsafe.  you may need to reissue /followme or /assiston");
+			}
+
+			//process any tlo request from the UI, or anything really.
+			RouterServer.ProcessRequests();
             //process any commands we need to process from the UI
             PubClient.ProcessRequests();
         }
@@ -373,6 +387,12 @@ namespace E3Core.Processors
         public static Int64 LastMovementTimeStamp;
         public static string CurrentLongClassString;
         public static string CurrentShortClassString;
+        public static Int32 Debuff_TotalCounters;
+        public static Int32 Debuff_DiseaseCounters;
+		public static Int32 Debuff_PoisonCounters;
+		public static Int32 Debuff_CurseCounters;
+
+		public static int PctHPs;
         public static int CurrentHps;
         public static int HitPointsCurrent;
         public static int MagicPointsCurrent;

@@ -81,7 +81,7 @@ namespace E3Core.Server
                                     _pubCommands.Enqueue(messageReceived);
                                 }
                             }
-                            System.Threading.Thread.Sleep(1);
+                           
                         }
                     }
                     catch(Exception)

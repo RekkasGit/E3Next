@@ -976,57 +976,32 @@ namespace E3Core.Processors
 		}
 		private static Dictionary<string, CharacterBuffs> _characterBuffs = new Dictionary<string, CharacterBuffs>();
 
-		private static bool BuffTimerIsGood_CheckLocalData(Data.Spell spell, Spawn s, bool usePets, bool updateTImers = false)
+		private static bool BuffTimerIsGood_CheckLocalData(Data.Spell spell, Spawn s, Func<Data.Spell,Int64> TimeLeftFunction, bool updateTImers = false)
 		{
-			if (s.ID == E3.CurrentId)
-			{   //its US!
+		   //its US!
 
-				Int64 timeinMS = Casting.TimeLeftOnMyBuff(spell);
-				if (timeinMS < 1)
-				{
-					return false;
-				}
-				if (spell.MinDurationBeforeRecast > 0)
-				{
-
-					if (timeinMS < spell.MinDurationBeforeRecast)
-					{
-						return false;
-					}
-
-				}
-				if (updateTImers && timeinMS > 0)
-				{
-					UpdateBuffTimers(s.ID, spell, timeinMS, timeinMS);
-				}
-				return true;
-			}
-			else if (s.ID == MQ.Query<Int32>("${Me.Pet.ID}"))
+			Int64 timeinMS = TimeLeftFunction(spell);
+			if (timeinMS < 1)
 			{
-				//is our pet, again easy!
-				Int64 timeinMS = Casting.TimeLeftOnMyPetBuff(spell);
-				if (timeinMS < 1)
+				return false;
+			}
+			if (spell.MinDurationBeforeRecast > 0)
+			{
+
+				if (timeinMS < spell.MinDurationBeforeRecast)
 				{
 					return false;
 				}
-				if (spell.MinDurationBeforeRecast > 0)
-				{
-
-					if (timeinMS < spell.MinDurationBeforeRecast)
-					{
-						return false;
-					}
-
-				}
-				if(updateTImers && timeinMS >0)
-				{
-					UpdateBuffTimers(s.ID, spell, timeinMS, timeinMS);
-				}
-				return true;
 
 			}
-			return false;
+			if (updateTImers && timeinMS > 0)
+			{
+				UpdateBuffTimers(s.ID, spell, timeinMS, timeinMS);
+			}
+			return true;
+			
 		}
+
 		private static bool BuffTimerIsGood_CheckBotData(Data.Spell spell, Spawn s, bool usePets)
 		{
 			//register the user to get their buff data if its not already there
@@ -1042,6 +1017,12 @@ namespace E3Core.Processors
 			}
 
 			string keyNameToUse = s.Name; //to get the pet or the owner
+
+			if(!NetMQServer.SharedDataClient.TopicUpdates.ContainsKey(spell.CastTarget))
+			{
+				//don't have it registered, asssume good for now.
+				return true;
+			}
 
 			var userTopics = NetMQServer.SharedDataClient.TopicUpdates[spell.CastTarget];
 			//check to see if it has been filled out yet.
@@ -1113,11 +1094,12 @@ namespace E3Core.Processors
 						//easy to check on just ourself
 						if (s.ID == E3.CurrentId)
 						{
-							return BuffTimerIsGood_CheckLocalData(spell, s, usePets);
+							return BuffTimerIsGood_CheckLocalData(spell, s,Casting.TimeLeftOnMyBuff);
+							
 						}
-						else if (s.ID == MQ.Query<Int32>("${Me.Pet.ID}"))
+						else if (usePets && s.ID == MQ.Query<Int32>("${Me.Pet.ID}"))
 						{
-							return BuffTimerIsGood_CheckLocalData(spell, s, usePets);
+							return BuffTimerIsGood_CheckLocalData(spell, s, Casting.TimeLeftOnMyPetBuff);
 						}
 						else
 						{   //if a bot, check to see if the buff still exists
@@ -1140,11 +1122,11 @@ namespace E3Core.Processors
 						if (s.ID == E3.CurrentId)
 						{   //its US!
 
-							return BuffTimerIsGood_CheckLocalData(spell, s, usePets,true);
+							return BuffTimerIsGood_CheckLocalData(spell, s, Casting.TimeLeftOnMyBuff,true);
 						}
-						else if (s.ID == MQ.Query<Int32>("${Me.Pet.ID}"))
+						else if (usePets && s.ID == MQ.Query<Int32>("${Me.Pet.ID}"))
 						{
-							return BuffTimerIsGood_CheckLocalData(spell, s, usePets, true);
+							return BuffTimerIsGood_CheckLocalData(spell, s, Casting.TimeLeftOnMyPetBuff,true);
 						}
 						else if (E3.Bots.BotsConnected().Contains(spell.CastTarget, StringComparer.OrdinalIgnoreCase))
 						{
@@ -1182,12 +1164,14 @@ namespace E3Core.Processors
 					if (s.ID == E3.CurrentId)
 					{   //its US!
 
-						return BuffTimerIsGood_CheckLocalData(spell, s, usePets, true);
+						return BuffTimerIsGood_CheckLocalData(spell, s, Casting.TimeLeftOnMyBuff, true);
+
 					}
-					else if (s.ID == MQ.Query<Int32>("${Me.Pet.ID}"))
+					else if (usePets && s.ID == MQ.Query<Int32>("${Me.Pet.ID}"))
 					{
 						//is our pet
-						return BuffTimerIsGood_CheckLocalData(spell, s, usePets, true);
+						return BuffTimerIsGood_CheckLocalData(spell, s, Casting.TimeLeftOnMyPetBuff, true);
+
 					}
 					else if (E3.Bots.BotsConnected().Contains(spell.CastTarget, StringComparer.OrdinalIgnoreCase))
 					{
@@ -1225,12 +1209,13 @@ namespace E3Core.Processors
 				if (s.ID == E3.CurrentId)
 				{   //its US!
 
-					return BuffTimerIsGood_CheckLocalData(spell, s, usePets, true);
+					return BuffTimerIsGood_CheckLocalData(spell, s, Casting.TimeLeftOnMyBuff, true);
+
 				}
-				else if (s.ID == MQ.Query<Int32>("${Me.Pet.ID}"))
+				else if (usePets && s.ID == MQ.Query<Int32>("${Me.Pet.ID}"))
 				{
 					//is our pet
-					return BuffTimerIsGood_CheckLocalData(spell, s, usePets, true);
+					return BuffTimerIsGood_CheckLocalData(spell, s, Casting.TimeLeftOnMyPetBuff, true);
 				}
 				else if (E3.Bots.BotsConnected().Contains(spell.CastTarget, StringComparer.OrdinalIgnoreCase))
 				{

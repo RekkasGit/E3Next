@@ -1,4 +1,7 @@
-﻿using E3Core.Utility;
+﻿using E3Core.Data;
+using E3Core.Server;
+using E3Core.Settings;
+using E3Core.Utility;
 using MonoCore;
 using System;
 using System.Collections.Generic;
@@ -8,6 +11,7 @@ using System.Linq;
 using System.Net;
 using System.Text;
 using System.Threading.Tasks;
+using System.Xml.Linq;
 using static MonoCore.EventProcessor;
 
 namespace E3Core.Processors
@@ -333,7 +337,302 @@ namespace E3Core.Processors
         }
     }
 
-    public class DanBots : IBots
+
+    public class SharedDataBots : IBots
+    {
+        public static Logging _log = E3.Log;
+        private static IMQ MQ = E3.MQ;
+        private string settingsFilePath = String.Empty;
+        private static Dictionary<string, CharacterBuffs> _characterBuffs = new Dictionary<string, CharacterBuffs>();
+        private static Dictionary<string, CharacterBuffs> _petBuffs = new Dictionary<string, CharacterBuffs>();
+        public SharedDataBots()
+        {
+            settingsFilePath = BaseSettings.GetSettingsFilePath("");
+
+        }
+        private bool IsRegistered(string name)
+        {
+            return NetMQServer.SharedDataClient.TopicUpdates.ContainsKey(name);
+
+        }
+        private bool RegisterUser(string name)
+        {
+            //register the user to get their buff data if its not already there
+            if (!NetMQServer.SharedDataClient.TopicUpdates.ContainsKey(name))
+            {
+                if (NetMQServer.SharedDataClient.RegisterUser(name))
+                {
+                    //we registered the user, lets wait just a moment to get the data. 
+                    MQ.Write($"\agConnecting to shared data for user:\ap{name}");
+                    MQ.Delay(500);
+                    return true;
+
+                }
+
+            }
+            return false;
+        }
+        /// <summary>
+        /// 
+        /// </summary>
+        /// <param name="name">name of user</param>
+        /// <param name="charBuffKeyName">name of the character to use, could be pet or user</param>
+        /// <param name="topicKey">topic key to use</param>
+        private void UpdateBuffInfoUserInfo(string name, string charBuffKeyName, string topicKey, Dictionary<string, CharacterBuffs> buffCollection)
+        {
+            var userTopics = NetMQServer.SharedDataClient.TopicUpdates[name];
+
+            //we don't have it in our memeory, so lets add it
+            if (!buffCollection.ContainsKey(charBuffKeyName))
+            {
+                var buffInfo = CharacterBuffs.Aquire();
+
+                e3util.BuffInfoToDictonary(userTopics[topicKey].Data, buffInfo.BuffDurations);
+                buffInfo.LastUpdate = userTopics[topicKey].LastUpdate;
+                buffCollection.Add(charBuffKeyName, buffInfo);
+            }
+            //do we have updated information that is newer than what we already have?
+            if (userTopics[topicKey].LastUpdate > buffCollection[charBuffKeyName].LastUpdate)
+            {
+                //new info, lets update!
+                var buffInfo = buffCollection[charBuffKeyName];
+                e3util.BuffInfoToDictonary(userTopics[topicKey].Data, buffInfo.BuffDurations);
+                buffInfo.LastUpdate = userTopics[topicKey].LastUpdate;
+            }
+        }
+
+        private int DebuffCounterFunction(string name,string key, Dictionary<string, SharedNumericDataInt32> collection)
+		{
+            //register the user to get their buff data if its not already there
+			if (!NetMQServer.SharedDataClient.TopicUpdates.ContainsKey(name))
+			{
+				if (RegisterUser(name))
+				{
+					return 0; //dunno just say 0
+				}
+			}
+			var userTopics = NetMQServer.SharedDataClient.TopicUpdates[name];
+			//check to see if it has been filled out yet.
+			string keyToUse = key;
+			if (!userTopics.ContainsKey(keyToUse))
+			{
+				//don't have the data yet kick out and assume everything is ok.
+				return 0;//dunno just say 0
+			}
+			var entry = userTopics[keyToUse];
+			if (!collection.ContainsKey(name))
+			{
+				collection.Add(name, new SharedNumericDataInt32 { Data = 0 });
+			}
+			var sharedInfo = collection[name];
+			if (entry.LastUpdate > sharedInfo.LastUpdate)
+			{
+				if (Int32.TryParse(entry.Data, out var result))
+				{
+
+					sharedInfo.Data = result;
+					sharedInfo.LastUpdate = entry.LastUpdate;
+				}
+			}
+			return sharedInfo.Data;
+		}
+
+		Dictionary<string, SharedNumericDataInt32> _debuffCurseCounterCollection = new Dictionary<string, SharedNumericDataInt32>();
+		public int BaseCursedCounters(string name)
+        {
+            return DebuffCounterFunction(name, "${Me.CountersCurse}", _debuffCurseCounterCollection);
+		}
+
+		Dictionary<string, SharedNumericDataInt32> _debuffTotalCounterCollection = new Dictionary<string, SharedNumericDataInt32>();
+		public int BaseDebuffCounters(string name)
+        {
+			return DebuffCounterFunction(name, "${Me.TotalCounters}", _debuffTotalCounterCollection);
+		}
+
+		Dictionary<string, SharedNumericDataInt32> _debuffDiseaseCounterCollection = new Dictionary<string, SharedNumericDataInt32>();
+		public int BaseDiseasedCounters(string name)
+        {
+			return DebuffCounterFunction(name, "${Me.CountersDisease}", _debuffDiseaseCounterCollection);
+
+		}
+
+		Dictionary<string, SharedNumericDataInt32> _debuffPoisonCounterCollection = new Dictionary<string, SharedNumericDataInt32>();
+		public int BasePoisonedCounters(string name)
+        {
+			return DebuffCounterFunction(name, "${Me.CountersPoison}", _debuffPoisonCounterCollection);
+
+		}
+		public List<string> BotsConnected()
+        {
+            throw new NotImplementedException();
+        }
+
+        public void Broadcast(string message)
+        {
+            throw new NotImplementedException();
+        }
+
+        public void BroadcastCommand(string command, bool noparse = false, CommandMatch match = null)
+        {
+            throw new NotImplementedException();
+        }
+
+        public void BroadcastCommandToGroup(string command, CommandMatch match = null, bool noparse = false)
+        {
+            throw new NotImplementedException();
+        }
+
+        public void BroadcastCommandToPerson(string person, string command)
+        {
+            throw new NotImplementedException();
+        }
+        List<int> _buffListReturnValue = new List<int>();
+
+        public List<int> BuffList(string name)
+        {
+            _buffListReturnValue.Clear();
+            //register the user to get their buff data if its not already there
+            if (!IsRegistered(name))
+            {
+                if (!RegisterUser(name))
+                {
+                    //couldn't register, no file avilable assume they are not online yet
+                    return _buffListReturnValue;
+                }
+            }
+            var userTopics = NetMQServer.SharedDataClient.TopicUpdates[name];
+            //check to see if it has been filled out yet.
+            string topicKey = "${Me.BuffInfo}";
+            if (!userTopics.ContainsKey(topicKey))
+            {
+                //don't have the data yet kick out with empty list as we simply don't know.
+                return _buffListReturnValue;
+            }
+            //we have the data, lets check for updates
+            //the double name is because the 2nd name could be the pet name! its called in PetBuffList
+            UpdateBuffInfoUserInfo(name, name, topicKey, _characterBuffs);
+            //done with updates, now lets check the data.
+            _buffListReturnValue.AddRange(_characterBuffs[name].BuffDurations.Keys);
+
+            return _buffListReturnValue;
+
+        }
+
+        public bool HasShortBuff(string name, int buffid)
+        {
+            _buffListReturnValue.Clear();
+            //register the user to get their buff data if its not already there
+            if (!NetMQServer.SharedDataClient.TopicUpdates.ContainsKey(name))
+            {
+                if (RegisterUser(name))
+                {
+                    return false;
+                }
+            }
+            var userTopics = NetMQServer.SharedDataClient.TopicUpdates[name];
+            //check to see if it has been filled out yet.
+            string keyToUse = "${Me.BuffInfo}";
+            if (!userTopics.ContainsKey(keyToUse))
+            {
+                //don't have the data yet kick out and assume everything is ok.
+                return false;
+            }
+            //we have the data, lets check on it. 
+            UpdateBuffInfoUserInfo(name, name, keyToUse, _characterBuffs);
+            //done with updates, now lets check the data.
+            return _characterBuffs[name].BuffDurations.ContainsKey(buffid);
+
+        }
+
+        public bool IsMyBot(string name)
+        {
+            string filePath = $"{settingsFilePath}{name}_pubsubport.txt";
+            if (System.IO.File.Exists(filePath))
+            {
+                return true;
+            }
+            return false;
+        }
+
+        Dictionary<string, SharedNumericDataInt32> _pctHealthCollection = new Dictionary<string, SharedNumericDataInt32>();
+		public int PctHealth(string name)
+		{
+			//register the user to get their buff data if its not already there
+			if (!NetMQServer.SharedDataClient.TopicUpdates.ContainsKey(name))
+			{
+				if (RegisterUser(name))
+				{
+					return 100; //dunno just say full health
+				}
+			}
+			var userTopics = NetMQServer.SharedDataClient.TopicUpdates[name];
+			//check to see if it has been filled out yet.
+			string keyToUse = "${Me.PctHPs}";
+			if (!userTopics.ContainsKey(keyToUse))
+			{
+				//don't have the data yet kick out and assume everything is ok.
+				return 100;//dunno just say full health
+			}
+            var entry = userTopics[keyToUse];
+            if(!_pctHealthCollection.ContainsKey(name))
+            {
+                _pctHealthCollection.Add(name, new SharedNumericDataInt32 { Data=100});
+			}
+            var sharedInfo = _pctHealthCollection[name];
+			if (entry.LastUpdate> sharedInfo.LastUpdate)
+            {
+				if (Int32.TryParse(entry.Data, out var result))
+				{
+
+					sharedInfo.Data = result;
+					sharedInfo.LastUpdate= entry.LastUpdate;
+				}
+			}
+            return sharedInfo.Data;
+		}
+
+		public List<int> PetBuffList(string name)
+		{
+			_buffListReturnValue.Clear();
+			//register the user to get their buff data if its not already there
+			if (!IsRegistered(name))
+			{
+				if (!RegisterUser(name))
+				{
+					//couldn't register, no file avilable assume they are not online yet
+					return _buffListReturnValue;
+				}
+			}
+			var userTopics = NetMQServer.SharedDataClient.TopicUpdates[name];
+			//check to see if it has been filled out yet.
+			string topicKey = "${Me.PetBuffInfo}";
+			if (!userTopics.ContainsKey(topicKey))
+			{
+				//don't have the data yet kick out with empty list as we simply don't know.
+				return _buffListReturnValue;
+			}
+			//we have the data, lets check for updates
+			//the double name is because the 2nd name could be the pet name! its called in PetBuffList
+			UpdateBuffInfoUserInfo(name, name, topicKey,_petBuffs);
+			//done with updates, now lets check the data.
+			_buffListReturnValue.AddRange(_petBuffs[name].BuffDurations.Keys);
+
+			return _buffListReturnValue;
+		}
+
+		public void Trade(string name)
+		{
+			throw new NotImplementedException();
+		}
+        class SharedNumericDataInt32
+        {
+            public Int32 Data { get; set; }
+            public Int64 LastUpdate { get; set; }
+        }
+
+	}
+
+	public class DanBots : IBots
     {
         private string _connectedBotsString = string.Empty;
         private List<string> _connectedBots = new List<string>();
