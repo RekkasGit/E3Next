@@ -1,4 +1,5 @@
-﻿using E3Core.Processors;
+﻿using E3Core.Data;
+using E3Core.Processors;
 using E3Core.Settings;
 using MonoCore;
 using NetMQ;
@@ -11,6 +12,7 @@ using System.Text;
 using System.Threading;
 using System.Threading.Tasks;
 using System.Windows.Forms.VisualStyles;
+using System.Xml.Linq;
 
 namespace E3Core.Server
 {
@@ -24,7 +26,7 @@ namespace E3Core.Server
 	public class SharedDataClient
     {
 		public ConcurrentDictionary<string, ConcurrentDictionary<string, ShareDataEntry>> TopicUpdates = new ConcurrentDictionary<string, ConcurrentDictionary<string, ShareDataEntry>>(StringComparer.OrdinalIgnoreCase);
-		public ConcurrentQueue<string> CommandQueue = new ConcurrentQueue<string>();
+		public ConcurrentQueue<OnCommandData> CommandQueue = new ConcurrentQueue<OnCommandData>();
 
 		private static IMQ MQ = E3.MQ;
 
@@ -58,32 +60,94 @@ namespace E3Core.Server
 		{
 			while (CommandQueue.Count > 0)
 			{
-				string message;
-				if (CommandQueue.TryDequeue(out message))
+				if (CommandQueue.TryDequeue(out var data))
 				{
 					//command format
 					//$"{E3.CurrentName}:{noparse}:{command}"
 
-					Int32 indexOfSeperator = message.IndexOf(':');
-					Int32 currentIndex = 0;
-					string user = message.Substring(currentIndex, indexOfSeperator);
-					currentIndex = indexOfSeperator + 1;
-					indexOfSeperator = message.IndexOf(':', indexOfSeperator + 1);
-					string noparseString = message.Substring(currentIndex, message.Length - indexOfSeperator);
-					currentIndex = indexOfSeperator + 1;
-					indexOfSeperator = message.IndexOf(':', indexOfSeperator + 1);
-					string command = message.Substring(currentIndex, message.Length - indexOfSeperator);
+					string message = data.Data;
+					
+					try
+					{
+						if(data.TypeOfCommand == OnCommandData.CommandType.BroadCastMessage)
+						{
+							Int32 indexOfSeperator = message.IndexOf(':');
+							Int32 currentIndex = 0;
+							string user = message.Substring(currentIndex, indexOfSeperator);
+							currentIndex = indexOfSeperator + 1;
+							string bcMessage = message.Substring(currentIndex, message.Length - currentIndex);
 
-					MQ.Write($"\ag<\ap{user}\ag> Command:"+command);
-					if(noparseString=="true")
-					{
-						MQ.Cmd("/noparse "+message);
+							//MQ write it out
+							MQ.Write($"\ar<\ay{user}\ar> \aw{bcMessage}");
+						}
+						else
+						{
+							Int32 indexOfSeperator = message.IndexOf(':');
+							Int32 currentIndex = 0;
+							string user = message.Substring(currentIndex, indexOfSeperator);
+							currentIndex = indexOfSeperator + 1;
+							indexOfSeperator = message.IndexOf(':', indexOfSeperator + 1);
+
+							string noparseString = message.Substring(currentIndex, indexOfSeperator - currentIndex);
+							currentIndex = indexOfSeperator + 1;
+							string command = message.Substring(currentIndex, message.Length - currentIndex);
+							//a command type
+							if (data.TypeOfCommand == OnCommandData.CommandType.OnCommandName)
+							{
+								//check to see if we are part of their group
+								if (user != E3.CurrentName)
+								{
+									//not for us
+									break;
+								}
+							}
+							else if (data.TypeOfCommand == OnCommandData.CommandType.OnCommandGroup)
+							{
+								//check to see if we are part of their group
+								if (user == E3.CurrentName)
+								{
+									//not for us only group members
+									break;
+								}
+								//check to see if we are part of their group
+								Int32 groupMemberIndex = MQ.Query<Int32>($"${{Group.Member[{user}].Index}}");
+
+								if (groupMemberIndex < 0)
+								{
+									//ignore it
+									break;
+								}
+							}
+							else if (data.TypeOfCommand == OnCommandData.CommandType.OnCommandRaid)
+							{
+								//check to see if we are part of their group
+								var inRaid = MQ.Query<bool>($"${{Raid.Member[{user}]}}");
+
+								if (!inRaid)
+								{
+									break;
+								}
+							}
+
+							MQ.Write($"\ag<\ap{user}\ag> Command:" + command);
+							if (String.Compare(noparseString, "true", true) == 0)
+							{
+								MQ.Cmd("/noparse " + command);
+							}
+							else
+							{
+								MQ.Cmd(command);
+							}
+						}
+						
 					}
-					else
+					finally
 					{
-						MQ.Cmd(message);
+						data.Dispose();
 					}
+					
 				}
+				
 			}
 		}
 		public void Process(string user,string port,string fileName)
@@ -111,6 +175,7 @@ namespace E3Core.Server
 						subSocket.Subscribe(OnCommandName);
 						subSocket.Subscribe("OnCommand-All");
 						subSocket.Subscribe("OnCommand-Group");
+						subSocket.Subscribe("OnCommand-GroupAll");
 						subSocket.Subscribe("OnCommand-Raid");
 						subSocket.Subscribe("BroadCastMessage");
 						MQ.Write("\agShared Data Client: Connecting to user:" + user + " on port:" + port); ;
@@ -127,24 +192,51 @@ namespace E3Core.Server
 
 								if (messageTopicReceived=="OnCommand-All")
 								{
+									var data = OnCommandData.Aquire();
+									data.Data = messageReceived;
+									data.TypeOfCommand = OnCommandData.CommandType.OnCommandAll;
 
-									CommandQueue.Enqueue(messageReceived);
+									CommandQueue.Enqueue(data);
 								}
 								else if(messageTopicReceived== "OnCommand-Group")
 								{
+									var data = OnCommandData.Aquire();
+									data.Data = messageReceived;
+									data.TypeOfCommand = OnCommandData.CommandType.OnCommandGroup;
 
+									CommandQueue.Enqueue(data);
+								}
+								else if (messageTopicReceived == "OnCommand-GroupAll")
+								{
+									var data = OnCommandData.Aquire();
+									data.Data = messageReceived;
+									data.TypeOfCommand = OnCommandData.CommandType.OnCommandGroupAll;
+
+									CommandQueue.Enqueue(data);
 								}
 								else if (messageTopicReceived == "OnCommand-Raid")
 								{
+									var data = OnCommandData.Aquire();
+									data.Data = messageReceived;
+									data.TypeOfCommand = OnCommandData.CommandType.OnCommandRaid;
 
+									CommandQueue.Enqueue(data);
 								}
 								else if (messageTopicReceived == "BroadCastMessage")
 								{
+									var data = OnCommandData.Aquire();
+									data.Data = messageReceived;
+									data.TypeOfCommand = OnCommandData.CommandType.BroadCastMessage;
 
+									CommandQueue.Enqueue(data);
 								}
 								else if (messageTopicReceived == OnCommandName)
 								{
+									var data = OnCommandData.Aquire();
+									data.Data = messageReceived;
+									data.TypeOfCommand = OnCommandData.CommandType.OnCommandName;
 
+									CommandQueue.Enqueue(data);
 
 								}
 								else
@@ -207,6 +299,49 @@ namespace E3Core.Server
 
 			}
 			MQ.Write($"Shutting down Share Data Thread for {user}.");
+		}
+
+		public class OnCommandData
+		{
+			public enum CommandType
+			{
+				None,
+				OnCommandAll,
+				OnCommandGroup,
+				OnCommandGroupAll,
+				OnCommandRaid,
+				BroadCastMessage,
+				OnCommandName
+			}
+			public string Data { get; set; }
+			public CommandType TypeOfCommand { get; set; }
+			
+			public Dictionary<Int32, Int64> BuffDurations = new Dictionary<int, Int64>();
+			public Int64 LastUpdate = 0;
+
+			public static OnCommandData Aquire()
+			{
+				OnCommandData obj;
+				if (!StaticObjectPool.TryPop<OnCommandData>(out obj))
+				{
+					obj = new OnCommandData();
+				}
+
+				return obj;
+			}
+			public void Dispose()
+			{
+				TypeOfCommand = CommandType.None;
+				Data = String.Empty;
+				StaticObjectPool.Push(this);
+			}
+			~OnCommandData()
+			{
+				//DO NOT CALL DISPOSE FROM THE FINALIZER! This should only ever be used in using statements
+				//if this is called, it will cause the domain to hang in the GC when shuttind down
+				//This is only here to warn you
+
+			}
 		}
 	}
 }

@@ -641,7 +641,8 @@ namespace E3Core.Processors
 		public void Trade(string name)
 		{
 			MQ.Cmd("/notify TradeWnd TRDW_Trade_Button leftmouseup", 250);
-			MQ.Cmd($"/bct {name} //notify TradeWnd TRDW_Trade_Button leftmouseup");
+            string command = "/notify TradeWnd TRDW_Trade_Button leftmouseup";
+			PubServer.AddTopicMessage("OnCommand-" + name, $"{E3.CurrentName}:{false}:{command}");
 		}
         class SharedNumericDataInt32
         {
