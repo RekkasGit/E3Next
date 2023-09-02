@@ -1321,28 +1321,29 @@ namespace MonoCore
                 //we are terminating, kill this thread
                 throw new ThreadAbort("Terminating thread: Delay enter");
             }
-
             if (value > 0)
             {
                 Core.DelayStartTime = Core.StopWatch.ElapsedMilliseconds;
                 Core.DelayTime = value;
                 Core.CurrentDelay = value;//tell the C++ thread to send out a delay update
             }
+			E3.StateUpdates();
 
-            //lets tell core that it can continue
-            Core.CoreResetEvent.Set();
+			//lets tell core that it can continue
+			Core.CoreResetEvent.Set();
             //we are now going to wait on the core
             MainProcessor.ProcessResetEvent.Wait();
             MainProcessor.ProcessResetEvent.Reset();
+			
 
-            if(!Core.IsProcessing)
+			if (!Core.IsProcessing)
             {
                 //we are terminating, kill this thread
                 Write("Throwing exception for termination: Delay exit");
                 throw new ThreadAbort("Terminating thread");
             }
-
-            SinceLastDelay = Core.StopWatch.ElapsedMilliseconds;
+			E3.StateUpdates();
+			SinceLastDelay = Core.StopWatch.ElapsedMilliseconds;
         }
 
         public Boolean Delay(Int32 maxTimeToWait, string Condition)

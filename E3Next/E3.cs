@@ -208,8 +208,9 @@ namespace E3Core.Processors
 
 		public static void StateUpdates()
         {
-			
-            if(e3util.ShouldCheck(ref _nextBuffUpdateCheckTime, _nextBuffUpdateTimeInterval))
+			NetMQServer.SharedDataClient.ProcessCommands();
+
+			if (e3util.ShouldCheck(ref _nextBuffUpdateCheckTime, _nextBuffUpdateTimeInterval))
             {
 				PubServer.AddTopicMessage("${Me.BuffInfo}", e3util.GenerateBuffInfoForPubSub());
 				PubServer.AddTopicMessage("${Me.PetBuffInfo}", e3util.GeneratePetBuffInfoForPubSub());
@@ -267,7 +268,7 @@ namespace E3Core.Processors
 			RouterServer.ProcessRequests();
             //process any commands we need to process from the UI
             PubClient.ProcessRequests();
-            NetMQServer.SharedDataClient.ProcessCommands();
+           
         }
         private static void RefreshCaches()
         {
