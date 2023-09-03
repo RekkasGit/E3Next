@@ -331,7 +331,7 @@ namespace MQServerClient
             Cmd(query);
         }
 
-        public void Cmd(string query)
+        public void Cmd(string query, bool delayed = false)
         {
             //send empty frame over
             if (_requestMsg.IsInitialised)
@@ -377,9 +377,9 @@ namespace MQServerClient
             Console.WriteLine("CMD:" + query);
             //do work
         }
-        public void Cmd(string query, Int32 delay)
+        public void Cmd(string query, Int32 delay, bool delayed = false)
         {
-            Cmd(query);
+            Cmd(query, delayed);
             Delay(delay);
 
         }

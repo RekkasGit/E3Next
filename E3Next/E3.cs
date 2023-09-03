@@ -201,7 +201,7 @@ namespace E3Core.Processors
 		/// </summary>
 		/// 
 		private static Int64 _nextStateUpdateCheckTime = 0;
-		private static Int64 _nextStateUpdateTimeInterval = 500;
+		private static Int64 _nextStateUpdateTimeInterval = 50;
 
 		private static Int64 _nextBuffUpdateCheckTime = 0;
 		private static Int64 _nextBuffUpdateTimeInterval = 1000;
@@ -234,7 +234,7 @@ namespace E3Core.Processors
 			PubServer.AddTopicMessage("${Me.CountersCurse}", Debuff_CurseCounters.ToString("N0"));
             //end cure counters
 
-			PubServer.AddTopicMessage("${Me.PctHPs}", HitPointsCurrent.ToString("N0"));
+			PubServer.AddTopicMessage("${Me.PctHPs}", PctHPs.ToString());
 			HitPointsCurrent = MQ.Query<int>("${Me.CurrentHPs}");
             PubServer.AddTopicMessage("${Me.CurrentHPs}", HitPointsCurrent.ToString("N0"));
             MagicPointsCurrent = MQ.Query<int>("${Me.CurrentMana}");
