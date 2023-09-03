@@ -347,13 +347,86 @@ namespace E3Core.Processors
         private string settingsFilePath = String.Empty;
         private static Dictionary<string, CharacterBuffs> _characterBuffs = new Dictionary<string, CharacterBuffs>();
         private static Dictionary<string, CharacterBuffs> _petBuffs = new Dictionary<string, CharacterBuffs>();
-        Task _autoRegisrationTask;
+		private System.Text.StringBuilder _stringBuilder = new System.Text.StringBuilder();
+		Task _autoRegisrationTask;
         public SharedDataBots()
         {
             settingsFilePath = BaseSettings.GetSettingsFilePath("");
 
 			_autoRegisrationTask = Task.Factory.StartNew(() => { AutoRegisterUsers(settingsFilePath); }, CancellationToken.None, TaskCreationOptions.DenyChildAttach, TaskScheduler.Default);
-			
+
+			//had to be registered in this order so that you don't get wildcard matches happening first in mq
+			//there is no 'exact match' in the MQ command linked list
+            //smallest to largest
+
+			EventProcessor.RegisterCommand("/e3bc", (x) =>
+			{
+				if (x.args.Count > 0)
+				{
+
+                    string message = string.Empty;
+                    _stringBuilder.Clear();
+					foreach(var arg in x.args)
+                    {
+                        _stringBuilder.Append($"{arg} ");
+
+                    }
+                    message = _stringBuilder.ToString().Trim();
+                    Broadcast(message);
+				}
+			});
+			EventProcessor.RegisterCommand("/e3bcg", (x) =>
+			{
+				if (x.args.Count > 0)
+				{
+					string command = string.Empty;
+					_stringBuilder.Clear();
+					foreach (var arg in x.args)
+					{
+						_stringBuilder.Append($"{arg} ");
+
+					}
+					command = _stringBuilder.ToString().Trim();
+					BroadcastCommandToGroup(command);
+
+				}
+				
+			});
+			EventProcessor.RegisterCommand("/e3bct", (x) =>
+			{
+				if (x.args.Count > 1)
+				{
+					string person = x.args[0];
+					x.args.RemoveAt(0);
+					string command = string.Empty;
+					_stringBuilder.Clear();
+					foreach (var arg in x.args)
+					{
+						_stringBuilder.Append($"{arg} ");
+
+					}
+					command = _stringBuilder.ToString().Trim();
+					BroadcastCommandToPerson(person, command);
+				}
+			});
+			EventProcessor.RegisterCommand("/e3bcga", (x) =>
+			{
+				if (x.args.Count > 0)
+				{
+					string command = string.Empty;
+					_stringBuilder.Clear();
+					foreach (var arg in x.args)
+					{
+						_stringBuilder.Append($"{arg} ");
+
+					}
+					command = _stringBuilder.ToString().Trim();
+					BroadcastCommand(command);
+		            
+                }
+			});
+
+
 		}
 
         private void AutoRegisterUsers(string settingsPath)
@@ -476,8 +549,9 @@ namespace E3Core.Processors
         public void Broadcast(string message)
         {
 			PubServer.AddTopicMessage("BroadCastMessage", $"{E3.CurrentName}:{message}");
+		//	MQ.Write($"\ar<\ay{E3.CurrentName}\ar> \aw{message}");
 		}
-        private System.Text.StringBuilder _stringBuilder = new System.Text.StringBuilder();
+       
         public void BroadcastCommand(string command, bool noparse = false, CommandMatch match = null)
         {
 			if (match != null && match.filters.Count > 0)
@@ -491,7 +565,7 @@ namespace E3Core.Processors
 				}
                 command = _stringBuilder.ToString();
 			}
-			PubServer.AddTopicMessage("OnCommand-All", $"{E3.CurrentName}:{noparse}:{command}");
+			PubServer.AddTopicMessage("OnCommand-GroupAll", $"{E3.CurrentName}:{noparse}:{command}");
 		}
 
         public void BroadcastCommandToGroup(string command, CommandMatch match = null, bool noparse = false)
@@ -512,6 +586,7 @@ namespace E3Core.Processors
 
         public void BroadcastCommandToPerson(string person, string command)
 		{
+            person = e3util.FirstCharToUpper(person);
 			PubServer.AddTopicMessage("OnCommand-" + person, $"{E3.CurrentName}:{false}:{command}");
 		}
         List<int> _buffListReturnValue = new List<int>();

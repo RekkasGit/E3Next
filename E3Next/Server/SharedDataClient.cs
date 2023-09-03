@@ -31,27 +31,36 @@ namespace E3Core.Server
 		private static IMQ MQ = E3.MQ;
 
 
-		List<Task> _processTasks = new List<Task>();
+		Dictionary<string, Task> _processTasks = new Dictionary<string, Task>();
+		static object _processLock = new object();
 		public bool RegisterUser(string user)
 		{
 
 			//see if they exist in the collection
 			if(!TopicUpdates.ContainsKey(user))
 			{
-				//lets see if the file exists
-				string filePath = BaseSettings.GetSettingsFilePath($"{user}_{E3.ServerName}_pubsubport.txt");
-
-				if (System.IO.File.Exists(filePath))
+				lock(_processLock)
 				{
-					//lets load up the port information
-					TopicUpdates.TryAdd(user, new ConcurrentDictionary<string, ShareDataEntry>());
-					string port = System.IO.File.ReadAllText(filePath);
+					if(!_processTasks.ContainsKey(user))
+					{
+						//lets see if the file exists
+						string filePath = BaseSettings.GetSettingsFilePath($"{user}_{E3.ServerName}_pubsubport.txt");
 
-					var newTask = Task.Factory.StartNew(() => { Process(user,port, filePath); }, CancellationToken.None, TaskCreationOptions.DenyChildAttach, TaskScheduler.Default);
-					_processTasks.Add(newTask);
-					return true;
+						if (System.IO.File.Exists(filePath))
+						{
+							//lets load up the port information
+							TopicUpdates.TryAdd(user, new ConcurrentDictionary<string, ShareDataEntry>());
+							string port = System.IO.File.ReadAllText(filePath);
+
+							var newTask = Task.Factory.StartNew(() => { Process(user, port, filePath); }, CancellationToken.None, TaskCreationOptions.DenyChildAttach, TaskScheduler.Default);
+							_processTasks.Add(user, newTask);
+							return true;
+
+						}
+					}
 					
 				}
+				
 			}
 			return false;
 		}
@@ -92,16 +101,7 @@ namespace E3Core.Server
 							currentIndex = indexOfSeperator + 1;
 							string command = message.Substring(currentIndex, message.Length - currentIndex);
 							//a command type
-							if (data.TypeOfCommand == OnCommandData.CommandType.OnCommandName)
-							{
-								//check to see if we are part of their group
-								if (user != E3.CurrentName)
-								{
-									//not for us
-									break;
-								}
-							}
-							else if (data.TypeOfCommand == OnCommandData.CommandType.OnCommandGroup)
+							if (data.TypeOfCommand == OnCommandData.CommandType.OnCommandGroup)
 							{
 								//check to see if we are part of their group
 								if (user == E3.CurrentName)
@@ -109,6 +109,17 @@ namespace E3Core.Server
 									//not for us only group members
 									break;
 								}
+								//check to see if we are part of their group
+								Int32 groupMemberIndex = MQ.Query<Int32>($"${{Group.Member[{user}].Index}}");
+
+								if (groupMemberIndex < 0)
+								{
+									//ignore it
+									break;
+								}
+							}
+							else if (data.TypeOfCommand == OnCommandData.CommandType.OnCommandGroupAll)
+							{
 								//check to see if we are part of their group
 								Int32 groupMemberIndex = MQ.Query<Int32>($"${{Group.Member[{user}].Index}}");
 
@@ -159,150 +170,158 @@ namespace E3Core.Server
 			System.DateTime lastFileUpdate = System.IO.File.GetLastWriteTime(fileName);
 			string OnCommandName = "OnCommand-" + E3.CurrentName;
 
-			while (Core.IsProcessing)
+		
+			//some type of delay if our sub errors out.
+			System.Threading.Thread.Sleep(100);
+			//timespan we expect to have some type of message
+			TimeSpan recieveTimeout = new TimeSpan(0, 0, 0, 0, 2);
+			using (var subSocket = new SubscriberSocket())
 			{
-				//some type of delay if our sub errors out.
-				System.Threading.Thread.Sleep(100);
-				//timespan we expect to have some type of message
-				TimeSpan recieveTimeout = new TimeSpan(0, 0, 0, 0, 2);
-				using (var subSocket = new SubscriberSocket())
+				try
 				{
-					try
+					subSocket.Options.ReceiveHighWatermark = 1000;
+					subSocket.Options.TcpKeepalive = true;
+					subSocket.Options.TcpKeepaliveIdle = TimeSpan.FromSeconds(5);
+					subSocket.Options.TcpKeepaliveInterval = TimeSpan.FromSeconds(1);
+					subSocket.Connect("tcp://127.0.0.1:" + port);
+					subSocket.Subscribe("${Me.BuffInfo}");
+					subSocket.Subscribe("${Me.PetBuffInfo}");
+					subSocket.Subscribe(OnCommandName);
+					subSocket.Subscribe("OnCommand-All");
+					subSocket.Subscribe("OnCommand-Group");
+					subSocket.Subscribe("OnCommand-GroupAll");
+					subSocket.Subscribe("OnCommand-Raid");
+					subSocket.Subscribe("BroadCastMessage");
+					MQ.Write("\agShared Data Client: Connecting to user:" + user + " on port:" + port); ;
+
+					Int32 messageCount = 0;
+					while (Core.IsProcessing)
 					{
-						subSocket.Options.ReceiveHighWatermark = 1000;
-						subSocket.Options.TcpKeepalive = true;
-						subSocket.Options.TcpKeepaliveIdle = TimeSpan.FromSeconds(5);
-						subSocket.Options.TcpKeepaliveInterval = TimeSpan.FromSeconds(1);
-						subSocket.Connect("tcp://127.0.0.1:" + port);
-						subSocket.Subscribe("${Me.BuffInfo}");
-						subSocket.Subscribe("${Me.PetBuffInfo}");
-						subSocket.Subscribe(OnCommandName);
-						subSocket.Subscribe("OnCommand-All");
-						subSocket.Subscribe("OnCommand-Group");
-						subSocket.Subscribe("OnCommand-GroupAll");
-						subSocket.Subscribe("OnCommand-Raid");
-						subSocket.Subscribe("BroadCastMessage");
-						MQ.Write("\agShared Data Client: Connecting to user:" + user + " on port:" + port); ;
-
-						Int32 messageCount = 0;
-						while (Core.IsProcessing)
+						string messageTopicReceived;
+						if (subSocket.TryReceiveFrameString(recieveTimeout, out messageTopicReceived))
 						{
-							string messageTopicReceived;
-							if (subSocket.TryReceiveFrameString(recieveTimeout, out messageTopicReceived))
+
+
+							string messageReceived = subSocket.ReceiveFrameString();
+
+							if (messageTopicReceived=="OnCommand-All")
 							{
+								var data = OnCommandData.Aquire();
+								data.Data = messageReceived;
+								data.TypeOfCommand = OnCommandData.CommandType.OnCommandAll;
 
+								CommandQueue.Enqueue(data);
+							}
+							else if(messageTopicReceived== "OnCommand-Group")
+							{
+								var data = OnCommandData.Aquire();
+								data.Data = messageReceived;
+								data.TypeOfCommand = OnCommandData.CommandType.OnCommandGroup;
 
-								string messageReceived = subSocket.ReceiveFrameString();
+								CommandQueue.Enqueue(data);
+							}
+							else if (messageTopicReceived == "OnCommand-GroupAll")
+							{
+								var data = OnCommandData.Aquire();
+								data.Data = messageReceived;
+								data.TypeOfCommand = OnCommandData.CommandType.OnCommandGroupAll;
 
-								if (messageTopicReceived=="OnCommand-All")
-								{
-									var data = OnCommandData.Aquire();
-									data.Data = messageReceived;
-									data.TypeOfCommand = OnCommandData.CommandType.OnCommandAll;
+								CommandQueue.Enqueue(data);
+							}
+							else if (messageTopicReceived == "OnCommand-Raid")
+							{
+								var data = OnCommandData.Aquire();
+								data.Data = messageReceived;
+								data.TypeOfCommand = OnCommandData.CommandType.OnCommandRaid;
 
-									CommandQueue.Enqueue(data);
-								}
-								else if(messageTopicReceived== "OnCommand-Group")
-								{
-									var data = OnCommandData.Aquire();
-									data.Data = messageReceived;
-									data.TypeOfCommand = OnCommandData.CommandType.OnCommandGroup;
+								CommandQueue.Enqueue(data);
+							}
+							else if (messageTopicReceived == "BroadCastMessage")
+							{
+								var data = OnCommandData.Aquire();
+								data.Data = messageReceived;
+								data.TypeOfCommand = OnCommandData.CommandType.BroadCastMessage;
 
-									CommandQueue.Enqueue(data);
-								}
-								else if (messageTopicReceived == "OnCommand-GroupAll")
-								{
-									var data = OnCommandData.Aquire();
-									data.Data = messageReceived;
-									data.TypeOfCommand = OnCommandData.CommandType.OnCommandGroupAll;
+								CommandQueue.Enqueue(data);
+							}
+							else if (messageTopicReceived == OnCommandName)
+							{
+								var data = OnCommandData.Aquire();
+								data.Data = messageReceived;
+								data.TypeOfCommand = OnCommandData.CommandType.OnCommandName;
 
-									CommandQueue.Enqueue(data);
-								}
-								else if (messageTopicReceived == "OnCommand-Raid")
-								{
-									var data = OnCommandData.Aquire();
-									data.Data = messageReceived;
-									data.TypeOfCommand = OnCommandData.CommandType.OnCommandRaid;
-
-									CommandQueue.Enqueue(data);
-								}
-								else if (messageTopicReceived == "BroadCastMessage")
-								{
-									var data = OnCommandData.Aquire();
-									data.Data = messageReceived;
-									data.TypeOfCommand = OnCommandData.CommandType.BroadCastMessage;
-
-									CommandQueue.Enqueue(data);
-								}
-								else if (messageTopicReceived == OnCommandName)
-								{
-									var data = OnCommandData.Aquire();
-									data.Data = messageReceived;
-									data.TypeOfCommand = OnCommandData.CommandType.OnCommandName;
-
-									CommandQueue.Enqueue(data);
-
-								}
-								else
-								{
-									Int64 updateTime = Core.StopWatch.ElapsedMilliseconds;
-									if (!TopicUpdates[user].ContainsKey(messageTopicReceived))
-									{
-										TopicUpdates[user].TryAdd(messageTopicReceived, new ShareDataEntry() { Data = messageReceived, LastUpdate = updateTime });
-									}
-									var entry = TopicUpdates[user][messageTopicReceived];
-									entry.Data = messageReceived;
-									entry.LastUpdate = updateTime;
-
-								}
-
-
+								CommandQueue.Enqueue(data);
 
 							}
 							else
-							{	//we didn't get a message in the timespan we were expecting, verify if we need to reconnect
-								try
+							{
+								Int64 updateTime = Core.StopWatch.ElapsedMilliseconds;
+								if (!TopicUpdates[user].ContainsKey(messageTopicReceived))
 								{
-									System.DateTime currentTime = System.IO.File.GetLastWriteTime(fileName);
-									if (currentTime > lastFileUpdate)
-									{
-										MQ.Write("\agShared Data Client: Disconnecting port:" + port + "for toon:" + user);
-										//shutown the socket and restart it
-										subSocket.Disconnect("tcp://127.0.0.1:" + port);
-										port = System.IO.File.ReadAllText(fileName);
-										MQ.Write("\agShared Data Client: Reconnecting to port:" + port + "for toon:" + user);
-										subSocket.Connect("tcp://127.0.0.1:" + port);
-										lastFileUpdate = currentTime;
-									}
+									TopicUpdates[user].TryAdd(messageTopicReceived, new ShareDataEntry() { Data = messageReceived, LastUpdate = updateTime });
 								}
-								catch (Exception ex)
+								var entry = TopicUpdates[user][messageTopicReceived];
+
+								//why do work if its the same data?									
+								if(entry.Data!=messageReceived)
 								{
-									//file deleted most likely, kill the thread
-									MQ.Write("\agShared Data Client: Issue reading port file, shutting down thread for toon:" + user);
-
-									subSocket.Dispose();
-									if (TopicUpdates.TryRemove(user, out var tout))
-									{
-
-									}
-
-									break;
-
+									entry.Data = messageReceived;
+									entry.LastUpdate = updateTime;
 								}
+
 							}
-							
+
+
 
 						}
-						
-					}
-					catch (Exception)
-					{
-					}
+						else
+						{	//we didn't get a message in the timespan we were expecting, verify if we need to reconnect
+							try
+							{
+								System.DateTime currentTime = System.IO.File.GetLastWriteTime(fileName);
+								if (currentTime > lastFileUpdate)
+								{
+									MQ.Write("\agShared Data Client: Disconnecting port:" + port + "for toon:" + user);
+									//shutown the socket and restart it
+									subSocket.Disconnect("tcp://127.0.0.1:" + port);
+									port = System.IO.File.ReadAllText(fileName);
+									MQ.Write("\agShared Data Client: Reconnecting to port:" + port + "for toon:" + user);
+									subSocket.Connect("tcp://127.0.0.1:" + port);
+									lastFileUpdate = currentTime;
+								}
+							}
+							catch (Exception ex)
+							{
+								//file deleted most likely, kill the thread
+								MQ.Write("\agShared Data Client: Issue reading port file, shutting down thread for toon:" + user);
 
+								subSocket.Dispose();
+								if (TopicUpdates.TryRemove(user, out var tout))
+								{
+
+								}
+
+								break;
+
+							}
+						}
+							
+
+					}
+						
+				}
+				catch (Exception)
+				{
 				}
 
 			}
+
+			
 			MQ.Write($"Shutting down Share Data Thread for {user}.");
+			lock(_processLock)
+			{
+				_processTasks.Remove(user);
+			}
 		}
 
 		public class OnCommandData
