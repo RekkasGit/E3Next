@@ -144,9 +144,10 @@ namespace E3Core.Server
 						}
 
 						MQ.Write($"\ag<\ap{user}\ag> Command:" + command);
-						if (String.Compare("/mono e3", command, StringComparison.OrdinalIgnoreCase) == 0)
+						if (command.StartsWith("/mono ",StringComparison.OrdinalIgnoreCase))
 						{
-							//we are being asked to restart e3, kinda need to kill this entire thing :D
+							//in case this is a restart command, we need to delay the command so it happens outside of the OnPulse. just assume all /mono commands are 
+							//delayed
 							if(Core._MQ2MonoVersion>=0.22m)
 							{
 								//needs to be delayed, so that the restarts happes outside of the E3N OnPulse
