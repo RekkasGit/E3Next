@@ -831,7 +831,7 @@ namespace E3Core.Utility
                     }
                     else
                     {
-                        MQ.Write($"\aNEED A TARGET TO {command}");
+                        MQ.Write($"\arNEED A TARGET TO {command}");
                     }
                 }
             });
