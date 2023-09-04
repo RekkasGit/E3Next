@@ -906,7 +906,12 @@ namespace MonoCore
             if (CurrentCommand != String.Empty)
             {
                 //for mana stone usage, to allow spamming
-                bool isUseItem = CurrentCommand.StartsWith("/useitem");
+                bool gobacktoCSharp = CurrentCommand.StartsWith("/useitem");
+
+                if(CurrentCommand.StartsWith("/echo"))
+                {
+                    gobacktoCSharp = true;
+                }
 
                 if(!CurrentCommandDelayed || _MQ2MonoVersion<0.22m)
                 {
@@ -921,7 +926,7 @@ namespace MonoCore
 				CurrentCommand = String.Empty;
                 CurrentCommandDelayed = false;
 
-                if (isUseItem)
+                if (gobacktoCSharp)
                 {
                     goto RestartWait;
                 }
