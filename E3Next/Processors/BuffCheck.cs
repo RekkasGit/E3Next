@@ -1263,23 +1263,30 @@ namespace E3Core.Processors
 			else
 			{
 				//we have no buff timer? lets create one by targeting and getting the information
-				if (Casting.TrueTarget(s.ID))
+				long timeInMs = 0;
+				if (s.ID == E3.CurrentId)
+				{
+					timeInMs = Casting.TimeLeftOnMyBuff(spell);
+				}
+				else if (Casting.TrueTarget(s.ID))
 				{
 					MQ.Delay(2000, "${Target.BuffsPopulated}");
-					Int64 timeinMS = Casting.TimeLeftOnTargetBuff(spell);
-					if (timeinMS < 1)
-					{
-						//buff doesn't exist
-						return false;
-					}if (timeinMS <= (spell.MinDurationBeforeRecast))
-					{
-						return false;
-					}
-					UpdateBuffTimers(s.ID, spell, timeinMS, timeinMS);
-					
+                    timeInMs = Casting.TimeLeftOnTargetBuff(spell);
+                }
 
-				}
-				return true;
+                if (timeInMs < 1)
+                {
+                    //buff doesn't exist
+                    return false;
+                }
+                if (timeInMs <= (spell.MinDurationBeforeRecast))
+                {
+                    return false;
+                }
+
+                UpdateBuffTimers(s.ID, spell, timeInMs, timeInMs);
+
+                return true;
 
 			}
 			return false;
