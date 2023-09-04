@@ -88,7 +88,6 @@ namespace E3Core.Server
 						string user = message.Substring(currentIndex, indexOfSeperator);
 						currentIndex = indexOfSeperator + 1;
 						string bcMessage = message.Substring(currentIndex, message.Length - currentIndex);
-
 						MQ.Cmd($"/echo \a#336699[{MainProcessor.ApplicationName}]\a-w{System.DateTime.Now.ToString("HH:mm:ss")}\ar<\ay{user}\ar> \aw{bcMessage}");
 					}
 					else
@@ -142,6 +141,14 @@ namespace E3Core.Server
 							}
 						}
 
+						//check to see if we are part of their group
+						if (user == E3.CurrentName && (typeInfo!= OnCommandData.CommandType.OnCommandGroupAll || typeInfo == OnCommandData.CommandType.OnCommandAll))
+						{
+							//if not an all type command and not us, kick out.
+							//not for us only group members
+							break;
+						}
+
 						MQ.Write($"\ag<\ap{user}\ag> Command:" + command);
 						if (command.StartsWith("/mono ",StringComparison.OrdinalIgnoreCase))
 						{
@@ -159,15 +166,7 @@ namespace E3Core.Server
 						}
 						else
 						{
-							if (String.Compare(noparseString, "true", true) == 0)
-							{
-								MQ.Cmd("/noparse " + command);
-							}
-							else
-							{
-								MQ.Cmd(command);
-							}
-
+							MQ.Cmd(command);
 						}
 						
 					}
@@ -199,6 +198,7 @@ namespace E3Core.Server
 					subSocket.Connect("tcp://127.0.0.1:" + port);
 					subSocket.Subscribe(OnCommandName);
 					subSocket.Subscribe("OnCommand-All");
+					subSocket.Subscribe("OnCommand-AllExceptMe");
 					subSocket.Subscribe("OnCommand-Group");
 					subSocket.Subscribe("OnCommand-GroupAll");
 					subSocket.Subscribe("OnCommand-Raid");
@@ -229,6 +229,14 @@ namespace E3Core.Server
 								var data = OnCommandData.Aquire();
 								data.Data = messageReceived;
 								data.TypeOfCommand = OnCommandData.CommandType.OnCommandGroup;
+
+								CommandQueue.Enqueue(data);
+							}
+							else if (messageTopicReceived == "OnCommand-AllExceptMe")
+							{
+								var data = OnCommandData.Aquire();
+								data.Data = messageReceived;
+								data.TypeOfCommand = OnCommandData.CommandType.OnCommandAllExceptMe;
 
 								CommandQueue.Enqueue(data);
 							}
@@ -343,6 +351,7 @@ namespace E3Core.Server
 			{
 				None,
 				OnCommandAll,
+				OnCommandAllExceptMe,
 				OnCommandGroup,
 				OnCommandGroupAll,
 				OnCommandRaid,
