@@ -537,6 +537,26 @@ namespace E3Core.Processors
 						}
 
 					}
+					bool shouldContinue = false;
+					if(spell.CheckForCollection.Count>0)
+					{
+						foreach(var checkforItem in spell.CheckForCollection.Keys)
+						{
+							hasCheckFor = MQ.Query<bool>($"${{Bool[${{Me.Buff[{checkforItem}]}}]}}");
+							if (hasCheckFor)
+							{
+								shouldContinue = true;
+								break;
+							}
+							hasCheckFor = MQ.Query<bool>($"${{Bool[${{Me.Song[{checkforItem}]}}]}}");
+							if (hasCheckFor)
+							{
+								shouldContinue = true;
+								break;
+							}
+						}
+						if(shouldContinue) { continue; }
+					}
 					if (!String.IsNullOrWhiteSpace(spell.Ifs))
 					{
 						if (!Casting.Ifs(spell))
@@ -675,6 +695,42 @@ namespace E3Core.Processors
 
 
 						}
+						bool shouldContinue = false;
+						if (spell.CheckForCollection.Count > 0)
+						{
+							foreach (var checkforItem in spell.CheckForCollection.Keys)
+							{
+								hasCheckFor = MQ.Query<bool>($"${{Bool[${{Me.Buff[{checkforItem}]}}]}}");
+								if (!hasCheckFor)
+								{
+									hasCheckFor = MQ.Query<bool>($"${{Bool[${{Me.Song[{checkforItem}]}}]}}");
+									if (hasCheckFor)
+									{
+										Int64 buffDuration = MQ.Query<Int64>($"${{Me.Song[{checkforItem}].Duration}}");
+										if (buffDuration < 1000)
+										{
+											buffDuration = 1000;
+										}
+										//don't let the refresh update this
+										UpdateBuffTimers(s.ID, spell, 3000, buffDuration, true);
+										shouldContinue = true;
+										break;
+									}
+								}
+								else
+								{
+									Int64 buffDuration = MQ.Query<Int64>($"${{Me.Buff[{checkforItem}].Duration}}");
+									if (buffDuration < 1000)
+									{
+										buffDuration = 1000;
+									}
+									UpdateBuffTimers(s.ID, spell, 3000, buffDuration, true);
+									shouldContinue = true;
+									break;
+								}
+							}
+							if (shouldContinue) { continue; }
+						}
 						//Is the buff still good? if so, skip
 						if (BuffTimerIsGood(spell, s, usePets))
 						{
@@ -739,6 +795,23 @@ namespace E3Core.Processors
 								UpdateBuffTimers(s.ID, spell, 3000, -1,true);
 								continue;
 							}
+						}
+						bool shouldContinue = false;
+						if (spell.CheckForCollection.Count > 0)
+						{
+							foreach (var checkforItem in spell.CheckForCollection.Keys)
+							{
+								hasCheckFor = MQ.Query<bool>($"${{Bool[${{Me.Pet.Buff[{checkforItem}]}}]}}");
+								hasCachedCheckFor = MQ.Query<bool>($"${{Bool[${{Spawn[${{Me.Pet.ID}}].Buff[{checkforItem}]}}]}}");
+								if (hasCheckFor || hasCachedCheckFor)
+								{
+
+									UpdateBuffTimers(s.ID, spell, 3000, -1, true);
+									shouldContinue = true;
+									break;
+								}
+							}
+							if (shouldContinue) { continue; }
 						}
 						//Is the buff still good? if so, skip
 						if (BuffTimerIsGood(spell, s, usePets))
@@ -819,6 +892,26 @@ namespace E3Core.Processors
 									continue;
 								}
 
+							}
+							bool shouldContinue = false;
+							if (spell.CheckForCollection.Count > 0)
+							{
+								foreach (var checkforItem in spell.CheckForCollection.Keys)
+								{
+									//keys are check for spell names, the value is the spell id
+
+									bool hasCheckFor = findBuffList(spell.CastTarget).Contains(spell.CheckForCollection[checkforItem]);
+									//can't check for target song buffs, be aware. will have to check netbots. 
+									if (hasCheckFor)
+									{
+										//can't see the time, just set it for this time to recheck
+										//3 seconds
+										UpdateBuffTimers(s.ID, spell, 3000, -1, true);
+										shouldContinue = true;
+										break;
+									}
+								}
+								if (shouldContinue) { continue; }
 							}
 							//Is the buff still good? if so, skip
 							if (BuffTimerIsGood(spell, s, usePets))

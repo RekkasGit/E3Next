@@ -5,6 +5,7 @@ using MonoCore;
 using System;
 using System.Collections.Generic;
 using System.Diagnostics;
+using System.Linq;
 using System.Reflection;
 using System.Text;
 
@@ -140,7 +141,20 @@ namespace E3Core.Data
                     {
                         CheckFor = GetArgument<String>(value);
                     }
-                    else if (value.StartsWith("CastIf|", StringComparison.OrdinalIgnoreCase))
+					else if (value.StartsWith("CheckForList|", StringComparison.OrdinalIgnoreCase))
+					{
+                        string checkFors = GetArgument<String>(value);
+                        string[] checkForItems = checkFors.Split(',');
+
+                        foreach(var checkFor in checkForItems)
+                        {
+                            if(!CheckForCollection.ContainsKey(checkFor))
+                            {
+								CheckForCollection.Add(checkFor, 0);
+							}
+                        }
+					}
+					else if (value.StartsWith("CastIf|", StringComparison.OrdinalIgnoreCase))
                     {
                         CastIF = GetArgument<String>(value);
                     }
@@ -660,6 +674,19 @@ namespace E3Core.Data
                     CheckForID = MQ.Query<Int32>($"${{Spell[{CheckFor}].ID}}");
                 }
             }
+            foreach(string key in CheckForCollection.Keys.ToList())
+            {
+                Int32 tcID = 0;
+				if (MQ.Query<bool>($"${{Bool[${{AltAbility[{key}].Spell}}]}}"))
+				{
+					tcID = MQ.Query<Int32>($"${{AltAbility[{key}].Spell.ID}}");
+				}
+				else if (MQ.Query<bool>($"${{Bool[${{Spell[{key}].ID}}]}}"))
+				{
+					tcID = MQ.Query<Int32>($"${{Spell[{key}].ID}}");
+				}
+                CheckForCollection[key] = tcID;
+            }
 
         }
         //override public String ToString()
@@ -677,6 +704,7 @@ namespace E3Core.Data
         public Int32 GiveUpTimer;
         public Int32 MaxTries = 5;
         public String CheckFor = String.Empty;
+        public Dictionary<string, Int32> CheckForCollection = new Dictionary<string, int>();
         public Int32 Duration;
         public Int32 DurationTotalSeconds;
         public Int32 RecastTime;
