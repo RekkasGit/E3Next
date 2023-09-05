@@ -143,7 +143,7 @@ namespace E3Core.Server
 						}
 
 						//check to see if we are part of their group
-						if (user == E3.CurrentName && (typeInfo!= OnCommandData.CommandType.OnCommandGroupAll || typeInfo == OnCommandData.CommandType.OnCommandAll))
+						if (user == E3.CurrentName && (!(typeInfo== OnCommandData.CommandType.OnCommandGroupAll || typeInfo == OnCommandData.CommandType.OnCommandAll)))
 						{
 							//if not an all type command and not us, kick out.
 							//not for us only group members

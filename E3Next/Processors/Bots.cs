@@ -443,7 +443,7 @@ namespace E3Core.Processors
 
 					}
 					command = _stringBuilder.ToString().Trim();
-					BroadcastCommand(command);
+					BroadcastCommandAll(command);
 		            
                 }
 			});
@@ -660,7 +660,7 @@ namespace E3Core.Processors
 			{
 				command = MQ.Query<string>(command);
 			}
-			PubServer.AddTopicMessage("OnCommand-All", $"{E3.CurrentName}:{noparse}:{command}");
+			PubServer.AddTopicMessage("OnCommand-AllExceptMe", $"{E3.CurrentName}:{noparse}:{command}");
 		}
 		public void BroadcastCommandToGroup(string command, CommandMatch match = null, bool noparse = false)
         {
