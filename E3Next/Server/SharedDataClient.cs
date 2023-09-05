@@ -153,9 +153,12 @@ namespace E3Core.Server
 						MQ.Write($"\ag<\ap{user}\ag> Command:" + command);
 						if (command.StartsWith("/mono ",StringComparison.OrdinalIgnoreCase))
 						{
+
+							
+
 							//in case this is a restart command, we need to delay the command so it happens outside of the OnPulse. just assume all /mono commands are 
 							//delayed
-							if(Core._MQ2MonoVersion>=0.22m)
+							if (Core._MQ2MonoVersion>=0.22m)
 							{
 								//needs to be delayed, so that the restarts happes outside of the E3N OnPulse
 								MQ.Cmd(command,true);
@@ -167,7 +170,23 @@ namespace E3Core.Server
 						}
 						else
 						{
-							MQ.Cmd(command);
+							bool internalComand = false;
+							foreach (var pair in EventProcessor.CommandList)
+							{
+								if (command.StartsWith(pair.Key, StringComparison.OrdinalIgnoreCase))
+								{
+									internalComand = true;
+									//no need to send this to mq if its our own command, just drop it into the queues to be processed. 
+									EventProcessor.ProcessMQCommand(command);
+									break;
+								}
+
+							}
+							if (!internalComand)
+							{
+								MQ.Cmd(command);
+
+							}
 						}
 						
 					}

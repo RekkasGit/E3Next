@@ -281,11 +281,12 @@ namespace E3Core.Processors
                 //lets do our abilities!
                 foreach (var ability in E3.CharacterSettings.MeleeAbilities)
                 {
-                    //why even check, if its not ready?
-                    if (Casting.CheckReady(ability))
+					
+					//why even check, if its not ready?
+					if (Casting.CheckReady(ability))
                     {
-
-                        if (!String.IsNullOrWhiteSpace(ability.Ifs))
+						
+						if (!String.IsNullOrWhiteSpace(ability.Ifs))
                         {
                             if (!Casting.Ifs(ability))
                             {
@@ -384,7 +385,11 @@ namespace E3Core.Processors
                             Casting.Cast(AssistTargetID, ability);
                         }
                     }
-                }
+					if (E3.ActionTaken)
+					{
+						return;
+					}
+				}
             }
         }
 
