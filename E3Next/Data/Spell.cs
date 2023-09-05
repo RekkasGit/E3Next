@@ -108,6 +108,10 @@ namespace E3Core.Data
 						StackRecastDelay = GetArgument<Int64>(value);
 						StackRecastDelay *= 1000;
 					}
+					else if (value.StartsWith("StackRequestItem|", StringComparison.OrdinalIgnoreCase))
+					{
+						StackRequestItem = GetArgument<String>(value);
+					}
 					else if (value.StartsWith("AfterCast|", StringComparison.OrdinalIgnoreCase))
                     {
                         AfterSpell = GetArgument<String>(value);
@@ -716,6 +720,7 @@ namespace E3Core.Data
         public Int64 StackIntervalCheck = 10000;
         public Int64 StackIntervalNextCheck = 0;
         public Int64 StackRecastDelay = 1860000;
+        public string StackRequestItem = String.Empty;
 		public Dictionary<string, Int64> StackSpellCooldown = new Dictionary<string, long>();
 		public Boolean GiftOfMana;
         public Int32 CheckForID;

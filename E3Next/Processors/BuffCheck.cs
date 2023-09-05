@@ -366,7 +366,13 @@ namespace E3Core.Processors
 					{
 						//we can cast,maybe.
 
-						E3.Bots.BroadcastCommandToPerson(caster, $"/nowcast me \"{spell.CastName}\" ${{Me.ID}}");
+						string thingToAask = spell.CastName;
+						if(String.IsNullOrWhiteSpace(spell.StackRequestItem))
+						{
+							thingToAask = spell.StackRequestItem;
+						}
+
+						E3.Bots.BroadcastCommandToPerson(caster, $"/nowcast me \"{thingToAask}\" ${{Me.ID}}");
 						Int64 recastDelay = spell.RecastTime;
 						if (spell.CastType == CastType.Item)
 						{
