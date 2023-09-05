@@ -1345,7 +1345,7 @@ namespace MonoCore
                 Core.DelayTime = value;
                 Core.CurrentDelay = value;//tell the C++ thread to send out a delay update
             }
-            if (E3.IsInit)
+            if (E3.IsInit && !E3.InStateUpdate)
             {
                 E3.StateUpdates();
             }
@@ -1362,10 +1362,9 @@ namespace MonoCore
                 Write("Throwing exception for termination: Delay exit");
                 throw new ThreadAbort("Terminating thread");
             }
-            if(E3.IsInit)
-            {
+			if (E3.IsInit && !E3.InStateUpdate)
+			{
 				E3.StateUpdates();
-
 			}
 			SinceLastDelay = Core.StopWatch.ElapsedMilliseconds;
         }

@@ -206,68 +206,80 @@ namespace E3Core.Processors
 		private static Int64 _nextBuffUpdateCheckTime = 0;
 		private static Int64 _nextBuffUpdateTimeInterval = 1000;
 
+
+        //qick hack to prevent calling state update... while in state updates. 
+        public static bool InStateUpdate = false;
 		public static void StateUpdates()
         {
-			NetMQServer.SharedDataClient.ProcessCommands();
-
-			if (e3util.ShouldCheck(ref _nextBuffUpdateCheckTime, _nextBuffUpdateTimeInterval))
+            try
             {
-				PubServer.AddTopicMessage("${Me.BuffInfo}", e3util.GenerateBuffInfoForPubSub());
-				PubServer.AddTopicMessage("${Me.PetBuffInfo}", e3util.GeneratePetBuffInfoForPubSub());
+                InStateUpdate = true;
+				NetMQServer.SharedDataClient.ProcessCommands();
+
+				if (e3util.ShouldCheck(ref _nextBuffUpdateCheckTime, _nextBuffUpdateTimeInterval))
+				{
+					PubServer.AddTopicMessage("${Me.BuffInfo}", e3util.GenerateBuffInfoForPubSub());
+					PubServer.AddTopicMessage("${Me.PetBuffInfo}", e3util.GeneratePetBuffInfoForPubSub());
+				}
+
+				if (!e3util.ShouldCheck(ref _nextStateUpdateCheckTime, _nextStateUpdateTimeInterval)) return;
+
+				IsInvis = MQ.Query<bool>("${Me.Invis}");
+				CurrentHps = MQ.Query<int>("${Me.PctHPs}");
+				CurrentId = MQ.Query<int>("${Me.ID}");
+				PctHPs = MQ.Query<Int32>("${Me.PctHPs}");
+
+				//cure counters
+				Debuff_TotalCounters = MQ.Query<Int32>("${Me.TotalCounters}");
+				Debuff_PoisonCounters = MQ.Query<Int32>("${Me.CountersPoison}");
+				Debuff_DiseaseCounters = MQ.Query<Int32>("${Me.CountersDisease}");
+				Debuff_CurseCounters = MQ.Query<Int32>("${Me.CountersCurse}");
+				PubServer.AddTopicMessage("${Me.TotalCounters}", Debuff_TotalCounters.ToString("N0"));
+				PubServer.AddTopicMessage("${Me.CountersPoison}", Debuff_PoisonCounters.ToString("N0"));
+				PubServer.AddTopicMessage("${Me.CountersDisease}", Debuff_DiseaseCounters.ToString("N0"));
+				PubServer.AddTopicMessage("${Me.CountersCurse}", Debuff_CurseCounters.ToString("N0"));
+				//end cure counters
+
+				PubServer.AddTopicMessage("${Me.PctHPs}", PctHPs.ToString());
+				HitPointsCurrent = MQ.Query<int>("${Me.CurrentHPs}");
+				PubServer.AddTopicMessage("${Me.CurrentHPs}", HitPointsCurrent.ToString("N0"));
+				MagicPointsCurrent = MQ.Query<int>("${Me.CurrentMana}");
+				PubServer.AddTopicMessage("${Me.CurrentMana}", MagicPointsCurrent.ToString("N0"));
+				StamPointsCurrent = MQ.Query<int>("${Me.CurrentEndurance}");
+				PubServer.AddTopicMessage("${Me.CurrentEndurance}", StamPointsCurrent.ToString("N0"));
+				CurrentInCombat = Basics.InCombat();
+				PubServer.AddTopicMessage("${InCombat}", CurrentInCombat.ToString());
+				PubServer.AddTopicMessage("${EQ.CurrentFocusedWindowName}", MQ.GetFocusedWindowName());
+
+				string nameOfPet = MQ.Query<string>("${Me.Pet.CleanName}");
+				if (nameOfPet != "NULL")
+				{
+					//set the pet name
+					CurrentPetName = nameOfPet;
+					PubServer.AddTopicMessage("${Me.Pet.CleanName}", CurrentPetName);
+				}
+
+				bool IsMoving = MQ.Query<bool>("${Me.Moving}");
+				if (IsMoving)
+				{
+					LastMovementTimeStamp = Core.StopWatch.ElapsedMilliseconds;
+				}
+				if (MQ.Query<bool>("${MoveUtils.GM}"))
+				{
+					MQ.Cmd("/squelch /stick imsafe");
+					Bots.Broadcast("GM Safe kicked in, issued /stick imsafe.  you may need to reissue /followme or /assiston");
+				}
+
+				//process any tlo request from the UI, or anything really.
+				RouterServer.ProcessRequests();
+				//process any commands we need to process from the UI
+				PubClient.ProcessRequests();
 			}
-            
-            if (!e3util.ShouldCheck(ref _nextStateUpdateCheckTime, _nextStateUpdateTimeInterval)) return;
-
-			IsInvis = MQ.Query<bool>("${Me.Invis}");
-            CurrentHps = MQ.Query<int>("${Me.PctHPs}");
-            CurrentId = MQ.Query<int>("${Me.ID}");
-            PctHPs = MQ.Query<Int32>("${Me.PctHPs}");
-
-            //cure counters
-            Debuff_TotalCounters = MQ.Query<Int32>("${Me.TotalCounters}");
-			Debuff_PoisonCounters = MQ.Query<Int32>("${Me.CountersPoison}");
-			Debuff_DiseaseCounters = MQ.Query<Int32>("${Me.CountersDisease}");
-			Debuff_CurseCounters = MQ.Query<Int32>("${Me.CountersCurse}");
-			PubServer.AddTopicMessage("${Me.TotalCounters}", Debuff_TotalCounters.ToString("N0"));
-			PubServer.AddTopicMessage("${Me.CountersPoison}", Debuff_PoisonCounters.ToString("N0"));
-			PubServer.AddTopicMessage("${Me.CountersDisease}", Debuff_DiseaseCounters.ToString("N0"));
-			PubServer.AddTopicMessage("${Me.CountersCurse}", Debuff_CurseCounters.ToString("N0"));
-            //end cure counters
-
-			PubServer.AddTopicMessage("${Me.PctHPs}", PctHPs.ToString());
-			HitPointsCurrent = MQ.Query<int>("${Me.CurrentHPs}");
-            PubServer.AddTopicMessage("${Me.CurrentHPs}", HitPointsCurrent.ToString("N0"));
-            MagicPointsCurrent = MQ.Query<int>("${Me.CurrentMana}");
-            PubServer.AddTopicMessage("${Me.CurrentMana}", MagicPointsCurrent.ToString("N0"));
-            StamPointsCurrent = MQ.Query<int>("${Me.CurrentEndurance}");
-            PubServer.AddTopicMessage("${Me.CurrentEndurance}", StamPointsCurrent.ToString("N0"));
-            CurrentInCombat = Basics.InCombat();
-            PubServer.AddTopicMessage("${InCombat}", CurrentInCombat.ToString());
-			PubServer.AddTopicMessage("${EQ.CurrentFocusedWindowName}", MQ.GetFocusedWindowName());
-            
-			string nameOfPet = MQ.Query<string>("${Me.Pet.CleanName}");
-            if (nameOfPet != "NULL")
+            finally
             {
-                //set the pet name
-                CurrentPetName = nameOfPet;
-                PubServer.AddTopicMessage("${Me.Pet.CleanName}", CurrentPetName);
+                InStateUpdate = false;
             }
-
-			bool IsMoving = MQ.Query<bool>("${Me.Moving}");
-			if (IsMoving)
-			{
-				LastMovementTimeStamp = Core.StopWatch.ElapsedMilliseconds;
-			}
-			if (MQ.Query<bool>("${MoveUtils.GM}"))
-			{
-				MQ.Cmd("/squelch /stick imsafe");
-				Bots.Broadcast("GM Safe kicked in, issued /stick imsafe.  you may need to reissue /followme or /assiston");
-			}
-
-			//process any tlo request from the UI, or anything really.
-			RouterServer.ProcessRequests();
-            //process any commands we need to process from the UI
-            PubClient.ProcessRequests();
+			
            
         }
         private static void RefreshCaches()
