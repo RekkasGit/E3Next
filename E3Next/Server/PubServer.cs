@@ -1,5 +1,6 @@
 ﻿using E3Core.Processors;
 using E3Core.Settings;
+using E3Core.Utility;
 using MonoCore;
 using NetMQ;
 using NetMQ.Sockets;
@@ -40,10 +41,11 @@ namespace E3Core.Server
         public void Start(Int32 port)
         {
             PubPort = port;
+            string localIP = e3util.GetLocalIPAddress();
             string filePath = BaseSettings.GetSettingsFilePath($"{E3.CurrentName}_{E3.ServerName}_pubsubport.txt");
 
             System.IO.File.Delete(filePath);
-            System.IO.File.WriteAllText(filePath, port.ToString());
+            System.IO.File.WriteAllText(filePath, port.ToString()+","+localIP);
 
             _serverThread = Task.Factory.StartNew(() => { Process(filePath); }, CancellationToken.None, TaskCreationOptions.DenyChildAttach, TaskScheduler.Default);
 
@@ -60,7 +62,7 @@ namespace E3Core.Server
             {
                 pubSocket.Options.SendHighWatermark = 50000;
                 
-                pubSocket.Bind("tcp://127.0.0.1:" + PubPort.ToString());
+                pubSocket.Bind("tcp://0.0.0.0:" + PubPort.ToString());
                 
                 while (Core.IsProcessing)
                 {

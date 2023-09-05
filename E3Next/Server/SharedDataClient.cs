@@ -35,7 +35,7 @@ namespace E3Core.Server
 
 		Dictionary<string, Task> _processTasks = new Dictionary<string, Task>();
 		static object _processLock = new object();
-		public bool RegisterUser(string user)
+		public bool RegisterUser(string user,string path)
 		{
 
 			//see if they exist in the collection
@@ -46,23 +46,24 @@ namespace E3Core.Server
 					if (!_processTasks.ContainsKey(user))
 					{
 						//lets see if the file exists
-						string filePath = BaseSettings.GetSettingsFilePath($"{user}_{E3.ServerName}_pubsubport.txt");
+						string filePath =$"{path}{user}_{E3.ServerName}_pubsubport.txt";
 
 						if (System.IO.File.Exists(filePath))
 						{
 							//lets load up the port information
 							TopicUpdates.TryAdd(user, new ConcurrentDictionary<string, ShareDataEntry>());
-							string port = System.IO.File.ReadAllText(filePath);
+							string data = System.IO.File.ReadAllText(filePath);
+							//its now port:ipaddress
+							string[] splitData = data.Split(new char[] { ',' });
+							string port = splitData[0];
+							string ipaddress = splitData[1];
 
-							var newTask = Task.Factory.StartNew(() => { Process(user, port, filePath); }, CancellationToken.None, TaskCreationOptions.DenyChildAttach, TaskScheduler.Default);
+							var newTask = Task.Factory.StartNew(() => { Process(user, port,ipaddress, filePath); }, CancellationToken.None, TaskCreationOptions.DenyChildAttach, TaskScheduler.Default);
 							_processTasks.Add(user, newTask);
 							return true;
-
 						}
 					}
-
 				}
-
 			}
 			return false;
 		}
@@ -177,7 +178,7 @@ namespace E3Core.Server
 
 			}
 		}
-		public void Process(string user, string port, string fileName)
+		public void Process(string user, string port,string serverName, string fileName)
 		{
 			System.DateTime lastFileUpdate = System.IO.File.GetLastWriteTime(fileName);
 			string OnCommandName = "OnCommand-" + E3.CurrentName;
@@ -191,20 +192,22 @@ namespace E3Core.Server
 			{
 				try
 				{
+				
 					subSocket.Options.ReceiveHighWatermark = 1000;
 					subSocket.Options.TcpKeepalive = true;
 					subSocket.Options.TcpKeepaliveIdle = TimeSpan.FromSeconds(5);
 					subSocket.Options.TcpKeepaliveInterval = TimeSpan.FromSeconds(1);
-					subSocket.Connect("tcp://127.0.0.1:" + port);
+					subSocket.Connect($"tcp://{serverName}:" + port);
 					subSocket.Subscribe(OnCommandName);
 					subSocket.Subscribe("OnCommand-All");
 					subSocket.Subscribe("OnCommand-AllExceptMe");
 					subSocket.Subscribe("OnCommand-Group");
 					subSocket.Subscribe("OnCommand-GroupAll");
 					subSocket.Subscribe("OnCommand-Raid");
+					subSocket.Subscribe("OnCommand-Zone");
 					subSocket.Subscribe("BroadCastMessage");
 					subSocket.Subscribe("${Me."); //all Me stuff should be subscribed to
-					MQ.Write("\agShared Data Client: Connecting to user:" + user + " on port:" + port); ;
+					MQ.Write("\agShared Data Client: Connecting to user:" + user + " on port:" + port + " server:"+serverName); ;
 
 					Int32 messageCount = 0;
 					while (Core.IsProcessing)
@@ -290,9 +293,6 @@ namespace E3Core.Server
 								}
 
 							}
-
-
-
 						}
 						else
 						{   //we didn't get a message in the timespan we were expecting, verify if we need to reconnect
@@ -301,12 +301,15 @@ namespace E3Core.Server
 								System.DateTime currentTime = System.IO.File.GetLastWriteTime(fileName);
 								if (currentTime > lastFileUpdate)
 								{
-									MQ.Write("\agShared Data Client: Disconnecting port:" + port + " for toon:" + user);
+									MQ.Write($"\agShared Data Client: Disconnecting server:{serverName} port:" + port + " for toon:" + user);
 									//shutown the socket and restart it
-									subSocket.Disconnect("tcp://127.0.0.1:" + port);
-									port = System.IO.File.ReadAllText(fileName);
-									MQ.Write("\agShared Data Client: Reconnecting to port:" + port + " for toon:" + user);
-									subSocket.Connect("tcp://127.0.0.1:" + port);
+									subSocket.Disconnect($"tcp://{serverName}:" + port);
+									string data = System.IO.File.ReadAllText(fileName);
+									string[] splitData = data.Split(new char[] { ':' });
+									port = splitData[0];
+									serverName = splitData[1];
+									MQ.Write($"\agShared Data Client: Reconnecting to server:{serverName} port:" + port + " for toon:" + user);
+									subSocket.Connect($"tcp://{serverName}:" + port);
 									lastFileUpdate = currentTime;
 								}
 							}
@@ -325,7 +328,6 @@ namespace E3Core.Server
 
 							}
 						}
-
 
 					}
 					

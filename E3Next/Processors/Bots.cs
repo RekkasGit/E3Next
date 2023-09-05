@@ -354,7 +354,10 @@ namespace E3Core.Processors
         {
             settingsFilePath = BaseSettings.GetSettingsFilePath("");
 
-			_autoRegisrationTask = Task.Factory.StartNew(() => { AutoRegisterUsers(settingsFilePath); }, CancellationToken.None, TaskCreationOptions.DenyChildAttach, TaskScheduler.Default);
+            List<string> pathsToLookAT = new List<string>();
+            pathsToLookAT.Add(settingsFilePath);
+
+			_autoRegisrationTask = Task.Factory.StartNew(() => { AutoRegisterUsers(pathsToLookAT); }, CancellationToken.None, TaskCreationOptions.DenyChildAttach, TaskScheduler.Default);
 
 			//had to be registered in this order so that you don't get wildcard matches happening first in mq
 			//there is no 'exact match' in the MQ command linked list
@@ -459,26 +462,29 @@ namespace E3Core.Processors
 
 		}
 
-        private void AutoRegisterUsers(string settingsPath)
+        private void AutoRegisterUsers(List<string> settingsPaths)
         {
             string searchPattern = $"*_{E3.ServerName}_pubsubport.txt";
 			while (Core.IsProcessing)
             {
-                //look for files that start with $"{user}_{E3.ServerName}_pubsubport.txt"
-                string[] fileNames = System.IO.Directory.GetFiles(settingsFilePath, searchPattern);
-                foreach (string file in fileNames)
+                foreach(var path in settingsPaths)
                 {
-                    //D:\\EQ\\E3_ROF2_MQ2Next\\Config\\e3 Macro Inis\\Rekken_Lazarus_pubsubport.txt
-                    Int32 currentIndex = file.LastIndexOf(@"\") + 1;
-                    Int32 indexOfUnderline = file.IndexOf('_', currentIndex);
-					string name = file.Substring(currentIndex,indexOfUnderline- currentIndex);
-                   
-					if (!NetMQServer.SharedDataClient.TopicUpdates.ContainsKey(name))
-                    {
-                        NetMQServer.SharedDataClient.RegisterUser(name);
+					//look for files that start with $"{user}_{E3.ServerName}_pubsubport.txt"
+					string[] fileNames = System.IO.Directory.GetFiles(path, searchPattern);
+					foreach (string file in fileNames)
+					{
+						//D:\\EQ\\E3_ROF2_MQ2Next\\Config\\e3 Macro Inis\\Rekken_Lazarus_pubsubport.txt
+						Int32 currentIndex = file.LastIndexOf(@"\") + 1;
+						Int32 indexOfUnderline = file.IndexOf('_', currentIndex);
+						string name = file.Substring(currentIndex, indexOfUnderline - currentIndex);
+
+						if (!NetMQServer.SharedDataClient.TopicUpdates.ContainsKey(name))
+						{
+							NetMQServer.SharedDataClient.RegisterUser(name,path);
+						}
 					}
 				}
-				System.Threading.Thread.Sleep(1000);
+     			System.Threading.Thread.Sleep(1000);
             }
         }
         /// <summary>

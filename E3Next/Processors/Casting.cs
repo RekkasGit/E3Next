@@ -33,8 +33,11 @@ namespace E3Core.Processors
             bool navActive = false;
             bool navPaused = false;
             bool e3PausedNav = false;
-
-            if(spell.Debug)
+			if (MQ.Query<bool>("${Cursor.ID}"))
+			{
+				e3util.ClearCursor();
+			}
+			if (spell.Debug)
             {
                 _previousLogLevel = Logging.MinLogLevelTolog;
                 Logging.MinLogLevelTolog = Logging.DefaultLogLevel;
@@ -200,10 +203,7 @@ namespace E3Core.Processors
                 //using (_log.Trace())
                 {
 
-                    if (MQ.Query<bool>("${Cursor.ID}"))
-                    {
-                        e3util.ClearCursor();
-                    }
+             
                     if (_spawns.TryByID(targetID, out var s))
                     {
 
