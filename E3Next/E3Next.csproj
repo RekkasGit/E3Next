@@ -102,6 +102,7 @@
     <Compile Include="Classes\Warrior.cs" />
     <Compile Include="Classes\Wizard.cs" />
     <Compile Include="Core.cs" />
+    <Compile Include="Data\CharacterBuffs.cs" />
     <Compile Include="Data\Class.cs" />
     <Compile Include="Data\MelodyIfs.cs" />
     <Compile Include="Data\ResistCounter.cs" />
@@ -125,7 +126,7 @@
     <Compile Include="Server\PubClient.cs" />
     <Compile Include="Server\PubServer.cs" />
     <Compile Include="Server\RouterServer.cs" />
-    <Compile Include="Server\ShareData.cs" />
+    <Compile Include="Server\SharedDataClient.cs" />
     <Compile Include="Settings\AdvancedSettings.cs" />
     <Compile Include="Settings\BaseSettings.cs" />
     <Compile Include="Settings\CharacterSettings.cs" />
@@ -176,7 +177,6 @@
   </ItemGroup>
   <Import Project="$(MSBuildToolsPath)\Microsoft.CSharp.targets" />
   <PropertyGroup>
-    <PostBuildEvent>
-    </PostBuildEvent>
+    <PostBuildEvent>powershell.exe $(ProjectDir)\CopyToEQFolder.ps1</PostBuildEvent>
   </PropertyGroup>
 </Project>
