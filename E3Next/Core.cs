@@ -905,9 +905,9 @@ namespace MonoCore
             }
             if (CurrentCommand != String.Empty)
             {
-                //for mana stone usage, to allow spamming
+                //special commands that dont' go through the 'delay of processing back to MQ
+                //useitem for manastone and echo for... well echoing out data/broadcast. 
                 bool gobacktoCSharp = CurrentCommand.StartsWith("/useitem");
-
                 if(CurrentCommand.StartsWith("/echo"))
                 {
                     gobacktoCSharp = true;
@@ -1306,12 +1306,6 @@ namespace MonoCore
             Cmd(query,delayed);
             Delay(delay);
         }
-
-        public void Broadcast(string query)
-        {
-            Cmd($"/bc {query}");
-        }
-
 
         public void Write(string query, [CallerMemberName] string memberName = "", [CallerFilePath] string fileName = "", [CallerLineNumber] int lineNumber = 0)
         {
