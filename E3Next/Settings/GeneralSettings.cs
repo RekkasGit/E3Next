@@ -67,10 +67,12 @@ namespace E3Core.Settings
         public bool AutoTrade_Group = false;
         public bool AutoTrade_Guild = false;
         public bool AutoTrade_Raid = false;
+        public List<string> General_E3NetworkAddPathToMonitor = new List<string>();
 
-        
 
-        public Int32 Movement_StandingStill = 10000;
+
+
+		public Int32 Movement_StandingStill = 10000;
         public Int32 Movement_ChaseDistanceMin = 10;
         public Int32 Movement_ChaseDistanceMax = 500;
         public Int32 Movement_NavStopDistance = 10;
@@ -131,7 +133,8 @@ namespace E3Core.Settings
             //    section.Keys.AddKey("NetworkMethod", "EQBC");
 
             LoadKeyData("General", "NetworkMethod",parsedData, ref General_NetworkMethod);
-            LoadKeyData("General", "Network Default Broadcast (Group,All,AllInZoneOrRaid)", parsedData, ref General_BroadCast_Default);
+			LoadKeyData("General", "E3NetworkAddPathToMonitor", parsedData,General_E3NetworkAddPathToMonitor);
+			LoadKeyData("General", "Network Default Broadcast (Group,All,AllInZoneOrRaid)", parsedData, ref General_BroadCast_Default);
 
             LoadKeyData("General", "Heal While Navigating (On/Off)", parsedData, ref General_HealWhileNavigating);
             LoadKeyData("General", "Beep Notifications (On/Off)", parsedData, ref General_BeepNotifications);
@@ -295,6 +298,7 @@ namespace E3Core.Settings
             var section = newFile.Sections.GetSectionData("General");
             section.Keys.AddKey("AutoMedBreak PctMana", "0");
             section.Keys.AddKey("NetworkMethod", "EQBC");
+            section.Keys.AddKey("E3NetworkAddPathToMonitor", "");
             section.Keys.AddKey("Network Default Broadcast (Group,All,AllInZoneOrRaid)", "Group");
 
             section.Keys.AddKey("Heal While Navigating (On/Off)","On");

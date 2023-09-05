@@ -356,6 +356,11 @@ namespace E3Core.Processors
 
             List<string> pathsToLookAT = new List<string>();
             pathsToLookAT.Add(settingsFilePath);
+            //add other paths that have been configured to look at
+            foreach(var path in E3.GeneralSettings.General_E3NetworkAddPathToMonitor)
+            {
+                pathsToLookAT.Add(path);
+            }
 
 			_autoRegisrationTask = Task.Factory.StartNew(() => { AutoRegisterUsers(pathsToLookAT); }, CancellationToken.None, TaskCreationOptions.DenyChildAttach, TaskScheduler.Default);
 
@@ -469,19 +474,28 @@ namespace E3Core.Processors
             {
                 foreach(var path in settingsPaths)
                 {
-					//look for files that start with $"{user}_{E3.ServerName}_pubsubport.txt"
-					string[] fileNames = System.IO.Directory.GetFiles(path, searchPattern);
-					foreach (string file in fileNames)
-					{
-						//D:\\EQ\\E3_ROF2_MQ2Next\\Config\\e3 Macro Inis\\Rekken_Lazarus_pubsubport.txt
-						Int32 currentIndex = file.LastIndexOf(@"\") + 1;
-						Int32 indexOfUnderline = file.IndexOf('_', currentIndex);
-						string name = file.Substring(currentIndex, indexOfUnderline - currentIndex);
-
-						if (!NetMQServer.SharedDataClient.TopicUpdates.ContainsKey(name))
+                    try
+                    {
+						//look for files that start with $"{user}_{E3.ServerName}_pubsubport.txt"
+						string[] fileNames = System.IO.Directory.GetFiles(path, searchPattern);
+						foreach (string file in fileNames)
 						{
-							NetMQServer.SharedDataClient.RegisterUser(name,path);
+							//D:\\EQ\\E3_ROF2_MQ2Next\\Config\\e3 Macro Inis\\Rekken_Lazarus_pubsubport.txt
+							Int32 currentIndex = file.LastIndexOf(@"\") + 1;
+							Int32 indexOfUnderline = file.IndexOf('_', currentIndex);
+							string name = file.Substring(currentIndex, indexOfUnderline - currentIndex);
+
+							if (!NetMQServer.SharedDataClient.TopicUpdates.ContainsKey(name))
+							{
+								NetMQServer.SharedDataClient.RegisterUser(name, path);
+							}
 						}
+
+					}
+					catch (Exception ex)
+                    {
+                        _log.Write($"Auto Reg user eror for path:{path} message:{ex.ToString()}"); ;
+						System.Threading.Thread.Sleep(1000);
 					}
 				}
      			System.Threading.Thread.Sleep(1000);
