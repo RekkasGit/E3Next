@@ -378,7 +378,15 @@ namespace E3Core.Processors
 
                     }
                     message = _stringBuilder.ToString().Trim();
-                    Broadcast(message);
+                    if(message.StartsWith(@"/"))
+                    {
+                        BroadcastCommandAll(message);
+                    }
+                    else
+                    {
+						Broadcast(message);
+
+					}
 				}
 			});
 			EventProcessor.RegisterCommand("/e3bcg", (x) =>
@@ -571,7 +579,7 @@ namespace E3Core.Processors
         public void Broadcast(string message)
         {
             //have to parse out all the MQ macro information
-            message = Core.mq_ParseTLO(message);
+            message = MQ.Query<string>(message);
 			PubServer.AddTopicMessage("BroadCastMessage", $"{E3.CurrentName}:{message}");
 		//	MQ.Write($"\ar<\ay{E3.CurrentName}\ar> \aw{message}");
 		}
@@ -591,7 +599,7 @@ namespace E3Core.Processors
 			}
             if(!noparse)
             {
-				command = Core.mq_ParseTLO(command);
+				command = MQ.Query<string>(command);
 			}
 
 			PubServer.AddTopicMessage("OnCommand-AllExceptMe", $"{E3.CurrentName}:{noparse}:{command}");
@@ -611,7 +619,7 @@ namespace E3Core.Processors
 			}
 			if (!noparse)
 			{
-				command = Core.mq_ParseTLO(command);
+				command = MQ.Query<string>(command);
 			}
 			PubServer.AddTopicMessage("OnCommand-All", $"{E3.CurrentName}:{noparse}:{command}");
 		}
@@ -630,7 +638,7 @@ namespace E3Core.Processors
 			}
 			if (!noparse)
 			{
-				command = Core.mq_ParseTLO(command);
+				command = MQ.Query<string>(command);
 			}
 			PubServer.AddTopicMessage("OnCommand-All", $"{E3.CurrentName}:{noparse}:{command}");
 		}
@@ -666,7 +674,7 @@ namespace E3Core.Processors
 			}
 			if (!noparse)
 			{
-				command = Core.mq_ParseTLO(command);
+				command = MQ.Query<string>(command);
 			}
 			PubServer.AddTopicMessage("OnCommand-Group", $"{E3.CurrentName}:{noparse}:{command}");
 		}
@@ -674,7 +682,7 @@ namespace E3Core.Processors
         public void BroadcastCommandToPerson(string person, string command)
 		{
             person = e3util.FirstCharToUpper(person);
-			command = Core.mq_ParseTLO(command);
+			command = MQ.Query<string>(command);
 			PubServer.AddTopicMessage("OnCommand-" + person, $"{E3.CurrentName}:{false}:{command}");
 		}
         List<int> _buffListReturnValue = new List<int>();
