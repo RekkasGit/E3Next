@@ -443,7 +443,7 @@ namespace E3Core.Processors
 
 					}
 					command = _stringBuilder.ToString().Trim();
-					BroadcastCommandAll(command);
+					BroadcastCommandToGroupAll(command);
 		            
                 }
 			});
@@ -698,8 +698,44 @@ namespace E3Core.Processors
 			}
 			PubServer.AddTopicMessage("OnCommand-Group", $"{E3.CurrentName}:{noparse}:{command}");
 		}
+		public void BroadcastCommandToGroupAll(string command, CommandMatch match = null, bool noparse = false)
+		{
+			bool hasAllFlag = false;
 
-        public void BroadcastCommandToPerson(string person, string command)
+			if (match != null)
+			{
+				hasAllFlag = match.hasAllFlag;
+			}
+			if (GlobalAllEnabled)
+			{
+				hasAllFlag = GlobalAllEnabled;
+			}
+
+			if (hasAllFlag)
+			{
+				BroadcastCommandAll(command, noparse, match);
+				return;
+			}
+
+			if (match != null && match.filters.Count > 0)
+			{
+				//need to pass over the filters if they exist
+				_stringBuilder.Clear();
+				_stringBuilder.Append($"{command}");
+				foreach (var filter in match.filters)
+				{
+					_stringBuilder.Append($" \"{filter}\"");
+				}
+				command = _stringBuilder.ToString();
+			}
+			if (!noparse)
+			{
+				command = MQ.Query<string>(command);
+			}
+			PubServer.AddTopicMessage("OnCommand-GroupAll", $"{E3.CurrentName}:{noparse}:{command}");
+		}
+
+		public void BroadcastCommandToPerson(string person, string command)
 		{
             person = e3util.FirstCharToUpper(person);
 			command = MQ.Query<string>(command);
