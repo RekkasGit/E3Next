@@ -792,7 +792,8 @@ namespace E3Core.Utility
 		}
         public static bool IsShuttingDown()
         {
-            if(EventProcessor.CommandList["/shutdown"].queuedEvents.Count > 0)
+
+            if(EventProcessor.CommandList.ContainsKey("/shutdown") && EventProcessor.CommandList["/shutdown"].queuedEvents.Count > 0)
             {
                 return true;
             }

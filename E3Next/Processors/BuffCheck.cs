@@ -883,7 +883,11 @@ namespace E3Core.Processors
 							}
 						}
 						else
-						{
+						{   //Is the buff still good? if so, skip
+							if (BuffTimerIsGood(spell, s, usePets))
+							{
+								continue;
+							}
 							//its someone not in our buff group, do it the hacky way.
 							Casting.TrueTarget(s.ID);
 							MQ.Delay(2000, "${Target.BuffsPopulated}");
@@ -905,11 +909,7 @@ namespace E3Core.Processors
 									continue;
 								}
 							}
-							//Is the buff still good? if so, skip
-							if (BuffTimerIsGood(spell, s, usePets))
-							{
-								continue;
-							}
+						
 							//greater than 0, so we don't get things like shrink that don't have a duration
 							bool isShortDuration = spell.DurationTotalSeconds <= 60 && spell.DurationTotalSeconds > 0;
 							Int64 timeLeftInMS = Casting.TimeLeftOnTargetBuff(spell);
