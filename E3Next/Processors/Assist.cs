@@ -7,6 +7,7 @@ using System;
 using System.Collections.Generic;
 using System.Dynamic;
 using System.Linq;
+using System.Xml.Linq;
 
 namespace E3Core.Processors
 {
@@ -302,15 +303,20 @@ namespace E3Core.Processors
                                 continue;
                             }
                         }
-                        if (!String.IsNullOrWhiteSpace(ability.CheckFor))
-                        {
-                            if (MQ.Query<bool>($"${{Bool[${{Target.Buff[{ability.CheckFor}]}}]}}"))
-                            {
-                                //has the buff already
-                                continue;
-                            }
-                        }
-
+						bool shouldContinue = false;
+						if (ability.CheckForCollection.Count > 0)
+						{
+							foreach (var checkforItem in ability.CheckForCollection.Keys)
+							{
+								if (MQ.Query<bool>($"${{Bool[${{Target.Buff[{checkforItem}]}}]}}"))
+								{
+									shouldContinue = true;
+									break;
+								}
+							}
+							if (shouldContinue) { continue; }
+						}
+					
                         if (pctAggro < ability.PctAggro)
                         {
                             continue;

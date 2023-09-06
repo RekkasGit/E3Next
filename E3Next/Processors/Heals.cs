@@ -413,15 +413,19 @@ namespace E3Core.Processors
 											}
 										}
 
-										if (!String.IsNullOrWhiteSpace(spell.CheckFor))
+										bool shouldContinue = false;
+										if (spell.CheckForCollection.Count>0)
 										{
-
-											if (E3.Bots.BuffList(name).Contains(spell.CheckForID))
+											var bufflist = E3.Bots.BuffList(name);
+											foreach (var checkforItem in spell.CheckForCollection.Keys)
 											{
-												//they have the buff, kick out
-												continue;
+												if (bufflist.Contains(spell.CheckForCollection[checkforItem]))
+												{
+													shouldContinue = false;
+													break;
+												}
 											}
-
+											if (shouldContinue) { continue; }
 										}
 
 									recastSpell:
@@ -500,13 +504,19 @@ namespace E3Core.Processors
 											continue;
 										}
 									}
-									if (!String.IsNullOrWhiteSpace(spell.CheckFor))
+									bool shouldContinue = false;
+									if (spell.CheckForCollection.Count > 0)
 									{
-										if (E3.Bots.BuffList(name).Contains(spell.CheckForID))
+										var bufflist = E3.Bots.BuffList(name);
+										foreach (var checkforItem in spell.CheckForCollection.Keys)
 										{
-											//they have the buff, kick out
-											continue;
+											if (bufflist.Contains(spell.CheckForCollection[checkforItem]))
+											{
+												shouldContinue = false;
+												break;
+											}
 										}
+										if (shouldContinue) { continue; }
 									}
 								recastSpell:
 									if (spell.Mana > currentMana)

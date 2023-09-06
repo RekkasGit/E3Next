@@ -138,10 +138,6 @@ namespace E3Core.Data
                         MaxTries = GetArgument<Int32>(value);
                     }
                     else if (value.StartsWith("CheckFor|", StringComparison.OrdinalIgnoreCase))
-                    {
-                        CheckFor = GetArgument<String>(value);
-                    }
-					else if (value.StartsWith("CheckForList|", StringComparison.OrdinalIgnoreCase))
 					{
                         string checkFors = GetArgument<String>(value);
                         string[] checkForItems = checkFors.Split(',');
@@ -663,17 +659,6 @@ namespace E3Core.Data
                 //nothing to update here
             }
 
-            if (!String.IsNullOrWhiteSpace(CheckFor))
-            {
-                if (MQ.Query<bool>($"${{Bool[${{AltAbility[{CheckFor}].Spell}}]}}"))
-                {
-                    CheckForID = MQ.Query<Int32>($"${{AltAbility[{CheckFor}].Spell.ID}}");
-                }
-                else if (MQ.Query<bool>($"${{Bool[${{Spell[{CheckFor}].ID}}]}}"))
-                {
-                    CheckForID = MQ.Query<Int32>($"${{Spell[{CheckFor}].ID}}");
-                }
-            }
             foreach(string key in CheckForCollection.Keys.ToList())
             {
                 Int32 tcID = 0;
@@ -703,7 +688,6 @@ namespace E3Core.Data
         public Int32 SpellGem;
         public Int32 GiveUpTimer;
         public Int32 MaxTries = 5;
-        public String CheckFor = String.Empty;
         public Dictionary<string, Int32> CheckForCollection = new Dictionary<string, int>();
         public Int32 Duration;
         public Int32 DurationTotalSeconds;
@@ -751,7 +735,6 @@ namespace E3Core.Data
         public string StackRequestItem = String.Empty;
 		public Dictionary<string, Int64> StackSpellCooldown = new Dictionary<string, long>();
 		public Boolean GiftOfMana;
-        public Int32 CheckForID;
         public Int32 SpellID;
         public Int32 PctAggro;
         public String Zone = "All";

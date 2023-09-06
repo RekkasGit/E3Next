@@ -523,20 +523,6 @@ namespace E3Core.Processors
 					}
 
 					bool hasCheckFor = false;
-					if (!String.IsNullOrWhiteSpace(spell.CheckFor))
-					{
-						hasCheckFor = MQ.Query<bool>($"${{Bool[${{Me.Buff[{spell.CheckFor}]}}]}}");
-						if (hasCheckFor)
-						{
-							continue;
-						}
-						hasCheckFor = MQ.Query<bool>($"${{Bool[${{Me.Song[{spell.CheckFor}]}}]}}");
-						if (hasCheckFor)
-						{
-							continue;
-						}
-
-					}
 					bool shouldContinue = false;
 					if(spell.CheckForCollection.Count>0)
 					{
@@ -664,37 +650,6 @@ namespace E3Core.Processors
 
 
 						bool hasCheckFor = false;
-						if (!String.IsNullOrWhiteSpace(spell.CheckFor))
-						{
-							hasCheckFor = MQ.Query<bool>($"${{Bool[${{Me.Buff[{spell.CheckFor}]}}]}}");
-							if (!hasCheckFor)
-							{
-								hasCheckFor = MQ.Query<bool>($"${{Bool[${{Me.Song[{spell.CheckFor}]}}]}}");
-								if (hasCheckFor)
-								{
-									Int64 buffDuration = MQ.Query<Int64>($"${{Me.Song[{spell.CheckFor}].Duration}}");
-									if (buffDuration < 1000)
-									{
-										buffDuration = 1000;
-									}
-									//don't let the refresh update this
-									UpdateBuffTimers(s.ID, spell, 3000, buffDuration,true);
-									continue;
-								}
-							}
-							else
-							{
-								Int64 buffDuration = MQ.Query<Int64>($"${{Me.Buff[{spell.CheckFor}].Duration}}");
-								if (buffDuration < 1000)
-								{
-									buffDuration = 1000;
-								}
-								UpdateBuffTimers(s.ID, spell, 3000, buffDuration,true);
-								continue;
-							}
-
-
-						}
 						bool shouldContinue = false;
 						if (spell.CheckForCollection.Count > 0)
 						{
@@ -785,17 +740,6 @@ namespace E3Core.Processors
 						Int32 buffCount = MQ.Query<Int32>("${Me.Pet.BuffCount}");
 						bool hasCheckFor = false;
 						bool hasCachedCheckFor = false;
-						if (!String.IsNullOrWhiteSpace(spell.CheckFor))
-						{
-							hasCheckFor = MQ.Query<bool>($"${{Bool[${{Me.Pet.Buff[{spell.CheckFor}]}}]}}");
-							hasCachedCheckFor = MQ.Query<bool>($"${{Bool[${{Spawn[${{Me.Pet.ID}}].Buff[{spell.CheckFor}]}}]}}");
-							if (hasCheckFor || hasCachedCheckFor)
-							{
-
-								UpdateBuffTimers(s.ID, spell, 3000, -1,true);
-								continue;
-							}
-						}
 						bool shouldContinue = false;
 						if (spell.CheckForCollection.Count > 0)
 						{
@@ -879,20 +823,6 @@ namespace E3Core.Processors
 						if (isABot)
 						{
 
-							//its one of our bots, we can directly access short buffs
-							if (!String.IsNullOrWhiteSpace(spell.CheckFor))
-							{
-								bool hasCheckFor = findBuffList(spell.CastTarget).Contains(spell.CheckForID);
-								//can't check for target song buffs, be aware. will have to check netbots. 
-								if (hasCheckFor)
-								{
-									//can't see the time, just set it for this time to recheck
-									//3 seconds
-									UpdateBuffTimers(s.ID, spell, 3000, -1, true);
-									continue;
-								}
-
-							}
 							bool shouldContinue = false;
 							if (spell.CheckForCollection.Count > 0)
 							{

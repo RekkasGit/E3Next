@@ -160,13 +160,19 @@ namespace E3Core.Processors
                             continue;
                         }
                     }
-                    if (!String.IsNullOrWhiteSpace(burn.CheckFor))
-                    {
-                        if (MQ.Query<bool>($"${{Bool[${{Me.Buff[{burn.CheckFor}]}}]}}") || MQ.Query<bool>($"${{Bool[${{Me.Song[{burn.CheckFor}]}}]}}"))
-                        {
-                            continue;
-                        }
-                    }
+                    bool shouldContinue = false;
+					if (burn.CheckForCollection.Count > 0)
+					{
+						foreach (var checkforItem in burn.CheckForCollection.Keys)
+						{
+							if (MQ.Query<bool>($"${{Bool[${{Me.Buff[{checkforItem}]}}]}}") || MQ.Query<bool>($"${{Bool[${{Me.Song[{checkforItem}]}}]}}"))
+							{
+                                shouldContinue = true;
+								break;
+							}
+						}
+						if (shouldContinue) { continue; }
+					}
 
                     if (Casting.CheckReady(burn))
                     {

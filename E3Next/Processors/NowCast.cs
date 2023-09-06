@@ -9,6 +9,7 @@ using System.Runtime.CompilerServices;
 using System.Security.Cryptography;
 using System.Text;
 using System.Threading.Tasks;
+using System.Xml.Linq;
 
 namespace E3Core.Processors
 {
@@ -150,14 +151,20 @@ namespace E3Core.Processors
                             return CastReturn.CAST_IFFAILURE;
                         }
                     }
-                    if (!String.IsNullOrWhiteSpace(spell.CheckFor))
-                    {
-                        Casting.TrueTarget(targetid);
-                        if (MQ.Query<bool>($"${{Bool[${{Target.Buff[{spell.CheckFor}]}}]}}"))
-                        {
-                            return CastReturn.CAST_TAKEHOLD;
-                        }
-                    }
+					
+					if (spell.CheckForCollection.Count > 0)
+					{
+						foreach (var checkforItem in spell.CheckForCollection.Keys)
+						{
+							Casting.TrueTarget(targetid);
+							if (MQ.Query<bool>($"${{Bool[${{Target.Buff[{checkforItem}]}}]}}"))
+							{
+								return CastReturn.CAST_TAKEHOLD;
+							}
+						}
+						
+					}
+					
 				    recast:
 					if (Casting.InRange(targetid, spell) && Casting.CheckReady(spell) && Casting.CheckMana(spell))
                     {
