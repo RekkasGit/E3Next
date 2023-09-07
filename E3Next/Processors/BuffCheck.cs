@@ -98,7 +98,12 @@ namespace E3Core.Processors
 					}
 				}
 			});
+			EventProcessor.RegisterCommand("/e3clearbufftimers", (x) =>
+			{
+				E3.Bots.Broadcast("Clearing buff timers");
+				ClearBuffTimers();
 
+			});
 
 
 			EventProcessor.RegisterCommand("/blockbuff", (x) =>
@@ -583,8 +588,16 @@ namespace E3Core.Processors
 		private static void BuffBots(List<Data.Spell> buffs, bool usePets = false)
 		{
 			if (e3util.IsActionBlockingWindowOpen()) return;
+			Logging.LogLevels previousLogLevel = Logging.LogLevels.Error;
+
 			foreach (var spell in buffs)
 			{
+				//if (spell.Debug)
+				//{
+				//	previousLogLevel = Logging.MinLogLevelTolog;
+				//	Logging.MinLogLevelTolog = Logging.DefaultLogLevel;
+
+				//}
 				Spawn s;
 				Spawn master = null;
 
@@ -737,7 +750,7 @@ namespace E3Core.Processors
 					else if (s.ID == MQ.Query<Int32>("${Me.Pet.ID}"))
 					{
 						//its my pet
-						Int32 buffCount = MQ.Query<Int32>("${Me.Pet.BuffCount}");
+					
 						bool hasCheckFor = false;
 						bool hasCachedCheckFor = false;
 						bool shouldContinue = false;
@@ -780,8 +793,8 @@ namespace E3Core.Processors
 							else
 							{
 								//lets verify what we have.
-							
 
+								Int32 buffCount = MQ.Query<Int32>("${Me.Pet.BuffCount}");
 								if (buffCount < 31)
 								{
 									MQ.Delay(300);
@@ -891,6 +904,22 @@ namespace E3Core.Processors
 							//its someone not in our buff group, do it the hacky way.
 							Casting.TrueTarget(s.ID);
 							MQ.Delay(2000, "${Target.BuffsPopulated}");
+							bool shouldContinue = false;
+							if (spell.CheckForCollection.Count > 0)
+							{
+								foreach (var checkforItem in spell.CheckForCollection.Keys)
+								{
+									Int64 timeinMS  = MQ.Query<Int64>($"${{Target.Buff[${{Spell[{checkforItem}]}}]}}");
+									if(timeinMS> 0)
+									{
+										//they have the check for
+										UpdateBuffTimers(s.ID, spell, timeinMS, timeinMS, true);
+										shouldContinue = true;
+										break;
+									}
+								}
+								if (shouldContinue) { continue; }
+							}
 
 							bool willStack = MQ.Query<bool>($"${{Spell[{spell.SpellName}].StacksTarget}}");
 							//MQ.Write($"Will stack:{spell.SpellName}:" + willStack);
@@ -1433,6 +1462,19 @@ namespace E3Core.Processors
 				_nextBotCacheCheckTime = Core.StopWatch.ElapsedMilliseconds + _nextBotCacheCheckTimeInterval;
 			}
 		}
+
+
+		public static void ClearBuffTimers()
+		{
+			foreach(var pair in _buffTimers)
+			{
+
+				pair.Value.Dispose();
+			}
+			_buffTimers.Clear();
+
+		}
+
 		/// <summary>
 		/// 
 		/// </summary>
