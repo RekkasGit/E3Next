@@ -909,7 +909,7 @@ namespace E3Core.Processors
 							{
 								foreach (var checkforItem in spell.CheckForCollection.Keys)
 								{
-									Int64 timeinMS  = MQ.Query<Int64>($"${{Target.Buff[${{Spell[{checkforItem}]}}]}}");
+									Int64 timeinMS  = MQ.Query<Int64>($"${{Target.Buff[${{Spell[{checkforItem}]}}].Duration}}");
 									if(timeinMS> 0)
 									{
 										//they have the check for
