@@ -624,9 +624,30 @@ namespace E3Core.Processors
                                     return CastReturn.CAST_INTERRUPTED;
                                 }
                             }
+
+                            if (EventProcessor.CommandList.ContainsKey("/e3bc") && EventProcessor.CommandList["/e3bc"].queuedEvents.Count > 0){
+                                EventProcessor.ProcessEventsInQueues("/e3bc");
+                            }
+							if (EventProcessor.CommandList.ContainsKey("/e3bcg") && EventProcessor.CommandList["/e3bcg"].queuedEvents.Count > 0)
+							{
+								EventProcessor.ProcessEventsInQueues("/e3bcg");
+							}
+							if (EventProcessor.CommandList.ContainsKey("/e3bct") && EventProcessor.CommandList["/e3bct"].queuedEvents.Count > 0)
+							{
+								EventProcessor.ProcessEventsInQueues("/e3bct");
+							}
+							if (EventProcessor.CommandList.ContainsKey("/e3bcga") && EventProcessor.CommandList["/e3bcga"].queuedEvents.Count > 0)
+							{
+								EventProcessor.ProcessEventsInQueues("/e3bcga");
+							}
+							if (EventProcessor.CommandList.ContainsKey("/e3bcaa") && EventProcessor.CommandList["/e3bcaa"].queuedEvents.Count > 0)
+							{
+								EventProcessor.ProcessEventsInQueues("/e3bcaa");
+							}
 							//process any commands we need to process from the UI
 							PubClient.ProcessRequests();
 							MQ.Delay(50);
+
                             if(E3.IsPaused())
                             {
                                 Interrupt();
