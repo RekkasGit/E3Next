@@ -27,7 +27,7 @@ namespace E3Core.Processors
         Boolean HasShortBuff(string name, Int32 buffid);
         void BroadcastCommand(string command, bool noparse = false, CommandMatch match = null);
         void BroadcastCommandToGroup(string command, CommandMatch match=null, bool noparse = false);
-        void BroadcastCommandToPerson(string person, string command);
+        void BroadcastCommandToPerson(string person, string command, bool noparse = false);
         void Broadcast(string message);
         List<Int32> BuffList(string name);
         List<Int32> PetBuffList(string name);
@@ -134,7 +134,7 @@ namespace E3Core.Processors
                 
             }
         }
-        public void BroadcastCommandToPerson(string person, string command)
+        public void BroadcastCommandToPerson(string person, string command, bool noparse = false)
         {
             person = e3util.FirstCharToUpper(person);
 			MQ.Cmd($"/bct {person} /{command}");
@@ -388,7 +388,7 @@ namespace E3Core.Processors
                     message = _stringBuilder.ToString().Trim();
                     if(message.StartsWith(@"/"))
                     {
-                        BroadcastCommandAll(message);
+                        BroadcastCommandAll(message,true);
                     }
                     else
                     {
@@ -409,7 +409,7 @@ namespace E3Core.Processors
 
 					}
 					command = _stringBuilder.ToString().Trim();
-					BroadcastCommandToGroup(command);
+					BroadcastCommandToGroup(command,null,true);
 
 				}
 				
@@ -428,7 +428,7 @@ namespace E3Core.Processors
 
 					}
 					command = _stringBuilder.ToString().Trim();
-					BroadcastCommandToPerson(person, command);
+					BroadcastCommandToPerson(person, command,true);
 				}
 			});
 			EventProcessor.RegisterCommand("/e3bcga", (x) =>
@@ -443,7 +443,7 @@ namespace E3Core.Processors
 
 					}
 					command = _stringBuilder.ToString().Trim();
-					BroadcastCommandToGroupAll(command);
+					BroadcastCommandToGroupAll(command,null,true);
 		            
                 }
 			});
@@ -459,7 +459,7 @@ namespace E3Core.Processors
 
 					}
 					command = _stringBuilder.ToString().Trim();
-                    BroadcastCommandAll(command);
+                    BroadcastCommandAll(command,true);
 
 				}
 			});
@@ -599,7 +599,7 @@ namespace E3Core.Processors
         public void Broadcast(string message)
         {
             //have to parse out all the MQ macro information
-            message = MQ.Query<string>(message);
+            //message = MQ.Query<string>(message);
 			PubServer.AddTopicMessage("BroadCastMessage", $"{E3.CurrentName}:{message}");
 		//	MQ.Write($"\ar<\ay{E3.CurrentName}\ar> \aw{message}");
 		}
@@ -735,10 +735,14 @@ namespace E3Core.Processors
 			PubServer.AddTopicMessage("OnCommand-GroupAll", $"{E3.CurrentName}:{noparse}:{command}");
 		}
 
-		public void BroadcastCommandToPerson(string person, string command)
+        public void BroadcastCommandToPerson(string person, string command, bool noparse = false)
 		{
             person = e3util.FirstCharToUpper(person);
-			command = MQ.Query<string>(command);
+            if (!noparse)
+			{
+				command = MQ.Query<string>(command);
+			}
+
 			PubServer.AddTopicMessage("OnCommand-" + person, $"{E3.CurrentName}:{false}:{command}");
 		}
         List<int> _buffListReturnValue = new List<int>();
@@ -1029,7 +1033,7 @@ namespace E3Core.Processors
             
         }
 
-        public void BroadcastCommandToPerson(string person, string command)
+        public void BroadcastCommandToPerson(string person, string command,bool noparse = false)
         {
             MQ.Cmd($"/dex {person} {command}");
         }

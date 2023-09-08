@@ -133,7 +133,6 @@ namespace E3Core.Classes
             //go through the ifs and see if we should change the melodies
             foreach(var melodyCheck in E3.CharacterSettings.Bard_MelodyIfs)
             {
-                //TODO: Fix this so it goes through the main castig ifs eventually.
                 bool melodyTrue = Casting.Ifs(melodyCheck.MelodyIf);
                 if(melodyTrue)
                 {
