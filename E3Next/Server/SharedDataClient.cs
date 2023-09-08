@@ -228,7 +228,6 @@ namespace E3Core.Server
 					subSocket.Subscribe("${Me."); //all Me stuff should be subscribed to
 					MQ.Write("\agShared Data Client: Connecting to user:" + user + " on port:" + port + " server:"+serverName); ;
 
-					Int32 messageCount = 0;
 					while (Core.IsProcessing)
 					{
 						string messageTopicReceived;
@@ -332,7 +331,7 @@ namespace E3Core.Server
 									lastFileUpdate = currentTime;
 								}
 							}
-							catch (Exception ex)
+							catch (Exception)
 							{
 								//file deleted most likely, kill the thread
 								MQ.Write("\agShared Data Client: Issue reading port file, shutting down thread for toon:" + user);

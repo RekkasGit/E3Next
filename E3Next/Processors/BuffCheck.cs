@@ -43,7 +43,7 @@ namespace E3Core.Processors
 		private static Int64 _nextInstantBuffRefresh = 0;
 		private static Int64 _nextInstantRefreshTimeInterval = 250;
 		private static List<Int32> _keyList = new List<int>();
-		private static Int64 _printoutTimer;
+		//private static Int64 _printoutTimer;
 		private static Data.Spell _selectAura = null;
 		private static Int64 _nextBuffCheck = 0;
 
@@ -588,7 +588,7 @@ namespace E3Core.Processors
 		private static void BuffBots(List<Data.Spell> buffs, bool usePets = false)
 		{
 			if (e3util.IsActionBlockingWindowOpen()) return;
-			Logging.LogLevels previousLogLevel = Logging.LogLevels.Error;
+			//Logging.LogLevels previousLogLevel = Logging.LogLevels.Error;
 
 			foreach (var spell in buffs)
 			{

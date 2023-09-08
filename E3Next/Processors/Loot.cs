@@ -262,7 +262,7 @@ namespace E3Core.Processors
                 //lets check if we can loot.
                 Movement.PauseMovement();
 
-                bool destroyCorpses = false;
+               // bool destroyCorpses = false;
 
                 foreach (var c in corpses)
                 {

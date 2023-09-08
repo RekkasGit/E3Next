@@ -810,7 +810,7 @@ namespace MonoCore
 			{
 				_MQ2MonoVersion = Decimal.Parse(Core.mq_GetMQ2MonoVersion());
 			}
-			catch (Exception ex)
+			catch (Exception)
 			{
 				//old version, does not have mq2mono method, warn user
 			}

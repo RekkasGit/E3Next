@@ -28,7 +28,7 @@ namespace E3Core.Processors
         void BroadcastCommand(string command, bool noparse = false, CommandMatch match = null);
         void BroadcastCommandToGroup(string command, CommandMatch match=null, bool noparse = false);
         void BroadcastCommandToPerson(string person, string command, bool noparse = false);
-        void Broadcast(string message);
+        void Broadcast(string message, bool noparse = false);
         List<Int32> BuffList(string name);
         List<Int32> PetBuffList(string name);
         Int32 BaseDebuffCounters(string name);
@@ -293,9 +293,17 @@ namespace E3Core.Processors
 
         }
 
-        public void Broadcast(string message)
+        public void Broadcast(string message, bool noparse = false)
         {
-            MQ.Cmd($"/bc {message}");
+            if(noparse)
+            {
+				MQ.Cmd($"/noparse /bc {message}");
+			}
+            else
+            {
+				MQ.Cmd($"/bc {message}");
+			}
+           
         }
 
 		//NOTE* these are the counters on the original spell , not the CURRENT counter value.
@@ -392,7 +400,7 @@ namespace E3Core.Processors
                     }
                     else
                     {
-						Broadcast(message);
+						Broadcast(message,true);
 
 					}
 				}
@@ -596,10 +604,13 @@ namespace E3Core.Processors
             return NetMQServer.SharedDataClient.TopicUpdates.Keys.ToList();
 		}
 
-        public void Broadcast(string message)
+        public void Broadcast(string message, bool noparse = false)
         {
-            //have to parse out all the MQ macro information
-            //message = MQ.Query<string>(message);
+			//have to parse out all the MQ macro information
+			if (!noparse)
+			{
+				message = MQ.Query<string>(message);
+			}
 			PubServer.AddTopicMessage("BroadCastMessage", $"{E3.CurrentName}:{message}");
 		//	MQ.Write($"\ar<\ay{E3.CurrentName}\ar> \aw{message}");
 		}
@@ -970,9 +981,17 @@ namespace E3Core.Processors
             return _connectedBots;
         }
 
-        public void Broadcast(string message)
+        public void Broadcast(string message, bool noparse = false)
         {
-            MQ.Cmd($"/dgt {message}");
+            if(noparse)
+            {
+				MQ.Cmd($"/dgt {message}");
+			}
+            else
+            {
+				MQ.Cmd($"/noparse /dgt {message}");
+			}
+           
         }
 
         public void BroadcastCommand(string command, bool noparse = false, CommandMatch match = null)

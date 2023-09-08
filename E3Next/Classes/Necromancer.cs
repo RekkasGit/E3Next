@@ -39,7 +39,7 @@ namespace E3Core.Classes
                         MQ.Cmd("/stand");
 
                         //recast FD
-                        bool FD = false;
+                      
                         Spell s;
                         if (!Spell.LoadedSpellsByName.TryGetValue("Improved Death Peace", out s))
                         {
@@ -48,14 +48,14 @@ namespace E3Core.Classes
                         if (Casting.CheckReady(s) && Casting.CheckMana(s))
                         {
                             Casting.Cast(0, s);
-                            FD = true;
+                          
 
                         }
                         else if (!Spell.LoadedSpellsByName.TryGetValue("Death Peace", out s))
                         {
                             s = new Spell("Death Peace");
                             Casting.Cast(0, s);
-                            FD = true;
+                          
                         }
                     }
                 });

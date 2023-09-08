@@ -27,8 +27,8 @@ namespace E3Core.Processors
         public static List<Data.Spell> _swarmPets = new List<Spell>();
         public static string _epicWeaponName = String.Empty;
         public static string _anguishBPName = String.Empty;
-        private static Int64 _nextBurnCheck = 0;
-        private static Int64 _nextBurnCheckInterval = 50;
+        //private static Int64 _nextBurnCheck = 0;
+        //private static Int64 _nextBurnCheckInterval = 50;
 
 
         private static Int64 _quickburnStartTimeStamp = 0;
