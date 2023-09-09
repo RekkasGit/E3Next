@@ -107,6 +107,8 @@ namespace E3Core.Server
 				EventProcessor.ProcessEventsInQueues("/e3bcaaz");
 			}
 		}
+		//primary E3N C# thread, we pull off the collections that was populated by the network thread
+		//this way we can do queries/command/etc.
 		public void ProcessCommands()
 		{
 			while (CommandQueue.Count > 0)
@@ -264,6 +266,8 @@ namespace E3Core.Server
 
 			}
 		}
+		//reading the commands off the wire from this thread, to post to the main thread collection
+		//with proper enums
 		public void Process(string user, string port,string serverName, string fileName)
 		{
 			System.DateTime lastFileUpdate = System.IO.File.GetLastWriteTime(fileName);

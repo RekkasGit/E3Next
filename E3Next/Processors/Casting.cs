@@ -95,8 +95,11 @@ namespace E3Core.Processors
                         }
 						MQ.Write($"\ag{spell.CastName} \am{targetName} \ao{targetID}");
 					}
-						
+                    BeforeEventCheck(spell);
+                    BeforeSpellCheck(spell,targetID);
 					MQ.Cmd($"/alt activate {spell.CastID}");
+                    AfterSpellCheck(spell,targetID);
+					AfterEventCheck(spell);
 					UpdateAAInCooldown(spell);
 					E3.ActionTaken = true;
                     MQ.Delay(200); //necessary to keep things... in order
@@ -314,32 +317,8 @@ namespace E3Core.Processors
                             }
                             TrueTarget(targetID);
                         }
-                        _log.Write("Checking BeforeEvent...");
-                        if (!String.IsNullOrWhiteSpace(spell.BeforeEvent))
-                        {
-                            _log.Write($"Doing BeforeEvent:{spell.BeforeEvent}");
-                            MQ.Cmd($"/docommand {spell.BeforeEvent}");
-                            if (spell.BeforeEvent.StartsWith("/exchange", StringComparison.OrdinalIgnoreCase)) MQ.Delay(500);
- 
-                        }
 
-                        _log.Write("Checking BeforeSpell...");
-                        if (!String.IsNullOrWhiteSpace(spell.BeforeSpell))
-                        {
-                            if (spell.BeforeSpellData == null)
-                            {
-                                spell.BeforeSpellData = new Data.Spell(spell.BeforeSpell);
-                            }
-                            //Wait for GCD if spell
-
-                            _log.Write("Doing AfterSpell:{spell.AfterSpell}");
-                            if (CheckReady(spell.BeforeSpellData) && CheckMana(spell.BeforeSpellData))
-                            {
-                                Casting.Cast(targetID, spell.BeforeSpellData);
-                            }
-                            _log.Write($"Doing BeforeSpell:{spell.BeforeSpell}");
-
-                        }
+                        BeforeEventCheck(spell);
 
                         //remove item from cursor before casting
                         _log.Write("Checking for item on cursor...");
@@ -349,6 +328,7 @@ namespace E3Core.Processors
                             e3util.ClearCursor();
                         }
 
+                        BeforeSpellCheck(spell, targetID);
 
                         //From here, we actually start casting the spell. 
                         _log.Write("Checking for spell type to run logic...");
@@ -707,31 +687,8 @@ namespace E3Core.Processors
                         }
                         //MQ.Write($"{spell.CastName} Result:{returnValue.ToString()}");
 
-                        //is an after spell configured? lets do that now.
-                        _log.Write("Checking AfterSpell...");
-                        if (!String.IsNullOrWhiteSpace(spell.AfterSpell))
-                        {
-
-                            if (spell.AfterSpellData == null)
-                            {
-                                spell.AfterSpellData = new Data.Spell(spell.AfterSpell);
-                            }
-                            //Wait for GCD if spell
-
-                            _log.Write("Doing AfterSpell:{spell.AfterSpell}");
-                            if (CheckReady(spell.AfterSpellData) && CheckMana(spell.AfterSpellData))
-                            {
-                                Casting.Cast(targetID, spell.AfterSpellData);
-                            }
-                        }
-                        //after event, after all things are done               
-                        _log.Write("Checking AfterEvent...");
-                        if (!String.IsNullOrWhiteSpace(spell.AfterEvent))
-                        {
-                            _log.Write($"Doing AfterEvent:{spell.AfterEvent}");
-                            MQ.Cmd($"/docommand {spell.AfterEvent}");
-                        }
-                     
+                        AfterSpellCheck(spell, targetID);
+                        AfterEventCheck(spell);
                         //TODO: bard resume twist
 
                         E3.ActionTaken = true;
@@ -767,7 +724,70 @@ namespace E3Core.Processors
 				}
 			}
         }
-       
+        private static void BeforeEventCheck(Spell spell)
+        {
+			_log.Write("Checking BeforeEvent...");
+			if (!String.IsNullOrWhiteSpace(spell.BeforeEvent))
+			{
+				_log.Write($"Doing BeforeEvent:{spell.BeforeEvent}");
+				MQ.Cmd($"/docommand {spell.BeforeEvent}");
+				if (spell.BeforeEvent.StartsWith("/exchange", StringComparison.OrdinalIgnoreCase)) MQ.Delay(500);
+
+			}
+
+		}
+		private static void AfterEventCheck(Spell spell)
+        {
+
+			//after event, after all things are done               
+			_log.Write("Checking AfterEvent...");
+			if (!String.IsNullOrWhiteSpace(spell.AfterEvent))
+			{
+				_log.Write($"Doing AfterEvent:{spell.AfterEvent}");
+				MQ.Cmd($"/docommand {spell.AfterEvent}");
+			}
+
+		}
+		private static void AfterSpellCheck(Spell spell,Int32 targetID)
+        {
+			//is an after spell configured? lets do that now.
+			_log.Write("Checking AfterSpell...");
+			if (!String.IsNullOrWhiteSpace(spell.AfterSpell))
+			{
+
+				if (spell.AfterSpellData == null)
+				{
+					spell.AfterSpellData = new Data.Spell(spell.AfterSpell);
+				}
+				//Wait for GCD if spell
+
+				_log.Write("Doing AfterSpell:{spell.AfterSpell}");
+				if (CheckReady(spell.AfterSpellData) && CheckMana(spell.AfterSpellData))
+				{
+					Casting.Cast(targetID, spell.AfterSpellData);
+				}
+			}
+		}
+        private static void BeforeSpellCheck(Spell spell,Int32 targetID)
+        {
+			_log.Write("Checking BeforeSpell...");
+			if (!String.IsNullOrWhiteSpace(spell.BeforeSpell))
+			{
+				if (spell.BeforeSpellData == null)
+				{
+					spell.BeforeSpellData = new Data.Spell(spell.BeforeSpell);
+				}
+				//Wait for GCD if spell
+
+				_log.Write("Doing AfterSpell:{spell.AfterSpell}");
+				if (CheckReady(spell.BeforeSpellData) && CheckMana(spell.BeforeSpellData))
+				{
+					Casting.Cast(targetID, spell.BeforeSpellData);
+				}
+				_log.Write($"Doing BeforeSpell:{spell.BeforeSpell}");
+
+			}
+		}
         private static bool NowCastReady()
         {
             if(((EventProcessor.CommandList.ContainsKey("/nowcast") && EventProcessor.CommandList["/nowcast"].queuedEvents.Count > 0) || PubClient.NowCastInQueue()))
