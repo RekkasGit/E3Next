@@ -81,7 +81,7 @@ namespace E3Core.Processors
                             Assist.AssistOn(s.ID, Zoning.CurrentZone.Id);
                             if (FaceTarget)
                             {
-                                MQ.Cmd("/face fast");
+                                MQ.Cmd("/squelch /face fast");
                             }
                             if (StickTarget)
                             {
