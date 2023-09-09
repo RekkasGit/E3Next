@@ -214,7 +214,8 @@ namespace E3Core.Processors
             try
             {
                 InStateUpdate = true;
-				NetMQServer.SharedDataClient.ProcessCommands();
+				NetMQServer.SharedDataClient.ProcessCommands(); //recieving data
+				NetMQServer.SharedDataClient.ProcessE3BCCommands();//sending out data
 
 				if (e3util.ShouldCheck(ref _nextBuffUpdateCheckTime, _nextBuffUpdateTimeInterval))
 				{

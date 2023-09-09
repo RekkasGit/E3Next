@@ -1365,6 +1365,7 @@ namespace MonoCore
 			if (E3.IsInit && !E3.InStateUpdate)
 			{
 				E3.StateUpdates();
+                
 			}
 			SinceLastDelay = Core.StopWatch.ElapsedMilliseconds;
         }
