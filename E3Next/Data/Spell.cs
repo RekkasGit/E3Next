@@ -252,7 +252,7 @@ namespace E3Core.Data
                             var keyData = section[ifKey];
                             if (!String.IsNullOrWhiteSpace(keyData))
                             {
-                                Ifs = keyData;
+                                Ifs = string.IsNullOrWhiteSpace(Ifs) ? keyData : Ifs + " && " + keyData;
                             }
                         }
                     }
