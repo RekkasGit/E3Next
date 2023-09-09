@@ -298,6 +298,7 @@ namespace E3Core.Processors
                 }
 
                 E3.Bots.Broadcast("\agFinished looting area");
+                MQ.Delay(100); // Wait for fading corpses to disappear
             }
         }
         private static bool SafeToLoot()
