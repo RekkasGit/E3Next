@@ -246,7 +246,7 @@ namespace E3Core.Processors
                                     {
                                         MQ.Cmd("/doability Taunt");
 
-                                        E3.Bots.Broadcast($"Taunting {s.CleanName}: {tt.ClassShortName} - {tt.CleanName} has agro and not a tank");
+                                        if (E3.CharacterSettings.Misc_DebugLogLevel > 0) E3.Bots.Broadcast($"Taunting {s.CleanName}: {tt.ClassShortName} - {tt.CleanName} has agro and not a tank");
 
                                     }
                                     else if (MQ.Query<bool>("${Me.AltAbilityReady[Divine Stun]}"))

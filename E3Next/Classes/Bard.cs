@@ -186,7 +186,7 @@ namespace E3Core.Classes
             }
             if (Casting.CheckReady(songToPlay))
             {
-                MQ.Write($"\atTwist \ag{songToPlay.SpellName}");
+                if (E3.CharacterSettings.Misc_DebugLogLevel > 0) MQ.Write($"\atTwist \ag{songToPlay.SpellName}");
                 Casting.Sing(0, songToPlay);
             }
             else
@@ -207,7 +207,7 @@ namespace E3Core.Classes
             CharacterSettings.LoadKeyData($"{melodyName} Melody", "Song", E3.CharacterSettings.ParsedData, _songs);
             if(_songs.Count>0)
             {
-                MQ.Write($"\aoStart Melody:\ag{melodyName}");
+                if (E3.CharacterSettings.Misc_DebugLogLevel > 0) MQ.Write($"\aoStart Melody:\ag{melodyName}");
                 MQ.Cmd("/stopsong");
                 _forceOverride = force;
                 _playingMelody = true;
