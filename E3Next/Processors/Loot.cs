@@ -297,7 +297,7 @@ namespace E3Core.Processors
                     
                 }
 
-                E3.Bots.Broadcast("\agFinished looting area");
+                if (E3.CharacterSettings.Misc_DebugLogLevel > 0) E3.Bots.Broadcast("\agFinished looting area");
             }
         }
         private static bool SafeToLoot()
