@@ -519,7 +519,7 @@ namespace E3Core.Processors
 
                 if (!AllowControl)
                 {
-                    MQ.Cmd($"/face fast id {AssistTargetID}");
+                    MQ.Cmd($"/squelch /face fast id {AssistTargetID}");
                 }
 
                 if (MQ.Query<Int32>("${Me.Pet.ID}") > 0)
