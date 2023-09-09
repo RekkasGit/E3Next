@@ -598,7 +598,7 @@ namespace E3Core.Processors
                     {
                         Movement.PauseMovement();
                         Int32 currentZone = MQ.Query<Int32>("${Zone.ID}");
-                        MQ.Cmd($"/face fast heading {heading * -1}");
+                        MQ.Cmd($"/squelch /face fast heading {heading * -1}");
                         MQ.Delay(600);
                         MQ.Cmd("/nomodkey /keypress forward hold");
                         MQ.Delay(3000);
@@ -621,7 +621,7 @@ namespace E3Core.Processors
                     E3.Bots.BroadcastCommandToGroup($"/rtz {heading}",x);
                     if (e3util.FilterMe(x)) return;
                     MQ.Delay(1000);
-                    MQ.Cmd($"/face fast heading {heading * -1}");
+                    MQ.Cmd($"/squelch /face fast heading {heading * -1}");
                     MQ.Cmd("/nomodkey /keypress forward hold");
 
                 }
