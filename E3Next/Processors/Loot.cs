@@ -227,10 +227,6 @@ namespace E3Core.Processors
         }
         private static void LootArea()
         {
-            Double startX = MQ.Query<Double>("${Me.X}");
-            Double startY = MQ.Query<Double>("${Me.Y}");
-            Double startZ = MQ.Query<Double>("${Me.Z}");
-
             List<Spawn> corpses = new List<Spawn>();
             foreach (var spawn in _spawns.Get())
             {
@@ -246,58 +242,83 @@ namespace E3Core.Processors
                     }
                 }
             }
-            if (corpses.Count==0)
+            if (corpses.Count == 0)
             {
                 return;
             }
-                //sort all the corpses, removing the ones we cannot loot
-             corpses = corpses.OrderBy(x => x.Distance).ToList();
+            //sort all the corpses, removing the ones we cannot loot
+            corpses = corpses.OrderBy(x => x.Distance).ToList();
 
             if (corpses.Count > 0)
             {
                 MQ.Cmd("/squelch /hidecorpse looted");
                 MQ.Delay(100);
 
-
                 //lets check if we can loot.
                 Movement.PauseMovement();
 
                 bool destroyCorpses = false;
-
-                foreach (var c in corpses)
+                while (true)
                 {
-					
-					//allow eq time to send the message to us
-					e3util.YieldToEQ();
+                    corpses = new List<Spawn>();
+                    foreach (var spawn in _spawns.Get())
+                    {
+                        if (spawn.Distance3D < E3.GeneralSettings.Loot_CorpseSeekRadius && spawn.DeityID == 0 && spawn.TypeDesc == "Corpse")
+                        {
+                            if (!Zoning.CurrentZone.IsSafeZone)
+                            {
+                                if (!_unlootableCorpses.Contains(spawn.ID))
+                                {
+                                    corpses.Add(spawn);
+                                }
+                            }
+                        }
+                    }
+                    if (corpses.Count == 0)
+                    {
+                        break;  // No more corpses to process
+                    }
+
+                    //sort all the corpses, removing the ones we cannot loot
+                    var c = corpses.OrderBy(x => x.Distance).FirstOrDefault(); // Take the nearest corpse.
+
+                    if (c == null)
+                    {
+                        break;  // No more valid corpses found
+                    }
+                    //allow eq time to send the message to us
+                    e3util.YieldToEQ();
                     if (e3util.IsShuttingDown() || E3.IsPaused()) return;
                     EventProcessor.ProcessEventsInQueues("/lootoff");
-					EventProcessor.ProcessEventsInQueues("/assistme");
-					if (!E3.CharacterSettings.Misc_AutoLootEnabled) return;
+                    EventProcessor.ProcessEventsInQueues("/assistme");
+                    if (!E3.CharacterSettings.Misc_AutoLootEnabled) return;
                     if (!E3.GeneralSettings.Loot_LootInCombat)
                     {
                         if (Basics.InCombat()) return;
                     }
-
-                    Casting.TrueTarget(c.ID);
-                    MQ.Delay(2000, "${Target.ID}");
-                   
-                    if(MQ.Query<bool>("${Target.ID}"))
+                    if (MQ.Query<int>($"${{Spawn[id {c.ID}].ID}}") == 0)
+                    {
+                        continue; // If spawn not updated try again 
+                    }
+                    MQ.Cmd("/target id " + c.ID);
+                    MQ.Delay(750, "${Target.ID}");
+                    if (MQ.Query<bool>("${Target.ID}"))
                     {
                         e3util.TryMoveToTarget();
-
+                        MQ.Delay(2250, "${Target.Distance3D} < 8"); // Give Time to get to Corpse 
+                        MQ.Cmd("/target id " + c.ID);
+                        MQ.Delay(100);
                         LootCorpse(c);
-                       
+
                         if (MQ.Query<bool>("${Window[LootWnd].Open}"))
                         {
                             MQ.Cmd("/nomodkey /notify LootWnd DoneButton leftmouseup");
                         }
-
-                        MQ.Delay(300);
+                        MQ.Delay(150);
                     }
-                    
                 }
-
                 E3.Bots.Broadcast("\agFinished looting area");
+                MQ.Delay(300); // Wait for fading corpses to disappear
             }
         }
         private static bool SafeToLoot()
