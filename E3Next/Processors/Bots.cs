@@ -396,11 +396,35 @@ namespace E3Core.Processors
                     message = _stringBuilder.ToString().Trim();
                     if(message.StartsWith(@"/"))
                     {
-                        BroadcastCommandAll(message,true);
+                        BroadcastCommand(message,true);
                     }
                     else
                     {
 						Broadcast(message,true);
+
+					}
+				}
+			});
+			EventProcessor.RegisterCommand("/e3bcz", (x) =>
+			{
+				if (x.args.Count > 0)
+				{
+
+					string message = string.Empty;
+					_stringBuilder.Clear();
+					foreach (var arg in x.args)
+					{
+						_stringBuilder.Append($"{arg} ");
+
+					}
+					message = _stringBuilder.ToString().Trim();
+					if (message.StartsWith(@"/"))
+					{
+						BroadcastCommandAllZoneNotMe(message, true);
+					}
+					else
+					{
+						BroadcastZone(message, true);
 
 					}
 				}
@@ -421,6 +445,23 @@ namespace E3Core.Processors
 
 				}
 				
+			});
+			EventProcessor.RegisterCommand("/e3bcgz", (x) =>
+			{
+				if (x.args.Count > 0)
+				{
+					string command = string.Empty;
+					_stringBuilder.Clear();
+					foreach (var arg in x.args)
+					{
+						_stringBuilder.Append($"{arg} ");
+
+					}
+					command = _stringBuilder.ToString().Trim();
+					BroadcastCommandToGroupZone(command, null, true);
+
+				}
+
 			});
 			EventProcessor.RegisterCommand("/e3bct", (x) =>
 			{
@@ -455,7 +496,23 @@ namespace E3Core.Processors
 		            
                 }
 			});
-			EventProcessor.RegisterCommand("/e3bcaa", (x) =>
+			EventProcessor.RegisterCommand("/e3bcgaz", (x) =>
+			{
+				if (x.args.Count > 0)
+				{
+					string command = string.Empty;
+					_stringBuilder.Clear();
+					foreach (var arg in x.args)
+					{
+						_stringBuilder.Append($"{arg} ");
+
+					}
+					command = _stringBuilder.ToString().Trim();
+					BroadcastCommandToGroupAllZone(command, null, true);
+
+				}
+			});
+			EventProcessor.RegisterCommand("/e3bca", (x) =>
 			{
 				if (x.args.Count > 0)
 				{
@@ -468,6 +525,22 @@ namespace E3Core.Processors
 					}
 					command = _stringBuilder.ToString().Trim();
                     BroadcastCommandAll(command,true);
+
+				}
+			});
+			EventProcessor.RegisterCommand("/e3bcaz", (x) =>
+			{
+				if (x.args.Count > 0)
+				{
+					string command = string.Empty;
+					_stringBuilder.Clear();
+					foreach (var arg in x.args)
+					{
+						_stringBuilder.Append($"{arg} ");
+
+					}
+					command = _stringBuilder.ToString().Trim();
+					BroadcastCommandAllZone(command, true);
 
 				}
 			});
@@ -614,8 +687,17 @@ namespace E3Core.Processors
 			PubServer.AddTopicMessage("BroadCastMessage", $"{E3.CurrentName}:{message}");
 		//	MQ.Write($"\ar<\ay{E3.CurrentName}\ar> \aw{message}");
 		}
-       
-        public void BroadcastCommand(string command, bool noparse = false, CommandMatch match = null)
+		public void BroadcastZone(string message, bool noparse = false)
+		{
+			//have to parse out all the MQ macro information
+			if (!noparse)
+			{
+				message = MQ.Query<string>(message);
+			}
+			PubServer.AddTopicMessage("BroadCastMessageZone", $"{E3.CurrentName}:{message}");
+			//	MQ.Write($"\ar<\ay{E3.CurrentName}\ar> \aw{message}");
+		}
+		public void BroadcastCommand(string command, bool noparse = false, CommandMatch match = null)
         {
 			if (match != null && match.filters.Count > 0)
 			{
@@ -654,7 +736,7 @@ namespace E3Core.Processors
 			}
 			PubServer.AddTopicMessage("OnCommand-All", $"{E3.CurrentName}:{noparse}:{command}");
 		}
-		public void BroadcastCommandAllNotMe(string command, bool noparse = false, CommandMatch match = null)
+		public void BroadcastCommandAllZone(string command, bool noparse = false, CommandMatch match = null)
 		{
 			if (match != null && match.filters.Count > 0)
 			{
@@ -671,7 +753,26 @@ namespace E3Core.Processors
 			{
 				command = MQ.Query<string>(command);
 			}
-			PubServer.AddTopicMessage("OnCommand-AllExceptMe", $"{E3.CurrentName}:{noparse}:{command}");
+			PubServer.AddTopicMessage("OnCommand-AllZone", $"{E3.CurrentName}:{noparse}:{command}");
+		}
+		public void BroadcastCommandAllZoneNotMe(string command, bool noparse = false, CommandMatch match = null)
+		{
+			if (match != null && match.filters.Count > 0)
+			{
+				//need to pass over the filters if they exist
+				_stringBuilder.Clear();
+				_stringBuilder.Append($"{command}");
+				foreach (var filter in match.filters)
+				{
+					_stringBuilder.Append($" \"{filter}\"");
+				}
+				command = _stringBuilder.ToString();
+			}
+			if (!noparse)
+			{
+				command = MQ.Query<string>(command);
+			}
+			PubServer.AddTopicMessage("OnCommand-AllExceptMeZone", $"{E3.CurrentName}:{noparse}:{command}");
 		}
 		public void BroadcastCommandToGroup(string command, CommandMatch match = null, bool noparse = false)
         {
@@ -709,6 +810,42 @@ namespace E3Core.Processors
 			}
 			PubServer.AddTopicMessage("OnCommand-Group", $"{E3.CurrentName}:{noparse}:{command}");
 		}
+		public void BroadcastCommandToGroupZone(string command, CommandMatch match = null, bool noparse = false)
+		{
+			bool hasAllFlag = false;
+
+			if (match != null)
+			{
+				hasAllFlag = match.hasAllFlag;
+			}
+			if (GlobalAllEnabled)
+			{
+				hasAllFlag = GlobalAllEnabled;
+			}
+
+			if (hasAllFlag)
+			{
+				BroadcastCommandAll(command, noparse, match);
+				return;
+			}
+
+			if (match != null && match.filters.Count > 0)
+			{
+				//need to pass over the filters if they exist
+				_stringBuilder.Clear();
+				_stringBuilder.Append($"{command}");
+				foreach (var filter in match.filters)
+				{
+					_stringBuilder.Append($" \"{filter}\"");
+				}
+				command = _stringBuilder.ToString();
+			}
+			if (!noparse)
+			{
+				command = MQ.Query<string>(command);
+			}
+			PubServer.AddTopicMessage("OnCommand-GroupZone", $"{E3.CurrentName}:{noparse}:{command}");
+		}
 		public void BroadcastCommandToGroupAll(string command, CommandMatch match = null, bool noparse = false)
 		{
 			bool hasAllFlag = false;
@@ -745,8 +882,43 @@ namespace E3Core.Processors
 			}
 			PubServer.AddTopicMessage("OnCommand-GroupAll", $"{E3.CurrentName}:{noparse}:{command}");
 		}
+		public void BroadcastCommandToGroupAllZone(string command, CommandMatch match = null, bool noparse = false)
+		{
+			bool hasAllFlag = false;
 
-        public void BroadcastCommandToPerson(string person, string command, bool noparse = false)
+			if (match != null)
+			{
+				hasAllFlag = match.hasAllFlag;
+			}
+			if (GlobalAllEnabled)
+			{
+				hasAllFlag = GlobalAllEnabled;
+			}
+
+			if (hasAllFlag)
+			{
+				BroadcastCommandAll(command, noparse, match);
+				return;
+			}
+
+			if (match != null && match.filters.Count > 0)
+			{
+				//need to pass over the filters if they exist
+				_stringBuilder.Clear();
+				_stringBuilder.Append($"{command}");
+				foreach (var filter in match.filters)
+				{
+					_stringBuilder.Append($" \"{filter}\"");
+				}
+				command = _stringBuilder.ToString();
+			}
+			if (!noparse)
+			{
+				command = MQ.Query<string>(command);
+			}
+			PubServer.AddTopicMessage("OnCommand-GroupAllZone", $"{E3.CurrentName}:{noparse}:{command}");
+		}
+		public void BroadcastCommandToPerson(string person, string command, bool noparse = false)
 		{
             person = e3util.FirstCharToUpper(person);
             if (!noparse)

@@ -1,4 +1,5 @@
-﻿using E3Core.Data;
+﻿using E3Core.Classes;
+using E3Core.Data;
 using E3Core.Processors;
 using E3Core.Settings;
 using MonoCore;
@@ -73,9 +74,17 @@ namespace E3Core.Server
 			{
 				EventProcessor.ProcessEventsInQueues("/e3bc");
 			}
+			if (EventProcessor.CommandList.ContainsKey("/e3bcz") && EventProcessor.CommandList["/e3bcz"].queuedEvents.Count > 0)
+			{
+				EventProcessor.ProcessEventsInQueues("/e3bcz");
+			}
 			if (EventProcessor.CommandList.ContainsKey("/e3bcg") && EventProcessor.CommandList["/e3bcg"].queuedEvents.Count > 0)
 			{
 				EventProcessor.ProcessEventsInQueues("/e3bcg");
+			}
+			if (EventProcessor.CommandList.ContainsKey("/e3bcgz") && EventProcessor.CommandList["/e3bcgz"].queuedEvents.Count > 0)
+			{
+				EventProcessor.ProcessEventsInQueues("/e3bcgz");
 			}
 			if (EventProcessor.CommandList.ContainsKey("/e3bct") && EventProcessor.CommandList["/e3bct"].queuedEvents.Count > 0)
 			{
@@ -85,9 +94,17 @@ namespace E3Core.Server
 			{
 				EventProcessor.ProcessEventsInQueues("/e3bcga");
 			}
+			if (EventProcessor.CommandList.ContainsKey("/e3bcgaz") && EventProcessor.CommandList["/e3bcgaz"].queuedEvents.Count > 0)
+			{
+				EventProcessor.ProcessEventsInQueues("/e3bcgaz");
+			}
 			if (EventProcessor.CommandList.ContainsKey("/e3bcaa") && EventProcessor.CommandList["/e3bcaa"].queuedEvents.Count > 0)
 			{
 				EventProcessor.ProcessEventsInQueues("/e3bcaa");
+			}
+			if (EventProcessor.CommandList.ContainsKey("/e3bcaaz") && EventProcessor.CommandList["/e3bcaaz"].queuedEvents.Count > 0)
+			{
+				EventProcessor.ProcessEventsInQueues("/e3bcaaz");
 			}
 		}
 		public void ProcessCommands()
@@ -104,13 +121,26 @@ namespace E3Core.Server
 
 					data.Dispose(); //put back to be reused ,we have the data we want out of it.
 
-					if (typeInfo == OnCommandData.CommandType.BroadCastMessage)
+					if (typeInfo == OnCommandData.CommandType.BroadCastMessage || typeInfo== OnCommandData.CommandType.BroadCastMessageZone)
 					{
 						Int32 indexOfSeperator = message.IndexOf(':');
 						Int32 currentIndex = 0;
 						string user = message.Substring(currentIndex, indexOfSeperator);
+						
+						if (typeInfo == OnCommandData.CommandType.BroadCastMessageZone)
+						{
+							//check to see if we are in the same zone as the person
+							Int32 spawnID = MQ.Query<Int32>($"${{Spawn[{user}].ID}}");
+							if(spawnID<1)
+							{
+								//we can safely ignore this.
+								continue;
+							}
+						}
+						
 						currentIndex = indexOfSeperator + 1;
 						string bcMessage = message.Substring(currentIndex, message.Length - currentIndex);
+
 						MQ.Cmd($"/echo \a#336699[{MainProcessor.ApplicationName}]\a-w{System.DateTime.Now.ToString("HH:mm:ss")}\ar<\ay{user}\ar> \aw{bcMessage}");
 					}
 					else
@@ -125,13 +155,28 @@ namespace E3Core.Server
 						currentIndex = indexOfSeperator + 1;
 						string command = message.Substring(currentIndex, message.Length - currentIndex);
 						//a command type
-						if (typeInfo == OnCommandData.CommandType.OnCommandGroup)
+
+						if(typeInfo== OnCommandData.CommandType.OnCommandAllExceptMeZone  || typeInfo == OnCommandData.CommandType.OnCommandAllZone || typeInfo ==OnCommandData.CommandType.OnCommandGroupZone || typeInfo== OnCommandData.CommandType.OnCommandGroupAllZone)
+						{
+
+							//this is a zone type command lets verify zone logic
+							//check to see if we are in the same zone as the person
+							Int32 spawnID = MQ.Query<Int32>($"${{Spawn[{user}].ID}}");
+							if (spawnID < 1)
+							{
+								//we can safely ignore this.
+								continue;
+							}
+						}
+
+
+						if (typeInfo == OnCommandData.CommandType.OnCommandGroup || typeInfo == OnCommandData.CommandType.OnCommandGroupZone)
 						{
 							//check to see if we are part of their group
 							if (user == E3.CurrentName)
 							{
 								//not for us only group members
-								break;
+								continue;
 							}
 							//check to see if we are part of their group
 							Int32 groupMemberIndex = MQ.Query<Int32>($"${{Group.Member[{user}].Index}}");
@@ -139,10 +184,10 @@ namespace E3Core.Server
 							if (groupMemberIndex < 0)
 							{
 								//ignore it
-								break;
+								continue;
 							}
 						}
-						else if (typeInfo == OnCommandData.CommandType.OnCommandGroupAll)
+						else if (typeInfo == OnCommandData.CommandType.OnCommandGroupAll || typeInfo == OnCommandData.CommandType.OnCommandGroupAllZone)
 						{
 							//check to see if we are part of their group
 							Int32 groupMemberIndex = MQ.Query<Int32>($"${{Group.Member[{user}].Index}}");
@@ -150,7 +195,7 @@ namespace E3Core.Server
 							if (groupMemberIndex < 0)
 							{
 								//ignore it
-								break;
+								continue;
 							}
 						}
 						else if (typeInfo == OnCommandData.CommandType.OnCommandRaid)
@@ -160,16 +205,16 @@ namespace E3Core.Server
 
 							if (!inRaid)
 							{
-								break;
+								continue;
 							}
 						}
 
 						//check to see if we are part of their group
-						if (user == E3.CurrentName && (!(typeInfo== OnCommandData.CommandType.OnCommandGroupAll || typeInfo == OnCommandData.CommandType.OnCommandAll)))
+						if (user == E3.CurrentName && (!(typeInfo== OnCommandData.CommandType.OnCommandGroupAll || typeInfo == OnCommandData.CommandType.OnCommandAll || typeInfo== OnCommandData.CommandType.OnCommandGroupAllZone|| typeInfo==OnCommandData.CommandType.OnCommandAllZone)))
 						{
 							//if not an all type command and not us, kick out.
 							//not for us only group members
-							break;
+							continue;
 						}
 
 						MQ.Write($"\ag<\ap{user}\ag> Command:" + command);
@@ -267,11 +312,27 @@ namespace E3Core.Server
 
 								CommandQueue.Enqueue(data);
 							}
+							else if (messageTopicReceived == "OnCommand-AllZone")
+							{
+								var data = OnCommandData.Aquire();
+								data.Data = messageReceived;
+								data.TypeOfCommand = OnCommandData.CommandType.OnCommandAllZone;
+
+								CommandQueue.Enqueue(data);
+							}
 							else if (messageTopicReceived == "OnCommand-Group")
 							{
 								var data = OnCommandData.Aquire();
 								data.Data = messageReceived;
 								data.TypeOfCommand = OnCommandData.CommandType.OnCommandGroup;
+
+								CommandQueue.Enqueue(data);
+							}
+							else if (messageTopicReceived == "OnCommand-GroupZone")
+							{
+								var data = OnCommandData.Aquire();
+								data.Data = messageReceived;
+								data.TypeOfCommand = OnCommandData.CommandType.OnCommandGroupZone;
 
 								CommandQueue.Enqueue(data);
 							}
@@ -283,11 +344,27 @@ namespace E3Core.Server
 
 								CommandQueue.Enqueue(data);
 							}
+							else if (messageTopicReceived == "OnCommand-AllExceptMeZone")
+							{
+								var data = OnCommandData.Aquire();
+								data.Data = messageReceived;
+								data.TypeOfCommand = OnCommandData.CommandType.OnCommandAllExceptMeZone;
+
+								CommandQueue.Enqueue(data);
+							}
 							else if (messageTopicReceived == "OnCommand-GroupAll")
 							{
 								var data = OnCommandData.Aquire();
 								data.Data = messageReceived;
 								data.TypeOfCommand = OnCommandData.CommandType.OnCommandGroupAll;
+
+								CommandQueue.Enqueue(data);
+							}
+							else if (messageTopicReceived == "OnCommand-GroupAllZone")
+							{
+								var data = OnCommandData.Aquire();
+								data.Data = messageReceived;
+								data.TypeOfCommand = OnCommandData.CommandType.OnCommandGroupAllZone;
 
 								CommandQueue.Enqueue(data);
 							}
@@ -304,6 +381,14 @@ namespace E3Core.Server
 								var data = OnCommandData.Aquire();
 								data.Data = messageReceived;
 								data.TypeOfCommand = OnCommandData.CommandType.BroadCastMessage;
+
+								CommandQueue.Enqueue(data);
+							}
+							else if (messageTopicReceived == "BroadCastMessageZone")
+							{
+								var data = OnCommandData.Aquire();
+								data.Data = messageReceived;
+								data.TypeOfCommand = OnCommandData.CommandType.BroadCastMessageZone;
 
 								CommandQueue.Enqueue(data);
 							}
@@ -393,11 +478,16 @@ namespace E3Core.Server
 			{
 				None,
 				OnCommandAll,
+				OnCommandAllZone,
 				OnCommandAllExceptMe,
+				OnCommandAllExceptMeZone,
 				OnCommandGroup,
+				OnCommandGroupZone,
 				OnCommandGroupAll,
+				OnCommandGroupAllZone,
 				OnCommandRaid,
 				BroadCastMessage,
+				BroadCastMessageZone,
 				OnCommandName
 			}
 			public string Data { get; set; }
