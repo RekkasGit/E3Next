@@ -177,8 +177,27 @@ namespace E3Core.Settings
         public List<string> Rez_RezSpells = new List<string>();
         public bool Rez_AutoRez = false;
 
-    
-        public Dictionary<string, string> PetWeapons = new Dictionary<string, string>();
+
+
+        //charm data
+        public Spell Charm_CharmSpell = null;
+        public List<Spell> Charm_CharmOhShitSpells = new List<Spell>();
+        public List<Spell> Charm_SelfDebuffSpells = new List<Spell>();
+		public List<Spell> Charm_BadPetBuffs = new List<Spell>();
+        public string Charm_PeelTank = String.Empty;
+        public List<Spell> Charm_PeelTankAggroAbility = new List<Spell>();
+        public string Charm_PeelHealer = String.Empty;
+        public List<Spell> Charm_PeelHealerHeal = new List<Spell>();
+        public string Charm_PeelPetOwner = String.Empty;
+        public string Charm_PeelSnarePerson = String.Empty;
+        public List<Spell> Charm_PeelSnareSpell  = new List<Spell>();
+        public string Charm_PeelDebuffPerson = String.Empty;
+        public List<Spell> Charm_PeelDebuffSpells = new List<Spell>();
+
+		//
+
+
+		public Dictionary<string, string> PetWeapons = new Dictionary<string, string>();
         public bool AutoPetWeapons = false;
         public bool IgnorePetWeaponRequests = false;
         public bool AutoCanni = false;
@@ -464,16 +483,36 @@ namespace E3Core.Settings
             LoadKeyData("Gimme", "Gimme", ParsedData, Gimme);
             LoadKeyData("Gimme", "Gimme-InCombat", ParsedData, ref Gimme_InCombat);
 
+            List<Spell> tcharmSpells = new List<Spell>();
 
-           // _log.Write($"Finished processing and loading: {fullPathToUse}");
+            LoadKeyData("Charm", "CharmSpell",ParsedData, tcharmSpells);
+            foreach(Spell spell in tcharmSpells)
+            {
+                Charm_CharmSpell = spell;
+                break;
+            }
+			LoadKeyData("Charm", "CharmOhShitSpells", ParsedData, Charm_CharmOhShitSpells);
+			LoadKeyData("Charm", "SelfDebuffSpells", ParsedData, Charm_SelfDebuffSpells);
+			LoadKeyData("Charm", "BadPetBuffs", ParsedData, Charm_BadPetBuffs);
+			LoadKeyData("Charm", "PeelTank", ParsedData, ref Charm_PeelTank);
+			LoadKeyData("Charm", "PellTankAggroAbility", ParsedData, Charm_PeelTankAggroAbility);
+			LoadKeyData("Charm", "PeelHealer", ParsedData, ref Charm_PeelHealer);
+			LoadKeyData("Charm", "PeelHealerHeal", ParsedData, Charm_PeelHealerHeal);
+			LoadKeyData("Charm", "PeelPetOwner", ParsedData,ref Charm_PeelPetOwner);
+			LoadKeyData("Charm", "PeelSnarePerson", ParsedData, ref Charm_PeelSnarePerson);
+			LoadKeyData("Charm", "PeelSnareSpell", ParsedData,Charm_PeelSnareSpell);
+			LoadKeyData("Charm", "PeelDebuffPerson", ParsedData, ref Charm_PeelDebuffPerson);
+			LoadKeyData("Charm", "PeelDebuffSpells", ParsedData, Charm_PeelDebuffSpells);
 
-        }
+			// _log.Write($"Finished processing and loading: {fullPathToUse}");
 
-        /// <summary>
-        /// Creates the settings file.
-        /// </summary>
-        /// <returns></returns>
-        public IniData CreateSettings(string fileName)
+		}
+
+		/// <summary>
+		/// Creates the settings file.
+		/// </summary>
+		/// <returns></returns>
+		public IniData CreateSettings(string fileName)
         {
             //if we need to , its easier to just output the entire file. 
 
@@ -649,7 +688,28 @@ namespace E3Core.Settings
                 section.Keys.AddKey("DiseaseCountersIgnore", "");
             }
 
-            if ((CharacterClass & Class.Priest) == CharacterClass || (CharacterClass & Class.HealHybrid) == CharacterClass)
+			if ((CharacterClass & Class.Charmer) == CharacterClass)
+			{
+				newFile.Sections.AddSection("Charm");
+				section = newFile.Sections.GetSectionData("Charm");
+				section.Keys.AddKey("CharmSpell", "");
+				section.Keys.AddKey("CharmOhShitSpells", "");
+				section.Keys.AddKey("SelfDebuffSpells", "");
+				section.Keys.AddKey("BadPetBuffs", "");
+				section.Keys.AddKey("PeelTank", "");
+				section.Keys.AddKey("PellTankAggroAbility", "");
+				section.Keys.AddKey("PeelHealer", "");
+				section.Keys.AddKey("PeelHealerHeal", "");
+				section.Keys.AddKey("PeelPetOwner", "");
+				section.Keys.AddKey("PeelSnarePerson", "");
+				section.Keys.AddKey("PeelSnareSpell", "");
+                section.Keys.AddKey("PeelDebuffPerson", "");
+                section.Keys.AddKey("PeelDebuffSpells", "");
+			}
+
+
+
+			if ((CharacterClass & Class.Priest) == CharacterClass || (CharacterClass & Class.HealHybrid) == CharacterClass)
             {
                 newFile.Sections.AddSection("Heals");
                 section = newFile.Sections.GetSectionData("Heals");

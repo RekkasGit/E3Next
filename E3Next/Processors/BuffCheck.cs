@@ -353,6 +353,7 @@ namespace E3Core.Processors
 				bool haveBuff = MQ.Query<bool>($"${{Bool[${{Me.Buff[{spell.SpellName}]}}]}}");
 				if (haveBuff) continue;
 
+				//allow for other buff checks
 				if(spell.CheckForCollection.Count>0)
 				{
 					foreach(var spellName in spell.CheckForCollection)

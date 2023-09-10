@@ -112,6 +112,7 @@
     <Compile Include="Processors\BaseProcessor.cs" />
     <Compile Include="Processors\Bots.cs" />
     <Compile Include="Processors\Burns.cs" />
+    <Compile Include="Processors\Charm.cs" />
     <Compile Include="Processors\ClearXTargets.cs" />
     <Compile Include="Processors\DebuffDot.cs" />
     <Compile Include="Processors\Dispel.cs" />
@@ -177,6 +178,7 @@
   </ItemGroup>
   <Import Project="$(MSBuildToolsPath)\Microsoft.CSharp.targets" />
   <PropertyGroup>
-    <PostBuildEvent>powershell.exe $(ProjectDir)\CopyToEQFolder.ps1</PostBuildEvent>
+    <PostBuildEvent>
+    </PostBuildEvent>
   </PropertyGroup>
 </Project>
