@@ -405,6 +405,30 @@ namespace E3Core.Processors
 					}
 				}
 			});
+			EventProcessor.RegisterCommand("/e3bca", (x) =>
+			{
+				if (x.args.Count > 0)
+				{
+
+					string message = string.Empty;
+					_stringBuilder.Clear();
+					foreach (var arg in x.args)
+					{
+						_stringBuilder.Append($"{arg} ");
+
+					}
+					message = _stringBuilder.ToString().Trim();
+					if (message.StartsWith(@"/"))
+					{
+						BroadcastCommand(message, true);
+					}
+					else
+					{
+						Broadcast(message, true);
+
+					}
+				}
+			});
 			EventProcessor.RegisterCommand("/e3bcz", (x) =>
 			{
 				if (x.args.Count > 0)
@@ -512,7 +536,7 @@ namespace E3Core.Processors
 
 				}
 			});
-			EventProcessor.RegisterCommand("/e3bca", (x) =>
+			EventProcessor.RegisterCommand("/e3bcaa", (x) =>
 			{
 				if (x.args.Count > 0)
 				{
@@ -528,7 +552,7 @@ namespace E3Core.Processors
 
 				}
 			});
-			EventProcessor.RegisterCommand("/e3bcaz", (x) =>
+			EventProcessor.RegisterCommand("/e3bcza", (x) =>
 			{
 				if (x.args.Count > 0)
 				{

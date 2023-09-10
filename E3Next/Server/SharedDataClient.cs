@@ -290,12 +290,16 @@ namespace E3Core.Server
 					subSocket.Connect($"tcp://{serverName}:" + port);
 					subSocket.Subscribe(OnCommandName);
 					subSocket.Subscribe("OnCommand-All");
+					subSocket.Subscribe("OnCommand-AllZone");
 					subSocket.Subscribe("OnCommand-AllExceptMe");
+					subSocket.Subscribe("OnCommand-AllExceptMeZone");
 					subSocket.Subscribe("OnCommand-Group");
 					subSocket.Subscribe("OnCommand-GroupAll");
+					subSocket.Subscribe("OnCommand-GroupAllZone");
 					subSocket.Subscribe("OnCommand-Raid");
 					subSocket.Subscribe("OnCommand-Zone");
 					subSocket.Subscribe("BroadCastMessage");
+					subSocket.Subscribe("BroadCastMessageZone");
 					subSocket.Subscribe("${Me."); //all Me stuff should be subscribed to
 					MQ.Write("\agShared Data Client: Connecting to user:" + user + " on port:" + port + " server:"+serverName); ;
 
