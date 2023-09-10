@@ -353,6 +353,16 @@ namespace E3Core.Processors
 				bool haveBuff = MQ.Query<bool>($"${{Bool[${{Me.Buff[{spell.SpellName}]}}]}}");
 				if (haveBuff) continue;
 
+				if(spell.CheckForCollection.Count>0)
+				{
+					foreach(var spellName in spell.CheckForCollection)
+					{
+						haveBuff = MQ.Query<bool>($"${{Bool[${{Me.Buff[{spellName}]}}]}}");
+						if (haveBuff) goto endStackChecks;
+
+					}
+				}
+
 				List<string> castersInGroup = E3.Bots.BotsConnected();
 
 				foreach (var caster in spell.StackRequestTargets)
@@ -395,6 +405,8 @@ namespace E3Core.Processors
 						break;
 					}
 				}
+				endStackChecks:
+				continue;
 			}
 		}
 		[ClassInvoke(Data.Class.All)]
