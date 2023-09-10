@@ -249,10 +249,14 @@ namespace E3Core.Data
                         var section = parsedData.Sections["Ifs"];
                         if (section != null)
                         {
-                            var keyData = section[ifKey];
-                            if (!String.IsNullOrWhiteSpace(keyData))
+                            var keys = ifKey.Split(','); // Splitting based on comma
+                            foreach (var key in keys)
                             {
-                                Ifs = string.IsNullOrWhiteSpace(Ifs) ? keyData : Ifs + " && " + keyData;
+                                var keyData = section[key];
+                                if (!String.IsNullOrWhiteSpace(keyData))
+                                {
+                                    Ifs = string.IsNullOrWhiteSpace(Ifs) ? keyData : Ifs + " && " + keyData;
+                                }
                             }
                         }
                     }
