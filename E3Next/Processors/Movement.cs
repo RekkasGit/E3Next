@@ -319,7 +319,7 @@ namespace E3Core.Processors
                         if (zoneID != Zoning.CurrentZone.Id)
                         {
                             //we are not in the same zone, ignore.
-                            return;
+                            return;   
                         }
                     }
                 }
@@ -330,16 +330,45 @@ namespace E3Core.Processors
                 {
                     MQ.Cmd($"/doortarget id {closestID}");
                     double currentDistance = MQ.Query<Double>("${DoorTarget.Distance}");
+                    int attempts = 3;
                     //need to move to its location
                     if (currentDistance < 50)
                     {
-                        MQ.Cmd($"/doortarget id {closestID}");
-
                         Double doorX = MQ.Query<double>("${DoorTarget.X}");
                         Double doorY = MQ.Query<double>("${DoorTarget.Y}");
                         Double doorZ = MQ.Query<double>("${DoorTarget.Z}");
-                        e3util.TryMoveToLoc(doorX, doorY,doorZ, 8, 3000);
-                        MQ.Cmd("/squelch /click left door");
+                        // try more then once break out if you have moved or zoned
+                        for (int i = 1; i <= attempts; i++)
+                        {
+                            MQ.Cmd($"/doortarget id {closestID}");
+                            e3util.TryMoveToLoc(doorX, doorY, doorZ, 8, 3000);
+                            MQ.Delay(100);
+                            // Lets Get your Location to check if it changes after clicking the door
+                            int preZoneID = MQ.Query<int>("${Zone.ID}");
+                            double preDoorX = MQ.Query<double>("${Me.X}");
+                            double preDoorY = MQ.Query<double>("${Me.Y}");
+                            double preDoorZ = MQ.Query<double>("${Me.Z}");
+                            MQ.Cmd("/squelch /click left door");
+                            MQ.Delay(2100);
+                            int postZoneID = MQ.Query<int>("${Zone.ID}");
+                            double postDoorX = MQ.Query<double>("${Me.X}");
+                            double postDoorY = MQ.Query<double>("${Me.Y}");
+                            double postDoorZ = MQ.Query<double>("${Me.Z}");
+                            double distanceMoved = MQ.Query<double>($"${{Math.Distance[{preDoorX},{preDoorY},{preDoorZ}:{postDoorX},{postDoorY},{postDoorZ}]}}");
+                            // Check for Zone change or Movement
+                            if (distanceMoved > 80.0 || preZoneID != postZoneID)
+                            {
+                                MQ.Write("\ayZone Detected");
+                                break;
+                            }
+                            // Inform the user that no movement was detected
+                            if (i == attempts)
+                            {
+                                E3.Bots.Broadcast("\arI Failed to Zone");
+                                MQ.Write("\arZone FAILED");
+                            }
+                        }
+
                     }
                     else
                     {
@@ -351,8 +380,6 @@ namespace E3Core.Processors
                     MQ.Cmd($"/doortarget");
                     MQ.Cmd("/squelch /click left door");
                 }
-
-
             });
 
             EventProcessor.RegisterCommand("/anchoron", (x) =>
