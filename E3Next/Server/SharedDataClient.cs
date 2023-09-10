@@ -39,6 +39,12 @@ namespace E3Core.Server
 		public bool RegisterUser(string user,string path)
 		{
 
+			//fix situations where it doesn't end in a slash
+			if(!path.EndsWith(@"\"))
+			{
+				path  += @"\";
+			}
+
 			//see if they exist in the collection
 			if (!TopicUpdates.ContainsKey(user))
 			{
@@ -212,7 +218,7 @@ namespace E3Core.Server
 						}
 
 						//check to see if we are part of their group
-						if (user == E3.CurrentName && (!(typeInfo== OnCommandData.CommandType.OnCommandGroupAll || typeInfo == OnCommandData.CommandType.OnCommandAll || typeInfo== OnCommandData.CommandType.OnCommandGroupAllZone|| typeInfo==OnCommandData.CommandType.OnCommandAllZone)))
+						if (user == E3.CurrentName && (!(typeInfo == OnCommandData.CommandType.OnCommandName||typeInfo== OnCommandData.CommandType.OnCommandGroupAll || typeInfo == OnCommandData.CommandType.OnCommandAll || typeInfo== OnCommandData.CommandType.OnCommandGroupAllZone|| typeInfo==OnCommandData.CommandType.OnCommandAllZone)))
 						{
 							//if not an all type command and not us, kick out.
 							//not for us only group members
