@@ -386,15 +386,8 @@ namespace E3Core.Processors
 				if (x.args.Count > 0)
 				{
 
-                    string message = string.Empty;
-                    _stringBuilder.Clear();
-					foreach(var arg in x.args)
-                    {
-                        _stringBuilder.Append($"{arg} ");
-
-                    }
-                    message = _stringBuilder.ToString().Trim();
-                    if(message.StartsWith(@"/"))
+					string message = ArgsToCommand(x.args);
+					if (message.StartsWith(@"/"))
                     {
                         BroadcastCommand(message,true);
                     }
@@ -410,14 +403,7 @@ namespace E3Core.Processors
 				if (x.args.Count > 0)
 				{
 
-					string message = string.Empty;
-					_stringBuilder.Clear();
-					foreach (var arg in x.args)
-					{
-						_stringBuilder.Append($"{arg} ");
-
-					}
-					message = _stringBuilder.ToString().Trim();
+					string message = ArgsToCommand(x.args);
 					if (message.StartsWith(@"/"))
 					{
 						BroadcastCommand(message, true);
@@ -434,14 +420,7 @@ namespace E3Core.Processors
 				if (x.args.Count > 0)
 				{
 
-					string message = string.Empty;
-					_stringBuilder.Clear();
-					foreach (var arg in x.args)
-					{
-						_stringBuilder.Append($"{arg} ");
-
-					}
-					message = _stringBuilder.ToString().Trim();
+					string message = ArgsToCommand(x.args);
 					if (message.StartsWith(@"/"))
 					{
 						BroadcastCommandAllZoneNotMe(message, true);
@@ -457,14 +436,7 @@ namespace E3Core.Processors
 			{
 				if (x.args.Count > 0)
 				{
-					string command = string.Empty;
-					_stringBuilder.Clear();
-					foreach (var arg in x.args)
-					{
-						_stringBuilder.Append($"{arg} ");
-
-					}
-					command = _stringBuilder.ToString().Trim();
+					string command = ArgsToCommand(x.args);
 					BroadcastCommandToGroup(command,null,true);
 
 				}
@@ -474,14 +446,7 @@ namespace E3Core.Processors
 			{
 				if (x.args.Count > 0)
 				{
-					string command = string.Empty;
-					_stringBuilder.Clear();
-					foreach (var arg in x.args)
-					{
-						_stringBuilder.Append($"{arg} ");
-
-					}
-					command = _stringBuilder.ToString().Trim();
+					string command = ArgsToCommand(x.args);
 					BroadcastCommandToGroupZone(command, null, true);
 
 				}
@@ -493,14 +458,7 @@ namespace E3Core.Processors
 				{
 					string person = x.args[0];
 					x.args.RemoveAt(0);
-					string command = string.Empty;
-					_stringBuilder.Clear();
-					foreach (var arg in x.args)
-					{
-						_stringBuilder.Append($"{arg} ");
-
-					}
-					command = _stringBuilder.ToString().Trim();
+					string command = ArgsToCommand(x.args);
 					BroadcastCommandToPerson(person, command,true);
 				}
 			});
@@ -508,14 +466,7 @@ namespace E3Core.Processors
 			{
 				if (x.args.Count > 0)
 				{
-					string command = string.Empty;
-					_stringBuilder.Clear();
-					foreach (var arg in x.args)
-					{
-						_stringBuilder.Append($"{arg} ");
-
-					}
-					command = _stringBuilder.ToString().Trim();
+					string command = ArgsToCommand(x.args);
 					BroadcastCommandToGroupAll(command,null,true);
 		            
                 }
@@ -524,14 +475,7 @@ namespace E3Core.Processors
 			{
 				if (x.args.Count > 0)
 				{
-					string command = string.Empty;
-					_stringBuilder.Clear();
-					foreach (var arg in x.args)
-					{
-						_stringBuilder.Append($"{arg} ");
-
-					}
-					command = _stringBuilder.ToString().Trim();
+					string command = ArgsToCommand(x.args);
 					BroadcastCommandToGroupAllZone(command, null, true);
 
 				}
@@ -540,15 +484,8 @@ namespace E3Core.Processors
 			{
 				if (x.args.Count > 0)
 				{
-					string command = string.Empty;
-					_stringBuilder.Clear();
-					foreach (var arg in x.args)
-					{
-						_stringBuilder.Append($"{arg} ");
-
-					}
-					command = _stringBuilder.ToString().Trim();
-                    BroadcastCommandAll(command,true);
+					string command = ArgsToCommand(x.args);
+			        BroadcastCommandAll(command,true);
 
 				}
 			});
@@ -556,14 +493,7 @@ namespace E3Core.Processors
 			{
 				if (x.args.Count > 0)
 				{
-					string command = string.Empty;
-					_stringBuilder.Clear();
-					foreach (var arg in x.args)
-					{
-						_stringBuilder.Append($"{arg} ");
-
-					}
-					command = _stringBuilder.ToString().Trim();
+					string command = ArgsToCommand(x.args);
 					BroadcastCommandAllZone(command, true);
 
 				}
@@ -571,7 +501,24 @@ namespace E3Core.Processors
 
 
 		}
+        private string ArgsToCommand(List<String> args)
+        {
+			_stringBuilder.Clear();
+			foreach (var arg in args)
+			{
+				if (arg.Contains(" "))
+				{
+					//need to wrap it with quotes if it has spaces
+					_stringBuilder.Append($"\"{arg}\" ");
+				}
+				else
+				{
+					_stringBuilder.Append($"{arg} ");
+				}
 
+			}
+			return _stringBuilder.ToString().Trim();
+		}
         private void AutoRegisterUsers(List<string> settingsPaths)
         {
             string searchPattern = $"*_{E3.ServerName}_pubsubport.txt";

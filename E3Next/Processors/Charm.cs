@@ -44,6 +44,11 @@ namespace E3Core.Processors
 					E3.Bots.Broadcast($"\agCharm spell not set in INI file.");
 					return;
 				}
+				if(!IsCheckCharmConfigured())
+				{
+					E3.Bots.Broadcast($"\agcheck_Charm not found in the advanced ini for this class.");
+				}
+				
 				_charmTargetId = MQ.Query<int>("${Target.ID}");
 				E3.Bots.Broadcast($"\agSetting ${{Spawn[{_charmTargetId}].CleanName}} as charm target");
 
@@ -58,6 +63,21 @@ namespace E3Core.Processors
 				_charmTargetId = 0;
 			});
 
+		}
+		private static bool IsCheckCharmConfigured()
+		{
+			List<string> _methodsToInvokeAsStrings;
+			if (AdvancedSettings.ClassMethodsAsStrings.TryGetValue(E3.CurrentShortClassString, out _methodsToInvokeAsStrings))
+			{
+				foreach (var methodName in _methodsToInvokeAsStrings)
+				{
+					if (String.Compare(methodName, "check_charm", true) == 0)
+					{
+						return true;
+					}
+				}
+			}
+			return false;
 		}
 
 		private static void CharmProcess()
