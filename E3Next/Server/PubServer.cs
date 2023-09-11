@@ -44,10 +44,29 @@ namespace E3Core.Server
             string localIP = e3util.GetLocalIPAddress();
             string filePath = BaseSettings.GetSettingsFilePath($"{E3.CurrentName}_{E3.ServerName}_pubsubport.txt");
 
-            System.IO.File.Delete(filePath);
-            System.IO.File.WriteAllText(filePath, port.ToString()+","+localIP);
+            //System.IO.File.Delete(filePath);
+            bool updatedFile = false;
+            Int32 counter = 0;
+            while(!updatedFile)
+            {
+                counter++;
+				try
+				{
 
-            _serverThread = Task.Factory.StartNew(() => { Process(filePath); }, CancellationToken.None, TaskCreationOptions.DenyChildAttach, TaskScheduler.Default);
+					System.IO.File.WriteAllText(filePath, port.ToString() + "," + localIP);
+					updatedFile = true;
+				}
+				catch (Exception ex)
+				{
+                    System.Threading.Thread.Sleep(100);
+				    if(counter>20) //allow up 2 seconds worth of failures before we throw an exception.
+                    {
+                        throw new Exception($"Cannot write out the pubsubport file {filePath}, some other process is using it. Try manually deleting it. ErrorMessage:" + ex.Message);
+                    }
+                }
+
+			}
+			_serverThread = Task.Factory.StartNew(() => { Process(filePath); }, CancellationToken.None, TaskCreationOptions.DenyChildAttach, TaskScheduler.Default);
 
         }
         public  static void AddTopicMessage(string topic, string message)
@@ -106,7 +125,15 @@ namespace E3Core.Server
                     }
                     System.Threading.Thread.Sleep(1);
                 }
-				System.IO.File.Delete(filePath);
+                try
+                {
+					System.IO.File.Delete(filePath);
+
+				}
+				catch (Exception ex)
+                {
+                    MQ.Write("Issue deleting pubsub.txt file");
+                }
 				MQ.Write("Shutting down PubServer Thread.");
             }
         }
