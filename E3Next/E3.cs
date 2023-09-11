@@ -225,10 +225,7 @@ namespace E3Core.Processors
 
 				if (!e3util.ShouldCheck(ref _nextStateUpdateCheckTime, _nextStateUpdateTimeInterval)) return;
 
-				IsInvis = MQ.Query<bool>("${Me.Invis}");
-				CurrentHps = MQ.Query<int>("${Me.PctHPs}");
-				CurrentId = MQ.Query<int>("${Me.ID}");
-				PctHPs = MQ.Query<Int32>("${Me.PctHPs}");
+		
 
 				//cure counters
 				Debuff_TotalCounters = MQ.Query<Int32>("${Me.TotalCounters}");
@@ -241,14 +238,19 @@ namespace E3Core.Processors
 				PubServer.AddTopicMessage("${Me.CountersCurse}", Debuff_CurseCounters.ToString("N0"));
 				//end cure counters
 
-				PubServer.AddTopicMessage("${Me.PctHPs}", PctHPs.ToString());
+				IsInvis = MQ.Query<bool>("${Me.Invis}");
+				CurrentHps = MQ.Query<int>("${Me.PctHPs}");
+				CurrentId = MQ.Query<int>("${Me.ID}");
+				PctHPs = MQ.Query<Int32>("${Me.PctHPs}");
 				HitPointsCurrent = MQ.Query<int>("${Me.CurrentHPs}");
-				PubServer.AddTopicMessage("${Me.CurrentHPs}", HitPointsCurrent.ToString("N0"));
 				MagicPointsCurrent = MQ.Query<int>("${Me.CurrentMana}");
-				PubServer.AddTopicMessage("${Me.CurrentMana}", MagicPointsCurrent.ToString("N0"));
 				StamPointsCurrent = MQ.Query<int>("${Me.CurrentEndurance}");
-				PubServer.AddTopicMessage("${Me.CurrentEndurance}", StamPointsCurrent.ToString("N0"));
 				CurrentInCombat = Basics.InCombat();
+
+				PubServer.AddTopicMessage("${Me.PctHPs}", PctHPs.ToString());
+				PubServer.AddTopicMessage("${Me.CurrentHPs}", HitPointsCurrent.ToString("N0"));
+				PubServer.AddTopicMessage("${Me.CurrentMana}", MagicPointsCurrent.ToString("N0"));
+				PubServer.AddTopicMessage("${Me.CurrentEndurance}", StamPointsCurrent.ToString("N0"));
 				PubServer.AddTopicMessage("${InCombat}", CurrentInCombat.ToString());
 				PubServer.AddTopicMessage("${EQ.CurrentFocusedWindowName}", MQ.GetFocusedWindowName());
 

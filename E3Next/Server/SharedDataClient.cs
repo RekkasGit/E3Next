@@ -276,9 +276,6 @@ namespace E3Core.Server
 			System.DateTime lastFileUpdate = System.IO.File.GetLastWriteTime(fileName);
 			string OnCommandName = "OnCommand-" + E3.CurrentName;
 
-
-			//some type of delay if our sub errors out.
-			System.Threading.Thread.Sleep(100);
 			//timespan we expect to have some type of message
 			TimeSpan recieveTimeout = new TimeSpan(0, 0, 0, 0, 2);
 			using (var subSocket = new SubscriberSocket())

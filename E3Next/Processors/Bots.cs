@@ -709,7 +709,6 @@ namespace E3Core.Processors
 				message = MQ.Query<string>(message);
 			}
 			PubServer.AddTopicMessage("BroadCastMessage", $"{E3.CurrentName}:{message}");
-		//	MQ.Write($"\ar<\ay{E3.CurrentName}\ar> \aw{message}");
 		}
 		public void BroadcastZone(string message, bool noparse = false)
 		{
@@ -813,7 +812,7 @@ namespace E3Core.Processors
 
             if(hasAllFlag)
             {
-                BroadcastCommandAll(command,noparse,match);
+                BroadcastCommand(command,noparse,match);
                 return;
             }
 
@@ -849,7 +848,7 @@ namespace E3Core.Processors
 
 			if (hasAllFlag)
 			{
-				BroadcastCommandAll(command, noparse, match);
+				BroadcastCommand(command, noparse, match);
 				return;
 			}
 
@@ -885,7 +884,7 @@ namespace E3Core.Processors
 
 			if (hasAllFlag)
 			{
-				BroadcastCommandAll(command, noparse, match);
+				BroadcastCommand(command, noparse, match);
 				return;
 			}
 
@@ -921,7 +920,7 @@ namespace E3Core.Processors
 
 			if (hasAllFlag)
 			{
-				BroadcastCommandAll(command, noparse, match);
+				BroadcastCommand(command, noparse, match);
 				return;
 			}
 
