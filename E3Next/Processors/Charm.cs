@@ -169,7 +169,6 @@ namespace E3Core.Processors
 		}
 		private static bool CharmTargetIsValid()
 		{
-			E3.Spawns.RefreshList();
 			Spawn s;
 			bool validTarget = true;
 			if (!E3.Spawns.TryByID(_charmTargetId, out s))

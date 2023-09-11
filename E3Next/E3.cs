@@ -346,7 +346,7 @@ namespace E3Core.Processors
 				Setup.Init();
 
                 IsInit = true;
-                MonoCore.Spawns.RefreshTimePeriodInMS = 3000;
+                MonoCore.Spawns.RefreshTimePeriodInMS = 1000;
             }
 
 

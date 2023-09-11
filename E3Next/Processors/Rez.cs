@@ -98,10 +98,7 @@ namespace E3Core.Processors
                         return;
 
                     }
-                    //maybe there is another corpse? lets find out.
-                    //get all spawns within a 100 distance
-                    //make sure we have the most up to date zones spawns, takes about 1-2ms so no real harm forcing the issue.
-                    _spawns.RefreshList();
+                 
                     string corpseName = E3.CurrentName + "'s corpse";
                     foreach (var spawn in _spawns.Get())
                     {
@@ -162,7 +159,6 @@ namespace E3Core.Processors
         public static void RefreshCorpseList(RezType rezType = RezType.AE)
         {
               //lets get a corpse list
-            _spawns.RefreshList();
             _corpseList.Clear();
 
             bool rezOurself = false;
