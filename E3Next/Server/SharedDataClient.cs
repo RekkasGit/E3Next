@@ -303,7 +303,7 @@ namespace E3Core.Server
 					subSocket.Subscribe("${Me."); //all Me stuff should be subscribed to
 					MQ.Write("\agShared Data Client: Connecting to user:" + user + " on port:" + port + " server:"+serverName); ;
 
-					while (Core.IsProcessing)
+					while (Core.IsProcessing && E3.NetMQ_SharedDataServerThradRun)
 					{
 						string messageTopicReceived;
 						if (subSocket.TryReceiveFrameString(recieveTimeout, out messageTopicReceived))

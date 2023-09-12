@@ -215,11 +215,39 @@ namespace E3Core.Processors
             });
             EventProcessor.RegisterCommand("/shutdown", (x) =>
             {
-                MQ.Write("Isussing shutdown, setting process to false.");
-                Core.IsProcessing = false;
-                System.Threading.Thread.MemoryBarrier();
 
-            });
+                if(x.args.Count==0)
+                {
+					MQ.Write("Isussing shutdown, setting process to false.");
+					Core.IsProcessing = false;
+					System.Threading.Thread.MemoryBarrier();
+
+				}
+                else
+                {
+                    //pull out the first arg and see what we should do
+                    string command = x.args[0];
+                    if (String.Compare(command, "pubserver", true) == 0)
+                    {
+                        E3.NetMQ_PubServerThradRun = false;
+
+                    }
+					if (String.Compare(command, "pubclient", true) == 0)
+					{
+						E3.NetMQ_PubClientThradRun = false;
+					}
+					if (String.Compare(command, "shareddata", true) == 0)
+					{
+						E3.NetMQ_SharedDataServerThradRun = false;
+					}
+					if (String.Compare(command, "routerserver", true) == 0)
+					{
+						E3.NetMQ_RouterServerThradRun = false;
+					}
+
+				}
+
+			});
             EventProcessor.RegisterCommand("/e3reload", (x) =>
             {
                 E3.Bots.Broadcast("\aoReloading settings files...");

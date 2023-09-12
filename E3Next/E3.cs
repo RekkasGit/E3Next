@@ -438,5 +438,12 @@ namespace E3Core.Processors
         private static Int64 _nextReloadSettingsCheck = 0;
         private static Int64 _nextReloadSettingsInterval = 2000;
         private static Int64 _lastGCCollect = 0;
-    }
+        public volatile static bool NetMQ_PubServerThradRun = true;
+		public volatile static bool NetMQ_SharedDataServerThradRun = true;
+		public volatile static bool NetMQ_RouterServerThradRun = true;
+		public volatile static bool NetMQ_PubClientThradRun = true;
+
+
+
+	}
 }

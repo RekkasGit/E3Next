@@ -83,7 +83,7 @@ namespace E3Core.Server
                 
                 pubSocket.Bind("tcp://0.0.0.0:" + PubPort.ToString());
                 
-                while (Core.IsProcessing)
+                while (Core.IsProcessing && E3.NetMQ_PubServerThradRun)
                 {
                    
                     while (_topicMessages.Count > 0)
