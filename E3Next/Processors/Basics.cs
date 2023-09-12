@@ -242,9 +242,19 @@ namespace E3Core.Processors
                 E3.Bots.Broadcast("\aoComplete!");
 
             });
-           
-            
-            EventProcessor.RegisterCommand("/debug", (x) =>
+			EventProcessor.RegisterCommand("/e3cpudelay", (x) =>
+			{
+
+				if (x.args.Count > 0)
+				{
+                    Int32 delay = E3.CharacterSettings.CPU_ProcessLoopDelay;
+                    Int32.TryParse(x.args[0], out delay);
+                    E3.CharacterSettings.CPU_ProcessLoopDelay = delay;
+				}
+
+			});
+
+			EventProcessor.RegisterCommand("/debug", (x) =>
             {
 
                 var traceLevel = Logging.LogLevels.Trace;
