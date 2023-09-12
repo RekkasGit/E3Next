@@ -45,11 +45,11 @@ namespace E3Core.Processors
         private static TimeSpan _cursorOccupiedTime;
         private static TimeSpan _cursorOccupiedThreshold = new TimeSpan(0, 0, 0, 30);
         private static Int32 _cusrorPreviousID;
-     
-        /// <summary>
-        /// Initializes this instance.
-        /// </summary>
-        [SubSystemInit]
+		static Int32 Debug_PreviousCPUDelay = 50;
+		/// <summary>
+		/// Initializes this instance.
+		/// </summary>
+		[SubSystemInit]
         public static void Init()
         {
             RegisterEvents();
@@ -243,6 +243,7 @@ namespace E3Core.Processors
 
             });
            
+            
             EventProcessor.RegisterCommand("/debug", (x) =>
             {
 
@@ -261,7 +262,8 @@ namespace E3Core.Processors
                 {
                     Logging.MinLogLevelTolog = Logging.LogLevels.Debug;
                     Logging.TraceLogLevel = traceLevel;
-                    MainProcessor.ProcessDelay = 1000;
+                    Debug_PreviousCPUDelay = E3.CharacterSettings.CPU_ProcessLoopDelay;
+					E3.CharacterSettings.CPU_ProcessLoopDelay = 1000;
                     _log.Write("Debug has been turned on:");
                 }
                 else
@@ -269,7 +271,7 @@ namespace E3Core.Processors
                     _log.Write("Debug has been turned off.");
                     Logging.MinLogLevelTolog = Logging.LogLevels.Error;
                     Logging.TraceLogLevel = Logging.LogLevels.None;
-                    MainProcessor.ProcessDelay = E3.ProcessDelay;
+					E3.CharacterSettings.CPU_ProcessLoopDelay = Debug_PreviousCPUDelay;
                 }
             });
 

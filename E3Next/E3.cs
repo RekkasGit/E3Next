@@ -318,8 +318,6 @@ namespace E3Core.Processors
                 Logging.MinLogLevelTolog = Logging.LogLevels.Error; //log levels have integers assoicatd to them. you can set this to Error to only log errors. 
                 Logging.DefaultLogLevel = Logging.LogLevels.Debug; //the default if a level is not passed into the _log.write statement. useful to hide/show things.
                 MainProcessor.ApplicationName = "E3"; //application name, used in some outputs
-                MainProcessor.ProcessDelay = ProcessDelay; //how much time we will wait until we start our next processing once we are done with a loop.
-                                                            //how long you allow script to process before auto yield is engaged. generally should't need to mess with this, but an example.
                 MonoCore.MQ.MaxMillisecondsToWork = 40;
                 //max event count for each registered event before spilling over.
                 EventProcessor.EventLimiterPerRegisteredEvent = 20;
@@ -435,7 +433,6 @@ namespace E3Core.Processors
         public static int HitPointsCurrent;
         public static int MagicPointsCurrent;
         public static int StamPointsCurrent;
-        public static int ProcessDelay = 50;
         public static ISpawns Spawns = Core.spawnInstance;
         public static bool IsInvis;
         private static Int64 _nextReloadSettingsCheck = 0;

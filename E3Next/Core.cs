@@ -39,7 +39,7 @@ namespace MonoCore
     public static class MainProcessor
     {
         public static IMQ MQ = Core.mqInstance;
-        public static Int32 ProcessDelay = 200;
+       
         private static Logging _log = Core.logInstance;
         public static string ApplicationName = "";
         public static void Init()
@@ -100,7 +100,7 @@ namespace MonoCore
                 //give execution back to the C++ thread, to go back into MQ/EQ
                 if(Core.IsProcessing)
                 {
-                    Delay(ProcessDelay);//this calls the reset events and sets the delay to 10ms at min
+                    Delay(E3.CharacterSettings.CPU_ProcessLoopDelay);//this calls the reset events and sets the delay to 10ms at min
                 }
             }
            

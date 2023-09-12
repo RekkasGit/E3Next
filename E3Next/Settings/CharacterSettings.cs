@@ -194,8 +194,10 @@ namespace E3Core.Settings
         public string Charm_PeelDebuffPerson = String.Empty;
         public List<Spell> Charm_PeelDebuffSpells = new List<Spell>();
 
-		//
+        //
 
+
+        public Int32 CPU_ProcessLoopDelay = 50;
 
 		public Dictionary<string, string> PetWeapons = new Dictionary<string, string>();
         public bool AutoPetWeapons = false;
@@ -272,6 +274,9 @@ namespace E3Core.Settings
             //this is so we can get the merged data as well. 
             string filename = GetBoTFilePath($"{CharacterName}_{ServerName}.ini");
             ParsedData = CreateSettings(filename);
+
+
+            LoadKeyData("CPU", "ProcessLoopDelayInMS", ParsedData, ref CPU_ProcessLoopDelay);
 
             LoadKeyData("Misc", "AutoFood", ParsedData, ref Misc_AutoFoodEnabled);
             LoadKeyData("Misc", "Food", ParsedData, ref Misc_AutoFood);
@@ -787,6 +792,9 @@ namespace E3Core.Settings
             newFile.Sections.AddSection("Ifs");
             newFile.Sections.AddSection("Events");
 			newFile.Sections.AddSection("EventLoop");
+			newFile.Sections.AddSection("CPU");
+			section = newFile.Sections.GetSectionData("CPU");
+			section.Keys.AddKey("ProcessLoopDelayInMS", "50");
 
 
 			newFile.Sections.AddSection("Manastone");
