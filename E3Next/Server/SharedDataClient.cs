@@ -277,7 +277,7 @@ namespace E3Core.Server
 			string OnCommandName = "OnCommand-" + E3.CurrentName;
 
 			//timespan we expect to have some type of message
-			TimeSpan recieveTimeout = new TimeSpan(0, 0, 0, 0, 2);
+			TimeSpan recieveTimeout = new TimeSpan(0, 0, 0, 2, 0);
 			using (var subSocket = new SubscriberSocket())
 			{
 				try
@@ -308,8 +308,6 @@ namespace E3Core.Server
 						string messageTopicReceived;
 						if (subSocket.TryReceiveFrameString(recieveTimeout, out messageTopicReceived))
 						{
-
-
 							string messageReceived = subSocket.ReceiveFrameString();
 
 							if (messageTopicReceived == "OnCommand-All")

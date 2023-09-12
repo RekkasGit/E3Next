@@ -178,7 +178,6 @@
   </ItemGroup>
   <Import Project="$(MSBuildToolsPath)\Microsoft.CSharp.targets" />
   <PropertyGroup>
-    <PostBuildEvent>
-    </PostBuildEvent>
+    <PostBuildEvent>powershell.exe $(ProjectDir)\CopyToEQFolder.ps1</PostBuildEvent>
   </PropertyGroup>
 </Project>
