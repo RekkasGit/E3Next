@@ -414,13 +414,18 @@ namespace E3Core.Server
 								{
 									TopicUpdates[user].TryAdd(messageTopicReceived, new ShareDataEntry() { Data = messageReceived, LastUpdate = updateTime });
 								}
+
+								
 								var entry = TopicUpdates[user][messageTopicReceived];
 
-								//why do work if its the same data?									
-								if (entry.Data != messageReceived)
+								lock(entry)
 								{
-									entry.Data = messageReceived;
-									entry.LastUpdate = updateTime;
+									//why do work if its the same data?									
+									if (entry.Data != messageReceived)
+									{
+										entry.Data = messageReceived;
+										entry.LastUpdate = updateTime;
+									}
 								}
 
 							}

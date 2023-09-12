@@ -562,23 +562,26 @@ namespace E3Core.Processors
         private void UpdateBuffInfoUserInfo(string name, string charBuffKeyName, string topicKey, Dictionary<string, CharacterBuffs> buffCollection)
         {
             var userTopics = NetMQServer.SharedDataClient.TopicUpdates[name];
-
-            //we don't have it in our memeory, so lets add it
-            if (!buffCollection.ContainsKey(charBuffKeyName))
+            lock (userTopics[topicKey])
             {
-                var buffInfo = CharacterBuffs.Aquire();
 
-                e3util.BuffInfoToDictonary(userTopics[topicKey].Data, buffInfo.BuffDurations);
-                buffInfo.LastUpdate = userTopics[topicKey].LastUpdate;
-                buffCollection.Add(charBuffKeyName, buffInfo);
-            }
-            //do we have updated information that is newer than what we already have?
-            if (userTopics[topicKey].LastUpdate > buffCollection[charBuffKeyName].LastUpdate)
-            {
-                //new info, lets update!
-                var buffInfo = buffCollection[charBuffKeyName];
-                e3util.BuffInfoToDictonary(userTopics[topicKey].Data, buffInfo.BuffDurations);
-                buffInfo.LastUpdate = userTopics[topicKey].LastUpdate;
+                //we don't have it in our memeory, so lets add it
+                if (!buffCollection.ContainsKey(charBuffKeyName))
+                {
+                    var buffInfo = CharacterBuffs.Aquire();
+                    e3util.BuffInfoToDictonary(userTopics[topicKey].Data, buffInfo.BuffDurations);
+                    buffInfo.LastUpdate = userTopics[topicKey].LastUpdate;
+                    buffCollection.Add(charBuffKeyName, buffInfo);
+                }
+                //do we have updated information that is newer than what we already have?
+                if (userTopics[topicKey].LastUpdate > buffCollection[charBuffKeyName].LastUpdate)
+                {
+                    //new info, lets update!
+                    var buffInfo = buffCollection[charBuffKeyName];
+                    e3util.BuffInfoToDictonary(userTopics[topicKey].Data, buffInfo.BuffDurations);
+                    buffInfo.LastUpdate = userTopics[topicKey].LastUpdate;
+                    
+                }
             }
         }
 
@@ -605,15 +608,19 @@ namespace E3Core.Processors
 				collection.Add(name, new SharedNumericDataInt32 { Data = 0 });
 			}
 			var sharedInfo = collection[name];
-			if (entry.LastUpdate > sharedInfo.LastUpdate)
-			{
-				if (Int32.TryParse(entry.Data, out var result))
+            lock(entry)
+            {
+				if (entry.LastUpdate > sharedInfo.LastUpdate)
 				{
+					if (Int32.TryParse(entry.Data, out var result))
+					{
 
-					sharedInfo.Data = result;
-					sharedInfo.LastUpdate = entry.LastUpdate;
+						sharedInfo.Data = result;
+						sharedInfo.LastUpdate = entry.LastUpdate;
+					}
 				}
 			}
+			
 			return sharedInfo.Data;
 		}
 
@@ -985,15 +992,19 @@ namespace E3Core.Processors
                 _pctHealthCollection.Add(name, new SharedNumericDataInt32 { Data=100});
 			}
             var sharedInfo = _pctHealthCollection[name];
-			if (entry.LastUpdate> sharedInfo.LastUpdate)
+            lock(entry)
             {
-				if (Int32.TryParse(entry.Data, out var result))
+				if (entry.LastUpdate > sharedInfo.LastUpdate)
 				{
+					if (Int32.TryParse(entry.Data, out var result))
+					{
 
-					sharedInfo.Data = result;
-					sharedInfo.LastUpdate= entry.LastUpdate;
+						sharedInfo.Data = result;
+						sharedInfo.LastUpdate = entry.LastUpdate;
+					}
 				}
 			}
+			
             return sharedInfo.Data;
 		}
 

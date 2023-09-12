@@ -1120,22 +1120,26 @@ namespace E3Core.Processors
 			}
 			//we have the data, lets check on it. 
 			//we don't have it in our memeory, so lets add it
-			if (!_characterBuffs.ContainsKey(keyNameToUse))
+			lock (userTopics[keyToUse])
 			{
-				var buffInfo = CharacterBuffs.Aquire();
-
-				e3util.BuffInfoToDictonary(userTopics[keyToUse].Data, buffInfo.BuffDurations);
-				buffInfo.LastUpdate = userTopics[keyToUse].LastUpdate;
-				_characterBuffs.Add(keyNameToUse, buffInfo);
+				if (!_characterBuffs.ContainsKey(keyNameToUse))
+				{
+					var buffInfo = CharacterBuffs.Aquire();
+					e3util.BuffInfoToDictonary(userTopics[keyToUse].Data, buffInfo.BuffDurations);
+					buffInfo.LastUpdate = userTopics[keyToUse].LastUpdate;
+					_characterBuffs.Add(keyNameToUse, buffInfo);
+				}
+				//do we have updated information that is newer than what we already have?
+				if (userTopics[keyToUse].LastUpdate > _characterBuffs[keyNameToUse].LastUpdate)
+				{
+					//new info, lets update!
+					var buffInfo = _characterBuffs[keyNameToUse];
+					e3util.BuffInfoToDictonary(userTopics[keyToUse].Data, buffInfo.BuffDurations);
+					buffInfo.LastUpdate = userTopics[keyToUse].LastUpdate;
+					
+				}
 			}
-			//do we have updated information that is newer than what we already have?
-			if (userTopics[keyToUse].LastUpdate > _characterBuffs[keyNameToUse].LastUpdate)
-			{
-				//new info, lets update!
-				var buffInfo = _characterBuffs[keyNameToUse];
-				e3util.BuffInfoToDictonary(userTopics[keyToUse].Data, buffInfo.BuffDurations);
-				buffInfo.LastUpdate = userTopics[keyToUse].LastUpdate;
-			}
+				
 			//done with updates, now lets check the data.
 			//pets have a cap of MaxPetBuffSlots if equal to or greater, we just can't buff because well.. we can't see it!
 			if (usePets && _characterBuffs[keyNameToUse].BuffDurations.Count >= e3util.MaxPetBuffSlots)
