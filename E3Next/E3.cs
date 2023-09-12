@@ -73,7 +73,7 @@ namespace E3Core.Processors
             BuffCheck.BuffInstant(E3.CharacterSettings.InstantBuffs);
 
 
-            using (Log.Trace("Assist/WaitForRez"))
+            //using (Log.Trace("Assist/WaitForRez"))
             {
                 Rez.Process();
                 if (Basics.AmIDead()) return;
@@ -93,29 +93,41 @@ namespace E3Core.Processors
                     {
                         foreach (var methodName in _methodsToInvokeAsStrings)
                         {
-							Burns.UseBurns();
-							//if an action was taken, start over
-							if (ActionTaken)
+							//using (Log.Trace($"{methodName}-Burns"))
                             {
-                                break;
-                            }
-                            Action methodToInvoke;
-                            if (AdvancedSettings.MethodLookup.TryGetValue(methodName, out methodToInvoke))
-                            {
-                                methodToInvoke.Invoke();
+								Burns.UseBurns();
 
-                            }
-                            //check backoff
-                            //check nowcast
-                            EventProcessor.ProcessEventsInQueues("/nowcast");
-                            EventProcessor.ProcessEventsInQueues("/backoff");
+							}
+
+							//using (Log.Trace($"{methodName}-Main"))
+                            {
+								//if an action was taken, start over
+								if (ActionTaken)
+								{
+									break;
+								}
+								Action methodToInvoke;
+								if (AdvancedSettings.MethodLookup.TryGetValue(methodName, out methodToInvoke))
+								{
+									methodToInvoke.Invoke();
+
+								}
+							}
+
+							//check backoff
+							//check nowcast
+							//using (Log.Trace($"{methodName}-CheckQueues"))
+							{
+								EventProcessor.ProcessEventsInQueues("/nowcast");
+								EventProcessor.ProcessEventsInQueues("/backoff");
+
+							}
+							
                         }
                     }
                 }
 
             }
-            //get most up to date data, so let the game do a full process loop.
-            e3util.YieldToEQ();
             EventProcessor.ProcessEventsInQueues("/backoff");
             Assist.Process();
             
@@ -132,14 +144,17 @@ namespace E3Core.Processors
             //in case any of them change the target, put it back after called
             Int32 orgTargetID = MQ.Query<Int32>("${Target.ID}");
            
-            using (Log.Trace("ClassMethodCalls"))
+            //using (Log.Trace("ClassMethodCalls"))
             {
 
                 //lets do our class methods, this is last because of bards
                 foreach (var kvp in AdvancedSettings.ClassMethodLookup)
                 {
 					Burns.UseBurns();
-					kvp.Value.Invoke();
+                    //using (Log.Trace($"ClassMethodCalls-{kvp.Key}-Main"))
+                    {
+                        kvp.Value.Invoke();
+                    }
                     EventProcessor.ProcessEventsInQueues("/nowcast");
                     EventProcessor.ProcessEventsInQueues("/backoff");
                 }
@@ -211,6 +226,7 @@ namespace E3Core.Processors
         public static bool InStateUpdate = false;
 		public static void StateUpdates()
         {
+           
             try
             {
                 InStateUpdate = true;
@@ -346,7 +362,7 @@ namespace E3Core.Processors
 				Setup.Init();
 
                 IsInit = true;
-                MonoCore.Spawns.RefreshTimePeriodInMS = 1000;
+                MonoCore.Spawns.RefreshTimePeriodInMS = 500;
             }
 
 
