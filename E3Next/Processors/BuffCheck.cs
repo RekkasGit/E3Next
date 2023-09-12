@@ -290,7 +290,7 @@ namespace E3Core.Processors
 				//auto remove torpor if not in combat and full health
 				if (MQ.Query<Int32>("${Me.PctHPs}") > 95 && !Basics.InCombat())
 				{
-					if (MQ.Query<bool>("${Me.Song[Transcendent Torpor]}"))
+					if (MQ.Query<bool>("${Me.Song[Transcendent Torpor]}") || MQ.Query<bool>("${Me.Buff[Transcendent Torpor]}"))
 					{
 						DropBuff("Transcendent Torpor");
 					}
