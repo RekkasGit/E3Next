@@ -352,25 +352,25 @@ namespace E3Core.Processors
     {
         public static Logging _log = E3.Log;
         private static IMQ MQ = E3.MQ;
-        private string settingsFilePath = String.Empty;
         private static Dictionary<string, CharacterBuffs> _characterBuffs = new Dictionary<string, CharacterBuffs>();
         private static Dictionary<string, CharacterBuffs> _petBuffs = new Dictionary<string, CharacterBuffs>();
 		private System.Text.StringBuilder _stringBuilder = new System.Text.StringBuilder();
 		private static bool GlobalAllEnabled = false;
+		List<string> _pathsTolookAt = new List<string>();
 		Task _autoRegisrationTask;
         public SharedDataBots()
         {
-            settingsFilePath = BaseSettings.GetSettingsFilePath("");
+            string settingsFilePath = BaseSettings.GetSettingsFilePath("");
 
-            List<string> pathsToLookAT = new List<string>();
-            pathsToLookAT.Add(settingsFilePath);
+           
+            _pathsTolookAt.Add(settingsFilePath);
             //add other paths that have been configured to look at
             foreach(var path in E3.GeneralSettings.General_E3NetworkAddPathToMonitor)
             {
-                pathsToLookAT.Add(path);
+                _pathsTolookAt.Add(path);
             }
 
-			_autoRegisrationTask = Task.Factory.StartNew(() => { AutoRegisterUsers(pathsToLookAT); }, CancellationToken.None, TaskCreationOptions.DenyChildAttach, TaskScheduler.Default);
+			_autoRegisrationTask = Task.Factory.StartNew(() => { AutoRegisterUsers(_pathsTolookAt); }, CancellationToken.None, TaskCreationOptions.DenyChildAttach, TaskScheduler.Default);
 
 			//had to be registered in this order so that you don't get wildcard matches happening first in mq
 			//there is no 'exact match' in the MQ command linked list
@@ -959,14 +959,21 @@ namespace E3Core.Processors
             return _characterBuffs[name].BuffDurations.ContainsKey(buffid);
 
         }
-
+        HashSet<string> _isMyBotCache = new HashSet<string>(StringComparer.OrdinalIgnoreCase);
         public bool IsMyBot(string name)
         {
-            string filePath = $"{settingsFilePath}{name}_{E3.ServerName}_pubsubport.txt";
-            if (System.IO.File.Exists(filePath))
+
+            if (_isMyBotCache.Contains(name)) return true;
+
+            foreach (var path in _pathsTolookAt)
             {
-                return true;
-            }
+				string filePath = $"{path}{name}_{E3.ServerName}_pubsubport.txt";
+				if (System.IO.File.Exists(filePath))
+				{
+                    _isMyBotCache.Add(name);
+					return true;
+				}
+			}
             return false;
         }
 
