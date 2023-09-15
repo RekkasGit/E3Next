@@ -89,7 +89,7 @@ namespace E3Core.Data
                     {
                         AfterSpell = GetArgument<String>(value);
                     }
-					else if (value.StartsWith("StackRequetTargets|", StringComparison.OrdinalIgnoreCase))
+					else if (value.StartsWith("StackRequestTargets|", StringComparison.OrdinalIgnoreCase))
 					{
                         string targetString = GetArgument<String>(value);
                         string[] targets = targetString.Split(new char[] { ',' }, StringSplitOptions.RemoveEmptyEntries);

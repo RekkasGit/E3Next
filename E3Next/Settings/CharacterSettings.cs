@@ -62,9 +62,10 @@ namespace E3Core.Settings
         public bool Assist_DelayStrafeEnabled = true;
         public Int32 Assist_DelayStrafeDelay = 1500;
         private string _fileName = String.Empty;
-
-        //abilities
-        public List<Spell> MeleeAbilities = new List<Spell>();
+        public bool Assist_PetBackOffOnenrage = false;
+        public bool Assist_BackOffOnEnrage = false;
+		//abilities
+		public List<Spell> MeleeAbilities = new List<Spell>();
         //nukes
         public List<Spell> Nukes = new List<Spell>();
         public List<Spell> Stuns = new List<Spell>();
@@ -176,6 +177,7 @@ namespace E3Core.Settings
         public List<string> Rez_AutoRezSpells = new List<string>();
         public List<string> Rez_RezSpells = new List<string>();
         public bool Rez_AutoRez = false;
+      
 
 
 
@@ -334,7 +336,10 @@ namespace E3Core.Settings
             LoadKeyData("Assist Settings", "Ranged Distance", ParsedData, ref Assist_RangeDistance);
             LoadKeyData("Assist Settings", "Auto-Assist Engage Percent", ParsedData, ref Assist_AutoAssistPercent);
 			LoadKeyData("Assist Settings", "Delayed Strafe Enabled (On/Off)", ParsedData, ref Assist_DelayStrafeEnabled);
-			
+            LoadKeyData("Assist Settings", "Pet back off on Enrage (On/Off)", ParsedData, ref Assist_PetBackOffOnenrage);
+			LoadKeyData("Assist Settings", "Back off on Enrage (On/Off)", ParsedData, ref Assist_BackOffOnEnrage);
+
+
 
 
 			if (CharacterClass == Class.Rogue)
@@ -553,7 +558,8 @@ namespace E3Core.Settings
             section.Keys.AddKey("Melee Distance", "MaxMelee");
             section.Keys.AddKey("Ranged Distance", "100");
             section.Keys.AddKey("Auto-Assist Engage Percent", "98");
-			
+			section.Keys.AddKey("Pet back off on Enrage (On/Off)", "Off");
+			section.Keys.AddKey("Back off on Enrage (On/Off)", "Off");
 
 
 			newFile.Sections.AddSection("Buffs");

@@ -876,17 +876,21 @@ namespace E3Core.Processors
                     string mobName = x.match.Groups[1].Value;
                     if (MQ.Query<string>("${Target.CleanName}") == mobName)
                     {
-                        if (E3.GeneralSettings.AttackOffOnEnrage)
+                        if (E3.GeneralSettings.AttackOffOnEnrage || E3.CharacterSettings.Assist_BackOffOnEnrage)
                         {
                             E3.Bots.Broadcast("Enabling Assist Is Enraged");
                             _assistIsEnraged = true;
-                        }
-
-                        if (MQ.Query<Int32>("${Me.Pet.ID}") > 0)
+							
+						}
+                        if(E3.CharacterSettings.Assist_PetBackOffOnenrage)
                         {
-                            MQ.Cmd("/pet back off");
-                        }
-                    }
+							if (MQ.Query<Int32>("${Me.Pet.ID}") > 0)
+							{
+								MQ.Cmd("/pet back off");
+							}
+
+						}
+					}
                 }
             });
             EventProcessor.RegisterEvent("EnrageOff", "(.+)  is no longer enraged.", (x) =>
