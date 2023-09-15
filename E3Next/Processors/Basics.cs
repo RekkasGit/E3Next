@@ -586,20 +586,28 @@ namespace E3Core.Processors
                     return;
                 }
                 MQ.Cmd("/disband");
+                MQ.Delay(300);
                 MQ.Cmd("/raiddisband");
-                MQ.Delay(1500);
-                if (MQ.Query<int>("${Group}") > 0)
-                {
-                    MQ.Delay(2000, "!${Group}");
-                }
-
-                foreach (var member in groupMembers)
+			    if (MQ.Query<int>("${Group}") > 0)
+				{
+					MQ.Delay(2000, "!${Group}");
+				}
+				if (MQ.Query<int>("${Raid}") > 0)
+				{
+					MQ.Delay(2000, "!${Raid}");
+				}
+				foreach (var member in groupMembers)
+				{
+					E3.Bots.BroadcastCommandToPerson(member, "/disband");
+				}
+				//a delay between disband and raid disband. Shared data is stupid fast, so a delay and breaking up the commands are needed.
+				MQ.Delay(500);
+				foreach (var member in groupMembers)
                 {
                     E3.Bots.BroadcastCommandToPerson(member,"/raiddisband");
-                    E3.Bots.BroadcastCommandToPerson(member,"/disband");
                 }
-                
-                MQ.Delay(1500);
+				//give the time needed for everyone to disband
+				MQ.Delay(1500); 
                 foreach (var member in groupMembers)
                 {
                     MQ.Cmd($"/invite {member}");
