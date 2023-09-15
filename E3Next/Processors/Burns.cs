@@ -371,7 +371,7 @@ namespace E3Core.Processors
          "Swarm of Decay","Rise of Bones","Graverobber's Icon","Soulwhisper","Deathwhisper",
          "Wake the Dead","Spirit Call", "Shattered Gnoll Slayer", "Call of Xuzl","Song of Stone",
          "Tarnished Skeleton Key","Celestial Hammer","Graverobber's Icon","Battered Smuggler's Barrel",
-         "Phantasmal Opponent","Projection of Piety","Spirits of Nature", "Nature's Guardian"
+         "Phantasmal Opponent","Spirits of Nature", "Nature's Guardian"
         };
         private static List<string> _anguishBPList = new List<string>() {
             "Bladewhisper Chain Vest of Journeys",
