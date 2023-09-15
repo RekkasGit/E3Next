@@ -465,7 +465,8 @@ namespace E3Core.Data
                     SpellID = MQ.Query<Int32>($"${{Me.Inventory[{invSlot}].Spell.ID}}");
                     CastID = MQ.Query<Int32>($"${{Me.Inventory[{invSlot}].ID}}");
                     SpellType = MQ.Query<String>($"${{Me.Inventory[{invSlot}].Spell.SpellType}}");
-                }
+					IsShortBuff = MQ.Query<bool>($"${{Me.Inventory[{invSlot}].Spell.DurationWindow}}");
+				}
                 else
                 {
                     //1 index vs 0 index
@@ -495,8 +496,8 @@ namespace E3Core.Data
                     SpellID = MQ.Query<Int32>($"${{Me.Inventory[{invSlot}].Item[{bagSlot}].Spell.ID}}");
                     CastID = MQ.Query<Int32>($"${{Me.Inventory[{invSlot}].Item[{bagSlot}].ID}}");
                     SpellType = MQ.Query<String>($"${{Me.Inventory[{invSlot}].Item[{bagSlot}].Spell.SpellType}}");
-
-                }
+					IsShortBuff = MQ.Query<bool>($"${{Me.Inventory[{invSlot}].Item[{bagSlot}].Spell.DurationWindow}}");
+				}
 
             }
             else if (CastType == CastType.AA)
@@ -544,8 +545,10 @@ namespace E3Core.Data
                 SpellName = MQ.Query<String>($"${{Me.AltAbility[{CastName}].Spell}}");
                 SpellID = MQ.Query<Int32>($"${{Me.AltAbility[{CastName}].Spell.ID}}");
                 CastID = MQ.Query<Int32>($"${{Me.AltAbility[{CastName}].ID}}");
-            }
-            else if (CastType == CastType.Spell)
+				IsShortBuff = MQ.Query<bool>($"${{Me.AltAbility[{CastName}].Spell.DurationWindow}}");
+
+			}
+			else if (CastType == CastType.Spell)
             {
               
                 if(SpellInBook)
@@ -563,8 +566,9 @@ namespace E3Core.Data
                     Double AERange = MQ.Query<Double>($"${{Me.Book[{bookNumber}].AERange}}");
                     MyRange = MQ.Query<double>($"${{Me.Book[{bookNumber}].MyRange}}");
                     SpellType = MQ.Query<String>($"${{Me.Book[{bookNumber}].SpellType}}");
+                    IsShortBuff = MQ.Query<bool>($"${{Me.Book[{bookNumber}].DurationWindow}}");
 
-                    if (SpellType.Equals("Detrimental", StringComparison.OrdinalIgnoreCase))
+					if (SpellType.Equals("Detrimental", StringComparison.OrdinalIgnoreCase))
                     {
 
                         if (AERange > 0)
@@ -604,8 +608,9 @@ namespace E3Core.Data
                     Double AERange = MQ.Query<Double>($"${{Spell[{CastName}].AERange}}");
                     MyRange = MQ.Query<double>($"${{Spell[{CastName}].MyRange}}");
                     SpellType = MQ.Query<String>($"${{Spell[{CastName}].SpellType}}");
+					IsShortBuff = MQ.Query<bool>($"${{Spell[{CastName}].DurationWindow}}");
 
-                    if (SpellType.Equals("Detrimental", StringComparison.OrdinalIgnoreCase))
+					if (SpellType.Equals("Detrimental", StringComparison.OrdinalIgnoreCase))
                     {
 
                         if (AERange > 0)
@@ -652,9 +657,11 @@ namespace E3Core.Data
                 SpellID = MQ.Query<Int32>($"${{Spell[{CastName}].ID}}");
                 CastID = SpellID;
                 SpellType = MQ.Query<String>($"${{Spell[{CastName}].SpellType}}");
+				IsShortBuff = MQ.Query<bool>($"${{Spell[{CastName}].DurationWindow}}");
 
-            }
-            else if (CastType == CastType.Ability)
+
+			}
+			else if (CastType == CastType.Ability)
             {
                 //nothing to update here
             }
@@ -758,6 +765,7 @@ namespace E3Core.Data
         public bool NoMidSongCast = false;
         public Int64 MinDurationBeforeRecast = 0;
         public Int64 LastUpdateCheckFromTopicUpdate = 0;
+        public bool IsShortBuff = false;
       
 
         public override string ToString()

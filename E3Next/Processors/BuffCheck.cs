@@ -939,7 +939,16 @@ namespace E3Core.Processors
 								}
 								//its someone not in our buff group, do it the hacky way.
 								Casting.TrueTarget(s.ID);
-								MQ.Delay(2000, "${Target.BuffsPopulated}");
+
+								//greater than 0, so we don't get things like shrink that don't have a duration
+								bool isShortDuration = spell.IsShortBuff;
+
+								if(!isShortDuration || spell.CheckForCollection.Count>0)
+								{
+									//we can't see the short duration buffs anyway, so no need to delay.
+									MQ.Delay(2000, "${Target.BuffsPopulated}");
+								}
+								
 								bool shouldContinue = false;
 								if (spell.CheckForCollection.Count > 0)
 								{
@@ -956,13 +965,15 @@ namespace E3Core.Processors
 									}
 									if (shouldContinue) { continue; }
 								}
-
-								bool willStack = MQ.Query<bool>($"${{Spell[{spell.SpellName}].StacksTarget}}");
-								//MQ.Write($"Will stack:{spell.SpellName}:" + willStack);
-								if (!willStack)
+								if (!isShortDuration || spell.CheckForCollection.Count > 0)
 								{
-									//won't stack don't check back for awhile
-									UpdateBuffTimers(s.ID, spell, 30 * 1000, -1, true);
+									bool willStack = MQ.Query<bool>($"${{Spell[{spell.SpellName}].StacksTarget}}");
+									//MQ.Write($"Will stack:{spell.SpellName}:" + willStack);
+									if (!willStack)
+									{
+										//won't stack don't check back for awhile
+										UpdateBuffTimers(s.ID, spell, 30 * 1000, -1, true);
+									}
 								}
 								//double ifs check, so if their if included Target, we have it
 								if (!String.IsNullOrWhiteSpace(spell.Ifs))
@@ -974,12 +985,7 @@ namespace E3Core.Processors
 										continue;
 									}
 								}
-
-								//greater than 0, so we don't get things like shrink that don't have a duration
-								bool isShortDuration = spell.DurationTotalSeconds <= 60 && spell.DurationTotalSeconds > 0;
-								Int64 timeLeftInMS = Casting.TimeLeftOnTargetBuff(spell);
-
-								if (isShortDuration && timeLeftInMS < 1)
+								if (isShortDuration)
 								{
 									//we cannot do target based checks if a short duration type.
 
@@ -997,12 +1003,8 @@ namespace E3Core.Processors
 											UpdateBuffTimers(s.ID, spell, 60 * 1000, -1, true);
 										}
 										else
-										{
-
-											Casting.TrueTarget(s.ID);
-											MQ.Delay(2000, "${Target.BuffsPopulated}");
-											MQ.Delay(300);
-											UpdateBuffTimers(s.ID, spell, spell.DurationTotalSeconds * 1000, timeLeftInMS);
+										{	
+											UpdateBuffTimers(s.ID, spell, spell.DurationTotalSeconds * 1000, spell.DurationTotalSeconds * 1000,true);
 										}
 										return;
 									}
@@ -1011,6 +1013,9 @@ namespace E3Core.Processors
 								}
 								else
 								{
+									Int64 timeLeftInMS = -1;
+									timeLeftInMS = Casting.TimeLeftOnTargetBuff(spell);
+
 									if (timeLeftInMS < 15000)
 									{
 										if (Casting.CheckReady(spell) && Casting.CheckMana(spell))

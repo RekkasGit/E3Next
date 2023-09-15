@@ -1385,7 +1385,7 @@ namespace MonoCore
                 {
                     return false;
                 }
-                this.Delay(10);
+                this.Delay(25);
             }
             return true;
         }
