@@ -383,7 +383,7 @@ namespace E3Core.Processors
 						//we can cast,maybe.
 
 						string thingToAask = spell.CastName;
-						if(String.IsNullOrWhiteSpace(spell.StackRequestItem))
+						if(!String.IsNullOrWhiteSpace(spell.StackRequestItem))
 						{
 							thingToAask = spell.StackRequestItem;
 						}
