@@ -926,7 +926,7 @@ namespace E3Core.Processors
 									return;
 								}
 								else
-								{   //spell not ready
+								{   //spell not ready or won't stack
 									UpdateBuffTimers(s.ID, spell, 6000, -1, true, true);
 
 								}

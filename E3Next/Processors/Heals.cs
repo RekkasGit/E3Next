@@ -421,7 +421,7 @@ namespace E3Core.Processors
 											{
 												if (bufflist.Contains(spell.CheckForCollection[checkforItem]))
 												{
-													shouldContinue = false;
+													shouldContinue = true;
 													break;
 												}
 											}
@@ -512,7 +512,7 @@ namespace E3Core.Processors
 										{
 											if (bufflist.Contains(spell.CheckForCollection[checkforItem]))
 											{
-												shouldContinue = false;
+												shouldContinue = true;
 												break;
 											}
 										}

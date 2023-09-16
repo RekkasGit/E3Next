@@ -113,10 +113,64 @@ namespace E3Core.Processors
                 }
 
             });
-            #endregion
+			#endregion
+			#region Ture_Warning
+			pattern = "roars with fury as it surveys its attackers";
+			EventProcessor.RegisterEvent("Ture_warning", pattern, (x) => {
+				{
 
-            #region Uqua
-            pattern = "The (.+) must unlock the door to the next room\\.";
+					if (E3.CurrentName == MQ.Query<string>("${Raid.Leader}"))
+					{
+						MQ.Cmd($"/rsay AE Rampage INC 5 seconds.");
+					}
+				}
+
+			});
+			#endregion
+
+			#region Ture_Ramp_Start
+			pattern = "eyes roll into its head as it goes into a frenzy";
+			EventProcessor.RegisterEvent("Ture_Ramp_Start", pattern, (x) => {
+				{
+
+					if (E3.CurrentName == MQ.Query<string>("${Raid.Leader}"))
+					{
+						MQ.Cmd($"/rsay -+- 10k AE Rampage Started -+-");
+					}
+				}
+
+			});
+			#endregion
+
+			#region Ture_Ramp_End
+			pattern = "calms and regains its focus";
+			EventProcessor.RegisterEvent("Ture_Ramp_End", pattern, (x) => {
+				{
+
+					if (E3.CurrentName == MQ.Query<string>("${Raid.Leader}"))
+					{
+						MQ.Cmd($"/rsay -+- Boss Safe - AE Rampage ended -+-");
+					}
+				}
+
+			});
+			#endregion
+
+			#region Keldovan_Power
+			pattern = "Keldovan the Harrier regains his combat stance";
+			EventProcessor.RegisterEvent("Keldovan_Power", pattern, (x) => {
+				{
+
+					if (E3.CurrentName == MQ.Query<string>("${Raid.Leader}"))
+					{
+						MQ.Cmd($"/rsay -+- Keldovan has regained a power - KILL A DOG -+-");
+					}
+				}
+
+			});
+			#endregion
+			#region Uqua
+			pattern = "The (.+) must unlock the door to the next room\\.";
             EventProcessor.RegisterEvent("AlertUquaChamberKey", pattern, (x) => {
 
                 if(x.match.Groups.Count>1)
