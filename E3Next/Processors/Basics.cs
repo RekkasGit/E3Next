@@ -1323,7 +1323,7 @@ namespace E3Core.Processors
                         }
                         else
                         {
-                            bool orb = MQ.Query<bool>("${Cursor.Name.Equal[Molten orb]}") || MQ.Query<bool>("${Cursor.Name.Equal[Lava orb]}");
+                            bool orb = MQ.Query<bool>("${Cursor.Name.Equal[Molten orb]}") || MQ.Query<bool>("${Cursor.Name.Equal[Lava orb]}") || MQ.Query<bool>("${Cursor.Name.Equal[Blazing Void Orb]}");
                             if (orb)
                             {
                                 int charges = MQ.Query<int>("${Cursor.Charges}");

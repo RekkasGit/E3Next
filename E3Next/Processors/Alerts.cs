@@ -43,16 +43,12 @@ namespace E3Core.Processors
                 }
                 else
                 {
-                   
                     if(currentFace!= "Mirrored Mask")
                     {
                         MQ.Cmd("/exchange \"mirrored mask\" face");
-                        MQ.Delay(100);
+                        MQ.Delay(500);
                     }
                 }
-
-
-
                 if (MQ.Query<bool>("${Me.Inventory[face].Name.Equal[Mirrored Mask]}"))
                 {
                     Data.Spell mirroredMask = new Data.Spell("Mirrored Mask");
