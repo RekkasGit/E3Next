@@ -962,20 +962,12 @@ namespace E3Core.Processors
         HashSet<string> _isMyBotCache = new HashSet<string>(StringComparer.OrdinalIgnoreCase);
         public bool IsMyBot(string name)
         {
-
-            if (_isMyBotCache.Contains(name)) return true;
-
-            foreach (var path in _pathsTolookAt)
+            if(NetMQServer.SharedDataClient.TopicUpdates.ContainsKey(name))
             {
-				string filePath = $"{path}{name}_{E3.ServerName}_pubsubport.txt";
-				if (System.IO.File.Exists(filePath))
-				{
-                    _isMyBotCache.Add(name);
-					return true;
-				}
-			}
+                return true;
+            }
             return false;
-        }
+	    }
 
         Dictionary<string, SharedNumericDataInt32> _pctHealthCollection = new Dictionary<string, SharedNumericDataInt32>();
 		public int PctHealth(string name)

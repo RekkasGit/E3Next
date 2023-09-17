@@ -118,14 +118,27 @@ namespace E3Core.Utility
             return resultStringBuilder.ToString();
         }
 
-       
-        /// <summary>
-        /// Use to see if a certain method should be running
-        /// </summary>
-        /// <param name="nextCheck">ref param to update ot the next time a thing should run</param>
-        /// <param name="nextCheckInterval">The interval in milliseconds</param>
-        /// <returns></returns>
-        public static bool ShouldCheck(ref Int64 nextCheck, Int64 nextCheckInterval)
+		public static IEnumerable<T> Shuffle<T>(this IEnumerable<T> source, Random rng)
+		{
+			//https://stackoverflow.com/questions/1287567/is-using-random-and-orderby-a-good-shuffle-algorithm
+			T[] elements = source.ToArray();
+			for (int i = elements.Length - 1; i >= 0; i--)
+			{
+				// Swap element "i" with a random earlier element it (or itself)
+				// ... except we don't really need to swap it fully, as we can
+				// return it immediately, and afterwards it's irrelevant.
+				int swapIndex = rng.Next(i + 1);
+				yield return elements[swapIndex];
+				elements[swapIndex] = elements[i];
+			}
+		}
+		/// <summary>
+		/// Use to see if a certain method should be running
+		/// </summary>
+		/// <param name="nextCheck">ref param to update ot the next time a thing should run</param>
+		/// <param name="nextCheckInterval">The interval in milliseconds</param>
+		/// <returns></returns>
+		public static bool ShouldCheck(ref Int64 nextCheck, Int64 nextCheckInterval)
         {  
             if (Core.StopWatch.ElapsedMilliseconds < nextCheck)
             {
