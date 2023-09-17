@@ -176,7 +176,7 @@ namespace E3Core.Utility
             Double x = MQ.Query<Double>("${Target.X}");
             Double y = MQ.Query<Double>("${Target.Y}");
             MQ.Cmd($"/squelch /moveto loc {y} {x} mdist 5");
-            MQ.Delay(500);
+            MQ.Delay(1500, $"${{Math.Distance[{y}, {x}]}} < 5");    // This is the blocking but breaks the second you are there
 
             Int64 endTime = Core.StopWatch.ElapsedMilliseconds + 10000;
             while(true)
