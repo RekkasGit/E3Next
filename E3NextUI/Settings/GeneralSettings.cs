@@ -48,7 +48,8 @@ namespace E3NextUI.Settings
         public bool TTS_ChannelRaidEnabled = false;
         public bool TTS_ChannelTellEnabled = false;
         public string TTS_RegEx = string.Empty;
-        public string TTS_Voice = string.Empty;
+		public string TTS_RegExExclude = string.Empty;
+		public string TTS_Voice = string.Empty;
         public Int32 TTS_Volume = 50;
         public Int32 TTS_Speed = 0;
 
@@ -106,6 +107,7 @@ namespace E3NextUI.Settings
 			LoadKeyData("TTS", "ChannelTellEnabled", _parsedData, ref TTS_ChannelTellEnabled);
 
 			LoadKeyData("TTS", "RegEx", _parsedData, ref TTS_RegEx);
+			LoadKeyData("TTS", "RegExExclude", _parsedData, ref TTS_RegExExclude);
 			LoadKeyData("TTS", "VoiceName", _parsedData, ref TTS_Voice);
 			LoadKeyData("TTS", "VoiceVolume", _parsedData, ref TTS_Volume);
 			LoadKeyData("TTS", "VoiceSpeed", _parsedData, ref TTS_Speed);
@@ -196,6 +198,7 @@ namespace E3NextUI.Settings
             section["ChannelRaidEnabled"] = TTS_ChannelRaidEnabled.ToString();
 			section["ChannelTellEnabled"] = TTS_ChannelTellEnabled.ToString();
 			section["RegEx"] = TTS_RegEx;
+            section["RegExExclude"] = TTS_RegExExclude;
             section["VoiceName"] = TTS_Voice;
             section["VoiceVolume"] = TTS_Volume.ToString();
             section["VoiceSpeed"] = TTS_Speed.ToString();
@@ -255,6 +258,7 @@ namespace E3NextUI.Settings
 			section.Keys.AddKey("ChannelRaidEnabled", "False");
 			section.Keys.AddKey("ChannelTellEnabled", "False");
 			section.Keys.AddKey("RegEx", "");
+            section.Keys.AddKey("RegExExclude", "");
             section.Keys.AddKey("VoiceName", "");
 			section.Keys.AddKey("VoiceVolume", "50");
 			section.Keys.AddKey("VoiceSpeed", "0");

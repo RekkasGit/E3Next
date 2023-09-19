@@ -48,6 +48,8 @@
 			this.buttonOK = new System.Windows.Forms.Button();
 			this.button1 = new System.Windows.Forms.Button();
 			this.checkBox_tts_breifmode = new System.Windows.Forms.CheckBox();
+			this.label5 = new System.Windows.Forms.Label();
+			this.textBox_tts_regex_exclude = new System.Windows.Forms.TextBox();
 			this.groupBox1.SuspendLayout();
 			((System.ComponentModel.ISupportInitialize)(this.trackBar_tts_volume)).BeginInit();
 			((System.ComponentModel.ISupportInitialize)(this.trackBar_tts_speed)).BeginInit();
@@ -141,7 +143,7 @@
 			// 
 			// textBox_tts_regex
 			// 
-			this.textBox_tts_regex.Location = new System.Drawing.Point(13, 184);
+			this.textBox_tts_regex.Location = new System.Drawing.Point(13, 180);
 			this.textBox_tts_regex.Name = "textBox_tts_regex";
 			this.textBox_tts_regex.Size = new System.Drawing.Size(456, 20);
 			this.textBox_tts_regex.TabIndex = 7;
@@ -149,7 +151,7 @@
 			// label1
 			// 
 			this.label1.AutoSize = true;
-			this.label1.Location = new System.Drawing.Point(14, 159);
+			this.label1.Location = new System.Drawing.Point(14, 161);
 			this.label1.Name = "label1";
 			this.label1.Size = new System.Drawing.Size(131, 13);
 			this.label1.TabIndex = 8;
@@ -220,7 +222,7 @@
 			// buttonOK
 			// 
 			this.buttonOK.DialogResult = System.Windows.Forms.DialogResult.OK;
-			this.buttonOK.Location = new System.Drawing.Point(117, 213);
+			this.buttonOK.Location = new System.Drawing.Point(117, 255);
 			this.buttonOK.Name = "buttonOK";
 			this.buttonOK.Size = new System.Drawing.Size(87, 31);
 			this.buttonOK.TabIndex = 16;
@@ -231,7 +233,7 @@
 			// button1
 			// 
 			this.button1.DialogResult = System.Windows.Forms.DialogResult.Cancel;
-			this.button1.Location = new System.Drawing.Point(268, 213);
+			this.button1.Location = new System.Drawing.Point(268, 255);
 			this.button1.Name = "button1";
 			this.button1.Size = new System.Drawing.Size(87, 31);
 			this.button1.TabIndex = 17;
@@ -249,11 +251,29 @@
 			this.checkBox_tts_breifmode.Text = "Breif Mode";
 			this.checkBox_tts_breifmode.UseVisualStyleBackColor = true;
 			// 
+			// label5
+			// 
+			this.label5.AutoSize = true;
+			this.label5.Location = new System.Drawing.Point(14, 206);
+			this.label5.Name = "label5";
+			this.label5.Size = new System.Drawing.Size(139, 13);
+			this.label5.TabIndex = 20;
+			this.label5.Text = "Regular Expression Exclude";
+			// 
+			// textBox_tts_regex_exclude
+			// 
+			this.textBox_tts_regex_exclude.Location = new System.Drawing.Point(13, 225);
+			this.textBox_tts_regex_exclude.Name = "textBox_tts_regex_exclude";
+			this.textBox_tts_regex_exclude.Size = new System.Drawing.Size(456, 20);
+			this.textBox_tts_regex_exclude.TabIndex = 19;
+			// 
 			// TTSConfig
 			// 
 			this.AutoScaleDimensions = new System.Drawing.SizeF(6F, 13F);
 			this.AutoScaleMode = System.Windows.Forms.AutoScaleMode.Font;
-			this.ClientSize = new System.Drawing.Size(510, 260);
+			this.ClientSize = new System.Drawing.Size(510, 302);
+			this.Controls.Add(this.label5);
+			this.Controls.Add(this.textBox_tts_regex_exclude);
 			this.Controls.Add(this.checkBox_tts_breifmode);
 			this.Controls.Add(this.button1);
 			this.Controls.Add(this.buttonOK);
@@ -299,5 +319,7 @@
 		public System.Windows.Forms.TrackBar trackBar_tts_volume;
 		public System.Windows.Forms.TrackBar trackBar_tts_speed;
 		public System.Windows.Forms.CheckBox checkBox_tts_breifmode;
+		private System.Windows.Forms.Label label5;
+		public System.Windows.Forms.TextBox textBox_tts_regex_exclude;
 	}
 }

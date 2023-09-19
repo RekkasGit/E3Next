@@ -203,7 +203,25 @@ namespace E3NextUI.Server
         {
             if (!E3UI._genSettings.TTS_Enabled) return;
             if (message.StartsWith("You ")) return;
-            if(message.Contains(" says out of character,"))
+
+
+			if (!String.IsNullOrWhiteSpace(E3UI._genSettings.TTS_RegEx))
+			{
+				var match = System.Text.RegularExpressions.Regex.Match(message, E3UI._genSettings.TTS_RegEx);
+				if (!match.Success)
+				{
+					return;
+				}
+			}
+			if (!String.IsNullOrWhiteSpace(E3UI._genSettings.TTS_RegExExclude))
+			{
+				var match = System.Text.RegularExpressions.Regex.Match(message, E3UI._genSettings.TTS_RegEx);
+				if (match.Success)
+				{
+					return;
+				}
+			}
+			if (message.Contains(" says out of character,"))
             {
                 if (!E3UI._genSettings.TTS_ChannelOOCEnabled) return;
 		
@@ -247,14 +265,7 @@ namespace E3NextUI.Server
 				if (!E3UI._genSettings.TTS_ChannelSayEnabled) return;
 
 			}
-			if (!String.IsNullOrWhiteSpace(E3UI._genSettings.TTS_RegEx))
-			{
-				var match = System.Text.RegularExpressions.Regex.Match(message, E3UI._genSettings.TTS_RegEx);
-				if (!match.Success)
-				{
-					return;
-				}
-			}
+			
 			if (!String.IsNullOrWhiteSpace(E3UI._genSettings.TTS_Voice))
             {
 				_synth.SelectVoice(E3UI._genSettings.TTS_Voice);
