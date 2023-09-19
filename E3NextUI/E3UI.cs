@@ -1053,6 +1053,8 @@ namespace E3NextUI
             config.checkBox_tts_breifmode.Checked = _genSettings.TTS_BriefMode;
 			config.textBox_tts_regex.Text = _genSettings.TTS_RegEx;
 			config.textBox_tts_regex_exclude.Text = _genSettings.TTS_RegExExclude;
+            config.numericUpDown_tts_wordlimit.Value=_genSettings.TTS_CharacterLimit;
+
 
 			if (!String.IsNullOrWhiteSpace(_genSettings.TTS_Voice))
 			{
@@ -1078,7 +1080,7 @@ namespace E3NextUI
 				_genSettings.TTS_RegEx = config.textBox_tts_regex.Text;
 				_genSettings.TTS_RegExExclude = config.textBox_tts_regex_exclude.Text;
 				_genSettings.TTS_Voice = (String)config.comboBox_tts_voices.SelectedItem;
-
+                _genSettings.TTS_CharacterLimit = (Int32)config.numericUpDown_tts_wordlimit.Value;
 				_genSettings.TTS_Speed = config.trackBar_tts_speed.Value;
 				_genSettings.TTS_Volume = config.trackBar_tts_volume.Value;
 

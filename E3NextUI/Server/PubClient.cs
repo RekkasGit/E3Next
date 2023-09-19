@@ -292,6 +292,15 @@ namespace E3NextUI.Server
                 }
             }
 
+            if(E3UI._genSettings.TTS_CharacterLimit>0)
+            {
+                if(message.Length>E3UI._genSettings.TTS_CharacterLimit)
+                {
+                    message = message.Substring(0, E3UI._genSettings.TTS_CharacterLimit);
+                    message += " TLDR";
+                }
+            }
+
 
             _synth.Rate = E3UI._genSettings.TTS_Speed;
             _synth.Volume = E3UI._genSettings.TTS_Volume;

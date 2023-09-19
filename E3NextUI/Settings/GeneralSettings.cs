@@ -52,6 +52,7 @@ namespace E3NextUI.Settings
 		public string TTS_Voice = string.Empty;
         public Int32 TTS_Volume = 50;
         public Int32 TTS_Speed = 0;
+        public Int32 TTS_CharacterLimit = 0;
 
         private IniData _parsedData;
 
@@ -111,6 +112,7 @@ namespace E3NextUI.Settings
 			LoadKeyData("TTS", "VoiceName", _parsedData, ref TTS_Voice);
 			LoadKeyData("TTS", "VoiceVolume", _parsedData, ref TTS_Volume);
 			LoadKeyData("TTS", "VoiceSpeed", _parsedData, ref TTS_Speed);
+			LoadKeyData("TTS", "CharacterLimit", _parsedData, ref TTS_CharacterLimit);
 
 			for (Int32 i = 0; i < 25; i++)
             {
@@ -202,7 +204,8 @@ namespace E3NextUI.Settings
             section["VoiceName"] = TTS_Voice;
             section["VoiceVolume"] = TTS_Volume.ToString();
             section["VoiceSpeed"] = TTS_Speed.ToString();
-            section["BriefMode"] = TTS_BriefMode.ToString();
+			section["CharacterLimit"] = TTS_CharacterLimit.ToString();
+			section["BriefMode"] = TTS_BriefMode.ToString();
 
 			foreach (var pair in DynamicButtons)
             {
@@ -262,7 +265,8 @@ namespace E3NextUI.Settings
             section.Keys.AddKey("VoiceName", "");
 			section.Keys.AddKey("VoiceVolume", "50");
 			section.Keys.AddKey("VoiceSpeed", "0");
-           
+			section.Keys.AddKey("CharacterLimit", "0");
+
 
 
 			if (!System.IO.File.Exists(filename))
