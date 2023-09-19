@@ -558,7 +558,7 @@ namespace E3Core.Processors
                             pctMana = MQ.Query<Int32>("${Me.PctMana}");
                         }
 
-                        while (IsCasting())
+                        while(IsCasting())
                         {
                             //means that we didn't fizzle and are now casting the spell
                             if (!spell.NoInterrupt)

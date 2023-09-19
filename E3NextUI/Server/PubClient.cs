@@ -5,6 +5,7 @@ using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Runtime.InteropServices;
+using System.Speech.Synthesis;
 using System.Text;
 using System.Threading;
 using System.Threading.Tasks;
@@ -17,19 +18,25 @@ namespace E3NextUI.Server
 
         Task _serverThread;
         private Int32 _port;
-        public void Start(Int32 port)
+        
+		public void Start(Int32 port)
         {
             _port = port;
             _serverThread = Task.Factory.StartNew(() => { Process(); }, CancellationToken.None, TaskCreationOptions.DenyChildAttach, TaskScheduler.Default);
         }
-        List<string> _consoleContains = new List<string>(){"You say out of character", "You say, '"," says out of character, '", " tells you, '", " guild, '", " party, '", " raid, '", " group, '", " auctions, '" };
+        List<string> _consoleContains = new List<string>(){"You say out of character", "You say, '"," says out of character, '", " tells you, '", " guild, '", " party, '", " raid, '", " says, '", " group, '", " auctions, '" };
         List<string> _spellContains = new List<string>() { "begins to cast a spell\\.","'s body is "," damage from ", "a critical blast!" };
         List<string> _spellEndWith = new List<string>() { "begins to cast a spell.", "'s enchantments fades.", " was burned.",  "'s casting is interrupted!", "'s spell fizzles!", "non-melee damage." };
         List<string> _spellStartsWith = new List<string>() { "You begin casting ", "Your spell is interrupted." };
-
-        public void Process()
+		SpeechSynthesizer _synth = new SpeechSynthesizer();
+		public void Process()
         {
-            TimeSpan recieveTimeout = new TimeSpan(0, 0, 0, 0, 5);
+          
+			_synth.SetOutputToDefaultAudioDevice();
+           
+            //_synth.SelectVoiceByHints(VoiceGender.Female); //zera voice built into windows
+
+			TimeSpan recieveTimeout = new TimeSpan(0, 0, 0, 0, 5);
 
             using (var subSocket = new SubscriberSocket())
             {
@@ -37,7 +44,8 @@ namespace E3NextUI.Server
                 subSocket.Connect("tcp://127.0.0.1:" + _port);
                 subSocket.SubscribeToAnyTopic();
                 Console.WriteLine("Subscriber socket connecting...");
-                while (true)
+				
+				while (true)
                 {
                     string messageTopicReceived;
                         
@@ -64,7 +72,8 @@ namespace E3NextUI.Server
                                     {
                                         if (messageReceived.Contains(c))
                                         {
-                                            ((E3UI)Application.OpenForms[0]).AddConsoleLine(messageReceived, E3UI.Console);
+                                            Speak(messageReceived);
+										    ((E3UI)Application.OpenForms[0]).AddConsoleLine(messageReceived, E3UI.Console);
                                             found = true;
                                             break;
                                         }
@@ -188,6 +197,78 @@ namespace E3NextUI.Server
 
                 }
             }
+        }
+     
+        void Speak(string message)
+        {
+            if (!E3UI._genSettings.TTS_Enabled) return;
+            if (message.StartsWith("You ")) return;
+            if(message.Contains(" says out of character,"))
+            {
+                if (!E3UI._genSettings.TTS_ChannelOOCEnabled) return;
+		
+                message = message.Replace(" says out of character,", " OOC,");
+    		}
+			if (message.Contains(" tells the group,"))
+			{
+				if (!E3UI._genSettings.TTS_ChannelGroupEnabled) return;
+
+				message = message.Replace(" tells the group,", " group,");
+			}
+			if (message.Contains(" tells the guild,"))
+			{
+				if (!E3UI._genSettings.TTS_ChannelGuildEnabled) return;
+
+				message = message.Replace(" tells the guild,", " guild,");
+			}
+			if (message.Contains(" tells you,"))
+			{
+				if (!E3UI._genSettings.TTS_ChannelTellEnabled) return;
+
+			}
+			//
+			if (message.Contains(" raid, '"))
+			{
+				if (!E3UI._genSettings.TTS_ChannelRaidEnabled) return;
+
+			}
+			if (message.Contains(" auctions, '"))
+			{
+				if (!E3UI._genSettings.TTS_ChannelAuctionEnabled) return;
+
+			}
+			if (message.Contains(" auctions, '"))
+			{
+				if (!E3UI._genSettings.TTS_ChannelAuctionEnabled) return;
+
+			}
+			if (message.Contains(" says, '"))
+			{
+				if (!E3UI._genSettings.TTS_ChannelSayEnabled) return;
+
+			}
+			if (!String.IsNullOrWhiteSpace(E3UI._genSettings.TTS_RegEx))
+			{
+				var match = System.Text.RegularExpressions.Regex.Match(message, E3UI._genSettings.TTS_RegEx);
+				if (!match.Success)
+				{
+					return;
+				}
+			}
+			if (!String.IsNullOrWhiteSpace(E3UI._genSettings.TTS_Voice))
+            {
+				_synth.SelectVoice(E3UI._genSettings.TTS_Voice);
+				//_synth.SelectVoice("Microsoft Eva Mobile");
+			}
+            else
+            {
+                _synth.SelectVoiceByHints(VoiceGender.Female);
+            }
+           
+
+            _synth.Rate = E3UI._genSettings.TTS_Speed;
+            _synth.Volume = E3UI._genSettings.TTS_Volume;
+			_synth.SpeakAsync(message);
         }
     }
 }

@@ -130,7 +130,7 @@ namespace E3Core.Server
 					System.IO.File.Delete(filePath);
 
 				}
-				catch (Exception ex)
+				catch (Exception)
                 {
                     MQ.Write("Issue deleting pubsub.txt file");
                 }

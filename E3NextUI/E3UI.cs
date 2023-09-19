@@ -21,6 +21,7 @@ using Ionic.Zip;
 using System.Reflection;
 using static System.Windows.Forms.VisualStyles.VisualStyleElement;
 
+
 namespace E3NextUI
 {
 
@@ -51,6 +52,7 @@ namespace E3NextUI
         public static object _objectLock = new object();
         public static GeneralSettings _genSettings;
         public static bool _buttonMode = false;
+        public static bool _textToSpeachMode = false;
         public Image _collapseConsoleImage;
         public Image _uncollapseConsoleImage;
         public Image _collapseDynamicButtonImage;
@@ -118,7 +120,7 @@ namespace E3NextUI
             _genSettings.LoadData();
 
 
-            if(_genSettings.StartLocationX>0 || _genSettings.StartLocationY>0)
+           // if(_genSettings.StartLocationX>0 || _genSettings.StartLocationY>0)
             {
                 this.StartPosition = FormStartPosition.Manual;
                 var point = new Point(_genSettings.StartLocationX, _genSettings.StartLocationY);
@@ -1000,6 +1002,7 @@ namespace E3NextUI
             if(_buttonMode)
             {
                 _buttonMode = false;
+               
 				panelMain.Show();
 				panelStatusPannel2.Show();
 				panelButtons.Location = new Point(736, 24);
@@ -1013,8 +1016,265 @@ namespace E3NextUI
 				panelButtons.Location = new Point(0, 24);
 
 			}
+			buttonModeToolStripMenuItem.Checked = _buttonMode;
+		}
+
+		private void textToSpeachToolStripMenuItem_Click(object sender, EventArgs e)
+		{
 
 		}
+
+		private void settingsToolStripMenuItem1_Click(object sender, EventArgs e)
+		{
+
+			TTSConfig config = new TTSConfig();
+
+			if (config._voices.Count == 0)
+			{
+				//no voices to configure, warn and kickout
+				var mb = new MessageBox();
+				mb.StartPosition = FormStartPosition.CenterParent;
+				mb.Text = "No voices Found";
+				mb.lblMessage.Text = "No voices found on the system, sorry :(";
+				mb.ShowDialog();
+				return;
+			}
+
+			config.StartPosition = FormStartPosition.CenterParent;
+
+			config.checkBox_channel_auction.Checked = _genSettings.TTS_ChannelAuctionEnabled;
+			config.checkBox_channel_gsay.Checked = _genSettings.TTS_ChannelGroupEnabled;
+			config.checkBox_channel_guild.Checked = _genSettings.TTS_ChannelGuildEnabled;
+			config.checkBox_channel_ooc.Checked = _genSettings.TTS_ChannelOOCEnabled;
+			config.checkBox_channel_raid.Checked = _genSettings.TTS_ChannelRaidEnabled;
+			config.checkBox_channel_say.Checked = _genSettings.TTS_ChannelSayEnabled;
+			config.checkBox_channel_tell.Checked = _genSettings.TTS_ChannelTellEnabled;
+			config.checkBox_tts_enabled.Checked = _genSettings.TTS_Enabled;
+
+			config.textBox_tts_regex.Text = _genSettings.TTS_RegEx;
+			if (!String.IsNullOrWhiteSpace(_genSettings.TTS_Voice))
+			{
+				config.comboBox_tts_voices.SelectedItem = _genSettings.TTS_Voice;
+			}
+
+			config.trackBar_tts_speed.Value = _genSettings.TTS_Speed;
+			config.trackBar_tts_volume.Value = _genSettings.TTS_Volume;
+
+
+			if (config.ShowDialog() == DialogResult.OK)
+			{
+
+				_genSettings.TTS_ChannelAuctionEnabled = config.checkBox_channel_auction.Checked;
+				_genSettings.TTS_ChannelGroupEnabled = config.checkBox_channel_gsay.Checked;
+				_genSettings.TTS_ChannelGuildEnabled = config.checkBox_channel_guild.Checked;
+				_genSettings.TTS_ChannelOOCEnabled = config.checkBox_channel_ooc.Checked;
+				_genSettings.TTS_ChannelRaidEnabled = config.checkBox_channel_raid.Checked;
+				_genSettings.TTS_ChannelSayEnabled = config.checkBox_channel_say.Checked;
+				_genSettings.TTS_ChannelTellEnabled = config.checkBox_channel_tell.Checked;
+				_genSettings.TTS_Enabled = config.checkBox_tts_enabled.Checked;
+
+				_genSettings.TTS_RegEx = config.textBox_tts_regex.Text;
+				_genSettings.TTS_Voice = (String)config.comboBox_tts_voices.SelectedItem;
+
+				_genSettings.TTS_Speed = config.trackBar_tts_speed.Value;
+				_genSettings.TTS_Volume = config.trackBar_tts_volume.Value;
+
+				_genSettings.SaveData();
+
+			}
+
+			//if (_textToSpeachMode)
+			//{
+			//	_textToSpeachMode = false;
+			//             textToSpeachToolStripMenuItem.Checked = false;
+			//}
+			//else
+			//{
+			//	_textToSpeachMode = true;
+			//             textToSpeachToolStripMenuItem.Checked = true;
+			//}
+		}
+
+		private void unlockEvaVoiceToolStripMenuItem_Click(object sender, EventArgs e)
+		{
+
+			TTSConfig config = new TTSConfig();
+			var mb = new MessageBox();
+			if (config._voices.Contains("Microsoft Eva Mobile"))
+            {
+				
+				mb.StartPosition = FormStartPosition.CenterParent;
+				mb.Text = "Already done!";
+				mb.lblMessage.Text = "This is already unlocked for you! :)";
+				mb.buttonOkayOnly.Visible = true;
+				mb.buttonOK.Visible = false;
+				mb.buttonCancel.Visible = false;
+				mb.ShowDialog();
+                return;
+            }
+
+			
+			mb.StartPosition = FormStartPosition.CenterParent;
+			mb.Text = "Please select a folder";
+			mb.lblMessage.Text = "You will be asked to select a folder. \r\nWe will save a registery file you will need to double click on. Default is in the E3N settings area";
+			mb.buttonOkayOnly.Visible = true;
+			mb.buttonOK.Visible = false;
+			mb.buttonCancel.Visible = false;
+			mb.ShowDialog();
+		
+            SaveFileDialog sd = new SaveFileDialog();
+            sd.Filter = "Registery|*.reg";
+            sd.Title = "Save Registery File";
+            sd.FileName = "eva_unlock.reg";
+            sd.InitialDirectory = _genSettings.GetFolderPath();
+
+            if (sd.ShowDialog() == DialogResult.OK)
+            {
+                if (!String.IsNullOrEmpty(sd.FileName))
+                {
+                    
+                    //sd filename now has the full path
+                    System.IO.File.WriteAllText(sd.FileName, _evaUnlockString);
+                    Int32 indexOfLastSlash = sd.FileName.LastIndexOf("\\");
+                    string directory = sd.FileName.Substring(0, indexOfLastSlash);
+                    ProcessStartInfo startInfo = new ProcessStartInfo()
+					{
+						Arguments = directory,
+						FileName = "explorer.exe"
+				    };
+
+				    Process.Start(startInfo);
+
+			    }
+            }
+
+		}
+		#region unlockString
+		string _evaUnlockString = @"Windows Registry Editor Version 5.00
+
+[HKEY_LOCAL_MACHINE\SOFTWARE\Microsoft\Speech\Voices\Tokens\MSTTS_V110_enUS_EvaM]
+@=""Microsoft Eva Mobile - English (United States)""
+""409""=""Microsoft Eva Mobile - English (United States)""
+""CLSID""=""{179F3D56-1B0B-42B2-A962-59B7EF59FE1B}""
+""LangDataPath""=hex(2):25,00,77,00,69,00,6e,00,64,00,69,00,72,00,25,00,5c,00,53,\
+  00,70,00,65,00,65,00,63,00,68,00,5f,00,4f,00,6e,00,65,00,43,00,6f,00,72,00,\
+  65,00,5c,00,45,00,6e,00,67,00,69,00,6e,00,65,00,73,00,5c,00,54,00,54,00,53,\
+  00,5c,00,65,00,6e,00,2d,00,55,00,53,00,5c,00,4d,00,53,00,54,00,54,00,53,00,\
+  4c,00,6f,00,63,00,65,00,6e,00,55,00,53,00,2e,00,64,00,61,00,74,00,00,00
+""VoicePath""=hex(2):25,00,77,00,69,00,6e,00,64,00,69,00,72,00,25,00,5c,00,53,00,\
+  70,00,65,00,65,00,63,00,68,00,5f,00,4f,00,6e,00,65,00,43,00,6f,00,72,00,65,\
+  00,5c,00,45,00,6e,00,67,00,69,00,6e,00,65,00,73,00,5c,00,54,00,54,00,53,00,\
+  5c,00,65,00,6e,00,2d,00,55,00,53,00,5c,00,4d,00,31,00,30,00,33,00,33,00,45,\
+  00,76,00,61,00,00,00
+
+[HKEY_LOCAL_MACHINE\SOFTWARE\Microsoft\Speech\Voices\Tokens\MSTTS_V110_enUS_EvaM\Attributes]
+""Age""=""Adult""
+""Gender""=""Female""
+""Version""=""11.0""
+""Language""=""409""
+""Name""=""Microsoft Eva Mobile""
+""SharedPronunciation""=""""
+""Vendor""=""Microsoft""
+""DataVersion""=""11.0.2013.1022""
+
+[HKEY_LOCAL_MACHINE\SOFTWARE\Microsoft\Speech_OneCore\Voices\Tokens\MSTTS_V110_enUS_EvaM]
+@=""Microsoft Eva Mobile - English (United States)""
+""409""=""Microsoft Eva Mobile - English (United States)""
+""CLSID""=""{179F3D56-1B0B-42B2-A962-59B7EF59FE1B}""
+""LangDataPath""=hex(2):25,00,77,00,69,00,6e,00,64,00,69,00,72,00,25,00,5c,00,53,\
+  00,70,00,65,00,65,00,63,00,68,00,5f,00,4f,00,6e,00,65,00,43,00,6f,00,72,00,\
+  65,00,5c,00,45,00,6e,00,67,00,69,00,6e,00,65,00,73,00,5c,00,54,00,54,00,53,\
+  00,5c,00,65,00,6e,00,2d,00,55,00,53,00,5c,00,4d,00,53,00,54,00,54,00,53,00,\
+  4c,00,6f,00,63,00,65,00,6e,00,55,00,53,00,2e,00,64,00,61,00,74,00,00,00
+""VoicePath""=hex(2):25,00,77,00,69,00,6e,00,64,00,69,00,72,00,25,00,5c,00,53,00,\
+  70,00,65,00,65,00,63,00,68,00,5f,00,4f,00,6e,00,65,00,43,00,6f,00,72,00,65,\
+  00,5c,00,45,00,6e,00,67,00,69,00,6e,00,65,00,73,00,5c,00,54,00,54,00,53,00,\
+  5c,00,65,00,6e,00,2d,00,55,00,53,00,5c,00,4d,00,31,00,30,00,33,00,33,00,45,\
+  00,76,00,61,00,00,00
+
+[HKEY_LOCAL_MACHINE\SOFTWARE\Microsoft\Speech_OneCore\Voices\Tokens\MSTTS_V110_enUS_EvaM\Attributes]
+""Age""=""Adult""
+""Gender""=""Female""
+""Version""=""11.0""
+""Language""=""409""
+""Name""=""Microsoft Eva Mobile""
+""SharedPronunciation""=""""
+""Vendor""=""Microsoft""
+
+[HKEY_LOCAL_MACHINE\SOFTWARE\WOW6432Node\Microsoft\SPEECH\Voices\Tokens\MSTTS_V110_enUS_EvaM]
+@=""Microsoft Eva Mobile - English (United States)""
+""409""=""Microsoft Eva Mobile - English (United States)""
+""CLSID""=""{179F3D56-1B0B-42B2-A962-59B7EF59FE1B}""
+""LangDataPath""=hex(2):25,00,77,00,69,00,6e,00,64,00,69,00,72,00,25,00,5c,00,53,\
+  00,70,00,65,00,65,00,63,00,68,00,5f,00,4f,00,6e,00,65,00,43,00,6f,00,72,00,\
+  65,00,5c,00,45,00,6e,00,67,00,69,00,6e,00,65,00,73,00,5c,00,54,00,54,00,53,\
+  00,5c,00,65,00,6e,00,2d,00,55,00,53,00,5c,00,4d,00,53,00,54,00,54,00,53,00,\
+  4c,00,6f,00,63,00,65,00,6e,00,55,00,53,00,2e,00,64,00,61,00,74,00,00,00
+""VoicePath""=hex(2):25,00,77,00,69,00,6e,00,64,00,69,00,72,00,25,00,5c,00,53,00,\
+  70,00,65,00,65,00,63,00,68,00,5f,00,4f,00,6e,00,65,00,43,00,6f,00,72,00,65,\
+  00,5c,00,45,00,6e,00,67,00,69,00,6e,00,65,00,73,00,5c,00,54,00,54,00,53,00,\
+  5c,00,65,00,6e,00,2d,00,55,00,53,00,5c,00,4d,00,31,00,30,00,33,00,33,00,45,\
+  00,76,00,61,00,00,00
+
+[HKEY_LOCAL_MACHINE\SOFTWARE\WOW6432Node\Microsoft\SPEECH\Voices\Tokens\MSTTS_V110_enUS_EvaM\Attributes]
+""Age""=""Adult""
+""Gender""=""Female""
+""Version""=""11.0""
+""Language""=""409""
+""Name""=""Microsoft Eva Mobile""
+""SharedPronunciation""=""""
+""Vendor""=""Microsoft""
+""DataVersion""=""11.0.2013.1022""
+
+[HKEY_LOCAL_MACHINE\SOFTWARE\WOW6432Node\Microsoft\SPEECH\Voices\Tokens\MSTTS_V110_enUS_EvaM]
+@=""Microsoft Eva Mobile - English (United States)""
+""409""=""Microsoft Eva Mobile - English (United States)""
+""CLSID""=""{179F3D56-1B0B-42B2-A962-59B7EF59FE1B}""
+""LangDataPath""=hex(2):25,00,77,00,69,00,6e,00,64,00,69,00,72,00,25,00,5c,00,53,\
+  00,70,00,65,00,65,00,63,00,68,00,5f,00,4f,00,6e,00,65,00,43,00,6f,00,72,00,\
+  65,00,5c,00,45,00,6e,00,67,00,69,00,6e,00,65,00,73,00,5c,00,54,00,54,00,53,\
+ 00,5c,00,65,00,6e,00,2d,00,55,00,53,00,5c,00,4d,00,53,00,54,00,54,00,53,00,\
+  4c,00,6f,00,63,00,65,00,6e,00,55,00,53,00,2e,00,64,00,61,00,74,00,00,00
+""VoicePath""=hex(2):25,00,77,00,69,00,6e,00,64,00,69,00,72,00,25,00,5c,00,53,00,\
+  70,00,65,00,65,00,63,00,68,00,5f,00,4f,00,6e,00,65,00,43,00,6f,00,72,00,65,\
+  00,5c,00,45,00,6e,00,67,00,69,00,6e,00,65,00,73,00,5c,00,54,00,54,00,53,00,\
+  5c,00,65,00,6e,00,2d,00,55,00,53,00,5c,00,4d,00,31,00,30,00,33,00,33,00,45,\
+  00,76,00,61,00,00,00
+
+[HKEY_LOCAL_MACHINE\SOFTWARE\WOW6432Node\Microsoft\SPEECH\Voices\Tokens\MSTTS_V110_enUS_EvaM\Attributes]
+""Age""=""Adult""
+""Gender""=""Female""
+""Version""=""11.0""
+""Language""=""409""
+""Name""=""Microsoft Eva Mobile""
+""SharedPronunciation""=""""
+""Vendor""=""Microsoft""
+
+[HKEY_LOCAL_MACHINE\SOFTWARE\WOW6432Node\Microsoft\Speech_OneCore\Voices\Tokens\MSTTS_V110_enUS_EvaM]
+@=""Microsoft Eva Mobile - English (United States)""
+""409""=""Microsoft Eva Mobile - English (United States)""
+""CLSID""=""{179F3D56-1B0B-42B2-A962-59B7EF59FE1B}""
+""LangDataPath""=hex(2):25,00,77,00,69,00,6e,00,64,00,69,00,72,00,25,00,5c,00,53,\
+  00,70,00,65,00,65,00,63,00,68,00,5f,00,4f,00,6e,00,65,00,43,00,6f,00,72,00,\
+  65,00,5c,00,45,00,6e,00,67,00,69,00,6e,00,65,00,73,00,5c,00,54,00,54,00,53,\
+  00,5c,00,65,00,6e,00,2d,00,55,00,53,00,5c,00,4d,00,53,00,54,00,54,00,53,00,\
+  4c,00,6f,00,63,00,65,00,6e,00,55,00,53,00,2e,00,64,00,61,00,74,00,00,00
+""VoicePath""=hex(2):25,00,77,00,69,00,6e,00,64,00,69,00,72,00,25,00,5c,00,53,00,\
+  70,00,65,00,65,00,63,00,68,00,5f,00,4f,00,6e,00,65,00,43,00,6f,00,72,00,65,\
+  00,5c,00,45,00,6e,00,67,00,69,00,6e,00,65,00,73,00,5c,00,54,00,54,00,53,00,\
+  5c,00,65,00,6e,00,2d,00,55,00,53,00,5c,00,4d,00,31,00,30,00,33,00,33,00,45,\
+  00,76,00,61,00,00,00
+
+[HKEY_LOCAL_MACHINE\SOFTWARE\WOW6432Node\Microsoft\Speech_OneCore\Voices\Tokens\MSTTS_V110_enUS_EvaM\Attributes]
+""Age""=""Adult""
+""Gender""=""Female""
+""Version""=""11.0""
+""Language""=""409""
+""Name""=""Microsoft Eva Mobile""
+""SharedPronunciation""=""""
+""Vendor""=""Microsoft""";
+		#endregion
+
 	}
 	public class TextBoxInfo
     {
@@ -1026,4 +1286,6 @@ namespace E3NextUI
         public CircularBuffer<string> consoleBuffer = new CircularBuffer<string>(1000);
     }
 
+
+  
 }
