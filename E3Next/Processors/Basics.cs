@@ -221,7 +221,7 @@ namespace E3Core.Processors
 					MQ.Write("Isussing shutdown, setting process to false.");
 					Core.IsProcessing = false;
 					System.Threading.Thread.MemoryBarrier();
-
+                    throw new ThreadAbort();
 				}
                 else
                 {

@@ -83,6 +83,8 @@ namespace MonoCore
                 {
                     if(ex is ThreadAbort)
 					{
+						Core.IsProcessing = false;
+						Core.CoreResetEvent.Set();
 						throw new ThreadAbort("Terminating thread");
 				    }
 
@@ -104,10 +106,10 @@ namespace MonoCore
                 }
             }
            
-            E3.Shutdown();
+            //E3.Shutdown();
             MQ.Write("Shutting down E3 Main C# Thread.");
             MQ.Write("Doing netmq cleanup.");
-            NetMQConfig.Cleanup(false);
+            //NetMQConfig.Cleanup(false);
 
             Core.CoreResetEvent.Set();
         }
