@@ -47,6 +47,7 @@
 			this.checkBox_tts_enabled = new System.Windows.Forms.CheckBox();
 			this.buttonOK = new System.Windows.Forms.Button();
 			this.button1 = new System.Windows.Forms.Button();
+			this.checkBox_tts_breifmode = new System.Windows.Forms.CheckBox();
 			this.groupBox1.SuspendLayout();
 			((System.ComponentModel.ISupportInitialize)(this.trackBar_tts_volume)).BeginInit();
 			((System.ComponentModel.ISupportInitialize)(this.trackBar_tts_speed)).BeginInit();
@@ -238,11 +239,22 @@
 			this.button1.UseVisualStyleBackColor = true;
 			this.button1.Click += new System.EventHandler(this.button1_Click);
 			// 
+			// checkBox_tts_breifmode
+			// 
+			this.checkBox_tts_breifmode.AutoSize = true;
+			this.checkBox_tts_breifmode.Location = new System.Drawing.Point(88, 133);
+			this.checkBox_tts_breifmode.Name = "checkBox_tts_breifmode";
+			this.checkBox_tts_breifmode.Size = new System.Drawing.Size(77, 17);
+			this.checkBox_tts_breifmode.TabIndex = 18;
+			this.checkBox_tts_breifmode.Text = "Breif Mode";
+			this.checkBox_tts_breifmode.UseVisualStyleBackColor = true;
+			// 
 			// TTSConfig
 			// 
 			this.AutoScaleDimensions = new System.Drawing.SizeF(6F, 13F);
 			this.AutoScaleMode = System.Windows.Forms.AutoScaleMode.Font;
 			this.ClientSize = new System.Drawing.Size(510, 260);
+			this.Controls.Add(this.checkBox_tts_breifmode);
 			this.Controls.Add(this.button1);
 			this.Controls.Add(this.buttonOK);
 			this.Controls.Add(this.checkBox_tts_enabled);
@@ -286,5 +298,6 @@
 		public System.Windows.Forms.CheckBox checkBox_channel_tell;
 		public System.Windows.Forms.TrackBar trackBar_tts_volume;
 		public System.Windows.Forms.TrackBar trackBar_tts_speed;
+		public System.Windows.Forms.CheckBox checkBox_tts_breifmode;
 	}
 }

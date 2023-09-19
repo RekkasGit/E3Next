@@ -1050,7 +1050,7 @@ namespace E3NextUI
 			config.checkBox_channel_say.Checked = _genSettings.TTS_ChannelSayEnabled;
 			config.checkBox_channel_tell.Checked = _genSettings.TTS_ChannelTellEnabled;
 			config.checkBox_tts_enabled.Checked = _genSettings.TTS_Enabled;
-
+            config.checkBox_tts_breifmode.Checked = _genSettings.TTS_BriefMode;
 			config.textBox_tts_regex.Text = _genSettings.TTS_RegEx;
 			if (!String.IsNullOrWhiteSpace(_genSettings.TTS_Voice))
 			{
@@ -1072,7 +1072,7 @@ namespace E3NextUI
 				_genSettings.TTS_ChannelSayEnabled = config.checkBox_channel_say.Checked;
 				_genSettings.TTS_ChannelTellEnabled = config.checkBox_channel_tell.Checked;
 				_genSettings.TTS_Enabled = config.checkBox_tts_enabled.Checked;
-
+                _genSettings.TTS_BriefMode = config.checkBox_tts_breifmode.Checked;
 				_genSettings.TTS_RegEx = config.textBox_tts_regex.Text;
 				_genSettings.TTS_Voice = (String)config.comboBox_tts_voices.SelectedItem;
 

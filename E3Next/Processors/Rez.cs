@@ -299,7 +299,7 @@ namespace E3Core.Processors
                     {
                         var currentMana = MQ.Query<int>("${Me.CurrentMana}");
                         var pctMana = MQ.Query<int>("${Me.PctMana}");
-                        if (Heals.SomeoneNeedsHealing(currentMana, pctMana))
+                        if (Heals.SomeoneNeedsHealing(null,currentMana, pctMana))
                         {
                             return;
                         }

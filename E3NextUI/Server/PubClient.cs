@@ -264,7 +264,23 @@ namespace E3NextUI.Server
             {
                 _synth.SelectVoiceByHints(VoiceGender.Female);
             }
-           
+        
+            
+            if(E3UI._genSettings.TTS_BriefMode)
+            {
+                Int32 indexOfStart = message.IndexOf(", '");
+
+                if(indexOfStart != -1)
+                {
+                    indexOfStart += 3;
+                    message = message.Substring(indexOfStart, message.Length - indexOfStart);
+                    if (message.EndsWith("'"))
+                    {
+                        message = message.Substring(0, message.Length-1);
+                    }
+                }
+            }
+
 
             _synth.Rate = E3UI._genSettings.TTS_Speed;
             _synth.Volume = E3UI._genSettings.TTS_Volume;

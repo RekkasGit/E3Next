@@ -1,4 +1,5 @@
-﻿using E3Core.Settings;
+﻿using E3Core.Data;
+using E3Core.Settings;
 using E3Core.Utility;
 using IniParser;
 using MonoCore;
@@ -282,15 +283,18 @@ namespace E3Core.Processors
 			}
 		}
 
-		public static bool TargetDoesNotNeedHeals(Int32 currentMana, Int32 pctMana)
+		public static bool TargetDoesNotNeedHeals(Spell spell,Int32 currentMana, Int32 pctMana)
 		{
-
 			//Int32 currentMana = MQ.Query<Int32>("${Me.CurrentMana}");
 			//Int32 pctMana = MQ.Query<Int32>("${Me.PctMana}");
-
-			if (MQ.Query<Int32>("${Target.PctHPs}") > 98)
+			Int32 pctHealth = MQ.Query<Int32>("${Target.PctHPs}");
+			if (spell != null)
 			{
-				return true;
+				if(spell.HealthMax<100 && spell.HealthMax>=pctHealth)
+				{
+					E3.Bots.Broadcast($"Health Max set, {spell.CastTarget} does not need health, canceling {spell.SpellName}.");
+					return true;
+				}
 			}
 			return false;
 		}
@@ -299,7 +303,7 @@ namespace E3Core.Processors
 		/// used as an action to determine if a spell should be interrupted in case someone needs a heal.
 		/// </summary>
 		/// <returns>true if a heal is needed, otherwise false</returns>
-		public static bool SomeoneNeedsHealing(Int32 currentMana, Int32 pctMana)
+		public static bool SomeoneNeedsHealing(Spell spell,Int32 currentMana, Int32 pctMana)
 		{
 			if (!((E3.CurrentClass & Data.Class.Priest) == E3.CurrentClass))
 			{

@@ -1044,7 +1044,7 @@ namespace E3Core.Processors
 						if (MQ.Query<bool>("${Me.Invis}")) return;
                         if ((E3.CurrentClass & Class.Priest) == E3.CurrentClass && Basics.InCombat())
                         {
-                            if (Heals.SomeoneNeedsHealing(currentMana, pctMana))
+                            if (Heals.SomeoneNeedsHealing(null,currentMana, pctMana))
                             {
                                 return;
                             }

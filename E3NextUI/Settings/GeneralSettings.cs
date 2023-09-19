@@ -39,6 +39,7 @@ namespace E3NextUI.Settings
         public bool UseOverlay = false;
 
         public bool TTS_Enabled= false;
+        public bool TTS_BriefMode = false;
         public bool TTS_ChannelOOCEnabled = false;
         public bool TTS_ChannelGuildEnabled = false;
         public bool TTS_ChannelGroupEnabled = false;
@@ -95,6 +96,7 @@ namespace E3NextUI.Settings
             LoadKeyData("General", "UseOverlay", _parsedData, ref UseOverlay);
 
 			LoadKeyData("TTS", "Enabled", _parsedData, ref TTS_Enabled);
+			LoadKeyData("TTS", "BriefMode", _parsedData, ref TTS_BriefMode);
 			LoadKeyData("TTS", "ChannelOOCEnabled", _parsedData, ref TTS_ChannelOOCEnabled);
 			LoadKeyData("TTS", "ChannelGuildEnabled", _parsedData, ref TTS_ChannelGuildEnabled);
 			LoadKeyData("TTS", "ChannelGroupEnabled", _parsedData, ref TTS_ChannelGroupEnabled);
@@ -197,6 +199,7 @@ namespace E3NextUI.Settings
             section["VoiceName"] = TTS_Voice;
             section["VoiceVolume"] = TTS_Volume.ToString();
             section["VoiceSpeed"] = TTS_Speed.ToString();
+            section["BriefMode"] = TTS_BriefMode.ToString();
 
 			foreach (var pair in DynamicButtons)
             {
@@ -243,6 +246,7 @@ namespace E3NextUI.Settings
 			newFile.Sections.AddSection("TTS");
 			section = newFile.Sections.GetSectionData("TTS");
 			section.Keys.AddKey("Enabled", "False");
+			section.Keys.AddKey("BriefMode", "False");
 			section.Keys.AddKey("ChannelOOCEnabled", "False");
 			section.Keys.AddKey("ChannelGuildEnabled", "False");
 			section.Keys.AddKey("ChannelGroupEnabled", "False");
@@ -254,7 +258,7 @@ namespace E3NextUI.Settings
             section.Keys.AddKey("VoiceName", "");
 			section.Keys.AddKey("VoiceVolume", "50");
 			section.Keys.AddKey("VoiceSpeed", "0");
-
+           
 
 
 			if (!System.IO.File.Exists(filename))

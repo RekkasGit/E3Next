@@ -28,7 +28,7 @@ namespace E3Core.Processors
         private static ISpawns _spawns = E3.Spawns;
         private static Logging.LogLevels _previousLogLevel = Logging.LogLevels.Error;
 
-        public static CastReturn Cast(int targetID, Data.Spell spell, Func<Int32, Int32, bool> interruptCheck = null, bool isNowCast = false)
+        public static CastReturn Cast(int targetID, Data.Spell spell, Func<Spell,Int32, Int32, bool> interruptCheck = null, bool isNowCast = false)
         {
             bool navActive = false;
             bool navPaused = false;
@@ -563,7 +563,7 @@ namespace E3Core.Processors
                             //means that we didn't fizzle and are now casting the spell
                             if (!spell.NoInterrupt)
                             {
-                                if (interruptCheck != null && interruptCheck(currentMana, pctMana))
+                                if (interruptCheck != null && interruptCheck(spell,currentMana, pctMana))
                                 {
                                     Interrupt();
                                     E3.ActionTaken = true;

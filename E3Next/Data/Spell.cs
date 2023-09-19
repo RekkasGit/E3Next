@@ -85,6 +85,10 @@ namespace E3Core.Data
 					{
 						Debug = true;
 					}
+					else if (value.Equals("HealthMax|", StringComparison.OrdinalIgnoreCase))
+					{
+						HealthMax = GetArgument<Int32>(value);
+					}
 					else if (value.StartsWith("AfterSpell|", StringComparison.OrdinalIgnoreCase))
                     {
                         AfterSpell = GetArgument<String>(value);
@@ -766,6 +770,7 @@ namespace E3Core.Data
         public Int64 MinDurationBeforeRecast = 0;
         public Int64 LastUpdateCheckFromTopicUpdate = 0;
         public bool IsShortBuff = false;
+        public Int32 HealthMax = 100;
       
 
         public override string ToString()
