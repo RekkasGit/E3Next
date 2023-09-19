@@ -12,14 +12,15 @@ using System.Windows.Forms;
 
 namespace E3NextUI
 {
-	public partial class TTSConfig : Form
+	public partial class TTSConfig : Form,IDisposable
 	{
-	
+		System.Windows.Forms.ToolTip _toolTipBrief = new System.Windows.Forms.ToolTip();
 		public List<string> _voices = new List<string>();
 		static TTSConfig()
 		{
 
 		
+			
 		}
 			
 
@@ -39,6 +40,9 @@ namespace E3NextUI
 				}
 				comboBox_tts_voices.DataSource = _voices;
 			}
+
+			_toolTipBrief.SetToolTip(checkBox_tts_breifmode, "Only use the inner text when talking");
+
 		}
 		private void buttonOK_Click(object sender, EventArgs e)
 		{
@@ -48,6 +52,11 @@ namespace E3NextUI
 		private void button1_Click(object sender, EventArgs e)
 		{
 
+		}
+		void IDisposable.Dispose()
+		{
+			_toolTipBrief.Dispose();
+			// do the same for all other disposable objects your repository has created.
 		}
 	}
 }

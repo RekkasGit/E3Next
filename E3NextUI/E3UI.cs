@@ -1027,96 +1027,86 @@ namespace E3NextUI
 		private void settingsToolStripMenuItem1_Click(object sender, EventArgs e)
 		{
 
-			TTSConfig config = new TTSConfig();
+            using (TTSConfig config = new TTSConfig())
+            {
+				if (config._voices.Count == 0)
+				{
+					//no voices to configure, warn and kickout
+					var mb = new MessageBox();
+					mb.StartPosition = FormStartPosition.CenterParent;
+					mb.Text = "No voices Found";
+					mb.lblMessage.Text = "No voices found on the system, sorry :(";
+					mb.ShowDialog();
+					return;
+				}
 
-			if (config._voices.Count == 0)
-			{
-				//no voices to configure, warn and kickout
-				var mb = new MessageBox();
-				mb.StartPosition = FormStartPosition.CenterParent;
-				mb.Text = "No voices Found";
-				mb.lblMessage.Text = "No voices found on the system, sorry :(";
-				mb.ShowDialog();
-				return;
+				config.StartPosition = FormStartPosition.CenterParent;
+
+				config.checkBox_channel_auction.Checked = _genSettings.TTS_ChannelAuctionEnabled;
+				config.checkBox_channel_gsay.Checked = _genSettings.TTS_ChannelGroupEnabled;
+				config.checkBox_channel_guild.Checked = _genSettings.TTS_ChannelGuildEnabled;
+				config.checkBox_channel_ooc.Checked = _genSettings.TTS_ChannelOOCEnabled;
+				config.checkBox_channel_raid.Checked = _genSettings.TTS_ChannelRaidEnabled;
+				config.checkBox_channel_say.Checked = _genSettings.TTS_ChannelSayEnabled;
+				config.checkBox_channel_tell.Checked = _genSettings.TTS_ChannelTellEnabled;
+				config.checkBox_tts_enabled.Checked = _genSettings.TTS_Enabled;
+				config.checkBox_tts_breifmode.Checked = _genSettings.TTS_BriefMode;
+				config.textBox_tts_regex.Text = _genSettings.TTS_RegEx;
+				config.textBox_tts_regex_exclude.Text = _genSettings.TTS_RegExExclude;
+				config.numericUpDown_tts_wordlimit.Value = _genSettings.TTS_CharacterLimit;
+
+
+				if (!String.IsNullOrWhiteSpace(_genSettings.TTS_Voice))
+				{
+					config.comboBox_tts_voices.SelectedItem = _genSettings.TTS_Voice;
+				}
+
+				config.trackBar_tts_speed.Value = _genSettings.TTS_Speed;
+				config.trackBar_tts_volume.Value = _genSettings.TTS_Volume;
+
+
+				if (config.ShowDialog() == DialogResult.OK)
+				{
+					_genSettings.TTS_ChannelAuctionEnabled = config.checkBox_channel_auction.Checked;
+					_genSettings.TTS_ChannelGroupEnabled = config.checkBox_channel_gsay.Checked;
+					_genSettings.TTS_ChannelGuildEnabled = config.checkBox_channel_guild.Checked;
+					_genSettings.TTS_ChannelOOCEnabled = config.checkBox_channel_ooc.Checked;
+					_genSettings.TTS_ChannelRaidEnabled = config.checkBox_channel_raid.Checked;
+					_genSettings.TTS_ChannelSayEnabled = config.checkBox_channel_say.Checked;
+					_genSettings.TTS_ChannelTellEnabled = config.checkBox_channel_tell.Checked;
+					_genSettings.TTS_Enabled = config.checkBox_tts_enabled.Checked;
+					_genSettings.TTS_BriefMode = config.checkBox_tts_breifmode.Checked;
+					_genSettings.TTS_RegEx = config.textBox_tts_regex.Text;
+					_genSettings.TTS_RegExExclude = config.textBox_tts_regex_exclude.Text;
+					_genSettings.TTS_Voice = (String)config.comboBox_tts_voices.SelectedItem;
+					_genSettings.TTS_CharacterLimit = (Int32)config.numericUpDown_tts_wordlimit.Value;
+					_genSettings.TTS_Speed = config.trackBar_tts_speed.Value;
+					_genSettings.TTS_Volume = config.trackBar_tts_volume.Value;
+					_genSettings.SaveData();
+				}
 			}
-
-			config.StartPosition = FormStartPosition.CenterParent;
-
-			config.checkBox_channel_auction.Checked = _genSettings.TTS_ChannelAuctionEnabled;
-			config.checkBox_channel_gsay.Checked = _genSettings.TTS_ChannelGroupEnabled;
-			config.checkBox_channel_guild.Checked = _genSettings.TTS_ChannelGuildEnabled;
-			config.checkBox_channel_ooc.Checked = _genSettings.TTS_ChannelOOCEnabled;
-			config.checkBox_channel_raid.Checked = _genSettings.TTS_ChannelRaidEnabled;
-			config.checkBox_channel_say.Checked = _genSettings.TTS_ChannelSayEnabled;
-			config.checkBox_channel_tell.Checked = _genSettings.TTS_ChannelTellEnabled;
-			config.checkBox_tts_enabled.Checked = _genSettings.TTS_Enabled;
-            config.checkBox_tts_breifmode.Checked = _genSettings.TTS_BriefMode;
-			config.textBox_tts_regex.Text = _genSettings.TTS_RegEx;
-			config.textBox_tts_regex_exclude.Text = _genSettings.TTS_RegExExclude;
-            config.numericUpDown_tts_wordlimit.Value=_genSettings.TTS_CharacterLimit;
-
-
-			if (!String.IsNullOrWhiteSpace(_genSettings.TTS_Voice))
-			{
-				config.comboBox_tts_voices.SelectedItem = _genSettings.TTS_Voice;
-			}
-
-			config.trackBar_tts_speed.Value = _genSettings.TTS_Speed;
-			config.trackBar_tts_volume.Value = _genSettings.TTS_Volume;
-
-
-			if (config.ShowDialog() == DialogResult.OK)
-			{
-
-				_genSettings.TTS_ChannelAuctionEnabled = config.checkBox_channel_auction.Checked;
-				_genSettings.TTS_ChannelGroupEnabled = config.checkBox_channel_gsay.Checked;
-				_genSettings.TTS_ChannelGuildEnabled = config.checkBox_channel_guild.Checked;
-				_genSettings.TTS_ChannelOOCEnabled = config.checkBox_channel_ooc.Checked;
-				_genSettings.TTS_ChannelRaidEnabled = config.checkBox_channel_raid.Checked;
-				_genSettings.TTS_ChannelSayEnabled = config.checkBox_channel_say.Checked;
-				_genSettings.TTS_ChannelTellEnabled = config.checkBox_channel_tell.Checked;
-				_genSettings.TTS_Enabled = config.checkBox_tts_enabled.Checked;
-                _genSettings.TTS_BriefMode = config.checkBox_tts_breifmode.Checked;
-				_genSettings.TTS_RegEx = config.textBox_tts_regex.Text;
-				_genSettings.TTS_RegExExclude = config.textBox_tts_regex_exclude.Text;
-				_genSettings.TTS_Voice = (String)config.comboBox_tts_voices.SelectedItem;
-                _genSettings.TTS_CharacterLimit = (Int32)config.numericUpDown_tts_wordlimit.Value;
-				_genSettings.TTS_Speed = config.trackBar_tts_speed.Value;
-				_genSettings.TTS_Volume = config.trackBar_tts_volume.Value;
-
-				_genSettings.SaveData();
-
-			}
-
-			//if (_textToSpeachMode)
-			//{
-			//	_textToSpeachMode = false;
-			//             textToSpeachToolStripMenuItem.Checked = false;
-			//}
-			//else
-			//{
-			//	_textToSpeachMode = true;
-			//             textToSpeachToolStripMenuItem.Checked = true;
-			//}
 		}
 
 		private void unlockEvaVoiceToolStripMenuItem_Click(object sender, EventArgs e)
 		{
-
-			TTSConfig config = new TTSConfig();
 			var mb = new MessageBox();
-			if (config._voices.Contains("Microsoft Eva Mobile"))
+			using (TTSConfig config = new TTSConfig())
             {
-				
-				mb.StartPosition = FormStartPosition.CenterParent;
-				mb.Text = "Already done!";
-				mb.lblMessage.Text = "This is already unlocked for you! :)";
-				mb.buttonOkayOnly.Visible = true;
-				mb.buttonOK.Visible = false;
-				mb.buttonCancel.Visible = false;
-				mb.ShowDialog();
-                return;
-            }
+				if (config._voices.Contains("Microsoft Eva Mobile"))
+				{
+
+					mb.StartPosition = FormStartPosition.CenterParent;
+					mb.Text = "Already done!";
+					mb.lblMessage.Text = "This is already unlocked for you! :)";
+					mb.buttonOkayOnly.Visible = true;
+					mb.buttonOK.Visible = false;
+					mb.buttonCancel.Visible = false;
+					mb.ShowDialog();
+					return;
+				}
+			}
+               
+			
 
 			
 			mb.StartPosition = FormStartPosition.CenterParent;
