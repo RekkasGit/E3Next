@@ -215,7 +215,7 @@ namespace E3NextUI.Server
 			}
 			if (!String.IsNullOrWhiteSpace(E3UI._genSettings.TTS_RegExExclude))
 			{
-				var match = System.Text.RegularExpressions.Regex.Match(message, E3UI._genSettings.TTS_RegEx);
+				var match = System.Text.RegularExpressions.Regex.Match(message, E3UI._genSettings.TTS_RegExExclude);
 				if (match.Success)
 				{
 					return;
