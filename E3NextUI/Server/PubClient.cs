@@ -230,19 +230,28 @@ namespace E3NextUI.Server
             Int32 indexOfBegin = message.IndexOf(" begins to cast a spell");
             string mobName = message.Substring(0, indexOfBegin);
 
+            bool isMob = false;
+            if (mobName.Contains(" "))
+            {
+                isMob = true;
+            }
 
-            if(!E3UI._genSettings.TTS_ChannelMobSpellsEnabled)
+			if (!E3UI._genSettings.TTS_ChannelMobSpellsEnabled && isMob)
             {
                 //we don't want a mob but it contains space, so its a mob, return
-				if (mobName.Contains(" ")) return; 
+				return; 
 			}
-            if(!E3UI._genSettings.TTS_ChannelPCSpellsEnabled)
+            if(!E3UI._genSettings.TTS_ChannelPCSpellsEnabled && !isMob)
             {
                 //we don't want a pc, but there are no spaces, so its a PC (not really, single named mobs can have it , will have to warn user)
-                if (!mobName.Contains(" ")) return;
+                return;
 			}
 
 			message = message.Replace(" begins to cast a spell", " casting");
+            if(isMob)
+            {
+				message = message.Replace(mobName, "");
+			}
 
 			if (E3UI._genSettings.TTS_BriefMode)
 			{
