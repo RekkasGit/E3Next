@@ -200,6 +200,8 @@ namespace E3Core.Settings
 
 
         public Int32 CPU_ProcessLoopDelay = 50;
+        public bool CPU_Camping_PauseAt20Seconds = true;
+        public bool CPU_Camping_ShutdownAt5Seconds = true;
 
 		public Dictionary<string, string> PetWeapons = new Dictionary<string, string>();
         public bool AutoPetWeapons = false;
@@ -279,8 +281,10 @@ namespace E3Core.Settings
 
 
             LoadKeyData("CPU", "ProcessLoopDelayInMS", ParsedData, ref CPU_ProcessLoopDelay);
+			LoadKeyData("CPU", "Camp Pause at 20 seconds", ParsedData, ref CPU_Camping_PauseAt20Seconds);
+			LoadKeyData("CPU", "Camp Shutdown at 5 seconds", ParsedData, ref CPU_Camping_ShutdownAt5Seconds);
 
-            LoadKeyData("Misc", "AutoFood", ParsedData, ref Misc_AutoFoodEnabled);
+			LoadKeyData("Misc", "AutoFood", ParsedData, ref Misc_AutoFoodEnabled);
             LoadKeyData("Misc", "Food", ParsedData, ref Misc_AutoFood);
             LoadKeyData("Misc", "Drink", ParsedData, ref Misc_AutoDrink);
             LoadKeyData("Misc", "End MedBreak in Combat(On/Off)", ParsedData, ref Misc_EndMedBreakInCombat);
@@ -798,10 +802,12 @@ namespace E3Core.Settings
             newFile.Sections.AddSection("Ifs");
             newFile.Sections.AddSection("Events");
 			newFile.Sections.AddSection("EventLoop");
-			newFile.Sections.AddSection("CPU");
+			
+            newFile.Sections.AddSection("CPU");
 			section = newFile.Sections.GetSectionData("CPU");
 			section.Keys.AddKey("ProcessLoopDelayInMS", "50");
-
+			section.Keys.AddKey("Camp Pause at 20 seconds", "True");
+			section.Keys.AddKey("Camp Shutdown at 5 seconds", "True");
 
 			newFile.Sections.AddSection("Manastone");
             section = newFile.Sections.GetSectionData("Manastone");

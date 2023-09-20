@@ -198,10 +198,29 @@ namespace E3Core.Processors
             });
 
 			pattern = @"It will take about 20 more seconds to prepare your camp\.";
-			EventProcessor.RegisterEvent("ShutdownForCamp", pattern, (x) => {
+			EventProcessor.RegisterEvent("PauseForCamp", pattern, (x) => {
 
-                Basics.IsPaused = true;
+				if (!E3.CharacterSettings.CPU_Camping_PauseAt20Seconds)
+				{
+					return;
+				}
+				Basics.IsPaused = true;
 				E3.Bots.Broadcast("\arPAUSING E3!");
+			});
+
+			pattern = @"It will take about 5 more seconds to prepare your camp\.";
+			EventProcessor.RegisterEvent("ShutdownForCamp", pattern, (x) => {
+			
+                if(!E3.CharacterSettings.CPU_Camping_ShutdownAt5Seconds)
+                {
+                    return;
+                }
+
+                if (Core._MQ2MonoVersion >= 0.22m)
+				{
+					MQ.Cmd("/shutdown", true);
+				}
+				
 			});
 		}
     }
