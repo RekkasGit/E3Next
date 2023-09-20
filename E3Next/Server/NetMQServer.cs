@@ -66,16 +66,16 @@ namespace E3Core.Server
                 }
 
             });
-            EventProcessor.RegisterCommand("/ui", (x) =>
+            EventProcessor.RegisterCommand("/e3ui", (x) =>
             {
                 ToggleUI();
             });
-			EventProcessor.RegisterCommand("/ui-debug", (x) =>
+			EventProcessor.RegisterCommand("/e3ui-debug", (x) =>
             {
                 Int32 processID = System.Diagnostics.Process.GetCurrentProcess().Id;
                 MQ.Write($"{PubPort} {RouterPort} {PubClientPort} {processID}");
             });
-            EventProcessor.RegisterCommand("/ui-kill", (x) =>
+            EventProcessor.RegisterCommand("/e3ui-kill", (x) =>
             {
                if(UIProcess!=null)
                 {

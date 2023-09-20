@@ -135,6 +135,8 @@
     <Compile Include="Util\FolderPicker.cs" />
     <Compile Include="Util\GlobalKeyboard.cs" />
     <Compile Include="Util\LineParser.cs" />
+    <Compile Include="Util\ObjectPool.cs" />
+    <Compile Include="Util\TTSProcessor.cs" />
     <EmbeddedResource Include="E3UI.resx">
       <DependentUpon>E3UI.cs</DependentUpon>
     </EmbeddedResource>

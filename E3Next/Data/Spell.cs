@@ -148,9 +148,9 @@ namespace E3Core.Data
 
                         foreach(var checkFor in checkForItems)
                         {
-                            if(!CheckForCollection.ContainsKey(checkFor))
+                            if(!CheckForCollection.ContainsKey(checkFor.Trim()))
                             {
-								CheckForCollection.Add(checkFor, 0);
+								CheckForCollection.Add(checkFor.Trim(), 0);
 							}
                         }
 					}

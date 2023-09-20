@@ -218,7 +218,7 @@ namespace E3NextUI.Settings
 			section["ChannelTellEnabled"] = TTS_ChannelTellEnabled.ToString();
 			section["ChannelShoutEnabled"] = TTS_ChannelShoutEnabled.ToString();
 			section["ChannelMobSpellsEnabled"] = TTS_ChannelMobSpellsEnabled.ToString();
-			section["ChannelPCSpellsEnabled"] = TTS_ChannelMobSpellsEnabled.ToString();
+			section["ChannelPCSpellsEnabled"] = TTS_ChannelPCSpellsEnabled.ToString();
 
 
 			section["RegEx"] = TTS_RegEx;

@@ -890,7 +890,10 @@ namespace E3Core.Processors
 											break;
 										}
 									}
-									if (shouldContinue) { continue; }
+									if (shouldContinue) 
+									{ 
+										continue; 
+									}
 								}
 								//Is the buff still good? if so, skip
 								if (BuffTimerIsGood(spell, s, usePets))

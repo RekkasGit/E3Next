@@ -28,11 +28,11 @@ namespace E3NextUI.Server
         List<string> _spellContains = new List<string>() { @"begins to cast a spell.","'s body is "," damage from ", "a critical blast!" };
         List<string> _spellEndWith = new List<string>() { "begins to cast a spell.", "'s enchantments fades.", " was burned.",  "'s casting is interrupted!", "'s spell fizzles!", "non-melee damage." };
         List<string> _spellStartsWith = new List<string>() { "You begin casting ", "Your spell is interrupted." };
-		SpeechSynthesizer _synth = new SpeechSynthesizer();
+        TTSProcessor _ttsprocessor = new TTSProcessor();
 		public void Process()
         {
           
-			_synth.SetOutputToDefaultAudioDevice();
+			
            
             //_synth.SelectVoiceByHints(VoiceGender.Female); //zera voice built into windows
 
@@ -44,9 +44,10 @@ namespace E3NextUI.Server
                 subSocket.Connect("tcp://127.0.0.1:" + _port);
                 subSocket.SubscribeToAnyTopic();
                 Console.WriteLine("Subscriber socket connecting...");
-				
-				while (true)
-                {
+                _ttsprocessor.Start();
+
+				while (E3UI.ShouldProcess)
+				{
                     string messageTopicReceived;
                         
                     if(subSocket.TryReceiveFrameString(recieveTimeout,out messageTopicReceived))
@@ -72,7 +73,7 @@ namespace E3NextUI.Server
                                     {
                                         if (messageReceived.Contains(c))
                                         {
-                                            Speak(messageReceived);
+                                            _ttsprocessor.AddMessageNormalQueue(messageReceived);
 										    ((E3UI)Application.OpenForms[0]).AddConsoleLine(messageReceived, E3UI.Console);
                                             found = true;
                                             break;
@@ -87,7 +88,7 @@ namespace E3NextUI.Server
                                         {
                                             if (messageReceived.Contains(c))
                                             {
-                                                SpeakSpell(messageReceived);
+                                                _ttsprocessor.AddMessageToSpellQueue(messageReceived);
                                                 ((E3UI)Application.OpenForms[0]).AddConsoleLine(messageReceived, E3UI.SpellConsole);
                                                 found = true;
                                                 break;
@@ -199,200 +200,6 @@ namespace E3NextUI.Server
                 }
             }
         }
-        void SpeakSpell(string message)
-		{
-			if (!E3UI._genSettings.TTS_Enabled) return;
-			if (message.StartsWith("You ")) return;
-			if (!String.IsNullOrWhiteSpace(E3UI._genSettings.TTS_RegEx))
-			{
-				var match = System.Text.RegularExpressions.Regex.Match(message, E3UI._genSettings.TTS_RegEx);
-				if (!match.Success)
-				{
-					return;
-				}
-			}
-			if (!String.IsNullOrWhiteSpace(E3UI._genSettings.TTS_RegExExclude))
-			{
-				var match = System.Text.RegularExpressions.Regex.Match(message, E3UI._genSettings.TTS_RegExExclude);
-				if (match.Success)
-				{
-					return;
-				}
-			}
-
-
-            //need to see if this is a mob or user spell cast. 
-            //[Sat Dec 24 06:40:45 2022] a Tae Ew proselyte begins to cast a spell. <HC Tectonic Shock>
-            if (!message.EndsWith(">")) return; //need to end with the spell name.
-            if (!message.Contains(" begins to cast a spell")) return;
-            //check to if there are any spaces before begins to cast a spell, to see if its a mob or user.
-            //named mobs are an issue here like "Lockjaw"
-            Int32 indexOfBegin = message.IndexOf(" begins to cast a spell");
-            string mobName = message.Substring(0, indexOfBegin);
-
-            bool isMob = false;
-            if (mobName.Contains(" "))
-            {
-                isMob = true;
-            }
-
-			if (!E3UI._genSettings.TTS_ChannelMobSpellsEnabled && isMob)
-            {
-                //we don't want a mob but it contains space, so its a mob, return
-				return; 
-			}
-            if(!E3UI._genSettings.TTS_ChannelPCSpellsEnabled && !isMob)
-            {
-                //we don't want a pc, but there are no spaces, so its a PC (not really, single named mobs can have it , will have to warn user)
-                return;
-			}
-
-			message = message.Replace(" begins to cast a spell", " casting");
-            if(isMob)
-            {
-				message = message.Replace(mobName, "");
-			}
-
-			if (E3UI._genSettings.TTS_BriefMode)
-			{
-				Int32 indexOfStart = message.IndexOf(", '");
-
-				if (indexOfStart != -1)
-				{
-					indexOfStart += 3;
-					message = message.Substring(indexOfStart, message.Length - indexOfStart);
-					if (message.EndsWith("'"))
-					{
-						message = message.Substring(0, message.Length - 1);
-					}
-				}
-			}
-
-			if (E3UI._genSettings.TTS_CharacterLimit > 0)
-			{
-				if (message.Length > E3UI._genSettings.TTS_CharacterLimit)
-				{
-					message = message.Substring(0, E3UI._genSettings.TTS_CharacterLimit);
-					message += " TLDR";
-				}
-			}
-
-
-			_synth.Rate = E3UI._genSettings.TTS_Speed;
-			_synth.Volume = E3UI._genSettings.TTS_Volume;
-			_synth.SpeakAsync(message);
-		}
-        void Speak(string message)
-        {
-            if (!E3UI._genSettings.TTS_Enabled) return;
-            if (message.StartsWith("You ")) return;
-
-
-			if (!String.IsNullOrWhiteSpace(E3UI._genSettings.TTS_RegEx))
-			{
-				var match = System.Text.RegularExpressions.Regex.Match(message, E3UI._genSettings.TTS_RegEx);
-				if (!match.Success)
-				{
-					return;
-				}
-			}
-			if (!String.IsNullOrWhiteSpace(E3UI._genSettings.TTS_RegExExclude))
-			{
-				var match = System.Text.RegularExpressions.Regex.Match(message, E3UI._genSettings.TTS_RegExExclude);
-				if (match.Success)
-				{
-					return;
-				}
-			}
-			if (message.Contains(" says out of character,"))
-            {
-                if (!E3UI._genSettings.TTS_ChannelOOCEnabled) return;
-		
-                message = message.Replace(" says out of character,", " OOC,");
-    		}
-			if (message.Contains(" tells the group,"))
-			{
-				if (!E3UI._genSettings.TTS_ChannelGroupEnabled) return;
-
-				message = message.Replace(" tells the group,", " group,");
-			}
-			if (message.Contains(" tells the guild,"))
-			{
-				if (!E3UI._genSettings.TTS_ChannelGuildEnabled) return;
-
-				message = message.Replace(" tells the guild,", " guild,");
-			}
-			if (message.Contains(" tells you,"))
-			{
-				if (!E3UI._genSettings.TTS_ChannelTellEnabled) return;
-
-			}
-			//
-			if (message.Contains(" raid, '"))
-			{
-				if (!E3UI._genSettings.TTS_ChannelRaidEnabled) return;
-
-			}
-			if (message.Contains(" auctions, '"))
-			{
-				if (!E3UI._genSettings.TTS_ChannelAuctionEnabled) return;
-
-			}
-			if (message.Contains(" auctions, '"))
-			{
-				if (!E3UI._genSettings.TTS_ChannelAuctionEnabled) return;
-
-			}
-			if (message.Contains(" says, '"))
-			{
-				if (!E3UI._genSettings.TTS_ChannelSayEnabled) return;
-
-			}
-			if (message.Contains(" shouts, '"))
-			{
-				if (!E3UI._genSettings.TTS_ChannelShoutEnabled) return;
-
-			}
-
-			if (!String.IsNullOrWhiteSpace(E3UI._genSettings.TTS_Voice))
-            {
-				_synth.SelectVoice(E3UI._genSettings.TTS_Voice);
-				//_synth.SelectVoice("Microsoft Eva Mobile");
-			}
-            else
-            {
-                _synth.SelectVoiceByHints(VoiceGender.Female);
-            }
-        
-            
-            if(E3UI._genSettings.TTS_BriefMode)
-            {
-                Int32 indexOfStart = message.IndexOf(", '");
-
-                if(indexOfStart != -1)
-                {
-                    indexOfStart += 3;
-                    message = message.Substring(indexOfStart, message.Length - indexOfStart);
-                    if (message.EndsWith("'"))
-                    {
-                        message = message.Substring(0, message.Length-1);
-                    }
-                }
-            }
-
-            if(E3UI._genSettings.TTS_CharacterLimit>0)
-            {
-                if(message.Length>E3UI._genSettings.TTS_CharacterLimit)
-                {
-                    message = message.Substring(0, E3UI._genSettings.TTS_CharacterLimit);
-                    message += " TLDR";
-                }
-            }
-
-
-            _synth.Rate = E3UI._genSettings.TTS_Speed;
-            _synth.Volume = E3UI._genSettings.TTS_Volume;
-			_synth.SpeakAsync(message);
-        }
+       
     }
 }
