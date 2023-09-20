@@ -200,7 +200,9 @@ namespace E3NextUI.Server
             }
         }
         void SpeakSpell(string message)
-        {
+		{
+			if (!E3UI._genSettings.TTS_Enabled) return;
+			if (message.StartsWith("You ")) return;
 			if (!String.IsNullOrWhiteSpace(E3UI._genSettings.TTS_RegEx))
 			{
 				var match = System.Text.RegularExpressions.Regex.Match(message, E3UI._genSettings.TTS_RegEx);
