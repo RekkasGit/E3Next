@@ -124,6 +124,7 @@ namespace E3NextUI
             {
                 this.StartPosition = FormStartPosition.Manual;
                 var point = new Point(_genSettings.StartLocationX, _genSettings.StartLocationY);
+               this.Location = point;
                 var size = new Size(_genSettings.Width, _genSettings.Height);
                 this.DesktopBounds = new Rectangle(point, size);
           
@@ -1049,6 +1050,10 @@ namespace E3NextUI
 				config.checkBox_channel_raid.Checked = _genSettings.TTS_ChannelRaidEnabled;
 				config.checkBox_channel_say.Checked = _genSettings.TTS_ChannelSayEnabled;
 				config.checkBox_channel_tell.Checked = _genSettings.TTS_ChannelTellEnabled;
+				config.checkBox_channel_shout.Checked = _genSettings.TTS_ChannelShoutEnabled;
+				config.checkBox_channel_mobspells.Checked = _genSettings.TTS_ChannelMobSpellsEnabled;
+				config.checkBox_channel_pcspells.Checked = _genSettings.TTS_ChannelPCSpellsEnabled;
+
 				config.checkBox_tts_enabled.Checked = _genSettings.TTS_Enabled;
 				config.checkBox_tts_breifmode.Checked = _genSettings.TTS_BriefMode;
 				config.textBox_tts_regex.Text = _genSettings.TTS_RegEx;
@@ -1074,6 +1079,9 @@ namespace E3NextUI
 					_genSettings.TTS_ChannelRaidEnabled = config.checkBox_channel_raid.Checked;
 					_genSettings.TTS_ChannelSayEnabled = config.checkBox_channel_say.Checked;
 					_genSettings.TTS_ChannelTellEnabled = config.checkBox_channel_tell.Checked;
+					_genSettings.TTS_ChannelShoutEnabled = config.checkBox_channel_shout.Checked;
+					_genSettings.TTS_ChannelMobSpellsEnabled = config.checkBox_channel_mobspells.Checked;
+					_genSettings.TTS_ChannelPCSpellsEnabled = config.checkBox_channel_pcspells.Checked;
 					_genSettings.TTS_Enabled = config.checkBox_tts_enabled.Checked;
 					_genSettings.TTS_BriefMode = config.checkBox_tts_breifmode.Checked;
 					_genSettings.TTS_RegEx = config.textBox_tts_regex.Text;

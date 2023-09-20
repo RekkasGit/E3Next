@@ -47,7 +47,11 @@ namespace E3NextUI.Settings
         public bool TTS_ChannelAuctionEnabled = false;
         public bool TTS_ChannelRaidEnabled = false;
         public bool TTS_ChannelTellEnabled = false;
-        public string TTS_RegEx = string.Empty;
+        public bool TTS_ChannelShoutEnabled = false;
+        public bool TTS_ChannelMobSpellsEnabled = false;
+		public bool TTS_ChannelPCSpellsEnabled = false;
+
+		public string TTS_RegEx = string.Empty;
 		public string TTS_RegExExclude = string.Empty;
 		public string TTS_Voice = string.Empty;
         public Int32 TTS_Volume = 50;
@@ -89,10 +93,20 @@ namespace E3NextUI.Settings
             _parsedData = fileIniData.ReadFile(filename);
 
             LoadKeyData("General", "StartLocationX", _parsedData, ref StartLocationX);
+            if(StartLocationX<0) StartLocationX = 0;
             LoadKeyData("General", "StartLocationY", _parsedData, ref StartLocationY);
-            LoadKeyData("General", "Width", _parsedData, ref Width);
+			if (StartLocationY < 0) StartLocationY = 0;
+			LoadKeyData("General", "Width", _parsedData, ref Width);
+            if(Width< 200)
+            {
+                Width = 758;
+            }
             LoadKeyData("General", "Height", _parsedData, ref Height);
-            LoadKeyData("General", "ConsoleCollapsed", _parsedData, ref ConsoleCollapsed);
+			if (Height < 100)
+			{
+				Height = 290;
+			}
+			LoadKeyData("General", "ConsoleCollapsed", _parsedData, ref ConsoleCollapsed);
             LoadKeyData("General", "DynamicButtonsCollapsed", _parsedData, ref DynamicButtonsCollapsed);
             LoadKeyData("General", "UseDarkMode", _parsedData, ref UseDarkMode);
             LoadKeyData("General", "UseOverlay", _parsedData, ref UseOverlay);
@@ -106,6 +120,9 @@ namespace E3NextUI.Settings
 			LoadKeyData("TTS", "ChannelAuctionEnabled", _parsedData, ref TTS_ChannelAuctionEnabled);
 			LoadKeyData("TTS", "ChannelRaidEnabled", _parsedData, ref TTS_ChannelRaidEnabled);
 			LoadKeyData("TTS", "ChannelTellEnabled", _parsedData, ref TTS_ChannelTellEnabled);
+			LoadKeyData("TTS", "ChannelShoutEnabled", _parsedData, ref TTS_ChannelShoutEnabled);
+			LoadKeyData("TTS", "ChannelMobSpellsEnabled", _parsedData, ref TTS_ChannelMobSpellsEnabled);
+			LoadKeyData("TTS", "ChannelPCSpellsEnabled", _parsedData, ref TTS_ChannelPCSpellsEnabled);
 
 			LoadKeyData("TTS", "RegEx", _parsedData, ref TTS_RegEx);
 			LoadKeyData("TTS", "RegExExclude", _parsedData, ref TTS_RegExExclude);
@@ -199,6 +216,11 @@ namespace E3NextUI.Settings
             section["ChannelAuctionEnabled"] = TTS_ChannelAuctionEnabled.ToString();
             section["ChannelRaidEnabled"] = TTS_ChannelRaidEnabled.ToString();
 			section["ChannelTellEnabled"] = TTS_ChannelTellEnabled.ToString();
+			section["ChannelShoutEnabled"] = TTS_ChannelShoutEnabled.ToString();
+			section["ChannelMobSpellsEnabled"] = TTS_ChannelMobSpellsEnabled.ToString();
+			section["ChannelPCSpellsEnabled"] = TTS_ChannelMobSpellsEnabled.ToString();
+
+
 			section["RegEx"] = TTS_RegEx;
             section["RegExExclude"] = TTS_RegExExclude;
             section["VoiceName"] = TTS_Voice;
@@ -260,6 +282,10 @@ namespace E3NextUI.Settings
 			section.Keys.AddKey("ChannelAuctionEnabled", "False");
 			section.Keys.AddKey("ChannelRaidEnabled", "False");
 			section.Keys.AddKey("ChannelTellEnabled", "False");
+			section.Keys.AddKey("ChannelShoutEnabled", "False");
+			section.Keys.AddKey("ChannelMobSpellsEnabled", "False");
+			section.Keys.AddKey("ChannelPCSpellsEnabled", "False");
+
 			section.Keys.AddKey("RegEx", "");
             section.Keys.AddKey("RegExExclude", "");
             section.Keys.AddKey("VoiceName", "");

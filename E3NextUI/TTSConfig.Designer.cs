@@ -52,6 +52,9 @@
 			this.textBox_tts_regex_exclude = new System.Windows.Forms.TextBox();
 			this.label6 = new System.Windows.Forms.Label();
 			this.numericUpDown_tts_wordlimit = new System.Windows.Forms.NumericUpDown();
+			this.checkBox_channel_shout = new System.Windows.Forms.CheckBox();
+			this.checkBox_channel_mobspells = new System.Windows.Forms.CheckBox();
+			this.checkBox_channel_pcspells = new System.Windows.Forms.CheckBox();
 			this.groupBox1.SuspendLayout();
 			((System.ComponentModel.ISupportInitialize)(this.trackBar_tts_volume)).BeginInit();
 			((System.ComponentModel.ISupportInitialize)(this.trackBar_tts_speed)).BeginInit();
@@ -120,6 +123,9 @@
 			// 
 			// groupBox1
 			// 
+			this.groupBox1.Controls.Add(this.checkBox_channel_pcspells);
+			this.groupBox1.Controls.Add(this.checkBox_channel_mobspells);
+			this.groupBox1.Controls.Add(this.checkBox_channel_shout);
 			this.groupBox1.Controls.Add(this.checkBox_channel_tell);
 			this.groupBox1.Controls.Add(this.checkBox_channel_say);
 			this.groupBox1.Controls.Add(this.checkBox_channel_auction);
@@ -129,7 +135,7 @@
 			this.groupBox1.Controls.Add(this.checkBox_channel_gsay);
 			this.groupBox1.Location = new System.Drawing.Point(12, 12);
 			this.groupBox1.Name = "groupBox1";
-			this.groupBox1.Size = new System.Drawing.Size(151, 117);
+			this.groupBox1.Size = new System.Drawing.Size(231, 117);
 			this.groupBox1.TabIndex = 6;
 			this.groupBox1.TabStop = false;
 			this.groupBox1.Text = "Channels";
@@ -148,7 +154,7 @@
 			// 
 			this.textBox_tts_regex.Location = new System.Drawing.Point(13, 180);
 			this.textBox_tts_regex.Name = "textBox_tts_regex";
-			this.textBox_tts_regex.Size = new System.Drawing.Size(456, 20);
+			this.textBox_tts_regex.Size = new System.Drawing.Size(512, 20);
 			this.textBox_tts_regex.TabIndex = 7;
 			// 
 			// label1
@@ -162,7 +168,7 @@
 			// 
 			// trackBar_tts_volume
 			// 
-			this.trackBar_tts_volume.Location = new System.Drawing.Point(192, 25);
+			this.trackBar_tts_volume.Location = new System.Drawing.Point(248, 25);
 			this.trackBar_tts_volume.Maximum = 100;
 			this.trackBar_tts_volume.Name = "trackBar_tts_volume";
 			this.trackBar_tts_volume.Size = new System.Drawing.Size(277, 45);
@@ -172,7 +178,7 @@
 			// label2
 			// 
 			this.label2.AutoSize = true;
-			this.label2.Location = new System.Drawing.Point(204, 6);
+			this.label2.Location = new System.Drawing.Point(260, 6);
 			this.label2.Name = "label2";
 			this.label2.Size = new System.Drawing.Size(66, 13);
 			this.label2.TabIndex = 10;
@@ -180,7 +186,7 @@
 			// 
 			// trackBar_tts_speed
 			// 
-			this.trackBar_tts_speed.Location = new System.Drawing.Point(192, 76);
+			this.trackBar_tts_speed.Location = new System.Drawing.Point(248, 76);
 			this.trackBar_tts_speed.Minimum = -10;
 			this.trackBar_tts_speed.Name = "trackBar_tts_speed";
 			this.trackBar_tts_speed.Size = new System.Drawing.Size(277, 45);
@@ -189,7 +195,7 @@
 			// label3
 			// 
 			this.label3.AutoSize = true;
-			this.label3.Location = new System.Drawing.Point(204, 57);
+			this.label3.Location = new System.Drawing.Point(260, 57);
 			this.label3.Name = "label3";
 			this.label3.Size = new System.Drawing.Size(62, 13);
 			this.label3.TabIndex = 12;
@@ -198,7 +204,7 @@
 			// comboBox_tts_voices
 			// 
 			this.comboBox_tts_voices.FormattingEnabled = true;
-			this.comboBox_tts_voices.Location = new System.Drawing.Point(192, 133);
+			this.comboBox_tts_voices.Location = new System.Drawing.Point(248, 133);
 			this.comboBox_tts_voices.Name = "comboBox_tts_voices";
 			this.comboBox_tts_voices.Size = new System.Drawing.Size(277, 21);
 			this.comboBox_tts_voices.TabIndex = 13;
@@ -206,7 +212,7 @@
 			// label4
 			// 
 			this.label4.AutoSize = true;
-			this.label4.Location = new System.Drawing.Point(189, 117);
+			this.label4.Location = new System.Drawing.Point(249, 116);
 			this.label4.Name = "label4";
 			this.label4.Size = new System.Drawing.Size(34, 13);
 			this.label4.TabIndex = 14;
@@ -225,7 +231,7 @@
 			// buttonOK
 			// 
 			this.buttonOK.DialogResult = System.Windows.Forms.DialogResult.OK;
-			this.buttonOK.Location = new System.Drawing.Point(117, 301);
+			this.buttonOK.Location = new System.Drawing.Point(144, 301);
 			this.buttonOK.Name = "buttonOK";
 			this.buttonOK.Size = new System.Drawing.Size(87, 31);
 			this.buttonOK.TabIndex = 16;
@@ -236,7 +242,7 @@
 			// button1
 			// 
 			this.button1.DialogResult = System.Windows.Forms.DialogResult.Cancel;
-			this.button1.Location = new System.Drawing.Point(268, 301);
+			this.button1.Location = new System.Drawing.Point(295, 301);
 			this.button1.Name = "button1";
 			this.button1.Size = new System.Drawing.Size(87, 31);
 			this.button1.TabIndex = 17;
@@ -267,7 +273,7 @@
 			// 
 			this.textBox_tts_regex_exclude.Location = new System.Drawing.Point(13, 225);
 			this.textBox_tts_regex_exclude.Name = "textBox_tts_regex_exclude";
-			this.textBox_tts_regex_exclude.Size = new System.Drawing.Size(456, 20);
+			this.textBox_tts_regex_exclude.Size = new System.Drawing.Size(512, 20);
 			this.textBox_tts_regex_exclude.TabIndex = 19;
 			// 
 			// label6
@@ -291,11 +297,42 @@
 			this.numericUpDown_tts_wordlimit.Size = new System.Drawing.Size(120, 20);
 			this.numericUpDown_tts_wordlimit.TabIndex = 22;
 			// 
+			// checkBox_channel_shout
+			// 
+			this.checkBox_channel_shout.AutoSize = true;
+			this.checkBox_channel_shout.Location = new System.Drawing.Point(71, 92);
+			this.checkBox_channel_shout.Name = "checkBox_channel_shout";
+			this.checkBox_channel_shout.Size = new System.Drawing.Size(54, 17);
+			this.checkBox_channel_shout.TabIndex = 7;
+			this.checkBox_channel_shout.Text = "Shout";
+			this.checkBox_channel_shout.UseVisualStyleBackColor = true;
+			// 
+			// checkBox_channel_mobspells
+			// 
+			this.checkBox_channel_mobspells.AutoSize = true;
+			this.checkBox_channel_mobspells.Location = new System.Drawing.Point(141, 23);
+			this.checkBox_channel_mobspells.Name = "checkBox_channel_mobspells";
+			this.checkBox_channel_mobspells.Size = new System.Drawing.Size(78, 17);
+			this.checkBox_channel_mobspells.TabIndex = 8;
+			this.checkBox_channel_mobspells.Text = "Mob Spells";
+			this.checkBox_channel_mobspells.UseVisualStyleBackColor = true;
+			// 
+			// checkBox_channel_pcspells
+			// 
+			this.checkBox_channel_pcspells.AutoSize = true;
+			this.checkBox_channel_pcspells.Location = new System.Drawing.Point(141, 46);
+			this.checkBox_channel_pcspells.Name = "checkBox_channel_pcspells";
+			this.checkBox_channel_pcspells.Size = new System.Drawing.Size(71, 17);
+			this.checkBox_channel_pcspells.TabIndex = 9;
+			this.checkBox_channel_pcspells.Text = "PC Spells";
+			this.checkBox_channel_pcspells.UseVisualStyleBackColor = true;
+			// 
 			// TTSConfig
 			// 
 			this.AutoScaleDimensions = new System.Drawing.SizeF(6F, 13F);
 			this.AutoScaleMode = System.Windows.Forms.AutoScaleMode.Font;
-			this.ClientSize = new System.Drawing.Size(510, 347);
+			this.ClientSize = new System.Drawing.Size(539, 343);
+			this.ControlBox = false;
 			this.Controls.Add(this.numericUpDown_tts_wordlimit);
 			this.Controls.Add(this.label6);
 			this.Controls.Add(this.label5);
@@ -350,5 +387,8 @@
 		public System.Windows.Forms.TextBox textBox_tts_regex_exclude;
 		private System.Windows.Forms.Label label6;
 		public System.Windows.Forms.NumericUpDown numericUpDown_tts_wordlimit;
+		public System.Windows.Forms.CheckBox checkBox_channel_shout;
+		public System.Windows.Forms.CheckBox checkBox_channel_mobspells;
+		public System.Windows.Forms.CheckBox checkBox_channel_pcspells;
 	}
 }

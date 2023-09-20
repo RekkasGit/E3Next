@@ -24,8 +24,8 @@ namespace E3NextUI.Server
             _port = port;
             _serverThread = Task.Factory.StartNew(() => { Process(); }, CancellationToken.None, TaskCreationOptions.DenyChildAttach, TaskScheduler.Default);
         }
-        List<string> _consoleContains = new List<string>(){"You say out of character", "You say, '"," says out of character, '", " tells you, '", " guild, '", " party, '", " raid, '", " says, '", " group, '", " auctions, '" };
-        List<string> _spellContains = new List<string>() { "begins to cast a spell\\.","'s body is "," damage from ", "a critical blast!" };
+        List<string> _consoleContains = new List<string>(){"You say out of character", "You say, '"," says out of character, '", " tells you, '", " guild, '", " shouts, '", " party, '", " raid, '", " says, '", " group, '", " auctions, '" };
+        List<string> _spellContains = new List<string>() { @"begins to cast a spell.","'s body is "," damage from ", "a critical blast!" };
         List<string> _spellEndWith = new List<string>() { "begins to cast a spell.", "'s enchantments fades.", " was burned.",  "'s casting is interrupted!", "'s spell fizzles!", "non-melee damage." };
         List<string> _spellStartsWith = new List<string>() { "You begin casting ", "Your spell is interrupted." };
 		SpeechSynthesizer _synth = new SpeechSynthesizer();
@@ -87,6 +87,7 @@ namespace E3NextUI.Server
                                         {
                                             if (messageReceived.Contains(c))
                                             {
+                                                SpeakSpell(messageReceived);
                                                 ((E3UI)Application.OpenForms[0]).AddConsoleLine(messageReceived, E3UI.SpellConsole);
                                                 found = true;
                                                 break;
@@ -198,7 +199,78 @@ namespace E3NextUI.Server
                 }
             }
         }
-     
+        void SpeakSpell(string message)
+        {
+			if (!String.IsNullOrWhiteSpace(E3UI._genSettings.TTS_RegEx))
+			{
+				var match = System.Text.RegularExpressions.Regex.Match(message, E3UI._genSettings.TTS_RegEx);
+				if (!match.Success)
+				{
+					return;
+				}
+			}
+			if (!String.IsNullOrWhiteSpace(E3UI._genSettings.TTS_RegExExclude))
+			{
+				var match = System.Text.RegularExpressions.Regex.Match(message, E3UI._genSettings.TTS_RegExExclude);
+				if (match.Success)
+				{
+					return;
+				}
+			}
+
+
+            //need to see if this is a mob or user spell cast. 
+            //[Sat Dec 24 06:40:45 2022] a Tae Ew proselyte begins to cast a spell. <HC Tectonic Shock>
+            if (!message.EndsWith(">")) return; //need to end with the spell name.
+            if (!message.Contains(" begins to cast a spell")) return;
+            //check to if there are any spaces before begins to cast a spell, to see if its a mob or user.
+            //named mobs are an issue here like "Lockjaw"
+            Int32 indexOfBegin = message.IndexOf(" begins to cast a spell");
+            string mobName = message.Substring(0, indexOfBegin);
+
+
+            if(!E3UI._genSettings.TTS_ChannelMobSpellsEnabled)
+            {
+                //we don't want a mob but it contains space, so its a mob, return
+				if (mobName.Contains(" ")) return; 
+			}
+            if(!E3UI._genSettings.TTS_ChannelPCSpellsEnabled)
+            {
+                //we don't want a pc, but there are no spaces, so its a PC (not really, single named mobs can have it , will have to warn user)
+                if (!mobName.Contains(" ")) return;
+			}
+
+			message = message.Replace(" begins to cast a spell", " casting");
+
+			if (E3UI._genSettings.TTS_BriefMode)
+			{
+				Int32 indexOfStart = message.IndexOf(", '");
+
+				if (indexOfStart != -1)
+				{
+					indexOfStart += 3;
+					message = message.Substring(indexOfStart, message.Length - indexOfStart);
+					if (message.EndsWith("'"))
+					{
+						message = message.Substring(0, message.Length - 1);
+					}
+				}
+			}
+
+			if (E3UI._genSettings.TTS_CharacterLimit > 0)
+			{
+				if (message.Length > E3UI._genSettings.TTS_CharacterLimit)
+				{
+					message = message.Substring(0, E3UI._genSettings.TTS_CharacterLimit);
+					message += " TLDR";
+				}
+			}
+
+
+			_synth.Rate = E3UI._genSettings.TTS_Speed;
+			_synth.Volume = E3UI._genSettings.TTS_Volume;
+			_synth.SpeakAsync(message);
+		}
         void Speak(string message)
         {
             if (!E3UI._genSettings.TTS_Enabled) return;
@@ -265,7 +337,12 @@ namespace E3NextUI.Server
 				if (!E3UI._genSettings.TTS_ChannelSayEnabled) return;
 
 			}
-			
+			if (message.Contains(" shouts, '"))
+			{
+				if (!E3UI._genSettings.TTS_ChannelShoutEnabled) return;
+
+			}
+
 			if (!String.IsNullOrWhiteSpace(E3UI._genSettings.TTS_Voice))
             {
 				_synth.SelectVoice(E3UI._genSettings.TTS_Voice);

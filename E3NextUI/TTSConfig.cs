@@ -42,6 +42,8 @@ namespace E3NextUI
 			}
 
 			_toolTipBrief.SetToolTip(checkBox_tts_breifmode, "Only use the inner text when talking");
+			_toolTipBrief.SetToolTip(checkBox_channel_mobspells, "Warning this only gets mobs with 1+ spaces in their name. If a single name you will have to use PC with a regex filter.");
+			_toolTipBrief.SetToolTip(checkBox_channel_pcspells, "Warning USE FILTERS! This only gets mobs with NO spaces in their name. Generally this is PCs but it can be named NPCS as well.");
 
 		}
 		private void buttonOK_Click(object sender, EventArgs e)
