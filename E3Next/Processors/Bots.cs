@@ -7,6 +7,7 @@ using System;
 using System.Collections.Generic;
 using System.Diagnostics;
 using System.Globalization;
+using System.IO;
 using System.Linq;
 using System.Net;
 using System.Text;
@@ -362,8 +363,19 @@ namespace E3Core.Processors
         {
             string settingsFilePath = BaseSettings.GetSettingsFilePath("");
 
-           
+            if(!settingsFilePath.EndsWith(@"\"))
+            {
+                settingsFilePath += @"\";
+            }
+
+            settingsFilePath+=@"SharedData\";
+
+            if(!Directory.Exists(settingsFilePath))
+            {
+                Directory.CreateDirectory(settingsFilePath);
+            }
             _pathsTolookAt.Add(settingsFilePath);
+           
             //add other paths that have been configured to look at
             foreach(var path in E3.GeneralSettings.General_E3NetworkAddPathToMonitor)
             {

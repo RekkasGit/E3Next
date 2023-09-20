@@ -7,6 +7,7 @@ using NetMQ.Sockets;
 using System;
 using System.Collections.Concurrent;
 using System.Collections.Generic;
+using System.IO;
 using System.Linq;
 using System.Text;
 using System.Threading;
@@ -42,7 +43,27 @@ namespace E3Core.Server
         {
             PubPort = port;
             string localIP = e3util.GetLocalIPAddress();
-            string filePath = BaseSettings.GetSettingsFilePath($"{E3.CurrentName}_{E3.ServerName}_pubsubport.txt");
+			string settingsFilePath = BaseSettings.GetSettingsFilePath("");
+
+			if (!settingsFilePath.EndsWith(@"\"))
+			{
+				settingsFilePath += @"\";
+			}
+
+			settingsFilePath += @"SharedData\";
+
+            if(!Directory.Exists(settingsFilePath))
+            {
+                try
+                {
+					//in case you have 6 clients all trying to create the directory at once.
+                    Directory.CreateDirectory(settingsFilePath);
+				}
+				catch (Exception)
+                {
+                }
+            }
+			string filePath = settingsFilePath+$"{E3.CurrentName}_{E3.ServerName}_pubsubport.txt";
 
             //System.IO.File.Delete(filePath);
             bool updatedFile = false;
