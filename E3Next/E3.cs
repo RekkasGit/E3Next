@@ -25,7 +25,7 @@ namespace E3Core.Processors
     public static class E3
 	{
 		/// <summary>
-		/// The main processing loop.
+		/// The main processing loop. Things are broken up to keep this loop small and understandable.
 		/// </summary>
 		public static void Process()
         {
@@ -37,141 +37,152 @@ namespace E3Core.Processors
             CheckGC();
 			//Init is here to make sure we only Init while InGame, as some queries will fail if not in game
 			if (!IsInit) { Init(); }
-
 			//update all states, important.
 			StateUpdates();
-
-            //kickout after updates if paused
-            if (IsPaused()) return;
-
-          
-            ActionTaken = false;
-            
-            if (CurrentHps < 98)
-            {
-                Heals.Check_LifeSupport();
-            }
-
-            RefreshCaches();
-
-            //nowcast before all.
-            EventProcessor.ProcessEventsInQueues("/nowcast");
-            EventProcessor.ProcessEventsInQueues("/backoff");
-            //use burns if able, this is high as some heals need burns as well
-            Burns.UseBurns();
-            //do the basics first
-            //first and formost, do healing checks
-            if ((CurrentClass & Data.Class.Priest) == CurrentClass)
-            {
-                ActionTaken = false;
-                Heals.Check_Heals();
-                Basics.CheckManaResources();
-				if (ActionTaken) return; //we did a heal, kick out as we may need to do another heal.
-            }
-            
-            //instant buffs have their own shouldcheck, need it snappy so check quickly.
-            BuffCheck.BuffInstant(E3.CharacterSettings.InstantBuffs);
-
-
-            //using (Log.Trace("Assist/WaitForRez"))
-            {
-                Rez.Process();
-                if (Basics.AmIDead()) return;
-
-                Assist.Process();
-            }
-
-            
-
-            if (!ActionTaken)
-            {
-                using (Log.Trace("AdvMethodCalls"))
-                {
-                    //rembmer check_heals is auto inserted, should probably just pull out here
-                    List<string> _methodsToInvokeAsStrings;
-                    if (AdvancedSettings.ClassMethodsAsStrings.TryGetValue(CurrentShortClassString, out _methodsToInvokeAsStrings))
-                    {
-                        foreach (var methodName in _methodsToInvokeAsStrings)
-                        {
-							//using (Log.Trace($"{methodName}-Burns"))
-                            {
-								Burns.UseBurns();
-
-							}
-
-							//using (Log.Trace($"{methodName}-Main"))
-                            {
-								//if an action was taken, start over
-								if (ActionTaken)
-								{
-									break;
-								}
-								Action methodToInvoke;
-								if (AdvancedSettings.MethodLookup.TryGetValue(methodName, out methodToInvoke))
-								{
-									methodToInvoke.Invoke();
-
-								}
-							}
-
-							//check backoff
-							//check nowcast
-							//using (Log.Trace($"{methodName}-CheckQueues"))
-							{
-								EventProcessor.ProcessEventsInQueues("/nowcast");
-								EventProcessor.ProcessEventsInQueues("/backoff");
-
-							}
-							
-                        }
-                    }
-                }
-
-            }
-            EventProcessor.ProcessEventsInQueues("/backoff");
-            Assist.Process();
-            
-            //process any requests commands from the UI.
-            PubClient.ProcessRequests();
-
-            //bard song player
-            if (E3.CurrentClass == Data.Class.Bard)
-            {
-                Bard.check_BardSongs();
-            }
-
-            //class attribute method calls, call them all!
-            //in case any of them change the target, put it back after called
-            Int32 orgTargetID = MQ.Query<Int32>("${Target.ID}");
+			RefreshCaches();
+			//kickout after updates if paused
+			if (IsPaused()) return;
            
-            //using (Log.Trace("ClassMethodCalls"))
+            ActionTaken = false;
+         
+            BeforeAdvancedSettingsCalls();
+			if (!ActionTaken)
             {
-
-                //lets do our class methods, this is last because of bards
-                foreach (var kvp in AdvancedSettings.ClassMethodLookup)
-                {
-					Burns.UseBurns();
-                    //using (Log.Trace($"ClassMethodCalls-{kvp.Key}-Main"))
-                    {
-                        kvp.Value.Invoke();
-                    }
-                    EventProcessor.ProcessEventsInQueues("/nowcast");
-                    EventProcessor.ProcessEventsInQueues("/backoff");
-                }
-                e3util.PutOriginalTargetBackIfNeeded(orgTargetID);
-            }
-
-            using (Log.Trace("LootProcessing"))
-            {
-                Loot.Process();
-            }
-            //instant buffs have their own shouldcheck, need it snappy so check quickly.
-            BuffCheck.BuffInstant(E3.CharacterSettings.InstantBuffs);
-
-            //were modifications made to the settings files?
-            CheckModifiedSettings();
+                AdvancedSettingsCalls();
+			}
+            AfterAdvancedSettingsCalls();
+			ClassMethodCalls();
+			FinalCalls();
         }
-        private static void CheckModifiedSettings()
+		
+		private static void BeforeAdvancedSettingsCalls()
+		{
+			if (CurrentHps < 98)
+			{
+				Heals.Check_LifeSupport();
+			}
+			//nowcast before all.
+			EventProcessor.ProcessEventsInQueues("/nowcast");
+			EventProcessor.ProcessEventsInQueues("/backoff");
+			//use burns if able, this is high as some heals need burns as well
+			Burns.UseBurns();
+			//do the basics first
+			//first and formost, do healing checks
+			if ((CurrentClass & Data.Class.Priest) == CurrentClass)
+			{
+				ActionTaken = false;
+				Heals.Check_Heals();
+				Basics.CheckManaResources();
+				if (ActionTaken) return; //we did a heal, kick out as we may need to do another heal.
+			}
+
+			//instant buffs have their own shouldcheck, need it snappy so check quickly.
+			BuffCheck.BuffInstant(E3.CharacterSettings.InstantBuffs);
+
+			Rez.Process();
+			if (Basics.AmIDead()) return;
+			Assist.Process();
+
+		}
+		private static void AdvancedSettingsCalls()
+		{
+			using (Log.Trace("AdvMethodCalls"))
+			{
+				//rembmer check_heals is auto inserted, should probably just pull out here
+				List<string> _methodsToInvokeAsStrings;
+				if (AdvancedSettings.ClassMethodsAsStrings.TryGetValue(CurrentShortClassString, out _methodsToInvokeAsStrings))
+				{
+					foreach (var methodName in _methodsToInvokeAsStrings)
+					{
+						//using (Log.Trace($"{methodName}-Burns"))
+						{
+							Burns.UseBurns();
+
+						}
+
+						//using (Log.Trace($"{methodName}-Main"))
+						{
+							//if an action was taken, start over
+							if (ActionTaken)
+							{
+								break;
+							}
+							Action methodToInvoke;
+							if (AdvancedSettings.MethodLookup.TryGetValue(methodName, out methodToInvoke))
+							{
+								methodToInvoke.Invoke();
+
+							}
+						}
+
+						//check backoff
+						//check nowcast
+						//using (Log.Trace($"{methodName}-CheckQueues"))
+						{
+							EventProcessor.ProcessEventsInQueues("/nowcast");
+							EventProcessor.ProcessEventsInQueues("/backoff");
+
+						}
+
+					}
+				}
+			}
+		}
+		
+		private static void AfterAdvancedSettingsCalls()
+		{
+			EventProcessor.ProcessEventsInQueues("/backoff");
+			Assist.Process();
+
+			//process any requests commands from the UI.
+			PubClient.ProcessRequests();
+
+			//bard song player
+			if (E3.CurrentClass == Data.Class.Bard)
+			{
+				Bard.check_BardSongs();
+			}
+		}
+	
+		private static void ClassMethodCalls()
+		{
+
+			//class attribute method calls, call them all!
+			//in case any of them change the target, put it back after called
+			Int32 orgTargetID = MQ.Query<Int32>("${Target.ID}");
+
+			//using (Log.Trace("ClassMethodCalls"))
+			{
+
+				//lets do our class methods, this is last because of bards
+				foreach (var kvp in AdvancedSettings.ClassMethodLookup)
+				{
+					Burns.UseBurns();
+					//using (Log.Trace($"ClassMethodCalls-{kvp.Key}-Main"))
+					{
+						kvp.Value.Invoke();
+					}
+					EventProcessor.ProcessEventsInQueues("/nowcast");
+					EventProcessor.ProcessEventsInQueues("/backoff");
+				}
+				e3util.PutOriginalTargetBackIfNeeded(orgTargetID);
+			}
+
+
+		}
+		private static void FinalCalls()
+		{
+			using (Log.Trace("LootProcessing"))
+			{
+				Loot.Process();
+			}
+			//instant buffs have their own shouldcheck, need it snappy so check quickly.
+			BuffCheck.BuffInstant(E3.CharacterSettings.InstantBuffs);
+
+			//were modifications made to the settings files?
+			CheckModifiedSettings();
+		}
+		private static void CheckModifiedSettings()
         {
             if (!e3util.ShouldCheck(ref _nextReloadSettingsCheck, _nextReloadSettingsInterval)) return;
 
@@ -199,7 +210,8 @@ namespace E3Core.Processors
                 E3.Bots.Broadcast("\aoComplete!");
             }
         }
-        public static bool IsPaused()
+       
+		public static bool IsPaused()
         {
             EventProcessor.ProcessEventsInQueues("/e3p");
 
