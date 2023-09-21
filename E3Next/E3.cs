@@ -34,24 +34,36 @@ namespace E3Core.Processors
             {
                 return;
             }
-            CheckGC();
 			//Init is here to make sure we only Init while InGame, as some queries will fail if not in game
 			if (!IsInit) { Init(); }
+
+			//auto 5 min gc check
+			CheckGC();
+	
 			//update all states, important.
 			StateUpdates();
 			RefreshCaches();
+
 			//kickout after updates if paused
 			if (IsPaused()) return;
-           
+
+			//global action taken key, used by adv settings
+			//if true, adv settings will stop processing for this loop.
             ActionTaken = false;
          
+			
             BeforeAdvancedSettingsCalls();
 			if (!ActionTaken)
-            {
-                AdvancedSettingsCalls();
+			{
+				//All the advanced Ini stuff here
+				AdvancedSettingsCalls();
 			}
             AfterAdvancedSettingsCalls();
+			
+			//attribute class calls
 			ClassMethodCalls();
+
+			//final cleanup/actions after the main loop has done processing
 			FinalCalls();
         }
 		
