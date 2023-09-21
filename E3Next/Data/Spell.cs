@@ -742,7 +742,7 @@ namespace E3Core.Data
         public List<string> StackRequestTargets = new List<string>();
         public Int64 StackIntervalCheck = 10000;
         public Int64 StackIntervalNextCheck = 0;
-        public Int64 StackRecastDelay = 1860000;
+        public Int64 StackRecastDelay = 0;
         public string StackRequestItem = String.Empty;
 		public Dictionary<string, Int64> StackSpellCooldown = new Dictionary<string, long>();
 		public Boolean GiftOfMana;
