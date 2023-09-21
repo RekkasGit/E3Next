@@ -128,9 +128,11 @@ namespace E3Core.Processors
             if (CheckCounterCure(E3.CharacterSettings.CurseCounterCure, E3.CharacterSettings.CurseCounterIgnore, E3.Bots.BaseCursedCounters)) return;
             if (CheckCounterCure(E3.CharacterSettings.PoisonCounterCure, E3.CharacterSettings.PoisonCounterIgnore, E3.Bots.BasePoisonedCounters)) return;
             if (CheckCounterCure(E3.CharacterSettings.DiseaseCounterCure, E3.CharacterSettings.DiseaseCounterIgnore, E3.Bots.BaseDiseasedCounters)) return;
+			if (CheckCounterCure(E3.CharacterSettings.CorruptedCounterCure, E3.CharacterSettings.CorruptedCounterIgnore, E3.Bots.BaseCorruptedCounters)) return;
 
-        }
-        private static bool CheckCounterCure(List<Spell> curesSpells, List<Spell> ignoreSpells, Func<string, int> counterFunc)
+
+		}
+		private static bool CheckCounterCure(List<Spell> curesSpells, List<Spell> ignoreSpells, Func<string, int> counterFunc)
         {
             foreach (var spell in curesSpells)
             {

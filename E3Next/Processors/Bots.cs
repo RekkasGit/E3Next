@@ -34,7 +34,8 @@ namespace E3Core.Processors
         List<Int32> PetBuffList(string name);
         Int32 BaseDebuffCounters(string name);
         Int32 BaseDiseasedCounters(string name);
-        Int32 BasePoisonedCounters(string name);
+		Int32 BaseCorruptedCounters(string name);
+		Int32 BasePoisonedCounters(string name);
         Int32 BaseCursedCounters(string name);
         bool IsMyBot(string name);
         void Trade(string name);
@@ -346,7 +347,12 @@ namespace E3Core.Processors
             MQ.Cmd("/notify TradeWnd TRDW_Trade_Button leftmouseup", 250);
             MQ.Cmd($"/bct {name} //notify TradeWnd TRDW_Trade_Button leftmouseup");
         }
-    }
+
+		public int BaseCorruptedCounters(string name)
+		{
+			throw new NotImplementedException();
+		}
+	}
 
 
     public class SharedDataBots : IBots
@@ -661,7 +667,13 @@ namespace E3Core.Processors
 			return DebuffCounterFunction(name, "${Me.CountersPoison}", _debuffPoisonCounterCollection);
 
 		}
-       
+		Dictionary<string, SharedNumericDataInt32> _debuffCorruptedCounterCollection = new Dictionary<string, SharedNumericDataInt32>();
+		public int BaseCorruptedCounters(string name)
+		{
+			return DebuffCounterFunction(name, "${Me.CountersCorrupted}", _debuffCorruptedCounterCollection);
+
+		}
+
 		public List<string> BotsConnected()
         {
             return NetMQServer.SharedDataClient.TopicUpdates.Keys.ToList();
@@ -1432,5 +1444,10 @@ namespace E3Core.Processors
             MQ.Cmd("/notify TradeWnd TRDW_Trade_Button leftmouseup", 250);
             MQ.Cmd($"/dex {name} /notify TradeWnd TRDW_Trade_Button leftmouseup");
         }
-    }
+
+		public int BaseCorruptedCounters(string name)
+		{
+			throw new NotImplementedException();
+		}
+	}
 }

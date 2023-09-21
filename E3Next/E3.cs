@@ -244,14 +244,16 @@ namespace E3Core.Processors
 		
 
 				//cure counters
-				Debuff_TotalCounters = MQ.Query<Int32>("${Me.TotalCounters}");
-				Debuff_PoisonCounters = MQ.Query<Int32>("${Me.CountersPoison}");
-				Debuff_DiseaseCounters = MQ.Query<Int32>("${Me.CountersDisease}");
-				Debuff_CurseCounters = MQ.Query<Int32>("${Me.CountersCurse}");
+				Debuff_TotalCounters = MQ.Query<Int32>("${Debuff.Count}");
+				Debuff_PoisonCounters = MQ.Query<Int32>("${Debuff.Poisoned}");
+				Debuff_DiseaseCounters = MQ.Query<Int32>("${Debuff.Diseased}");
+				Debuff_CurseCounters = MQ.Query<Int32>("${Debuff.Cursed}");
+                Debuff_CorruptionCounters = MQ.Query<Int32>("${Debuff.Corrupted}");
 				PubServer.AddTopicMessage("${Me.TotalCounters}", Debuff_TotalCounters.ToString("N0"));
 				PubServer.AddTopicMessage("${Me.CountersPoison}", Debuff_PoisonCounters.ToString("N0"));
 				PubServer.AddTopicMessage("${Me.CountersDisease}", Debuff_DiseaseCounters.ToString("N0"));
 				PubServer.AddTopicMessage("${Me.CountersCurse}", Debuff_CurseCounters.ToString("N0"));
+				PubServer.AddTopicMessage("${Me.CountersCorrupted}", Debuff_CurseCounters.ToString("N0"));
 				//end cure counters
 
 				IsInvis = MQ.Query<bool>("${Me.Invis}");
@@ -427,6 +429,7 @@ namespace E3Core.Processors
         public static Int32 Debuff_DiseaseCounters;
 		public static Int32 Debuff_PoisonCounters;
 		public static Int32 Debuff_CurseCounters;
+		public static Int32 Debuff_CorruptionCounters;
 
 		public static int PctHPs;
         public static int CurrentHps;

@@ -1617,8 +1617,7 @@ namespace E3Core.Processors
                 //if (CheckForResistByName("CAST_NOTARGET", endtime)) return CastReturn.CAST_NOTARGET;
                 //if (CheckForResistByName("CAST_OUTDOORS", endtime)) return CastReturn.CAST_DISTRACTED;
                 MQ.Delay(100);
-                E3.StateUpdates();
-
+               
             }
             //assume success at this point.
             return CastReturn.CAST_SUCCESS;

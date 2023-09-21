@@ -117,8 +117,10 @@ namespace E3Core.Settings
         public List<Spell> CureAll = new List<Spell>();
         public List<Spell> RadiantCure = new List<Spell>();
         public List<Spell> CurseCounterCure = new List<Spell>();
-        public List<Spell> CurseCounterIgnore = new List<Spell>();
-        public List<Spell> PoisonCounterCure = new List<Spell>();
+		public List<Spell> CurseCounterIgnore = new List<Spell>();
+		public List<Spell> CorruptedCounterCure = new List<Spell>();
+		public List<Spell> CorruptedCounterIgnore = new List<Spell>();
+		public List<Spell> PoisonCounterCure = new List<Spell>();
         public List<Spell> PoisonCounterIgnore = new List<Spell>();
         public List<Spell> DiseaseCounterCure = new List<Spell>();
         public List<Spell> DiseaseCounterIgnore = new List<Spell>();
@@ -451,8 +453,10 @@ namespace E3Core.Settings
             LoadKeyData("Cures", "CureAll", ParsedData, CureAll);
             LoadKeyData("Cures", "RadiantCure", ParsedData, RadiantCure);
             LoadKeyData("Cures", "CurseCounters", ParsedData, CurseCounterCure);
-            LoadKeyData("Cures", "CurseCountersIgnore", ParsedData, CurseCounterIgnore);
-            LoadKeyData("Cures", "PoisonCounters", ParsedData, PoisonCounterCure);
+			LoadKeyData("Cures", "CurseCountersIgnore", ParsedData, CurseCounterIgnore);
+			LoadKeyData("Cures", "CorruptedCounters", ParsedData, CorruptedCounterCure);
+			LoadKeyData("Cures", "CorruptedCountersIgnore", ParsedData, CorruptedCounterIgnore);
+			LoadKeyData("Cures", "PoisonCounters", ParsedData, PoisonCounterCure);
             LoadKeyData("Cures", "PoisonCountersIgnore", ParsedData, PoisonCounterIgnore);
             LoadKeyData("Cures", "DiseaseCounters", ParsedData, DiseaseCounterCure);
             LoadKeyData("Cures", "DiseaseCountersIgnore", ParsedData, DiseaseCounterIgnore);
@@ -696,8 +700,10 @@ namespace E3Core.Settings
                 section.Keys.AddKey("CureAll", "");
                 section.Keys.AddKey("RadiantCure", "");
                 section.Keys.AddKey("CurseCounters", "");
-                section.Keys.AddKey("CurseCountersIgnore", "");
-                section.Keys.AddKey("PoisonCounters", "");
+				section.Keys.AddKey("CurseCountersIgnore", "");
+				section.Keys.AddKey("CorruptedCounters", "");
+				section.Keys.AddKey("CorruptedCountersIgnore", "");
+				section.Keys.AddKey("PoisonCounters", "");
                 section.Keys.AddKey("PoisonCountersIgnore", "");
                 section.Keys.AddKey("DiseaseCounters", "");
                 section.Keys.AddKey("DiseaseCountersIgnore", "");

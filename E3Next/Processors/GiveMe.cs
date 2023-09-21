@@ -64,7 +64,7 @@ namespace E3Core.Processors
         private static IMQ MQ = E3.MQ;
         private static ISpawns _spawns = E3.Spawns;
         private static Dictionary<string, Int32> _groupSpellLimits = new Dictionary<string, int>();
-        private static Dictionary<string, Data.Spell> _groupSpellRequests = new Dictionary<string, Data.Spell>(StringComparer.OrdinalIgnoreCase);
+        public static Dictionary<string, Data.Spell> _groupSpellRequests = new Dictionary<string, Data.Spell>(StringComparer.OrdinalIgnoreCase);
         private static Int64 _nextSupplyCheck = 0;
         private static Int64 _nextSupplyCheckInterval = 1000;
         private static List<GiveMeItem> _supplyList = new List<GiveMeItem>();
