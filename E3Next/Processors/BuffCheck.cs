@@ -356,7 +356,7 @@ namespace E3Core.Processors
 				//allow for other buff checks
 				if(spell.CheckForCollection.Count>0)
 				{
-					foreach(var spellName in spell.CheckForCollection)
+					foreach(var spellName in spell.CheckForCollection.Keys)
 					{
 						haveBuff = MQ.Query<bool>($"${{Bool[${{Me.Buff[{spellName}]}}]}}");
 						if (haveBuff) goto endStackChecks;
