@@ -399,6 +399,8 @@ namespace E3Core.Settings
 			if (sectionkey.Equals("Dispel", StringComparison.OrdinalIgnoreCase)) return;
 			if (sectionkey.Equals("Buffs", StringComparison.OrdinalIgnoreCase) && keyData.KeyName.Equals("Group Buff Request",StringComparison.OrdinalIgnoreCase)) return;
 			if (sectionkey.Equals("Buffs", StringComparison.OrdinalIgnoreCase) && keyData.KeyName.Equals("Raid Buff Request", StringComparison.OrdinalIgnoreCase)) return;
+			if (sectionkey.Equals("Buffs", StringComparison.OrdinalIgnoreCase) && keyData.KeyName.Equals("Stack Buff Request", StringComparison.OrdinalIgnoreCase)) return;
+
 			if (sectionkey.Equals("Charm", StringComparison.OrdinalIgnoreCase)) return;
 
 			string thing = thingToCheckFor;

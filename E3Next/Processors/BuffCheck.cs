@@ -390,7 +390,7 @@ namespace E3Core.Processors
 
 						E3.Bots.BroadcastCommandToPerson(caster, $"/nowcast me \"{thingToAask}\" ${{Me.ID}}");
 						Int64 recastDelay = spell.RecastTime;
-						if (spell.CastType == CastType.Item)
+						if (spell.StackRecastDelay>0)
 						{
 							recastDelay = spell.StackRecastDelay;
 						}

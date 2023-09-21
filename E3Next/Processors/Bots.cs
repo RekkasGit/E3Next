@@ -914,7 +914,7 @@ namespace E3Core.Processors
 			{
 				command = MQ.Query<string>(command);
 			}
-
+            MQ.Write($"\ap{E3.CurrentName}=> \ay{person} : \ag{command}");
 			PubServer.AddTopicMessage("OnCommand-" + person, $"{E3.CurrentName}:{false}:{command}");
 		}
         List<int> _buffListReturnValue = new List<int>();
