@@ -164,22 +164,25 @@ namespace E3Core.Processors
 						}
 						
 					}
-					
-				    recast:
-					if (Casting.InRange(targetid, spell) && Casting.CheckReady(spell) && Casting.CheckMana(spell))
+				recast:
+					if (!Casting.CheckReady(spell))
                     {
-                        
-                        var returnValue = Casting.Cast(targetid, spell, null, true);
-						if(returnValue== CastReturn.CAST_FIZZLE)
-                        {
-                            goto recast;
-                        }
-                        return returnValue;
+                        return CastReturn.CAST_NOTREADY;
                     }
-                    else
+                    if(!Casting.InRange(targetid,spell))
                     {
-                        //spell isn't quite ready yet pause for 1.5 sec
+                        return CastReturn.CAST_OUTOFRANGE;
                     }
+					if (!Casting.CheckMana(spell))
+					{
+						return CastReturn.CAST_OUTOFMANA;
+					}
+			        var returnValue = Casting.Cast(targetid, spell, null, true);
+					if(returnValue== CastReturn.CAST_FIZZLE)
+                    {
+                        goto recast;
+                    }
+                    return returnValue;
                 }
 
                 return CastReturn.CAST_INVALID;
