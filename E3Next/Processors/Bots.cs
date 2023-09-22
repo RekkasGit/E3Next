@@ -717,6 +717,7 @@ namespace E3Core.Processors
 			}
 
 			PubServer.AddTopicMessage("OnCommand-AllExceptMe", $"{E3.CurrentName}:{noparse}:{command}");
+			MQ.Write($"\ap{E3.CurrentName} => \ayAll: \ag{command}");
 		}
 		public void BroadcastCommandAll(string command, bool noparse = false, CommandMatch match = null)
 		{
@@ -774,6 +775,7 @@ namespace E3Core.Processors
 				command = MQ.Query<string>(command);
 			}
 			PubServer.AddTopicMessage("OnCommand-AllExceptMeZone", $"{E3.CurrentName}:{noparse}:{command}");
+			MQ.Write($"\ap{E3.CurrentName} => \ayGroup All: \ag{command}");
 		}
 		public void BroadcastCommandToGroup(string command, CommandMatch match = null, bool noparse = false)
         {
@@ -810,6 +812,7 @@ namespace E3Core.Processors
 				command = MQ.Query<string>(command);
 			}
 			PubServer.AddTopicMessage("OnCommand-Group", $"{E3.CurrentName}:{noparse}:{command}");
+			MQ.Write($"\ap{E3.CurrentName} => \ayGroup: \ag{command}");
 		}
 		public void BroadcastCommandToGroupZone(string command, CommandMatch match = null, bool noparse = false)
 		{
@@ -846,6 +849,7 @@ namespace E3Core.Processors
 				command = MQ.Query<string>(command);
 			}
 			PubServer.AddTopicMessage("OnCommand-GroupZone", $"{E3.CurrentName}:{noparse}:{command}");
+			MQ.Write($"\ap{E3.CurrentName} => \ayGroup Zone : \ag{command}");
 		}
 		public void BroadcastCommandToGroupAll(string command, CommandMatch match = null, bool noparse = false)
 		{
@@ -918,6 +922,7 @@ namespace E3Core.Processors
 				command = MQ.Query<string>(command);
 			}
 			PubServer.AddTopicMessage("OnCommand-GroupAllZone", $"{E3.CurrentName}:{noparse}:{command}");
+			
 		}
 		public void BroadcastCommandToPerson(string person, string command, bool noparse = false)
 		{
@@ -927,7 +932,7 @@ namespace E3Core.Processors
 				command = MQ.Query<string>(command);
 			}
      		PubServer.AddTopicMessage("OnCommand-" + person, $"{E3.CurrentName}:{false}:{command}");
-			MQ.Write($"\ap{E3.CurrentName}=> \ay{person} : \ag{command}");
+			MQ.Write($"\ap{E3.CurrentName} => \ay{person} : \ag{command}");
 
 		}
 		List<int> _buffListReturnValue = new List<int>();

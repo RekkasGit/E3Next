@@ -21,19 +21,11 @@ namespace E3Core.Processors
 		private static long _nextCharmRefreshTimeInterval = 500;
 		private static Int32 _charmDebuffDelay = 4000;
 
-
-	
-
-
-
-
 		[SubSystemInit]
 		public static void Init()
 		{
-
 			InitCharm();
 		}
-
 		private static void InitCharm()
 		{
 
