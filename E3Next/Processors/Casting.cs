@@ -1370,7 +1370,7 @@ namespace E3Core.Processors
 			return Ifs(spell.Ifs);
 		}
 
-		static System.Text.RegularExpressions.Regex _e3buffexistsRegEx = new System.Text.RegularExpressions.Regex(@"\$\{E3BuffExists\[(.+),(.+)\]\}", System.Text.RegularExpressions.RegexOptions.Compiled);
+		static System.Text.RegularExpressions.Regex _e3buffexistsRegEx = new System.Text.RegularExpressions.Regex(@"\$\{E3BuffExists\[([A-Za-z0-9 _]+),([A-Za-z0-9 _]+)\]\}", System.Text.RegularExpressions.RegexOptions.Compiled);
 		public static bool Ifs(string IfsExpression)
 		{
 			if (!String.IsNullOrWhiteSpace(IfsExpression))
