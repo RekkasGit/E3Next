@@ -31,17 +31,36 @@ namespace E3Core.Processors
 
 			EventProcessor.RegisterCommand("/charmon", x =>
 			{
+
+
+
 				if (E3.CharacterSettings.Charm_CharmSpell == null)
 				{
 					E3.Bots.Broadcast($"\agCharm spell not set in INI file.");
 					return;
 				}
-				if(!IsCheckCharmConfigured())
+				if (!IsCheckCharmConfigured())
 				{
 					E3.Bots.Broadcast($"\agcheck_Charm not found in the advanced ini for this class.");
+					return;
 				}
-				
-				_charmTargetId = MQ.Query<int>("${Target.ID}");
+
+				if (x.args.Count > 0)
+				{
+					//they supplied a target
+					Int32.TryParse(x.args[0], out _charmTargetId);
+				}
+				if (_charmTargetId == 0)
+				{
+					_charmTargetId = MQ.Query<int>("${Target.ID}");
+
+				}
+				if (_charmTargetId == 0 || !CharmTargetIsValid())
+				{
+					E3.Bots.Broadcast($"\agNot a valid charm target.");
+					return;
+				}
+
 				E3.Bots.Broadcast($"\agSetting ${{Spawn[{_charmTargetId}].CleanName}} as charm target");
 
 				CharmProcess();
@@ -162,24 +181,15 @@ namespace E3Core.Processors
 		private static bool CharmTargetIsValid()
 		{
 			Spawn s;
-			bool validTarget = true;
 			if (!E3.Spawns.TryByID(_charmTargetId, out s))
 			{
-				validTarget = false;
+				return false;
 			}
-			else if (s.TypeDesc == "Corpse")
+			if (s.TypeDesc == "Corpse")
 			{
-				validTarget = false;
-
+				return false;
 			}
-			if (!validTarget)
-			{
-				// it's dead jim
-				E3.Bots.Broadcast($"\arDisabling charm; {_charmTargetId} is no longer a valid npc");
-				MQ.Cmd("/beep");
-				_charmTargetId = 0;
-			}
-			return validTarget;
+			return true;
 		}
 
 		[AdvSettingInvoke]
@@ -192,6 +202,10 @@ namespace E3Core.Processors
 
 			if (!CharmTargetIsValid())
 			{
+				
+				// it's dead jim
+				E3.Bots.Broadcast($"\arDisabling charm; {_charmTargetId} is no longer a valid npc");
+				MQ.Cmd("/beep");
 				_charmTargetId = 0;
 				return;
 			}

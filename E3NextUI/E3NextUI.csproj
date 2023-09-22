@@ -137,6 +137,7 @@
     <Compile Include="Util\LineParser.cs" />
     <Compile Include="Util\ObjectPool.cs" />
     <Compile Include="Util\TTSProcessor.cs" />
+    <Compile Include="Util\WinUtils.cs" />
     <EmbeddedResource Include="E3UI.resx">
       <DependentUpon>E3UI.cs</DependentUpon>
     </EmbeddedResource>

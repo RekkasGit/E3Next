@@ -5,21 +5,16 @@ using E3NextUI.Util;
 using Octokit;
 using System;
 using System.Collections.Generic;
-using System.ComponentModel;
-using System.Data;
 using System.Diagnostics;
 using System.Drawing;
 using System.Linq;
-using System.Runtime.CompilerServices;
 using System.Runtime.InteropServices;
 using System.Text;
 using System.Threading;
 using System.Threading.Tasks;
 using System.Windows.Forms;
-using System.Xml;
-using Ionic.Zip;
 using System.Reflection;
-using static System.Windows.Forms.VisualStyles.VisualStyleElement;
+using System.IO;
 
 
 namespace E3NextUI
@@ -126,7 +121,7 @@ namespace E3NextUI
                 var point = new Point(_genSettings.StartLocationX, _genSettings.StartLocationY);
                this.Location = point;
                 var size = new Size(_genSettings.Width, _genSettings.Height);
-                this.DesktopBounds = new Rectangle(point, size);
+                this.DesktopBounds = new System.Drawing.Rectangle(point, size);
           
             }
 
@@ -431,7 +426,7 @@ namespace E3NextUI
                     Int32 newWidth = BorderWidth + (panelStatusPannel2.Width) + 10;
                     var point = new Point(this.DesktopBounds.X, this.DesktopBounds.Y);
                     var size = new Size(newWidth, this.DesktopBounds.Height);
-                    this.DesktopBounds = new Rectangle(point, size);
+                    this.DesktopBounds = new System.Drawing.Rectangle(point, size);
 
                 }
                 pbCollapseDynamicButtons.Image = (Image)_collapseDynamicButtonImage;
@@ -444,7 +439,7 @@ namespace E3NextUI
                 Int32 newWidth = BorderWidth + (panelStatusPannel2.Width) + tableLayoutPanelDynamicButtons.Width + 10;
                 var point = new Point(this.DesktopBounds.X, this.DesktopBounds.Y);
                 var size = new Size(newWidth, this.DesktopBounds.Height);
-                this.DesktopBounds = new Rectangle(point, size);
+                this.DesktopBounds = new System.Drawing.Rectangle(point, size);
                 tableLayoutPanelDynamicButtons.Visible = true;
                 pbCollapseDynamicButtons.Image = (Image)_uncollapseDynamicButtonImage;
                 _genSettings.DynamicButtonsCollapsed = false;
@@ -766,7 +761,7 @@ namespace E3NextUI
                     Int32 newHeight = TitlebarHeight + BorderWidth + panelStatusPannel2.Height + panelMain.Height + menuStrip1.Height + 20;
                     var point = new Point(this.DesktopBounds.X, this.DesktopBounds.Y);
                     var size = new Size(this.DesktopBounds.Width, newHeight);
-                    this.DesktopBounds = new Rectangle(point, size);
+                    this.DesktopBounds = new System.Drawing.Rectangle(point, size);
 
                 }
 
@@ -782,7 +777,7 @@ namespace E3NextUI
                 Int32 newHeight = TitlebarHeight + BorderWidth + panelStatusPannel2.Height + panelMain.Height + menuStrip1.Height + 20 + (splitContainer2.Height + splitContainer1.Height);
                 var point = new Point(this.DesktopBounds.X, this.DesktopBounds.Y);
                 var size = new Size(this.DesktopBounds.Width, newHeight);
-                this.DesktopBounds = new Rectangle(point, size);
+                this.DesktopBounds = new System.Drawing.Rectangle(point, size);
                 splitContainer2.Visible = true;
                 splitContainer1.Visible = true;
                 _genSettings.ConsoleCollapsed = false;
@@ -1100,32 +1095,70 @@ namespace E3NextUI
 			var mb = new MessageBox();
 			using (TTSConfig config = new TTSConfig())
             {
-				if (config._voices.Contains("Microsoft Eva Mobile"))
-				{
+                if (config._voices.Contains("Microsoft Eva Mobile"))
+                {
 
-					mb.StartPosition = FormStartPosition.CenterParent;
-					mb.Text = "Already done!";
-					mb.lblMessage.Text = "This is already unlocked for you! :)";
-					mb.buttonOkayOnly.Visible = true;
-					mb.buttonOK.Visible = false;
-					mb.buttonCancel.Visible = false;
-					mb.ShowDialog();
-					return;
-				}
+                    mb.StartPosition = FormStartPosition.CenterParent;
+                    mb.Text = "Already done!";
+                    mb.lblMessage.Text = "This is already unlocked for you! :)";
+                    mb.buttonOkayOnly.Visible = true;
+                    mb.buttonOK.Visible = false;
+                    mb.buttonCancel.Visible = false;
+                    mb.ShowDialog();
+                    return;
+                }
+            }
+
+            string TTSFolder = @"C:\\Windows\\Speech_OneCore\\Engines\\TTS\\en-US";
+			if (!Directory.Exists(TTSFolder))
+            {
+				//TTS not setup/installed on windows?
+				mb.StartPosition = FormStartPosition.CenterParent;
+				mb.Text = "Sorry you don't have eva avilable :(";
+				mb.lblMessage.Text = $"Sorry cannot find the en-US TTS folder at:{TTSFolder}";
+				mb.buttonOkayOnly.Visible = true;
+				mb.buttonOK.Visible = false;
+				mb.buttonCancel.Visible = false;
+				mb.ShowDialog();
+				return;
+
 			}
-               
-			
 
-			
+            //directory exists, lets check for the eva files.
+            string searchPattern = "M1033Eva*";
+			string[] fileNames = System.IO.Directory.GetFiles(TTSFolder, searchPattern);
+
+
+            if(fileNames.Length==0)
+            {
+				//TTS not setup/installed on windows?
+				mb.StartPosition = FormStartPosition.CenterParent;
+				mb.Text = "Sorry you don't have eva avilable :(";
+				mb.lblMessage.Text = $"Sorry cannot find the eva engine files (M1033Eva*) at:{TTSFolder}";
+				mb.buttonOkayOnly.Visible = true;
+				mb.buttonOK.Visible = false;
+				mb.buttonCancel.Visible = false;
+				mb.ShowDialog();
+				return;
+			}
+
 			mb.StartPosition = FormStartPosition.CenterParent;
 			mb.Text = "Please select a folder";
-			mb.lblMessage.Text = "You will be asked to select a folder. \r\nWe will save a registery file you will need to double click on. Default is in the E3N settings area";
+			mb.lblMessage.Text = "You will be asked to select a folder. \r\nWe will save a registery file you will need to double click on. Default is in the E3N settings area.";
 			mb.buttonOkayOnly.Visible = true;
 			mb.buttonOK.Visible = false;
 			mb.buttonCancel.Visible = false;
 			mb.ShowDialog();
-		
-            SaveFileDialog sd = new SaveFileDialog();
+
+			mb.StartPosition = FormStartPosition.CenterParent;
+			mb.Text = "Please select a folder";
+			mb.lblMessage.Text = "Note After the reg update it will require a restart to show up.";
+			mb.buttonOkayOnly.Visible = true;
+			mb.buttonOK.Visible = false;
+			mb.buttonCancel.Visible = false;
+			mb.ShowDialog();
+
+			SaveFileDialog sd = new SaveFileDialog();
             sd.Filter = "Registery|*.reg";
             sd.Title = "Save Registery File";
             sd.FileName = "eva_unlock.reg";
