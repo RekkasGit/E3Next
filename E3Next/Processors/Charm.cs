@@ -111,12 +111,13 @@ namespace E3Core.Processors
 			}
 
 			E3.Bots.Broadcast($"\agPreparing to charm ${{Spawn[{_charmTargetId}].CleanName}}");
-
+			bool debuffsAreCasting = false;
 			if (E3.CharacterSettings.Charm_PeelSnarePerson != String.Empty) 
 			{
 				foreach(var spell in E3.CharacterSettings.Charm_PeelSnareSpell)
 				{
 					E3.Bots.BroadcastCommandToPerson(E3.CharacterSettings.Charm_PeelSnarePerson, $"/nowcast me \"{spell.CastName}\" {_charmTargetId}");
+					debuffsAreCasting = true;
 				}
 			}
 
@@ -125,6 +126,7 @@ namespace E3Core.Processors
 				foreach(var spell in E3.CharacterSettings.Charm_PeelDebuffSpells)
 				{
 					E3.Bots.BroadcastCommandToPerson(E3.CharacterSettings.Charm_PeelDebuffPerson, $"/nowcast me \"{spell.CastName}\" {_charmTargetId}");
+					debuffsAreCasting = true;
 				}
 			}
 			if (E3.CharacterSettings.Charm_PeelPetOwner != String.Empty) E3.Bots.BroadcastCommandToPerson(E3.CharacterSettings.Charm_PeelPetOwner, $"/pet attack {_charmTargetId}");
@@ -161,7 +163,11 @@ namespace E3Core.Processors
 
 
 			E3.Bots.Broadcast($"\agWaiting 4s for debuffs to happen");
-			MQ.Delay(_charmDebuffDelay);
+			if(debuffsAreCasting)
+			{
+				MQ.Delay(_charmDebuffDelay);
+
+			}
 			E3.Bots.Broadcast($"\agDebuffs should have landed; attempting to charm");
 			if (Casting.CheckReady(E3.CharacterSettings.Charm_CharmSpell))
 			{

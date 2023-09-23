@@ -66,7 +66,11 @@ namespace E3Core.Server
                 }
 
             });
-            EventProcessor.RegisterCommand("/e3ui", (x) =>
+			EventProcessor.RegisterCommand("/ui", (x) =>
+			{
+                MQ.Write("/ui has been depreciated, please use /e3ui");
+			});
+			EventProcessor.RegisterCommand("/e3ui", (x) =>
             {
                 ToggleUI();
             });
