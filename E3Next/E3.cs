@@ -264,35 +264,25 @@ namespace E3Core.Processors
 				}
 
 				if (!e3util.ShouldCheck(ref _nextStateUpdateCheckTime, _nextStateUpdateTimeInterval)) return;
-
-		
-
-				//cure counters
-				Debuff_TotalCounters = MQ.Query<Int32>("${Debuff.Count}");
-				Debuff_PoisonCounters = MQ.Query<Int32>("${Debuff.Poisoned}");
-				Debuff_DiseaseCounters = MQ.Query<Int32>("${Debuff.Diseased}");
-				Debuff_CurseCounters = MQ.Query<Int32>("${Debuff.Cursed}");
-                Debuff_CorruptionCounters = MQ.Query<Int32>("${Debuff.Corrupted}");
-				PubServer.AddTopicMessage("${Me.TotalCounters}", Debuff_TotalCounters.ToString("N0"));
-				PubServer.AddTopicMessage("${Me.CountersPoison}", Debuff_PoisonCounters.ToString("N0"));
-				PubServer.AddTopicMessage("${Me.CountersDisease}", Debuff_DiseaseCounters.ToString("N0"));
-				PubServer.AddTopicMessage("${Me.CountersCurse}", Debuff_CurseCounters.ToString("N0"));
-				PubServer.AddTopicMessage("${Me.CountersCorrupted}", Debuff_CurseCounters.ToString("N0"));
-				//end cure counters
-
-				IsInvis = MQ.Query<bool>("${Me.Invis}");
 				PctHPs = MQ.Query<int>("${Me.PctHPs}");
-				CurrentId = MQ.Query<int>("${Me.ID}");
-				
-				HitPointsCurrent = MQ.Query<int>("${Me.CurrentHPs}");
-				MagicPointsCurrent = MQ.Query<int>("${Me.CurrentMana}");
-				StamPointsCurrent = MQ.Query<int>("${Me.CurrentEndurance}");
-				CurrentInCombat = Basics.InCombat();
-
+				//cure counters
+				PubServer.AddTopicMessage("${Me.TotalCounters}", MQ.Query<string>("${Debuff.Count}"));
+				PubServer.AddTopicMessage("${Me.CountersPoison}", MQ.Query<string>("${Debuff.Poisoned}"));
+				PubServer.AddTopicMessage("${Me.CountersDisease}", MQ.Query<string>("${Debuff.Diseased}"));
+				PubServer.AddTopicMessage("${Me.CountersCurse}", MQ.Query<string>("${Debuff.Cursed}"));
+				PubServer.AddTopicMessage("${Me.CountersCorrupted}", MQ.Query<string>("${Debuff.Corrupted}"));
+				//end cure counters
+				PubServer.AddTopicMessage("${Me.PctMana}", MQ.Query<string>("${Me.PctMana}"));
+				PubServer.AddTopicMessage("${Me.PctEndurance}", MQ.Query<string>("${Me.PctEndurance}"));
 				PubServer.AddTopicMessage("${Me.PctHPs}", PctHPs.ToString());
-				PubServer.AddTopicMessage("${Me.CurrentHPs}", HitPointsCurrent.ToString("N0"));
-				PubServer.AddTopicMessage("${Me.CurrentMana}", MagicPointsCurrent.ToString("N0"));
-				PubServer.AddTopicMessage("${Me.CurrentEndurance}", StamPointsCurrent.ToString("N0"));
+				PubServer.AddTopicMessage("${Me.CurrentHPs}", MQ.Query<string>("${Me.CurrentHPs}"));
+				PubServer.AddTopicMessage("${Me.CurrentMana}", MQ.Query<string>("${Me.CurrentMana}"));
+				PubServer.AddTopicMessage("${Me.CurrentEndurance}", MQ.Query<string>("${Me.CurrentEndurance}"));
+		
+				IsInvis = MQ.Query<bool>("${Me.Invis}");
+			
+				CurrentId = MQ.Query<int>("${Me.ID}");
+				CurrentInCombat = Basics.InCombat();
 				PubServer.AddTopicMessage("${InCombat}", CurrentInCombat.ToString());
 				PubServer.AddTopicMessage("${EQ.CurrentFocusedWindowName}", MQ.GetFocusedWindowName());
 
@@ -449,16 +439,8 @@ namespace E3Core.Processors
         public static Int64 LastMovementTimeStamp;
         public static string CurrentLongClassString;
         public static string CurrentShortClassString;
-        public static Int32 Debuff_TotalCounters;
-        public static Int32 Debuff_DiseaseCounters;
-		public static Int32 Debuff_PoisonCounters;
-		public static Int32 Debuff_CurseCounters;
-		public static Int32 Debuff_CorruptionCounters;
 
 		public static int PctHPs;
-        public static int HitPointsCurrent;
-        public static int MagicPointsCurrent;
-        public static int StamPointsCurrent;
         public static ISpawns Spawns = Core.spawnInstance;
         public static bool IsInvis;
         private static Int64 _nextReloadSettingsCheck = 0;

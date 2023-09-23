@@ -8,7 +8,9 @@ using System.Linq;
 using System.Net.Http.Headers;
 using System.Runtime.CompilerServices;
 using System.Security.Cryptography;
+using System.ServiceModel.Dispatcher;
 using System.Text;
+using System.Text.RegularExpressions;
 using System.Threading.Tasks;
 
 namespace E3Core.Processors
@@ -1369,54 +1371,278 @@ namespace E3Core.Processors
 		{
 			return Ifs(spell.Ifs);
 		}
-
-		static System.Text.RegularExpressions.Regex _e3buffexistsRegEx = new System.Text.RegularExpressions.Regex(@"\$\{E3BuffExists\[([A-Za-z0-9 _]+),([A-Za-z0-9 _]+)\]\}", System.Text.RegularExpressions.RegexOptions.Compiled);
+		
 		public static bool Ifs(string IfsExpression)
 		{
 			if (!String.IsNullOrWhiteSpace(IfsExpression))
 			{
-				string tIF = IfsExpression;
+				string tIF = Ifs_Results(IfsExpression);
+				return MQ.Query<bool>($"${{If[{tIF},TRUE,FALSE]}}");
+			}
+			return true;
+		}
 
-				if (VarsetValues.Count > 0)
+		public static string Ifs_Results(string IfsExpression)
+		{
+			string tIF = IfsExpression;
+
+			if (VarsetValues.Count > 0)
+			{
+				foreach (var key in VarsetValues.Keys)
 				{
-					foreach (var key in VarsetValues.Keys)
+					if (tIF.IndexOf($"${{{key}}}", 0, StringComparison.OrdinalIgnoreCase) > -1)
 					{
-						if (tIF.IndexOf($"${{{key}}}", 0, StringComparison.OrdinalIgnoreCase) > -1)
-						{
 
-							tIF = tIF.ReplaceInsensitive($"${{{key}}}", VarsetValues[key]);
+						tIF = tIF.ReplaceInsensitive($"${{{key}}}", VarsetValues[key]);
+					}
+				}
+			}
+			var parsedData = E3.CharacterSettings.ParsedData;
+			var section = parsedData.Sections["Ifs"];
+			if (section != null)
+			{
+				foreach (var key in section)
+				{
+					if (tIF.IndexOf(key.KeyName, 0, StringComparison.OrdinalIgnoreCase) > -1)
+					{
+						var tkeyName = $"${{{key.KeyName}}}";
+
+						if (tIF.IndexOf(tkeyName, 0, StringComparison.OrdinalIgnoreCase) > -1)
+						{
+							tIF = tIF.ReplaceInsensitive(tkeyName, key.Value);
 						}
 					}
 				}
-				var parsedData = E3.CharacterSettings.ParsedData;
-				var section = parsedData.Sections["Ifs"];
-				if (section != null)
-				{
-					foreach (var key in section)
-					{
-						if (tIF.IndexOf(key.KeyName, 0, StringComparison.OrdinalIgnoreCase) > -1)
-						{
-							var tkeyName = $"${{{key.KeyName}}}";
+			}
+			//need to do some legacy compatability checksraibles that were used in Ifs.
+			if (tIF.IndexOf("${Assisting}", 0, StringComparison.OrdinalIgnoreCase) > -1)
+			{
+				//lets replace it with TRUE/FALSE
+				tIF = tIF.ReplaceInsensitive("${Assisting}", Assist.IsAssisting.ToString());
+			}
 
-							if (tIF.IndexOf(tkeyName, 0, StringComparison.OrdinalIgnoreCase) > -1)
+			Ifs_E3Bots(ref tIF);
+
+			//need to do some legacy compatability checksraibles that were used in Ifs.
+			if (tIF.IndexOf("${PBAEON}", 0, StringComparison.OrdinalIgnoreCase) > -1)
+			{
+				//lets replace it with TRUE/FALSE
+				tIF = tIF.ReplaceInsensitive("${PBAEON}", Nukes.PBAEEnabled.ToString());
+			}
+			if (tIF.IndexOf("${AssistTarget}", 0, StringComparison.OrdinalIgnoreCase) > -1)
+			{
+				//lets replace it with TRUE/FALSE
+				tIF = tIF.ReplaceInsensitive("${AssistTarget}", Assist.AssistTargetID.ToString());
+			}
+			if (tIF.IndexOf("${AssistType}", 0, StringComparison.OrdinalIgnoreCase) > -1)
+			{
+				tIF = tIF.ReplaceInsensitive("${AssistType}", E3.CharacterSettings.Assist_Type);
+			}
+			if (tIF.IndexOf("${use_QUICKBurns}", 0, StringComparison.OrdinalIgnoreCase) > -1)
+			{
+				//lets replace it with TRUE/FALSE
+				tIF = tIF.ReplaceInsensitive("${use_QUICKBurns}", Burns.use_QUICKBurns.ToString());
+			}
+			if (tIF.IndexOf("${use_LONGBurns}", 0, StringComparison.OrdinalIgnoreCase) > -1)
+			{
+				//lets replace it with TRUE/FALSE
+				tIF = tIF.Replace("${use_LONGBurns}", Burns.use_LONGBurns.ToString());
+			}
+			if (tIF.IndexOf("${use_FULLBurns}", 0, StringComparison.OrdinalIgnoreCase) > -1)
+			{
+				//lets replace it with TRUE/FALSE
+				tIF = tIF.ReplaceInsensitive("${use_FULLBurns}", Burns.use_FULLBurns.ToString());
+			}
+			if (tIF.IndexOf("${use_EPICBurns}", 0, StringComparison.OrdinalIgnoreCase) > -1)
+			{
+				//lets replace it with TRUE/FALSE
+				tIF = tIF.ReplaceInsensitive("${use_EPICBurns}", Burns.use_EPICBurns.ToString());
+			}
+			if (tIF.IndexOf("${use_Swarms}", 0, StringComparison.OrdinalIgnoreCase) > -1)
+			{
+				//lets replace it with TRUE/FALSE
+				tIF = tIF.ReplaceInsensitive("${use_Swarms}", Burns.use_Swarms.ToString());
+			}
+			if (tIF.IndexOf("${charmTarget}", 0, StringComparison.OrdinalIgnoreCase) > -1)
+			{
+				//lets replace it with TRUE/FALSE
+				tIF = tIF.ReplaceInsensitive("${charmTarget}", "false");
+			}
+			if (tIF.IndexOf("${NotCombat}", 0, StringComparison.OrdinalIgnoreCase) > -1)
+			{
+				//lets replace it with TRUE/FALSE
+				tIF = tIF.ReplaceInsensitive("${NotCombat}", (!Basics.InCombat()).ToString());
+			}
+			if (tIF.IndexOf("${InCombat}", 0, StringComparison.OrdinalIgnoreCase) > -1)
+			{
+				//lets replace it with TRUE/FALSE
+				tIF = tIF.ReplaceInsensitive("${InCombat}", (Basics.InCombat()).ToString());
+			}
+
+			return tIF;
+		}
+
+		static System.Text.RegularExpressions.Regex _e3buffexistsRegEx = new System.Text.RegularExpressions.Regex(@"\$\{E3BuffExists\[([A-Za-z0-9 _]+),([A-Za-z0-9 _]+)\]\}", System.Text.RegularExpressions.RegexOptions.Compiled);
+		static System.Text.RegularExpressions.Regex _e3BotsRegEx = new System.Text.RegularExpressions.Regex(@"\$\{E3Bots\[([A-Za-z0-9 _]+)\]\.([A-Za-z]+)\}", System.Text.RegularExpressions.RegexOptions.Compiled);
+		static System.Text.RegularExpressions.Regex _e3BotsBuffsRegEx = new System.Text.RegularExpressions.Regex(@"\$\{E3Bots\[([A-Za-z0-9 _]+)\]\.Buffs\[([A-Za-z0-9 _]+)\]\.([A-Za-z0-9]+)\}", System.Text.RegularExpressions.RegexOptions.Compiled);
+
+		//
+		//to replace the NetBots functionality of query data in the ini files
+		//a bit of regex hell while trying to be somewhat efficent
+
+		
+		public static void Ifs_E3Bots(ref string tIF)
+		{
+
+			//need to do some legacy compatability checksraibles that were used in Ifs.
+			if (tIF.IndexOf("${E3Bots[", 0, StringComparison.OrdinalIgnoreCase) > -1)
+			{
+				string replaceValue = "";
+				//time for some regex
+
+				////\$\{E3Bots\[([A-Za-z0-9 _]+)\]\.([A-Za-z]+)\}
+				//${E3Bots[Rekken].Hps} && ${E3Bots[Rekken].Hps}
+				// gruop0: ${E3Bots[Rekken].Hps}
+				// group1: Rekken
+				// group2: Hps
+				var matches = _e3BotsRegEx.Matches(tIF);
+				foreach (Match match in matches)
+				{
+					if (match.Success && match.Groups.Count > 0)
+					{
+						//${E3Bots[Rekken].CurrentHPs} 
+						string replaceString = match.Groups[0].Value;
+						string replacevalue = replaceString;
+						//Rekken
+						string targetname = match.Groups[1].Value;
+						//CurrentHps
+						string query= match.Groups[2].Value;
+
+						if(query=="PctHPs")
+						{
+							replaceValue = "100";
+							string result = E3.Bots.Query(targetname, "${Me.PctHPs}");
+							if(result != "NULL")
 							{
-								tIF = tIF.ReplaceInsensitive(tkeyName, key.Value);
+								replaceValue = result;
 							}
 						}
+						else if (query == "PctMana")
+						{
+							replaceValue = "100";
+							string result = E3.Bots.Query(targetname, "${Me.PctMana}");
+							if (result != "NULL")
+							{
+								replaceValue = result;
+							}
+						}
+						else if (query == "PctEndurance")
+						{
+							replaceValue = "100";
+							string result = E3.Bots.Query(targetname, "${Me.PctEndurance}");
+							if (result != "NULL")
+							{
+								replaceValue = result;
+							}
+						}
+						else if(query=="CurrentHPs")
+						{
+							replaceValue = "0";
+							string result = E3.Bots.Query(targetname, "${Me.CurrentHPs}");
+							if (result != "NULL")
+							{
+								replaceValue = result;
+							}
+						}
+						else if (query == "CurrentMana")
+						{
+							replaceValue = "0";
+							string result = E3.Bots.Query(targetname, "${Me.CurrentMana}");
+							if (result != "NULL")
+							{
+								replaceValue = result;
+							}
+						}
+						else if (query == "CurrentEndurance")
+						{
+							replaceValue = "0";
+							string result = E3.Bots.Query(targetname, "${Me.CurrentEndurance}");
+							if (result != "NULL")
+							{
+								replaceValue = result;
+							}
+						}
+						//check to see if some modification was done
+						if(replaceString!=replaceValue)
+						{
+							tIF = tIF.ReplaceInsensitive(replaceString, replaceValue);
+						}
+
 					}
 				}
-				//need to do some legacy compatability checksraibles that were used in Ifs.
-				if (tIF.IndexOf("${Assisting}", 0, StringComparison.OrdinalIgnoreCase) > -1)
+
+				matches =_e3BotsBuffsRegEx.Matches(tIF);
+
+				foreach(Match match in matches)
 				{
-					//lets replace it with TRUE/FALSE
-					tIF = tIF.ReplaceInsensitive("${Assisting}", Assist.IsAssisting.ToString());
+					if (match.Success && match.Groups.Count > 0)
+					{
+						//${E3Bots[Rekken].Buffs[Hand of Conviction].ID}
+						//${E3Bots[Rekken].Buffs[Hand of Conviction].Duration}
+						string replaceString = match.Groups[0].Value;
+						replaceValue = replaceString;
+						//Rekken
+						string targetname = match.Groups[1].Value;
+						//buffname
+						string buffName = match.Groups[2].Value;
+						//ID,Duration,etc
+						string query = match.Groups[3].Value;
+						if (query == "ID")
+						{
+							replaceValue = "0";
+							List<Int32> buffList = E3.Bots.BuffList(targetname);
+							Int32 spellID = Spell.SpellIDLookup(buffName);
+							if (spellID > 0)
+							{
+								if (buffList.Contains(spellID))
+								{
+									replaceValue = spellID.ToString();
+								}
+							}
+						}
+						if (query == "Duration")
+						{
+							replaceValue = "0";
+							CharacterBuffs buffInfo = E3.Bots.GetBuffInformation(targetname);
+
+							if (buffInfo!=null)
+							{
+								Int32 spellID = Spell.SpellIDLookup(buffName);
+								if (buffInfo.BuffDurations.TryGetValue(spellID, out var buffDuration))
+								{
+									replaceValue = buffDuration.ToString();
+								}
+							}
+						}
+						//check to see if some modification was done
+						if (replaceString != replaceValue)
+						{
+							tIF = tIF.ReplaceInsensitive(replaceString, replaceValue);
+						}
+					}
 				}
-				//need to do some legacy compatability checksraibles that were used in Ifs.
-				if (tIF.IndexOf("${E3BuffExists[", 0, StringComparison.OrdinalIgnoreCase) > -1)
+			}
+
+			//need to do some legacy compatability checksraibles that were used in Ifs.
+			if (tIF.IndexOf("${E3BuffExists[", 0, StringComparison.OrdinalIgnoreCase) > -1)
+			{
+				bool replaceValue = false;
+				//time for some regex
+
+				var matchs = _e3buffexistsRegEx.Matches(tIF);
+
+				foreach (Match match in matchs)
 				{
-					bool replaceValue = false;
-					//time for some regex
-					var match = _e3buffexistsRegEx.Match(tIF);
 					if (match.Success && match.Groups.Count > 0)
 					{
 						string replaceString = match.Groups[0].Value;
@@ -1435,64 +1661,8 @@ namespace E3Core.Processors
 						tIF = tIF.ReplaceInsensitive(replaceString, replaceValue.ToString());
 					}
 				}
-				//need to do some legacy compatability checksraibles that were used in Ifs.
-				if (tIF.IndexOf("${PBAEON}", 0, StringComparison.OrdinalIgnoreCase) > -1)
-				{
-					//lets replace it with TRUE/FALSE
-					tIF = tIF.ReplaceInsensitive("${PBAEON}", Nukes.PBAEEnabled.ToString());
-				}
-				if (tIF.IndexOf("${AssistTarget}", 0, StringComparison.OrdinalIgnoreCase) > -1)
-				{
-					//lets replace it with TRUE/FALSE
-					tIF = tIF.ReplaceInsensitive("${AssistTarget}", Assist.AssistTargetID.ToString());
-				}
-				if (tIF.IndexOf("${AssistType}", 0, StringComparison.OrdinalIgnoreCase) > -1)
-				{
-					tIF = tIF.ReplaceInsensitive("${AssistType}", E3.CharacterSettings.Assist_Type);
-				}
-				if (tIF.IndexOf("${use_QUICKBurns}", 0, StringComparison.OrdinalIgnoreCase) > -1)
-				{
-					//lets replace it with TRUE/FALSE
-					tIF = tIF.ReplaceInsensitive("${use_QUICKBurns}", Burns.use_QUICKBurns.ToString());
-				}
-				if (tIF.IndexOf("${use_LONGBurns}", 0, StringComparison.OrdinalIgnoreCase) > -1)
-				{
-					//lets replace it with TRUE/FALSE
-					tIF = tIF.Replace("${use_LONGBurns}", Burns.use_LONGBurns.ToString());
-				}
-				if (tIF.IndexOf("${use_FULLBurns}", 0, StringComparison.OrdinalIgnoreCase) > -1)
-				{
-					//lets replace it with TRUE/FALSE
-					tIF = tIF.ReplaceInsensitive("${use_FULLBurns}", Burns.use_FULLBurns.ToString());
-				}
-				if (tIF.IndexOf("${use_EPICBurns}", 0, StringComparison.OrdinalIgnoreCase) > -1)
-				{
-					//lets replace it with TRUE/FALSE
-					tIF = tIF.ReplaceInsensitive("${use_EPICBurns}", Burns.use_EPICBurns.ToString());
-				}
-				if (tIF.IndexOf("${use_Swarms}", 0, StringComparison.OrdinalIgnoreCase) > -1)
-				{
-					//lets replace it with TRUE/FALSE
-					tIF = tIF.ReplaceInsensitive("${use_Swarms}", Burns.use_Swarms.ToString());
-				}
-				if (tIF.IndexOf("${charmTarget}", 0, StringComparison.OrdinalIgnoreCase) > -1)
-				{
-					//lets replace it with TRUE/FALSE
-					tIF = tIF.ReplaceInsensitive("${charmTarget}", "false");
-				}
-				if (tIF.IndexOf("${NotCombat}", 0, StringComparison.OrdinalIgnoreCase) > -1)
-				{
-					//lets replace it with TRUE/FALSE
-					tIF = tIF.ReplaceInsensitive("${NotCombat}", (!Basics.InCombat()).ToString());
-				}
-				if (tIF.IndexOf("${InCombat}", 0, StringComparison.OrdinalIgnoreCase) > -1)
-				{
-					//lets replace it with TRUE/FALSE
-					tIF = tIF.ReplaceInsensitive("${InCombat}", (Basics.InCombat()).ToString());
-				}
-				return MQ.Query<bool>($"${{If[{tIF},TRUE,FALSE]}}");
+
 			}
-			return true;
 		}
 		public static bool TrueTarget(Int32 targetID, bool allowClear = false)
 		{

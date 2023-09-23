@@ -46,6 +46,7 @@ namespace E3Core.Processors
         private static TimeSpan _cursorOccupiedThreshold = new TimeSpan(0, 0, 0, 30);
         private static Int32 _cusrorPreviousID;
 		static Int32 Debug_PreviousCPUDelay = 50;
+
 		/// <summary>
 		/// Initializes this instance.
 		/// </summary>
@@ -187,6 +188,7 @@ namespace E3Core.Processors
                     }
                 }
             });
+            
             EventProcessor.RegisterCommand("/e3settings", (x) =>
             {
                 if(x.args.Count>0)
@@ -203,7 +205,14 @@ namespace E3Core.Processors
                 }
 
             });
-            EventProcessor.RegisterCommand("/dropinvis", (x) =>
+           
+			EventProcessor.RegisterCommand("/e3echo", (x) =>
+			{
+                string argumentLine = e3util.ArgsToCommand(x.args);
+                string processedLine = Casting.Ifs_Results(argumentLine);
+				MQ.Cmd($"/echo {processedLine}");
+			});
+			EventProcessor.RegisterCommand("/dropinvis", (x) =>
             {
                 E3.Bots.BroadcastCommandToGroup("/makemevisible",x);
                 MQ.Cmd("/makemevisible");

@@ -27,9 +27,24 @@ namespace E3Core.Data
     {
         public static Dictionary<Int32, Data.Spell> _loadedSpells = new Dictionary<int, Spell>();
         public static Dictionary<string, Data.Spell> LoadedSpellsByName = new Dictionary<string, Spell>();
-        public static IMQ MQ = E3.MQ;
+		static Dictionary<string, Int32> _spellIDLookup = new Dictionary<string, Int32>();
+		public static IMQ MQ = E3.MQ;
 
 
+        public static Int32 SpellIDLookup(string spellName)
+        {
+            if(_spellIDLookup.TryGetValue(spellName, out var result))
+            {
+                return result;
+			}
+            Int32 spellID = MQ.Query<Int32>($"${{Spell[{spellName}].ID}}");
+            if(spellID>0)
+            {
+				_spellIDLookup.Add(spellName, spellID);
+			}
+			return spellID;
+
+		}
         public Spell(string spellName, IniData parsedData = null)
         {
 

@@ -30,9 +30,26 @@ namespace E3Core.Utility
 
 		//share this as we can reuse as its only 1 thread
 		private static StringBuilder resultStringBuilder = new StringBuilder(1024);
-        //modified from https://stackoverflow.com/questions/6275980/string-replace-ignoring-case
-        
-        public static void PutOriginalTargetBackIfNeeded(Int32 targetid)
+		//modified from https://stackoverflow.com/questions/6275980/string-replace-ignoring-case
+		public static string ArgsToCommand(List<String> args)
+		{
+			resultStringBuilder.Clear();
+			foreach (var arg in args)
+			{
+				if (arg.Contains(" "))
+				{
+					//need to wrap it with quotes if it has spaces
+					resultStringBuilder.Append($"\"{arg}\" ");
+				}
+				else
+				{
+					resultStringBuilder.Append($"{arg} ");
+				}
+
+			}
+			return resultStringBuilder.ToString().Trim();
+		}
+		public static void PutOriginalTargetBackIfNeeded(Int32 targetid)
         {
             //put the target back to where it was
             Int32 currentTargetID = MQ.Query<Int32>("${Target.ID}");

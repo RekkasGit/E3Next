@@ -12,6 +12,7 @@ using System.Linq;
 using System.Text;
 using System.Threading;
 using System.Threading.Tasks;
+using static E3Core.Server.SharedDataClient;
 
 namespace E3Core.Server
 {
@@ -22,11 +23,36 @@ namespace E3Core.Server
     public class PubServer
     {
         private static IMQ MQ = E3.MQ;
-        class topicMessagePair
+        class topicMessagePair:IDisposable
         {
             public string topic;
             public string message;
-        }
+            private topicMessagePair()
+            {
+                //do not let others instance us
+            }
+			public static topicMessagePair Aquire()
+			{
+				topicMessagePair obj;
+				if (!StaticObjectPool.TryPop<topicMessagePair>(out obj))
+				{
+					obj = new topicMessagePair();
+				}
+				return obj;
+			}
+			public void Dispose()
+			{
+                topic = string.Empty;
+                message = string.Empty;
+				StaticObjectPool.Push(this);
+			}
+			~topicMessagePair()
+			{
+				//DO NOT CALL DISPOSE FROM THE FINALIZER! This should only ever be used in using statements
+				//if this is called, it will cause the domain to hang in the GC when shutting down
+				//This is only here to warn you
+			}
+		}
 
         Task _serverThread = null;
 
@@ -91,9 +117,11 @@ namespace E3Core.Server
 
         }
         public  static void AddTopicMessage(string topic, string message)
-        {
-            topicMessagePair t = new topicMessagePair() { topic = topic, message = message };
-            _topicMessages.Enqueue(t);
+        {  
+            topicMessagePair t = topicMessagePair.Aquire();
+            t.topic = topic;
+            t.message=message;
+		     _topicMessages.Enqueue(t);
         }
         private void Process(string filePath)
         {
@@ -106,13 +134,14 @@ namespace E3Core.Server
                 
                 while (Core.IsProcessing && E3.NetMQ_PubServerThradRun)
                 {
-                   
                     while (_topicMessages.Count > 0)
                     {
                         if (_topicMessages.TryDequeue(out var value))
                         {
-
-                            pubSocket.SendMoreFrame(value.topic).SendFrame(value.message);
+                            using(value)
+                            {
+								pubSocket.SendMoreFrame(value.topic).SendFrame(value.message);
+							}
                         }
                     }
                    while(IncomingChatMessages.Count > 0)

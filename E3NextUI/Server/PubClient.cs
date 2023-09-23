@@ -136,7 +136,7 @@ namespace E3NextUI.Server
                                     }
                                 }
                             }
-                            else if (messageTopicReceived == "${Me.PctHPs}")
+                            else if (messageTopicReceived == "${Me.CurrentHPs}")
                             {
                                 if (Application.OpenForms.Count > 0)
                                 {

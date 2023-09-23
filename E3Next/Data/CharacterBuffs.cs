@@ -12,6 +12,7 @@ namespace E3Core.Data
 
 		public Dictionary<Int32, Int64> BuffDurations = new Dictionary<int, Int64>();
 		public Int64 LastUpdate= 0;
+		private CharacterBuffs() { }
 
 		public static CharacterBuffs Aquire()
 		{

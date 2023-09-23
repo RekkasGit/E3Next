@@ -73,58 +73,58 @@ namespace E3Core.Processors
         {
             using (_log.Trace())
             {
+                //no longer in use, delete this in the near future
+                //if(E3.Bots is Bots)
+                //{
+                //    if (!MQ.Query<bool>("${Plugin[MQ2EQBC]}"))
+                //    {
+                //        MQ.Write("Plugin MQ2EQBC is not loaded, attempting to resolve...");
+                //        MQ.Cmd("/plugin MQ2EQBC");
+                //        MQ.Delay(1000);
 
-                if(E3.Bots is Bots)
-                {
-                    if (!MQ.Query<bool>("${Plugin[MQ2EQBC]}"))
-                    {
-                        MQ.Write("Plugin MQ2EQBC is not loaded, attempting to resolve...");
-                        MQ.Cmd("/plugin MQ2EQBC");
-                        MQ.Delay(1000);
+                //        Int32 counter = 0;
+                //        while (!MQ.Query<bool>("${EQBC}"))
+                //        {
+                //            if (counter > 10)
+                //            {
+                //                MQ.Write("***WARNING*** Could not load MQ2EQBC, macro functionality may be limited.");
+                //                break;
+                //            }
+                //            counter++;
+                //            MQ.Delay(1000);
+                //        }
+                //    }
+                //    bool EQBC = MQ.Query<bool>("${EQBC}");
+                //    MQ.Write("Checking for EQBC...result:" + EQBC);
+                //    if (EQBC)
+                //    {
+                //        bool bcConnect = MQ.Query<bool>("${EQBC.Connected}");
+                //        MQ.Write("EQBC Found! checking connection...result:" + bcConnect);
+                //        if (!bcConnect)
+                //        {
+                //            MQ.Write("Not connected, trying to connect!");
+                //            MQ.Cmd("/bccmd connect");
 
-                        Int32 counter = 0;
-                        while (!MQ.Query<bool>("${EQBC}"))
-                        {
-                            if (counter > 10)
-                            {
-                                MQ.Write("***WARNING*** Could not load MQ2EQBC, macro functionality may be limited.");
-                                break;
-                            }
-                            counter++;
-                            MQ.Delay(1000);
-                        }
-                    }
-                    bool EQBC = MQ.Query<bool>("${EQBC}");
-                    MQ.Write("Checking for EQBC...result:" + EQBC);
-                    if (EQBC)
-                    {
-                        bool bcConnect = MQ.Query<bool>("${EQBC.Connected}");
-                        MQ.Write("EQBC Found! checking connection...result:" + bcConnect);
-                        if (!bcConnect)
-                        {
-                            MQ.Write("Not connected, trying to connect!");
-                            MQ.Cmd("/bccmd connect");
-
-                            if (!MQ.Delay(5000, "${EQBC.Connected}"))
-                            {
-                                MQ.Write("***WARNING*** Could not connect to EQBCS! Please open EQBCS and try again.  Macro functionality may be limited...");
-                            }
-                        }
-                    }
-                    if (!MQ.Query<bool>("${Plugin[MQ2NetBots]}"))
-                    {
-                        MQ.Write("Plugin MQ2NetBots is not loaded, attempting to resolve...");
-                        MQ.Cmd("/plugin MQ2NetBots");
-                        if (!MQ.Delay(3000, "${NetBots}"))
-                        {
-                            MQ.Write("***WARNING*** Could not load MQ2NetBots! Macro functionality may be limited.");
-                        }
-                    }
-                    if (MQ.Query<bool>("${NetBots}"))
-                    {
-                        MQ.Cmd("/squelch /netbots on grab=on send=on");
-                    }
-                }
+                //            if (!MQ.Delay(5000, "${EQBC.Connected}"))
+                //            {
+                //                MQ.Write("***WARNING*** Could not connect to EQBCS! Please open EQBCS and try again.  Macro functionality may be limited...");
+                //            }
+                //        }
+                //    }
+                //    if (!MQ.Query<bool>("${Plugin[MQ2NetBots]}"))
+                //    {
+                //        MQ.Write("Plugin MQ2NetBots is not loaded, attempting to resolve...");
+                //        MQ.Cmd("/plugin MQ2NetBots");
+                //        if (!MQ.Delay(3000, "${NetBots}"))
+                //        {
+                //            MQ.Write("***WARNING*** Could not load MQ2NetBots! Macro functionality may be limited.");
+                //        }
+                //    }
+                //    if (MQ.Query<bool>("${NetBots}"))
+                //    {
+                //        MQ.Cmd("/squelch /netbots on grab=on send=on");
+                //    }
+                //}
 
                 if (!MQ.Query<bool>("${Plugin[MQ2Debuffs]}"))
                 {

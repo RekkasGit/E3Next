@@ -10,6 +10,7 @@ using System.Globalization;
 using System.IO;
 using System.Linq;
 using System.Net;
+using System.Net.Http.Headers;
 using System.Text;
 using System.Text.RegularExpressions;
 using System.Threading;
@@ -39,321 +40,10 @@ namespace E3Core.Processors
         Int32 BaseCursedCounters(string name);
         bool IsMyBot(string name);
         void Trade(string name);
+		string Query(string name, string query);
+		CharacterBuffs GetBuffInformation(string name);
     }
-    public class Bots: IBots
-    {
-        public static string _lastSuccesfulCast = String.Empty;
-        public static Logging _log = E3.Log;
-        private static IMQ MQ = E3.MQ;
-
-        private string _connectedBotsString = string.Empty;
-        private List<string> _connectedBots = new List<string>();
-        private static Dictionary<string, List<Int32>> _buffListCollection = new Dictionary<string, List<int>>();
-        private static Dictionary<string, Int64> _buffListCollectionTimeStamps = new Dictionary<string, long>();
-        private static Int64 _nextBuffCheck = 0;
-        private static Int64 _nextBuffRefreshTimeInterval = 1000;
-
-        private static Dictionary<string, List<Int32>> _petBuffListCollection = new Dictionary<string, List<int>>();
-        private static Dictionary<string, Int64> _petBuffListCollectionTimeStamps = new Dictionary<string, long>();
-        private static Int64 _nextPetBuffCheck = 0;
-        private static Int64 _nextPetBuffRefreshTimeInterval = 1000;
-        private static bool GlobalAllEnabled = false;
-
-        public Bots()
-        {
-			EventProcessor.RegisterCommand("/e3GlobalBroadcast", (x) =>
-			{
-                GlobalAllEnabled = !GlobalAllEnabled;
-                Broadcast($"\agSetting Global Boradcast to {GlobalAllEnabled}");
-				
-			});
-		}
-
-        private static string GetGroupCommand()
-        {
-            if (E3.GeneralSettings.General_BroadCast_Default == Settings.DefaultBroadcast.All)
-            {
-                return "/bca";
-            }
-            else if (E3.GeneralSettings.General_BroadCast_Default == Settings.DefaultBroadcast.AllInZoneOrRaid)
-            {
-                return "/bca";
-            }
-
-            return "/bcg";
-        }
-        private static StringBuilder _strinbBuilder = new StringBuilder();
-        public void BroadcastCommandToGroup(string query, CommandMatch match = null, bool noparse = false)
-        {
-
-            bool hasAllFlag = false;
-
-            if(match!=null)
-            {
-                hasAllFlag = match.hasAllFlag;
-            }
-            if(GlobalAllEnabled)
-            {
-                hasAllFlag = GlobalAllEnabled;
-            }
-
-            string noparseCommand = string.Empty;
-            if(noparse)
-            {
-                //space after is required
-                noparseCommand = "/noparse ";
-            }
-
-            if(match!=null && match.filters.Count>0)
-            {
-                //need to pass over the filters if they exist
-                _strinbBuilder.Clear();
-                if(hasAllFlag)
-                {
-                    _strinbBuilder.Append($"{noparseCommand}/bca /{query}");
-                }
-                else
-                {
-                    _strinbBuilder.Append($"{GetGroupCommand()} /{query}");
-                }
-                
-                foreach(var filter in match.filters)
-                {
-                    _strinbBuilder.Append($" \"{filter}\"");
-                }
-                MQ.Cmd(_strinbBuilder.ToString());
-            }
-            else
-            {
-                if(hasAllFlag)
-                {
-                    MQ.Cmd($"{noparseCommand}/bca /{query}");
-                }
-                else
-                {
-                    MQ.Cmd($"{noparseCommand}{GetGroupCommand()} /{query}");
-                }
-                
-            }
-        }
-        public void BroadcastCommandToPerson(string person, string command, bool noparse = false)
-        {
-            person = e3util.FirstCharToUpper(person);
-			MQ.Cmd($"/bct {person} /{command}");
-        }
-        public void BroadcastCommand(string command,bool noparse = false, CommandMatch match = null)
-        {
-            if (match != null && match.filters.Count > 0)
-            {
-                //need to pass over the filters if they exist
-                _strinbBuilder.Clear();
-                _strinbBuilder.Append($"/bca /{command}");
-                foreach (var filter in match.filters)
-                {
-                    _strinbBuilder.Append($" \"{filter}\"");
-                }
-                if (noparse)
-                {
-                    MQ.Cmd($"/noparse {_strinbBuilder.ToString()}");
-                }
-                else
-                {
-                    MQ.Cmd(_strinbBuilder.ToString());
-                }
-            }
-            else if (noparse)
-            {
-                MQ.Cmd($"/noparse /bca /{command}");
-            }
-            else
-            {
-                MQ.Cmd($"/bca /{command}");
-            }
-        }
-        public Boolean InZone(string name)
-        {
-            return MQ.Query<bool>($"${{NetBots[{name}].InZone}}");
-
-        }
-        public Int32 PctHealth(string name)
-        {
-            return MQ.Query<Int32>($"${{NetBots[{name}].PctHPs}}");
-        }
-
-        public List<string> BotsConnected()
-        {
-
-
-            string currentConnectedBots = MQ.Query<string>("${NetBots.Client}");
-
-            if(currentConnectedBots=="NULL" || string.IsNullOrEmpty(currentConnectedBots))
-            {
-                //error?
-                if(_connectedBots.Count>0)
-                {
-                    _connectedBots = new List<string>();
-
-                }
-                return _connectedBots;
-            }
-
-            if(currentConnectedBots==_connectedBotsString)
-            {
-                //no chnage, return the current list
-                return _connectedBots;
-            }
-            else
-            {
-                //its different, update
-                _connectedBots =e3util .StringsToList(currentConnectedBots, ' ');
-                return _connectedBots;
-            }
-        }
-
-        public bool HasShortBuff(string name, Int32 buffid)
-        {
-            return BuffList(name).Contains(buffid);
-        }
-
-        public  List<int> BuffList(string name)
-        {
-
-            List<Int32> buffList;
-            bool alreadyExisted = true;
-            if (!_buffListCollection.TryGetValue(name, out buffList))
-            {
-                alreadyExisted = false;
-                buffList = new List<int>();
-                _buffListCollection.Add(name, buffList);
-                _buffListCollectionTimeStamps.Add(name, 0);
-            }
-
-            if (!e3util.ShouldCheck(ref _nextBuffCheck, _nextBuffRefreshTimeInterval) && alreadyExisted) return _buffListCollection[name];
-
-            //refresh all lists of all people
-
-            foreach(var kvp in _buffListCollection)
-            {
-                if(kvp.Key.Contains("\""))
-                {
-                    //ignore pets with quotes. 
-                    continue;
-                }
-                string listString = string.Empty;
-                
-                listString=MQ.Query<string>($"${{NetBots[{kvp.Key}].Buff}}");
-                _buffListCollection[kvp.Key].Clear();
-                if (listString != "NULL")
-                {  
-                    e3util.StringsToNumbers(listString, ' ', _buffListCollection[kvp.Key]);
-                    listString = MQ.Query<string>($"${{NetBots[{kvp.Key}].ShortBuff}}");
-                    if (listString != "NULL")
-                    {
-                        e3util.StringsToNumbers(listString, ' ', _buffListCollection[kvp.Key]);
-                    }
-                }
-
-            }
-            return _buffListCollection[name];
-
-        }
-        public List<int> PetBuffList(string name)
-        {
-
-            List<Int32> buffList;
-            bool alreadyExisted = true;
-            if (!_petBuffListCollection.TryGetValue(name, out buffList))
-            {
-                alreadyExisted = false;
-                buffList = new List<int>();
-                _petBuffListCollection.Add(name, buffList);
-                _petBuffListCollectionTimeStamps.Add(name, 0);
-            }
-
-            if (!e3util.ShouldCheck(ref _nextPetBuffCheck, _nextPetBuffRefreshTimeInterval) && alreadyExisted) return _petBuffListCollection[name];
-
-            //refresh all lists of all people
-
-            foreach (var kvp in _petBuffListCollection)
-            {
-                if (kvp.Key.Contains("\""))
-                {
-                    //ignore pets with quotes. 
-                    continue;
-                }
-                string listString = string.Empty;
-
-                listString = MQ.Query<string>($"${{NetBots[{kvp.Key}].PetBuff}}");
-                _petBuffListCollection[kvp.Key].Clear();
-                if (listString != "NULL")
-                {
-                    e3util.StringsToNumbers(listString, ' ', _petBuffListCollection[kvp.Key]);
-                }
-
-            }
-            return _petBuffListCollection[name];
-
-        }
-
-        public void Broadcast(string message, bool noparse = false)
-        {
-            if(noparse)
-            {
-				MQ.Cmd($"/noparse /bc {message}");
-			}
-            else
-            {
-				MQ.Cmd($"/bc {message}");
-			}
-           
-        }
-
-		//NOTE* these are the counters on the original spell , not the CURRENT counter value.
-		//can't currently get counter totals on EMu due to a but in MQ
-		//per Dannuic
-		//There are more spells (especially on emu) that can be cured that don't use counters, you should be checking SPA (which is what ${Me.Diseased} does)
-
-		public int BaseDebuffCounters(string name)
-        {
-            Int32 counters = MQ.Query<Int32>($"${{NetBots[{name}].Counters}}");
-            return counters;
-        }
-
-        public int BaseDiseasedCounters(string name)
-        {
-            Int32 counters = MQ.Query<Int32>($"${{NetBots[{name}].Diseased}}");
-            return counters;
-        }
-
-        public int BasePoisonedCounters(string name)
-        {
-            Int32 counters = MQ.Query<Int32>($"${{NetBots[{name}].Poisoned}}");
-            return counters;
-        }
-
-        public int BaseCursedCounters(string name)
-        {
-            Int32 counters = MQ.Query<Int32>($"${{NetBots[{name}].Cursed}}");
-            return counters;
-        }
-
-        public bool IsMyBot(string name)
-        {
-            return BotsConnected().Contains(name);
-        }
-
-        public void Trade(string name)
-        {
-            MQ.Cmd("/notify TradeWnd TRDW_Trade_Button leftmouseup", 250);
-            MQ.Cmd($"/bct {name} //notify TradeWnd TRDW_Trade_Button leftmouseup");
-        }
-
-		public int BaseCorruptedCounters(string name)
-		{
-			throw new NotImplementedException();
-		}
-	}
-
+  
 
     public class SharedDataBots : IBots
     {
@@ -361,7 +51,7 @@ namespace E3Core.Processors
         private static IMQ MQ = E3.MQ;
         private static Dictionary<string, CharacterBuffs> _characterBuffs = new Dictionary<string, CharacterBuffs>();
         private static Dictionary<string, CharacterBuffs> _petBuffs = new Dictionary<string, CharacterBuffs>();
-		private System.Text.StringBuilder _stringBuilder = new System.Text.StringBuilder();
+		private static System.Text.StringBuilder _stringBuilder = new System.Text.StringBuilder();
 		private static bool GlobalAllEnabled = false;
 		List<string> _pathsTolookAt = new List<string>();
 		Task _autoRegisrationTask;
@@ -404,7 +94,7 @@ namespace E3Core.Processors
 				if (x.args.Count > 0)
 				{
 
-					string message = ArgsToCommand(x.args);
+					string message = e3util.ArgsToCommand(x.args);
 					if (message.StartsWith(@"/"))
                     {
                         BroadcastCommand(message,true);
@@ -421,7 +111,7 @@ namespace E3Core.Processors
 				if (x.args.Count > 0)
 				{
 
-					string message = ArgsToCommand(x.args);
+					string message = e3util.ArgsToCommand(x.args);
 					if (message.StartsWith(@"/"))
 					{
 						BroadcastCommand(message, true);
@@ -438,7 +128,7 @@ namespace E3Core.Processors
 				if (x.args.Count > 0)
 				{
 
-					string message = ArgsToCommand(x.args);
+					string message = e3util.ArgsToCommand(x.args);
 					if (message.StartsWith(@"/"))
 					{
 						BroadcastCommandAllZoneNotMe(message, true);
@@ -454,7 +144,7 @@ namespace E3Core.Processors
 			{
 				if (x.args.Count > 0)
 				{
-					string command = ArgsToCommand(x.args);
+					string command = e3util.ArgsToCommand(x.args);
 					BroadcastCommandToGroup(command,null,true);
 
 				}
@@ -464,7 +154,7 @@ namespace E3Core.Processors
 			{
 				if (x.args.Count > 0)
 				{
-					string command = ArgsToCommand(x.args);
+					string command = e3util.ArgsToCommand(x.args);
 					BroadcastCommandToGroupZone(command, null, true);
 
 				}
@@ -476,7 +166,7 @@ namespace E3Core.Processors
 				{
 					string person = x.args[0];
 					x.args.RemoveAt(0);
-					string command = ArgsToCommand(x.args);
+					string command = e3util.ArgsToCommand(x.args);
 					BroadcastCommandToPerson(person, command,true);
 				}
 			});
@@ -484,7 +174,7 @@ namespace E3Core.Processors
 			{
 				if (x.args.Count > 0)
 				{
-					string command = ArgsToCommand(x.args);
+					string command = e3util.ArgsToCommand(x.args);
 					BroadcastCommandToGroupAll(command,null,true);
 		            
                 }
@@ -493,7 +183,7 @@ namespace E3Core.Processors
 			{
 				if (x.args.Count > 0)
 				{
-					string command = ArgsToCommand(x.args);
+					string command = e3util.ArgsToCommand(x.args);
 					BroadcastCommandToGroupAllZone(command, null, true);
 
 				}
@@ -502,7 +192,7 @@ namespace E3Core.Processors
 			{
 				if (x.args.Count > 0)
 				{
-					string command = ArgsToCommand(x.args);
+					string command = e3util.ArgsToCommand(x.args);
 			        BroadcastCommandAll(command,true);
 
 				}
@@ -511,7 +201,7 @@ namespace E3Core.Processors
 			{
 				if (x.args.Count > 0)
 				{
-					string command = ArgsToCommand(x.args);
+					string command = e3util.ArgsToCommand(x.args);
 					BroadcastCommandAllZone(command, true);
 
 				}
@@ -519,24 +209,16 @@ namespace E3Core.Processors
 
 
 		}
-        private string ArgsToCommand(List<String> args)
-        {
-			_stringBuilder.Clear();
-			foreach (var arg in args)
-			{
-				if (arg.Contains(" "))
-				{
-					//need to wrap it with quotes if it has spaces
-					_stringBuilder.Append($"\"{arg}\" ");
-				}
-				else
-				{
-					_stringBuilder.Append($"{arg} ");
-				}
+		public CharacterBuffs GetBuffInformation(string name)
+		{
+			UpdateBuffInfoUserInfo(name, name, "${Me.BuffInfo}", _characterBuffs);
 
-			}
-			return _stringBuilder.ToString().Trim();
+			if (_characterBuffs.TryGetValue(name, out var buff)) return buff;
+
+			return null;
 		}
+
+		
         private void AutoRegisterUsers(List<string> settingsPaths)
         {
             string searchPattern = $"*_{E3.ServerName}_pubsubport.txt";
@@ -1036,6 +718,26 @@ namespace E3Core.Processors
 			
             return sharedInfo.Data;
 		}
+        public string Query(string name,string query)
+        {
+			//register the user to get their buff data if its not already there
+			if (!NetMQServer.SharedDataClient.TopicUpdates.ContainsKey(name))
+			{
+				return "NULL"; //dunno
+			}
+			var userTopics = NetMQServer.SharedDataClient.TopicUpdates[name];
+			//check to see if it has been filled out yet.
+			string keyToUse = query;
+			if (!userTopics.ContainsKey(keyToUse))
+			{
+				return "NULL"; //dunno
+			}
+			var entry = userTopics[keyToUse];
+			lock (entry)
+			{
+                return entry.Data;
+			}
+		}
 
 		public List<int> PetBuffList(string name)
 		{
@@ -1074,6 +776,320 @@ namespace E3Core.Processors
             public Int64 LastUpdate { get; set; }
         }
 
+	}
+	/*
+	public class Bots : IBots
+	{
+		public static string _lastSuccesfulCast = String.Empty;
+		public static Logging _log = E3.Log;
+		private static IMQ MQ = E3.MQ;
+
+		private string _connectedBotsString = string.Empty;
+		private List<string> _connectedBots = new List<string>();
+		private static Dictionary<string, List<Int32>> _buffListCollection = new Dictionary<string, List<int>>();
+		private static Dictionary<string, Int64> _buffListCollectionTimeStamps = new Dictionary<string, long>();
+		private static Int64 _nextBuffCheck = 0;
+		private static Int64 _nextBuffRefreshTimeInterval = 1000;
+
+		private static Dictionary<string, List<Int32>> _petBuffListCollection = new Dictionary<string, List<int>>();
+		private static Dictionary<string, Int64> _petBuffListCollectionTimeStamps = new Dictionary<string, long>();
+		private static Int64 _nextPetBuffCheck = 0;
+		private static Int64 _nextPetBuffRefreshTimeInterval = 1000;
+		private static bool GlobalAllEnabled = false;
+
+		public Bots()
+		{
+			EventProcessor.RegisterCommand("/e3GlobalBroadcast", (x) =>
+			{
+				GlobalAllEnabled = !GlobalAllEnabled;
+				Broadcast($"\agSetting Global Boradcast to {GlobalAllEnabled}");
+
+			});
+		}
+
+		private static string GetGroupCommand()
+		{
+			if (E3.GeneralSettings.General_BroadCast_Default == Settings.DefaultBroadcast.All)
+			{
+				return "/bca";
+			}
+			else if (E3.GeneralSettings.General_BroadCast_Default == Settings.DefaultBroadcast.AllInZoneOrRaid)
+			{
+				return "/bca";
+			}
+
+			return "/bcg";
+		}
+		private static StringBuilder _strinbBuilder = new StringBuilder();
+		public void BroadcastCommandToGroup(string query, CommandMatch match = null, bool noparse = false)
+		{
+
+			bool hasAllFlag = false;
+
+			if (match != null)
+			{
+				hasAllFlag = match.hasAllFlag;
+			}
+			if (GlobalAllEnabled)
+			{
+				hasAllFlag = GlobalAllEnabled;
+			}
+
+			string noparseCommand = string.Empty;
+			if (noparse)
+			{
+				//space after is required
+				noparseCommand = "/noparse ";
+			}
+
+			if (match != null && match.filters.Count > 0)
+			{
+				//need to pass over the filters if they exist
+				_strinbBuilder.Clear();
+				if (hasAllFlag)
+				{
+					_strinbBuilder.Append($"{noparseCommand}/bca /{query}");
+				}
+				else
+				{
+					_strinbBuilder.Append($"{GetGroupCommand()} /{query}");
+				}
+
+				foreach (var filter in match.filters)
+				{
+					_strinbBuilder.Append($" \"{filter}\"");
+				}
+				MQ.Cmd(_strinbBuilder.ToString());
+			}
+			else
+			{
+				if (hasAllFlag)
+				{
+					MQ.Cmd($"{noparseCommand}/bca /{query}");
+				}
+				else
+				{
+					MQ.Cmd($"{noparseCommand}{GetGroupCommand()} /{query}");
+				}
+
+			}
+		}
+		public void BroadcastCommandToPerson(string person, string command, bool noparse = false)
+		{
+			person = e3util.FirstCharToUpper(person);
+			MQ.Cmd($"/bct {person} /{command}");
+		}
+		public void BroadcastCommand(string command, bool noparse = false, CommandMatch match = null)
+		{
+			if (match != null && match.filters.Count > 0)
+			{
+				//need to pass over the filters if they exist
+				_strinbBuilder.Clear();
+				_strinbBuilder.Append($"/bca /{command}");
+				foreach (var filter in match.filters)
+				{
+					_strinbBuilder.Append($" \"{filter}\"");
+				}
+				if (noparse)
+				{
+					MQ.Cmd($"/noparse {_strinbBuilder.ToString()}");
+				}
+				else
+				{
+					MQ.Cmd(_strinbBuilder.ToString());
+				}
+			}
+			else if (noparse)
+			{
+				MQ.Cmd($"/noparse /bca /{command}");
+			}
+			else
+			{
+				MQ.Cmd($"/bca /{command}");
+			}
+		}
+		public Boolean InZone(string name)
+		{
+			return MQ.Query<bool>($"${{NetBots[{name}].InZone}}");
+
+		}
+		public Int32 PctHealth(string name)
+		{
+			return MQ.Query<Int32>($"${{NetBots[{name}].PctHPs}}");
+		}
+
+		public List<string> BotsConnected()
+		{
+
+
+			string currentConnectedBots = MQ.Query<string>("${NetBots.Client}");
+
+			if (currentConnectedBots == "NULL" || string.IsNullOrEmpty(currentConnectedBots))
+			{
+				//error?
+				if (_connectedBots.Count > 0)
+				{
+					_connectedBots = new List<string>();
+
+				}
+				return _connectedBots;
+			}
+
+			if (currentConnectedBots == _connectedBotsString)
+			{
+				//no chnage, return the current list
+				return _connectedBots;
+			}
+			else
+			{
+				//its different, update
+				_connectedBots = e3util.StringsToList(currentConnectedBots, ' ');
+				return _connectedBots;
+			}
+		}
+
+		public bool HasShortBuff(string name, Int32 buffid)
+		{
+			return BuffList(name).Contains(buffid);
+		}
+
+		public List<int> BuffList(string name)
+		{
+
+			List<Int32> buffList;
+			bool alreadyExisted = true;
+			if (!_buffListCollection.TryGetValue(name, out buffList))
+			{
+				alreadyExisted = false;
+				buffList = new List<int>();
+				_buffListCollection.Add(name, buffList);
+				_buffListCollectionTimeStamps.Add(name, 0);
+			}
+
+			if (!e3util.ShouldCheck(ref _nextBuffCheck, _nextBuffRefreshTimeInterval) && alreadyExisted) return _buffListCollection[name];
+
+			//refresh all lists of all people
+
+			foreach (var kvp in _buffListCollection)
+			{
+				if (kvp.Key.Contains("\""))
+				{
+					//ignore pets with quotes. 
+					continue;
+				}
+				string listString = string.Empty;
+
+				listString = MQ.Query<string>($"${{NetBots[{kvp.Key}].Buff}}");
+				_buffListCollection[kvp.Key].Clear();
+				if (listString != "NULL")
+				{
+					e3util.StringsToNumbers(listString, ' ', _buffListCollection[kvp.Key]);
+					listString = MQ.Query<string>($"${{NetBots[{kvp.Key}].ShortBuff}}");
+					if (listString != "NULL")
+					{
+						e3util.StringsToNumbers(listString, ' ', _buffListCollection[kvp.Key]);
+					}
+				}
+
+			}
+			return _buffListCollection[name];
+
+		}
+		public List<int> PetBuffList(string name)
+		{
+
+			List<Int32> buffList;
+			bool alreadyExisted = true;
+			if (!_petBuffListCollection.TryGetValue(name, out buffList))
+			{
+				alreadyExisted = false;
+				buffList = new List<int>();
+				_petBuffListCollection.Add(name, buffList);
+				_petBuffListCollectionTimeStamps.Add(name, 0);
+			}
+
+			if (!e3util.ShouldCheck(ref _nextPetBuffCheck, _nextPetBuffRefreshTimeInterval) && alreadyExisted) return _petBuffListCollection[name];
+
+			//refresh all lists of all people
+
+			foreach (var kvp in _petBuffListCollection)
+			{
+				if (kvp.Key.Contains("\""))
+				{
+					//ignore pets with quotes. 
+					continue;
+				}
+				string listString = string.Empty;
+
+				listString = MQ.Query<string>($"${{NetBots[{kvp.Key}].PetBuff}}");
+				_petBuffListCollection[kvp.Key].Clear();
+				if (listString != "NULL")
+				{
+					e3util.StringsToNumbers(listString, ' ', _petBuffListCollection[kvp.Key]);
+				}
+
+			}
+			return _petBuffListCollection[name];
+
+		}
+
+		public void Broadcast(string message, bool noparse = false)
+		{
+			if (noparse)
+			{
+				MQ.Cmd($"/noparse /bc {message}");
+			}
+			else
+			{
+				MQ.Cmd($"/bc {message}");
+			}
+
+		}
+
+		//NOTE* these are the counters on the original spell , not the CURRENT counter value.
+		//can't currently get counter totals on EMu due to a but in MQ
+		//per Dannuic
+		//There are more spells (especially on emu) that can be cured that don't use counters, you should be checking SPA (which is what ${Me.Diseased} does)
+
+		public int BaseDebuffCounters(string name)
+		{
+			Int32 counters = MQ.Query<Int32>($"${{NetBots[{name}].Counters}}");
+			return counters;
+		}
+
+		public int BaseDiseasedCounters(string name)
+		{
+			Int32 counters = MQ.Query<Int32>($"${{NetBots[{name}].Diseased}}");
+			return counters;
+		}
+
+		public int BasePoisonedCounters(string name)
+		{
+			Int32 counters = MQ.Query<Int32>($"${{NetBots[{name}].Poisoned}}");
+			return counters;
+		}
+
+		public int BaseCursedCounters(string name)
+		{
+			Int32 counters = MQ.Query<Int32>($"${{NetBots[{name}].Cursed}}");
+			return counters;
+		}
+
+		public bool IsMyBot(string name)
+		{
+			return BotsConnected().Contains(name);
+		}
+
+		public void Trade(string name)
+		{
+			MQ.Cmd("/notify TradeWnd TRDW_Trade_Button leftmouseup", 250);
+			MQ.Cmd($"/bct {name} //notify TradeWnd TRDW_Trade_Button leftmouseup");
+		}
+
+		public int BaseCorruptedCounters(string name)
+		{
+			throw new NotImplementedException();
+		}
 	}
 
 	public class DanBots : IBots
@@ -1455,4 +1471,5 @@ namespace E3Core.Processors
 			throw new NotImplementedException();
 		}
 	}
+	*/
 }

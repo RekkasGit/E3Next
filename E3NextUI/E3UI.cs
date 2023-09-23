@@ -651,16 +651,40 @@ namespace E3NextUI
         }
         public void SetPlayerHP(string value)
         {
-            _playerHP = value;
+            if(Int32.TryParse(value,out var result))
+            {
+                _playerHP = result.ToString("N0");
+            }
+            else
+            {
+				_playerHP = value;
+			}
+            
         }
         public void SetPlayerMP(string value)
         {
-            _playerMP = value;
+			if (Int32.TryParse(value, out var result))
+			{
+				_playerMP = result.ToString("N0");
+			}
+			else
+			{
+				_playerMP = value;
+			}
+		
 
         }
         public void SetPlayerSP(string value)
         {
-            _playerSP = value;
+			if (Int32.TryParse(value, out var result))
+			{
+				_playerSP = result.ToString("N0");
+			}
+			else
+			{
+				_playerSP = value;
+			}
+		
         }
         public void SetPlayerCasting(string value)
         {
