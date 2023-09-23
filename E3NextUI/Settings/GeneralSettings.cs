@@ -206,7 +206,13 @@ namespace E3NextUI.Settings
 			section = _parsedData.Sections["TTS"];
 			if (section != null)
 			{
+               
 				section.RemoveAllKeys();
+			}
+            else
+            {
+				_parsedData.Sections.Add(new SectionData("TTS"));
+				section = _parsedData.Sections["TTS"];
 			}
 			section["Enabled"] = TTS_Enabled.ToString();
             section["ChannelOOCEnabled"] = TTS_ChannelOOCEnabled.ToString();

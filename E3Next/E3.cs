@@ -69,7 +69,7 @@ namespace E3Core.Processors
 		
 		private static void BeforeAdvancedSettingsCalls()
 		{
-			if (CurrentHps < 98)
+			if (PctHPs < 98)
 			{
 				Heals.Check_LifeSupport();
 			}
@@ -281,9 +281,9 @@ namespace E3Core.Processors
 				//end cure counters
 
 				IsInvis = MQ.Query<bool>("${Me.Invis}");
-				CurrentHps = MQ.Query<int>("${Me.PctHPs}");
+				PctHPs = MQ.Query<int>("${Me.PctHPs}");
 				CurrentId = MQ.Query<int>("${Me.ID}");
-				PctHPs = MQ.Query<Int32>("${Me.PctHPs}");
+				
 				HitPointsCurrent = MQ.Query<int>("${Me.CurrentHPs}");
 				MagicPointsCurrent = MQ.Query<int>("${Me.CurrentMana}");
 				StamPointsCurrent = MQ.Query<int>("${Me.CurrentEndurance}");
@@ -456,7 +456,6 @@ namespace E3Core.Processors
 		public static Int32 Debuff_CorruptionCounters;
 
 		public static int PctHPs;
-        public static int CurrentHps;
         public static int HitPointsCurrent;
         public static int MagicPointsCurrent;
         public static int StamPointsCurrent;

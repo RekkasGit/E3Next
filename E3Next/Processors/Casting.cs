@@ -1423,10 +1423,8 @@ namespace E3Core.Processors
 						string buffname = match.Groups[1].Value;
 						string targetname = match.Groups[2].Value;
 
-
 						List<Int32> buffList = E3.Bots.BuffList(targetname);
 						Int32 spellID = MQ.Query<Int32>($"${{Spell[{buffname}].ID}}");
-
 						if (spellID > 0)
 						{
 							if (buffList.Contains(spellID))
