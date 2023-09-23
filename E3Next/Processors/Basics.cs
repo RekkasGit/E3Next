@@ -211,6 +211,7 @@ namespace E3Core.Processors
                 string argumentLine = e3util.ArgsToCommand(x.args);
                 string processedLine = Casting.Ifs_Results(argumentLine);
 				MQ.Cmd($"/echo {processedLine}");
+				MQ.Cmd($"/varset E3N_var {processedLine}");
 			});
 			EventProcessor.RegisterCommand("/dropinvis", (x) =>
             {
