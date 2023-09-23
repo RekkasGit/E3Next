@@ -24,7 +24,13 @@ namespace E3NextUI
 
     public partial class E3UI : Form
     {
-        public static string Version = "v1.0.44-beta";
+		public const int WM_NCLBUTTONDOWN = 0xA1;
+		public const int HT_CAPTION = 0x2;
+		[DllImportAttribute("user32.dll")]
+		public static extern int SendMessage(IntPtr hWnd, int Msg, int wParam, int lParam);
+		[DllImportAttribute("user32.dll")]
+		public static extern bool ReleaseCapture();
+		public static string Version = "v1.0.44-beta";
         public static System.Diagnostics.Stopwatch _stopWatch = new System.Diagnostics.Stopwatch();
         public static volatile bool ShouldProcess = true;
 
@@ -57,12 +63,12 @@ namespace E3NextUI
         public static String _playerSP;
         private globalKeyboardHook _globalKeyboard;
         public static string _currentWindowName = "NULL";
-       
+        private FormBorderStyle _startingStyle;
 
-        public E3UI()
+		public E3UI()
         {
             InitializeComponent();
-            
+            _startingStyle = this.FormBorderStyle;
             _collapseConsoleImage = (Image)pbCollapseConsoleButtons.Image.Clone();
             pbCollapseConsoleButtons.Image.RotateFlip(RotateFlipType.Rotate180FlipNone);
             _uncollapseConsoleImage = (Image)pbCollapseConsoleButtons.Image.Clone();
@@ -1017,12 +1023,14 @@ namespace E3NextUI
             }
         }
 
+        string _prevString = String.Empty;
 		private void buttonModeToolStripMenuItem_Click(object sender, EventArgs e)
 		{
             if(_buttonMode)
             {
+                this.Text = _prevString;
                 _buttonMode = false;
-               
+                this.FormBorderStyle = _startingStyle;
 				panelMain.Show();
 				panelStatusPannel2.Show();
 				panelButtons.Location = new Point(736, 24);
@@ -1030,7 +1038,11 @@ namespace E3NextUI
 			}
 			else
             {
-                _buttonMode = true;
+                _prevString = this.Text;
+				_buttonMode = true;
+                this.ControlBox = false;
+                this.Text = String.Empty;
+                this.FormBorderStyle= FormBorderStyle.None;
 				panelMain.Hide();
 				panelStatusPannel2.Hide();
 				panelButtons.Location = new Point(0, 24);
@@ -1335,6 +1347,12 @@ namespace E3NextUI
 ""Vendor""=""Microsoft""";
 		#endregion
 
+		private void menuStrip1_MouseDown(object sender, MouseEventArgs e)
+		{
+			ReleaseCapture();
+			SendMessage(this.Handle, WM_NCLBUTTONDOWN, HT_CAPTION, 0);
+
+		}
 	}
 	public class TextBoxInfo
     {
