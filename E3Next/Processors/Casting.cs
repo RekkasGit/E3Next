@@ -100,11 +100,12 @@ namespace E3Core.Processors
 					BeforeEventCheck(spell);
 					BeforeSpellCheck(spell, targetID);
 					MQ.Cmd($"/alt activate {spell.CastID}");
+					MQ.Delay(300); //necessary to keep things... in order
 					AfterSpellCheck(spell, targetID);
 					AfterEventCheck(spell);
 					UpdateAAInCooldown(spell);
 					E3.ActionTaken = true;
-					MQ.Delay(200); //necessary to keep things... in order
+					
 					///allow the player to 'tweak' this value.
 					if (E3.CharacterSettings.Misc_DelayAfterCastWindowDropsForSpellCompletion > 0)
 					{

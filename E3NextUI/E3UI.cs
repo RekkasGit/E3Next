@@ -64,7 +64,8 @@ namespace E3NextUI
         private globalKeyboardHook _globalKeyboard;
         public static string _currentWindowName = "NULL";
         private FormBorderStyle _startingStyle;
-        //resizing stuff for when in buttonmode
+		//resizing stuff for when in buttonmode
+		//https://stackoverflow.com/questions/2575216/how-to-move-and-resize-a-form-without-a-border
 		private const int
 	    HTLEFT = 10,
 	    HTRIGHT = 11,
