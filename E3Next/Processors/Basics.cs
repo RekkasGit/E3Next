@@ -10,6 +10,7 @@ using System.Collections.Generic;
 using System.Diagnostics;
 using System.Linq;
 using System.Text;
+using System.Windows.Forms;
 
 namespace E3Core.Processors
 {
@@ -192,77 +193,7 @@ namespace E3Core.Processors
 			{
                 if(x.args.Count > 0)
                 {
-					foreach (var spell in E3.CharacterSettings.Report_Entries)
-					{
-						if (spell.CastType == CastType.AA)
-						{
-							Int32 timeInMS = MQ.Query<Int32>($"${{Me.AltAbilityTimer[{spell.CastName}]}}");
-							if (timeInMS > 0)
-							{
-								E3.Bots.Broadcast($"\am{spell.CastName}: \at{(((Double)timeInMS) / 100)}\aw seconds");
-							}
-							else
-							{
-								E3.Bots.Broadcast($"\am{spell.CastName}\aw: \agReady\aw!");
-							}
-						}
-						else if (spell.CastType == CastType.Spell)
-						{
-
-							Int32 timeInMS = MQ.Query<Int32>($"${{Me.GemTimer[{spell.CastName}]}}");
-							if (timeInMS > 0)
-							{
-								E3.Bots.Broadcast($"\am{spell.CastName}: \at{(((Double)timeInMS) / 100)}\aw seconds");
-							}
-							else
-							{
-								E3.Bots.Broadcast($"\am{spell.CastName}\aw: \agReady\aw!");
-							}
-						}
-						else if (spell.CastType == CastType.Disc)
-						{
-							Int32 timeInTicks = MQ.Query<Int32>($"${{Me.CombatAbilityTimer[{spell.CastName}]}}");
-
-							//bug with thiefs eyes, always return true 8001
-							if (timeInTicks > 0 && spell.CastID != 8001)
-							{
-								E3.Bots.Broadcast($"\am{spell.CastName}: \at{(timeInTicks * 6)} \awseconds");
-							}
-							else
-							{
-								E3.Bots.Broadcast($"\am{spell.CastName}\aw: \agReady\aw!");
-							}
-						}
-						else if (spell.CastType == Data.CastType.Ability)
-						{
-							Int32 timeInMS = MQ.Query<Int32>($"${{Me.AbilityTimer[{spell.CastName}]}}");
-							if (timeInMS > 0)
-							{
-								E3.Bots.Broadcast($"\am{spell.CastName}: \at{(((Double)timeInMS) / 100)} \awseconds");
-							}
-							else
-							{
-								E3.Bots.Broadcast($"\am{spell.CastName}\aw: \agReady\aw!");
-							}
-						}
-						else if (spell.CastType == CastType.Item)
-						{
-							Int32 timeInTicks = MQ.Query<Int32>($"${{FindItem[{spell.CastName}].Timer}}");
-
-							//bug with thiefs eyes, always return true 8001
-							if (timeInTicks > 0)
-							{
-								E3.Bots.Broadcast($"\am{spell.CastName}: \at{(timeInTicks * 6)} \awseconds");
-							}
-							else
-							{
-								E3.Bots.Broadcast($"\am{spell.CastName}\aw: \agReady\aw!");
-							}
-						}
-
-
-						//${FindItem[Kreljnok's Sword of Eternal Power].Timer}
-					}
+                    PrintE3TReport();
 				}
                 else
                 {
@@ -791,6 +722,91 @@ namespace E3Core.Processors
             return true;
         }
 
+        private static void PrintE3TReport_Information(Spell spell, Int32 timeInMS,Int32 charges=0)
+		{
+			string chargesLeftString = String.Empty;
+			if (charges > 0)
+			{
+				chargesLeftString = $" \atCharges left:\ay {charges}";
+
+			}
+			//bug with thiefs eyes, always return true 8001
+			if (timeInMS > 0 && spell.CastID != 8001)
+			{
+                TimeSpan t = TimeSpan.FromMilliseconds(timeInMS);
+             
+                if(t.TotalDays>=1)
+                {
+					E3.Bots.Broadcast($"\am{spell.CastName}: \at {t.Days} \aw days \at{t.Hours} \awhours \at{t.Minutes} \awminutes \at{t.Seconds} \awseconds{chargesLeftString}");
+
+				}
+				else if(t.TotalHours>=1)
+                {
+					E3.Bots.Broadcast($"\am{spell.CastName}: \at{t.Hours} \awhours \at{t.Minutes} \awminutes \at{t.Seconds} \awseconds{chargesLeftString}");
+
+				}
+                else if(t.TotalMinutes>=1)
+                {
+					E3.Bots.Broadcast($"\am{spell.CastName}: \at{t.Minutes} \awminutes \at{t.Seconds} \awseconds{chargesLeftString}");
+
+				}
+				else
+                {
+					E3.Bots.Broadcast($"\am{spell.CastName}: \at{t.Seconds} \awseconds{chargesLeftString}");
+
+				}
+                
+			}
+			else
+			{
+				E3.Bots.Broadcast($"\am{spell.CastName}\aw: \agReady\aw!{chargesLeftString}");
+			
+
+			}
+		}
+        private static void PrintE3TReport()
+        {
+			foreach (var spell in E3.CharacterSettings.Report_Entries)
+			{
+				if (spell.CastType == CastType.AA)
+				{
+					Int32 timeInMS = MQ.Query<Int32>($"${{Me.AltAbilityTimer[{spell.CastName}]}}");
+                    PrintE3TReport_Information(spell, timeInMS);
+				}
+				else if (spell.CastType == CastType.Spell)
+				{
+
+					Int32 timeInMS = MQ.Query<Int32>($"${{Me.GemTimer[{spell.CastName}]}}");
+					PrintE3TReport_Information(spell, timeInMS);
+				}
+				else if (spell.CastType == CastType.Disc)
+				{
+					Int32 timeInTicks = MQ.Query<Int32>($"${{Me.CombatAbilityTimer[{spell.CastName}]}}");
+					PrintE3TReport_Information(spell, timeInTicks * 6 *1000);
+
+				}
+				else if (spell.CastType == Data.CastType.Ability)
+				{
+					Int32 timeInMS = MQ.Query<Int32>($"${{Me.AbilityTimer[{spell.CastName}]}}");
+					PrintE3TReport_Information(spell, timeInMS);
+				}
+				else if (spell.CastType == CastType.Item || spell.CastType== CastType.None)
+				{
+
+                    if (MQ.Query<bool>($"${{FindItem[{spell.CastName}].ID}}"))
+                    {
+						Int32 timeInTicks = MQ.Query<Int32>($"${{FindItem[{spell.CastName}].Timer}}");
+						Int32 charges = MQ.Query<Int32>($"${{FindItem[{spell.CastName}].Charges}}");
+						PrintE3TReport_Information(spell, timeInTicks * 6 * 1000, charges);
+
+					}
+				}
+
+
+				//${FindItem[Kreljnok's Sword of Eternal Power].Timer}
+			}
+
+		}
         /// <summary>
         /// Am I in combat?
         /// </summary>
