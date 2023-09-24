@@ -58,7 +58,7 @@ namespace E3NextUI.Server
                             //Console.WriteLine(messageReceived);
                             if (messageTopicReceived == "OnWriteChatColor")
                             {
-                                if (Application.OpenForms.Count > 0)
+                                if (Application.OpenForms.Count > 0 && Application.OpenForms[0] is E3UI)
                                 {
                                     ((E3UI)Application.OpenForms[0]).AddConsoleLine(messageReceived, E3UI.MQConsole);
                                 }
@@ -66,7 +66,7 @@ namespace E3NextUI.Server
                             }
                             else if (messageTopicReceived == "OnIncomingChat")
                             {
-                                if (Application.OpenForms.Count > 0)
+                                if (Application.OpenForms.Count > 0 && Application.OpenForms[0] is E3UI)
                                 {
                                     bool found = false;
                                     foreach (var c in _consoleContains)
@@ -130,7 +130,7 @@ namespace E3NextUI.Server
                             {
                                 if (messageReceived == "#toggleshow")
                                 {
-                                    if (Application.OpenForms.Count > 0)
+                                    if (Application.OpenForms.Count > 0 && Application.OpenForms[0] is E3UI)
                                     {
                                         ((E3UI)Application.OpenForms[0]).ToggleShow();
                                     }
@@ -138,21 +138,21 @@ namespace E3NextUI.Server
                             }
                             else if (messageTopicReceived == "${Me.CurrentHPs}")
                             {
-                                if (Application.OpenForms.Count > 0)
+                                if (Application.OpenForms.Count > 0 && Application.OpenForms[0] is E3UI)
                                 {
                                     ((E3UI)Application.OpenForms[0]).SetPlayerHP(messageReceived);
                                 }
                             }
                             else if (messageTopicReceived == "${Me.CurrentMana}")
                             {
-                                if (Application.OpenForms.Count > 0)
+                                if (Application.OpenForms.Count > 0 && Application.OpenForms[0] is E3UI)
                                 {
                                     ((E3UI)Application.OpenForms[0]).SetPlayerMP(messageReceived);
                                 }
                             }
                             else if (messageTopicReceived == "${Me.CurrentEndurance}")
                             {
-                                if (Application.OpenForms.Count > 0)
+                                if (Application.OpenForms.Count > 0 && Application.OpenForms[0] is E3UI)
                                 {
                                     ((E3UI)Application.OpenForms[0]).SetPlayerSP(messageReceived);
                                 }
@@ -172,7 +172,7 @@ namespace E3NextUI.Server
                             }
                             else if (messageTopicReceived == "${Casting}")
                             {
-                                if (Application.OpenForms.Count > 0)
+                                if (Application.OpenForms.Count > 0 && Application.OpenForms[0] is E3UI)
                                 {
                                     ((E3UI)Application.OpenForms[0]).SetPlayerCasting(messageReceived);
                                 }
@@ -181,7 +181,7 @@ namespace E3NextUI.Server
                             else if(messageTopicReceived== "${EQ.CurrentFocusedWindowName}")
                             {
 
-								if (Application.OpenForms.Count > 0)
+								if (Application.OpenForms.Count > 0 && Application.OpenForms[0] is E3UI)
 								{
 								    ((E3UI)Application.OpenForms[0]).SetCurrentWindow(messageReceived);
 								}
@@ -190,7 +190,10 @@ namespace E3NextUI.Server
 						}
                         catch (Exception ex)
                         {
-                            ((E3UI)Application.OpenForms[0]).AddConsoleLine(ex.Message, E3UI.Console);
+                            if (Application.OpenForms.Count > 0 && Application.OpenForms[0] is E3UI)
+                            {
+                                ((E3UI)Application.OpenForms[0]).AddConsoleLine(ex.Message, E3UI.Console);
+                            }
 
                         }
                         
