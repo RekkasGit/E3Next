@@ -188,8 +188,91 @@ namespace E3Core.Processors
                     }
                 }
             });
-            
-            EventProcessor.RegisterCommand("/e3settings", (x) =>
+			EventProcessor.RegisterCommand("/e3treport", (x) =>
+			{
+                if(x.args.Count > 0)
+                {
+					foreach (var spell in E3.CharacterSettings.Report_Entries)
+					{
+						if (spell.CastType == CastType.AA)
+						{
+							Int32 timeInMS = MQ.Query<Int32>($"${{Me.AltAbilityTimer[{spell.CastName}]}}");
+							if (timeInMS > 0)
+							{
+								E3.Bots.Broadcast($"\am{spell.CastName}: \at{(((Double)timeInMS) / 100)}\aw seconds");
+							}
+							else
+							{
+								E3.Bots.Broadcast($"\am{spell.CastName}\aw: \agReady\aw!");
+							}
+						}
+						else if (spell.CastType == CastType.Spell)
+						{
+
+							Int32 timeInMS = MQ.Query<Int32>($"${{Me.GemTimer[{spell.CastName}]}}");
+							if (timeInMS > 0)
+							{
+								E3.Bots.Broadcast($"\am{spell.CastName}: \at{(((Double)timeInMS) / 100)}\aw seconds");
+							}
+							else
+							{
+								E3.Bots.Broadcast($"\am{spell.CastName}\aw: \agReady\aw!");
+							}
+						}
+						else if (spell.CastType == CastType.Disc)
+						{
+							Int32 timeInTicks = MQ.Query<Int32>($"${{Me.CombatAbilityTimer[{spell.CastName}]}}");
+
+							//bug with thiefs eyes, always return true 8001
+							if (timeInTicks > 0 && spell.CastID != 8001)
+							{
+								E3.Bots.Broadcast($"\am{spell.CastName}: \at{(timeInTicks * 6)} \awseconds");
+							}
+							else
+							{
+								E3.Bots.Broadcast($"\am{spell.CastName}\aw: \agReady\aw!");
+							}
+						}
+						else if (spell.CastType == Data.CastType.Ability)
+						{
+							Int32 timeInMS = MQ.Query<Int32>($"${{Me.AbilityTimer[{spell.CastName}]}}");
+							if (timeInMS > 0)
+							{
+								E3.Bots.Broadcast($"\am{spell.CastName}: \at{(((Double)timeInMS) / 100)} \awseconds");
+							}
+							else
+							{
+								E3.Bots.Broadcast($"\am{spell.CastName}\aw: \agReady\aw!");
+							}
+						}
+						else if (spell.CastType == CastType.Item)
+						{
+							Int32 timeInTicks = MQ.Query<Int32>($"${{FindItem[{spell.CastName}].Timer}}");
+
+							//bug with thiefs eyes, always return true 8001
+							if (timeInTicks > 0)
+							{
+								E3.Bots.Broadcast($"\am{spell.CastName}: \at{(timeInTicks * 6)} \awseconds");
+							}
+							else
+							{
+								E3.Bots.Broadcast($"\am{spell.CastName}\aw: \agReady\aw!");
+							}
+						}
+
+
+						//${FindItem[Kreljnok's Sword of Eternal Power].Timer}
+					}
+				}
+                else
+                {
+                    E3.Bots.BroadcastCommandToGroup("/e3treport me");//send command to everyone else
+					EventProcessor.ProcessMQCommand("/e3treport me");//make sure we do the command as well
+				}
+                
+			});
+
+			EventProcessor.RegisterCommand("/e3settings", (x) =>
             {
                 if(x.args.Count>0)
                 {

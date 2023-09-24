@@ -179,7 +179,9 @@ namespace E3Core.Settings
         public List<string> Rez_AutoRezSpells = new List<string>();
         public List<string> Rez_RezSpells = new List<string>();
         public bool Rez_AutoRez = false;
-      
+
+        //report
+        public List<Spell> Report_Entries = new List<Spell>();
 
 
 
@@ -323,6 +325,10 @@ namespace E3Core.Settings
 			}
 
 			LoadKeyData("Manastone", "ExceptionMQQuery", ParsedData, ManaStone_ExceptionMQQuery);
+
+
+            LoadKeyData("Report", "ReportEntry", ParsedData, Report_Entries);
+
 
 			LoadKeyData("Bando Buff", "Enabled", ParsedData, ref BandoBuff_Enabled);
 			LoadKeyData("Bando Buff", "DebuffName", ParsedData, ref BandoBuff_DebuffName);
@@ -808,8 +814,11 @@ namespace E3Core.Settings
             newFile.Sections.AddSection("Ifs");
             newFile.Sections.AddSection("Events");
 			newFile.Sections.AddSection("EventLoop");
-			
-            newFile.Sections.AddSection("CPU");
+			newFile.Sections.AddSection("Report");
+			section = newFile.Sections.GetSectionData("Report");
+			section.Keys.AddKey("ReportEntry", "");
+
+			newFile.Sections.AddSection("CPU");
 			section = newFile.Sections.GetSectionData("CPU");
 			section.Keys.AddKey("ProcessLoopDelayInMS", "50");
 			section.Keys.AddKey("Camp Pause at 20 seconds", "True");
