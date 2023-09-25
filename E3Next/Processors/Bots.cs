@@ -179,7 +179,7 @@ namespace E3Core.Processors
 		            
                 }
 			});
-			EventProcessor.RegisterCommand("/e3bcgaz", (x) =>
+			EventProcessor.RegisterCommand("/e3bcgza", (x) =>
 			{
 				if (x.args.Count > 0)
 				{
