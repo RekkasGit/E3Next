@@ -120,6 +120,8 @@ namespace E3Core.Processors
 					debuffsAreCasting = true;
 				}
 			}
+			//in case the mage is the debuff + pet peel, issue pet attack before debuff
+			if (E3.CharacterSettings.Charm_PeelPetOwner != String.Empty) E3.Bots.BroadcastCommandToPerson(E3.CharacterSettings.Charm_PeelPetOwner, $"/pet attack {_charmTargetId}");
 
 			if (E3.CharacterSettings.Charm_PeelDebuffPerson != String.Empty)
 			{
@@ -129,7 +131,6 @@ namespace E3Core.Processors
 					debuffsAreCasting = true;
 				}
 			}
-			if (E3.CharacterSettings.Charm_PeelPetOwner != String.Empty) E3.Bots.BroadcastCommandToPerson(E3.CharacterSettings.Charm_PeelPetOwner, $"/pet attack {_charmTargetId}");
 			if (E3.CharacterSettings.Charm_PeelHealer != String.Empty) 
 			{
 				foreach (var spell in E3.CharacterSettings.Charm_PeelHealerHeal)
