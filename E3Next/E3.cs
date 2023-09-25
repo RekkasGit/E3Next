@@ -204,6 +204,7 @@ namespace E3Core.Processors
                 CharacterSettings = new CharacterSettings();
                 Loot.Reset();
                 GiveMe.Reset();
+				Bard.RestartMelody();
                 E3.Bots.Broadcast("\aoComplete!");
                
             }

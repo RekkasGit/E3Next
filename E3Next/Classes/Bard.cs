@@ -8,6 +8,7 @@ using MonoCore;
 using System.Collections.Generic;
 using System.Dynamic;
 using System.Linq;
+using System.Windows.Forms;
 
 namespace E3Core.Classes
 {
@@ -213,6 +214,22 @@ namespace E3Core.Classes
                 _currentMelody = melodyName;
             }
         }
+        public static void RestartMelody()
+        {
+            if(_playingMelody && !String.IsNullOrWhiteSpace(_currentMelody))
+            {
+				_songs.Clear();
+				//lets find the melody in the character ini.
+				CharacterSettings.LoadKeyData($"{_currentMelody} Melody", "Song", E3.CharacterSettings.ParsedData, _songs);
+				if (_songs.Count > 0)
+				{
+					MQ.Write($"\aoStart Melody:\ag{_currentMelody}");
+					MQ.Cmd("/stopsong");
+					
+				}
+			}
+			
+		}
 
     }
 }
