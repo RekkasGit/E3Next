@@ -50,12 +50,10 @@ namespace E3Core.Processors
 
             Int32 petId = MQ.Query<Int32>("${Me.Pet.ID}");
 
-
             if (petId > 0)
             {
                 CheckPetHeal(petId);
                 CheckPetShrink(petId);
-
             }
 
 			if (Basics.InCombat() && !E3.CharacterSettings.Pet_SummonCombat)
@@ -66,9 +64,7 @@ namespace E3Core.Processors
 			{
 				
 				CheckPetSummon(ref petId);
-
 			}
-
 		}
 
         private static void CheckPetSummon(ref Int32 petID)

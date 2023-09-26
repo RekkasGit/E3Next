@@ -18,9 +18,12 @@ namespace E3NextUI.Server
 
         Task _serverThread;
         private Int32 _port;
-        
-		public void Start(Int32 port)
+        E3UI _parent;
+        OverlayGroupInfo _overlayGroup;
+		public void Start(Int32 port,E3UI parent)
         {
+            _parent = parent;
+            _overlayGroup = parent._overlayGroupInfo;
             _port = port;
             _serverThread = Task.Factory.StartNew(() => { Process(); }, CancellationToken.None, TaskCreationOptions.DenyChildAttach, TaskScheduler.Default);
         }
@@ -186,7 +189,127 @@ namespace E3NextUI.Server
 								    ((E3UI)Application.OpenForms[0]).SetCurrentWindow(messageReceived);
 								}
 							}
+							else if (messageTopicReceived.StartsWith("${E3Bot"))
+							{
+                                if(messageTopicReceived.StartsWith("${E3Bot1."))
+                                {
+                                    if(messageTopicReceived=="${E3Bot1.Name}")
+                                    {
+										_overlayGroup.SetOverlayLabelData(_overlayGroup.label_name1, messageReceived);
+									}
+                                    else if (messageTopicReceived == "${E3Bot1.AAPoints}")
+									{
+										_overlayGroup.SetOverlayLabelData(_overlayGroup.label_name1_aatotal, messageReceived);
+									}
+									else if (messageTopicReceived == "${E3Bot1.Target}")
+									{
+                                  	_overlayGroup.SetOverlayLabelData(_overlayGroup.label_target1_info, messageReceived);
+									}
+									else if (messageTopicReceived == "${E3Bot1.Casting}")
+									{
+										_overlayGroup.SetOverlayLabelData(_overlayGroup.label_casting1_info, messageReceived);
+									}
+									//TargetName
+								}
+								else if (messageTopicReceived.StartsWith("${E3Bot2."))
+								{
+									if (messageTopicReceived == "${E3Bot2.Name}")
+									{
+										_overlayGroup.SetOverlayLabelData(_overlayGroup.label_name2, messageReceived);
+									}
+									else if (messageTopicReceived == "${E3Bot2.AAPoints}")
+									{
+										_overlayGroup.SetOverlayLabelData(_overlayGroup.label_name2_aatotal, messageReceived);
+									}
+									else if (messageTopicReceived == "${E3Bot2.Target}")
+									{
+										_overlayGroup.SetOverlayLabelData(_overlayGroup.label_target2_info, messageReceived);
+									}
+									else if (messageTopicReceived == "${E3Bot2.Casting}")
+									{
+										_overlayGroup.SetOverlayLabelData(_overlayGroup.label_casting2_info, messageReceived);
+									}
+									
+								}
+								else if (messageTopicReceived.StartsWith("${E3Bot3."))
+								{
+									if (messageTopicReceived == "${E3Bot3.Name}")
+									{
+										_overlayGroup.SetOverlayLabelData(_overlayGroup.label_name3, messageReceived);
+									}
+									else if (messageTopicReceived == "${E3Bot3.AAPoints}")
+									{
+										_overlayGroup.SetOverlayLabelData(_overlayGroup.label_name3_aatotal, messageReceived);
+									}
+									else if (messageTopicReceived == "${E3Bot3.Target}")
+									{
+										_overlayGroup.SetOverlayLabelData(_overlayGroup.label_target3_info, messageReceived);
+									}
+									else if (messageTopicReceived == "${E3Bot3.Casting}")
+									{
+										_overlayGroup.SetOverlayLabelData(_overlayGroup.label_casting3_info, messageReceived);
+									}
+								
+								}
+								else if (messageTopicReceived.StartsWith("${E3Bot4."))
+								{
+									if (messageTopicReceived == "${E3Bot4.Name}")
+									{
+										_overlayGroup.SetOverlayLabelData(_overlayGroup.label_name4, messageReceived);
+									}
+									else if (messageTopicReceived == "${E3Bot4.AAPoints}")
+									{
+										_overlayGroup.SetOverlayLabelData(_overlayGroup.label_name4_aatotal, messageReceived);
+									}
+									else if (messageTopicReceived == "${E3Bot4.Target}")
+									{
+										_overlayGroup.SetOverlayLabelData(_overlayGroup.label_target4_info, messageReceived);
+									}
+									else if (messageTopicReceived == "${E3Bot4.Casting}")
+									{
+										_overlayGroup.SetOverlayLabelData(_overlayGroup.label_casting4_info, messageReceived);
+									}
+								}
+								else if (messageTopicReceived.StartsWith("${E3Bot5."))
+								{
+									if (messageTopicReceived == "${E3Bot5.Name}")
+									{
+										_overlayGroup.SetOverlayLabelData(_overlayGroup.label_name5, messageReceived);
+									}
+									else if (messageTopicReceived == "${E3Bot5.AAPoints}")
+									{
+										_overlayGroup.SetOverlayLabelData(_overlayGroup.label_name5_aatotal, messageReceived);
+									}
+									else if (messageTopicReceived == "${E3Bot5.Target}")
+									{
+										_overlayGroup.SetOverlayLabelData(_overlayGroup.label_target5_info, messageReceived);
+									}
+									else if (messageTopicReceived == "${E3Bot5.Casting}")
+									{
+										_overlayGroup.SetOverlayLabelData(_overlayGroup.label_casting5_info, messageReceived);
+									}
+								}
+								else if (messageTopicReceived.StartsWith("${E3Bot6."))
+								{
+									if (messageTopicReceived == "${E3Bot6.Name}")
+									{
+										_overlayGroup.SetOverlayLabelData(_overlayGroup.label_name6, messageReceived);
+									}
+									else if (messageTopicReceived == "${E3Bot6.AAPoints}")
+									{
+										_overlayGroup.SetOverlayLabelData(_overlayGroup.label_name6_aatotal, messageReceived);
+									}
+									else if (messageTopicReceived == "${E3Bot6.Target}")
+									{
+										_overlayGroup.SetOverlayLabelData(_overlayGroup.label_target6_info, messageReceived);
+									}
+									else if (messageTopicReceived == "${E3Bot6.Casting}")
+									{
+										_overlayGroup.SetOverlayLabelData(_overlayGroup.label_casting6_info, messageReceived);
+									}
+								}
 
+							}
 						}
                         catch (Exception ex)
                         {

@@ -92,6 +92,7 @@ namespace E3NextUI
 			this.labelCasting = new System.Windows.Forms.Label();
 			this.labelCastingValue = new System.Windows.Forms.Label();
 			this.panelStatusPannel2 = new System.Windows.Forms.Panel();
+			this.infoOverlayToolStripMenuItem = new System.Windows.Forms.ToolStripMenuItem();
 			((System.ComponentModel.ISupportInitialize)(this.splitContainer1)).BeginInit();
 			this.splitContainer1.Panel1.SuspendLayout();
 			this.splitContainer1.Panel2.SuspendLayout();
@@ -531,7 +532,8 @@ namespace E3NextUI
             this.darkModeMenuItem,
             this.overlayOntopToolStripMenuItem,
             this.buttonModeToolStripMenuItem,
-            this.textToSpeachToolStripMenuItem});
+            this.textToSpeachToolStripMenuItem,
+            this.infoOverlayToolStripMenuItem});
 			this.settingsToolStripMenuItem.Name = "settingsToolStripMenuItem";
 			this.settingsToolStripMenuItem.Size = new System.Drawing.Size(61, 20);
 			this.settingsToolStripMenuItem.Text = "Settings";
@@ -539,21 +541,21 @@ namespace E3NextUI
 			// darkModeMenuItem
 			// 
 			this.darkModeMenuItem.Name = "darkModeMenuItem";
-			this.darkModeMenuItem.Size = new System.Drawing.Size(153, 22);
+			this.darkModeMenuItem.Size = new System.Drawing.Size(180, 22);
 			this.darkModeMenuItem.Text = "DarkMode";
 			this.darkModeMenuItem.Click += new System.EventHandler(this.darkModeToolStripMenuItem_Click);
 			// 
 			// overlayOntopToolStripMenuItem
 			// 
 			this.overlayOntopToolStripMenuItem.Name = "overlayOntopToolStripMenuItem";
-			this.overlayOntopToolStripMenuItem.Size = new System.Drawing.Size(153, 22);
+			this.overlayOntopToolStripMenuItem.Size = new System.Drawing.Size(180, 22);
 			this.overlayOntopToolStripMenuItem.Text = "Overlay/Ontop";
 			this.overlayOntopToolStripMenuItem.Click += new System.EventHandler(this.overlayOntopToolStripMenuItem_Click);
 			// 
 			// buttonModeToolStripMenuItem
 			// 
 			this.buttonModeToolStripMenuItem.Name = "buttonModeToolStripMenuItem";
-			this.buttonModeToolStripMenuItem.Size = new System.Drawing.Size(153, 22);
+			this.buttonModeToolStripMenuItem.Size = new System.Drawing.Size(180, 22);
 			this.buttonModeToolStripMenuItem.Text = "ButtonMode";
 			this.buttonModeToolStripMenuItem.Click += new System.EventHandler(this.buttonModeToolStripMenuItem_Click);
 			// 
@@ -563,7 +565,7 @@ namespace E3NextUI
             this.settingsToolStripMenuItem1,
             this.unlockEvaVoiceToolStripMenuItem});
 			this.textToSpeachToolStripMenuItem.Name = "textToSpeachToolStripMenuItem";
-			this.textToSpeachToolStripMenuItem.Size = new System.Drawing.Size(153, 22);
+			this.textToSpeachToolStripMenuItem.Size = new System.Drawing.Size(180, 22);
 			this.textToSpeachToolStripMenuItem.Text = "Text to Speach";
 			this.textToSpeachToolStripMenuItem.Click += new System.EventHandler(this.textToSpeachToolStripMenuItem_Click);
 			// 
@@ -784,6 +786,13 @@ namespace E3NextUI
 			this.panelStatusPannel2.Size = new System.Drawing.Size(733, 113);
 			this.panelStatusPannel2.TabIndex = 42;
 			// 
+			// infoOverlayToolStripMenuItem
+			// 
+			this.infoOverlayToolStripMenuItem.Name = "infoOverlayToolStripMenuItem";
+			this.infoOverlayToolStripMenuItem.Size = new System.Drawing.Size(180, 22);
+			this.infoOverlayToolStripMenuItem.Text = "Info Overlay";
+			this.infoOverlayToolStripMenuItem.Click += new System.EventHandler(this.infoOverlayToolStripMenuItem_Click);
+			// 
 			// E3UI
 			// 
 			this.AutoScaleDimensions = new System.Drawing.SizeF(6F, 13F);
@@ -889,6 +898,7 @@ namespace E3NextUI
 		private System.Windows.Forms.ToolStripMenuItem textToSpeachToolStripMenuItem;
 		private System.Windows.Forms.ToolStripMenuItem settingsToolStripMenuItem1;
 		private System.Windows.Forms.ToolStripMenuItem unlockEvaVoiceToolStripMenuItem;
+		private System.Windows.Forms.ToolStripMenuItem infoOverlayToolStripMenuItem;
 	}
 }
 

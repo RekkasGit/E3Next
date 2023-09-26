@@ -1,4 +1,5 @@
 ﻿using E3Core.Classes;
+using E3Core.Data;
 using E3Core.Server;
 using E3Core.Settings;
 using E3Core.Settings.FeatureSettings;
@@ -9,6 +10,7 @@ using System;
 using System.Collections.Generic;
 using System.Diagnostics;
 using System.Globalization;
+using System.Linq;
 using System.Reflection;
 using System.Runtime.InteropServices;
 using System.ServiceModel.Channels;
@@ -279,7 +281,25 @@ namespace E3Core.Processors
 				PubServer.AddTopicMessage("${Me.CurrentHPs}", MQ.Query<string>("${Me.CurrentHPs}"));
 				PubServer.AddTopicMessage("${Me.CurrentMana}", MQ.Query<string>("${Me.CurrentMana}"));
 				PubServer.AddTopicMessage("${Me.CurrentEndurance}", MQ.Query<string>("${Me.CurrentEndurance}"));
-		
+				PubServer.AddTopicMessage("${Me.Name}", E3.CurrentName);
+				PubServer.AddTopicMessage("${Me.TargetName}", MQ.Query<string>("${Target.Name}"));
+				PubServer.AddTopicMessage("${Me.AAPoints}", MQ.Query<string>("${Me.AAPoints}"));
+				PubServer.AddTopicMessage("${Me.Casting}", MQ.Query<string>("${Me.Casting}"));
+
+				//TopicUpdates
+				//get bot network useres
+				Int32 count = 1;
+				foreach(var pair in NetMQServer.SharedDataClient.TopicUpdates)
+				{
+					PubServer.AddTopicMessage($"${{E3Bot{count}.Name}}",pair.Key);
+					PubServer.AddTopicMessage($"${{E3Bot{count}.Target}}", E3.Bots.Query(pair.Key, "${Me.TargetName}"));
+					PubServer.AddTopicMessage($"${{E3Bot{count}.Casting}}", E3.Bots.Query(pair.Key, "${Me.Casting}"));
+					PubServer.AddTopicMessage($"${{E3Bot{count}.AAPoints}}", E3.Bots.Query(pair.Key, "${Me.AAPoints}"));
+					PubServer.AddTopicMessage($"${{E3Bot{count}.Casting}}", E3.Bots.Query(pair.Key, "${Me.Casting}"));
+
+					count++;
+				}
+
 				IsInvis = MQ.Query<bool>("${Me.Invis}");
 			
 				CurrentId = MQ.Query<int>("${Me.ID}");

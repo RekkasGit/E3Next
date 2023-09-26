@@ -99,6 +99,8 @@ namespace E3Core.Processors
 					}
 					BeforeEventCheck(spell);
 					BeforeSpellCheck(spell, targetID);
+					PubServer.AddTopicMessage("${Casting}", $"{spell.CastName} on {targetName}");
+					PubServer.AddTopicMessage("${Me.Casting}", $"{spell.CastName}");
 					MQ.Cmd($"/alt activate {spell.CastID}");
 					MQ.Delay(300); //necessary to keep things... in order
 					AfterSpellCheck(spell, targetID);
@@ -464,6 +466,7 @@ namespace E3Core.Processors
 								if (spell.CastType == Data.CastType.Spell)
 								{
 									PubServer.AddTopicMessage("${Casting}", $"{spell.CastName} on {targetName}");
+								
 									MQ.Write($"\ag{spell.CastName} \at{spell.SpellID} \am{targetName} \ao{targetID} \aw({spell.MyCastTime / 1000}sec)");
 
 									MQ.Cmd($"/casting \"{spell.CastName}|{spell.SpellGem}\"");
@@ -477,6 +480,7 @@ namespace E3Core.Processors
 									if (spell.CastType == CastType.AA)
 									{
 										PubServer.AddTopicMessage("${Casting}", $"{spell.CastName} on {targetName}");
+						
 										MQ.Write($"\ag{spell.CastName} \at{spell.SpellID} \am{targetName} \ao{targetID} \aw({spell.MyCastTime / 1000}sec)");
 
 										MQ.Cmd($"/casting \"{spell.CastName}|alt\"");
@@ -494,6 +498,7 @@ namespace E3Core.Processors
 									else
 									{
 										PubServer.AddTopicMessage("${Casting}", $"{spell.CastName} on {targetName}");
+					
 										MQ.Write($"\ag{spell.CastName} \at{spell.SpellID} \am{targetName} \ao{targetID} \aw({spell.MyCastTime / 1000}sec)");
 
 										//else its an item
@@ -511,6 +516,7 @@ namespace E3Core.Processors
 								if (spell.CastType == Data.CastType.Spell)
 								{
 									PubServer.AddTopicMessage("${Casting}", $"{spell.CastName} on {targetName}");
+					
 									MQ.Write($"\ag{spell.CastName} \at{spell.SpellID} \am{targetName} \ao{targetID} \aw({spell.MyCastTime / 1000}sec)");
 									MQ.Cmd($"/casting \"{spell.CastName}|{spell.SpellGem}\" \"-targetid|{targetID}\"");
 									if (spell.MyCastTime > 500)
@@ -521,6 +527,7 @@ namespace E3Core.Processors
 								else
 								{
 									PubServer.AddTopicMessage("${Casting}", $"{spell.CastName} on {targetName}");
+					
 									MQ.Write($"\ag{spell.CastName} \at{spell.SpellID} \am{targetName} \ao{targetID} \aw({spell.MyCastTime / 1000}sec)");
 									if (spell.CastType == CastType.AA)
 									{
@@ -709,6 +716,8 @@ namespace E3Core.Processors
 			{
 				//send message to the ui to clear their casting information
 				PubServer.AddTopicMessage("${Casting}", String.Empty);
+				PubServer.AddTopicMessage("${Me.Casting}", $"");
+
 				//unpause any stick command that may be paused
 				MQ.Cmd("/stick unpause");
 				//resume navigation.

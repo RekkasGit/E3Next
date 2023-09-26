@@ -33,8 +33,8 @@ namespace E3NextUI
 		public static string Version = "v1.0.45-beta";
         public static System.Diagnostics.Stopwatch _stopWatch = new System.Diagnostics.Stopwatch();
         public static volatile bool ShouldProcess = true;
-
-        Task _consoleTask;
+		public OverlayGroupInfo _overlayGroupInfo = new OverlayGroupInfo();
+		Task _consoleTask;
         Task _consoleMQTask;
         Task _consoleMeleeTask;
         Task _consoleSpellTask;
@@ -85,12 +85,13 @@ namespace E3NextUI
 		Rectangle TopRight { get { return new Rectangle(this.ClientSize.Width - _, 0, _, _); } }
 		Rectangle BottomLeft { get { return new Rectangle(0, this.ClientSize.Height - _, _, _); } }
 		Rectangle BottomRight { get { return new Rectangle(this.ClientSize.Width - _, this.ClientSize.Height - _, _, _); } }
-
+		
 		//end resizing stuff for buttonmode
 		public E3UI()
         {
             InitializeComponent();
-            _startingStyle = this.FormBorderStyle;
+
+			_startingStyle = this.FormBorderStyle;
 			SetStyle(ControlStyles.ResizeRedraw, true); // this is to avoid visual artifacts
 
 			_collapseConsoleImage = (Image)pbCollapseConsoleButtons.Image.Clone();
@@ -130,7 +131,7 @@ namespace E3NextUI
                
                 _pubClient = new PubClient();
                 port = Int32.Parse(args[1]);
-                _pubClient.Start(port);
+                _pubClient.Start(port,this);
                 port = Int32.Parse(args[3]);
                 _pubServer = new PubServer();
                 _pubServer.Start(port);
@@ -1066,6 +1067,21 @@ namespace E3NextUI
         }
 
         string _prevString = String.Empty;
+		
+		private void infoOverlayToolStripMenuItem_Click(object sender, EventArgs e)
+		{
+
+            if(_overlayGroupInfo!=null)
+            {
+             
+                _overlayGroupInfo.Show();
+            }
+
+
+		}
+
+      	
+
 		private void buttonModeToolStripMenuItem_Click(object sender, EventArgs e)
 		{
             if(_buttonMode)
@@ -1076,7 +1092,7 @@ namespace E3NextUI
 				panelMain.Show();
 				panelStatusPannel2.Show();
 				panelButtons.Location = new Point(736, 24);
-
+     
 			}
 			else
             {
@@ -1088,11 +1104,11 @@ namespace E3NextUI
 				panelMain.Hide();
 				panelStatusPannel2.Hide();
 				panelButtons.Location = new Point(0, 24);
+               
 
 			}
 			buttonModeToolStripMenuItem.Checked = _buttonMode;
 		}
-
 		private void textToSpeachToolStripMenuItem_Click(object sender, EventArgs e)
 		{
 
