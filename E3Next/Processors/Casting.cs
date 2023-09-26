@@ -351,8 +351,22 @@ namespace E3Core.Processors
 								TrueTarget(targetID);
 								E3.ActionTaken = true;
 								_log.Write("Issuing Disc command:{spell.CastName}");
-								MQ.Cmd($"/disc {spell.CastName}");
-								MQ.Delay(300);
+								if(spell.TargetType.Equals("Self"))
+								{
+									Int32 counter = 0;
+									while (!MQ.Query<bool>("${Me.ActiveDisc.ID}"))
+									{
+										MQ.Cmd($"/disc {spell.CastName}");
+										MQ.Delay(300);
+										counter++;
+										if (counter > 10) break;
+									}
+								}
+								else
+								{
+									MQ.Cmd($"/disc {spell.CastName}");
+									MQ.Delay(300);
+								}
 								returnValue = CastReturn.CAST_SUCCESS;
 								goto startCasting;
 							}
