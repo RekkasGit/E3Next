@@ -1071,11 +1071,16 @@ namespace E3NextUI
 		private void infoOverlayToolStripMenuItem_Click(object sender, EventArgs e)
 		{
 
-            if(_overlayGroupInfo!=null)
-            {
+			if (System.Windows.Forms.Application.OpenForms.OfType<OverlayGroupInfo>().Count() == 0 || !_overlayGroupInfo.Visible)
+			{
              
                 _overlayGroupInfo.Show();
+   
             }
+            else
+            {
+                _overlayGroupInfo.Hide();
+			}
 
 
 		}

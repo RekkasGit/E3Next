@@ -430,7 +430,7 @@ namespace E3Core.Processors
             if (!e3util.ShouldCheck(ref _nextTradeCheck, _nextTradeCheckInterval)) return;
 
             //don't trade if its the foreground window and WaitForTrade is set to true in the INI
-            if (e3util.IsManualControl() && E3.GeneralSettings.AutoTrade_WaitForTrade) return;
+
 
             bool tradeWndOpen = MQ.Query<bool>($"${{Window[TradeWnd].Open}}");
             bool doTrade = false;
@@ -450,33 +450,37 @@ namespace E3Core.Processors
                    
                     if (E3.GeneralSettings.AutoTrade_All)
                     {
-                        doTrade = true;
+						if (e3util.IsManualControl() && E3.GeneralSettings.AutoTrade_WaitForTrade) return;
+						doTrade = true;
                      
                     }
                     else if (E3.GeneralSettings.AutoTrade_Guild)
                     {
-                        if (MQ.Query<bool>($"${{Spawn[id {trader.ID}].Guild.Equal[${{Me.Guild}}]}}"))
+                        if (MQ.Query<bool>($"${{Spawn[id {trader.ID}].Guild.Equal[${{Me.Guild}}]}}") && !Basics.GroupMembers.Contains(trader.ID))
                         {
                             doTrade = true;
                         }
                     }
                     else if (E3.GeneralSettings.AutoTrade_Raid)
                     {
-                        if (MQ.Query<bool>($"${{Raid.Member[{trader.DisplayName}]}}"))
+						if (e3util.IsManualControl() && E3.GeneralSettings.AutoTrade_WaitForTrade) return;
+						if (MQ.Query<bool>($"${{Raid.Member[{trader.DisplayName}]}}"))
                         {
                             doTrade = true;
                         }
                     }
                     else if (E3.GeneralSettings.AutoTrade_Bots)
-                    {
-                        if (E3.Bots.BotsConnected().Contains(trader.CleanName))
+					{
+						if (e3util.IsManualControl() && E3.GeneralSettings.AutoTrade_WaitForTrade) return;
+						if (E3.Bots.BotsConnected().Contains(trader.CleanName))
                         {
                             doTrade = true;
                         }
                     }
                     else if (E3.GeneralSettings.AutoTrade_Group)
-                    {
-                        if (Basics.GroupMembers.Contains(trader.ID))
+					{
+						if (e3util.IsManualControl() && E3.GeneralSettings.AutoTrade_WaitForTrade) return;
+						if (Basics.GroupMembers.Contains(trader.ID))
                         {
                             doTrade = true;
                         }
