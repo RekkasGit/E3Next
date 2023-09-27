@@ -18,6 +18,7 @@ using System.Text;
 using System.Threading;
 using System.Threading.Tasks;
 using System.Windows.Forms;
+using System.Xml.Linq;
 
 namespace E3Core.Processors
 {
@@ -291,13 +292,29 @@ namespace E3Core.Processors
 				Int32 count = 1;
 				foreach(var pair in NetMQServer.SharedDataClient.TopicUpdates)
 				{
-					PubServer.AddTopicMessage($"${{E3Bot{count}.Name}}",pair.Key);
-					PubServer.AddTopicMessage($"${{E3Bot{count}.Target}}", E3.Bots.Query(pair.Key, "${Me.TargetName}"));
-					PubServer.AddTopicMessage($"${{E3Bot{count}.Casting}}", E3.Bots.Query(pair.Key, "${Me.Casting}"));
-					PubServer.AddTopicMessage($"${{E3Bot{count}.AAPoints}}", E3.Bots.Query(pair.Key, "${Me.AAPoints}"));
-					PubServer.AddTopicMessage($"${{E3Bot{count}.Casting}}", E3.Bots.Query(pair.Key, "${Me.Casting}"));
+					Int32 groupMemberIndex = MQ.Query<Int32>($"${{Group.Member[{pair.Key}].Index}}");
+					if (groupMemberIndex >= 0)
+					{
+						PubServer.AddTopicMessage($"${{E3Bot{count}.Name}}", pair.Key);
+						PubServer.AddTopicMessage($"${{E3Bot{count}.Target}}", E3.Bots.Query(pair.Key, "${Me.TargetName}"));
+						PubServer.AddTopicMessage($"${{E3Bot{count}.Casting}}", E3.Bots.Query(pair.Key, "${Me.Casting}"));
+						PubServer.AddTopicMessage($"${{E3Bot{count}.AAPoints}}", E3.Bots.Query(pair.Key, "${Me.AAPoints}"));
+						PubServer.AddTopicMessage($"${{E3Bot{count}.Casting}}", E3.Bots.Query(pair.Key, "${Me.Casting}"));
+						count++;
+					}
 
-					count++;
+				}
+				if(count<7)
+				{
+					for(Int32 index=count; index < 7; index++)
+					{           //need to 'empty' out the group members we didn't send.
+						PubServer.AddTopicMessage($"${{E3Bot{index}.Name}}", String.Empty);
+						PubServer.AddTopicMessage($"${{E3Bot{index}.Target}}", String.Empty);
+						PubServer.AddTopicMessage($"${{E3Bot{index}.Casting}}", String.Empty);
+						PubServer.AddTopicMessage($"${{E3Bot{index}.AAPoints}}", "0");
+						PubServer.AddTopicMessage($"${{E3Bot{index}.Casting}}", String.Empty);
+					}
+
 				}
 
 				IsInvis = MQ.Query<bool>("${Me.Invis}");
