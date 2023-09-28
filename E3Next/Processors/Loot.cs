@@ -4,14 +4,11 @@ using E3Core.Settings.FeatureSettings;
 using E3Core.Utility;
 using MonoCore;
 using System;
-using System.Collections;
 using System.Collections.Generic;
 using System.Collections.Specialized;
 using System.Dynamic;
 using System.Linq;
 using System.Net.Configuration;
-using System.Reflection;
-using System.Security.Cryptography;
 using System.ServiceModel.PeerResolvers;
 using System.Windows.Forms;
 
@@ -252,10 +249,7 @@ namespace E3Core.Processors
         }
 
         private static void TargetAndEnsureCorrespondence(Spawn corpse) {
-            MQ.Cmd($"/target id {corpse.ID}");
-            MQ.Delay(300, $"${{Target.ID}}=={corpse.ID}");
-            MQ.Cmd($"/target id {corpse.ID}");
-            MQ.Delay(300, $"${{Target.ID}}=={corpse.ID}");
+            Casting.TrueTarget(corpse.ID);
             MQ.Cmd($"/Squelch /face fast nolook id {corpse.ID}");
         }
 
