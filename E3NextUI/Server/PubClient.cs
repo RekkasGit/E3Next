@@ -27,7 +27,7 @@ namespace E3NextUI.Server
             _port = port;
             _serverThread = Task.Factory.StartNew(() => { Process(); }, CancellationToken.None, TaskCreationOptions.DenyChildAttach, TaskScheduler.Default);
         }
-        List<string> _consoleContains = new List<string>(){"You say out of character", "You say, '"," says out of character, '", " tells you, '", " guild, '", " shouts, '", " party, '", " raid, '", " says, '", " group, '", " auctions, '" };
+        List<string> _consoleContains = new List<string>(){"You say out of character", "You say, '"," says out of character, '", " tells you, '", " guild, '", " shouts, '", " party, '", " raid,  '", " says, '", " group, '", " auctions, '" };
         List<string> _spellContains = new List<string>() { @"begins to cast a spell.","'s body is "," damage from ", "a critical blast!" };
         List<string> _spellEndWith = new List<string>() { "begins to cast a spell.", "'s enchantments fades.", " was burned.",  "'s casting is interrupted!", "'s spell fizzles!", "non-melee damage." };
         List<string> _spellStartsWith = new List<string>() { "You begin casting ", "Your spell is interrupted." };

@@ -1071,7 +1071,11 @@ namespace E3NextUI
         bool firstShown = true;
 		private void E3UI_Shown(object sender, EventArgs e)
 		{
+            if(System.Diagnostics.Debugger.IsAttached)
+            {
+                firstShown = false;
 
+			}
             if(firstShown)
             {
                 Hide();
