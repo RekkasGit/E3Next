@@ -585,6 +585,8 @@ namespace MonoCore
         }
         public static void ProcessMQCommand(string line)
         {
+            //for whatever reason if the line is blank/null, kick out
+            //had a user on win11 that expericned this issue, no clue.
 			if (String.IsNullOrWhiteSpace(line)) return;
 			_mqCommandProcessingQueue.Enqueue(line);
            
@@ -820,6 +822,8 @@ namespace MonoCore
         {
 			try
 			{
+				Thread.CurrentThread.CurrentCulture = new CultureInfo("en-US");
+
 				_MQ2MonoVersion = Decimal.Parse(Core.mq_GetMQ2MonoVersion());
 			}
 			catch (Exception)

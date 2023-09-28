@@ -8,6 +8,7 @@ using NetMQ.Sockets;
 using System;
 using System.Collections.Concurrent;
 using System.Collections.Generic;
+using System.Globalization;
 using System.Linq;
 using System.Text;
 using System.Threading;
@@ -273,6 +274,8 @@ namespace E3Core.Server
 		//with proper enums
 		public void Process(string user, string port,string serverName, string fileName)
 		{
+			Thread.CurrentThread.CurrentCulture = new CultureInfo("en-US");
+
 			System.DateTime lastFileUpdate = System.IO.File.GetLastWriteTime(fileName);
 			string OnCommandName = "OnCommand-" + E3.CurrentName;
 

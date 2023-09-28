@@ -15,7 +15,7 @@ using System.Threading.Tasks;
 using System.Windows.Forms;
 using System.Reflection;
 using System.IO;
-
+using System.Globalization;
 
 namespace E3NextUI
 {
@@ -90,6 +90,7 @@ namespace E3NextUI
 		public E3UI()
         {
             InitializeComponent();
+			Thread.CurrentThread.CurrentCulture = new CultureInfo("en-US");
 
 			_startingStyle = this.FormBorderStyle;
 			SetStyle(ControlStyles.ResizeRedraw, true); // this is to avoid visual artifacts

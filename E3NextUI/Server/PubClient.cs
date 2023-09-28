@@ -3,6 +3,7 @@ using NetMQ;
 using NetMQ.Sockets;
 using System;
 using System.Collections.Generic;
+using System.Globalization;
 using System.Linq;
 using System.Runtime.InteropServices;
 using System.Speech.Synthesis;
@@ -34,10 +35,11 @@ namespace E3NextUI.Server
         TTSProcessor _ttsprocessor = new TTSProcessor();
 		public void Process()
         {
-          
-			
-           
-            //_synth.SelectVoiceByHints(VoiceGender.Female); //zera voice built into windows
+
+			Thread.CurrentThread.CurrentCulture = new CultureInfo("en-US");
+
+
+			//_synth.SelectVoiceByHints(VoiceGender.Female); //zera voice built into windows
 
 			TimeSpan recieveTimeout = new TimeSpan(0, 0, 0, 0, 5);
 

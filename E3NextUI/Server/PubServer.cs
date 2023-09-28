@@ -3,6 +3,7 @@ using NetMQ.Sockets;
 using System;
 using System.Collections.Concurrent;
 using System.Collections.Generic;
+using System.Globalization;
 using System.Linq;
 using System.Text;
 using System.Threading;
@@ -27,8 +28,9 @@ namespace E3NextUI.Server
         }
         private void Process()
         {
-            
-            using (var pubSocket = new PublisherSocket())
+			Thread.CurrentThread.CurrentCulture = new CultureInfo("en-US");
+
+			using (var pubSocket = new PublisherSocket())
             {
                 pubSocket.Options.SendHighWatermark = 50000;
 
