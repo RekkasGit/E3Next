@@ -4,14 +4,7 @@ using E3Core.Utility;
 using MonoCore;
 using System;
 using System.Collections.Generic;
-using System.Linq;
-using System.Net.Http.Headers;
-using System.Runtime.CompilerServices;
-using System.Security.Cryptography;
-using System.ServiceModel.Dispatcher;
-using System.Text;
 using System.Text.RegularExpressions;
-using System.Threading.Tasks;
 
 namespace E3Core.Processors
 {
@@ -32,6 +25,15 @@ namespace E3Core.Processors
 
 		public static CastReturn Cast(int targetID, Data.Spell spell, Func<Spell, Int32, Int32, bool> interruptCheck = null, bool isNowCast = false)
 		{
+
+			if (IsActiveDisc(spell))
+			{
+				if (MQ.Query<bool>("${Me.ActiveDisc.ID}"))
+				{
+					return CastReturn.CAST_ACTIVEDISC;
+				}
+			}
+
 			bool navActive = false;
 			bool navPaused = false;
 			bool e3PausedNav = false;
@@ -76,6 +78,8 @@ namespace E3Core.Processors
 				//if this is a non bard, as we are not casting and its just an /alt activate, kick it off so it can queue up quickly. 
 				if (E3.CurrentClass != Class.Bard && spell.CastType == CastType.AA && spell.MyCastTime <= 500 && !IsCasting())
 				{
+					
+
 					if (!(spell.TargetType == "Self" || spell.TargetType == "Group v1"))
 					{
 						TrueTarget(targetID);
@@ -101,8 +105,25 @@ namespace E3Core.Processors
 					BeforeSpellCheck(spell, targetID);
 					PubServer.AddTopicMessage("${Casting}", $"{spell.CastName} on {targetName}");
 					PubServer.AddTopicMessage("${Me.Casting}", $"{spell.CastName}");
-					MQ.Cmd($"/alt activate {spell.CastID}");
-					MQ.Delay(300); //necessary to keep things... in order
+					Int32 counter = 0;
+					//some aa's can actually be discs, zerker savage spirit is the main one i know of
+					if(IsActiveDisc(spell))
+					{
+						while (!MQ.Query<bool>("${Me.ActiveDisc.ID}"))
+						{
+							MQ.Cmd($"/alt activate {spell.CastID}");
+							MQ.Delay(300);
+							counter++;
+							if (counter > 10) break;
+						}
+					}
+					else
+					{
+						MQ.Cmd($"/alt activate {spell.CastID}");
+						MQ.Delay(300); //necessary to keep things... in order
+					}
+					
+				
 					AfterSpellCheck(spell, targetID);
 					AfterEventCheck(spell);
 					UpdateAAInCooldown(spell);
@@ -496,8 +517,24 @@ namespace E3Core.Processors
 										PubServer.AddTopicMessage("${Casting}", $"{spell.CastName} on {targetName}");
 						
 										MQ.Write($"\ag{spell.CastName} \at{spell.SpellID} \am{targetName} \ao{targetID} \aw({spell.MyCastTime / 1000}sec)");
-
-										MQ.Cmd($"/casting \"{spell.CastName}|alt\"");
+										Int32 counter = 0;
+										//some aa's can actually be discs, zerker savage spirit is the main one i know of
+										if (IsActiveDisc(spell))
+										{
+											while (!MQ.Query<bool>("${Me.ActiveDisc.ID}"))
+											{
+												MQ.Cmd($"/casting \"{spell.CastName}|alt\"");
+												MQ.Delay(300);
+												counter++;
+												if (counter > 10) break;
+											}
+										}
+										else
+										{
+											MQ.Cmd($"/casting \"{spell.CastName}|alt\"");
+											MQ.Delay(300); //necessary to keep things... in order
+										}
+									
 										UpdateAAInCooldown(spell);
 
 										if (spell.MyCastTime > 500)
@@ -793,6 +830,30 @@ namespace E3Core.Processors
 					Casting.Cast(targetID, spell.AfterSpellData);
 				}
 			}
+		}
+		public static bool IsActiveDisc(Spell spell)
+		{
+			if (spell.CastType == Data.CastType.Disc)
+			{
+				
+				if (spell.TargetType.Equals("Self"))
+				{
+					return true;
+				}
+			}
+			if(spell.CastType==Data.CastType.AA)
+			{
+				////HACK!!!!!!!!!!!!
+				//its like the only self targert AA in the game that is also a disc
+				//mark it as a disc so that we will check active disc on it.
+				//100% hack but MQ doesn't expose that its a disc in the spell data that i can see. 
+				if (E3.CurrentClass == Class.Berserker && spell.CastName.Equals("Savage Spirit", StringComparison.OrdinalIgnoreCase))
+				{
+					return true;
+				}
+				////////END HACK!
+			}
+			return false;
 		}
 		private static void BeforeSpellCheck(Spell spell, Int32 targetID)
 		{
@@ -1116,6 +1177,13 @@ namespace E3Core.Processors
 				}
 				else
 				{
+					if (IsActiveDisc(spell))
+					{
+						if (MQ.Query<bool>("${Me.ActiveDisc.ID}"))
+						{
+							return false;
+						}
+					}
 					if (MQ.Query<bool>($"${{Me.AltAbilityReady[{spell.CastName}]}}"))
 					{
 						return false;
@@ -1124,6 +1192,13 @@ namespace E3Core.Processors
 			}
 			else
 			{
+				if (IsActiveDisc(spell))
+				{
+					if (MQ.Query<bool>("${Me.ActiveDisc.ID}"))
+					{
+						return false;
+					}
+				}
 				if (MQ.Query<bool>($"${{Me.AltAbilityReady[{spell.CastName}]}}"))
 				{
 					return false;

@@ -185,8 +185,8 @@ namespace E3NextUI
 
             _globalUpdate = Task.Factory.StartNew(() => { GlobalTimer(); }, CancellationToken.None, TaskCreationOptions.DenyChildAttach, TaskScheduler.Default);
 
-           
-        }
+		
+		}
 		protected override void WndProc(ref Message message)
 		{
 			base.WndProc(ref message);
@@ -541,7 +541,7 @@ namespace E3NextUI
             {
                 Themese.DarkMode.ChangeTheme(this, this.Controls);
             }
-
+           
 
 		}
         private void E3UI_FormClosing(object sender, FormClosingEventArgs e)
@@ -1068,7 +1068,17 @@ namespace E3NextUI
         }
 
         string _prevString = String.Empty;
-		
+        bool firstShown = true;
+		private void E3UI_Shown(object sender, EventArgs e)
+		{
+
+            if(firstShown)
+            {
+                Hide();
+            }
+            firstShown = false;
+		}
+
 		private void infoOverlayToolStripMenuItem_Click(object sender, EventArgs e)
 		{
 

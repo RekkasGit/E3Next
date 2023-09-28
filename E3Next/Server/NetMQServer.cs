@@ -87,7 +87,12 @@ namespace E3Core.Server
                     UIProcess = null;
                 }
             });
-        }
+
+			string dllFullPath = Assembly.GetExecutingAssembly().CodeBase.Replace("file:///", "").Replace("/", "\\").Replace("e3.dll", "");
+			Int32 currentProcessID = System.Diagnostics.Process.GetCurrentProcess().Id;
+			//MQ.Write("Trying to start:" + dllFullPath + @"E3NextUI.exe");
+			UIProcess = System.Diagnostics.Process.Start(dllFullPath + @"E3NextUI.exe", $"{PubPort} {RouterPort} {PubClientPort} {currentProcessID}");
+		}
         /// <summary>
         /// Turns on the UI program, and then from then on, hide/shows it as needed. To close restart e3.
         /// </summary>
