@@ -283,9 +283,10 @@ namespace E3Core.Processors
 				PubServer.AddTopicMessage("${Me.CurrentMana}", MQ.Query<string>("${Me.CurrentMana}"));
 				PubServer.AddTopicMessage("${Me.CurrentEndurance}", MQ.Query<string>("${Me.CurrentEndurance}"));
 				PubServer.AddTopicMessage("${Me.Name}", E3.CurrentName);
-				PubServer.AddTopicMessage("${Me.TargetName}", MQ.Query<string>("${Target.Name}"));
+				PubServer.AddTopicMessage("${Me.TargetName}", MQ.Query<string>("${Target.CleanName}"));
 				PubServer.AddTopicMessage("${Me.AAPoints}", MQ.Query<string>("${Me.AAPoints}"));
 				PubServer.AddTopicMessage("${Me.Casting}", MQ.Query<string>("${Me.Casting}"));
+				PubServer.AddTopicMessage("${Me.DPSUpdate}", PubClient.LastDPSUpdate);
 
 				//TopicUpdates
 				//get bot network useres
@@ -300,6 +301,8 @@ namespace E3Core.Processors
 						PubServer.AddTopicMessage($"${{E3Bot{count}.Casting}}", E3.Bots.Query(pair.Key, "${Me.Casting}"));
 						PubServer.AddTopicMessage($"${{E3Bot{count}.AAPoints}}", E3.Bots.Query(pair.Key, "${Me.AAPoints}"));
 						PubServer.AddTopicMessage($"${{E3Bot{count}.Casting}}", E3.Bots.Query(pair.Key, "${Me.Casting}"));
+						PubServer.AddTopicMessage($"${{E3Bot{count}.DPSUpdate}}", E3.Bots.Query(pair.Key, "${Me.DPSUpdate}"));
+
 						count++;
 					}
 
@@ -313,6 +316,7 @@ namespace E3Core.Processors
 						PubServer.AddTopicMessage($"${{E3Bot{index}.Casting}}", String.Empty);
 						PubServer.AddTopicMessage($"${{E3Bot{index}.AAPoints}}", "0");
 						PubServer.AddTopicMessage($"${{E3Bot{index}.Casting}}", String.Empty);
+						PubServer.AddTopicMessage($"${{E3Bot{index}.DPSUpdate}}", String.Empty);
 					}
 
 				}

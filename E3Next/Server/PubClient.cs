@@ -20,6 +20,9 @@ namespace E3Core.Server
         public static ConcurrentQueue<string> _pubCommands = new ConcurrentQueue<string>();
         private static IMQ MQ = E3.MQ;
 
+        //make it volatile so we will eventually get it out/updated
+        public static volatile string LastDPSUpdate = String.Empty;
+
         Task _serverThread;
         private Int32 _port;
         public void Start(Int32 port)
@@ -66,6 +69,7 @@ namespace E3Core.Server
                     subSocket.Options.TcpKeepaliveInterval = TimeSpan.FromSeconds(1);
                     subSocket.Connect("tcp://127.0.0.1:" + _port);
                     subSocket.Subscribe("OnCommand");
+                    subSocket.Subscribe("OnDPSUpdate");
                     while (Core.IsProcessing && E3.NetMQ_PubClientThradRun)
                     {
                         string messageTopicReceived;
@@ -76,6 +80,13 @@ namespace E3Core.Server
                             {
                                 _pubCommands.Enqueue(messageReceived);
                             }
+                            if(messageTopicReceived =="OnDPSUpdate")
+                            {
+                                if(LastDPSUpdate!=messageReceived)
+                                {
+									LastDPSUpdate = messageReceived;
+								}
+							}
                         }
                            
                     }

@@ -16,7 +16,8 @@ namespace E3NextUI.Server
 
        
         public static ConcurrentQueue<string> PubCommands = new ConcurrentQueue<string>();
-        public static Int32 PubPort = 0;
+		public static ConcurrentQueue<string> DPSUpdates = new ConcurrentQueue<string>();
+		public static Int32 PubPort = 0;
 
         public void Start(Int32 port)
         {
@@ -36,12 +37,18 @@ namespace E3NextUI.Server
                 {
                     if (PubCommands.Count > 0)
                     {
-                        string message;
-                        if (PubCommands.TryDequeue(out message))
+                        if (PubCommands.TryDequeue(out var message))
                         {
                             pubSocket.SendMoreFrame("OnCommand").SendFrame(message);
                         }
                     }
+                    else if(DPSUpdates.Count>0)
+                    {
+						if (DPSUpdates.TryDequeue(out var message))
+						{
+							pubSocket.SendMoreFrame("OnDPSUpdate").SendFrame(message);
+						}
+					}
                     else
                     {
                         System.Threading.Thread.Sleep(1);

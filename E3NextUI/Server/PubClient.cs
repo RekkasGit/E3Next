@@ -209,7 +209,22 @@ namespace E3NextUI.Server
 									{
 										_overlayGroup.SetOverlayLabelData(_overlayGroup.label_casting1_info, messageReceived);
 									}
-									//TargetName
+									else if (messageTopicReceived == "${E3Bot1.DPSUpdate}")
+                                    {
+                                        if (messageReceived == String.Empty)
+                                        {
+                                            continue;   
+                                        }
+										//$"{PlayerName},{totalDPS},{yourDPS},{petDPS},{dsDPS},{totalTime}"
+                                        Int32 indexOfFirstComma = messageReceived.IndexOf(',');
+                                        Int32 indexOf2nComma = messageReceived.IndexOf(',', indexOfFirstComma + 1);
+										string dpsValue = messageReceived.Substring(indexOfFirstComma + 1, indexOf2nComma - indexOfFirstComma - 1);
+										if(Int32.TryParse(dpsValue,out var dpsint))
+										{
+											_overlayGroup.SetOverlayLabelData(_overlayGroup.label_dps1_total, dpsint.ToString("N0"));
+
+										}
+									}
 								}
 								else if (messageTopicReceived.StartsWith("${E3Bot2."))
 								{
@@ -229,7 +244,24 @@ namespace E3NextUI.Server
 									{
 										_overlayGroup.SetOverlayLabelData(_overlayGroup.label_casting2_info, messageReceived);
 									}
-									
+									else if (messageTopicReceived == "${E3Bot2.DPSUpdate}")
+									{
+										if (messageReceived == String.Empty)
+										{
+											continue;
+										}
+										//$"{PlayerName},{totalDPS},{yourDPS},{petDPS},{dsDPS},{totalTime}"
+										Int32 indexOfFirstComma = messageReceived.IndexOf(',');
+										Int32 indexOf2nComma = messageReceived.IndexOf(',', indexOfFirstComma + 1);
+										string dpsValue = messageReceived.Substring(indexOfFirstComma + 1, indexOf2nComma - indexOfFirstComma - 1);
+										if (Int32.TryParse(dpsValue, out var dpsint))
+										{
+											_overlayGroup.SetOverlayLabelData(_overlayGroup.label_dps2_total, dpsint.ToString("N0"));
+
+										}
+										
+									}
+
 								}
 								else if (messageTopicReceived.StartsWith("${E3Bot3."))
 								{
@@ -249,7 +281,22 @@ namespace E3NextUI.Server
 									{
 										_overlayGroup.SetOverlayLabelData(_overlayGroup.label_casting3_info, messageReceived);
 									}
-								
+									else if (messageTopicReceived == "${E3Bot3.DPSUpdate}")
+									{
+										if (messageReceived == String.Empty)
+										{
+											continue;
+										}
+										//$"{PlayerName},{totalDPS},{yourDPS},{petDPS},{dsDPS},{totalTime}"
+										Int32 indexOfFirstComma = messageReceived.IndexOf(',');
+										Int32 indexOf2nComma = messageReceived.IndexOf(',', indexOfFirstComma + 1);
+										string dpsValue = messageReceived.Substring(indexOfFirstComma + 1, indexOf2nComma - indexOfFirstComma - 1);
+										if (Int32.TryParse(dpsValue, out var dpsint))
+										{
+											_overlayGroup.SetOverlayLabelData(_overlayGroup.label_dps3_total, dpsint.ToString("N0"));
+
+										}
+									}
 								}
 								else if (messageTopicReceived.StartsWith("${E3Bot4."))
 								{
@@ -268,6 +315,22 @@ namespace E3NextUI.Server
 									else if (messageTopicReceived == "${E3Bot4.Casting}")
 									{
 										_overlayGroup.SetOverlayLabelData(_overlayGroup.label_casting4_info, messageReceived);
+									}
+									else if (messageTopicReceived == "${E3Bot4.DPSUpdate}")
+									{
+										if (messageReceived == String.Empty)
+										{
+											continue;
+										}
+										//$"{PlayerName},{totalDPS},{yourDPS},{petDPS},{dsDPS},{totalTime}"
+										Int32 indexOfFirstComma = messageReceived.IndexOf(',');
+										Int32 indexOf2nComma = messageReceived.IndexOf(',', indexOfFirstComma + 1);
+										string dpsValue = messageReceived.Substring(indexOfFirstComma + 1, indexOf2nComma - indexOfFirstComma - 1);
+										if (Int32.TryParse(dpsValue, out var dpsint))
+										{
+											_overlayGroup.SetOverlayLabelData(_overlayGroup.label_dps4_total, dpsint.ToString("N0"));
+
+										}
 									}
 								}
 								else if (messageTopicReceived.StartsWith("${E3Bot5."))
@@ -288,6 +351,22 @@ namespace E3NextUI.Server
 									{
 										_overlayGroup.SetOverlayLabelData(_overlayGroup.label_casting5_info, messageReceived);
 									}
+									else if (messageTopicReceived == "${E3Bot5.DPSUpdate}")
+									{
+										if (messageReceived == String.Empty)
+										{
+											continue;
+										}
+										//$"{PlayerName},{totalDPS},{yourDPS},{petDPS},{dsDPS},{totalTime}"
+										Int32 indexOfFirstComma = messageReceived.IndexOf(',');
+										Int32 indexOf2nComma = messageReceived.IndexOf(',', indexOfFirstComma + 1);
+										string dpsValue = messageReceived.Substring(indexOfFirstComma + 1, indexOf2nComma - indexOfFirstComma - 1);
+										if (Int32.TryParse(dpsValue, out var dpsint))
+										{
+											_overlayGroup.SetOverlayLabelData(_overlayGroup.label_dps5_total, dpsint.ToString("N0"));
+
+										}
+									}
 								}
 								else if (messageTopicReceived.StartsWith("${E3Bot6."))
 								{
@@ -306,6 +385,22 @@ namespace E3NextUI.Server
 									else if (messageTopicReceived == "${E3Bot6.Casting}")
 									{
 										_overlayGroup.SetOverlayLabelData(_overlayGroup.label_casting6_info, messageReceived);
+									}
+									else if (messageTopicReceived == "${E3Bot6.DPSUpdate}")
+									{
+										if (messageReceived == String.Empty)
+										{
+											continue;
+										}
+										//$"{PlayerName},{totalDPS},{yourDPS},{petDPS},{dsDPS},{totalTime}"
+										Int32 indexOfFirstComma = messageReceived.IndexOf(',');
+										Int32 indexOf2nComma = messageReceived.IndexOf(',', indexOfFirstComma + 1);
+										string dpsValue = messageReceived.Substring(indexOfFirstComma+1, indexOf2nComma - indexOfFirstComma-1);
+										if (Int32.TryParse(dpsValue, out var dpsint))
+										{
+											_overlayGroup.SetOverlayLabelData(_overlayGroup.label_dps6_total, dpsint.ToString("N0"));
+
+										}
 									}
 								}
 
