@@ -214,9 +214,17 @@ namespace E3Core.Processors
                         }
                         else
                         {
-                            Casting.Cast(0, burn);
-                            MQ.Cmd(chatOutput);
-                        }
+                            CastReturn returnValue = Casting.Cast(0, burn);
+
+							if (returnValue == CastReturn.CAST_SUCCESS)
+                            {
+								MQ.Cmd(chatOutput);
+							}
+                            else
+                            {
+								MQ.Cmd(chatOutput + $" Error:{returnValue}");
+							}
+						}
                     }
                 }
 
