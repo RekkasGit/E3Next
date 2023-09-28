@@ -196,163 +196,172 @@ namespace MonoCore
             ///only the primary C# thread can do that.
             while (Core.IsProcessing)
             {
-                if (_eventProcessingQueue.Count > 0)
+                try
                 {
-                    string line;
-                    if (_eventProcessingQueue.TryDequeue(out line))
-                    {
-                        foreach(var ueventMethod in _unfilteredEventMethodList)
-                        {
-                            ueventMethod.Value.Invoke(new EventMatch() { eventName = ueventMethod.Key, eventString = line, typeOfEvent = eventType.EQEvent });
-                        }
-           
-                        foreach(var uevent in _unfilteredEventList)
-                        {
-                            uevent.Value.queuedEvents.Enqueue(new EventMatch() { eventName = uevent.Value.keyName, eventString = line, typeOfEvent = eventType.EQEvent });
-                        }
+					if (_eventProcessingQueue.Count > 0)
+					{
+						string line;
+						if (_eventProcessingQueue.TryDequeue(out line))
+						{
+							foreach (var ueventMethod in _unfilteredEventMethodList)
+							{
+								ueventMethod.Value.Invoke(new EventMatch() { eventName = ueventMethod.Key, eventString = line, typeOfEvent = eventType.EQEvent });
+							}
 
-                        //do filter matching
-                        //does it match our filter ? if so we can leave
-                        bool matchFilter = false;
-                        //locl this so someone can clear/add more filters are runtime.
-                        lock (_filterRegexes)
-                        {
-                            foreach (var filter in _filterRegexes)
-                            {
-                                var match = filter.Match(line);
-                                if (match.Success)
-                                {
-                                    matchFilter = true;
-                                    break;
-                                }
-                            }
-                        }
+							foreach (var uevent in _unfilteredEventList)
+							{
+								uevent.Value.queuedEvents.Enqueue(new EventMatch() { eventName = uevent.Value.keyName, eventString = line, typeOfEvent = eventType.EQEvent });
+							}
 
-                        if (!matchFilter)
-                        {
-                            foreach (var item in EventList)
-                            {
-                                //prevent spamming of an event to a user
-                                if (item.Value.queuedEvents.Count > EventLimiterPerRegisteredEvent)
-                                {
-                                    continue;
-                                }
-                                foreach (var regex in item.Value.regexs)
-                                {
-                                    var match = regex.Match(line);
-                                    if (match.Success)
-                                    {
-                                        item.Value.queuedEvents.Enqueue(new EventMatch() { eventName = item.Value.keyName, eventString = line, match = match, typeOfEvent= eventType.EQEvent});
-                                        break;
-                                    }
-                                }
+							//do filter matching
+							//does it match our filter ? if so we can leave
+							bool matchFilter = false;
+							//locl this so someone can clear/add more filters are runtime.
+							lock (_filterRegexes)
+							{
+								foreach (var filter in _filterRegexes)
+								{
+									var match = filter.Match(line);
+									if (match.Success)
+									{
+										matchFilter = true;
+										break;
+									}
+								}
+							}
 
-                            }
-                        }
+							if (!matchFilter)
+							{
+								foreach (var item in EventList)
+								{
+									//prevent spamming of an event to a user
+									if (item.Value.queuedEvents.Count > EventLimiterPerRegisteredEvent)
+									{
+										continue;
+									}
+									foreach (var regex in item.Value.regexs)
+									{
+										var match = regex.Match(line);
+										if (match.Success)
+										{
+											item.Value.queuedEvents.Enqueue(new EventMatch() { eventName = item.Value.keyName, eventString = line, match = match, typeOfEvent = eventType.EQEvent });
+											break;
+										}
+									}
 
-                        
+								}
+							}
 
-                    }
-                }
-                else if (_mqEventProcessingQueue.Count > 0)
+
+
+						}
+					}
+					else if (_mqEventProcessingQueue.Count > 0)
+					{
+						//have to be careful here and process out anything that isn't boxchat or dannet.
+						string line;
+						if (_mqEventProcessingQueue.TryDequeue(out line))
+						{
+
+							foreach (var ueventMethod in _unfilteredEventMethodList)
+							{
+								ueventMethod.Value.Invoke(new EventMatch() { eventName = ueventMethod.Key, eventString = line, typeOfEvent = eventType.MQEvent });
+							}
+
+							foreach (var uevent in _unfilteredEventList)
+							{
+								uevent.Value.queuedEvents.Enqueue(new EventMatch() { eventName = uevent.Value.keyName, eventString = line, typeOfEvent = eventType.MQEvent });
+							}
+
+							//do filtered
+							if (line.StartsWith("["))
+							{
+								Int32 indexOfApp = line.IndexOf(MainProcessor.ApplicationName);
+								if (indexOfApp == 1)
+								{
+									if (line.IndexOf("]") == MainProcessor.ApplicationName.Length + 1)
+									{
+										goto skipLine;
+									}
+									else
+									{
+										goto processLine;
+									}
+
+								}
+							}
+						processLine:
+							foreach (var item in EventList)
+							{
+								//prevent spamming of an event to a user
+								if (item.Value.queuedEvents.Count > EventLimiterPerRegisteredEvent)
+								{
+									continue;
+								}
+
+								foreach (var regex in item.Value.regexs)
+								{
+									var match = regex.Match(line);
+									if (match.Success)
+									{
+
+										item.Value.queuedEvents.Enqueue(new EventMatch() { eventName = item.Value.keyName, eventString = line, match = match, typeOfEvent = eventType.MQEvent });
+
+										break;
+									}
+								}
+
+							}
+
+						}
+					skipLine:
+						continue;
+					}
+					else if (_mqCommandProcessingQueue.Count > 0)
+					{
+						//have to be careful here and process out anything that isn't boxchat or dannet.
+						string line;
+						if (_mqCommandProcessingQueue.TryDequeue(out line))
+						{
+							if (!String.IsNullOrWhiteSpace(line))
+							{
+
+								foreach (var item in CommandList)
+								{
+									//prevent spamming of an event to a user
+									if (item.Value.queuedEvents.Count > 50)
+									{
+										Core.mqInstance.Write("event limiter");
+
+										continue;
+									}
+									if (line.Equals(item.Value.command, StringComparison.OrdinalIgnoreCase) || line.StartsWith(item.Value.command + " ", StringComparison.OrdinalIgnoreCase))
+									{
+										//need to split out the params
+										List<String> args = ParseParms(line, ' ', '"').ToList();
+										args.RemoveAt(0);
+
+										bool hasAllFlag = HasAllFlag(args);
+
+										item.Value.queuedEvents.Enqueue(new CommandMatch() { eventName = item.Value.keyName, eventString = line, args = args, hasAllFlag = hasAllFlag });
+
+									}
+								}
+							}
+						}
+					}
+					else
+					{
+						System.Threading.Thread.Sleep(1);
+					}
+				}
+                catch(Exception ex)
                 {
-                    //have to be careful here and process out anything that isn't boxchat or dannet.
-                    string line;
-                    if (_mqEventProcessingQueue.TryDequeue(out line))
-                    {
-
-                        foreach (var ueventMethod in _unfilteredEventMethodList)
-                        {
-                            ueventMethod.Value.Invoke(new EventMatch() { eventName = ueventMethod.Key, eventString = line, typeOfEvent = eventType.MQEvent });
-                        }
-
-                        foreach (var uevent in _unfilteredEventList)
-                        {
-                            uevent.Value.queuedEvents.Enqueue(new EventMatch() { eventName = uevent.Value.keyName, eventString = line, typeOfEvent = eventType.MQEvent });
-                        }
-                       
-                        //do filtered
-                        if (line.StartsWith("["))
-                        {
-                            Int32 indexOfApp = line.IndexOf(MainProcessor.ApplicationName);
-                            if (indexOfApp == 1)
-                            {
-                                if (line.IndexOf("]") == MainProcessor.ApplicationName.Length + 1)
-                                {
-                                    goto skipLine;
-                                }
-                                else
-                                {
-                                    goto processLine;
-                                }
-
-                            }
-                        }
-                        processLine:
-                        foreach (var item in EventList)
-                        {
-                            //prevent spamming of an event to a user
-                            if (item.Value.queuedEvents.Count > EventLimiterPerRegisteredEvent)
-                            {
-                                continue;
-                            }
-
-                            foreach (var regex in item.Value.regexs)
-                            {
-                                var match = regex.Match(line);
-                                if (match.Success)
-                                {
-
-                                    item.Value.queuedEvents.Enqueue(new EventMatch() { eventName = item.Value.keyName, eventString = line, match = match, typeOfEvent= eventType.MQEvent});
-
-                                    break;
-                                }
-                            }
-
-                        }
-
-                    }
-                    skipLine:
-                    continue;
+					Core.mqInstance.Write("Exception on Main processing command thread:"+ex.Message  + " stack:"+ex.StackTrace);
+					System.Threading.Thread.Sleep(5000);
                 }
-                else if (_mqCommandProcessingQueue.Count > 0)
-                {
-                    //have to be careful here and process out anything that isn't boxchat or dannet.
-                    string line;
-                    if (_mqCommandProcessingQueue.TryDequeue(out line))
-                    {
-                         if (!String.IsNullOrWhiteSpace(line))
-                        {
-                          
-                            foreach (var item in CommandList)
-                            {
-                                //prevent spamming of an event to a user
-                                if (item.Value.queuedEvents.Count > 50)
-                                {
-                                    Core.mqInstance.Write("event limiter");
-
-                                    continue;
-                                }
-                                if (line.Equals(item.Value.command, StringComparison.OrdinalIgnoreCase) || line.StartsWith(item.Value.command + " ", StringComparison.OrdinalIgnoreCase))
-                                {
-                                    //need to split out the params
-                                    List<String> args = ParseParms(line, ' ', '"').ToList();
-                                    args.RemoveAt(0);
-
-                                    bool hasAllFlag = HasAllFlag(args);
-                                                                        
-                                    item.Value.queuedEvents.Enqueue(new CommandMatch() { eventName = item.Value.keyName, eventString = line, args = args, hasAllFlag=hasAllFlag });
-                                    
-                                }
-                            }
-                        }
-                    }
-                }
-                else
-                {
-                    System.Threading.Thread.Sleep(1);
-                }
-            }
+				
+			}
             Core.mqInstance.Write("Ending Event Processing Thread.");
         }
         ///checks for all flag and then removes it
@@ -564,19 +573,20 @@ namespace MonoCore
         /// <param name="line"></param>
         public static void ProcessEvent(string line)
         {   
+            if(String.IsNullOrWhiteSpace(line)) return;
             _eventProcessingQueue.Enqueue(line);
         }
 
         public static void ProcessMQEvent(string line)
         {
-           
-            _mqEventProcessingQueue.Enqueue(line);
+			if (String.IsNullOrWhiteSpace(line)) return;
+			_mqEventProcessingQueue.Enqueue(line);
 
         }
         public static void ProcessMQCommand(string line)
         {
-           
-           _mqCommandProcessingQueue.Enqueue(line);
+			if (String.IsNullOrWhiteSpace(line)) return;
+			_mqCommandProcessingQueue.Enqueue(line);
            
 
         }
@@ -958,8 +968,8 @@ namespace MonoCore
             {
                 return;
             }
-            mq_Echo("command recieved:" + commandLine);
-
+            mq_Echo("command recieved:" + commandLine + " total count:" + EventProcessor._mqCommandProcessingQueue.Count());
+           
             EventProcessor.ProcessMQCommand(commandLine);
         }
         public static void OnIncomingChat(string line)
