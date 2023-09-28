@@ -176,18 +176,16 @@ namespace E3Core.Processors
 
                     if (Casting.CheckReady(burn))
                     {
-                        if (burn.CastType == Data.CastType.Disc)
+                     
+                        if(Casting.IsActiveDisc(burn))
                         {
-                            if (burn.TargetType == "Self")
-                            {
-                                if (MQ.Query<bool>("${Me.ActiveDisc.ID}"))
-                                {
-                                    continue;
 
-                                }
-                            }
-                        }
+							if (MQ.Query<bool>("${Me.ActiveDisc.ID}"))
+							{
+								continue;
 
+							}
+						}
                         bool targetPC = false;
                         bool isMyPet = false;
                         bool isGroupMember = false;
