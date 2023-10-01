@@ -79,6 +79,20 @@ namespace E3NextUI
 			this.label_dps4_total.Paint += new System.Windows.Forms.PaintEventHandler(this.label_dps4_total_Paint);
 			this.label_dps5_total.Paint += new System.Windows.Forms.PaintEventHandler(this.label_dps5_total_Paint);
 			this.label_dps6_total.Paint += new System.Windows.Forms.PaintEventHandler(this.label_dps6_total_Paint);
+
+			this.label_dmg1.Paint += new System.Windows.Forms.PaintEventHandler(this.label_dmg1_Paint);
+			this.label_dmg2.Paint += new System.Windows.Forms.PaintEventHandler(this.label_dmg2_Paint);
+			this.label_dmg3.Paint += new System.Windows.Forms.PaintEventHandler(this.label_dmg3_Paint);
+			this.label_dmg4.Paint += new System.Windows.Forms.PaintEventHandler(this.label_dmg4_Paint);
+			this.label_dmg5.Paint += new System.Windows.Forms.PaintEventHandler(this.label_dmg5_Paint);
+			this.label_dmg6.Paint += new System.Windows.Forms.PaintEventHandler(this.label_dmg6_Paint);
+
+			this.label_dmg1_total.Paint += new System.Windows.Forms.PaintEventHandler(this.label_dmg1_total_Paint);
+			this.label_dmg2_total.Paint += new System.Windows.Forms.PaintEventHandler(this.label_dmg2_total_Paint);
+			this.label_dmg3_total.Paint += new System.Windows.Forms.PaintEventHandler(this.label_dmg3_total_Paint);
+			this.label_dmg4_total.Paint += new System.Windows.Forms.PaintEventHandler(this.label_dmg4_total_Paint);
+			this.label_dmg5_total.Paint += new System.Windows.Forms.PaintEventHandler(this.label_dmg5_total_Paint);
+			this.label_dmg6_total.Paint += new System.Windows.Forms.PaintEventHandler(this.label_dmg6_total_Paint);
 		}
 		protected override void OnPaintBackground(PaintEventArgs e)
 		{
@@ -277,6 +291,57 @@ namespace E3NextUI
 		private void label_dps6_total_Paint(object sender, PaintEventArgs e)
 		{
 			PaintLabel(label_dps6_total, e);
+		}
+
+		private void label_dmg1_Paint(object sender, PaintEventArgs e)
+		{
+			PaintLabel(label_dmg1, e);
+		}
+		private void label_dmg2_Paint(object sender, PaintEventArgs e)
+		{
+			PaintLabel(label_dmg2, e);
+		}
+		private void label_dmg3_Paint(object sender, PaintEventArgs e)
+		{
+			PaintLabel(label_dmg3, e);
+		}
+		private void label_dmg4_Paint(object sender, PaintEventArgs e)
+		{
+			PaintLabel(label_dmg4, e);
+		}
+		private void label_dmg5_Paint(object sender, PaintEventArgs e)
+		{
+			PaintLabel(label_dmg5, e);
+		}
+		private void label_dmg6_Paint(object sender, PaintEventArgs e)
+		{
+			PaintLabel(label_dmg6, e);
+		}
+
+
+		private void label_dmg1_total_Paint(object sender, PaintEventArgs e)
+		{
+			PaintLabel(label_dmg1_total, e);
+		}
+		private void label_dmg2_total_Paint(object sender, PaintEventArgs e)
+		{
+			PaintLabel(label_dmg2_total, e);
+		}
+		private void label_dmg3_total_Paint(object sender, PaintEventArgs e)
+		{
+			PaintLabel(label_dmg3_total, e);
+		}
+		private void label_dmg4_total_Paint(object sender, PaintEventArgs e)
+		{
+			PaintLabel(label_dmg4_total, e);
+		}
+		private void label_dmg5_total_Paint(object sender, PaintEventArgs e)
+		{
+			PaintLabel(label_dmg5_total, e);
+		}
+		private void label_dmg6_total_Paint(object sender, PaintEventArgs e)
+		{
+			PaintLabel(label_dmg6_total, e);
 		}
 		public void SetOverlayLabelData(Label control, string data)
 		{

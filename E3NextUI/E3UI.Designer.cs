@@ -804,6 +804,7 @@ namespace E3NextUI
 			this.Controls.Add(this.panelStatusPannel2);
 			this.Controls.Add(this.panelMain);
 			this.Controls.Add(this.menuStrip1);
+			this.Icon = ((System.Drawing.Icon)(resources.GetObject("$this.Icon")));
 			this.MainMenuStrip = this.menuStrip1;
 			this.Name = "E3UI";
 			this.SizeGripStyle = System.Windows.Forms.SizeGripStyle.Show;

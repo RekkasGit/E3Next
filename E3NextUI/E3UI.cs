@@ -690,7 +690,7 @@ namespace E3NextUI
                 labelYourDamageDPSValue.Text = yourDPS.ToString("N0") + " dps";
                 labelPetDamageDPSValue.Text = petDPS.ToString("N0") + " dps";
                 labelDamageShieldDPSValue.Text = dsDPS.ToString("N0") + " dps";
-                PubServer.DPSUpdates.Enqueue($"{PlayerName},{totalDPS},{yourDPS},{petDPS},{dsDPS},{totalTime}");
+                PubServer.DPSUpdates.Enqueue($"{PlayerName},{totalDPS},{totalDamage},{yourDPS},{petDPS},{dsDPS},{totalTime}");
 
             }
             

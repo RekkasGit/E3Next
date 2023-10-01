@@ -220,10 +220,18 @@ namespace E3NextUI.Server
 										//$"{PlayerName},{totalDPS},{yourDPS},{petDPS},{dsDPS},{totalTime}"
                                         Int32 indexOfFirstComma = messageReceived.IndexOf(',');
                                         Int32 indexOf2nComma = messageReceived.IndexOf(',', indexOfFirstComma + 1);
+										Int32 indexOf3rdComma = messageReceived.IndexOf(',', indexOf2nComma + 1);
+
 										string dpsValue = messageReceived.Substring(indexOfFirstComma + 1, indexOf2nComma - indexOfFirstComma - 1);
-										if(Int32.TryParse(dpsValue,out var dpsint))
+										string dmgValue = messageReceived.Substring(indexOf2nComma + 1, indexOf3rdComma - indexOf2nComma - 1);
+										if (Int32.TryParse(dpsValue,out var dpsint))
 										{
 											_overlayGroup.SetOverlayLabelData(_overlayGroup.label_dps1_total, dpsint.ToString("N0"));
+
+										}
+										if (Int32.TryParse(dmgValue, out var dmgint))
+										{
+											_overlayGroup.SetOverlayLabelData(_overlayGroup.label_dmg1_total, dmgint.ToString("N0"));
 
 										}
 									}
@@ -255,13 +263,20 @@ namespace E3NextUI.Server
 										//$"{PlayerName},{totalDPS},{yourDPS},{petDPS},{dsDPS},{totalTime}"
 										Int32 indexOfFirstComma = messageReceived.IndexOf(',');
 										Int32 indexOf2nComma = messageReceived.IndexOf(',', indexOfFirstComma + 1);
+										Int32 indexOf3rdComma = messageReceived.IndexOf(',', indexOf2nComma + 1);
+
 										string dpsValue = messageReceived.Substring(indexOfFirstComma + 1, indexOf2nComma - indexOfFirstComma - 1);
+										string dmgValue = messageReceived.Substring(indexOf2nComma + 1, indexOf3rdComma - indexOf2nComma - 1);
 										if (Int32.TryParse(dpsValue, out var dpsint))
 										{
 											_overlayGroup.SetOverlayLabelData(_overlayGroup.label_dps2_total, dpsint.ToString("N0"));
 
 										}
-										
+										if (Int32.TryParse(dmgValue, out var dmgint))
+										{
+											_overlayGroup.SetOverlayLabelData(_overlayGroup.label_dmg2_total, dmgint.ToString("N0"));
+
+										}
 									}
 
 								}
@@ -292,10 +307,18 @@ namespace E3NextUI.Server
 										//$"{PlayerName},{totalDPS},{yourDPS},{petDPS},{dsDPS},{totalTime}"
 										Int32 indexOfFirstComma = messageReceived.IndexOf(',');
 										Int32 indexOf2nComma = messageReceived.IndexOf(',', indexOfFirstComma + 1);
+										Int32 indexOf3rdComma = messageReceived.IndexOf(',', indexOf2nComma + 1);
+
 										string dpsValue = messageReceived.Substring(indexOfFirstComma + 1, indexOf2nComma - indexOfFirstComma - 1);
+										string dmgValue = messageReceived.Substring(indexOf2nComma + 1, indexOf3rdComma - indexOf2nComma - 1);
 										if (Int32.TryParse(dpsValue, out var dpsint))
 										{
 											_overlayGroup.SetOverlayLabelData(_overlayGroup.label_dps3_total, dpsint.ToString("N0"));
+
+										}
+										if (Int32.TryParse(dmgValue, out var dmgint))
+										{
+											_overlayGroup.SetOverlayLabelData(_overlayGroup.label_dmg3_total, dmgint.ToString("N0"));
 
 										}
 									}
@@ -327,10 +350,18 @@ namespace E3NextUI.Server
 										//$"{PlayerName},{totalDPS},{yourDPS},{petDPS},{dsDPS},{totalTime}"
 										Int32 indexOfFirstComma = messageReceived.IndexOf(',');
 										Int32 indexOf2nComma = messageReceived.IndexOf(',', indexOfFirstComma + 1);
+										Int32 indexOf3rdComma = messageReceived.IndexOf(',', indexOf2nComma + 1);
+
 										string dpsValue = messageReceived.Substring(indexOfFirstComma + 1, indexOf2nComma - indexOfFirstComma - 1);
+										string dmgValue = messageReceived.Substring(indexOf2nComma + 1, indexOf3rdComma - indexOf2nComma - 1);
 										if (Int32.TryParse(dpsValue, out var dpsint))
 										{
 											_overlayGroup.SetOverlayLabelData(_overlayGroup.label_dps4_total, dpsint.ToString("N0"));
+
+										}
+										if (Int32.TryParse(dmgValue, out var dmgint))
+										{
+											_overlayGroup.SetOverlayLabelData(_overlayGroup.label_dmg4_total, dmgint.ToString("N0"));
 
 										}
 									}
@@ -362,10 +393,18 @@ namespace E3NextUI.Server
 										//$"{PlayerName},{totalDPS},{yourDPS},{petDPS},{dsDPS},{totalTime}"
 										Int32 indexOfFirstComma = messageReceived.IndexOf(',');
 										Int32 indexOf2nComma = messageReceived.IndexOf(',', indexOfFirstComma + 1);
+										Int32 indexOf3rdComma = messageReceived.IndexOf(',', indexOf2nComma + 1);
+
 										string dpsValue = messageReceived.Substring(indexOfFirstComma + 1, indexOf2nComma - indexOfFirstComma - 1);
+										string dmgValue = messageReceived.Substring(indexOf2nComma + 1, indexOf3rdComma - indexOf2nComma - 1);
 										if (Int32.TryParse(dpsValue, out var dpsint))
 										{
 											_overlayGroup.SetOverlayLabelData(_overlayGroup.label_dps5_total, dpsint.ToString("N0"));
+
+										}
+										if (Int32.TryParse(dmgValue, out var dmgint))
+										{
+											_overlayGroup.SetOverlayLabelData(_overlayGroup.label_dmg5_total, dmgint.ToString("N0"));
 
 										}
 									}
@@ -397,10 +436,18 @@ namespace E3NextUI.Server
 										//$"{PlayerName},{totalDPS},{yourDPS},{petDPS},{dsDPS},{totalTime}"
 										Int32 indexOfFirstComma = messageReceived.IndexOf(',');
 										Int32 indexOf2nComma = messageReceived.IndexOf(',', indexOfFirstComma + 1);
-										string dpsValue = messageReceived.Substring(indexOfFirstComma+1, indexOf2nComma - indexOfFirstComma-1);
+										Int32 indexOf3rdComma = messageReceived.IndexOf(',', indexOf2nComma + 1);
+
+										string dpsValue = messageReceived.Substring(indexOfFirstComma + 1, indexOf2nComma - indexOfFirstComma - 1);
+										string dmgValue = messageReceived.Substring(indexOf2nComma + 1, indexOf3rdComma - indexOf2nComma - 1);
 										if (Int32.TryParse(dpsValue, out var dpsint))
 										{
 											_overlayGroup.SetOverlayLabelData(_overlayGroup.label_dps6_total, dpsint.ToString("N0"));
+
+										}
+										if (Int32.TryParse(dmgValue, out var dmgint))
+										{
+											_overlayGroup.SetOverlayLabelData(_overlayGroup.label_dmg6_total, dmgint.ToString("N0"));
 
 										}
 									}

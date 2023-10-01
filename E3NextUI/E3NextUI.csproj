@@ -36,6 +36,9 @@
     <AllowUnsafeBlocks>true</AllowUnsafeBlocks>
     <NoWarn>CS0618</NoWarn>
   </PropertyGroup>
+  <PropertyGroup>
+    <ApplicationIcon>logo-white.ico</ApplicationIcon>
+  </PropertyGroup>
   <ItemGroup>
     <Reference Include="AsyncIO, Version=0.1.69.0, Culture=neutral, PublicKeyToken=44a94435bd6f33f8, processorArchitecture=MSIL">
       <HintPath>..\packages\AsyncIO.0.1.69\lib\net40\AsyncIO.dll</HintPath>
@@ -192,6 +195,7 @@
     </ProjectReference>
   </ItemGroup>
   <ItemGroup>
+    <Content Include="logo-white.ico" />
     <Content Include="Resources\icon-expand.png" />
     <Content Include="Resources\icon_struct_hide_collapsed.png" />
   </ItemGroup>

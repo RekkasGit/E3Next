@@ -207,7 +207,7 @@ namespace E3Core.Classes
             CharacterSettings.LoadKeyData($"{melodyName} Melody", "Song", E3.CharacterSettings.ParsedData, _songs);
             if(_songs.Count>0)
             {
-                MQ.Write($"\aoStart Melody:\ag{melodyName}");
+                E3.Bots.Broadcast($"\aoStart Melody:\ag{melodyName}");
                 MQ.Cmd("/stopsong");
                 _forceOverride = force;
                 _playingMelody = true;

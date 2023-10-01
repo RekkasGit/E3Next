@@ -276,6 +276,13 @@ namespace E3Core.Processors
 
 			foreach (var spell in E3.CharacterSettings.BockedBuffs)
 			{
+				if(!String.IsNullOrWhiteSpace(spell.Ifs))
+				{
+					if(!Casting.Ifs(spell.Ifs))
+					{
+						continue;
+					}
+				}
 				if (spell.SpellID > 0)
 				{
 					if (MQ.Query<bool>($"${{Me.Buff[{spell.CastName}]}}") || MQ.Query<bool>($"${{Me.Song[{spell.CastName}]}}"))
