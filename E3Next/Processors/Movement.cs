@@ -547,7 +547,8 @@ namespace E3Core.Processors
                         double currentX = MQ.Query<double>("${Me.X}");
                         double currentY = MQ.Query<double>("${Me.Y}");
                         double currentZ = MQ.Query<double>("${Me.Z}");
-                        extraArgs += $" tome={currentX}/{currentY}/{currentZ}";
+                        int zoneID = MQ.Query<int>("${Zone.ID}");
+                        extraArgs += $" tome={currentX}/{currentY}/{currentZ}/{zoneID}";
                     }
                     E3.Bots.BroadcastCommandToGroup($"/followoff all{extraArgs}",x);
                 }
@@ -569,7 +570,10 @@ namespace E3Core.Processors
                                     double xval;
                                     double yval;
                                     double zval;
-                                    if(double.TryParse(xyz[0], out xval))
+                                    int zoneID;
+                                    int.TryParse(xyz[3], out zoneID);
+                                    if (MQ.Query<int>("${Zone.ID}") != zoneID) return; 
+                                    if (double.TryParse(xyz[0], out xval))
                                     {
                                         if (double.TryParse(xyz[1], out yval))
                                         {
