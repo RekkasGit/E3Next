@@ -209,6 +209,7 @@ namespace E3Core.Settings
 
 		public Dictionary<string, string> PetWeapons = new Dictionary<string, string>();
         public bool AutoPetWeapons = false;
+        public bool KeepOpenInventorySlot = false;
         public bool IgnorePetWeaponRequests = false;
         public bool AutoCanni = false;
         public int MalosTotemSpellGem;
@@ -389,6 +390,7 @@ namespace E3Core.Settings
             if (CharacterClass == Class.Magician)
             {
                 LoadKeyData("Magician", "Auto-Pet Weapons (On/Off)", ParsedData, ref AutoPetWeapons);
+                LoadKeyData("Magician", "Keep Open Inventory Slot (On/Off)", ParsedData, ref KeepOpenInventorySlot);
                 LoadKeyData("Magician", "Ignore Pet Weapon Requests (On/Off)", ParsedData, ref IgnorePetWeaponRequests);
                 LoadKeyData("Magician", "Pet Weapons", ParsedData, PetWeapons);
             }
@@ -801,6 +803,7 @@ namespace E3Core.Settings
                 section = newFile.Sections.GetSectionData("Magician");
                 section.Keys.AddKey("Auto-Pet Weapons (On/Off)", "Off");
                 section.Keys.AddKey("Ignore Pet Weapon Requests (On/Off)", "Off");
+                section.Keys.AddKey("Keep Open Inventory Slot (On/Off)", "Off");
                 section.Keys.AddKey("Pet Weapons", "");
             }
 

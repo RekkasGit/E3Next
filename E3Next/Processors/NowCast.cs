@@ -90,6 +90,10 @@ namespace E3Core.Processors
                     if (castResult != CastReturn.CAST_SUCCESS)
                     {
                         E3.Bots.Broadcast($"\arNowcast of {spell} unsuccessful due to {castResult}!");
+                        if (castResult== CastReturn.CAST_NOTREADY)
+                        {
+                            Basics.PrintE3TReport(new Spell(spell));
+                        }
                     }
                 }
             });

@@ -249,6 +249,7 @@ namespace E3Core.Classes
         [ClassInvoke(Data.Class.Magician)]
         public static void KeepOpenInvSlot()
         {
+            if (!E3.CharacterSettings.KeepOpenInventorySlot) return;
             if (Basics.InCombat()) return;
             if (!e3util.ShouldCheck(ref _nextInventoryCheck, _nextInventoryCheckInterval)) return;
 
