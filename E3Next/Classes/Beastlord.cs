@@ -51,6 +51,7 @@ namespace E3Core.Classes
             {
                 foreach(var character in E3.CharacterSettings.FocusedParagonCharacters)
                 {
+                    MQ.Cmd($"/dobserve {character} -q Me.PctMana");
                     if (_spawns.TryByName(character, out var characterSpawn))
                     {
                         if (!Casting.CheckReady(E3.CharacterSettings.FocusedParagonSpell)) return;
