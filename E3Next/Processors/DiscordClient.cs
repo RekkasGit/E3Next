@@ -12,6 +12,7 @@ using Discord.Commands;
 using System.Windows.Input;
 using Discord.Webhook;
 using NetMQ;
+using System.Windows.Forms;
 
 namespace E3Core.Processors
 {
@@ -62,6 +63,8 @@ namespace E3Core.Processors
             catch (Exception ex)
             {
                 E3.Bots.Broadcast(ex.Message);
+                E3.Bots.Broadcast(ex.InnerException.Message);
+                Clipboard.SetText(ex.InnerException.StackTrace);
             }
         }
 
