@@ -32,14 +32,14 @@ namespace E3Core.Processors
                     }
                 });
 
-                EventProcessor.RegisterEvent("SayChat", "(.+) says, '(.+)'", (x) =>
+                EventProcessor.RegisterEvent("SayChat", "(.+) says, '(.+)'", async (x) =>
                 {
                     if (x.match.Groups.Count == 3)
                     {
                         var character = x.match.Groups[1].Value;
                         var message = x.match.Groups[2].Value;
 
-                        SendMessageToDiscord($"**{character} Guild**: {message}");
+                        await SendMessageToDiscord($"**{character} Guild**: {message}");
                     }
                 });
 
