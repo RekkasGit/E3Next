@@ -68,9 +68,10 @@ namespace E3Core.Settings
         public bool AutoTrade_Guild = false;
         public bool AutoTrade_Raid = false;
         public List<string> General_E3NetworkAddPathToMonitor = new List<string>();
-
-
-
+        public string DiscordBotToken = string.Empty;
+        public string DiscordBotCharacter = string.Empty;
+        public ulong DiscordGuildChannelId = 0;
+        public string DiscordGuildChatChannelWebhookUrl = string.Empty;
 
 		public Int32 Movement_StandingStill = 10000;
         public Int32 Movement_ChaseDistanceMin = 10;
@@ -135,9 +136,14 @@ namespace E3Core.Settings
             LoadKeyData("General", "NetworkMethod",parsedData, ref General_NetworkMethod);
 			LoadKeyData("General", "E3NetworkAddPathToMonitor", parsedData,General_E3NetworkAddPathToMonitor);
 			LoadKeyData("General", "Network Default Broadcast (Group,All,AllInZoneOrRaid)", parsedData, ref General_BroadCast_Default);
-
             LoadKeyData("General", "Heal While Navigating (On/Off)", parsedData, ref General_HealWhileNavigating);
             LoadKeyData("General", "Beep Notifications (On/Off)", parsedData, ref General_BeepNotifications);
+
+            LoadKeyData("Discord Bot", "Token", parsedData, ref DiscordBotToken);
+            LoadKeyData("Discord Bot", "Character Name", parsedData, ref DiscordBotCharacter);
+            LoadKeyData("Discord Bot", "Guild Channel ID", parsedData, ref DiscordGuildChannelId);
+            LoadKeyData("Discord Bot", "Guild Channel Webhook URL", parsedData, ref DiscordGuildChatChannelWebhookUrl);
+
 
             LoadKeyData("Misc", "Automatically Use Misfit Box (On/Off)", parsedData, ref AutoMisfitBox);
             LoadKeyData("Misc", "Turn Player Attack Off During Enrage (On/Off)", parsedData, ref AttackOffOnEnrage);
@@ -303,6 +309,13 @@ namespace E3Core.Settings
 
             section.Keys.AddKey("Heal While Navigating (On/Off)","On");
             section.Keys.AddKey("Beep Notifications (On/Off)", "On");
+
+            newFile.Sections.AddSection("Discord Bot");
+            section = newFile.Sections.GetSectionData("Discord Bot");
+            section.Keys.AddKey("Token", "");
+            section.Keys.AddKey("Character Name", "");
+            section.Keys.AddKey("Guild Channel ID", "");
+            section.Keys.AddKey("Guild Channel Webhook URL", "");
             
             //Misc
             newFile.Sections.AddSection("Misc");

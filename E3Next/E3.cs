@@ -376,9 +376,14 @@ namespace E3Core.Processors
 				//as there is an order dependecy
 				Setup.Init();
 
+				if (GeneralSettings.DiscordBotCharacter == CurrentName)
+				{ 
+					DiscordClient.Init(); 
+				}
+
                 IsInit = true;
                 MonoCore.Spawns.RefreshTimePeriodInMS = 500;
-            }
+			}
 
 
         }

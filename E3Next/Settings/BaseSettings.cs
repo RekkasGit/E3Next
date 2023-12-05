@@ -145,6 +145,27 @@ namespace E3Core.Settings
                 }
             }
         }
+
+        public static void LoadKeyData(string sectionKey, string Key, IniData parsedData, ref ulong valueToSet)
+        {
+            _log.Write($"{sectionKey} {Key}");
+            var section = parsedData.Sections[sectionKey];
+            if (section != null)
+            {
+                var keyData = section.GetKeyData(Key);
+                if (keyData != null)
+                {
+                    foreach (var data in keyData.ValueList)
+                    {
+                        if (!String.IsNullOrWhiteSpace(data))
+                        {
+                            valueToSet = (ulong)Convert.ToInt64(data);
+                        }
+                    }
+                }
+            }
+        }
+
         public static void LoadKeyData(string sectionKey, string Key, IniData parsedData, ref DefaultBroadcast valueToSet)
         {
             _log.Write($"{sectionKey} {Key}");
