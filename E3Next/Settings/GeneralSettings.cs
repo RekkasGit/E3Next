@@ -72,6 +72,7 @@ namespace E3Core.Settings
         public string DiscordBotCharacter = string.Empty;
         public ulong DiscordGuildChannelId = 0;
         public string DiscordGuildChatChannelWebhookUrl = string.Empty;
+        public ulong DiscordServerId = 0;
 
 		public Int32 Movement_StandingStill = 10000;
         public Int32 Movement_ChaseDistanceMin = 10;
@@ -142,6 +143,7 @@ namespace E3Core.Settings
             LoadKeyData("Discord Bot", "Token", parsedData, ref DiscordBotToken);
             LoadKeyData("Discord Bot", "Character Name", parsedData, ref DiscordBotCharacter);
             LoadKeyData("Discord Bot", "Guild Channel ID", parsedData, ref DiscordGuildChannelId);
+            LoadKeyData("Discord Bot", "Server ID", parsedData, ref DiscordServerId);
             LoadKeyData("Discord Bot", "Guild Channel Webhook URL", parsedData, ref DiscordGuildChatChannelWebhookUrl);
 
 
@@ -315,6 +317,7 @@ namespace E3Core.Settings
             section.Keys.AddKey("Token", "");
             section.Keys.AddKey("Character Name", "");
             section.Keys.AddKey("Guild Channel ID", "");
+            section.Keys.AddKey("Server ID", "");
             section.Keys.AddKey("Guild Channel Webhook URL", "");
             
             //Misc
