@@ -24,15 +24,7 @@ namespace E3Core.Processors
         {
             try
             {
-                EventProcessor.RegisterEvent("GuildChat", "(.+) tells the guild, '(.+)'", (x) =>
-                {
-                    if (x.match.Groups.Count > 1)
-                    {
-
-                    }
-                });
-
-                EventProcessor.RegisterEvent("SayChat", "(.+) says, '(.+)'", async (x) =>
+                EventProcessor.RegisterEvent("GuildChat", "(.+) tells the guild, '(.+)'", async (x) =>
                 {
                     if (x.match.Groups.Count == 3)
                     {
@@ -78,7 +70,7 @@ namespace E3Core.Processors
         // connection and it is now safe to access the cache.
         private static async Task ReadyAsync()
         {
-            PubClient._pubCommands.Enqueue($"/say Connected");
+            SendMessageToGame($"/gu Connected");
             await SendMessageToDiscord("Connected");
         }
 
@@ -91,9 +83,14 @@ namespace E3Core.Processors
                 return Task.CompletedTask;
 
             if (message.Author is SocketGuildUser guildUser)
-                PubClient._pubCommands.Enqueue($"/say {guildUser.DisplayName} from discord: {message.Content}");
+                SendMessageToGame($"/gu {guildUser.DisplayName} from discord: {message.Content}");
 
             return Task.CompletedTask;
+        }
+
+        private static void SendMessageToGame(string message)
+        {
+            PubClient._pubCommands.Enqueue(message);
         }
 
         // For better functionality & a more developer-friendly approach to handling any kind of interaction, refer to:
