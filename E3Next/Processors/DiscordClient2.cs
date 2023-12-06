@@ -100,9 +100,9 @@ namespace E3Core.Processors
 
         public async static void Init()
         {
-            //try
-            //{
-            EventProcessor.RegisterEvent("GuildChat", "(.+) tells the guild, '(.+)'", async (x) =>
+            try
+            {
+                EventProcessor.RegisterEvent("GuildChat", "(.+) tells the guild, '(.+)'", async (x) =>
             {
                 if (x.match.Groups.Count == 3)
                 {
@@ -113,55 +113,64 @@ namespace E3Core.Processors
                 }
             });
 
-            //EventProcessor.RegisterEvent("SayChat", "(.+) says, '(.+)'", async (x) =>
-            //{
-            //    if (x.match.Groups.Count == 3)
-            //    {
-            //        var character = x.match.Groups[1].Value;
-            //        var message = x.match.Groups[2].Value;
+                //EventProcessor.RegisterEvent("SayChat", "(.+) says, '(.+)'", async (x) =>
+                //{
+                //    if (x.match.Groups.Count == 3)
+                //    {
+                //        var character = x.match.Groups[1].Value;
+                //        var message = x.match.Groups[2].Value;
 
-            //        await SendMessageToDiscord($"**{character} Guild**: {message}");
-            //    }
-            //});
+                //        await SendMessageToDiscord($"**{character} Guild**: {message}");
+                //    }
+                //});
 
-            //    var config = new DiscordSocketConfig
-            //    {
-            //        GatewayIntents = GatewayIntents.AllUnprivileged | GatewayIntents.MessageContent
-            //    };
+                //    var config = new DiscordSocketConfig
+                //    {
+                //        GatewayIntents = GatewayIntents.AllUnprivileged | GatewayIntents.MessageContent
+                //    };
 
-            //    WebhookClient = new DiscordWebhookClient(E3.GeneralSettings.DiscordGuildChatChannelWebhookUrl);
+                //    WebhookClient = new DiscordWebhookClient(E3.GeneralSettings.DiscordGuildChatChannelWebhookUrl);
 
-            //    SocketClient = new DiscordSocketClient(config);
-            //    SocketClient.Log += LogAsync;
-            //    SocketClient.Ready += ReadyAsync;
-            //    SocketClient.MessageReceived += MessageReceivedAsync;
-            //    SocketClient.InteractionCreated += InteractionCreatedAsync;
+                //    SocketClient = new DiscordSocketClient(config);
+                //    SocketClient.Log += LogAsync;
+                //    SocketClient.Ready += ReadyAsync;
+                //    SocketClient.MessageReceived += MessageReceivedAsync;
+                //    SocketClient.InteractionCreated += InteractionCreatedAsync;
 
-            //    await SocketClient.LoginAsync(TokenType.Bot, E3.GeneralSettings.DiscordBotToken);
-            //    await SocketClient.StartAsync();
-            //    await Task.Delay(Timeout.Infinite);
-            //}
-            //catch (Exception ex)
-            //{
-            //    E3.Bots.Broadcast(ex.Message);
-            //    E3.Bots.Broadcast(ex.InnerException.Message);
-            //    Clipboard.SetText(ex.InnerException.StackTrace);
-            //}
+                //    await SocketClient.LoginAsync(TokenType.Bot, E3.GeneralSettings.DiscordBotToken);
+                //    await SocketClient.StartAsync();
+                //    await Task.Delay(Timeout.Infinite);
+                //}
+                //catch (Exception ex)
+                //{
+                //    E3.Bots.Broadcast(ex.Message);
+                //    E3.Bots.Broadcast(ex.InnerException.Message);
+                //    Clipboard.SetText(ex.InnerException.StackTrace);
+                //}
 
-            _e3ConfigFilePath = MQ.Query<string>("${MacroQuest.Path[config]}");
-            _lastDiscordMessageIdFilePath = $"{_e3ConfigFilePath}\\e3 Macro Inis\\{_lastDiscordMessageIdFileName}";
-            _httpClient = new HttpClient();
-            _httpClient.DefaultRequestHeaders.Authorization = new System.Net.Http.Headers.AuthenticationHeaderValue("Bot", $"{E3.GeneralSettings.DiscordBotToken}");
+                _e3ConfigFilePath = MQ.Query<string>("${MacroQuest.Path[config]}");
+                _lastDiscordMessageIdFilePath = $"{_e3ConfigFilePath}\\e3 Macro Inis\\{_lastDiscordMessageIdFileName}";
+                _httpClient = new HttpClient();
+                _httpClient.DefaultRequestHeaders.Authorization = new System.Net.Http.Headers.AuthenticationHeaderValue("Bot", $"{E3.GeneralSettings.DiscordBotToken}");
 
-            var userUrl = $"{_baseDiscordUrl}/users/@me";
-            var userResponse = await SendHttpRequest(userUrl);
-            var myUser = JsonConvert.DeserializeObject<DiscordUser>(userResponse);
+                var userUrl = $"{_baseDiscordUrl}/users/@me";
+                var userResponse = await SendHttpRequest(userUrl);
+                var myUser = JsonConvert.DeserializeObject<DiscordUser>(userResponse);
 
-            var guildUrl = $"{_baseDiscordUrl}/guilds/{E3.GeneralSettings.DiscordServerId}/members?limit=1000";
-            var guildResponse = await SendHttpRequest(guildUrl);
-            var guildMembers = JsonConvert.DeserializeObject<GuildMember[]>(guildResponse);
-            _discordUserIdToNameMap = guildMembers.ToDictionary(k => k.user.id, v => v.nick ?? v.user.global_name ?? v.user.username);
-            _discordBotUserId = myUser?.id ?? 0;
+                var guildUrl = $"{_baseDiscordUrl}/guilds/{E3.GeneralSettings.DiscordServerId}/members?limit=1000";
+                var guildResponse = await SendHttpRequest(guildUrl);
+                var guildMembers = JsonConvert.DeserializeObject<GuildMember[]>(guildResponse);
+                _discordUserIdToNameMap = guildMembers.ToDictionary(k => k.user.id, v => v.nick ?? v.user.global_name ?? v.user.username);
+                _discordBotUserId = myUser?.id ?? 0;
+            }
+            catch (Exception e)
+            {
+                var sb = new StringBuilder();
+                sb.AppendLine(e.Message);
+                sb.AppendLine(e.InnerException.Message);
+                sb.AppendLine(e.StackTrace);
+                Clipboard.SetText(sb.ToString());
+            }
         }
 
         [ClassInvoke(Data.Class.All)]
