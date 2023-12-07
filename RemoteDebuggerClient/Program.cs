@@ -37,10 +37,10 @@ namespace MQServerClient
             Core.mqInstance.Cmd("/remotedebugdelay 1");
             while (true)
             {
-                
+                Console.WriteLine($"{DateTime.Now} Start of e3 scan loop");
                 E3.Process();
                 EventProcessor.ProcessEventsInQueues();
-                System.Threading.Thread.Sleep(1000);
+                //System.Threading.Thread.Sleep(1000);
             }
 
         }
@@ -423,7 +423,7 @@ namespace MQServerClient
 
         public T Query<T>(string query)
         {
-            Console.WriteLine(query);
+            // Console.WriteLine(query);
             if (_requestMsg.IsInitialised)
             {
                 _requestMsg.Close();

@@ -36,16 +36,19 @@ namespace E3Core.Processors
             }
 			//Init is here to make sure we only Init while InGame, as some queries will fail if not in game
 			if (!IsInit) { Init(); }
-
+			var sw = new Stopwatch();
+			sw.Start();
 			//auto 5 min gc check
 			CheckGC();
-	
+			WriteToConsoleAndResetStopwatch(sw, "CheckGC");
 			//update all states, important.
 			StateUpdates();
-			RefreshCaches();
+            WriteToConsoleAndResetStopwatch(sw, "StateUpdates");
+            RefreshCaches();
+            WriteToConsoleAndResetStopwatch(sw, "RefreshCaches");
 
-			//kickout after updates if paused
-			if (IsPaused()) return;
+            //kickout after updates if paused
+            if (IsPaused()) return;
 
 			//global action taken key, used by adv settings
 			//if true, adv settings will stop processing for this loop.
@@ -53,19 +56,30 @@ namespace E3Core.Processors
          
 			
             BeforeAdvancedSettingsCalls();
-			if (!ActionTaken)
+            WriteToConsoleAndResetStopwatch(sw, "BeforeAdvancedSettingsCalls");
+            if (!ActionTaken)
 			{
 				//All the advanced Ini stuff here
 				AdvancedSettingsCalls();
-			}
+                WriteToConsoleAndResetStopwatch(sw, "AdvancedSettingsCalls");
+            }
             AfterAdvancedSettingsCalls();
-			
-			//attribute class calls
-			ClassMethodCalls();
+            WriteToConsoleAndResetStopwatch(sw, "AfterAdvancedSettingsCalls");
 
-			//final cleanup/actions after the main loop has done processing
-			FinalCalls();
+            //attribute class calls
+            ClassMethodCalls();
+            WriteToConsoleAndResetStopwatch(sw, "ClassMethodCalls");
+
+            //final cleanup/actions after the main loop has done processing
+            FinalCalls();
+            WriteToConsoleAndResetStopwatch(sw, "FinalCalls");
         }
+
+		private static void WriteToConsoleAndResetStopwatch(Stopwatch sw, string method)
+		{
+			Console.WriteLine($"it took {sw.ElapsedMilliseconds}ms to execute {method}");
+			sw.Restart();
+		}
 		
 		private static void BeforeAdvancedSettingsCalls()
 		{

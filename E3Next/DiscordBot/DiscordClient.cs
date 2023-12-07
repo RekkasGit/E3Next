@@ -1,15 +1,13 @@
 ﻿using E3Core.DiscordBot;
-using E3Core.Server;
 using E3Core.Settings;
 using E3Core.Utility;
 using MonoCore;
-using Newtonsoft.Json;
+using RestSharp;
 using System;
 using System.Collections.Generic;
 using System.Linq;
-using System.Net.Http;
 using System.Text;
-using System.Threading.Tasks;
+using System.Text.Json;
 using System.Windows.Forms;
 
 namespace E3Core.Processors
@@ -18,23 +16,22 @@ namespace E3Core.Processors
     {
         private static Int64 _nextDiscordMessagePoll = 0;
         private static Int64 _nextDiscordMessagePollInterval = 1000;
-        private static HttpClient _httpClient;
+        private static RestClient _restClient;
         private static string _lastDiscordMessageIdFileName = "Last Discord Message Id.txt";
         private static string _e3ConfigFilePath;
         private static string _lastDiscordMessageIdFilePath;
         private static ulong _discordBotUserId;
-        private static string _baseDiscordUrl = "https://discord.com/api";
-        private static string _messageUrl;
+        private static string _messageResource = $"channels/{E3.GeneralSettings.DiscordGuildChannelId}/messages";
         private static IMQ MQ = E3.MQ;
         private static Dictionary<ulong, string> _discordUserIdToNameMap = new Dictionary<ulong, string>();
         private static Dictionary<string, ulong> _discordNameToUserIdMap = new Dictionary<string, ulong>();
         private static bool _isInit;
 
-        public async static void Init()
+        public static void Init()
         {
             try
             {
-                EventProcessor.RegisterEvent("GuildChat", "(.+) tells the guild, '(.+)'", async (x) =>
+                EventProcessor.RegisterEvent("GuildChat", "(.+) tells the guild, '(.+)'", (x) =>
                 {
                     if (x.match.Groups.Count == 3)
                     {
@@ -62,7 +59,7 @@ namespace E3Core.Processors
                             }
                         }
 
-                        await SendMessageToDiscord($"**{character} Guild**: {messageToSend}");
+                        SendMessageToDiscord($"**{character} Guild**: {messageToSend}");
                     }
                 });
 
@@ -70,26 +67,23 @@ namespace E3Core.Processors
                 _lastDiscordMessageIdFilePath = $"{_e3ConfigFilePath}\\e3 Macro Inis\\{_lastDiscordMessageIdFileName}";
 
                 E3.Bots.Broadcast("newing up http client");
-                _httpClient = new HttpClient();
-                E3.Bots.Broadcast("setting http client headers");
-                _httpClient.DefaultRequestHeaders.Authorization = new System.Net.Http.Headers.AuthenticationHeaderValue("Bot", $"{E3.GeneralSettings.DiscordBotToken}");
-                _messageUrl = $"{_baseDiscordUrl}/channels/{E3.GeneralSettings.DiscordGuildChannelId}/messages";
+                var restOptions = new RestClientOptions("https://discord.com/api");
+                _restClient = new RestClient(restOptions);
+                _restClient.AddDefaultHeader("Authorization", $"Bot {E3.GeneralSettings.DiscordBotToken}");
 
-                var userUrl = $"{_baseDiscordUrl}/users/@me";
-                var userResponse = await SendHttpRequest(userUrl);
-                var myUser = JsonConvert.DeserializeObject<DiscordUser>(userResponse);
+                var myUserRequest = new RestRequest("users/@me");
+                var myUser = _restClient.Get<DiscordUser>(myUserRequest);
 
                 _discordBotUserId = myUser?.id ?? 0;
 
-                var guildUrl = $"{_baseDiscordUrl}/guilds/{E3.GeneralSettings.DiscordServerId}/members?limit=1000";
-                var guildResponse = await SendHttpRequest(guildUrl);
-                var guildMembers = JsonConvert.DeserializeObject<GuildMember[]>(guildResponse);
+                var guildRequest = new RestRequest($"guilds/{E3.GeneralSettings.DiscordServerId}/members").AddParameter("limit", 1000);
+                var guildMembers = _restClient.Get<GuildMember[]>(guildRequest);
 
                 _discordUserIdToNameMap = guildMembers.ToDictionary(k => k.user.id, v => v.nick ?? v.user.global_name ?? v.user.username);
                 _discordNameToUserIdMap = guildMembers.ToDictionary(k => k.nick ?? k.user.global_name ?? k.user.username, v => v.user.id);
 
-                await SendMessageToDiscord("Connected");
-                SendMessageToGame("/gu Connected");
+                //SendMessageToDiscord("Connected");
+                //SendMessageToGame("/gu Connected");
 
                 _isInit = true;
             }
@@ -98,30 +92,29 @@ namespace E3Core.Processors
                 E3.Bots.Broadcast($"Caught exception {e.Message} in discord client init");
                 var sb = new StringBuilder();
                 sb.AppendLine(e.Message);
-                sb.AppendLine(e.InnerException.Message);
+                sb.AppendLine(e.InnerException?.Message);
                 sb.AppendLine(e.StackTrace);
                 Clipboard.SetText(sb.ToString());
             }
         }
 
         [ClassInvoke(Data.Class.All)]
-        public static async void PollDiscord()
+        public static void PollDiscord()
         {
             if (!_isInit) return;
             if (!e3util.ShouldCheck(ref _nextDiscordMessagePoll, _nextDiscordMessagePollInterval)) return;
 
-            var messageUrl = _messageUrl;
+            var request = new RestRequest(_messageResource);
             if (System.IO.File.Exists(_lastDiscordMessageIdFilePath))
             {
                 var lastMessageId = System.IO.File.ReadAllText(_lastDiscordMessageIdFilePath);
                 if (!string.IsNullOrEmpty(lastMessageId))
                 {
-                    messageUrl += $"?after={lastMessageId}";
+                    request.AddParameter("after", lastMessageId);
                 }
             }
 
-            var content = await SendHttpRequest(messageUrl);
-            var messages = JsonConvert.DeserializeObject<DiscordMessage[]>(content);
+            var messages = _restClient.Get<DiscordMessage[]>(request);
             foreach (var message in messages.OrderBy(o => o.timestamp))
             {
                 if (message.author.id == _discordBotUserId)
@@ -129,7 +122,7 @@ namespace E3Core.Processors
 
                 if (message.content == "!status")
                 {
-                    await SendMessageToDiscord("Connected");
+                    SendMessageToDiscord("Connected");
                 }
                 else if (_discordUserIdToNameMap.TryGetValue(message.author.id, out var user))
                 {
@@ -146,32 +139,14 @@ namespace E3Core.Processors
 
         private static void SendMessageToGame(string message)
         {
-            PubClient._pubCommands.Enqueue(message);
+            MQ.Cmd(message);
         }
 
-        private static async Task SendMessageToDiscord(string message)
+        private static void SendMessageToDiscord(string message)
         {
-            await PostHttpRequest(_messageUrl, JsonConvert.SerializeObject(new DiscordMessageRequest { content = message }));
-        }
-
-        private static async Task<string> SendHttpRequest(string url)
-        {
-            var request = new HttpRequestMessage(HttpMethod.Get, url);
-            var response = await _httpClient.SendAsync(request);
-            return await ValidateAndReadResponse(response);
-        }
-
-        private static async Task<string> PostHttpRequest(string url, string content)
-        {
-            var httpContent = new StringContent(content, Encoding.UTF8, "application/json");
-            var response = await _httpClient.PostAsync(url, httpContent);
-            return await ValidateAndReadResponse(response);
-        }
-
-        private static async Task<string> ValidateAndReadResponse(HttpResponseMessage response)
-        {
-            response.EnsureSuccessStatusCode();
-            return await response.Content.ReadAsStringAsync();
+            var request = new RestRequest($"channels/{E3.GeneralSettings.DiscordGuildChannelId}/messages");
+            request.AddStringBody(JsonSerializer.Serialize(new DiscordMessageRequest { content = message }), DataFormat.Json);
+            _restClient.Post(request);
         }
     }
 }
