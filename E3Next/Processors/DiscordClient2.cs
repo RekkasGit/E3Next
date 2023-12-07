@@ -34,6 +34,8 @@ namespace E3Core.Processors
         private static string _baseDiscordUrl = "https://discord.com/api";
         private static IMQ MQ = E3.MQ;
         private static Dictionary<ulong, string> _discordUserIdToNameMap = new Dictionary<ulong, string>();
+        private static Dictionary<string, ulong> _discordNameToUserIdMap = new Dictionary<string, ulong>();
+        private static bool _isInit;
 
         public class DiscordMessage
         {
@@ -108,8 +110,20 @@ namespace E3Core.Processors
                 {
                     var character = x.match.Groups[1].Value;
                     var message = x.match.Groups[2].Value;
+                    var messageToSend = message;
 
-                    await SendMessageToDiscord($"**{character} Guild**: {message}");
+                    //var atIndex = message.IndexOf("@");
+                    //if (atIndex > -1)
+                    //{
+                    //    var spaceIndex = message.IndexOf(" ", atIndex);
+                    //    var atName = message.Substring(atIndex + 1, message.IndexOf(" "));
+                    //    if (_discordNameToUserIdMap.TryGetValue(character, out var discordUserId))
+                    //    {
+                    //        messageToSend = message.Replace($"@{character}", $"<@{discordUserId}>");
+                    //    }
+                    //}
+
+                    await SendMessageToDiscord($"**{character} Guild**: {messageToSend}");
                 }
             });
 
@@ -161,7 +175,13 @@ namespace E3Core.Processors
                 var guildResponse = await SendHttpRequest(guildUrl);
                 var guildMembers = JsonConvert.DeserializeObject<GuildMember[]>(guildResponse);
                 _discordUserIdToNameMap = guildMembers.ToDictionary(k => k.user.id, v => v.nick ?? v.user.global_name ?? v.user.username);
+                _discordNameToUserIdMap = guildMembers.ToDictionary(k => k.nick ?? k.user.global_name ?? k.user.username, v => v.user.id);
                 _discordBotUserId = myUser?.id ?? 0;
+
+                await SendMessageToDiscord("Connected");
+                SendMessageToGame("/gu Connected");
+
+                _isInit = true;
             }
             catch (Exception e)
             {
@@ -176,6 +196,7 @@ namespace E3Core.Processors
         [ClassInvoke(Data.Class.All)]
         public static async void PollDiscord()
         {
+            if (!_isInit) return;
             if (!e3util.ShouldCheck(ref _nextDiscordMessagePoll, _nextDiscordMessagePollInterval)) return;
             var url = $"{_baseDiscordUrl}/channels/{E3.GeneralSettings.DiscordGuildChannelId}/messages";
             if (System.IO.File.Exists(_lastDiscordMessageIdFilePath))
@@ -191,7 +212,12 @@ namespace E3Core.Processors
             foreach (var message in messages.OrderBy(o => o.timestamp))
             {
                 if (message.author.id == _discordBotUserId)
-                    continue;
+                {
+                    if (message.content == "!status")
+                        await SendMessageToDiscord("Connected");
+
+                    continue; 
+                }
 
                 if (_discordUserIdToNameMap.TryGetValue(message.author.id, out var user))
                     SendMessageToGame($"/gu {user} from discord: {message.content}");
