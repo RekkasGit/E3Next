@@ -68,7 +68,10 @@ namespace E3Core.Processors
 
                 _e3ConfigFilePath = MQ.Query<string>("${MacroQuest.Path[config]}");
                 _lastDiscordMessageIdFilePath = $"{_e3ConfigFilePath}\\e3 Macro Inis\\{_lastDiscordMessageIdFileName}";
+
+                E3.Bots.Broadcast("newing up http client");
                 _httpClient = new HttpClient();
+                E3.Bots.Broadcast("setting http client headers");
                 _httpClient.DefaultRequestHeaders.Authorization = new System.Net.Http.Headers.AuthenticationHeaderValue("Bot", $"{E3.GeneralSettings.DiscordBotToken}");
                 _messageUrl = $"{_baseDiscordUrl}/channels/{E3.GeneralSettings.DiscordGuildChannelId}/messages";
 
@@ -92,6 +95,7 @@ namespace E3Core.Processors
             }
             catch (Exception e)
             {
+                E3.Bots.Broadcast($"Caught exception {e.Message} in discord client init");
                 var sb = new StringBuilder();
                 sb.AppendLine(e.Message);
                 sb.AppendLine(e.InnerException.Message);
