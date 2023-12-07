@@ -378,7 +378,7 @@ namespace E3Core.Processors
 
 				if (GeneralSettings.DiscordBotCharacter == CurrentName)
 				{ 
-					DiscordClient2.Init(); 
+					DiscordClient.Init(); 
 				}
 
                 IsInit = true;
