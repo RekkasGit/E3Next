@@ -67,54 +67,61 @@ namespace E3Discord
 
         public static void PollDiscord()
         {
-            string lastMessageId = string.Empty;
-            if (System.IO.File.Exists(_lastDiscordMessageIdFilePath))
+            try
             {
-                lastMessageId = System.IO.File.ReadAllText(_lastDiscordMessageIdFilePath);
+                string lastMessageId = string.Empty;
+                if (System.IO.File.Exists(_lastDiscordMessageIdFilePath))
+                {
+                    lastMessageId = System.IO.File.ReadAllText(_lastDiscordMessageIdFilePath);
+                }
+
+                var messages = ApiLibrary.ApiLibrary.GetMessagesFromDiscord(lastMessageId);
+                if (messages.Length > 0)
+                    WriteMessageToConsole($"Got {messages.Length} messages from discord", ConsoleColor.Green);
+
+                foreach (var message in messages.OrderBy(o => o.timestamp))
+                {
+                    var preEmojiStripLength = message.content.Length;
+                    var messageContent = Regex.Replace(message.content, @"\p{Cs}", "");
+                    var postEmojiStripLength = messageContent.Length;
+                    if (string.IsNullOrEmpty(messageContent))
+                    {
+                        WriteMessageToConsole("Skipped message because it only contained an emoji", ConsoleColor.Yellow);
+                        continue;
+                    }
+                    else if (postEmojiStripLength < preEmojiStripLength)
+                    {
+                        WriteMessageToConsole("Stripped emoji out of discord message", ConsoleColor.Yellow);
+                    }
+
+                    if (message.author.id == _discordBotUserId)
+                        continue;
+
+                    if (string.Equals(messageContent, "!status", StringComparison.OrdinalIgnoreCase))
+                    {
+                        SendMessageToDiscord("Chatbot Connected :fire:");
+                    }
+                    else if (string.Equals(messageContent, "!joke", StringComparison.OrdinalIgnoreCase))
+                    {
+                        var joke = ApiLibrary.ApiLibrary.GetAJoke();
+                        SendMessageToDiscord(joke.joke);
+                        SendMessageToGame($"/gu {joke.joke}");
+                    }
+                    else if (_discordUserIdToNameMap.TryGetValue(message.author.id, out var user))
+                    {
+                        SendMessageToGame($"/gu {user} from discord: {messageContent}");
+                    }
+                }
+
+                var lastMessage = messages.FirstOrDefault();
+                if (lastMessage != null)
+                {
+                    System.IO.File.WriteAllText(_lastDiscordMessageIdFilePath, lastMessage.id.ToString());
+                }
             }
-
-            var messages = ApiLibrary.ApiLibrary.GetMessagesFromDiscord(lastMessageId);
-            if (messages.Length > 0)
-                WriteMessageToConsole($"Got {messages.Length} messages from discord", ConsoleColor.Green);
-
-            foreach (var message in messages.OrderBy(o => o.timestamp))
+            catch (Exception e)
             {
-                var preEmojiStripLength = message.content.Length;
-                var messageContent = Regex.Replace(message.content, @"\p{Cs}", "");
-                var postEmojiStripLength = messageContent.Length;
-                if (string.IsNullOrEmpty(messageContent))
-                {
-                    WriteMessageToConsole("Skipped message because it only contained an emoji", ConsoleColor.Yellow);
-                    continue;
-                }
-                else if (postEmojiStripLength < preEmojiStripLength)
-                { 
-                    WriteMessageToConsole("Stripped emoji out of discord message", ConsoleColor.Yellow); 
-                }
-
-                if (message.author.id == _discordBotUserId)
-                    continue;
-
-                if (string.Equals(messageContent, "!status", StringComparison.OrdinalIgnoreCase))
-                {
-                    SendMessageToDiscord("Chatbot Connected :fire:");
-                }
-                else if (string.Equals(messageContent, "!joke", StringComparison.OrdinalIgnoreCase))
-                {
-                    var joke = ApiLibrary.ApiLibrary.GetAJoke();
-                    SendMessageToDiscord(joke.joke);
-                    SendMessageToGame($"/gu {joke.joke}");
-                }
-                else if (_discordUserIdToNameMap.TryGetValue(message.author.id, out var user))
-                {
-                    SendMessageToGame($"/gu {user} from discord: {messageContent}");
-                }
-            }
-
-            var lastMessage = messages.FirstOrDefault();
-            if (lastMessage != null) 
-            {
-                System.IO.File.WriteAllText(_lastDiscordMessageIdFilePath, lastMessage.id.ToString());
+                WriteMessageToConsole($"Exception {e.Message} occurred in PollDiscord method: {e.StackTrace}", ConsoleColor.Red);
             }
         }
 
