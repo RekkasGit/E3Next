@@ -135,7 +135,7 @@ namespace E3Core.Server
         {
             var dllFullPath = Assembly.GetExecutingAssembly().CodeBase.Replace("file:///", "").Replace("/", "\\").Replace("e3.dll", "");
 #if DEBUG
-            dllFullPath = "C:\\Code\\E3next\\E3Discord\\bin\\Debug\\";
+            dllFullPath = "C:\\Code\\E3next\\E3Next\\bin\\Debug\\";
 #endif
             var processName = $"{dllFullPath}E3Discord.exe";
             if (DiscordProcess == null)

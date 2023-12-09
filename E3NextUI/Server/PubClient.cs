@@ -190,7 +190,7 @@ namespace E3NextUI.Server
                                 {
                                     var message = $"**{messageParts[0]} Guild**: {messageParts[1]}";
                                     WriteMessageToConsole($"Sending message: \"{message}\" to discord", ConsoleColor.Green);
-                                    ApiLibrary.ApiLibrary.SendMessageToDiscord(message).GetAwaiter().GetResult();
+                                    ApiLibrary.ApiLibrary.SendMessageToDiscord(message);
                                 }
                             }
 						}

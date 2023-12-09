@@ -15,21 +15,21 @@ namespace ApiLibrary
         public static string DiscordMessageResource;
         public static ulong DiscordServerId;
 
-        public static async Task<DiscordUser> GetDiscordBotUser()
+        public static DiscordUser GetDiscordBotUser()
         {
             var restClient = GetRestClient(_baseDiscordUrl);
             var myUserRequest = new RestRequest("users/@me");
-            return await restClient.GetAsync<DiscordUser>(myUserRequest);
+            return restClient.Get<DiscordUser>(myUserRequest);
         }
 
-        public static async Task<GuildMember[]> GetServerMembers()
+        public static GuildMember[] GetServerMembers()
         {
             var restClient = GetRestClient(_baseDiscordUrl);
             var guildRequest = new RestRequest($"guilds/{DiscordServerId}/members").AddParameter("limit", 1000);
-            return await restClient.GetAsync<GuildMember[]>(guildRequest);
+            return restClient.Get<GuildMember[]>(guildRequest);
         }
 
-        public static async Task<DiscordMessage[]> GetMessagesFromDiscord(string lastMessageId)
+        public static DiscordMessage[] GetMessagesFromDiscord(string lastMessageId)
         {
             var request = new RestRequest(DiscordMessageResource);
             if (!string.IsNullOrEmpty(lastMessageId))
@@ -38,24 +38,24 @@ namespace ApiLibrary
             }
 
             var restClient = GetRestClient(_baseDiscordUrl);
-            return await restClient.GetAsync<DiscordMessage[]>(request);
+            return restClient.Get<DiscordMessage[]>(request);
         }
 
-        public static async Task SendMessageToDiscord(string message)
+        public static void SendMessageToDiscord(string message)
         {
             var restClient = GetRestClient(_baseDiscordUrl);
             var request = new RestRequest(DiscordMessageResource);
             request.AddStringBody(JsonSerializer.Serialize(new DiscordMessageRequest { content = message }), DataFormat.Json);
-            await restClient.PostAsync(request);
+            restClient.Post(request);
         }
 
-        public static async Task<JokeResponse> GetAJoke()
+        public static JokeResponse GetAJoke()
         {
             var restOptions = new RestClientOptions(_baseJokeUrl);
             var client = new RestClient(_httpClient, restOptions);
             var jokeRequest = new RestRequest();
             jokeRequest.AddHeader("Accept", "application/json");
-            return await client.GetAsync<JokeResponse>(jokeRequest);
+            return client.Get<JokeResponse>(jokeRequest);
         }
 
         private static RestClient GetRestClient(string url)

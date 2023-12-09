@@ -20,7 +20,7 @@ namespace E3Discord
 
         public static bool IsInit;
 
-        public static async void Init(string[] args) 
+        public static void Init(string[] args) 
         { 
             try
             {
@@ -54,7 +54,7 @@ namespace E3Discord
                 SetupDiscordBotUser();
                 SetupDiscordUserMaps();
 
-                await ApiLibrary.ApiLibrary.SendMessageToDiscord("Chatbot Connected :fire:");
+                ApiLibrary.ApiLibrary.SendMessageToDiscord("Chatbot Connected :fire:");
                 SendMessageToGame("/gu Chatbot Connected");
 
                 IsInit = true;
@@ -65,7 +65,7 @@ namespace E3Discord
             }
         }
 
-        public static async void PollDiscord()
+        public static void PollDiscord()
         {
             string lastMessageId = string.Empty;
             if (System.IO.File.Exists(_lastDiscordMessageIdFilePath))
@@ -73,7 +73,7 @@ namespace E3Discord
                 lastMessageId = System.IO.File.ReadAllText(_lastDiscordMessageIdFilePath);
             }
 
-            var messages = await ApiLibrary.ApiLibrary.GetMessagesFromDiscord(lastMessageId);
+            var messages = ApiLibrary.ApiLibrary.GetMessagesFromDiscord(lastMessageId);
             if (messages.Length > 0)
                 WriteMessageToConsole($"Got {messages.Length} messages from discord", ConsoleColor.Green);
 
@@ -101,7 +101,7 @@ namespace E3Discord
                 }
                 else if (string.Equals(messageContent, "!joke", StringComparison.OrdinalIgnoreCase))
                 {
-                    var joke = await ApiLibrary.ApiLibrary.GetAJoke();
+                    var joke = ApiLibrary.ApiLibrary.GetAJoke();
                     SendMessageToDiscord(joke.joke);
                     SendMessageToGame($"/gu {joke.joke}");
                 }
@@ -118,12 +118,12 @@ namespace E3Discord
             }
         }
 
-        public static async void SendMessageToDiscord(string message)
+        public static void SendMessageToDiscord(string message)
         {
             try
             {
                 WriteMessageToConsole($"Sending message: \"{message}\" to discord", ConsoleColor.Green);
-                await ApiLibrary.ApiLibrary.SendMessageToDiscord(message);
+                ApiLibrary.ApiLibrary.SendMessageToDiscord(message);
             }
             catch (Exception e)
             {
@@ -131,16 +131,16 @@ namespace E3Discord
             }
         }
 
-        private static async void SetupDiscordBotUser()
+        private static void SetupDiscordBotUser()
         {
-            var myUser = await ApiLibrary.ApiLibrary.GetDiscordBotUser();
+            var myUser = ApiLibrary.ApiLibrary.GetDiscordBotUser();
             _discordBotUserId = myUser?.id ?? 0;
             WriteMessageToConsole($"Discord bot user id is {_discordBotUserId}", ConsoleColor.Green);
         }
 
-        private async static void SetupDiscordUserMaps()
+        private static void SetupDiscordUserMaps()
         {
-            var guildMembers = await ApiLibrary.ApiLibrary.GetServerMembers();
+            var guildMembers = ApiLibrary.ApiLibrary.GetServerMembers();
             _discordUserIdToNameMap = guildMembers.ToDictionary(k => k.user.id, v => v.nick ?? v.user.global_name ?? v.user.username);
             _discordNameToUserIdMap = guildMembers.ToDictionary(k => k.nick ?? k.user.global_name ?? k.user.username, v => v.user.id);
         }
