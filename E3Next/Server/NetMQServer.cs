@@ -3,6 +3,7 @@ using MonoCore;
 using System;
 using System.Collections.Generic;
 using System.Diagnostics;
+using System.IO;
 using System.Linq;
 using System.Net;
 using System.Net.Sockets;
@@ -26,7 +27,8 @@ namespace E3Core.Server
 		public static Int32 RouterPort;
         public static Int32 PubPort;
         public static Int32 PubClientPort;
-        public static System.Diagnostics.Process UIProcess;
+        public static Process UIProcess;
+        public static Process DiscordProcess;
         private static IMQ MQ = E3.MQ;
 
         
@@ -74,10 +76,15 @@ namespace E3Core.Server
             {
                 ToggleUI();
             });
+			EventProcessor.RegisterCommand("/e3discord", (x) =>
+            {
+                ToggleDiscordBot();
+            });
 			EventProcessor.RegisterCommand("/e3ui-debug", (x) =>
             {
                 Int32 processID = System.Diagnostics.Process.GetCurrentProcess().Id;
-                MQ.Write($"{PubPort} {RouterPort} {PubClientPort} {processID}");
+                var path = $"{Assembly.GetExecutingAssembly().CodeBase.Replace("file:///", "").Replace("/", "\\").Replace("e3.dll", "")}E3NextUI.exe";
+                MQ.Write($"{path} {PubPort} {RouterPort} {PubClientPort} {processID}");
             });
             EventProcessor.RegisterCommand("/e3ui-kill", (x) =>
             {
@@ -97,6 +104,7 @@ namespace E3Core.Server
             if (UIProcess == null)
             {
                 string dllFullPath = Assembly.GetExecutingAssembly().CodeBase.Replace("file:///", "").Replace("/", "\\").Replace("e3.dll", "");
+                dllFullPath = "C:\\Code\\E3next\\E3NextUI\\bin\\Debug\\";
                 Int32 processID = System.Diagnostics.Process.GetCurrentProcess().Id;
                 MQ.Write("Trying to start:" + dllFullPath + @"E3NextUI.exe");
                 UIProcess = System.Diagnostics.Process.Start(dllFullPath + @"E3NextUI.exe", $"{PubPort} {RouterPort} {PubClientPort} {processID}");
@@ -107,6 +115,9 @@ namespace E3Core.Server
                 if (UIProcess.HasExited)
                 {
                     string dllFullPath = Assembly.GetExecutingAssembly().CodeBase.Replace("file:///", "").Replace("/", "\\").Replace("e3.dll", "");
+#if DEBUG
+                    dllFullPath = "C:\\Code\\E3next\\E3NextUI\\bin\\Debug\\";
+#endif
                     Int32 processID = System.Diagnostics.Process.GetCurrentProcess().Id;
                     //start up a new one.
                     MQ.Write("Trying to start:" + dllFullPath + @"E3NextUI.exe");
@@ -119,6 +130,40 @@ namespace E3Core.Server
                 }
             }
         }
+
+        static void ToggleDiscordBot()
+        {
+            var dllFullPath = Assembly.GetExecutingAssembly().CodeBase.Replace("file:///", "").Replace("/", "\\").Replace("e3.dll", "");
+#if DEBUG
+            dllFullPath = "C:\\Code\\E3next\\E3Discord\\bin\\Debug\\";
+#endif
+            var processName = $"{dllFullPath}E3Discord.exe";
+            if (DiscordProcess == null)
+            {
+                var existingDiscordProcess = Process.GetProcessesByName("E3Discord.exe");
+                if (existingDiscordProcess.Any())
+                {
+                    MQ.Write("\agAnother E3Discord is already runnning. Not starting another one");
+                    return;
+                }
+                Int32 processID = System.Diagnostics.Process.GetCurrentProcess().Id;
+                MQ.Write("\ayTrying to start:" + processName);
+                var commandLineArgs = $"{PubPort} {RouterPort} {PubClientPort} {E3.GeneralSettings.DiscordBotToken} " +
+                    $"{E3.GeneralSettings.DiscordGuildChannelId} {E3.GeneralSettings.DiscordServerId} {processID}";
+                DiscordProcess = System.Diagnostics.Process.Start(dllFullPath + "E3Discord.exe", commandLineArgs);
+                MQ.Write($"\agStarted {processName}");
+            }
+            else
+            {
+                MQ.Write($"\ayKilling {processName}");
+                if (!DiscordProcess.HasExited)
+                    DiscordProcess.Kill();
+
+                DiscordProcess = null;
+                MQ.Write("\agIt's dead Jim");
+            }
+        }
+
         /// <summary>
         /// best way to find a free open port that i can figure out
         /// windows won't reuse the port for a bit, so safe to open/close -> reuse.

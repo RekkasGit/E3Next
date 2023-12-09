@@ -1,5 +1,6 @@
 ﻿using E3Core.Classes;
 using E3Core.Data;
+using E3Core.Server;
 using E3Core.Settings;
 using E3Core.Settings.FeatureSettings;
 using E3Core.Utility;
@@ -189,7 +190,20 @@ namespace E3Core.Processors
                     }
                 }
             });
-			EventProcessor.RegisterCommand("/e3treport", (x) =>
+
+            EventProcessor.RegisterEvent("GuildChat", "(.+) tells the guild, '(.+)'", (x) =>
+            {
+                if (x.match.Groups.Count == 3)
+                {
+                    var character = x.match.Groups[1].Value;
+                    var message = x.match.Groups[2].Value;
+                    var messageToSend = message;
+
+                    PubServer.AddTopicMessage("GuildChatForDiscord", $"{character}|{message}");
+                }
+            });
+
+            EventProcessor.RegisterCommand("/e3treport", (x) =>
 			{
                 if(x.args.Count > 0)
                 {

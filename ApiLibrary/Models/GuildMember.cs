@@ -1,6 +1,6 @@
 ﻿using System;
 
-namespace E3Core.DiscordBot
+namespace ApiLibrary.Models
 {
     public class GuildMember
     {

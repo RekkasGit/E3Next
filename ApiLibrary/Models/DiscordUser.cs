@@ -1,4 +1,4 @@
-﻿namespace E3Core.DiscordBot
+﻿namespace ApiLibrary.Models
 {
     public class DiscordUser
     {
