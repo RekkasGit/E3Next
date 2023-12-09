@@ -69,9 +69,7 @@ namespace E3Core.Settings
         public bool AutoTrade_Raid = false;
         public List<string> General_E3NetworkAddPathToMonitor = new List<string>();
         public string DiscordBotToken = string.Empty;
-        public string DiscordBotCharacter = string.Empty;
         public ulong DiscordGuildChannelId = 0;
-        public string DiscordGuildChatChannelWebhookUrl = string.Empty;
         public ulong DiscordServerId = 0;
 
 		public Int32 Movement_StandingStill = 10000;
@@ -141,10 +139,8 @@ namespace E3Core.Settings
             LoadKeyData("General", "Beep Notifications (On/Off)", parsedData, ref General_BeepNotifications);
 
             LoadKeyData("Discord Bot", "Token", parsedData, ref DiscordBotToken);
-            LoadKeyData("Discord Bot", "Character Name", parsedData, ref DiscordBotCharacter);
             LoadKeyData("Discord Bot", "Guild Channel ID", parsedData, ref DiscordGuildChannelId);
             LoadKeyData("Discord Bot", "Server ID", parsedData, ref DiscordServerId);
-            LoadKeyData("Discord Bot", "Guild Channel Webhook URL", parsedData, ref DiscordGuildChatChannelWebhookUrl);
 
 
             LoadKeyData("Misc", "Automatically Use Misfit Box (On/Off)", parsedData, ref AutoMisfitBox);
@@ -315,10 +311,8 @@ namespace E3Core.Settings
             newFile.Sections.AddSection("Discord Bot");
             section = newFile.Sections.GetSectionData("Discord Bot");
             section.Keys.AddKey("Token", "");
-            section.Keys.AddKey("Character Name", "");
             section.Keys.AddKey("Guild Channel ID", "");
             section.Keys.AddKey("Server ID", "");
-            section.Keys.AddKey("Guild Channel Webhook URL", "");
             
             //Misc
             newFile.Sections.AddSection("Misc");
