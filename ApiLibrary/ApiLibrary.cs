@@ -1,5 +1,6 @@
 ﻿using ApiLibrary.Models;
 using RestSharp;
+using System;
 using System.Net.Http;
 using System.Text.Json;
 using System.Threading.Tasks;
@@ -43,6 +44,7 @@ namespace ApiLibrary
 
         public static void SendMessageToDiscord(string message)
         {
+            WriteMessageToConsole($"Sending message: \"{message}\" to discord", ConsoleColor.Yellow);
             var restClient = GetRestClient(_baseDiscordUrl);
             var request = new RestRequest(DiscordMessageResource);
             request.AddStringBody(JsonSerializer.Serialize(new DiscordMessageRequest { content = message }), DataFormat.Json);
@@ -65,6 +67,12 @@ namespace ApiLibrary
             restClient.AddDefaultHeader("Authorization", $"Bot {DiscordBotToken}");
 
             return restClient;
+        }
+
+        private static void WriteMessageToConsole(string message, ConsoleColor consoleColor)
+        {
+            Console.ForegroundColor = consoleColor;
+            Console.WriteLine($"{DateTime.Now}: {message}");
         }
     }
 }

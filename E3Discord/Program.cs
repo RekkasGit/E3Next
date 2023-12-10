@@ -27,11 +27,11 @@ namespace E3Discord
                 {
                     Process.GetProcessById(int.Parse(args[7]));
                 }
-                // kill the chatbot process if the parent process is gone
+                // kill the Chatbot process if the parent process is gone
                 catch (ArgumentException)
                 {
-                    DiscordMessager.SendMessageToDiscord("Chatbot Disconnected :sob:");
-                    DiscordMessager.SendMessageToGame("Chatbot Disconnected");
+                    DiscordMessager.SendMessageToDiscord("Disconnected :sob:");
+                    DiscordMessager.SendMessageToGame("Disconnected");
                     Environment.Exit(0);
                 }
 
@@ -42,8 +42,8 @@ namespace E3Discord
 
         private static bool Handler()
         {
-            DiscordMessager.SendMessageToDiscord("Chatbot Disconnected :sob:");
-            DiscordMessager.SendMessageToGame("Chatbot Disconnected");
+            DiscordMessager.SendMessageToDiscord("Disconnected :sob:");
+            DiscordMessager.SendMessageToGame("Disconnected");
             Environment.Exit(0);
 
             return true;

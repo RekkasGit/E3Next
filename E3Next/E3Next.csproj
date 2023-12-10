@@ -175,6 +175,10 @@
     <Compile Include="Utility\e3util.cs" />
   </ItemGroup>
   <ItemGroup>
+    <ProjectReference Include="..\E3Discord\E3Discord.csproj">
+      <Project>{55537c61-1e0a-4b1e-b51f-1cd0149b5cc4}</Project>
+      <Name>E3Discord</Name>
+    </ProjectReference>
     <ProjectReference Include="..\E3NextUI\E3NextUI.csproj">
       <Project>{b2f73dbf-6758-48d3-8258-599bf07fa731}</Project>
       <Name>E3NextUI</Name>

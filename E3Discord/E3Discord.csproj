@@ -103,10 +103,6 @@
       <Project>{B2F73DBF-6758-48D3-8258-599BF07FA731}</Project>
       <Name>E3NextUI</Name>
     </ProjectReference>
-    <ProjectReference Include="..\E3Next\E3Next.csproj">
-      <Project>{ca025b4a-d09d-48ad-bf6c-7c303c8b5cb9}</Project>
-      <Name>E3Next</Name>
-    </ProjectReference>
   </ItemGroup>
   <Import Project="$(MSBuildToolsPath)\Microsoft.CSharp.targets" />
 </Project>

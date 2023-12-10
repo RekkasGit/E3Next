@@ -183,13 +183,10 @@ namespace E3NextUI.Server
 							}
                             else if (messageTopicReceived == "GuildChatForDiscord")
                             {
-                                Console.ForegroundColor = ConsoleColor.Magenta;
-                                Console.WriteLine($"Received guild chat message {messageReceived}");
                                 var messageParts = messageReceived.Split('|');
                                 if (messageParts.Length == 2)
                                 {
                                     var message = $"**{messageParts[0]} Guild**: {messageParts[1]}";
-                                    WriteMessageToConsole($"Sending message: \"{message}\" to discord", ConsoleColor.Green);
                                     ApiLibrary.ApiLibrary.SendMessageToDiscord(message);
                                 }
                             }

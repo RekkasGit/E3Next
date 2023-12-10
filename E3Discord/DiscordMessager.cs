@@ -1,4 +1,5 @@
-﻿using E3NextUI.Server;
+﻿using ApiLibrary.Models;
+using E3NextUI.Server;
 using System;
 using System.Collections.Generic;
 using System.Linq;
@@ -54,8 +55,8 @@ namespace E3Discord
                 SetupDiscordBotUser();
                 SetupDiscordUserMaps();
 
-                ApiLibrary.ApiLibrary.SendMessageToDiscord("Chatbot Connected :fire:");
-                SendMessageToGame("/gu Chatbot Connected");
+                ApiLibrary.ApiLibrary.SendMessageToDiscord("Connected :fire:");
+                SendMessageToGame("/gu Connected");
 
                 IsInit = true;
             }
@@ -67,6 +68,7 @@ namespace E3Discord
 
         public static void PollDiscord()
         {
+            DiscordMessage lastMessage = null;
             try
             {
                 string lastMessageId = string.Empty;
@@ -76,11 +78,15 @@ namespace E3Discord
                 }
 
                 var messages = ApiLibrary.ApiLibrary.GetMessagesFromDiscord(lastMessageId);
-                if (messages.Length > 0)
-                    WriteMessageToConsole($"Got {messages.Length} messages from discord", ConsoleColor.Green);
-
                 foreach (var message in messages.OrderBy(o => o.timestamp))
                 {
+                    lastMessage = messages.FirstOrDefault();
+
+                    // ignore the bot so we don't echo its messages
+                    if (message.author.id == _discordBotUserId)
+                        continue;
+
+                    WriteMessageToConsole($"Processing raw message \"{message.content}\" from discord", ConsoleColor.Yellow);
                     var preEmojiStripLength = message.content.Length;
                     var messageContent = Regex.Replace(message.content, @"\p{Cs}", "");
                     var postEmojiStripLength = messageContent.Length;
@@ -94,12 +100,9 @@ namespace E3Discord
                         WriteMessageToConsole("Stripped emoji out of discord message", ConsoleColor.Yellow);
                     }
 
-                    if (message.author.id == _discordBotUserId)
-                        continue;
-
                     if (string.Equals(messageContent, "!status", StringComparison.OrdinalIgnoreCase))
                     {
-                        SendMessageToDiscord("Chatbot Connected :fire:");
+                        SendMessageToDiscord("Connected :fire:");
                     }
                     else if (string.Equals(messageContent, "!joke", StringComparison.OrdinalIgnoreCase))
                     {
@@ -109,19 +112,34 @@ namespace E3Discord
                     }
                     else if (_discordUserIdToNameMap.TryGetValue(message.author.id, out var user))
                     {
+                        if (messageContent.Contains("<@") && messageContent.Contains(">"))
+                        {
+                            var mentionStartIndex = messageContent.IndexOf("<@");
+                            var mentionEndIndex = messageContent.IndexOf('>', mentionStartIndex);
+                            var userId = messageContent.Substring(mentionStartIndex + 2, mentionEndIndex - mentionStartIndex - 2);
+                            if (_discordUserIdToNameMap.TryGetValue(ulong.Parse(userId), out var userName))
+                            {
+                                var whatToReplace = messageContent.Substring(mentionStartIndex, mentionEndIndex - mentionStartIndex + 1);
+                                messageContent = messageContent.Replace(whatToReplace, userName);
+                            }
+                        }
+
                         SendMessageToGame($"/gu {user} from discord: {messageContent}");
                     }
                 }
-
-                var lastMessage = messages.FirstOrDefault();
-                if (lastMessage != null)
-                {
-                    System.IO.File.WriteAllText(_lastDiscordMessageIdFilePath, lastMessage.id.ToString());
-                }
+            }
+            catch (FormatException)
+            {
+                WriteMessageToConsole("Message could not be parsed", ConsoleColor.Yellow);
             }
             catch (Exception e)
             {
                 WriteMessageToConsole($"Exception {e.Message} occurred in PollDiscord method: {e.StackTrace}", ConsoleColor.Red);
+            }
+            finally
+            {
+                if (lastMessage != null)
+                    System.IO.File.WriteAllText(_lastDiscordMessageIdFilePath, lastMessage.id.ToString());
             }
         }
 
@@ -129,7 +147,6 @@ namespace E3Discord
         {
             try
             {
-                WriteMessageToConsole($"Sending message: \"{message}\" to discord", ConsoleColor.Green);
                 ApiLibrary.ApiLibrary.SendMessageToDiscord(message);
             }
             catch (Exception e)
