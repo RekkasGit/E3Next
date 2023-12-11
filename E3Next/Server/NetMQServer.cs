@@ -116,7 +116,7 @@ namespace E3Core.Server
                 {
                     string dllFullPath = Assembly.GetExecutingAssembly().CodeBase.Replace("file:///", "").Replace("/", "\\").Replace("e3.dll", "");
 #if DEBUG
-                    dllFullPath = "C:\\Code\\E3next\\E3NextUI\\bin\\Debug\\";
+                    dllFullPath = "C:\\Code\\E3next\\E3Next\\bin\\Debug\\";
 #endif
                     Int32 processID = System.Diagnostics.Process.GetCurrentProcess().Id;
                     //start up a new one.
@@ -148,8 +148,9 @@ namespace E3Core.Server
                 }
                 Int32 processID = System.Diagnostics.Process.GetCurrentProcess().Id;
                 MQ.Write("\ayTrying to start:" + processName);
+                var discordMyUserId = string.IsNullOrEmpty(E3.GeneralSettings.DiscordMyUserId) ? string.Empty : E3.GeneralSettings.DiscordMyUserId;
                 var commandLineArgs = $"{PubPort} {RouterPort} {PubClientPort} {E3.GeneralSettings.DiscordBotToken} " +
-                    $"{E3.GeneralSettings.DiscordGuildChannelId} {E3.GeneralSettings.DiscordServerId} {processID}";
+                    $"{E3.GeneralSettings.DiscordGuildChannelId} {E3.GeneralSettings.DiscordServerId} {processID} {E3.GeneralSettings.DiscordMyUserId}";
                 DiscordProcess = System.Diagnostics.Process.Start(dllFullPath + "E3Discord.exe", commandLineArgs);
                 MQ.Write($"\agStarted {processName}");
             }

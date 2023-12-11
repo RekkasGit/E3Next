@@ -13,8 +13,8 @@ namespace ApiLibrary
         private static string _baseDiscordUrl = "https://discord.com/api";
         private static string _baseJokeUrl = "https://icanhazdadjoke.com";
         public static string DiscordBotToken;
-        public static string DiscordMessageResource;
-        public static ulong DiscordServerId;
+        public static string DiscordGuildChannelMessageResource;
+        public static string DiscordServerId;
 
         public static DiscordUser GetDiscordBotUser()
         {
@@ -32,7 +32,7 @@ namespace ApiLibrary
 
         public static DiscordMessage[] GetMessagesFromDiscord(string lastMessageId)
         {
-            var request = new RestRequest(DiscordMessageResource);
+            var request = new RestRequest(DiscordGuildChannelMessageResource);
             if (!string.IsNullOrEmpty(lastMessageId))
             {
                 request.AddParameter("after", lastMessageId);
@@ -42,13 +42,23 @@ namespace ApiLibrary
             return restClient.Get<DiscordMessage[]>(request);
         }
 
-        public static void SendMessageToDiscord(string message)
+        public static void SendMessageToDiscord(string message, string channelId = null)
         {
             WriteMessageToConsole($"Sending message: \"{message}\" to discord", ConsoleColor.Yellow);
             var restClient = GetRestClient(_baseDiscordUrl);
-            var request = new RestRequest(DiscordMessageResource);
-            request.AddStringBody(JsonSerializer.Serialize(new DiscordMessageRequest { content = message }), DataFormat.Json);
+            var channelResource = string.IsNullOrEmpty(channelId) ? DiscordGuildChannelMessageResource : $"channels/{channelId}/messages";
+            var request = new RestRequest(channelResource);
+            request.AddStringBody(JsonSerializer.Serialize(new { content = message }), DataFormat.Json);
             restClient.Post(request);
+        }
+
+        public static DiscordDmChannel GetDmChannel(string discordUserId)
+        {
+            var restClient = GetRestClient(_baseDiscordUrl);
+            var request = new RestRequest("users/@me/channels");
+            var body = JsonSerializer.Serialize(new { recipient_id = discordUserId });
+            request.AddStringBody(body, DataFormat.Json);
+            return restClient.Post<DiscordDmChannel>(request);
         }
 
         public static JokeResponse GetAJoke()

@@ -69,8 +69,9 @@ namespace E3Core.Settings
         public bool AutoTrade_Raid = false;
         public List<string> General_E3NetworkAddPathToMonitor = new List<string>();
         public string DiscordBotToken = string.Empty;
-        public ulong DiscordGuildChannelId = 0;
-        public ulong DiscordServerId = 0;
+        public string DiscordGuildChannelId = string.Empty;
+        public string DiscordServerId = string.Empty;
+        public string DiscordMyUserId = string.Empty;
 
 		public Int32 Movement_StandingStill = 10000;
         public Int32 Movement_ChaseDistanceMin = 10;
@@ -141,6 +142,7 @@ namespace E3Core.Settings
             LoadKeyData("Discord Bot", "Token", parsedData, ref DiscordBotToken);
             LoadKeyData("Discord Bot", "Guild Channel ID", parsedData, ref DiscordGuildChannelId);
             LoadKeyData("Discord Bot", "Server ID", parsedData, ref DiscordServerId);
+            LoadKeyData("Discord Bot", "My Discord User ID", parsedData, ref DiscordMyUserId);
 
 
             LoadKeyData("Misc", "Automatically Use Misfit Box (On/Off)", parsedData, ref AutoMisfitBox);
@@ -313,6 +315,7 @@ namespace E3Core.Settings
             section.Keys.AddKey("Token", "");
             section.Keys.AddKey("Guild Channel ID", "");
             section.Keys.AddKey("Server ID", "");
+            section.Keys.AddKey("My Discord User ID", "");
             
             //Misc
             newFile.Sections.AddSection("Misc");

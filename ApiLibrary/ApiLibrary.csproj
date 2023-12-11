@@ -74,6 +74,7 @@
   </ItemGroup>
   <ItemGroup>
     <Compile Include="ApiLibrary.cs" />
+    <Compile Include="Models\DiscordDmChannel.cs" />
     <Compile Include="Models\DiscordMessage.cs" />
     <Compile Include="Models\DiscordMessageRequest.cs" />
     <Compile Include="Models\DiscordUser.cs" />

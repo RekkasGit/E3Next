@@ -34,8 +34,11 @@ namespace E3Discord
                 var tloClientPort = int.Parse(args[2]);
                 var pubServerPort = int.Parse(args[3]);
                 _discordBotToken = args[4];
-                var discordGuildChannelId = ulong.Parse(args[5]);
-                var discordServerId = ulong.Parse(args[6]);
+                var discordGuildChannelId = args[5];
+                var discordServerId = args[6];
+                string myDiscordUserId = string.Empty;
+                if (args.Length > 8)
+                     myDiscordUserId = args[8];
 
                 _pubClient = new PubClient();
                 _pubClient.Start(pubClientPort);
@@ -47,13 +50,15 @@ namespace E3Discord
                 var configFolder = _tloClient.RequestData("${MacroQuest.Path[config]}");
 
                 ApiLibrary.ApiLibrary.DiscordBotToken = _discordBotToken;
-                ApiLibrary.ApiLibrary.DiscordMessageResource = $"channels/{discordGuildChannelId}/messages";
+                ApiLibrary.ApiLibrary.DiscordGuildChannelMessageResource = $"channels/{discordGuildChannelId}/messages";
                 ApiLibrary.ApiLibrary.DiscordServerId = discordServerId;
 
                 _lastDiscordMessageIdFilePath = $"{configFolder}\\e3 Macro Inis\\{_lastDiscordMessageIdFileName}";
 
                 SetupDiscordBotUser();
                 SetupDiscordUserMaps();
+                if (!string.IsNullOrEmpty(myDiscordUserId))
+                    SetupDiscordDmChannel(myDiscordUserId);
 
                 ApiLibrary.ApiLibrary.SendMessageToDiscord("Connected :fire:");
                 SendMessageToGame("/gu Connected");
@@ -68,6 +73,8 @@ namespace E3Discord
 
         public static void PollDiscord()
         {
+            //just a simple query to test if the bot's everquest client is logged in
+            _tloClient.RequestData("${MacroQuest.Path[config]}");
             DiscordMessage lastMessage = null;
             try
             {
@@ -143,11 +150,11 @@ namespace E3Discord
             }
         }
 
-        public static void SendMessageToDiscord(string message)
+        public static void SendMessageToDiscord(string message, string channelId = null)
         {
             try
             {
-                ApiLibrary.ApiLibrary.SendMessageToDiscord(message);
+                ApiLibrary.ApiLibrary.SendMessageToDiscord(message, channelId);
             }
             catch (Exception e)
             {
@@ -167,6 +174,12 @@ namespace E3Discord
             var guildMembers = ApiLibrary.ApiLibrary.GetServerMembers();
             _discordUserIdToNameMap = guildMembers.ToDictionary(k => k.user.id, v => v.nick ?? v.user.global_name ?? v.user.username);
             _discordNameToUserIdMap = guildMembers.ToDictionary(k => k.nick ?? k.user.global_name ?? k.user.username, v => v.user.id);
+        }
+
+        private static void SetupDiscordDmChannel(string myDiscordUserId)
+        {
+            var dmChannel = ApiLibrary.ApiLibrary.GetDmChannel(myDiscordUserId);
+            DiscordDmChannel = (dmChannel?.id ?? 0).ToString();
         }
 
         public static void SendMessageToGame(string message)
