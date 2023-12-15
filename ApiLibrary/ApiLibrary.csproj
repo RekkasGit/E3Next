@@ -78,6 +78,7 @@
     <Compile Include="Models\DiscordMessage.cs" />
     <Compile Include="Models\DiscordMessageRequest.cs" />
     <Compile Include="Models\DiscordUser.cs" />
+    <Compile Include="Models\FactResponse.cs" />
     <Compile Include="Models\GuildMember.cs" />
     <Compile Include="Models\JokeResponse.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />

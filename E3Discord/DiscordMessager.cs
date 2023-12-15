@@ -18,8 +18,16 @@ namespace E3Discord
         private static DealerClient _tloClient;
         private static PubClient _pubClient;
         private static PubServer _pubServer;
+        private static Dictionary<string, Action> _commands = new Dictionary<string, Action>(StringComparer.OrdinalIgnoreCase)
+        {
+            { "!commands", ShowCommands},
+            { "!status", SendConnectedMessage},
+            { "!joke", TellAJoke },
+            { "!fact", GetAFact }
+        };
 
         public static bool IsInit;
+        public static string DiscordDmChannel;
 
         public static void Init(string[] args) 
         { 
@@ -27,8 +35,8 @@ namespace E3Discord
             {
                 // exe path, publisher port, router port, pub client port, discord bot token, discord guild chat channel id, discord server id
                 WriteMessageToConsole($"Running init method with args {string.Join(",", args)}", ConsoleColor.Green);
-                WriteMessageToConsole("Press any key to continue...", ConsoleColor.Green);
-                Console.ReadKey();
+                //WriteMessageToConsole("Press any key to continue...", ConsoleColor.Green);
+                //Console.ReadKey();
 
                 var pubClientPort = int.Parse(args[1]);
                 var tloClientPort = int.Parse(args[2]);
@@ -60,7 +68,7 @@ namespace E3Discord
                 if (!string.IsNullOrEmpty(myDiscordUserId))
                     SetupDiscordDmChannel(myDiscordUserId);
 
-                ApiLibrary.ApiLibrary.SendMessageToDiscord("Connected :fire:");
+                SendMessageToDiscord("Connected :fire:");
                 SendMessageToGame("/gu Connected");
 
                 IsInit = true;
@@ -107,15 +115,17 @@ namespace E3Discord
                         WriteMessageToConsole("Stripped emoji out of discord message", ConsoleColor.Yellow);
                     }
 
-                    if (string.Equals(messageContent, "!status", StringComparison.OrdinalIgnoreCase))
+                    // handle commands
+                    if (messageContent.StartsWith("!"))
                     {
-                        SendMessageToDiscord("Connected :fire:");
-                    }
-                    else if (string.Equals(messageContent, "!joke", StringComparison.OrdinalIgnoreCase))
-                    {
-                        var joke = ApiLibrary.ApiLibrary.GetAJoke();
-                        SendMessageToDiscord(joke.joke);
-                        SendMessageToGame($"/gu {joke.joke}");
+                        if (_commands.TryGetValue(messageContent, out var action))
+                        {
+                            action();
+                        }
+                        else
+                        {
+                            SendMessageToDiscord($"I'm sorry, but **{messageContent}** is not a valid command - valid commands are {string.Join(", ", _commands.Keys)}");
+                        }
                     }
                     else if (_discordUserIdToNameMap.TryGetValue(message.author.id, out var user))
                     {
@@ -148,6 +158,30 @@ namespace E3Discord
                 if (lastMessage != null)
                     System.IO.File.WriteAllText(_lastDiscordMessageIdFilePath, lastMessage.id.ToString());
             }
+        }
+
+        public static void TellAJoke()
+        {
+            var joke = ApiLibrary.ApiLibrary.GetAJoke();
+            SendMessageToDiscord(joke.joke);
+            SendMessageToGame($"/gu {joke.joke}");
+        }
+
+        public static void GetAFact()
+        {
+            var fact = ApiLibrary.ApiLibrary.GetAFact();
+            SendMessageToDiscord(fact.text);
+            SendMessageToGame($"/gu {fact.text}");
+        }
+
+        public static void SendConnectedMessage()
+        {
+            SendMessageToDiscord("Connected :fire:");
+        }
+
+        public static void ShowCommands()
+        {
+            SendMessageToDiscord($"The following commands are supported: {string.Join(", ", _commands.Keys)}");
         }
 
         public static void SendMessageToDiscord(string message, string channelId = null)

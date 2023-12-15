@@ -12,6 +12,7 @@ namespace ApiLibrary
         private static HttpClient _httpClient = new HttpClient();
         private static string _baseDiscordUrl = "https://discord.com/api";
         private static string _baseJokeUrl = "https://icanhazdadjoke.com";
+        private static string _baseFactUrl = "https://uselessfacts.jsph.pl/api/v2/facts/random";
         public static string DiscordBotToken;
         public static string DiscordGuildChannelMessageResource;
         public static string DiscordServerId;
@@ -68,6 +69,15 @@ namespace ApiLibrary
             var jokeRequest = new RestRequest();
             jokeRequest.AddHeader("Accept", "application/json");
             return client.Get<JokeResponse>(jokeRequest);
+        }
+
+        public static FactResponse GetAFact()
+        {
+            var restOptions = new RestClientOptions(_baseFactUrl);
+            var client = new RestClient(_httpClient, restOptions);
+            var jokeRequest = new RestRequest();
+            jokeRequest.AddHeader("Accept", "application/json");
+            return client.Get<FactResponse>(jokeRequest);
         }
 
         private static RestClient GetRestClient(string url)
