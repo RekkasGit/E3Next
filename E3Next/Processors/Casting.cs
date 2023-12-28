@@ -117,14 +117,14 @@ namespace E3Core.Processors
 					}
 					return CastReturn.CAST_SUCCESS;
 				}
-				//bard can cast insta cast items while singing, they be special.
-				else if (E3.CurrentClass == Class.Bard && spell.NoMidSongCast == false && spell.MyCastTime <= 500 && (spell.CastType == CastType.Item || spell.CastType == CastType.AA))
-				{
-					//instant cast item, can cast while singing
-					//note bards are special and cast do insta casts while doing normal singing. they have their own 
-					//sing area, so only go here to do item/aa casts while singing. can't do IsCasting checks as it will catch
-					//on the singing... so just kick out and assume all is well.
-					if (_spawns.TryByID(targetID, out var s))
+                //bard can cast insta cast items while singing, they be special.
+                else if (E3.CurrentClass == Class.Bard && spell.NoMidSongCast == false && spell.MyCastTime <= 500 && (spell.CastType == CastType.Item || spell.CastType == CastType.AA || spell.CastType == Data.CastType.Ability))
+                {
+                    //instant cast item, can cast while singing
+                    //note bards are special and cast do insta casts while doing normal singing. they have their own 
+                    //sing area, so only go here to do item/aa casts while singing. can't do IsCasting checks as it will catch
+                    //on the singing... so just kick out and assume all is well.
+                    if (_spawns.TryByID(targetID, out var s))
 					{
 
 						String targetName = String.Empty;
@@ -137,7 +137,15 @@ namespace E3Core.Processors
 						{
 							targetName = MQ.Query<string>($"${{Spawn[id ${{Target.ID}}].CleanName}}");
 						}
-						MQ.Write($"\agBardCast {spell.CastName} \at{spell.SpellID} \am{targetName} \ao{targetID} \aw({spell.MyCastTime / 1000}sec)");
+                        //this lets bard kick regardless of current song status, otherwise will wait until between songs to kick
+                        string abilityToCheck = spell.CastName;
+                        if (spell.CastType == Data.CastType.Ability && abilityToCheck.Equals("Kick", StringComparison.OrdinalIgnoreCase))
+                        {
+                            MQ.Write($"\ag{spell.CastName} \am{targetName} \ao{targetID}");
+                            MQ.Cmd($"/doability \"{spell.CastName}\"");
+                            return CastReturn.CAST_SUCCESS;
+                        }
+                        MQ.Write($"\agBardCast {spell.CastName} \at{spell.SpellID} \am{targetName} \ao{targetID} \aw({spell.MyCastTime / 1000}sec)");
 						if (spell.CastType == CastType.AA)
 						{
 							MQ.Cmd($"/alt activate {spell.CastID}");
@@ -145,10 +153,10 @@ namespace E3Core.Processors
 							E3.ActionTaken = true;
 							return CastReturn.CAST_SUCCESS;
 						}
-						else
-						{
-							//else its an item
-							MQ.Cmd($"/useitem \"{spell.CastName}\"", 300);
+                        if (spell.CastType == CastType.Item)
+                        {
+                            //else its an item
+                            MQ.Cmd($"/useitem \"{spell.CastName}\"", 300);
 							UpdateItemInCooldown(spell);
 							E3.ActionTaken = true;
 							return CastReturn.CAST_SUCCESS;
