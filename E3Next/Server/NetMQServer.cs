@@ -99,12 +99,13 @@ namespace E3Core.Server
         /// Turns on the UI program, and then from then on, hide/shows it as needed. To close restart e3.
         /// </summary>
         static void ToggleUI()
-        { 
-          
+        {
+            string dllFullPath = Assembly.GetExecutingAssembly().CodeBase.Replace("file:///", "").Replace("/", "\\").Replace("e3.dll", "");
+#if DEBUG
+            dllFullPath = "C:\\Code\\E3next\\E3Next\\bin\\Debug\\";
+#endif
             if (UIProcess == null)
             {
-                string dllFullPath = Assembly.GetExecutingAssembly().CodeBase.Replace("file:///", "").Replace("/", "\\").Replace("e3.dll", "");
-                dllFullPath = "C:\\Code\\E3next\\E3NextUI\\bin\\Debug\\";
                 Int32 processID = System.Diagnostics.Process.GetCurrentProcess().Id;
                 MQ.Write("Trying to start:" + dllFullPath + @"E3NextUI.exe");
                 UIProcess = System.Diagnostics.Process.Start(dllFullPath + @"E3NextUI.exe", $"{PubPort} {RouterPort} {PubClientPort} {processID}");
@@ -114,10 +115,6 @@ namespace E3Core.Server
                 //we have a process, is it up?
                 if (UIProcess.HasExited)
                 {
-                    string dllFullPath = Assembly.GetExecutingAssembly().CodeBase.Replace("file:///", "").Replace("/", "\\").Replace("e3.dll", "");
-#if DEBUG
-                    dllFullPath = "C:\\Code\\E3next\\E3Next\\bin\\Debug\\";
-#endif
                     Int32 processID = System.Diagnostics.Process.GetCurrentProcess().Id;
                     //start up a new one.
                     MQ.Write("Trying to start:" + dllFullPath + @"E3NextUI.exe");

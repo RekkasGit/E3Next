@@ -203,6 +203,19 @@ namespace E3Core.Processors
                 }
             });
 
+            EventProcessor.RegisterEvent("ServerDown", "(.+) The world will be coming down in (.+)", (x) =>
+            {
+                if (x.match.Groups.Count == 3)
+                {
+                    var character = x.match.Groups[1].Value;
+                    var serverMessage = x.match.Groups[2].Value;
+                    var minutes = serverMessage.Substring(1, serverMessage.IndexOf("]") - 1);
+                    var messageToSend = serverMessage;
+
+                    PubServer.AddTopicMessage("WorldShutdown", $"{minutes}");
+                }
+            });
+
             EventProcessor.RegisterCommand("/e3treport", (x) =>
 			{
                 if(x.args.Count > 0)

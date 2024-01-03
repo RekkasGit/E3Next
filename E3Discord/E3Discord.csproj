@@ -5,7 +5,7 @@
     <Configuration Condition=" '$(Configuration)' == '' ">Debug</Configuration>
     <Platform Condition=" '$(Platform)' == '' ">AnyCPU</Platform>
     <ProjectGuid>{55537C61-1E0A-4B1E-B51F-1CD0149B5CC4}</ProjectGuid>
-    <OutputType>WinExe</OutputType>
+    <OutputType>Exe</OutputType>
     <RootNamespace>E3Discord</RootNamespace>
     <AssemblyName>E3Discord</AssemblyName>
     <TargetFrameworkVersion>v4.8</TargetFrameworkVersion>

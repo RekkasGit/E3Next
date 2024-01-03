@@ -3,6 +3,7 @@ using NetMQ;
 using NetMQ.Sockets;
 using System;
 using System.Collections.Generic;
+using System.ServiceModel.Configuration;
 using System.Threading;
 using System.Threading.Tasks;
 using System.Windows.Forms;
@@ -189,6 +190,10 @@ namespace E3NextUI.Server
                                     var message = $"**{messageParts[0]} Guild**: {messageParts[1]}";
                                     ApiLibrary.ApiLibrary.SendMessageToDiscord(message);
                                 }
+                            }
+                            else if (messageTopicReceived == "WorldShutdown")
+                            {
+
                             }
 						}
                         catch (Exception ex)

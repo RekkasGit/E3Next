@@ -42,7 +42,6 @@ namespace E3Discord
                     Environment.Exit(0);
                 }
 
-                //DiscordMessager.PollDiscord();
                 Thread.Sleep(1000);
             }
         }
