@@ -58,7 +58,8 @@ namespace E3Core.Classes
                         var pctMana = MQ.Query<int>($"${{DanNet[{character}].Observe[Me.PctMana]}}");
                         if (pctMana < E3.CharacterSettings.FocusedParagonManaPct)
                         {
-                            Casting.Cast(characterSpawn.ID, E3.CharacterSettings.FocusedParagonSpell);
+                            if (characterSpawn.Distance < E3.CharacterSettings.FocusedParagonSpell.MyRange)
+                                Casting.Cast(characterSpawn.ID, E3.CharacterSettings.FocusedParagonSpell);
                         }
                     }
                 }
