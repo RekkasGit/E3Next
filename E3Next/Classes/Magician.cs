@@ -375,6 +375,13 @@ namespace E3Core.Classes
 				}
 			}
 
+            var dskGloveItem = "Glyphwielder's Ascendant Gloves of the Summoner";
+            var hasDskGloves = MQ.Query<bool>($"${{FindItem[{dskGloveItem}]}}");
+            if (hasDskGloves)
+            {
+                MQ.Cmd($"/useitem {dskGloveItem}");
+            }
+
 			var pet = _spawns.Get().FirstOrDefault(f => f.ID == petId);
             if (pet != null)
             {

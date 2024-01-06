@@ -145,6 +145,7 @@ namespace E3Core.Settings
                 }
             }
         }
+
         public static void LoadKeyData(string sectionKey, string Key, IniData parsedData, ref DefaultBroadcast valueToSet)
         {
             _log.Write($"{sectionKey} {Key}");

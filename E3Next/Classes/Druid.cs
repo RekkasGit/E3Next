@@ -67,6 +67,10 @@ namespace E3Core.Classes
                         bool haveBardSong = MQ.Query<bool>("${Me.Buff[Selo's Sonata].ID}") || MQ.Query<bool>("${Me.Buff[Selo's Accelerating Chorus].ID}");
                         if (!haveBardSong)
                         {
+                            if (MQ.Query<int>("${Target.ID}") == MQ.Query<int>("${Me.Pet.ID}"))
+                            {
+                                MQ.Cmd("/target clear");
+                            }
 
                             Casting.Cast(E3.CurrentId, _cheetaSpell);
                         }

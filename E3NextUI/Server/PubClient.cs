@@ -3,10 +3,7 @@ using NetMQ;
 using NetMQ.Sockets;
 using System;
 using System.Collections.Generic;
-using System.Linq;
-using System.Runtime.InteropServices;
-using System.Speech.Synthesis;
-using System.Text;
+using System.ServiceModel.Configuration;
 using System.Threading;
 using System.Threading.Tasks;
 using System.Windows.Forms;
@@ -15,7 +12,6 @@ namespace E3NextUI.Server
 {
     public class PubClient
     {
-
         Task _serverThread;
         private Int32 _port;
         
@@ -186,7 +182,19 @@ namespace E3NextUI.Server
 								    ((E3UI)Application.OpenForms[0]).SetCurrentWindow(messageReceived);
 								}
 							}
+                            else if (messageTopicReceived == "GuildChatForDiscord")
+                            {
+                                var messageParts = messageReceived.Split('|');
+                                if (messageParts.Length == 2)
+                                {
+                                    var message = $"**{messageParts[0]} Guild**: {messageParts[1]}";
+                                    ApiLibrary.ApiLibrary.SendMessageToDiscord(message);
+                                }
+                            }
+                            else if (messageTopicReceived == "WorldShutdown")
+                            {
 
+                            }
 						}
                         catch (Exception ex)
                         {
@@ -194,15 +202,15 @@ namespace E3NextUI.Server
                             {
                                 ((E3UI)Application.OpenForms[0]).AddConsoleLine(ex.Message, E3UI.Console);
                             }
-
                         }
-                        
-
                     }
-
                 }
             }
         }
-       
+        private static void WriteMessageToConsole(string message, ConsoleColor consoleColor)
+        {
+            Console.ForegroundColor = consoleColor;
+            Console.WriteLine($"{DateTime.Now}: {message}");
+        }
     }
 }
