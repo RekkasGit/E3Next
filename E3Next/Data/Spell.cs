@@ -105,6 +105,10 @@ namespace E3Core.Data
                             AugSlot = 0;
                         }
                     }
+                    else if (value.Equals("UseItem", StringComparison.OrdinalIgnoreCase))
+                    {
+                        UseItem = true;
+                    }
                     else if (value.Equals("NoInterrupt", StringComparison.OrdinalIgnoreCase))
                     {
                         NoInterrupt = true;
@@ -826,6 +830,10 @@ namespace E3Core.Data
 
         // Used for item clicks, where the click effect is from an aug. This option lets E3Next resolve the correct spell effect. Augs are 1-based, so < 1 means ignore
         public Int32 AugSlot = 0;
+
+        // Indicates cast routines should use /useitem instead of /casting
+        // Work-around for casting not always working
+        public bool UseItem;
 
         public override string ToString()
         {

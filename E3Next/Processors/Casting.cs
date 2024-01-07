@@ -505,7 +505,15 @@ namespace E3Core.Processors
 										MQ.Write($"\ag{spell.CastName} \at{spell.SpellID} \am{targetName} \ao{targetID} \aw({spell.MyCastTime / 1000}sec)");
 
 										//else its an item
-										MQ.Cmd($"/casting \"{spell.CastName}|{spell.CastType.ToString()}\"");
+										if (spell.UseItem)
+										{
+											MQ.Cmd($"/useitem \"{spell.CastName}\"", 300);
+										}
+										else
+										{
+                                            MQ.Cmd($"/casting \"{spell.CastName}|{spell.CastType.ToString()}\"");
+                                        }
+
 										UpdateItemInCooldown(spell);
 										if (spell.MyCastTime > 500)
 										{
