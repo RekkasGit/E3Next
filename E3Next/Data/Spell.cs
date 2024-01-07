@@ -1,7 +1,10 @@
 ﻿using E3Core.Processors;
 using E3Core.Utility;
+
 using IniParser.Model;
+
 using MonoCore;
+
 using System;
 using System.Collections.Generic;
 using System.Diagnostics;
@@ -27,24 +30,25 @@ namespace E3Core.Data
     {
         public static Dictionary<Int32, Data.Spell> _loadedSpells = new Dictionary<int, Spell>();
         public static Dictionary<string, Data.Spell> LoadedSpellsByName = new Dictionary<string, Spell>();
-		static Dictionary<string, Int32> _spellIDLookup = new Dictionary<string, Int32>();
-		public static IMQ MQ = E3.MQ;
+        static Dictionary<string, Int32> _spellIDLookup = new Dictionary<string, Int32>();
+        public static IMQ MQ = E3.MQ;
 
 
         public static Int32 SpellIDLookup(string spellName)
         {
-            if(_spellIDLookup.TryGetValue(spellName, out var result))
+            if (_spellIDLookup.TryGetValue(spellName, out var result))
             {
                 return result;
-			}
+            }
             Int32 spellID = MQ.Query<Int32>($"${{Spell[{spellName}].ID}}");
-            if(spellID>0)
+            if (spellID > 0)
             {
-				_spellIDLookup.Add(spellName, spellID);
-			}
-			return spellID;
+                _spellIDLookup.Add(spellName, spellID);
+            }
+            return spellID;
 
-		}
+        }
+
         public Spell(string spellName, IniData parsedData = null)
         {
 
@@ -54,10 +58,9 @@ namespace E3Core.Data
 
             Parse(parsedData);
 
-
-
             QueryMQ();
-            if (this.SpellID>0 && !_loadedSpells.ContainsKey(this.SpellID))
+
+            if (this.SpellID > 0 && !_loadedSpells.ContainsKey(this.SpellID))
             {
                 //sometimes an item can have the same spellid of a spell. prevent duplicates. 
                 //should deal with this later tho, and make it off maybe castID
@@ -92,47 +95,57 @@ namespace E3Core.Data
                     {
                         SpellGem = GetArgument<Int32>(value);
                     }
+                    else if (value.StartsWith("AugSlot|", StringComparison.OrdinalIgnoreCase))
+                    {
+                        AugSlot = GetArgument<Int32>(value);
+                        if (AugSlot < 0)
+                        {
+                            E3.Bots.Broadcast($"Spell parameters for {CastName} have requested an invalid AugSlot {AugSlot}. Ignoring AugSlot.");
+                            e3util.Beep();
+                            AugSlot = 0;
+                        }
+                    }
                     else if (value.Equals("NoInterrupt", StringComparison.OrdinalIgnoreCase))
                     {
                         NoInterrupt = true;
                     }
-					else if (value.Equals("Debug", StringComparison.OrdinalIgnoreCase))
-					{
-						Debug = true;
-					}
-					else if (value.Equals("HealthMax|", StringComparison.OrdinalIgnoreCase))
-					{
-						HealthMax = GetArgument<Int32>(value);
-					}
-					else if (value.StartsWith("AfterSpell|", StringComparison.OrdinalIgnoreCase))
+                    else if (value.Equals("Debug", StringComparison.OrdinalIgnoreCase))
+                    {
+                        Debug = true;
+                    }
+                    else if (value.Equals("HealthMax|", StringComparison.OrdinalIgnoreCase))
+                    {
+                        HealthMax = GetArgument<Int32>(value);
+                    }
+                    else if (value.StartsWith("AfterSpell|", StringComparison.OrdinalIgnoreCase))
                     {
                         AfterSpell = GetArgument<String>(value);
                     }
-					else if (value.StartsWith("StackRequestTargets|", StringComparison.OrdinalIgnoreCase))
-					{
+                    else if (value.StartsWith("StackRequestTargets|", StringComparison.OrdinalIgnoreCase))
+                    {
                         string targetString = GetArgument<String>(value);
                         string[] targets = targetString.Split(new char[] { ',' }, StringSplitOptions.RemoveEmptyEntries);
-                        foreach(var target in targets)
+                        foreach (var target in targets)
                         {
                             StackRequestTargets.Add(e3util.FirstCharToUpper(target.Trim()));
                         }
-						//StackIntervalCheck
-					}
-					else if (value.StartsWith("StackCheckInterval|", StringComparison.OrdinalIgnoreCase))
-					{
-						StackIntervalCheck = GetArgument<Int64>(value);
+                        //StackIntervalCheck
+                    }
+                    else if (value.StartsWith("StackCheckInterval|", StringComparison.OrdinalIgnoreCase))
+                    {
+                        StackIntervalCheck = GetArgument<Int64>(value);
                         StackIntervalCheck *= 1000;
-					}
-					else if (value.StartsWith("StackRecastDelay|", StringComparison.OrdinalIgnoreCase))
-					{
-						StackRecastDelay = GetArgument<Int64>(value);
-						StackRecastDelay *= 1000;
-					}
-					else if (value.StartsWith("StackRequestItem|", StringComparison.OrdinalIgnoreCase))
-					{
-						StackRequestItem = GetArgument<String>(value);
-					}
-					else if (value.StartsWith("AfterCast|", StringComparison.OrdinalIgnoreCase))
+                    }
+                    else if (value.StartsWith("StackRecastDelay|", StringComparison.OrdinalIgnoreCase))
+                    {
+                        StackRecastDelay = GetArgument<Int64>(value);
+                        StackRecastDelay *= 1000;
+                    }
+                    else if (value.StartsWith("StackRequestItem|", StringComparison.OrdinalIgnoreCase))
+                    {
+                        StackRequestItem = GetArgument<String>(value);
+                    }
+                    else if (value.StartsWith("AfterCast|", StringComparison.OrdinalIgnoreCase))
                     {
                         AfterSpell = GetArgument<String>(value);
                     }
@@ -140,11 +153,11 @@ namespace E3Core.Data
                     {
                         BeforeSpell = GetArgument<String>(value);
                     }
-					else if (value.StartsWith("MinDurationBeforeRecast|", StringComparison.OrdinalIgnoreCase))
-					{
-						MinDurationBeforeRecast = GetArgument<Int64>(value) *1000;
-					}
-					else if (value.StartsWith("BeforeCast|", StringComparison.OrdinalIgnoreCase))
+                    else if (value.StartsWith("MinDurationBeforeRecast|", StringComparison.OrdinalIgnoreCase))
+                    {
+                        MinDurationBeforeRecast = GetArgument<Int64>(value) * 1000;
+                    }
+                    else if (value.StartsWith("BeforeCast|", StringComparison.OrdinalIgnoreCase))
                     {
                         BeforeSpell = GetArgument<String>(value);
                     }
@@ -157,19 +170,19 @@ namespace E3Core.Data
                         MaxTries = GetArgument<Int32>(value);
                     }
                     else if (value.StartsWith("CheckFor|", StringComparison.OrdinalIgnoreCase))
-					{
+                    {
                         string checkFors = GetArgument<String>(value);
                         string[] checkForItems = checkFors.Split(',');
 
-                        foreach(var checkFor in checkForItems)
+                        foreach (var checkFor in checkForItems)
                         {
-                            if(!CheckForCollection.ContainsKey(checkFor.Trim()))
+                            if (!CheckForCollection.ContainsKey(checkFor.Trim()))
                             {
-								CheckForCollection.Add(checkFor.Trim(), 0);
-							}
+                                CheckForCollection.Add(checkFor.Trim(), 0);
+                            }
                         }
-					}
-					else if (value.StartsWith("CastIf|", StringComparison.OrdinalIgnoreCase))
+                    }
+                    else if (value.StartsWith("CastIf|", StringComparison.OrdinalIgnoreCase))
                     {
                         CastIF = GetArgument<String>(value);
                     }
@@ -234,13 +247,13 @@ namespace E3Core.Data
                         }
 
                     }
-					else if (value.StartsWith("DelayAfterCast|", StringComparison.OrdinalIgnoreCase))
-					{
-						
-						DelayAfterCast = GetArgument<Int32>(value);
-						
-					}
-					else if (value.Equals("GoM", StringComparison.OrdinalIgnoreCase))
+                    else if (value.StartsWith("DelayAfterCast|", StringComparison.OrdinalIgnoreCase))
+                    {
+
+                        DelayAfterCast = GetArgument<Int32>(value);
+
+                    }
+                    else if (value.Equals("GoM", StringComparison.OrdinalIgnoreCase))
                     {
                         GiftOfMana = true;
                     }
@@ -417,7 +430,7 @@ namespace E3Core.Data
             {
                 CastType = CastType.Disc;
             }
-            else if (MQ.Query<bool>($"${{Me.Ability[{CastName}]}}")|| String.Compare("Slam",CastName,true)==0)
+            else if (MQ.Query<bool>($"${{Me.Ability[{CastName}]}}") || String.Compare("Slam", CastName, true) == 0)
             {
                 CastType = CastType.Ability;
             }
@@ -460,67 +473,87 @@ namespace E3Core.Data
 
                 }
 
+                string queryRoot = $"${{Me.Inventory[{invSlot}]";
+                if (AugSlot > 0)
+                {
+                    // AugSlot is 1-based
+                    int augSlots = MQ.Query<Int32>($"${queryRoot}.Augs}}");
+                    if (AugSlot <= augSlots)
+                    {
+                        queryRoot += $".Item[{AugSlot}].Clicky";
+                    }
+                    else
+                    {
+                        E3.Bots.Broadcast($"Spell parameters for {CastName} have requested an AugSlot {AugSlot} that is higher than item's available slots. Ignoring AugSlot.");
+                        e3util.Beep();
+                        AugSlot = 0;
+                    }
+                }
+
                 if (bagSlot == -1)
                 {
                     //Means this is not in a bag and in the root inventory, OR we are wearing it
-                    TargetType = MQ.Query<String>($"${{Me.Inventory[{invSlot}].Spell.TargetType}}");
-                    Duration = MQ.Query<Int32>($"${{Me.Inventory[{invSlot}].Spell.Duration}}");
-                    DurationTotalSeconds = MQ.Query<Int32>($"${{Me.Inventory[{invSlot}].Spell.Duration.TotalSeconds}}");
-                    RecastTime = MQ.Query<Int32>($"${{Me.Inventory[{invSlot}].Spell.RecastTime}}");
-                    RecoveryTime = MQ.Query<Decimal>($"${{Me.Inventory[{invSlot}].Spell.RecoveryTime}}");
-                    MyCastTime = MQ.Query<Decimal>($"${{Me.Inventory[{invSlot}].Spell.CastTime}}");
+                    TargetType = MQ.Query<String>($"{queryRoot}.Spell.TargetType}}");
+                    Duration = MQ.Query<Int32>($"{queryRoot}.Spell.Duration}}");
+                    DurationTotalSeconds = MQ.Query<Int32>($"{queryRoot}.Spell.Duration.TotalSeconds}}");
+                    RecastTime = MQ.Query<Int32>($"{queryRoot}.Spell.RecastTime}}");
+                    RecoveryTime = MQ.Query<Decimal>($"{queryRoot}.Spell.RecoveryTime}}");
+                    MyCastTime = MQ.Query<Decimal>($"{queryRoot}.Spell.CastTime}}");
 
-                    double AERange = MQ.Query<double>($"${{Me.Inventory[{invSlot}].Spell.AERange}}");
+                    double AERange = MQ.Query<double>($"{queryRoot}.Spell.AERange}}");
                     MyRange = AERange;
                     if (MyRange == 0)
                     {
-                        MyRange = MQ.Query<double>($"${{Me.Inventory[{invSlot}].Spell.MyRange}}"); ;
+                        MyRange = MQ.Query<double>($"{queryRoot}.Spell.MyRange}}"); ;
                     }
 
-                    string et = MQ.Query<String>($"${{Me.Inventory[{invSlot}].EffectType}}");
+                    string et = MQ.Query<String>($"{queryRoot}.EffectType}}");
 
                     if (et.Equals("Click Worn", StringComparison.OrdinalIgnoreCase))
                     {
                         ItemMustEquip = true;
                     }
 
-                    SpellName = MQ.Query<String>($"${{Me.Inventory[{invSlot}].Spell}}");
-                    SpellID = MQ.Query<Int32>($"${{Me.Inventory[{invSlot}].Spell.ID}}");
-                    CastID = MQ.Query<Int32>($"${{Me.Inventory[{invSlot}].ID}}");
-                    SpellType = MQ.Query<String>($"${{Me.Inventory[{invSlot}].Spell.SpellType}}");
-					IsShortBuff = MQ.Query<bool>($"${{Me.Inventory[{invSlot}].Spell.DurationWindow}}");
-				}
+                    SpellName = MQ.Query<String>($"{queryRoot}.Spell}}");
+                    SpellID = MQ.Query<Int32>($"{queryRoot}.Spell.ID}}");
+                    CastID = MQ.Query<Int32>($"${{Me.Inventory[{invSlot}].ID}}"); // Item Id
+                    SpellType = MQ.Query<String>($"{queryRoot}.Spell.SpellType}}");
+                    IsShortBuff = MQ.Query<bool>($"{queryRoot}.Spell.DurationWindow}}");
+                }
                 else
                 {
                     //1 index vs 0 index
                     bagSlot += 1;
-                    TargetType = MQ.Query<String>($"${{Me.Inventory[{invSlot}].Item[{bagSlot}].Spell.TargetType}}");
-                    Duration = MQ.Query<Int32>($"${{Me.Inventory[{invSlot}].Item[{bagSlot}].Spell.Duration}}");
-                    DurationTotalSeconds = MQ.Query<Int32>($"${{Me.Inventory[{invSlot}].Item[{bagSlot}].Spell.Duration.TotalSeconds}}");
 
-                    RecastTime = MQ.Query<Int32>($"${{Me.Inventory[{invSlot}].Item[{bagSlot}].Spell.RecastTime}}");
-                    RecoveryTime = MQ.Query<Decimal>($"${{Me.Inventory[{invSlot}].Item[{bagSlot}].Spell.RecoveryTime}}");
-                    MyCastTime = MQ.Query<Decimal>($"${{Me.Inventory[{invSlot}].Item[{bagSlot}].CastTime}}");
+                    queryRoot += $".Item[{bagSlot}]";
 
-                    double AERange = MQ.Query<double>($"${{Me.Inventory[{invSlot}].Item[{bagSlot}].Spell.AERange}}");
+                    TargetType = MQ.Query<String>($"{queryRoot}.Spell.TargetType}}");
+                    Duration = MQ.Query<Int32>($"{queryRoot}.Spell.Duration}}");
+                    DurationTotalSeconds = MQ.Query<Int32>($"{queryRoot}.Spell.Duration.TotalSeconds}}");
+
+                    RecastTime = MQ.Query<Int32>($"{queryRoot}.Spell.RecastTime}}");
+                    RecoveryTime = MQ.Query<Decimal>($"{queryRoot}.Spell.RecoveryTime}}");
+                    MyCastTime = MQ.Query<Decimal>($"{queryRoot}.CastTime}}");
+
+                    double AERange = MQ.Query<double>($"{queryRoot}.Spell.AERange}}");
                     MyRange = AERange;
                     if (MyRange == 0)
                     {
-                        MyRange = MQ.Query<double>($"${{Me.Inventory[{invSlot}].Item[{bagSlot}].Spell.MyRange}}"); ;
+                        MyRange = MQ.Query<double>($"{queryRoot}.Spell.MyRange}}"); ;
                     }
 
-                    string et = MQ.Query<String>($"${{Me.Inventory[{invSlot}].Item[{bagSlot}].EffectType}}");
+                    string et = MQ.Query<String>($"{queryRoot}.EffectType}}");
                     if (et.Equals("Click Worn", StringComparison.OrdinalIgnoreCase))
                     {
                         ItemMustEquip = true;
                     }
 
-                    SpellName = MQ.Query<String>($"${{Me.Inventory[{invSlot}].Item[{bagSlot}].Spell}}");
-                    SpellID = MQ.Query<Int32>($"${{Me.Inventory[{invSlot}].Item[{bagSlot}].Spell.ID}}");
-                    CastID = MQ.Query<Int32>($"${{Me.Inventory[{invSlot}].Item[{bagSlot}].ID}}");
-                    SpellType = MQ.Query<String>($"${{Me.Inventory[{invSlot}].Item[{bagSlot}].Spell.SpellType}}");
-					IsShortBuff = MQ.Query<bool>($"${{Me.Inventory[{invSlot}].Item[{bagSlot}].Spell.DurationWindow}}");
-				}
+                    SpellName = MQ.Query<String>($"{queryRoot}.Spell}}");
+                    SpellID = MQ.Query<Int32>($"{queryRoot}.Spell.ID}}");
+                    CastID = MQ.Query<Int32>($"${{Me.Inventory[{invSlot}].Item[{bagSlot}].ID}}"); // Item ID
+                    SpellType = MQ.Query<String>($"{queryRoot}.Spell.SpellType}}");
+                    IsShortBuff = MQ.Query<bool>($"{queryRoot}.Spell.DurationWindow}}");
+                }
 
             }
             else if (CastType == CastType.AA)
@@ -561,20 +594,20 @@ namespace E3Core.Data
 
                 }
                 int tmpMana = MQ.Query<Int32>($"${{Me.AltAbility[{CastName}].Spell.Mana}}");
-                if(tmpMana>0)
+                if (tmpMana > 0)
                 {
                     Mana = tmpMana;
                 }
                 SpellName = MQ.Query<String>($"${{Me.AltAbility[{CastName}].Spell}}");
                 SpellID = MQ.Query<Int32>($"${{Me.AltAbility[{CastName}].Spell.ID}}");
                 CastID = MQ.Query<Int32>($"${{Me.AltAbility[{CastName}].ID}}");
-				IsShortBuff = MQ.Query<bool>($"${{Me.AltAbility[{CastName}].Spell.DurationWindow}}");
+                IsShortBuff = MQ.Query<bool>($"${{Me.AltAbility[{CastName}].Spell.DurationWindow}}");
 
-			}
-			else if (CastType == CastType.Spell)
+            }
+            else if (CastType == CastType.Spell)
             {
-              
-                if(SpellInBook)
+
+                if (SpellInBook)
                 {
                     string bookNumber = MQ.Query<string>($"${{Me.Book[{CastName}]}}");
 
@@ -591,7 +624,7 @@ namespace E3Core.Data
                     SpellType = MQ.Query<String>($"${{Me.Book[{bookNumber}].SpellType}}");
                     IsShortBuff = MQ.Query<bool>($"${{Me.Book[{bookNumber}].DurationWindow}}");
 
-					if (SpellType.Equals("Detrimental", StringComparison.OrdinalIgnoreCase))
+                    if (SpellType.Equals("Detrimental", StringComparison.OrdinalIgnoreCase))
                     {
 
                         if (AERange > 0)
@@ -631,9 +664,9 @@ namespace E3Core.Data
                     Double AERange = MQ.Query<Double>($"${{Spell[{CastName}].AERange}}");
                     MyRange = MQ.Query<double>($"${{Spell[{CastName}].MyRange}}");
                     SpellType = MQ.Query<String>($"${{Spell[{CastName}].SpellType}}");
-					IsShortBuff = MQ.Query<bool>($"${{Spell[{CastName}].DurationWindow}}");
+                    IsShortBuff = MQ.Query<bool>($"${{Spell[{CastName}].DurationWindow}}");
 
-					if (SpellType.Equals("Detrimental", StringComparison.OrdinalIgnoreCase))
+                    if (SpellType.Equals("Detrimental", StringComparison.OrdinalIgnoreCase))
                     {
 
                         if (AERange > 0)
@@ -662,7 +695,7 @@ namespace E3Core.Data
 
                 }
 
-                
+
             }
             else if (CastType == CastType.Disc)
             {
@@ -680,26 +713,26 @@ namespace E3Core.Data
                 SpellID = MQ.Query<Int32>($"${{Spell[{CastName}].ID}}");
                 CastID = SpellID;
                 SpellType = MQ.Query<String>($"${{Spell[{CastName}].SpellType}}");
-				IsShortBuff = MQ.Query<bool>($"${{Spell[{CastName}].DurationWindow}}");
+                IsShortBuff = MQ.Query<bool>($"${{Spell[{CastName}].DurationWindow}}");
 
 
-			}
-			else if (CastType == CastType.Ability)
+            }
+            else if (CastType == CastType.Ability)
             {
                 //nothing to update here
             }
 
-            foreach(string key in CheckForCollection.Keys.ToList())
+            foreach (string key in CheckForCollection.Keys.ToList())
             {
                 Int32 tcID = 0;
-				if (MQ.Query<bool>($"${{Bool[${{AltAbility[{key}].Spell}}]}}"))
-				{
-					tcID = MQ.Query<Int32>($"${{AltAbility[{key}].Spell.ID}}");
-				}
-				else if (MQ.Query<bool>($"${{Bool[${{Spell[{key}].ID}}]}}"))
-				{
-					tcID = MQ.Query<Int32>($"${{Spell[{key}].ID}}");
-				}
+                if (MQ.Query<bool>($"${{Bool[${{AltAbility[{key}].Spell}}]}}"))
+                {
+                    tcID = MQ.Query<Int32>($"${{AltAbility[{key}].Spell.ID}}");
+                }
+                else if (MQ.Query<bool>($"${{Bool[${{Spell[{key}].ID}}]}}"))
+                {
+                    tcID = MQ.Query<Int32>($"${{Spell[{key}].ID}}");
+                }
                 CheckForCollection[key] = tcID;
             }
 
@@ -763,8 +796,8 @@ namespace E3Core.Data
         public Int64 StackIntervalNextCheck = 0;
         public Int64 StackRecastDelay = 0;
         public string StackRequestItem = String.Empty;
-		public Dictionary<string, Int64> StackSpellCooldown = new Dictionary<string, long>();
-		public Boolean GiftOfMana;
+        public Dictionary<string, Int64> StackSpellCooldown = new Dictionary<string, long>();
+        public Boolean GiftOfMana;
         public Int32 SpellID;
         public Int32 PctAggro;
         public String Zone = "All";
@@ -790,7 +823,9 @@ namespace E3Core.Data
         public Int64 LastUpdateCheckFromTopicUpdate = 0;
         public bool IsShortBuff = false;
         public Int32 HealthMax = 100;
-      
+
+        // Used for item clicks, where the click effect is from an aug. This option lets E3Next resolve the correct spell effect. Augs are 1-based, so < 1 means ignore
+        public Int32 AugSlot = 0;
 
         public override string ToString()
         {
@@ -806,7 +841,7 @@ namespace E3Core.Data
                 sb.Append(": ");
                 sb.Append(value);
                 sb.Append(System.Environment.NewLine);
-               
+
             }
             return sb.ToString();
         }
