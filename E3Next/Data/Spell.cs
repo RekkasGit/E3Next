@@ -481,7 +481,7 @@ namespace E3Core.Data
                 if (AugSlot > 0)
                 {
                     // AugSlot is 1-based
-                    int augSlots = MQ.Query<Int32>($"${queryRoot}.Augs}}");
+                    int augSlots = MQ.Query<Int32>($"{queryRoot}.Augs}}");
                     if (AugSlot <= augSlots)
                     {
                         queryRoot += $".Item[{AugSlot}].Clicky";
