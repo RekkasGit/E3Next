@@ -1,11 +1,12 @@
-﻿using System;
+﻿using IniParser.Parser;
+
+using System;
 using System.Text.RegularExpressions;
-using IniParser.Parser;
 
 namespace IniParser.Model.Configuration
 {
     [Obsolete("Kept for backward compatibility, just use IniParserConfiguration class")]
-    public class DefaultIniParserConfiguration : ConcatenateDuplicatedKeysIniParserConfiguration {}
+    public class DefaultIniParserConfiguration : ConcatenateDuplicatedKeysIniParserConfiguration { }
 
     /// <summary>
     ///     Defines data for a Parser configuration object.
@@ -80,7 +81,7 @@ namespace IniParser.Model.Configuration
             CommentString = ori.CommentString;
             ThrowExceptionsOnError = ori.ThrowExceptionsOnError;
 
-          // Regex values should recreate themselves.
+            // Regex values should recreate themselves.
         }
         #endregion
 
@@ -129,7 +130,7 @@ namespace IniParser.Model.Configuration
         /// <remarks>
         ///     Defaults to false (case sensitive search)
         /// </remarks>
-        public bool CaseInsensitive{ get; set; }
+        public bool CaseInsensitive { get; set; }
 
         /// <summary>
         ///     Sets the char that defines the start of a comment.
@@ -208,7 +209,7 @@ namespace IniParser.Model.Configuration
         ///     Defaults to <c>true</c>.
         /// </remarks>
         public bool AllowKeysWithoutSection { get; set; }
-			
+
         /// <summary>
         ///     If set to <c>false</c> and the <see cref="IniDataParser"/> finds duplicate keys in a
         ///     section the parser will stop with an error.
@@ -308,7 +309,7 @@ namespace IniParser.Model.Configuration
         {
             if (char.IsControl(value)
                 || char.IsWhiteSpace(value)
-                || CommentString.Contains(new string(new [] {value}))
+                || CommentString.Contains(new string(new[] { value }))
                 || value == KeyValueAssigmentChar)
                 throw new Exception(string.Format("Invalid character for section delimiter: '{0}", value));
 

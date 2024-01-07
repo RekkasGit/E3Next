@@ -1,9 +1,6 @@
 ﻿using IniParser.Model;
+
 using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
 
 namespace E3Core.Data
 {
@@ -18,7 +15,7 @@ namespace E3Core.Data
 
             MelodyName = melodyArray[0];
 
-            if(melodyArray.Length>1)
+            if (melodyArray.Length > 1)
             {
                 string ifKey = Spell.GetArgument<string>(melodyArray[1]);
                 var section = parsedData.Sections["Ifs"];

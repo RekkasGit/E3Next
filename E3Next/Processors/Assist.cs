@@ -2,12 +2,12 @@
 using E3Core.Data;
 using E3Core.Settings;
 using E3Core.Utility;
+
 using MonoCore;
+
 using System;
 using System.Collections.Generic;
-using System.Dynamic;
 using System.Linq;
-using System.Xml.Linq;
 
 namespace E3Core.Processors
 {
@@ -26,7 +26,7 @@ namespace E3Core.Processors
         private static IMQ MQ = E3.MQ;
         private static ISpawns _spawns = E3.Spawns;
         private static IList<string> _rangeTypes = new List<string>() { "Ranged", "Autofire" };
-        private static IList<string> _meleeTypes = new List<string>() { "Melee","AutoAttack" };
+        private static IList<string> _meleeTypes = new List<string>() { "Melee", "AutoAttack" };
         private static IList<string> _assistDistanceTypes = new List<string> { "MaxMelee", "off" };
         private static Int32 _assistDistance = 0;
         private static bool _assistIsEnraged = false;
@@ -98,11 +98,11 @@ namespace E3Core.Processors
                     MQ.Cmd("/assistme");
                 }
                 //else if the user  has this window focused don't do anything if they have changed targets or what not.
-                else if (manualControl && targetId >0) return;
+                else if (manualControl && targetId > 0) return;
 
                 //deal with dead mob
                 if (targetId < 1)
-                {  
+                {
                     if (!Casting.TrueTarget(AssistTargetID))
                     {
                         AssistOff();
@@ -118,8 +118,8 @@ namespace E3Core.Processors
                 }
                 else if (targetId != AssistTargetID)
                 {
-                   //somehow we are not on the proper target and not in manual control and not the issuer of /assistme, put us back on target.
-                    if(!AllowControl)
+                    //somehow we are not on the proper target and not in manual control and not the issuer of /assistme, put us back on target.
+                    if (!AllowControl)
                     {
                         Casting.TrueTarget(AssistTargetID);
                     }
@@ -140,8 +140,8 @@ namespace E3Core.Processors
             {
                 if (MQ.Query<bool>("${Me.Feigning}"))
                 {
-					if (E3.CharacterSettings.IfFDStayDown) return;
-					MQ.Cmd("/stand");
+                    if (E3.CharacterSettings.IfFDStayDown) return;
+                    MQ.Cmd("/stand");
                 }
 
                 //if range/melee
@@ -173,15 +173,15 @@ namespace E3Core.Processors
                             }
                         }
 
-                        if(!E3.CharacterSettings.Assist_Type.Equals("AutoAttack", StringComparison.OrdinalIgnoreCase))
+                        if (!E3.CharacterSettings.Assist_Type.Equals("AutoAttack", StringComparison.OrdinalIgnoreCase))
                         {
-							//are we sticking?
-							if (!AllowControl && (!MQ.Query<bool>("${Stick.Active}") || MQ.Query<string>("${Stick.Status}") == "PAUSED"))
-							{
-								StickToAssistTarget();
-							}
-						}
-                       
+                            //are we sticking?
+                            if (!AllowControl && (!MQ.Query<bool>("${Stick.Active}") || MQ.Query<string>("${Stick.Status}") == "PAUSED"))
+                            {
+                                StickToAssistTarget();
+                            }
+                        }
+
 
                     }
                     else
@@ -282,12 +282,12 @@ namespace E3Core.Processors
                 //lets do our abilities!
                 foreach (var ability in E3.CharacterSettings.MeleeAbilities)
                 {
-					
-					//why even check, if its not ready?
-					if (Casting.CheckReady(ability))
+
+                    //why even check, if its not ready?
+                    if (Casting.CheckReady(ability))
                     {
-						
-						if (!String.IsNullOrWhiteSpace(ability.Ifs))
+
+                        if (!String.IsNullOrWhiteSpace(ability.Ifs))
                         {
                             if (!Casting.Ifs(ability))
                             {
@@ -303,20 +303,20 @@ namespace E3Core.Processors
                                 continue;
                             }
                         }
-						bool shouldContinue = false;
-						if (ability.CheckForCollection.Count > 0)
-						{
-							foreach (var checkforItem in ability.CheckForCollection.Keys)
-							{
-								if (MQ.Query<bool>($"${{Bool[${{Target.Buff[{checkforItem}]}}]}}"))
-								{
-									shouldContinue = true;
-									break;
-								}
-							}
-							if (shouldContinue) { continue; }
-						}
-					
+                        bool shouldContinue = false;
+                        if (ability.CheckForCollection.Count > 0)
+                        {
+                            foreach (var checkforItem in ability.CheckForCollection.Keys)
+                            {
+                                if (MQ.Query<bool>($"${{Bool[${{Target.Buff[{checkforItem}]}}]}}"))
+                                {
+                                    shouldContinue = true;
+                                    break;
+                                }
+                            }
+                            if (shouldContinue) { continue; }
+                        }
+
                         if (pctAggro < ability.PctAggro)
                         {
                             continue;
@@ -325,7 +325,7 @@ namespace E3Core.Processors
                         if (ability.CastType == Data.CastType.Ability)
                         {
 
-                            if(String.Equals(ability.CastName,"Bash",StringComparison.OrdinalIgnoreCase))
+                            if (String.Equals(ability.CastName, "Bash", StringComparison.OrdinalIgnoreCase))
                             {
                                 //check if we can actually bash
                                 if (MQ.Query<double>("${Target.Distance}") > 14 || !(MQ.Query<bool>("${Select[${Me.Inventory[Offhand].Type},Shield]}") || MQ.Query<bool>("${Me.AltAbility[2 Hand Bash]}")))
@@ -337,7 +337,7 @@ namespace E3Core.Processors
                             if (String.Equals(ability.CastName, "Slam", StringComparison.OrdinalIgnoreCase))
                             {
                                 //check if we can actually bash
-                                if (MQ.Query<double>("${Target.Distance}") > 14 )
+                                if (MQ.Query<double>("${Target.Distance}") > 14)
                                 {
                                     continue;
                                 }
@@ -350,7 +350,7 @@ namespace E3Core.Processors
                                     continue;
                                 }
                             }
-                           
+
                             Casting.Cast(AssistTargetID, ability);
                         }
                         else if (ability.CastType == Data.CastType.AA)
@@ -391,11 +391,11 @@ namespace E3Core.Processors
                             Casting.Cast(AssistTargetID, ability);
                         }
                     }
-					if (E3.ActionTaken)
-					{
-						return;
-					}
-				}
+                    if (E3.ActionTaken)
+                    {
+                        return;
+                    }
+                }
             }
         }
 
@@ -427,7 +427,7 @@ namespace E3Core.Processors
         /// Turns assist off.
         /// </summary>
         public static void AssistOff()
-        {  
+        {
             if (MQ.Query<bool>("${Me.Combat}")) MQ.Cmd("/attack off");
             if (MQ.Query<bool>("${Me.AutoFire}"))
             {
@@ -557,10 +557,10 @@ namespace E3Core.Processors
                     {
                         _assistDistance = 33;
                     }
-					if (_assistDistance < 1)
-					{
-						_assistDistance = 25;
-					}
+                    if (_assistDistance < 1)
+                    {
+                        _assistDistance = 25;
+                    }
                     if (!E3.CharacterSettings.Assist_Type.Equals("AutoAttack", StringComparison.OrdinalIgnoreCase))
                     {
                         if (!AllowControl)
@@ -616,16 +616,16 @@ namespace E3Core.Processors
             //needed a case insensitive switch, that was easy to read, thus this.
             string sp = E3.CharacterSettings.Assist_MeleeStickPoint;
 
-           // E3.Bots.Broadcast("Setting assist range to: " + _assistDistance);
-           
+            // E3.Bots.Broadcast("Setting assist range to: " + _assistDistance);
+
             if (_stickSwitch == null)
             {
                 var stw = new Dictionary<string, Action>(10, StringComparer.OrdinalIgnoreCase);
                 stw.Add("behind", () =>
                 {
                     string delayedStrafeOption = " delaystrafe";
-					if (!E3.CharacterSettings.Assist_DelayStrafeEnabled) delayedStrafeOption = String.Empty;
-				    MQ.Cmd("/stick snaproll uw");
+                    if (!E3.CharacterSettings.Assist_DelayStrafeEnabled) delayedStrafeOption = String.Empty;
+                    MQ.Cmd("/stick snaproll uw");
                     MQ.Delay(500);
                     MQ.Delay(2000, $"${{Bool[${{Stick.Behind}} && ${{Stick.Stopped}}]}}");
                     MQ.Cmd($"/squelch /stick hold moveback behind {_assistDistance} uw{delayedStrafeOption}");
@@ -639,20 +639,20 @@ namespace E3Core.Processors
                 });
                 stw.Add("behindonce", () =>
                 {
-					string delayedStrafeOption = " delaystrafe";
-					if (!E3.CharacterSettings.Assist_DelayStrafeEnabled) delayedStrafeOption = String.Empty;
+                    string delayedStrafeOption = " delaystrafe";
+                    if (!E3.CharacterSettings.Assist_DelayStrafeEnabled) delayedStrafeOption = String.Empty;
 
-					MQ.Cmd("/stick snaproll uw");
+                    MQ.Cmd("/stick snaproll uw");
                     MQ.Delay(500);
                     MQ.Delay(2000, $"${{Bool[${{Stick.Behind}} && ${{Stick.Stopped}}]}}");
                     MQ.Cmd($"/squelch /stick hold moveback behindonce {_assistDistance} uw{delayedStrafeOption}");
                 });
                 stw.Add("pin", () =>
                 {
-					string delayedStrafeOption = " delaystrafe";
+                    string delayedStrafeOption = " delaystrafe";
                     if (!E3.CharacterSettings.Assist_DelayStrafeEnabled) delayedStrafeOption = String.Empty;
 
-					MQ.Cmd("/stick snaproll uw");
+                    MQ.Cmd("/stick snaproll uw");
                     MQ.Delay(500);
                     MQ.Delay(2000, $"${{Bool[${{Stick.Behind}} && ${{Stick.Stopped}}]}}");
                     MQ.Cmd($"/squelch /stick hold moveback pin {_assistDistance} uw{delayedStrafeOption}");
@@ -680,77 +680,77 @@ namespace E3Core.Processors
 
         private static void RegisterEvents()
         {
-           EventProcessor.RegisterCommand("/assistme", (x) =>
-           {
+            EventProcessor.RegisterCommand("/assistme", (x) =>
+            {
                 //clear in case its not reset by other means
                 //or you want to attack in enrage
                 _assistIsEnraged = false;
 
-               bool ignoreme = false;
-               if(x.args.Contains("/ignoreme"))
-               {
-                   ignoreme = true;
-                   x.args.Remove("/ignoreme");
-               }
+                bool ignoreme = false;
+                if (x.args.Contains("/ignoreme"))
+                {
+                    ignoreme = true;
+                    x.args.Remove("/ignoreme");
+                }
 
-               MQ.Cmd("/makemevisible");
-               //Rez.Reset();
-               if (x.args.Count == 0)
-               {
+                MQ.Cmd("/makemevisible");
+                //Rez.Reset();
+                if (x.args.Count == 0)
+                {
 
-                   Int32 targetID = MQ.Query<Int32>("${Target.ID}");
+                    Int32 targetID = MQ.Query<Int32>("${Target.ID}");
 
-                   if (targetID == E3.CurrentId)
-                   {
-                       E3.Bots.Broadcast("I cannot assist on myself.");
-                       return;
-                   }
-                   if(!ignoreme)
-                   {
-                       if (!e3util.FilterMe(x))
-                       {
-                           if (targetID != AssistTargetID)
-                           {
-                               AssistOff();
-                              
-                           }
-						   AllowControl = true;
-						   AssistOn(targetID, Zoning.CurrentZone.Id);
-					   }
-                   }
-                   else
-                   {
-                       //we are asking to ignore ourself, but might want to send out our pet still
-                       if (MQ.Query<Int32>("${Me.Pet.ID}") > 0)
-                       {
-                           MQ.Cmd($"/pet attack {targetID}");
-                       }
+                    if (targetID == E3.CurrentId)
+                    {
+                        E3.Bots.Broadcast("I cannot assist on myself.");
+                        return;
                     }
-                   E3.Bots.BroadcastCommandToGroup($"/assistme {targetID} {Zoning.CurrentZone.Id}", x);
+                    if (!ignoreme)
+                    {
+                        if (!e3util.FilterMe(x))
+                        {
+                            if (targetID != AssistTargetID)
+                            {
+                                AssistOff();
+
+                            }
+                            AllowControl = true;
+                            AssistOn(targetID, Zoning.CurrentZone.Id);
+                        }
+                    }
+                    else
+                    {
+                        //we are asking to ignore ourself, but might want to send out our pet still
+                        if (MQ.Query<Int32>("${Me.Pet.ID}") > 0)
+                        {
+                            MQ.Cmd($"/pet attack {targetID}");
+                        }
+                    }
+                    E3.Bots.BroadcastCommandToGroup($"/assistme {targetID} {Zoning.CurrentZone.Id}", x);
 
 
-               }
-               else if (!e3util.FilterMe(x))
-               {
-                   Int32 mobid;
-                   Int32 zoneid;
+                }
+                else if (!e3util.FilterMe(x))
+                {
+                    Int32 mobid;
+                    Int32 zoneid;
 
-                   if (Int32.TryParse(x.args[0], out mobid))
-                   {
+                    if (Int32.TryParse(x.args[0], out mobid))
+                    {
                         //make sure the target is in the same zone we are in
-                       if (Int32.TryParse(x.args[1], out zoneid))
-                       {
-                           if (mobid != AssistTargetID)
-						   {
-							   AssistOff();
-				           }
-                           AllowControl = false;
-                           AssistOn(mobid, zoneid);
+                        if (Int32.TryParse(x.args[1], out zoneid))
+                        {
+                            if (mobid != AssistTargetID)
+                            {
+                                AssistOff();
+                            }
+                            AllowControl = false;
+                            AssistOn(mobid, zoneid);
 
-                       }
-                   }
-               }
-           });
+                        }
+                    }
+                }
+            });
 
             EventProcessor.RegisterCommand("/cleartargets", (x) =>
             {
@@ -761,9 +761,9 @@ namespace E3Core.Processors
                 {
                     ClearXTargets.MobToAttack = 0;
                     AssistOff();
-                    E3.Bots.BroadcastCommandToGroup($"/backoff all",x);
-					ClearXTargets.Filters.Clear();
-					if (x.filters.Count > 0)
+                    E3.Bots.BroadcastCommandToGroup($"/backoff all", x);
+                    ClearXTargets.Filters.Clear();
+                    if (x.filters.Count > 0)
                     {
                         ClearXTargets.Filters.Clear();
                         ClearXTargets.Filters.AddRange(x.filters);
@@ -780,7 +780,7 @@ namespace E3Core.Processors
                     ClearXTargets.Enabled = false;
                     ClearXTargets.Filters.Clear();
                     ClearXTargets.HasAllFlag = false;
-                    E3.Bots.BroadcastCommandToGroup($"/backoff all",x);
+                    E3.Bots.BroadcastCommandToGroup($"/backoff all", x);
                 }
                 else if (x.args.Count >= 1)
                 {
@@ -839,7 +839,7 @@ namespace E3Core.Processors
             {
                 if (!e3util.FilterMe(x))
                 {
-                    if(E3.CurrentClass!=Class.Bard)
+                    if (E3.CurrentClass != Class.Bard)
                     {
                         Casting.Interrupt();
                     }
@@ -850,7 +850,7 @@ namespace E3Core.Processors
 
                 }
                 if (x.args.Count == 0)
-                {     
+                {
                     //we are telling people to back off
                     E3.Bots.BroadcastCommandToGroup($"/backoff all", x);
                 }
@@ -858,14 +858,14 @@ namespace E3Core.Processors
             });
             EventProcessor.RegisterCommand("/backoffme", (x) =>
             {
-                    if (E3.CurrentClass != Class.Bard)
-                    {
-                        Casting.Interrupt();
-                    }
-                    AssistOff();
-                    Burns.Reset();
-                    DebuffDot.Reset();
-                    Movement.AcquireFollow();
+                if (E3.CurrentClass != Class.Bard)
+                {
+                    Casting.Interrupt();
+                }
+                AssistOff();
+                Burns.Reset();
+                DebuffDot.Reset();
+                Movement.AcquireFollow();
 
             });
             e3util.RegisterCommandWithTarget("/e3offassistignore", (x) => { _offAssistIgnore.Add(x); });
@@ -880,17 +880,17 @@ namespace E3Core.Processors
                         {
                             E3.Bots.Broadcast("Enabling Assist Is Enraged");
                             _assistIsEnraged = true;
-							
-						}
-                        if(E3.CharacterSettings.Assist_PetBackOffOnenrage)
-                        {
-							if (MQ.Query<Int32>("${Me.Pet.ID}") > 0)
-							{
-								MQ.Cmd("/pet back off");
-							}
 
-						}
-					}
+                        }
+                        if (E3.CharacterSettings.Assist_PetBackOffOnenrage)
+                        {
+                            if (MQ.Query<Int32>("${Me.Pet.ID}") > 0)
+                            {
+                                MQ.Cmd("/pet back off");
+                            }
+
+                        }
+                    }
                 }
             });
             EventProcessor.RegisterEvent("EnrageOff", "(.+)  is no longer enraged.", (x) =>

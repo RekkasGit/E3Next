@@ -1,24 +1,20 @@
-﻿using E3Core.Processors;
-using E3Core.Utility;
+﻿using E3Core.Utility;
+
 using IniParser;
 using IniParser.Model;
+
 using System;
 using System.Collections.Generic;
 using System.Linq;
-using System.Runtime.CompilerServices;
-using System.Runtime.Serialization.Formatters;
-using System.Text;
-using System.Threading.Tasks;
-using static System.Collections.Specialized.BitVector32;
 
 namespace E3Core.Settings
 {
- 
+
 
 
     public class GeneralSettings : BaseSettings, IBaseSettings
     {
-        
+
 
         public Int32 VersionID = 1;
         public Int32 General_AutoMedBreakPctMana;
@@ -32,14 +28,14 @@ namespace E3Core.Settings
 
         public Int32 Loot_LootItemDelay = 300;
         public string Loot_LinkChannel = String.Empty;
-        public List<string> Loot_LinkChannelValid = new List<string>() {"g","gu","say","rsay","shout","gsay", "rs","bc","e3bc"};
+        public List<string> Loot_LinkChannelValid = new List<string>() { "g", "gu", "say", "rsay", "shout", "gsay", "rs", "bc", "e3bc" };
         public Int32 MaxGemSlots = 8 + MQ.Query<Int32>("${Me.AltAbility[Mnemonic Retention].Rank}");
 
         private Int32 casting_DefaultSpellGem = 8;
-        public int Casting_DefaultSpellGem 
-        { 
-            get { return casting_DefaultSpellGem; } 
-            set { if (value > 0 && value <= MaxGemSlots) { casting_DefaultSpellGem = value; } } 
+        public int Casting_DefaultSpellGem
+        {
+            get { return casting_DefaultSpellGem; }
+            set { if (value > 0 && value <= MaxGemSlots) { casting_DefaultSpellGem = value; } }
         }
 
         public Boolean BuffRequests_AllowBuffRequests = true;
@@ -57,9 +53,9 @@ namespace E3Core.Settings
         public Int32 Loot_TimeToWaitAfterAssist = 2000;
         public bool Loot_OnlyStackableHonorLootFileSkips = false;
 
-        public Boolean Assists_AutoAssistEnabled=false;
-        public Int32 Assists_MaxEngagedDistance=250;
-        public Int32 Assists_AEThreatRange=100;
+        public Boolean Assists_AutoAssistEnabled = false;
+        public Int32 Assists_MaxEngagedDistance = 250;
+        public Int32 Assists_AEThreatRange = 100;
 
         public bool AutoTrade_WaitForTrade = true;
         public bool AutoTrade_All = false;
@@ -73,7 +69,7 @@ namespace E3Core.Settings
         public string DiscordServerId = string.Empty;
         public string DiscordMyUserId = string.Empty;
 
-		public Int32 Movement_StandingStill = 10000;
+        public Int32 Movement_StandingStill = 10000;
         public Int32 Movement_ChaseDistanceMin = 10;
         public Int32 Movement_ChaseDistanceMax = 500;
         public Int32 Movement_NavStopDistance = 10;
@@ -115,7 +111,7 @@ namespace E3Core.Settings
                 {
                     System.IO.Directory.CreateDirectory(_configFolder + _settingsFolder);
                 }
-             
+
                 parsedData = CreateSettings(_filename);
             }
             else
@@ -125,7 +121,7 @@ namespace E3Core.Settings
             _fileLastModifiedFileName = _filename;
             _fileLastModified = System.IO.File.GetLastWriteTime(_filename);
             //have the data now!
-            if (parsedData==null)
+            if (parsedData == null)
             {
                 throw new Exception("Could not load General Settings file");
             }
@@ -133,9 +129,9 @@ namespace E3Core.Settings
             LoadKeyData("General", "AutoMedBreak PctMana", parsedData, ref General_AutoMedBreakPctMana);
             //    section.Keys.AddKey("NetworkMethod", "EQBC");
 
-            LoadKeyData("General", "NetworkMethod",parsedData, ref General_NetworkMethod);
-			LoadKeyData("General", "E3NetworkAddPathToMonitor", parsedData,General_E3NetworkAddPathToMonitor);
-			LoadKeyData("General", "Network Default Broadcast (Group,All,AllInZoneOrRaid)", parsedData, ref General_BroadCast_Default);
+            LoadKeyData("General", "NetworkMethod", parsedData, ref General_NetworkMethod);
+            LoadKeyData("General", "E3NetworkAddPathToMonitor", parsedData, General_E3NetworkAddPathToMonitor);
+            LoadKeyData("General", "Network Default Broadcast (Group,All,AllInZoneOrRaid)", parsedData, ref General_BroadCast_Default);
             LoadKeyData("General", "Heal While Navigating (On/Off)", parsedData, ref General_HealWhileNavigating);
             LoadKeyData("General", "Beep Notifications (On/Off)", parsedData, ref General_BeepNotifications);
 
@@ -156,7 +152,7 @@ namespace E3Core.Settings
                 MQ.Write("Invalid Loot Link Channel setting, loot will not be reported");
                 Loot_LinkChannel = String.Empty;
             }
-          
+
             LoadKeyData("Loot", "Corpse Seek Radius", parsedData, ref Loot_CorpseSeekRadius);
             LoadKeyData("Loot", "LootItemDelay", parsedData, ref Loot_LootItemDelay);
             //no lower than 300ms
@@ -175,7 +171,7 @@ namespace E3Core.Settings
             LoadKeyData("Loot", "Loot Only Stackable: Loot common tradeskill items ie:pelts ores silks etc (On/Off)", parsedData, ref Loot_OnlyStackableOnlyCommonTradeSkillItems);
             LoadKeyData("Loot", "Loot Only Stackable: Always Loot Item", parsedData, Loot_OnlyStackableAlwaysLoot);
             LoadKeyData("Loot", "Loot Only Stackable: Honor Loot File Skip Settings (On/Off)", parsedData, ref Loot_OnlyStackableHonorLootFileSkips);
-        
+
             LoadKeyData("Manastone", "NumerOfClicksPerLoop", parsedData, ref ManaStone_NumerOfClicksPerLoop);
             LoadKeyData("Manastone", "NumberOfLoops", parsedData, ref ManaStone_NumberOfLoops);
             LoadKeyData("Manastone", "DelayBetweenLoops (in milliseconds)", parsedData, ref ManaStone_DelayBetweenLoops);
@@ -192,7 +188,7 @@ namespace E3Core.Settings
             Int32 spellGem = Casting_DefaultSpellGem;
             LoadKeyData("Casting", "Default Spell Gem", parsedData, ref spellGem);
             Casting_DefaultSpellGem = spellGem;
-            
+
             LoadKeyData("Buff Requests", "Allow Buff Requests (On/Off)", parsedData, ref BuffRequests_AllowBuffRequests);
             LoadKeyData("Buff Requests", "Restricted PCs (When Requests [On])", parsedData, ref BuffRequests_RestrictedPCs);
             LoadKeyData("Buff Requests", "Allowed PCs (When Requests [Off])", parsedData, ref BuffRequests_AllowedPcs);
@@ -215,7 +211,7 @@ namespace E3Core.Settings
             LoadKeyData("Movement", "Nav Stop Distance", parsedData, ref Movement_NavStopDistance);
             LoadKeyData("Movement", "Anchor Distance Minimum", parsedData, ref Movement_AnchorDistanceMin);
             LoadKeyData("Movement", "Anchor Distance Maximum", parsedData, ref Movement_AnchorDistanceMax);
-            LoadKeyData("Movement", "Milliseconds till standing Still",parsedData,ref Movement_StandingStill);
+            LoadKeyData("Movement", "Milliseconds till standing Still", parsedData, ref Movement_StandingStill);
             CheckMovementValues();
         }
 
@@ -307,7 +303,7 @@ namespace E3Core.Settings
             section.Keys.AddKey("E3NetworkAddPathToMonitor", "");
             section.Keys.AddKey("Network Default Broadcast (Group,All,AllInZoneOrRaid)", "Group");
 
-            section.Keys.AddKey("Heal While Navigating (On/Off)","On");
+            section.Keys.AddKey("Heal While Navigating (On/Off)", "On");
             section.Keys.AddKey("Beep Notifications (On/Off)", "On");
 
             newFile.Sections.AddSection("Discord Bot");
@@ -316,7 +312,7 @@ namespace E3Core.Settings
             section.Keys.AddKey("Guild Channel ID", "");
             section.Keys.AddKey("Server ID", "");
             section.Keys.AddKey("My Discord User ID", "");
-            
+
             //Misc
             newFile.Sections.AddSection("Misc");
             section = newFile.Sections.GetSectionData("Misc");
@@ -326,11 +322,11 @@ namespace E3Core.Settings
             //Loot
             newFile.Sections.AddSection("Loot");
             section = newFile.Sections.GetSectionData("Loot");
-            section.Keys.AddKey("Loot Link Channel","say");
-	        section.Keys.AddKey("Corpse Seek Radius","125");
-            section.Keys.AddKey("Loot in Combat","TRUE");
+            section.Keys.AddKey("Loot Link Channel", "say");
+            section.Keys.AddKey("Corpse Seek Radius", "125");
+            section.Keys.AddKey("Loot in Combat", "TRUE");
             section.Keys.AddKey("Milliseconds To Wait To Loot", "2000");
-            section.Keys.AddKey("NumOfFreeSlotsOpen(1+)","0");
+            section.Keys.AddKey("NumOfFreeSlotsOpen(1+)", "0");
             section.Keys.AddKey("Loot Only Stackable: Enable (On/Off)", "Off");
             section.Keys.AddKey("Loot Only Stackable: With Value Greater Than Or Equal in Copper", "10000");
             section.Keys.AddKey("Loot Only Stackable: Loot common tradeskill items ie:pelts ores silks etc (On/Off)", "Off");
@@ -350,18 +346,18 @@ namespace E3Core.Settings
             section.Keys.AddKey("Min HP", "60");
             section.Keys.AddKey("Out of Combat MinMana", "85");
             section.Keys.AddKey("Out of Combat MaxMana", "95");
-          
+
             //Casting
             newFile.Sections.AddSection("Casting");
             section = newFile.Sections.GetSectionData("Casting");
-            section.Keys.AddKey("Default Spell Gem","8");
+            section.Keys.AddKey("Default Spell Gem", "8");
 
             //Buff Requests
             newFile.Sections.AddSection("Buff Requests");
             section = newFile.Sections.GetSectionData("Buff Requests");
-            section.Keys.AddKey("Allow Buff Requests (On/Off)","On");
-            section.Keys.AddKey("Restricted PCs (When Requests [On])","");
-            section.Keys.AddKey("Allowed PCs (When Requests [Off])","");
+            section.Keys.AddKey("Allow Buff Requests (On/Off)", "On");
+            section.Keys.AddKey("Restricted PCs (When Requests [On])", "");
+            section.Keys.AddKey("Allowed PCs (When Requests [Off])", "");
 
 
             //Assists
@@ -370,7 +366,7 @@ namespace E3Core.Settings
             section.Keys.AddKey("Auto-Assist (On/Off)", "Off");
             section.Keys.AddKey("Max Engage Distance", "250");
             section.Keys.AddKey("AE Threat Range", "100");
-            
+
 
             //Trade
             newFile.Sections.AddSection("AutoTrade");
@@ -381,7 +377,7 @@ namespace E3Core.Settings
             section.Keys.AddKey("Group (On/Off)", "Off");
             section.Keys.AddKey("Guild (On/Off)", "Off");
             section.Keys.AddKey("Raid (On/Off)", "Off");
-            
+
 
             newFile.Sections.AddSection("Movement");
             section = newFile.Sections.GetSectionData("Movement");
@@ -392,7 +388,7 @@ namespace E3Core.Settings
             section.Keys.AddKey("Anchor Distance Maximum", "150");
             section.Keys.AddKey("Milliseconds till standing Still", "10000");
 
-           
+
             if (!System.IO.File.Exists(filename))
             {
                 if (!System.IO.Directory.Exists(_configFolder + _settingsFolder))
@@ -412,7 +408,7 @@ namespace E3Core.Settings
                 IniData parsedData = fileIniData.ReadFile(filename);
 
                 return parsedData;
-               
+
             }
 
 

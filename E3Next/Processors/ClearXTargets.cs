@@ -1,14 +1,11 @@
-﻿using E3Core.Classes;
-using E3Core.Data;
-using E3Core.Settings;
+﻿using E3Core.Settings;
 using E3Core.Utility;
+
 using MonoCore;
+
 using System;
 using System.Collections.Generic;
-using System.Dynamic;
 using System.Linq;
-using System.Runtime.InteropServices;
-using System.Security.Cryptography.X509Certificates;
 
 namespace E3Core.Processors
 {
@@ -89,7 +86,7 @@ namespace E3Core.Processors
                             }
                             MQ.Delay(500);
 
-                            if(HasAllFlag)
+                            if (HasAllFlag)
                             {
                                 if (Filters.Count > 0)
                                 {

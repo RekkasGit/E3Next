@@ -2,17 +2,15 @@
 using E3Core.Settings;
 using E3Core.Settings.FeatureSettings;
 using E3Core.Utility;
-using Microsoft.Win32;
+
 using MonoCore;
+
 using System;
 using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
 
 namespace E3Core.Processors
 {
-  
+
     public static class BegForBuffs
     {
         class BuffQueuedItem
@@ -53,14 +51,14 @@ namespace E3Core.Processors
                     if (Basics.AmIDead()) return;
                     string user = x.match.Groups[1].Value;
 
-             
+
                     if (E3.GeneralSettings.BuffRequests_AllowBuffRequests || E3.Bots.IsMyBot(user))
                     {
                         Int32 totalQueuedSpells = 0;
                         if (_spawns.TryByName(user, out var spawn))
                         {
                             Casting.TrueTarget(spawn.ID);
-                           
+
                             foreach (var spell in E3.CharacterSettings.GroupBuffs)
                             {
                                 if (!String.IsNullOrWhiteSpace(spell.Ifs))
@@ -70,10 +68,10 @@ namespace E3Core.Processors
                                         continue;
                                     }
                                 }
-                                _queuedBuffs.Enqueue(new BuffQueuedItem() { TargetID = spawn.ID, Spell = spell});
+                                _queuedBuffs.Enqueue(new BuffQueuedItem() { TargetID = spawn.ID, Spell = spell });
                                 totalQueuedSpells++;
                             }
-                            if(totalQueuedSpells > 0)
+                            if (totalQueuedSpells > 0)
                             {
                                 MQ.Cmd($"/t {user} casting buffs on you, please wait.");
                                 E3.Bots.BroadcastCommand($"/buffme {spawn.ID}");
@@ -100,7 +98,7 @@ namespace E3Core.Processors
                         {
                             Int32 petid = spawn.PetID;
                             Casting.TrueTarget(spawn.ID);
-                            if (petid>0)
+                            if (petid > 0)
                             {
                                 foreach (var spell in E3.CharacterSettings.GroupBuffs)
                                 {
@@ -114,20 +112,20 @@ namespace E3Core.Processors
                                     _queuedBuffs.Enqueue(new BuffQueuedItem() { TargetID = petid, Spell = spell });
                                     totalQueuedSpells++;
                                 }
-                               
+
                                 if (totalQueuedSpells > 0)
                                 {
                                     MQ.Cmd($"/t {user} casting buffs on your pet, please wait.");
                                     E3.Bots.BroadcastCommand($"/buffme {petid}");
                                 }
-                                    
+
                             }
                             else
                             {
                                 MQ.Cmd($"/t {user} you have no pet.");
                             }
-                           
-                            
+
+
                         }
                     }
                 }
@@ -141,23 +139,23 @@ namespace E3Core.Processors
                     {
                         foreach (var spell in E3.CharacterSettings.GroupBuffs)
                         {
-                            if(_spawns.TryByID(spawnid, out var spawn))
+                            if (_spawns.TryByID(spawnid, out var spawn))
                             {
-								_queuedBuffs.Enqueue(new BuffQueuedItem() { TargetID = spawnid, Spell = spell });
-							}
+                                _queuedBuffs.Enqueue(new BuffQueuedItem() { TargetID = spawnid, Spell = spell });
+                            }
 
-						}
+                        }
                     }
                 }
                 else
                 {
-                    
+
                     foreach (var spell in E3.CharacterSettings.GroupBuffs)
                     {
                         _queuedBuffs.Enqueue(new BuffQueuedItem() { TargetID = E3.CurrentId, Spell = spell });
 
                     }
-                    
+
                     E3.Bots.BroadcastCommand($"/buffme {E3.CurrentId}");
                 }
             });
@@ -178,7 +176,7 @@ namespace E3Core.Processors
                 else
                 {
                     int targetid = MQ.Query<int>("${Target.ID}");
-                    if(targetid>0)
+                    if (targetid > 0)
                     {
                         E3.Bots.BroadcastCommand($"/buffme {targetid}");
 
@@ -196,60 +194,60 @@ namespace E3Core.Processors
 
                     if (_spawns.TryByName(user, out var spawn)) //same zone?
                     {
-						if (E3.GeneralSettings.BuffRequests_AllowBuffRequests || E3.Bots.IsMyBot(user))
-						{
-							string spell = x.match.Groups[2].Value;
-							bool groupReply = false;
-							if (x.match.Groups[0].Value.Contains(" tells the group,"))
-							{
-								groupReply = true;
-							}
+                        if (E3.GeneralSettings.BuffRequests_AllowBuffRequests || E3.Bots.IsMyBot(user))
+                        {
+                            string spell = x.match.Groups[2].Value;
+                            bool groupReply = false;
+                            if (x.match.Groups[0].Value.Contains(" tells the group,"))
+                            {
+                                groupReply = true;
+                            }
 
-							if (Int32.TryParse(spell, out var temp))
-							{
-								//me.book returns the spell that is memed in that slot in your book
-								//this isnt what we want, to just ignore the request
-								return;
-							}
+                            if (Int32.TryParse(spell, out var temp))
+                            {
+                                //me.book returns the spell that is memed in that slot in your book
+                                //this isnt what we want, to just ignore the request
+                                return;
+                            }
 
-							//check to see if its an alias.
-							string realSpell = string.Empty;
-							if (SpellAliases.TryGetValue(spell, out realSpell))
-							{
-								spell = realSpell;
-							}
-							bool inBook = MQ.Query<bool>($"${{Me.Book[{spell}]}}");
-							bool aa = MQ.Query<bool>($"${{Me.AltAbility[{spell}].Spell}}");
-							bool item = MQ.Query<bool>($"${{FindItem[={spell}]}}");
+                            //check to see if its an alias.
+                            string realSpell = string.Empty;
+                            if (SpellAliases.TryGetValue(spell, out realSpell))
+                            {
+                                spell = realSpell;
+                            }
+                            bool inBook = MQ.Query<bool>($"${{Me.Book[{spell}]}}");
+                            bool aa = MQ.Query<bool>($"${{Me.AltAbility[{spell}].Spell}}");
+                            bool item = MQ.Query<bool>($"${{FindItem[={spell}]}}");
 
-							if (inBook || aa || item)
-							{
-								if (groupReply)
-								{
-									MQ.Cmd($"/gsay {user}: putting in queue {spell}");
+                            if (inBook || aa || item)
+                            {
+                                if (groupReply)
+                                {
+                                    MQ.Cmd($"/gsay {user}: putting in queue {spell}");
 
-								}
-								else
-								{
-									MQ.Cmd($"/t {user} I'm queueing up {spell} to use on you, please wait.");
+                                }
+                                else
+                                {
+                                    MQ.Cmd($"/t {user} I'm queueing up {spell} to use on you, please wait.");
 
-								}
-								_queuedBuffs.Enqueue(new BuffQueuedItem() { Requester = user, SpellTouse = spell });
+                                }
+                                _queuedBuffs.Enqueue(new BuffQueuedItem() { Requester = user, SpellTouse = spell });
 
-							}
-						}
-					}
-					
+                            }
+                        }
+                    }
+
                 }
             });
-            var raidbuffBeg = new List<string> {"(.+) tells the raid,  '"+E3.CurrentName+@":(.+)'" };
+            var raidbuffBeg = new List<string> { "(.+) tells the raid,  '" + E3.CurrentName + @":(.+)'" };
             EventProcessor.RegisterEvent("RaidBuffBeg", raidbuffBeg, (x) =>
             {
                 if (x.match.Groups.Count > 2)
                 {
                     if (Basics.AmIDead()) return;
                     string user = x.match.Groups[1].Value;
-                    if(_spawns.TryByName(user, out var spawn))
+                    if (_spawns.TryByName(user, out var spawn))
                     {
                         if (E3.GeneralSettings.BuffRequests_AllowBuffRequests || E3.Bots.IsMyBot(user))
                         {
@@ -279,7 +277,7 @@ namespace E3Core.Processors
                             }
                         }
                     }
-                    
+
                 }
             });
             //queuecast almost works exactly the same so added it here.
@@ -306,7 +304,7 @@ namespace E3Core.Processors
                         {
                             E3.Bots.BroadcastCommandToGroup($"/queuecast me \"{spell}\" {targetid}");
 
-                            QueueCast(spell, targetid,"");
+                            QueueCast(spell, targetid, "");
                         }
                         else
                         {
@@ -344,7 +342,7 @@ namespace E3Core.Processors
                 }
             });
         }
-        public static void QueueCast(string spell, Int32 targetid,string user)
+        public static void QueueCast(string spell, Int32 targetid, string user)
         {
 
             //check to see if its an alias.
@@ -353,39 +351,39 @@ namespace E3Core.Processors
             {
                 spell = realSpell;
             }
-           
-            if(!String.IsNullOrWhiteSpace(user))
+
+            if (!String.IsNullOrWhiteSpace(user))
             {
                 MQ.Cmd($"/t {user} I'm queuing up {spell} to use on you, please wait.");
-               
+
             }
-            _queuedBuffs.Enqueue(new BuffQueuedItem() { Requester = user, SpellTouse = spell, TargetID=targetid});
-            
+            _queuedBuffs.Enqueue(new BuffQueuedItem() { Requester = user, SpellTouse = spell, TargetID = targetid });
+
         }
         [ClassInvoke(Data.Class.All)]
         public static void Check_QueuedBuffs()
         {
             if (!e3util.ShouldCheck(ref _nextBegCheck, _nextBegCheckInterval)) return;
 
-            if (_queuedBuffs.Count>0)
+            if (_queuedBuffs.Count > 0)
             {
                 var askedForSpell = _queuedBuffs.Peek();
                 Spawn spawn;
 
                 if (_spawns.TryByName(askedForSpell.Requester, out spawn) || _spawns.TryByID(askedForSpell.TargetID, out spawn))
                 {
-                    Spell s=null;
+                    Spell s = null;
 
                     //see if the spell was already supplied
                     if (askedForSpell.Spell != null) s = askedForSpell.Spell;
 
-                    if(s==null)
+                    if (s == null)
                     {
                         s = new Spell(askedForSpell.SpellTouse, E3.CharacterSettings.ParsedData);
                     }
 
                     //not a valid spell
-                    if (s.CastType==CastType.None)
+                    if (s.CastType == CastType.None)
                     {
                         _queuedBuffs.Dequeue();
                         return;
@@ -401,34 +399,34 @@ namespace E3Core.Processors
                         }
                     }
                     if (s.CheckForCollection.Count > 0)
-					{
-						Casting.TrueTarget(spawn.ID);
-						foreach (var checkforItem in s.CheckForCollection.Keys)
-						{
-							if (MQ.Query<bool>($"${{Bool[${{Target.Buff[{checkforItem}]}}]}}"))
-							{
-								_queuedBuffs.Dequeue();
+                    {
+                        Casting.TrueTarget(spawn.ID);
+                        foreach (var checkforItem in s.CheckForCollection.Keys)
+                        {
+                            if (MQ.Query<bool>($"${{Bool[${{Target.Buff[{checkforItem}]}}]}}"))
+                            {
+                                _queuedBuffs.Dequeue();
                                 return;
-							}
-						}
-					}
-					
+                            }
+                        }
+                    }
 
-                    if ((s.TargetType=="Self" ||Casting.InRange(spawn.ID, s)) && Casting.CheckReady(s) && Casting.CheckMana(s))
+
+                    if ((s.TargetType == "Self" || Casting.InRange(spawn.ID, s)) && Casting.CheckReady(s) && Casting.CheckMana(s))
                     {
                         //so we can be sure our cursor was empty before we cast
                         Int32 cursorID = MQ.Query<Int32>("${Cursor.ID}");
-                     
+
                         var result = Casting.Cast(spawn.ID, s, Heals.SomeoneNeedsHealing);
                         if (result == CastReturn.CAST_INTERRUPTFORHEAL)
                         {
                             return;
                         }
-                        if (cursorID<1)
+                        if (cursorID < 1)
                         {
                             Casting.TrueTarget(spawn.ID);
                             cursorID = MQ.Query<Int32>("${Cursor.ID}");
-                            if(cursorID>0)
+                            if (cursorID > 0)
                             {
                                 //the spell that was requested put something on our curosr, give it to them.
                                 e3util.GiveItemOnCursorToTarget();
@@ -439,15 +437,15 @@ namespace E3Core.Processors
                         _queuedBuffs.Dequeue();
                     }
                     else
-                    { 
+                    {
                         //give the buff at least 30 sec for us to be able to cast. 
-                        if(askedForSpell.TimeStamp==0)
+                        if (askedForSpell.TimeStamp == 0)
                         {
                             askedForSpell.TimeStamp = Core.StopWatch.ElapsedMilliseconds;
                             var result = _queuedBuffs.Dequeue();
                             _queuedBuffs.Enqueue(result);
                         }
-                        if(Core.StopWatch.ElapsedMilliseconds - askedForSpell.TimeStamp > 30000 )
+                        if (Core.StopWatch.ElapsedMilliseconds - askedForSpell.TimeStamp > 30000)
                         {
                             E3.Bots.Broadcast("Removing spell from queue due to it being not ready or out of range: " + s.CastName);
                             //possibly long cooldown?

@@ -1,19 +1,17 @@
-﻿using System;
+﻿using Nancy;
+
+using NetMQ;
+using NetMQ.Sockets;
+
+using System;
+using System.Collections.Concurrent;
 using System.Collections.Generic;
+using System.Diagnostics;
+using System.Globalization;
 using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
 using System.Runtime.CompilerServices;
 using System.Threading;
-using System.Diagnostics;
-using System.Collections.Concurrent;
-using System.Text.RegularExpressions;
-using Nancy;
-using Nancy.Hosting.Self;
-using NetMQ.Sockets;
-using NetMQ;
-using System.Globalization;
-using System.Collections;
+using System.Threading.Tasks;
 
 
 /// <summary>
@@ -66,15 +64,15 @@ namespace MonoCore
         public static Int64 _startTimeStamp;
         public static Int64 _processingCounts;
         public static Int64 _totalProcessingCounts;
-        
+
         private static Double _startLoopTime = 0;
-   
-     
+
+
         //remote debugging server
         private static RouterServer _netmqServer;
         //remote debugging events
         private static PubServer _pubServer;
-   
+
 
         public static void Init()
         {
@@ -89,13 +87,13 @@ namespace MonoCore
             _pubServer.Start();
 
         }
-      
+
         public static ManualResetEventSlim _processResetEvent = new ManualResetEventSlim(false);
         public static ConcurrentQueue<string> _queuedCommands = new ConcurrentQueue<string>();
         public static ConcurrentQueue<string> _queuedQuery = new ConcurrentQueue<string>();
         public static ConcurrentQueue<string> _queuedQueryResposne = new ConcurrentQueue<string>();
         public static ConcurrentQueue<string> _queuedWrite = new ConcurrentQueue<string>();
-      
+
 
 
         public static void Process()
@@ -118,7 +116,7 @@ namespace MonoCore
                 }
                 _processingCounts++;
                 _totalProcessingCounts++;
-        
+
                 try
                 {
                     foundRequest = false;
@@ -151,10 +149,10 @@ namespace MonoCore
                                     //lets pull out the string
                                     string query = System.Text.Encoding.Default.GetString(message.payload, 0, message.payloadLength);
                                     //is this a debug command
-                                    if(query.StartsWith("/remotedebugdelay "))
+                                    if (query.StartsWith("/remotedebugdelay "))
                                     {
                                         Int32 indexOfSpace = query.IndexOf(" ");
-                                        if(indexOfSpace>-1)
+                                        if (indexOfSpace > -1)
                                         {
                                             string delayAsString = query.Substring(indexOfSpace + 1, query.Length - indexOfSpace - 1);
                                             Int32 delayToChange;
@@ -261,14 +259,14 @@ namespace MonoCore
                             RouterMessage message;
                             if (RouterServer._getSpawnsRequests.TryDequeue(out message))
                             {
-                                
+
                                 IEnumerable<Spawn> spawnList = Spawns.Get();
                                 message.spawns = spawnList.ToList();
                                 RouterServer._getSpawnsResponse.Enqueue(message);
                                 foundRequest = true;
                                 foundRequestCount++;
                             }
-                           
+
                         }
 
                         ///FOR THE WEB SERVER, NOT IN USE ANYMORE
@@ -331,7 +329,7 @@ namespace MonoCore
                     _currentWaitTime = 1;
                 }
             }
-            
+
 
         }
 
@@ -594,11 +592,11 @@ namespace MonoCore
                     {
                         RouterMessage message;
                         _getSpawnsResponse.TryDequeue(out message);
-                        if (message != null && message.spawns!=null)
+                        if (message != null && message.spawns != null)
                         {
                             try
                             {
-                                foreach(var spawn in message.spawns)
+                                foreach (var spawn in message.spawns)
                                 {
                                     routerResponse.InitPool(message.identiyLength);
                                     Buffer.BlockCopy(message.identity, 0, routerResponse.Data, 0, message.identiyLength);
@@ -662,7 +660,7 @@ namespace MonoCore
         public static ConcurrentQueue<string> _pubMessages = new ConcurrentQueue<string>();
         public static ConcurrentQueue<string> _pubWriteColorMessages = new ConcurrentQueue<string>();
         public static ConcurrentQueue<string> _pubCommands = new ConcurrentQueue<string>();
-      
+
         public void Start()
         {
 
@@ -677,8 +675,8 @@ namespace MonoCore
             using (var pubSocket = new PublisherSocket())
             {
                 pubSocket.Options.SendHighWatermark = 1000;
-               pubSocket.Bind("tcp://*:" + RemoteDebugServerConfig.NetMQPubPort.ToString());
-               // pubSocket.Bind("tcp://*:12347");
+                pubSocket.Bind("tcp://*:" + RemoteDebugServerConfig.NetMQPubPort.ToString());
+                // pubSocket.Bind("tcp://*:12347");
                 while (Core._isProcessing)
                 {
 
@@ -791,7 +789,7 @@ namespace MonoCore
 
                 //isProcessing needs to be true before the event processor has started
                 _isProcessing = true;
-               
+
                 if (_taskThread == null)
                 {
                     //start up the main processor, this is where most of the C# code kicks off in
@@ -806,7 +804,7 @@ namespace MonoCore
         public static void OnStop()
         {
             _isProcessing = false;
-             NetMQConfig.Cleanup(true);
+            NetMQConfig.Cleanup(true);
         }
         public static void OnPulse()
         {
@@ -830,16 +828,16 @@ namespace MonoCore
             }
 
 
-            //Core.mq_Echo("Starting OnPulse in C#");
+        //Core.mq_Echo("Starting OnPulse in C#");
 
-            //if (_stopWatch.ElapsedMilliseconds - millisecondsSinceLastPrint > 5000)
-            //{
-            //    use raw command, as we are on the C++thread, and don't want a delay hitting us
-            //    Core.mq_Echo("[" + System.DateTime.Now + " Total Calls:" + _onPulseCalls);
-            //    millisecondsSinceLastPrint = _stopWatch.ElapsedMilliseconds;
-            //}
+        //if (_stopWatch.ElapsedMilliseconds - millisecondsSinceLastPrint > 5000)
+        //{
+        //    use raw command, as we are on the C++thread, and don't want a delay hitting us
+        //    Core.mq_Echo("[" + System.DateTime.Now + " Total Calls:" + _onPulseCalls);
+        //    millisecondsSinceLastPrint = _stopWatch.ElapsedMilliseconds;
+        //}
 
-            RestartWait:
+        RestartWait:
             //allow the processing thread to start its work.
             //and copy cache values to other cores so the thread can see the updated information in MQ
             MainProcessor._processResetEvent.Set();
@@ -870,13 +868,13 @@ namespace MonoCore
                 //    goto RestartWait;
                 //}
             }
-			if (_currentAddCommand != String.Empty)
-			{
-				Core.mq_AddCommand(_currentAddCommand);
-				_currentAddCommand = String.Empty;
+            if (_currentAddCommand != String.Empty)
+            {
+                Core.mq_AddCommand(_currentAddCommand);
+                _currentAddCommand = String.Empty;
 
-			}
-			if (_currentDelay > 0)
+            }
+            if (_currentDelay > 0)
             {
                 // Core.mq_Echo("Unblocked on C++:: Doing a Delay");
                 Core.mq_Delay(_currentDelay);
@@ -939,13 +937,13 @@ namespace MonoCore
         public extern static void mq_GetSpawns();
         [MethodImpl(MethodImplOptions.InternalCall)]
         public extern static bool mq_GetRunNextCommand();
-		[MethodImpl(MethodImplOptions.InternalCall)]
-		public extern static string mq_GetFocusedWindowName();
-		[MethodImpl(MethodImplOptions.InternalCall)]
-		public extern static string mq_GetMQ2MonoVersion();
+        [MethodImpl(MethodImplOptions.InternalCall)]
+        public extern static string mq_GetFocusedWindowName();
+        [MethodImpl(MethodImplOptions.InternalCall)]
+        public extern static string mq_GetMQ2MonoVersion();
 
-		#region IMGUI
-		[MethodImpl(MethodImplOptions.InternalCall)]
+        #region IMGUI
+        [MethodImpl(MethodImplOptions.InternalCall)]
         public extern static bool imgui_Begin(string name, int flags);
         [MethodImpl(MethodImplOptions.InternalCall)]
         public extern static void imgui_Begin_OpenFlagSet(string name, bool value);
@@ -1101,13 +1099,13 @@ namespace MonoCore
         }
         public void Cmd(string query)
         {
-        
+
             if (query.StartsWith("/delay", StringComparison.OrdinalIgnoreCase))
             {
                 return;
             }
 
-        
+
             Core._currentCommand = query;
             Core._coreResetEvent.Set();
             //we are now going to wait on the core
@@ -1122,7 +1120,7 @@ namespace MonoCore
 
         public void Write(string query, [CallerMemberName] string memberName = "", [CallerFilePath] string fileName = "", [CallerLineNumber] int lineNumber = 0)
         {
-           
+
             Core._currentWrite = query;
             //swap to the C++thread, and it will swap back after executing the current write becau of us setting _CurrentWrite before
             Core._coreResetEvent.Set();
@@ -1181,12 +1179,12 @@ namespace MonoCore
         }
         public bool AddCommand(string commandName)
         {
-			
-			Core._currentAddCommand = commandName;
-			Core._coreResetEvent.Set();
-			//we are now going to wait on the core
-			MainProcessor._processResetEvent.Wait();
-			MainProcessor._processResetEvent.Reset();
+
+            Core._currentAddCommand = commandName;
+            Core._coreResetEvent.Set();
+            //we are now going to wait on the core
+            MainProcessor._processResetEvent.Wait();
+            MainProcessor._processResetEvent.Reset();
             return true;
         }
         public void ClearCommands()
@@ -1523,15 +1521,15 @@ namespace MonoCore
     }
     public class Spawns
     {
-        
+
         public static List<Spawn> _spawns = new List<Spawn>(2048);
         public static Int64 _lastRefesh = 0;
-      
+
         public static IEnumerable<Spawn> Get()
         {
             //remote version doesn't keep a cache timer, it always returns fresh  
             RefreshList();
-            
+
             return _spawns;
         }
 
@@ -1577,7 +1575,7 @@ namespace MonoCore
             //end of remote debug
 
         }
-        
+
         public void Dispose()
         {
             _dataSize = 0;

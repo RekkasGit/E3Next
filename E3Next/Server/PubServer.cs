@@ -1,18 +1,17 @@
 ﻿using E3Core.Processors;
 using E3Core.Settings;
 using E3Core.Utility;
+
 using MonoCore;
+
 using NetMQ;
 using NetMQ.Sockets;
+
 using System;
 using System.Collections.Concurrent;
-using System.Collections.Generic;
 using System.IO;
-using System.Linq;
-using System.Text;
 using System.Threading;
 using System.Threading.Tasks;
-using static E3Core.Server.SharedDataClient;
 
 namespace E3Core.Server
 {
@@ -23,7 +22,7 @@ namespace E3Core.Server
     public class PubServer
     {
         private static IMQ MQ = E3.MQ;
-        class topicMessagePair:IDisposable
+        class topicMessagePair : IDisposable
         {
             public string topic;
             public string message;
@@ -31,28 +30,28 @@ namespace E3Core.Server
             {
                 //do not let others instance us
             }
-			public static topicMessagePair Aquire()
-			{
-				topicMessagePair obj;
-				if (!StaticObjectPool.TryPop<topicMessagePair>(out obj))
-				{
-					obj = new topicMessagePair();
-				}
-				return obj;
-			}
-			public void Dispose()
-			{
+            public static topicMessagePair Aquire()
+            {
+                topicMessagePair obj;
+                if (!StaticObjectPool.TryPop<topicMessagePair>(out obj))
+                {
+                    obj = new topicMessagePair();
+                }
+                return obj;
+            }
+            public void Dispose()
+            {
                 topic = string.Empty;
                 message = string.Empty;
-				StaticObjectPool.Push(this);
-			}
-			~topicMessagePair()
-			{
-				//DO NOT CALL DISPOSE FROM THE FINALIZER! This should only ever be used in using statements
-				//if this is called, it will cause the domain to hang in the GC when shutting down
-				//This is only here to warn you
-			}
-		}
+                StaticObjectPool.Push(this);
+            }
+            ~topicMessagePair()
+            {
+                //DO NOT CALL DISPOSE FROM THE FINALIZER! This should only ever be used in using statements
+                //if this is called, it will cause the domain to hang in the GC when shutting down
+                //This is only here to warn you
+            }
+        }
 
         Task _serverThread = null;
 
@@ -69,59 +68,59 @@ namespace E3Core.Server
         {
             PubPort = port;
             string localIP = e3util.GetLocalIPAddress();
-			string settingsFilePath = BaseSettings.GetSettingsFilePath("");
+            string settingsFilePath = BaseSettings.GetSettingsFilePath("");
 
-			if (!settingsFilePath.EndsWith(@"\"))
-			{
-				settingsFilePath += @"\";
-			}
+            if (!settingsFilePath.EndsWith(@"\"))
+            {
+                settingsFilePath += @"\";
+            }
 
-			settingsFilePath += @"SharedData\";
+            settingsFilePath += @"SharedData\";
 
-            if(!Directory.Exists(settingsFilePath))
+            if (!Directory.Exists(settingsFilePath))
             {
                 try
                 {
-					//in case you have 6 clients all trying to create the directory at once.
+                    //in case you have 6 clients all trying to create the directory at once.
                     Directory.CreateDirectory(settingsFilePath);
-				}
-				catch (Exception)
+                }
+                catch (Exception)
                 {
                 }
             }
-			string filePath = settingsFilePath+$"{E3.CurrentName}_{E3.ServerName}_pubsubport.txt";
+            string filePath = settingsFilePath + $"{E3.CurrentName}_{E3.ServerName}_pubsubport.txt";
 
             //System.IO.File.Delete(filePath);
             bool updatedFile = false;
             Int32 counter = 0;
-            while(!updatedFile)
+            while (!updatedFile)
             {
                 counter++;
-				try
-				{
+                try
+                {
 
-					System.IO.File.WriteAllText(filePath, port.ToString() + "," + localIP);
-					updatedFile = true;
-				}
-				catch (Exception ex)
-				{
+                    System.IO.File.WriteAllText(filePath, port.ToString() + "," + localIP);
+                    updatedFile = true;
+                }
+                catch (Exception ex)
+                {
                     System.Threading.Thread.Sleep(100);
-				    if(counter>20) //allow up 2 seconds worth of failures before we throw an exception.
+                    if (counter > 20) //allow up 2 seconds worth of failures before we throw an exception.
                     {
                         throw new Exception($"Cannot write out the pubsubport file {filePath}, some other process is using it. Try manually deleting it. ErrorMessage:" + ex.Message);
                     }
                 }
 
-			}
-			_serverThread = Task.Factory.StartNew(() => { Process(filePath); }, CancellationToken.None, TaskCreationOptions.DenyChildAttach, TaskScheduler.Default);
+            }
+            _serverThread = Task.Factory.StartNew(() => { Process(filePath); }, CancellationToken.None, TaskCreationOptions.DenyChildAttach, TaskScheduler.Default);
 
         }
-        public  static void AddTopicMessage(string topic, string message)
-        {  
+        public static void AddTopicMessage(string topic, string message)
+        {
             topicMessagePair t = topicMessagePair.Aquire();
             t.topic = topic;
-            t.message=message;
-		     _topicMessages.Enqueue(t);
+            t.message = message;
+            _topicMessages.Enqueue(t);
         }
         private void Process(string filePath)
         {
@@ -129,22 +128,22 @@ namespace E3Core.Server
             using (var pubSocket = new PublisherSocket())
             {
                 pubSocket.Options.SendHighWatermark = 50000;
-                
+
                 pubSocket.Bind("tcp://0.0.0.0:" + PubPort.ToString());
-                
+
                 while (Core.IsProcessing && E3.NetMQ_PubServerThradRun)
                 {
                     while (_topicMessages.Count > 0)
                     {
                         if (_topicMessages.TryDequeue(out var value))
                         {
-                            using(value)
+                            using (value)
                             {
-								pubSocket.SendMoreFrame(value.topic).SendFrame(value.message);
-							}
+                                pubSocket.SendMoreFrame(value.topic).SendFrame(value.message);
+                            }
                         }
                     }
-                   while(IncomingChatMessages.Count > 0)
+                    while (IncomingChatMessages.Count > 0)
                     {
                         string message;
                         if (IncomingChatMessages.TryDequeue(out message))
@@ -153,7 +152,7 @@ namespace E3Core.Server
                             pubSocket.SendMoreFrame("OnIncomingChat").SendFrame(message);
                         }
                     }
-                   while (MQChatMessages.Count > 0)
+                    while (MQChatMessages.Count > 0)
                     {
                         string message;
                         if (MQChatMessages.TryDequeue(out message))
@@ -163,7 +162,7 @@ namespace E3Core.Server
 
                         }
                     }
-                    while(CommandsToSend.Count > 0)
+                    while (CommandsToSend.Count > 0)
                     {
                         string message;
                         if (CommandsToSend.TryDequeue(out message))
@@ -177,14 +176,14 @@ namespace E3Core.Server
                 }
                 try
                 {
-					System.IO.File.Delete(filePath);
+                    System.IO.File.Delete(filePath);
 
-				}
-				catch (Exception)
+                }
+                catch (Exception)
                 {
                     MQ.Write("Issue deleting pubsub.txt file");
                 }
-				MQ.Write("Shutting down PubServer Thread.");
+                MQ.Write("Shutting down PubServer Thread.");
             }
         }
     }

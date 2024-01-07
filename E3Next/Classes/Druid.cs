@@ -1,13 +1,12 @@
-﻿using E3Core.Processors;
+﻿using E3Core.Data;
+using E3Core.Processors;
 using E3Core.Settings;
-using System;
-using E3Core.Classes;
-using E3Core.Data;
 using E3Core.Utility;
+
 using MonoCore;
+
+using System;
 using System.Collections.Generic;
-using System.Dynamic;
-using System.Linq;
 namespace E3Core.Classes
 {
     /// <summary>
@@ -37,12 +36,12 @@ namespace E3Core.Classes
                 bool needToCast = false;
                 //lets get group members
                 List<string> memberNames = E3.Bots.BotsConnected();
-               foreach (int memberid in Basics.GroupMembers)
+                foreach (int memberid in Basics.GroupMembers)
                 {
                     Spawn s;
-                    if (_spawns.TryByID(memberid,out s))
+                    if (_spawns.TryByID(memberid, out s))
                     {
-                        if(memberNames.Contains(s.CleanName))
+                        if (memberNames.Contains(s.CleanName))
                         {
                             List<Int32> buffList = E3.Bots.BuffList(s.CleanName);
                             _log.Write($"Bufflist for {s.CleanName}:" + String.Join(",", buffList));
@@ -59,7 +58,7 @@ namespace E3Core.Classes
                 {
                     needToCast = true;
                 }
-                
+
                 if (needToCast)
                 {
                     if (Casting.CheckReady(_cheetaSpell))

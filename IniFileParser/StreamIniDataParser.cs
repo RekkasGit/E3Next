@@ -1,8 +1,9 @@
+using IniParser.Model;
+using IniParser.Model.Formatting;
+using IniParser.Parser;
+
 using System;
 using System.IO;
-using IniParser.Model;
-using IniParser.Parser;
-using IniParser.Model.Formatting;
 
 namespace IniParser
 {
@@ -20,7 +21,7 @@ namespace IniParser
         /// <summary>
         ///     Ctor
         /// </summary>
-        public StreamIniDataParser() : this (new IniDataParser()) {}
+        public StreamIniDataParser() : this(new IniDataParser()) { }
 
         /// <summary>
         ///     Ctor
@@ -46,7 +47,7 @@ namespace IniParser
         {
             if (reader == null)
                 throw new ArgumentNullException("reader");
-            
+
             return Parser.Parse(reader.ReadToEnd());
         }
 
@@ -68,7 +69,7 @@ namespace IniParser
             writer.Write(iniData.ToString());
         }
 
-        
+
         /// <summary>
         ///     Writes the ini data to a stream.
         /// </summary>

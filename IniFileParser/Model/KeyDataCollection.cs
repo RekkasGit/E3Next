@@ -30,7 +30,7 @@ namespace IniParser.Model
         {
             _searchComparer = searchComparer;
             _keyData = new Dictionary<string, KeyData>(_searchComparer);
-            
+
         }
 
         /// <summary>
@@ -210,7 +210,7 @@ namespace IniParser.Model
             if (AddKey(keyName))
             {
                 _keyData[keyName].Value = keyValue;
-                
+
                 return true;
             }
             if (!_keyData[keyName].ValueList.Contains(keyValue))
@@ -267,7 +267,7 @@ namespace IniParser.Model
         {
             foreach (var keyData in keyDataToMerge)
             {
-                if(AddKey(keyData.KeyName))
+                if (AddKey(keyData.KeyName))
                 {
                     _keyData[keyData.KeyName].ValueList.AddRange(keyData.ValueList);
                 }
@@ -371,7 +371,7 @@ namespace IniParser.Model
         /// Collection of KeyData for a given section
         /// </summary>
         private readonly Dictionary<string, KeyData> _keyData;
-        
+
 
         #endregion
 

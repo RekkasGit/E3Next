@@ -2,15 +2,12 @@
 using E3Core.Processors;
 using E3Core.Settings;
 using E3Core.Utility;
+
 using MonoCore;
+
 using System;
 using System.Collections.Generic;
-using System.Globalization;
 using System.Linq;
-using System.Security.Cryptography;
-using System.Text;
-using System.Threading.Tasks;
-using System.Windows.Forms.VisualStyles;
 
 namespace E3Core.Classes
 {
@@ -105,9 +102,9 @@ namespace E3Core.Classes
                     return;
                 }
 
-                _isExternalRequest = !E3.Bots.BotsConnected().Contains(_requester);               
+                _isExternalRequest = !E3.Bots.BotsConnected().Contains(_requester);
                 var weaponSplit = x.match.Groups[2].ToString().Split('|');
-                if (!_isExternalRequest && weaponSplit.Length != 2) 
+                if (!_isExternalRequest && weaponSplit.Length != 2)
                 {
                     if (E3.CharacterSettings.PetWeapons.TryGetValue(_requester, out var weaponConfig))
                     {
@@ -133,10 +130,10 @@ namespace E3Core.Classes
                     return;
                 }
 
-                if(_spawns.TryByName(_requester, out var requesterSpawn))
+                if (_spawns.TryByName(_requester, out var requesterSpawn))
                 {
                     var theirPetId = requesterSpawn.PetID;
-                    if(theirPetId < 0)
+                    if (theirPetId < 0)
                     {
                         MQ.Cmd($"/t {_requester} You don't have a pet to equip!");
                         return;
@@ -227,7 +224,7 @@ namespace E3Core.Classes
                     {
                         continue;
                     }
-                    
+
                     var theirPetLevel = MQ.Query<int>($"${{Spawn[{ownerSpawn.Name}].Pet.Level}}");
                     if (theirPetLevel == 1)
                     {
@@ -350,30 +347,30 @@ namespace E3Core.Classes
 
                 return;
             }
-			Casting.TrueTarget(petId);
-           
-			var spell = new Spell(_armorSpell);
+            Casting.TrueTarget(petId);
+
+            var spell = new Spell(_armorSpell);
             Int32 castAttempts = 0;
-            if(Casting.CheckReady(spell) && Casting.CheckMana(spell))
-			{
-				while(Casting.Cast(petId, spell) == CastReturn.CAST_FIZZLE)
-				{
+            if (Casting.CheckReady(spell) && Casting.CheckMana(spell))
+            {
+                while (Casting.Cast(petId, spell) == CastReturn.CAST_FIZZLE)
+                {
                     if (castAttempts > 7) break;
-					MQ.Delay(1500);
+                    MQ.Delay(1500);
                     castAttempts++;
-				}
-			}
-			castAttempts = 0;
-			spell = new Spell(_focusSpell);
-			if (Casting.CheckReady(spell) && Casting.CheckMana(spell))
-			{
-				while (Casting.Cast(petId, spell) == CastReturn.CAST_FIZZLE)
-				{
-					if (castAttempts > 7) break;
-					MQ.Delay(1500);
-					castAttempts++;
-				}
-			}
+                }
+            }
+            castAttempts = 0;
+            spell = new Spell(_focusSpell);
+            if (Casting.CheckReady(spell) && Casting.CheckMana(spell))
+            {
+                while (Casting.Cast(petId, spell) == CastReturn.CAST_FIZZLE)
+                {
+                    if (castAttempts > 7) break;
+                    MQ.Delay(1500);
+                    castAttempts++;
+                }
+            }
 
             var dskGloveItem = "Glyphwielder's Ascendant Gloves of the Summoner";
             var hasDskGloves = MQ.Query<bool>($"${{FindItem[{dskGloveItem}]}}");
@@ -382,7 +379,7 @@ namespace E3Core.Classes
                 MQ.Cmd($"/useitem {dskGloveItem}");
             }
 
-			var pet = _spawns.Get().FirstOrDefault(f => f.ID == petId);
+            var pet = _spawns.Get().FirstOrDefault(f => f.ID == petId);
             if (pet != null)
             {
                 if (_isExternalRequest)

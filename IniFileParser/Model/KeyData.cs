@@ -1,6 +1,5 @@
 using System;
 using System.Collections.Generic;
-using System.Data;
 using System.Linq;
 
 namespace IniParser.Model
@@ -18,7 +17,7 @@ namespace IniParser.Model
         /// </summary>
         public KeyData(string keyName)
         {
-            if(string.IsNullOrEmpty(keyName))
+            if (string.IsNullOrEmpty(keyName))
                 throw new ArgumentException("key name can not be empty");
 
             _comments = new List<string>();
@@ -54,7 +53,7 @@ namespace IniParser.Model
         public List<string> Comments
         {
             get { return _comments; }
-            set 
+            set
             {
                 _comments.AddRange(value);
                 //_comments = new List<string> (value) ; 
@@ -66,13 +65,14 @@ namespace IniParser.Model
         /// </summary>
         public string Value
         {
-            get { return ValueList.LastOrDefault() ?? string.Empty;}
-            set {
-             
+            get { return ValueList.LastOrDefault() ?? string.Empty; }
+            set
+            {
+
                 _valueList.Add(value);
             }
         }
-       
+
 
         public List<string> ValueList
         {

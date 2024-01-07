@@ -13,9 +13,9 @@ namespace IniParser.Model
         #region Initialization
 
         public SectionData(string sectionName)
-            :this(sectionName, EqualityComparer<string>.Default)
+            : this(sectionName, EqualityComparer<string>.Default)
         {
-            
+
         }
         /// <summary>
         ///     Initializes a new instance of the <see cref="SectionData"/> class.
@@ -58,7 +58,7 @@ namespace IniParser.Model
 
         #endregion
 
-		#region Operations
+        #region Operations
 
         /// <summary>
         ///     Deletes all comments in this section and key/value pairs
@@ -74,9 +74,9 @@ namespace IniParser.Model
         /// Deletes all the key-value pairs in this section.
         /// </summary>
 		public void ClearKeyData()
-		{
-			Keys.RemoveAllKeys();
-		}
+        {
+            Keys.RemoveAllKeys();
+        }
 
         /// <summary>
         ///     Merges otherSection into this, adding new keys if they don't exists
@@ -89,16 +89,16 @@ namespace IniParser.Model
         /// <param name="toMergeSection"></param>
         public void Merge(SectionData toMergeSection)
         {
-            foreach (var comment in toMergeSection.LeadingComments) 
+            foreach (var comment in toMergeSection.LeadingComments)
                 LeadingComments.Add(comment);
-                
+
             Keys.Merge(toMergeSection.Keys);
 
-            foreach(var comment in toMergeSection.TrailingComments) 
+            foreach (var comment in toMergeSection.TrailingComments)
                 TrailingComments.Add(comment);
         }
 
-		#endregion
+        #endregion
 
         #region Properties
 
@@ -123,7 +123,7 @@ namespace IniParser.Model
         }
 
 
-		[Obsolete("Do not use this property, use property Comments instead")]
+        [Obsolete("Do not use this property, use property Comments instead")]
         public List<string> LeadingComments
         {
             get
@@ -147,13 +147,13 @@ namespace IniParser.Model
         {
             get
             {
-				return _leadingComments;
+                return _leadingComments;
             }
 
 
         }
 
-		[Obsolete("Do not use this property, use property Comments instead")]
+        [Obsolete("Do not use this property, use property Comments instead")]
         public List<string> TrailingComments
         {
             get

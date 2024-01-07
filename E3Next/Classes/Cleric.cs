@@ -1,14 +1,6 @@
 ﻿using E3Core.Processors;
-using E3Core.Settings;
-using System;
-using E3Core.Classes;
-using E3Core.Data;
-using E3Core.Utility;
+
 using MonoCore;
-using System.Collections.Generic;
-using System.Dynamic;
-using System.Linq;
-using Microsoft.Win32;
 
 namespace E3Core.Classes
 {
@@ -31,6 +23,6 @@ namespace E3Core.Classes
             if (_isInit) return;
             _isInit = true;
         }
-     
+
     }
 }

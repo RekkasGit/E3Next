@@ -1,14 +1,12 @@
-﻿using E3Core.Processors;
+﻿using E3Core.Data;
+using E3Core.Processors;
 using E3Core.Settings;
-using System;
-using E3Core.Classes;
-using E3Core.Data;
 using E3Core.Utility;
+
 using MonoCore;
+
+using System;
 using System.Collections.Generic;
-using System.Dynamic;
-using System.Linq;
-using System.Windows.Forms;
 
 namespace E3Core.Classes
 {
@@ -81,7 +79,7 @@ namespace E3Core.Classes
                 {
                     if (Casting.CheckReady(_sonataSpell))
                     {
-                        bool haveBardSong =MQ.Query<bool>("${Me.Buff[Selo's Accelerating Chorus].ID}");
+                        bool haveBardSong = MQ.Query<bool>("${Me.Buff[Selo's Accelerating Chorus].ID}");
                         if (!haveBardSong)
                         {
 
@@ -133,15 +131,15 @@ namespace E3Core.Classes
             if (!_playingMelody || _forceOverride) return;
 
             //go through the ifs and see if we should change the melodies
-            foreach(var melodyCheck in E3.CharacterSettings.Bard_MelodyIfs)
+            foreach (var melodyCheck in E3.CharacterSettings.Bard_MelodyIfs)
             {
                 bool melodyTrue = Casting.Ifs(melodyCheck.MelodyIf);
-                if(melodyTrue)
+                if (melodyTrue)
                 {
-                    if(!_currentMelody.Equals(melodyCheck.MelodyName, StringComparison.OrdinalIgnoreCase))
+                    if (!_currentMelody.Equals(melodyCheck.MelodyName, StringComparison.OrdinalIgnoreCase))
                     {
                         StartMelody(melodyCheck.MelodyName);
-                        
+
                     }
                     return;
                 }
@@ -155,28 +153,28 @@ namespace E3Core.Classes
         {
 
 
-            if(!_playingMelody && !Assist.IsAssisting)
+            if (!_playingMelody && !Assist.IsAssisting)
             {
                 return;
             }
 
-            if ( _songs.Count==0) return;            
+            if (_songs.Count == 0) return;
             if (E3.IsInvis || e3util.IsActionBlockingWindowOpen())
             {
                 return;
             }
-            if(Casting.IsCasting())
+            if (Casting.IsCasting())
             {
                 return;
             }
             if (_songs.Count == 1 && MQ.Query<bool>("${Me.Casting}")) return;
 
             //lets play a song!
-            Data.Spell songToPlay= _songs.Dequeue();
+            Data.Spell songToPlay = _songs.Dequeue();
             _songs.Enqueue(songToPlay);
-            
+
             //if this base song duration > 18 seconds check to see if we have it as a buff, otherwise recast. 
-            if(songToPlay.DurationTotalSeconds>18)
+            if (songToPlay.DurationTotalSeconds > 18)
             {
                 string BuffSecondsLeftQuery = "${Me.Buff[" + songToPlay.SpellName + "].Duration.TotalSeconds}";
                 string SongSecondsLeftQuery = "${Me.Song[" + songToPlay.SpellName + "].Duration.TotalSeconds}";
@@ -207,12 +205,12 @@ namespace E3Core.Classes
         /// </summary>
         /// <param name="melodyName">Name of the melody.</param>
         /// <param name="force">if set to <c>true</c> [force].</param>
-        public static void StartMelody(string melodyName, bool force=false)
+        public static void StartMelody(string melodyName, bool force = false)
         {
-             _songs.Clear();
+            _songs.Clear();
             //lets find the melody in the character ini.
             CharacterSettings.LoadKeyData($"{melodyName} Melody", "Song", E3.CharacterSettings.ParsedData, _songs);
-            if(_songs.Count>0)
+            if (_songs.Count > 0)
             {
                 MQ.Write($"\aoStart Melody:\ag{melodyName}");
                 MQ.Cmd("/stopsong");
@@ -223,20 +221,20 @@ namespace E3Core.Classes
         }
         public static void RestartMelody()
         {
-            if(_playingMelody && !String.IsNullOrWhiteSpace(_currentMelody))
+            if (_playingMelody && !String.IsNullOrWhiteSpace(_currentMelody))
             {
-				_songs.Clear();
-				//lets find the melody in the character ini.
-				CharacterSettings.LoadKeyData($"{_currentMelody} Melody", "Song", E3.CharacterSettings.ParsedData, _songs);
-				if (_songs.Count > 0)
-				{
-					MQ.Write($"\aoStart Melody:\ag{_currentMelody}");
-					MQ.Cmd("/stopsong");
-					
-				}
-			}
-			
-		}
+                _songs.Clear();
+                //lets find the melody in the character ini.
+                CharacterSettings.LoadKeyData($"{_currentMelody} Melody", "Song", E3.CharacterSettings.ParsedData, _songs);
+                if (_songs.Count > 0)
+                {
+                    MQ.Write($"\aoStart Melody:\ag{_currentMelody}");
+                    MQ.Cmd("/stopsong");
+
+                }
+            }
+
+        }
 
     }
 }

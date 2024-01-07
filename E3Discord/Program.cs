@@ -1,5 +1,4 @@
 ﻿using System;
-using System.Diagnostics;
 using System.Runtime.InteropServices;
 using System.Threading;
 using System.Threading.Tasks;
@@ -33,8 +32,8 @@ namespace E3Discord
             {
                 var task = Task.Run(() => DiscordMessager.PollDiscord());
                 if (task.Wait(TimeSpan.FromSeconds(60))) // if it didn't return in 60 seconds, the bot's everquest client likely went disconnected. kill this process
-                { 
-                    task.GetAwaiter().GetResult(); 
+                {
+                    task.GetAwaiter().GetResult();
                 }
                 else
                 {

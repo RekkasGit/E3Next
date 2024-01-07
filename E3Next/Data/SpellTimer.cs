@@ -1,10 +1,7 @@
 ﻿using MonoCore;
+
 using System;
-using System.Collections.Concurrent;
 using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
 
 namespace E3Core.Data
 {
@@ -12,8 +9,8 @@ namespace E3Core.Data
     {
         public Int32 MobID;
         public Dictionary<Int32, Int64> Timestamps = new Dictionary<Int32, Int64>();
-		public Dictionary<Int32, Int64> TimestampBySpellDuration = new Dictionary<Int32, Int64>();
-		public Dictionary<Int32, Int64> Lockedtimestamps = new Dictionary<Int32, Int64>();
+        public Dictionary<Int32, Int64> TimestampBySpellDuration = new Dictionary<Int32, Int64>();
+        public Dictionary<Int32, Int64> Lockedtimestamps = new Dictionary<Int32, Int64>();
 
         public static SpellTimer Aquire()
         {
@@ -31,7 +28,7 @@ namespace E3Core.Data
             Timestamps.Clear();
             TimestampBySpellDuration.Clear();
 
-			Lockedtimestamps.Clear();
+            Lockedtimestamps.Clear();
             StaticObjectPool.Push(this);
         }
         ~SpellTimer()

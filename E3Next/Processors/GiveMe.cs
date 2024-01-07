@@ -1,7 +1,9 @@
 ﻿using E3Core.Data;
 using E3Core.Settings;
 using E3Core.Utility;
+
 using MonoCore;
+
 using System;
 using System.Collections.Generic;
 using System.Linq;
@@ -77,11 +79,11 @@ namespace E3Core.Processors
             _groupSpellRequests.Add("Azure Mind Crystal III", new Spell("Azure Mind Crystal"));
             _groupSpellRequests.Add("Summoned: Large Modulation Shard", new Spell("Large Modulation Shard"));
             _groupSpellRequests.Add("Sanguine Mind Crystal III", new Spell("Sanguine Mind Crystal"));
-			_groupSpellRequests.Add("Blazing Void Orb", new Spell("Glyphwielder's Eternal Bracer"));
-			_groupSpellRequests.Add("Molten orb", new Spell("Summon: Molten Orb"));
+            _groupSpellRequests.Add("Blazing Void Orb", new Spell("Glyphwielder's Eternal Bracer"));
+            _groupSpellRequests.Add("Molten orb", new Spell("Summon: Molten Orb"));
             _groupSpellRequests.Add("Lava orb", new Spell("Summon: Lava Orb"));
             _groupSpellRequests.Add("Rod of Mystical Transvergence", new Spell("Mass Mystical Transvergence"));
-          
+
 
             foreach (var input in E3.CharacterSettings.Gimme)
             {
@@ -112,7 +114,7 @@ namespace E3Core.Processors
             {
 
                 if (Basics.InCombat() && !E3.CharacterSettings.Gimme_InCombat) return;
-               
+
                 Int32 qty = int.MaxValue;
                 //giveme Alara "Something" qty Rekken
                 if (x.args.Count > 3)
@@ -145,7 +147,7 @@ namespace E3Core.Processors
                 //giveme Alara "Something" qty Rekken
                 if (x.args.Count > 0)
                 {
-                    while(Casting.InGlobalCooldown())
+                    while (Casting.InGlobalCooldown())
                     {
                         MQ.Delay(50);
                     }
@@ -244,7 +246,7 @@ namespace E3Core.Processors
                             MQ.Cmd("/click left target", 250);
                             MQ.Delay(2000, "${Cursor.ID}");
                         }
-                       
+
                         E3.Bots.Trade(whoToGiveTo);
                         MQ.Cmd("/invoke ${Window[InventoryWindow].DoClose}");
                         return;
@@ -293,7 +295,7 @@ namespace E3Core.Processors
         private static void DoGroupSpellGive(string whoToGiveTo, string whatToGive)
         {
             Spawn spawn;
-            if(_spawns.TryByName(whoToGiveTo, out spawn))
+            if (_spawns.TryByName(whoToGiveTo, out spawn))
             {
                 //check if group member
                 if (!Basics.GroupMembers.Contains(spawn.ID)) return;

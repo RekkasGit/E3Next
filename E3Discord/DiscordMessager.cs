@@ -1,5 +1,7 @@
 ﻿using ApiLibrary.Models;
+
 using E3NextUI.Server;
+
 using System;
 using System.Collections.Generic;
 using System.Linq;
@@ -29,8 +31,8 @@ namespace E3Discord
         public static bool IsInit;
         public static string DiscordDmChannel;
 
-        public static void Init(string[] args) 
-        { 
+        public static void Init(string[] args)
+        {
             try
             {
                 // exe path, publisher port, router port, pub client port, discord bot token, discord guild chat channel id, discord server id
@@ -46,7 +48,7 @@ namespace E3Discord
                 var discordServerId = args[6];
                 string myDiscordUserId = string.Empty;
                 if (args.Length > 8)
-                     myDiscordUserId = args[8];
+                    myDiscordUserId = args[8];
 
                 _pubClient = new PubClient();
                 _pubClient.Start(pubClientPort);

@@ -1,11 +1,8 @@
-﻿using E3Core.Settings.FeatureSettings;
-using E3Core.Utility;
-using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
+﻿using E3Core.Utility;
+
 using MonoCore;
+
+using System;
 
 
 namespace E3Core.Processors
@@ -26,7 +23,7 @@ namespace E3Core.Processors
             EventProcessor.RegisterCommand("/restock", (x) =>
             {
                 string itemName = "food";
-                if(x.args.Count>1)
+                if (x.args.Count > 1)
                 {
                     itemName = x.args[0];
                 }
@@ -44,7 +41,7 @@ namespace E3Core.Processors
                     }
                 }
                 itemName = itemName.ToLower();
-                switch(itemName)
+                switch (itemName)
                 {
                     case "emerald":
                         RestockItem(itemName, qtyNeeded);
@@ -59,7 +56,7 @@ namespace E3Core.Processors
                         RestockFoodWater();
                         break;
                 }
-                    
+
             });
         }
         /// <summary>
@@ -68,17 +65,17 @@ namespace E3Core.Processors
         /// <param name="itemName"> Name of the item to check</param>
         private static int CheckQtyStackSize(string itemName)
         {
-            
+
             int itemQtyStackSize = MQ.Query<int>($"${{FindItem[{itemName}].StackSize}}");
             int qtyNeeded = -1;
             int itemQty = -1;
-            
+
             if (!String.IsNullOrWhiteSpace(itemName))
             {
                 itemQty = MQ.Query<int>($"${{FindItemCount[{itemName}]}}");
             }
 
-            if (itemQty >= itemQtyStackSize )
+            if (itemQty >= itemQtyStackSize)
             {
                 MQ.Write($"\arYou already have more than a stack of {itemName}!");
                 return qtyNeeded;
@@ -88,12 +85,12 @@ namespace E3Core.Processors
 
             return qtyNeeded;
         }
-        
+
         private static void RestockFoodWater()
         {
             string toEat = "Iron Ration";
             string toDrink = "Water Flask";
-                        
+
 
             //check how many items are needed to make a stack of the specified food and drink, return -1 if they already have more than a stack
 
@@ -103,12 +100,12 @@ namespace E3Core.Processors
             int toEatQty = 20;
             if (foodAvail > 0)
             {
-                toEatQty=CheckQtyStackSize(toEat);
+                toEatQty = CheckQtyStackSize(toEat);
             }
             int toDrinkQty = 20;
             if (drinkAvail > 0)
             {
-                toDrinkQty=CheckQtyStackSize(toDrink);
+                toDrinkQty = CheckQtyStackSize(toDrink);
 
             }
 
@@ -133,14 +130,14 @@ namespace E3Core.Processors
 
                 }
                 else if (zoneID == 202 || zoneID == 386)
-                {                
+                {
                     //zoneID 202 = Plane of Knowledge
                     //zoneId 386 = Marr temple
                     string vendorName = "Vori";
                     vendorID = MQ.Query<int>($"${{Spawn[{vendorName}].ID}}");
                 }
 
-                if(vendorID==0)
+                if (vendorID == 0)
                 {
                     vendorID = MQ.Query<Int32>("${Target.ID}");
                 }
@@ -171,10 +168,10 @@ namespace E3Core.Processors
 
         private static void RestockItem(string itemName, int qtyNeeded)
         {
-            
+
             //check how many items are needed to make a stack of the specified item, return -1 if they already have more than a stack
             int restockQty = CheckQtyStackSize(itemName);
-            
+
 
             if (restockQty <= 0)
             {
@@ -184,7 +181,7 @@ namespace E3Core.Processors
             else
             {
                 MQ.Write($"\agInitiating restock for {itemName}.");
-                
+
             }
         }
         /// <summary>
@@ -208,7 +205,7 @@ namespace E3Core.Processors
                 MQ.Delay(200);
                 buyingItemText = MQ.Query<string>("${Window[MerchantWnd].Child[MW_SelectedItemLabel].Text}");
             }
-            
+
             if (buyingItemText != itemName)
             {
                 E3.Bots.Broadcast($"\arERROR: Buying item cannot get vendor to select, exiting. Item:{itemName}");
@@ -236,6 +233,6 @@ namespace E3Core.Processors
             }
 
         }
-        
+
     }
 }

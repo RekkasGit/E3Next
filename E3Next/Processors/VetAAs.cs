@@ -1,15 +1,6 @@
 ﻿using E3Core.Data;
-using E3Core.Settings;
-using E3Core.Settings.FeatureSettings;
-using E3Core.Utility;
-using IniParser;
+
 using MonoCore;
-using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Security.Cryptography.X509Certificates;
-using System.Text;
-using System.Threading.Tasks;
 
 namespace E3Core.Processors
 {
@@ -70,7 +61,7 @@ namespace E3Core.Processors
             {
                 if (x.args.Count == 0)
                 {
-                    E3.Bots.BroadcastCommandToGroup("/throne me",x);
+                    E3.Bots.BroadcastCommandToGroup("/throne me", x);
                 }
                 Casting.Interrupt();
                 MQ.Delay(500);
@@ -92,7 +83,7 @@ namespace E3Core.Processors
             });
         }
 
-        private static void VetAA(string vetAASpell, string command,EventProcessor.CommandMatch x)
+        private static void VetAA(string vetAASpell, string command, EventProcessor.CommandMatch x)
         {
             Spell s;
             if (!Spell.LoadedSpellsByName.TryGetValue(vetAASpell, out s))
@@ -105,7 +96,7 @@ namespace E3Core.Processors
                 {
                     Casting.Cast(0, s);
                 }
-                E3.Bots.BroadcastCommandToGroup($"{command} all",x);
+                E3.Bots.BroadcastCommandToGroup($"{command} all", x);
             }
             else
             {
@@ -117,7 +108,7 @@ namespace E3Core.Processors
                     if (E3.CurrentClass == Class.Bard)
                     {
                         MQ.Cmd("/stopsong");
-                       
+
                     }
                     Casting.Cast(0, s);
 

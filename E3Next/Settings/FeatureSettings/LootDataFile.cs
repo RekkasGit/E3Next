@@ -1,12 +1,12 @@
 ﻿using E3Core.Utility;
+
 using IniParser;
 using IniParser.Model;
+
 using System;
 using System.Collections.Generic;
 using System.Linq;
-using System.Text;
 using System.Text.RegularExpressions;
-using System.Threading.Tasks;
 
 namespace E3Core.Settings.FeatureSettings
 {
@@ -15,8 +15,8 @@ namespace E3Core.Settings.FeatureSettings
         public static HashSet<string> Keep = new HashSet<string>(10000, StringComparer.OrdinalIgnoreCase);
         public static HashSet<string> Sell = new HashSet<string>(10000, StringComparer.OrdinalIgnoreCase);
         public static HashSet<string> Skip = new HashSet<string>(10000, StringComparer.OrdinalIgnoreCase);
-		public static HashSet<string> Destroy = new HashSet<string>(10000, StringComparer.OrdinalIgnoreCase);
-		public static bool _isDirty = false;
+        public static HashSet<string> Destroy = new HashSet<string>(10000, StringComparer.OrdinalIgnoreCase);
+        public static bool _isDirty = false;
 
         private static string _fileName = @"Loot Settings.ini";
 
@@ -33,7 +33,7 @@ namespace E3Core.Settings.FeatureSettings
         public static void LoadData()
         {
             string fileNameFullPath = GetSettingsFilePath(_fileName);
-         
+
 
             if (!System.IO.File.Exists(fileNameFullPath))
             {
@@ -41,18 +41,18 @@ namespace E3Core.Settings.FeatureSettings
                 {
                     System.IO.Directory.CreateDirectory(_configFolder + _settingsFolder);
                 }
-                 //file straight up doesn't exist, lets create it
+                //file straight up doesn't exist, lets create it
                 System.IO.File.CreateText(fileNameFullPath);
             }
             else
             {
                 //File already exists, may need to merge in new settings lets check
-               
+
 
                 FileIniDataParser fileIniData = e3util.CreateIniParser();
                 _log.Write($"Reading Loot Settings:{fileNameFullPath}");
                 var parsedData = fileIniData.ReadFile(fileNameFullPath);
-                
+
                 //because of the old loot system, need to do 4 regex, and get more specific as we go down 
                 //before we go non specific on regex4
 
@@ -73,13 +73,13 @@ namespace E3Core.Settings.FeatureSettings
                 {
                     foreach (var key in section.Keys)
                     {
-                        if(key.Value.StartsWith("Sell", StringComparison.OrdinalIgnoreCase))
+                        if (key.Value.StartsWith("Sell", StringComparison.OrdinalIgnoreCase))
                         {
                             //lets get the data out of the old format. 
                             string keyname = key.KeyName;//lets get rid of the junk
                             var match = regex1.Match(keyname);
                             if (match.Success) { MatchSuccess(Sell, match); }
-                            if(!match.Success)
+                            if (!match.Success)
                             {
                                 match = regex2.Match(keyname);
                                 if (match.Success) { MatchSuccess(Sell, match); }
@@ -97,7 +97,7 @@ namespace E3Core.Settings.FeatureSettings
 
 
                         }
-                        else if(key.Value.StartsWith("Keep", StringComparison.OrdinalIgnoreCase))
+                        else if (key.Value.StartsWith("Keep", StringComparison.OrdinalIgnoreCase))
                         {
                             //lets get the data out of the old format. 
                             string keyname = key.KeyName;//lets get rid of the junk
@@ -119,29 +119,29 @@ namespace E3Core.Settings.FeatureSettings
                                 if (match.Success) { MatchSuccess(Keep, match); }
                             }
                         }
-						else if (key.Value.StartsWith("Destroy", StringComparison.OrdinalIgnoreCase))
-						{
-							//lets get the data out of the old format. 
-							string keyname = key.KeyName;//lets get rid of the junk
-							var match = regex1.Match(keyname);
-							if (match.Success) { MatchSuccess(Destroy, match); }
-							if (!match.Success)
-							{
-								match = regex2.Match(keyname);
-								if (match.Success) { MatchSuccess(Destroy, match); }
-							}
-							if (!match.Success)
-							{
-								match = regex3.Match(keyname);
-								if (match.Success) { MatchSuccess(Destroy, match); }
-							}
-							if (!match.Success)
-							{
-								match = regex4.Match(keyname);
-								if (match.Success) { MatchSuccess(Destroy, match); }
-							}
-						}
-						else
+                        else if (key.Value.StartsWith("Destroy", StringComparison.OrdinalIgnoreCase))
+                        {
+                            //lets get the data out of the old format. 
+                            string keyname = key.KeyName;//lets get rid of the junk
+                            var match = regex1.Match(keyname);
+                            if (match.Success) { MatchSuccess(Destroy, match); }
+                            if (!match.Success)
+                            {
+                                match = regex2.Match(keyname);
+                                if (match.Success) { MatchSuccess(Destroy, match); }
+                            }
+                            if (!match.Success)
+                            {
+                                match = regex3.Match(keyname);
+                                if (match.Success) { MatchSuccess(Destroy, match); }
+                            }
+                            if (!match.Success)
+                            {
+                                match = regex4.Match(keyname);
+                                if (match.Success) { MatchSuccess(Destroy, match); }
+                            }
+                        }
+                        else
                         {
                             //lets get the data out of the old format. 
                             string keyname = key.KeyName;//lets get rid of the junk
@@ -168,7 +168,7 @@ namespace E3Core.Settings.FeatureSettings
                 }
             }
 
-          
+
         }
 
         private static void MatchSuccess(HashSet<string> hash, Match match)
@@ -195,15 +195,15 @@ namespace E3Core.Settings.FeatureSettings
             List<string> _keepSorted = Keep.OrderBy(x => x).ToList();
             List<string> _sellSorted = Sell.OrderBy(x => x).ToList();
             List<string> _skipSorted = Skip.OrderBy(x => x).ToList();
-			List<string> _destroySorted = Destroy.OrderBy(x => x).ToList();
+            List<string> _destroySorted = Destroy.OrderBy(x => x).ToList();
 
-			for (char c = 'A'; c <= 'Z'; c++)
+            for (char c = 'A'; c <= 'Z'; c++)
             {
                 string tc = c.ToString();
                 newFile.Sections.AddSection(tc);
                 var section = newFile.Sections.GetSectionData(tc);
-                
-                foreach(string hashvalue in _keepSorted)
+
+                foreach (string hashvalue in _keepSorted)
                 {
                     if (hashvalue.StartsWith(tc))
                     {
@@ -224,15 +224,15 @@ namespace E3Core.Settings.FeatureSettings
                         section.Keys.AddKey(hashvalue, "Skip");
                     }
                 }
-				foreach (string hashvalue in _destroySorted)
-				{
-					if (hashvalue.StartsWith(tc))
-					{
-						section.Keys.AddKey(hashvalue, "Destroy");
-					}
-				}
+                foreach (string hashvalue in _destroySorted)
+                {
+                    if (hashvalue.StartsWith(tc))
+                    {
+                        section.Keys.AddKey(hashvalue, "Destroy");
+                    }
+                }
 
-			}
+            }
             for (char c = '0'; c <= '9'; c++)
             {
                 string tc = c.ToString();
@@ -260,15 +260,15 @@ namespace E3Core.Settings.FeatureSettings
                         section.Keys.AddKey(hashvalue, "Skip");
                     }
                 }
-				foreach (string hashvalue in _destroySorted)
-				{
-					if (hashvalue.StartsWith(tc))
-					{
-						section.Keys.AddKey(hashvalue, "Destroy");
-					}
-				}
+                foreach (string hashvalue in _destroySorted)
+                {
+                    if (hashvalue.StartsWith(tc))
+                    {
+                        section.Keys.AddKey(hashvalue, "Destroy");
+                    }
+                }
 
-			}
+            }
             string fileNameFullPath = GetSettingsFilePath(_fileName);
 
 

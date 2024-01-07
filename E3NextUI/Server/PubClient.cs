@@ -1,9 +1,10 @@
 ﻿using E3NextUI.Util;
+
 using NetMQ;
 using NetMQ.Sockets;
+
 using System;
 using System.Collections.Generic;
-using System.ServiceModel.Configuration;
 using System.Threading;
 using System.Threading.Tasks;
 using System.Windows.Forms;
@@ -14,25 +15,25 @@ namespace E3NextUI.Server
     {
         Task _serverThread;
         private Int32 _port;
-        
-		public void Start(Int32 port)
+
+        public void Start(Int32 port)
         {
             _port = port;
             _serverThread = Task.Factory.StartNew(() => { Process(); }, CancellationToken.None, TaskCreationOptions.DenyChildAttach, TaskScheduler.Default);
         }
-        List<string> _consoleContains = new List<string>(){"You say out of character", "You say, '"," says out of character, '", " tells you, '", " guild, '", " shouts, '", " party, '", " raid, '", " says, '", " group, '", " auctions, '" };
-        List<string> _spellContains = new List<string>() { @"begins to cast a spell.","'s body is "," damage from ", "a critical blast!" };
-        List<string> _spellEndWith = new List<string>() { "begins to cast a spell.", "'s enchantments fades.", " was burned.",  "'s casting is interrupted!", "'s spell fizzles!", "non-melee damage." };
+        List<string> _consoleContains = new List<string>() { "You say out of character", "You say, '", " says out of character, '", " tells you, '", " guild, '", " shouts, '", " party, '", " raid, '", " says, '", " group, '", " auctions, '" };
+        List<string> _spellContains = new List<string>() { @"begins to cast a spell.", "'s body is ", " damage from ", "a critical blast!" };
+        List<string> _spellEndWith = new List<string>() { "begins to cast a spell.", "'s enchantments fades.", " was burned.", "'s casting is interrupted!", "'s spell fizzles!", "non-melee damage." };
         List<string> _spellStartsWith = new List<string>() { "You begin casting ", "Your spell is interrupted." };
         TTSProcessor _ttsprocessor = new TTSProcessor();
-		public void Process()
+        public void Process()
         {
-          
-			
-           
+
+
+
             //_synth.SelectVoiceByHints(VoiceGender.Female); //zera voice built into windows
 
-			TimeSpan recieveTimeout = new TimeSpan(0, 0, 0, 0, 5);
+            TimeSpan recieveTimeout = new TimeSpan(0, 0, 0, 0, 5);
 
             using (var subSocket = new SubscriberSocket())
             {
@@ -42,11 +43,11 @@ namespace E3NextUI.Server
                 Console.WriteLine("Subscriber socket connecting...");
                 _ttsprocessor.Start();
 
-				while (E3UI.ShouldProcess)
-				{
+                while (E3UI.ShouldProcess)
+                {
                     string messageTopicReceived;
-                        
-                    if(subSocket.TryReceiveFrameString(recieveTimeout,out messageTopicReceived))
+
+                    if (subSocket.TryReceiveFrameString(recieveTimeout, out messageTopicReceived))
                     {
                         string messageReceived = subSocket.ReceiveFrameString();
                         try
@@ -70,7 +71,7 @@ namespace E3NextUI.Server
                                         if (messageReceived.Contains(c))
                                         {
                                             _ttsprocessor.AddMessageNormalQueue(messageReceived);
-										    ((E3UI)Application.OpenForms[0]).AddConsoleLine(messageReceived, E3UI.Console);
+                                            ((E3UI)Application.OpenForms[0]).AddConsoleLine(messageReceived, E3UI.Console);
                                             found = true;
                                             break;
                                         }
@@ -160,7 +161,7 @@ namespace E3NextUI.Server
                             }
                             else if (messageTopicReceived == "${InCombat}")
                             {
-                                if(Boolean.TryParse(messageReceived, out var inCombat))
+                                if (Boolean.TryParse(messageReceived, out var inCombat))
                                 {
                                     LineParser.SetCombatState(inCombat);
                                 }
@@ -174,14 +175,14 @@ namespace E3NextUI.Server
                                 }
 
                             }
-                            else if(messageTopicReceived== "${EQ.CurrentFocusedWindowName}")
+                            else if (messageTopicReceived == "${EQ.CurrentFocusedWindowName}")
                             {
 
-								if (Application.OpenForms.Count > 0 && Application.OpenForms[0] is E3UI)
-								{
-								    ((E3UI)Application.OpenForms[0]).SetCurrentWindow(messageReceived);
-								}
-							}
+                                if (Application.OpenForms.Count > 0 && Application.OpenForms[0] is E3UI)
+                                {
+                                    ((E3UI)Application.OpenForms[0]).SetCurrentWindow(messageReceived);
+                                }
+                            }
                             else if (messageTopicReceived == "GuildChatForDiscord")
                             {
                                 var messageParts = messageReceived.Split('|');
@@ -195,7 +196,7 @@ namespace E3NextUI.Server
                             {
 
                             }
-						}
+                        }
                         catch (Exception ex)
                         {
                             if (Application.OpenForms.Count > 0 && Application.OpenForms[0] is E3UI)

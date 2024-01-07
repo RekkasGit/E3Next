@@ -1,14 +1,13 @@
 ﻿using E3Core.Processors;
 using E3Core.Utility;
+
 using IniParser;
 using IniParser.Model;
-using MonoCore;
+
 using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Reflection;
-using System.Text;
-using System.Threading.Tasks;
 
 namespace E3Core.Settings
 {
@@ -38,7 +37,7 @@ namespace E3Core.Settings
         //  public static Dictionary<string, Action> _methodLookup = new Dictionary<string, Action>(StringComparer.OrdinalIgnoreCase);
 
         public static Dictionary<string, Action> MethodLookup = new Dictionary<string, Action>(StringComparer.OrdinalIgnoreCase);
-        public static Dictionary<string,Action> ClassMethodLookup = new Dictionary<string, Action>(StringComparer.OrdinalIgnoreCase);
+        public static Dictionary<string, Action> ClassMethodLookup = new Dictionary<string, Action>(StringComparer.OrdinalIgnoreCase);
         public static Dictionary<string, List<string>> ClassMethodsAsStrings = new Dictionary<string, List<string>>(StringComparer.OrdinalIgnoreCase);
         private string filename = string.Empty;
         public AdvancedSettings()
@@ -46,7 +45,7 @@ namespace E3Core.Settings
 
             Reset();
             LoadData();
-        
+
         }
         public void Reset()
         {
@@ -83,7 +82,7 @@ namespace E3Core.Settings
                 ClassMethodsAsStrings.Add(shortname, new List<string>());
                 LoadKeyData($"{shortname} Functions", $"{shortname} Function", parsedData, ClassMethodsAsStrings[shortname]);
             }
-         
+
         }
         public void InitMethods()
         {
@@ -93,10 +92,10 @@ namespace E3Core.Settings
             //var func = (Action)method.CreateDelegate(typeof(Action), this);
 
             //find all methods in all classes that have the adv setting invoke attribute. 
-            var methods = AppDomain.CurrentDomain.GetAssemblies() 
-            .SelectMany(x => x.GetTypes()) 
+            var methods = AppDomain.CurrentDomain.GetAssemblies()
+            .SelectMany(x => x.GetTypes())
             .Where(x => x.IsClass)
-            .SelectMany(x => x.GetMethods()) 
+            .SelectMany(x => x.GetMethods())
             .Where(x => x.GetCustomAttributes(typeof(AdvSettingInvokeAttribute), false).FirstOrDefault() != null); // returns only methods that have the InvokeAttribute
 
             foreach (var foundMethod in methods) // iterate through all found methods
@@ -104,34 +103,34 @@ namespace E3Core.Settings
                 //these are static don't need to create an instance
                 var func = (Action)foundMethod.CreateDelegate(typeof(Action));
                 MethodLookup.Add(foundMethod.Name, func);
-                
+
             }
             methods = AppDomain.CurrentDomain.GetAssemblies()
            .SelectMany(x => x.GetTypes())
            .Where(x => x.IsClass)
            .SelectMany(x => x.GetMethods())
-           .Where(x => x.GetCustomAttributes(typeof(ClassInvokeAttribute),false).FirstOrDefault() != null); // returns only methods that have the InvokeAttribute
+           .Where(x => x.GetCustomAttributes(typeof(ClassInvokeAttribute), false).FirstOrDefault() != null); // returns only methods that have the InvokeAttribute
 
             foreach (var foundMethod in methods) // iterate through all found methods
             {
                 //if the attribute class is the same as our current class.
                 Data.Class configClass = ((ClassInvokeAttribute)foundMethod.GetCustomAttribute(typeof(ClassInvokeAttribute), false)).CurrentClass;
-                if ((E3.CurrentClass &configClass) == E3.CurrentClass)
-                { 
+                if ((E3.CurrentClass & configClass) == E3.CurrentClass)
+                {
                     //these are static don't need to create an instance
                     var func = (Action)foundMethod.CreateDelegate(typeof(Action));
                     ClassMethodLookup.Add(foundMethod.Name, func);
                 }
             }
         }
-        public  void CreateSettings()
+        public void CreateSettings()
         {
-    
+
             if (!System.IO.File.Exists(filename) && !System.IO.File.Exists(filename))
             {
-                if (!System.IO.Directory.Exists(_configFolder+_settingsFolder))
-                {   
-                    System.IO.Directory.CreateDirectory(_configFolder+ _settingsFolder);
+                if (!System.IO.Directory.Exists(_configFolder + _settingsFolder))
+                {
+                    System.IO.Directory.CreateDirectory(_configFolder + _settingsFolder);
                 }
                 //file straight up doesn't exist, lets create it
                 System.IO.File.WriteAllText(filename, filePayload);
@@ -140,10 +139,10 @@ namespace E3Core.Settings
 
         }
 
-       
-      
 
-       
+
+
+
         string filePayload =
        @"
 [WAR Functions]

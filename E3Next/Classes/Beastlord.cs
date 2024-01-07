@@ -1,14 +1,8 @@
-﻿using E3Core.Data;
-using E3Core.Processors;
+﻿using E3Core.Processors;
 using E3Core.Settings;
 using E3Core.Utility;
+
 using MonoCore;
-using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Text.RegularExpressions;
-using System.Threading.Tasks;
 
 namespace E3Core.Classes
 {
@@ -49,7 +43,7 @@ namespace E3Core.Classes
             if (!e3util.ShouldCheck(ref _nextFocusedParagonCheck, _nextFocusedParagonCheckInterval)) return;
             if (E3.CharacterSettings.AutoFocusedParagon)
             {
-                foreach(var character in E3.CharacterSettings.FocusedParagonCharacters)
+                foreach (var character in E3.CharacterSettings.FocusedParagonCharacters)
                 {
                     MQ.Cmd($"/dobserve {character} -q Me.PctMana");
                     if (_spawns.TryByName(character, out var characterSpawn))

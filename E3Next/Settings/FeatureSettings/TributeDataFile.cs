@@ -1,13 +1,13 @@
-﻿using E3Core.Utility;
-using IniParser.Model;
+﻿using E3Core.Processors;
+using E3Core.Utility;
+
 using IniParser;
+
+using MonoCore;
+
 using System;
 using System.Collections.Generic;
 using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
-using E3Core.Processors;
-using MonoCore;
 
 namespace E3Core.Settings.FeatureSettings
 {

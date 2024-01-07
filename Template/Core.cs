@@ -1,16 +1,17 @@
 ﻿using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
-using System.Runtime.CompilerServices;
-using System.Threading;
-using System.Diagnostics;
 using System.Collections.Concurrent;
-using System.Text.RegularExpressions;
-using System.Runtime.InteropServices;
-using Template;
+using System.Collections.Generic;
+using System.Diagnostics;
 using System.Globalization;
+using System.Linq;
+using System.Runtime.CompilerServices;
+using System.Runtime.InteropServices;
+using System.Text;
+using System.Text.RegularExpressions;
+using System.Threading;
+using System.Threading.Tasks;
+
+using Template;
 
 /// <summary>
 /// Version 0.1
@@ -275,7 +276,7 @@ namespace MonoCore
 
                             }
                         }
-                        processLine:
+                    processLine:
                         foreach (var item in EventList)
                         {
                             //prevent spamming of an event to a user
@@ -299,7 +300,7 @@ namespace MonoCore
                         }
 
                     }
-                    skipLine:
+                skipLine:
                     continue;
                 }
                 else if (_mqCommandProcessingQueue.Count > 0)
@@ -845,7 +846,7 @@ namespace MonoCore
                 DelayTime = 0;
             }
 
-            RestartWait:
+        RestartWait:
             //allow the processing thread to start its work.
             //and copy cache values to other cores so the thread can see the updated information in MQ
             MainProcessor.ProcessResetEvent.Set();

@@ -1,12 +1,6 @@
-﻿using Microsoft.Win32;
-using System;
-using System.Collections.Generic;
+﻿using System;
 using System.Drawing;
-using System.Linq;
-using System.Runtime.CompilerServices;
 using System.Runtime.InteropServices;
-using System.Text;
-using System.Threading.Tasks;
 using System.Windows.Forms;
 
 namespace E3NextUI.Themese
@@ -42,7 +36,7 @@ namespace E3NextUI.Themese
 
     public static class DarkMode
     {
-    
+
         public static void ChangeTheme(System.Windows.Forms.Form form, Control.ControlCollection container)
         {
             Int32 enabled = 1;
@@ -56,7 +50,7 @@ namespace E3NextUI.Themese
                 }
 
             }
-            catch(Exception)
+            catch (Exception)
             {
                 //eat whatever exception
             }
@@ -70,27 +64,27 @@ namespace E3NextUI.Themese
         private static bool IsWindows10OrGreater(int build = -1)
         {
             string version = Environment.OSVersion.Version.Major + "." + Environment.OSVersion.Version.Minor;
-            if(Decimal.TryParse(version, out var verNumber))
+            if (Decimal.TryParse(version, out var verNumber))
             {
-                return (verNumber>=6.2M) && Environment.OSVersion.Version.Build >= build;
+                return (verNumber >= 6.2M) && Environment.OSVersion.Version.Build >= build;
             }
 
             return false;
         }
 
-            
+
         public static void ChangeThemeRecursive(Control.ControlCollection container)
         {
             foreach (Control component in container)
             {
                 if (component is Button)
                 {
-                   
+
                     component.BackColor = SystemColors.Control;
                     component.ForeColor = SystemColors.ControlText;
-                    
+
                 }
-                else if(component is MenuStrip)
+                else if (component is MenuStrip)
                 {
                     component.BackColor = Color.FromArgb(60, 60, 60);
                     if (component.ForeColor == SystemColors.ControlText)
@@ -102,7 +96,7 @@ namespace E3NextUI.Themese
                 {
                     ChangeThemeRecursive(component.Controls);
                     component.BackColor = Color.FromArgb(60, 60, 60);
-                    if (component.ForeColor== SystemColors.ControlText)
+                    if (component.ForeColor == SystemColors.ControlText)
                     {
                         component.ForeColor = System.Drawing.Color.LightGray;
                     }

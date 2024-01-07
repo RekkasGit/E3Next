@@ -1,8 +1,5 @@
 ﻿using System;
 using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
 
 namespace E3Core.Data
 {
@@ -11,10 +8,10 @@ namespace E3Core.Data
 
         static List<string> _spellPropMapping = new List<string>();
         static Dictionary<string, Int32> _spellPropIndex = new Dictionary<string, int>();
-       
+
         static SpellProperties()
         {
-            
+
             _spellPropMapping.Add("CastName");
             _spellPropMapping.Add("CastType");
             _spellPropMapping.Add("TargetType");

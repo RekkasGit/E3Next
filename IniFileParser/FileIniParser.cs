@@ -1,9 +1,10 @@
-﻿using System;
-using System.IO;
-using System.Text;
-using IniParser.Exceptions;
+﻿using IniParser.Exceptions;
 using IniParser.Model;
 using IniParser.Parser;
+
+using System;
+using System.IO;
+using System.Text;
 
 namespace IniParser
 {
@@ -15,7 +16,7 @@ namespace IniParser
         /// <summary>
         ///     Ctor
         /// </summary>
-        public FileIniDataParser() {}
+        public FileIniDataParser() { }
 
         /// <summary>
         ///     Ctor
@@ -105,7 +106,7 @@ namespace IniParser
         {
             WriteFile(filePath, parsedData, Encoding.UTF8);
         }
-                             
+
         /// <summary>
         ///     Writes INI data to a text file.
         /// </summary>
@@ -122,8 +123,8 @@ namespace IniParser
         {
             // The default value can't be assigned as a default parameter value because it is not
             // a constant expression.
-			if (fileEncoding == null)
-				fileEncoding = Encoding.UTF8;
+            if (fileEncoding == null)
+                fileEncoding = Encoding.UTF8;
 
             if (string.IsNullOrEmpty(filePath))
                 throw new ArgumentException("Bad filename.");

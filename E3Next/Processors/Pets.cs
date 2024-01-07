@@ -1,16 +1,11 @@
 ﻿using E3Core.Data;
 using E3Core.Settings;
 using E3Core.Utility;
+
 using MonoCore;
+
 using System;
 using System.Collections.Generic;
-using System.Diagnostics.SymbolStore;
-using System.Linq;
-using System.Net.Http.Headers;
-using System.Runtime.CompilerServices;
-using System.Security.Cryptography;
-using System.Text;
-using System.Threading.Tasks;
 
 namespace E3Core.Processors
 {
@@ -22,7 +17,7 @@ namespace E3Core.Processors
         private static Int32 _petMaxShrinkID = 0;
         private static Int64 _nextPetCheck = 0;
         private static Int64 _nextPetCheckInterval = 1000;
-        private static List<string> _petShrinkSpells = new List<string>() { "Diminutive Companion", "Gemstone of Dark Flame", "Symbol of Ancient Summoning", "Tiny Companion",  };
+        private static List<string> _petShrinkSpells = new List<string>() { "Diminutive Companion", "Gemstone of Dark Flame", "Symbol of Ancient Summoning", "Tiny Companion", };
 
         [SubSystemInit]
         public static void Init()
@@ -58,18 +53,18 @@ namespace E3Core.Processors
 
             }
 
-			if (Basics.InCombat() && !E3.CharacterSettings.Pet_SummonCombat)
-			{
-				return;
-			}
-			if (petId<1)
-			{
-				
-				CheckPetSummon(ref petId);
+            if (Basics.InCombat() && !E3.CharacterSettings.Pet_SummonCombat)
+            {
+                return;
+            }
+            if (petId < 1)
+            {
 
-			}
+                CheckPetSummon(ref petId);
 
-		}
+            }
+
+        }
 
         private static void CheckPetSummon(ref Int32 petID)
         {
@@ -94,7 +89,7 @@ namespace E3Core.Processors
                         break;
                     }
                 }
-                if(castPet)
+                if (castPet)
                 {
                     //wait for the pet to appear
                     MQ.Delay(1000);
@@ -104,7 +99,7 @@ namespace E3Core.Processors
                         MQ.Cmd("/squelch /pet ghold on");
                     }
                 }
-              
+
             }
         }
         private static void CheckPetHeal(Int32 petID)

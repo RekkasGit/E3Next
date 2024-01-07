@@ -1,8 +1,5 @@
 ﻿using System;
 using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
 
 namespace E3Core.Data
 {
@@ -37,7 +34,7 @@ namespace E3Core.Data
         FeignDeathClass = Necromancer | Shadowknight | Monk,
         ManaUsers = Caster | Priest | HealHybrid | Shadowknight,
         Ranged = Caster | Ranger,
-        Charmer = Enchanter|Druid|Necromancer
+        Charmer = Enchanter | Druid | Necromancer
     }
 
     public static class Classes
@@ -46,14 +43,14 @@ namespace E3Core.Data
 
         static Classes()
         {
-            foreach(var pair in ClassLongToShort)
+            foreach (var pair in ClassLongToShort)
             {
                 _classShortToLong.Add(pair.Value, pair.Key);
             }
-        
+
         }
 
-    public static List<string> ClassShortNames = new List<string>() { "WAR",
+        public static List<string> ClassShortNames = new List<string>() { "WAR",
                                                                             "PAL",
                                                                             "RNG",
                                                                             "SHD",
@@ -89,7 +86,7 @@ namespace E3Core.Data
                                                                                                         {"Berserker","BER"}};
 
 
-        public static Dictionary<string, string> _classShortToLong = new Dictionary<string, string>(StringComparer.OrdinalIgnoreCase); 
+        public static Dictionary<string, string> _classShortToLong = new Dictionary<string, string>(StringComparer.OrdinalIgnoreCase);
 
     }
 }

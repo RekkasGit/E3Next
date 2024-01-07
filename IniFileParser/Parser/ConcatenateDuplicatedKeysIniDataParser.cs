@@ -1,6 +1,3 @@
-using System;
-using System.Collections.Generic;
-using IniParser.Exceptions;
 using IniParser.Model;
 using IniParser.Model.Configuration;
 
@@ -22,12 +19,12 @@ namespace IniParser.Parser
         }
 
         public ConcatenateDuplicatedKeysIniDataParser()
-            :this(new ConcatenateDuplicatedKeysIniParserConfiguration())
-        {}
+            : this(new ConcatenateDuplicatedKeysIniParserConfiguration())
+        { }
 
         public ConcatenateDuplicatedKeysIniDataParser(ConcatenateDuplicatedKeysIniParserConfiguration parserConfiguration)
-            :base(parserConfiguration)
-        {}
+            : base(parserConfiguration)
+        { }
 
         protected override void HandleDuplicatedKeyInCollection(string key, string value, KeyDataCollection keyDataCollection, string sectionName)
         {

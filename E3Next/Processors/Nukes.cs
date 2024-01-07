@@ -1,12 +1,10 @@
-﻿using E3Core.Classes;
-using E3Core.Data;
-using E3Core.Settings;
+﻿using E3Core.Settings;
 using E3Core.Utility;
+
 using MonoCore;
+
 using System;
 using System.Collections.Generic;
-using System.Dynamic;
-using System.Linq;
 
 namespace E3Core.Processors
 {
@@ -37,15 +35,15 @@ namespace E3Core.Processors
 
             EventProcessor.RegisterCommand("/pbaeon", (x) =>
             {
-                 if (E3.CharacterSettings.PBAE.Count > 0)
+                if (E3.CharacterSettings.PBAE.Count > 0)
                 {
                     PBAEEnabled = true;
                     E3.Bots.Broadcast("Enabling PBAE");
-                   
+
                 }
                 if (x.args.Count == 0)
                 {
-                   E3.Bots.BroadcastCommandToGroup($"/pbaeon all",x);
+                    E3.Bots.BroadcastCommandToGroup($"/pbaeon all", x);
                 }
 
             });
@@ -56,7 +54,7 @@ namespace E3Core.Processors
                 {
                     PBAEEnabled = false;
                     E3.Bots.Broadcast("Disabling PBAE");
-                   
+
                 }
                 if (x.args.Count == 0)
                 {
@@ -69,7 +67,7 @@ namespace E3Core.Processors
         [ClassInvoke(Data.Class.All)]
         public static void CheckPBAE()
         {
-            if (PBAEEnabled  && E3.CharacterSettings.PBAE.Count>0&& MQ.Query<bool>($"!${{Bool[${{SpawnCount[npc radius {E3.GeneralSettings.Assists_AEThreatRange}]}}]}}"))
+            if (PBAEEnabled && E3.CharacterSettings.PBAE.Count > 0 && MQ.Query<bool>($"!${{Bool[${{SpawnCount[npc radius {E3.GeneralSettings.Assists_AEThreatRange}]}}]}}"))
             {
                 E3.Bots.Broadcast($"\aoDisabiling PBAE as no more mobs in {E3.GeneralSettings.Assists_AEThreatRange} radius");
                 PBAEEnabled = false;
@@ -98,7 +96,7 @@ namespace E3Core.Processors
             {
                 //person in manual control and they are not on the assist target, chill.
                 Int32 targetId = MQ.Query<Int32>("${Target.ID}");
-                if(targetId!=Assist.AssistTargetID && e3util.IsManualControl())
+                if (targetId != Assist.AssistTargetID && e3util.IsManualControl())
                 {
                     return;
                 }
@@ -256,8 +254,8 @@ namespace E3Core.Processors
                             }
 
                         }
-                
-                    
+
+
                         CastReturn result = Casting.Cast(0, spell, Heals.SomeoneNeedsHealing);
                         if (result == CastReturn.CAST_INTERRUPTFORHEAL)
                         {

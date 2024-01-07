@@ -1,16 +1,17 @@
-﻿using System;
-using System.Collections.Generic;
-using IniParser.Exceptions;
+﻿using IniParser.Exceptions;
 using IniParser.Model;
 using IniParser.Model.Configuration;
+
+using System;
+using System.Collections.Generic;
 using System.Collections.ObjectModel;
 
 namespace IniParser.Parser
 {
-	/// <summary>
-	/// 	Responsible for parsing an string from an ini file, and creating
-	/// 	an <see cref="IniData"/> structure.
-	/// </summary>
+    /// <summary>
+    /// 	Responsible for parsing an string from an ini file, and creating
+    /// 	an <see cref="IniData"/> structure.
+    /// </summary>
     public class IniDataParser
     {
         #region Private
@@ -68,10 +69,10 @@ namespace IniParser.Parser
         /// exception that was raised.
         /// </remarks>
 
-        public ReadOnlyCollection<Exception> Errors {get {return _errorExceptions.AsReadOnly();} }
-		#endregion
+        public ReadOnlyCollection<Exception> Errors { get { return _errorExceptions.AsReadOnly(); } }
+        #endregion
 
-		#region Operations
+        #region Operations
 
         /// <summary>
         ///     Parses a string containing valid ini data
@@ -88,7 +89,7 @@ namespace IniParser.Parser
         /// </exception>
         public IniData Parse(string iniDataString)
         {
-            
+
             IniData iniData = Configuration.CaseInsensitive ? new IniDataCaseInsensitive() : new IniData();
             iniData.Configuration = this.Configuration.Clone();
 
@@ -103,7 +104,7 @@ namespace IniParser.Parser
 
             try
             {
-                var lines = iniDataString.Split(new []{"\n", "\r\n"}, StringSplitOptions.None);
+                var lines = iniDataString.Split(new[] { "\n", "\r\n" }, StringSplitOptions.None);
                 for (int lineNumber = 0; lineNumber < lines.Length; lineNumber++)
                 {
                     var line = lines[lineNumber];
@@ -116,8 +117,8 @@ namespace IniParser.Parser
                     }
                     catch (Exception ex)
                     {
-                        var errorEx = new ParsingException(ex.Message, lineNumber+1, line, ex);
-                        if (Configuration.ThrowExceptionsOnError) 
+                        var errorEx = new ParsingException(ex.Message, lineNumber + 1, line, ex);
+                        if (Configuration.ThrowExceptionsOnError)
                         {
                             throw errorEx;
                         }
@@ -140,22 +141,22 @@ namespace IniParser.Parser
                     }
                     // No sections, put the comment in the last key value pair
                     // but only if the ini file contains at least one key-value pair
-                    else if (iniData.Global.Count > 0) 
+                    else if (iniData.Global.Count > 0)
                     {
                         iniData.Global.GetLast().Comments
                             .AddRange(_currentCommentListTemp);
                     }
-                    
-                    
+
+
                     _currentCommentListTemp.Clear();
                 }
 
             }
-            catch(Exception ex)
+            catch (Exception ex)
             {
                 _errorExceptions.Add(ex);
-                if (Configuration.ThrowExceptionsOnError) 
-                { 
+                if (Configuration.ThrowExceptionsOnError)
+                {
                     throw;
                 }
             }
@@ -174,7 +175,7 @@ namespace IniParser.Parser
         // Probably for the most common cases you can change the parsing behavior
         //  using a custom configuration object rather than creating derived classes.
         // See IniParserConfiguration interface, and IniDataParser constructor
-		//  to change the default configuration.
+        //  to change the default configuration.
 
         /// <summary>
         ///     Checks if a given string contains a comment.
@@ -187,7 +188,7 @@ namespace IniParser.Parser
         /// </returns>
         protected virtual bool LineContainsAComment(string line)
         {
-            return !string.IsNullOrEmpty(line) 
+            return !string.IsNullOrEmpty(line)
                 && Configuration.CommentRegex.Match(line).Success;
         }
 
@@ -202,7 +203,7 @@ namespace IniParser.Parser
         /// </returns>
         protected virtual bool LineMatchesASection(string line)
         {
-            return !string.IsNullOrEmpty(line) 
+            return !string.IsNullOrEmpty(line)
                 && Configuration.SectionRegex.Match(line).Success;
         }
 
@@ -350,7 +351,7 @@ namespace IniParser.Parser
             // get key and value data
             string key = ExtractKey(line);
 
-			if (string.IsNullOrEmpty(key) && Configuration.SkipInvalidLines) return;
+            if (string.IsNullOrEmpty(key) && Configuration.SkipInvalidLines) return;
 
             string value = ExtractValue(line);
 
@@ -417,7 +418,7 @@ namespace IniParser.Parser
             {
                 throw new ParsingException(string.Format("Duplicated key '{0}' found in section '{1}", key, sectionName));
             }
-            else if(Configuration.OverrideDuplicateKeys)
+            else if (Configuration.OverrideDuplicateKeys)
             {
                 keyDataCollection[key] = value;
             }

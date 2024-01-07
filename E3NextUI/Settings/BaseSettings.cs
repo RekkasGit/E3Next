@@ -1,10 +1,8 @@
 ﻿using IniParser;
 using IniParser.Model;
+
 using System;
 using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
 
 namespace E3NextUI.Settings
 {
@@ -69,7 +67,7 @@ namespace E3NextUI.Settings
         }
         public static string LoadKeyData(string sectionKey, string Key, IniData parsedData)
         {
-             var section = parsedData.Sections[sectionKey];
+            var section = parsedData.Sections[sectionKey];
             if (section != null)
             {
                 var keyData = section.GetKeyData(Key);

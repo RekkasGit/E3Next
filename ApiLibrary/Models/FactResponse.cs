@@ -2,6 +2,6 @@
 {
     public class FactResponse
     {
-        public string text {  get; set; }
+        public string text { get; set; }
     }
 }

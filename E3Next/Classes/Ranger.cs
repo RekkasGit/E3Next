@@ -1,13 +1,11 @@
-﻿using E3Core.Processors;
+﻿using E3Core.Data;
+using E3Core.Processors;
 using E3Core.Settings;
-using System;
-using E3Core.Classes;
-using E3Core.Data;
 using E3Core.Utility;
+
 using MonoCore;
-using System.Collections.Generic;
-using System.Dynamic;
-using System.Linq;
+
+using System;
 
 
 namespace E3Core.Classes
@@ -38,7 +36,7 @@ namespace E3Core.Classes
                 //lets check our aggro.
                 Int32 aggroPct = MQ.Query<Int32>("${Target.PctAggro}");
                 Int32 pctHps = MQ.Query<Int32>("${Target.PctHPs}");
-                if (aggroPct > 95 && pctHps<98)
+                if (aggroPct > 95 && pctHps < 98)
                 {
                     Spell s;
                     if (!Spell.LoadedSpellsByName.TryGetValue("Cover Tracks", out s))
@@ -54,17 +52,17 @@ namespace E3Core.Classes
                     Int32 assistid = Assist.AssistTargetID;
                     Assist.AssistOff();
                     Int32 counter = 0;
-                    while (MQ.Query<Int32>("${Target.PctAggro}") >= 75 && counter<50)
+                    while (MQ.Query<Int32>("${Target.PctAggro}") >= 75 && counter < 50)
                     {
                         MQ.Delay(100);
                         counter++;
                     }
                     Assist.AssistOn(assistid, Zoning.CurrentZone.Id);
-                    
+
                 }
 
             }
-            
+
         }
 
 

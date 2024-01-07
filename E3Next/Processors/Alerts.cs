@@ -1,10 +1,6 @@
-﻿using MonoCore;
-using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
-using E3Core.Utility;
+﻿using E3Core.Utility;
+
+using MonoCore;
 
 namespace E3Core.Processors
 {
@@ -30,10 +26,11 @@ namespace E3Core.Processors
             #region AnguishMask
             //Anguish mask swap
             string pattern = @"You feel a gaze of deadly power focusing on you\.";
-            EventProcessor.RegisterEvent("AnguishMask", pattern, (x) => {
+            EventProcessor.RegisterEvent("AnguishMask", pattern, (x) =>
+            {
 
                 string currentFace = MQ.Query<string>("${Me.Inventory[face].Name}");
-               
+
                 if (!MQ.Query<bool>("${Bool[${FindItem[=Mirrored Mask]}]}"))
                 {
                     E3.Bots.Broadcast("I don't have a mirrored mask, I dun messed up.");
@@ -43,7 +40,7 @@ namespace E3Core.Processors
                 }
                 else
                 {
-                    if(currentFace!= "Mirrored Mask")
+                    if (currentFace != "Mirrored Mask")
                     {
                         MQ.Cmd("/exchange \"mirrored mask\" face");
                         MQ.Delay(500);
@@ -70,7 +67,8 @@ namespace E3Core.Processors
 
             #region PoTaticsStampeed
             pattern = "You hear the pounding of hooves.";
-            EventProcessor.RegisterEvent("PoT_STAMPEDE", pattern, (x) => {
+            EventProcessor.RegisterEvent("PoT_STAMPEDE", pattern, (x) =>
+            {
 
                 if (MQ.Query<bool>("${Zone.ShortName.Equal[potactics]}"))
                 {
@@ -82,7 +80,8 @@ namespace E3Core.Processors
 
             #region CharacterFlag
             pattern = "You receive a character flag.";
-            EventProcessor.RegisterEvent("CharacterFlag", pattern, (x) => {
+            EventProcessor.RegisterEvent("CharacterFlag", pattern, (x) =>
+            {
                 E3.Bots.Broadcast("I have recieved a characer flag!");
             });
 
@@ -91,16 +90,18 @@ namespace E3Core.Processors
             #region Ducking
 
             pattern = "From the corner of your eye, you notice a Kyv taking aim at your head. You should duck\\.";
-            EventProcessor.RegisterEvent("YouShouldDuck", pattern, (x) => {
+            EventProcessor.RegisterEvent("YouShouldDuck", pattern, (x) =>
+            {
 
-                if(!MQ.Query<bool>("${Me.Ducking}"))
+                if (!MQ.Query<bool>("${Me.Ducking}"))
                 {
                     MQ.Cmd("/nomodkey /keypress duck");
                     E3.Bots.Broadcast("/ar Ducking to avoid arrow.");
                 }
             });
             pattern = "An arrow narrowly misses you\\.";
-            EventProcessor.RegisterEvent("YouShouldStand", pattern, (x) => {
+            EventProcessor.RegisterEvent("YouShouldStand", pattern, (x) =>
+            {
 
                 if (MQ.Query<bool>("${Me.Ducking}"))
                 {
@@ -109,67 +110,72 @@ namespace E3Core.Processors
                 }
 
             });
-			#endregion
-			#region Ture_Warning
-			pattern = "roars with fury as it surveys its attackers";
-			EventProcessor.RegisterEvent("Ture_warning", pattern, (x) => {
-				{
+            #endregion
+            #region Ture_Warning
+            pattern = "roars with fury as it surveys its attackers";
+            EventProcessor.RegisterEvent("Ture_warning", pattern, (x) =>
+            {
+                {
 
-					if (E3.CurrentName == MQ.Query<string>("${Raid.Leader}"))
-					{
-						MQ.Cmd($"/rsay AE Rampage INC 5 seconds.");
-					}
-				}
+                    if (E3.CurrentName == MQ.Query<string>("${Raid.Leader}"))
+                    {
+                        MQ.Cmd($"/rsay AE Rampage INC 5 seconds.");
+                    }
+                }
 
-			});
-			#endregion
+            });
+            #endregion
 
-			#region Ture_Ramp_Start
-			pattern = "eyes roll into its head as it goes into a frenzy";
-			EventProcessor.RegisterEvent("Ture_Ramp_Start", pattern, (x) => {
-				{
+            #region Ture_Ramp_Start
+            pattern = "eyes roll into its head as it goes into a frenzy";
+            EventProcessor.RegisterEvent("Ture_Ramp_Start", pattern, (x) =>
+            {
+                {
 
-					if (E3.CurrentName == MQ.Query<string>("${Raid.Leader}"))
-					{
-						MQ.Cmd($"/rsay -+- 10k AE Rampage Started -+-");
-					}
-				}
+                    if (E3.CurrentName == MQ.Query<string>("${Raid.Leader}"))
+                    {
+                        MQ.Cmd($"/rsay -+- 10k AE Rampage Started -+-");
+                    }
+                }
 
-			});
-			#endregion
+            });
+            #endregion
 
-			#region Ture_Ramp_End
-			pattern = "calms and regains its focus";
-			EventProcessor.RegisterEvent("Ture_Ramp_End", pattern, (x) => {
-				{
+            #region Ture_Ramp_End
+            pattern = "calms and regains its focus";
+            EventProcessor.RegisterEvent("Ture_Ramp_End", pattern, (x) =>
+            {
+                {
 
-					if (E3.CurrentName == MQ.Query<string>("${Raid.Leader}"))
-					{
-						MQ.Cmd($"/rsay -+- Boss Safe - AE Rampage ended -+-");
-					}
-				}
+                    if (E3.CurrentName == MQ.Query<string>("${Raid.Leader}"))
+                    {
+                        MQ.Cmd($"/rsay -+- Boss Safe - AE Rampage ended -+-");
+                    }
+                }
 
-			});
-			#endregion
+            });
+            #endregion
 
-			#region Keldovan_Power
-			pattern = "Keldovan the Harrier regains his combat stance";
-			EventProcessor.RegisterEvent("Keldovan_Power", pattern, (x) => {
-				{
+            #region Keldovan_Power
+            pattern = "Keldovan the Harrier regains his combat stance";
+            EventProcessor.RegisterEvent("Keldovan_Power", pattern, (x) =>
+            {
+                {
 
-					if (E3.CurrentName == MQ.Query<string>("${Raid.Leader}"))
-					{
-						MQ.Cmd($"/rsay -+- Keldovan has regained a power - KILL A DOG -+-");
-					}
-				}
+                    if (E3.CurrentName == MQ.Query<string>("${Raid.Leader}"))
+                    {
+                        MQ.Cmd($"/rsay -+- Keldovan has regained a power - KILL A DOG -+-");
+                    }
+                }
 
-			});
-			#endregion
-			#region Uqua
-			pattern = "The (.+) must unlock the door to the next room\\.";
-            EventProcessor.RegisterEvent("AlertUquaChamberKey", pattern, (x) => {
+            });
+            #endregion
+            #region Uqua
+            pattern = "The (.+) must unlock the door to the next room\\.";
+            EventProcessor.RegisterEvent("AlertUquaChamberKey", pattern, (x) =>
+            {
 
-                if(x.match.Groups.Count>1)
+                if (x.match.Groups.Count > 1)
                 {
                     string classValue = x.match.Groups[1].Value;
                     MQ.Cmd($"/rsay >>^<< The {classValue} unlocks the door >>^<<");
@@ -184,44 +190,47 @@ namespace E3Core.Processors
             #endregion
 
             pattern = @"(.+) spell has been reflected by (.+)\.";
-            EventProcessor.RegisterEvent("ReflectSpell", pattern, (x) => {
+            EventProcessor.RegisterEvent("ReflectSpell", pattern, (x) =>
+            {
 
-                if(x.match.Groups.Count>2)
+                if (x.match.Groups.Count > 2)
                 {
                     string mobname = x.match.Groups[1].Value;
                     string personName = x.match.Groups[2].Value;
-                    if(E3.CurrentName==personName)
+                    if (E3.CurrentName == personName)
                     {
                         MQ.Cmd($"/g I have reflected {mobname} spell!");
                     }
                 }
             });
 
-			pattern = @"It will take about 20 more seconds to prepare your camp\.";
-			EventProcessor.RegisterEvent("PauseForCamp", pattern, (x) => {
+            pattern = @"It will take about 20 more seconds to prepare your camp\.";
+            EventProcessor.RegisterEvent("PauseForCamp", pattern, (x) =>
+            {
 
-				if (!E3.CharacterSettings.CPU_Camping_PauseAt20Seconds)
-				{
-					return;
-				}
-				Basics.IsPaused = true;
-				E3.Bots.Broadcast("\arPAUSING E3!");
-			});
+                if (!E3.CharacterSettings.CPU_Camping_PauseAt20Seconds)
+                {
+                    return;
+                }
+                Basics.IsPaused = true;
+                E3.Bots.Broadcast("\arPAUSING E3!");
+            });
 
-			pattern = @"It will take about 5 more seconds to prepare your camp\.";
-			EventProcessor.RegisterEvent("ShutdownForCamp", pattern, (x) => {
-			
-                if(!E3.CharacterSettings.CPU_Camping_ShutdownAt5Seconds)
+            pattern = @"It will take about 5 more seconds to prepare your camp\.";
+            EventProcessor.RegisterEvent("ShutdownForCamp", pattern, (x) =>
+            {
+
+                if (!E3.CharacterSettings.CPU_Camping_ShutdownAt5Seconds)
                 {
                     return;
                 }
 
                 if (Core._MQ2MonoVersion >= 0.22m)
-				{
-					MQ.Cmd("/shutdown", true);
-				}
-				
-			});
-		}
+                {
+                    MQ.Cmd("/shutdown", true);
+                }
+
+            });
+        }
     }
 }

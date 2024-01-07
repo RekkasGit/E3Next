@@ -1,13 +1,9 @@
 ﻿using Ionic.Zip;
+
 using Octokit;
+
 using System;
 using System.Collections.Generic;
-using System.ComponentModel;
-using System.Data;
-using System.Drawing;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
 using System.Windows.Forms;
 
 namespace E3NextUI
@@ -25,7 +21,7 @@ namespace E3NextUI
         {
             if (String.IsNullOrWhiteSpace(this.textBoxInstallPath.Text))
             {
-                 lblStatus.Text = "Please enter a name or cancel";
+                lblStatus.Text = "Please enter a name or cancel";
                 return;
             }
 
@@ -49,7 +45,7 @@ namespace E3NextUI
             var mb = new MessageBox();
             mb.Owner = this;
             mb.StartPosition = FormStartPosition.CenterParent;
-         
+
             mb.Text = "Upgrade E3";
             mb.lblMessage.Text = "Done! Please restart E3/Everquest.";
             mb.buttonOkayOnly.Visible = true;

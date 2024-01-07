@@ -1,13 +1,11 @@
-﻿using E3Core.Processors;
+﻿using E3Core.Data;
+using E3Core.Processors;
 using E3Core.Settings;
-using System;
-using E3Core.Classes;
-using E3Core.Data;
 using E3Core.Utility;
+
 using MonoCore;
-using System.Collections.Generic;
-using System.Dynamic;
-using System.Linq;
+
+using System;
 
 namespace E3Core.Classes
 {
@@ -28,7 +26,7 @@ namespace E3Core.Classes
         public static void Init()
         {
 
-            if((E3.CurrentClass& Data.Class.Necromancer)==Data.Class.Necromancer)
+            if ((E3.CurrentClass & Data.Class.Necromancer) == Data.Class.Necromancer)
             {
                 EventProcessor.RegisterEvent("NecroFDBreak", "You are no longer feigning death, because a spell hit you.", (x) =>
                 {
@@ -39,7 +37,7 @@ namespace E3Core.Classes
                         MQ.Cmd("/stand");
 
                         //recast FD
-                      
+
                         Spell s;
                         if (!Spell.LoadedSpellsByName.TryGetValue("Improved Death Peace", out s))
                         {
@@ -48,14 +46,14 @@ namespace E3Core.Classes
                         if (Casting.CheckReady(s) && Casting.CheckMana(s))
                         {
                             Casting.Cast(0, s);
-                          
+
 
                         }
                         else if (!Spell.LoadedSpellsByName.TryGetValue("Death Peace", out s))
                         {
                             s = new Spell("Death Peace");
                             Casting.Cast(0, s);
-                          
+
                         }
                     }
                 });
@@ -68,7 +66,7 @@ namespace E3Core.Classes
 
             if (!Basics.InCombat()) return;
             //allow people to run to their death if they have the window focused. 
-          
+
             if (e3util.IsManualControl()) return;
 
             Int32 GroupSize = MQ.Query<Int32>("${Group}");
@@ -87,7 +85,7 @@ namespace E3Core.Classes
                 {
                     Casting.Cast(0, s);
                     FD = true;
-              
+
                 }
                 else if (!Spell.LoadedSpellsByName.TryGetValue("Death Peace", out s))
                 {
@@ -127,13 +125,13 @@ namespace E3Core.Classes
                 Int32 mobId = MQ.Query<Int32>($"${{Me.XTarget[{i}].ID}}");
                 if (mobId > 0)
                 {
-                     Spawn s;
+                    Spawn s;
                     if (_spawns.TryByID(mobId, out s))
                     {
                         if (s.Aggressive)
                         {
                             currentAggro = MQ.Query<Int32>($"${{Me.XTarget[{i}].PctAggro}}");
-                            if(tempMaxAggro<currentAggro)
+                            if (tempMaxAggro < currentAggro)
                             {
                                 tempMaxAggro = currentAggro;
                             }
@@ -141,15 +139,15 @@ namespace E3Core.Classes
                     }
                 }
             }
-            if(tempMaxAggro>_maxAggroCap)
+            if (tempMaxAggro > _maxAggroCap)
             {
-                
+
                 Spell s;
-                if(!Spell.LoadedSpellsByName.TryGetValue("Improved Death Peace",out s))
+                if (!Spell.LoadedSpellsByName.TryGetValue("Improved Death Peace", out s))
                 {
                     s = new Spell("Improved Death Peace");
                 }
-                if(Casting.CheckReady(s) && Casting.CheckMana(s))
+                if (Casting.CheckReady(s) && Casting.CheckMana(s))
                 {
                     Casting.Cast(0, s);
                     //check to see if we can stand based off the # of group members.
@@ -194,8 +192,8 @@ namespace E3Core.Classes
                     return;
                 }
 
-            } 
-            
+            }
+
         }
 
     }

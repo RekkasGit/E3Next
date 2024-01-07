@@ -1,11 +1,11 @@
-﻿using E3Core.Classes;
-using E3Core.Data;
+﻿using E3Core.Data;
 using E3Core.Settings;
 using E3Core.Utility;
+
 using MonoCore;
+
 using System;
 using System.Collections.Generic;
-using System.Dynamic;
 using System.Linq;
 
 namespace E3Core.Processors
@@ -61,7 +61,7 @@ namespace E3Core.Processors
         [AdvSettingInvoke]
         public static void Check_OffAssistSpells()
         {
-             if (!_shouldOffAssist) return;
+            if (!_shouldOffAssist) return;
             if (!Assist.IsAssisting) return;
             if (E3.CharacterSettings.OffAssistSpells.Count == 0) return;
             if (!e3util.ShouldCheck(ref _nextOffAssistCheck, _nextOffAssistCheckInterval)) return;
@@ -106,8 +106,8 @@ namespace E3Core.Processors
                         }
                     }
                 }
-				if (_mobsToOffAsist.Count == 0) return;
-				_mobsToOffAsist.Remove(Assist.AssistTargetID);
+                if (_mobsToOffAsist.Count == 0) return;
+                _mobsToOffAsist.Remove(Assist.AssistTargetID);
                 if (_mobsToOffAsist.Count == 0) return;
 
                 try
@@ -115,15 +115,15 @@ namespace E3Core.Processors
                     //lets place the 1st offensive spell on each mob, then the next, then the next
                     foreach (var spell in E3.CharacterSettings.OffAssistSpells)
                     {
-						//check if the if condition works
-						if (!String.IsNullOrWhiteSpace(spell.Ifs))
-						{
-							if (!Casting.Ifs(spell))
-							{
-								continue;
-							}
-						}
-						if (Casting.CheckMana(spell))
+                        //check if the if condition works
+                        if (!String.IsNullOrWhiteSpace(spell.Ifs))
+                        {
+                            if (!Casting.Ifs(spell))
+                            {
+                                continue;
+                            }
+                        }
+                        if (Casting.CheckMana(spell))
                         {
                             _tempOffAssistSpellList.Clear();
                             _tempOffAssistSpellList.Add(spell);
@@ -139,7 +139,7 @@ namespace E3Core.Processors
                 {
                     e3util.PutOriginalTargetBackIfNeeded(targetId);
                 }
-               
+
             }
         }
 
@@ -192,7 +192,7 @@ namespace E3Core.Processors
             if (Assist.AssistTargetID > 0)
             {
                 //person in manual control and they are not on the assist target, chill.
-               
+
                 if (targetId != Assist.AssistTargetID && e3util.IsManualControl())
                 {
                     return;
@@ -204,7 +204,7 @@ namespace E3Core.Processors
             if (!e3util.ShouldCheck(ref _nextDoTCheck, _nextDoTCheckInterval)) return;
             // e3util.PrintTimerStatus(_dotTimers, ref _nextDoTCheck, "Damage over Time");
             //person in manual control and they are not on the assist target, chill.
-           
+
             if (targetId != Assist.AssistTargetID && e3util.IsManualControl())
             {
                 return;
@@ -218,7 +218,7 @@ namespace E3Core.Processors
                         CastLongTermSpell(mobid, E3.CharacterSettings.Dots_OnCommand, _dotTimers);
                         if (E3.ActionTaken) return;
                     }
-                   
+
                 }
                 finally
                 {
@@ -249,9 +249,9 @@ namespace E3Core.Processors
                 _mobsToDebuff.Clear();
                 if (x.args.Count == 0)
                 {
-                   //we are telling people to back off
-                   E3.Bots.BroadcastCommandToGroup($"/debuffsoff all",x);
-                   
+                    //we are telling people to back off
+                    E3.Bots.BroadcastCommandToGroup($"/debuffsoff all", x);
+
                 }
 
             });
@@ -261,7 +261,7 @@ namespace E3Core.Processors
                 if (x.args.Count == 0)
                 {
                     //we are telling people to back off
-                    E3.Bots.BroadcastCommandToGroup($"/dotsoff all",x);
+                    E3.Bots.BroadcastCommandToGroup($"/dotsoff all", x);
                 }
 
             });
@@ -273,7 +273,7 @@ namespace E3Core.Processors
                 if (x.args.Count == 0)
                 {
                     _shouldOffAssist = true;
-                    E3.Bots.BroadcastCommandToGroup("/offassiston all",x);
+                    E3.Bots.BroadcastCommandToGroup("/offassiston all", x);
                 }
                 else
                 {
@@ -290,7 +290,7 @@ namespace E3Core.Processors
                 }
                 else
                 {
-                      _shouldOffAssist = false;
+                    _shouldOffAssist = false;
                     E3.Bots.Broadcast("\a-gTurning Off OffAssist.");
                 }
             });
@@ -331,12 +331,12 @@ namespace E3Core.Processors
                             {
                                 _mobsToIgnoreOffAsist.Add(targetid);
                             }
-                            E3.Bots.BroadcastCommandToGroup($"/offassistignore all {command} {targetid}",x);
+                            E3.Bots.BroadcastCommandToGroup($"/offassistignore all {command} {targetid}", x);
                         }
                         else if (command == "remove")
                         {
                             _mobsToIgnoreOffAsist.Remove(targetid);
-                            E3.Bots.BroadcastCommandToGroup($"/offassistignore all {command} {targetid}",x);
+                            E3.Bots.BroadcastCommandToGroup($"/offassistignore all {command} {targetid}", x);
                         }
                     }
                 }
@@ -385,12 +385,12 @@ namespace E3Core.Processors
 
                 if (!String.IsNullOrWhiteSpace(spell.Ifs) && !spell.Ifs.Contains("${Target"))
                 {
-					//its safe to run the Ifs before the check ready
-					if (!Casting.Ifs(spell))
-					{
-						continue;
-					}
-				}
+                    //its safe to run the Ifs before the check ready
+                    if (!Casting.Ifs(spell))
+                    {
+                        continue;
+                    }
+                }
 
                 if (Casting.InRange(mobid, spell) && Casting.CheckReady(spell) && Casting.CheckMana(spell))
                 {
@@ -427,34 +427,34 @@ namespace E3Core.Processors
                             continue;
                         }
                     }
-					bool shouldContinue = false;
-					if (spell.CheckForCollection.Count > 0)
-					{
-						foreach (var checkforItem in spell.CheckForCollection.Keys)
-						{
-							if (MQ.Query<bool>($"${{Bool[${{Target.Buff[{checkforItem}]}}]}}"))
-							{
-								//has the buff already
-								//lets set the timer for it so we dont' have to keep targeting it.
-								Int64 buffDuration = MQ.Query<Int64>($"${{Target.BuffDuration[{checkforItem}]}}");
-								if (buffDuration < 1000)
-								{
-									buffDuration = 1000;
-								}
-								UpdateDotDebuffTimers(mobid, spell, buffDuration, timers);
-								shouldContinue = true;
-								break;
-							}
-						}
-						if (shouldContinue) { continue; }
-					}
-				    
+                    bool shouldContinue = false;
+                    if (spell.CheckForCollection.Count > 0)
+                    {
+                        foreach (var checkforItem in spell.CheckForCollection.Keys)
+                        {
+                            if (MQ.Query<bool>($"${{Bool[${{Target.Buff[{checkforItem}]}}]}}"))
+                            {
+                                //has the buff already
+                                //lets set the timer for it so we dont' have to keep targeting it.
+                                Int64 buffDuration = MQ.Query<Int64>($"${{Target.BuffDuration[{checkforItem}]}}");
+                                if (buffDuration < 1000)
+                                {
+                                    buffDuration = 1000;
+                                }
+                                UpdateDotDebuffTimers(mobid, spell, buffDuration, timers);
+                                shouldContinue = true;
+                                break;
+                            }
+                        }
+                        if (shouldContinue) { continue; }
+                    }
+
                     if (!MQ.Query<bool>($"${{Spell[{spell.SpellID}].StacksTarget}}"))
                     {
                         //spell won't land based on stacking, move to next
                         continue;
                     }
-                    
+
                     var result = Casting.Cast(mobid, spell, Heals.SomeoneNeedsHealing);
                     if (result == CastReturn.CAST_INTERRUPTFORHEAL)
                     {

@@ -1,12 +1,10 @@
-using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
 using E3Core.Processors;
 using E3Core.Settings;
 using E3Core.Utility;
+
 using MonoCore;
+
+using System;
 
 namespace E3Core.Classes
 {
@@ -27,7 +25,7 @@ namespace E3Core.Classes
         /// </summary>
         public static void RogueStrike()
         {
-            using(_log.Trace())
+            using (_log.Trace())
             {
                 string sneakattack = E3.CharacterSettings.Rogue_SneakAttack;
 
@@ -59,7 +57,7 @@ namespace E3Core.Classes
                     }
                 }
             }
-            
+
         }
 
         [ClassInvoke(Data.Class.Rogue)]
@@ -92,7 +90,7 @@ namespace E3Core.Classes
         /// </summary>
         public static void AutoEvade()
         {
-            using(_log.Trace())
+            using (_log.Trace())
             {
                 if (MQ.Query<Int32>("${Me.PctAggro}") > E3.CharacterSettings.Rogue_EvadePct)
                 {

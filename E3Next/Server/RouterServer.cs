@@ -1,11 +1,12 @@
 ﻿using E3Core.Processors;
+
 using MonoCore;
+
 using NetMQ.Sockets;
+
 using System;
 using System.Collections.Concurrent;
 using System.Collections.Generic;
-using System.Linq;
-using System.Text;
 using System.Threading;
 using System.Threading.Tasks;
 
@@ -61,7 +62,7 @@ namespace E3Core.Server
 
         public static ConcurrentQueue<RouterMessage> _tloRequets = new ConcurrentQueue<RouterMessage>();
         public static ConcurrentQueue<RouterMessage> _tloResposne = new ConcurrentQueue<RouterMessage>();
-        
+
 
         public Int32 RouterPort = 0;
 
@@ -213,7 +214,7 @@ namespace E3Core.Server
                             }
                         }
                     }
-                    
+
                 }
             }
             catch (Exception)

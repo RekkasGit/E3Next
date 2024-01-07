@@ -1,13 +1,11 @@
-﻿using E3Core.Processors;
+﻿using E3Core.Data;
+using E3Core.Processors;
 using E3Core.Settings;
-using System;
-using E3Core.Classes;
-using E3Core.Data;
 using E3Core.Utility;
+
 using MonoCore;
-using System.Collections.Generic;
-using System.Dynamic;
-using System.Linq;
+
+using System;
 
 
 namespace E3Core.Classes
@@ -38,11 +36,11 @@ namespace E3Core.Classes
 
             if (!e3util.ShouldCheck(ref _nextAggroCheck, _nextAggroRefreshTimeInterval)) return;
 
-            using(_log.Trace())
+            using (_log.Trace())
             {
-                using(_log.Trace("TotemDrop"))
+                using (_log.Trace("TotemDrop"))
                 {
-                    if(BuffCheck.HasBuff("Inconspicuous Totem"))
+                    if (BuffCheck.HasBuff("Inconspicuous Totem"))
                     {
                         BuffCheck.DropBuff("Inconspicuous Totem");
                     }
@@ -73,7 +71,7 @@ namespace E3Core.Classes
                         }
                     }
                 }
-               
+
                 if (tempMaxAggro > _maxAggroCap)
                 {
 
@@ -94,7 +92,7 @@ namespace E3Core.Classes
 
                 }
             }
-        
+
         }
 
         /// <summary>
@@ -104,7 +102,7 @@ namespace E3Core.Classes
         public static void Check_MalosTotem()
         {
             if (!e3util.ShouldCheck(ref _nextTotemCheck, _nextTotemRefreshTimeInterval)) return;
-            if(Movement.AnchorTarget>0)
+            if (Movement.AnchorTarget > 0)
             {
                 using (_log.Trace())
                 {
@@ -112,7 +110,7 @@ namespace E3Core.Classes
 
                     if (!idolUp)
                     {
-                        Spell s;                        
+                        Spell s;
                         if (!Spell.LoadedSpellsByName.TryGetValue("Idol of Malos", out s))
                         {
                             s = new Spell($"Idol of Malos/Gem|{E3.CharacterSettings.MalosTotemSpellGem}");
@@ -124,7 +122,7 @@ namespace E3Core.Classes
                         }
                     }
                 }
-                
+
             }
 
 

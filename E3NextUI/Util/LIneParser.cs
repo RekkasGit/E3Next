@@ -1,9 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
-using System.Linq;
-using System.Text;
 using System.Text.RegularExpressions;
-using System.Threading.Tasks;
 
 namespace E3NextUI.Util
 {
@@ -34,11 +31,11 @@ namespace E3NextUI.Util
         public static Int64 _lastCombatCheck = 0;
         public static bool CurrentlyCombat = false;
         public static object _objectLock = new object();
-        public static string PetName=String.Empty;
+        public static string PetName = String.Empty;
 
         public static void Reset()
         {
-            lock(_objectLock)
+            lock (_objectLock)
             {
                 YourDamage.Clear();
                 YourDamageTime.Clear();
@@ -53,18 +50,18 @@ namespace E3NextUI.Util
                 HealingByYou.Clear();
                 _healingByYouTime.Clear();
             }
-        
+
         }
         public static void SetPetName(string petName)
         {
-            if (String.IsNullOrWhiteSpace(PetName) && petName!="NULL")
+            if (String.IsNullOrWhiteSpace(PetName) && petName != "NULL")
             {
                 PetName = petName;
                 _yourPetMelee = new System.Text.RegularExpressions.Regex($"{PetName} .+ for ([0-9]+) points of damage.");
             }
             else
             {
-                if(petName!="NULL")
+                if (petName != "NULL")
                 {
                     if (!PetName.Equals(petName))
                     {
@@ -89,14 +86,14 @@ namespace E3NextUI.Util
             CurrentlyCombat = inCombat;
         }
         public static void ParseLine(string line)
-        { 
-            lock(_objectLock)
-            { 
+        {
+            lock (_objectLock)
+            {
                 //E3UI._stopWatch;
                 if (TryUpdateCollection(line, _yourdmg, YourDamage, YourDamageTime)) return;
                 if (TryUpdateCollection(line, _yourdot, YourDamage, YourDamageTime)) return;
                 if (TryUpdateCollection(line, _yourspellDmg, YourDamage, YourDamageTime)) return;
-               
+
                 if (!String.IsNullOrWhiteSpace(PetName))
                 {
                     if (TryUpdateCollection(line, _yourPetMelee, YourPetDamage, YourPetDamageTime)) return;
@@ -113,7 +110,7 @@ namespace E3NextUI.Util
 
             }
         }
-        private static bool TryUpdateCollection(string line,Regex reg, List<Int32> collection, List<Int64> timeCollection)
+        private static bool TryUpdateCollection(string line, Regex reg, List<Int32> collection, List<Int64> timeCollection)
         {
             var match = reg.Match(line);
             if (match.Success)
@@ -135,7 +132,7 @@ namespace E3NextUI.Util
         static System.Text.RegularExpressions.Regex _yourdmg = new System.Text.RegularExpressions.Regex("You .+ for ([0-9]+) points of damage.");
         static System.Text.RegularExpressions.Regex _yourdot = new System.Text.RegularExpressions.Regex("taken ([0-9]+) damage from your");
         static System.Text.RegularExpressions.Regex _yourspellDmg = new System.Text.RegularExpressions.Regex($"{E3UI.PlayerName} hit .+ for ([0-9]+) points of");
-       
+
         //proc dmg by pet
         static System.Text.RegularExpressions.Regex _yourPetProcDmg = new System.Text.RegularExpressions.Regex(".+ was hit by non-melee for ([0-9]+) points of damage\\.");
         static System.Text.RegularExpressions.Regex _yourPetMelee = new System.Text.RegularExpressions.Regex($"{PetName} .+ for ([0-9]+) points of damage.");

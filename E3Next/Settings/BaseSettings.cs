@@ -1,12 +1,14 @@
 ﻿using E3Core.Processors;
+
 using IniParser.Model;
+
 using MonoCore;
+
 using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Reflection;
 using System.Text;
-using System.Threading.Tasks;
 
 namespace E3Core.Settings
 {
@@ -291,7 +293,7 @@ namespace E3Core.Settings
                     {
                         if (!String.IsNullOrWhiteSpace(data))
                         {
-                            CheckFor(data, sectionKey,keyData);
+                            CheckFor(data, sectionKey, keyData);
                             collectionToAddTo.Add(new Data.Spell(data, parsedData));
                         }
 
@@ -391,20 +393,20 @@ namespace E3Core.Settings
         /// Checks if i have a thing and broadcasts a warning message that i don't.
         /// </summary>
         /// <param name="thingToCheckFor">The thing.</param>
-        public static void CheckFor(string thingToCheckFor, string sectionkey,KeyData keyData)
+        public static void CheckFor(string thingToCheckFor, string sectionkey, KeyData keyData)
         {
 
             if (sectionkey.Equals("Cures", StringComparison.OrdinalIgnoreCase)) return;
             if (sectionkey.Equals("Blocked Buffs", StringComparison.OrdinalIgnoreCase)) return;
             if (sectionkey.Equals("Dispel", StringComparison.OrdinalIgnoreCase)) return;
-			if (sectionkey.Equals("Dispel", StringComparison.OrdinalIgnoreCase)) return;
-			if (sectionkey.Equals("Buffs", StringComparison.OrdinalIgnoreCase) && keyData.KeyName.Equals("Group Buff Request",StringComparison.OrdinalIgnoreCase)) return;
-			if (sectionkey.Equals("Buffs", StringComparison.OrdinalIgnoreCase) && keyData.KeyName.Equals("Raid Buff Request", StringComparison.OrdinalIgnoreCase)) return;
-			if (sectionkey.Equals("Buffs", StringComparison.OrdinalIgnoreCase) && keyData.KeyName.Equals("Stack Buff Request", StringComparison.OrdinalIgnoreCase)) return;
+            if (sectionkey.Equals("Dispel", StringComparison.OrdinalIgnoreCase)) return;
+            if (sectionkey.Equals("Buffs", StringComparison.OrdinalIgnoreCase) && keyData.KeyName.Equals("Group Buff Request", StringComparison.OrdinalIgnoreCase)) return;
+            if (sectionkey.Equals("Buffs", StringComparison.OrdinalIgnoreCase) && keyData.KeyName.Equals("Raid Buff Request", StringComparison.OrdinalIgnoreCase)) return;
+            if (sectionkey.Equals("Buffs", StringComparison.OrdinalIgnoreCase) && keyData.KeyName.Equals("Stack Buff Request", StringComparison.OrdinalIgnoreCase)) return;
 
-			if (sectionkey.Equals("Charm", StringComparison.OrdinalIgnoreCase)) return;
+            if (sectionkey.Equals("Charm", StringComparison.OrdinalIgnoreCase)) return;
 
-			string thing = thingToCheckFor;
+            string thing = thingToCheckFor;
             if (thingToCheckFor.Contains('/'))
             {
                 thing = thingToCheckFor.Split('/')[0];

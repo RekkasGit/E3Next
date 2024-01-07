@@ -1,31 +1,26 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Runtime.InteropServices;
-using System.Text;
-using System.Threading.Tasks;
+﻿using System.Runtime.InteropServices;
 
 namespace E3NextUI.Util
 {
-	public class WinUtils
-	{
-		[DllImport("ntdll.dll", SetLastError = true)]
-		internal static extern uint RtlGetVersion(out OsVersionInfo versionInformation); // return type should be the NtStatus enum
+    public class WinUtils
+    {
+        [DllImport("ntdll.dll", SetLastError = true)]
+        internal static extern uint RtlGetVersion(out OsVersionInfo versionInformation); // return type should be the NtStatus enum
 
-		[StructLayout(LayoutKind.Sequential)]
-		internal struct OsVersionInfo
-		{
-			private readonly uint OsVersionInfoSize;
+        [StructLayout(LayoutKind.Sequential)]
+        internal struct OsVersionInfo
+        {
+            private readonly uint OsVersionInfoSize;
 
-			internal readonly uint MajorVersion;
-			internal readonly uint MinorVersion;
+            internal readonly uint MajorVersion;
+            internal readonly uint MinorVersion;
 
-			private readonly uint BuildNumber;
+            private readonly uint BuildNumber;
 
-			private readonly uint PlatformId;
+            private readonly uint PlatformId;
 
-			[MarshalAs(UnmanagedType.ByValTStr, SizeConst = 128)]
-			private readonly string CSDVersion;
-		}
-	}
+            [MarshalAs(UnmanagedType.ByValTStr, SizeConst = 128)]
+            private readonly string CSDVersion;
+        }
+    }
 }

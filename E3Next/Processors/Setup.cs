@@ -1,9 +1,7 @@
 ﻿using MonoCore;
+
 using System;
-using System.Collections.Generic;
 using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
 
 namespace E3Core.Processors
 {
@@ -33,7 +31,7 @@ namespace E3Core.Processors
             using (_log.Trace())
             {
 
-                if(MQ.Query<bool>("!${Defined[E3N_var]}"))
+                if (MQ.Query<bool>("!${Defined[E3N_var]}"))
                 {
                     MQ.Cmd("/declare E3N_var string global false");
                 }
@@ -46,7 +44,7 @@ namespace E3Core.Processors
                 }
 
                 MQ.Write($"Loading nE³xt v{_e3Version}...Mq2Mono v{Core._MQ2MonoVersion}");
-             
+
 
                 InitPlugins();
                 InitSubSystems();
@@ -128,21 +126,21 @@ namespace E3Core.Processors
 
                 if (!MQ.Query<bool>("${Plugin[MQ2Debuffs]}"))
                 {
-					MQ.Cmd("/plugin mq2debuffs");
-					if (!MQ.Delay(3000, "${Plugin[MQ2Debuffs]}"))
-					{
-						MQ.Write("***WARNING*** Could not load MQ2Debuffs! Macro functionality may be limited.");
-					}
-				}
-				if (!MQ.Query<bool>("${Plugin[MQ2Cast]}"))
-				{
-					MQ.Cmd("/plugin mq2cast");
-					if (!MQ.Delay(3000, "${Plugin[MQ2Cast]}"))
-					{
-						MQ.Write("***WARNING*** Could not load MQ2Cast! Macro functionality may be limited.");
-					}
-				}
-				if (!MQ.Query<bool>($"${{Plugin[MQ2AdvPath].Name.Length}}"))
+                    MQ.Cmd("/plugin mq2debuffs");
+                    if (!MQ.Delay(3000, "${Plugin[MQ2Debuffs]}"))
+                    {
+                        MQ.Write("***WARNING*** Could not load MQ2Debuffs! Macro functionality may be limited.");
+                    }
+                }
+                if (!MQ.Query<bool>("${Plugin[MQ2Cast]}"))
+                {
+                    MQ.Cmd("/plugin mq2cast");
+                    if (!MQ.Delay(3000, "${Plugin[MQ2Cast]}"))
+                    {
+                        MQ.Write("***WARNING*** Could not load MQ2Cast! Macro functionality may be limited.");
+                    }
+                }
+                if (!MQ.Query<bool>($"${{Plugin[MQ2AdvPath].Name.Length}}"))
                 {
                     MQ.Write("Plugin MQ2AdvPath is not loaded, attempting to resolve...");
                     MQ.Cmd("/plugin MQ2AdvPath");
@@ -194,6 +192,6 @@ namespace E3Core.Processors
 
             }
         }
-        
+
     }
 }

@@ -1,6 +1,7 @@
-using System;
 using IniParser.Model;
 using IniParser.Parser;
+
+using System;
 
 namespace IniParser
 {
@@ -24,7 +25,7 @@ namespace IniParser
         /// <summary>
         ///     Ctor
         /// </summary>
-        public StringIniParser() : this (new IniDataParser()) {}
+        public StringIniParser() : this(new IniDataParser()) { }
 
         /// <summary>
         ///     Ctor

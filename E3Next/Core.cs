@@ -1,17 +1,19 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
-using System.Runtime.CompilerServices;
-using System.Threading;
-using System.Diagnostics;
-using System.Collections.Concurrent;
-using System.Text.RegularExpressions;
-using E3Core.Processors;
-using System.Runtime.InteropServices;
+﻿using E3Core.Processors;
+
 using NetMQ;
+
+using System;
+using System.Collections.Concurrent;
+using System.Collections.Generic;
+using System.Diagnostics;
 using System.Globalization;
+using System.Linq;
+using System.Runtime.CompilerServices;
+using System.Runtime.InteropServices;
+using System.Text;
+using System.Text.RegularExpressions;
+using System.Threading;
+using System.Threading.Tasks;
 
 /// <summary>
 /// Version 0.1
@@ -39,7 +41,7 @@ namespace MonoCore
     public static class MainProcessor
     {
         public static IMQ MQ = Core.mqInstance;
-       
+
         private static Logging _log = Core.logInstance;
         public static string ApplicationName = "";
         public static void Init()
@@ -47,9 +49,9 @@ namespace MonoCore
 
             //WARNING , you may not be in game yet, so careful what queries you run on MQ.Query. May cause a crash.
             //how long before auto yielding back to C++/EQ/MQ on the next query/command/etc
-     
+
         }
-        
+
         //we use this to tell the C++ thread that its okay to start processing gain
         public static ManualResetEventSlim ProcessResetEvent = new ManualResetEventSlim(false);
 
@@ -61,7 +63,7 @@ namespace MonoCore
             //wait for the C++ thread thread to tell us we can go
             ProcessResetEvent.Wait();
             ProcessResetEvent.Reset();
-            
+
             //volatile variable, will eventually update to kill the thread on shutdown
             while (Core.IsProcessing)
             {
@@ -81,31 +83,31 @@ namespace MonoCore
                 }
                 catch (Exception ex)
                 {
-                    if(ex is ThreadAbort)
-					{
-						Core.IsProcessing = false;
-						Core.CoreResetEvent.Set();
-						throw new ThreadAbort("Terminating thread");
-				    }
+                    if (ex is ThreadAbort)
+                    {
+                        Core.IsProcessing = false;
+                        Core.CoreResetEvent.Set();
+                        throw new ThreadAbort("Terminating thread");
+                    }
 
-                    if(Core.IsProcessing)
+                    if (Core.IsProcessing)
                     {
                         _log.Write("Error: Please reload. Terminating. \r\nExceptionMessage:" + ex.Message + " stack:" + ex.StackTrace.ToString(), Logging.LogLevels.CriticalError);
-						Core.IsProcessing = false;
-						Core.CoreResetEvent.Set();
-					}
-                    
+                        Core.IsProcessing = false;
+                        Core.CoreResetEvent.Set();
+                    }
+
                     //we perma exit this thread loop a full reload will be necessary
                     break;
                 }
 
                 //give execution back to the C++ thread, to go back into MQ/EQ
-                if(Core.IsProcessing)
+                if (Core.IsProcessing)
                 {
                     Delay(E3.CharacterSettings.CPU_ProcessLoopDelay);//this calls the reset events and sets the delay to 10ms at min
                 }
             }
-           
+
             //E3.Shutdown();
             MQ.Write("Shutting down E3 Main C# Thread.");
             MQ.Write("Doing netmq cleanup.");
@@ -130,7 +132,7 @@ namespace MonoCore
         }
 
     }
- 
+
     /// <summary>
     /// Processor to handle Event strings
     /// It spawns its own thread to do the inital regex parse, whatever matches will be 
@@ -140,7 +142,7 @@ namespace MonoCore
     {
         //***NOTE*** no _log.Write or MQ.Writes are allowed here. Use remote debugging.
         //YOU WILL LOCK the process :) don't do it. Remember this is a seperate thread.
-        
+
         public static ConcurrentDictionary<string, Action<EventMatch>> _unfilteredEventMethodList = new ConcurrentDictionary<string, Action<EventMatch>>();
         public static ConcurrentDictionary<string, EventListItem> _unfilteredEventList = new ConcurrentDictionary<string, EventListItem>();
         public static ConcurrentDictionary<string, EventListItem> EventList = new ConcurrentDictionary<string, EventListItem>();
@@ -154,7 +156,7 @@ namespace MonoCore
         private static List<string> _tokenResult = new List<string>();
         //if matches take place, they are placed in this queue for the main C# thread to process. 
         public static Int32 EventLimiterPerRegisteredEvent = 10;
-       
+
         //this threads entire purpose, is to simply keep processing the event processing queue and place matches into
         //the eventfilteredqueue
         public static Task _regExProcessingTask;
@@ -174,9 +176,9 @@ namespace MonoCore
                 filterRegex = new Regex(@" begins to cast a spell\.");
                 _filterRegexes.Add(filterRegex);
 
-                _regExProcessingTask =Task.Factory.StartNew(() => { ProcessEventsIntoQueues(); }, CancellationToken.None, TaskCreationOptions.DenyChildAttach, TaskScheduler.Default);
+                _regExProcessingTask = Task.Factory.StartNew(() => { ProcessEventsIntoQueues(); }, CancellationToken.None, TaskCreationOptions.DenyChildAttach, TaskScheduler.Default);
                 _isInit = true;
-            
+
             }
 
         }
@@ -189,9 +191,9 @@ namespace MonoCore
             Thread.CurrentThread.CurrentCulture = new CultureInfo("en-US");
 
             System.Text.RegularExpressions.Regex dannetRegex = new Regex("");
-            char[] splitChars = new char[1] {' '};
+            char[] splitChars = new char[1] { ' ' };
 
-     
+
             ////WARNING DO NOT SEND COMMANDS/Writes/Echos, etc from this thread. 
             ///only the primary C# thread can do that.
             while (Core.IsProcessing)
@@ -201,12 +203,12 @@ namespace MonoCore
                     string line;
                     if (_eventProcessingQueue.TryDequeue(out line))
                     {
-                        foreach(var ueventMethod in _unfilteredEventMethodList)
+                        foreach (var ueventMethod in _unfilteredEventMethodList)
                         {
                             ueventMethod.Value.Invoke(new EventMatch() { eventName = ueventMethod.Key, eventString = line, typeOfEvent = eventType.EQEvent });
                         }
-           
-                        foreach(var uevent in _unfilteredEventList)
+
+                        foreach (var uevent in _unfilteredEventList)
                         {
                             uevent.Value.queuedEvents.Enqueue(new EventMatch() { eventName = uevent.Value.keyName, eventString = line, typeOfEvent = eventType.EQEvent });
                         }
@@ -242,7 +244,7 @@ namespace MonoCore
                                     var match = regex.Match(line);
                                     if (match.Success)
                                     {
-                                        item.Value.queuedEvents.Enqueue(new EventMatch() { eventName = item.Value.keyName, eventString = line, match = match, typeOfEvent= eventType.EQEvent});
+                                        item.Value.queuedEvents.Enqueue(new EventMatch() { eventName = item.Value.keyName, eventString = line, match = match, typeOfEvent = eventType.EQEvent });
                                         break;
                                     }
                                 }
@@ -250,7 +252,7 @@ namespace MonoCore
                             }
                         }
 
-                        
+
 
                     }
                 }
@@ -270,7 +272,7 @@ namespace MonoCore
                         {
                             uevent.Value.queuedEvents.Enqueue(new EventMatch() { eventName = uevent.Value.keyName, eventString = line, typeOfEvent = eventType.MQEvent });
                         }
-                       
+
                         //do filtered
                         if (line.StartsWith("["))
                         {
@@ -288,7 +290,7 @@ namespace MonoCore
 
                             }
                         }
-                        processLine:
+                    processLine:
                         foreach (var item in EventList)
                         {
                             //prevent spamming of an event to a user
@@ -303,7 +305,7 @@ namespace MonoCore
                                 if (match.Success)
                                 {
 
-                                    item.Value.queuedEvents.Enqueue(new EventMatch() { eventName = item.Value.keyName, eventString = line, match = match, typeOfEvent= eventType.MQEvent});
+                                    item.Value.queuedEvents.Enqueue(new EventMatch() { eventName = item.Value.keyName, eventString = line, match = match, typeOfEvent = eventType.MQEvent });
 
                                     break;
                                 }
@@ -312,7 +314,7 @@ namespace MonoCore
                         }
 
                     }
-                    skipLine:
+                skipLine:
                     continue;
                 }
                 else if (_mqCommandProcessingQueue.Count > 0)
@@ -321,9 +323,9 @@ namespace MonoCore
                     string line;
                     if (_mqCommandProcessingQueue.TryDequeue(out line))
                     {
-                         if (!String.IsNullOrWhiteSpace(line))
+                        if (!String.IsNullOrWhiteSpace(line))
                         {
-                          
+
                             foreach (var item in CommandList)
                             {
                                 //prevent spamming of an event to a user
@@ -340,9 +342,9 @@ namespace MonoCore
                                     args.RemoveAt(0);
 
                                     bool hasAllFlag = HasAllFlag(args);
-                                                                        
-                                    item.Value.queuedEvents.Enqueue(new CommandMatch() { eventName = item.Value.keyName, eventString = line, args = args, hasAllFlag=hasAllFlag });
-                                    
+
+                                    item.Value.queuedEvents.Enqueue(new CommandMatch() { eventName = item.Value.keyName, eventString = line, args = args, hasAllFlag = hasAllFlag });
+
                                 }
                             }
                         }
@@ -390,19 +392,19 @@ namespace MonoCore
 
             foreach (string value in values)
             {
-                if (value.StartsWith("/only", StringComparison.OrdinalIgnoreCase) )
+                if (value.StartsWith("/only", StringComparison.OrdinalIgnoreCase))
                 {
                     returnValue.Add(value);
                 }
-                else if (value.StartsWith("/not", StringComparison.OrdinalIgnoreCase) )
+                else if (value.StartsWith("/not", StringComparison.OrdinalIgnoreCase))
                 {
                     returnValue.Add(value);
                 }
-                else if (value.StartsWith("/exclude",  StringComparison.OrdinalIgnoreCase))
+                else if (value.StartsWith("/exclude", StringComparison.OrdinalIgnoreCase))
                 {
                     returnValue.Add(value);
                 }
-                else if (value.StartsWith("/include",StringComparison.OrdinalIgnoreCase))
+                else if (value.StartsWith("/include", StringComparison.OrdinalIgnoreCase))
                 {
                     returnValue.Add(value);
                 }
@@ -563,21 +565,21 @@ namespace MonoCore
         /// </summary>
         /// <param name="line"></param>
         public static void ProcessEvent(string line)
-        {   
+        {
             _eventProcessingQueue.Enqueue(line);
         }
 
         public static void ProcessMQEvent(string line)
         {
-           
+
             _mqEventProcessingQueue.Enqueue(line);
 
         }
         public static void ProcessMQCommand(string line)
         {
-           
-           _mqCommandProcessingQueue.Enqueue(line);
-           
+
+            _mqCommandProcessingQueue.Enqueue(line);
+
 
         }
         public static void ClearEventQueue(string keyName)
@@ -594,10 +596,10 @@ namespace MonoCore
         }
         public enum eventType
         {
-            Unknown=0,
-            EQEvent=1,
-            MQEvent=2,
-           
+            Unknown = 0,
+            EQEvent = 1,
+            MQEvent = 2,
+
         }
         public class EventListItem
         {
@@ -605,7 +607,7 @@ namespace MonoCore
             public List<System.Text.RegularExpressions.Regex> regexs;
             public System.Action<EventMatch> method;
             public ConcurrentQueue<EventMatch> queuedEvents = new ConcurrentQueue<EventMatch>();
-           
+
         }
         public class CommandListItem
         {
@@ -617,16 +619,16 @@ namespace MonoCore
         public class CommandMatch
         {
             public List<String> _args;
-       
+
             public List<String> args
             {
                 get { return _args; }
-                set 
+                set
                 {   //filter out any into filters.
                     if (value != null)
                     {
                         filters = GetCommandFilters(value);
-                        if(filters.Count>0)
+                        if (filters.Count > 0)
                         {
                             _args = value.Where(x => !filters.Any(y => y == x)).ToList();
 
@@ -648,7 +650,7 @@ namespace MonoCore
             public string eventString;
             public Match match;
             public string eventName;
-            public eventType typeOfEvent=eventType.Unknown;
+            public eventType typeOfEvent = eventType.Unknown;
         }
         public static bool RegisterCommand(string commandName, Action<CommandMatch> method)
         {
@@ -656,17 +658,17 @@ namespace MonoCore
             c.command = commandName;
             c.method = method;
             c.keyName = commandName;
-     
-            bool returnvalue =  Core.mqInstance.AddCommand(commandName);
-     
+
+            bool returnvalue = Core.mqInstance.AddCommand(commandName);
+
             if (returnvalue)
-            {   
+            {
                 if (CommandList.TryAdd(commandName, c))
                 {
                     //now to register the command over.
                     return true;
                 }
-                
+
             }
             return false;
 
@@ -757,7 +759,7 @@ namespace MonoCore
         {
         }
     }
-   
+
     //This class is for C++ thread to come in and call. for the most part, leave this alone. 
     public static class Core
     {
@@ -777,7 +779,7 @@ namespace MonoCore
         //this is protected by the lock, so that the primary C++ thread is the one that executes commands that the
         //processing thread has done.
         public static string CurrentCommand = string.Empty;
-        public static bool CurrentCommandDelayed = false;   
+        public static bool CurrentCommandDelayed = false;
         public static string _currentWrite = String.Empty;
         public static Int32 CurrentDelay = 0;
 
@@ -808,16 +810,16 @@ namespace MonoCore
         static Task _taskThread;
         public static void OnInit()
         {
-			try
-			{
-				_MQ2MonoVersion = Decimal.Parse(Core.mq_GetMQ2MonoVersion());
-			}
-			catch (Exception)
-			{
-				//old version, does not have mq2mono method, warn user
-			}
+            try
+            {
+                _MQ2MonoVersion = Decimal.Parse(Core.mq_GetMQ2MonoVersion());
+            }
+            catch (Exception)
+            {
+                //old version, does not have mq2mono method, warn user
+            }
 
-			if (!_isInit)
+            if (!_isInit)
             {
                 IsProcessing = true;
                 if (mqInstance == null)
@@ -865,7 +867,7 @@ namespace MonoCore
         {
 
             if (!IsProcessing)
-            {   
+            {
                 //allow the primary thread to finish terminating. 
                 MainProcessor.ProcessResetEvent.Set();
                 return;
@@ -887,7 +889,7 @@ namespace MonoCore
                 DelayTime = 0;
             }
 
-            RestartWait:
+        RestartWait:
             //allow the processing thread to start its work.
             //and copy cache values to other cores so the thread can see the updated information in MQ
             MainProcessor.ProcessResetEvent.Set();
@@ -910,22 +912,22 @@ namespace MonoCore
                 //special commands that dont' go through the 'delay of processing back to MQ
                 //useitem for manastone and echo for... well echoing out data/broadcast. 
                 bool gobacktoCSharp = CurrentCommand.StartsWith("/useitem");
-                if(CurrentCommand.StartsWith("/echo"))
+                if (CurrentCommand.StartsWith("/echo"))
                 {
                     gobacktoCSharp = true;
                 }
 
-                if(!CurrentCommandDelayed || _MQ2MonoVersion<0.22m)
+                if (!CurrentCommandDelayed || _MQ2MonoVersion < 0.22m)
                 {
                     //if not delayed, or the version doesn't support it, use this.
-					Core.mq_DoCommand(CurrentCommand);
-				}
-				else
+                    Core.mq_DoCommand(CurrentCommand);
+                }
+                else
                 {
                     //if the version supports delayed command, use it, otherwise ignore. 
-					Core.mq_DoCommandDelayed(CurrentCommand);
-				}
-				CurrentCommand = String.Empty;
+                    Core.mq_DoCommandDelayed(CurrentCommand);
+                }
+                CurrentCommand = String.Empty;
                 CurrentCommandDelayed = false;
 
                 if (gobacktoCSharp)
@@ -939,7 +941,7 @@ namespace MonoCore
                 Core.mq_Delay(CurrentDelay);
                 CurrentDelay = 0;
             }
-  
+
 
         }
 
@@ -976,9 +978,9 @@ namespace MonoCore
 
             //pull the id out of the array
             Int32 ID = BitConverter.ToInt32(data, 0);
-          
+
             Spawn s;
-            if(Spawns.SpawnsByID.TryGetValue(ID, out s))
+            if (Spawns.SpawnsByID.TryGetValue(ID, out s))
             {
                 //just update the value
                 s.Init(data, size);
@@ -990,7 +992,7 @@ namespace MonoCore
                 Spawns._spawns.Add(spawn);
             }
 
-            
+
             //copy the data out into the current array set. 
         }
 
@@ -1014,9 +1016,9 @@ namespace MonoCore
         public extern static string mq_ParseTLO(string msg);
         [MethodImpl(MethodImplOptions.InternalCall)]
         public extern static void mq_DoCommand(string msg);
-		[MethodImpl(MethodImplOptions.InternalCall)]
-		public extern static void mq_DoCommandDelayed(string msg);
-		[MethodImpl(MethodImplOptions.InternalCall)]
+        [MethodImpl(MethodImplOptions.InternalCall)]
+        public extern static void mq_DoCommandDelayed(string msg);
+        [MethodImpl(MethodImplOptions.InternalCall)]
         public extern static void mq_Delay(int delay);
         [MethodImpl(MethodImplOptions.InternalCall)]
         public extern static bool mq_AddCommand(string command);
@@ -1030,13 +1032,13 @@ namespace MonoCore
         public extern static bool mq_GetRunNextCommand();
         [MethodImpl(MethodImplOptions.InternalCall)]
         public extern static string mq_GetFocusedWindowName();
-		[MethodImpl(MethodImplOptions.InternalCall)]
-		private extern static string mq_GetMQ2MonoVersion();
-		[MethodImpl(MethodImplOptions.InternalCall)]
-		public extern static string mq_DoesNotExist();
+        [MethodImpl(MethodImplOptions.InternalCall)]
+        private extern static string mq_GetMQ2MonoVersion();
+        [MethodImpl(MethodImplOptions.InternalCall)]
+        public extern static string mq_DoesNotExist();
 
-		#region IMGUI
-		[MethodImpl(MethodImplOptions.InternalCall)]
+        #region IMGUI
+        [MethodImpl(MethodImplOptions.InternalCall)]
         public extern static bool imgui_Begin(string name, int flags);
         [MethodImpl(MethodImplOptions.InternalCall)]
         public extern static void imgui_Begin_OpenFlagSet(string name, bool value);
@@ -1070,7 +1072,7 @@ namespace MonoCore
             int nSize
         );
         [DllImport("user32.dll")]
-        public static extern IntPtr GetWindowThreadProcessId(IntPtr hWnd,out uint ProcessId);
+        public static extern IntPtr GetWindowThreadProcessId(IntPtr hWnd, out uint ProcessId);
     }
 
     enum ImGuiWindowFlags
@@ -1115,16 +1117,16 @@ namespace MonoCore
         //ImGuiWindowFlags_ResizeFromAnySide    = 1 << 17,  // --> Set io.ConfigWindowsResizeFromEdges=true and make sure mouse cursors are supported by backend (io.BackendFlags & ImGuiBackendFlags_HasMouseCursors)
     };
     public enum MQFeature
-    { 
+    {
         TLO_Dispellable
-    
+
     }
 
     public interface IMQ
     {
         T Query<T>(string query);
         void Cmd(string query, bool delayed = false);
-        void Cmd(string query,Int32 delay,bool delayed=false);
+        void Cmd(string query, Int32 delay, bool delayed = false);
         void Write(string query, [CallerMemberName] string memberName = "", [CallerFilePath] string fileName = "", [CallerLineNumber] int lineNumber = 0);
         void TraceStart(string methodName);
         void TraceEnd(string methodName);
@@ -1135,7 +1137,7 @@ namespace MonoCore
         bool AddCommand(string query);
         void ClearCommands();
         void RemoveCommand(string commandName);
-        
+
         bool FeatureEnabled(MQFeature feature);
         string GetFocusedWindowName();
 
@@ -1280,7 +1282,7 @@ namespace MonoCore
             if (query.StartsWith("/delay ", StringComparison.OrdinalIgnoreCase))
             {
                 string[] splitArray = query.Split(' ');
-                if(splitArray.Length>1)
+                if (splitArray.Length > 1)
                 {
                     if (Int32.TryParse(splitArray[1], out var delayvalue))
                     {
@@ -1289,7 +1291,7 @@ namespace MonoCore
                 }
                 return;
             }
-         
+
             Core.CurrentCommand = query;
             Core.CurrentCommandDelayed = delayed;
             Core.CoreResetEvent.Set();
@@ -1297,7 +1299,7 @@ namespace MonoCore
             MainProcessor.ProcessResetEvent.Wait();
             MainProcessor.ProcessResetEvent.Reset();
             if (!Core.IsProcessing)
-            {  
+            {
                 //we are terminating, kill this thread
                 throw new ThreadAbort("Terminating thread");
             }
@@ -1305,13 +1307,13 @@ namespace MonoCore
         }
         public void Cmd(string query, Int32 delay, bool delayed = false)
         {
-            Cmd(query,delayed);
+            Cmd(query, delayed);
             Delay(delay);
         }
 
         public void Write(string query, [CallerMemberName] string memberName = "", [CallerFilePath] string fileName = "", [CallerLineNumber] int lineNumber = 0)
         {
-              //write on current thread, it will be queued up by MQ. 
+            //write on current thread, it will be queued up by MQ. 
             //needed to deal with certain lock situations and just keeps things simple. 
             Core.mq_Echo($"\a#336699[{MainProcessor.ApplicationName}]\a-w{System.DateTime.Now.ToString("HH:mm:ss")} \aw- {query}");
             return;
@@ -1351,25 +1353,25 @@ namespace MonoCore
             {
                 E3.StateUpdates();
             }
-			//lets tell core that it can continue
-			Core.CoreResetEvent.Set();
+            //lets tell core that it can continue
+            Core.CoreResetEvent.Set();
             //we are now going to wait on the core
             MainProcessor.ProcessResetEvent.Wait();
             MainProcessor.ProcessResetEvent.Reset();
-			
 
-			if (!Core.IsProcessing)
+
+            if (!Core.IsProcessing)
             {
                 //we are terminating, kill this thread
                 Write("Throwing exception for termination: Delay exit");
                 throw new ThreadAbort("Terminating thread");
             }
-			if (E3.IsInit && !E3.InStateUpdate)
-			{
-				E3.StateUpdates();
-                
-			}
-			SinceLastDelay = Core.StopWatch.ElapsedMilliseconds;
+            if (E3.IsInit && !E3.InStateUpdate)
+            {
+                E3.StateUpdates();
+
+            }
+            SinceLastDelay = Core.StopWatch.ElapsedMilliseconds;
         }
 
         public Boolean Delay(Int32 maxTimeToWait, string Condition)
@@ -1425,20 +1427,20 @@ namespace MonoCore
         private bool? Feature_TLO_Dispellable = null;
         public bool FeatureEnabled(MQFeature feature)
         {
-            if(feature == MQFeature.TLO_Dispellable)
+            if (feature == MQFeature.TLO_Dispellable)
             {
-               if(Feature_TLO_Dispellable==null)
-               {
+                if (Feature_TLO_Dispellable == null)
+                {
                     Feature_TLO_Dispellable = Query<bool>("${Spell[Courage].Dispellable}");
-               }
+                }
                 return Feature_TLO_Dispellable.Value;
             }
             return true;
         }
 
-		public string GetFocusedWindowName()
-		{
-            if(Core._MQ2MonoVersion>0.1M)
+        public string GetFocusedWindowName()
+        {
+            if (Core._MQ2MonoVersion > 0.1M)
             {
                 return Core.mq_GetFocusedWindowName();
             }
@@ -1446,9 +1448,9 @@ namespace MonoCore
             {
                 return "NULL";
             }
-			
-		}
-	}
+
+        }
+    }
 
     public class Logging
     {
@@ -1603,7 +1605,8 @@ namespace MonoCore
 
 
             //private constructor, needs to be created so that you are forced to use the pool.
-            private BaseTrace() {
+            private BaseTrace()
+            {
 
             }
 
@@ -1782,30 +1785,30 @@ namespace MonoCore
         void RefreshList();
         void EmptyLists();
         bool TryByID(Int32 id, out Spawn s);
-        bool TryByName(string name,out Spawn s);
+        bool TryByName(string name, out Spawn s);
         Int32 GetIDByName(string name);
         bool Contains(string name);
         bool Contains(Int32 id);
-       
+
     }
     /// <summary>
     /// Used to download spawns from MQ in a quick manner to be used in scripts. 
     /// </summary>
-    public class Spawns: ISpawns
+    public class Spawns : ISpawns
     {
         //special list so we can get rid of the non dirty values
         private static List<Spawn> _tmpSpawnList = new List<Spawn>();
-        
+
         public static List<Spawn> _spawns = new List<Spawn>(2048);
         public static Dictionary<string, Spawn> _spawnsByName = new Dictionary<string, Spawn>(2048, StringComparer.OrdinalIgnoreCase);
-        public static Dictionary<Int32,Spawn> SpawnsByID = new Dictionary<int,Spawn>(2048);
+        public static Dictionary<Int32, Spawn> SpawnsByID = new Dictionary<int, Spawn>(2048);
         public static Int64 _lastRefesh = 0;
         public static Int64 RefreshTimePeriodInMS = 1000;
 
         public bool TryByID(Int32 id, out Spawn s)
         {
             RefreshListIfNeeded();
-            return SpawnsByID.TryGetValue(id,out s);
+            return SpawnsByID.TryGetValue(id, out s);
         }
         public bool TryByName(string name, out Spawn s)
         {
@@ -1840,7 +1843,7 @@ namespace MonoCore
 
         private void RefreshListIfNeeded()
         {
-            if(_spawns.Count==0)
+            if (_spawns.Count == 0)
             {
                 RefreshList();
                 return;
@@ -1854,7 +1857,7 @@ namespace MonoCore
         /// warning, only do this during shutdown.
         /// </summary>
         public void EmptyLists()
-        {  
+        {
             _spawnsByName.Clear();
             SpawnsByID.Clear();
             _spawns.Clear();
@@ -1875,12 +1878,12 @@ namespace MonoCore
             SpawnsByID.Clear();
             foreach (var spawn in _spawns)
             {
-                if(spawn.isDirty)
+                if (spawn.isDirty)
                 {
                     _tmpSpawnList.Add(spawn);
-                    if(spawn.TypeDesc=="PC")
+                    if (spawn.TypeDesc == "PC")
                     {
-                        if(!_spawnsByName.ContainsKey(spawn.Name))
+                        if (!_spawnsByName.ContainsKey(spawn.Name))
                         {
                             _spawnsByName.Add(spawn.Name, spawn);
                         }
@@ -1907,7 +1910,7 @@ namespace MonoCore
     /// <summary>
     /// the actual object pooled spawn object that can be used in scripts. 
     /// </summary>
-    public class Spawn: IDisposable
+    public class Spawn : IDisposable
     {
         public byte[] _data = new byte[1024];
         public Int32 _dataSize;
@@ -1930,7 +1933,7 @@ namespace MonoCore
 
         }
         static Dictionary<string, string> _stringLookup = new Dictionary<string, string>();
-       
+
         public void Init(byte[] data, Int32 length)
         {
             isDirty = true;
@@ -1938,7 +1941,7 @@ namespace MonoCore
             System.Buffer.BlockCopy(data, 0, _data, 0, length);
             _dataSize = length;
             //end of remote debug
-        
+
             Int32 cb = 0;
             ID = BitConverter.ToInt32(data, cb);
             cb += 4;
@@ -1966,13 +1969,13 @@ namespace MonoCore
             cb += slength;
             Buyer = BitConverter.ToBoolean(data, cb);
             cb += 1;
-            ClassID= BitConverter.ToInt32(data, cb);
+            ClassID = BitConverter.ToInt32(data, cb);
             cb += 4;
             //cleanname
             slength = BitConverter.ToInt32(data, cb);
             cb += 4;
             tstring = System.Text.Encoding.ASCII.GetString(data, cb, slength);
-            if(!_stringLookup.TryGetValue(tstring,out CleanName))
+            if (!_stringLookup.TryGetValue(tstring, out CleanName))
             {
                 _stringLookup.Add(tstring, tstring);
                 CleanName = tstring;
@@ -2012,7 +2015,7 @@ namespace MonoCore
             cb += 4;
             Height = BitConverter.ToSingle(data, cb);
             cb += 4;
-    
+
             Invis = BitConverter.ToBoolean(data, cb);
             cb += 1;
             IsSummoned = BitConverter.ToBoolean(data, cb);
@@ -2193,11 +2196,12 @@ namespace MonoCore
         }
         public string CleanName = String.Empty;
         public Int32 ClassID;
-        public String ClassName 
-        { 
-            get {
+        public String ClassName
+        {
+            get
+            {
                 return ClassIDToName(ClassID);
-            } 
+            }
         }
         public String ClassShortName
         {
@@ -2248,7 +2252,7 @@ namespace MonoCore
                 default:
                     return "RED";
             }
-         
+
         }
         private string GetGender(Int32 genderID)
         {
@@ -2322,7 +2326,7 @@ namespace MonoCore
         }
         private string ClassIDToName(Int32 ClassID)
         {
-            switch(ClassID)
+            switch (ClassID)
             {
                 case 1:
                     return "Warrior";
@@ -2384,408 +2388,408 @@ namespace MonoCore
     /// </summary>
     /// Not currently used, tho it is used in the E3IU. Thought it might be useful to some.
     public class CircularBuffer<T> : IEnumerable<T>
+    {
+        private readonly T[] _buffer;
+
+        /// <summary>
+        /// The _start. Index of the first element in buffer.
+        /// </summary>
+        private int _start;
+
+        /// <summary>
+        /// The _end. Index after the last element in the buffer.
+        /// </summary>
+        private int _end;
+
+        /// <summary>
+        /// The _size. Buffer size.
+        /// </summary>
+        private int _size;
+
+        /// <summary>
+        /// Initializes a new instance of the <see cref="CircularBuffer{T}"/> class.
+        /// 
+        /// </summary>
+        /// <param name='capacity'>
+        /// Buffer capacity. Must be positive.
+        /// </param>
+        public CircularBuffer(int capacity)
+            : this(capacity, new T[] { })
         {
-            private readonly T[] _buffer;
+        }
 
-            /// <summary>
-            /// The _start. Index of the first element in buffer.
-            /// </summary>
-            private int _start;
-
-            /// <summary>
-            /// The _end. Index after the last element in the buffer.
-            /// </summary>
-            private int _end;
-
-            /// <summary>
-            /// The _size. Buffer size.
-            /// </summary>
-            private int _size;
-
-            /// <summary>
-            /// Initializes a new instance of the <see cref="CircularBuffer{T}"/> class.
-            /// 
-            /// </summary>
-            /// <param name='capacity'>
-            /// Buffer capacity. Must be positive.
-            /// </param>
-            public CircularBuffer(int capacity)
-                : this(capacity, new T[] { })
+        /// <summary>
+        /// Initializes a new instance of the <see cref="CircularBuffer{T}"/> class.
+        /// 
+        /// </summary>
+        /// <param name='capacity'>
+        /// Buffer capacity. Must be positive.
+        /// </param>
+        /// <param name='items'>
+        /// Items to fill buffer with. Items length must be less than capacity.
+        /// Suggestion: use Skip(x).Take(y).ToArray() to build this argument from
+        /// any enumerable.
+        /// </param>
+        public CircularBuffer(int capacity, T[] items)
+        {
+            if (capacity < 1)
             {
+                throw new ArgumentException(
+                    "Circular buffer cannot have negative or zero capacity.", nameof(capacity));
+            }
+            if (items == null)
+            {
+                throw new ArgumentNullException(nameof(items));
+            }
+            if (items.Length > capacity)
+            {
+                throw new ArgumentException(
+                    "Too many items to fit circular buffer", nameof(items));
             }
 
-            /// <summary>
-            /// Initializes a new instance of the <see cref="CircularBuffer{T}"/> class.
-            /// 
-            /// </summary>
-            /// <param name='capacity'>
-            /// Buffer capacity. Must be positive.
-            /// </param>
-            /// <param name='items'>
-            /// Items to fill buffer with. Items length must be less than capacity.
-            /// Suggestion: use Skip(x).Take(y).ToArray() to build this argument from
-            /// any enumerable.
-            /// </param>
-            public CircularBuffer(int capacity, T[] items)
+            _buffer = new T[capacity];
+
+            Array.Copy(items, _buffer, items.Length);
+            _size = items.Length;
+
+            _start = 0;
+            _end = _size == capacity ? 0 : _size;
+        }
+
+        /// <summary>
+        /// Maximum capacity of the buffer. Elements pushed into the buffer after
+        /// maximum capacity is reached (IsFull = true), will remove an element.
+        /// </summary>
+        public int Capacity { get { return _buffer.Length; } }
+
+        /// <summary>
+        /// Boolean indicating if Circular is at full capacity.
+        /// Adding more elements when the buffer is full will
+        /// cause elements to be removed from the other end
+        /// of the buffer.
+        /// </summary>
+        public bool IsFull
+        {
+            get
             {
-                if (capacity < 1)
-                {
-                    throw new ArgumentException(
-                        "Circular buffer cannot have negative or zero capacity.", nameof(capacity));
-                }
-                if (items == null)
-                {
-                    throw new ArgumentNullException(nameof(items));
-                }
-                if (items.Length > capacity)
-                {
-                    throw new ArgumentException(
-                        "Too many items to fit circular buffer", nameof(items));
-                }
-
-                _buffer = new T[capacity];
-
-                Array.Copy(items, _buffer, items.Length);
-                _size = items.Length;
-
-                _start = 0;
-                _end = _size == capacity ? 0 : _size;
+                return Size == Capacity;
             }
+        }
 
-            /// <summary>
-            /// Maximum capacity of the buffer. Elements pushed into the buffer after
-            /// maximum capacity is reached (IsFull = true), will remove an element.
-            /// </summary>
-            public int Capacity { get { return _buffer.Length; } }
-
-            /// <summary>
-            /// Boolean indicating if Circular is at full capacity.
-            /// Adding more elements when the buffer is full will
-            /// cause elements to be removed from the other end
-            /// of the buffer.
-            /// </summary>
-            public bool IsFull
+        /// <summary>
+        /// True if has no elements.
+        /// </summary>
+        public bool IsEmpty
+        {
+            get
             {
-                get
-                {
-                    return Size == Capacity;
-                }
+                return Size == 0;
             }
+        }
 
-            /// <summary>
-            /// True if has no elements.
-            /// </summary>
-            public bool IsEmpty
-            {
-                get
-                {
-                    return Size == 0;
-                }
-            }
+        /// <summary>
+        /// Current buffer size (the number of elements that the buffer has).
+        /// </summary>
+        public int Size { get { return _size; } }
 
-            /// <summary>
-            /// Current buffer size (the number of elements that the buffer has).
-            /// </summary>
-            public int Size { get { return _size; } }
+        /// <summary>
+        /// Element at the front of the buffer - this[0].
+        /// </summary>
+        /// <returns>The value of the element of type T at the front of the buffer.</returns>
+        public T Front()
+        {
+            ThrowIfEmpty();
+            return _buffer[_start];
+        }
 
-            /// <summary>
-            /// Element at the front of the buffer - this[0].
-            /// </summary>
-            /// <returns>The value of the element of type T at the front of the buffer.</returns>
-            public T Front()
-            {
-                ThrowIfEmpty();
-                return _buffer[_start];
-            }
+        /// <summary>
+        /// Element at the back of the buffer - this[Size - 1].
+        /// </summary>
+        /// <returns>The value of the element of type T at the back of the buffer.</returns>
+        public T Back()
+        {
+            ThrowIfEmpty();
+            return _buffer[(_end != 0 ? _end : Capacity) - 1];
+        }
 
-            /// <summary>
-            /// Element at the back of the buffer - this[Size - 1].
-            /// </summary>
-            /// <returns>The value of the element of type T at the back of the buffer.</returns>
-            public T Back()
-            {
-                ThrowIfEmpty();
-                return _buffer[(_end != 0 ? _end : Capacity) - 1];
-            }
-
-            /// <summary>
-            /// Index access to elements in buffer.
-            /// Index does not loop around like when adding elements,
-            /// valid interval is [0;Size[
-            /// </summary>
-            /// <param name="index">Index of element to access.</param>
-            /// <exception cref="IndexOutOfRangeException">Thrown when index is outside of [; Size[ interval.</exception>
-            public T this[int index]
-            {
-                get
-                {
-                    if (IsEmpty)
-                    {
-                        throw new IndexOutOfRangeException(string.Format("Cannot access index {0}. Buffer is empty", index));
-                    }
-                    if (index >= _size)
-                    {
-                        throw new IndexOutOfRangeException(string.Format("Cannot access index {0}. Buffer size is {1}", index, _size));
-                    }
-                    int actualIndex = InternalIndex(index);
-                    return _buffer[actualIndex];
-                }
-                set
-                {
-                    if (IsEmpty)
-                    {
-                        throw new IndexOutOfRangeException(string.Format("Cannot access index {0}. Buffer is empty", index));
-                    }
-                    if (index >= _size)
-                    {
-                        throw new IndexOutOfRangeException(string.Format("Cannot access index {0}. Buffer size is {1}", index, _size));
-                    }
-                    int actualIndex = InternalIndex(index);
-                    _buffer[actualIndex] = value;
-                }
-            }
-
-            /// <summary>
-            /// Pushes a new element to the back of the buffer. Back()/this[Size-1]
-            /// will now return this element.
-            /// 
-            /// When the buffer is full, the element at Front()/this[0] will be 
-            /// popped to allow for this new element to fit.
-            /// </summary>
-            /// <param name="item">Item to push to the back of the buffer</param>
-            public void PushBack(T item)
-            {
-                if (IsFull)
-                {
-                    _buffer[_end] = item;
-                    Increment(ref _end);
-                    _start = _end;
-                }
-                else
-                {
-                    _buffer[_end] = item;
-                    Increment(ref _end);
-                    ++_size;
-                }
-            }
-
-            /// <summary>
-            /// Pushes a new element to the front of the buffer. Front()/this[0]
-            /// will now return this element.
-            /// 
-            /// When the buffer is full, the element at Back()/this[Size-1] will be 
-            /// popped to allow for this new element to fit.
-            /// </summary>
-            /// <param name="item">Item to push to the front of the buffer</param>
-            public void PushFront(T item)
-            {
-                if (IsFull)
-                {
-                    Decrement(ref _start);
-                    _end = _start;
-                    _buffer[_start] = item;
-                }
-                else
-                {
-                    Decrement(ref _start);
-                    _buffer[_start] = item;
-                    ++_size;
-                }
-            }
-
-            /// <summary>
-            /// Removes the element at the back of the buffer. Decreasing the 
-            /// Buffer size by 1.
-            /// </summary>
-            public void PopBack()
-            {
-                ThrowIfEmpty("Cannot take elements from an empty buffer.");
-                Decrement(ref _end);
-                _buffer[_end] = default(T);
-                --_size;
-            }
-
-            /// <summary>
-            /// Removes the element at the front of the buffer. Decreasing the 
-            /// Buffer size by 1.
-            /// </summary>
-            public void PopFront()
-            {
-                ThrowIfEmpty("Cannot take elements from an empty buffer.");
-                _buffer[_start] = default(T);
-                Increment(ref _start);
-                --_size;
-            }
-
-            /// <summary>
-            /// Clears the contents of the array. Size = 0, Capacity is unchanged.
-            /// </summary>
-            /// <exception cref="NotImplementedException"></exception>
-            public void Clear()
-            {
-                // to clear we just reset everything.
-                _start = 0;
-                _end = 0;
-                _size = 0;
-                Array.Clear(_buffer, 0, _buffer.Length);
-            }
-
-            /// <summary>
-            /// Copies the buffer contents to an array, according to the logical
-            /// contents of the buffer (i.e. independent of the internal 
-            /// order/contents)
-            /// </summary>
-            /// <returns>A new array with a copy of the buffer contents.</returns>
-            public T[] ToArray()
-            {
-                T[] newArray = new T[Size];
-                int newArrayOffset = 0;
-                var segments = ToArraySegments();
-                foreach (ArraySegment<T> segment in segments)
-                {
-                    Array.Copy(segment.Array, segment.Offset, newArray, newArrayOffset, segment.Count);
-                    newArrayOffset += segment.Count;
-                }
-                return newArray;
-            }
-
-            /// <summary>
-            /// Get the contents of the buffer as 2 ArraySegments.
-            /// Respects the logical contents of the buffer, where
-            /// each segment and items in each segment are ordered
-            /// according to insertion.
-            ///
-            /// Fast: does not copy the array elements.
-            /// Useful for methods like <c>Send(IList&lt;ArraySegment&lt;Byte&gt;&gt;)</c>.
-            /// 
-            /// <remarks>Segments may be empty.</remarks>
-            /// </summary>
-            /// <returns>An IList with 2 segments corresponding to the buffer content.</returns>
-            public IList<ArraySegment<T>> ToArraySegments()
-            {
-                return new[] { ArrayOne(), ArrayTwo() };
-            }
-
-            #region IEnumerable<T> implementation
-            /// <summary>
-            /// Returns an enumerator that iterates through this buffer.
-            /// </summary>
-            /// <returns>An enumerator that can be used to iterate this collection.</returns>
-            public IEnumerator<T> GetEnumerator()
-            {
-                var segments = ToArraySegments();
-                foreach (ArraySegment<T> segment in segments)
-                {
-                    for (int i = 0; i < segment.Count; i++)
-                    {
-                        yield return segment.Array[segment.Offset + i];
-                    }
-                }
-            }
-            #endregion
-            #region IEnumerable implementation
-            System.Collections.IEnumerator System.Collections.IEnumerable.GetEnumerator()
-            {
-                return (System.Collections.IEnumerator)GetEnumerator();
-            }
-            #endregion
-
-            private void ThrowIfEmpty(string message = "Cannot access an empty buffer.")
+        /// <summary>
+        /// Index access to elements in buffer.
+        /// Index does not loop around like when adding elements,
+        /// valid interval is [0;Size[
+        /// </summary>
+        /// <param name="index">Index of element to access.</param>
+        /// <exception cref="IndexOutOfRangeException">Thrown when index is outside of [; Size[ interval.</exception>
+        public T this[int index]
+        {
+            get
             {
                 if (IsEmpty)
                 {
-                    throw new InvalidOperationException(message);
+                    throw new IndexOutOfRangeException(string.Format("Cannot access index {0}. Buffer is empty", index));
                 }
-            }
-
-            /// <summary>
-            /// Increments the provided index variable by one, wrapping
-            /// around if necessary.
-            /// </summary>
-            /// <param name="index"></param>
-            private void Increment(ref int index)
-            {
-                if (++index == Capacity)
+                if (index >= _size)
                 {
-                    index = 0;
+                    throw new IndexOutOfRangeException(string.Format("Cannot access index {0}. Buffer size is {1}", index, _size));
                 }
+                int actualIndex = InternalIndex(index);
+                return _buffer[actualIndex];
             }
-
-            /// <summary>
-            /// Decrements the provided index variable by one, wrapping
-            /// around if necessary.
-            /// </summary>
-            /// <param name="index"></param>
-            private void Decrement(ref int index)
-            {
-                if (index == 0)
-                {
-                    index = Capacity;
-                }
-                index--;
-            }
-
-            /// <summary>
-            /// Converts the index in the argument to an index in <code>_buffer</code>
-            /// </summary>
-            /// <returns>
-            /// The transformed index.
-            /// </returns>
-            /// <param name='index'>
-            /// External index.
-            /// </param>
-            private int InternalIndex(int index)
-            {
-                return _start + (index < (Capacity - _start) ? index : index - Capacity);
-            }
-
-            // doing ArrayOne and ArrayTwo methods returning ArraySegment<T> as seen here: 
-            // http://www.boost.org/doc/libs/1_37_0/libs/circular_buffer/doc/circular_buffer.html#classboost_1_1circular__buffer_1957cccdcb0c4ef7d80a34a990065818d
-            // http://www.boost.org/doc/libs/1_37_0/libs/circular_buffer/doc/circular_buffer.html#classboost_1_1circular__buffer_1f5081a54afbc2dfc1a7fb20329df7d5b
-            // should help a lot with the code.
-
-            #region Array items easy access.
-            // The array is composed by at most two non-contiguous segments, 
-            // the next two methods allow easy access to those.
-
-            private ArraySegment<T> ArrayOne()
+            set
             {
                 if (IsEmpty)
                 {
-                    return new ArraySegment<T>(new T[0]);
+                    throw new IndexOutOfRangeException(string.Format("Cannot access index {0}. Buffer is empty", index));
                 }
-                else if (_start < _end)
+                if (index >= _size)
                 {
-                    return new ArraySegment<T>(_buffer, _start, _end - _start);
+                    throw new IndexOutOfRangeException(string.Format("Cannot access index {0}. Buffer size is {1}", index, _size));
                 }
-                else
-                {
-                    return new ArraySegment<T>(_buffer, _start, _buffer.Length - _start);
-                }
+                int actualIndex = InternalIndex(index);
+                _buffer[actualIndex] = value;
             }
+        }
 
-            private ArraySegment<T> ArrayTwo()
+        /// <summary>
+        /// Pushes a new element to the back of the buffer. Back()/this[Size-1]
+        /// will now return this element.
+        /// 
+        /// When the buffer is full, the element at Front()/this[0] will be 
+        /// popped to allow for this new element to fit.
+        /// </summary>
+        /// <param name="item">Item to push to the back of the buffer</param>
+        public void PushBack(T item)
+        {
+            if (IsFull)
             {
-                if (IsEmpty)
+                _buffer[_end] = item;
+                Increment(ref _end);
+                _start = _end;
+            }
+            else
+            {
+                _buffer[_end] = item;
+                Increment(ref _end);
+                ++_size;
+            }
+        }
+
+        /// <summary>
+        /// Pushes a new element to the front of the buffer. Front()/this[0]
+        /// will now return this element.
+        /// 
+        /// When the buffer is full, the element at Back()/this[Size-1] will be 
+        /// popped to allow for this new element to fit.
+        /// </summary>
+        /// <param name="item">Item to push to the front of the buffer</param>
+        public void PushFront(T item)
+        {
+            if (IsFull)
+            {
+                Decrement(ref _start);
+                _end = _start;
+                _buffer[_start] = item;
+            }
+            else
+            {
+                Decrement(ref _start);
+                _buffer[_start] = item;
+                ++_size;
+            }
+        }
+
+        /// <summary>
+        /// Removes the element at the back of the buffer. Decreasing the 
+        /// Buffer size by 1.
+        /// </summary>
+        public void PopBack()
+        {
+            ThrowIfEmpty("Cannot take elements from an empty buffer.");
+            Decrement(ref _end);
+            _buffer[_end] = default(T);
+            --_size;
+        }
+
+        /// <summary>
+        /// Removes the element at the front of the buffer. Decreasing the 
+        /// Buffer size by 1.
+        /// </summary>
+        public void PopFront()
+        {
+            ThrowIfEmpty("Cannot take elements from an empty buffer.");
+            _buffer[_start] = default(T);
+            Increment(ref _start);
+            --_size;
+        }
+
+        /// <summary>
+        /// Clears the contents of the array. Size = 0, Capacity is unchanged.
+        /// </summary>
+        /// <exception cref="NotImplementedException"></exception>
+        public void Clear()
+        {
+            // to clear we just reset everything.
+            _start = 0;
+            _end = 0;
+            _size = 0;
+            Array.Clear(_buffer, 0, _buffer.Length);
+        }
+
+        /// <summary>
+        /// Copies the buffer contents to an array, according to the logical
+        /// contents of the buffer (i.e. independent of the internal 
+        /// order/contents)
+        /// </summary>
+        /// <returns>A new array with a copy of the buffer contents.</returns>
+        public T[] ToArray()
+        {
+            T[] newArray = new T[Size];
+            int newArrayOffset = 0;
+            var segments = ToArraySegments();
+            foreach (ArraySegment<T> segment in segments)
+            {
+                Array.Copy(segment.Array, segment.Offset, newArray, newArrayOffset, segment.Count);
+                newArrayOffset += segment.Count;
+            }
+            return newArray;
+        }
+
+        /// <summary>
+        /// Get the contents of the buffer as 2 ArraySegments.
+        /// Respects the logical contents of the buffer, where
+        /// each segment and items in each segment are ordered
+        /// according to insertion.
+        ///
+        /// Fast: does not copy the array elements.
+        /// Useful for methods like <c>Send(IList&lt;ArraySegment&lt;Byte&gt;&gt;)</c>.
+        /// 
+        /// <remarks>Segments may be empty.</remarks>
+        /// </summary>
+        /// <returns>An IList with 2 segments corresponding to the buffer content.</returns>
+        public IList<ArraySegment<T>> ToArraySegments()
+        {
+            return new[] { ArrayOne(), ArrayTwo() };
+        }
+
+        #region IEnumerable<T> implementation
+        /// <summary>
+        /// Returns an enumerator that iterates through this buffer.
+        /// </summary>
+        /// <returns>An enumerator that can be used to iterate this collection.</returns>
+        public IEnumerator<T> GetEnumerator()
+        {
+            var segments = ToArraySegments();
+            foreach (ArraySegment<T> segment in segments)
+            {
+                for (int i = 0; i < segment.Count; i++)
                 {
-                    return new ArraySegment<T>(new T[0]);
-                }
-                else if (_start < _end)
-                {
-                    return new ArraySegment<T>(_buffer, _end, 0);
-                }
-                else
-                {
-                    return new ArraySegment<T>(_buffer, 0, _end);
+                    yield return segment.Array[segment.Offset + i];
                 }
             }
+        }
+        #endregion
+        #region IEnumerable implementation
+        System.Collections.IEnumerator System.Collections.IEnumerable.GetEnumerator()
+        {
+            return (System.Collections.IEnumerator)GetEnumerator();
+        }
+        #endregion
 
-         
-            #endregion
+        private void ThrowIfEmpty(string message = "Cannot access an empty buffer.")
+        {
+            if (IsEmpty)
+            {
+                throw new InvalidOperationException(message);
+            }
+        }
+
+        /// <summary>
+        /// Increments the provided index variable by one, wrapping
+        /// around if necessary.
+        /// </summary>
+        /// <param name="index"></param>
+        private void Increment(ref int index)
+        {
+            if (++index == Capacity)
+            {
+                index = 0;
+            }
+        }
+
+        /// <summary>
+        /// Decrements the provided index variable by one, wrapping
+        /// around if necessary.
+        /// </summary>
+        /// <param name="index"></param>
+        private void Decrement(ref int index)
+        {
+            if (index == 0)
+            {
+                index = Capacity;
+            }
+            index--;
+        }
+
+        /// <summary>
+        /// Converts the index in the argument to an index in <code>_buffer</code>
+        /// </summary>
+        /// <returns>
+        /// The transformed index.
+        /// </returns>
+        /// <param name='index'>
+        /// External index.
+        /// </param>
+        private int InternalIndex(int index)
+        {
+            return _start + (index < (Capacity - _start) ? index : index - Capacity);
+        }
+
+        // doing ArrayOne and ArrayTwo methods returning ArraySegment<T> as seen here: 
+        // http://www.boost.org/doc/libs/1_37_0/libs/circular_buffer/doc/circular_buffer.html#classboost_1_1circular__buffer_1957cccdcb0c4ef7d80a34a990065818d
+        // http://www.boost.org/doc/libs/1_37_0/libs/circular_buffer/doc/circular_buffer.html#classboost_1_1circular__buffer_1f5081a54afbc2dfc1a7fb20329df7d5b
+        // should help a lot with the code.
+
+        #region Array items easy access.
+        // The array is composed by at most two non-contiguous segments, 
+        // the next two methods allow easy access to those.
+
+        private ArraySegment<T> ArrayOne()
+        {
+            if (IsEmpty)
+            {
+                return new ArraySegment<T>(new T[0]);
+            }
+            else if (_start < _end)
+            {
+                return new ArraySegment<T>(_buffer, _start, _end - _start);
+            }
+            else
+            {
+                return new ArraySegment<T>(_buffer, _start, _buffer.Length - _start);
+            }
+        }
+
+        private ArraySegment<T> ArrayTwo()
+        {
+            if (IsEmpty)
+            {
+                return new ArraySegment<T>(new T[0]);
+            }
+            else if (_start < _end)
+            {
+                return new ArraySegment<T>(_buffer, _end, 0);
+            }
+            else
+            {
+                return new ArraySegment<T>(_buffer, 0, _end);
+            }
         }
 
 
+        #endregion
+    }
 
-        
-    
+
+
+
+
 }

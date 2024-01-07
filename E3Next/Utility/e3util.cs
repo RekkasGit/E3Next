@@ -1,16 +1,17 @@
 ﻿using E3Core.Data;
 using E3Core.Processors;
-using E3Core.Settings;
+
 using IniParser;
+
 using MonoCore;
+
 using System;
 using System.Collections.Generic;
 using System.Linq;
-using System.Net.Sockets;
 using System.Net;
-using System.Reflection.Emit;
-using System.Runtime.CompilerServices;
+using System.Net.Sockets;
 using System.Text;
+
 using static MonoCore.EventProcessor;
 
 
@@ -24,32 +25,32 @@ namespace E3Core.Utility
         private static IMQ MQ = E3.MQ;
         private static ISpawns _spawns = E3.Spawns;
 
-		public static Int32 MaxBuffSlots = 38;
-		public static Int32 MaxSongSlots = 20;
+        public static Int32 MaxBuffSlots = 38;
+        public static Int32 MaxSongSlots = 20;
         public static Int32 MaxPetBuffSlots = 30;
 
-		//share this as we can reuse as its only 1 thread
-		private static StringBuilder resultStringBuilder = new StringBuilder(1024);
-		//modified from https://stackoverflow.com/questions/6275980/string-replace-ignoring-case
-		public static string ArgsToCommand(List<String> args)
-		{
-			resultStringBuilder.Clear();
-			foreach (var arg in args)
-			{
-				if (arg.Contains(" "))
-				{
-					//need to wrap it with quotes if it has spaces
-					resultStringBuilder.Append($"\"{arg}\" ");
-				}
-				else
-				{
-					resultStringBuilder.Append($"{arg} ");
-				}
+        //share this as we can reuse as its only 1 thread
+        private static StringBuilder resultStringBuilder = new StringBuilder(1024);
+        //modified from https://stackoverflow.com/questions/6275980/string-replace-ignoring-case
+        public static string ArgsToCommand(List<String> args)
+        {
+            resultStringBuilder.Clear();
+            foreach (var arg in args)
+            {
+                if (arg.Contains(" "))
+                {
+                    //need to wrap it with quotes if it has spaces
+                    resultStringBuilder.Append($"\"{arg}\" ");
+                }
+                else
+                {
+                    resultStringBuilder.Append($"{arg} ");
+                }
 
-			}
-			return resultStringBuilder.ToString().Trim();
-		}
-		public static void PutOriginalTargetBackIfNeeded(Int32 targetid)
+            }
+            return resultStringBuilder.ToString().Trim();
+        }
+        public static void PutOriginalTargetBackIfNeeded(Int32 targetid)
         {
             //put the target back to where it was
             Int32 currentTargetID = MQ.Query<Int32>("${Target.ID}");
@@ -92,7 +93,7 @@ namespace E3Core.Utility
             }
 
             resultStringBuilder.Clear();
-          
+
             // Analyze the replacement: replace or remove.
             bool isReplacementNullOrEmpty = string.IsNullOrEmpty(newValue);
 
@@ -135,28 +136,28 @@ namespace E3Core.Utility
             return resultStringBuilder.ToString();
         }
 
-		public static IEnumerable<T> Shuffle<T>(this IEnumerable<T> source, Random rng)
-		{
-			//https://stackoverflow.com/questions/1287567/is-using-random-and-orderby-a-good-shuffle-algorithm
-			T[] elements = source.ToArray();
-			for (int i = elements.Length - 1; i >= 0; i--)
-			{
-				// Swap element "i" with a random earlier element it (or itself)
-				// ... except we don't really need to swap it fully, as we can
-				// return it immediately, and afterwards it's irrelevant.
-				int swapIndex = rng.Next(i + 1);
-				yield return elements[swapIndex];
-				elements[swapIndex] = elements[i];
-			}
-		}
-		/// <summary>
-		/// Use to see if a certain method should be running
-		/// </summary>
-		/// <param name="nextCheck">ref param to update ot the next time a thing should run</param>
-		/// <param name="nextCheckInterval">The interval in milliseconds</param>
-		/// <returns></returns>
-		public static bool ShouldCheck(ref Int64 nextCheck, Int64 nextCheckInterval)
-        {  
+        public static IEnumerable<T> Shuffle<T>(this IEnumerable<T> source, Random rng)
+        {
+            //https://stackoverflow.com/questions/1287567/is-using-random-and-orderby-a-good-shuffle-algorithm
+            T[] elements = source.ToArray();
+            for (int i = elements.Length - 1; i >= 0; i--)
+            {
+                // Swap element "i" with a random earlier element it (or itself)
+                // ... except we don't really need to swap it fully, as we can
+                // return it immediately, and afterwards it's irrelevant.
+                int swapIndex = rng.Next(i + 1);
+                yield return elements[swapIndex];
+                elements[swapIndex] = elements[i];
+            }
+        }
+        /// <summary>
+        /// Use to see if a certain method should be running
+        /// </summary>
+        /// <param name="nextCheck">ref param to update ot the next time a thing should run</param>
+        /// <param name="nextCheckInterval">The interval in milliseconds</param>
+        /// <returns></returns>
+        public static bool ShouldCheck(ref Int64 nextCheck, Int64 nextCheckInterval)
+        {
             if (Core.StopWatch.ElapsedMilliseconds < nextCheck)
             {
                 return false;
@@ -173,7 +174,7 @@ namespace E3Core.Utility
             //Check for Nav path if available and Nav is loaded
             bool navLoaded = MQ.Query<bool>("${Plugin[MQ2Nav].IsLoaded}");
             int targetID = MQ.Query<int>("${Target.ID}");
-            
+
             if (navLoaded)
             {
                 if (MQ.Query<Double>("${Target.Distance}") < 100 && MQ.Query<bool>("${Target.LineOfSight}"))
@@ -184,17 +185,17 @@ namespace E3Core.Utility
 
                 if (meshLoaded)
                 {
-                    
+
                     e3util.NavToSpawnID(targetID);
                     //exit from TryMoveToTarget if we've reached the target
-                    if(MQ.Query<Double>("${Target.Distance}") < E3.GeneralSettings.Movement_NavStopDistance)
+                    if (MQ.Query<Double>("${Target.Distance}") < E3.GeneralSettings.Movement_NavStopDistance)
                     {
                         return;
                     }
                 }
             }
-            
-            
+
+
             if (!MQ.Query<bool>("${Target.LineOfSight}"))
             {
                 E3.Bots.Broadcast("\arCannot move to target, not in LoS");
@@ -203,7 +204,7 @@ namespace E3Core.Utility
                 return;
             }
 
-            UseMoveTo:
+        UseMoveTo:
             Double meX = MQ.Query<Double>("${Me.X}");
             Double meY = MQ.Query<Double>("${Me.Y}");
 
@@ -213,13 +214,13 @@ namespace E3Core.Utility
             MQ.Delay(1500, $"${{Math.Distance[{y}, {x}]}} < 8");    // This is the blocking but breaks the second you are there
 
             Int64 endTime = Core.StopWatch.ElapsedMilliseconds + 10000;
-            while(true)
+            while (true)
             {
-               
+
                 Double tmeX = MQ.Query<Double>("${Me.X}");
                 Double tmeY = MQ.Query<Double>("${Me.Y}");
 
-                if((int)meX==(int)tmeX && (int)meY==(int)tmeY)
+                if ((int)meX == (int)tmeX && (int)meY == (int)tmeY)
                 {
                     //we are stuck, kick out
                     break;
@@ -324,7 +325,7 @@ namespace E3Core.Utility
                 {
                     return false;
                 }
-               
+
                 if (includeFilter != String.Empty)
                 {
                     indexOfPipe = includeFilter.IndexOf('|') + 1;
@@ -352,7 +353,7 @@ namespace E3Core.Utility
             else if (notFilter != string.Empty)
             {
                 returnValue = false;
-                 Int32 indexOfPipe = notFilter.IndexOf('|') + 1;
+                Int32 indexOfPipe = notFilter.IndexOf('|') + 1;
                 string input = notFilter.Substring(indexOfPipe, notFilter.Length - indexOfPipe);
                 //now split up into a list of values.
                 List<string> inputs = StringsToList(input, ' ');
@@ -449,7 +450,7 @@ namespace E3Core.Utility
             {
                 if (x == delim || end == s.Length - 1)
                 {
-                    if (end == s.Length - 1 && x!=delim)
+                    if (end == s.Length - 1 && x != delim)
                         end++;
                     result.Add(int.Parse(s.Substring(start, end - start)));
                     start = end + 1;
@@ -458,51 +459,51 @@ namespace E3Core.Utility
             }
 
         }
-		public static void StringsToNumbers(string s, char delim, List<Int64> list)
-		{
-			List<Int64> result = list;
-			int start = 0;
-			int end = 0;
-			foreach (char x in s)
-			{
-				if (x == delim || end == s.Length - 1)
-				{
-					if (end == s.Length - 1 && x != delim)
-						end++;
-					result.Add(Int64.Parse(s.Substring(start, end - start)));
-					start = end + 1;
-				}
-				end++;
-			}
+        public static void StringsToNumbers(string s, char delim, List<Int64> list)
+        {
+            List<Int64> result = list;
+            int start = 0;
+            int end = 0;
+            foreach (char x in s)
+            {
+                if (x == delim || end == s.Length - 1)
+                {
+                    if (end == s.Length - 1 && x != delim)
+                        end++;
+                    result.Add(Int64.Parse(s.Substring(start, end - start)));
+                    start = end + 1;
+                }
+                end++;
+            }
 
-		}
-		private static List<Int64> _buffInfoTempList = new List<Int64>();
-		public static void BuffInfoToDictonary(string s, Dictionary<Int32, Int64> list, char delim=':')
-		{
+        }
+        private static List<Int64> _buffInfoTempList = new List<Int64>();
+        public static void BuffInfoToDictonary(string s, Dictionary<Int32, Int64> list, char delim = ':')
+        {
             list.Clear();
-			Dictionary<Int32, Int64> result = list;
-            
-			int start = 0;
-			int end = 0;
-			foreach (char x in s)
-			{
-				if (x == delim || end == s.Length - 1)
-				{
-					if (end == s.Length - 1 && x != delim)
-						end++;
+            Dictionary<Int32, Int64> result = list;
+
+            int start = 0;
+            int end = 0;
+            foreach (char x in s)
+            {
+                if (x == delim || end == s.Length - 1)
+                {
+                    if (end == s.Length - 1 && x != delim)
+                        end++;
                     //number,number
                     _buffInfoTempList.Clear();
                     string tstring = s.Substring(start, end - start);
                     StringsToNumbers(tstring, ',', _buffInfoTempList);
                     result.Add((Int32)_buffInfoTempList[0], _buffInfoTempList[1]);
 
-					start = end + 1;
-				}
-				end++;
-			}
+                    start = end + 1;
+                }
+                end++;
+            }
 
-		}
-		public static List<string> StringsToList(string s, char delim)
+        }
+        public static List<string> StringsToList(string s, char delim)
         {
             List<string> result = new List<string>();
             int start = 0;
@@ -521,7 +522,7 @@ namespace E3Core.Utility
 
             return result;
         }
-        public static void TryMoveToLoc(Double x, Double y,Double z, Int32 minDistance = 0,Int32 timeoutInMS = 10000 )
+        public static void TryMoveToLoc(Double x, Double y, Double z, Int32 minDistance = 0, Int32 timeoutInMS = 10000)
         {
             //Check for Nav path if available and Nav is loaded
             bool navLoaded = MQ.Query<bool>("${Plugin[MQ2Nav].IsLoaded}");
@@ -533,7 +534,7 @@ namespace E3Core.Utility
 
                 if (meshLoaded)
                 {
-                    NavToLoc(x,y,z);
+                    NavToLoc(x, y, z);
                     //exit from TryMoveToLoc if we've reached the destination
                     Double distanceX = Math.Abs(x - MQ.Query<Double>("${Me.X}"));
                     Double distanceY = Math.Abs(y - MQ.Query<Double>("${Me.Y}"));
@@ -631,13 +632,13 @@ namespace E3Core.Utility
         {
             Int32 cursorID = MQ.Query<Int32>("${Cursor.ID}");
             Int32 counter = 0;
-            while(cursorID>0)
-            {   
+            while (cursorID > 0)
+            {
                 if (cursorID > 0)
                 {
                     string autoinvItem = MQ.Query<string>("${Cursor}");
 
-                    if(E3.CharacterSettings.Cursor_Delete.Contains(autoinvItem, StringComparer.OrdinalIgnoreCase))
+                    if (E3.CharacterSettings.Cursor_Delete.Contains(autoinvItem, StringComparer.OrdinalIgnoreCase))
                     {
                         //configured to delete this item.
                         MQ.Cmd("/destroy");
@@ -668,24 +669,24 @@ namespace E3Core.Utility
         }
         public static void DeleteNoRentItem(string itemName)
         {
-            while(Casting.IsCasting())
+            while (Casting.IsCasting())
             {
                 MQ.Delay(100);
             }
-            if(ClearCursor())
+            if (ClearCursor())
             {
                 bool foundItem = MQ.Query<bool>($"${{Bool[${{FindItem[={itemName}]}}]}}");
                 if (!foundItem) return;
                 MQ.Cmd($"/nomodkey /itemnotify \"{itemName}\" leftmouseup");
                 MQ.Delay(2000, "${Bool[${Cursor.ID}]}");
                 bool itemOnCursor = MQ.Query<bool>("${Bool[${Cursor.ID}]}");
-                if(itemOnCursor)
+                if (itemOnCursor)
                 {
                     bool isNoRent = MQ.Query<bool>("${Cursor.NoRent}");
-                    if(isNoRent)
+                    if (isNoRent)
                     {
                         MQ.Cmd("/destroy");
-                        MQ.Delay(300);                        
+                        MQ.Delay(300);
                     }
                     ClearCursor();
                 }
@@ -694,66 +695,66 @@ namespace E3Core.Utility
         static System.Text.StringBuilder buffInfoStringBuilder = new StringBuilder();
         public static string GenerateBuffInfoForPubSub()
         {
-            using(_log.Trace())
+            using (_log.Trace())
             {
-				buffInfoStringBuilder.Clear();
-				//lets look for a partial match.
-				for (Int32 i = 1; i <= MaxBuffSlots; i++)
-				{
-					string spellID = MQ.Query<string>($"${{Me.Buff[{i}].Spell.ID}}");
-					if (spellID != "NULL")
-					{
-						string duration = MQ.Query<string>($"${{Me.Buff[{i}].Duration}}");
-						buffInfoStringBuilder.Append(spellID);
-						buffInfoStringBuilder.Append(",");
-						buffInfoStringBuilder.Append(duration);
-						buffInfoStringBuilder.Append(":");
-					}
-				}
-				for (Int32 i = 1; i <= MaxSongSlots; i++)
-				{
-					string spellID = MQ.Query<String>($"${{Me.Song[{i}].Spell.ID}}");
-
-					if (spellID != "NULL")
-					{
-						string duration = MQ.Query<string>($"${{Me.Song[{i}].Duration}}");
-						buffInfoStringBuilder.Append(spellID);
-						buffInfoStringBuilder.Append(",");
-						buffInfoStringBuilder.Append(duration);
-						buffInfoStringBuilder.Append(":");
-					}
-				}
-				return buffInfoStringBuilder.ToString();
-
-			}
-            
-		}
-		public static string GeneratePetBuffInfoForPubSub()
-		{
-			using (_log.Trace())
-			{
-				buffInfoStringBuilder.Clear();
-				//lets look for a partial match.
-                if(MQ.Query<bool>("${Me.Pet.ID}"))
+                buffInfoStringBuilder.Clear();
+                //lets look for a partial match.
+                for (Int32 i = 1; i <= MaxBuffSlots; i++)
                 {
-					for (Int32 i = 1; i <= MaxPetBuffSlots; i++)
-					{
-						string spellID = MQ.Query<string>($"${{Me.Pet.Buff[{i}].ID}}");
-						if (spellID != "NULL")
-						{
-							string duration = MQ.Query<string>($"${{Me.Pet.Buff[{i}].Duration}}");
-							buffInfoStringBuilder.Append(spellID);
-							buffInfoStringBuilder.Append(",");
-							buffInfoStringBuilder.Append(duration);
-							buffInfoStringBuilder.Append(":");
-						}
-					}
-				}
-				return buffInfoStringBuilder.ToString();
-			}
+                    string spellID = MQ.Query<string>($"${{Me.Buff[{i}].Spell.ID}}");
+                    if (spellID != "NULL")
+                    {
+                        string duration = MQ.Query<string>($"${{Me.Buff[{i}].Duration}}");
+                        buffInfoStringBuilder.Append(spellID);
+                        buffInfoStringBuilder.Append(",");
+                        buffInfoStringBuilder.Append(duration);
+                        buffInfoStringBuilder.Append(":");
+                    }
+                }
+                for (Int32 i = 1; i <= MaxSongSlots; i++)
+                {
+                    string spellID = MQ.Query<String>($"${{Me.Song[{i}].Spell.ID}}");
 
-		}
-		public static void GiveItemOnCursorToTarget(bool moveBackToOriginalLocation = true, bool clearTarget = true)
+                    if (spellID != "NULL")
+                    {
+                        string duration = MQ.Query<string>($"${{Me.Song[{i}].Duration}}");
+                        buffInfoStringBuilder.Append(spellID);
+                        buffInfoStringBuilder.Append(",");
+                        buffInfoStringBuilder.Append(duration);
+                        buffInfoStringBuilder.Append(":");
+                    }
+                }
+                return buffInfoStringBuilder.ToString();
+
+            }
+
+        }
+        public static string GeneratePetBuffInfoForPubSub()
+        {
+            using (_log.Trace())
+            {
+                buffInfoStringBuilder.Clear();
+                //lets look for a partial match.
+                if (MQ.Query<bool>("${Me.Pet.ID}"))
+                {
+                    for (Int32 i = 1; i <= MaxPetBuffSlots; i++)
+                    {
+                        string spellID = MQ.Query<string>($"${{Me.Pet.Buff[{i}].ID}}");
+                        if (spellID != "NULL")
+                        {
+                            string duration = MQ.Query<string>($"${{Me.Pet.Buff[{i}].Duration}}");
+                            buffInfoStringBuilder.Append(spellID);
+                            buffInfoStringBuilder.Append(",");
+                            buffInfoStringBuilder.Append(duration);
+                            buffInfoStringBuilder.Append(":");
+                        }
+                    }
+                }
+                return buffInfoStringBuilder.ToString();
+            }
+
+        }
+        public static void GiveItemOnCursorToTarget(bool moveBackToOriginalLocation = true, bool clearTarget = true)
         {
 
             double currentX = MQ.Query<double>("${Me.X}");
@@ -767,7 +768,7 @@ namespace E3Core.Utility
             var windowOpenQuery = $"${{Window[{windowType}].Open}}";
             MQ.Delay(3000, windowOpenQuery);
             bool windowOpen = MQ.Query<bool>(windowOpenQuery);
-            if(!windowOpen)
+            if (!windowOpen)
             {
                 MQ.Write("\arError could not give target what is on our cursor, putting it in inventory");
                 E3.Bots.BroadcastCommand($"/popup ${{Me}} cannot give ${{Cursor.Name}} to ${{Target}}", false);
@@ -777,19 +778,19 @@ namespace E3Core.Utility
                 return;
             }
             Int32 waitCounter = 0;
-            waitAcceptLoop:
+        waitAcceptLoop:
             var command = $"/nomodkey /notify {windowType} {buttonType} leftmouseup";
             MQ.Cmd(command);
-            if(string.Equals(targetType, "PC", StringComparison.OrdinalIgnoreCase))
+            if (string.Equals(targetType, "PC", StringComparison.OrdinalIgnoreCase))
             {
                 E3.Bots.Trade(MQ.Query<string>("${Target.CleanName}"));
             }
             MQ.Delay(1000, $"!{windowOpenQuery}");
             windowOpen = MQ.Query<bool>(windowOpenQuery);
-            if(windowOpen)
+            if (windowOpen)
             {
                 waitCounter++;
-                if(waitCounter<30)
+                if (waitCounter < 30)
                 {
                     goto waitAcceptLoop;
 
@@ -804,26 +805,26 @@ namespace E3Core.Utility
             //lets go back to our location
             if (moveBackToOriginalLocation)
             {
-                e3util.TryMoveToLoc(currentX, currentY,currentZ);
+                e3util.TryMoveToLoc(currentX, currentY, currentZ);
             }
         }
         public static string GetLocalIPAddress()
         {
-			//https://stackoverflow.com/questions/6803073/get-local-ip-address
+            //https://stackoverflow.com/questions/6803073/get-local-ip-address
 
-			string localIP;
-			using (Socket socket = new Socket(AddressFamily.InterNetwork, SocketType.Dgram, 0))
-			{
-				socket.Connect("8.8.8.8", 65530);
-				IPEndPoint endPoint = socket.LocalEndPoint as IPEndPoint;
-				localIP = endPoint.Address.ToString();
-			}
+            string localIP;
+            using (Socket socket = new Socket(AddressFamily.InterNetwork, SocketType.Dgram, 0))
+            {
+                socket.Connect("8.8.8.8", 65530);
+                IPEndPoint endPoint = socket.LocalEndPoint as IPEndPoint;
+                localIP = endPoint.Address.ToString();
+            }
             return localIP;
-		}
+        }
         public static bool IsShuttingDown()
         {
 
-            if(EventProcessor.CommandList.ContainsKey("/shutdown") && EventProcessor.CommandList["/shutdown"].queuedEvents.Count > 0)
+            if (EventProcessor.CommandList.ContainsKey("/shutdown") && EventProcessor.CommandList["/shutdown"].queuedEvents.Count > 0)
             {
                 return true;
             }
@@ -837,17 +838,17 @@ namespace E3Core.Utility
         {
             EventProcessor.RegisterCommand(command, (x) =>
             {
-              
-                 Int32 mobid;
+
+                Int32 mobid;
                 if (x.args.Count > 0)
                 {
                     if (e3util.FilterMe(x)) return;
 
                     if (Int32.TryParse(x.args[0], out mobid))
                     {
-                        if(_spawns.TryByID(mobid, out var spawn))
+                        if (_spawns.TryByID(mobid, out var spawn))
                         {
-                            if(spawn.TypeDesc=="NPC")
+                            if (spawn.TypeDesc == "NPC")
                             {
                                 FunctionToExecute(mobid);
 
@@ -868,8 +869,8 @@ namespace E3Core.Utility
                         {
                             if (spawn.TypeDesc == "NPC")
                             {
-                              
-                                E3.Bots.BroadcastCommandToGroup($"{command} {targetID}",x);
+
+                                E3.Bots.BroadcastCommandToGroup($"{command} {targetID}", x);
                                 if (e3util.FilterMe(x)) return;
                                 FunctionToExecute(targetID);
                             }
@@ -914,12 +915,12 @@ namespace E3Core.Utility
         /// <param name="YesClick">if set to <c>true</c> [yes click].</param>
         public static void ClickYesNo(bool YesClick)
         {
-			string TypeToClick = "Yes";
+            string TypeToClick = "Yes";
 
-			if (!YesClick)
-			{
-				TypeToClick = "No";
-			}
+            if (!YesClick)
+            {
+                TypeToClick = "No";
+            }
             if (MQ.Query<bool>("${Window[ConfirmationDialogBox].Open}"))
             {
                 MQ.Cmd($"/nomodkey /notify ConfirmationDialogBox {TypeToClick}_Button leftmouseup");
@@ -928,75 +929,76 @@ namespace E3Core.Utility
             {
                 MQ.Cmd($"/nomodkey /notify LargeDialogWindow LDW_{TypeToClick}Button leftmouseup");
             }
-            else {
+            else
+            {
 
-				TypeToClick = "Accept";
-				if (!YesClick)
-				{
-					TypeToClick = "Decline";
-				}
+                TypeToClick = "Accept";
+                if (!YesClick)
+                {
+                    TypeToClick = "Decline";
+                }
 
-				if (MQ.Query<bool>("${Window[TaskSelectWnd].Open}"))
-				{
-					MQ.Cmd($"/nomodkey /notify TaskSelectWnd TSEL_{TypeToClick}Button leftmouseup");
-				}
-				else if (MQ.Query<bool>("${Window[ProgressionSelectionWnd].Open}"))
-				{
-					MQ.Cmd($"/nomodkey /notify ProgressionSelectionWnd ProgressionTemplateSelect{TypeToClick}Button leftmouseup");
-				}
-			}
-		}
-		public static string ClassNameFix(string className)
-		{
+                if (MQ.Query<bool>("${Window[TaskSelectWnd].Open}"))
+                {
+                    MQ.Cmd($"/nomodkey /notify TaskSelectWnd TSEL_{TypeToClick}Button leftmouseup");
+                }
+                else if (MQ.Query<bool>("${Window[ProgressionSelectionWnd].Open}"))
+                {
+                    MQ.Cmd($"/nomodkey /notify ProgressionSelectionWnd ProgressionTemplateSelect{TypeToClick}Button leftmouseup");
+                }
+            }
+        }
+        public static string ClassNameFix(string className)
+        {
             //fix for the MQ ShadowKnight vs the enum "shadowknight"
-			if (className == "Shadow Knight")
-			{
-				return "Shadowknight";
-			}
-			//Sanctuary EQ has custom classes ,that need to be mapped. 
-			if (className == "Adventurer")
-			{
-				return "Warrior";
-			}
-			if (className == "Alchemist")
-			{
-				return "Shaman";
-			}
-			if (className == "Archer")
-			{
-				return "Ranger";
-			}
-			if (className == "Assassin")
-			{
-				return "Rogue";
-			}
-			if (className == "Dragoon")
-			{
-				return "Paladin";
-			}
-			if (className == "Priest")
-			{
-				return "Cleric";
-			}
-			if (className == "Summoner")
-			{
-				return "Magician";
-			}
-			if (className == "Tamer")
-			{
-				return "Beastlord";
-			}
-			if (className == "Witch")
-			{
-				return "Druid";
-			}
-			if (className == "Sorcerer")
-			{
-				return "Wizard";
-			}
-			return className;
-		}
-		public static string FormatServerName(string serverName)
+            if (className == "Shadow Knight")
+            {
+                return "Shadowknight";
+            }
+            //Sanctuary EQ has custom classes ,that need to be mapped. 
+            if (className == "Adventurer")
+            {
+                return "Warrior";
+            }
+            if (className == "Alchemist")
+            {
+                return "Shaman";
+            }
+            if (className == "Archer")
+            {
+                return "Ranger";
+            }
+            if (className == "Assassin")
+            {
+                return "Rogue";
+            }
+            if (className == "Dragoon")
+            {
+                return "Paladin";
+            }
+            if (className == "Priest")
+            {
+                return "Cleric";
+            }
+            if (className == "Summoner")
+            {
+                return "Magician";
+            }
+            if (className == "Tamer")
+            {
+                return "Beastlord";
+            }
+            if (className == "Witch")
+            {
+                return "Druid";
+            }
+            if (className == "Sorcerer")
+            {
+                return "Wizard";
+            }
+            return className;
+        }
+        public static string FormatServerName(string serverName)
         {
 
             if (string.IsNullOrWhiteSpace(serverName)) return "Lazarus";
@@ -1015,14 +1017,14 @@ namespace E3Core.Utility
             fileIniData.Parser.Configuration.OverrideDuplicateKeys = true;// so that the other ones will be put into a collection
             fileIniData.Parser.Configuration.AssigmentSpacer = "";
             fileIniData.Parser.Configuration.CaseInsensitive = true;
-           
+
             return fileIniData;
         }
         /// <summary>
         /// NavToSpawnID - use MQ2Nav to reach the specified spawn, right now just by ID, ideally by any valid nav command
         /// </summary>
         /// <param name="spawnID"></param>
-        public static void NavToSpawnID(int spawnID, Int32 stopDistance=-1)
+        public static void NavToSpawnID(int spawnID, Int32 stopDistance = -1)
         {
             bool navPathExists = MQ.Query<bool>($"${{Navigation.PathExists[id {spawnID}]}}");
             bool navActive = MQ.Query<bool>("${Navigation.Active}");
@@ -1031,7 +1033,7 @@ namespace E3Core.Utility
             double maxDistanceToChase = E3.GeneralSettings.Movement_ChaseDistanceMax;
 
             //if a specific stop distance isn't set, use the NavStopDistance from general settings
-            if(stopDistance == -1)
+            if (stopDistance == -1)
             {
                 stopDistance = E3.GeneralSettings.Movement_NavStopDistance;
             }
@@ -1045,9 +1047,9 @@ namespace E3Core.Utility
 
             int timeoutInMS = 3000;
 
-            
+
             MQ.Cmd($"/nav id {spawnID} distance={stopDistance}");
-            
+
             Int64 endTime = Core.StopWatch.ElapsedMilliseconds + timeoutInMS;
             MQ.Delay(300);
 
@@ -1066,7 +1068,7 @@ namespace E3Core.Utility
                     //Movement.Following = false;
                     break;
                 }
-                
+
                 if (endTime < Core.StopWatch.ElapsedMilliseconds)
                 {
                     //stop nav if we exceed the timeout
@@ -1075,7 +1077,7 @@ namespace E3Core.Utility
                     break;
                 }
                 MQ.Delay(1000);
-                
+
                 navActive = MQ.Query<bool>("${Navigation.Active}");
                 if (!navActive)
                 {
@@ -1085,7 +1087,7 @@ namespace E3Core.Utility
 
                 Double tmeX = MQ.Query<Double>("${Me.X}");
                 Double tmeY = MQ.Query<Double>("${Me.Y}");
-                
+
                 if ((int)meX == (int)tmeX && (int)meY == (int)tmeY)
                 {
                     //we are stuck, kick out
@@ -1105,7 +1107,7 @@ namespace E3Core.Utility
             var navQuery = $"locxyz {locX} {locY} {locZ}";
 
             var navPathExists = MQ.Query<bool>($"${{Navigation.PathExists[{navQuery}]}}");
-            
+
             if (!navPathExists)
             {
                 //early return if no path available
@@ -1122,7 +1124,7 @@ namespace E3Core.Utility
             int timeoutInMS = 3000;
 
             MQ.Cmd($"/nav {navQuery}");
-            
+
 
             Int64 endTime = Core.StopWatch.ElapsedMilliseconds + timeoutInMS;
             MQ.Delay(300);
@@ -1164,7 +1166,7 @@ namespace E3Core.Utility
                 navPathExists = MQ.Query<bool>($"${{Navigation.PathExists[{navQuery}]}}");
             }
         }
-        
+
 
         public static bool OpenMerchant()
         {
@@ -1188,7 +1190,7 @@ namespace E3Core.Utility
         public static void CloseMerchant()
         {
             bool merchantWindowOpen = MQ.Query<bool>("${Window[MerchantWnd].Open}");
-            
+
             MQ.Cmd("/nomodkey /notify MerchantWnd MW_Done_Button leftmouseup");
             MQ.Delay(200);
         }

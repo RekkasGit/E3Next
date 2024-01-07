@@ -1,15 +1,13 @@
 ﻿using E3Core.Processors;
+
 using MonoCore;
+
 using System;
-using System.Collections.Generic;
 using System.Diagnostics;
-using System.IO;
 using System.Linq;
 using System.Net;
 using System.Net.Sockets;
 using System.Reflection;
-using System.Text;
-using System.Threading.Tasks;
 
 namespace E3Core.Server
 {
@@ -24,25 +22,25 @@ namespace E3Core.Server
         static PubClient _pubClient;
         public static SharedDataClient SharedDataClient;
 
-		public static Int32 RouterPort;
+        public static Int32 RouterPort;
         public static Int32 PubPort;
         public static Int32 PubClientPort;
         public static Process UIProcess;
         public static Process DiscordProcess;
         private static IMQ MQ = E3.MQ;
 
-        
+
         public static void Init()
         {
-			SharedDataClient = new SharedDataClient();
+            SharedDataClient = new SharedDataClient();
 
-			RouterPort = FreeTcpPort();
+            RouterPort = FreeTcpPort();
             PubPort = FreeTcpPort();
             PubClientPort = FreeTcpPort();
 
-            
 
-            if(Debugger.IsAttached)
+
+            if (Debugger.IsAttached)
             {
                 PubPort = 51711;
                 RouterPort = 51712;
@@ -55,32 +53,34 @@ namespace E3Core.Server
             _pubServer.Start(PubPort);
             _routerServer.Start(RouterPort);
             _pubClient.Start(PubClientPort);
-			
 
-			EventProcessor.RegisterUnfilteredEventMethod("E3UI", (x) => {
 
-                if(x.typeOfEvent== EventProcessor.eventType.EQEvent)
+            EventProcessor.RegisterUnfilteredEventMethod("E3UI", (x) =>
+            {
+
+                if (x.typeOfEvent == EventProcessor.eventType.EQEvent)
                 {
                     PubServer.IncomingChatMessages.Enqueue(x.eventString);
-                }else if(x.typeOfEvent == EventProcessor.eventType.MQEvent)
+                }
+                else if (x.typeOfEvent == EventProcessor.eventType.MQEvent)
                 {
                     PubServer.MQChatMessages.Enqueue(x.eventString);
                 }
 
             });
-			EventProcessor.RegisterCommand("/ui", (x) =>
-			{
+            EventProcessor.RegisterCommand("/ui", (x) =>
+            {
                 MQ.Write("/ui has been depreciated, please use /e3ui");
-			});
-			EventProcessor.RegisterCommand("/e3ui", (x) =>
+            });
+            EventProcessor.RegisterCommand("/e3ui", (x) =>
             {
                 ToggleUI();
             });
-			EventProcessor.RegisterCommand("/e3discord", (x) =>
+            EventProcessor.RegisterCommand("/e3discord", (x) =>
             {
                 ToggleDiscordBot();
             });
-			EventProcessor.RegisterCommand("/e3ui-debug", (x) =>
+            EventProcessor.RegisterCommand("/e3ui-debug", (x) =>
             {
                 Int32 processID = System.Diagnostics.Process.GetCurrentProcess().Id;
                 var path = $"{Assembly.GetExecutingAssembly().CodeBase.Replace("file:///", "").Replace("/", "\\").Replace("e3.dll", "")}E3NextUI.exe";
@@ -88,7 +88,7 @@ namespace E3Core.Server
             });
             EventProcessor.RegisterCommand("/e3ui-kill", (x) =>
             {
-               if(UIProcess!=null)
+                if (UIProcess != null)
                 {
                     UIProcess.Kill();
                     UIProcess = null;
@@ -120,10 +120,10 @@ namespace E3Core.Server
                     MQ.Write("Trying to start:" + dllFullPath + @"E3NextUI.exe");
                     UIProcess = System.Diagnostics.Process.Start(dllFullPath + @"E3NextUI.exe", $"{PubPort} {RouterPort} {PubClientPort} {processID}");
                 }
-                else 
+                else
                 {
                     PubServer.CommandsToSend.Enqueue("#toggleshow");
-                   
+
                 }
             }
         }

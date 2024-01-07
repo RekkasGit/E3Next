@@ -2,48 +2,44 @@
 using E3Core.Server;
 using E3Core.Settings;
 using E3Core.Utility;
+
 using MonoCore;
+
 using System;
 using System.Collections.Generic;
-using System.Diagnostics;
-using System.Globalization;
 using System.IO;
 using System.Linq;
-using System.Net;
-using System.Net.Http.Headers;
-using System.Text;
-using System.Text.RegularExpressions;
 using System.Threading;
 using System.Threading.Tasks;
-using System.Xml.Linq;
+
 using static MonoCore.EventProcessor;
 
 namespace E3Core.Processors
 {
     public interface IBots
     {
-       
-     //   Boolean InZone(string Name);
+
+        //   Boolean InZone(string Name);
         Int32 PctHealth(string name);
         List<string> BotsConnected();
         Boolean HasShortBuff(string name, Int32 buffid);
         void BroadcastCommand(string command, bool noparse = false, CommandMatch match = null);
-        void BroadcastCommandToGroup(string command, CommandMatch match=null, bool noparse = false);
+        void BroadcastCommandToGroup(string command, CommandMatch match = null, bool noparse = false);
         void BroadcastCommandToPerson(string person, string command, bool noparse = false);
         void Broadcast(string message, bool noparse = false);
         List<Int32> BuffList(string name);
         List<Int32> PetBuffList(string name);
         Int32 BaseDebuffCounters(string name);
         Int32 BaseDiseasedCounters(string name);
-		Int32 BaseCorruptedCounters(string name);
-		Int32 BasePoisonedCounters(string name);
+        Int32 BaseCorruptedCounters(string name);
+        Int32 BasePoisonedCounters(string name);
         Int32 BaseCursedCounters(string name);
         bool IsMyBot(string name);
         void Trade(string name);
-		string Query(string name, string query);
-		CharacterBuffs GetBuffInformation(string name);
+        string Query(string name, string query);
+        CharacterBuffs GetBuffInformation(string name);
     }
-  
+
 
     public class SharedDataBots : IBots
     {
@@ -51,206 +47,206 @@ namespace E3Core.Processors
         private static IMQ MQ = E3.MQ;
         private static Dictionary<string, CharacterBuffs> _characterBuffs = new Dictionary<string, CharacterBuffs>();
         private static Dictionary<string, CharacterBuffs> _petBuffs = new Dictionary<string, CharacterBuffs>();
-		private static System.Text.StringBuilder _stringBuilder = new System.Text.StringBuilder();
-		private static bool GlobalAllEnabled = false;
-		List<string> _pathsTolookAt = new List<string>();
-		Task _autoRegisrationTask;
+        private static System.Text.StringBuilder _stringBuilder = new System.Text.StringBuilder();
+        private static bool GlobalAllEnabled = false;
+        List<string> _pathsTolookAt = new List<string>();
+        Task _autoRegisrationTask;
         public SharedDataBots()
         {
             string settingsFilePath = BaseSettings.GetSettingsFilePath("");
 
-            if(!settingsFilePath.EndsWith(@"\"))
+            if (!settingsFilePath.EndsWith(@"\"))
             {
                 settingsFilePath += @"\";
             }
 
-            settingsFilePath+=@"SharedData\";
+            settingsFilePath += @"SharedData\";
 
-            if(!Directory.Exists(settingsFilePath))
+            if (!Directory.Exists(settingsFilePath))
             {
                 Directory.CreateDirectory(settingsFilePath);
             }
             _pathsTolookAt.Add(settingsFilePath);
-           
+
             //add other paths that have been configured to look at
-            foreach(var path in E3.GeneralSettings.General_E3NetworkAddPathToMonitor)
+            foreach (var path in E3.GeneralSettings.General_E3NetworkAddPathToMonitor)
             {
                 _pathsTolookAt.Add(path);
             }
 
-			_autoRegisrationTask = Task.Factory.StartNew(() => { AutoRegisterUsers(_pathsTolookAt); }, CancellationToken.None, TaskCreationOptions.DenyChildAttach, TaskScheduler.Default);
+            _autoRegisrationTask = Task.Factory.StartNew(() => { AutoRegisterUsers(_pathsTolookAt); }, CancellationToken.None, TaskCreationOptions.DenyChildAttach, TaskScheduler.Default);
 
-			//had to be registered in this order so that you don't get wildcard matches happening first in mq
-			//there is no 'exact match' in the MQ command linked list
-			//smallest to largest
-			EventProcessor.RegisterCommand("/e3GlobalBroadcast", (x) =>
-			{
-				GlobalAllEnabled = !GlobalAllEnabled;
-				Broadcast($"\agSetting Global Boradcast to {GlobalAllEnabled}");
+            //had to be registered in this order so that you don't get wildcard matches happening first in mq
+            //there is no 'exact match' in the MQ command linked list
+            //smallest to largest
+            EventProcessor.RegisterCommand("/e3GlobalBroadcast", (x) =>
+            {
+                GlobalAllEnabled = !GlobalAllEnabled;
+                Broadcast($"\agSetting Global Boradcast to {GlobalAllEnabled}");
 
-			});
-			EventProcessor.RegisterCommand("/e3bc", (x) =>
-			{
-				if (x.args.Count > 0)
-				{
+            });
+            EventProcessor.RegisterCommand("/e3bc", (x) =>
+            {
+                if (x.args.Count > 0)
+                {
 
-					string message = e3util.ArgsToCommand(x.args);
-					if (message.StartsWith(@"/"))
+                    string message = e3util.ArgsToCommand(x.args);
+                    if (message.StartsWith(@"/"))
                     {
-                        BroadcastCommand(message,true);
+                        BroadcastCommand(message, true);
                     }
                     else
                     {
-						Broadcast(message,true);
+                        Broadcast(message, true);
 
-					}
-				}
-			});
-			EventProcessor.RegisterCommand("/e3bca", (x) =>
-			{
-				if (x.args.Count > 0)
-				{
-
-					string message = e3util.ArgsToCommand(x.args);
-					if (message.StartsWith(@"/"))
-					{
-						BroadcastCommand(message, true);
-					}
-					else
-					{
-						Broadcast(message, true);
-
-					}
-				}
-			});
-			EventProcessor.RegisterCommand("/e3bcz", (x) =>
-			{
-				if (x.args.Count > 0)
-				{
-
-					string message = e3util.ArgsToCommand(x.args);
-					if (message.StartsWith(@"/"))
-					{
-						BroadcastCommandAllZoneNotMe(message, true);
-					}
-					else
-					{
-						BroadcastZone(message, true);
-
-					}
-				}
-			});
-			EventProcessor.RegisterCommand("/e3bcg", (x) =>
-			{
-				if (x.args.Count > 0)
-				{
-					string command = e3util.ArgsToCommand(x.args);
-					BroadcastCommandToGroup(command,null,true);
-
-				}
-				
-			});
-			EventProcessor.RegisterCommand("/e3bcgz", (x) =>
-			{
-				if (x.args.Count > 0)
-				{
-					string command = e3util.ArgsToCommand(x.args);
-					BroadcastCommandToGroupZone(command, null, true);
-
-				}
-
-			});
-			EventProcessor.RegisterCommand("/e3bct", (x) =>
-			{
-				if (x.args.Count > 1)
-				{
-					string person = x.args[0];
-					x.args.RemoveAt(0);
-					string command = e3util.ArgsToCommand(x.args);
-					BroadcastCommandToPerson(person, command,true);
-				}
-			});
-			EventProcessor.RegisterCommand("/e3bcga", (x) =>
-			{
-				if (x.args.Count > 0)
-				{
-					string command = e3util.ArgsToCommand(x.args);
-					BroadcastCommandToGroupAll(command,null,true);
-		            
+                    }
                 }
-			});
-			EventProcessor.RegisterCommand("/e3bcgza", (x) =>
-			{
-				if (x.args.Count > 0)
-				{
-					string command = e3util.ArgsToCommand(x.args);
-					BroadcastCommandToGroupAllZone(command, null, true);
+            });
+            EventProcessor.RegisterCommand("/e3bca", (x) =>
+            {
+                if (x.args.Count > 0)
+                {
 
-				}
-			});
-			EventProcessor.RegisterCommand("/e3bcaa", (x) =>
-			{
-				if (x.args.Count > 0)
-				{
-					string command = e3util.ArgsToCommand(x.args);
-			        BroadcastCommandAll(command,true);
+                    string message = e3util.ArgsToCommand(x.args);
+                    if (message.StartsWith(@"/"))
+                    {
+                        BroadcastCommand(message, true);
+                    }
+                    else
+                    {
+                        Broadcast(message, true);
 
-				}
-			});
-			EventProcessor.RegisterCommand("/e3bcza", (x) =>
-			{
-				if (x.args.Count > 0)
-				{
-					string command = e3util.ArgsToCommand(x.args);
-					BroadcastCommandAllZone(command, true);
+                    }
+                }
+            });
+            EventProcessor.RegisterCommand("/e3bcz", (x) =>
+            {
+                if (x.args.Count > 0)
+                {
 
-				}
-			});
+                    string message = e3util.ArgsToCommand(x.args);
+                    if (message.StartsWith(@"/"))
+                    {
+                        BroadcastCommandAllZoneNotMe(message, true);
+                    }
+                    else
+                    {
+                        BroadcastZone(message, true);
+
+                    }
+                }
+            });
+            EventProcessor.RegisterCommand("/e3bcg", (x) =>
+            {
+                if (x.args.Count > 0)
+                {
+                    string command = e3util.ArgsToCommand(x.args);
+                    BroadcastCommandToGroup(command, null, true);
+
+                }
+
+            });
+            EventProcessor.RegisterCommand("/e3bcgz", (x) =>
+            {
+                if (x.args.Count > 0)
+                {
+                    string command = e3util.ArgsToCommand(x.args);
+                    BroadcastCommandToGroupZone(command, null, true);
+
+                }
+
+            });
+            EventProcessor.RegisterCommand("/e3bct", (x) =>
+            {
+                if (x.args.Count > 1)
+                {
+                    string person = x.args[0];
+                    x.args.RemoveAt(0);
+                    string command = e3util.ArgsToCommand(x.args);
+                    BroadcastCommandToPerson(person, command, true);
+                }
+            });
+            EventProcessor.RegisterCommand("/e3bcga", (x) =>
+            {
+                if (x.args.Count > 0)
+                {
+                    string command = e3util.ArgsToCommand(x.args);
+                    BroadcastCommandToGroupAll(command, null, true);
+
+                }
+            });
+            EventProcessor.RegisterCommand("/e3bcgza", (x) =>
+            {
+                if (x.args.Count > 0)
+                {
+                    string command = e3util.ArgsToCommand(x.args);
+                    BroadcastCommandToGroupAllZone(command, null, true);
+
+                }
+            });
+            EventProcessor.RegisterCommand("/e3bcaa", (x) =>
+            {
+                if (x.args.Count > 0)
+                {
+                    string command = e3util.ArgsToCommand(x.args);
+                    BroadcastCommandAll(command, true);
+
+                }
+            });
+            EventProcessor.RegisterCommand("/e3bcza", (x) =>
+            {
+                if (x.args.Count > 0)
+                {
+                    string command = e3util.ArgsToCommand(x.args);
+                    BroadcastCommandAllZone(command, true);
+
+                }
+            });
 
 
-		}
-		public CharacterBuffs GetBuffInformation(string name)
-		{
-			UpdateBuffInfoUserInfo(name, name, "${Me.BuffInfo}", _characterBuffs);
+        }
+        public CharacterBuffs GetBuffInformation(string name)
+        {
+            UpdateBuffInfoUserInfo(name, name, "${Me.BuffInfo}", _characterBuffs);
 
-			if (_characterBuffs.TryGetValue(name, out var buff)) return buff;
+            if (_characterBuffs.TryGetValue(name, out var buff)) return buff;
 
-			return null;
-		}
+            return null;
+        }
 
-		
+
         private void AutoRegisterUsers(List<string> settingsPaths)
         {
             string searchPattern = $"*_{E3.ServerName}_pubsubport.txt";
-			while (Core.IsProcessing)
+            while (Core.IsProcessing)
             {
-                foreach(var path in settingsPaths)
+                foreach (var path in settingsPaths)
                 {
                     try
                     {
-						//look for files that start with $"{user}_{E3.ServerName}_pubsubport.txt"
-						string[] fileNames = System.IO.Directory.GetFiles(path, searchPattern);
-						foreach (string file in fileNames)
-						{
-							//D:\\EQ\\E3_ROF2_MQ2Next\\Config\\e3 Macro Inis\\Rekken_Lazarus_pubsubport.txt
-							Int32 currentIndex = file.LastIndexOf(@"\") + 1;
-							Int32 indexOfUnderline = file.IndexOf('_', currentIndex);
-							string name = file.Substring(currentIndex, indexOfUnderline - currentIndex);
+                        //look for files that start with $"{user}_{E3.ServerName}_pubsubport.txt"
+                        string[] fileNames = System.IO.Directory.GetFiles(path, searchPattern);
+                        foreach (string file in fileNames)
+                        {
+                            //D:\\EQ\\E3_ROF2_MQ2Next\\Config\\e3 Macro Inis\\Rekken_Lazarus_pubsubport.txt
+                            Int32 currentIndex = file.LastIndexOf(@"\") + 1;
+                            Int32 indexOfUnderline = file.IndexOf('_', currentIndex);
+                            string name = file.Substring(currentIndex, indexOfUnderline - currentIndex);
 
-							if (!NetMQServer.SharedDataClient.TopicUpdates.ContainsKey(name))
-							{
-								NetMQServer.SharedDataClient.RegisterUser(name, path);
-							}
-						}
+                            if (!NetMQServer.SharedDataClient.TopicUpdates.ContainsKey(name))
+                            {
+                                NetMQServer.SharedDataClient.RegisterUser(name, path);
+                            }
+                        }
 
-					}
-					catch (Exception ex)
+                    }
+                    catch (Exception ex)
                     {
                         _log.Write($"Auto Reg user eror for path:{path} message:{ex.ToString()}"); ;
-						System.Threading.Thread.Sleep(1000);
-					}
-				}
-     			System.Threading.Thread.Sleep(1000);
+                        System.Threading.Thread.Sleep(1000);
+                    }
+                }
+                System.Threading.Thread.Sleep(1000);
             }
         }
         /// <summary>
@@ -280,354 +276,354 @@ namespace E3Core.Processors
                     var buffInfo = buffCollection[charBuffKeyName];
                     e3util.BuffInfoToDictonary(userTopics[topicKey].Data, buffInfo.BuffDurations);
                     buffInfo.LastUpdate = userTopics[topicKey].LastUpdate;
-                    
+
                 }
             }
         }
 
-        private int DebuffCounterFunction(string name,string key, Dictionary<string, SharedNumericDataInt32> collection)
-		{
+        private int DebuffCounterFunction(string name, string key, Dictionary<string, SharedNumericDataInt32> collection)
+        {
             //register the user to get their buff data if its not already there
-			if (!NetMQServer.SharedDataClient.TopicUpdates.ContainsKey(name))
-			{
-				//don't have the data yet
-				return 0; //dunno just say 0
-				
-			}
-			var userTopics = NetMQServer.SharedDataClient.TopicUpdates[name];
-			//check to see if it has been filled out yet.
-			string keyToUse = key;
-			if (!userTopics.ContainsKey(keyToUse))
-			{
-				//don't have the data yet kick out and assume everything is ok.
-				return 0;//dunno just say 0
-			}
-			var entry = userTopics[keyToUse];
-			if (!collection.ContainsKey(name))
-			{
-				collection.Add(name, new SharedNumericDataInt32 { Data = 0 });
-			}
-			var sharedInfo = collection[name];
-            lock(entry)
+            if (!NetMQServer.SharedDataClient.TopicUpdates.ContainsKey(name))
             {
-				if (entry.LastUpdate > sharedInfo.LastUpdate)
-				{
-					if (Int32.TryParse(entry.Data, out var result))
-					{
+                //don't have the data yet
+                return 0; //dunno just say 0
 
-						sharedInfo.Data = result;
-						sharedInfo.LastUpdate = entry.LastUpdate;
-					}
-				}
-			}
-			
-			return sharedInfo.Data;
-		}
+            }
+            var userTopics = NetMQServer.SharedDataClient.TopicUpdates[name];
+            //check to see if it has been filled out yet.
+            string keyToUse = key;
+            if (!userTopics.ContainsKey(keyToUse))
+            {
+                //don't have the data yet kick out and assume everything is ok.
+                return 0;//dunno just say 0
+            }
+            var entry = userTopics[keyToUse];
+            if (!collection.ContainsKey(name))
+            {
+                collection.Add(name, new SharedNumericDataInt32 { Data = 0 });
+            }
+            var sharedInfo = collection[name];
+            lock (entry)
+            {
+                if (entry.LastUpdate > sharedInfo.LastUpdate)
+                {
+                    if (Int32.TryParse(entry.Data, out var result))
+                    {
 
-		Dictionary<string, SharedNumericDataInt32> _debuffCurseCounterCollection = new Dictionary<string, SharedNumericDataInt32>();
-		public int BaseCursedCounters(string name)
+                        sharedInfo.Data = result;
+                        sharedInfo.LastUpdate = entry.LastUpdate;
+                    }
+                }
+            }
+
+            return sharedInfo.Data;
+        }
+
+        Dictionary<string, SharedNumericDataInt32> _debuffCurseCounterCollection = new Dictionary<string, SharedNumericDataInt32>();
+        public int BaseCursedCounters(string name)
         {
             return DebuffCounterFunction(name, "${Me.CountersCurse}", _debuffCurseCounterCollection);
-		}
+        }
 
-		Dictionary<string, SharedNumericDataInt32> _debuffTotalCounterCollection = new Dictionary<string, SharedNumericDataInt32>();
-		public int BaseDebuffCounters(string name)
+        Dictionary<string, SharedNumericDataInt32> _debuffTotalCounterCollection = new Dictionary<string, SharedNumericDataInt32>();
+        public int BaseDebuffCounters(string name)
         {
-			return DebuffCounterFunction(name, "${Me.TotalCounters}", _debuffTotalCounterCollection);
-		}
+            return DebuffCounterFunction(name, "${Me.TotalCounters}", _debuffTotalCounterCollection);
+        }
 
-		Dictionary<string, SharedNumericDataInt32> _debuffDiseaseCounterCollection = new Dictionary<string, SharedNumericDataInt32>();
-		public int BaseDiseasedCounters(string name)
+        Dictionary<string, SharedNumericDataInt32> _debuffDiseaseCounterCollection = new Dictionary<string, SharedNumericDataInt32>();
+        public int BaseDiseasedCounters(string name)
         {
-			return DebuffCounterFunction(name, "${Me.CountersDisease}", _debuffDiseaseCounterCollection);
+            return DebuffCounterFunction(name, "${Me.CountersDisease}", _debuffDiseaseCounterCollection);
 
-		}
+        }
 
-		Dictionary<string, SharedNumericDataInt32> _debuffPoisonCounterCollection = new Dictionary<string, SharedNumericDataInt32>();
-		public int BasePoisonedCounters(string name)
+        Dictionary<string, SharedNumericDataInt32> _debuffPoisonCounterCollection = new Dictionary<string, SharedNumericDataInt32>();
+        public int BasePoisonedCounters(string name)
         {
-			return DebuffCounterFunction(name, "${Me.CountersPoison}", _debuffPoisonCounterCollection);
+            return DebuffCounterFunction(name, "${Me.CountersPoison}", _debuffPoisonCounterCollection);
 
-		}
-		Dictionary<string, SharedNumericDataInt32> _debuffCorruptedCounterCollection = new Dictionary<string, SharedNumericDataInt32>();
-		public int BaseCorruptedCounters(string name)
-		{
-			return DebuffCounterFunction(name, "${Me.CountersCorrupted}", _debuffCorruptedCounterCollection);
+        }
+        Dictionary<string, SharedNumericDataInt32> _debuffCorruptedCounterCollection = new Dictionary<string, SharedNumericDataInt32>();
+        public int BaseCorruptedCounters(string name)
+        {
+            return DebuffCounterFunction(name, "${Me.CountersCorrupted}", _debuffCorruptedCounterCollection);
 
-		}
+        }
 
-		public List<string> BotsConnected()
+        public List<string> BotsConnected()
         {
             return NetMQServer.SharedDataClient.TopicUpdates.Keys.ToList();
-		}
+        }
 
         public void Broadcast(string message, bool noparse = false)
         {
-			//have to parse out all the MQ macro information
-			if (!noparse)
-			{
-				message = MQ.Query<string>(message);
-			}
-			PubServer.AddTopicMessage("BroadCastMessage", $"{E3.CurrentName}:{message}");
-		}
-		public void BroadcastZone(string message, bool noparse = false)
-		{
-			//have to parse out all the MQ macro information
-			if (!noparse)
-			{
-				message = MQ.Query<string>(message);
-			}
-			PubServer.AddTopicMessage("BroadCastMessageZone", $"{E3.CurrentName}:{message}");
-			//	MQ.Write($"\ar<\ay{E3.CurrentName}\ar> \aw{message}");
-		}
-		public void BroadcastCommand(string command, bool noparse = false, CommandMatch match = null)
+            //have to parse out all the MQ macro information
+            if (!noparse)
+            {
+                message = MQ.Query<string>(message);
+            }
+            PubServer.AddTopicMessage("BroadCastMessage", $"{E3.CurrentName}:{message}");
+        }
+        public void BroadcastZone(string message, bool noparse = false)
         {
-			if (match != null && match.filters.Count > 0)
-			{
-				//need to pass over the filters if they exist
-				_stringBuilder.Clear();
-				_stringBuilder.Append($"{command}");
-				foreach (var filter in match.filters)
-				{
-					_stringBuilder.Append($" \"{filter}\"");
-				}
+            //have to parse out all the MQ macro information
+            if (!noparse)
+            {
+                message = MQ.Query<string>(message);
+            }
+            PubServer.AddTopicMessage("BroadCastMessageZone", $"{E3.CurrentName}:{message}");
+            //	MQ.Write($"\ar<\ay{E3.CurrentName}\ar> \aw{message}");
+        }
+        public void BroadcastCommand(string command, bool noparse = false, CommandMatch match = null)
+        {
+            if (match != null && match.filters.Count > 0)
+            {
+                //need to pass over the filters if they exist
+                _stringBuilder.Clear();
+                _stringBuilder.Append($"{command}");
+                foreach (var filter in match.filters)
+                {
+                    _stringBuilder.Append($" \"{filter}\"");
+                }
                 command = _stringBuilder.ToString();
-			}
-            if(!noparse)
+            }
+            if (!noparse)
             {
-				command = MQ.Query<string>(command);
-			}
+                command = MQ.Query<string>(command);
+            }
 
-			PubServer.AddTopicMessage("OnCommand-AllExceptMe", $"{E3.CurrentName}:{noparse}:{command}");
-			MQ.Write($"\ap{E3.CurrentName} => \ayAll: \ag{command}");
-		}
-		public void BroadcastCommandAll(string command, bool noparse = false, CommandMatch match = null)
-		{
-			if (match != null && match.filters.Count > 0)
-			{
-				//need to pass over the filters if they exist
-				_stringBuilder.Clear();
-				_stringBuilder.Append($"{command}");
-				foreach (var filter in match.filters)
-				{
-					_stringBuilder.Append($" \"{filter}\"");
-				}
-				command = _stringBuilder.ToString();
-			}
-			if (!noparse)
-			{
-				command = MQ.Query<string>(command);
-			}
-			PubServer.AddTopicMessage("OnCommand-All", $"{E3.CurrentName}:{noparse}:{command}");
-		}
-		public void BroadcastCommandAllZone(string command, bool noparse = false, CommandMatch match = null)
-		{
-			if (match != null && match.filters.Count > 0)
-			{
-				//need to pass over the filters if they exist
-				_stringBuilder.Clear();
-				_stringBuilder.Append($"{command}");
-				foreach (var filter in match.filters)
-				{
-					_stringBuilder.Append($" \"{filter}\"");
-				}
-				command = _stringBuilder.ToString();
-			}
-			if (!noparse)
-			{
-				command = MQ.Query<string>(command);
-			}
-			PubServer.AddTopicMessage("OnCommand-AllZone", $"{E3.CurrentName}:{noparse}:{command}");
-		}
-		public void BroadcastCommandAllZoneNotMe(string command, bool noparse = false, CommandMatch match = null)
-		{
-			if (match != null && match.filters.Count > 0)
-			{
-				//need to pass over the filters if they exist
-				_stringBuilder.Clear();
-				_stringBuilder.Append($"{command}");
-				foreach (var filter in match.filters)
-				{
-					_stringBuilder.Append($" \"{filter}\"");
-				}
-				command = _stringBuilder.ToString();
-			}
-			if (!noparse)
-			{
-				command = MQ.Query<string>(command);
-			}
-			PubServer.AddTopicMessage("OnCommand-AllExceptMeZone", $"{E3.CurrentName}:{noparse}:{command}");
-			MQ.Write($"\ap{E3.CurrentName} => \ayGroup All: \ag{command}");
-		}
-		public void BroadcastCommandToGroup(string command, CommandMatch match = null, bool noparse = false)
+            PubServer.AddTopicMessage("OnCommand-AllExceptMe", $"{E3.CurrentName}:{noparse}:{command}");
+            MQ.Write($"\ap{E3.CurrentName} => \ayAll: \ag{command}");
+        }
+        public void BroadcastCommandAll(string command, bool noparse = false, CommandMatch match = null)
         {
-			bool hasAllFlag = false;
-
-			if (match != null)
-			{
-				hasAllFlag = match.hasAllFlag;
-			}
-			if (GlobalAllEnabled)
-			{
-				hasAllFlag = GlobalAllEnabled;
-			}
-
-            if(hasAllFlag)
+            if (match != null && match.filters.Count > 0)
             {
-                BroadcastCommand(command,noparse,match);
+                //need to pass over the filters if they exist
+                _stringBuilder.Clear();
+                _stringBuilder.Append($"{command}");
+                foreach (var filter in match.filters)
+                {
+                    _stringBuilder.Append($" \"{filter}\"");
+                }
+                command = _stringBuilder.ToString();
+            }
+            if (!noparse)
+            {
+                command = MQ.Query<string>(command);
+            }
+            PubServer.AddTopicMessage("OnCommand-All", $"{E3.CurrentName}:{noparse}:{command}");
+        }
+        public void BroadcastCommandAllZone(string command, bool noparse = false, CommandMatch match = null)
+        {
+            if (match != null && match.filters.Count > 0)
+            {
+                //need to pass over the filters if they exist
+                _stringBuilder.Clear();
+                _stringBuilder.Append($"{command}");
+                foreach (var filter in match.filters)
+                {
+                    _stringBuilder.Append($" \"{filter}\"");
+                }
+                command = _stringBuilder.ToString();
+            }
+            if (!noparse)
+            {
+                command = MQ.Query<string>(command);
+            }
+            PubServer.AddTopicMessage("OnCommand-AllZone", $"{E3.CurrentName}:{noparse}:{command}");
+        }
+        public void BroadcastCommandAllZoneNotMe(string command, bool noparse = false, CommandMatch match = null)
+        {
+            if (match != null && match.filters.Count > 0)
+            {
+                //need to pass over the filters if they exist
+                _stringBuilder.Clear();
+                _stringBuilder.Append($"{command}");
+                foreach (var filter in match.filters)
+                {
+                    _stringBuilder.Append($" \"{filter}\"");
+                }
+                command = _stringBuilder.ToString();
+            }
+            if (!noparse)
+            {
+                command = MQ.Query<string>(command);
+            }
+            PubServer.AddTopicMessage("OnCommand-AllExceptMeZone", $"{E3.CurrentName}:{noparse}:{command}");
+            MQ.Write($"\ap{E3.CurrentName} => \ayGroup All: \ag{command}");
+        }
+        public void BroadcastCommandToGroup(string command, CommandMatch match = null, bool noparse = false)
+        {
+            bool hasAllFlag = false;
+
+            if (match != null)
+            {
+                hasAllFlag = match.hasAllFlag;
+            }
+            if (GlobalAllEnabled)
+            {
+                hasAllFlag = GlobalAllEnabled;
+            }
+
+            if (hasAllFlag)
+            {
+                BroadcastCommand(command, noparse, match);
                 return;
             }
 
-			if (match != null && match.filters.Count > 0)
-			{
-				//need to pass over the filters if they exist
-				_stringBuilder.Clear();
-				_stringBuilder.Append($"{command}");
-				foreach (var filter in match.filters)
-				{
-					_stringBuilder.Append($" \"{filter}\"");
-				}
-				command = _stringBuilder.ToString();
-			}
-			if (!noparse)
-			{
-				command = MQ.Query<string>(command);
-			}
-			PubServer.AddTopicMessage("OnCommand-Group", $"{E3.CurrentName}:{noparse}:{command}");
-			MQ.Write($"\ap{E3.CurrentName} => \ayGroup: \ag{command}");
-		}
-		public void BroadcastCommandToGroupZone(string command, CommandMatch match = null, bool noparse = false)
-		{
-			bool hasAllFlag = false;
+            if (match != null && match.filters.Count > 0)
+            {
+                //need to pass over the filters if they exist
+                _stringBuilder.Clear();
+                _stringBuilder.Append($"{command}");
+                foreach (var filter in match.filters)
+                {
+                    _stringBuilder.Append($" \"{filter}\"");
+                }
+                command = _stringBuilder.ToString();
+            }
+            if (!noparse)
+            {
+                command = MQ.Query<string>(command);
+            }
+            PubServer.AddTopicMessage("OnCommand-Group", $"{E3.CurrentName}:{noparse}:{command}");
+            MQ.Write($"\ap{E3.CurrentName} => \ayGroup: \ag{command}");
+        }
+        public void BroadcastCommandToGroupZone(string command, CommandMatch match = null, bool noparse = false)
+        {
+            bool hasAllFlag = false;
 
-			if (match != null)
-			{
-				hasAllFlag = match.hasAllFlag;
-			}
-			if (GlobalAllEnabled)
-			{
-				hasAllFlag = GlobalAllEnabled;
-			}
+            if (match != null)
+            {
+                hasAllFlag = match.hasAllFlag;
+            }
+            if (GlobalAllEnabled)
+            {
+                hasAllFlag = GlobalAllEnabled;
+            }
 
-			if (hasAllFlag)
-			{
-				BroadcastCommand(command, noparse, match);
-				return;
-			}
+            if (hasAllFlag)
+            {
+                BroadcastCommand(command, noparse, match);
+                return;
+            }
 
-			if (match != null && match.filters.Count > 0)
-			{
-				//need to pass over the filters if they exist
-				_stringBuilder.Clear();
-				_stringBuilder.Append($"{command}");
-				foreach (var filter in match.filters)
-				{
-					_stringBuilder.Append($" \"{filter}\"");
-				}
-				command = _stringBuilder.ToString();
-			}
-			if (!noparse)
-			{
-				command = MQ.Query<string>(command);
-			}
-			PubServer.AddTopicMessage("OnCommand-GroupZone", $"{E3.CurrentName}:{noparse}:{command}");
-			MQ.Write($"\ap{E3.CurrentName} => \ayGroup Zone : \ag{command}");
-		}
-		public void BroadcastCommandToGroupAll(string command, CommandMatch match = null, bool noparse = false)
-		{
-			bool hasAllFlag = false;
+            if (match != null && match.filters.Count > 0)
+            {
+                //need to pass over the filters if they exist
+                _stringBuilder.Clear();
+                _stringBuilder.Append($"{command}");
+                foreach (var filter in match.filters)
+                {
+                    _stringBuilder.Append($" \"{filter}\"");
+                }
+                command = _stringBuilder.ToString();
+            }
+            if (!noparse)
+            {
+                command = MQ.Query<string>(command);
+            }
+            PubServer.AddTopicMessage("OnCommand-GroupZone", $"{E3.CurrentName}:{noparse}:{command}");
+            MQ.Write($"\ap{E3.CurrentName} => \ayGroup Zone : \ag{command}");
+        }
+        public void BroadcastCommandToGroupAll(string command, CommandMatch match = null, bool noparse = false)
+        {
+            bool hasAllFlag = false;
 
-			if (match != null)
-			{
-				hasAllFlag = match.hasAllFlag;
-			}
-			if (GlobalAllEnabled)
-			{
-				hasAllFlag = GlobalAllEnabled;
-			}
+            if (match != null)
+            {
+                hasAllFlag = match.hasAllFlag;
+            }
+            if (GlobalAllEnabled)
+            {
+                hasAllFlag = GlobalAllEnabled;
+            }
 
-			if (hasAllFlag)
-			{
-				BroadcastCommand(command, noparse, match);
-				return;
-			}
+            if (hasAllFlag)
+            {
+                BroadcastCommand(command, noparse, match);
+                return;
+            }
 
-			if (match != null && match.filters.Count > 0)
-			{
-				//need to pass over the filters if they exist
-				_stringBuilder.Clear();
-				_stringBuilder.Append($"{command}");
-				foreach (var filter in match.filters)
-				{
-					_stringBuilder.Append($" \"{filter}\"");
-				}
-				command = _stringBuilder.ToString();
-			}
-			if (!noparse)
-			{
-				command = MQ.Query<string>(command);
-			}
-			PubServer.AddTopicMessage("OnCommand-GroupAll", $"{E3.CurrentName}:{noparse}:{command}");
-		}
-		public void BroadcastCommandToGroupAllZone(string command, CommandMatch match = null, bool noparse = false)
-		{
-			bool hasAllFlag = false;
+            if (match != null && match.filters.Count > 0)
+            {
+                //need to pass over the filters if they exist
+                _stringBuilder.Clear();
+                _stringBuilder.Append($"{command}");
+                foreach (var filter in match.filters)
+                {
+                    _stringBuilder.Append($" \"{filter}\"");
+                }
+                command = _stringBuilder.ToString();
+            }
+            if (!noparse)
+            {
+                command = MQ.Query<string>(command);
+            }
+            PubServer.AddTopicMessage("OnCommand-GroupAll", $"{E3.CurrentName}:{noparse}:{command}");
+        }
+        public void BroadcastCommandToGroupAllZone(string command, CommandMatch match = null, bool noparse = false)
+        {
+            bool hasAllFlag = false;
 
-			if (match != null)
-			{
-				hasAllFlag = match.hasAllFlag;
-			}
-			if (GlobalAllEnabled)
-			{
-				hasAllFlag = GlobalAllEnabled;
-			}
+            if (match != null)
+            {
+                hasAllFlag = match.hasAllFlag;
+            }
+            if (GlobalAllEnabled)
+            {
+                hasAllFlag = GlobalAllEnabled;
+            }
 
-			if (hasAllFlag)
-			{
-				BroadcastCommand(command, noparse, match);
-				return;
-			}
+            if (hasAllFlag)
+            {
+                BroadcastCommand(command, noparse, match);
+                return;
+            }
 
-			if (match != null && match.filters.Count > 0)
-			{
-				//need to pass over the filters if they exist
-				_stringBuilder.Clear();
-				_stringBuilder.Append($"{command}");
-				foreach (var filter in match.filters)
-				{
-					_stringBuilder.Append($" \"{filter}\"");
-				}
-				command = _stringBuilder.ToString();
-			}
-			if (!noparse)
-			{
-				command = MQ.Query<string>(command);
-			}
-			PubServer.AddTopicMessage("OnCommand-GroupAllZone", $"{E3.CurrentName}:{noparse}:{command}");
-			
-		}
-		public void BroadcastCommandToPerson(string person, string command, bool noparse = false)
-		{
+            if (match != null && match.filters.Count > 0)
+            {
+                //need to pass over the filters if they exist
+                _stringBuilder.Clear();
+                _stringBuilder.Append($"{command}");
+                foreach (var filter in match.filters)
+                {
+                    _stringBuilder.Append($" \"{filter}\"");
+                }
+                command = _stringBuilder.ToString();
+            }
+            if (!noparse)
+            {
+                command = MQ.Query<string>(command);
+            }
+            PubServer.AddTopicMessage("OnCommand-GroupAllZone", $"{E3.CurrentName}:{noparse}:{command}");
+
+        }
+        public void BroadcastCommandToPerson(string person, string command, bool noparse = false)
+        {
             person = e3util.FirstCharToUpper(person);
             if (!noparse)
-			{
-				command = MQ.Query<string>(command);
-			}
-     		PubServer.AddTopicMessage("OnCommand-" + person, $"{E3.CurrentName}:{false}:{command}");
-			MQ.Write($"\ap{E3.CurrentName} => \ay{person} : \ag{command}");
+            {
+                command = MQ.Query<string>(command);
+            }
+            PubServer.AddTopicMessage("OnCommand-" + person, $"{E3.CurrentName}:{false}:{command}");
+            MQ.Write($"\ap{E3.CurrentName} => \ay{person} : \ag{command}");
 
-		}
-		List<int> _buffListReturnValue = new List<int>();
+        }
+        List<int> _buffListReturnValue = new List<int>();
 
         public List<int> BuffList(string name)
         {
             _buffListReturnValue.Clear();
-			//register the user to get their buff data if its not already there
-			if (!NetMQServer.SharedDataClient.TopicUpdates.ContainsKey(name))
-			{
+            //register the user to get their buff data if its not already there
+            if (!NetMQServer.SharedDataClient.TopicUpdates.ContainsKey(name))
+            {
                 //couldn't register, no file avilable assume they are not online yet
                 return _buffListReturnValue;
-               
+
             }
             var userTopics = NetMQServer.SharedDataClient.TopicUpdates[name];
             //check to see if it has been filled out yet.
@@ -655,7 +651,7 @@ namespace E3Core.Processors
             {
                 //don't have data yet
                 return false;
-                
+
             }
             var userTopics = NetMQServer.SharedDataClient.TopicUpdates[name];
             //check to see if it has been filled out yet.
@@ -674,110 +670,110 @@ namespace E3Core.Processors
         HashSet<string> _isMyBotCache = new HashSet<string>(StringComparer.OrdinalIgnoreCase);
         public bool IsMyBot(string name)
         {
-            if(NetMQServer.SharedDataClient.TopicUpdates.ContainsKey(name))
+            if (NetMQServer.SharedDataClient.TopicUpdates.ContainsKey(name))
             {
                 return true;
             }
             return false;
-	    }
+        }
 
         Dictionary<string, SharedNumericDataInt32> _pctHealthCollection = new Dictionary<string, SharedNumericDataInt32>();
-		public int PctHealth(string name)
-		{
-			//register the user to get their buff data if its not already there
-			if (!NetMQServer.SharedDataClient.TopicUpdates.ContainsKey(name))
-			{
-				return 100; //dunno just say full health
-			}
-			var userTopics = NetMQServer.SharedDataClient.TopicUpdates[name];
-			//check to see if it has been filled out yet.
-			string keyToUse = "${Me.PctHPs}";
-			if (!userTopics.ContainsKey(keyToUse))
-			{
-				//don't have the data yet kick out and assume everything is ok.
-				return 100;//dunno just say full health
-			}
-            var entry = userTopics[keyToUse];
-            if(!_pctHealthCollection.ContainsKey(name))
-            {
-                _pctHealthCollection.Add(name, new SharedNumericDataInt32 { Data=100});
-			}
-            var sharedInfo = _pctHealthCollection[name];
-            lock(entry)
-            {
-				if (entry.LastUpdate > sharedInfo.LastUpdate)
-				{
-					if (Int32.TryParse(entry.Data, out var result))
-					{
-
-						sharedInfo.Data = result;
-						sharedInfo.LastUpdate = entry.LastUpdate;
-					}
-				}
-			}
-			
-            return sharedInfo.Data;
-		}
-        public string Query(string name,string query)
+        public int PctHealth(string name)
         {
-			//register the user to get their buff data if its not already there
-			if (!NetMQServer.SharedDataClient.TopicUpdates.ContainsKey(name))
-			{
-				return "NULL"; //dunno
-			}
-			var userTopics = NetMQServer.SharedDataClient.TopicUpdates[name];
-			//check to see if it has been filled out yet.
-			string keyToUse = query;
-			if (!userTopics.ContainsKey(keyToUse))
-			{
-				return "NULL"; //dunno
-			}
-			var entry = userTopics[keyToUse];
-			lock (entry)
-			{
+            //register the user to get their buff data if its not already there
+            if (!NetMQServer.SharedDataClient.TopicUpdates.ContainsKey(name))
+            {
+                return 100; //dunno just say full health
+            }
+            var userTopics = NetMQServer.SharedDataClient.TopicUpdates[name];
+            //check to see if it has been filled out yet.
+            string keyToUse = "${Me.PctHPs}";
+            if (!userTopics.ContainsKey(keyToUse))
+            {
+                //don't have the data yet kick out and assume everything is ok.
+                return 100;//dunno just say full health
+            }
+            var entry = userTopics[keyToUse];
+            if (!_pctHealthCollection.ContainsKey(name))
+            {
+                _pctHealthCollection.Add(name, new SharedNumericDataInt32 { Data = 100 });
+            }
+            var sharedInfo = _pctHealthCollection[name];
+            lock (entry)
+            {
+                if (entry.LastUpdate > sharedInfo.LastUpdate)
+                {
+                    if (Int32.TryParse(entry.Data, out var result))
+                    {
+
+                        sharedInfo.Data = result;
+                        sharedInfo.LastUpdate = entry.LastUpdate;
+                    }
+                }
+            }
+
+            return sharedInfo.Data;
+        }
+        public string Query(string name, string query)
+        {
+            //register the user to get their buff data if its not already there
+            if (!NetMQServer.SharedDataClient.TopicUpdates.ContainsKey(name))
+            {
+                return "NULL"; //dunno
+            }
+            var userTopics = NetMQServer.SharedDataClient.TopicUpdates[name];
+            //check to see if it has been filled out yet.
+            string keyToUse = query;
+            if (!userTopics.ContainsKey(keyToUse))
+            {
+                return "NULL"; //dunno
+            }
+            var entry = userTopics[keyToUse];
+            lock (entry)
+            {
                 return entry.Data;
-			}
-		}
+            }
+        }
 
-		public List<int> PetBuffList(string name)
-		{
-			_buffListReturnValue.Clear();
-			//register the user to get their buff data if its not already there
-			if (!NetMQServer.SharedDataClient.TopicUpdates.ContainsKey(name))
-			{  //no data assume not online yet.
-				return _buffListReturnValue;
-			}
-			var userTopics = NetMQServer.SharedDataClient.TopicUpdates[name];
-			//check to see if it has been filled out yet.
-			string topicKey = "${Me.PetBuffInfo}";
-			if (!userTopics.ContainsKey(topicKey))
-			{
-				//don't have the data yet kick out with empty list as we simply don't know.
-				return _buffListReturnValue;
-			}
-			//we have the data, lets check for updates
-			//the double name is because the 2nd name could be the pet name! its called in PetBuffList
-			UpdateBuffInfoUserInfo(name, name, topicKey,_petBuffs);
-			//done with updates, now lets check the data.
-			_buffListReturnValue.AddRange(_petBuffs[name].BuffDurations.Keys);
+        public List<int> PetBuffList(string name)
+        {
+            _buffListReturnValue.Clear();
+            //register the user to get their buff data if its not already there
+            if (!NetMQServer.SharedDataClient.TopicUpdates.ContainsKey(name))
+            {  //no data assume not online yet.
+                return _buffListReturnValue;
+            }
+            var userTopics = NetMQServer.SharedDataClient.TopicUpdates[name];
+            //check to see if it has been filled out yet.
+            string topicKey = "${Me.PetBuffInfo}";
+            if (!userTopics.ContainsKey(topicKey))
+            {
+                //don't have the data yet kick out with empty list as we simply don't know.
+                return _buffListReturnValue;
+            }
+            //we have the data, lets check for updates
+            //the double name is because the 2nd name could be the pet name! its called in PetBuffList
+            UpdateBuffInfoUserInfo(name, name, topicKey, _petBuffs);
+            //done with updates, now lets check the data.
+            _buffListReturnValue.AddRange(_petBuffs[name].BuffDurations.Keys);
 
-			return _buffListReturnValue;
-		}
+            return _buffListReturnValue;
+        }
 
-		public void Trade(string name)
-		{
-			MQ.Cmd("/notify TradeWnd TRDW_Trade_Button leftmouseup", 250);
+        public void Trade(string name)
+        {
+            MQ.Cmd("/notify TradeWnd TRDW_Trade_Button leftmouseup", 250);
             string command = "/notify TradeWnd TRDW_Trade_Button leftmouseup";
-			PubServer.AddTopicMessage("OnCommand-" + name, $"{E3.CurrentName}:{false}:{command}");
-		}
+            PubServer.AddTopicMessage("OnCommand-" + name, $"{E3.CurrentName}:{false}:{command}");
+        }
         class SharedNumericDataInt32
         {
             public Int32 Data { get; set; }
             public Int64 LastUpdate { get; set; }
         }
 
-	}
-	/*
+    }
+    /*
 	public class Bots : IBots
 	{
 		public static string _lastSuccesfulCast = String.Empty;

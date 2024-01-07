@@ -1,7 +1,10 @@
 ﻿using E3Core.Processors;
+
 using MonoCore;
+
 using NetMQ;
 using NetMQ.Sockets;
+
 using System;
 using System.Collections.Generic;
 using System.Diagnostics;
@@ -42,7 +45,7 @@ namespace MQServerClient
 
         }
     }
-   
+
 
     public class NetMQSpawns : ISpawns
     {
@@ -124,7 +127,7 @@ namespace MQServerClient
             {
                 spawn.isDirty = false;
             }
-         
+
             //_spawns should have fresh data now!
             _lastRefesh = Core.StopWatch.ElapsedMilliseconds;
             if (_requestMsg.IsInitialised)
@@ -135,7 +138,7 @@ namespace MQServerClient
             //send empty frame
             _requestSocket.TrySend(ref _requestMsg, SendTimeout, true);
 
-            _payloadLength =0;
+            _payloadLength = 0;
 
             _requestMsg.Close();
 
@@ -168,10 +171,10 @@ namespace MQServerClient
 
 
             _requestMsg.Close();
-          
+
             bool finishedResposne = false;
             List<Spawn> returnList = new List<Spawn>();
-            while(!finishedResposne)
+            while (!finishedResposne)
             {
                 _requestMsg.InitEmpty();
                 //recieve the empty frame
@@ -186,7 +189,7 @@ namespace MQServerClient
                 {
                     //wait for the message to come back
                 }
-                if(_requestMsg.Size==0)
+                if (_requestMsg.Size == 0)
                 {
                     finishedResposne = true;
                 }
@@ -205,13 +208,13 @@ namespace MQServerClient
                         spawn.Init(_requestMsg.Data, _requestMsg.Size);
                         _spawns.Add(spawn);
                     }
-                   
+
                 }
                 _requestMsg.Close();
 
             }
 
-            
+
             //spawns has new/updated data, get rid of the non dirty stuff.
             //can use the other dictionaries to help
             _spawnsByName.Clear();
@@ -277,7 +280,7 @@ namespace MQServerClient
             using (var subSocket = new SubscriberSocket())
             {
                 subSocket.Options.ReceiveHighWatermark = 1000;
-                subSocket.Connect("tcp://localhost:"+ RemoteDebugServerConfig.NetMQPubPort.ToString());
+                subSocket.Connect("tcp://localhost:" + RemoteDebugServerConfig.NetMQPubPort.ToString());
                 subSocket.Subscribe("OnIncomingChat");
                 subSocket.Subscribe("OnWriteChatColor");
                 subSocket.Subscribe("OnCommand");
@@ -287,11 +290,11 @@ namespace MQServerClient
                     string messageTopicReceived = subSocket.ReceiveFrameString();
                     string messageReceived = subSocket.ReceiveFrameString();
                     Console.WriteLine(messageReceived);
-                    if(messageTopicReceived== "OnWriteChatColor")
+                    if (messageTopicReceived == "OnWriteChatColor")
                     {
                         EventProcessor.ProcessMQEvent(messageReceived);
                     }
-                    else if(messageTopicReceived == "OnIncomingChat")
+                    else if (messageTopicReceived == "OnIncomingChat")
                     {
                         EventProcessor.ProcessEvent(messageReceived);
                     }
@@ -316,7 +319,7 @@ namespace MQServerClient
 
         public NetMQMQ()
         {
-           
+
             _requestSocket = new DealerSocket();
             _requestSocket.Options.Identity = Guid.NewGuid().ToByteArray();
             _requestSocket.Options.SendHighWatermark = 100;
@@ -784,10 +787,10 @@ namespace MQServerClient
             return true;
         }
 
-		public string GetFocusedWindowName()
-		{
+        public string GetFocusedWindowName()
+        {
             return "NULL";
-		}
-	}
+        }
+    }
 
 }

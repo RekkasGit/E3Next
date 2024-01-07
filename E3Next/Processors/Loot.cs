@@ -1,16 +1,11 @@
-﻿using E3Core.Data;
-using E3Core.Settings;
-using E3Core.Settings.FeatureSettings;
+﻿using E3Core.Settings.FeatureSettings;
 using E3Core.Utility;
+
 using MonoCore;
+
 using System;
 using System.Collections.Generic;
-using System.Collections.Specialized;
-using System.Dynamic;
 using System.Linq;
-using System.Net.Configuration;
-using System.ServiceModel.PeerResolvers;
-using System.Windows.Forms;
 
 namespace E3Core.Processors
 {
@@ -19,7 +14,7 @@ namespace E3Core.Processors
         public static Logging _log = E3.Log;
         private static IMQ MQ = E3.MQ;
         private static ISpawns _spawns = E3.Spawns;
-      
+
         private static HashSet<Int32> _unlootableCorpses = new HashSet<int>();
         private static bool _fullInventoryAlert = false;
         private static Int64 _nextLootCheck = 0;
@@ -43,42 +38,42 @@ namespace E3Core.Processors
                 if (x.args.Count > 1)
                 {
                     //remove item from all collections and add to desired collection
-                    if(x.args[1]=="KEEP")
+                    if (x.args[1] == "KEEP")
                     {
                         LootDataFile.Sell.Remove(x.args[0]);
                         LootDataFile.Skip.Remove(x.args[0]);
-						LootDataFile.Destroy.Remove(x.args[0]);
-						LootDataFile.Keep.Add(x.args[0]);
+                        LootDataFile.Destroy.Remove(x.args[0]);
+                        LootDataFile.Keep.Add(x.args[0]);
 
                     }
-                    else if(x.args[1]=="SELL")
+                    else if (x.args[1] == "SELL")
                     {
                         LootDataFile.Keep.Remove(x.args[0]);
                         LootDataFile.Skip.Remove(x.args[0]);
-						LootDataFile.Destroy.Remove(x.args[0]);
-						LootDataFile.Sell.Add(x.args[0]);
+                        LootDataFile.Destroy.Remove(x.args[0]);
+                        LootDataFile.Sell.Add(x.args[0]);
                     }
-					else if (x.args[1] == "DESTROY")
-					{
-						LootDataFile.Keep.Remove(x.args[0]);
-						LootDataFile.Skip.Remove(x.args[0]);
-						LootDataFile.Sell.Remove(x.args[0]);
-						LootDataFile.Destroy.Add(x.args[0]);
-					}
-					else
+                    else if (x.args[1] == "DESTROY")
+                    {
+                        LootDataFile.Keep.Remove(x.args[0]);
+                        LootDataFile.Skip.Remove(x.args[0]);
+                        LootDataFile.Sell.Remove(x.args[0]);
+                        LootDataFile.Destroy.Add(x.args[0]);
+                    }
+                    else
                     {
                         LootDataFile.Keep.Remove(x.args[0]);
                         LootDataFile.Sell.Remove(x.args[0]);
-						LootDataFile.Destroy.Remove(x.args[0]);
-						LootDataFile.Skip.Add(x.args[0]);
+                        LootDataFile.Destroy.Remove(x.args[0]);
+                        LootDataFile.Skip.Add(x.args[0]);
                     }
-                } 
+                }
             });
 
             EventProcessor.RegisterCommand("/looton", (x) =>
             {
-                
-                if (x.args.Count >0 && E3.Bots.BotsConnected().Contains(x.args[0], StringComparer.OrdinalIgnoreCase) && !x.args[0].Equals(E3.CurrentName, StringComparison.OrdinalIgnoreCase))
+
+                if (x.args.Count > 0 && E3.Bots.BotsConnected().Contains(x.args[0], StringComparer.OrdinalIgnoreCase) && !x.args[0].Equals(E3.CurrentName, StringComparison.OrdinalIgnoreCase))
                 {
                     if (x.args.Count == 2 && x.args[1] == "force")
                     {
@@ -98,7 +93,7 @@ namespace E3Core.Processors
                         MQ.Cmd("/hidecorpse none");
                     }
                     E3.CharacterSettings.Misc_AutoLootEnabled = true;
-                    
+
                     E3.Bots.Broadcast("\agTurning on Loot.");
                 }
             });
@@ -130,9 +125,9 @@ namespace E3Core.Processors
                 LootDataFile.Keep.Remove(cursorItem);
                 LootDataFile.Sell.Remove(cursorItem);
                 LootDataFile.Skip.Remove(cursorItem);
-				LootDataFile.Destroy.Remove(cursorItem);
-				LootDataFile.Keep.Add(cursorItem);
-                
+                LootDataFile.Destroy.Remove(cursorItem);
+                LootDataFile.Keep.Add(cursorItem);
+
                 MQ.Write($"\aoSetting {cursorItem} to KEEP");
                 E3.Bots.BroadcastCommand($"/E3LootAdd \"{cursorItem}\" KEEP");
                 LootDataFile.SaveData();
@@ -140,31 +135,31 @@ namespace E3Core.Processors
                 e3util.ClearCursor();
             });
 
-			EventProcessor.RegisterCommand("/lootdestroy", (x) =>
-			{
-				string cursorItem = MQ.Query<string>("${Cursor.Name}");
+            EventProcessor.RegisterCommand("/lootdestroy", (x) =>
+            {
+                string cursorItem = MQ.Query<string>("${Cursor.Name}");
 
-				if (cursorItem.Equals("NULL", StringComparison.OrdinalIgnoreCase) || String.IsNullOrWhiteSpace(cursorItem))
-				{
-					MQ.Write("You don't have an item on your cursor, cannot modify the loot file.");
-					MQ.Write("Place an item on your cursor and then give the proper /lootkeep, /lootsell, /lootskip,/lootdestroy command");
-					return;
-				}
+                if (cursorItem.Equals("NULL", StringComparison.OrdinalIgnoreCase) || String.IsNullOrWhiteSpace(cursorItem))
+                {
+                    MQ.Write("You don't have an item on your cursor, cannot modify the loot file.");
+                    MQ.Write("Place an item on your cursor and then give the proper /lootkeep, /lootsell, /lootskip,/lootdestroy command");
+                    return;
+                }
 
-				LootDataFile.Keep.Remove(cursorItem);
-				LootDataFile.Sell.Remove(cursorItem);
-				LootDataFile.Skip.Remove(cursorItem);
-				LootDataFile.Keep.Remove(cursorItem);
-				LootDataFile.Destroy.Add(cursorItem);
-			
+                LootDataFile.Keep.Remove(cursorItem);
+                LootDataFile.Sell.Remove(cursorItem);
+                LootDataFile.Skip.Remove(cursorItem);
+                LootDataFile.Keep.Remove(cursorItem);
+                LootDataFile.Destroy.Add(cursorItem);
+
                 MQ.Write($"\aoSetting {cursorItem} to DESTROY");
-				E3.Bots.BroadcastCommand($"/E3LootAdd \"{cursorItem}\" DESTROY");
-				LootDataFile.SaveData();
+                E3.Bots.BroadcastCommand($"/E3LootAdd \"{cursorItem}\" DESTROY");
+                LootDataFile.SaveData();
 
-				MQ.Cmd("/destroy");
-			});
+                MQ.Cmd("/destroy");
+            });
 
-			EventProcessor.RegisterCommand("/lootskip", (x) =>
+            EventProcessor.RegisterCommand("/lootskip", (x) =>
             {
                 string cursorItem = MQ.Query<string>("${Cursor.Name}");
 
@@ -178,8 +173,8 @@ namespace E3Core.Processors
                 LootDataFile.Keep.Remove(cursorItem);
                 LootDataFile.Sell.Remove(cursorItem);
                 LootDataFile.Skip.Remove(cursorItem);
-				LootDataFile.Destroy.Remove(cursorItem);
-				LootDataFile.Skip.Add(cursorItem);
+                LootDataFile.Destroy.Remove(cursorItem);
+                LootDataFile.Skip.Add(cursorItem);
 
                 MQ.Write($"\arSetting {cursorItem} to SKIP");
                 E3.Bots.BroadcastCommand($"/E3LootAdd \"{cursorItem}\" SKIP");
@@ -201,7 +196,7 @@ namespace E3Core.Processors
                 LootDataFile.Sell.Remove(cursorItem);
                 LootDataFile.Skip.Remove(cursorItem);
                 LootDataFile.Sell.Add(cursorItem);
-                
+
                 MQ.Write($"\agSetting {cursorItem} to SELL");
                 E3.Bots.BroadcastCommand($"/E3LootAdd \"{cursorItem}\" SELL");
                 LootDataFile.SaveData();
@@ -216,13 +211,13 @@ namespace E3Core.Processors
             if (!e3util.ShouldCheck(ref _nextLootCheck, _nextLootCheckInterval)) return;
 
             if (!E3.CharacterSettings.Misc_AutoLootEnabled) return;
-            if(!Assist.IsAssisting)
+            if (!Assist.IsAssisting)
             {
                 long currentTimestamp = Core.StopWatch.ElapsedMilliseconds;
                 if ((!Basics.InCombat() && currentTimestamp - Assist.LastAssistEndedTimestamp > E3.GeneralSettings.Loot_TimeToWaitAfterAssist) && SafeToLoot() || E3.GeneralSettings.Loot_LootInCombat)
                 {
-             		LootArea();
-				}
+                    LootArea();
+                }
             }
         }
         private static void LootArea()
@@ -246,12 +241,12 @@ namespace E3Core.Processors
                     }
                 }
             }
-            if (corpses.Count==0)
+            if (corpses.Count == 0)
             {
                 return;
             }
-                //sort all the corpses, removing the ones we cannot loot
-             corpses = corpses.OrderBy(x => x.Distance).ToList();
+            //sort all the corpses, removing the ones we cannot loot
+            corpses = corpses.OrderBy(x => x.Distance).ToList();
 
             if (corpses.Count > 0)
             {
@@ -262,17 +257,17 @@ namespace E3Core.Processors
                 //lets check if we can loot.
                 Movement.PauseMovement();
 
-               // bool destroyCorpses = false;
+                // bool destroyCorpses = false;
 
                 foreach (var c in corpses)
                 {
-					
-					//allow eq time to send the message to us
-					e3util.YieldToEQ();
+
+                    //allow eq time to send the message to us
+                    e3util.YieldToEQ();
                     if (e3util.IsShuttingDown() || E3.IsPaused()) return;
                     EventProcessor.ProcessEventsInQueues("/lootoff");
-					EventProcessor.ProcessEventsInQueues("/assistme");
-					if (!E3.CharacterSettings.Misc_AutoLootEnabled) return;
+                    EventProcessor.ProcessEventsInQueues("/assistme");
+                    if (!E3.CharacterSettings.Misc_AutoLootEnabled) return;
                     if (!E3.GeneralSettings.Loot_LootInCombat)
                     {
                         if (Basics.InCombat()) return;
@@ -280,13 +275,13 @@ namespace E3Core.Processors
 
                     Casting.TrueTarget(c.ID);
                     MQ.Delay(2000, "${Target.ID}");
-                   
-                    if(MQ.Query<bool>("${Target.ID}"))
+
+                    if (MQ.Query<bool>("${Target.ID}"))
                     {
                         e3util.TryMoveToTarget();
                         MQ.Delay(2250, "${Target.Distance3D} < 10"); // Give Time to get to Corpse 
                         LootCorpse(c);
-                       
+
                         if (MQ.Query<bool>("${Window[LootWnd].Open}"))
                         {
                             MQ.Cmd("/nomodkey /notify LootWnd DoneButton leftmouseup");
@@ -294,7 +289,7 @@ namespace E3Core.Processors
 
                         MQ.Delay(300);
                     }
-                    
+
                 }
 
                 E3.Bots.Broadcast("\agFinished looting area");
@@ -303,20 +298,20 @@ namespace E3Core.Processors
         }
         private static bool SafeToLoot()
         {
-			foreach (var s in _spawns.Get().OrderBy(x => x.Distance))
-			{
-				//find all mobs that are close
-				if (s.TypeDesc != "NPC") continue;
-				if (!s.Targetable) continue;
-				if (!s.Aggressive) continue;
-				if (s.CleanName.EndsWith("s pet")) continue;
-				if (!MQ.Query<bool>($"${{Spawn[npc id {s.ID}].LineOfSight}}")) continue;
-				if (s.Distance > 30) break;//mob is too far away, and since it is ordered, kick out.
-                                          
+            foreach (var s in _spawns.Get().OrderBy(x => x.Distance))
+            {
+                //find all mobs that are close
+                if (s.TypeDesc != "NPC") continue;
+                if (!s.Targetable) continue;
+                if (!s.Aggressive) continue;
+                if (s.CleanName.EndsWith("s pet")) continue;
+                if (!MQ.Query<bool>($"${{Spawn[npc id {s.ID}].LineOfSight}}")) continue;
+                if (s.Distance > 30) break;//mob is too far away, and since it is ordered, kick out.
+
                 return false;
-			}
+            }
             return true;
-		}
+        }
         public static void DestroyCorpse(Spawn corpse)
         {
             MQ.Cmd("/loot");
@@ -346,12 +341,12 @@ namespace E3Core.Processors
 
             for (Int32 i = 1; i <= corpseItems; i++)
             {
-              
+
                 //lets loot it if we can!
                 MQ.Cmd($"/nomodkey /shift /itemnotify loot{i} leftmouseup", 300);
                 MQ.Delay(1000, "${Cursor.ID}");
                 Int32 cursorid = MQ.Query<Int32>("${Cursor.ID}");
-                if(cursorid>0)
+                if (cursorid > 0)
                 {
                     E3.Bots.Broadcast($"Deleting from corpse [] [{MQ.Query<string>("${Cursor}")}]");
                     //have it on our cursor, lets destroy
@@ -361,31 +356,31 @@ namespace E3Core.Processors
                 }
 
             }
-            
+
         }
         public static bool ImportantItemOnCorpse(Spawn corpse)
         {
             bool importantItem = false;
             bool nodropImportantItem = false;
 
-            if(!MQ.Query<bool>("${Window[LootWnd].Open}"))
+            if (!MQ.Query<bool>("${Window[LootWnd].Open}"))
             {
-				MQ.Cmd("/loot");
-				MQ.Delay(1000, "${Window[LootWnd].Open}");
-				MQ.Delay(100);
-				if (!MQ.Query<bool>("${Window[LootWnd].Open}"))
-				{
-					MQ.Write($"\arERROR, Loot Window not opening, adding {corpse.CleanName}-{corpse.ID} to ignore corpse list.");
-					if (!_unlootableCorpses.Contains(corpse.ID))
-					{
-						_unlootableCorpses.Add(corpse.ID);
-					}
-					return true;
+                MQ.Cmd("/loot");
+                MQ.Delay(1000, "${Window[LootWnd].Open}");
+                MQ.Delay(100);
+                if (!MQ.Query<bool>("${Window[LootWnd].Open}"))
+                {
+                    MQ.Write($"\arERROR, Loot Window not opening, adding {corpse.CleanName}-{corpse.ID} to ignore corpse list.");
+                    if (!_unlootableCorpses.Contains(corpse.ID))
+                    {
+                        _unlootableCorpses.Add(corpse.ID);
+                    }
+                    return true;
 
-				}
-			}
+                }
+            }
 
-           
+
             MQ.Delay(500, "${Corpse.Items}");
 
             MQ.Delay(E3.GeneralSettings.Loot_LootItemDelay);//wait a little longer to let the items finish populating, for EU people they may need to increase this.
@@ -503,7 +498,7 @@ namespace E3Core.Processors
         }
         public static void LootCorpse(Spawn corpse, bool bypassLootSettings = false)
         {
-            
+
             Int32 freeInventorySlots = MQ.Query<Int32>("${Me.FreeInventory}");
             //keep some free if configured to do so.
             freeInventorySlots -= E3.GeneralSettings.Loot_NumberOfFreeSlotsOpen;
@@ -511,7 +506,7 @@ namespace E3Core.Processors
             bool importantItem = false;
             bool nodropImportantItem = false;
 
-            if(!_fullInventoryAlert && freeInventorySlots<1)
+            if (!_fullInventoryAlert && freeInventorySlots < 1)
             {
                 _fullInventoryAlert = true;
                 E3.Bots.Broadcast("\arMy inventory is full! \awI will continue to link items on corpses, but cannot loot anything else.");
@@ -519,23 +514,23 @@ namespace E3Core.Processors
                 e3util.Beep();
 
             }
-			if (!MQ.Query<bool>("${Window[LootWnd].Open}"))
-			{
-				MQ.Cmd("/loot");
-				MQ.Delay(3000, "${Window[LootWnd].Open}");
-				MQ.Delay(100);
-				if (!MQ.Query<bool>("${Window[LootWnd].Open}"))
-				{
-					MQ.Write($"\arERROR, Loot Window not opening, adding {corpse.CleanName}-{corpse.ID} to ignore corpse list.");
-					if (!_unlootableCorpses.Contains(corpse.ID))
-					{
-						_unlootableCorpses.Add(corpse.ID);
-					}
-					return;
-                    
-				}
-			}
-            
+            if (!MQ.Query<bool>("${Window[LootWnd].Open}"))
+            {
+                MQ.Cmd("/loot");
+                MQ.Delay(3000, "${Window[LootWnd].Open}");
+                MQ.Delay(100);
+                if (!MQ.Query<bool>("${Window[LootWnd].Open}"))
+                {
+                    MQ.Write($"\arERROR, Loot Window not opening, adding {corpse.CleanName}-{corpse.ID} to ignore corpse list.");
+                    if (!_unlootableCorpses.Contains(corpse.ID))
+                    {
+                        _unlootableCorpses.Add(corpse.ID);
+                    }
+                    return;
+
+                }
+            }
+
             MQ.Delay(500, "${Corpse.Items}");
 
             MQ.Delay(E3.GeneralSettings.Loot_LootItemDelay);//wait a little longer to let the items finish populating, for EU people they may need to increase this.
@@ -549,7 +544,7 @@ namespace E3Core.Processors
                 return;
             }
 
-            for(Int32 i =1;i<=corpseItems;i++)
+            for (Int32 i = 1; i <= corpseItems; i++)
             {
                 //lets try and loot them.
                 importantItem = false;
@@ -563,27 +558,27 @@ namespace E3Core.Processors
                 Int32 stackCount = MQ.Query<Int32>($"${{Corpse.Item[{i}].Stack}}");
                 bool tradeskillItem = MQ.Query<bool>($"${{Corpse.Item[{i}].Tradeskills}}");
 
-                
+
                 //destroy things we don't like
-				if (LootDataFile.Destroy.Contains(corpseItem))
-				{
-					//lets loot it if we can!
-					MQ.Cmd($"/nomodkey /shift /itemnotify loot{i} leftmouseup", 300);
-					MQ.Delay(1000, "${Cursor.ID}");
-					Int32 cursorid = MQ.Query<Int32>("${Cursor.ID}");
-					if (cursorid > 0)
-					{
-						E3.Bots.Broadcast($"Deleting from corpse [{MQ.Query<string>("${Cursor}")}]");
-						//have it on our cursor, lets destroy
-						MQ.Cmd("/destroy");
-						//delay until the cursor is empty
-						MQ.Delay(1000, "${If[${Cursor.ID},FALSE,TRUE]}");
+                if (LootDataFile.Destroy.Contains(corpseItem))
+                {
+                    //lets loot it if we can!
+                    MQ.Cmd($"/nomodkey /shift /itemnotify loot{i} leftmouseup", 300);
+                    MQ.Delay(1000, "${Cursor.ID}");
+                    Int32 cursorid = MQ.Query<Int32>("${Cursor.ID}");
+                    if (cursorid > 0)
+                    {
+                        E3.Bots.Broadcast($"Deleting from corpse [{MQ.Query<string>("${Cursor}")}]");
+                        //have it on our cursor, lets destroy
+                        MQ.Cmd("/destroy");
+                        //delay until the cursor is empty
+                        MQ.Delay(1000, "${If[${Cursor.ID},FALSE,TRUE]}");
 
-					}
-					continue;
-				}
+                    }
+                    continue;
+                }
 
-				if (E3.GeneralSettings.Loot_OnlyStackableEnabled)
+                if (E3.GeneralSettings.Loot_OnlyStackableEnabled)
                 {
                     //check if in our always loot.
                     if (E3.GeneralSettings.Loot_OnlyStackableAlwaysLoot.Contains(corpseItem, StringComparer.OrdinalIgnoreCase))
@@ -627,12 +622,12 @@ namespace E3Core.Processors
                         //loot nodrop items in inifile
                         nodropImportantItem = nodrop;
                     }
-                    else if(LootDataFile.Skip.Contains(corpseItem))
+                    else if (LootDataFile.Skip.Contains(corpseItem))
                     {
                         importantItem = false;
                         foundInFile = true;
                     }
-					if (!foundInFile && !nodrop)
+                    if (!foundInFile && !nodrop)
                     {
                         importantItem = true;
                         LootDataFile.Keep.Add(corpseItem);
@@ -653,16 +648,16 @@ namespace E3Core.Processors
                 }
 
                 //stackable but we don't have room and don't have the item yet
-                if(freeInventorySlots<1 && stackable && !weHaveItem)
+                if (freeInventorySlots < 1 && stackable && !weHaveItem)
                 {
                     importantItem = false;
                 }
-                
+
                 //stackable but we don't have room but we already have an item, lets see if we have room.
                 if (freeInventorySlots < 1 && stackable && weHaveItem)
                 {
                     //does it have free stacks?
-                    if(FoundStackableFitInInventory(corpseItem,stackCount))
+                    if (FoundStackableFitInInventory(corpseItem, stackCount))
                     {
                         importantItem = true;
                     }
@@ -676,7 +671,7 @@ namespace E3Core.Processors
                 if (importantItem || bypassLootSettings)
                 {
                     //lets loot it if we can!
-                    MQ.Cmd($"/nomodkey /shift /itemnotify loot{i} rightmouseup",300);
+                    MQ.Cmd($"/nomodkey /shift /itemnotify loot{i} rightmouseup", 300);
                     //loot nodrop items if important
                     if (nodropImportantItem)
                     {
@@ -684,10 +679,10 @@ namespace E3Core.Processors
                         if (confirmationBox) MQ.Cmd($"/nomodkey /notify ConfirmationDialogBox CD_Yes_Button leftmouseup", 300);
                     }
                 }
-                
-               
+
+
             }
-            if (MQ.Query<Int32>("${Corpse.Items}")>0)
+            if (MQ.Query<Int32>("${Corpse.Items}") > 0)
             {   //link what is ever left over.
                 //should we should notify if we have not looted.
                 if (!String.IsNullOrWhiteSpace(E3.GeneralSettings.Loot_LinkChannel))
@@ -701,9 +696,9 @@ namespace E3Core.Processors
         private static void PrintLink(string message)
         {
             MQ.Cmd("/nomodkey /keypress /");
-            foreach(char c in message)
+            foreach (char c in message)
             {
-                if(c==' ')
+                if (c == ' ')
                 {
                     MQ.Cmd($"/nomodkey /keypress space chat");
                 }
@@ -721,16 +716,16 @@ namespace E3Core.Processors
         private static bool FoundStackableFitInInventory(string corpseItem, Int32 count)
         {
             //scan through our inventory looking for an item with a stackable
-            for(Int32 i =1;i<=10;i++)
+            for (Int32 i = 1; i <= 10; i++)
             {
                 bool SlotExists = MQ.Query<bool>($"${{Me.Inventory[pack{i}]}}");
-                if(SlotExists)
+                if (SlotExists)
                 {
                     Int32 slotsInInvetoryLost = MQ.Query<Int32>($"${{Me.Inventory[pack{i}].Container}}");
 
-                    if(slotsInInvetoryLost>0)
+                    if (slotsInInvetoryLost > 0)
                     {
-                        for(Int32 e=1;e<=slotsInInvetoryLost;e++)
+                        for (Int32 e = 1; e <= slotsInInvetoryLost; e++)
                         {
                             //${Me.Inventory[${itemSlot}].Item[${j}].Name.Equal[${itemName}]}
                             String itemName = MQ.Query<String>($"${{Me.Inventory[pack{i}].Item[{e}]}}");
@@ -738,7 +733,7 @@ namespace E3Core.Processors
                             {
                                 continue;
                             }
-                            if (itemName==corpseItem)
+                            if (itemName == corpseItem)
                             {
                                 //its the item we are looking for, does it have stackable 
                                 Int32 freeStack = MQ.Query<Int32>($"${{Me.Inventory[pack{i}].Item[{e}].FreeStack}}");

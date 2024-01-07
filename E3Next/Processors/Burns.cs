@@ -1,13 +1,10 @@
-﻿using E3Core.Classes;
-using E3Core.Data;
-using E3Core.Settings;
+﻿using E3Core.Data;
 using E3Core.Utility;
+
 using MonoCore;
+
 using System;
 using System.Collections.Generic;
-using System.Dynamic;
-using System.Linq;
-using System.Runtime.CompilerServices;
 
 namespace E3Core.Processors
 {
@@ -103,10 +100,10 @@ namespace E3Core.Processors
             //  if (!e3util.ShouldCheck(ref _nextBurnCheck, _nextBurnCheckInterval)) return;
             //lets check if there are any events in the queue that we need to check on. 
             EventProcessor.ProcessEventsInQueues("/quickburns");
-			EventProcessor.ProcessEventsInQueues("/epicburns");
-			EventProcessor.ProcessEventsInQueues("/fullburns");
-			EventProcessor.ProcessEventsInQueues("/longburns");
-			CheckTimeouts();
+            EventProcessor.ProcessEventsInQueues("/epicburns");
+            EventProcessor.ProcessEventsInQueues("/fullburns");
+            EventProcessor.ProcessEventsInQueues("/longburns");
+            CheckTimeouts();
 
             UseBurn(_epicWeapon, use_EPICBurns, "EpicBurns");
             UseBurn(_anguishBP, use_EPICBurns, "AnguishBPBurns");
@@ -119,11 +116,11 @@ namespace E3Core.Processors
 
         public static void CheckTimeouts()
         {
-           
+
             if (use_QUICKBurns) CheckTimeouts_SubCheck(ref use_QUICKBurns, ref _quickburnTimeout, ref _quickburnStartTimeStamp, "QuickBurns");
             if (use_LONGBurns) CheckTimeouts_SubCheck(ref use_LONGBurns, ref _longburnTimeout, ref _longburnStartTimeStamp, "LongBurns");
             if (use_FULLBurns) CheckTimeouts_SubCheck(ref use_FULLBurns, ref _fullburnTimeout, ref _fullburnStartTimeStamp, "FullBurns");
-            if (use_EPICBurns) CheckTimeouts_SubCheck(ref use_EPICBurns, ref _epicburnTimeout, ref _epicStartTimeStamp,"EpicBurns");
+            if (use_EPICBurns) CheckTimeouts_SubCheck(ref use_EPICBurns, ref _epicburnTimeout, ref _epicStartTimeStamp, "EpicBurns");
             if (use_Swarms) CheckTimeouts_SubCheck(ref use_Swarms, ref _swarmburnTimeout, ref _swarmStartTimeStamp, "SwarmPets");
 
         }
@@ -161,18 +158,18 @@ namespace E3Core.Processors
                         }
                     }
                     bool shouldContinue = false;
-					if (burn.CheckForCollection.Count > 0)
-					{
-						foreach (var checkforItem in burn.CheckForCollection.Keys)
-						{
-							if (MQ.Query<bool>($"${{Bool[${{Me.Buff[{checkforItem}]}}]}}") || MQ.Query<bool>($"${{Bool[${{Me.Song[{checkforItem}]}}]}}"))
-							{
+                    if (burn.CheckForCollection.Count > 0)
+                    {
+                        foreach (var checkforItem in burn.CheckForCollection.Keys)
+                        {
+                            if (MQ.Query<bool>($"${{Bool[${{Me.Buff[{checkforItem}]}}]}}") || MQ.Query<bool>($"${{Bool[${{Me.Song[{checkforItem}]}}]}}"))
+                            {
                                 shouldContinue = true;
-								break;
-							}
-						}
-						if (shouldContinue) { continue; }
-					}
+                                break;
+                            }
+                        }
+                        if (shouldContinue) { continue; }
+                    }
 
                     if (Casting.CheckReady(burn))
                     {
@@ -267,7 +264,7 @@ namespace E3Core.Processors
                 {
                     if (!e3util.FilterMe(x))
                     {
-                       
+
                         burnType = true;
                         if (timeout > 0)
                         {
@@ -291,8 +288,8 @@ namespace E3Core.Processors
                 Int32 targetID = MQ.Query<Int32>("${Target.ID}");
                 if (targetID > 0)
                 {
-                   
-                    if(timeout>0)
+
+                    if (timeout > 0)
                     {
                         E3.Bots.BroadcastCommandToGroup($"{command} {targetID} timeout={timeout}", x);
                     }

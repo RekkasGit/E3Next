@@ -1,15 +1,8 @@
 ﻿using E3Core.Data;
+
 using MonoCore;
+
 using System;
-using System.Collections.Generic;
-using System.Diagnostics.SymbolStore;
-using System.Linq;
-using System.Net.Http.Headers;
-using System.Runtime.CompilerServices;
-using System.Security.Cryptography;
-using System.Text;
-using System.Threading.Tasks;
-using System.Xml.Linq;
 
 namespace E3Core.Processors
 {
@@ -39,7 +32,7 @@ namespace E3Core.Processors
 
                     user = x.args[0];
                     spell = x.args[1];
-                    if(x.args.Count>2)
+                    if (x.args.Count > 2)
                     {
                         Int32.TryParse(x.args[2], out targetid);
                     }
@@ -49,7 +42,7 @@ namespace E3Core.Processors
                     {
                         if (targetid > 0)
                         {
-                            E3.Bots.BroadcastCommandToGroup($"/nowcast me \"{spell}\" {targetid}",x);
+                            E3.Bots.BroadcastCommandToGroup($"/nowcast me \"{spell}\" {targetid}", x);
                             castResult = NowCastSpell(spell, targetid);
                         }
                         else
@@ -90,7 +83,7 @@ namespace E3Core.Processors
                     if (castResult != CastReturn.CAST_SUCCESS)
                     {
                         E3.Bots.Broadcast($"\arNowcast of {spell} unsuccessful due to {castResult}!");
-                        if (castResult== CastReturn.CAST_NOTREADY)
+                        if (castResult == CastReturn.CAST_NOTREADY)
                         {
                             Basics.PrintE3TReport(new Spell(spell));
                         }
@@ -102,7 +95,7 @@ namespace E3Core.Processors
 
         public static bool IsNowCastInQueue()
         {
-            if(EventProcessor.CommandList["/nowcast"].queuedEvents.Count > 0)
+            if (EventProcessor.CommandList["/nowcast"].queuedEvents.Count > 0)
             {
                 return true;
             }
@@ -155,34 +148,34 @@ namespace E3Core.Processors
                             return CastReturn.CAST_IFFAILURE;
                         }
                     }
-					
-					if (spell.CheckForCollection.Count > 0)
-					{
-						foreach (var checkforItem in spell.CheckForCollection.Keys)
-						{
-							Casting.TrueTarget(targetid);
-							if (MQ.Query<bool>($"${{Bool[${{Target.Buff[{checkforItem}]}}]}}"))
-							{
-								return CastReturn.CAST_TAKEHOLD;
-							}
-						}
-						
-					}
-				recast:
-					if (!Casting.CheckReady(spell))
+
+                    if (spell.CheckForCollection.Count > 0)
+                    {
+                        foreach (var checkforItem in spell.CheckForCollection.Keys)
+                        {
+                            Casting.TrueTarget(targetid);
+                            if (MQ.Query<bool>($"${{Bool[${{Target.Buff[{checkforItem}]}}]}}"))
+                            {
+                                return CastReturn.CAST_TAKEHOLD;
+                            }
+                        }
+
+                    }
+                recast:
+                    if (!Casting.CheckReady(spell))
                     {
                         return CastReturn.CAST_NOTREADY;
                     }
-                    if(!Casting.InRange(targetid,spell))
+                    if (!Casting.InRange(targetid, spell))
                     {
                         return CastReturn.CAST_OUTOFRANGE;
                     }
-					if (!Casting.CheckMana(spell))
-					{
-						return CastReturn.CAST_OUTOFMANA;
-					}
-			        var returnValue = Casting.Cast(targetid, spell, null, true);
-					if(returnValue== CastReturn.CAST_FIZZLE)
+                    if (!Casting.CheckMana(spell))
+                    {
+                        return CastReturn.CAST_OUTOFMANA;
+                    }
+                    var returnValue = Casting.Cast(targetid, spell, null, true);
+                    if (returnValue == CastReturn.CAST_FIZZLE)
                     {
                         goto recast;
                     }
@@ -192,7 +185,7 @@ namespace E3Core.Processors
                 return CastReturn.CAST_INVALID;
             }
             finally
-            { 
+            {
                 //put the target back to where it was
                 Int32 currentTargetID = MQ.Query<Int32>("${Target.ID}");
                 if (orgTargetID > 0 && currentTargetID != orgTargetID)
@@ -205,7 +198,7 @@ namespace E3Core.Processors
                 }
 
             }
-            
+
         }
     }
 }

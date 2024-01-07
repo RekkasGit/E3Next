@@ -1,9 +1,6 @@
 ﻿using NetMQ.Sockets;
+
 using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
 
 namespace E3NextUI.Server
 {
@@ -24,7 +21,7 @@ namespace E3NextUI.Server
 
         private void ResetSocket()
         {
-            if(_requestSocket!=null)
+            if (_requestSocket != null)
             {
                 _requestSocket.Dispose();
             }
@@ -37,13 +34,13 @@ namespace E3NextUI.Server
 
         public string RequestData(string query)
         {
-            
-            if(_requestSocket==null)
+
+            if (_requestSocket == null)
             {
                 ResetSocket();
             }
 
-            retry:
+        retry:
             try
             {
                 if (_requestMsg.IsInitialised)
@@ -106,7 +103,7 @@ namespace E3NextUI.Server
 
                 return mqReturnValue;
             }
-            catch(Exception)
+            catch (Exception)
             {
                 System.Threading.Thread.Sleep(1000);
                 ResetSocket();

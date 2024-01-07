@@ -1,16 +1,11 @@
-﻿using E3Core.Data;
-using E3Core.Settings;
-using E3Core.Settings.FeatureSettings;
+﻿using E3Core.Settings;
 using E3Core.Utility;
-using E3Core.Processors;
-using IniParser;
+
 using MonoCore;
+
 using System;
 using System.Collections.Generic;
 using System.Linq;
-using System.Security.Cryptography.X509Certificates;
-using System.Text;
-using System.Threading.Tasks;
 
 namespace E3Core.Processors
 {
@@ -29,7 +24,7 @@ namespace E3Core.Processors
         {
             RegisterEvents();
         }
-        private static bool FDSPrint(string slot,string channel="/gsay")
+        private static bool FDSPrint(string slot, string channel = "/gsay")
         {
 
             if (_fdsSlots.Contains(slot))
@@ -236,11 +231,11 @@ namespace E3Core.Processors
                 }
                 else
                 {
-                    MQ.Cmd($"/nomodkey /notify QuantityWnd QTYW_slider newvalue {requestedQuantity}",250);
+                    MQ.Cmd($"/nomodkey /notify QuantityWnd QTYW_slider newvalue {requestedQuantity}", 250);
                 }
             }
 
-            MQ.Cmd("/nomodkey /notify QuantityWnd QTYW_Accept_Button leftmouseup",50);
+            MQ.Cmd("/nomodkey /notify QuantityWnd QTYW_Accept_Button leftmouseup", 50);
         }
 
         private static void Upgrade(List<string> args)
@@ -286,7 +281,7 @@ namespace E3Core.Processors
                 return;
             }
 
-            if(freeInvSlots < slotsWithAugs.Count())
+            if (freeInvSlots < slotsWithAugs.Count())
             {
                 MQ.Write("\arYou do not have enough free inventory space to hold removed augs");
                 return;
@@ -294,7 +289,7 @@ namespace E3Core.Processors
 
             MQ.Cmd($"/nomodkey /itemnotify \"${{Me.Inventory[{slotName}]}}\" rightmouseheld");
 
-            foreach(var kvp in slotsWithAugs)
+            foreach (var kvp in slotsWithAugs)
             {
                 MQ.Cmd($"/nomodkey /notify ItemDisplayWindow IDW_Socket_Slot_{kvp.Key}_Item leftmouseup");
                 MQ.Delay(500);
@@ -304,8 +299,8 @@ namespace E3Core.Processors
             }
 
             MQ.Cmd("/nomodkey /keypress esc");
-            MQ.Cmd($"/nomodkey /itemnotify \"${{FindItem[={newItem}]}}\" rightmouseheld",500);
-            
+            MQ.Cmd($"/nomodkey /itemnotify \"${{FindItem[={newItem}]}}\" rightmouseheld", 500);
+
 
             foreach (var kvp in slotsWithAugs)
             {
@@ -362,7 +357,7 @@ namespace E3Core.Processors
             {
 
                 if (e3util.FilterMe(x)) return;
-                
+
                 List<string> validReportChannels = new List<string>() { "/g", "/gu", "/say", "/rsay", "/gsay", "/rs", "/bc" };
 
                 string channel = "/gsay";
@@ -374,11 +369,11 @@ namespace E3Core.Processors
                 if (x.args.Count > 0)
                 {
                     string slot = x.args[0];
-                    if (FDSPrint(slot,channel))
+                    if (FDSPrint(slot, channel))
                     {
                         if (!x.args.Contains("group"))
                         {
-                            E3.Bots.BroadcastCommandToGroup($"/fds {slot} {channel} group",x);
+                            E3.Bots.BroadcastCommandToGroup($"/fds {slot} {channel} group", x);
                         }
                     }
                 }
@@ -422,10 +417,10 @@ namespace E3Core.Processors
             EventProcessor.RegisterCommand("/getfrominv", (x) => GetFrom("Inventory", x.args));
             EventProcessor.RegisterCommand("/upgrade", (x) => Upgrade(x.args));
             //restock generic reusable items from vendors
-            
+
         }
         [ClassInvoke(Data.Class.All)]
-        public static void CheckTradeAccept() 
+        public static void CheckTradeAccept()
         {
             if (!e3util.ShouldCheck(ref _nextTradeCheck, _nextTradeCheckInterval)) return;
 
@@ -441,17 +436,17 @@ namespace E3Core.Processors
             }
             else
             {
-                
+
                 string traderName = MQ.Query<string>($"${{Window[TradeWnd].Child[TRDW_HisName].Text}}");
                 Spawn trader;
-                
-                if (_spawns.TryByName(traderName,out trader))
+
+                if (_spawns.TryByName(traderName, out trader))
                 {
-                   
+
                     if (E3.GeneralSettings.AutoTrade_All)
                     {
                         doTrade = true;
-                     
+
                     }
                     else if (E3.GeneralSettings.AutoTrade_Guild)
                     {

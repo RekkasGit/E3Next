@@ -1,12 +1,10 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
-using E3Core.Data;
-using E3Core.Settings;
+﻿using E3Core.Data;
 using E3Core.Settings.FeatureSettings;
+
 using MonoCore;
+
+using System;
+using System.Collections.Generic;
 
 namespace E3Core.Processors
 {

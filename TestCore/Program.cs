@@ -1,10 +1,7 @@
 ﻿using MonoCore;
+
 using System;
-using System.Collections.Generic;
-using System.Linq;
 using System.Runtime.CompilerServices;
-using System.Text;
-using System.Threading.Tasks;
 
 namespace TestCore
 {
@@ -92,7 +89,7 @@ namespace TestCore
             //E3Core.Settings.CharacterSettings settings = new E3Core.Settings.CharacterSettings();
 
             MonoCore.Core.OnInit();
-           
+
             while (true)
             {
                 MonoCore.Core.OnIncomingChat("Rekken tells the group, 'nowCast Dawnstrike targetid=88'");
@@ -130,24 +127,24 @@ namespace TestCore
 
             public void Cmd(string query, bool delayed = false)
             {
-                Console.WriteLine("CMD:"+query);
-               //do work
+                Console.WriteLine("CMD:" + query);
+                //do work
             }
-            public void Cmd(string query,Int32 delay, bool delayed = false)
+            public void Cmd(string query, Int32 delay, bool delayed = false)
             {
                 Console.WriteLine("CMD:" + query);
                 //do work
             }
             public void Delay(int value)
             {
-              
+
 
                 //lets tell core that it can continue
                 Core.CoreResetEvent.Set();
                 //we are now going to wait on the core
                 MainProcessor.ProcessResetEvent.Wait();
                 MainProcessor.ProcessResetEvent.Reset();
-               
+
             }
 
             public bool Delay(int maxTimeToWait, string Condition)
@@ -165,33 +162,33 @@ namespace TestCore
 
                 if (typeof(T) == typeof(Int32))
                 {
-                   
+
 
                 }
                 else if (typeof(T) == typeof(Boolean))
                 {
-                   
+
 
 
                 }
                 else if (typeof(T) == typeof(string))
                 {
-                    if(query=="${MacroQuest.Path[macros]}") return (T)(object)@"G:\EQ\e3Test\Macros";
-                    if(query=="${MacroQuest.Path[config]}") return (T)(object)@"G:\EQ\e3Test\config";
-                    if(query=="${MacroQuest.Server}") return (T)(object)@"Project Lazarus"; ;
-                    if(query=="${Me.Class}")return (T)(object)"Druid";
-                    if(query=="${Me.CleanName}") return (T)(object)"Shadowvine";
-                    if(query=="${EverQuest.GameState}") return (T)(object)"INGAME";
+                    if (query == "${MacroQuest.Path[macros]}") return (T)(object)@"G:\EQ\e3Test\Macros";
+                    if (query == "${MacroQuest.Path[config]}") return (T)(object)@"G:\EQ\e3Test\config";
+                    if (query == "${MacroQuest.Server}") return (T)(object)@"Project Lazarus"; ;
+                    if (query == "${Me.Class}") return (T)(object)"Druid";
+                    if (query == "${Me.CleanName}") return (T)(object)"Shadowvine";
+                    if (query == "${EverQuest.GameState}") return (T)(object)"INGAME";
 
                     return (T)(object)String.Empty;
                 }
                 else if (typeof(T) == typeof(decimal))
                 {
-                  
+
                 }
                 else if (typeof(T) == typeof(Int64))
                 {
-                   
+
                 }
 
 
@@ -211,7 +208,7 @@ namespace TestCore
 
             public void TraceStart(string methodName)
             {
-                Console.WriteLine("tracestart:"+methodName);
+                Console.WriteLine("tracestart:" + methodName);
             }
 
             public void Write(string query, [CallerMemberName] string memberName = "", [CallerFilePath] string fileName = "", [CallerLineNumber] int lineNumber = 0)
@@ -224,11 +221,11 @@ namespace TestCore
                 return true;
             }
 
-			public string GetFocusedWindowName()
-			{
+            public string GetFocusedWindowName()
+            {
                 return "NULL";
-			}
-		}
+            }
+        }
 
     }
 }

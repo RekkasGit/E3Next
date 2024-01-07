@@ -1,17 +1,18 @@
-﻿using E3Core.Classes;
-using E3Core.Data;
+﻿using E3Core.Data;
 using E3Core.Server;
 using E3Core.Settings;
 using E3Core.Settings.FeatureSettings;
 using E3Core.Utility;
+
 using IniParser.Model;
+
 using MonoCore;
+
 using System;
 using System.Collections.Generic;
 using System.Diagnostics;
 using System.Linq;
 using System.Text;
-using System.Windows.Forms;
 
 namespace E3Core.Processors
 {
@@ -41,18 +42,18 @@ namespace E3Core.Processors
         private static long _nextForageCheck = 0;
         private static long _nextForageCheckInterval = 10000;
 
-		private static long _nextEventLoopCheck = 0;
-		private static long _nextEventLoopCheckInterval = 1000;
-		private static DateTime? _cursorOccupiedSince;
+        private static long _nextEventLoopCheck = 0;
+        private static long _nextEventLoopCheckInterval = 1000;
+        private static DateTime? _cursorOccupiedSince;
         private static TimeSpan _cursorOccupiedTime;
         private static TimeSpan _cursorOccupiedThreshold = new TimeSpan(0, 0, 0, 30);
         private static Int32 _cusrorPreviousID;
-		static Int32 Debug_PreviousCPUDelay = 50;
+        static Int32 Debug_PreviousCPUDelay = 50;
 
-		/// <summary>
-		/// Initializes this instance.
-		/// </summary>
-		[SubSystemInit]
+        /// <summary>
+        /// Initializes this instance.
+        /// </summary>
+        [SubSystemInit]
         public static void Init()
         {
             RegisterEvents();
@@ -64,27 +65,27 @@ namespace E3Core.Processors
         public static void RegisterEvents()
         {
 
-			
-			EventProcessor.RegisterCommand("/e3printini", (x) =>
-			{
+
+            EventProcessor.RegisterCommand("/e3printini", (x) =>
+            {
                 // Print Character InI file 
                 CharacterSettings settings = E3.CharacterSettings;
-				IniData newFile = settings.ParsedData;
-				List<string> sections = newFile.Sections.Select(s => s.SectionName).ToList();
+                IniData newFile = settings.ParsedData;
+                List<string> sections = newFile.Sections.Select(s => s.SectionName).ToList();
 
-				foreach (string elements in sections)
-				{
-					var KeyData = newFile.Sections[elements];
-					MQ.Write("\ag" + elements + ":");
-					foreach (var key in KeyData)
-					{
-						MQ.Write("---" + key.KeyName + " = " + key.Value);
-					}
-				}
-			});
-			
+                foreach (string elements in sections)
+                {
+                    var KeyData = newFile.Sections[elements];
+                    MQ.Write("\ag" + elements + ":");
+                    foreach (var key in KeyData)
+                    {
+                        MQ.Write("---" + key.KeyName + " = " + key.Value);
+                    }
+                }
+            });
 
-			EventProcessor.RegisterEvent("InviteToGroup", "(.+) invites you to join a group.", (x) =>
+
+            EventProcessor.RegisterEvent("InviteToGroup", "(.+) invites you to join a group.", (x) =>
             {
                 MQ.Cmd("/invite");
                 MQ.Delay(300);
@@ -112,7 +113,7 @@ namespace E3Core.Processors
                     Int32 petID = MQ.Query<Int32>("${Me.Pet.ID");
                     foreach (var spawn in _spawns.Get())
                     {
-                        if(spawn.CleanName==name && spawn.TypeDesc=="NPC")
+                        if (spawn.CleanName == name && spawn.TypeDesc == "NPC")
                         {
                             return;
                         }
@@ -132,7 +133,7 @@ namespace E3Core.Processors
 
             EventProcessor.RegisterEvent("Zoned", @"You have entered (.+)\.", (x) =>
             {
-               
+
                 //means we have zoned.
                 _spawns.RefreshList();//make sure we get a new refresh of this zone.
                 Loot.Reset();
@@ -141,29 +142,29 @@ namespace E3Core.Processors
                 Pets.Reset();
                 Nukes.Reset();
                 BuffCheck.AddToBuffCheckTimer(2000);
-				//clear out the timers as the ID's are no longer valid
+                //clear out the timers as the ID's are no longer valid
                 BuffCheck.Reset();
-		        Zoning.Zoned(MQ.Query<Int32>("${Zone.ID}"));
-				E3.StateUpdates();
-			});
+                Zoning.Zoned(MQ.Query<Int32>("${Zone.ID}"));
+                E3.StateUpdates();
+            });
             EventProcessor.RegisterEvent("Summoned", @"You have been summoned!", (x) =>
             {
-				return;
+                return;
 
-				//coth, or summoned by a mob?
-				///a Tae Ew warder says 'You will not evade me, Alara!' 
-				///You have been summoned!
-				if (Assist.AllowControl) return; //this is our driver and most likely a tank, ignore this.
+                //coth, or summoned by a mob?
+                ///a Tae Ew warder says 'You will not evade me, Alara!' 
+                ///You have been summoned!
+                if (Assist.AllowControl) return; //this is our driver and most likely a tank, ignore this.
 
                 _spawns.RefreshList();//make sure we get a new refresh of this zone.
                 //check to see if your target is on top of you, if so... well, good luck!
                 Int32 targetID = MQ.Query<Int32>("${Target.ID}");
-                if(_spawns.TryByID(targetID, out var spawn))
+                if (_spawns.TryByID(targetID, out var spawn))
                 {
-                    if(spawn.Distance<5 && spawn.Aggressive && spawn.TypeDesc=="NPC")
+                    if (spawn.Distance < 5 && spawn.Aggressive && spawn.TypeDesc == "NPC")
                     {
                         //oh dear, the mob is in your face, best of luck.
-                        if(Movement.AnchorTarget>0)
+                        if (Movement.AnchorTarget > 0)
                         {
                             Movement.MoveToAnchor();
                         }
@@ -181,10 +182,10 @@ namespace E3Core.Processors
             {
                 if (x.match.Groups.Count > 1)
                 {
-                    string  user = x.match.Groups[1].Value;
+                    string user = x.match.Groups[1].Value;
 
                     //need to be in the same zone
-                    if(_spawns.TryByName(user,out var s))
+                    if (_spawns.TryByName(user, out var s))
                     {
                         MQ.Cmd($"/raidinvite {user}");
                     }
@@ -217,27 +218,27 @@ namespace E3Core.Processors
             });
 
             EventProcessor.RegisterCommand("/e3treport", (x) =>
-			{
-                if(x.args.Count > 0)
+            {
+                if (x.args.Count > 0)
                 {
                     PrintE3TReportEntries();
-				}
+                }
                 else
                 {
                     E3.Bots.BroadcastCommandToGroup("/e3treport me");//send command to everyone else
-					EventProcessor.ProcessMQCommand("/e3treport me");//make sure we do the command as well
-				}
-                
-			});
+                    EventProcessor.ProcessMQCommand("/e3treport me");//make sure we do the command as well
+                }
 
-			EventProcessor.RegisterCommand("/e3settings", (x) =>
+            });
+
+            EventProcessor.RegisterCommand("/e3settings", (x) =>
             {
-                if(x.args.Count>0)
+                if (x.args.Count > 0)
                 {
-                    if(x.args[0].Equals("createdefault", StringComparison.OrdinalIgnoreCase))
+                    if (x.args[0].Equals("createdefault", StringComparison.OrdinalIgnoreCase))
                     {
                         string newFileName = BaseSettings.GetSettingsFilePath("General Settings_default.ini");
-                        if(System.IO.File.Exists(newFileName))
+                        if (System.IO.File.Exists(newFileName))
                         {
                             System.IO.File.Delete(newFileName);
                         }
@@ -246,34 +247,34 @@ namespace E3Core.Processors
                 }
 
             });
-           
-			EventProcessor.RegisterCommand("/e3echo", (x) =>
-			{
+
+            EventProcessor.RegisterCommand("/e3echo", (x) =>
+            {
                 string argumentLine = e3util.ArgsToCommand(x.args);
                 string processedLine = Casting.Ifs_Results(argumentLine);
-				MQ.Cmd($"/echo {processedLine}");
-				MQ.Cmd($"/varset E3N_var {processedLine}");
-			});
-			EventProcessor.RegisterCommand("/dropinvis", (x) =>
+                MQ.Cmd($"/echo {processedLine}");
+                MQ.Cmd($"/varset E3N_var {processedLine}");
+            });
+            EventProcessor.RegisterCommand("/dropinvis", (x) =>
             {
-                E3.Bots.BroadcastCommandToGroup("/makemevisible",x);
+                E3.Bots.BroadcastCommandToGroup("/makemevisible", x);
                 MQ.Cmd("/makemevisible");
             });
             EventProcessor.RegisterCommand("/droplev", (x) =>
             {
-                E3.Bots.BroadcastCommandToGroup("/removelev",x);
+                E3.Bots.BroadcastCommandToGroup("/removelev", x);
                 MQ.Cmd("/removelev");
             });
             EventProcessor.RegisterCommand("/shutdown", (x) =>
             {
 
-                if(x.args.Count==0)
+                if (x.args.Count == 0)
                 {
-					MQ.Write("Isussing shutdown, setting process to false.");
-					Core.IsProcessing = false;
-					System.Threading.Thread.MemoryBarrier();
+                    MQ.Write("Isussing shutdown, setting process to false.");
+                    Core.IsProcessing = false;
+                    System.Threading.Thread.MemoryBarrier();
                     throw new ThreadAbort();
-				}
+                }
                 else
                 {
                     //pull out the first arg and see what we should do
@@ -283,29 +284,29 @@ namespace E3Core.Processors
                         E3.NetMQ_PubServerThradRun = false;
 
                     }
-					if (String.Compare(command, "pubclient", true) == 0)
-					{
-						E3.NetMQ_PubClientThradRun = false;
-					}
-					if (String.Compare(command, "shareddata", true) == 0)
-					{
-						E3.NetMQ_SharedDataServerThradRun = false;
-					}
-					if (String.Compare(command, "routerserver", true) == 0)
-					{
-						E3.NetMQ_RouterServerThradRun = false;
-					}
+                    if (String.Compare(command, "pubclient", true) == 0)
+                    {
+                        E3.NetMQ_PubClientThradRun = false;
+                    }
+                    if (String.Compare(command, "shareddata", true) == 0)
+                    {
+                        E3.NetMQ_SharedDataServerThradRun = false;
+                    }
+                    if (String.Compare(command, "routerserver", true) == 0)
+                    {
+                        E3.NetMQ_RouterServerThradRun = false;
+                    }
 
-				}
+                }
 
-			});
+            });
             EventProcessor.RegisterCommand("/e3reload", (x) =>
             {
                 E3.Bots.Broadcast("\aoReloading settings files...");
 
-                if(x.args.Count>0)
+                if (x.args.Count > 0)
                 {
-                    BaseSettings.CurrentSet = x.args[0].ToUpper();    
+                    BaseSettings.CurrentSet = x.args[0].ToUpper();
                 }
                 else
                 {
@@ -321,26 +322,26 @@ namespace E3Core.Processors
                 E3.Bots.Broadcast("\aoComplete!");
 
             });
-			EventProcessor.RegisterCommand("/e3cpudelay", (x) =>
-			{
+            EventProcessor.RegisterCommand("/e3cpudelay", (x) =>
+            {
 
-				if (x.args.Count > 0)
-				{
+                if (x.args.Count > 0)
+                {
                     Int32 delay = E3.CharacterSettings.CPU_ProcessLoopDelay;
                     Int32.TryParse(x.args[0], out delay);
                     E3.CharacterSettings.CPU_ProcessLoopDelay = delay;
-				}
+                }
 
-			});
+            });
 
-			EventProcessor.RegisterCommand("/debug", (x) =>
+            EventProcessor.RegisterCommand("/debug", (x) =>
             {
 
                 var traceLevel = Logging.LogLevels.Trace;
 
-                if(x.args.Count>0)
+                if (x.args.Count > 0)
                 {
-                    if(String.Equals(x.args[0],"notrace", StringComparison.OrdinalIgnoreCase))
+                    if (String.Equals(x.args[0], "notrace", StringComparison.OrdinalIgnoreCase))
                     {
                         traceLevel = Logging.LogLevels.None;
                     }
@@ -352,7 +353,7 @@ namespace E3Core.Processors
                     Logging.MinLogLevelTolog = Logging.LogLevels.Debug;
                     Logging.TraceLogLevel = traceLevel;
                     Debug_PreviousCPUDelay = E3.CharacterSettings.CPU_ProcessLoopDelay;
-					E3.CharacterSettings.CPU_ProcessLoopDelay = 1000;
+                    E3.CharacterSettings.CPU_ProcessLoopDelay = 1000;
                     _log.Write("Debug has been turned on:");
                 }
                 else
@@ -360,7 +361,7 @@ namespace E3Core.Processors
                     _log.Write("Debug has been turned off.");
                     Logging.MinLogLevelTolog = Logging.LogLevels.Error;
                     Logging.TraceLogLevel = Logging.LogLevels.None;
-					E3.CharacterSettings.CPU_ProcessLoopDelay = Debug_PreviousCPUDelay;
+                    E3.CharacterSettings.CPU_ProcessLoopDelay = Debug_PreviousCPUDelay;
                 }
             });
 
@@ -376,7 +377,7 @@ namespace E3Core.Processors
                 }
             });
 
-            if(E3.ServerName=="Lazarus")
+            if (E3.ServerName == "Lazarus")
             {
                 EventProcessor.RegisterCommand("/baz", (x) =>
                 {
@@ -385,12 +386,12 @@ namespace E3Core.Processors
 
                 });
             }
-        
+
             EventProcessor.RegisterCommand("/yes", (x) =>
             {
                 if (x.args.Count == 0)
                 {
-                    E3.Bots.BroadcastCommandToGroup("/yes all",x);
+                    E3.Bots.BroadcastCommandToGroup("/yes all", x);
                 }
                 e3util.ClickYesNo(true);
             });
@@ -398,18 +399,18 @@ namespace E3Core.Processors
             {
                 if (x.args.Count == 0)
                 {
-                    E3.Bots.BroadcastCommandToGroup("/no all",x);
+                    E3.Bots.BroadcastCommandToGroup("/no all", x);
                 }
                 e3util.ClickYesNo(false);
             });
 
-          
+
             EventProcessor.RegisterCommand("/reportaa", (x) =>
             {
-                List<string> validReportChannels = new List<string>() { "/g", "/gu", "/say", "/rsay","/gsay", "/rs" };
+                List<string> validReportChannels = new List<string>() { "/g", "/gu", "/say", "/rsay", "/gsay", "/rs" };
 
                 string channel = "/gu";
-                if(x.args.Count>0 && validReportChannels.Contains(x.args[0], StringComparer.OrdinalIgnoreCase))
+                if (x.args.Count > 0 && validReportChannels.Contains(x.args[0], StringComparer.OrdinalIgnoreCase))
                 {
 
                     channel = x.args[0];
@@ -430,7 +431,7 @@ namespace E3Core.Processors
                         Spawn s;
                         if (_spawns.TryByID(targetid, out s))
                         {
-                            e3util.TryMoveToLoc(s.X, s.Y,s.Z);
+                            e3util.TryMoveToLoc(s.X, s.Y, s.Z);
                             System.Text.StringBuilder sb = new StringBuilder();
                             bool first = true;
                             foreach (string arg in x.args)
@@ -440,7 +441,7 @@ namespace E3Core.Processors
                                 first = false;
                             }
                             string message = sb.ToString();
-                            E3.Bots.BroadcastCommandToGroup($"/bark-send {targetid} \"{message}\" {Zoning.CurrentZone.Id}",x);
+                            E3.Bots.BroadcastCommandToGroup($"/bark-send {targetid} \"{message}\" {Zoning.CurrentZone.Id}", x);
                             for (int i = 0; i < 5; i++)
                             {
 
@@ -463,13 +464,13 @@ namespace E3Core.Processors
                 {
                     if (x.args.Count > 2)
                     {
-						string zoneid = x.args[2];
+                        string zoneid = x.args[2];
                         if (zoneid != Zoning.CurrentZone.Id.ToString())
                         {
                             return;
                         }
-					}
-					int targetid;
+                    }
+                    int targetid;
                     if (int.TryParse(x.args[0], out targetid))
                     {
                         if (targetid > 0)
@@ -480,19 +481,19 @@ namespace E3Core.Processors
                             {
                                 Casting.TrueTarget(targetid);
                                 MQ.Delay(100);
-                                e3util.TryMoveToLoc(s.X, s.Y,s.Z);
+                                e3util.TryMoveToLoc(s.X, s.Y, s.Z);
 
                                 string message = x.args[1];
                                 for (int i = 0; i < 5; i++)
                                 {
-                                    MQ.Cmd($"/say {message}",1000);
+                                    MQ.Cmd($"/say {message}", 1000);
 
-									if (EventProcessor.EventList["Zoned"].queuedEvents.Count > 0)
-									{
-										//means we have zoned and can stop
-										break;
-									}
-								}
+                                    if (EventProcessor.EventList["Zoned"].queuedEvents.Count > 0)
+                                    {
+                                        //means we have zoned and can stop
+                                        break;
+                                    }
+                                }
                             }
                         }
                     }
@@ -556,7 +557,7 @@ namespace E3Core.Processors
                         }
                     }
                 }
-                else if(x.args.Count==0)
+                else if (x.args.Count == 0)
                 {   //let someone else try it out
                     E3.Bots.BroadcastCommandToGroup("/evac me");
                 }
@@ -578,7 +579,7 @@ namespace E3Core.Processors
                     }
                     else if (x.args[0].Equals("on", StringComparison.OrdinalIgnoreCase))
                     {
-                        if(!IsPaused)
+                        if (!IsPaused)
                         {
                             IsPaused = true;
                             E3.Bots.Broadcast("\arPAUSING E3!");
@@ -607,22 +608,22 @@ namespace E3Core.Processors
                 MQ.Write($"\agSuccessfully created {args[0]}");
             });
 
-			EventProcessor.RegisterCommand("/e3manastone", (x) =>
-			{
-				var args = x.args;
-				if (args.Count == 0)
-					return;
+            EventProcessor.RegisterCommand("/e3manastone", (x) =>
+            {
+                var args = x.args;
+                if (args.Count == 0)
+                    return;
 
                 bool manastoneon;
 
                 bool.TryParse(args[0], out manastoneon);
-				E3.CharacterSettings.Manastone_Enabled = manastoneon;
-                				
-				MQ.Write($"\ag ManaStone Enabled: {manastoneon}");
-			
-			});
+                E3.CharacterSettings.Manastone_Enabled = manastoneon;
 
-			EventProcessor.RegisterCommand("/group", (x) =>
+                MQ.Write($"\ag ManaStone Enabled: {manastoneon}");
+
+            });
+
+            EventProcessor.RegisterCommand("/group", (x) =>
             {
                 var args = x.args;
                 if (args.Count == 0)
@@ -639,26 +640,26 @@ namespace E3Core.Processors
                 MQ.Cmd("/disband");
                 MQ.Delay(300);
                 MQ.Cmd("/raiddisband");
-			    if (MQ.Query<int>("${Group}") > 0)
-				{
-					MQ.Delay(2000, "!${Group}");
-				}
-				if (MQ.Query<int>("${Raid}") > 0)
-				{
-					MQ.Delay(2000, "!${Raid}");
-				}
-				foreach (var member in groupMembers)
-				{
-					E3.Bots.BroadcastCommandToPerson(member, "/disband");
-				}
-				//a delay between disband and raid disband. Shared data is stupid fast, so a delay and breaking up the commands are needed.
-				MQ.Delay(500);
-				foreach (var member in groupMembers)
+                if (MQ.Query<int>("${Group}") > 0)
                 {
-                    E3.Bots.BroadcastCommandToPerson(member,"/raiddisband");
+                    MQ.Delay(2000, "!${Group}");
                 }
-				//give the time needed for everyone to disband
-				MQ.Delay(1500); 
+                if (MQ.Query<int>("${Raid}") > 0)
+                {
+                    MQ.Delay(2000, "!${Raid}");
+                }
+                foreach (var member in groupMembers)
+                {
+                    E3.Bots.BroadcastCommandToPerson(member, "/disband");
+                }
+                //a delay between disband and raid disband. Shared data is stupid fast, so a delay and breaking up the commands are needed.
+                MQ.Delay(500);
+                foreach (var member in groupMembers)
+                {
+                    E3.Bots.BroadcastCommandToPerson(member, "/raiddisband");
+                }
+                //give the time needed for everyone to disband
+                MQ.Delay(1500);
                 foreach (var member in groupMembers)
                 {
                     MQ.Cmd($"/invite {member}");
@@ -668,8 +669,8 @@ namespace E3Core.Processors
             EventProcessor.RegisterCommand("/listgroups", (x) =>
             {
                 var savedGroups = SavedGroupData.GetData();
-				var server = MQ.Query<string>("${MacroQuest.Server}");
-				foreach (var group in savedGroups)
+                var server = MQ.Query<string>("${MacroQuest.Server}");
+                foreach (var group in savedGroups)
                 {
                     var serverAndGroupName = group.Key.Split('_');
                     var serverName = serverAndGroupName[0];
@@ -697,11 +698,11 @@ namespace E3Core.Processors
                 {
                     Process.Start(new ProcessStartInfo { FileName = "https://www.lazaruseq.com/Wiki/index.php/Main_Page", UseShellExecute = true });
                 }
-				else if (string.Equals(x.args[0], "Ret", StringComparison.OrdinalIgnoreCase))
-				{
-					Process.Start(new ProcessStartInfo { FileName = "https://retributioneq.com/", UseShellExecute = true });
-				}
-			});
+                else if (string.Equals(x.args[0], "Ret", StringComparison.OrdinalIgnoreCase))
+                {
+                    Process.Start(new ProcessStartInfo { FileName = "https://retributioneq.com/", UseShellExecute = true });
+                }
+            });
         }
 
         /// <summary>
@@ -715,11 +716,11 @@ namespace E3Core.Processors
             groupCount++;
             GroupMembers.Clear();
             //refresh group members.
-            
+
             for (int i = 0; i < groupCount; i++)
             {
                 int id = MQ.Query<int>($"${{Group.Member[{i}].ID}}");
-                if(id>0)
+                if (id > 0)
                 {
                     GroupMembers.Add(id);
                 }
@@ -741,7 +742,7 @@ namespace E3Core.Processors
                     return false;
                 }
             }
-            if(MQ.Query<Int32>("${Me.Inventory[Chest].ID}")>0)
+            if (MQ.Query<Int32>("${Me.Inventory[Chest].ID}") > 0)
             {
                 return false;
             }
@@ -749,48 +750,48 @@ namespace E3Core.Processors
             return true;
         }
 
-        private static void PrintE3TReport_Information(Spell spell, Int32 timeInMS,Int32 charges=0)
-		{
-			string chargesLeftString = String.Empty;
-			if (charges > 0)
-			{
-				chargesLeftString = $" \atCharges left:\ay {charges}";
+        private static void PrintE3TReport_Information(Spell spell, Int32 timeInMS, Int32 charges = 0)
+        {
+            string chargesLeftString = String.Empty;
+            if (charges > 0)
+            {
+                chargesLeftString = $" \atCharges left:\ay {charges}";
 
-			}
-			//bug with thiefs eyes, always return true 8001
-			if (timeInMS > 0 && spell.CastID != 8001)
-			{
+            }
+            //bug with thiefs eyes, always return true 8001
+            if (timeInMS > 0 && spell.CastID != 8001)
+            {
                 TimeSpan t = TimeSpan.FromMilliseconds(timeInMS);
-             
-                if(t.TotalDays>=1)
+
+                if (t.TotalDays >= 1)
                 {
-					E3.Bots.Broadcast($"\am{spell.CastName}: \at {t.Days} \aw days \at{t.Hours} \awhours \at{t.Minutes} \awminutes \at{t.Seconds} \awseconds{chargesLeftString}");
+                    E3.Bots.Broadcast($"\am{spell.CastName}: \at {t.Days} \aw days \at{t.Hours} \awhours \at{t.Minutes} \awminutes \at{t.Seconds} \awseconds{chargesLeftString}");
 
-				}
-				else if(t.TotalHours>=1)
+                }
+                else if (t.TotalHours >= 1)
                 {
-					E3.Bots.Broadcast($"\am{spell.CastName}: \at{t.Hours} \awhours \at{t.Minutes} \awminutes \at{t.Seconds} \awseconds{chargesLeftString}");
+                    E3.Bots.Broadcast($"\am{spell.CastName}: \at{t.Hours} \awhours \at{t.Minutes} \awminutes \at{t.Seconds} \awseconds{chargesLeftString}");
 
-				}
-                else if(t.TotalMinutes>=1)
+                }
+                else if (t.TotalMinutes >= 1)
                 {
-					E3.Bots.Broadcast($"\am{spell.CastName}: \at{t.Minutes} \awminutes \at{t.Seconds} \awseconds{chargesLeftString}");
+                    E3.Bots.Broadcast($"\am{spell.CastName}: \at{t.Minutes} \awminutes \at{t.Seconds} \awseconds{chargesLeftString}");
 
-				}
-				else
+                }
+                else
                 {
-					E3.Bots.Broadcast($"\am{spell.CastName}: \at{t.Seconds} \awseconds{chargesLeftString}");
+                    E3.Bots.Broadcast($"\am{spell.CastName}: \at{t.Seconds} \awseconds{chargesLeftString}");
 
-				}
-                
-			}
-			else
-			{
-				E3.Bots.Broadcast($"\am{spell.CastName}\aw: \agReady\aw!{chargesLeftString}");
-			
+                }
 
-			}
-		}
+            }
+            else
+            {
+                E3.Bots.Broadcast($"\am{spell.CastName}\aw: \agReady\aw!{chargesLeftString}");
+
+
+            }
+        }
 
         private static void PrintE3TReportEntries()
         {
@@ -851,7 +852,7 @@ namespace E3Core.Processors
         }
         public static bool InGameCombat()
         {
-            bool inCombat =  MQ.Query<bool>("${Me.CombatState.Equal[Combat]}");
+            bool inCombat = MQ.Query<bool>("${Me.CombatState.Equal[Combat]}");
             return inCombat;
         }
         /// <summary>
@@ -866,7 +867,7 @@ namespace E3Core.Processors
             {
                 if (E3.IsInvis) return;
                 if (Basics.AmIDead()) return;
-                
+
 
                 int pctMana = MQ.Query<int>("${Me.PctMana}");
                 var pctHps = MQ.Query<int>("${Me.PctHPs}");
@@ -914,63 +915,63 @@ namespace E3Core.Processors
                     //don't canni if we are moving/following
                     if (E3.CharacterSettings.AutoCanni && Movement.StandingStillForTimePeriod())
                     {
-                        foreach(var canniSpell in E3.CharacterSettings.CanniSpell)
+                        foreach (var canniSpell in E3.CharacterSettings.CanniSpell)
                         {
-							if (Casting.CheckReady(canniSpell))
-							{
-								pctHps = MQ.Query<int>("${Me.PctHPs}");
-								var hpThresholdDefined = canniSpell.MinHP > 0;
-								var manaThresholdDefined = canniSpell.MaxMana > 0;
-								bool castCanniSpell = false;
-								bool hpThresholdMet = false;
-								bool manaThresholdMet = false;
+                            if (Casting.CheckReady(canniSpell))
+                            {
+                                pctHps = MQ.Query<int>("${Me.PctHPs}");
+                                var hpThresholdDefined = canniSpell.MinHP > 0;
+                                var manaThresholdDefined = canniSpell.MaxMana > 0;
+                                bool castCanniSpell = false;
+                                bool hpThresholdMet = false;
+                                bool manaThresholdMet = false;
 
-								if (hpThresholdDefined)
-								{
-									if (pctHps > canniSpell.MinHP)
-									{
-										hpThresholdMet = true;
-									}
-								}
+                                if (hpThresholdDefined)
+                                {
+                                    if (pctHps > canniSpell.MinHP)
+                                    {
+                                        hpThresholdMet = true;
+                                    }
+                                }
 
-								if (manaThresholdDefined)
-								{
-									if (pctMana < canniSpell.MaxMana)
-									{
-										manaThresholdMet = true;
-									}
-								}
+                                if (manaThresholdDefined)
+                                {
+                                    if (pctMana < canniSpell.MaxMana)
+                                    {
+                                        manaThresholdMet = true;
+                                    }
+                                }
 
-								if (hpThresholdDefined && manaThresholdDefined)
-								{
-									castCanniSpell = hpThresholdMet && manaThresholdMet;
-								}
-								else if (hpThresholdDefined && !manaThresholdDefined)
-								{
-									castCanniSpell = hpThresholdMet;
-								}
-								else if (manaThresholdDefined && !hpThresholdDefined)
-								{
-									castCanniSpell = manaThresholdMet;
-								}
-								else
-								{
-									castCanniSpell = true;
-								}
+                                if (hpThresholdDefined && manaThresholdDefined)
+                                {
+                                    castCanniSpell = hpThresholdMet && manaThresholdMet;
+                                }
+                                else if (hpThresholdDefined && !manaThresholdDefined)
+                                {
+                                    castCanniSpell = hpThresholdMet;
+                                }
+                                else if (manaThresholdDefined && !hpThresholdDefined)
+                                {
+                                    castCanniSpell = manaThresholdMet;
+                                }
+                                else
+                                {
+                                    castCanniSpell = true;
+                                }
 
-								if (castCanniSpell)
-								{
-									var result = Casting.Cast(0, canniSpell);
-								    if(result== CastReturn.CAST_SUCCESS)
+                                if (castCanniSpell)
+                                {
+                                    var result = Casting.Cast(0, canniSpell);
+                                    if (result == CastReturn.CAST_SUCCESS)
                                     {
                                         break;
                                     }
                                 }
-							}
-							
-						}
-                        
-                        
+                            }
+
+                        }
+
+
                     }
 
                 }
@@ -1084,25 +1085,25 @@ namespace E3Core.Processors
                 }
                 if (E3.CharacterSettings.ManaStone_ExceptionZones.Contains(Zoning.CurrentZone.ShortName)) return;
 
-				if (E3.CharacterSettings.ManaStone_ExceptionMQQuery.Count > 0)
+                if (E3.CharacterSettings.ManaStone_ExceptionMQQuery.Count > 0)
                 {
-                    foreach(var query in E3.CharacterSettings.ManaStone_ExceptionMQQuery)
+                    foreach (var query in E3.CharacterSettings.ManaStone_ExceptionMQQuery)
                     {
                         if (String.IsNullOrEmpty(query)) continue;
 
-                        if(Casting.Ifs(query))
+                        if (Casting.Ifs(query))
                         {
                             return;
                         }
                     }
                 }
 
-				//manastone code
-				int minMana = E3.GeneralSettings.ManaStone_InCombatMinMana;
+                //manastone code
+                int minMana = E3.GeneralSettings.ManaStone_InCombatMinMana;
                 int minHP = E3.GeneralSettings.ManaStone_MinHP;
                 int maxMana = E3.GeneralSettings.ManaStone_InCombatMaxMana;
                 int maxLoop = E3.GeneralSettings.ManaStone_NumberOfLoops;
-                int totalClicksToTry =E3.GeneralSettings.ManaStone_NumerOfClicksPerLoop;
+                int totalClicksToTry = E3.GeneralSettings.ManaStone_NumerOfClicksPerLoop;
                 int delayBetweenClicks = E3.GeneralSettings.ManaStone_DelayBetweenLoops;
                 //Int32 minManaToTryAndHeal = 1000;
                 bool manastone_UseInCombat = E3.GeneralSettings.ManaStone_EnabledInCombat;
@@ -1113,7 +1114,7 @@ namespace E3Core.Processors
                     maxMana = E3.GeneralSettings.ManaStone_OutOfCombatMaxMana;
                 }
 
-                if(E3.CharacterSettings.Manastone_OverrideGeneralSettings)
+                if (E3.CharacterSettings.Manastone_OverrideGeneralSettings)
                 {
                     minMana = E3.CharacterSettings.ManaStone_InCombatMinMana;
                     minHP = E3.CharacterSettings.ManaStone_MinHP;
@@ -1121,7 +1122,7 @@ namespace E3Core.Processors
                     maxLoop = E3.CharacterSettings.ManaStone_NumberOfLoops;
                     totalClicksToTry = E3.CharacterSettings.ManaStone_NumberOfClicksPerLoop;
                     delayBetweenClicks = E3.CharacterSettings.ManaStone_DelayBetweenLoops;
-              
+
                     if (!InCombat())
                     {
                         minMana = E3.CharacterSettings.ManaStone_OutOfCombatMinMana;
@@ -1140,13 +1141,13 @@ namespace E3Core.Processors
                 if (pctHps < minHP) return;
 
                 bool hasManaStone = MQ.Query<bool>("${Bool[${FindItem[=Manastone]}]}");
-                
+
                 string manastoneName = "Manastone";
-                if(!hasManaStone)
+                if (!hasManaStone)
                 {
                     hasManaStone = MQ.Query<bool>("${Bool[${FindItem[=Apocryphal Manastone]}]}");
-                    if(hasManaStone) manastoneName = "Apocryphal Manastone";
-                    if(!hasManaStone)
+                    if (hasManaStone) manastoneName = "Apocryphal Manastone";
+                    if (!hasManaStone)
                     {
                         hasManaStone = MQ.Query<bool>("${Bool[${FindItem[=Rose Colored Manastone]}]}");
                         if (hasManaStone) manastoneName = "Rose Colored Manastone";
@@ -1175,18 +1176,18 @@ namespace E3Core.Processors
                         }
                         //allow mq to have the commands sent to the server
                         MQ.Delay(delayBetweenClicks);
-						if (EventProcessor.CommandList["/followme"].queuedEvents.Count > 0)
-						{
+                        if (EventProcessor.CommandList["/followme"].queuedEvents.Count > 0)
+                        {
                             return;
-						}
-						if (EventProcessor.CommandList["/chaseme"].queuedEvents.Count > 0)
-						{
-							return;
-						}
-						if (MQ.Query<bool>("${Me.Invis}")) return;
+                        }
+                        if (EventProcessor.CommandList["/chaseme"].queuedEvents.Count > 0)
+                        {
+                            return;
+                        }
+                        if (MQ.Query<bool>("${Me.Invis}")) return;
                         if ((E3.CurrentClass & Class.Priest) == E3.CurrentClass && Basics.InCombat())
                         {
-                            if (Heals.SomeoneNeedsHealing(null,currentMana, pctMana))
+                            if (Heals.SomeoneNeedsHealing(null, currentMana, pctMana))
                             {
                                 return;
                             }
@@ -1215,7 +1216,7 @@ namespace E3Core.Processors
             if (!E3.CharacterSettings.Misc_AutoMedBreak) return;
             using (_log.Trace())
             {
-                bool onMount = MQ.Query<bool>("${Me.Mount.ID}");                
+                bool onMount = MQ.Query<bool>("${Me.Mount.ID}");
                 if (onMount) return;
 
                 if (!Movement.StandingStillForTimePeriod())
@@ -1335,39 +1336,39 @@ namespace E3Core.Processors
             }
         }
 
-		[ClassInvoke(Class.All)]
+        [ClassInvoke(Class.All)]
         public static void EventLoop()
         {
-			if (!e3util.ShouldCheck(ref _nextEventLoopCheck, _nextEventLoopCheckInterval)) return;
+            if (!e3util.ShouldCheck(ref _nextEventLoopCheck, _nextEventLoopCheckInterval)) return;
 
-			var section = E3.CharacterSettings.ParsedData.Sections["EventLoop"];
-			if (section != null)
-			{
-                foreach(var key in section)
+            var section = E3.CharacterSettings.ParsedData.Sections["EventLoop"];
+            if (section != null)
+            {
+                foreach (var key in section)
                 {
                     var keyData = section[key.KeyName];
-					if (!String.IsNullOrWhiteSpace(keyData))
-					{
+                    if (!String.IsNullOrWhiteSpace(keyData))
+                    {
                         string EventToParse = keyData;
-                        if(Casting.Ifs(EventToParse))
+                        if (Casting.Ifs(EventToParse))
                         {
-							string ifKey = key.KeyName;
-							var eventSection = E3.CharacterSettings.ParsedData.Sections["Events"];
-							if (eventSection != null)
-							{
-								var eventToExecute = eventSection[ifKey];
-								if (!String.IsNullOrWhiteSpace(eventToExecute))
-								{
-									MQ.Cmd($"/docommand {eventToExecute}");
-								}
-							}
-						}
-					}
-				}
-			}
-		}
+                            string ifKey = key.KeyName;
+                            var eventSection = E3.CharacterSettings.ParsedData.Sections["Events"];
+                            if (eventSection != null)
+                            {
+                                var eventToExecute = eventSection[ifKey];
+                                if (!String.IsNullOrWhiteSpace(eventToExecute))
+                                {
+                                    MQ.Cmd($"/docommand {eventToExecute}");
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+        }
 
-		[ClassInvoke(Class.All)]
+        [ClassInvoke(Class.All)]
         public static void CheckForage()
         {
             if (!E3.CharacterSettings.Misc_AutoForage) return;
@@ -1375,14 +1376,14 @@ namespace E3Core.Processors
 
             bool forageReady = MQ.Query<bool>("${Me.AbilityReady[Forage]}");
 
-            if(forageReady)
+            if (forageReady)
             {
                 MQ.Write("\agAuto Foraging....");
                 MQ.Cmd("/doability forage");
                 MQ.Delay(2000, "${Bool[${Cursor.ID}]}");
                 MQ.Delay(500);
                 bool cursorItem = MQ.Query<bool>("${Bool[${Cursor.ID}]}");
-                if(cursorItem)
+                if (cursorItem)
                 {
 
                     //auto delete stuff on cursor that is configured to do so
@@ -1407,7 +1408,7 @@ namespace E3Core.Processors
 
                 }
             }
-         
+
         }
 
 
@@ -1423,7 +1424,7 @@ namespace E3Core.Processors
             using (_log.Trace())
             {
                 bool itemOnCursor = MQ.Query<bool>("${Bool[${Cursor.ID}]}");
-                
+
                 if (itemOnCursor)
                 {
                     //auto delete stuff on cursor that is configured to do so
@@ -1442,25 +1443,25 @@ namespace E3Core.Processors
 
                     Int32 itemID = MQ.Query<Int32>("${Cursor.ID}");
 
-                    if (_cursorOccupiedSince == null || itemID!=_cusrorPreviousID)
+                    if (_cursorOccupiedSince == null || itemID != _cusrorPreviousID)
                     {
                         _cursorOccupiedSince = DateTime.Now;
                         _cusrorPreviousID = itemID;
                     }
 
-                   
+
                     if (!e3util.IsManualControl() || Basics.InCombat())
                     {
 
-						string cursorItem = MQ.Query<string>("${Cursor.Name}");
+                        string cursorItem = MQ.Query<string>("${Cursor.Name}");
 
-					   
+
                         bool isGiveMeItem = GiveMe._groupSpellRequests.ContainsKey(cursorItem);
 
                         if (isGiveMeItem)
                         {
-                                e3util.ClearCursor();
-                                _cursorOccupiedSince = null;
+                            e3util.ClearCursor();
+                            _cursorOccupiedSince = null;
                         }
                         else
                         {
@@ -1473,7 +1474,7 @@ namespace E3Core.Processors
                             }
                         }
                     }
-                    
+
                 }
                 else
                 {

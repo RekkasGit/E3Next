@@ -1,4 +1,5 @@
 ﻿using MonoCore;
+
 using System;
 namespace Template
 {
@@ -23,7 +24,7 @@ namespace Template
         private static void Init()
         {
             if (!_isInit)
-            {   
+            {
                 Logging.TraceLogLevel = Logging.LogLevels.None; //Trace or None. Others will simply be treated as if Trace was turned on.
                 Logging.MinLogLevelTolog = Logging.LogLevels.Debug; //set to the min value to log. look at the int values. if set to Info, you will not log debugs.
                 Logging.DefaultLogLevel = Logging.LogLevels.Debug; //the default if a level is not passed into the _log.write statement. useful to hide/show things.

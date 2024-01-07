@@ -16,8 +16,8 @@ namespace IniParser.Model
         /// Initializes a new instance of the <see cref="SectionDataCollection"/> class.
         /// </summary>
         public SectionDataCollection()
-            :this(EqualityComparer<string>.Default)
-        {}
+            : this(EqualityComparer<string>.Default)
+        { }
 
         /// <summary>
         /// Initializes a new instance of the <see cref="IniParser.Model.SectionDataCollection"/> class.
@@ -45,9 +45,9 @@ namespace IniParser.Model
         public SectionDataCollection(SectionDataCollection ori, IEqualityComparer<string> searchComparer)
         {
             _searchComparer = searchComparer ?? EqualityComparer<string>.Default;
-                
+
             _sectionData = new Dictionary<string, SectionData>(_searchComparer);
-            foreach(var sectionData in ori)
+            foreach (var sectionData in ori)
             {
                 _sectionData.Add(sectionData.SectionName, (SectionData)sectionData.Clone());
             };
@@ -72,7 +72,7 @@ namespace IniParser.Model
         {
             get
             {
-                if ( _sectionData.ContainsKey(sectionName) )
+                if (_sectionData.ContainsKey(sectionName))
                     return _sectionData[sectionName].Keys;
 
                 return null;
@@ -99,9 +99,9 @@ namespace IniParser.Model
             //if ( !Assert.StringHasNoBlankSpaces(keyName) )
             //    throw new ArgumentException("Section name contain whitespaces");
 
-            if ( !ContainsSection(keyName) )
+            if (!ContainsSection(keyName))
             {
-                _sectionData.Add( keyName, new SectionData(keyName, _searchComparer) );
+                _sectionData.Add(keyName, new SectionData(keyName, _searchComparer));
                 return true;
             }
 
@@ -163,7 +163,7 @@ namespace IniParser.Model
 
         public void Merge(SectionDataCollection sectionsToMerge)
         {
-            foreach(var sectionDataToMerge in sectionsToMerge)
+            foreach (var sectionDataToMerge in sectionsToMerge)
             {
                 var sectionDataInThis = GetSectionData(sectionDataToMerge.SectionName);
 
@@ -183,7 +183,7 @@ namespace IniParser.Model
         /// <param name="data">The new <see cref="SectionData"/>instance.</param>
         public void SetSectionData(string sectionName, SectionData data)
         {
-            if ( data != null )
+            if (data != null)
                 _sectionData[sectionName] = data;
         }
 

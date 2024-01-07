@@ -1,12 +1,12 @@
 ﻿using E3Core.Processors;
+
 using MonoCore;
+
 using NetMQ;
 using NetMQ.Sockets;
+
 using System;
 using System.Collections.Concurrent;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
 using System.Threading;
 using System.Threading.Tasks;
 
@@ -29,11 +29,11 @@ namespace E3Core.Server
         }
         public static bool NowCastInQueue()
         {
-            if(_pubCommands.Count>0)
+            if (_pubCommands.Count > 0)
             {
-                if(_pubCommands.TryPeek(out var result))
+                if (_pubCommands.TryPeek(out var result))
                 {
-                    if(result.StartsWith("/nowcast "))
+                    if (result.StartsWith("/nowcast "))
                     {
                         return true;
                     }
@@ -46,7 +46,7 @@ namespace E3Core.Server
             while (_pubCommands.Count > 0)
             {
                 string message;
-                if(_pubCommands.TryDequeue(out message))
+                if (_pubCommands.TryDequeue(out message))
                 {
 
                     MQ.Cmd(message);
@@ -77,14 +77,14 @@ namespace E3Core.Server
                                 _pubCommands.Enqueue(messageReceived);
                             }
                         }
-                           
+
                     }
                 }
-                catch(Exception)
+                catch (Exception)
                 {
 
                 }
-                    
+
             }
             MQ.Write("Shutting down PubClient Thread.");
         }

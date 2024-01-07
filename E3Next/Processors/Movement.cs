@@ -2,14 +2,12 @@
 using E3Core.Settings;
 using E3Core.Settings.FeatureSettings;
 using E3Core.Utility;
-using IniParser;
+
 using MonoCore;
+
 using System;
 using System.Collections.Generic;
 using System.Linq;
-using System.Security.Cryptography.X509Certificates;
-using System.Text;
-using System.Threading.Tasks;
 
 namespace E3Core.Processors
 {
@@ -40,13 +38,13 @@ namespace E3Core.Processors
         public static void Init()
         {
             RegisterEvents();
-             _doorData.LoadData();
-    
+            _doorData.LoadData();
+
         }
 
         public static bool StandingStillForTimePeriod()
         {
-            if(Core.StopWatch.ElapsedMilliseconds - E3.LastMovementTimeStamp > E3.GeneralSettings.Movement_StandingStill)
+            if (Core.StopWatch.ElapsedMilliseconds - E3.LastMovementTimeStamp > E3.GeneralSettings.Movement_StandingStill)
             {
                 return true;
             }
@@ -78,7 +76,7 @@ namespace E3Core.Processors
                     double distance = MQ.Query<double>($"${{Spawn[={_chaseTarget}].Distance}}");
                     double minDistanceToChase = E3.GeneralSettings.Movement_ChaseDistanceMin;
                     double maxDistanceToChase = E3.GeneralSettings.Movement_ChaseDistanceMax;
-                    
+
 
                     if (distance != -1)
                     {
@@ -103,7 +101,7 @@ namespace E3Core.Processors
                                 double x = MQ.Query<double>($"${{Spawn[={_chaseTarget}].X}}");
                                 double y = MQ.Query<double>($"${{Spawn[={_chaseTarget}].Y}}");
                                 double z = MQ.Query<double>($"${{Spawn[={_chaseTarget}].Z}}");
-                                e3util.TryMoveToLoc(x, y,z, 5, -1);
+                                e3util.TryMoveToLoc(x, y, z, 5, -1);
                             }
                         }
                     }
@@ -128,7 +126,7 @@ namespace E3Core.Processors
             if (!e3util.ShouldCheck(ref _nextFollowCheck, _nextFollowCheckInterval)) return;
 
             if (String.IsNullOrWhiteSpace(FollowTargetName)) return;
- 
+
             if (Assist.IsAssisting) return;
 
             Spawn s;
@@ -157,7 +155,7 @@ namespace E3Core.Processors
                 }
             }
         }
-        
+
         public static void PauseMovement()
         {
             if (MQ.Query<bool>("${Stick.Active}")) MQ.Cmd("/squelch /stick off");
@@ -175,7 +173,7 @@ namespace E3Core.Processors
         }
         public static bool AnchorEnabled()
         {
-            if(e3util.IsManualControl())
+            if (e3util.IsManualControl())
             {
                 return false;
             }
@@ -221,11 +219,11 @@ namespace E3Core.Processors
 
             _spawns.RefreshList();
             Spawn s;
-            if(Anchor_X!=double.MinValue)
+            if (Anchor_X != double.MinValue)
             {
-                if(_spawns.TryByID(E3.CurrentId,out s))
+                if (_spawns.TryByID(E3.CurrentId, out s))
                 {
-                    double distance = GetDistance3D(s.X, s.Y, s.Z,Anchor_X, Anchor_Y, Anchor_Z);
+                    double distance = GetDistance3D(s.X, s.Y, s.Z, Anchor_X, Anchor_Y, Anchor_Z);
                     if (distance > E3.GeneralSettings.Movement_AnchorDistanceMin && distance < E3.GeneralSettings.Movement_AnchorDistanceMax)
                     {
                         e3util.TryMoveToLoc(Anchor_X, Anchor_Y, Anchor_Z);
@@ -237,7 +235,7 @@ namespace E3Core.Processors
             {
                 if (s.Distance > E3.GeneralSettings.Movement_AnchorDistanceMin && s.Distance < E3.GeneralSettings.Movement_AnchorDistanceMax)
                 {
-                    e3util.TryMoveToLoc(s.X, s.Y,s.Z);
+                    e3util.TryMoveToLoc(s.X, s.Y, s.Z);
                 }
             }
         }
@@ -245,22 +243,24 @@ namespace E3Core.Processors
         static void RegisterEvents()
         {
 
-            EventProcessor.RegisterCommand("/scatter", (x) => {
+            EventProcessor.RegisterCommand("/scatter", (x) =>
+            {
 
                 Int32 Distance = 10;
-                if(x.args.Count>0)
+                if (x.args.Count > 0)
                 {
                     Int32.TryParse(x.args[0], out Distance);
                 }
 
                 double currentX = MQ.Query<double>("${Me.X}");
                 double currentY = MQ.Query<double>("${Me.Y}");
-             
-                E3.Bots.BroadcastCommandToGroup($"/e3movetorandomloc \"{currentX}\" \"{currentY}\" \"{Distance}\"",x,true);
-            
+
+                E3.Bots.BroadcastCommandToGroup($"/e3movetorandomloc \"{currentX}\" \"{currentY}\" \"{Distance}\"", x, true);
+
 
             });
-            EventProcessor.RegisterCommand("/e3movetorandomloc", (x) => {
+            EventProcessor.RegisterCommand("/e3movetorandomloc", (x) =>
+            {
 
 
                 double currentX = 0;
@@ -278,10 +278,11 @@ namespace E3Core.Processors
                     return;
                 }
                 double currentZ = MQ.Query<double>("${Me.Z}");
-                e3util.TryMoveToLoc(currentX+rnd.Next(-1*distance,distance), currentY + rnd.Next(-1 * distance, distance), currentZ);
+                e3util.TryMoveToLoc(currentX + rnd.Next(-1 * distance, distance), currentY + rnd.Next(-1 * distance, distance), currentZ);
 
             });
-            EventProcessor.RegisterCommand("/e3movetoloc", (x) => {
+            EventProcessor.RegisterCommand("/e3movetoloc", (x) =>
+            {
 
 
                 double currentX = 0;
@@ -298,7 +299,7 @@ namespace E3Core.Processors
                 }
                 double currentZ = MQ.Query<double>("${Me.Z}");
                 e3util.TryMoveToLoc(currentX, currentY, currentZ);
-        
+
             });
 
             EventProcessor.RegisterCommand("/clickit", (x) =>
@@ -306,7 +307,7 @@ namespace E3Core.Processors
                 if (x.args.Count == 0)
                 {
                     //we are telling people to follow us
-                    E3.Bots.BroadcastCommandToGroup($"/clickit {Zoning.CurrentZone.Id}",x);
+                    E3.Bots.BroadcastCommandToGroup($"/clickit {Zoning.CurrentZone.Id}", x);
 
                 }
                 if (e3util.FilterMe(x)) return;
@@ -319,7 +320,7 @@ namespace E3Core.Processors
                         if (zoneID != Zoning.CurrentZone.Id)
                         {
                             //we are not in the same zone, ignore.
-                            return;   
+                            return;
                         }
                     }
                 }
@@ -384,7 +385,7 @@ namespace E3Core.Processors
 
             EventProcessor.RegisterCommand("/anchoron", (x) =>
             {
-                
+
 
                 if (x.args.Count > 0)
                 {
@@ -394,7 +395,7 @@ namespace E3Core.Processors
                     {
                         AnchorFilters.AddRange(x.filters);
                     }
-                    if (x.args.Count==1)
+                    if (x.args.Count == 1)
                     {
                         Int32 targetid;
                         if (Int32.TryParse(x.args[0], out targetid))
@@ -406,13 +407,13 @@ namespace E3Core.Processors
                         }
 
                     }
-                    else if(x.args.Count==3)
+                    else if (x.args.Count == 3)
                     {
                         double ax;
                         if (double.TryParse(x.args[0], out ax))
                         {
                             double ay;
-                            if(double.TryParse(x.args[1], out ay))
+                            if (double.TryParse(x.args[1], out ay))
                             {
                                 double az;
                                 if (double.TryParse(x.args[2], out az))
@@ -423,7 +424,7 @@ namespace E3Core.Processors
                                     Anchor_Z = az;
                                 }
                             }
-                          
+
                         }
                     }
                 }
@@ -435,16 +436,16 @@ namespace E3Core.Processors
                     Anchor_Y = double.MinValue;
                     Anchor_Z = double.MinValue;
 
-                    if (targetid > 0 && targetid!=E3.CurrentId)
+                    if (targetid > 0 && targetid != E3.CurrentId)
                     {
-                        E3.Bots.BroadcastCommandToGroup($"/anchoron {targetid}",x);
+                        E3.Bots.BroadcastCommandToGroup($"/anchoron {targetid}", x);
                     }
                     else
                     {
-                        if(_spawns.TryByID(E3.CurrentId,out var s))
+                        if (_spawns.TryByID(E3.CurrentId, out var s))
                         {
-                            E3.Bots.BroadcastCommandToGroup($"/anchoron {s.X} {s.Y} {s.Z}",x);
-                            
+                            E3.Bots.BroadcastCommandToGroup($"/anchoron {s.X} {s.Y} {s.Z}", x);
+
                         }
                     }
                 }
@@ -490,10 +491,10 @@ namespace E3Core.Processors
             });
             EventProcessor.RegisterCommand("/anchoroff", (x) =>
             {
-               
+
                 if (x.args.Count == 0)
                 {
-                    E3.Bots.BroadcastCommandToGroup($"/anchoroff all",x);
+                    E3.Bots.BroadcastCommandToGroup($"/anchoroff all", x);
                 }
 
                 if (!e3util.FilterMe(x))
@@ -518,10 +519,10 @@ namespace E3Core.Processors
                         Spawn s;
                         if (_spawns.TryByName(user, out s))
                         {
-                           
+
                             FollowTargetName = user;
                             Following = false;
-                            if(E3.CurrentClass!=Class.Bard)
+                            if (E3.CurrentClass != Class.Bard)
                             {
                                 Casting.Interrupt();
                             }
@@ -537,13 +538,14 @@ namespace E3Core.Processors
                     Rez.Reset();
                     //we are telling people to follow us
                     E3.Bots.BroadcastCommandToGroup("/followme " + E3.CurrentName, x);
-                   
+
                 }
             });
 
-            EventProcessor.RegisterCommand("/mtm", (x) => {
+            EventProcessor.RegisterCommand("/mtm", (x) =>
+            {
 
-                if (x.args.Count==0)
+                if (x.args.Count == 0)
                 {
                     E3.Bots.BroadcastCommandToGroup($"/mtm {E3.CurrentName}", x);
                 }
@@ -560,7 +562,7 @@ namespace E3Core.Processors
             );
             EventProcessor.RegisterCommand("/followoff", (x) =>
             {
-                if (!x.args.Contains("all",StringComparer.OrdinalIgnoreCase))
+                if (!x.args.Contains("all", StringComparer.OrdinalIgnoreCase))
                 {
                     _chaseTarget = String.Empty;
                     FollowTargetName = string.Empty;
@@ -569,7 +571,7 @@ namespace E3Core.Processors
                     //we are telling everyone to stop following us
                     string extraArgs = String.Empty;
 
-                    if(x.args.Contains("tome", StringComparer.OrdinalIgnoreCase))
+                    if (x.args.Contains("tome", StringComparer.OrdinalIgnoreCase))
                     {
                         double currentX = MQ.Query<double>("${Me.X}");
                         double currentY = MQ.Query<double>("${Me.Y}");
@@ -577,7 +579,7 @@ namespace E3Core.Processors
                         int zoneID = MQ.Query<int>("${Zone.ID}");
                         extraArgs += $" tome={currentX}/{currentY}/{currentZ}/{zoneID}";
                     }
-                    E3.Bots.BroadcastCommandToGroup($"/followoff all{extraArgs}",x);
+                    E3.Bots.BroadcastCommandToGroup($"/followoff all{extraArgs}", x);
                 }
                 else
                 {
@@ -592,14 +594,14 @@ namespace E3Core.Processors
                                 string[] strings = arg.Split(new char[] { '=' });
                                 string[] xyz = strings[1].Split(new char[] { '/' });
 
-                                if (xyz.Length>2)
+                                if (xyz.Length > 2)
                                 {
                                     double xval;
                                     double yval;
                                     double zval;
                                     int zoneID;
                                     int.TryParse(xyz[3], out zoneID);
-                                    if (MQ.Query<int>("${Zone.ID}") != zoneID) return; 
+                                    if (MQ.Query<int>("${Zone.ID}") != zoneID) return;
                                     if (double.TryParse(xyz[0], out xval))
                                     {
                                         if (double.TryParse(xyz[1], out yval))
@@ -615,7 +617,7 @@ namespace E3Core.Processors
                             }
                         }
                     }
-                   
+
                 }
             });
             EventProcessor.RegisterCommand("/rtz", (x) =>
@@ -649,7 +651,7 @@ namespace E3Core.Processors
                     //tell others to rtz
                     //get our faced heading
                     double heading = MQ.Query<double>("${Me.Heading.Degrees}");
-                    E3.Bots.BroadcastCommandToGroup($"/rtz {heading}",x);
+                    E3.Bots.BroadcastCommandToGroup($"/rtz {heading}", x);
                     if (e3util.FilterMe(x)) return;
                     MQ.Delay(1000);
                     MQ.Cmd($"/face fast heading {heading * -1}");
@@ -674,12 +676,12 @@ namespace E3Core.Processors
                     Spawn s;
                     if (_spawns.TryByName(cothTarget, out s))
                     {
-                        if (!Basics.GroupMembers.Contains(s.ID)) 
+                        if (!Basics.GroupMembers.Contains(s.ID))
                         {
                             E3.Bots.Broadcast($"{s.CleanName} is not in our group, can't summon.");
                             return;
                         }
-                        
+
                         PlayerSummon(s.CleanName);
                     }
                 }
@@ -698,7 +700,7 @@ namespace E3Core.Processors
             }
             else if (MQ.Query<bool>($"${{Bool[${{FindItem[=Wayfarers Brotherhood Emblem].Clicky}}"))
             {
-              
+
                 summonSpell = new Spell("Wayfarers Brotherhood Emblem");
             }
             else
@@ -739,7 +741,7 @@ namespace E3Core.Processors
             }
 
             //randomly pick group member
-            foreach (int memberid in Basics.GroupMembers.OrderBy(x=>Guid.NewGuid()).ToList())
+            foreach (int memberid in Basics.GroupMembers.OrderBy(x => Guid.NewGuid()).ToList())
             {
                 if (Basics.InCombat())
                 {
@@ -751,7 +753,7 @@ namespace E3Core.Processors
                     if (s.Distance < 50 && MQ.Query<bool>($"${{Spawn[id {s.ID}].LineOfSight}}"))
                     {
                         E3.Bots.Broadcast($"{s.CleanName} is within 50 units and in LOS, not summoning.");
-                            continue;
+                        continue;
                     }
                     if (Casting.CheckReady(summonSpell))
                     {
