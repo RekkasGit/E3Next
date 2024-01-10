@@ -127,5 +127,11 @@ UpgradeLog*.XML
 *.pidb
 *.resources
 test-results/
->>>>>>> Stashed changes
-/DiscordApiLibrary/obj
+
+#
+*.suo
+*.user
+
+bin
+obj
+packages

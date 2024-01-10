@@ -1,0 +1,55 @@
+<?xml version="1.0" encoding="utf-8"?>
+<Project xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
+
+  <PropertyGroup Label="Approved Suppressions" Condition="'$(MSBuildProjectExtension)' != '.vcxproj'">
+    <!-- NU1803 - Non-HTTPS NugetSource. To be resolved and removed by the end of 2023 -->
+    <NoWarn>$(NoWarn);NU1803</NoWarn>
+
+    <!-- For solutions that suppress AssemblyInfo file -->
+    <!-- TFMs that include '-windows' inject SupportedOSPlatform into AssemblyInfo -->
+    <!-- Including PlatformName indicates that the solution will target Windows -->
+    <!-- <PlatformName>windows</PlatformName> -->
+  </PropertyGroup>
+
+  <ItemGroup Label="Code Quality Packages" Condition="'$(MSBuildProjectExtension)' != '.vcxproj'">
+
+    <!-- https://github.com/josefpihrt/roslynator -->
+    <!-- http://pihrt.net/Roslynator/Analyzers?Query=RCS1 -->
+    <PackageReference Include="Roslynator.Analyzers" Version="*">
+      <PrivateAssets>all</PrivateAssets>
+      <IncludeAssets>runtime; build; native; contentfiles; analyzers; buildtransitive</IncludeAssets>
+    </PackageReference>
+
+    <!-- https://github.com/josefpihrt/roslynator -->
+    <!-- http://pihrt.net/Roslynator/Analyzers?Query=RCS0 -->
+    <!-- https://github.com/JosefPihrt/Roslynator/blob/main/docs/Configuration.md -->
+    <PackageReference Include="Roslynator.Formatting.Analyzers" Version="*">
+      <PrivateAssets>all</PrivateAssets>
+      <IncludeAssets>runtime; build; native; contentfiles; analyzers</IncludeAssets>
+    </PackageReference>
+
+    <PackageReference Include="Microsoft.DotNet.UpgradeAssistant.Extensions.Default.Analyzers" Version="*">
+      <PrivateAssets>all</PrivateAssets>
+    </PackageReference>
+
+    <!-- https://www.nuget.org/packages/SonarAnalyzer.CSharp -->
+    <PackageReference
+      Include="SonarAnalyzer.CSharp"
+      Version="*"
+      PrivateAssets="all"
+      Condition="$(MSBuildProjectExtension) == '.csproj'" />
+
+    <!-- https://github.com/AArnott/CSharpIsNull -->
+    <PackageReference Include="CSharpIsNullAnalyzer" Version="*">
+      <PrivateAssets>all</PrivateAssets>
+      <IncludeAssets>runtime; build; native; contentfiles; analyzers</IncludeAssets>
+    </PackageReference>
+
+    <!-- https://security-code-scan.github.io/ -->
+    <PackageReference Include="SecurityCodeScan.VS2019" Version="*" PrivateAssets="all" />
+
+    <!-- https://github.com/tom-englert/Nullable.Extended -->
+    <PackageReference Include="Nullable.Extended.Analyzer" Version="*" PrivateAssets="all" />
+
+  </ItemGroup>
+</Project>

@@ -220,7 +220,7 @@ namespace E3Core.Processors
                 }
             }
         }
-        private static void LootArea()
+        public static void LootArea(bool safetyChecks = true)
         {
             Double startX = MQ.Query<Double>("${Me.X}");
             Double startY = MQ.Query<Double>("${Me.Y}");
@@ -267,8 +267,8 @@ namespace E3Core.Processors
                     if (e3util.IsShuttingDown() || E3.IsPaused()) return;
                     EventProcessor.ProcessEventsInQueues("/lootoff");
                     EventProcessor.ProcessEventsInQueues("/assistme");
-                    if (!E3.CharacterSettings.Misc_AutoLootEnabled) return;
-                    if (!E3.GeneralSettings.Loot_LootInCombat)
+                    if (safetyChecks &&!E3.CharacterSettings.Misc_AutoLootEnabled) return;
+                    if (safetyChecks && !E3.GeneralSettings.Loot_LootInCombat)
                     {
                         if (Basics.InCombat()) return;
                     }
