@@ -251,7 +251,7 @@ namespace E3Core.Data
                     {
                         NoInterrupt = true;
                     }
-                    else if (value.Equals("ItemRecast", StringComparison.OrdinalIgnoreCase))
+                    else if (value.StartsWith("ItemRecast", StringComparison.OrdinalIgnoreCase))
                     {
                         // Assume milliseconds unless s or m suffix specified
                         string tvalue = value;
