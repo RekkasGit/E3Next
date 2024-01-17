@@ -494,8 +494,11 @@ namespace E3Core.Utility
                     _buffInfoTempList.Clear();
                     string tstring = s.Substring(start, end - start);
                     StringsToNumbers(tstring, ',', _buffInfoTempList);
-                    result.Add((Int32)_buffInfoTempList[0], _buffInfoTempList[1]);
-
+                    if (result.ContainsKey((Int32)_buffInfoTempList[0])) {
+                        result[(Int32)_buffInfoTempList[0]] = Math.Max(_buffInfoTempList[0], _buffInfoTempList[1]);
+                    } else {
+                        result.Add((Int32)_buffInfoTempList[0], _buffInfoTempList[1]);
+                    }
 					start = end + 1;
 				}
 				end++;
