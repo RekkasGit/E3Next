@@ -418,6 +418,22 @@ namespace E3Core.Processors
                 }
 
             });
+
+            EventProcessor.RegisterCommand("/findaugs", x =>
+            {
+                foreach (var augName in E3.GeneralSettings.DesiredAugs.OrderBy(o => o))
+                {
+                    var found = MQ.Query<bool>($"${{FindItem[{augName}]}}");
+                    if (!found)
+                    {
+                        found = MQ.Query<bool>($"${{FindItemBank[{augName}]}}");
+                    }
+
+                    var prefix = found ? "\ag" : "\ar x";
+                    MQ.Cmd($"/echo {prefix} {augName}");
+                }
+            });
+
             EventProcessor.RegisterCommand("/getfrombank", (x) => GetFrom("Bank", x.args));
             EventProcessor.RegisterCommand("/getfrominv", (x) => GetFrom("Inventory", x.args));
             EventProcessor.RegisterCommand("/upgrade", (x) => Upgrade(x.args));

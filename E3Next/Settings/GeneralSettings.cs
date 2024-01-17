@@ -1,19 +1,15 @@
-﻿using E3Core.Processors;
+﻿using E3Core.Data;
+using E3Core.Processors;
 using E3Core.Utility;
 using IniParser;
 using IniParser.Model;
 using System;
 using System.Collections.Generic;
 using System.Linq;
-using System.Runtime.CompilerServices;
-using System.Runtime.Serialization.Formatters;
-using System.Text;
-using System.Threading.Tasks;
-using static System.Collections.Specialized.BitVector32;
 
 namespace E3Core.Settings
 {
- 
+
 
 
     public class GeneralSettings : BaseSettings, IBaseSettings
@@ -90,6 +86,7 @@ namespace E3Core.Settings
         public Int32 ManaStone_OutOfCombatMinMana = 85;
         public Int32 ManaStone_OutOfCombatMaxMana = 95;
 
+        public List<string> DesiredAugs = new List<string>();
 
         private string _filename = String.Empty;
 
@@ -217,6 +214,33 @@ namespace E3Core.Settings
             LoadKeyData("Movement", "Anchor Distance Maximum", parsedData, ref Movement_AnchorDistanceMax);
             LoadKeyData("Movement", "Milliseconds till standing Still",parsedData,ref Movement_StandingStill);
             CheckMovementValues();
+
+            string allClassDesiredAugs = string.Empty;
+            string myClassDesiredAugs = string.Empty;
+
+            LoadKeyData("Desired Augs", "All", parsedData, ref allClassDesiredAugs);
+
+            if ((E3.CurrentClass & Class.Tank) == E3.CurrentClass)
+            {
+                LoadKeyData("Desired Augs", "Tank (WAR,PAL,SHD)", parsedData, ref myClassDesiredAugs);
+            }
+            else if ((E3.CurrentClass & Class.Priest) == E3.CurrentClass)
+            {
+                LoadKeyData("Desired Augs", "Priest (CLR,DRU,SHM)", parsedData, ref myClassDesiredAugs);
+            }
+            else if ((E3.CurrentClass & Class.Melee) == E3.CurrentClass)
+            {
+                LoadKeyData("Desired Augs", "Melee (BER,MNK,ROG,BRD,BST,RNG)", parsedData, ref myClassDesiredAugs);
+            }
+            else if ((E3.CurrentClass & Class.Caster) == E3.CurrentClass)
+            {
+                LoadKeyData("Desired Augs", "Caster (NEC,MAG,ENC,WIZ)", parsedData, ref myClassDesiredAugs);
+            }
+
+            var allClassDesiredAugsList = new List<string> (allClassDesiredAugs.Split(','));
+            var myClassDesiredAugsList = new List<string>(myClassDesiredAugs.Split(','));
+
+            DesiredAugs = allClassDesiredAugsList.Concat(myClassDesiredAugsList).Distinct().ToList();
         }
 
         private void CheckAssistValues()
@@ -391,6 +415,14 @@ namespace E3Core.Settings
             section.Keys.AddKey("Anchor Distance Minimum", "15");
             section.Keys.AddKey("Anchor Distance Maximum", "150");
             section.Keys.AddKey("Milliseconds till standing Still", "10000");
+
+            newFile.Sections.AddSection("Desired Augs");
+            section = newFile.Sections.GetSectionData("Desired Augs");
+            section.Keys.AddKey("All", "");
+            section.Keys.AddKey("Tank (WAR,PAL,SHD)", "");
+            section.Keys.AddKey("Priest (CLR,DRU,SHM)", "");
+            section.Keys.AddKey("Caster (NEC,MAG,ENC,WIZ)", "");
+            section.Keys.AddKey("Melee (BER,MNK,ROG,BRD,BST,RNG)", "");
 
            
             if (!System.IO.File.Exists(filename))

@@ -53,6 +53,11 @@ namespace E3Core.Processors
                     if (Basics.AmIDead()) return;
                     string user = x.match.Groups[1].Value;
 
+                    if (E3.GeneralSettings.BuffRequests_RestrictedPCs.Contains(user))
+                    {
+                        MQ.Cmd("I will not buff you.");
+                        return;
+                    }
              
                     if (E3.GeneralSettings.BuffRequests_AllowBuffRequests || E3.Bots.IsMyBot(user))
                     {
