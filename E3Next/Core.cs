@@ -972,10 +972,9 @@ namespace MonoCore
             }
             EventProcessor.ProcessEvent(line);
         }
+
         public static void OnSetSpawns(byte[] data, int size)
         {
-
-
             //pull the id out of the array
             Int32 ID = BitConverter.ToInt32(data, 0);
 

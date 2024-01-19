@@ -141,6 +141,8 @@ namespace E3Core.Processors
                 Assist.Reset();
                 Pets.Reset();
                 Nukes.Reset();
+                Hunter.Reset();
+                WayPointHunter.Reset();
                 BuffCheck.AddToBuffCheckTimer(2000);
                 //clear out the timers as the ID's are no longer valid
                 BuffCheck.Reset();

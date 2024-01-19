@@ -128,6 +128,7 @@
     <Compile Include="Processors\DebuffDot.cs" />
     <Compile Include="Processors\Dispel.cs" />
     <Compile Include="Processors\GiveMe.cs" />
+    <Compile Include="Processors\WaypointHunter.cs" />
     <Compile Include="Processors\Hunter.cs" />
     <Compile Include="Processors\Inventory.cs" />
     <Compile Include="Processors\Movement.cs" />
@@ -197,6 +198,8 @@
   <PropertyGroup>
     <PostBuildEvent>REM powershell.exe $(ProjectDir)CopyToEQFolder.ps1
 copy *.dll "C:\NotWork\EZServer\E3NextAndMQNextBinary-main\mono\macros\e3"
-copy *.exe "C:\NotWork\EZServer\E3NextAndMQNextBinary-main\mono\macros\e3"</PostBuildEvent>
+copy *.exe "C:\NotWork\EZServer\E3NextAndMQNextBinary-main\mono\macros\e3"
+REM copy *.dll "F:\EQEmu\EZServer\E3NextAndMQNextBinary-main\mono\macros\e3"
+REM copy *.exe "F:\EQEmu\EZServer\E3NextAndMQNextBinary-main\mono\macros\e3"</PostBuildEvent>
   </PropertyGroup>
 </Project>

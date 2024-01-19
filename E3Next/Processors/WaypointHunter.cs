@@ -10,28 +10,23 @@ using MonoCore;
 using System;
 using System.Collections.Generic;
 using System.IO;
-using System.Linq;
-using System.Text.RegularExpressions;
 
 namespace E3Core.Processors
 {
-    public class HuntingProfile : BaseSettings, IBaseSettings
+    public class WaypointHuntingProfile : BaseSettings, IBaseSettings
     {
         private string _zoneName;
         private string _profileName;
 
-        private bool _whiteListEnabled = true;
-        private readonly List<string> _whiteList = new List<string>();
+        private int _CurrentWP = 0;
+        private readonly List<string> _waypoints = new List<string>();
 
-        private bool _blackListEnabled = false;
-        private readonly List<string> _blackList = new List<string>();
-
-        public static HuntingProfile LoadProfile(Zone currentZone, string profileName)
+        public static WaypointHuntingProfile LoadProfile(Zone currentZone, string profileName)
         {
             if (string.IsNullOrEmpty(profileName))
                 profileName = "Default";
 
-            var profile = new HuntingProfile();
+            var profile = new WaypointHuntingProfile();
             profile._zoneName = currentZone.ShortName;
             profile._profileName = profileName;
             profile.LoadData();
@@ -40,27 +35,17 @@ namespace E3Core.Processors
 
         private void LoadData()
         {
-            string filename = GetSettingsFilePath($"Hunt_{_zoneName}_{_profileName}.ini");
+            string filename = GetSettingsFilePath($"WPHunt_{_zoneName}_{_profileName}.ini");
             var parsedData = CreateSettings(filename);
 
-            LoadKeyData("WhiteList", "WhiteListEnabled", parsedData, ref _whiteListEnabled);
-            LoadKeyData("WhiteList", "WhiteListRegex", parsedData, _whiteList);
-
-            LoadKeyData("BlackList", "BlackListEnabled", parsedData, ref _blackListEnabled);
-            LoadKeyData("BlackList", "BlackListRegex", parsedData, _blackList);
+            LoadKeyData("Waypoints", "Waypoint", parsedData, _waypoints);
         }
 
         public bool IsValid()
         {
-            if (_whiteListEnabled && _blackListEnabled)
+            if (_waypoints.Count == 0)
             {
-                MQ.Write("Both whitelist and blacklist cannot be enabled or disabled");
-                return false;
-            }
-
-            if (_whiteListEnabled && _whiteList.Count == 0)
-            {
-                MQ.Write("Whitelist is enabled, but has no entries");
+                MQ.Write("No waypoints defined");
                 return false;
             }
 
@@ -72,13 +57,9 @@ namespace E3Core.Processors
             FileIniDataParser parser = e3util.CreateIniParser();
             IniData newFile = new IniData();
 
-            newFile.Sections.AddSection("WhiteList");
-            var wlSection = newFile.Sections.GetSectionData("WhiteList");
-            wlSection.Keys.AddKey("WhiteListEnabled", "On");
-
-            newFile.Sections.AddSection("BlackList");
-            var blSection = newFile.Sections.GetSectionData("BlackList");
-            blSection.Keys.AddKey("BlackListEnabled", "Off");
+            newFile.Sections.AddSection("Waypoints");
+            var wlSection = newFile.Sections.GetSectionData("Waypoints");
+            wlSection.Keys.AddKey("Waypoint", "");
 
             if (!File.Exists(fileName))
             {
@@ -113,37 +94,28 @@ namespace E3Core.Processors
             return newFile;
         }
 
-        public bool Matches(Spawn s)
+        public string CurrentWaypoint() => _waypoints[_CurrentWP];
+
+        public bool MoveNext()
         {
-            if (_whiteListEnabled)
-            {
-                foreach (var entry in _whiteList)
-                {
-                    bool r = Regex.IsMatch(s.CleanName, entry);
-                    if (r) return true;
-                }
-                return false;
-            }
-            else  /* if (_blackListEnabled) */
-            {
-                foreach (var entry in _blackList)
-                {
-                    bool r = Regex.IsMatch(s.CleanName, entry);
-                    if (r) return false;
-                }
-                return true;
-            }
+            _CurrentWP++;
+            return _CurrentWP < _waypoints.Count ;
+        }
+
+        public void Reset()
+        {
+            _CurrentWP = 0;
         }
     }
 
-    public static class Hunter
+    public static class WaypointHunter
     {
         public static Logging _log = E3.Log;
 
         private static IMQ MQ = E3.MQ;
         private static ISpawns _spawns = E3.Spawns;
 
-        private static HuntingProfile _Profile;
+        private static WaypointHuntingProfile _Profile;
 
         private static int _ActiveTarget = 0;
 
@@ -152,10 +124,13 @@ namespace E3Core.Processors
         private enum State
         {
             Disabled = 0,
-            Acquiring = 1,
+            NavigationStart = 1,
             Navigating = 2,
-            Murder = 3,
-            Looting = 4
+            Acquiring = 3,
+            MurderStart = 4,
+            Murder = 5,
+            Looting = 6,
+            WaitingToRepop = 7
         }
 
         private static State _CurrentStateV = State.Disabled;
@@ -174,12 +149,12 @@ namespace E3Core.Processors
             }
         }
 
-        private const int navFuzzyDistance = 30;
+        private static DateTime LastRepopTime = DateTime.Now;
 
         [SubSystemInit]
-        public static void SystemInit()
+        public static void WPSystemInit()
         {
-            EventProcessor.RegisterCommand("/hunt", (x) =>
+            EventProcessor.RegisterCommand("/wphunt", (x) =>
             {
                 ClearXTargets.FaceTarget = true;
                 ClearXTargets.StickTarget = false;
@@ -204,20 +179,28 @@ namespace E3Core.Processors
 
                 if (doLoad)
                 {
-                    MQ.Write($"Hunter enabled with profile [{profileName}]");
+                    LastRepopTime = DateTime.Now;
+                    MQ.Write($"Waypoint Hunter enabled with profile [{profileName}]");
 
-                    var tmpProfile = HuntingProfile.LoadProfile(Zoning.CurrentZone, profileName);
+                    var tmpProfile = WaypointHuntingProfile.LoadProfile(Zoning.CurrentZone, profileName);
                     if (tmpProfile.IsValid())
                     {
                         _Profile = tmpProfile;
-                        CurrentState = State.Acquiring;
+                        CurrentState = State.NavigationStart;
                     }
                 }
+            });
+
+            var repop = new List<string> { "Instance repopped" };
+            EventProcessor.RegisterEvent("InstanceRepopped", repop, (x) =>
+            {
+                LastRepopTime = DateTime.Now;
+                MQ.Write("Detected instance repop; updating last repop time");
             });
         }
 
         [ClassInvoke(Data.Class.All)]
-        public static void Check_Hunter()
+        public static void Check_WPHunter()
         {
             if (CurrentState == State.Disabled) return;
 
@@ -228,19 +211,25 @@ namespace E3Core.Processors
 
             switch (CurrentState)
             {
-                case State.Acquiring: HandleStateAcquiring(); break;
+                case State.NavigationStart: StartNavigation(); break;
 
                 case State.Navigating: HandleStateNavigating(); break;
+
+                case State.Acquiring: HandleStateAcquiring(); break;
+
+                case State.MurderStart: HandleStateMurderStart(); break;
 
                 case State.Murder: HandleStateMurder(); break;
 
                 case State.Looting: HandleStateLooting(); break;
+
+                case State.WaitingToRepop: HandleStateWaitingToRepop(); break;
             }
         }
 
         public static void Reset()
         {
-            MQ.Write("Hunter disabled");
+            MQ.Write("WPHunter disabled");
             CurrentState = State.Disabled;
             _ActiveTarget = 0;
             _Profile = null;
@@ -250,70 +239,80 @@ namespace E3Core.Processors
 
         private static void HandleStateAcquiring()
         {
-            _ActiveTarget = _spawns.Get()
-                .Where(x => x.TypeDesc == "NPC")
-                .Where(x => _Profile.Matches(x))
-                .Where(x => MQ.Query<bool>($"${{Navigation.PathExists[id {x.ID} distance={navFuzzyDistance}]}}"))
-                .OrderBy(x => x.Distance)
-                //.OrderBy(x => MQ.Query<bool>($"${{Navigation.PathLength[id {x.ID} distance={navFuzzyDistance}]}}"))
-                .Select(x => x.ID)
-                .FirstOrDefault();
+            var nextTarget = MQ.Query<int>("${Spawn[npc radius 40 los targetable].ID}");
 
-            if (_ActiveTarget > 0)
+            if (nextTarget == 0)
             {
-                MQ.Cmd($"/target id {_ActiveTarget}");
-                StartNavigation();
+                CurrentState = State.Looting;
             }
+            else
+            {
+                _ActiveTarget = nextTarget;
+                CurrentState = State.MurderStart;
+            }
+        }
+
+        private static void HandleStateMurderStart()
+        {
+            MQ.Write("Murder Time");
+
+            _ = Casting.TrueTarget(_ActiveTarget);
+
+            MQ.Write("Sticking...");
+            MQ.Cmd("/stick 5");
+            MQ.Delay(1000);
+
+            CurrentState = State.Murder;
+
+            MQ.Cmd("/stand");
+            MQ.Cmd("/keypress 1");
+            MQ.Cmd("/attack");
+            MQ.Cmd("/stick hold moveback 10");
+            MQ.Cmd("/face fast");
         }
 
         private static void HandleStateNavigating()
         {
-            if (!ActiveTargetExists())
-            {
-                CurrentState = State.Acquiring;
-            }
-            else
-            {
-                // TODO - Mob may be moving, so when velocity = 0 we need to stick then wait until within melee range. Thats a new state
+            if (MQ.Query<bool>("${Navigation.Active}")) return; // still moving
 
-                if (MQ.Query<bool>("${Navigation.Active}")) return; // still moving
-
-                MQ.Cmd("/nav stop");
-
-                MQ.Write("Sticking...");
-                MQ.Cmd("/stick 5");
-                MQ.Delay(1000);
-
-                MQ.Write("Murder Time");
-
-                CurrentState = State.Murder;
-                _ = Casting.TrueTarget(_ActiveTarget);
-
-                MQ.Cmd("/stand");
-                MQ.Cmd("/keypress 1");
-                MQ.Cmd("/attack");
-                MQ.Cmd("/stick hold moveback 10");
-            }
+            MQ.Delay(100);
+            MQ.Cmd("/useitem \"Spirit of the Ninja\"");
+            CurrentState = State.Acquiring;
+            MQ.Cmd("/nav stop");
         }
 
         private static void HandleStateMurder()
         {
-            if (!ActiveTargetExists())
-            {
-                MQ.Write("2");
-                CurrentState = State.Acquiring;
-            }
-
-            bool sticking = MQ.Query<bool>("${Stick.Active}");
-            if (!sticking) MQ.Cmd("/stick hold moveback 5");
-            if (ActiveTargetDead()) CurrentState = State.Looting;
+            if (ActiveTargetDead()) CurrentState = State.Acquiring;
         }
 
         private static void HandleStateLooting()
         {
             MQ.Delay(100);
+
+            string waypoint = _Profile.CurrentWaypoint();
+            MQ.Cmd($"/nav waypoint \"{waypoint}\"");
+
+            while (MQ.Query<bool>("${Navigation.Active}"))
+            {
+                System.Threading.Thread.Sleep(250);
+            }
+
+            Loot.Reset();
             Loot.LootArea(false);
-            CurrentState = State.Acquiring;
+
+            // Nothing else in area?
+            if (!_Profile.MoveNext())
+            {
+                _Profile.Reset();
+                var remaining = LastRepopTime.AddMinutes(10.1).Subtract(DateTime.Now);
+                MQ.Write($"Next repop time expected @ {LastRepopTime.AddMinutes(10.1).ToShortTimeString()} (eta {remaining.TotalSeconds} sec)");
+                CurrentState = State.WaitingToRepop;
+            }
+            else
+            {
+                CurrentState = State.NavigationStart;
+            }
         }
 
         private static bool ActiveTargetExists()
@@ -330,19 +329,32 @@ namespace E3Core.Processors
 
         private static void StartNavigation()
         {
-            bool navPathExists = MQ.Query<bool>($"${{Navigation.PathExists[id {_ActiveTarget} distance={navFuzzyDistance}]}}");
+            string waypoint = _Profile.CurrentWaypoint();
 
-            if (!navPathExists)
+            MQ.Write($"Navigating to WayPoint [{waypoint}]");
+            CurrentState = State.Navigating;
+            MQ.Cmd($"/nav waypoint \"{waypoint}\"");
+        }
+
+        private static void HandleStateWaitingToRepop()
+        {
+            int xtargetId = MQ.Query<int>("${Me.XTarget[1].ID}");
+            if (xtargetId > 0)
             {
-                //early return if no path available
-                MQ.Write($"\arNo nav path available to spawn ID: {_ActiveTarget}");
-                _ActiveTarget = 0;
-                CurrentState = State.Disabled;
-                return;
+                bool los = MQ.Query<bool>("${Me.XTarget[1].LineOfSight}");
+                if (los)
+                {
+                    _ = Casting.TrueTarget(xtargetId, true);
+                    MQ.Cmd("/face fast");
+                }
             }
 
-            CurrentState = State.Navigating;
-            MQ.Cmd($"/nav id {_ActiveTarget} distance={navFuzzyDistance}");
+            var remaining = LastRepopTime.AddMinutes(10.1).Subtract(DateTime.Now);
+            if (remaining.TotalSeconds > 0) return;
+
+            MQ.Cmd("/say repop instance");
+            MQ.Delay(1000);
+            CurrentState = State.NavigationStart;
         }
     }
 }

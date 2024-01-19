@@ -282,6 +282,7 @@ namespace E3Core.Settings
             LoadData();
 
         }
+       
         /// <summary>
         /// Loads the data.
         /// </summary>
