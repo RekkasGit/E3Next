@@ -494,9 +494,8 @@ namespace E3Core.Utility
                     _buffInfoTempList.Clear();
                     string tstring = s.Substring(start, end - start);
                     StringsToNumbers(tstring, ',', _buffInfoTempList);
-                    result.Add((Int32)_buffInfoTempList[0], _buffInfoTempList[1]);
-
-					start = end + 1;
+                    result[(int)_buffInfoTempList[0]] = _buffInfoTempList[1];
+		    start = end + 1;
 				}
 				end++;
 			}
