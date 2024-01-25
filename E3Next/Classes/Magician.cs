@@ -617,7 +617,7 @@ namespace E3Core.Classes
             {
                 if (E3.CharacterSettings.AutoPetWeapons)
                 {
-                    E3.Bots.Broadcast("No free inventory space and auto pet weapons is on - toggling off so inventory space can be freed up");
+                    E3.Bots.Broadcast("\arError: No free inventory space and auto pet weapons is on - toggling off so inventory space can be freed up");
                     E3.CharacterSettings.AutoPetWeapons = false;
                 }
 
@@ -767,7 +767,7 @@ namespace E3Core.Classes
 
             return hasOpenInventorySlot;
         }
-        
+
         private static bool CheckAllPetsEquipped()
         {
             if (E3.CharacterSettings.AutoPetDebug) { E3.Bots.Broadcast("\amDebug: CheckAllPetsEquipped() has been called"); };
