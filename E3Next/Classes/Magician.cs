@@ -129,6 +129,8 @@ namespace E3Core.Classes
 
         private static long _nextInventoryCheck = 0;
         private static long _nextInventoryCheckInterval = 5000;
+        private static long _nextCheckAllPetsEquipped = 0;
+        private static long _nextCheckAllPetsEquippedInterval = 5000;
 
         private static int[] GetEnchanterPrimaryWeaponIds()
         {
@@ -770,6 +772,7 @@ namespace E3Core.Classes
 
         private static bool CheckAllPetsEquipped()
         {
+            if (!e3util.ShouldCheck(ref _nextCheckAllPetsEquipped, _nextCheckAllPetsEquippedInterval)) return true;
             if (E3.CharacterSettings.AutoPetDebug) { E3.Bots.Broadcast("\amDebug: CheckAllPetsEquipped() has been called"); };
 
             bool allPetsEquipped = true;
