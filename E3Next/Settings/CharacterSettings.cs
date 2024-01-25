@@ -206,15 +206,21 @@ namespace E3Core.Settings
         public Int32 CPU_ProcessLoopDelay = 50;
         public bool CPU_Camping_PauseAt20Seconds = true;
         public bool CPU_Camping_ShutdownAt5Seconds = true;
-
-		public Dictionary<string, string> PetWeapons = new Dictionary<string, string>();
+        //Magician
+		public List<string> PetWeapons = new List<string>();
         public bool AutoPetWeapons = false;
+        public bool AutoPetDebug = false;
         public bool KeepOpenInventorySlot = false;
         public bool IgnorePetWeaponRequests = false;
+             //AdditionalIDsString is for summon pets that have a weapon that are not a weapon in primary. Not Automatically Added to ini.
+        public string AdditionalIDsString = string.Empty;
+        public List<string> spiIni = new List<string>();
+        public List<string> CleanBags = new List<string>();
+        //Shaman
         public bool AutoCanni = false;
         public int MalosTotemSpellGem;
         public List<Spell> CanniSpell = new List<Spell>();
-
+        //Beastlord
         public bool AutoParagon = false;
         public Spell ParagonSpell = null;
         public int ParagonManaPct = 60;
@@ -390,9 +396,13 @@ namespace E3Core.Settings
             if (CharacterClass == Class.Magician)
             {
                 LoadKeyData("Magician", "Auto-Pet Weapons (On/Off)", ParsedData, ref AutoPetWeapons);
+                LoadKeyData("Magician", "Auto-Pet Debug (On/Off)", ParsedData, ref AutoPetDebug);
                 LoadKeyData("Magician", "Keep Open Inventory Slot (On/Off)", ParsedData, ref KeepOpenInventorySlot);
                 LoadKeyData("Magician", "Ignore Pet Weapon Requests (On/Off)", ParsedData, ref IgnorePetWeaponRequests);
                 LoadKeyData("Magician", "Pet Weapons", ParsedData, PetWeapons);
+                LoadKeyData("Magician", "Summoned Pet Item", ParsedData, spiIni);
+                LoadKeyData("Magician", "Clean Bags", ParsedData, CleanBags);
+                LoadKeyData("Magician", "Treat WeaponIDs as Empty(##, ##, ##)", ParsedData, ref AdditionalIDsString);
             }
 
             if (CharacterClass == Class.Shaman)
@@ -802,9 +812,12 @@ namespace E3Core.Settings
                 newFile.Sections.AddSection("Magician");
                 section = newFile.Sections.GetSectionData("Magician");
                 section.Keys.AddKey("Auto-Pet Weapons (On/Off)", "Off");
+                section.Keys.AddKey("Auto-Pet Debug (On/Off)", "Off");
                 section.Keys.AddKey("Ignore Pet Weapon Requests (On/Off)", "Off");
                 section.Keys.AddKey("Keep Open Inventory Slot (On/Off)", "Off");
                 section.Keys.AddKey("Pet Weapons", "");
+                section.Keys.AddKey("Summoned Pet Item", "");
+                section.Keys.AddKey("Clean Bags", "");
             }
 
             if (CharacterClass == Class.Shaman)
