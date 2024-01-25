@@ -380,6 +380,225 @@ namespace E3Core.Classes
             LazCleanUp();
         }
 
+        public static void IdentForCharacter(string characterName, int PetId)
+        {
+            //My Current Location to moveback to later
+            var currentX = MQ.Query<double>("${Me.X}");
+            var currentY = MQ.Query<double>("${Me.Y}");
+            var currentZ = MQ.Query<double>("${Me.Z}");
+
+            E3.Bots.Broadcast($"\awDebug: IdentForCharacter started for {characterName}.");
+            
+            // Parse the INI setting
+            var characterSetting = E3.CharacterSettings.PetWeapons.FirstOrDefault(s => s.StartsWith(characterName + "/"));
+
+            if (characterSetting == null)
+            {
+                E3.Bots.Broadcast($"\arNo Identifiers found for character {characterName}.");
+                return;
+            }
+
+            // Get Pet ID
+            //_spawns.TryByName(characterName, out var characterSpawn);
+            //var PetId = characterSpawn.PetID;
+
+            // Get the identifiers for the current character
+            var identifiers = characterSetting.Split('/')[1].Split(new char[] { ',', '|' });
+            if (E3.CharacterSettings.AutoPetDebug) E3.Bots.Broadcast($"\amDebug: IFC: Identifiers for {characterName}: {string.Join(", ", identifiers)}");
+
+
+            // Cast spells for each identifier
+            foreach (var identifier in identifiers)
+            {
+                bool isLazHardcodeIdentifier = _lazhardcodedItems.Contains(identifier);
+
+                foreach (var entry in _spiMap)
+                {
+                    // Run LazCleanUp bag process if a non-lazhardcode identifier is detected
+                    if (!isLazHardcodeIdentifier)
+                    {
+                        LazCleanUp();
+                        isLazHardcodeIdentifier = true; // Set the flag to true to avoid running LazCleanUp multiple times
+                    }
+
+                    var spiSpell = entry.Key;
+                    foreach (var spellItem in entry.Value.Where(si => si.Identifier.Equals(identifier, StringComparison.OrdinalIgnoreCase)))
+                    {
+                        if (E3.CharacterSettings.AutoPetDebug) E3.Bots.Broadcast($"\amDebug: IFC: Sending casting request for Spell: {spiSpell}, Item: {spellItem.Item}, for PetID: {PetId}.");
+                        spiCastSpell(spiSpell, PetId, spellItem.Item);
+                    }
+                }
+            }
+
+            MQ.Delay(250);
+            e3util.TryMoveToLoc(currentX, currentY, currentZ);
+            E3.Bots.Broadcast($"\awDebug: IdentForCharacter Finshed for {characterName}.");
+        }
+
+        public static void IdentForRequester(string requesterName, List<string> identifiers, int PetId)
+        {
+            //My Current Location to moveback to later
+            var currentX = MQ.Query<double>("${Me.X}");
+            var currentY = MQ.Query<double>("${Me.Y}");
+            var currentZ = MQ.Query<double>("${Me.Z}");
+
+            if (E3.CharacterSettings.AutoPetDebug) E3.Bots.Broadcast($"\awDebug: IdentForRequester Started for {requesterName}.");
+
+            foreach (var identifier in identifiers)
+            {
+                bool isLazHardcodeIdentifier = _lazhardcodedItems.Contains(identifier);
+
+                foreach (var entry in _spiMap)
+                {
+                    // Run LazCleanUp bag process if a non-lazhardcode identifier is detected
+                    if (!isLazHardcodeIdentifier)
+                    {
+                        LazCleanUp();
+                        isLazHardcodeIdentifier = true; // Set the flag to true to avoid running LazCleanUp multiple times
+                    }
+
+                    var spiSpell = entry.Key;
+                    foreach (var spellItem in entry.Value.Where(si => si.Identifier.Equals(identifier, StringComparison.OrdinalIgnoreCase)))
+                    {
+                        if (E3.CharacterSettings.AutoPetDebug) E3.Bots.Broadcast($"\amDebug: IFR: Sending casting request for Spell: {spiSpell}, Item: {spellItem.Item}, for PetID: {PetId}.");
+                        spiCastSpell(spiSpell, PetId, spellItem.Item);
+                    }
+                }
+
+            }
+
+            MQ.Delay(250);
+            e3util.TryMoveToLoc(currentX, currentY, currentZ);
+            if (E3.CharacterSettings.AutoPetDebug) E3.Bots.Broadcast($"\awDebug: IdentForRequester Finished for {requesterName}.");
+        }
+
+
+        private static void spiCastSpell(string spiSpell,int PetId, string spiItem)
+        {
+            if (E3.CharacterSettings.AutoPetDebug) E3.Bots.Broadcast($"\acDebug: spiCastSpell process Started.");
+            
+            var spell = new Spell(spiSpell);
+            string item = spiItem;
+            bool itemfound = MQ.Query<bool>($"${{FindItem[={item}]}}");
+            Int32 castAttempts = 0;
+            Casting.TrueTarget(PetId);
+            if (itemfound)
+            {
+                if (E3.CharacterSettings.AutoPetDebug) E3.Bots.Broadcast($"\amDebug: SCS: Item found. No casting required.");
+                spiGiveItemToPet(PetId, item);
+            }
+            else
+            {
+                if (Casting.CheckReady(spell) && Casting.CheckMana(spell))
+                {
+                    if (E3.CharacterSettings.AutoPetDebug) E3.Bots.Broadcast($"\amDebug: SCS: Casting started for Spell: {spiSpell}, Item: {spiItem}, for PetID: {PetId}.");
+                    while (Casting.Cast(PetId, spell) == CastReturn.CAST_FIZZLE)
+                    {
+                        if (castAttempts >= 5)
+                        {
+                            E3.Bots.Broadcast($"\ar Your spell: {spell} has failed 5 times. Stopping Summon Attempts.");
+                            break;
+             
+                        }
+                        MQ.Delay(1500);
+                        castAttempts++;
+                    }
+                }
+                spiGiveItemToPet(PetId, item);
+            }
+            if (E3.CharacterSettings.AutoPetDebug) E3.Bots.Broadcast($"\acDebug: spiCastSpell process Finished.");
+
+        }
+
+        private static void spiGiveItemToPet(int PetId, string item)
+        {
+            if (E3.CharacterSettings.AutoPetDebug) E3.Bots.Broadcast($"\acDebug: spiGiveItemToPet process Started.");
+
+            var foundArmorBag = MQ.Query<bool>($"${{FindItem[={item}]}}");
+            var oncursor = MQ.Query<string>($"${{Cursor.Name}}");
+            if (oncursor == item)
+            {
+                Casting.TrueTarget(PetId);
+                e3util.GiveItemOnCursorToTarget(false, false);
+                if (E3.CharacterSettings.AutoPetDebug) E3.Bots.Broadcast($"\amDebug: SGITP: Item Already on Cursor, No Pickup Process Needed.");
+            }
+            else if (oncursor != item)
+            {
+                MQ.Cmd("/autoinventory");
+                MQ.Delay(250);
+                PickUpItem(item);
+                Casting.TrueTarget(PetId);
+                e3util.GiveItemOnCursorToTarget(false, false);
+            }
+            else
+            {
+                if (foundArmorBag)
+                {
+                    PickUpItem(item);
+                    Casting.TrueTarget(PetId);
+                    e3util.GiveItemOnCursorToTarget(false, false);
+                }
+            }
+
+            if (E3.CharacterSettings.AutoPetDebug) E3.Bots.Broadcast($"\amDebug: SGITP: Item: {item} was giving to PetId: {PetId} .");
+            if (E3.CharacterSettings.AutoPetDebug) E3.Bots.Broadcast($"\acDebug: spiGiveItemToPet process Finished.");
+        }
+
+        private static void PickUpItem(string item)
+        {
+            if (E3.CharacterSettings.AutoPetDebug) E3.Bots.Broadcast($"\acDebug: PickUpItem process Started.");
+
+            var itemSlot = MQ.Query<int>($"${{FindItem[{item}].ItemSlot}}");
+            var itemSlot2 = MQ.Query<int>($"${{FindItem[{item}].ItemSlot2}}");
+            var packSlot = itemSlot - 22;
+            var inPackSlot = itemSlot2 + 1;
+
+            MQ.Cmd($"/nomodkey /itemnotify in pack{packSlot} {inPackSlot} leftmouseup");
+
+            if (E3.CharacterSettings.AutoPetDebug) E3.Bots.Broadcast($"\amDebug: PI: Item: {item} Picked Up from pack: {packSlot} slot: {inPackSlot} .");
+            if (E3.CharacterSettings.AutoPetDebug) E3.Bots.Broadcast($"\acDebug: PickUpItem process Finished.");
+        }
+
+        private static void CleanUp()
+        {
+            if (E3.CharacterSettings.AutoPetDebug) E3.Bots.Broadcast($"\acDebug: CleanUp process Started.");
+
+            foreach (var item in _cleanbags)
+            {                
+                if (MQ.Query<int>($"${{FindItemCount[{item}]}}") > 0)
+                {
+                    PickUpItem(item);
+                    if (item == MQ.Query<string>($"${{Cursor.Name}}"))
+                    {
+                        MQ.Cmd("/destroy");
+                    }
+                    if (E3.CharacterSettings.AutoPetDebug) E3.Bots.Broadcast($"\amDebug: CU: Item: {item} was destroyed.");
+                }
+            }
+
+            if (E3.CharacterSettings.AutoPetDebug) E3.Bots.Broadcast($"\acDebug: CleanUp process Finished.");
+        }
+
+        private static void LazCleanUp()
+        {
+            if (E3.CharacterSettings.AutoPetDebug) E3.Bots.Broadcast($"\acDebug: LazCleanUp process Started.");
+
+            foreach (var item in _lazhardcodedbags)
+            {                
+                if (MQ.Query<int>($"${{FindItemCount[{item}]}}") > 0)
+                {
+                    PickUpItem(item);
+                    if (item == MQ.Query<string>($"${{Cursor.Name}}"))
+                    {
+                        MQ.Cmd("/destroy");
+                    }
+                    if (E3.CharacterSettings.AutoPetDebug) E3.Bots.Broadcast($"\amDebug: CU: Item: {item} was destroyed.");
+                }
+            }
+
+            if (E3.CharacterSettings.AutoPetDebug) E3.Bots.Broadcast($"\acDebug: LazCleanUp process Finished.");
+        }
+
         /// <summary>
         /// Keeps an inventory slot open for summoned shit.
         /// </summary>
