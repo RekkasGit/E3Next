@@ -11,7 +11,7 @@ using System.Security.Cryptography;
 using System.Text;
 using System.Threading.Tasks;
 using System.Windows.Forms.VisualStyles;
-//test pushpull
+
 namespace E3Core.Classes
 {
     /// <summary>
@@ -21,25 +21,95 @@ namespace E3Core.Classes
     {
         private static IMQ MQ = E3.MQ;
         private static ISpawns _spawns = E3.Spawns;
-        private static string _weaponSpell = "Grant Spectral Armaments";
-        private static string _weaponItem = "Folded Pack of Spectral Armaments";
-        private static string _armorSpell = "Grant Spectral Plate";
-        private static string _armorItem = "Folded Pack of Spectral Plate";
-        private static string _focusSpell = "Grant Enibik's Heirlooms";
-        private static string _focusItem = "Folded Pack of Enibik's Heirlooms";
-        private static string _weaponBag = "Pouch of Quellious";
-        private static string _armorOrHeirloomBag = "Phantom Satchel";
-        private static Dictionary<string, string> _weaponMap = new Dictionary<string, string>(StringComparer.OrdinalIgnoreCase) {
-            {"Fire", "Summoned: Fist of Flame"},
-            {"Water", "Summoned: Orb of Chilling Water" },
-            {"Shield", "Summoned: Buckler of Draining Defense" },
-            {"Taunt", "Summoned: Short Sword of Warding" },
-            {"Slow", "Summoned: Mace of Temporal Distortion" },
-            {"Malo", "Summoned: Spear of Maliciousness" },
-            {"Dispel", "Summoned: Wand of Dismissal" },
-            {"Snare", "Summoned: Tendon Carver" },
-            {"None", null }
-        };
+        //For the backwards compatibility of lazuras code. Allows Laz users to decide if they want to use the new code or the old code. Default is On.
+        private static bool _LazurasMageImport = E3.GeneralSettings.LazurasMageImport;
+        //Pulling from E3.CharacterSettings for CleanBags
+        private static List<string> _cleanbags = E3.CharacterSettings.CleanBags;
+
+        //
+        //___Project Lazarus Hard Coded Bags___
+        //
+        private static List<string> _lazhardcodedbags = new List<string>();
+        public static void lazbag()
+        {
+            if (MQ.Query<String>("${EverQuest.Server}") == "Project Lazarus" && (_LazurasMageImport))
+            {
+                _lazhardcodedbags = new List<string>
+                {
+                    "Clean Bags=Folded Pack of Spectral Armaments",
+                    "Clean Bags=Folded Pack of Spectral Plate",
+                    "Clean Bags=Folded Pack of Enibik's Heirlooms"
+                };
+            }
+        }
+        //
+        //__^Project Lazarus Hard Coded Bags^__
+        //
+
+        //
+        //___Project Lazarus Hard Spell|item|Identifers___
+        //
+        private static List<string> _lazhardcodedItems = new List<string>();
+        public static void lazitems()
+        {
+            if (MQ.Query<String>("${EverQuest.Server}") == "Project Lazarus" && (_LazurasMageImport))
+            {
+                _lazhardcodedItems = new List<string>
+                {
+                    "Summoned Pet Item=Grant Spectral Armaments|Summoned: Fist of Flame|Fire",
+                    "Summoned Pet Item=Grant Spectral Armaments|Summoned: Orb of Chilling Water|Water",
+                    "Summoned Pet Item=Grant Spectral Armaments|Summoned: Buckler of Draining Defense|Shield",
+                    "Summoned Pet Item=Grant Spectral Armaments|Summoned: Short Sword of Warding|Taunt",
+                    "Summoned Pet Item=Grant Spectral Armaments|Summoned: Mace of Temporal Distortion|Slow",
+                    "Summoned Pet Item=Grant Spectral Armaments|Summoned: Spear of Maliciousness|Malo",
+                    "Summoned Pet Item=Grant Spectral Armaments|Summoned: Wand of Dismissal|Dispel",
+                    "Summoned Pet Item=Grant Spectral Armaments|Summoned: Tendon Carver|Snare",
+                    "Summoned Pet Item=Grant Spectral Plate|Folded Pack of Spectral Plate|none",
+                    "Summoned Pet Item=Grant Enibik's Heirlooms|Folded Pack of Enibik's Heirlooms|none"
+                };
+            }
+        }
+        //
+        //__^Project Lazarus Hard Spell|item|Identifers^__
+        //
+
+        //___Pulling Summoned Pet Items from E3.CharacterSettings___
+        public class SpellItem
+        {
+            public string Spell { get; set; }
+            public string Item { get; set; }
+            public string Identifier { get; set; }
+        }
+        private static Dictionary<string, List<SpellItem>> _spiMap = new Dictionary<string, List<SpellItem>>();
+               static Magician()
+        {
+            if (E3.CharacterSettings.AutoPetDebug) E3.Bots.Broadcast($"\amDebug: Magician: spiIni Dictionary: {E3.CharacterSettings.spiIni}");
+
+            //Will Add lazuras hard coded items to the spiIni Dictionary if the above it true otherwise it will just use the E3.CharacterSettings.spiIni
+            var allItems = _lazhardcodedItems.Concat(E3.CharacterSettings.spiIni);
+
+            if (E3.CharacterSettings.AutoPetDebug && MQ.Query<String>("${EverQuest.Server}") == "Project Laz") E3.Bots.Broadcast($"\amDebug: Magician: spiIni Dictionary with Laz hardcode: {allItems}");
+
+            // Split the entire string into separate entries
+            foreach (var spiIni in allItems)
+            {
+                if (E3.CharacterSettings.AutoPetDebug) E3.Bots.Broadcast($"\amspiIni: {spiIni}");
+                var data = spiIni.Split('|');
+                if (data.Length == 3)
+                {
+                    var spiSpell = data[0].Trim();
+                    var spiItem = data[1].Trim();
+                    var identifier = data[2].Trim();
+                    var spellItem = new SpellItem { Spell = spiSpell, Item = spiItem, Identifier = identifier };
+                    if (!_spiMap.ContainsKey(spiSpell))
+                    {
+                        _spiMap[spiSpell] = new List<SpellItem>();
+                    }
+                    _spiMap[spiSpell].Add(spellItem);
+                }
+            }
+        }
+        //__^Pulling Summoned Pet Items from E3.CharacterSettings^__
 
         private static Dictionary<int, string> _inventorySlotToPackMap = new Dictionary<int, string>
         {
@@ -55,23 +125,30 @@ namespace E3Core.Classes
             {32, "pack10" },
         };
 
-        private static Dictionary<string, string> _summonedItemMap = new Dictionary<string, string>
-        {
-            {_weaponSpell, _weaponItem },
-            {_armorSpell, _armorItem },
-            {_focusSpell, _focusItem },
-        };
-
         private static string _requester;
-
-        private static long _nextWeaponCheck = 0;
-        private static long _nextWeaponCheckInterval = 10000;
-        private static bool _isExternalRequest = false;
 
         private static long _nextInventoryCheck = 0;
         private static long _nextInventoryCheckInterval = 5000;
 
-        private const int EnchanterPetPrimaryWeaponId = 10702;
+        private static int[] GetEnchanterPrimaryWeaponIds()
+        {
+            int[] baseIds = { 10702, 10653, 10648, 41, 60 };
+            string additionalIdsString = E3.CharacterSettings.AdditionalIDsString;
+
+            if (string.IsNullOrEmpty(additionalIdsString))
+            {
+                return baseIds;
+            }
+
+            int[] additionalIds = additionalIdsString
+                .Split(',')
+                .Select(int.Parse)
+                .ToArray();
+
+            return baseIds.Concat(additionalIds).ToArray();
+        }
+
+        private static readonly int[] EnchanterPetPrimaryWeaponIds = GetEnchanterPrimaryWeaponIds();
 
         /// <summary>
         /// Accepts a pet equipment request.
