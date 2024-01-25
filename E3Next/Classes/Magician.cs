@@ -767,5 +767,43 @@ namespace E3Core.Classes
 
             return hasOpenInventorySlot;
         }
+        
+        private static bool CheckAllPetsEquipped()
+        {
+            if (E3.CharacterSettings.AutoPetDebug) { E3.Bots.Broadcast("\amDebug: CheckAllPetsEquipped() has been called"); };
+
+            bool allPetsEquipped = true;
+            var myPetPrimary = MQ.Query<int>("${Me.Pet.Primary}");
+
+            if (E3.CharacterSettings.AutoPetDebug) E3.Bots.Broadcast($"\amDebug: CAPE: PetWeapons count: {E3.CharacterSettings.PetWeapons.Count}");
+
+            foreach (var botsettings in E3.CharacterSettings.PetWeapons)
+            {
+                var parts = botsettings.Split('/');
+                var bot = parts[0];
+
+                bool found = _spawns.TryByName(bot, out var ownerSpawnCh);
+                if (E3.CharacterSettings.AutoPetDebug) E3.Bots.Broadcast($"\amDebug: CAPE: Trying to find bot {bot}, success: {found}");
+
+                if (_spawns.TryByName(bot, out var ownerSpawn))
+                {
+                    var theirPetPrimary = MQ.Query<int>($"${{Spawn[{ownerSpawn.Name}].Pet.Primary}}");
+                    if (theirPetPrimary == 0 || EnchanterPetPrimaryWeaponIds.Contains(theirPetPrimary))
+                    {
+                        // If any pet is not equipped or has the Enchanter's primary weapon, set the flag to false
+                        if (E3.CharacterSettings.AutoPetDebug) E3.Bots.Broadcast($"\amDebug: CAPE: Bot {bot} is not properly equipped");
+
+                        allPetsEquipped = false;
+                        break; // Exit the loop early since we already know not all pets are equipped
+                    }
+                }
+            }
+
+            if (myPetPrimary == 0 || !allPetsEquipped)
+            {
+                allPetsEquipped = false;
+            }
+            return allPetsEquipped;
+        }
     }
 }
