@@ -684,54 +684,6 @@ namespace E3Core.Classes
 
         private static bool CheckInventory()
         {
-            // clean up any leftovers
-            var bag = _armorOrHeirloomBag;
-            while (MQ.Query<int>($"${{FindItemCount[={bag}]}}") > 0)
-            {
-                if (!DestroyIfEmpty(bag)) return false;
-            }
-
-            bag = "Huge Disenchanted Backpack";
-            while (MQ.Query<int>($"${{FindItemCount[={bag}]}}") > 0)
-            {
-                if (!DestroyIfEmpty(bag)) return false;
-            }
-
-            bool DestroyIfEmpty(string containerName)
-            {
-                var itemSlot = MQ.Query<int>($"${{FindItem[={containerName}].ItemSlot}}");
-                var itemSlot2 = MQ.Query<int>($"${{FindItem[={containerName}].ItemSlot2}}");
-                // it's in another container
-                if (itemSlot2 >= 0)
-                {
-                    MQ.Cmd($"/nomodkey /itemnotify in {_inventorySlotToPackMap[itemSlot]} {itemSlot + 1} leftmouseup");
-                    if (!e3util.ValidateCursor(MQ.Query<int>($"${{FindItem[={containerName}].ID}}")))
-                    {
-                        E3.Bots.Broadcast($"\arUnexpected item on cursor when trying to destroy {containerName}");
-                        return false;
-                    }
-
-                    MQ.Cmd("/destroy");
-                    return true;
-                }
-
-                if (MQ.Query<int>($"${{InvSlot[{itemSlot}].Item.Items}}") == 0)
-                {
-                    MQ.Cmd($"/nomodkey /itemnotify {itemSlot} leftmouseup");
-                    MQ.Delay(1000, "${Cursor.ID}");
-                    if (!e3util.ValidateCursor(MQ.Query<int>($"${{FindItem[={containerName}].ID}}")))
-                    {
-                        E3.Bots.Broadcast($"\arUnexpected item on cursor when trying to destroy {containerName}");
-                        return false;
-                    }
-
-                    MQ.Cmd("/destroy");
-                    return true;
-                }
-
-                return false;
-            }
-
             int containerWithOpenSpace = -1;
             int slotToMoveFrom = -1;
             bool hasOpenInventorySlot = false;
