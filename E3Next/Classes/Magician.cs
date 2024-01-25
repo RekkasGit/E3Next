@@ -161,15 +161,60 @@ namespace E3Core.Classes
                 return;
             }
 
+            //Providing List of Pet Item Identifiers to Requester
+            var armPetList = new List<string> { "(.+) tells you, 'armpetlist'", "(.+) tells you, 'armpetlist'", "(.+) tells the group, 'armpetlist'", };
+            EventProcessor.RegisterEvent("ArmPetList", armPetList, (x) =>
+            {
+                if (e3util.IsShuttingDown() || E3.IsPaused()) return;
+
+                //___Process Request Requirements___
+                if (E3.CharacterSettings.AutoPetDebug)  E3.Bots.Broadcast("\acPet List Request Event Started");
+                _requester = x.match.Groups[1].ToString();
+                string configuredIdentifiers = string.Join(", ", _spiMap.Values.SelectMany(list => list.Select(item => item.Identifier)).Distinct());
+                //__^Process Request Requirements^__
+
+                //Send Tell of Pet Item Identifiers to Requester
+                MQ.Cmd($"/t {_requester} My current configured Pet Item Identifiers are: {configuredIdentifiers}.");
+                if (E3.CharacterSettings.AutoPetDebug)  E3.Bots.Broadcast("\acPet List Request Event Finished");
+
+            });
+
             var armPetEvents = new List<string> { "(.+) tells you, 'armpet'", "(.+) tells you, 'armpet (.+)'", "(.+) tells the group, 'armpet (.+)'", };
             EventProcessor.RegisterEvent("ArmPet", armPetEvents, (x) =>
             {
-                if (x.match.Groups.Count <= 1)
+                if (e3util.IsShuttingDown() || E3.IsPaused()) return;
+
+                //___Process Request Requirements___
+                E3.Bots.Broadcast("\agPet Equipment Request Event Started");
+                int xCount = x.match.Groups.Count;
+                _requester = x.match.Groups[1].ToString();
+                if (E3.CharacterSettings.AutoPetDebug) E3.Bots.Broadcast($"\amDebug: PER: x.match.Groups.Count: {xCount}");
+                if (E3.CharacterSettings.AutoPetDebug) E3.Bots.Broadcast($"\amDebug: PER: Requestername: {_requester}");
+                string[] identArray = x.match.Groups[2].ToString().Split(new char[] { ',', '|' });
+                List<string> identifiers = identArray.ToList();
+                //__^Process Request Requirements^__
+
+                //___Identifier Checks___
+                if (x.match.Groups.Count <= 2)
                 {
+                    E3.Bots.Broadcast($"\ayWARN: PER: {_requester} did not provide any identifiers. Ending {_requester} Request");
+                    MQ.Cmd($"/t {_requester} You did not provide any identifiers. Message me armpetlist if you need a list of identifiers.");
                     return;
                 }
 
-                _requester = x.match.Groups[1].ToString();
+                bool allIdentifiersExist = identifiers.All(id => _spiMap.Values.Any(spellItemList => spellItemList.Any(spellItem => spellItem.Identifier == id)));
+
+                if (!allIdentifiersExist)
+                {
+                    string configuredIdentifiers = string.Join(", ", _spiMap.Values.SelectMany(list => list.Select(item => item.Identifier)).Distinct());
+                    E3.Bots.Broadcast($"\ayWarn: PER: A requested identifiers from {_requester} does not exist. Ending {_requester} Request");
+                    E3.Bots.Broadcast($"\amDebug: Requested Identifiers: {string.Join(", ", identifiers)} | Current Configed Indentifiers: {configuredIdentifiers}.");
+                    MQ.Cmd($"/t {_requester} One or more identifiers you requested are currently not configured.My current configured identifiers are: {configuredIdentifiers}.");
+                    return;
+                }
+                //__^Identifier Checks^__
+
+                //___PreRequester Checks___
                 if (E3.CharacterSettings.IgnorePetWeaponRequests)
                 {
                     MQ.Cmd($"/t {_requester} Sorry, I am not currently accepting requests for pet weapons");
@@ -182,71 +227,56 @@ namespace E3Core.Classes
                     return;
                 }
 
-                _isExternalRequest = !E3.Bots.BotsConnected().Contains(_requester);               
-                var weaponSplit = x.match.Groups[2].ToString().Split('|');
-                if (!_isExternalRequest && weaponSplit.Length != 2) 
+                if(!CheckInventory())
                 {
-                    if (E3.CharacterSettings.PetWeapons.TryGetValue(_requester, out var weaponConfig))
+                    MQ.Cmd($"/t {_requester} I don't have any inventory space to give you a pet weapon!");
+                    E3.Bots.Broadcast($"\arERROR: PER: Inventory is full, Canceling Request for {_requester}");
+                    return;
+                }
+                //__^PreRequester Checks^__
+
+                //___Requester Checks and Method Call___
+                if (_spawns.TryByName(_requester, out var spawn))
+                {
+                    var petId = MQ.Query<int>($"${{Spawn[{spawn.Name}].Pet.ID}}");
+
+                    if (petId <= 0)
                     {
-                        weaponSplit = weaponConfig.Split('|');
-                    }
-                }
-
-                if (weaponSplit.Count() != 2)
-                {
-                    MQ.Cmd($"/t {_requester} Invalid request. The request must be in the format of armpet Primary|Secondary");
-                    return;
-                }
-
-                if (!_weaponMap.TryGetValue(weaponSplit[0], out _))
-                {
-                    MQ.Cmd($"/t {_requester} Invalid primary weapon selection. Valid values are {string.Join(", ", _weaponMap.Keys)}");
-                    return;
-                }
-
-                if (!_weaponMap.TryGetValue(weaponSplit[1], out _))
-                {
-                    MQ.Cmd($"/t {_requester} Invalid secondary weapon selection. Valid values are {string.Join(", ", _weaponMap.Keys)}");
-                    return;
-                }
-
-                if(_spawns.TryByName(_requester, out var requesterSpawn))
-                {
-                    var theirPetId = requesterSpawn.PetID;
-                    if(theirPetId < 0)
-                    {
+                        E3.Bots.Broadcast($"\ayWARN: PER: {_requester} has no pet. Ending thier Request");
                         MQ.Cmd($"/t {_requester} You don't have a pet to equip!");
                         return;
                     }
 
-                    if (_spawns.Get().First(w => w.ID == theirPetId).Distance > 50)
+                    if (_spawns.Get().First(w => w.ID == petId).Distance > 50)
                     {
+                        E3.Bots.Broadcast($"\ayWARN: PER: {_requester} is too far away or thier pet is. Ending thier Request");
                         MQ.Cmd($"/t {_requester} Your pet is too far away!");
                         return;
                     }
 
-                    if (_spawns.Get().First(w => w.ID == theirPetId).Level == 1)
+                    if (_spawns.Get().First(w => w.ID == petId).Level == 1)
                     {
+                        E3.Bots.Broadcast($"\ayWARN: PER: {_requester} asking to arm a familiar, not supported. Ending thier Request");
                         MQ.Cmd($"/t {_requester} Your pet is just a familiar!");
                         return;
                     }
 
-                    ArmPet(theirPetId, $"{weaponSplit[0]}|{weaponSplit[1]}");
+                    MQ.Cmd($"/t {_requester} Arming Pet Please Give me a moment, If you move more then 30y this will fail");
+                    if (e3util.IsShuttingDown() || E3.IsPaused()) return;
+                    IdentForRequester(_requester, identifiers, petId);
+                    if (e3util.IsShuttingDown() || E3.IsPaused()) return;
                 }
-            });
-
-            armPetEvents = new List<string> { "(.+) tells you, 'armpets'", "(.+) tells the group, 'armpets'", };
-            EventProcessor.RegisterEvent("ArmPets", armPetEvents, x =>
-            {
-                E3.Bots.Broadcast("I hear you I hear you one moment please....");
-                _requester = x.match.Groups[1].ToString();
-                if (!E3.Bots.BotsConnected().Contains(_requester))
+                else
                 {
-                    MQ.Cmd($"/t {_requester} the ArmPets command is only valid on your own bot network");
-                    return;
+                    MQ.Cmd($"/t {_requester} I couldn't find your pet!");
                 }
+                //__^Requester Checks and Method Call^__
 
-                ArmPets();
+                MQ.Cmd($"/t {_requester} Arming Pet had finished, Happy Hunting");
+                E3.Bots.Broadcast("\agArmpet Event process Finished");
+                CleanUp();
+                LazCleanUp();
+                
             });
         }
 
