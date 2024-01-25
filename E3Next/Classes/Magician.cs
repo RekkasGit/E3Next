@@ -276,7 +276,7 @@ namespace E3Core.Classes
                 E3.Bots.Broadcast("\agArmpet Event process Finished");
                 CleanUp();
                 LazCleanUp();
-                
+
             });
         }
 
@@ -289,13 +289,15 @@ namespace E3Core.Classes
         {
             if (Basics.InCombat()) return;
             if (!E3.CharacterSettings.AutoPetWeapons) return;
-            if (!e3util.ShouldCheck(ref _nextWeaponCheck, _nextWeaponCheckInterval)) return;
+            if (CheckAllPetsEquipped()) return;
+            if (!CheckInventory()) return;
 
             ArmPets();
         }
 
         public static void ArmPets()
         {
+            E3.Bots.Broadcast("\agArmPets started.");
             if (MQ.Query<int>("${Cursor.ID}") > 0)
             {
                 if (!e3util.ClearCursor())
@@ -304,50 +306,78 @@ namespace E3Core.Classes
                 }
             }
 
-            // my pet
+            //___MY PET___
             var primary = MQ.Query<int>("${Me.Pet.Primary}");
             var myPetId = MQ.Query<int>("${Me.Pet.ID}");
             if (myPetId > 0 && primary == 0)
             {
-                E3.CharacterSettings.PetWeapons.TryGetValue(E3.CurrentName, out var weapons);
+                if (E3.CharacterSettings.AutoPetDebug) E3.Bots.Broadcast($"\amPet ID: {myPetId}, Primary: {primary}");
+                if (E3.CharacterSettings.AutoPetDebug) E3.Bots.Broadcast($"\am_spiMap count: {_spiMap.Count}");
+
                 if (e3util.IsShuttingDown() || E3.IsPaused()) return;
-                ArmPet(myPetId, weapons);
+                var myBotName = MQ.Query<string>("${Me.Name}");
+                if (E3.CharacterSettings.AutoPetDebug) E3.Bots.Broadcast($"\amDebug: AP: About to call IdentForCharacter for myBotName");
+                IdentForCharacter(myBotName, myPetId);
                 if (e3util.IsShuttingDown() || E3.IsPaused()) return;
             }
+            //__^MY PET^__
 
-            // bot pets
-            foreach (var kvp in E3.CharacterSettings.PetWeapons)
+            //___BOT PETS___
+            foreach (var botsettings in E3.CharacterSettings.PetWeapons)
             {
-                if (_spawns.TryByName(kvp.Key, out var ownerSpawn))
+                var parts = botsettings.Split('/');
+                var bot = parts[0];
+                E3.Bots.Broadcast($"\ayDebug: Processing bot: {bot}");
+
+                if (_spawns.TryByName(bot, out var ownerSpawn))
                 {
                     if (e3util.IsShuttingDown() || E3.IsPaused()) return;
 
                     if (string.Equals(ownerSpawn.Name, E3.CurrentName)) continue;
-                    var theirPetId = ownerSpawn.PetID;
-                    if (theirPetId < 0)
+
+                    var botName = ownerSpawn.CleanName;
+                    var petId = ownerSpawn.PetID;
+                    var petSpawn = _spawns.Get().FirstOrDefault(w => w.ID == petId);
+
+                    if (petId < 0)
                     {
+                        E3.Bots.Broadcast($"\arDebug: {botName} doesn't have a pet to summon!");
                         continue;
                     }
 
-                    var theirPetDistance = MQ.Query<double>($"${{Spawn[{ownerSpawn.Name}].Pet.Distance}}");
-                    if (theirPetDistance > 50)
+                    if (petSpawn == null)
                     {
+                        E3.Bots.Broadcast($"\arDebug: {botName} doesn't have a pet to summon!");
                         continue;
                     }
-                    
-                    var theirPetLevel = MQ.Query<int>($"${{Spawn[{ownerSpawn.Name}].Pet.Level}}");
-                    if (theirPetLevel == 1)
+
+                    if (petSpawn.Distance > 50)
                     {
+                        E3.Bots.Broadcast($"\arDebug: {botName}'s pet is too far away!");
+                        continue;
+                    }
+
+                    if (petSpawn.Level == 1)
+                    {
+                        E3.Bots.Broadcast($"\arDebug: {botName}'s pet is just a familiar!");
                         continue;
                     }
 
                     var theirPetPrimary = MQ.Query<int>($"${{Spawn[{ownerSpawn.Name}].Pet.Primary}}");
-                    if (theirPetPrimary == 0 || theirPetPrimary == EnchanterPetPrimaryWeaponId)
+                    if (theirPetPrimary == 0 || EnchanterPetPrimaryWeaponIds.Contains(theirPetPrimary))
                     {
-                        ArmPet(theirPetId, kvp.Value);
+                        if (e3util.IsShuttingDown() || E3.IsPaused()) return;
+                        if (E3.CharacterSettings.AutoPetDebug) E3.Bots.Broadcast($"\ayDebug: AP: About to call IdentForCharacter for bot: {botName}");                        
+                        IdentForCharacter(botName, petId);
+                        if (e3util.IsShuttingDown() || E3.IsPaused()) return;
                     }
                 }
             }
+            //__^BOT PETS^__
+            
+            E3.Bots.Broadcast("\agArmPets finished.");
+            CleanUp();
+            LazCleanUp();
         }
 
         /// <summary>
