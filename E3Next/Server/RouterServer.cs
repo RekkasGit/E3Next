@@ -54,7 +54,7 @@ namespace E3Core.Server
         RouterSocket _rpcRouter = null;
         Task _serverThread = null;
         NetMQ.Msg routerResponse = new NetMQ.Msg();
-        TimeSpan recieveTimeout = new TimeSpan(0, 0, 0, 0, 5);
+        TimeSpan recieveTimeout = new TimeSpan(0, 0, 0, 0, 50);
         NetMQ.Msg routerMessage = new NetMQ.Msg();
         Int64 counter = 0;
         static TimeSpan timeout = new TimeSpan(0, 0, 0, 5);
@@ -99,7 +99,7 @@ namespace E3Core.Server
             try
             {
 
-                while (Core.IsProcessing)
+                while (Core.IsProcessing && E3.NetMQ_RouterServerThradRun)
                 {
 
                     if (_rpcRouter.TryReceive(ref routerMessage, recieveTimeout))

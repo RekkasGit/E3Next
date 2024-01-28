@@ -32,7 +32,7 @@ namespace E3Core.Settings
 
         public Int32 Loot_LootItemDelay = 300;
         public string Loot_LinkChannel = String.Empty;
-        public List<string> Loot_LinkChannelValid = new List<string>() {"g","gu","say","rsay","shout","gsay", "rs"};
+        public List<string> Loot_LinkChannelValid = new List<string>() {"g","gu","say","rsay","shout","gsay", "rs","bc","e3bc"};
         public Int32 MaxGemSlots = 8 + MQ.Query<Int32>("${Me.AltAbility[Mnemonic Retention].Rank}");
 
         private Int32 casting_DefaultSpellGem = 8;
@@ -67,10 +67,13 @@ namespace E3Core.Settings
         public bool AutoTrade_Group = false;
         public bool AutoTrade_Guild = false;
         public bool AutoTrade_Raid = false;
+        public List<string> General_E3NetworkAddPathToMonitor = new List<string>();
+        public string DiscordBotToken = string.Empty;
+        public string DiscordGuildChannelId = string.Empty;
+        public string DiscordServerId = string.Empty;
+        public string DiscordMyUserId = string.Empty;
 
-        
-
-        public Int32 Movement_StandingStill = 10000;
+		public Int32 Movement_StandingStill = 10000;
         public Int32 Movement_ChaseDistanceMin = 10;
         public Int32 Movement_ChaseDistanceMax = 500;
         public Int32 Movement_NavStopDistance = 10;
@@ -131,10 +134,16 @@ namespace E3Core.Settings
             //    section.Keys.AddKey("NetworkMethod", "EQBC");
 
             LoadKeyData("General", "NetworkMethod",parsedData, ref General_NetworkMethod);
-            LoadKeyData("General", "Network Default Broadcast (Group,All,AllInZoneOrRaid)", parsedData, ref General_BroadCast_Default);
-
+			LoadKeyData("General", "E3NetworkAddPathToMonitor", parsedData,General_E3NetworkAddPathToMonitor);
+			LoadKeyData("General", "Network Default Broadcast (Group,All,AllInZoneOrRaid)", parsedData, ref General_BroadCast_Default);
             LoadKeyData("General", "Heal While Navigating (On/Off)", parsedData, ref General_HealWhileNavigating);
             LoadKeyData("General", "Beep Notifications (On/Off)", parsedData, ref General_BeepNotifications);
+
+            LoadKeyData("Discord Bot", "Token", parsedData, ref DiscordBotToken);
+            LoadKeyData("Discord Bot", "Guild Channel ID", parsedData, ref DiscordGuildChannelId);
+            LoadKeyData("Discord Bot", "Server ID", parsedData, ref DiscordServerId);
+            LoadKeyData("Discord Bot", "My Discord User ID", parsedData, ref DiscordMyUserId);
+
 
             LoadKeyData("Misc", "Automatically Use Misfit Box (On/Off)", parsedData, ref AutoMisfitBox);
             LoadKeyData("Misc", "Turn Player Attack Off During Enrage (On/Off)", parsedData, ref AttackOffOnEnrage);
@@ -295,10 +304,18 @@ namespace E3Core.Settings
             var section = newFile.Sections.GetSectionData("General");
             section.Keys.AddKey("AutoMedBreak PctMana", "0");
             section.Keys.AddKey("NetworkMethod", "EQBC");
+            section.Keys.AddKey("E3NetworkAddPathToMonitor", "");
             section.Keys.AddKey("Network Default Broadcast (Group,All,AllInZoneOrRaid)", "Group");
 
             section.Keys.AddKey("Heal While Navigating (On/Off)","On");
             section.Keys.AddKey("Beep Notifications (On/Off)", "On");
+
+            newFile.Sections.AddSection("Discord Bot");
+            section = newFile.Sections.GetSectionData("Discord Bot");
+            section.Keys.AddKey("Token", "");
+            section.Keys.AddKey("Guild Channel ID", "");
+            section.Keys.AddKey("Server ID", "");
+            section.Keys.AddKey("My Discord User ID", "");
             
             //Misc
             newFile.Sections.AddSection("Misc");

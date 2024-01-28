@@ -9,6 +9,7 @@ using System.Runtime.CompilerServices;
 using System.Security.Cryptography;
 using System.Text;
 using System.Threading.Tasks;
+using System.Xml.Linq;
 
 namespace E3Core.Processors
 {
@@ -89,6 +90,10 @@ namespace E3Core.Processors
                     if (castResult != CastReturn.CAST_SUCCESS)
                     {
                         E3.Bots.Broadcast($"\arNowcast of {spell} unsuccessful due to {castResult}!");
+                        if (castResult== CastReturn.CAST_NOTREADY)
+                        {
+                            Basics.PrintE3TReport(new Spell(spell));
+                        }
                     }
                 }
             });
@@ -150,29 +155,38 @@ namespace E3Core.Processors
                             return CastReturn.CAST_IFFAILURE;
                         }
                     }
-                    if (!String.IsNullOrWhiteSpace(spell.CheckFor))
+					
+					if (spell.CheckForCollection.Count > 0)
+					{
+						foreach (var checkforItem in spell.CheckForCollection.Keys)
+						{
+							Casting.TrueTarget(targetid);
+							if (MQ.Query<bool>($"${{Bool[${{Target.Buff[{checkforItem}]}}]}}"))
+							{
+								return CastReturn.CAST_TAKEHOLD;
+							}
+						}
+						
+					}
+				recast:
+					if (!Casting.CheckReady(spell))
                     {
-                        Casting.TrueTarget(targetid);
-                        if (MQ.Query<bool>($"${{Bool[${{Target.Buff[{spell.CheckFor}]}}]}}"))
-                        {
-                            return CastReturn.CAST_TAKEHOLD;
-                        }
+                        return CastReturn.CAST_NOTREADY;
                     }
-				    recast:
-					if (Casting.InRange(targetid, spell) && Casting.CheckReady(spell) && Casting.CheckMana(spell))
+                    if(!Casting.InRange(targetid,spell))
                     {
-                        
-                        var returnValue = Casting.Cast(targetid, spell, null, true);
-						if(returnValue== CastReturn.CAST_FIZZLE)
-                        {
-                            goto recast;
-                        }
-                        return returnValue;
+                        return CastReturn.CAST_OUTOFRANGE;
                     }
-                    else
+					if (!Casting.CheckMana(spell))
+					{
+						return CastReturn.CAST_OUTOFMANA;
+					}
+			        var returnValue = Casting.Cast(targetid, spell, null, true);
+					if(returnValue== CastReturn.CAST_FIZZLE)
                     {
-                        //spell isn't quite ready yet pause for 1.5 sec
+                        goto recast;
                     }
+                    return returnValue;
                 }
 
                 return CastReturn.CAST_INVALID;

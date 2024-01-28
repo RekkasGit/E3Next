@@ -13,6 +13,10 @@ namespace E3Core.Data
         public Int32 _mobID;
         public Dictionary<Int32, Int32> SpellCounters = new Dictionary<int, int>();
 
+        private ResistCounter()
+        {
+
+        }
         public static ResistCounter Aquire()
         {
             ResistCounter obj;

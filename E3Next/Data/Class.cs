@@ -36,7 +36,8 @@ namespace E3Core.Data
         HealHybrid = Paladin | Ranger | Beastlord,
         FeignDeathClass = Necromancer | Shadowknight | Monk,
         ManaUsers = Caster | Priest | HealHybrid | Shadowknight,
-        Ranged = Caster | Ranger
+        Ranged = Caster | Ranger,
+        Charmer = Enchanter|Druid|Necromancer
     }
 
     public static class Classes

@@ -93,7 +93,7 @@ namespace E3Core.Processors
                             {
                                 if (Filters.Count > 0)
                                 {
-                                    E3.Bots.BroadcastCommand($"/assistme {mobId} {Zoning.CurrentZone.Id} {string.Join(" ", Filters)}");
+                                    E3.Bots.BroadcastCommand($"/assistme {mobId} {Zoning.CurrentZone.Id} \"{string.Join(" ", Filters)}\"");
                                 }
                                 else
                                 {
@@ -104,7 +104,7 @@ namespace E3Core.Processors
                             {
                                 if (Filters.Count > 0)
                                 {
-                                    E3.Bots.BroadcastCommandToGroup($"/assistme {mobId} {Zoning.CurrentZone.Id} {string.Join(" ", Filters)}");
+                                    E3.Bots.BroadcastCommandToGroup($"/assistme {mobId} {Zoning.CurrentZone.Id} \"{string.Join(" ", Filters)}\"");
                                 }
                                 else
                                 {

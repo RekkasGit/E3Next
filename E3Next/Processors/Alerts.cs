@@ -43,16 +43,12 @@ namespace E3Core.Processors
                 }
                 else
                 {
-                   
                     if(currentFace!= "Mirrored Mask")
                     {
                         MQ.Cmd("/exchange \"mirrored mask\" face");
-                        MQ.Delay(100);
+                        MQ.Delay(500);
                     }
                 }
-
-
-
                 if (MQ.Query<bool>("${Me.Inventory[face].Name.Equal[Mirrored Mask]}"))
                 {
                     Data.Spell mirroredMask = new Data.Spell("Mirrored Mask");
@@ -113,10 +109,64 @@ namespace E3Core.Processors
                 }
 
             });
-            #endregion
+			#endregion
+			#region Ture_Warning
+			pattern = "roars with fury as it surveys its attackers";
+			EventProcessor.RegisterEvent("Ture_warning", pattern, (x) => {
+				{
 
-            #region Uqua
-            pattern = "The (.+) must unlock the door to the next room\\.";
+					if (E3.CurrentName == MQ.Query<string>("${Raid.Leader}"))
+					{
+						MQ.Cmd($"/rsay AE Rampage INC 5 seconds.");
+					}
+				}
+
+			});
+			#endregion
+
+			#region Ture_Ramp_Start
+			pattern = "eyes roll into its head as it goes into a frenzy";
+			EventProcessor.RegisterEvent("Ture_Ramp_Start", pattern, (x) => {
+				{
+
+					if (E3.CurrentName == MQ.Query<string>("${Raid.Leader}"))
+					{
+						MQ.Cmd($"/rsay -+- 10k AE Rampage Started -+-");
+					}
+				}
+
+			});
+			#endregion
+
+			#region Ture_Ramp_End
+			pattern = "calms and regains its focus";
+			EventProcessor.RegisterEvent("Ture_Ramp_End", pattern, (x) => {
+				{
+
+					if (E3.CurrentName == MQ.Query<string>("${Raid.Leader}"))
+					{
+						MQ.Cmd($"/rsay -+- Boss Safe - AE Rampage ended -+-");
+					}
+				}
+
+			});
+			#endregion
+
+			#region Keldovan_Power
+			pattern = "Keldovan the Harrier regains his combat stance";
+			EventProcessor.RegisterEvent("Keldovan_Power", pattern, (x) => {
+				{
+
+					if (E3.CurrentName == MQ.Query<string>("${Raid.Leader}"))
+					{
+						MQ.Cmd($"/rsay -+- Keldovan has regained a power - KILL A DOG -+-");
+					}
+				}
+
+			});
+			#endregion
+			#region Uqua
+			pattern = "The (.+) must unlock the door to the next room\\.";
             EventProcessor.RegisterEvent("AlertUquaChamberKey", pattern, (x) => {
 
                 if(x.match.Groups.Count>1)
@@ -148,10 +198,29 @@ namespace E3Core.Processors
             });
 
 			pattern = @"It will take about 20 more seconds to prepare your camp\.";
-			EventProcessor.RegisterEvent("ShutdownForCamp", pattern, (x) => {
+			EventProcessor.RegisterEvent("PauseForCamp", pattern, (x) => {
 
-                Basics.IsPaused = true;
+				if (!E3.CharacterSettings.CPU_Camping_PauseAt20Seconds)
+				{
+					return;
+				}
+				Basics.IsPaused = true;
 				E3.Bots.Broadcast("\arPAUSING E3!");
+			});
+
+			pattern = @"It will take about 5 more seconds to prepare your camp\.";
+			EventProcessor.RegisterEvent("ShutdownForCamp", pattern, (x) => {
+			
+                if(!E3.CharacterSettings.CPU_Camping_ShutdownAt5Seconds)
+                {
+                    return;
+                }
+
+                if (Core._MQ2MonoVersion >= 0.22m)
+				{
+					MQ.Cmd("/shutdown", true);
+				}
+				
 			});
 		}
     }

@@ -75,6 +75,9 @@ namespace E3NextUI
 			this.darkModeMenuItem = new System.Windows.Forms.ToolStripMenuItem();
 			this.overlayOntopToolStripMenuItem = new System.Windows.Forms.ToolStripMenuItem();
 			this.buttonModeToolStripMenuItem = new System.Windows.Forms.ToolStripMenuItem();
+			this.textToSpeachToolStripMenuItem = new System.Windows.Forms.ToolStripMenuItem();
+			this.settingsToolStripMenuItem1 = new System.Windows.Forms.ToolStripMenuItem();
+			this.unlockEvaVoiceToolStripMenuItem = new System.Windows.Forms.ToolStripMenuItem();
 			this.panelMain = new System.Windows.Forms.Panel();
 			this.panelButtons = new System.Windows.Forms.Panel();
 			this.tableLayoutPanelDynamicButtons = new System.Windows.Forms.TableLayoutPanel();
@@ -489,6 +492,7 @@ namespace E3NextUI
 			this.menuStrip1.Size = new System.Drawing.Size(1092, 24);
 			this.menuStrip1.TabIndex = 44;
 			this.menuStrip1.Text = "menuStrip1";
+			this.menuStrip1.MouseDown += new System.Windows.Forms.MouseEventHandler(this.menuStrip1_MouseDown);
 			// 
 			// mainToolStripMenuItem
 			// 
@@ -526,7 +530,8 @@ namespace E3NextUI
 			this.settingsToolStripMenuItem.DropDownItems.AddRange(new System.Windows.Forms.ToolStripItem[] {
             this.darkModeMenuItem,
             this.overlayOntopToolStripMenuItem,
-            this.buttonModeToolStripMenuItem});
+            this.buttonModeToolStripMenuItem,
+            this.textToSpeachToolStripMenuItem});
 			this.settingsToolStripMenuItem.Name = "settingsToolStripMenuItem";
 			this.settingsToolStripMenuItem.Size = new System.Drawing.Size(61, 20);
 			this.settingsToolStripMenuItem.Text = "Settings";
@@ -551,6 +556,30 @@ namespace E3NextUI
 			this.buttonModeToolStripMenuItem.Size = new System.Drawing.Size(153, 22);
 			this.buttonModeToolStripMenuItem.Text = "ButtonMode";
 			this.buttonModeToolStripMenuItem.Click += new System.EventHandler(this.buttonModeToolStripMenuItem_Click);
+			// 
+			// textToSpeachToolStripMenuItem
+			// 
+			this.textToSpeachToolStripMenuItem.DropDownItems.AddRange(new System.Windows.Forms.ToolStripItem[] {
+            this.settingsToolStripMenuItem1,
+            this.unlockEvaVoiceToolStripMenuItem});
+			this.textToSpeachToolStripMenuItem.Name = "textToSpeachToolStripMenuItem";
+			this.textToSpeachToolStripMenuItem.Size = new System.Drawing.Size(153, 22);
+			this.textToSpeachToolStripMenuItem.Text = "Text to Speach";
+			this.textToSpeachToolStripMenuItem.Click += new System.EventHandler(this.textToSpeachToolStripMenuItem_Click);
+			// 
+			// settingsToolStripMenuItem1
+			// 
+			this.settingsToolStripMenuItem1.Name = "settingsToolStripMenuItem1";
+			this.settingsToolStripMenuItem1.Size = new System.Drawing.Size(163, 22);
+			this.settingsToolStripMenuItem1.Text = "Settings";
+			this.settingsToolStripMenuItem1.Click += new System.EventHandler(this.settingsToolStripMenuItem1_Click);
+			// 
+			// unlockEvaVoiceToolStripMenuItem
+			// 
+			this.unlockEvaVoiceToolStripMenuItem.Name = "unlockEvaVoiceToolStripMenuItem";
+			this.unlockEvaVoiceToolStripMenuItem.Size = new System.Drawing.Size(163, 22);
+			this.unlockEvaVoiceToolStripMenuItem.Text = "Unlock Eva Voice";
+			this.unlockEvaVoiceToolStripMenuItem.Click += new System.EventHandler(this.unlockEvaVoiceToolStripMenuItem_Click);
 			// 
 			// panelMain
 			// 
@@ -857,6 +886,9 @@ namespace E3NextUI
         private System.Windows.Forms.ToolStripMenuItem overlayOntopToolStripMenuItem;
         private System.Windows.Forms.ToolStripMenuItem donateToolStripMenuItem;
 		private System.Windows.Forms.ToolStripMenuItem buttonModeToolStripMenuItem;
+		private System.Windows.Forms.ToolStripMenuItem textToSpeachToolStripMenuItem;
+		private System.Windows.Forms.ToolStripMenuItem settingsToolStripMenuItem1;
+		private System.Windows.Forms.ToolStripMenuItem unlockEvaVoiceToolStripMenuItem;
 	}
 }
 

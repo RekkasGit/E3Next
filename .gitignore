@@ -128,3 +128,4 @@ UpgradeLog*.XML
 *.resources
 test-results/
 >>>>>>> Stashed changes
+/DiscordApiLibrary/obj

@@ -262,7 +262,7 @@ namespace E3Core.Processors
                 //lets check if we can loot.
                 Movement.PauseMovement();
 
-                bool destroyCorpses = false;
+               // bool destroyCorpses = false;
 
                 foreach (var c in corpses)
                 {
@@ -284,7 +284,7 @@ namespace E3Core.Processors
                     if(MQ.Query<bool>("${Target.ID}"))
                     {
                         e3util.TryMoveToTarget();
-
+                        MQ.Delay(2250, "${Target.Distance3D} < 10"); // Give Time to get to Corpse 
                         LootCorpse(c);
                        
                         if (MQ.Query<bool>("${Window[LootWnd].Open}"))
@@ -298,6 +298,7 @@ namespace E3Core.Processors
                 }
 
                 if (E3.CharacterSettings.Misc_DebugLogLevel > 0) E3.Bots.Broadcast("\agFinished looting area");
+                MQ.Delay(100); // Wait for fading corpses to disappear
             }
         }
         private static bool SafeToLoot()

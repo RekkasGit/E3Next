@@ -5,6 +5,7 @@ using MonoCore;
 using System;
 using System.Collections.Generic;
 using System.Diagnostics;
+using System.Linq;
 using System.Reflection;
 using System.Text;
 
@@ -26,9 +27,24 @@ namespace E3Core.Data
     {
         public static Dictionary<Int32, Data.Spell> _loadedSpells = new Dictionary<int, Spell>();
         public static Dictionary<string, Data.Spell> LoadedSpellsByName = new Dictionary<string, Spell>();
-        public static IMQ MQ = E3.MQ;
+		static Dictionary<string, Int32> _spellIDLookup = new Dictionary<string, Int32>();
+		public static IMQ MQ = E3.MQ;
 
 
+        public static Int32 SpellIDLookup(string spellName)
+        {
+            if(_spellIDLookup.TryGetValue(spellName, out var result))
+            {
+                return result;
+			}
+            Int32 spellID = MQ.Query<Int32>($"${{Spell[{spellName}].ID}}");
+            if(spellID>0)
+            {
+				_spellIDLookup.Add(spellName, spellID);
+			}
+			return spellID;
+
+		}
         public Spell(string spellName, IniData parsedData = null)
         {
 
@@ -84,11 +100,15 @@ namespace E3Core.Data
 					{
 						Debug = true;
 					}
+					else if (value.Equals("HealthMax|", StringComparison.OrdinalIgnoreCase))
+					{
+						HealthMax = GetArgument<Int32>(value);
+					}
 					else if (value.StartsWith("AfterSpell|", StringComparison.OrdinalIgnoreCase))
                     {
                         AfterSpell = GetArgument<String>(value);
                     }
-					else if (value.StartsWith("StackRequetTargets|", StringComparison.OrdinalIgnoreCase))
+					else if (value.StartsWith("StackRequestTargets|", StringComparison.OrdinalIgnoreCase))
 					{
                         string targetString = GetArgument<String>(value);
                         string[] targets = targetString.Split(new char[] { ',' }, StringSplitOptions.RemoveEmptyEntries);
@@ -107,6 +127,10 @@ namespace E3Core.Data
 					{
 						StackRecastDelay = GetArgument<Int64>(value);
 						StackRecastDelay *= 1000;
+					}
+					else if (value.StartsWith("StackRequestItem|", StringComparison.OrdinalIgnoreCase))
+					{
+						StackRequestItem = GetArgument<String>(value);
 					}
 					else if (value.StartsWith("AfterCast|", StringComparison.OrdinalIgnoreCase))
                     {
@@ -133,10 +157,19 @@ namespace E3Core.Data
                         MaxTries = GetArgument<Int32>(value);
                     }
                     else if (value.StartsWith("CheckFor|", StringComparison.OrdinalIgnoreCase))
-                    {
-                        CheckFor = GetArgument<String>(value);
-                    }
-                    else if (value.StartsWith("CastIf|", StringComparison.OrdinalIgnoreCase))
+					{
+                        string checkFors = GetArgument<String>(value);
+                        string[] checkForItems = checkFors.Split(',');
+
+                        foreach(var checkFor in checkForItems)
+                        {
+                            if(!CheckForCollection.ContainsKey(checkFor.Trim()))
+                            {
+								CheckForCollection.Add(checkFor.Trim(), 0);
+							}
+                        }
+					}
+					else if (value.StartsWith("CastIf|", StringComparison.OrdinalIgnoreCase))
                     {
                         CastIF = GetArgument<String>(value);
                     }
@@ -249,10 +282,14 @@ namespace E3Core.Data
                         var section = parsedData.Sections["Ifs"];
                         if (section != null)
                         {
-                            var keyData = section[ifKey];
-                            if (!String.IsNullOrWhiteSpace(keyData))
+                            var keys = ifKey.Split(','); // Splitting based on comma
+                            foreach (var key in keys)
                             {
-                                Ifs = keyData;
+                                var keyData = section[key];
+                                if (!String.IsNullOrWhiteSpace(keyData))
+                                {
+                                    Ifs = string.IsNullOrWhiteSpace(Ifs) ? keyData : Ifs + " && " + keyData;
+                                }
                             }
                         }
                     }
@@ -451,7 +488,8 @@ namespace E3Core.Data
                     SpellID = MQ.Query<Int32>($"${{Me.Inventory[{invSlot}].Spell.ID}}");
                     CastID = MQ.Query<Int32>($"${{Me.Inventory[{invSlot}].ID}}");
                     SpellType = MQ.Query<String>($"${{Me.Inventory[{invSlot}].Spell.SpellType}}");
-                }
+					IsShortBuff = MQ.Query<bool>($"${{Me.Inventory[{invSlot}].Spell.DurationWindow}}");
+				}
                 else
                 {
                     //1 index vs 0 index
@@ -481,8 +519,8 @@ namespace E3Core.Data
                     SpellID = MQ.Query<Int32>($"${{Me.Inventory[{invSlot}].Item[{bagSlot}].Spell.ID}}");
                     CastID = MQ.Query<Int32>($"${{Me.Inventory[{invSlot}].Item[{bagSlot}].ID}}");
                     SpellType = MQ.Query<String>($"${{Me.Inventory[{invSlot}].Item[{bagSlot}].Spell.SpellType}}");
-
-                }
+					IsShortBuff = MQ.Query<bool>($"${{Me.Inventory[{invSlot}].Item[{bagSlot}].Spell.DurationWindow}}");
+				}
 
             }
             else if (CastType == CastType.AA)
@@ -530,8 +568,10 @@ namespace E3Core.Data
                 SpellName = MQ.Query<String>($"${{Me.AltAbility[{CastName}].Spell}}");
                 SpellID = MQ.Query<Int32>($"${{Me.AltAbility[{CastName}].Spell.ID}}");
                 CastID = MQ.Query<Int32>($"${{Me.AltAbility[{CastName}].ID}}");
-            }
-            else if (CastType == CastType.Spell)
+				IsShortBuff = MQ.Query<bool>($"${{Me.AltAbility[{CastName}].Spell.DurationWindow}}");
+
+			}
+			else if (CastType == CastType.Spell)
             {
               
                 if(SpellInBook)
@@ -549,8 +589,9 @@ namespace E3Core.Data
                     Double AERange = MQ.Query<Double>($"${{Me.Book[{bookNumber}].AERange}}");
                     MyRange = MQ.Query<double>($"${{Me.Book[{bookNumber}].MyRange}}");
                     SpellType = MQ.Query<String>($"${{Me.Book[{bookNumber}].SpellType}}");
+                    IsShortBuff = MQ.Query<bool>($"${{Me.Book[{bookNumber}].DurationWindow}}");
 
-                    if (SpellType.Equals("Detrimental", StringComparison.OrdinalIgnoreCase))
+					if (SpellType.Equals("Detrimental", StringComparison.OrdinalIgnoreCase))
                     {
 
                         if (AERange > 0)
@@ -590,8 +631,9 @@ namespace E3Core.Data
                     Double AERange = MQ.Query<Double>($"${{Spell[{CastName}].AERange}}");
                     MyRange = MQ.Query<double>($"${{Spell[{CastName}].MyRange}}");
                     SpellType = MQ.Query<String>($"${{Spell[{CastName}].SpellType}}");
+					IsShortBuff = MQ.Query<bool>($"${{Spell[{CastName}].DurationWindow}}");
 
-                    if (SpellType.Equals("Detrimental", StringComparison.OrdinalIgnoreCase))
+					if (SpellType.Equals("Detrimental", StringComparison.OrdinalIgnoreCase))
                     {
 
                         if (AERange > 0)
@@ -638,23 +680,27 @@ namespace E3Core.Data
                 SpellID = MQ.Query<Int32>($"${{Spell[{CastName}].ID}}");
                 CastID = SpellID;
                 SpellType = MQ.Query<String>($"${{Spell[{CastName}].SpellType}}");
+				IsShortBuff = MQ.Query<bool>($"${{Spell[{CastName}].DurationWindow}}");
 
-            }
-            else if (CastType == CastType.Ability)
+
+			}
+			else if (CastType == CastType.Ability)
             {
                 //nothing to update here
             }
 
-            if (!String.IsNullOrWhiteSpace(CheckFor))
+            foreach(string key in CheckForCollection.Keys.ToList())
             {
-                if (MQ.Query<bool>($"${{Bool[${{AltAbility[{CheckFor}].Spell}}]}}"))
-                {
-                    CheckForID = MQ.Query<Int32>($"${{AltAbility[{CheckFor}].Spell.ID}}");
-                }
-                else if (MQ.Query<bool>($"${{Bool[${{Spell[{CheckFor}].ID}}]}}"))
-                {
-                    CheckForID = MQ.Query<Int32>($"${{Spell[{CheckFor}].ID}}");
-                }
+                Int32 tcID = 0;
+				if (MQ.Query<bool>($"${{Bool[${{AltAbility[{key}].Spell}}]}}"))
+				{
+					tcID = MQ.Query<Int32>($"${{AltAbility[{key}].Spell.ID}}");
+				}
+				else if (MQ.Query<bool>($"${{Bool[${{Spell[{key}].ID}}]}}"))
+				{
+					tcID = MQ.Query<Int32>($"${{Spell[{key}].ID}}");
+				}
+                CheckForCollection[key] = tcID;
             }
 
         }
@@ -672,7 +718,7 @@ namespace E3Core.Data
         public Int32 SpellGem;
         public Int32 GiveUpTimer;
         public Int32 MaxTries = 5;
-        public String CheckFor = String.Empty;
+        public Dictionary<string, Int32> CheckForCollection = new Dictionary<string, int>();
         public Int32 Duration;
         public Int32 DurationTotalSeconds;
         public Int32 RecastTime;
@@ -715,10 +761,10 @@ namespace E3Core.Data
         public List<string> StackRequestTargets = new List<string>();
         public Int64 StackIntervalCheck = 10000;
         public Int64 StackIntervalNextCheck = 0;
-        public Int64 StackRecastDelay = 1860000;
+        public Int64 StackRecastDelay = 0;
+        public string StackRequestItem = String.Empty;
 		public Dictionary<string, Int64> StackSpellCooldown = new Dictionary<string, long>();
 		public Boolean GiftOfMana;
-        public Int32 CheckForID;
         public Int32 SpellID;
         public Int32 PctAggro;
         public String Zone = "All";
@@ -741,6 +787,9 @@ namespace E3Core.Data
         public bool SpellInBook = false;
         public bool NoMidSongCast = false;
         public Int64 MinDurationBeforeRecast = 0;
+        public Int64 LastUpdateCheckFromTopicUpdate = 0;
+        public bool IsShortBuff = false;
+        public Int32 HealthMax = 100;
       
 
         public override string ToString()

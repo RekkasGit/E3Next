@@ -145,6 +145,7 @@ namespace E3Core.Settings
                 }
             }
         }
+
         public static void LoadKeyData(string sectionKey, string Key, IniData parsedData, ref DefaultBroadcast valueToSet)
         {
             _log.Write($"{sectionKey} {Key}");
@@ -399,6 +400,9 @@ namespace E3Core.Settings
 			if (sectionkey.Equals("Dispel", StringComparison.OrdinalIgnoreCase)) return;
 			if (sectionkey.Equals("Buffs", StringComparison.OrdinalIgnoreCase) && keyData.KeyName.Equals("Group Buff Request",StringComparison.OrdinalIgnoreCase)) return;
 			if (sectionkey.Equals("Buffs", StringComparison.OrdinalIgnoreCase) && keyData.KeyName.Equals("Raid Buff Request", StringComparison.OrdinalIgnoreCase)) return;
+			if (sectionkey.Equals("Buffs", StringComparison.OrdinalIgnoreCase) && keyData.KeyName.Equals("Stack Buff Request", StringComparison.OrdinalIgnoreCase)) return;
+
+			if (sectionkey.Equals("Charm", StringComparison.OrdinalIgnoreCase)) return;
 
 			string thing = thingToCheckFor;
             if (thingToCheckFor.Contains('/'))

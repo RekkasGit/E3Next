@@ -5,21 +5,17 @@ using E3NextUI.Util;
 using Octokit;
 using System;
 using System.Collections.Generic;
-using System.ComponentModel;
-using System.Data;
 using System.Diagnostics;
 using System.Drawing;
 using System.Linq;
-using System.Runtime.CompilerServices;
 using System.Runtime.InteropServices;
 using System.Text;
 using System.Threading;
 using System.Threading.Tasks;
 using System.Windows.Forms;
-using System.Xml;
-using Ionic.Zip;
 using System.Reflection;
-using static System.Windows.Forms.VisualStyles.VisualStyleElement;
+using System.IO;
+
 
 namespace E3NextUI
 {
@@ -28,7 +24,13 @@ namespace E3NextUI
 
     public partial class E3UI : Form
     {
-        public static string Version = "v1.0.44-beta";
+		public const int WM_NCLBUTTONDOWN = 0xA1;
+		public const int HT_CAPTION = 0x2;
+		[DllImportAttribute("user32.dll")]
+		public static extern int SendMessage(IntPtr hWnd, int Msg, int wParam, int lParam);
+		[DllImportAttribute("user32.dll")]
+		public static extern bool ReleaseCapture();
+		public static string Version = "v1.2";
         public static System.Diagnostics.Stopwatch _stopWatch = new System.Diagnostics.Stopwatch();
         public static volatile bool ShouldProcess = true;
 
@@ -51,6 +53,7 @@ namespace E3NextUI
         public static object _objectLock = new object();
         public static GeneralSettings _genSettings;
         public static bool _buttonMode = false;
+        public static bool _textToSpeachMode = false;
         public Image _collapseConsoleImage;
         public Image _uncollapseConsoleImage;
         public Image _collapseDynamicButtonImage;
@@ -60,13 +63,37 @@ namespace E3NextUI
         public static String _playerSP;
         private globalKeyboardHook _globalKeyboard;
         public static string _currentWindowName = "NULL";
-       
+        private FormBorderStyle _startingStyle;
+		//resizing stuff for when in buttonmode
+		//https://stackoverflow.com/questions/2575216/how-to-move-and-resize-a-form-without-a-border
+		private const int
+	    HTLEFT = 10,
+	    HTRIGHT = 11,
+	    HTTOP = 12,
+	    HTTOPLEFT = 13,
+	    HTTOPRIGHT = 14,
+	    HTBOTTOM = 15,
+	    HTBOTTOMLEFT = 16,
+	    HTBOTTOMRIGHT = 17;
+		const int _ = 10; // you can rename this variable if you like
+		Rectangle Top { get { return new Rectangle(0, 0, this.ClientSize.Width, _); } }
+		Rectangle Left { get { return new Rectangle(0, 0, _, this.ClientSize.Height); } }
+		Rectangle Bottom { get { return new Rectangle(0, this.ClientSize.Height - _, this.ClientSize.Width, _); } }
+		Rectangle Right { get { return new Rectangle(this.ClientSize.Width - _, 0, _, this.ClientSize.Height); } }
 
-        public E3UI()
+		Rectangle TopLeft { get { return new Rectangle(0, 0, _, _); } }
+		Rectangle TopRight { get { return new Rectangle(this.ClientSize.Width - _, 0, _, _); } }
+		Rectangle BottomLeft { get { return new Rectangle(0, this.ClientSize.Height - _, _, _); } }
+		Rectangle BottomRight { get { return new Rectangle(this.ClientSize.Width - _, this.ClientSize.Height - _, _, _); } }
+
+		//end resizing stuff for buttonmode
+		public E3UI()
         {
             InitializeComponent();
-            
-            _collapseConsoleImage = (Image)pbCollapseConsoleButtons.Image.Clone();
+            _startingStyle = this.FormBorderStyle;
+			SetStyle(ControlStyles.ResizeRedraw, true); // this is to avoid visual artifacts
+
+			_collapseConsoleImage = (Image)pbCollapseConsoleButtons.Image.Clone();
             pbCollapseConsoleButtons.Image.RotateFlip(RotateFlipType.Rotate180FlipNone);
             _uncollapseConsoleImage = (Image)pbCollapseConsoleButtons.Image.Clone();
 
@@ -118,12 +145,13 @@ namespace E3NextUI
             _genSettings.LoadData();
 
 
-            if(_genSettings.StartLocationX>0 || _genSettings.StartLocationY>0)
+           // if(_genSettings.StartLocationX>0 || _genSettings.StartLocationY>0)
             {
                 this.StartPosition = FormStartPosition.Manual;
                 var point = new Point(_genSettings.StartLocationX, _genSettings.StartLocationY);
+               this.Location = point;
                 var size = new Size(_genSettings.Width, _genSettings.Height);
-                this.DesktopBounds = new Rectangle(point, size);
+                this.DesktopBounds = new System.Drawing.Rectangle(point, size);
           
             }
 
@@ -158,8 +186,26 @@ namespace E3NextUI
 
            
         }
+		protected override void WndProc(ref Message message)
+		{
+			base.WndProc(ref message);
 
-		
+			if (message.Msg == 0x84) // WM_NCHITTEST
+			{
+				var cursor = this.PointToClient(Cursor.Position);
+
+				if (TopLeft.Contains(cursor)) message.Result = (IntPtr)HTTOPLEFT;
+				else if (TopRight.Contains(cursor)) message.Result = (IntPtr)HTTOPRIGHT;
+				else if (BottomLeft.Contains(cursor)) message.Result = (IntPtr)HTBOTTOMLEFT;
+				else if (BottomRight.Contains(cursor)) message.Result = (IntPtr)HTBOTTOMRIGHT;
+
+				else if (Top.Contains(cursor)) message.Result = (IntPtr)HTTOP;
+				else if (Left.Contains(cursor)) message.Result = (IntPtr)HTLEFT;
+				else if (Right.Contains(cursor)) message.Result = (IntPtr)HTRIGHT;
+				else if (Bottom.Contains(cursor)) message.Result = (IntPtr)HTBOTTOM;
+			}
+		}
+
 
 		private delegate void GlobalDelegate();
         public void GlobalUIProcess()
@@ -428,7 +474,7 @@ namespace E3NextUI
                     Int32 newWidth = BorderWidth + (panelStatusPannel2.Width) + 10;
                     var point = new Point(this.DesktopBounds.X, this.DesktopBounds.Y);
                     var size = new Size(newWidth, this.DesktopBounds.Height);
-                    this.DesktopBounds = new Rectangle(point, size);
+                    this.DesktopBounds = new System.Drawing.Rectangle(point, size);
 
                 }
                 pbCollapseDynamicButtons.Image = (Image)_collapseDynamicButtonImage;
@@ -441,7 +487,7 @@ namespace E3NextUI
                 Int32 newWidth = BorderWidth + (panelStatusPannel2.Width) + tableLayoutPanelDynamicButtons.Width + 10;
                 var point = new Point(this.DesktopBounds.X, this.DesktopBounds.Y);
                 var size = new Size(newWidth, this.DesktopBounds.Height);
-                this.DesktopBounds = new Rectangle(point, size);
+                this.DesktopBounds = new System.Drawing.Rectangle(point, size);
                 tableLayoutPanelDynamicButtons.Visible = true;
                 pbCollapseDynamicButtons.Image = (Image)_uncollapseDynamicButtonImage;
                 _genSettings.DynamicButtonsCollapsed = false;
@@ -653,16 +699,40 @@ namespace E3NextUI
         }
         public void SetPlayerHP(string value)
         {
-            _playerHP = value;
+            if(Int32.TryParse(value,out var result))
+            {
+                _playerHP = result.ToString("N0");
+            }
+            else
+            {
+				_playerHP = value;
+			}
+            
         }
         public void SetPlayerMP(string value)
         {
-            _playerMP = value;
+			if (Int32.TryParse(value, out var result))
+			{
+				_playerMP = result.ToString("N0");
+			}
+			else
+			{
+				_playerMP = value;
+			}
+		
 
         }
         public void SetPlayerSP(string value)
         {
-            _playerSP = value;
+			if (Int32.TryParse(value, out var result))
+			{
+				_playerSP = result.ToString("N0");
+			}
+			else
+			{
+				_playerSP = value;
+			}
+		
         }
         public void SetPlayerCasting(string value)
         {
@@ -763,7 +833,7 @@ namespace E3NextUI
                     Int32 newHeight = TitlebarHeight + BorderWidth + panelStatusPannel2.Height + panelMain.Height + menuStrip1.Height + 20;
                     var point = new Point(this.DesktopBounds.X, this.DesktopBounds.Y);
                     var size = new Size(this.DesktopBounds.Width, newHeight);
-                    this.DesktopBounds = new Rectangle(point, size);
+                    this.DesktopBounds = new System.Drawing.Rectangle(point, size);
 
                 }
 
@@ -779,7 +849,7 @@ namespace E3NextUI
                 Int32 newHeight = TitlebarHeight + BorderWidth + panelStatusPannel2.Height + panelMain.Height + menuStrip1.Height + 20 + (splitContainer2.Height + splitContainer1.Height);
                 var point = new Point(this.DesktopBounds.X, this.DesktopBounds.Y);
                 var size = new Size(this.DesktopBounds.Width, newHeight);
-                this.DesktopBounds = new Rectangle(point, size);
+                this.DesktopBounds = new System.Drawing.Rectangle(point, size);
                 splitContainer2.Visible = true;
                 splitContainer1.Visible = true;
                 _genSettings.ConsoleCollapsed = false;
@@ -995,11 +1065,14 @@ namespace E3NextUI
             }
         }
 
+        string _prevString = String.Empty;
 		private void buttonModeToolStripMenuItem_Click(object sender, EventArgs e)
 		{
             if(_buttonMode)
             {
+                this.Text = _prevString;
                 _buttonMode = false;
+                this.FormBorderStyle = _startingStyle;
 				panelMain.Show();
 				panelStatusPannel2.Show();
 				panelButtons.Location = new Point(736, 24);
@@ -1007,12 +1080,319 @@ namespace E3NextUI
 			}
 			else
             {
-                _buttonMode = true;
+                _prevString = this.Text;
+				_buttonMode = true;
+                this.ControlBox = false;
+                this.Text = String.Empty;
+                this.FormBorderStyle= FormBorderStyle.None;
 				panelMain.Hide();
 				panelStatusPannel2.Hide();
 				panelButtons.Location = new Point(0, 24);
 
 			}
+			buttonModeToolStripMenuItem.Checked = _buttonMode;
+		}
+
+		private void textToSpeachToolStripMenuItem_Click(object sender, EventArgs e)
+		{
+
+		}
+
+		private void settingsToolStripMenuItem1_Click(object sender, EventArgs e)
+		{
+
+            using (TTSConfig config = new TTSConfig())
+            {
+				if (config._voices.Count == 0)
+				{
+					//no voices to configure, warn and kickout
+					var mb = new MessageBox();
+					mb.StartPosition = FormStartPosition.CenterParent;
+					mb.Text = "No voices Found";
+					mb.lblMessage.Text = "No voices found on the system, sorry :(";
+					mb.ShowDialog();
+					return;
+				}
+
+				config.StartPosition = FormStartPosition.CenterParent;
+
+				config.checkBox_channel_auction.Checked = _genSettings.TTS_ChannelAuctionEnabled;
+				config.checkBox_channel_gsay.Checked = _genSettings.TTS_ChannelGroupEnabled;
+				config.checkBox_channel_guild.Checked = _genSettings.TTS_ChannelGuildEnabled;
+				config.checkBox_channel_ooc.Checked = _genSettings.TTS_ChannelOOCEnabled;
+				config.checkBox_channel_raid.Checked = _genSettings.TTS_ChannelRaidEnabled;
+				config.checkBox_channel_say.Checked = _genSettings.TTS_ChannelSayEnabled;
+				config.checkBox_channel_tell.Checked = _genSettings.TTS_ChannelTellEnabled;
+				config.checkBox_channel_shout.Checked = _genSettings.TTS_ChannelShoutEnabled;
+				config.checkBox_channel_mobspells.Checked = _genSettings.TTS_ChannelMobSpellsEnabled;
+				config.checkBox_channel_pcspells.Checked = _genSettings.TTS_ChannelPCSpellsEnabled;
+
+				config.checkBox_tts_enabled.Checked = _genSettings.TTS_Enabled;
+				config.checkBox_tts_breifmode.Checked = _genSettings.TTS_BriefMode;
+				config.textBox_tts_regex.Text = _genSettings.TTS_RegEx;
+				config.textBox_tts_regex_exclude.Text = _genSettings.TTS_RegExExclude;
+				config.numericUpDown_tts_wordlimit.Value = _genSettings.TTS_CharacterLimit;
+
+
+				if (!String.IsNullOrWhiteSpace(_genSettings.TTS_Voice))
+				{
+					config.comboBox_tts_voices.SelectedItem = _genSettings.TTS_Voice;
+				}
+
+				config.trackBar_tts_speed.Value = _genSettings.TTS_Speed;
+				config.trackBar_tts_volume.Value = _genSettings.TTS_Volume;
+
+
+				if (config.ShowDialog() == DialogResult.OK)
+				{
+					_genSettings.TTS_ChannelAuctionEnabled = config.checkBox_channel_auction.Checked;
+					_genSettings.TTS_ChannelGroupEnabled = config.checkBox_channel_gsay.Checked;
+					_genSettings.TTS_ChannelGuildEnabled = config.checkBox_channel_guild.Checked;
+					_genSettings.TTS_ChannelOOCEnabled = config.checkBox_channel_ooc.Checked;
+					_genSettings.TTS_ChannelRaidEnabled = config.checkBox_channel_raid.Checked;
+					_genSettings.TTS_ChannelSayEnabled = config.checkBox_channel_say.Checked;
+					_genSettings.TTS_ChannelTellEnabled = config.checkBox_channel_tell.Checked;
+					_genSettings.TTS_ChannelShoutEnabled = config.checkBox_channel_shout.Checked;
+					_genSettings.TTS_ChannelMobSpellsEnabled = config.checkBox_channel_mobspells.Checked;
+					_genSettings.TTS_ChannelPCSpellsEnabled = config.checkBox_channel_pcspells.Checked;
+					_genSettings.TTS_Enabled = config.checkBox_tts_enabled.Checked;
+					_genSettings.TTS_BriefMode = config.checkBox_tts_breifmode.Checked;
+					_genSettings.TTS_RegEx = config.textBox_tts_regex.Text;
+					_genSettings.TTS_RegExExclude = config.textBox_tts_regex_exclude.Text;
+					_genSettings.TTS_Voice = (String)config.comboBox_tts_voices.SelectedItem;
+					_genSettings.TTS_CharacterLimit = (Int32)config.numericUpDown_tts_wordlimit.Value;
+					_genSettings.TTS_Speed = config.trackBar_tts_speed.Value;
+					_genSettings.TTS_Volume = config.trackBar_tts_volume.Value;
+					_genSettings.SaveData();
+				}
+			}
+		}
+
+		private void unlockEvaVoiceToolStripMenuItem_Click(object sender, EventArgs e)
+		{
+			var mb = new MessageBox();
+			using (TTSConfig config = new TTSConfig())
+            {
+                if (config._voices.Contains("Microsoft Eva Mobile"))
+                {
+
+                    mb.StartPosition = FormStartPosition.CenterParent;
+                    mb.Text = "Already done!";
+                    mb.lblMessage.Text = "This is already unlocked for you! :)";
+                    mb.buttonOkayOnly.Visible = true;
+                    mb.buttonOK.Visible = false;
+                    mb.buttonCancel.Visible = false;
+                    mb.ShowDialog();
+                    return;
+                }
+            }
+
+            string TTSFolder = @"C:\\Windows\\Speech_OneCore\\Engines\\TTS\\en-US";
+			if (!Directory.Exists(TTSFolder))
+            {
+				//TTS not setup/installed on windows?
+				mb.StartPosition = FormStartPosition.CenterParent;
+				mb.Text = "Sorry you don't have eva avilable :(";
+				mb.lblMessage.Text = $"Sorry cannot find the en-US TTS folder at:{TTSFolder}";
+				mb.buttonOkayOnly.Visible = true;
+				mb.buttonOK.Visible = false;
+				mb.buttonCancel.Visible = false;
+				mb.ShowDialog();
+				return;
+
+			}
+
+            //directory exists, lets check for the eva files.
+            string searchPattern = "M1033Eva*";
+			string[] fileNames = System.IO.Directory.GetFiles(TTSFolder, searchPattern);
+
+
+            if(fileNames.Length==0)
+            {
+				//TTS not setup/installed on windows?
+				mb.StartPosition = FormStartPosition.CenterParent;
+				mb.Text = "Sorry you don't have eva avilable :(";
+				mb.lblMessage.Text = $"Sorry cannot find the eva engine files (M1033Eva*) at:{TTSFolder}";
+				mb.buttonOkayOnly.Visible = true;
+				mb.buttonOK.Visible = false;
+				mb.buttonCancel.Visible = false;
+				mb.ShowDialog();
+				return;
+			}
+
+			mb.StartPosition = FormStartPosition.CenterParent;
+			mb.Text = "Please select a folder";
+			mb.lblMessage.Text = "You will be asked to select a folder. \r\nWe will save a registery file you will need to double click on. Default is in the E3N settings area.";
+			mb.buttonOkayOnly.Visible = true;
+			mb.buttonOK.Visible = false;
+			mb.buttonCancel.Visible = false;
+			mb.ShowDialog();
+
+			mb.StartPosition = FormStartPosition.CenterParent;
+			mb.Text = "Please select a folder";
+			mb.lblMessage.Text = "Note After the reg update it will require a restart to show up.";
+			mb.buttonOkayOnly.Visible = true;
+			mb.buttonOK.Visible = false;
+			mb.buttonCancel.Visible = false;
+			mb.ShowDialog();
+
+			SaveFileDialog sd = new SaveFileDialog();
+            sd.Filter = "Registery|*.reg";
+            sd.Title = "Save Registery File";
+            sd.FileName = "eva_unlock.reg";
+            sd.InitialDirectory = _genSettings.GetFolderPath();
+
+            if (sd.ShowDialog() == DialogResult.OK)
+            {
+                if (!String.IsNullOrEmpty(sd.FileName))
+                {
+                    
+                    //sd filename now has the full path
+                    System.IO.File.WriteAllText(sd.FileName, _evaUnlockString);
+                    Int32 indexOfLastSlash = sd.FileName.LastIndexOf("\\");
+                    string directory = sd.FileName.Substring(0, indexOfLastSlash);
+                    ProcessStartInfo startInfo = new ProcessStartInfo()
+					{
+						Arguments = directory,
+						FileName = "explorer.exe"
+				    };
+
+				    Process.Start(startInfo);
+
+			    }
+            }
+
+		}
+		#region unlockString
+		string _evaUnlockString = @"Windows Registry Editor Version 5.00
+
+[HKEY_LOCAL_MACHINE\SOFTWARE\Microsoft\Speech\Voices\Tokens\MSTTS_V110_enUS_EvaM]
+@=""Microsoft Eva Mobile - English (United States)""
+""409""=""Microsoft Eva Mobile - English (United States)""
+""CLSID""=""{179F3D56-1B0B-42B2-A962-59B7EF59FE1B}""
+""LangDataPath""=hex(2):25,00,77,00,69,00,6e,00,64,00,69,00,72,00,25,00,5c,00,53,\
+  00,70,00,65,00,65,00,63,00,68,00,5f,00,4f,00,6e,00,65,00,43,00,6f,00,72,00,\
+  65,00,5c,00,45,00,6e,00,67,00,69,00,6e,00,65,00,73,00,5c,00,54,00,54,00,53,\
+  00,5c,00,65,00,6e,00,2d,00,55,00,53,00,5c,00,4d,00,53,00,54,00,54,00,53,00,\
+  4c,00,6f,00,63,00,65,00,6e,00,55,00,53,00,2e,00,64,00,61,00,74,00,00,00
+""VoicePath""=hex(2):25,00,77,00,69,00,6e,00,64,00,69,00,72,00,25,00,5c,00,53,00,\
+  70,00,65,00,65,00,63,00,68,00,5f,00,4f,00,6e,00,65,00,43,00,6f,00,72,00,65,\
+  00,5c,00,45,00,6e,00,67,00,69,00,6e,00,65,00,73,00,5c,00,54,00,54,00,53,00,\
+  5c,00,65,00,6e,00,2d,00,55,00,53,00,5c,00,4d,00,31,00,30,00,33,00,33,00,45,\
+  00,76,00,61,00,00,00
+
+[HKEY_LOCAL_MACHINE\SOFTWARE\Microsoft\Speech\Voices\Tokens\MSTTS_V110_enUS_EvaM\Attributes]
+""Age""=""Adult""
+""Gender""=""Female""
+""Version""=""11.0""
+""Language""=""409""
+""Name""=""Microsoft Eva Mobile""
+""SharedPronunciation""=""""
+""Vendor""=""Microsoft""
+""DataVersion""=""11.0.2013.1022""
+
+[HKEY_LOCAL_MACHINE\SOFTWARE\Microsoft\Speech_OneCore\Voices\Tokens\MSTTS_V110_enUS_EvaM]
+@=""Microsoft Eva Mobile - English (United States)""
+""409""=""Microsoft Eva Mobile - English (United States)""
+""CLSID""=""{179F3D56-1B0B-42B2-A962-59B7EF59FE1B}""
+""LangDataPath""=hex(2):25,00,77,00,69,00,6e,00,64,00,69,00,72,00,25,00,5c,00,53,\
+  00,70,00,65,00,65,00,63,00,68,00,5f,00,4f,00,6e,00,65,00,43,00,6f,00,72,00,\
+  65,00,5c,00,45,00,6e,00,67,00,69,00,6e,00,65,00,73,00,5c,00,54,00,54,00,53,\
+  00,5c,00,65,00,6e,00,2d,00,55,00,53,00,5c,00,4d,00,53,00,54,00,54,00,53,00,\
+  4c,00,6f,00,63,00,65,00,6e,00,55,00,53,00,2e,00,64,00,61,00,74,00,00,00
+""VoicePath""=hex(2):25,00,77,00,69,00,6e,00,64,00,69,00,72,00,25,00,5c,00,53,00,\
+  70,00,65,00,65,00,63,00,68,00,5f,00,4f,00,6e,00,65,00,43,00,6f,00,72,00,65,\
+  00,5c,00,45,00,6e,00,67,00,69,00,6e,00,65,00,73,00,5c,00,54,00,54,00,53,00,\
+  5c,00,65,00,6e,00,2d,00,55,00,53,00,5c,00,4d,00,31,00,30,00,33,00,33,00,45,\
+  00,76,00,61,00,00,00
+
+[HKEY_LOCAL_MACHINE\SOFTWARE\Microsoft\Speech_OneCore\Voices\Tokens\MSTTS_V110_enUS_EvaM\Attributes]
+""Age""=""Adult""
+""Gender""=""Female""
+""Version""=""11.0""
+""Language""=""409""
+""Name""=""Microsoft Eva Mobile""
+""SharedPronunciation""=""""
+""Vendor""=""Microsoft""
+
+[HKEY_LOCAL_MACHINE\SOFTWARE\WOW6432Node\Microsoft\SPEECH\Voices\Tokens\MSTTS_V110_enUS_EvaM]
+@=""Microsoft Eva Mobile - English (United States)""
+""409""=""Microsoft Eva Mobile - English (United States)""
+""CLSID""=""{179F3D56-1B0B-42B2-A962-59B7EF59FE1B}""
+""LangDataPath""=hex(2):25,00,77,00,69,00,6e,00,64,00,69,00,72,00,25,00,5c,00,53,\
+  00,70,00,65,00,65,00,63,00,68,00,5f,00,4f,00,6e,00,65,00,43,00,6f,00,72,00,\
+  65,00,5c,00,45,00,6e,00,67,00,69,00,6e,00,65,00,73,00,5c,00,54,00,54,00,53,\
+  00,5c,00,65,00,6e,00,2d,00,55,00,53,00,5c,00,4d,00,53,00,54,00,54,00,53,00,\
+  4c,00,6f,00,63,00,65,00,6e,00,55,00,53,00,2e,00,64,00,61,00,74,00,00,00
+""VoicePath""=hex(2):25,00,77,00,69,00,6e,00,64,00,69,00,72,00,25,00,5c,00,53,00,\
+  70,00,65,00,65,00,63,00,68,00,5f,00,4f,00,6e,00,65,00,43,00,6f,00,72,00,65,\
+  00,5c,00,45,00,6e,00,67,00,69,00,6e,00,65,00,73,00,5c,00,54,00,54,00,53,00,\
+  5c,00,65,00,6e,00,2d,00,55,00,53,00,5c,00,4d,00,31,00,30,00,33,00,33,00,45,\
+  00,76,00,61,00,00,00
+
+[HKEY_LOCAL_MACHINE\SOFTWARE\WOW6432Node\Microsoft\SPEECH\Voices\Tokens\MSTTS_V110_enUS_EvaM\Attributes]
+""Age""=""Adult""
+""Gender""=""Female""
+""Version""=""11.0""
+""Language""=""409""
+""Name""=""Microsoft Eva Mobile""
+""SharedPronunciation""=""""
+""Vendor""=""Microsoft""
+""DataVersion""=""11.0.2013.1022""
+
+[HKEY_LOCAL_MACHINE\SOFTWARE\WOW6432Node\Microsoft\SPEECH\Voices\Tokens\MSTTS_V110_enUS_EvaM]
+@=""Microsoft Eva Mobile - English (United States)""
+""409""=""Microsoft Eva Mobile - English (United States)""
+""CLSID""=""{179F3D56-1B0B-42B2-A962-59B7EF59FE1B}""
+""LangDataPath""=hex(2):25,00,77,00,69,00,6e,00,64,00,69,00,72,00,25,00,5c,00,53,\
+  00,70,00,65,00,65,00,63,00,68,00,5f,00,4f,00,6e,00,65,00,43,00,6f,00,72,00,\
+  65,00,5c,00,45,00,6e,00,67,00,69,00,6e,00,65,00,73,00,5c,00,54,00,54,00,53,\
+ 00,5c,00,65,00,6e,00,2d,00,55,00,53,00,5c,00,4d,00,53,00,54,00,54,00,53,00,\
+  4c,00,6f,00,63,00,65,00,6e,00,55,00,53,00,2e,00,64,00,61,00,74,00,00,00
+""VoicePath""=hex(2):25,00,77,00,69,00,6e,00,64,00,69,00,72,00,25,00,5c,00,53,00,\
+  70,00,65,00,65,00,63,00,68,00,5f,00,4f,00,6e,00,65,00,43,00,6f,00,72,00,65,\
+  00,5c,00,45,00,6e,00,67,00,69,00,6e,00,65,00,73,00,5c,00,54,00,54,00,53,00,\
+  5c,00,65,00,6e,00,2d,00,55,00,53,00,5c,00,4d,00,31,00,30,00,33,00,33,00,45,\
+  00,76,00,61,00,00,00
+
+[HKEY_LOCAL_MACHINE\SOFTWARE\WOW6432Node\Microsoft\SPEECH\Voices\Tokens\MSTTS_V110_enUS_EvaM\Attributes]
+""Age""=""Adult""
+""Gender""=""Female""
+""Version""=""11.0""
+""Language""=""409""
+""Name""=""Microsoft Eva Mobile""
+""SharedPronunciation""=""""
+""Vendor""=""Microsoft""
+
+[HKEY_LOCAL_MACHINE\SOFTWARE\WOW6432Node\Microsoft\Speech_OneCore\Voices\Tokens\MSTTS_V110_enUS_EvaM]
+@=""Microsoft Eva Mobile - English (United States)""
+""409""=""Microsoft Eva Mobile - English (United States)""
+""CLSID""=""{179F3D56-1B0B-42B2-A962-59B7EF59FE1B}""
+""LangDataPath""=hex(2):25,00,77,00,69,00,6e,00,64,00,69,00,72,00,25,00,5c,00,53,\
+  00,70,00,65,00,65,00,63,00,68,00,5f,00,4f,00,6e,00,65,00,43,00,6f,00,72,00,\
+  65,00,5c,00,45,00,6e,00,67,00,69,00,6e,00,65,00,73,00,5c,00,54,00,54,00,53,\
+  00,5c,00,65,00,6e,00,2d,00,55,00,53,00,5c,00,4d,00,53,00,54,00,54,00,53,00,\
+  4c,00,6f,00,63,00,65,00,6e,00,55,00,53,00,2e,00,64,00,61,00,74,00,00,00
+""VoicePath""=hex(2):25,00,77,00,69,00,6e,00,64,00,69,00,72,00,25,00,5c,00,53,00,\
+  70,00,65,00,65,00,63,00,68,00,5f,00,4f,00,6e,00,65,00,43,00,6f,00,72,00,65,\
+  00,5c,00,45,00,6e,00,67,00,69,00,6e,00,65,00,73,00,5c,00,54,00,54,00,53,00,\
+  5c,00,65,00,6e,00,2d,00,55,00,53,00,5c,00,4d,00,31,00,30,00,33,00,33,00,45,\
+  00,76,00,61,00,00,00
+
+[HKEY_LOCAL_MACHINE\SOFTWARE\WOW6432Node\Microsoft\Speech_OneCore\Voices\Tokens\MSTTS_V110_enUS_EvaM\Attributes]
+""Age""=""Adult""
+""Gender""=""Female""
+""Version""=""11.0""
+""Language""=""409""
+""Name""=""Microsoft Eva Mobile""
+""SharedPronunciation""=""""
+""Vendor""=""Microsoft""";
+		#endregion
+
+		private void menuStrip1_MouseDown(object sender, MouseEventArgs e)
+		{
+			ReleaseCapture();
+			SendMessage(this.Handle, WM_NCLBUTTONDOWN, HT_CAPTION, 0);
 
 		}
 	}
@@ -1026,4 +1406,6 @@ namespace E3NextUI
         public CircularBuffer<string> consoleBuffer = new CircularBuffer<string>(1000);
     }
 
+
+  
 }

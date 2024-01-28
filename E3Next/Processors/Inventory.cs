@@ -330,7 +330,7 @@ namespace E3Core.Processors
 
                         // then check inside the container
                         var containerSlots = MQ.Query<int>($"${{Me.Inventory[pack{i}].Container}}");
-                        for (int j = i; j <= containerSlots; j++)
+                        for (int j = 1; j <= containerSlots; j++)
                         {
                             item = MQ.Query<string>($"${{Me.Inventory[pack{i}].Item[{j}]}}");
                             if (string.Equals(item, kvp.Value))

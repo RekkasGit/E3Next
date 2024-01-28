@@ -39,7 +39,7 @@ namespace MonoCore
     public static class MainProcessor
     {
         public static IMQ MQ = Core.mqInstance;
-        public static Int32 ProcessDelay = 200;
+       
         private static Logging _log = Core.logInstance;
         public static string ApplicationName = "";
         public static void Init()
@@ -81,13 +81,20 @@ namespace MonoCore
                 }
                 catch (Exception ex)
                 {
+                    if(ex is ThreadAbort)
+					{
+						Core.IsProcessing = false;
+						Core.CoreResetEvent.Set();
+						throw new ThreadAbort("Terminating thread");
+				    }
+
                     if(Core.IsProcessing)
                     {
                         _log.Write("Error: Please reload. Terminating. \r\nExceptionMessage:" + ex.Message + " stack:" + ex.StackTrace.ToString(), Logging.LogLevels.CriticalError);
-
-                    }
-                    Core.IsProcessing = false;
-                    Core.CoreResetEvent.Set();
+						Core.IsProcessing = false;
+						Core.CoreResetEvent.Set();
+					}
+                    
                     //we perma exit this thread loop a full reload will be necessary
                     break;
                 }
@@ -95,14 +102,14 @@ namespace MonoCore
                 //give execution back to the C++ thread, to go back into MQ/EQ
                 if(Core.IsProcessing)
                 {
-                    Delay(ProcessDelay);//this calls the reset events and sets the delay to 10ms at min
+                    Delay(E3.CharacterSettings.CPU_ProcessLoopDelay);//this calls the reset events and sets the delay to 10ms at min
                 }
             }
            
-            E3.Shutdown();
+            //E3.Shutdown();
             MQ.Write("Shutting down E3 Main C# Thread.");
             MQ.Write("Doing netmq cleanup.");
-            NetMQConfig.Cleanup(false);
+            //NetMQConfig.Cleanup(false);
 
             Core.CoreResetEvent.Set();
         }
@@ -770,6 +777,7 @@ namespace MonoCore
         //this is protected by the lock, so that the primary C++ thread is the one that executes commands that the
         //processing thread has done.
         public static string CurrentCommand = string.Empty;
+        public static bool CurrentCommandDelayed = false;   
         public static string _currentWrite = String.Empty;
         public static Int32 CurrentDelay = 0;
 
@@ -804,7 +812,7 @@ namespace MonoCore
 			{
 				_MQ2MonoVersion = Decimal.Parse(Core.mq_GetMQ2MonoVersion());
 			}
-			catch (Exception ex)
+			catch (Exception)
 			{
 				//old version, does not have mq2mono method, warn user
 			}
@@ -842,7 +850,7 @@ namespace MonoCore
             //wait will issue a memory barrier, set will not, issue one
             System.Threading.Thread.MemoryBarrier();
             //tell the C# thread that it can now process and since processing is false, we can then end the application.
-           MainProcessor.ProcessResetEvent.Set();
+            MainProcessor.ProcessResetEvent.Set();
             if (E3Core.Server.NetMQServer.UIProcess != null)
             {
                 E3Core.Server.NetMQServer.UIProcess.Kill();
@@ -899,12 +907,28 @@ namespace MonoCore
             }
             if (CurrentCommand != String.Empty)
             {
-                //for mana stone usage, to allow spamming
-                bool isUseItem = CurrentCommand.StartsWith("/useitem");
-                Core.mq_DoCommand(CurrentCommand);
-                CurrentCommand = String.Empty;
+                //special commands that dont' go through the 'delay of processing back to MQ
+                //useitem for manastone and echo for... well echoing out data/broadcast. 
+                bool gobacktoCSharp = CurrentCommand.StartsWith("/useitem");
+                if(CurrentCommand.StartsWith("/echo"))
+                {
+                    gobacktoCSharp = true;
+                }
 
-                if (isUseItem)
+                if(!CurrentCommandDelayed || _MQ2MonoVersion<0.22m)
+                {
+                    //if not delayed, or the version doesn't support it, use this.
+					Core.mq_DoCommand(CurrentCommand);
+				}
+				else
+                {
+                    //if the version supports delayed command, use it, otherwise ignore. 
+					Core.mq_DoCommandDelayed(CurrentCommand);
+				}
+				CurrentCommand = String.Empty;
+                CurrentCommandDelayed = false;
+
+                if (gobacktoCSharp)
                 {
                     goto RestartWait;
                 }
@@ -990,7 +1014,9 @@ namespace MonoCore
         public extern static string mq_ParseTLO(string msg);
         [MethodImpl(MethodImplOptions.InternalCall)]
         public extern static void mq_DoCommand(string msg);
-        [MethodImpl(MethodImplOptions.InternalCall)]
+		[MethodImpl(MethodImplOptions.InternalCall)]
+		public extern static void mq_DoCommandDelayed(string msg);
+		[MethodImpl(MethodImplOptions.InternalCall)]
         public extern static void mq_Delay(int delay);
         [MethodImpl(MethodImplOptions.InternalCall)]
         public extern static bool mq_AddCommand(string command);
@@ -1097,8 +1123,8 @@ namespace MonoCore
     public interface IMQ
     {
         T Query<T>(string query);
-        void Cmd(string query);
-        void Cmd(string query,Int32 delay);
+        void Cmd(string query, bool delayed = false);
+        void Cmd(string query,Int32 delay,bool delayed=false);
         void Write(string query, [CallerMemberName] string memberName = "", [CallerFilePath] string fileName = "", [CallerLineNumber] int lineNumber = 0);
         void TraceStart(string methodName);
         void TraceEnd(string methodName);
@@ -1234,7 +1260,7 @@ namespace MonoCore
             return default(T);
 
         }
-        public void Cmd(string query)
+        public void Cmd(string query, bool delayed = false)
         {
             if (!Core.IsProcessing)
             {
@@ -1265,29 +1291,23 @@ namespace MonoCore
             }
          
             Core.CurrentCommand = query;
+            Core.CurrentCommandDelayed = delayed;
             Core.CoreResetEvent.Set();
             //we are now going to wait on the core
             MainProcessor.ProcessResetEvent.Wait();
             MainProcessor.ProcessResetEvent.Reset();
             if (!Core.IsProcessing)
-            {
-                Write("Throwing exception for termination: CMD");
+            {  
                 //we are terminating, kill this thread
                 throw new ThreadAbort("Terminating thread");
             }
 
         }
-        public void Cmd(string query, Int32 delay)
+        public void Cmd(string query, Int32 delay, bool delayed = false)
         {
-            Cmd(query);
+            Cmd(query,delayed);
             Delay(delay);
         }
-
-        public void Broadcast(string query)
-        {
-            Cmd($"/bc {query}");
-        }
-
 
         public void Write(string query, [CallerMemberName] string memberName = "", [CallerFilePath] string fileName = "", [CallerLineNumber] int lineNumber = 0)
         {
@@ -1321,28 +1341,35 @@ namespace MonoCore
                 //we are terminating, kill this thread
                 throw new ThreadAbort("Terminating thread: Delay enter");
             }
-
             if (value > 0)
             {
                 Core.DelayStartTime = Core.StopWatch.ElapsedMilliseconds;
                 Core.DelayTime = value;
                 Core.CurrentDelay = value;//tell the C++ thread to send out a delay update
             }
-
-            //lets tell core that it can continue
-            Core.CoreResetEvent.Set();
+            if (E3.IsInit && !E3.InStateUpdate)
+            {
+                E3.StateUpdates();
+            }
+			//lets tell core that it can continue
+			Core.CoreResetEvent.Set();
             //we are now going to wait on the core
             MainProcessor.ProcessResetEvent.Wait();
             MainProcessor.ProcessResetEvent.Reset();
+			
 
-            if(!Core.IsProcessing)
+			if (!Core.IsProcessing)
             {
                 //we are terminating, kill this thread
                 Write("Throwing exception for termination: Delay exit");
                 throw new ThreadAbort("Terminating thread");
             }
-
-            SinceLastDelay = Core.StopWatch.ElapsedMilliseconds;
+			if (E3.IsInit && !E3.InStateUpdate)
+			{
+				E3.StateUpdates();
+                
+			}
+			SinceLastDelay = Core.StopWatch.ElapsedMilliseconds;
         }
 
         public Boolean Delay(Int32 maxTimeToWait, string Condition)
@@ -1360,7 +1387,7 @@ namespace MonoCore
                 {
                     return false;
                 }
-                this.Delay(10);
+                this.Delay(25);
             }
             return true;
         }

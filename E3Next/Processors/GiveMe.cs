@@ -64,7 +64,7 @@ namespace E3Core.Processors
         private static IMQ MQ = E3.MQ;
         private static ISpawns _spawns = E3.Spawns;
         private static Dictionary<string, Int32> _groupSpellLimits = new Dictionary<string, int>();
-        private static Dictionary<string, Data.Spell> _groupSpellRequests = new Dictionary<string, Data.Spell>(StringComparer.OrdinalIgnoreCase);
+        public static Dictionary<string, Data.Spell> _groupSpellRequests = new Dictionary<string, Data.Spell>(StringComparer.OrdinalIgnoreCase);
         private static Int64 _nextSupplyCheck = 0;
         private static Int64 _nextSupplyCheckInterval = 1000;
         private static List<GiveMeItem> _supplyList = new List<GiveMeItem>();
@@ -77,7 +77,8 @@ namespace E3Core.Processors
             _groupSpellRequests.Add("Azure Mind Crystal III", new Spell("Azure Mind Crystal"));
             _groupSpellRequests.Add("Summoned: Large Modulation Shard", new Spell("Large Modulation Shard"));
             _groupSpellRequests.Add("Sanguine Mind Crystal III", new Spell("Sanguine Mind Crystal"));
-            _groupSpellRequests.Add("Molten orb", new Spell("Summon: Molten Orb"));
+			_groupSpellRequests.Add("Blazing Void Orb", new Spell("Glyphwielder's Eternal Bracer"));
+			_groupSpellRequests.Add("Molten orb", new Spell("Summon: Molten Orb"));
             _groupSpellRequests.Add("Lava orb", new Spell("Summon: Lava Orb"));
             _groupSpellRequests.Add("Rod of Mystical Transvergence", new Spell("Mass Mystical Transvergence"));
           
@@ -144,6 +145,10 @@ namespace E3Core.Processors
                 //giveme Alara "Something" qty Rekken
                 if (x.args.Count > 0)
                 {
+                    while(Casting.InGlobalCooldown())
+                    {
+                        MQ.Delay(50);
+                    }
                     e3util.DeleteNoRentItem(x.args[0]);
                 }
 

@@ -63,9 +63,10 @@ namespace E3Core.Settings
         public bool Assist_DelayStrafeEnabled = true;
         public Int32 Assist_DelayStrafeDelay = 1500;
         private string _fileName = String.Empty;
-
-        //abilities
-        public List<Spell> MeleeAbilities = new List<Spell>();
+        public bool Assist_PetBackOffOnenrage = false;
+        public bool Assist_BackOffOnEnrage = false;
+		//abilities
+		public List<Spell> MeleeAbilities = new List<Spell>();
         //nukes
         public List<Spell> Nukes = new List<Spell>();
         public List<Spell> Stuns = new List<Spell>();
@@ -117,8 +118,10 @@ namespace E3Core.Settings
         public List<Spell> CureAll = new List<Spell>();
         public List<Spell> RadiantCure = new List<Spell>();
         public List<Spell> CurseCounterCure = new List<Spell>();
-        public List<Spell> CurseCounterIgnore = new List<Spell>();
-        public List<Spell> PoisonCounterCure = new List<Spell>();
+		public List<Spell> CurseCounterIgnore = new List<Spell>();
+		public List<Spell> CorruptedCounterCure = new List<Spell>();
+		public List<Spell> CorruptedCounterIgnore = new List<Spell>();
+		public List<Spell> PoisonCounterCure = new List<Spell>();
         public List<Spell> PoisonCounterIgnore = new List<Spell>();
         public List<Spell> DiseaseCounterCure = new List<Spell>();
         public List<Spell> DiseaseCounterIgnore = new List<Spell>();
@@ -178,16 +181,50 @@ namespace E3Core.Settings
         public List<string> Rez_RezSpells = new List<string>();
         public bool Rez_AutoRez = false;
 
-    
-        public Dictionary<string, string> PetWeapons = new Dictionary<string, string>();
+        //report
+        public List<Spell> Report_Entries = new List<Spell>();
+
+
+
+        //charm data
+        public Spell Charm_CharmSpell = null;
+        public List<Spell> Charm_CharmOhShitSpells = new List<Spell>();
+        public List<Spell> Charm_SelfDebuffSpells = new List<Spell>();
+		public List<Spell> Charm_BadPetBuffs = new List<Spell>();
+        public string Charm_PeelTank = String.Empty;
+        public List<Spell> Charm_PeelTankAggroAbility = new List<Spell>();
+        public string Charm_PeelHealer = String.Empty;
+        public List<Spell> Charm_PeelHealerHeal = new List<Spell>();
+        public string Charm_PeelPetOwner = String.Empty;
+        public string Charm_PeelSnarePerson = String.Empty;
+        public List<Spell> Charm_PeelSnareSpell  = new List<Spell>();
+        public string Charm_PeelDebuffPerson = String.Empty;
+        public List<Spell> Charm_PeelDebuffSpells = new List<Spell>();
+
+        //
+
+
+        public Int32 CPU_ProcessLoopDelay = 50;
+        public bool CPU_Camping_PauseAt20Seconds = true;
+        public bool CPU_Camping_ShutdownAt5Seconds = true;
+
+		public Dictionary<string, string> PetWeapons = new Dictionary<string, string>();
         public bool AutoPetWeapons = false;
+        public bool KeepOpenInventorySlot = false;
         public bool IgnorePetWeaponRequests = false;
         public bool AutoCanni = false;
         public int MalosTotemSpellGem;
         public List<Spell> CanniSpell = new List<Spell>();
-		
 
-		public HashSet<string> WhoToHeal = new HashSet<string>(10, StringComparer.OrdinalIgnoreCase);
+        public bool AutoParagon = false;
+        public Spell ParagonSpell = null;
+        public int ParagonManaPct = 60;
+        public bool AutoFocusedParagon = false;
+        public Spell FocusedParagonSpell = null;
+        public List<string> FocusedParagonCharacters = new List<string>();
+        public int FocusedParagonManaPct = 70;
+
+        public HashSet<string> WhoToHeal = new HashSet<string>(10, StringComparer.OrdinalIgnoreCase);
         public bool HealAutoNecroOrbs = false;
         private string _whoToHealString;
         public string WhoToHealString
@@ -255,7 +292,12 @@ namespace E3Core.Settings
             string filename = GetBoTFilePath($"{CharacterName}_{ServerName}.ini");
             ParsedData = CreateSettings(filename);
 
-            LoadKeyData("Misc", "AutoFood", ParsedData, ref Misc_AutoFoodEnabled);
+
+            LoadKeyData("CPU", "ProcessLoopDelayInMS", ParsedData, ref CPU_ProcessLoopDelay);
+			LoadKeyData("CPU", "Camp Pause at 20 seconds", ParsedData, ref CPU_Camping_PauseAt20Seconds);
+			LoadKeyData("CPU", "Camp Shutdown at 5 seconds", ParsedData, ref CPU_Camping_ShutdownAt5Seconds);
+
+			LoadKeyData("Misc", "AutoFood", ParsedData, ref Misc_AutoFoodEnabled);
             LoadKeyData("Misc", "Food", ParsedData, ref Misc_AutoFood);
             LoadKeyData("Misc", "Drink", ParsedData, ref Misc_AutoDrink);
             LoadKeyData("Misc", "End MedBreak in Combat(On/Off)", ParsedData, ref Misc_EndMedBreakInCombat);
@@ -294,6 +336,10 @@ namespace E3Core.Settings
 
 			LoadKeyData("Manastone", "ExceptionMQQuery", ParsedData, ManaStone_ExceptionMQQuery);
 
+
+            LoadKeyData("Report", "ReportEntry", ParsedData, Report_Entries);
+
+
 			LoadKeyData("Bando Buff", "Enabled", ParsedData, ref BandoBuff_Enabled);
 			LoadKeyData("Bando Buff", "DebuffName", ParsedData, ref BandoBuff_DebuffName);
 			LoadKeyData("Bando Buff", "BuffName", ParsedData, ref BandoBuff_BuffName);
@@ -312,8 +358,8 @@ namespace E3Core.Settings
             LoadKeyData("Assist Settings", "Ranged Distance", ParsedData, ref Assist_RangeDistance);
             LoadKeyData("Assist Settings", "Auto-Assist Engage Percent", ParsedData, ref Assist_AutoAssistPercent);
 			LoadKeyData("Assist Settings", "Delayed Strafe Enabled (On/Off)", ParsedData, ref Assist_DelayStrafeEnabled);
-			
-
+            LoadKeyData("Assist Settings", "Pet back off on Enrage (On/Off)", ParsedData, ref Assist_PetBackOffOnenrage);
+			LoadKeyData("Assist Settings", "Back off on Enrage (On/Off)", ParsedData, ref Assist_BackOffOnEnrage);
 
 			if (CharacterClass == Class.Rogue)
             {
@@ -330,7 +376,6 @@ namespace E3Core.Settings
             {
                 LoadKeyData("Bard", "MelodyIf", ParsedData, Bard_MelodyIfs);
                 LoadKeyData("Bard", "Auto-Sonata (On/Off)", ParsedData, ref Bard_AutoSonata);
-
             }
 
             if ((CharacterClass & Class.Druid) == CharacterClass)
@@ -338,13 +383,16 @@ namespace E3Core.Settings
                 LoadKeyData("Druid", "Evac Spell", ParsedData, CasterEvacs);
                 LoadKeyData("Druid", "Auto-Cheetah (On/Off)", ParsedData, ref Druid_AutoCheetah);
             }
+
             if ((CharacterClass & Class.Wizard) == CharacterClass)
             {
                 LoadKeyData("Wizard", "Evac Spell", ParsedData, CasterEvacs);
             }
+            
             if (CharacterClass == Class.Magician)
             {
                 LoadKeyData("Magician", "Auto-Pet Weapons (On/Off)", ParsedData, ref AutoPetWeapons);
+                LoadKeyData("Magician", "Keep Open Inventory Slot (On/Off)", ParsedData, ref KeepOpenInventorySlot);
                 LoadKeyData("Magician", "Ignore Pet Weapon Requests (On/Off)", ParsedData, ref IgnorePetWeaponRequests);
                 LoadKeyData("Magician", "Pet Weapons", ParsedData, PetWeapons);
             }
@@ -354,6 +402,32 @@ namespace E3Core.Settings
                 LoadKeyData("Shaman", "Auto-Canni (On/Off)", ParsedData, ref AutoCanni);
                 LoadKeyData("Shaman", "Canni", ParsedData, CanniSpell);
                 LoadKeyData("Shaman", "Malos Totem Spell Gem", ParsedData, ref MalosTotemSpellGem);
+            }
+
+            if (CharacterClass == Class.Beastlord)
+            {
+                LoadKeyData("Auto Paragon", "Auto Paragon (On/Off)", ParsedData, ref AutoParagon);
+                LoadKeyData("Auto Paragon", "Paragon Spell", ParsedData, out ParagonSpell);
+                LoadKeyData("Auto Paragon", "Paragon Mana (Pct)", ParsedData, ref ParagonManaPct);
+                LoadKeyData("Auto Paragon", "Auto Focused Paragon (On/Off)", ParsedData, ref AutoFocusedParagon);
+                LoadKeyData("Auto Paragon", "Focused Paragon Spell", ParsedData, out FocusedParagonSpell);
+                LoadKeyData("Auto Paragon", "Focused Paragon Mana (Pct)", ParsedData, ref FocusedParagonManaPct);
+                LoadKeyData("Auto Paragon", "Character", ParsedData, FocusedParagonCharacters);
+                if (AutoFocusedParagon)
+                {
+                    MQ.Cmd("/plugin mq2dannet");
+                    if (!MQ.Query<bool>("${Plugin[mq2dannet]}"))
+                    {
+                        E3.Bots.Broadcast("\arUnable to load mq2dannet - disabling auto focused paragon");
+                        AutoFocusedParagon = false;
+                    }
+
+                    E3.Bots.Broadcast("Adding dannet observers for focused paragon characters' mana");
+                    foreach (var character in FocusedParagonCharacters)
+                    {
+                        MQ.Cmd($"/dobserve {character} -q Me.PctMana");
+                    }
+                }
             }
 
             LoadKeyData("Buffs", "Instant Buff", ParsedData, InstantBuffs);
@@ -420,8 +494,10 @@ namespace E3Core.Settings
             LoadKeyData("Cures", "CureAll", ParsedData, CureAll);
             LoadKeyData("Cures", "RadiantCure", ParsedData, RadiantCure);
             LoadKeyData("Cures", "CurseCounters", ParsedData, CurseCounterCure);
-            LoadKeyData("Cures", "CurseCountersIgnore", ParsedData, CurseCounterIgnore);
-            LoadKeyData("Cures", "PoisonCounters", ParsedData, PoisonCounterCure);
+			LoadKeyData("Cures", "CurseCountersIgnore", ParsedData, CurseCounterIgnore);
+			LoadKeyData("Cures", "CorruptedCounters", ParsedData, CorruptedCounterCure);
+			LoadKeyData("Cures", "CorruptedCountersIgnore", ParsedData, CorruptedCounterIgnore);
+			LoadKeyData("Cures", "PoisonCounters", ParsedData, PoisonCounterCure);
             LoadKeyData("Cures", "PoisonCountersIgnore", ParsedData, PoisonCounterIgnore);
             LoadKeyData("Cures", "DiseaseCounters", ParsedData, DiseaseCounterCure);
             LoadKeyData("Cures", "DiseaseCountersIgnore", ParsedData, DiseaseCounterIgnore);
@@ -466,16 +542,36 @@ namespace E3Core.Settings
             LoadKeyData("Gimme", "Gimme", ParsedData, Gimme);
             LoadKeyData("Gimme", "Gimme-InCombat", ParsedData, ref Gimme_InCombat);
 
+            List<Spell> tcharmSpells = new List<Spell>();
 
-           // _log.Write($"Finished processing and loading: {fullPathToUse}");
+            LoadKeyData("Charm", "CharmSpell",ParsedData, tcharmSpells);
+            foreach(Spell spell in tcharmSpells)
+            {
+                Charm_CharmSpell = spell;
+                break;
+            }
+			LoadKeyData("Charm", "CharmOhShitSpells", ParsedData, Charm_CharmOhShitSpells);
+			LoadKeyData("Charm", "SelfDebuffSpells", ParsedData, Charm_SelfDebuffSpells);
+			LoadKeyData("Charm", "BadPetBuffs", ParsedData, Charm_BadPetBuffs);
+			LoadKeyData("Charm", "PeelTank", ParsedData, ref Charm_PeelTank);
+			LoadKeyData("Charm", "PellTankAggroAbility", ParsedData, Charm_PeelTankAggroAbility);
+			LoadKeyData("Charm", "PeelHealer", ParsedData, ref Charm_PeelHealer);
+			LoadKeyData("Charm", "PeelHealerHeal", ParsedData, Charm_PeelHealerHeal);
+			LoadKeyData("Charm", "PeelPetOwner", ParsedData,ref Charm_PeelPetOwner);
+			LoadKeyData("Charm", "PeelSnarePerson", ParsedData, ref Charm_PeelSnarePerson);
+			LoadKeyData("Charm", "PeelSnareSpell", ParsedData,Charm_PeelSnareSpell);
+			LoadKeyData("Charm", "PeelDebuffPerson", ParsedData, ref Charm_PeelDebuffPerson);
+			LoadKeyData("Charm", "PeelDebuffSpells", ParsedData, Charm_PeelDebuffSpells);
 
-        }
+			// _log.Write($"Finished processing and loading: {fullPathToUse}");
 
-        /// <summary>
-        /// Creates the settings file.
-        /// </summary>
-        /// <returns></returns>
-        public IniData CreateSettings(string fileName)
+		}
+
+		/// <summary>
+		/// Creates the settings file.
+		/// </summary>
+		/// <returns></returns>
+		public IniData CreateSettings(string fileName)
         {
             //if we need to , its easier to just output the entire file. 
 
@@ -512,7 +608,8 @@ namespace E3Core.Settings
             section.Keys.AddKey("Melee Distance", "MaxMelee");
             section.Keys.AddKey("Ranged Distance", "100");
             section.Keys.AddKey("Auto-Assist Engage Percent", "98");
-			
+			section.Keys.AddKey("Pet back off on Enrage (On/Off)", "Off");
+			section.Keys.AddKey("Back off on Enrage (On/Off)", "Off");
 
 
 			newFile.Sections.AddSection("Buffs");
@@ -645,14 +742,37 @@ namespace E3Core.Settings
                 section.Keys.AddKey("CureAll", "");
                 section.Keys.AddKey("RadiantCure", "");
                 section.Keys.AddKey("CurseCounters", "");
-                section.Keys.AddKey("CurseCountersIgnore", "");
-                section.Keys.AddKey("PoisonCounters", "");
+				section.Keys.AddKey("CurseCountersIgnore", "");
+				section.Keys.AddKey("CorruptedCounters", "");
+				section.Keys.AddKey("CorruptedCountersIgnore", "");
+				section.Keys.AddKey("PoisonCounters", "");
                 section.Keys.AddKey("PoisonCountersIgnore", "");
                 section.Keys.AddKey("DiseaseCounters", "");
                 section.Keys.AddKey("DiseaseCountersIgnore", "");
             }
 
-            if ((CharacterClass & Class.Priest) == CharacterClass || (CharacterClass & Class.HealHybrid) == CharacterClass)
+			if ((CharacterClass & Class.Charmer) == CharacterClass)
+			{
+				newFile.Sections.AddSection("Charm");
+				section = newFile.Sections.GetSectionData("Charm");
+				section.Keys.AddKey("CharmSpell", "");
+				section.Keys.AddKey("CharmOhShitSpells", "");
+				section.Keys.AddKey("SelfDebuffSpells", "");
+				section.Keys.AddKey("BadPetBuffs", "");
+				section.Keys.AddKey("PeelTank", "");
+				section.Keys.AddKey("PellTankAggroAbility", "");
+				section.Keys.AddKey("PeelHealer", "");
+				section.Keys.AddKey("PeelHealerHeal", "");
+				section.Keys.AddKey("PeelPetOwner", "");
+				section.Keys.AddKey("PeelSnarePerson", "");
+				section.Keys.AddKey("PeelSnareSpell", "");
+                section.Keys.AddKey("PeelDebuffPerson", "");
+                section.Keys.AddKey("PeelDebuffSpells", "");
+			}
+
+
+
+			if ((CharacterClass & Class.Priest) == CharacterClass || (CharacterClass & Class.HealHybrid) == CharacterClass)
             {
                 newFile.Sections.AddSection("Heals");
                 section = newFile.Sections.GetSectionData("Heals");
@@ -686,6 +806,7 @@ namespace E3Core.Settings
                 section = newFile.Sections.GetSectionData("Magician");
                 section.Keys.AddKey("Auto-Pet Weapons (On/Off)", "Off");
                 section.Keys.AddKey("Ignore Pet Weapon Requests (On/Off)", "Off");
+                section.Keys.AddKey("Keep Open Inventory Slot (On/Off)", "Off");
                 section.Keys.AddKey("Pet Weapons", "");
             }
 
@@ -698,7 +819,20 @@ namespace E3Core.Settings
                 section.Keys.AddKey("Malos Totem Spell Gem", "8");
             }
 
-			newFile.Sections.AddSection("Bando Buff");
+            if (CharacterClass == Class.Beastlord)
+            {
+                newFile.Sections.AddSection("Auto Paragon");
+                section = newFile.Sections.GetSectionData("Auto Paragon");
+                section.Keys.AddKey("Auto Paragon (On/Off)", "Off");
+                section.Keys.AddKey("Paragon Spell", "Paragon of Spirit");
+                section.Keys.AddKey("Paragon Mana (Pct)", "60");
+                section.Keys.AddKey("Auto Focused Paragon (On/Off)", "Off");
+                section.Keys.AddKey("Focused Paragon Spell", "Focused Paragon of Spirits");
+                section.Keys.AddKey("Focused Paragon Mana (Pct)", "70");
+                section.Keys.AddKey("Character", "");
+            }
+
+            newFile.Sections.AddSection("Bando Buff");
 			section = newFile.Sections.GetSectionData("Bando Buff");
             section.Keys.AddKey("Enabled", "Off");
 			section.Keys.AddKey("BuffName", "");
@@ -730,7 +864,15 @@ namespace E3Core.Settings
             newFile.Sections.AddSection("Ifs");
             newFile.Sections.AddSection("Events");
 			newFile.Sections.AddSection("EventLoop");
+			newFile.Sections.AddSection("Report");
+			section = newFile.Sections.GetSectionData("Report");
+			section.Keys.AddKey("ReportEntry", "");
 
+			newFile.Sections.AddSection("CPU");
+			section = newFile.Sections.GetSectionData("CPU");
+			section.Keys.AddKey("ProcessLoopDelayInMS", "50");
+			section.Keys.AddKey("Camp Pause at 20 seconds", "True");
+			section.Keys.AddKey("Camp Shutdown at 5 seconds", "True");
 
 			newFile.Sections.AddSection("Manastone");
             section = newFile.Sections.GetSectionData("Manastone");

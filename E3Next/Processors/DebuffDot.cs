@@ -382,6 +382,16 @@ namespace E3Core.Processors
                         }
                     }
                 }
+
+                if (!String.IsNullOrWhiteSpace(spell.Ifs) && !spell.Ifs.Contains("${Target"))
+                {
+					//its safe to run the Ifs before the check ready
+					if (!Casting.Ifs(spell))
+					{
+						continue;
+					}
+				}
+
                 if (Casting.InRange(mobid, spell) && Casting.CheckReady(spell) && Casting.CheckMana(spell))
                 {
 
@@ -401,7 +411,8 @@ namespace E3Core.Processors
                     }
                     MQ.Delay(2000, "${Target.BuffsPopulated}");
                     //check if the if condition works
-                    if (!String.IsNullOrWhiteSpace(spell.Ifs))
+                    //if it has a target tlo, process, other wise it was tested above.
+                    if (!String.IsNullOrWhiteSpace(spell.Ifs) && spell.Ifs.Contains("${Target"))
                     {
                         if (!Casting.Ifs(spell))
                         {
@@ -416,22 +427,28 @@ namespace E3Core.Processors
                             continue;
                         }
                     }
-                    if (!String.IsNullOrWhiteSpace(spell.CheckFor))
-                    {
-                        if (MQ.Query<bool>($"${{Bool[${{Target.Buff[{spell.CheckFor}]}}]}}"))
-                        {
-                            //has the buff already
-                            //lets set the timer for it so we dont' have to keep targeting it.
-                            Int64 buffDuration = MQ.Query<Int64>($"${{Target.BuffDuration[{spell.CheckFor}]}}");
-                            if (buffDuration < 1000)
-                            {
-                                buffDuration = 1000;
-                            }
-                            UpdateDotDebuffTimers(mobid, spell, buffDuration, timers);
-                            continue;
-                        }
-                    }
-                    
+					bool shouldContinue = false;
+					if (spell.CheckForCollection.Count > 0)
+					{
+						foreach (var checkforItem in spell.CheckForCollection.Keys)
+						{
+							if (MQ.Query<bool>($"${{Bool[${{Target.Buff[{checkforItem}]}}]}}"))
+							{
+								//has the buff already
+								//lets set the timer for it so we dont' have to keep targeting it.
+								Int64 buffDuration = MQ.Query<Int64>($"${{Target.BuffDuration[{checkforItem}]}}");
+								if (buffDuration < 1000)
+								{
+									buffDuration = 1000;
+								}
+								UpdateDotDebuffTimers(mobid, spell, buffDuration, timers);
+								shouldContinue = true;
+								break;
+							}
+						}
+						if (shouldContinue) { continue; }
+					}
+				    
                     if (!MQ.Query<bool>($"${{Spell[{spell.SpellID}].StacksTarget}}"))
                     {
                         //spell won't land based on stacking, move to next

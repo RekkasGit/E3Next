@@ -6,6 +6,8 @@ using MonoCore;
 using System;
 using System.Collections.Generic;
 using System.Linq;
+using System.Net.Sockets;
+using System.Net;
 using System.Reflection.Emit;
 using System.Runtime.CompilerServices;
 using System.Text;
@@ -22,13 +24,32 @@ namespace E3Core.Utility
         private static IMQ MQ = E3.MQ;
         private static ISpawns _spawns = E3.Spawns;
 
+		public static Int32 MaxBuffSlots = 38;
+		public static Int32 MaxSongSlots = 20;
+        public static Int32 MaxPetBuffSlots = 30;
 
+		//share this as we can reuse as its only 1 thread
+		private static StringBuilder resultStringBuilder = new StringBuilder(1024);
+		//modified from https://stackoverflow.com/questions/6275980/string-replace-ignoring-case
+		public static string ArgsToCommand(List<String> args)
+		{
+			resultStringBuilder.Clear();
+			foreach (var arg in args)
+			{
+				if (arg.Contains(" "))
+				{
+					//need to wrap it with quotes if it has spaces
+					resultStringBuilder.Append($"\"{arg}\" ");
+				}
+				else
+				{
+					resultStringBuilder.Append($"{arg} ");
+				}
 
-        //share this as we can reuse as its only 1 thread
-        private static StringBuilder resultStringBuilder = new StringBuilder(1024);
-        //modified from https://stackoverflow.com/questions/6275980/string-replace-ignoring-case
-        
-        public static void PutOriginalTargetBackIfNeeded(Int32 targetid)
+			}
+			return resultStringBuilder.ToString().Trim();
+		}
+		public static void PutOriginalTargetBackIfNeeded(Int32 targetid)
         {
             //put the target back to where it was
             Int32 currentTargetID = MQ.Query<Int32>("${Target.ID}");
@@ -114,14 +135,27 @@ namespace E3Core.Utility
             return resultStringBuilder.ToString();
         }
 
-       
-        /// <summary>
-        /// Use to see if a certain method should be running
-        /// </summary>
-        /// <param name="nextCheck">ref param to update ot the next time a thing should run</param>
-        /// <param name="nextCheckInterval">The interval in milliseconds</param>
-        /// <returns></returns>
-        public static bool ShouldCheck(ref Int64 nextCheck, Int64 nextCheckInterval)
+		public static IEnumerable<T> Shuffle<T>(this IEnumerable<T> source, Random rng)
+		{
+			//https://stackoverflow.com/questions/1287567/is-using-random-and-orderby-a-good-shuffle-algorithm
+			T[] elements = source.ToArray();
+			for (int i = elements.Length - 1; i >= 0; i--)
+			{
+				// Swap element "i" with a random earlier element it (or itself)
+				// ... except we don't really need to swap it fully, as we can
+				// return it immediately, and afterwards it's irrelevant.
+				int swapIndex = rng.Next(i + 1);
+				yield return elements[swapIndex];
+				elements[swapIndex] = elements[i];
+			}
+		}
+		/// <summary>
+		/// Use to see if a certain method should be running
+		/// </summary>
+		/// <param name="nextCheck">ref param to update ot the next time a thing should run</param>
+		/// <param name="nextCheckInterval">The interval in milliseconds</param>
+		/// <returns></returns>
+		public static bool ShouldCheck(ref Int64 nextCheck, Int64 nextCheckInterval)
         {  
             if (Core.StopWatch.ElapsedMilliseconds < nextCheck)
             {
@@ -176,7 +210,7 @@ namespace E3Core.Utility
             Double x = MQ.Query<Double>("${Target.X}");
             Double y = MQ.Query<Double>("${Target.Y}");
             MQ.Cmd($"/squelch /moveto loc {y} {x} mdist 5");
-            MQ.Delay(500);
+            MQ.Delay(1500, $"${{Math.Distance[{y}, {x}]}} < 8");    // This is the blocking but breaks the second you are there
 
             Int64 endTime = Core.StopWatch.ElapsedMilliseconds + 10000;
             while(true)
@@ -424,7 +458,50 @@ namespace E3Core.Utility
             }
 
         }
-        public static List<string> StringsToList(string s, char delim)
+		public static void StringsToNumbers(string s, char delim, List<Int64> list)
+		{
+			List<Int64> result = list;
+			int start = 0;
+			int end = 0;
+			foreach (char x in s)
+			{
+				if (x == delim || end == s.Length - 1)
+				{
+					if (end == s.Length - 1 && x != delim)
+						end++;
+					result.Add(Int64.Parse(s.Substring(start, end - start)));
+					start = end + 1;
+				}
+				end++;
+			}
+
+		}
+		private static List<Int64> _buffInfoTempList = new List<Int64>();
+		public static void BuffInfoToDictonary(string s, Dictionary<Int32, Int64> list, char delim=':')
+		{
+            list.Clear();
+			Dictionary<Int32, Int64> result = list;
+            
+			int start = 0;
+			int end = 0;
+			foreach (char x in s)
+			{
+				if (x == delim || end == s.Length - 1)
+				{
+					if (end == s.Length - 1 && x != delim)
+						end++;
+                    //number,number
+                    _buffInfoTempList.Clear();
+                    string tstring = s.Substring(start, end - start);
+                    StringsToNumbers(tstring, ',', _buffInfoTempList);
+                    result[(int)_buffInfoTempList[0]] = _buffInfoTempList[1];
+		    start = end + 1;
+				}
+				end++;
+			}
+
+		}
+		public static List<string> StringsToList(string s, char delim)
         {
             List<string> result = new List<string>();
             int start = 0;
@@ -613,7 +690,69 @@ namespace E3Core.Utility
                 }
             }
         }
-        public static void GiveItemOnCursorToTarget(bool moveBackToOriginalLocation = true, bool clearTarget = true)
+        static System.Text.StringBuilder buffInfoStringBuilder = new StringBuilder();
+        public static string GenerateBuffInfoForPubSub()
+        {
+            using(_log.Trace())
+            {
+				buffInfoStringBuilder.Clear();
+				//lets look for a partial match.
+				for (Int32 i = 1; i <= MaxBuffSlots; i++)
+				{
+					string spellID = MQ.Query<string>($"${{Me.Buff[{i}].Spell.ID}}");
+					if (spellID != "NULL")
+					{
+						string duration = MQ.Query<string>($"${{Me.Buff[{i}].Duration}}");
+						buffInfoStringBuilder.Append(spellID);
+						buffInfoStringBuilder.Append(",");
+						buffInfoStringBuilder.Append(duration);
+						buffInfoStringBuilder.Append(":");
+					}
+				}
+				for (Int32 i = 1; i <= MaxSongSlots; i++)
+				{
+					string spellID = MQ.Query<String>($"${{Me.Song[{i}].Spell.ID}}");
+
+					if (spellID != "NULL")
+					{
+						string duration = MQ.Query<string>($"${{Me.Song[{i}].Duration}}");
+						buffInfoStringBuilder.Append(spellID);
+						buffInfoStringBuilder.Append(",");
+						buffInfoStringBuilder.Append(duration);
+						buffInfoStringBuilder.Append(":");
+					}
+				}
+				return buffInfoStringBuilder.ToString();
+
+			}
+            
+		}
+		public static string GeneratePetBuffInfoForPubSub()
+		{
+			using (_log.Trace())
+			{
+				buffInfoStringBuilder.Clear();
+				//lets look for a partial match.
+                if(MQ.Query<bool>("${Me.Pet.ID}"))
+                {
+					for (Int32 i = 1; i <= MaxPetBuffSlots; i++)
+					{
+						string spellID = MQ.Query<string>($"${{Me.Pet.Buff[{i}].ID}}");
+						if (spellID != "NULL")
+						{
+							string duration = MQ.Query<string>($"${{Me.Pet.Buff[{i}].Duration}}");
+							buffInfoStringBuilder.Append(spellID);
+							buffInfoStringBuilder.Append(",");
+							buffInfoStringBuilder.Append(duration);
+							buffInfoStringBuilder.Append(":");
+						}
+					}
+				}
+				return buffInfoStringBuilder.ToString();
+			}
+
+		}
+		public static void GiveItemOnCursorToTarget(bool moveBackToOriginalLocation = true, bool clearTarget = true)
         {
 
             double currentX = MQ.Query<double>("${Me.X}");
@@ -667,9 +806,23 @@ namespace E3Core.Utility
                 e3util.TryMoveToLoc(currentX, currentY,currentZ);
             }
         }
+        public static string GetLocalIPAddress()
+        {
+			//https://stackoverflow.com/questions/6803073/get-local-ip-address
+
+			string localIP;
+			using (Socket socket = new Socket(AddressFamily.InterNetwork, SocketType.Dgram, 0))
+			{
+				socket.Connect("8.8.8.8", 65530);
+				IPEndPoint endPoint = socket.LocalEndPoint as IPEndPoint;
+				localIP = endPoint.Address.ToString();
+			}
+            return localIP;
+		}
         public static bool IsShuttingDown()
         {
-            if(EventProcessor.CommandList["/shutdown"].queuedEvents.Count > 0)
+
+            if(EventProcessor.CommandList.ContainsKey("/shutdown") && EventProcessor.CommandList["/shutdown"].queuedEvents.Count > 0)
             {
                 return true;
             }
@@ -723,7 +876,7 @@ namespace E3Core.Utility
                     }
                     else
                     {
-                        MQ.Write($"\aNEED A TARGET TO {command}");
+                        MQ.Write($"\arNEED A TARGET TO {command}");
                     }
                 }
             });

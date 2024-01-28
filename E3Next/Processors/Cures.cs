@@ -6,6 +6,7 @@ using System;
 using System.Collections.Generic;
 using System.Dynamic;
 using System.Linq;
+using System.Xml.Linq;
 
 namespace E3Core.Processors
 {
@@ -67,15 +68,22 @@ namespace E3Core.Processors
                     Spawn s;
                     if (_spawns.TryByID(id, out s))
                     {
-                        if (E3.Bots.BuffList(s.CleanName).Contains(spell.CheckForID))
-                        {
-                            if (Casting.CheckReady(spell) && Casting.CheckMana(spell))
-                            {
-                                Casting.Cast(s.ID, spell, Heals.SomeoneNeedsHealing);
-                                return;
-                            }
-                        }
-                    }
+						if (spell.CheckForCollection.Count > 0)
+						{
+							var bufflist = E3.Bots.BuffList(s.CleanName);
+							foreach (var checkforItem in spell.CheckForCollection.Keys)
+							{
+								if (bufflist.Contains(spell.CheckForCollection[checkforItem]))
+								{
+									if (Casting.CheckReady(spell) && Casting.CheckMana(spell))
+									{
+										Casting.Cast(s.ID, spell, Heals.SomeoneNeedsHealing);
+										return;
+									}
+								}
+							}
+						}
+	                }
                 }
 
             }
@@ -120,9 +128,11 @@ namespace E3Core.Processors
             if (CheckCounterCure(E3.CharacterSettings.CurseCounterCure, E3.CharacterSettings.CurseCounterIgnore, E3.Bots.BaseCursedCounters)) return;
             if (CheckCounterCure(E3.CharacterSettings.PoisonCounterCure, E3.CharacterSettings.PoisonCounterIgnore, E3.Bots.BasePoisonedCounters)) return;
             if (CheckCounterCure(E3.CharacterSettings.DiseaseCounterCure, E3.CharacterSettings.DiseaseCounterIgnore, E3.Bots.BaseDiseasedCounters)) return;
+			if (CheckCounterCure(E3.CharacterSettings.CorruptedCounterCure, E3.CharacterSettings.CorruptedCounterIgnore, E3.Bots.BaseCorruptedCounters)) return;
 
-        }
-        private static bool CheckCounterCure(List<Spell> curesSpells, List<Spell> ignoreSpells, Func<string, int> counterFunc)
+
+		}
+		private static bool CheckCounterCure(List<Spell> curesSpells, List<Spell> ignoreSpells, Func<string, int> counterFunc)
         {
             foreach (var spell in curesSpells)
             {
@@ -169,17 +179,24 @@ namespace E3Core.Processors
                 Spawn s;
                 if (_spawns.TryByName(spell.CastTarget, out s))
                 {
-                    if (s.Distance < spell.MyRange && E3.Bots.BuffList(s.CleanName).Contains(spell.CheckForID))
+                    var buffList = E3.Bots.BuffList(s.CleanName);
+
+					if (s.Distance < spell.MyRange)
                     {
-                        if (Casting.InRange(s.ID, spell) && Casting.CheckReady(spell) && Casting.CheckMana(spell))
+                        foreach(var pair in spell.CheckForCollection)
                         {
-                            Casting.Cast(s.ID, spell, Heals.SomeoneNeedsHealing);
-                            return;
-                        }
-                    }
+                            if(buffList.Contains(pair.Value))
+                            {
+								if (Casting.InRange(s.ID, spell) && Casting.CheckReady(spell) && Casting.CheckMana(spell))
+								{
+									Casting.Cast(s.ID, spell, Heals.SomeoneNeedsHealing);
+									return;
+								}
+							}
+						}
+
+					}
                 }
-
-
             }
         }
         private static void CastRadiantCure()

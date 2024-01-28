@@ -27,8 +27,8 @@ namespace E3Core.Processors
         public static List<Data.Spell> _swarmPets = new List<Spell>();
         public static string _epicWeaponName = String.Empty;
         public static string _anguishBPName = String.Empty;
-        private static Int64 _nextBurnCheck = 0;
-        private static Int64 _nextBurnCheckInterval = 50;
+        //private static Int64 _nextBurnCheck = 0;
+        //private static Int64 _nextBurnCheckInterval = 50;
 
 
         private static Int64 _quickburnStartTimeStamp = 0;
@@ -160,13 +160,19 @@ namespace E3Core.Processors
                             continue;
                         }
                     }
-                    if (!String.IsNullOrWhiteSpace(burn.CheckFor))
-                    {
-                        if (MQ.Query<bool>($"${{Bool[${{Me.Buff[{burn.CheckFor}]}}]}}") || MQ.Query<bool>($"${{Bool[${{Me.Song[{burn.CheckFor}]}}]}}"))
-                        {
-                            continue;
-                        }
-                    }
+                    bool shouldContinue = false;
+					if (burn.CheckForCollection.Count > 0)
+					{
+						foreach (var checkforItem in burn.CheckForCollection.Keys)
+						{
+							if (MQ.Query<bool>($"${{Bool[${{Me.Buff[{checkforItem}]}}]}}") || MQ.Query<bool>($"${{Bool[${{Me.Song[{checkforItem}]}}]}}"))
+							{
+                                shouldContinue = true;
+								break;
+							}
+						}
+						if (shouldContinue) { continue; }
+					}
 
                     if (Casting.CheckReady(burn))
                     {
@@ -361,12 +367,13 @@ namespace E3Core.Processors
                 }
             }
         }
-        private static List<string> _swarmPetList = new List<string>() {"Servant of Ro","Host of the Elements",
-         "Swarm of Decay","Rise of Bones","Graverobber's Icon","Soulwhisper","Deathwhisper",
-         "Wake the Dead","Spirit Call", "Shattered Gnoll Slayer", "Call of Xuzl","Song of Stone",
-         "Tarnished Skeleton Key","Celestial Hammer","Graverobber's Icon","Battered Smuggler's Barrel",
-         "Phantasmal Opponent","Projection of Piety","Spirits of Nature", "Nature's Guardian"
+        private static List<string> _swarmPetList = new List<string>() {"Servant of Ro", "Host of the Elements",
+            "Swarm of Decay","Rise of Bones","Graverobber's Icon","Soulwhisper","Deathwhisper",
+            "Wake the Dead","Spirit Call", "Shattered Gnoll Slayer", "Call of Xuzl","Song of Stone",
+            "Tarnished Skeleton Key","Celestial Hammer","Graverobber's Icon","Battered Smuggler's Barrel",
+            "Phantasmal Opponent","Spirits of Nature", "Nature's Guardian"
         };
+
         private static List<string> _anguishBPList = new List<string>() {
             "Bladewhisper Chain Vest of Journeys",
             "Farseeker's Plate Chestguard of Harmony",
@@ -374,7 +381,15 @@ namespace E3Core.Processors
             "Savagesoul Jerkin of the Wilds",
             "Glyphwielder's Tunic of the Summoner",
             "Whispering Tunic of Shadows",
-            "Ritualchanter's Tunic of the Ancestors"};
+            "Ritualchanter's Tunic of the Ancestors",
+            "Deadeye's Ascendant Vest of Journeys",
+            "Farseeker's Ascendant Chestguard of Harmony",
+            "Wrathbringer's Ascendant Chestguard of the Vindicator",
+            "Savagesoul's Ascendant Jerkin of the Wilds",
+            "Glyphwielder's Ascendant Tunic of the Summoner",
+            "Whisperer's Ascendant Tunic of Shadows",
+            "Ritualchanter's Ascendant Tunic of the Ancestors",
+        };
 
         private static List<string> _epicList = new List<string>() {
             "Prismatic Dragon Blade",

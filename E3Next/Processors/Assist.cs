@@ -7,6 +7,7 @@ using System;
 using System.Collections.Generic;
 using System.Dynamic;
 using System.Linq;
+using System.Xml.Linq;
 
 namespace E3Core.Processors
 {
@@ -281,11 +282,12 @@ namespace E3Core.Processors
                 //lets do our abilities!
                 foreach (var ability in E3.CharacterSettings.MeleeAbilities)
                 {
-                    //why even check, if its not ready?
-                    if (Casting.CheckReady(ability))
+					
+					//why even check, if its not ready?
+					if (Casting.CheckReady(ability))
                     {
-
-                        if (!String.IsNullOrWhiteSpace(ability.Ifs))
+						
+						if (!String.IsNullOrWhiteSpace(ability.Ifs))
                         {
                             if (!Casting.Ifs(ability))
                             {
@@ -301,15 +303,20 @@ namespace E3Core.Processors
                                 continue;
                             }
                         }
-                        if (!String.IsNullOrWhiteSpace(ability.CheckFor))
-                        {
-                            if (MQ.Query<bool>($"${{Bool[${{Target.Buff[{ability.CheckFor}]}}]}}"))
-                            {
-                                //has the buff already
-                                continue;
-                            }
-                        }
-
+						bool shouldContinue = false;
+						if (ability.CheckForCollection.Count > 0)
+						{
+							foreach (var checkforItem in ability.CheckForCollection.Keys)
+							{
+								if (MQ.Query<bool>($"${{Bool[${{Target.Buff[{checkforItem}]}}]}}"))
+								{
+									shouldContinue = true;
+									break;
+								}
+							}
+							if (shouldContinue) { continue; }
+						}
+					
                         if (pctAggro < ability.PctAggro)
                         {
                             continue;
@@ -384,7 +391,11 @@ namespace E3Core.Processors
                             Casting.Cast(AssistTargetID, ability);
                         }
                     }
-                }
+					if (E3.ActionTaken)
+					{
+						return;
+					}
+				}
             }
         }
 
@@ -865,17 +876,21 @@ namespace E3Core.Processors
                     string mobName = x.match.Groups[1].Value;
                     if (MQ.Query<string>("${Target.CleanName}") == mobName)
                     {
-                        if (E3.GeneralSettings.AttackOffOnEnrage)
+                        if (E3.GeneralSettings.AttackOffOnEnrage || E3.CharacterSettings.Assist_BackOffOnEnrage)
                         {
                             E3.Bots.Broadcast("Enabling Assist Is Enraged");
                             _assistIsEnraged = true;
-                        }
-
-                        if (MQ.Query<Int32>("${Me.Pet.ID}") > 0)
+							
+						}
+                        if(E3.CharacterSettings.Assist_PetBackOffOnenrage)
                         {
-                            MQ.Cmd("/pet back off");
-                        }
-                    }
+							if (MQ.Query<Int32>("${Me.Pet.ID}") > 0)
+							{
+								MQ.Cmd("/pet back off");
+							}
+
+						}
+					}
                 }
             });
             EventProcessor.RegisterEvent("EnrageOff", "(.+)  is no longer enraged.", (x) =>

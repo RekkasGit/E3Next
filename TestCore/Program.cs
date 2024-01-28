@@ -128,12 +128,12 @@ namespace TestCore
                 throw new NotImplementedException();
             }
 
-            public void Cmd(string query)
+            public void Cmd(string query, bool delayed = false)
             {
                 Console.WriteLine("CMD:"+query);
                //do work
             }
-            public void Cmd(string query,Int32 delay)
+            public void Cmd(string query,Int32 delay, bool delayed = false)
             {
                 Console.WriteLine("CMD:" + query);
                 //do work

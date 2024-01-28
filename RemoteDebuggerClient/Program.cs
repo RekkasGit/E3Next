@@ -2,13 +2,10 @@
 using MonoCore;
 using NetMQ;
 using NetMQ.Sockets;
-using RestSharp;
 using System;
 using System.Collections.Generic;
 using System.Diagnostics;
-using System.Linq;
 using System.Runtime.CompilerServices;
-using System.Text;
 using System.Threading;
 using System.Threading.Tasks;
 
@@ -24,7 +21,7 @@ namespace MQServerClient
             MonoCore.Core.mqInstance = new NetMQMQ();
             MonoCore.Core.spawnInstance = new NetMQSpawns();
             MonoCore.Core.OnInit();
-           
+
             NetMQOnIncomingChat _incChat = new NetMQOnIncomingChat();
             _incChat.Start();
 
@@ -32,17 +29,15 @@ namespace MQServerClient
             E3.Log = Core.logInstance;
             E3.Spawns = Core.spawnInstance;
 
-			IBots bots = new DanBots();
-            E3.Bots = bots;//change it to use dannet
             Core.mqInstance.Cmd("/remotedebugdelay 100");
             E3.Process();
             Core.mqInstance.Cmd("/remotedebugdelay 1");
             while (true)
             {
-                
+                Console.WriteLine($"{DateTime.Now} Start of e3 scan loop");
                 E3.Process();
                 EventProcessor.ProcessEventsInQueues();
-                System.Threading.Thread.Sleep(1000);
+                //System.Threading.Thread.Sleep(1000);
             }
 
         }
@@ -333,7 +328,7 @@ namespace MQServerClient
             Cmd(query);
         }
 
-        public void Cmd(string query)
+        public void Cmd(string query, bool delayed = false)
         {
             //send empty frame over
             if (_requestMsg.IsInitialised)
@@ -379,9 +374,9 @@ namespace MQServerClient
             Console.WriteLine("CMD:" + query);
             //do work
         }
-        public void Cmd(string query, Int32 delay)
+        public void Cmd(string query, Int32 delay, bool delayed = false)
         {
-            Cmd(query);
+            Cmd(query, delayed);
             Delay(delay);
 
         }
@@ -425,7 +420,7 @@ namespace MQServerClient
 
         public T Query<T>(string query)
         {
-            Console.WriteLine(query);
+            // Console.WriteLine(query);
             if (_requestMsg.IsInitialised)
             {
                 _requestMsg.Close();

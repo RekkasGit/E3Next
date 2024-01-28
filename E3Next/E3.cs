@@ -23,138 +23,192 @@ namespace E3Core.Processors
     /// The main file from which all other processing is called.
     /// </summary>
     public static class E3
-    {
-        /// <summary>
-        /// The main processing loop.
-        /// </summary>
-        public static void Process()
+	{
+		/// <summary>
+		/// The main processing loop. Things are broken up to keep this loop small and understandable.
+		/// </summary>
+		public static void Process()
         {
 
             if (!ShouldRun())
             {
                 return;
             }
-            CheckGC();
-            //update all states, important.
-            StateUpdates();
+			//Init is here to make sure we only Init while InGame, as some queries will fail if not in game
+			if (!IsInit) { Init(); }
+			var sw = new Stopwatch();
+			sw.Start();
+			//auto 5 min gc check
+			CheckGC();
+			WriteToConsoleAndResetStopwatch(sw, "CheckGC");
+			//update all states, important.
+			StateUpdates();
+            WriteToConsoleAndResetStopwatch(sw, "StateUpdates");
+            RefreshCaches();
+            WriteToConsoleAndResetStopwatch(sw, "RefreshCaches");
 
             //kickout after updates if paused
             if (IsPaused()) return;
 
-            //Init is here to make sure we only Init while InGame, as some queries will fail if not in game
-            if (!IsInit) { Init(); }
+			//global action taken key, used by adv settings
+			//if true, adv settings will stop processing for this loop.
             ActionTaken = false;
-            
-            if (CurrentHps < 98)
-            {
-                Heals.Check_LifeSupport();
-            }
-
-            RefreshCaches();
-
-            //nowcast before all.
-            EventProcessor.ProcessEventsInQueues("/nowcast");
-            EventProcessor.ProcessEventsInQueues("/backoff");
-            //use burns if able, this is high as some heals need burns as well
-            Burns.UseBurns();
-            //do the basics first
-            //first and formost, do healing checks
-            if ((CurrentClass & Data.Class.Priest) == CurrentClass)
-            {
-                ActionTaken = false;
-                Heals.Check_Heals();
-                Basics.CheckManaResources();
-				if (ActionTaken) return; //we did a heal, kick out as we may need to do another heal.
-            }
-            
-            //instant buffs have their own shouldcheck, need it snappy so check quickly.
-            BuffCheck.BuffInstant(E3.CharacterSettings.InstantBuffs);
-
-
-            using (Log.Trace("Assist/WaitForRez"))
-            {
-                Rez.Process();
-                if (Basics.AmIDead()) return;
-
-                Assist.Process();
-            }
-
-            
-
+         
+			
+            BeforeAdvancedSettingsCalls();
+            WriteToConsoleAndResetStopwatch(sw, "BeforeAdvancedSettingsCalls");
             if (!ActionTaken)
-            {
-                using (Log.Trace("AdvMethodCalls"))
-                {
-                    //rembmer check_heals is auto inserted, should probably just pull out here
-                    List<string> _methodsToInvokeAsStrings;
-                    if (AdvancedSettings.ClassMethodsAsStrings.TryGetValue(CurrentShortClassString, out _methodsToInvokeAsStrings))
-                    {
-                        foreach (var methodName in _methodsToInvokeAsStrings)
-                        {
+			{
+				//All the advanced Ini stuff here
+				AdvancedSettingsCalls();
+                WriteToConsoleAndResetStopwatch(sw, "AdvancedSettingsCalls");
+            }
+            AfterAdvancedSettingsCalls();
+            WriteToConsoleAndResetStopwatch(sw, "AfterAdvancedSettingsCalls");
+
+            //attribute class calls
+            ClassMethodCalls();
+            WriteToConsoleAndResetStopwatch(sw, "ClassMethodCalls");
+
+            //final cleanup/actions after the main loop has done processing
+            FinalCalls();
+            WriteToConsoleAndResetStopwatch(sw, "FinalCalls");
+        }
+
+		private static void WriteToConsoleAndResetStopwatch(Stopwatch sw, string method)
+		{
+			Console.WriteLine($"it took {sw.ElapsedMilliseconds}ms to execute {method}");
+			sw.Restart();
+		}
+		
+		private static void BeforeAdvancedSettingsCalls()
+		{
+			if (PctHPs < 98)
+			{
+				Heals.Check_LifeSupport();
+			}
+			//nowcast before all.
+			EventProcessor.ProcessEventsInQueues("/nowcast");
+			EventProcessor.ProcessEventsInQueues("/backoff");
+			//use burns if able, this is high as some heals need burns as well
+			Burns.UseBurns();
+			//do the basics first
+			//first and formost, do healing checks
+			if ((CurrentClass & Data.Class.Priest) == CurrentClass)
+			{
+				ActionTaken = false;
+				Heals.Check_Heals();
+				Basics.CheckManaResources();
+				if (ActionTaken) return; //we did a heal, kick out as we may need to do another heal.
+			}
+
+			//instant buffs have their own shouldcheck, need it snappy so check quickly.
+			BuffCheck.BuffInstant(E3.CharacterSettings.InstantBuffs);
+
+			Rez.Process();
+			if (Basics.AmIDead()) return;
+			Assist.Process();
+
+		}
+		private static void AdvancedSettingsCalls()
+		{
+			using (Log.Trace("AdvMethodCalls"))
+			{
+				//rembmer check_heals is auto inserted, should probably just pull out here
+				List<string> _methodsToInvokeAsStrings;
+				if (AdvancedSettings.ClassMethodsAsStrings.TryGetValue(CurrentShortClassString, out _methodsToInvokeAsStrings))
+				{
+					foreach (var methodName in _methodsToInvokeAsStrings)
+					{
+						//using (Log.Trace($"{methodName}-Burns"))
+						{
 							Burns.UseBurns();
+
+						}
+
+						//using (Log.Trace($"{methodName}-Main"))
+						{
 							//if an action was taken, start over
 							if (ActionTaken)
-                            {
-                                break;
-                            }
-                            Action methodToInvoke;
-                            if (AdvancedSettings.MethodLookup.TryGetValue(methodName, out methodToInvoke))
-                            {
-                                methodToInvoke.Invoke();
+							{
+								break;
+							}
+							Action methodToInvoke;
+							if (AdvancedSettings.MethodLookup.TryGetValue(methodName, out methodToInvoke))
+							{
+								methodToInvoke.Invoke();
 
-                            }
-                            //check backoff
-                            //check nowcast
-                            EventProcessor.ProcessEventsInQueues("/nowcast");
-                            EventProcessor.ProcessEventsInQueues("/backoff");
-                        }
-                    }
-                }
+							}
+						}
 
-            }
-            //get most up to date data, so let the game do a full process loop.
-            e3util.YieldToEQ();
-            EventProcessor.ProcessEventsInQueues("/backoff");
-            Assist.Process();
-            
-            //process any requests commands from the UI.
-            PubClient.ProcessRequests();
+						//check backoff
+						//check nowcast
+						//using (Log.Trace($"{methodName}-CheckQueues"))
+						{
+							EventProcessor.ProcessEventsInQueues("/nowcast");
+							EventProcessor.ProcessEventsInQueues("/backoff");
 
-            //bard song player
-            if (E3.CurrentClass == Data.Class.Bard)
-            {
-                Bard.check_BardSongs();
-            }
+						}
 
-            //class attribute method calls, call them all!
-            //in case any of them change the target, put it back after called
-            Int32 orgTargetID = MQ.Query<Int32>("${Target.ID}");
-           
-            using (Log.Trace("ClassMethodCalls"))
-            {
+					}
+				}
+			}
+		}
+		
+		private static void AfterAdvancedSettingsCalls()
+		{
+			EventProcessor.ProcessEventsInQueues("/backoff");
+			Assist.Process();
 
-                //lets do our class methods, this is last because of bards
-                foreach (var kvp in AdvancedSettings.ClassMethodLookup)
-                {
+			//process any requests commands from the UI.
+			PubClient.ProcessRequests();
+
+			//bard song player
+			if (E3.CurrentClass == Data.Class.Bard)
+			{
+				Bard.check_BardSongs();
+			}
+		}
+	
+		private static void ClassMethodCalls()
+		{
+
+			//class attribute method calls, call them all!
+			//in case any of them change the target, put it back after called
+			Int32 orgTargetID = MQ.Query<Int32>("${Target.ID}");
+
+			//using (Log.Trace("ClassMethodCalls"))
+			{
+
+				//lets do our class methods, this is last because of bards
+				foreach (var kvp in AdvancedSettings.ClassMethodLookup)
+				{
 					Burns.UseBurns();
-					kvp.Value.Invoke();
-                    EventProcessor.ProcessEventsInQueues("/nowcast");
-                    EventProcessor.ProcessEventsInQueues("/backoff");
-                }
-                e3util.PutOriginalTargetBackIfNeeded(orgTargetID);
-            }
+					//using (Log.Trace($"ClassMethodCalls-{kvp.Key}-Main"))
+					{
+						kvp.Value.Invoke();
+					}
+					EventProcessor.ProcessEventsInQueues("/nowcast");
+					EventProcessor.ProcessEventsInQueues("/backoff");
+				}
+				e3util.PutOriginalTargetBackIfNeeded(orgTargetID);
+			}
 
-            using (Log.Trace("LootProcessing"))
-            {
-                Loot.Process();
-            }
-            //instant buffs have their own shouldcheck, need it snappy so check quickly.
-            BuffCheck.BuffInstant(E3.CharacterSettings.InstantBuffs);
 
-            //were modifications made to the settings files?
-            CheckModifiedSettings();
-        }
-        private static void CheckModifiedSettings()
+		}
+		private static void FinalCalls()
+		{
+			using (Log.Trace("LootProcessing"))
+			{
+				Loot.Process();
+			}
+			//instant buffs have their own shouldcheck, need it snappy so check quickly.
+			BuffCheck.BuffInstant(E3.CharacterSettings.InstantBuffs);
+
+			//were modifications made to the settings files?
+			CheckModifiedSettings();
+		}
+		private static void CheckModifiedSettings()
         {
             if (!e3util.ShouldCheck(ref _nextReloadSettingsCheck, _nextReloadSettingsInterval)) return;
 
@@ -164,6 +218,7 @@ namespace E3Core.Processors
                 CharacterSettings = new CharacterSettings();
                 Loot.Reset();
                 GiveMe.Reset();
+				Bard.RestartMelody();
                 E3.Bots.Broadcast("\aoComplete!");
                
             }
@@ -182,7 +237,8 @@ namespace E3Core.Processors
                 E3.Bots.Broadcast("\aoComplete!");
             }
         }
-        public static bool IsPaused()
+       
+		public static bool IsPaused()
         {
             EventProcessor.ProcessEventsInQueues("/e3p");
 
@@ -192,49 +248,89 @@ namespace E3Core.Processors
             }
             return false;
         }
-        /// <summary>
-        /// This is used during thigns like casting, while we are delaying a ton
-        /// so that we can keep things 'up to date' such as hp, invs status, pet name, etc. 
-        /// 
-        /// </summary>
-        public static void StateUpdates()
+		/// <summary>
+		/// This is used during thigns like casting, while we are delaying a ton
+		/// so that we can keep things 'up to date' such as hp, invs status, pet name, etc. 
+		/// 
+		/// </summary>
+		/// 
+		private static Int64 _nextStateUpdateCheckTime = 0;
+		private static Int64 _nextStateUpdateTimeInterval = 50;
+
+		private static Int64 _nextBuffUpdateCheckTime = 0;
+		private static Int64 _nextBuffUpdateTimeInterval = 1000;
+
+
+        //qick hack to prevent calling state update... while in state updates. 
+        public static bool InStateUpdate = false;
+		public static void StateUpdates()
         {
-            IsInvis = MQ.Query<bool>("${Me.Invis}");
-            CurrentHps = MQ.Query<int>("${Me.PctHPs}");
-            CurrentId = MQ.Query<int>("${Me.ID}");
-            bool IsMoving = MQ.Query<bool>("${Me.Moving}");
-
-            if(IsMoving)
+           
+            try
             {
-                LastMovementTimeStamp = Core.StopWatch.ElapsedMilliseconds;
-            }
-            if (MQ.Query<bool>("${MoveUtils.GM}"))
-            {
-                MQ.Cmd("/squelch /stick imsafe");
-                Bots.Broadcast("GM Safe kicked in, issued /stick imsafe.  you may need to reissue /followme or /assiston");
-            }
+                InStateUpdate = true;
+				NetMQServer.SharedDataClient.ProcessCommands(); //recieving data
+				NetMQServer.SharedDataClient.ProcessE3BCCommands();//sending out data
 
-            HitPointsCurrent = MQ.Query<int>("${Me.CurrentHPs}");
-            PubServer.AddTopicMessage("${Me.CurrentHPs}", HitPointsCurrent.ToString("N0"));
-            MagicPointsCurrent = MQ.Query<int>("${Me.CurrentMana}");
-            PubServer.AddTopicMessage("${Me.CurrentMana}", MagicPointsCurrent.ToString("N0"));
-            StamPointsCurrent = MQ.Query<int>("${Me.CurrentEndurance}");
-            PubServer.AddTopicMessage("${Me.CurrentEndurance}", StamPointsCurrent.ToString("N0"));
-            CurrentInCombat = Basics.InCombat();
-            PubServer.AddTopicMessage("${InCombat}", CurrentInCombat.ToString());
-			PubServer.AddTopicMessage("${EQ.CurrentFocusedWindowName}", MQ.GetFocusedWindowName());
+				if (e3util.ShouldCheck(ref _nextBuffUpdateCheckTime, _nextBuffUpdateTimeInterval))
+				{
+					PubServer.AddTopicMessage("${Me.BuffInfo}", e3util.GenerateBuffInfoForPubSub());
+					PubServer.AddTopicMessage("${Me.PetBuffInfo}", e3util.GeneratePetBuffInfoForPubSub());
+				}
 
-			string nameOfPet = MQ.Query<string>("${Me.Pet.CleanName}");
-            if (nameOfPet != "NULL")
+				if (!e3util.ShouldCheck(ref _nextStateUpdateCheckTime, _nextStateUpdateTimeInterval)) return;
+				PctHPs = MQ.Query<int>("${Me.PctHPs}");
+				//cure counters
+				PubServer.AddTopicMessage("${Me.TotalCounters}", MQ.Query<string>("${Debuff.Count}"));
+				PubServer.AddTopicMessage("${Me.CountersPoison}", MQ.Query<string>("${Debuff.Poisoned}"));
+				PubServer.AddTopicMessage("${Me.CountersDisease}", MQ.Query<string>("${Debuff.Diseased}"));
+				PubServer.AddTopicMessage("${Me.CountersCurse}", MQ.Query<string>("${Debuff.Cursed}"));
+				PubServer.AddTopicMessage("${Me.CountersCorrupted}", MQ.Query<string>("${Debuff.Corrupted}"));
+				//end cure counters
+				PubServer.AddTopicMessage("${Me.PctMana}", MQ.Query<string>("${Me.PctMana}"));
+				PubServer.AddTopicMessage("${Me.PctEndurance}", MQ.Query<string>("${Me.PctEndurance}"));
+				PubServer.AddTopicMessage("${Me.PctHPs}", PctHPs.ToString());
+				PubServer.AddTopicMessage("${Me.CurrentHPs}", MQ.Query<string>("${Me.CurrentHPs}"));
+				PubServer.AddTopicMessage("${Me.CurrentMana}", MQ.Query<string>("${Me.CurrentMana}"));
+				PubServer.AddTopicMessage("${Me.CurrentEndurance}", MQ.Query<string>("${Me.CurrentEndurance}"));
+		
+				IsInvis = MQ.Query<bool>("${Me.Invis}");
+			
+				CurrentId = MQ.Query<int>("${Me.ID}");
+				CurrentInCombat = Basics.InCombat();
+				PubServer.AddTopicMessage("${InCombat}", CurrentInCombat.ToString());
+				PubServer.AddTopicMessage("${EQ.CurrentFocusedWindowName}", MQ.GetFocusedWindowName());
+
+				string nameOfPet = MQ.Query<string>("${Me.Pet.CleanName}");
+				if (nameOfPet != "NULL")
+				{
+					//set the pet name
+					CurrentPetName = nameOfPet;
+					PubServer.AddTopicMessage("${Me.Pet.CleanName}", CurrentPetName);
+				}
+
+				bool IsMoving = MQ.Query<bool>("${Me.Moving}");
+				if (IsMoving)
+				{
+					LastMovementTimeStamp = Core.StopWatch.ElapsedMilliseconds;
+				}
+				if (MQ.Query<bool>("${MoveUtils.GM}"))
+				{
+					MQ.Cmd("/squelch /stick imsafe");
+					Bots.Broadcast("GM Safe kicked in, issued /stick imsafe.  you may need to reissue /followme or /assiston");
+				}
+
+				//process any tlo request from the UI, or anything really.
+				RouterServer.ProcessRequests();
+				//process any commands we need to process from the UI
+				PubClient.ProcessRequests();
+			}
+            finally
             {
-                //set the pet name
-                CurrentPetName = nameOfPet;
-                PubServer.AddTopicMessage("${Me.Pet.CleanName}", CurrentPetName);
+                InStateUpdate = false;
             }
-            //process any tlo request from the UI, or anything really.
-            RouterServer.ProcessRequests();
-            //process any commands we need to process from the UI
-            PubClient.ProcessRequests();
+			
+           
         }
         private static void RefreshCaches()
         {
@@ -253,8 +349,6 @@ namespace E3Core.Processors
                 Logging.MinLogLevelTolog = Logging.LogLevels.Error; //log levels have integers assoicatd to them. you can set this to Error to only log errors. 
                 Logging.DefaultLogLevel = Logging.LogLevels.Debug; //the default if a level is not passed into the _log.write statement. useful to hide/show things.
                 MainProcessor.ApplicationName = "E3"; //application name, used in some outputs
-                MainProcessor.ProcessDelay = ProcessDelay; //how much time we will wait until we start our next processing once we are done with a loop.
-                                                            //how long you allow script to process before auto yield is engaged. generally should't need to mess with this, but an example.
                 MonoCore.MQ.MaxMillisecondsToWork = 40;
                 //max event count for each registered event before spilling over.
                 EventProcessor.EventLimiterPerRegisteredEvent = 20;
@@ -274,28 +368,30 @@ namespace E3Core.Processors
 
                 //Init the settings
                 GeneralSettings = new Settings.GeneralSettings();
-                if(Bots==null)
-                {
-					if ("DANNET".Equals(E3.GeneralSettings.General_NetworkMethod, StringComparison.OrdinalIgnoreCase) && Core._MQ2MonoVersion > 0.20m)
-					{
-						Bots = new DanBots();
-					}
-					else
-					{
-						Bots = new Bots();
-					}
-				}
-                
-                CharacterSettings = new Settings.CharacterSettings();
-                AdvancedSettings = new Settings.AdvancedSettings();
-                
-                //setup is done after the settings are setup.
-                //as there is an order dependecy
-                Setup.Init();
 
+				NetMQServer.Init();
+				if (Bots == null)
+				{
+                   	Bots = new SharedDataBots();
+
+                    //if ("DANNET".Equals(E3.GeneralSettings.General_NetworkMethod, StringComparison.OrdinalIgnoreCase) && Core._MQ2MonoVersion > 0.20m)
+                    //{
+                    //    Bots = new DanBots();
+                    //}
+                    //else
+                    //{
+                    //    Bots = new Bots();
+                    //}
+                }
+				CharacterSettings = new Settings.CharacterSettings();
+                AdvancedSettings = new Settings.AdvancedSettings();
+				
+				//setup is done after the settings are setup.
+				//as there is an order dependecy
+				Setup.Init();
                 IsInit = true;
-                MonoCore.Spawns.RefreshTimePeriodInMS = 3000;
-            }
+                MonoCore.Spawns.RefreshTimePeriodInMS = 500;
+			}
 
 
         }
@@ -357,15 +453,19 @@ namespace E3Core.Processors
         public static Int64 LastMovementTimeStamp;
         public static string CurrentLongClassString;
         public static string CurrentShortClassString;
-        public static int CurrentHps;
-        public static int HitPointsCurrent;
-        public static int MagicPointsCurrent;
-        public static int StamPointsCurrent;
-        public static int ProcessDelay = 50;
+
+		public static int PctHPs;
         public static ISpawns Spawns = Core.spawnInstance;
         public static bool IsInvis;
         private static Int64 _nextReloadSettingsCheck = 0;
         private static Int64 _nextReloadSettingsInterval = 2000;
         private static Int64 _lastGCCollect = 0;
-    }
+        public volatile static bool NetMQ_PubServerThradRun = true;
+		public volatile static bool NetMQ_SharedDataServerThradRun = true;
+		public volatile static bool NetMQ_RouterServerThradRun = true;
+		public volatile static bool NetMQ_PubClientThradRun = true;
+
+
+
+	}
 }

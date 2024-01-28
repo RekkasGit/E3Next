@@ -28,6 +28,8 @@ namespace E3Core.Processors
         private static readonly Spell _divineRes = new Spell("Divine Resurrection");
         private static readonly HashSet<string> _classesToDivineRez = new HashSet<string> { "Cleric", "Warrior", "Paladin", "Shadow Knight" };
         private static bool _skipAutoRez = false;
+        private static Dictionary<int, DateTime> _recentlyRezzed = new Dictionary<int, DateTime>();
+        private static List<int> _corpsesToRemoveFromRecentlyRezzed = new List<int>();
 
         [SubSystemInit]
         public static void Init()
@@ -98,10 +100,7 @@ namespace E3Core.Processors
                         return;
 
                     }
-                    //maybe there is another corpse? lets find out.
-                    //get all spawns within a 100 distance
-                    //make sure we have the most up to date zones spawns, takes about 1-2ms so no real harm forcing the issue.
-                    _spawns.RefreshList();
+                 
                     string corpseName = E3.CurrentName + "'s corpse";
                     foreach (var spawn in _spawns.Get())
                     {
@@ -162,8 +161,27 @@ namespace E3Core.Processors
         public static void RefreshCorpseList(RezType rezType = RezType.AE)
         {
               //lets get a corpse list
-            _spawns.RefreshList();
             _corpseList.Clear();
+
+            foreach (var kvp in _recentlyRezzed)
+            {
+                // if < 1 minute since last rez attempt, skip
+                if (DateTime.Now - kvp.Value < new TimeSpan(0, 1, 0))
+                {
+                    continue;
+                }
+                else
+                {
+                    _corpsesToRemoveFromRecentlyRezzed.Add(kvp.Key);
+                }
+            }
+
+            foreach(var corpse in _corpsesToRemoveFromRecentlyRezzed)
+            {
+                _recentlyRezzed.Remove(corpse);
+            }
+
+            _corpsesToRemoveFromRecentlyRezzed.Clear();
 
             bool rezOurself = false;
 
@@ -172,7 +190,12 @@ namespace E3Core.Processors
             {
                 if (spawn.Distance3D < 100 && spawn.DeityID != 0 && spawn.TypeDesc == "Corpse" && spawn.ClassShortName == "CLR")
                 {
-                    if(rezType== RezType.Group && !E3.Bots.IsMyBot(spawn.DisplayName))
+                    if (_recentlyRezzed.TryGetValue(spawn.ID, out _))
+                    {
+                        //E3.Bots.Broadcast($"\agSkipping {spawn.CleanName} because i rezzed it < 1 minute ago");
+                        continue;
+                    }
+                    if (rezType== RezType.Group && !E3.Bots.IsMyBot(spawn.DisplayName))
                     {
                         continue;
                     }
@@ -194,6 +217,11 @@ namespace E3Core.Processors
             {
                 if (spawn.Distance3D < 100 && spawn.DeityID != 0 && spawn.TypeDesc == "Corpse" && (spawn.ClassShortName == "DRU" || spawn.ClassShortName == "SHM" || spawn.ClassShortName == "WAR"))
                 {
+                    if (_recentlyRezzed.TryGetValue(spawn.ID, out _))
+                    {
+                        //E3.Bots.Broadcast($"\agSkipping {spawn.CleanName}'s corpse because i rezzed it < 1 minute ago");
+                        continue;
+                    }
                     if (rezType == RezType.Group && !E3.Bots.IsMyBot(spawn.DisplayName))
                     {
                         continue;
@@ -217,6 +245,11 @@ namespace E3Core.Processors
             {
                 if (spawn.Distance3D < 100 && spawn.DeityID != 0 && spawn.TypeDesc == "Corpse")
                 {
+                    if (_recentlyRezzed.TryGetValue(spawn.ID, out _))
+                    {
+                        //E3.Bots.Broadcast($"\agSkipping {spawn.CleanName}'s corpse because i rezzed it < 1 minute ago");
+                        continue;
+                    }
                     //lists are super small so contains is fine
                     if (!_corpseList.Contains(spawn.ID))
                     {
@@ -279,6 +312,19 @@ namespace E3Core.Processors
             {
                 if (_spawns.TryByID(corpse, out var spawn))
                 {
+                    if (_recentlyRezzed.TryGetValue(corpse, out var lastRez))
+                    {
+                        // if < 1 minute since last rez attempt, skip
+                        if (DateTime.Now - lastRez < new TimeSpan(0, 1, 0))
+                        {
+                            //E3.Bots.Broadcast($"\agSkipping {spawn.CleanName}'s corpse because i rezzed it < 1 minute ago");
+                            continue; 
+                        }
+                        else
+                        {
+                            _recentlyRezzed.Remove(corpse);
+                        }
+                    }
                     EventProcessor.ProcessEventsInQueues("/wipe");
                     EventProcessor.ProcessEventsInQueues("/wipe all");
                     EventProcessor.ProcessEventsInQueues("/autorezon");
@@ -294,7 +340,7 @@ namespace E3Core.Processors
                         continue;
                     }
                     //if not a cleric, and the person is in raid but no in group, let clerics deal with it.
-                    if(E3.CurrentClass!=Class.Cleric && inRaid && !inGroup)
+                    if (E3.CurrentClass != Class.Cleric && inRaid && !inGroup)
                     {
                         continue;
                     }
@@ -303,7 +349,7 @@ namespace E3Core.Processors
                     {
                         var currentMana = MQ.Query<int>("${Me.CurrentMana}");
                         var pctMana = MQ.Query<int>("${Me.PctMana}");
-                        if (Heals.SomeoneNeedsHealing(currentMana, pctMana))
+                        if (Heals.SomeoneNeedsHealing(null,currentMana, pctMana))
                         {
                             return;
                         }
@@ -313,13 +359,14 @@ namespace E3Core.Processors
                     {
                         if (!CanRez())
                         {
+                            _recentlyRezzed.Add(spawn.ID, DateTime.Now);
                             continue;
                         }
                         InitRezSpells(RezType.Auto);
                         if (_currentRezSpells.Count == 0) return;
 
                         MQ.Cmd($"/t {spawn.DisplayName} Wait4Rez",100);
-                        MQ.Delay(1500);
+                        //MQ.Delay(1500);
                         MQ.Cmd("/corpse");
                         
 
@@ -345,10 +392,12 @@ namespace E3Core.Processors
                                     }
 
                                     Casting.Cast(spawn.ID, spell, Heals.SomeoneNeedsHealing);
+                                    _recentlyRezzed.Add(spawn.ID, DateTime.Now);
                                 }
                                 else
                                 {
                                     Casting.Cast(spawn.ID, spell);
+                                    _recentlyRezzed.Add(spawn.ID, DateTime.Now);
                                 }
                                 break;
                             }

@@ -4,9 +4,10 @@ using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
 
-namespace E3Core.Server
+namespace ApiLibrary.Models
 {
-    public class ShareData
+    public class DiscordDmChannel
     {
+        public ulong id { get; set; } 
     }
 }

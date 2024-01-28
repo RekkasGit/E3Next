@@ -31,7 +31,7 @@ namespace E3NextUI.Server
             {
                 pubSocket.Options.SendHighWatermark = 50000;
 
-                pubSocket.Bind("tcp://127.0.0.1:" + PubPort.ToString());
+                pubSocket.Bind("tcp://0.0.0.0:" + PubPort.ToString());
                 while (E3UI.ShouldProcess)
                 {
                     if (PubCommands.Count > 0)

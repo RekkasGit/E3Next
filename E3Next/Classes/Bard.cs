@@ -8,6 +8,7 @@ using MonoCore;
 using System.Collections.Generic;
 using System.Dynamic;
 using System.Linq;
+using System.Windows.Forms;
 
 namespace E3Core.Classes
 {
@@ -29,6 +30,7 @@ namespace E3Core.Classes
         private static bool _forceOverride = false;
         private static Int64 _nextAutoSonataCheck;
         private static Data.Spell _sonataSpell = new Spell("Selo's Sonata");
+        private static Int64 _nextBardCast = 0;
         /// <summary>
         /// Initializes this instance.
         /// </summary>
@@ -133,7 +135,6 @@ namespace E3Core.Classes
             //go through the ifs and see if we should change the melodies
             foreach(var melodyCheck in E3.CharacterSettings.Bard_MelodyIfs)
             {
-                //TODO: Fix this so it goes through the main castig ifs eventually.
                 bool melodyTrue = Casting.Ifs(melodyCheck.MelodyIf);
                 if(melodyTrue)
                 {
@@ -186,7 +187,13 @@ namespace E3Core.Classes
             }
             if (Casting.CheckReady(songToPlay))
             {
+                Int64 curTimeStamp = Core.StopWatch.ElapsedMilliseconds;
+                if (curTimeStamp < _nextBardCast)
+                {
+                    return;
+                }
                 if (E3.CharacterSettings.Misc_DebugLogLevel > 0) MQ.Write($"\atTwist \ag{songToPlay.SpellName}");
+                _nextBardCast = Core.StopWatch.ElapsedMilliseconds + (int)songToPlay.MyCastTime;
                 Casting.Sing(0, songToPlay);
             }
             else
@@ -214,6 +221,22 @@ namespace E3Core.Classes
                 _currentMelody = melodyName;
             }
         }
+        public static void RestartMelody()
+        {
+            if(_playingMelody && !String.IsNullOrWhiteSpace(_currentMelody))
+            {
+				_songs.Clear();
+				//lets find the melody in the character ini.
+				CharacterSettings.LoadKeyData($"{_currentMelody} Melody", "Song", E3.CharacterSettings.ParsedData, _songs);
+				if (_songs.Count > 0)
+				{
+					MQ.Write($"\aoStart Melody:\ag{_currentMelody}");
+					MQ.Cmd("/stopsong");
+					
+				}
+			}
+			
+		}
 
     }
 }

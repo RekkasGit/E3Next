@@ -55,42 +55,36 @@ namespace E3Core.Server
         }
         public void Process()
         {
-            while(Core.IsProcessing)
+            TimeSpan recieveTimeout = new TimeSpan(0, 0, 0, 0, 5);
+            using (var subSocket = new SubscriberSocket())
             {
-                //some type of delay if our sub errors out.
-                System.Threading.Thread.Sleep(100);
-                TimeSpan recieveTimeout = new TimeSpan(0, 0, 0, 0, 5);
-                using (var subSocket = new SubscriberSocket())
+                try
                 {
-                    try
+                    subSocket.Options.ReceiveHighWatermark = 1000;
+                    subSocket.Options.TcpKeepalive = true;
+                    subSocket.Options.TcpKeepaliveIdle = TimeSpan.FromSeconds(5);
+                    subSocket.Options.TcpKeepaliveInterval = TimeSpan.FromSeconds(1);
+                    subSocket.Connect("tcp://127.0.0.1:" + _port);
+                    subSocket.Subscribe("OnCommand");
+                    while (Core.IsProcessing && E3.NetMQ_PubClientThradRun)
                     {
-                        subSocket.Options.ReceiveHighWatermark = 1000;
-                        subSocket.Options.TcpKeepalive = true;
-                        subSocket.Options.TcpKeepaliveIdle = TimeSpan.FromSeconds(5);
-                        subSocket.Options.TcpKeepaliveInterval = TimeSpan.FromSeconds(1);
-                        subSocket.Connect("tcp://127.0.0.1:" + _port);
-                        subSocket.Subscribe("OnCommand");
-                        while (Core.IsProcessing)
+                        string messageTopicReceived;
+                        if (subSocket.TryReceiveFrameString(recieveTimeout, out messageTopicReceived))
                         {
-                            string messageTopicReceived;
-                            if (subSocket.TryReceiveFrameString(recieveTimeout, out messageTopicReceived))
+                            string messageReceived = subSocket.ReceiveFrameString();
+                            if (messageTopicReceived == "OnCommand")
                             {
-                                string messageReceived = subSocket.ReceiveFrameString();
-                                if (messageTopicReceived == "OnCommand")
-                                {
-                                    _pubCommands.Enqueue(messageReceived);
-                                }
+                                _pubCommands.Enqueue(messageReceived);
                             }
-                            System.Threading.Thread.Sleep(1);
                         }
+                           
                     }
-                    catch(Exception)
-                    {
-
-                    }
-                    
                 }
-               
+                catch(Exception)
+                {
+
+                }
+                    
             }
             MQ.Write("Shutting down PubClient Thread.");
         }
