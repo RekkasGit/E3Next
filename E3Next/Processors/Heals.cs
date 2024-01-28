@@ -738,7 +738,22 @@ namespace E3Core.Processors
 												continue;
 											}
 										}
-									recastSpell:
+
+                                        bool shouldContinue = false;
+                                        if (spell.CheckForCollection.Count > 0)
+                                        {
+                                            var bufflist = E3.Bots.BuffList(name);
+                                            foreach (var checkforItem in spell.CheckForCollection.Keys)
+                                            {
+                                                if (bufflist.Contains(spell.CheckForCollection[checkforItem]))
+                                                {
+                                                    shouldContinue = true;
+                                                    break;
+                                                }
+                                            }
+                                            if (shouldContinue) { continue; }
+                                        }
+                                    recastSpell:
 										if (spell.Mana > currentMana)
 										{
 											//mana cost too high
