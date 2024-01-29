@@ -529,7 +529,7 @@ namespace E3Core.Server
 			~OnCommandData()
 			{
 				//DO NOT CALL DISPOSE FROM THE FINALIZER! This should only ever be used in using statements
-				//if this is called, it will cause the domain to hang in the GC when shuttind down
+				//if this is called, it will cause the domain to hang in the GC when shutting down
 				//This is only here to warn you
 
 			}
