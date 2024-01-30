@@ -302,7 +302,7 @@ namespace E3Core.Settings
 
             newFile.Sections.AddSection("General");
             var section = newFile.Sections.GetSectionData("General");
-            section.Keys.AddKey("AutoMedBreak PctMana", "0");
+            section.Keys.AddKey("AutoMedBreak PctMana", "70");
             section.Keys.AddKey("NetworkMethod", "EQBC");
             section.Keys.AddKey("E3NetworkAddPathToMonitor", "");
             section.Keys.AddKey("Network Default Broadcast (Group,All,AllInZoneOrRaid)", "Group");
