@@ -4,6 +4,7 @@ using E3Core.Utility;
 using IniParser;
 using IniParser.Model;
 using System;
+using MonoCore;
 using System.Collections.Generic;
 using System.IO;
 using System.Linq;
@@ -35,7 +36,7 @@ namespace E3Core.Settings
         public string Misc_AnchorChar = string.Empty;
         public bool Misc_RemoveTorporAfterCombat = true;
         public Int32 Misc_DelayAfterCastWindowDropsForSpellCompletion = 0;
-        public Int32 Misc_DebugLogLevel = 1;
+        public string Misc_DebugLogLevel = "Info";
 
         public bool Misc_AutoForage = false;
         
@@ -309,8 +310,11 @@ namespace E3Core.Settings
             LoadKeyData("Misc", "Dismount On Interrupt (On/Off)", ParsedData, ref Misc_DismountOnInterrupt);
             LoadKeyData("Misc", "Delay in MS After CastWindow Drops For Spell Completion",ParsedData, ref Misc_DelayAfterCastWindowDropsForSpellCompletion);
 			LoadKeyData("Misc", "If FD stay down (true/false)", ParsedData, ref IfFDStayDown);
-            LoadKeyData("Misc", "Debug Log Level(0,1,2,3)", ParsedData, ref Misc_DebugLogLevel);
-
+            LoadKeyData("Misc", "Debug Log Level(debug,info,error)", ParsedData, ref Misc_DebugLogLevel);
+            // Set Debug Levels On reload
+            if (Enum.TryParse(Misc_DebugLogLevel, true, out Logging.LogLevels logLevel)) {
+                Logging.MinLogLevelTolog = (Logging.LogLevels)Enum.Parse(typeof(Logging.LogLevels), Misc_DebugLogLevel, true);
+            }
             LoadKeyData("Manastone", "Override General Settings (On/Off)", ParsedData, ref Manastone_OverrideGeneralSettings);
             LoadKeyData("Manastone", "Manastone Enabled (On/Off)", ParsedData, ref Manastone_Enabled);
 
@@ -593,7 +597,7 @@ namespace E3Core.Settings
             section.Keys.AddKey("Dismount On Interrupt (On/Off)","On");
             section.Keys.AddKey("Delay in MS After CastWindow Drops For Spell Completion", "0");
 			section.Keys.AddKey("If FD stay down (true/false)", "False");
-            section.Keys.AddKey("Debug Log Level(0,1,2,3)", "1");
+            section.Keys.AddKey("Debug Log Level(debug,info,error)", "info");
 
 
             newFile.Sections.AddSection("Assist Settings");

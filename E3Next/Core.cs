@@ -958,7 +958,7 @@ namespace MonoCore
             {
                 return;
             }
-            if (E3.CharacterSettings.Misc_DebugLogLevel > 2) mq_Echo("command received:" + commandLine);
+            if (Logging.MinLogLevelTolog < Logging.LogLevels.Error ) mq_Echo("command received:" + commandLine);
 
             EventProcessor.ProcessMQCommand(commandLine);
         }

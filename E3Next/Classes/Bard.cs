@@ -192,13 +192,13 @@ namespace E3Core.Classes
                 {
                     return;
                 }
-                if (E3.CharacterSettings.Misc_DebugLogLevel > 0) MQ.Write($"\atTwist \ag{songToPlay.SpellName}");
+                _log.Write($"\atTwist \ag{songToPlay.SpellName}", Logging.LogLevels.Info);
                 _nextBardCast = Core.StopWatch.ElapsedMilliseconds + (int)songToPlay.MyCastTime;
                 Casting.Sing(0, songToPlay);
             }
             else
             {
-                MQ.Write($"\arTwists-Skip \ag{songToPlay.SpellName}");
+                _log.Write($"\arTwists-Skip \ag{songToPlay.SpellName}", Logging.LogLevels.Error);
             }
         }
 
@@ -214,7 +214,7 @@ namespace E3Core.Classes
             CharacterSettings.LoadKeyData($"{melodyName} Melody", "Song", E3.CharacterSettings.ParsedData, _songs);
             if(_songs.Count>0)
             {
-                if (E3.CharacterSettings.Misc_DebugLogLevel > 0) MQ.Write($"\aoStart Melody:\ag{melodyName}");
+                _log.Write($"\aoStart Melody:\ag{melodyName}", Logging.LogLevels.Info);
                 MQ.Cmd("/stopsong");
                 _forceOverride = force;
                 _playingMelody = true;
@@ -230,7 +230,7 @@ namespace E3Core.Classes
 				CharacterSettings.LoadKeyData($"{_currentMelody} Melody", "Song", E3.CharacterSettings.ParsedData, _songs);
 				if (_songs.Count > 0)
 				{
-					MQ.Write($"\aoStart Melody:\ag{_currentMelody}");
+					_log.Write($"\aoStart Melody:\ag{_currentMelody}", Logging.LogLevels.Info);
 					MQ.Cmd("/stopsong");
 					
 				}

@@ -247,7 +247,7 @@ namespace E3Core.Processors
                                     {
                                         MQ.Cmd("/doability Taunt");
 
-                                        if (E3.CharacterSettings.Misc_DebugLogLevel > 0) E3.Bots.Broadcast($"Taunting {s.CleanName}: {tt.ClassShortName} - {tt.CleanName} has agro and not a tank");
+                                        if (Logging.MinLogLevelTolog < Logging.LogLevels.Error) E3.Bots.Broadcast($"Taunting {s.CleanName}: {tt.ClassShortName} - {tt.CleanName} has agro and not a tank");
 
                                     }
                                     else if (MQ.Query<bool>("${Me.AltAbilityReady[Divine Stun]}"))
@@ -519,7 +519,7 @@ namespace E3Core.Processors
                 AssistTargetID = mobID;
                 if (MQ.Query<Int32>("${Target.ID}") != AssistTargetID)
                 {
-                    if (E3.CharacterSettings.Misc_DebugLogLevel > 0) MQ.Write("AssistOn Fix TargetID:" + AssistTargetID);
+                    _log.Write("AssistOn Fix TargetID:" + AssistTargetID, Logging.LogLevels.Info);
                     if (!Casting.TrueTarget(AssistTargetID))
                     {
                         //could not target
