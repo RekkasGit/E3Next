@@ -590,6 +590,7 @@ namespace E3Core.Data
                     MyRange = MQ.Query<double>($"${{Me.Book[{bookNumber}].MyRange}}");
                     SpellType = MQ.Query<String>($"${{Me.Book[{bookNumber}].SpellType}}");
                     IsShortBuff = MQ.Query<bool>($"${{Me.Book[{bookNumber}].DurationWindow}}");
+                    Subcategory = MQ.Query<string>($"${{Me.Book[{bookNumber}].Subcategory}}");
 
 					if (SpellType.Equals("Detrimental", StringComparison.OrdinalIgnoreCase))
                     {
@@ -607,7 +608,7 @@ namespace E3Core.Data
                     else
                     {
                         //if the buff/heal has an AERange value, set MyRange to AE Range because otherwise the spell won't land on the target
-                        if (AERange > 0)
+                        if (AERange > 0 && Subcategory != "Calm")
                         {
                             MyRange = AERange;
                         }
@@ -631,9 +632,10 @@ namespace E3Core.Data
                     Double AERange = MQ.Query<Double>($"${{Spell[{CastName}].AERange}}");
                     MyRange = MQ.Query<double>($"${{Spell[{CastName}].MyRange}}");
                     SpellType = MQ.Query<String>($"${{Spell[{CastName}].SpellType}}");
-					IsShortBuff = MQ.Query<bool>($"${{Spell[{CastName}].DurationWindow}}");
+                    IsShortBuff = MQ.Query<bool>($"${{Spell[{CastName}].DurationWindow}}");
+                    Subcategory = MQ.Query<string>($"${{Spell[{CastName}].Subcategory}}");
 
-					if (SpellType.Equals("Detrimental", StringComparison.OrdinalIgnoreCase))
+                    if (SpellType.Equals("Detrimental", StringComparison.OrdinalIgnoreCase))
                     {
 
                         if (AERange > 0)
@@ -649,7 +651,7 @@ namespace E3Core.Data
                     else
                     {
                         //if the buff/heal has an AERange value, set MyRange to AE Range because otherwise the spell won't land on the target
-                        if (AERange > 0)
+                        if (AERange > 0 && Subcategory != "Calm")
                         {
                             MyRange = AERange;
                         }
@@ -711,6 +713,7 @@ namespace E3Core.Data
 
         //    return returnString;
         //}
+        public String Subcategory = String.Empty;
         public String SpellName = String.Empty;//the spell's name. If the item clicks, this is the spell it casts
         public String CastName = String.Empty;//this can be the item, spell, aa, disc. What is required to cast it. 
         public CastType CastType;
