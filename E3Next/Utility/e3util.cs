@@ -210,7 +210,7 @@ namespace E3Core.Utility
             Double x = MQ.Query<Double>("${Target.X}");
             Double y = MQ.Query<Double>("${Target.Y}");
             MQ.Cmd($"/squelch /moveto loc {y} {x} mdist 5");
-            MQ.Delay(500);
+            MQ.Delay(1500, $"${{Math.Distance[{y}, {x}]}} < 8");    // This is the blocking but breaks the second you are there
 
             Int64 endTime = Core.StopWatch.ElapsedMilliseconds + 10000;
             while(true)
@@ -494,9 +494,8 @@ namespace E3Core.Utility
                     _buffInfoTempList.Clear();
                     string tstring = s.Substring(start, end - start);
                     StringsToNumbers(tstring, ',', _buffInfoTempList);
-                    result.Add((Int32)_buffInfoTempList[0], _buffInfoTempList[1]);
-
-					start = end + 1;
+                    result[(int)_buffInfoTempList[0]] = _buffInfoTempList[1];
+		    start = end + 1;
 				}
 				end++;
 			}

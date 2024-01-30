@@ -357,7 +357,16 @@ namespace E3Core.Processors
 			foreach (var spell in E3.CharacterSettings.StackBuffRequest)
 			{
 				if (!e3util.ShouldCheck(ref spell.StackIntervalNextCheck, spell.StackIntervalCheck)) continue;
-				bool haveBuff = MQ.Query<bool>($"${{Bool[${{Me.Buff[{spell.SpellName}]}}]}}");
+
+                if (!String.IsNullOrWhiteSpace(spell.Ifs))
+                {
+                    if (!Casting.Ifs(spell))
+                    {
+                        continue;
+                    }
+                }
+
+                bool haveBuff = MQ.Query<bool>($"${{Bool[${{Me.Buff[{spell.SpellName}]}}]}}");
 				if (haveBuff) continue;
 
 				//allow for other buff checks

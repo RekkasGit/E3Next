@@ -1,5 +1,6 @@
 ﻿using E3Core.Classes;
 using E3Core.Data;
+using E3Core.Server;
 using E3Core.Settings;
 using E3Core.Settings.FeatureSettings;
 using E3Core.Utility;
@@ -189,11 +190,37 @@ namespace E3Core.Processors
                     }
                 }
             });
-			EventProcessor.RegisterCommand("/e3treport", (x) =>
+
+            EventProcessor.RegisterEvent("GuildChat", "(.+) tells the guild, '(.+)'", (x) =>
+            {
+                if (x.match.Groups.Count == 3)
+                {
+                    var character = x.match.Groups[1].Value;
+                    var message = x.match.Groups[2].Value;
+                    var messageToSend = message;
+
+                    PubServer.AddTopicMessage("GuildChatForDiscord", $"{character}|{message}");
+                }
+            });
+
+            EventProcessor.RegisterEvent("ServerDown", "(.+) The world will be coming down in (.+)", (x) =>
+            {
+                if (x.match.Groups.Count == 3)
+                {
+                    var character = x.match.Groups[1].Value;
+                    var serverMessage = x.match.Groups[2].Value;
+                    var minutes = serverMessage.Substring(1, serverMessage.IndexOf("]") - 1);
+                    var messageToSend = serverMessage;
+
+                    PubServer.AddTopicMessage("WorldShutdown", $"{minutes}");
+                }
+            });
+
+            EventProcessor.RegisterCommand("/e3treport", (x) =>
 			{
                 if(x.args.Count > 0)
                 {
-                    PrintE3TReport();
+                    PrintE3TReportEntries();
 				}
                 else
                 {
@@ -764,49 +791,55 @@ namespace E3Core.Processors
 
 			}
 		}
-        private static void PrintE3TReport()
+
+        private static void PrintE3TReportEntries()
         {
-			foreach (var spell in E3.CharacterSettings.Report_Entries)
-			{
-				if (spell.CastType == CastType.AA)
-				{
-					Int32 timeInMS = MQ.Query<Int32>($"${{Me.AltAbilityTimer[{spell.CastName}]}}");
-                    PrintE3TReport_Information(spell, timeInMS);
-				}
-				else if (spell.CastType == CastType.Spell)
-				{
+            foreach (var spell in E3.CharacterSettings.Report_Entries)
+            {
+                PrintE3TReport(spell);
+            }
+        }
 
-					Int32 timeInMS = MQ.Query<Int32>($"${{Me.GemTimer[{spell.CastName}]}}");
-					PrintE3TReport_Information(spell, timeInMS);
-				}
-				else if (spell.CastType == CastType.Disc)
-				{
-					Int32 timeInTicks = MQ.Query<Int32>($"${{Me.CombatAbilityTimer[{spell.CastName}]}}");
-					PrintE3TReport_Information(spell, timeInTicks * 6 *1000);
+        public static void PrintE3TReport(Spell spell)
+        {
+            if (spell.CastType == CastType.AA)
+            {
+                Int32 timeInMS = MQ.Query<Int32>($"${{Me.AltAbilityTimer[{spell.CastName}]}}");
+                PrintE3TReport_Information(spell, timeInMS);
+            }
+            else if (spell.CastType == CastType.Spell)
+            {
 
-				}
-				else if (spell.CastType == Data.CastType.Ability)
-				{
-					Int32 timeInMS = MQ.Query<Int32>($"${{Me.AbilityTimer[{spell.CastName}]}}");
-					PrintE3TReport_Information(spell, timeInMS);
-				}
-				else if (spell.CastType == CastType.Item || spell.CastType== CastType.None)
-				{
+                Int32 timeInMS = MQ.Query<Int32>($"${{Me.GemTimer[{spell.CastName}]}}");
+                PrintE3TReport_Information(spell, timeInMS);
+            }
+            else if (spell.CastType == CastType.Disc)
+            {
+                Int32 timeInTicks = MQ.Query<Int32>($"${{Me.CombatAbilityTimer[{spell.CastName}]}}");
+                PrintE3TReport_Information(spell, timeInTicks * 6 * 1000);
 
-                    if (MQ.Query<bool>($"${{FindItem[{spell.CastName}].ID}}"))
-                    {
-						Int32 timeInTicks = MQ.Query<Int32>($"${{FindItem[{spell.CastName}].Timer}}");
-						Int32 charges = MQ.Query<Int32>($"${{FindItem[{spell.CastName}].Charges}}");
-						PrintE3TReport_Information(spell, timeInTicks * 6 * 1000, charges);
+            }
+            else if (spell.CastType == Data.CastType.Ability)
+            {
+                Int32 timeInMS = MQ.Query<Int32>($"${{Me.AbilityTimer[{spell.CastName}]}}");
+                PrintE3TReport_Information(spell, timeInMS);
+            }
+            else if (spell.CastType == CastType.Item || spell.CastType == CastType.None)
+            {
 
-					}
-				}
+                if (MQ.Query<bool>($"${{FindItem[{spell.CastName}].ID}}"))
+                {
+                    Int32 timeInTicks = MQ.Query<Int32>($"${{FindItem[{spell.CastName}].Timer}}");
+                    Int32 charges = MQ.Query<Int32>($"${{FindItem[{spell.CastName}].Charges}}");
+                    PrintE3TReport_Information(spell, timeInTicks * 6 * 1000, charges);
+
+                }
+            }
 
 
-				//${FindItem[Kreljnok's Sword of Eternal Power].Timer}
-			}
+            //${FindItem[Kreljnok's Sword of Eternal Power].Timer}
 
-		}
+        }
         /// <summary>
         /// Am I in combat?
         /// </summary>
@@ -939,7 +972,7 @@ namespace E3Core.Processors
                         
                         
                     }
-                    
+
                 }
 
                 if (MQ.Query<bool>("${Me.ItemReady[Summoned: Large Modulation Shard]}"))
@@ -1182,19 +1215,17 @@ namespace E3Core.Processors
             if (!E3.CharacterSettings.Misc_AutoMedBreak) return;
             using (_log.Trace())
             {
-                bool onMount = MQ.Query<bool>("${Me.Mount.ID}");
+                bool onMount = MQ.Query<bool>("${Me.Mount.ID}");                
+                if (onMount) return;
 
-                
-                if (onMount|| Assist.IsAssisting ) return;
-
-                if(!Movement.StandingStillForTimePeriod())
+                if (!Movement.StandingStillForTimePeriod())
                 {
                     if (Movement.Following || Movement.IsMoving()) return;
                 }
 
                 bool amIStanding = MQ.Query<bool>("${Me.Standing}");
                 string combatState = MQ.Query<string>("${Me.CombatState}");
-                if (amIStanding && autoMedPct > 0 && combatState!="COMBAT")
+                if (amIStanding && autoMedPct > 0 && (combatState != "COMBAT" || (E3.CurrentClass & Class.Priest) == E3.CurrentClass || (E3.CurrentClass & Class.Caster) == E3.CurrentClass))
                 {
                     int pctMana = MQ.Query<int>("${Me.PctMana}");
                     int pctEndurance = MQ.Query<int>("${Me.PctEndurance}");
@@ -1247,6 +1278,7 @@ namespace E3Core.Processors
         {
             if (!E3.GeneralSettings.AutoMisfitBox) return;
             if (InCombat()) return;
+            if (!Zoning.CurrentZone.IsSafeZone) return;
             if (!e3util.ShouldCheck(ref _nextBoxCheck, _nextBoxCheckInterval)) return;
 
             var box = "Box of Misfit Prizes";

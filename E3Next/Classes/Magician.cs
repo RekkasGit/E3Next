@@ -249,6 +249,7 @@ namespace E3Core.Classes
         [ClassInvoke(Data.Class.Magician)]
         public static void KeepOpenInvSlot()
         {
+            if (!E3.CharacterSettings.KeepOpenInventorySlot) return;
             if (Basics.InCombat()) return;
             if (!e3util.ShouldCheck(ref _nextInventoryCheck, _nextInventoryCheckInterval)) return;
 
@@ -373,6 +374,13 @@ namespace E3Core.Classes
 					castAttempts++;
 				}
 			}
+
+            var dskGloveItem = "Glyphwielder's Ascendant Gloves of the Summoner";
+            var hasDskGloves = MQ.Query<bool>($"${{FindItem[{dskGloveItem}]}}");
+            if (hasDskGloves)
+            {
+                MQ.Cmd($"/useitem {dskGloveItem}");
+            }
 
 			var pet = _spawns.Get().FirstOrDefault(f => f.ID == petId);
             if (pet != null)

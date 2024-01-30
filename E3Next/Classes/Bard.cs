@@ -30,6 +30,7 @@ namespace E3Core.Classes
         private static bool _forceOverride = false;
         private static Int64 _nextAutoSonataCheck;
         private static Data.Spell _sonataSpell = new Spell("Selo's Sonata");
+        private static Int64 _nextBardCast = 0;
         /// <summary>
         /// Initializes this instance.
         /// </summary>
@@ -186,7 +187,13 @@ namespace E3Core.Classes
             }
             if (Casting.CheckReady(songToPlay))
             {
+                Int64 curTimeStamp = Core.StopWatch.ElapsedMilliseconds;
+                if (curTimeStamp < _nextBardCast)
+                {
+                    return;
+                }
                 MQ.Write($"\atTwist \ag{songToPlay.SpellName}");
+                _nextBardCast = Core.StopWatch.ElapsedMilliseconds + (int)songToPlay.MyCastTime;
                 Casting.Sing(0, songToPlay);
             }
             else

@@ -209,13 +209,21 @@ namespace E3Core.Settings
 
 		public Dictionary<string, string> PetWeapons = new Dictionary<string, string>();
         public bool AutoPetWeapons = false;
+        public bool KeepOpenInventorySlot = false;
         public bool IgnorePetWeaponRequests = false;
         public bool AutoCanni = false;
         public int MalosTotemSpellGem;
         public List<Spell> CanniSpell = new List<Spell>();
-		
 
-		public HashSet<string> WhoToHeal = new HashSet<string>(10, StringComparer.OrdinalIgnoreCase);
+        public bool AutoParagon = false;
+        public Spell ParagonSpell = null;
+        public int ParagonManaPct = 60;
+        public bool AutoFocusedParagon = false;
+        public Spell FocusedParagonSpell = null;
+        public List<string> FocusedParagonCharacters = new List<string>();
+        public int FocusedParagonManaPct = 70;
+
+        public HashSet<string> WhoToHeal = new HashSet<string>(10, StringComparer.OrdinalIgnoreCase);
         public bool HealAutoNecroOrbs = false;
         private string _whoToHealString;
         public string WhoToHealString
@@ -351,9 +359,6 @@ namespace E3Core.Settings
             LoadKeyData("Assist Settings", "Pet back off on Enrage (On/Off)", ParsedData, ref Assist_PetBackOffOnenrage);
 			LoadKeyData("Assist Settings", "Back off on Enrage (On/Off)", ParsedData, ref Assist_BackOffOnEnrage);
 
-
-
-
 			if (CharacterClass == Class.Rogue)
             {
                 LoadKeyData("Rogue", "Auto-Hide (On/Off)", ParsedData, ref Rogue_AutoHide);
@@ -369,7 +374,6 @@ namespace E3Core.Settings
             {
                 LoadKeyData("Bard", "MelodyIf", ParsedData, Bard_MelodyIfs);
                 LoadKeyData("Bard", "Auto-Sonata (On/Off)", ParsedData, ref Bard_AutoSonata);
-
             }
 
             if ((CharacterClass & Class.Druid) == CharacterClass)
@@ -377,13 +381,16 @@ namespace E3Core.Settings
                 LoadKeyData("Druid", "Evac Spell", ParsedData, CasterEvacs);
                 LoadKeyData("Druid", "Auto-Cheetah (On/Off)", ParsedData, ref Druid_AutoCheetah);
             }
+
             if ((CharacterClass & Class.Wizard) == CharacterClass)
             {
                 LoadKeyData("Wizard", "Evac Spell", ParsedData, CasterEvacs);
             }
+            
             if (CharacterClass == Class.Magician)
             {
                 LoadKeyData("Magician", "Auto-Pet Weapons (On/Off)", ParsedData, ref AutoPetWeapons);
+                LoadKeyData("Magician", "Keep Open Inventory Slot (On/Off)", ParsedData, ref KeepOpenInventorySlot);
                 LoadKeyData("Magician", "Ignore Pet Weapon Requests (On/Off)", ParsedData, ref IgnorePetWeaponRequests);
                 LoadKeyData("Magician", "Pet Weapons", ParsedData, PetWeapons);
             }
@@ -393,6 +400,32 @@ namespace E3Core.Settings
                 LoadKeyData("Shaman", "Auto-Canni (On/Off)", ParsedData, ref AutoCanni);
                 LoadKeyData("Shaman", "Canni", ParsedData, CanniSpell);
                 LoadKeyData("Shaman", "Malos Totem Spell Gem", ParsedData, ref MalosTotemSpellGem);
+            }
+
+            if (CharacterClass == Class.Beastlord)
+            {
+                LoadKeyData("Auto Paragon", "Auto Paragon (On/Off)", ParsedData, ref AutoParagon);
+                LoadKeyData("Auto Paragon", "Paragon Spell", ParsedData, out ParagonSpell);
+                LoadKeyData("Auto Paragon", "Paragon Mana (Pct)", ParsedData, ref ParagonManaPct);
+                LoadKeyData("Auto Paragon", "Auto Focused Paragon (On/Off)", ParsedData, ref AutoFocusedParagon);
+                LoadKeyData("Auto Paragon", "Focused Paragon Spell", ParsedData, out FocusedParagonSpell);
+                LoadKeyData("Auto Paragon", "Focused Paragon Mana (Pct)", ParsedData, ref FocusedParagonManaPct);
+                LoadKeyData("Auto Paragon", "Character", ParsedData, FocusedParagonCharacters);
+                if (AutoFocusedParagon)
+                {
+                    MQ.Cmd("/plugin mq2dannet");
+                    if (!MQ.Query<bool>("${Plugin[mq2dannet]}"))
+                    {
+                        E3.Bots.Broadcast("\arUnable to load mq2dannet - disabling auto focused paragon");
+                        AutoFocusedParagon = false;
+                    }
+
+                    E3.Bots.Broadcast("Adding dannet observers for focused paragon characters' mana");
+                    foreach (var character in FocusedParagonCharacters)
+                    {
+                        MQ.Cmd($"/dobserve {character} -q Me.PctMana");
+                    }
+                }
             }
 
             LoadKeyData("Buffs", "Instant Buff", ParsedData, InstantBuffs);
@@ -770,6 +803,7 @@ namespace E3Core.Settings
                 section = newFile.Sections.GetSectionData("Magician");
                 section.Keys.AddKey("Auto-Pet Weapons (On/Off)", "Off");
                 section.Keys.AddKey("Ignore Pet Weapon Requests (On/Off)", "Off");
+                section.Keys.AddKey("Keep Open Inventory Slot (On/Off)", "Off");
                 section.Keys.AddKey("Pet Weapons", "");
             }
 
@@ -782,7 +816,20 @@ namespace E3Core.Settings
                 section.Keys.AddKey("Malos Totem Spell Gem", "8");
             }
 
-			newFile.Sections.AddSection("Bando Buff");
+            if (CharacterClass == Class.Beastlord)
+            {
+                newFile.Sections.AddSection("Auto Paragon");
+                section = newFile.Sections.GetSectionData("Auto Paragon");
+                section.Keys.AddKey("Auto Paragon (On/Off)", "Off");
+                section.Keys.AddKey("Paragon Spell", "Paragon of Spirit");
+                section.Keys.AddKey("Paragon Mana (Pct)", "60");
+                section.Keys.AddKey("Auto Focused Paragon (On/Off)", "Off");
+                section.Keys.AddKey("Focused Paragon Spell", "Focused Paragon of Spirits");
+                section.Keys.AddKey("Focused Paragon Mana (Pct)", "70");
+                section.Keys.AddKey("Character", "");
+            }
+
+            newFile.Sections.AddSection("Bando Buff");
 			section = newFile.Sections.GetSectionData("Bando Buff");
             section.Keys.AddKey("Enabled", "Off");
 			section.Keys.AddKey("BuffName", "");
