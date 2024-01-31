@@ -278,6 +278,13 @@ namespace E3Core.Processors
                         if (Basics.InCombat()) return;
                     }
 
+
+                    if (MQ.Query<double>($"${{Spawn[id {c.ID}].Distance3D}}") > E3.GeneralSettings.Loot_CorpseSeekRadius*2)
+                    {
+                        E3.Bots.Broadcast($"\arSkipping corpse: {c.ID} because of distance: ${{Spawn[id {c.ID}].Distance3D}}");
+                        continue;
+                    }
+
                     Casting.TrueTarget(c.ID);
                     MQ.Delay(2000, "${Target.ID}");
                    
