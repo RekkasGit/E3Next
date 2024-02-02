@@ -283,22 +283,6 @@ namespace E3Core.Processors
 			}
 		}
 
-		public static bool TargetDoesNotNeedHeals(Spell spell,Int32 currentMana, Int32 pctMana)
-		{
-			//Int32 currentMana = MQ.Query<Int32>("${Me.CurrentMana}");
-			//Int32 pctMana = MQ.Query<Int32>("${Me.PctMana}");
-			Int32 pctHealth = MQ.Query<Int32>("${Target.PctHPs}");
-			if (spell != null)
-			{
-				if(spell.HealthMax<100 && spell.HealthMax>=pctHealth)
-				{
-					E3.Bots.Broadcast($"Health Max set, {spell.CastTarget} does not need health, canceling {spell.SpellName}.");
-					return true;
-				}
-			}
-			return false;
-		}
-
 		/// <summary>
 		/// used as an action to determine if a spell should be interrupted in case someone needs a heal.
 		/// </summary>
@@ -541,7 +525,7 @@ namespace E3Core.Processors
 											//should cast a heal!
 											if (Casting.CheckReady(spell) && Casting.CheckMana(spell))
 											{
-												if (Casting.Cast(targetID, spell, TargetDoesNotNeedHeals) == CastReturn.CAST_FIZZLE)
+												if (Casting.Cast(targetID, spell) == CastReturn.CAST_FIZZLE)
 												{
 													currentMana = MQ.Query<Int32>("${Me.CurrentMana}");
 													pctMana = MQ.Query<Int32>("${Me.PctMana}");

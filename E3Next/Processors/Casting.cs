@@ -615,9 +615,15 @@ namespace E3Core.Processors
 									return CastReturn.CAST_INTERRUPTED;
 								}
 							}
+                            if (CheckHealthMax(spell))
+                            {
+                                E3.Bots.Broadcast($"Health Max set, {spell.CastTarget} does not need health, canceling {spell.SpellName}.");
+                                Interrupt();
+                                return CastReturn.CAST_INTERRUPTED;
+                            }
 
-							//process any commands we need to process from the UI
-							PubClient.ProcessRequests();
+                            //process any commands we need to process from the UI
+                            PubClient.ProcessRequests();
 							MQ.Delay(50);
 
 							if (E3.IsPaused())
@@ -1945,7 +1951,22 @@ namespace E3Core.Processors
 			}
 			return false;
 		}
-		static void RegisterEventsCastResults()
+        private static bool CheckHealthMax(Spell spell)
+        {
+            if (spell.SpellType.Equals("Beneficial") && spell.TargetType == "Single")
+            {
+                if (spell.Subcategory.Equals("Heals") || spell.Subcategory.Equals("Quick Heal"))
+                {
+                    int pctHealth = MQ.Query<Int32>("${Target.PctHPs}");
+                    if (spell.HealthMax < 100 && pctHealth >= spell.HealthMax)
+                    {
+                        return true;
+                    }
+                }
+            }
+            return false;
+        }
+        static void RegisterEventsCastResults()
 		{
 			List<String> r = new List<string>();
 			//r.Add("Your gate is too unstable, and collapses.*");
