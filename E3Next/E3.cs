@@ -32,13 +32,14 @@ namespace E3Core.Processors
 		/// </summary>
 		public static void Process()
         {
-
+			
             if (!ShouldRun())
             {
                 return;
             }
 			//Init is here to make sure we only Init while InGame, as some queries will fail if not in game
 			if (!IsInit) { Init(); }
+			
 			var sw = new Stopwatch();
 			sw.Start();
 			//auto 5 min gc check
@@ -262,14 +263,18 @@ namespace E3Core.Processors
 
 		private static Int64 _nextBuffUpdateCheckTime = 0;
 		private static Int64 _nextBuffUpdateTimeInterval = 1000;
-
+		
 
         //qick hack to prevent calling state update... while in state updates. 
         public static bool InStateUpdate = false;
 		public static void StateUpdates()
         {
-           
-            try
+		
+			
+			//if we are not running, ignore state updates
+			if (!IsInit) { return; }
+
+			try
             {
                 InStateUpdate = true;
 				NetMQServer.SharedDataClient.ProcessCommands(); //recieving data
@@ -383,6 +388,12 @@ namespace E3Core.Processors
 
             if (!IsInit)
             {
+				if(System.Diagnostics.Debugger.IsAttached)
+				{
+					_nextStateUpdateTimeInterval = 10000;
+					_nextBuffUpdateTimeInterval = 10000;
+				}
+
                 MQ.ClearCommands();
                 AsyncIO.ForceDotNet.Force();
 
@@ -413,24 +424,24 @@ namespace E3Core.Processors
 				NetMQServer.Init();
 				if (Bots == null)
 				{
-                   	Bots = new SharedDataBots();
+					Bots = new SharedDataBots();
 
-                    //if ("DANNET".Equals(E3.GeneralSettings.General_NetworkMethod, StringComparison.OrdinalIgnoreCase) && Core._MQ2MonoVersion > 0.20m)
-                    //{
-                    //    Bots = new DanBots();
-                    //}
-                    //else
-                    //{
-                    //    Bots = new Bots();
-                    //}
-                }
+					//if ("DANNET".Equals(E3.GeneralSettings.General_NetworkMethod, StringComparison.OrdinalIgnoreCase) && Core._MQ2MonoVersion > 0.20m)
+					//{
+					//    Bots = new DanBots();
+					//}
+					//else
+					//{
+					//    Bots = new Bots();
+					//}
+				}
 				CharacterSettings = new Settings.CharacterSettings();
-                AdvancedSettings = new Settings.AdvancedSettings();
-				
+				AdvancedSettings = new Settings.AdvancedSettings();
+
 				//setup is done after the settings are setup.
 				//as there is an order dependecy
 				Setup.Init();
-                IsInit = true;
+				IsInit = true;
                 MonoCore.Spawns.RefreshTimePeriodInMS = 500;
 			}
 
@@ -449,12 +460,17 @@ namespace E3Core.Processors
         }
         public static void Shutdown()
         {
-            IsBadState = true;
-            AdvancedSettings.Reset();
-            CharacterSettings = null;
-            GeneralSettings = null;
-            AdvancedSettings = null;
-            Spawns.EmptyLists();
+
+			if (NetMQServer.UIProcess != null)
+			{
+				NetMQServer.UIProcess.Kill();
+			}
+			//IsBadState = true;
+   //         AdvancedSettings.Reset();
+   //         CharacterSettings = null;
+   //         GeneralSettings = null;
+   //         AdvancedSettings = null;
+   //         Spawns.EmptyLists();
            
 
         }

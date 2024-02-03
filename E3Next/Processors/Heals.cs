@@ -474,7 +474,7 @@ namespace E3Core.Processors
 												//should cast a heal!
 												if (Casting.CheckReady(spell) && Casting.CheckMana(spell))
 												{
-													if (Casting.Cast(targetID, spell) == CastReturn.CAST_FIZZLE)
+													if (Casting.Cast(targetID, spell, TargetDoesNotNeedHeals) == CastReturn.CAST_FIZZLE)
 													{
 														currentMana = MQ.Query<Int32>("${Me.CurrentMana}");
 														pctMana = MQ.Query<Int32>("${Me.PctMana}");

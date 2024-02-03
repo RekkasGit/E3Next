@@ -102,11 +102,17 @@ namespace MonoCore
                 //give execution back to the C++ thread, to go back into MQ/EQ
                 if(Core.IsProcessing)
                 {
-                    Delay(E3.CharacterSettings.CPU_ProcessLoopDelay);//this calls the reset events and sets the delay to 10ms at min
+                    Int32 ProcessDelay = 50;
+                    if(E3.CharacterSettings!=null)
+                    {
+                        ProcessDelay = E3.CharacterSettings.CPU_ProcessLoopDelay;
+                    }
+
+                    Delay(ProcessDelay);//this calls the reset events and sets the delay to 10ms at min
                 }
             }
            
-            //E3.Shutdown();
+            E3.Shutdown();
             MQ.Write("Shutting down E3 Main C# Thread.");
             MQ.Write("Doing netmq cleanup.");
             //NetMQConfig.Cleanup(false);
