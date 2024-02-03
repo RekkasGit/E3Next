@@ -42,6 +42,8 @@ namespace E3Core.Processors
         void Trade(string name);
 		string Query(string name, string query);
 		CharacterBuffs GetBuffInformation(string name);
+        void BroadcastLootingCorpse(int corpseId, bool looting);
+        bool IsGroupLooting(int corpseId);
     }
   
 
@@ -770,6 +772,48 @@ namespace E3Core.Processors
             string command = "/notify TradeWnd TRDW_Trade_Button leftmouseup";
 			PubServer.AddTopicMessage("OnCommand-" + name, $"{E3.CurrentName}:{false}:{command}");
 		}
+
+        public void BroadcastLootingCorpse(int corpseId, bool looting)
+        {
+            PubServer.AddTopicMessage("Looting", $"{corpseId}:{looting}");
+        }
+
+        Dictionary<string, SharedNumericDataInt32> _lootCollection = new Dictionary<string, SharedNumericDataInt32>();
+        public bool IsGroupLooting(int corpseId)
+        {
+            string keyToUse = "Looting";
+            var allTopics = NetMQServer.SharedDataClient.TopicUpdates;
+
+            foreach (var userTopics in allTopics.Where(x => x.Key != E3.CurrentName))
+            {
+                if (!userTopics.Value.ContainsKey(keyToUse))
+                {
+                    continue;
+                }
+                var entry = userTopics.Value[keyToUse];
+                if (!_lootCollection.ContainsKey(userTopics.Key))
+                {
+                    _lootCollection.Add(userTopics.Key, new SharedNumericDataInt32 { Data = 0 });
+                }
+                var sharedInfo = _lootCollection[userTopics.Key];
+
+                lock (entry)
+                {
+                    if (entry.LastUpdate > sharedInfo.LastUpdate)
+                    {
+                        var split = entry.Data.Split(':');
+                        if (int.TryParse(split[0], out var corpse) && bool.TryParse(split[1], out var looting))
+                        {
+                            sharedInfo.Data = looting ? corpse : 0;
+                            sharedInfo.LastUpdate = entry.LastUpdate;
+                        }
+                    }
+                }
+            }
+
+            return _lootCollection.Any(x => x.Value.Data == corpseId);
+        }
+
         class SharedNumericDataInt32
         {
             public Int32 Data { get; set; }
