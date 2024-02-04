@@ -47,7 +47,6 @@ namespace E3Core.Processors
         private static TimeSpan _cursorOccupiedTime;
         private static TimeSpan _cursorOccupiedThreshold = new TimeSpan(0, 0, 0, 30);
         private static Int32 _cusrorPreviousID;
-		static Int32 Debug_PreviousCPUDelay = 50;
 
 		/// <summary>
 		/// Initializes this instance.
@@ -335,33 +334,46 @@ namespace E3Core.Processors
 
 			EventProcessor.RegisterCommand("/debug", (x) =>
             {
-
-                var traceLevel = Logging.LogLevels.Trace;
+                var traceLevel = Logging.MinLogLevelTolog;
 
                 if(x.args.Count>0)
                 {
-                    if(String.Equals(x.args[0],"notrace", StringComparison.OrdinalIgnoreCase))
-                    {
-                        traceLevel = Logging.LogLevels.None;
+                    if (String.Equals(x.args[0], "help", StringComparison.OrdinalIgnoreCase)) {
+                        MQ.Write("\ag/debug [\aytrace, debug, info, error, off\ag]");
+                        traceLevel = Logging.MinLogLevelTolog;
                     }
+                    if (String.Equals(x.args[0], "off", StringComparison.OrdinalIgnoreCase)) {
+                        traceLevel = Logging.LogLevels.Default;
+                    }
+                    if (String.Equals(x.args[0], "trace", StringComparison.OrdinalIgnoreCase)) {
+                        traceLevel = Logging.LogLevels.Trace;
+                    }
+                    if (String.Equals(x.args[0], "debug", StringComparison.OrdinalIgnoreCase)) {
+                        traceLevel = Logging.LogLevels.Debug;
+                    }
+                    if (String.Equals(x.args[0], "info", StringComparison.OrdinalIgnoreCase)) {
+                        traceLevel = Logging.LogLevels.Info;
+                    }
+                    if (String.Equals(x.args[0], "error", StringComparison.OrdinalIgnoreCase)) {
+                        traceLevel = Logging.LogLevels.Error;
+                    }
+                }
+                else {
+                    MQ.Write("\ag/debug [\aytrace, debug, info, error, off\ag]");
+                    return;
 
                 }
 
-                if (Logging.MinLogLevelTolog == Logging.LogLevels.Error)
-                {
-                    Logging.MinLogLevelTolog = Logging.LogLevels.Debug;
-                    Logging.TraceLogLevel = traceLevel;
-                    Debug_PreviousCPUDelay = E3.CharacterSettings.CPU_ProcessLoopDelay;
-					E3.CharacterSettings.CPU_ProcessLoopDelay = 1000;
-                    _log.Write("Debug has been turned on:");
+                Logging.MinLogLevelTolog = traceLevel;
+                Logging.TraceLogLevel = traceLevel;
+                MQ.Write("\agDebug level set: \ay" + traceLevel);
+                if (Logging.MinLogLevelTolog < Logging.LogLevels.Info) {
+                    E3.CharacterSettings.CPU_ProcessLoopDelay = 1000;
                 }
-                else
-                {
-                    _log.Write("Debug has been turned off.");
-                    Logging.MinLogLevelTolog = Logging.LogLevels.Error;
-                    Logging.TraceLogLevel = Logging.LogLevels.None;
-					E3.CharacterSettings.CPU_ProcessLoopDelay = Debug_PreviousCPUDelay;
+                else {
+                    E3.CharacterSettings.CPU_ProcessLoopDelay = 50;
                 }
+
             });
 
             EventProcessor.RegisterCommand("/pizza", (x) =>
