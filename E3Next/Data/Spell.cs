@@ -100,7 +100,7 @@ namespace E3Core.Data
 					{
 						Debug = true;
 					}
-					else if (value.Equals("HealthMax|", StringComparison.OrdinalIgnoreCase))
+					else if (value.StartsWith("HealthMax|", StringComparison.OrdinalIgnoreCase))
 					{
 						HealthMax = GetArgument<Int32>(value);
 					}
