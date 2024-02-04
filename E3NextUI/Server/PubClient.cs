@@ -21,11 +21,15 @@ namespace E3NextUI.Server
         private Int32 _port;
         E3UI _parent;
         OverlayGroupInfo _overlayGroup;
-		public void Start(Int32 port,E3UI parent)
+		public void Start(Int32 port,E3UI parent=null)
         {
             _parent = parent;
-            _overlayGroup = parent._overlayGroupInfo;
-            _port = port;
+			if(parent != null)
+			{
+				_overlayGroup = parent._overlayGroupInfo;
+
+			}
+			_port = port;
             _serverThread = Task.Factory.StartNew(() => { Process(); }, CancellationToken.None, TaskCreationOptions.DenyChildAttach, TaskScheduler.Default);
         }
         List<string> _consoleContains = new List<string>(){"You say out of character", "You say, '"," says out of character, '", " tells you, '", " guild, '", " shouts, '", " party, '", " raid,  '", " says, '", " group, '", " auctions, '" };
@@ -204,7 +208,7 @@ namespace E3NextUI.Server
                             {
 
                             }
-							else if (messageTopicReceived.StartsWith("${E3Bot"))
+							else if (_overlayGroup!=null && messageTopicReceived.StartsWith("${E3Bot"))
 							{
                                 if(messageTopicReceived.StartsWith("${E3Bot1."))
                                 {
