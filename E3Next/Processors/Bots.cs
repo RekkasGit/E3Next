@@ -775,13 +775,13 @@ namespace E3Core.Processors
 
         public void BroadcastLootingCorpse(int corpseId, bool looting)
         {
-            PubServer.AddTopicMessage("Looting", $"{corpseId}:{looting}");
+            PubServer.AddTopicMessage("${Me.Looting}", $"{corpseId}:{looting}");
         }
 
         Dictionary<string, SharedNumericDataInt32> _lootCollection = new Dictionary<string, SharedNumericDataInt32>();
         public bool IsGroupLooting(int corpseId)
         {
-            string keyToUse = "Looting";
+            string keyToUse = "${Me.Looting}";
             var allTopics = NetMQServer.SharedDataClient.TopicUpdates;
 
             foreach (var userTopics in allTopics.Where(x => x.Key != E3.CurrentName))

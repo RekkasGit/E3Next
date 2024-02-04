@@ -280,7 +280,7 @@ namespace E3Core.Processors
                         if (Basics.InCombat()) return;
                     }
 
-                    EventProcessor.ProcessEventsInQueues("Looting");
+                    EventProcessor.ProcessEventsInQueues("${Me.Looting}");
                     if (E3.Bots.IsGroupLooting(c.ID))
                     {
                         MQ.Write($"\arCorpse {c.ID} is already being looted!");
