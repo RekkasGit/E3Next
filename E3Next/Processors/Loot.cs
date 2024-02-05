@@ -267,7 +267,7 @@ namespace E3Core.Processors
 
                 foreach (var c in corpses)
                 {
-                    E3.Bots.BroadcastLootingCorpse(c.ID, true);
+                    E3.Bots.BroadcastLootingCorpse(c.ID);
 
                     //allow eq time to send the message to us
                     e3util.YieldToEQ();
@@ -284,7 +284,6 @@ namespace E3Core.Processors
                     if (E3.Bots.IsGroupLooting(c.ID))
                     {
                         MQ.Write($"\arCorpse {c.ID} is already being looted!");
-                        E3.Bots.BroadcastLootingCorpse(c.ID, false);
                         continue;
                     }
 
@@ -311,7 +310,6 @@ namespace E3Core.Processors
 
                         MQ.Delay(300);
                     }
-                    E3.Bots.BroadcastLootingCorpse(c.ID, false);
 
                 }
 

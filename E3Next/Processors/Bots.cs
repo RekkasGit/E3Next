@@ -42,7 +42,7 @@ namespace E3Core.Processors
         void Trade(string name);
 		string Query(string name, string query);
 		CharacterBuffs GetBuffInformation(string name);
-        void BroadcastLootingCorpse(int corpseId, bool looting);
+        void BroadcastLootingCorpse(int corpseId);
         bool IsGroupLooting(int corpseId);
     }
   
@@ -773,12 +773,12 @@ namespace E3Core.Processors
 			PubServer.AddTopicMessage("OnCommand-" + name, $"{E3.CurrentName}:{false}:{command}");
 		}
 
-        public void BroadcastLootingCorpse(int corpseId, bool looting)
+        public void BroadcastLootingCorpse(int corpseId)
         {
-            PubServer.AddTopicMessage("${Me.Looting}", $"{corpseId}:{looting}");
+            PubServer.AddTopicMessage("${Me.Looting}", $"{corpseId}");
         }
 
-        Dictionary<string, SharedNumericDataInt32> _lootCollection = new Dictionary<string, SharedNumericDataInt32>();
+        Dictionary<string, CircularBuffer<int>> _lootCollection = new Dictionary<string, CircularBuffer<int>>();
         public bool IsGroupLooting(int corpseId)
         {
             string keyToUse = "${Me.Looting}";
@@ -793,25 +793,20 @@ namespace E3Core.Processors
                 var entry = userTopics.Value[keyToUse];
                 if (!_lootCollection.ContainsKey(userTopics.Key))
                 {
-                    _lootCollection.Add(userTopics.Key, new SharedNumericDataInt32 { Data = 0 });
+                    _lootCollection.Add(userTopics.Key, new CircularBuffer<int>(10));
                 }
                 var sharedInfo = _lootCollection[userTopics.Key];
 
                 lock (entry)
                 {
-                    if (entry.LastUpdate > sharedInfo.LastUpdate)
+                    if (int.TryParse(entry.Data, out var corpse))
                     {
-                        var split = entry.Data.Split(':');
-                        if (int.TryParse(split[0], out var corpse) && bool.TryParse(split[1], out var looting))
-                        {
-                            sharedInfo.Data = looting ? corpse : 0;
-                            sharedInfo.LastUpdate = entry.LastUpdate;
-                        }
+                        sharedInfo.PushFront(corpse);
                     }
                 }
             }
 
-            return _lootCollection.Any(x => x.Value.Data == corpseId);
+            return _lootCollection.Any(x => x.Value.Contains(corpseId));
         }
 
         class SharedNumericDataInt32
