@@ -43,7 +43,7 @@ namespace E3Core.Processors
 		string Query(string name, string query);
 		CharacterBuffs GetBuffInformation(string name);
         void BroadcastLootingCorpse(int corpseId);
-        bool IsGroupLooting(int corpseId);
+        bool HasGroupLooted(int corpseId);
     }
   
 
@@ -779,7 +779,7 @@ namespace E3Core.Processors
         }
 
         Dictionary<string, CircularBuffer<int>> _lootCollection = new Dictionary<string, CircularBuffer<int>>();
-        public bool IsGroupLooting(int corpseId)
+        public bool HasGroupLooted(int corpseId)
         {
             string keyToUse = "${Me.Looting}";
             var allTopics = NetMQServer.SharedDataClient.TopicUpdates;
@@ -806,7 +806,8 @@ namespace E3Core.Processors
                 }
             }
 
-            return _lootCollection.Any(x => x.Value.Contains(corpseId));
+            return _lootCollection.Where(x => x.Key != E3.CurrentName)
+                                  .Any(x => x.Value.Contains(corpseId));
         }
 
         class SharedNumericDataInt32
