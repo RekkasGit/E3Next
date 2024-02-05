@@ -799,7 +799,7 @@ namespace E3Core.Processors
 
                 lock (entry)
                 {
-                    if (int.TryParse(entry.Data, out var corpse))
+                    if (int.TryParse(entry.Data, out var corpse) && !sharedInfo.Contains(corpse))
                     {
                         sharedInfo.PushFront(corpse);
                     }
