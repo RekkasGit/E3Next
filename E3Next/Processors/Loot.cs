@@ -282,7 +282,7 @@ namespace E3Core.Processors
                     EventProcessor.ProcessEventsInQueues("${Me.Looting}");
                     if (E3.Bots.HasGroupLooted(c.ID))
                     {
-                        E3.Bots.Broadcast($"\arCorpse {c.ID} is already being looted!");
+                        MQ.Write($"\arCorpse {c.ID} is already being looted!");
                         continue;
                     }
 
