@@ -315,14 +315,14 @@ namespace E3Core.Processors
             {
                 if (!firstItem)
                 {
-					_lootInfoStringBuilder.Append("," + corpseID.ToString());
-				}
+					_lootInfoStringBuilder.Append(",");
+    			}
                 else
 				{
-					_lootInfoStringBuilder.Append(corpseID.ToString());
 					firstItem = false;
 				}
-            }
+				_lootInfoStringBuilder.Append(corpseID.ToString());
+			}
 			return _lootInfoStringBuilder.ToString();
 			
 		}
