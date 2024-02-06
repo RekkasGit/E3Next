@@ -56,6 +56,7 @@ namespace E3Core.Settings
         public Boolean Loot_OnlyStackableEnabled = false;
         public Int32 Loot_TimeToWaitAfterAssist = 2000;
         public bool Loot_OnlyStackableHonorLootFileSkips = false;
+        public Int32 Loot_NumberOfLootedCorpsesToRememberForGroup = 25;
 
         public Boolean Assists_AutoAssistEnabled=false;
         public Int32 Assists_MaxEngagedDistance=250;

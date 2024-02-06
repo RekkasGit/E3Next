@@ -1,4 +1,5 @@
 ﻿using E3Core.Data;
+using E3Core.Server;
 using E3Core.Settings;
 using E3Core.Settings.FeatureSettings;
 using E3Core.Utility;
@@ -10,6 +11,7 @@ using System.Dynamic;
 using System.Linq;
 using System.Net.Configuration;
 using System.ServiceModel.PeerResolvers;
+using System.Text;
 using System.Windows.Forms;
 
 namespace E3Core.Processors
@@ -31,12 +33,16 @@ namespace E3Core.Processors
             RegisterEvents();
 
             LootDataFile.LoadData();
-        }
+			_lootedCorpses= new CircularBuffer<int>(E3.GeneralSettings.Loot_NumberOfLootedCorpsesToRememberForGroup);
+		}
         public static void Reset()
         {
             _unlootableCorpses.Clear();
-        }
-        private static void RegisterEvents()
+            _lootedCorpses.Clear();
+			PubServer.AddTopicMessage("${Me.LootedCorpses}", GenerateLootedCorpseCorpseInfoForPubSub());
+
+		}
+		private static void RegisterEvents()
         {
             EventProcessor.RegisterCommand("/E3LootAdd", (x) =>
             {
@@ -94,7 +100,7 @@ namespace E3Core.Processors
                     //we are turning our own loot on.
                     if (x.args.Count == 1 && x.args[0] == "force")
                     {
-                        _unlootableCorpses.Clear();
+                        Reset();
                         MQ.Cmd("/hidecorpse none");
                     }
                     E3.CharacterSettings.Misc_AutoLootEnabled = true;
@@ -239,7 +245,7 @@ namespace E3Core.Processors
                 {
                     if (!Zoning.CurrentZone.IsSafeZone)
                     {
-                        if (!_unlootableCorpses.Contains(spawn.ID))
+                        if (!_unlootableCorpses.Contains(spawn.ID) && !HasGroupLooted(spawn.ID))
                         {
                             corpses.Add(spawn);
                         }
@@ -250,15 +256,12 @@ namespace E3Core.Processors
             {
                 return;
             }
-                //sort all the corpses, removing the ones we cannot loot
-             corpses = corpses.OrderBy(x => x.Distance).ToList();
-
+            //sort all the corpses, removing the ones we cannot loot
+            corpses = corpses.OrderBy(x => x.Distance).ToList();
             if (corpses.Count > 0)
             {
                 MQ.Cmd("/squelch /hidecorpse looted");
                 MQ.Delay(100);
-
-
                 //lets check if we can loot.
                 Movement.PauseMovement();
 
@@ -266,8 +269,7 @@ namespace E3Core.Processors
 
                 foreach (var c in corpses)
                 {
-					
-					//allow eq time to send the message to us
+                	//allow eq time to send the message to us
 					e3util.YieldToEQ();
                     if (e3util.IsShuttingDown() || E3.IsPaused()) return;
                     EventProcessor.ProcessEventsInQueues("/lootoff");
@@ -277,14 +279,11 @@ namespace E3Core.Processors
                     {
                         if (Basics.InCombat()) return;
                     }
-
-
                     if (MQ.Query<double>($"${{Spawn[id {c.ID}].Distance3D}}") > E3.GeneralSettings.Loot_CorpseSeekRadius*2)
                     {
                         E3.Bots.Broadcast($"\arSkipping corpse: {c.ID} because of distance: ${{Spawn[id {c.ID}].Distance3D}}");
                         continue;
                     }
-
                     Casting.TrueTarget(c.ID);
                     MQ.Delay(2000, "${Target.ID}");
                    
@@ -298,17 +297,49 @@ namespace E3Core.Processors
                         {
                             MQ.Cmd("/nomodkey /notify LootWnd DoneButton leftmouseup");
                         }
-
                         MQ.Delay(300);
                     }
-                    
                 }
-
                 E3.Bots.Broadcast("\agFinished looting area");
                 MQ.Delay(100); // Wait for fading corpses to disappear
             }
         }
-        private static bool SafeToLoot()
+		static StringBuilder _lootInfoStringBuilder = new StringBuilder();
+
+        static CircularBuffer<Int32> _lootedCorpses;
+		public static string GenerateLootedCorpseCorpseInfoForPubSub()
+		{
+			_lootInfoStringBuilder.Clear();
+            bool firstItem = true;
+            foreach(Int32 corpseID in _lootedCorpses)
+            {
+                if (!firstItem)
+                {
+					_lootInfoStringBuilder.Append("," + corpseID.ToString());
+				}
+                else
+				{
+					_lootInfoStringBuilder.Append(corpseID.ToString());
+					firstItem = false;
+				}
+            }
+			return _lootInfoStringBuilder.ToString();
+			
+		}
+		public static bool HasGroupLooted(int corpseId)
+		{
+			foreach (var bot in E3.Bots.BotsConnected())
+			{
+				//don't do for ourself
+				if (bot == E3.CurrentName) continue;
+				if (E3.Bots.LootedCorpses(bot).Contains(corpseId))
+				{
+					return true;
+				}
+			}
+			return false;
+		}
+		private static bool SafeToLoot()
         {
 			foreach (var s in _spawns.Get().OrderBy(x => x.Distance))
 			{
@@ -542,8 +573,11 @@ namespace E3Core.Processors
                     
 				}
 			}
-            
-            MQ.Delay(500, "${Corpse.Items}");
+            //put this corpseID into our looted ID collection
+            _lootedCorpses.PushFront(corpse.ID);
+			PubServer.AddTopicMessage("${Me.LootedCorpses}", GenerateLootedCorpseCorpseInfoForPubSub());
+
+			MQ.Delay(500, "${Corpse.Items}");
 
             MQ.Delay(E3.GeneralSettings.Loot_LootItemDelay);//wait a little longer to let the items finish populating, for EU people they may need to increase this.
 

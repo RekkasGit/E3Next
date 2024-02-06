@@ -115,6 +115,7 @@
     <Compile Include="Core.cs" />
     <Compile Include="Data\CharacterBuffs.cs" />
     <Compile Include="Data\Class.cs" />
+    <Compile Include="Data\CorpsesLooted.cs" />
     <Compile Include="Data\MelodyIfs.cs" />
     <Compile Include="Data\ResistCounter.cs" />
     <Compile Include="Data\SpellRequest.cs" />

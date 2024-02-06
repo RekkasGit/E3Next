@@ -25,13 +25,14 @@ namespace E3Core.Processors
        
      //   Boolean InZone(string Name);
         Int32 PctHealth(string name);
-        List<string> BotsConnected();
+		List<int> LootedCorpses(string name);
+		List<string> BotsConnected();
         Boolean HasShortBuff(string name, Int32 buffid);
         void BroadcastCommand(string command, bool noparse = false, CommandMatch match = null);
         void BroadcastCommandToGroup(string command, CommandMatch match=null, bool noparse = false);
         void BroadcastCommandToPerson(string person, string command, bool noparse = false);
         void Broadcast(string message, bool noparse = false);
-        List<Int32> BuffList(string name);
+		List<Int32> BuffList(string name);
         List<Int32> PetBuffList(string name);
         Int32 BaseDebuffCounters(string name);
         Int32 BaseDiseasedCounters(string name);
@@ -51,6 +52,8 @@ namespace E3Core.Processors
         private static IMQ MQ = E3.MQ;
         private static Dictionary<string, CharacterBuffs> _characterBuffs = new Dictionary<string, CharacterBuffs>();
         private static Dictionary<string, CharacterBuffs> _petBuffs = new Dictionary<string, CharacterBuffs>();
+		private static Dictionary<string, CorpsesLooted> _corpseLists = new Dictionary<string, CorpsesLooted>();
+
 		private static System.Text.StringBuilder _stringBuilder = new System.Text.StringBuilder();
 		private static bool GlobalAllEnabled = false;
 		List<string> _pathsTolookAt = new List<string>();
@@ -253,13 +256,14 @@ namespace E3Core.Processors
      			System.Threading.Thread.Sleep(1000);
             }
         }
-        /// <summary>
-        /// 
-        /// </summary>
-        /// <param name="name">name of user</param>
-        /// <param name="charBuffKeyName">name of the character to use, could be pet or user</param>
-        /// <param name="topicKey">topic key to use</param>
-        private void UpdateBuffInfoUserInfo(string name, string charBuffKeyName, string topicKey, Dictionary<string, CharacterBuffs> buffCollection)
+		
+		/// <summary>
+		/// 
+		/// </summary>
+		/// <param name="name">name of user</param>
+		/// <param name="charBuffKeyName">name of the character to use, could be pet or user</param>
+		/// <param name="topicKey">topic key to use</param>
+		private void UpdateBuffInfoUserInfo(string name, string charBuffKeyName, string topicKey, Dictionary<string, CharacterBuffs> buffCollection)
         {
             var userTopics = NetMQServer.SharedDataClient.TopicUpdates[name];
             lock (userTopics[topicKey])
@@ -284,8 +288,33 @@ namespace E3Core.Processors
                 }
             }
         }
-
-        private int DebuffCounterFunction(string name,string key, Dictionary<string, SharedNumericDataInt32> collection)
+		private void UpdateLootedCorpsesUserInfo(string name, string corpsesKeyName, string topicKey, Dictionary<string, CorpsesLooted> corpseCollection)
+		{
+			var userTopics = NetMQServer.SharedDataClient.TopicUpdates[name];
+			lock (userTopics[topicKey])
+			{
+				//we don't have it in our memeory, so lets add it
+				if (!corpseCollection.ContainsKey(corpsesKeyName))
+				{
+					var corpseInfo = CorpsesLooted.Aquire();
+					corpseInfo.CorpseIDs.Clear();
+					//just a comma delimited list of numbers, push them into a list
+					e3util.StringsToNumbers(userTopics[topicKey].Data, ',', corpseInfo.CorpseIDs);
+					corpseInfo.LastUpdate = userTopics[topicKey].LastUpdate;
+					corpseCollection.Add(corpsesKeyName, corpseInfo);
+				}
+				//do we have updated information that is newer than what we already have?
+				if (userTopics[topicKey].LastUpdate > corpseCollection[corpsesKeyName].LastUpdate)
+				{
+					//new info, lets update!
+					var corpseInfo = corpseCollection[corpsesKeyName];
+					corpseInfo.CorpseIDs.Clear();//clear out what was there before to get new updated information, otherwise it will just append.
+					e3util.StringsToNumbers(userTopics[topicKey].Data, ',', corpseInfo.CorpseIDs);
+					corpseInfo.LastUpdate = userTopics[topicKey].LastUpdate;
+				}
+			}
+		}
+		private int DebuffCounterFunction(string name,string key, Dictionary<string, SharedNumericDataInt32> collection)
 		{
             //register the user to get their buff data if its not already there
 			if (!NetMQServer.SharedDataClient.TopicUpdates.ContainsKey(name))
@@ -615,6 +644,35 @@ namespace E3Core.Processors
 			}
      		PubServer.AddTopicMessage("OnCommand-" + person, $"{E3.CurrentName}:{false}:{command}");
 			MQ.Write($"\ap{E3.CurrentName} => \ay{person} : \ag{command}");
+
+		}
+
+		List<int> _lootedCorpseReturnValue = new List<int>();
+		public List<int> LootedCorpses(string name)
+		{
+			_lootedCorpseReturnValue.Clear();
+			//register the user to get their buff data if its not already there
+			if (!NetMQServer.SharedDataClient.TopicUpdates.ContainsKey(name))
+			{
+				//couldn't register, no file avilable assume they are not online yet
+				return _lootedCorpseReturnValue;
+
+			}
+			var userTopics = NetMQServer.SharedDataClient.TopicUpdates[name];
+			//check to see if it has been filled out yet.
+			string topicKey = "${Me.LootedCorpses}";
+			if (!userTopics.ContainsKey(topicKey))
+			{
+				//don't have the data yet kick out with empty list as we simply don't know.
+				return _lootedCorpseReturnValue;
+			}
+			//we have the data, lets check for updates
+			//the double name is because the 2nd name could be the pet name! its called in PetBuffList
+			UpdateLootedCorpsesUserInfo(name, name, topicKey, _corpseLists);
+			
+			//technically not needed but keeps the logic the same as the dictionary
+			_lootedCorpseReturnValue.AddRange(_corpseLists[name].CorpseIDs);
+			return _lootedCorpseReturnValue;
 
 		}
 		List<int> _buffListReturnValue = new List<int>();
