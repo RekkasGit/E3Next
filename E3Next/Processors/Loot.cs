@@ -231,6 +231,87 @@ namespace E3Core.Processors
 				}
             }
         }
+		static Random _multipleLooterRandomGenerator = new Random();
+		private static void LootAreaForMultipleLooters()
+        {
+			Double startX = MQ.Query<Double>("${Me.X}");
+			Double startY = MQ.Query<Double>("${Me.Y}");
+			Double startZ = MQ.Query<Double>("${Me.Z}");
+
+			List<Spawn> corpses = new List<Spawn>();
+			//.Get() is configured to refresh the spawns every 1 second, which should be good enough.
+			foreach (var spawn in _spawns.Get())
+			{
+				//only player corpses have a Deity
+				if (spawn.Distance3D < E3.GeneralSettings.Loot_CorpseSeekRadius && spawn.DeityID == 0 && spawn.TypeDesc == "Corpse")
+				{
+					if (!Zoning.CurrentZone.IsSafeZone)
+					{
+						if (!_unlootableCorpses.Contains(spawn.ID) && !HasGroupLooted(spawn.ID))
+						{
+							corpses.Add(spawn);
+                    	}
+					}
+				}
+			}
+			if (corpses.Count == 0)
+			{
+				return;
+			}
+
+			//don't sort the corpses, as we will be randoming anyway
+			if (corpses.Count > 0)
+			{
+				MQ.Cmd("/squelch /hidecorpse looted");
+				MQ.Delay(100);
+				//lets check if we can loot.
+				Movement.PauseMovement();
+		
+                //shuffle the corpses up, so that when we have multiple looters, they avoid looting the same corpse
+				foreach (var c in e3util.Shuffle<Spawn>(corpses, _multipleLooterRandomGenerator))
+				{
+                	//allow eq time to send the message to us
+					e3util.YieldToEQ();
+					if (e3util.IsShuttingDown() || E3.IsPaused()) return;
+					EventProcessor.ProcessEventsInQueues("/lootoff");
+					EventProcessor.ProcessEventsInQueues("/assistme");
+					if (!E3.CharacterSettings.Misc_AutoLootEnabled) return;
+					if (!E3.GeneralSettings.Loot_LootInCombat)
+					{
+						if (Basics.InCombat()) return;
+					}
+					if (MQ.Query<double>($"${{Spawn[id {c.ID}].Distance3D}}") > E3.GeneralSettings.Loot_CorpseSeekRadius * 2)
+					{
+						E3.Bots.Broadcast($"\arSkipping corpse: {c.ID} because of distance: ${{Spawn[id {c.ID}].Distance3D}}");
+						continue;
+					}
+                    //already been looted by someone
+                    if (HasGroupLooted(c.ID))
+                    {
+					   //E3.Bots.Broadcast($"\arSkipping corpse: {c.ID} because its already been marked as looted: corpseID:${c.ID}");
+
+						continue;
+                    }
+					Casting.TrueTarget(c.ID);
+					MQ.Delay(2000, "${Target.ID}");
+
+					if (MQ.Query<bool>("${Target.ID}"))
+					{
+						e3util.TryMoveToTarget();
+						MQ.Delay(2250, "${Target.Distance3D} < 10"); // Give Time to get to Corpse 
+						LootCorpse(c);
+
+						if (MQ.Query<bool>("${Window[LootWnd].Open}"))
+						{
+							MQ.Cmd("/nomodkey /notify LootWnd DoneButton leftmouseup");
+						}
+						MQ.Delay(300);
+					}
+				}
+				E3.Bots.Broadcast("\agFinished looting area");
+				MQ.Delay(100); // Wait for fading corpses to disappear
+			}
+		}
         private static void LootArea()
         {
             Double startX = MQ.Query<Double>("${Me.X}");
@@ -238,6 +319,7 @@ namespace E3Core.Processors
             Double startZ = MQ.Query<Double>("${Me.Z}");
 
             List<Spawn> corpses = new List<Spawn>();
+            //.Get() is configured to refresh the spawns every 1 second, which should be good enough.
             foreach (var spawn in _spawns.Get())
             {
                 //only player corpses have a Deity

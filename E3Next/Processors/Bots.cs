@@ -25,7 +25,7 @@ namespace E3Core.Processors
        
      //   Boolean InZone(string Name);
         Int32 PctHealth(string name);
-		List<int> LootedCorpses(string name);
+		HashSet<int> LootedCorpses(string name);
 		List<string> BotsConnected();
         Boolean HasShortBuff(string name, Int32 buffid);
         void BroadcastCommand(string command, bool noparse = false, CommandMatch match = null);
@@ -647,8 +647,8 @@ namespace E3Core.Processors
 
 		}
 
-		List<int> _lootedCorpseReturnValue = new List<int>();
-		public List<int> LootedCorpses(string name)
+		HashSet<int> _lootedCorpseReturnValue = new HashSet<int>();
+		public HashSet<int> LootedCorpses(string name)
 		{
 			_lootedCorpseReturnValue.Clear();
 			//register the user to get their buff data if its not already there
@@ -669,10 +669,8 @@ namespace E3Core.Processors
 			//we have the data, lets check for updates
 			//the double name is because the 2nd name could be the pet name! its called in PetBuffList
 			UpdateLootedCorpsesUserInfo(name, name, topicKey, _corpseLists);
-			
-			//technically not needed but keeps the logic the same as the dictionary
-			_lootedCorpseReturnValue.AddRange(_corpseLists[name].CorpseIDs);
-			return _lootedCorpseReturnValue;
+
+			return _corpseLists[name].CorpseIDs;
 
 		}
 		List<int> _buffListReturnValue = new List<int>();

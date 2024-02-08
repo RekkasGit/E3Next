@@ -458,6 +458,28 @@ namespace E3Core.Utility
             }
 
         }
+		public static void StringsToNumbers(string s, char delim, HashSet<Int32> list)
+		{
+			HashSet<int> result = list;
+			int start = 0;
+			int end = 0;
+			foreach (char x in s)
+			{
+				if (x == delim || end == s.Length - 1)
+				{
+					if (end == s.Length - 1 && x != delim)
+						end++;
+                    Int32 parsedInt = int.Parse(s.Substring(start, end - start));
+                    if(!result.Contains(parsedInt))
+                    {
+						result.Add(parsedInt);
+					}
+					start = end + 1;
+				}
+				end++;
+			}
+
+		}
 		public static void StringsToNumbers(string s, char delim, List<Int64> list)
 		{
 			List<Int64> result = list;

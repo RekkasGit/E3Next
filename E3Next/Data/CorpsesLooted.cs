@@ -10,7 +10,7 @@ namespace E3Core.Data
 	public class CorpsesLooted : IDisposable
 	{
 
-		public List<Int32> CorpseIDs = new List<int>();
+		public HashSet<Int32> CorpseIDs = new HashSet<int>();
 		public Int64 LastUpdate = 0;
 		private CorpsesLooted() { }
 
