@@ -292,9 +292,12 @@ namespace E3Core.Processors
 
 						continue;
                     }
+
+					//broadcast out that we are claiming this corpse id
+					_lootedCorpses.PushFront(c.ID);
+					PubServer.AddTopicMessage("${Me.LootedCorpses}", GenerateLootedCorpseCorpseInfoForPubSub());
 					Casting.TrueTarget(c.ID);
 					MQ.Delay(2000, "${Target.ID}");
-
 					if (MQ.Query<bool>("${Target.ID}"))
 					{
 						e3util.TryMoveToTarget();
@@ -327,7 +330,7 @@ namespace E3Core.Processors
                 {
                     if (!Zoning.CurrentZone.IsSafeZone)
                     {
-                        if (!_unlootableCorpses.Contains(spawn.ID) && !HasGroupLooted(spawn.ID))
+                        if (!_unlootableCorpses.Contains(spawn.ID))
                         {
                             corpses.Add(spawn);
                         }
@@ -655,10 +658,7 @@ namespace E3Core.Processors
                     
 				}
 			}
-            //put this corpseID into our looted ID collection
-            _lootedCorpses.PushFront(corpse.ID);
-			PubServer.AddTopicMessage("${Me.LootedCorpses}", GenerateLootedCorpseCorpseInfoForPubSub());
-
+        
 			MQ.Delay(500, "${Corpse.Items}");
 
             MQ.Delay(E3.GeneralSettings.Loot_LootItemDelay);//wait a little longer to let the items finish populating, for EU people they may need to increase this.
