@@ -131,6 +131,10 @@ namespace E3Core.Processors
                         wasCasting = true;
                         MQ.Delay(50);
                     }
+                    if (wasCasting)
+                    {
+                        MQ.Delay(600);
+                    }
                     if (MQ.Query<Int32>("${Me.CurrentMana}") > 0)
                     {
                         while (Casting.InGlobalCooldown())
