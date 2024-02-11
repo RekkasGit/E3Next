@@ -125,9 +125,11 @@ namespace E3Core.Processors
                 {
 
                     //wait for GCD to be over.
-                    if (Casting.IsCasting())
+                    bool wasCasting = false;
+                    while (Casting.IsCasting())
                     {
-			MQ.Cmd("/stopcast");
+                        wasCasting = true;
+                        MQ.Delay(50);
                     }
                     if (MQ.Query<Int32>("${Me.CurrentMana}") > 0)
                     {
