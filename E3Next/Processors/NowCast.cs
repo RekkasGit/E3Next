@@ -62,23 +62,32 @@ namespace E3Core.Processors
                     }
                     else if (user.Equals("me", StringComparison.OrdinalIgnoreCase))
                     {
-                        if (targetid > 0)
+                        if (targetid > 0 && x.args.Count > 3 && x.args[3].Equals("force", StringComparison.OrdinalIgnoreCase))
+                        {
+                            castResult = NowCastSpell(spell, targetid, true);
+                        }
+                        if (targetid > 0 && x.args.Count < 4)
                         {
                             castResult = NowCastSpell(spell, targetid);
                         }
-                        else
+                        else if (!x.args[3].Equals("force", StringComparison.OrdinalIgnoreCase))
                         {
                             castResult = NowCastSpell(spell, 0);
                         }
                     }
                     else
                     {
-                        if (targetid > 0)
+                        if (targetid > 0 && x.args.Count > 3 && x.args[3].Equals("force", StringComparison.OrdinalIgnoreCase))
+                        {
+                            //send this to a person!
+                            E3.Bots.BroadcastCommandToPerson(user, $"/nowcast me \"{spell}\" {targetid} force");
+                        }
+                        if (targetid > 0 && x.args.Count < 4)
                         {
                             //send this to a person!
                             E3.Bots.BroadcastCommandToPerson(user, $"/nowcast me \"{spell}\" {targetid}");
                         }
-                        else
+                        else if (!x.args[3].Equals("force", StringComparison.OrdinalIgnoreCase))
                         {
                             //send this to a person!
                             E3.Bots.BroadcastCommandToPerson(user, $"/nowcast me \"{spell}\"");
@@ -108,7 +117,7 @@ namespace E3Core.Processors
             }
             return false;
         }
-        private static CastReturn NowCastSpell(string spellName, Int32 targetid)
+        private static CastReturn NowCastSpell(string spellName, Int32 targetid, bool force=false)
         {
             Int32 orgTargetID = MQ.Query<Int32>("${Target.ID}");
 
@@ -126,7 +135,11 @@ namespace E3Core.Processors
 
                     //wait for GCD to be over.
                     bool wasCasting = false;
-                    while (Casting.IsCasting())
+                    if (Casting.IsCasting() && force)
+                    {
+                        MQ.Cmd("/stopcast");
+                    }
+                    while (Casting.IsCasting() && !force)
                     {
                         wasCasting = true;
                         MQ.Delay(50);
