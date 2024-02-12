@@ -47,12 +47,17 @@ namespace E3Core.Processors
                     CastReturn castResult = CastReturn.CAST_SUCCESS;
                     if (user.Equals("all", StringComparison.OrdinalIgnoreCase))
                     {
-                        if (targetid > 0)
+                        if (targetid > 0 && x.args.Count > 3 && x.args[3].Equals("force", StringComparison.OrdinalIgnoreCase))
+                        {
+                            E3.Bots.BroadcastCommandToGroup($"/nowcast me \"{spell}\" {targetid}", x);
+                            castResult = NowCastSpell(spell, targetid, true);
+                        }
+                        if (targetid > 0 && x.args.Count < 4)
                         {
                             E3.Bots.BroadcastCommandToGroup($"/nowcast me \"{spell}\" {targetid}",x);
                             castResult = NowCastSpell(spell, targetid);
                         }
-                        else
+                        else if (!x.args[3].Equals("force", StringComparison.OrdinalIgnoreCase))
                         {
                             E3.Bots.BroadcastCommandToGroup($"/nowcast me \"{spell}\"", x);
                             castResult = NowCastSpell(spell, 0);
