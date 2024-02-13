@@ -175,7 +175,7 @@ namespace E3Core.Processors
 				}
 				else if (E3.CurrentClass == Class.Bard && spell.CastType == CastType.Item)
                 		{
-                    			MQ.Cmd($"/useitem \"{spell.CastName}\"");
+                    			MQ.Cmd($"/useitem \"{spell.CastName}\"", 300);
                     			UpdateItemInCooldown(spell);
                     			MQ.Delay((int)spell.MyCastTime);
                     			E3.ActionTaken = true;
