@@ -173,6 +173,14 @@ namespace E3Core.Processors
 					MQ.Delay((int)spell.MyCastTime);
 					return CastReturn.CAST_SUCCESS;
 				}
+				else if (E3.CurrentClass == Class.Bard && spell.CastType == CastType.Item)
+                		{
+                    			MQ.Cmd($"/useitem \"{spell.CastName}\"");
+                    			UpdateItemInCooldown(spell);
+                    			MQ.Delay((int)spell.MyCastTime);
+                    			E3.ActionTaken = true;
+                    			return CastReturn.CAST_SUCCESS;
+                		}
 				else
 				{
 					//block on waiting for the spell window to close
