@@ -48,58 +48,34 @@ namespace E3Core.Processors
                     CastReturn castResult = CastReturn.CAST_SUCCESS;
                     if (user.Equals("all", StringComparison.OrdinalIgnoreCase))
                     {
-                        if (targetid > 0 && shouldForce)
+                        string broadcastCommand = $"/nowcast me \"{spell}\"";
+                        if (targetid > 0)
                         {
-                            E3.Bots.BroadcastCommandToGroup($"/nowcast me \"{spell}\" {targetid}", x);
-                            castResult = NowCastSpell(spell, targetid, true);
+                            broadcastCommand += $" {targetid}";
                         }
-                        else if (targetid > 0)
+                        if (shouldForce)
                         {
-                            E3.Bots.BroadcastCommandToGroup($"/nowcast me \"{spell}\" {targetid}", x);
-                            castResult = NowCastSpell(spell, targetid);
+                            broadcastCommand += " force";
                         }
-                        else
-                        {
-                            E3.Bots.BroadcastCommandToGroup($"/nowcast me \"{spell}\"", x);
-                            castResult = NowCastSpell(spell, 0);
-
-                        }
-
+                        E3.Bots.BroadcastCommandToGroup(broadcastCommand, x);
+                        castResult = NowCastSpell(spell, targetid, shouldForce);
                     }
                     else if (user.Equals("me", StringComparison.OrdinalIgnoreCase))
                     {
-                        if (targetid > 0 && shouldForce)
-                        {
-                            castResult = NowCastSpell(spell, targetid, true);
-                        }
-                        else if (targetid > 0)
-                        {
-                            castResult = NowCastSpell(spell, targetid);
-                        }
-                        else
-                        {
-                            castResult = NowCastSpell(spell, 0);
-                        }
+                        castResult = NowCastSpell(spell, targetid, shouldForce);
                     }
                     else
                     {
-                        if (targetid > 0 && shouldForce)
+                        string broadcastCommand = $"/nowcast me \"{spell}\"";
+                        if (targetid > 0)
                         {
-                            //send this to a person!
-                            E3.Bots.BroadcastCommandToPerson(user, $"/nowcast me \"{spell}\" {targetid} force");
+                            broadcastCommand += $" {targetid}";
                         }
-                        else if (targetid > 0)
+                        if (shouldForce)
                         {
-                            //send this to a person!
-                            E3.Bots.BroadcastCommandToPerson(user, $"/nowcast me \"{spell}\" {targetid}");
+                            broadcastCommand += " force";
                         }
-                        else
-                        {
-                            //send this to a person!
-                            E3.Bots.BroadcastCommandToPerson(user, $"/nowcast me \"{spell}\"");
-
-
-                        }
+                        E3.Bots.BroadcastCommandToPerson(user, broadcastCommand);
                     }
 
                     if (castResult != CastReturn.CAST_SUCCESS)
