@@ -37,7 +37,7 @@ namespace E3Core.Processors
                     string user = string.Empty;
                     string spell = string.Empty;
 					bool shouldForce = x.args.Contains("force", StringComparer.OrdinalIgnoreCase);
-					
+
                     user = x.args[0];
                     spell = x.args[1];
                     if(x.args.Count>2)
