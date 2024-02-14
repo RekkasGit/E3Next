@@ -36,7 +36,8 @@ namespace E3Core.Processors
                     Int32 targetid = 0;
                     string user = string.Empty;
                     string spell = string.Empty;
-
+					bool shouldForce = x.args.Contains("force", StringComparer.OrdinalIgnoreCase);
+					
                     user = x.args[0];
                     spell = x.args[1];
                     if(x.args.Count>2)
@@ -47,9 +48,14 @@ namespace E3Core.Processors
                     CastReturn castResult = CastReturn.CAST_SUCCESS;
                     if (user.Equals("all", StringComparison.OrdinalIgnoreCase))
                     {
-                        if (targetid > 0)
+                        if (targetid > 0 && shouldForce)
                         {
-                            E3.Bots.BroadcastCommandToGroup($"/nowcast me \"{spell}\" {targetid}",x);
+                            E3.Bots.BroadcastCommandToGroup($"/nowcast me \"{spell}\" {targetid}", x);
+                            castResult = NowCastSpell(spell, targetid, true);
+                        }
+                        else if (targetid > 0)
+                        {
+                            E3.Bots.BroadcastCommandToGroup($"/nowcast me \"{spell}\" {targetid}", x);
                             castResult = NowCastSpell(spell, targetid);
                         }
                         else
@@ -62,32 +68,32 @@ namespace E3Core.Processors
                     }
                     else if (user.Equals("me", StringComparison.OrdinalIgnoreCase))
                     {
-                        if (targetid > 0 && x.args.Count > 3 && x.args[3].Equals("force", StringComparison.OrdinalIgnoreCase))
+                        if (targetid > 0 && shouldForce)
                         {
                             castResult = NowCastSpell(spell, targetid, true);
                         }
-                        if (targetid > 0 && x.args.Count < 4)
+                        else if (targetid > 0)
                         {
                             castResult = NowCastSpell(spell, targetid);
                         }
-                        else if (!x.args[3].Equals("force", StringComparison.OrdinalIgnoreCase))
+                        else
                         {
                             castResult = NowCastSpell(spell, 0);
                         }
                     }
                     else
                     {
-                        if (targetid > 0 && x.args.Count > 3 && x.args[3].Equals("force", StringComparison.OrdinalIgnoreCase))
+                        if (targetid > 0 && shouldForce)
                         {
                             //send this to a person!
                             E3.Bots.BroadcastCommandToPerson(user, $"/nowcast me \"{spell}\" {targetid} force");
                         }
-                        if (targetid > 0 && x.args.Count < 4)
+                        else if (targetid > 0)
                         {
                             //send this to a person!
                             E3.Bots.BroadcastCommandToPerson(user, $"/nowcast me \"{spell}\" {targetid}");
                         }
-                        else if (!x.args[3].Equals("force", StringComparison.OrdinalIgnoreCase))
+                        else
                         {
                             //send this to a person!
                             E3.Bots.BroadcastCommandToPerson(user, $"/nowcast me \"{spell}\"");
@@ -117,7 +123,7 @@ namespace E3Core.Processors
             }
             return false;
         }
-        private static CastReturn NowCastSpell(string spellName, Int32 targetid, bool force=false)
+        private static CastReturn NowCastSpell(string spellName, Int32 targetid, bool shouldForce = false)
         {
             Int32 orgTargetID = MQ.Query<Int32>("${Target.ID}");
 
@@ -135,11 +141,11 @@ namespace E3Core.Processors
 
                     //wait for GCD to be over.
                     bool wasCasting = false;
-                    if (Casting.IsCasting() && force)
+                    if (Casting.IsCasting() && shouldForce)
                     {
                         MQ.Cmd("/stopcast");
                     }
-                    while (Casting.IsCasting() && !force)
+                    while (Casting.IsCasting() && !shouldForce)
                     {
                         wasCasting = true;
                         MQ.Delay(50);
