@@ -120,6 +120,7 @@ namespace E3Core.Processors
                     if (Casting.IsCasting() && shouldForce)
                     {
                         MQ.Cmd("/stopcast");
+			MQ.Delay(50);
                     }
                     while (Casting.IsCasting() && !shouldForce)
                     {
