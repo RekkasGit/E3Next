@@ -173,7 +173,20 @@ namespace E3Core.Processors
 					MQ.Delay((int)spell.MyCastTime);
 					return CastReturn.CAST_SUCCESS;
 				}
-				else
+                else if (E3.CurrentClass == Class.Bard && spell.CastType == CastType.Item && spell.MyCastTime > 3000)
+                {
+                    if (targetID > 0)
+                    {
+                        TrueTarget(targetID);
+                    }
+                    MQ.Write($"\ag{spell.CastName} \at{spell.SpellID} \ao{targetID} \aw({spell.MyCastTime / 1000}sec)");
+                    MQ.Cmd($"/useitem \"{spell.CastName}\"", 300);
+                    UpdateItemInCooldown(spell);
+                    MQ.Delay((int)spell.MyCastTime);
+                    E3.ActionTaken = true;
+                    return CastReturn.CAST_SUCCESS;
+                }
+                else
 				{
 					//block on waiting for the spell window to close
 					while (IsCasting())
