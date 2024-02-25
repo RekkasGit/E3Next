@@ -1644,6 +1644,11 @@ namespace E3Core.Processors
 			//we have the debuff or we have the buff.
 			string primaryName = MQ.Query<String>("${Me.Inventory[13]}");
 			string secondaryName = MQ.Query<String>("${Me.Inventory[14]}");
+			if(String.Compare(secondaryName,"NULL",true)==0 && E3.CharacterSettings.BandoBuff_Secondary==String.Empty)
+			{
+				secondaryName = string.Empty;
+
+			}
 			if (hasBuff)
 			{
 				if (!(String.Equals(primaryName, E3.CharacterSettings.BandoBuff_Primary, StringComparison.OrdinalIgnoreCase) && String.Equals(secondaryName, E3.CharacterSettings.BandoBuff_Secondary, StringComparison.OrdinalIgnoreCase)))
