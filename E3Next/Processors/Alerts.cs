@@ -114,8 +114,7 @@ namespace E3Core.Processors
 			pattern = "roars with fury as it surveys its attackers";
 			EventProcessor.RegisterEvent("Ture_warning", pattern, (x) => {
 				{
-
-					if (E3.CurrentName == MQ.Query<string>("${Raid.Leader}"))
+					if (IsRaidLeader())
 					{
 						MQ.Cmd($"/rsay AE Rampage INC 5 seconds.");
 					}
@@ -128,8 +127,7 @@ namespace E3Core.Processors
 			pattern = "eyes roll into its head as it goes into a frenzy";
 			EventProcessor.RegisterEvent("Ture_Ramp_Start", pattern, (x) => {
 				{
-
-					if (E3.CurrentName == MQ.Query<string>("${Raid.Leader}"))
+                    if (IsRaidLeader())
 					{
 						MQ.Cmd($"/rsay -+- 10k AE Rampage Started -+-");
 					}
@@ -142,8 +140,7 @@ namespace E3Core.Processors
 			pattern = "calms and regains its focus";
 			EventProcessor.RegisterEvent("Ture_Ramp_End", pattern, (x) => {
 				{
-
-					if (E3.CurrentName == MQ.Query<string>("${Raid.Leader}"))
+					if (IsRaidLeader())
 					{
 						MQ.Cmd($"/rsay -+- Boss Safe - AE Rampage ended -+-");
 					}
@@ -156,8 +153,7 @@ namespace E3Core.Processors
 			pattern = "Keldovan the Harrier regains his combat stance";
 			EventProcessor.RegisterEvent("Keldovan_Power", pattern, (x) => {
 				{
-
-					if (E3.CurrentName == MQ.Query<string>("${Raid.Leader}"))
+					if (IsRaidLeader())
 					{
 						MQ.Cmd($"/rsay -+- Keldovan has regained a power - KILL A DOG -+-");
 					}
@@ -190,7 +186,7 @@ namespace E3Core.Processors
                 {
                     string mobname = x.match.Groups[1].Value;
                     string personName = x.match.Groups[2].Value;
-                    if(E3.CurrentName==personName)
+                    if(E3.CurrentName.Equals(personName, StringComparison.OrdinalIgnoreCase))
                     {
                         MQ.Cmd($"/g I have reflected {mobname} spell!");
                     }
@@ -223,5 +219,9 @@ namespace E3Core.Processors
 				
 			});
 		}
+
+        private static Boolean IsRaidLeader() {
+            return E3.CurrentName.Equals(MQ.Query<string>("${Raid.Leader}"), StringComparison.OrdinalIgnoreCase);
+        }
     }
 }
