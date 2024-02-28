@@ -66,7 +66,7 @@ namespace E3Core.Utility
             }
         }
 
-        public static Boolean CompareInsensitive(this string str, string compareStr)
+        public static Boolean EqualsIns(this string str, string compareStr)
         {
             return str.Equals(compareStr, StringComparison.OrdinalIgnoreCase);
         }

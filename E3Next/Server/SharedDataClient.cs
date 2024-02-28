@@ -182,7 +182,7 @@ namespace E3Core.Server
 						if (typeInfo == OnCommandData.CommandType.OnCommandGroup || typeInfo == OnCommandData.CommandType.OnCommandGroupZone)
 						{
 							//check to see if we are part of their group
-							if (E3.CurrentName.CompareInsensitive(user))
+							if (E3.CurrentName.EqualsIns(user))
 							{
 								//not for us only group members
 								continue;
@@ -219,7 +219,7 @@ namespace E3Core.Server
 						}
 
 						//check to see if we are part of their group
-						if (E3.CurrentName.CompareInsensitive(user) && (!(typeInfo == OnCommandData.CommandType.OnCommandName||typeInfo== OnCommandData.CommandType.OnCommandGroupAll || typeInfo == OnCommandData.CommandType.OnCommandAll || typeInfo== OnCommandData.CommandType.OnCommandGroupAllZone|| typeInfo==OnCommandData.CommandType.OnCommandAllZone)))
+						if (E3.CurrentName.EqualsIns(user) && (!(typeInfo == OnCommandData.CommandType.OnCommandName||typeInfo== OnCommandData.CommandType.OnCommandGroupAll || typeInfo == OnCommandData.CommandType.OnCommandAll || typeInfo== OnCommandData.CommandType.OnCommandGroupAllZone|| typeInfo==OnCommandData.CommandType.OnCommandAllZone)))
 						{
 							//if not an all type command and not us, kick out.
 							//not for us only group members
