@@ -1841,7 +1841,7 @@ namespace E3Core.Processors
 				{
 					//check if its mine
 					string casterName = MQ.Query<string>($"${{Target.Buff[{i}].Caster}}");
-					if (E3.CurrentName.Equals(casterName, StringComparison.OrdinalIgnoreCase))
+					if (E3.CurrentName.CompareInsensitive(casterName))
 					{
 						//its my spell!
 						Int64 millisecondsLeft = MQ.Query<Int64>($"${{Target.BuffDuration[{i}]}}");

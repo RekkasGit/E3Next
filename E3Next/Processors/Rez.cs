@@ -653,7 +653,7 @@ namespace E3Core.Processors
                 {
                     string user = x.args[0];
 
-                    if (E3.CurrentName.Equals(user, StringComparison.OrdinalIgnoreCase))
+                    if (E3.CurrentName.CompareInsensitive(user))
                     {
                         //its a me!
                         MultiRez();
@@ -676,7 +676,7 @@ namespace E3Core.Processors
                 {
                     string user = x.args[0];
 
-                    if (E3.CurrentName.Equals(user, StringComparison.OrdinalIgnoreCase))
+                    if (E3.CurrentName.CompareInsensitive(user))
                     {
                         //its a me!
                         MultiRez(RezType.Group);
@@ -701,7 +701,7 @@ namespace E3Core.Processors
                 {
                     string user = x.args[0];
 
-                    if (E3.CurrentName.Equals(user, StringComparison.OrdinalIgnoreCase))
+                    if (E3.CurrentName.CompareInsensitive(user))
                     {
                         //its a me!
                         MultiRez(RezType.GroupOrRaid);

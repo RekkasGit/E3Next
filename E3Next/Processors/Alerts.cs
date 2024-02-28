@@ -186,7 +186,7 @@ namespace E3Core.Processors
                 {
                     string mobname = x.match.Groups[1].Value;
                     string personName = x.match.Groups[2].Value;
-                    if(E3.CurrentName.Equals(personName, StringComparison.OrdinalIgnoreCase))
+                    if(E3.CurrentName.CompareInsensitive(personName))
                     {
                         MQ.Cmd($"/g I have reflected {mobname} spell!");
                     }
@@ -221,7 +221,7 @@ namespace E3Core.Processors
 		}
 
         private static Boolean IsRaidLeader() {
-            return E3.CurrentName.Equals(MQ.Query<string>("${Raid.Leader}"), StringComparison.OrdinalIgnoreCase);
+            return E3.CurrentName.CompareInsensitive(MQ.Query<string>("${Raid.Leader}"));
         }
     }
 }
