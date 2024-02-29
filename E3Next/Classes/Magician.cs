@@ -204,7 +204,7 @@ namespace E3Core.Classes
                     return;
                 }
 
-                bool allIdentifiersExist = identifiers.All(id => _spiMap.Values.Any(spellItemList => spellItemList.Any(spellItem => spellItem.Identifier == id)));
+                bool allIdentifiersExist = identifiers.All(id => _spiMap.Values.Any(spellItemList => spellItemList.Any(spellItem => spellItem.Identifier.Equals(id, StringComparison.OrdinalIgnoreCase))));
 
                 if (!allIdentifiersExist)
                 {
