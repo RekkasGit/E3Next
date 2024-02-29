@@ -172,7 +172,7 @@ namespace E3Core.Classes
                 //___Process Request Requirements___
                 if (E3.CharacterSettings.AutoPetDebug)  E3.Bots.Broadcast("\acPet List Request Event Started");
                 _requester = x.match.Groups[1].ToString();
-                string configuredIdentifiers = string.Join(", ", _spiMap.Values.SelectMany(list => list.Select(item => item.Identifier)).Distinct());
+                string configuredIdentifiers = string.Join(", ", _spiMap.Values.SelectMany(list => list.Select(item => $"[{item.Identifier}]")).Distinct());
                 //__^Process Request Requirements^__
 
                 //Send Tell of Pet Item Identifiers to Requester
@@ -208,7 +208,7 @@ namespace E3Core.Classes
 
                 if (!allIdentifiersExist)
                 {
-                    string configuredIdentifiers = string.Join(", ", _spiMap.Values.SelectMany(list => list.Select(item => item.Identifier)).Distinct());
+                    string configuredIdentifiers = string.Join(", ", _spiMap.Values.SelectMany(list => list.Select(item => $"[{item.Identifier}]")).Distinct());
                     E3.Bots.Broadcast($"\ayWarn: PER: A requested identifiers from {_requester} does not exist. Ending {_requester} Request");
                     E3.Bots.Broadcast($"\amDebug: Requested Identifiers: {string.Join(", ", identifiers)} | Current Configed Indentifiers: {configuredIdentifiers}.");
                     MQ.Cmd($"/t {_requester} One or more identifiers you requested are currently not configured.My current configured identifiers are: {configuredIdentifiers}.");
