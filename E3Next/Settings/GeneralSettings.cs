@@ -25,7 +25,6 @@ namespace E3Core.Settings
         public bool AutoMisfitBox;
         public bool AttackOffOnEnrage;
         public bool RelayTells;
-        public bool LazurasMageImport;
         public string General_NetworkMethod = "EQBC";
         public DefaultBroadcast General_BroadCast_Default = DefaultBroadcast.Group;
         public bool General_HealWhileNavigating = true;
@@ -149,7 +148,6 @@ namespace E3Core.Settings
             LoadKeyData("Misc", "Automatically Use Misfit Box (On/Off)", parsedData, ref AutoMisfitBox);
             LoadKeyData("Misc", "Turn Player Attack Off During Enrage (On/Off)", parsedData, ref AttackOffOnEnrage);
             LoadKeyData("Misc", "Relay Tells (On/Off)", parsedData, ref RelayTells);
-            LoadKeyData("Misc", "Lazuras Mage Import (On/Off)", parsedData, ref LazurasMageImport);
 
             LoadKeyData("Loot", "Loot Link Channel", parsedData, ref Loot_LinkChannel);
             //check valid loot channels

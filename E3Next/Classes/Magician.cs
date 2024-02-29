@@ -21,8 +21,6 @@ namespace E3Core.Classes
     {
         private static IMQ MQ = E3.MQ;
         private static ISpawns _spawns = E3.Spawns;
-        //For the backwards compatibility of lazuras code. Allows Laz users to decide if they want to use the new code or the old code. Default is On.
-        private static bool _LazurasMageImport = E3.GeneralSettings.LazurasMageImport;
         //Pulling from E3.CharacterSettings for CleanBags
         private static List<string> _cleanbags = E3.CharacterSettings.CleanBags;
 
@@ -32,13 +30,13 @@ namespace E3Core.Classes
         private static List<string> _lazhardcodedbags = new List<string>();
         public static void lazbag()
         {
-            if (MQ.Query<String>("${EverQuest.Server}") == "Project Lazarus" && (_LazurasMageImport))
-            {
+            if (E3.CharacterSettings.CleanBags == null || !E3.CharacterSettings.CleanBags.Any() || E3.CharacterSettings.CleanBags.Any(string.IsNullOrWhiteSpace))
+                {
                 _lazhardcodedbags = new List<string>
                 {
-                    "Clean Bags=Folded Pack of Spectral Armaments",
-                    "Clean Bags=Folded Pack of Spectral Plate",
-                    "Clean Bags=Folded Pack of Enibik's Heirlooms"
+                    "Folded Pack of Spectral Armaments",
+                    "Folded Pack of Spectral Plate",
+                    "Folded Pack of Enibik's Heirlooms"
                 };
             }
         }
@@ -52,20 +50,20 @@ namespace E3Core.Classes
         private static List<string> _lazhardcodedItems = new List<string>();
         public static void lazitems()
         {
-            if (MQ.Query<String>("${EverQuest.Server}") == "Project Lazarus" && (_LazurasMageImport))
-            {
+            if (E3.CharacterSettings.spiIni == null || !E3.CharacterSettings.spiIni.Any() || E3.CharacterSettings.spiIni.All(string.IsNullOrWhiteSpace))
+                {
                 _lazhardcodedItems = new List<string>
                 {
-                    "Summoned Pet Item=Grant Spectral Armaments|Summoned: Fist of Flame|Fire",
-                    "Summoned Pet Item=Grant Spectral Armaments|Summoned: Orb of Chilling Water|Water",
-                    "Summoned Pet Item=Grant Spectral Armaments|Summoned: Buckler of Draining Defense|Shield",
-                    "Summoned Pet Item=Grant Spectral Armaments|Summoned: Short Sword of Warding|Taunt",
-                    "Summoned Pet Item=Grant Spectral Armaments|Summoned: Mace of Temporal Distortion|Slow",
-                    "Summoned Pet Item=Grant Spectral Armaments|Summoned: Spear of Maliciousness|Malo",
-                    "Summoned Pet Item=Grant Spectral Armaments|Summoned: Wand of Dismissal|Dispel",
-                    "Summoned Pet Item=Grant Spectral Armaments|Summoned: Tendon Carver|Snare",
-                    "Summoned Pet Item=Grant Spectral Plate|Folded Pack of Spectral Plate|none",
-                    "Summoned Pet Item=Grant Enibik's Heirlooms|Folded Pack of Enibik's Heirlooms|none"
+                    "Grant Spectral Armaments|Summoned: Fist of Flame|Fire",
+                    "Grant Spectral Armaments|Summoned: Orb of Chilling Water|Water",
+                    "Grant Spectral Armaments|Summoned: Buckler of Draining Defense|Shield",
+                    "Grant Spectral Armaments|Summoned: Short Sword of Warding|Taunt",
+                    "Grant Spectral Armaments|Summoned: Mace of Temporal Distortion|Slow",
+                    "Grant Spectral Armaments|Summoned: Spear of Maliciousness|Malo",
+                    "Grant Spectral Armaments|Summoned: Wand of Dismissal|Dispel",
+                    "Grant Spectral Armaments|Summoned: Tendon Carver|Snare",
+                    "Grant Spectral Plate|Folded Pack of Spectral Plate|none",
+                    "Grant Enibik's Heirlooms|Folded Pack of Enibik's Heirlooms|none"
                 };
             }
         }
@@ -81,14 +79,16 @@ namespace E3Core.Classes
             public string Identifier { get; set; }
         }
         private static Dictionary<string, List<SpellItem>> _spiMap = new Dictionary<string, List<SpellItem>>();
-               static Magician()
+        static Magician()
         {
+            lazitems(); // Call this method to populate _lazhardcodedItems
+
             if (E3.CharacterSettings.AutoPetDebug) E3.Bots.Broadcast($"\amDebug: Magician: spiIni Dictionary: {E3.CharacterSettings.spiIni}");
 
             //Will Add lazuras hard coded items to the spiIni Dictionary if the above it true otherwise it will just use the E3.CharacterSettings.spiIni
             var allItems = _lazhardcodedItems.Concat(E3.CharacterSettings.spiIni);
 
-            if (E3.CharacterSettings.AutoPetDebug && MQ.Query<String>("${EverQuest.Server}") == "Project Laz") E3.Bots.Broadcast($"\amDebug: Magician: spiIni Dictionary with Laz hardcode: {allItems}");
+            if (E3.CharacterSettings.spiIni == null || !E3.CharacterSettings.spiIni.Any() || E3.CharacterSettings.spiIni.All(string.IsNullOrWhiteSpace)) E3.Bots.Broadcast($"\amDebug: Magician: spiIni Dictionary with Laz hardcode: {allItems}");
 
             // Split the entire string into separate entries
             foreach (var spiIni in allItems)
@@ -583,6 +583,8 @@ namespace E3Core.Classes
 
         private static void LazCleanUp()
         {
+            lazbag(); // Call this method to populate _lazhardcodedbags
+
             if (E3.CharacterSettings.AutoPetDebug) E3.Bots.Broadcast($"\acDebug: LazCleanUp process Started.");
 
             foreach (var item in _lazhardcodedbags)
