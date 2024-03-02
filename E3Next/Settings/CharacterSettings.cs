@@ -32,6 +32,7 @@ namespace E3Core.Settings
         public bool Misc_EndMedBreakInCombat;
         public bool Misc_AutoMedBreak;
         public bool Misc_AutoLootEnabled;
+        
         public string Misc_AnchorChar = string.Empty;
         public bool Misc_RemoveTorporAfterCombat = true;
         public Int32 Misc_DelayAfterCastWindowDropsForSpellCompletion = 0;
@@ -200,10 +201,14 @@ namespace E3Core.Settings
         public string Charm_PeelDebuffPerson = String.Empty;
         public List<Spell> Charm_PeelDebuffSpells = new List<Spell>();
 
-        //
+		//
 
+		//Loot Commander
 
-        public Int32 CPU_ProcessLoopDelay = 50;
+		public bool LootCommander_Enabled;
+        public List<string> LootCommander_Looters = new List<string>();
+
+		public Int32 CPU_ProcessLoopDelay = 50;
         public bool CPU_Camping_PauseAt20Seconds = true;
         public bool CPU_Camping_ShutdownAt5Seconds = true;
 
@@ -468,7 +473,8 @@ namespace E3Core.Settings
             LoadKeyData("Debuffs", "Debuff on Assist", ParsedData, Debuffs_OnAssist);
             LoadKeyData("Debuffs", "Debuff on Command", ParsedData, Debuffs_Command);
 
-
+            LoadKeyData("LootCommander", "Enabled",ParsedData, ref LootCommander_Enabled);
+            LoadKeyData("LootCommander", "Looter", ParsedData, LootCommander_Looters);
 
             LoadKeyData("Burn", "Quick Burn", ParsedData, QuickBurns);
             LoadKeyData("Burn", "Long Burn", ParsedData, LongBurns);
@@ -844,6 +850,8 @@ namespace E3Core.Settings
 
 		
 
+
+
 			newFile.Sections.AddSection("Blocked Buffs");
             section = newFile.Sections.GetSectionData("Blocked Buffs");
             section.Keys.AddKey("BuffName", "");
@@ -858,7 +866,13 @@ namespace E3Core.Settings
             section.Keys.AddKey("Gimme", "");
 
 
-            newFile.Sections.AddSection("Ifs");
+			newFile.Sections.AddSection("LootCommander");
+			section = newFile.Sections.GetSectionData("LootCommander");
+			section.Keys.AddKey("Enabled (On/Off)", "Off");
+			section.Keys.AddKey("Looter", "");
+
+
+			newFile.Sections.AddSection("Ifs");
             newFile.Sections.AddSection("Events");
 			newFile.Sections.AddSection("EventLoop");
 			newFile.Sections.AddSection("Report");
