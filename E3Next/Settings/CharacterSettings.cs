@@ -440,7 +440,6 @@ namespace E3Core.Settings
             LoadKeyData("Buffs", "Bot Buff", ParsedData, BotBuffs);
             LoadKeyData("Buffs", "Combat Buff", ParsedData, CombatBuffs);
             LoadKeyData("Buffs", "Group Buff", ParsedData, GroupBuffs);
-            LoadKeyData("Buffs", "Pet Buff", ParsedData, PetBuffs);
             LoadKeyData("Buffs", "Group Buff Request", ParsedData, GroupBuffRequests);
             LoadKeyData("Buffs", "Raid Buff Request", ParsedData, RaidBuffRequests);
 			LoadKeyData("Buffs", "Stack Buff Request", ParsedData, StackBuffRequest);
