@@ -1212,6 +1212,8 @@ namespace E3Core.Processors
             if (!e3util.ShouldCheck(ref _nextAutoMedCheck, _nextAutoMedCheckInterval)) return;
             int autoMedPct = E3.GeneralSettings.General_AutoMedBreakPctMana;
             if (autoMedPct == 0) return;
+            if (InCombat()) return;
+
             if (!E3.CharacterSettings.Misc_AutoMedBreak) return;
             using (_log.Trace())
             {
@@ -1225,7 +1227,7 @@ namespace E3Core.Processors
 
                 bool amIStanding = MQ.Query<bool>("${Me.Standing}");
                 string combatState = MQ.Query<string>("${Me.CombatState}");
-                if (amIStanding && autoMedPct > 0 && (combatState != "COMBAT" || (E3.CurrentClass & Class.Priest) == E3.CurrentClass || (E3.CurrentClass & Class.Caster) == E3.CurrentClass))
+                if (amIStanding && autoMedPct > 0)
                 {
                     int pctMana = MQ.Query<int>("${Me.PctMana}");
                     int pctEndurance = MQ.Query<int>("${Me.PctEndurance}");
