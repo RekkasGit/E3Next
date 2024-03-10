@@ -171,9 +171,20 @@ namespace E3Core.Classes
             }
             if (_songs.Count == 1 && MQ.Query<bool>("${Me.Casting}")) return;
 
-            //lets play a song!
-            //get a song from the queue.
-            Data.Spell songToPlay= _songs.Dequeue();
+			if (MQ.Query<bool>("${Window[SpellBookWnd].Open}"))
+			{
+
+                return;
+			}
+
+			Int64 curTimeStamp = Core.StopWatch.ElapsedMilliseconds;
+			if (curTimeStamp < _nextBardCast)
+			{
+				return;
+			}
+			//lets play a song!
+			//get a song from the queue.
+			Data.Spell songToPlay= _songs.Dequeue();
             //a counter to determine if we have looped through all the songs before finding a good one
             Int32 trycounter = 0;
             while(!Casting.Ifs(songToPlay))
@@ -190,9 +201,9 @@ namespace E3Core.Classes
 			}
             //found a valid song, place it back into the queue so we don't lose it. 
 			_songs.Enqueue(songToPlay);
-            
-            //if this base song duration > 18 seconds check to see if we have it as a buff, otherwise recast. 
-            if(songToPlay.DurationTotalSeconds>18)
+
+			//if this base song duration > 18 seconds check to see if we have it as a buff, otherwise recast. 
+			if (songToPlay.DurationTotalSeconds>18)
             {
                 string BuffSecondsLeftQuery = "${Me.Buff[" + songToPlay.SpellName + "].Duration.TotalSeconds}";
                 string SongSecondsLeftQuery = "${Me.Song[" + songToPlay.SpellName + "].Duration.TotalSeconds}";
@@ -203,13 +214,9 @@ namespace E3Core.Classes
             }
             if (Casting.CheckReady(songToPlay))
             {
-                Int64 curTimeStamp = Core.StopWatch.ElapsedMilliseconds;
-                if (curTimeStamp < _nextBardCast)
-                {
-                    return;
-                }
+               
                 MQ.Write($"\atTwist \ag{songToPlay.SpellName}");
-                _nextBardCast = Core.StopWatch.ElapsedMilliseconds + (int)songToPlay.MyCastTime;
+                _nextBardCast = Core.StopWatch.ElapsedMilliseconds + (int)songToPlay.MyCastTime + 300;
                 Casting.Sing(0, songToPlay);
             }
             else

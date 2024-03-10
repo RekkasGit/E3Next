@@ -465,7 +465,15 @@ namespace E3Core.Processors
 		public volatile static bool NetMQ_RouterServerThradRun = true;
 		public volatile static bool NetMQ_PubClientThradRun = true;
 
+		public static MQBuild MQBuildVersion = MQBuild.EMU;
 
 
+	}
+	public enum MQBuild
+	{
+		Live=1,
+		Test=2,
+		Beta=3,
+		EMU=4
 	}
 }

@@ -32,6 +32,8 @@ namespace E3Core.Settings
         public bool Misc_EndMedBreakInCombat;
         public bool Misc_AutoMedBreak;
         public bool Misc_AutoLootEnabled;
+
+      
         
         public string Misc_AnchorChar = string.Empty;
         public bool Misc_RemoveTorporAfterCombat = true;
@@ -129,7 +131,7 @@ namespace E3Core.Settings
         public List<Spell> LifeSupport = new List<Spell>();
 
         //blocked buffs
-        public List<Spell> BockedBuffs = new List<Spell>();
+        public List<Spell> BlockedBuffs = new List<Spell>();
 
         public bool IfFDStayDown = false;
 
@@ -506,7 +508,7 @@ namespace E3Core.Settings
             LoadKeyData("Cures", "DiseaseCounters", ParsedData, DiseaseCounterCure);
             LoadKeyData("Cures", "DiseaseCountersIgnore", ParsedData, DiseaseCounterIgnore);
 
-            LoadKeyData("Blocked Buffs", "BuffName", ParsedData, BockedBuffs);
+            LoadKeyData("Blocked Buffs", "BuffName", ParsedData, BlockedBuffs);
 
             LoadKeyData("Heals", "Tank Heal", ParsedData, HealTanks);
             LoadKeyData("Heals", "Important Heal", ParsedData, HealImportantBots);
@@ -597,7 +599,6 @@ namespace E3Core.Settings
             section.Keys.AddKey("Dismount On Interrupt (On/Off)","On");
             section.Keys.AddKey("Delay in MS After CastWindow Drops For Spell Completion", "0");
 			section.Keys.AddKey("If FD stay down (true/false)", "False");
-		
 
 			newFile.Sections.AddSection("Assist Settings");
             section = newFile.Sections.GetSectionData("Assist Settings");
@@ -962,7 +963,7 @@ namespace E3Core.Settings
             }
             section = ParsedData.Sections["Blocked Buffs"];
             section.RemoveAllKeys();
-            foreach (var spell in BockedBuffs)
+            foreach (var spell in BlockedBuffs)
             {
                 section.AddKey("BuffName", spell.SpellName);
             }

@@ -133,7 +133,7 @@ namespace E3Core.Processors
 					{
 						MQ.Write("\aoBlocked Spell List");
 						MQ.Write("\aw==================");
-						foreach (var spell in E3.CharacterSettings.BockedBuffs)
+						foreach (var spell in E3.CharacterSettings.BlockedBuffs)
 						{
 							MQ.Write("\at" + spell.SpellName);
 						}
@@ -143,8 +143,8 @@ namespace E3Core.Processors
 		}
 		public static void BlockBuffRemove(string spellName)
 		{
-			List<Spell> newList = E3.CharacterSettings.BockedBuffs.Where(y => !y.SpellName.Equals(spellName, StringComparison.OrdinalIgnoreCase)).ToList();
-			E3.CharacterSettings.BockedBuffs = newList;
+			List<Spell> newList = E3.CharacterSettings.BlockedBuffs.Where(y => !y.SpellName.Equals(spellName, StringComparison.OrdinalIgnoreCase)).ToList();
+			E3.CharacterSettings.BlockedBuffs = newList;
 			E3.CharacterSettings.SaveData();
 
 		}
@@ -152,7 +152,7 @@ namespace E3Core.Processors
 		{
 			//check if it exists
 			bool exists = false;
-			foreach (var spell in E3.CharacterSettings.BockedBuffs)
+			foreach (var spell in E3.CharacterSettings.BlockedBuffs)
 			{
 
 				if (spell.SpellName.Equals(spellName, StringComparison.OrdinalIgnoreCase))
@@ -165,7 +165,7 @@ namespace E3Core.Processors
 				Spell s = new Spell(spellName);
 				if (s.SpellID > 0)
 				{
-					E3.CharacterSettings.BockedBuffs.Add(s);
+					E3.CharacterSettings.BlockedBuffs.Add(s);
 					E3.CharacterSettings.SaveData();
 				}
 			}
@@ -274,8 +274,17 @@ namespace E3Core.Processors
 			if (!e3util.ShouldCheck(ref _nextBlockBuffCheck, _nextBlockBuffCheckInterval)) return;
 
 
-			foreach (var spell in E3.CharacterSettings.BockedBuffs)
+			foreach (var spell in E3.CharacterSettings.BlockedBuffs)
 			{
+
+				if (!String.IsNullOrWhiteSpace(spell.Ifs))
+				{
+					if (!Casting.Ifs(spell))
+					{
+						continue;
+					}
+				}
+
 				if (spell.SpellID > 0)
 				{
 					if (MQ.Query<bool>($"${{Me.Buff[{spell.CastName}]}}") || MQ.Query<bool>($"${{Me.Song[{spell.CastName}]}}"))

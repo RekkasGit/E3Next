@@ -439,7 +439,15 @@ namespace E3Core.Utility
 
             return !inputSetValue;
         }
+        public static bool IsEQLive()
+        {
+            return E3.MQBuildVersion != MQBuild.EMU;
 
+		}
+        public static bool IsEQEMU()
+        {
+            return E3.MQBuildVersion == MQBuild.EMU;
+        }
         public static string NumbersToString(List<Int32> numbers, char delim)
         {
             _resultStringBuilder.Clear();

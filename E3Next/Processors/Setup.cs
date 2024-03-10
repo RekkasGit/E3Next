@@ -33,6 +33,7 @@ namespace E3Core.Processors
             using (_log.Trace())
             {
 
+                E3.MQBuildVersion = (MQBuild)MQ.Query<Int32>("${MacroQuest.Build}");
                 if(MQ.Query<bool>("!${Defined[E3N_var]}"))
                 {
                     MQ.Cmd("/declare E3N_var string global false");
@@ -46,7 +47,7 @@ namespace E3Core.Processors
                 }
 
                 MQ.Write($"Loading nE³xt v{_e3Version}...Mq2Mono v{Core._MQ2MonoVersion}");
-             
+                
 
                 InitPlugins();
                 InitSubSystems();

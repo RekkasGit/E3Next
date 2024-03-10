@@ -189,7 +189,15 @@ namespace E3Core.Processors
                         //we be ranged!
                         if (!AllowControl)
                         {
-                            MQ.Cmd($"/squelch /face fast id {AssistTargetID}");
+                            if(e3util.IsEQLive())
+                            {
+								MQ.Cmd($"/squelch fast id {AssistTargetID}",500);
+							}
+                            else
+                            {
+								MQ.Cmd($"/squelch /face fast id {AssistTargetID}");
+							}
+                           
                             if (MQ.Query<Decimal>("${Target.Distance}") > 200)
                             {
                                 MQ.Cmd("/squelch /stick moveback 195");
@@ -530,7 +538,16 @@ namespace E3Core.Processors
 
                 if (!AllowControl)
                 {
-                    MQ.Cmd($"/face fast id {AssistTargetID}");
+                    if(e3util.IsEQLive())
+					{
+						MQ.Cmd($"/face id {AssistTargetID}",500);
+
+					}
+                    else
+                    {
+						MQ.Cmd($"/face fast id {AssistTargetID}");
+					}
+                  
                 }
 
                 if (MQ.Query<Int32>("${Me.Pet.ID}") > 0)
@@ -944,7 +961,17 @@ namespace E3Core.Processors
                 {
                     if (AssistTargetID > 0)
                     {
-                        MQ.Cmd($"/squelch /face fast id {AssistTargetID}");
+
+						if (e3util.IsEQLive())
+						{
+							MQ.Cmd($"/squelch /face id {AssistTargetID}",500);
+
+						}
+						else
+						{
+							MQ.Cmd($"/squelch /face fast id {AssistTargetID}");
+						}
+						
 
                     }
 

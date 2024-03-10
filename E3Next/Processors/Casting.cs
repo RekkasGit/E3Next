@@ -817,7 +817,7 @@ namespace E3Core.Processors
 			{
 				TrueTarget(targetid);
 			}
-
+			
 			if (spell.CastType == CastType.Spell)
 			{
 				//if (MQ.Query<bool>($"${{Bool[${{Me.Book[{spell.CastName}]}}]}}"))
@@ -831,9 +831,19 @@ namespace E3Core.Processors
 						MQ.Cmd($"/docommand {spell.BeforeEvent}");
 						if (spell.BeforeEvent.StartsWith("/exchange", StringComparison.OrdinalIgnoreCase)) MQ.Delay(300);
 					}
-
+					Int32 retryCounter = 0;
+					retrysong:
+					MQ.Cmd("/stopsong");
 					MQ.Cmd($"/cast \"{spell.CastName}\"");
 					MQ.Delay(300, IsCasting);
+					if(e3util.IsEQLive())
+					{
+						if (IsCasting())
+						{
+							//on live the cast window comes up on a missed note, so we check just for a bit to make sure so we can recast. 
+							MQ.Delay(500);
+						}
+					}
 					//sometimes the cast isn't fully complete even if the window is done
 					///allow the player to 'tweak' this value.
 					if (E3.CharacterSettings.Misc_DelayAfterCastWindowDropsForSpellCompletion > 0)
@@ -842,14 +852,10 @@ namespace E3Core.Processors
 					}
 					if (!IsCasting())
 					{
-						MQ.Write("Issuing stopcast as cast window isn't open");
-						MQ.Cmd("/stopsong");
-						MQ.Delay(100);
-						MQ.Cmd($"/cast \"{spell.CastName}\"");
-						//wait for spell cast window
-						if (spell.MyCastTime > 500)
+						if (retryCounter < 5)
 						{
-							MQ.Delay(1000);
+							retryCounter++;
+							goto retrysong;
 						}
 					}
 
@@ -1030,8 +1036,9 @@ namespace E3Core.Processors
 			if (!IsCasting()) return;
 
 			bool onMount = MQ.Query<bool>("${Me.Mount.ID}");
-			if (onMount)
+			if (onMount && e3util.IsEQEMU())
 			{
+				//can't interrupt on emu.
 				if (E3.CharacterSettings.Misc_DismountOnInterrupt)
 				{
 					MQ.Cmd("/dismount");
