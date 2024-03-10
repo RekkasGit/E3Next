@@ -155,28 +155,37 @@ namespace E3Core.Classes
         {
 
 
-            if(!_playingMelody && !Assist.IsAssisting)
+            if (!_playingMelody && !Assist.IsAssisting)
             {
                 return;
             }
 
-            if ( _songs.Count==0) return;            
+            if (_songs.Count == 0) return;
             if (E3.IsInvis || e3util.IsActionBlockingWindowOpen())
             {
                 return;
             }
-            if(Casting.IsCasting())
+            if (Casting.IsCasting())
             {
                 return;
             }
             if (_songs.Count == 1 && MQ.Query<bool>("${Me.Casting}")) return;
 
-			if (MQ.Query<bool>("${Window[SpellBookWnd].Open}"))
-			{
+            if (MQ.Query<bool>("${Window[SpellBookWnd].Open}"))
+            {
 
                 return;
-			}
-
+            }
+            //can['t do songs if your stunned
+            if (MQ.Query<bool>("${Me.Stunned}"))
+            {
+                return;
+            }
+            if (!MQ.Query<bool>("${Me.Standing}"))
+            {
+                //we are sitting, don't do anything
+                return;
+            }
 			Int64 curTimeStamp = Core.StopWatch.ElapsedMilliseconds;
 			if (curTimeStamp < _nextBardCast)
 			{

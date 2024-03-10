@@ -326,7 +326,8 @@ namespace E3Core.Processors
 
                 Int32 closestID = _doorData.ClosestDoorID();
 
-                if (closestID > 0)
+                //eqlives doors have differnt IDs, do the basic click
+                if (closestID > 0 && !e3util.IsEQLive())
                 {
                     MQ.Cmd($"/doortarget id {closestID}");
                     double currentDistance = MQ.Query<Double>("${DoorTarget.Distance}");
@@ -376,7 +377,7 @@ namespace E3Core.Processors
                     }
                 }
                 else
-                {
+                {  //either eqlive or we don't have the id in our config
                     MQ.Cmd($"/doortarget");
                     MQ.Cmd("/squelch /click left door");
                 }

@@ -1228,6 +1228,12 @@ namespace E3Core.Processors
 
 		public static Boolean CheckReady(Data.Spell spell)
 		{
+			//if your stunned nothing is ready
+			if (MQ.Query<bool>("${Me.Stunned}"))
+			{
+				return false;
+			}
+
 			if (spell.CastType == CastType.None) return false;
 			//do we need to memorize it?
 

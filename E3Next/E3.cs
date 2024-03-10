@@ -49,10 +49,12 @@ namespace E3Core.Processors
 
             //kickout after updates if paused
             if (IsPaused()) return;
+			//stunned, no sense in processing
+			if (MQ.Query<bool>("${Me.Stunned}")) return;
 
 			//global action taken key, used by adv settings
 			//if true, adv settings will stop processing for this loop.
-            ActionTaken = false;
+			ActionTaken = false;
          
 			
             BeforeAdvancedSettingsCalls();
