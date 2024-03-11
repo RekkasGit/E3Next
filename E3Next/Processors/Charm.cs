@@ -152,12 +152,16 @@ namespace E3Core.Processors
 
 			foreach (var spell in E3.CharacterSettings.Charm_CharmOhShitSpells)
 			{
+				if (!Casting.Ifs(spell)) continue;
+
 				if (!Casting.CheckReady(spell)) continue;
 				var result = Casting.Cast(_charmTargetId, spell);
 				if (result != CastReturn.CAST_RESIST) break;
 			}
 			foreach (var spell in E3.CharacterSettings.Charm_SelfDebuffSpells)
 			{
+				if (!Casting.Ifs(spell)) continue;
+
 				Casting.Cast(_charmTargetId, spell);
 			}
 
