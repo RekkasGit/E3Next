@@ -316,10 +316,14 @@ namespace E3Core.Processors
 				{
 					LastMovementTimeStamp = Core.StopWatch.ElapsedMilliseconds;
 				}
+			
 				if (MQ.Query<bool>("${MoveUtils.GM}"))
 				{
-					MQ.Cmd("/squelch /stick imsafe");
-					Bots.Broadcast("GM Safe kicked in, issued /stick imsafe.  you may need to reissue /followme or /assiston");
+					if (e3util.IsEQEMU())
+					{
+						MQ.Cmd("/squelch /stick imsafe");
+					}
+					Bots.Broadcast("GM Safe kicked in, on live issue /stick imsafe.  you may need to reissue /followme or /assiston");
 				}
 
 				//process any tlo request from the UI, or anything really.
