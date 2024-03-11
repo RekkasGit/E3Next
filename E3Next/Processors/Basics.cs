@@ -866,7 +866,7 @@ namespace E3Core.Processors
             {
                 if (E3.IsInvis) return;
                 if (Basics.AmIDead()) return;
-                
+                if (e3util.IsEQLive()) return;
 
                 int pctMana = MQ.Query<int>("${Me.PctMana}");
                 var pctHps = MQ.Query<int>("${Me.PctHPs}");
@@ -1213,6 +1213,8 @@ namespace E3Core.Processors
             int autoMedPct = E3.GeneralSettings.General_AutoMedBreakPctMana;
             if (autoMedPct == 0) return;
             if (InCombat()) return;
+            if (Casting.IsCasting()) return;
+
 
             if (!E3.CharacterSettings.Misc_AutoMedBreak) return;
             using (_log.Trace())
