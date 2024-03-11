@@ -201,6 +201,10 @@ namespace E3Core.Data
                     {
                         NoBurn = true;
                     }
+                    else if (value.Equals("NoTarget", StringComparison.OrdinalIgnoreCase))
+                    {
+                        NoTarget = true;
+                    }
                     else if (value.Equals("NoAggro", StringComparison.OrdinalIgnoreCase))
                     {
                         NoAggro = true;
@@ -750,6 +754,7 @@ namespace E3Core.Data
         public String Reagent = String.Empty;
         public Boolean ItemMustEquip;
         public Boolean NoBurn;
+        public Boolean NoTarget;
         public Boolean NoAggro;
         public Int32 Mode;
         public Boolean Rotate;
