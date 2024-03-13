@@ -113,6 +113,13 @@ namespace E3Core.Processors
 
                         foreach (var spell in spells)
                         {
+                            // need to query this here because the spawn cache may not be up to date
+                            if (MQ.Query<string>("${Target.Name}").Contains("corpse"))
+                            {
+                                MQ.Write($"\arkicking out of nuke routine because i'm targeting a corpse");
+                                MQ.Cmd("/squelch /target clear");
+                                return;
+                            }
                             //check Ifs on the spell
                             if (!String.IsNullOrWhiteSpace(spell.Ifs))
                             {
