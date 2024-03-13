@@ -1375,9 +1375,12 @@ namespace E3Core.Processors
         public static void CheckForage()
         {
             if (!E3.CharacterSettings.Misc_AutoForage) return;
+            
             if (!e3util.ShouldCheck(ref _nextForageCheck, _nextForageCheckInterval)) return;
 
-            bool forageReady = MQ.Query<bool>("${Me.AbilityReady[Forage]}");
+			if (Basics.AmIDead()) return;
+
+			bool forageReady = MQ.Query<bool>("${Me.AbilityReady[Forage]}");
 
             if(forageReady)
             {

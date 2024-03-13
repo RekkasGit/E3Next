@@ -151,10 +151,11 @@ namespace E3Core.Settings
             LoadKeyData("Misc", "Relay Tells (On/Off)", parsedData, ref RelayTells);
 
             LoadKeyData("Loot", "Loot Link Channel", parsedData, ref Loot_LinkChannel);
+            Loot_LinkChannel = Loot_LinkChannel.Trim();
             //check valid loot channels
             if (!Loot_LinkChannelValid.Contains(Loot_LinkChannel, StringComparer.OrdinalIgnoreCase))
             {
-                MQ.Write("Invalid Loot Link Channel setting, loot will not be reported");
+                MQ.Write($"Invalid Loot Link Channel setting, loot will not be reported. value [{Loot_LinkChannel}]. Valid values are [{String.Join(",",Loot_LinkChannelValid)}]");
                 Loot_LinkChannel = String.Empty;
             }
           

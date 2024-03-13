@@ -441,7 +441,7 @@ namespace E3Core.Server
 									//shutown the socket and restart it
 									subSocket.Disconnect($"tcp://{serverName}:" + port);
 									string data = System.IO.File.ReadAllText(fileName);
-									string[] splitData = data.Split(new char[] { ':' });
+									string[] splitData = data.Split(new char[] { ',' });
 									port = splitData[0];
 									serverName = splitData[1];
 									MQ.Write($"\agShared Data Client: Reconnecting to server:{serverName} port:" + port + " for toon:" + user);
@@ -449,10 +449,10 @@ namespace E3Core.Server
 									lastFileUpdate = currentTime;
 								}
 							}
-							catch (Exception)
+							catch (Exception ex)
 							{
 								//file deleted most likely, kill the thread
-								MQ.Write("\agShared Data Client: Issue reading port file, shutting down thread for toon:" + user);
+								MQ.Write("\agShared Data Client: Issue reading port file, shutting down thread for toon:" + user + " stack:"+ex.Message);
 
 								subSocket.Dispose();
 								if (TopicUpdates.TryRemove(user, out var tout))
