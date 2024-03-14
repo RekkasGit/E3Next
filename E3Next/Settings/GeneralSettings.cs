@@ -323,7 +323,6 @@ namespace E3Core.Settings
             section.Keys.AddKey("Automatically Use Misfit Box (On/Off)", "Off");
             section.Keys.AddKey("Turn Player Attack Off During Enrage (On/Off)", "On");
             section.Keys.AddKey("Relay Tells (On/Off)", "Off");
-            section.Keys.AddKey("Lazuras Mage Import (On/Off)", "On");
             //Loot
             newFile.Sections.AddSection("Loot");
             section = newFile.Sections.GetSectionData("Loot");

@@ -21,12 +21,9 @@ namespace E3Core.Classes
     {
         private static IMQ MQ = E3.MQ;
         private static ISpawns _spawns = E3.Spawns;
-        //Pulling from E3.CharacterSettings for CleanBags
         private static List<string> _cleanbags = E3.CharacterSettings.CleanBags;
 
-        //
         //___Project Lazarus Hard Coded Bags___
-        //
         private static List<string> _lazhardcodedbags = new List<string>();
         public static void lazbag()
         {
@@ -40,13 +37,9 @@ namespace E3Core.Classes
                 };
             }
         }
-        //
-        //__^Project Lazarus Hard Coded Bags^__
-        //
 
-        //
+ 
         //___Project Lazarus Hard Spell|item|Identifers___
-        //
         private static List<string> _lazhardcodedItems = new List<string>();
         public static void lazitems()
         {
@@ -67,9 +60,6 @@ namespace E3Core.Classes
                 };
             }
         }
-        //
-        //__^Project Lazarus Hard Spell|item|Identifers^__
-        //
 
         //___Pulling Summoned Pet Items from E3.CharacterSettings___
         public class SpellItem
@@ -88,7 +78,7 @@ namespace E3Core.Classes
             //Will Add lazuras hard coded items to the spiIni Dictionary if the above it true otherwise it will just use the E3.CharacterSettings.spiIni
             var allItems = _lazhardcodedItems.Concat(E3.CharacterSettings.spiIni);
 
-            if (E3.CharacterSettings.spiIni == null || !E3.CharacterSettings.spiIni.Any() || E3.CharacterSettings.spiIni.All(string.IsNullOrWhiteSpace)) E3.Bots.Broadcast($"\amDebug: Magician: spiIni Dictionary with Laz hardcode: {allItems}");
+            if (E3.CharacterSettings.spiIni == null || !E3.CharacterSettings.spiIni.Any() || E3.CharacterSettings.spiIni.All(string.IsNullOrWhiteSpace) && E3.CharacterSettings.AutoPetDebug) E3.Bots.Broadcast($"\amDebug: Magician: spiIni Dictionary with Laz hardcode: {allItems}");
 
             // Split the entire string into separate entries
             foreach (var spiIni in allItems)
@@ -109,7 +99,6 @@ namespace E3Core.Classes
                 }
             }
         }
-        //__^Pulling Summoned Pet Items from E3.CharacterSettings^__
 
         private static Dictionary<int, string> _inventorySlotToPackMap = new Dictionary<int, string>
         {
@@ -163,7 +152,7 @@ namespace E3Core.Classes
                 return;
             }
 
-            //Providing List of Pet Item Identifiers to Requester
+            //Provides List of Pet Item Identifiers to Requester
             var armPetList = new List<string> { "(.+) tells you, 'armpetlist'", "(.+) tells you, 'armpetlist'", "(.+) tells the group, 'armpetlist'", };
             EventProcessor.RegisterEvent("ArmPetList", armPetList, (x) =>
             {
@@ -173,7 +162,7 @@ namespace E3Core.Classes
                 if (E3.CharacterSettings.AutoPetDebug)  E3.Bots.Broadcast("\acPet List Request Event Started");
                 _requester = x.match.Groups[1].ToString();
                 string configuredIdentifiers = string.Join(", ", _spiMap.Values.SelectMany(list => list.Select(item => $"[{item.Identifier}]")).Distinct());
-                //__^Process Request Requirements^__
+
 
                 //Send Tell of Pet Item Identifiers to Requester
                 MQ.Cmd($"/t {_requester} My current configured Pet Item Identifiers are: {configuredIdentifiers}.");
@@ -187,14 +176,13 @@ namespace E3Core.Classes
                 if (e3util.IsShuttingDown() || E3.IsPaused()) return;
 
                 //___Process Request Requirements___
-                E3.Bots.Broadcast("\agPet Equipment Request Event Started");
+                if (E3.CharacterSettings.AutoPetDebug) E3.Bots.Broadcast("\agPet Equipment Request Event Started");
                 int xCount = x.match.Groups.Count;
                 _requester = x.match.Groups[1].ToString();
                 if (E3.CharacterSettings.AutoPetDebug) E3.Bots.Broadcast($"\amDebug: PER: x.match.Groups.Count: {xCount}");
                 if (E3.CharacterSettings.AutoPetDebug) E3.Bots.Broadcast($"\amDebug: PER: Requestername: {_requester}");
                 string[] identArray = x.match.Groups[2].ToString().Split(new char[] { ',', '|' });
                 List<string> identifiers = identArray.ToList();
-                //__^Process Request Requirements^__
 
                 //___Identifier Checks___
                 if (x.match.Groups.Count <= 2)
@@ -210,11 +198,10 @@ namespace E3Core.Classes
                 {
                     string configuredIdentifiers = string.Join(", ", _spiMap.Values.SelectMany(list => list.Select(item => $"[{item.Identifier}]")).Distinct());
                     E3.Bots.Broadcast($"\ayWarn: PER: A requested identifiers from {_requester} does not exist. Ending {_requester} Request");
-                    E3.Bots.Broadcast($"\amDebug: Requested Identifiers: {string.Join(", ", identifiers)} | Current Configed Indentifiers: {configuredIdentifiers}.");
+                    if (E3.CharacterSettings.AutoPetDebug) E3.Bots.Broadcast($"\amDebug: Requested Identifiers: {string.Join(", ", identifiers)} | Current Configed Indentifiers: {configuredIdentifiers}.");
                     MQ.Cmd($"/t {_requester} One or more identifiers you requested are currently not configured.My current configured identifiers are: {configuredIdentifiers}.");
                     return;
-                }
-                //__^Identifier Checks^__
+                }                
 
                 //___PreRequester Checks___
                 if (E3.CharacterSettings.IgnorePetWeaponRequests)
@@ -234,8 +221,7 @@ namespace E3Core.Classes
                     MQ.Cmd($"/t {_requester} I don't have any inventory space to give you a pet weapon!");
                     E3.Bots.Broadcast($"\arERROR: PER: Inventory is full, Canceling Request for {_requester}");
                     return;
-                }
-                //__^PreRequester Checks^__
+                }                
 
                 //___Requester Checks and Method Call___
                 if (_spawns.TryByName(_requester, out var spawn))
@@ -271,11 +257,10 @@ namespace E3Core.Classes
                 else
                 {
                     MQ.Cmd($"/t {_requester} I couldn't find your pet!");
-                }
-                //__^Requester Checks and Method Call^__
+                }                
 
                 MQ.Cmd($"/t {_requester} Arming Pet had finished, Happy Hunting");
-                E3.Bots.Broadcast("\agArmpet Event process Finished");
+                if (E3.CharacterSettings.AutoPetDebug) E3.Bots.Broadcast("\agArmpet Event process Finished");
                 CleanUp();
                 LazCleanUp();
 
@@ -321,15 +306,14 @@ namespace E3Core.Classes
                 if (E3.CharacterSettings.AutoPetDebug) E3.Bots.Broadcast($"\amDebug: AP: About to call IdentForCharacter for myBotName");
                 IdentForCharacter(myBotName, myPetId);
                 if (e3util.IsShuttingDown() || E3.IsPaused()) return;
-            }
-            //__^MY PET^__
+            }            
 
             //___BOT PETS___
             foreach (var botsettings in E3.CharacterSettings.PetWeapons)
             {
                 var parts = botsettings.Split('/');
                 var bot = parts[0];
-                E3.Bots.Broadcast($"\ayDebug: Processing bot: {bot}");
+                if (E3.CharacterSettings.AutoPetDebug) E3.Bots.Broadcast($"\ayDebug: Processing bot: {bot}");
 
                 if (_spawns.TryByName(bot, out var ownerSpawn))
                 {
@@ -343,25 +327,25 @@ namespace E3Core.Classes
 
                     if (petId < 0)
                     {
-                        E3.Bots.Broadcast($"\arDebug: {botName} doesn't have a pet to summon!");
+                        E3.Bots.Broadcast($"\ayWarn: {botName} doesn't have a pet to summon!");
                         continue;
                     }
 
                     if (petSpawn == null)
                     {
-                        E3.Bots.Broadcast($"\arDebug: {botName} doesn't have a pet to summon!");
+                        E3.Bots.Broadcast($"\ayWarn: {botName} doesn't have a pet to summon!");
                         continue;
                     }
 
                     if (petSpawn.Distance > 50)
                     {
-                        E3.Bots.Broadcast($"\arDebug: {botName}'s pet is too far away!");
+                        E3.Bots.Broadcast($"\ayWarn: {botName}'s pet is too far away!");
                         continue;
                     }
 
                     if (petSpawn.Level == 1)
                     {
-                        E3.Bots.Broadcast($"\arDebug: {botName}'s pet is just a familiar!");
+                        E3.Bots.Broadcast($"\ayWarn: {botName}'s pet is just a familiar!");
                         continue;
                     }
 
@@ -374,8 +358,7 @@ namespace E3Core.Classes
                         if (e3util.IsShuttingDown() || E3.IsPaused()) return;
                     }
                 }
-            }
-            //__^BOT PETS^__
+            }            
             
             E3.Bots.Broadcast("\agArmPets finished.");
             CleanUp();
@@ -400,10 +383,6 @@ namespace E3Core.Classes
                 return;
             }
 
-            // Get Pet ID
-            //_spawns.TryByName(characterName, out var characterSpawn);
-            //var PetId = characterSpawn.PetID;
-
             // Get the identifiers for the current character
             var identifiers = characterSetting.Split('/')[1].Split(new char[] { ',', '|' });
             if (E3.CharacterSettings.AutoPetDebug) E3.Bots.Broadcast($"\amDebug: IFC: Identifiers for {characterName}: {string.Join(", ", identifiers)}");
@@ -416,11 +395,11 @@ namespace E3Core.Classes
 
                 foreach (var entry in _spiMap)
                 {
-                    // Run LazCleanUp bag process if a non-lazhardcode identifier is detected
+                    // Run HarcCode CleanUp bag process if a non-lazhardcode identifier is detected
                     if (!isLazHardcodeIdentifier)
                     {
                         LazCleanUp();
-                        isLazHardcodeIdentifier = true; // Set the flag to true to avoid running LazCleanUp multiple times
+                        isLazHardcodeIdentifier = true;
                     }
 
                     var spiSpell = entry.Key;
@@ -434,7 +413,7 @@ namespace E3Core.Classes
 
             MQ.Delay(250);
             e3util.TryMoveToLoc(currentX, currentY, currentZ);
-            E3.Bots.Broadcast($"\awDebug: IdentForCharacter Finshed for {characterName}.");
+            if (E3.CharacterSettings.AutoPetDebug) E3.Bots.Broadcast($"\awDebug: IdentForCharacter Finshed for {characterName}.");
         }
 
         public static void IdentForRequester(string requesterName, List<string> identifiers, int PetId)
@@ -452,11 +431,11 @@ namespace E3Core.Classes
 
                 foreach (var entry in _spiMap)
                 {
-                    // Run LazCleanUp bag process if a non-lazhardcode identifier is detected
+                    // Run Hardcode CleanUp bag process if a non-lazhardcode identifier is detected
                     if (!isLazHardcodeIdentifier)
                     {
                         LazCleanUp();
-                        isLazHardcodeIdentifier = true; // Set the flag to true to avoid running LazCleanUp multiple times
+                        isLazHardcodeIdentifier = true;
                     }
 
                     var spiSpell = entry.Key;
@@ -583,7 +562,7 @@ namespace E3Core.Classes
 
         private static void LazCleanUp()
         {
-            lazbag(); // Call this method to populate _lazhardcodedbags
+            lazbag();
 
             if (E3.CharacterSettings.AutoPetDebug) E3.Bots.Broadcast($"\acDebug: LazCleanUp process Started.");
 
