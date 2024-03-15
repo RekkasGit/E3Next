@@ -1026,7 +1026,9 @@ namespace MonoCore
         public extern static void mq_RemoveCommand(string command);
         [MethodImpl(MethodImplOptions.InternalCall)]
         public extern static void mq_GetSpawns();
-        [MethodImpl(MethodImplOptions.InternalCall)]
+		[MethodImpl(MethodImplOptions.InternalCall)]
+		public extern static void mq_GetSpawns2();
+		[MethodImpl(MethodImplOptions.InternalCall)]
         public extern static bool mq_GetRunNextCommand();
         [MethodImpl(MethodImplOptions.InternalCall)]
         public extern static string mq_GetFocusedWindowName();
@@ -1867,11 +1869,20 @@ namespace MonoCore
                 spawn.isDirty = false;
             }
             //request new spawns!
-            Core.mq_GetSpawns();
+            if(Core._MQ2MonoVersion>0.23m)
+            {
+				Core.mq_GetSpawns2();
 
-            //spawns has new/updated data, get rid of the non dirty stuff.
-            //can use the other dictionaries to help
-            _spawnsByName.Clear();
+			}
+			else
+            {
+				Core.mq_GetSpawns();
+
+			}
+
+			//spawns has new/updated data, get rid of the non dirty stuff.
+			//can use the other dictionaries to help
+			_spawnsByName.Clear();
             SpawnsByID.Clear();
             foreach (var spawn in _spawns)
             {
@@ -1982,9 +1993,19 @@ namespace MonoCore
             cb += 4;
             CurrentEndurnace = BitConverter.ToInt32(data, cb);
             cb += 4;
-            CurrentHPs = BitConverter.ToInt32(data, cb);
-            cb += 4;
-            CurrentMana = BitConverter.ToInt32(data, cb);
+            if (Core._MQ2MonoVersion > 0.22m)
+            {
+				CurrentHPs = BitConverter.ToInt64(data, cb);
+				cb += 8;
+
+			}
+			else
+            {
+				CurrentHPs = BitConverter.ToInt32(data, cb);
+				cb += 4;
+
+			}
+			CurrentMana = BitConverter.ToInt32(data, cb);
             cb += 4;
             Dead = BitConverter.ToBoolean(data, cb);
             cb += 1;
@@ -2006,8 +2027,17 @@ namespace MonoCore
             cb += 4;
             GM = BitConverter.ToBoolean(data, cb);
             cb += 1;
-            GuildID = BitConverter.ToInt32(data, cb);
-            cb += 4;
+            if(Core._MQ2MonoVersion>0.23m)
+            {
+				GuildID = BitConverter.ToInt64(data, cb);
+				cb += 8;
+			}
+            else
+            {
+				GuildID = BitConverter.ToInt32(data, cb);
+				cb += 4;
+			}
+          
             Heading = BitConverter.ToSingle(data, cb);
             cb += 4;
             Height = BitConverter.ToSingle(data, cb);
@@ -2049,8 +2079,17 @@ namespace MonoCore
             cb += slength;
             Named = BitConverter.ToBoolean(data, cb);
             cb += 1;
-            PctHps = BitConverter.ToInt32(data, cb);
-            cb += 4;
+			if (Core._MQ2MonoVersion > 0.23m)
+			{
+				PctHps = BitConverter.ToInt64(data, cb);
+				cb += 8;
+			}
+			else
+			{
+				PctHps = BitConverter.ToInt32(data, cb);
+				cb += 4;
+			}
+			
             PctMana = BitConverter.ToInt32(data, cb);
             cb += 4;
             PetID = BitConverter.ToInt32(data, cb);
@@ -2147,7 +2186,7 @@ namespace MonoCore
         public Int32 PlayerState;
         public Int32 PetID;
         public Int32 PctMana;
-        public Int32 PctHps;
+        public Int64 PctHps;
         public bool Named;
         public string Name = String.Empty;
         public bool Moving;
@@ -2165,7 +2204,7 @@ namespace MonoCore
         public Int32 ID;
         public float Height;
         public float Heading;
-        public Int32 GuildID;
+        public Int64 GuildID;
         public bool GM;
         public Int32 GenderID;
         public String Gender
@@ -2181,7 +2220,7 @@ namespace MonoCore
         public string DisplayName = string.Empty;
         public bool Dead;
         public Int32 CurrentMana;
-        public Int32 CurrentHPs;
+        public Int64 CurrentHPs;
         public Int32 CurrentEndurnace;
         public Int32 ConColorID;
         public String ConColor
