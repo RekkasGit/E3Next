@@ -96,12 +96,6 @@ namespace E3Core.Processors
         {
             if (Assist.AssistTargetID > 0)
             {
-                //person in manual control and they are not on the assist target, chill.
-                Int32 targetId = MQ.Query<Int32>("${Target.ID}");
-                if(targetId!=Assist.AssistTargetID && e3util.IsManualControl())
-                {
-                    return;
-                }
                 //we should be assisting, check_AssistStatus, verifies its not a corpse.
                 using (_log.Trace())
                 {
@@ -113,13 +107,20 @@ namespace E3Core.Processors
 
                         foreach (var spell in spells)
                         {
-                            // need to query this here because the spawn cache may not be up to date
-                            if (MQ.Query<string>("${Target.Name}").Contains("corpse"))
+                            //person in manual control and they are not on the assist target, chill.
+                            Int32 targetId = MQ.Query<Int32>("${Target.ID}");
+                            if (targetId != Assist.AssistTargetID && e3util.IsManualControl())
                             {
-                                MQ.Write($"\arkicking out of nuke routine because i'm targeting a corpse");
-                                MQ.Cmd("/squelch /target clear");
                                 return;
                             }
+
+                            if (MQ.Query<int>("${Target.PctHPs}") == 0)
+                            {
+                                MQ.Write("\arExiting nuke loop because we're targeting a corpse");
+                                MQ.Cmd("/target clear");
+                                return;
+                            }
+
                             //check Ifs on the spell
                             if (!String.IsNullOrWhiteSpace(spell.Ifs))
                             {
