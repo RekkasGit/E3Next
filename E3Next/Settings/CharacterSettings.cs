@@ -80,6 +80,7 @@ namespace E3Core.Settings
         public List<Spell> GroupBuffs = new List<Spell>();
         public List<Spell> CombatBuffs = new List<Spell>();
         public List<Spell> PetBuffs = new List<Spell>();
+        public List<Spell> BlockedPetBuffs = new List<Spell>();
         public bool Buffs_CastAuras = true;
         public List<SpellRequest> GroupBuffRequests = new List<SpellRequest>();
         public List<SpellRequest> RaidBuffRequests = new List<SpellRequest>();
@@ -439,7 +440,6 @@ namespace E3Core.Settings
             LoadKeyData("Buffs", "Bot Buff", ParsedData, BotBuffs);
             LoadKeyData("Buffs", "Combat Buff", ParsedData, CombatBuffs);
             LoadKeyData("Buffs", "Group Buff", ParsedData, GroupBuffs);
-            LoadKeyData("Buffs", "Pet Buff", ParsedData, PetBuffs);
             LoadKeyData("Buffs", "Group Buff Request", ParsedData, GroupBuffRequests);
             LoadKeyData("Buffs", "Raid Buff Request", ParsedData, RaidBuffRequests);
 			LoadKeyData("Buffs", "Stack Buff Request", ParsedData, StackBuffRequest);
@@ -477,6 +477,7 @@ namespace E3Core.Settings
 
             LoadKeyData("Pets", "Pet Spell", ParsedData, PetSpell);
             LoadKeyData("Pets", "Pet Buff", ParsedData, PetBuffs);
+            LoadKeyData("Pets", "Blocked Pet Buff", ParsedData, BlockedPetBuffs);
             LoadKeyData("Pets", "Pet Heal", ParsedData, PetHeals);
             LoadKeyData("Pets", "Pet Mend (Pct)", ParsedData, ref Pet_MendPercent);
             LoadKeyData("Pets", "Pet Taunt (On/Off)", ParsedData, ref Pet_TauntEnabled);
