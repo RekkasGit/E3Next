@@ -775,7 +775,12 @@ namespace E3Core.Processors
 				_log.Write("Doing AfterSpell:{spell.AfterSpell}");
 				if (CheckReady(spell.AfterSpellData) && CheckMana(spell.AfterSpellData))
 				{
-					Casting.Cast(targetID, spell.AfterSpellData);
+					retrycast:
+					if(Casting.Cast(targetID, spell.AfterSpellData)== CastReturn.CAST_FIZZLE) 
+					{ 
+						goto retrycast;
+
+					}
 				}
 			}
 		}
@@ -793,7 +798,11 @@ namespace E3Core.Processors
 				_log.Write("Doing AfterSpell:{spell.AfterSpell}");
 				if (CheckReady(spell.BeforeSpellData) && CheckMana(spell.BeforeSpellData))
 				{
-					Casting.Cast(targetID, spell.BeforeSpellData);
+					retrycast:
+					if (Casting.Cast(targetID, spell.BeforeSpellData) == CastReturn.CAST_FIZZLE)
+					{
+						goto retrycast;
+					}
 				}
 				_log.Write($"Doing BeforeSpell:{spell.BeforeSpell}");
 
