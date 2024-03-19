@@ -953,7 +953,62 @@ namespace E3Core.Processors
 			}
 			return false;
 		}
+		public static void MemorizeAllSpells()
+		{
+			MQ.Cmd("/squelch /windowstate SpellBookWnd open",1000);
+			foreach(Spell s in E3.CharacterSettings.Nukes)
+			{
+				if (!SpellBookWndOpen()) return;
+				MemorizeSpell(s);
+			}
+			foreach (Spell s in E3.CharacterSettings.Dots_OnCommand)
+			{
+				if (!SpellBookWndOpen()) return;
+				MemorizeSpell(s);
+			}
+			foreach (Spell s in E3.CharacterSettings.Dots_Assist)
+			{
+				if (!SpellBookWndOpen()) return;
+				MemorizeSpell(s);
+			}
+			foreach (Spell s in E3.CharacterSettings.Debuffs_Command)
+			{
+				if (!SpellBookWndOpen()) return;
+				MemorizeSpell(s);
+			}
+			foreach (Spell s in E3.CharacterSettings.Debuffs_OnAssist)
+			{
+				if (!SpellBookWndOpen()) return;
+				MemorizeSpell(s);
+			}
+			foreach (Spell s in E3.CharacterSettings.HealTanks)
+			{
+				if (!SpellBookWndOpen()) return;
+				MemorizeSpell(s);
+			}
+			foreach (Spell s in E3.CharacterSettings.HealImportantBots)
+			{
+				if (!SpellBookWndOpen()) return;
+				MemorizeSpell(s);
+			}
+			foreach (Spell s in E3.CharacterSettings.HealTanks)
+			{
+				if (!SpellBookWndOpen()) return;
+				MemorizeSpell(s);
+			}
+			foreach (Spell s in E3.CharacterSettings.HealAll)
+			{
+				if (!SpellBookWndOpen()) return;
+				MemorizeSpell(s);
+			}
 
+			MQ.Cmd("/stand");
+		}
+		public static bool SpellBookWndOpen()
+		{
+			return MQ.Query<bool>("${Window[SpellBookWnd].Open}");
+			
+		}
 		public static bool MemorizeSpell(Data.Spell spell)
 		{
 			if (!(spell.CastType == CastType.Spell && spell.SpellInBook))
@@ -996,10 +1051,9 @@ namespace E3Core.Processors
 				}
 			}
 			MQ.Write($"\aySpell not memed, meming \ag{spell.SpellName} \ayin \awGEM:{spell.SpellGem}");
-			MQ.Cmd($"/memorize \"{spell.SpellName}\" {spell.SpellGem}");
-			MQ.Delay(2000);
-			MQ.Delay(5000, "!${Window[SpellBookWnd].Open}");
-			MQ.Delay(3000, $"${{Me.SpellReady[${{Me.Gem[{spell.SpellGem}].Name}}]}}");
+			MQ.Cmd($"/memspell {spell.SpellGem} \"{spell.SpellName}\"");
+			MQ.Delay(15000, $"${{Me.Gem[{spell.SpellGem}].Name.Equal[{spell.SpellName}]}} || !${{Window[SpellBookWnd].Open}}");
+			//MQ.Delay(3000, $"${{Me.SpellReady[${{Me.Gem[{spell.SpellGem}].Name}}]}}");
 
 			//make double sure the collectio has this spell gem. maybe purchased AA for new slots?
 			if (!_gemRecastLockForMem.ContainsKey(spell.SpellGem))

@@ -319,7 +319,8 @@ namespace E3Core.Processors
                 Loot.Reset();
                 Assist.Reset();
                 E3.Bots.Broadcast("\aoComplete!");
-
+                //mem all new spells that may be configured
+                Casting.MemorizeAllSpells();
             });
 			EventProcessor.RegisterCommand("/e3cpudelay", (x) =>
 			{
