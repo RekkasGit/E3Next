@@ -23,43 +23,32 @@ namespace E3Core.Classes
         private static ISpawns _spawns = E3.Spawns;
         private static List<string> _cleanbags = E3.CharacterSettings.CleanBags;
 
-        //___Project Lazarus Hard Coded Bags___
-        private static List<string> _lazhardcodedbags = new List<string>();
-        public static void lazbag()
-        {
-            if (E3.CharacterSettings.CleanBags == null || !E3.CharacterSettings.CleanBags.Any() || E3.CharacterSettings.CleanBags.Any(string.IsNullOrWhiteSpace))
-                {
-                _lazhardcodedbags = new List<string>
-                {
-                    "Folded Pack of Spectral Armaments",
-                    "Folded Pack of Spectral Plate",
-                    "Folded Pack of Enibik's Heirlooms"
-                };
-            }
-        }
+        //___Hardcoded Bags  for backwards compatability___
+        private static List<string> _hardcodedbags = (E3.CharacterSettings.CleanBags == null || !E3.CharacterSettings.CleanBags.Any() || E3.CharacterSettings.CleanBags.Any(string.IsNullOrWhiteSpace)) ?
+         new List<string>
+         {
+             "Folded Pack of Spectral Armaments",
+             "Folded Pack of Spectral Plate",
+             "Folded Pack of Enibik's Heirlooms"
+         } :
+         new List<string>();
 
- 
-        //___Project Lazarus Hard Spell|item|Identifers___
-        private static List<string> _lazhardcodedItems = new List<string>();
-        public static void lazitems()
-        {
-            if (E3.CharacterSettings.spiIni == null || !E3.CharacterSettings.spiIni.Any() || E3.CharacterSettings.spiIni.All(string.IsNullOrWhiteSpace))
-                {
-                _lazhardcodedItems = new List<string>
-                {
-                    "Grant Spectral Armaments|Summoned: Fist of Flame|Fire",
-                    "Grant Spectral Armaments|Summoned: Orb of Chilling Water|Water",
-                    "Grant Spectral Armaments|Summoned: Buckler of Draining Defense|Shield",
-                    "Grant Spectral Armaments|Summoned: Short Sword of Warding|Taunt",
-                    "Grant Spectral Armaments|Summoned: Mace of Temporal Distortion|Slow",
-                    "Grant Spectral Armaments|Summoned: Spear of Maliciousness|Malo",
-                    "Grant Spectral Armaments|Summoned: Wand of Dismissal|Dispel",
-                    "Grant Spectral Armaments|Summoned: Tendon Carver|Snare",
-                    "Grant Spectral Plate|Folded Pack of Spectral Plate|none",
-                    "Grant Enibik's Heirlooms|Folded Pack of Enibik's Heirlooms|none"
-                };
-            }
-        }
+        //___Hardcoded Spell|item|Identifers for backwards compatability___
+        private static List<string> _hardcodedItems = (E3.CharacterSettings.spiIni == null || !E3.CharacterSettings.spiIni.Any() || E3.CharacterSettings.spiIni.All(string.IsNullOrWhiteSpace)) ?
+        new List<string>
+         {
+             "Grant Spectral Armaments|Summoned: Fist of Flame|Fire",
+             "Grant Spectral Armaments|Summoned: Orb of Chilling Water|Water",
+             "Grant Spectral Armaments|Summoned: Buckler of Draining Defense|Shield",
+             "Grant Spectral Armaments|Summoned: Short Sword of Warding|Taunt",
+             "Grant Spectral Armaments|Summoned: Mace of Temporal Distortion|Slow",
+             "Grant Spectral Armaments|Summoned: Spear of Maliciousness|Malo",
+             "Grant Spectral Armaments|Summoned: Wand of Dismissal|Dispel",
+             "Grant Spectral Armaments|Summoned: Tendon Carver|Snare",
+             "Grant Spectral Plate|Folded Pack of Spectral Plate|none",
+             "Grant Enibik's Heirlooms|Folded Pack of Enibik's Heirlooms|none"
+         } :
+        new List<string>();
 
         //___Pulling Summoned Pet Items from E3.CharacterSettings___
         public class SpellItem
@@ -71,14 +60,12 @@ namespace E3Core.Classes
         private static Dictionary<string, List<SpellItem>> _spiMap = new Dictionary<string, List<SpellItem>>();
         static Magician()
         {
-            lazitems(); // Call this method to populate _lazhardcodedItems
-
             if (E3.CharacterSettings.AutoPetDebug) E3.Bots.Broadcast($"\amDebug: Magician: spiIni Dictionary: {E3.CharacterSettings.spiIni}");
 
-            //Will Add lazuras hard coded items to the spiIni Dictionary if the above it true otherwise it will just use the E3.CharacterSettings.spiIni
-            var allItems = _lazhardcodedItems.Concat(E3.CharacterSettings.spiIni);
+            //Will Add hard coded items to the spiIni Dictionary if the above it true otherwise it will just use the E3.CharacterSettings.spiIni
+            var allItems = _hardcodedItems.Concat(E3.CharacterSettings.spiIni);
 
-            if (E3.CharacterSettings.spiIni == null || !E3.CharacterSettings.spiIni.Any() || E3.CharacterSettings.spiIni.All(string.IsNullOrWhiteSpace) && E3.CharacterSettings.AutoPetDebug) E3.Bots.Broadcast($"\amDebug: Magician: spiIni Dictionary with Laz hardcode: {allItems}");
+            if (E3.CharacterSettings.spiIni == null || !E3.CharacterSettings.spiIni.Any() || E3.CharacterSettings.spiIni.All(string.IsNullOrWhiteSpace) && E3.CharacterSettings.AutoPetDebug) E3.Bots.Broadcast($"\amDebug: Magician: spiIni Dictionary with hardcode: {allItems}");
 
             // Split the entire string into separate entries
             foreach (var spiIni in allItems)
@@ -163,6 +150,7 @@ namespace E3Core.Classes
                 _requester = x.match.Groups[1].ToString();
                 string configuredIdentifiers = string.Join(", ", _spiMap.Values.SelectMany(list => list.Select(item => $"[{item.Identifier}]")).Distinct());
 
+                if (E3.CharacterSettings.AutoPetDebug) E3.Bots.Broadcast($"\acConfigured Identifiers: {configuredIdentifiers}");
 
                 //Send Tell of Pet Item Identifiers to Requester
                 MQ.Cmd($"/t {_requester} My current configured Pet Item Identifiers are: {configuredIdentifiers}.");
@@ -262,7 +250,7 @@ namespace E3Core.Classes
                 MQ.Cmd($"/t {_requester} Arming Pet had finished, Happy Hunting");
                 if (E3.CharacterSettings.AutoPetDebug) E3.Bots.Broadcast("\agArmpet Event process Finished");
                 CleanUp();
-                LazCleanUp();
+                HCCleanUp();
 
             });
         }
@@ -362,7 +350,7 @@ namespace E3Core.Classes
             
             E3.Bots.Broadcast("\agArmPets finished.");
             CleanUp();
-            LazCleanUp();
+            HCCleanUp();
         }
 
         public static void IdentForCharacter(string characterName, int PetId)
@@ -391,15 +379,15 @@ namespace E3Core.Classes
             // Cast spells for each identifier
             foreach (var identifier in identifiers)
             {
-                bool isLazHardcodeIdentifier = _lazhardcodedItems.Contains(identifier);
+                bool isHardcodeIdentifier = _hardcodedItems.Contains(identifier);
 
                 foreach (var entry in _spiMap)
                 {
-                    // Run HarcCode CleanUp bag process if a non-lazhardcode identifier is detected
-                    if (!isLazHardcodeIdentifier)
+                    // Run HarcCode CleanUp bag process if a non-hardcode identifier is detected
+                    if (!isHardcodeIdentifier)
                     {
-                        LazCleanUp();
-                        isLazHardcodeIdentifier = true;
+                        HCCleanUp();
+                        isHardcodeIdentifier = true;
                     }
 
                     var spiSpell = entry.Key;
@@ -427,15 +415,15 @@ namespace E3Core.Classes
 
             foreach (var identifier in identifiers)
             {
-                bool isLazHardcodeIdentifier = _lazhardcodedItems.Contains(identifier);
+                bool isHardcodeIdentifier = _hardcodedItems.Contains(identifier);
 
                 foreach (var entry in _spiMap)
                 {
-                    // Run Hardcode CleanUp bag process if a non-lazhardcode identifier is detected
-                    if (!isLazHardcodeIdentifier)
+                    // Run Hardcode CleanUp bag process if a non-hardcode identifier is detected
+                    if (!isHardcodeIdentifier)
                     {
-                        LazCleanUp();
-                        isLazHardcodeIdentifier = true;
+                        HCCleanUp();
+                        isHardcodeIdentifier = true;
                     }
 
                     var spiSpell = entry.Key;
@@ -560,13 +548,11 @@ namespace E3Core.Classes
             if (E3.CharacterSettings.AutoPetDebug) E3.Bots.Broadcast($"\acDebug: CleanUp process Finished.");
         }
 
-        private static void LazCleanUp()
+        private static void HCCleanUp()
         {
-            lazbag();
+            if (E3.CharacterSettings.AutoPetDebug) E3.Bots.Broadcast($"\acDebug: HCCleanUp process Started.");
 
-            if (E3.CharacterSettings.AutoPetDebug) E3.Bots.Broadcast($"\acDebug: LazCleanUp process Started.");
-
-            foreach (var item in _lazhardcodedbags)
+            foreach (var item in _hardcodedbags)
             {                
                 if (MQ.Query<int>($"${{FindItemCount[{item}]}}") > 0)
                 {
@@ -579,7 +565,7 @@ namespace E3Core.Classes
                 }
             }
 
-            if (E3.CharacterSettings.AutoPetDebug) E3.Bots.Broadcast($"\acDebug: LazCleanUp process Finished.");
+            if (E3.CharacterSettings.AutoPetDebug) E3.Bots.Broadcast($"\acDebug: HCCleanUp process Finished.");
         }
 
         /// <summary>
