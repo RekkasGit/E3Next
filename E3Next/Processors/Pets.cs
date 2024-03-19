@@ -73,7 +73,7 @@ namespace E3Core.Processors
                 var buffIndex = MQ.Query<int>($"${{Me.Pet.Buff[{buff.SpellName}]}}");
                 if (buffIndex > 0)
                 {
-                    MQ.Cmd($"/notify PIW_BuffWindow PIW_PetBuff{buffIndex - 1}_Button leftmouseup");
+                    MQ.Cmd($"/removebuff -pet {buff.SpellName}");
                 }
             }
         }
