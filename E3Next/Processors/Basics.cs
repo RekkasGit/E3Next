@@ -366,7 +366,7 @@ namespace E3Core.Processors
 
             EventProcessor.RegisterCommand("/pizza", (x) =>
             {
-                if (E3.CurrentName == "Reek")
+                if (E3.CurrentName.EqualsIns("Reek"))
                 {
                     System.Diagnostics.Process.Start("https://ordering.orders2.me/menu/pontillos-pizzeria-hudson-ridge");
                 }
