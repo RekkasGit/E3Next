@@ -374,10 +374,12 @@ namespace E3Core.Processors
                         }
                         InitRezSpells(RezType.Auto);
                         if (_currentRezSpells.Count == 0) return;
-
-                        MQ.Cmd($"/t {spawn.DisplayName} Wait4Rez",100);
-                        //MQ.Delay(1500);
-                        MQ.Cmd("/corpse");
+                        if(e3util.IsEQEMU())
+                        {
+							MQ.Cmd($"/t {spawn.DisplayName} Wait4Rez", 100);
+						}
+						//MQ.Delay(1500);
+						MQ.Cmd("/corpse");
                         
 
                         // if it's a cleric or warrior corpse and we're in combat, try to use divine res
@@ -480,8 +482,12 @@ namespace E3Core.Processors
                     {
                         if (Casting.CheckReady(spell) && Casting.CheckMana(spell) && CanRez())
                         {
-                            MQ.Cmd($"/tell {s.DisplayName} Wait4Rez", 100);
-                            Casting.Cast(s.ID, spell);
+                            if(e3util.IsEQEMU())
+                            {
+								MQ.Cmd($"/tell {s.DisplayName} Wait4Rez", 100);
+
+							}
+							Casting.Cast(s.ID, spell);
 
                             return;
                         }
@@ -539,11 +545,13 @@ namespace E3Core.Processors
                         //no spells ready, break out of loop. 
                         break;
                     }
+                    if(e3util.IsEQEMU())
+                    {
+						MQ.Cmd($"/tell {s.DisplayName} Wait4Rez", 1500); //long delays after tells
 
-                    MQ.Cmd($"/tell {s.DisplayName} Wait4Rez",1500); //long delays after tells
-
-                    //assume consent was given
-                    MQ.Cmd("/corpse");
+					}
+					//assume consent was given
+					MQ.Cmd("/corpse");
 
                     foreach (var spell in _currentRezSpells)
                     {

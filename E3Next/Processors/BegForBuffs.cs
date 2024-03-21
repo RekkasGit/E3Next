@@ -48,6 +48,9 @@ namespace E3Core.Processors
 
             EventProcessor.RegisterEvent("BuffMe", "(.+) tells you, '(?i)buff me'", (x) =>
             {
+                //disable if on EQ live
+                if (e3util.IsEQLive()) return;
+
                 using(_log.Trace())
                 {
 					_log.Write("Entering Buff Me Method");
@@ -107,7 +110,10 @@ namespace E3Core.Processors
 
             EventProcessor.RegisterEvent("BuffMyPet", "(.+) tells you, '(?i)buff my pet'", (x) =>
             {
-                if (x.match.Groups.Count > 1)
+				//disable if on EQ live
+				if (e3util.IsEQLive()) return;
+
+				if (x.match.Groups.Count > 1)
                 {
                     if (Basics.AmIDead()) return;
                     string user = x.match.Groups[1].Value;
@@ -210,7 +216,10 @@ namespace E3Core.Processors
             var buffBegs = new List<string> { "(.+) tells you, '(.+)'", "(.+) tells the group, '(.+)'" };
             EventProcessor.RegisterEvent("BuffBeg", buffBegs, (x) =>
             {
-                if (x.match.Groups.Count > 2)
+				//disable if on EQ live
+				if (e3util.IsEQLive()) return;
+
+				if (x.match.Groups.Count > 2)
                 {
                     if (Basics.AmIDead()) return;
                     string user = x.match.Groups[1].Value;
@@ -266,7 +275,10 @@ namespace E3Core.Processors
             var raidbuffBeg = new List<string> {"(.+) tells the raid,  '"+E3.CurrentName+@":(.+)'" };
             EventProcessor.RegisterEvent("RaidBuffBeg", raidbuffBeg, (x) =>
             {
-                if (x.match.Groups.Count > 2)
+				//disable if on EQ live
+				if (e3util.IsEQLive()) return;
+
+				if (x.match.Groups.Count > 2)
                 {
                     if (Basics.AmIDead()) return;
                     string user = x.match.Groups[1].Value;

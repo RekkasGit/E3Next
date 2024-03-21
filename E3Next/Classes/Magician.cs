@@ -2,6 +2,7 @@
 using E3Core.Processors;
 using E3Core.Settings;
 using E3Core.Utility;
+using E3NextUI;
 using MonoCore;
 using System;
 using System.Collections.Generic;
@@ -87,6 +88,9 @@ namespace E3Core.Classes
             var armPetEvents = new List<string> { "(.+) tells you, 'armpet'", "(.+) tells you, 'armpet (.+)'", "(.+) tells the group, 'armpet (.+)'", };
             EventProcessor.RegisterEvent("ArmPet", armPetEvents, (x) =>
             {
+                //auto reply on live is dangerous, disable.
+                if (e3util.IsEQLive()) return;
+
                 if (x.match.Groups.Count <= 1)
                 {
                     return;
