@@ -24,8 +24,10 @@ namespace E3Core.Processors
 
         private static long _nextRezDialogCheck = 0;
         private static long _nextRezDialogCheckInterval = 1000;
+		//should accepting rezes be paused
+		private static bool _pauseRez = false;
 
-        private static readonly Spell _divineRes = new Spell("Divine Resurrection");
+		private static readonly Spell _divineRes = new Spell("Divine Resurrection");
         private static readonly HashSet<string> _classesToDivineRez = new HashSet<string> { "Cleric", "Warrior", "Paladin", "Shadow Knight" };
         private static bool _skipAutoRez = false;
         private static Dictionary<int, DateTime> _recentlyRezzed = new Dictionary<int, DateTime>();
@@ -50,10 +52,18 @@ namespace E3Core.Processors
         {
             _waitingOnRez = false;
         }
+
         public static void Process()
         {
             if (!e3util.ShouldCheck(ref _nextRezDialogCheck, _nextRezDialogCheckInterval)) return;
             //check for dialog box
+
+            //rez is paused kick out
+            if (_pauseRez) return;
+
+            //don't do this on live as a GM will kill you and see if you auto accept a rez.
+            if (e3util.IsEQLive()) return;
+
             if (MQ.Query<bool>("${Window[ConfirmationDialogBox].Open}"))
             {
                 //check if its a valid confirmation box
@@ -616,8 +626,7 @@ namespace E3Core.Processors
                 }
             }
         }
-
-
+       
         private static void GatherCorpses()
         {
             if (MQ.Query<bool>("${Raid.Members}"))
@@ -641,8 +650,37 @@ namespace E3Core.Processors
 
         private static void RegisterEvents()
         {
+			EventProcessor.RegisterCommand("/e3prez", (x) =>
+			{
+				if (x.args.Count > 0)
+				{
+					if (x.args[0].Equals("off", StringComparison.OrdinalIgnoreCase))
+					{
+						if (_pauseRez)
+						{
+							_pauseRez = false;
+							E3.Bots.Broadcast("\agAccepting Rez again!");
+						}
+					}
+					else if (x.args[0].Equals("on", StringComparison.OrdinalIgnoreCase))
+					{
+						if (!_pauseRez)
+						{
+							_pauseRez = true;
+							E3.Bots.Broadcast("\arPAUSING Rez Acceptance!");
 
-            EventProcessor.RegisterCommand("/aerez", (x) =>
+						}
+					}
+				}
+				else
+				{
+					_pauseRez = _pauseRez ? false : true;
+					if (_pauseRez) E3.Bots.Broadcast("\arPAUSING Rez Acceptance!");
+					if (!_pauseRez) E3.Bots.Broadcast("\agAccepting Rezes again!");
+
+				}
+			});
+			EventProcessor.RegisterCommand("/aerez", (x) =>
             {
                 if (x.args.Count == 0)
                 {
