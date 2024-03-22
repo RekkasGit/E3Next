@@ -269,6 +269,10 @@ namespace E3Core.Utility
 
             return false;
         }
+        public static bool InMyGuild(string person)
+        {
+            return MQ.Query<bool>($"${{Spawn[{person}].Guild.Equal[${{Me.Guild}}]}}");
+		}
         public static bool FilterMe(CommandMatch x)
         {
             ////Stop /Only|Soandoso
