@@ -42,6 +42,8 @@ namespace E3Core.Processors
         void Trade(string name);
 		string Query(string name, string query);
 		CharacterBuffs GetBuffInformation(string name);
+        void BroadcastLootingCorpse(int corpseId);
+        bool HasGroupLooted(int corpseId);
     }
   
 
@@ -770,6 +772,44 @@ namespace E3Core.Processors
             string command = "/notify TradeWnd TRDW_Trade_Button leftmouseup";
 			PubServer.AddTopicMessage("OnCommand-" + name, $"{E3.CurrentName}:{false}:{command}");
 		}
+
+        public void BroadcastLootingCorpse(int corpseId)
+        {
+            PubServer.AddTopicMessage("${Me.Looting}", $"{corpseId}");
+        }
+
+        Dictionary<string, CircularBuffer<int>> _lootCollection = new Dictionary<string, CircularBuffer<int>>();
+        public bool HasGroupLooted(int corpseId)
+        {
+            string keyToUse = "${Me.Looting}";
+            var allTopics = NetMQServer.SharedDataClient.TopicUpdates;
+
+            foreach (var userTopics in allTopics.Where(x => x.Key != E3.CurrentName))
+            {
+                if (!userTopics.Value.ContainsKey(keyToUse))
+                {
+                    continue;
+                }
+                var entry = userTopics.Value[keyToUse];
+                if (!_lootCollection.ContainsKey(userTopics.Key))
+                {
+                    _lootCollection.Add(userTopics.Key, new CircularBuffer<int>(10));
+                }
+                var sharedInfo = _lootCollection[userTopics.Key];
+
+                lock (entry)
+                {
+                    if (int.TryParse(entry.Data, out var corpse) && !sharedInfo.Contains(corpse))
+                    {
+                        sharedInfo.PushFront(corpse);
+                    }
+                }
+            }
+
+            return _lootCollection.Where(x => x.Key != E3.CurrentName)
+                                  .Any(x => x.Value.Contains(corpseId));
+        }
+
         class SharedNumericDataInt32
         {
             public Int32 Data { get; set; }

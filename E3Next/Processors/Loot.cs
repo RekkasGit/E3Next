@@ -75,6 +75,7 @@ namespace E3Core.Processors
                 } 
             });
 
+
             EventProcessor.RegisterCommand("/looton", (x) =>
             {
                 
@@ -266,9 +267,9 @@ namespace E3Core.Processors
 
                 foreach (var c in corpses)
                 {
-					
-					//allow eq time to send the message to us
-					e3util.YieldToEQ();
+                    E3.Bots.BroadcastLootingCorpse(c.ID);
+                    //allow eq time to send the message to us
+                    e3util.YieldToEQ();
                     if (e3util.IsShuttingDown() || E3.IsPaused()) return;
                     EventProcessor.ProcessEventsInQueues("/lootoff");
 					EventProcessor.ProcessEventsInQueues("/assistme");
@@ -276,6 +277,13 @@ namespace E3Core.Processors
                     if (!E3.GeneralSettings.Loot_LootInCombat)
                     {
                         if (Basics.InCombat()) return;
+                    }
+
+                    EventProcessor.ProcessEventsInQueues("${Me.Looting}");
+                    if (E3.Bots.HasGroupLooted(c.ID))
+                    {
+                        MQ.Write($"\arCorpse {c.ID} is already being looted!");
+                        continue;
                     }
 
 
@@ -301,7 +309,7 @@ namespace E3Core.Processors
 
                         MQ.Delay(300);
                     }
-                    
+
                 }
 
                 E3.Bots.Broadcast("\agFinished looting area");
