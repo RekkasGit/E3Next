@@ -474,7 +474,7 @@ namespace E3Core.Processors
             if (mobID == 0)
             {
                 //something wrong with the assist, kickout
-                E3.Bots.Broadcast("Cannot assist, improper mobid");
+                E3.Bots.Broadcast("Cannot assist, improper MOB ID. Please get a valid target.");
                 return;
             }
             Spawn s;

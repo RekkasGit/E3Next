@@ -187,6 +187,8 @@ namespace E3Core.Settings
         public List<Spell> Report_Entries = new List<Spell>();
 
 
+        //E3BotsPublishData
+        public Dictionary<string,string> E3BotsPublishData = new Dictionary<string,string>();
 
         //charm data
         public Spell Charm_CharmSpell = null;
@@ -435,6 +437,22 @@ namespace E3Core.Settings
                 }
             }
 
+            Dictionary<string, string> tempPublishData = new Dictionary<string, string>();
+            LoadKeyData("E3BotsPublishData (key/value)", ParsedData, tempPublishData);
+
+            //now we need to change the keys to be in a specific format
+            foreach(var pair in tempPublishData)
+            {
+                string key = "${Data." + pair.Key + "}";
+                if(!E3BotsPublishData.ContainsKey(key)) 
+                {
+					E3BotsPublishData.Add("${Data." + pair.Key + "}", pair.Value);
+				}
+
+				
+            }
+
+
             LoadKeyData("Buffs", "Instant Buff", ParsedData, InstantBuffs);
             LoadKeyData("Buffs", "Self Buff", ParsedData, SelfBuffs);
             //set target on self buffs
@@ -453,8 +471,7 @@ namespace E3Core.Settings
 
 			LoadKeyData("Buffs", "Cast Aura(On/Off)", ParsedData, ref Buffs_CastAuras);
 
-
-            LoadKeyData("Melee Abilities", "Ability", ParsedData, MeleeAbilities);
+			LoadKeyData("Melee Abilities", "Ability", ParsedData, MeleeAbilities);
 
             LoadKeyData("Cursor Delete", "Delete", ParsedData, Cursor_Delete);
 
@@ -849,9 +866,10 @@ namespace E3Core.Settings
 			section.Keys.AddKey("BandoNameWithoutBuff", "");
 			section.Keys.AddKey("BandoNameWithoutDeBuff", "");
 
-		
 
 
+			
+			
 
 			newFile.Sections.AddSection("Blocked Buffs");
             section = newFile.Sections.GetSectionData("Blocked Buffs");
@@ -874,7 +892,8 @@ namespace E3Core.Settings
 
 
 			newFile.Sections.AddSection("Ifs");
-            newFile.Sections.AddSection("Events");
+			newFile.Sections.AddSection("E3BotsPublishData (key/value)");
+			newFile.Sections.AddSection("Events");
 			newFile.Sections.AddSection("EventLoop");
 			newFile.Sections.AddSection("Report");
 			section = newFile.Sections.GetSectionData("Report");

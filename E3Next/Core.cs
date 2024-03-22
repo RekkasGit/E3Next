@@ -970,7 +970,16 @@ namespace MonoCore
             }
             EventProcessor.ProcessEvent(line);
         }
-        public static void OnSetSpawns(byte[] data, int size)
+		public static string OnQuery(string line)
+		{
+        	//mq_Echo("query recieved:" + line);
+            line = line.Replace("(", "[").Replace(")", "]");
+			//mq_Echo("query fixed:" + line);
+            string results = Casting.Ifs_Results($"${{{line}}}");
+			//mq_Echo("final result:" + results);
+			return results;
+		}
+		public static void OnSetSpawns(byte[] data, int size)
         {
 
 

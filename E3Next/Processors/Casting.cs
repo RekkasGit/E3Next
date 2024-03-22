@@ -1567,10 +1567,10 @@ namespace E3Core.Processors
 			return tIF;
 		}
 
-		static System.Text.RegularExpressions.Regex _e3buffexistsRegEx = new System.Text.RegularExpressions.Regex(@"\$\{E3BuffExists\[([A-Za-z0-9 _]+),([A-Za-z0-9 _]+)\]\}", System.Text.RegularExpressions.RegexOptions.Compiled);
-		static System.Text.RegularExpressions.Regex _e3BotsRegEx = new System.Text.RegularExpressions.Regex(@"\$\{E3Bots\[([A-Za-z0-9 _]+)\]\.([A-Za-z]+)\}", System.Text.RegularExpressions.RegexOptions.Compiled);
-		static System.Text.RegularExpressions.Regex _e3BotsBuffsRegEx = new System.Text.RegularExpressions.Regex(@"\$\{E3Bots\[([A-Za-z0-9 _]+)\]\.Buffs\[([A-Za-z0-9 _]+)\]\.([A-Za-z0-9]+)\}", System.Text.RegularExpressions.RegexOptions.Compiled);
-
+		static Regex _e3buffexistsRegEx = new Regex(@"\$\{E3BuffExists\[([A-Za-z0-9 _]+),([A-Za-z0-9 _]+)\]\}", RegexOptions.Compiled);
+		static Regex _e3BotsRegEx = new Regex(@"\$\{E3Bots\[([A-Za-z0-9 _]+)\]\.([A-Za-z]+)\}", RegexOptions.Compiled);
+		static Regex _e3BotsBuffsRegEx = new Regex(@"\$\{E3Bots\[([A-Za-z0-9 _]+)\]\.Buffs\[([A-Za-z0-9 _]+)\]\.([A-Za-z0-9]+)\}", RegexOptions.Compiled);
+		static Regex _e3BotsQuery = new Regex(@"\$\{E3Bots\[([A-Za-z0-9 _]+)\]\.Query\[([A-Za-z]+)\]\}", RegexOptions.Compiled);
 		//
 		//to replace the NetBots functionality of query data in the ini files
 		//a bit of regex hell while trying to be somewhat efficent
@@ -1578,13 +1578,50 @@ namespace E3Core.Processors
 		
 		public static void Ifs_E3Bots(ref string tIF)
 		{
-
 			//need to do some legacy compatability checksraibles that were used in Ifs.
-			if (tIF.IndexOf("${E3Bots[", 0, StringComparison.OrdinalIgnoreCase) > -1)
+			if (tIF.IndexOf("${E3Bots[", 0, StringComparison.OrdinalIgnoreCase) > -1 && tIF.IndexOf(".Query[", 0, StringComparison.OrdinalIgnoreCase) > -1)
 			{
 				string replaceValue = "";
-				//time for some regex
+				////\$\{E3Bots\[([A-Za-z0-9 _]+)\]\.Query\([A-Za-z]+)\]\}
+				//${E3Bots[Rekken].Query[SomeKeyValue]}
+				// gruop0: ${E3Bots[Rekken].Query[SomeKeyValue]}
+				// group1: Rekken
+				// group2: SomeKeyValue
+				var matches = _e3BotsQuery.Matches(tIF);
+				foreach (Match match in matches)
+				{
+					if (match.Success && match.Groups.Count > 0)
+					{
+						//${E3Bots[Rekken].Query[SomeKeyValue]}
+						string replaceString = match.Groups[0].Value;
+						string replacevalue = replaceString;
+						//Rekken
+						string targetname = match.Groups[1].Value;
+						//SomeKeyValue
+						string keyValue = match.Groups[2].Value;
+						keyValue = "${Data." + keyValue + "}"; //data format for custom keys
+						replaceValue = "";
+						string result = E3.Bots.Query(targetname, keyValue);
+						if (result != "NULL")
+						{
+							replaceValue = result;
+						}
+						
+						
+						//check to see if some modification was done
+						if (replaceString != replaceValue)
+						{
+							tIF = tIF.ReplaceInsensitive(replaceString, replaceValue);
+						}
+					}
 
+				}
+			}
+			else if (tIF.IndexOf("${E3Bots[", 0, StringComparison.OrdinalIgnoreCase) > -1)
+			{
+
+				//time for some regex
+				string replaceValue = "";
 				////\$\{E3Bots\[([A-Za-z0-9 _]+)\]\.([A-Za-z]+)\}
 				//${E3Bots[Rekken].Hps} && ${E3Bots[Rekken].Hps}
 				// gruop0: ${E3Bots[Rekken].Hps}
@@ -1601,13 +1638,13 @@ namespace E3Core.Processors
 						//Rekken
 						string targetname = match.Groups[1].Value;
 						//CurrentHps
-						string query= match.Groups[2].Value;
+						string query = match.Groups[2].Value;
 
-						if(query=="PctHPs")
+						if (query == "PctHPs")
 						{
 							replaceValue = "100";
 							string result = E3.Bots.Query(targetname, "${Me.PctHPs}");
-							if(result != "NULL")
+							if (result != "NULL")
 							{
 								replaceValue = result;
 							}
@@ -1630,7 +1667,7 @@ namespace E3Core.Processors
 								replaceValue = result;
 							}
 						}
-						else if(query=="CurrentHPs")
+						else if (query == "CurrentHPs")
 						{
 							replaceValue = "0";
 							string result = E3.Bots.Query(targetname, "${Me.CurrentHPs}");
@@ -1658,7 +1695,7 @@ namespace E3Core.Processors
 							}
 						}
 						//check to see if some modification was done
-						if(replaceString!=replaceValue)
+						if (replaceString != replaceValue)
 						{
 							tIF = tIF.ReplaceInsensitive(replaceString, replaceValue);
 						}
@@ -1666,9 +1703,9 @@ namespace E3Core.Processors
 					}
 				}
 
-				matches =_e3BotsBuffsRegEx.Matches(tIF);
+				matches = _e3BotsBuffsRegEx.Matches(tIF);
 
-				foreach(Match match in matches)
+				foreach (Match match in matches)
 				{
 					if (match.Success && match.Groups.Count > 0)
 					{
@@ -1700,7 +1737,7 @@ namespace E3Core.Processors
 							replaceValue = "0";
 							CharacterBuffs buffInfo = E3.Bots.GetBuffInformation(targetname);
 
-							if (buffInfo!=null)
+							if (buffInfo != null)
 							{
 								Int32 spellID = Spell.SpellIDLookup(buffName);
 								if (buffInfo.BuffDurations.TryGetValue(spellID, out var buffDuration))

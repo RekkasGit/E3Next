@@ -301,6 +301,7 @@ namespace E3Core.Server
 					subSocket.Subscribe("BroadCastMessage");
 					subSocket.Subscribe("BroadCastMessageZone");
 					subSocket.Subscribe("${Me."); //all Me stuff should be subscribed to
+					subSocket.Subscribe("${Data."); //all the custom data keys a user can create
 					MQ.Write("\agShared Data Client: Connecting to user:" + user + " on port:" + port + " server:"+serverName); ;
 
 					while (Core.IsProcessing && E3.NetMQ_SharedDataServerThradRun)

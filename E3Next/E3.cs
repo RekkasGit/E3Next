@@ -267,10 +267,10 @@ namespace E3Core.Processors
         public static bool InStateUpdate = false;
 		public static void StateUpdates()
         {
-           
-            try
-            {
-                InStateUpdate = true;
+
+			try
+			{
+				InStateUpdate = true;
 				NetMQServer.SharedDataClient.ProcessCommands(); //recieving data
 				NetMQServer.SharedDataClient.ProcessE3BCCommands();//sending out data
 
@@ -281,6 +281,15 @@ namespace E3Core.Processors
 				}
 
 				if (!e3util.ShouldCheck(ref _nextStateUpdateCheckTime, _nextStateUpdateTimeInterval)) return;
+
+				//lets query the data we are configured to send out extra
+				if (E3.CharacterSettings.E3BotsPublishData.Count > 0)
+				{
+					foreach(var pair in E3.CharacterSettings.E3BotsPublishData)
+					{
+						PubServer.AddTopicMessage(pair.Key, MQ.Query<string>(pair.Value));
+					}
+				}
 				PctHPs = MQ.Query<int>("${Me.PctHPs}");
 				//cure counters
 				PubServer.AddTopicMessage("${Me.TotalCounters}", MQ.Query<string>("${Debuff.Count}"));
