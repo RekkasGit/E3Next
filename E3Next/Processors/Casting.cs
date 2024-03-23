@@ -472,6 +472,7 @@ namespace E3Core.Processors
 								if (spell.CastType == Data.CastType.Spell)
 								{
 									PubServer.AddTopicMessage("${Casting}", $"{spell.CastName} on {targetName}");
+									PubServer.AddTopicMessage("${Me.Casting}",spell.CastName);
 									MQ.Write($"\ag{spell.CastName} \at{spell.SpellID} \am{targetName} \ao{targetID} \aw({spell.MyCastTime / 1000}sec)");
 
 									MQ.Cmd($"/casting \"{spell.CastName}|{spell.SpellGem}\"");
@@ -485,6 +486,7 @@ namespace E3Core.Processors
 									if (spell.CastType == CastType.AA)
 									{
 										PubServer.AddTopicMessage("${Casting}", $"{spell.CastName} on {targetName}");
+										PubServer.AddTopicMessage("${Me.Casting}", spell.CastName);
 										MQ.Write($"\ag{spell.CastName} \at{spell.SpellID} \am{targetName} \ao{targetID} \aw({spell.MyCastTime / 1000}sec)");
 
 										MQ.Cmd($"/casting \"{spell.CastName}|alt\"");
@@ -502,6 +504,7 @@ namespace E3Core.Processors
 									else
 									{
 										PubServer.AddTopicMessage("${Casting}", $"{spell.CastName} on {targetName}");
+										PubServer.AddTopicMessage("${Me.Casting}", spell.CastName);
 										MQ.Write($"\ag{spell.CastName} \at{spell.SpellID} \am{targetName} \ao{targetID} \aw({spell.MyCastTime / 1000}sec)");
 
 										//else its an item
@@ -519,6 +522,7 @@ namespace E3Core.Processors
 								if (spell.CastType == Data.CastType.Spell)
 								{
 									PubServer.AddTopicMessage("${Casting}", $"{spell.CastName} on {targetName}");
+									PubServer.AddTopicMessage("${Me.Casting}", spell.CastName);
 									MQ.Write($"\ag{spell.CastName} \at{spell.SpellID} \am{targetName} \ao{targetID} \aw({spell.MyCastTime / 1000}sec)");
 									MQ.Cmd($"/casting \"{spell.CastName}|{spell.SpellGem}\" \"-targetid|{targetID}\"");
 									if (spell.MyCastTime > 500)
@@ -529,6 +533,7 @@ namespace E3Core.Processors
 								else
 								{
 									PubServer.AddTopicMessage("${Casting}", $"{spell.CastName} on {targetName}");
+									PubServer.AddTopicMessage("${Me.Casting}", spell.CastName);
 									MQ.Write($"\ag{spell.CastName} \at{spell.SpellID} \am{targetName} \ao{targetID} \aw({spell.MyCastTime / 1000}sec)");
 									if (spell.CastType == CastType.AA)
 									{
@@ -547,6 +552,7 @@ namespace E3Core.Processors
 									else
 									{
 										//else its an item
+										PubServer.AddTopicMessage("${Me.Casting}", spell.CastName);
 										MQ.Cmd($"/casting \"{spell.CastName}|item\" \"-targetid|{targetID}\"");
 										UpdateItemInCooldown(spell);
 										if (spell.MyCastTime > 500)
@@ -717,6 +723,7 @@ namespace E3Core.Processors
 			{
 				//send message to the ui to clear their casting information
 				PubServer.AddTopicMessage("${Casting}", String.Empty);
+				PubServer.AddTopicMessage("${Me.Casting}", String.Empty);
 				//unpause any stick command that may be paused
 				MQ.Cmd("/stick unpause");
 				//resume navigation.
@@ -843,6 +850,7 @@ namespace E3Core.Processors
 					Int32 retryCounter = 0;
 					retrysong:
 					MQ.Cmd("/stopsong");
+					PubServer.AddTopicMessage("${Me.Casting}", spell.CastName);
 					MQ.Cmd($"/cast \"{spell.CastName}\"");
 					MQ.Delay(300, IsCasting);
 					if(e3util.IsEQLive())
@@ -905,6 +913,7 @@ namespace E3Core.Processors
 					MQ.Cmd($"/docommand {spell.BeforeEvent}");
 					if (spell.BeforeEvent.StartsWith("/exchange", StringComparison.OrdinalIgnoreCase)) MQ.Delay(300);
 				}
+				PubServer.AddTopicMessage("${Me.Casting}", spell.CastName);
 				MQ.Cmd($"/useitem \"{spell.CastName}\"", 300);
 				//after event, after all things are done               
 				if (!String.IsNullOrWhiteSpace(spell.AfterEvent))
@@ -925,6 +934,7 @@ namespace E3Core.Processors
 					MQ.Cmd($"/docommand {spell.BeforeEvent}");
 					if (spell.BeforeEvent.StartsWith("/exchange", StringComparison.OrdinalIgnoreCase)) MQ.Delay(300);
 				}
+				PubServer.AddTopicMessage("${Me.Casting}", spell.CastName);
 				MQ.Cmd($"/casting \"{spell.CastName}\" alt", 300);
 
 				//after event, after all things are done               
@@ -1578,56 +1588,115 @@ namespace E3Core.Processors
 		
 		public static void Ifs_E3Bots(ref string tIF)
 		{
-			//need to do some legacy compatability checksraibles that were used in Ifs.
-			if (tIF.IndexOf("${E3Bots[", 0, StringComparison.OrdinalIgnoreCase) > -1 && tIF.IndexOf(".Query[", 0, StringComparison.OrdinalIgnoreCase) > -1)
+			
+			
+			//do we need to run ANY of the E3Bots regex?, quick n dirty check
+			if (tIF.IndexOf("${E3Bots[", 0, StringComparison.OrdinalIgnoreCase) > -1)
 			{
 				string replaceValue = "";
-				////\$\{E3Bots\[([A-Za-z0-9 _]+)\]\.Query\([A-Za-z]+)\]\}
-				//${E3Bots[Rekken].Query[SomeKeyValue]}
-				// gruop0: ${E3Bots[Rekken].Query[SomeKeyValue]}
-				// group1: Rekken
-				// group2: SomeKeyValue
-				var matches = _e3BotsQuery.Matches(tIF);
-				foreach (Match match in matches)
+				MatchCollection matches;
+				//do we need to run any of the query regexes?, quick n dirty check
+				if (tIF.IndexOf(".Query[", 0, StringComparison.OrdinalIgnoreCase) > -1)
 				{
-					if (match.Success && match.Groups.Count > 0)
+					replaceValue = "";
+					////\$\{E3Bots\[([A-Za-z0-9 _]+)\]\.Query\([A-Za-z]+)\]\}
+					//${E3Bots[Rekken].Query[SomeKeyValue]}
+					// gruop0: ${E3Bots[Rekken].Query[SomeKeyValue]}
+					// group1: Rekken
+					// group2: SomeKeyValue
+					matches = _e3BotsQuery.Matches(tIF);
+					foreach (Match match in matches)
 					{
-						//${E3Bots[Rekken].Query[SomeKeyValue]}
-						string replaceString = match.Groups[0].Value;
-						string replacevalue = replaceString;
-						//Rekken
-						string targetname = match.Groups[1].Value;
-						//SomeKeyValue
-						string keyValue = match.Groups[2].Value;
-						keyValue = "${Data." + keyValue + "}"; //data format for custom keys
-						replaceValue = "";
-						string result = E3.Bots.Query(targetname, keyValue);
-						if (result != "NULL")
+						if (match.Success && match.Groups.Count > 0)
 						{
-							replaceValue = result;
+							//${E3Bots[Rekken].Query[SomeKeyValue]}
+							string replaceString = match.Groups[0].Value;
+							string replacevalue = replaceString;
+							//Rekken
+							string targetname = match.Groups[1].Value;
+							//SomeKeyValue
+							string keyValue = match.Groups[2].Value;
+							keyValue = "${Data." + keyValue + "}"; //data format for custom keys
+							replaceValue = "";
+							string result = E3.Bots.Query(targetname, keyValue);
+							if (result != "NULL")
+							{
+								replaceValue = result;
+							}
+
+
+							//check to see if some modification was done
+							if (replaceString != replaceValue)
+							{
+								tIF = tIF.ReplaceInsensitive(replaceString, replaceValue);
+							}
 						}
-						
-						
-						//check to see if some modification was done
-						if (replaceString != replaceValue)
+
+					}
+				}
+				//do we need to run any of the buff regexes? quick n dirty check
+				if (tIF.IndexOf(".Buffs[", 0, StringComparison.OrdinalIgnoreCase) > -1)
+				{
+					matches = _e3BotsBuffsRegEx.Matches(tIF);
+
+					foreach (Match match in matches)
+					{
+						if (match.Success && match.Groups.Count > 0)
 						{
-							tIF = tIF.ReplaceInsensitive(replaceString, replaceValue);
+							//${E3Bots[Rekken].Buffs[Hand of Conviction].ID}
+							//${E3Bots[Rekken].Buffs[Hand of Conviction].Duration}
+							string replaceString = match.Groups[0].Value;
+							replaceValue = replaceString;
+							//Rekken
+							string targetname = match.Groups[1].Value;
+							//buffname
+							string buffName = match.Groups[2].Value;
+							//ID,Duration,etc
+							string query = match.Groups[3].Value;
+							if (query == "ID")
+							{
+								replaceValue = "0";
+								List<Int32> buffList = E3.Bots.BuffList(targetname);
+								Int32 spellID = Spell.SpellIDLookup(buffName);
+								if (spellID > 0)
+								{
+									if (buffList.Contains(spellID))
+									{
+										replaceValue = spellID.ToString();
+									}
+								}
+							}
+							if (query == "Duration")
+							{
+								replaceValue = "0";
+								CharacterBuffs buffInfo = E3.Bots.GetBuffInformation(targetname);
+
+								if (buffInfo != null)
+								{
+									Int32 spellID = Spell.SpellIDLookup(buffName);
+									if (buffInfo.BuffDurations.TryGetValue(spellID, out var buffDuration))
+									{
+										replaceValue = buffDuration.ToString();
+									}
+								}
+							}
+							//check to see if some modification was done
+							if (replaceString != replaceValue)
+							{
+								tIF = tIF.ReplaceInsensitive(replaceString, replaceValue);
+							}
 						}
 					}
-
 				}
-			}
-			else if (tIF.IndexOf("${E3Bots[", 0, StringComparison.OrdinalIgnoreCase) > -1)
-			{
-
-				//time for some regex
-				string replaceValue = "";
+			
+				//time for the rest of the regexs , the above should have already done their work.
+				replaceValue = "";
 				////\$\{E3Bots\[([A-Za-z0-9 _]+)\]\.([A-Za-z]+)\}
 				//${E3Bots[Rekken].Hps} && ${E3Bots[Rekken].Hps}
 				// gruop0: ${E3Bots[Rekken].Hps}
 				// group1: Rekken
 				// group2: Hps
-				var matches = _e3BotsRegEx.Matches(tIF);
+				matches = _e3BotsRegEx.Matches(tIF);
 				foreach (Match match in matches)
 				{
 					if (match.Success && match.Groups.Count > 0)
@@ -1694,6 +1763,60 @@ namespace E3Core.Processors
 								replaceValue = result;
 							}
 						}
+						else if (query == "CurrentTargetID")
+						{
+							replaceValue = "0";
+							string result = E3.Bots.Query(targetname, "${Me.CurrentTargetID}");
+							if (result != "NULL")
+							{
+								replaceValue = result;
+							}
+						}
+						else if (query == "Casting")
+						{
+							replaceValue = "";
+							string result = E3.Bots.Query(targetname, "${Me.Casting}");
+							if (result != "NULL")
+							{
+								replaceValue = result;
+							}
+						}
+						else if (query == "AAPoints")
+						{
+							replaceValue = "0";
+							string result = E3.Bots.Query(targetname, "${Me.AAPoints}");
+							if (result != "NULL")
+							{
+								replaceValue = result;
+							}
+						}
+						else if (query == "AAPointsAssigned")
+						{
+							replaceValue = "0";
+							string result = E3.Bots.Query(targetname, "${Me.AAPointsAssigned}");
+							if (result != "NULL")
+							{
+								replaceValue = result;
+							}
+						}
+						else if (query == "AAPointsSpent")
+						{
+							replaceValue = "0";
+							string result = E3.Bots.Query(targetname, "${Me.AAPointsSpent}");
+							if (result != "NULL")
+							{
+								replaceValue = result;
+							}
+						}
+						else if (query == "AAPointsTotal")
+						{
+							replaceValue = "0";
+							string result = E3.Bots.Query(targetname, "${Me.AAPointsTotal}");
+							if (result != "NULL")
+							{
+								replaceValue = result;
+							}
+						}
 						//check to see if some modification was done
 						if (replaceString != replaceValue)
 						{
@@ -1702,62 +1825,12 @@ namespace E3Core.Processors
 
 					}
 				}
-
-				matches = _e3BotsBuffsRegEx.Matches(tIF);
-
-				foreach (Match match in matches)
-				{
-					if (match.Success && match.Groups.Count > 0)
-					{
-						//${E3Bots[Rekken].Buffs[Hand of Conviction].ID}
-						//${E3Bots[Rekken].Buffs[Hand of Conviction].Duration}
-						string replaceString = match.Groups[0].Value;
-						replaceValue = replaceString;
-						//Rekken
-						string targetname = match.Groups[1].Value;
-						//buffname
-						string buffName = match.Groups[2].Value;
-						//ID,Duration,etc
-						string query = match.Groups[3].Value;
-						if (query == "ID")
-						{
-							replaceValue = "0";
-							List<Int32> buffList = E3.Bots.BuffList(targetname);
-							Int32 spellID = Spell.SpellIDLookup(buffName);
-							if (spellID > 0)
-							{
-								if (buffList.Contains(spellID))
-								{
-									replaceValue = spellID.ToString();
-								}
-							}
-						}
-						if (query == "Duration")
-						{
-							replaceValue = "0";
-							CharacterBuffs buffInfo = E3.Bots.GetBuffInformation(targetname);
-
-							if (buffInfo != null)
-							{
-								Int32 spellID = Spell.SpellIDLookup(buffName);
-								if (buffInfo.BuffDurations.TryGetValue(spellID, out var buffDuration))
-								{
-									replaceValue = buffDuration.ToString();
-								}
-							}
-						}
-						//check to see if some modification was done
-						if (replaceString != replaceValue)
-						{
-							tIF = tIF.ReplaceInsensitive(replaceString, replaceValue);
-						}
-					}
-				}
+				
+				
 			}
-
-			//need to do some legacy compatability checksraibles that were used in Ifs.
-			if (tIF.IndexOf("${E3BuffExists[", 0, StringComparison.OrdinalIgnoreCase) > -1)
+			else if (tIF.IndexOf("${E3BuffExists[", 0, StringComparison.OrdinalIgnoreCase) > -1)
 			{
+				//need to do some legacy compatability checksraibles that were used in Ifs.
 				bool replaceValue = false;
 				//time for some regex
 

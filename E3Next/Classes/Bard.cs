@@ -191,23 +191,41 @@ namespace E3Core.Classes
 			{
 				return;
 			}
-			//lets play a song!
-			//get a song from the queue.
-			Data.Spell songToPlay= _songs.Dequeue();
-            //a counter to determine if we have looped through all the songs before finding a good one
-            Int32 trycounter = 0;
-            while(!Casting.Ifs(songToPlay))
-            {
-                _songs.Enqueue(songToPlay);// place song back
-                songToPlay = _songs.Dequeue(); //get new song
-				trycounter++;
-                //we have gone through all the songs and not found a valid one to use, kick out
-				if (trycounter > _songs.Count)
-				{
-					_songs.Enqueue(songToPlay);//place song back
-					return;
-				}
+            //lets play a song!
+            //get a song from the queue.
+            Data.Spell songToPlay = null;
+
+			//a counter to determine if we have looped through all the songs before finding a good one
+			Int32 trycounter = 0;
+
+    		pickASong:
+			songToPlay = _songs.Dequeue();
+		
+            trycounter++;
+			//we have gone through all the songs and not found a valid one to use, kick out
+			if (trycounter > _songs.Count)
+			{
+				_songs.Enqueue(songToPlay);//place song back
+				return;
 			}
+			if (songToPlay.CheckForCollection.Count > 0)
+			{
+				foreach (var spellName in songToPlay.CheckForCollection.Keys)
+				{
+                    bool haveBuff = (MQ.Query<bool>($"${{Bool[${{Me.Buff[{spellName}]}}]}}") || MQ.Query<bool>($"${{Bool[${{Me.Song[{spellName}]}}]}}"));
+                    if (haveBuff) 
+                    {
+						_songs.Enqueue(songToPlay);// place song back
+						goto pickASong;
+					}
+      		}
+			}
+            if(!Casting.Ifs(songToPlay))
+			{
+				_songs.Enqueue(songToPlay);// place song back
+				goto pickASong;
+			}
+		
             //found a valid song, place it back into the queue so we don't lose it. 
 			_songs.Enqueue(songToPlay);
 
