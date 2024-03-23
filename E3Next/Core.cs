@@ -972,8 +972,16 @@ namespace MonoCore
         }
 		public static string OnQuery(string line)
 		{
-        	//mq_Echo("query recieved:" + line);
-            line = line.Replace("(", "[").Replace(")", "]");
+			//mq_Echo("query recieved:" + line);
+			if (!IsProcessing)
+			{
+				return String.Empty;
+			}
+			if (!E3.IsInit)
+            {
+                return String.Empty;
+            }
+			line = line.Replace("(", "[").Replace(")", "]");
 			//mq_Echo("query fixed:" + line);
             string results = Casting.Ifs_Results($"${{{line}}}");
 			//mq_Echo("final result:" + results);
