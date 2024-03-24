@@ -1,3 +1,5 @@
+![272140191-9fa2e227-003e-4864-b0e2-ecfabb5f66c1](https://github.com/RekkasGit/E3Next/assets/4657161/ea393d55-4d15-40d7-892c-606ec1339d07)
+
 # E3Next
 
 Automation Software using the MQ2Mono Plugin , written in C#. 
