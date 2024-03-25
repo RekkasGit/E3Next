@@ -278,6 +278,13 @@ namespace E3Core.Processors
                         if (Basics.InCombat()) return;
                     }
 
+
+                    if (MQ.Query<double>($"${{Spawn[id {c.ID}].Distance3D}}") > E3.GeneralSettings.Loot_CorpseSeekRadius*2)
+                    {
+                        E3.Bots.Broadcast($"\arSkipping corpse: {c.ID} because of distance: ${{Spawn[id {c.ID}].Distance3D}}");
+                        continue;
+                    }
+
                     Casting.TrueTarget(c.ID);
                     MQ.Delay(2000, "${Target.ID}");
                    
@@ -556,6 +563,7 @@ namespace E3Core.Processors
 
                 MQ.Delay(1000, $"${{Corpse.Item[{i}].ID}}");
 
+                var itemId = MQ.Query<int>($"${{Corpse.Item[{i}].ID}}");
                 string corpseItem = MQ.Query<string>($"${{Corpse.Item[{i}].Name}}");
                 bool stackable = MQ.Query<bool>($"${{Corpse.Item[{i}].Stackable}}");
                 bool nodrop = MQ.Query<bool>($"${{Corpse.Item[{i}].NoDrop}}");
@@ -567,11 +575,13 @@ namespace E3Core.Processors
                 //destroy things we don't like
 				if (LootDataFile.Destroy.Contains(corpseItem))
 				{
-					//lets loot it if we can!
-					MQ.Cmd($"/nomodkey /shift /itemnotify loot{i} leftmouseup", 300);
+                    e3util.ClearCursor();
+
+                    //lets loot it if we can!
+                    MQ.Cmd($"/nomodkey /shift /itemnotify loot{i} leftmouseup", 300);
 					MQ.Delay(1000, "${Cursor.ID}");
-					Int32 cursorid = MQ.Query<Int32>("${Cursor.ID}");
-					if (cursorid > 0)
+                    var cursorid = MQ.Query<int>("${Cursor.ID}");
+                    if (cursorid == itemId)
 					{
 						E3.Bots.Broadcast($"Deleting from corpse [{MQ.Query<string>("${Cursor}")}]");
 						//have it on our cursor, lets destroy
@@ -580,6 +590,10 @@ namespace E3Core.Processors
 						MQ.Delay(1000, "${If[${Cursor.ID},FALSE,TRUE]}");
 
 					}
+                    else
+                    {
+                        e3util.ClearCursor();
+                    }
 					continue;
 				}
 

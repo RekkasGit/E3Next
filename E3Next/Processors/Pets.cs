@@ -55,7 +55,7 @@ namespace E3Core.Processors
             {
                 CheckPetHeal(petId);
                 CheckPetShrink(petId);
-
+                CheckPetBuffs();
             }
 
 			if (Basics.InCombat() && !E3.CharacterSettings.Pet_SummonCombat)
@@ -63,13 +63,25 @@ namespace E3Core.Processors
 				return;
 			}
 			if (petId<1)
-			{
-				
+			{	
 				CheckPetSummon(ref petId);
-
 			}
-
 		}
+
+        public static void removeBuffsIfNecessary(List<Spell> buffs) {
+            foreach (var buff in buffs) {
+                var buffIndex = MQ.Query<int>($"${{Me.Pet.Buff[{buff.SpellName}]}}");
+                if (buffIndex > 0)
+                {
+                    MQ.Cmd($"/removebuff -pet {buff.SpellName}");
+                }
+            }
+        }
+
+        private static void CheckPetBuffs()
+        {
+            Pets.removeBuffsIfNecessary(E3.CharacterSettings.BlockedPetBuffs);
+        }
 
         private static void CheckPetSummon(ref Int32 petID)
         {
