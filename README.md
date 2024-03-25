@@ -16,7 +16,7 @@ https://github.com/RekkasGit/MQ2Mono
 
 More instructions to come on the install of E3N itself , currently for EMU you can use 
 
-https://github.com/RekkasGit/E3Next/wiki/1)-Getting-started
+https://github.com/RekkasGit/E3Next/wiki/1)-Getting-started-(EMU,-32bit)
 
 This is for EMU only, I will setup instructions for live soon, but its not hard. 
 
