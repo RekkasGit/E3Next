@@ -28,10 +28,9 @@ To start issue.
 /mono e3
 ```
 
+# Donation
+If you wish to donate to the project
 
-### Authors
+Please choose friends and family, the funds will go toward Pizza/Beer and Github costs.
 
-**Rekka** - *Initial work*
-
-See also the list of [contributors](https://github.com/your/project/contributors) who participated in this project.
-
+https://www.paypal.com/paypalme/RekkaSoftware
