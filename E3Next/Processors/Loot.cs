@@ -31,8 +31,15 @@ namespace E3Core.Processors
         public static void Init()
         {
             RegisterEvents();
+            try
+            {
+				LootDataFile.LoadData();
 
-            LootDataFile.LoadData();
+			}
+			catch (Exception ex) {
+                MQ.Write("Exception loading Loot Data file");
+                throw ex;            
+            }
         }
         public static void Reset()
         {

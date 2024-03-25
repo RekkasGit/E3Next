@@ -480,7 +480,12 @@ namespace E3Core.Processors
                     Int32 buffCount = MQ.Query<Int32>("${Target.BuffCount}");
                     //lets just update our cache with what is on the mob.
                     Int64 timeLeftInMS = Casting.TimeLeftOnMySpell(spell);
-                    if (buffCount < 55)
+
+					//On EQ Live 
+					//Refactored the way buffs/debuffs are stored on characters and NPCs, enabling an increase in hostile NPC's maximum from 97 to 200.
+                    //This required a one-time clearing of saved buffs on mercenaries and pets, may 2022.
+
+					if (buffCount < 55 || (e3util.IsEQLive() && buffCount<201))
                     {
                         UpdateDotDebuffTimers(mobid, spell, timeLeftInMS, timers);
                     }

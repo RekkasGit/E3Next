@@ -24,8 +24,8 @@ namespace E3Core.Utility
         private static IMQ MQ = E3.MQ;
         private static ISpawns _spawns = E3.Spawns;
 
-		public static Int32 MaxBuffSlots = 38;
-		public static Int32 MaxSongSlots = 20;
+		public static Int32 MaxBuffSlots = 42;
+		public static Int32 MaxSongSlots = 30;
         public static Int32 MaxPetBuffSlots = 30;
 
 		//share this as we can reuse as its only 1 thread
@@ -723,6 +723,9 @@ namespace E3Core.Utility
         {
             using(_log.Trace())
             {
+                //incase this changes at runtime
+                MaxBuffSlots = MQ.Query<Int32>("${Me.MaxBuffSlots}");
+
 				buffInfoStringBuilder.Clear();
 				//lets look for a partial match.
 				for (Int32 i = 1; i <= MaxBuffSlots; i++)

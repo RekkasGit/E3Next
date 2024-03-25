@@ -982,9 +982,13 @@ namespace MonoCore
                 return String.Empty;
             }
 			line = line.Replace("(", "[").Replace(")", "]");
-			//mq_Echo("query fixed:" + line);
+            //mq_Echo("query fixed:" + line);
+
+            MQ._noDelay = true;
             string results = Casting.Ifs_Results($"${{{line}}}");
-			//mq_Echo("final result:" + results);
+            MQ._noDelay = false;
+
+            //mq_Echo("final result:" + results);
 			return results;
 		}
 		public static void OnSetSpawns(byte[] data, int size)
@@ -1167,6 +1171,7 @@ namespace MonoCore
         public static Int64 MaxMillisecondsToWork = 40;
         public static Int64 SinceLastDelay = 0;
         public static Int64 _totalQueryCounts;
+        public static bool _noDelay = false;
         public T Query<T>(string query)
         {
             if (!Core.IsProcessing)
@@ -1177,7 +1182,6 @@ namespace MonoCore
             _totalQueryCounts++;
             Int64 elapsedTime = Core.StopWatch.ElapsedMilliseconds;
             Int64 differenceTime = Core.StopWatch.ElapsedMilliseconds - SinceLastDelay;
-
 
             if (MaxMillisecondsToWork < differenceTime)
             {
@@ -1355,6 +1359,8 @@ namespace MonoCore
         }
         public void Delay(Int32 value)
         {
+            if (_noDelay) return;
+
             if (!Core.IsProcessing)
             {
                 //we are terminating, kill this thread

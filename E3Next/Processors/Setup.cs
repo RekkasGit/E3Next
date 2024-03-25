@@ -67,7 +67,16 @@ namespace E3Core.Processors
             {
                 //these are static don't need to create an instance
                 var func = (Action)foundMethod.CreateDelegate(typeof(Action));
-                func.Invoke();
+                try
+                {
+					func.Invoke();
+
+				}
+				catch (Exception ex)
+                {
+                    MQ.Write("Issue with InitSubsystem:" + foundMethod.ToString());
+                    throw ex;
+                }
             }
         }
         private static void InitPlugins()
