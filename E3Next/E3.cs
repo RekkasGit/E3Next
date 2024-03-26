@@ -40,17 +40,14 @@ namespace E3Core.Processors
 			sw.Start();
 			//auto 5 min gc check
 			CheckGC();
-			WriteToConsoleAndResetStopwatch(sw, "CheckGC");
-
+	
 			//did someone send us a command? lets process it. 
 			ProcessExternalCommands();
 
 			//update all states, important.
 			StateUpdates();
-			WriteToConsoleAndResetStopwatch(sw, "StateUpdates");
-            RefreshCaches();
-            WriteToConsoleAndResetStopwatch(sw, "RefreshCaches");
-
+	        RefreshCaches();
+    
             //kickout after updates if paused
             if (IsPaused()) return;
 			//stunned, no sense in processing
@@ -59,34 +56,20 @@ namespace E3Core.Processors
 			//global action taken key, used by adv settings
 			//if true, adv settings will stop processing for this loop.
 			ActionTaken = false;
-         
-			
             BeforeAdvancedSettingsCalls();
-            WriteToConsoleAndResetStopwatch(sw, "BeforeAdvancedSettingsCalls");
             if (!ActionTaken)
 			{
 				//All the advanced Ini stuff here
 				AdvancedSettingsCalls();
-                WriteToConsoleAndResetStopwatch(sw, "AdvancedSettingsCalls");
-            }
+             }
             AfterAdvancedSettingsCalls();
-            WriteToConsoleAndResetStopwatch(sw, "AfterAdvancedSettingsCalls");
-
+           
             //attribute class calls
             ClassMethodCalls();
-            WriteToConsoleAndResetStopwatch(sw, "ClassMethodCalls");
-
             //final cleanup/actions after the main loop has done processing
             FinalCalls();
-            WriteToConsoleAndResetStopwatch(sw, "FinalCalls");
         }
-
-		private static void WriteToConsoleAndResetStopwatch(Stopwatch sw, string method)
-		{
-			Console.WriteLine($"it took {sw.ElapsedMilliseconds}ms to execute {method}");
-			sw.Restart();
-		}
-		
+	
 		private static void BeforeAdvancedSettingsCalls()
 		{
 			if (PctHPs < 98)
@@ -264,7 +247,7 @@ namespace E3Core.Processors
 		private static Int64 _nextStateUpdateTimeInterval = 50;
 
 		private static Int64 _nextBuffUpdateCheckTime = 0;
-		private static Int64 _nextBuffUpdateTimeInterval = 1000;
+		private static Int64 _nextBuffUpdateTimeInterval = 3000;
 
 		private static Int64 _nextSlowUpdateCheckTime = 0;
 		private static Int64 _nextSlowUpdateTimeInterval = 1000;

@@ -970,6 +970,8 @@ namespace MonoCore
             }
             EventProcessor.ProcessEvent(line);
         }
+
+        static System.Text.StringBuilder _queryBuilder = new StringBuilder(); 
 		public static string OnQuery(string line)
 		{
 			//mq_Echo("query recieved:" + line);
@@ -981,14 +983,32 @@ namespace MonoCore
             {
                 return String.Empty;
             }
-			line = line.Replace("(", "[").Replace(")", "]");
-            //mq_Echo("query fixed:" + line);
+            _queryBuilder.Clear();
+            _queryBuilder.Append(line);
+            _queryBuilder.Replace('(', '[');
+			_queryBuilder.Replace(')', ']');
+            line = _queryBuilder.ToString();
+            string results = String.Empty;
+			//mq_Echo("query fixed:" + line);
 
-            MQ._noDelay = true;
-            string results = Casting.Ifs_Results($"${{{line}}}");
-            MQ._noDelay = false;
+			try
+			{
+                //its important to disable the delay, as that can force control back to C++, whcn C++ is waiting on us to respond
+                //aka deadlock. do not allow that to happen, set global nodelay to prevent any sub calls calling delay.
+				MQ._noDelay = true;
+                _queryBuilder.Clear();
+                _queryBuilder.Append("${");
+                _queryBuilder.Append(line);
+                _queryBuilder.Append("}");
+                results = Casting.Ifs_Results(_queryBuilder.ToString());
+			}
+            finally
+            {
+                //put it back when done
+				MQ._noDelay = false;
+			}
 
-            //mq_Echo("final result:" + results);
+			//mq_Echo("final result:" + results);
 			return results;
 		}
 		public static void OnSetSpawns(byte[] data, int size)
