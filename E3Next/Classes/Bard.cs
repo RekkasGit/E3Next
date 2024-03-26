@@ -30,6 +30,7 @@ namespace E3Core.Classes
         private static bool _forceOverride = false;
         private static Int64 _nextAutoSonataCheck;
         private static Data.Spell _sonataSpell = new Spell("Selo's Sonata");
+        private static Data.Spell _sonataAccelerando = new Spell("Selo's Accelerando");
         private static Int64 _nextBardCast = 0;
         /// <summary>
         /// Initializes this instance.
@@ -51,6 +52,12 @@ namespace E3Core.Classes
             if (!e3util.ShouldCheck(ref _nextAutoSonataCheck, 1000)) return;
             if (E3.CharacterSettings.Bard_AutoSonata)
             {
+                Int32 spellIDToLookup = SelosBuffID;
+
+                if(e3util.IsEQLive())
+                {
+                    spellIDToLookup = _sonataAccelerando.SpellID;
+                }
 
                 bool needToCast = false;
                 //lets get group members
@@ -63,7 +70,7 @@ namespace E3Core.Classes
                         if (memberNames.Contains(s.CleanName))
                         {
                             List<Int32> buffList = E3.Bots.BuffList(s.CleanName);
-                            if (!buffList.Contains(SelosBuffID))
+                            if (!buffList.Contains(spellIDToLookup))
                             {
                                 needToCast = true;
                                 break;
@@ -71,8 +78,17 @@ namespace E3Core.Classes
                         }
                     }
                 }
-                Int32 totalSecondsLeft = MQ.Query<Int32>("${Me.Buff[Selo's Sonata].Duration.TotalSeconds}");
-                if (totalSecondsLeft < 10)
+                Int32 totalSecondsLeft = 0;
+                if(e3util.IsEQLive())
+                {
+					totalSecondsLeft = MQ.Query<Int32>("${Me.Buff[Selo's Accelerando].Duration.TotalSeconds}");
+				}
+				else
+                {
+					totalSecondsLeft = MQ.Query<Int32>("${Me.Buff[Selo's Sonata].Duration.TotalSeconds}");
+				}
+
+				if (totalSecondsLeft < 10)
                 {
                     needToCast = true;
                 }

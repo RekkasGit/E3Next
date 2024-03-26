@@ -1363,6 +1363,13 @@ namespace E3Core.Processors
 		{
 			if (!E3.CharacterSettings.Buffs_CastAuras) return;
 			if (e3util.IsActionBlockingWindowOpen()) return;
+
+
+			if (E3.CharacterSettings.Buffs_Auras.Count > 0)
+			{
+				_selectAura = E3.CharacterSettings.Buffs_Auras[0];
+			}
+
 			if (_selectAura == null)
 			{
 				if (!_initAuras)
@@ -1441,6 +1448,7 @@ namespace E3Core.Processors
 			"Bloodlust Aura",
 			"Aura of Insight",
 			"Aura of the Muse",
+			"Aura of the Artist",
 			"Aura of the Zealot",
 			"Aura of the Pious",
 			"Aura of Divinity",
