@@ -1400,8 +1400,15 @@ namespace E3Core.Processors
 
 		public static Dictionary<string, string> VarsetValues = new Dictionary<string, string>(StringComparer.OrdinalIgnoreCase);
 		[SubSystemInit]
-		public static void InitVarSets()
+		public static void InitCommands()
 		{
+
+			EventProcessor.RegisterCommand("/e3resetcounters", (x) =>
+			{
+				//key/value
+				Casting.ResetResistCounters();
+				E3.Bots.Broadcast("Resetting resist counters...");
+			});
 			EventProcessor.RegisterCommand("/e3varset", (x) =>
 			{
 				//key/value
