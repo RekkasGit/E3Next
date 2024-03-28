@@ -1405,7 +1405,6 @@ namespace E3Core.Processors
 
 			EventProcessor.RegisterCommand("/e3resetcounters", (x) =>
 			{
-				//key/value
 				Casting.ResetResistCounters();
 				E3.Bots.Broadcast("Resetting resist counters...");
 			});

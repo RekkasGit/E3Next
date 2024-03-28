@@ -282,7 +282,8 @@ namespace E3Core.Classes
             {
                 MQ.Write($"\aoStart Melody:\ag{melodyName}");
                 MQ.Cmd("/stopsong");
-                _forceOverride = force;
+                _nextBardCast = Core.StopWatch.ElapsedMilliseconds;
+				_forceOverride = force;
                 _playingMelody = true;
                 _currentMelody = melodyName;
             }
@@ -298,7 +299,8 @@ namespace E3Core.Classes
 				{
 					MQ.Write($"\aoStart Melody:\ag{_currentMelody}");
 					MQ.Cmd("/stopsong");
-					
+					_nextBardCast = Core.StopWatch.ElapsedMilliseconds;
+
 				}
 			}
 			

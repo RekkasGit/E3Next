@@ -506,7 +506,12 @@ namespace E3Core.Processors
                             }
                             string message = sb.ToString();
                             E3.Bots.BroadcastCommandToGroup($"/bark-send {targetid} \"{message}\" {Zoning.CurrentZone.Id}",x);
-                            for (int i = 0; i < 5; i++)
+                            Int32 numberToBark = 5;
+                            if(e3util.IsEQLive())
+                            {
+                                numberToBark = 1;
+                            }
+                            for (int i = 0; i < numberToBark; i++)
                             {
 
                                 MQ.Cmd($"/say {message}");
