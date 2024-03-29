@@ -80,9 +80,19 @@ namespace E3Core.Server
                 _tloRequets.TryDequeue(out message);
                 //lets pull out the string
                 string query = System.Text.Encoding.Default.GetString(message.payload, 0, message.payloadLength);
-                string response = MQ.Query<string>(query);
+                string response = String.Empty;
 
-                message.payloadLength = System.Text.Encoding.Default.GetBytes(response, 0, response.Length, message.payload, 0);
+                if (query =="${IniServerName}")
+                {
+                    response = Setup._serverNameForIni;                    
+                }
+                else
+                {
+					response = MQ.Query<string>(query);
+
+				}
+
+				message.payloadLength = System.Text.Encoding.Default.GetBytes(response, 0, response.Length, message.payload, 0);
                 _tloResposne.Enqueue(message);
             }
         }

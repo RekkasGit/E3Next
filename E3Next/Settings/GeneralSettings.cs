@@ -60,7 +60,7 @@ namespace E3Core.Settings
 
         public Boolean Assists_AutoAssistEnabled=false;
         public Int32 Assists_MaxEngagedDistance=250;
-        public Int32 Assists_AEThreatRange=100;
+        public Int32 Assists_AEThreatRange=40;
 
         public bool AutoTrade_WaitForTrade = true;
         public bool AutoTrade_All = false;

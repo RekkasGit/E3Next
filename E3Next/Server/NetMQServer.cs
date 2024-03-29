@@ -117,7 +117,7 @@ namespace E3Core.Server
                 {
                     Int32 processID = System.Diagnostics.Process.GetCurrentProcess().Id;
                     //start up a new one.
-                    MQ.Write("Trying to start:" + dllFullPath + @"E3NextUI.exe");
+                    MQ.Write("Trying to start again:" + dllFullPath + @"E3NextUI.exe");
                     UIProcess = System.Diagnostics.Process.Start(dllFullPath + @"E3NextUI.exe", $"{PubPort} {RouterPort} {PubClientPort} {processID}");
                 }
                 else 

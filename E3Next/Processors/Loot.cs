@@ -865,8 +865,11 @@ namespace E3Core.Processors
                 //should we should notify if we have not looted.
                 if (!String.IsNullOrWhiteSpace(E3.GeneralSettings.Loot_LinkChannel))
                 {
-                    PrintLink($"{E3.GeneralSettings.Loot_LinkChannel} {corpse.ID} - ");
-                }
+                    if(MQ.Query<bool>("${Group}"))
+                    {
+						PrintLink($"{E3.GeneralSettings.Loot_LinkChannel} {corpse.ID} - ");
+					}
+				}
             }
 
         }

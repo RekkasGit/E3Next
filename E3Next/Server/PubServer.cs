@@ -138,6 +138,7 @@ namespace E3Core.Server
                     {
                         if (_topicMessages.TryDequeue(out var value))
                         {
+                            //using so that we put it back into the memory pool
                             using(value)
                             {
 								pubSocket.SendMoreFrame(value.topic).SendFrame(value.message);

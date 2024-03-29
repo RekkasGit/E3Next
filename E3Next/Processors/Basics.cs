@@ -450,8 +450,23 @@ namespace E3Core.Processors
 
                 });
             }
-        
-            EventProcessor.RegisterCommand("/yes", (x) =>
+			EventProcessor.RegisterCommand("/e3yes", (x) =>
+			{
+				if (x.args.Count == 0)
+				{
+					E3.Bots.BroadcastCommandToGroup("/e3yes all", x);
+				}
+				e3util.ClickYesNo(true);
+			});
+			EventProcessor.RegisterCommand("/e3no", (x) =>
+			{
+				if (x.args.Count == 0)
+				{
+					E3.Bots.BroadcastCommandToGroup("/e3no all", x);
+				}
+				e3util.ClickYesNo(false);
+			});
+			EventProcessor.RegisterCommand("/yes", (x) =>
             {
                 if (x.args.Count == 0)
                 {
