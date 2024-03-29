@@ -207,6 +207,7 @@ namespace E3Core.Processors
 						}
 
 						//process any commands we need to process from the UI
+						NetMQServer.SharedDataClient.ProcessCommands();
 						PubClient.ProcessRequests();
 
 					}
@@ -623,7 +624,8 @@ namespace E3Core.Processors
 								}
 							}
 
-							//process any commands we need to process from the UI
+							//process any commands we need to process from the UI or just basic commands from other bots/drivers
+							NetMQServer.SharedDataClient.ProcessCommands();
 							PubClient.ProcessRequests();
 							MQ.Delay(50);
 

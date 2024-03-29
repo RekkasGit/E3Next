@@ -1260,6 +1260,8 @@ namespace E3Core.Processors
                         }
                         //allow mq to have the commands sent to the server
                         MQ.Delay(delayBetweenClicks);
+						NetMQServer.SharedDataClient.ProcessCommands();
+						PubClient.ProcessRequests();
 						if (EventProcessor.CommandList["/followme"].queuedEvents.Count > 0)
 						{
                             return;

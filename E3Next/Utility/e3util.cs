@@ -12,7 +12,7 @@ using System.Reflection.Emit;
 using System.Runtime.CompilerServices;
 using System.Text;
 using static MonoCore.EventProcessor;
-
+using E3Core.Server;
 
 namespace E3Core.Utility
 {
@@ -852,8 +852,8 @@ namespace E3Core.Utility
 		}
         public static bool IsShuttingDown()
         {
-
-            if(EventProcessor.CommandList.ContainsKey("/shutdown") && EventProcessor.CommandList["/shutdown"].queuedEvents.Count > 0)
+			NetMQServer.SharedDataClient.ProcessCommands();
+			if (EventProcessor.CommandList.ContainsKey("/shutdown") && EventProcessor.CommandList["/shutdown"].queuedEvents.Count > 0)
             {
                 return true;
             }
