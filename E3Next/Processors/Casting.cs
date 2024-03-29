@@ -179,6 +179,7 @@ namespace E3Core.Processors
 					while (IsCasting())
 					{
 						MQ.Delay(50);
+						
 						if (E3.IsPaused())
 						{
 							Interrupt();
@@ -594,7 +595,7 @@ namespace E3Core.Processors
 									return CastReturn.CAST_INTERRUPTED;
 								}
 								//check if we need to process any events,if healing tho, ignore. 
-								if (spell.SpellType.Equals("Detrimental") || E3.CurrentClass == Class.Bard)
+								if ((spell.SpellType.Equals("Detrimental") || spell.Duration>0)|| E3.CurrentClass == Class.Bard)
 								{
 									if (EventProcessor.CommandList["/backoff"].queuedEvents.Count > 0)
 									{
@@ -969,47 +970,47 @@ namespace E3Core.Processors
 			foreach(Spell s in E3.CharacterSettings.Nukes)
 			{
 				if (!SpellBookWndOpen()) return;
-				MemorizeSpell(s);
+				MemorizeSpell(s, true);
 			}
 			foreach (Spell s in E3.CharacterSettings.Dots_OnCommand)
 			{
 				if (!SpellBookWndOpen()) return;
-				MemorizeSpell(s);
+				MemorizeSpell(s, true);
 			}
 			foreach (Spell s in E3.CharacterSettings.Dots_Assist)
 			{
 				if (!SpellBookWndOpen()) return;
-				MemorizeSpell(s);
+				MemorizeSpell(s, true);
 			}
 			foreach (Spell s in E3.CharacterSettings.Debuffs_Command)
 			{
 				if (!SpellBookWndOpen()) return;
-				MemorizeSpell(s);
+				MemorizeSpell(s, true);
 			}
 			foreach (Spell s in E3.CharacterSettings.Debuffs_OnAssist)
 			{
 				if (!SpellBookWndOpen()) return;
-				MemorizeSpell(s);
+				MemorizeSpell(s, true);
 			}
 			foreach (Spell s in E3.CharacterSettings.HealTanks)
 			{
 				if (!SpellBookWndOpen()) return;
-				MemorizeSpell(s);
+				MemorizeSpell(s, true);
 			}
 			foreach (Spell s in E3.CharacterSettings.HealImportantBots)
 			{
 				if (!SpellBookWndOpen()) return;
-				MemorizeSpell(s);
+				MemorizeSpell(s, true);
 			}
 			foreach (Spell s in E3.CharacterSettings.HealTanks)
 			{
 				if (!SpellBookWndOpen()) return;
-				MemorizeSpell(s);
+				MemorizeSpell(s, true);
 			}
 			foreach (Spell s in E3.CharacterSettings.HealAll)
 			{
 				if (!SpellBookWndOpen()) return;
-				MemorizeSpell(s);
+				MemorizeSpell(s,true);
 			}
 
 			MQ.Cmd("/stand");
@@ -1019,7 +1020,7 @@ namespace E3Core.Processors
 			return MQ.Query<bool>("${Window[SpellBookWnd].Open}");
 			
 		}
-		public static bool MemorizeSpell(Data.Spell spell)
+		public static bool MemorizeSpell(Data.Spell spell,bool ignoreWait=false)
 		{
 			if (!(spell.CastType == CastType.Spell && spell.SpellInBook))
 			{
@@ -1063,7 +1064,10 @@ namespace E3Core.Processors
 			MQ.Write($"\aySpell not memed, meming \ag{spell.SpellName} \ayin \awGEM:{spell.SpellGem}");
 			MQ.Cmd($"/memspell {spell.SpellGem} \"{spell.SpellName}\"");
 			MQ.Delay(15000, $"${{Me.Gem[{spell.SpellGem}].Name.Equal[{spell.SpellName}]}} || !${{Window[SpellBookWnd].Open}}");
-			//MQ.Delay(3000, $"${{Me.SpellReady[${{Me.Gem[{spell.SpellGem}].Name}}]}}");
+			if(!ignoreWait)
+			{
+				MQ.Delay(3000, $"${{Me.SpellReady[${{Me.Gem[{spell.SpellGem}].Name}}]}}");
+			}
 
 			//make double sure the collectio has this spell gem. maybe purchased AA for new slots?
 			if (!_gemRecastLockForMem.ContainsKey(spell.SpellGem))
