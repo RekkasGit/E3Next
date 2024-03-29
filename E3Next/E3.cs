@@ -247,7 +247,7 @@ namespace E3Core.Processors
 		private static Int64 _nextStateUpdateTimeInterval = 50;
 
 		private static Int64 _nextBuffUpdateCheckTime = 0;
-		private static Int64 _nextBuffUpdateTimeInterval = 3000;
+		private static Int64 _nextBuffUpdateTimeInterval = 1000;
 
 		private static Int64 _nextSlowUpdateCheckTime = 0;
 		private static Int64 _nextSlowUpdateTimeInterval = 1000;
