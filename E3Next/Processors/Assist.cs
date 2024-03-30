@@ -28,7 +28,7 @@ namespace E3Core.Processors
         private static IList<string> _rangeTypes = new List<string>() { "Ranged", "Autofire" };
         private static IList<string> _meleeTypes = new List<string>() { "Melee","AutoAttack" };
         private static IList<string> _assistDistanceTypes = new List<string> { "MaxMelee", "off" };
-        private static Int32 _assistDistance = 0;
+        public static Int32 _assistDistance = 0;
         private static bool _assistIsEnraged = false;
         private static Dictionary<string, Action> _stickSwitch;
         private static HashSet<Int32> _offAssistIgnore = new HashSet<Int32>();

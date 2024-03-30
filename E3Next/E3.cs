@@ -246,6 +246,7 @@ namespace E3Core.Processors
 		private static Int64 _nextStateUpdateCheckTime = 0;
 		private static Int64 _nextStateUpdateTimeInterval = 50;
 
+		//needs to be fast to be able to show a new buff has landed
 		private static Int64 _nextBuffUpdateCheckTime = 0;
 		private static Int64 _nextBuffUpdateTimeInterval = 1000;
 

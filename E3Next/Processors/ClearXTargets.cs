@@ -93,7 +93,12 @@ namespace E3Core.Processors
                             }
                             if (StickTarget)
                             {
-                                MQ.Cmd($"/squelch /stick {E3.CharacterSettings.Assist_MeleeStickPoint} {E3.CharacterSettings.Assist_MeleeDistance}");
+                              
+
+
+
+								//MQ.Write($"Setting stick with :/squelch /stick {E3.CharacterSettings.Assist_MeleeStickPoint} {Assist._assistDistance}");
+                                MQ.Cmd($"/squelch /stick {E3.CharacterSettings.Assist_MeleeStickPoint} {Assist._assistDistance}");
                             }
                             MQ.Delay(500);
 

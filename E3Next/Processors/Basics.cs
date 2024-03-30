@@ -1300,8 +1300,9 @@ namespace E3Core.Processors
             int autoMedPct = E3.GeneralSettings.General_AutoMedBreakPctMana;
             if (autoMedPct == 0) return;
             if (InCombat()) return;
-            if (Casting.IsCasting()) return;
-
+            if (Casting.IsCasting() && E3.CurrentClass!= Class.Bard) return;
+            //no sense in recovering endurance if not in resting state
+            if (!MQ.Query<bool>("${Me.CombatState.Equal[ACTIVE]}") && E3.CurrentClass == Class.Bard) return;
 
             if (!E3.CharacterSettings.Misc_AutoMedBreak) return;
             using (_log.Trace())
