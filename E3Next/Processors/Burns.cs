@@ -149,6 +149,7 @@ namespace E3Core.Processors
                 Int32 previousTarget = MQ.Query<Int32>("${Target.ID}");
                 foreach (var burn in burnList)
                 {
+                    if (MQ.Query<Int32>("${Me.CurrentHPs}") < 1) return; //can't burn if dead
                     //can't do gathering dusk if not in combat, skip it
                     if (burn.SpellName == "Gathering Dusk" && !Basics.InGameCombat()) continue;
                     if (burn.TargetType == "Pet" && MQ.Query<int>("${Me.Pet.ID}") < 1) continue;
@@ -199,7 +200,7 @@ namespace E3Core.Processors
                             isMyPet = (previousTarget == MQ.Query<Int32>("${Me.Pet.ID}"));
 
                         }
-                        var chatOutput = $"/g {burnType}: {burn.CastName}";
+                        var chatOutput = $"{burnType}: {burn.CastName}";
                         //so you don't target other groups or your pet for burns if your target happens to be on them.
                         if (((isMyPet) || (targetPC && !isGroupMember)) && (burn.TargetType == "Group v1" || burn.TargetType == "Group v2"))
                         {
@@ -212,12 +213,12 @@ namespace E3Core.Processors
                                     Casting.TrueTarget(previousTarget);
                                 }
                             }
-                            MQ.Cmd(chatOutput);
+                            E3.Bots.Broadcast(chatOutput);
                         }
                         else
                         {
                             Casting.Cast(0, burn);
-                            MQ.Cmd(chatOutput);
+                            E3.Bots.Broadcast(chatOutput);
                         }
                     }
                 }

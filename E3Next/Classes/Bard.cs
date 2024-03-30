@@ -215,14 +215,11 @@ namespace E3Core.Classes
             //lets play a song!
             //get a song from the queue.
             Data.Spell songToPlay = null;
-
 			//a counter to determine if we have looped through all the songs before finding a good one
 			Int32 trycounter = 0;
-
     		pickASong:
 			songToPlay = _songs.Dequeue();
-		
-            trycounter++;
+	        trycounter++;
 			//we have gone through all the songs and not found a valid one to use, kick out
 			if (trycounter > _songs.Count)
 			{
@@ -239,17 +236,15 @@ namespace E3Core.Classes
 						_songs.Enqueue(songToPlay);// place song back
 						goto pickASong;
 					}
-      		}
+      		    }
 			}
             if(!Casting.Ifs(songToPlay))
 			{
 				_songs.Enqueue(songToPlay);// place song back
 				goto pickASong;
 			}
-		
             //found a valid song, place it back into the queue so we don't lose it. 
 			_songs.Enqueue(songToPlay);
-
 			//if this base song duration > 18 seconds check to see if we have it as a buff, otherwise recast. 
 			if (songToPlay.DurationTotalSeconds>18)
             {
