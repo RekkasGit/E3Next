@@ -70,6 +70,13 @@ namespace E3Core.Processors
 
         public static void removeBuffsIfNecessary(List<Spell> buffs) {
             foreach (var buff in buffs) {
+		if (!String.IsNullOrWhiteSpace(buff.Ifs))
+                {
+                    if (!Casting.Ifs(buff.Ifs))
+                    {
+                        continue;
+                    }
+                }
                 var buffIndex = MQ.Query<int>($"${{Me.Pet.Buff[{buff.SpellName}]}}");
                 if (buffIndex > 0)
                 {
