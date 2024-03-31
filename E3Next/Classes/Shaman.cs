@@ -29,10 +29,52 @@ namespace E3Core.Classes
 
         private static Int32 _maxAggroCap = 90;
 
-        /// <summary>
-        /// Checks aggro level and drops it if necessary.
-        /// </summary>
-        [AdvSettingInvoke]
+		[SubSystemInit]
+		public static void Init()
+		{
+			RegisterEvents();
+		}
+        public static void RegisterEvents()
+        {
+			EventProcessor.RegisterCommand("/e3autocanni", (x) =>
+			{
+				//swap them
+
+				if (x.args.Count > 0)
+				{
+					if (x.args[0].Equals("off", StringComparison.OrdinalIgnoreCase))
+					{
+						if (E3.CharacterSettings.AutoCanni)
+						{
+							E3.CharacterSettings.AutoCanni = false;
+							E3.Bots.Broadcast("\agTurning off Auto Canni");
+						}
+					}
+					else if (x.args[0].Equals("on", StringComparison.OrdinalIgnoreCase))
+					{
+						if (!E3.CharacterSettings.AutoCanni)
+						{
+							E3.CharacterSettings.AutoCanni = true;
+							E3.Bots.Broadcast("\arTurning on auto canni!");
+
+						}
+					}
+				}
+				else
+				{
+					E3.CharacterSettings.AutoCanni = E3.CharacterSettings.AutoCanni ? false : true;
+					if (E3.CharacterSettings.AutoCanni) E3.Bots.Broadcast("\arAuto Canni On");
+					if (!E3.CharacterSettings.AutoCanni) E3.Bots.Broadcast("\agAuto Canni Off");
+
+				}
+
+			});
+
+		}
+		/// <summary>
+		/// Checks aggro level and drops it if necessary.
+		/// </summary>
+		[AdvSettingInvoke]
         public static void Check_ShamanAggro()
         {
 

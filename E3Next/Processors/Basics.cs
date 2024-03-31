@@ -1300,9 +1300,19 @@ namespace E3Core.Processors
             int autoMedPct = E3.GeneralSettings.General_AutoMedBreakPctMana;
             if (autoMedPct == 0) return;
             if (InCombat()) return;
+            if (e3util.IsManualControl()) return;
             if (Casting.IsCasting() && E3.CurrentClass!= Class.Bard) return;
-            //no sense in recovering endurance if not in resting state
-            if (!MQ.Query<bool>("${Me.CombatState.Equal[ACTIVE]}") && E3.CurrentClass == Class.Bard) return;
+			bool amIStanding = MQ.Query<bool>("${Me.Standing}");
+			int pctMana = MQ.Query<int>("${Me.PctMana}");
+			int pctEndurance = MQ.Query<int>("${Me.PctEndurance}");
+
+			if (!amIStanding&& pctMana > 99 && pctEndurance > 99 && !e3util.IsManualControl())
+			{
+				MQ.Cmd("/stand");
+                return;
+			}
+			//no sense in recovering endurance if not in resting state
+			if (!MQ.Query<bool>("${Me.CombatState.Equal[ACTIVE]}") && E3.CurrentClass == Class.Bard) return;
 
             if (!E3.CharacterSettings.Misc_AutoMedBreak) return;
             using (_log.Trace())
@@ -1315,13 +1325,13 @@ namespace E3Core.Processors
                     if (Movement.Following || Movement.IsMoving()) return;
                 }
 
-                bool amIStanding = MQ.Query<bool>("${Me.Standing}");
+               
                 string combatState = MQ.Query<string>("${Me.CombatState}");
-                if (amIStanding && autoMedPct > 0)
-                {
-                    int pctMana = MQ.Query<int>("${Me.PctMana}");
-                    int pctEndurance = MQ.Query<int>("${Me.PctEndurance}");
+				
 
+				if (amIStanding && autoMedPct > 0)
+                {
+                   
                     if (pctMana < autoMedPct && (E3.CurrentClass & Class.ManaUsers) == E3.CurrentClass)
                     {
                         MQ.Cmd("/sit");
@@ -1333,9 +1343,10 @@ namespace E3Core.Processors
                         MQ.Cmd("/sit");
                     }
                 }
+                
             }
         }
-
+        
         /// <summary>
         /// Checks hunger and thirst levels, and eats the configured food and drink in order to save stat food.
         /// </summary>

@@ -611,7 +611,7 @@ namespace E3Core.Processors
 									}
 								}
 							}
-							if (spell.SpellType.Equals("Detrimental") && spell.TargetType != "PB AE")
+							if (spell.SpellType.Equals("Detrimental") && (spell.TargetType != "PB AE" && spell.TargetType!="Self"))
 							{
 								bool isCorpse = MQ.Query<bool>("${Target.Type.Equal[Corpse]}");
 
