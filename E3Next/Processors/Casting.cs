@@ -1585,6 +1585,27 @@ namespace E3Core.Processors
 				//lets replace it with TRUE/FALSE
 				tIF = tIF.ReplaceInsensitive("${InCombat}", (Basics.InCombat()).ToString());
 			}
+			if (tIF.IndexOf("${StandingStillForTimePeriod}", 0, StringComparison.OrdinalIgnoreCase) > -1)
+			{
+				//lets replace it with TRUE/FALSE
+				tIF = tIF.ReplaceInsensitive("${StandingStillForTimePeriod}", (Movement.StandingStillForTimePeriod()).ToString());
+			}
+			if (tIF.IndexOf("${NotStandingStillForTimePeriod}", 0, StringComparison.OrdinalIgnoreCase) > -1)
+			{
+				//lets replace it with TRUE/FALSE
+				tIF = tIF.ReplaceInsensitive("${NotStandingStillForTimePeriod}", (!Movement.StandingStillForTimePeriod()).ToString());
+			}
+			if (tIF.IndexOf("${IsSafeZone}", 0, StringComparison.OrdinalIgnoreCase) > -1)
+			{
+				//lets replace it with TRUE/FALSE
+				tIF = tIF.ReplaceInsensitive("${IsSafeZone}", (Zoning.CurrentZone.IsSafeZone).ToString());
+			}
+			if (tIF.IndexOf("${IsNotSafeZone}", 0, StringComparison.OrdinalIgnoreCase) > -1)
+			{
+				//lets replace it with TRUE/FALSE
+				tIF = tIF.ReplaceInsensitive("${IsNotSafeZone}", (!Zoning.CurrentZone.IsSafeZone).ToString());
+			}
+			//StandingStillForTimePeriod()
 
 			return tIF;
 		}
