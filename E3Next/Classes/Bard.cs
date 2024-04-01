@@ -192,6 +192,10 @@ namespace E3Core.Classes
 
 			if (_songs.Count == 1 && MQ.Query<bool>("${Me.Casting}")) return;
 
+			if (E3.CharacterSettings.Misc_DelayAfterCastWindowDropsForSpellCompletion > 0)
+			{
+				MQ.Delay(E3.CharacterSettings.Misc_DelayAfterCastWindowDropsForSpellCompletion);
+			}
 			//necessary in case to stop the situation of the song not fully reigstering on the server as being complete
 			//even if the client thinks it does. basically the debuff/buff won't appear before even tho the client says we have completed the song
 			Int64 curTimeStamp = Core.StopWatch.ElapsedMilliseconds;

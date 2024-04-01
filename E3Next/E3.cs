@@ -52,6 +52,7 @@ namespace E3Core.Processors
             if (IsPaused()) return;
 			//stunned, no sense in processing
 			if (MQ.Query<bool>("${Me.Stunned}")) return;
+			if (MQ.Query<Int32>("${Me.CurrentHPs}") < 1) return; //we are dead
 
 			//global action taken key, used by adv settings
 			//if true, adv settings will stop processing for this loop.
