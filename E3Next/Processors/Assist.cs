@@ -467,9 +467,11 @@ namespace E3Core.Processors
         {
 
             if (zoneId != Zoning.CurrentZone.Id) return;
-            //clear in case its not reset by other means
-            //or you want to attack in enrage
-            _assistIsEnraged = false;
+			
+           
+			//clear in case its not reset by other means
+			//or you want to attack in enrage
+			_assistIsEnraged = false;
 
             if (mobID == 0)
             {
@@ -498,12 +500,18 @@ namespace E3Core.Processors
                     E3.Bots.Broadcast($"{s.CleanName} is too far away.");
                     return;
                 }
-
-                if (MQ.Query<bool>("${Me.Feigning}"))
+				bool amIStanding = MQ.Query<bool>("${Me.Standing}");
+				if (MQ.Query<bool>("${Me.Feigning}"))
                 {
                     if (E3.CharacterSettings.IfFDStayDown) return;
                     MQ.Cmd("/stand");
-                }
+                }else
+                {
+					if (!amIStanding)
+					{
+						MQ.Cmd("/stand");
+					}
+				}
 
                 Spawn folTarget;
 
