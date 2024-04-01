@@ -175,8 +175,7 @@ namespace E3Core.Classes
         public static void check_BardSongs()
         {
 
-
-            if (!_playingMelody && !Assist.IsAssisting)
+			if (!_playingMelody && !Assist.IsAssisting)
             {
                 return;
             }
@@ -190,9 +189,19 @@ namespace E3Core.Classes
             {
                 return;
             }
-            if (_songs.Count == 1 && MQ.Query<bool>("${Me.Casting}")) return;
 
-            if (MQ.Query<bool>("${Window[SpellBookWnd].Open}"))
+			if (_songs.Count == 1 && MQ.Query<bool>("${Me.Casting}")) return;
+
+			//necessary in case to stop the situation of the song not fully reigstering on the server as being complete
+			//even if the client thinks it does. basically the debuff/buff won't appear before even tho the client says we have completed the song
+			Int64 curTimeStamp = Core.StopWatch.ElapsedMilliseconds;
+			if (curTimeStamp < _nextBardCast)
+			{
+				return;
+			}
+
+
+			if (MQ.Query<bool>("${Window[SpellBookWnd].Open}"))
             {
 
                 return;
@@ -207,11 +216,7 @@ namespace E3Core.Classes
                 //we are sitting, don't do anything
                 return;
             }
-			Int64 curTimeStamp = Core.StopWatch.ElapsedMilliseconds;
-			if (curTimeStamp < _nextBardCast)
-			{
-				return;
-			}
+			
             //lets play a song!
             //get a song from the queue.
             Data.Spell songToPlay = null;
@@ -259,9 +264,9 @@ namespace E3Core.Classes
             {
                
                 MQ.Write($"\atTwist \ag{songToPlay.SpellName}");
-                _nextBardCast = Core.StopWatch.ElapsedMilliseconds + (int)songToPlay.MyCastTime + 300;
-                Casting.Sing(0, songToPlay);
-            }
+				_nextBardCast = Core.StopWatch.ElapsedMilliseconds + (int)songToPlay.MyCastTime + 300;
+				Casting.Sing(0, songToPlay);
+			}
             else
             {
                 MQ.Write($"\arTwists-Skip \ag{songToPlay.SpellName}");
