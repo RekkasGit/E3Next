@@ -83,7 +83,8 @@ namespace E3Core.Settings
         public List<Spell> GroupBuffs = new List<Spell>();
         public List<Spell> CombatBuffs = new List<Spell>();
         public List<Spell> PetBuffs = new List<Spell>();
-        public bool Buffs_CastAuras = true;
+		public List<Spell> CombatPetBuffs = new List<Spell>();
+		public bool Buffs_CastAuras = true;
 		public List<Spell> Buffs_Auras = new List<Spell>();
         public List<SpellRequest> GroupBuffRequests = new List<SpellRequest>();
         public List<SpellRequest> RaidBuffRequests = new List<SpellRequest>();
@@ -468,7 +469,8 @@ namespace E3Core.Settings
             LoadKeyData("Buffs", "Combat Buff", ParsedData, CombatBuffs);
             LoadKeyData("Buffs", "Group Buff", ParsedData, GroupBuffs);
             LoadKeyData("Buffs", "Pet Buff", ParsedData, PetBuffs);
-            LoadKeyData("Buffs", "Group Buff Request", ParsedData, GroupBuffRequests);
+			LoadKeyData("Buffs", "Combat Pet Buff", ParsedData, CombatPetBuffs);
+			LoadKeyData("Buffs", "Group Buff Request", ParsedData, GroupBuffRequests);
             LoadKeyData("Buffs", "Raid Buff Request", ParsedData, RaidBuffRequests);
 			LoadKeyData("Buffs", "Stack Buff Request", ParsedData, StackBuffRequest);
             LoadKeyData("Buffs", "Aura", ParsedData, Buffs_Auras);
@@ -506,13 +508,13 @@ namespace E3Core.Settings
 
             LoadKeyData("Pets", "Pet Spell", ParsedData, PetSpell);
             LoadKeyData("Pets", "Pet Buff", ParsedData, PetBuffs);
-            LoadKeyData("Pets", "Pet Heal", ParsedData, PetHeals);
+			LoadKeyData("Pets", "Combat Pet Buff", ParsedData, CombatPetBuffs);
+			LoadKeyData("Pets", "Pet Heal", ParsedData, PetHeals);
             LoadKeyData("Pets", "Pet Mend (Pct)", ParsedData, ref Pet_MendPercent);
             LoadKeyData("Pets", "Pet Taunt (On/Off)", ParsedData, ref Pet_TauntEnabled);
             LoadKeyData("Pets", "Pet Auto-Shrink (On/Off)", ParsedData, ref Pet_AutoShrink);
             LoadKeyData("Pets", "Pet Summon Combat (On/Off)", ParsedData, ref Pet_SummonCombat);
-            LoadKeyData("Pets", "Pet Buff Combat (On/Off)", ParsedData, ref Pet_BuffCombat);
-
+          
             LoadKeyData("Rez", "AutoRez", ParsedData, ref Rez_AutoRez);
             LoadKeyData("Rez", "Auto Rez Spells", ParsedData, Rez_AutoRezSpells);
             LoadKeyData("Rez", "Rez Spells", ParsedData, Rez_RezSpells);
@@ -645,7 +647,8 @@ namespace E3Core.Settings
             section.Keys.AddKey("Combat Buff", "");
             section.Keys.AddKey("Group Buff", "");
             section.Keys.AddKey("Pet Buff", "");
-            section.Keys.AddKey("Aura", "");
+			section.Keys.AddKey("Combat Pet Buff", "");
+			section.Keys.AddKey("Aura", "");
             section.Keys.AddKey("Group Buff Request", "");
             section.Keys.AddKey("Raid Buff Request", "");
 			section.Keys.AddKey("Stack Buff Request", "");
@@ -739,11 +742,11 @@ namespace E3Core.Settings
                 section.Keys.AddKey("Pet Spell", "");
                 section.Keys.AddKey("Pet Heal", "");
                 section.Keys.AddKey("Pet Buff", "");
-                section.Keys.AddKey("Pet Mend (Pct)", "");
+				section.Keys.AddKey("Combat Pet Buff", "");
+				section.Keys.AddKey("Pet Mend (Pct)", "");
                 section.Keys.AddKey("Pet Taunt (On/Off)", "On");
                 section.Keys.AddKey("Pet Auto-Shrink (On/Off)", "Off");
                 section.Keys.AddKey("Pet Summon Combat (On/Off)", "Off");
-                section.Keys.AddKey("Pet Buff Combat (On/Off)", "On");
             }
 
             if ((CharacterClass & Class.Druid) == CharacterClass)

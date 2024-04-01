@@ -224,13 +224,14 @@ namespace E3Core.Classes
 			Int32 trycounter = 0;
     		pickASong:
 			songToPlay = _songs.Dequeue();
-	        trycounter++;
+	      
 			//we have gone through all the songs and not found a valid one to use, kick out
 			if (trycounter > _songs.Count)
 			{
 				_songs.Enqueue(songToPlay);//place song back
 				return;
 			}
+			trycounter++;
 			if (songToPlay.CheckForCollection.Count > 0)
 			{
 				foreach (var spellName in songToPlay.CheckForCollection.Keys)

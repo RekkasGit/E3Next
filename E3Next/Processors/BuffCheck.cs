@@ -496,6 +496,7 @@ namespace E3Core.Processors
 					if (Assist.IsAssisting || Nukes.PBAEEnabled)
 					{
 						BuffBots(E3.CharacterSettings.CombatBuffs);
+						BuffBots(E3.CharacterSettings.CombatPetBuffs,true);
 					}
 
 					if ((!Movement.IsMoving() && String.IsNullOrWhiteSpace(Movement.FollowTargetName)) || Movement.StandingStillForTimePeriod())
