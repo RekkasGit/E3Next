@@ -382,6 +382,7 @@ namespace E3Core.Processors
                 Rez.Reset();
                 Loot.Reset();
                 Assist.Reset();
+                BuffCheck.Reset();
                 E3.Bots.Broadcast("\aoComplete!");
                 //mem all new spells that may be configured
                 Casting.MemorizeAllSpells();

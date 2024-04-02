@@ -66,7 +66,9 @@ namespace E3Core.Processors
 		}
 		public static void Reset()
 		{
-			foreach(var pair in _buffTimers)
+			_initAuras = false;
+			_selectAura = null;
+			foreach (var pair in _buffTimers)
 			{
 				pair.Value.Dispose();
 
