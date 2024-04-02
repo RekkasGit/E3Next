@@ -222,6 +222,22 @@ namespace E3Core.Processors
 				}
 				
 			});
+            if(e3util.IsEQLive())
+            {
+				pattern = @"You gain party experience!";
+				EventProcessor.RegisterEvent("YouGainEXPParty", pattern, (x) => {
+
+					E3.Bots.Broadcast(x.eventString);
+
+				});
+				pattern = @"You gain experience!";
+				EventProcessor.RegisterEvent("YouGainEXP", pattern, (x) => {
+
+					E3.Bots.Broadcast(x.eventString);
+
+				});
+
+			}
 		}
     }
 }
