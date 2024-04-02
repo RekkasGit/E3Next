@@ -171,7 +171,7 @@ namespace E3Core.Settings
 
         public List<string> HealImportantBotTargets = new List<string>();
         public List<Spell> HealImportantBots = new List<Spell>();
-
+        public List<string> StartupCommands = new List<string>();
         public List<Spell> HealGroup = new List<Spell>();
         public Int32 HealGroup_NumberOfInjuredMembers = 3;
         public List<Spell> HealAll = new List<Spell>();
@@ -474,6 +474,10 @@ namespace E3Core.Settings
             LoadKeyData("Buffs", "Raid Buff Request", ParsedData, RaidBuffRequests);
 			LoadKeyData("Buffs", "Stack Buff Request", ParsedData, StackBuffRequest);
             LoadKeyData("Buffs", "Aura", ParsedData, Buffs_Auras);
+
+
+			LoadKeyData("Startup Commands", "Command", ParsedData, StartupCommands);
+
 
 			LoadKeyData("Buffs", "Cast Aura(On/Off)", ParsedData, ref Buffs_CastAuras);
 
@@ -877,8 +881,10 @@ namespace E3Core.Settings
 
 
 
-			
-			
+			newFile.Sections.AddSection("Startup Commands");
+			section = newFile.Sections.GetSectionData("Startup Commands");
+			section.Keys.AddKey("Command", "");
+
 
 			newFile.Sections.AddSection("Blocked Buffs");
             section = newFile.Sections.GetSectionData("Blocked Buffs");

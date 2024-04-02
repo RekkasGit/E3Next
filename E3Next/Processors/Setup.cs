@@ -51,6 +51,11 @@ namespace E3Core.Processors
 
                 InitPlugins();
                 InitSubSystems();
+
+                foreach(var command in E3.CharacterSettings.StartupCommands)
+                {
+                    MQ.Cmd(command);
+                }
                 return true;
             }
 
