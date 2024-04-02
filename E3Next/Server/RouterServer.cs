@@ -4,6 +4,7 @@ using NetMQ.Sockets;
 using System;
 using System.Collections.Concurrent;
 using System.Collections.Generic;
+using System.Globalization;
 using System.Linq;
 using System.Text;
 using System.Threading;
@@ -74,6 +75,7 @@ namespace E3Core.Server
         //called by the main C# thread
         public static void ProcessRequests()
         {
+
             while (_tloRequets.Count > 0)
             {
                 RouterMessage message;
@@ -99,7 +101,10 @@ namespace E3Core.Server
 
         private void Process()
         {
-            AsyncIO.ForceDotNet.Force();
+			//need to do this so double parses work in other languages
+			Thread.CurrentThread.CurrentCulture = new CultureInfo("en-US");
+
+			AsyncIO.ForceDotNet.Force();
             _rpcRouter = new RouterSocket();
             _rpcRouter.Options.SendHighWatermark = 50000;
             _rpcRouter.Options.ReceiveHighWatermark = 50000;

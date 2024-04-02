@@ -227,13 +227,13 @@ namespace E3Core.Processors
 				pattern = @"You gain party experience!";
 				EventProcessor.RegisterEvent("YouGainEXPParty", pattern, (x) => {
 
-					E3.Bots.Broadcast(x.eventString);
+					E3.Bots.Broadcast(x.eventString + $" Total:{MQ.Query<string>("${Me.PctExp}")}%");
 
 				});
 				pattern = @"You gain experience!";
 				EventProcessor.RegisterEvent("YouGainEXP", pattern, (x) => {
 
-					E3.Bots.Broadcast(x.eventString);
+					E3.Bots.Broadcast(x.eventString + $" Total:{MQ.Query<string>("${Me.PctExp}")}%");
 
 				});
 

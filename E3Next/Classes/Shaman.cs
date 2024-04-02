@@ -8,7 +8,7 @@ using MonoCore;
 using System.Collections.Generic;
 using System.Dynamic;
 using System.Linq;
-
+using System.Web.UI;
 
 namespace E3Core.Classes
 {
@@ -70,6 +70,79 @@ namespace E3Core.Classes
 
 			});
 
+		}
+        [ClassInvoke(Data.Class.Shaman)]
+        public static void AutoCanni()
+        {
+			//don't canni if we are moving/following
+			if (E3.CharacterSettings.AutoCanni && Movement.StandingStillForTimePeriod())
+			{
+				
+				foreach (var canniSpell in E3.CharacterSettings.CanniSpell)
+				{
+					int pctMana = MQ.Query<int>("${Me.PctMana}");
+					var pctHps = MQ.Query<int>("${Me.PctHPs}");
+					int currentHps = MQ.Query<int>("${Me.CurrentHPs}");
+
+                    if(!Casting.Ifs(canniSpell))
+                    {
+                        continue;
+                    }
+					if (Casting.CheckReady(canniSpell))
+					{
+						var hpThresholdDefined = canniSpell.MinHP > 0;
+						var manaThresholdDefined = canniSpell.MaxMana > 0;
+						bool castCanniSpell = false;
+						bool hpThresholdMet = false;
+						bool manaThresholdMet = false;
+
+						if (hpThresholdDefined)
+						{
+							if (pctHps > canniSpell.MinHP)
+							{
+								hpThresholdMet = true;
+							}
+						}
+
+						if (manaThresholdDefined)
+						{
+							if (pctMana < canniSpell.MaxMana)
+							{
+								manaThresholdMet = true;
+							}
+						}
+
+						if (hpThresholdDefined && manaThresholdDefined)
+						{
+							castCanniSpell = hpThresholdMet && manaThresholdMet;
+						}
+						else if (hpThresholdDefined && !manaThresholdDefined)
+						{
+							castCanniSpell = hpThresholdMet;
+						}
+						else if (manaThresholdDefined && !hpThresholdDefined)
+						{
+							castCanniSpell = manaThresholdMet;
+						}
+						else
+						{
+							castCanniSpell = true;
+						}
+
+						if (castCanniSpell)
+						{
+							var result = Casting.Cast(0, canniSpell);
+							if (result == CastReturn.CAST_SUCCESS)
+							{
+								break;
+							}
+						}
+					}
+
+				}
+
+
+			}
 		}
 		/// <summary>
 		/// Checks aggro level and drops it if necessary.
