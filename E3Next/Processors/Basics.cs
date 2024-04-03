@@ -1241,6 +1241,7 @@ namespace E3Core.Processors
             int autoMedPct = E3.GeneralSettings.General_AutoMedBreakPctMana;
             if (autoMedPct == 0) return;
             if (InCombat()) return;
+            if (Casting.SpellBookWndOpen()) return;
             if (e3util.IsManualControl()) return;
             if (Casting.IsCasting() && E3.CurrentClass!= Class.Bard) return;
 			bool amIStanding = MQ.Query<bool>("${Me.Standing}");
