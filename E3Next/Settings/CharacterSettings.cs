@@ -215,7 +215,8 @@ namespace E3Core.Settings
         public List<string> LootCommander_Looters = new List<string>();
 
 		public Int32 CPU_ProcessLoopDelay = 50;
-        public bool CPU_Camping_PauseAt20Seconds = true;
+		public bool CPU_Camping_PauseAt30Seconds = true;
+		public bool CPU_Camping_PauseAt20Seconds = true;
         public bool CPU_Camping_ShutdownAt5Seconds = true;
 
 		public Dictionary<string, string> PetWeapons = new Dictionary<string, string>();
@@ -304,6 +305,7 @@ namespace E3Core.Settings
 
 
             LoadKeyData("CPU", "ProcessLoopDelayInMS", ParsedData, ref CPU_ProcessLoopDelay);
+			LoadKeyData("CPU", "Camp Pause at 30 seconds", ParsedData, ref CPU_Camping_PauseAt30Seconds);
 			LoadKeyData("CPU", "Camp Pause at 20 seconds", ParsedData, ref CPU_Camping_PauseAt20Seconds);
 			LoadKeyData("CPU", "Camp Shutdown at 5 seconds", ParsedData, ref CPU_Camping_ShutdownAt5Seconds);
 
@@ -917,6 +919,7 @@ namespace E3Core.Settings
 			newFile.Sections.AddSection("CPU");
 			section = newFile.Sections.GetSectionData("CPU");
 			section.Keys.AddKey("ProcessLoopDelayInMS", "50");
+			section.Keys.AddKey("Camp Pause at 30 seconds", "True");
 			section.Keys.AddKey("Camp Pause at 20 seconds", "True");
 			section.Keys.AddKey("Camp Shutdown at 5 seconds", "True");
 

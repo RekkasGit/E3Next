@@ -196,14 +196,34 @@ namespace E3Core.Processors
                     }
                 }
             });
+			pattern = @"You abandon your preparations to camp\.";
+			EventProcessor.RegisterEvent("PauseForCampUndo", pattern, (x) => {
 
+				
+				if (!Basics.IsPaused) return;
+				Basics.IsPaused = false;
+				E3.Bots.Broadcast("\agRunning E3 again!");
+			});
+			pattern = @"It will take you about 30 seconds to prepare your camp\.";
+			EventProcessor.RegisterEvent("PauseForCamp30", pattern, (x) => {
+
+				if (!E3.CharacterSettings.CPU_Camping_PauseAt30Seconds)
+				{
+					return;
+				}
+				if (Basics.IsPaused) return;
+				Basics.IsPaused = true;
+				E3.Bots.Broadcast("\arPAUSING E3!");
+			});
 			pattern = @"It will take about 20 more seconds to prepare your camp\.";
-			EventProcessor.RegisterEvent("PauseForCamp", pattern, (x) => {
+			EventProcessor.RegisterEvent("PauseForCamp20", pattern, (x) => {
+
 
 				if (!E3.CharacterSettings.CPU_Camping_PauseAt20Seconds)
 				{
 					return;
 				}
+                if (Basics.IsPaused) return;
 				Basics.IsPaused = true;
 				E3.Bots.Broadcast("\arPAUSING E3!");
 			});
