@@ -1392,6 +1392,8 @@ namespace E3Core.Processors
 		}
 		public static bool InRange(Int32 targetId, Data.Spell spell)
 		{
+			if (spell.MyRange == 0) return true;
+
 			Spawn s;
 			if (_spawns.TryByID(targetId, out s))
 			{
