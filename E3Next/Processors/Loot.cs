@@ -642,7 +642,7 @@ namespace E3Core.Processors
                     {
                         foreach(var item in LootStackableSettings.AlwaysStackableItemsContains)
                         {
-                            if(corpseItem.Contains(item))
+                            if(corpseItem.IndexOf(item,StringComparison.OrdinalIgnoreCase)>-1)
                             {
                                 importantItem = true;
                                 break;
