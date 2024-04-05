@@ -14,6 +14,7 @@ namespace E3Core.Settings.FeatureSettings
 		string _fileName;
 		public IniData parsedData;
 		public HashSet<string> AlwaysStackableItems = new HashSet<string>(StringComparer.OrdinalIgnoreCase);
+		public List<string> AlwaysStackableItemsContains = new List<string>();
 		public Boolean LootOnlyCommonTradeSkillItems = false;
 		public Boolean LootAllTradeSkillItems = false;
 		public Int32 LootValueGreaterThanInCopper = 1;
@@ -23,6 +24,7 @@ namespace E3Core.Settings.FeatureSettings
 		public void LoadData()
 		{
 			AlwaysStackableItems.Clear();
+			AlwaysStackableItemsContains.Clear();
 			_fileName = GetSettingsFilePath($"Loot_Stackable_{E3.CurrentName}_{E3.ServerName}.ini");
 			//this is so we can get the merged data as well. 
 			parsedData = CreateSettings(_fileName);
@@ -32,7 +34,7 @@ namespace E3Core.Settings.FeatureSettings
 			LoadKeyData("Settings", "Loot common tradeskill items ie:pelts ores silks etc (On/Off)", parsedData, ref LootOnlyCommonTradeSkillItems);
 			LoadKeyData("Settings", "Honor Loot File Skip Settings (On/Off)", parsedData, ref HonorLootFileSkips);
 			LoadKeyData("AlwaysLoot", "Entry", parsedData, AlwaysStackableItems);
-
+			LoadKeyData("AlwaysLootContains", "Entry", parsedData, AlwaysStackableItemsContains);
 		}
 		public IniData CreateSettings(string fileName)
 		{
@@ -50,7 +52,8 @@ namespace E3Core.Settings.FeatureSettings
 			newFile.Sections.AddSection("AlwaysLoot");
 		    section = newFile.Sections.GetSectionData("AlwaysLoot");
 			section.Keys.AddKey("Entry", "");
-
+			section = newFile.Sections.GetSectionData("AlwaysLootContains");
+			section.Keys.AddKey("Entry", "");
 
 			if (!System.IO.File.Exists(fileName))
 			{
@@ -93,6 +96,12 @@ namespace E3Core.Settings.FeatureSettings
 			var section = parsedData.Sections["AlwaysLoot"];
 			section.RemoveAllKeys();
 			foreach (var item in AlwaysStackableItems)
+			{
+				section.AddKey("Entry", item);
+			}
+			section = parsedData.Sections["AlwaysLootContains"];
+			section.RemoveAllKeys();
+			foreach (var item in AlwaysStackableItemsContains)
 			{
 				section.AddKey("Entry", item);
 			}

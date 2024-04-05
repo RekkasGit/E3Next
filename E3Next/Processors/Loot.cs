@@ -638,6 +638,17 @@ namespace E3Core.Processors
 						nodropImportantItem = nodrop;
 						MQ.Write("\ayStackable: always loot item " + corpseItem);
 					}
+                    if(!importantItem && LootStackableSettings.AlwaysStackableItemsContains.Count>0)
+                    {
+                        foreach(var item in LootStackableSettings.AlwaysStackableItemsContains)
+                        {
+                            if(corpseItem.Contains(item))
+                            {
+                                importantItem = true;
+                                break;
+                            }
+                        }
+                    }
 
 					if (stackable && !nodrop)
 					{
