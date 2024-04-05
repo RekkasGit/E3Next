@@ -548,7 +548,10 @@ namespace E3Core.Processors
                 {
                     if(e3util.IsEQLive())
 					{
-						MQ.Cmd($"/face id {AssistTargetID}",500);
+                        //if(!((E3.CurrentClass & Class.Caster) == E3.CurrentClass || (E3.CurrentClass & Class.Priest) == E3.CurrentClass))
+                        {
+							MQ.Cmd($"/face id {AssistTargetID}", 500);
+						}
 
 					}
                     else

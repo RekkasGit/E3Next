@@ -26,20 +26,34 @@ namespace E3Core.Processors
         private static Int64 _nextLootCheckInterval = 1000;
         private static CircularBuffer<Int32> _lootCommanderAssisngedCorpsesToLoot = new CircularBuffer<int>(100);
         private static Dictionary<string, List<Int32>> _lootCommanderAssignmentBuilder = new Dictionary<string, List<int>>();
+		public static Settings.FeatureSettings.LootStackable LootStackableSettings = null;
 
-        [SubSystemInit]
+		[SubSystemInit]
         public static void Init()
         {
             RegisterEvents();
             try
             {
-				LootDataFile.LoadData();
+                LootDataFile.LoadData();
+
+            }
+            catch (Exception ex)
+            {
+                MQ.Write("Exception loading Loot Data file");
+                throw ex;
+            }
+            try
+            {
+                LootStackableSettings = new LootStackable();
+				LootStackableSettings.LoadData();
+            }
+            catch(Exception ex)
+			{
+            
+				MQ.Write("Exception loading Loot Stackable Data file. message:"+ex.Message + " stack:"+ex.StackTrace);
+				throw ex;
 
 			}
-			catch (Exception ex) {
-                MQ.Write("Exception loading Loot Data file");
-                throw ex;            
-            }
         }
         public static void Reset()
         {
@@ -73,13 +87,50 @@ namespace E3Core.Processors
    			}
 			});
 
+
+            EventProcessor.RegisterCommand("/E3LootStackAdd", (x) =>
+            {
+                if(x.args.Count>0)
+                {
+					string item = x.args[0];
+
+					if (!E3.GeneralSettings.Loot_OnlyStackableAlwaysLoot.Contains(item))
+					{
+						E3.GeneralSettings.Loot_OnlyStackableAlwaysLoot.Add(item);
+					}
+					
+
+				}
+                else
+                {
+					string cursorItem = MQ.Query<string>("${Cursor.Name}");
+				
+					if (cursorItem.Equals("NULL", StringComparison.OrdinalIgnoreCase) || String.IsNullOrWhiteSpace(cursorItem))
+					{
+						MQ.Write("You don't have an item on your cursor, cannot modify the loot file.");
+						MQ.Write("Place an item on your cursor and then give the proper /lootkeep, /lootsell, /lootskip /lootdestroy command");
+						return;
+					}
+					if (!E3.GeneralSettings.Loot_OnlyStackableAlwaysLoot.Contains(cursorItem))
+					{
+						E3.GeneralSettings.Loot_OnlyStackableAlwaysLoot.Add(cursorItem);
+					}
+					
+
+					MQ.Write($"\aoSetting {cursorItem} to KEEP");
+					E3.Bots.BroadcastCommand($"/E3LootStackAdd \"{cursorItem}\"");
+			
+					e3util.ClearCursor();
+				}
+			});
 			EventProcessor.RegisterCommand("/E3LootAdd", (x) =>
             {
                 if (x.args.Count > 1)
-                {
-                    //remove item from all collections and add to desired collection
-                    if(x.args[1]=="KEEP")
+				{
+					//remove item from all collections and add to desired collection
+					if (x.args[1]=="KEEP")
                     {
+                      
                         LootDataFile.Sell.Remove(x.args[0]);
                         LootDataFile.Skip.Remove(x.args[0]);
 						LootDataFile.Destroy.Remove(x.args[0]);
@@ -578,8 +629,42 @@ namespace E3Core.Processors
                 Int32 stackCount = MQ.Query<Int32>($"${{Corpse.Item[{i}].Stack}}");
                 bool tradeskillItem = MQ.Query<bool>($"${{Corpse.Item[{i}].Tradeskills}}");
 
-                if (E3.GeneralSettings.Loot_OnlyStackableEnabled)
+				if (LootStackableSettings.Enabled)
+				{   //this is the new character specific loot stackable
+					//check if in our always loot.
+					if (LootStackableSettings.AlwaysStackableItems.Contains(corpseItem, StringComparer.OrdinalIgnoreCase))
+					{
+						importantItem = true;
+						nodropImportantItem = nodrop;
+						MQ.Write("\ayStackable: always loot item " + corpseItem);
+					}
+
+					if (stackable && !nodrop)
+					{
+						if (!importantItem && LootStackableSettings.LootOnlyCommonTradeSkillItems)
+						{
+							if (corpseItem.Contains(" Pelt")) importantItem = true;
+							if (corpseItem.Contains(" Silk")) importantItem = true;
+							if (corpseItem.Contains(" Ore")) importantItem = true;
+						}
+						if (!importantItem && itemValue >= LootStackableSettings.LootValueGreaterThanInCopper)
+						{
+							importantItem = true;
+						}
+						if (!importantItem && LootStackableSettings.LootAllTradeSkillItems)
+						{
+							if (tradeskillItem) importantItem = true;
+						}
+
+						if (!importantItem && itemValue >= LootStackableSettings.LootValueGreaterThanInCopper)
+						{
+							importantItem = true;
+						}
+					}
+				}
+				else if (E3.GeneralSettings.Loot_OnlyStackableEnabled)
                 {
+                    //this is the legacy general settigs for loot stackable
                     //check if in our always loot.
                     if (E3.GeneralSettings.Loot_OnlyStackableAlwaysLoot.Contains(corpseItem, StringComparer.OrdinalIgnoreCase))
                     {

@@ -226,7 +226,13 @@ namespace E3Core.Processors
                 Zoning.TributeDataFile.ToggleTribute();
                 E3.Bots.Broadcast("\aoComplete!");
             }
-        }
+			if (Loot.LootStackableSettings.ShouldReload())
+			{
+				E3.Bots.Broadcast("\aoAuto-Reloading Loot Stackable Settings...");
+				Loot.LootStackableSettings.LoadData();
+				E3.Bots.Broadcast("\aoComplete!");
+			}
+		}
        
 		public static bool IsPaused()
         {
@@ -481,7 +487,7 @@ namespace E3Core.Processors
         public static IMQ MQ = Core.mqInstance;
         public static Logging Log = Core.logInstance;
         public static Settings.CharacterSettings CharacterSettings = null;
-        public static Settings.GeneralSettings GeneralSettings = null;
+		public static Settings.GeneralSettings GeneralSettings = null;
         public static Settings.AdvancedSettings AdvancedSettings = null;
         public static IBots Bots = null;
         public static string CurrentName;
