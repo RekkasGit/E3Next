@@ -3,12 +3,7 @@ using IniParser.Model;
 using IniParser;
 using System;
 using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
-using E3Core.Data;
 using System.IO;
-using static System.Collections.Specialized.BitVector32;
 using E3Core.Processors;
 
 namespace E3Core.Settings.FeatureSettings
