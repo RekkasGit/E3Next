@@ -52,6 +52,7 @@ namespace E3Core.Settings.FeatureSettings
 			newFile.Sections.AddSection("AlwaysLoot");
 		    section = newFile.Sections.GetSectionData("AlwaysLoot");
 			section.Keys.AddKey("Entry", "");
+			newFile.Sections.AddSection("AlwaysLootContains");
 			section = newFile.Sections.GetSectionData("AlwaysLootContains");
 			section.Keys.AddKey("Entry", "");
 
@@ -73,11 +74,18 @@ namespace E3Core.Settings.FeatureSettings
 				//some reason we were called when this already exists, just return what is there.
 
 				FileIniDataParser fileIniData = e3util.CreateIniParser();
-				IniData parsedData = fileIniData.ReadFile(_fileName);
+				IniData tParsedData = fileIniData.ReadFile(fileName);
+
+				//overwrite newfile with what was already there
+				tParsedData.Merge(newFile);
+				newFile = tParsedData;
+				//save it it out now
+				File.Delete(fileName);
+				parser.WriteFile(fileName, tParsedData);
+
 				_fileLastModified = System.IO.File.GetLastWriteTime(fileName);
 				_fileLastModifiedFileName = fileName;
 				_fileName = fileName;
-				return parsedData;
 
 			}
 
