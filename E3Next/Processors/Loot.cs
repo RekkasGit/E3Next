@@ -852,7 +852,51 @@ namespace E3Core.Processors
 					continue;
 				}
 
-				if (E3.GeneralSettings.Loot_OnlyStackableEnabled)
+				if (LootStackableSettings.Enabled)
+				{   //this is the new character specific loot stackable
+					//check if in our always loot.
+					if (LootStackableSettings.AlwaysStackableItems.Contains(corpseItem, StringComparer.OrdinalIgnoreCase))
+					{
+						importantItem = true;
+						nodropImportantItem = nodrop;
+						MQ.Write("\ayStackable: always loot item " + corpseItem);
+					}
+					if (!importantItem && LootStackableSettings.AlwaysStackableItemsContains.Count > 0)
+					{
+						foreach (var item in LootStackableSettings.AlwaysStackableItemsContains)
+						{
+							if (corpseItem.IndexOf(item, StringComparison.OrdinalIgnoreCase) > -1)
+							{
+								importantItem = true;
+								break;
+							}
+						}
+					}
+
+					if (stackable && !nodrop)
+					{
+						if (!importantItem && LootStackableSettings.LootOnlyCommonTradeSkillItems)
+						{
+							if (corpseItem.Contains(" Pelt")) importantItem = true;
+							if (corpseItem.Contains(" Silk")) importantItem = true;
+							if (corpseItem.Contains(" Ore")) importantItem = true;
+						}
+						if (!importantItem && itemValue >= LootStackableSettings.LootValueGreaterThanInCopper)
+						{
+							importantItem = true;
+						}
+						if (!importantItem && LootStackableSettings.LootAllTradeSkillItems)
+						{
+							if (tradeskillItem) importantItem = true;
+						}
+
+						if (!importantItem && itemValue >= LootStackableSettings.LootValueGreaterThanInCopper)
+						{
+							importantItem = true;
+						}
+					}
+				}
+				else if (E3.GeneralSettings.Loot_OnlyStackableEnabled)
                 {
                     //check if in our always loot.
                     if (E3.GeneralSettings.Loot_OnlyStackableAlwaysLoot.Contains(corpseItem, StringComparer.OrdinalIgnoreCase))

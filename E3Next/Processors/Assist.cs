@@ -548,9 +548,12 @@ namespace E3Core.Processors
                 {
                     if(e3util.IsEQLive())
 					{
+                        //don't want to appear 'bot' like by always facing the mob
+                        //stick for melee should keep them facing th emob
+                        //as well as ranged has face commands but casters shouldn't care
                         //if(!((E3.CurrentClass & Class.Caster) == E3.CurrentClass || (E3.CurrentClass & Class.Priest) == E3.CurrentClass))
                         {
-							MQ.Cmd($"/face id {AssistTargetID}", 500);
+							//MQ.Cmd($"/face id {AssistTargetID}", 500);
 						}
 
 					}
