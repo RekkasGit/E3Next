@@ -499,7 +499,7 @@ namespace E3Core.Processors
         public static Int64 LastMovementTimeStamp;
         public static string CurrentLongClassString;
         public static string CurrentShortClassString;
-
+		public static System.Random Random = new System.Random();
 		public static int PctHPs;
         public static ISpawns Spawns = Core.spawnInstance;
         public static bool IsInvis;

@@ -510,7 +510,7 @@ namespace E3Core.Processors
                     {
                         Spawn s;
                         if (_spawns.TryByID(targetid, out s))
-                        {
+                        {   
                             e3util.TryMoveToLoc(s.X, s.Y,s.Z);
                             System.Text.StringBuilder sb = new StringBuilder();
                             bool first = true;
@@ -564,12 +564,22 @@ namespace E3Core.Processors
                             Spawn s;
                             if (_spawns.TryByID(targetid, out s))
                             {
-                                Casting.TrueTarget(targetid);
+								if (e3util.IsEQLive())
+								{
+                                    //random delay so it isn't quite so ovious
+                                    MQ.Delay(E3.Random.Next(100, 1000));
+
+								}
+								Casting.TrueTarget(targetid);
                                 MQ.Delay(100);
                                 e3util.TryMoveToLoc(s.X, s.Y,s.Z);
-
-                                string message = x.args[1];
-                                for (int i = 0; i < 5; i++)
+								Int32 numberToBark = 5;
+								if (e3util.IsEQLive())
+								{
+									numberToBark = 1;
+								}
+								string message = x.args[1];
+                                for (int i = 0; i < numberToBark; i++)
                                 {
                                     MQ.Cmd($"/say {message}",1000);
 

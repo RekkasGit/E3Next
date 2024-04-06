@@ -241,7 +241,7 @@ namespace E3Core.Processors
                 }
             }
         }
-        static System.Random rnd = new System.Random();
+        
         static void RegisterEvents()
         {
 
@@ -278,7 +278,7 @@ namespace E3Core.Processors
                     return;
                 }
                 double currentZ = MQ.Query<double>("${Me.Z}");
-                e3util.TryMoveToLoc(currentX+rnd.Next(-1*distance,distance), currentY + rnd.Next(-1 * distance, distance), currentZ);
+                e3util.TryMoveToLoc(currentX+E3.Random.Next(-1*distance,distance), currentY + E3.Random.Next(-1 * distance, distance), currentZ);
 
             });
             EventProcessor.RegisterCommand("/e3movetoloc", (x) => {
