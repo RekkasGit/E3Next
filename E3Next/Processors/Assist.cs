@@ -230,8 +230,13 @@ namespace E3Core.Processors
         /// </summary>
         public static void CombatAbilties()
         {
-            //can we find our target?
-            Spawn s;
+			if (MQ.Query<bool>("${Me.Feigning}"))
+			{
+				if (E3.CharacterSettings.IfFDStayDown) return;
+				MQ.Cmd("/stand");
+			}
+			//can we find our target?
+			Spawn s;
             if (_spawns.TryByID(AssistTargetID, out s))
             {
                 //yes we can, lets grab our current agro
@@ -784,7 +789,18 @@ namespace E3Core.Processors
 							   AssistOff();
 				           }
                            AllowControl = false;
-                           AssistOn(mobid, zoneid);
+						   if (e3util.IsEQLive())
+						   {
+							   //random delay so it isn't quite so ovious
+                               if((E3.CurrentClass & Class.Priest)!=E3.CurrentClass)
+                               {
+                                   //if not a priest/healer, lets chill for 30-400ms
+								   MQ.Delay(E3.Random.Next(30, 400));
+
+							   }
+
+						   }
+						   AssistOn(mobid, zoneid);
 
                        }
                    }

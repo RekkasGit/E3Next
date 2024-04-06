@@ -848,8 +848,8 @@ namespace E3Core.Processors
 					{
 						_log.Write($"Doing BeforeEvent:{spell.BeforeEvent}");
 						MQ.Cmd($"/docommand {spell.BeforeEvent}");
-						if (spell.BeforeEvent.StartsWith("/exchange", StringComparison.OrdinalIgnoreCase)) MQ.Delay(300);
-						if (spell.BeforeEvent.StartsWith("/bando", StringComparison.OrdinalIgnoreCase)) MQ.Delay(300);
+						//if (spell.BeforeEvent.StartsWith("/exchange", StringComparison.OrdinalIgnoreCase)) MQ.Delay(300);
+						//if (spell.BeforeEvent.StartsWith("/bando", StringComparison.OrdinalIgnoreCase)) MQ.Delay(300);
 					}
 					Int32 retryCounter = 0;
 					retrysong:
