@@ -228,14 +228,7 @@ namespace E3Core.Processors
 			}
 			if (MQ.Query<int>("${Me.Pet.ID}") > 0)
 			{
-				foreach (var buff in E3.CharacterSettings.Charm_BadPetBuffs)
-				{
-					var buffIndex = MQ.Query<int>($"${{Me.Pet.Buff[{buff.SpellName}]}}");
-					if (buffIndex > 0)
-					{
-						MQ.Cmd($"/notify PIW_BuffWindow PIW_PetBuff{buffIndex - 1}_Button leftmouseup");
-					}
-				}
+				Pets.removeBuffsIfNecessary(E3.CharacterSettings.Charm_BadPetBuffs);
 			}
 			if (MQ.Query<int>("${Me.Pet.ID}") == _charmTargetId)
 			{

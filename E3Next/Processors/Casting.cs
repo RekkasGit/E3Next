@@ -47,6 +47,10 @@ namespace E3Core.Processors
 			}
 			try
 			{
+				if (spell.NoTarget)
+				{
+                    targetID = 0;
+                }
 
 				if (targetID == 0)
 				{
