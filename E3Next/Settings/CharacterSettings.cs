@@ -87,7 +87,7 @@ namespace E3Core.Settings
 		public bool Buffs_CastAuras = true;
 		public List<Spell> Buffs_Auras = new List<Spell>();
         public List<Spell> BlockedPetBuffs = new List<Spell>();
-         public List<SpellRequest> GroupBuffRequests = new List<SpellRequest>();
+        public List<SpellRequest> GroupBuffRequests = new List<SpellRequest>();
         public List<SpellRequest> RaidBuffRequests = new List<SpellRequest>();
 
         public List<SpellRequest> StackBuffRequest = new List<SpellRequest>();
