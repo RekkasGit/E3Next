@@ -572,14 +572,14 @@ namespace E3Core.Processors
                 if (MQ.Query<Int32>("${Me.Pet.ID}") > 0)
                 {
                     MQ.Cmd($"/pet attack {AssistTargetID}");
-                    if(e3util.IsEQLive())
-                    {
-                        MQ.Cmd("/pet swarm");
-                    }    
+                     
                 }
-
-                //IF MELEE/Ranged
-                if (_meleeTypes.Contains(E3.CharacterSettings.Assist_Type, StringComparer.OrdinalIgnoreCase))
+				if (e3util.IsEQLive())
+				{
+					MQ.Cmd("/pet swarm");
+				}
+				//IF MELEE/Ranged
+				if (_meleeTypes.Contains(E3.CharacterSettings.Assist_Type, StringComparer.OrdinalIgnoreCase))
                 {
                     if (_assistDistanceTypes.Contains(E3.CharacterSettings.Assist_MeleeDistance, StringComparer.OrdinalIgnoreCase))
                     {
@@ -764,12 +764,13 @@ namespace E3Core.Processors
                        if (MQ.Query<Int32>("${Me.Pet.ID}") > 0)
                        {
                            MQ.Cmd($"/pet attack {targetID}");
-						   if (e3util.IsEQLive())
-						   {
-							   MQ.Cmd("/pet swarm");
-						   }
+						  
 					   }
-                    }
+					   if (e3util.IsEQLive())
+					   {
+						   MQ.Cmd("/pet swarm");
+					   }
+				   }
                    E3.Bots.BroadcastCommandToGroup($"/assistme {targetID} {Zoning.CurrentZone.Id}", x);
 
 
@@ -963,12 +964,13 @@ namespace E3Core.Processors
                         if (MQ.Query<Int32>("${Me.Pet.ID}") > 0)
                         {
                             MQ.Cmd("/pet attack");
-							if (e3util.IsEQLive())
-							{
-								MQ.Cmd("/pet swarm");
-							}
+						
 						}
-                    }
+						if (e3util.IsEQLive())
+						{
+							MQ.Cmd("/pet swarm");
+						}
+					}
                 }
             });
             EventProcessor.RegisterEvent("GetCloser", "Your target is too far away, get closer!", (x) =>
