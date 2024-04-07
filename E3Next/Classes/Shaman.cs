@@ -25,7 +25,7 @@ namespace E3Core.Classes
         private static Int64 _nextAggroCheck = 0;
         private static Int64 _nextAggroRefreshTimeInterval = 1000;
         private static Int64 _nextTotemCheck = 0;
-        private static Int64 _nextTotemRefreshTimeInterval = 1000;
+        private static Int64 _nextTotemRefreshTimeInterval = 3000;
 
         private static Int32 _maxAggroCap = 90;
 
