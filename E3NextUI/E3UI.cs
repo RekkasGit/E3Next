@@ -30,7 +30,7 @@ namespace E3NextUI
 		public static extern int SendMessage(IntPtr hWnd, int Msg, int wParam, int lParam);
 		[DllImportAttribute("user32.dll")]
 		public static extern bool ReleaseCapture();
-		public static string Version = "v1.2";
+		public static string Version = "v1.3";
         public static System.Diagnostics.Stopwatch _stopWatch = new System.Diagnostics.Stopwatch();
         public static volatile bool ShouldProcess = true;
 
