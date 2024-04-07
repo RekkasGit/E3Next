@@ -32,6 +32,9 @@ namespace E3Core.Settings
         public bool Misc_EndMedBreakInCombat;
         public bool Misc_AutoMedBreak;
         public bool Misc_AutoLootEnabled;
+
+      
+        
         public string Misc_AnchorChar = string.Empty;
         public bool Misc_RemoveTorporAfterCombat = true;
         public Int32 Misc_DelayAfterCastWindowDropsForSpellCompletion = 0;
@@ -80,8 +83,10 @@ namespace E3Core.Settings
         public List<Spell> GroupBuffs = new List<Spell>();
         public List<Spell> CombatBuffs = new List<Spell>();
         public List<Spell> PetBuffs = new List<Spell>();
+		public List<Spell> CombatPetBuffs = new List<Spell>();
+		public bool Buffs_CastAuras = true;
+		public List<Spell> Buffs_Auras = new List<Spell>();
         public List<Spell> BlockedPetBuffs = new List<Spell>();
-        public bool Buffs_CastAuras = true;
         public List<SpellRequest> GroupBuffRequests = new List<SpellRequest>();
         public List<SpellRequest> RaidBuffRequests = new List<SpellRequest>();
 
@@ -129,7 +134,7 @@ namespace E3Core.Settings
         public List<Spell> LifeSupport = new List<Spell>();
 
         //blocked buffs
-        public List<Spell> BockedBuffs = new List<Spell>();
+        public List<Spell> BlockedBuffs = new List<Spell>();
 
         public bool IfFDStayDown = false;
 
@@ -167,7 +172,7 @@ namespace E3Core.Settings
 
         public List<string> HealImportantBotTargets = new List<string>();
         public List<Spell> HealImportantBots = new List<Spell>();
-
+        public List<string> StartupCommands = new List<string>();
         public List<Spell> HealGroup = new List<Spell>();
         public Int32 HealGroup_NumberOfInjuredMembers = 3;
         public List<Spell> HealAll = new List<Spell>();
@@ -185,6 +190,8 @@ namespace E3Core.Settings
         public List<Spell> Report_Entries = new List<Spell>();
 
 
+        //E3BotsPublishData
+        public Dictionary<string,string> E3BotsPublishData = new Dictionary<string,string>();
 
         //charm data
         public Spell Charm_CharmSpell = null;
@@ -201,11 +208,16 @@ namespace E3Core.Settings
         public string Charm_PeelDebuffPerson = String.Empty;
         public List<Spell> Charm_PeelDebuffSpells = new List<Spell>();
 
-        //
+		//
 
+		//Loot Commander
 
-        public Int32 CPU_ProcessLoopDelay = 50;
-        public bool CPU_Camping_PauseAt20Seconds = true;
+		public bool LootCommander_Enabled;
+        public List<string> LootCommander_Looters = new List<string>();
+
+		public Int32 CPU_ProcessLoopDelay = 50;
+		public bool CPU_Camping_PauseAt30Seconds = true;
+		public bool CPU_Camping_PauseAt20Seconds = true;
         public bool CPU_Camping_ShutdownAt5Seconds = true;
 
 		public Dictionary<string, string> PetWeapons = new Dictionary<string, string>();
@@ -294,6 +306,7 @@ namespace E3Core.Settings
 
 
             LoadKeyData("CPU", "ProcessLoopDelayInMS", ParsedData, ref CPU_ProcessLoopDelay);
+			LoadKeyData("CPU", "Camp Pause at 30 seconds", ParsedData, ref CPU_Camping_PauseAt30Seconds);
 			LoadKeyData("CPU", "Camp Pause at 20 seconds", ParsedData, ref CPU_Camping_PauseAt20Seconds);
 			LoadKeyData("CPU", "Camp Shutdown at 5 seconds", ParsedData, ref CPU_Camping_ShutdownAt5Seconds);
 
@@ -337,6 +350,8 @@ namespace E3Core.Settings
 
 
             LoadKeyData("Report", "ReportEntry", ParsedData, Report_Entries);
+
+		
 
 
 			LoadKeyData("Bando Buff", "Enabled", ParsedData, ref BandoBuff_Enabled);
@@ -429,6 +444,22 @@ namespace E3Core.Settings
                 }
             }
 
+            Dictionary<string, string> tempPublishData = new Dictionary<string, string>();
+            LoadKeyData("E3BotsPublishData (key/value)", ParsedData, tempPublishData);
+
+            //now we need to change the keys to be in a specific format
+            foreach(var pair in tempPublishData)
+            {
+                string key = "${Data." + pair.Key + "}";
+                if(!E3BotsPublishData.ContainsKey(key)) 
+                {
+					E3BotsPublishData.Add("${Data." + pair.Key + "}", pair.Value);
+				}
+
+				
+            }
+
+
             LoadKeyData("Buffs", "Instant Buff", ParsedData, InstantBuffs);
             LoadKeyData("Buffs", "Self Buff", ParsedData, SelfBuffs);
             //set target on self buffs
@@ -441,14 +472,19 @@ namespace E3Core.Settings
             LoadKeyData("Buffs", "Combat Buff", ParsedData, CombatBuffs);
             LoadKeyData("Buffs", "Group Buff", ParsedData, GroupBuffs);
 			LoadKeyData("Buffs", "Pet Buff", ParsedData, PetBuffs);
-            LoadKeyData("Buffs", "Group Buff Request", ParsedData, GroupBuffRequests);
+			LoadKeyData("Buffs", "Combat Pet Buff", ParsedData, CombatPetBuffs);
+			LoadKeyData("Buffs", "Group Buff Request", ParsedData, GroupBuffRequests);
             LoadKeyData("Buffs", "Raid Buff Request", ParsedData, RaidBuffRequests);
 			LoadKeyData("Buffs", "Stack Buff Request", ParsedData, StackBuffRequest);
+            LoadKeyData("Buffs", "Aura", ParsedData, Buffs_Auras);
+
+
+			LoadKeyData("Startup Commands", "Command", ParsedData, StartupCommands);
+
 
 			LoadKeyData("Buffs", "Cast Aura(On/Off)", ParsedData, ref Buffs_CastAuras);
 
-
-            LoadKeyData("Melee Abilities", "Ability", ParsedData, MeleeAbilities);
+			LoadKeyData("Melee Abilities", "Ability", ParsedData, MeleeAbilities);
 
             LoadKeyData("Cursor Delete", "Delete", ParsedData, Cursor_Delete);
 
@@ -469,7 +505,8 @@ namespace E3Core.Settings
             LoadKeyData("Debuffs", "Debuff on Assist", ParsedData, Debuffs_OnAssist);
             LoadKeyData("Debuffs", "Debuff on Command", ParsedData, Debuffs_Command);
 
-
+            LoadKeyData("LootCommander", "Enabled",ParsedData, ref LootCommander_Enabled);
+            LoadKeyData("LootCommander", "Looter", ParsedData, LootCommander_Looters);
 
             LoadKeyData("Burn", "Quick Burn", ParsedData, QuickBurns);
             LoadKeyData("Burn", "Long Burn", ParsedData, LongBurns);
@@ -478,14 +515,14 @@ namespace E3Core.Settings
 
             LoadKeyData("Pets", "Pet Spell", ParsedData, PetSpell);
             LoadKeyData("Pets", "Pet Buff", ParsedData, PetBuffs);
+			LoadKeyData("Pets", "Combat Pet Buff", ParsedData, CombatPetBuffs);
             LoadKeyData("Pets", "Blocked Pet Buff", ParsedData, BlockedPetBuffs);
             LoadKeyData("Pets", "Pet Heal", ParsedData, PetHeals);
             LoadKeyData("Pets", "Pet Mend (Pct)", ParsedData, ref Pet_MendPercent);
             LoadKeyData("Pets", "Pet Taunt (On/Off)", ParsedData, ref Pet_TauntEnabled);
             LoadKeyData("Pets", "Pet Auto-Shrink (On/Off)", ParsedData, ref Pet_AutoShrink);
             LoadKeyData("Pets", "Pet Summon Combat (On/Off)", ParsedData, ref Pet_SummonCombat);
-            LoadKeyData("Pets", "Pet Buff Combat (On/Off)", ParsedData, ref Pet_BuffCombat);
-
+          
             LoadKeyData("Rez", "AutoRez", ParsedData, ref Rez_AutoRez);
             LoadKeyData("Rez", "Auto Rez Spells", ParsedData, Rez_AutoRezSpells);
             LoadKeyData("Rez", "Rez Spells", ParsedData, Rez_RezSpells);
@@ -502,7 +539,7 @@ namespace E3Core.Settings
             LoadKeyData("Cures", "DiseaseCounters", ParsedData, DiseaseCounterCure);
             LoadKeyData("Cures", "DiseaseCountersIgnore", ParsedData, DiseaseCounterIgnore);
 
-            LoadKeyData("Blocked Buffs", "BuffName", ParsedData, BockedBuffs);
+            LoadKeyData("Blocked Buffs", "BuffName", ParsedData, BlockedBuffs);
 
             LoadKeyData("Heals", "Tank Heal", ParsedData, HealTanks);
             LoadKeyData("Heals", "Important Heal", ParsedData, HealImportantBots);
@@ -593,7 +630,6 @@ namespace E3Core.Settings
             section.Keys.AddKey("Dismount On Interrupt (On/Off)","On");
             section.Keys.AddKey("Delay in MS After CastWindow Drops For Spell Completion", "0");
 			section.Keys.AddKey("If FD stay down (true/false)", "False");
-		
 
 			newFile.Sections.AddSection("Assist Settings");
             section = newFile.Sections.GetSectionData("Assist Settings");
@@ -619,10 +655,13 @@ namespace E3Core.Settings
             section.Keys.AddKey("Combat Buff", "");
             section.Keys.AddKey("Group Buff", "");
             section.Keys.AddKey("Pet Buff", "");
+			section.Keys.AddKey("Combat Pet Buff", "");
+			section.Keys.AddKey("Aura", "");
             section.Keys.AddKey("Group Buff Request", "");
             section.Keys.AddKey("Raid Buff Request", "");
 			section.Keys.AddKey("Stack Buff Request", "");
 			section.Keys.AddKey("Cast Aura(On/Off)", "On");
+           
 
             if ((CharacterClass & Class.Caster) != CharacterClass && (CharacterClass & Class.Priest) != CharacterClass)
             {
@@ -711,11 +750,11 @@ namespace E3Core.Settings
                 section.Keys.AddKey("Pet Spell", "");
                 section.Keys.AddKey("Pet Heal", "");
                 section.Keys.AddKey("Pet Buff", "");
-                section.Keys.AddKey("Pet Mend (Pct)", "");
+				section.Keys.AddKey("Combat Pet Buff", "");
+				section.Keys.AddKey("Pet Mend (Pct)", "");
                 section.Keys.AddKey("Pet Taunt (On/Off)", "On");
                 section.Keys.AddKey("Pet Auto-Shrink (On/Off)", "Off");
                 section.Keys.AddKey("Pet Summon Combat (On/Off)", "Off");
-                section.Keys.AddKey("Pet Buff Combat (On/Off)", "On");
             }
 
             if ((CharacterClass & Class.Druid) == CharacterClass)
@@ -844,7 +883,12 @@ namespace E3Core.Settings
 			section.Keys.AddKey("BandoNameWithoutBuff", "");
 			section.Keys.AddKey("BandoNameWithoutDeBuff", "");
 
-		
+
+
+			newFile.Sections.AddSection("Startup Commands");
+			section = newFile.Sections.GetSectionData("Startup Commands");
+			section.Keys.AddKey("Command", "");
+
 
 			newFile.Sections.AddSection("Blocked Buffs");
             section = newFile.Sections.GetSectionData("Blocked Buffs");
@@ -860,8 +904,15 @@ namespace E3Core.Settings
             section.Keys.AddKey("Gimme", "");
 
 
-            newFile.Sections.AddSection("Ifs");
-            newFile.Sections.AddSection("Events");
+			newFile.Sections.AddSection("LootCommander");
+			section = newFile.Sections.GetSectionData("LootCommander");
+			section.Keys.AddKey("Enabled (On/Off)", "Off");
+			section.Keys.AddKey("Looter", "");
+
+
+			newFile.Sections.AddSection("Ifs");
+			newFile.Sections.AddSection("E3BotsPublishData (key/value)");
+			newFile.Sections.AddSection("Events");
 			newFile.Sections.AddSection("EventLoop");
 			newFile.Sections.AddSection("Report");
 			section = newFile.Sections.GetSectionData("Report");
@@ -870,6 +921,7 @@ namespace E3Core.Settings
 			newFile.Sections.AddSection("CPU");
 			section = newFile.Sections.GetSectionData("CPU");
 			section.Keys.AddKey("ProcessLoopDelayInMS", "50");
+			section.Keys.AddKey("Camp Pause at 30 seconds", "True");
 			section.Keys.AddKey("Camp Pause at 20 seconds", "True");
 			section.Keys.AddKey("Camp Shutdown at 5 seconds", "True");
 
@@ -950,7 +1002,7 @@ namespace E3Core.Settings
             }
             section = ParsedData.Sections["Blocked Buffs"];
             section.RemoveAllKeys();
-            foreach (var spell in BockedBuffs)
+            foreach (var spell in BlockedBuffs)
             {
                 section.AddKey("BuffName", spell.SpellName);
             }

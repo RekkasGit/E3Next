@@ -4,6 +4,7 @@ using NetMQ.Sockets;
 using System;
 using System.Collections.Concurrent;
 using System.Collections.Generic;
+using System.Globalization;
 using System.Linq;
 using System.Text;
 using System.Threading;
@@ -74,22 +75,36 @@ namespace E3Core.Server
         //called by the main C# thread
         public static void ProcessRequests()
         {
+
             while (_tloRequets.Count > 0)
             {
                 RouterMessage message;
                 _tloRequets.TryDequeue(out message);
                 //lets pull out the string
                 string query = System.Text.Encoding.Default.GetString(message.payload, 0, message.payloadLength);
-                string response = MQ.Query<string>(query);
+                string response = String.Empty;
 
-                message.payloadLength = System.Text.Encoding.Default.GetBytes(response, 0, response.Length, message.payload, 0);
+                if (query =="${IniServerName}")
+                {
+                    response = Setup._serverNameForIni;                    
+                }
+                else
+                {
+					response = MQ.Query<string>(query);
+
+				}
+
+				message.payloadLength = System.Text.Encoding.Default.GetBytes(response, 0, response.Length, message.payload, 0);
                 _tloResposne.Enqueue(message);
             }
         }
 
         private void Process()
         {
-            AsyncIO.ForceDotNet.Force();
+			//need to do this so double parses work in other languages
+			Thread.CurrentThread.CurrentCulture = new CultureInfo("en-US");
+
+			AsyncIO.ForceDotNet.Force();
             _rpcRouter = new RouterSocket();
             _rpcRouter.Options.SendHighWatermark = 50000;
             _rpcRouter.Options.ReceiveHighWatermark = 50000;

@@ -241,7 +241,7 @@ namespace E3Core.Processors
                 }
             }
         }
-        static System.Random rnd = new System.Random();
+        
         static void RegisterEvents()
         {
 
@@ -278,7 +278,7 @@ namespace E3Core.Processors
                     return;
                 }
                 double currentZ = MQ.Query<double>("${Me.Z}");
-                e3util.TryMoveToLoc(currentX+rnd.Next(-1*distance,distance), currentY + rnd.Next(-1 * distance, distance), currentZ);
+                e3util.TryMoveToLoc(currentX+E3.Random.Next(-1*distance,distance), currentY + E3.Random.Next(-1 * distance, distance), currentZ);
 
             });
             EventProcessor.RegisterCommand("/e3movetoloc", (x) => {
@@ -326,7 +326,8 @@ namespace E3Core.Processors
 
                 Int32 closestID = _doorData.ClosestDoorID();
 
-                if (closestID > 0)
+                //eqlives doors have differnt IDs, do the basic click
+                if (closestID > 0 && !e3util.IsEQLive())
                 {
                     MQ.Cmd($"/doortarget id {closestID}");
                     double currentDistance = MQ.Query<Double>("${DoorTarget.Distance}");
@@ -376,7 +377,7 @@ namespace E3Core.Processors
                     }
                 }
                 else
-                {
+                {  //either eqlive or we don't have the id in our config
                     MQ.Cmd($"/doortarget");
                     MQ.Cmd("/squelch /click left door");
                 }
@@ -629,7 +630,15 @@ namespace E3Core.Processors
                     {
                         Movement.PauseMovement();
                         Int32 currentZone = MQ.Query<Int32>("${Zone.ID}");
-                        MQ.Cmd($"/face fast heading {heading * -1}");
+                        if(e3util.IsEQLive())
+                        {
+							MQ.Cmd($"/face heading {heading * -1}",500);
+						}
+                        else
+                        {
+							MQ.Cmd($"/face fast heading {heading * -1}");
+						}
+                       
                         MQ.Delay(600);
                         MQ.Cmd("/nomodkey /keypress forward hold");
                         MQ.Delay(3000);
@@ -652,7 +661,15 @@ namespace E3Core.Processors
                     E3.Bots.BroadcastCommandToGroup($"/rtz {heading}",x);
                     if (e3util.FilterMe(x)) return;
                     MQ.Delay(1000);
-                    MQ.Cmd($"/face fast heading {heading * -1}");
+                    if(e3util.IsEQLive())
+                    {
+						MQ.Cmd($"/face heading {heading * -1}",500);
+                 	}
+                    else
+                    {
+						MQ.Cmd($"/face fast heading {heading * -1}");
+					}
+                    
                     MQ.Cmd("/nomodkey /keypress forward hold");
 
                 }

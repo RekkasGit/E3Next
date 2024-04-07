@@ -29,8 +29,9 @@ namespace E3Core.Settings
         public DefaultBroadcast General_BroadCast_Default = DefaultBroadcast.Group;
         public bool General_HealWhileNavigating = true;
         public bool General_BeepNotifications = true;
+		
 
-        public Int32 Loot_LootItemDelay = 300;
+		public Int32 Loot_LootItemDelay = 300;
         public string Loot_LinkChannel = String.Empty;
         public List<string> Loot_LinkChannelValid = new List<string>() {"g","gu","say","rsay","shout","gsay", "rs","bc","e3bc"};
         public Int32 MaxGemSlots = 8 + MQ.Query<Int32>("${Me.AltAbility[Mnemonic Retention].Rank}");
@@ -54,12 +55,13 @@ namespace E3Core.Settings
         public List<string> Loot_OnlyStackableAlwaysLoot = new List<string>();
         public Int32 Loot_OnlyStackableValueGreaterThanInCopper = 1;
         public Boolean Loot_OnlyStackableEnabled = false;
-        public Int32 Loot_TimeToWaitAfterAssist = 2000;
-        public bool Loot_OnlyStackableHonorLootFileSkips = false;
+		public bool Loot_OnlyStackableHonorLootFileSkips = false;
+		public Int32 Loot_TimeToWaitAfterAssist = 2000;
+        
 
         public Boolean Assists_AutoAssistEnabled=false;
         public Int32 Assists_MaxEngagedDistance=250;
-        public Int32 Assists_AEThreatRange=100;
+        public Int32 Assists_AEThreatRange=40;
 
         public bool AutoTrade_WaitForTrade = true;
         public bool AutoTrade_All = false;
@@ -150,10 +152,11 @@ namespace E3Core.Settings
             LoadKeyData("Misc", "Relay Tells (On/Off)", parsedData, ref RelayTells);
 
             LoadKeyData("Loot", "Loot Link Channel", parsedData, ref Loot_LinkChannel);
+            Loot_LinkChannel = Loot_LinkChannel.Trim();
             //check valid loot channels
             if (!Loot_LinkChannelValid.Contains(Loot_LinkChannel, StringComparer.OrdinalIgnoreCase))
             {
-                MQ.Write("Invalid Loot Link Channel setting, loot will not be reported");
+                MQ.Write($"Invalid Loot Link Channel setting, loot will not be reported. value [{Loot_LinkChannel}]. Valid values are [{String.Join(",",Loot_LinkChannelValid)}]");
                 Loot_LinkChannel = String.Empty;
             }
           

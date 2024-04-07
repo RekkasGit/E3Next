@@ -28,7 +28,7 @@ namespace E3Core.Processors
         private static IList<string> _rangeTypes = new List<string>() { "Ranged", "Autofire" };
         private static IList<string> _meleeTypes = new List<string>() { "Melee","AutoAttack" };
         private static IList<string> _assistDistanceTypes = new List<string> { "MaxMelee", "off" };
-        private static Int32 _assistDistance = 0;
+        public static Int32 _assistDistance = 0;
         private static bool _assistIsEnraged = false;
         private static Dictionary<string, Action> _stickSwitch;
         private static HashSet<Int32> _offAssistIgnore = new HashSet<Int32>();
@@ -189,7 +189,15 @@ namespace E3Core.Processors
                         //we be ranged!
                         if (!AllowControl)
                         {
-                            MQ.Cmd($"/squelch /face fast id {AssistTargetID}");
+                            if(e3util.IsEQLive())
+                            {
+								MQ.Cmd($"/squelch fast id {AssistTargetID}",500);
+							}
+                            else
+                            {
+								MQ.Cmd($"/squelch /face fast id {AssistTargetID}");
+							}
+                           
                             if (MQ.Query<Decimal>("${Target.Distance}") > 200)
                             {
                                 MQ.Cmd("/squelch /stick moveback 195");
@@ -222,8 +230,13 @@ namespace E3Core.Processors
         /// </summary>
         public static void CombatAbilties()
         {
-            //can we find our target?
-            Spawn s;
+			if (MQ.Query<bool>("${Me.Feigning}"))
+			{
+				if (E3.CharacterSettings.IfFDStayDown) return;
+				MQ.Cmd("/stand");
+			}
+			//can we find our target?
+			Spawn s;
             if (_spawns.TryByID(AssistTargetID, out s))
             {
                 //yes we can, lets grab our current agro
@@ -459,14 +472,16 @@ namespace E3Core.Processors
         {
 
             if (zoneId != Zoning.CurrentZone.Id) return;
-            //clear in case its not reset by other means
-            //or you want to attack in enrage
-            _assistIsEnraged = false;
+			
+           
+			//clear in case its not reset by other means
+			//or you want to attack in enrage
+			_assistIsEnraged = false;
 
             if (mobID == 0)
             {
                 //something wrong with the assist, kickout
-                E3.Bots.Broadcast("Cannot assist, improper mobid");
+                E3.Bots.Broadcast("Cannot assist, improper MOB ID. Please get a valid target.");
                 return;
             }
             Spawn s;
@@ -490,12 +505,18 @@ namespace E3Core.Processors
                     E3.Bots.Broadcast($"{s.CleanName} is too far away.");
                     return;
                 }
-
-                if (MQ.Query<bool>("${Me.Feigning}"))
+				bool amIStanding = MQ.Query<bool>("${Me.Standing}");
+				if (MQ.Query<bool>("${Me.Feigning}"))
                 {
                     if (E3.CharacterSettings.IfFDStayDown) return;
                     MQ.Cmd("/stand");
-                }
+                }else
+                {
+					if (!amIStanding)
+					{
+						MQ.Cmd("/stand");
+					}
+				}
 
                 Spawn folTarget;
 
@@ -530,16 +551,35 @@ namespace E3Core.Processors
 
                 if (!AllowControl)
                 {
-                    MQ.Cmd($"/face fast id {AssistTargetID}");
+                    if(e3util.IsEQLive())
+					{
+                        //don't want to appear 'bot' like by always facing the mob
+                        //stick for melee should keep them facing th emob
+                        //as well as ranged has face commands but casters shouldn't care
+                        //if(!((E3.CurrentClass & Class.Caster) == E3.CurrentClass || (E3.CurrentClass & Class.Priest) == E3.CurrentClass))
+                        {
+							//MQ.Cmd($"/face id {AssistTargetID}", 500);
+						}
+
+					}
+                    else
+                    {
+						MQ.Cmd($"/face fast id {AssistTargetID}");
+					}
+                  
                 }
 
                 if (MQ.Query<Int32>("${Me.Pet.ID}") > 0)
                 {
                     MQ.Cmd($"/pet attack {AssistTargetID}");
+                     
                 }
-
-                //IF MELEE/Ranged
-                if (_meleeTypes.Contains(E3.CharacterSettings.Assist_Type, StringComparer.OrdinalIgnoreCase))
+				if (e3util.IsEQLive())
+				{
+					MQ.Cmd("/pet swarm");
+				}
+				//IF MELEE/Ranged
+				if (_meleeTypes.Contains(E3.CharacterSettings.Assist_Type, StringComparer.OrdinalIgnoreCase))
                 {
                     if (_assistDistanceTypes.Contains(E3.CharacterSettings.Assist_MeleeDistance, StringComparer.OrdinalIgnoreCase))
                     {
@@ -724,8 +764,13 @@ namespace E3Core.Processors
                        if (MQ.Query<Int32>("${Me.Pet.ID}") > 0)
                        {
                            MQ.Cmd($"/pet attack {targetID}");
-                       }
-                    }
+						  
+					   }
+					   if (e3util.IsEQLive())
+					   {
+						   MQ.Cmd("/pet swarm");
+					   }
+				   }
                    E3.Bots.BroadcastCommandToGroup($"/assistme {targetID} {Zoning.CurrentZone.Id}", x);
 
 
@@ -745,7 +790,18 @@ namespace E3Core.Processors
 							   AssistOff();
 				           }
                            AllowControl = false;
-                           AssistOn(mobid, zoneid);
+						   if (e3util.IsEQLive())
+						   {
+							   //random delay so it isn't quite so ovious
+                               if((E3.CurrentClass & Class.Priest)!=E3.CurrentClass)
+                               {
+                                   //if not a priest/healer, lets chill for 30-400ms
+								   MQ.Delay(E3.Random.Next(30, 400));
+
+							   }
+
+						   }
+						   AssistOn(mobid, zoneid);
 
                        }
                    }
@@ -908,8 +964,13 @@ namespace E3Core.Processors
                         if (MQ.Query<Int32>("${Me.Pet.ID}") > 0)
                         {
                             MQ.Cmd("/pet attack");
-                        }
-                    }
+						
+						}
+						if (e3util.IsEQLive())
+						{
+							MQ.Cmd("/pet swarm");
+						}
+					}
                 }
             });
             EventProcessor.RegisterEvent("GetCloser", "Your target is too far away, get closer!", (x) =>
@@ -944,7 +1005,17 @@ namespace E3Core.Processors
                 {
                     if (AssistTargetID > 0)
                     {
-                        MQ.Cmd($"/squelch /face fast id {AssistTargetID}");
+
+						if (e3util.IsEQLive())
+						{
+							MQ.Cmd($"/squelch /face id {AssistTargetID}",500);
+
+						}
+						else
+						{
+							MQ.Cmd($"/squelch /face fast id {AssistTargetID}");
+						}
+						
 
                     }
 

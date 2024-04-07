@@ -366,21 +366,47 @@ namespace E3Core.Processors
                 List<string> validReportChannels = new List<string>() { "/g", "/gu", "/say", "/rsay", "/gsay", "/rs", "/bc" };
 
                 string channel = "/gsay";
-                if (x.args.Count > 1 && validReportChannels.Contains(x.args[1], StringComparer.OrdinalIgnoreCase))
+                if(e3util.IsEQLive())
                 {
-
-                    channel = x.args[1];
+                    channel = "/gsay";
                 }
+                else
+                {
+					if (x.args.Count > 1 && validReportChannels.Contains(x.args[1], StringComparer.OrdinalIgnoreCase))
+					{
+
+						channel = x.args[1];
+					}
+				}
+              
                 if (x.args.Count > 0)
                 {
                     string slot = x.args[0];
-                    if (FDSPrint(slot,channel))
+                    if(slot=="all")
                     {
-                        if (!x.args.Contains("group"))
+                        foreach (string tslot in _invSlots)
                         {
-                            E3.Bots.BroadcastCommandToGroup($"/fds {slot} {channel} group",x);
-                        }
+							if (FDSPrint(tslot, channel))
+							{
+								//if (!x.args.Contains("group"))
+								//{
+								//	//E3.Bots.BroadcastCommandToGroup($"/fds {slot} {channel} group", x);
+								//}
+							}
+						}
+
                     }
+                    else
+                    {
+						if (FDSPrint(slot, channel))
+						{
+							if (!x.args.Contains("group"))
+							{
+								E3.Bots.BroadcastCommandToGroup($"/fds {slot} {channel} group", x);
+							}
+						}
+					}
+                   
                 }
 
             });

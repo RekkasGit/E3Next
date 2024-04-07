@@ -86,13 +86,55 @@ namespace E3Core.Processors
 
 			EventProcessor.RegisterEvent("InviteToGroup", "(.+) invites you to join a group.", (x) =>
             {
-                MQ.Cmd("/invite");
-                MQ.Delay(300);
+                if(e3util.IsEQLive())
+                {
+                    //don't just blindly accept group invites if not from your bot network
+					if (x.match.Groups.Count > 1)
+					{
+                        string person = x.match.Groups[1].Value;
+                        if(E3.Bots.IsMyBot(person))
+                        {
+							MQ.Cmd("/invite");
+							MQ.Delay(300);
+						}
+                        else
+                        {
+                            E3.Bots.Broadcast($"{person} tried to invite me to group, but not in my bot network, ignoring");
+                        }
+					}
+				}
+                else
+                {
+					MQ.Cmd("/invite");
+					MQ.Delay(300);
+				}
+			
             });
             EventProcessor.RegisterEvent("InviteToRaid", "(.+) invites you to join a raid.", (x) =>
             {
-                MQ.Delay(500);
-                MQ.Cmd("/raidaccept");
+				if (e3util.IsEQLive())
+				{     
+                    //don't just blindly accept raid invites if not from your guild
+					if (x.match.Groups.Count > 1)
+					{
+						string person = x.match.Groups[1].Value;
+						if (e3util.InMyGuild(person))
+						{
+							MQ.Delay(500);
+							MQ.Cmd("/raidaccept");
+						}
+						else
+						{
+							E3.Bots.Broadcast($"{person} tried to invite me to raid, but not in my guild, ignoring");
+						}
+					}
+				}
+				else
+				{
+					MQ.Delay(500);
+					MQ.Cmd("/raidaccept");
+				}
+				
             });
 
             EventProcessor.RegisterEvent("InviteToDZ", "(.+) tells you, 'dzadd'", (x) =>
@@ -181,13 +223,35 @@ namespace E3Core.Processors
             {
                 if (x.match.Groups.Count > 1)
                 {
-                    string  user = x.match.Groups[1].Value;
 
-                    //need to be in the same zone
-                    if(_spawns.TryByName(user,out var s))
-                    {
-                        MQ.Cmd($"/raidinvite {user}");
-                    }
+					if (e3util.IsEQLive())
+					{
+						//don't just blindly give raid invites if not from your guild
+						string person = x.match.Groups[1].Value;
+						if (e3util.InMyGuild(person))
+						{
+							//need to be in the same zone
+							if (_spawns.TryByName(person, out var s))
+							{
+								MQ.Cmd($"/raidinvite {person}");
+							}
+						}
+						else
+						{
+							E3.Bots.Broadcast($"{person} tried to ask for raid invite, but not in my guild. Ignoring");
+						}
+					}
+					else
+					{
+						string user = x.match.Groups[1].Value;
+
+						//need to be in the same zone
+						if (_spawns.TryByName(user, out var s))
+						{
+							MQ.Cmd($"/raidinvite {user}");
+						}
+					}
+					
                 }
             });
 
@@ -318,8 +382,10 @@ namespace E3Core.Processors
                 Rez.Reset();
                 Loot.Reset();
                 Assist.Reset();
+                BuffCheck.Reset();
                 E3.Bots.Broadcast("\aoComplete!");
-
+                //mem all new spells that may be configured
+                Casting.MemorizeAllSpells();
             });
 			EventProcessor.RegisterCommand("/e3cpudelay", (x) =>
 			{
@@ -385,8 +451,23 @@ namespace E3Core.Processors
 
                 });
             }
-        
-            EventProcessor.RegisterCommand("/yes", (x) =>
+			EventProcessor.RegisterCommand("/e3yes", (x) =>
+			{
+				if (x.args.Count == 0)
+				{
+					E3.Bots.BroadcastCommandToGroup("/e3yes all", x);
+				}
+				e3util.ClickYesNo(true);
+			});
+			EventProcessor.RegisterCommand("/e3no", (x) =>
+			{
+				if (x.args.Count == 0)
+				{
+					E3.Bots.BroadcastCommandToGroup("/e3no all", x);
+				}
+				e3util.ClickYesNo(false);
+			});
+			EventProcessor.RegisterCommand("/yes", (x) =>
             {
                 if (x.args.Count == 0)
                 {
@@ -429,7 +510,7 @@ namespace E3Core.Processors
                     {
                         Spawn s;
                         if (_spawns.TryByID(targetid, out s))
-                        {
+                        {   
                             e3util.TryMoveToLoc(s.X, s.Y,s.Z);
                             System.Text.StringBuilder sb = new StringBuilder();
                             bool first = true;
@@ -441,7 +522,12 @@ namespace E3Core.Processors
                             }
                             string message = sb.ToString();
                             E3.Bots.BroadcastCommandToGroup($"/bark-send {targetid} \"{message}\" {Zoning.CurrentZone.Id}",x);
-                            for (int i = 0; i < 5; i++)
+                            Int32 numberToBark = 5;
+                            if(e3util.IsEQLive())
+                            {
+                                numberToBark = 1;
+                            }
+                            for (int i = 0; i < numberToBark; i++)
                             {
 
                                 MQ.Cmd($"/say {message}");
@@ -478,12 +564,22 @@ namespace E3Core.Processors
                             Spawn s;
                             if (_spawns.TryByID(targetid, out s))
                             {
-                                Casting.TrueTarget(targetid);
+								if (e3util.IsEQLive())
+								{
+                                    //random delay so it isn't quite so ovious
+                                    MQ.Delay(E3.Random.Next(100, 1000));
+
+								}
+								Casting.TrueTarget(targetid);
                                 MQ.Delay(100);
                                 e3util.TryMoveToLoc(s.X, s.Y,s.Z);
-
-                                string message = x.args[1];
-                                for (int i = 0; i < 5; i++)
+								Int32 numberToBark = 5;
+								if (e3util.IsEQLive())
+								{
+									numberToBark = 1;
+								}
+								string message = x.args[1];
+                                for (int i = 0; i < numberToBark; i++)
                                 {
                                     MQ.Cmd($"/say {message}",1000);
 
@@ -866,7 +962,7 @@ namespace E3Core.Processors
             {
                 if (E3.IsInvis) return;
                 if (Basics.AmIDead()) return;
-                
+                if (e3util.IsEQLive()) return;
 
                 int pctMana = MQ.Query<int>("${Me.PctMana}");
                 var pctHps = MQ.Query<int>("${Me.PctHPs}");
@@ -911,67 +1007,7 @@ namespace E3Core.Processors
                         }
                     }
 
-                    //don't canni if we are moving/following
-                    if (E3.CharacterSettings.AutoCanni && Movement.StandingStillForTimePeriod())
-                    {
-                        foreach(var canniSpell in E3.CharacterSettings.CanniSpell)
-                        {
-							if (Casting.CheckReady(canniSpell))
-							{
-								pctHps = MQ.Query<int>("${Me.PctHPs}");
-								var hpThresholdDefined = canniSpell.MinHP > 0;
-								var manaThresholdDefined = canniSpell.MaxMana > 0;
-								bool castCanniSpell = false;
-								bool hpThresholdMet = false;
-								bool manaThresholdMet = false;
-
-								if (hpThresholdDefined)
-								{
-									if (pctHps > canniSpell.MinHP)
-									{
-										hpThresholdMet = true;
-									}
-								}
-
-								if (manaThresholdDefined)
-								{
-									if (pctMana < canniSpell.MaxMana)
-									{
-										manaThresholdMet = true;
-									}
-								}
-
-								if (hpThresholdDefined && manaThresholdDefined)
-								{
-									castCanniSpell = hpThresholdMet && manaThresholdMet;
-								}
-								else if (hpThresholdDefined && !manaThresholdDefined)
-								{
-									castCanniSpell = hpThresholdMet;
-								}
-								else if (manaThresholdDefined && !hpThresholdDefined)
-								{
-									castCanniSpell = manaThresholdMet;
-								}
-								else
-								{
-									castCanniSpell = true;
-								}
-
-								if (castCanniSpell)
-								{
-									var result = Casting.Cast(0, canniSpell);
-								    if(result== CastReturn.CAST_SUCCESS)
-                                    {
-                                        break;
-                                    }
-                                }
-							}
-							
-						}
-                        
-                        
-                    }
+                   
 
                 }
 
@@ -1175,6 +1211,8 @@ namespace E3Core.Processors
                         }
                         //allow mq to have the commands sent to the server
                         MQ.Delay(delayBetweenClicks);
+						NetMQServer.SharedDataClient.ProcessCommands();
+						PubClient.ProcessRequests();
 						if (EventProcessor.CommandList["/followme"].queuedEvents.Count > 0)
 						{
                             return;
@@ -1212,6 +1250,22 @@ namespace E3Core.Processors
             if (!e3util.ShouldCheck(ref _nextAutoMedCheck, _nextAutoMedCheckInterval)) return;
             int autoMedPct = E3.GeneralSettings.General_AutoMedBreakPctMana;
             if (autoMedPct == 0) return;
+            if (InCombat()) return;
+            if (Casting.SpellBookWndOpen()) return;
+            if (e3util.IsManualControl()) return;
+            if (Casting.IsCasting() && E3.CurrentClass!= Class.Bard) return;
+			bool amIStanding = MQ.Query<bool>("${Me.Standing}");
+			int pctMana = MQ.Query<int>("${Me.PctMana}");
+			int pctEndurance = MQ.Query<int>("${Me.PctEndurance}");
+			bool confirmationBox = MQ.Query<bool>("${Window[ConfirmationDialogBox].Open}");
+			if (!confirmationBox && !amIStanding&& pctMana > 99 && pctEndurance > 99 && !e3util.IsManualControl())
+			{
+				MQ.Cmd("/stand");
+                return;
+			}
+			//no sense in recovering endurance if not in resting state
+			if (!MQ.Query<bool>("${Me.CombatState.Equal[ACTIVE]}") && E3.CurrentClass == Class.Bard) return;
+
             if (!E3.CharacterSettings.Misc_AutoMedBreak) return;
             using (_log.Trace())
             {
@@ -1223,13 +1277,13 @@ namespace E3Core.Processors
                     if (Movement.Following || Movement.IsMoving()) return;
                 }
 
-                bool amIStanding = MQ.Query<bool>("${Me.Standing}");
+               
                 string combatState = MQ.Query<string>("${Me.CombatState}");
-                if (amIStanding && autoMedPct > 0 && (combatState != "COMBAT" || (E3.CurrentClass & Class.Priest) == E3.CurrentClass || (E3.CurrentClass & Class.Caster) == E3.CurrentClass))
-                {
-                    int pctMana = MQ.Query<int>("${Me.PctMana}");
-                    int pctEndurance = MQ.Query<int>("${Me.PctEndurance}");
+				
 
+				if (amIStanding && autoMedPct > 0)
+                {
+                   
                     if (pctMana < autoMedPct && (E3.CurrentClass & Class.ManaUsers) == E3.CurrentClass)
                     {
                         MQ.Cmd("/sit");
@@ -1241,9 +1295,10 @@ namespace E3Core.Processors
                         MQ.Cmd("/sit");
                     }
                 }
+                
             }
         }
-
+        
         /// <summary>
         /// Checks hunger and thirst levels, and eats the configured food and drink in order to save stat food.
         /// </summary>
@@ -1371,9 +1426,12 @@ namespace E3Core.Processors
         public static void CheckForage()
         {
             if (!E3.CharacterSettings.Misc_AutoForage) return;
+            
             if (!e3util.ShouldCheck(ref _nextForageCheck, _nextForageCheckInterval)) return;
 
-            bool forageReady = MQ.Query<bool>("${Me.AbilityReady[Forage]}");
+			if (Basics.AmIDead()) return;
+
+			bool forageReady = MQ.Query<bool>("${Me.AbilityReady[Forage]}");
 
             if(forageReady)
             {

@@ -30,6 +30,7 @@ namespace E3Core.Classes
         private static bool _forceOverride = false;
         private static Int64 _nextAutoSonataCheck;
         private static Data.Spell _sonataSpell = new Spell("Selo's Sonata");
+        private static Data.Spell _sonataAccelerando = new Spell("Selo's Accelerando");
         private static Int64 _nextBardCast = 0;
         /// <summary>
         /// Initializes this instance.
@@ -49,8 +50,19 @@ namespace E3Core.Classes
         {
             if (E3.IsInvis) return;
             if (!e3util.ShouldCheck(ref _nextAutoSonataCheck, 1000)) return;
-            if (E3.CharacterSettings.Bard_AutoSonata)
+			if (!MQ.Query<bool>("${Me.Standing}"))
+			{
+				//we are sitting, don't do anything
+				return;
+			}
+			if (E3.CharacterSettings.Bard_AutoSonata)
             {
+                Int32 spellIDToLookup = SelosBuffID;
+
+                if(e3util.IsEQLive())
+                {
+                    spellIDToLookup = _sonataAccelerando.SpellID;
+                }
 
                 bool needToCast = false;
                 //lets get group members
@@ -63,7 +75,7 @@ namespace E3Core.Classes
                         if (memberNames.Contains(s.CleanName))
                         {
                             List<Int32> buffList = E3.Bots.BuffList(s.CleanName);
-                            if (!buffList.Contains(SelosBuffID))
+                            if (!buffList.Contains(spellIDToLookup))
                             {
                                 needToCast = true;
                                 break;
@@ -71,8 +83,17 @@ namespace E3Core.Classes
                         }
                     }
                 }
-                Int32 totalSecondsLeft = MQ.Query<Int32>("${Me.Buff[Selo's Sonata].Duration.TotalSeconds}");
-                if (totalSecondsLeft < 10)
+                Int32 totalSecondsLeft = 0;
+                if(e3util.IsEQLive())
+                {
+					totalSecondsLeft = MQ.Query<Int32>("${Me.Buff[Selo's Accelerando].Duration.TotalSeconds}");
+				}
+				else
+                {
+					totalSecondsLeft = MQ.Query<Int32>("${Me.Buff[Selo's Sonata].Duration.TotalSeconds}");
+				}
+
+				if (totalSecondsLeft < 10)
                 {
                     needToCast = true;
                 }
@@ -154,29 +175,88 @@ namespace E3Core.Classes
         public static void check_BardSongs()
         {
 
-
-            if(!_playingMelody && !Assist.IsAssisting)
+			if (!_playingMelody && !Assist.IsAssisting)
             {
                 return;
             }
 
-            if ( _songs.Count==0) return;            
+            if (_songs.Count == 0) return;
             if (E3.IsInvis || e3util.IsActionBlockingWindowOpen())
             {
                 return;
             }
-            if(Casting.IsCasting())
+            if (Casting.IsCasting())
             {
                 return;
             }
-            if (_songs.Count == 1 && MQ.Query<bool>("${Me.Casting}")) return;
 
+			if (_songs.Count == 1 && MQ.Query<bool>("${Me.Casting}")) return;
+
+			if (E3.CharacterSettings.Misc_DelayAfterCastWindowDropsForSpellCompletion > 0)
+			{
+				MQ.Delay(E3.CharacterSettings.Misc_DelayAfterCastWindowDropsForSpellCompletion);
+			}
+			//necessary in case to stop the situation of the song not fully reigstering on the server as being complete
+			//even if the client thinks it does. basically the debuff/buff won't appear before even tho the client says we have completed the song
+			Int64 curTimeStamp = Core.StopWatch.ElapsedMilliseconds;
+			if (curTimeStamp < _nextBardCast)
+			{
+				return;
+			}
+
+
+			if (MQ.Query<bool>("${Window[SpellBookWnd].Open}"))
+            {
+
+                return;
+            }
+            //can['t do songs if your stunned
+            if (MQ.Query<bool>("${Me.Stunned}"))
+            {
+                return;
+            }
+            if (!MQ.Query<bool>("${Me.Standing}"))
+            {
+                //we are sitting, don't do anything
+                return;
+            }
+			
             //lets play a song!
-            Data.Spell songToPlay= _songs.Dequeue();
-            _songs.Enqueue(songToPlay);
-            
-            //if this base song duration > 18 seconds check to see if we have it as a buff, otherwise recast. 
-            if(songToPlay.DurationTotalSeconds>18)
+            //get a song from the queue.
+            Data.Spell songToPlay = null;
+			//a counter to determine if we have looped through all the songs before finding a good one
+			Int32 trycounter = 0;
+    		pickASong:
+			songToPlay = _songs.Dequeue();
+	      
+			//we have gone through all the songs and not found a valid one to use, kick out
+			if (trycounter > _songs.Count)
+			{
+				_songs.Enqueue(songToPlay);//place song back
+				return;
+			}
+			trycounter++;
+			if (songToPlay.CheckForCollection.Count > 0)
+			{
+				foreach (var spellName in songToPlay.CheckForCollection.Keys)
+				{
+                    bool haveBuff = (MQ.Query<bool>($"${{Bool[${{Me.Buff[{spellName}]}}]}}") || MQ.Query<bool>($"${{Bool[${{Me.Song[{spellName}]}}]}}"));
+                    if (haveBuff) 
+                    {
+						_songs.Enqueue(songToPlay);// place song back
+						goto pickASong;
+					}
+      		    }
+			}
+            if(!Casting.Ifs(songToPlay))
+			{
+				_songs.Enqueue(songToPlay);// place song back
+				goto pickASong;
+			}
+            //found a valid song, place it back into the queue so we don't lose it. 
+			_songs.Enqueue(songToPlay);
+			//if this base song duration > 18 seconds check to see if we have it as a buff, otherwise recast. 
+			if (songToPlay.DurationTotalSeconds>18)
             {
                 string BuffSecondsLeftQuery = "${Me.Buff[" + songToPlay.SpellName + "].Duration.TotalSeconds}";
                 string SongSecondsLeftQuery = "${Me.Song[" + songToPlay.SpellName + "].Duration.TotalSeconds}";
@@ -187,15 +267,11 @@ namespace E3Core.Classes
             }
             if (Casting.CheckReady(songToPlay))
             {
-                Int64 curTimeStamp = Core.StopWatch.ElapsedMilliseconds;
-                if (curTimeStamp < _nextBardCast)
-                {
-                    return;
-                }
+               
                 MQ.Write($"\atTwist \ag{songToPlay.SpellName}");
-                _nextBardCast = Core.StopWatch.ElapsedMilliseconds + (int)songToPlay.MyCastTime;
-                Casting.Sing(0, songToPlay);
-            }
+				_nextBardCast = Core.StopWatch.ElapsedMilliseconds + (int)songToPlay.MyCastTime + 300;
+				Casting.Sing(0, songToPlay);
+			}
             else
             {
                 MQ.Write($"\arTwists-Skip \ag{songToPlay.SpellName}");
@@ -216,7 +292,8 @@ namespace E3Core.Classes
             {
                 MQ.Write($"\aoStart Melody:\ag{melodyName}");
                 MQ.Cmd("/stopsong");
-                _forceOverride = force;
+                _nextBardCast = Core.StopWatch.ElapsedMilliseconds;
+				_forceOverride = force;
                 _playingMelody = true;
                 _currentMelody = melodyName;
             }
@@ -232,7 +309,8 @@ namespace E3Core.Classes
 				{
 					MQ.Write($"\aoStart Melody:\ag{_currentMelody}");
 					MQ.Cmd("/stopsong");
-					
+					_nextBardCast = Core.StopWatch.ElapsedMilliseconds;
+
 				}
 			}
 			

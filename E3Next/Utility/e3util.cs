@@ -12,7 +12,7 @@ using System.Reflection.Emit;
 using System.Runtime.CompilerServices;
 using System.Text;
 using static MonoCore.EventProcessor;
-
+using E3Core.Server;
 
 namespace E3Core.Utility
 {
@@ -24,30 +24,30 @@ namespace E3Core.Utility
         private static IMQ MQ = E3.MQ;
         private static ISpawns _spawns = E3.Spawns;
 
-		public static Int32 MaxBuffSlots = 38;
-		public static Int32 MaxSongSlots = 20;
+		public static Int32 MaxBuffSlots = 42;
+		public static Int32 MaxSongSlots = 30;
         public static Int32 MaxPetBuffSlots = 30;
 
 		//share this as we can reuse as its only 1 thread
-		private static StringBuilder resultStringBuilder = new StringBuilder(1024);
+		private static StringBuilder _resultStringBuilder = new StringBuilder(1024);
 		//modified from https://stackoverflow.com/questions/6275980/string-replace-ignoring-case
 		public static string ArgsToCommand(List<String> args)
 		{
-			resultStringBuilder.Clear();
+			_resultStringBuilder.Clear();
 			foreach (var arg in args)
 			{
 				if (arg.Contains(" "))
 				{
 					//need to wrap it with quotes if it has spaces
-					resultStringBuilder.Append($"\"{arg}\" ");
+					_resultStringBuilder.Append($"\"{arg}\" ");
 				}
 				else
 				{
-					resultStringBuilder.Append($"{arg} ");
+					_resultStringBuilder.Append($"{arg} ");
 				}
 
 			}
-			return resultStringBuilder.ToString().Trim();
+			return _resultStringBuilder.ToString().Trim();
 		}
 		public static void PutOriginalTargetBackIfNeeded(Int32 targetid)
         {
@@ -91,7 +91,7 @@ namespace E3Core.Utility
                 throw new ArgumentException("String cannot be of zero length.");
             }
 
-            resultStringBuilder.Clear();
+            _resultStringBuilder.Clear();
           
             // Analyze the replacement: replace or remove.
             bool isReplacementNullOrEmpty = string.IsNullOrEmpty(newValue);
@@ -107,13 +107,13 @@ namespace E3Core.Utility
                 bool isNothingToAppend = charsUntilReplacment == 0;
                 if (!isNothingToAppend)
                 {
-                    resultStringBuilder.Append(str, startSearchFromIndex, charsUntilReplacment);
+                    _resultStringBuilder.Append(str, startSearchFromIndex, charsUntilReplacment);
                 }
 
                 // Process the replacement.
                 if (!isReplacementNullOrEmpty)
                 {
-                    resultStringBuilder.Append(newValue);
+                    _resultStringBuilder.Append(newValue);
                 }
                 // Prepare start index for the next search.
                 // This needed to prevent infinite loop, otherwise method always start search 
@@ -126,13 +126,13 @@ namespace E3Core.Utility
                     // It is end of the input string: no more space for the next search.
                     // The input string ends with a value that has already been replaced. 
                     // Therefore, the string builder with the result is complete and no further action is required.
-                    return resultStringBuilder.ToString();
+                    return _resultStringBuilder.ToString();
                 }
             }
             // Append the last part to the result.
             int charsUntilStringEnd = str.Length - startSearchFromIndex;
-            resultStringBuilder.Append(str, startSearchFromIndex, charsUntilStringEnd);
-            return resultStringBuilder.ToString();
+            _resultStringBuilder.Append(str, startSearchFromIndex, charsUntilStringEnd);
+            return _resultStringBuilder.ToString();
         }
 
 		public static IEnumerable<T> Shuffle<T>(this IEnumerable<T> source, Random rng)
@@ -269,6 +269,10 @@ namespace E3Core.Utility
 
             return false;
         }
+        public static bool InMyGuild(string person)
+        {
+            return MQ.Query<bool>($"${{Spawn[{person}].Guild.Equal[${{Me.Guild}}]}}");
+		}
         public static bool FilterMe(CommandMatch x)
         {
             ////Stop /Only|Soandoso
@@ -439,7 +443,31 @@ namespace E3Core.Utility
 
             return !inputSetValue;
         }
+        public static bool IsEQLive()
+        {
+            return E3.MQBuildVersion != MQBuild.EMU;
 
+		}
+        public static bool IsEQEMU()
+        {
+            return E3.MQBuildVersion == MQBuild.EMU;
+        }
+        public static string NumbersToString(List<Int32> numbers, char delim)
+        {
+            _resultStringBuilder.Clear();
+            foreach(Int32 number in numbers)
+            {
+
+                if(_resultStringBuilder.Length > 0)
+                {
+                    _resultStringBuilder.Append(delim);
+                }
+               
+				_resultStringBuilder.Append(number.ToString());
+			}
+            return _resultStringBuilder.ToString();
+
+        }
         public static void StringsToNumbers(string s, char delim, List<Int32> list)
         {
             List<int> result = list;
@@ -695,6 +723,9 @@ namespace E3Core.Utility
         {
             using(_log.Trace())
             {
+                //incase this changes at runtime
+                MaxBuffSlots = MQ.Query<Int32>("${Me.MaxBuffSlots}");
+
 				buffInfoStringBuilder.Clear();
 				//lets look for a partial match.
 				for (Int32 i = 1; i <= MaxBuffSlots; i++)
@@ -821,8 +852,8 @@ namespace E3Core.Utility
 		}
         public static bool IsShuttingDown()
         {
-
-            if(EventProcessor.CommandList.ContainsKey("/shutdown") && EventProcessor.CommandList["/shutdown"].queuedEvents.Count > 0)
+			NetMQServer.SharedDataClient.ProcessCommands();
+			if (EventProcessor.CommandList.ContainsKey("/shutdown") && EventProcessor.CommandList["/shutdown"].queuedEvents.Count > 0)
             {
                 return true;
             }

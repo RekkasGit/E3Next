@@ -8,7 +8,7 @@ using MonoCore;
 using System.Collections.Generic;
 using System.Dynamic;
 using System.Linq;
-
+using System.Web.UI;
 
 namespace E3Core.Classes
 {
@@ -25,14 +25,133 @@ namespace E3Core.Classes
         private static Int64 _nextAggroCheck = 0;
         private static Int64 _nextAggroRefreshTimeInterval = 1000;
         private static Int64 _nextTotemCheck = 0;
-        private static Int64 _nextTotemRefreshTimeInterval = 1000;
+        private static Int64 _nextTotemRefreshTimeInterval = 3000;
 
         private static Int32 _maxAggroCap = 90;
 
-        /// <summary>
-        /// Checks aggro level and drops it if necessary.
-        /// </summary>
-        [AdvSettingInvoke]
+		[SubSystemInit]
+		public static void Init()
+		{
+			RegisterEvents();
+		}
+        public static void RegisterEvents()
+        {
+			EventProcessor.RegisterCommand("/e3autocanni", (x) =>
+			{
+				//swap them
+
+				if (x.args.Count > 0)
+				{
+					if (x.args[0].Equals("off", StringComparison.OrdinalIgnoreCase))
+					{
+						if (E3.CharacterSettings.AutoCanni)
+						{
+							E3.CharacterSettings.AutoCanni = false;
+							E3.Bots.Broadcast("\agTurning off Auto Canni");
+						}
+					}
+					else if (x.args[0].Equals("on", StringComparison.OrdinalIgnoreCase))
+					{
+						if (!E3.CharacterSettings.AutoCanni)
+						{
+							E3.CharacterSettings.AutoCanni = true;
+							E3.Bots.Broadcast("\arTurning on auto canni!");
+
+						}
+					}
+				}
+				else
+				{
+					E3.CharacterSettings.AutoCanni = E3.CharacterSettings.AutoCanni ? false : true;
+					if (E3.CharacterSettings.AutoCanni) E3.Bots.Broadcast("\arAuto Canni On");
+					if (!E3.CharacterSettings.AutoCanni) E3.Bots.Broadcast("\agAuto Canni Off");
+
+				}
+
+			});
+
+		}
+        [ClassInvoke(Data.Class.Shaman)]
+        public static void AutoCanni()
+        {
+			//don't canni if we are moving/following
+			if (E3.CharacterSettings.AutoCanni && Movement.StandingStillForTimePeriod())
+			{
+				
+				foreach (var canniSpell in E3.CharacterSettings.CanniSpell)
+				{
+					int pctMana = MQ.Query<int>("${Me.PctMana}");
+					var pctHps = MQ.Query<int>("${Me.PctHPs}");
+					int currentHps = MQ.Query<int>("${Me.CurrentHPs}");
+
+                    if(!Casting.Ifs(canniSpell))
+                    {
+                        continue;
+                    }
+					if (Casting.CheckReady(canniSpell))
+					{
+						var hpThresholdDefined = canniSpell.MinHP > 0;
+						var manaThresholdDefined = canniSpell.MaxMana > 0;
+						bool castCanniSpell = false;
+						bool hpThresholdMet = false;
+						bool manaThresholdMet = false;
+
+						if (hpThresholdDefined)
+						{
+							if (pctHps > canniSpell.MinHP)
+							{
+								hpThresholdMet = true;
+							}
+						}
+
+						if (manaThresholdDefined)
+						{
+							if (pctMana < canniSpell.MaxMana)
+							{
+								manaThresholdMet = true;
+							}
+						}
+
+						if (hpThresholdDefined && manaThresholdDefined)
+						{
+							castCanniSpell = hpThresholdMet && manaThresholdMet;
+						}
+						else if (hpThresholdDefined && !manaThresholdDefined)
+						{
+							castCanniSpell = hpThresholdMet;
+						}
+						else if (manaThresholdDefined && !hpThresholdDefined)
+						{
+							castCanniSpell = manaThresholdMet;
+						}
+						else
+						{
+							castCanniSpell = true;
+						}
+
+						if (castCanniSpell)
+						{
+							var result = Casting.Cast(0, canniSpell,Heals.SomeoneNeedsHealing);
+							if (result == CastReturn.CAST_SUCCESS)
+							{
+								break;
+							}
+                            if(result==CastReturn.CAST_INTERRUPTFORHEAL)
+                            {
+                                return;
+                            }
+						}
+					}
+
+				}
+
+
+			}
+		}
+		/// <summary>
+		/// Checks aggro level and drops it if necessary.
+		/// </summary>
+		[AdvSettingInvoke]
         public static void Check_ShamanAggro()
         {
 

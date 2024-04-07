@@ -97,7 +97,7 @@ namespace E3Core.Processors
 					string message = e3util.ArgsToCommand(x.args);
 					if (message.StartsWith(@"/"))
                     {
-                        BroadcastCommand(message,true);
+                        BroadcastCommand(message,true,x);
                     }
                     else
                     {
@@ -114,7 +114,7 @@ namespace E3Core.Processors
 					string message = e3util.ArgsToCommand(x.args);
 					if (message.StartsWith(@"/"))
 					{
-						BroadcastCommand(message, true);
+						BroadcastCommand(message, true,x);
 					}
 					else
 					{
@@ -131,7 +131,7 @@ namespace E3Core.Processors
 					string message = e3util.ArgsToCommand(x.args);
 					if (message.StartsWith(@"/"))
 					{
-						BroadcastCommandAllZoneNotMe(message, true);
+						BroadcastCommandAllZoneNotMe(message, true,x);
 					}
 					else
 					{
@@ -145,7 +145,7 @@ namespace E3Core.Processors
 				if (x.args.Count > 0)
 				{
 					string command = e3util.ArgsToCommand(x.args);
-					BroadcastCommandToGroup(command,null,true);
+					BroadcastCommandToGroup(command,x,true);
 
 				}
 				
@@ -155,7 +155,7 @@ namespace E3Core.Processors
 				if (x.args.Count > 0)
 				{
 					string command = e3util.ArgsToCommand(x.args);
-					BroadcastCommandToGroupZone(command, null, true);
+					BroadcastCommandToGroupZone(command, x, true);
 
 				}
 
@@ -167,6 +167,11 @@ namespace E3Core.Processors
 					string person = x.args[0];
 					x.args.RemoveAt(0);
 					string command = e3util.ArgsToCommand(x.args);
+					if(x.filters.Count > 0)
+					{
+						command += " \""+ e3util.ArgsToCommand(x.filters)+"\"";
+					}
+
 					BroadcastCommandToPerson(person, command,true);
 				}
 			});
@@ -175,7 +180,7 @@ namespace E3Core.Processors
 				if (x.args.Count > 0)
 				{
 					string command = e3util.ArgsToCommand(x.args);
-					BroadcastCommandToGroupAll(command,null,true);
+					BroadcastCommandToGroupAll(command,x,true);
 		            
                 }
 			});
@@ -184,7 +189,7 @@ namespace E3Core.Processors
 				if (x.args.Count > 0)
 				{
 					string command = e3util.ArgsToCommand(x.args);
-					BroadcastCommandToGroupAllZone(command, null, true);
+					BroadcastCommandToGroupAllZone(command, x, true);
 
 				}
 			});
@@ -193,7 +198,7 @@ namespace E3Core.Processors
 				if (x.args.Count > 0)
 				{
 					string command = e3util.ArgsToCommand(x.args);
-			        BroadcastCommandAll(command,true);
+			        BroadcastCommandAll(command,true,x);
 
 				}
 			});
@@ -202,7 +207,7 @@ namespace E3Core.Processors
 				if (x.args.Count > 0)
 				{
 					string command = e3util.ArgsToCommand(x.args);
-					BroadcastCommandAllZone(command, true);
+					BroadcastCommandAllZone(command, true,x);
 
 				}
 			});

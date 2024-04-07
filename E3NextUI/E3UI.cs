@@ -30,7 +30,7 @@ namespace E3NextUI
 		public static extern int SendMessage(IntPtr hWnd, int Msg, int wParam, int lParam);
 		[DllImportAttribute("user32.dll")]
 		public static extern bool ReleaseCapture();
-		public static string Version = "v1.2";
+		public static string Version = "v1.3";
         public static System.Diagnostics.Stopwatch _stopWatch = new System.Diagnostics.Stopwatch();
         public static volatile bool ShouldProcess = true;
 
@@ -49,7 +49,9 @@ namespace E3NextUI
         public static TextBoxInfo MeleeConsole;
         public static TextBoxInfo SpellConsole;
         public static string PlayerName;
-        public static Int32 _parentProcess;
+        public static string ServerName = string.Empty;
+	
+	    public static Int32 _parentProcess;
         public static object _objectLock = new object();
         public static GeneralSettings _genSettings;
         public static bool _buttonMode = false;
@@ -122,7 +124,8 @@ namespace E3NextUI
                     lock (_tloClient)
                     {
                         PlayerName = _tloClient.RequestData("${Me.CleanName}");
-                        this.Text = $"E3UI ({PlayerName}) ({Version})";
+                        ServerName = _tloClient.RequestData("${MacroQuest.Server}");
+                        this.Text = $"E3UI ({PlayerName})({ServerName})({Version})";
                         labelPlayerName.Text = PlayerName;
                         configFolder = _tloClient.RequestData("${MacroQuest.Path[config]}");
                     }
@@ -141,7 +144,7 @@ namespace E3NextUI
 
 			}
 
-            _genSettings = new GeneralSettings(configFolder, PlayerName);
+            _genSettings = new GeneralSettings(configFolder, PlayerName,ServerName);
             _genSettings.LoadData();
 
 

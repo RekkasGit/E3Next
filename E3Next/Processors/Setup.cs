@@ -17,7 +17,7 @@ namespace E3Core.Processors
         static public string _missingSpellItem = string.Empty;
         static public Int32 _numInventorySlots = 10;
         static public Int32 _previousSpellGemThatWasCast = -1;
-        public const string _e3Version = "1.2";
+        public const string _e3Version = "1.3";
         public static Boolean _debug = true;
         public const string _macroData_Ini = @"e3 Macro Inis\e3 Data.ini";
         public static string _generalSettings_Ini = @"e3 Macro Inis\General Settings.ini";
@@ -33,6 +33,7 @@ namespace E3Core.Processors
             using (_log.Trace())
             {
 
+                E3.MQBuildVersion = (MQBuild)MQ.Query<Int32>("${MacroQuest.Build}");
                 if(MQ.Query<bool>("!${Defined[E3N_var]}"))
                 {
                     MQ.Cmd("/declare E3N_var string global false");
@@ -46,10 +47,15 @@ namespace E3Core.Processors
                 }
 
                 MQ.Write($"Loading nE³xt v{_e3Version}...Mq2Mono v{Core._MQ2MonoVersion}");
-             
+                
 
                 InitPlugins();
                 InitSubSystems();
+
+                foreach(var command in E3.CharacterSettings.StartupCommands)
+                {
+                    MQ.Cmd(command);
+                }
                 return true;
             }
 
@@ -66,7 +72,16 @@ namespace E3Core.Processors
             {
                 //these are static don't need to create an instance
                 var func = (Action)foundMethod.CreateDelegate(typeof(Action));
-                func.Invoke();
+                try
+                {
+					func.Invoke();
+
+				}
+				catch (Exception ex)
+                {
+                    MQ.Write("Issue with InitSubsystem:" + foundMethod.ToString());
+                    throw ex;
+                }
             }
         }
         private static void InitPlugins()

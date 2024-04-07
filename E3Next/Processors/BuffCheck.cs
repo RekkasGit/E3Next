@@ -66,7 +66,9 @@ namespace E3Core.Processors
 		}
 		public static void Reset()
 		{
-			foreach(var pair in _buffTimers)
+			_initAuras = false;
+			_selectAura = null;
+			foreach (var pair in _buffTimers)
 			{
 				pair.Value.Dispose();
 
@@ -133,7 +135,7 @@ namespace E3Core.Processors
 					{
 						MQ.Write("\aoBlocked Spell List");
 						MQ.Write("\aw==================");
-						foreach (var spell in E3.CharacterSettings.BockedBuffs)
+						foreach (var spell in E3.CharacterSettings.BlockedBuffs)
 						{
 							MQ.Write("\at" + spell.SpellName);
 						}
@@ -143,8 +145,8 @@ namespace E3Core.Processors
 		}
 		public static void BlockBuffRemove(string spellName)
 		{
-			List<Spell> newList = E3.CharacterSettings.BockedBuffs.Where(y => !y.SpellName.Equals(spellName, StringComparison.OrdinalIgnoreCase)).ToList();
-			E3.CharacterSettings.BockedBuffs = newList;
+			List<Spell> newList = E3.CharacterSettings.BlockedBuffs.Where(y => !y.SpellName.Equals(spellName, StringComparison.OrdinalIgnoreCase)).ToList();
+			E3.CharacterSettings.BlockedBuffs = newList;
 			E3.CharacterSettings.SaveData();
 
 		}
@@ -152,7 +154,7 @@ namespace E3Core.Processors
 		{
 			//check if it exists
 			bool exists = false;
-			foreach (var spell in E3.CharacterSettings.BockedBuffs)
+			foreach (var spell in E3.CharacterSettings.BlockedBuffs)
 			{
 
 				if (spell.SpellName.Equals(spellName, StringComparison.OrdinalIgnoreCase))
@@ -165,7 +167,7 @@ namespace E3Core.Processors
 				Spell s = new Spell(spellName);
 				if (s.SpellID > 0)
 				{
-					E3.CharacterSettings.BockedBuffs.Add(s);
+					E3.CharacterSettings.BlockedBuffs.Add(s);
 					E3.CharacterSettings.SaveData();
 				}
 			}
@@ -274,8 +276,17 @@ namespace E3Core.Processors
 			if (!e3util.ShouldCheck(ref _nextBlockBuffCheck, _nextBlockBuffCheckInterval)) return;
 
 
-			foreach (var spell in E3.CharacterSettings.BockedBuffs)
+			foreach (var spell in E3.CharacterSettings.BlockedBuffs)
 			{
+
+				if (!String.IsNullOrWhiteSpace(spell.Ifs))
+				{
+					if (!Casting.Ifs(spell))
+					{
+						continue;
+					}
+				}
+
 				if (spell.SpellID > 0)
 				{
 					if (MQ.Query<bool>($"${{Me.Buff[{spell.CastName}]}}") || MQ.Query<bool>($"${{Me.Song[{spell.CastName}]}}"))
@@ -487,6 +498,7 @@ namespace E3Core.Processors
 					if (Assist.IsAssisting || Nukes.PBAEEnabled)
 					{
 						BuffBots(E3.CharacterSettings.CombatBuffs);
+						BuffBots(E3.CharacterSettings.CombatPetBuffs,true);
 					}
 
 					if ((!Movement.IsMoving() && String.IsNullOrWhiteSpace(Movement.FollowTargetName)) || Movement.StandingStillForTimePeriod())
@@ -1354,6 +1366,13 @@ namespace E3Core.Processors
 		{
 			if (!E3.CharacterSettings.Buffs_CastAuras) return;
 			if (e3util.IsActionBlockingWindowOpen()) return;
+
+
+			if (E3.CharacterSettings.Buffs_Auras.Count > 0)
+			{
+				_selectAura = E3.CharacterSettings.Buffs_Auras[0];
+			}
+
 			if (_selectAura == null)
 			{
 				if (!_initAuras)
@@ -1432,6 +1451,7 @@ namespace E3Core.Processors
 			"Bloodlust Aura",
 			"Aura of Insight",
 			"Aura of the Muse",
+			"Aura of the Artist",
 			"Aura of the Zealot",
 			"Aura of the Pious",
 			"Aura of Divinity",

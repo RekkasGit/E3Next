@@ -5,6 +5,7 @@ using NetMQ.Sockets;
 using System;
 using System.Collections.Concurrent;
 using System.Collections.Generic;
+using System.Globalization;
 using System.Linq;
 using System.Text;
 using System.Threading;
@@ -55,7 +56,10 @@ namespace E3Core.Server
         }
         public void Process()
         {
-            TimeSpan recieveTimeout = new TimeSpan(0, 0, 0, 0, 5);
+			//need to do this so double parses work in other languages
+			Thread.CurrentThread.CurrentCulture = new CultureInfo("en-US");
+
+			TimeSpan recieveTimeout = new TimeSpan(0, 0, 0, 0, 5);
             using (var subSocket = new SubscriberSocket())
             {
                 try

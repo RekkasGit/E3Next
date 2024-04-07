@@ -5,6 +5,7 @@ using NetMQ.Sockets;
 using System;
 using System.Collections.Generic;
 using System.Diagnostics;
+using System.Globalization;
 using System.Runtime.CompilerServices;
 using System.Threading;
 using System.Threading.Tasks;
@@ -16,7 +17,10 @@ namespace MQServerClient
         public static Stopwatch _stopWatch = new Stopwatch();
         static void Main(string[] args)
         {
-            AsyncIO.ForceDotNet.Force();
+			//need to do this so double parses work in other languages
+			Thread.CurrentThread.CurrentCulture = new CultureInfo("en-US");
+
+			AsyncIO.ForceDotNet.Force();
             MonoCore.Core._MQ2MonoVersion = 0.21m;
             MonoCore.Core.mqInstance = new NetMQMQ();
             MonoCore.Core.spawnInstance = new NetMQSpawns();

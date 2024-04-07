@@ -7,6 +7,7 @@ using NetMQ.Sockets;
 using System;
 using System.Collections.Concurrent;
 using System.Collections.Generic;
+using System.Globalization;
 using System.IO;
 using System.Linq;
 using System.Text;
@@ -125,7 +126,9 @@ namespace E3Core.Server
         }
         private void Process(string filePath)
         {
-            AsyncIO.ForceDotNet.Force();
+			//need to do this so double parses work in other languages
+			Thread.CurrentThread.CurrentCulture = new CultureInfo("en-US");
+			AsyncIO.ForceDotNet.Force();
             using (var pubSocket = new PublisherSocket())
             {
                 pubSocket.Options.SendHighWatermark = 50000;
@@ -138,6 +141,7 @@ namespace E3Core.Server
                     {
                         if (_topicMessages.TryDequeue(out var value))
                         {
+                            //using so that we put it back into the memory pool
                             using(value)
                             {
 								pubSocket.SendMoreFrame(value.topic).SendFrame(value.message);

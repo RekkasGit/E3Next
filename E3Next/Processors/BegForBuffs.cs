@@ -48,45 +48,72 @@ namespace E3Core.Processors
 
             EventProcessor.RegisterEvent("BuffMe", "(.+) tells you, '(?i)buff me'", (x) =>
             {
-                if (x.match.Groups.Count > 1)
+                //disable if on EQ live
+                if (e3util.IsEQLive()) return;
+
+                using(_log.Trace())
                 {
-                    if (Basics.AmIDead()) return;
-                    string user = x.match.Groups[1].Value;
+					_log.Write("Entering Buff Me Method");
+					if (x.match.Groups.Count > 1)
+					{
+						_log.Write("Checking if dead");
 
-             
-                    if (E3.GeneralSettings.BuffRequests_AllowBuffRequests || E3.Bots.IsMyBot(user))
-                    {
-                        Int32 totalQueuedSpells = 0;
-                        if (_spawns.TryByName(user, out var spawn))
-                        {
-                            Casting.TrueTarget(spawn.ID);
-                           
-                            foreach (var spell in E3.CharacterSettings.GroupBuffs)
-                            {
-                                if (!String.IsNullOrWhiteSpace(spell.Ifs))
-                                {
-                                    if (!Casting.Ifs(spell))
-                                    {
-                                        continue;
-                                    }
-                                }
-                                _queuedBuffs.Enqueue(new BuffQueuedItem() { TargetID = spawn.ID, Spell = spell});
-                                totalQueuedSpells++;
-                            }
-                            if(totalQueuedSpells > 0)
-                            {
-                                MQ.Cmd($"/t {user} casting buffs on you, please wait.");
-                                E3.Bots.BroadcastCommand($"/buffme {spawn.ID}");
+						if (Basics.AmIDead()) return;
 
-                            }
-                        }
-                    }
-                }
+						_log.Write("Getting User");
+
+						string user = x.match.Groups[1].Value;
+
+                        _log.Write($"user is {user}, checking if we allow buff requetss or if my bot.");
+
+						if (E3.GeneralSettings.BuffRequests_AllowBuffRequests || E3.Bots.IsMyBot(user))
+						{
+
+							Int32 totalQueuedSpells = 0;
+
+                            _log.Write("Checking if a valid spawn");
+                            if (_spawns.TryByName(user, out var spawn))
+							{
+								_log.Write("Valid spawn,issuing true target");
+								Casting.TrueTarget(spawn.ID);
+
+								_log.Write("Looping through group buffs..");
+
+								foreach (var spell in E3.CharacterSettings.GroupBuffs)
+								{
+                                    _log.Write($"Checking spell {spell.CastName}");
+									if (!String.IsNullOrWhiteSpace(spell.Ifs))
+									{
+                                       
+										if (!Casting.Ifs(spell))
+										{
+											continue;
+										}
+									}
+									_log.Write($"enquing spell to be called soon...");
+
+									_queuedBuffs.Enqueue(new BuffQueuedItem() { TargetID = spawn.ID, Spell = spell });
+									totalQueuedSpells++;
+								}
+								if (totalQueuedSpells > 0)
+								{
+									MQ.Cmd($"/t {user} casting buffs on you, please wait.");
+									E3.Bots.BroadcastCommand($"/buffme {spawn.ID}");
+
+								}
+							}
+						}
+					}
+				}
+               
             });
 
             EventProcessor.RegisterEvent("BuffMyPet", "(.+) tells you, '(?i)buff my pet'", (x) =>
             {
-                if (x.match.Groups.Count > 1)
+				//disable if on EQ live
+				if (e3util.IsEQLive()) return;
+
+				if (x.match.Groups.Count > 1)
                 {
                     if (Basics.AmIDead()) return;
                     string user = x.match.Groups[1].Value;
@@ -189,7 +216,10 @@ namespace E3Core.Processors
             var buffBegs = new List<string> { "(.+) tells you, '(.+)'", "(.+) tells the group, '(.+)'" };
             EventProcessor.RegisterEvent("BuffBeg", buffBegs, (x) =>
             {
-                if (x.match.Groups.Count > 2)
+				//disable if on EQ live
+				if (e3util.IsEQLive()) return;
+
+				if (x.match.Groups.Count > 2)
                 {
                     if (Basics.AmIDead()) return;
                     string user = x.match.Groups[1].Value;
@@ -245,7 +275,10 @@ namespace E3Core.Processors
             var raidbuffBeg = new List<string> {"(.+) tells the raid,  '"+E3.CurrentName+@":(.+)'" };
             EventProcessor.RegisterEvent("RaidBuffBeg", raidbuffBeg, (x) =>
             {
-                if (x.match.Groups.Count > 2)
+				//disable if on EQ live
+				if (e3util.IsEQLive()) return;
+
+				if (x.match.Groups.Count > 2)
                 {
                     if (Basics.AmIDead()) return;
                     string user = x.match.Groups[1].Value;

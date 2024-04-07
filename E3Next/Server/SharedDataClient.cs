@@ -8,6 +8,7 @@ using NetMQ.Sockets;
 using System;
 using System.Collections.Concurrent;
 using System.Collections.Generic;
+using System.Globalization;
 using System.Linq;
 using System.Text;
 using System.Threading;
@@ -275,7 +276,8 @@ namespace E3Core.Server
 		{
 			System.DateTime lastFileUpdate = System.IO.File.GetLastWriteTime(fileName);
 			string OnCommandName = "OnCommand-" + E3.CurrentName;
-
+			//need to do this so double parses work in other languages
+			Thread.CurrentThread.CurrentCulture = new CultureInfo("en-US");
 			//timespan we expect to have some type of message
 			TimeSpan recieveTimeout = new TimeSpan(0, 0, 0, 2, 0);
 			using (var subSocket = new SubscriberSocket())
@@ -301,6 +303,7 @@ namespace E3Core.Server
 					subSocket.Subscribe("BroadCastMessage");
 					subSocket.Subscribe("BroadCastMessageZone");
 					subSocket.Subscribe("${Me."); //all Me stuff should be subscribed to
+					subSocket.Subscribe("${Data."); //all the custom data keys a user can create
 					MQ.Write("\agShared Data Client: Connecting to user:" + user + " on port:" + port + " server:"+serverName); ;
 
 					while (Core.IsProcessing && E3.NetMQ_SharedDataServerThradRun)
@@ -441,7 +444,7 @@ namespace E3Core.Server
 									//shutown the socket and restart it
 									subSocket.Disconnect($"tcp://{serverName}:" + port);
 									string data = System.IO.File.ReadAllText(fileName);
-									string[] splitData = data.Split(new char[] { ':' });
+									string[] splitData = data.Split(new char[] { ',' });
 									port = splitData[0];
 									serverName = splitData[1];
 									MQ.Write($"\agShared Data Client: Reconnecting to server:{serverName} port:" + port + " for toon:" + user);
@@ -449,10 +452,10 @@ namespace E3Core.Server
 									lastFileUpdate = currentTime;
 								}
 							}
-							catch (Exception)
+							catch (Exception ex)
 							{
 								//file deleted most likely, kill the thread
-								MQ.Write("\agShared Data Client: Issue reading port file, shutting down thread for toon:" + user);
+								MQ.Write("\agShared Data Client: Issue reading port file, shutting down thread for toon:" + user + " stack:"+ex.Message);
 
 								subSocket.Dispose();
 								if (TopicUpdates.TryRemove(user, out var tout))

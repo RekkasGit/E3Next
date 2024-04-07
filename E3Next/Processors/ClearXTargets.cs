@@ -81,11 +81,24 @@ namespace E3Core.Processors
                             Assist.AssistOn(s.ID, Zoning.CurrentZone.Id);
                             if (FaceTarget)
                             {
-                                MQ.Cmd("/face fast");
+                                if(e3util.IsEQLive())
+                                {
+									MQ.Cmd("/face",500);
+								}
+                                else
+                                {
+									MQ.Cmd("/face fast");
+								}
+                               
                             }
                             if (StickTarget)
                             {
-                                MQ.Cmd($"/squelch /stick {E3.CharacterSettings.Assist_MeleeStickPoint} {E3.CharacterSettings.Assist_MeleeDistance}");
+                              
+
+
+
+								//MQ.Write($"Setting stick with :/squelch /stick {E3.CharacterSettings.Assist_MeleeStickPoint} {Assist._assistDistance}");
+                                MQ.Cmd($"/squelch /stick {E3.CharacterSettings.Assist_MeleeStickPoint} {Assist._assistDistance}");
                             }
                             MQ.Delay(500);
 

@@ -186,7 +186,24 @@ namespace E3Core.Settings
                 }
             }
         }
-        public static string LoadKeyData(string sectionKey, string Key, IniData parsedData)
+		public static void LoadKeyData<K, V>(string sectionKey, IniData parsedData, Dictionary<K, V> dictionary)
+		{
+			
+			var section = parsedData.Sections[sectionKey];
+			if (section != null)
+			{
+                var keyData = section;
+                if (keyData != null)
+				{
+					foreach (var data in keyData)
+					{
+						dictionary.Add((K)(object)data.KeyName, (V)(object)data.Value);
+						
+					}
+				}
+			}
+		}
+		public static string LoadKeyData(string sectionKey, string Key, IniData parsedData)
         {
             _log.Write($"{sectionKey} {Key}");
             var section = parsedData.Sections[sectionKey];
@@ -278,7 +295,31 @@ namespace E3Core.Settings
                 }
             }
         }
-        public static void LoadKeyData(string sectionKey, string Key, IniData parsedData, List<Data.Spell> collectionToAddTo)
+		public static void LoadKeyData(string sectionKey, string Key, IniData parsedData, HashSet<String> collectionToAddTo)
+		{
+			_log.Write($"{sectionKey} {Key}");
+			var section = parsedData.Sections[sectionKey];
+			if (section != null)
+			{
+				var keyData = section.GetKeyData(Key);
+				if (keyData != null)
+				{
+					foreach (var data in keyData.ValueList)
+					{
+						if (!String.IsNullOrWhiteSpace(data))
+						{
+                            if(!collectionToAddTo.Contains(data))
+                            {
+								collectionToAddTo.Add(data);
+
+							}
+						}
+
+					}
+				}
+			}
+		}
+		public static void LoadKeyData(string sectionKey, string Key, IniData parsedData, List<Data.Spell> collectionToAddTo)
         {
             _log.Write($"{sectionKey} {Key}");
             var section = parsedData.Sections[sectionKey];
