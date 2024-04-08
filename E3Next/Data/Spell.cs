@@ -100,6 +100,10 @@ namespace E3Core.Data
 					{
 						Debug = true;
 					}
+					else if (value.Equals("IgnoreStackRules", StringComparison.OrdinalIgnoreCase))
+					{
+						IgnoreStackRules = true;
+					}
 					else if (value.StartsWith("HealthMax|", StringComparison.OrdinalIgnoreCase))
 					{
 						HealthMax = GetArgument<Int32>(value);
@@ -798,6 +802,7 @@ namespace E3Core.Data
         public Int64 LastUpdateCheckFromTopicUpdate = 0;
         public bool IsShortBuff = false;
         public Int32 HealthMax = 100;
+        public bool IgnoreStackRules = false;
       
 
         public override string ToString()

@@ -449,13 +449,16 @@ namespace E3Core.Processors
 						if (shouldContinue) { continue; }
 					}
 				    
-                    if (!MQ.Query<bool>($"${{Spell[{spell.SpellID}].StacksTarget}}"))
+                    if(!spell.IgnoreStackRules)
                     {
-                        //spell won't land based on stacking, move to next
-                        continue;
-                    }
-                    
-                    var result = Casting.Cast(mobid, spell, Heals.SomeoneNeedsHealing);
+						if (!MQ.Query<bool>($"${{Spell[{spell.SpellID}].StacksTarget}}"))
+						{
+							//spell won't land based on stacking, move to next
+							continue;
+						}
+					}
+
+					var result = Casting.Cast(mobid, spell, Heals.SomeoneNeedsHealing);
                     if (result == CastReturn.CAST_INTERRUPTFORHEAL)
                     {
                         return;

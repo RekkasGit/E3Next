@@ -279,8 +279,32 @@ namespace E3Core.Processors
                     PubServer.AddTopicMessage("WorldShutdown", $"{minutes}");
                 }
             });
+			EventProcessor.RegisterCommand("/e3camp", (x) =>
+			{
+				string user = string.Empty;
 
-            EventProcessor.RegisterCommand("/e3treport", (x) =>
+				if (x.args.Count > 0)
+				{
+					if (!e3util.FilterMe(x))
+					{
+                        Pause(true);
+                        MQ.Cmd("/camp");
+
+					}
+				}
+				else
+				{
+                    if (!e3util.FilterMe(x))
+                    {
+                        Pause(true);
+                        MQ.Cmd("/camp");
+                    }
+					//we are telling people to follow us
+					E3.Bots.BroadcastCommandToGroup("/e3camp " + E3.CurrentName, x);
+
+				}
+			});
+			EventProcessor.RegisterCommand("/e3treport", (x) =>
 			{
                 if(x.args.Count > 0)
                 {
@@ -668,25 +692,21 @@ namespace E3Core.Processors
                     {
                         if (IsPaused)
                         {
-                            IsPaused = false;
-                            E3.Bots.Broadcast("\agRunning E3 again!");
+                            Pause(false);
                         }
                     }
                     else if (x.args[0].Equals("on", StringComparison.OrdinalIgnoreCase))
                     {
                         if(!IsPaused)
                         {
-                            IsPaused = true;
-                            E3.Bots.Broadcast("\arPAUSING E3!");
-
+                            Pause(true);
                         }
                     }
                 }
                 else
                 {
-                    IsPaused = IsPaused ? false : true;
-                    if (IsPaused) E3.Bots.Broadcast("\arPAUSING E3!");
-                    if (!IsPaused) E3.Bots.Broadcast("\agRunning E3 again!");
+
+                    Pause(IsPaused ? false : true);
 
                 }
 
@@ -887,7 +907,21 @@ namespace E3Core.Processors
 
 			}
 		}
+        public static void Pause(bool on)
+        {
+            if(on && IsPaused==false)
+            {
+				IsPaused = true;
+				E3.Bots.Broadcast("\arPAUSING E3!");
+			
 
+			}
+            else if(!on && IsPaused==true)
+            {
+				IsPaused = false;
+				E3.Bots.Broadcast("\agRunning E3 again!");
+			}
+		}
         private static void PrintE3TReportEntries()
         {
             foreach (var spell in E3.CharacterSettings.Report_Entries)

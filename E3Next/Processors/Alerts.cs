@@ -201,8 +201,7 @@ namespace E3Core.Processors
 
 				
 				if (!Basics.IsPaused) return;
-				Basics.IsPaused = false;
-				E3.Bots.Broadcast("\agRunning E3 again!");
+				Basics.Pause(false);
 			});
 			pattern = @"It will take you about 30 seconds to prepare your camp\.";
 			EventProcessor.RegisterEvent("PauseForCamp30", pattern, (x) => {
@@ -211,9 +210,7 @@ namespace E3Core.Processors
 				{
 					return;
 				}
-				if (Basics.IsPaused) return;
-				Basics.IsPaused = true;
-				E3.Bots.Broadcast("\arPAUSING E3!");
+                Basics.Pause(true);
 			});
 			pattern = @"It will take about 20 more seconds to prepare your camp\.";
 			EventProcessor.RegisterEvent("PauseForCamp20", pattern, (x) => {
@@ -224,8 +221,7 @@ namespace E3Core.Processors
 					return;
 				}
                 if (Basics.IsPaused) return;
-				Basics.IsPaused = true;
-				E3.Bots.Broadcast("\arPAUSING E3!");
+				Basics.Pause(true);
 			});
 
 			pattern = @"It will take about 5 more seconds to prepare your camp\.";
