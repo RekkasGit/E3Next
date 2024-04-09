@@ -383,6 +383,14 @@ namespace E3Core.Processors
             Casting.RefreshGemCache();
             Basics.RefreshGroupMembers();
         }
+		public static void ReInit()
+		{
+			string classValue = e3util.ClassNameFix(MQ.Query<string>("${Me.Class}"));
+			Enum.TryParse(classValue, out CurrentClass);
+			CurrentLongClassString = CurrentClass.ToString();
+			CurrentShortClassString = Data.Classes.ClassLongToShort[CurrentLongClassString];
+
+		}
         private static void Init()
         {
 

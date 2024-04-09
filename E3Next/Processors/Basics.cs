@@ -289,7 +289,6 @@ namespace E3Core.Processors
 					{
                         Pause(true);
                         MQ.Cmd("/camp");
-
 					}
 				}
 				else
@@ -301,7 +300,6 @@ namespace E3Core.Processors
                     }
 					//we are telling people to follow us
 					E3.Bots.BroadcastCommandToGroup("/e3camp " + E3.CurrentName, x);
-
 				}
 			});
 			EventProcessor.RegisterCommand("/e3treport", (x) =>
@@ -400,6 +398,9 @@ namespace E3Core.Processors
                     BaseSettings.CurrentSet = String.Empty;
                 }
 
+                E3.ReInit(); //set new class
+                E3.AdvancedSettings.Reset(); //reset all collections
+                
                 E3.CharacterSettings = new CharacterSettings();
                 E3.AdvancedSettings = new AdvancedSettings();
                 E3.GeneralSettings = new GeneralSettings();
