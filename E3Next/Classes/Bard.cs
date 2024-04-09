@@ -61,7 +61,7 @@ namespace E3Core.Classes
 
                 if(e3util.IsEQLive())
                 {
-                    spellIDToLookup = _sonataAccelerando.SpellID;
+                    spellIDToLookup = 50190;
                 }
 
                 bool needToCast = false;
@@ -87,6 +87,10 @@ namespace E3Core.Classes
                 if(e3util.IsEQLive())
                 {
 					totalSecondsLeft = MQ.Query<Int32>("${Me.Buff[Selo's Accelerando].Duration.TotalSeconds}");
+                    if (totalSecondsLeft < 1)
+                    {
+						totalSecondsLeft = MQ.Query<Int32>("${Me.Buff[Selo's Accelerato].Duration.TotalSeconds}");
+					}
 				}
 				else
                 {
