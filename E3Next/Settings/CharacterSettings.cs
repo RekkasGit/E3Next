@@ -216,7 +216,10 @@ namespace E3Core.Settings
         public List<string> LootCommander_Looters = new List<string>();
 
 		public Int32 CPU_ProcessLoopDelay = 50;
-		public bool CPU_Camping_PauseAt30Seconds = true;
+        public Int32 CPU_PublishStateDataInMS = 50;
+        public Int32 CPU_PublishBuffDataInMS = 1000;
+        public Int32 CPU_PublishSlowDataInMS = 1000;
+        public bool CPU_Camping_PauseAt30Seconds = true;
 		public bool CPU_Camping_PauseAt20Seconds = true;
         public bool CPU_Camping_ShutdownAt5Seconds = true;
 
@@ -921,6 +924,10 @@ namespace E3Core.Settings
 			newFile.Sections.AddSection("CPU");
 			section = newFile.Sections.GetSectionData("CPU");
 			section.Keys.AddKey("ProcessLoopDelayInMS", "50");
+            section.Keys.AddKey("PublishStateDataInMS", "50");
+            section.Keys.AddKey("PublishBuffDastaInMS", "1000");
+			section.Keys.AddKey("PublishSlowDataInMS", "1000");
+
 			section.Keys.AddKey("Camp Pause at 30 seconds", "True");
 			section.Keys.AddKey("Camp Pause at 20 seconds", "True");
 			section.Keys.AddKey("Camp Shutdown at 5 seconds", "True");

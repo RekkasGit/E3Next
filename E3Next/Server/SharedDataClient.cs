@@ -423,8 +423,9 @@ namespace E3Core.Server
 
 								lock(entry)
 								{
-									//why do work if its the same data?									
-									if (entry.Data != messageReceived)
+									//why do work if its the same data?	
+																
+									if (!String.Equals(entry.Data, messageReceived))
 									{
 										entry.Data = messageReceived;
 										entry.LastUpdate = updateTime;

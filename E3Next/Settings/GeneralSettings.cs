@@ -153,6 +153,7 @@ namespace E3Core.Settings
 
             LoadKeyData("Loot", "Loot Link Channel", parsedData, ref Loot_LinkChannel);
             Loot_LinkChannel = Loot_LinkChannel.Trim();
+			Loot_LinkChannel=Loot_LinkChannel.Replace(@"/", "");
             //check valid loot channels
             if (!Loot_LinkChannelValid.Contains(Loot_LinkChannel, StringComparer.OrdinalIgnoreCase))
             {

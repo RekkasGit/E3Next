@@ -251,15 +251,10 @@ namespace E3Core.Processors
 		/// </summary>
 		/// 
 		private static Int64 _nextStateUpdateCheckTime = 0;
-		private static Int64 _nextStateUpdateTimeInterval = 50;
-
 		//needs to be fast to be able to show a new buff has landed
 		private static Int64 _nextBuffUpdateCheckTime = 0;
-		private static Int64 _nextBuffUpdateTimeInterval = 1000;
-
 		private static Int64 _nextSlowUpdateCheckTime = 0;
-		private static Int64 _nextSlowUpdateTimeInterval = 1000;
-
+	
 		//qick hack to prevent calling state update... while in state updates. 
 		public static bool InStateUpdate = false;
 
@@ -322,19 +317,19 @@ namespace E3Core.Processors
 				InStateUpdate = true;
 
 				//expensive only send out once per second?
-				if (e3util.ShouldCheck(ref _nextBuffUpdateCheckTime, _nextBuffUpdateTimeInterval))
+				if (e3util.ShouldCheck(ref _nextBuffUpdateCheckTime, E3.CharacterSettings.CPU_PublishBuffDataInMS))
 				{
 					StateUpdates_BuffInformation();
 				}
 				//hp, mana, counters, etc, should send out quickly, but no more than say 50 milliseconds
-				if (e3util.ShouldCheck(ref _nextStateUpdateCheckTime, _nextStateUpdateTimeInterval))
+				if (e3util.ShouldCheck(ref _nextStateUpdateCheckTime, E3.CharacterSettings.CPU_PublishStateDataInMS))
 				{
 					StateUpdates_Counters();
 					StateUpdates_Stats();
 				}
 
 				//not horribly important stuff, can just be sent out whever, currently once per second
-				if (e3util.ShouldCheck(ref _nextSlowUpdateCheckTime, _nextSlowUpdateTimeInterval))
+				if (e3util.ShouldCheck(ref _nextSlowUpdateCheckTime, E3.CharacterSettings.CPU_PublishSlowDataInMS))
 				{
 					StateUpdates_AAInformation();
 					//lets query the data we are configured to send out extra

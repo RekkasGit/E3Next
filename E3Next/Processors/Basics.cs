@@ -4,6 +4,7 @@ using E3Core.Server;
 using E3Core.Settings;
 using E3Core.Settings.FeatureSettings;
 using E3Core.Utility;
+using E3NextUI;
 using IniParser.Model;
 using MonoCore;
 using System;
@@ -417,10 +418,51 @@ namespace E3Core.Processors
 
 				if (x.args.Count > 0)
 				{
-                    Int32 delay = E3.CharacterSettings.CPU_ProcessLoopDelay;
-                    Int32.TryParse(x.args[0], out delay);
-                    E3.CharacterSettings.CPU_ProcessLoopDelay = delay;
-				}
+
+                    if (!e3util.FilterMe(x))
+                    {
+                        if(x.args.Count>1)
+                        {
+                            //pull out the type and then the value
+                            string command = x.args[0];
+                            Int32 value = 100;
+
+							if (String.Equals(command, "PublishStateDataInMS",StringComparison.OrdinalIgnoreCase))
+                            {
+                             
+                                if (!Int32.TryParse(x.args[1], out value)) value = 50;
+                                E3.CharacterSettings.CPU_PublishStateDataInMS = value;
+                                E3.Bots.Broadcast($"Setting {command} to value:{value}");
+                                
+                            }
+                            else if(String.Equals(command, "PublishBuffDataInMS", StringComparison.OrdinalIgnoreCase))
+							{
+							
+								if (!Int32.TryParse(x.args[1], out value)) value = 1000;
+								E3.CharacterSettings.CPU_PublishBuffDataInMS = value;
+								E3.Bots.Broadcast($"Setting {command} to value:{value}");
+
+							}
+							else if (String.Equals(command, "PublishSlowDataInMS", StringComparison.OrdinalIgnoreCase))
+							{
+								if (!Int32.TryParse(x.args[1], out value)) value = 1000;
+								E3.CharacterSettings.CPU_PublishSlowDataInMS = value;
+								E3.Bots.Broadcast($"Setting {command} to value:{value}");
+
+							}
+
+						}
+                        else
+                        {
+							Int32 delay = E3.CharacterSettings.CPU_ProcessLoopDelay;
+							Int32.TryParse(x.args[0], out delay);
+							E3.CharacterSettings.CPU_ProcessLoopDelay = delay;
+							E3.Bots.Broadcast("Setting CPU Delay to:" + delay.ToString());
+
+						}
+
+					}
+                }
 
 			});
 
