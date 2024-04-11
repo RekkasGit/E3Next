@@ -1029,6 +1029,7 @@ namespace E3Core.Processors
 		}
 		public static bool MemorizeSpell(Data.Spell spell,bool ignoreWait=false)
 		{
+		
 			if (!(spell.CastType == CastType.Spell && spell.SpellInBook))
 			{
 				//we can't mem this just return true
@@ -1323,12 +1324,36 @@ namespace E3Core.Processors
 
 			if ((spell.CastType == CastType.Spell || spell.CastType == CastType.Item || spell.CastType == CastType.AA) && MQ.Query<bool>("${Debuff.Silenced}")) return false;
 
-			if (!MemorizeSpell(spell))
+
+			
+			//do we already have it memed?
+			bool spellMemed = false;
+			foreach (var spellid in _currentSpellGems.Values)
 			{
-				return false;
+				if (spellid == spell.SpellID && spellid != 0)
+				{
+					spellMemed=true;
+					break;
+				}
 			}
+			
+			//if not memed, and we are not currently tanking
+			//mem the spell or try to.
+			if(!spellMemed)
+			{
+				//lets not sit while we have 100% aggro on a mob , crits be bad
+				Int32 pctAggro = MQ.Query<Int32>("${Me.PctAggro}");
 
-
+				if (pctAggro==100)
+				{
+					//don't try and mem a spell while tanking
+					return false;
+				}
+				if (!MemorizeSpell(spell))
+				{
+					return false;
+				}
+			}
 			//_log.Write($"CheckReady on {spell.CastName}");
 
 			if (E3.CurrentClass != Data.Class.Bard)
