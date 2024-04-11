@@ -52,7 +52,9 @@ namespace E3Core.Settings
         public List<MelodyIfs> Bard_MelodyIfs = new List<MelodyIfs>();
 
         public List<Spell> CasterEvacs = new List<Spell>();
-        public bool Druid_AutoCheetah = true;
+        public List<string> E3ChatChannelsToJoin = new List<string>();
+
+		public bool Druid_AutoCheetah = true;
         public bool Bard_AutoSonata = true;
 
         public string Assist_Type = string.Empty;
@@ -377,6 +379,7 @@ namespace E3Core.Settings
 			LoadKeyData("Assist Settings", "Delayed Strafe Enabled (On/Off)", ParsedData, ref Assist_DelayStrafeEnabled);
             LoadKeyData("Assist Settings", "Pet back off on Enrage (On/Off)", ParsedData, ref Assist_PetBackOffOnenrage);
 			LoadKeyData("Assist Settings", "Back off on Enrage (On/Off)", ParsedData, ref Assist_BackOffOnEnrage);
+           
 
 			if (CharacterClass == Class.Rogue)
             {
@@ -461,9 +464,19 @@ namespace E3Core.Settings
 
 				
             }
+            List<string> tempChatChannelsTJ = new List<string>();
+			LoadKeyData("E3ChatChannelsToJoin", "Channel", ParsedData, tempChatChannelsTJ);
+			foreach (var value in tempChatChannelsTJ)
+			{
+				string key = $"${{DataChannel.{value.Trim()}}}";
+				if (!E3ChatChannelsToJoin.Contains(key))
+				{
+					E3ChatChannelsToJoin.Add(key);
+				}
+			}
 
 
-            LoadKeyData("Buffs", "Instant Buff", ParsedData, InstantBuffs);
+			LoadKeyData("Buffs", "Instant Buff", ParsedData, InstantBuffs);
             LoadKeyData("Buffs", "Self Buff", ParsedData, SelfBuffs);
             //set target on self buffs
             foreach (var buff in SelfBuffs)
@@ -915,6 +928,9 @@ namespace E3Core.Settings
 
 			newFile.Sections.AddSection("Ifs");
 			newFile.Sections.AddSection("E3BotsPublishData (key/value)");
+			newFile.Sections.AddSection("E3ChatChannelsToJoin");
+            section = newFile.Sections.GetSectionData("E3ChatChannelsToJoin");
+            section.Keys.AddKey("Channel");
 			newFile.Sections.AddSection("Events");
 			newFile.Sections.AddSection("EventLoop");
 			newFile.Sections.AddSection("Report");

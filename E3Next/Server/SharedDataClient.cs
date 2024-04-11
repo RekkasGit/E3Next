@@ -219,7 +219,7 @@ namespace E3Core.Server
 						}
 
 						//check to see if we are part of their group
-						if (user == E3.CurrentName && (!(typeInfo == OnCommandData.CommandType.OnCommandName||typeInfo== OnCommandData.CommandType.OnCommandGroupAll || typeInfo == OnCommandData.CommandType.OnCommandAll || typeInfo== OnCommandData.CommandType.OnCommandGroupAllZone|| typeInfo==OnCommandData.CommandType.OnCommandAllZone)))
+						if (user == E3.CurrentName && (!(typeInfo == OnCommandData.CommandType.OnCommandName|| typeInfo== OnCommandData.CommandType.OnCommandChannel ||typeInfo== OnCommandData.CommandType.OnCommandGroupAll || typeInfo == OnCommandData.CommandType.OnCommandAll || typeInfo== OnCommandData.CommandType.OnCommandGroupAllZone|| typeInfo==OnCommandData.CommandType.OnCommandAllZone)))
 						{
 							//if not an all type command and not us, kick out.
 							//not for us only group members
@@ -284,7 +284,7 @@ namespace E3Core.Server
 			{
 				try
 				{
-				
+					
 					subSocket.Options.ReceiveHighWatermark = 1000;
 					subSocket.Options.TcpKeepalive = true;
 					subSocket.Options.TcpKeepaliveIdle = TimeSpan.FromSeconds(5);
@@ -304,6 +304,7 @@ namespace E3Core.Server
 					subSocket.Subscribe("BroadCastMessageZone");
 					subSocket.Subscribe("${Me."); //all Me stuff should be subscribed to
 					subSocket.Subscribe("${Data."); //all the custom data keys a user can create
+					subSocket.Subscribe("${DataChannel.");
 					MQ.Write("\agShared Data Client: Connecting to user:" + user + " on port:" + port + " server:"+serverName); ;
 
 					while (Core.IsProcessing && E3.NetMQ_SharedDataServerThradRun)
@@ -401,8 +402,18 @@ namespace E3Core.Server
 
 								CommandQueue.Enqueue(data);
 							}
-							else if (messageTopicReceived == OnCommandName)
+							else if (messageTopicReceived.StartsWith("${DataChannel."))
 							{
+								if(E3.CharacterSettings.E3ChatChannelsToJoin.Contains(messageTopicReceived,StringComparer.OrdinalIgnoreCase))
+								{
+									var data = OnCommandData.Aquire();
+									data.Data = messageReceived;
+									data.TypeOfCommand = OnCommandData.CommandType.OnCommandChannel;
+									CommandQueue.Enqueue(data);
+								}
+							}
+							else if (messageTopicReceived == OnCommandName)
+							{	//bct commands
 								var data = OnCommandData.Aquire();
 								data.Data = messageReceived;
 								data.TypeOfCommand = OnCommandData.CommandType.OnCommandName;
@@ -503,7 +514,8 @@ namespace E3Core.Server
 				OnCommandRaid,
 				BroadCastMessage,
 				BroadCastMessageZone,
-				OnCommandName
+				OnCommandName,
+				OnCommandChannel
 			}
 			public string Data { get; set; }
 			public CommandType TypeOfCommand { get; set; }

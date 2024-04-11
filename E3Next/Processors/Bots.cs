@@ -160,6 +160,21 @@ namespace E3Core.Processors
 				}
 
 			});
+			EventProcessor.RegisterCommand("/e3bcchannel", (x) =>
+			{
+				if (x.args.Count > 1)
+				{
+					string channel = x.args[0];
+					x.args.RemoveAt(0);
+					string command = e3util.ArgsToCommand(x.args);
+					if (x.filters.Count > 0)
+					{
+						command += " \"" + e3util.ArgsToCommand(x.filters) + "\"";
+					}
+
+					BroadcastCommandToChannel(channel, command, true);
+				}
+			});
 			EventProcessor.RegisterCommand("/e3bct", (x) =>
 			{
 				if (x.args.Count > 1)
@@ -610,6 +625,16 @@ namespace E3Core.Processors
 			}
 			PubServer.AddTopicMessage("OnCommand-GroupAllZone", $"{E3.CurrentName}:{noparse}:{command}");
 			
+		}
+		public void BroadcastCommandToChannel(string channel, string command, bool noparse = false)
+		{
+			if (!noparse)
+			{
+				command = MQ.Query<string>(command);
+			}
+			PubServer.AddTopicMessage($"${{DataChannel.{channel}}}", $"{E3.CurrentName}:{false}:{command}");
+			MQ.Write($"\ap{E3.CurrentName} => \ay{channel} : \ag{command}");
+
 		}
 		public void BroadcastCommandToPerson(string person, string command, bool noparse = false)
 		{
