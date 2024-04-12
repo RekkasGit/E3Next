@@ -24,6 +24,8 @@ Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "E3Discord", "E3Discord\E3Di
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "ApiLibrary", "ApiLibrary\ApiLibrary.csproj", "{288B260E-CD88-4813-8E2B-5F853D3F00D3}"
 EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "E3NextProxy", "E3NextProxy\E3NextProxy.csproj", "{08D08E06-22A7-49B9-AFA4-04F9E2AA9210}"
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Any CPU = Debug|Any CPU
@@ -164,6 +166,18 @@ Global
 		{288B260E-CD88-4813-8E2B-5F853D3F00D3}.Release|x64.Build.0 = Release|Any CPU
 		{288B260E-CD88-4813-8E2B-5F853D3F00D3}.Release|x86.ActiveCfg = Release|Any CPU
 		{288B260E-CD88-4813-8E2B-5F853D3F00D3}.Release|x86.Build.0 = Release|Any CPU
+		{08D08E06-22A7-49B9-AFA4-04F9E2AA9210}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{08D08E06-22A7-49B9-AFA4-04F9E2AA9210}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{08D08E06-22A7-49B9-AFA4-04F9E2AA9210}.Debug|x64.ActiveCfg = Debug|Any CPU
+		{08D08E06-22A7-49B9-AFA4-04F9E2AA9210}.Debug|x64.Build.0 = Debug|Any CPU
+		{08D08E06-22A7-49B9-AFA4-04F9E2AA9210}.Debug|x86.ActiveCfg = Debug|Any CPU
+		{08D08E06-22A7-49B9-AFA4-04F9E2AA9210}.Debug|x86.Build.0 = Debug|Any CPU
+		{08D08E06-22A7-49B9-AFA4-04F9E2AA9210}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{08D08E06-22A7-49B9-AFA4-04F9E2AA9210}.Release|Any CPU.Build.0 = Release|Any CPU
+		{08D08E06-22A7-49B9-AFA4-04F9E2AA9210}.Release|x64.ActiveCfg = Release|Any CPU
+		{08D08E06-22A7-49B9-AFA4-04F9E2AA9210}.Release|x64.Build.0 = Release|Any CPU
+		{08D08E06-22A7-49B9-AFA4-04F9E2AA9210}.Release|x86.ActiveCfg = Release|Any CPU
+		{08D08E06-22A7-49B9-AFA4-04F9E2AA9210}.Release|x86.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE

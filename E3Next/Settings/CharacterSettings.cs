@@ -311,6 +311,10 @@ namespace E3Core.Settings
 
 
             LoadKeyData("CPU", "ProcessLoopDelayInMS", ParsedData, ref CPU_ProcessLoopDelay);
+			LoadKeyData("CPU", "PublishStateDataInMS", ParsedData, ref CPU_PublishStateDataInMS);
+			LoadKeyData("CPU", "PublishBuffDataInMS", ParsedData, ref CPU_PublishBuffDataInMS);
+			LoadKeyData("CPU", "PublishSlowDataInMS", ParsedData, ref CPU_PublishSlowDataInMS);
+
 			LoadKeyData("CPU", "Camp Pause at 30 seconds", ParsedData, ref CPU_Camping_PauseAt30Seconds);
 			LoadKeyData("CPU", "Camp Pause at 20 seconds", ParsedData, ref CPU_Camping_PauseAt20Seconds);
 			LoadKeyData("CPU", "Camp Shutdown at 5 seconds", ParsedData, ref CPU_Camping_ShutdownAt5Seconds);
@@ -941,7 +945,7 @@ namespace E3Core.Settings
 			section = newFile.Sections.GetSectionData("CPU");
 			section.Keys.AddKey("ProcessLoopDelayInMS", "50");
             section.Keys.AddKey("PublishStateDataInMS", "50");
-            section.Keys.AddKey("PublishBuffDastaInMS", "1000");
+            section.Keys.AddKey("PublishBuffDataInMS", "1000");
 			section.Keys.AddKey("PublishSlowDataInMS", "1000");
 
 			section.Keys.AddKey("Camp Pause at 30 seconds", "True");

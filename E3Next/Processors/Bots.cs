@@ -241,12 +241,65 @@ namespace E3Core.Processors
 		
         private void AutoRegisterUsers(List<string> settingsPaths)
         {
+			///we can have two states here, the normal user_server_pubsubport.txt
+			///and the "proxy_pubsubport.txt". If the proxy_pubsubport exists, we use that and only that.
             string searchPattern = $"*_{E3.ServerName}_pubsubport.txt";
+			bool inProxyState = false;
+			string proxyFileFullName = string.Empty;
+			DateTime proxyFileLastUpdateTime = DateTime.MinValue; 
 			while (Core.IsProcessing)
             {
-                foreach(var path in settingsPaths)
-                {
-                    try
+				//currently have proxy file, to just keep the thread checking for updates
+				if(inProxyState)
+				{
+					System.Threading.Thread.Sleep(500);
+
+					if(!File.Exists(proxyFileFullName))
+					{    //proxy file poofed, will need to restart proxy
+						continue;
+					}
+					//need to check for proxy file update
+					DateTime lastUpdate = System.IO.File.GetLastWriteTime(proxyFileFullName);
+
+					if(lastUpdate>proxyFileLastUpdateTime)
+					{
+						inProxyState = false;
+					
+					}
+
+					continue;
+				}
+				//check to see if there are any proxy setups, if so do them first
+				foreach (var path in settingsPaths)
+				{
+					string tpath = path;
+					if (!tpath.EndsWith(@"\"))
+					{
+						tpath += @"\";
+					}
+					if (File.Exists($@"{tpath}proxy_pubsubport.txt"))
+					{
+
+						//we are in proxy mode, set proxy state and kick out
+
+						NetMQServer.SharedDataClient.RegisterUser("proxy", tpath, true);
+						inProxyState = true;
+						proxyFileFullName = $@"{tpath}proxy_pubsubport.txt";
+						proxyFileLastUpdateTime = System.IO.File.GetLastWriteTime(proxyFileFullName);
+						break;
+
+					}
+				}
+				if (inProxyState) continue;
+				foreach (var path in settingsPaths)
+				{
+					string tpath = path;
+					if (!tpath.EndsWith(@"\"))
+					{
+						tpath += @"\";
+					}
+					
+					try
                     {
 						//look for files that start with $"{user}_{E3.ServerName}_pubsubport.txt"
 						string[] fileNames = System.IO.Directory.GetFiles(path, searchPattern);
@@ -270,7 +323,7 @@ namespace E3Core.Processors
 						System.Threading.Thread.Sleep(1000);
 					}
 				}
-     			System.Threading.Thread.Sleep(1000);
+     			System.Threading.Thread.Sleep(500);
             }
         }
         /// <summary>

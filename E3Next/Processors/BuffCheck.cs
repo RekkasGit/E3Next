@@ -1397,7 +1397,7 @@ namespace E3Core.Processors
 				if (currentAura != "NULL")
 				{
 					//we already have an aura, check if its different
-					if (currentAura.Equals(_selectAura.SpellName, StringComparison.OrdinalIgnoreCase))
+					//if (currentAura.Equals(_selectAura.SpellName, StringComparison.OrdinalIgnoreCase))
 					{
 						//don't need to do anything
 						return;

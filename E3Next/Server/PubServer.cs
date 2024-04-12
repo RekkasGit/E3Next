@@ -144,7 +144,7 @@ namespace E3Core.Server
                             //using so that we put it back into the memory pool
                             using(value)
                             {
-								pubSocket.SendMoreFrame(value.topic).SendFrame(value.message);
+								pubSocket.SendMoreFrame(value.topic).SendFrame($"{E3.CurrentName}:{value.message}");
 							}
                         }
                     }
