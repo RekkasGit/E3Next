@@ -261,7 +261,7 @@ namespace E3NextUI
 			// labelTotalDamage
 			// 
 			this.labelTotalDamage.AutoSize = true;
-			this.labelTotalDamage.Location = new System.Drawing.Point(262, 81);
+			this.labelTotalDamage.Location = new System.Drawing.Point(222, 81);
 			this.labelTotalDamage.Name = "labelTotalDamage";
 			this.labelTotalDamage.Size = new System.Drawing.Size(74, 13);
 			this.labelTotalDamage.TabIndex = 9;
@@ -270,7 +270,7 @@ namespace E3NextUI
 			// labelTotalDamageValue
 			// 
 			this.labelTotalDamageValue.AutoSize = true;
-			this.labelTotalDamageValue.Location = new System.Drawing.Point(342, 81);
+			this.labelTotalDamageValue.Location = new System.Drawing.Point(302, 81);
 			this.labelTotalDamageValue.Name = "labelTotalDamageValue";
 			this.labelTotalDamageValue.Size = new System.Drawing.Size(13, 13);
 			this.labelTotalDamageValue.TabIndex = 10;
@@ -279,7 +279,7 @@ namespace E3NextUI
 			// labelTotalTime
 			// 
 			this.labelTotalTime.AutoSize = true;
-			this.labelTotalTime.Location = new System.Drawing.Point(279, 101);
+			this.labelTotalTime.Location = new System.Drawing.Point(239, 101);
 			this.labelTotalTime.Name = "labelTotalTime";
 			this.labelTotalTime.Size = new System.Drawing.Size(57, 13);
 			this.labelTotalTime.TabIndex = 11;
@@ -288,7 +288,7 @@ namespace E3NextUI
 			// labelTotalTimeValue
 			// 
 			this.labelTotalTimeValue.AutoSize = true;
-			this.labelTotalTimeValue.Location = new System.Drawing.Point(342, 101);
+			this.labelTotalTimeValue.Location = new System.Drawing.Point(302, 101);
 			this.labelTotalTimeValue.Name = "labelTotalTimeValue";
 			this.labelTotalTimeValue.Size = new System.Drawing.Size(13, 13);
 			this.labelTotalTimeValue.TabIndex = 12;
@@ -297,7 +297,7 @@ namespace E3NextUI
 			// labelYourDamageValue
 			// 
 			this.labelYourDamageValue.AutoSize = true;
-			this.labelYourDamageValue.Location = new System.Drawing.Point(342, 5);
+			this.labelYourDamageValue.Location = new System.Drawing.Point(302, 5);
 			this.labelYourDamageValue.Name = "labelYourDamageValue";
 			this.labelYourDamageValue.Size = new System.Drawing.Size(13, 13);
 			this.labelYourDamageValue.TabIndex = 14;
@@ -306,7 +306,7 @@ namespace E3NextUI
 			// labelYourDamage
 			// 
 			this.labelYourDamage.AutoSize = true;
-			this.labelYourDamage.Location = new System.Drawing.Point(261, 5);
+			this.labelYourDamage.Location = new System.Drawing.Point(221, 5);
 			this.labelYourDamage.Name = "labelYourDamage";
 			this.labelYourDamage.Size = new System.Drawing.Size(75, 13);
 			this.labelYourDamage.TabIndex = 13;
@@ -315,7 +315,7 @@ namespace E3NextUI
 			// labelPetDamageValue
 			// 
 			this.labelPetDamageValue.AutoSize = true;
-			this.labelPetDamageValue.Location = new System.Drawing.Point(342, 25);
+			this.labelPetDamageValue.Location = new System.Drawing.Point(302, 25);
 			this.labelPetDamageValue.Name = "labelPetDamageValue";
 			this.labelPetDamageValue.Size = new System.Drawing.Size(13, 13);
 			this.labelPetDamageValue.TabIndex = 16;
@@ -324,7 +324,7 @@ namespace E3NextUI
 			// labelPetDamage
 			// 
 			this.labelPetDamage.AutoSize = true;
-			this.labelPetDamage.Location = new System.Drawing.Point(267, 25);
+			this.labelPetDamage.Location = new System.Drawing.Point(227, 25);
 			this.labelPetDamage.Name = "labelPetDamage";
 			this.labelPetDamage.Size = new System.Drawing.Size(69, 13);
 			this.labelPetDamage.TabIndex = 15;
@@ -333,7 +333,7 @@ namespace E3NextUI
 			// labelYourDamageShieldValue
 			// 
 			this.labelYourDamageShieldValue.AutoSize = true;
-			this.labelYourDamageShieldValue.Location = new System.Drawing.Point(342, 48);
+			this.labelYourDamageShieldValue.Location = new System.Drawing.Point(302, 48);
 			this.labelYourDamageShieldValue.Name = "labelYourDamageShieldValue";
 			this.labelYourDamageShieldValue.Size = new System.Drawing.Size(13, 13);
 			this.labelYourDamageShieldValue.TabIndex = 18;
@@ -342,7 +342,7 @@ namespace E3NextUI
 			// labelYourDamageShield
 			// 
 			this.labelYourDamageShield.AutoSize = true;
-			this.labelYourDamageShield.Location = new System.Drawing.Point(268, 48);
+			this.labelYourDamageShield.Location = new System.Drawing.Point(228, 48);
 			this.labelYourDamageShield.Name = "labelYourDamageShield";
 			this.labelYourDamageShield.Size = new System.Drawing.Size(68, 13);
 			this.labelYourDamageShield.TabIndex = 17;

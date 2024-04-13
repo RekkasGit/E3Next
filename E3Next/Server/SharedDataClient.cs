@@ -298,7 +298,7 @@ namespace E3Core.Server
 
 			Int64 updateTime = Core.StopWatch.ElapsedMilliseconds;
 			ShareDataEntry entry;
-			if (!usertopics.TryGetValue(messageReceived, out entry))
+			if (!usertopics.TryGetValue(messageTopicReceived, out entry))
 			{
 				entry = new ShareDataEntry() { Data = messageReceived, LastUpdate = updateTime };
 				usertopics.TryAdd(messageTopicReceived, entry);

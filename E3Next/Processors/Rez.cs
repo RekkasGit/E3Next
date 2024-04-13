@@ -477,17 +477,15 @@ namespace E3Core.Processors
                     //we do this to check if our rez tokens have been used up.
                     InitRezSpells();
                     Casting.TrueTarget(s.ID);
-                    
-                    foreach (var spell in _currentRezSpells)
+
+					MQ.Cmd("/corpse");
+
+					foreach (var spell in _currentRezSpells)
                     {
                         if (Casting.CheckReady(spell) && Casting.CheckMana(spell) && CanRez())
                         {
-                            if(e3util.IsEQEMU())
-                            {
-								MQ.Cmd($"/tell {s.DisplayName} Wait4Rez", 100);
-
-							}
-							Casting.Cast(s.ID, spell);
+                            E3.Bots.Broadcast($"Rezing {s.DisplayName}");
+                            Casting.Cast(s.ID, spell);
 
                             return;
                         }
@@ -545,13 +543,12 @@ namespace E3Core.Processors
                         //no spells ready, break out of loop. 
                         break;
                     }
-                    if(e3util.IsEQEMU())
-                    {
-						MQ.Cmd($"/tell {s.DisplayName} Wait4Rez", 1500); //long delays after tells
-
-					}
 					//assume consent was given
 					MQ.Cmd("/corpse");
+
+					E3.Bots.Broadcast($"Rezing {s.DisplayName}");
+					
+					
 
                     foreach (var spell in _currentRezSpells)
                     {

@@ -1,12 +1,14 @@
 ﻿using E3NextUI.Util;
 using NetMQ;
 using NetMQ.Sockets;
+using Octokit;
 using System;
 using System.Collections.Generic;
 using System.ServiceModel.Configuration;
 using System.Threading;
 using System.Threading.Tasks;
 using System.Windows.Forms;
+using Application = System.Windows.Forms.Application;
 
 namespace E3NextUI.Server
 {
@@ -49,7 +51,13 @@ namespace E3NextUI.Server
                     if(subSocket.TryReceiveFrameString(recieveTimeout,out messageTopicReceived))
                     {
                         string messageReceived = subSocket.ReceiveFrameString();
-                        try
+
+						Int32 indexOfColon = messageReceived.IndexOf(':');
+						string payloaduser = messageReceived.Substring(0, indexOfColon);
+						string payload = messageReceived.Substring(indexOfColon + 1, messageReceived.Length - indexOfColon - 1);
+						messageReceived = payload;
+
+						try
                         {
                             //Console.WriteLine(messageReceived);
                             if (messageTopicReceived == "OnWriteChatColor")
