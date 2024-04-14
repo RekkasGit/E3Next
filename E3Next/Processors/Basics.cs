@@ -578,8 +578,12 @@ namespace E3Core.Processors
                         Spawn s;
                         if (_spawns.TryByID(targetid, out s))
                         {   
-                            e3util.TryMoveToLoc(s.X, s.Y,s.Z);
-                            System.Text.StringBuilder sb = new StringBuilder();
+                            //lets not appear too botty
+                            if(e3util.IsEQEMU())
+                            {
+								e3util.TryMoveToLoc(s.X, s.Y, s.Z);
+							}
+							System.Text.StringBuilder sb = new StringBuilder();
                             bool first = true;
                             foreach (string arg in x.args)
                             {
@@ -639,7 +643,10 @@ namespace E3Core.Processors
 								}
 								Casting.TrueTarget(targetid);
                                 MQ.Delay(100);
-                                e3util.TryMoveToLoc(s.X, s.Y,s.Z);
+                                if(e3util.IsEQEMU())
+                                {
+									e3util.TryMoveToLoc(s.X, s.Y, s.Z);
+								}
 								Int32 numberToBark = 5;
 								if (e3util.IsEQLive())
 								{
@@ -1327,8 +1334,13 @@ namespace E3Core.Processors
             if (!e3util.ShouldCheck(ref _nextAutoMedCheck, _nextAutoMedCheckInterval)) return;
             int autoMedPct = E3.GeneralSettings.General_AutoMedBreakPctMana;
             if (autoMedPct == 0) return;
-            if (InCombat()) return;
-            if (Casting.SpellBookWndOpen()) return;
+            
+            if(E3.CharacterSettings.Misc_EndMedBreakInCombat)
+            {
+				if (InCombat()) return;
+
+			}
+			if (Casting.SpellBookWndOpen()) return;
             if (e3util.IsManualControl()) return;
             if (Casting.IsCasting() && E3.CurrentClass!= Class.Bard) return;
 			bool amIStanding = MQ.Query<bool>("${Me.Standing}");

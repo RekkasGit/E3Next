@@ -34,7 +34,7 @@ namespace E3Core.Classes
         private static Data.Spell _sonataAccelerando = new Spell("Selo's Accelerando");
         private static Int64 _nextBardCast = 0;
         private static bool _autoMezEnabled = false;
-        private static List<Int64> _autoMezFullMobList = new List<long>();
+        private static HashSet<Int64> _autoMezFullMobList = new HashSet<long>();
 		private static HashSet<Int64> _mobsToAutoMez = new HashSet<Int64>();
 		public static Dictionary<Int32, SpellTimer> _autoMezTimers = new Dictionary<Int32, SpellTimer>();
 

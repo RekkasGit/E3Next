@@ -22,7 +22,7 @@ namespace E3Core.Processors
         public static HashSet<Int32> _mobsToDot = new HashSet<int>();
         public static HashSet<Int32> _mobsToDebuff = new HashSet<int>();
         public static HashSet<Int64> _mobsToOffAsist = new HashSet<Int64>();
-		private static List<Int64> _offAssistFullMobList = new List<long>();
+		private static HashSet<Int64> _offAssistFullMobList = new HashSet<long>();
 
 		public static HashSet<Int32> _mobsToIgnoreOffAsist = new HashSet<int>();
 		
@@ -73,10 +73,10 @@ namespace E3Core.Processors
             }
 
 				Int32 targetId = MQ.Query<Int32>("${Target.ID}");
-            if (targetId != Assist.AssistTargetID && e3util.IsManualControl())
-            {
-                return;
-            }
+            //if (targetId != Assist.AssistTargetID && e3util.IsManualControl())
+            //{
+            //    return;
+            //}
             //do not off assist if you are in the middle of gather dusk. It sucks to put it on an add. 
             if(e3util.IsEQEMU() && String.Equals(E3.ServerName,"Lazarus", StringComparison.OrdinalIgnoreCase))
             {
@@ -111,7 +111,7 @@ namespace E3Core.Processors
 				List<Int64> mobIdsToRemove = new List<Int64>();
 				foreach (var mobid in _mobsToOffAsist)
 				{
-					if (_offAssistFullMobList.Contains(mobid))
+					if (!_offAssistFullMobList.Contains(mobid))
 					{
 						//they are no longer a valid mobid, remove from mobs to mez
 						mobIdsToRemove.Add(mobid);
