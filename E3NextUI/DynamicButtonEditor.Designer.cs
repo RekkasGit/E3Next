@@ -40,14 +40,15 @@ namespace E3NextUI
 			this.checkBoxHotkeyCtrl = new System.Windows.Forms.CheckBox();
 			this.comboBoxKeyValues = new System.Windows.Forms.ComboBox();
 			this.checkBoxHotkeyEat = new System.Windows.Forms.CheckBox();
+			this.checkBoxHotkeyShift = new System.Windows.Forms.CheckBox();
 			this.SuspendLayout();
 			// 
 			// textBoxCommands
 			// 
-			this.textBoxCommands.Location = new System.Drawing.Point(12, 101);
+			this.textBoxCommands.Location = new System.Drawing.Point(12, 118);
 			this.textBoxCommands.Multiline = true;
 			this.textBoxCommands.Name = "textBoxCommands";
-			this.textBoxCommands.Size = new System.Drawing.Size(360, 271);
+			this.textBoxCommands.Size = new System.Drawing.Size(360, 272);
 			this.textBoxCommands.TabIndex = 1;
 			// 
 			// label1
@@ -81,7 +82,7 @@ namespace E3NextUI
 			// 
 			// buttonOK
 			// 
-			this.buttonOK.Location = new System.Drawing.Point(47, 379);
+			this.buttonOK.Location = new System.Drawing.Point(47, 397);
 			this.buttonOK.Name = "buttonOK";
 			this.buttonOK.Size = new System.Drawing.Size(87, 31);
 			this.buttonOK.TabIndex = 2;
@@ -92,7 +93,7 @@ namespace E3NextUI
 			// buttonCancel
 			// 
 			this.buttonCancel.DialogResult = System.Windows.Forms.DialogResult.Cancel;
-			this.buttonCancel.Location = new System.Drawing.Point(242, 379);
+			this.buttonCancel.Location = new System.Drawing.Point(242, 397);
 			this.buttonCancel.Name = "buttonCancel";
 			this.buttonCancel.Size = new System.Drawing.Size(83, 31);
 			this.buttonCancel.TabIndex = 3;
@@ -112,7 +113,7 @@ namespace E3NextUI
 			// 
 			// checkBoxHotkeyAlt
 			// 
-			this.checkBoxHotkeyAlt.Location = new System.Drawing.Point(224, 67);
+			this.checkBoxHotkeyAlt.Location = new System.Drawing.Point(224, 63);
 			this.checkBoxHotkeyAlt.Name = "checkBoxHotkeyAlt";
 			this.checkBoxHotkeyAlt.Size = new System.Drawing.Size(53, 24);
 			this.checkBoxHotkeyAlt.TabIndex = 6;
@@ -121,7 +122,7 @@ namespace E3NextUI
 			// 
 			// checkBoxHotkeyCtrl
 			// 
-			this.checkBoxHotkeyCtrl.Location = new System.Drawing.Point(283, 67);
+			this.checkBoxHotkeyCtrl.Location = new System.Drawing.Point(283, 63);
 			this.checkBoxHotkeyCtrl.Name = "checkBoxHotkeyCtrl";
 			this.checkBoxHotkeyCtrl.Size = new System.Drawing.Size(53, 24);
 			this.checkBoxHotkeyCtrl.TabIndex = 7;
@@ -138,20 +139,30 @@ namespace E3NextUI
 			// 
 			// checkBoxHotkeyEat
 			// 
-			this.checkBoxHotkeyEat.Location = new System.Drawing.Point(333, 66);
+			this.checkBoxHotkeyEat.Location = new System.Drawing.Point(283, 93);
 			this.checkBoxHotkeyEat.Name = "checkBoxHotkeyEat";
 			this.checkBoxHotkeyEat.Size = new System.Drawing.Size(53, 24);
 			this.checkBoxHotkeyEat.TabIndex = 9;
 			this.checkBoxHotkeyEat.Text = "Eat";
 			this.checkBoxHotkeyEat.UseVisualStyleBackColor = true;
 			// 
+			// checkBoxHotkeyShift
+			// 
+			this.checkBoxHotkeyShift.Location = new System.Drawing.Point(224, 93);
+			this.checkBoxHotkeyShift.Name = "checkBoxHotkeyShift";
+			this.checkBoxHotkeyShift.Size = new System.Drawing.Size(53, 24);
+			this.checkBoxHotkeyShift.TabIndex = 10;
+			this.checkBoxHotkeyShift.Text = "Shift";
+			this.checkBoxHotkeyShift.UseVisualStyleBackColor = true;
+			// 
 			// DynamicButtonEditor
 			// 
 			this.AutoScaleDimensions = new System.Drawing.SizeF(6F, 13F);
 			this.AutoScaleMode = System.Windows.Forms.AutoScaleMode.Font;
 			this.CancelButton = this.buttonCancel;
-			this.ClientSize = new System.Drawing.Size(398, 436);
+			this.ClientSize = new System.Drawing.Size(385, 438);
 			this.ControlBox = false;
+			this.Controls.Add(this.checkBoxHotkeyShift);
 			this.Controls.Add(this.checkBoxHotkeyEat);
 			this.Controls.Add(this.comboBoxKeyValues);
 			this.Controls.Add(this.checkBoxHotkeyCtrl);
@@ -184,5 +195,6 @@ namespace E3NextUI
 		public System.Windows.Forms.CheckBox checkBoxHotkeyCtrl;
 		public System.Windows.Forms.ComboBox comboBoxKeyValues;
 		public System.Windows.Forms.CheckBox checkBoxHotkeyEat;
+		public System.Windows.Forms.CheckBox checkBoxHotkeyShift;
 	}
 }

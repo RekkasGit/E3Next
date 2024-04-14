@@ -1332,10 +1332,13 @@ namespace E3Core.Processors
         public static void CheckAutoMed()
         {
             if (!e3util.ShouldCheck(ref _nextAutoMedCheck, _nextAutoMedCheckInterval)) return;
+            if (!E3.CharacterSettings.Misc_AutoMedBreak) return;
             int autoMedPct = E3.GeneralSettings.General_AutoMedBreakPctMana;
             if (autoMedPct == 0) return;
             
-            if(E3.CharacterSettings.Misc_EndMedBreakInCombat)
+            bool isCasterOrPriest = (E3.CurrentClass & Class.Caster) == E3.CurrentClass || (E3.CurrentClass & Class.Priest) == E3.CurrentClass;
+
+            if (E3.CharacterSettings.Misc_EndMedBreakInCombat || (Assist.IsAssisting && !isCasterOrPriest))
             {
 				if (InCombat()) return;
 
@@ -1355,7 +1358,7 @@ namespace E3Core.Processors
 			//no sense in recovering endurance if not in resting state
 			if (!MQ.Query<bool>("${Me.CombatState.Equal[ACTIVE]}") && E3.CurrentClass == Class.Bard) return;
 
-            if (!E3.CharacterSettings.Misc_AutoMedBreak) return;
+          
             using (_log.Trace())
             {
                 bool onMount = MQ.Query<bool>("${Me.Mount.ID}");                

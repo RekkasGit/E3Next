@@ -292,6 +292,7 @@ namespace E3NextUI
                         edit.textBoxName.Text = b.Text;
                         edit.textBoxCommands.Text = String.Join("\r\n",db.Commands);
 						edit.checkBoxHotkeyAlt.Checked = db.HotKeyAlt;
+                        edit.checkBoxHotkeyShift.Checked = db.HotKeyShift;
 						edit.checkBoxHotkeyCtrl.Checked = db.HotKeyCtrl;
                         edit.checkBoxHotkeyEat.Checked = db.HotKeyEat;
 
@@ -356,7 +357,25 @@ namespace E3NextUI
 
 				if (key==e.KeyCode)
 				{ 
-                    if(pair.Value.HotKeyAlt && e.Modifiers!= Keys.Alt)
+                    if(e.Modifiers==Keys.Alt && !pair.Value.HotKeyAlt)
+                    {
+                        continue;
+                    }
+					if (e.Modifiers == Keys.Control && !pair.Value.HotKeyCtrl)
+					{
+						continue;
+					}
+
+					if (e.Modifiers == Keys.Shift && !pair.Value.HotKeyShift)
+					{
+						continue;
+					}
+					if (e.Modifiers == Keys.Shift && !pair.Value.HotKeyShift)
+					{
+						continue;
+					}
+
+					if (pair.Value.HotKeyAlt && e.Modifiers!= Keys.Alt)
                     {
                         continue;
                     }
@@ -429,6 +448,7 @@ namespace E3NextUI
 			_genSettings.DynamicButtons[b.Name] = tdb;
 
 			tdb.HotKeyAlt = edit.checkBoxHotkeyAlt.Checked;
+            tdb.HotKeyShift = edit.checkBoxHotkeyShift.Checked;
 			tdb.HotKeyCtrl = edit.checkBoxHotkeyCtrl.Checked;
 			tdb.HotKeyEat = edit.checkBoxHotkeyEat.Checked;
 			string text = (string)edit.comboBoxKeyValues.SelectedItem;

@@ -643,7 +643,7 @@ namespace E3Core.Settings
             section.Keys.AddKey("AutoFood", "Off");
             section.Keys.AddKey("Food", "");
             section.Keys.AddKey("Drink", "");
-            section.Keys.AddKey("End MedBreak in Combat(On/Off)", "Off");
+            section.Keys.AddKey("End MedBreak in Combat(On/Off)", "On");
             section.Keys.AddKey("AutoMedBreak (On/Off)", "Off");
             section.Keys.AddKey("Auto-Loot (On/Off)", "Off");
             section.Keys.AddKey("Anchor (Char to Anchor to)", "");
