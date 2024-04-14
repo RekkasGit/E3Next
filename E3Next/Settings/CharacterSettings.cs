@@ -50,6 +50,7 @@ namespace E3Core.Settings
         public string Rogue_SneakAttack = string.Empty;
 
         public List<MelodyIfs> Bard_MelodyIfs = new List<MelodyIfs>();
+        public List<Spell> Bard_AutoMezSong = new List<Spell>();
 
         public List<Spell> CasterEvacs = new List<Spell>();
         public List<string> E3ChatChannelsToJoin = new List<string>();
@@ -399,6 +400,7 @@ namespace E3Core.Settings
             if (CharacterClass == Class.Bard)
             {
                 LoadKeyData("Bard", "MelodyIf", ParsedData, Bard_MelodyIfs);
+                LoadKeyData("Bard", "AutoMezSong", ParsedData, Bard_AutoMezSong);
                 LoadKeyData("Bard", "Auto-Sonata (On/Off)", ParsedData, ref Bard_AutoSonata);
             }
 
@@ -760,7 +762,8 @@ namespace E3Core.Settings
                 newFile.Sections.AddSection("Bard");
                 section = newFile.Sections.GetSectionData("Bard");
                 section.Keys.AddKey("MelodyIf", "");
-                section.Keys.AddKey("Auto-Sonata (On/Off)", "Off");
+				section.Keys.AddKey("AutoMezSong", "");
+				section.Keys.AddKey("Auto-Sonata (On/Off)", "Off");
             }
 
             if ((CharacterClass & Class.PetClass) == CharacterClass)

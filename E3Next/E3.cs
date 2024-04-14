@@ -156,6 +156,7 @@ namespace E3Core.Processors
 			//bard song player
 			if (E3.CurrentClass == Data.Class.Bard)
 			{
+				Bard.Check_AutoMez();
 				Bard.check_BardSongs();
 			}
 		}
@@ -391,7 +392,10 @@ namespace E3Core.Processors
 			Enum.TryParse(classValue, out CurrentClass);
 			CurrentLongClassString = CurrentClass.ToString();
 			CurrentShortClassString = Data.Classes.ClassLongToShort[CurrentLongClassString];
-
+			if(e3util.IsEQLive())
+			{
+				e3util.MobMaxDebuffSlots = 200;
+			}
 		}
         private static void Init()
         {

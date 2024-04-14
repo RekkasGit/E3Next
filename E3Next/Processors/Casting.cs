@@ -2084,7 +2084,7 @@ namespace E3Core.Processors
 		public static Int64 TimeLeftOnMySpell(Data.Spell spell)
 		{
 
-			for (Int32 i = 1; i < 57; i++)
+			for (Int32 i = 1; i < (e3util.MobMaxDebuffSlots+1); i++)
 			{
 				Int32 buffID = MQ.Query<Int32>($"${{Target.Buff[{i}].ID}}");
 

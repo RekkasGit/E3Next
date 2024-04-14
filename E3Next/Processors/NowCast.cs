@@ -1,4 +1,5 @@
-﻿using E3Core.Data;
+﻿using E3Core.Classes;
+using E3Core.Data;
 using MonoCore;
 using System;
 using System.Collections.Generic;
@@ -126,15 +127,26 @@ namespace E3Core.Processors
 
                     //wait for GCD to be over.
                     bool wasCasting = false;
-                    while (Casting.IsCasting())
+                    if(E3.CurrentClass!= Class.Bard)
                     {
-                        wasCasting = true;
-                        MQ.Delay(50);
-                    }
-                    if (wasCasting)
+						while (Casting.IsCasting())
+						{
+							wasCasting = true;
+							MQ.Delay(50);
+						}
+
+						if (wasCasting)
+						{
+							MQ.Delay(600);
+						}
+					}
+                    else
                     {
-                        MQ.Delay(600);
+                        //bard, stop the song and do what we were told to do 
+                        MQ.Cmd("/stopsong");
+                        Bard.ResetNextBardSong();
                     }
+					
                     if (MQ.Query<Int32>("${Me.CurrentMana}") > 0)
                     {
                         while (Casting.InGlobalCooldown())
@@ -185,6 +197,11 @@ namespace E3Core.Processors
 					if(returnValue== CastReturn.CAST_FIZZLE)
                     {
                         goto recast;
+                    }
+                    if(returnValue == CastReturn.CAST_SUCCESS && E3.CurrentClass== Class.Bard)
+                    {
+                        //bards need a moment before they start back up their twist on a nowcast
+                        MQ.Delay(300);
                     }
                     return returnValue;
                 }

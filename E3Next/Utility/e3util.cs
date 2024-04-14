@@ -27,6 +27,7 @@ namespace E3Core.Utility
 		public static Int32 MaxBuffSlots = 42;
 		public static Int32 MaxSongSlots = 30;
         public static Int32 MaxPetBuffSlots = 30;
+        public static Int32 MobMaxDebuffSlots = 55;
 
 		//share this as we can reuse as its only 1 thread
 		private static StringBuilder _resultStringBuilder = new StringBuilder(1024);

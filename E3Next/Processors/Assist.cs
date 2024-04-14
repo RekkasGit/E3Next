@@ -64,10 +64,11 @@ namespace E3Core.Processors
             Casting.ResetResistCounters();
             //put them back in their object pools
             DebuffDot.Reset();
-            Burns.Reset();
+			Burns.Reset();
             AssistOff();
+         
 
-        }
+		}
 
         /// <summary>
         /// Checks the assist status.

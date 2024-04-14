@@ -96,6 +96,14 @@ namespace E3Core.Data
                     {
                         NoInterrupt = true;
                     }
+					else if (value.Equals("IsDoT", StringComparison.OrdinalIgnoreCase))
+					{
+						IsDoT = true;
+					}
+					else if (value.Equals("IsDebuff", StringComparison.OrdinalIgnoreCase))
+					{
+						IsDebuff = true;
+					}
 					else if (value.Equals("Debug", StringComparison.OrdinalIgnoreCase))
 					{
 						Debug = true;
@@ -803,6 +811,8 @@ namespace E3Core.Data
         public bool IsShortBuff = false;
         public Int32 HealthMax = 100;
         public bool IgnoreStackRules = false;
+        public bool IsDebuff = false;
+        public bool IsDoT = false;
       
 
         public override string ToString()

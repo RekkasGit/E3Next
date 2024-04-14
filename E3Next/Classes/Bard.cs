@@ -9,6 +9,7 @@ using System.Collections.Generic;
 using System.Dynamic;
 using System.Linq;
 using System.Windows.Forms;
+using System.Security.Cryptography;
 
 namespace E3Core.Classes
 {
@@ -32,14 +33,23 @@ namespace E3Core.Classes
         private static Data.Spell _sonataSpell = new Spell("Selo's Sonata");
         private static Data.Spell _sonataAccelerando = new Spell("Selo's Accelerando");
         private static Int64 _nextBardCast = 0;
-        /// <summary>
-        /// Initializes this instance.
-        /// </summary>
-        [ClassInvoke(Data.Class.Bard)]
+        private static bool _autoMezEnabled = false;
+        private static List<Int64> _autoMezFullMobList = new List<long>();
+		private static HashSet<Int64> _mobsToAutoMez = new HashSet<Int64>();
+		public static Dictionary<Int32, SpellTimer> _autoMezTimers = new Dictionary<Int32, SpellTimer>();
+
+        public static void ResetNextBardSong()
+        {
+            _nextBardCast = 0;
+        }
+		/// <summary>
+		/// Initializes this instance.
+		/// </summary>
+		[ClassInvoke(Data.Class.Bard)]
         public static void Init()
         {
             if (_isInit) return;
-            PlayMelody();
+            RegisterCommands();
             _isInit = true;
         }
         /// <summary>
@@ -119,7 +129,7 @@ namespace E3Core.Classes
         /// <summary>
         /// /playmelody melodyName
         /// </summary>
-        public static void PlayMelody()
+        public static void RegisterCommands()
         {
             EventProcessor.RegisterCommand("/playmelody", (x) =>
             {
@@ -144,7 +154,32 @@ namespace E3Core.Classes
                     }
                 }
             });
-        }
+			EventProcessor.RegisterCommand("/e3automez", (x) =>
+            {
+                if (x.args.Count > 0)
+                {
+                    if (x.args[0].Equals("off", StringComparison.OrdinalIgnoreCase))
+                    {
+                        E3.Bots.Broadcast("Turning off Bard Auto Mez");
+                        Casting.Interrupt();
+                        _autoMezEnabled = false;
+                        _autoMezTimers.Clear();
+                        
+
+                    }
+                   
+                }
+				else
+				{
+					E3.Bots.Broadcast("Turning on Bard Auto Mez");
+
+					_autoMezEnabled = true;
+					_autoMezTimers.Clear();
+
+
+				}
+			});
+		}
 
         /// <summary>
         /// Checks the melody ifs.
@@ -172,11 +207,136 @@ namespace E3Core.Classes
                 }
             }
         }
-        //[ClassInvoke(Data.Class.Bard)]        
-        /// <summary>
-        /// Checks the bard songs.
-        /// </summary>
-        public static void check_BardSongs()
+		public static void Check_AutoMez()
+		{
+			if (!_autoMezEnabled) return;
+			
+			if (E3.CharacterSettings.Bard_AutoMezSong.Count == 0) return;
+			Int32 targetId = MQ.Query<Int32>("${Target.ID}");
+
+			using (_log.Trace())
+			{
+				_autoMezFullMobList.Clear();
+
+				foreach (var s in _spawns.Get().OrderBy(x => x.Distance))
+				{
+					_autoMezFullMobList.Add(s.ID);
+					if (_mobsToAutoMez.Contains(s.ID)) continue;
+					//find all mobs that are close
+					if (s.TypeDesc != "NPC") continue;
+					if (!s.Targetable) continue;
+					if (!s.Aggressive) continue;
+					if (s.CleanName.EndsWith("s pet")) continue;
+					if (!MQ.Query<bool>($"${{Spawn[npc id {s.ID}].LineOfSight}}")) continue;
+					if (s.Distance > 60) break;//mob is too far away, and since it is ordered, kick out.
+											   //its valid to attack!
+					_mobsToAutoMez.Add(s.ID);
+				}
+				
+                List<Int64> mobIdsToRemove = new List<Int64>();
+                foreach(var mobid in _mobsToAutoMez)
+                {
+                    if(!_autoMezFullMobList.Contains(mobid))
+                    {
+                        //they are no longer a valid mobid, remove from mobs to mez
+                        mobIdsToRemove.Add(mobid);
+					}
+                }
+                foreach (var mobid in mobIdsToRemove)
+                {
+                    _mobsToAutoMez.Remove(mobid);
+                }
+                if (_mobsToAutoMez.Count == 0)
+                {
+                    _autoMezEnabled = false;
+                    E3.Bots.Broadcast("No more mobs to mez, turning off auto mez.");
+					_autoMezTimers.Clear();
+					return;
+                }
+				_mobsToAutoMez.Remove(Assist.AssistTargetID);
+				if (_mobsToAutoMez.Count == 0)
+				{
+					E3.Bots.Broadcast("No more mobs to mez, turning off auto mez.");
+					_autoMezEnabled = false;
+                    _autoMezTimers.Clear();
+					return;
+				}
+
+                bool wasAttacking = MQ.Query<bool>("${Me.Combat}");
+				try
+				{
+                    //lets place the 1st offensive spell on each mob, then the next, then the next
+                    //lets not hit what we are trying to mez
+                    if(wasAttacking)
+                    {
+						MQ.Cmd("/attack off");
+
+					}
+
+					foreach (var spell in E3.CharacterSettings.Bard_AutoMezSong)
+					{
+						//check if the if condition works
+						if (!String.IsNullOrWhiteSpace(spell.Ifs))
+						{
+							if (!Casting.Ifs(spell))
+							{
+								continue;
+							}
+						}
+						if (Casting.CheckMana(spell))
+						{
+							foreach (Int32 mobid in _mobsToAutoMez.ToList())
+							{
+								SpellTimer s;
+								//do we need to cast the song?
+								if (_autoMezTimers.TryGetValue(mobid, out s))
+								{
+									Int64 timestamp;
+									if (s.Timestamps.TryGetValue(spell.SpellID, out timestamp))
+									{
+										if ((Core.StopWatch.ElapsedMilliseconds + (spell.MinDurationBeforeRecast)) < timestamp)
+										{
+											//debuff/dot is still on the mob, kick off
+											continue;
+										}
+									}
+								}
+
+								Casting.Sing(mobid, spell);
+								//now change our target back
+								e3util.PutOriginalTargetBackIfNeeded(targetId);
+
+								if (wasAttacking)
+								{
+									MQ.Cmd("/attack on");
+								}
+
+                                while(Casting.IsCasting())
+                                {
+                                    MQ.Delay(50);
+                                }
+								DebuffDot.UpdateDotDebuffTimers(mobid, spell, spell.Duration, _autoMezTimers);
+                                MQ.Cmd("/stopsong");
+								
+                          }
+						}
+					}
+				}
+				finally
+				{
+					e3util.PutOriginalTargetBackIfNeeded(targetId);
+                    if(wasAttacking)
+                    {
+                        MQ.Cmd("/attack on");
+                    }
+				}
+
+			}
+		}
+		/// <summary>
+		/// Checks the bard songs.
+		/// </summary>
+		public static void check_BardSongs()
         {
 
 			if (!_playingMelody && !Assist.IsAssisting)
