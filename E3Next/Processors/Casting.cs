@@ -1474,7 +1474,7 @@ namespace E3Core.Processors
 					}
 				}
 			});
-			EventProcessor.RegisterCommand("/e3varsetbool", (x) =>
+			EventProcessor.RegisterCommand("/e3varbool", (x) =>
 			{
 				//key/value
 				if (x.args.Count > 1)
