@@ -1337,15 +1337,26 @@ namespace E3Core.Processors
             int autoMedPct = E3.GeneralSettings.General_AutoMedBreakPctMana;
             if (autoMedPct == 0) return;
             
-            if(E3.ActionTaken)
+            if(Misc_LastTimeAutoMedHappened==0)
+            {
+                Misc_LastTimeAutoMedHappened = Core.StopWatch.ElapsedMilliseconds;
+            }
+            
+            if(E3.ActionTaken && E3.CurrentClass!=Class.Bard)
             { //we just did something, lets wait for at least one loop of nothing before we sit
               //this should prevent cast/sit/cast/cast in rapid fire situations
                 Misc_LastTimeAutoMedHappened = Core.StopWatch.ElapsedMilliseconds;
                 return; 
                
             }
+            else if(E3.CurrentClass== Class.Bard && Basics.InCombat())
+            {
+				//well they won't really sit in combat\
+				Misc_LastTimeAutoMedHappened = Core.StopWatch.ElapsedMilliseconds;
+				return;
+            }
             //don't try and sit more than once every 3 seconds to prevent the cast/spell/up /down
-            if(Core.StopWatch.ElapsedMilliseconds > Misc_LastTimeAutoMedHappened+3000)
+            if(Core.StopWatch.ElapsedMilliseconds < (Misc_LastTimeAutoMedHappened+3000))
             {
                 return;
             }

@@ -108,7 +108,7 @@ namespace E3Core.Processors
 				return false;
 			}
 			//find the lowest health xtarget
-			const Int32 XtargetMax = 12;
+			Int32 XtargetMax = e3util.XtargetMax;
 			//dealing with index of 1.
 			Int32 currentLowestHealth = 100;
 			Int32 lowestHealthTargetid = -1;

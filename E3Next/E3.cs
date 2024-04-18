@@ -406,8 +406,12 @@ namespace E3Core.Processors
             {
                 MQ.ClearCommands();
                 AsyncIO.ForceDotNet.Force();
-
-                Logging.TraceLogLevel = Logging.LogLevels.None; //log level we are currently at
+				if (e3util.IsEQLive())
+				{
+					e3util.MobMaxDebuffSlots = 200;
+					e3util.XtargetMax = 20;
+				}
+				Logging.TraceLogLevel = Logging.LogLevels.None; //log level we are currently at
                 Logging.MinLogLevelTolog = Logging.LogLevels.Error; //log levels have integers assoicatd to them. you can set this to Error to only log errors. 
                 Logging.DefaultLogLevel = Logging.LogLevels.Debug; //the default if a level is not passed into the _log.write statement. useful to hide/show things.
                 MainProcessor.ApplicationName = "E3"; //application name, used in some outputs

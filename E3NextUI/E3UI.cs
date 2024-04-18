@@ -332,8 +332,12 @@ namespace E3NextUI
 		private void globalKeyboard_KeyDown(object sender, KeyEventArgs e)
 		{
 			//one of the keys we are looking for!
-			
-            if (_currentWindowName.EndsWith("Input", StringComparison.OrdinalIgnoreCase))
+			if (_currentWindowName.Equals("IMGUI", StringComparison.OrdinalIgnoreCase))
+			{
+				//they are typing in game, do not capture events.
+				return;
+			}
+			if (_currentWindowName.EndsWith("Input", StringComparison.OrdinalIgnoreCase))
 			{
 				//they are typing in game, do not capture events.
 				return;

@@ -127,35 +127,36 @@ namespace E3Core.Processors
 
                     //wait for GCD to be over.
                     bool wasCasting = false;
-                    if(E3.CurrentClass!= Class.Bard)
+                    if (E3.CurrentClass != Class.Bard)
                     {
-						while (Casting.IsCasting())
-						{
-							wasCasting = true;
-							MQ.Delay(50);
-						}
+                        while (Casting.IsCasting())
+                        {
+                            wasCasting = true;
+                            MQ.Delay(50);
+                        }
 
-						if (wasCasting)
-						{
-							MQ.Delay(600);
-						}
-					}
+                        if (wasCasting)
+                        {
+                            MQ.Delay(600);
+                        }
+                    }
                     else
                     {
                         //bard, stop the song and do what we were told to do 
                         MQ.Cmd("/stopsong");
                         Bard.ResetNextBardSong();
                     }
-					
-                    if (MQ.Query<Int32>("${Me.CurrentMana}") > 0)
-                    {
-                        while (Casting.InGlobalCooldown())
-                        {
-                            MQ.Delay(100);
-                        }
-                    }
 
-                    if (targetid == 0)
+                    if (spell.CastType == CastType.Spell)
+                    {
+						while (Casting.InGlobalCooldown())
+						{
+							MQ.Delay(100);
+						}
+					
+					}
+
+					if (targetid == 0)
                     {
                         targetid = E3.CurrentId;
                     }

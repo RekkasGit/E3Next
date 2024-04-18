@@ -52,12 +52,16 @@ namespace E3Core.Processors
         {
 
             if (!e3util.ShouldCheck(ref _nextRCureCheck, _nexRCureCheckInterval)) return;
-            if (!E3.ActionTaken) CheckRadiant();
+
+			Int32 targetID = MQ.Query<Int32>("${Target.ID}");
+			if (!E3.ActionTaken) CheckRadiant();
             if (!E3.ActionTaken) CheckNormalCures();
             if (!E3.ActionTaken) CheckCounterCures();
             if (!E3.ActionTaken) CheckNormalCureAll();
 
-        }
+			e3util.PutOriginalTargetBackIfNeeded(targetID);
+
+		}
         private static void CheckNormalCureAll()
         {
             foreach (var spell in E3.CharacterSettings.CureAll)
