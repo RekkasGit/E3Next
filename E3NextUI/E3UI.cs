@@ -773,6 +773,7 @@ namespace E3NextUI
 		{
 			if (value == labelCastingValue.Text) return;
             _currentWindowName = value;
+            labelCastingValue.Text = value;
 		}
 		#endregion
 

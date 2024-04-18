@@ -509,7 +509,7 @@ namespace E3Core.Processors
 				bool amIStanding = MQ.Query<bool>("${Me.Standing}");
 				if (MQ.Query<bool>("${Me.Feigning}"))
                 {
-                    if (E3.CharacterSettings.IfFDStayDown) return;
+                    //if (E3.CharacterSettings.IfFDStayDown) return;
                     MQ.Cmd("/stand");
                 }else
                 {

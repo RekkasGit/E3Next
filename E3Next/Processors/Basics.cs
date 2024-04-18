@@ -1336,10 +1336,16 @@ namespace E3Core.Processors
             int autoMedPct = E3.GeneralSettings.General_AutoMedBreakPctMana;
             if (autoMedPct == 0) return;
             
+            if(E3.ActionTaken)
+            { //we just did something, lets wait for at least one loop of nothing before we sit
+              //this should prevent cast/sit/cast/cast in rapid fire situations
+                return; 
+            }
             bool isCasterOrPriest = (E3.CurrentClass & Class.Caster) == E3.CurrentClass || (E3.CurrentClass & Class.Priest) == E3.CurrentClass;
 
             if (E3.CharacterSettings.Misc_EndMedBreakInCombat || (Assist.IsAssisting && !isCasterOrPriest))
             {
+
 				if (InCombat()) return;
 
 			}

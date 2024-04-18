@@ -107,7 +107,8 @@ namespace E3NextUI.Util
                 if (TryUpdateCollection(line, _dotDmgToYou, DamageToYou, _damageToYouTime)) return;
                 if (TryUpdateCollection(line, _spellDmgToYou, DamageToYou, _damageToYouTime)) return;
                 if (TryUpdateCollection(line, _damageshieldByYou, YourDamageShieldDamage, YourDamageShieldDamageTime)) return;
-                if (TryUpdateCollection(line, _healingYou, HealingToYou, _healingToYouTime)) return;
+				if (TryUpdateCollection(line, _damageshieldByYou2, YourDamageShieldDamage, YourDamageShieldDamageTime)) return;
+				if (TryUpdateCollection(line, _healingYou, HealingToYou, _healingToYouTime)) return;
                 if (TryUpdateCollection(line, _selfHeals, HealingToYou, _healingToYouTime)) return;
                 if (TryUpdateCollection(line, _healingByYouRegex, HealingByYou, _healingByYouTime)) return;
 
@@ -148,9 +149,11 @@ namespace E3NextUI.Util
 
         //damage shield
         static System.Text.RegularExpressions.Regex _damageshieldByYou = new System.Text.RegularExpressions.Regex(".+ was hit by non-melee for ([0-9]+) points of damage\\.");
-        //healing
+        //eqlive damage shield
+		static System.Text.RegularExpressions.Regex _damageshieldByYou2 = new System.Text.RegularExpressions.Regex(@".+ is pierced by YOUR thorns for ([0-9]+) points of non-melee damage\.");
+		//healing
 
-        static System.Text.RegularExpressions.Regex _healingYou = new System.Text.RegularExpressions.Regex(".+ has healed you for ([0-9]+) points\\.");
+		static System.Text.RegularExpressions.Regex _healingYou = new System.Text.RegularExpressions.Regex(".+ has healed you for ([0-9]+) points\\.");
         static System.Text.RegularExpressions.Regex _selfHeals = new System.Text.RegularExpressions.Regex("You have been healed for ([0-9]+) hit points");
         static System.Text.RegularExpressions.Regex _healingByYouRegex = new System.Text.RegularExpressions.Regex("You have healed .+ for ([0-9]+) points\\.");
 

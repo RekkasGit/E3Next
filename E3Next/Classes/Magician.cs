@@ -515,14 +515,17 @@ namespace E3Core.Classes
             var id = E3.CurrentId;
             Casting.TrueTarget(id);
             var spell = new Spell(itemToSummon);
-            if (Casting.CheckReady(spell))
+            if (Casting.CheckReady(spell) && Casting.CheckMana(spell))
             {
                 int cursorId = 0;
                 // try several times to summon
                 for (int i = 1; i <= 5; i++)
                 {
-                    Casting.Cast(id, spell);
-                    e3util.YieldToEQ();
+                    if(Casting.Cast(id, spell)== CastReturn.CAST_FIZZLE)
+                    {
+                        continue;
+                    }
+                    MQ.Delay(3000, "${Cursor.ID}");
                     cursorId = MQ.Query<int>("${Cursor.ID}");
                     if (cursorId > 0) break;
                 }
