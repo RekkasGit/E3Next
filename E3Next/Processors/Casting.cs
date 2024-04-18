@@ -1453,6 +1453,80 @@ namespace E3Core.Processors
 				{
 					string key = x.args[0];
 					string value = x.args[1];
+					if (VarsetValues.Count > 0)
+					{
+						foreach (var vkey in VarsetValues.Keys)
+						{
+							if (value.IndexOf($"({vkey})", 0, StringComparison.OrdinalIgnoreCase) > -1)
+							{
+
+								value = value.ReplaceInsensitive($"({vkey})", $"({VarsetValues[vkey]})");
+							}
+						}
+					}
+					if (!VarsetValues.ContainsKey(key))
+					{
+						VarsetValues.Add(key, value);
+					}
+					else
+					{
+						VarsetValues[key] = value;
+					}
+				}
+			});
+			EventProcessor.RegisterCommand("/e3varsetbool", (x) =>
+			{
+				//key/value
+				if (x.args.Count > 1)
+				{
+					string key = x.args[0];
+					string value = x.args[1];
+
+					if (VarsetValues.Count > 0)
+					{
+						foreach (var vkey in VarsetValues.Keys)
+						{
+							if (value.IndexOf($"({vkey})", 0, StringComparison.OrdinalIgnoreCase) > -1)
+							{
+
+								value = value.ReplaceInsensitive($"({vkey})", $"({VarsetValues[vkey]})");
+							}
+						}
+					}
+					value = Ifs(value).ToString();
+
+
+					if (!VarsetValues.ContainsKey(key))
+					{
+						VarsetValues.Add(key, value);
+					}
+					else
+					{
+						VarsetValues[key] = value;
+					}
+				}
+			});
+			EventProcessor.RegisterCommand("/e3varcalc", (x) =>
+			{
+				//key/value
+				if (x.args.Count > 1)
+				{
+					string key = x.args[0];
+					string value = x.args[1];
+					if (VarsetValues.Count > 0)
+					{
+						foreach (var vkey in VarsetValues.Keys)
+						{
+							if (value.IndexOf($"({vkey})", 0, StringComparison.OrdinalIgnoreCase) > -1)
+							{
+
+								value = value.ReplaceInsensitive($"({vkey})", $"({VarsetValues[vkey]})");
+							}
+						}
+					}
+					value = Ifs_Results(value);
+					value = MQ.Query<double>($"${{Math.Calc[{value}]}}").ToString();
+
 					if (!VarsetValues.ContainsKey(key))
 					{
 						VarsetValues.Add(key, value);

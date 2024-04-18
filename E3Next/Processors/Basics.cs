@@ -33,7 +33,8 @@ namespace E3Core.Processors
         private static long _nextResourceCheckInterval = 1000;
         private static long _nextAutoMedCheck = 0;
         private static long _nextAutoMedCheckInterval = 1000;
-        private static long _nextFoodCheck = 0;
+		public static long Misc_LastTimeAutoMedHappened = 0;
+		private static long _nextFoodCheck = 0;
         private static long _nextFoodCheckInterval = 1000;
         private static long _nextCursorCheck = 0;
         private static long _nextCursorCheckInterval = 1000;
@@ -1339,7 +1340,14 @@ namespace E3Core.Processors
             if(E3.ActionTaken)
             { //we just did something, lets wait for at least one loop of nothing before we sit
               //this should prevent cast/sit/cast/cast in rapid fire situations
+                Misc_LastTimeAutoMedHappened = Core.StopWatch.ElapsedMilliseconds;
                 return; 
+               
+            }
+            //don't try and sit more than once every 3 seconds to prevent the cast/spell/up /down
+            if(Core.StopWatch.ElapsedMilliseconds > Misc_LastTimeAutoMedHappened+3000)
+            {
+                return;
             }
             bool isCasterOrPriest = (E3.CurrentClass & Class.Caster) == E3.CurrentClass || (E3.CurrentClass & Class.Priest) == E3.CurrentClass;
 
@@ -1385,14 +1393,18 @@ namespace E3Core.Processors
                     if (pctMana < autoMedPct && (E3.CurrentClass & Class.ManaUsers) == E3.CurrentClass)
                     {
                         MQ.Cmd("/sit");
-                        return;
+                        Misc_LastTimeAutoMedHappened = Core.StopWatch.ElapsedMilliseconds;
+
+						return;
                     }
 
                     if (pctEndurance < autoMedPct)
                     {
                         MQ.Cmd("/sit");
-                    }
-                }
+						Misc_LastTimeAutoMedHappened = Core.StopWatch.ElapsedMilliseconds;
+
+					}
+				}
                 
             }
         }

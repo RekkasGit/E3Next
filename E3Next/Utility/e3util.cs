@@ -1268,5 +1268,128 @@ namespace E3Core.Utility
             }
 
         }
-    }
+        //modified from
+		//https://stackoverflow.com/questions/21750824/how-to-convert-a-string-to-a-mathematical-expression-programmatically
+		private static string[] _operators = { "-", "+", "/", "*", "^" };
+		private static Func<double, double, double>[] _operations = {
+		(a1, a2) => a1 - a2,
+		(a1, a2) => a1 + a2,
+		(a1, a2) => a1 / a2,
+		(a1, a2) => a1 * a2,
+		(a1, a2) => Math.Pow(a1, a2)
+	    };
+		public static double Eval(string expression)
+		{
+            List<string> tokens = getTokens(expression);
+			Stack<double> operandStack = new Stack<double>();
+			Stack<string> operatorStack = new Stack<string>();
+			int tokenIndex = 0;
+
+			while (tokenIndex < tokens.Count)
+			{
+				string token = tokens[tokenIndex];
+				if (token == "(")
+				{
+					string subExpr = getSubExpression(tokens, ref tokenIndex);
+					operandStack.Push(Eval(subExpr));
+					continue;
+				}
+				if (token == ")")
+				{
+					throw new ArgumentException("Mis-matched parentheses in expression");
+				}
+				//If this is an operator  
+				if (Array.IndexOf(_operators, token) >= 0)
+				{
+					while (operatorStack.Count > 0 && Array.IndexOf(_operators, token) < Array.IndexOf(_operators, operatorStack.Peek()))
+					{
+						string op = operatorStack.Pop();
+						double arg2 = operandStack.Pop();
+						double arg1 = operandStack.Pop();
+						operandStack.Push(_operations[Array.IndexOf(_operators, op)](arg1, arg2));
+					}
+					operatorStack.Push(token);
+				}
+				else
+				{
+					operandStack.Push(double.Parse(token));
+				}
+				tokenIndex += 1;
+			}
+
+			while (operatorStack.Count > 0)
+			{
+				string op = operatorStack.Pop();
+				double arg2 = operandStack.Pop();
+				double arg1 = operandStack.Pop();
+				operandStack.Push(_operations[Array.IndexOf(_operators, op)](arg1, arg2));
+			}
+			return operandStack.Pop();
+		}
+		private static string getSubExpression(List<string> tokens, ref int index)
+		{
+			StringBuilder subExpr = new StringBuilder();
+			int parenlevels = 1;
+			index += 1;
+			while (index < tokens.Count && parenlevels > 0)
+			{
+				string token = tokens[index];
+				if (tokens[index] == "(")
+				{
+					parenlevels += 1;
+				}
+
+				if (tokens[index] == ")")
+				{
+					parenlevels -= 1;
+				}
+
+				if (parenlevels > 0)
+				{
+					subExpr.Append(token);
+				}
+
+				index += 1;
+			}
+
+			if ((parenlevels > 0))
+			{
+				throw new ArgumentException("Mis-matched parentheses in expression");
+			}
+			return subExpr.ToString();
+		}
+		private static StringBuilder _evalStringBuilder = new StringBuilder();
+        private static string _getTokenOperators = "()^*/+-";
+		private static  List<string> getTokens(string expression)
+		{
+			
+			List<string> tokens = new List<string>();
+            StringBuilder sb = _evalStringBuilder;
+            sb.Clear();
+
+			foreach (char c in expression.Replace(" ", string.Empty))
+			{
+				if (_getTokenOperators.IndexOf(c) >= 0)
+				{
+					if ((sb.Length > 0))
+					{
+						tokens.Add(sb.ToString());
+						sb.Length = 0;
+					}
+					tokens.Add(c.ToString());
+				}
+				else
+				{
+					sb.Append(c.ToString());
+				}
+			}
+
+			if ((sb.Length > 0))
+			{
+				tokens.Add(sb.ToString());
+			}
+			return tokens;
+		}
+
+	}
 }
