@@ -1374,6 +1374,7 @@ namespace E3Core.Processors
 			bool amIStanding = MQ.Query<bool>("${Me.Standing}");
 			int pctMana = MQ.Query<int>("${Me.PctMana}");
 			int pctEndurance = MQ.Query<int>("${Me.PctEndurance}");
+            int pctHealth = MQ.Query<int>("${Me.PctHPs}");
 			bool confirmationBox = MQ.Query<bool>("${Window[ConfirmationDialogBox].Open}");
 			if (!confirmationBox && !amIStanding&& pctMana > 99 && pctEndurance > 99 && !e3util.IsManualControl())
 			{

@@ -357,7 +357,13 @@ namespace E3Core.Processors
 						CurrentPetName = nameOfPet;
 						PubServer.AddTopicMessage("${Me.Pet.CleanName}", CurrentPetName);
 					}
-
+					string nameOfMerc = MQ.Query<string>("${Mercenary.CleanName}");
+					if (nameOfMerc != "NULL")
+					{
+						//set the pet name
+						CurrentMercName = nameOfMerc;
+						PubServer.AddTopicMessage("${Mercenary.CleanName}", CurrentMercName);
+					}
 					bool IsMoving = MQ.Query<bool>("${Me.Moving}");
 					if (IsMoving)
 					{
@@ -514,6 +520,7 @@ namespace E3Core.Processors
         public static Data.Class CurrentClass;
         public static string ServerName;
         public static string CurrentPetName = String.Empty;
+		public static string CurrentMercName = String.Empty;
         public static bool CurrentInCombat = false;
         public static int CurrentId;
         public static Int64 LastMovementTimeStamp;

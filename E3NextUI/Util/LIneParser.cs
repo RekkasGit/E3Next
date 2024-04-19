@@ -19,7 +19,11 @@ namespace E3NextUI.Util
         public static List<Int32> YourPetDamage = new List<int>(1000000);
         public static List<Int64> YourPetDamageTime = new List<Int64>(1000000);
 
-        public static List<Int32> YourDamageShieldDamage = new List<int>(1000000);
+		public static List<Int32> YourMercDamage = new List<int>(1000000);
+		public static List<Int64> YourMercDamageTime = new List<Int64>(1000000);
+
+
+		public static List<Int32> YourDamageShieldDamage = new List<int>(1000000);
         public static List<Int64> YourDamageShieldDamageTime = new List<Int64>(1000000);
 
         public static List<Int32> DamageToYou = new List<int>(1000000);
@@ -35,8 +39,9 @@ namespace E3NextUI.Util
         public static bool CurrentlyCombat = false;
         public static object _objectLock = new object();
         public static string PetName=String.Empty;
+		public static string MercName = String.Empty;
 
-        public static void Reset()
+		public static void Reset()
         {
             lock(_objectLock)
             {
@@ -46,6 +51,8 @@ namespace E3NextUI.Util
                 YourPetDamageTime.Clear();
                 YourDamageShieldDamage.Clear();
                 YourDamageShieldDamageTime.Clear();
+                YourMercDamage.Clear();
+                YourMercDamageTime.Clear();
                 DamageToYou.Clear();
                 _damageToYouTime.Clear();
                 HealingToYou.Clear();
@@ -55,7 +62,28 @@ namespace E3NextUI.Util
             }
         
         }
-        public static void SetPetName(string petName)
+		public static void SetMercName(string mercName)
+		{
+			if (String.IsNullOrWhiteSpace(MercName) && mercName != "NULL")
+			{
+				MercName = mercName;
+				_yourMercMelee = new System.Text.RegularExpressions.Regex($"{MercName} .+ for ([0-9]+) points of damage.");
+			}
+			else
+			{
+				if (mercName != "NULL")
+				{
+					if (!MercName.Equals(mercName))
+					{
+						MercName = mercName;
+						_yourMercMelee = new System.Text.RegularExpressions.Regex($"{MercName} .+ for ([0-9]+) points of damage.");
+					}
+
+				}
+
+			}
+		}
+		public static void SetPetName(string petName)
         {
             if (String.IsNullOrWhiteSpace(PetName) && petName!="NULL")
             {
@@ -102,6 +130,10 @@ namespace E3NextUI.Util
                     if (TryUpdateCollection(line, _yourPetMelee, YourPetDamage, YourPetDamageTime)) return;
                     if (TryUpdateCollection(line, _yourPetProcDmg, YourPetDamage, YourPetDamageTime)) return;
                 }
+                if(!String.IsNullOrWhiteSpace(MercName))
+                {
+					if (TryUpdateCollection(line, _yourMercMelee, YourMercDamage, YourMercDamageTime)) return;
+				}
                 if (TryUpdateCollection(line, _yourswarmDmg, YourPetDamage, YourPetDamageTime)) return;
                 if (TryUpdateCollection(line, _meleeDmgToYou, DamageToYou, _damageToYouTime)) return;
                 if (TryUpdateCollection(line, _dotDmgToYou, DamageToYou, _damageToYouTime)) return;
@@ -141,9 +173,12 @@ namespace E3NextUI.Util
         static System.Text.RegularExpressions.Regex _yourPetProcDmg = new System.Text.RegularExpressions.Regex(".+ was hit by non-melee for ([0-9]+) points of damage\\.");
         static System.Text.RegularExpressions.Regex _yourPetMelee = new System.Text.RegularExpressions.Regex($"{PetName} .+ for ([0-9]+) points of damage.");
         static System.Text.RegularExpressions.Regex _yourswarmDmg = new System.Text.RegularExpressions.Regex($"{E3UI.PlayerName}`s pet hits .+ for ([0-9]+) points of");
+	
+		static System.Text.RegularExpressions.Regex _yourMercMelee = new System.Text.RegularExpressions.Regex($"{MercName} .+ for ([0-9]+) points of damage.");
 
-        //damage to you
-        static System.Text.RegularExpressions.Regex _meleeDmgToYou = new System.Text.RegularExpressions.Regex(".+ YOU for ([0-9]+) points of damage\\.");
+
+		//damage to you
+		static System.Text.RegularExpressions.Regex _meleeDmgToYou = new System.Text.RegularExpressions.Regex(".+ YOU for ([0-9]+) points of damage\\.");
         static System.Text.RegularExpressions.Regex _dotDmgToYou = new System.Text.RegularExpressions.Regex("You have taken ([0-9]+) damage");
         static System.Text.RegularExpressions.Regex _spellDmgToYou = new System.Text.RegularExpressions.Regex("You have taken ([0-9]+) points of damage");
 

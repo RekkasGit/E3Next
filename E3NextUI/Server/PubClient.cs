@@ -166,7 +166,12 @@ namespace E3NextUI.Server
                                 LineParser.SetPetName(messageReceived);
 
                             }
-                            else if (messageTopicReceived == "${InCombat}")
+							else if (messageTopicReceived == "${Mercenary.CleanName}")
+							{
+								LineParser.SetMercName(messageReceived);
+
+							}
+							else if (messageTopicReceived == "${InCombat}")
                             {
                                 if(Boolean.TryParse(messageReceived, out var inCombat))
                                 {

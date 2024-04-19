@@ -607,10 +607,18 @@ namespace E3NextUI
             while (ShouldProcess)
             {
              
-                if(this.IsHandleCreated)
+                try
                 {
-                    this.Invoke(new ProcesssBaseParseDelegate(ProcesssBaseParse), null);
+					if (this.IsHandleCreated)
+					{
+						this.Invoke(new ProcesssBaseParseDelegate(ProcesssBaseParse), null);
 
+					}
+
+				}
+				catch (Exception ex) 
+                {
+                    ; Debug.WriteLine(ex.Message);                
                 }
                 System.Threading.Thread.Sleep(500);
             }
@@ -642,16 +650,23 @@ namespace E3NextUI
                 {
                     labelPetNameValue.Text = LineParser.PetName;
                 }
-                Int64 yourDamageTotal = LineParser.YourDamage.Sum();
+				if (!String.IsNullOrWhiteSpace(LineParser.MercName))
+				{
+					labelMercNameValue.Text = LineParser.MercName;
+				}
+				Int64 yourDamageTotal = LineParser.YourDamage.Sum();
                 labelYourDamageValue.Text = yourDamageTotal.ToString("N0");
 
                 Int64 petDamageTotal = LineParser.YourPetDamage.Sum();
                 labelPetDamageValue.Text = petDamageTotal.ToString("N0");
 
-                Int64 dsDamage = LineParser.YourDamageShieldDamage.Sum();
+				Int64 mercDamageTotal = LineParser.YourMercDamage.Sum();
+				labelMercDamageValue.Text = mercDamageTotal.ToString("N0");
+
+				Int64 dsDamage = LineParser.YourDamageShieldDamage.Sum();
                 labelYourDamageShieldValue.Text = dsDamage.ToString("N0");
 
-                Int64 totalDamage = yourDamageTotal + petDamageTotal + dsDamage;
+                Int64 totalDamage = yourDamageTotal + petDamageTotal + dsDamage + mercDamageTotal;
                 labelTotalDamageValue.Text = totalDamage.ToString("N0");
 
                 Int64 damageToyou = LineParser.DamageToYou.Sum();
@@ -690,7 +705,18 @@ namespace E3NextUI
                         endTime = LineParser.YourPetDamageTime[LineParser.YourPetDamageTime.Count - 1];
                     }
                 }
-                if (LineParser.YourDamageShieldDamage.Count > 0)
+				if (LineParser.YourMercDamage.Count > 0)
+				{
+					if (startTime > LineParser.YourMercDamage[0] || startTime == 0)
+					{
+						startTime = LineParser.YourMercDamageTime[0];
+					}
+					if (endTime < LineParser.YourMercDamageTime[LineParser.YourMercDamageTime.Count - 1])
+					{
+						endTime = LineParser.YourMercDamageTime[LineParser.YourMercDamageTime.Count - 1];
+					}
+				}
+				if (LineParser.YourDamageShieldDamage.Count > 0)
                 {
                     if (startTime > LineParser.YourDamageShieldDamageTime[0] || startTime == 0)
                     {
@@ -709,14 +735,16 @@ namespace E3NextUI
                 Int64 totalDPS = totalDamage / totalTime;
                 Int64 yourDPS = yourDamageTotal / totalTime;
                 Int64 petDPS = petDamageTotal / totalTime;
+                Int64 mercDPS = mercDamageTotal / totalTime;
                 Int64 dsDPS = dsDamage / totalTime;
 
                 labelTotalDamageDPSValue.Text = totalDPS.ToString("N0") + " dps";
                 labelYourDamageDPSValue.Text = yourDPS.ToString("N0") + " dps";
                 labelPetDamageDPSValue.Text = petDPS.ToString("N0") + " dps";
                 labelDamageShieldDPSValue.Text = dsDPS.ToString("N0") + " dps";
+                labelMercDamageDPSValue.Text = mercDPS.ToString("N0") + " dps";
 
-            }
+			}
             
         }
         private delegate void SetPlayerDataDelegate(string name);

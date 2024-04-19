@@ -180,6 +180,10 @@
       <Project>{55537c61-1e0a-4b1e-b51f-1cd0149b5cc4}</Project>
       <Name>E3Discord</Name>
     </ProjectReference>
+    <ProjectReference Include="..\E3NextProxy\E3NextProxy.csproj">
+      <Project>{08d08e06-22a7-49b9-afa4-04f9e2aa9210}</Project>
+      <Name>E3NextProxy</Name>
+    </ProjectReference>
     <ProjectReference Include="..\E3NextUI\E3NextUI.csproj">
       <Project>{b2f73dbf-6758-48d3-8258-599bf07fa731}</Project>
       <Name>E3NextUI</Name>

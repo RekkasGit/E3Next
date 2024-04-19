@@ -23,20 +23,14 @@ namespace E3NextProxy
 
 		static void Main(string[] args)
 		{
-
+			
 			Int32 XPublisherPort = FreeTcpPort();
 			string localIP = GetLocalIPAddress();
 
-			//need to write out the XPublish Port
-			
-			_fullFileName = _directoryLocation + _fileName;
-
-			if(File.Exists(_fullFileName))
+			if (!CreateInfoFile(localIP, XPublisherPort))
 			{
-				File.Delete(_fullFileName);
+				return;
 			}
-
-			File.WriteAllText(_fullFileName, $"{XPublisherPort},{localIP}");
 
 
 			try
@@ -55,7 +49,7 @@ namespace E3NextProxy
 
 					// blocks indefinitely
 					m_proxy.StartAsync();
-					Console.WriteLine($"Pulish connection string:{connectionString}");
+					Console.WriteLine($"Publish connection string:{connectionString}");
 					Console.WriteLine("Press enter to end");
 					Console.ReadLine();
 					m_proxy.Stop();
@@ -208,15 +202,21 @@ namespace E3NextProxy
 
 
 		}
-		public static void CreateInfoFile()
+		public static bool CreateInfoFile(string localIP,Int32 XPublisherPort)
 		{
 			//need to create a file in the macroquest directory, walk backwards till we get to the root with the config file
 			//we should be in the \mono\macros\e3 folder, might cause an issue if this is running and updates are happening
 
 			var dllFullPath = Assembly.GetExecutingAssembly().CodeBase.Replace("file:///", "").Replace("/", "\\").Replace("E3NextProxy.exe", "");
 
+			if(System.Diagnostics.Debugger.IsAttached)
+			{
+				dllFullPath=@"D:\EQ\MQLive\mono\macros\e3\";
+			}
+
 			DirectoryInfo currentDirectory = new DirectoryInfo(dllFullPath);
 
+			
 			while (!IsMQInPath(currentDirectory.FullName))
 			{
 				currentDirectory = Directory.GetParent(currentDirectory.FullName);
@@ -224,29 +224,33 @@ namespace E3NextProxy
 				if (currentDirectory == null)
 				{
 					//couldn't find MQ root directory kick out
-					Console.WriteLine("Couldn't find MacroQuest.exe in parent foldres, press enter to exit");
+					Console.WriteLine("Couldn't find MacroQuest.exe in parent folders, press enter to exit");
 					Console.ReadLine();
-					return;
+					return false;
 				}
 			}
 			//we are now in the root MQ folder, lets go and create our shared data file
-			string configPath = currentDirectory.FullName + @"config\e3 Macro Inis\SharedData";
+			string configPath = currentDirectory.FullName + @"\config\e3 Macro Inis\SharedData";
 			DirectoryInfo configPathDirectory = new DirectoryInfo(configPath);
 			if (!configPathDirectory.Exists)
 			{
 				configPathDirectory.Create();
 			}
+			_directoryLocation = configPath;
+			Console.WriteLine("Config File Path:" + _directoryLocation);
 
 			//now delete the old file if it exists
-			string fullPathName = configPathDirectory.FullName + "proxy_pubsubport.txt";
+			string fullPathName = configPathDirectory.FullName + @"\"+_fileName;
 
 			if (File.Exists(fullPathName))
 			{
 				File.Delete(fullPathName);
 			}
-			//string payload = $"{port.ToString()},{localIP}";
-			File.WriteAllText(fullPathName, fullPathName);
+			_fullFileName = fullPathName;
+			Console.WriteLine("Config File name:" + _fullFileName);
+			File.WriteAllText(_fullFileName, $"{XPublisherPort},{localIP}");
 
+			return true;
 		}
 		public static string GetLocalIPAddress()
 		{
@@ -268,7 +272,7 @@ namespace E3NextProxy
 
 			foreach(var file in files)
 			{
-				if(file.Equals("MacroQuest.exe"))
+				if(file.EndsWith(@"\MacroQuest.exe"))
 				{
 					return true;
 				}

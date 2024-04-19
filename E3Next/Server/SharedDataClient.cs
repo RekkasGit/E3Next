@@ -360,14 +360,13 @@ namespace E3Core.Server
 							Int32 indexOfColon = messageReceived.IndexOf(':');
 							string payloaduser = messageReceived.Substring(0, indexOfColon);
 							string payload = messageReceived.Substring(indexOfColon + 1, messageReceived.Length - indexOfColon - 1);
-							user = payloaduser;
 							messageReceived = payload;
 
 							//most common goes first
 							if (messageTopicReceived.StartsWith("${Me."))
 							{
 
-								ProcessTopicMessage(user, messageTopicReceived, messageReceived);
+								ProcessTopicMessage(payloaduser, messageTopicReceived, messageReceived);
 
 							}
 							else if (messageTopicReceived == "OnCommand-All")
@@ -479,7 +478,7 @@ namespace E3Core.Server
 							}
 							else
 							{
-								ProcessTopicMessage(user, messageTopicReceived, messageReceived);
+								ProcessTopicMessage(payloaduser, messageTopicReceived, messageReceived);
 
 							}
 						}
