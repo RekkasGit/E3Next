@@ -428,10 +428,17 @@ namespace E3Core.Processors
 			return DebuffCounterFunction(name, "${Me.CountersCorrupted}", _debuffCorruptedCounterCollection);
 
 		}
-
+		private Int32 _botsConnectedCount = 0;
+		private List<string> _botsConnectedCache = new List<string>();
 		public List<string> BotsConnected()
         {
-            return NetMQServer.SharedDataClient.TopicUpdates.Keys.ToList();
+			if(NetMQServer.SharedDataClient.TopicUpdates.Keys.Count!=_botsConnectedCount)
+			{
+				//need to udpate
+				_botsConnectedCount = NetMQServer.SharedDataClient.TopicUpdates.Keys.Count;
+				_botsConnectedCache = NetMQServer.SharedDataClient.TopicUpdates.Keys.ToList();
+			}
+			return _botsConnectedCache;
 		}
 
         public void Broadcast(string message, bool noparse = false)

@@ -1968,6 +1968,18 @@ namespace E3Core.Processors
 				
 				
 			}
+			else if (tIF.IndexOf("${E3Bots.ConnectedClients}", 0, StringComparison.OrdinalIgnoreCase) > -1)
+			{
+
+				tIF = tIF.ReplaceInsensitive("${E3Bots.ConnectedClients}", String.Join(",", E3.Bots.BotsConnected()));
+
+			}
+			else if (tIF.IndexOf("${E3Bots.ConnectedClientsCount}", 0, StringComparison.OrdinalIgnoreCase) > -1)
+			{
+
+				tIF = tIF.ReplaceInsensitive("${E3Bots.ConnectedClientsCount}", E3.Bots.BotsConnected().Count.ToString());
+
+			}
 			else if (tIF.IndexOf("${E3BuffExists[", 0, StringComparison.OrdinalIgnoreCase) > -1)
 			{
 				//need to do some legacy compatability checksraibles that were used in Ifs.
