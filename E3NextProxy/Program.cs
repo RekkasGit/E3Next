@@ -23,8 +23,12 @@ namespace E3NextProxy
 
 		static void Main(string[] args)
 		{
+			//purpose of this program is to provide a Proxy between clients and consumers. This is basically the Server mode instead of the P2P mode that is default for E3N Networking
+			//this is useful if you run a lot of bots as its far more efficent thread wise. 
+			//if running 54 bots, that would be 2900+ threads vs just 108 threads using the proxy, it scales a lot better, tho less convient to run a server vs just peer to peer. 
 			
 			Int32 XPublisherPort = FreeTcpPort();
+			Int32 XSubPort = FreeTcpPort();
 			string localIP = GetLocalIPAddress();
 
 			if (!CreateInfoFile(localIP, XPublisherPort))
@@ -45,7 +49,7 @@ namespace E3NextProxy
 					var sub1task = Task.Factory.StartNew(() => { SubScribeReader(XPublisherPort, localIP); }, CancellationToken.None, TaskCreationOptions.DenyChildAttach, TaskScheduler.Default);
 
 					m_proxy = new E3NextProxy.Proxy(xsubSocket, xpubSocket);
-					var xSubTaskAdd = Task.Factory.StartNew(() => { AddSubscribers(localIP, new List<int>() { 56497 }); }, CancellationToken.None, TaskCreationOptions.DenyChildAttach, TaskScheduler.Default);
+					var xSubTaskAdd = Task.Factory.StartNew(() => { AddSubscribers(localIP, new List<int>() { XSubPort }); }, CancellationToken.None, TaskCreationOptions.DenyChildAttach, TaskScheduler.Default);
 
 					// blocks indefinitely
 					m_proxy.StartAsync();
