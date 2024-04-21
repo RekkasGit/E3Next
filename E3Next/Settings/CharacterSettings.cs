@@ -142,16 +142,13 @@ namespace E3Core.Settings
         public bool BandoBuff_Enabled = false;
 		public string BandoBuff_BuffName = String.Empty;
 		public string BandoBuff_DebuffName = String.Empty;
-		//public string BandoBuff_Primary = String.Empty;
-		//public string BandoBuff_Secondary = String.Empty;
-		//public string BandoBuff_PrimaryWithoutBuff = String.Empty;
-		//public string BandoBuff_SecondaryWithoutBuff = String.Empty;
 	    public string BandoBuff_BandoName = String.Empty;
 		public string BandoBuff_BandoNameWithoutBuff = String.Empty;
-		public string BandoBuff_BandoNameWithoutDeBuff = String.Empty;
+        public string BandoBuff_BandoNameWithoutDeBuff = String.Empty;
+        public HashSet<string> BandoBuff_ExceptionZones = new HashSet<string> {};
 
-		//manastone
-		public bool Manastone_Enabled = true;
+        //manastone
+        public bool Manastone_Enabled = true;
         public bool Manastone_OverrideGeneralSettings = false;
         public Int32 ManaStone_NumberOfClicksPerLoop = 40;
         public Int32 ManaStone_NumberOfLoops = 25;
@@ -357,14 +354,21 @@ namespace E3Core.Settings
 			LoadKeyData("Bando Buff", "Enabled", ParsedData, ref BandoBuff_Enabled);
 			LoadKeyData("Bando Buff", "DebuffName", ParsedData, ref BandoBuff_DebuffName);
 			LoadKeyData("Bando Buff", "BuffName", ParsedData, ref BandoBuff_BuffName);
-			//LoadKeyData("Bando Buff", "PrimaryWithBuff", ParsedData, ref BandoBuff_Primary);
-			//LoadKeyData("Bando Buff", "SecondaryWithBuff", ParsedData, ref BandoBuff_Secondary);
-			//LoadKeyData("Bando Buff", "PrimaryWithoutBuff", ParsedData, ref BandoBuff_PrimaryWithoutBuff);
-			//LoadKeyData("Bando Buff", "SecondaryWithoutBuff", ParsedData, ref BandoBuff_SecondaryWithoutBuff);
 			LoadKeyData("Bando Buff", "BandoNameDefault", ParsedData, ref BandoBuff_BandoName);
 			LoadKeyData("Bando Buff", "BandoNameWithoutBuff", ParsedData, ref BandoBuff_BandoNameWithoutBuff);
 			LoadKeyData("Bando Buff", "BandoNameWithoutDeBuff", ParsedData, ref BandoBuff_BandoNameWithoutDeBuff);
-			LoadKeyData("Assist Settings", "Assist Type (Melee/Ranged/Off)", ParsedData, ref Assist_Type);
+            List<string> bandozoneList = new List<string>();
+            LoadKeyData("Bando Buff", "ExceptionZone", ParsedData, bandozoneList);
+
+            foreach (var bandozone in bandozoneList)
+            {
+                if (!BandoBuff_ExceptionZones.Contains(bandozone))
+                {
+                    BandoBuff_ExceptionZones.Add(bandozone);
+                }
+            }
+
+            LoadKeyData("Assist Settings", "Assist Type (Melee/Ranged/Off)", ParsedData, ref Assist_Type);
             LoadKeyData("Assist Settings", "Melee Stick Point", ParsedData, ref Assist_MeleeStickPoint);
             LoadKeyData("Assist Settings", "Taunt(On/Off)", ParsedData, ref Assist_TauntEnabled);
             LoadKeyData("Assist Settings", "SmartTaunt(On/Off)", ParsedData, ref Assist_SmartTaunt);
@@ -878,10 +882,10 @@ namespace E3Core.Settings
             section.Keys.AddKey("BandoNameDefault");
 			section.Keys.AddKey("BandoNameWithoutBuff", "");
 			section.Keys.AddKey("BandoNameWithoutDeBuff", "");
+            section.Keys.AddKey("ExceptionZone", "poknowledge");
+            section.Keys.AddKey("ExceptionZone", "guildlobby");
 
-
-
-			newFile.Sections.AddSection("Startup Commands");
+            newFile.Sections.AddSection("Startup Commands");
 			section = newFile.Sections.GetSectionData("Startup Commands");
 			section.Keys.AddKey("Command", "");
 

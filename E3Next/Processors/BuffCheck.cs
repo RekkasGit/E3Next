@@ -1628,6 +1628,7 @@ namespace E3Core.Processors
 			if (!e3util.ShouldCheck(ref _nextBandoBuffCheck, _nextBandoBuffCheckInterval)) return;
 
 			if (!E3.CharacterSettings.BandoBuff_Enabled) return;
+			if (E3.CharacterSettings.BandoBuff_ExceptionZones.Contains(Zoning.CurrentZone.ShortName)) return;
 			if (E3.CharacterSettings.BandoBuff_Enabled && String.IsNullOrWhiteSpace(E3.CharacterSettings.BandoBuff_BuffName) && String.IsNullOrWhiteSpace(E3.CharacterSettings.BandoBuff_DebuffName)) return;
 			if (!String.IsNullOrWhiteSpace(E3.CharacterSettings.BandoBuff_BuffName) && String.IsNullOrWhiteSpace(E3.CharacterSettings.BandoBuff_BandoName) && String.IsNullOrWhiteSpace(E3.CharacterSettings.BandoBuff_BandoNameWithoutBuff)) return;
 			if (!String.IsNullOrWhiteSpace(E3.CharacterSettings.BandoBuff_DebuffName) && String.IsNullOrWhiteSpace(E3.CharacterSettings.BandoBuff_BandoName) && String.IsNullOrWhiteSpace(E3.CharacterSettings.BandoBuff_DebuffName)) return;
