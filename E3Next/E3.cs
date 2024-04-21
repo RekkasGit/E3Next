@@ -258,7 +258,7 @@ namespace E3Core.Processors
 		private static Int64 _nextBuffUpdateCheckTime = 0;
 		private static Int64 _nextSlowUpdateCheckTime = 0;
 		private static Int64 _nextMiscUpdateCheckTime = 0;
-		private static Int64 _MiscUpdateCheckRate = 500;
+		private static Int64 _MiscUpdateCheckRate = 100;
 	
 		//qick hack to prevent calling state update... while in state updates. 
 		public static bool InStateUpdate = false;

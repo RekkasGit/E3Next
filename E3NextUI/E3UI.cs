@@ -65,6 +65,7 @@ namespace E3NextUI
         public static String _playerSP;
         private globalKeyboardHook _globalKeyboard;
         public static string _currentWindowName = "NULL";
+        public static object _currentWindowLock = new object();
         private FormBorderStyle _startingStyle;
 		//resizing stuff for when in buttonmode
 		//https://stackoverflow.com/questions/2575216/how-to-move-and-resize-a-form-without-a-border
@@ -331,27 +332,31 @@ namespace E3NextUI
 
 		private void globalKeyboard_KeyDown(object sender, KeyEventArgs e)
 		{
-			//one of the keys we are looking for!
-			if (_currentWindowName.Equals("IMGUI", StringComparison.OrdinalIgnoreCase))
-			{
-				//they are typing in game, do not capture events.
-				return;
-			}
-			if (_currentWindowName.EndsWith("Input", StringComparison.OrdinalIgnoreCase))
-			{
-				//they are typing in game, do not capture events.
-				return;
-			}
-			if (_currentWindowName.Equals("CW_ChatInput",StringComparison.OrdinalIgnoreCase))
+            lock(_currentWindowLock)
             {
-                //they are typing in game, do not capture events.
-                return;
-            }
-			if (_currentWindowName.Equals("QTYW_SliderInput", StringComparison.OrdinalIgnoreCase))
-			{
-				//they are typing in game, do not capture events.
-				return;
+				//one of the keys we are looking for!
+				if (_currentWindowName.Equals("IMGUI", StringComparison.OrdinalIgnoreCase))
+				{
+					//they are typing in game, do not capture events.
+					return;
+				}
+				if (_currentWindowName.EndsWith("Input", StringComparison.OrdinalIgnoreCase))
+				{
+					//they are typing in game, do not capture events.
+					return;
+				}
+				if (_currentWindowName.Equals("CW_ChatInput", StringComparison.OrdinalIgnoreCase))
+				{
+					//they are typing in game, do not capture events.
+					return;
+				}
+				if (_currentWindowName.Equals("QTYW_SliderInput", StringComparison.OrdinalIgnoreCase))
+				{
+					//they are typing in game, do not capture events.
+					return;
+				}
 			}
+			
 			foreach (var pair in _genSettings.DynamicButtons)
 			{
 
@@ -803,9 +808,11 @@ namespace E3NextUI
         }
 		public void SetCurrentWindow(string value)
 		{
-			if (value == labelCastingValue.Text) return;
-            _currentWindowName = value;
-            labelCastingValue.Text = value;
+			if (value == _currentWindowName) return;
+            lock(_currentWindowLock)
+            {
+				_currentWindowName = value;
+			}
 		}
 		#endregion
 
