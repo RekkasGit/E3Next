@@ -67,7 +67,7 @@ namespace E3NextUI.Util
 			if (String.IsNullOrWhiteSpace(MercName) && mercName != "NULL")
 			{
 				MercName = mercName;
-				_yourMercMelee = new System.Text.RegularExpressions.Regex($"{MercName} .+ for ([0-9]+) points of damage.");
+				_yourMercMelee = new System.Text.RegularExpressions.Regex($"{MercName} .+ for ([0-9]+) points of .*damage.");
 			}
 			else
 			{
@@ -76,7 +76,7 @@ namespace E3NextUI.Util
 					if (!MercName.Equals(mercName))
 					{
 						MercName = mercName;
-						_yourMercMelee = new System.Text.RegularExpressions.Regex($"{MercName} .+ for ([0-9]+) points of damage.");
+						_yourMercMelee = new System.Text.RegularExpressions.Regex($"{MercName} .+ for ([0-9]+) points of .*damage.");
 					}
 
 				}
@@ -88,7 +88,7 @@ namespace E3NextUI.Util
             if (String.IsNullOrWhiteSpace(PetName) && petName!="NULL")
             {
                 PetName = petName;
-                _yourPetMelee = new System.Text.RegularExpressions.Regex($"{PetName} .+ for ([0-9]+) points of damage.");
+                _yourPetMelee = new System.Text.RegularExpressions.Regex($@"{PetName} .+ for ([0-9]+) points of .*damage");
             }
             else
             {
@@ -97,7 +97,7 @@ namespace E3NextUI.Util
                     if (!PetName.Equals(petName))
                     {
                         PetName = petName;
-                        _yourPetMelee = new System.Text.RegularExpressions.Regex($"{PetName} .+ for ([0-9]+) points of damage.");
+                        _yourPetMelee = new System.Text.RegularExpressions.Regex($@"{PetName} .+ for ([0-9]+) points of .*damage");
                     }
 
                 }
@@ -165,32 +165,32 @@ namespace E3NextUI.Util
 
 
         //damage done by you
-        static System.Text.RegularExpressions.Regex _yourdmg = new System.Text.RegularExpressions.Regex("You .+ for ([0-9]+) points of damage.");
-        static System.Text.RegularExpressions.Regex _yourdot = new System.Text.RegularExpressions.Regex("taken ([0-9]+) damage from your");
-        static System.Text.RegularExpressions.Regex _yourspellDmg = new System.Text.RegularExpressions.Regex($"{E3UI.PlayerName} hit .+ for ([0-9]+) points of");
+        static System.Text.RegularExpressions.Regex _yourdmg = new System.Text.RegularExpressions.Regex(@"You .+ for ([0-9]+) points of .*damage");
+        static System.Text.RegularExpressions.Regex _yourdot = new System.Text.RegularExpressions.Regex(@"taken ([0-9]+) damage from your");
+        static System.Text.RegularExpressions.Regex _yourspellDmg = new System.Text.RegularExpressions.Regex($@"{E3UI.PlayerName} hit .+ for ([0-9]+) points of");
        
         //proc dmg by pet
-        static System.Text.RegularExpressions.Regex _yourPetProcDmg = new System.Text.RegularExpressions.Regex(".+ was hit by non-melee for ([0-9]+) points of damage\\.");
-        static System.Text.RegularExpressions.Regex _yourPetMelee = new System.Text.RegularExpressions.Regex($"{PetName} .+ for ([0-9]+) points of damage.");
-        static System.Text.RegularExpressions.Regex _yourswarmDmg = new System.Text.RegularExpressions.Regex($"{E3UI.PlayerName}`s pet hits .+ for ([0-9]+) points of");
+        static System.Text.RegularExpressions.Regex _yourPetProcDmg = new System.Text.RegularExpressions.Regex(@".+ was hit by non-melee for ([0-9]+) points of .*damage\\.");
+        static System.Text.RegularExpressions.Regex _yourPetMelee = new System.Text.RegularExpressions.Regex($@"{PetName} .+ for ([0-9]+) points of .*damage");
+        static System.Text.RegularExpressions.Regex _yourswarmDmg = new System.Text.RegularExpressions.Regex($@"{E3UI.PlayerName}`s pet hits .+ for ([0-9]+) points of");
 	
-		static System.Text.RegularExpressions.Regex _yourMercMelee = new System.Text.RegularExpressions.Regex($"{MercName} .+ for ([0-9]+) points of damage.");
+		static System.Text.RegularExpressions.Regex _yourMercMelee = new System.Text.RegularExpressions.Regex($@"{MercName} .+ for ([0-9]+) points of .*damage");
 
 
 		//damage to you
-		static System.Text.RegularExpressions.Regex _meleeDmgToYou = new System.Text.RegularExpressions.Regex(".+ YOU for ([0-9]+) points of damage\\.");
-        static System.Text.RegularExpressions.Regex _dotDmgToYou = new System.Text.RegularExpressions.Regex("You have taken ([0-9]+) damage");
-        static System.Text.RegularExpressions.Regex _spellDmgToYou = new System.Text.RegularExpressions.Regex("You have taken ([0-9]+) points of damage");
+		static System.Text.RegularExpressions.Regex _meleeDmgToYou = new System.Text.RegularExpressions.Regex(@".+ YOU for ([0-9]+) points of damage\\.");
+        static System.Text.RegularExpressions.Regex _dotDmgToYou = new System.Text.RegularExpressions.Regex(@"You have taken ([0-9]+) damage");
+        static System.Text.RegularExpressions.Regex _spellDmgToYou = new System.Text.RegularExpressions.Regex(@"You have taken ([0-9]+) points of damage");
 
         //damage shield
-        static System.Text.RegularExpressions.Regex _damageshieldByYou = new System.Text.RegularExpressions.Regex(".+ was hit by non-melee for ([0-9]+) points of damage\\.");
+        static System.Text.RegularExpressions.Regex _damageshieldByYou = new System.Text.RegularExpressions.Regex(@".+ was hit by non-melee for ([0-9]+) points of damage\\.");
         //eqlive damage shield
 		static System.Text.RegularExpressions.Regex _damageshieldByYou2 = new System.Text.RegularExpressions.Regex(@".+ is pierced by YOUR thorns for ([0-9]+) points of non-melee damage\.");
 		//healing
 
-		static System.Text.RegularExpressions.Regex _healingYou = new System.Text.RegularExpressions.Regex(".+ has healed you for ([0-9]+) points\\.");
-        static System.Text.RegularExpressions.Regex _selfHeals = new System.Text.RegularExpressions.Regex("You have been healed for ([0-9]+) hit points");
-        static System.Text.RegularExpressions.Regex _healingByYouRegex = new System.Text.RegularExpressions.Regex("You have healed .+ for ([0-9]+) points\\.");
+		static System.Text.RegularExpressions.Regex _healingYou = new System.Text.RegularExpressions.Regex(@".+ has healed you for ([0-9]+) points\\.");
+        static System.Text.RegularExpressions.Regex _selfHeals = new System.Text.RegularExpressions.Regex(@"You have been healed for ([0-9]+) hit points");
+        static System.Text.RegularExpressions.Regex _healingByYouRegex = new System.Text.RegularExpressions.Regex(@"You have healed .+ for ([0-9]+) points\\.");
 
     }
 }

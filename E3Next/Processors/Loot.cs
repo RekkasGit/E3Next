@@ -39,8 +39,8 @@ namespace E3Core.Processors
             }
             catch (Exception ex)
             {
-                MQ.Write("Exception loading Loot Data file");
-                throw ex;
+                MQ.Write("Exception loading Loot Data file. Loot data is not available. Error:"+ex.Message + " stack:" + ex.StackTrace);
+               
             }
             try
             {
@@ -51,7 +51,7 @@ namespace E3Core.Processors
 			{
             
 				MQ.Write("Exception loading Loot Stackable Data file. message:"+ex.Message + " stack:"+ex.StackTrace);
-				throw ex;
+				
 
 			}
         }
