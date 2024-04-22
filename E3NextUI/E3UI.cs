@@ -340,6 +340,11 @@ namespace E3NextUI
 					//they are typing in game, do not capture events.
 					return;
 				}
+				if (_currentWindowName.EndsWith("SearchTextEdit", StringComparison.OrdinalIgnoreCase))
+				{
+					//they are typing in game, do not capture events.
+					return;
+				}
 				if (_currentWindowName.EndsWith("Input", StringComparison.OrdinalIgnoreCase))
 				{
 					//they are typing in game, do not capture events.
