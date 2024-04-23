@@ -277,7 +277,15 @@ namespace E3Core.Processors
                 {
                     return;
                 }
-                double currentZ = MQ.Query<double>("${Me.Z}");
+
+				if (e3util.IsEQLive())
+				{
+					//random delay so it isn't quite so ovious
+					MQ.Delay(E3.Random.Next(1500, 3000));
+
+				}
+
+				double currentZ = MQ.Query<double>("${Me.Z}");
                 e3util.TryMoveToLoc(currentX+E3.Random.Next(-1*distance,distance), currentY + E3.Random.Next(-1 * distance, distance), currentZ);
 
             });

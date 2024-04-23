@@ -1036,6 +1036,166 @@ namespace E3Core.Processors
             return inCombat;
         }
         /// <summary>
+        /// server specific code for Lazarus, honestly it was to make things easier for people during the begigning of E3N, ported over from custom macro code
+        /// E3N has somewhat out grown it, and no loner a real valid thing for most servers, leaving here for laz people with an option to turn it off
+        /// </summary>
+        /// <returns></returns>
+        private static bool LazarusManaRecovery()
+        {
+			if (!(e3util.IsEQEMU() && E3.ServerName == "Lazarus")) return false;
+			if (!E3.GeneralSettings.General_LazarusManaRecovery) return false;
+            if (E3.IsInvis) return false;
+			if (Basics.AmIDead()) return false;
+			if (e3util.IsEQLive()) return false;
+
+			int pctMana = MQ.Query<int>("${Me.PctMana}");
+			var pctHps = MQ.Query<int>("${Me.PctHPs}");
+			int currentHps = MQ.Query<int>("${Me.CurrentHPs}");
+
+			if (E3.CurrentClass == Data.Class.Enchanter)
+			{
+				bool manaDrawBuff = MQ.Query<bool>("${Bool[${Me.Buff[Mana Draw]}]}") || MQ.Query<bool>("${Bool[${Me.Song[Mana Draw]}]}");
+				if (manaDrawBuff)
+				{
+					if (pctMana > 50)
+					{
+						return false;
+					}
+				}
+			}
+
+			if (E3.CurrentClass == Data.Class.Necromancer)
+			{
+				bool deathBloom = MQ.Query<bool>("${Bool[${Me.Buff[Death Bloom]}]}") || MQ.Query<bool>("${Bool[${Me.Song[Death Bloom]}]}");
+				if (deathBloom)
+				{
+					return false;
+				}
+			}
+
+			if (E3.CurrentClass == Data.Class.Shaman)
+			{
+				bool canniReady = MQ.Query<bool>("${Me.AltAbilityReady[Cannibalization]}");
+
+				if (canniReady && currentHps > 7000 && MQ.Query<double>("${Math.Calc[${Me.MaxMana} - ${Me.CurrentMana}]}") > 4500)
+				{
+					Spell s;
+					if (!Spell.LoadedSpellsByName.TryGetValue("Cannibalization", out s))
+					{
+						s = new Spell("Cannibalization");
+					}
+					if (s.CastType != CastType.None)
+					{
+						Casting.Cast(0, s);
+						return true;
+					}
+				}
+			}
+
+			if (MQ.Query<bool>("${Me.ItemReady[Summoned: Large Modulation Shard]}"))
+			{
+				if (MQ.Query<double>("${Math.Calc[${Me.MaxMana} - ${Me.CurrentMana}]}") > 3500 && currentHps > 6000)
+				{
+					Spell s;
+					if (!Spell.LoadedSpellsByName.TryGetValue("Summoned: Large Modulation Shard", out s))
+					{
+						s = new Spell("Summoned: Large Modulation Shard");
+					}
+					if (s.CastType != CastType.None)
+					{
+						Casting.Cast(0, s);
+						return true;
+					}
+				}
+			}
+			if (MQ.Query<bool>("${Me.ItemReady[Azure Mind Crystal III]}"))
+			{
+				if (MQ.Query<double>("${Math.Calc[${Me.MaxMana} - ${Me.CurrentMana}]}") > 3500)
+				{
+					Spell s;
+					if (!Spell.LoadedSpellsByName.TryGetValue("Azure Mind Crystal III", out s))
+					{
+						s = new Spell("Azure Mind Crystal III");
+					}
+					if (s.CastType != CastType.None)
+					{
+						Casting.Cast(0, s);
+						return true;
+					}
+				}
+			}
+
+			if (E3.CurrentClass == Data.Class.Necromancer && pctMana < 50 && E3.CurrentInCombat)
+			{
+				bool deathBloomReady = MQ.Query<bool>("${Me.AltAbilityReady[Death Bloom]}");
+				if (deathBloomReady && currentHps > 8000)
+				{
+					Spell s;
+					if (!Spell.LoadedSpellsByName.TryGetValue("Death Bloom", out s))
+					{
+						s = new Spell("Death Bloom");
+					}
+					if (s.CastType != CastType.None)
+					{
+						Casting.Cast(0, s);
+						return true;
+					}
+				}
+			}
+			if (E3.CurrentClass == Data.Class.Cleric && pctMana < 30 && E3.CurrentInCombat)
+			{
+				bool miracleReady = MQ.Query<bool>("${Me.AltAbilityReady[Quiet Miracle]}");
+				if (miracleReady)
+				{
+					Spell s;
+					if (!Spell.LoadedSpellsByName.TryGetValue("Quiet Miracle", out s))
+					{
+						s = new Spell("Quiet Miracle");
+					}
+					if (s.CastType != CastType.None)
+					{
+						Casting.Cast(E3.CurrentId, s);
+						return true;
+					}
+				}
+			}
+			if (E3.CurrentClass == Data.Class.Wizard && pctMana < 15 && E3.CurrentInCombat)
+			{
+				bool harvestReady = MQ.Query<bool>("${Me.AltAbilityReady[Harvest of Druzzil]}");
+				if (harvestReady)
+				{
+					Spell s;
+					if (!Spell.LoadedSpellsByName.TryGetValue("Harvest of Druzzil", out s))
+					{
+						s = new Spell("Harvest of Druzzil");
+					}
+					if (s.CastType != CastType.None)
+					{
+						Casting.Cast(0, s);
+						return true;
+					}
+				}
+			}
+			if (E3.CurrentClass == Data.Class.Enchanter && pctMana < 50 && E3.CurrentInCombat)
+			{
+				bool manaDrawReady = MQ.Query<bool>("${Me.AltAbilityReady[Mana Draw]}");
+				if (manaDrawReady)
+				{
+					Spell s;
+					if (!Spell.LoadedSpellsByName.TryGetValue("Mana Draw", out s))
+					{
+						s = new Spell("Mana Draw");
+					}
+					if (s.CastType != CastType.None)
+					{
+						Casting.Cast(0, s);
+                        return true;
+					}
+				}
+			}
+            return false;
+		}
+        /// <summary>
         /// Checks the mana resources, and does actions to regenerate mana during combat.
         /// </summary>
         [ClassInvoke(Data.Class.ManaUsers)]
@@ -1043,163 +1203,25 @@ namespace E3Core.Processors
         {
             if (!e3util.ShouldCheck(ref _nextResourceCheck, _nextResourceCheckInterval)) return;
 
+            if(e3util.IsEQEMU() && E3.ServerName=="Lazarus")
+            {
+                if(LazarusManaRecovery())
+                {
+                    return;
+                }
+            }
+
             using (_log.Trace())
             {
-                if (E3.IsInvis) return;
-                if (Basics.AmIDead()) return;
-                if (e3util.IsEQLive()) return;
+				if (E3.IsInvis) return;
+				if (Basics.AmIDead()) return;
+				if (e3util.IsEQLive()) return;
 
-                int pctMana = MQ.Query<int>("${Me.PctMana}");
-                var pctHps = MQ.Query<int>("${Me.PctHPs}");
-                int currentHps = MQ.Query<int>("${Me.CurrentHPs}");
+				int pctMana = MQ.Query<int>("${Me.PctMana}");
+				var pctHps = MQ.Query<int>("${Me.PctHPs}");
+				int currentHps = MQ.Query<int>("${Me.CurrentHPs}");
 
-                if (E3.CurrentClass == Data.Class.Enchanter)
-                {
-                    bool manaDrawBuff = MQ.Query<bool>("${Bool[${Me.Buff[Mana Draw]}]}") || MQ.Query<bool>("${Bool[${Me.Song[Mana Draw]}]}");
-                    if (manaDrawBuff)
-                    {
-                        if (pctMana > 50)
-                        {
-                            return;
-                        }
-                    }
-                }
-
-                if (E3.CurrentClass == Data.Class.Necromancer)
-                {
-                    bool deathBloom = MQ.Query<bool>("${Bool[${Me.Buff[Death Bloom]}]}") || MQ.Query<bool>("${Bool[${Me.Song[Death Bloom]}]}");
-                    if (deathBloom)
-                    {
-                        return;
-                    }
-                }
-
-                if (E3.CurrentClass == Data.Class.Shaman)
-                {
-                    bool canniReady = MQ.Query<bool>("${Me.AltAbilityReady[Cannibalization]}");
-
-                    if (canniReady && currentHps > 7000 && MQ.Query<double>("${Math.Calc[${Me.MaxMana} - ${Me.CurrentMana}]}") > 4500)
-                    {
-                        Spell s;
-                        if (!Spell.LoadedSpellsByName.TryGetValue("Cannibalization", out s))
-                        {
-                            s = new Spell("Cannibalization");
-                        }
-                        if (s.CastType != CastType.None)
-                        {
-                            Casting.Cast(0, s);
-                            return;
-                        }
-                    }
-
-                   
-
-                }
-
-                if (MQ.Query<bool>("${Me.ItemReady[Summoned: Large Modulation Shard]}"))
-                {
-                    if (MQ.Query<double>("${Math.Calc[${Me.MaxMana} - ${Me.CurrentMana}]}") > 3500 && currentHps > 6000)
-                    {
-                        Spell s;
-                        if (!Spell.LoadedSpellsByName.TryGetValue("Summoned: Large Modulation Shard", out s))
-                        {
-                            s = new Spell("Summoned: Large Modulation Shard");
-                        }
-                        if (s.CastType != CastType.None)
-                        {
-                            Casting.Cast(0, s);
-                            return;
-                        }
-                    }
-                }
-                if (MQ.Query<bool>("${Me.ItemReady[Azure Mind Crystal III]}"))
-                {
-                    if (MQ.Query<double>("${Math.Calc[${Me.MaxMana} - ${Me.CurrentMana}]}") > 3500)
-                    {
-                        Spell s;
-                        if (!Spell.LoadedSpellsByName.TryGetValue("Azure Mind Crystal III", out s))
-                        {
-                            s = new Spell("Azure Mind Crystal III");
-                        }
-                        if (s.CastType != CastType.None)
-                        {
-                            Casting.Cast(0, s);
-                            return;
-                        }
-                    }
-                }
-
-                if (E3.CurrentClass == Data.Class.Necromancer && pctMana < 50 && E3.CurrentInCombat)
-                {
-                    bool deathBloomReady = MQ.Query<bool>("${Me.AltAbilityReady[Death Bloom]}");
-                    if (deathBloomReady && currentHps > 8000)
-                    {
-                        Spell s;
-                        if (!Spell.LoadedSpellsByName.TryGetValue("Death Bloom", out s))
-                        {
-                            s = new Spell("Death Bloom");
-                        }
-                        if (s.CastType != CastType.None)
-                        {
-                            Casting.Cast(0, s);
-                            return;
-                        }
-                    }
-                }
-                if (E3.CurrentClass == Data.Class.Cleric && pctMana < 30 && E3.CurrentInCombat)
-                {
-                    bool miracleReady = MQ.Query<bool>("${Me.AltAbilityReady[Quiet Miracle]}");
-                    if (miracleReady)
-                    {
-                        Spell s;
-                        if (!Spell.LoadedSpellsByName.TryGetValue("Quiet Miracle", out s))
-                        {
-                            s = new Spell("Quiet Miracle");
-                        }
-                        if (s.CastType != CastType.None)
-                        {
-                            Casting.Cast(E3.CurrentId, s);
-                            return;
-                        }
-                    }
-                }
-                if (E3.CurrentClass == Data.Class.Wizard && pctMana < 15 && E3.CurrentInCombat)
-                {
-                    bool harvestReady = MQ.Query<bool>("${Me.AltAbilityReady[Harvest of Druzzil]}");
-                    if (harvestReady)
-                    {
-                        Spell s;
-                        if (!Spell.LoadedSpellsByName.TryGetValue("Harvest of Druzzil", out s))
-                        {
-                            s = new Spell("Harvest of Druzzil");
-                        }
-                        if (s.CastType != CastType.None)
-                        {
-                            Casting.Cast(0, s);
-                            return;
-                        }
-                    }
-                }
-                if (E3.CurrentClass == Data.Class.Enchanter && pctMana < 50 && E3.CurrentInCombat)
-                {
-                    bool manaDrawReady = MQ.Query<bool>("${Me.AltAbilityReady[Mana Draw]}");
-                    if (manaDrawReady)
-                    {
-                        Spell s;
-                        if (!Spell.LoadedSpellsByName.TryGetValue("Mana Draw", out s))
-                        {
-                            s = new Spell("Mana Draw");
-                        }
-                        if (s.CastType != CastType.None)
-                        {
-                            Casting.Cast(0, s);
-                            return;
-                        }
-                    }
-                }
-
-
-                if (E3.CharacterSettings.Manastone_OverrideGeneralSettings && !E3.CharacterSettings.Manastone_Enabled)
+				if (E3.CharacterSettings.Manastone_OverrideGeneralSettings && !E3.CharacterSettings.Manastone_Enabled)
                 {
                     return;
                 }
