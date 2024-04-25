@@ -569,7 +569,7 @@ namespace E3Core.Processors
             );
             EventProcessor.RegisterCommand("/followoff", (x) =>
             {
-                if (!x.args.Contains("all",StringComparer.OrdinalIgnoreCase))
+                if (!x.args.Contains("me",StringComparer.OrdinalIgnoreCase))
                 {
                     _chaseTarget = String.Empty;
                     FollowTargetName = string.Empty;
@@ -586,7 +586,7 @@ namespace E3Core.Processors
                         int zoneID = MQ.Query<int>("${Zone.ID}");
                         extraArgs += $" tome={currentX}/{currentY}/{currentZ}/{zoneID}";
                     }
-                    E3.Bots.BroadcastCommandToGroup($"/followoff all{extraArgs}",x);
+                    E3.Bots.BroadcastCommandToGroup($"/followoff me{extraArgs}",x);
                 }
                 else
                 {

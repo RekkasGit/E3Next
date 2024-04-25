@@ -550,16 +550,24 @@ namespace E3Core.Processors
                     }
                 }
 
-                if (!AllowControl)
+                //rogues have discs that they need to be sneaking/invisiable for
+				if (String.IsNullOrWhiteSpace(E3.CharacterSettings.Rogue_SneakAttack))
+				{
+					MQ.Cmd("/makemevisible");
+
+				}
+				
+
+				if (!AllowControl)
                 {
                     if(e3util.IsEQLive())
 					{
                         //don't want to appear 'bot' like by always facing the mob
                         //stick for melee should keep them facing th emob
                         //as well as ranged has face commands but casters shouldn't care
-                        //if(!((E3.CurrentClass & Class.Caster) == E3.CurrentClass || (E3.CurrentClass & Class.Priest) == E3.CurrentClass))
+                        if(!((E3.CurrentClass & Class.Caster) == E3.CurrentClass || (E3.CurrentClass & Class.Priest) == E3.CurrentClass)|| (E3.CharacterSettings.Assist_Type.Equals("AutoAttack", StringComparison.OrdinalIgnoreCase)))
                         {
-							//MQ.Cmd($"/face id {AssistTargetID}", 500);
+							MQ.Cmd($"/face id {AssistTargetID}", 500);
 						}
 
 					}
@@ -610,7 +618,7 @@ namespace E3Core.Processors
 
                         }
                     }
-                    if (E3.CurrentClass == Data.Class.Rogue)
+                    if (E3.CurrentClass == Data.Class.Rogue && !String.IsNullOrWhiteSpace(E3.CharacterSettings.Rogue_SneakAttack))
                     {
                         Rogue.RogueStrike();
 
@@ -734,7 +742,7 @@ namespace E3Core.Processors
                    x.args.Remove("/ignoreme");
                }
 
-               MQ.Cmd("/makemevisible");
+              
                //Rez.Reset();
                if (x.args.Count == 0)
                {

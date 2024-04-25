@@ -1269,6 +1269,24 @@ namespace E3Core.Utility
             }
 
         }
+        public static List<Data.Spell> ListAllActiveAA()
+        {
+            List<Data.Spell> returnValue = new List<Data.Spell>();
+            for(Int32 i=0;i<10000;i++)
+            {
+                string spellName = MQ.Query<String>($"${{Me.AltAbility[{i}].Name}}");
+                if(spellName!="NULL")
+                {
+                    var spell = new Data.Spell(spellName);
+                    if(spell.CastType== CastType.AA)
+                    {
+						returnValue.Add(spell);
+					}
+				}
+            }
+            return returnValue;
+        }
+
         //modified from
 		//https://stackoverflow.com/questions/21750824/how-to-convert-a-string-to-a-mathematical-expression-programmatically
 		private static string[] _operators = { "-", "+", "/", "*", "^" };

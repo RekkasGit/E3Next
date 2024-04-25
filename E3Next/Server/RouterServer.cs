@@ -1,6 +1,8 @@
 ﻿using E3Core.Processors;
+using E3Core.Utility;
 using MonoCore;
 using NetMQ.Sockets;
+using Newtonsoft.Json;
 using System;
 using System.Collections.Concurrent;
 using System.Collections.Generic;
@@ -20,7 +22,7 @@ namespace E3Core.Server
         public byte[] identity = new byte[1024 * 86]; //86k to get on the LOH
         public Int32 identiyLength = 0;
         public Int32 commandType = 0;
-        public byte[] payload = new byte[1024 * 86];
+        public byte[] payload = new byte[1024 * 1024];
         public Int32 payloadLength = 0;
         public IEnumerable<Spawn> spawns;
         public static RouterMessage Aquire()
@@ -88,6 +90,11 @@ namespace E3Core.Server
                 {
                     response = Setup._serverNameForIni;                    
                 }
+                else if(String.Equals(query,"${E3.AA.ListAll}", StringComparison.OrdinalIgnoreCase))
+                {
+					List<Data.Spell> aas = e3util.ListAllActiveAA();
+					response = JsonConvert.SerializeObject(aas);
+				}
                 else
                 {
 					response = MQ.Query<string>(query);

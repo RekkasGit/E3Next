@@ -450,16 +450,22 @@ namespace E3Core.Classes
         public static void StartMelody(string melodyName, bool force=false)
         {
              _songs.Clear();
-            //lets find the melody in the character ini.
-            CharacterSettings.LoadKeyData($"{melodyName} Melody", "Song", E3.CharacterSettings.ParsedData, _songs);
+			MQ.Cmd("/stopsong");
+			//lets find the melody in the character ini.
+			CharacterSettings.LoadKeyData($"{melodyName} Melody", "Song", E3.CharacterSettings.ParsedData, _songs);
             if(_songs.Count>0)
             {
                 MQ.Write($"\aoStart Melody:\ag{melodyName}");
-                MQ.Cmd("/stopsong");
+             
                 _nextBardCast = Core.StopWatch.ElapsedMilliseconds;
 				_forceOverride = force;
                 _playingMelody = true;
                 _currentMelody = melodyName;
+            }
+            else
+            {
+                //its an empty list
+
             }
         }
         public static void RestartMelody()

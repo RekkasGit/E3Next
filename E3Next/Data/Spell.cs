@@ -45,6 +45,11 @@ namespace E3Core.Data
 			return spellID;
 
 		}
+        //only used for seralization
+        public Spell()
+        {
+
+        }
         public Spell(string spellName, IniData parsedData = null)
         {
 
@@ -503,7 +508,8 @@ namespace E3Core.Data
                     SpellName = MQ.Query<String>($"${{Me.Inventory[{invSlot}].Spell}}");
                     SpellID = MQ.Query<Int32>($"${{Me.Inventory[{invSlot}].Spell.ID}}");
                     CastID = MQ.Query<Int32>($"${{Me.Inventory[{invSlot}].ID}}");
-                    SpellType = MQ.Query<String>($"${{Me.Inventory[{invSlot}].Spell.SpellType}}");
+                    SpellIcon = MQ.Query<Int32>($"${{Me.Inventory[{invSlot}].Spell.SpellIcon}}");
+					SpellType = MQ.Query<String>($"${{Me.Inventory[{invSlot}].Spell.SpellType}}");
 					IsShortBuff = MQ.Query<bool>($"${{Me.Inventory[{invSlot}].Spell.DurationWindow}}");
 				}
                 else
@@ -534,7 +540,8 @@ namespace E3Core.Data
                     SpellName = MQ.Query<String>($"${{Me.Inventory[{invSlot}].Item[{bagSlot}].Spell}}");
                     SpellID = MQ.Query<Int32>($"${{Me.Inventory[{invSlot}].Item[{bagSlot}].Spell.ID}}");
                     CastID = MQ.Query<Int32>($"${{Me.Inventory[{invSlot}].Item[{bagSlot}].ID}}");
-                    SpellType = MQ.Query<String>($"${{Me.Inventory[{invSlot}].Item[{bagSlot}].Spell.SpellType}}");
+                    SpellIcon = MQ.Query<Int32>($"${{Me.Inventory[{invSlot}].Item[{bagSlot}].Spell.SpellIcon}}");
+					SpellType = MQ.Query<String>($"${{Me.Inventory[{invSlot}].Item[{bagSlot}].Spell.SpellType}}");
 					IsShortBuff = MQ.Query<bool>($"${{Me.Inventory[{invSlot}].Item[{bagSlot}].Spell.DurationWindow}}");
 				}
 
@@ -552,9 +559,9 @@ namespace E3Core.Data
                 Double AERange = MQ.Query<Double>($"${{Me.AltAbility[{CastName}].Spell.AERange}}");
                 MyRange = MQ.Query<double>($"${{Me.AltAbility[{CastName}].Spell.MyRange}}");
                 SpellType = MQ.Query<String>($"${{Spell[{CastName}].SpellType}}");
+				SpellIcon = MQ.Query<Int32>($"${{Spell[{CastName}].SpellIcon}}");
 
-
-                if (SpellType.Equals("Detrimental", StringComparison.OrdinalIgnoreCase))
+				if (SpellType.Equals("Detrimental", StringComparison.OrdinalIgnoreCase))
                 {
 
                     if (AERange > 0)
@@ -585,7 +592,8 @@ namespace E3Core.Data
                 SpellID = MQ.Query<Int32>($"${{Me.AltAbility[{CastName}].Spell.ID}}");
                 CastID = MQ.Query<Int32>($"${{Me.AltAbility[{CastName}].ID}}");
 				IsShortBuff = MQ.Query<bool>($"${{Me.AltAbility[{CastName}].Spell.DurationWindow}}");
-
+                Category = MQ.Query<String>($"${{Me.AltAbility[{CastName}].Spell.Category}}");
+                Subcategory = MQ.Query<String>($"${{Me.AltAbility[{CastName}].Spell.Subcategory}}");
 			}
 			else if (CastType == CastType.Spell)
             {
@@ -607,7 +615,7 @@ namespace E3Core.Data
                     SpellType = MQ.Query<String>($"${{Me.Book[{bookNumber}].SpellType}}");
                     IsShortBuff = MQ.Query<bool>($"${{Me.Book[{bookNumber}].DurationWindow}}");
                     Subcategory = MQ.Query<string>($"${{Me.Book[{bookNumber}].Subcategory}}");
-
+                    Category = MQ.Query<string>($"${{Me.Book[{bookNumber}].Category}}");
 					if (SpellType.Equals("Detrimental", StringComparison.OrdinalIgnoreCase))
                     {
 
@@ -634,6 +642,7 @@ namespace E3Core.Data
                     SpellName = CastName;
                     SpellID = MQ.Query<Int32>($"${{Me.Book[{bookNumber}].ID}}");
                     CastID = SpellID;
+                    SpellIcon = MQ.Query<Int32>($"${{Me.Book[{bookNumber}].SpellIcon}}}}");
                 }
                 else
                 {
@@ -650,8 +659,10 @@ namespace E3Core.Data
                     SpellType = MQ.Query<String>($"${{Spell[{CastName}].SpellType}}");
                     IsShortBuff = MQ.Query<bool>($"${{Spell[{CastName}].DurationWindow}}");
                     Subcategory = MQ.Query<string>($"${{Spell[{CastName}].Subcategory}}");
+                    Category = MQ.Query<string>($"${{Spell[{CastName}].Category}}");
+                    SpellIcon = MQ.Query<Int32>($"${{Spell[{CastName}].SpellIcon}}");
 
-                    if (SpellType.Equals("Detrimental", StringComparison.OrdinalIgnoreCase))
+					if (SpellType.Equals("Detrimental", StringComparison.OrdinalIgnoreCase))
                     {
 
                         if (AERange > 0)
@@ -699,6 +710,7 @@ namespace E3Core.Data
                 CastID = SpellID;
                 SpellType = MQ.Query<String>($"${{Spell[{CastName}].SpellType}}");
 				IsShortBuff = MQ.Query<bool>($"${{Spell[{CastName}].DurationWindow}}");
+                SpellIcon = MQ.Query<Int32>($"${{Spell[{CastName}].SpellIcon}}");
 
 
 			}
@@ -730,6 +742,7 @@ namespace E3Core.Data
         //    return returnString;
         //}
         public String Subcategory = String.Empty;
+        public String Category = String.Empty;
         public String SpellName = String.Empty;//the spell's name. If the item clicks, this is the spell it casts
         public String CastName = String.Empty;//this can be the item, spell, aa, disc. What is required to cast it. 
         public CastType CastType;
@@ -805,6 +818,7 @@ namespace E3Core.Data
         public string InitName = String.Empty;
         public bool ReagentOutOfStock = false;
         public bool SpellInBook = false;
+        public Int32 SpellIcon = 0;
         public bool NoMidSongCast = false;
         public Int64 MinDurationBeforeRecast = 0;
         public Int64 LastUpdateCheckFromTopicUpdate = 0;

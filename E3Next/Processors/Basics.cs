@@ -7,6 +7,7 @@ using E3Core.Utility;
 using E3NextUI;
 using IniParser.Model;
 using MonoCore;
+using Newtonsoft.Json;
 using System;
 using System.Collections.Generic;
 using System.Diagnostics;
@@ -66,7 +67,22 @@ namespace E3Core.Processors
         public static void RegisterEvents()
         {
 
-			
+			EventProcessor.RegisterCommand("/e3printAA", (x) =>
+			{
+                List<Data.Spell> aas = e3util.ListAllActiveAA();
+
+
+                foreach(var aa in aas)
+                {
+                    E3.Bots.Broadcast(aa.CastName);
+                }
+                E3.Bots.Broadcast("Total Count:" + aas.Count);
+                string output =JsonConvert.SerializeObject(aas, Formatting.Indented);
+                E3.Bots.Broadcast("Total Size:"+output.Length);
+                //E3.Bots.Broadcast(output);
+
+			});
+
 			EventProcessor.RegisterCommand("/e3printini", (x) =>
 			{
                 // Print Character InI file 
@@ -334,13 +350,19 @@ namespace E3Core.Processors
                 }
 
             });
-           
-			EventProcessor.RegisterCommand("/e3echo", (x) =>
+           	EventProcessor.RegisterCommand("/e3echo", (x) =>
 			{
                 string argumentLine = e3util.ArgsToCommand(x.args);
                 string processedLine = Casting.Ifs_Results(argumentLine);
 				MQ.Cmd($"/echo {processedLine}");
 				MQ.Cmd($"/varset E3N_var {processedLine}");
+			});
+			EventProcessor.RegisterCommand("/e3echobool", (x) =>
+			{
+				string argumentLine = e3util.ArgsToCommand(x.args);
+				bool processedLine = Casting.Ifs(argumentLine);
+				MQ.Cmd($"/echo {processedLine}");
+				//MQ.Cmd($"/varset E3N_var {processedLine}");
 			});
 			EventProcessor.RegisterCommand("/dropinvis", (x) =>
             {
@@ -1202,6 +1224,8 @@ namespace E3Core.Processors
         public static void CheckManaResources()
         {
             if (!e3util.ShouldCheck(ref _nextResourceCheck, _nextResourceCheckInterval)) return;
+
+            if (e3util.IsEQLive()) return;
 
             if(e3util.IsEQEMU() && E3.ServerName=="Lazarus")
             {
