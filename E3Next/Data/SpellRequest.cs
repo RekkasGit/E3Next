@@ -9,6 +9,10 @@ namespace E3Core.Data
 {
     public class SpellRequest : Spell
     {
+        public SpellRequest()
+        {
+            
+        }
         public SpellRequest(string spellName, IniData parsedData = null):base(spellName, parsedData)
         {
 

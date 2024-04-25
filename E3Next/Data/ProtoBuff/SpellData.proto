@@ -1,0 +1,90 @@
+﻿syntax = "proto3";
+
+message SpellDataList {
+
+    repeated SpellData data=1;
+
+}
+
+message SpellData {
+
+    enum CastingType {
+        AA=0;
+        Spell=1;
+        Disc=2;
+        Ability=3;
+        Item=4;
+        None=5;
+    } 
+    string SpellName = 1;
+    string CastName = 2;
+	string Subcategory = 3;
+    string Category = 4;
+    CastingType CastType=5;
+    string TargetType=6;
+    int32 SpellGem=7;
+    int32 GiveUpTimer=8;
+    int32 MaxTries=9;
+    int32 Duration=10;
+    int32 DurationTotalSeconds=11;
+    int32 RecastTime=12;
+    double RecoveryTime=13;
+    double myCastTime=14;
+    double MyCastTimeInSeconds = 15;
+    double MyRange=16;
+    int32 Mana=17;
+    int32 MinMana=18;
+    int32 MaxMana=19;
+    int32 MinHP=20;
+    int32 HealPct=21;
+    bool Debug=22;
+    string Reagent=23;
+    bool ItemMustEquip=24;
+    bool NoBurn=25;
+    bool NoTarget=26;
+    bool NoAggro=27;
+    int32 Mode=28;
+   
+    int32 EnduranceCost=29;
+    int32 Delay=30;
+    int32 DelayAfterCast=31;
+    int32 CastID=32;
+    int32 MinEnd=33;
+    bool CastInvis=34;
+    string SpellType=35;
+    string CastTarget=36;
+    repeated string StackRequestTargets=37;
+    int64 StackIntervalCheck=38;
+    int64 StackIntervalNextCheck =39;
+    int64 StackRecastDelay=40;
+    string StackRequestItem=41;
+	bool GiftOfMana=42;
+    int32 SpellID=43;
+    int32 PctAggro=44;
+    string Zone=45;
+    int32 MinSick=46;
+    bool AllowSpellSwap=47;
+    bool NoEarlyRecast=48;
+    bool NoStack=49;
+    string TriggerSpell=50;
+    string BeforeSpell=51;
+    bool NoInterrupt=53;
+    string AfterEvent=54;
+    string BeforeEvent=55;
+    string CastIF=56;
+    string Ifs=57;
+    string InitName =58;
+    bool ReagentOutOfStock=59;
+    bool SpellInBook=60;
+    int32 SpellIcon=61;
+    bool NoMidSongCast=62;
+    int64 MinDurationBeforeRecast=63;
+    bool IsShortBuff=64;
+    int32 HealthMax =65;
+    bool IgnoreStackRules=66;
+    bool IsDebuff=67;
+    bool IsDoT=68;
+    bool Rotate=69;
+    string AfterSpell=70;
+    int32 Level = 71;
+}

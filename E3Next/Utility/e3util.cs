@@ -1286,8 +1286,62 @@ namespace E3Core.Utility
             }
             return returnValue;
         }
-
-        //modified from
+        public static List<Data.Spell> ListAllBookSpells()
+        {
+			List<Data.Spell> returnValue = new List<Data.Spell>();
+			for (Int32 i = 0; i < 1120; i++)
+			{
+				string spellName = MQ.Query<String>($"${{Me.Book[{i}].Name}}");
+				if (spellName != "NULL")
+				{
+					var spell = new Data.Spell(spellName);
+					if (spell.CastType == CastType.Spell)
+					{
+						returnValue.Add(spell);
+					}
+				}
+			}
+			return returnValue;
+		}
+		public static List<Data.Spell> ListAllSpellBookData()
+		{
+			List<Data.Spell> returnValue = new List<Data.Spell>();
+			for (Int32 i = 0; i < 10000; i++)
+			{
+				string spellName = MQ.Query<String>($"${{Me.AltAbility[{i}].Name}}");
+				if (spellName != "NULL")
+				{
+					var spell = new Data.Spell(spellName);
+					if (spell.CastType == CastType.AA)
+					{
+						returnValue.Add(spell);
+					}
+				}
+			}
+			return returnValue;
+		}
+		public static List<Data.Spell> ListAllDiscData()
+		{
+			List<Data.Spell> returnValue = new List<Data.Spell>();
+			for (Int32 i = 1; i < 10000; i++)
+			{
+				string spellName = MQ.Query<String>($"${{Me.CombatAbility[{i}].Name}}");
+				if (spellName != "NULL")
+				{
+					var spell = new Data.Spell(spellName);
+					if (spell.CastType == CastType.Disc)
+					{
+						returnValue.Add(spell);
+					}
+				}
+                else
+                {
+                    break;//no more discs
+                }
+			}
+			return returnValue;
+		}
+		//modified from
 		//https://stackoverflow.com/questions/21750824/how-to-convert-a-string-to-a-mathematical-expression-programmatically
 		private static string[] _operators = { "-", "+", "/", "*", "^" };
 		private static Func<double, double, double>[] _operations = {

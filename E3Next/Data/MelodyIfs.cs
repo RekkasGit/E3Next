@@ -11,7 +11,10 @@ namespace E3Core.Data
     {
         public String MelodyName;
         public String MelodyIf;
+        public MelodyIfs()
+        {
 
+        }
         public MelodyIfs(string melodyName, IniData parsedData)
         {
             string[] melodyArray = melodyName.Split('/');

@@ -28,13 +28,27 @@
 		/// </summary>
 		private void InitializeComponent()
 		{
+			this.kryptonListBox1 = new ComponentFactory.Krypton.Toolkit.KryptonListBox();
 			this.SuspendLayout();
+			// 
+			// kryptonListBox1
+			// 
+			this.kryptonListBox1.Items.AddRange(new object[] {
+            "Nukes",
+            "Burns",
+            "Heals"});
+			this.kryptonListBox1.ItemStyle = ComponentFactory.Krypton.Toolkit.ButtonStyle.Gallery;
+			this.kryptonListBox1.Location = new System.Drawing.Point(32, 13);
+			this.kryptonListBox1.Name = "kryptonListBox1";
+			this.kryptonListBox1.Size = new System.Drawing.Size(161, 377);
+			this.kryptonListBox1.TabIndex = 0;
 			// 
 			// ConfigEditor
 			// 
 			this.AutoScaleDimensions = new System.Drawing.SizeF(6F, 13F);
 			this.AutoScaleMode = System.Windows.Forms.AutoScaleMode.Font;
 			this.ClientSize = new System.Drawing.Size(800, 450);
+			this.Controls.Add(this.kryptonListBox1);
 			this.Name = "ConfigEditor";
 			this.Text = "Form1";
 			this.ResumeLayout(false);
@@ -42,6 +56,8 @@
 		}
 
 		#endregion
+
+		private ComponentFactory.Krypton.Toolkit.KryptonListBox kryptonListBox1;
 	}
 }
 

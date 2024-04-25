@@ -616,6 +616,8 @@ namespace E3Core.Data
                     IsShortBuff = MQ.Query<bool>($"${{Me.Book[{bookNumber}].DurationWindow}}");
                     Subcategory = MQ.Query<string>($"${{Me.Book[{bookNumber}].Subcategory}}");
                     Category = MQ.Query<string>($"${{Me.Book[{bookNumber}].Category}}");
+                   
+
 					if (SpellType.Equals("Detrimental", StringComparison.OrdinalIgnoreCase))
                     {
 
@@ -643,7 +645,8 @@ namespace E3Core.Data
                     SpellID = MQ.Query<Int32>($"${{Me.Book[{bookNumber}].ID}}");
                     CastID = SpellID;
                     SpellIcon = MQ.Query<Int32>($"${{Me.Book[{bookNumber}].SpellIcon}}}}");
-                }
+					Level = MQ.Query<Int32>($"${{Me.Book[{bookNumber}].Level}}");
+				}
                 else
                 {
                     TargetType = MQ.Query<String>($"${{Spell[{CastName}].TargetType}}");
@@ -661,7 +664,7 @@ namespace E3Core.Data
                     Subcategory = MQ.Query<string>($"${{Spell[{CastName}].Subcategory}}");
                     Category = MQ.Query<string>($"${{Spell[{CastName}].Category}}");
                     SpellIcon = MQ.Query<Int32>($"${{Spell[{CastName}].SpellIcon}}");
-
+                    Level = MQ.Query<Int32>($"${{Spell[{CastName}].Level}}");
 					if (SpellType.Equals("Detrimental", StringComparison.OrdinalIgnoreCase))
                     {
 
@@ -827,7 +830,83 @@ namespace E3Core.Data
         public bool IgnoreStackRules = false;
         public bool IsDebuff = false;
         public bool IsDoT = false;
-      
+        public Int32 Level = 255;
+
+        public SpellData ToProto()
+        {
+
+            SpellData r = new SpellData();
+            r.AfterEvent = this.AfterEvent;
+            r.AfterSpell = this.AfterSpell;
+            r.AllowSpellSwap = this.AllowSpellSwap;
+            r.BeforeEvent = this.BeforeEvent;
+            r.BeforeSpell = this.BeforeSpell;
+            r.CastID = this.CastID;
+            r.CastIF = this.CastIF;
+            r.CastInvis = this.CastInvis;
+            r.CastName = this.CastName;
+            r.CastTarget = this.CastTarget;
+            r.CastType = (SpellData.Types.CastingType)this.CastType;
+            r.Category = this.Category;
+            r.Debug = this.Debug;
+            r.Delay = this.Delay;
+            r.DelayAfterCast = this.DelayAfterCast;
+            r.Duration = this.Duration;
+            r.DurationTotalSeconds = this.DurationTotalSeconds;
+            r.EnduranceCost = this.EnduranceCost;
+            r.GiftOfMana = this.GiftOfMana;
+            r.GiveUpTimer = this.GiveUpTimer;
+            r.HealPct = this.HealPct;
+            r.HealthMax = this.HealthMax;
+            r.Ifs=  this.Ifs;
+            r.IgnoreStackRules = this.IgnoreStackRules;
+            r.InitName = this.InitName;
+            r.IsDebuff = this.IsDebuff;
+            r.IsDoT= this.IsDoT;
+            r.IsShortBuff = this.IsShortBuff;
+            r.ItemMustEquip = this.ItemMustEquip;
+            r.Mana= this.Mana;
+            r.MaxMana= this.MaxMana;
+            r.MaxTries = this.MaxTries;
+            r.MinDurationBeforeRecast = this.MinDurationBeforeRecast;
+            r.MinEnd = this.MinEnd;
+            r.MinHP = this.MinHP;
+            r.MinMana = this.MinMana;
+            r.MinSick = this.MinSick;
+            r.Mode = this.Mode;
+            r.MyCastTime = (double)this.MyCastTime;
+            r.MyCastTimeInSeconds = (double)this.MyCastTimeInSeconds;
+            r.MyRange= this.MyRange; 
+            r.NoAggro = this.NoAggro;
+            r.NoBurn = this.NoBurn;
+            r.NoEarlyRecast = this.NoEarlyRecast;
+            r.NoInterrupt = this.NoInterrupt;
+            r.NoMidSongCast = this.NoMidSongCast;
+            r.NoStack = this.NoStack;
+            r.NoTarget = this.NoTarget;
+            r.PctAggro = this.PctAggro;
+            r.Reagent = this.Reagent;
+            r.ReagentOutOfStock = this.ReagentOutOfStock;
+            r.RecastTime= this.RecastTime;
+            r.RecoveryTime = (double)this.RecoveryTime;
+            r.Rotate = this.Rotate;
+            r.SpellGem = this.SpellGem;
+            r.SpellIcon = this.SpellIcon;
+            r.SpellID = this.SpellID;
+            r.SpellInBook = this.SpellInBook;
+            r.SpellName = this.SpellName;
+            r.SpellType = this.SpellType;
+            r.StackRecastDelay = this.StackRecastDelay;
+            r.StackRequestItem = this.StackRequestItem;
+            r.StackRequestTargets.AddRange(this.StackRequestTargets);
+            r.Subcategory = this.Subcategory;
+            r.TargetType = this.TargetType;
+            r.TriggerSpell =this.TriggerSpell;
+            r.Zone = this.Zone;
+            r.Level = this.Level;
+            return r;
+
+        }
 
         public override string ToString()
         {

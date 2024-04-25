@@ -77,10 +77,20 @@ namespace E3Core.Processors
                     E3.Bots.Broadcast(aa.CastName);
                 }
                 E3.Bots.Broadcast("Total Count:" + aas.Count);
-                string output =JsonConvert.SerializeObject(aas, Formatting.Indented);
-                E3.Bots.Broadcast("Total Size:"+output.Length);
                 //E3.Bots.Broadcast(output);
 
+			});
+			EventProcessor.RegisterCommand("/e3printDics", (x) =>
+			{
+				List<Data.Spell> aas = e3util.ListAllDiscData();
+
+
+				foreach (var aa in aas)
+				{
+					E3.Bots.Broadcast(aa.CastName);
+				}
+				E3.Bots.Broadcast("Total Count:" + aas.Count);
+			
 			});
 
 			EventProcessor.RegisterCommand("/e3printini", (x) =>

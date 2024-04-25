@@ -241,7 +241,7 @@ namespace E3Core.Settings
         public Spell FocusedParagonSpell = null;
         public List<string> FocusedParagonCharacters = new List<string>();
         public int FocusedParagonManaPct = 70;
-
+        private bool _mergeUpdates = true;
         public HashSet<string> WhoToHeal = new HashSet<string>(10, StringComparer.OrdinalIgnoreCase);
         public bool HealAutoNecroOrbs = false;
         private string _whoToHealString;
@@ -292,14 +292,17 @@ namespace E3Core.Settings
         /// <summary>
         /// Initializes a new instance of the <see cref="CharacterSettings"/> class.
         /// </summary>
-        public CharacterSettings()
+        public CharacterSettings(bool mergeUpdates = true)
         {
+            _mergeUpdates = mergeUpdates;
             CharacterName = E3.CurrentName;
             ServerName = E3.ServerName;
             CharacterClass = E3.CurrentClass;
             LoadData();
 
         }
+
+
         /// <summary>
         /// Loads the data.
         /// </summary>
@@ -994,20 +997,22 @@ namespace E3Core.Settings
             }
             else
             {
-                //File already exists, may need to merge in new settings lets check
-                //Parse the ini file
-                //Create an instance of a ini file parser
-                FileIniDataParser fileIniData = e3util.CreateIniParser();
-                IniData tParsedData = fileIniData.ReadFile(fileName);
+				//File already exists, may need to merge in new settings lets check
+				//Parse the ini file
+				//Create an instance of a ini file parser
+				FileIniDataParser fileIniData = e3util.CreateIniParser();
+				IniData tParsedData = fileIniData.ReadFile(fileName);
+				if (_mergeUpdates)
+                {
+					//overwrite newfile with what was already there
+					tParsedData.Merge(newFile);
+					//save it it out now
+					File.Delete(fileName);
+					parser.WriteFile(fileName, tParsedData);
 
-                //overwrite newfile with what was already there
-                tParsedData.Merge(newFile);
-                newFile = tParsedData;
-                //save it it out now
-                File.Delete(fileName);
-                parser.WriteFile(fileName, tParsedData);
-
-                _fileLastModified = System.IO.File.GetLastWriteTime(fileName);
+				}
+				newFile = tParsedData;
+				_fileLastModified = System.IO.File.GetLastWriteTime(fileName);
                 _fileLastModifiedFileName = fileName;
                 _fileName = fileName;
                 

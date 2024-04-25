@@ -43,6 +43,9 @@
     <Reference Include="ComponentFactory.Krypton.Toolkit">
       <HintPath>..\..\EQ\Krypton\Bin\ComponentFactory.Krypton.Toolkit.dll</HintPath>
     </Reference>
+    <Reference Include="Google.Protobuf, Version=3.26.1.0, Culture=neutral, PublicKeyToken=a7d26565bac4d604, processorArchitecture=MSIL">
+      <HintPath>..\packages\Google.Protobuf.3.26.1\lib\net45\Google.Protobuf.dll</HintPath>
+    </Reference>
     <Reference Include="NaCl, Version=0.1.13.0, Culture=neutral, PublicKeyToken=827c20e50a9775fa, processorArchitecture=MSIL">
       <HintPath>..\packages\NaCl.Net.0.1.13\lib\net472\NaCl.dll</HintPath>
     </Reference>
@@ -90,6 +93,7 @@
     <Compile Include="ConfigEditor.Designer.cs">
       <DependentUpon>ConfigEditor.cs</DependentUpon>
     </Compile>
+    <Compile Include="MQ\MQClient.cs" />
     <Compile Include="Program.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
     <Compile Include="TGA\TargaImage.cs" />

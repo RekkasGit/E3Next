@@ -1,5 +1,6 @@
 ﻿using E3Core.Processors;
 using E3Core.Utility;
+using Google.Protobuf;
 using MonoCore;
 using NetMQ.Sockets;
 using Newtonsoft.Json;
@@ -57,7 +58,7 @@ namespace E3Core.Server
         RouterSocket _rpcRouter = null;
         Task _serverThread = null;
         NetMQ.Msg routerResponse = new NetMQ.Msg();
-        TimeSpan recieveTimeout = new TimeSpan(0, 0, 0, 0, 50);
+        TimeSpan recieveTimeout = new TimeSpan(0, 0, 0, 0, 1);
         NetMQ.Msg routerMessage = new NetMQ.Msg();
         Int64 counter = 0;
         static TimeSpan timeout = new TimeSpan(0, 0, 0, 5);
@@ -77,8 +78,8 @@ namespace E3Core.Server
         //called by the main C# thread
         public static void ProcessRequests()
         {
-
-            while (_tloRequets.Count > 0)
+            bool _inBulkMode = false;
+            while (_tloRequets.Count > 0 )
             {
                 RouterMessage message;
                 _tloRequets.TryDequeue(out message);
@@ -93,16 +94,85 @@ namespace E3Core.Server
                 else if(String.Equals(query,"${E3.AA.ListAll}", StringComparison.OrdinalIgnoreCase))
                 {
 					List<Data.Spell> aas = e3util.ListAllActiveAA();
-					response = JsonConvert.SerializeObject(aas);
+
+                    SpellDataList spellDatas = new SpellDataList();
+                    foreach(var aa in aas)
+                    {
+                        spellDatas.Data.Add(aa.ToProto());
+                    }
+
+
+                    byte[] bytes = spellDatas.ToByteArray();
+					message.payloadLength = bytes.Length;
+                    Buffer.BlockCopy(bytes, 0, message.payload, 0, message.payloadLength);
+                   
 				}
-                else
+				else if (String.Equals(query, "${E3.SpellBook.ListAll}", StringComparison.OrdinalIgnoreCase))
+				{
+					List<Data.Spell> spells = e3util.ListAllBookSpells();
+
+					SpellDataList spellDatas = new SpellDataList();
+					foreach (var spell in spells)
+					{
+						spellDatas.Data.Add(spell.ToProto());
+					}
+					byte[] bytes = spellDatas.ToByteArray();
+					message.payloadLength = bytes.Length;
+					Buffer.BlockCopy(bytes, 0, message.payload, 0, message.payloadLength);
+
+				}
+				else if (String.Equals(query, "${E3.Discs.ListAll}", StringComparison.OrdinalIgnoreCase))
+				{
+					List<Data.Spell> spells = e3util.ListAllDiscData();
+
+					SpellDataList spellDatas = new SpellDataList();
+					foreach (var spell in spells)
+					{
+						spellDatas.Data.Add(spell.ToProto());
+					}
+					byte[] bytes = spellDatas.ToByteArray();
+					message.payloadLength = bytes.Length;
+					Buffer.BlockCopy(bytes, 0, message.payload, 0, message.payloadLength);
+
+				}
+				else
                 {
-					response = MQ.Query<string>(query);
-
+                    //string return types
+					if (String.Equals(query, "${E3.TLO.BulkBegin}", StringComparison.OrdinalIgnoreCase))
+					{
+						//we are about to get a bunch of TLO requests, stay in this loop until we get a BulkEnd
+						//note this is not safe for multiple clients
+						_inBulkMode = true;
+						response = "TRUE";
+					}
+					else if (String.Equals(query, "${E3.TLO.BulkEnd}", StringComparison.OrdinalIgnoreCase))
+					{
+						//we are ending the TLO bulk mode
+						//note, this isn't safe for mutlipe clients 
+						_inBulkMode = false;
+						response = "TRUE";
+					}
+					else
+					{
+						response = MQ.Query<string>(query);
+					}
+					message.payloadLength = System.Text.Encoding.Default.GetBytes(response, 0, response.Length, message.payload, 0);
 				}
-
-				message.payloadLength = System.Text.Encoding.Default.GetBytes(response, 0, response.Length, message.payload, 0);
                 _tloResposne.Enqueue(message);
+
+
+                if(_inBulkMode)
+                {
+
+                    Int32 bulkSleepCounter = 0;
+                    while(_tloRequets.Count==0 && bulkSleepCounter<1000)
+                    {
+                        //if bulk mode lasts too log without data, kick out of bulk mode after about 1 second
+                        bulkSleepCounter++;
+                        System.Threading.Thread.Sleep(1);
+                    }
+                }
+
             }
         }
 
