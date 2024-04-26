@@ -264,6 +264,7 @@ namespace E3NextConfigEditor
 		private void valuesListBox_SelectedIndexChanged(object sender, EventArgs e)
 		{
 			//is it a spell?
+			Debug.WriteLine("Index Changed");
 			if (valuesListBox.SelectedItem == null) return;
 			string selectedName = valuesListBox.SelectedItem.ToString();
 			if(Spell.LoadedSpellsByName.TryGetValue(selectedName, out var result)) 

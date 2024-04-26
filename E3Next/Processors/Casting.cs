@@ -30,11 +30,18 @@ namespace E3Core.Processors
 		private static ISpawns _spawns = E3.Spawns;
 		private static Logging.LogLevels _previousLogLevel = Logging.LogLevels.Error;
 
-		public static CastReturn Cast(int targetID, Data.Spell spell, Func<Spell, Int32, Int32, bool> interruptCheck = null, bool isNowCast = false)
+		public static CastReturn Cast(int targetID, Data.Spell spell, Func<Spell, Int32, Int32, bool> interruptCheck = null, bool isNowCast = false, bool isEmergency = false)
 		{
 			bool navActive = false;
 			bool navPaused = false;
 			bool e3PausedNav = false;
+			Int32 currentMana = 0;
+			Int32 pctMana = 0;
+			
+			currentMana = MQ.Query<Int32>("${Me.CurrentMana}");
+			pctMana = MQ.Query<Int32>("${Me.PctMana}");
+			
+
 			if (MQ.Query<bool>("${Cursor.ID}"))
 			{
 				e3util.ClearCursor();
@@ -189,7 +196,29 @@ namespace E3Core.Processors
 							Interrupt();
 							return CastReturn.CAST_INTERRUPTED;
 						}
-						if (!isNowCast && NowCast.IsNowCastInQueue())
+
+						if (!isEmergency && Heals.SomeoneNeedEmergencyHealing(currentMana, pctMana))
+						{
+							E3.Bots.Broadcast($"Interrupting [{spell.CastName}] for Emergecy Heal.");
+							Interrupt();
+							E3.ActionTaken = true;
+							//fire of emergency heal asap! checks targets in network and xtarget
+							Heals.SomeoneNeedEmergencyHealing(currentMana, pctMana, true);
+							return CastReturn.CAST_INTERRUPTFORHEAL;
+						}
+						if (!isEmergency && Heals.SomeoneNeedEmergencyHealingGroup(currentMana, pctMana))
+						{
+
+							E3.Bots.Broadcast($"Interrupting [{spell.CastName}] for Emergecy Group Heal.");
+							Interrupt();
+							E3.ActionTaken = true;
+							//fire of emergency heal asap!
+							//checks group members
+							Heals.SomeoneNeedEmergencyHealingGroup(currentMana, pctMana, true);
+							return CastReturn.CAST_INTERRUPTFORHEAL;
+						}
+
+						if (!isNowCast && !isEmergency && NowCast.IsNowCastInQueue())
 						{
 							//we have a nowcast ready to be processed
 							Interrupt();
@@ -573,17 +602,37 @@ namespace E3Core.Processors
 					startCasting:
 
 						//needed for heal interrupt check
-						Int32 currentMana = 0;
-						Int32 pctMana = 0;
-						if (interruptCheck != null)
-						{
-							currentMana = MQ.Query<Int32>("${Me.CurrentMana}");
-							pctMana = MQ.Query<Int32>("${Me.PctMana}");
-						}
+					
+						currentMana = MQ.Query<Int32>("${Me.CurrentMana}");
+						pctMana = MQ.Query<Int32>("${Me.PctMana}");
+						
 
 						while (IsCasting())
 						{
 							//means that we didn't fizzle and are now casting the spell
+
+							//these are outside the no interrupt check
+							if (!isEmergency && Heals.SomeoneNeedEmergencyHealing(currentMana, pctMana))
+							{
+								E3.Bots.Broadcast($"Interrupting [{spell.CastName}] for Emergecy Heal.");
+								Interrupt();
+								E3.ActionTaken = true;
+								//fire of emergency heal asap! checks targets in network and xtarget
+								Heals.SomeoneNeedEmergencyHealing(currentMana, pctMana, true);
+								return CastReturn.CAST_INTERRUPTFORHEAL;
+							}
+							if (!isEmergency && Heals.SomeoneNeedEmergencyHealingGroup(currentMana, pctMana))
+							{
+
+								E3.Bots.Broadcast($"Interrupting [{spell.CastName}] for Emergecy Group Heal.");
+								Interrupt();
+								E3.ActionTaken = true;
+								//fire of emergency heal asap!
+								//checks group members
+								Heals.SomeoneNeedEmergencyHealingGroup(currentMana, pctMana, true);
+								return CastReturn.CAST_INTERRUPTFORHEAL;
+							}
+
 							if (!spell.NoInterrupt)
 							{
 								if (interruptCheck != null && interruptCheck(spell, currentMana, pctMana))
@@ -592,8 +641,9 @@ namespace E3Core.Processors
 									E3.ActionTaken = true;
 									return CastReturn.CAST_INTERRUPTFORHEAL;
 								}
+
 								//check to see if there is a nowcast queued up, if so we need to kickout.
-								if (!isNowCast && NowCastReady())
+								if (!isNowCast && !isEmergency && NowCastReady())
 								{
 									//we have a nowcast ready to be processed
 									Interrupt();
@@ -1265,7 +1315,7 @@ namespace E3Core.Processors
 
 			_log.Write($"Checking if spell is ready on {spell.CastName}");
 
-			if (MQ.Query<bool>($"${{Me.SpellReady[{spell.CastName}]}}") && MQ.Query<Int32>($"${{Me.GemTimer[{spell.CastName}]}}") < 1)
+			if (MQ.Query<Int32>($"${{Me.GemTimer[{spell.CastName}]}}") ==0)
 			{
 				_log.Write($"CheckReady Success! on {spell.CastName}");
 
@@ -1311,7 +1361,7 @@ namespace E3Core.Processors
 		}
 
 
-		public static Boolean CheckReady(Data.Spell spell)
+		public static Boolean CheckReady(Data.Spell spell, bool skipCastCheck = false)
 		{
 			//if your stunned nothing is ready
 			if (MQ.Query<bool>("${Me.Stunned}"))
@@ -1328,13 +1378,16 @@ namespace E3Core.Processors
 			
 			
 			//_log.Write($"CheckReady on {spell.CastName}");
-
-			if (E3.CurrentClass != Data.Class.Bard)
+			if(!skipCastCheck)
 			{
-				while (IsCasting())
+				if (E3.CurrentClass != Data.Class.Bard)
 				{
-					MQ.Delay(20);
+					while (IsCasting())
+					{
+						MQ.Delay(20);
+					}
 				}
+
 			}
 
 			bool returnValue = false;

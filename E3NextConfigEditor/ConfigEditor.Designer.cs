@@ -127,7 +127,7 @@
             | System.Windows.Forms.AnchorStyles.Right)));
 			this.propertyGrid.Location = new System.Drawing.Point(306, 12);
 			this.propertyGrid.Name = "propertyGrid";
-			this.propertyGrid.Size = new System.Drawing.Size(482, 426);
+			this.propertyGrid.Size = new System.Drawing.Size(482, 481);
 			this.propertyGrid.TabIndex = 3;
 			this.propertyGrid.ToolbarVisible = false;
 			// 
@@ -135,7 +135,7 @@
 			// 
 			this.AutoScaleDimensions = new System.Drawing.SizeF(6F, 13F);
 			this.AutoScaleMode = System.Windows.Forms.AutoScaleMode.Font;
-			this.ClientSize = new System.Drawing.Size(800, 450);
+			this.ClientSize = new System.Drawing.Size(800, 505);
 			this.Controls.Add(this.propertyGrid);
 			this.Controls.Add(this.valuesListBox);
 			this.Controls.Add(this.subsectionComboBox);

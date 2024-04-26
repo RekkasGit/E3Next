@@ -205,6 +205,9 @@
     <None Include="Data\ProtoBuff\SpellData.proto" />
     <None Include="packages.config" />
   </ItemGroup>
+  <ItemGroup>
+    <Folder Include="Data\Interfaces\" />
+  </ItemGroup>
   <Import Project="$(MSBuildToolsPath)\Microsoft.CSharp.targets" />
   <PropertyGroup>
     <PostBuildEvent>powershell.exe $(ProjectDir)CopyToEQFolder.ps1</PostBuildEvent>

@@ -374,11 +374,8 @@ namespace E3Core.Processors
                         }
                         InitRezSpells(RezType.Auto);
                         if (_currentRezSpells.Count == 0) return;
-                        if(e3util.IsEQEMU())
-                        {
-							MQ.Cmd($"/t {spawn.DisplayName} Wait4Rez", 100);
-						}
-						//MQ.Delay(1500);
+                       	
+                        E3.Bots.Broadcast($"Trying to rez {spawn.DisplayName}");
 						MQ.Cmd("/corpse");
                         
 

@@ -13,6 +13,7 @@ using System.Runtime.CompilerServices;
 using System.Text;
 using static MonoCore.EventProcessor;
 using E3Core.Server;
+using System.Reflection;
 
 namespace E3Core.Utility
 {
@@ -1341,6 +1342,44 @@ namespace E3Core.Utility
 			}
 			return returnValue;
 		}
+
+  //      public static Dictionary<string,Dictionary<string,List<string>>> GetSettingsMappedToInI()
+  //      {
+  //          Dictionary<string, Dictionary<string, List<string>>> returnValue = new Dictionary<string, Dictionary<string, List<string>>>();
+
+
+  //          //now for some ... reflection
+  //          var type =E3.CharacterSettings.GetType();
+
+  //          foreach(var field in type.GetFields(BindingFlags.Public))
+  //          {
+		//		var customAttributes = (CharacterINIAttribute[])field.GetCustomAttributes();
+		//		foreach (var attribute in customAttributes)
+		//		{
+  //                  Dictionary<string, List<string>> section;
+		//		    if(!returnValue.TryGetValue(attribute.Header,out section))
+  //                  {
+  //                      section = new Dictionary<string, List<string>>();
+  //                      returnValue.Add(attribute.Header, section);
+  //                  }
+                   
+                   
+
+		//		}
+
+
+		//	}
+		//	var fields = typeof(Settings.CharacterSettings).GetFields(BindingFlags.Public);
+
+		//	foreach (var field in fields)
+		//	{
+				
+		//	}
+
+
+
+		//}
+
 		//modified from
 		//https://stackoverflow.com/questions/21750824/how-to-convert-a-string-to-a-mathematical-expression-programmatically
 		private static string[] _operators = { "-", "+", "/", "*", "^" };

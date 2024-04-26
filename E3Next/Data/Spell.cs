@@ -936,9 +936,10 @@ namespace E3Core.Data
 			string t_MinEnd = (MinEnd == 0) ? String.Empty : $"/MinEnd|{MinEnd}";
 			string t_AfterEvent = (String.IsNullOrWhiteSpace(this.AfterEvent)) ? String.Empty : $"/AfterEvent|{AfterEvent}";
 			string t_BeforeEvent = (String.IsNullOrWhiteSpace(this.BeforeEvent)) ? String.Empty : $"/BeforeEvent|{BeforeEvent}";
-
-			//Main=Terror of Mirenilla Rk. II/Gem|4/Ifs|Tanking
-			return $"{CastName}/Gem|{SpellGem}{t_Ifs}{t_checkFor}{t_CastIF}{t_healPct}{t_healthMax}{t_noInterrupt}{t_Zone}{t_MinSick}{t_BeforeSpell}{t_AfterSpell}{t_BeforeEvent}{t_AfterEvent}{t_minMana}{t_maxMana}{t_MinEnd}{t_ignoreStackRules}{t_MinDurationBeforeRecast}{t_MaxTries}";
+			string t_Reagent = (String.IsNullOrWhiteSpace(this.Reagent)) ? String.Empty : $"/Reagent|{Reagent}";
+			
+            //Main=Terror of Mirenilla Rk. II/Gem|4/Ifs|Tanking
+			return $"{CastName}/Gem|{SpellGem}{t_Ifs}{t_checkFor}{t_CastIF}{t_healPct}{t_healthMax}{t_noInterrupt}{t_Zone}{t_MinSick}{t_BeforeSpell}{t_AfterSpell}{t_BeforeEvent}{t_AfterEvent}{t_minMana}{t_maxMana}{t_MinEnd}{t_ignoreStackRules}{t_MinDurationBeforeRecast}{t_MaxTries}{t_Reagent}";
         }
 
 		public override string ToString()

@@ -11,14 +11,34 @@ using static System.Collections.Specialized.BitVector32;
 
 namespace E3Core.Settings
 {
-    //update all peg to laz
-    //get-childitem *_PEQTGC.ini | rename-item -newname {$_.name -replace '_PEQTGC.ini','_Lazarus.ini' }    
-    /// <summary>
-    /// Settings specific to the current character
-    /// </summary>
-    /// <seealso cref="BaseSettings" />
-    /// <seealso cref="IBaseSettings" />
-    public class CharacterSettings : BaseSettings, IBaseSettings
+
+	public class CharacterINIAttribute : Attribute
+	{
+        private string _header;
+
+		public string Header
+		{
+			get { return _header; }
+			set { _header = value; }
+		}
+
+
+		public CharacterINIAttribute(string header)
+		{
+			_header = header;
+		}
+
+	}
+
+	//update all peg to laz
+	//get-childitem *_PEQTGC.ini | rename-item -newname {$_.name -replace '_PEQTGC.ini','_Lazarus.ini' }    
+	/// <summary>
+	/// Settings specific to the current character
+	/// </summary>
+	/// <seealso cref="BaseSettings" />
+	/// <seealso cref="IBaseSettings" />
+	/// 
+	public class CharacterSettings : BaseSettings, IBaseSettings
     {
 #pragma warning disable CS1591 // Missing XML comment for publicly visible type or member
         public IniData ParsedData;
@@ -73,6 +93,7 @@ namespace E3Core.Settings
 		//abilities
 		public List<Spell> MeleeAbilities = new List<Spell>();
         //nukes
+        [CharacterINI("Nukes")]
         public List<Spell> Nukes = new List<Spell>();
         public List<Spell> Stuns = new List<Spell>();
         //dispel
@@ -184,6 +205,10 @@ namespace E3Core.Settings
         public List<Spell> HealPets = new List<Spell>();
         public List<Spell> HealOverTime = new List<Spell>();
         public List<string> HealPetOwners = new List<string>();
+
+        public List<Spell> Heal_EmergencyHeals = new List<Spell>();
+        public List<Spell> Heal_EmergecyGroupHeals = new List<Spell>();
+
         //rez spells
         public List<string> Rez_AutoRezSpells = new List<string>();
         public List<string> Rez_RezSpells = new List<string>();
@@ -577,6 +602,8 @@ namespace E3Core.Settings
 			LoadKeyData("Heals", "Pet Heal", ParsedData, HealPets);
             LoadKeyData("Heals", "Number Of Injured Members For Group Heal", ParsedData, ref HealGroup_NumberOfInjuredMembers);
 
+            LoadKeyData("Heals", "Emergency Group Heal", ParsedData, Heal_EmergecyGroupHeals);
+            LoadKeyData("Heals", "Emergency Heal", ParsedData, Heal_EmergencyHeals);
 
             LoadKeyData("Heals", "Tank", ParsedData, HealTankTargets);
             for (Int32 i = 0; i < HealTankTargets.Count; i++)
@@ -855,6 +882,8 @@ namespace E3Core.Settings
                 section.Keys.AddKey("Pet Owner", "");
                 section.Keys.AddKey("Auto Cast Necro Heal Orbs (On/Off)", "On");
                 section.Keys.AddKey("Number Of Injured Members For Group Heal", "3");
+                section.Keys.AddKey("Emergency Heal", "");
+                section.Keys.AddKey("Emergency Group Heal", "");
             }
 
             if ((CharacterClass & Class.Priest) == CharacterClass || (CharacterClass & Class.Caster) == CharacterClass)

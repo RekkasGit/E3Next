@@ -125,6 +125,8 @@ namespace E3Core.Settings
                     ClassMethodLookup.Add(foundMethod.Name, func);
                 }
             }
+
+           
         }
         public  void CreateSettings()
         {
