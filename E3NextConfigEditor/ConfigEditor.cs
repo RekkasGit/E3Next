@@ -19,6 +19,7 @@ using System.Text;
 using System.Threading.Tasks;
 using System.Windows.Forms;
 using static System.Windows.Forms.VisualStyles.VisualStyleElement.Rebar;
+using E3NextConfigEditor.Extensions;
 
 namespace E3NextConfigEditor
 {
@@ -153,7 +154,7 @@ namespace E3NextConfigEditor
 
 
 		}
-
+		#region comboBoxs
 		private void sectionComboBox_ButtonSpecAny2_Click(object sender, EventArgs e)
 		{
 			if (sectionComboBox.SelectedIndex < (sectionComboBox.Items.Count - 1))
@@ -235,7 +236,7 @@ namespace E3NextConfigEditor
 						KryptonListItem item = new KryptonListItem();
 						item.ShortText = result.SpellName;
 						item.LongText = string.Empty;
-
+						item.Tag = result;
 						if(result.SpellIcon>-1)
 						{
 							item.Image = _spellIcons[result.SpellIcon];
@@ -254,19 +255,97 @@ namespace E3NextConfigEditor
 				
 			
 		}
+		#endregion
+		#region DragNDropListBox
+		Int64 mouseDownTimeStamp = 0;
+		System.Diagnostics.Stopwatch _stopwatch = new Stopwatch();
+		System.Timers.Timer _timer = new System.Timers.Timer(50);
 
 		private void valuesListBox_SelectedIndexChanged(object sender, EventArgs e)
 		{
-
 			//is it a spell?
+			if (valuesListBox.SelectedItem == null) return;
 			string selectedName = valuesListBox.SelectedItem.ToString();
-
 			if(Spell.LoadedSpellsByName.TryGetValue(selectedName, out var result)) 
 			{
 
 				propertyGrid.SelectedObject = new Models.SpellDataProxy(result);
 			}
+		}
+		private void valuesListBox_MouseUp(object sender, MouseEventArgs e)
+		{
+			mouseDownTimeStamp = 0;
+			Debug.WriteLine("Mouse Up");
+		}
+		private void valuesListBox_MouseDown(object sender, MouseEventArgs e)
+		{
+			mouseDownTimeStamp = _stopwatch.ElapsedMilliseconds;
+			Debug.WriteLine("Mouse Down");
+			if (valuesListBox.SelectedItem == null) return;
+			string selectedName = valuesListBox.SelectedItem.ToString();
+			if (Spell.LoadedSpellsByName.TryGetValue(selectedName, out var result))
+			{
+
+				propertyGrid.SelectedObject = new Models.SpellDataProxy(result);
+			}
+			
+		}
+
+
+		private void ConfigEditor_Load(object sender, EventArgs e)
+		{
+			valuesListBox.AllowDrop = true;
+			_stopwatch.Start();
+			_timer.Elapsed += _timer_Elapsed;
+			_timer.Start();
+		}
+
+		private void _timer_Elapsed(object sender, System.Timers.ElapsedEventArgs e)
+		{
+			if(mouseDownTimeStamp !=0 && mouseDownTimeStamp+400 < _stopwatch.ElapsedMilliseconds)
+			{
+				
+				valuesListBox.Invoke((MethodInvoker)delegate
+				{
+					if (valuesListBox.SelectedItem == null) return;
+					valuesListBox.DoDragDrop(valuesListBox.SelectedItem, DragDropEffects.Move);
+					mouseDownTimeStamp = 0;
+				});
+
+				mouseDownTimeStamp = 0;
+			}
+		}
+
+		private void valuesListBox_DragOver(object sender, DragEventArgs e)
+		{
+			e.Effect = DragDropEffects.Move;
+		}
+
+		private void valuesListBox_DragDrop(object sender, DragEventArgs e)
+		{
+			Point point = valuesListBox.PointToClient(new Point(e.X, e.Y));
+			int index = this.valuesListBox.IndexFromPoint(point);
+			if (index < 0) index = this.valuesListBox.Items.Count - 1;
+			object data = valuesListBox.SelectedItem;
+			this.valuesListBox.Items.Remove(data);
+			this.valuesListBox.Items.Insert(index, data);
+			valuesListBox.SelectedIndex = index;
+			
+			mouseDownTimeStamp = 0;
+		}
+		#endregion
+
+		private void valuesListBox_MouseMove(object sender, MouseEventArgs e)
+		{
+			Debug.WriteLine("Mouse move");
 
 		}
+
+		private void valuesListBox_MouseHover(object sender, EventArgs e)
+		{
+			Debug.WriteLine("Mouse Hover");
+		}
+
+		
 	}
 }

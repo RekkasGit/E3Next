@@ -57,12 +57,16 @@
 			// 
 			// sectionComboBox_ButtonSpecAny1
 			// 
+			this.sectionComboBox_ButtonSpecAny1.Style = ComponentFactory.Krypton.Toolkit.PaletteButtonStyle.Inherit;
+			this.sectionComboBox_ButtonSpecAny1.ToolTipStyle = ComponentFactory.Krypton.Toolkit.LabelStyle.ToolTip;
 			this.sectionComboBox_ButtonSpecAny1.Type = ComponentFactory.Krypton.Toolkit.PaletteButtonSpecStyle.ArrowLeft;
 			this.sectionComboBox_ButtonSpecAny1.UniqueName = "07150ABD249746AA3BBF969B010258EE";
 			this.sectionComboBox_ButtonSpecAny1.Click += new System.EventHandler(this.sectionComboBox_ButtonSpecAny1_Click);
 			// 
 			// sectionComboBox_ButtonSpecAny2
 			// 
+			this.sectionComboBox_ButtonSpecAny2.Style = ComponentFactory.Krypton.Toolkit.PaletteButtonStyle.Inherit;
+			this.sectionComboBox_ButtonSpecAny2.ToolTipStyle = ComponentFactory.Krypton.Toolkit.LabelStyle.ToolTip;
 			this.sectionComboBox_ButtonSpecAny2.Type = ComponentFactory.Krypton.Toolkit.PaletteButtonSpecStyle.ArrowRight;
 			this.sectionComboBox_ButtonSpecAny2.UniqueName = "22E191AD9E654F4EDC85CBB96002CD5E";
 			this.sectionComboBox_ButtonSpecAny2.Click += new System.EventHandler(this.sectionComboBox_ButtonSpecAny2_Click);
@@ -84,18 +88,23 @@
 			// 
 			// subsectionComboBox_buttonSpecAny1
 			// 
+			this.subsectionComboBox_buttonSpecAny1.Style = ComponentFactory.Krypton.Toolkit.PaletteButtonStyle.Inherit;
+			this.subsectionComboBox_buttonSpecAny1.ToolTipStyle = ComponentFactory.Krypton.Toolkit.LabelStyle.ToolTip;
 			this.subsectionComboBox_buttonSpecAny1.Type = ComponentFactory.Krypton.Toolkit.PaletteButtonSpecStyle.ArrowLeft;
 			this.subsectionComboBox_buttonSpecAny1.UniqueName = "07150ABD249746AA3BBF969B010258EE";
 			this.subsectionComboBox_buttonSpecAny1.Click += new System.EventHandler(this.subsectionComboBox_buttonSpecAny1_Click);
 			// 
 			// subsectionComboBox_buttonSpecAny2
 			// 
+			this.subsectionComboBox_buttonSpecAny2.Style = ComponentFactory.Krypton.Toolkit.PaletteButtonStyle.Inherit;
+			this.subsectionComboBox_buttonSpecAny2.ToolTipStyle = ComponentFactory.Krypton.Toolkit.LabelStyle.ToolTip;
 			this.subsectionComboBox_buttonSpecAny2.Type = ComponentFactory.Krypton.Toolkit.PaletteButtonSpecStyle.ArrowRight;
 			this.subsectionComboBox_buttonSpecAny2.UniqueName = "22E191AD9E654F4EDC85CBB96002CD5E";
 			this.subsectionComboBox_buttonSpecAny2.Click += new System.EventHandler(this.subsectionComboBox_buttonSpecAny2_Click);
 			// 
 			// valuesListBox
 			// 
+			this.valuesListBox.AllowDrop = true;
 			this.valuesListBox.Items.AddRange(new object[] {
             "item1",
             "item2"});
@@ -104,6 +113,12 @@
 			this.valuesListBox.Size = new System.Drawing.Size(287, 357);
 			this.valuesListBox.TabIndex = 2;
 			this.valuesListBox.SelectedIndexChanged += new System.EventHandler(this.valuesListBox_SelectedIndexChanged);
+			this.valuesListBox.DragDrop += new System.Windows.Forms.DragEventHandler(this.valuesListBox_DragDrop);
+			this.valuesListBox.DragOver += new System.Windows.Forms.DragEventHandler(this.valuesListBox_DragOver);
+			this.valuesListBox.MouseDown += new System.Windows.Forms.MouseEventHandler(this.valuesListBox_MouseDown);
+			this.valuesListBox.MouseHover += new System.EventHandler(this.valuesListBox_MouseHover);
+			this.valuesListBox.MouseMove += new System.Windows.Forms.MouseEventHandler(this.valuesListBox_MouseMove);
+			this.valuesListBox.MouseUp += new System.Windows.Forms.MouseEventHandler(this.valuesListBox_MouseUp);
 			// 
 			// propertyGrid
 			// 
@@ -128,6 +143,7 @@
 			this.DoubleBuffered = true;
 			this.Name = "ConfigEditor";
 			this.Text = "Form1";
+			this.Load += new System.EventHandler(this.ConfigEditor_Load);
 			((System.ComponentModel.ISupportInitialize)(this.sectionComboBox)).EndInit();
 			((System.ComponentModel.ISupportInitialize)(this.subsectionComboBox)).EndInit();
 			this.ResumeLayout(false);

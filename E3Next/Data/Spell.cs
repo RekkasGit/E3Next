@@ -212,10 +212,6 @@ namespace E3Core.Data
                     {
                         HealPct = GetArgument<Int32>(value);
                     }
-                    else if (value.StartsWith("HealPct|", StringComparison.OrdinalIgnoreCase))
-                    {
-                        HealPct = GetArgument<Int32>(value);
-                    }
                     else if (value.StartsWith("Reagent|", StringComparison.OrdinalIgnoreCase))
                     {
                         Reagent = GetArgument<String>(value);
@@ -305,11 +301,11 @@ namespace E3Core.Data
                     }
                     else if (value.StartsWith("Ifs|", StringComparison.OrdinalIgnoreCase))
                     {
-                        string ifKey = GetArgument<string>(value);
+                        IfsKeys = GetArgument<string>(value);
                         var section = parsedData.Sections["Ifs"];
                         if (section != null)
                         {
-                            var keys = ifKey.Split(','); // Splitting based on comma
+                            var keys = IfsKeys.Split(','); // Splitting based on comma
                             foreach (var key in keys)
                             {
                                 var keyData = section[key];
@@ -758,7 +754,8 @@ namespace E3Core.Data
         public String TargetType = String.Empty;
         public Int32 SpellGem;
         public Int32 GiveUpTimer;
-        public Int32 MaxTries = 5;
+        private const Int32 MaxTiresDefault = 5;
+        public Int32 MaxTries = MaxTiresDefault;
         public Dictionary<string, Int32> CheckForCollection = new Dictionary<string, int>();
         public Int32 Duration;
         public Int32 DurationTotalSeconds;
@@ -810,7 +807,8 @@ namespace E3Core.Data
         public Int32 SpellID;
         public Int32 PctAggro;
         public String Zone = "All";
-        public Int32 MinSick = 2;
+        private const Int32 MinSickDefault = 2;
+        public Int32 MinSick = MinSickDefault;
         public Boolean AllowSpellSwap;
         public Boolean NoEarlyRecast;
         public Boolean NoStack;
@@ -824,6 +822,7 @@ namespace E3Core.Data
         public String BeforeEvent = String.Empty;
         public String CastIF = String.Empty;
         public string Ifs = String.Empty;
+        public string IfsKeys = String.Empty;
         public string InitName = String.Empty;
         public bool ReagentOutOfStock = false;
         public bool SpellInBook = false;
@@ -913,8 +912,104 @@ namespace E3Core.Data
             return r;
 
         }
+        public string ToConfigEntry()
+        {
+			
+            string t_Ifs = String.Empty;
+            if(!String.IsNullOrEmpty(this.IfsKeys))
+            {
+                t_Ifs= $"/Ifs|{IfsKeys}";
+            }
+			string t_Zone = String.Empty;
+			if (!String.IsNullOrEmpty(this.Zone))
+			{
+				t_Zone = $"/Zone|{Zone}";
+			}
+			string t_MinSick = String.Empty;
+			if (MinSick!= MinSickDefault)
+			{
+				t_MinSick = $"/MinSick|{MinSick}";
+			}
+			string t_checkFor = String.Empty;
+            if(CheckForCollection.Count>0)
+            {
+                t_checkFor = "/CheckFor|"+String.Join(",", CheckForCollection.Keys.ToList());
+            }
+            string t_healPct = String.Empty;
+            if(HealPct>0)
+            {
+                t_healPct = $"/HealPct|{HealPct}";
+            }
+			string t_noInterrupt = String.Empty;
+			if (NoInterrupt)
+			{
+				t_noInterrupt = $"/NoInterrupt";
+			}
+			string t_AfterSpell = String.Empty;
+			if (!String.IsNullOrEmpty(this.AfterSpell))
+			{
+				t_AfterSpell = $"/AfterSpell|{AfterSpell}";
+			}
+			string t_BeforeSpell = String.Empty;
+			if (!String.IsNullOrEmpty(this.BeforeSpell))
+			{
+				t_BeforeSpell = $"/BeforeSpell|{BeforeSpell}";
+			}
+			string t_minMana = String.Empty;
+			if (MinMana > 0)
+			{
+				t_minMana = $"/MinMana|{MinMana}";
+			}
+			string t_maxMana = String.Empty;
+			if (MaxMana > 0)
+			{
+				t_maxMana = $"/MaxMana|{MaxMana}";
+			}
+			string t_ignoreStackRules = String.Empty;
+			if (IgnoreStackRules)
+			{
+				t_ignoreStackRules = $"/IgnoreStackRules";
+			}
+			string t_healthMax = String.Empty;
+			if (HealthMax>0)
+			{
+				t_healthMax = $"/HealthMax|{HealthMax}";
+			}
+			string t_MinDurationBeforeRecast = String.Empty;
+			if (MinDurationBeforeRecast > 0)
+			{
+				t_MinDurationBeforeRecast = $"/MinDurationBeforeRecast|{MinDurationBeforeRecast}";
+			}
+			string t_MaxTries = String.Empty;
+			if (MaxTries > 0)
+			{
+				t_MaxTries = $"/MaxTries|{MaxTries}";
+			}
+			string t_CastIF = String.Empty;
+			if (!String.IsNullOrEmpty(this.CastIF))
+			{
+				t_CastIF = $"/CastIF|{BeforeSpell}";
+			}
+			string t_MinEnd = String.Empty;
+			if (MinEnd > 0)
+			{
+				t_MinEnd = $"/MinEnd|{MinEnd}";
+			}
+			string t_AfterEvent = String.Empty;
+			if (!String.IsNullOrEmpty(this.AfterEvent))
+			{
+				t_AfterEvent = $"/AfterEvent|{AfterEvent}";
+			}
+			string t_BeforeEvent = String.Empty;
+			if (!String.IsNullOrEmpty(this.BeforeEvent))
+			{
+				t_BeforeEvent = $"/BeforeEvent|{BeforeEvent}";
+			}
+			//Main=Terror of Mirenilla Rk. II/Gem|4/Ifs|Tanking
+			return $"{CastName}/Gem|{SpellGem}{t_Ifs}{t_checkFor}{t_CastIF}{t_healPct}{t_healthMax}{t_noInterrupt}{t_Zone}{t_MinSick}{t_BeforeSpell}{t_AfterSpell}{t_BeforeEvent}{t_AfterEvent}{t_minMana}{t_maxMana}{t_MinEnd}{t_ignoreStackRules}{t_MinDurationBeforeRecast}{t_MaxTries}";
+        }
 
-        public override string ToString()
+		public override string ToString()
         {
             StringBuilder sb = new StringBuilder();
             sb.Append(this.GetType().Name);
