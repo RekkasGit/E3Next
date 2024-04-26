@@ -40,6 +40,9 @@
     <Reference Include="AsyncIO, Version=0.1.69.0, Culture=neutral, PublicKeyToken=44a94435bd6f33f8, processorArchitecture=MSIL">
       <HintPath>..\packages\AsyncIO.0.1.69\lib\net40\AsyncIO.dll</HintPath>
     </Reference>
+    <Reference Include="ComponentFactory.Krypton.Navigator">
+      <HintPath>Krypton\ComponentFactory.Krypton.Navigator.dll</HintPath>
+    </Reference>
     <Reference Include="ComponentFactory.Krypton.Toolkit">
       <HintPath>..\..\EQ\Krypton\Bin\ComponentFactory.Krypton.Toolkit.dll</HintPath>
     </Reference>
@@ -93,10 +96,13 @@
     <Compile Include="ConfigEditor.Designer.cs">
       <DependentUpon>ConfigEditor.cs</DependentUpon>
     </Compile>
+    <Compile Include="Models\SpellDataProxy.cs" />
     <Compile Include="MQ\MQClient.cs" />
     <Compile Include="Program.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
     <Compile Include="TGA\TargaImage.cs" />
+    <Compile Include="Themes\DarkMode.cs" />
+    <Compile Include="Themes\DefaultMode.cs" />
     <EmbeddedResource Include="ConfigEditor.resx">
       <DependentUpon>ConfigEditor.cs</DependentUpon>
     </EmbeddedResource>
@@ -127,6 +133,10 @@
     <ProjectReference Include="..\E3Next\E3Next.csproj">
       <Project>{ca025b4a-d09d-48ad-bf6c-7c303c8b5cb9}</Project>
       <Name>E3Next</Name>
+    </ProjectReference>
+    <ProjectReference Include="..\IniFileParser\INIFileParser.csproj">
+      <Project>{5E46DCF4-C473-4171-9F9B-F3910B5EC407}</Project>
+      <Name>INIFileParser</Name>
     </ProjectReference>
   </ItemGroup>
   <Import Project="$(MSBuildToolsPath)\Microsoft.CSharp.targets" />

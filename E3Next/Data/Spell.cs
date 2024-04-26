@@ -27,6 +27,7 @@ namespace E3Core.Data
     {
         public static Dictionary<Int32, Data.Spell> _loadedSpells = new Dictionary<int, Spell>();
         public static Dictionary<string, Data.Spell> LoadedSpellsByName = new Dictionary<string, Spell>();
+        public static Dictionary<string, Data.Spell> LoadedSpellByConfigEntry = new Dictionary<string, Data.Spell>();
 		static Dictionary<string, Int32> _spellIDLookup = new Dictionary<string, Int32>();
 		public static IMQ MQ = E3.MQ;
 
@@ -52,6 +53,11 @@ namespace E3Core.Data
         }
         public Spell(string spellName, IniData parsedData = null)
         {
+
+            if(!LoadedSpellByConfigEntry.ContainsKey(spellName))
+            {
+                LoadedSpellByConfigEntry.Add(spellName, this);
+            }
 
             SpellName = spellName; //what the thing actually casts
             CastName = spellName;//required to send command
@@ -644,7 +650,7 @@ namespace E3Core.Data
                     SpellName = CastName;
                     SpellID = MQ.Query<Int32>($"${{Me.Book[{bookNumber}].ID}}");
                     CastID = SpellID;
-                    SpellIcon = MQ.Query<Int32>($"${{Me.Book[{bookNumber}].SpellIcon}}}}");
+                    SpellIcon = MQ.Query<Int32>($"${{Me.Book[{bookNumber}].SpellIcon}}");
 					Level = MQ.Query<Int32>($"${{Me.Book[{bookNumber}].Level}}");
 				}
                 else
