@@ -5,6 +5,7 @@ using IniParser.Model;
 using System;
 using System.Collections.Generic;
 using System.Linq;
+using System.Net;
 using System.Runtime.CompilerServices;
 using System.Runtime.Serialization.Formatters;
 using System.Text;
@@ -31,7 +32,7 @@ namespace E3Core.Settings
         public bool General_BeepNotifications = true;
         public bool General_LazarusManaRecovery = true;
 
-
+        public string General_Networking_ExternalIPToQueryForLocal = "8.8.8.8";
 
 		public Int32 Loot_LootItemDelay = 300;
         public string Loot_LinkChannel = String.Empty;
@@ -143,6 +144,13 @@ namespace E3Core.Settings
             LoadKeyData("General", "Heal While Navigating (On/Off)", parsedData, ref General_HealWhileNavigating);
             LoadKeyData("General", "Beep Notifications (On/Off)", parsedData, ref General_BeepNotifications);
             LoadKeyData("General", "LazarusManaRecovery (On/Off)", parsedData, ref General_LazarusManaRecovery);
+            LoadKeyData("General", "ExternalIP To Query For Local Address (8.8.8.8 default)", parsedData, ref General_Networking_ExternalIPToQueryForLocal);
+
+            if(!IPAddress.TryParse(General_Networking_ExternalIPToQueryForLocal,out var result))
+            {
+                General_Networking_ExternalIPToQueryForLocal = "8.8.8.8";
+            }
+
 
             LoadKeyData("Discord Bot", "Token", parsedData, ref DiscordBotToken);
             LoadKeyData("Discord Bot", "Guild Channel ID", parsedData, ref DiscordGuildChannelId);
@@ -313,6 +321,7 @@ namespace E3Core.Settings
             section.Keys.AddKey("NetworkMethod", "EQBC");
             section.Keys.AddKey("E3NetworkAddPathToMonitor", "");
         	section.Keys.AddKey("LazarusManaRecovery (On/Off)", "On");
+			section.Keys.AddKey("ExternalIP To Query For Local Address (8.8.8.8 default)", "8.8.8.8");
 
 			section.Keys.AddKey("Heal While Navigating (On/Off)","On");
             section.Keys.AddKey("Beep Notifications (On/Off)", "On");

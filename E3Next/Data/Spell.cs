@@ -976,15 +976,12 @@ namespace E3Core.Data
 				t_healthMax = $"/HealthMax|{HealthMax}";
 			}
 			string t_MinDurationBeforeRecast = String.Empty;
-			if (MinDurationBeforeRecast > 0)
-			{
-				t_MinDurationBeforeRecast = $"/MinDurationBeforeRecast|{MinDurationBeforeRecast}";
-			}
+			if (MinDurationBeforeRecast > 0) t_MinDurationBeforeRecast = $"/MinDurationBeforeRecast|{MinDurationBeforeRecast}";
+			
 			string t_MaxTries = String.Empty;
-			if (MaxTries > 0)
-			{
-				t_MaxTries = $"/MaxTries|{MaxTries}";
-			}
+			if (MaxTries > 0) t_MaxTries = $"/MaxTries|{MaxTries}";
+			
+
 			string t_CastIF = String.Empty;
 			if (!String.IsNullOrEmpty(this.CastIF))
 			{
