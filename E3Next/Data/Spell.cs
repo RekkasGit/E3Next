@@ -914,94 +914,29 @@ namespace E3Core.Data
         }
         public string ToConfigEntry()
         {
-			
-            string t_Ifs = String.Empty;
-            if(!String.IsNullOrEmpty(this.IfsKeys))
-            {
-                t_Ifs= $"/Ifs|{IfsKeys}";
-            }
-			string t_Zone = String.Empty;
-			if (!String.IsNullOrEmpty(this.Zone))
-			{
-				t_Zone = $"/Zone|{Zone}";
-			}
-			string t_MinSick = String.Empty;
-			if (MinSick!= MinSickDefault)
-			{
-				t_MinSick = $"/MinSick|{MinSick}";
-			}
-			string t_checkFor = String.Empty;
-            if(CheckForCollection.Count>0)
-            {
-                t_checkFor = "/CheckFor|"+String.Join(",", CheckForCollection.Keys.ToList());
-            }
-            string t_healPct = String.Empty;
-            if(HealPct>0)
-            {
-                t_healPct = $"/HealPct|{HealPct}";
-            }
-			string t_noInterrupt = String.Empty;
-			if (NoInterrupt)
-			{
-				t_noInterrupt = $"/NoInterrupt";
-			}
-			string t_AfterSpell = String.Empty;
-			if (!String.IsNullOrEmpty(this.AfterSpell))
-			{
-				t_AfterSpell = $"/AfterSpell|{AfterSpell}";
-			}
-			string t_BeforeSpell = String.Empty;
-			if (!String.IsNullOrEmpty(this.BeforeSpell))
-			{
-				t_BeforeSpell = $"/BeforeSpell|{BeforeSpell}";
-			}
-			string t_minMana = String.Empty;
-			if (MinMana > 0)
-			{
-				t_minMana = $"/MinMana|{MinMana}";
-			}
-			string t_maxMana = String.Empty;
-			if (MaxMana > 0)
-			{
-				t_maxMana = $"/MaxMana|{MaxMana}";
-			}
-			string t_ignoreStackRules = String.Empty;
-			if (IgnoreStackRules)
-			{
-				t_ignoreStackRules = $"/IgnoreStackRules";
-			}
-			string t_healthMax = String.Empty;
-			if (HealthMax>0)
-			{
-				t_healthMax = $"/HealthMax|{HealthMax}";
-			}
-			string t_MinDurationBeforeRecast = String.Empty;
-			if (MinDurationBeforeRecast > 0) t_MinDurationBeforeRecast = $"/MinDurationBeforeRecast|{MinDurationBeforeRecast}";
-			
-			string t_MaxTries = String.Empty;
-			if (MaxTries > 0) t_MaxTries = $"/MaxTries|{MaxTries}";
-			
+			//This is C#'s ternary conditional operator
+            //its condition if true do 1st, else 2nd. 
+			//in this case, if ifskeys is null or empty, set to string empty
+            //else use /Ifs|{IfsKeys}
+            string t_Ifs = (String.IsNullOrWhiteSpace(this.IfsKeys)) ? String.Empty : $"/Ifs|{IfsKeys}";
+            string t_Zone = (String.IsNullOrWhiteSpace(this.Zone)) ? String.Empty :  $"/Zone|{Zone}";
+			string t_MinSick = (MinSick == MinSickDefault) ? String.Empty : t_MinSick = $"/MinSick|{MinSick}";
+	        string t_checkFor = (CheckForCollection.Count == 0) ? String.Empty: t_checkFor = "/CheckFor|" + String.Join(",", CheckForCollection.Keys.ToList());
+            string t_healPct = (HealPct == 0) ?String.Empty :  $"/HealPct|{HealPct}";
+            string t_noInterrupt = (!NoInterrupt) ? String.Empty :$"/NoInterrupt";
+		    string t_AfterSpell = (String.IsNullOrWhiteSpace(this.AfterSpell)) ?String.Empty : t_AfterSpell = $"/AfterSpell|{AfterSpell}";
+			string t_BeforeSpell = (String.IsNullOrWhiteSpace(this.BeforeSpell)) ? String.Empty : t_BeforeSpell = $"/BeforeSpell|{BeforeSpell}";
+            string t_minMana = (MinMana==0) ?String.Empty: $"/MinMana|{MinMana}";
+			string t_maxMana = (MaxMana == 0) ? String.Empty : $"/MaxMana|{MaxMana}";
+			string t_ignoreStackRules = (!IgnoreStackRules) ? String.Empty : $"/IgnoreStackRules";
+			string t_healthMax = (HealthMax == 0) ? String.Empty : $"/HealthMax|{HealthMax}";
+			string t_MinDurationBeforeRecast = (MinDurationBeforeRecast == 0) ? String.Empty : $"/MinDurationBeforeRecast|{MinDurationBeforeRecast}";
+			string t_MaxTries = (MaxTries == MaxTiresDefault) ? String.Empty : $"/MaxTries|{MaxTries}";
+			string t_CastIF = (String.IsNullOrWhiteSpace(this.CastIF)) ? String.Empty : $"/CastIF|{CastIF}";
+			string t_MinEnd = (MinEnd == 0) ? String.Empty : $"/MinEnd|{MinEnd}";
+			string t_AfterEvent = (String.IsNullOrWhiteSpace(this.AfterEvent)) ? String.Empty : $"/AfterEvent|{AfterEvent}";
+			string t_BeforeEvent = (String.IsNullOrWhiteSpace(this.BeforeEvent)) ? String.Empty : $"/BeforeEvent|{BeforeEvent}";
 
-			string t_CastIF = String.Empty;
-			if (!String.IsNullOrEmpty(this.CastIF))
-			{
-				t_CastIF = $"/CastIF|{BeforeSpell}";
-			}
-			string t_MinEnd = String.Empty;
-			if (MinEnd > 0)
-			{
-				t_MinEnd = $"/MinEnd|{MinEnd}";
-			}
-			string t_AfterEvent = String.Empty;
-			if (!String.IsNullOrEmpty(this.AfterEvent))
-			{
-				t_AfterEvent = $"/AfterEvent|{AfterEvent}";
-			}
-			string t_BeforeEvent = String.Empty;
-			if (!String.IsNullOrEmpty(this.BeforeEvent))
-			{
-				t_BeforeEvent = $"/BeforeEvent|{BeforeEvent}";
-			}
 			//Main=Terror of Mirenilla Rk. II/Gem|4/Ifs|Tanking
 			return $"{CastName}/Gem|{SpellGem}{t_Ifs}{t_checkFor}{t_CastIF}{t_healPct}{t_healthMax}{t_noInterrupt}{t_Zone}{t_MinSick}{t_BeforeSpell}{t_AfterSpell}{t_BeforeEvent}{t_AfterEvent}{t_minMana}{t_maxMana}{t_MinEnd}{t_ignoreStackRules}{t_MinDurationBeforeRecast}{t_MaxTries}";
         }
