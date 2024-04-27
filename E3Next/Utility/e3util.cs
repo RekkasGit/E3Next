@@ -1343,43 +1343,70 @@ namespace E3Core.Utility
 			return returnValue;
 		}
 
-  //      public static Dictionary<string,Dictionary<string,List<string>>> GetSettingsMappedToInI()
-  //      {
-  //          Dictionary<string, Dictionary<string, List<string>>> returnValue = new Dictionary<string, Dictionary<string, List<string>>>();
+        public static Dictionary<string,Dictionary<string,FieldInfo>> GetSettingsMappedToInI()
+        {
+            Dictionary<string, Dictionary<string, FieldInfo>> returnValue = new Dictionary<string, Dictionary<string, FieldInfo>>();
 
 
-  //          //now for some ... reflection
-  //          var type =E3.CharacterSettings.GetType();
+            //now for some ... reflection
+            var type =E3.CharacterSettings.GetType();
 
-  //          foreach(var field in type.GetFields(BindingFlags.Public))
-  //          {
-		//		var customAttributes = (CharacterINIAttribute[])field.GetCustomAttributes();
-		//		foreach (var attribute in customAttributes)
-		//		{
-  //                  Dictionary<string, List<string>> section;
-		//		    if(!returnValue.TryGetValue(attribute.Header,out section))
-  //                  {
-  //                      section = new Dictionary<string, List<string>>();
-  //                      returnValue.Add(attribute.Header, section);
-  //                  }
-                   
-                   
+            foreach(var field in type.GetFields())
+            {
+				var customAttributes =field.GetCustomAttributes();
+                string section = String.Empty;
+                string key = String.Empty;
 
-		//		}
+				foreach (var attribute in customAttributes)
+				{
+                    if(attribute is INI_SectionAttribute)
+                    {
+                        var tattribute = ((INI_SectionAttribute)attribute);
 
+                        section = tattribute.Header;
+                        key = tattribute.Key;
+						Dictionary<string, FieldInfo> sectionKeys;
+						if (!returnValue.TryGetValue(section, out sectionKeys))
+						{
+							sectionKeys = new Dictionary<string, FieldInfo>();
+							returnValue.Add(section, sectionKeys);
+						}
+						sectionKeys.Add(key, field);
+					}
+					if (attribute is INI_Section2Attribute)
+					{
+						var tattribute = ((INI_Section2Attribute)attribute);
 
-		//	}
-		//	var fields = typeof(Settings.CharacterSettings).GetFields(BindingFlags.Public);
+						section = tattribute.Header;
+						key = tattribute.Key;
+						Dictionary<string, FieldInfo> sectionKeys;
+						if (!returnValue.TryGetValue(section, out sectionKeys))
+						{
+							sectionKeys = new Dictionary<string, FieldInfo>();
+							returnValue.Add(section, sectionKeys);
+						}
+						sectionKeys.Add(key, field);
+					}
+				}
+             
+			}
+            return returnValue;
+		}
+		public static bool IsGenericList(this FieldInfo o, Type typeToCheck)
+		{
+			var oType = o.FieldType;
+			if (oType.IsGenericType && (oType.GetGenericTypeDefinition() == typeof(List<>)))
+            {
+				Type itemType = oType.GetGenericArguments()[0]; // use this...
 
-		//	foreach (var field in fields)
-		//	{
-				
-		//	}
+                if(itemType==typeToCheck)
+                {
+                    return true;
+                }
 
-
-
-		//}
-
+			}
+			return false;
+		}
 		//modified from
 		//https://stackoverflow.com/questions/21750824/how-to-convert-a-string-to-a-mathematical-expression-programmatically
 		private static string[] _operators = { "-", "+", "/", "*", "^" };

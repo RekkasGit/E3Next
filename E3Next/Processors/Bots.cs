@@ -86,7 +86,7 @@ namespace E3Core.Processors
 			EventProcessor.RegisterCommand("/e3GlobalBroadcast", (x) =>
 			{
 				GlobalAllEnabled = !GlobalAllEnabled;
-				Broadcast($"\agSetting Global Boradcast to {GlobalAllEnabled}");
+				Broadcast($"\agSetting Global Broadcast to {GlobalAllEnabled}");
 
 			});
 			EventProcessor.RegisterCommand("/e3bc", (x) =>
@@ -892,7 +892,7 @@ namespace E3Core.Processors
 			EventProcessor.RegisterCommand("/e3GlobalBroadcast", (x) =>
 			{
 				GlobalAllEnabled = !GlobalAllEnabled;
-				Broadcast($"\agSetting Global Boradcast to {GlobalAllEnabled}");
+				Broadcast($"\agSetting Global Broadcast to {GlobalAllEnabled}");
 
 			});
 		}

@@ -12,24 +12,52 @@ using static System.Collections.Specialized.BitVector32;
 namespace E3Core.Settings
 {
 
-	public class CharacterINIAttribute : Attribute
-	{
+    public class INI_SectionAttribute : Attribute
+    {
         private string _header;
+        private string _key;
+
+        public string Header
+        {
+            get { return _header; }
+            set { _header = value; }
+        }
+        public string Key
+        {
+            get { return _key; }
+            set { _key = value; }
+        }
+
+        public INI_SectionAttribute(string header, string key)
+        {
+            _header = header;
+            _key = key;
+        }
+
+    }
+	public class INI_Section2Attribute : Attribute
+	{
+		private string _header;
+		private string _key;
 
 		public string Header
 		{
 			get { return _header; }
 			set { _header = value; }
 		}
+		public string Key
+		{
+			get { return _key; }
+			set { _key = value; }
+		}
 
-
-		public CharacterINIAttribute(string header)
+		public INI_Section2Attribute(string header, string key)
 		{
 			_header = header;
+			_key = key;
 		}
 
 	}
-
 	//update all peg to laz
 	//get-childitem *_PEQTGC.ini | rename-item -newname {$_.name -replace '_PEQTGC.ini','_Lazarus.ini' }    
 	/// <summary>
@@ -45,196 +73,342 @@ namespace E3Core.Settings
         private readonly string CharacterName;
         private readonly string ServerName;
         private readonly Class CharacterClass;
-        public bool Misc_AutoFoodEnabled;
-        public bool Misc_DismountOnInterrupt = true;
-        public string Misc_AutoFood;
-        public string Misc_AutoDrink;
-        public bool Misc_EndMedBreakInCombat;
-        public bool Misc_AutoMedBreak;
-        public bool Misc_AutoLootEnabled;
 
-      
-        
-        public string Misc_AnchorChar = string.Empty;
-        public bool Misc_RemoveTorporAfterCombat = true;
-        public Int32 Misc_DelayAfterCastWindowDropsForSpellCompletion = 0;
-       
-        public bool Misc_AutoForage = false;
-        
-        public bool Rogue_AutoHide = false;
-        public bool Rogue_AutoEvade = false;
-        public int Rogue_EvadePct = 0;
-        public string Rogue_PoisonPR = string.Empty;
-        public string Rogue_PoisonFR = string.Empty;
-        public string Rogue_PoisonCR = string.Empty;
-        public string Rogue_SneakAttack = string.Empty;
+		[INI_Section("Misc", "AutoFood")]
+		public bool Misc_AutoFoodEnabled;
+		[INI_Section("Misc", "Dismount On Interrupt (On/Off)")]
+		public bool Misc_DismountOnInterrupt = true;
+		[INI_Section("Misc", "Food")]
+		public string Misc_AutoFood;
+		[INI_Section("Misc", "Drink")]
+		public string Misc_AutoDrink;
+		[INI_Section("Misc", "End MedBreak in Combat(On/Off)")]
+		public bool Misc_EndMedBreakInCombat;
+		[INI_Section("Misc", "AutoMedBreak (On/Off)")]
+		public bool Misc_AutoMedBreak;
+		[INI_Section("Misc", "Auto-Loot (On/Off)")]
+		public bool Misc_AutoLootEnabled;
 
-        public List<MelodyIfs> Bard_MelodyIfs = new List<MelodyIfs>();
-        public List<Spell> Bard_AutoMezSong = new List<Spell>();
 
-        public List<Spell> CasterEvacs = new List<Spell>();
-        public List<string> E3ChatChannelsToJoin = new List<string>();
+		[INI_Section("Misc", "Anchor (Char to Anchor to)")]
+		public string Misc_AnchorChar = string.Empty;
+		[INI_Section("Misc", "Remove Torpor After Combat")]
+		public bool Misc_RemoveTorporAfterCombat = true;
+		[INI_Section("Misc", "Delay in MS After CastWindow Drops For Spell Completion")]
+		public Int32 Misc_DelayAfterCastWindowDropsForSpellCompletion = 0;
 
+
+		[INI_Section("Misc", "Auto-Forage (On/Off)")]
+		public bool Misc_AutoForage = false;
+
+
+		[INI_Section("Rogue", "Auto-Hide (On/Off)")]
+		public bool Rogue_AutoHide = false;
+		[INI_Section("Rogue", "Auto-Evade (On/Off)")]
+		public bool Rogue_AutoEvade = false;
+		[INI_Section("Rogue", "Evade PctAggro")]
+		public int Rogue_EvadePct = 0;
+		[INI_Section("Rogue", "PoisonPR")]
+		public string Rogue_PoisonPR = string.Empty;
+		[INI_Section("Rogue", "PoisonFR")]
+		public string Rogue_PoisonFR = string.Empty;
+		[INI_Section("Rogue", "PoisonCR")]
+		public string Rogue_PoisonCR = string.Empty;
+		[INI_Section("Rogue", "Sneak Attack Discipline")]
+		public string Rogue_SneakAttack = string.Empty;
+		[INI_Section("Bard", "MelodyIf")]
+		public List<MelodyIfs> Bard_MelodyIfs = new List<MelodyIfs>();
+		[INI_Section("Bard", "AutoMezSong")]
+		public List<Spell> Bard_AutoMezSong = new List<Spell>();
+
+		[INI_Section("Druid", "Evac Spell")]
+		[INI_Section2("Wizard", "Evac Spell")]
+		public List<Spell> CasterEvacs = new List<Spell>();
+
+		[INI_Section("E3ChatChannelsToJoin", "Channel")]
+		public List<string> E3ChatChannelsToJoin = new List<string>();
+		
+        [INI_Section("Druid", "Auto-Cheetah (On/Off)")]
 		public bool Druid_AutoCheetah = true;
-        public bool Bard_AutoSonata = true;
+		[INI_Section("Bard", "Auto-Sonata (On/Off)")]
+		public bool Bard_AutoSonata = true;
 
-        public string Assist_Type = string.Empty;
-        public string Assist_MeleeStickPoint = string.Empty;
-        public bool Assist_TauntEnabled = false;
-        public bool Assist_SmartTaunt = false;
-        public string Assist_MeleeDistance = "MaxMelee";
-        public string Assist_RangeDistance = "100";
-        public int Assist_AutoAssistPercent = 98;
-        public bool Assist_DelayStrafeEnabled = true;
-        public Int32 Assist_DelayStrafeDelay = 1500;
-        private string _fileName = String.Empty;
-        public bool Assist_PetBackOffOnenrage = false;
-        public bool Assist_BackOffOnEnrage = false;
-		//abilities
+		[INI_Section("Assist Settings", "Assist Type (Melee/Ranged/Off)")]
+		public string Assist_Type = string.Empty;
+		[INI_Section("Assist Settings", "Melee Stick Point")]
+		public string Assist_MeleeStickPoint = string.Empty;
+		[INI_Section("Assist Settings", "Taunt(On/Off)")]
+		public bool Assist_TauntEnabled = false;
+		[INI_Section("Assist Settings", "SmartTaunt(On/Off)")]
+		public bool Assist_SmartTaunt = false;
+		[INI_Section("Assist Settings", "Melee Distance")]
+		public string Assist_MeleeDistance = "MaxMelee";
+		[INI_Section("Assist Settings", "Ranged Distance")]
+		public string Assist_RangeDistance = "100";
+		[INI_Section("Assist Settings", "Auto-Assist Engage Percent")]
+		public int Assist_AutoAssistPercent = 98;
+		[INI_Section("Assist Settings", "Delayed Strafe Enabled (On/Off)")]
+		public bool Assist_DelayStrafeEnabled = true;
+	
+        //not explosed for some reason?
+		public Int32 Assist_DelayStrafeDelay = 1500;
+       
+		[INI_Section("Assist Settings", "Pet back off on Enrage (On/Off)")]
+		public bool Assist_PetBackOffOnenrage = false;
+		[INI_Section("Assist Settings", "Back off on Enrage (On/Off)")]
+		public bool Assist_BackOffOnEnrage = false;
+
+		[INI_Section("Melee Abilities", "Ability")]
 		public List<Spell> MeleeAbilities = new List<Spell>();
-        //nukes
-        [CharacterINI("Nukes")]
+        
+        [INI_Section("Nukes","Main")]
         public List<Spell> Nukes = new List<Spell>();
-        public List<Spell> Stuns = new List<Spell>();
-        //dispel
-        public List<Spell> Dispels = new List<Spell>();
-        public List<Spell> DispelIgnore = new List<Spell>();
+        
+        [INI_Section("Stuns", "Main")]
+		public List<Spell> Stuns = new List<Spell>();
+	    
+        [INI_Section("Dispel","Main")]
+		public List<Spell> Dispels = new List<Spell>();
+		
+        [INI_Section("Dispel", "Ignore")]
+		public List<Spell> DispelIgnore = new List<Spell>();
 
-        //buffs
-        public List<Spell> InstantBuffs = new List<Spell>();
-        public List<Spell> SelfBuffs = new List<Spell>();
-        public List<Spell> BotBuffs = new List<Spell>();
-        public List<Spell> GroupBuffs = new List<Spell>();
-        public List<Spell> CombatBuffs = new List<Spell>();
-        public List<Spell> PetBuffs = new List<Spell>();
+		[INI_Section("Buffs", "Instant Buff")]
+		public List<Spell> InstantBuffs = new List<Spell>();
+		[INI_Section("Buffs", "Self Buff")]
+		public List<Spell> SelfBuffs = new List<Spell>();
+		[INI_Section("Buffs", "Bot Buff")]
+		public List<Spell> BotBuffs = new List<Spell>();
+		[INI_Section("Buffs", "Group Buff")]
+		public List<Spell> GroupBuffs = new List<Spell>();
+		[INI_Section("Buffs", "Combat Buff")]
+		public List<Spell> CombatBuffs = new List<Spell>();
+
+		[INI_Section("Buffs", "Pet Buff")]
+		[INI_Section2("Pets", "Pet Buff")]
+		public List<Spell> PetBuffs = new List<Spell>();
+		
+        [INI_Section("Buffs", "Combat Pet Buff")]
+		[INI_Section2("Pets", "Combat Pet Buff")]
 		public List<Spell> CombatPetBuffs = new List<Spell>();
+		[INI_Section("Buffs", "Cast Aura(On/Off)")]
 		public bool Buffs_CastAuras = true;
+		[INI_Section("Buffs", "Aura")]
 		public List<Spell> Buffs_Auras = new List<Spell>();
-        public List<Spell> BlockedPetBuffs = new List<Spell>();
-        public List<SpellRequest> GroupBuffRequests = new List<SpellRequest>();
-        public List<SpellRequest> RaidBuffRequests = new List<SpellRequest>();
 
-        public List<SpellRequest> StackBuffRequest = new List<SpellRequest>();
+		[INI_Section2("Pets", "Blocked Pet Buff")]
+		public List<Spell> BlockedPetBuffs = new List<Spell>();
 
-        //gimme
-        public List<string> Gimme = new List<string>();
-        public bool Gimme_InCombat = true;
-        //pets
-        public List<Spell> PetSpell = new List<Spell>();
-        public List<Spell> PetHeals = new List<Spell>();
-        public int Pet_MendPercent;
-        public bool Pet_TauntEnabled;
-        public bool Pet_AutoShrink;
-        public bool Pet_SummonCombat;
-        public bool Pet_BuffCombat;
-        //debuffs
-        public List<Spell> Debuffs_OnAssist = new List<Spell>();
-        public List<Spell> Debuffs_Command = new List<Spell>();
-        public List<Spell> Debuffs_All = new List<Spell>();
-        //dots
-        public List<Spell> Dots_OnCommand = new List<Spell>();
-        public List<Spell> Dots_Assist = new List<Spell>();
-        //aoe
-        public List<Spell> PBAE = new List<Spell>();
-        public List<Spell> TargetAE = new List<Spell>();
-        //burns
-        public List<Spell> QuickBurns = new List<Spell>();
-        public List<Spell> LongBurns = new List<Spell>();
-        public List<Spell> FullBurns = new List<Spell>();
-        //cures
-        public bool AutoRadiant = false;
-        public List<Spell> Cures = new List<Spell>();
-        public List<Spell> CureAll = new List<Spell>();
-        public List<Spell> RadiantCure = new List<Spell>();
-        public List<Spell> CurseCounterCure = new List<Spell>();
+		[INI_Section("Buffs", "Group Buff Request")]
+		public List<SpellRequest> GroupBuffRequests = new List<SpellRequest>();
+		[INI_Section("Buffs", "Raid Buff Request")]
+		public List<SpellRequest> RaidBuffRequests = new List<SpellRequest>();
+		[INI_Section("Buffs", "Stack Buff Request")]
+		public List<SpellRequest> StackBuffRequest = new List<SpellRequest>();
+
+		[INI_Section("Gimme", "Gimme")]
+		public List<string> Gimme = new List<string>();
+		[INI_Section("Gimme", "Gimme-InCombat")]
+		public bool Gimme_InCombat = true;
+
+		[INI_Section("Pets", "Pet Spell")]
+		public List<Spell> PetSpell = new List<Spell>();
+		
+        [INI_Section("Pets", "Pet Heal")]
+		public List<Spell> PetHeals = new List<Spell>();
+
+		[INI_Section("Pets", "Pet Mend (Pct)")]
+		public int Pet_MendPercent;
+		[INI_Section("Pets", "Pet Taunt (On/Off)")]
+		public bool Pet_TauntEnabled;
+		[INI_Section("Pets", "Pet Auto-Shrink (On/Off)")]
+		public bool Pet_AutoShrink;
+		[INI_Section("Pets", "Pet Summon Combat (On/Off)")]
+		public bool Pet_SummonCombat;
+
+		//debuffs
+		[INI_Section("Debuffs", "Debuff on Assist")]
+		public List<Spell> Debuffs_OnAssist = new List<Spell>();
+		[INI_Section("Debuffs", "Debuff on Command")]
+		public List<Spell> Debuffs_Command = new List<Spell>();
+
+		//dots
+		[INI_Section("DoTs on Command", "Main")]
+		public List<Spell> Dots_OnCommand = new List<Spell>();
+		[INI_Section("DoTs on Assist", "Main")]
+		public List<Spell> Dots_Assist = new List<Spell>();
+		//aoe
+		[INI_Section("PBAE", "PBAE")]
+		public List<Spell> PBAE = new List<Spell>();
+		//burns
+		[INI_Section("Burn", "Quick Burn")]
+		public List<Spell> QuickBurns = new List<Spell>();
+		[INI_Section("Burn", "Long Burn")]
+		public List<Spell> LongBurns = new List<Spell>();
+		[INI_Section("Burn", "Full Burn")]
+		public List<Spell> FullBurns = new List<Spell>();
+		//cures
+		[INI_Section("Cures", "Cure")]
+		public List<Spell> Cures = new List<Spell>();
+		[INI_Section("Cures", "CureAll")]
+		public List<Spell> CureAll = new List<Spell>();
+		[INI_Section("Cures", "RadiantCure")]
+		public List<Spell> RadiantCure = new List<Spell>();
+		[INI_Section("Cures", "CurseCounters")]
+		public List<Spell> CurseCounterCure = new List<Spell>();
+		[INI_Section("Cures", "CurseCountersIgnore")]
 		public List<Spell> CurseCounterIgnore = new List<Spell>();
+		[INI_Section("Cures", "CorruptedCounters")]
 		public List<Spell> CorruptedCounterCure = new List<Spell>();
+		[INI_Section("Cures", "CorruptedCountersIgnore")]
 		public List<Spell> CorruptedCounterIgnore = new List<Spell>();
+		[INI_Section("Cures", "PoisonCounters")]
 		public List<Spell> PoisonCounterCure = new List<Spell>();
-        public List<Spell> PoisonCounterIgnore = new List<Spell>();
-        public List<Spell> DiseaseCounterCure = new List<Spell>();
-        public List<Spell> DiseaseCounterIgnore = new List<Spell>();
-        //life support
-        public List<Spell> LifeSupport = new List<Spell>();
+		[INI_Section("Cures", "PoisonCountersIgnore")]
+		public List<Spell> PoisonCounterIgnore = new List<Spell>();
+		[INI_Section("Cures", "DiseaseCounters")]
+		public List<Spell> DiseaseCounterCure = new List<Spell>();
+		[INI_Section("Cures", "DiseaseCountersIgnore")]
+		public List<Spell> DiseaseCounterIgnore = new List<Spell>();
 
-        //blocked buffs
-        public List<Spell> BlockedBuffs = new List<Spell>();
 
-        public bool IfFDStayDown = false;
+		//life support
+		[INI_Section("Life Support", "Life Support")]
+		public List<Spell> LifeSupport = new List<Spell>();
 
-        //bando buffs
-        public bool BandoBuff_Enabled = false;
+		//blocked buffs
+		[INI_Section("Blocked Buffs", "BuffName")]
+		public List<Spell> BlockedBuffs = new List<Spell>();
+
+		[INI_Section("Misc", "If FD stay down (true/false)")]
+		public bool IfFDStayDown = false;
+
+		//bando buffs
+		[INI_Section("Bando Buff", "Enabled")]
+		public bool BandoBuff_Enabled = false;
+		[INI_Section("Bando Buff", "BuffName")]
 		public string BandoBuff_BuffName = String.Empty;
+		[INI_Section("Bando Buff", "DebuffName")]
 		public string BandoBuff_DebuffName = String.Empty;
+		[INI_Section("Bando Buff", "PrimaryWithBuff")]
 		public string BandoBuff_Primary = String.Empty;
+		[INI_Section("Bando Buff", "SecondaryWithBuff")]
 		public string BandoBuff_Secondary = String.Empty;
+		[INI_Section("Bando Buff", "PrimaryWithoutBuff")]
 		public string BandoBuff_PrimaryWithoutBuff = String.Empty;
+		[INI_Section("Bando Buff", "SecondaryWithoutBuff")]
 		public string BandoBuff_SecondaryWithoutBuff = String.Empty;
-	    public string BandoBuff_BandoName = String.Empty;
+		[INI_Section("Bando Buff", "BandoNameWithBuff")]
+		public string BandoBuff_BandoName = String.Empty;
+		[INI_Section("Bando Buff", "BandoNameWithoutBuff")]
 		public string BandoBuff_BandoNameWithoutBuff = String.Empty;
+		[INI_Section("Bando Buff", "BandoNameWithoutDeBuff")]
 		public string BandoBuff_BandoNameWithoutDeBuff = String.Empty;
 
 		//manastone
+		[INI_Section("Manastone", "Manastone Enabled (On/Off)")]
 		public bool Manastone_Enabled = true;
-        public bool Manastone_OverrideGeneralSettings = false;
-        public Int32 ManaStone_NumberOfClicksPerLoop = 40;
-        public Int32 ManaStone_NumberOfLoops = 25;
-        public Int32 ManaStone_DelayBetweenLoops = 50;
-
-        public bool ManaStone_EnabledInCombat = true;
-        public Int32 ManaStone_InCombatMinMana = 40;
-        public Int32 ManaStone_InCombatMaxMana = 75;
-        public Int32 ManaStone_MinHP = 60;
-        public Int32 ManaStone_OutOfCombatMinMana = 85;
-        public Int32 ManaStone_OutOfCombatMaxMana = 95;
+		[INI_Section("Manastone", "Override General Settings (On/Off)")]
+		public bool Manastone_OverrideGeneralSettings = false;
+		[INI_Section("Manastone", "NumberOfClicksPerLoop")]
+		public Int32 ManaStone_NumberOfClicksPerLoop = 40;
+		[INI_Section("Manastone", "NumberOfLoops")]
+		public Int32 ManaStone_NumberOfLoops = 25;
+		[INI_Section("Manastone", "DelayBetweenLoops (in milliseconds)")]
+		public Int32 ManaStone_DelayBetweenLoops = 50;
+		[INI_Section("Manastone", "Use In Combat")]
+		public bool ManaStone_EnabledInCombat = true;
+		[INI_Section("Manastone", "In Combat MinMana")]
+		public Int32 ManaStone_InCombatMinMana = 40;
+		[INI_Section("Manastone", "In Combat MaxMana")]
+		public Int32 ManaStone_InCombatMaxMana = 75;
+		[INI_Section("Manastone", "Min HP")]
+		public Int32 ManaStone_MinHP = 60;
+		[INI_Section("Manastone", "Out of Combat MinMana")]
+		public Int32 ManaStone_OutOfCombatMinMana = 85;
+		[INI_Section("Manastone", "Out of Combat MaxMana")]
+		public Int32 ManaStone_OutOfCombatMaxMana = 95;
+		[INI_Section("Manastone", "ExceptionZone")]
 		public HashSet<string> ManaStone_ExceptionZones = new HashSet<string> {};
-        public List<string> ManaStone_ExceptionMQQuery = new List<string>();
-
+		[INI_Section("Manastone", "ExceptionMQQuery")]
+		public List<string> ManaStone_ExceptionMQQuery = new List<string>();
+		[INI_Section("Startup Commands", "Command")]
+		public List<string> StartupCommands = new List<string>();
 		//heals
+		[INI_Section("Heals", "Tank")]
 		public List<string> HealTankTargets = new List<string>();
-        public List<Spell> HealTanks = new List<Spell>();
+		[INI_Section("Heals", "Tank Heal")]
+		public List<Spell> HealTanks = new List<Spell>();
+		[INI_Section("Heals", "Important Bot")]
+		public List<string> HealImportantBotTargets = new List<string>();
+		[INI_Section("Heals", "Important Heal")]
+		public List<Spell> HealImportantBots = new List<Spell>();
+		
+		[INI_Section("Heals", "Group Heal")]
+		public List<Spell> HealGroup = new List<Spell>();
+		[INI_Section("Heals", "Number Of Injured Members For Group Heal")]
+		public Int32 HealGroup_NumberOfInjuredMembers = 3;
+		[INI_Section("Heals", "All Heal")]
+		public List<Spell> HealAll = new List<Spell>();
+		[INI_Section("Heals", "Party Heal")]
+		public List<Spell> HealParty = new List<Spell>();
+		[INI_Section("Heals", "XTarget Heal")]
+		public List<Spell> HealXTarget = new List<Spell>();
+		[INI_Section("Heals", "Pet Heal")]
+		public List<Spell> HealPets = new List<Spell>();
+		[INI_Section("Heals", "Heal Over Time Spell")]
+		public List<Spell> HealOverTime = new List<Spell>();
+		[INI_Section("Heals", "Pet Owner")]
+		public List<string> HealPetOwners = new List<string>();
+		[INI_Section("Heals", "Emergency Heal")]
+		public List<Spell> Heal_EmergencyHeals = new List<Spell>();
+		[INI_Section("Heals", "Emergency Group Heal")]
+		public List<Spell> Heal_EmergecyGroupHeals = new List<Spell>();
 
-        public List<string> HealImportantBotTargets = new List<string>();
-        public List<Spell> HealImportantBots = new List<Spell>();
-        public List<string> StartupCommands = new List<string>();
-        public List<Spell> HealGroup = new List<Spell>();
-        public Int32 HealGroup_NumberOfInjuredMembers = 3;
-        public List<Spell> HealAll = new List<Spell>();
-        public List<Spell> HealParty = new List<Spell>();
-        public List<Spell> HealXTarget = new List<Spell>();
-        public List<Spell> HealPets = new List<Spell>();
-        public List<Spell> HealOverTime = new List<Spell>();
-        public List<string> HealPetOwners = new List<string>();
+		//rez spells
+		[INI_Section("Rez", "Auto Rez Spells")]
+		public List<string> Rez_AutoRezSpells = new List<string>();
+		[INI_Section("Rez", "Rez Spells")]
+		public List<string> Rez_RezSpells = new List<string>();
+		[INI_Section("Rez", "AutoRez")]
+		public bool Rez_AutoRez = false;
 
-        public List<Spell> Heal_EmergencyHeals = new List<Spell>();
-        public List<Spell> Heal_EmergecyGroupHeals = new List<Spell>();
-
-        //rez spells
-        public List<string> Rez_AutoRezSpells = new List<string>();
-        public List<string> Rez_RezSpells = new List<string>();
-        public bool Rez_AutoRez = false;
-
-        //report
-        public List<Spell> Report_Entries = new List<Spell>();
+		//report
+		[INI_Section("Report", "ReportEntry")]
+		public List<Spell> Report_Entries = new List<Spell>();
 
 
-        //E3BotsPublishData
-        public Dictionary<string,string> E3BotsPublishData = new Dictionary<string,string>();
+		//E3BotsPublishData
+		[INI_Section("E3BotsPublishData (key/value)", "")]
+		public Dictionary<string,string> E3BotsPublishData = new Dictionary<string,string>();
 
-        //charm data
-        public Spell Charm_CharmSpell = null;
-        public List<Spell> Charm_CharmOhShitSpells = new List<Spell>();
-        public List<Spell> Charm_SelfDebuffSpells = new List<Spell>();
+		//charm data
+		[INI_Section("Charm", "CharmSpell")]
+		public Spell Charm_CharmSpell = null;
+		[INI_Section("Charm", "CharmOhShitSpells")]
+		public List<Spell> Charm_CharmOhShitSpells = new List<Spell>();
+		[INI_Section("Charm", "SelfDebuffSpells")]
+		public List<Spell> Charm_SelfDebuffSpells = new List<Spell>();
+		[INI_Section("Charm", "BadPetBuffs")]
 		public List<Spell> Charm_BadPetBuffs = new List<Spell>();
-        public string Charm_PeelTank = String.Empty;
-        public List<Spell> Charm_PeelTankAggroAbility = new List<Spell>();
-        public string Charm_PeelHealer = String.Empty;
-        public List<Spell> Charm_PeelHealerHeal = new List<Spell>();
-        public string Charm_PeelPetOwner = String.Empty;
-        public string Charm_PeelSnarePerson = String.Empty;
-        public List<Spell> Charm_PeelSnareSpell  = new List<Spell>();
-        public string Charm_PeelDebuffPerson = String.Empty;
-        public List<Spell> Charm_PeelDebuffSpells = new List<Spell>();
+		[INI_Section("Charm", "PeelTank")]
+		public string Charm_PeelTank = String.Empty;
+		[INI_Section("Charm", "PellTankAggroAbility")]
+		public List<Spell> Charm_PeelTankAggroAbility = new List<Spell>();
+		[INI_Section("Charm", "PeelHealer")]
+		public string Charm_PeelHealer = String.Empty;
+		[INI_Section("Charm", "PeelHealerHeal")]
+		public List<Spell> Charm_PeelHealerHeal = new List<Spell>();
+		[INI_Section("Charm", "PeelPetOwner")]
+		public string Charm_PeelPetOwner = String.Empty;
+		[INI_Section("Charm", "PeelSnarePerson")]
+		public string Charm_PeelSnarePerson = String.Empty;
+		[INI_Section("Charm", "PeelSnareSpell")]
+		public List<Spell> Charm_PeelSnareSpell  = new List<Spell>();
+		[INI_Section("Charm", "PeelDebuffPerson")]
+		public string Charm_PeelDebuffPerson = String.Empty;
+		[INI_Section("Charm", "PeelDebuffSpells")]
+		public List<Spell> Charm_PeelDebuffSpells = new List<Spell>();
 
 		//
 
@@ -243,34 +417,63 @@ namespace E3Core.Settings
 		public bool LootCommander_Enabled;
         public List<string> LootCommander_Looters = new List<string>();
 
+		[INI_Section("CPU", "ProcessLoopDelayInMS")]
 		public Int32 CPU_ProcessLoopDelay = 50;
-        public Int32 CPU_PublishStateDataInMS = 50;
-        public Int32 CPU_PublishBuffDataInMS = 1000;
-        public Int32 CPU_PublishSlowDataInMS = 1000;
-        public bool CPU_Camping_PauseAt30Seconds = true;
+		[INI_Section("CPU", "PublishStateDataInMS")]
+		public Int32 CPU_PublishStateDataInMS = 50;
+		[INI_Section("CPU", "PublishBuffDataInMS")]
+		public Int32 CPU_PublishBuffDataInMS = 1000;
+		[INI_Section("CPU", "PublishSlowDataInMS")]
+		public Int32 CPU_PublishSlowDataInMS = 1000;
+		[INI_Section("CPU", "Camp Pause at 30 seconds")]
+		public bool CPU_Camping_PauseAt30Seconds = true;
+		[INI_Section("CPU", "Camp Pause at 20 seconds")]
 		public bool CPU_Camping_PauseAt20Seconds = true;
-        public bool CPU_Camping_ShutdownAt5Seconds = true;
+		[INI_Section("CPU", "Camp Shutdown at 5 seconds")]
+		public bool CPU_Camping_ShutdownAt5Seconds = true;
 
+		[INI_Section("Magician", "Pet Weapons")]
 		public Dictionary<string, string> PetWeapons = new Dictionary<string, string>();
-        public bool AutoPetWeapons = false;
-        public bool KeepOpenInventorySlot = false;
-        public bool IgnorePetWeaponRequests = false;
-        public bool AutoCanni = false;
-        public int MalosTotemSpellGem;
-        public List<Spell> CanniSpell = new List<Spell>();
+		[INI_Section("Magician", "Auto-Pet Weapons (On/Off)")]
+		public bool AutoPetWeapons = false;
+		[INI_Section("Magician", "Keep Open Inventory Slot (On/Off)")]
+		public bool KeepOpenInventorySlot = false;
+		[INI_Section("Magician", "Ignore Pet Weapon Requests (On/Off)")]
+		public bool IgnorePetWeaponRequests = false;
 
-        public bool AutoParagon = false;
-        public Spell ParagonSpell = null;
-        public int ParagonManaPct = 60;
-        public bool AutoFocusedParagon = false;
-        public Spell FocusedParagonSpell = null;
-        public List<string> FocusedParagonCharacters = new List<string>();
-        public int FocusedParagonManaPct = 70;
+		[INI_Section("Shaman", "Auto-Canni (On/Off)")]
+		public bool AutoCanni = false;
+		[INI_Section("Shaman", "Malos Totem Spell Gem")]
+		public int MalosTotemSpellGem;
+		[INI_Section("Shaman", "Canni")]
+		public List<Spell> CanniSpell = new List<Spell>();
+
+
+
+		[INI_Section("Auto Paragon", "Auto Paragon (On/Off)")]
+		public bool AutoParagon = false;
+		[INI_Section("Auto Paragon", "Paragon Spell")]
+		public Spell ParagonSpell = null;
+		[INI_Section("Auto Paragon", "Paragon Mana (Pct)")]
+		public int ParagonManaPct = 60;
+		[INI_Section("Auto Paragon", "Auto Focused Paragon (On/Off)")]
+		public bool AutoFocusedParagon = false;
+		[INI_Section("Auto Paragon", "Focused Paragon Spell")]
+		public Spell FocusedParagonSpell = null;
+		[INI_Section("Auto Paragon", "Character")]
+		public List<string> FocusedParagonCharacters = new List<string>();
+		[INI_Section("Auto Paragon", "Focused Paragon Mana (Pct)")]
+		public int FocusedParagonManaPct = 70;
+
+
         private bool _mergeUpdates = true;
-        public HashSet<string> WhoToHeal = new HashSet<string>(10, StringComparer.OrdinalIgnoreCase);
+
+		
+		public HashSet<string> WhoToHeal = new HashSet<string>(10, StringComparer.OrdinalIgnoreCase);
         public bool HealAutoNecroOrbs = false;
         private string _whoToHealString;
-        public string WhoToHealString
+		[INI_Section("Heals", "Who to Heal")]
+		public string WhoToHealString
         {
             get { return _whoToHealString; }
             set
@@ -289,8 +492,8 @@ namespace E3Core.Settings
         }
         public HashSet<string> WhoToHoT = new HashSet<string>(10, StringComparer.OrdinalIgnoreCase);
         private string _whoToHoTString;
-
-        public string WhoToHoTString
+		[INI_Section("Heals", "Who to HoT")]
+		public string WhoToHoTString
         {
             get { return _whoToHoTString; }
             set
@@ -308,16 +511,20 @@ namespace E3Core.Settings
             }
         }
 
-        //offassist
-        public List<Spell> OffAssistSpells = new List<Spell>();
+		//offassist
+		[INI_Section("Off Assist Spells", "Main")]
+		public List<Spell> OffAssistSpells = new List<Spell>();
 
-        //clearcursor delete
-        public List<String> Cursor_Delete = new List<string>();
+		//clearcursor delete
+		[INI_Section("Cursor Delete", "Delete")]
+		public List<String> Cursor_Delete = new List<string>();
 
-        /// <summary>
-        /// Initializes a new instance of the <see cref="CharacterSettings"/> class.
-        /// </summary>
-        public CharacterSettings(bool mergeUpdates = true)
+
+		private string _fileName = String.Empty;
+		/// <summary>
+		/// Initializes a new instance of the <see cref="CharacterSettings"/> class.
+		/// </summary>
+		public CharacterSettings(bool mergeUpdates = true)
         {
             _mergeUpdates = mergeUpdates;
             CharacterName = E3.CurrentName;
@@ -544,7 +751,6 @@ namespace E3Core.Settings
             LoadKeyData("Dispel", "Main", ParsedData, Dispels);
             LoadKeyData("Dispel", "Ignore", ParsedData, DispelIgnore);
 
-            LoadKeyData("TargetAE", "TargetAE", ParsedData, PBAE);
             LoadKeyData("PBAE", "PBAE", ParsedData, PBAE);
 
             LoadKeyData("Life Support", "Life Support", ParsedData, LifeSupport);
@@ -598,7 +804,7 @@ namespace E3Core.Settings
             LoadKeyData("Heals", "Heal Over Time Spell", ParsedData, HealOverTime);
             LoadKeyData("Heals", "Group Heal", ParsedData, HealGroup);
 			LoadKeyData("Heals", "Party Heal", ParsedData, HealParty);
-
+			//LoadKeyData("Heals", "Pet Heal", ParsedData, PetHeals);
 			LoadKeyData("Heals", "Pet Heal", ParsedData, HealPets);
             LoadKeyData("Heals", "Number Of Injured Members For Group Heal", ParsedData, ref HealGroup_NumberOfInjuredMembers);
 
@@ -618,7 +824,7 @@ namespace E3Core.Settings
                 HealImportantBotTargets[i] = e3util.FirstCharToUpper(HealImportantBotTargets[i]);
             }
 
-            LoadKeyData("Heals", "Pet Heal", ParsedData, PetHeals);
+          
 
             //parse out the Tanks/XTargets/etc into collections via the Set method on the
             //property set method

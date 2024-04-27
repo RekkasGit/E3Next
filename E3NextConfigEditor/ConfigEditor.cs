@@ -20,6 +20,7 @@ using System.Threading.Tasks;
 using System.Windows.Forms;
 using static System.Windows.Forms.VisualStyles.VisualStyleElement.Rebar;
 using E3NextConfigEditor.Extensions;
+using System.Reflection;
 
 namespace E3NextConfigEditor
 {
@@ -27,6 +28,8 @@ namespace E3NextConfigEditor
 	{
 		public static DealerClient _tloClient;
 		public static List<Bitmap> _spellIcons = new List<Bitmap>();
+		public static Dictionary<string, Dictionary<string, FieldInfo>> _charSettingsMappings;
+		public static E3Core.Data.Class CurrentClass;
 		public ConfigEditor()
 		{
 
@@ -35,32 +38,7 @@ namespace E3NextConfigEditor
 
 			LoadData();
 
-			List<string> importantSections = new List<string>() { "Misc", "Assist Settings", "Nukes", "Debuffs", "DoTs on Assist", "DoTs on Command", "Heals", "Buffs", "Melee Abilities", "Burn", "Pets", "Ifs" };
-
-			List<string> sectionNames = new List<string>();
-			foreach( var section in E3.CharacterSettings.ParsedData.Sections) 
-			{
-
-				sectionNames.Add(section.SectionName);
-
-			}
-			sectionNames = sectionNames.OrderBy(x => x).ToList();
-
-			foreach(var section in importantSections)
-			{
-				if(E3.CharacterSettings.ParsedData.Sections.ContainsSection(section))
-				{
-					sectionComboBox.Items.Add(section);
-
-				}
-			}
-
-			foreach(var section in sectionNames)
-			{
-				if (importantSections.Contains(section, StringComparer.OrdinalIgnoreCase)) continue;
-				sectionComboBox.Items.Add(section);
-			}
-
+			
 		}
 
 
@@ -73,7 +51,8 @@ namespace E3NextConfigEditor
 			//System.Windows.Forms.Application.DoEvents();
 			//this.Opacity = 100;
 
-			_tloClient = new DealerClient(58008);
+
+			_tloClient = new DealerClient(49793);
 			IMQ _mqClient = new MQ.MQClient(_tloClient);
 
 			byte[] result = _tloClient.RequestRawData("${E3.AA.ListAll}");
@@ -85,6 +64,8 @@ namespace E3NextConfigEditor
 			result = _tloClient.RequestRawData("${E3.Discs.ListAll}");
 			SpellDataList discs = SpellDataList.Parser.ParseFrom(result);
 
+			string classValue = e3util.ClassNameFix(_tloClient.RequestData("${Me.Class}"));
+            System.Enum.TryParse(classValue, out CurrentClass);
 
 
 			//lets sort all the spells by cataegory/subcategory and levels
@@ -150,8 +131,35 @@ namespace E3NextConfigEditor
 					}
 				}
 			}
-			
 
+			_charSettingsMappings = e3util.GetSettingsMappedToInI();
+
+			List<string> importantSections = new List<string>() { "Misc", "Assist Settings", "Nukes", "Debuffs", "DoTs on Assist", "DoTs on Command", "Heals", "Buffs", "Melee Abilities", "Burn", "Pets", "Ifs" };
+
+			List<string> sectionNames = new List<string>();
+			foreach (var section in E3.CharacterSettings.ParsedData.Sections)
+			{
+
+				sectionNames.Add(section.SectionName);
+
+			}
+			sectionNames = sectionNames.OrderBy(x => x).ToList();
+
+			foreach (var section in importantSections)
+			{
+				if (E3.CharacterSettings.ParsedData.Sections.ContainsSection(section))
+				{
+					sectionComboBox.Items.Add(section);
+
+				}
+			}
+
+			foreach (var section in sectionNames)
+			{
+				if (importantSections.Contains(section, StringComparer.OrdinalIgnoreCase)) continue;
+				sectionComboBox.Items.Add(section);
+
+			}
 
 		}
 		#region comboBoxs
@@ -195,6 +203,9 @@ namespace E3NextConfigEditor
 				}
 			}
 
+
+
+
 		}
 
 		private void subsectionComboBox_buttonSpecAny1_Click(object sender, EventArgs e)
@@ -225,6 +236,7 @@ namespace E3NextConfigEditor
 			if (section != null)
 			{
 				string selectedSubSection = subsectionComboBox.SelectedItem.ToString();
+
 
 
 				var valueList = section.GetKeyData(selectedSubSection).ValueList;
