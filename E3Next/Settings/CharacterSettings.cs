@@ -78,10 +78,10 @@ namespace E3Core.Settings
 		public bool Misc_AutoFoodEnabled;
 		[INI_Section("Misc", "Dismount On Interrupt (On/Off)")]
 		public bool Misc_DismountOnInterrupt = true;
-		[INI_Section("Misc", "Food")]
-		public string Misc_AutoFood;
+        [INI_Section("Misc", "Food")]
+        public string Misc_AutoFood = String.Empty;
 		[INI_Section("Misc", "Drink")]
-		public string Misc_AutoDrink;
+		public string Misc_AutoDrink = String.Empty;
 		[INI_Section("Misc", "End MedBreak in Combat(On/Off)")]
 		public bool Misc_EndMedBreakInCombat;
 		[INI_Section("Misc", "AutoMedBreak (On/Off)")]
@@ -91,7 +91,7 @@ namespace E3Core.Settings
 
 
 		[INI_Section("Misc", "Anchor (Char to Anchor to)")]
-		public string Misc_AnchorChar = string.Empty;
+		public string Misc_AnchorChar = String.Empty;
 		[INI_Section("Misc", "Remove Torpor After Combat")]
 		public bool Misc_RemoveTorporAfterCombat = true;
 		[INI_Section("Misc", "Delay in MS After CastWindow Drops For Spell Completion")]

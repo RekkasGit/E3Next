@@ -97,6 +97,7 @@
       <DependentUpon>ConfigEditor.cs</DependentUpon>
     </Compile>
     <Compile Include="Extensions\ListBoxExtensions.cs" />
+    <Compile Include="Models\RefDataProxy.cs" />
     <Compile Include="Models\SpellDataProxy.cs" />
     <Compile Include="MQ\MQClient.cs" />
     <Compile Include="Program.cs" />

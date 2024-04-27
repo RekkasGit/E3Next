@@ -492,8 +492,11 @@ namespace E3Core.Data
                     RecastTime = MQ.Query<Int32>($"${{Me.Inventory[{invSlot}].Spell.RecastTime}}");
                     RecoveryTime = MQ.Query<Decimal>($"${{Me.Inventory[{invSlot}].Spell.RecoveryTime}}");
                     MyCastTime = MQ.Query<Decimal>($"${{Me.Inventory[{invSlot}].Spell.CastTime}}");
+                    Description = MQ.Query<String>($"${{Me.Inventory[{invSlot}].Spell.Description}}");
+                    ResistType = MQ.Query<String>($"${{Me.Inventory[{invSlot}].Spell.ResistType}}");
+					ResistAdj = MQ.Query<Int32>($"${{Me.Inventory[{invSlot}].Spell.ResistAdj}}");
 
-                    double AERange = MQ.Query<double>($"${{Me.Inventory[{invSlot}].Spell.AERange}}");
+					double AERange = MQ.Query<double>($"${{Me.Inventory[{invSlot}].Spell.AERange}}");
                     MyRange = AERange;
                     if (MyRange == 0)
                     {
@@ -513,6 +516,7 @@ namespace E3Core.Data
                     SpellIcon = MQ.Query<Int32>($"${{Me.Inventory[{invSlot}].Spell.SpellIcon}}");
 					SpellType = MQ.Query<String>($"${{Me.Inventory[{invSlot}].Spell.SpellType}}");
 					IsShortBuff = MQ.Query<bool>($"${{Me.Inventory[{invSlot}].Spell.DurationWindow}}");
+                    
 				}
                 else
                 {
@@ -525,8 +529,11 @@ namespace E3Core.Data
                     RecastTime = MQ.Query<Int32>($"${{Me.Inventory[{invSlot}].Item[{bagSlot}].Spell.RecastTime}}");
                     RecoveryTime = MQ.Query<Decimal>($"${{Me.Inventory[{invSlot}].Item[{bagSlot}].Spell.RecoveryTime}}");
                     MyCastTime = MQ.Query<Decimal>($"${{Me.Inventory[{invSlot}].Item[{bagSlot}].CastTime}}");
+                    Description = MQ.Query<String>($"${{Me.Inventory[{invSlot}].Item[{bagSlot}].Spell.Description}}");
+					ResistType = MQ.Query<String>($"${{Me.Inventory[{invSlot}].Item[{bagSlot}].Spell.ResistType}}");
+					ResistAdj = MQ.Query<Int32>($"${{Me.Inventory[{invSlot}].Item[{bagSlot}].Spell.ResistAdj}}");
 
-                    double AERange = MQ.Query<double>($"${{Me.Inventory[{invSlot}].Item[{bagSlot}].Spell.AERange}}");
+					double AERange = MQ.Query<double>($"${{Me.Inventory[{invSlot}].Item[{bagSlot}].Spell.AERange}}");
                     MyRange = AERange;
                     if (MyRange == 0)
                     {
@@ -562,6 +569,9 @@ namespace E3Core.Data
                 MyRange = MQ.Query<double>($"${{Me.AltAbility[{CastName}].Spell.MyRange}}");
                 SpellType = MQ.Query<String>($"${{Spell[{CastName}].SpellType}}");
 				SpellIcon = MQ.Query<Int32>($"${{Spell[{CastName}].SpellIcon}}");
+                Description = MQ.Query<String>($"${{Spell[{CastName}].Description}}");
+				ResistType = MQ.Query<String>($"${{Me.AltAbility[{CastName}].Spell.ResistType}}");
+				ResistAdj = MQ.Query<Int32>($"${{Me.AltAbility[{CastName}].Spell.ResistAdj}}");
 
 				if (SpellType.Equals("Detrimental", StringComparison.OrdinalIgnoreCase))
                 {
@@ -596,6 +606,7 @@ namespace E3Core.Data
 				IsShortBuff = MQ.Query<bool>($"${{Me.AltAbility[{CastName}].Spell.DurationWindow}}");
                 Category = MQ.Query<String>($"${{Me.AltAbility[{CastName}].Spell.Category}}");
                 Subcategory = MQ.Query<String>($"${{Me.AltAbility[{CastName}].Spell.Subcategory}}");
+               
 			}
 			else if (CastType == CastType.Spell)
             {
@@ -618,7 +629,9 @@ namespace E3Core.Data
                     IsShortBuff = MQ.Query<bool>($"${{Me.Book[{bookNumber}].DurationWindow}}");
                     Subcategory = MQ.Query<string>($"${{Me.Book[{bookNumber}].Subcategory}}");
                     Category = MQ.Query<string>($"${{Me.Book[{bookNumber}].Category}}");
-                   
+                    Description= MQ.Query<string>($"${{Me.Book[{bookNumber}].Description}}");
+					ResistType = MQ.Query<String>($"${{Me.Book[{bookNumber}].ResistType}}");
+					ResistAdj = MQ.Query<Int32>($"${{Me.Book[{bookNumber}].ResistAdj}}");
 
 					if (SpellType.Equals("Detrimental", StringComparison.OrdinalIgnoreCase))
                     {
@@ -667,6 +680,11 @@ namespace E3Core.Data
                     Category = MQ.Query<string>($"${{Spell[{CastName}].Category}}");
                     SpellIcon = MQ.Query<Int32>($"${{Spell[{CastName}].SpellIcon}}");
                     Level = MQ.Query<Int32>($"${{Spell[{CastName}].Level}}");
+                    Description = MQ.Query<string>($"${{Spell[{CastName}].Description}}");
+					ResistType = MQ.Query<String>($"${{Spell[{CastName}].ResistType}}");
+					ResistAdj = MQ.Query<Int32>($"${{Spell[{CastName}].ResistAdj}}");
+
+
 					if (SpellType.Equals("Detrimental", StringComparison.OrdinalIgnoreCase))
                     {
 
@@ -716,6 +734,9 @@ namespace E3Core.Data
                 SpellType = MQ.Query<String>($"${{Spell[{CastName}].SpellType}}");
 				IsShortBuff = MQ.Query<bool>($"${{Spell[{CastName}].DurationWindow}}");
                 SpellIcon = MQ.Query<Int32>($"${{Spell[{CastName}].SpellIcon}}");
+                Description = MQ.Query<String>($"${{Spell[{CastName}].Description}}");
+				ResistType = MQ.Query<String>($"${{Spell[{CastName}].ResistType}}");
+				ResistAdj = MQ.Query<Int32>($"${{Spell[{CastName}].ResistAdj}}");
 
 
 			}
@@ -836,7 +857,9 @@ namespace E3Core.Data
         public bool IsDebuff = false;
         public bool IsDoT = false;
         public Int32 Level = 255;
-
+        public string Description  = String.Empty;
+        public Int32 ResistAdj = 0;
+        public string ResistType = String.Empty;
         public SpellData ToProto()
         {
 
@@ -909,6 +932,9 @@ namespace E3Core.Data
             r.TriggerSpell =this.TriggerSpell;
             r.Zone = this.Zone;
             r.Level = this.Level;
+            r.Description = this.Description;
+            r.ResistType = this.ResistType;
+            r.ResistAdj = this.ResistAdj;
             return r;
 
         }

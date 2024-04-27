@@ -87,4 +87,7 @@ message SpellData {
     bool Rotate=69;
     string AfterSpell=70;
     int32 Level = 71;
+    string Description=72;
+    string ResistType=73;
+    int32 ResistAdj = 74;
 }

@@ -227,6 +227,7 @@ namespace E3NextConfigEditor
 			}
 		}
 
+
 		private void subsectionComboBox_SelectedIndexChanged(object sender, EventArgs e)
 		{
 			valuesListBox.Items.Clear();
@@ -238,30 +239,131 @@ namespace E3NextConfigEditor
 				string selectedSubSection = subsectionComboBox.SelectedItem.ToString();
 
 
+				var objectList = _charSettingsMappings[selectedSection][selectedSubSection];
 
-				var valueList = section.GetKeyData(selectedSubSection).ValueList;
-
-				foreach (var value in valueList)
+				if(objectList.IsGenericList(typeof(Spell)))
 				{
-					if (Spell.LoadedSpellByConfigEntry.TryGetValue(value, out var result))
+					
+					List<Spell> spellList = (List<Spell>)objectList.GetValue(E3.CharacterSettings);
+				
+					valuesListBox.Tag= spellList;
+					foreach(var spell in spellList)
 					{
 						KryptonListItem item = new KryptonListItem();
-						item.ShortText = result.SpellName;
+						item.ShortText = spell.SpellName;
 						item.LongText = string.Empty;
-						item.Tag = result;
-						if(result.SpellIcon>-1)
+						item.Tag = spell;
+						if (spell.SpellIcon > -1)
 						{
-							item.Image = _spellIcons[result.SpellIcon];
+							item.Image = _spellIcons[spell.SpellIcon];
 
 						}
-						//item.Image = imageList.Images[_rand.Next(imageList.Images.Count - 1)];
 						valuesListBox.Items.Add(item);
 					}
-					else
+
+				}
+				else if(objectList.IsGenericList(typeof(SpellRequest)))
+				{
+					List<SpellRequest> spellList = (List<SpellRequest>)objectList.GetValue(E3.CharacterSettings);
+					valuesListBox.Tag = spellList;
+					foreach (var spell in spellList)
 					{
-						valuesListBox.Items.Add(value);
+						KryptonListItem item = new KryptonListItem();
+						item.ShortText = spell.SpellName;
+						item.LongText = string.Empty;
+						item.Tag = spell;
+						if (spell.SpellIcon > -1)
+						{
+							item.Image = _spellIcons[spell.SpellIcon];
+
+						}
+						valuesListBox.Items.Add(item);
 					}
 				}
+				else if (objectList.IsGenericList(typeof(String)))
+				{
+					List<string> spellList = (List<string>)objectList.GetValue(E3.CharacterSettings);
+					valuesListBox.Tag = spellList;
+					foreach (var spell in spellList)
+					{
+						KryptonListItem item = new KryptonListItem();
+						item.ShortText = spell;
+						item.LongText = string.Empty;
+						item.Tag = spell;
+						valuesListBox.Items.Add(item);
+					}
+				}
+				else
+				{
+					//value data types, going to have to do some reflection shenanagins
+					object value = objectList.GetValue(E3.CharacterSettings);
+					KryptonListItem item = new KryptonListItem();
+					string displayText = value.ToString();
+					if (String.IsNullOrWhiteSpace(displayText))
+					{
+						displayText = "[Not Set]";
+					}
+					item.ShortText = displayText;
+					item.LongText = string.Empty;
+					//create a reference holder
+					if (value is string)
+					{
+						Models.Ref<string> refInstance = new Models.Ref<String>(() => (string)objectList.GetValue(E3.CharacterSettings), v => { objectList.SetValue(E3.CharacterSettings,v); });
+						refInstance.ListItem = item;
+						refInstance.ListBox = valuesListBox;
+						item.Tag = refInstance;
+					}
+					else if (value is bool)
+					{
+
+						Models.Ref<bool> refInstance = new Models.Ref<bool>(() => (bool)objectList.GetValue(E3.CharacterSettings), v => { objectList.SetValue(E3.CharacterSettings, v); });
+						refInstance.ListItem = item;
+						refInstance.ListBox = valuesListBox;
+						item.Tag = refInstance;
+					}
+					else if (value is Int32)
+					{
+
+						Models.Ref<Int32> refInstance = new Models.Ref<Int32>(() => (Int32)objectList.GetValue(E3.CharacterSettings), v => { objectList.SetValue(E3.CharacterSettings, v); });
+						refInstance.ListItem = item;
+						refInstance.ListBox = valuesListBox;
+						item.Tag = refInstance;
+					}
+					else if (value is Int64)
+					{
+
+						Models.Ref<Int64> refInstance = new Models.Ref<Int64>(() => (Int64)objectList.GetValue(E3.CharacterSettings), v => { objectList.SetValue(E3.CharacterSettings, v); });
+						refInstance.ListItem = item;
+						refInstance.ListBox = valuesListBox;
+						item.Tag = refInstance;
+					}
+					valuesListBox.Items.Add(item);
+
+				}
+
+				//var valueList = section.GetKeyData(selectedSubSection).ValueList;
+
+				//foreach (var value in valueList)
+				//{
+				//	if (Spell.LoadedSpellByConfigEntry.TryGetValue(value, out var result))
+				//	{
+				//		KryptonListItem item = new KryptonListItem();
+				//		item.ShortText = result.SpellName;
+				//		item.LongText = string.Empty;
+				//		item.Tag = result;
+				//		if(result.SpellIcon>-1)
+				//		{
+				//			item.Image = _spellIcons[result.SpellIcon];
+
+				//		}
+				//		//item.Image = imageList.Images[_rand.Next(imageList.Images.Count - 1)];
+				//		valuesListBox.Items.Add(item);
+				//	}
+				//	else
+				//	{
+				//		valuesListBox.Items.Add(value);
+				//	}
+				//}
 
 			}
 				
@@ -273,17 +375,39 @@ namespace E3NextConfigEditor
 		System.Diagnostics.Stopwatch _stopwatch = new Stopwatch();
 		System.Timers.Timer _timer = new System.Timers.Timer(50);
 
+		private void updatePropertyGrid()
+		{
+			propertyGrid.SelectedObject = null;
+			//need to pull out the Tag and verify which type so we know what to pass to the 
+			//property grid
+			KryptonListItem listItem = ((KryptonListItem)valuesListBox.SelectedItem);
+			if (listItem.Tag is Spell)
+			{
+				
+				propertyGrid.SelectedObject = new Models.SpellDataProxy((Spell)listItem.Tag);
+				
+			}
+			else if (listItem.Tag is SpellRequest)
+			{
+				propertyGrid.SelectedObject = new Models.SpellRequestDataProxy((SpellRequest)listItem.Tag);
+			}
+			else if (listItem.Tag is Models.Ref<string> || listItem.Tag is Models.Ref<bool> || listItem.Tag is Models.Ref<Int32> || listItem.Tag is Models.Ref<Int64>)
+			{
+
+				propertyGrid.SelectedObject = listItem.Tag;
+			
+			}
+			
+		}
+
 		private void valuesListBox_SelectedIndexChanged(object sender, EventArgs e)
 		{
 			//is it a spell?
 			Debug.WriteLine("Index Changed");
 			if (valuesListBox.SelectedItem == null) return;
-			string selectedName = valuesListBox.SelectedItem.ToString();
-			if(Spell.LoadedSpellsByName.TryGetValue(selectedName, out var result)) 
-			{
 
-				propertyGrid.SelectedObject = new Models.SpellDataProxy(result);
-			}
+			updatePropertyGrid();
+			
 		}
 		private void valuesListBox_MouseUp(object sender, MouseEventArgs e)
 		{
@@ -295,13 +419,9 @@ namespace E3NextConfigEditor
 			mouseDownTimeStamp = _stopwatch.ElapsedMilliseconds;
 			Debug.WriteLine("Mouse Down");
 			if (valuesListBox.SelectedItem == null) return;
-			string selectedName = valuesListBox.SelectedItem.ToString();
-			if (Spell.LoadedSpellsByName.TryGetValue(selectedName, out var result))
-			{
 
-				propertyGrid.SelectedObject = new Models.SpellDataProxy(result);
-			}
-			
+			updatePropertyGrid();
+
 		}
 
 

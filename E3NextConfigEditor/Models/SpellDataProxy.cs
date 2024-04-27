@@ -31,7 +31,27 @@ namespace E3NextConfigEditor.Models
 			get { return _spell.SpellIcon; }
 
 		}
+		[Category("Spell Data")]
+		[Description("Description")]
+		public String Description
+		{
+			get { return _spell.Description; }
 
+		}
+		[Category("Spell Data")]
+		[Description("ResistType")]
+		public String ResistType
+		{
+			get { return _spell.ResistType; }
+
+		}
+		[Category("Spell Data")]
+		[Description("Resist Adjustment")]
+		public Int32 ResistAdj
+		{
+			get { return _spell.ResistAdj; }
+
+		}
 		[Category("Flags")]
 		[Description("Prevent this from being interrupted")]
 		public bool NoInterrupt
@@ -40,5 +60,16 @@ namespace E3NextConfigEditor.Models
 			set { _spell.NoInterrupt = value; }
 		}
 
+	}
+
+	public class SpellRequestDataProxy:SpellDataProxy
+	{
+		private SpellRequest _spell;
+
+		public SpellRequestDataProxy(SpellRequest spell) : base(spell)
+		{
+			_spell = spell;
+
+		}
 	}
 }
