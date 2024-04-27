@@ -67,7 +67,7 @@ namespace E3NextConfigEditor.MQ
 		public T Query<T>(string query)
 		{
 			string mqReturnValue = _tloClient.RequestData(query);
-			Debug.WriteLine($"[{System.DateTime.Now.ToString()}] {mqReturnValue}");
+			//Debug.WriteLine($"[{System.DateTime.Now.ToString()}] {mqReturnValue}");
 
 			if (typeof(T) == typeof(Int32))
 			{

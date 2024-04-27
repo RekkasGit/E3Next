@@ -1,10 +1,6 @@
 ﻿using ComponentFactory.Krypton.Toolkit;
 using System;
-using System.Collections.Generic;
 using System.ComponentModel;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
 
 namespace E3NextConfigEditor.Models
 {
@@ -14,10 +10,12 @@ namespace E3NextConfigEditor.Models
 		private Action<T> setter;
 		KryptonListItem _listItem;
 		KryptonListBox _listBox;
-		public Ref(Func<T> getter, Action<T> setter)
+		bool _refreshList = false;
+		public Ref(Func<T> getter, Action<T> setter, bool refreshList = false)
 		{
 			this.getter = getter;
 			this.setter = setter;
+			_refreshList = refreshList;
 		}
 		[Category("Value Data")]
 		[Description("Value")]
@@ -27,7 +25,7 @@ namespace E3NextConfigEditor.Models
 				return getter(); 
 			}
 			set { 
-				if(_listItem != null && _listBox!=null)
+				if( _refreshList && _listItem != null && _listBox!=null)
 				{
 					_listItem.ShortText = value.ToString();
 					_listBox.Refresh();
@@ -58,4 +56,6 @@ namespace E3NextConfigEditor.Models
 			}
 		}
 	}
+	
+	
 }

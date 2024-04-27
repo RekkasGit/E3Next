@@ -379,8 +379,19 @@ namespace E3Core.Settings
 
 
 		//E3BotsPublishData
+		
 		[INI_Section("E3BotsPublishData (key/value)", "")]
+		public Dictionary<string, string> E3BotsPublishDataRaw = new Dictionary<string, string>();
+		//used internally, the editor uses the Raw version
+		//the normal collection is modified to have ${Data.KeyName} for its keys
 		public Dictionary<string,string> E3BotsPublishData = new Dictionary<string,string>();
+		[INI_Section("Ifs", "")]
+		public Dictionary<string, string> Ifs = new Dictionary<string, string>();
+		[INI_Section("Events", "")]
+		public Dictionary<string, string> Events = new Dictionary<string, string>();
+		[INI_Section("EventLoop", "")]
+		public Dictionary<string, string> EventLoop = new Dictionary<string, string>();
+
 
 		//charm data
 		[INI_Section("Charm", "CharmSpell")]
@@ -691,11 +702,11 @@ namespace E3Core.Settings
                 }
             }
 
-            Dictionary<string, string> tempPublishData = new Dictionary<string, string>();
-            LoadKeyData("E3BotsPublishData (key/value)", ParsedData, tempPublishData);
-
+         
+            LoadKeyData("E3BotsPublishData (key/value)", ParsedData, E3BotsPublishDataRaw);
+            
             //now we need to change the keys to be in a specific format
-            foreach(var pair in tempPublishData)
+            foreach(var pair in E3BotsPublishDataRaw)
             {
                 string key = "${Data." + pair.Key + "}";
                 if(!E3BotsPublishData.ContainsKey(key)) 
@@ -705,7 +716,12 @@ namespace E3Core.Settings
 
 				
             }
-            List<string> tempChatChannelsTJ = new List<string>();
+            
+            LoadKeyData("Ifs", ParsedData, Ifs);
+			LoadKeyData("Events", ParsedData, Events);
+			LoadKeyData("EventLoop", ParsedData, EventLoop);
+
+			List<string> tempChatChannelsTJ = new List<string>();
 			LoadKeyData("E3ChatChannelsToJoin", "Channel", ParsedData, tempChatChannelsTJ);
 			foreach (var value in tempChatChannelsTJ)
 			{

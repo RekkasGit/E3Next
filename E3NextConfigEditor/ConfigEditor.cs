@@ -181,13 +181,16 @@ namespace E3NextConfigEditor
 			}
 
 		}
-
+		static List<string> dictionarySections = new List<string>() { "Ifs", "E3BotsPublishData (key/value)","Events","EventLoop" };
 		private void sectionComboBox_SelectedIndexChanged(object sender, EventArgs e)
 		{
 			//selection changed, update the navigator
 
 
 			subsectionComboBox.Items.Clear();
+			valuesListBox.Items.Clear();
+			propertyGrid.SelectedObject = null;
+
 
 			string selectedSection = sectionComboBox.SelectedItem.ToString();
 
@@ -196,10 +199,19 @@ namespace E3NextConfigEditor
 			if(section != null)
 			{
 
-				foreach(var key in section)
+				//dynamic type, just fill out the list below with the loaded types
+				if(dictionarySections.Contains(selectedSection,StringComparer.OrdinalIgnoreCase))
 				{
-				
-					subsectionComboBox.Items.Add(key.KeyName);
+					UpdateListView(selectedSection, "");
+				}
+				else
+				{
+					foreach (var key in section)
+					{
+
+						subsectionComboBox.Items.Add(key.KeyName);
+					}
+
 				}
 			}
 
@@ -227,146 +239,144 @@ namespace E3NextConfigEditor
 			}
 		}
 
-
-		private void subsectionComboBox_SelectedIndexChanged(object sender, EventArgs e)
+		private void UpdateListView(string selectedSection, string selectedSubSection)
 		{
 			valuesListBox.Items.Clear();
+			//this will not work for Ifs, Event,EventLoop as they have nop pre-defined keys
+
+			FieldInfo objectList = _charSettingsMappings[selectedSection][selectedSubSection];
+
+			if (objectList.IsGenericList(typeof(Spell)))
+			{
+
+				List<Spell> spellList = (List<Spell>)objectList.GetValue(E3.CharacterSettings);
+
+				valuesListBox.Tag = spellList;
+				foreach (var spell in spellList)
+				{
+					KryptonListItem item = new KryptonListItem();
+					item.ShortText = spell.SpellName;
+					item.LongText = string.Empty;
+					item.Tag = spell;
+					if (spell.SpellIcon > -1)
+					{
+						item.Image = _spellIcons[spell.SpellIcon];
+
+					}
+					valuesListBox.Items.Add(item);
+				}
+
+			}
+			else if (objectList.IsGenericList(typeof(SpellRequest)))
+			{
+				List<SpellRequest> spellList = (List<SpellRequest>)objectList.GetValue(E3.CharacterSettings);
+				valuesListBox.Tag = spellList;
+				foreach (var spell in spellList)
+				{
+					KryptonListItem item = new KryptonListItem();
+					item.ShortText = spell.SpellName;
+					item.LongText = string.Empty;
+					item.Tag = spell;
+					if (spell.SpellIcon > -1)
+					{
+						item.Image = _spellIcons[spell.SpellIcon];
+
+					}
+					valuesListBox.Items.Add(item);
+				}
+			}
+			else if (objectList.IsGenericList(typeof(String)))
+			{
+				List<string> spellList = (List<string>)objectList.GetValue(E3.CharacterSettings);
+				valuesListBox.Tag = spellList;
+				Int32 i = 0;
+				foreach (var spell in spellList)
+				{
+					Int32 tIndex = i;
+					KryptonListItem item = new KryptonListItem();
+					Models.Ref<string> refInstance = new Models.Ref<string>(() => (string)spellList[tIndex], v => { spellList[tIndex] = v; },true);
+					refInstance.ListItem = item;
+					refInstance.ListBox = valuesListBox;
+					item.ShortText = spell;
+					item.LongText = string.Empty;
+					item.Tag = refInstance;
+					valuesListBox.Items.Add(item);
+					i++;
+				}
+			}
+			else if (objectList.IsGenericDictonary(typeof(string), typeof(string)))
+			{
+				Dictionary<string, string> dictionary = (Dictionary<string, string>)objectList.GetValue(E3.CharacterSettings);
+				valuesListBox.Tag = dictionary;
+				foreach (var pair in dictionary)
+				{
+					KryptonListItem item = new KryptonListItem();
+					Models.Ref<string> refInstance = new Models.Ref<string>(() => (string)dictionary[pair.Key], v => { dictionary[pair.Key] = v; });
+					item.ShortText = pair.Key;
+					item.LongText = string.Empty;
+					item.Tag = refInstance;
+					valuesListBox.Items.Add(item);
+				}
+
+			}
+			else
+			{
+				//value data types, going to have to do some reflection shenanagins
+				object value = objectList.GetValue(E3.CharacterSettings);
+				KryptonListItem item = new KryptonListItem();
+				string displayText = value.ToString();
+				if (String.IsNullOrWhiteSpace(displayText))
+				{
+					displayText = "[Not Set]";
+				}
+				item.ShortText = displayText;
+				item.LongText = string.Empty;
+				//create a reference holder
+				if (value is string)
+				{
+					Models.Ref<string> refInstance = new Models.Ref<String>(() => (string)objectList.GetValue(E3.CharacterSettings), v => { objectList.SetValue(E3.CharacterSettings, v); },true);
+					refInstance.ListItem = item;
+					refInstance.ListBox = valuesListBox;
+					item.Tag = refInstance;
+				}
+				else if (value is bool)
+				{
+
+					Models.Ref<bool> refInstance = new Models.Ref<bool>(() => (bool)objectList.GetValue(E3.CharacterSettings), v => { objectList.SetValue(E3.CharacterSettings, v); }, true);
+					refInstance.ListItem = item;
+					refInstance.ListBox = valuesListBox;
+					item.Tag = refInstance;
+				}
+				else if (value is Int32)
+				{
+
+					Models.Ref<Int32> refInstance = new Models.Ref<Int32>(() => (Int32)objectList.GetValue(E3.CharacterSettings), v => { objectList.SetValue(E3.CharacterSettings, v); }, true);
+					refInstance.ListItem = item;
+					refInstance.ListBox = valuesListBox;
+					item.Tag = refInstance;
+				}
+				else if (value is Int64)
+				{
+
+					Models.Ref<Int64> refInstance = new Models.Ref<Int64>(() => (Int64)objectList.GetValue(E3.CharacterSettings), v => { objectList.SetValue(E3.CharacterSettings, v); }, true);
+					refInstance.ListItem = item;
+					refInstance.ListBox = valuesListBox;
+					item.Tag = refInstance;
+				}
+				valuesListBox.Items.Add(item);
+
+			}
+			
+		}
+		private void subsectionComboBox_SelectedIndexChanged(object sender, EventArgs e)
+		{	
 			string selectedSection = sectionComboBox.SelectedItem.ToString();
 			var section = E3.CharacterSettings.ParsedData.Sections[selectedSection];
-		
 			if (section != null)
 			{
 				string selectedSubSection = subsectionComboBox.SelectedItem.ToString();
-
-
-				var objectList = _charSettingsMappings[selectedSection][selectedSubSection];
-
-				if(objectList.IsGenericList(typeof(Spell)))
-				{
-					
-					List<Spell> spellList = (List<Spell>)objectList.GetValue(E3.CharacterSettings);
-				
-					valuesListBox.Tag= spellList;
-					foreach(var spell in spellList)
-					{
-						KryptonListItem item = new KryptonListItem();
-						item.ShortText = spell.SpellName;
-						item.LongText = string.Empty;
-						item.Tag = spell;
-						if (spell.SpellIcon > -1)
-						{
-							item.Image = _spellIcons[spell.SpellIcon];
-
-						}
-						valuesListBox.Items.Add(item);
-					}
-
-				}
-				else if(objectList.IsGenericList(typeof(SpellRequest)))
-				{
-					List<SpellRequest> spellList = (List<SpellRequest>)objectList.GetValue(E3.CharacterSettings);
-					valuesListBox.Tag = spellList;
-					foreach (var spell in spellList)
-					{
-						KryptonListItem item = new KryptonListItem();
-						item.ShortText = spell.SpellName;
-						item.LongText = string.Empty;
-						item.Tag = spell;
-						if (spell.SpellIcon > -1)
-						{
-							item.Image = _spellIcons[spell.SpellIcon];
-
-						}
-						valuesListBox.Items.Add(item);
-					}
-				}
-				else if (objectList.IsGenericList(typeof(String)))
-				{
-					List<string> spellList = (List<string>)objectList.GetValue(E3.CharacterSettings);
-					valuesListBox.Tag = spellList;
-					foreach (var spell in spellList)
-					{
-						KryptonListItem item = new KryptonListItem();
-						item.ShortText = spell;
-						item.LongText = string.Empty;
-						item.Tag = spell;
-						valuesListBox.Items.Add(item);
-					}
-				}
-				else
-				{
-					//value data types, going to have to do some reflection shenanagins
-					object value = objectList.GetValue(E3.CharacterSettings);
-					KryptonListItem item = new KryptonListItem();
-					string displayText = value.ToString();
-					if (String.IsNullOrWhiteSpace(displayText))
-					{
-						displayText = "[Not Set]";
-					}
-					item.ShortText = displayText;
-					item.LongText = string.Empty;
-					//create a reference holder
-					if (value is string)
-					{
-						Models.Ref<string> refInstance = new Models.Ref<String>(() => (string)objectList.GetValue(E3.CharacterSettings), v => { objectList.SetValue(E3.CharacterSettings,v); });
-						refInstance.ListItem = item;
-						refInstance.ListBox = valuesListBox;
-						item.Tag = refInstance;
-					}
-					else if (value is bool)
-					{
-
-						Models.Ref<bool> refInstance = new Models.Ref<bool>(() => (bool)objectList.GetValue(E3.CharacterSettings), v => { objectList.SetValue(E3.CharacterSettings, v); });
-						refInstance.ListItem = item;
-						refInstance.ListBox = valuesListBox;
-						item.Tag = refInstance;
-					}
-					else if (value is Int32)
-					{
-
-						Models.Ref<Int32> refInstance = new Models.Ref<Int32>(() => (Int32)objectList.GetValue(E3.CharacterSettings), v => { objectList.SetValue(E3.CharacterSettings, v); });
-						refInstance.ListItem = item;
-						refInstance.ListBox = valuesListBox;
-						item.Tag = refInstance;
-					}
-					else if (value is Int64)
-					{
-
-						Models.Ref<Int64> refInstance = new Models.Ref<Int64>(() => (Int64)objectList.GetValue(E3.CharacterSettings), v => { objectList.SetValue(E3.CharacterSettings, v); });
-						refInstance.ListItem = item;
-						refInstance.ListBox = valuesListBox;
-						item.Tag = refInstance;
-					}
-					valuesListBox.Items.Add(item);
-
-				}
-
-				//var valueList = section.GetKeyData(selectedSubSection).ValueList;
-
-				//foreach (var value in valueList)
-				//{
-				//	if (Spell.LoadedSpellByConfigEntry.TryGetValue(value, out var result))
-				//	{
-				//		KryptonListItem item = new KryptonListItem();
-				//		item.ShortText = result.SpellName;
-				//		item.LongText = string.Empty;
-				//		item.Tag = result;
-				//		if(result.SpellIcon>-1)
-				//		{
-				//			item.Image = _spellIcons[result.SpellIcon];
-
-				//		}
-				//		//item.Image = imageList.Images[_rand.Next(imageList.Images.Count - 1)];
-				//		valuesListBox.Items.Add(item);
-				//	}
-				//	else
-				//	{
-				//		valuesListBox.Items.Add(value);
-				//	}
-				//}
-
-			}
-				
+				UpdateListView(selectedSection, selectedSubSection);
+			}	
 			
 		}
 		#endregion
