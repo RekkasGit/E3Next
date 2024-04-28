@@ -451,6 +451,7 @@ namespace E3NextConfigEditor
 				valuesListBox.Invoke((MethodInvoker)delegate
 				{
 					if (valuesListBox.SelectedItem == null) return;
+					if (valuesListBox.Items.Count < 2) return;
 					valuesListBox.DoDragDrop(valuesListBox.SelectedItem, DragDropEffects.Move);
 					mouseDownTimeStamp = 0;
 				});
@@ -470,6 +471,20 @@ namespace E3NextConfigEditor
 			int index = this.valuesListBox.IndexFromPoint(point);
 			if (index < 0) index = this.valuesListBox.Items.Count - 1;
 			object data = valuesListBox.SelectedItem;
+
+			object settings_data_obj = valuesListBox.Tag;
+
+			//update the base storage data
+			if(settings_data_obj is List<Spell>)
+			{
+				List<Spell> spellList = (List<Spell>)settings_data_obj;
+
+				var spell = (Spell)((KryptonListItem)data).Tag;
+				spellList.Remove(spell);
+				spellList.Insert(index, spell);
+
+			}
+
 			this.valuesListBox.Items.Remove(data);
 			this.valuesListBox.Items.Insert(index, data);
 			valuesListBox.SelectedIndex = index;
@@ -489,6 +504,34 @@ namespace E3NextConfigEditor
 			Debug.WriteLine("Mouse Hover");
 		}
 
-		
+		private void kryptonContextMenu1_Opening(object sender, CancelEventArgs e)
+		{
+
+		}
+
+		private void kryptonCommand_Delete_Execute(object sender, EventArgs e)
+		{
+			if (valuesListBox.SelectedItem == null) return;
+			if (valuesListBox.Items.Count < 2) return;
+			object data = valuesListBox.SelectedItem;
+
+			object settings_data_obj = valuesListBox.Tag;
+
+			//update the base storage data
+			if (settings_data_obj is List<Spell>)
+			{
+				List<Spell> spellList = (List<Spell>)settings_data_obj;
+
+				var spell = (Spell)((KryptonListItem)data).Tag;
+				spellList.Remove(spell);
+			}
+
+			valuesListBox.Items.Remove(data);
+			valuesListBox.SelectedItem = null;
+			valuesListBox.Refresh();
+			Debug.WriteLine("Test Delete");
+
+
+		}
 	}
 }
