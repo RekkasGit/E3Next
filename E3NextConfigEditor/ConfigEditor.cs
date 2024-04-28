@@ -29,7 +29,9 @@ namespace E3NextConfigEditor
 		public static DealerClient _tloClient;
 		public static List<Bitmap> _spellIcons = new List<Bitmap>();
 		public static Dictionary<string, Dictionary<string, FieldInfo>> _charSettingsMappings;
-		public static E3Core.Data.Class CurrentClass;
+		public static E3Core.Data.Class _currentClass;
+		public static Dictionary<string, Dictionary<string, List<SpellData>>> _spellDataOrganized = new Dictionary<string, Dictionary<string, List<SpellData>>>();
+		public static Int32 _networkPort = 56974;
 		public ConfigEditor()
 		{
 
@@ -52,7 +54,7 @@ namespace E3NextConfigEditor
 			//this.Opacity = 100;
 
 
-			_tloClient = new DealerClient(49793);
+			_tloClient = new DealerClient(_networkPort);
 			IMQ _mqClient = new MQ.MQClient(_tloClient);
 
 			byte[] result = _tloClient.RequestRawData("${E3.AA.ListAll}");
@@ -65,22 +67,22 @@ namespace E3NextConfigEditor
 			SpellDataList discs = SpellDataList.Parser.ParseFrom(result);
 
 			string classValue = e3util.ClassNameFix(_tloClient.RequestData("${Me.Class}"));
-            System.Enum.TryParse(classValue, out CurrentClass);
+            System.Enum.TryParse(classValue, out _currentClass);
 
 
 			//lets sort all the spells by cataegory/subcategory and levels
 
-			Dictionary<string, Dictionary<string, List<SpellData>>> spellDataOrganized = new Dictionary<string, Dictionary<string, List<SpellData>>>();
+			
 
 			foreach (SpellData s in bookSpells.Data)
 			{
 
 				Dictionary<string, List<SpellData>> subCategoryLookup;
 				List<SpellData> spellList;
-				if (!spellDataOrganized.TryGetValue(s.Category, out subCategoryLookup))
+				if (!_spellDataOrganized.TryGetValue(s.Category, out subCategoryLookup))
 				{
 					subCategoryLookup = new Dictionary<string, List<SpellData>>();
-					spellDataOrganized.Add(s.Category, subCategoryLookup);
+					_spellDataOrganized.Add(s.Category, subCategoryLookup);
 				}
 				if (!subCategoryLookup.TryGetValue(s.Subcategory, out spellList))
 				{
@@ -93,11 +95,11 @@ namespace E3NextConfigEditor
 			}
 
 			//now sort all the levels int the lists
-			foreach (var pair in spellDataOrganized)
+			foreach (var pair in _spellDataOrganized)
 			{
 				foreach (var keySet in pair.Value.Keys.ToList())
 				{
-					spellDataOrganized[pair.Key][keySet] = spellDataOrganized[pair.Key][keySet].OrderByDescending(x => x.Level).ToList();
+					_spellDataOrganized[pair.Key][keySet] = _spellDataOrganized[pair.Key][keySet].OrderByDescending(x => x.Level).ToList();
 				}
 			}
 
@@ -394,7 +396,7 @@ namespace E3NextConfigEditor
 			if (listItem.Tag is Spell)
 			{
 				
-				propertyGrid.SelectedObject = new Models.SpellDataProxy((Spell)listItem.Tag);
+				propertyGrid.SelectedObject = new Models.SpellProxy((Spell)listItem.Tag);
 				
 			}
 			else if (listItem.Tag is SpellRequest)
@@ -509,7 +511,7 @@ namespace E3NextConfigEditor
 
 		}
 
-		private void kryptonCommand_Delete_Execute(object sender, EventArgs e)
+		private void valueList_Delete_Execute(object sender, EventArgs e)
 		{
 			if (valuesListBox.SelectedItem == null) return;
 			if (valuesListBox.Items.Count < 2) return;
@@ -530,6 +532,22 @@ namespace E3NextConfigEditor
 			valuesListBox.SelectedItem = null;
 			valuesListBox.Refresh();
 			Debug.WriteLine("Test Delete");
+
+
+		}
+
+		private void valueList_AddSpell_Execute(object sender, EventArgs e)
+		{
+
+			AddSpellEditor a = new AddSpellEditor(_spellDataOrganized,_spellIcons);
+			a.StartPosition = FormStartPosition.CenterParent;
+			if(a.ShowDialog()== DialogResult.OK)
+			{
+
+
+
+
+			}
 
 
 		}
