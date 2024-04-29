@@ -124,6 +124,7 @@
     <Compile Include="Data\MelodyIfs.cs" />
     <Compile Include="Data\ProtoBuff\SpellData.cs" />
     <Compile Include="Data\ResistCounter.cs" />
+    <Compile Include="Data\Skills.cs" />
     <Compile Include="Data\SpellRequest.cs" />
     <Compile Include="Data\SpellTimer.cs" />
     <Compile Include="Data\Zone.cs" />

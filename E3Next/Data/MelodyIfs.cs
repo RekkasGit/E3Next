@@ -11,6 +11,7 @@ namespace E3Core.Data
     {
         public String MelodyName;
         public String MelodyIf;
+		public String MelodyIfName;
         public MelodyIfs()
         {
 
@@ -23,11 +24,11 @@ namespace E3Core.Data
 
             if(melodyArray.Length>1)
             {
-                string ifKey = Spell.GetArgument<string>(melodyArray[1]);
+				MelodyIfName = Spell.GetArgument<string>(melodyArray[1]);
                 var section = parsedData.Sections["Ifs"];
                 if (section != null)
                 {
-                    var keyData = section[ifKey];
+                    var keyData = section[MelodyIfName];
                     if (!String.IsNullOrWhiteSpace(keyData))
                     {
                         MelodyIf = keyData;

@@ -34,8 +34,9 @@ namespace E3NextConfigEditor
 		public static SortedDictionary<string, SortedDictionary<string, List<SpellData>>> _spellDataOrganized = new SortedDictionary<string, SortedDictionary<string, List<SpellData>>>();
 		public static SortedDictionary<string, SortedDictionary<string, List<SpellData>>> _altdataOrganized = new SortedDictionary<string, SortedDictionary<string, List<SpellData>>>();
 		public static SortedDictionary<string, SortedDictionary<string, List<SpellData>>> _discdataOrganized = new SortedDictionary<string, SortedDictionary<string, List<SpellData>>>();
-
-		public static Int32 _networkPort = 59324;
+		public static SortedDictionary<string, SortedDictionary<string, List<SpellData>>> _skilldataOrganized = new SortedDictionary<string, SortedDictionary<string, List<SpellData>>>();
+		public static Int32 _networkPort = 63046;
+		public static Int32 _propertyGridWidth = 150;
 		public ConfigEditor()
 		{
 
@@ -48,28 +49,7 @@ namespace E3NextConfigEditor
 		}
 
 
-		public void OrganizeData(RepeatedField<SpellData> spells, SortedDictionary<string, SortedDictionary<string, List<SpellData>>> dest)
-		{
-			foreach (SpellData s in spells)
-			{
-
-				SortedDictionary<string, List<SpellData>> subCategoryLookup;
-				List<SpellData> spellList;
-				if (!dest.TryGetValue(s.Category, out subCategoryLookup))
-				{
-					subCategoryLookup = new SortedDictionary<string, List<SpellData>>();
-					dest.Add(s.Category, subCategoryLookup);
-				}
-				if (!subCategoryLookup.TryGetValue(s.Subcategory, out spellList))
-				{
-					spellList = new List<SpellData>();
-					subCategoryLookup.Add(s.Subcategory, spellList);
-				}
-
-				spellList.Add(s);
-
-			}
-		}
+		
 
 		public void LoadData()
 		{
@@ -91,16 +71,24 @@ namespace E3NextConfigEditor
 			result = _tloClient.RequestRawData("${E3.Discs.ListAll}");
 			SpellDataList discs = SpellDataList.Parser.ParseFrom(result);
 
+			result = _tloClient.RequestRawData("${E3.Skills.ListAll}");
+			SpellDataList skills = SpellDataList.Parser.ParseFrom(result);
+
+			foreach(var skill in skills.Data)
+			{
+				skill.Category = "Skill";
+				skill.Subcategory = "Basic";
+			}
+
 			string classValue = e3util.ClassNameFix(_tloClient.RequestData("${Me.Class}"));
             System.Enum.TryParse(classValue, out _currentClass);
 
-
 			//lets sort all the spells by cataegory/subcategory and levels
 
-
-			OrganizeData(bookSpells.Data, _spellDataOrganized);
-			OrganizeData(aas.Data, _altdataOrganized);
-			OrganizeData(discs.Data, _discdataOrganized);
+			PopulateData(skills.Data, _skilldataOrganized);
+			PopulateData(bookSpells.Data, _spellDataOrganized);
+			PopulateData(aas.Data, _altdataOrganized);
+			PopulateData(discs.Data, _discdataOrganized);
 
 			//now sort all the levels int the lists
 			foreach (var pair in _spellDataOrganized)
@@ -125,12 +113,19 @@ namespace E3NextConfigEditor
 					_discdataOrganized[pair.Key][keySet] = _discdataOrganized[pair.Key][keySet].OrderByDescending(x => x.Level).ToList();
 				}
 			}
-
+			foreach (var pair in _skilldataOrganized)
+			{
+				foreach (var keySet in pair.Value.Keys.ToList())
+				{
+					_skilldataOrganized[pair.Key][keySet] = _skilldataOrganized[pair.Key][keySet].OrderBy(x => x.SpellName).ToList();
+				}
+			}
 
 			E3.MQ = _mqClient;
 			E3.Log = new Logging(E3.MQ); ;
 			E3.CurrentName = _mqClient.Query<string>("${Me.CleanName}");
 			E3.ServerName = e3util.FormatServerName(_mqClient.Query<string>("${MacroQuest.Server}"));
+			E3.CurrentClass = _currentClass;
 
 			_tloClient.RequestData("${E3.TLO.BulkBegin}");
 			//create settings files here
@@ -162,15 +157,24 @@ namespace E3NextConfigEditor
 
 			List<string> importantSections = new List<string>() { "Misc", "Assist Settings", "Nukes", "Debuffs", "DoTs on Assist", "DoTs on Command", "Heals", "Buffs", "Melee Abilities", "Burn", "Pets", "Ifs" };
 
+
 			List<string> sectionNames = new List<string>();
+
+			sectionNames = sectionNames.OrderBy(x => x).ToList();
+			if (E3.CurrentClass == Class.Bard)
+			{
+				sectionNames.Add("Dynamic Melodies");
+			}
+
 			foreach (var section in E3.CharacterSettings.ParsedData.Sections)
 			{
+				//bards are special, do not include their dynamic melodies
+				if (section.SectionName.EndsWith(" Melody", StringComparison.OrdinalIgnoreCase)) continue;
 
 				sectionNames.Add(section.SectionName);
 
 			}
-			sectionNames = sectionNames.OrderBy(x => x).ToList();
-
+			
 			foreach (var section in importantSections)
 			{
 				if (E3.CharacterSettings.ParsedData.Sections.ContainsSection(section))
@@ -179,7 +183,6 @@ namespace E3NextConfigEditor
 
 				}
 			}
-
 			foreach (var section in sectionNames)
 			{
 				if (importantSections.Contains(section, StringComparer.OrdinalIgnoreCase)) continue;
@@ -188,91 +191,50 @@ namespace E3NextConfigEditor
 			}
 
 		}
-		#region comboBoxs
-		private void sectionComboBox_ButtonSpecAny2_Click(object sender, EventArgs e)
+		public void PopulateData(RepeatedField<SpellData> spells, SortedDictionary<string, SortedDictionary<string, List<SpellData>>> dest)
 		{
-			if (sectionComboBox.SelectedIndex < (sectionComboBox.Items.Count - 1))
+			foreach (SpellData s in spells)
 			{
-				sectionComboBox.SelectedIndex += 1;
-				sectionComboBox.ComboBox.Focus();
+
+				SortedDictionary<string, List<SpellData>> subCategoryLookup;
+				List<SpellData> spellList;
+				if (!dest.TryGetValue(s.Category, out subCategoryLookup))
+				{
+					subCategoryLookup = new SortedDictionary<string, List<SpellData>>();
+					dest.Add(s.Category, subCategoryLookup);
+				}
+				if (!subCategoryLookup.TryGetValue(s.Subcategory, out spellList))
+				{
+					spellList = new List<SpellData>();
+					subCategoryLookup.Add(s.Subcategory, spellList);
+				}
+
+				spellList.Add(s);
+
 			}
 		}
-
-		private void sectionComboBox_ButtonSpecAny1_Click(object sender, EventArgs e)
+		private void UpdateListView(List<Spell> spellList)
 		{
-			if (sectionComboBox.SelectedIndex > 0)
-			{
-				sectionComboBox.SelectedIndex -= 1;
-				sectionComboBox.ComboBox.Focus();
-			}
-
-		}
-		static List<string> dictionarySections = new List<string>() { "Ifs", "E3BotsPublishData (key/value)","Events","EventLoop" };
-		private void sectionComboBox_SelectedIndexChanged(object sender, EventArgs e)
-		{
-			//selection changed, update the navigator
-
-
-			subsectionComboBox.Items.Clear();
 			valuesListBox.Items.Clear();
-			valuesListBox.Tag = null;
-
-			propertyGrid.SelectedObject = null;
-
-
-			string selectedSection = sectionComboBox.SelectedItem.ToString();
-
-			var section = E3.CharacterSettings.ParsedData.Sections[selectedSection];
-
-			if(section != null)
+			valuesListBox.Tag = spellList;
+			foreach (var spell in spellList)
 			{
-
-				//dynamic type, just fill out the list below with the loaded types
-				if(dictionarySections.Contains(selectedSection,StringComparer.OrdinalIgnoreCase))
+				KryptonListItem item = new KryptonListItem();
+				item.ShortText = spell.SpellName;
+				item.LongText = string.Empty;
+				item.Tag = spell;
+				if (spell.SpellIcon > -1)
 				{
-					UpdateListView(selectedSection, "");
-				}
-				else
-				{
-					foreach (var key in section)
-					{
-
-						subsectionComboBox.Items.Add(key.KeyName);
-					}
+					item.Image = _spellIcons[spell.SpellIcon];
 
 				}
-			}
-
-
-
-
-		}
-
-		private void subsectionComboBox_buttonSpecAny1_Click(object sender, EventArgs e)
-		{
-			if (subsectionComboBox.SelectedIndex > 0)
-			{
-				subsectionComboBox.SelectedIndex -= 1;
-				subsectionComboBox.ComboBox.Focus();
-			}
-
-		}
-
-		private void subsectionComboBox_buttonSpecAny2_Click(object sender, EventArgs e)
-		{
-			if (subsectionComboBox.SelectedIndex < (subsectionComboBox.Items.Count - 1))
-			{
-				subsectionComboBox.SelectedIndex += 1;
-				subsectionComboBox.ComboBox.Focus();
+				valuesListBox.Items.Add(item);
 			}
 		}
-
-		private void UpdateListView(string selectedSection, string selectedSubSection)
+		private void UpdateListView(FieldInfo objectList)
 		{
 			valuesListBox.Items.Clear();
 			//this will not work for Ifs, Event,EventLoop as they have nop pre-defined keys
-
-			FieldInfo objectList = _charSettingsMappings[selectedSection][selectedSubSection];
 
 			if (objectList.IsGenericList(typeof(Spell)))
 			{
@@ -313,6 +275,19 @@ namespace E3NextConfigEditor
 					valuesListBox.Items.Add(item);
 				}
 			}
+			else if (objectList.IsGenericList(typeof(MelodyIfs)))
+			{
+				List<MelodyIfs> spellList = (List<MelodyIfs>)objectList.GetValue(E3.CharacterSettings);
+				valuesListBox.Tag = spellList;
+				foreach (var spell in spellList)
+				{
+					KryptonListItem item = new KryptonListItem();
+					item.ShortText = spell.MelodyName;
+					item.LongText = string.Empty;
+					item.Tag = spell;
+					valuesListBox.Items.Add(item);
+				}
+			}
 			else if (objectList.IsGenericList(typeof(String)))
 			{
 				List<string> spellList = (List<string>)objectList.GetValue(E3.CharacterSettings);
@@ -322,7 +297,7 @@ namespace E3NextConfigEditor
 				{
 					Int32 tIndex = i;
 					KryptonListItem item = new KryptonListItem();
-					Models.Ref<string> refInstance = new Models.Ref<string>(() => (string)spellList[tIndex], v => { spellList[tIndex] = v; },true);
+					Models.Ref<string> refInstance = new Models.Ref<string>(() => (string)spellList[tIndex], v => { spellList[tIndex] = v; }, true);
 					refInstance.ListItem = item;
 					refInstance.ListBox = valuesListBox;
 					item.ShortText = spell;
@@ -332,6 +307,7 @@ namespace E3NextConfigEditor
 					i++;
 				}
 			}
+
 			else if (objectList.IsGenericDictonary(typeof(string), typeof(string)))
 			{
 				Dictionary<string, string> dictionary = (Dictionary<string, string>)objectList.GetValue(E3.CharacterSettings);
@@ -339,7 +315,7 @@ namespace E3NextConfigEditor
 				foreach (var pair in dictionary)
 				{
 					KryptonListItem item = new KryptonListItem();
-					Models.Ref<string,string> refInstance = new Models.Ref<string,string>(() => (string)dictionary[pair.Key], v => { dictionary[pair.Key] = v; }, () => (string)pair.Key);
+					Models.Ref<string, string> refInstance = new Models.Ref<string, string>(() => (string)dictionary[pair.Key], v => { dictionary[pair.Key] = v; }, () => (string)pair.Key);
 					item.ShortText = pair.Key;
 					item.LongText = string.Empty;
 					item.Tag = refInstance;
@@ -378,7 +354,7 @@ namespace E3NextConfigEditor
 				//create a reference holder
 				if (value is string)
 				{
-					Models.Ref<string> refInstance = new Models.Ref<String>(() => (string)objectList.GetValue(E3.CharacterSettings), v => { objectList.SetValue(E3.CharacterSettings, v); },true);
+					Models.Ref<string> refInstance = new Models.Ref<String>(() => (string)objectList.GetValue(E3.CharacterSettings), v => { objectList.SetValue(E3.CharacterSettings, v); }, true);
 					refInstance.ListItem = item;
 					refInstance.ListBox = valuesListBox;
 					item.Tag = refInstance;
@@ -410,18 +386,135 @@ namespace E3NextConfigEditor
 				valuesListBox.Items.Add(item);
 
 			}
-			
+
 		}
+		#region comboBoxs
+		private void sectionComboBox_ButtonSpecAny2_Click(object sender, EventArgs e)
+		{
+			if (sectionComboBox.SelectedIndex < (sectionComboBox.Items.Count - 1))
+			{
+				sectionComboBox.SelectedIndex += 1;
+				sectionComboBox.ComboBox.Focus();
+			}
+		}
+
+		private void sectionComboBox_ButtonSpecAny1_Click(object sender, EventArgs e)
+		{
+			if (sectionComboBox.SelectedIndex > 0)
+			{
+				sectionComboBox.SelectedIndex -= 1;
+				sectionComboBox.ComboBox.Focus();
+			}
+
+		}
+		static List<string> dictionarySections = new List<string>() { "Ifs", "E3BotsPublishData (key/value)","Events","EventLoop" };
+		private void sectionComboBox_SelectedIndexChanged(object sender, EventArgs e)
+		{
+			//selection changed, update the navigator
+
+
+			subsectionComboBox.Items.Clear();
+			valuesListBox.Items.Clear();
+			valuesListBox.Tag = null;
+
+			propertyGrid.SelectedObject = null;
+
+
+			string selectedSection = sectionComboBox.SelectedItem.ToString();
+
+
+		
+			if(selectedSection=="Dynamic Melodies")
+			{   //sigh bards, special snowflakes
+				FieldInfo objectList = _charSettingsMappings["Bard"]["DynamicMelodySets"];
+				if (objectList.IsGenericSortedDictonary(typeof(string), typeof(List<Spell>)))
+				{
+					IDictionary<string, List<Spell>> dictionary = (IDictionary<string, List<Spell>>)objectList.GetValue(E3.CharacterSettings);
+					foreach (var pair in dictionary)
+					{
+						subsectionComboBox.Items.Add(pair.Key);
+					}
+				}
+			}
+			else
+			{
+				var section = E3.CharacterSettings.ParsedData.Sections[selectedSection];
+				if (section != null)
+				{
+					//dynamic type, just fill out the list below with the loaded types
+					if (dictionarySections.Contains(selectedSection, StringComparer.OrdinalIgnoreCase))
+					{
+						FieldInfo objectList = _charSettingsMappings[selectedSection][""];
+
+						UpdateListView(objectList);
+					}
+					else
+					{
+						foreach (var key in section)
+						{
+
+							subsectionComboBox.Items.Add(key.KeyName);
+						}
+					}
+				}
+			}
+			
+
+
+
+
+		}
+
+		private void subsectionComboBox_buttonSpecAny1_Click(object sender, EventArgs e)
+		{
+			if (subsectionComboBox.SelectedIndex > 0)
+			{
+				subsectionComboBox.SelectedIndex -= 1;
+				subsectionComboBox.ComboBox.Focus();
+			}
+
+		}
+
+		private void subsectionComboBox_buttonSpecAny2_Click(object sender, EventArgs e)
+		{
+			if (subsectionComboBox.SelectedIndex < (subsectionComboBox.Items.Count - 1))
+			{
+				subsectionComboBox.SelectedIndex += 1;
+				subsectionComboBox.ComboBox.Focus();
+			}
+		}
+		
 		private void subsectionComboBox_SelectedIndexChanged(object sender, EventArgs e)
 		{	
 			string selectedSection = sectionComboBox.SelectedItem.ToString();
-			var section = E3.CharacterSettings.ParsedData.Sections[selectedSection];
-			if (section != null)
+
+
+			if (selectedSection == "Dynamic Melodies")
+			{   //sigh bards, special snowflakes
+				FieldInfo objectList = _charSettingsMappings["Bard"]["DynamicMelodySets"];
+				if (objectList.IsGenericSortedDictonary(typeof(string), typeof(List<Spell>)))
+				{
+					IDictionary<string, List<Spell>> dynamicMelodies = (IDictionary<string, List<Spell>>)objectList.GetValue(E3.CharacterSettings);
+					string selectedSubSection = subsectionComboBox.SelectedItem.ToString();
+					List<Spell> melodies = dynamicMelodies[selectedSubSection];
+					UpdateListView(melodies);
+
+				}
+			}
+			else
 			{
-				string selectedSubSection = subsectionComboBox.SelectedItem.ToString();
-				UpdateListView(selectedSection, selectedSubSection);
-			}	
-			
+				var section = E3.CharacterSettings.ParsedData.Sections[selectedSection];
+				if (section != null)
+				{
+					string selectedSubSection = subsectionComboBox.SelectedItem.ToString();
+					FieldInfo objectList = _charSettingsMappings[selectedSection][selectedSubSection];
+
+					UpdateListView(objectList);
+				}
+
+			}
+
+
 		}
 		#endregion
 		#region DragNDropListBox
@@ -444,6 +537,10 @@ namespace E3NextConfigEditor
 			else if (listItem.Tag is SpellRequest)
 			{
 				propertyGrid.SelectedObject = new Models.SpellRequestDataProxy((SpellRequest)listItem.Tag);
+			}
+			else if (listItem.Tag is MelodyIfs)
+			{
+				propertyGrid.SelectedObject = new Models.MelodyIfProxy((MelodyIfs)listItem.Tag);
 			}
 			else if (listItem.Tag is Models.Ref<string,string>  || listItem.Tag is Models.Ref<string> || listItem.Tag is Models.Ref<bool> || listItem.Tag is Models.Ref<Int32> || listItem.Tag is Models.Ref<Int64>)
 			{
@@ -485,11 +582,11 @@ namespace E3NextConfigEditor
 			_stopwatch.Start();
 			_timer.Elapsed += _timer_Elapsed;
 			_timer.Start();
-			propertyGrid.SetLabelColumnWidth(120);
+			propertyGrid.SetLabelColumnWidth(_propertyGridWidth);
 		}
 		private void propertyGrid_SizeChanged(object sender, EventArgs e)
 		{
-			propertyGrid.SetLabelColumnWidth(120);
+			propertyGrid.SetLabelColumnWidth(_propertyGridWidth);
 		}
 
 		private void _timer_Elapsed(object sender, System.Timers.ElapsedEventArgs e)
@@ -533,7 +630,22 @@ namespace E3NextConfigEditor
 				spellList.Insert(index, spell);
 
 			}
+			else if(settings_data_obj is List<SpellRequest>)
+			{
+				List<SpellRequest> spellList = (List<SpellRequest>)settings_data_obj;
 
+				var spell = (SpellRequest)((KryptonListItem)data).Tag;
+				spellList.Remove(spell);
+				spellList.Insert(index, spell);
+			}
+			else if (settings_data_obj is List<MelodyIfs>)
+			{
+				List<MelodyIfs> spellList = (List<MelodyIfs>)settings_data_obj;
+
+				var spell = (MelodyIfs)((KryptonListItem)data).Tag;
+				spellList.Remove(spell);
+				spellList.Insert(index, spell);
+			}
 			this.valuesListBox.Items.Remove(data);
 			this.valuesListBox.Items.Insert(index, data);
 			valuesListBox.SelectedIndex = index;
@@ -556,7 +668,16 @@ namespace E3NextConfigEditor
 		private void valueList_Delete_Execute(object sender, EventArgs e)
 		{
 			if (valuesListBox.SelectedItem == null) return;
-			if (valuesListBox.Items.Count < 2) return;
+			if (valuesListBox.Items.Count < 2)
+			{
+				bool shouldExit = true;
+				//these are allowed to have empty lists, the rest no
+				if(valuesListBox.Tag is List<Spell>) shouldExit = false;
+				if (valuesListBox.Tag is List<SpellRequest>) shouldExit = false;
+				if (valuesListBox.Tag is List<MelodyIfs>) shouldExit = false;
+				if (valuesListBox.Tag is IDictionary<string, string>) shouldExit = false;
+				if (shouldExit) return;
+			}
 			object data = valuesListBox.SelectedItem;
 
 			object settings_data_obj = valuesListBox.Tag;
@@ -574,6 +695,13 @@ namespace E3NextConfigEditor
 				List<SpellRequest> spellList = (List<SpellRequest>)settings_data_obj;
 
 				var spell = (SpellRequest)((KryptonListItem)data).Tag;
+				spellList.Remove(spell);
+			}
+			else if (settings_data_obj is List<MelodyIfs>)
+			{
+				List<MelodyIfs> spellList = (List<MelodyIfs>)settings_data_obj;
+
+				var spell = (MelodyIfs)((KryptonListItem)data).Tag;
 				spellList.Remove(spell);
 			}
 			else if(settings_data_obj is List<string>)
@@ -596,12 +724,45 @@ namespace E3NextConfigEditor
 
 
 		}
+		private void valueList_AddMelodyIfToCollection(string Melody, string IfsName)
+		{
+			MelodyIfs newMelody = new MelodyIfs();
+			newMelody.MelodyName = Melody;
+			newMelody.MelodyIfName = IfsName;
 
+			object settings_data_obj = valuesListBox.Tag;
+
+			//update the base storage data
+			if (settings_data_obj is List<MelodyIfs>)
+			{
+				List<MelodyIfs> spellList = (List<MelodyIfs>)settings_data_obj;
+				if (spellList.Count > 0 && valuesListBox.SelectedItem != null)
+				{
+					//put after the current selected
+					Int32 index = valuesListBox.SelectedIndex + 1;
+					KryptonListItem item = new KryptonListItem();
+					item.ShortText = newMelody.MelodyIfName;
+					item.LongText = string.Empty;
+					item.Tag = newMelody;
+					
+					spellList.Insert(index, newMelody);
+					valuesListBox.Items.Insert(index, item);
+				}
+				else
+				{
+					//no items in the list, just add
+					spellList.Add(newMelody);
+					KryptonListItem item = new KryptonListItem();
+					item.ShortText = newMelody.MelodyIfName;
+					item.LongText = string.Empty;
+					item.Tag = newMelody;
+					valuesListBox.Items.Add(item);
+				}
+			}
+		}
 		private void valueList_AddSpellToCollection(SpellData selected)
 		{
 			Spell newSpell = Spell.FromProto(selected);
-
-
 			object settings_data_obj = valuesListBox.Tag;
 
 			//update the base storage data
@@ -623,7 +784,6 @@ namespace E3NextConfigEditor
 					}
 					spellList.Insert(index, newSpell);
 					valuesListBox.Items.Insert(index, item);
-				
 				}
 				else
 				{
@@ -638,12 +798,7 @@ namespace E3NextConfigEditor
 						item.Image = _spellIcons[newSpell.SpellIcon];
 					}
 					valuesListBox.Items.Add(item);
-
-
 				}
-				
-			
-
 			}
 		}
 
@@ -710,7 +865,35 @@ namespace E3NextConfigEditor
 
 			}
 		}
+		private void valueList_AddSkill_Execute(object sender, EventArgs e)
+		{
+			if (!(valuesListBox.Tag is List<Spell>))
+			{
+				return;
+			}
 
+			AddSpellEditor a = new AddSpellEditor(_skilldataOrganized, _spellIcons);
+			a.StartPosition = FormStartPosition.CenterParent;
+			if (a.ShowDialog() == DialogResult.OK)
+			{
+				if (a.SelectedSpell != null)
+				{
+					valueList_AddSpellToCollection(a.SelectedSpell);
+
+				}
+			}
+		}
+		private void valueList_AddMelodyIf_Execute(object sender, EventArgs e)
+		{
+			if (!(valuesListBox.Tag is List<MelodyIfs>))
+			{
+				return;
+			}
+
+
+			//valueList_AddMelodyIfToCollection
+
+		}
 		private void valueList_AddKeyValue_Execute(object sender, EventArgs e)
 		{
 			if (!(valuesListBox.Tag is IDictionary<string,string>))
@@ -741,7 +924,9 @@ namespace E3NextConfigEditor
 					//dynamic type, just fill out the list below with the loaded types
 					if (dictionarySections.Contains(selectedSection, StringComparer.OrdinalIgnoreCase))
 					{
-						UpdateListView(selectedSection, "");
+						FieldInfo objectList = _charSettingsMappings[selectedSection][""];
+
+						UpdateListView(objectList);
 					}
 				}
 			}
@@ -780,10 +965,33 @@ namespace E3NextConfigEditor
 								{
 									menuItem.Visible = false;
 								}
+								else if (menuItem.Text == "Add Skill")
+								{
+									menuItem.Visible = false;
+								}
 							}
 							else if ((valuesListBox.Tag is List<Spell>))
 							{
 								if (menuItem.Text == "Add Key/Value")
+								{
+									menuItem.Visible = false;
+								}
+							}
+							else if ((valuesListBox.Tag is List<MelodyIfs>))
+							{
+								if (menuItem.Text == "Add Disc")
+								{
+									menuItem.Visible = false;
+								}
+								else if (menuItem.Text == "Add Spell")
+								{
+									menuItem.Visible = false;
+								}
+								else if (menuItem.Text == "Add AA")
+								{
+									menuItem.Visible = false;
+								}
+								else if (menuItem.Text == "Add Skill")
 								{
 									menuItem.Visible = false;
 								}
@@ -801,5 +1009,7 @@ namespace E3NextConfigEditor
 				
 			}
 		}
+
+		
 	}
 }

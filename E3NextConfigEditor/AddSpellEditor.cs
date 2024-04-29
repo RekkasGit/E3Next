@@ -118,12 +118,12 @@ namespace E3NextConfigEditor
 
 		private void AddSpellEditor_Load(object sender, EventArgs e)
 		{
-			addSpellPropertyGrid.SetLabelColumnWidth(120);
+			addSpellPropertyGrid.SetLabelColumnWidth(ConfigEditor._propertyGridWidth);
 		}
 
 		private void addSpellPropertyGrid_SizeChanged(object sender, EventArgs e)
 		{
-			addSpellPropertyGrid.SetLabelColumnWidth(120);
+			addSpellPropertyGrid.SetLabelColumnWidth(ConfigEditor._propertyGridWidth);
 		}
 	}
 }

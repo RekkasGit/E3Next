@@ -118,6 +118,8 @@ namespace E3Core.Settings
 		public string Rogue_SneakAttack = string.Empty;
 		[INI_Section("Bard", "MelodyIf")]
 		public List<MelodyIfs> Bard_MelodyIfs = new List<MelodyIfs>();
+		[INI_Section("Bard", "DynamicMelodySets")]
+		public SortedDictionary<string, List<Spell>> Bard_MelodySets = new SortedDictionary<string, List<Spell>>();
 		[INI_Section("Bard", "AutoMezSong")]
 		public List<Spell> Bard_AutoMezSong = new List<Spell>();
 
@@ -648,6 +650,11 @@ namespace E3Core.Settings
                 LoadKeyData("Bard", "MelodyIf", ParsedData, Bard_MelodyIfs);
                 LoadKeyData("Bard", "AutoMezSong", ParsedData, Bard_AutoMezSong);
                 LoadKeyData("Bard", "Auto-Sonata (On/Off)", ParsedData, ref Bard_AutoSonata);
+				//load up all melody sets
+
+				Bard_MelodySets= LoadMeldoySetData(ParsedData);
+				
+
             }
 
             if ((CharacterClass & Class.Druid) == CharacterClass)

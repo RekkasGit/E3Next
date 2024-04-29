@@ -223,6 +223,34 @@ namespace E3Core.Settings
             }
             return String.Empty;
         }
+		public static SortedDictionary<string, List<Data.Spell>> LoadMeldoySetData(IniData parsedData)
+		{
+			SortedDictionary<string, List<Data.Spell>> returnData = new SortedDictionary<string, List<Data.Spell>>();
+			foreach (var section in parsedData.Sections)
+			{
+				if(section.SectionName.EndsWith(" Melody"))
+				{
+					//its a dynamic melody, lets get the spells 
+					string name = section.SectionName.Split(new char[] { ' ' })[0];
+
+					List<Data.Spell> spellList;
+					if(!returnData.TryGetValue(name,out spellList))
+					{
+						spellList = new List<Data.Spell>();
+						returnData.Add(name, spellList);
+					}
+					foreach(var key in section.Keys)
+					{
+						foreach(var value in key.ValueList)
+						{
+							var newSpell = new Data.Spell(value);
+							spellList.Add(newSpell);
+						}
+					}
+				}
+			}
+			return returnData;
+		}
         public static void LoadKeyData(string sectionKey, string Key, IniData parsedData, ref Boolean valueToSet)
         {
             _log.Write($"{sectionKey} {Key}");

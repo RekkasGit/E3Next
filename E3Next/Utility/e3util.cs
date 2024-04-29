@@ -1287,7 +1287,25 @@ namespace E3Core.Utility
             }
             return returnValue;
         }
-        public static List<Data.Spell> ListAllBookSpells()
+		
+		public static List<Data.Spell> ListAllActiveSkills()
+		{
+			List<Data.Spell> returnValue = new List<Data.Spell>();
+			for (Int32 i = 0; i < Skills.IDToName.Count; i++)
+			{
+				bool haveSkill = MQ.Query<bool>($"${{Me.Ability[{i}]}}");
+				if (haveSkill)
+				{
+					var spell = new Data.Spell(Skills.IDToName[i]);
+					if (spell.CastType == CastType.Ability)
+					{
+						returnValue.Add(spell);
+					}
+				}
+			}
+			return returnValue;
+		}
+		public static List<Data.Spell> ListAllBookSpells()
         {
 			List<Data.Spell> returnValue = new List<Data.Spell>();
 			for (Int32 i = 0; i < 1120; i++)

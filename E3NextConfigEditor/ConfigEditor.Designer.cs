@@ -36,6 +36,7 @@
 			this.subsectionComboBox_buttonSpecAny2 = new Krypton.Toolkit.ButtonSpecAny();
 			this.valuesListBox = new Krypton.Toolkit.KryptonListBox();
 			this.valueListContextMenu = new Krypton.Toolkit.KryptonContextMenu();
+			this.kryptonContextMenuHeading2 = new Krypton.Toolkit.KryptonContextMenuHeading();
 			this.kryptonContextMenuItems1 = new Krypton.Toolkit.KryptonContextMenuItems();
 			this.kryptonContextMenuItem2 = new Krypton.Toolkit.KryptonContextMenuItem();
 			this.valueList_AddSpell = new Krypton.Toolkit.KryptonCommand();
@@ -43,6 +44,8 @@
 			this.valueList_AddAA = new Krypton.Toolkit.KryptonCommand();
 			this.kryptonContextMenuItem4 = new Krypton.Toolkit.KryptonContextMenuItem();
 			this.valueList_AddDisc = new Krypton.Toolkit.KryptonCommand();
+			this.kryptonContextMenuItem7 = new Krypton.Toolkit.KryptonContextMenuItem();
+			this.valueList_AddSkill = new Krypton.Toolkit.KryptonCommand();
 			this.kryptonContextMenuItem6 = new Krypton.Toolkit.KryptonContextMenuItem();
 			this.valueList_AddKeyValue = new Krypton.Toolkit.KryptonCommand();
 			this.kryptonContextMenuItem5 = new Krypton.Toolkit.KryptonContextMenuItem();
@@ -52,7 +55,7 @@
 			this.kryptonContextMenuItem1 = new Krypton.Toolkit.KryptonContextMenuItem();
 			this.kryptonContextMenuItems3 = new Krypton.Toolkit.KryptonContextMenuItems();
 			this.kryptonContextMenuHeading1 = new Krypton.Toolkit.KryptonContextMenuHeading();
-			this.kryptonContextMenuHeading2 = new Krypton.Toolkit.KryptonContextMenuHeading();
+			this.valueList_AddMelodyIf = new Krypton.Toolkit.KryptonCommand();
 			((System.ComponentModel.ISupportInitialize)(this.sectionComboBox)).BeginInit();
 			((System.ComponentModel.ISupportInitialize)(this.subsectionComboBox)).BeginInit();
 			this.SuspendLayout();
@@ -141,12 +144,18 @@
 			this.valueListContextMenu.StateDisabled.ItemTextStandard.ShortText.Color1 = System.Drawing.Color.Red;
 			this.valueListContextMenu.Opening += new System.ComponentModel.CancelEventHandler(this.valueListContextMenu_Opening);
 			// 
+			// kryptonContextMenuHeading2
+			// 
+			this.kryptonContextMenuHeading2.ExtraText = "";
+			this.kryptonContextMenuHeading2.Text = "Options";
+			// 
 			// kryptonContextMenuItems1
 			// 
 			this.kryptonContextMenuItems1.Items.AddRange(new Krypton.Toolkit.KryptonContextMenuItemBase[] {
             this.kryptonContextMenuItem2,
             this.kryptonContextMenuItem3,
             this.kryptonContextMenuItem4,
+            this.kryptonContextMenuItem7,
             this.kryptonContextMenuItem6,
             this.kryptonContextMenuItem5});
 			// 
@@ -179,6 +188,16 @@
 			// 
 			this.valueList_AddDisc.Text = "Add Disc";
 			this.valueList_AddDisc.Execute += new System.EventHandler(this.valueList_AddDisc_Execute);
+			// 
+			// kryptonContextMenuItem7
+			// 
+			this.kryptonContextMenuItem7.KryptonCommand = this.valueList_AddSkill;
+			this.kryptonContextMenuItem7.Text = "Add Skill";
+			// 
+			// valueList_AddSkill
+			// 
+			this.valueList_AddSkill.Text = "Add Skill";
+			this.valueList_AddSkill.Execute += new System.EventHandler(this.valueList_AddSkill_Execute);
 			// 
 			// kryptonContextMenuItem6
 			// 
@@ -221,10 +240,10 @@
 			// 
 			this.kryptonContextMenuHeading1.ExtraText = "";
 			// 
-			// kryptonContextMenuHeading2
+			// valueList_AddMelodyIf
 			// 
-			this.kryptonContextMenuHeading2.ExtraText = "";
-			this.kryptonContextMenuHeading2.Text = "Options";
+			this.valueList_AddMelodyIf.Text = "Add Skill";
+			this.valueList_AddMelodyIf.Execute += new System.EventHandler(this.valueList_AddMelodyIf_Execute);
 			// 
 			// ConfigEditor
 			// 
@@ -273,6 +292,9 @@
 		private Krypton.Toolkit.KryptonCommand valueList_AddKeyValue;
 		private Krypton.Toolkit.KryptonContextMenuItem kryptonContextMenuItem6;
 		private Krypton.Toolkit.KryptonContextMenuHeading kryptonContextMenuHeading2;
+		private Krypton.Toolkit.KryptonCommand valueList_AddSkill;
+		private Krypton.Toolkit.KryptonContextMenuItem kryptonContextMenuItem7;
+		private Krypton.Toolkit.KryptonCommand valueList_AddMelodyIf;
 	}
 }
 

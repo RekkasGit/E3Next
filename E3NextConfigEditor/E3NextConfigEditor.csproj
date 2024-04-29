@@ -105,6 +105,7 @@
     </Compile>
     <Compile Include="Extensions\ListBoxExtensions.cs" />
     <Compile Include="Extensions\PropertyGridExtensions.cs" />
+    <Compile Include="Models\MelodyIfProxy.cs" />
     <Compile Include="Models\RefDataProxy.cs" />
     <Compile Include="Models\SpellProxy.cs" />
     <Compile Include="MQ\MQClient.cs" />
