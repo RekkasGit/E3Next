@@ -1304,23 +1304,7 @@ namespace E3Core.Utility
 			}
 			return returnValue;
 		}
-		public static List<Data.Spell> ListAllSpellBookData()
-		{
-			List<Data.Spell> returnValue = new List<Data.Spell>();
-			for (Int32 i = 0; i < 10000; i++)
-			{
-				string spellName = MQ.Query<String>($"${{Me.AltAbility[{i}].Name}}");
-				if (spellName != "NULL")
-				{
-					var spell = new Data.Spell(spellName);
-					if (spell.CastType == CastType.AA)
-					{
-						returnValue.Add(spell);
-					}
-				}
-			}
-			return returnValue;
-		}
+		
 		public static List<Data.Spell> ListAllDiscData()
 		{
 			List<Data.Spell> returnValue = new List<Data.Spell>();

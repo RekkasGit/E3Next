@@ -21,6 +21,8 @@ using System.Windows.Forms;
 using static System.Windows.Forms.VisualStyles.VisualStyleElement.Rebar;
 using E3NextConfigEditor.Extensions;
 using System.Reflection;
+using Google.Protobuf.Collections;
+using System.Collections;
 
 namespace E3NextConfigEditor
 {
@@ -30,8 +32,11 @@ namespace E3NextConfigEditor
 		public static List<Bitmap> _spellIcons = new List<Bitmap>();
 		public static Dictionary<string, Dictionary<string, FieldInfo>> _charSettingsMappings;
 		public static E3Core.Data.Class _currentClass;
-		public static Dictionary<string, Dictionary<string, List<SpellData>>> _spellDataOrganized = new Dictionary<string, Dictionary<string, List<SpellData>>>();
-		public static Int32 _networkPort = 56974;
+		public static SortedDictionary<string, SortedDictionary<string, List<SpellData>>> _spellDataOrganized = new SortedDictionary<string, SortedDictionary<string, List<SpellData>>>();
+		public static SortedDictionary<string, SortedDictionary<string, List<SpellData>>> _altdataOrganized = new SortedDictionary<string, SortedDictionary<string, List<SpellData>>>();
+		public static SortedDictionary<string, SortedDictionary<string, List<SpellData>>> _discdataOrganized = new SortedDictionary<string, SortedDictionary<string, List<SpellData>>>();
+
+		public static Int32 _networkPort = 59324;
 		public ConfigEditor()
 		{
 
@@ -44,7 +49,28 @@ namespace E3NextConfigEditor
 		}
 
 
+		public void OrganizeData(RepeatedField<SpellData> spells, SortedDictionary<string, SortedDictionary<string, List<SpellData>>> dest)
+		{
+			foreach (SpellData s in spells)
+			{
 
+				SortedDictionary<string, List<SpellData>> subCategoryLookup;
+				List<SpellData> spellList;
+				if (!dest.TryGetValue(s.Category, out subCategoryLookup))
+				{
+					subCategoryLookup = new SortedDictionary<string, List<SpellData>>();
+					dest.Add(s.Category, subCategoryLookup);
+				}
+				if (!subCategoryLookup.TryGetValue(s.Subcategory, out spellList))
+				{
+					spellList = new List<SpellData>();
+					subCategoryLookup.Add(s.Subcategory, spellList);
+				}
+
+				spellList.Add(s);
+
+			}
+		}
 
 		public void LoadData()
 		{
@@ -72,27 +98,10 @@ namespace E3NextConfigEditor
 
 			//lets sort all the spells by cataegory/subcategory and levels
 
-			
 
-			foreach (SpellData s in bookSpells.Data)
-			{
-
-				Dictionary<string, List<SpellData>> subCategoryLookup;
-				List<SpellData> spellList;
-				if (!_spellDataOrganized.TryGetValue(s.Category, out subCategoryLookup))
-				{
-					subCategoryLookup = new Dictionary<string, List<SpellData>>();
-					_spellDataOrganized.Add(s.Category, subCategoryLookup);
-				}
-				if (!subCategoryLookup.TryGetValue(s.Subcategory, out spellList))
-				{
-					spellList = new List<SpellData>();
-					subCategoryLookup.Add(s.Subcategory, spellList);
-				}
-
-				spellList.Add(s);
-
-			}
+			OrganizeData(bookSpells.Data, _spellDataOrganized);
+			OrganizeData(aas.Data, _altdataOrganized);
+			OrganizeData(discs.Data, _discdataOrganized);
 
 			//now sort all the levels int the lists
 			foreach (var pair in _spellDataOrganized)
@@ -102,6 +111,22 @@ namespace E3NextConfigEditor
 					_spellDataOrganized[pair.Key][keySet] = _spellDataOrganized[pair.Key][keySet].OrderByDescending(x => x.Level).ToList();
 				}
 			}
+			foreach (var pair in _altdataOrganized)
+			{
+				foreach (var keySet in pair.Value.Keys.ToList())
+				{
+					_altdataOrganized[pair.Key][keySet] = _altdataOrganized[pair.Key][keySet].OrderBy(x => x.SpellName).ToList();
+				}
+			}
+			foreach (var pair in _discdataOrganized)
+			{
+				
+				foreach (var keySet in pair.Value.Keys.ToList())
+				{
+					_discdataOrganized[pair.Key][keySet] = _discdataOrganized[pair.Key][keySet].OrderByDescending(x => x.Level).ToList();
+				}
+			}
+
 
 			E3.MQ = _mqClient;
 			E3.Log = new Logging(E3.MQ); ;
@@ -323,6 +348,7 @@ namespace E3NextConfigEditor
 			}
 			else
 			{
+				valuesListBox.Tag = null;
 				//value data types, going to have to do some reflection shenanagins
 				object value = objectList.GetValue(E3.CharacterSettings);
 				KryptonListItem item = new KryptonListItem();
@@ -443,6 +469,11 @@ namespace E3NextConfigEditor
 			_stopwatch.Start();
 			_timer.Elapsed += _timer_Elapsed;
 			_timer.Start();
+			propertyGrid.SetLabelColumnWidth(120);
+		}
+		private void propertyGrid_SizeChanged(object sender, EventArgs e)
+		{
+			propertyGrid.SetLabelColumnWidth(120);
 		}
 
 		private void _timer_Elapsed(object sender, System.Timers.ElapsedEventArgs e)
@@ -506,11 +537,6 @@ namespace E3NextConfigEditor
 			Debug.WriteLine("Mouse Hover");
 		}
 
-		private void kryptonContextMenu1_Opening(object sender, CancelEventArgs e)
-		{
-
-		}
-
 		private void valueList_Delete_Execute(object sender, EventArgs e)
 		{
 			if (valuesListBox.SelectedItem == null) return;
@@ -527,6 +553,19 @@ namespace E3NextConfigEditor
 				var spell = (Spell)((KryptonListItem)data).Tag;
 				spellList.Remove(spell);
 			}
+			else if (settings_data_obj is List<SpellRequest>)
+			{
+				List<SpellRequest> spellList = (List<SpellRequest>)settings_data_obj;
+
+				var spell = (SpellRequest)((KryptonListItem)data).Tag;
+				spellList.Remove(spell);
+			}
+			else if(settings_data_obj is List<string>)
+			{
+				List<string> stringList = (List<string>)settings_data_obj;
+				var stringRef = (Models.Ref<string>)((KryptonListItem)data).Tag;
+				stringList.Remove(stringRef.Value);
+			}
 
 			valuesListBox.Items.Remove(data);
 			valuesListBox.SelectedItem = null;
@@ -536,20 +575,175 @@ namespace E3NextConfigEditor
 
 		}
 
+		private void valueList_AddSpellToCollection(SpellData selected)
+		{
+			Spell newSpell = Spell.FromProto(selected);
+
+
+			object settings_data_obj = valuesListBox.Tag;
+
+			//update the base storage data
+			if (settings_data_obj is List<Spell>)
+			{
+				List<Spell> spellList = (List<Spell>)settings_data_obj;
+				if (spellList.Count>0 && valuesListBox.SelectedItem!=null)
+				{
+					//put after the current selected
+					Int32 index = valuesListBox.SelectedIndex+1;
+					KryptonListItem item = new KryptonListItem();
+					item.ShortText = newSpell.SpellName;
+					item.LongText = string.Empty;
+					item.Tag = newSpell;
+					if (newSpell.SpellIcon > -1)
+					{
+						item.Image = _spellIcons[newSpell.SpellIcon];
+
+					}
+					spellList.Insert(index, newSpell);
+					valuesListBox.Items.Insert(index, item);
+				
+				}
+				else
+				{
+					//no items in the list, just add
+					spellList.Add(newSpell);
+					KryptonListItem item = new KryptonListItem();
+					item.ShortText = newSpell.SpellName;
+					item.LongText = string.Empty;
+					item.Tag = newSpell;
+					if (newSpell.SpellIcon > -1)
+					{
+						item.Image = _spellIcons[newSpell.SpellIcon];
+					}
+					valuesListBox.Items.Add(item);
+
+
+				}
+				
+			
+
+			}
+		}
+
 		private void valueList_AddSpell_Execute(object sender, EventArgs e)
 		{
 
+			if(!(valuesListBox.Tag is List<Spell>))
+			{
+				return;
+			}
 			AddSpellEditor a = new AddSpellEditor(_spellDataOrganized,_spellIcons);
 			a.StartPosition = FormStartPosition.CenterParent;
 			if(a.ShowDialog()== DialogResult.OK)
 			{
 
+				if(a.SelectedSpell!=null)
+				{
+					valueList_AddSpellToCollection(a.SelectedSpell);
 
+				}
+			}
+		}
+
+		private void valueList_AddAA_Execute(object sender, EventArgs e)
+		{
+			if (!(valuesListBox.Tag is List<Spell>))
+			{
+				return;
+			}
+
+			AddSpellEditor a = new AddSpellEditor(_altdataOrganized, _spellIcons);
+			a.StartPosition = FormStartPosition.CenterParent;
+			if (a.ShowDialog() == DialogResult.OK)
+			{
+
+				if (a.SelectedSpell != null)
+				{
+					valueList_AddSpellToCollection(a.SelectedSpell);
+
+				}
 
 
 			}
+		}
+
+		private void valueList_AddDisc_Execute(object sender, EventArgs e)
+		{
+			if (!(valuesListBox.Tag is List<Spell>))
+			{
+				return;
+			}
+
+			AddSpellEditor a = new AddSpellEditor(_discdataOrganized, _spellIcons);
+			a.StartPosition = FormStartPosition.CenterParent;
+			if (a.ShowDialog() == DialogResult.OK)
+			{
+
+				if (a.SelectedSpell != null)
+				{
+					valueList_AddSpellToCollection(a.SelectedSpell);
+
+				}
 
 
+			}
+		}
+
+		private void valueList_AddKeyValue_Execute(object sender, EventArgs e)
+		{
+			if (!(valuesListBox.Tag is Dictionary<string,string>))
+			{
+				return;
+			}
+
+
+
+		}
+
+		private void valueListContextMenu_Opening(object sender, CancelEventArgs e)
+		{
+			foreach(KryptonContextMenuItems items in valueListContextMenu.Items) 
+			{
+				foreach(KryptonContextMenuItemBase item in items.Items)
+				{	
+					if (item is KryptonContextMenuItem)
+					{
+					
+						var menuItem = (KryptonContextMenuItem)item;
+
+						
+						menuItem.Enabled = true;
+					
+						if ((valuesListBox.Tag is Dictionary<string, string>))
+						{
+							if (menuItem.Text == "Add Disc")
+							{
+								menuItem.Enabled = false;
+							}
+							else if (menuItem.Text == "Add Spell")
+							{
+								menuItem.Enabled = false;
+							}
+							else if (menuItem.Text == "Add AA")
+							{
+								menuItem.Enabled = false;
+							}
+						}
+						else if ((valuesListBox.Tag is List<Spell>))
+						{
+							if (menuItem.Text == "Add Key/Value")
+							{
+								menuItem.Enabled = false;
+							}
+						}
+						else
+						{
+							menuItem.Enabled = false;
+						}
+					}
+				}
+				
+			}
 		}
 	}
 }

@@ -1,5 +1,6 @@
 ﻿using ComponentFactory.Krypton.Toolkit;
 using E3Core.Data;
+using E3NextConfigEditor.Extensions;
 using System;
 using System.Collections.Generic;
 using System.ComponentModel;
@@ -16,9 +17,10 @@ namespace E3NextConfigEditor
 {
 	public partial class AddSpellEditor : Form
 	{
-		Dictionary<string, Dictionary<string, List<SpellData>>> _spellDataOrganized;
+		SortedDictionary<string, SortedDictionary<string, List<SpellData>>> _spellDataOrganized;
 		List<Bitmap> _spellIcons;
-		public AddSpellEditor(Dictionary<string, Dictionary<string, List<SpellData>>> spellDataOrganized, List<Bitmap> spellIcons)
+		public SpellData SelectedSpell = null;
+		public AddSpellEditor(SortedDictionary<string, SortedDictionary<string, List<SpellData>>> spellDataOrganized, List<Bitmap> spellIcons)
 		{
 			_spellDataOrganized = spellDataOrganized;
 			_spellIcons = spellIcons;
@@ -60,7 +62,7 @@ namespace E3NextConfigEditor
 						}
 
 						KryptonTreeNode item3 = new KryptonTreeNode();
-						item3.Text = spell.SpellName;
+						item3.Text = spell.CastName;
 						item3.ImageIndex = spell.SpellIcon;
 						item3.SelectedImageIndex = spell.SpellIcon;
 						item3.Tag = spell;
@@ -69,30 +71,7 @@ namespace E3NextConfigEditor
 				}
 			}
 		}
-		//private void updatePropertyGrid()
-		//{
-		//	propertyGrid.SelectedObject = null;
-		//	//need to pull out the Tag and verify which type so we know what to pass to the 
-		//	//property grid
-		//	KryptonListItem listItem = ((KryptonListItem)valuesListBox.SelectedItem);
-		//	if (listItem.Tag is Spell)
-		//	{
-
-		//		propertyGrid.SelectedObject = new Models.SpellDataProxy((Spell)listItem.Tag);
-
-		//	}
-		//	else if (listItem.Tag is SpellRequest)
-		//	{
-		//		propertyGrid.SelectedObject = new Models.SpellRequestDataProxy((SpellRequest)listItem.Tag);
-		//	}
-		//	else if (listItem.Tag is Models.Ref<string> || listItem.Tag is Models.Ref<bool> || listItem.Tag is Models.Ref<Int32> || listItem.Tag is Models.Ref<Int64>)
-		//	{
-
-		//		propertyGrid.SelectedObject = listItem.Tag;
-
-		//	}
-
-		//}
+		
 		private void spellTreeView_AfterSelect(object sender, TreeViewEventArgs e)
 		{
 			if(spellTreeView.SelectedNode != null )
@@ -105,6 +84,45 @@ namespace E3NextConfigEditor
 					}
 				}
 			}
+		}
+
+		private void addSpellButton_Click(object sender, EventArgs e)
+		{
+
+			if (spellTreeView.SelectedNode != null)
+			{
+				if (spellTreeView.SelectedNode.Tag != null)
+				{
+					if (spellTreeView.SelectedNode.Tag is SpellData)
+					{
+						SelectedSpell = (SpellData)spellTreeView.SelectedNode.Tag;
+
+					}
+				}
+			}
+			if(SelectedSpell != null)
+			{
+				this.DialogResult = DialogResult.OK;
+				Close();
+
+			}
+		}
+
+		private void cancelSpellButton_Click(object sender, EventArgs e)
+		{
+			SelectedSpell = null;
+			this.DialogResult= DialogResult.Cancel;
+			Close();
+		}
+
+		private void AddSpellEditor_Load(object sender, EventArgs e)
+		{
+			addSpellPropertyGrid.SetLabelColumnWidth(120);
+		}
+
+		private void addSpellPropertyGrid_SizeChanged(object sender, EventArgs e)
+		{
+			addSpellPropertyGrid.SetLabelColumnWidth(120);
 		}
 	}
 }

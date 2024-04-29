@@ -28,6 +28,7 @@
 		/// </summary>
 		private void InitializeComponent()
 		{
+			this.components = new System.ComponentModel.Container();
 			this.sectionComboBox = new ComponentFactory.Krypton.Toolkit.KryptonComboBox();
 			this.sectionComboBox_ButtonSpecAny1 = new ComponentFactory.Krypton.Toolkit.ButtonSpecAny();
 			this.sectionComboBox_ButtonSpecAny2 = new ComponentFactory.Krypton.Toolkit.ButtonSpecAny();
@@ -40,8 +41,11 @@
 			this.kryptonContextMenuItem2 = new ComponentFactory.Krypton.Toolkit.KryptonContextMenuItem();
 			this.valueList_AddSpell = new ComponentFactory.Krypton.Toolkit.KryptonCommand();
 			this.kryptonContextMenuItem3 = new ComponentFactory.Krypton.Toolkit.KryptonContextMenuItem();
+			this.valueList_AddAA = new ComponentFactory.Krypton.Toolkit.KryptonCommand();
 			this.kryptonContextMenuItem4 = new ComponentFactory.Krypton.Toolkit.KryptonContextMenuItem();
-			this.kryptonContextMenuSeparator1 = new ComponentFactory.Krypton.Toolkit.KryptonContextMenuSeparator();
+			this.valueList_AddDisc = new ComponentFactory.Krypton.Toolkit.KryptonCommand();
+			this.kryptonContextMenuItem6 = new ComponentFactory.Krypton.Toolkit.KryptonContextMenuItem();
+			this.valueList_AddKeyValue = new ComponentFactory.Krypton.Toolkit.KryptonCommand();
 			this.kryptonContextMenuItem5 = new ComponentFactory.Krypton.Toolkit.KryptonContextMenuItem();
 			this.valueList_Delete = new ComponentFactory.Krypton.Toolkit.KryptonCommand();
 			this.propertyGrid = new System.Windows.Forms.PropertyGrid();
@@ -49,8 +53,8 @@
 			this.kryptonContextMenuItem1 = new ComponentFactory.Krypton.Toolkit.KryptonContextMenuItem();
 			this.kryptonContextMenuItems3 = new ComponentFactory.Krypton.Toolkit.KryptonContextMenuItems();
 			this.kryptonContextMenuHeading1 = new ComponentFactory.Krypton.Toolkit.KryptonContextMenuHeading();
-			this.kryptonBorderEdge1 = new ComponentFactory.Krypton.Toolkit.KryptonBorderEdge();
 			this.kryptonBorderEdge2 = new ComponentFactory.Krypton.Toolkit.KryptonBorderEdge();
+			this.kryptonPalette1 = new ComponentFactory.Krypton.Toolkit.KryptonPalette(this.components);
 			((System.ComponentModel.ISupportInitialize)(this.sectionComboBox)).BeginInit();
 			((System.ComponentModel.ISupportInitialize)(this.subsectionComboBox)).BeginInit();
 			this.SuspendLayout();
@@ -112,10 +116,12 @@
 			// valuesListBox
 			// 
 			this.valuesListBox.AllowDrop = true;
+			this.valuesListBox.Anchor = ((System.Windows.Forms.AnchorStyles)(((System.Windows.Forms.AnchorStyles.Top | System.Windows.Forms.AnchorStyles.Bottom) 
+            | System.Windows.Forms.AnchorStyles.Left)));
 			this.valuesListBox.KryptonContextMenu = this.valueListContextMenu;
-			this.valuesListBox.Location = new System.Drawing.Point(13, 81);
+			this.valuesListBox.Location = new System.Drawing.Point(13, 66);
 			this.valuesListBox.Name = "valuesListBox";
-			this.valuesListBox.Size = new System.Drawing.Size(287, 357);
+			this.valuesListBox.Size = new System.Drawing.Size(287, 627);
 			this.valuesListBox.TabIndex = 2;
 			this.valuesListBox.SelectedIndexChanged += new System.EventHandler(this.valuesListBox_SelectedIndexChanged);
 			this.valuesListBox.DragDrop += new System.Windows.Forms.DragEventHandler(this.valuesListBox_DragDrop);
@@ -130,7 +136,13 @@
 			this.valueListContextMenu.Items.AddRange(new ComponentFactory.Krypton.Toolkit.KryptonContextMenuItemBase[] {
             this.kryptonContextMenuItems1});
 			this.valueListContextMenu.PaletteMode = ComponentFactory.Krypton.Toolkit.PaletteMode.SparkleBlue;
-			this.valueListContextMenu.Opening += new System.ComponentModel.CancelEventHandler(this.kryptonContextMenu1_Opening);
+			this.valueListContextMenu.StateDisabled.ItemShortcutText.ShortText.Color1 = System.Drawing.Color.Red;
+			this.valueListContextMenu.StateDisabled.ItemShortcutText.ShortText.Color2 = System.Drawing.Color.Red;
+			this.valueListContextMenu.StateDisabled.ItemTextAlternate.ShortText.Color1 = System.Drawing.Color.Red;
+			this.valueListContextMenu.StateDisabled.ItemTextAlternate.ShortText.Color2 = System.Drawing.Color.Red;
+			this.valueListContextMenu.StateDisabled.ItemTextStandard.LongText.Color1 = System.Drawing.Color.Red;
+			this.valueListContextMenu.StateDisabled.ItemTextStandard.ShortText.Color1 = System.Drawing.Color.Red;
+			this.valueListContextMenu.Opening += new System.ComponentModel.CancelEventHandler(this.valueListContextMenu_Opening);
 			// 
 			// kryptonContextMenuItems1
 			// 
@@ -138,7 +150,7 @@
             this.kryptonContextMenuItem2,
             this.kryptonContextMenuItem3,
             this.kryptonContextMenuItem4,
-            this.kryptonContextMenuSeparator1,
+            this.kryptonContextMenuItem6,
             this.kryptonContextMenuItem5});
 			// 
 			// kryptonContextMenuItem2
@@ -153,11 +165,33 @@
 			// 
 			// kryptonContextMenuItem3
 			// 
+			this.kryptonContextMenuItem3.KryptonCommand = this.valueList_AddAA;
 			this.kryptonContextMenuItem3.Text = "Add AA";
+			// 
+			// valueList_AddAA
+			// 
+			this.valueList_AddAA.Text = "Add AA";
+			this.valueList_AddAA.Execute += new System.EventHandler(this.valueList_AddAA_Execute);
 			// 
 			// kryptonContextMenuItem4
 			// 
+			this.kryptonContextMenuItem4.KryptonCommand = this.valueList_AddDisc;
 			this.kryptonContextMenuItem4.Text = "Add Disc";
+			// 
+			// valueList_AddDisc
+			// 
+			this.valueList_AddDisc.Text = "Add Disc";
+			this.valueList_AddDisc.Execute += new System.EventHandler(this.valueList_AddDisc_Execute);
+			// 
+			// kryptonContextMenuItem6
+			// 
+			this.kryptonContextMenuItem6.KryptonCommand = this.valueList_AddKeyValue;
+			this.kryptonContextMenuItem6.Text = "Add Key/Value";
+			// 
+			// valueList_AddKeyValue
+			// 
+			this.valueList_AddKeyValue.Text = "Add Key/Value";
+			this.valueList_AddKeyValue.Execute += new System.EventHandler(this.valueList_AddKeyValue_Execute);
 			// 
 			// kryptonContextMenuItem5
 			// 
@@ -177,9 +211,10 @@
 			this.propertyGrid.Font = new System.Drawing.Font("Microsoft Sans Serif", 12F, System.Drawing.FontStyle.Regular, System.Drawing.GraphicsUnit.Point, ((byte)(0)));
 			this.propertyGrid.Location = new System.Drawing.Point(306, 12);
 			this.propertyGrid.Name = "propertyGrid";
-			this.propertyGrid.Size = new System.Drawing.Size(482, 481);
+			this.propertyGrid.Size = new System.Drawing.Size(993, 681);
 			this.propertyGrid.TabIndex = 3;
 			this.propertyGrid.ToolbarVisible = false;
+			this.propertyGrid.SizeChanged += new System.EventHandler(this.propertyGrid_SizeChanged);
 			// 
 			// kryptonContextMenuItem1
 			// 
@@ -189,13 +224,6 @@
 			// 
 			this.kryptonContextMenuHeading1.ExtraText = "";
 			// 
-			// kryptonBorderEdge1
-			// 
-			this.kryptonBorderEdge1.Location = new System.Drawing.Point(739, 501);
-			this.kryptonBorderEdge1.Name = "kryptonBorderEdge1";
-			this.kryptonBorderEdge1.Size = new System.Drawing.Size(50, 1);
-			this.kryptonBorderEdge1.Text = "kryptonBorderEdge1";
-			// 
 			// kryptonBorderEdge2
 			// 
 			this.kryptonBorderEdge2.Location = new System.Drawing.Point(0, 0);
@@ -203,13 +231,23 @@
 			this.kryptonBorderEdge2.Size = new System.Drawing.Size(50, 1);
 			this.kryptonBorderEdge2.Text = "kryptonBorderEdge2";
 			// 
+			// kryptonPalette1
+			// 
+			this.kryptonPalette1.ContextMenu.StateDisabled.ItemShortcutText.ShortText.Color1 = System.Drawing.Color.Red;
+			this.kryptonPalette1.ContextMenu.StateDisabled.ItemShortcutText.ShortText.Color2 = System.Drawing.Color.FromArgb(((int)(((byte)(255)))), ((int)(((byte)(128)))), ((int)(((byte)(0)))));
+			this.kryptonPalette1.ContextMenu.StateDisabled.ItemTextAlternate.LongText.Color1 = System.Drawing.Color.Red;
+			this.kryptonPalette1.ContextMenu.StateDisabled.ItemTextAlternate.LongText.Color2 = System.Drawing.Color.FromArgb(((int)(((byte)(255)))), ((int)(((byte)(128)))), ((int)(((byte)(0)))));
+			this.kryptonPalette1.ContextMenu.StateDisabled.ItemTextAlternate.ShortText.Color1 = System.Drawing.Color.Red;
+			this.kryptonPalette1.ContextMenu.StateDisabled.ItemTextAlternate.ShortText.Color2 = System.Drawing.Color.FromArgb(((int)(((byte)(255)))), ((int)(((byte)(128)))), ((int)(((byte)(0)))));
+			this.kryptonPalette1.ContextMenu.StateDisabled.ItemTextStandard.ShortText.Color1 = System.Drawing.Color.Red;
+			this.kryptonPalette1.ContextMenu.StateDisabled.ItemTextStandard.ShortText.Color2 = System.Drawing.Color.FromArgb(((int)(((byte)(255)))), ((int)(((byte)(128)))), ((int)(((byte)(0)))));
+			// 
 			// ConfigEditor
 			// 
 			this.AutoScaleDimensions = new System.Drawing.SizeF(6F, 13F);
 			this.AutoScaleMode = System.Windows.Forms.AutoScaleMode.Font;
-			this.ClientSize = new System.Drawing.Size(800, 505);
+			this.ClientSize = new System.Drawing.Size(1311, 705);
 			this.Controls.Add(this.kryptonBorderEdge2);
-			this.Controls.Add(this.kryptonBorderEdge1);
 			this.Controls.Add(this.propertyGrid);
 			this.Controls.Add(this.valuesListBox);
 			this.Controls.Add(this.subsectionComboBox);
@@ -244,12 +282,15 @@
 		private ComponentFactory.Krypton.Toolkit.KryptonContextMenuItems kryptonContextMenuItems2;
 		private ComponentFactory.Krypton.Toolkit.KryptonContextMenuItem kryptonContextMenuItem1;
 		private ComponentFactory.Krypton.Toolkit.KryptonContextMenuItems kryptonContextMenuItems3;
-		private ComponentFactory.Krypton.Toolkit.KryptonContextMenuSeparator kryptonContextMenuSeparator1;
 		private ComponentFactory.Krypton.Toolkit.KryptonContextMenuHeading kryptonContextMenuHeading1;
 		private ComponentFactory.Krypton.Toolkit.KryptonCommand valueList_Delete;
 		private ComponentFactory.Krypton.Toolkit.KryptonCommand valueList_AddSpell;
-		private ComponentFactory.Krypton.Toolkit.KryptonBorderEdge kryptonBorderEdge1;
 		private ComponentFactory.Krypton.Toolkit.KryptonBorderEdge kryptonBorderEdge2;
+		private ComponentFactory.Krypton.Toolkit.KryptonCommand valueList_AddAA;
+		private ComponentFactory.Krypton.Toolkit.KryptonCommand valueList_AddDisc;
+		private ComponentFactory.Krypton.Toolkit.KryptonCommand valueList_AddKeyValue;
+		private ComponentFactory.Krypton.Toolkit.KryptonContextMenuItem kryptonContextMenuItem6;
+		private ComponentFactory.Krypton.Toolkit.KryptonPalette kryptonPalette1;
 	}
 }
 
