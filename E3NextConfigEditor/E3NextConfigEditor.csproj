@@ -84,6 +84,12 @@
     <Reference Include="System.Xml" />
   </ItemGroup>
   <ItemGroup>
+    <Compile Include="AddkeyValue.cs">
+      <SubType>Form</SubType>
+    </Compile>
+    <Compile Include="AddkeyValue.Designer.cs">
+      <DependentUpon>AddkeyValue.cs</DependentUpon>
+    </Compile>
     <Compile Include="AddSpellEditor.cs">
       <SubType>Form</SubType>
     </Compile>
@@ -107,6 +113,9 @@
     <Compile Include="TGA\TargaImage.cs" />
     <Compile Include="Themes\DarkMode.cs" />
     <Compile Include="Themes\DefaultMode.cs" />
+    <EmbeddedResource Include="AddkeyValue.resx">
+      <DependentUpon>AddkeyValue.cs</DependentUpon>
+    </EmbeddedResource>
     <EmbeddedResource Include="AddSpellEditor.resx">
       <DependentUpon>AddSpellEditor.cs</DependentUpon>
     </EmbeddedResource>

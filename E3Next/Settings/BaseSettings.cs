@@ -165,7 +165,7 @@ namespace E3Core.Settings
                 }
             }
         }
-        public static void LoadKeyData<K, V>(string sectionKey, string Key, IniData parsedData, Dictionary<K, V> dictionary)
+        public static void LoadKeyData<K, V>(string sectionKey, string Key, IniData parsedData, IDictionary<K, V> dictionary)
         {
             _log.Write($"{sectionKey} {Key}");
             var section = parsedData.Sections[sectionKey];
@@ -186,7 +186,7 @@ namespace E3Core.Settings
                 }
             }
         }
-		public static void LoadKeyData<K, V>(string sectionKey, IniData parsedData, Dictionary<K, V> dictionary)
+		public static void LoadKeyData<K, V>(string sectionKey, IniData parsedData, IDictionary<K, V> dictionary)
 		{
 			
 			var section = parsedData.Sections[sectionKey];

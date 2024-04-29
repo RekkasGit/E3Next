@@ -215,6 +215,8 @@ namespace E3NextConfigEditor
 
 			subsectionComboBox.Items.Clear();
 			valuesListBox.Items.Clear();
+			valuesListBox.Tag = null;
+
 			propertyGrid.SelectedObject = null;
 
 
@@ -337,7 +339,22 @@ namespace E3NextConfigEditor
 				foreach (var pair in dictionary)
 				{
 					KryptonListItem item = new KryptonListItem();
-					Models.Ref<string> refInstance = new Models.Ref<string>(() => (string)dictionary[pair.Key], v => { dictionary[pair.Key] = v; });
+					Models.Ref<string,string> refInstance = new Models.Ref<string,string>(() => (string)dictionary[pair.Key], v => { dictionary[pair.Key] = v; }, () => (string)pair.Key);
+					item.ShortText = pair.Key;
+					item.LongText = string.Empty;
+					item.Tag = refInstance;
+					valuesListBox.Items.Add(item);
+				}
+
+			}
+			else if (objectList.IsGenericSortedDictonary(typeof(string), typeof(string)))
+			{
+				SortedDictionary<string, string> dictionary = (SortedDictionary<string, string>)objectList.GetValue(E3.CharacterSettings);
+				valuesListBox.Tag = dictionary;
+				foreach (var pair in dictionary)
+				{
+					KryptonListItem item = new KryptonListItem();
+					Models.Ref<string, string> refInstance = new Models.Ref<string, string>(() => (string)dictionary[pair.Key], v => { dictionary[pair.Key] = v; }, () => (string)pair.Key);
 					item.ShortText = pair.Key;
 					item.LongText = string.Empty;
 					item.Tag = refInstance;
@@ -428,7 +445,7 @@ namespace E3NextConfigEditor
 			{
 				propertyGrid.SelectedObject = new Models.SpellRequestDataProxy((SpellRequest)listItem.Tag);
 			}
-			else if (listItem.Tag is Models.Ref<string> || listItem.Tag is Models.Ref<bool> || listItem.Tag is Models.Ref<Int32> || listItem.Tag is Models.Ref<Int64>)
+			else if (listItem.Tag is Models.Ref<string,string>  || listItem.Tag is Models.Ref<string> || listItem.Tag is Models.Ref<bool> || listItem.Tag is Models.Ref<Int32> || listItem.Tag is Models.Ref<Int64>)
 			{
 
 				propertyGrid.SelectedObject = listItem.Tag;
@@ -565,7 +582,13 @@ namespace E3NextConfigEditor
 				var stringRef = (Models.Ref<string>)((KryptonListItem)data).Tag;
 				stringList.Remove(stringRef.Value);
 			}
-
+			else if (settings_data_obj is IDictionary<string,string>)
+			{
+				IDictionary<string, string> stringDict = (IDictionary<string, string>)settings_data_obj;
+				var stringRef = (Models.Ref<string,string>)((KryptonListItem)data).Tag;
+				stringDict.Remove(stringRef.Key);
+			}
+			
 			valuesListBox.Items.Remove(data);
 			valuesListBox.SelectedItem = null;
 			valuesListBox.Refresh();
@@ -690,11 +713,38 @@ namespace E3NextConfigEditor
 
 		private void valueList_AddKeyValue_Execute(object sender, EventArgs e)
 		{
-			if (!(valuesListBox.Tag is Dictionary<string,string>))
+			if (!(valuesListBox.Tag is IDictionary<string,string>))
 			{
 				return;
 			}
+			AddkeyValue a = new AddkeyValue();
 
+			if(a.ShowDialog()== DialogResult.OK)
+			{
+				string key = a.Key;
+				string value = a.Value;
+
+				IDictionary<string, string> dict = (IDictionary<string, string>) valuesListBox.Tag;
+
+				if(!dict.ContainsKey(key))
+				{
+					dict.Add(key, value);
+				}
+				else
+				{
+					dict[key] = value;
+				}
+				string selectedSection = sectionComboBox.SelectedItem.ToString();
+				var section = E3.CharacterSettings.ParsedData.Sections[selectedSection];
+				if (section != null)
+				{
+					//dynamic type, just fill out the list below with the loaded types
+					if (dictionarySections.Contains(selectedSection, StringComparer.OrdinalIgnoreCase))
+					{
+						UpdateListView(selectedSection, "");
+					}
+				}
+			}
 
 
 		}
@@ -716,7 +766,7 @@ namespace E3NextConfigEditor
 
 							menuItem.Visible = true;
 
-							if ((valuesListBox.Tag is Dictionary<string, string>))
+							if ((valuesListBox.Tag is IDictionary<string, string>))
 							{
 								if (menuItem.Text == "Add Disc")
 								{

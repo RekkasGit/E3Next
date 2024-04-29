@@ -1407,6 +1407,22 @@ namespace E3Core.Utility
 			}
 			return false;
 		}
+		public static bool IsGenericSortedDictonary(this FieldInfo o, Type keyTypeToCheck, Type valueTypeToCheck)
+		{
+			var oType = o.FieldType;
+			if (oType.IsGenericType && (oType.GetGenericTypeDefinition() == typeof(SortedDictionary<,>)))
+			{
+				Type keyType = oType.GetGenericArguments()[0]; // use this...
+				Type valueType = oType.GetGenericArguments()[1];
+
+				if (keyType == keyTypeToCheck && valueTypeToCheck == valueType)
+				{
+					return true;
+				}
+
+			}
+			return false;
+		}
 		//modified from
 		//https://stackoverflow.com/questions/21750824/how-to-convert-a-string-to-a-mathematical-expression-programmatically
 		private static string[] _operators = { "-", "+", "/", "*", "^" };

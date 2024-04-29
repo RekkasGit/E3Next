@@ -381,16 +381,16 @@ namespace E3Core.Settings
 		//E3BotsPublishData
 		
 		[INI_Section("E3BotsPublishData (key/value)", "")]
-		public Dictionary<string, string> E3BotsPublishDataRaw = new Dictionary<string, string>();
+		public SortedDictionary<string, string> E3BotsPublishDataRaw = new SortedDictionary<string, string>();
 		//used internally, the editor uses the Raw version
 		//the normal collection is modified to have ${Data.KeyName} for its keys
-		public Dictionary<string,string> E3BotsPublishData = new Dictionary<string,string>();
+		public SortedDictionary<string,string> E3BotsPublishData = new SortedDictionary<string,string>();
 		[INI_Section("Ifs", "")]
-		public Dictionary<string, string> Ifs = new Dictionary<string, string>();
+		public SortedDictionary<string, string> Ifs = new SortedDictionary<string, string>();
 		[INI_Section("Events", "")]
-		public Dictionary<string, string> Events = new Dictionary<string, string>();
+		public SortedDictionary<string, string> Events = new SortedDictionary<string, string>();
 		[INI_Section("EventLoop", "")]
-		public Dictionary<string, string> EventLoop = new Dictionary<string, string>();
+		public SortedDictionary<string, string> EventLoop = new SortedDictionary<string, string>();
 
 
 		//charm data
