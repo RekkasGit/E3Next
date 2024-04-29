@@ -56,6 +56,9 @@
 			this.kryptonContextMenuItems3 = new Krypton.Toolkit.KryptonContextMenuItems();
 			this.kryptonContextMenuHeading1 = new Krypton.Toolkit.KryptonContextMenuHeading();
 			this.valueList_AddMelodyIf = new Krypton.Toolkit.KryptonCommand();
+			this.valueList_AddDynamicMelody = new Krypton.Toolkit.KryptonCommand();
+			this.kryptonContextMenuItem8 = new Krypton.Toolkit.KryptonContextMenuItem();
+			this.kryptonContextMenuItem9 = new Krypton.Toolkit.KryptonContextMenuItem();
 			((System.ComponentModel.ISupportInitialize)(this.sectionComboBox)).BeginInit();
 			((System.ComponentModel.ISupportInitialize)(this.subsectionComboBox)).BeginInit();
 			this.SuspendLayout();
@@ -157,6 +160,8 @@
             this.kryptonContextMenuItem4,
             this.kryptonContextMenuItem7,
             this.kryptonContextMenuItem6,
+            this.kryptonContextMenuItem8,
+            this.kryptonContextMenuItem9,
             this.kryptonContextMenuItem5});
 			// 
 			// kryptonContextMenuItem2
@@ -242,8 +247,23 @@
 			// 
 			// valueList_AddMelodyIf
 			// 
-			this.valueList_AddMelodyIf.Text = "Add Skill";
+			this.valueList_AddMelodyIf.Text = "Add MelodyIf";
 			this.valueList_AddMelodyIf.Execute += new System.EventHandler(this.valueList_AddMelodyIf_Execute);
+			// 
+			// valueList_AddDynamicMelody
+			// 
+			this.valueList_AddDynamicMelody.Text = "Add Melody";
+			this.valueList_AddDynamicMelody.Execute += new System.EventHandler(this.valueList_AddDynamicMelody_Execute);
+			// 
+			// kryptonContextMenuItem8
+			// 
+			this.kryptonContextMenuItem8.KryptonCommand = this.valueList_AddDynamicMelody;
+			this.kryptonContextMenuItem8.Text = "Add Melody";
+			// 
+			// kryptonContextMenuItem9
+			// 
+			this.kryptonContextMenuItem9.KryptonCommand = this.valueList_AddMelodyIf;
+			this.kryptonContextMenuItem9.Text = "Add MelodyIf";
 			// 
 			// ConfigEditor
 			// 
@@ -295,6 +315,9 @@
 		private Krypton.Toolkit.KryptonCommand valueList_AddSkill;
 		private Krypton.Toolkit.KryptonContextMenuItem kryptonContextMenuItem7;
 		private Krypton.Toolkit.KryptonCommand valueList_AddMelodyIf;
+		private Krypton.Toolkit.KryptonCommand valueList_AddDynamicMelody;
+		private Krypton.Toolkit.KryptonContextMenuItem kryptonContextMenuItem8;
+		private Krypton.Toolkit.KryptonContextMenuItem kryptonContextMenuItem9;
 	}
 }
 

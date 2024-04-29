@@ -30,8 +30,8 @@
 		{
 			this.keyTextBox = new System.Windows.Forms.TextBox();
 			this.valueTextBox = new System.Windows.Forms.TextBox();
-			this.label1 = new System.Windows.Forms.Label();
-			this.label2 = new System.Windows.Forms.Label();
+			this.keyLabel = new System.Windows.Forms.Label();
+			this.valueLable = new System.Windows.Forms.Label();
 			this.okButton = new Krypton.Toolkit.KryptonButton();
 			this.cancelButton = new Krypton.Toolkit.KryptonButton();
 			this.SuspendLayout();
@@ -39,7 +39,7 @@
 			// keyTextBox
 			// 
 			this.keyTextBox.Font = new System.Drawing.Font("Microsoft Sans Serif", 14.25F, System.Drawing.FontStyle.Regular, System.Drawing.GraphicsUnit.Point, ((byte)(0)));
-			this.keyTextBox.Location = new System.Drawing.Point(81, 30);
+			this.keyTextBox.Location = new System.Drawing.Point(40, 30);
 			this.keyTextBox.Name = "keyTextBox";
 			this.keyTextBox.Size = new System.Drawing.Size(469, 29);
 			this.keyTextBox.TabIndex = 0;
@@ -47,34 +47,34 @@
 			// valueTextBox
 			// 
 			this.valueTextBox.Font = new System.Drawing.Font("Microsoft Sans Serif", 14.25F, System.Drawing.FontStyle.Regular, System.Drawing.GraphicsUnit.Point, ((byte)(0)));
-			this.valueTextBox.Location = new System.Drawing.Point(81, 76);
+			this.valueTextBox.Location = new System.Drawing.Point(40, 94);
 			this.valueTextBox.Name = "valueTextBox";
 			this.valueTextBox.Size = new System.Drawing.Size(469, 29);
 			this.valueTextBox.TabIndex = 1;
 			// 
-			// label1
+			// keyLabel
 			// 
-			this.label1.AutoSize = true;
-			this.label1.Font = new System.Drawing.Font("Microsoft Sans Serif", 14.25F, System.Drawing.FontStyle.Regular, System.Drawing.GraphicsUnit.Point, ((byte)(0)));
-			this.label1.Location = new System.Drawing.Point(12, 30);
-			this.label1.Name = "label1";
-			this.label1.Size = new System.Drawing.Size(42, 24);
-			this.label1.TabIndex = 2;
-			this.label1.Text = "Key";
+			this.keyLabel.AutoSize = true;
+			this.keyLabel.Font = new System.Drawing.Font("Microsoft Sans Serif", 14.25F, System.Drawing.FontStyle.Regular, System.Drawing.GraphicsUnit.Point, ((byte)(0)));
+			this.keyLabel.Location = new System.Drawing.Point(36, 3);
+			this.keyLabel.Name = "keyLabel";
+			this.keyLabel.Size = new System.Drawing.Size(42, 24);
+			this.keyLabel.TabIndex = 2;
+			this.keyLabel.Text = "Key";
 			// 
-			// label2
+			// valueLable
 			// 
-			this.label2.AutoSize = true;
-			this.label2.Font = new System.Drawing.Font("Microsoft Sans Serif", 14.25F, System.Drawing.FontStyle.Regular, System.Drawing.GraphicsUnit.Point, ((byte)(0)));
-			this.label2.Location = new System.Drawing.Point(12, 76);
-			this.label2.Name = "label2";
-			this.label2.Size = new System.Drawing.Size(59, 24);
-			this.label2.TabIndex = 3;
-			this.label2.Text = "Value";
+			this.valueLable.AutoSize = true;
+			this.valueLable.Font = new System.Drawing.Font("Microsoft Sans Serif", 14.25F, System.Drawing.FontStyle.Regular, System.Drawing.GraphicsUnit.Point, ((byte)(0)));
+			this.valueLable.Location = new System.Drawing.Point(36, 64);
+			this.valueLable.Name = "valueLable";
+			this.valueLable.Size = new System.Drawing.Size(59, 24);
+			this.valueLable.TabIndex = 3;
+			this.valueLable.Text = "Value";
 			// 
 			// okButton
 			// 
-			this.okButton.Location = new System.Drawing.Point(149, 119);
+			this.okButton.Location = new System.Drawing.Point(107, 135);
 			this.okButton.Name = "okButton";
 			this.okButton.Size = new System.Drawing.Size(90, 25);
 			this.okButton.TabIndex = 4;
@@ -83,7 +83,7 @@
 			// 
 			// cancelButton
 			// 
-			this.cancelButton.Location = new System.Drawing.Point(345, 119);
+			this.cancelButton.Location = new System.Drawing.Point(302, 135);
 			this.cancelButton.Name = "cancelButton";
 			this.cancelButton.Size = new System.Drawing.Size(90, 25);
 			this.cancelButton.TabIndex = 5;
@@ -94,11 +94,11 @@
 			// 
 			this.AutoScaleDimensions = new System.Drawing.SizeF(6F, 13F);
 			this.AutoScaleMode = System.Windows.Forms.AutoScaleMode.Font;
-			this.ClientSize = new System.Drawing.Size(602, 156);
+			this.ClientSize = new System.Drawing.Size(538, 172);
 			this.Controls.Add(this.cancelButton);
 			this.Controls.Add(this.okButton);
-			this.Controls.Add(this.label2);
-			this.Controls.Add(this.label1);
+			this.Controls.Add(this.valueLable);
+			this.Controls.Add(this.keyLabel);
 			this.Controls.Add(this.valueTextBox);
 			this.Controls.Add(this.keyTextBox);
 			this.Name = "AddkeyValue";
@@ -113,8 +113,8 @@
 
 		private System.Windows.Forms.TextBox keyTextBox;
 		private System.Windows.Forms.TextBox valueTextBox;
-		private System.Windows.Forms.Label label1;
-		private System.Windows.Forms.Label label2;
+		private System.Windows.Forms.Label keyLabel;
+		private System.Windows.Forms.Label valueLable;
 		private Krypton.Toolkit.KryptonButton okButton;
 		private Krypton.Toolkit.KryptonButton cancelButton;
 	}

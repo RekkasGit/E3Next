@@ -7,6 +7,7 @@ using System;
 using System.Collections.Generic;
 using System.IO;
 using System.Linq;
+using System.Reflection;
 using static System.Collections.Specialized.BitVector32;
 
 namespace E3Core.Settings
@@ -1300,7 +1301,47 @@ namespace E3Core.Settings
                 section.AddKey("BuffName", spell.SpellName);
             }
 
-            FileIniDataParser fileIniData = e3util.CreateIniParser();
+
+			//var charSettings = e3util.GetSettingsMappedToInI();
+
+			//foreach(var pair in charSettings)
+			//{
+			//	foreach (var pair2 in pair.Value)
+			//	{
+			//		//now we have the header and keyname of the ini entry
+			//		string header = pair.Key;
+			//		string keyName = pair2.Key;
+			//		section = ParsedData.Sections[header];
+			//		if (section != null)
+			//		{
+
+			//			section.RemoveKey(keyName);
+			//			KeyData newKey = new KeyData(keyName);
+			//			section.AddKey(newKey,);
+			//			section[newKey]
+
+			//			section.RemoveAllKeys();
+
+
+			//		}
+				
+
+			//	}
+			//}
+			//FieldInfo objectList = _charSettingsMappings[selectedSection][selectedSubSection];
+			//section = ParsedData.Sections["Nukes"];
+			//if(section!=null)
+			//{
+			//	section.RemoveAllKeys();
+			//	foreach (var spell in Nukes)
+			//	{
+			//		section.AddKey("Main", spell.ToConfigEntry());
+			//	}
+
+			//}
+
+
+			FileIniDataParser fileIniData = e3util.CreateIniParser();
             File.Delete(_fileName);
             fileIniData.WriteFile(_fileName, ParsedData);
         }

@@ -37,6 +37,9 @@ namespace E3NextConfigEditor
 		public static SortedDictionary<string, SortedDictionary<string, List<SpellData>>> _skilldataOrganized = new SortedDictionary<string, SortedDictionary<string, List<SpellData>>>();
 		public static Int32 _networkPort = 63046;
 		public static Int32 _propertyGridWidth = 150;
+		public static string _bardDynamicMelodyName = "Dynamic Melodies";
+		public static List<String> _dynamicSections = new List<string>() { _bardDynamicMelodyName };
+	
 		public ConfigEditor()
 		{
 
@@ -155,15 +158,13 @@ namespace E3NextConfigEditor
 
 			_charSettingsMappings = e3util.GetSettingsMappedToInI();
 
-			List<string> importantSections = new List<string>() { "Misc", "Assist Settings", "Nukes", "Debuffs", "DoTs on Assist", "DoTs on Command", "Heals", "Buffs", "Melee Abilities", "Burn", "Pets", "Ifs" };
-
+			List<string> importantSections = GetSectionSortOrderByClass(E3.CurrentClass);
 
 			List<string> sectionNames = new List<string>();
 
-			sectionNames = sectionNames.OrderBy(x => x).ToList();
 			if (E3.CurrentClass == Class.Bard)
 			{
-				sectionNames.Add("Dynamic Melodies");
+				sectionNames.Add(_bardDynamicMelodyName);
 			}
 
 			foreach (var section in E3.CharacterSettings.ParsedData.Sections)
@@ -177,7 +178,11 @@ namespace E3NextConfigEditor
 			
 			foreach (var section in importantSections)
 			{
-				if (E3.CharacterSettings.ParsedData.Sections.ContainsSection(section))
+				if(_dynamicSections.Contains(section))
+				{
+					sectionComboBox.Items.Add(section);
+				}
+				else if (E3.CharacterSettings.ParsedData.Sections.ContainsSection(section))
 				{
 					sectionComboBox.Items.Add(section);
 
@@ -190,6 +195,21 @@ namespace E3NextConfigEditor
 
 			}
 
+		}
+
+		List<string> GetSectionSortOrderByClass(Class characterClass)
+		{
+
+			var	returnValue = new List<string>() { "Misc", "Assist Settings", "Nukes", "Debuffs", "DoTs on Assist", "DoTs on Command", "Heals", "Buffs", "Melee Abilities", "Burn", "Pets", "Ifs" };
+
+
+			if(characterClass== Class.Bard)
+			{
+				returnValue = new List<string>() { _bardDynamicMelodyName, "Bard", "Melee Abilities", "Burn", "Ifs", "Assist Settings", "Buffs" };
+			}
+
+
+			return returnValue;
 		}
 		public void PopulateData(RepeatedField<SpellData> spells, SortedDictionary<string, SortedDictionary<string, List<SpellData>>> dest)
 		{
@@ -424,16 +444,13 @@ namespace E3NextConfigEditor
 
 
 		
-			if(selectedSection=="Dynamic Melodies")
+			if(selectedSection== _bardDynamicMelodyName)
 			{   //sigh bards, special snowflakes
-				FieldInfo objectList = _charSettingsMappings["Bard"]["DynamicMelodySets"];
-				if (objectList.IsGenericSortedDictonary(typeof(string), typeof(List<Spell>)))
+				valuesListBox.Tag = _bardDynamicMelodyName;
+				IDictionary<string, List<Spell>> dictionary = E3.CharacterSettings.Bard_MelodySets;
+				foreach (var pair in dictionary)
 				{
-					IDictionary<string, List<Spell>> dictionary = (IDictionary<string, List<Spell>>)objectList.GetValue(E3.CharacterSettings);
-					foreach (var pair in dictionary)
-					{
-						subsectionComboBox.Items.Add(pair.Key);
-					}
+					subsectionComboBox.Items.Add(pair.Key);
 				}
 			}
 			else
@@ -489,7 +506,7 @@ namespace E3NextConfigEditor
 			string selectedSection = sectionComboBox.SelectedItem.ToString();
 
 
-			if (selectedSection == "Dynamic Melodies")
+			if (selectedSection == _bardDynamicMelodyName)
 			{   //sigh bards, special snowflakes
 				FieldInfo objectList = _charSettingsMappings["Bard"]["DynamicMelodySets"];
 				if (objectList.IsGenericSortedDictonary(typeof(string), typeof(List<Spell>)))
@@ -890,8 +907,15 @@ namespace E3NextConfigEditor
 				return;
 			}
 
+			AddkeyValue a = new AddkeyValue();
+			a.SetKeyLabel("Melody Name");
+			a.SetValueLabel("Ifs Name");
+			a.StartPosition = FormStartPosition.CenterParent;
+			if (a.ShowDialog() == DialogResult.OK)
+			{
+				valueList_AddMelodyIfToCollection(a.Key, a.Value);
 
-			//valueList_AddMelodyIfToCollection
+			}
 
 		}
 		private void valueList_AddKeyValue_Execute(object sender, EventArgs e)
@@ -901,7 +925,7 @@ namespace E3NextConfigEditor
 				return;
 			}
 			AddkeyValue a = new AddkeyValue();
-
+			a.StartPosition = FormStartPosition.CenterParent;
 			if(a.ShowDialog()== DialogResult.OK)
 			{
 				string key = a.Key;
@@ -934,6 +958,25 @@ namespace E3NextConfigEditor
 
 		}
 
+		private void valueList_AddDynamicMelody_Execute(object sender, EventArgs e)
+		{
+			if (!(valuesListBox.Tag is string) && ((string)valuesListBox.Tag) != _bardDynamicMelodyName)
+			{
+				return;
+			}
+			AddMelody a = new AddMelody();
+			a.StartPosition = FormStartPosition.CenterParent;
+			if (a.ShowDialog() == DialogResult.OK)
+			{
+				string value = a.Value;
+				E3.CharacterSettings.Bard_MelodySets.Add(value, new List<Spell>());
+				subsectionComboBox.Items.Clear();
+				foreach (var pair in E3.CharacterSettings.Bard_MelodySets)
+				{
+					subsectionComboBox.Items.Add(pair.Key);
+				}
+			}
+		}
 		private void valueListContextMenu_Opening(object sender, CancelEventArgs e)
 		{
 			foreach(KryptonContextMenuItemBase items in valueListContextMenu.Items) 
@@ -969,10 +1012,18 @@ namespace E3NextConfigEditor
 								{
 									menuItem.Visible = false;
 								}
+								else if (menuItem.Text == "Add Melody")
+								{
+									menuItem.Visible = false;
+								}
 							}
 							else if ((valuesListBox.Tag is List<Spell>))
 							{
 								if (menuItem.Text == "Add Key/Value")
+								{
+									menuItem.Visible = false;
+								}
+								else if (menuItem.Text == "Add Melody")
 								{
 									menuItem.Visible = false;
 								}
@@ -995,6 +1046,42 @@ namespace E3NextConfigEditor
 								{
 									menuItem.Visible = false;
 								}
+								else if (menuItem.Text == "Add Melody")
+								{
+									menuItem.Visible = false;
+								}
+								else if (menuItem.Text == "Add Key/Value")
+								{
+									menuItem.Visible = false;
+								}
+							}
+							else if(valuesListBox.Tag is string)
+							{
+								string value = (string)valuesListBox.Tag;
+
+								if(value==_bardDynamicMelodyName)
+								{
+									if (menuItem.Text == "Add Disc")
+									{
+										menuItem.Visible = false;
+									}
+									else if (menuItem.Text == "Add Spell")
+									{
+										menuItem.Visible = false;
+									}
+									else if (menuItem.Text == "Add AA")
+									{
+										menuItem.Visible = false;
+									}
+									else if (menuItem.Text == "Add Skill")
+									{
+										menuItem.Visible = false;
+									}
+									else if (menuItem.Text == "Add Key/Value")
+									{
+										menuItem.Visible = false;
+									}
+								}
 							}
 							else
 							{
@@ -1010,6 +1097,5 @@ namespace E3NextConfigEditor
 			}
 		}
 
-		
 	}
 }
