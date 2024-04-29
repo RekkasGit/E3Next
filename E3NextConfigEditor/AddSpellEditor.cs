@@ -1,6 +1,7 @@
-﻿using ComponentFactory.Krypton.Toolkit;
+﻿using Krypton.Toolkit;
 using E3Core.Data;
 using E3NextConfigEditor.Extensions;
+using Krypton.Toolkit;
 using System;
 using System.Collections.Generic;
 using System.ComponentModel;
@@ -11,11 +12,11 @@ using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
 using System.Windows.Forms;
-using static System.Windows.Forms.VisualStyles.VisualStyleElement.Rebar;
+
 
 namespace E3NextConfigEditor
 {
-	public partial class AddSpellEditor : Form
+	public partial class AddSpellEditor : KryptonForm
 	{
 		SortedDictionary<string, SortedDictionary<string, List<SpellData>>> _spellDataOrganized;
 		List<Bitmap> _spellIcons;

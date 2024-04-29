@@ -28,88 +28,84 @@
 		/// </summary>
 		private void InitializeComponent()
 		{
-			this.components = new System.ComponentModel.Container();
-			this.sectionComboBox = new ComponentFactory.Krypton.Toolkit.KryptonComboBox();
-			this.sectionComboBox_ButtonSpecAny1 = new ComponentFactory.Krypton.Toolkit.ButtonSpecAny();
-			this.sectionComboBox_ButtonSpecAny2 = new ComponentFactory.Krypton.Toolkit.ButtonSpecAny();
-			this.subsectionComboBox = new ComponentFactory.Krypton.Toolkit.KryptonComboBox();
-			this.subsectionComboBox_buttonSpecAny1 = new ComponentFactory.Krypton.Toolkit.ButtonSpecAny();
-			this.subsectionComboBox_buttonSpecAny2 = new ComponentFactory.Krypton.Toolkit.ButtonSpecAny();
-			this.valuesListBox = new ComponentFactory.Krypton.Toolkit.KryptonListBox();
-			this.valueListContextMenu = new ComponentFactory.Krypton.Toolkit.KryptonContextMenu();
-			this.kryptonContextMenuItems1 = new ComponentFactory.Krypton.Toolkit.KryptonContextMenuItems();
-			this.kryptonContextMenuItem2 = new ComponentFactory.Krypton.Toolkit.KryptonContextMenuItem();
-			this.valueList_AddSpell = new ComponentFactory.Krypton.Toolkit.KryptonCommand();
-			this.kryptonContextMenuItem3 = new ComponentFactory.Krypton.Toolkit.KryptonContextMenuItem();
-			this.valueList_AddAA = new ComponentFactory.Krypton.Toolkit.KryptonCommand();
-			this.kryptonContextMenuItem4 = new ComponentFactory.Krypton.Toolkit.KryptonContextMenuItem();
-			this.valueList_AddDisc = new ComponentFactory.Krypton.Toolkit.KryptonCommand();
-			this.kryptonContextMenuItem6 = new ComponentFactory.Krypton.Toolkit.KryptonContextMenuItem();
-			this.valueList_AddKeyValue = new ComponentFactory.Krypton.Toolkit.KryptonCommand();
-			this.kryptonContextMenuItem5 = new ComponentFactory.Krypton.Toolkit.KryptonContextMenuItem();
-			this.valueList_Delete = new ComponentFactory.Krypton.Toolkit.KryptonCommand();
+			this.sectionComboBox = new Krypton.Toolkit.KryptonComboBox();
+			this.sectionComboBox_ButtonSpecAny1 = new Krypton.Toolkit.ButtonSpecAny();
+			this.sectionComboBox_ButtonSpecAny2 = new Krypton.Toolkit.ButtonSpecAny();
+			this.subsectionComboBox = new Krypton.Toolkit.KryptonComboBox();
+			this.subsectionComboBox_buttonSpecAny1 = new Krypton.Toolkit.ButtonSpecAny();
+			this.subsectionComboBox_buttonSpecAny2 = new Krypton.Toolkit.ButtonSpecAny();
+			this.valuesListBox = new Krypton.Toolkit.KryptonListBox();
+			this.valueListContextMenu = new Krypton.Toolkit.KryptonContextMenu();
+			this.kryptonContextMenuItems1 = new Krypton.Toolkit.KryptonContextMenuItems();
+			this.kryptonContextMenuItem2 = new Krypton.Toolkit.KryptonContextMenuItem();
+			this.valueList_AddSpell = new Krypton.Toolkit.KryptonCommand();
+			this.kryptonContextMenuItem3 = new Krypton.Toolkit.KryptonContextMenuItem();
+			this.valueList_AddAA = new Krypton.Toolkit.KryptonCommand();
+			this.kryptonContextMenuItem4 = new Krypton.Toolkit.KryptonContextMenuItem();
+			this.valueList_AddDisc = new Krypton.Toolkit.KryptonCommand();
+			this.kryptonContextMenuItem6 = new Krypton.Toolkit.KryptonContextMenuItem();
+			this.valueList_AddKeyValue = new Krypton.Toolkit.KryptonCommand();
+			this.kryptonContextMenuItem5 = new Krypton.Toolkit.KryptonContextMenuItem();
+			this.valueList_Delete = new Krypton.Toolkit.KryptonCommand();
 			this.propertyGrid = new System.Windows.Forms.PropertyGrid();
-			this.kryptonContextMenuItems2 = new ComponentFactory.Krypton.Toolkit.KryptonContextMenuItems();
-			this.kryptonContextMenuItem1 = new ComponentFactory.Krypton.Toolkit.KryptonContextMenuItem();
-			this.kryptonContextMenuItems3 = new ComponentFactory.Krypton.Toolkit.KryptonContextMenuItems();
-			this.kryptonContextMenuHeading1 = new ComponentFactory.Krypton.Toolkit.KryptonContextMenuHeading();
-			this.kryptonBorderEdge2 = new ComponentFactory.Krypton.Toolkit.KryptonBorderEdge();
-			this.kryptonPalette1 = new ComponentFactory.Krypton.Toolkit.KryptonPalette(this.components);
+			this.kryptonContextMenuItems2 = new Krypton.Toolkit.KryptonContextMenuItems();
+			this.kryptonContextMenuItem1 = new Krypton.Toolkit.KryptonContextMenuItem();
+			this.kryptonContextMenuItems3 = new Krypton.Toolkit.KryptonContextMenuItems();
+			this.kryptonContextMenuHeading1 = new Krypton.Toolkit.KryptonContextMenuHeading();
+			this.kryptonContextMenuHeading2 = new Krypton.Toolkit.KryptonContextMenuHeading();
 			((System.ComponentModel.ISupportInitialize)(this.sectionComboBox)).BeginInit();
 			((System.ComponentModel.ISupportInitialize)(this.subsectionComboBox)).BeginInit();
 			this.SuspendLayout();
 			// 
 			// sectionComboBox
 			// 
-			this.sectionComboBox.ButtonSpecs.AddRange(new ComponentFactory.Krypton.Toolkit.ButtonSpecAny[] {
-            this.sectionComboBox_ButtonSpecAny1,
-            this.sectionComboBox_ButtonSpecAny2});
+			this.sectionComboBox.ButtonSpecs.Add(this.sectionComboBox_ButtonSpecAny1);
+			this.sectionComboBox.ButtonSpecs.Add(this.sectionComboBox_ButtonSpecAny2);
 			this.sectionComboBox.DropDownStyle = System.Windows.Forms.ComboBoxStyle.DropDownList;
 			this.sectionComboBox.DropDownWidth = 131;
-			this.sectionComboBox.ItemStyle = ComponentFactory.Krypton.Toolkit.ButtonStyle.Standalone;
+			this.sectionComboBox.IntegralHeight = false;
+			this.sectionComboBox.ItemStyle = Krypton.Toolkit.ButtonStyle.Standalone;
 			this.sectionComboBox.Location = new System.Drawing.Point(12, 12);
 			this.sectionComboBox.Name = "sectionComboBox";
-			this.sectionComboBox.PaletteMode = ComponentFactory.Krypton.Toolkit.PaletteMode.Office2010Black;
 			this.sectionComboBox.Size = new System.Drawing.Size(288, 21);
 			this.sectionComboBox.TabIndex = 0;
 			this.sectionComboBox.SelectedIndexChanged += new System.EventHandler(this.sectionComboBox_SelectedIndexChanged);
 			// 
 			// sectionComboBox_ButtonSpecAny1
 			// 
-			this.sectionComboBox_ButtonSpecAny1.Type = ComponentFactory.Krypton.Toolkit.PaletteButtonSpecStyle.ArrowLeft;
+			this.sectionComboBox_ButtonSpecAny1.Type = Krypton.Toolkit.PaletteButtonSpecStyle.ArrowLeft;
 			this.sectionComboBox_ButtonSpecAny1.UniqueName = "07150ABD249746AA3BBF969B010258EE";
 			this.sectionComboBox_ButtonSpecAny1.Click += new System.EventHandler(this.sectionComboBox_ButtonSpecAny1_Click);
 			// 
 			// sectionComboBox_ButtonSpecAny2
 			// 
-			this.sectionComboBox_ButtonSpecAny2.Type = ComponentFactory.Krypton.Toolkit.PaletteButtonSpecStyle.ArrowRight;
+			this.sectionComboBox_ButtonSpecAny2.Type = Krypton.Toolkit.PaletteButtonSpecStyle.ArrowRight;
 			this.sectionComboBox_ButtonSpecAny2.UniqueName = "22E191AD9E654F4EDC85CBB96002CD5E";
 			this.sectionComboBox_ButtonSpecAny2.Click += new System.EventHandler(this.sectionComboBox_ButtonSpecAny2_Click);
 			// 
 			// subsectionComboBox
 			// 
-			this.subsectionComboBox.ButtonSpecs.AddRange(new ComponentFactory.Krypton.Toolkit.ButtonSpecAny[] {
-            this.subsectionComboBox_buttonSpecAny1,
-            this.subsectionComboBox_buttonSpecAny2});
+			this.subsectionComboBox.ButtonSpecs.Add(this.subsectionComboBox_buttonSpecAny1);
+			this.subsectionComboBox.ButtonSpecs.Add(this.subsectionComboBox_buttonSpecAny2);
 			this.subsectionComboBox.DropDownStyle = System.Windows.Forms.ComboBoxStyle.DropDownList;
 			this.subsectionComboBox.DropDownWidth = 131;
-			this.subsectionComboBox.ItemStyle = ComponentFactory.Krypton.Toolkit.ButtonStyle.Standalone;
+			this.subsectionComboBox.IntegralHeight = false;
+			this.subsectionComboBox.ItemStyle = Krypton.Toolkit.ButtonStyle.Standalone;
 			this.subsectionComboBox.Location = new System.Drawing.Point(12, 39);
 			this.subsectionComboBox.Name = "subsectionComboBox";
-			this.subsectionComboBox.PaletteMode = ComponentFactory.Krypton.Toolkit.PaletteMode.Office2010Black;
 			this.subsectionComboBox.Size = new System.Drawing.Size(288, 21);
 			this.subsectionComboBox.TabIndex = 1;
 			this.subsectionComboBox.SelectedIndexChanged += new System.EventHandler(this.subsectionComboBox_SelectedIndexChanged);
 			// 
 			// subsectionComboBox_buttonSpecAny1
 			// 
-			this.subsectionComboBox_buttonSpecAny1.Type = ComponentFactory.Krypton.Toolkit.PaletteButtonSpecStyle.ArrowLeft;
+			this.subsectionComboBox_buttonSpecAny1.Type = Krypton.Toolkit.PaletteButtonSpecStyle.ArrowLeft;
 			this.subsectionComboBox_buttonSpecAny1.UniqueName = "07150ABD249746AA3BBF969B010258EE";
 			this.subsectionComboBox_buttonSpecAny1.Click += new System.EventHandler(this.subsectionComboBox_buttonSpecAny1_Click);
 			// 
 			// subsectionComboBox_buttonSpecAny2
 			// 
-			this.subsectionComboBox_buttonSpecAny2.Type = ComponentFactory.Krypton.Toolkit.PaletteButtonSpecStyle.ArrowRight;
+			this.subsectionComboBox_buttonSpecAny2.Type = Krypton.Toolkit.PaletteButtonSpecStyle.ArrowRight;
 			this.subsectionComboBox_buttonSpecAny2.UniqueName = "22E191AD9E654F4EDC85CBB96002CD5E";
 			this.subsectionComboBox_buttonSpecAny2.Click += new System.EventHandler(this.subsectionComboBox_buttonSpecAny2_Click);
 			// 
@@ -133,9 +129,10 @@
 			// 
 			// valueListContextMenu
 			// 
-			this.valueListContextMenu.Items.AddRange(new ComponentFactory.Krypton.Toolkit.KryptonContextMenuItemBase[] {
+			this.valueListContextMenu.Items.AddRange(new Krypton.Toolkit.KryptonContextMenuItemBase[] {
+            this.kryptonContextMenuHeading2,
             this.kryptonContextMenuItems1});
-			this.valueListContextMenu.PaletteMode = ComponentFactory.Krypton.Toolkit.PaletteMode.SparkleBlue;
+			this.valueListContextMenu.PaletteMode = Krypton.Toolkit.PaletteMode.Office2010BlackDarkMode;
 			this.valueListContextMenu.StateDisabled.ItemShortcutText.ShortText.Color1 = System.Drawing.Color.Red;
 			this.valueListContextMenu.StateDisabled.ItemShortcutText.ShortText.Color2 = System.Drawing.Color.Red;
 			this.valueListContextMenu.StateDisabled.ItemTextAlternate.ShortText.Color1 = System.Drawing.Color.Red;
@@ -146,7 +143,7 @@
 			// 
 			// kryptonContextMenuItems1
 			// 
-			this.kryptonContextMenuItems1.Items.AddRange(new ComponentFactory.Krypton.Toolkit.KryptonContextMenuItemBase[] {
+			this.kryptonContextMenuItems1.Items.AddRange(new Krypton.Toolkit.KryptonContextMenuItemBase[] {
             this.kryptonContextMenuItem2,
             this.kryptonContextMenuItem3,
             this.kryptonContextMenuItem4,
@@ -224,73 +221,58 @@
 			// 
 			this.kryptonContextMenuHeading1.ExtraText = "";
 			// 
-			// kryptonBorderEdge2
+			// kryptonContextMenuHeading2
 			// 
-			this.kryptonBorderEdge2.Location = new System.Drawing.Point(0, 0);
-			this.kryptonBorderEdge2.Name = "kryptonBorderEdge2";
-			this.kryptonBorderEdge2.Size = new System.Drawing.Size(50, 1);
-			this.kryptonBorderEdge2.Text = "kryptonBorderEdge2";
-			// 
-			// kryptonPalette1
-			// 
-			this.kryptonPalette1.ContextMenu.StateDisabled.ItemShortcutText.ShortText.Color1 = System.Drawing.Color.Red;
-			this.kryptonPalette1.ContextMenu.StateDisabled.ItemShortcutText.ShortText.Color2 = System.Drawing.Color.FromArgb(((int)(((byte)(255)))), ((int)(((byte)(128)))), ((int)(((byte)(0)))));
-			this.kryptonPalette1.ContextMenu.StateDisabled.ItemTextAlternate.LongText.Color1 = System.Drawing.Color.Red;
-			this.kryptonPalette1.ContextMenu.StateDisabled.ItemTextAlternate.LongText.Color2 = System.Drawing.Color.FromArgb(((int)(((byte)(255)))), ((int)(((byte)(128)))), ((int)(((byte)(0)))));
-			this.kryptonPalette1.ContextMenu.StateDisabled.ItemTextAlternate.ShortText.Color1 = System.Drawing.Color.Red;
-			this.kryptonPalette1.ContextMenu.StateDisabled.ItemTextAlternate.ShortText.Color2 = System.Drawing.Color.FromArgb(((int)(((byte)(255)))), ((int)(((byte)(128)))), ((int)(((byte)(0)))));
-			this.kryptonPalette1.ContextMenu.StateDisabled.ItemTextStandard.ShortText.Color1 = System.Drawing.Color.Red;
-			this.kryptonPalette1.ContextMenu.StateDisabled.ItemTextStandard.ShortText.Color2 = System.Drawing.Color.FromArgb(((int)(((byte)(255)))), ((int)(((byte)(128)))), ((int)(((byte)(0)))));
+			this.kryptonContextMenuHeading2.ExtraText = "";
+			this.kryptonContextMenuHeading2.Text = "Options";
 			// 
 			// ConfigEditor
 			// 
 			this.AutoScaleDimensions = new System.Drawing.SizeF(6F, 13F);
 			this.AutoScaleMode = System.Windows.Forms.AutoScaleMode.Font;
 			this.ClientSize = new System.Drawing.Size(1311, 705);
-			this.Controls.Add(this.kryptonBorderEdge2);
 			this.Controls.Add(this.propertyGrid);
 			this.Controls.Add(this.valuesListBox);
 			this.Controls.Add(this.subsectionComboBox);
 			this.Controls.Add(this.sectionComboBox);
 			this.DoubleBuffered = true;
 			this.Name = "ConfigEditor";
+			this.PaletteMode = Krypton.Toolkit.PaletteMode.Office2010BlackDarkMode;
 			this.Text = "Form1";
 			this.Load += new System.EventHandler(this.ConfigEditor_Load);
 			((System.ComponentModel.ISupportInitialize)(this.sectionComboBox)).EndInit();
 			((System.ComponentModel.ISupportInitialize)(this.subsectionComboBox)).EndInit();
 			this.ResumeLayout(false);
-			this.PerformLayout();
 
 		}
 
 		#endregion
 
-		private ComponentFactory.Krypton.Toolkit.KryptonComboBox sectionComboBox;
-		private ComponentFactory.Krypton.Toolkit.ButtonSpecAny sectionComboBox_ButtonSpecAny1;
-		private ComponentFactory.Krypton.Toolkit.ButtonSpecAny sectionComboBox_ButtonSpecAny2;
-		private ComponentFactory.Krypton.Toolkit.KryptonComboBox subsectionComboBox;
-		private ComponentFactory.Krypton.Toolkit.ButtonSpecAny subsectionComboBox_buttonSpecAny1;
-		private ComponentFactory.Krypton.Toolkit.ButtonSpecAny subsectionComboBox_buttonSpecAny2;
-		private ComponentFactory.Krypton.Toolkit.KryptonListBox valuesListBox;
+		private Krypton.Toolkit.KryptonComboBox sectionComboBox;
+		private Krypton.Toolkit.ButtonSpecAny sectionComboBox_ButtonSpecAny1;
+		private Krypton.Toolkit.ButtonSpecAny sectionComboBox_ButtonSpecAny2;
+		private Krypton.Toolkit.KryptonComboBox subsectionComboBox;
+		private Krypton.Toolkit.ButtonSpecAny subsectionComboBox_buttonSpecAny1;
+		private Krypton.Toolkit.ButtonSpecAny subsectionComboBox_buttonSpecAny2;
+		private Krypton.Toolkit.KryptonListBox valuesListBox;
 		private System.Windows.Forms.PropertyGrid propertyGrid;
-		private ComponentFactory.Krypton.Toolkit.KryptonContextMenu valueListContextMenu;
-		private ComponentFactory.Krypton.Toolkit.KryptonContextMenuItems kryptonContextMenuItems1;
-		private ComponentFactory.Krypton.Toolkit.KryptonContextMenuItem kryptonContextMenuItem2;
-		private ComponentFactory.Krypton.Toolkit.KryptonContextMenuItem kryptonContextMenuItem3;
-		private ComponentFactory.Krypton.Toolkit.KryptonContextMenuItem kryptonContextMenuItem4;
-		private ComponentFactory.Krypton.Toolkit.KryptonContextMenuItem kryptonContextMenuItem5;
-		private ComponentFactory.Krypton.Toolkit.KryptonContextMenuItems kryptonContextMenuItems2;
-		private ComponentFactory.Krypton.Toolkit.KryptonContextMenuItem kryptonContextMenuItem1;
-		private ComponentFactory.Krypton.Toolkit.KryptonContextMenuItems kryptonContextMenuItems3;
-		private ComponentFactory.Krypton.Toolkit.KryptonContextMenuHeading kryptonContextMenuHeading1;
-		private ComponentFactory.Krypton.Toolkit.KryptonCommand valueList_Delete;
-		private ComponentFactory.Krypton.Toolkit.KryptonCommand valueList_AddSpell;
-		private ComponentFactory.Krypton.Toolkit.KryptonBorderEdge kryptonBorderEdge2;
-		private ComponentFactory.Krypton.Toolkit.KryptonCommand valueList_AddAA;
-		private ComponentFactory.Krypton.Toolkit.KryptonCommand valueList_AddDisc;
-		private ComponentFactory.Krypton.Toolkit.KryptonCommand valueList_AddKeyValue;
-		private ComponentFactory.Krypton.Toolkit.KryptonContextMenuItem kryptonContextMenuItem6;
-		private ComponentFactory.Krypton.Toolkit.KryptonPalette kryptonPalette1;
+		private Krypton.Toolkit.KryptonContextMenu valueListContextMenu;
+		private Krypton.Toolkit.KryptonContextMenuItems kryptonContextMenuItems1;
+		private Krypton.Toolkit.KryptonContextMenuItem kryptonContextMenuItem2;
+		private Krypton.Toolkit.KryptonContextMenuItem kryptonContextMenuItem3;
+		private Krypton.Toolkit.KryptonContextMenuItem kryptonContextMenuItem4;
+		private Krypton.Toolkit.KryptonContextMenuItem kryptonContextMenuItem5;
+		private Krypton.Toolkit.KryptonContextMenuItems kryptonContextMenuItems2;
+		private Krypton.Toolkit.KryptonContextMenuItem kryptonContextMenuItem1;
+		private Krypton.Toolkit.KryptonContextMenuItems kryptonContextMenuItems3;
+		private Krypton.Toolkit.KryptonContextMenuHeading kryptonContextMenuHeading1;
+		private Krypton.Toolkit.KryptonCommand valueList_Delete;
+		private Krypton.Toolkit.KryptonCommand valueList_AddSpell;
+		private Krypton.Toolkit.KryptonCommand valueList_AddAA;
+		private Krypton.Toolkit.KryptonCommand valueList_AddDisc;
+		private Krypton.Toolkit.KryptonCommand valueList_AddKeyValue;
+		private Krypton.Toolkit.KryptonContextMenuItem kryptonContextMenuItem6;
+		private Krypton.Toolkit.KryptonContextMenuHeading kryptonContextMenuHeading2;
 	}
 }
 

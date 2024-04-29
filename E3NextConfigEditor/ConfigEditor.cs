@@ -1,6 +1,4 @@
-﻿using ComponentFactory.Krypton.Navigator;
-using ComponentFactory.Krypton.Toolkit;
-using E3Core.Data;
+﻿using E3Core.Data;
 using E3Core.Processors;
 using E3Core.Utility;
 using E3NextConfigEditor.Client;
@@ -23,6 +21,7 @@ using E3NextConfigEditor.Extensions;
 using System.Reflection;
 using Google.Protobuf.Collections;
 using System.Collections;
+using Krypton.Toolkit;
 
 namespace E3NextConfigEditor
 {
@@ -702,46 +701,53 @@ namespace E3NextConfigEditor
 
 		private void valueListContextMenu_Opening(object sender, CancelEventArgs e)
 		{
-			foreach(KryptonContextMenuItems items in valueListContextMenu.Items) 
+			foreach(KryptonContextMenuItemBase items in valueListContextMenu.Items) 
 			{
-				foreach(KryptonContextMenuItemBase item in items.Items)
-				{	
-					if (item is KryptonContextMenuItem)
+				
+				if (items is KryptonContextMenuItems)
+				{
+					foreach (KryptonContextMenuItemBase item in ((KryptonContextMenuItems)items).Items)
 					{
-					
-						var menuItem = (KryptonContextMenuItem)item;
+						if (item is KryptonContextMenuItem)
+						{
 
-						
-						menuItem.Enabled = true;
-					
-						if ((valuesListBox.Tag is Dictionary<string, string>))
-						{
-							if (menuItem.Text == "Add Disc")
+							var menuItem = (KryptonContextMenuItem)item;
+
+
+							menuItem.Visible = true;
+
+							if ((valuesListBox.Tag is Dictionary<string, string>))
 							{
-								menuItem.Enabled = false;
+								if (menuItem.Text == "Add Disc")
+								{
+									menuItem.Visible = false;
+								}
+								else if (menuItem.Text == "Add Spell")
+								{
+									menuItem.Visible = false;
+								}
+								else if (menuItem.Text == "Add AA")
+								{
+									menuItem.Visible = false;
+								}
 							}
-							else if (menuItem.Text == "Add Spell")
+							else if ((valuesListBox.Tag is List<Spell>))
 							{
-								menuItem.Enabled = false;
+								if (menuItem.Text == "Add Key/Value")
+								{
+									menuItem.Visible = false;
+								}
 							}
-							else if (menuItem.Text == "Add AA")
+							else
 							{
-								menuItem.Enabled = false;
+								menuItem.Visible = false;
 							}
-						}
-						else if ((valuesListBox.Tag is List<Spell>))
-						{
-							if (menuItem.Text == "Add Key/Value")
-							{
-								menuItem.Enabled = false;
-							}
-						}
-						else
-						{
-							menuItem.Enabled = false;
 						}
 					}
+
 				}
+				
+				
 				
 			}
 		}

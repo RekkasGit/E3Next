@@ -28,10 +28,10 @@
 		/// </summary>
 		private void InitializeComponent()
 		{
-			this.spellTreeView = new ComponentFactory.Krypton.Toolkit.KryptonTreeView();
+			this.spellTreeView = new Krypton.Toolkit.KryptonTreeView();
 			this.addSpellPropertyGrid = new System.Windows.Forms.PropertyGrid();
-			this.addSpellButton = new ComponentFactory.Krypton.Toolkit.KryptonButton();
-			this.cancelSpellButton = new ComponentFactory.Krypton.Toolkit.KryptonButton();
+			this.addSpellButton = new Krypton.Toolkit.KryptonButton();
+			this.cancelSpellButton = new Krypton.Toolkit.KryptonButton();
 			this.SuspendLayout();
 			// 
 			// spellTreeView
@@ -88,6 +88,7 @@
 			this.Controls.Add(this.addSpellPropertyGrid);
 			this.Controls.Add(this.spellTreeView);
 			this.Name = "AddSpellEditor";
+			this.PaletteMode = Krypton.Toolkit.PaletteMode.Office2010BlackDarkMode;
 			this.Text = "Add Spell/Disc/AA Editor";
 			this.Load += new System.EventHandler(this.AddSpellEditor_Load);
 			this.ResumeLayout(false);
@@ -96,9 +97,9 @@
 
 		#endregion
 
-		private ComponentFactory.Krypton.Toolkit.KryptonTreeView spellTreeView;
+		private Krypton.Toolkit.KryptonTreeView spellTreeView;
 		private System.Windows.Forms.PropertyGrid addSpellPropertyGrid;
-		private ComponentFactory.Krypton.Toolkit.KryptonButton addSpellButton;
-		private ComponentFactory.Krypton.Toolkit.KryptonButton cancelSpellButton;
+		private Krypton.Toolkit.KryptonButton addSpellButton;
+		private Krypton.Toolkit.KryptonButton cancelSpellButton;
 	}
 }
