@@ -39,35 +39,8 @@ namespace E3Core.Classes
 			EventProcessor.RegisterCommand("/e3autocanni", (x) =>
 			{
 				//swap them
-
-				if (x.args.Count > 0)
-				{
-					if (x.args[0].Equals("off", StringComparison.OrdinalIgnoreCase))
-					{
-						if (E3.CharacterSettings.AutoCanni)
-						{
-							E3.CharacterSettings.AutoCanni = false;
-							E3.Bots.Broadcast("\agTurning off Auto Canni");
-						}
-					}
-					else if (x.args[0].Equals("on", StringComparison.OrdinalIgnoreCase))
-					{
-						if (!E3.CharacterSettings.AutoCanni)
-						{
-							E3.CharacterSettings.AutoCanni = true;
-							E3.Bots.Broadcast("\arTurning on auto canni!");
-
-						}
-					}
-				}
-				else
-				{
-					E3.CharacterSettings.AutoCanni = E3.CharacterSettings.AutoCanni ? false : true;
-					if (E3.CharacterSettings.AutoCanni) E3.Bots.Broadcast("\arAuto Canni On");
-					if (!E3.CharacterSettings.AutoCanni) E3.Bots.Broadcast("\agAuto Canni Off");
-
-				}
-
+				e3util.ToggleBooleanSetting(ref E3.CharacterSettings.AutoCanni, "Auto Canni", x.args);
+	
 			});
 
 		}

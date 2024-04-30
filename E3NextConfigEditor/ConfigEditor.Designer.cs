@@ -129,9 +129,7 @@
 			this.valuesListBox.DragDrop += new System.Windows.Forms.DragEventHandler(this.valuesListBox_DragDrop);
 			this.valuesListBox.DragOver += new System.Windows.Forms.DragEventHandler(this.valuesListBox_DragOver);
 			this.valuesListBox.MouseDown += new System.Windows.Forms.MouseEventHandler(this.valuesListBox_MouseDown);
-			this.valuesListBox.MouseHover += new System.EventHandler(this.valuesListBox_MouseHover);
-			this.valuesListBox.MouseMove += new System.Windows.Forms.MouseEventHandler(this.valuesListBox_MouseMove);
-			this.valuesListBox.MouseUp += new System.Windows.Forms.MouseEventHandler(this.valuesListBox_MouseUp);
+
 			// 
 			// valueListContextMenu
 			// 

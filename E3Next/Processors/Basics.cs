@@ -113,34 +113,7 @@ namespace E3Core.Processors
 			EventProcessor.RegisterCommand("/e3forage", (x) =>
 			{
 				//swap them
-
-				if (x.args.Count > 0)
-				{
-					if (x.args[0].Equals("off", StringComparison.OrdinalIgnoreCase))
-					{
-						if (E3.CharacterSettings.Misc_AutoForage)
-						{
-							E3.CharacterSettings.Misc_AutoForage = false;
-							E3.Bots.Broadcast("\agTurning off Forage");
-						}
-					}
-					else if (x.args[0].Equals("on", StringComparison.OrdinalIgnoreCase))
-					{
-						if (!E3.CharacterSettings.Misc_AutoForage)
-						{
-							E3.CharacterSettings.Misc_AutoForage = true;
-							E3.Bots.Broadcast("\arTurning on Forage!");
-
-						}
-					}
-				}
-				else
-				{
-					E3.CharacterSettings.Misc_AutoForage = E3.CharacterSettings.Misc_AutoForage ? false : true;
-					if (E3.CharacterSettings.Misc_AutoForage) E3.Bots.Broadcast("\arAuto Forage On");
-					if (!E3.CharacterSettings.Misc_AutoForage) E3.Bots.Broadcast("\agAuto CaForagenni Off");
-
-				}
+				e3util.ToggleBooleanSetting(ref E3.CharacterSettings.Misc_AutoForage, "Auto Forage", x.args);
 
 			});
 

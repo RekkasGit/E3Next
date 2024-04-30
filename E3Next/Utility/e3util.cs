@@ -1270,7 +1270,37 @@ namespace E3Core.Utility
             }
 
         }
-        public static List<Data.Spell> ListAllActiveAA()
+		public static void ToggleBooleanSetting(ref bool booleanObject, string Name, List<string> args)
+		{
+			if (args.Count > 0)
+			{
+				if (args[0].Equals("off", StringComparison.OrdinalIgnoreCase))
+				{
+					if (booleanObject)
+					{
+						booleanObject = false;
+						E3.Bots.Broadcast($"\agTurning off {Name}");
+					}
+				}
+				else if (args[0].Equals("on", StringComparison.OrdinalIgnoreCase))
+				{
+					if (!booleanObject)
+					{
+						booleanObject = true;
+						E3.Bots.Broadcast($"\arTurning on {Name}!");
+
+					}
+				}
+			}
+			else
+			{
+				booleanObject = booleanObject ? false : true;
+				if (booleanObject) E3.Bots.Broadcast($"\ag{Name} On");
+				if (!booleanObject) E3.Bots.Broadcast($"\ar{Name} Off");
+
+			}
+		}
+		public static List<Data.Spell> ListAllActiveAA()
         {
             List<Data.Spell> returnValue = new List<Data.Spell>();
             for(Int32 i=0;i<10000;i++)

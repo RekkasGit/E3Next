@@ -27,36 +27,39 @@ namespace E3NextConfigEditor
 {
 	public partial class ConfigEditor : KryptonForm
 	{
+		//client to query the EQ intsance
 		public static DealerClient _tloClient;
+		//pre-loaded spell icons
 		public static List<Bitmap> _spellIcons = new List<Bitmap>();
+		//reflection stuff for the E3.CharacterSettings
 		public static Dictionary<string, Dictionary<string, FieldInfo>> _charSettingsMappings;
+		//our current class, needed by the settings class
 		public static E3Core.Data.Class _currentClass;
-		public static SortedDictionary<string, SortedDictionary<string, List<SpellData>>> _spellDataOrganized = new SortedDictionary<string, SortedDictionary<string, List<SpellData>>>();
-		public static SortedDictionary<string, SortedDictionary<string, List<SpellData>>> _altdataOrganized = new SortedDictionary<string, SortedDictionary<string, List<SpellData>>>();
-		public static SortedDictionary<string, SortedDictionary<string, List<SpellData>>> _discdataOrganized = new SortedDictionary<string, SortedDictionary<string, List<SpellData>>>();
-		public static SortedDictionary<string, SortedDictionary<string, List<SpellData>>> _skilldataOrganized = new SortedDictionary<string, SortedDictionary<string, List<SpellData>>>();
-		public static Int32 _networkPort = 58138;
-		public static Int32 _propertyGridWidth = 150;
-		public static string _bardDynamicMelodyName = "Dynamic Melodies";
-		public static List<String> _dynamicSections = new List<string>() { _bardDynamicMelodyName };
+		//building the tree views takes time, so only pay it once
+		//side benefit it keeps the position of when it was closed
+		//maybe should create an object that keeps the position/size but eh.
 		public static AddSpellEditor _spellEditor;
 		public static AddSpellEditor _discEditor;
 		public static AddSpellEditor _abilityEditor;
 		public static AddSpellEditor _aaEditor;
 		public static AddSpellEditor _skillEditor;
+		//Spell data organized for the tree view of the editors.
+		public static SortedDictionary<string, SortedDictionary<string, List<SpellData>>> _spellDataOrganized = new SortedDictionary<string, SortedDictionary<string, List<SpellData>>>();
+		public static SortedDictionary<string, SortedDictionary<string, List<SpellData>>> _altdataOrganized = new SortedDictionary<string, SortedDictionary<string, List<SpellData>>>();
+		public static SortedDictionary<string, SortedDictionary<string, List<SpellData>>> _discdataOrganized = new SortedDictionary<string, SortedDictionary<string, List<SpellData>>>();
+		public static SortedDictionary<string, SortedDictionary<string, List<SpellData>>> _skilldataOrganized = new SortedDictionary<string, SortedDictionary<string, List<SpellData>>>();
+
+		public static Int32 _networkPort = 58138;
+		public static Int32 _propertyGridWidth = 150;
+		public static string _bardDynamicMelodyName = "Dynamic Melodies";
+		public static List<String> _dynamicSections = new List<string>() { _bardDynamicMelodyName };
+
+	
 		public ConfigEditor()
 		{
-
-
 			InitializeComponent();
-
 			LoadData();
-
-			
 		}
-
-
-		
 
 		public void LoadData()
 		{
@@ -81,14 +84,14 @@ namespace E3NextConfigEditor
 			result = _tloClient.RequestRawData("${E3.Skills.ListAll}");
 			SpellDataList skills = SpellDataList.Parser.ParseFrom(result);
 
-			foreach(var skill in skills.Data)
+			foreach (var skill in skills.Data)
 			{
 				skill.Category = "Skill";
 				skill.Subcategory = "Basic";
 			}
 
 			string classValue = e3util.ClassNameFix(_tloClient.RequestData("${Me.Class}"));
-            System.Enum.TryParse(classValue, out _currentClass);
+			System.Enum.TryParse(classValue, out _currentClass);
 
 			//lets sort all the spells by cataegory/subcategory and levels
 
@@ -114,7 +117,7 @@ namespace E3NextConfigEditor
 			}
 			foreach (var pair in _discdataOrganized)
 			{
-				
+
 				foreach (var keySet in pair.Value.Keys.ToList())
 				{
 					_discdataOrganized[pair.Key][keySet] = _discdataOrganized[pair.Key][keySet].OrderByDescending(x => x.Level).ToList();
@@ -142,17 +145,17 @@ namespace E3NextConfigEditor
 
 
 			//load image data
-			for(Int32 i =1;i<=63;i++)
+			for (Int32 i = 1; i <= 63; i++)
 			{
 				using (var image = new TGA.TargaImage($"D:\\EQ\\EQLive\\uifiles\\default\\spells{i.ToString("D2")}.tga"))
 				{
-					using(var bitmap = image.Image)
+					using (var bitmap = image.Image)
 					{
 						for (Int32 y = 0; y < 6; y++)
 						{
-							for(Int32 x=0;x<6;x++)
+							for (Int32 x = 0; x < 6; x++)
 							{
-								var icon = bitmap.Clone(new Rectangle(x*40, y*40, 40, 40), bitmap.PixelFormat);
+								var icon = bitmap.Clone(new Rectangle(x * 40, y * 40, 40, 40), bitmap.PixelFormat);
 								_spellIcons.Add(icon);
 							}
 						}
@@ -179,10 +182,10 @@ namespace E3NextConfigEditor
 				sectionNames.Add(section.SectionName);
 
 			}
-			
+
 			foreach (var section in importantSections)
 			{
-				if(_dynamicSections.Contains(section))
+				if (_dynamicSections.Contains(section))
 				{
 					sectionComboBox.Items.Add(section);
 				}
@@ -204,14 +207,17 @@ namespace E3NextConfigEditor
 		List<string> GetSectionSortOrderByClass(Class characterClass)
 		{
 
-			var	returnValue = new List<string>() { "Misc", "Assist Settings", "Nukes", "Debuffs", "DoTs on Assist", "DoTs on Command", "Heals", "Buffs", "Melee Abilities", "Burn", "Pets", "Ifs" };
+			var returnValue = new List<string>() { "Misc", "Assist Settings", "Nukes", "Debuffs", "DoTs on Assist", "DoTs on Command", "Heals", "Buffs", "Melee Abilities", "Burn", "Pets", "Ifs" };
 
 
-			if(characterClass== Class.Bard)
+			if (characterClass == Class.Bard)
 			{
 				returnValue = new List<string>() { _bardDynamicMelodyName, "Bard", "Melee Abilities", "Burn", "Ifs", "Assist Settings", "Buffs" };
 			}
-
+			if (characterClass == Class.Necromancer)
+			{
+				returnValue = new List<string>() { "DoTs on Assist","DoTs on Command", "Debuffs","Pets", "Burn", "Ifs", "Assist Settings", "Buffs" };
+			}
 
 			return returnValue;
 		}
@@ -235,6 +241,540 @@ namespace E3NextConfigEditor
 
 				spellList.Add(s);
 
+			}
+		}
+		
+		#region comboBoxs
+		private void sectionComboBox_ButtonSpecAny2_Click(object sender, EventArgs e)
+		{
+			if (sectionComboBox.SelectedIndex < (sectionComboBox.Items.Count - 1))
+			{
+				sectionComboBox.SelectedIndex += 1;
+				sectionComboBox.ComboBox.Focus();
+			}
+		}
+
+		private void sectionComboBox_ButtonSpecAny1_Click(object sender, EventArgs e)
+		{
+			if (sectionComboBox.SelectedIndex > 0)
+			{
+				sectionComboBox.SelectedIndex -= 1;
+				sectionComboBox.ComboBox.Focus();
+			}
+
+		}
+		static List<string> dictionarySections = new List<string>() { "Ifs", "E3BotsPublishData (key/value)", "Events", "EventLoop" };
+		private void sectionComboBox_SelectedIndexChanged(object sender, EventArgs e)
+		{
+			//selection changed, update the navigator
+
+
+			subsectionComboBox.Items.Clear();
+			valuesListBox.Items.Clear();
+			valuesListBox.Tag = null;
+
+			propertyGrid.SelectedObject = null;
+
+
+			string selectedSection = sectionComboBox.SelectedItem.ToString();
+
+
+
+			if (selectedSection == _bardDynamicMelodyName)
+			{   //sigh bards, special snowflakes
+				valuesListBox.Tag = _bardDynamicMelodyName;
+				IDictionary<string, List<Spell>> dictionary = E3.CharacterSettings.Bard_MelodySets;
+				foreach (var pair in dictionary)
+				{
+					subsectionComboBox.Items.Add(pair.Key);
+				}
+			}
+			else
+			{
+				var section = E3.CharacterSettings.ParsedData.Sections[selectedSection];
+				if (section != null)
+				{
+					//dynamic type, just fill out the list below with the loaded types
+					if (dictionarySections.Contains(selectedSection, StringComparer.OrdinalIgnoreCase))
+					{
+						FieldInfo objectList = _charSettingsMappings[selectedSection][""];
+
+						UpdateListView(objectList);
+					}
+					else
+					{
+						foreach (var key in section)
+						{
+
+							subsectionComboBox.Items.Add(key.KeyName);
+						}
+					}
+				}
+			}
+
+
+
+
+
+		}
+
+		private void subsectionComboBox_buttonSpecAny1_Click(object sender, EventArgs e)
+		{
+			if (subsectionComboBox.SelectedIndex > 0)
+			{
+				subsectionComboBox.SelectedIndex -= 1;
+				subsectionComboBox.ComboBox.Focus();
+			}
+
+		}
+
+		private void subsectionComboBox_buttonSpecAny2_Click(object sender, EventArgs e)
+		{
+			if (subsectionComboBox.SelectedIndex < (subsectionComboBox.Items.Count - 1))
+			{
+				subsectionComboBox.SelectedIndex += 1;
+				subsectionComboBox.ComboBox.Focus();
+			}
+		}
+
+		private void subsectionComboBox_SelectedIndexChanged(object sender, EventArgs e)
+		{
+			string selectedSection = sectionComboBox.SelectedItem.ToString();
+
+
+			if (selectedSection == _bardDynamicMelodyName)
+			{   //sigh bards, special snowflakes
+				FieldInfo objectList = _charSettingsMappings["Bard"]["DynamicMelodySets"];
+				if (objectList.IsGenericSortedDictonary(typeof(string), typeof(List<Spell>)))
+				{
+					IDictionary<string, List<Spell>> dynamicMelodies = (IDictionary<string, List<Spell>>)objectList.GetValue(E3.CharacterSettings);
+					string selectedSubSection = subsectionComboBox.SelectedItem.ToString();
+					List<Spell> melodies = dynamicMelodies[selectedSubSection];
+					UpdateListView(melodies);
+
+				}
+			}
+			else
+			{
+				var section = E3.CharacterSettings.ParsedData.Sections[selectedSection];
+				if (section != null)
+				{
+					string selectedSubSection = subsectionComboBox.SelectedItem.ToString();
+					FieldInfo objectList = _charSettingsMappings[selectedSection][selectedSubSection];
+
+					UpdateListView(objectList);
+				}
+
+			}
+
+
+		}
+		#endregion
+		#region DragNDropListBox
+		Int64 mouseDownTimeStamp = 0;
+		System.Diagnostics.Stopwatch _stopwatch = new Stopwatch();
+		System.Timers.Timer _timer = new System.Timers.Timer(50);
+
+		private void updatePropertyGrid()
+		{
+			propertyGrid.SelectedObject = null;
+			//need to pull out the Tag and verify which type so we know what to pass to the 
+			//property grid
+			KryptonListItem listItem = ((KryptonListItem)valuesListBox.SelectedItem);
+			if (listItem.Tag is Spell)
+			{
+
+				propertyGrid.SelectedObject = new Models.SpellProxy((Spell)listItem.Tag);
+
+			}
+			else if (listItem.Tag is SpellRequest)
+			{
+				propertyGrid.SelectedObject = new Models.SpellRequestDataProxy((SpellRequest)listItem.Tag);
+			}
+			else if (listItem.Tag is MelodyIfs)
+			{
+				propertyGrid.SelectedObject = new Models.MelodyIfProxy((MelodyIfs)listItem.Tag);
+			}
+			else if (listItem.Tag is Models.Ref<string, string> || listItem.Tag is Models.Ref<string> || listItem.Tag is Models.Ref<bool> || listItem.Tag is Models.Ref<Int32> || listItem.Tag is Models.Ref<Int64>)
+			{
+
+				propertyGrid.SelectedObject = listItem.Tag;
+
+			}
+
+		}
+
+		private void valuesListBox_SelectedIndexChanged(object sender, EventArgs e)
+		{
+			//is it a spell?
+			Debug.WriteLine("Index Changed");
+			if (valuesListBox.SelectedItem == null) return;
+
+			updatePropertyGrid();
+
+		}
+		private void valuesListBox_MouseUp(object sender, MouseEventArgs e)
+		{
+			mouseDownTimeStamp = 0;
+			Debug.WriteLine("Mouse Up");
+		}
+		private void valuesListBox_MouseDown(object sender, MouseEventArgs e)
+		{
+			mouseDownTimeStamp = _stopwatch.ElapsedMilliseconds;
+			Debug.WriteLine("Mouse Down");
+			if (valuesListBox.SelectedItem == null) return;
+
+			updatePropertyGrid();
+
+		}
+
+
+		private void ConfigEditor_Load(object sender, EventArgs e)
+		{
+			valuesListBox.AllowDrop = true;
+			_stopwatch.Start();
+			_timer.Elapsed += _timer_Elapsed;
+			_timer.Start();
+			propertyGrid.SetLabelColumnWidth(_propertyGridWidth);
+		}
+		private void propertyGrid_SizeChanged(object sender, EventArgs e)
+		{
+			propertyGrid.SetLabelColumnWidth(_propertyGridWidth);
+		}
+
+		private void _timer_Elapsed(object sender, System.Timers.ElapsedEventArgs e)
+		{
+			if (mouseDownTimeStamp != 0 && mouseDownTimeStamp + 400 < _stopwatch.ElapsedMilliseconds)
+			{
+
+				valuesListBox.Invoke((MethodInvoker)delegate
+				{
+					if (valuesListBox.SelectedItem == null) return;
+					if (valuesListBox.Items.Count < 2) return;
+					valuesListBox.DoDragDrop(valuesListBox.SelectedItem, DragDropEffects.Move);
+					mouseDownTimeStamp = 0;
+				});
+
+				mouseDownTimeStamp = 0;
+			}
+		}
+
+		private void valuesListBox_DragOver(object sender, DragEventArgs e)
+		{
+			e.Effect = DragDropEffects.Move;
+		}
+
+		private void valuesListBox_DragDrop(object sender, DragEventArgs e)
+		{
+			Point point = valuesListBox.PointToClient(new Point(e.X, e.Y));
+			int index = this.valuesListBox.IndexFromPoint(point);
+			if (index < 0) index = this.valuesListBox.Items.Count - 1;
+			object data = valuesListBox.SelectedItem;
+
+			object settings_data_obj = valuesListBox.Tag;
+
+			//update the base storage data
+			if (settings_data_obj is List<Spell>)
+			{
+				List<Spell> spellList = (List<Spell>)settings_data_obj;
+
+				var spell = (Spell)((KryptonListItem)data).Tag;
+				spellList.Remove(spell);
+				spellList.Insert(index, spell);
+
+			}
+			else if (settings_data_obj is List<SpellRequest>)
+			{
+				List<SpellRequest> spellList = (List<SpellRequest>)settings_data_obj;
+
+				var spell = (SpellRequest)((KryptonListItem)data).Tag;
+				spellList.Remove(spell);
+				spellList.Insert(index, spell);
+			}
+			else if (settings_data_obj is List<MelodyIfs>)
+			{
+				List<MelodyIfs> spellList = (List<MelodyIfs>)settings_data_obj;
+
+				var spell = (MelodyIfs)((KryptonListItem)data).Tag;
+				spellList.Remove(spell);
+				spellList.Insert(index, spell);
+			}
+			this.valuesListBox.Items.Remove(data);
+			this.valuesListBox.Items.Insert(index, data);
+			valuesListBox.SelectedIndex = index;
+
+			mouseDownTimeStamp = 0;
+		}
+		#endregion
+
+		#region ContextMenuCommands
+		private void valueList_AddDynamicMelody_Execute(object sender, EventArgs e)
+		{
+			if (!(valuesListBox.Tag is string) && ((string)valuesListBox.Tag) != _bardDynamicMelodyName)
+			{
+				return;
+			}
+			AddMelody a = new AddMelody();
+			a.StartPosition = FormStartPosition.CenterParent;
+			if (a.ShowDialog() == DialogResult.OK)
+			{
+				string value = a.Value;
+				E3.CharacterSettings.Bard_MelodySets.Add(value, new List<Spell>());
+				subsectionComboBox.Items.Clear();
+				foreach (var pair in E3.CharacterSettings.Bard_MelodySets)
+				{
+					subsectionComboBox.Items.Add(pair.Key);
+				}
+			}
+		}
+		private void valueList_AddSpell_Execute(object sender, EventArgs e)
+		{
+
+			if (!(valuesListBox.Tag is List<Spell>))
+			{
+				return;
+			}
+			ShowEditorDialog(ref _spellEditor, _spellDataOrganized);
+		}
+
+		private void valueList_AddAA_Execute(object sender, EventArgs e)
+		{
+			if (!(valuesListBox.Tag is List<Spell>))
+			{
+				return;
+			}
+
+			ShowEditorDialog(ref _aaEditor, _altdataOrganized);
+		}
+		private void valueList_Delete_Execute(object sender, EventArgs e)
+		{
+			if (valuesListBox.SelectedItem == null) return;
+			if (valuesListBox.Items.Count < 2)
+			{
+				bool shouldExit = true;
+				//these are allowed to have empty lists, the rest no
+				if (valuesListBox.Tag is List<Spell>) shouldExit = false;
+				if (valuesListBox.Tag is List<SpellRequest>) shouldExit = false;
+				if (valuesListBox.Tag is List<MelodyIfs>) shouldExit = false;
+				if (valuesListBox.Tag is IDictionary<string, string>) shouldExit = false;
+				if (shouldExit) return;
+			}
+			object data = valuesListBox.SelectedItem;
+
+			object settings_data_obj = valuesListBox.Tag;
+
+			//update the base storage data
+			if (settings_data_obj is List<Spell>)
+			{
+				List<Spell> spellList = (List<Spell>)settings_data_obj;
+
+				var spell = (Spell)((KryptonListItem)data).Tag;
+				spellList.Remove(spell);
+			}
+			else if (settings_data_obj is List<SpellRequest>)
+			{
+				List<SpellRequest> spellList = (List<SpellRequest>)settings_data_obj;
+
+				var spell = (SpellRequest)((KryptonListItem)data).Tag;
+				spellList.Remove(spell);
+			}
+			else if (settings_data_obj is List<MelodyIfs>)
+			{
+				List<MelodyIfs> spellList = (List<MelodyIfs>)settings_data_obj;
+
+				var spell = (MelodyIfs)((KryptonListItem)data).Tag;
+				spellList.Remove(spell);
+			}
+			else if (settings_data_obj is List<string>)
+			{
+				List<string> stringList = (List<string>)settings_data_obj;
+				var stringRef = (Models.Ref<string>)((KryptonListItem)data).Tag;
+				stringList.Remove(stringRef.Value);
+			}
+			else if (settings_data_obj is IDictionary<string, string>)
+			{
+				IDictionary<string, string> stringDict = (IDictionary<string, string>)settings_data_obj;
+				var stringRef = (Models.Ref<string, string>)((KryptonListItem)data).Tag;
+				stringDict.Remove(stringRef.Key);
+			}
+
+			valuesListBox.Items.Remove(data);
+			valuesListBox.SelectedItem = null;
+			valuesListBox.Refresh();
+			Debug.WriteLine("Test Delete");
+
+
+		}
+		private void valueList_AddDisc_Execute(object sender, EventArgs e)
+		{
+			if (!(valuesListBox.Tag is List<Spell>))
+			{
+				return;
+			}
+			ShowEditorDialog(ref _discEditor, _discdataOrganized);
+		}
+		private void valueList_AddSkill_Execute(object sender, EventArgs e)
+		{
+			if (!(valuesListBox.Tag is List<Spell>))
+			{
+				return;
+			}
+			ShowEditorDialog(ref _skillEditor, _skilldataOrganized);
+		}
+		private void valueList_AddMelodyIf_Execute(object sender, EventArgs e)
+		{
+			if (!(valuesListBox.Tag is List<MelodyIfs>))
+			{
+				return;
+			}
+
+			AddkeyValue a = new AddkeyValue();
+			a.SetKeyLabel("Melody Name");
+			a.SetValueLabel("Ifs Name");
+			a.StartPosition = FormStartPosition.CenterParent;
+			if (a.ShowDialog() == DialogResult.OK)
+			{
+				valueList_AddMelodyIfToCollection(a.Key, a.Value);
+
+			}
+
+		}
+		private void valueList_AddKeyValue_Execute(object sender, EventArgs e)
+		{
+			if (!(valuesListBox.Tag is IDictionary<string, string>))
+			{
+				return;
+			}
+			AddkeyValue a = new AddkeyValue();
+			a.StartPosition = FormStartPosition.CenterParent;
+			if (a.ShowDialog() == DialogResult.OK)
+			{
+				string key = a.Key;
+				string value = a.Value;
+
+				IDictionary<string, string> dict = (IDictionary<string, string>)valuesListBox.Tag;
+
+				if (!dict.ContainsKey(key))
+				{
+					dict.Add(key, value);
+				}
+				else
+				{
+					dict[key] = value;
+				}
+				string selectedSection = sectionComboBox.SelectedItem.ToString();
+				var section = E3.CharacterSettings.ParsedData.Sections[selectedSection];
+				if (section != null)
+				{
+					//dynamic type, just fill out the list below with the loaded types
+					if (dictionarySections.Contains(selectedSection, StringComparer.OrdinalIgnoreCase))
+					{
+						FieldInfo objectList = _charSettingsMappings[selectedSection][""];
+
+						UpdateListView(objectList);
+					}
+				}
+			}
+
+
+		}
+		#endregion
+
+		#region HelperMethods
+		private void SetMenuItemVisablity(KryptonContextMenuItem menuItem)
+		{
+			if ((valuesListBox.Tag is IDictionary<string, string>))
+			{
+				if (menuItem.Text == "Add Disc")
+				{
+					menuItem.Visible = false;
+				}
+				else if (menuItem.Text == "Add Spell")
+				{
+					menuItem.Visible = false;
+				}
+				else if (menuItem.Text == "Add AA")
+				{
+					menuItem.Visible = false;
+				}
+				else if (menuItem.Text == "Add Skill")
+				{
+					menuItem.Visible = false;
+				}
+				else if (menuItem.Text == "Add Melody")
+				{
+					menuItem.Visible = false;
+				}
+			}
+			else if ((valuesListBox.Tag is List<Spell>))
+			{
+				if (menuItem.Text == "Add Key/Value")
+				{
+					menuItem.Visible = false;
+				}
+				else if (menuItem.Text == "Add Melody")
+				{
+					menuItem.Visible = false;
+				}
+			}
+			else if ((valuesListBox.Tag is List<MelodyIfs>))
+			{
+				if (menuItem.Text == "Add Disc")
+				{
+					menuItem.Visible = false;
+				}
+				else if (menuItem.Text == "Add Spell")
+				{
+					menuItem.Visible = false;
+				}
+				else if (menuItem.Text == "Add AA")
+				{
+					menuItem.Visible = false;
+				}
+				else if (menuItem.Text == "Add Skill")
+				{
+					menuItem.Visible = false;
+				}
+				else if (menuItem.Text == "Add Melody")
+				{
+					menuItem.Visible = false;
+				}
+				else if (menuItem.Text == "Add Key/Value")
+				{
+					menuItem.Visible = false;
+				}
+			}
+			else if (valuesListBox.Tag is string)
+			{
+				string value = (string)valuesListBox.Tag;
+
+				if (value == _bardDynamicMelodyName)
+				{
+					if (menuItem.Text == "Add Disc")
+					{
+						menuItem.Visible = false;
+					}
+					else if (menuItem.Text == "Add Spell")
+					{
+						menuItem.Visible = false;
+					}
+					else if (menuItem.Text == "Add AA")
+					{
+						menuItem.Visible = false;
+					}
+					else if (menuItem.Text == "Add Skill")
+					{
+						menuItem.Visible = false;
+					}
+					else if (menuItem.Text == "Add Key/Value")
+					{
+						menuItem.Visible = false;
+					}
+				}
+			}
+			else
+			{
+				menuItem.Visible = false;
 			}
 		}
 		private void UpdateListView(List<Spell> spellList)
@@ -412,339 +952,6 @@ namespace E3NextConfigEditor
 			}
 
 		}
-		#region comboBoxs
-		private void sectionComboBox_ButtonSpecAny2_Click(object sender, EventArgs e)
-		{
-			if (sectionComboBox.SelectedIndex < (sectionComboBox.Items.Count - 1))
-			{
-				sectionComboBox.SelectedIndex += 1;
-				sectionComboBox.ComboBox.Focus();
-			}
-		}
-
-		private void sectionComboBox_ButtonSpecAny1_Click(object sender, EventArgs e)
-		{
-			if (sectionComboBox.SelectedIndex > 0)
-			{
-				sectionComboBox.SelectedIndex -= 1;
-				sectionComboBox.ComboBox.Focus();
-			}
-
-		}
-		static List<string> dictionarySections = new List<string>() { "Ifs", "E3BotsPublishData (key/value)","Events","EventLoop" };
-		private void sectionComboBox_SelectedIndexChanged(object sender, EventArgs e)
-		{
-			//selection changed, update the navigator
-
-
-			subsectionComboBox.Items.Clear();
-			valuesListBox.Items.Clear();
-			valuesListBox.Tag = null;
-
-			propertyGrid.SelectedObject = null;
-
-
-			string selectedSection = sectionComboBox.SelectedItem.ToString();
-
-
-		
-			if(selectedSection== _bardDynamicMelodyName)
-			{   //sigh bards, special snowflakes
-				valuesListBox.Tag = _bardDynamicMelodyName;
-				IDictionary<string, List<Spell>> dictionary = E3.CharacterSettings.Bard_MelodySets;
-				foreach (var pair in dictionary)
-				{
-					subsectionComboBox.Items.Add(pair.Key);
-				}
-			}
-			else
-			{
-				var section = E3.CharacterSettings.ParsedData.Sections[selectedSection];
-				if (section != null)
-				{
-					//dynamic type, just fill out the list below with the loaded types
-					if (dictionarySections.Contains(selectedSection, StringComparer.OrdinalIgnoreCase))
-					{
-						FieldInfo objectList = _charSettingsMappings[selectedSection][""];
-
-						UpdateListView(objectList);
-					}
-					else
-					{
-						foreach (var key in section)
-						{
-
-							subsectionComboBox.Items.Add(key.KeyName);
-						}
-					}
-				}
-			}
-			
-
-
-
-
-		}
-
-		private void subsectionComboBox_buttonSpecAny1_Click(object sender, EventArgs e)
-		{
-			if (subsectionComboBox.SelectedIndex > 0)
-			{
-				subsectionComboBox.SelectedIndex -= 1;
-				subsectionComboBox.ComboBox.Focus();
-			}
-
-		}
-
-		private void subsectionComboBox_buttonSpecAny2_Click(object sender, EventArgs e)
-		{
-			if (subsectionComboBox.SelectedIndex < (subsectionComboBox.Items.Count - 1))
-			{
-				subsectionComboBox.SelectedIndex += 1;
-				subsectionComboBox.ComboBox.Focus();
-			}
-		}
-		
-		private void subsectionComboBox_SelectedIndexChanged(object sender, EventArgs e)
-		{	
-			string selectedSection = sectionComboBox.SelectedItem.ToString();
-
-
-			if (selectedSection == _bardDynamicMelodyName)
-			{   //sigh bards, special snowflakes
-				FieldInfo objectList = _charSettingsMappings["Bard"]["DynamicMelodySets"];
-				if (objectList.IsGenericSortedDictonary(typeof(string), typeof(List<Spell>)))
-				{
-					IDictionary<string, List<Spell>> dynamicMelodies = (IDictionary<string, List<Spell>>)objectList.GetValue(E3.CharacterSettings);
-					string selectedSubSection = subsectionComboBox.SelectedItem.ToString();
-					List<Spell> melodies = dynamicMelodies[selectedSubSection];
-					UpdateListView(melodies);
-
-				}
-			}
-			else
-			{
-				var section = E3.CharacterSettings.ParsedData.Sections[selectedSection];
-				if (section != null)
-				{
-					string selectedSubSection = subsectionComboBox.SelectedItem.ToString();
-					FieldInfo objectList = _charSettingsMappings[selectedSection][selectedSubSection];
-
-					UpdateListView(objectList);
-				}
-
-			}
-
-
-		}
-		#endregion
-		#region DragNDropListBox
-		Int64 mouseDownTimeStamp = 0;
-		System.Diagnostics.Stopwatch _stopwatch = new Stopwatch();
-		System.Timers.Timer _timer = new System.Timers.Timer(50);
-
-		private void updatePropertyGrid()
-		{
-			propertyGrid.SelectedObject = null;
-			//need to pull out the Tag and verify which type so we know what to pass to the 
-			//property grid
-			KryptonListItem listItem = ((KryptonListItem)valuesListBox.SelectedItem);
-			if (listItem.Tag is Spell)
-			{
-				
-				propertyGrid.SelectedObject = new Models.SpellProxy((Spell)listItem.Tag);
-				
-			}
-			else if (listItem.Tag is SpellRequest)
-			{
-				propertyGrid.SelectedObject = new Models.SpellRequestDataProxy((SpellRequest)listItem.Tag);
-			}
-			else if (listItem.Tag is MelodyIfs)
-			{
-				propertyGrid.SelectedObject = new Models.MelodyIfProxy((MelodyIfs)listItem.Tag);
-			}
-			else if (listItem.Tag is Models.Ref<string,string>  || listItem.Tag is Models.Ref<string> || listItem.Tag is Models.Ref<bool> || listItem.Tag is Models.Ref<Int32> || listItem.Tag is Models.Ref<Int64>)
-			{
-
-				propertyGrid.SelectedObject = listItem.Tag;
-			
-			}
-			
-		}
-
-		private void valuesListBox_SelectedIndexChanged(object sender, EventArgs e)
-		{
-			//is it a spell?
-			Debug.WriteLine("Index Changed");
-			if (valuesListBox.SelectedItem == null) return;
-
-			updatePropertyGrid();
-			
-		}
-		private void valuesListBox_MouseUp(object sender, MouseEventArgs e)
-		{
-			mouseDownTimeStamp = 0;
-			Debug.WriteLine("Mouse Up");
-		}
-		private void valuesListBox_MouseDown(object sender, MouseEventArgs e)
-		{
-			mouseDownTimeStamp = _stopwatch.ElapsedMilliseconds;
-			Debug.WriteLine("Mouse Down");
-			if (valuesListBox.SelectedItem == null) return;
-
-			updatePropertyGrid();
-
-		}
-
-
-		private void ConfigEditor_Load(object sender, EventArgs e)
-		{
-			valuesListBox.AllowDrop = true;
-			_stopwatch.Start();
-			_timer.Elapsed += _timer_Elapsed;
-			_timer.Start();
-			propertyGrid.SetLabelColumnWidth(_propertyGridWidth);
-		}
-		private void propertyGrid_SizeChanged(object sender, EventArgs e)
-		{
-			propertyGrid.SetLabelColumnWidth(_propertyGridWidth);
-		}
-
-		private void _timer_Elapsed(object sender, System.Timers.ElapsedEventArgs e)
-		{
-			if(mouseDownTimeStamp !=0 && mouseDownTimeStamp+400 < _stopwatch.ElapsedMilliseconds)
-			{
-				
-				valuesListBox.Invoke((MethodInvoker)delegate
-				{
-					if (valuesListBox.SelectedItem == null) return;
-					if (valuesListBox.Items.Count < 2) return;
-					valuesListBox.DoDragDrop(valuesListBox.SelectedItem, DragDropEffects.Move);
-					mouseDownTimeStamp = 0;
-				});
-
-				mouseDownTimeStamp = 0;
-			}
-		}
-
-		private void valuesListBox_DragOver(object sender, DragEventArgs e)
-		{
-			e.Effect = DragDropEffects.Move;
-		}
-
-		private void valuesListBox_DragDrop(object sender, DragEventArgs e)
-		{
-			Point point = valuesListBox.PointToClient(new Point(e.X, e.Y));
-			int index = this.valuesListBox.IndexFromPoint(point);
-			if (index < 0) index = this.valuesListBox.Items.Count - 1;
-			object data = valuesListBox.SelectedItem;
-
-			object settings_data_obj = valuesListBox.Tag;
-
-			//update the base storage data
-			if(settings_data_obj is List<Spell>)
-			{
-				List<Spell> spellList = (List<Spell>)settings_data_obj;
-
-				var spell = (Spell)((KryptonListItem)data).Tag;
-				spellList.Remove(spell);
-				spellList.Insert(index, spell);
-
-			}
-			else if(settings_data_obj is List<SpellRequest>)
-			{
-				List<SpellRequest> spellList = (List<SpellRequest>)settings_data_obj;
-
-				var spell = (SpellRequest)((KryptonListItem)data).Tag;
-				spellList.Remove(spell);
-				spellList.Insert(index, spell);
-			}
-			else if (settings_data_obj is List<MelodyIfs>)
-			{
-				List<MelodyIfs> spellList = (List<MelodyIfs>)settings_data_obj;
-
-				var spell = (MelodyIfs)((KryptonListItem)data).Tag;
-				spellList.Remove(spell);
-				spellList.Insert(index, spell);
-			}
-			this.valuesListBox.Items.Remove(data);
-			this.valuesListBox.Items.Insert(index, data);
-			valuesListBox.SelectedIndex = index;
-			
-			mouseDownTimeStamp = 0;
-		}
-		#endregion
-
-		private void valuesListBox_MouseMove(object sender, MouseEventArgs e)
-		{
-			Debug.WriteLine("Mouse move");
-
-		}
-
-		private void valuesListBox_MouseHover(object sender, EventArgs e)
-		{
-			Debug.WriteLine("Mouse Hover");
-		}
-
-		private void valueList_Delete_Execute(object sender, EventArgs e)
-		{
-			if (valuesListBox.SelectedItem == null) return;
-			if (valuesListBox.Items.Count < 2)
-			{
-				bool shouldExit = true;
-				//these are allowed to have empty lists, the rest no
-				if(valuesListBox.Tag is List<Spell>) shouldExit = false;
-				if (valuesListBox.Tag is List<SpellRequest>) shouldExit = false;
-				if (valuesListBox.Tag is List<MelodyIfs>) shouldExit = false;
-				if (valuesListBox.Tag is IDictionary<string, string>) shouldExit = false;
-				if (shouldExit) return;
-			}
-			object data = valuesListBox.SelectedItem;
-
-			object settings_data_obj = valuesListBox.Tag;
-
-			//update the base storage data
-			if (settings_data_obj is List<Spell>)
-			{
-				List<Spell> spellList = (List<Spell>)settings_data_obj;
-
-				var spell = (Spell)((KryptonListItem)data).Tag;
-				spellList.Remove(spell);
-			}
-			else if (settings_data_obj is List<SpellRequest>)
-			{
-				List<SpellRequest> spellList = (List<SpellRequest>)settings_data_obj;
-
-				var spell = (SpellRequest)((KryptonListItem)data).Tag;
-				spellList.Remove(spell);
-			}
-			else if (settings_data_obj is List<MelodyIfs>)
-			{
-				List<MelodyIfs> spellList = (List<MelodyIfs>)settings_data_obj;
-
-				var spell = (MelodyIfs)((KryptonListItem)data).Tag;
-				spellList.Remove(spell);
-			}
-			else if(settings_data_obj is List<string>)
-			{
-				List<string> stringList = (List<string>)settings_data_obj;
-				var stringRef = (Models.Ref<string>)((KryptonListItem)data).Tag;
-				stringList.Remove(stringRef.Value);
-			}
-			else if (settings_data_obj is IDictionary<string,string>)
-			{
-				IDictionary<string, string> stringDict = (IDictionary<string, string>)settings_data_obj;
-				var stringRef = (Models.Ref<string,string>)((KryptonListItem)data).Tag;
-				stringDict.Remove(stringRef.Key);
-			}
-			
-			valuesListBox.Items.Remove(data);
-			valuesListBox.SelectedItem = null;
-			valuesListBox.Refresh();
-			Debug.WriteLine("Test Delete");
-
-
-		}
 		private void valueList_AddMelodyIfToCollection(string Melody, string IfsName)
 		{
 			MelodyIfs newMelody = new MelodyIfs();
@@ -765,7 +972,7 @@ namespace E3NextConfigEditor
 					item.ShortText = newMelody.MelodyIfName;
 					item.LongText = string.Empty;
 					item.Tag = newMelody;
-					
+
 					spellList.Insert(index, newMelody);
 					valuesListBox.Items.Insert(index, item);
 				}
@@ -790,10 +997,10 @@ namespace E3NextConfigEditor
 			if (settings_data_obj is List<Spell>)
 			{
 				List<Spell> spellList = (List<Spell>)settings_data_obj;
-				if (spellList.Count>0 && valuesListBox.SelectedItem!=null)
+				if (spellList.Count > 0 && valuesListBox.SelectedItem != null)
 				{
 					//put after the current selected
-					Int32 index = valuesListBox.SelectedIndex+1;
+					Int32 index = valuesListBox.SelectedIndex + 1;
 					KryptonListItem item = new KryptonListItem();
 					item.ShortText = newSpell.SpellName;
 					item.LongText = string.Empty;
@@ -822,7 +1029,6 @@ namespace E3NextConfigEditor
 				}
 			}
 		}
-
 		private void ShowEditorDialog(ref AddSpellEditor editor, SortedDictionary<string, SortedDictionary<string, List<SpellData>>> spellData)
 		{
 			if (editor == null)
@@ -840,236 +1046,27 @@ namespace E3NextConfigEditor
 			}
 		}
 
-		private void valueList_AddSpell_Execute(object sender, EventArgs e)
-		{
-
-			if(!(valuesListBox.Tag is List<Spell>))
-			{
-				return;
-			}
-			ShowEditorDialog(ref _spellEditor, _spellDataOrganized);
-		}
-
-		private void valueList_AddAA_Execute(object sender, EventArgs e)
-		{
-			if (!(valuesListBox.Tag is List<Spell>))
-			{
-				return;
-			}
-
-			ShowEditorDialog(ref _aaEditor, _altdataOrganized);
-		}
-
-		private void valueList_AddDisc_Execute(object sender, EventArgs e)
-		{
-			if (!(valuesListBox.Tag is List<Spell>))
-			{
-				return;
-			}
-			ShowEditorDialog(ref _discEditor, _discdataOrganized);
-		}
-		private void valueList_AddSkill_Execute(object sender, EventArgs e)
-		{
-			if (!(valuesListBox.Tag is List<Spell>))
-			{
-				return;
-			}
-			ShowEditorDialog(ref _skillEditor, _skilldataOrganized);
-		}
-		private void valueList_AddMelodyIf_Execute(object sender, EventArgs e)
-		{
-			if (!(valuesListBox.Tag is List<MelodyIfs>))
-			{
-				return;
-			}
-
-			AddkeyValue a = new AddkeyValue();
-			a.SetKeyLabel("Melody Name");
-			a.SetValueLabel("Ifs Name");
-			a.StartPosition = FormStartPosition.CenterParent;
-			if (a.ShowDialog() == DialogResult.OK)
-			{
-				valueList_AddMelodyIfToCollection(a.Key, a.Value);
-
-			}
-
-		}
-		private void valueList_AddKeyValue_Execute(object sender, EventArgs e)
-		{
-			if (!(valuesListBox.Tag is IDictionary<string,string>))
-			{
-				return;
-			}
-			AddkeyValue a = new AddkeyValue();
-			a.StartPosition = FormStartPosition.CenterParent;
-			if(a.ShowDialog()== DialogResult.OK)
-			{
-				string key = a.Key;
-				string value = a.Value;
-
-				IDictionary<string, string> dict = (IDictionary<string, string>) valuesListBox.Tag;
-
-				if(!dict.ContainsKey(key))
-				{
-					dict.Add(key, value);
-				}
-				else
-				{
-					dict[key] = value;
-				}
-				string selectedSection = sectionComboBox.SelectedItem.ToString();
-				var section = E3.CharacterSettings.ParsedData.Sections[selectedSection];
-				if (section != null)
-				{
-					//dynamic type, just fill out the list below with the loaded types
-					if (dictionarySections.Contains(selectedSection, StringComparer.OrdinalIgnoreCase))
-					{
-						FieldInfo objectList = _charSettingsMappings[selectedSection][""];
-
-						UpdateListView(objectList);
-					}
-				}
-			}
-
-
-		}
-
-		private void valueList_AddDynamicMelody_Execute(object sender, EventArgs e)
-		{
-			if (!(valuesListBox.Tag is string) && ((string)valuesListBox.Tag) != _bardDynamicMelodyName)
-			{
-				return;
-			}
-			AddMelody a = new AddMelody();
-			a.StartPosition = FormStartPosition.CenterParent;
-			if (a.ShowDialog() == DialogResult.OK)
-			{
-				string value = a.Value;
-				E3.CharacterSettings.Bard_MelodySets.Add(value, new List<Spell>());
-				subsectionComboBox.Items.Clear();
-				foreach (var pair in E3.CharacterSettings.Bard_MelodySets)
-				{
-					subsectionComboBox.Items.Add(pair.Key);
-				}
-			}
-		}
+		#endregion
+		
+		
 		private void valueListContextMenu_Opening(object sender, CancelEventArgs e)
 		{
-			foreach(KryptonContextMenuItemBase items in valueListContextMenu.Items) 
+			foreach (KryptonContextMenuItemBase items in valueListContextMenu.Items)
 			{
-				
+
 				if (items is KryptonContextMenuItems)
 				{
 					foreach (KryptonContextMenuItemBase item in ((KryptonContextMenuItems)items).Items)
 					{
 						if (item is KryptonContextMenuItem)
 						{
-
 							var menuItem = (KryptonContextMenuItem)item;
-
-
 							menuItem.Visible = true;
-
-							if ((valuesListBox.Tag is IDictionary<string, string>))
-							{
-								if (menuItem.Text == "Add Disc")
-								{
-									menuItem.Visible = false;
-								}
-								else if (menuItem.Text == "Add Spell")
-								{
-									menuItem.Visible = false;
-								}
-								else if (menuItem.Text == "Add AA")
-								{
-									menuItem.Visible = false;
-								}
-								else if (menuItem.Text == "Add Skill")
-								{
-									menuItem.Visible = false;
-								}
-								else if (menuItem.Text == "Add Melody")
-								{
-									menuItem.Visible = false;
-								}
-							}
-							else if ((valuesListBox.Tag is List<Spell>))
-							{
-								if (menuItem.Text == "Add Key/Value")
-								{
-									menuItem.Visible = false;
-								}
-								else if (menuItem.Text == "Add Melody")
-								{
-									menuItem.Visible = false;
-								}
-							}
-							else if ((valuesListBox.Tag is List<MelodyIfs>))
-							{
-								if (menuItem.Text == "Add Disc")
-								{
-									menuItem.Visible = false;
-								}
-								else if (menuItem.Text == "Add Spell")
-								{
-									menuItem.Visible = false;
-								}
-								else if (menuItem.Text == "Add AA")
-								{
-									menuItem.Visible = false;
-								}
-								else if (menuItem.Text == "Add Skill")
-								{
-									menuItem.Visible = false;
-								}
-								else if (menuItem.Text == "Add Melody")
-								{
-									menuItem.Visible = false;
-								}
-								else if (menuItem.Text == "Add Key/Value")
-								{
-									menuItem.Visible = false;
-								}
-							}
-							else if(valuesListBox.Tag is string)
-							{
-								string value = (string)valuesListBox.Tag;
-
-								if(value==_bardDynamicMelodyName)
-								{
-									if (menuItem.Text == "Add Disc")
-									{
-										menuItem.Visible = false;
-									}
-									else if (menuItem.Text == "Add Spell")
-									{
-										menuItem.Visible = false;
-									}
-									else if (menuItem.Text == "Add AA")
-									{
-										menuItem.Visible = false;
-									}
-									else if (menuItem.Text == "Add Skill")
-									{
-										menuItem.Visible = false;
-									}
-									else if (menuItem.Text == "Add Key/Value")
-									{
-										menuItem.Visible = false;
-									}
-								}
-							}
-							else
-							{
-								menuItem.Visible = false;
-							}
+							SetMenuItemVisablity(menuItem);
 						}
 					}
 
 				}
-				
-				
-				
 			}
 		}
 

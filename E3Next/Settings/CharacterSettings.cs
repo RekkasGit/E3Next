@@ -457,6 +457,8 @@ namespace E3Core.Settings
 
 		[INI_Section("Shaman", "Auto-Canni (On/Off)")]
 		public bool AutoCanni = false;
+
+		public bool Misc_AutoJoinTasks = false;
 		[INI_Section("Shaman", "Malos Totem Spell Gem")]
 		public int MalosTotemSpellGem;
 		[INI_Section("Shaman", "Canni")]

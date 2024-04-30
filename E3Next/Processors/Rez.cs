@@ -654,33 +654,8 @@ namespace E3Core.Processors
         {
 			EventProcessor.RegisterCommand("/e3prez", (x) =>
 			{
-				if (x.args.Count > 0)
-				{
-					if (x.args[0].Equals("off", StringComparison.OrdinalIgnoreCase))
-					{
-						if (_pauseRez)
-						{
-							_pauseRez = false;
-							E3.Bots.Broadcast("\agAccepting Rez again!");
-						}
-					}
-					else if (x.args[0].Equals("on", StringComparison.OrdinalIgnoreCase))
-					{
-						if (!_pauseRez)
-						{
-							_pauseRez = true;
-							E3.Bots.Broadcast("\arPAUSING Rez Acceptance!");
-
-						}
-					}
-				}
-				else
-				{
-					_pauseRez = _pauseRez ? false : true;
-					if (_pauseRez) E3.Bots.Broadcast("\arPAUSING Rez Acceptance!");
-					if (!_pauseRez) E3.Bots.Broadcast("\agAccepting Rezes again!");
-
-				}
+				e3util.ToggleBooleanSetting(ref _pauseRez, "Auto Rez Accept", x.args);
+				
 			});
 			EventProcessor.RegisterCommand("/aerez", (x) =>
             {

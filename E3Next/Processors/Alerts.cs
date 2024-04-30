@@ -15,7 +15,7 @@ namespace E3Core.Processors
     {
         private static Logging _log = E3.Log;
         private static IMQ MQ = E3.MQ;
-
+	
         /// <summary>
         /// Initializes this instance.
         /// </summary>
@@ -252,8 +252,28 @@ namespace E3Core.Processors
 					E3.Bots.Broadcast(x.eventString + $" Total:{MQ.Query<string>("${Me.PctExp}")}%");
 
 				});
+				pattern = @"(.+) has asked you to join the shared task";
+				EventProcessor.RegisterEvent("GuildAddTask", pattern, (x) => {
+					if (!E3.CharacterSettings.Misc_AutoJoinTasks) return;
+					if (x.match.Groups.Count > 1)
+					{
+						string person = x.match.Groups[1].Value;
+						//no way to check for guild if window not open?
+						MQ.Delay(7000);
+						e3util.ClickYesNo(true);
+					}
+				});
+				EventProcessor.RegisterCommand("/e3autojointasks", (x) =>
+				{
+					
+					e3util.ToggleBooleanSetting(ref E3.CharacterSettings.Misc_AutoJoinTasks, "Auto Join Tasks", x.args);
+					
+
+				});
+				
 
 			}
 		}
+		
     }
 }
