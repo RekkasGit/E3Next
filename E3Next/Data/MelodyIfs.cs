@@ -36,5 +36,15 @@ namespace E3Core.Data
                 }
             }
         }
-    }
+		public string ToConfigEntry()
+		{
+			//This is C#'s ternary conditional operator
+			//its condition if true do 1st, else 2nd. 
+			//in this case, if ifskeys is null or empty, set to string empty
+			//else use /Ifs|{IfsKeys}
+			string t_Ifs = (String.IsNullOrWhiteSpace(this.MelodyIfName)) ? String.Empty : $"/Ifs|{MelodyIfName}";
+			
+			return $"{MelodyName}{t_Ifs}";
+		}
+	}
 }

@@ -35,11 +35,15 @@ namespace E3NextConfigEditor
 		public static SortedDictionary<string, SortedDictionary<string, List<SpellData>>> _altdataOrganized = new SortedDictionary<string, SortedDictionary<string, List<SpellData>>>();
 		public static SortedDictionary<string, SortedDictionary<string, List<SpellData>>> _discdataOrganized = new SortedDictionary<string, SortedDictionary<string, List<SpellData>>>();
 		public static SortedDictionary<string, SortedDictionary<string, List<SpellData>>> _skilldataOrganized = new SortedDictionary<string, SortedDictionary<string, List<SpellData>>>();
-		public static Int32 _networkPort = 63046;
+		public static Int32 _networkPort = 58138;
 		public static Int32 _propertyGridWidth = 150;
 		public static string _bardDynamicMelodyName = "Dynamic Melodies";
 		public static List<String> _dynamicSections = new List<string>() { _bardDynamicMelodyName };
-	
+		public static AddSpellEditor _spellEditor;
+		public static AddSpellEditor _discEditor;
+		public static AddSpellEditor _abilityEditor;
+		public static AddSpellEditor _aaEditor;
+		public static AddSpellEditor _skillEditor;
 		public ConfigEditor()
 		{
 
@@ -819,6 +823,23 @@ namespace E3NextConfigEditor
 			}
 		}
 
+		private void ShowEditorDialog(ref AddSpellEditor editor, SortedDictionary<string, SortedDictionary<string, List<SpellData>>> spellData)
+		{
+			if (editor == null)
+			{
+				editor = new AddSpellEditor(spellData, _spellIcons);
+				editor.StartPosition = FormStartPosition.CenterParent;
+			}
+
+			if (editor.ShowDialog() == DialogResult.OK)
+			{
+				if (editor.SelectedSpell != null)
+				{
+					valueList_AddSpellToCollection(editor.SelectedSpell);
+				}
+			}
+		}
+
 		private void valueList_AddSpell_Execute(object sender, EventArgs e)
 		{
 
@@ -826,17 +847,7 @@ namespace E3NextConfigEditor
 			{
 				return;
 			}
-			AddSpellEditor a = new AddSpellEditor(_spellDataOrganized,_spellIcons);
-			a.StartPosition = FormStartPosition.CenterParent;
-			if(a.ShowDialog()== DialogResult.OK)
-			{
-
-				if(a.SelectedSpell!=null)
-				{
-					valueList_AddSpellToCollection(a.SelectedSpell);
-
-				}
-			}
+			ShowEditorDialog(ref _spellEditor, _spellDataOrganized);
 		}
 
 		private void valueList_AddAA_Execute(object sender, EventArgs e)
@@ -846,19 +857,7 @@ namespace E3NextConfigEditor
 				return;
 			}
 
-			AddSpellEditor a = new AddSpellEditor(_altdataOrganized, _spellIcons);
-			a.StartPosition = FormStartPosition.CenterParent;
-			if (a.ShowDialog() == DialogResult.OK)
-			{
-
-				if (a.SelectedSpell != null)
-				{
-					valueList_AddSpellToCollection(a.SelectedSpell);
-
-				}
-
-
-			}
+			ShowEditorDialog(ref _aaEditor, _altdataOrganized);
 		}
 
 		private void valueList_AddDisc_Execute(object sender, EventArgs e)
@@ -867,20 +866,7 @@ namespace E3NextConfigEditor
 			{
 				return;
 			}
-
-			AddSpellEditor a = new AddSpellEditor(_discdataOrganized, _spellIcons);
-			a.StartPosition = FormStartPosition.CenterParent;
-			if (a.ShowDialog() == DialogResult.OK)
-			{
-
-				if (a.SelectedSpell != null)
-				{
-					valueList_AddSpellToCollection(a.SelectedSpell);
-
-				}
-
-
-			}
+			ShowEditorDialog(ref _discEditor, _discdataOrganized);
 		}
 		private void valueList_AddSkill_Execute(object sender, EventArgs e)
 		{
@@ -888,17 +874,7 @@ namespace E3NextConfigEditor
 			{
 				return;
 			}
-
-			AddSpellEditor a = new AddSpellEditor(_skilldataOrganized, _spellIcons);
-			a.StartPosition = FormStartPosition.CenterParent;
-			if (a.ShowDialog() == DialogResult.OK)
-			{
-				if (a.SelectedSpell != null)
-				{
-					valueList_AddSpellToCollection(a.SelectedSpell);
-
-				}
-			}
+			ShowEditorDialog(ref _skillEditor, _skilldataOrganized);
 		}
 		private void valueList_AddMelodyIf_Execute(object sender, EventArgs e)
 		{

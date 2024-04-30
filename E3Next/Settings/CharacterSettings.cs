@@ -1285,62 +1285,87 @@ namespace E3Core.Settings
         /// Saves the data.
         /// </summary>
         public void SaveData()
-        {
-            var section = ParsedData.Sections["Blocked Buffs"];
-            if (section == null)
-            {
-                ParsedData.Sections.AddSection("Blocked Buffs");
-                var newSection = ParsedData.Sections.GetSectionData("Blocked Buffs");
-                newSection.Keys.AddKey("BuffName", "");
+		{
+			//time to pull out the reflection noone has time to manage all that settings crap
+			var charSettings = e3util.GetSettingsMappedToInI();
+			foreach (var pair in charSettings)
+			{
+				foreach (var pair2 in pair.Value)
+				{
+					//now we have the header and keyname of the ini entry
+					string header = pair.Key;
+					string keyName = pair2.Key;
+					var section = ParsedData.Sections[header];
+					if (section != null)
+					{
+						section.RemoveKey(keyName);
 
-            }
-            section = ParsedData.Sections["Blocked Buffs"];
-            section.RemoveAllKeys();
-            foreach (var spell in BlockedBuffs)
-            {
-                section.AddKey("BuffName", spell.SpellName);
-            }
+						FieldInfo field = pair2.Value;
 
-
-			//var charSettings = e3util.GetSettingsMappedToInI();
-
-			//foreach(var pair in charSettings)
-			//{
-			//	foreach (var pair2 in pair.Value)
-			//	{
-			//		//now we have the header and keyname of the ini entry
-			//		string header = pair.Key;
-			//		string keyName = pair2.Key;
-			//		section = ParsedData.Sections[header];
-			//		if (section != null)
-			//		{
-
-			//			section.RemoveKey(keyName);
-			//			KeyData newKey = new KeyData(keyName);
-			//			section.AddKey(newKey,);
-			//			section[newKey]
-
-			//			section.RemoveAllKeys();
-
-
-			//		}
-				
-
-			//	}
-			//}
-			//FieldInfo objectList = _charSettingsMappings[selectedSection][selectedSubSection];
-			//section = ParsedData.Sections["Nukes"];
-			//if(section!=null)
-			//{
-			//	section.RemoveAllKeys();
-			//	foreach (var spell in Nukes)
-			//	{
-			//		section.AddKey("Main", spell.ToConfigEntry());
-			//	}
-
-			//}
-
-
+						Object reference = field.GetValue(this);
+						//have to work with all the types in the settings class
+						if (reference is List<Spell>)
+						{
+							List<Spell> spellList = (List<Spell>)reference;
+							foreach (var spell in spellList)
+							{
+								section.AddKey(keyName, spell.ToConfigEntry());
+							}
+						}
+						else if (reference is List<SpellRequest>)
+						{
+							List<SpellRequest> spellList = (List<SpellRequest>)reference;
+							foreach (var spell in spellList)
+							{
+								section.AddKey(keyName, spell.ToConfigEntry());
+							}
+						}
+						else if (reference is List<MelodyIfs>)
+						{
+							List<MelodyIfs> melodyIfsList = (List<MelodyIfs>)reference;
+							foreach (var spell in melodyIfsList)
+							{
+								section.AddKey(keyName, spell.ToConfigEntry());
+							}
+						}
+						else if (reference is List<string>)
+						{
+							List<String> stringlist = (List<String>)reference;
+							foreach (var value in stringlist)
+							{
+								section.AddKey(keyName, value);
+							}
+						}
+						else if (reference is IDictionary<string, string>)
+						{
+							IDictionary<string, string> stringDict = (IDictionary<string, string>)reference;
+							foreach (var tpair in stringDict)
+							{
+								section.AddKey(tpair.Key, tpair.Value);
+							}
+						}
+						else
+						{
+							if (reference is string)
+							{
+								section.AddKey(keyName, (string)reference);
+							}
+							else if (reference is bool)
+							{
+								section.AddKey(keyName, ((bool)reference).ToString());
+							} 
+							else if (reference is Int32)
+							{
+								section.AddKey(keyName, ((Int32)reference).ToString());
+							}
+							else if (reference is Int64)
+							{
+								section.AddKey(keyName, ((Int64)reference).ToString());
+							}
+						}
+					}
+				}
+			}
 			FileIniDataParser fileIniData = e3util.CreateIniParser();
             File.Delete(_fileName);
             fileIniData.WriteFile(_fileName, ParsedData);

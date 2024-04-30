@@ -1,7 +1,6 @@
 ﻿using Krypton.Toolkit;
 using E3Core.Data;
 using E3NextConfigEditor.Extensions;
-using Krypton.Toolkit;
 using System;
 using System.Collections.Generic;
 using System.ComponentModel;

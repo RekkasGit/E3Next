@@ -42,7 +42,6 @@ namespace E3Core.Processors
             });
             EventProcessor.RegisterCommand("/autostack", (x) =>
             {
-                e3util.OpenMerchant();
                 AutoStack();
             });
         }
@@ -197,7 +196,8 @@ namespace E3Core.Processors
             var windowOpen = MQ.Query<bool>("${Window[BigBankWnd].Open}");
             if (!windowOpen)
             {
-                E3.Bots.Broadcast("\arError: <AutoStack> Merchant window not open. Exiting");
+                E3.Bots.Broadcast("\arError: <AutoStack> Bank window not open. Exiting");
+				return;
             }
 
             for (int i = 1; i <= 10; i++)
@@ -216,11 +216,11 @@ namespace E3Core.Processors
 
                         if (MQ.Query<bool>($"${{FindItemBank[={item}]}}"))
                         {
-                            MQ.Cmd($"/nomodkey /itemnotify \"{item}\" leftmouseup",250);
+                            MQ.Cmd($"/nomodkey /itemnotify \"{item}\" leftmouseup",500);
                             
                             if (MQ.Query<bool>("${Window[QuantityWnd].Open}"))
                             {
-                                MQ.Cmd("/nomodkey /notify QuantityWnd QTYW_Accept_Button leftmouseup",250);
+                                MQ.Cmd("/nomodkey /notify QuantityWnd QTYW_Accept_Button leftmouseup", 500);
                             }
 
                             var slot = MQ.Query<int>($"${{FindItemBank[={item}].ItemSlot}}");
@@ -235,7 +235,7 @@ namespace E3Core.Processors
                                 MQ.Cmd($"/nomodkey /itemnotify bank{slot + 1} leftmouseup");
                             }
 
-                            MQ.Delay(250);
+                            MQ.Delay(500);
                         }
                     }
                 }
