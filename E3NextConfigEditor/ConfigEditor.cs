@@ -53,11 +53,12 @@ namespace E3NextConfigEditor
 		public static Int32 _propertyGridWidth = 150;
 		public static string _bardDynamicMelodyName = "Dynamic Melodies";
 		public static List<String> _dynamicSections = new List<string>() { _bardDynamicMelodyName };
-
+		public static SplashScreen _splashScreen = null;
 	
 		public ConfigEditor()
 		{
 			InitializeComponent();
+			this.StartPosition = FormStartPosition.CenterScreen;
 			LoadData();
 		}
 
@@ -79,15 +80,17 @@ namespace E3NextConfigEditor
 			_tloClient = new DealerClient(_networkPort);
 			IMQ _mqClient = new MQ.MQClient(_tloClient);
 
+			_splashScreen.Invoke(new Action(() =>_splashScreen.splashLabel.Text="Requesting AA list..."));
 			byte[] result = _tloClient.RequestRawData("${E3.AA.ListAll}");
 			SpellDataList aas = SpellDataList.Parser.ParseFrom(result);
-
+			_splashScreen.Invoke(new Action(() => _splashScreen.splashLabel.Text = "Requesting SpellBook list..."));
 			result = _tloClient.RequestRawData("${E3.SpellBook.ListAll}");
 			SpellDataList bookSpells = SpellDataList.Parser.ParseFrom(result);
 
+			_splashScreen.Invoke(new Action(() => _splashScreen.splashLabel.Text = "Requesting Disc list..."));
 			result = _tloClient.RequestRawData("${E3.Discs.ListAll}");
 			SpellDataList discs = SpellDataList.Parser.ParseFrom(result);
-
+			_splashScreen.Invoke(new Action(() => _splashScreen.splashLabel.Text = "Requesting Skill list..."));
 			result = _tloClient.RequestRawData("${E3.Skills.ListAll}");
 			SpellDataList skills = SpellDataList.Parser.ParseFrom(result);
 
@@ -147,10 +150,13 @@ namespace E3NextConfigEditor
 			_tloClient.RequestData("${E3.TLO.BulkBegin}");
 			//create settings files here
 			bool mergeUpdates = false;
+			_splashScreen.Invoke(new Action(() => _splashScreen.splashLabel.Text = "Loading settings file... might take a moment (querying MQ)"));
 			E3.CharacterSettings = new E3Core.Settings.CharacterSettings(mergeUpdates);
 			_tloClient.RequestData("${E3.TLO.BulkEnd}");
 
-			this.Text = $"({E3.CurrentName})({E3.ServerName})";
+			//this.Text = $"({E3.CurrentName})({E3.ServerName})";
+			this.Text = $"(Necro01)";
+
 			//load image data
 			for (Int32 i = 1; i <= 63; i++)
 			{
@@ -1087,7 +1093,7 @@ namespace E3NextConfigEditor
 			mb.buttonOK.Visible = false;
 			mb.buttonCancel.Visible = false;
 			mb.buttonOkayOnly.Visible = true;
-
+		
 			if (mb.ShowDialog() == DialogResult.OK)
 			{
 			}
