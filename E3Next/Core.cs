@@ -81,6 +81,7 @@ namespace MonoCore
                 }
                 catch (Exception ex)
                 {
+				
                     if(ex is ThreadAbort)
 					{
 						Core.IsProcessing = false;
@@ -851,10 +852,7 @@ namespace MonoCore
             System.Threading.Thread.MemoryBarrier();
             //tell the C# thread that it can now process and since processing is false, we can then end the application.
             MainProcessor.ProcessResetEvent.Set();
-            if (E3Core.Server.NetMQServer.UIProcess != null)
-            {
-                E3Core.Server.NetMQServer.UIProcess.Kill();
-            }
+			E3Core.Server.NetMQServer.KillAllProcesses();
             NetMQConfig.Cleanup(false);
             System.Threading.Thread.Sleep(500);
             GC.Collect();

@@ -28,7 +28,8 @@ namespace E3Core.Server
         public static Int32 PubPort;
         public static Int32 PubClientPort;
         public static Process UIProcess;
-        public static Process DiscordProcess;
+		public static Process ConfigProcess;
+		public static Process DiscordProcess;
         private static IMQ MQ = E3.MQ;
 
         
@@ -68,9 +69,15 @@ namespace E3Core.Server
                 }
 
             });
+
+		
 			EventProcessor.RegisterCommand("/ui", (x) =>
 			{
                 MQ.Write("/ui has been depreciated, please use /e3ui");
+			});
+			EventProcessor.RegisterCommand("/e3config", (x) =>
+			{
+				LaunchCharConfig();
 			});
 			EventProcessor.RegisterCommand("/e3ui", (x) =>
             {
@@ -95,6 +102,70 @@ namespace E3Core.Server
                 }
             });
         }
+		public static void KillAllProcesses()
+		{
+			if (UIProcess != null)
+			{
+				try
+				{
+					UIProcess.Kill();
+
+				}
+				catch (Exception)
+				{
+
+				}
+			}
+			if (DiscordProcess != null)
+			{
+
+				try
+				{
+					DiscordProcess.Kill();
+
+				}
+				catch (Exception)
+				{
+
+				}
+			}
+			if (ConfigProcess != null)
+			{
+
+				try
+				{
+					ConfigProcess.Kill();
+
+				}
+				catch (Exception)
+				{
+
+				}
+			}
+			
+		}
+		static void LaunchCharConfig()
+		{
+			string dllFullPath = Assembly.GetExecutingAssembly().CodeBase.Replace("file:///", "").Replace("/", "\\").Replace("e3.dll", "");
+			string exeName = "E3NextConfigEditor.exe";
+			if (ConfigProcess == null)
+			{
+				Int32 processID = System.Diagnostics.Process.GetCurrentProcess().Id;
+				MQ.Write("Trying to start:" + dllFullPath + exeName);
+				UIProcess = System.Diagnostics.Process.Start(dllFullPath + exeName, $"{RouterPort}");
+			}
+			else
+			{
+				//we have a process, is it up?
+				if (UIProcess.HasExited)
+				{
+					Int32 processID = System.Diagnostics.Process.GetCurrentProcess().Id;
+					//start up a new one.
+					MQ.Write("Trying to start again:" + dllFullPath + exeName);
+					UIProcess = System.Diagnostics.Process.Start(dllFullPath + exeName, $"{RouterPort}");
+				}
+			}
+		}
         /// <summary>
         /// Turns on the UI program, and then from then on, hide/shows it as needed. To close restart e3.
         /// </summary>

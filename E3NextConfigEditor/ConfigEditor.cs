@@ -49,7 +49,7 @@ namespace E3NextConfigEditor
 		public static SortedDictionary<string, SortedDictionary<string, List<SpellData>>> _discdataOrganized = new SortedDictionary<string, SortedDictionary<string, List<SpellData>>>();
 		public static SortedDictionary<string, SortedDictionary<string, List<SpellData>>> _skilldataOrganized = new SortedDictionary<string, SortedDictionary<string, List<SpellData>>>();
 
-		public static Int32 _networkPort = 60964;
+		public static Int32 _networkPort = 0;
 		public static Int32 _propertyGridWidth = 150;
 		public static string _bardDynamicMelodyName = "Dynamic Melodies";
 		public static List<String> _dynamicSections = new List<string>() { _bardDynamicMelodyName };
@@ -63,11 +63,18 @@ namespace E3NextConfigEditor
 
 		public void LoadData()
 		{
-			//DarkMode.ChangeTheme(this, this.Controls);
-			//this.Opacity = this.Opacity - 0.001;
-			//System.Windows.Forms.Application.DoEvents();
-			//this.Opacity = 100;
+			string[] args = Environment.GetCommandLineArgs();
 
+
+			if (args.Length > 1)
+			{
+				if(!Int32.TryParse(args[1], out _networkPort))
+				{
+					MessageBox.Show("Error getting port");
+					Application.Exit();
+					return;
+				}
+			}
 
 			_tloClient = new DealerClient(_networkPort);
 			IMQ _mqClient = new MQ.MQClient(_tloClient);

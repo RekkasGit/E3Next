@@ -7,7 +7,6 @@ using E3Core.Utility;
 using E3NextUI;
 using IniParser.Model;
 using MonoCore;
-using Newtonsoft.Json;
 using System;
 using System.Collections.Generic;
 using System.Diagnostics;

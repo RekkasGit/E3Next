@@ -3,7 +3,6 @@ using E3Core.Utility;
 using Google.Protobuf;
 using MonoCore;
 using NetMQ.Sockets;
-using Newtonsoft.Json;
 using System;
 using System.Collections.Concurrent;
 using System.Collections.Generic;
