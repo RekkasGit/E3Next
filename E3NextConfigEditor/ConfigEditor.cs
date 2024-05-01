@@ -70,7 +70,7 @@ namespace E3NextConfigEditor
 			{
 				if(!Int32.TryParse(args[1], out _networkPort))
 				{
-					MessageBox.Show("Error getting port");
+					
 					Application.Exit();
 					return;
 				}
@@ -1080,7 +1080,17 @@ namespace E3NextConfigEditor
 		private void saveButton_Click(object sender, EventArgs e)
 		{
 			E3.CharacterSettings.SaveData();
-			
+			var mb = new MessageBox();
+			mb.StartPosition = FormStartPosition.CenterParent;
+			mb.Text = "Save Data Complete!";
+			mb.lblMessage.Text = "Save Data Complete!";
+			mb.buttonOK.Visible = false;
+			mb.buttonCancel.Visible = false;
+			mb.buttonOkayOnly.Visible = true;
+
+			if (mb.ShowDialog() == DialogResult.OK)
+			{
+			}
 		}
 	}
 }
