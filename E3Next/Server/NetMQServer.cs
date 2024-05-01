@@ -152,7 +152,10 @@ namespace E3Core.Server
 			{
 				Int32 processID = System.Diagnostics.Process.GetCurrentProcess().Id;
 				MQ.Write("Trying to start:" + dllFullPath + exeName);
-				UIProcess = System.Diagnostics.Process.Start(dllFullPath + exeName, $"{RouterPort}");
+				var startInfo = new ProcessStartInfo(dllFullPath + exeName);
+				startInfo.WorkingDirectory = dllFullPath;// working directory
+				startInfo.Arguments = RouterPort.ToString();// set additional properties 
+				UIProcess = System.Diagnostics.Process.Start(startInfo);
 			}
 			else
 			{
