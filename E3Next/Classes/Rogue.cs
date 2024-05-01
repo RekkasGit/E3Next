@@ -36,7 +36,7 @@ namespace E3Core.Classes
                     _rogueSneakAttack = new Data.Spell(sneakattack);
                 }
 
-                if (_rogueSneakAttack.CastType != Data.CastType.None)
+                if (_rogueSneakAttack.CastType != Data.CastingType.None)
                 {
                     if (MQ.Query<bool>($"${{Me.CombatAbilityReady[{sneakattack}]}}") && MQ.Query<bool>($"${{Me.AbilityReady[Backstab]}}"))
                     {

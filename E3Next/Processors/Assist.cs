@@ -336,7 +336,7 @@ namespace E3Core.Processors
                             continue;
                         }
 
-                        if (ability.CastType == Data.CastType.Ability)
+                        if (ability.CastType == Data.CastingType.Ability)
                         {
 
                             if(String.Equals(ability.CastName,"Bash",StringComparison.OrdinalIgnoreCase))
@@ -367,12 +367,12 @@ namespace E3Core.Processors
                            
                             Casting.Cast(AssistTargetID, ability);
                         }
-                        else if (ability.CastType == Data.CastType.AA)
+                        else if (ability.CastType == Data.CastingType.AA)
                         {
 
                             Casting.Cast(AssistTargetID, ability);
                         }
-                        else if (ability.CastType == Data.CastType.Disc)
+                        else if (ability.CastType == Data.CastingType.Disc)
                         {
 
                             Int32 endurance = MQ.Query<Int32>("${Me.Endurance}");
@@ -400,7 +400,7 @@ namespace E3Core.Processors
                                 }
                             }
                         }
-                        else if (ability.CastType == Data.CastType.Item)
+                        else if (ability.CastType == Data.CastingType.Item)
                         {
                             Casting.Cast(AssistTargetID, ability);
                         }

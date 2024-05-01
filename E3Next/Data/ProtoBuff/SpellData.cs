@@ -23,7 +23,7 @@ public static partial class SpellDataReflection {
     byte[] descriptorData = global::System.Convert.FromBase64String(
         string.Concat(
           "Cg9TcGVsbERhdGEucHJvdG8iKQoNU3BlbGxEYXRhTGlzdBIYCgRkYXRhGAEg",
-          "AygLMgouU3BlbGxEYXRhIp8MCglTcGVsbERhdGESEQoJU3BlbGxOYW1lGAEg",
+          "AygLMgouU3BlbGxEYXRhItEMCglTcGVsbERhdGESEQoJU3BlbGxOYW1lGAEg",
           "ASgJEhAKCENhc3ROYW1lGAIgASgJEhMKC1N1YmNhdGVnb3J5GAMgASgJEhAK",
           "CENhdGVnb3J5GAQgASgJEigKCENhc3RUeXBlGAUgASgOMhYuU3BlbGxEYXRh",
           "LkNhc3RpbmdUeXBlEhIKClRhcmdldFR5cGUYBiABKAkSEAoIU3BlbGxHZW0Y",
@@ -56,14 +56,15 @@ public static partial class SpellDataReflection {
           "YWNrUnVsZXMYQiABKAgSEAoISXNEZWJ1ZmYYQyABKAgSDQoFSXNEb1QYRCAB",
           "KAgSDgoGUm90YXRlGEUgASgIEhIKCkFmdGVyU3BlbGwYRiABKAkSDQoFTGV2",
           "ZWwYRyABKAUSEwoLRGVzY3JpcHRpb24YSCABKAkSEgoKUmVzaXN0VHlwZRhJ",
-          "IAEoCRIRCglSZXNpc3RBZGoYSiABKAUiSwoLQ2FzdGluZ1R5cGUSBgoCQUEQ",
-          "ABIJCgVTcGVsbBABEggKBERpc2MQAhILCgdBYmlsaXR5EAMSCAoESXRlbRAE",
-          "EggKBE5vbmUQBWIGcHJvdG8z"));
+          "IAEoCRIRCglSZXNpc3RBZGoYSiABKAUSMAoQQ2FzdFR5cGVPdmVycmlkZRhL",
+          "IAEoDjIWLlNwZWxsRGF0YS5DYXN0aW5nVHlwZSJLCgtDYXN0aW5nVHlwZRIG",
+          "CgJBQRAAEgkKBVNwZWxsEAESCAoERGlzYxACEgsKB0FiaWxpdHkQAxIICgRJ",
+          "dGVtEAQSCAoETm9uZRAFYgZwcm90bzM="));
     descriptor = pbr::FileDescriptor.FromGeneratedCode(descriptorData,
         new pbr::FileDescriptor[] { },
         new pbr::GeneratedClrTypeInfo(null, null, new pbr::GeneratedClrTypeInfo[] {
           new pbr::GeneratedClrTypeInfo(typeof(global::SpellDataList), global::SpellDataList.Parser, new[]{ "Data" }, null, null, null, null),
-          new pbr::GeneratedClrTypeInfo(typeof(global::SpellData), global::SpellData.Parser, new[]{ "SpellName", "CastName", "Subcategory", "Category", "CastType", "TargetType", "SpellGem", "GiveUpTimer", "MaxTries", "Duration", "DurationTotalSeconds", "RecastTime", "RecoveryTime", "MyCastTime", "MyCastTimeInSeconds", "MyRange", "Mana", "MinMana", "MaxMana", "MinHP", "HealPct", "Debug", "Reagent", "ItemMustEquip", "NoBurn", "NoTarget", "NoAggro", "Mode", "EnduranceCost", "Delay", "DelayAfterCast", "CastID", "MinEnd", "CastInvis", "SpellType", "CastTarget", "StackRequestTargets", "StackIntervalCheck", "StackIntervalNextCheck", "StackRecastDelay", "StackRequestItem", "GiftOfMana", "SpellID", "PctAggro", "Zone", "MinSick", "AllowSpellSwap", "NoEarlyRecast", "NoStack", "TriggerSpell", "BeforeSpell", "NoInterrupt", "AfterEvent", "BeforeEvent", "CastIF", "Ifs", "InitName", "ReagentOutOfStock", "SpellInBook", "SpellIcon", "NoMidSongCast", "MinDurationBeforeRecast", "IsShortBuff", "HealthMax", "IgnoreStackRules", "IsDebuff", "IsDoT", "Rotate", "AfterSpell", "Level", "Description", "ResistType", "ResistAdj" }, null, new[]{ typeof(global::SpellData.Types.CastingType) }, null, null)
+          new pbr::GeneratedClrTypeInfo(typeof(global::SpellData), global::SpellData.Parser, new[]{ "SpellName", "CastName", "Subcategory", "Category", "CastType", "TargetType", "SpellGem", "GiveUpTimer", "MaxTries", "Duration", "DurationTotalSeconds", "RecastTime", "RecoveryTime", "MyCastTime", "MyCastTimeInSeconds", "MyRange", "Mana", "MinMana", "MaxMana", "MinHP", "HealPct", "Debug", "Reagent", "ItemMustEquip", "NoBurn", "NoTarget", "NoAggro", "Mode", "EnduranceCost", "Delay", "DelayAfterCast", "CastID", "MinEnd", "CastInvis", "SpellType", "CastTarget", "StackRequestTargets", "StackIntervalCheck", "StackIntervalNextCheck", "StackRecastDelay", "StackRequestItem", "GiftOfMana", "SpellID", "PctAggro", "Zone", "MinSick", "AllowSpellSwap", "NoEarlyRecast", "NoStack", "TriggerSpell", "BeforeSpell", "NoInterrupt", "AfterEvent", "BeforeEvent", "CastIF", "Ifs", "InitName", "ReagentOutOfStock", "SpellInBook", "SpellIcon", "NoMidSongCast", "MinDurationBeforeRecast", "IsShortBuff", "HealthMax", "IgnoreStackRules", "IsDebuff", "IsDoT", "Rotate", "AfterSpell", "Level", "Description", "ResistType", "ResistAdj", "CastTypeOverride" }, null, new[]{ typeof(global::SpellData.Types.CastingType) }, null, null)
         }));
   }
   #endregion
@@ -357,6 +358,7 @@ public sealed partial class SpellData : pb::IMessage<SpellData>
     description_ = other.description_;
     resistType_ = other.resistType_;
     resistAdj_ = other.resistAdj_;
+    castTypeOverride_ = other.castTypeOverride_;
     _unknownFields = pb::UnknownFieldSet.Clone(other._unknownFields);
   }
 
@@ -1241,6 +1243,18 @@ public sealed partial class SpellData : pb::IMessage<SpellData>
     }
   }
 
+  /// <summary>Field number for the "CastTypeOverride" field.</summary>
+  public const int CastTypeOverrideFieldNumber = 75;
+  private global::SpellData.Types.CastingType castTypeOverride_ = global::SpellData.Types.CastingType.Aa;
+  [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
+  [global::System.CodeDom.Compiler.GeneratedCode("protoc", null)]
+  public global::SpellData.Types.CastingType CastTypeOverride {
+    get { return castTypeOverride_; }
+    set {
+      castTypeOverride_ = value;
+    }
+  }
+
   [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
   [global::System.CodeDom.Compiler.GeneratedCode("protoc", null)]
   public override bool Equals(object other) {
@@ -1329,6 +1343,7 @@ public sealed partial class SpellData : pb::IMessage<SpellData>
     if (Description != other.Description) return false;
     if (ResistType != other.ResistType) return false;
     if (ResistAdj != other.ResistAdj) return false;
+    if (CastTypeOverride != other.CastTypeOverride) return false;
     return Equals(_unknownFields, other._unknownFields);
   }
 
@@ -1409,6 +1424,7 @@ public sealed partial class SpellData : pb::IMessage<SpellData>
     if (Description.Length != 0) hash ^= Description.GetHashCode();
     if (ResistType.Length != 0) hash ^= ResistType.GetHashCode();
     if (ResistAdj != 0) hash ^= ResistAdj.GetHashCode();
+    if (CastTypeOverride != global::SpellData.Types.CastingType.Aa) hash ^= CastTypeOverride.GetHashCode();
     if (_unknownFields != null) {
       hash ^= _unknownFields.GetHashCode();
     }
@@ -1716,6 +1732,10 @@ public sealed partial class SpellData : pb::IMessage<SpellData>
       output.WriteRawTag(208, 4);
       output.WriteInt32(ResistAdj);
     }
+    if (CastTypeOverride != global::SpellData.Types.CastingType.Aa) {
+      output.WriteRawTag(216, 4);
+      output.WriteEnum((int) CastTypeOverride);
+    }
     if (_unknownFields != null) {
       _unknownFields.WriteTo(output);
     }
@@ -2015,6 +2035,10 @@ public sealed partial class SpellData : pb::IMessage<SpellData>
       output.WriteRawTag(208, 4);
       output.WriteInt32(ResistAdj);
     }
+    if (CastTypeOverride != global::SpellData.Types.CastingType.Aa) {
+      output.WriteRawTag(216, 4);
+      output.WriteEnum((int) CastTypeOverride);
+    }
     if (_unknownFields != null) {
       _unknownFields.WriteTo(ref output);
     }
@@ -2241,6 +2265,9 @@ public sealed partial class SpellData : pb::IMessage<SpellData>
     }
     if (ResistAdj != 0) {
       size += 2 + pb::CodedOutputStream.ComputeInt32Size(ResistAdj);
+    }
+    if (CastTypeOverride != global::SpellData.Types.CastingType.Aa) {
+      size += 2 + pb::CodedOutputStream.ComputeEnumSize((int) CastTypeOverride);
     }
     if (_unknownFields != null) {
       size += _unknownFields.CalculateSize();
@@ -2470,6 +2497,9 @@ public sealed partial class SpellData : pb::IMessage<SpellData>
     }
     if (other.ResistAdj != 0) {
       ResistAdj = other.ResistAdj;
+    }
+    if (other.CastTypeOverride != global::SpellData.Types.CastingType.Aa) {
+      CastTypeOverride = other.CastTypeOverride;
     }
     _unknownFields = pb::UnknownFieldSet.MergeFrom(_unknownFields, other._unknownFields);
   }
@@ -2778,6 +2808,10 @@ public sealed partial class SpellData : pb::IMessage<SpellData>
           ResistAdj = input.ReadInt32();
           break;
         }
+        case 600: {
+          CastTypeOverride = (global::SpellData.Types.CastingType) input.ReadEnum();
+          break;
+        }
       }
     }
   #endif
@@ -3083,6 +3117,10 @@ public sealed partial class SpellData : pb::IMessage<SpellData>
         }
         case 592: {
           ResistAdj = input.ReadInt32();
+          break;
+        }
+        case 600: {
+          CastTypeOverride = (global::SpellData.Types.CastingType) input.ReadEnum();
           break;
         }
       }

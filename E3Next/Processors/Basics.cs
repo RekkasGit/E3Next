@@ -1020,29 +1020,29 @@ namespace E3Core.Processors
 
         public static void PrintE3TReport(Spell spell)
         {
-            if (spell.CastType == CastType.AA)
+            if (spell.CastType == CastingType.AA)
             {
                 Int32 timeInMS = MQ.Query<Int32>($"${{Me.AltAbilityTimer[{spell.CastName}]}}");
                 PrintE3TReport_Information(spell, timeInMS);
             }
-            else if (spell.CastType == CastType.Spell)
+            else if (spell.CastType == CastingType.Spell)
             {
 
                 Int32 timeInMS = MQ.Query<Int32>($"${{Me.GemTimer[{spell.CastName}]}}");
                 PrintE3TReport_Information(spell, timeInMS);
             }
-            else if (spell.CastType == CastType.Disc)
+            else if (spell.CastType == CastingType.Disc)
             {
                 Int32 timeInTicks = MQ.Query<Int32>($"${{Me.CombatAbilityTimer[{spell.CastName}]}}");
                 PrintE3TReport_Information(spell, timeInTicks * 6 * 1000);
 
             }
-            else if (spell.CastType == Data.CastType.Ability)
+            else if (spell.CastType == Data.CastingType.Ability)
             {
                 Int32 timeInMS = MQ.Query<Int32>($"${{Me.AbilityTimer[{spell.CastName}]}}");
                 PrintE3TReport_Information(spell, timeInMS);
             }
-            else if (spell.CastType == CastType.Item || spell.CastType == CastType.None)
+            else if (spell.CastType == CastingType.Item || spell.CastType == CastingType.None)
             {
 
                 if (MQ.Query<bool>($"${{FindItem[{spell.CastName}].ID}}"))
@@ -1121,7 +1121,7 @@ namespace E3Core.Processors
 					{
 						s = new Spell("Cannibalization");
 					}
-					if (s.CastType != CastType.None)
+					if (s.CastType != CastingType.None)
 					{
 						Casting.Cast(0, s);
 						return true;
@@ -1138,7 +1138,7 @@ namespace E3Core.Processors
 					{
 						s = new Spell("Summoned: Large Modulation Shard");
 					}
-					if (s.CastType != CastType.None)
+					if (s.CastType != CastingType.None)
 					{
 						Casting.Cast(0, s);
 						return true;
@@ -1154,7 +1154,7 @@ namespace E3Core.Processors
 					{
 						s = new Spell("Azure Mind Crystal III");
 					}
-					if (s.CastType != CastType.None)
+					if (s.CastType != CastingType.None)
 					{
 						Casting.Cast(0, s);
 						return true;
@@ -1172,7 +1172,7 @@ namespace E3Core.Processors
 					{
 						s = new Spell("Death Bloom");
 					}
-					if (s.CastType != CastType.None)
+					if (s.CastType != CastingType.None)
 					{
 						Casting.Cast(0, s);
 						return true;
@@ -1189,7 +1189,7 @@ namespace E3Core.Processors
 					{
 						s = new Spell("Quiet Miracle");
 					}
-					if (s.CastType != CastType.None)
+					if (s.CastType != CastingType.None)
 					{
 						Casting.Cast(E3.CurrentId, s);
 						return true;
@@ -1206,7 +1206,7 @@ namespace E3Core.Processors
 					{
 						s = new Spell("Harvest of Druzzil");
 					}
-					if (s.CastType != CastType.None)
+					if (s.CastType != CastingType.None)
 					{
 						Casting.Cast(0, s);
 						return true;
@@ -1223,7 +1223,7 @@ namespace E3Core.Processors
 					{
 						s = new Spell("Mana Draw");
 					}
-					if (s.CastType != CastType.None)
+					if (s.CastType != CastingType.None)
 					{
 						Casting.Cast(0, s);
                         return true;

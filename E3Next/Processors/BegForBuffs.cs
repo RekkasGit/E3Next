@@ -418,7 +418,7 @@ namespace E3Core.Processors
                     }
 
                     //not a valid spell
-                    if (s.CastType==CastType.None)
+                    if (s.CastType==CastingType.None)
                     {
                         _queuedBuffs.Dequeue();
                         return;

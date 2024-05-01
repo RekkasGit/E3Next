@@ -174,7 +174,7 @@ namespace E3Core.Processors
                     {
                         s = new Spell(spellName);
                     }
-                    if (s.SpellID > 0 && s.CastType != CastType.None)
+                    if (s.SpellID > 0 && s.CastType != CastingType.None)
                     {
                         Casting.Cast(petID, s);
                         MQ.Delay(300);

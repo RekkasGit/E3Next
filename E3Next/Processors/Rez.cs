@@ -620,7 +620,7 @@ namespace E3Core.Processors
                     {
                         s = new Spell(spellName);
                     }
-                    if(s.CastType!= CastType.None)
+                    if(s.CastType!= CastingType.None)
                     {
                         _currentRezSpells.Add(s);
 

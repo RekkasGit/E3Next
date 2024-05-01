@@ -177,7 +177,7 @@ namespace E3Core.Processors
 
                     if (Casting.CheckReady(burn))
                     {
-                        if (burn.CastType == Data.CastType.Disc)
+                        if (burn.CastType == Data.CastingType.Disc)
                         {
                             if (burn.TargetType == "Self")
                             {

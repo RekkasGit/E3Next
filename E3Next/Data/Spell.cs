@@ -13,7 +13,7 @@ namespace E3Core.Data
 {
 
 
-    public enum CastType
+    public enum CastingType
     {
         AA,
         Spell,
@@ -82,7 +82,7 @@ namespace E3Core.Data
 
         void Parse(IniData parsedData)
         {
-
+	
             if (SpellName.Contains("/"))
             {
 
@@ -114,6 +114,11 @@ namespace E3Core.Data
 					else if (value.Equals("IsDebuff", StringComparison.OrdinalIgnoreCase))
 					{
 						IsDebuff = true;
+					}
+					else if(value.Equals("CastType|", StringComparison.OrdinalIgnoreCase))
+					{
+						string castTypeAsString = GetArgument<String>(value);
+						Enum.TryParse<CastingType>(castTypeAsString, true, out this.CastTypeOverride);
 					}
 					else if (value.Equals("Debug", StringComparison.OrdinalIgnoreCase))
 					{
@@ -426,43 +431,50 @@ namespace E3Core.Data
         }
         void QueryMQ()
         {
+			if(CastTypeOverride == CastingType.None)
+			{
+				if (MQ.Query<bool>($"${{Me.AltAbility[{CastName}].Spell}}"))
+				{
+					CastType = CastingType.AA;
+				}
+				else if (MQ.Query<bool>($"${{Me.Book[{CastName}]}}"))
+				{
+					CastType = CastingType.Spell;
+					SpellInBook = true;
+				}
+				else if (MQ.Query<bool>($"${{Me.CombatAbility[{CastName}]}}"))
+				{
+					CastType = CastingType.Disc;
+				}
+				else if (MQ.Query<bool>($"${{Me.Ability[{CastName}]}}") || String.Compare("Slam", CastName, true) == 0)
+				{
+					CastType = CastingType.Ability;
+				}
+				else if (MQ.Query<bool>($"${{FindItem[={CastName}]}}"))
+				{
 
-            if (MQ.Query<bool>($"${{Me.AltAbility[{CastName}].Spell}}"))
-            {
-                CastType = CastType.AA;
-            }
-            else if (MQ.Query<bool>($"${{Me.Book[{CastName}]}}"))
-            {
-                CastType = CastType.Spell;
-                SpellInBook = true;
-            }
-            else if (MQ.Query<bool>($"${{Me.CombatAbility[{CastName}]}}"))
-            {
-                CastType = CastType.Disc;
-            }
-            else if (MQ.Query<bool>($"${{Me.Ability[{CastName}]}}")|| String.Compare("Slam",CastName,true)==0)
-            {
-                CastType = CastType.Ability;
-            }
-            else if (MQ.Query<bool>($"${{FindItem[={CastName}]}}"))
-            {
-
-                CastType = CastType.Item;
-            }
-            else if (MQ.Query<bool>($"${{Spell[{CastName}]}}"))
-            {
-                //final check to see if its a spell, that maybe a mob casts?
-                CastType = CastType.Spell;
-            }
-            else
-            {
-                //bad spell/item/etc
-                CastType = CastType.None;
-            }
+					CastType = CastingType.Item;
+				}
+				else if (MQ.Query<bool>($"${{Spell[{CastName}]}}"))
+				{
+					//final check to see if its a spell, that maybe a mob casts?
+					CastType = CastingType.Spell;
+				}
+				else
+				{
+					//bad spell/item/etc
+					CastType = CastingType.None;
+				}
+			}
+			else
+			{
+				CastType = CastTypeOverride;
+			}
+           
 
 
 
-            if (CastType == CastType.Item)
+            if (CastType == CastingType.Item)
             {
                 Int32 invSlot;
                 Int32 bagSlot;
@@ -555,7 +567,7 @@ namespace E3Core.Data
 				}
 
             }
-            else if (CastType == CastType.AA)
+            else if (CastType == CastingType.AA)
             {
                 TargetType = MQ.Query<String>($"${{Me.AltAbility[{CastName}].Spell.TargetType}}");
                 Duration = MQ.Query<Int32>($"${{Me.AltAbility[{CastName}].Spell.Duration}}");
@@ -608,7 +620,7 @@ namespace E3Core.Data
                 Subcategory = MQ.Query<String>($"${{Me.AltAbility[{CastName}].Spell.Subcategory}}");
                
 			}
-			else if (CastType == CastType.Spell)
+			else if (CastType == CastingType.Spell)
             {
               
                 if(SpellInBook)
@@ -716,7 +728,7 @@ namespace E3Core.Data
 
                 
             }
-            else if (CastType == CastType.Disc)
+            else if (CastType == CastingType.Disc)
             {
                 TargetType = MQ.Query<String>($"${{Spell[{CastName}].TargetType}}");
                 Duration = MQ.Query<Int32>($"${{Spell[{CastName}].Duration}}");
@@ -742,7 +754,7 @@ namespace E3Core.Data
 				Category = MQ.Query<string>($"${{Spell[{CastName}].Category}}");
 
 			}
-			else if (CastType == CastType.Ability)
+			else if (CastType == CastingType.Ability)
             {
                 //nothing to update here
             }
@@ -773,7 +785,8 @@ namespace E3Core.Data
         public String Category = String.Empty;
         public String SpellName = String.Empty;//the spell's name. If the item clicks, this is the spell it casts
         public String CastName = String.Empty;//this can be the item, spell, aa, disc. What is required to cast it. 
-        public CastType CastType;
+		public CastingType CastType = CastingType.None;
+		private CastingType CastTypeOverride = CastingType.None;
         public String TargetType = String.Empty;
         public Int32 SpellGem;
         public Int32 GiveUpTimer;
@@ -791,7 +804,7 @@ namespace E3Core.Data
             set
             {
                 myCastTime = value;
-                if (CastType != CastType.Ability)
+                if (CastType != CastingType.Ability)
                 {
                     MyCastTimeInSeconds = value / 1000;
                 }
@@ -862,7 +875,7 @@ namespace E3Core.Data
         public string Description  = String.Empty;
         public Int32 ResistAdj = 0;
         public string ResistType = String.Empty;
-
+		
         public static Spell FromProto(SpellData source)
         {
 			Spell r = new Spell();
@@ -876,7 +889,7 @@ namespace E3Core.Data
 			r.CastInvis = source.CastInvis;
 			r.CastName = source.CastName;
 			r.CastTarget = source.CastTarget;
-			r.CastType = (CastType)source.CastType;
+			r.CastType = (CastingType)source.CastType;
 			r.Category = source.Category;
 			r.Debug = source.Debug;
 			r.Delay = source.Delay;
@@ -937,6 +950,8 @@ namespace E3Core.Data
 			r.Description = source.Description;
 			r.ResistType = source.ResistType;
 			r.ResistAdj = source.ResistAdj;
+			r.CastTypeOverride = (CastingType)source.CastTypeOverride;
+			
 			return r;
 		}
         public SpellData ToProto()
@@ -1014,6 +1029,8 @@ namespace E3Core.Data
             r.Description = this.Description;
             r.ResistType = this.ResistType;
             r.ResistAdj = this.ResistAdj;
+			r.CastTypeOverride = (SpellData.Types.CastingType)this.CastTypeOverride;
+			
             return r;
 
         }
@@ -1042,10 +1059,11 @@ namespace E3Core.Data
 			string t_AfterEvent = (String.IsNullOrWhiteSpace(this.AfterEvent)) ? String.Empty : $"/AfterEvent|{AfterEvent}";
 			string t_BeforeEvent = (String.IsNullOrWhiteSpace(this.BeforeEvent)) ? String.Empty : $"/BeforeEvent|{BeforeEvent}";
 			string t_Reagent = (String.IsNullOrWhiteSpace(this.Reagent)) ? String.Empty : $"/Reagent|{Reagent}";
-			
-            //Main=Terror of Mirenilla Rk. II/Gem|4/Ifs|Tanking
-			return $"{CastName}/Gem|{SpellGem}{t_Ifs}{t_checkFor}{t_CastIF}{t_healPct}{t_healthMax}{t_noInterrupt}{t_Zone}{t_MinSick}{t_BeforeSpell}{t_AfterSpell}{t_BeforeEvent}{t_AfterEvent}{t_minMana}{t_maxMana}{t_MinEnd}{t_ignoreStackRules}{t_MinDurationBeforeRecast}{t_MaxTries}{t_Reagent}";
-        }
+			string t_CastTypeOverride = (this.CastTypeOverride== CastingType.None) ? String.Empty : $"/CastType|{CastType.ToString()}";
+			//Main=Terror of Mirenilla Rk. II/Gem|4/Ifs|Tanking
+			return $"{CastName}/Gem|{SpellGem}{t_Ifs}{t_checkFor}{t_CastIF}{t_healPct}{t_healthMax}{t_noInterrupt}{t_Zone}{t_MinSick}{t_BeforeSpell}{t_AfterSpell}{t_BeforeEvent}{t_AfterEvent}{t_minMana}{t_maxMana}{t_MinEnd}{t_ignoreStackRules}{t_MinDurationBeforeRecast}{t_MaxTries}{t_Reagent}{t_CastTypeOverride}";
+
+		}
 
 		public override string ToString()
         {

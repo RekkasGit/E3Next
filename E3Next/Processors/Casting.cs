@@ -85,7 +85,7 @@ namespace E3Core.Processors
 				}
 
 				//if this is a non bard, as we are not casting and its just an /alt activate, kick it off so it can queue up quickly. 
-				if (E3.CurrentClass != Class.Bard && spell.CastType == CastType.AA && spell.MyCastTime <= 500 && !IsCasting())
+				if (E3.CurrentClass != Class.Bard && spell.CastType == CastingType.AA && spell.MyCastTime <= 500 && !IsCasting())
 				{
 					if (!(spell.TargetType == "Self" || spell.TargetType == "Group v1"))
 					{
@@ -129,7 +129,7 @@ namespace E3Core.Processors
 					return CastReturn.CAST_SUCCESS;
 				}
                 //bard can cast insta cast items while singing, they be special.
-                else if (E3.CurrentClass == Class.Bard && spell.NoMidSongCast == false && spell.MyCastTime <= 500 && (spell.CastType == CastType.Item || spell.CastType == CastType.AA || spell.CastType == Data.CastType.Ability))
+                else if (E3.CurrentClass == Class.Bard && spell.NoMidSongCast == false && spell.MyCastTime <= 500 && (spell.CastType == CastingType.Item || spell.CastType == CastingType.AA || spell.CastType == Data.CastingType.Ability))
                 {
                     //instant cast item, can cast while singing
                     //note bards are special and cast do insta casts while doing normal singing. they have their own 
@@ -150,21 +150,21 @@ namespace E3Core.Processors
 						}
                         //this lets bard kick regardless of current song status, otherwise will wait until between songs to kick
                         string abilityToCheck = spell.CastName;
-                        if (spell.CastType == Data.CastType.Ability && abilityToCheck.Equals("Kick", StringComparison.OrdinalIgnoreCase))
+                        if (spell.CastType == Data.CastingType.Ability && abilityToCheck.Equals("Kick", StringComparison.OrdinalIgnoreCase))
                         {
                             MQ.Write($"\ag{spell.CastName} \am{targetName} \ao{targetID}");
                             MQ.Cmd($"/doability \"{spell.CastName}\"");
                             return CastReturn.CAST_SUCCESS;
                         }
                         MQ.Write($"\agBardCast {spell.CastName} \at{spell.SpellID} \am{targetName} \ao{targetID} \aw({spell.MyCastTime / 1000}sec)");
-						if (spell.CastType == CastType.AA)
+						if (spell.CastType == CastingType.AA)
 						{
 							MQ.Cmd($"/alt activate {spell.CastID}");
 							UpdateAAInCooldown(spell);
 							E3.ActionTaken = true;
 							return CastReturn.CAST_SUCCESS;
 						}
-                        if (spell.CastType == CastType.Item)
+                        if (spell.CastType == CastingType.Item)
                         {
                             //else its an item
                             MQ.Cmd($"/useitem \"{spell.CastName}\"", 300);
@@ -178,7 +178,7 @@ namespace E3Core.Processors
 						return CastReturn.CAST_NOTARGET;
 					}
 				}
-				else if (E3.CurrentClass == Class.Bard && spell.CastType == CastType.Spell)
+				else if (E3.CurrentClass == Class.Bard && spell.CastType == CastingType.Spell)
 				{
 					Sing(targetID, spell);
 					MQ.Delay((int)spell.MyCastTime);
@@ -378,7 +378,7 @@ namespace E3Core.Processors
 
 						//From here, we actually start casting the spell. 
 						_log.Write("Checking for spell type to run logic...");
-						if (spell.CastType == Data.CastType.Disc)
+						if (spell.CastType == Data.CastingType.Disc)
 						{
 							_log.Write("Doing disc based logic checks...");
 							if (MQ.Query<bool>("${Me.ActiveDisc.ID}") && spell.TargetType.Equals("Self"))
@@ -399,7 +399,7 @@ namespace E3Core.Processors
 							}
 
 						}
-						else if (spell.CastType == Data.CastType.Ability)
+						else if (spell.CastType == Data.CastingType.Ability)
 						{
 
 							string abilityToCheck = spell.CastName;
@@ -504,7 +504,7 @@ namespace E3Core.Processors
 
 								}
 
-								if (spell.CastType == Data.CastType.Spell)
+								if (spell.CastType == Data.CastingType.Spell)
 								{
 									PubServer.AddTopicMessage("${Casting}", $"{spell.CastName} on {targetName}");
 									PubServer.AddTopicMessage("${Me.Casting}",spell.CastName);
@@ -518,7 +518,7 @@ namespace E3Core.Processors
 								}
 								else
 								{
-									if (spell.CastType == CastType.AA)
+									if (spell.CastType == CastingType.AA)
 									{
 										PubServer.AddTopicMessage("${Casting}", $"{spell.CastName} on {targetName}");
 										PubServer.AddTopicMessage("${Me.Casting}", spell.CastName);
@@ -554,7 +554,7 @@ namespace E3Core.Processors
 							}
 							else
 							{
-								if (spell.CastType == Data.CastType.Spell)
+								if (spell.CastType == Data.CastingType.Spell)
 								{
 									PubServer.AddTopicMessage("${Casting}", $"{spell.CastName} on {targetName}");
 									PubServer.AddTopicMessage("${Me.Casting}", spell.CastName);
@@ -570,7 +570,7 @@ namespace E3Core.Processors
 									PubServer.AddTopicMessage("${Casting}", $"{spell.CastName} on {targetName}");
 									PubServer.AddTopicMessage("${Me.Casting}", spell.CastName);
 									MQ.Write($"\ag{spell.CastName} \at{spell.SpellID} \am{targetName} \ao{targetID} \aw({spell.MyCastTime / 1000}sec)");
-									if (spell.CastType == CastType.AA)
+									if (spell.CastType == CastingType.AA)
 									{
 										MQ.Cmd($"/casting \"{spell.CastName}|alt\" \"-targetid|{targetID}\"");
 										UpdateAAInCooldown(spell);
@@ -891,7 +891,7 @@ namespace E3Core.Processors
 				TrueTarget(targetid);
 			}
 			
-			if (spell.CastType == CastType.Spell)
+			if (spell.CastType == CastingType.Spell)
 			{
 				//if (MQ.Query<bool>($"${{Bool[${{Me.Book[{spell.CastName}]}}]}}"))
 				{
@@ -944,7 +944,7 @@ namespace E3Core.Processors
 
 				}
 			}
-			else if (spell.CastType == CastType.Item)
+			else if (spell.CastType == CastingType.Item)
 			{
 				if (spell.MyCastTime > 500)
 				{
@@ -980,7 +980,7 @@ namespace E3Core.Processors
 					MQ.Cmd($"/docommand {spell.AfterEvent}");
 				}
 			}
-			else if (spell.CastType == CastType.AA)
+			else if (spell.CastType == CastingType.AA)
 			{
 				if (spell.MyCastTime > 500)
 				{
@@ -1080,7 +1080,7 @@ namespace E3Core.Processors
 		public static bool MemorizeSpell(Data.Spell spell,bool ignoreWait=false)
 		{
 		
-			if (!(spell.CastType == CastType.Spell && spell.SpellInBook))
+			if (!(spell.CastType == CastingType.Spell && spell.SpellInBook))
 			{
 				//we can't mem this just return true
 				return true;
@@ -1369,10 +1369,10 @@ namespace E3Core.Processors
 				return false;
 			}
 
-			if (spell.CastType == CastType.None) return false;
+			if (spell.CastType == CastingType.None) return false;
 			//do we need to memorize it?
 
-			if ((spell.CastType == CastType.Spell || spell.CastType == CastType.Item || spell.CastType == CastType.AA) && MQ.Query<bool>("${Debuff.Silenced}")) return false;
+			if ((spell.CastType == CastingType.Spell || spell.CastType == CastingType.Item || spell.CastType == CastingType.AA) && MQ.Query<bool>("${Debuff.Silenced}")) return false;
 
 
 			
@@ -1391,7 +1391,7 @@ namespace E3Core.Processors
 			}
 
 			bool returnValue = false;
-			if (spell.CastType == Data.CastType.Spell && spell.SpellInBook)
+			if (spell.CastType == Data.CastingType.Spell && spell.SpellInBook)
 			{
 				//do we already have it memed?
 				bool spellMemed = false;
@@ -1428,14 +1428,14 @@ namespace E3Core.Processors
 				}
 
 			}
-			else if (spell.CastType == Data.CastType.Item)
+			else if (spell.CastType == Data.CastingType.Item)
 			{
 				if (!ItemInCooldown(spell))
 				{
 					return true;
 				}
 			}
-			else if (spell.CastType == Data.CastType.AA)
+			else if (spell.CastType == Data.CastingType.AA)
 			{
 				if (!AAInCooldown(spell))
 				{
@@ -1443,7 +1443,7 @@ namespace E3Core.Processors
 				}
 
 			}
-			else if (spell.CastType == Data.CastType.Disc)
+			else if (spell.CastType == Data.CastingType.Disc)
 			{
 				//bug with thiefs eyes, always return true
 				if (spell.SpellID == 8001) return true;
@@ -1457,7 +1457,7 @@ namespace E3Core.Processors
 					return true;
 				}
 			}
-			else if (spell.CastType == Data.CastType.Ability)
+			else if (spell.CastType == Data.CastingType.Ability)
 			{
 				string abilityToCheck = spell.CastName;
 

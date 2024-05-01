@@ -27,14 +27,13 @@ namespace E3Core.Settings
         private static string _currentSet = String.Empty;
 
         public static string CurrentSet { get { return _currentSet; } set { _currentSet = value; } }
-
-
-        static BaseSettings()
+		
+		static BaseSettings()
         {
+			
 
 
-
-        }
+		}
         public static string GetBoTFilePath(string fileName)
         {
             string macroFile = _macroFolder + _botFolder + fileName;

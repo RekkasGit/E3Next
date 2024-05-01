@@ -147,7 +147,7 @@ namespace E3Core.Processors
                         Bard.ResetNextBardSong();
                     }
 
-                    if (spell.CastType == CastType.Spell)
+                    if (spell.CastType == CastingType.Spell)
                     {
 						while (Casting.InGlobalCooldown())
 						{

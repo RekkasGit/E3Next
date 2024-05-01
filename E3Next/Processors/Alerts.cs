@@ -258,9 +258,18 @@ namespace E3Core.Processors
 					if (x.match.Groups.Count > 1)
 					{
 						string person = x.match.Groups[1].Value;
-						//no way to check for guild if window not open?
-						MQ.Delay(7000);
-						e3util.ClickYesNo(true);
+						//need to fill out GuildList.txt for it to work for guild members not in zone.
+						if (e3util.InMyGuild(person))
+						{
+							
+							MQ.Delay(7000);
+							e3util.ClickYesNo(true);
+
+						}
+						else
+						{
+							E3.Bots.Broadcast($@"{person} tried to invite me to a task, but not in my guild or was in guild but not in zone and not in \e3 Macro Inis\guildlist.txt");
+						}
 					}
 				});
 				EventProcessor.RegisterCommand("/e3autojointasks", (x) =>

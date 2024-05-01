@@ -23,8 +23,10 @@ namespace E3Core.Processors
         public static string _generalSettings_Ini = @"e3 Macro Inis\General Settings.ini";
         public static string _advancedSettings_Ini = @"e3 Macro Inis\Advanced Settingse.ini";
         public static string _character_Ini = @"e3 Bot Inis\{CharacterName}_{ServerName}.ini";
+		public static string _guildListFilePath = String.Empty;
+		public static List<string> GuildListMembers = new List<string>();
 
-        public static string _serverNameForIni = "PEQTGC"; //project eq, the grand creation, where legacy e3 was born i believe.
+		public static string _serverNameForIni = "PEQTGC"; //project eq, the grand creation, where legacy e3 was born i believe.
         public static Logging _log = E3.Log;
         private static IMQ MQ = E3.MQ;
 
@@ -52,12 +54,22 @@ namespace E3Core.Processors
                 InitPlugins();
                 InitSubSystems();
 
-                foreach(var command in E3.CharacterSettings.StartupCommands)
+				foreach (var command in E3.CharacterSettings.StartupCommands)
                 {
                     MQ.Cmd(command);
                 }
-                return true;
-            }
+
+				//needed for IsMyGuild(namn), to supply a user generated list of guild members
+				_guildListFilePath = Settings.BaseSettings.GetSettingsFilePath("GuildList.txt");
+				if(System.IO.File.Exists(_guildListFilePath))
+				{
+					foreach(var line in System.IO.File.ReadAllLines(_guildListFilePath))
+					{
+						GuildListMembers.Add(line);
+					}
+				}
+				return true;
+			}
 
         }
         private static void InitSubSystems()

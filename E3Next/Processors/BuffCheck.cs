@@ -1408,7 +1408,7 @@ namespace E3Core.Processors
 
 				//need to put on new aura
 				Int32 meID = E3.CurrentId;
-				if (_selectAura.CastType == CastType.Spell)
+				if (_selectAura.CastType == CastingType.Spell)
 				{
 					//this is a spell, need to mem, then cast. 
 					if (Casting.CheckReady(_selectAura) && Casting.CheckMana(_selectAura))
@@ -1418,7 +1418,7 @@ namespace E3Core.Processors
 
 
 				}
-				else if (_selectAura.CastType == CastType.Disc)
+				else if (_selectAura.CastType == CastingType.Disc)
 				{
 					Int32 endurance = MQ.Query<Int32>("${Me.Endurance}");
 					if (_selectAura.EnduranceCost < endurance)
