@@ -129,6 +129,7 @@ namespace E3Core.Settings
 		public List<Spell> CasterEvacs = new List<Spell>();
 
 		[INI_Section("E3ChatChannelsToJoin", "Channel")]
+		public List<string> E3ChatChannelsToJoinRaw = new List<string>();
 		public List<string> E3ChatChannelsToJoin = new List<string>();
 		
         [INI_Section("Druid", "Auto-Cheetah (On/Off)")]
@@ -332,7 +333,7 @@ namespace E3Core.Settings
 		[INI_Section("Manastone", "Out of Combat MaxMana")]
 		public Int32 ManaStone_OutOfCombatMaxMana = 95;
 		[INI_Section("Manastone", "ExceptionZone")]
-		public HashSet<string> ManaStone_ExceptionZones = new HashSet<string> {};
+		public List<string> ManaStone_ExceptionZones = new List<string> {};
 		[INI_Section("Manastone", "ExceptionMQQuery")]
 		public List<string> ManaStone_ExceptionMQQuery = new List<string>();
 		[INI_Section("Startup Commands", "Command")]
@@ -731,9 +732,9 @@ namespace E3Core.Settings
 			LoadKeyData("Events", ParsedData, Events);
 			LoadKeyData("EventLoop", ParsedData, EventLoop);
 
-			List<string> tempChatChannelsTJ = new List<string>();
-			LoadKeyData("E3ChatChannelsToJoin", "Channel", ParsedData, tempChatChannelsTJ);
-			foreach (var value in tempChatChannelsTJ)
+		
+			LoadKeyData("E3ChatChannelsToJoin", "Channel", ParsedData, E3ChatChannelsToJoinRaw);
+			foreach (var value in E3ChatChannelsToJoinRaw)
 			{
 				string key = $"${{DataChannel.{value.Trim()}}}";
 				if (!E3ChatChannelsToJoin.Contains(key))
@@ -888,191 +889,185 @@ namespace E3Core.Settings
 
 		}
 
-		/// <summary>
-		/// Creates the settings file.
-		/// </summary>
-		/// <returns></returns>
-		public IniData CreateSettings(string fileName)
-        {
-            //if we need to , its easier to just output the entire file. 
-
-            FileIniDataParser parser = e3util.CreateIniParser();
-            IniData newFile = new IniData();
+		private IniData createNewINIData()
+		{
+			IniData newFile = new IniData();
 
 
-            newFile.Sections.AddSection("Misc");
-            var section = newFile.Sections.GetSectionData("Misc");
-            section.Keys.AddKey("AutoFood", "Off");
-            section.Keys.AddKey("Food", "");
-            section.Keys.AddKey("Drink", "");
-            section.Keys.AddKey("End MedBreak in Combat(On/Off)", "On");
-            section.Keys.AddKey("AutoMedBreak (On/Off)", "Off");
-            section.Keys.AddKey("Auto-Loot (On/Off)", "Off");
-            section.Keys.AddKey("Anchor (Char to Anchor to)", "");
-            section.Keys.AddKey("Remove Torpor After Combat", "On");
-            section.Keys.AddKey("Auto-Forage (On/Off)", "Off");
-            section.Keys.AddKey("Dismount On Interrupt (On/Off)","On");
-            section.Keys.AddKey("Delay in MS After CastWindow Drops For Spell Completion", "0");
+			newFile.Sections.AddSection("Misc");
+			var section = newFile.Sections.GetSectionData("Misc");
+			section.Keys.AddKey("AutoFood", "Off");
+			section.Keys.AddKey("Food", "");
+			section.Keys.AddKey("Drink", "");
+			section.Keys.AddKey("End MedBreak in Combat(On/Off)", "On");
+			section.Keys.AddKey("AutoMedBreak (On/Off)", "Off");
+			section.Keys.AddKey("Auto-Loot (On/Off)", "Off");
+			section.Keys.AddKey("Anchor (Char to Anchor to)", "");
+			section.Keys.AddKey("Remove Torpor After Combat", "On");
+			section.Keys.AddKey("Auto-Forage (On/Off)", "Off");
+			section.Keys.AddKey("Dismount On Interrupt (On/Off)", "On");
+			section.Keys.AddKey("Delay in MS After CastWindow Drops For Spell Completion", "0");
 			section.Keys.AddKey("If FD stay down (true/false)", "False");
 
 			newFile.Sections.AddSection("Assist Settings");
-            section = newFile.Sections.GetSectionData("Assist Settings");
-            section.Keys.AddKey("Assist Type (Melee/Ranged/Off)", "Melee");
-            section.Keys.AddKey("Melee Stick Point", "Behind");
+			section = newFile.Sections.GetSectionData("Assist Settings");
+			section.Keys.AddKey("Assist Type (Melee/Ranged/Off)", "Melee");
+			section.Keys.AddKey("Melee Stick Point", "Behind");
 			section.Keys.AddKey("Delayed Strafe Enabled (On/Off)", "On");
-			if (((CharacterClass & Class.Tank) == CharacterClass) || CharacterClass== Class.Ranger)
-            {
-                section.Keys.AddKey("SmartTaunt(On/Off)", "On");
-            }
-            section.Keys.AddKey("Melee Distance", "MaxMelee");
-            section.Keys.AddKey("Ranged Distance", "100");
-            section.Keys.AddKey("Auto-Assist Engage Percent", "98");
+			if (((CharacterClass & Class.Tank) == CharacterClass) || CharacterClass == Class.Ranger)
+			{
+				section.Keys.AddKey("SmartTaunt(On/Off)", "On");
+			}
+			section.Keys.AddKey("Melee Distance", "MaxMelee");
+			section.Keys.AddKey("Ranged Distance", "100");
+			section.Keys.AddKey("Auto-Assist Engage Percent", "98");
 			section.Keys.AddKey("Pet back off on Enrage (On/Off)", "Off");
 			section.Keys.AddKey("Back off on Enrage (On/Off)", "Off");
 
 
 			newFile.Sections.AddSection("Buffs");
-            section = newFile.Sections.GetSectionData("Buffs");
-            section.Keys.AddKey("Instant Buff", "");
-            section.Keys.AddKey("Self Buff", "");
-            section.Keys.AddKey("Bot Buff", "");
-            section.Keys.AddKey("Combat Buff", "");
-            section.Keys.AddKey("Group Buff", "");
-            section.Keys.AddKey("Pet Buff", "");
+			section = newFile.Sections.GetSectionData("Buffs");
+			section.Keys.AddKey("Instant Buff", "");
+			section.Keys.AddKey("Self Buff", "");
+			section.Keys.AddKey("Bot Buff", "");
+			section.Keys.AddKey("Combat Buff", "");
+			section.Keys.AddKey("Group Buff", "");
+			section.Keys.AddKey("Pet Buff", "");
 			section.Keys.AddKey("Combat Pet Buff", "");
 			section.Keys.AddKey("Aura", "");
-            section.Keys.AddKey("Group Buff Request", "");
-            section.Keys.AddKey("Raid Buff Request", "");
+			section.Keys.AddKey("Group Buff Request", "");
+			section.Keys.AddKey("Raid Buff Request", "");
 			section.Keys.AddKey("Stack Buff Request", "");
 			section.Keys.AddKey("Cast Aura(On/Off)", "On");
-           
-
-            if ((CharacterClass & Class.Caster) != CharacterClass && (CharacterClass & Class.Priest) != CharacterClass)
-            {
-                newFile.Sections.AddSection("Melee Abilities");
-                section = newFile.Sections.GetSectionData("Melee Abilities");
-                section.Keys.AddKey("Ability", "");
-            }
-            if ((CharacterClass & Class.PureMelee) != CharacterClass && CharacterClass != Class.Bard)
-            {
-                newFile.Sections.AddSection("Nukes");
-                section = newFile.Sections.GetSectionData("Nukes");
-                section.Keys.AddKey("Main", "");
-                newFile.Sections.AddSection("Stuns");
-                section = newFile.Sections.GetSectionData("Stuns");
-                section.Keys.AddKey("Main", "");
-                
-                newFile.Sections.AddSection("PBAE");
-                section = newFile.Sections.GetSectionData("PBAE");
-                section.Keys.AddKey("PBAE", "");
-
-                newFile.Sections.AddSection("DoTs on Assist");
-                section = newFile.Sections.GetSectionData("DoTs on Assist");
-                section.Keys.AddKey("Main", "");
-
-                newFile.Sections.AddSection("DoTs on Command");
-                section = newFile.Sections.GetSectionData("DoTs on Command");
-                section.Keys.AddKey("Main", "");
-
-                newFile.Sections.AddSection("Debuffs");
-                section = newFile.Sections.GetSectionData("Debuffs");
-                section.Keys.AddKey("Debuff on Assist", "");
-                section.Keys.AddKey("Debuff on Command", "");
-            }
-
-            //if not a tank class
-            if(!((CharacterClass & Class.Tank)==CharacterClass))
-            {
-                newFile.Sections.AddSection("Dispel");
-                section = newFile.Sections.GetSectionData("Dispel");
-                section.Keys.AddKey("Main", "");
-                section.Keys.AddKey("Ignore", "");
-            }
-
-            newFile.Sections.AddSection("Life Support");
-            section = newFile.Sections.GetSectionData("Life Support");
-            section.Keys.AddKey("Life Support", "");
-
-            newFile.Sections.AddSection("Rez");
-            section = newFile.Sections.GetSectionData("Rez");
-            section.Keys.AddKey("AutoRez", "Off");
-            section.Keys.AddKey("Auto Rez Spells", "Token of Resurrection");
-            section.Keys.AddKey("Rez Spells", "Token of Resurrection");
-
-            newFile.Sections.AddSection("Burn");
-            section = newFile.Sections.GetSectionData("Burn");
-            section.Keys.AddKey("Quick Burn", "");
-            section.Keys.AddKey("Long Burn", "");
-            section.Keys.AddKey("Full Burn", "");
 
 
-            if (CharacterClass == Class.Rogue)
-            {
-                newFile.Sections.AddSection("Rogue");
-                section = newFile.Sections.GetSectionData("Rogue");
-                section.Keys.AddKey("Auto-Hide (On/Off)", "Off");
-                section.Keys.AddKey("Auto-Evade (On/Off)", "Off");
-                section.Keys.AddKey("Evade PctAggro", "75");
-                section.Keys.AddKey("Sneak Attack Discipline", "");
-                section.Keys.AddKey("PoisonPR", "");
-                section.Keys.AddKey("PoisonFR", "");
-                section.Keys.AddKey("PoisonCR", "");
-            }
+			if ((CharacterClass & Class.Caster) != CharacterClass && (CharacterClass & Class.Priest) != CharacterClass)
+			{
+				newFile.Sections.AddSection("Melee Abilities");
+				section = newFile.Sections.GetSectionData("Melee Abilities");
+				section.Keys.AddKey("Ability", "");
+			}
+			if ((CharacterClass & Class.PureMelee) != CharacterClass && CharacterClass != Class.Bard)
+			{
+				newFile.Sections.AddSection("Nukes");
+				section = newFile.Sections.GetSectionData("Nukes");
+				section.Keys.AddKey("Main", "");
+				newFile.Sections.AddSection("Stuns");
+				section = newFile.Sections.GetSectionData("Stuns");
+				section.Keys.AddKey("Main", "");
 
-            if (CharacterClass == Class.Bard)
-            {
-                newFile.Sections.AddSection("Bard");
-                section = newFile.Sections.GetSectionData("Bard");
-                section.Keys.AddKey("MelodyIf", "");
+				newFile.Sections.AddSection("PBAE");
+				section = newFile.Sections.GetSectionData("PBAE");
+				section.Keys.AddKey("PBAE", "");
+
+				newFile.Sections.AddSection("DoTs on Assist");
+				section = newFile.Sections.GetSectionData("DoTs on Assist");
+				section.Keys.AddKey("Main", "");
+
+				newFile.Sections.AddSection("DoTs on Command");
+				section = newFile.Sections.GetSectionData("DoTs on Command");
+				section.Keys.AddKey("Main", "");
+
+				newFile.Sections.AddSection("Debuffs");
+				section = newFile.Sections.GetSectionData("Debuffs");
+				section.Keys.AddKey("Debuff on Assist", "");
+				section.Keys.AddKey("Debuff on Command", "");
+			}
+
+			//if not a tank class
+			if (!((CharacterClass & Class.Tank) == CharacterClass))
+			{
+				newFile.Sections.AddSection("Dispel");
+				section = newFile.Sections.GetSectionData("Dispel");
+				section.Keys.AddKey("Main", "");
+				section.Keys.AddKey("Ignore", "");
+			}
+
+			newFile.Sections.AddSection("Life Support");
+			section = newFile.Sections.GetSectionData("Life Support");
+			section.Keys.AddKey("Life Support", "");
+
+			newFile.Sections.AddSection("Rez");
+			section = newFile.Sections.GetSectionData("Rez");
+			section.Keys.AddKey("AutoRez", "Off");
+			section.Keys.AddKey("Auto Rez Spells", "Token of Resurrection");
+			section.Keys.AddKey("Rez Spells", "Token of Resurrection");
+
+			newFile.Sections.AddSection("Burn");
+			section = newFile.Sections.GetSectionData("Burn");
+			section.Keys.AddKey("Quick Burn", "");
+			section.Keys.AddKey("Long Burn", "");
+			section.Keys.AddKey("Full Burn", "");
+
+
+			if (CharacterClass == Class.Rogue)
+			{
+				newFile.Sections.AddSection("Rogue");
+				section = newFile.Sections.GetSectionData("Rogue");
+				section.Keys.AddKey("Auto-Hide (On/Off)", "Off");
+				section.Keys.AddKey("Auto-Evade (On/Off)", "Off");
+				section.Keys.AddKey("Evade PctAggro", "75");
+				section.Keys.AddKey("Sneak Attack Discipline", "");
+				section.Keys.AddKey("PoisonPR", "");
+				section.Keys.AddKey("PoisonFR", "");
+				section.Keys.AddKey("PoisonCR", "");
+			}
+
+			if (CharacterClass == Class.Bard)
+			{
+				newFile.Sections.AddSection("Bard");
+				section = newFile.Sections.GetSectionData("Bard");
+				section.Keys.AddKey("MelodyIf", "");
 				section.Keys.AddKey("AutoMezSong", "");
 				section.Keys.AddKey("Auto-Sonata (On/Off)", "Off");
-            }
+			}
 
-            if ((CharacterClass & Class.PetClass) == CharacterClass)
-            {
-                newFile.Sections.AddSection("Pets");
-                section = newFile.Sections.GetSectionData("Pets");
-                section.Keys.AddKey("Pet Spell", "");
-                section.Keys.AddKey("Pet Heal", "");
-                section.Keys.AddKey("Pet Buff", "");
+			if ((CharacterClass & Class.PetClass) == CharacterClass)
+			{
+				newFile.Sections.AddSection("Pets");
+				section = newFile.Sections.GetSectionData("Pets");
+				section.Keys.AddKey("Pet Spell", "");
+				section.Keys.AddKey("Pet Heal", "");
+				section.Keys.AddKey("Pet Buff", "");
 				section.Keys.AddKey("Combat Pet Buff", "");
 				section.Keys.AddKey("Pet Mend (Pct)", "");
-                section.Keys.AddKey("Pet Taunt (On/Off)", "On");
-                section.Keys.AddKey("Pet Auto-Shrink (On/Off)", "Off");
-                section.Keys.AddKey("Pet Summon Combat (On/Off)", "Off");
-            }
+				section.Keys.AddKey("Pet Taunt (On/Off)", "On");
+				section.Keys.AddKey("Pet Auto-Shrink (On/Off)", "Off");
+				section.Keys.AddKey("Pet Summon Combat (On/Off)", "Off");
+				section.Keys.AddKey("Blocked Pet Buff","");
+			}
 
-            if ((CharacterClass & Class.Druid) == CharacterClass)
-            {
-                newFile.Sections.AddSection("Druid");
-                section = newFile.Sections.GetSectionData("Druid");
-                section.Keys.AddKey("Evac Spell", "");
-                section.Keys.AddKey("Auto-Cheetah (On/Off)", "Off");
+			if ((CharacterClass & Class.Druid) == CharacterClass)
+			{
+				newFile.Sections.AddSection("Druid");
+				section = newFile.Sections.GetSectionData("Druid");
+				section.Keys.AddKey("Evac Spell", "");
+				section.Keys.AddKey("Auto-Cheetah (On/Off)", "Off");
 
-            }
-            if ((CharacterClass & Class.Wizard) == CharacterClass)
-            {
-                newFile.Sections.AddSection("Wizard");
-                section = newFile.Sections.GetSectionData("Wizard");
-                section.Keys.AddKey("Evac Spell", "");
-            }
+			}
+			if ((CharacterClass & Class.Wizard) == CharacterClass)
+			{
+				newFile.Sections.AddSection("Wizard");
+				section = newFile.Sections.GetSectionData("Wizard");
+				section.Keys.AddKey("Evac Spell", "");
+			}
 
-            if ((CharacterClass & Class.Priest) == CharacterClass)
-            {
-                newFile.Sections.AddSection("Cures");
-                section = newFile.Sections.GetSectionData("Cures");
-                section.Keys.AddKey("Cure", "");
-                section.Keys.AddKey("CureAll", "");
-                section.Keys.AddKey("RadiantCure", "");
-                section.Keys.AddKey("CurseCounters", "");
+			if ((CharacterClass & Class.Priest) == CharacterClass)
+			{
+				newFile.Sections.AddSection("Cures");
+				section = newFile.Sections.GetSectionData("Cures");
+				section.Keys.AddKey("Cure", "");
+				section.Keys.AddKey("CureAll", "");
+				section.Keys.AddKey("RadiantCure", "");
+				section.Keys.AddKey("CurseCounters", "");
 				section.Keys.AddKey("CurseCountersIgnore", "");
 				section.Keys.AddKey("CorruptedCounters", "");
 				section.Keys.AddKey("CorruptedCountersIgnore", "");
 				section.Keys.AddKey("PoisonCounters", "");
-                section.Keys.AddKey("PoisonCountersIgnore", "");
-                section.Keys.AddKey("DiseaseCounters", "");
-                section.Keys.AddKey("DiseaseCountersIgnore", "");
-            }
+				section.Keys.AddKey("PoisonCountersIgnore", "");
+				section.Keys.AddKey("DiseaseCounters", "");
+				section.Keys.AddKey("DiseaseCountersIgnore", "");
+			}
 
 			if ((CharacterClass & Class.Charmer) == CharacterClass)
 			{
@@ -1089,77 +1084,77 @@ namespace E3Core.Settings
 				section.Keys.AddKey("PeelPetOwner", "");
 				section.Keys.AddKey("PeelSnarePerson", "");
 				section.Keys.AddKey("PeelSnareSpell", "");
-                section.Keys.AddKey("PeelDebuffPerson", "");
-                section.Keys.AddKey("PeelDebuffSpells", "");
+				section.Keys.AddKey("PeelDebuffPerson", "");
+				section.Keys.AddKey("PeelDebuffSpells", "");
 			}
 
 
 
 			if ((CharacterClass & Class.Priest) == CharacterClass || (CharacterClass & Class.HealHybrid) == CharacterClass)
-            {
-                newFile.Sections.AddSection("Heals");
-                section = newFile.Sections.GetSectionData("Heals");
-                section.Keys.AddKey("Tank Heal", "");
-                section.Keys.AddKey("Important Heal", "");
-                section.Keys.AddKey("Group Heal", "");
+			{
+				newFile.Sections.AddSection("Heals");
+				section = newFile.Sections.GetSectionData("Heals");
+				section.Keys.AddKey("Tank Heal", "");
+				section.Keys.AddKey("Important Heal", "");
+				section.Keys.AddKey("Group Heal", "");
 				section.Keys.AddKey("Party Heal", "");
-                section.Keys.AddKey("Heal Over Time Spell", "");
+				section.Keys.AddKey("Heal Over Time Spell", "");
 				section.Keys.AddKey("All Heal", "");
-                section.Keys.AddKey("XTarget Heal", "");
-                section.Keys.AddKey("Tank", "");
-                section.Keys.AddKey("Important Bot", "");
-                section.Keys.AddKey("Pet Heal", "");
-                section.Keys.AddKey("Who to Heal", "Tanks/ImportantBots/XTargets/Pets/Party");
-                section.Keys.AddKey("Who to HoT", "");
-                section.Keys.AddKey("Pet Owner", "");
-                section.Keys.AddKey("Auto Cast Necro Heal Orbs (On/Off)", "On");
-                section.Keys.AddKey("Number Of Injured Members For Group Heal", "3");
-                section.Keys.AddKey("Emergency Heal", "");
-                section.Keys.AddKey("Emergency Group Heal", "");
-            }
+				section.Keys.AddKey("XTarget Heal", "");
+				section.Keys.AddKey("Tank", "");
+				section.Keys.AddKey("Important Bot", "");
+				section.Keys.AddKey("Pet Heal", "");
+				section.Keys.AddKey("Who to Heal", "Tanks/ImportantBots/XTargets/Pets/Party");
+				section.Keys.AddKey("Who to HoT", "");
+				section.Keys.AddKey("Pet Owner", "");
+				section.Keys.AddKey("Auto Cast Necro Heal Orbs (On/Off)", "On");
+				section.Keys.AddKey("Number Of Injured Members For Group Heal", "3");
+				section.Keys.AddKey("Emergency Heal", "");
+				section.Keys.AddKey("Emergency Group Heal", "");
+			}
 
-            if ((CharacterClass & Class.Priest) == CharacterClass || (CharacterClass & Class.Caster) == CharacterClass)
-            {
-                newFile.Sections.AddSection("Off Assist Spells");
-                section = newFile.Sections.GetSectionData("Off Assist Spells");
-                section.Keys.AddKey("Main", "");
-            }
+			if ((CharacterClass & Class.Priest) == CharacterClass || (CharacterClass & Class.Caster) == CharacterClass)
+			{
+				newFile.Sections.AddSection("Off Assist Spells");
+				section = newFile.Sections.GetSectionData("Off Assist Spells");
+				section.Keys.AddKey("Main", "");
+			}
 
-            if (CharacterClass == Class.Magician)
-            {
-                newFile.Sections.AddSection("Magician");
-                section = newFile.Sections.GetSectionData("Magician");
-                section.Keys.AddKey("Auto-Pet Weapons (On/Off)", "Off");
-                section.Keys.AddKey("Ignore Pet Weapon Requests (On/Off)", "Off");
-                section.Keys.AddKey("Keep Open Inventory Slot (On/Off)", "Off");
-                section.Keys.AddKey("Pet Weapons", "");
-            }
+			if (CharacterClass == Class.Magician)
+			{
+				newFile.Sections.AddSection("Magician");
+				section = newFile.Sections.GetSectionData("Magician");
+				section.Keys.AddKey("Auto-Pet Weapons (On/Off)", "Off");
+				section.Keys.AddKey("Ignore Pet Weapon Requests (On/Off)", "Off");
+				section.Keys.AddKey("Keep Open Inventory Slot (On/Off)", "Off");
+				section.Keys.AddKey("Pet Weapons", "");
+			}
 
-            if (CharacterClass == Class.Shaman)
-            {
-                newFile.Sections.AddSection("Shaman");
-                section = newFile.Sections.GetSectionData("Shaman");
-                section.Keys.AddKey("Auto-Canni (On/Off)", "Off");
-                section.Keys.AddKey("Canni", "");
-                section.Keys.AddKey("Malos Totem Spell Gem", "8");
-            }
+			if (CharacterClass == Class.Shaman)
+			{
+				newFile.Sections.AddSection("Shaman");
+				section = newFile.Sections.GetSectionData("Shaman");
+				section.Keys.AddKey("Auto-Canni (On/Off)", "Off");
+				section.Keys.AddKey("Canni", "");
+				section.Keys.AddKey("Malos Totem Spell Gem", "8");
+			}
 
-            if (CharacterClass == Class.Beastlord)
-            {
-                newFile.Sections.AddSection("Auto Paragon");
-                section = newFile.Sections.GetSectionData("Auto Paragon");
-                section.Keys.AddKey("Auto Paragon (On/Off)", "Off");
-                section.Keys.AddKey("Paragon Spell", "Paragon of Spirit");
-                section.Keys.AddKey("Paragon Mana (Pct)", "60");
-                section.Keys.AddKey("Auto Focused Paragon (On/Off)", "Off");
-                section.Keys.AddKey("Focused Paragon Spell", "Focused Paragon of Spirits");
-                section.Keys.AddKey("Focused Paragon Mana (Pct)", "70");
-                section.Keys.AddKey("Character", "");
-            }
+			if (CharacterClass == Class.Beastlord)
+			{
+				newFile.Sections.AddSection("Auto Paragon");
+				section = newFile.Sections.GetSectionData("Auto Paragon");
+				section.Keys.AddKey("Auto Paragon (On/Off)", "Off");
+				section.Keys.AddKey("Paragon Spell", "Paragon of Spirit");
+				section.Keys.AddKey("Paragon Mana (Pct)", "60");
+				section.Keys.AddKey("Auto Focused Paragon (On/Off)", "Off");
+				section.Keys.AddKey("Focused Paragon Spell", "Focused Paragon of Spirits");
+				section.Keys.AddKey("Focused Paragon Mana (Pct)", "70");
+				section.Keys.AddKey("Character", "");
+			}
 
-            newFile.Sections.AddSection("Bando Buff");
+			newFile.Sections.AddSection("Bando Buff");
 			section = newFile.Sections.GetSectionData("Bando Buff");
-            section.Keys.AddKey("Enabled", "Off");
+			section.Keys.AddKey("Enabled", "Off");
 			section.Keys.AddKey("BuffName", "");
 			section.Keys.AddKey("DebuffName", "");
 			section.Keys.AddKey("PrimaryWithBuff", "");
@@ -1178,17 +1173,17 @@ namespace E3Core.Settings
 
 
 			newFile.Sections.AddSection("Blocked Buffs");
-            section = newFile.Sections.GetSectionData("Blocked Buffs");
-            section.Keys.AddKey("BuffName", "");
+			section = newFile.Sections.GetSectionData("Blocked Buffs");
+			section.Keys.AddKey("BuffName", "");
 
-            newFile.Sections.AddSection("Cursor Delete");
-            section = newFile.Sections.GetSectionData("Cursor Delete");
-            section.Keys.AddKey("Delete", "");
+			newFile.Sections.AddSection("Cursor Delete");
+			section = newFile.Sections.GetSectionData("Cursor Delete");
+			section.Keys.AddKey("Delete", "");
 
-            newFile.Sections.AddSection("Gimme");
-            section = newFile.Sections.GetSectionData("Gimme");
-            section.Keys.AddKey("Gimme-InCombat", "On");
-            section.Keys.AddKey("Gimme", "");
+			newFile.Sections.AddSection("Gimme");
+			section = newFile.Sections.GetSectionData("Gimme");
+			section.Keys.AddKey("Gimme-InCombat", "On");
+			section.Keys.AddKey("Gimme", "");
 
 
 			newFile.Sections.AddSection("LootCommander");
@@ -1200,8 +1195,8 @@ namespace E3Core.Settings
 			newFile.Sections.AddSection("Ifs");
 			newFile.Sections.AddSection("E3BotsPublishData (key/value)");
 			newFile.Sections.AddSection("E3ChatChannelsToJoin");
-            section = newFile.Sections.GetSectionData("E3ChatChannelsToJoin");
-            section.Keys.AddKey("Channel");
+			section = newFile.Sections.GetSectionData("E3ChatChannelsToJoin");
+			section.Keys.AddKey("Channel");
 			newFile.Sections.AddSection("Events");
 			newFile.Sections.AddSection("EventLoop");
 			newFile.Sections.AddSection("Report");
@@ -1211,8 +1206,8 @@ namespace E3Core.Settings
 			newFile.Sections.AddSection("CPU");
 			section = newFile.Sections.GetSectionData("CPU");
 			section.Keys.AddKey("ProcessLoopDelayInMS", "50");
-            section.Keys.AddKey("PublishStateDataInMS", "50");
-            section.Keys.AddKey("PublishBuffDataInMS", "1000");
+			section.Keys.AddKey("PublishStateDataInMS", "50");
+			section.Keys.AddKey("PublishBuffDataInMS", "1000");
 			section.Keys.AddKey("PublishSlowDataInMS", "1000");
 
 			section.Keys.AddKey("Camp Pause at 30 seconds", "True");
@@ -1220,23 +1215,36 @@ namespace E3Core.Settings
 			section.Keys.AddKey("Camp Shutdown at 5 seconds", "True");
 
 			newFile.Sections.AddSection("Manastone");
-            section = newFile.Sections.GetSectionData("Manastone");
+			section = newFile.Sections.GetSectionData("Manastone");
 
-            section.Keys.AddKey("Override General Settings (On/Off)", "Off");
-            section.Keys.AddKey("Manastone Enabled (On/Off)","On");
-            section.Keys.AddKey("NumberOfClicksPerLoop", "40");
-            section.Keys.AddKey("NumberOfLoops", "25");
-            section.Keys.AddKey("DelayBetweenLoops (in milliseconds)", "50");
-            section.Keys.AddKey("In Combat MinMana", "40");
-            section.Keys.AddKey("In Combat MaxMana", "75");
-            section.Keys.AddKey("Use In Combat", "On");
-            section.Keys.AddKey("Min HP", "60");
-            section.Keys.AddKey("Out of Combat MinMana", "85");
-            section.Keys.AddKey("Out of Combat MaxMana", "95");
-            section.Keys.AddKey("ExceptionZone", "poknowledge");
+			section.Keys.AddKey("Override General Settings (On/Off)", "Off");
+			section.Keys.AddKey("Manastone Enabled (On/Off)", "On");
+			section.Keys.AddKey("NumberOfClicksPerLoop", "40");
+			section.Keys.AddKey("NumberOfLoops", "25");
+			section.Keys.AddKey("DelayBetweenLoops (in milliseconds)", "50");
+			section.Keys.AddKey("In Combat MinMana", "40");
+			section.Keys.AddKey("In Combat MaxMana", "75");
+			section.Keys.AddKey("Use In Combat", "On");
+			section.Keys.AddKey("Min HP", "60");
+			section.Keys.AddKey("Out of Combat MinMana", "85");
+			section.Keys.AddKey("Out of Combat MaxMana", "95");
+			section.Keys.AddKey("ExceptionZone", "poknowledge");
 			section.Keys.AddKey("ExceptionZone", "thevoida");
 			section.Keys.AddKey("ExceptionMQQuery", "");
 
+			return newFile;
+		}
+		/// <summary>
+		/// Creates the settings file.
+		/// </summary>
+		/// <returns></returns>
+		public IniData CreateSettings(string fileName)
+        {
+            //if we need to , its easier to just output the entire file. 
+
+            FileIniDataParser parser = e3util.CreateIniParser();
+
+			IniData newFile = createNewINIData();
 
 			if (!String.IsNullOrEmpty(CurrentSet))
             {
@@ -1290,17 +1298,43 @@ namespace E3Core.Settings
 		{
 			//time to pull out the reflection noone has time to manage all that settings crap
 			var charSettings = e3util.GetSettingsMappedToInI();
+			List<string> deletedKeyComments = new List<string>();
+
+			IniData defaultFile = createNewINIData();
+
 			foreach (var pair in charSettings)
 			{
+				string header = pair.Key;
+
 				foreach (var pair2 in pair.Value)
 				{
 					//now we have the header and keyname of the ini entry
-					string header = pair.Key;
+					
 					string keyName = pair2.Key;
-					var section = ParsedData.Sections[header];
+					var section = defaultFile.Sections[header];
 					if (section != null)
 					{
-						section.RemoveKey(keyName);
+						deletedKeyComments.Clear();
+						if (keyName==String.Empty)
+						{
+							foreach(var keyData in section)
+							{
+								deletedKeyComments.AddRange(keyData.Comments);
+							}
+							section.RemoveAllKeys();
+						}
+						else
+						{
+							var deletedKey = section.GetKeyData(keyName);
+							if(deletedKey==null)
+							{
+								//not valid for this class type
+								continue;
+							}
+							deletedKeyComments.AddRange(deletedKey.Comments);
+							section.RemoveKey(keyName);
+							
+						}
 
 						FieldInfo field = pair2.Value;
 
@@ -1309,6 +1343,11 @@ namespace E3Core.Settings
 						if (reference is List<Spell>)
 						{
 							List<Spell> spellList = (List<Spell>)reference;
+							if(spellList.Count==0)
+							{
+								section.AddKey(keyName, "");
+								continue;
+							}
 							foreach (var spell in spellList)
 							{
 								section.AddKey(keyName, spell.ToConfigEntry());
@@ -1317,6 +1356,11 @@ namespace E3Core.Settings
 						else if (reference is List<SpellRequest>)
 						{
 							List<SpellRequest> spellList = (List<SpellRequest>)reference;
+							if (spellList.Count == 0)
+							{
+								section.AddKey(keyName, "");
+								continue;
+							}
 							foreach (var spell in spellList)
 							{
 								section.AddKey(keyName, spell.ToConfigEntry());
@@ -1325,6 +1369,11 @@ namespace E3Core.Settings
 						else if (reference is List<MelodyIfs>)
 						{
 							List<MelodyIfs> melodyIfsList = (List<MelodyIfs>)reference;
+							if (melodyIfsList.Count == 0)
+							{
+								section.AddKey(keyName, "");
+								continue;
+							}
 							foreach (var spell in melodyIfsList)
 							{
 								section.AddKey(keyName, spell.ToConfigEntry());
@@ -1354,7 +1403,12 @@ namespace E3Core.Settings
 							}
 							else if (reference is bool)
 							{
-								section.AddKey(keyName, ((bool)reference).ToString());
+								string boolString = "On";
+								if(!(bool)reference)
+								{
+									boolString = "Off";
+								}
+								section.AddKey(keyName, boolString);
 							} 
 							else if (reference is Int32)
 							{
@@ -1365,12 +1419,31 @@ namespace E3Core.Settings
 								section.AddKey(keyName, ((Int64)reference).ToString());
 							}
 						}
+						if(deletedKeyComments.Count>0)
+						{	
+							//cary over any comments on the key 
+							if(keyName!=String.Empty)
+							{
+								var newKeyData = section.GetKeyData(keyName);
+								newKeyData.Comments.AddRange(deletedKeyComments);
+
+							}
+							else
+							{
+								//just add all the comments to the first key
+								foreach(var keyData in section)
+								{
+									keyData.Comments.AddRange(deletedKeyComments);
+									break;
+								}
+							}
+						}
 					}
 				}
 			}
 			FileIniDataParser fileIniData = e3util.CreateIniParser();
             File.Delete(_fileName);
-            fileIniData.WriteFile(_fileName, ParsedData);
+            fileIniData.WriteFile(_fileName, defaultFile);
         }
     }
 }

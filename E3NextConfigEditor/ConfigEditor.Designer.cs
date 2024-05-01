@@ -48,6 +48,10 @@
 			this.valueList_AddSkill = new Krypton.Toolkit.KryptonCommand();
 			this.kryptonContextMenuItem6 = new Krypton.Toolkit.KryptonContextMenuItem();
 			this.valueList_AddKeyValue = new Krypton.Toolkit.KryptonCommand();
+			this.kryptonContextMenuItem8 = new Krypton.Toolkit.KryptonContextMenuItem();
+			this.valueList_AddDynamicMelody = new Krypton.Toolkit.KryptonCommand();
+			this.kryptonContextMenuItem9 = new Krypton.Toolkit.KryptonContextMenuItem();
+			this.valueList_AddMelodyIf = new Krypton.Toolkit.KryptonCommand();
 			this.kryptonContextMenuItem5 = new Krypton.Toolkit.KryptonContextMenuItem();
 			this.valueList_Delete = new Krypton.Toolkit.KryptonCommand();
 			this.propertyGrid = new System.Windows.Forms.PropertyGrid();
@@ -55,10 +59,7 @@
 			this.kryptonContextMenuItem1 = new Krypton.Toolkit.KryptonContextMenuItem();
 			this.kryptonContextMenuItems3 = new Krypton.Toolkit.KryptonContextMenuItems();
 			this.kryptonContextMenuHeading1 = new Krypton.Toolkit.KryptonContextMenuHeading();
-			this.valueList_AddMelodyIf = new Krypton.Toolkit.KryptonCommand();
-			this.valueList_AddDynamicMelody = new Krypton.Toolkit.KryptonCommand();
-			this.kryptonContextMenuItem8 = new Krypton.Toolkit.KryptonContextMenuItem();
-			this.kryptonContextMenuItem9 = new Krypton.Toolkit.KryptonContextMenuItem();
+			this.saveButton = new Krypton.Toolkit.KryptonButton();
 			((System.ComponentModel.ISupportInitialize)(this.sectionComboBox)).BeginInit();
 			((System.ComponentModel.ISupportInitialize)(this.subsectionComboBox)).BeginInit();
 			this.SuspendLayout();
@@ -129,7 +130,6 @@
 			this.valuesListBox.DragDrop += new System.Windows.Forms.DragEventHandler(this.valuesListBox_DragDrop);
 			this.valuesListBox.DragOver += new System.Windows.Forms.DragEventHandler(this.valuesListBox_DragOver);
 			this.valuesListBox.MouseDown += new System.Windows.Forms.MouseEventHandler(this.valuesListBox_MouseDown);
-
 			// 
 			// valueListContextMenu
 			// 
@@ -212,6 +212,26 @@
 			this.valueList_AddKeyValue.Text = "Add Key/Value";
 			this.valueList_AddKeyValue.Execute += new System.EventHandler(this.valueList_AddKeyValue_Execute);
 			// 
+			// kryptonContextMenuItem8
+			// 
+			this.kryptonContextMenuItem8.KryptonCommand = this.valueList_AddDynamicMelody;
+			this.kryptonContextMenuItem8.Text = "Add Melody";
+			// 
+			// valueList_AddDynamicMelody
+			// 
+			this.valueList_AddDynamicMelody.Text = "Add Melody";
+			this.valueList_AddDynamicMelody.Execute += new System.EventHandler(this.valueList_AddDynamicMelody_Execute);
+			// 
+			// kryptonContextMenuItem9
+			// 
+			this.kryptonContextMenuItem9.KryptonCommand = this.valueList_AddMelodyIf;
+			this.kryptonContextMenuItem9.Text = "Add MelodyIf";
+			// 
+			// valueList_AddMelodyIf
+			// 
+			this.valueList_AddMelodyIf.Text = "Add MelodyIf";
+			this.valueList_AddMelodyIf.Execute += new System.EventHandler(this.valueList_AddMelodyIf_Execute);
+			// 
 			// kryptonContextMenuItem5
 			// 
 			this.kryptonContextMenuItem5.KryptonCommand = this.valueList_Delete;
@@ -230,7 +250,7 @@
 			this.propertyGrid.Font = new System.Drawing.Font("Microsoft Sans Serif", 12F, System.Drawing.FontStyle.Regular, System.Drawing.GraphicsUnit.Point, ((byte)(0)));
 			this.propertyGrid.Location = new System.Drawing.Point(306, 12);
 			this.propertyGrid.Name = "propertyGrid";
-			this.propertyGrid.Size = new System.Drawing.Size(993, 681);
+			this.propertyGrid.Size = new System.Drawing.Size(993, 636);
 			this.propertyGrid.TabIndex = 3;
 			this.propertyGrid.ToolbarVisible = false;
 			this.propertyGrid.SizeChanged += new System.EventHandler(this.propertyGrid_SizeChanged);
@@ -243,31 +263,21 @@
 			// 
 			this.kryptonContextMenuHeading1.ExtraText = "";
 			// 
-			// valueList_AddMelodyIf
+			// saveButton
 			// 
-			this.valueList_AddMelodyIf.Text = "Add MelodyIf";
-			this.valueList_AddMelodyIf.Execute += new System.EventHandler(this.valueList_AddMelodyIf_Execute);
-			// 
-			// valueList_AddDynamicMelody
-			// 
-			this.valueList_AddDynamicMelody.Text = "Add Melody";
-			this.valueList_AddDynamicMelody.Execute += new System.EventHandler(this.valueList_AddDynamicMelody_Execute);
-			// 
-			// kryptonContextMenuItem8
-			// 
-			this.kryptonContextMenuItem8.KryptonCommand = this.valueList_AddDynamicMelody;
-			this.kryptonContextMenuItem8.Text = "Add Melody";
-			// 
-			// kryptonContextMenuItem9
-			// 
-			this.kryptonContextMenuItem9.KryptonCommand = this.valueList_AddMelodyIf;
-			this.kryptonContextMenuItem9.Text = "Add MelodyIf";
+			this.saveButton.Location = new System.Drawing.Point(347, 666);
+			this.saveButton.Name = "saveButton";
+			this.saveButton.Size = new System.Drawing.Size(90, 25);
+			this.saveButton.TabIndex = 4;
+			this.saveButton.Values.Text = "kryptonButton1";
+			this.saveButton.Click += new System.EventHandler(this.saveButton_Click);
 			// 
 			// ConfigEditor
 			// 
 			this.AutoScaleDimensions = new System.Drawing.SizeF(6F, 13F);
 			this.AutoScaleMode = System.Windows.Forms.AutoScaleMode.Font;
 			this.ClientSize = new System.Drawing.Size(1311, 705);
+			this.Controls.Add(this.saveButton);
 			this.Controls.Add(this.propertyGrid);
 			this.Controls.Add(this.valuesListBox);
 			this.Controls.Add(this.subsectionComboBox);
@@ -316,6 +326,7 @@
 		private Krypton.Toolkit.KryptonCommand valueList_AddDynamicMelody;
 		private Krypton.Toolkit.KryptonContextMenuItem kryptonContextMenuItem8;
 		private Krypton.Toolkit.KryptonContextMenuItem kryptonContextMenuItem9;
+		private Krypton.Toolkit.KryptonButton saveButton;
 	}
 }
 

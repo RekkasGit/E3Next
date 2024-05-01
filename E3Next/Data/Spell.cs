@@ -875,8 +875,10 @@ namespace E3Core.Data
         public string Description  = String.Empty;
         public Int32 ResistAdj = 0;
         public string ResistType = String.Empty;
-		
-        public static Spell FromProto(SpellData source)
+
+		//.\protoc --csharp_out=.\ SpellData.proto
+		//add field to this class, you need to update the proto file as well.
+		public static Spell FromProto(SpellData source)
         {
 			Spell r = new Spell();
 			r.AfterEvent = source.AfterEvent;
@@ -1041,7 +1043,7 @@ namespace E3Core.Data
 			//in this case, if ifskeys is null or empty, set to string empty
             //else use /Ifs|{IfsKeys}
             string t_Ifs = (String.IsNullOrWhiteSpace(this.IfsKeys)) ? String.Empty : $"/Ifs|{IfsKeys}";
-            string t_Zone = (String.IsNullOrWhiteSpace(this.Zone)) ? String.Empty :  $"/Zone|{Zone}";
+            string t_Zone = (Zone=="All") ? String.Empty :  $"/Zone|{Zone}";
 			string t_MinSick = (MinSick == MinSickDefault) ? String.Empty : t_MinSick = $"/MinSick|{MinSick}";
 	        string t_checkFor = (CheckForCollection.Count == 0) ? String.Empty: t_checkFor = "/CheckFor|" + String.Join(",", CheckForCollection.Keys.ToList());
             string t_healPct = (HealPct == 0) ?String.Empty :  $"/HealPct|{HealPct}";
@@ -1051,8 +1053,8 @@ namespace E3Core.Data
             string t_minMana = (MinMana==0) ?String.Empty: $"/MinMana|{MinMana}";
 			string t_maxMana = (MaxMana == 0) ? String.Empty : $"/MaxMana|{MaxMana}";
 			string t_ignoreStackRules = (!IgnoreStackRules) ? String.Empty : $"/IgnoreStackRules";
-			string t_healthMax = (HealthMax == 0) ? String.Empty : $"/HealthMax|{HealthMax}";
-			string t_MinDurationBeforeRecast = (MinDurationBeforeRecast == 0) ? String.Empty : $"/MinDurationBeforeRecast|{MinDurationBeforeRecast}";
+			string t_healthMax = (HealthMax == 100) ? String.Empty : $"/HealthMax|{HealthMax}";
+			string t_MinDurationBeforeRecast = (MinDurationBeforeRecast == 0) ? String.Empty : $"/MinDurationBeforeRecast|{MinDurationBeforeRecast/1000}";
 			string t_MaxTries = (MaxTries == MaxTiresDefault) ? String.Empty : $"/MaxTries|{MaxTries}";
 			string t_CastIF = (String.IsNullOrWhiteSpace(this.CastIF)) ? String.Empty : $"/CastIF|{CastIF}";
 			string t_MinEnd = (MinEnd == 0) ? String.Empty : $"/MinEnd|{MinEnd}";
@@ -1060,8 +1062,10 @@ namespace E3Core.Data
 			string t_BeforeEvent = (String.IsNullOrWhiteSpace(this.BeforeEvent)) ? String.Empty : $"/BeforeEvent|{BeforeEvent}";
 			string t_Reagent = (String.IsNullOrWhiteSpace(this.Reagent)) ? String.Empty : $"/Reagent|{Reagent}";
 			string t_CastTypeOverride = (this.CastTypeOverride== CastingType.None) ? String.Empty : $"/CastType|{CastType.ToString()}";
+			string t_GemNumber = (this.SpellGem == 0) ? String.Empty : $"/Gem|{SpellGem}";
 			//Main=Terror of Mirenilla Rk. II/Gem|4/Ifs|Tanking
-			return $"{CastName}/Gem|{SpellGem}{t_Ifs}{t_checkFor}{t_CastIF}{t_healPct}{t_healthMax}{t_noInterrupt}{t_Zone}{t_MinSick}{t_BeforeSpell}{t_AfterSpell}{t_BeforeEvent}{t_AfterEvent}{t_minMana}{t_maxMana}{t_MinEnd}{t_ignoreStackRules}{t_MinDurationBeforeRecast}{t_MaxTries}{t_Reagent}{t_CastTypeOverride}";
+			string returnValue = $"{CastName}{t_GemNumber}{t_Ifs}{t_checkFor}{t_CastIF}{t_healPct}{t_healthMax}{t_noInterrupt}{t_Zone}{t_MinSick}{t_BeforeSpell}{t_AfterSpell}{t_BeforeEvent}{t_AfterEvent}{t_minMana}{t_maxMana}{t_MinEnd}{t_ignoreStackRules}{t_MinDurationBeforeRecast}{t_MaxTries}{t_Reagent}{t_CastTypeOverride}";
+			return returnValue;
 
 		}
 

@@ -49,7 +49,7 @@ namespace E3NextConfigEditor
 		public static SortedDictionary<string, SortedDictionary<string, List<SpellData>>> _discdataOrganized = new SortedDictionary<string, SortedDictionary<string, List<SpellData>>>();
 		public static SortedDictionary<string, SortedDictionary<string, List<SpellData>>> _skilldataOrganized = new SortedDictionary<string, SortedDictionary<string, List<SpellData>>>();
 
-		public static Int32 _networkPort = 58138;
+		public static Int32 _networkPort = 60964;
 		public static Int32 _propertyGridWidth = 150;
 		public static string _bardDynamicMelodyName = "Dynamic Melodies";
 		public static List<String> _dynamicSections = new List<string>() { _bardDynamicMelodyName };
@@ -1070,5 +1070,10 @@ namespace E3NextConfigEditor
 			}
 		}
 
+		private void saveButton_Click(object sender, EventArgs e)
+		{
+			E3.CharacterSettings.SaveData();
+			MessageBox.Show("Save complete!");
+		}
 	}
 }
