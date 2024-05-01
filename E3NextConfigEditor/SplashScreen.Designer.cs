@@ -46,7 +46,7 @@
 			// 
 			// pictureBox1
 			// 
-			this.pictureBox1.ImageLocation = "Images\\E3Next.png";
+			this.pictureBox1.ImageLocation = "E3Next.png";
 			this.pictureBox1.Location = new System.Drawing.Point(12, 12);
 			this.pictureBox1.Name = "pictureBox1";
 			this.pictureBox1.Size = new System.Drawing.Size(178, 141);

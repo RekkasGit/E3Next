@@ -187,7 +187,7 @@
     <Folder Include="Util\" />
   </ItemGroup>
   <ItemGroup>
-    <Content Include="Images\E3Next.png">
+    <Content Include="E3Next.png">
       <CopyToOutputDirectory>Always</CopyToOutputDirectory>
     </Content>
   </ItemGroup>
