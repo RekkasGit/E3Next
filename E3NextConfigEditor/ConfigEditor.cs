@@ -143,7 +143,7 @@ namespace E3NextConfigEditor
 			E3.CharacterSettings = new E3Core.Settings.CharacterSettings(mergeUpdates);
 			_tloClient.RequestData("${E3.TLO.BulkEnd}");
 
-
+			this.Text = $"({E3.CurrentName})({E3.ServerName})";
 			//load image data
 			for (Int32 i = 1; i <= 63; i++)
 			{
@@ -809,7 +809,7 @@ namespace E3NextConfigEditor
 				foreach (var spell in spellList)
 				{
 					KryptonListItem item = new KryptonListItem();
-					item.ShortText = spell.SpellName;
+					item.ShortText = spell.CastName;
 					item.LongText = string.Empty;
 					item.Tag = spell;
 					if (spell.SpellIcon > -1)
@@ -828,7 +828,7 @@ namespace E3NextConfigEditor
 				foreach (var spell in spellList)
 				{
 					KryptonListItem item = new KryptonListItem();
-					item.ShortText = spell.SpellName;
+					item.ShortText = spell.CastName;
 					item.LongText = string.Empty;
 					item.Tag = spell;
 					if (spell.SpellIcon > -1)
@@ -1073,7 +1073,7 @@ namespace E3NextConfigEditor
 		private void saveButton_Click(object sender, EventArgs e)
 		{
 			E3.CharacterSettings.SaveData();
-			MessageBox.Show("Save complete!");
+			MessageBox.Show(this,"Save complete!");
 		}
 	}
 }
