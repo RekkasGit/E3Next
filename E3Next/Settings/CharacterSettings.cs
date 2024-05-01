@@ -189,12 +189,15 @@ namespace E3Core.Settings
 		public List<Spell> CombatBuffs = new List<Spell>();
 
 		[INI_Section("Buffs", "Pet Buff")]
-		[INI_Section2("Pets", "Pet Buff")]
 		public List<Spell> PetBuffs = new List<Spell>();
-		
+		[INI_Section("Pets", "Pet Buff")]
+		public List<Spell> PetOwnerBuffs = new List<Spell>();
+
         [INI_Section("Buffs", "Combat Pet Buff")]
-		[INI_Section2("Pets", "Combat Pet Buff")]
 		public List<Spell> CombatPetBuffs = new List<Spell>();
+		[INI_Section("Pets", "Combat Pet Buff")]
+		public List<Spell> CombatPetOwnerBuffs = new List<Spell>();
+
 		[INI_Section("Buffs", "Cast Aura(On/Off)")]
 		public bool Buffs_CastAuras = true;
 		[INI_Section("Buffs", "Aura")]
@@ -797,8 +800,8 @@ namespace E3Core.Settings
 
 
             LoadKeyData("Pets", "Pet Spell", ParsedData, PetSpell);
-            LoadKeyData("Pets", "Pet Buff", ParsedData, PetBuffs);
-			LoadKeyData("Pets", "Combat Pet Buff", ParsedData, CombatPetBuffs);
+            LoadKeyData("Pets", "Pet Buff", ParsedData, PetOwnerBuffs);
+			LoadKeyData("Pets", "Combat Pet Buff", ParsedData, CombatPetOwnerBuffs);
             LoadKeyData("Pets", "Blocked Pet Buff", ParsedData, BlockedPetBuffs);
             LoadKeyData("Pets", "Pet Heal", ParsedData, PetHeals);
             LoadKeyData("Pets", "Pet Mend (Pct)", ParsedData, ref Pet_MendPercent);

@@ -1080,7 +1080,7 @@ namespace E3NextConfigEditor
 		private void saveButton_Click(object sender, EventArgs e)
 		{
 			E3.CharacterSettings.SaveData();
-			MessageBox.Show(this,"Save complete!");
+			
 		}
 	}
 }

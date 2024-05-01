@@ -499,6 +499,7 @@ namespace E3Core.Processors
 					{
 						BuffBots(E3.CharacterSettings.CombatBuffs);
 						BuffBots(E3.CharacterSettings.CombatPetBuffs,true);
+						BuffBots(E3.CharacterSettings.CombatPetOwnerBuffs, true);
 					}
 
 					if ((!Movement.IsMoving() && String.IsNullOrWhiteSpace(Movement.FollowTargetName)) || Movement.StandingStillForTimePeriod())
@@ -523,7 +524,7 @@ namespace E3Core.Processors
 							//using (_log.Trace("Buffs-Pet"))
 							{
 								if (!E3.ActionTaken) BuffBots(E3.CharacterSettings.PetBuffs, true);
-
+								if (!E3.ActionTaken) BuffBots(E3.CharacterSettings.PetOwnerBuffs, true);
 							}
 
 						}
