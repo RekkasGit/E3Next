@@ -250,7 +250,7 @@
 			this.propertyGrid.Font = new System.Drawing.Font("Microsoft Sans Serif", 12F, System.Drawing.FontStyle.Regular, System.Drawing.GraphicsUnit.Point, ((byte)(0)));
 			this.propertyGrid.Location = new System.Drawing.Point(306, 12);
 			this.propertyGrid.Name = "propertyGrid";
-			this.propertyGrid.Size = new System.Drawing.Size(993, 636);
+			this.propertyGrid.Size = new System.Drawing.Size(993, 650);
 			this.propertyGrid.TabIndex = 3;
 			this.propertyGrid.ToolbarVisible = false;
 			this.propertyGrid.SizeChanged += new System.EventHandler(this.propertyGrid_SizeChanged);
@@ -265,11 +265,11 @@
 			// 
 			// saveButton
 			// 
-			this.saveButton.Location = new System.Drawing.Point(347, 666);
+			this.saveButton.Location = new System.Drawing.Point(306, 668);
 			this.saveButton.Name = "saveButton";
 			this.saveButton.Size = new System.Drawing.Size(90, 25);
 			this.saveButton.TabIndex = 4;
-			this.saveButton.Values.Text = "kryptonButton1";
+			this.saveButton.Values.Text = "Save";
 			this.saveButton.Click += new System.EventHandler(this.saveButton_Click);
 			// 
 			// ConfigEditor

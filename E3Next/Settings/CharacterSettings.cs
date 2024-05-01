@@ -973,7 +973,12 @@ namespace E3Core.Settings
 				section.Keys.AddKey("Debuff on Assist", "");
 				section.Keys.AddKey("Debuff on Command", "");
 			}
-
+			if ((CharacterClass & Class.Priest) == CharacterClass || (CharacterClass & Class.Caster) == CharacterClass)
+			{
+				newFile.Sections.AddSection("Off Assist Spells");
+				section = newFile.Sections.GetSectionData("Off Assist Spells");
+				section.Keys.AddKey("Main", "");
+			}
 			//if not a tank class
 			if (!((CharacterClass & Class.Tank) == CharacterClass))
 			{
@@ -1113,12 +1118,7 @@ namespace E3Core.Settings
 				section.Keys.AddKey("Emergency Group Heal", "");
 			}
 
-			if ((CharacterClass & Class.Priest) == CharacterClass || (CharacterClass & Class.Caster) == CharacterClass)
-			{
-				newFile.Sections.AddSection("Off Assist Spells");
-				section = newFile.Sections.GetSectionData("Off Assist Spells");
-				section.Keys.AddKey("Main", "");
-			}
+			
 
 			if (CharacterClass == Class.Magician)
 			{
@@ -1166,12 +1166,6 @@ namespace E3Core.Settings
 			section.Keys.AddKey("BandoNameWithoutDeBuff", "");
 
 
-
-			newFile.Sections.AddSection("Startup Commands");
-			section = newFile.Sections.GetSectionData("Startup Commands");
-			section.Keys.AddKey("Command", "");
-
-
 			newFile.Sections.AddSection("Blocked Buffs");
 			section = newFile.Sections.GetSectionData("Blocked Buffs");
 			section.Keys.AddKey("BuffName", "");
@@ -1186,17 +1180,14 @@ namespace E3Core.Settings
 			section.Keys.AddKey("Gimme", "");
 
 
-			newFile.Sections.AddSection("LootCommander");
-			section = newFile.Sections.GetSectionData("LootCommander");
-			section.Keys.AddKey("Enabled (On/Off)", "Off");
-			section.Keys.AddKey("Looter", "");
+			//newFile.Sections.AddSection("LootCommander");
+			//section = newFile.Sections.GetSectionData("LootCommander");
+			//section.Keys.AddKey("Enabled (On/Off)", "Off");
+			//section.Keys.AddKey("Looter", "");
 
 
 			newFile.Sections.AddSection("Ifs");
-			newFile.Sections.AddSection("E3BotsPublishData (key/value)");
-			newFile.Sections.AddSection("E3ChatChannelsToJoin");
-			section = newFile.Sections.GetSectionData("E3ChatChannelsToJoin");
-			section.Keys.AddKey("Channel");
+		
 			newFile.Sections.AddSection("Events");
 			newFile.Sections.AddSection("EventLoop");
 			newFile.Sections.AddSection("Report");
@@ -1231,6 +1222,15 @@ namespace E3Core.Settings
 			section.Keys.AddKey("ExceptionZone", "poknowledge");
 			section.Keys.AddKey("ExceptionZone", "thevoida");
 			section.Keys.AddKey("ExceptionMQQuery", "");
+
+			newFile.Sections.AddSection("Startup Commands");
+			section = newFile.Sections.GetSectionData("Startup Commands");
+			section.Keys.AddKey("Command", "");
+
+			newFile.Sections.AddSection("E3BotsPublishData (key/value)");
+			newFile.Sections.AddSection("E3ChatChannelsToJoin");
+			section = newFile.Sections.GetSectionData("E3ChatChannelsToJoin");
+			section.Keys.AddKey("Channel");
 
 			return newFile;
 		}
@@ -1311,133 +1311,167 @@ namespace E3Core.Settings
 					//now we have the header and keyname of the ini entry
 					
 					string keyName = pair2.Key;
-					var section = defaultFile.Sections[header];
+					var section = defaultFile.Sections.GetSectionData(header);
+					//copy over comments from loaded section
+					var loadeddata_section = ParsedData.Sections.GetSectionData(header);
+					if(loadeddata_section!=null)
+					{
+						section.Comments.AddRange(loadeddata_section.Comments);
+					}
+
+					deletedKeyComments.Clear();
+
 					if (section != null)
 					{
-						deletedKeyComments.Clear();
-						if (keyName==String.Empty)
-						{
-							foreach(var keyData in section)
-							{
-								deletedKeyComments.AddRange(keyData.Comments);
-							}
-							section.RemoveAllKeys();
-						}
-						else
-						{
-							var deletedKey = section.GetKeyData(keyName);
-							if(deletedKey==null)
-							{
-								//not valid for this class type
-								continue;
-							}
-							deletedKeyComments.AddRange(deletedKey.Comments);
-							section.RemoveKey(keyName);
-							
-						}
+						var section_keyCollection = defaultFile.Sections[header];
 
-						FieldInfo field = pair2.Value;
-
-						Object reference = field.GetValue(this);
-						//have to work with all the types in the settings class
-						if (reference is List<Spell>)
+						try
 						{
-							List<Spell> spellList = (List<Spell>)reference;
-							if(spellList.Count==0)
+							if (keyName == String.Empty)
 							{
-								section.AddKey(keyName, "");
-								continue;
-							}
-							foreach (var spell in spellList)
-							{
-								section.AddKey(keyName, spell.ToConfigEntry());
-							}
-						}
-						else if (reference is List<SpellRequest>)
-						{
-							List<SpellRequest> spellList = (List<SpellRequest>)reference;
-							if (spellList.Count == 0)
-							{
-								section.AddKey(keyName, "");
-								continue;
-							}
-							foreach (var spell in spellList)
-							{
-								section.AddKey(keyName, spell.ToConfigEntry());
-							}
-						}
-						else if (reference is List<MelodyIfs>)
-						{
-							List<MelodyIfs> melodyIfsList = (List<MelodyIfs>)reference;
-							if (melodyIfsList.Count == 0)
-							{
-								section.AddKey(keyName, "");
-								continue;
-							}
-							foreach (var spell in melodyIfsList)
-							{
-								section.AddKey(keyName, spell.ToConfigEntry());
-							}
-						}
-						else if (reference is List<string>)
-						{
-							List<String> stringlist = (List<String>)reference;
-							foreach (var value in stringlist)
-							{
-								section.AddKey(keyName, value);
-							}
-						}
-						else if (reference is IDictionary<string, string>)
-						{
-							IDictionary<string, string> stringDict = (IDictionary<string, string>)reference;
-							foreach (var tpair in stringDict)
-							{
-								section.AddKey(tpair.Key, tpair.Value);
-							}
-						}
-						else
-						{
-							if (reference is string)
-							{
-								section.AddKey(keyName, (string)reference);
-							}
-							else if (reference is bool)
-							{
-								string boolString = "On";
-								if(!(bool)reference)
+								foreach (var keyData in loadeddata_section.Keys)
 								{
-									boolString = "Off";
+									if (keyData.Comments.Count > 0)
+									{
+										deletedKeyComments.AddRange(keyData.Comments);
+									}
 								}
-								section.AddKey(keyName, boolString);
-							} 
-							else if (reference is Int32)
-							{
-								section.AddKey(keyName, ((Int32)reference).ToString());
-							}
-							else if (reference is Int64)
-							{
-								section.AddKey(keyName, ((Int64)reference).ToString());
-							}
-						}
-						if(deletedKeyComments.Count>0)
-						{	
-							//cary over any comments on the key 
-							if(keyName!=String.Empty)
-							{
-								var newKeyData = section.GetKeyData(keyName);
-								newKeyData.Comments.AddRange(deletedKeyComments);
-
+								section_keyCollection.RemoveAllKeys();
 							}
 							else
 							{
-								//just add all the comments to the first key
-								foreach(var keyData in section)
+								var deletedKey = section_keyCollection.GetKeyData(keyName);
+								if (deletedKey == null)
 								{
-									keyData.Comments.AddRange(deletedKeyComments);
-									break;
+									//not valid for this class type
+									continue;
+								}
+
+								deletedKey = ParsedData.Sections[header].GetKeyData(keyName);
+
+								if (deletedKey != null && deletedKey.Comments.Count > 0)
+								{
+									deletedKeyComments.AddRange(deletedKey.Comments);
+								}
+
+
+								section_keyCollection.RemoveKey(keyName);
+
+							}
+
+							FieldInfo field = pair2.Value;
+
+							Object reference = field.GetValue(this);
+							//have to work with all the types in the settings class
+							if (reference is List<Spell>)
+							{
+								List<Spell> spellList = (List<Spell>)reference;
+								if (spellList.Count == 0)
+								{
+									section_keyCollection.AddKey(keyName, "");
+									continue;
+								}
+								foreach (var spell in spellList)
+								{
+									section_keyCollection.AddKey(keyName, spell.ToConfigEntry());
+								}
+							}
+							else if (reference is List<SpellRequest>)
+							{
+								List<SpellRequest> spellList = (List<SpellRequest>)reference;
+								if (spellList.Count == 0)
+								{
+									section_keyCollection.AddKey(keyName, "");
+									continue;
+								}
+								foreach (var spell in spellList)
+								{
+									section_keyCollection.AddKey(keyName, spell.ToConfigEntry());
+								}
+							}
+							else if (reference is List<MelodyIfs>)
+							{
+								List<MelodyIfs> melodyIfsList = (List<MelodyIfs>)reference;
+								if (melodyIfsList.Count == 0)
+								{
+									section_keyCollection.AddKey(keyName, "");
+									continue;
+								}
+								foreach (var spell in melodyIfsList)
+								{
+									section_keyCollection.AddKey(keyName, spell.ToConfigEntry());
+								}
+							}
+							else if (reference is List<string>)
+							{
+								List<String> stringlist = (List<String>)reference;
+								if (stringlist.Count == 0)
+								{
+									section_keyCollection.AddKey(keyName, "");
+									continue;
+								}
+								foreach (var value in stringlist)
+								{
+									section_keyCollection.AddKey(keyName, value);
+								}
+							}
+							else if (reference is IDictionary<string, string>)
+							{
+								IDictionary<string, string> stringDict = (IDictionary<string, string>)reference;
+								foreach (var tpair in stringDict)
+								{
+									section_keyCollection.AddKey(tpair.Key, tpair.Value);
+								}
+							}
+							else
+							{
+								if (reference is string)
+								{
+									section_keyCollection.AddKey(keyName, (string)reference);
+								}
+								else if (reference is bool)
+								{
+									string boolString = "On";
+									if (!(bool)reference)
+									{
+										boolString = "Off";
+									}
+									section_keyCollection.AddKey(keyName, boolString);
+								}
+								else if (reference is Int32)
+								{
+									section_keyCollection.AddKey(keyName, ((Int32)reference).ToString());
+								}
+								else if (reference is Int64)
+								{
+									section_keyCollection.AddKey(keyName, ((Int64)reference).ToString());
 								}
 							}
 						}
+						finally
+						{
+							if (deletedKeyComments.Count > 0)
+							{
+								//cary over any comments on the key 
+								if (keyName != String.Empty)
+								{
+									var newKeyData = section_keyCollection.GetKeyData(keyName);
+									newKeyData.Comments.AddRange(deletedKeyComments);
+
+								}
+								else
+								{
+									//just add all the comments to the first key
+									foreach (var keyData in section_keyCollection)
+									{
+										keyData.Comments.AddRange(deletedKeyComments);
+										break;
+									}
+								}
+							}
+						}
+						
+						
 					}
 				}
 			}
