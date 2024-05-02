@@ -43,17 +43,20 @@ namespace E3NextConfigEditor
 		public static AddSpellEditor _abilityEditor;
 		public static AddSpellEditor _aaEditor;
 		public static AddSpellEditor _skillEditor;
+		public static AddSpellEditor _itemEditor;
 		//Spell data organized for the tree view of the editors.
 		public static SortedDictionary<string, SortedDictionary<string, List<SpellData>>> _spellDataOrganized = new SortedDictionary<string, SortedDictionary<string, List<SpellData>>>();
 		public static SortedDictionary<string, SortedDictionary<string, List<SpellData>>> _altdataOrganized = new SortedDictionary<string, SortedDictionary<string, List<SpellData>>>();
 		public static SortedDictionary<string, SortedDictionary<string, List<SpellData>>> _discdataOrganized = new SortedDictionary<string, SortedDictionary<string, List<SpellData>>>();
 		public static SortedDictionary<string, SortedDictionary<string, List<SpellData>>> _skilldataOrganized = new SortedDictionary<string, SortedDictionary<string, List<SpellData>>>();
+		public static SortedDictionary<string, SortedDictionary<string, List<SpellData>>> _itemDataOrganized = new SortedDictionary<string, SortedDictionary<string, List<SpellData>>>();
 
 		public static Int32 _networkPort = 0;
 		public static Int32 _propertyGridWidth = 150;
 		public static string _bardDynamicMelodyName = "Dynamic Melodies";
 		public static List<String> _dynamicSections = new List<string>() { _bardDynamicMelodyName };
 		public static SplashScreen _splashScreen = null;
+		public static IniParser.Model.IniData _baseIniData = null;
 	
 		public ConfigEditor()
 		{
@@ -65,7 +68,6 @@ namespace E3NextConfigEditor
 		public void LoadData()
 		{
 			string[] args = Environment.GetCommandLineArgs();
-
 
 			if (args.Length > 1)
 			{
@@ -93,6 +95,9 @@ namespace E3NextConfigEditor
 			_splashScreen.Invoke(new Action(() => _splashScreen.splashLabel.Text = "Requesting Skill list..."));
 			result = _tloClient.RequestRawData("${E3.Skills.ListAll}");
 			SpellDataList skills = SpellDataList.Parser.ParseFrom(result);
+			_splashScreen.Invoke(new Action(() => _splashScreen.splashLabel.Text = "Requesting Item list..."));
+			result = _tloClient.RequestRawData("${E3.ItemsWithSpells.ListAll}");
+			SpellDataList items = SpellDataList.Parser.ParseFrom(result);
 
 			string EQDirectory = _tloClient.RequestData("${EverQuest.Path}");
 
@@ -108,7 +113,7 @@ namespace E3NextConfigEditor
 			System.Enum.TryParse(classValue, out _currentClass);
 
 			//lets sort all the spells by cataegory/subcategory and levels
-
+			PopulateItemData(items.Data, _itemDataOrganized);
 			PopulateData(skills.Data, _skilldataOrganized);
 			PopulateData(bookSpells.Data, _spellDataOrganized);
 			PopulateData(aas.Data, _altdataOrganized);
@@ -185,6 +190,8 @@ namespace E3NextConfigEditor
 				}
 				
 			}
+			_baseIniData = E3.CharacterSettings.createNewINIData();
+
 
 			_charSettingsMappings = e3util.GetSettingsMappedToInI();
 
@@ -197,7 +204,9 @@ namespace E3NextConfigEditor
 				sectionNames.Add(_bardDynamicMelodyName);
 			}
 
-			foreach (var section in E3.CharacterSettings.ParsedData.Sections)
+			
+
+			foreach (var section in _baseIniData.Sections)
 			{
 				//bards are special, do not include their dynamic melodies
 				if (section.SectionName.EndsWith(" Melody", StringComparison.OrdinalIgnoreCase)) continue;
@@ -212,7 +221,7 @@ namespace E3NextConfigEditor
 				{
 					sectionComboBox.Items.Add(section);
 				}
-				else if (E3.CharacterSettings.ParsedData.Sections.ContainsSection(section))
+				else if (_baseIniData.Sections.ContainsSection(section))
 				{
 					sectionComboBox.Items.Add(section);
 
@@ -241,6 +250,10 @@ namespace E3NextConfigEditor
 			{
 				returnValue = new List<string>() { "DoTs on Assist","DoTs on Command", "Debuffs","Pets", "Burn", "Ifs", "Assist Settings", "Buffs" };
 			}
+			if (characterClass == Class.Shadowknight)
+			{
+				returnValue = new List<string>() { "Nukes", "Assist Settings", "Buffs","DoTs on Assist", "DoTs on Command", "Debuffs", "Pets", "Burn", "Ifs"  };
+			}
 
 			return returnValue;
 		}
@@ -266,7 +279,28 @@ namespace E3NextConfigEditor
 
 			}
 		}
-		
+		public void PopulateItemData(RepeatedField<SpellData> spells, SortedDictionary<string, SortedDictionary<string, List<SpellData>>> dest)
+		{
+			foreach (SpellData s in spells)
+			{
+
+				SortedDictionary<string, List<SpellData>> subCategoryLookup;
+				List<SpellData> spellList;
+				if (!dest.TryGetValue(s.SpellName, out subCategoryLookup))
+				{
+					subCategoryLookup = new SortedDictionary<string, List<SpellData>>();
+					dest.Add(s.CastName, subCategoryLookup);
+				}
+				if (!subCategoryLookup.TryGetValue(s.CastName, out spellList))
+				{
+					spellList = new List<SpellData>();
+					subCategoryLookup.Add(s.SpellName, spellList);
+				}
+
+				spellList.Add(s);
+
+			}
+		}
 		#region comboBoxs
 		private void sectionComboBox_ButtonSpecAny2_Click(object sender, EventArgs e)
 		{
@@ -559,7 +593,14 @@ namespace E3NextConfigEditor
 			}
 			ShowEditorDialog(ref _spellEditor, _spellDataOrganized);
 		}
-
+		private void valueList_AddItem_Execute(object sender, EventArgs e)
+		{
+			if (!(valuesListBox.Tag is List<Spell>))
+			{
+				return;
+			}
+			ShowEditorDialog(ref _itemEditor, _itemDataOrganized);
+		}
 		private void valueList_AddAA_Execute(object sender, EventArgs e)
 		{
 			if (!(valuesListBox.Tag is List<Spell>))
@@ -1108,5 +1149,7 @@ namespace E3NextConfigEditor
 			{
 			}
 		}
+
+		
 	}
 }

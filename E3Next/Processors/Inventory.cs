@@ -131,8 +131,34 @@ namespace E3Core.Processors
                             }
                         }
                     }
+					else
+					{
+						//its a single item
+
+						String bagItem = MQ.Query<String>($"${{Me.Inventory[pack{i}]}}");
+						if (bagItem.IndexOf(itemName, 0, StringComparison.OrdinalIgnoreCase) > -1)
+						{
+							report.Add($"\ag[Pack] ${{Me.Inventory[pack{i}].ItemLink[CLICKABLE]}} - \awbag({i})");
+						}
+						Int32 augCount = MQ.Query<Int32>($"${{Me.Inventory[pack{i}].Augs}}");
+						if (augCount > 0)
+						{
+							for (int a = 1; a <= 6; a++)
+							{
+								string augname = MQ.Query<string>($"${{Me.Inventory[pack{i}].AugSlot[{a}].Name}}");
+
+								if (augname.IndexOf(itemName, 0, StringComparison.OrdinalIgnoreCase) > -1)
+								{
+									totalItems += 1;
+									report.Add($"\ag[Pack] ${{Me.Inventory[pack{i}].ItemLink[CLICKABLE]}} - ${{Me.Inventory[pack{i}].AugSlot[{a}].Item.ItemLink[CLICKABLE]}} \aw(aug-slot[{a}]) \awbag({i})");
+								}
+							}
+						}
+
+					}
 
                 }
+				
             }
 
             for (int i = 1; i <= 26; i++)

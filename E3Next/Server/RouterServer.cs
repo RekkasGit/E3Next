@@ -148,6 +148,20 @@ namespace E3Core.Server
 					Buffer.BlockCopy(bytes, 0, message.payload, 0, message.payloadLength);
 
 				}
+				else if (String.Equals(query, "${E3.ItemsWithSpells.ListAll}", StringComparison.OrdinalIgnoreCase))
+				{
+					List<Data.Spell> spells = e3util.ListAllItemWithClickyData();
+
+					SpellDataList spellDatas = new SpellDataList();
+					foreach (var spell in spells)
+					{
+						spellDatas.Data.Add(spell.ToProto());
+					}
+					byte[] bytes = spellDatas.ToByteArray();
+					message.payloadLength = bytes.Length;
+					Buffer.BlockCopy(bytes, 0, message.payload, 0, message.payloadLength);
+
+				}
 				else
                 {
                     //string return types

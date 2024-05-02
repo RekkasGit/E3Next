@@ -430,10 +430,10 @@ namespace E3Core.Settings
 
 		//
 
-		//Loot Commander
+		////Loot Commander
 
-		public bool LootCommander_Enabled;
-        public List<string> LootCommander_Looters = new List<string>();
+		//public bool LootCommander_Enabled;
+  //      public List<string> LootCommander_Looters = new List<string>();
 
 		[INI_Section("CPU", "ProcessLoopDelayInMS")]
 		public Int32 CPU_ProcessLoopDelay = 50;
@@ -791,8 +791,8 @@ namespace E3Core.Settings
             LoadKeyData("Debuffs", "Debuff on Assist", ParsedData, Debuffs_OnAssist);
             LoadKeyData("Debuffs", "Debuff on Command", ParsedData, Debuffs_Command);
 
-            LoadKeyData("LootCommander", "Enabled",ParsedData, ref LootCommander_Enabled);
-            LoadKeyData("LootCommander", "Looter", ParsedData, LootCommander_Looters);
+            //LoadKeyData("LootCommander", "Enabled",ParsedData, ref LootCommander_Enabled);
+            //LoadKeyData("LootCommander", "Looter", ParsedData, LootCommander_Looters);
 
             LoadKeyData("Burn", "Quick Burn", ParsedData, QuickBurns);
             LoadKeyData("Burn", "Long Burn", ParsedData, LongBurns);
@@ -892,7 +892,7 @@ namespace E3Core.Settings
 
 		}
 
-		private IniData createNewINIData()
+		public IniData createNewINIData()
 		{
 			IniData newFile = new IniData();
 

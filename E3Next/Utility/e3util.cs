@@ -1387,8 +1387,59 @@ namespace E3Core.Utility
 			}
 			return returnValue;
 		}
+		public static List<Data.Spell> ListAllItemWithClickyData()
+		{
+			List<Data.Spell> returnValue = new List<Data.Spell>();
+			for (int i = 0; i <= 22; i++)
+			{
+				string spellName = MQ.Query<string>($"${{Me.Inventory[{i}].Clicky}}");
 
-        public static Dictionary<string,Dictionary<string,FieldInfo>> GetSettingsMappedToInI()
+				if(spellName!="NULL")
+				{
+					string itemName = MQ.Query<string>($"${{Me.Inventory[{i}]}}");
+					var newSpell = new Data.Spell(itemName, null);
+					returnValue.Add(newSpell);
+				}
+				
+			}
+			for (Int32 i = 1; i <= 12; i++)
+			{
+				bool SlotExists = MQ.Query<bool>($"${{Me.Inventory[pack{i}]}}");
+				if (SlotExists)
+				{
+					Int32 ContainerSlots = MQ.Query<Int32>($"${{Me.Inventory[pack{i}].Container}}");
+					if (ContainerSlots > 0)
+					{
+						for (Int32 e = 1; e <= ContainerSlots; e++)
+						{
+							//${Me.Inventory[${itemSlot}].Item[${j}].Name.Equal[${itemName}]}
+							string bagItemSpell = MQ.Query<String>($"${{Me.Inventory[pack{i}].Item[{e}].Clicky}}");
+							if(bagItemSpell!="NULL")
+							{
+								String bagItem = MQ.Query<String>($"${{Me.Inventory[pack{i}].Item[{e}]}}");
+								var newSpell = new Data.Spell(bagItem, null);
+								returnValue.Add(newSpell);
+							}
+						}
+					}
+					else
+					{
+						//its a single item
+						string spellName = MQ.Query<string>($"${{Me.Inventory[pack{i}].Clicky}}");
+
+						if (spellName != "NULL")
+						{
+							string itemName = MQ.Query<string>($"${{Me.Inventory[pack{i}]}}");
+							var newSpell = new Data.Spell(itemName, null);
+							returnValue.Add(newSpell);
+						}
+					}
+				}
+			}
+			return returnValue;
+		}
+
+		public static Dictionary<string,Dictionary<string,FieldInfo>> GetSettingsMappedToInI()
         {
             Dictionary<string, Dictionary<string, FieldInfo>> returnValue = new Dictionary<string, Dictionary<string, FieldInfo>>();
 

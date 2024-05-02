@@ -42,6 +42,8 @@
 			this.valueList_AddSpell = new Krypton.Toolkit.KryptonCommand();
 			this.kryptonContextMenuItem3 = new Krypton.Toolkit.KryptonContextMenuItem();
 			this.valueList_AddAA = new Krypton.Toolkit.KryptonCommand();
+			this.kryptonContextMenuItem10 = new Krypton.Toolkit.KryptonContextMenuItem();
+			this.valueList_AddItem = new Krypton.Toolkit.KryptonCommand();
 			this.kryptonContextMenuItem4 = new Krypton.Toolkit.KryptonContextMenuItem();
 			this.valueList_AddDisc = new Krypton.Toolkit.KryptonCommand();
 			this.kryptonContextMenuItem7 = new Krypton.Toolkit.KryptonContextMenuItem();
@@ -155,6 +157,7 @@
 			this.kryptonContextMenuItems1.Items.AddRange(new Krypton.Toolkit.KryptonContextMenuItemBase[] {
             this.kryptonContextMenuItem2,
             this.kryptonContextMenuItem3,
+            this.kryptonContextMenuItem10,
             this.kryptonContextMenuItem4,
             this.kryptonContextMenuItem7,
             this.kryptonContextMenuItem6,
@@ -181,6 +184,16 @@
 			// 
 			this.valueList_AddAA.Text = "Add AA";
 			this.valueList_AddAA.Execute += new System.EventHandler(this.valueList_AddAA_Execute);
+			// 
+			// kryptonContextMenuItem10
+			// 
+			this.kryptonContextMenuItem10.KryptonCommand = this.valueList_AddItem;
+			this.kryptonContextMenuItem10.Text = "Add Item";
+			// 
+			// valueList_AddItem
+			// 
+			this.valueList_AddItem.Text = "Add Item";
+			this.valueList_AddItem.Execute += new System.EventHandler(this.valueList_AddItem_Execute);
 			// 
 			// kryptonContextMenuItem4
 			// 
@@ -327,6 +340,8 @@
 		private Krypton.Toolkit.KryptonContextMenuItem kryptonContextMenuItem8;
 		private Krypton.Toolkit.KryptonContextMenuItem kryptonContextMenuItem9;
 		private Krypton.Toolkit.KryptonButton saveButton;
+		private Krypton.Toolkit.KryptonCommand valueList_AddItem;
+		private Krypton.Toolkit.KryptonContextMenuItem kryptonContextMenuItem10;
 	}
 }
 
