@@ -94,6 +94,10 @@ namespace E3NextConfigEditor
 			result = _tloClient.RequestRawData("${E3.Skills.ListAll}");
 			SpellDataList skills = SpellDataList.Parser.ParseFrom(result);
 
+			string EQDirectory = _tloClient.RequestData("${EverQuest.Path}");
+
+
+
 			foreach (var skill in skills.Data)
 			{
 				skill.Category = "Skill";
@@ -154,26 +158,32 @@ namespace E3NextConfigEditor
 			E3.CharacterSettings = new E3Core.Settings.CharacterSettings(mergeUpdates);
 			_tloClient.RequestData("${E3.TLO.BulkEnd}");
 
-			//this.Text = $"({E3.CurrentName})({E3.ServerName})";
-			this.Text = $"(Necro01)";
+			this.Text = $"({E3.CurrentName})({E3.ServerName})";
+			//this.Text = $"(Necro01)";
 
 			//load image data
 			for (Int32 i = 1; i <= 63; i++)
 			{
-				using (var image = new TGA.TargaImage($"D:\\EQ\\EQLive\\uifiles\\default\\spells{i.ToString("D2")}.tga"))
+				string fileName = $@"{EQDirectory}\uifiles\default\spells{i.ToString("D2")}.tga";
+				if(System.IO.File.Exists(fileName))
 				{
-					using (var bitmap = image.Image)
+					using (var image = new TGA.TargaImage(fileName))
 					{
-						for (Int32 y = 0; y < 6; y++)
+						using (var bitmap = image.Image)
 						{
-							for (Int32 x = 0; x < 6; x++)
+							for (Int32 y = 0; y < 6; y++)
 							{
-								var icon = bitmap.Clone(new Rectangle(x * 40, y * 40, 40, 40), bitmap.PixelFormat);
-								_spellIcons.Add(icon);
+								for (Int32 x = 0; x < 6; x++)
+								{
+									var icon = bitmap.Clone(new Rectangle(x * 40, y * 40, 40, 40), bitmap.PixelFormat);
+									_spellIcons.Add(icon);
+								}
 							}
 						}
 					}
+
 				}
+				
 			}
 
 			_charSettingsMappings = e3util.GetSettingsMappedToInI();
