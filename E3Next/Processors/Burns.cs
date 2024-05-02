@@ -202,7 +202,22 @@ namespace E3Core.Processors
                         }
                         var chatOutput = $"{burnType}: {burn.CastName}";
                         //so you don't target other groups or your pet for burns if your target happens to be on them.
-                        if (((isMyPet) || (targetPC && !isGroupMember)) && (burn.TargetType == "Group v1" || burn.TargetType == "Group v2"))
+						if(!String.IsNullOrWhiteSpace(burn.CastTarget) && _spawns.TryByName(burn.CastTarget, out var spelltarget))
+						{
+
+							Casting.Cast(spelltarget.ID, burn);
+							if (previousTarget > 0)
+							{
+								Int32 currentTarget = MQ.Query<Int32>("${Target.ID}");
+								if (previousTarget != currentTarget)
+								{
+									Casting.TrueTarget(previousTarget);
+								}
+							}
+							E3.Bots.Broadcast(chatOutput);
+
+						}
+                        else if (((isMyPet) || (targetPC && !isGroupMember)) && (burn.TargetType == "Group v1" || burn.TargetType == "Group v2"))
                         {
                             Casting.Cast(E3.CurrentId, burn);
                             if (previousTarget > 0)
