@@ -593,6 +593,16 @@ namespace E3NextConfigEditor
 			}
 			ShowEditorDialog(ref _spellEditor, _spellDataOrganized);
 		}
+		private void valueList_ReplaceSpell_Execute(object sender, EventArgs e)
+		{
+			if (!(valuesListBox.Tag is List<Spell>))
+			{
+				return;
+			}
+			if (valuesListBox.SelectedItem == null) return;
+
+			ShowEditorDialog(ref _spellEditor, _spellDataOrganized,true);
+		}
 		private void valueList_AddItem_Execute(object sender, EventArgs e)
 		{
 			if (!(valuesListBox.Tag is List<Spell>))
@@ -1093,7 +1103,38 @@ namespace E3NextConfigEditor
 				}
 			}
 		}
-		private void ShowEditorDialog(ref AddSpellEditor editor, SortedDictionary<string, SortedDictionary<string, List<SpellData>>> spellData)
+		private void valueList_ReplaecSpellToCollection(SpellData selected)
+		{
+			Spell newSpell = Spell.FromProto(selected);
+			object settings_data_obj = valuesListBox.Tag;
+
+			//update the base storage data
+			if (settings_data_obj is List<Spell>)
+			{
+				List<Spell> spellList = (List<Spell>)settings_data_obj;
+				if (spellList.Count > 0 && valuesListBox.SelectedItem != null)
+				{
+					//put after the current selected
+					Int32 index = valuesListBox.SelectedIndex;
+					KryptonListItem item = new KryptonListItem();
+					item.ShortText = newSpell.SpellName;
+					item.LongText = string.Empty;
+					item.Tag = newSpell;
+					if (newSpell.SpellIcon > -1)
+					{
+						item.Image = _spellIcons[newSpell.SpellIcon];
+
+					}
+					newSpell.SpellGem = ((Spell)((KryptonListItem)valuesListBox.SelectedItem).Tag).SpellGem;
+					spellList.RemoveAt(index);
+					spellList.Insert(index, newSpell);
+					valuesListBox.Items.RemoveAt(index);
+					valuesListBox.Items.Insert(index, item);
+				}
+				
+			}
+		}
+		private void ShowEditorDialog(ref AddSpellEditor editor, SortedDictionary<string, SortedDictionary<string, List<SpellData>>> spellData, bool replaceSpell=false)
 		{
 			if (editor == null)
 			{
@@ -1105,7 +1146,16 @@ namespace E3NextConfigEditor
 			{
 				if (editor.SelectedSpell != null)
 				{
-					valueList_AddSpellToCollection(editor.SelectedSpell);
+					if(replaceSpell)
+					{
+						valueList_ReplaecSpellToCollection(editor.SelectedSpell);
+
+					}
+					else
+					{
+						valueList_AddSpellToCollection(editor.SelectedSpell);
+					}
+					
 				}
 			}
 		}

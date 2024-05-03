@@ -62,6 +62,11 @@
 			this.kryptonContextMenuItems3 = new Krypton.Toolkit.KryptonContextMenuItems();
 			this.kryptonContextMenuHeading1 = new Krypton.Toolkit.KryptonContextMenuHeading();
 			this.saveButton = new Krypton.Toolkit.KryptonButton();
+			this.kryptonContextMenuItem11 = new Krypton.Toolkit.KryptonContextMenuItem();
+			this.kryptonContextMenuItems4 = new Krypton.Toolkit.KryptonContextMenuItems();
+			this.kryptonContextMenuItem12 = new Krypton.Toolkit.KryptonContextMenuItem();
+			this.kryptonContextMenuItem13 = new Krypton.Toolkit.KryptonContextMenuItem();
+			this.valueList_ReplaceSpell = new Krypton.Toolkit.KryptonCommand();
 			((System.ComponentModel.ISupportInitialize)(this.sectionComboBox)).BeginInit();
 			((System.ComponentModel.ISupportInitialize)(this.subsectionComboBox)).BeginInit();
 			this.SuspendLayout();
@@ -163,6 +168,7 @@
             this.kryptonContextMenuItem6,
             this.kryptonContextMenuItem8,
             this.kryptonContextMenuItem9,
+            this.kryptonContextMenuItem11,
             this.kryptonContextMenuItem5});
 			// 
 			// kryptonContextMenuItem2
@@ -285,6 +291,25 @@
 			this.saveButton.Values.Text = "Save";
 			this.saveButton.Click += new System.EventHandler(this.saveButton_Click);
 			// 
+			// kryptonContextMenuItem11
+			// 
+			this.kryptonContextMenuItem11.KryptonCommand = this.valueList_ReplaceSpell;
+			this.kryptonContextMenuItem11.Text = "Replace Spell";
+			// 
+			// kryptonContextMenuItem12
+			// 
+			this.kryptonContextMenuItem12.Text = "Replace with Spell";
+			// 
+			// kryptonContextMenuItem13
+			// 
+			this.kryptonContextMenuItem13.Text = "Replace with AA";
+			// 
+			// valueList_ReplaceSpell
+			// 
+			this.valueList_ReplaceSpell.Text = "Replace Spell";
+			this.valueList_ReplaceSpell.TextLine1 = "Copy data to new Spell";
+			this.valueList_ReplaceSpell.Execute += new System.EventHandler(this.valueList_ReplaceSpell_Execute);
+			// 
 			// ConfigEditor
 			// 
 			this.AutoScaleDimensions = new System.Drawing.SizeF(6F, 13F);
@@ -342,6 +367,11 @@
 		private Krypton.Toolkit.KryptonButton saveButton;
 		private Krypton.Toolkit.KryptonCommand valueList_AddItem;
 		private Krypton.Toolkit.KryptonContextMenuItem kryptonContextMenuItem10;
+		private Krypton.Toolkit.KryptonContextMenuItem kryptonContextMenuItem11;
+		private Krypton.Toolkit.KryptonContextMenuItems kryptonContextMenuItems4;
+		private Krypton.Toolkit.KryptonContextMenuItem kryptonContextMenuItem12;
+		private Krypton.Toolkit.KryptonContextMenuItem kryptonContextMenuItem13;
+		private Krypton.Toolkit.KryptonCommand valueList_ReplaceSpell;
 	}
 }
 

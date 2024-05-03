@@ -125,7 +125,7 @@ namespace E3NextConfigEditor.Models
 		}
 		[Category("Flags")]
 		[Description("Before Spell Name, follows normal heircy rules")]
-		public string Before
+		public string BeforeSpell
 		{
 			get { return _spell.BeforeSpell; }
 			set { _spell.BeforeSpell = value; }
