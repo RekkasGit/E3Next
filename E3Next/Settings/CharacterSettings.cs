@@ -1301,10 +1301,11 @@ namespace E3Core.Settings
 		{
 			//time to pull out the reflection noone has time to manage all that settings crap
 			var charSettings = e3util.GetSettingsMappedToInI();
-			List<string> deletedKeyComments = new List<string>();
+			List<string> transferedKeyComments = new List<string>();
 
 			IniData defaultFile = createNewINIData();
 
+			//lets save the normal stuff
 			foreach (var pair in charSettings)
 			{
 				string header = pair.Key;
@@ -1322,7 +1323,7 @@ namespace E3Core.Settings
 						section.Comments.AddRange(loadeddata_section.Comments);
 					}
 
-					deletedKeyComments.Clear();
+					transferedKeyComments.Clear();
 
 					if (section != null)
 					{
@@ -1336,7 +1337,7 @@ namespace E3Core.Settings
 								{
 									if (keyData.Comments.Count > 0)
 									{
-										deletedKeyComments.AddRange(keyData.Comments);
+										transferedKeyComments.AddRange(keyData.Comments);
 									}
 								}
 								section_keyCollection.RemoveAllKeys();
@@ -1354,7 +1355,7 @@ namespace E3Core.Settings
 
 								if (deletedKey != null && deletedKey.Comments.Count > 0)
 								{
-									deletedKeyComments.AddRange(deletedKey.Comments);
+									transferedKeyComments.AddRange(deletedKey.Comments);
 								}
 
 
@@ -1453,13 +1454,13 @@ namespace E3Core.Settings
 						}
 						finally
 						{
-							if (deletedKeyComments.Count > 0)
+							if (transferedKeyComments.Count > 0)
 							{
 								//cary over any comments on the key 
 								if (keyName != String.Empty)
 								{
 									var newKeyData = section_keyCollection.GetKeyData(keyName);
-									newKeyData.Comments.AddRange(deletedKeyComments);
+									newKeyData.Comments.AddRange(transferedKeyComments);
 
 								}
 								else
@@ -1467,7 +1468,7 @@ namespace E3Core.Settings
 									//just add all the comments to the first key
 									foreach (var keyData in section_keyCollection)
 									{
-										keyData.Comments.AddRange(deletedKeyComments);
+										keyData.Comments.AddRange(transferedKeyComments);
 										break;
 									}
 								}
@@ -1478,6 +1479,48 @@ namespace E3Core.Settings
 					}
 				}
 			}
+			//now for the snowflake bards :)
+			if(E3.CurrentClass== Class.Bard)
+			{
+				
+				//dict of List<spell>
+				foreach (var pair in Bard_MelodySets)
+				{
+					transferedKeyComments.Clear();
+					string header = $"{pair.Key} Melody";
+					defaultFile.Sections.AddSection(header);
+					var section = defaultFile.Sections[header];
+					var old_section = ParsedData.Sections.GetSectionData(header);
+					KeyData oldKey = null;
+					if(old_section!=null)
+					{
+						foreach (var keyData in old_section.Keys)
+						{
+							if (keyData.Comments.Count > 0)
+							{
+								transferedKeyComments.AddRange(keyData.Comments);
+							}
+						}
+
+					}
+				
+					foreach (var spell in pair.Value)
+					{
+						//list<spell>
+						section.AddKey("Song", spell.ToConfigEntry());
+					}
+					var newKeySet = section.GetKeyData("Song");
+					if(newKeySet!=null)
+					{
+						newKeySet.Comments.AddRange(transferedKeyComments);
+	
+					}
+
+				}
+			}
+
+
+
 			FileIniDataParser fileIniData = e3util.CreateIniParser();
             File.Delete(_fileName);
             fileIniData.WriteFile(_fileName, defaultFile);

@@ -286,12 +286,12 @@ namespace E3NextConfigEditor
 
 				SortedDictionary<string, List<SpellData>> subCategoryLookup;
 				List<SpellData> spellList;
-				if (!dest.TryGetValue(s.SpellName, out subCategoryLookup))
+				if (!dest.TryGetValue(s.CastName, out subCategoryLookup))
 				{
 					subCategoryLookup = new SortedDictionary<string, List<SpellData>>();
 					dest.Add(s.CastName, subCategoryLookup);
 				}
-				if (!subCategoryLookup.TryGetValue(s.CastName, out spellList))
+				if (!subCategoryLookup.TryGetValue(s.SpellName, out spellList))
 				{
 					spellList = new List<SpellData>();
 					subCategoryLookup.Add(s.SpellName, spellList);
