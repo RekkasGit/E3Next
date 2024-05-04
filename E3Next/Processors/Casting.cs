@@ -1701,6 +1701,11 @@ namespace E3Core.Processors
 				//lets replace it with TRUE/FALSE
 				tIF = tIF.ReplaceInsensitive("${E3N.State.ClearTargets}", ClearXTargets.Enabled.ToString());
 			}
+			if (tIF.IndexOf("${E3N.State.IsLootOn}", 0, StringComparison.OrdinalIgnoreCase) > -1)
+			{
+				//lets replace it with TRUE/FALSE
+				tIF = tIF.ReplaceInsensitive("${E3N.State.IsLootOn}", E3.CharacterSettings.Misc_AutoLootEnabled.ToString());
+			}
 			if (tIF.IndexOf("${AssistTarget}", 0, StringComparison.OrdinalIgnoreCase) > -1)
 			{
 				//lets replace it with TRUE/FALSE

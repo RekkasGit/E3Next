@@ -242,7 +242,7 @@ namespace E3Core.Settings
 					{
 						foreach(var value in key.ValueList)
 						{
-							var newSpell = new Data.Spell(value);
+							var newSpell = new Data.Spell(value, parsedData);
 							spellList.Add(newSpell);
 						}
 					}
