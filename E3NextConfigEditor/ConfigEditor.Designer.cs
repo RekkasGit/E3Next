@@ -54,6 +54,8 @@
 			this.valueList_AddDynamicMelody = new Krypton.Toolkit.KryptonCommand();
 			this.kryptonContextMenuItem9 = new Krypton.Toolkit.KryptonContextMenuItem();
 			this.valueList_AddMelodyIf = new Krypton.Toolkit.KryptonCommand();
+			this.kryptonContextMenuItem11 = new Krypton.Toolkit.KryptonContextMenuItem();
+			this.valueList_ReplaceSpell = new Krypton.Toolkit.KryptonCommand();
 			this.kryptonContextMenuItem5 = new Krypton.Toolkit.KryptonContextMenuItem();
 			this.valueList_Delete = new Krypton.Toolkit.KryptonCommand();
 			this.propertyGrid = new System.Windows.Forms.PropertyGrid();
@@ -62,11 +64,11 @@
 			this.kryptonContextMenuItems3 = new Krypton.Toolkit.KryptonContextMenuItems();
 			this.kryptonContextMenuHeading1 = new Krypton.Toolkit.KryptonContextMenuHeading();
 			this.saveButton = new Krypton.Toolkit.KryptonButton();
-			this.kryptonContextMenuItem11 = new Krypton.Toolkit.KryptonContextMenuItem();
 			this.kryptonContextMenuItems4 = new Krypton.Toolkit.KryptonContextMenuItems();
 			this.kryptonContextMenuItem12 = new Krypton.Toolkit.KryptonContextMenuItem();
 			this.kryptonContextMenuItem13 = new Krypton.Toolkit.KryptonContextMenuItem();
-			this.valueList_ReplaceSpell = new Krypton.Toolkit.KryptonCommand();
+			this.valueList_AddValue = new Krypton.Toolkit.KryptonCommand();
+			this.kryptonContextMenuItem14 = new Krypton.Toolkit.KryptonContextMenuItem();
 			((System.ComponentModel.ISupportInitialize)(this.sectionComboBox)).BeginInit();
 			((System.ComponentModel.ISupportInitialize)(this.subsectionComboBox)).BeginInit();
 			this.SuspendLayout();
@@ -166,6 +168,7 @@
             this.kryptonContextMenuItem4,
             this.kryptonContextMenuItem7,
             this.kryptonContextMenuItem6,
+            this.kryptonContextMenuItem14,
             this.kryptonContextMenuItem8,
             this.kryptonContextMenuItem9,
             this.kryptonContextMenuItem11,
@@ -251,6 +254,17 @@
 			this.valueList_AddMelodyIf.Text = "Add MelodyIf";
 			this.valueList_AddMelodyIf.Execute += new System.EventHandler(this.valueList_AddMelodyIf_Execute);
 			// 
+			// kryptonContextMenuItem11
+			// 
+			this.kryptonContextMenuItem11.KryptonCommand = this.valueList_ReplaceSpell;
+			this.kryptonContextMenuItem11.Text = "Replace Spell";
+			// 
+			// valueList_ReplaceSpell
+			// 
+			this.valueList_ReplaceSpell.Text = "Replace Spell";
+			this.valueList_ReplaceSpell.TextLine1 = "Copy data to new Spell";
+			this.valueList_ReplaceSpell.Execute += new System.EventHandler(this.valueList_ReplaceSpell_Execute);
+			// 
 			// kryptonContextMenuItem5
 			// 
 			this.kryptonContextMenuItem5.KryptonCommand = this.valueList_Delete;
@@ -291,11 +305,6 @@
 			this.saveButton.Values.Text = "Save";
 			this.saveButton.Click += new System.EventHandler(this.saveButton_Click);
 			// 
-			// kryptonContextMenuItem11
-			// 
-			this.kryptonContextMenuItem11.KryptonCommand = this.valueList_ReplaceSpell;
-			this.kryptonContextMenuItem11.Text = "Replace Spell";
-			// 
 			// kryptonContextMenuItem12
 			// 
 			this.kryptonContextMenuItem12.Text = "Replace with Spell";
@@ -304,11 +313,15 @@
 			// 
 			this.kryptonContextMenuItem13.Text = "Replace with AA";
 			// 
-			// valueList_ReplaceSpell
+			// valueList_AddValue
 			// 
-			this.valueList_ReplaceSpell.Text = "Replace Spell";
-			this.valueList_ReplaceSpell.TextLine1 = "Copy data to new Spell";
-			this.valueList_ReplaceSpell.Execute += new System.EventHandler(this.valueList_ReplaceSpell_Execute);
+			this.valueList_AddValue.Text = "Add Value";
+			this.valueList_AddValue.Execute += new System.EventHandler(this.valueList_AddValue_Execute);
+			// 
+			// kryptonContextMenuItem14
+			// 
+			this.kryptonContextMenuItem14.KryptonCommand = this.valueList_AddValue;
+			this.kryptonContextMenuItem14.Text = "Add Value";
 			// 
 			// ConfigEditor
 			// 
@@ -372,6 +385,8 @@
 		private Krypton.Toolkit.KryptonContextMenuItem kryptonContextMenuItem12;
 		private Krypton.Toolkit.KryptonContextMenuItem kryptonContextMenuItem13;
 		private Krypton.Toolkit.KryptonCommand valueList_ReplaceSpell;
+		private Krypton.Toolkit.KryptonCommand valueList_AddValue;
+		private Krypton.Toolkit.KryptonContextMenuItem kryptonContextMenuItem14;
 	}
 }
 

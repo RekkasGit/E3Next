@@ -601,6 +601,16 @@ namespace E3NextConfigEditor
 				spellList.Remove(spell);
 				spellList.Insert(index, spell);
 			}
+			else if (settings_data_obj is List<string>)
+			{
+				List<string> spellList = (List<string>)settings_data_obj;
+
+				var spell = (Models.Ref<string>)((KryptonListItem)data).Tag;
+				//make a copy as this is a ref value type
+				string tempValue = spell.Value;	
+				spellList.Remove(tempValue);
+				spellList.Insert(index, tempValue);
+			}
 			this.valuesListBox.Items.Remove(data);
 			this.valuesListBox.Items.Insert(index, data);
 			valuesListBox.SelectedIndex = index;
@@ -616,7 +626,8 @@ namespace E3NextConfigEditor
 			{
 				return;
 			}
-			AddMelody a = new AddMelody();
+			AddValue a = new AddValue();
+			a.lableDescription.Text = "Melody Name";
 			a.StartPosition = FormStartPosition.CenterParent;
 			if (a.ShowDialog() == DialogResult.OK)
 			{
@@ -676,6 +687,7 @@ namespace E3NextConfigEditor
 				if (valuesListBox.Tag is List<SpellRequest>) shouldExit = false;
 				if (valuesListBox.Tag is List<MelodyIfs>) shouldExit = false;
 				if (valuesListBox.Tag is IDictionary<string, string>) shouldExit = false;
+				if (valuesListBox.Tag is List<string>) shouldExit = false;
 				if (shouldExit) return;
 			}
 			object data = valuesListBox.SelectedItem;
@@ -758,6 +770,30 @@ namespace E3NextConfigEditor
 			}
 
 		}
+		private void valueList_AddValue_Execute(object sender, EventArgs e)
+		{
+			if (!(valuesListBox.Tag is List<string>))
+			{
+				return;
+			}
+			AddValue a = new AddValue();
+			a.lableDescription.Text = "Value";
+			a.StartPosition = FormStartPosition.CenterParent;
+			if (a.ShowDialog() == DialogResult.OK)
+			{
+				List<string> valueList = (List<string>)valuesListBox.Tag;
+				valueList.Add(a.Value);
+
+				string selectedSection = sectionComboBox.SelectedItem.ToString();
+				var section = E3.CharacterSettings.ParsedData.Sections[selectedSection];
+				if (section != null)
+				{
+					string selectedSubSection = subsectionComboBox.SelectedItem.ToString();
+					FieldInfo objectList = _charSettingsMappings[selectedSection][selectedSubSection];
+					UpdateListView(objectList);
+				}
+			}
+		}
 		private void valueList_AddKeyValue_Execute(object sender, EventArgs e)
 		{
 			if (!(valuesListBox.Tag is IDictionary<string, string>))
@@ -809,6 +845,10 @@ namespace E3NextConfigEditor
 				{
 					menuItem.Visible = true;
 				}
+				else if (menuItem.Text == "Delete")
+				{
+					menuItem.Visible = true;
+				}
 			}
 			else if ((valuesListBox.Tag is List<Spell>))
 			{
@@ -833,10 +873,18 @@ namespace E3NextConfigEditor
 				{
 					menuItem.Visible = true;
 				}
+				else if (menuItem.Text == "Delete")
+				{
+					menuItem.Visible = true;
+				}
 			}
 			else if ((valuesListBox.Tag is List<MelodyIfs>))
 			{
 				if (menuItem.Text == "Add MelodyIf")
+				{
+					menuItem.Visible = true;
+				}
+				else if (menuItem.Text == "Delete")
 				{
 					menuItem.Visible = true;
 				}
@@ -851,6 +899,21 @@ namespace E3NextConfigEditor
 					{
 						menuItem.Visible = true;
 					}
+					else if (menuItem.Text == "Delete")
+					{
+						menuItem.Visible = true;
+					}
+				}
+			}
+			else if (valuesListBox.Tag is List<string>)
+			{
+				if (menuItem.Text == "Add Value")
+				{
+					menuItem.Visible = true;
+				}
+				else if (menuItem.Text == "Delete")
+				{
+					menuItem.Visible = true;
 				}
 			}
 			else

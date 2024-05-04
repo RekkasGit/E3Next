@@ -10,11 +10,11 @@ using System.Windows.Forms;
 
 namespace E3NextConfigEditor
 {
-	public partial class AddMelody : Krypton.Toolkit.KryptonForm
+	public partial class AddValue : Krypton.Toolkit.KryptonForm
 	{
 		public string Value = String.Empty;
 
-		public AddMelody()
+		public AddValue()
 		{
 			InitializeComponent();
 		}
@@ -32,6 +32,22 @@ namespace E3NextConfigEditor
 				Value = valueTextBox.Text;
 				this.DialogResult = DialogResult.OK;
 				Close();
+			}
+		}
+
+		private void valueTextBox_KeyDown(object sender, KeyEventArgs e)
+		{
+			if (!String.IsNullOrWhiteSpace(valueTextBox.Text))
+			{
+				if (e.KeyCode == Keys.Enter)
+				{
+					e.SuppressKeyPress = true;
+					Value = valueTextBox.Text;
+					this.DialogResult = DialogResult.OK;
+					Close();
+
+				}
+				e.Handled = true;
 			}
 		}
 	}

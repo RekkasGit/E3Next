@@ -984,14 +984,11 @@ namespace E3Core.Settings
 				section = newFile.Sections.GetSectionData("Off Assist Spells");
 				section.Keys.AddKey("Main", "");
 			}
-			//if not a tank class
-			if (!((CharacterClass & Class.Tank) == CharacterClass))
-			{
-				newFile.Sections.AddSection("Dispel");
-				section = newFile.Sections.GetSectionData("Dispel");
-				section.Keys.AddKey("Main", "");
-				section.Keys.AddKey("Ignore", "");
-			}
+			
+			newFile.Sections.AddSection("Dispel");
+			section = newFile.Sections.GetSectionData("Dispel");
+			section.Keys.AddKey("Main", "");
+			section.Keys.AddKey("Ignore", "");
 
 			newFile.Sections.AddSection("Life Support");
 			section = newFile.Sections.GetSectionData("Life Support");
@@ -1353,7 +1350,12 @@ namespace E3Core.Settings
 									continue;
 								}
 
-								deletedKey = ParsedData.Sections[header].GetKeyData(keyName);
+								var deleteKeyHeader = ParsedData.Sections[header];
+								if(deleteKeyHeader!=null)
+								{
+									deletedKey = deleteKeyHeader.GetKeyData(keyName);
+								}
+								
 
 								if (deletedKey != null && deletedKey.Comments.Count > 0)
 								{

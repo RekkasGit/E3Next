@@ -1,6 +1,6 @@
 ﻿namespace E3NextConfigEditor
 {
-	partial class AddMelody
+	partial class AddValue
 	{
 		/// <summary>
 		/// Required designer variable.
@@ -30,7 +30,7 @@
 		{
 			this.cancelButton = new Krypton.Toolkit.KryptonButton();
 			this.okButton = new Krypton.Toolkit.KryptonButton();
-			this.label2 = new System.Windows.Forms.Label();
+			this.lableDescription = new System.Windows.Forms.Label();
 			this.valueTextBox = new System.Windows.Forms.TextBox();
 			this.SuspendLayout();
 			// 
@@ -52,15 +52,15 @@
 			this.okButton.Values.Text = "OK";
 			this.okButton.Click += new System.EventHandler(this.okButton_Click);
 			// 
-			// label2
+			// lableDescription
 			// 
-			this.label2.AutoSize = true;
-			this.label2.Font = new System.Drawing.Font("Microsoft Sans Serif", 14.25F, System.Drawing.FontStyle.Regular, System.Drawing.GraphicsUnit.Point, ((byte)(0)));
-			this.label2.Location = new System.Drawing.Point(179, 30);
-			this.label2.Name = "label2";
-			this.label2.Size = new System.Drawing.Size(128, 24);
-			this.label2.TabIndex = 7;
-			this.label2.Text = "Melody Name";
+			this.lableDescription.AutoSize = true;
+			this.lableDescription.Font = new System.Drawing.Font("Microsoft Sans Serif", 14.25F, System.Drawing.FontStyle.Regular, System.Drawing.GraphicsUnit.Point, ((byte)(0)));
+			this.lableDescription.Location = new System.Drawing.Point(179, 30);
+			this.lableDescription.Name = "lableDescription";
+			this.lableDescription.Size = new System.Drawing.Size(128, 24);
+			this.lableDescription.TabIndex = 7;
+			this.lableDescription.Text = "Melody Name";
 			// 
 			// valueTextBox
 			// 
@@ -69,19 +69,20 @@
 			this.valueTextBox.Name = "valueTextBox";
 			this.valueTextBox.Size = new System.Drawing.Size(469, 29);
 			this.valueTextBox.TabIndex = 6;
+			this.valueTextBox.KeyDown += new System.Windows.Forms.KeyEventHandler(this.valueTextBox_KeyDown);
 			// 
-			// AddMelody
+			// AddValue
 			// 
 			this.AutoScaleDimensions = new System.Drawing.SizeF(6F, 13F);
 			this.AutoScaleMode = System.Windows.Forms.AutoScaleMode.Font;
 			this.ClientSize = new System.Drawing.Size(518, 159);
 			this.Controls.Add(this.cancelButton);
 			this.Controls.Add(this.okButton);
-			this.Controls.Add(this.label2);
+			this.Controls.Add(this.lableDescription);
 			this.Controls.Add(this.valueTextBox);
-			this.Name = "AddMelody";
+			this.Name = "AddValue";
 			this.PaletteMode = Krypton.Toolkit.PaletteMode.Office2010BlackDarkMode;
-			this.Text = "AddMelody";
+			this.Text = "AddValue";
 			this.ResumeLayout(false);
 			this.PerformLayout();
 
@@ -91,7 +92,7 @@
 
 		private Krypton.Toolkit.KryptonButton cancelButton;
 		private Krypton.Toolkit.KryptonButton okButton;
-		private System.Windows.Forms.Label label2;
 		private System.Windows.Forms.TextBox valueTextBox;
+		public System.Windows.Forms.Label lableDescription;
 	}
 }

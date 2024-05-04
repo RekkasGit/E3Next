@@ -90,11 +90,11 @@
     <Compile Include="AddkeyValue.Designer.cs">
       <DependentUpon>AddkeyValue.cs</DependentUpon>
     </Compile>
-    <Compile Include="AddMelody.cs">
+    <Compile Include="AddValue.cs">
       <SubType>Form</SubType>
     </Compile>
-    <Compile Include="AddMelody.Designer.cs">
-      <DependentUpon>AddMelody.cs</DependentUpon>
+    <Compile Include="AddValue.Designer.cs">
+      <DependentUpon>AddValue.cs</DependentUpon>
     </Compile>
     <Compile Include="AddSpellEditor.cs">
       <SubType>Form</SubType>
@@ -135,8 +135,8 @@
     <EmbeddedResource Include="AddkeyValue.resx">
       <DependentUpon>AddkeyValue.cs</DependentUpon>
     </EmbeddedResource>
-    <EmbeddedResource Include="AddMelody.resx">
-      <DependentUpon>AddMelody.cs</DependentUpon>
+    <EmbeddedResource Include="AddValue.resx">
+      <DependentUpon>AddValue.cs</DependentUpon>
     </EmbeddedResource>
     <EmbeddedResource Include="AddSpellEditor.resx">
       <DependentUpon>AddSpellEditor.cs</DependentUpon>
