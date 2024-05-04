@@ -1400,7 +1400,6 @@ namespace E3Core.Utility
 					var newSpell = new Data.Spell(itemName, null);
 					returnValue.Add(newSpell);
 				}
-				
 			}
 			for (Int32 i = 1; i <= 12; i++)
 			{

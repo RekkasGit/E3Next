@@ -1501,9 +1501,7 @@ namespace E3Core.Settings
 								transferedKeyComments.AddRange(keyData.Comments);
 							}
 						}
-
 					}
-				
 					foreach (var spell in pair.Value)
 					{
 						//list<spell>
@@ -1513,14 +1511,9 @@ namespace E3Core.Settings
 					if(newKeySet!=null)
 					{
 						newKeySet.Comments.AddRange(transferedKeyComments);
-	
 					}
-
 				}
 			}
-
-
-
 			FileIniDataParser fileIniData = e3util.CreateIniParser();
             File.Delete(_fileName);
             fileIniData.WriteFile(_fileName, defaultFile);

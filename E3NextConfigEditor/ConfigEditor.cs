@@ -1076,7 +1076,7 @@ namespace E3NextConfigEditor
 					//put after the current selected
 					Int32 index = valuesListBox.SelectedIndex + 1;
 					KryptonListItem item = new KryptonListItem();
-					item.ShortText = newSpell.SpellName;
+					item.ShortText = newSpell.CastName;
 					item.LongText = string.Empty;
 					item.Tag = newSpell;
 					if (newSpell.SpellIcon > -1)
@@ -1092,7 +1092,7 @@ namespace E3NextConfigEditor
 					//no items in the list, just add
 					spellList.Add(newSpell);
 					KryptonListItem item = new KryptonListItem();
-					item.ShortText = newSpell.SpellName;
+					item.ShortText = newSpell.CastName;
 					item.LongText = string.Empty;
 					item.Tag = newSpell;
 					if (newSpell.SpellIcon > -1)

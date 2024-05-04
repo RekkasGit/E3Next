@@ -18,22 +18,28 @@ namespace E3NextConfigEditor
 	public partial class AddSpellEditor : KryptonForm
 	{
 		SortedDictionary<string, SortedDictionary<string, List<SpellData>>> _spellDataOrganized;
+		SortedDictionary<string, SortedDictionary<string, List<SpellData>>> _filteredSpellDataOrganized= new SortedDictionary<string, SortedDictionary<string, List<SpellData>>>();
 		List<Bitmap> _spellIcons;
+		ImageList _spellIconImageList;
 		public SpellData SelectedSpell = null;
 		public AddSpellEditor(SortedDictionary<string, SortedDictionary<string, List<SpellData>>> spellDataOrganized, List<Bitmap> spellIcons)
 		{
 			_spellDataOrganized = spellDataOrganized;
 			_spellIcons = spellIcons;
 			InitializeComponent();
+			var imageList =
+		
+			_spellIconImageList = new ImageList();
+			_spellIconImageList.Images.AddRange(_spellIcons.ToArray());
 
-			PopulateData();
+			PopulateData(_spellDataOrganized);
 		}
-		public void PopulateData()
+		public void PopulateData(SortedDictionary<string, SortedDictionary<string, List<SpellData>>> spellData)
 		{
-			var imageList = new ImageList();
-			imageList.Images.AddRange(_spellIcons.ToArray());
-			spellTreeView.ImageList = imageList;
-			foreach (var pair in _spellDataOrganized)
+
+			spellTreeView.Nodes.Clear();
+			spellTreeView.ImageList = _spellIconImageList;
+			foreach (var pair in spellData)
 			{
 				string cat = pair.Key;
 				KryptonTreeNode item = new KryptonTreeNode();
@@ -123,6 +129,58 @@ namespace E3NextConfigEditor
 		private void addSpellPropertyGrid_SizeChanged(object sender, EventArgs e)
 		{
 			addSpellPropertyGrid.SetLabelColumnWidth(ConfigEditor._propertyGridWidth);
+		}
+
+		private void FilterSpellSearchTree(string searchTerm)
+		{
+			_filteredSpellDataOrganized.Clear();
+
+			
+
+			foreach (var pair in _spellDataOrganized)
+			{
+				foreach (var pair2 in pair.Value)
+				{
+					foreach (var spell in pair2.Value)
+					{
+						if (spell.CastName.IndexOf(searchTerm, 0, StringComparison.OrdinalIgnoreCase) > -1 || String.IsNullOrWhiteSpace(searchTerm))
+						{
+							SortedDictionary<string, List<SpellData>> level1;
+							if (!_filteredSpellDataOrganized.TryGetValue(pair.Key, out level1))
+							{
+								level1 = new SortedDictionary<string, List<SpellData>>();
+								_filteredSpellDataOrganized.Add(pair.Key, level1);
+							}
+							List<SpellData> level2;
+							if (!level1.TryGetValue(pair2.Key, out level2))
+							{
+								level2 = new List<SpellData>();
+								level1.Add(pair2.Key, level2);
+							}
+							level2.Add(spell);
+						}
+					}
+				}
+			}
+			//added to the filtered set, now populate data
+			PopulateData(_filteredSpellDataOrganized);
+		}
+		private void searchButton_Click(object sender, EventArgs e)
+		{
+			string searchString = searchTextBox.Text;
+			FilterSpellSearchTree(searchString);
+		}
+
+		private void searchTextBox_KeyDown(object sender, KeyEventArgs e)
+		{
+			if (e.KeyCode == Keys.Enter)
+			{
+				e.SuppressKeyPress = true;
+				string searchString = searchTextBox.Text;
+				FilterSpellSearchTree(searchString);
+
+			}
+			e.Handled = true;
 		}
 	}
 }
