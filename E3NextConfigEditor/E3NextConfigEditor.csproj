@@ -102,6 +102,7 @@
     <Compile Include="AddSpellEditor.Designer.cs">
       <DependentUpon>AddSpellEditor.cs</DependentUpon>
     </Compile>
+    <Compile Include="Client\Bots.cs" />
     <Compile Include="Client\DealerClient.cs" />
     <Compile Include="ConfigEditor.cs">
       <SubType>Form</SubType>

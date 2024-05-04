@@ -165,6 +165,7 @@ namespace E3NextConfigEditor
 			//set the global IMQ so that settinsg can load correctly
 			//and other necessary properties
 			E3.MQ = _mqClient;
+			E3.Bots = new Client.Bots();
 			E3.Log = new Logging(E3.MQ); ;
 			E3.CurrentName = _mqClient.Query<string>("${Me.CleanName}");
 			E3.ServerName = e3util.FormatServerName(_mqClient.Query<string>("${MacroQuest.Server}"));
