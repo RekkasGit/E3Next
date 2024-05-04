@@ -493,8 +493,7 @@ namespace E3NextConfigEditor
 			{
 
 				propertyGrid.SelectedObject = listItem.Tag;
-				updatePropertyGrid_CollapseCategoriesIfNeeded();
-				_firstPropertyGridSelection = false;
+				
 
 			}
 
@@ -803,65 +802,43 @@ namespace E3NextConfigEditor
 		#region HelperMethods
 		private void SetMenuItemVisablity(KryptonContextMenuItem menuItem)
 		{
+			
 			if ((valuesListBox.Tag is IDictionary<string, string>))
 			{
-				if (menuItem.Text == "Add Disc")
+				if (menuItem.Text == "Add Key/Value")
 				{
-					menuItem.Visible = false;
-				}
-				else if (menuItem.Text == "Add Spell")
-				{
-					menuItem.Visible = false;
-				}
-				else if (menuItem.Text == "Add AA")
-				{
-					menuItem.Visible = false;
-				}
-				else if (menuItem.Text == "Add Skill")
-				{
-					menuItem.Visible = false;
-				}
-				else if (menuItem.Text == "Add Melody")
-				{
-					menuItem.Visible = false;
+					menuItem.Visible = true;
 				}
 			}
 			else if ((valuesListBox.Tag is List<Spell>))
 			{
-				if (menuItem.Text == "Add Key/Value")
+
+				if (menuItem.Text == "Add Disc")
 				{
-					menuItem.Visible = false;
+					menuItem.Visible = true;
 				}
-				else if (menuItem.Text == "Add Melody")
+				else if (menuItem.Text == "Add Spell")
 				{
-					menuItem.Visible = false;
+					menuItem.Visible = true;
+				}
+				else if (menuItem.Text == "Add AA")
+				{
+					menuItem.Visible = true;
+				}
+				else if (menuItem.Text == "Add Skill")
+				{
+					menuItem.Visible = true;
+				}
+				else if (menuItem.Text == "Replace Spell")
+				{
+					menuItem.Visible = true;
 				}
 			}
 			else if ((valuesListBox.Tag is List<MelodyIfs>))
 			{
-				if (menuItem.Text == "Add Disc")
+				if (menuItem.Text == "Add MelodyIf")
 				{
-					menuItem.Visible = false;
-				}
-				else if (menuItem.Text == "Add Spell")
-				{
-					menuItem.Visible = false;
-				}
-				else if (menuItem.Text == "Add AA")
-				{
-					menuItem.Visible = false;
-				}
-				else if (menuItem.Text == "Add Skill")
-				{
-					menuItem.Visible = false;
-				}
-				else if (menuItem.Text == "Add Melody")
-				{
-					menuItem.Visible = false;
-				}
-				else if (menuItem.Text == "Add Key/Value")
-				{
-					menuItem.Visible = false;
+					menuItem.Visible = true;
 				}
 			}
 			else if (valuesListBox.Tag is string)
@@ -870,25 +847,9 @@ namespace E3NextConfigEditor
 
 				if (value == _bardDynamicMelodyName)
 				{
-					if (menuItem.Text == "Add Disc")
+					if (menuItem.Text == "Add Melody")
 					{
-						menuItem.Visible = false;
-					}
-					else if (menuItem.Text == "Add Spell")
-					{
-						menuItem.Visible = false;
-					}
-					else if (menuItem.Text == "Add AA")
-					{
-						menuItem.Visible = false;
-					}
-					else if (menuItem.Text == "Add Skill")
-					{
-						menuItem.Visible = false;
-					}
-					else if (menuItem.Text == "Add Key/Value")
-					{
-						menuItem.Visible = false;
+						menuItem.Visible = true;
 					}
 				}
 			}
@@ -1222,7 +1183,7 @@ namespace E3NextConfigEditor
 						if (item is KryptonContextMenuItem)
 						{
 							var menuItem = (KryptonContextMenuItem)item;
-							menuItem.Visible = true;
+							menuItem.Visible = false;
 							SetMenuItemVisablity(menuItem);
 						}
 					}
@@ -1241,10 +1202,9 @@ namespace E3NextConfigEditor
 			mb.buttonOK.Visible = false;
 			mb.buttonCancel.Visible = false;
 			mb.buttonOkayOnly.Visible = true;
-		
-			if (mb.ShowDialog() == DialogResult.OK)
-			{
-			}
+
+			mb.ShowDialog(); //it will always be an ok
+			
 		}
 
 		
