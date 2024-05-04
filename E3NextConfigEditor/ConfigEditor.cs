@@ -57,7 +57,11 @@ namespace E3NextConfigEditor
 		public static List<String> _dynamicSections = new List<string>() { _bardDynamicMelodyName };
 		public static SplashScreen _splashScreen = null;
 		public static IniParser.Model.IniData _baseIniData = null;
-	
+
+		//list the Dictionary or Key/Value based sections that are valid
+		static List<string> _dictionarySections = new List<string>() { "Ifs", "E3BotsPublishData (key/value)", "Events", "EventLoop" };
+
+
 		public ConfigEditor()
 		{
 			InitializeComponent();
@@ -79,7 +83,9 @@ namespace E3NextConfigEditor
 				}
 			}
 
+			//create the client to get data from E3N/MQ
 			_tloClient = new DealerClient(_networkPort);
+			//create an IMQ interface, so that we can use this when loading the settings
 			IMQ _mqClient = new MQ.MQClient(_tloClient);
 
 			_splashScreen.Invoke(new Action(() =>_splashScreen.splashLabel.Text="Requesting AA list..."));
@@ -99,16 +105,18 @@ namespace E3NextConfigEditor
 			result = _tloClient.RequestRawData("${E3.ItemsWithSpells.ListAll}");
 			SpellDataList items = SpellDataList.Parser.ParseFrom(result);
 
+			//need the correct directory so that we can get image data from the UI folder
 			string EQDirectory = _tloClient.RequestData("${EverQuest.Path}");
 
 
-
+			//set some default categories/subcategories so it look correct in the list view
 			foreach (var skill in skills.Data)
 			{
 				skill.Category = "Skill";
 				skill.Subcategory = "Basic";
 			}
 
+			//need the proper class so that the settings can load correctly
 			string classValue = e3util.ClassNameFix(_tloClient.RequestData("${Me.Class}"));
 			System.Enum.TryParse(classValue, out _currentClass);
 
@@ -119,7 +127,8 @@ namespace E3NextConfigEditor
 			PopulateData(aas.Data, _altdataOrganized);
 			PopulateData(discs.Data, _discdataOrganized);
 
-			//now sort all the levels int the lists
+			//now sort all the data. 
+			//spells are by level the the leaf level
 			foreach (var pair in _spellDataOrganized)
 			{
 				foreach (var keySet in pair.Value.Keys.ToList())
@@ -127,6 +136,7 @@ namespace E3NextConfigEditor
 					_spellDataOrganized[pair.Key][keySet] = _spellDataOrganized[pair.Key][keySet].OrderByDescending(x => x.Level).ToList();
 				}
 			}
+			//alt data is well, special just do alpha
 			foreach (var pair in _altdataOrganized)
 			{
 				foreach (var keySet in pair.Value.Keys.ToList())
@@ -134,6 +144,7 @@ namespace E3NextConfigEditor
 					_altdataOrganized[pair.Key][keySet] = _altdataOrganized[pair.Key][keySet].OrderBy(x => x.SpellName).ToList();
 				}
 			}
+			//discs can be organized by levels, at the leaf
 			foreach (var pair in _discdataOrganized)
 			{
 
@@ -142,6 +153,7 @@ namespace E3NextConfigEditor
 					_discdataOrganized[pair.Key][keySet] = _discdataOrganized[pair.Key][keySet].OrderByDescending(x => x.Level).ToList();
 				}
 			}
+			//skills are also special, just alpha them
 			foreach (var pair in _skilldataOrganized)
 			{
 				foreach (var keySet in pair.Value.Keys.ToList())
@@ -150,22 +162,26 @@ namespace E3NextConfigEditor
 				}
 			}
 
+			//set the global IMQ so that settinsg can load correctly
+			//and other necessary properties
 			E3.MQ = _mqClient;
 			E3.Log = new Logging(E3.MQ); ;
 			E3.CurrentName = _mqClient.Query<string>("${Me.CleanName}");
 			E3.ServerName = e3util.FormatServerName(_mqClient.Query<string>("${MacroQuest.Server}"));
 			E3.CurrentClass = _currentClass;
 
+			//we bulk to inform E3N that they are going to come fast, and to keep checking for 100-200miliseconds before continuing on with the game loop.
 			_tloClient.RequestData("${E3.TLO.BulkBegin}");
 			//create settings files here
 			bool mergeUpdates = false;
 			_splashScreen.Invoke(new Action(() => _splashScreen.splashLabel.Text = "Loading settings file... might take a moment (querying MQ)"));
 			E3.CharacterSettings = new E3Core.Settings.CharacterSettings(mergeUpdates);
+			//this will auto end after 1 second, but its good to end it properly.
 			_tloClient.RequestData("${E3.TLO.BulkEnd}");
 
+			//set window title
 			this.Text = $"({E3.CurrentName})({E3.ServerName})";
-			//this.Text = $"(Necro01)";
-
+			
 			//load image data
 			for (Int32 i = 1; i <= 63; i++)
 			{
@@ -190,22 +206,25 @@ namespace E3NextConfigEditor
 				}
 				
 			}
+
+			//get a 'base' ini file for the class so that we can use this to merge data in later
 			_baseIniData = E3.CharacterSettings.createNewINIData();
-
-
+			//get all the reflection attributes off the settings class
 			_charSettingsMappings = e3util.GetSettingsMappedToInI();
 
 			List<string> importantSections = GetSectionSortOrderByClass(E3.CurrentClass);
 
 			List<string> sectionNames = new List<string>();
 
+			//bards, the snowflakes can make dynamic sections
 			if (E3.CurrentClass == Class.Bard)
 			{
 				sectionNames.Add(_bardDynamicMelodyName);
 			}
 
 			
-
+			//find all the section that end in Melody like [main Melody] and ignore them.
+			//at one time this was the main ini file, now we are doing the base, so this is probably not needed anymore
 			foreach (var section in _baseIniData.Sections)
 			{
 				//bards are special, do not include their dynamic melodies
@@ -215,6 +234,7 @@ namespace E3NextConfigEditor
 
 			}
 
+			//lets organize the stuff based off important sections
 			foreach (var section in importantSections)
 			{
 				if (_dynamicSections.Contains(section))
@@ -227,6 +247,7 @@ namespace E3NextConfigEditor
 
 				}
 			}
+			//add the rest that were not important
 			foreach (var section in sectionNames)
 			{
 				if (importantSections.Contains(section, StringComparer.OrdinalIgnoreCase)) continue;
@@ -235,7 +256,11 @@ namespace E3NextConfigEditor
 			}
 
 		}
-
+		/// <summary>
+		/// This is used to decide what sections are important and thus shown first to a class
+		/// </summary>
+		/// <param name="characterClass"></param>
+		/// <returns></returns>
 		List<string> GetSectionSortOrderByClass(Class characterClass)
 		{
 
@@ -257,6 +282,11 @@ namespace E3NextConfigEditor
 
 			return returnValue;
 		}
+		/// <summary>
+		/// Takes the data from the TLO queries and creates the organized dictionary data. 
+		/// </summary>
+		/// <param name="spells"></param>
+		/// <param name="dest"></param>
 		public void PopulateData(RepeatedField<SpellData> spells, SortedDictionary<string, SortedDictionary<string, List<SpellData>>> dest)
 		{
 			foreach (SpellData s in spells)
@@ -279,6 +309,11 @@ namespace E3NextConfigEditor
 
 			}
 		}
+		/// <summary>
+		/// Items are special so they are oranized a bit differently as they are mossing one level.
+		/// </summary>
+		/// <param name="spells"></param>
+		/// <param name="dest"></param>
 		public void PopulateItemData(RepeatedField<SpellData> spells, SortedDictionary<string, SortedDictionary<string, List<SpellData>>> dest)
 		{
 			foreach (SpellData s in spells)
@@ -302,6 +337,7 @@ namespace E3NextConfigEditor
 			}
 		}
 		#region comboBoxs
+		// The combo box stuff
 		private void sectionComboBox_ButtonSpecAny2_Click(object sender, EventArgs e)
 		{
 			if (sectionComboBox.SelectedIndex < (sectionComboBox.Items.Count - 1))
@@ -320,7 +356,7 @@ namespace E3NextConfigEditor
 			}
 
 		}
-		static List<string> dictionarySections = new List<string>() { "Ifs", "E3BotsPublishData (key/value)", "Events", "EventLoop" };
+		
 		private void sectionComboBox_SelectedIndexChanged(object sender, EventArgs e)
 		{
 			//selection changed, update the navigator
@@ -352,7 +388,7 @@ namespace E3NextConfigEditor
 				if (section != null)
 				{
 					//dynamic type, just fill out the list below with the loaded types
-					if (dictionarySections.Contains(selectedSection, StringComparer.OrdinalIgnoreCase))
+					if (_dictionarySections.Contains(selectedSection, StringComparer.OrdinalIgnoreCase))
 					{
 						FieldInfo objectList = _charSettingsMappings[selectedSection][""];
 
@@ -822,7 +858,7 @@ namespace E3NextConfigEditor
 				if (section != null)
 				{
 					//dynamic type, just fill out the list below with the loaded types
-					if (dictionarySections.Contains(selectedSection, StringComparer.OrdinalIgnoreCase))
+					if (_dictionarySections.Contains(selectedSection, StringComparer.OrdinalIgnoreCase))
 					{
 						FieldInfo objectList = _charSettingsMappings[selectedSection][""];
 
