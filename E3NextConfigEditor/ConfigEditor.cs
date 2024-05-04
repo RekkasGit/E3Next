@@ -501,18 +501,25 @@ namespace E3NextConfigEditor
 
 		private void _timer_Elapsed(object sender, System.Timers.ElapsedEventArgs e)
 		{
-			if (mouseDownTimeStamp != 0 && mouseDownTimeStamp + 400 < _stopwatch.ElapsedMilliseconds)
+			if (mouseDownTimeStamp != 0 && mouseDownTimeStamp + 250 < _stopwatch.ElapsedMilliseconds)
 			{
-
+				_timer.Enabled = false;
 				valuesListBox.Invoke((MethodInvoker)delegate
 				{
-					if (valuesListBox.SelectedItem == null) return;
-					if (valuesListBox.Items.Count < 2) return;
-					valuesListBox.DoDragDrop(valuesListBox.SelectedItem, DragDropEffects.Move);
-					mouseDownTimeStamp = 0;
+					try
+					{
+						if (valuesListBox.SelectedItem == null) return;
+						if (valuesListBox.Items.Count < 2) return;
+						valuesListBox.DoDragDrop(valuesListBox.SelectedItem, DragDropEffects.Move);
+					}
+					finally
+					{
+						mouseDownTimeStamp = 0;
+						_timer.Enabled = true;
+					}
 				});
 
-				mouseDownTimeStamp = 0;
+				
 			}
 		}
 

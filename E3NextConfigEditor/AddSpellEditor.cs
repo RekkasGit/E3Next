@@ -135,8 +135,6 @@ namespace E3NextConfigEditor
 		{
 			_filteredSpellDataOrganized.Clear();
 
-			
-
 			foreach (var pair in _spellDataOrganized)
 			{
 				foreach (var pair2 in pair.Value)

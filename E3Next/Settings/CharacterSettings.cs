@@ -950,11 +950,13 @@ namespace E3Core.Settings
 				section = newFile.Sections.GetSectionData("Melee Abilities");
 				section.Keys.AddKey("Ability", "");
 			}
+			//in case a melee has a nuke item?
+			newFile.Sections.AddSection("Nukes");
+			section = newFile.Sections.GetSectionData("Nukes");
+			section.Keys.AddKey("Main", "");
+
 			if ((CharacterClass & Class.PureMelee) != CharacterClass && CharacterClass != Class.Bard)
 			{
-				newFile.Sections.AddSection("Nukes");
-				section = newFile.Sections.GetSectionData("Nukes");
-				section.Keys.AddKey("Main", "");
 				newFile.Sections.AddSection("Stuns");
 				section = newFile.Sections.GetSectionData("Stuns");
 				section.Keys.AddKey("Main", "");
@@ -1060,7 +1062,7 @@ namespace E3Core.Settings
 				section.Keys.AddKey("Evac Spell", "");
 			}
 
-			if ((CharacterClass & Class.Priest) == CharacterClass)
+			if (((CharacterClass & Class.Priest) == CharacterClass)|| CharacterClass== Class.Paladin)
 			{
 				newFile.Sections.AddSection("Cures");
 				section = newFile.Sections.GetSectionData("Cures");
