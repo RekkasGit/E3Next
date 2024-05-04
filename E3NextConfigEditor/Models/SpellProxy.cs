@@ -73,13 +73,7 @@ namespace E3NextConfigEditor.Models
 			get { return _spell.IfsKeys; }
 			set { _spell.IfsKeys = value; }
 		}
-		[Category("Flags")]
-		[Description("Zone to be active in")]
-		public string Zone
-		{
-			get { return _spell.Zone; }
-			set { _spell.Zone = value; }
-		}
+		
 		[Category("Flags")]
 		[Description("Check for, comma seperated. For Detremental it is the debuff on the mob. For Buffs/songs its the buff on you.")]
 		public string CheckFor
@@ -102,20 +96,14 @@ namespace E3NextConfigEditor.Models
 				}
 			}
 		}
-		[Category("Flags")]
+		[Category("Spell Gem Flags")]
 		[Description("Spell Gem")]
 		public Int32 SpellGem
 		{
 			get { return _spell.SpellGem; }
 			set { _spell.SpellGem = value; }
 		}
-		[Category("Flags")]
-		[Description("Heal Percentage, only valid for heal sections")]
-		public Int32 HealPct
-		{
-			get { return _spell.HealPct; }
-			set { _spell.HealPct = value; }
-		}
+
 		[Category("Flags")]
 		[Description("After Spell Name, follows normal heircy rules")]
 		public string AfterSpell
@@ -129,6 +117,83 @@ namespace E3NextConfigEditor.Models
 		{
 			get { return _spell.BeforeSpell; }
 			set { _spell.BeforeSpell = value; }
+		}
+		[Category("Flags")]
+		[Description("After Event Name, follows normal heircy rules")]
+		public string AfterEvent
+		{
+			get { return _spell.AfterEvent; }
+			set { _spell.AfterEvent = value; }
+		}
+		[Category("Flags")]
+		[Description("Before Event Name, follows normal heircy rules")]
+		public string BeforeEvent
+		{
+			get { return _spell.BeforeEvent; }
+			set { _spell.BeforeEvent = value; }
+		}
+		[Category("Flags")]
+		[Description("Zone to Enable in. Honetly not sure this works!")]
+		public string Zone
+		{
+			get { return _spell.Zone; }
+			set { _spell.Zone = value; }
+		}
+		[Category("Heal Flags")]
+		[Description("For heals, Heal Percentage you start casting")]
+		public Int32 HealPct
+		{
+			get { return _spell.HealPct; }
+			set { _spell.HealPct = value; }
+		}
+		[Category("Heal Flags")]
+		[Description("For Heals, cancel heal if above this health level")]
+		public Int32 HealthMax
+		{
+			get { return _spell.HealthMax; }
+			set { _spell.HealthMax = value; }
+		}
+		[Category("Cure Flags")]
+		[Description("Min sickness before cast, only used for cures")]
+		public Int32 MinSick
+		{
+			get { return _spell.MinSick; }
+			set { _spell.MinSick = value; }
+		}
+		[Category("Flags")]
+		[Description("Minimum mana level before try and cast the spell")]
+		public Int32 MinMana
+		{
+			get { return _spell.MinMana; }
+			set { _spell.MinMana = value; }
+		}
+		[Category("Flags")]
+		[Description("Don't cast spell if you are above this mana level")]
+		public Int32 MaxMana
+		{
+			get { return _spell.MaxMana; }
+			set { _spell.MaxMana = value; }
+		}
+		[Category("Flags")]
+		[Description("Min endurance before you try and cast an ability")]
+		public Int32 MinEnd
+		{
+			get { return _spell.MinEnd; }
+			set { _spell.MinEnd = value; }
+		}
+		[Category("Flags")]
+		[Description("Don't use internal stacking rules for debuffs")]
+		public bool IgnoreStackRules
+		{
+			get { return _spell.IgnoreStackRules; }
+			set { _spell.IgnoreStackRules = value; }
+		}
+		[Category("Flags")]
+		[Description("Cast if this debuff/debuff exists")]
+		public string CastIf
+		{
+			get { return _spell.CastIF; }
+			set { _spell.CastIF = value; }
 		}
 
 	}
@@ -188,6 +253,135 @@ namespace E3NextConfigEditor.Models
 		{
 			get { return _spell.NoInterrupt; }
 			set { _spell.NoInterrupt = value; }
+		}
+		[Category("Flags")]
+		[Description("Ifs Keys to be used, comma seperated")]
+		public string IfsKeys
+		{
+			get { return _spell.IfsKeys; }
+			set { _spell.IfsKeys = value; }
+		}
+
+		[Category("Flags")]
+		[Description("Check for, comma seperated. For Detremental it is the debuff on the mob. For Buffs/songs its the buff on you.")]
+		public string CheckFor
+		{
+			get { return String.Join(",", _spell.CheckForCollection.ToList()); }
+			set
+			{
+				if (!String.IsNullOrWhiteSpace(value))
+				{
+					string[] splitArray = value.Split(',');
+					_spell.CheckForCollection.Clear();
+					foreach (var spell in splitArray)
+					{
+						_spell.CheckForCollection.Add(spell);
+					}
+				}
+				else
+				{
+					_spell.CheckForCollection.Clear();
+				}
+			}
+		}
+		[Category("Spell Gem Flags")]
+		[Description("Spell Gem")]
+		public Int32 SpellGem
+		{
+			get { return _spell.SpellGem; }
+			set { _spell.SpellGem = value; }
+		}
+
+		[Category("Flags")]
+		[Description("After Spell Name, follows normal heircy rules")]
+		public string AfterSpell
+		{
+			get { return _spell.AfterSpell; }
+			set { _spell.AfterSpell = value; }
+		}
+		[Category("Flags")]
+		[Description("Before Spell Name, follows normal heircy rules")]
+		public string BeforeSpell
+		{
+			get { return _spell.BeforeSpell; }
+			set { _spell.BeforeSpell = value; }
+		}
+		[Category("Flags")]
+		[Description("After Event Name, follows normal heircy rules")]
+		public string AfterEvent
+		{
+			get { return _spell.AfterEvent; }
+			set { _spell.AfterEvent = value; }
+		}
+		[Category("Flags")]
+		[Description("Before Event Name, follows normal heircy rules")]
+		public string BeforeEvent
+		{
+			get { return _spell.BeforeEvent; }
+			set { _spell.BeforeEvent = value; }
+		}
+		[Category("Flags")]
+		[Description("Zone to Enable in. Honetly not sure this works!")]
+		public string Zone
+		{
+			get { return _spell.Zone; }
+			set { _spell.Zone = value; }
+		}
+		[Category("Heal Flags")]
+		[Description("For heals, Heal Percentage you start casting")]
+		public Int32 HealPct
+		{
+			get { return _spell.HealPct; }
+			set { _spell.HealPct = value; }
+		}
+		[Category("Heal Flags")]
+		[Description("For Heals, cancel heal if above this health level")]
+		public Int32 HealthMax
+		{
+			get { return _spell.HealthMax; }
+			set { _spell.HealthMax = value; }
+		}
+		[Category("Cure Flags")]
+		[Description("Min sickness before cast, only used for cures")]
+		public Int32 MinSick
+		{
+			get { return _spell.MinSick; }
+			set { _spell.MinSick = value; }
+		}
+		[Category("Flags")]
+		[Description("Minimum mana level before try and cast the spell")]
+		public Int32 MinMana
+		{
+			get { return _spell.MinMana; }
+			set { _spell.MinMana = value; }
+		}
+		[Category("Flags")]
+		[Description("Don't cast spell if you are above this mana level")]
+		public Int32 MaxMana
+		{
+			get { return _spell.MaxMana; }
+			set { _spell.MaxMana = value; }
+		}
+		[Category("Flags")]
+		[Description("Min endurance before you try and cast an ability")]
+		public Int32 MinEnd
+		{
+			get { return _spell.MinEnd; }
+			set { _spell.MinEnd = value; }
+		}
+		[Category("Flags")]
+		[Description("Don't use internal stacking rules for debuffs")]
+		public bool IgnoreStackRules
+		{
+			get { return _spell.IgnoreStackRules; }
+			set { _spell.IgnoreStackRules = value; }
+		}
+		[Category("Flags")]
+		[Description("Cast if this debuff/debuff exists")]
+		public string CastIf
+		{
+			get { return _spell.CastIF; }
+			set { _spell.CastIF = value; }
 		}
 
 	}

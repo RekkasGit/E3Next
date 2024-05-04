@@ -904,6 +904,7 @@ namespace E3Core.Data
 			r.HealPct = source.HealPct;
 			r.HealthMax = source.HealthMax;
 			r.Ifs = source.Ifs;
+			r.IfsKeys = source.IfsKeys;
 			r.IgnoreStackRules = source.IgnoreStackRules;
 			r.InitName = source.InitName;
 			r.IsDebuff = source.IsDebuff;
@@ -953,6 +954,14 @@ namespace E3Core.Data
 			r.ResistType = source.ResistType;
 			r.ResistAdj = source.ResistAdj;
 			r.CastTypeOverride = (CastingType)source.CastTypeOverride;
+			foreach(var entry in source.CheckForCollection)
+			{
+				if(!r.CheckForCollection.ContainsKey(entry))
+				{
+					r.CheckForCollection.Add(entry,0);
+				}
+			}
+		
 			
 			return r;
 		}
@@ -1032,10 +1041,36 @@ namespace E3Core.Data
             r.ResistType = this.ResistType;
             r.ResistAdj = this.ResistAdj;
 			r.CastTypeOverride = (SpellData.Types.CastingType)this.CastTypeOverride;
-			
+			r.IfsKeys = IfsKeys;
+			r.CheckForCollection.AddRange(CheckForCollection.Keys.ToList());
             return r;
 
         }
+		public void TransferFlags(Spell d)
+		{
+			d.IfsKeys = IfsKeys;
+			d.SpellGem = SpellGem;
+			d.Zone = Zone;
+			d.MinSick = MinSick;
+			d.CheckForCollection =CheckForCollection.ToDictionary(entry => entry.Key,  entry => entry.Value);
+			d.HealPct = HealPct;
+			d.NoInterrupt = NoInterrupt;
+			d.AfterSpell = AfterSpell;
+			d.BeforeSpell = BeforeSpell;
+			d.MinMana = MinMana;
+			d.MaxMana = MaxMana;
+			d.IgnoreStackRules = IgnoreStackRules;
+			d.HealthMax = HealthMax;
+			d.MinDurationBeforeRecast = MinDurationBeforeRecast;
+			d.MaxTries = MaxTries;
+			d.CastIF = CastIF;
+			d.MinEnd = MinEnd;
+			d.AfterEvent = AfterEvent;
+			d.BeforeEvent = BeforeEvent;
+			d.Reagent = Reagent;
+		
+		}
+
         public string ToConfigEntry()
         {
 			//This is C#'s ternary conditional operator

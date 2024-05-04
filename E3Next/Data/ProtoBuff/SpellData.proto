@@ -91,4 +91,6 @@ message SpellData {
     string ResistType=73;
     int32 ResistAdj = 74;
 	CastingType CastTypeOverride=75;
+	repeated string CheckForCollection=76;
+	string IfsKeys=77;
 }

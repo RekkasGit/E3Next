@@ -77,7 +77,37 @@ namespace E3NextConfigEditor
 				}
 			}
 		}
-		
+		private void updatePropertyGrid_CollapseCategoriesIfNeeded()
+		{
+			if (!_firstPropertyGridSelection) return;
+			//https://forums.codeguru.com/showthread.php?380039-Expand-Collapse-a-category-in-property-grid
+
+			GridItem root = addSpellPropertyGrid.SelectedGridItem;
+			while (root.Parent != null)
+			{
+				root = root.Parent;
+
+			}
+			if (root != null)
+			{
+				foreach (GridItem gi in root.GridItems)
+				{
+					if (gi.Label == "Flags")
+					{
+						gi.Expanded = false;
+					}
+					if (gi.Label == "Cure Flags")
+					{
+						gi.Expanded = false;
+					}
+					if (gi.Label == "Heal Flags")
+					{
+						gi.Expanded = false;
+					}
+				}
+			}
+		}
+		private bool _firstPropertyGridSelection = true;
 		private void spellTreeView_AfterSelect(object sender, TreeViewEventArgs e)
 		{
 			if(spellTreeView.SelectedNode != null )
@@ -87,6 +117,8 @@ namespace E3NextConfigEditor
 					if(spellTreeView.SelectedNode.Tag is SpellData)
 					{
 						addSpellPropertyGrid.SelectedObject = new Models.SpellDataProxy((SpellData)spellTreeView.SelectedNode.Tag);
+						updatePropertyGrid_CollapseCategoriesIfNeeded();
+						_firstPropertyGridSelection = false;
 					}
 				}
 			}

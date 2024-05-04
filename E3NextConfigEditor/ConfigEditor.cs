@@ -432,6 +432,38 @@ namespace E3NextConfigEditor
 		System.Diagnostics.Stopwatch _stopwatch = new Stopwatch();
 		System.Timers.Timer _timer = new System.Timers.Timer(50);
 
+		//start the property grid elements collappsed
+		private void updatePropertyGrid_CollapseCategoriesIfNeeded()
+		{
+			if (!_firstPropertyGridSelection) return;
+			//https://forums.codeguru.com/showthread.php?380039-Expand-Collapse-a-category-in-property-grid
+
+			GridItem root = propertyGrid.SelectedGridItem;
+			while (root.Parent != null)
+			{
+				root = root.Parent;
+
+			}
+			if (root != null)
+			{
+				foreach (GridItem gi in root.GridItems)
+				{
+					if (gi.Label == "Flags")
+					{
+						gi.Expanded = false;
+					}
+					if (gi.Label == "Cure Flags")
+					{
+						gi.Expanded = false;
+					}
+					if (gi.Label == "Heal Flags")
+					{
+						gi.Expanded = false;
+					}
+				}
+			}
+		}
+		private bool _firstPropertyGridSelection = true;
 		private void updatePropertyGrid()
 		{
 			propertyGrid.SelectedObject = null;
@@ -442,11 +474,16 @@ namespace E3NextConfigEditor
 			{
 
 				propertyGrid.SelectedObject = new Models.SpellProxy((Spell)listItem.Tag);
+				updatePropertyGrid_CollapseCategoriesIfNeeded();
+				_firstPropertyGridSelection = false;
+
 
 			}
 			else if (listItem.Tag is SpellRequest)
 			{
 				propertyGrid.SelectedObject = new Models.SpellRequestDataProxy((SpellRequest)listItem.Tag);
+				updatePropertyGrid_CollapseCategoriesIfNeeded();
+				_firstPropertyGridSelection = false;
 			}
 			else if (listItem.Tag is MelodyIfs)
 			{
@@ -456,6 +493,8 @@ namespace E3NextConfigEditor
 			{
 
 				propertyGrid.SelectedObject = listItem.Tag;
+				updatePropertyGrid_CollapseCategoriesIfNeeded();
+				_firstPropertyGridSelection = false;
 
 			}
 
@@ -1132,7 +1171,8 @@ namespace E3NextConfigEditor
 						item.Image = _spellIcons[newSpell.SpellIcon];
 
 					}
-					newSpell.SpellGem = ((Spell)((KryptonListItem)valuesListBox.SelectedItem).Tag).SpellGem;
+					((Spell)((KryptonListItem)valuesListBox.SelectedItem).Tag).TransferFlags(newSpell);
+
 					spellList.RemoveAt(index);
 					spellList.Insert(index, newSpell);
 					valuesListBox.Items.RemoveAt(index);
