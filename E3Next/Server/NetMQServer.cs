@@ -160,7 +160,7 @@ namespace E3Core.Server
 			else
 			{
 				//we have a process, is it up?
-				if (UIProcess.HasExited)
+				if (ConfigProcess.HasExited)
 				{
 					Int32 processID = System.Diagnostics.Process.GetCurrentProcess().Id;
 					//start up a new one.
