@@ -195,6 +195,13 @@ namespace E3NextConfigEditor.Models
 			get { return _spell.CastIF; }
 			set { _spell.CastIF = value; }
 		}
+		[Category("Flags")]
+		[Description("Cast type, valid are Spell/AA/Item/Disc")]
+		public string CastType
+		{
+			get { return _spell.CastType.ToString(); }
+			set { Enum.TryParse(value,true,out _spell.CastType); }
+		}
 
 	}
 	public class SpellDataProxy
@@ -382,6 +389,21 @@ namespace E3NextConfigEditor.Models
 		{
 			get { return _spell.CastIF; }
 			set { _spell.CastIF = value; }
+		}
+		[Category("Flags")]
+		[Description("Cast type, valid are Spell/AA/Item/Disc")]
+		public string CastType
+		{
+			get { return _spell.CastType.ToString(); }
+			set
+			{
+				CastingType tempType = CastingType.None;
+				if(Enum.TryParse(value, true, out tempType))
+				{
+					_spell.CastType = (SpellData.Types.CastingType)tempType;
+				}
+
+			}
 		}
 
 	}

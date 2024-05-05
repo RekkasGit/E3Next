@@ -50,6 +50,8 @@
 			this.valueList_AddSkill = new Krypton.Toolkit.KryptonCommand();
 			this.kryptonContextMenuItem6 = new Krypton.Toolkit.KryptonContextMenuItem();
 			this.valueList_AddKeyValue = new Krypton.Toolkit.KryptonCommand();
+			this.kryptonContextMenuItem14 = new Krypton.Toolkit.KryptonContextMenuItem();
+			this.valueList_AddValue = new Krypton.Toolkit.KryptonCommand();
 			this.kryptonContextMenuItem8 = new Krypton.Toolkit.KryptonContextMenuItem();
 			this.valueList_AddDynamicMelody = new Krypton.Toolkit.KryptonCommand();
 			this.kryptonContextMenuItem9 = new Krypton.Toolkit.KryptonContextMenuItem();
@@ -67,8 +69,7 @@
 			this.kryptonContextMenuItems4 = new Krypton.Toolkit.KryptonContextMenuItems();
 			this.kryptonContextMenuItem12 = new Krypton.Toolkit.KryptonContextMenuItem();
 			this.kryptonContextMenuItem13 = new Krypton.Toolkit.KryptonContextMenuItem();
-			this.valueList_AddValue = new Krypton.Toolkit.KryptonCommand();
-			this.kryptonContextMenuItem14 = new Krypton.Toolkit.KryptonContextMenuItem();
+			this.donateButton = new Krypton.Toolkit.KryptonButton();
 			((System.ComponentModel.ISupportInitialize)(this.sectionComboBox)).BeginInit();
 			((System.ComponentModel.ISupportInitialize)(this.subsectionComboBox)).BeginInit();
 			this.SuspendLayout();
@@ -234,6 +235,16 @@
 			this.valueList_AddKeyValue.Text = "Add Key/Value";
 			this.valueList_AddKeyValue.Execute += new System.EventHandler(this.valueList_AddKeyValue_Execute);
 			// 
+			// kryptonContextMenuItem14
+			// 
+			this.kryptonContextMenuItem14.KryptonCommand = this.valueList_AddValue;
+			this.kryptonContextMenuItem14.Text = "Add Value";
+			// 
+			// valueList_AddValue
+			// 
+			this.valueList_AddValue.Text = "Add Value";
+			this.valueList_AddValue.Execute += new System.EventHandler(this.valueList_AddValue_Execute);
+			// 
 			// kryptonContextMenuItem8
 			// 
 			this.kryptonContextMenuItem8.KryptonCommand = this.valueList_AddDynamicMelody;
@@ -313,21 +324,22 @@
 			// 
 			this.kryptonContextMenuItem13.Text = "Replace with AA";
 			// 
-			// valueList_AddValue
+			// donateButton
 			// 
-			this.valueList_AddValue.Text = "Add Value";
-			this.valueList_AddValue.Execute += new System.EventHandler(this.valueList_AddValue_Execute);
-			// 
-			// kryptonContextMenuItem14
-			// 
-			this.kryptonContextMenuItem14.KryptonCommand = this.valueList_AddValue;
-			this.kryptonContextMenuItem14.Text = "Add Value";
+			this.donateButton.Location = new System.Drawing.Point(1139, 668);
+			this.donateButton.Name = "donateButton";
+			this.donateButton.Size = new System.Drawing.Size(151, 25);
+			this.donateButton.TabIndex = 5;
+			this.donateButton.Values.Text = "Donate";
+			this.donateButton.Click += new System.EventHandler(this.donateButton_Click);
 			// 
 			// ConfigEditor
 			// 
 			this.AutoScaleDimensions = new System.Drawing.SizeF(6F, 13F);
 			this.AutoScaleMode = System.Windows.Forms.AutoScaleMode.Font;
+			this.AutoScroll = true;
 			this.ClientSize = new System.Drawing.Size(1311, 705);
+			this.Controls.Add(this.donateButton);
 			this.Controls.Add(this.saveButton);
 			this.Controls.Add(this.propertyGrid);
 			this.Controls.Add(this.valuesListBox);
@@ -387,6 +399,7 @@
 		private Krypton.Toolkit.KryptonCommand valueList_ReplaceSpell;
 		private Krypton.Toolkit.KryptonCommand valueList_AddValue;
 		private Krypton.Toolkit.KryptonContextMenuItem kryptonContextMenuItem14;
+		private Krypton.Toolkit.KryptonButton donateButton;
 	}
 }
 

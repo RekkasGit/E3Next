@@ -1307,6 +1307,18 @@ namespace E3NextConfigEditor
 			
 		}
 
-		
+		private void donateButton_Click(object sender, EventArgs e)
+		{
+			var mb = new MessageBox();
+			mb.StartPosition = FormStartPosition.CenterParent;
+			mb.Text = "Donate for Github Costs and Pizza (Paypal)";
+			mb.lblMessage.Text = "Hi, Ty for thinking of donating! If you wish to donate, please use friends and family.";
+
+			if (mb.ShowDialog() == DialogResult.OK)
+			{
+				System.Diagnostics.Process.Start("https://www.paypal.com/paypalme/RekkaSoftware");
+
+			}
+		}
 	}
 }
