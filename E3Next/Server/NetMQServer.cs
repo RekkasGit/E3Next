@@ -155,7 +155,7 @@ namespace E3Core.Server
 				var startInfo = new ProcessStartInfo(dllFullPath + exeName);
 				startInfo.WorkingDirectory = dllFullPath;// working directory
 				startInfo.Arguments = RouterPort.ToString();// set additional properties 
-				UIProcess = System.Diagnostics.Process.Start(startInfo);
+				ConfigProcess = System.Diagnostics.Process.Start(startInfo);
 			}
 			else
 			{
@@ -165,7 +165,7 @@ namespace E3Core.Server
 					Int32 processID = System.Diagnostics.Process.GetCurrentProcess().Id;
 					//start up a new one.
 					MQ.Write("Trying to start again:" + dllFullPath + exeName);
-					UIProcess = System.Diagnostics.Process.Start(dllFullPath + exeName, $"{RouterPort}");
+					ConfigProcess = System.Diagnostics.Process.Start(dllFullPath + exeName, $"{RouterPort}");
 				}
 			}
 		}
