@@ -309,6 +309,7 @@
 			// 
 			// saveButton
 			// 
+			this.saveButton.Anchor = ((System.Windows.Forms.AnchorStyles)((System.Windows.Forms.AnchorStyles.Bottom | System.Windows.Forms.AnchorStyles.Left)));
 			this.saveButton.Location = new System.Drawing.Point(306, 668);
 			this.saveButton.Name = "saveButton";
 			this.saveButton.Size = new System.Drawing.Size(90, 25);
@@ -326,6 +327,7 @@
 			// 
 			// donateButton
 			// 
+			this.donateButton.Anchor = ((System.Windows.Forms.AnchorStyles)((System.Windows.Forms.AnchorStyles.Bottom | System.Windows.Forms.AnchorStyles.Right)));
 			this.donateButton.Location = new System.Drawing.Point(1139, 668);
 			this.donateButton.Name = "donateButton";
 			this.donateButton.Size = new System.Drawing.Size(151, 25);

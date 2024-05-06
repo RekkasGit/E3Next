@@ -1111,7 +1111,7 @@ namespace E3Core.Settings
 				section.Keys.AddKey("Tank", "");
 				section.Keys.AddKey("Important Bot", "");
 				section.Keys.AddKey("Pet Heal", "");
-				section.Keys.AddKey("Who to Heal", "Tanks/ImportantBots/XTargets/Pets/Party");
+				section.Keys.AddKey("Who to Heal", "Tanks/ImportantBots/XTargets/Pets/Party/All");
 				section.Keys.AddKey("Who to HoT", "");
 				section.Keys.AddKey("Pet Owner", "");
 				section.Keys.AddKey("Auto Cast Necro Heal Orbs (On/Off)", "On");
