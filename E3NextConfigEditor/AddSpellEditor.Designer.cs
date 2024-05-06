@@ -82,6 +82,8 @@
 			// 
 			// searchTextBox
 			// 
+			this.searchTextBox.Anchor = ((System.Windows.Forms.AnchorStyles)(((System.Windows.Forms.AnchorStyles.Bottom | System.Windows.Forms.AnchorStyles.Left) 
+            | System.Windows.Forms.AnchorStyles.Right)));
 			this.searchTextBox.Font = new System.Drawing.Font("Microsoft Sans Serif", 12F, System.Drawing.FontStyle.Regular, System.Drawing.GraphicsUnit.Point, ((byte)(0)));
 			this.searchTextBox.Location = new System.Drawing.Point(568, 604);
 			this.searchTextBox.Name = "searchTextBox";
@@ -91,7 +93,7 @@
 			// 
 			// searchButton
 			// 
-			this.searchButton.Anchor = ((System.Windows.Forms.AnchorStyles)((System.Windows.Forms.AnchorStyles.Bottom | System.Windows.Forms.AnchorStyles.Left)));
+			this.searchButton.Anchor = ((System.Windows.Forms.AnchorStyles)((System.Windows.Forms.AnchorStyles.Bottom | System.Windows.Forms.AnchorStyles.Right)));
 			this.searchButton.Location = new System.Drawing.Point(872, 605);
 			this.searchButton.Name = "searchButton";
 			this.searchButton.Size = new System.Drawing.Size(90, 25);
