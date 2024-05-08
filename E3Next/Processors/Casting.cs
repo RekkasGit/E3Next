@@ -148,6 +148,7 @@ namespace E3Core.Processors
 						{
 							targetName = MQ.Query<string>($"${{Spawn[id ${{Target.ID}}].CleanName}}");
 						}
+						TrueTarget(targetID);
                         //this lets bard kick regardless of current song status, otherwise will wait until between songs to kick
                         string abilityToCheck = spell.CastName;
                         if (spell.CastType == Data.CastingType.Ability && abilityToCheck.Equals("Kick", StringComparison.OrdinalIgnoreCase))

@@ -328,9 +328,10 @@
 			// donateButton
 			// 
 			this.donateButton.Anchor = ((System.Windows.Forms.AnchorStyles)((System.Windows.Forms.AnchorStyles.Bottom | System.Windows.Forms.AnchorStyles.Right)));
-			this.donateButton.Location = new System.Drawing.Point(1139, 668);
+			this.donateButton.Location = new System.Drawing.Point(1227, 668);
 			this.donateButton.Name = "donateButton";
-			this.donateButton.Size = new System.Drawing.Size(151, 25);
+			this.donateButton.PaletteMode = Krypton.Toolkit.PaletteMode.Office2007BlackDarkMode;
+			this.donateButton.Size = new System.Drawing.Size(72, 25);
 			this.donateButton.TabIndex = 5;
 			this.donateButton.Values.Text = "Donate";
 			this.donateButton.Click += new System.EventHandler(this.donateButton_Click);

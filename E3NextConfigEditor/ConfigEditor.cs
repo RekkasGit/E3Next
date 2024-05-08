@@ -906,6 +906,10 @@ namespace E3NextConfigEditor
 				{
 					menuItem.Visible = true;
 				}
+				else if (menuItem.Text == "Add Item")
+				{
+					menuItem.Visible = true;
+				}
 				else if (menuItem.Text == "Replace Spell")
 				{
 					menuItem.Visible = true;
