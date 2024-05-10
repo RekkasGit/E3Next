@@ -70,6 +70,7 @@
 			this.kryptonContextMenuItem12 = new Krypton.Toolkit.KryptonContextMenuItem();
 			this.kryptonContextMenuItem13 = new Krypton.Toolkit.KryptonContextMenuItem();
 			this.donateButton = new Krypton.Toolkit.KryptonButton();
+			this.viewFileButton = new Krypton.Toolkit.KryptonButton();
 			((System.ComponentModel.ISupportInitialize)(this.sectionComboBox)).BeginInit();
 			((System.ComponentModel.ISupportInitialize)(this.subsectionComboBox)).BeginInit();
 			this.SuspendLayout();
@@ -336,12 +337,23 @@
 			this.donateButton.Values.Text = "Donate";
 			this.donateButton.Click += new System.EventHandler(this.donateButton_Click);
 			// 
+			// viewFileButton
+			// 
+			this.viewFileButton.Anchor = ((System.Windows.Forms.AnchorStyles)((System.Windows.Forms.AnchorStyles.Bottom | System.Windows.Forms.AnchorStyles.Left)));
+			this.viewFileButton.Location = new System.Drawing.Point(422, 668);
+			this.viewFileButton.Name = "viewFileButton";
+			this.viewFileButton.Size = new System.Drawing.Size(90, 25);
+			this.viewFileButton.TabIndex = 6;
+			this.viewFileButton.Values.Text = "View Text";
+			this.viewFileButton.Click += new System.EventHandler(this.viewFileButton_Click);
+			// 
 			// ConfigEditor
 			// 
 			this.AutoScaleDimensions = new System.Drawing.SizeF(6F, 13F);
 			this.AutoScaleMode = System.Windows.Forms.AutoScaleMode.Font;
 			this.AutoScroll = true;
 			this.ClientSize = new System.Drawing.Size(1311, 705);
+			this.Controls.Add(this.viewFileButton);
 			this.Controls.Add(this.donateButton);
 			this.Controls.Add(this.saveButton);
 			this.Controls.Add(this.propertyGrid);
@@ -403,6 +415,7 @@
 		private Krypton.Toolkit.KryptonCommand valueList_AddValue;
 		private Krypton.Toolkit.KryptonContextMenuItem kryptonContextMenuItem14;
 		private Krypton.Toolkit.KryptonButton donateButton;
+		private Krypton.Toolkit.KryptonButton viewFileButton;
 	}
 }
 

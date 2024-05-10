@@ -250,9 +250,8 @@ namespace E3Core.Processors
 							}
 							bool inBook = MQ.Query<bool>($"${{Me.Book[{spell}]}}");
 							bool aa = MQ.Query<bool>($"${{Me.AltAbility[{spell}].Spell}}");
-							bool item = MQ.Query<bool>($"${{FindItem[={spell}]}}");
-
-							if (inBook || aa || item)
+						
+							if (inBook || aa )
 							{
 								if (groupReply)
 								{
@@ -451,8 +450,11 @@ namespace E3Core.Processors
                     {
                         //so we can be sure our cursor was empty before we cast
                         Int32 cursorID = MQ.Query<Int32>("${Cursor.ID}");
-                     
-                        var result = Casting.Cast(spawn.ID, s, Heals.SomeoneNeedsHealing);
+
+					recast:
+						var result = Casting.Cast(spawn.ID, s, Heals.SomeoneNeedsHealing);
+						if (result == CastReturn.CAST_FIZZLE) goto recast;
+
                         if (result == CastReturn.CAST_INTERRUPTFORHEAL)
                         {
                             return;

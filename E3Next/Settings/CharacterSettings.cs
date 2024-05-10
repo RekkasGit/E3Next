@@ -540,7 +540,7 @@ namespace E3Core.Settings
 		public List<String> Cursor_Delete = new List<string>();
 
 
-		private string _fileName = String.Empty;
+		public string _fileName = String.Empty;
 		/// <summary>
 		/// Initializes a new instance of the <see cref="CharacterSettings"/> class.
 		/// </summary>
@@ -978,7 +978,7 @@ namespace E3Core.Settings
 				section.Keys.AddKey("Debuff on Assist", "");
 				section.Keys.AddKey("Debuff on Command", "");
 			}
-			if ((CharacterClass & Class.Priest) == CharacterClass || (CharacterClass & Class.Caster) == CharacterClass)
+			if ((CharacterClass & Class.ManaUsers) == CharacterClass)
 			{
 				newFile.Sections.AddSection("Off Assist Spells");
 				section = newFile.Sections.GetSectionData("Off Assist Spells");

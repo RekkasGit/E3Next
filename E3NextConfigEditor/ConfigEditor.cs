@@ -44,6 +44,7 @@ namespace E3NextConfigEditor
 		public static AddSpellEditor _aaEditor;
 		public static AddSpellEditor _skillEditor;
 		public static AddSpellEditor _itemEditor;
+		public static ConfigTextViewer _textViewer;
 		//Spell data organized for the tree view of the editors.
 		public static SortedDictionary<string, SortedDictionary<string, List<SpellData>>> _spellDataOrganized = new SortedDictionary<string, SortedDictionary<string, List<SpellData>>>();
 		public static SortedDictionary<string, SortedDictionary<string, List<SpellData>>> _altdataOrganized = new SortedDictionary<string, SortedDictionary<string, List<SpellData>>>();
@@ -1323,6 +1324,22 @@ namespace E3NextConfigEditor
 				System.Diagnostics.Process.Start("https://www.paypal.com/paypalme/RekkaSoftware");
 
 			}
+		}
+
+		private void viewFileButton_Click(object sender, EventArgs e)
+		{
+			if(_textViewer==null)
+			{
+				_textViewer = new ConfigTextViewer();
+				_textViewer.StartPosition = FormStartPosition.CenterParent;
+				
+			}
+			_textViewer.FileToShow = E3.CharacterSettings._fileName;
+			if (_textViewer.ShowDialog()== DialogResult.OK)
+			{
+
+			}
+
 		}
 	}
 }
