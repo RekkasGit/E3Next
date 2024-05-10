@@ -229,7 +229,11 @@ namespace E3Core.Data
                     {
                         NoTarget = true;
                     }
-                    else if (value.Equals("NoAggro", StringComparison.OrdinalIgnoreCase))
+					else if (value.Equals("Disabled", StringComparison.OrdinalIgnoreCase))
+					{
+						Enabled = false;
+					}
+					else if (value.Equals("NoAggro", StringComparison.OrdinalIgnoreCase))
                     {
                         NoAggro = true;
                     }
@@ -875,6 +879,7 @@ namespace E3Core.Data
         public string Description  = String.Empty;
         public Int32 ResistAdj = 0;
         public string ResistType = String.Empty;
+		public bool Enabled = true;
 
 		//.\protoc --csharp_out=.\ SpellData.proto
 		//add field to this class, you need to update the proto file as well.
@@ -961,7 +966,7 @@ namespace E3Core.Data
 					r.CheckForCollection.Add(entry,0);
 				}
 			}
-		
+			r.Enabled = source.Enabled;
 			
 			return r;
 		}
@@ -1043,6 +1048,7 @@ namespace E3Core.Data
 			r.CastTypeOverride = (SpellData.Types.CastingType)this.CastTypeOverride;
 			r.IfsKeys = IfsKeys;
 			r.CheckForCollection.AddRange(CheckForCollection.Keys.ToList());
+			r.Enabled = Enabled;
             return r;
 
         }
@@ -1068,6 +1074,7 @@ namespace E3Core.Data
 			d.AfterEvent = AfterEvent;
 			d.BeforeEvent = BeforeEvent;
 			d.Reagent = Reagent;
+			d.Enabled = Enabled;
 		
 		}
 
@@ -1098,8 +1105,10 @@ namespace E3Core.Data
 			string t_Reagent = (String.IsNullOrWhiteSpace(this.Reagent)) ? String.Empty : $"/Reagent|{Reagent}";
 			string t_CastTypeOverride = (this.CastTypeOverride== CastingType.None) ? String.Empty : $"/CastType|{CastType.ToString()}";
 			string t_GemNumber = (this.SpellGem == 0) ? String.Empty : $"/Gem|{SpellGem}";
+			string t_Enabled = (Enabled == true) ? String.Empty : $"/Disabled";
+			string t_CastTarget = (String.IsNullOrWhiteSpace(this.CastTarget)) ? String.Empty : $"/{CastTarget}";
 			//Main=Terror of Mirenilla Rk. II/Gem|4/Ifs|Tanking
-			string returnValue = $"{CastName}{t_GemNumber}{t_Ifs}{t_checkFor}{t_CastIF}{t_healPct}{t_healthMax}{t_noInterrupt}{t_Zone}{t_MinSick}{t_BeforeSpell}{t_AfterSpell}{t_BeforeEvent}{t_AfterEvent}{t_minMana}{t_maxMana}{t_MinEnd}{t_ignoreStackRules}{t_MinDurationBeforeRecast}{t_MaxTries}{t_Reagent}{t_CastTypeOverride}";
+			string returnValue = $"{CastName}{t_CastTarget}{t_GemNumber}{t_Ifs}{t_checkFor}{t_CastIF}{t_healPct}{t_healthMax}{t_noInterrupt}{t_Zone}{t_MinSick}{t_BeforeSpell}{t_AfterSpell}{t_BeforeEvent}{t_AfterEvent}{t_minMana}{t_maxMana}{t_MinEnd}{t_ignoreStackRules}{t_MinDurationBeforeRecast}{t_MaxTries}{t_Reagent}{t_CastTypeOverride}";
 			return returnValue;
 
 		}

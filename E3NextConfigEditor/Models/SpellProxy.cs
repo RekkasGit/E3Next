@@ -103,6 +103,13 @@ namespace E3NextConfigEditor.Models
 			get { return _spell.SpellGem; }
 			set { _spell.SpellGem = value; }
 		}
+		[Category("Spell Target Flags")]
+		[Description("Spell Target. Self or Name of toon is valid")]
+		public String CastTarget
+		{
+			get { return _spell.CastTarget; }
+			set { _spell.CastTarget = value; }
+		}
 
 		[Category("Flags")]
 		[Description("After Spell Name, follows normal heircy rules")]
@@ -298,7 +305,13 @@ namespace E3NextConfigEditor.Models
 			get { return _spell.SpellGem; }
 			set { _spell.SpellGem = value; }
 		}
-
+		[Category("Spell Target Flags")]
+		[Description("Spell Target. Self or Name of toon is valid")]
+		public String CastTarget
+		{
+			get { return _spell.CastTarget; }
+			set { _spell.CastTarget = value; }
+		}
 		[Category("Flags")]
 		[Description("After Spell Name, follows normal heircy rules")]
 		public string AfterSpell

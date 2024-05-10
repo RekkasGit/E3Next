@@ -282,14 +282,15 @@ namespace E3Core.Processors
 
 						if (!String.IsNullOrWhiteSpace(spell.Reagent))
 						{
+							
 							_log.Write($"Checking for reagent required for spell cast:{targetName} value:{spell.Reagent}");
 							//spell requires a regent, lets check if we have it.
 							Int32 itemCount = MQ.Query<Int32>($"${{FindItemCount[={spell.Reagent}]}}");
 							if (itemCount < 1)
 							{
 								spell.ReagentOutOfStock = true;
-								_log.Write($"Cannot cast [{spell.CastName}], I do not have any [{spell.Reagent}], removing this spell from array. Restock and Reload Macro", Logging.LogLevels.Error);
-								E3.Bots.BroadcastCommand($"/popup ${{Me}} does not have {spell.Reagent}", false);
+								_log.Write($"Cannot cast [{spell.CastName}], I do not have any [{spell.Reagent}], removing this spell from array. Restock for this spell to cast again.", Logging.LogLevels.Error);
+								E3.Bots.Broadcast($"Cannot cast [{spell.CastName}], I do not have any [{spell.Reagent}], removing this spell from array. Restock for this spell to cast again.");
 								e3util.Beep();
 								return CastReturn.CAST_REAGENT;
 							}
@@ -1318,6 +1319,12 @@ namespace E3Core.Processors
 
 			if (MQ.Query<Int32>($"${{Me.GemTimer[{spell.CastName}]}}") ==0)
 			{
+				//check if we are out of stock still
+				if(spell.ReagentOutOfStock)
+				{
+					Int32 itemCount = MQ.Query<Int32>($"${{FindItemCount[={spell.Reagent}]}}");
+					if (itemCount<1) return true;
+				}
 				_log.Write($"CheckReady Success! on {spell.CastName}");
 
 				returnValue = false;
@@ -1364,6 +1371,11 @@ namespace E3Core.Processors
 
 		public static Boolean CheckReady(Data.Spell spell, bool skipCastCheck = false)
 		{
+
+
+	
+			if (!spell.Enabled) return false;
+
 			//if your stunned nothing is ready
 			if (MQ.Query<bool>("${Me.Stunned}"))
 			{

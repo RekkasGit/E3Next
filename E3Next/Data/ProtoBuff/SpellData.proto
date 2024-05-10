@@ -93,4 +93,5 @@ message SpellData {
 	CastingType CastTypeOverride=75;
 	repeated string CheckForCollection=76;
 	string IfsKeys=77;
+	bool Enabled = 78;
 }
