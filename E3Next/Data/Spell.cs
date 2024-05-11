@@ -875,6 +875,7 @@ namespace E3Core.Data
         public bool IgnoreStackRules = false;
         public bool IsDebuff = false;
         public bool IsDoT = false;
+		public bool IsBuff = false;
         public Int32 Level = 255;
         public string Description  = String.Empty;
         public Int32 ResistAdj = 0;
@@ -914,6 +915,7 @@ namespace E3Core.Data
 			r.InitName = source.InitName;
 			r.IsDebuff = source.IsDebuff;
 			r.IsDoT = source.IsDoT;
+			r.IsBuff = source.IsBuff;
 			r.IsShortBuff = source.IsShortBuff;
 			r.ItemMustEquip = source.ItemMustEquip;
 			r.Mana = source.Mana;
@@ -1001,6 +1003,7 @@ namespace E3Core.Data
             r.InitName = this.InitName;
             r.IsDebuff = this.IsDebuff;
             r.IsDoT= this.IsDoT;
+			r.IsBuff = this.IsBuff;
             r.IsShortBuff = this.IsShortBuff;
             r.ItemMustEquip = this.ItemMustEquip;
             r.Mana= this.Mana;
@@ -1106,9 +1109,9 @@ namespace E3Core.Data
 			string t_CastTypeOverride = (this.CastTypeOverride== CastingType.None) ? String.Empty : $"/CastType|{CastType.ToString()}";
 			string t_GemNumber = (this.SpellGem == 0) ? String.Empty : $"/Gem|{SpellGem}";
 			string t_Enabled = (Enabled == true) ? String.Empty : $"/Disabled";
-			string t_CastTarget = (String.IsNullOrWhiteSpace(this.CastTarget)) ? String.Empty : $"/{CastTarget}";
+			string t_CastTarget = (String.IsNullOrWhiteSpace(this.CastTarget) || this.IsBuff==false) ? String.Empty : $"/{CastTarget}";
 			//Main=Terror of Mirenilla Rk. II/Gem|4/Ifs|Tanking
-			string returnValue = $"{CastName}{t_CastTarget}{t_GemNumber}{t_Ifs}{t_checkFor}{t_CastIF}{t_healPct}{t_healthMax}{t_noInterrupt}{t_Zone}{t_MinSick}{t_BeforeSpell}{t_AfterSpell}{t_BeforeEvent}{t_AfterEvent}{t_minMana}{t_maxMana}{t_MinEnd}{t_ignoreStackRules}{t_MinDurationBeforeRecast}{t_MaxTries}{t_Reagent}{t_CastTypeOverride}";
+			string returnValue = $"{CastName}{t_CastTarget}{t_GemNumber}{t_Ifs}{t_checkFor}{t_CastIF}{t_healPct}{t_healthMax}{t_noInterrupt}{t_Zone}{t_MinSick}{t_BeforeSpell}{t_AfterSpell}{t_BeforeEvent}{t_AfterEvent}{t_minMana}{t_maxMana}{t_MinEnd}{t_ignoreStackRules}{t_MinDurationBeforeRecast}{t_MaxTries}{t_Reagent}{t_CastTypeOverride}{t_Enabled}";
 			return returnValue;
 
 		}

@@ -77,7 +77,7 @@ namespace E3NextConfigEditor
 				}
 			}
 		}
-		private void updatePropertyGrid_CollapseCategoriesIfNeeded()
+		private void updatePropertyGrid_CollapseCategoriesIfNeeded(SpellData spell)
 		{
 			if (!_firstPropertyGridSelection) return;
 			//https://forums.codeguru.com/showthread.php?380039-Expand-Collapse-a-category-in-property-grid
@@ -104,6 +104,14 @@ namespace E3NextConfigEditor
 					{
 						gi.Expanded = false;
 					}
+					if(gi.Label== "Spell Target Flags" && !spell.IsBuff)
+					{
+						gi.Expanded = false;
+					}
+					if (gi.Label == "Spell Gem Flagss" && !spell.SpellInBook)
+					{
+						gi.Expanded = false;
+					}
 				}
 			}
 		}
@@ -116,8 +124,9 @@ namespace E3NextConfigEditor
 				{
 					if(spellTreeView.SelectedNode.Tag is SpellData)
 					{
-						addSpellPropertyGrid.SelectedObject = new Models.SpellDataProxy((SpellData)spellTreeView.SelectedNode.Tag);
-						updatePropertyGrid_CollapseCategoriesIfNeeded();
+						var model = (SpellData)spellTreeView.SelectedNode.Tag;;
+						addSpellPropertyGrid.SelectedObject = new Models.SpellDataProxy(model);
+						updatePropertyGrid_CollapseCategoriesIfNeeded(model);
 						_firstPropertyGridSelection = false;
 					}
 				}

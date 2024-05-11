@@ -209,6 +209,13 @@ namespace E3NextConfigEditor.Models
 			get { return _spell.CastType.ToString(); }
 			set { Enum.TryParse(value,true,out _spell.CastType); }
 		}
+		[Category("Spell Enabled")]
+		[Description("if disabled, the spell will not be cast")]
+		public bool Enabled
+		{
+			get { return _spell.Enabled; }
+			set { _spell.Enabled = value; }
+		}
 
 	}
 	public class SpellDataProxy
@@ -311,6 +318,13 @@ namespace E3NextConfigEditor.Models
 		{
 			get { return _spell.CastTarget; }
 			set { _spell.CastTarget = value; }
+		}
+		[Category("Spell Enabled")]
+		[Description("if disabled, the spell will not be cast")]
+		public bool Enabled
+		{
+			get { return _spell.Enabled; }
+			set { _spell.Enabled = value; }
 		}
 		[Category("Flags")]
 		[Description("After Spell Name, follows normal heircy rules")]

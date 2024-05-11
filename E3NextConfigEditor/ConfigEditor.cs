@@ -1247,13 +1247,18 @@ namespace E3NextConfigEditor
 				
 			}
 		}
-		private void ShowEditorDialog(ref AddSpellEditor editor, SortedDictionary<string, SortedDictionary<string, List<SpellData>>> spellData, bool replaceSpell=false)
+		public static void InitEditor( ref AddSpellEditor editor, SortedDictionary<string, SortedDictionary<string, List<SpellData>>> spellData)
 		{
 			if (editor == null)
 			{
 				editor = new AddSpellEditor(spellData, _spellIcons);
 				editor.StartPosition = FormStartPosition.CenterParent;
 			}
+		}
+		private void ShowEditorDialog(ref AddSpellEditor editor, SortedDictionary<string, SortedDictionary<string, List<SpellData>>> spellData, bool replaceSpell=false)
+		{
+
+			InitEditor(ref editor,spellData);
 
 			if (editor.ShowDialog() == DialogResult.OK)
 			{

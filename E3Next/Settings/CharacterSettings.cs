@@ -748,22 +748,36 @@ namespace E3Core.Settings
 
 
 			LoadKeyData("Buffs", "Instant Buff", ParsedData, InstantBuffs);
-            LoadKeyData("Buffs", "Self Buff", ParsedData, SelfBuffs);
+
+			foreach (var buff in InstantBuffs) buff.IsBuff = true;
+			
+
+			LoadKeyData("Buffs", "Self Buff", ParsedData, SelfBuffs);
             //set target on self buffs
             foreach (var buff in SelfBuffs)
             {
                 buff.CastTarget = CharacterName;
-            }
+				buff.IsBuff = true;
+			}
 
             LoadKeyData("Buffs", "Bot Buff", ParsedData, BotBuffs);
-            LoadKeyData("Buffs", "Combat Buff", ParsedData, CombatBuffs);
-            LoadKeyData("Buffs", "Group Buff", ParsedData, GroupBuffs);
+			foreach (var buff in BotBuffs) buff.IsBuff = true;
+			LoadKeyData("Buffs", "Combat Buff", ParsedData, CombatBuffs);
+			foreach (var buff in CombatBuffs) buff.IsBuff = true;
+			LoadKeyData("Buffs", "Group Buff", ParsedData, GroupBuffs);
+			foreach (var buff in GroupBuffs) buff.IsBuff = true;
 			LoadKeyData("Buffs", "Pet Buff", ParsedData, PetBuffs);
+			foreach (var buff in PetBuffs) buff.IsBuff = true;
 			LoadKeyData("Buffs", "Combat Pet Buff", ParsedData, CombatPetBuffs);
+			foreach (var buff in CombatPetBuffs) buff.IsBuff = true;
 			LoadKeyData("Buffs", "Group Buff Request", ParsedData, GroupBuffRequests);
-            LoadKeyData("Buffs", "Raid Buff Request", ParsedData, RaidBuffRequests);
+			foreach (var buff in GroupBuffRequests) buff.IsBuff = true;
+			LoadKeyData("Buffs", "Raid Buff Request", ParsedData, RaidBuffRequests);
+			foreach (var buff in RaidBuffRequests) buff.IsBuff = true;
 			LoadKeyData("Buffs", "Stack Buff Request", ParsedData, StackBuffRequest);
-            LoadKeyData("Buffs", "Aura", ParsedData, Buffs_Auras);
+			foreach (var buff in StackBuffRequest) buff.IsBuff = true;
+			LoadKeyData("Buffs", "Aura", ParsedData, Buffs_Auras);
+			foreach (var buff in Buffs_Auras) buff.IsBuff = true;
 
 
 			LoadKeyData("Startup Commands", "Command", ParsedData, StartupCommands);
