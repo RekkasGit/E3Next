@@ -213,7 +213,15 @@ namespace E3Core.Classes
 			if (!_autoMezEnabled) return;
 
 			if (Casting.IsCasting()) return;
+			if (!Basics.InCombat())
+			{
+				if(_autoMezTimers.Count>0)
+				{
+					_autoMezTimers.Clear();
 
+				}
+				return;
+			}
 			if (E3.CharacterSettings.Bard_AutoMezSong.Count == 0) return;
 			Int32 targetId = MQ.Query<Int32>("${Target.ID}");
 
@@ -252,16 +260,16 @@ namespace E3Core.Classes
                 }
                 if (_mobsToAutoMez.Count == 0)
                 {
-                    _autoMezEnabled = false;
-                    E3.Bots.Broadcast("No more mobs to mez, turning off auto mez.");
+                    //_autoMezEnabled = false;
+                    //E3.Bots.Broadcast("No more mobs to mez, turning off auto mez.");
 					_autoMezTimers.Clear();
 					return;
                 }
 				_mobsToAutoMez.Remove(Assist.AssistTargetID);
 				if (_mobsToAutoMez.Count == 0)
 				{
-					E3.Bots.Broadcast("No more mobs to mez, turning off auto mez.");
-					_autoMezEnabled = false;
+					//E3.Bots.Broadcast("No more mobs to mez, turning off auto mez.");
+					//_autoMezEnabled = false;
                     _autoMezTimers.Clear();
 					return;
 				}

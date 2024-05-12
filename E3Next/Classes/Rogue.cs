@@ -21,11 +21,45 @@ namespace E3Core.Classes
         private static Data.Spell _rogueSneakAttack = null;
         private static long _nextHideCheck = 0;
         private static long _nextHideCheckInterval = 1000;
+		private static bool _isInit = false;
 
-        /// <summary>
-        /// Performs a sneak attack.
-        /// </summary>
-        public static void RogueStrike()
+		[ClassInvoke(Data.Class.Rogue)]
+		public static void Init()
+		{
+			if (_isInit) return;
+			RegisterCommands();
+			_isInit = true;
+		}
+		public static void RegisterCommands()
+		{
+			
+			EventProcessor.RegisterCommand("/e3rogue-autohide", (x) =>
+			{
+				if (x.args.Count > 0)
+				{
+					if (x.args[0].Equals("off", StringComparison.OrdinalIgnoreCase))
+					{
+						E3.Bots.Broadcast("Turning off Rogue Auto Hide");
+						E3.CharacterSettings.Rogue_AutoHide = false;
+
+
+					}
+
+				}
+				else
+				{
+					E3.Bots.Broadcast("Turning on Rogue Auto Hide");
+
+					E3.CharacterSettings.Rogue_AutoHide = true;
+
+				}
+			});
+		}
+
+		/// <summary>
+		/// Performs a sneak attack.
+		/// </summary>
+		public static void RogueStrike()
         {
             using(_log.Trace())
             {
