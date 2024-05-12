@@ -973,6 +973,7 @@ namespace E3NextConfigEditor
 				item.ShortText = spell.SpellName;
 				item.LongText = string.Empty;
 				item.Tag = spell;
+				
 				if (spell.SpellIcon > -1)
 				{
 					item.Image = _spellIcons[spell.SpellIcon];

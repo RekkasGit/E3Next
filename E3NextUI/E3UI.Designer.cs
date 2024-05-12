@@ -489,6 +489,7 @@ namespace E3NextUI
 			// 
 			// menuStrip1
 			// 
+			this.menuStrip1.Font = new System.Drawing.Font("Segoe UI", 9F);
 			this.menuStrip1.Items.AddRange(new System.Windows.Forms.ToolStripItem[] {
             this.mainToolStripMenuItem,
             this.settingsToolStripMenuItem});
@@ -855,6 +856,7 @@ namespace E3NextUI
 			this.Controls.Add(this.panelStatusPannel2);
 			this.Controls.Add(this.panelMain);
 			this.Controls.Add(this.menuStrip1);
+			this.Icon = ((System.Drawing.Icon)(resources.GetObject("$this.Icon")));
 			this.MainMenuStrip = this.menuStrip1;
 			this.Name = "E3UI";
 			this.SizeGripStyle = System.Windows.Forms.SizeGripStyle.Show;

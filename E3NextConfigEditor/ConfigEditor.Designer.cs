@@ -28,6 +28,7 @@
 		/// </summary>
 		private void InitializeComponent()
 		{
+			System.ComponentModel.ComponentResourceManager resources = new System.ComponentModel.ComponentResourceManager(typeof(ConfigEditor));
 			this.sectionComboBox = new Krypton.Toolkit.KryptonComboBox();
 			this.sectionComboBox_ButtonSpecAny1 = new Krypton.Toolkit.ButtonSpecAny();
 			this.sectionComboBox_ButtonSpecAny2 = new Krypton.Toolkit.ButtonSpecAny();
@@ -361,6 +362,7 @@
 			this.Controls.Add(this.subsectionComboBox);
 			this.Controls.Add(this.sectionComboBox);
 			this.DoubleBuffered = true;
+			this.Icon = ((System.Drawing.Icon)(resources.GetObject("$this.Icon")));
 			this.Name = "ConfigEditor";
 			this.PaletteMode = Krypton.Toolkit.PaletteMode.Office2010BlackDarkMode;
 			this.Text = "Form1";
