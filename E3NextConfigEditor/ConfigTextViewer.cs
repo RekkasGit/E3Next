@@ -62,6 +62,7 @@ namespace E3NextConfigEditor
 			{
 				if (File.Exists(value))
 				{
+					this.Text = $"Text Viewer: {value}";
 					_textEditor.Load(value);
 				}
 			}

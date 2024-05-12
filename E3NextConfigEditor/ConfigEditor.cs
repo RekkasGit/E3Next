@@ -963,6 +963,33 @@ namespace E3NextConfigEditor
 				menuItem.Visible = false;
 			}
 		}
+		private void RefeshListView()
+		{
+			if(valuesListBox.Tag is List<Spell>)
+			{
+				var spelllist = (List<Spell>)valuesListBox.Tag;
+				valuesListBox.Items.Clear();
+				foreach (var spell in spelllist)
+				{
+					KryptonListItem item = new KryptonListItem();
+					string nameOfSpell = spell.CastName;
+
+					//visual showing of if the spell is disabled
+					if (!spell.Enabled) nameOfSpell = nameOfSpell + " (disabled)";
+
+					item.ShortText = nameOfSpell;
+					item.LongText = string.Empty;
+					item.Tag = spell;
+
+					if (spell.SpellIcon > -1)
+					{
+						item.Image = _spellIcons[spell.SpellIcon];
+
+					}
+					valuesListBox.Items.Add(item);
+				}
+			}
+		}
 		private void UpdateListView(List<Spell> spellList)
 		{
 			valuesListBox.Items.Clear();
@@ -970,7 +997,12 @@ namespace E3NextConfigEditor
 			foreach (var spell in spellList)
 			{
 				KryptonListItem item = new KryptonListItem();
-				item.ShortText = spell.SpellName;
+				string nameOfSpell = spell.CastName;
+
+				//visual showing of if the spell is disabled
+				if (!spell.Enabled) nameOfSpell = nameOfSpell + " (disabled)";
+
+				item.ShortText = nameOfSpell;
 				item.LongText = string.Empty;
 				item.Tag = spell;
 				
@@ -996,7 +1028,13 @@ namespace E3NextConfigEditor
 				foreach (var spell in spellList)
 				{
 					KryptonListItem item = new KryptonListItem();
-					item.ShortText = spell.CastName;
+					string nameOfSpell = spell.CastName;
+
+					//visual showing of if the spell is disabled
+					if (!spell.Enabled) nameOfSpell = nameOfSpell + " (disabled)";
+
+
+					item.ShortText = nameOfSpell;
 					item.LongText = string.Empty;
 					item.Tag = spell;
 					if (spell.SpellIcon > -1)
@@ -1189,7 +1227,12 @@ namespace E3NextConfigEditor
 					//put after the current selected
 					Int32 index = valuesListBox.SelectedIndex + 1;
 					KryptonListItem item = new KryptonListItem();
-					item.ShortText = newSpell.CastName;
+					string nameOfSpell = newSpell.CastName;
+
+					//visual showing of if the spell is disabled
+					if (!newSpell.Enabled) nameOfSpell = nameOfSpell + " (disabled)";
+
+					item.ShortText = nameOfSpell;
 					item.LongText = string.Empty;
 					item.Tag = newSpell;
 					if (newSpell.SpellIcon > -1)
@@ -1205,7 +1248,11 @@ namespace E3NextConfigEditor
 					//no items in the list, just add
 					spellList.Add(newSpell);
 					KryptonListItem item = new KryptonListItem();
-					item.ShortText = newSpell.CastName;
+					string nameOfSpell = newSpell.CastName;
+
+					//visual showing of if the spell is disabled
+					if (!newSpell.Enabled) nameOfSpell = nameOfSpell + " (disabled)";
+					item.ShortText = nameOfSpell;
 					item.LongText = string.Empty;
 					item.Tag = newSpell;
 					if (newSpell.SpellIcon > -1)
@@ -1230,7 +1277,11 @@ namespace E3NextConfigEditor
 					//put after the current selected
 					Int32 index = valuesListBox.SelectedIndex;
 					KryptonListItem item = new KryptonListItem();
-					item.ShortText = newSpell.SpellName;
+					string nameOfSpell = newSpell.CastName;
+
+					//visual showing of if the spell is disabled
+					if (!newSpell.Enabled) nameOfSpell = nameOfSpell + " (disabled)";
+					item.ShortText = nameOfSpell;
 					item.LongText = string.Empty;
 					item.Tag = newSpell;
 					if (newSpell.SpellIcon > -1)
@@ -1315,7 +1366,9 @@ namespace E3NextConfigEditor
 			mb.buttonOkayOnly.Visible = true;
 
 			mb.ShowDialog(); //it will always be an ok
-			
+			RefeshListView();
+
+
 		}
 
 		private void donateButton_Click(object sender, EventArgs e)
