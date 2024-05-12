@@ -175,6 +175,13 @@ namespace E3NextConfigEditor.Models
 			set { _spell.MinMana = value; }
 		}
 		[Category("Flags")]
+		[Description("Min duration before recast in seconds")]
+		public Int64 MinDurationBeforeRecast
+		{
+			get { return _spell.MinDurationBeforeRecast; }
+			set { _spell.MinDurationBeforeRecast = value; }
+		}
+		[Category("Flags")]
 		[Description("Don't cast spell if you are above this mana level")]
 		public Int32 MaxMana
 		{
@@ -395,6 +402,13 @@ namespace E3NextConfigEditor.Models
 		{
 			get { return _spell.MaxMana; }
 			set { _spell.MaxMana = value; }
+		}
+		[Category("Flags")]
+		[Description("Min duration before recast in seconds")]
+		public Int64 MinDurationBeforeRecast
+		{
+			get { return _spell.MinDurationBeforeRecast; }
+			set { _spell.MinDurationBeforeRecast = value; }
 		}
 		[Category("Flags")]
 		[Description("Min endurance before you try and cast an ability")]

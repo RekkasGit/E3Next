@@ -1331,7 +1331,7 @@ namespace E3Core.Settings
 					var section = defaultFile.Sections.GetSectionData(header);
 					//copy over comments from loaded section
 					var loadeddata_section = ParsedData.Sections.GetSectionData(header);
-					if(loadeddata_section!=null)
+					if(loadeddata_section!=null && section!=null)
 					{
 						section.Comments.AddRange(loadeddata_section.Comments);
 					}

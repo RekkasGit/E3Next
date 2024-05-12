@@ -154,7 +154,7 @@ namespace E3Core.Classes
                     }
                 }
             });
-			EventProcessor.RegisterCommand("/e3automez", (x) =>
+			EventProcessor.RegisterCommand("/e3bard-automez", (x) =>
             {
                 if (x.args.Count > 0)
                 {
@@ -207,10 +207,13 @@ namespace E3Core.Classes
                 }
             }
         }
+		public static Dictionary<Int32, Int64> _mobsAndTimeStampForMez = new Dictionary<int, long>();
 		public static void Check_AutoMez()
 		{
 			if (!_autoMezEnabled) return;
-			
+
+			if (Casting.IsCasting()) return;
+
 			if (E3.CharacterSettings.Bard_AutoMezSong.Count == 0) return;
 			Int32 targetId = MQ.Query<Int32>("${Target.ID}");
 
@@ -221,6 +224,7 @@ namespace E3Core.Classes
 				foreach (var s in _spawns.Get().OrderBy(x => x.Distance))
 				{
 					_autoMezFullMobList.Add(s.ID);
+					if (s.ID == Assist.AssistTargetID) continue;
 					if (_mobsToAutoMez.Contains(s.ID)) continue;
 					//find all mobs that are close
 					if (s.TypeDesc != "NPC") continue;
@@ -265,13 +269,7 @@ namespace E3Core.Classes
                 bool wasAttacking = MQ.Query<bool>("${Me.Combat}");
 				try
 				{
-                    //lets place the 1st offensive spell on each mob, then the next, then the next
-                    //lets not hit what we are trying to mez
-                    if(wasAttacking)
-                    {
-						MQ.Cmd("/attack off");
-
-					}
+                   
 
 					foreach (var spell in E3.CharacterSettings.Bard_AutoMezSong)
 					{
@@ -285,6 +283,9 @@ namespace E3Core.Classes
 						}
 						if (Casting.CheckMana(spell))
 						{
+
+							//find the mob that has either 1) no mez timer, or 2) the lowest value one
+							_mobsAndTimeStampForMez.Clear();
 							foreach (Int32 mobid in _mobsToAutoMez.ToList())
 							{
 								SpellTimer s;
@@ -294,31 +295,55 @@ namespace E3Core.Classes
 									Int64 timestamp;
 									if (s.Timestamps.TryGetValue(spell.SpellID, out timestamp))
 									{
-										if ((Core.StopWatch.ElapsedMilliseconds + (spell.MinDurationBeforeRecast)) < timestamp)
+										Int64 timeAndMinDuration = (Core.StopWatch.ElapsedMilliseconds + (spell.MinDurationBeforeRecast));
+										if (timeAndMinDuration < timestamp)
 										{
 											//debuff/dot is still on the mob, kick off
+											//MQ.Write($"Debuff is still on the mob");
 											continue;
 										}
+										else
+										{
+											_mobsAndTimeStampForMez.Add(mobid, timeAndMinDuration);
+											continue;
+											//MQ.Write($"Debuff timer is up re-issuing cast. Time:{Core.StopWatch.ElapsedMilliseconds} stamp:{timestamp} minduration:{spell.MinDurationBeforeRecast}");
+										}
 									}
+						
 								}
+								_mobsAndTimeStampForMez.Add(mobid, 0);
 
-								Casting.Sing(mobid, spell);
-								//now change our target back
-								e3util.PutOriginalTargetBackIfNeeded(targetId);
+							}
 
+							//get the mobid with the lease amount of timestamp
+							if(_mobsAndTimeStampForMez.Count>0)
+							{
+								Int32 mobIDToMez=0;
+								Int64 leastTime = Int64.MaxValue;
+								foreach (var pair in _mobsAndTimeStampForMez)
+								{
+									if (pair.Value < leastTime)
+									{
+										mobIDToMez = pair.Key;
+										leastTime = pair.Value;
+									}
+
+								}
+								//lets place the 1st offensive spell on each mob, then the next, then the next
+								//lets not hit what we are trying to mez
 								if (wasAttacking)
 								{
-									MQ.Cmd("/attack on");
-								}
+									MQ.Cmd("/attack off");
 
-                                while(Casting.IsCasting())
-                                {
-                                    MQ.Delay(50);
-                                }
-								DebuffDot.UpdateDotDebuffTimers(mobid, spell, spell.Duration, _autoMezTimers);
-                                MQ.Cmd("/stopsong");
-								
-                          }
+								}
+								Casting.TrueTarget(mobIDToMez);
+								Casting.Sing(mobIDToMez, spell);
+								//MQ.Write($"Setting Debuff timer for {spell.DurationTotalSeconds * 1000} ms");
+								//duration is in ticks
+								DebuffDot.UpdateDotDebuffTimers(mobIDToMez, spell, spell.DurationTotalSeconds * 1000, _autoMezTimers);
+							}
+							
+							return;
 						}
 					}
 				}
