@@ -373,6 +373,10 @@ namespace E3Core.Processors
 						continue;
 					}
 				}
+				else
+				{
+					continue;
+				}
 				if (Casting.CheckReady(spell,true) && Casting.CheckMana(spell))
 				{
 
@@ -421,6 +425,10 @@ namespace E3Core.Processors
 						{
 							continue;
 						}
+					}
+					else
+					{
+						continue;
 					}
 					if(Casting.CheckReady(spell,true) && Casting.CheckMana(spell))
 					{

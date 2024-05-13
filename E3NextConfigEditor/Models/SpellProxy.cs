@@ -60,6 +60,13 @@ namespace E3NextConfigEditor.Models
 
 		}
 		[Category("Flags")]
+		[Description("PctAggro you have to be at before this ability will fire")]
+		public Int32 PctAggro
+		{
+			get { return _spell.PctAggro; }
+			set { _spell.PctAggro = value; }
+		}
+		[Category("Flags")]
 		[Description("Prevent this from being interrupted")]
 		public bool NoInterrupt
 		{
@@ -397,12 +404,20 @@ namespace E3NextConfigEditor.Models
 			set { _spell.MinSick = value; }
 		}
 		[Category("Flags")]
+		[Description("PctAggro you have to be at before this ability will fire")]
+		public Int32 PctAggro
+		{
+			get { return _spell.PctAggro; }
+			set { _spell.PctAggro = value; }
+		}
+		[Category("Flags")]
 		[Description("Minimum mana level before try and cast the spell")]
 		public Int32 MinMana
 		{
 			get { return _spell.MinMana; }
 			set { _spell.MinMana = value; }
 		}
+
 		[Category("Flags")]
 		[Description("Don't cast spell if you are above this mana level")]
 		public Int32 MaxMana

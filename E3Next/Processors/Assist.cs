@@ -342,7 +342,7 @@ namespace E3Core.Processors
                             if(String.Equals(ability.CastName,"Bash",StringComparison.OrdinalIgnoreCase))
                             {
                                 //check if we can actually bash
-                                if (MQ.Query<double>("${Target.Distance}") > 14 || !(MQ.Query<bool>("${Select[${Me.Inventory[Offhand].Type},Shield]}") || MQ.Query<bool>("${Me.AltAbility[2 Hand Bash]}")))
+                                if (MQ.Query<double>("${Target.Distance}") > 30 || !(MQ.Query<bool>("${Select[${Me.Inventory[Offhand].Type},Shield]}") || MQ.Query<bool>("${Me.AltAbility[2 Hand Bash]}")))
                                 {
                                     continue;
                                 }
@@ -351,7 +351,7 @@ namespace E3Core.Processors
                             if (String.Equals(ability.CastName, "Slam", StringComparison.OrdinalIgnoreCase))
                             {
                                 //check if we can actually bash
-                                if (MQ.Query<double>("${Target.Distance}") > 14 )
+                                if (MQ.Query<double>("${Target.Distance}") > 30)
                                 {
                                     continue;
                                 }
@@ -359,7 +359,7 @@ namespace E3Core.Processors
                             if (String.Equals(ability.CastName, "Kick", StringComparison.OrdinalIgnoreCase))
                             {
                                 //check if we can actually kick
-                                if (MQ.Query<double>("${Target.Distance}") > 14)
+                                if (MQ.Query<double>("${Target.Distance}") > 30)
                                 {
                                     continue;
                                 }

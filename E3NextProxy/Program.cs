@@ -10,11 +10,38 @@ using System.Threading;
 using System.Collections.Generic;
 using E3NextProxy.Models;
 using System.Diagnostics;
+using System.Runtime.InteropServices;
 
 namespace E3NextProxy
 {
+	
 	internal class Program
 	{
+		[DllImport("Kernel32")]
+		private static extern bool SetConsoleCtrlHandler(EventHandler handler, bool add);
+
+		private delegate bool EventHandler(CtrlType sig);
+		static EventHandler _handler;
+
+		enum CtrlType
+		{
+			CTRL_C_EVENT = 0,
+			CTRL_BREAK_EVENT = 1,
+			CTRL_CLOSE_EVENT = 2,
+			CTRL_LOGOFF_EVENT = 5,
+			CTRL_SHUTDOWN_EVENT = 6
+		}
+
+		private static bool Handler(CtrlType sig)
+		{
+			Console.WriteLine("Exiting system due to external CTRL-C, or process kill, or shutdown");
+			if(File.Exists(_fullFileName))
+			{
+				File.Delete(_fullFileName);
+			}
+			return true;
+		}
+
 		static E3NextProxy.Proxy m_proxy;
 		//lets scan the file system to find files so we can connect to start the proxy
 		static string _directoryLocation = $@"D:\EQ\MQLive\config\e3 Macro Inis\SharedData\";
@@ -23,6 +50,10 @@ namespace E3NextProxy
 
 		static void Main(string[] args)
 		{
+			//capture to clean up on force close
+			_handler += new EventHandler(Handler);
+			SetConsoleCtrlHandler(_handler, true);
+
 			//purpose of this program is to provide a Proxy between clients and consumers. This is basically the Server mode instead of the P2P mode that is default for E3N Networking
 			//this is useful if you run a lot of bots as its far more efficent thread wise. 
 			//if running 54 bots, that would be 2900+ threads vs just 108 threads using the proxy, it scales a lot better, tho less convient to run a server vs just peer to peer. 
@@ -61,7 +92,11 @@ namespace E3NextProxy
 			}
 			finally 
 			{ 
-				File.Delete(_fullFileName); 
+				if(File.Exists(_fullFileName))
+				{
+					File.Delete(_fullFileName);
+
+				}
 			}
 
 

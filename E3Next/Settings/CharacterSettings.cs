@@ -69,8 +69,12 @@ namespace E3Core.Settings
 	/// 
 	public class CharacterSettings : BaseSettings, IBaseSettings
     {
+		//the reflection lookup so that we can expose all settings data for custom looksup
+		//under the ${E3N.Settings.HEADER.KEY}
+		public Dictionary<string, FieldInfo> SettingsReflectionLookup = new Dictionary<string, FieldInfo>();
+
 #pragma warning disable CS1591 // Missing XML comment for publicly visible type or member
-        public IniData ParsedData;
+		public IniData ParsedData;
         private readonly string CharacterName;
         private readonly string ServerName;
         private readonly Class CharacterClass;
@@ -551,8 +555,10 @@ namespace E3Core.Settings
             ServerName = E3.ServerName;
             CharacterClass = E3.CurrentClass;
             LoadData();
+			//map everything to the dictionary for settings lookup. 
+			GetSettingsMappedToDictionary();
 
-        }
+		}
 
 
         /// <summary>
@@ -1536,5 +1542,42 @@ namespace E3Core.Settings
             File.Delete(_fileName);
             fileIniData.WriteFile(_fileName, defaultFile);
         }
-    }
+		private void GetSettingsMappedToDictionary()
+		{
+			//now for some ... reflection again.
+			var type = this.GetType();
+
+			foreach (var field in type.GetFields())
+			{
+				var oType = field.FieldType;
+				if (!(oType == typeof(string)|| oType == typeof(Int32) || oType == typeof(Int64) || oType == typeof(bool)) ) continue;
+
+				var customAttributes = field.GetCustomAttributes();
+				string section = String.Empty;
+				string key = String.Empty;
+
+				foreach (var attribute in customAttributes)
+				{
+					if (attribute is INI_SectionAttribute)
+					{
+						var tattribute = ((INI_SectionAttribute)attribute);
+
+						section = tattribute.Header;
+						key = tattribute.Key;
+						string dictKey = $"{section}.{key}";
+						SettingsReflectionLookup.Add(dictKey, field);
+
+					}
+					if (attribute is INI_Section2Attribute)
+					{
+						var tattribute = ((INI_Section2Attribute)attribute);
+						section = tattribute.Header;
+						key = tattribute.Key;
+						string dictKey = $"{section}.{key}";
+						SettingsReflectionLookup.Add(dictKey, field);
+					}
+				}
+			}
+		}
+	}
 }
