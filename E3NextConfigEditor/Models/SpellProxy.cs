@@ -214,7 +214,14 @@ namespace E3NextConfigEditor.Models
 		public string CastType
 		{
 			get { return _spell.CastType.ToString(); }
-			set { Enum.TryParse(value,true,out _spell.CastType); }
+			
+		}
+		[Category("Flags")]
+		[Description("Cast type, valid are Spell/AA/Item/Disc. Use None disable")]
+		public string CastTypeOverride
+		{
+			get { return _spell.CastTypeOverride.ToString(); }
+			set { Enum.TryParse(value, true, out _spell.CastTypeOverride); }
 		}
 		[Category("Spell Enabled")]
 		[Description("if disabled, the spell will not be cast")]
@@ -436,12 +443,19 @@ namespace E3NextConfigEditor.Models
 		public string CastType
 		{
 			get { return _spell.CastType.ToString(); }
+			
+		}
+		[Category("Flags")]
+		[Description("Cast type, valid are Spell/AA/Item/Disc. Use None disable")]
+		public string CastTypeOverride
+		{
+			get { return _spell.CastTypeOverride.ToString(); }
 			set
 			{
 				CastingType tempType = CastingType.None;
-				if(Enum.TryParse(value, true, out tempType))
+				if (Enum.TryParse(value, true, out tempType))
 				{
-					_spell.CastType = (SpellData.Types.CastingType)tempType;
+					_spell.CastTypeOverride = (SpellData.Types.CastingType)tempType;
 				}
 
 			}

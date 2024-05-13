@@ -115,7 +115,7 @@ namespace E3Core.Data
 					{
 						IsDebuff = true;
 					}
-					else if(value.Equals("CastType|", StringComparison.OrdinalIgnoreCase))
+					else if(value.StartsWith("CastType|", StringComparison.OrdinalIgnoreCase))
 					{
 						string castTypeAsString = GetArgument<String>(value);
 						Enum.TryParse<CastingType>(castTypeAsString, true, out this.CastTypeOverride);
@@ -790,7 +790,7 @@ namespace E3Core.Data
         public String SpellName = String.Empty;//the spell's name. If the item clicks, this is the spell it casts
         public String CastName = String.Empty;//this can be the item, spell, aa, disc. What is required to cast it. 
 		public CastingType CastType = CastingType.None;
-		private CastingType CastTypeOverride = CastingType.None;
+		public CastingType CastTypeOverride = CastingType.None;
         public String TargetType = String.Empty;
         public Int32 SpellGem;
         public Int32 GiveUpTimer;
@@ -1106,7 +1106,7 @@ namespace E3Core.Data
 			string t_AfterEvent = (String.IsNullOrWhiteSpace(this.AfterEvent)) ? String.Empty : $"/AfterEvent|{AfterEvent}";
 			string t_BeforeEvent = (String.IsNullOrWhiteSpace(this.BeforeEvent)) ? String.Empty : $"/BeforeEvent|{BeforeEvent}";
 			string t_Reagent = (String.IsNullOrWhiteSpace(this.Reagent)) ? String.Empty : $"/Reagent|{Reagent}";
-			string t_CastTypeOverride = (this.CastTypeOverride== CastingType.None) ? String.Empty : $"/CastType|{CastType.ToString()}";
+			string t_CastTypeOverride = (this.CastTypeOverride== CastingType.None) ? String.Empty : $"/CastType|{CastTypeOverride.ToString()}";
 			string t_GemNumber = (this.SpellGem == 0) ? String.Empty : $"/Gem|{SpellGem}";
 			string t_Enabled = (Enabled == true) ? String.Empty : $"/Disabled";
 			string t_CastTarget = (String.IsNullOrWhiteSpace(this.CastTarget) || this.IsBuff==false) ? String.Empty : $"/{CastTarget}";

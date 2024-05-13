@@ -53,7 +53,7 @@ namespace E3NextConfigEditor
 		public static SortedDictionary<string, SortedDictionary<string, List<SpellData>>> _itemDataOrganized = new SortedDictionary<string, SortedDictionary<string, List<SpellData>>>();
 
 		public static Int32 _networkPort = 0;
-		public static Int32 _propertyGridWidth = 150;
+		public static Int32 _propertyGridWidth = 230;
 		public static string _bardDynamicMelodyName = "Dynamic Melodies";
 		public static List<String> _dynamicSections = new List<string>() { _bardDynamicMelodyName };
 		public static SplashScreen _splashScreen = null;
