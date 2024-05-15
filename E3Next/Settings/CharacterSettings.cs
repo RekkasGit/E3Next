@@ -975,6 +975,11 @@ namespace E3Core.Settings
 			section = newFile.Sections.GetSectionData("Nukes");
 			section.Keys.AddKey("Main", "");
 
+			newFile.Sections.AddSection("Debuffs");
+			section = newFile.Sections.GetSectionData("Debuffs");
+			section.Keys.AddKey("Debuff on Assist", "");
+			section.Keys.AddKey("Debuff on Command", "");
+
 			if ((CharacterClass & Class.PureMelee) != CharacterClass && CharacterClass != Class.Bard)
 			{
 				newFile.Sections.AddSection("Stuns");
@@ -993,10 +998,7 @@ namespace E3Core.Settings
 				section = newFile.Sections.GetSectionData("DoTs on Command");
 				section.Keys.AddKey("Main", "");
 
-				newFile.Sections.AddSection("Debuffs");
-				section = newFile.Sections.GetSectionData("Debuffs");
-				section.Keys.AddKey("Debuff on Assist", "");
-				section.Keys.AddKey("Debuff on Command", "");
+				
 			}
 			if ((CharacterClass & Class.ManaUsers) == CharacterClass)
 			{

@@ -167,16 +167,31 @@ namespace E3Core.Classes
                         
 
                     }
-                   
+					else if (x.args[0].Equals("on", StringComparison.OrdinalIgnoreCase))
+					{
+						E3.Bots.Broadcast("Turning on Bard Auto Mez");
+
+						_autoMezEnabled = true;
+						_autoMezTimers.Clear();
+					}
                 }
 				else
 				{
-					E3.Bots.Broadcast("Turning on Bard Auto Mez");
+					if(_autoMezEnabled)
+					{
+						E3.Bots.Broadcast("Turning off Bard Auto Mez");
+						Casting.Interrupt();
+						_autoMezEnabled = false;
+						_autoMezTimers.Clear();
+					}
+					else
+					{
+						E3.Bots.Broadcast("Turning on Bard Auto Mez");
 
-					_autoMezEnabled = true;
-					_autoMezTimers.Clear();
+						_autoMezEnabled = true;
+						_autoMezTimers.Clear();
 
-
+					}
 				}
 			});
 		}

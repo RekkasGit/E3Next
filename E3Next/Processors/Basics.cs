@@ -215,6 +215,7 @@ namespace E3Core.Processors
                 Pets.Reset();
                 Nukes.Reset();
                 BuffCheck.AddToBuffCheckTimer(2000);
+				
 				//clear out the timers as the ID's are no longer valid
                 BuffCheck.Reset();
 		        Zoning.Zoned(MQ.Query<Int32>("${Zone.ID}"));

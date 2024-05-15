@@ -298,6 +298,7 @@ namespace E3Core.Processors
 
         public static void Process()
         {
+
             if (E3.IsInvis) return;
             if (!e3util.ShouldCheck(ref _nextLootCheck, _nextLootCheckInterval)) return;
 
@@ -316,7 +317,15 @@ namespace E3Core.Processors
 				//}
 
 				if (!E3.CharacterSettings.Misc_AutoLootEnabled) return;
-                if ((!Basics.InCombat() && currentTimestamp - Assist.LastAssistEndedTimestamp > E3.GeneralSettings.Loot_TimeToWaitAfterAssist) && SafeToLoot() || E3.GeneralSettings.Loot_LootInCombat)
+
+				if(Basics.AmIDead())
+				{
+					E3.Bots.Broadcast("I am dead, turning off autoloot");
+					E3.CharacterSettings.Misc_AutoLootEnabled = false;
+					return;
+				}
+
+				if ((!Basics.InCombat() && currentTimestamp - Assist.LastAssistEndedTimestamp > E3.GeneralSettings.Loot_TimeToWaitAfterAssist) && SafeToLoot() || E3.GeneralSettings.Loot_LootInCombat)
                 {
                     LootArea();
         		}
