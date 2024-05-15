@@ -179,9 +179,10 @@ namespace E3Core.Processors
 					{
 						if (currentLowestHealth < spell.HealPct)
 						{
-							if (JustCheck) return true;
+							
 							if (Casting.CheckReady(spell) && Casting.CheckMana(spell))
 							{
+								if (JustCheck) return true;
 
 								if (Casting.Cast(lowestHealthTargetid, spell,null,false,isEmergency) == CastReturn.CAST_FIZZLE)
 								{
@@ -379,8 +380,6 @@ namespace E3Core.Processors
 				}
 				if (Casting.CheckReady(spell,true) && Casting.CheckMana(spell))
 				{
-
-
 					if (pctHealth < spell.HealPct && pctHealth != 0)
 					{
 						if (CastIfNeed)
@@ -555,9 +554,7 @@ namespace E3Core.Processors
 										{
 											if (pctHealth < spell.HealPct)
 											{
-												if (JustCheck) return true;
-											
-												if (E3.CharacterSettings.HealAutoNecroOrbs)
+												if (E3.CharacterSettings.HealAutoNecroOrbs && !JustCheck)
 												{
 													if (_orbOfShadowsSpell == null && MQ.Query<bool>($"${{Me.ItemReady[Orb of Shadows]}}"))
 													{
@@ -576,10 +573,11 @@ namespace E3Core.Processors
 														Casting.Cast(targetID, _orbOfSoulsSpell);
 													}
 												}
-
 												//should cast a heal!
 												if (Casting.CheckReady(spell) && Casting.CheckMana(spell))
 												{
+													if (JustCheck) return true;
+
 													if (Casting.Cast(targetID, spell, TargetDoesNotNeedHeals,false,isEmergency) == CastReturn.CAST_FIZZLE)
 													{
 														currentMana = MQ.Query<Int32>("${Me.CurrentMana}");
@@ -643,10 +641,11 @@ namespace E3Core.Processors
 									{
 										if (pctHealth < spell.HealPct)
 										{
-											if (JustCheck) return true;
+										
 											//should cast a heal!
 											if (Casting.CheckReady(spell) && Casting.CheckMana(spell))
 											{
+												if (JustCheck) return true;
 												if (Casting.Cast(targetID, spell, TargetDoesNotNeedHeals,false,isEmergency) == CastReturn.CAST_FIZZLE)
 												{
 													currentMana = MQ.Query<Int32>("${Me.CurrentMana}");
@@ -760,10 +759,10 @@ namespace E3Core.Processors
 										{
 											if (pctHealth < spell.HealPct)
 											{
-												if (JustCheck) return true;
 												//should cast a heal!
 												if (Casting.CheckReady(spell) && Casting.CheckMana(spell))
 												{
+													if (JustCheck) return true;
 													if (Casting.Cast(targetID, spell) == CastReturn.CAST_FIZZLE)
 													{
 														currentMana = MQ.Query<Int32>("${Me.CurrentMana}");
