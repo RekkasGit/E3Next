@@ -418,7 +418,7 @@ namespace E3Core.Processors
 							}
 							_log.Write("Doing Ability based logic checks...");
 							//to deal with a slam bug
-							if (spell.CastName.Equals("Slam"))
+							if (spell.CastName.Equals("Slam", StringComparison.OrdinalIgnoreCase))
 							{
 								_log.Write("Doing Ability:Slam based logic checks...");
 								if (MQ.Query<bool>("${Window[ActionsAbilitiesPage].Child[AAP_FirstAbilityButton].Text.Equal[Slam]}"))
@@ -1371,25 +1371,16 @@ namespace E3Core.Processors
 
 		public static Boolean CheckReady(Data.Spell spell, bool skipCastCheck = false)
 		{
-
-
-	
 			if (!spell.Enabled) return false;
-
 			//if your stunned nothing is ready
 			if (MQ.Query<bool>("${Me.Stunned}"))
 			{
 				return false;
 			}
-
 			if (spell.CastType == CastingType.None) return false;
 			//do we need to memorize it?
-
 			if ((spell.CastType == CastingType.Spell || spell.CastType == CastingType.Item || spell.CastType == CastingType.AA) && MQ.Query<bool>("${Debuff.Silenced}")) return false;
 
-
-			
-			
 			//_log.Write($"CheckReady on {spell.CastName}");
 			if(!skipCastCheck)
 			{

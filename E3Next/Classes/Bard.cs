@@ -250,6 +250,7 @@ namespace E3Core.Classes
 					if (s.ID == Assist.AssistTargetID) continue;
 					if (_mobsToAutoMez.Contains(s.ID)) continue;
 					//find all mobs that are close
+					if (s.PctHps < 1) continue;
 					if (s.TypeDesc != "NPC") continue;
 					if (!s.Targetable) continue;
 					if (!s.Aggressive) continue;

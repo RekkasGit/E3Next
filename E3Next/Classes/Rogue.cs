@@ -93,16 +93,21 @@ namespace E3Core.Classes
         [ClassInvoke(Data.Class.Rogue)]
         public static void AutoHide()
         {
-			if (E3.ActionTaken) return;
+			
+			
             if (!E3.CharacterSettings.Rogue_AutoHide) return;
             if (!e3util.ShouldCheck(ref _nextHideCheck, _nextHideCheckInterval)) return;
             if (MQ.Query<bool>("${Me.Invis}")) return;
-            if (MQ.Query<bool>("${Me.Moving}")) return;
-            if (Zoning.CurrentZone.IsSafeZone) return;
+
+			if (MQ.Query<bool>("${Me.Moving}")) return;
+			if (Zoning.CurrentZone.IsSafeZone) return;
             if (Basics.InCombat()) return;
 
+			//reapply any buffs before we need to go into invis
+			BuffCheck.Check_Buffs();
+			if (E3.ActionTaken) return;
 
-            var sneakQuery = "${Me.Sneaking}";
+			var sneakQuery = "${Me.Sneaking}";
             if (!MQ.Query<bool>(sneakQuery) && MQ.Query<bool>("${Me.AbilityReady[Sneak]"))
             {
                 MQ.Cmd("/doability sneak");

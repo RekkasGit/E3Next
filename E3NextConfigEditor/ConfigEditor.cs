@@ -22,6 +22,7 @@ using System.Reflection;
 using Google.Protobuf.Collections;
 using System.Collections;
 using Krypton.Toolkit;
+using System.Threading;
 
 namespace E3NextConfigEditor
 {
@@ -52,7 +53,12 @@ namespace E3NextConfigEditor
 		public static SortedDictionary<string, SortedDictionary<string, List<SpellData>>> _skilldataOrganized = new SortedDictionary<string, SortedDictionary<string, List<SpellData>>>();
 		public static SortedDictionary<string, SortedDictionary<string, List<SpellData>>> _itemDataOrganized = new SortedDictionary<string, SortedDictionary<string, List<SpellData>>>();
 
+		//used to kill the process if the parent process dies
+		Task _globalUpdate;
+		public static volatile bool ShouldProcess = true;
+
 		public static Int32 _networkPort = 0;
+		public static Int32 _parentProcessID = 0;
 		public static Int32 _propertyGridWidth = 230;
 		public static string _bardDynamicMelodyName = "Dynamic Melodies";
 		public static List<String> _dynamicSections = new List<string>() { _bardDynamicMelodyName };
@@ -67,22 +73,62 @@ namespace E3NextConfigEditor
 		{
 			InitializeComponent();
 			this.StartPosition = FormStartPosition.CenterScreen;
-			LoadData();
-		}
+			GetParams();
 
-		public void LoadData()
+			LoadData();
+			_globalUpdate = Task.Factory.StartNew(() => { GlobalTimer(); }, CancellationToken.None, TaskCreationOptions.DenyChildAttach, TaskScheduler.Default);
+
+		}
+		private void GetParams()
 		{
 			string[] args = Environment.GetCommandLineArgs();
 
 			if (args.Length > 1)
 			{
-				if(!Int32.TryParse(args[1], out _networkPort))
+				if (!Int32.TryParse(args[1], out _networkPort))
 				{
-					
+
 					Application.Exit();
 					return;
 				}
 			}
+			if (args.Length > 2)
+			{
+				if (!Int32.TryParse(args[2], out _parentProcessID))
+				{
+
+					Application.Exit();
+					return;
+				}
+			}
+		}
+		private void GlobalTimer()
+		{
+			while (ShouldProcess)
+			{
+				if (_parentProcessID > 0)
+				{
+					if (!ProcessExists(_parentProcessID))
+					{
+						System.Windows.Forms.Application.Exit();
+					}
+				}
+
+				System.Threading.Thread.Sleep(1000);
+			}
+		}
+		/// <summary>
+		/// used to check if our parent process dies, so that we can close as well.
+		/// </summary>
+		/// <param name="id"></param>
+		/// <returns></returns>
+		private bool ProcessExists(int id)
+		{
+			return Process.GetProcesses().Any(x => x.Id == id);
+		}
+		public void LoadData()
+		{
+			
 
 			//create the client to get data from E3N/MQ
 			_tloClient = new DealerClient(_networkPort);
@@ -1399,6 +1445,11 @@ namespace E3NextConfigEditor
 
 			}
 
+		}
+
+		private void ConfigEditor_FormClosing(object sender, FormClosingEventArgs e)
+		{
+			ShouldProcess = false;
 		}
 	}
 }

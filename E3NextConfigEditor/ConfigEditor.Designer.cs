@@ -366,6 +366,7 @@
 			this.Name = "ConfigEditor";
 			this.PaletteMode = Krypton.Toolkit.PaletteMode.Office2010BlackDarkMode;
 			this.Text = "Form1";
+			this.FormClosing += new System.Windows.Forms.FormClosingEventHandler(this.ConfigEditor_FormClosing);
 			this.Load += new System.EventHandler(this.ConfigEditor_Load);
 			((System.ComponentModel.ISupportInitialize)(this.sectionComboBox)).EndInit();
 			((System.ComponentModel.ISupportInitialize)(this.subsectionComboBox)).EndInit();

@@ -463,6 +463,7 @@ namespace E3Core.Processors
                 Burns.Reset();
             }
             LastAssistEndedTimestamp = Core.StopWatch.ElapsedMilliseconds;
+			
         }
 
         /// <summary>
