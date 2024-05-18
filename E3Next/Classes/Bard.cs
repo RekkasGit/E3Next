@@ -297,6 +297,7 @@ namespace E3Core.Classes
 
 					foreach (var spell in E3.CharacterSettings.Bard_AutoMezSong)
 					{
+						
 						//check if the if condition works
 						if (!String.IsNullOrWhiteSpace(spell.Ifs))
 						{
@@ -342,7 +343,7 @@ namespace E3Core.Classes
 							//get the mobid with the lease amount of timestamp
 							if(_mobsAndTimeStampForMez.Count>0)
 							{
-								Int32 mobIDToMez=0;
+								Int32 mobIDToMez = 0;
 								Int64 leastTime = Int64.MaxValue;
 								foreach (var pair in _mobsAndTimeStampForMez)
 								{
@@ -353,18 +354,29 @@ namespace E3Core.Classes
 									}
 
 								}
-								//lets place the 1st offensive spell on each mob, then the next, then the next
-								//lets not hit what we are trying to mez
-								if (wasAttacking)
+								if (_spawns.TryByID(mobIDToMez, out var spawn))
 								{
-									MQ.Cmd("/attack off");
+									//lets place the 1st offensive spell on each mob, then the next, then the next
+									//lets not hit what we are trying to mez
+									if (wasAttacking)
+									{
+										MQ.Cmd("/attack off");
 
+									}
+									Casting.TrueTarget(mobIDToMez);
+									if (Casting.CheckReady(spell))
+									{
+										E3.Bots.Broadcast($"Trying to Mez ==>[{spawn.CleanName}]");
+										Casting.Sing(mobIDToMez, spell);
+									}
+										//MQ.Write($"Setting Debuff timer for {spell.DurationTotalSeconds * 1000} ms");
+									//duration is in ticks
+									Int64 spellDuration = E3.CharacterSettings.Bard_AutoMezSongDuration * 1000;
+									DebuffDot.UpdateDotDebuffTimers(mobIDToMez, spell, spellDuration, _autoMezTimers);
 								}
-								Casting.TrueTarget(mobIDToMez);
-								Casting.Sing(mobIDToMez, spell);
-								//MQ.Write($"Setting Debuff timer for {spell.DurationTotalSeconds * 1000} ms");
-								//duration is in ticks
-								DebuffDot.UpdateDotDebuffTimers(mobIDToMez, spell, spell.DurationTotalSeconds * 1000, _autoMezTimers);
+								
+								
+							
 							}
 							
 							return;

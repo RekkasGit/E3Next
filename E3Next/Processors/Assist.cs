@@ -806,7 +806,7 @@ namespace E3Core.Processors
                                if((E3.CurrentClass & Class.Priest)!=E3.CurrentClass)
                                {
                                    //if not a priest/healer, lets chill for 30-400ms
-								   MQ.Delay(E3.Random.Next(30, 400));
+								  // MQ.Delay(E3.Random.Next(30, 400));
 
 							   }
 

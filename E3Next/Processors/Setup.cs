@@ -1,7 +1,9 @@
-﻿using MonoCore;
+﻿using E3Core.Utility;
+using MonoCore;
 using System;
 using System.Collections.Generic;
 using System.Linq;
+using System.Reflection;
 using System.Text;
 using System.Threading.Tasks;
 
@@ -47,8 +49,9 @@ namespace E3Core.Processors
                 {
                     _serverNameForIni = "Lazarus";
                 }
-
-                MQ.Write($"Loading nE³xt v{_e3Version}...Mq2Mono v{Core._MQ2MonoVersion}");
+				string builddate = Properties.Resources.BuildDate;
+				builddate = builddate.Replace("\r\n", "");
+				MQ.Write($"Loading nE³xt v{_e3Version} builddate:{builddate}...Mq2Mono v{Core._MQ2MonoVersion}");
                 
 
                 InitPlugins();
@@ -72,6 +75,7 @@ namespace E3Core.Processors
 			}
 
         }
+
         private static void InitSubSystems()
         {
             var methods = AppDomain.CurrentDomain.GetAssemblies()

@@ -127,6 +127,9 @@ namespace E3Core.Settings
 		public SortedDictionary<string, List<Spell>> Bard_MelodySets = new SortedDictionary<string, List<Spell>>();
 		[INI_Section("Bard", "AutoMezSong")]
 		public List<Spell> Bard_AutoMezSong = new List<Spell>();
+		[INI_Section("Bard", "AutoMezSongDuration in seconds")]
+		public Int32 Bard_AutoMezSongDuration = 18;
+
 
 		[INI_Section("Druid", "Evac Spell")]
 		[INI_Section2("Wizard", "Evac Spell")]
@@ -662,6 +665,7 @@ namespace E3Core.Settings
             {
                 LoadKeyData("Bard", "MelodyIf", ParsedData, Bard_MelodyIfs);
                 LoadKeyData("Bard", "AutoMezSong", ParsedData, Bard_AutoMezSong);
+				LoadKeyData("Bard", "AutoMezSongDuration in seconds", ParsedData,ref Bard_AutoMezSongDuration);
                 LoadKeyData("Bard", "Auto-Sonata (On/Off)", ParsedData, ref Bard_AutoSonata);
 				//load up all melody sets
 
@@ -1048,6 +1052,7 @@ namespace E3Core.Settings
 				section = newFile.Sections.GetSectionData("Bard");
 				section.Keys.AddKey("MelodyIf", "");
 				section.Keys.AddKey("AutoMezSong", "");
+				section.Keys.AddKey("AutoMezSongDuration in seconds", "18");
 				section.Keys.AddKey("Auto-Sonata (On/Off)", "Off");
 			}
 
@@ -1566,7 +1571,7 @@ namespace E3Core.Settings
 
 						section = tattribute.Header;
 						key = tattribute.Key;
-						string dictKey = $"{section}.{key}";
+						string dictKey = $"${{E3N.Settings.{section}.{key}}}";
 						SettingsReflectionLookup.Add(dictKey, field);
 
 					}
@@ -1575,7 +1580,7 @@ namespace E3Core.Settings
 						var tattribute = ((INI_Section2Attribute)attribute);
 						section = tattribute.Header;
 						key = tattribute.Key;
-						string dictKey = $"{section}.{key}";
+						string dictKey = $"${{E3N.Settings.{section}.{key}}}";
 						SettingsReflectionLookup.Add(dictKey, field);
 					}
 				}
