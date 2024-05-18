@@ -18,20 +18,24 @@ namespace E3Core.Processors
         public static Logging _log = E3.Log;
         private static IMQ MQ = E3.MQ;
         private static ISpawns _spawns = E3.Spawns;
-        public static bool _waitingOnRez = false;
+		[ExposedData("Rez", "WaitingOnRez")]
+		public static bool _waitingOnRez = false;
         private static long _nextAutoRezCheck = 0;
         private static long _nextAutoRezCheckInterval = 1000;
 
         private static long _nextRezDialogCheck = 0;
         private static long _nextRezDialogCheckInterval = 1000;
 		//should accepting rezes be paused
+		[ExposedData("Rez", "PauseRez")]
 		private static bool _pauseRez = false;
 
 		private static readonly Spell _divineRes = new Spell("Divine Resurrection");
         private static readonly HashSet<string> _classesToDivineRez = new HashSet<string> { "Cleric", "Warrior", "Paladin", "Shadow Knight" };
-        private static bool _skipAutoRez = false;
+		[ExposedData("Rez", "SkipAutoRez")]
+		private static bool _skipAutoRez = false;
         private static Dictionary<int, DateTime> _recentlyRezzed = new Dictionary<int, DateTime>();
-        private static List<int> _corpsesToRemoveFromRecentlyRezzed = new List<int>();
+		[ExposedData("Rez", "CorpsesToRemoveFromRecentlyRezzed")]
+		private static List<int> _corpsesToRemoveFromRecentlyRezzed = new List<int>();
 
         [SubSystemInit]
         public static void Init()

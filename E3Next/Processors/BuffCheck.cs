@@ -46,12 +46,16 @@ namespace E3Core.Processors
 		//private static Int64 _printoutTimer;
 		private static Data.Spell _selectAura = null;
 		private static Int64 _nextBuffCheck = 0;
-
+		[ExposedData("BuffCheck", "BuffCheckInterval")]
 		private static Int64 _nextBuffCheckInterval = 1000;
+		[ExposedData("BuffCheck", "XPBuffs")]
 		private static List<Int32> _xpBuffs = new List<int>() { 42962 /*xp6*/, 42617 /*xp5*/, 42616 /*xp4*/};
+		[ExposedData("BuffCheck", "GMBuffs")]
 		private static List<Int32> _gmBuffs = new List<int>() { 34835, 35989, 35361, 25732, 34567, 36838, 43040, 36266, 36423 };
 		private static Int64 _nextBlockBuffCheck = 0;
+		[ExposedData("BuffCheck", "BlockBuffCheckInterval")]
 		private static Int64 _nextBlockBuffCheckInterval = 1000;
+		[ExposedData("BuffCheck", "InitAuras")]
 		static bool _initAuras = false;
 
 		public static void AddToBuffCheckTimer(int millisecondsToAdd)

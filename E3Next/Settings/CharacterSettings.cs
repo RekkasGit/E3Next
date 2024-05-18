@@ -1557,7 +1557,7 @@ namespace E3Core.Settings
 			foreach (var field in type.GetFields())
 			{
 				var oType = field.FieldType;
-				if (!(oType == typeof(string)|| oType == typeof(Int32) || oType == typeof(Int64) || oType == typeof(bool)) ) continue;
+				if (!(oType == typeof(string)|| oType == typeof(Int32) || oType == typeof(Int64) || oType == typeof(bool) || oType==typeof(List<string>) || oType == typeof(List<Int32>) || oType == typeof(List<Int64>) || oType == typeof(List<Spell>)) ) continue;
 
 				var customAttributes = field.GetCustomAttributes();
 				string section = String.Empty;

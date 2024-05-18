@@ -16,25 +16,34 @@ namespace E3Core.Processors
     /// </summary>
     public static class Assist
     {
-        public static bool AllowControl = false;
+		[ExposedData("Assist", "AllowControl")]
+		public static bool AllowControl = false;
+		[ExposedData("Assist", "IsAssisting")]
         public static Boolean IsAssisting = false;
-        public static Int32 AssistTargetID = 0;
+		[ExposedData("Assist", "AssistTargetID")]
+		public static Int32 AssistTargetID = 0;
 
         public static long LastAssistEndedTimestamp = 0;
 
         private static Logging _log = E3.Log;
         private static IMQ MQ = E3.MQ;
         private static ISpawns _spawns = E3.Spawns;
-        private static IList<string> _rangeTypes = new List<string>() { "Ranged", "Autofire" };
-        private static IList<string> _meleeTypes = new List<string>() { "Melee","AutoAttack" };
-        private static IList<string> _assistDistanceTypes = new List<string> { "MaxMelee", "off" };
-        public static Int32 _assistDistance = 0;
-        private static bool _assistIsEnraged = false;
+		[ExposedData("Assist", "RangeTypes")]
+		private static List<string> _rangeTypes = new List<string>() { "Ranged", "Autofire" };
+		[ExposedData("Assist", "MeleeTypes")]
+		private static List<string> _meleeTypes = new List<string>() { "Melee","AutoAttack" };
+		[ExposedData("Assist", "AssistDistanceTypes")]
+		private static List<string> _assistDistanceTypes = new List<string> { "MaxMelee", "off" };
+		[ExposedData("Assist", "AssistDistance")]
+		public static Int32 _assistDistance = 0;
+		[ExposedData("Assist", "AssistIsEnraged")]
+		private static bool _assistIsEnraged = false;
         private static Dictionary<string, Action> _stickSwitch;
         private static HashSet<Int32> _offAssistIgnore = new HashSet<Int32>();
-        private static Data.Spell _divineStun = new Data.Spell("Divine Stun");
-        private static Data.Spell _terrorOfDiscord = new Data.Spell("Terror of Discord");
-        private static IList<string> _tankTypes = new List<string>() { "WAR", "PAL", "SHD" };
+		//private static Data.Spell _divineStun = new Data.Spell("Divine Stun");
+		//private static Data.Spell _terrorOfDiscord = new Data.Spell("Terror of Discord");
+		[ExposedData("Assist", "TankTypes")]
+		private static List<string> _tankTypes = new List<string>() { "WAR", "PAL", "SHD" };
 
         /// <summary>
         /// Initializes this instance.
@@ -264,22 +273,22 @@ namespace E3Core.Processors
                                         E3.Bots.Broadcast($"Taunting {s.CleanName}: {tt.ClassShortName} - {tt.CleanName} has agro and not a tank");
 
                                     }
-                                    else if (MQ.Query<bool>("${Me.AltAbilityReady[Divine Stun]}"))
-                                    {
-                                        if (Casting.CheckReady(_divineStun))
-                                        {
-                                            Casting.Cast(AssistTargetID, _divineStun);
-                                        }
+                                    //else if (MQ.Query<bool>("${Me.AltAbilityReady[Divine Stun]}"))
+                                    //{
+                                    //    if (Casting.CheckReady(_divineStun))
+                                    //    {
+                                    //        Casting.Cast(AssistTargetID, _divineStun);
+                                    //    }
 
-                                    }
-                                    else if (MQ.Query<bool>("${Me.SpellReady[Terror of Discord]}"))
-                                    {
-                                        if (Casting.CheckReady(_terrorOfDiscord))
-                                        {
-                                            Casting.Cast(AssistTargetID, _terrorOfDiscord);
-                                        }
+                                    //}
+                                    //else if (MQ.Query<bool>("${Me.SpellReady[Terror of Discord]}"))
+                                    //{
+                                    //    if (Casting.CheckReady(_terrorOfDiscord))
+                                    //    {
+                                    //        Casting.Cast(AssistTargetID, _terrorOfDiscord);
+                                    //    }
 
-                                    }
+                                    //}
                                 }
                             }
                         }

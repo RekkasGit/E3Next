@@ -12,7 +12,30 @@ namespace E3Core.Processors
     public class SubSystemInitAttribute : Attribute
     {
     }
-    public static class Setup
+	public class ExposedData : Attribute
+	{
+		private string _header;
+		private string _key;
+
+		public string Header
+		{
+			get { return _header; }
+			set { _header = value; }
+		}
+		public string Key
+		{
+			get { return _key; }
+			set { _key = value; }
+		}
+
+		public ExposedData(string header, string key)
+		{
+			_header = header;
+			_key = key;
+		}
+
+	}
+	public static class Setup
     {
 
         static public Boolean _reloadOnLoot = false;
@@ -31,8 +54,9 @@ namespace E3Core.Processors
 		public static string _serverNameForIni = "PEQTGC"; //project eq, the grand creation, where legacy e3 was born i believe.
         public static Logging _log = E3.Log;
         private static IMQ MQ = E3.MQ;
+		public static Dictionary<string, FieldInfo> ExposedDataReflectionLookup = new Dictionary<string, FieldInfo>();
 
-        public static Boolean Init()
+		public static Boolean Init()
         {
             using (_log.Trace())
             {
@@ -56,7 +80,7 @@ namespace E3Core.Processors
 
                 InitPlugins();
                 InitSubSystems();
-
+				GetExposedDataMappedToDictionary();
 				foreach (var command in E3.CharacterSettings.StartupCommands)
                 {
                     MQ.Cmd(command);
@@ -225,6 +249,34 @@ namespace E3Core.Processors
 
             }
         }
-        
-    }
+		private static void GetExposedDataMappedToDictionary()
+		{
+			//now for some ... reflection again.
+			var fields = AppDomain.CurrentDomain.GetAssemblies()
+			.SelectMany(x => x.GetTypes())
+			.Where(x => x.IsClass)
+			.SelectMany(x => x.GetFields(BindingFlags.Public|BindingFlags.NonPublic | BindingFlags.Static))
+			.Where(x => x.GetCustomAttributes(typeof(ExposedData), false).FirstOrDefault() != null); // returns only methods that have the InvokeAttribute
+
+			foreach (var foundField in fields) // iterate through all found methods
+			{
+				var customAttributes = foundField.GetCustomAttributes();
+				string section = String.Empty;
+				string key = String.Empty;
+				//these are static don't need to create an instance
+				foreach (var attribute in customAttributes)
+				{
+					if (attribute is ExposedData)
+					{
+						var tattribute = ((ExposedData)attribute);
+
+						section = tattribute.Header;
+						key = tattribute.Key;
+						string dictKey = $"${{E3N.State.{section}.{key}}}";
+						ExposedDataReflectionLookup.Add(dictKey, foundField);
+					}
+				}
+			}
+		}
+	}
 }

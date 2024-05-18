@@ -13,12 +13,15 @@ namespace E3Core.Processors
 		private static IMQ MQ = E3.MQ;
 		private static ISpawns _spawns = E3.Spawns;
 
-
+		[ExposedData("Charm", "CharmTimer")]
 		private static Int64 _charmTimer = 0;
+		[ExposedData("Charm", "CharmTargetId")]
 		private static int _charmTargetId = 0;
 
 		private static long _nextCharmCheck = 0;
+		[ExposedData("Charm", "NextCharmRefreshTimeInterval")]
 		private static long _nextCharmRefreshTimeInterval = 500;
+		[ExposedData("Charm", "CharmDebuffDelay")]
 		private static Int32 _charmDebuffDelay = 4000;
 
 		[SubSystemInit]

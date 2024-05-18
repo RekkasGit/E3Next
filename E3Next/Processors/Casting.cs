@@ -1642,7 +1642,7 @@ namespace E3Core.Processors
 		{
 			return Ifs(spell.Ifs);
 		}
-		
+		private static StringBuilder _ifsStringBuilder = new StringBuilder(); 
 		public static bool Ifs(string IfsExpression)
 		{
 			if (!String.IsNullOrWhiteSpace(IfsExpression))
@@ -1685,20 +1685,121 @@ namespace E3Core.Processors
 					}
 				}
 			}
+			//to deal with an issue of ( and [ in the parser
+			if (tIF.Contains(@"\["))
+			{
+				//settings shouldn't have [, if we do they should be ( or ) instead
+				tIF = tIF.Replace(@"\[", "(").Replace(@"\]", ")");
+			}
 
 			//dynamic lookup via reflection
 			//${E3N.Settings.Header.Key}
-			if(tIF.IndexOf("${E3N.Settings",0,StringComparison.OrdinalIgnoreCase)>-1)
+			if (tIF.IndexOf("${E3N.Settings",0,StringComparison.OrdinalIgnoreCase)>-1)
 			{
+
 				foreach (var pair in E3.CharacterSettings.SettingsReflectionLookup)
 				{
 					if (tIF.IndexOf(pair.Key, 0, StringComparison.OrdinalIgnoreCase) > -1)
 					{
-						tIF = tIF.ReplaceInsensitive(pair.Key, pair.Value.GetValue(E3.CharacterSettings).ToString());
+						var field = pair.Value;
+						if (field.IsGenericList(typeof(String)))
+						{
+							List<string> fieldValue = (List<string>)field.GetValue(E3.CharacterSettings);
+							string finallist = string.Join(",", fieldValue);
+							tIF = tIF.ReplaceInsensitive(pair.Key, finallist);
+						}
+						else if (field.IsGenericList(typeof(Int32)))
+						{
+							List<Int32> fieldValue = (List<Int32>)field.GetValue(E3.CharacterSettings);
+							string finallist = string.Join(",", fieldValue);
+							tIF = tIF.ReplaceInsensitive(pair.Key, finallist);
+						}
+						else if (field.IsGenericList(typeof(Spell)))
+						{
+							List<Spell> fieldValue = (List<Spell>)field.GetValue(E3.CharacterSettings);
+							_ifsStringBuilder.Clear();
+							foreach (var spell in fieldValue)
+							{
+								if(_ifsStringBuilder.Length==0)
+								{
+									_ifsStringBuilder.Append(spell.CastName);
+								}
+								else
+								{
+									_ifsStringBuilder.Append(","+spell.CastName);
+								}
+							}
+							tIF = tIF.ReplaceInsensitive(pair.Key, _ifsStringBuilder.ToString());
+						}
+						else if (field.IsGenericList(typeof(Int64)))
+						{
+							List<Int64> fieldValue = (List<Int64>)field.GetValue(E3.CharacterSettings);
+							string finallist = string.Join(",", fieldValue);
+							tIF = tIF.ReplaceInsensitive(pair.Key, finallist);
+						}
+						else
+						{
+							tIF = tIF.ReplaceInsensitive(pair.Key, pair.Value.GetValue(E3.CharacterSettings).ToString());
+
+						}
+						
 					}
 				}
 			}
-			
+			if (tIF.IndexOf("${E3N.State", 0, StringComparison.OrdinalIgnoreCase) > -1)
+			{
+				foreach (var pair in Setup.ExposedDataReflectionLookup)
+				{
+					var field = pair.Value;
+					if(field.IsStatic)
+					{
+						if (tIF.IndexOf(pair.Key, 0, StringComparison.OrdinalIgnoreCase) > -1)
+						{
+							//we are pulling static data, so pass a null to get it. 
+							if (field.IsGenericList(typeof(String)))
+							{
+								List<string> fieldValue = (List<string>)field.GetValue(null);
+								string finallist = string.Join(",",fieldValue);
+								tIF = tIF.ReplaceInsensitive(pair.Key, finallist);
+							}
+							else if (field.IsGenericList(typeof(Spell)))
+							{
+								List<Spell> fieldValue = (List<Spell>)field.GetValue(null);
+								_ifsStringBuilder.Clear();
+								foreach (var spell in fieldValue)
+								{
+									if (_ifsStringBuilder.Length == 0)
+									{
+										_ifsStringBuilder.Append(spell.CastName);
+									}
+									else
+									{
+										_ifsStringBuilder.Append("," + spell.CastName);
+									}
+								}
+								tIF = tIF.ReplaceInsensitive(pair.Key, _ifsStringBuilder.ToString());
+							}
+							else if (field.IsGenericList(typeof(Int32)))
+							{
+								List<Int32> fieldValue = (List<Int32>)field.GetValue(null);
+								string finallist = string.Join(",", fieldValue);
+								tIF = tIF.ReplaceInsensitive(pair.Key, finallist);
+							}
+							else if (field.IsGenericList(typeof(Int64)))
+							{
+								List<Int64> fieldValue = (List<Int64>)field.GetValue(null);
+								string finallist = string.Join(",", fieldValue);
+								tIF = tIF.ReplaceInsensitive(pair.Key, finallist);
+							}
+							else
+							{
+								tIF = tIF.ReplaceInsensitive(pair.Key, field.GetValue(null).ToString());
+
+							}
+						}
+					}
+				}
+			}
 
 			//need to do some legacy compatability checksraibles that were used in Ifs.
 			if (tIF.IndexOf("${Assisting}", 0, StringComparison.OrdinalIgnoreCase) > -1)
@@ -1715,16 +1816,16 @@ namespace E3Core.Processors
 				//lets replace it with TRUE/FALSE
 				tIF = tIF.ReplaceInsensitive("${PBAEON}", Nukes.PBAEEnabled.ToString());
 			}
-			if (tIF.IndexOf("${E3N.State.ClearTargets}", 0, StringComparison.OrdinalIgnoreCase) > -1)
-			{
-				//lets replace it with TRUE/FALSE
-				tIF = tIF.ReplaceInsensitive("${E3N.State.ClearTargets}", ClearXTargets.Enabled.ToString());
-			}
-			if (tIF.IndexOf("${E3N.State.IsLootOn}", 0, StringComparison.OrdinalIgnoreCase) > -1)
-			{
-				//lets replace it with TRUE/FALSE
-				tIF = tIF.ReplaceInsensitive("${E3N.State.IsLootOn}", E3.CharacterSettings.Misc_AutoLootEnabled.ToString());
-			}
+			//if (tIF.IndexOf("${E3N.State.ClearTargets}", 0, StringComparison.OrdinalIgnoreCase) > -1)
+			//{
+			//	//lets replace it with TRUE/FALSE
+			//	tIF = tIF.ReplaceInsensitive("${E3N.State.ClearTargets}", ClearXTargets.Enabled.ToString());
+			//}
+			//if (tIF.IndexOf("${E3N.State.IsLootOn}", 0, StringComparison.OrdinalIgnoreCase) > -1)
+			//{
+			//	//lets replace it with TRUE/FALSE
+			//	tIF = tIF.ReplaceInsensitive("${E3N.State.IsLootOn}", E3.CharacterSettings.Misc_AutoLootEnabled.ToString());
+			//}
 			if (tIF.IndexOf("${AssistTarget}", 0, StringComparison.OrdinalIgnoreCase) > -1)
 			{
 				//lets replace it with TRUE/FALSE

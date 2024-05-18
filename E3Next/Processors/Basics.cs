@@ -25,14 +25,17 @@ namespace E3Core.Processors
         public static Logging _log = E3.Log;
         private static IMQ MQ = E3.MQ;
         private static ISpawns _spawns = E3.Spawns;
-        public static bool IsPaused = false;
-        public static List<int> GroupMembers = new List<int>();
+		[ExposedData("Basics", "IsPaused")]
+		public static bool IsPaused = false;
+		[ExposedData("Basics", "GroupMembers")]
+		public static List<int> GroupMembers = new List<int>();
         private static long _nextGroupCheck = 0;
         private static long _nextGroupCheckInterval = 1000;
         private static long _nextResourceCheck = 0;
         private static long _nextResourceCheckInterval = 1000;
         private static long _nextAutoMedCheck = 0;
         private static long _nextAutoMedCheckInterval = 1000;
+		[ExposedData("Basics", "Misc_LastTimeAutoMedHappened")]
 		public static long Misc_LastTimeAutoMedHappened = 0;
 		private static long _nextFoodCheck = 0;
         private static long _nextFoodCheckInterval = 1000;
@@ -48,7 +51,10 @@ namespace E3Core.Processors
 		private static DateTime? _cursorOccupiedSince;
         private static TimeSpan _cursorOccupiedTime;
         private static TimeSpan _cursorOccupiedThreshold = new TimeSpan(0, 0, 0, 30);
-        private static Int32 _cusrorPreviousID;
+
+		[ExposedData("Basics", "CusrorPreviousID")]
+		private static Int32 _cusrorPreviousID;
+		[ExposedData("Basics", "Debug_PreviousCPUDelay")]
 		static Int32 Debug_PreviousCPUDelay = 50;
 
 		/// <summary>

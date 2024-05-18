@@ -34,7 +34,8 @@ namespace E3Core.Processors
         private static Int64 _nextDoTCheckInterval = 1000;
         private static Int64 _nextOffAssistCheck = 0;
         private static Int64 _nextOffAssistCheckInterval = 500;
-        private static bool _shouldOffAssist = true;
+		[ExposedData("DebuffDot", "ShouldOffAssist")]
+		private static bool _shouldOffAssist = true;
         private static List<Data.Spell> _tempOffAssistSpellList = new List<Spell>();
 
         [SubSystemInit]

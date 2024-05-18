@@ -18,11 +18,13 @@ namespace E3Core.Processors
     {
         public static Logging _log = E3.Log;
         private static IMQ MQ = E3.MQ;
-        private static bool _petMaxShrink = false;
+		[ExposedData("Pets", "PetMaxShrink")]
+		private static bool _petMaxShrink = false;
         private static Int32 _petMaxShrinkID = 0;
         private static Int64 _nextPetCheck = 0;
         private static Int64 _nextPetCheckInterval = 1000;
-        private static List<string> _petShrinkSpells = new List<string>() { "Diminutive Companion", "Gemstone of Dark Flame", "Symbol of Ancient Summoning", "Tiny Companion",  };
+		[ExposedData("Pets", "PetShrinkSpells")]
+		private static List<string> _petShrinkSpells = new List<string>() { "Diminutive Companion", "Gemstone of Dark Flame", "Symbol of Ancient Summoning", "Tiny Companion",  };
 
         [SubSystemInit]
         public static void Init()

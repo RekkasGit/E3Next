@@ -15,7 +15,8 @@ namespace E3Core.Processors
         private static IMQ MQ = E3.MQ;
         private static ISpawns _spawns = E3.Spawns;
         private static Int64 _nextDispelCheck = 0;
-        private static Int64 _nextDispelCheckInterval = 500;
+		[ExposedData("Dispel", "DispelCheckInterval")]
+		private static Int64 _nextDispelCheckInterval = 500;
         
 
         [ClassInvoke(Data.Class.All)]

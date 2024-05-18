@@ -52,7 +52,9 @@ namespace E3Core.Processors
         private static Dictionary<string, CharacterBuffs> _characterBuffs = new Dictionary<string, CharacterBuffs>();
         private static Dictionary<string, CharacterBuffs> _petBuffs = new Dictionary<string, CharacterBuffs>();
 		private static System.Text.StringBuilder _stringBuilder = new System.Text.StringBuilder();
+		[ExposedData("Bots", "GlobalAllEnabled")]
 		private static bool GlobalAllEnabled = false;
+		[ExposedData("Bots", "NetworkingPathsTolookAt")]
 		List<string> _pathsTolookAt = new List<string>();
 		Task _autoRegisrationTask;
         public SharedDataBots()

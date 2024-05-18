@@ -17,7 +17,9 @@ namespace E3Core.Processors
 		public static ISpawns _spawns = E3.Spawns;
 
 		private static Int64 _nextHealCheck = 0;
+		[ExposedData("Heals", "HealCheckInterval")]
 		private static Int64 _nextHealCheckInterval = 250;
+		[ExposedData("Heals", "UseEQGroupDataForHeals")]
 		private static bool _useEQGroupDataForHeals = true;
 		private static Data.Spell _orbOfShadowsSpell = null;
 		private static Data.Spell _orbOfSoulsSpell = null;
