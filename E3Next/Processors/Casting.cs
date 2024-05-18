@@ -1688,13 +1688,17 @@ namespace E3Core.Processors
 
 			//dynamic lookup via reflection
 			//${E3N.Settings.Header.Key}
-			foreach(var pair in E3.CharacterSettings.SettingsReflectionLookup)
+			if(tIF.IndexOf("${E3N.Settings",0,StringComparison.OrdinalIgnoreCase)>-1)
 			{
-				if(tIF.IndexOf(pair.Key,0,StringComparison.OrdinalIgnoreCase)>-1)
+				foreach (var pair in E3.CharacterSettings.SettingsReflectionLookup)
 				{
-					tIF = tIF.ReplaceInsensitive(pair.Key, pair.Value.GetValue(E3.CharacterSettings).ToString());
+					if (tIF.IndexOf(pair.Key, 0, StringComparison.OrdinalIgnoreCase) > -1)
+					{
+						tIF = tIF.ReplaceInsensitive(pair.Key, pair.Value.GetValue(E3.CharacterSettings).ToString());
+					}
 				}
 			}
+			
 
 			//need to do some legacy compatability checksraibles that were used in Ifs.
 			if (tIF.IndexOf("${Assisting}", 0, StringComparison.OrdinalIgnoreCase) > -1)
