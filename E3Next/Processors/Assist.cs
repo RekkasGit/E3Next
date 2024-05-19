@@ -30,7 +30,7 @@ namespace E3Core.Processors
         private static ISpawns _spawns = E3.Spawns;
 		[ExposedData("Assist", "RangeTypes")]
 		private static List<string> _rangeTypes = new List<string>() { "Ranged", "Autofire" };
-		[ExposedData("Assist", "MeleeTypes")]
+		[ExposedData("Assist", "eleeTypes")]
 		private static List<string> _meleeTypes = new List<string>() { "Melee","AutoAttack" };
 		[ExposedData("Assist", "AssistDistanceTypes")]
 		private static List<string> _assistDistanceTypes = new List<string> { "MaxMelee", "off" };
@@ -351,7 +351,7 @@ namespace E3Core.Processors
                             if(String.Equals(ability.CastName,"Bash",StringComparison.OrdinalIgnoreCase))
                             {
                                 //check if we can actually bash
-                                if (MQ.Query<double>("${Target.Distance}") > 30 || !(MQ.Query<bool>("${Select[${Me.Inventory[Offhand].Type},Shield]}") || MQ.Query<bool>("${Me.AltAbility[2 Hand Bash]}")))
+                                if (MQ.Query<double>("${Target.Distance}") > 15 || !(MQ.Query<bool>("${Select[${Me.Inventory[Offhand].Type},Shield]}") || MQ.Query<bool>("${Me.AltAbility[2 Hand Bash]}")))
                                 {
                                     continue;
                                 }
@@ -360,7 +360,7 @@ namespace E3Core.Processors
                             if (String.Equals(ability.CastName, "Slam", StringComparison.OrdinalIgnoreCase))
                             {
                                 //check if we can actually bash
-                                if (MQ.Query<double>("${Target.Distance}") > 30)
+                                if (MQ.Query<double>("${Target.Distance}") > 15)
                                 {
                                     continue;
                                 }
@@ -368,7 +368,7 @@ namespace E3Core.Processors
                             if (String.Equals(ability.CastName, "Kick", StringComparison.OrdinalIgnoreCase))
                             {
                                 //check if we can actually kick
-                                if (MQ.Query<double>("${Target.Distance}") > 30)
+                                if (MQ.Query<double>("${Target.Distance}") > 15)
                                 {
                                     continue;
                                 }

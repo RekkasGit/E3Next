@@ -812,12 +812,17 @@ namespace E3Core.Processors
                 Assist.AssistOff();
                 _waitingOnRez = true;
             });
-
+			
             EventProcessor.RegisterEvent("CanRez", "This corpse can be resurrected.", (x) =>
             {
               
             });
-            EventProcessor.RegisterEvent("CanNotRez", "This corpse cannot be resurrected.", (x) =>
+			var cannotRezMessages = new List<string>
+			{
+				"This corpse cannot be resurrected",
+				"This corpse has already accepted a resurrection"
+			};
+			EventProcessor.RegisterEvent("CanNotRez", cannotRezMessages, (x) =>
             {
 
             });

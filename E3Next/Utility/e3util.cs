@@ -539,7 +539,7 @@ namespace E3Core.Utility
                     string tstring = s.Substring(start, end - start);
                     StringsToNumbers(tstring, ',', _buffInfoTempList);
                     result[(int)_buffInfoTempList[0]] = _buffInfoTempList[1];
-		    start = end + 1;
+					start = end + 1;
 				}
 				end++;
 			}
