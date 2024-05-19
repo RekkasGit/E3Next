@@ -165,7 +165,10 @@ namespace E3Core.Server
 					Int32 processID = System.Diagnostics.Process.GetCurrentProcess().Id;
 					//start up a new one.
 					MQ.Write("Trying to start again:" + dllFullPath + exeName);
-					ConfigProcess = System.Diagnostics.Process.Start(dllFullPath + exeName, $"{RouterPort} {processID}");
+					var startInfo = new ProcessStartInfo(dllFullPath + exeName);
+					startInfo.WorkingDirectory = dllFullPath;// working directory
+					startInfo.Arguments = $"{RouterPort} {processID}";// set additional properties 
+					ConfigProcess = System.Diagnostics.Process.Start(startInfo);
 				}
 			}
 		}
