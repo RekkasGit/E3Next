@@ -53,8 +53,10 @@ namespace E3NextConfigEditor
 					//do stuff 
 				}
 
-				var stream = new MemoryStream(_e3nImageBytes);
-				_e3nImage = Image.FromStream(stream);
+				using (var stream = new MemoryStream(_e3nImageBytes))
+				{
+					_e3nImage = Image.FromStream(stream);
+				}
 				_splashScreen.e3nextPictureBox.Image = _e3nImage;
 			}
 			catch (Exception ex)
@@ -76,7 +78,7 @@ namespace E3NextConfigEditor
 			_mainForm.TopMost = true;
 			_mainForm.Activate();
 			_mainForm.TopMost = false;
-			_mainForm.Activate();
+		
 		}
 	}
 }
