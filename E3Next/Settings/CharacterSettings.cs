@@ -1406,8 +1406,14 @@ namespace E3Core.Settings
 									section_keyCollection.AddKey(keyName, "");
 									continue;
 								}
+								
 								foreach (var spell in spellList)
 								{
+									//self buff hack to remove the target if its a self buff
+									if(header =="Buffs" && keyName=="Self Buff")
+									{
+										spell.CastTarget = String.Empty;
+									}
 									section_keyCollection.AddKey(keyName, spell.ToConfigEntry());
 								}
 							}

@@ -459,12 +459,16 @@ namespace E3Core.Server
 							}
 							else if (messageTopicReceived.StartsWith("${DataChannel."))
 							{
-								if(E3.CharacterSettings.E3ChatChannelsToJoin.Contains(messageTopicReceived,StringComparer.OrdinalIgnoreCase))
+								//don't do the command you are issuing out
+								if(payloaduser!=E3.CurrentName)
 								{
-									var data = OnCommandData.Aquire();
-									data.Data = messageReceived;
-									data.TypeOfCommand = OnCommandData.CommandType.OnCommandChannel;
-									CommandQueue.Enqueue(data);
+									if (E3.CharacterSettings.E3ChatChannelsToJoin.Contains(messageTopicReceived, StringComparer.OrdinalIgnoreCase))
+									{
+										var data = OnCommandData.Aquire();
+										data.Data = messageReceived;
+										data.TypeOfCommand = OnCommandData.CommandType.OnCommandChannel;
+										CommandQueue.Enqueue(data);
+									}
 								}
 							}
 							else if (messageTopicReceived == OnCommandName)

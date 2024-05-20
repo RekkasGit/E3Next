@@ -880,40 +880,97 @@ namespace E3NextConfigEditor
 		}
 		private void valueList_AddKeyValue_Execute(object sender, EventArgs e)
 		{
-			if (!(valuesListBox.Tag is IDictionary<string, string>))
+			if (valuesListBox.Tag is IDictionary<string, string>)
 			{
-				return;
-			}
-			AddkeyValue a = new AddkeyValue();
-			a.StartPosition = FormStartPosition.CenterParent;
-			if (a.ShowDialog() == DialogResult.OK)
-			{
-				string key = a.Key;
-				string value = a.Value;
+				AddkeyValue a = new AddkeyValue();
+				a.StartPosition = FormStartPosition.CenterParent;
+				if (a.ShowDialog() == DialogResult.OK)
+				{
+					string key = a.Key;
+					string value = a.Value;
 
-				IDictionary<string, string> dict = (IDictionary<string, string>)valuesListBox.Tag;
+					IDictionary<string, string> dict = (IDictionary<string, string>)valuesListBox.Tag;
 
-				if (!dict.ContainsKey(key))
-				{
-					dict.Add(key, value);
-				}
-				else
-				{
-					dict[key] = value;
-				}
-				string selectedSection = sectionComboBox.SelectedItem.ToString();
-				var section = E3.CharacterSettings.ParsedData.Sections[selectedSection];
-				if (section != null)
-				{
-					//dynamic type, just fill out the list below with the loaded types
-					if (_dictionarySections.Contains(selectedSection, StringComparer.OrdinalIgnoreCase))
+					if (!dict.ContainsKey(key))
 					{
-						FieldInfo objectList = _charSettingsMappings[selectedSection][""];
+						dict.Add(key, value);
+					}
+					else
+					{
+						dict[key] = value;
+					}
+					string selectedSection = sectionComboBox.SelectedItem.ToString();
+					var section = E3.CharacterSettings.ParsedData.Sections[selectedSection];
+					if (section != null)
+					{
+						//dynamic type, just fill out the list below with the loaded types
+						if (_dictionarySections.Contains(selectedSection, StringComparer.OrdinalIgnoreCase))
+						{
+							FieldInfo objectList = _charSettingsMappings[selectedSection][""];
 
-						UpdateListView(objectList);
+							UpdateListView(objectList);
+						}
 					}
 				}
 			}
+			else if (valuesListBox.Tag is List<SpellRequest>)
+			{
+				AddkeyValue a = new AddkeyValue();
+				a.SetKeyLabel("Spell Name");
+				a.SetValueLabel("Request target");
+
+				a.StartPosition = FormStartPosition.CenterParent;
+				if (a.ShowDialog() == DialogResult.OK)
+				{
+					string SpellName = a.Key;
+					string RequestTargetName = a.Value;
+					SpellRequest newSpell = new SpellRequest(SpellName + "/" + RequestTargetName);
+					newSpell.IsBuff = true;
+					List<SpellRequest> spellList = (List<SpellRequest>)valuesListBox.Tag;
+					if (spellList.Count > 0 && valuesListBox.SelectedItem != null)
+					{
+						//put after the current selected
+						Int32 index = valuesListBox.SelectedIndex + 1;
+						KryptonListItem item = new KryptonListItem();
+						string nameOfSpell = newSpell.CastName;
+
+						//visual showing of if the spell is disabled
+						if (!newSpell.Enabled) nameOfSpell = nameOfSpell + " (disabled)";
+
+						item.ShortText = nameOfSpell;
+						item.LongText = string.Empty;
+						item.Tag = newSpell;
+						if (newSpell.SpellIcon > -1)
+						{
+							item.Image = _spellIcons[newSpell.SpellIcon];
+
+						}
+						spellList.Insert(index, newSpell);
+						valuesListBox.Items.Insert(index, item);
+					}
+					else
+					{
+						//no items in the list, just add
+						spellList.Add(newSpell);
+						KryptonListItem item = new KryptonListItem();
+						string nameOfSpell = newSpell.CastName;
+
+						//visual showing of if the spell is disabled
+						if (!newSpell.Enabled) nameOfSpell = nameOfSpell + " (disabled)";
+						item.ShortText = nameOfSpell;
+						item.LongText = string.Empty;
+						item.Tag = newSpell;
+						if (newSpell.SpellIcon > -1)
+						{
+							item.Image = _spellIcons[newSpell.SpellIcon];
+						}
+						valuesListBox.Items.Add(item);
+					}
+
+
+				}
+			}
+			
 
 
 		}
@@ -934,7 +991,7 @@ namespace E3NextConfigEditor
 					menuItem.Visible = true;
 				}
 			}
-			else if ((valuesListBox.Tag is List<Spell>))
+			else if ((valuesListBox.Tag is List<Spell>) )
 			{
 
 				if (menuItem.Text == "Add Disc")
@@ -958,6 +1015,18 @@ namespace E3NextConfigEditor
 					menuItem.Visible = true;
 				}
 				else if (menuItem.Text == "Replace Spell")
+				{
+					menuItem.Visible = true;
+				}
+				else if (menuItem.Text == "Delete")
+				{
+					menuItem.Visible = true;
+				}
+			}
+			else if ((valuesListBox.Tag is List<SpellRequest>))
+			{
+
+				if (menuItem.Text == "Add Key/Value")
 				{
 					menuItem.Visible = true;
 				}
@@ -1014,6 +1083,30 @@ namespace E3NextConfigEditor
 			if(valuesListBox.Tag is List<Spell>)
 			{
 				var spelllist = (List<Spell>)valuesListBox.Tag;
+				valuesListBox.Items.Clear();
+				foreach (var spell in spelllist)
+				{
+					KryptonListItem item = new KryptonListItem();
+					string nameOfSpell = spell.CastName;
+
+					//visual showing of if the spell is disabled
+					if (!spell.Enabled) nameOfSpell = nameOfSpell + " (disabled)";
+
+					item.ShortText = nameOfSpell;
+					item.LongText = string.Empty;
+					item.Tag = spell;
+
+					if (spell.SpellIcon > -1)
+					{
+						item.Image = _spellIcons[spell.SpellIcon];
+
+					}
+					valuesListBox.Items.Add(item);
+				}
+			}
+			else if (valuesListBox.Tag is List<SpellRequest>)
+			{
+				var spelllist = (List<SpellRequest>)valuesListBox.Tag;
 				valuesListBox.Items.Clear();
 				foreach (var spell in spelllist)
 				{
@@ -1261,12 +1354,13 @@ namespace E3NextConfigEditor
 		}
 		private void valueList_AddSpellToCollection(SpellData selected)
 		{
-			Spell newSpell = Spell.FromProto(selected);
+			
 			object settings_data_obj = valuesListBox.Tag;
 
 			//update the base storage data
 			if (settings_data_obj is List<Spell>)
 			{
+				Spell newSpell = Spell.FromProto(selected);
 				List<Spell> spellList = (List<Spell>)settings_data_obj;
 				if (spellList.Count > 0 && valuesListBox.SelectedItem != null)
 				{
@@ -1362,7 +1456,12 @@ namespace E3NextConfigEditor
 			{
 				if (editor.SelectedSpell != null)
 				{
-					if(replaceSpell)
+					string selectedSection = sectionComboBox.SelectedItem.ToString();
+					if(selectedSection=="Buffs")
+					{
+						editor.SelectedSpell.IsBuff = true;
+					}
+					if (replaceSpell)
 					{
 						valueList_ReplaecSpellToCollection(editor.SelectedSpell);
 
