@@ -149,27 +149,34 @@ namespace E3Core.Processors
 							targetName = MQ.Query<string>($"${{Spawn[id ${{Target.ID}}].CleanName}}");
 						}
 						TrueTarget(targetID);
+
                         //this lets bard kick regardless of current song status, otherwise will wait until between songs to kick
                         string abilityToCheck = spell.CastName;
                         if (spell.CastType == Data.CastingType.Ability && abilityToCheck.Equals("Kick", StringComparison.OrdinalIgnoreCase))
                         {
-                            MQ.Write($"\ag{spell.CastName} \am{targetName} \ao{targetID}");
+							BeforeEventCheck(spell);
+							MQ.Write($"\ag{spell.CastName} \am{targetName} \ao{targetID}");
                             MQ.Cmd($"/doability \"{spell.CastName}\"");
-                            return CastReturn.CAST_SUCCESS;
+							AfterEventCheck(spell);
+							return CastReturn.CAST_SUCCESS;
                         }
                         MQ.Write($"\agBardCast {spell.CastName} \at{spell.SpellID} \am{targetName} \ao{targetID} \aw({spell.MyCastTime / 1000}sec)");
 						if (spell.CastType == CastingType.AA)
 						{
+							BeforeEventCheck(spell);
 							MQ.Cmd($"/alt activate {spell.CastID}");
 							UpdateAAInCooldown(spell);
+							AfterEventCheck(spell);
 							E3.ActionTaken = true;
 							return CastReturn.CAST_SUCCESS;
 						}
                         if (spell.CastType == CastingType.Item)
                         {
-                            //else its an item
-                            MQ.Cmd($"/useitem \"{spell.CastName}\"", 300);
+							BeforeEventCheck(spell);
+							//else its an item
+							MQ.Cmd($"/useitem \"{spell.CastName}\"", 300);
 							UpdateItemInCooldown(spell);
+							AfterEventCheck(spell);
 							E3.ActionTaken = true;
 							return CastReturn.CAST_SUCCESS;
 						}

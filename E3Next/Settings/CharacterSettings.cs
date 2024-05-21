@@ -418,7 +418,7 @@ namespace E3Core.Settings
 		public List<Spell> Charm_BadPetBuffs = new List<Spell>();
 		[INI_Section("Charm", "PeelTank")]
 		public string Charm_PeelTank = String.Empty;
-		[INI_Section("Charm", "PellTankAggroAbility")]
+		[INI_Section("Charm", "PeelTankAggroAbility")]
 		public List<Spell> Charm_PeelTankAggroAbility = new List<Spell>();
 		[INI_Section("Charm", "PeelHealer")]
 		public string Charm_PeelHealer = String.Empty;
@@ -905,7 +905,7 @@ namespace E3Core.Settings
 			LoadKeyData("Charm", "SelfDebuffSpells", ParsedData, Charm_SelfDebuffSpells);
 			LoadKeyData("Charm", "BadPetBuffs", ParsedData, Charm_BadPetBuffs);
 			LoadKeyData("Charm", "PeelTank", ParsedData, ref Charm_PeelTank);
-			LoadKeyData("Charm", "PellTankAggroAbility", ParsedData, Charm_PeelTankAggroAbility);
+			LoadKeyData("Charm", "PeelTankAggroAbility", ParsedData, Charm_PeelTankAggroAbility);
 			LoadKeyData("Charm", "PeelHealer", ParsedData, ref Charm_PeelHealer);
 			LoadKeyData("Charm", "PeelHealerHeal", ParsedData, Charm_PeelHealerHeal);
 			LoadKeyData("Charm", "PeelPetOwner", ParsedData,ref Charm_PeelPetOwner);
@@ -1114,7 +1114,7 @@ namespace E3Core.Settings
 				section.Keys.AddKey("SelfDebuffSpells", "");
 				section.Keys.AddKey("BadPetBuffs", "");
 				section.Keys.AddKey("PeelTank", "");
-				section.Keys.AddKey("PellTankAggroAbility", "");
+				section.Keys.AddKey("PeelTankAggroAbility", "");
 				section.Keys.AddKey("PeelHealer", "");
 				section.Keys.AddKey("PeelHealerHeal", "");
 				section.Keys.AddKey("PeelPetOwner", "");
