@@ -448,7 +448,7 @@ namespace E3Core.Server
 							{
 								var data = OnCommandData.Aquire();
 								data.Data = messageReceived;
-								data.TypeOfCommand = OnCommandData.CommandType.OnCommandRaidZone;
+								data.TypeOfCommand = OnCommandData.CommandType.OnCommandRaidNotMe;
 								CommandQueue.Enqueue(data);
 							}
 							else if (messageTopicReceived == "OnCommand-RaidZone")
