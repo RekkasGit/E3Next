@@ -30,7 +30,7 @@ namespace E3Core.Processors
         private static ISpawns _spawns = E3.Spawns;
 		[ExposedData("Assist", "RangeTypes")]
 		private static List<string> _rangeTypes = new List<string>() { "Ranged", "Autofire" };
-		[ExposedData("Assist", "eleeTypes")]
+		[ExposedData("Assist", "MeleeTypes")]
 		private static List<string> _meleeTypes = new List<string>() { "Melee","AutoAttack" };
 		[ExposedData("Assist", "AssistDistanceTypes")]
 		private static List<string> _assistDistanceTypes = new List<string> { "MaxMelee", "off" };

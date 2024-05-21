@@ -155,7 +155,7 @@ namespace E3Core.Server
 						currentIndex = indexOfSeperator + 1;
 						string bcMessage = message.Substring(currentIndex, message.Length - currentIndex);
 
-						MQ.Cmd($"/echo \a#336699[{MainProcessor.ApplicationName}]\a-w{System.DateTime.Now.ToString("HH:mm:ss")}\ar<\ay{user}\ar> \aw{bcMessage}");
+						MQ.Cmd($"/noparse /echo \a#336699[{MainProcessor.ApplicationName}]\a-w{System.DateTime.Now.ToString("HH:mm:ss")}\ar<\ay{user}\ar> \aw{bcMessage}");
 					}
 					else
 					{

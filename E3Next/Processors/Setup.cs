@@ -60,8 +60,8 @@ namespace E3Core.Processors
         {
             using (_log.Trace())
             {
-
-                E3.MQBuildVersion = (MQBuild)MQ.Query<Int32>("${MacroQuest.Build}");
+				RegisterEvents();
+				E3.MQBuildVersion = (MQBuild)MQ.Query<Int32>("${MacroQuest.Build}");
                 if(MQ.Query<bool>("!${Defined[E3N_var]}"))
                 {
                     MQ.Cmd("/declare E3N_var string global false");
@@ -99,8 +99,19 @@ namespace E3Core.Processors
 			}
 
         }
+		public static void RegisterEvents()
+		{
 
-        private static void InitSubSystems()
+			EventProcessor.RegisterCommand("/e3ListExposedData", (x) =>
+			{
+				foreach(var pair in ExposedDataReflectionLookup)
+				{
+					E3.Bots.Broadcast(pair.Key,true);
+				}
+
+			});
+		}
+			private static void InitSubSystems()
         {
             var methods = AppDomain.CurrentDomain.GetAssemblies()
             .SelectMany(x => x.GetTypes())
