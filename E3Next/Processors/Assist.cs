@@ -536,9 +536,18 @@ namespace E3Core.Processors
                     if (Movement.Following && folTarget.Distance3D > 100 && MQ.Query<bool>("${Me.Moving}"))
                     {
                         //using a delay in awhile loop, use query for realtime info
+                        Int32 counter = 0;
                         while (MQ.Query<bool>("${Me.Moving}") && MQ.Query<Decimal>($"${{Spawn[{Movement.FollowTargetName}].Distance3D}}") > 100)
                         {
                             MQ.Delay(100);
+                            counter++;
+                            //if we have tried more than 3 seconds, stop and kick out.
+                            if(counter>30)
+                            {
+                                E3.Bots.Broadcast("\arERROR:\ag Tried to move to target, took longer than 3 seconds, possibly not at the target. Turning off Assist");
+                                AssistOff();
+                                return;
+                            }
                             //wait us to get close to our follow target and then we can engage
                         }
                     }

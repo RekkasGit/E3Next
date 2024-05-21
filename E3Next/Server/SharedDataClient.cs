@@ -170,7 +170,8 @@ namespace E3Core.Server
 						string command = message.Substring(currentIndex, message.Length - currentIndex);
 						//a command type
 
-						if(typeInfo== OnCommandData.CommandType.OnCommandAllExceptMeZone  || typeInfo == OnCommandData.CommandType.OnCommandAllZone || typeInfo ==OnCommandData.CommandType.OnCommandGroupZone || typeInfo== OnCommandData.CommandType.OnCommandGroupAllZone)
+						if(typeInfo== OnCommandData.CommandType.OnCommandAllExceptMeZone  || typeInfo == OnCommandData.CommandType.OnCommandAllZone || typeInfo ==OnCommandData.CommandType.OnCommandGroupZone 
+							|| typeInfo== OnCommandData.CommandType.OnCommandGroupAllZone || typeInfo == OnCommandData.CommandType.OnCommandRaidZone || typeInfo == OnCommandData.CommandType.OnCommandRaidZoneNotMe)
 						{
 
 							//this is a zone type command lets verify zone logic
@@ -212,7 +213,7 @@ namespace E3Core.Server
 								continue;
 							}
 						}
-						else if (typeInfo == OnCommandData.CommandType.OnCommandRaid)
+						else if (typeInfo == OnCommandData.CommandType.OnCommandRaid || (typeInfo == OnCommandData.CommandType.OnCommandRaidZone) || (typeInfo == OnCommandData.CommandType.OnCommandRaidNotMe || (typeInfo == OnCommandData.CommandType.OnCommandRaidZoneNotMe)))
 						{
 							//check to see if we are part of their group
 							var inRaid = MQ.Query<bool>($"${{Raid.Member[{user}]}}");
@@ -224,7 +225,9 @@ namespace E3Core.Server
 						}
 
 						//check to see if we are part of their group
-						if (user == E3.CurrentName && (!(typeInfo == OnCommandData.CommandType.OnCommandName|| typeInfo== OnCommandData.CommandType.OnCommandChannel ||typeInfo== OnCommandData.CommandType.OnCommandGroupAll || typeInfo == OnCommandData.CommandType.OnCommandAll || typeInfo== OnCommandData.CommandType.OnCommandGroupAllZone|| typeInfo==OnCommandData.CommandType.OnCommandAllZone)))
+						if (user == E3.CurrentName && (!(typeInfo == OnCommandData.CommandType.OnCommandName|| typeInfo== OnCommandData.CommandType.OnCommandChannel ||
+							typeInfo== OnCommandData.CommandType.OnCommandGroupAll || typeInfo == OnCommandData.CommandType.OnCommandAll || typeInfo== OnCommandData.CommandType.OnCommandGroupAllZone|| 
+							typeInfo==OnCommandData.CommandType.OnCommandAllZone || typeInfo == OnCommandData.CommandType.OnCommandRaid || typeInfo == OnCommandData.CommandType.OnCommandRaidZone)))
 						{
 							//if not an all type command and not us, kick out.
 							//not for us only group members
@@ -441,6 +444,27 @@ namespace E3Core.Server
 
 								CommandQueue.Enqueue(data);
 							}
+							else if (messageTopicReceived == "OnCommand-RaidNotMe")
+							{
+								var data = OnCommandData.Aquire();
+								data.Data = messageReceived;
+								data.TypeOfCommand = OnCommandData.CommandType.OnCommandRaidZone;
+								CommandQueue.Enqueue(data);
+							}
+							else if (messageTopicReceived == "OnCommand-RaidZone")
+							{
+								var data = OnCommandData.Aquire();
+								data.Data = messageReceived;
+								data.TypeOfCommand = OnCommandData.CommandType.OnCommandRaidZone;
+								CommandQueue.Enqueue(data);
+							}
+							else if (messageTopicReceived == "OnCommand-RaidZoneNotMe")
+							{
+								var data = OnCommandData.Aquire();
+								data.Data = messageReceived;
+								data.TypeOfCommand = OnCommandData.CommandType.OnCommandRaidZoneNotMe;
+								CommandQueue.Enqueue(data);
+							}
 							else if (messageTopicReceived == "BroadCastMessage")
 							{
 								var data = OnCommandData.Aquire();
@@ -546,13 +570,16 @@ namespace E3Core.Server
 				None,
 				OnCommandAll,
 				OnCommandAllZone,
+				OnCommandRaid,
+				OnCommandRaidNotMe,
+				OnCommandRaidZone,
+				OnCommandRaidZoneNotMe,
 				OnCommandAllExceptMe,
 				OnCommandAllExceptMeZone,
 				OnCommandGroup,
 				OnCommandGroupZone,
 				OnCommandGroupAll,
 				OnCommandGroupAllZone,
-				OnCommandRaid,
 				BroadCastMessage,
 				BroadCastMessageZone,
 				OnCommandName,

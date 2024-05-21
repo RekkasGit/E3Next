@@ -228,7 +228,42 @@ namespace E3Core.Processors
 
 				}
 			});
+			EventProcessor.RegisterCommand("/e3bcr", (x) =>
+			{
+				if (x.args.Count > 0)
+				{
+					string command = e3util.ArgsToCommand(x.args);
+					BroadcastCommandRaidNotMe(command, true, x);
 
+				}
+			});
+			EventProcessor.RegisterCommand("/e3bcrz", (x) =>
+			{
+				if (x.args.Count > 0)
+				{
+					string command = e3util.ArgsToCommand(x.args);
+					BroadcastCommandAllZoneNotMe(command, true,x);
+
+				}
+			});
+			EventProcessor.RegisterCommand("/e3bcra", (x) =>
+			{
+				if (x.args.Count > 0)
+				{
+					string command = e3util.ArgsToCommand(x.args);
+					BroadcastCommandRaid(command, true,x);
+
+				}
+			});
+			EventProcessor.RegisterCommand("/e3bcraz", (x) =>
+			{
+				if (x.args.Count > 0)
+				{
+					string command = e3util.ArgsToCommand(x.args);
+					BroadcastCommandAllZone(command, true, x);
+
+				}
+			});
 
 		}
 		public CharacterBuffs GetBuffInformation(string name)
@@ -501,6 +536,89 @@ namespace E3Core.Processors
 				command = MQ.Query<string>(command);
 			}
 			PubServer.AddTopicMessage("OnCommand-All", $"{E3.CurrentName}:{noparse}:{command}");
+		}
+		public void BroadcastCommandRaid(string command, bool noparse = false, CommandMatch match = null)
+		{
+			if (match != null && match.filters.Count > 0)
+			{
+				//need to pass over the filters if they exist
+				_stringBuilder.Clear();
+				_stringBuilder.Append($"{command}");
+				foreach (var filter in match.filters)
+				{
+					_stringBuilder.Append($" \"{filter}\"");
+				}
+				command = _stringBuilder.ToString();
+			}
+			if (!noparse)
+			{
+				command = MQ.Query<string>(command);
+			}
+			PubServer.AddTopicMessage("OnCommand-Raid", $"{E3.CurrentName}:{noparse}:{command}");
+		}
+		public void BroadcastCommandRaidNotMe(string command, bool noparse = false, CommandMatch match = null)
+		{
+			if (match != null && match.filters.Count > 0)
+			{
+				//need to pass over the filters if they exist
+				_stringBuilder.Clear();
+				_stringBuilder.Append($"{command}");
+				foreach (var filter in match.filters)
+				{
+					_stringBuilder.Append($" \"{filter}\"");
+				}
+				command = _stringBuilder.ToString();
+			}
+			if (!noparse)
+			{
+				command = MQ.Query<string>(command);
+			}
+			PubServer.AddTopicMessage("OnCommand-RaidNotMe", $"{E3.CurrentName}:{noparse}:{command}");
+			MQ.Write($"\ap{E3.CurrentName} => \ayRaid All: \ag{command}");
+		}
+
+		public void BroadcastCommandRaidZone(string command, CommandMatch match = null, bool noparse = false)
+		{	
+
+			if (match != null && match.filters.Count > 0)
+			{
+				//need to pass over the filters if they exist
+				_stringBuilder.Clear();
+				_stringBuilder.Append($"{command}");
+				foreach (var filter in match.filters)
+				{
+					_stringBuilder.Append($" \"{filter}\"");
+				}
+				command = _stringBuilder.ToString();
+			}
+			if (!noparse)
+			{
+				command = MQ.Query<string>(command);
+			}
+			PubServer.AddTopicMessage("OnCommand-RaidZone", $"{E3.CurrentName}:{noparse}:{command}");
+
+		}
+		public void BroadcastCommandToRaidNotMeZone(string command, CommandMatch match = null, bool noparse = false)
+		{
+			
+
+			if (match != null && match.filters.Count > 0)
+			{
+				//need to pass over the filters if they exist
+				_stringBuilder.Clear();
+				_stringBuilder.Append($"{command}");
+				foreach (var filter in match.filters)
+				{
+					_stringBuilder.Append($" \"{filter}\"");
+				}
+				command = _stringBuilder.ToString();
+			}
+			if (!noparse)
+			{
+				command = MQ.Query<string>(command);
+			}
+			PubServer.AddTopicMessage("OnCommand-RaidZoneNotMe", $"{E3.CurrentName}:{noparse}:{command}");
+
 		}
 		public void BroadcastCommandAllZone(string command, bool noparse = false, CommandMatch match = null)
 		{
