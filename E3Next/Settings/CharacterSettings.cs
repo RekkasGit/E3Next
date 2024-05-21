@@ -495,11 +495,13 @@ namespace E3Core.Settings
 
         private bool _mergeUpdates = true;
 
-		
+		[INI_Section("Heals", "Auto Cast Necro Heal Orbs (On/Off)")]
+		public bool HealAutoNecroOrbs = false;
+
+
 		public HashSet<string> WhoToHeal = new HashSet<string>(10, StringComparer.OrdinalIgnoreCase);
-        public bool HealAutoNecroOrbs = false;
-        private string _whoToHealString;
 		[INI_Section("Heals", "Who to Heal")]
+		private string _whoToHealString;
 		public string WhoToHealString
         {
             get { return _whoToHealString; }
@@ -518,8 +520,8 @@ namespace E3Core.Settings
             }
         }
         public HashSet<string> WhoToHoT = new HashSet<string>(10, StringComparer.OrdinalIgnoreCase);
-        private string _whoToHoTString;
 		[INI_Section("Heals", "Who to HoT")]
+		private string _whoToHoTString;
 		public string WhoToHoTString
         {
             get { return _whoToHoTString; }
@@ -1560,7 +1562,7 @@ namespace E3Core.Settings
 			//now for some ... reflection again.
 			var type = this.GetType();
 
-			foreach (var field in type.GetFields())
+			foreach (var field in type.GetFields(BindingFlags.Public | BindingFlags.NonPublic | BindingFlags.Instance))
 			{
 				var oType = field.FieldType;
 				if (!(oType == typeof(string)|| oType == typeof(Int32) || oType == typeof(Int64) || oType == typeof(bool) || oType==typeof(List<string>) || oType == typeof(List<Int32>) || oType == typeof(List<Int64>) || oType == typeof(List<Spell>)) ) continue;

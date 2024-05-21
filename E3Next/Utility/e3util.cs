@@ -1446,7 +1446,7 @@ namespace E3Core.Utility
             //now for some ... reflection
             var type =E3.CharacterSettings.GetType();
 
-            foreach(var field in type.GetFields())
+            foreach(var field in type.GetFields(BindingFlags.Public | BindingFlags.NonPublic | BindingFlags.Instance))
             {
 				var customAttributes =field.GetCustomAttributes();
                 string section = String.Empty;

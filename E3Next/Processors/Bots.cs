@@ -242,7 +242,7 @@ namespace E3Core.Processors
 				if (x.args.Count > 0)
 				{
 					string command = e3util.ArgsToCommand(x.args);
-					BroadcastCommandAllZoneNotMe(command, true,x);
+					BroadcastCommandToRaidNotMeZone(command, x,true);
 
 				}
 			});
@@ -260,7 +260,7 @@ namespace E3Core.Processors
 				if (x.args.Count > 0)
 				{
 					string command = e3util.ArgsToCommand(x.args);
-					BroadcastCommandAllZone(command, true, x);
+					BroadcastCommandRaidZone(command, x,true);
 
 				}
 			});

@@ -432,7 +432,7 @@ namespace E3NextConfigEditor
 			}
 			else
 			{
-				var section = E3.CharacterSettings.ParsedData.Sections[selectedSection];
+				var section = _baseIniData.Sections[selectedSection];
 				if (section != null)
 				{
 					//dynamic type, just fill out the list below with the loaded types
@@ -497,7 +497,7 @@ namespace E3NextConfigEditor
 			}
 			else
 			{
-				var section = E3.CharacterSettings.ParsedData.Sections[selectedSection];
+				var section = _baseIniData.Sections[selectedSection];
 				if (section != null)
 				{
 					string selectedSubSection = subsectionComboBox.SelectedItem.ToString();
@@ -869,7 +869,7 @@ namespace E3NextConfigEditor
 				valueList.Add(a.Value);
 
 				string selectedSection = sectionComboBox.SelectedItem.ToString();
-				var section = E3.CharacterSettings.ParsedData.Sections[selectedSection];
+				var section = _baseIniData.Sections[selectedSection];
 				if (section != null)
 				{
 					string selectedSubSection = subsectionComboBox.SelectedItem.ToString();
@@ -900,7 +900,7 @@ namespace E3NextConfigEditor
 						dict[key] = value;
 					}
 					string selectedSection = sectionComboBox.SelectedItem.ToString();
-					var section = E3.CharacterSettings.ParsedData.Sections[selectedSection];
+					var section = _baseIniData.Sections[selectedSection];
 					if (section != null)
 					{
 						//dynamic type, just fill out the list below with the loaded types
