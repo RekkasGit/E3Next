@@ -505,7 +505,7 @@ namespace E3Core.Processors
                     }
 
                     Casting.TrueTarget(c.ID);
-                    MQ.Delay(2000, "${Target.ID}");
+                    //MQ.Delay(2000, "${Target.ID}");
                    
                     if(MQ.Query<bool>("${Target.ID}"))
                     {

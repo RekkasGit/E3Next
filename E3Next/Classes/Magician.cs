@@ -332,36 +332,21 @@ namespace E3Core.Classes
 
         private static void ArmPet(int petId, string weapons)
 		{
+			//all this code needs to be abstracted out as it is Laz specific
 			var dskGloveItem = "Glyphwielder's Ascendant Gloves of the Summoner";
 			var hasDskGloves = MQ.Query<bool>($"${{FindItem[{dskGloveItem}]}}");
+			var dskCodex = "Codex of Minion's Materiel";
+			var hasDskCodex = MQ.Query<bool>($"${{FindItem[{dskCodex}]}}");
+
 			// so we can move back
 			var currentX = MQ.Query<double>("${Me.X}");
             var currentY = MQ.Query<double>("${Me.Y}");
             var currentZ = MQ.Query<double>("${Me.Z}");
 			Casting.TrueTarget(petId);
-			if (!hasDskGloves)
-			{
-				if (!GiveWeapons(petId, weapons ?? "Water|Fire"))
-				{
-					if (_isExternalRequest)
-					{
-						MQ.Cmd($"/t {_requester} There was an issue with pet weapon summoning and we are unable to continue.");
-						return;
-					}
-					else
-					{
-						E3.Bots.Broadcast("\arThere was an issue with pet weapon summoning and we are unable to continue.");
-						return;
-					}
 
-					// move back to my original location
-					e3util.TryMoveToLoc(currentX, currentY, currentZ);
-					_isExternalRequest = false;
-
-					return;
-				}
-			}
-			else
+			var myPetID = MQ.Query<Int32>("${Me.Pet.ID}");
+		
+			try
 			{
 				if (hasDskGloves)
 				{
@@ -379,60 +364,98 @@ namespace E3Core.Classes
 
 					if (Casting.CheckReady(gloveSpell))
 					{
-						Casting.Cast(petId,gloveSpell);
+						Casting.Cast(petId, gloveSpell);
 					}
-					
+				}
+				else if (petId == myPetID && hasDskCodex)
+				{
+
+					var codexSpell = new Spell(dskCodex);
+
+					//if not ready, wait till its ready
+					Int32 counter = 0;
+					while (!Casting.CheckReady(codexSpell))
+					{
+						//if more than 10 seconds, break out
+						if (counter > 100) break;
+						MQ.Delay(100);
+						counter++;
+					}
+					if (Casting.CheckReady(codexSpell))
+					{
+						Casting.Cast(petId, codexSpell);
+					}
+				}
+				else
+				{
+					if (!GiveWeapons(petId, weapons ?? "Water|Fire"))
+					{
+						if (_isExternalRequest)
+						{
+							MQ.Cmd($"/t {_requester} There was an issue with pet weapon summoning and we are unable to continue.");
+
+						}
+						else
+						{
+							E3.Bots.Broadcast("\arThere was an issue with pet weapon summoning and we are unable to continue.");
+
+						}
+						return;
+					}
+				}
+
+				var spell = new Spell(_armorSpell);
+				Casting.MemorizeSpell(spell);
+				MQ.Delay(10000, $"${{Me.SpellReady[${{Me.Gem[{spell.SpellGem}].Name}}]}}");
+
+				Int32 castAttempts = 0;
+				if (Casting.CheckReady(spell) && Casting.CheckMana(spell))
+				{
+					while (Casting.Cast(petId, spell) == CastReturn.CAST_FIZZLE)
+					{
+						if (castAttempts > 7) break;
+						MQ.Delay(1500);
+						castAttempts++;
+					}
+				}
+				castAttempts = 0;
+				spell = new Spell(_focusSpell);
+				Casting.MemorizeSpell(spell);
+				MQ.Delay(10000, $"${{Me.SpellReady[${{Me.Gem[{spell.SpellGem}].Name}}]}}");
+
+				if (Casting.CheckReady(spell) && Casting.CheckMana(spell))
+				{
+					while (Casting.Cast(petId, spell) == CastReturn.CAST_FIZZLE)
+					{
+						if (castAttempts > 7) break;
+						MQ.Delay(1500);
+						castAttempts++;
+					}
+				}
+
+
+				var pet = _spawns.Get().FirstOrDefault(f => f.ID == petId);
+				if (pet != null)
+				{
+					if (_isExternalRequest)
+					{
+						MQ.Cmd($"/t {_requester} Finished arming {pet.CleanName}");
+					}
+					else
+					{
+						E3.Bots.Broadcast($"\agFinishing arming {pet.CleanName}");
+					}
 				}
 			}
+			finally
+			{ // move back to my original location
+				e3util.TryMoveToLoc(currentX, currentY, currentZ);
+				_isExternalRequest = false;
 
+			}
 			
 
-			var spell = new Spell(_armorSpell);
-			Casting.MemorizeSpell(spell);
-			MQ.Delay(10000, $"${{Me.SpellReady[${{Me.Gem[{spell.SpellGem}].Name}}]}}");
-
-			Int32 castAttempts = 0;
-            if(Casting.CheckReady(spell) && Casting.CheckMana(spell))
-			{
-				while(Casting.Cast(petId, spell) == CastReturn.CAST_FIZZLE)
-				{
-                    if (castAttempts > 7) break;
-					MQ.Delay(1500);
-                    castAttempts++;
-				}
-			}
-			castAttempts = 0;
-			spell = new Spell(_focusSpell);
-			Casting.MemorizeSpell(spell);
-			MQ.Delay(10000, $"${{Me.SpellReady[${{Me.Gem[{spell.SpellGem}].Name}}]}}");
-
-			if (Casting.CheckReady(spell) && Casting.CheckMana(spell))
-			{
-				while (Casting.Cast(petId, spell) == CastReturn.CAST_FIZZLE)
-				{
-					if (castAttempts > 7) break;
-					MQ.Delay(1500);
-					castAttempts++;
-				}
-			}
            
-
-			var pet = _spawns.Get().FirstOrDefault(f => f.ID == petId);
-            if (pet != null)
-            {
-                if (_isExternalRequest)
-                {
-                    MQ.Cmd($"/t {_requester} Finished arming {pet.CleanName}");
-                }
-                else
-                {
-                    E3.Bots.Broadcast($"\agFinishing arming {pet.CleanName}");
-                }
-            }
-
-            // move back to my original location
-            e3util.TryMoveToLoc(currentX, currentY, currentZ);
-            _isExternalRequest = false;
         }
 
         private static bool GiveWeapons(int petId, string weaponString)
