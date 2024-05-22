@@ -371,7 +371,7 @@ namespace E3Core.Classes
 					{
 						Casting.Cast(petId,gloveSpell);
 					}
-					MQ.Cmd($"/useitem {dskGloveItem}");
+					
 				}
 			}
 
