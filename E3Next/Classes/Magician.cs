@@ -348,6 +348,25 @@ namespace E3Core.Classes
 		
 			try
 			{
+				if (petId == myPetID && hasDskCodex)
+				{
+
+					var codexSpell = new Spell(dskCodex);
+
+					//if not ready, wait till its ready
+					Int32 counter = 0;
+					while (!Casting.CheckReady(codexSpell))
+					{
+						//if more than 10 seconds, break out
+						if (counter > 100) break;
+						MQ.Delay(100);
+						counter++;
+					}
+					if (Casting.CheckReady(codexSpell))
+					{
+						Casting.Cast(petId, codexSpell);
+					}
+				}
 				if (hasDskGloves)
 				{
 					var gloveSpell = new Spell(dskGloveItem);
@@ -367,26 +386,7 @@ namespace E3Core.Classes
 						Casting.Cast(petId, gloveSpell);
 					}
 				}
-				else if (petId == myPetID && hasDskCodex)
-				{
-
-					var codexSpell = new Spell(dskCodex);
-
-					//if not ready, wait till its ready
-					Int32 counter = 0;
-					while (!Casting.CheckReady(codexSpell))
-					{
-						//if more than 10 seconds, break out
-						if (counter > 100) break;
-						MQ.Delay(100);
-						counter++;
-					}
-					if (Casting.CheckReady(codexSpell))
-					{
-						Casting.Cast(petId, codexSpell);
-					}
-				}
-				else
+				else 
 				{
 					if (!GiveWeapons(petId, weapons ?? "Water|Fire"))
 					{
@@ -403,6 +403,8 @@ namespace E3Core.Classes
 						return;
 					}
 				}
+				//we are done if its our pet and we have applied the codex
+				if (petId == myPetID && hasDskCodex) return;
 
 				var spell = new Spell(_armorSpell);
 				Casting.MemorizeSpell(spell);
