@@ -331,33 +331,57 @@ namespace E3Core.Classes
         }
 
         private static void ArmPet(int petId, string weapons)
-        {
-            // so we can move back
-            var currentX = MQ.Query<double>("${Me.X}");
+		{
+			var dskGloveItem = "Glyphwielder's Ascendant Gloves of the Summoner";
+			var hasDskGloves = MQ.Query<bool>($"${{FindItem[{dskGloveItem}]}}");
+			// so we can move back
+			var currentX = MQ.Query<double>("${Me.X}");
             var currentY = MQ.Query<double>("${Me.Y}");
             var currentZ = MQ.Query<double>("${Me.Z}");
-
-            if (!GiveWeapons(petId, weapons ?? "Water|Fire"))
-            {
-                if (_isExternalRequest)
-                {
-                    MQ.Cmd($"/t {_requester} There was an issue with pet weapon summoning and we are unable to continue.");
-                }
-                else
-                {
-                    E3.Bots.Broadcast("\arThere was an issue with pet weapon summoning and we are unable to continue.");
-                }
-
-                // move back to my original location
-                e3util.TryMoveToLoc(currentX, currentY, currentZ);
-                _isExternalRequest = false;
-
-                return;
-            }
 			Casting.TrueTarget(petId);
-           
+			if (!hasDskGloves)
+			{
+				if (!GiveWeapons(petId, weapons ?? "Water|Fire"))
+				{
+					if (_isExternalRequest)
+					{
+						MQ.Cmd($"/t {_requester} There was an issue with pet weapon summoning and we are unable to continue.");
+						return;
+					}
+					else
+					{
+						E3.Bots.Broadcast("\arThere was an issue with pet weapon summoning and we are unable to continue.");
+						return;
+					}
+
+					// move back to my original location
+					e3util.TryMoveToLoc(currentX, currentY, currentZ);
+					_isExternalRequest = false;
+
+					return;
+				}
+			}
+			else
+			{
+				if (hasDskGloves)
+				{
+					var gloveSpell = new Spell(dskGloveItem);
+
+					if (Casting.CheckReady(gloveSpell))
+					{
+						Casting.Cast(petId,gloveSpell);
+					}
+					MQ.Cmd($"/useitem {dskGloveItem}");
+				}
+			}
+
+			
+
 			var spell = new Spell(_armorSpell);
-            Int32 castAttempts = 0;
+			Casting.MemorizeSpell(spell);
+			MQ.Delay(10000, $"${{Me.SpellReady[${{Me.Gem[{spell.SpellGem}].Name}}]}}");
+
+			Int32 castAttempts = 0;
             if(Casting.CheckReady(spell) && Casting.CheckMana(spell))
 			{
 				while(Casting.Cast(petId, spell) == CastReturn.CAST_FIZZLE)
@@ -369,6 +393,9 @@ namespace E3Core.Classes
 			}
 			castAttempts = 0;
 			spell = new Spell(_focusSpell);
+			Casting.MemorizeSpell(spell);
+			MQ.Delay(10000, $"${{Me.SpellReady[${{Me.Gem[{spell.SpellGem}].Name}}]}}");
+
 			if (Casting.CheckReady(spell) && Casting.CheckMana(spell))
 			{
 				while (Casting.Cast(petId, spell) == CastReturn.CAST_FIZZLE)
@@ -378,13 +405,7 @@ namespace E3Core.Classes
 					castAttempts++;
 				}
 			}
-
-            var dskGloveItem = "Glyphwielder's Ascendant Gloves of the Summoner";
-            var hasDskGloves = MQ.Query<bool>($"${{FindItem[{dskGloveItem}]}}");
-            if (hasDskGloves)
-            {
-                MQ.Cmd($"/useitem {dskGloveItem}");
-            }
+           
 
 			var pet = _spawns.Get().FirstOrDefault(f => f.ID == petId);
             if (pet != null)
