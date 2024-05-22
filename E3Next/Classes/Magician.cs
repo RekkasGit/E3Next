@@ -367,6 +367,16 @@ namespace E3Core.Classes
 				{
 					var gloveSpell = new Spell(dskGloveItem);
 
+					//if not ready, wait till its ready
+					Int32 counter = 0;
+					while (!Casting.CheckReady(gloveSpell))
+					{
+						//if more than 10 seconds, break out
+						if (counter > 100) break;
+						MQ.Delay(100);
+						counter++;
+					}
+
 					if (Casting.CheckReady(gloveSpell))
 					{
 						Casting.Cast(petId,gloveSpell);
