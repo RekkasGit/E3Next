@@ -400,7 +400,8 @@ namespace E3Core.Processors
 								//activate disc!
 								TrueTarget(targetID);
 								E3.ActionTaken = true;
-								_log.Write("Issuing Disc command:{spell.CastName}");
+								
+								MQ.Write($"\ag{spell.CastName} \at{spell.SpellID} \am{targetName} \ao{targetID} \aw({spell.MyCastTime / 1000}sec)");
 								MQ.Cmd($"/disc {spell.CastName}");
 								MQ.Delay(300);
 								returnValue = CastReturn.CAST_SUCCESS;
