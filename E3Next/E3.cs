@@ -403,8 +403,6 @@ namespace E3Core.Processors
                 CurrentId = MQ.Query<int>("${Me.ID}");
                 //do first to get class information
                 
-
-                CurrentName = MQ.Query<string>("${Me.CleanName}");
                 ServerName = e3util.FormatServerName(MQ.Query<string>("${MacroQuest.Server}"));
                 //deal with the Shadow Knight class issue.
                 string classValue =e3util.ClassNameFix(MQ.Query<string>("${Me.Class}"));

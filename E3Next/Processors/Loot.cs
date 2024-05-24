@@ -164,7 +164,7 @@ namespace E3Core.Processors
             EventProcessor.RegisterCommand("/looton", (x) =>
             {
                 
-                if (x.args.Count >0 && E3.Bots.BotsConnected().Contains(x.args[0], StringComparer.OrdinalIgnoreCase) && !x.args[0].Equals(E3.CurrentName, StringComparison.OrdinalIgnoreCase))
+                if (x.args.Count >0 && E3.Bots.BotsConnected().Contains(x.args[0], StringComparer.OrdinalIgnoreCase) && !E3.CurrentName.EqualsIns(x.args[0]))
                 {
                     if (x.args.Count == 2 && x.args[1] == "force")
                     {
@@ -190,7 +190,7 @@ namespace E3Core.Processors
             });
             EventProcessor.RegisterCommand("/lootoff", (x) =>
             {
-                if (x.args.Count > 0 && !x.args[0].Equals(E3.CurrentName, StringComparison.OrdinalIgnoreCase))
+                if (x.args.Count > 0 && !E3.CurrentName.EqualsIns(x.args[0]))
                 {
                     E3.Bots.BroadcastCommandToPerson(x.args[0], "/lootoff");
                 }

@@ -219,7 +219,7 @@ namespace E3Core.Classes
                 {
                     if (e3util.IsShuttingDown() || E3.IsPaused()) return;
 
-                    if (string.Equals(ownerSpawn.Name, E3.CurrentName)) continue;
+                    if (E3.CurrentName.EqualsIns(ownerSpawn.Name)) continue;
                     var theirPetId = ownerSpawn.PetID;
                     if (theirPetId < 0)
                     {

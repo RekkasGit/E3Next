@@ -214,7 +214,7 @@ namespace E3Core.Processors
                         continue;
 
                     }
-                    if(spawn.DisplayName == E3.CurrentName)
+                    if(E3.CurrentName.EqualsIns(spawn.DisplayName))
                     {
                         //rez ourself last
                         rezOurself = true;
@@ -241,7 +241,7 @@ namespace E3Core.Processors
                         continue;
 
                     }
-                    if (spawn.DisplayName == E3.CurrentName)
+                    if (E3.CurrentName.EqualsIns(spawn.DisplayName))
                     {
                         //rez ourself last
                         rezOurself = true;
@@ -272,7 +272,7 @@ namespace E3Core.Processors
                             continue;
 
                         }
-                        if(spawn.DisplayName == E3.CurrentName)
+                        if(E3.CurrentName.EqualsIns(spawn.DisplayName))
                         {
                             //rez ourself last
                             rezOurself = true;
@@ -291,7 +291,7 @@ namespace E3Core.Processors
                         //lists are super small so contains is fine
                         if (!_corpseList.Contains(spawn.ID))
                         {
-                            if (spawn.DisplayName == E3.CurrentName)
+                            if (E3.CurrentName.EqualsIns(spawn.DisplayName))
                             {
                                 _corpseList.Add(spawn.ID);
                             }
@@ -699,7 +699,7 @@ namespace E3Core.Processors
                 {
                     string user = x.args[0];
 
-                    if (user == E3.CurrentName)
+                    if (E3.CurrentName.EqualsIns(user))
                     {
                         //its a me!
                         MultiRez();
@@ -722,7 +722,7 @@ namespace E3Core.Processors
                 {
                     string user = x.args[0];
 
-                    if (user == E3.CurrentName)
+                    if (E3.CurrentName.EqualsIns(user))
                     {
                         //its a me!
                         MultiRez(RezType.Group);
@@ -747,7 +747,7 @@ namespace E3Core.Processors
                 {
                     string user = x.args[0];
 
-                    if (user == E3.CurrentName)
+                    if (E3.CurrentName.EqualsIns(user))
                     {
                         //its a me!
                         MultiRez(RezType.GroupOrRaid);
@@ -863,7 +863,7 @@ namespace E3Core.Processors
                 if(x.args.Count>0)
                 {
                     //is it us?
-                    if(x.args[0].Equals(E3.CurrentName, StringComparison.OrdinalIgnoreCase))
+                    if(E3.CurrentName.EqualsIns(x.args[0]))
                     {
                         //its us! lets wait
                         _waitingOnRez = true;
@@ -887,7 +887,7 @@ namespace E3Core.Processors
                 {
                     var sender = x.match.Groups[1].Value;
                     // of course i know him. he's me
-                    if (string.Equals(sender, E3.CurrentName)) return;
+                    if (E3.CurrentName.EqualsIns(sender)) return;
 
                     MQ.Cmd($"/consent {sender}");
                 }
