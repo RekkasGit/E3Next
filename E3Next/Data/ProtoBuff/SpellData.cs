@@ -23,7 +23,7 @@ public static partial class SpellDataReflection {
     byte[] descriptorData = global::System.Convert.FromBase64String(
         string.Concat(
           "Cg9TcGVsbERhdGEucHJvdG8iKQoNU3BlbGxEYXRhTGlzdBIYCgRkYXRhGAEg",
-          "AygLMgouU3BlbGxEYXRhIp8NCglTcGVsbERhdGESEQoJU3BlbGxOYW1lGAEg",
+          "AygLMgouU3BlbGxEYXRhIrMNCglTcGVsbERhdGESEQoJU3BlbGxOYW1lGAEg",
           "ASgJEhAKCENhc3ROYW1lGAIgASgJEhMKC1N1YmNhdGVnb3J5GAMgASgJEhAK",
           "CENhdGVnb3J5GAQgASgJEigKCENhc3RUeXBlGAUgASgOMhYuU3BlbGxEYXRh",
           "LkNhc3RpbmdUeXBlEhIKClRhcmdldFR5cGUYBiABKAkSEAoIU3BlbGxHZW0Y",
@@ -59,14 +59,14 @@ public static partial class SpellDataReflection {
           "IAEoCRIRCglSZXNpc3RBZGoYSiABKAUSMAoQQ2FzdFR5cGVPdmVycmlkZRhL",
           "IAEoDjIWLlNwZWxsRGF0YS5DYXN0aW5nVHlwZRIaChJDaGVja0ZvckNvbGxl",
           "Y3Rpb24YTCADKAkSDwoHSWZzS2V5cxhNIAEoCRIPCgdFbmFibGVkGE4gASgI",
-          "Eg4KBklzQnVmZhhPIAEoCCJLCgtDYXN0aW5nVHlwZRIGCgJBQRAAEgkKBVNw",
-          "ZWxsEAESCAoERGlzYxACEgsKB0FiaWxpdHkQAxIICgRJdGVtEAQSCAoETm9u",
-          "ZRAFYgZwcm90bzM="));
+          "Eg4KBklzQnVmZhhPIAEoCBISCgpNaW5IUFRvdGFsGFAgASgFIksKC0Nhc3Rp",
+          "bmdUeXBlEgYKAkFBEAASCQoFU3BlbGwQARIICgREaXNjEAISCwoHQWJpbGl0",
+          "eRADEggKBEl0ZW0QBBIICgROb25lEAViBnByb3RvMw=="));
     descriptor = pbr::FileDescriptor.FromGeneratedCode(descriptorData,
         new pbr::FileDescriptor[] { },
         new pbr::GeneratedClrTypeInfo(null, null, new pbr::GeneratedClrTypeInfo[] {
           new pbr::GeneratedClrTypeInfo(typeof(global::SpellDataList), global::SpellDataList.Parser, new[]{ "Data" }, null, null, null, null),
-          new pbr::GeneratedClrTypeInfo(typeof(global::SpellData), global::SpellData.Parser, new[]{ "SpellName", "CastName", "Subcategory", "Category", "CastType", "TargetType", "SpellGem", "GiveUpTimer", "MaxTries", "Duration", "DurationTotalSeconds", "RecastTime", "RecoveryTime", "MyCastTime", "MyCastTimeInSeconds", "MyRange", "Mana", "MinMana", "MaxMana", "MinHP", "HealPct", "Debug", "Reagent", "ItemMustEquip", "NoBurn", "NoTarget", "NoAggro", "Mode", "EnduranceCost", "Delay", "DelayAfterCast", "CastID", "MinEnd", "CastInvis", "SpellType", "CastTarget", "StackRequestTargets", "StackIntervalCheck", "StackIntervalNextCheck", "StackRecastDelay", "StackRequestItem", "GiftOfMana", "SpellID", "PctAggro", "Zone", "MinSick", "AllowSpellSwap", "NoEarlyRecast", "NoStack", "TriggerSpell", "BeforeSpell", "NoInterrupt", "AfterEvent", "BeforeEvent", "CastIF", "Ifs", "InitName", "ReagentOutOfStock", "SpellInBook", "SpellIcon", "NoMidSongCast", "MinDurationBeforeRecast", "IsShortBuff", "HealthMax", "IgnoreStackRules", "IsDebuff", "IsDoT", "Rotate", "AfterSpell", "Level", "Description", "ResistType", "ResistAdj", "CastTypeOverride", "CheckForCollection", "IfsKeys", "Enabled", "IsBuff" }, null, new[]{ typeof(global::SpellData.Types.CastingType) }, null, null)
+          new pbr::GeneratedClrTypeInfo(typeof(global::SpellData), global::SpellData.Parser, new[]{ "SpellName", "CastName", "Subcategory", "Category", "CastType", "TargetType", "SpellGem", "GiveUpTimer", "MaxTries", "Duration", "DurationTotalSeconds", "RecastTime", "RecoveryTime", "MyCastTime", "MyCastTimeInSeconds", "MyRange", "Mana", "MinMana", "MaxMana", "MinHP", "HealPct", "Debug", "Reagent", "ItemMustEquip", "NoBurn", "NoTarget", "NoAggro", "Mode", "EnduranceCost", "Delay", "DelayAfterCast", "CastID", "MinEnd", "CastInvis", "SpellType", "CastTarget", "StackRequestTargets", "StackIntervalCheck", "StackIntervalNextCheck", "StackRecastDelay", "StackRequestItem", "GiftOfMana", "SpellID", "PctAggro", "Zone", "MinSick", "AllowSpellSwap", "NoEarlyRecast", "NoStack", "TriggerSpell", "BeforeSpell", "NoInterrupt", "AfterEvent", "BeforeEvent", "CastIF", "Ifs", "InitName", "ReagentOutOfStock", "SpellInBook", "SpellIcon", "NoMidSongCast", "MinDurationBeforeRecast", "IsShortBuff", "HealthMax", "IgnoreStackRules", "IsDebuff", "IsDoT", "Rotate", "AfterSpell", "Level", "Description", "ResistType", "ResistAdj", "CastTypeOverride", "CheckForCollection", "IfsKeys", "Enabled", "IsBuff", "MinHPTotal" }, null, new[]{ typeof(global::SpellData.Types.CastingType) }, null, null)
         }));
   }
   #endregion
@@ -365,6 +365,7 @@ public sealed partial class SpellData : pb::IMessage<SpellData>
     ifsKeys_ = other.ifsKeys_;
     enabled_ = other.enabled_;
     isBuff_ = other.isBuff_;
+    minHPTotal_ = other.minHPTotal_;
     _unknownFields = pb::UnknownFieldSet.Clone(other._unknownFields);
   }
 
@@ -1308,6 +1309,18 @@ public sealed partial class SpellData : pb::IMessage<SpellData>
     }
   }
 
+  /// <summary>Field number for the "MinHPTotal" field.</summary>
+  public const int MinHPTotalFieldNumber = 80;
+  private int minHPTotal_;
+  [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
+  [global::System.CodeDom.Compiler.GeneratedCode("protoc", null)]
+  public int MinHPTotal {
+    get { return minHPTotal_; }
+    set {
+      minHPTotal_ = value;
+    }
+  }
+
   [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
   [global::System.CodeDom.Compiler.GeneratedCode("protoc", null)]
   public override bool Equals(object other) {
@@ -1401,6 +1414,7 @@ public sealed partial class SpellData : pb::IMessage<SpellData>
     if (IfsKeys != other.IfsKeys) return false;
     if (Enabled != other.Enabled) return false;
     if (IsBuff != other.IsBuff) return false;
+    if (MinHPTotal != other.MinHPTotal) return false;
     return Equals(_unknownFields, other._unknownFields);
   }
 
@@ -1486,6 +1500,7 @@ public sealed partial class SpellData : pb::IMessage<SpellData>
     if (IfsKeys.Length != 0) hash ^= IfsKeys.GetHashCode();
     if (Enabled != false) hash ^= Enabled.GetHashCode();
     if (IsBuff != false) hash ^= IsBuff.GetHashCode();
+    if (MinHPTotal != 0) hash ^= MinHPTotal.GetHashCode();
     if (_unknownFields != null) {
       hash ^= _unknownFields.GetHashCode();
     }
@@ -1810,6 +1825,10 @@ public sealed partial class SpellData : pb::IMessage<SpellData>
       output.WriteRawTag(248, 4);
       output.WriteBool(IsBuff);
     }
+    if (MinHPTotal != 0) {
+      output.WriteRawTag(128, 5);
+      output.WriteInt32(MinHPTotal);
+    }
     if (_unknownFields != null) {
       _unknownFields.WriteTo(output);
     }
@@ -2126,6 +2145,10 @@ public sealed partial class SpellData : pb::IMessage<SpellData>
       output.WriteRawTag(248, 4);
       output.WriteBool(IsBuff);
     }
+    if (MinHPTotal != 0) {
+      output.WriteRawTag(128, 5);
+      output.WriteInt32(MinHPTotal);
+    }
     if (_unknownFields != null) {
       _unknownFields.WriteTo(ref output);
     }
@@ -2365,6 +2388,9 @@ public sealed partial class SpellData : pb::IMessage<SpellData>
     }
     if (IsBuff != false) {
       size += 2 + 1;
+    }
+    if (MinHPTotal != 0) {
+      size += 2 + pb::CodedOutputStream.ComputeInt32Size(MinHPTotal);
     }
     if (_unknownFields != null) {
       size += _unknownFields.CalculateSize();
@@ -2607,6 +2633,9 @@ public sealed partial class SpellData : pb::IMessage<SpellData>
     }
     if (other.IsBuff != false) {
       IsBuff = other.IsBuff;
+    }
+    if (other.MinHPTotal != 0) {
+      MinHPTotal = other.MinHPTotal;
     }
     _unknownFields = pb::UnknownFieldSet.MergeFrom(_unknownFields, other._unknownFields);
   }
@@ -2935,6 +2964,10 @@ public sealed partial class SpellData : pb::IMessage<SpellData>
           IsBuff = input.ReadBool();
           break;
         }
+        case 640: {
+          MinHPTotal = input.ReadInt32();
+          break;
+        }
       }
     }
   #endif
@@ -3260,6 +3293,10 @@ public sealed partial class SpellData : pb::IMessage<SpellData>
         }
         case 632: {
           IsBuff = input.ReadBool();
+          break;
+        }
+        case 640: {
+          MinHPTotal = input.ReadInt32();
           break;
         }
       }

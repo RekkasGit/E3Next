@@ -56,8 +56,15 @@ namespace E3Core.Classes
 					int pctMana = MQ.Query<int>("${Me.PctMana}");
 					var pctHps = MQ.Query<int>("${Me.PctHPs}");
 					int currentHps = MQ.Query<int>("${Me.CurrentHPs}");
-
-                    if(!Casting.Ifs(canniSpell))
+					var minhpThreashold = canniSpell.MinHPTotal;
+					if (minhpThreashold > 0)
+					{
+						if (currentHps < minhpThreashold)
+						{
+							continue;
+						}
+					}
+					if (!Casting.Ifs(canniSpell))
                     {
                         continue;
                     }
@@ -65,9 +72,12 @@ namespace E3Core.Classes
 					{
 						var hpThresholdDefined = canniSpell.MinHP > 0;
 						var manaThresholdDefined = canniSpell.MaxMana > 0;
+                      
 						bool castCanniSpell = false;
 						bool hpThresholdMet = false;
 						bool manaThresholdMet = false;
+
+                        
 
 						if (hpThresholdDefined)
 						{

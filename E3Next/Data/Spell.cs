@@ -213,7 +213,11 @@ namespace E3Core.Data
                     {
                         MinHP = GetArgument<Int32>(value);
                     }
-                    else if (value.StartsWith("HealPct|", StringComparison.OrdinalIgnoreCase))
+					else if (value.StartsWith("MinHPTotal|", StringComparison.OrdinalIgnoreCase))
+					{
+						MinHPTotal = GetArgument<Int32>(value);
+					}
+					else if (value.StartsWith("HealPct|", StringComparison.OrdinalIgnoreCase))
                     {
                         HealPct = GetArgument<Int32>(value);
                     }
@@ -820,6 +824,7 @@ namespace E3Core.Data
         public Int32 MinMana;
         public Int32 MaxMana;
         public Int32 MinHP;
+        public Int32 MinHPTotal;
         public Int32 HealPct;
         public bool Debug;
         public String Reagent = String.Empty;
@@ -924,6 +929,7 @@ namespace E3Core.Data
 			r.MinDurationBeforeRecast = source.MinDurationBeforeRecast;
 			r.MinEnd = source.MinEnd;
 			r.MinHP = source.MinHP;
+            r.MinHPTotal = source.MinHPTotal;
 			r.MinMana = source.MinMana;
 			r.MinSick = source.MinSick;
 			r.Mode = source.Mode;
@@ -1012,6 +1018,7 @@ namespace E3Core.Data
             r.MinDurationBeforeRecast = this.MinDurationBeforeRecast;
             r.MinEnd = this.MinEnd;
             r.MinHP = this.MinHP;
+            r.MinHPTotal = this.MinHPTotal;
             r.MinMana = this.MinMana;
             r.MinSick = this.MinSick;
             r.Mode = this.Mode;

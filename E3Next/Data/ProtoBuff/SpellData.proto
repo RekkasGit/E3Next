@@ -95,4 +95,5 @@ message SpellData {
 	string IfsKeys=77;
 	bool Enabled = 78;
 	bool IsBuff = 79;
+    int32 MinHPTotal=80;
 }
