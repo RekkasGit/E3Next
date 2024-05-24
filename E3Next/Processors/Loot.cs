@@ -425,7 +425,7 @@ namespace E3Core.Processors
 					if (MQ.Query<bool>("${Target.ID}"))
 					{
 						e3util.TryMoveToTarget();
-						MQ.Delay(2250, "${Target.Distance3D} < 10"); // Give Time to get to Corpse 
+						MQ.Delay(2250, "${Target.Distance} < 10"); // Give Time to get to Corpse 
 						LootCorpse(c);
                         corpses.PopFront();
 						if (MQ.Query<bool>("${Window[LootWnd].Open}"))
@@ -510,7 +510,7 @@ namespace E3Core.Processors
                     if(MQ.Query<bool>("${Target.ID}"))
                     {
                         e3util.TryMoveToTarget();
-                        MQ.Delay(2250, "${Target.Distance3D} < 10"); // Give Time to get to Corpse 
+                        MQ.Delay(2250, "${Target.Distance} < 10"); // Give Time to get to Corpse 
                         LootCorpse(c);
                        
                         if (MQ.Query<bool>("${Window[LootWnd].Open}"))

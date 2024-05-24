@@ -811,6 +811,7 @@ namespace MonoCore
         {
 			try
 			{
+				Thread.CurrentThread.CurrentCulture = new CultureInfo("en-US");
 				_MQ2MonoVersion = Decimal.Parse(Core.mq_GetMQ2MonoVersion());
 			}
 			catch (Exception)
