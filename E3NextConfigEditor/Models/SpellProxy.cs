@@ -182,6 +182,20 @@ namespace E3NextConfigEditor.Models
 			set { _spell.MinMana = value; }
 		}
 		[Category("Flags")]
+		[Description("Minimum hp % level before try and cast the spell")]
+		public Int32 MinHP
+		{
+			get { return _spell.MinHP; }
+			set { _spell.MinHP = value; }
+		}
+		[Category("Flags")]
+		[Description("Minimum HP Total before try and cast the spell")]
+		public Int32 MinHPTotal
+		{
+			get { return _spell.MinHPTotal; }
+			set { _spell.MinHPTotal = value; }
+		}
+		[Category("Flags")]
 		[Description("Min duration before recast in seconds")]
 		public Int64 MinDurationBeforeRecast
 		{
@@ -417,7 +431,20 @@ namespace E3NextConfigEditor.Models
 			get { return _spell.MinMana; }
 			set { _spell.MinMana = value; }
 		}
-
+		[Category("Flags")]
+		[Description("Minimum hp % level before try and cast the spell")]
+		public Int32 MinHP
+		{
+			get { return _spell.MinHP; }
+			set { _spell.MinHP = value; }
+		}
+		[Category("Flags")]
+		[Description("Minimum HP Total before try and cast the spell")]
+		public Int32 MinHPTotal
+		{
+			get { return _spell.MinHPTotal; }
+			set { _spell.MinHPTotal = value; }
+		}
 		[Category("Flags")]
 		[Description("Don't cast spell if you are above this mana level")]
 		public Int32 MaxMana

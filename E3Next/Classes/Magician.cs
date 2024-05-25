@@ -30,7 +30,12 @@ namespace E3Core.Classes
         private static string _focusItem = "Folded Pack of Enibik's Heirlooms";
         private static string _weaponBag = "Pouch of Quellious";
         private static string _armorOrHeirloomBag = "Phantom Satchel";
-        private static Dictionary<string, string> _weaponMap = new Dictionary<string, string>(StringComparer.OrdinalIgnoreCase) {
+		private static string _dskGloveItem = "Glyphwielder's Ascendant Gloves of the Summoner";
+		private static string _dskCodex = "Codex of Minion's Materiel";
+        private static Spell _dskGloveSpell = null;
+		private static Spell _dskCodexSpell = null;
+
+		private static Dictionary<string, string> _weaponMap = new Dictionary<string, string>(StringComparer.OrdinalIgnoreCase) {
             {"Fire", "Summoned: Fist of Flame"},
             {"Water", "Summoned: Orb of Chilling Water" },
             {"Shield", "Summoned: Buckler of Draining Defense" },
@@ -175,7 +180,50 @@ namespace E3Core.Classes
 
                 ArmPets();
             });
-        }
+			armPetEvents = new List<string> { "(?i)(.+) tells you, 'DSK'", "(?i)(.+) tells the group, 'DSK'", };
+			EventProcessor.RegisterEvent("ArmPetDSK", armPetEvents, x =>
+			{
+				var hasDskGloves = MQ.Query<bool>($"${{FindItem[{_dskGloveItem}]}}");
+
+                if (hasDskGloves)
+                {
+                    if (_dskGloveSpell == null)
+                    {
+                        _dskGloveSpell = new Spell(_dskGloveItem);
+                    }
+                    _requester = x.match.Groups[1].ToString();
+                    if (_spawns.TryByName(_requester, out var requesterSpawn))
+                    {
+                        var theirPetId = requesterSpawn.PetID;
+                        if (theirPetId < 0)
+                        {
+                            MQ.Cmd($"/t {_requester} You don't have a pet to equip!");
+                            return;
+                        }
+                        if (_spawns.Get().First(w => w.ID == theirPetId).Distance > 50)
+                        {
+                            MQ.Cmd($"/t {_requester} Your pet is too far away!");
+                            return;
+                        }
+                        if (_spawns.Get().First(w => w.ID == theirPetId).Level == 1)
+                        {
+                            MQ.Cmd($"/t {_requester} Your pet is just a familiar!");
+                            return;
+                        }
+                        if (!Casting.CheckReady(_dskGloveSpell))
+                        {
+                            MQ.Cmd($"/t {_requester} Is in cooldown, try again shortly.");
+                            return;
+                        }
+                        MQ.Cmd($"/t {_requester} I hear you I hear you one moment please....");
+                        if (Casting.CheckReady(_dskGloveSpell))
+                        {
+                            Casting.Cast(theirPetId, _dskGloveSpell);
+                        }
+                    }
+                }
+			});
+		}
 
 
         /// <summary>
@@ -333,10 +381,9 @@ namespace E3Core.Classes
         private static void ArmPet(int petId, string weapons)
 		{
 			//all this code needs to be abstracted out as it is Laz specific
-			var dskGloveItem = "Glyphwielder's Ascendant Gloves of the Summoner";
-			var hasDskGloves = MQ.Query<bool>($"${{FindItem[{dskGloveItem}]}}");
-			var dskCodex = "Codex of Minion's Materiel";
-			var hasDskCodex = MQ.Query<bool>($"${{FindItem[{dskCodex}]}}");
+		
+			var hasDskGloves = MQ.Query<bool>($"${{FindItem[{_dskGloveItem}]}}");
+			var hasDskCodex = MQ.Query<bool>($"${{FindItem[{_dskCodex}]}}");
 
 			// so we can move back
 			var currentX = MQ.Query<double>("${Me.X}");
@@ -350,30 +397,34 @@ namespace E3Core.Classes
 			{
 				if (petId == myPetID && hasDskCodex)
 				{
-
-					var codexSpell = new Spell(dskCodex);
-
+					if (_dskCodexSpell == null)
+					{
+						_dskCodexSpell = new Spell(_dskCodex);
+					}
 					//if not ready, wait till its ready
 					Int32 counter = 0;
-					while (!Casting.CheckReady(codexSpell))
+					while (!Casting.CheckReady(_dskCodexSpell))
 					{
 						//if more than 10 seconds, break out
 						if (counter > 100) break;
 						MQ.Delay(100);
 						counter++;
 					}
-					if (Casting.CheckReady(codexSpell))
+					if (Casting.CheckReady(_dskCodexSpell))
 					{
-						Casting.Cast(petId, codexSpell);
+						Casting.Cast(petId, _dskCodexSpell);
 					}
 				}
 				if (hasDskGloves)
 				{
-					var gloveSpell = new Spell(dskGloveItem);
-
+					if (_dskGloveSpell == null)
+					{
+						_dskGloveSpell = new Spell(_dskGloveItem);
+					}
+				
 					//if not ready, wait till its ready
 					Int32 counter = 0;
-					while (!Casting.CheckReady(gloveSpell))
+					while (!Casting.CheckReady(_dskGloveSpell))
 					{
 						//if more than 10 seconds, break out
 						if (counter > 100) break;
@@ -381,9 +432,9 @@ namespace E3Core.Classes
 						counter++;
 					}
 
-					if (Casting.CheckReady(gloveSpell))
+					if (Casting.CheckReady(_dskGloveSpell))
 					{
-						Casting.Cast(petId, gloveSpell);
+						Casting.Cast(petId, _dskGloveSpell);
 					}
 				}
 				else 

@@ -512,7 +512,7 @@ namespace E3Core.Processors
 
                     
 
-					if (buffCount< e3util.MobMaxDebuffSlots)
+					if (buffCount< e3util.MobMaxDebuffSlots && E3.CharacterSettings.Misc_VisibleDebuffsDots)
                     {
                         UpdateDotDebuffTimers(mobid, spell, timeLeftInMS, timers);
                     }
