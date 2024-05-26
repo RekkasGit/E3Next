@@ -326,12 +326,20 @@ namespace E3Core.Processors
 							return CastReturn.CAST_FEIGN;
 						}
 						_log.Write("Checking for Open spell book....");
-						if (MQ.Query<bool>("${Window[SpellBookWnd].Open}"))
+						if (MQ.Query<bool>("${Window[SpellBookWnd].Open}") )
 						{
-							E3.ActionTaken = true;
-							E3.Bots.Broadcast($"skipping [{spell.CastName}] , spellbook is open.");
-							MQ.Delay(200);
-							return CastReturn.CAST_SPELLBOOKOPEN;
+							if(!e3util.IsManualControl())
+							{
+								MQ.Cmd("/stand");
+							}
+							else
+							{
+								E3.ActionTaken = true;
+								E3.Bots.Broadcast($"skipping [{spell.CastName}] , spellbook is open.");
+								MQ.Delay(200);
+								return CastReturn.CAST_SPELLBOOKOPEN;
+							}
+							
 						}
 						_log.Write("Checking for Open corpse....");
 						if (MQ.Query<bool>("${Corpse.Open}"))
@@ -1134,6 +1142,10 @@ namespace E3Core.Processors
 			MQ.Delay(15000, $"${{Me.Gem[{spell.SpellGem}].Name.Equal[{spell.SpellName}]}} || !${{Window[SpellBookWnd].Open}}");
 			if(!ignoreWait)
 			{
+				//sanity check that we stand in case something went wrong
+				//we do it in the ignorewait, because if we do ignore wait they already will do the 
+				//sit/stand as we are meming lots of spells at once. 
+				MQ.Cmd("/stand");
 				MQ.Delay(3000, $"${{Me.SpellReady[${{Me.Gem[{spell.SpellGem}].Name}}]}}");
 			}
 

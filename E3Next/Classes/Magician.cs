@@ -85,7 +85,7 @@ namespace E3Core.Classes
         [SubSystemInit]
         public static void PetEquipmentRequest()
         {
-            if (E3.CurrentClass != Class.Magician)
+            if (E3.CurrentClass != Class.Magician || e3util.IsEQLive())
             {
                 return;
             }
@@ -180,9 +180,14 @@ namespace E3Core.Classes
 
                 ArmPets();
             });
+            if(e3util.IsEQEMU())
+            {
+
+            }
 			armPetEvents = new List<string> { "(?i)(.+) tells you, 'DSK'", "(?i)(.+) tells the group, 'DSK'", };
 			EventProcessor.RegisterEvent("ArmPetDSK", armPetEvents, x =>
 			{
+                
 				var hasDskGloves = MQ.Query<bool>($"${{FindItem[{_dskGloveItem}]}}");
 
                 if (hasDskGloves)
