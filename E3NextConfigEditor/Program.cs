@@ -75,13 +75,11 @@ namespace E3NextConfigEditor
 				_splashScreen.Invoke(new Action(() => _splashScreen.Close()));
 
 			}
-
-			Task.Delay(50).ContinueWith(t => _mainForm.Invoke(new Action(() =>
+			_mainForm.TopMost = true;
+			_mainForm.Activate();
+			Task.Delay(2000).ContinueWith(t => _mainForm.Invoke(new Action(() =>
 			{
-				_mainForm.TopMost = true;
-				_mainForm.Activate();
 				_mainForm.TopMost = false;
-
 			}
 			)));
 			
