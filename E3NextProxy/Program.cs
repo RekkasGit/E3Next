@@ -112,67 +112,84 @@ namespace E3NextProxy
 			Dictionary<string,SubInfo> currentlyProcessing = new Dictionary<string, SubInfo>();
 			List<string> removeItems = new List<string>();
 
+			var networkFoldersToMonitor = System.Configuration.ConfigurationManager.AppSettings["NetworkFoldersToMonitor"];
+
+			List<string> foldersToMonitor = new List<string>();
+			foldersToMonitor.Add(_directoryLocation);
+			if(!String.IsNullOrWhiteSpace(networkFoldersToMonitor))
+			{
+				string[] folders = networkFoldersToMonitor.Split(new char[] { ';' });
+				foreach(var folder in folders)
+				{
+					string tempFolder = folder;
+					if(!tempFolder.EndsWith(@"\"))
+					{
+						tempFolder+=@"\";
+					}
+					foldersToMonitor.Add(tempFolder.Trim());
+				}
+			}
 			while (true)
 			{
-				string[] files = Directory.GetFiles(_directoryLocation);
-
-				foreach(var fileName in files)
+				foreach(var folder in foldersToMonitor)
 				{
-					if (String.Equals(fileName, _fullFileName, StringComparison.OrdinalIgnoreCase))
+					string[] files = Directory.GetFiles(folder);
+
+					foreach (var fileName in files)
 					{
-						continue;
-					}
-					if(!currentlyProcessing.ContainsKey(fileName))
-					{
-						System.DateTime lastFileUpdate = System.IO.File.GetLastWriteTime(fileName);
-						string data = System.IO.File.ReadAllText(fileName);
-						//its now port:ipaddress
-						string[] splitData = data.Split(new char[] { ',' });
-						string port = splitData[0];
-						string ipaddress = splitData[1];
-						string connectionString = $"tcp://{ipaddress}:{port}";
-						m_proxy.AddSubBinding(connectionString);
-						Console.WriteLine($"[{System.DateTime.Now.ToString()}] New File Found: {fileName}. Connection String: {connectionString}");
-						currentlyProcessing.Add(fileName, new SubInfo() { LastUpdateTime=lastFileUpdate,connectionString=connectionString});
-					}
-					else
-					{
-						//question is.. has it been modified?
-						System.DateTime lastFileUpdate = System.IO.File.GetLastWriteTime(fileName);
-						if (currentlyProcessing[fileName].LastUpdateTime<lastFileUpdate)
+						if (String.Equals(fileName, _fullFileName, StringComparison.OrdinalIgnoreCase))
 						{
-							string connectionString = currentlyProcessing[fileName].connectionString;
-							Console.WriteLine($"[{System.DateTime.Now.ToString()}] Reconnecting: {fileName}. Connection String: {connectionString}");
+							continue;
+						}
+						if (!currentlyProcessing.ContainsKey(fileName))
+						{
+							System.DateTime lastFileUpdate = System.IO.File.GetLastWriteTime(fileName);
+							string data = System.IO.File.ReadAllText(fileName);
+							//its now port:ipaddress
+							string[] splitData = data.Split(new char[] { ',' });
+							string port = splitData[0];
+							string ipaddress = splitData[1];
+							string connectionString = $"tcp://{ipaddress}:{port}";
+							m_proxy.AddSubBinding(connectionString);
+							Console.WriteLine($"[{System.DateTime.Now.ToString()}] New File Found: {fileName}. Connection String: {connectionString}");
+							currentlyProcessing.Add(fileName, new SubInfo() { LastUpdateTime = lastFileUpdate, connectionString = connectionString });
+						}
+						else
+						{
+							//question is.. has it been modified?
+							System.DateTime lastFileUpdate = System.IO.File.GetLastWriteTime(fileName);
+							if (currentlyProcessing[fileName].LastUpdateTime < lastFileUpdate)
+							{
+								string connectionString = currentlyProcessing[fileName].connectionString;
+								Console.WriteLine($"[{System.DateTime.Now.ToString()}] Reconnecting: {fileName}. Connection String: {connectionString}");
+								//it has, remove it from processing, so that we can get the new one
+								m_proxy.RemoveSubBinding(connectionString);
+								currentlyProcessing.Remove(fileName);
+							}
+						}
+
+					}
+
+					foreach (var info in currentlyProcessing)
+					{
+						if (!File.Exists(info.Key))
+						{
+							string fileName = info.Key;
+							string connectionString = info.Value.connectionString;
+							Console.WriteLine($"[{System.DateTime.Now.ToString()}] Disconnecting: {fileName} as it no longer exists. Connection String: {connectionString}");
 							//it has, remove it from processing, so that we can get the new one
 							m_proxy.RemoveSubBinding(connectionString);
-							currentlyProcessing.Remove(fileName);
+							removeItems.Add(fileName);
 						}
 					}
-
-				}
-				
-				foreach(var info in currentlyProcessing)
-				{
-					if(!File.Exists(info.Key))
+					foreach (var file in removeItems)
 					{
-						string fileName = info.Key;
-						string connectionString = info.Value.connectionString;
-						Console.WriteLine($"[{System.DateTime.Now.ToString()}] Disconnecting: {fileName} as it no longer exists. Connection String: {connectionString}");
-						//it has, remove it from processing, so that we can get the new one
-						m_proxy.RemoveSubBinding(connectionString);
-						removeItems.Add(fileName);
+						currentlyProcessing.Remove(file);
 					}
+					removeItems.Clear();
 				}
-				foreach(var file in removeItems)
-				{
-					currentlyProcessing.Remove(file);
-				}
-				removeItems.Clear();
-				System.Threading.Thread.Sleep(1000);
+				Thread.Sleep(1000);
 			}
-
-		
-
 		}
 
 		public static void SubPublisherWriter(string user, Int32 port, string ipaddress)
