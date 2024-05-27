@@ -2422,15 +2422,20 @@ namespace E3Core.Processors
 			if (buffIndex > 0)
 			{
 				millisecondsLeft = MQ.Query<Int64>($"${{Me.Pet.Buff[{buffIndex}].Duration}}");
-				if (millisecondsLeft == 0)
+				if(millisecondsLeft<0)
 				{
-					//check if perma spell
-					Int32 duration = MQ.Query<Int32>($"${{Spell[{buffIndex}].Duration}}");
-					if (duration < 0)
-					{
-						millisecondsLeft = Int32.MaxValue;
-					}
+					//perma buff?
+					millisecondsLeft = Int32.MaxValue;
 				}
+				//if (millisecondsLeft == 0)
+				//{
+				//	//check if perma spell
+				//	Int32 duration = MQ.Query<Int32>($"${{Spell[{spell.SpellName}].Duration}}");
+				//	if (duration < 0)
+				//	{
+				//		millisecondsLeft = Int32.MaxValue;
+				//	}
+				//}
 			}
 			return millisecondsLeft;
 		}
