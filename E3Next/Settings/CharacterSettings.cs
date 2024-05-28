@@ -1343,18 +1343,20 @@ namespace E3Core.Settings
 			{
 				string header = pair.Key;
 
+				var section = defaultFile.Sections.GetSectionData(header);
+				//copy over comments from loaded section
+				var loadeddata_section = ParsedData.Sections.GetSectionData(header);
+				if (loadeddata_section != null && section != null)
+				{
+					section.Comments.AddRange(loadeddata_section.Comments);
+				}
+
 				foreach (var pair2 in pair.Value)
 				{
 					//now we have the header and keyname of the ini entry
 					
 					string keyName = pair2.Key;
-					var section = defaultFile.Sections.GetSectionData(header);
-					//copy over comments from loaded section
-					var loadeddata_section = ParsedData.Sections.GetSectionData(header);
-					if(loadeddata_section!=null && section!=null)
-					{
-						section.Comments.AddRange(loadeddata_section.Comments);
-					}
+					
 
 					transferedKeyComments.Clear();
 
