@@ -1,7 +1,9 @@
-﻿using MonoCore;
+﻿using E3Core.Utility;
+using MonoCore;
 using System;
 using System.Collections.Generic;
 using System.Linq;
+using System.Reflection;
 using System.Text;
 using System.Threading.Tasks;
 
@@ -10,30 +12,56 @@ namespace E3Core.Processors
     public class SubSystemInitAttribute : Attribute
     {
     }
-    public static class Setup
+	public class ExposedData : Attribute
+	{
+		private string _header;
+		private string _key;
+
+		public string Header
+		{
+			get { return _header; }
+			set { _header = value; }
+		}
+		public string Key
+		{
+			get { return _key; }
+			set { _key = value; }
+		}
+
+		public ExposedData(string header, string key)
+		{
+			_header = header;
+			_key = key;
+		}
+
+	}
+	public static class Setup
     {
 
         static public Boolean _reloadOnLoot = false;
         static public string _missingSpellItem = string.Empty;
         static public Int32 _numInventorySlots = 10;
         static public Int32 _previousSpellGemThatWasCast = -1;
-        public const string _e3Version = "1.3";
+        public const string _e3Version = "1.4";
         public static Boolean _debug = true;
         public const string _macroData_Ini = @"e3 Macro Inis\e3 Data.ini";
         public static string _generalSettings_Ini = @"e3 Macro Inis\General Settings.ini";
         public static string _advancedSettings_Ini = @"e3 Macro Inis\Advanced Settingse.ini";
         public static string _character_Ini = @"e3 Bot Inis\{CharacterName}_{ServerName}.ini";
+		public static string _guildListFilePath = String.Empty;
+		public static List<string> GuildListMembers = new List<string>();
 
-        public static string _serverNameForIni = "PEQTGC"; //project eq, the grand creation, where legacy e3 was born i believe.
+		public static string _serverNameForIni = "PEQTGC"; //project eq, the grand creation, where legacy e3 was born i believe.
         public static Logging _log = E3.Log;
         private static IMQ MQ = E3.MQ;
+		public static Dictionary<string, FieldInfo> ExposedDataReflectionLookup = new Dictionary<string, FieldInfo>();
 
-        public static Boolean Init()
+		public static Boolean Init()
         {
             using (_log.Trace())
             {
-
-                E3.MQBuildVersion = (MQBuild)MQ.Query<Int32>("${MacroQuest.Build}");
+				RegisterEvents();
+				E3.MQBuildVersion = (MQBuild)MQ.Query<Int32>("${MacroQuest.Build}");
                 if(MQ.Query<bool>("!${Defined[E3N_var]}"))
                 {
                     MQ.Cmd("/declare E3N_var string global false");
@@ -45,22 +73,45 @@ namespace E3Core.Processors
                 {
                     _serverNameForIni = "Lazarus";
                 }
-
-                MQ.Write($"Loading nE³xt v{_e3Version}...Mq2Mono v{Core._MQ2MonoVersion}");
+				string builddate = Properties.Resources.BuildDate;
+				builddate = builddate.Replace("\r\n", "");
+				MQ.Write($"Loading nE³xt v{_e3Version} builddate:{builddate}...Mq2Mono v{Core._MQ2MonoVersion}");
                 
 
                 InitPlugins();
                 InitSubSystems();
-
-                foreach(var command in E3.CharacterSettings.StartupCommands)
+				GetExposedDataMappedToDictionary();
+				foreach (var command in E3.CharacterSettings.StartupCommands)
                 {
                     MQ.Cmd(command);
                 }
-                return true;
-            }
+
+				//needed for IsMyGuild(namn), to supply a user generated list of guild members
+				_guildListFilePath = Settings.BaseSettings.GetSettingsFilePath("GuildList.txt");
+				if(System.IO.File.Exists(_guildListFilePath))
+				{
+					foreach(var line in System.IO.File.ReadAllLines(_guildListFilePath))
+					{
+						GuildListMembers.Add(line);
+					}
+				}
+				return true;
+			}
 
         }
-        private static void InitSubSystems()
+		public static void RegisterEvents()
+		{
+
+			EventProcessor.RegisterCommand("/e3ListExposedData", (x) =>
+			{
+				foreach(var pair in ExposedDataReflectionLookup)
+				{
+					E3.Bots.Broadcast(pair.Key,true);
+				}
+
+			});
+		}
+			private static void InitSubSystems()
         {
             var methods = AppDomain.CurrentDomain.GetAssemblies()
             .SelectMany(x => x.GetTypes())
@@ -209,6 +260,34 @@ namespace E3Core.Processors
 
             }
         }
-        
-    }
+		private static void GetExposedDataMappedToDictionary()
+		{
+			//now for some ... reflection again.
+			var fields = AppDomain.CurrentDomain.GetAssemblies()
+			.SelectMany(x => x.GetTypes())
+			.Where(x => x.IsClass)
+			.SelectMany(x => x.GetFields(BindingFlags.Public|BindingFlags.NonPublic | BindingFlags.Static))
+			.Where(x => x.GetCustomAttributes(typeof(ExposedData), false).FirstOrDefault() != null); // returns only methods that have the InvokeAttribute
+
+			foreach (var foundField in fields) // iterate through all found methods
+			{
+				var customAttributes = foundField.GetCustomAttributes();
+				string section = String.Empty;
+				string key = String.Empty;
+				//these are static don't need to create an instance
+				foreach (var attribute in customAttributes)
+				{
+					if (attribute is ExposedData)
+					{
+						var tattribute = ((ExposedData)attribute);
+
+						section = tattribute.Header;
+						key = tattribute.Key;
+						string dictKey = $"${{E3N.State.{section}.{key}}}";
+						ExposedDataReflectionLookup.Add(dictKey, foundField);
+					}
+				}
+			}
+		}
+	}
 }

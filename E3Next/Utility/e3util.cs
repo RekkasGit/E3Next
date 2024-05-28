@@ -13,6 +13,7 @@ using System.Runtime.CompilerServices;
 using System.Text;
 using static MonoCore.EventProcessor;
 using E3Core.Server;
+using System.Reflection;
 
 namespace E3Core.Utility
 {
@@ -27,6 +28,8 @@ namespace E3Core.Utility
 		public static Int32 MaxBuffSlots = 42;
 		public static Int32 MaxSongSlots = 30;
         public static Int32 MaxPetBuffSlots = 30;
+        public static Int32 MobMaxDebuffSlots = 55;
+        public static Int32 XtargetMax = 12;
 
 		//share this as we can reuse as its only 1 thread
 		private static StringBuilder _resultStringBuilder = new StringBuilder(1024);
@@ -269,9 +272,22 @@ namespace E3Core.Utility
 
             return false;
         }
-        public static bool InMyGuild(string person)
+		
+
+		public static bool InMyGuild(string person)
         {
-            return MQ.Query<bool>($"${{Spawn[{person}].Guild.Equal[${{Me.Guild}}]}}");
+		
+			if(MQ.Query<bool>($"${{Spawn[{person}].Guild.Equal[${{Me.Guild}}]}}"))
+			{
+				return true;
+			}
+			//check for guildlist.txt if it exists
+			if(Setup.GuildListMembers.Count>0 && Setup.GuildListMembers.Contains(person,StringComparer.OrdinalIgnoreCase))
+			{
+				return true;
+			}
+
+			return false;
 		}
         public static bool FilterMe(CommandMatch x)
         {
@@ -523,7 +539,7 @@ namespace E3Core.Utility
                     string tstring = s.Substring(start, end - start);
                     StringsToNumbers(tstring, ',', _buffInfoTempList);
                     result[(int)_buffInfoTempList[0]] = _buffInfoTempList[1];
-		    start = end + 1;
+					start = end + 1;
 				}
 				end++;
 			}
@@ -844,7 +860,7 @@ namespace E3Core.Utility
 			string localIP;
 			using (Socket socket = new Socket(AddressFamily.InterNetwork, SocketType.Dgram, 0))
 			{
-				socket.Connect("8.8.8.8", 65530);
+				socket.Connect(E3.GeneralSettings.General_Networking_ExternalIPToQueryForLocal, 65530);
 				IPEndPoint endPoint = socket.LocalEndPoint as IPEndPoint;
 				localIP = endPoint.Address.ToString();
 			}
@@ -1267,5 +1283,258 @@ namespace E3Core.Utility
             }
 
         }
-    }
+		public static void ToggleBooleanSetting(ref bool booleanObject, string Name, List<string> args)
+		{
+			if (args.Count > 0)
+			{
+				if (args[0].Equals("off", StringComparison.OrdinalIgnoreCase))
+				{
+					if (booleanObject)
+					{
+						booleanObject = false;
+						E3.Bots.Broadcast($"\agTurning off {Name}");
+					}
+				}
+				else if (args[0].Equals("on", StringComparison.OrdinalIgnoreCase))
+				{
+					if (!booleanObject)
+					{
+						booleanObject = true;
+						E3.Bots.Broadcast($"\arTurning on {Name}!");
+
+					}
+				}
+			}
+			else
+			{
+				booleanObject = booleanObject ? false : true;
+				if (booleanObject) E3.Bots.Broadcast($"\ag{Name} On");
+				if (!booleanObject) E3.Bots.Broadcast($"\ar{Name} Off");
+
+			}
+		}
+		public static List<Data.Spell> ListAllActiveAA()
+        {
+            List<Data.Spell> returnValue = new List<Data.Spell>();
+            for(Int32 i=0;i<10000;i++)
+            {
+                string spellName = MQ.Query<String>($"${{Me.AltAbility[{i}].Name}}");
+                if(spellName!="NULL")
+                {
+                    var spell = new Data.Spell(spellName);
+                    if(spell.CastType== CastingType.AA)
+                    {
+						returnValue.Add(spell);
+					}
+				}
+            }
+            return returnValue;
+        }
+		
+		public static List<Data.Spell> ListAllActiveSkills()
+		{
+			List<Data.Spell> returnValue = new List<Data.Spell>();
+			for (Int32 i = 0; i < Skills.IDToName.Count; i++)
+			{
+				bool haveSkill = MQ.Query<bool>($"${{Me.Ability[{i}]}}");
+				if (haveSkill)
+				{
+					var spell = new Data.Spell(Skills.IDToName[i]);
+					if (spell.CastType == CastingType.Ability)
+					{
+						returnValue.Add(spell);
+					}
+				}
+			}
+			return returnValue;
+		}
+		public static List<Data.Spell> ListAllBookSpells()
+        {
+			List<Data.Spell> returnValue = new List<Data.Spell>();
+			for (Int32 i = 0; i < 1120; i++)
+			{
+				string spellName = MQ.Query<String>($"${{Me.Book[{i}].Name}}");
+				if (spellName != "NULL")
+				{
+					var spell = new Data.Spell(spellName);
+					if (spell.CastType == CastingType.Spell)
+					{
+						returnValue.Add(spell);
+					}
+				}
+			}
+			return returnValue;
+		}
+		
+		public static List<Data.Spell> ListAllDiscData()
+		{
+			List<Data.Spell> returnValue = new List<Data.Spell>();
+			for (Int32 i = 1; i < 10000; i++)
+			{
+				string spellName = MQ.Query<String>($"${{Me.CombatAbility[{i}].Name}}");
+				if (spellName != "NULL")
+				{
+					var spell = new Data.Spell(spellName);
+					if (spell.CastType == CastingType.Disc)
+					{
+						returnValue.Add(spell);
+					}
+				}
+                else
+                {
+                    break;//no more discs
+                }
+			}
+			return returnValue;
+		}
+		public static List<Data.Spell> ListAllItemWithClickyData()
+		{
+			List<Data.Spell> returnValue = new List<Data.Spell>();
+			for (int i = 0; i <= 22; i++)
+			{
+				string spellName = MQ.Query<string>($"${{Me.Inventory[{i}].Clicky}}");
+
+				if(spellName!="NULL")
+				{
+					string itemName = MQ.Query<string>($"${{Me.Inventory[{i}]}}");
+					var newSpell = new Data.Spell(itemName, null);
+					returnValue.Add(newSpell);
+				}
+			}
+			for (Int32 i = 1; i <= 12; i++)
+			{
+				bool SlotExists = MQ.Query<bool>($"${{Me.Inventory[pack{i}]}}");
+				if (SlotExists)
+				{
+					Int32 ContainerSlots = MQ.Query<Int32>($"${{Me.Inventory[pack{i}].Container}}");
+					if (ContainerSlots > 0)
+					{
+						for (Int32 e = 1; e <= ContainerSlots; e++)
+						{
+							//${Me.Inventory[${itemSlot}].Item[${j}].Name.Equal[${itemName}]}
+							string bagItemSpell = MQ.Query<String>($"${{Me.Inventory[pack{i}].Item[{e}].Clicky}}");
+							if(bagItemSpell!="NULL")
+							{
+								String bagItem = MQ.Query<String>($"${{Me.Inventory[pack{i}].Item[{e}]}}");
+								var newSpell = new Data.Spell(bagItem, null);
+								returnValue.Add(newSpell);
+							}
+						}
+					}
+					else
+					{
+						//its a single item
+						string spellName = MQ.Query<string>($"${{Me.Inventory[pack{i}].Clicky}}");
+
+						if (spellName != "NULL")
+						{
+							string itemName = MQ.Query<string>($"${{Me.Inventory[pack{i}]}}");
+							var newSpell = new Data.Spell(itemName, null);
+							returnValue.Add(newSpell);
+						}
+					}
+				}
+			}
+			return returnValue;
+		}
+
+		public static Dictionary<string,Dictionary<string,FieldInfo>> GetSettingsMappedToInI()
+        {
+            Dictionary<string, Dictionary<string, FieldInfo>> returnValue = new Dictionary<string, Dictionary<string, FieldInfo>>();
+
+
+            //now for some ... reflection
+            var type =E3.CharacterSettings.GetType();
+
+            foreach(var field in type.GetFields(BindingFlags.Public | BindingFlags.NonPublic | BindingFlags.Instance))
+            {
+				var customAttributes =field.GetCustomAttributes();
+                string section = String.Empty;
+                string key = String.Empty;
+
+				foreach (var attribute in customAttributes)
+				{
+                    if(attribute is INI_SectionAttribute)
+                    {
+                        var tattribute = ((INI_SectionAttribute)attribute);
+
+                        section = tattribute.Header;
+                        key = tattribute.Key;
+						Dictionary<string, FieldInfo> sectionKeys;
+						if (!returnValue.TryGetValue(section, out sectionKeys))
+						{
+							sectionKeys = new Dictionary<string, FieldInfo>();
+							returnValue.Add(section, sectionKeys);
+						}
+						sectionKeys.Add(key, field);
+					}
+					if (attribute is INI_Section2Attribute)
+					{
+						var tattribute = ((INI_Section2Attribute)attribute);
+
+						section = tattribute.Header;
+						key = tattribute.Key;
+						Dictionary<string, FieldInfo> sectionKeys;
+						if (!returnValue.TryGetValue(section, out sectionKeys))
+						{
+							sectionKeys = new Dictionary<string, FieldInfo>();
+							returnValue.Add(section, sectionKeys);
+						}
+						sectionKeys.Add(key, field);
+					}
+				}
+             
+			}
+            return returnValue;
+		}
+		public static bool IsGenericList(this FieldInfo o, Type typeToCheck)
+		{
+			var oType = o.FieldType;
+			if (oType.IsGenericType && (oType.GetGenericTypeDefinition() == typeof(List<>)))
+            {
+				Type itemType = oType.GetGenericArguments()[0]; // use this...
+
+                if(itemType==typeToCheck)
+                {
+                    return true;
+                }
+
+			}
+			return false;
+		}
+		public static bool IsGenericDictonary(this FieldInfo o, Type keyTypeToCheck,Type valueTypeToCheck)
+		{
+			var oType = o.FieldType;
+			if (oType.IsGenericType && (oType.GetGenericTypeDefinition() == typeof(Dictionary<,>)))
+			{
+				Type keyType = oType.GetGenericArguments()[0]; // use this...
+                Type valueType = oType.GetGenericArguments()[1];
+
+				if (keyType == keyTypeToCheck && valueTypeToCheck ==valueType)
+				{
+					return true;
+				}
+
+			}
+			return false;
+		}
+		public static bool IsGenericSortedDictonary(this FieldInfo o, Type keyTypeToCheck, Type valueTypeToCheck)
+		{
+			var oType = o.FieldType;
+			if (oType.IsGenericType && (oType.GetGenericTypeDefinition() == typeof(SortedDictionary<,>)))
+			{
+				Type keyType = oType.GetGenericArguments()[0]; // use this...
+				Type valueType = oType.GetGenericArguments()[1];
+
+				if (keyType == keyTypeToCheck && valueTypeToCheck == valueType)
+				{
+					return true;
+				}
+
+			}
+			return false;
+		}
+		
+
+	}
 }

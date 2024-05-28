@@ -21,11 +21,39 @@ namespace E3Core.Classes
         private static Data.Spell _rogueSneakAttack = null;
         private static long _nextHideCheck = 0;
         private static long _nextHideCheckInterval = 1000;
+		private static bool _isInit = false;
 
-        /// <summary>
-        /// Performs a sneak attack.
-        /// </summary>
-        public static void RogueStrike()
+		[ClassInvoke(Data.Class.Rogue)]
+		public static void Init()
+		{
+			if (_isInit) return;
+			RegisterCommands();
+			_isInit = true;
+		}
+		public static void RegisterCommands()
+		{
+			EventProcessor.RegisterCommand("/e3rogue-autohide", (x) =>
+			{
+				if (x.args.Count > 0)
+				{
+					if (x.args[0].Equals("off", StringComparison.OrdinalIgnoreCase))
+					{
+						E3.Bots.Broadcast("Turning off Rogue Auto Hide");
+						E3.CharacterSettings.Rogue_AutoHide = false;
+					}
+				}
+				else
+				{
+					E3.Bots.Broadcast("Turning on Rogue Auto Hide");
+					E3.CharacterSettings.Rogue_AutoHide = true;
+				}
+			});
+		}
+
+		/// <summary>
+		/// Performs a sneak attack.
+		/// </summary>
+		public static void RogueStrike()
         {
             using(_log.Trace())
             {
@@ -36,7 +64,7 @@ namespace E3Core.Classes
                     _rogueSneakAttack = new Data.Spell(sneakattack);
                 }
 
-                if (_rogueSneakAttack.CastType != Data.CastType.None)
+                if (_rogueSneakAttack.CastType != Data.CastingType.None)
                 {
                     if (MQ.Query<bool>($"${{Me.CombatAbilityReady[{sneakattack}]}}") && MQ.Query<bool>($"${{Me.AbilityReady[Backstab]}}"))
                     {
@@ -65,15 +93,21 @@ namespace E3Core.Classes
         [ClassInvoke(Data.Class.Rogue)]
         public static void AutoHide()
         {
+			
+			
             if (!E3.CharacterSettings.Rogue_AutoHide) return;
             if (!e3util.ShouldCheck(ref _nextHideCheck, _nextHideCheckInterval)) return;
             if (MQ.Query<bool>("${Me.Invis}")) return;
-            if (MQ.Query<bool>("${Me.Moving}")) return;
-            if (Zoning.CurrentZone.IsSafeZone) return;
+
+			if (MQ.Query<bool>("${Me.Moving}")) return;
+			if (Zoning.CurrentZone.IsSafeZone) return;
             if (Basics.InCombat()) return;
 
+			//reapply any buffs before we need to go into invis
+			BuffCheck.Check_Buffs();
+			if (E3.ActionTaken) return;
 
-            var sneakQuery = "${Me.Sneaking}";
+			var sneakQuery = "${Me.Sneaking}";
             if (!MQ.Query<bool>(sneakQuery) && MQ.Query<bool>("${Me.AbilityReady[Sneak]"))
             {
                 MQ.Cmd("/doability sneak");

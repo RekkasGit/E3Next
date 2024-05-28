@@ -15,7 +15,7 @@ namespace E3Core.Processors
     {
         private static Logging _log = E3.Log;
         private static IMQ MQ = E3.MQ;
-
+	
         /// <summary>
         /// Initializes this instance.
         /// </summary>
@@ -240,20 +240,49 @@ namespace E3Core.Processors
 			});
             if(e3util.IsEQLive())
             {
-				pattern = @"You gain party experience!";
+				pattern = @"You gain party experience";
 				EventProcessor.RegisterEvent("YouGainEXPParty", pattern, (x) => {
 
 					E3.Bots.Broadcast(x.eventString + $" Total:{MQ.Query<string>("${Me.PctExp}")}%");
 
 				});
-				pattern = @"You gain experience!";
+				pattern = @"You gain experience";
 				EventProcessor.RegisterEvent("YouGainEXP", pattern, (x) => {
 
 					E3.Bots.Broadcast(x.eventString + $" Total:{MQ.Query<string>("${Me.PctExp}")}%");
 
 				});
+				pattern = @"(.+) has asked you to join the shared task";
+				EventProcessor.RegisterEvent("GuildAddTask", pattern, (x) => {
+					if (!E3.CharacterSettings.Misc_AutoJoinTasks) return;
+					if (x.match.Groups.Count > 1)
+					{
+						string person = x.match.Groups[1].Value;
+						//need to fill out GuildList.txt for it to work for guild members not in zone.
+						if (e3util.InMyGuild(person))
+						{
+							
+							MQ.Delay(7000);
+							e3util.ClickYesNo(true);
+
+						}
+						else
+						{
+							E3.Bots.Broadcast($@"{person} tried to invite me to a task, but not in my guild or was in guild but not in zone and not in \e3 Macro Inis\guildlist.txt");
+						}
+					}
+				});
+				EventProcessor.RegisterCommand("/e3autojointasks", (x) =>
+				{
+					
+					e3util.ToggleBooleanSetting(ref E3.CharacterSettings.Misc_AutoJoinTasks, "Auto Join Tasks", x.args);
+					
+
+				});
+				
 
 			}
 		}
+		
     }
 }

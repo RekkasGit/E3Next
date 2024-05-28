@@ -145,31 +145,36 @@ namespace E3Core.Classes
             {
                 
                 Spell s;
-                if(!Spell.LoadedSpellsByName.TryGetValue("Improved Death Peace",out s))
-                {
-                    s = new Spell("Improved Death Peace");
-                }
-                if(Casting.CheckReady(s) && Casting.CheckMana(s))
-                {
-                    Casting.Cast(0, s);
-                    //check to see if we can stand based off the # of group members.
-                    Int32 GroupSize = MQ.Query<Int32>("${Group}");
-                    Int32 GroupInZone = MQ.Query<Int32>("${Group.Present}");
+                if(e3util.IsEQEMU())
+				{
+					if (!Spell.LoadedSpellsByName.TryGetValue("Improved Death Peace", out s))
+					{
+						s = new Spell("Improved Death Peace");
+					}
+					if (Casting.CheckReady(s) && Casting.CheckMana(s))
+					{
+						Casting.Cast(0, s);
+						//check to see if we can stand based off the # of group members.
+						Int32 GroupSize = MQ.Query<Int32>("${Group}");
+						Int32 GroupInZone = MQ.Query<Int32>("${Group.Present}");
 
-                    if (GroupSize - GroupInZone > 0)
-                    {
-                        Assist.AssistOff();
-                        E3.Bots.Broadcast("<CheckNecroAggro> Have agro, someone is dead, staying down. Issue reassist when ready.");
+						if (GroupSize - GroupInZone > 0)
+						{
+							Assist.AssistOff();
+							E3.Bots.Broadcast("<CheckNecroAggro> Have agro, someone is dead, staying down. Issue reassist when ready.");
 
 
-                    }
-                    else
-                    {
-                        MQ.Cmd("/stand");
-                        return;
-                    }
+						}
+						else
+						{
+							MQ.Cmd("/stand");
+							return;
+						}
 
-                }
+					}
+
+				}
+               
                 if (!Spell.LoadedSpellsByName.TryGetValue("Death Peace", out s))
                 {
                     s = new Spell("Death Peace");

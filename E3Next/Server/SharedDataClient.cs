@@ -37,16 +37,17 @@ namespace E3Core.Server
 
 		Dictionary<string, Task> _processTasks = new Dictionary<string, Task>();
 		static object _processLock = new object();
-		public bool RegisterUser(string user,string path)
+		static bool _isProxyMode = false;
+		public bool RegisterUser(string user, string path, bool isproxy = false)
 		{
-
+			_isProxyMode = isproxy;
 			//fix situations where it doesn't end in a slash
 			if(!path.EndsWith(@"\"))
 			{
 				path  += @"\";
 			}
 
-			//see if they exist in the collection
+			//sanity check area
 			if (!TopicUpdates.ContainsKey(user))
 			{
 				lock (_processLock)
@@ -55,11 +56,15 @@ namespace E3Core.Server
 					{
 						//lets see if the file exists
 						string filePath =$"{path}{user}_{E3.ServerName}_pubsubport.txt";
+						if(isproxy)
+						{
+							filePath = $"{path}{user}_pubsubport.txt";
+						}
 
 						if (System.IO.File.Exists(filePath))
 						{
 							//lets load up the port information
-							TopicUpdates.TryAdd(user, new ConcurrentDictionary<string, ShareDataEntry>());
+							
 							string data = System.IO.File.ReadAllText(filePath);
 							//its now port:ipaddress
 							string[] splitData = data.Split(new char[] { ',' });
@@ -150,7 +155,7 @@ namespace E3Core.Server
 						currentIndex = indexOfSeperator + 1;
 						string bcMessage = message.Substring(currentIndex, message.Length - currentIndex);
 
-						MQ.Cmd($"/echo \a#336699[{MainProcessor.ApplicationName}]\a-w{System.DateTime.Now.ToString("HH:mm:ss")}\ar<\ay{user}\ar> \aw{bcMessage}");
+						MQ.Cmd($"/noparse /echo \a#336699[{MainProcessor.ApplicationName}]\a-w{System.DateTime.Now.ToString("HH:mm:ss")}\ar<\ay{user}\ar> \aw{bcMessage}");
 					}
 					else
 					{
@@ -165,7 +170,8 @@ namespace E3Core.Server
 						string command = message.Substring(currentIndex, message.Length - currentIndex);
 						//a command type
 
-						if(typeInfo== OnCommandData.CommandType.OnCommandAllExceptMeZone  || typeInfo == OnCommandData.CommandType.OnCommandAllZone || typeInfo ==OnCommandData.CommandType.OnCommandGroupZone || typeInfo== OnCommandData.CommandType.OnCommandGroupAllZone)
+						if(typeInfo== OnCommandData.CommandType.OnCommandAllExceptMeZone  || typeInfo == OnCommandData.CommandType.OnCommandAllZone || typeInfo ==OnCommandData.CommandType.OnCommandGroupZone 
+							|| typeInfo== OnCommandData.CommandType.OnCommandGroupAllZone || typeInfo == OnCommandData.CommandType.OnCommandRaidZone || typeInfo == OnCommandData.CommandType.OnCommandRaidZoneNotMe)
 						{
 
 							//this is a zone type command lets verify zone logic
@@ -207,7 +213,7 @@ namespace E3Core.Server
 								continue;
 							}
 						}
-						else if (typeInfo == OnCommandData.CommandType.OnCommandRaid)
+						else if (typeInfo == OnCommandData.CommandType.OnCommandRaid || (typeInfo == OnCommandData.CommandType.OnCommandRaidZone) || (typeInfo == OnCommandData.CommandType.OnCommandRaidNotMe || (typeInfo == OnCommandData.CommandType.OnCommandRaidZoneNotMe)))
 						{
 							//check to see if we are part of their group
 							var inRaid = MQ.Query<bool>($"${{Raid.Member[{user}]}}");
@@ -219,7 +225,9 @@ namespace E3Core.Server
 						}
 
 						//check to see if we are part of their group
-						if (user == E3.CurrentName && (!(typeInfo == OnCommandData.CommandType.OnCommandName||typeInfo== OnCommandData.CommandType.OnCommandGroupAll || typeInfo == OnCommandData.CommandType.OnCommandAll || typeInfo== OnCommandData.CommandType.OnCommandGroupAllZone|| typeInfo==OnCommandData.CommandType.OnCommandAllZone)))
+						if (user == E3.CurrentName && (!(typeInfo == OnCommandData.CommandType.OnCommandName|| typeInfo== OnCommandData.CommandType.OnCommandChannel ||
+							typeInfo== OnCommandData.CommandType.OnCommandGroupAll || typeInfo == OnCommandData.CommandType.OnCommandAll || typeInfo== OnCommandData.CommandType.OnCommandGroupAllZone|| 
+							typeInfo==OnCommandData.CommandType.OnCommandAllZone || typeInfo == OnCommandData.CommandType.OnCommandRaid || typeInfo == OnCommandData.CommandType.OnCommandRaidZone)))
 						{
 							//if not an all type command and not us, kick out.
 							//not for us only group members
@@ -270,8 +278,44 @@ namespace E3Core.Server
 
 			}
 		}
-		//reading the commands off the wire from this thread, to post to the main thread collection
-		//with proper enums
+	
+		/// <summary>
+		/// Note, in P2P mode, we would have 1 thread per toon, but I had to enable proxy mode to handle larger number of clients (54) so i couldn't have 
+		/// one thread per toon, as that would be like nearly 3,000 threads. so the user name was put into the payload so that a proxy could be used. 
+		/// </summary>
+		/// <param name="user"></param>
+		/// <param name="messageTopicReceived"></param>
+		/// <param name="messageReceived"></param>
+		private void ProcessTopicMessage(string user,string messageTopicReceived, string messageReceived)
+		{
+
+			//get the user from the payload
+			
+
+			ConcurrentDictionary<string, ShareDataEntry> usertopics;
+			if (!TopicUpdates.TryGetValue(user,out usertopics))
+			{
+				usertopics =  new ConcurrentDictionary<string, ShareDataEntry>();	
+				TopicUpdates.TryAdd(user, usertopics);
+			}
+
+			Int64 updateTime = Core.StopWatch.ElapsedMilliseconds;
+			ShareDataEntry entry;
+			if (!usertopics.TryGetValue(messageTopicReceived, out entry))
+			{
+				entry = new ShareDataEntry() { Data = messageReceived, LastUpdate = updateTime };
+				usertopics.TryAdd(messageTopicReceived, entry);
+			}
+			if (!String.Equals(entry.Data, messageReceived))
+			{
+				lock (entry)
+				{
+					//why do work if its the same data?	
+					entry.Data = messageReceived;
+					entry.LastUpdate = updateTime;
+				}
+			}
+		}
 		public void Process(string user, string port,string serverName, string fileName)
 		{
 			System.DateTime lastFileUpdate = System.IO.File.GetLastWriteTime(fileName);
@@ -280,11 +324,13 @@ namespace E3Core.Server
 			Thread.CurrentThread.CurrentCulture = new CultureInfo("en-US");
 			//timespan we expect to have some type of message
 			TimeSpan recieveTimeout = new TimeSpan(0, 0, 0, 2, 0);
+
+
 			using (var subSocket = new SubscriberSocket())
 			{
 				try
 				{
-				
+					
 					subSocket.Options.ReceiveHighWatermark = 1000;
 					subSocket.Options.TcpKeepalive = true;
 					subSocket.Options.TcpKeepaliveIdle = TimeSpan.FromSeconds(5);
@@ -304,6 +350,7 @@ namespace E3Core.Server
 					subSocket.Subscribe("BroadCastMessageZone");
 					subSocket.Subscribe("${Me."); //all Me stuff should be subscribed to
 					subSocket.Subscribe("${Data."); //all the custom data keys a user can create
+					subSocket.Subscribe("${DataChannel.");
 					MQ.Write("\agShared Data Client: Connecting to user:" + user + " on port:" + port + " server:"+serverName); ;
 
 					while (Core.IsProcessing && E3.NetMQ_SharedDataServerThradRun)
@@ -313,7 +360,19 @@ namespace E3Core.Server
 						{
 							string messageReceived = subSocket.ReceiveFrameString();
 
-							if (messageTopicReceived == "OnCommand-All")
+							Int32 indexOfColon = messageReceived.IndexOf(':');
+							string payloaduser = messageReceived.Substring(0, indexOfColon);
+							string payload = messageReceived.Substring(indexOfColon + 1, messageReceived.Length - indexOfColon - 1);
+							messageReceived = payload;
+
+							//most common goes first
+							if (messageTopicReceived.StartsWith("${Me."))
+							{
+
+								ProcessTopicMessage(payloaduser, messageTopicReceived, messageReceived);
+
+							}
+							else if (messageTopicReceived == "OnCommand-All")
 							{
 								var data = OnCommandData.Aquire();
 								data.Data = messageReceived;
@@ -385,6 +444,27 @@ namespace E3Core.Server
 
 								CommandQueue.Enqueue(data);
 							}
+							else if (messageTopicReceived == "OnCommand-RaidNotMe")
+							{
+								var data = OnCommandData.Aquire();
+								data.Data = messageReceived;
+								data.TypeOfCommand = OnCommandData.CommandType.OnCommandRaidNotMe;
+								CommandQueue.Enqueue(data);
+							}
+							else if (messageTopicReceived == "OnCommand-RaidZone")
+							{
+								var data = OnCommandData.Aquire();
+								data.Data = messageReceived;
+								data.TypeOfCommand = OnCommandData.CommandType.OnCommandRaidZone;
+								CommandQueue.Enqueue(data);
+							}
+							else if (messageTopicReceived == "OnCommand-RaidZoneNotMe")
+							{
+								var data = OnCommandData.Aquire();
+								data.Data = messageReceived;
+								data.TypeOfCommand = OnCommandData.CommandType.OnCommandRaidZoneNotMe;
+								CommandQueue.Enqueue(data);
+							}
 							else if (messageTopicReceived == "BroadCastMessage")
 							{
 								var data = OnCommandData.Aquire();
@@ -401,8 +481,22 @@ namespace E3Core.Server
 
 								CommandQueue.Enqueue(data);
 							}
-							else if (messageTopicReceived == OnCommandName)
+							else if (messageTopicReceived.StartsWith("${DataChannel."))
 							{
+								//don't do the command you are issuing out
+								if(payloaduser!=E3.CurrentName)
+								{
+									if (E3.CharacterSettings.E3ChatChannelsToJoin.Contains(messageTopicReceived, StringComparer.OrdinalIgnoreCase))
+									{
+										var data = OnCommandData.Aquire();
+										data.Data = messageReceived;
+										data.TypeOfCommand = OnCommandData.CommandType.OnCommandChannel;
+										CommandQueue.Enqueue(data);
+									}
+								}
+							}
+							else if (messageTopicReceived == OnCommandName)
+							{	//bct commands
 								var data = OnCommandData.Aquire();
 								data.Data = messageReceived;
 								data.TypeOfCommand = OnCommandData.CommandType.OnCommandName;
@@ -412,24 +506,7 @@ namespace E3Core.Server
 							}
 							else
 							{
-								Int64 updateTime = Core.StopWatch.ElapsedMilliseconds;
-								if (!TopicUpdates[user].ContainsKey(messageTopicReceived))
-								{
-									TopicUpdates[user].TryAdd(messageTopicReceived, new ShareDataEntry() { Data = messageReceived, LastUpdate = updateTime });
-								}
-
-								
-								var entry = TopicUpdates[user][messageTopicReceived];
-
-								lock(entry)
-								{
-									//why do work if its the same data?									
-									if (entry.Data != messageReceived)
-									{
-										entry.Data = messageReceived;
-										entry.LastUpdate = updateTime;
-									}
-								}
+								ProcessTopicMessage(payloaduser, messageTopicReceived, messageReceived);
 
 							}
 						}
@@ -493,16 +570,20 @@ namespace E3Core.Server
 				None,
 				OnCommandAll,
 				OnCommandAllZone,
+				OnCommandRaid,
+				OnCommandRaidNotMe,
+				OnCommandRaidZone,
+				OnCommandRaidZoneNotMe,
 				OnCommandAllExceptMe,
 				OnCommandAllExceptMeZone,
 				OnCommandGroup,
 				OnCommandGroupZone,
 				OnCommandGroupAll,
 				OnCommandGroupAllZone,
-				OnCommandRaid,
 				BroadCastMessage,
 				BroadCastMessageZone,
-				OnCommandName
+				OnCommandName,
+				OnCommandChannel
 			}
 			public string Data { get; set; }
 			public CommandType TypeOfCommand { get; set; }

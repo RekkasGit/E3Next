@@ -88,12 +88,14 @@ namespace E3Core.Settings
         public void InitMethods()
         {
 
+            MethodLookup.Clear();
+            ClassMethodLookup.Clear();
+			ClassMethodsAsStrings.Clear();
+			//var method = typeof(AdvancedSettings).GetMethod("check_summonitems");
+			//var func = (Action)method.CreateDelegate(typeof(Action), this);
 
-            //var method = typeof(AdvancedSettings).GetMethod("check_summonitems");
-            //var func = (Action)method.CreateDelegate(typeof(Action), this);
-
-            //find all methods in all classes that have the adv setting invoke attribute. 
-            var methods = AppDomain.CurrentDomain.GetAssemblies() 
+			//find all methods in all classes that have the adv setting invoke attribute. 
+			var methods = AppDomain.CurrentDomain.GetAssemblies() 
             .SelectMany(x => x.GetTypes()) 
             .Where(x => x.IsClass)
             .SelectMany(x => x.GetMethods()) 
@@ -123,6 +125,8 @@ namespace E3Core.Settings
                     ClassMethodLookup.Add(foundMethod.Name, func);
                 }
             }
+
+           
         }
         public  void CreateSettings()
         {
@@ -202,9 +206,7 @@ ENC Function=check_Debuffs
 ENC Function=check_DoTs
 ENC Function=check_Nukes
 ENC Function=check_Buffs
-ENC Function=check_Rune
 ENC Function=check_AE
-ENC Function=check_Mez
 ENC Function=check_Pets
 ENC Function=check_Food
 ENC Function=check_Pets

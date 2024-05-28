@@ -52,7 +52,9 @@ namespace E3Core.Processors
         private static Dictionary<string, CharacterBuffs> _characterBuffs = new Dictionary<string, CharacterBuffs>();
         private static Dictionary<string, CharacterBuffs> _petBuffs = new Dictionary<string, CharacterBuffs>();
 		private static System.Text.StringBuilder _stringBuilder = new System.Text.StringBuilder();
+		[ExposedData("Bots", "GlobalAllEnabled")]
 		private static bool GlobalAllEnabled = false;
+		[ExposedData("Bots", "NetworkingPathsTolookAt")]
 		List<string> _pathsTolookAt = new List<string>();
 		Task _autoRegisrationTask;
         public SharedDataBots()
@@ -86,7 +88,7 @@ namespace E3Core.Processors
 			EventProcessor.RegisterCommand("/e3GlobalBroadcast", (x) =>
 			{
 				GlobalAllEnabled = !GlobalAllEnabled;
-				Broadcast($"\agSetting Global Boradcast to {GlobalAllEnabled}");
+				Broadcast($"\agSetting Global Broadcast to {GlobalAllEnabled}");
 
 			});
 			EventProcessor.RegisterCommand("/e3bc", (x) =>
@@ -160,6 +162,21 @@ namespace E3Core.Processors
 				}
 
 			});
+			EventProcessor.RegisterCommand("/e3bcchannel", (x) =>
+			{
+				if (x.args.Count > 1)
+				{
+					string channel = x.args[0];
+					x.args.RemoveAt(0);
+					string command = e3util.ArgsToCommand(x.args);
+					if (x.filters.Count > 0)
+					{
+						command += " \"" + e3util.ArgsToCommand(x.filters) + "\"";
+					}
+
+					BroadcastCommandToChannel(channel, command, true);
+				}
+			});
 			EventProcessor.RegisterCommand("/e3bct", (x) =>
 			{
 				if (x.args.Count > 1)
@@ -211,7 +228,42 @@ namespace E3Core.Processors
 
 				}
 			});
+			EventProcessor.RegisterCommand("/e3bcr", (x) =>
+			{
+				if (x.args.Count > 0)
+				{
+					string command = e3util.ArgsToCommand(x.args);
+					BroadcastCommandRaidNotMe(command, true, x);
 
+				}
+			});
+			EventProcessor.RegisterCommand("/e3bcrz", (x) =>
+			{
+				if (x.args.Count > 0)
+				{
+					string command = e3util.ArgsToCommand(x.args);
+					BroadcastCommandToRaidNotMeZone(command, x,true);
+
+				}
+			});
+			EventProcessor.RegisterCommand("/e3bcra", (x) =>
+			{
+				if (x.args.Count > 0)
+				{
+					string command = e3util.ArgsToCommand(x.args);
+					BroadcastCommandRaid(command, true,x);
+
+				}
+			});
+			EventProcessor.RegisterCommand("/e3bcraz", (x) =>
+			{
+				if (x.args.Count > 0)
+				{
+					string command = e3util.ArgsToCommand(x.args);
+					BroadcastCommandRaidZone(command, x,true);
+
+				}
+			});
 
 		}
 		public CharacterBuffs GetBuffInformation(string name)
@@ -226,12 +278,65 @@ namespace E3Core.Processors
 		
         private void AutoRegisterUsers(List<string> settingsPaths)
         {
+			///we can have two states here, the normal user_server_pubsubport.txt
+			///and the "proxy_pubsubport.txt". If the proxy_pubsubport exists, we use that and only that.
             string searchPattern = $"*_{E3.ServerName}_pubsubport.txt";
+			bool inProxyState = false;
+			string proxyFileFullName = string.Empty;
+			DateTime proxyFileLastUpdateTime = DateTime.MinValue; 
 			while (Core.IsProcessing)
             {
-                foreach(var path in settingsPaths)
-                {
-                    try
+				//currently have proxy file, to just keep the thread checking for updates
+				if(inProxyState)
+				{
+					System.Threading.Thread.Sleep(500);
+
+					if(!File.Exists(proxyFileFullName))
+					{    //proxy file poofed, will need to restart proxy
+						continue;
+					}
+					//need to check for proxy file update
+					DateTime lastUpdate = System.IO.File.GetLastWriteTime(proxyFileFullName);
+
+					if(lastUpdate>proxyFileLastUpdateTime)
+					{
+						inProxyState = false;
+					
+					}
+
+					continue;
+				}
+				//check to see if there are any proxy setups, if so do them first
+				foreach (var path in settingsPaths)
+				{
+					string tpath = path;
+					if (!tpath.EndsWith(@"\"))
+					{
+						tpath += @"\";
+					}
+					if (File.Exists($@"{tpath}proxy_pubsubport.txt"))
+					{
+
+						//we are in proxy mode, set proxy state and kick out
+
+						NetMQServer.SharedDataClient.RegisterUser("proxy", tpath, true);
+						inProxyState = true;
+						proxyFileFullName = $@"{tpath}proxy_pubsubport.txt";
+						proxyFileLastUpdateTime = System.IO.File.GetLastWriteTime(proxyFileFullName);
+						break;
+
+					}
+				}
+				if (inProxyState) continue;
+				foreach (var path in settingsPaths)
+				{
+					string tpath = path;
+					if (!tpath.EndsWith(@"\"))
+					{
+						tpath += @"\";
+					}
+					
+					try
                     {
 						//look for files that start with $"{user}_{E3.ServerName}_pubsubport.txt"
 						string[] fileNames = System.IO.Directory.GetFiles(path, searchPattern);
@@ -255,7 +360,7 @@ namespace E3Core.Processors
 						System.Threading.Thread.Sleep(1000);
 					}
 				}
-     			System.Threading.Thread.Sleep(1000);
+     			System.Threading.Thread.Sleep(500);
             }
         }
         /// <summary>
@@ -360,10 +465,17 @@ namespace E3Core.Processors
 			return DebuffCounterFunction(name, "${Me.CountersCorrupted}", _debuffCorruptedCounterCollection);
 
 		}
-
+		private Int32 _botsConnectedCount = 0;
+		private List<string> _botsConnectedCache = new List<string>();
 		public List<string> BotsConnected()
         {
-            return NetMQServer.SharedDataClient.TopicUpdates.Keys.ToList();
+			if(NetMQServer.SharedDataClient.TopicUpdates.Keys.Count!=_botsConnectedCount)
+			{
+				//need to udpate
+				_botsConnectedCount = NetMQServer.SharedDataClient.TopicUpdates.Keys.Count;
+				_botsConnectedCache = NetMQServer.SharedDataClient.TopicUpdates.Keys.ToList();
+			}
+			return _botsConnectedCache;
 		}
 
         public void Broadcast(string message, bool noparse = false)
@@ -424,6 +536,89 @@ namespace E3Core.Processors
 				command = MQ.Query<string>(command);
 			}
 			PubServer.AddTopicMessage("OnCommand-All", $"{E3.CurrentName}:{noparse}:{command}");
+		}
+		public void BroadcastCommandRaid(string command, bool noparse = false, CommandMatch match = null)
+		{
+			if (match != null && match.filters.Count > 0)
+			{
+				//need to pass over the filters if they exist
+				_stringBuilder.Clear();
+				_stringBuilder.Append($"{command}");
+				foreach (var filter in match.filters)
+				{
+					_stringBuilder.Append($" \"{filter}\"");
+				}
+				command = _stringBuilder.ToString();
+			}
+			if (!noparse)
+			{
+				command = MQ.Query<string>(command);
+			}
+			PubServer.AddTopicMessage("OnCommand-Raid", $"{E3.CurrentName}:{noparse}:{command}");
+		}
+		public void BroadcastCommandRaidNotMe(string command, bool noparse = false, CommandMatch match = null)
+		{
+			if (match != null && match.filters.Count > 0)
+			{
+				//need to pass over the filters if they exist
+				_stringBuilder.Clear();
+				_stringBuilder.Append($"{command}");
+				foreach (var filter in match.filters)
+				{
+					_stringBuilder.Append($" \"{filter}\"");
+				}
+				command = _stringBuilder.ToString();
+			}
+			if (!noparse)
+			{
+				command = MQ.Query<string>(command);
+			}
+			PubServer.AddTopicMessage("OnCommand-RaidNotMe", $"{E3.CurrentName}:{noparse}:{command}");
+			MQ.Write($"\ap{E3.CurrentName} => \ayRaid All: \ag{command}");
+		}
+
+		public void BroadcastCommandRaidZone(string command, CommandMatch match = null, bool noparse = false)
+		{	
+
+			if (match != null && match.filters.Count > 0)
+			{
+				//need to pass over the filters if they exist
+				_stringBuilder.Clear();
+				_stringBuilder.Append($"{command}");
+				foreach (var filter in match.filters)
+				{
+					_stringBuilder.Append($" \"{filter}\"");
+				}
+				command = _stringBuilder.ToString();
+			}
+			if (!noparse)
+			{
+				command = MQ.Query<string>(command);
+			}
+			PubServer.AddTopicMessage("OnCommand-RaidZone", $"{E3.CurrentName}:{noparse}:{command}");
+
+		}
+		public void BroadcastCommandToRaidNotMeZone(string command, CommandMatch match = null, bool noparse = false)
+		{
+			
+
+			if (match != null && match.filters.Count > 0)
+			{
+				//need to pass over the filters if they exist
+				_stringBuilder.Clear();
+				_stringBuilder.Append($"{command}");
+				foreach (var filter in match.filters)
+				{
+					_stringBuilder.Append($" \"{filter}\"");
+				}
+				command = _stringBuilder.ToString();
+			}
+			if (!noparse)
+			{
+				command = MQ.Query<string>(command);
+			}
+			PubServer.AddTopicMessage("OnCommand-RaidZoneNotMe", $"{E3.CurrentName}:{noparse}:{command}");
+
 		}
 		public void BroadcastCommandAllZone(string command, bool noparse = false, CommandMatch match = null)
 		{
@@ -610,6 +805,16 @@ namespace E3Core.Processors
 			}
 			PubServer.AddTopicMessage("OnCommand-GroupAllZone", $"{E3.CurrentName}:{noparse}:{command}");
 			
+		}
+		public void BroadcastCommandToChannel(string channel, string command, bool noparse = false)
+		{
+			if (!noparse)
+			{
+				command = MQ.Query<string>(command);
+			}
+			PubServer.AddTopicMessage($"${{DataChannel.{channel}}}", $"{E3.CurrentName}:{false}:{command}");
+			MQ.Write($"\ap{E3.CurrentName} => \ay{channel} : \ag{command}");
+
 		}
 		public void BroadcastCommandToPerson(string person, string command, bool noparse = false)
 		{
@@ -807,7 +1012,7 @@ namespace E3Core.Processors
 			EventProcessor.RegisterCommand("/e3GlobalBroadcast", (x) =>
 			{
 				GlobalAllEnabled = !GlobalAllEnabled;
-				Broadcast($"\agSetting Global Boradcast to {GlobalAllEnabled}");
+				Broadcast($"\agSetting Global Broadcast to {GlobalAllEnabled}");
 
 			});
 		}

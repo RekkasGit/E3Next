@@ -79,6 +79,9 @@ namespace E3NextUI
 			this.settingsToolStripMenuItem1 = new System.Windows.Forms.ToolStripMenuItem();
 			this.unlockEvaVoiceToolStripMenuItem = new System.Windows.Forms.ToolStripMenuItem();
 			this.panelMain = new System.Windows.Forms.Panel();
+			this.labelMercDamageDPSValue = new System.Windows.Forms.Label();
+			this.labelMercDamage = new System.Windows.Forms.Label();
+			this.labelMercDamageValue = new System.Windows.Forms.Label();
 			this.panelButtons = new System.Windows.Forms.Panel();
 			this.tableLayoutPanelDynamicButtons = new System.Windows.Forms.TableLayoutPanel();
 			this.panelConsole = new System.Windows.Forms.Panel();
@@ -92,6 +95,8 @@ namespace E3NextUI
 			this.labelCasting = new System.Windows.Forms.Label();
 			this.labelCastingValue = new System.Windows.Forms.Label();
 			this.panelStatusPannel2 = new System.Windows.Forms.Panel();
+			this.label1 = new System.Windows.Forms.Label();
+			this.labelMercNameValue = new System.Windows.Forms.Label();
 			((System.ComponentModel.ISupportInitialize)(this.splitContainer1)).BeginInit();
 			this.splitContainer1.Panel1.SuspendLayout();
 			this.splitContainer1.Panel2.SuspendLayout();
@@ -261,7 +266,7 @@ namespace E3NextUI
 			// labelTotalDamage
 			// 
 			this.labelTotalDamage.AutoSize = true;
-			this.labelTotalDamage.Location = new System.Drawing.Point(262, 81);
+			this.labelTotalDamage.Location = new System.Drawing.Point(222, 86);
 			this.labelTotalDamage.Name = "labelTotalDamage";
 			this.labelTotalDamage.Size = new System.Drawing.Size(74, 13);
 			this.labelTotalDamage.TabIndex = 9;
@@ -270,7 +275,7 @@ namespace E3NextUI
 			// labelTotalDamageValue
 			// 
 			this.labelTotalDamageValue.AutoSize = true;
-			this.labelTotalDamageValue.Location = new System.Drawing.Point(342, 81);
+			this.labelTotalDamageValue.Location = new System.Drawing.Point(302, 86);
 			this.labelTotalDamageValue.Name = "labelTotalDamageValue";
 			this.labelTotalDamageValue.Size = new System.Drawing.Size(13, 13);
 			this.labelTotalDamageValue.TabIndex = 10;
@@ -279,7 +284,7 @@ namespace E3NextUI
 			// labelTotalTime
 			// 
 			this.labelTotalTime.AutoSize = true;
-			this.labelTotalTime.Location = new System.Drawing.Point(279, 101);
+			this.labelTotalTime.Location = new System.Drawing.Point(237, 107);
 			this.labelTotalTime.Name = "labelTotalTime";
 			this.labelTotalTime.Size = new System.Drawing.Size(57, 13);
 			this.labelTotalTime.TabIndex = 11;
@@ -288,7 +293,7 @@ namespace E3NextUI
 			// labelTotalTimeValue
 			// 
 			this.labelTotalTimeValue.AutoSize = true;
-			this.labelTotalTimeValue.Location = new System.Drawing.Point(342, 101);
+			this.labelTotalTimeValue.Location = new System.Drawing.Point(302, 107);
 			this.labelTotalTimeValue.Name = "labelTotalTimeValue";
 			this.labelTotalTimeValue.Size = new System.Drawing.Size(13, 13);
 			this.labelTotalTimeValue.TabIndex = 12;
@@ -297,7 +302,7 @@ namespace E3NextUI
 			// labelYourDamageValue
 			// 
 			this.labelYourDamageValue.AutoSize = true;
-			this.labelYourDamageValue.Location = new System.Drawing.Point(342, 5);
+			this.labelYourDamageValue.Location = new System.Drawing.Point(302, 5);
 			this.labelYourDamageValue.Name = "labelYourDamageValue";
 			this.labelYourDamageValue.Size = new System.Drawing.Size(13, 13);
 			this.labelYourDamageValue.TabIndex = 14;
@@ -306,7 +311,7 @@ namespace E3NextUI
 			// labelYourDamage
 			// 
 			this.labelYourDamage.AutoSize = true;
-			this.labelYourDamage.Location = new System.Drawing.Point(261, 5);
+			this.labelYourDamage.Location = new System.Drawing.Point(221, 5);
 			this.labelYourDamage.Name = "labelYourDamage";
 			this.labelYourDamage.Size = new System.Drawing.Size(75, 13);
 			this.labelYourDamage.TabIndex = 13;
@@ -315,7 +320,7 @@ namespace E3NextUI
 			// labelPetDamageValue
 			// 
 			this.labelPetDamageValue.AutoSize = true;
-			this.labelPetDamageValue.Location = new System.Drawing.Point(342, 25);
+			this.labelPetDamageValue.Location = new System.Drawing.Point(302, 25);
 			this.labelPetDamageValue.Name = "labelPetDamageValue";
 			this.labelPetDamageValue.Size = new System.Drawing.Size(13, 13);
 			this.labelPetDamageValue.TabIndex = 16;
@@ -324,7 +329,7 @@ namespace E3NextUI
 			// labelPetDamage
 			// 
 			this.labelPetDamage.AutoSize = true;
-			this.labelPetDamage.Location = new System.Drawing.Point(267, 25);
+			this.labelPetDamage.Location = new System.Drawing.Point(227, 25);
 			this.labelPetDamage.Name = "labelPetDamage";
 			this.labelPetDamage.Size = new System.Drawing.Size(69, 13);
 			this.labelPetDamage.TabIndex = 15;
@@ -333,7 +338,7 @@ namespace E3NextUI
 			// labelYourDamageShieldValue
 			// 
 			this.labelYourDamageShieldValue.AutoSize = true;
-			this.labelYourDamageShieldValue.Location = new System.Drawing.Point(342, 48);
+			this.labelYourDamageShieldValue.Location = new System.Drawing.Point(302, 43);
 			this.labelYourDamageShieldValue.Name = "labelYourDamageShieldValue";
 			this.labelYourDamageShieldValue.Size = new System.Drawing.Size(13, 13);
 			this.labelYourDamageShieldValue.TabIndex = 18;
@@ -342,7 +347,7 @@ namespace E3NextUI
 			// labelYourDamageShield
 			// 
 			this.labelYourDamageShield.AutoSize = true;
-			this.labelYourDamageShield.Location = new System.Drawing.Point(268, 48);
+			this.labelYourDamageShield.Location = new System.Drawing.Point(228, 43);
 			this.labelYourDamageShield.Name = "labelYourDamageShield";
 			this.labelYourDamageShield.Size = new System.Drawing.Size(68, 13);
 			this.labelYourDamageShield.TabIndex = 17;
@@ -405,7 +410,7 @@ namespace E3NextUI
 			// labelDamageShieldDPSValue
 			// 
 			this.labelDamageShieldDPSValue.AutoSize = true;
-			this.labelDamageShieldDPSValue.Location = new System.Drawing.Point(399, 48);
+			this.labelDamageShieldDPSValue.Location = new System.Drawing.Point(399, 43);
 			this.labelDamageShieldDPSValue.Name = "labelDamageShieldDPSValue";
 			this.labelDamageShieldDPSValue.Size = new System.Drawing.Size(13, 13);
 			this.labelDamageShieldDPSValue.TabIndex = 25;
@@ -414,7 +419,7 @@ namespace E3NextUI
 			// labelTotalDamageDPSValue
 			// 
 			this.labelTotalDamageDPSValue.AutoSize = true;
-			this.labelTotalDamageDPSValue.Location = new System.Drawing.Point(399, 81);
+			this.labelTotalDamageDPSValue.Location = new System.Drawing.Point(399, 86);
 			this.labelTotalDamageDPSValue.Name = "labelTotalDamageDPSValue";
 			this.labelTotalDamageDPSValue.Size = new System.Drawing.Size(13, 13);
 			this.labelTotalDamageDPSValue.TabIndex = 26;
@@ -484,6 +489,7 @@ namespace E3NextUI
 			// 
 			// menuStrip1
 			// 
+			this.menuStrip1.Font = new System.Drawing.Font("Segoe UI", 9F);
 			this.menuStrip1.Items.AddRange(new System.Windows.Forms.ToolStripItem[] {
             this.mainToolStripMenuItem,
             this.settingsToolStripMenuItem});
@@ -583,8 +589,10 @@ namespace E3NextUI
 			// 
 			// panelMain
 			// 
-			this.panelMain.AutoSize = true;
 			this.panelMain.AutoSizeMode = System.Windows.Forms.AutoSizeMode.GrowAndShrink;
+			this.panelMain.Controls.Add(this.labelMercDamageDPSValue);
+			this.panelMain.Controls.Add(this.labelMercDamage);
+			this.panelMain.Controls.Add(this.labelMercDamageValue);
 			this.panelMain.Controls.Add(this.labelPlayer);
 			this.panelMain.Controls.Add(this.labelPlayerName);
 			this.panelMain.Controls.Add(this.labelHealingByYouValue);
@@ -616,8 +624,35 @@ namespace E3NextUI
 			this.panelMain.Controls.Add(this.labelDamageToYou);
 			this.panelMain.Location = new System.Drawing.Point(0, 24);
 			this.panelMain.Name = "panelMain";
-			this.panelMain.Size = new System.Drawing.Size(733, 114);
+			this.panelMain.Size = new System.Drawing.Size(733, 135);
 			this.panelMain.TabIndex = 45;
+			// 
+			// labelMercDamageDPSValue
+			// 
+			this.labelMercDamageDPSValue.AutoSize = true;
+			this.labelMercDamageDPSValue.Location = new System.Drawing.Point(399, 65);
+			this.labelMercDamageDPSValue.Name = "labelMercDamageDPSValue";
+			this.labelMercDamageDPSValue.Size = new System.Drawing.Size(13, 13);
+			this.labelMercDamageDPSValue.TabIndex = 43;
+			this.labelMercDamageDPSValue.Text = "0";
+			// 
+			// labelMercDamage
+			// 
+			this.labelMercDamage.AutoSize = true;
+			this.labelMercDamage.Location = new System.Drawing.Point(219, 65);
+			this.labelMercDamage.Name = "labelMercDamage";
+			this.labelMercDamage.Size = new System.Drawing.Size(77, 13);
+			this.labelMercDamage.TabIndex = 41;
+			this.labelMercDamage.Text = "Merc Damage:";
+			// 
+			// labelMercDamageValue
+			// 
+			this.labelMercDamageValue.AutoSize = true;
+			this.labelMercDamageValue.Location = new System.Drawing.Point(302, 65);
+			this.labelMercDamageValue.Name = "labelMercDamageValue";
+			this.labelMercDamageValue.Size = new System.Drawing.Size(13, 13);
+			this.labelMercDamageValue.TabIndex = 42;
+			this.labelMercDamageValue.Text = "0";
 			// 
 			// panelButtons
 			// 
@@ -666,7 +701,7 @@ namespace E3NextUI
 			this.labelInCombatValue.AutoSize = true;
 			this.labelInCombatValue.Font = new System.Drawing.Font("Microsoft Sans Serif", 12F, System.Drawing.FontStyle.Bold, System.Drawing.GraphicsUnit.Point, ((byte)(0)));
 			this.labelInCombatValue.ForeColor = System.Drawing.Color.FromArgb(((int)(((byte)(214)))), ((int)(((byte)(79)))), ((int)(((byte)(93)))));
-			this.labelInCombatValue.Location = new System.Drawing.Point(111, 45);
+			this.labelInCombatValue.Location = new System.Drawing.Point(111, 36);
 			this.labelInCombatValue.Name = "labelInCombatValue";
 			this.labelInCombatValue.Size = new System.Drawing.Size(48, 20);
 			this.labelInCombatValue.TabIndex = 32;
@@ -678,7 +713,7 @@ namespace E3NextUI
 			this.labelInCombat.AutoSize = true;
 			this.labelInCombat.Font = new System.Drawing.Font("Microsoft Sans Serif", 14.25F, System.Drawing.FontStyle.Bold, System.Drawing.GraphicsUnit.Point, ((byte)(0)));
 			this.labelInCombat.ForeColor = System.Drawing.Color.CornflowerBlue;
-			this.labelInCombat.Location = new System.Drawing.Point(3, 39);
+			this.labelInCombat.Location = new System.Drawing.Point(3, 30);
 			this.labelInCombat.Name = "labelInCombat";
 			this.labelInCombat.Size = new System.Drawing.Size(110, 24);
 			this.labelInCombat.TabIndex = 31;
@@ -690,7 +725,7 @@ namespace E3NextUI
 			this.labelPetNameValue.AutoSize = true;
 			this.labelPetNameValue.Font = new System.Drawing.Font("Microsoft Sans Serif", 12F, System.Drawing.FontStyle.Bold, System.Drawing.GraphicsUnit.Point, ((byte)(0)));
 			this.labelPetNameValue.ForeColor = System.Drawing.Color.FromArgb(((int)(((byte)(214)))), ((int)(((byte)(79)))), ((int)(((byte)(93)))));
-			this.labelPetNameValue.Location = new System.Drawing.Point(108, 18);
+			this.labelPetNameValue.Location = new System.Drawing.Point(108, 9);
 			this.labelPetNameValue.Name = "labelPetNameValue";
 			this.labelPetNameValue.Size = new System.Drawing.Size(51, 20);
 			this.labelPetNameValue.TabIndex = 28;
@@ -702,7 +737,7 @@ namespace E3NextUI
 			this.labelPetName.AutoSize = true;
 			this.labelPetName.Font = new System.Drawing.Font("Microsoft Sans Serif", 14.25F, System.Drawing.FontStyle.Bold, System.Drawing.GraphicsUnit.Point, ((byte)(0)));
 			this.labelPetName.ForeColor = System.Drawing.Color.CornflowerBlue;
-			this.labelPetName.Location = new System.Drawing.Point(67, 15);
+			this.labelPetName.Location = new System.Drawing.Point(67, 6);
 			this.labelPetName.Name = "labelPetName";
 			this.labelPetName.Size = new System.Drawing.Size(46, 24);
 			this.labelPetName.TabIndex = 27;
@@ -712,7 +747,7 @@ namespace E3NextUI
 			// 
 			this.pbCollapseConsoleButtons.Anchor = ((System.Windows.Forms.AnchorStyles)((System.Windows.Forms.AnchorStyles.Bottom | System.Windows.Forms.AnchorStyles.Right)));
 			this.pbCollapseConsoleButtons.Image = ((System.Drawing.Image)(resources.GetObject("pbCollapseConsoleButtons.Image")));
-			this.pbCollapseConsoleButtons.Location = new System.Drawing.Point(702, 84);
+			this.pbCollapseConsoleButtons.Location = new System.Drawing.Point(702, 65);
 			this.pbCollapseConsoleButtons.Name = "pbCollapseConsoleButtons";
 			this.pbCollapseConsoleButtons.Size = new System.Drawing.Size(28, 26);
 			this.pbCollapseConsoleButtons.SizeMode = System.Windows.Forms.PictureBoxSizeMode.StretchImage;
@@ -723,7 +758,7 @@ namespace E3NextUI
 			// buttonPauseConsoles
 			// 
 			this.buttonPauseConsoles.Anchor = System.Windows.Forms.AnchorStyles.Left;
-			this.buttonPauseConsoles.Location = new System.Drawing.Point(595, 78);
+			this.buttonPauseConsoles.Location = new System.Drawing.Point(595, 69);
 			this.buttonPauseConsoles.Name = "buttonPauseConsoles";
 			this.buttonPauseConsoles.Size = new System.Drawing.Size(98, 23);
 			this.buttonPauseConsoles.TabIndex = 29;
@@ -735,7 +770,7 @@ namespace E3NextUI
 			// 
 			this.pbCollapseDynamicButtons.Anchor = ((System.Windows.Forms.AnchorStyles)((System.Windows.Forms.AnchorStyles.Bottom | System.Windows.Forms.AnchorStyles.Right)));
 			this.pbCollapseDynamicButtons.Image = ((System.Drawing.Image)(resources.GetObject("pbCollapseDynamicButtons.Image")));
-			this.pbCollapseDynamicButtons.Location = new System.Drawing.Point(702, 57);
+			this.pbCollapseDynamicButtons.Location = new System.Drawing.Point(702, 38);
 			this.pbCollapseDynamicButtons.Name = "pbCollapseDynamicButtons";
 			this.pbCollapseDynamicButtons.Size = new System.Drawing.Size(28, 26);
 			this.pbCollapseDynamicButtons.SizeMode = System.Windows.Forms.PictureBoxSizeMode.StretchImage;
@@ -749,7 +784,7 @@ namespace E3NextUI
 			this.labelCasting.AutoSize = true;
 			this.labelCasting.Font = new System.Drawing.Font("Microsoft Sans Serif", 14.25F, System.Drawing.FontStyle.Bold, System.Drawing.GraphicsUnit.Point, ((byte)(0)));
 			this.labelCasting.ForeColor = System.Drawing.Color.CornflowerBlue;
-			this.labelCasting.Location = new System.Drawing.Point(27, 70);
+			this.labelCasting.Location = new System.Drawing.Point(27, 61);
 			this.labelCasting.Name = "labelCasting";
 			this.labelCasting.Size = new System.Drawing.Size(85, 24);
 			this.labelCasting.TabIndex = 37;
@@ -770,6 +805,8 @@ namespace E3NextUI
 			this.panelStatusPannel2.AutoSizeMode = System.Windows.Forms.AutoSizeMode.GrowAndShrink;
 			this.panelStatusPannel2.BackColor = System.Drawing.SystemColors.Control;
 			this.panelStatusPannel2.BackgroundImageLayout = System.Windows.Forms.ImageLayout.Zoom;
+			this.panelStatusPannel2.Controls.Add(this.label1);
+			this.panelStatusPannel2.Controls.Add(this.labelMercNameValue);
 			this.panelStatusPannel2.Controls.Add(this.labelCastingValue);
 			this.panelStatusPannel2.Controls.Add(this.labelCasting);
 			this.panelStatusPannel2.Controls.Add(this.pbCollapseDynamicButtons);
@@ -779,10 +816,34 @@ namespace E3NextUI
 			this.panelStatusPannel2.Controls.Add(this.labelPetNameValue);
 			this.panelStatusPannel2.Controls.Add(this.labelInCombat);
 			this.panelStatusPannel2.Controls.Add(this.labelInCombatValue);
-			this.panelStatusPannel2.Location = new System.Drawing.Point(0, 137);
+			this.panelStatusPannel2.Location = new System.Drawing.Point(3, 156);
 			this.panelStatusPannel2.Name = "panelStatusPannel2";
-			this.panelStatusPannel2.Size = new System.Drawing.Size(733, 113);
+			this.panelStatusPannel2.Size = new System.Drawing.Size(733, 94);
 			this.panelStatusPannel2.TabIndex = 42;
+			// 
+			// label1
+			// 
+			this.label1.Anchor = System.Windows.Forms.AnchorStyles.Left;
+			this.label1.AutoSize = true;
+			this.label1.Font = new System.Drawing.Font("Microsoft Sans Serif", 14.25F, System.Drawing.FontStyle.Bold, System.Drawing.GraphicsUnit.Point, ((byte)(0)));
+			this.label1.ForeColor = System.Drawing.Color.CornflowerBlue;
+			this.label1.Location = new System.Drawing.Point(220, 6);
+			this.label1.Name = "label1";
+			this.label1.Size = new System.Drawing.Size(63, 24);
+			this.label1.TabIndex = 43;
+			this.label1.Text = "Merc:";
+			// 
+			// labelMercNameValue
+			// 
+			this.labelMercNameValue.Anchor = System.Windows.Forms.AnchorStyles.Left;
+			this.labelMercNameValue.AutoSize = true;
+			this.labelMercNameValue.Font = new System.Drawing.Font("Microsoft Sans Serif", 12F, System.Drawing.FontStyle.Bold, System.Drawing.GraphicsUnit.Point, ((byte)(0)));
+			this.labelMercNameValue.ForeColor = System.Drawing.Color.FromArgb(((int)(((byte)(214)))), ((int)(((byte)(79)))), ((int)(((byte)(93)))));
+			this.labelMercNameValue.Location = new System.Drawing.Point(289, 9);
+			this.labelMercNameValue.Name = "labelMercNameValue";
+			this.labelMercNameValue.Size = new System.Drawing.Size(51, 20);
+			this.labelMercNameValue.TabIndex = 44;
+			this.labelMercNameValue.Text = "None";
 			// 
 			// E3UI
 			// 
@@ -795,6 +856,7 @@ namespace E3NextUI
 			this.Controls.Add(this.panelStatusPannel2);
 			this.Controls.Add(this.panelMain);
 			this.Controls.Add(this.menuStrip1);
+			this.Icon = ((System.Drawing.Icon)(resources.GetObject("$this.Icon")));
 			this.MainMenuStrip = this.menuStrip1;
 			this.Name = "E3UI";
 			this.SizeGripStyle = System.Windows.Forms.SizeGripStyle.Show;
@@ -889,6 +951,11 @@ namespace E3NextUI
 		private System.Windows.Forms.ToolStripMenuItem textToSpeachToolStripMenuItem;
 		private System.Windows.Forms.ToolStripMenuItem settingsToolStripMenuItem1;
 		private System.Windows.Forms.ToolStripMenuItem unlockEvaVoiceToolStripMenuItem;
+		private System.Windows.Forms.Label label1;
+		private System.Windows.Forms.Label labelMercNameValue;
+		private System.Windows.Forms.Label labelMercDamageDPSValue;
+		private System.Windows.Forms.Label labelMercDamage;
+		private System.Windows.Forms.Label labelMercDamageValue;
 	}
 }
 

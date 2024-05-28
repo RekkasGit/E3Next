@@ -16,25 +16,34 @@ namespace E3Core.Processors
     /// </summary>
     public static class Assist
     {
-        public static bool AllowControl = false;
+		[ExposedData("Assist", "AllowControl")]
+		public static bool AllowControl = false;
+		[ExposedData("Assist", "IsAssisting")]
         public static Boolean IsAssisting = false;
-        public static Int32 AssistTargetID = 0;
+		[ExposedData("Assist", "AssistTargetID")]
+		public static Int32 AssistTargetID = 0;
 
         public static long LastAssistEndedTimestamp = 0;
 
         private static Logging _log = E3.Log;
         private static IMQ MQ = E3.MQ;
         private static ISpawns _spawns = E3.Spawns;
-        private static IList<string> _rangeTypes = new List<string>() { "Ranged", "Autofire" };
-        private static IList<string> _meleeTypes = new List<string>() { "Melee","AutoAttack" };
-        private static IList<string> _assistDistanceTypes = new List<string> { "MaxMelee", "off" };
-        public static Int32 _assistDistance = 0;
-        private static bool _assistIsEnraged = false;
+		[ExposedData("Assist", "RangeTypes")]
+		private static List<string> _rangeTypes = new List<string>() { "Ranged", "Autofire" };
+		[ExposedData("Assist", "MeleeTypes")]
+		private static List<string> _meleeTypes = new List<string>() { "Melee","AutoAttack" };
+		[ExposedData("Assist", "AssistDistanceTypes")]
+		private static List<string> _assistDistanceTypes = new List<string> { "MaxMelee", "off" };
+		[ExposedData("Assist", "AssistDistance")]
+		public static Int32 _assistDistance = 0;
+		[ExposedData("Assist", "AssistIsEnraged")]
+		private static bool _assistIsEnraged = false;
         private static Dictionary<string, Action> _stickSwitch;
         private static HashSet<Int32> _offAssistIgnore = new HashSet<Int32>();
-        private static Data.Spell _divineStun = new Data.Spell("Divine Stun");
-        private static Data.Spell _terrorOfDiscord = new Data.Spell("Terror of Discord");
-        private static IList<string> _tankTypes = new List<string>() { "WAR", "PAL", "SHD" };
+		//private static Data.Spell _divineStun = new Data.Spell("Divine Stun");
+		//private static Data.Spell _terrorOfDiscord = new Data.Spell("Terror of Discord");
+		[ExposedData("Assist", "TankTypes")]
+		private static List<string> _tankTypes = new List<string>() { "WAR", "PAL", "SHD" };
 
         /// <summary>
         /// Initializes this instance.
@@ -64,10 +73,11 @@ namespace E3Core.Processors
             Casting.ResetResistCounters();
             //put them back in their object pools
             DebuffDot.Reset();
-            Burns.Reset();
+			Burns.Reset();
             AssistOff();
+         
 
-        }
+		}
 
         /// <summary>
         /// Checks the assist status.
@@ -263,22 +273,22 @@ namespace E3Core.Processors
                                         E3.Bots.Broadcast($"Taunting {s.CleanName}: {tt.ClassShortName} - {tt.CleanName} has agro and not a tank");
 
                                     }
-                                    else if (MQ.Query<bool>("${Me.AltAbilityReady[Divine Stun]}"))
-                                    {
-                                        if (Casting.CheckReady(_divineStun))
-                                        {
-                                            Casting.Cast(AssistTargetID, _divineStun);
-                                        }
+                                    //else if (MQ.Query<bool>("${Me.AltAbilityReady[Divine Stun]}"))
+                                    //{
+                                    //    if (Casting.CheckReady(_divineStun))
+                                    //    {
+                                    //        Casting.Cast(AssistTargetID, _divineStun);
+                                    //    }
 
-                                    }
-                                    else if (MQ.Query<bool>("${Me.SpellReady[Terror of Discord]}"))
-                                    {
-                                        if (Casting.CheckReady(_terrorOfDiscord))
-                                        {
-                                            Casting.Cast(AssistTargetID, _terrorOfDiscord);
-                                        }
+                                    //}
+                                    //else if (MQ.Query<bool>("${Me.SpellReady[Terror of Discord]}"))
+                                    //{
+                                    //    if (Casting.CheckReady(_terrorOfDiscord))
+                                    //    {
+                                    //        Casting.Cast(AssistTargetID, _terrorOfDiscord);
+                                    //    }
 
-                                    }
+                                    //}
                                 }
                             }
                         }
@@ -335,13 +345,13 @@ namespace E3Core.Processors
                             continue;
                         }
 
-                        if (ability.CastType == Data.CastType.Ability)
+                        if (ability.CastType == Data.CastingType.Ability)
                         {
 
                             if(String.Equals(ability.CastName,"Bash",StringComparison.OrdinalIgnoreCase))
                             {
                                 //check if we can actually bash
-                                if (MQ.Query<double>("${Target.Distance}") > 14 || !(MQ.Query<bool>("${Select[${Me.Inventory[Offhand].Type},Shield]}") || MQ.Query<bool>("${Me.AltAbility[2 Hand Bash]}")))
+                                if (MQ.Query<double>("${Target.Distance}") > 15 || !(MQ.Query<bool>("${Select[${Me.Inventory[Offhand].Type},Shield]}") || MQ.Query<bool>("${Me.AltAbility[2 Hand Bash]}")))
                                 {
                                     continue;
                                 }
@@ -350,7 +360,7 @@ namespace E3Core.Processors
                             if (String.Equals(ability.CastName, "Slam", StringComparison.OrdinalIgnoreCase))
                             {
                                 //check if we can actually bash
-                                if (MQ.Query<double>("${Target.Distance}") > 14 )
+                                if (MQ.Query<double>("${Target.Distance}") > 15)
                                 {
                                     continue;
                                 }
@@ -358,7 +368,7 @@ namespace E3Core.Processors
                             if (String.Equals(ability.CastName, "Kick", StringComparison.OrdinalIgnoreCase))
                             {
                                 //check if we can actually kick
-                                if (MQ.Query<double>("${Target.Distance}") > 14)
+                                if (MQ.Query<double>("${Target.Distance}") > 15)
                                 {
                                     continue;
                                 }
@@ -366,12 +376,12 @@ namespace E3Core.Processors
                            
                             Casting.Cast(AssistTargetID, ability);
                         }
-                        else if (ability.CastType == Data.CastType.AA)
+                        else if (ability.CastType == Data.CastingType.AA)
                         {
 
                             Casting.Cast(AssistTargetID, ability);
                         }
-                        else if (ability.CastType == Data.CastType.Disc)
+                        else if (ability.CastType == Data.CastingType.Disc)
                         {
 
                             Int32 endurance = MQ.Query<Int32>("${Me.Endurance}");
@@ -399,7 +409,7 @@ namespace E3Core.Processors
                                 }
                             }
                         }
-                        else if (ability.CastType == Data.CastType.Item)
+                        else if (ability.CastType == Data.CastingType.Item)
                         {
                             Casting.Cast(AssistTargetID, ability);
                         }
@@ -462,6 +472,7 @@ namespace E3Core.Processors
                 Burns.Reset();
             }
             LastAssistEndedTimestamp = Core.StopWatch.ElapsedMilliseconds;
+			
         }
 
         /// <summary>
@@ -508,7 +519,7 @@ namespace E3Core.Processors
 				bool amIStanding = MQ.Query<bool>("${Me.Standing}");
 				if (MQ.Query<bool>("${Me.Feigning}"))
                 {
-                    if (E3.CharacterSettings.IfFDStayDown) return;
+                    //if (E3.CharacterSettings.IfFDStayDown) return;
                     MQ.Cmd("/stand");
                 }else
                 {
@@ -525,9 +536,18 @@ namespace E3Core.Processors
                     if (Movement.Following && folTarget.Distance3D > 100 && MQ.Query<bool>("${Me.Moving}"))
                     {
                         //using a delay in awhile loop, use query for realtime info
+                        Int32 counter = 0;
                         while (MQ.Query<bool>("${Me.Moving}") && MQ.Query<Decimal>($"${{Spawn[{Movement.FollowTargetName}].Distance3D}}") > 100)
                         {
                             MQ.Delay(100);
+                            counter++;
+                            //if we have tried more than 3 seconds, stop and kick out.
+                            if(counter>30)
+                            {
+                                E3.Bots.Broadcast("\arERROR:\ag Tried to move to target, took longer than 3 seconds, possibly not at the target. Turning off Assist");
+                                AssistOff();
+                                return;
+                            }
                             //wait us to get close to our follow target and then we can engage
                         }
                     }
@@ -549,16 +569,24 @@ namespace E3Core.Processors
                     }
                 }
 
-                if (!AllowControl)
+                //rogues have discs that they need to be sneaking/invisiable for
+				if (String.IsNullOrWhiteSpace(E3.CharacterSettings.Rogue_SneakAttack))
+				{
+					MQ.Cmd("/makemevisible");
+
+				}
+				
+
+				if (!AllowControl)
                 {
                     if(e3util.IsEQLive())
 					{
                         //don't want to appear 'bot' like by always facing the mob
                         //stick for melee should keep them facing th emob
                         //as well as ranged has face commands but casters shouldn't care
-                        //if(!((E3.CurrentClass & Class.Caster) == E3.CurrentClass || (E3.CurrentClass & Class.Priest) == E3.CurrentClass))
+                        if(!((E3.CurrentClass & Class.Caster) == E3.CurrentClass || (E3.CurrentClass & Class.Priest) == E3.CurrentClass)|| (E3.CharacterSettings.Assist_Type.Equals("AutoAttack", StringComparison.OrdinalIgnoreCase)))
                         {
-							//MQ.Cmd($"/face id {AssistTargetID}", 500);
+							MQ.Cmd($"/face id {AssistTargetID}", 500);
 						}
 
 					}
@@ -609,7 +637,7 @@ namespace E3Core.Processors
 
                         }
                     }
-                    if (E3.CurrentClass == Data.Class.Rogue)
+                    if (E3.CurrentClass == Data.Class.Rogue && !String.IsNullOrWhiteSpace(E3.CharacterSettings.Rogue_SneakAttack))
                     {
                         Rogue.RogueStrike();
 
@@ -733,7 +761,7 @@ namespace E3Core.Processors
                    x.args.Remove("/ignoreme");
                }
 
-               MQ.Cmd("/makemevisible");
+              
                //Rez.Reset();
                if (x.args.Count == 0)
                {
@@ -796,7 +824,7 @@ namespace E3Core.Processors
                                if((E3.CurrentClass & Class.Priest)!=E3.CurrentClass)
                                {
                                    //if not a priest/healer, lets chill for 30-400ms
-								   MQ.Delay(E3.Random.Next(30, 400));
+								  // MQ.Delay(E3.Random.Next(30, 400));
 
 							   }
 

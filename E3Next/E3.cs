@@ -53,6 +53,8 @@ namespace E3Core.Processors
 			//stunned, no sense in processing
 			if (MQ.Query<bool>("${Me.Stunned}")) return;
 			if (MQ.Query<Int32>("${Me.CurrentHPs}") < 1) return; //we are dead
+			if (MQ.Query<bool>("${Me.Feigning}") && E3.CharacterSettings.IfFDStayDown) return;
+			
 
 			//global action taken key, used by adv settings
 			//if true, adv settings will stop processing for this loop.
@@ -156,6 +158,7 @@ namespace E3Core.Processors
 			//bard song player
 			if (E3.CurrentClass == Data.Class.Bard)
 			{
+				Bard.Check_AutoMez();
 				Bard.check_BardSongs();
 			}
 		}
@@ -251,15 +254,12 @@ namespace E3Core.Processors
 		/// </summary>
 		/// 
 		private static Int64 _nextStateUpdateCheckTime = 0;
-		private static Int64 _nextStateUpdateTimeInterval = 50;
-
 		//needs to be fast to be able to show a new buff has landed
 		private static Int64 _nextBuffUpdateCheckTime = 0;
-		private static Int64 _nextBuffUpdateTimeInterval = 1000;
-
 		private static Int64 _nextSlowUpdateCheckTime = 0;
-		private static Int64 _nextSlowUpdateTimeInterval = 1000;
-
+		private static Int64 _nextMiscUpdateCheckTime = 0;
+		private static Int64 _MiscUpdateCheckRate = 100;
+	
 		//qick hack to prevent calling state update... while in state updates. 
 		public static bool InStateUpdate = false;
 
@@ -273,24 +273,20 @@ namespace E3Core.Processors
 			PubServer.AddTopicMessage("${Me.CountersCorrupted}", MQ.Query<string>("${Debuff.Corrupted}"));
 			
 		}
+		public static void StateUpdates_Misc()
+		{
+			PubServer.AddTopicMessage("${InCombat}", CurrentInCombat.ToString());
+			PubServer.AddTopicMessage("${EQ.CurrentFocusedWindowName}", MQ.GetFocusedWindowName());
+			PubServer.AddTopicMessage("${Me.CurrentTargetID}", MQ.Query<string>("${Target.ID}"));
+		}
 		public static void StateUpdates_Stats()
 		{
-			PctHPs = MQ.Query<int>("${Me.PctHPs}");
-
 			PubServer.AddTopicMessage("${Me.PctMana}", MQ.Query<string>("${Me.PctMana}"));
 			PubServer.AddTopicMessage("${Me.PctEndurance}", MQ.Query<string>("${Me.PctEndurance}"));
 			PubServer.AddTopicMessage("${Me.PctHPs}", PctHPs.ToString());
 			PubServer.AddTopicMessage("${Me.CurrentHPs}", MQ.Query<string>("${Me.CurrentHPs}"));
 			PubServer.AddTopicMessage("${Me.CurrentMana}", MQ.Query<string>("${Me.CurrentMana}"));
 			PubServer.AddTopicMessage("${Me.CurrentEndurance}", MQ.Query<string>("${Me.CurrentEndurance}"));
-
-			IsInvis = MQ.Query<bool>("${Me.Invis}");
-
-			CurrentId = MQ.Query<int>("${Me.ID}");
-			CurrentInCombat = Basics.InCombat();
-			PubServer.AddTopicMessage("${InCombat}", CurrentInCombat.ToString());
-			PubServer.AddTopicMessage("${EQ.CurrentFocusedWindowName}", MQ.GetFocusedWindowName());
-			PubServer.AddTopicMessage("${Me.CurrentTargetID}", MQ.Query<string>("${Target.ID}"));
 		}
 		public static void StateUpdates_BuffInformation()
 		{
@@ -320,21 +316,30 @@ namespace E3Core.Processors
 			{
 				//this is important so that we do not get caught up in recursion during a Delay as delay can call this. 
 				InStateUpdate = true;
+				PctHPs = MQ.Query<int>("${Me.PctHPs}");
+				IsInvis = MQ.Query<bool>("${Me.Invis}");
+				CurrentId = MQ.Query<int>("${Me.ID}");
+				CurrentInCombat = Basics.InCombat();
 
-				//expensive only send out once per second?
-				if (e3util.ShouldCheck(ref _nextBuffUpdateCheckTime, _nextBuffUpdateTimeInterval))
-				{
-					StateUpdates_BuffInformation();
-				}
 				//hp, mana, counters, etc, should send out quickly, but no more than say 50 milliseconds
-				if (e3util.ShouldCheck(ref _nextStateUpdateCheckTime, _nextStateUpdateTimeInterval))
+				if (e3util.ShouldCheck(ref _nextStateUpdateCheckTime, E3.CharacterSettings.CPU_PublishStateDataInMS))
 				{
-					StateUpdates_Counters();
 					StateUpdates_Stats();
 				}
-
+				//other stuff not quite so quickly
+				if (e3util.ShouldCheck(ref _nextMiscUpdateCheckTime, _MiscUpdateCheckRate))
+				{
+					StateUpdates_Misc();
+				}
+				//expensive only send out once per second?
+				if (e3util.ShouldCheck(ref _nextBuffUpdateCheckTime, E3.CharacterSettings.CPU_PublishBuffDataInMS))
+				{
+					StateUpdates_BuffInformation();
+					StateUpdates_Counters();
+				}
+				
 				//not horribly important stuff, can just be sent out whever, currently once per second
-				if (e3util.ShouldCheck(ref _nextSlowUpdateCheckTime, _nextSlowUpdateTimeInterval))
+				if (e3util.ShouldCheck(ref _nextSlowUpdateCheckTime, E3.CharacterSettings.CPU_PublishSlowDataInMS))
 				{
 					StateUpdates_AAInformation();
 					//lets query the data we are configured to send out extra
@@ -352,7 +357,13 @@ namespace E3Core.Processors
 						CurrentPetName = nameOfPet;
 						PubServer.AddTopicMessage("${Me.Pet.CleanName}", CurrentPetName);
 					}
-
+					string nameOfMerc = MQ.Query<string>("${Mercenary.CleanName}");
+					if (nameOfMerc != "NULL")
+					{
+						//set the pet name
+						CurrentMercName = nameOfMerc;
+						PubServer.AddTopicMessage("${Mercenary.CleanName}", CurrentMercName);
+					}
 					bool IsMoving = MQ.Query<bool>("${Me.Moving}");
 					if (IsMoving)
 					{
@@ -383,6 +394,17 @@ namespace E3Core.Processors
             Casting.RefreshGemCache();
             Basics.RefreshGroupMembers();
         }
+		public static void ReInit()
+		{
+			string classValue = e3util.ClassNameFix(MQ.Query<string>("${Me.Class}"));
+			Enum.TryParse(classValue, out CurrentClass);
+			CurrentLongClassString = CurrentClass.ToString();
+			CurrentShortClassString = Data.Classes.ClassLongToShort[CurrentLongClassString];
+			if(e3util.IsEQLive())
+			{
+				e3util.MobMaxDebuffSlots = 200;
+			}
+		}
         private static void Init()
         {
 
@@ -390,8 +412,12 @@ namespace E3Core.Processors
             {
                 MQ.ClearCommands();
                 AsyncIO.ForceDotNet.Force();
-
-                Logging.TraceLogLevel = Logging.LogLevels.None; //log level we are currently at
+				if (e3util.IsEQLive())
+				{
+					e3util.MobMaxDebuffSlots = 200;
+					e3util.XtargetMax = 20;
+				}
+				Logging.TraceLogLevel = Logging.LogLevels.None; //log level we are currently at
                 Logging.MinLogLevelTolog = Logging.LogLevels.Error; //log levels have integers assoicatd to them. you can set this to Error to only log errors. 
                 Logging.DefaultLogLevel = Logging.LogLevels.Debug; //the default if a level is not passed into the _log.write statement. useful to hide/show things.
                 MainProcessor.ApplicationName = "E3"; //application name, used in some outputs
@@ -494,6 +520,7 @@ namespace E3Core.Processors
         public static Data.Class CurrentClass;
         public static string ServerName;
         public static string CurrentPetName = String.Empty;
+		public static string CurrentMercName = String.Empty;
         public static bool CurrentInCombat = false;
         public static int CurrentId;
         public static Int64 LastMovementTimeStamp;

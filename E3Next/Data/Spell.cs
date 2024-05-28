@@ -13,7 +13,7 @@ namespace E3Core.Data
 {
 
 
-    public enum CastType
+    public enum CastingType
     {
         AA,
         Spell,
@@ -27,6 +27,7 @@ namespace E3Core.Data
     {
         public static Dictionary<Int32, Data.Spell> _loadedSpells = new Dictionary<int, Spell>();
         public static Dictionary<string, Data.Spell> LoadedSpellsByName = new Dictionary<string, Spell>();
+        public static Dictionary<string, Data.Spell> LoadedSpellByConfigEntry = new Dictionary<string, Data.Spell>();
 		static Dictionary<string, Int32> _spellIDLookup = new Dictionary<string, Int32>();
 		public static IMQ MQ = E3.MQ;
 
@@ -45,8 +46,18 @@ namespace E3Core.Data
 			return spellID;
 
 		}
+        //only used for seralization
+        public Spell()
+        {
+
+        }
         public Spell(string spellName, IniData parsedData = null)
         {
+
+            if(!LoadedSpellByConfigEntry.ContainsKey(spellName))
+            {
+                LoadedSpellByConfigEntry.Add(spellName, this);
+            }
 
             SpellName = spellName; //what the thing actually casts
             CastName = spellName;//required to send command
@@ -71,7 +82,7 @@ namespace E3Core.Data
 
         void Parse(IniData parsedData)
         {
-
+	
             if (SpellName.Contains("/"))
             {
 
@@ -96,6 +107,19 @@ namespace E3Core.Data
                     {
                         NoInterrupt = true;
                     }
+					else if (value.Equals("IsDoT", StringComparison.OrdinalIgnoreCase))
+					{
+						IsDoT = true;
+					}
+					else if (value.Equals("IsDebuff", StringComparison.OrdinalIgnoreCase))
+					{
+						IsDebuff = true;
+					}
+					else if(value.StartsWith("CastType|", StringComparison.OrdinalIgnoreCase))
+					{
+						string castTypeAsString = GetArgument<String>(value);
+						Enum.TryParse<CastingType>(castTypeAsString, true, out this.CastTypeOverride);
+					}
 					else if (value.Equals("Debug", StringComparison.OrdinalIgnoreCase))
 					{
 						Debug = true;
@@ -189,11 +213,11 @@ namespace E3Core.Data
                     {
                         MinHP = GetArgument<Int32>(value);
                     }
-                    else if (value.StartsWith("HealPct|", StringComparison.OrdinalIgnoreCase))
-                    {
-                        HealPct = GetArgument<Int32>(value);
-                    }
-                    else if (value.StartsWith("HealPct|", StringComparison.OrdinalIgnoreCase))
+					else if (value.StartsWith("MinHPTotal|", StringComparison.OrdinalIgnoreCase))
+					{
+						MinHPTotal = GetArgument<Int32>(value);
+					}
+					else if (value.StartsWith("HealPct|", StringComparison.OrdinalIgnoreCase))
                     {
                         HealPct = GetArgument<Int32>(value);
                     }
@@ -209,7 +233,11 @@ namespace E3Core.Data
                     {
                         NoTarget = true;
                     }
-                    else if (value.Equals("NoAggro", StringComparison.OrdinalIgnoreCase))
+					else if (value.Equals("Disabled", StringComparison.OrdinalIgnoreCase))
+					{
+						Enabled = false;
+					}
+					else if (value.Equals("NoAggro", StringComparison.OrdinalIgnoreCase))
                     {
                         NoAggro = true;
                     }
@@ -286,11 +314,11 @@ namespace E3Core.Data
                     }
                     else if (value.StartsWith("Ifs|", StringComparison.OrdinalIgnoreCase))
                     {
-                        string ifKey = GetArgument<string>(value);
+                        IfsKeys = GetArgument<string>(value);
                         var section = parsedData.Sections["Ifs"];
                         if (section != null)
                         {
-                            var keys = ifKey.Split(','); // Splitting based on comma
+                            var keys = IfsKeys.Split(','); // Splitting based on comma
                             foreach (var key in keys)
                             {
                                 var keyData = section[key];
@@ -411,43 +439,50 @@ namespace E3Core.Data
         }
         void QueryMQ()
         {
+			if(CastTypeOverride == CastingType.None)
+			{
+				if (MQ.Query<bool>($"${{Me.AltAbility[{CastName}].Spell}}"))
+				{
+					CastType = CastingType.AA;
+				}
+				else if (MQ.Query<bool>($"${{Me.Book[{CastName}]}}"))
+				{
+					CastType = CastingType.Spell;
+					SpellInBook = true;
+				}
+				else if (MQ.Query<bool>($"${{Me.CombatAbility[{CastName}]}}"))
+				{
+					CastType = CastingType.Disc;
+				}
+				else if (MQ.Query<bool>($"${{Me.Ability[{CastName}]}}") || String.Compare("Slam", CastName, true) == 0)
+				{
+					CastType = CastingType.Ability;
+				}
+				else if (MQ.Query<bool>($"${{FindItem[={CastName}]}}"))
+				{
 
-            if (MQ.Query<bool>($"${{Me.AltAbility[{CastName}].Spell}}"))
-            {
-                CastType = CastType.AA;
-            }
-            else if (MQ.Query<bool>($"${{Me.Book[{CastName}]}}"))
-            {
-                CastType = CastType.Spell;
-                SpellInBook = true;
-            }
-            else if (MQ.Query<bool>($"${{Me.CombatAbility[{CastName}]}}"))
-            {
-                CastType = CastType.Disc;
-            }
-            else if (MQ.Query<bool>($"${{Me.Ability[{CastName}]}}")|| String.Compare("Slam",CastName,true)==0)
-            {
-                CastType = CastType.Ability;
-            }
-            else if (MQ.Query<bool>($"${{FindItem[={CastName}]}}"))
-            {
-
-                CastType = CastType.Item;
-            }
-            else if (MQ.Query<bool>($"${{Spell[{CastName}]}}"))
-            {
-                //final check to see if its a spell, that maybe a mob casts?
-                CastType = CastType.Spell;
-            }
-            else
-            {
-                //bad spell/item/etc
-                CastType = CastType.None;
-            }
+					CastType = CastingType.Item;
+				}
+				else if (MQ.Query<bool>($"${{Spell[{CastName}]}}"))
+				{
+					//final check to see if its a spell, that maybe a mob casts?
+					CastType = CastingType.Spell;
+				}
+				else
+				{
+					//bad spell/item/etc
+					CastType = CastingType.None;
+				}
+			}
+			else
+			{
+				CastType = CastTypeOverride;
+			}
+           
 
 
 
-            if (CastType == CastType.Item)
+            if (CastType == CastingType.Item)
             {
                 Int32 invSlot;
                 Int32 bagSlot;
@@ -477,8 +512,11 @@ namespace E3Core.Data
                     RecastTime = MQ.Query<Int32>($"${{Me.Inventory[{invSlot}].Spell.RecastTime}}");
                     RecoveryTime = MQ.Query<Decimal>($"${{Me.Inventory[{invSlot}].Spell.RecoveryTime}}");
                     MyCastTime = MQ.Query<Decimal>($"${{Me.Inventory[{invSlot}].Spell.CastTime}}");
+                    Description = MQ.Query<String>($"${{Me.Inventory[{invSlot}].Spell.Description}}");
+                    ResistType = MQ.Query<String>($"${{Me.Inventory[{invSlot}].Spell.ResistType}}");
+					ResistAdj = MQ.Query<Int32>($"${{Me.Inventory[{invSlot}].Spell.ResistAdj}}");
 
-                    double AERange = MQ.Query<double>($"${{Me.Inventory[{invSlot}].Spell.AERange}}");
+					double AERange = MQ.Query<double>($"${{Me.Inventory[{invSlot}].Spell.AERange}}");
                     MyRange = AERange;
                     if (MyRange == 0)
                     {
@@ -495,8 +533,10 @@ namespace E3Core.Data
                     SpellName = MQ.Query<String>($"${{Me.Inventory[{invSlot}].Spell}}");
                     SpellID = MQ.Query<Int32>($"${{Me.Inventory[{invSlot}].Spell.ID}}");
                     CastID = MQ.Query<Int32>($"${{Me.Inventory[{invSlot}].ID}}");
-                    SpellType = MQ.Query<String>($"${{Me.Inventory[{invSlot}].Spell.SpellType}}");
+                    SpellIcon = MQ.Query<Int32>($"${{Me.Inventory[{invSlot}].Spell.SpellIcon}}");
+					SpellType = MQ.Query<String>($"${{Me.Inventory[{invSlot}].Spell.SpellType}}");
 					IsShortBuff = MQ.Query<bool>($"${{Me.Inventory[{invSlot}].Spell.DurationWindow}}");
+                    
 				}
                 else
                 {
@@ -509,8 +549,11 @@ namespace E3Core.Data
                     RecastTime = MQ.Query<Int32>($"${{Me.Inventory[{invSlot}].Item[{bagSlot}].Spell.RecastTime}}");
                     RecoveryTime = MQ.Query<Decimal>($"${{Me.Inventory[{invSlot}].Item[{bagSlot}].Spell.RecoveryTime}}");
                     MyCastTime = MQ.Query<Decimal>($"${{Me.Inventory[{invSlot}].Item[{bagSlot}].CastTime}}");
+                    Description = MQ.Query<String>($"${{Me.Inventory[{invSlot}].Item[{bagSlot}].Spell.Description}}");
+					ResistType = MQ.Query<String>($"${{Me.Inventory[{invSlot}].Item[{bagSlot}].Spell.ResistType}}");
+					ResistAdj = MQ.Query<Int32>($"${{Me.Inventory[{invSlot}].Item[{bagSlot}].Spell.ResistAdj}}");
 
-                    double AERange = MQ.Query<double>($"${{Me.Inventory[{invSlot}].Item[{bagSlot}].Spell.AERange}}");
+					double AERange = MQ.Query<double>($"${{Me.Inventory[{invSlot}].Item[{bagSlot}].Spell.AERange}}");
                     MyRange = AERange;
                     if (MyRange == 0)
                     {
@@ -526,12 +569,13 @@ namespace E3Core.Data
                     SpellName = MQ.Query<String>($"${{Me.Inventory[{invSlot}].Item[{bagSlot}].Spell}}");
                     SpellID = MQ.Query<Int32>($"${{Me.Inventory[{invSlot}].Item[{bagSlot}].Spell.ID}}");
                     CastID = MQ.Query<Int32>($"${{Me.Inventory[{invSlot}].Item[{bagSlot}].ID}}");
-                    SpellType = MQ.Query<String>($"${{Me.Inventory[{invSlot}].Item[{bagSlot}].Spell.SpellType}}");
+                    SpellIcon = MQ.Query<Int32>($"${{Me.Inventory[{invSlot}].Item[{bagSlot}].Spell.SpellIcon}}");
+					SpellType = MQ.Query<String>($"${{Me.Inventory[{invSlot}].Item[{bagSlot}].Spell.SpellType}}");
 					IsShortBuff = MQ.Query<bool>($"${{Me.Inventory[{invSlot}].Item[{bagSlot}].Spell.DurationWindow}}");
 				}
 
             }
-            else if (CastType == CastType.AA)
+            else if (CastType == CastingType.AA)
             {
                 TargetType = MQ.Query<String>($"${{Me.AltAbility[{CastName}].Spell.TargetType}}");
                 Duration = MQ.Query<Int32>($"${{Me.AltAbility[{CastName}].Spell.Duration}}");
@@ -544,9 +588,12 @@ namespace E3Core.Data
                 Double AERange = MQ.Query<Double>($"${{Me.AltAbility[{CastName}].Spell.AERange}}");
                 MyRange = MQ.Query<double>($"${{Me.AltAbility[{CastName}].Spell.MyRange}}");
                 SpellType = MQ.Query<String>($"${{Spell[{CastName}].SpellType}}");
+				SpellIcon = MQ.Query<Int32>($"${{Spell[{CastName}].SpellIcon}}");
+                Description = MQ.Query<String>($"${{Spell[{CastName}].Description}}");
+				ResistType = MQ.Query<String>($"${{Me.AltAbility[{CastName}].Spell.ResistType}}");
+				ResistAdj = MQ.Query<Int32>($"${{Me.AltAbility[{CastName}].Spell.ResistAdj}}");
 
-
-                if (SpellType.Equals("Detrimental", StringComparison.OrdinalIgnoreCase))
+				if (SpellType.Equals("Detrimental", StringComparison.OrdinalIgnoreCase))
                 {
 
                     if (AERange > 0)
@@ -577,9 +624,11 @@ namespace E3Core.Data
                 SpellID = MQ.Query<Int32>($"${{Me.AltAbility[{CastName}].Spell.ID}}");
                 CastID = MQ.Query<Int32>($"${{Me.AltAbility[{CastName}].ID}}");
 				IsShortBuff = MQ.Query<bool>($"${{Me.AltAbility[{CastName}].Spell.DurationWindow}}");
-
+                Category = MQ.Query<String>($"${{Me.AltAbility[{CastName}].Spell.Category}}");
+                Subcategory = MQ.Query<String>($"${{Me.AltAbility[{CastName}].Spell.Subcategory}}");
+               
 			}
-			else if (CastType == CastType.Spell)
+			else if (CastType == CastingType.Spell)
             {
               
                 if(SpellInBook)
@@ -599,6 +648,10 @@ namespace E3Core.Data
                     SpellType = MQ.Query<String>($"${{Me.Book[{bookNumber}].SpellType}}");
                     IsShortBuff = MQ.Query<bool>($"${{Me.Book[{bookNumber}].DurationWindow}}");
                     Subcategory = MQ.Query<string>($"${{Me.Book[{bookNumber}].Subcategory}}");
+                    Category = MQ.Query<string>($"${{Me.Book[{bookNumber}].Category}}");
+                    Description= MQ.Query<string>($"${{Me.Book[{bookNumber}].Description}}");
+					ResistType = MQ.Query<String>($"${{Me.Book[{bookNumber}].ResistType}}");
+					ResistAdj = MQ.Query<Int32>($"${{Me.Book[{bookNumber}].ResistAdj}}");
 
 					if (SpellType.Equals("Detrimental", StringComparison.OrdinalIgnoreCase))
                     {
@@ -626,7 +679,9 @@ namespace E3Core.Data
                     SpellName = CastName;
                     SpellID = MQ.Query<Int32>($"${{Me.Book[{bookNumber}].ID}}");
                     CastID = SpellID;
-                }
+                    SpellIcon = MQ.Query<Int32>($"${{Me.Book[{bookNumber}].SpellIcon}}");
+					Level = MQ.Query<Int32>($"${{Me.Book[{bookNumber}].Level}}");
+				}
                 else
                 {
                     TargetType = MQ.Query<String>($"${{Spell[{CastName}].TargetType}}");
@@ -642,8 +697,15 @@ namespace E3Core.Data
                     SpellType = MQ.Query<String>($"${{Spell[{CastName}].SpellType}}");
                     IsShortBuff = MQ.Query<bool>($"${{Spell[{CastName}].DurationWindow}}");
                     Subcategory = MQ.Query<string>($"${{Spell[{CastName}].Subcategory}}");
+                    Category = MQ.Query<string>($"${{Spell[{CastName}].Category}}");
+                    SpellIcon = MQ.Query<Int32>($"${{Spell[{CastName}].SpellIcon}}");
+                    Level = MQ.Query<Int32>($"${{Spell[{CastName}].Level}}");
+                    Description = MQ.Query<string>($"${{Spell[{CastName}].Description}}");
+					ResistType = MQ.Query<String>($"${{Spell[{CastName}].ResistType}}");
+					ResistAdj = MQ.Query<Int32>($"${{Spell[{CastName}].ResistAdj}}");
 
-                    if (SpellType.Equals("Detrimental", StringComparison.OrdinalIgnoreCase))
+
+					if (SpellType.Equals("Detrimental", StringComparison.OrdinalIgnoreCase))
                     {
 
                         if (AERange > 0)
@@ -674,7 +736,7 @@ namespace E3Core.Data
 
                 
             }
-            else if (CastType == CastType.Disc)
+            else if (CastType == CastingType.Disc)
             {
                 TargetType = MQ.Query<String>($"${{Spell[{CastName}].TargetType}}");
                 Duration = MQ.Query<Int32>($"${{Spell[{CastName}].Duration}}");
@@ -691,10 +753,16 @@ namespace E3Core.Data
                 CastID = SpellID;
                 SpellType = MQ.Query<String>($"${{Spell[{CastName}].SpellType}}");
 				IsShortBuff = MQ.Query<bool>($"${{Spell[{CastName}].DurationWindow}}");
-
+                SpellIcon = MQ.Query<Int32>($"${{Spell[{CastName}].SpellIcon}}");
+                Description = MQ.Query<String>($"${{Spell[{CastName}].Description}}");
+				ResistType = MQ.Query<String>($"${{Spell[{CastName}].ResistType}}");
+				ResistAdj = MQ.Query<Int32>($"${{Spell[{CastName}].ResistAdj}}");
+                Level = MQ.Query<Int32>($"${{Spell[{CastName}].Level}}");
+				Subcategory = MQ.Query<string>($"${{Spell[{CastName}].Subcategory}}");
+				Category = MQ.Query<string>($"${{Spell[{CastName}].Category}}");
 
 			}
-			else if (CastType == CastType.Ability)
+			else if (CastType == CastingType.Ability)
             {
                 //nothing to update here
             }
@@ -722,13 +790,16 @@ namespace E3Core.Data
         //    return returnString;
         //}
         public String Subcategory = String.Empty;
+        public String Category = String.Empty;
         public String SpellName = String.Empty;//the spell's name. If the item clicks, this is the spell it casts
         public String CastName = String.Empty;//this can be the item, spell, aa, disc. What is required to cast it. 
-        public CastType CastType;
+		public CastingType CastType = CastingType.None;
+		public CastingType CastTypeOverride = CastingType.None;
         public String TargetType = String.Empty;
         public Int32 SpellGem;
         public Int32 GiveUpTimer;
-        public Int32 MaxTries = 5;
+        private const Int32 MaxTiresDefault = 5;
+        public Int32 MaxTries = MaxTiresDefault;
         public Dictionary<string, Int32> CheckForCollection = new Dictionary<string, int>();
         public Int32 Duration;
         public Int32 DurationTotalSeconds;
@@ -741,7 +812,7 @@ namespace E3Core.Data
             set
             {
                 myCastTime = value;
-                if (CastType != CastType.Ability)
+                if (CastType != CastingType.Ability)
                 {
                     MyCastTimeInSeconds = value / 1000;
                 }
@@ -753,6 +824,7 @@ namespace E3Core.Data
         public Int32 MinMana;
         public Int32 MaxMana;
         public Int32 MinHP;
+        public Int32 MinHPTotal;
         public Int32 HealPct;
         public bool Debug;
         public String Reagent = String.Empty;
@@ -780,7 +852,8 @@ namespace E3Core.Data
         public Int32 SpellID;
         public Int32 PctAggro;
         public String Zone = "All";
-        public Int32 MinSick = 2;
+        private const Int32 MinSickDefault = 2;
+        public Int32 MinSick = MinSickDefault;
         public Boolean AllowSpellSwap;
         public Boolean NoEarlyRecast;
         public Boolean NoStack;
@@ -794,18 +867,264 @@ namespace E3Core.Data
         public String BeforeEvent = String.Empty;
         public String CastIF = String.Empty;
         public string Ifs = String.Empty;
+        public string IfsKeys = String.Empty;
         public string InitName = String.Empty;
         public bool ReagentOutOfStock = false;
         public bool SpellInBook = false;
+        public Int32 SpellIcon = 0;
         public bool NoMidSongCast = false;
         public Int64 MinDurationBeforeRecast = 0;
         public Int64 LastUpdateCheckFromTopicUpdate = 0;
         public bool IsShortBuff = false;
         public Int32 HealthMax = 100;
         public bool IgnoreStackRules = false;
-      
+        public bool IsDebuff = false;
+        public bool IsDoT = false;
+		public bool IsBuff = false;
+        public Int32 Level = 255;
+        public string Description  = String.Empty;
+        public Int32 ResistAdj = 0;
+        public string ResistType = String.Empty;
+		public bool Enabled = true;
 
-        public override string ToString()
+		//.\protoc --csharp_out=.\ SpellData.proto
+		//add field to this class, you need to update the proto file as well.
+		public static Spell FromProto(SpellData source)
+        {
+			Spell r = new Spell();
+			r.AfterEvent = source.AfterEvent;
+			r.AfterSpell = source.AfterSpell;
+			r.AllowSpellSwap = source.AllowSpellSwap;
+			r.BeforeEvent = source.BeforeEvent;
+			r.BeforeSpell = source.BeforeSpell;
+			r.CastID = source.CastID;
+			r.CastIF = source.CastIF;
+			r.CastInvis = source.CastInvis;
+			r.CastName = source.CastName;
+			r.CastTarget = source.CastTarget;
+			r.CastType = (CastingType)source.CastType;
+			r.Category = source.Category;
+			r.Debug = source.Debug;
+			r.Delay = source.Delay;
+			r.DelayAfterCast = source.DelayAfterCast;
+			r.Duration = source.Duration;
+			r.DurationTotalSeconds = source.DurationTotalSeconds;
+			r.EnduranceCost = source.EnduranceCost;
+			r.GiftOfMana = source.GiftOfMana;
+			r.GiveUpTimer = source.GiveUpTimer;
+			r.HealPct = source.HealPct;
+			r.HealthMax = source.HealthMax;
+			r.Ifs = source.Ifs;
+			r.IfsKeys = source.IfsKeys;
+			r.IgnoreStackRules = source.IgnoreStackRules;
+			r.InitName = source.InitName;
+			r.IsDebuff = source.IsDebuff;
+			r.IsDoT = source.IsDoT;
+			r.IsBuff = source.IsBuff;
+			r.IsShortBuff = source.IsShortBuff;
+			r.ItemMustEquip = source.ItemMustEquip;
+			r.Mana = source.Mana;
+			r.MaxMana = source.MaxMana;
+			r.MaxTries = source.MaxTries;
+			r.MinDurationBeforeRecast = source.MinDurationBeforeRecast;
+			r.MinEnd = source.MinEnd;
+			r.MinHP = source.MinHP;
+            r.MinHPTotal = source.MinHPTotal;
+			r.MinMana = source.MinMana;
+			r.MinSick = source.MinSick;
+			r.Mode = source.Mode;
+			r.MyCastTime = (Decimal)source.MyCastTime;
+			r.MyCastTimeInSeconds = (Decimal)source.MyCastTimeInSeconds;
+			r.MyRange = source.MyRange;
+			r.NoAggro = source.NoAggro;
+			r.NoBurn = source.NoBurn;
+			r.NoEarlyRecast = source.NoEarlyRecast;
+			r.NoInterrupt = source.NoInterrupt;
+			r.NoMidSongCast = source.NoMidSongCast;
+			r.NoStack = source.NoStack;
+			r.NoTarget = source.NoTarget;
+			r.PctAggro = source.PctAggro;
+			r.Reagent = source.Reagent;
+			r.ReagentOutOfStock = source.ReagentOutOfStock;
+			r.RecastTime = source.RecastTime;
+			r.RecoveryTime = (Decimal)source.RecoveryTime;
+			r.Rotate = source.Rotate;
+			r.SpellGem = source.SpellGem;
+			r.SpellIcon = source.SpellIcon;
+			r.SpellID = source.SpellID;
+			r.SpellInBook = source.SpellInBook;
+			r.SpellName = source.SpellName;
+			r.SpellType = source.SpellType;
+			r.StackRecastDelay = source.StackRecastDelay;
+			r.StackRequestItem = source.StackRequestItem;
+			r.StackRequestTargets.AddRange(source.StackRequestTargets);
+			r.Subcategory = source.Subcategory;
+			r.TargetType = source.TargetType;
+			r.TriggerSpell = source.TriggerSpell;
+			r.Zone = source.Zone;
+			r.Level = source.Level;
+			r.Description = source.Description;
+			r.ResistType = source.ResistType;
+			r.ResistAdj = source.ResistAdj;
+			r.CastTypeOverride = (CastingType)source.CastTypeOverride;
+			foreach(var entry in source.CheckForCollection)
+			{
+				if(!r.CheckForCollection.ContainsKey(entry))
+				{
+					r.CheckForCollection.Add(entry,0);
+				}
+			}
+			r.Enabled = source.Enabled;
+			
+			return r;
+		}
+        public SpellData ToProto()
+        {
+
+            SpellData r = new SpellData();
+            r.AfterEvent = this.AfterEvent;
+            r.AfterSpell = this.AfterSpell;
+            r.AllowSpellSwap = this.AllowSpellSwap;
+            r.BeforeEvent = this.BeforeEvent;
+            r.BeforeSpell = this.BeforeSpell;
+            r.CastID = this.CastID;
+            r.CastIF = this.CastIF;
+            r.CastInvis = this.CastInvis;
+            r.CastName = this.CastName;
+            r.CastTarget = this.CastTarget;
+            r.CastType = (SpellData.Types.CastingType)this.CastType;
+            r.Category = this.Category;
+            r.Debug = this.Debug;
+            r.Delay = this.Delay;
+            r.DelayAfterCast = this.DelayAfterCast;
+            r.Duration = this.Duration;
+            r.DurationTotalSeconds = this.DurationTotalSeconds;
+            r.EnduranceCost = this.EnduranceCost;
+            r.GiftOfMana = this.GiftOfMana;
+            r.GiveUpTimer = this.GiveUpTimer;
+            r.HealPct = this.HealPct;
+            r.HealthMax = this.HealthMax;
+            r.Ifs=  this.Ifs;
+            r.IgnoreStackRules = this.IgnoreStackRules;
+            r.InitName = this.InitName;
+            r.IsDebuff = this.IsDebuff;
+            r.IsDoT= this.IsDoT;
+			r.IsBuff = this.IsBuff;
+            r.IsShortBuff = this.IsShortBuff;
+            r.ItemMustEquip = this.ItemMustEquip;
+            r.Mana= this.Mana;
+            r.MaxMana= this.MaxMana;
+            r.MaxTries = this.MaxTries;
+            r.MinDurationBeforeRecast = this.MinDurationBeforeRecast;
+            r.MinEnd = this.MinEnd;
+            r.MinHP = this.MinHP;
+            r.MinHPTotal = this.MinHPTotal;
+            r.MinMana = this.MinMana;
+            r.MinSick = this.MinSick;
+            r.Mode = this.Mode;
+            r.MyCastTime = (double)this.MyCastTime;
+            r.MyCastTimeInSeconds = (double)this.MyCastTimeInSeconds;
+            r.MyRange= this.MyRange; 
+            r.NoAggro = this.NoAggro;
+            r.NoBurn = this.NoBurn;
+            r.NoEarlyRecast = this.NoEarlyRecast;
+            r.NoInterrupt = this.NoInterrupt;
+            r.NoMidSongCast = this.NoMidSongCast;
+            r.NoStack = this.NoStack;
+            r.NoTarget = this.NoTarget;
+            r.PctAggro = this.PctAggro;
+            r.Reagent = this.Reagent;
+            r.ReagentOutOfStock = this.ReagentOutOfStock;
+            r.RecastTime= this.RecastTime;
+            r.RecoveryTime = (double)this.RecoveryTime;
+            r.Rotate = this.Rotate;
+            r.SpellGem = this.SpellGem;
+            r.SpellIcon = this.SpellIcon;
+            r.SpellID = this.SpellID;
+            r.SpellInBook = this.SpellInBook;
+            r.SpellName = this.SpellName;
+            r.SpellType = this.SpellType;
+            r.StackRecastDelay = this.StackRecastDelay;
+            r.StackRequestItem = this.StackRequestItem;
+            r.StackRequestTargets.AddRange(this.StackRequestTargets);
+            r.Subcategory = this.Subcategory;
+            r.TargetType = this.TargetType;
+            r.TriggerSpell =this.TriggerSpell;
+            r.Zone = this.Zone;
+            r.Level = this.Level;
+            r.Description = this.Description;
+            r.ResistType = this.ResistType;
+            r.ResistAdj = this.ResistAdj;
+			r.CastTypeOverride = (SpellData.Types.CastingType)this.CastTypeOverride;
+			r.IfsKeys = IfsKeys;
+			r.CheckForCollection.AddRange(CheckForCollection.Keys.ToList());
+			r.Enabled = Enabled;
+            return r;
+
+        }
+		public void TransferFlags(Spell d)
+		{
+			d.IfsKeys = IfsKeys;
+			d.SpellGem = SpellGem;
+			d.Zone = Zone;
+			d.MinSick = MinSick;
+			d.CheckForCollection =CheckForCollection.ToDictionary(entry => entry.Key,  entry => entry.Value);
+			d.HealPct = HealPct;
+			d.NoInterrupt = NoInterrupt;
+			d.AfterSpell = AfterSpell;
+			d.BeforeSpell = BeforeSpell;
+			d.MinMana = MinMana;
+			d.MaxMana = MaxMana;
+			d.IgnoreStackRules = IgnoreStackRules;
+			d.HealthMax = HealthMax;
+			d.MinDurationBeforeRecast = MinDurationBeforeRecast;
+			d.MaxTries = MaxTries;
+			d.CastIF = CastIF;
+			d.MinEnd = MinEnd;
+			d.AfterEvent = AfterEvent;
+			d.BeforeEvent = BeforeEvent;
+			d.Reagent = Reagent;
+			d.Enabled = Enabled;
+		
+		}
+
+        public string ToConfigEntry()
+        {
+			//This is C#'s ternary conditional operator
+            //its condition if true do 1st, else 2nd. 
+			//in this case, if ifskeys is null or empty, set to string empty
+            //else use /Ifs|{IfsKeys}
+            string t_Ifs = (String.IsNullOrWhiteSpace(this.IfsKeys)) ? String.Empty : $"/Ifs|{IfsKeys}";
+            string t_Zone = (Zone=="All") ? String.Empty :  $"/Zone|{Zone}";
+			string t_MinSick = (MinSick == MinSickDefault) ? String.Empty : t_MinSick = $"/MinSick|{MinSick}";
+	        string t_checkFor = (CheckForCollection.Count == 0) ? String.Empty: t_checkFor = "/CheckFor|" + String.Join(",", CheckForCollection.Keys.ToList());
+            string t_healPct = (HealPct == 0) ?String.Empty :  $"/HealPct|{HealPct}";
+            string t_noInterrupt = (!NoInterrupt) ? String.Empty :$"/NoInterrupt";
+		    string t_AfterSpell = (String.IsNullOrWhiteSpace(this.AfterSpell)) ?String.Empty : t_AfterSpell = $"/AfterSpell|{AfterSpell}";
+			string t_BeforeSpell = (String.IsNullOrWhiteSpace(this.BeforeSpell)) ? String.Empty : t_BeforeSpell = $"/BeforeSpell|{BeforeSpell}";
+            string t_minMana = (MinMana==0) ?String.Empty: $"/MinMana|{MinMana}";
+			string t_maxMana = (MaxMana == 0) ? String.Empty : $"/MaxMana|{MaxMana}";
+			string t_ignoreStackRules = (!IgnoreStackRules) ? String.Empty : $"/IgnoreStackRules";
+			string t_healthMax = (HealthMax == 100) ? String.Empty : $"/HealthMax|{HealthMax}";
+			string t_MinDurationBeforeRecast = (MinDurationBeforeRecast == 0) ? String.Empty : $"/MinDurationBeforeRecast|{MinDurationBeforeRecast/1000}";
+			string t_MaxTries = (MaxTries == MaxTiresDefault) ? String.Empty : $"/MaxTries|{MaxTries}";
+			string t_CastIF = (String.IsNullOrWhiteSpace(this.CastIF)) ? String.Empty : $"/CastIF|{CastIF}";
+			string t_MinEnd = (MinEnd == 0) ? String.Empty : $"/MinEnd|{MinEnd}";
+			string t_AfterEvent = (String.IsNullOrWhiteSpace(this.AfterEvent)) ? String.Empty : $"/AfterEvent|{AfterEvent}";
+			string t_BeforeEvent = (String.IsNullOrWhiteSpace(this.BeforeEvent)) ? String.Empty : $"/BeforeEvent|{BeforeEvent}";
+			string t_Reagent = (String.IsNullOrWhiteSpace(this.Reagent)) ? String.Empty : $"/Reagent|{Reagent}";
+			string t_CastTypeOverride = (this.CastTypeOverride== CastingType.None) ? String.Empty : $"/CastType|{CastTypeOverride.ToString()}";
+			string t_GemNumber = (this.SpellGem == 0) ? String.Empty : $"/Gem|{SpellGem}";
+			string t_Enabled = (Enabled == true) ? String.Empty : $"/Disabled";
+			string t_CastTarget = (String.IsNullOrWhiteSpace(this.CastTarget) || this.IsBuff==false) ? String.Empty : $"/{CastTarget}";
+			string t_PctAggro = (PctAggro == 0) ? String.Empty : $"/PctAggro|{PctAggro}";
+			//Main=Terror of Mirenilla Rk. II/Gem|4/Ifs|Tanking
+			string returnValue = $"{CastName}{t_CastTarget}{t_GemNumber}{t_Ifs}{t_checkFor}{t_CastIF}{t_healPct}{t_healthMax}{t_noInterrupt}{t_Zone}{t_MinSick}{t_BeforeSpell}{t_AfterSpell}{t_BeforeEvent}{t_AfterEvent}{t_minMana}{t_maxMana}{t_MinEnd}{t_ignoreStackRules}{t_MinDurationBeforeRecast}{t_MaxTries}{t_Reagent}{t_CastTypeOverride}{t_PctAggro}{t_Enabled}";
+			return returnValue;
+
+		}
+
+		public override string ToString()
         {
             StringBuilder sb = new StringBuilder();
             sb.Append(this.GetType().Name);

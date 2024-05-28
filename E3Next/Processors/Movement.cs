@@ -21,9 +21,11 @@ namespace E3Core.Processors
         public static double Anchor_Z = double.MinValue;
         public static List<string> AnchorFilters = new List<string>();
 
-        public static bool Following = false;
-        //public static Int32 _followTargetID = 0;
-        public static string FollowTargetName = String.Empty;
+		[ExposedData("Movement", "Following")]
+		public static bool Following = false;
+		//public static Int32 _followTargetID = 0;
+		[ExposedData("Movement", "FollowTargetName")]
+		public static string FollowTargetName = String.Empty;
         public static Logging _log = E3.Log;
         private static IMQ MQ = E3.MQ;
         private static ISpawns _spawns = E3.Spawns;
@@ -34,7 +36,8 @@ namespace E3Core.Processors
         private static Int64 _nextFollowCheckInterval = 1000;
         private static Int64 _nextChaseCheck = 0;
         private static Int64 _nextChaseCheckInterval = 10;
-        public static string _chaseTarget = String.Empty;
+		[ExposedData("Movement", "ChaseTarget")]
+		public static string _chaseTarget = String.Empty;
 
         [SubSystemInit]
         public static void Init()
@@ -277,7 +280,15 @@ namespace E3Core.Processors
                 {
                     return;
                 }
-                double currentZ = MQ.Query<double>("${Me.Z}");
+
+				if (e3util.IsEQLive())
+				{
+					//random delay so it isn't quite so ovious
+					MQ.Delay(E3.Random.Next(1500, 3000));
+
+				}
+
+				double currentZ = MQ.Query<double>("${Me.Z}");
                 e3util.TryMoveToLoc(currentX+E3.Random.Next(-1*distance,distance), currentY + E3.Random.Next(-1 * distance, distance), currentZ);
 
             });
@@ -561,7 +572,7 @@ namespace E3Core.Processors
             );
             EventProcessor.RegisterCommand("/followoff", (x) =>
             {
-                if (!x.args.Contains("all",StringComparer.OrdinalIgnoreCase))
+                if (!x.args.Contains("me",StringComparer.OrdinalIgnoreCase))
                 {
                     _chaseTarget = String.Empty;
                     FollowTargetName = string.Empty;
@@ -578,7 +589,7 @@ namespace E3Core.Processors
                         int zoneID = MQ.Query<int>("${Zone.ID}");
                         extraArgs += $" tome={currentX}/{currentY}/{currentZ}/{zoneID}";
                     }
-                    E3.Bots.BroadcastCommandToGroup($"/followoff all{extraArgs}",x);
+                    E3.Bots.BroadcastCommandToGroup($"/followoff me{extraArgs}",x);
                 }
                 else
                 {

@@ -46,12 +46,16 @@ namespace E3Core.Processors
 		//private static Int64 _printoutTimer;
 		private static Data.Spell _selectAura = null;
 		private static Int64 _nextBuffCheck = 0;
-
+		[ExposedData("BuffCheck", "BuffCheckInterval")]
 		private static Int64 _nextBuffCheckInterval = 1000;
+		[ExposedData("BuffCheck", "XPBuffs")]
 		private static List<Int32> _xpBuffs = new List<int>() { 42962 /*xp6*/, 42617 /*xp5*/, 42616 /*xp4*/};
+		[ExposedData("BuffCheck", "GMBuffs")]
 		private static List<Int32> _gmBuffs = new List<int>() { 34835, 35989, 35361, 25732, 34567, 36838, 43040, 36266, 36423 };
 		private static Int64 _nextBlockBuffCheck = 0;
+		[ExposedData("BuffCheck", "BlockBuffCheckInterval")]
 		private static Int64 _nextBlockBuffCheckInterval = 1000;
+		[ExposedData("BuffCheck", "InitAuras")]
 		static bool _initAuras = false;
 
 		public static void AddToBuffCheckTimer(int millisecondsToAdd)
@@ -499,6 +503,7 @@ namespace E3Core.Processors
 					{
 						BuffBots(E3.CharacterSettings.CombatBuffs);
 						BuffBots(E3.CharacterSettings.CombatPetBuffs,true);
+						BuffBots(E3.CharacterSettings.CombatPetOwnerBuffs, true);
 					}
 
 					if ((!Movement.IsMoving() && String.IsNullOrWhiteSpace(Movement.FollowTargetName)) || Movement.StandingStillForTimePeriod())
@@ -523,7 +528,7 @@ namespace E3Core.Processors
 							//using (_log.Trace("Buffs-Pet"))
 							{
 								if (!E3.ActionTaken) BuffBots(E3.CharacterSettings.PetBuffs, true);
-
+								if (!E3.ActionTaken) BuffBots(E3.CharacterSettings.PetOwnerBuffs, true);
 							}
 
 						}
@@ -1397,7 +1402,7 @@ namespace E3Core.Processors
 				if (currentAura != "NULL")
 				{
 					//we already have an aura, check if its different
-					if (currentAura.Equals(_selectAura.SpellName, StringComparison.OrdinalIgnoreCase))
+					//if (currentAura.Equals(_selectAura.SpellName, StringComparison.OrdinalIgnoreCase))
 					{
 						//don't need to do anything
 						return;
@@ -1408,7 +1413,7 @@ namespace E3Core.Processors
 
 				//need to put on new aura
 				Int32 meID = E3.CurrentId;
-				if (_selectAura.CastType == CastType.Spell)
+				if (_selectAura.CastType == CastingType.Spell)
 				{
 					//this is a spell, need to mem, then cast. 
 					if (Casting.CheckReady(_selectAura) && Casting.CheckMana(_selectAura))
@@ -1418,7 +1423,7 @@ namespace E3Core.Processors
 
 
 				}
-				else if (_selectAura.CastType == CastType.Disc)
+				else if (_selectAura.CastType == CastingType.Disc)
 				{
 					Int32 endurance = MQ.Query<Int32>("${Me.Endurance}");
 					if (_selectAura.EnduranceCost < endurance)

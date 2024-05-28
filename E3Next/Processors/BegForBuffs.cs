@@ -98,7 +98,7 @@ namespace E3Core.Processors
 								if (totalQueuedSpells > 0)
 								{
 									MQ.Cmd($"/t {user} casting buffs on you, please wait.");
-									E3.Bots.BroadcastCommand($"/buffme {spawn.ID}");
+									E3.Bots.BroadcastCommand($"/buffme {spawn.CleanName}");
 
 								}
 							}
@@ -145,7 +145,7 @@ namespace E3Core.Processors
                                 if (totalQueuedSpells > 0)
                                 {
                                     MQ.Cmd($"/t {user} casting buffs on your pet, please wait.");
-                                    E3.Bots.BroadcastCommand($"/buffme {petid}");
+                                    E3.Bots.BroadcastCommand($"/buffpet {user}");
                                 }
                                     
                             }
@@ -164,32 +164,60 @@ namespace E3Core.Processors
             {
                 if (x.args.Count > 0)
                 {
-                    if (Int32.TryParse(x.args[0], out var spawnid))
-                    {
-                        foreach (var spell in E3.CharacterSettings.GroupBuffs)
-                        {
-                            if(_spawns.TryByID(spawnid, out var spawn))
-                            {
-								_queuedBuffs.Enqueue(new BuffQueuedItem() { TargetID = spawnid, Spell = spell });
-							}
-
+					string spawnid = x.args[0];
+					if (_spawns.TryByName(spawnid, out var spawn))
+					{
+						foreach (var spell in E3.CharacterSettings.GroupBuffs)
+						{
+            				_queuedBuffs.Enqueue(new BuffQueuedItem() { TargetID = spawn.ID, Spell = spell });
 						}
-                    }
+					}
                 }
                 else
                 {
-                    
                     foreach (var spell in E3.CharacterSettings.GroupBuffs)
                     {
                         _queuedBuffs.Enqueue(new BuffQueuedItem() { TargetID = E3.CurrentId, Spell = spell });
 
                     }
                     
-                    E3.Bots.BroadcastCommand($"/buffme {E3.CurrentId}");
+                    E3.Bots.BroadcastCommand($"/buffme {E3.CurrentName}");
                 }
             });
+			EventProcessor.RegisterCommand("/buffpet", (x) =>
+			{
+				if (x.args.Count > 0)
+				{
+					string spawnid = x.args[0];
+					if (_spawns.TryByName(spawnid, out var spawn))
+					{
+						if (spawn.PetID > 0)
+						{
+							foreach (var spell in E3.CharacterSettings.GroupBuffs)
+							{
+								_queuedBuffs.Enqueue(new BuffQueuedItem() { TargetID = spawn.PetID, Spell = spell });
+							}
 
-            EventProcessor.RegisterCommand("/buffit", (x) =>
+						}
+					}
+				}
+				else
+				{
+					if (_spawns.TryByID(E3.CurrentId, out var spawn))
+					{ 
+						foreach (var spell in E3.CharacterSettings.GroupBuffs)
+						{
+
+							_queuedBuffs.Enqueue(new BuffQueuedItem() { TargetID = spawn.PetID, Spell = spell });
+
+						}
+					}
+
+					E3.Bots.BroadcastCommand($"/buffpet {E3.CurrentName}");
+				}
+			});
+
+			EventProcessor.RegisterCommand("/buffit", (x) =>
             {
                 if (x.args.Count > 0)
                 {
@@ -207,7 +235,10 @@ namespace E3Core.Processors
                     int targetid = MQ.Query<int>("${Target.ID}");
                     if(targetid>0)
                     {
-                        E3.Bots.BroadcastCommand($"/buffme {targetid}");
+						if (_spawns.TryByID(targetid, out var spawn))
+						{
+							E3.Bots.BroadcastCommand($"/buffme {spawn.CleanName}");
+						}
 
                     }
                 }
@@ -250,9 +281,8 @@ namespace E3Core.Processors
 							}
 							bool inBook = MQ.Query<bool>($"${{Me.Book[{spell}]}}");
 							bool aa = MQ.Query<bool>($"${{Me.AltAbility[{spell}].Spell}}");
-							bool item = MQ.Query<bool>($"${{FindItem[={spell}]}}");
-
-							if (inBook || aa || item)
+						
+							if (inBook || aa )
 							{
 								if (groupReply)
 								{
@@ -418,7 +448,7 @@ namespace E3Core.Processors
                     }
 
                     //not a valid spell
-                    if (s.CastType==CastType.None)
+                    if (s.CastType==CastingType.None)
                     {
                         _queuedBuffs.Dequeue();
                         return;
@@ -451,8 +481,11 @@ namespace E3Core.Processors
                     {
                         //so we can be sure our cursor was empty before we cast
                         Int32 cursorID = MQ.Query<Int32>("${Cursor.ID}");
-                     
-                        var result = Casting.Cast(spawn.ID, s, Heals.SomeoneNeedsHealing);
+
+					recast:
+						var result = Casting.Cast(spawn.ID, s, Heals.SomeoneNeedsHealing);
+						if (result == CastReturn.CAST_FIZZLE) goto recast;
+
                         if (result == CastReturn.CAST_INTERRUPTFORHEAL)
                         {
                             return;

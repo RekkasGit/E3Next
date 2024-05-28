@@ -27,14 +27,13 @@ namespace E3Core.Settings
         private static string _currentSet = String.Empty;
 
         public static string CurrentSet { get { return _currentSet; } set { _currentSet = value; } }
-
-
-        static BaseSettings()
+		
+		static BaseSettings()
         {
+			
 
 
-
-        }
+		}
         public static string GetBoTFilePath(string fileName)
         {
             string macroFile = _macroFolder + _botFolder + fileName;
@@ -165,7 +164,7 @@ namespace E3Core.Settings
                 }
             }
         }
-        public static void LoadKeyData<K, V>(string sectionKey, string Key, IniData parsedData, Dictionary<K, V> dictionary)
+        public static void LoadKeyData<K, V>(string sectionKey, string Key, IniData parsedData, IDictionary<K, V> dictionary)
         {
             _log.Write($"{sectionKey} {Key}");
             var section = parsedData.Sections[sectionKey];
@@ -186,7 +185,7 @@ namespace E3Core.Settings
                 }
             }
         }
-		public static void LoadKeyData<K, V>(string sectionKey, IniData parsedData, Dictionary<K, V> dictionary)
+		public static void LoadKeyData<K, V>(string sectionKey, IniData parsedData, IDictionary<K, V> dictionary)
 		{
 			
 			var section = parsedData.Sections[sectionKey];
@@ -223,6 +222,34 @@ namespace E3Core.Settings
             }
             return String.Empty;
         }
+		public static SortedDictionary<string, List<Data.Spell>> LoadMeldoySetData(IniData parsedData)
+		{
+			SortedDictionary<string, List<Data.Spell>> returnData = new SortedDictionary<string, List<Data.Spell>>();
+			foreach (var section in parsedData.Sections)
+			{
+				if(section.SectionName.EndsWith(" Melody"))
+				{
+					//its a dynamic melody, lets get the spells 
+					string name = section.SectionName.Split(new char[] { ' ' })[0];
+
+					List<Data.Spell> spellList;
+					if(!returnData.TryGetValue(name,out spellList))
+					{
+						spellList = new List<Data.Spell>();
+						returnData.Add(name, spellList);
+					}
+					foreach(var key in section.Keys)
+					{
+						foreach(var value in key.ValueList)
+						{
+							var newSpell = new Data.Spell(value, parsedData);
+							spellList.Add(newSpell);
+						}
+					}
+				}
+			}
+			return returnData;
+		}
         public static void LoadKeyData(string sectionKey, string Key, IniData parsedData, ref Boolean valueToSet)
         {
             _log.Write($"{sectionKey} {Key}");
@@ -439,6 +466,7 @@ namespace E3Core.Settings
             if (sectionkey.Equals("Blocked Buffs", StringComparison.OrdinalIgnoreCase)) return;
             if (sectionkey.Equals("Dispel", StringComparison.OrdinalIgnoreCase)) return;
 			if (sectionkey.Equals("Dispel", StringComparison.OrdinalIgnoreCase)) return;
+			if (sectionkey.Equals("Pets", StringComparison.OrdinalIgnoreCase) && keyData.KeyName.Equals("Blocked Pet Buff", StringComparison.OrdinalIgnoreCase)) return;
 			if (sectionkey.Equals("Buffs", StringComparison.OrdinalIgnoreCase) && keyData.KeyName.Equals("Group Buff Request",StringComparison.OrdinalIgnoreCase)) return;
 			if (sectionkey.Equals("Buffs", StringComparison.OrdinalIgnoreCase) && keyData.KeyName.Equals("Raid Buff Request", StringComparison.OrdinalIgnoreCase)) return;
 			if (sectionkey.Equals("Buffs", StringComparison.OrdinalIgnoreCase) && keyData.KeyName.Equals("Stack Buff Request", StringComparison.OrdinalIgnoreCase)) return;

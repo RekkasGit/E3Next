@@ -39,35 +39,8 @@ namespace E3Core.Classes
 			EventProcessor.RegisterCommand("/e3autocanni", (x) =>
 			{
 				//swap them
-
-				if (x.args.Count > 0)
-				{
-					if (x.args[0].Equals("off", StringComparison.OrdinalIgnoreCase))
-					{
-						if (E3.CharacterSettings.AutoCanni)
-						{
-							E3.CharacterSettings.AutoCanni = false;
-							E3.Bots.Broadcast("\agTurning off Auto Canni");
-						}
-					}
-					else if (x.args[0].Equals("on", StringComparison.OrdinalIgnoreCase))
-					{
-						if (!E3.CharacterSettings.AutoCanni)
-						{
-							E3.CharacterSettings.AutoCanni = true;
-							E3.Bots.Broadcast("\arTurning on auto canni!");
-
-						}
-					}
-				}
-				else
-				{
-					E3.CharacterSettings.AutoCanni = E3.CharacterSettings.AutoCanni ? false : true;
-					if (E3.CharacterSettings.AutoCanni) E3.Bots.Broadcast("\arAuto Canni On");
-					if (!E3.CharacterSettings.AutoCanni) E3.Bots.Broadcast("\agAuto Canni Off");
-
-				}
-
+				e3util.ToggleBooleanSetting(ref E3.CharacterSettings.AutoCanni, "Auto Canni", x.args);
+	
 			});
 
 		}
@@ -83,8 +56,15 @@ namespace E3Core.Classes
 					int pctMana = MQ.Query<int>("${Me.PctMana}");
 					var pctHps = MQ.Query<int>("${Me.PctHPs}");
 					int currentHps = MQ.Query<int>("${Me.CurrentHPs}");
-
-                    if(!Casting.Ifs(canniSpell))
+					var minhpThreashold = canniSpell.MinHPTotal;
+					if (minhpThreashold > 0)
+					{
+						if (currentHps < minhpThreashold)
+						{
+							continue;
+						}
+					}
+					if (!Casting.Ifs(canniSpell))
                     {
                         continue;
                     }
@@ -92,9 +72,12 @@ namespace E3Core.Classes
 					{
 						var hpThresholdDefined = canniSpell.MinHP > 0;
 						var manaThresholdDefined = canniSpell.MaxMana > 0;
+                      
 						bool castCanniSpell = false;
 						bool hpThresholdMet = false;
 						bool manaThresholdMet = false;
+
+                        
 
 						if (hpThresholdDefined)
 						{

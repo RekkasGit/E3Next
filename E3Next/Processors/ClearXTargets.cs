@@ -18,12 +18,17 @@ namespace E3Core.Processors
         private static IMQ MQ = E3.MQ;
         private static ISpawns _spawns = E3.Spawns;
 
-        public static bool Enabled = false;
-        public static Int32 MobToAttack = 0;
-        public static bool FaceTarget = false;
+		[ExposedData("ClearXTargets", "Enabled")]
+		public static bool Enabled = false;
+		[ExposedData("ClearXTargets", "MobToAttack")]
+		public static Int32 MobToAttack = 0;
+		[ExposedData("ClearXTargets", "FaceTarget")]
+		public static bool FaceTarget = false;
         public static List<string> Filters = new List<string>();
-        public static bool HasAllFlag = false;
-        public static bool StickTarget = false;
+		[ExposedData("ClearXTargets", "HasAllFlag")]
+		public static bool HasAllFlag = false;
+		[ExposedData("ClearXTargets", "StickTarget")]
+		public static bool StickTarget = false;
 
         [ClassInvoke(Data.Class.All)]
         public static void Check_Xtargets()

@@ -26,5 +26,10 @@ namespace E3Core.Data
         public string ShortName { get; set; }
         public int Id { get; set; }
         public bool IsSafeZone { get; set; }
-    }
+
+		public override string ToString()
+		{
+			return $"Name:{Name} ShortName:{ShortName} Id: {Id} IsSafeZone:{IsSafeZone}";
+		}
+	}
 }

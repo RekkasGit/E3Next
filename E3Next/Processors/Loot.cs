@@ -39,8 +39,8 @@ namespace E3Core.Processors
             }
             catch (Exception ex)
             {
-                MQ.Write("Exception loading Loot Data file");
-                throw ex;
+                MQ.Write("Exception loading Loot Data file. Loot data is not available. Error:"+ex.Message + " stack:" + ex.StackTrace);
+               
             }
             try
             {
@@ -51,7 +51,7 @@ namespace E3Core.Processors
 			{
             
 				MQ.Write("Exception loading Loot Stackable Data file. message:"+ex.Message + " stack:"+ex.StackTrace);
-				throw ex;
+				
 
 			}
         }
@@ -298,86 +298,95 @@ namespace E3Core.Processors
 
         public static void Process()
         {
+
             if (E3.IsInvis) return;
             if (!e3util.ShouldCheck(ref _nextLootCheck, _nextLootCheckInterval)) return;
 
             if(!Assist.IsAssisting)
             {
-                if(E3.CharacterSettings.LootCommander_Enabled && E3.CharacterSettings.LootCommander_Looters.Count>0)
-                {
-                    LootCommanderAssignCorpses();
-                    return;
-                }
+    //            if(E3.CharacterSettings.LootCommander_Enabled && E3.CharacterSettings.LootCommander_Looters.Count>0)
+    //            {
+    //                LootCommanderAssignCorpses();
+    //                return;
+    //            }
 				long currentTimestamp = Core.StopWatch.ElapsedMilliseconds;
 
-				if (_lootCommanderAssisngedCorpsesToLoot.Count<Int32>() > 0 && SafeToLoot() && !Basics.InCombat() && (currentTimestamp - Assist.LastAssistEndedTimestamp > E3.GeneralSettings.Loot_TimeToWaitAfterAssist))
-				{
-					LootCommanderLootCorpses(_lootCommanderAssisngedCorpsesToLoot);
-				}
+				//if (_lootCommanderAssisngedCorpsesToLoot.Count<Int32>() > 0 && SafeToLoot() && !Basics.InCombat() && (currentTimestamp - Assist.LastAssistEndedTimestamp > E3.GeneralSettings.Loot_TimeToWaitAfterAssist))
+				//{
+				//	LootCommanderLootCorpses(_lootCommanderAssisngedCorpsesToLoot);
+				//}
 
 				if (!E3.CharacterSettings.Misc_AutoLootEnabled) return;
-                if ((!Basics.InCombat() && currentTimestamp - Assist.LastAssistEndedTimestamp > E3.GeneralSettings.Loot_TimeToWaitAfterAssist) && SafeToLoot() || E3.GeneralSettings.Loot_LootInCombat)
+
+				if(Basics.AmIDead())
+				{
+					E3.Bots.Broadcast("I am dead, turning off autoloot");
+					E3.CharacterSettings.Misc_AutoLootEnabled = false;
+					return;
+				}
+
+				if ((!Basics.InCombat() && currentTimestamp - Assist.LastAssistEndedTimestamp > E3.GeneralSettings.Loot_TimeToWaitAfterAssist) && SafeToLoot() || E3.GeneralSettings.Loot_LootInCombat)
                 {
                     LootArea();
         		}
             }
         }
-        private static void LootCommanderAssignCorpses()
-        {
-            if(Zoning.CurrentZone.IsSafeZone)
-            {
-                return;
-            }
-			List<Spawn> corpses = new List<Spawn>();
-            _spawns.RefreshList();//just in case to make sure corpse data is updated
-            foreach (var spawn in _spawns.Get())
-			{
-				//only player corpses have a Deity
-				if (spawn.Distance3D < E3.GeneralSettings.Loot_CorpseSeekRadius && spawn.DeityID == 0 && spawn.TypeDesc == "Corpse")
-				{
+  //      private static void LootCommanderAssignCorpses()
+  //      {
+  //          if(Zoning.CurrentZone.IsSafeZone)
+  //          {
+  //              return;
+  //          }
+		//	List<Spawn> corpses = new List<Spawn>();
+  //          _spawns.RefreshList();//just in case to make sure corpse data is updated
+  //          foreach (var spawn in _spawns.Get())
+		//	{
+		//		//only player corpses have a Deity
+		//		if (spawn.Distance3D < E3.GeneralSettings.Loot_CorpseSeekRadius && spawn.DeityID == 0 && spawn.TypeDesc == "Corpse")
+		//		{
 			
-                    corpses.Add(spawn);
-				}
-			}
-            if(corpses.Count > 0)
-            {
-                //need to split these up and send the command to our looters
+  //                  corpses.Add(spawn);
+		//		}
+		//	}
+  //          if(corpses.Count > 0)
+  //          {
+  //              //need to split these up and send the command to our looters
 
-                //populate the assignment builder, and clear anything that was from before
-                foreach(var user in E3.CharacterSettings.LootCommander_Looters)
-                {
-                    if(!_lootCommanderAssignmentBuilder.ContainsKey(user))
-                    {
-                        _lootCommanderAssignmentBuilder.Add(user, new List<int>());
-                    }
-                    else
-                    {
-                        _lootCommanderAssignmentBuilder[user].Clear();
-                    }
-                }
-				//round robin the avilable corpses to each looter
-				for (Int32 i =0; i < corpses.Count; i++)
-                {
-                  	Int32 index = i % E3.CharacterSettings.LootCommander_Looters.Count;
-                    _lootCommanderAssignmentBuilder[E3.CharacterSettings.LootCommander_Looters[index]].Add(i);
+  //              //populate the assignment builder, and clear anything that was from before
+  //              foreach(var user in E3.CharacterSettings.LootCommander_Looters)
+  //              {
+  //                  if(!_lootCommanderAssignmentBuilder.ContainsKey(user))
+  //                  {
+  //                      _lootCommanderAssignmentBuilder.Add(user, new List<int>());
+  //                  }
+  //                  else
+  //                  {
+  //                      _lootCommanderAssignmentBuilder[user].Clear();
+  //                  }
+  //              }
+		//		//round robin the avilable corpses to each looter
+		//		for (Int32 i =0; i < corpses.Count; i++)
+  //              {
+  //                	Int32 index = i % E3.CharacterSettings.LootCommander_Looters.Count;
+  //                  _lootCommanderAssignmentBuilder[E3.CharacterSettings.LootCommander_Looters[index]].Add(i);
 
-				}
-                foreach(var pair in _lootCommanderAssignmentBuilder)
-                {
-                    string user = pair.Key;
-                    List<Int32> corpseIds = pair.Value;
-                    //if they have assignments, send off the command
-                    if(corpseIds.Count> 0)
-                    {
-						E3.Bots.BroadcastCommandToPerson(user, $"/lootcommand {user} \"{e3util.NumbersToString(corpseIds, ',')}\"");
-					}
-                }
-            }
-			MQ.Cmd("/squelch /hidecorpse all");
-            //give time for corpses to poof
-			MQ.Delay(100);
+		//		}
+  //              foreach(var pair in _lootCommanderAssignmentBuilder)
+  //              {
+  //                  string user = pair.Key;
+  //                  List<Int32> corpseIds = pair.Value;
+  //                  //if they have assignments, send off the command
+  //                  if(corpseIds.Count> 0)
+  //                  {
+		//				E3.Bots.BroadcastCommandToPerson(user, $"/lootcommand {user} \"{e3util.NumbersToString(corpseIds, ',')}\"");
+		//			}
+  //              }
+  //          }
+		//	MQ.Cmd("/squelch /hidecorpse all");
+  //          //give time for corpses to poof
+		//	MQ.Delay(100);
 
-		}
+		//}
 		private static void LootCommanderLootCorpses(CircularBuffer<Int32> corpses)
 		{
 			if (corpses.Count<Int32>() == 0)
@@ -416,7 +425,7 @@ namespace E3Core.Processors
 					if (MQ.Query<bool>("${Target.ID}"))
 					{
 						e3util.TryMoveToTarget();
-						MQ.Delay(2250, "${Target.Distance3D} < 10"); // Give Time to get to Corpse 
+						MQ.Delay(2250, "${Target.Distance} < 10"); // Give Time to get to Corpse 
 						LootCorpse(c);
                         corpses.PopFront();
 						if (MQ.Query<bool>("${Window[LootWnd].Open}"))
@@ -496,12 +505,12 @@ namespace E3Core.Processors
                     }
 
                     Casting.TrueTarget(c.ID);
-                    MQ.Delay(2000, "${Target.ID}");
+                    //MQ.Delay(2000, "${Target.ID}");
                    
                     if(MQ.Query<bool>("${Target.ID}"))
                     {
                         e3util.TryMoveToTarget();
-                        MQ.Delay(2250, "${Target.Distance3D} < 10"); // Give Time to get to Corpse 
+                        MQ.Delay(2250, "${Target.Distance} < 10"); // Give Time to get to Corpse 
                         LootCorpse(c);
                        
                         if (MQ.Query<bool>("${Window[LootWnd].Open}"))
