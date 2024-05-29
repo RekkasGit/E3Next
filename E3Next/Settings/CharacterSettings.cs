@@ -466,7 +466,8 @@ namespace E3Core.Settings
 		public bool KeepOpenInventorySlot = false;
 		[INI_Section("Magician", "Ignore Pet Weapon Requests (On/Off)")]
 		public bool IgnorePetWeaponRequests = false;
-
+		[INI_Section("Magician", "Allow Pet Weapon Requests from Guild Bypass(On/Off)")]
+		public bool Magican_AllowPetRequestWeaponsBypass = true;
 		[INI_Section("Shaman", "Auto-Canni (On/Off)")]
 		public bool AutoCanni = false;
 
@@ -695,6 +696,7 @@ namespace E3Core.Settings
                 LoadKeyData("Magician", "Auto-Pet Weapons (On/Off)", ParsedData, ref AutoPetWeapons);
                 LoadKeyData("Magician", "Keep Open Inventory Slot (On/Off)", ParsedData, ref KeepOpenInventorySlot);
                 LoadKeyData("Magician", "Ignore Pet Weapon Requests (On/Off)", ParsedData, ref IgnorePetWeaponRequests);
+				LoadKeyData("Magician", "Allow Pet Weapon Requests from Guild Bypass(On/Off)", ParsedData, ref Magican_AllowPetRequestWeaponsBypass);
                 LoadKeyData("Magician", "Pet Weapons", ParsedData, PetWeapons);
             }
 
@@ -1162,6 +1164,7 @@ namespace E3Core.Settings
 				section = newFile.Sections.GetSectionData("Magician");
 				section.Keys.AddKey("Auto-Pet Weapons (On/Off)", "Off");
 				section.Keys.AddKey("Ignore Pet Weapon Requests (On/Off)", "Off");
+				section.Keys.AddKey("Allow Pet Weapon Requests from Guild Bypass(On/Off)", "On");
 				section.Keys.AddKey("Keep Open Inventory Slot (On/Off)", "Off");
 				section.Keys.AddKey("Pet Weapons", "");
 			}

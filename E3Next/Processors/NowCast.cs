@@ -1,5 +1,6 @@
 ﻿using E3Core.Classes;
 using E3Core.Data;
+using E3Core.Utility;
 using MonoCore;
 using System;
 using System.Collections.Generic;
@@ -18,7 +19,9 @@ namespace E3Core.Processors
     {
         public static Logging _log = E3.Log;
         private static IMQ MQ = E3.MQ;
-        [SubSystemInit]
+		private static ISpawns _spawns = E3.Spawns;
+
+		[SubSystemInit]
         public static void Init()
         {
             RegisterEvents();
@@ -171,15 +174,38 @@ namespace E3Core.Processors
 					
 					if (spell.CheckForCollection.Count > 0)
 					{
-						foreach (var checkforItem in spell.CheckForCollection.Keys)
-						{
-							Casting.TrueTarget(targetid);
-							if (MQ.Query<bool>($"${{Bool[${{Target.Buff[{checkforItem}]}}]}}"))
+                        if(_spawns.TryByID(targetid, out var spawn))
+                        {
+							if (E3.Bots.IsMyBot(spawn.CleanName))
 							{
-								return CastReturn.CAST_TAKEHOLD;
+								foreach (var checkforItem in spell.CheckForCollection.Keys)
+								{
+									//keys are check for spell names, the value is the spell id
+
+									bool hasCheckFor = E3.Bots.BuffList(spawn.CleanName).Contains(spell.CheckForCollection[checkforItem]);
+									//can't check for target song buffs, be aware. will have to check netbots. 
+									if (hasCheckFor)
+									{
+										return CastReturn.CAST_TAKEHOLD;
+									}
+								}
 							}
+							else
+							{
+								Casting.TrueTarget(targetid);
+								MQ.Delay(2000, "${Target.BuffsPopulated}");
+
+								foreach (var checkforItem in spell.CheckForCollection.Keys)
+								{
+									if (MQ.Query<bool>($"${{Bool[${{Target.Buff[{checkforItem}]}}]}}"))
+									{
+										return CastReturn.CAST_TAKEHOLD;
+									}
+								}
+
+							}
+							
 						}
-						
 					}
 				recast:
 					if (!Casting.CheckReady(spell))

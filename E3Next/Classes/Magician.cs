@@ -102,7 +102,17 @@ namespace E3Core.Classes
                 }
 
                 _requester = x.match.Groups[1].ToString();
-                if (E3.CharacterSettings.IgnorePetWeaponRequests)
+
+				if(e3util.InMyGuild(_requester) && !E3.CharacterSettings.Magican_AllowPetRequestWeaponsBypass)
+				{
+					if (E3.CharacterSettings.IgnorePetWeaponRequests)
+					{
+						MQ.Cmd($"/t {_requester} Sorry, I am not currently accepting requests for pet weapons even from Guild Mates");
+						return;
+					}
+
+				}
+				else if (!e3util.InMyGuild(_requester) && E3.CharacterSettings.IgnorePetWeaponRequests)
                 {
                     MQ.Cmd($"/t {_requester} Sorry, I am not currently accepting requests for pet weapons");
                     return;
@@ -187,7 +197,21 @@ namespace E3Core.Classes
 			armPetEvents = new List<string> { "(?i)(.+) tells you, 'DSK'", "(?i)(.+) tells the group, 'DSK'", };
 			EventProcessor.RegisterEvent("ArmPetDSK", armPetEvents, x =>
 			{
-                
+				if (e3util.InMyGuild(_requester) && !E3.CharacterSettings.Magican_AllowPetRequestWeaponsBypass)
+				{
+					if (E3.CharacterSettings.IgnorePetWeaponRequests)
+					{
+						MQ.Cmd($"/t {_requester} Sorry, I am not currently accepting requests for pet weapons even from Guild Mates");
+						return;
+					}
+
+				}
+				else if (!e3util.InMyGuild(_requester) && E3.CharacterSettings.IgnorePetWeaponRequests)
+				{
+					MQ.Cmd($"/t {_requester} Sorry, I am not currently accepting requests for pet weapons");
+					return;
+				}
+
 				var hasDskGloves = MQ.Query<bool>($"${{FindItem[{_dskGloveItem}]}}");
 
                 if (hasDskGloves)
