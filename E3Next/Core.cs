@@ -221,8 +221,7 @@ namespace MonoCore
                         //contains uses an Ordinal compiarson sa well, so should be fairly fast
                         if (line.Contains("points of damage.")) matchFilter = true;
 						else if (line.Contains("points of non-melee damage.")) matchFilter = true;
-						else if (line.Contains("begins to cast a spell.")) matchFilter = true;
-
+					
                         //filters are just there in case we need to dynamically add a regex to filter out stuff.
                         if (!matchFilter)
                         {
