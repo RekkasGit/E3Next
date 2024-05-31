@@ -56,20 +56,7 @@ namespace E3Core.Server
             _pubServer.Start(PubPort);
             _routerServer.Start(RouterPort);
             _pubClient.Start(PubClientPort);
-			
-
-			EventProcessor.RegisterUnfilteredEventMethod("E3UI", (x) => {
-
-                if(x.typeOfEvent== EventProcessor.eventType.EQEvent)
-                {
-                    PubServer.IncomingChatMessages.Enqueue(x.eventString);
-                }else if(x.typeOfEvent == EventProcessor.eventType.MQEvent)
-                {
-                    PubServer.MQChatMessages.Enqueue(x.eventString);
-                }
-
-            });
-
+		
 		
 			EventProcessor.RegisterCommand("/ui", (x) =>
 			{
@@ -98,7 +85,7 @@ namespace E3Core.Server
                if(UIProcess!=null)
                 {
                     UIProcess.Kill();
-                    UIProcess = null;
+                  
                 }
             });
         }
@@ -156,6 +143,7 @@ namespace E3Core.Server
 				startInfo.WorkingDirectory = dllFullPath;// working directory
 				startInfo.Arguments = $"{RouterPort} {processID}";// set additional properties 
 				ConfigProcess = System.Diagnostics.Process.Start(startInfo);
+
 			}
 			else
 			{
@@ -186,7 +174,21 @@ namespace E3Core.Server
                 Int32 processID = System.Diagnostics.Process.GetCurrentProcess().Id;
                 MQ.Write("Trying to start:" + dllFullPath + @"E3NextUI.exe");
                 UIProcess = System.Diagnostics.Process.Start(dllFullPath + @"E3NextUI.exe", $"{PubPort} {RouterPort} {PubClientPort} {processID}");
-            }
+				
+                //wire up the events to send data over to the UI.
+                EventProcessor.RegisterUnfilteredEventMethod("E3UI", (x) => {
+
+					if (x.typeOfEvent == EventProcessor.eventType.EQEvent)
+					{
+						PubServer.IncomingChatMessages.Enqueue(x.eventString);
+					}
+					else if (x.typeOfEvent == EventProcessor.eventType.MQEvent)
+					{
+						PubServer.MQChatMessages.Enqueue(x.eventString);
+					}
+
+				});
+			}
             else
             {
                 //we have a process, is it up?

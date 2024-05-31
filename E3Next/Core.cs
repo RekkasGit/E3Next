@@ -169,11 +169,11 @@ namespace MonoCore
                 //some filter regular expressions so we can quicly get rid of combat and "has cast a spell" stuff. 
                 //if your app needs them remove these :)
                 System.Text.RegularExpressions.Regex filterRegex = new Regex(@" points of damage\.");
-                _filterRegexes.Add(filterRegex);
-                filterRegex = new Regex(@" points of non-melee damage\.");
-                _filterRegexes.Add(filterRegex);
-                filterRegex = new Regex(@" begins to cast a spell\.");
-                _filterRegexes.Add(filterRegex);
+                //  _filterRegexes.Add(filterRegex);
+                // filterRegex = new Regex(@" points of non-melee damage\.");
+                // _filterRegexes.Add(filterRegex);
+                //filterRegex = new Regex(@" begins to cast a spell\.");
+                // _filterRegexes.Add(filterRegex);
 
                 _regExProcessingTask =Task.Factory.StartNew(() => { ProcessEventsIntoQueues(); }, CancellationToken.None, TaskCreationOptions.DenyChildAttach, TaskScheduler.Default);
                 _isInit = true;
@@ -215,18 +215,33 @@ namespace MonoCore
                         //do filter matching
                         //does it match our filter ? if so we can leave
                         bool matchFilter = false;
-                        //locl this so someone can clear/add more filters are runtime.
-                        lock (_filterRegexes)
+                        
+                        //using contains as live/emu are different ont heir log messages for endings
+                        //so instead of doing endswith + contains, just do contains.
+                        //contains uses an Ordinal compiarson sa well, so should be fairly fast
+                        if (line.Contains("points of damage.")) matchFilter = true;
+						else if (line.Contains("points of non-melee damage.")) matchFilter = true;
+						else if (line.Contains("begins to cast a spell.")) matchFilter = true;
+
+                        //filters are just there in case we need to dynamically add a regex to filter out stuff.
+                        if (!matchFilter)
                         {
-                            foreach (var filter in _filterRegexes)
-                            {
-                                var match = filter.Match(line);
-                                if (match.Success)
-                                {
-                                    matchFilter = true;
-                                    break;
-                                }
-                            }
+                            //needed for live as they have differnt log messages
+                            if(_filterRegexes.Count>0)
+							{
+								lock (_filterRegexes)
+								{
+									foreach (var filter in _filterRegexes)
+									{
+										var match = filter.Match(line);
+										if (match.Success)
+										{
+											matchFilter = true;
+											break;
+										}
+									}
+								}
+							}
                         }
 
                         if (!matchFilter)
