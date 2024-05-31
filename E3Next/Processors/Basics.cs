@@ -552,16 +552,7 @@ namespace E3Core.Processors
                     System.Diagnostics.Process.Start("https://www.dominos.com/en/restaurants?type=Delivery");
                 }
             });
-
-            if(E3.ServerName=="Lazarus")
-            {
-                EventProcessor.RegisterCommand("/baz", (x) =>
-                {
-
-                    System.Diagnostics.Process.Start("https://www.lazaruseq.com/Magelo/index.php?page=bazaar");
-
-                });
-            }
+            
 			EventProcessor.RegisterCommand("/e3yes", (x) =>
 			{
 				if (x.args.Count == 0)
