@@ -136,7 +136,7 @@ namespace E3Core.Settings.FeatureSettings
             "Zun'Muram's Scepter of Chaos",
 
             // tacvi - Zun`Muram Yihst Vor
-            "Boots of Captive Screams", "Dagger of Death Piercing", "Deathblade of the Zun'Muram",
+            "Boots of Captive Screams", "Dagger of Death", "Deathblade of the Zun'Muram",
             "Discordant Dagger of Night", "Gloves of Coalesced Flame", "Pendant of Discord",
             "Rapier of Somber Notes", "Xxeric's Matted-Fur Mask",
             
