@@ -219,7 +219,7 @@ namespace MonoCore
                         //using contains as live/emu are different ont heir log messages for endings
                         //so instead of doing endswith + contains, just do contains.
                         //contains uses an Ordinal compiarson sa well, so should be fairly fast
-                        if (line.Contains("points of damage.")) matchFilter = true;
+                        if (line.Contains("points of damage.") && !line.Contains("(Rampage)")) matchFilter = true;
 						else if (line.Contains("points of non-melee damage.")) matchFilter = true;
 					
                         //filters are just there in case we need to dynamically add a regex to filter out stuff.
