@@ -281,6 +281,7 @@ namespace E3Core.Processors
 							}
 							bool inBook = MQ.Query<bool>($"${{Me.Book[{spell}]}}");
 							bool aa = MQ.Query<bool>($"${{Me.AltAbility[{spell}].Spell}}");
+                         
 						
 							if (inBook || aa )
 							{

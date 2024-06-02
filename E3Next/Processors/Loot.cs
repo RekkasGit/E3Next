@@ -304,17 +304,7 @@ namespace E3Core.Processors
 
             if(!Assist.IsAssisting)
             {
-    //            if(E3.CharacterSettings.LootCommander_Enabled && E3.CharacterSettings.LootCommander_Looters.Count>0)
-    //            {
-    //                LootCommanderAssignCorpses();
-    //                return;
-    //            }
-				long currentTimestamp = Core.StopWatch.ElapsedMilliseconds;
-
-				//if (_lootCommanderAssisngedCorpsesToLoot.Count<Int32>() > 0 && SafeToLoot() && !Basics.InCombat() && (currentTimestamp - Assist.LastAssistEndedTimestamp > E3.GeneralSettings.Loot_TimeToWaitAfterAssist))
-				//{
-				//	LootCommanderLootCorpses(_lootCommanderAssisngedCorpsesToLoot);
-				//}
+ 				long currentTimestamp = Core.StopWatch.ElapsedMilliseconds;
 
 				if (!E3.CharacterSettings.Misc_AutoLootEnabled) return;
 
