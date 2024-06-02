@@ -23,6 +23,8 @@ using Google.Protobuf.Collections;
 using System.Collections;
 using Krypton.Toolkit;
 using System.Threading;
+using System.Windows.Markup;
+using Google.Protobuf.Reflection;
 
 namespace E3NextConfigEditor
 {
@@ -743,6 +745,24 @@ namespace E3NextConfigEditor
 
 			ShowEditorDialog(ref _spellEditor, _spellDataOrganized,true);
 		}
+		private void valueList_CloneSpell_Execute(object sender, EventArgs e)
+		{
+
+			if (!(valuesListBox.Tag is List<Spell>))
+			{
+				return;
+			}
+			if (valuesListBox.SelectedItem == null) return;
+
+			Spell currentSpellSelected = (Spell)((KryptonListItem)valuesListBox.SelectedItem).Tag;
+
+			if(currentSpellSelected!=null)
+			{
+				var clonedSpell = currentSpellSelected.ToProto();
+				valueList_AddSpellToCollection(clonedSpell);
+			}
+
+		}
 		private void valueList_AddItem_Execute(object sender, EventArgs e)
 		{
 			if (!(valuesListBox.Tag is List<Spell>))
@@ -1015,6 +1035,10 @@ namespace E3NextConfigEditor
 					menuItem.Visible = true;
 				}
 				else if (menuItem.Text == "Replace Spell")
+				{
+					menuItem.Visible = true;
+				}
+				else if (menuItem.Text == "Clone Spell")
 				{
 					menuItem.Visible = true;
 				}
@@ -1429,7 +1453,8 @@ namespace E3NextConfigEditor
 						item.Image = _spellIcons[newSpell.SpellIcon];
 
 					}
-					((Spell)((KryptonListItem)valuesListBox.SelectedItem).Tag).TransferFlags(newSpell);
+					Spell oldSpell = ((Spell)((KryptonListItem)valuesListBox.SelectedItem).Tag);
+					oldSpell.TransferFlags(newSpell);
 
 					spellList.RemoveAt(index);
 					spellList.Insert(index, newSpell);
@@ -1457,6 +1482,7 @@ namespace E3NextConfigEditor
 				if (editor.SelectedSpell != null)
 				{
 					string selectedSection = sectionComboBox.SelectedItem.ToString();
+
 					if(selectedSection=="Buffs")
 					{
 						editor.SelectedSpell.IsBuff = true;
@@ -1550,5 +1576,7 @@ namespace E3NextConfigEditor
 		{
 			ShouldProcess = false;
 		}
+
+	
 	}
 }
