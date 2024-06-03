@@ -42,7 +42,10 @@ namespace E3Core.Processors
         static public string _missingSpellItem = string.Empty;
         static public Int32 _numInventorySlots = 10;
         static public Int32 _previousSpellGemThatWasCast = -1;
-        public const string _e3Version = "1.42_devbuild";
+		[ExposedData("Setup", "Version")]
+		public const string _e3Version = "1.42_devbuild";
+		[ExposedData("Setup", "BuildDate")]
+		public static string _buildDate = string.Empty;
         public static Boolean _debug = true;
         public const string _macroData_Ini = @"e3 Macro Inis\e3 Data.ini";
         public static string _generalSettings_Ini = @"e3 Macro Inis\General Settings.ini";
@@ -74,9 +77,9 @@ namespace E3Core.Processors
                 {
                     _serverNameForIni = "Lazarus";
                 }
-				string builddate = Properties.Resources.BuildDate;
-				builddate = builddate.Replace("\r\n", "");
-				MQ.Write($"Loading nE³xt v{_e3Version} builddate:{builddate}...Mq2Mono v{Core._MQ2MonoVersion}");
+				_buildDate = Properties.Resources.BuildDate;
+				_buildDate = _buildDate.Replace("\r\n", "");
+				MQ.Write($"Loading nE³xt v{_e3Version} builddate:{_buildDate}...Mq2Mono v{Core._MQ2MonoVersion}");
                 
 
                 InitPlugins();
