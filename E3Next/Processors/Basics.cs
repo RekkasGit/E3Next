@@ -8,6 +8,7 @@ using E3NextUI;
 using IniParser.Model;
 using MonoCore;
 using System;
+using System.Collections;
 using System.Collections.Generic;
 using System.Diagnostics;
 using System.Linq;
@@ -71,6 +72,18 @@ namespace E3Core.Processors
         /// </summary>
         public static void RegisterEvents()
         {
+
+
+			EventProcessor.RegisterCommand("/e3listcommands", (x) =>
+			{
+
+                List<EventProcessor.CommandListItem> list = EventProcessor.CommandList.Values.OrderBy(c => c.classOwner).ThenBy(c=>c.command).ToList();
+                
+				foreach (var command in list)
+				{
+					E3.Bots.Broadcast($"\atcommand:\ag{command.command} \atclass:\ag{command.classOwner}");
+				}
+			});
 
 			EventProcessor.RegisterCommand("/e3printAA", (x) =>
 			{

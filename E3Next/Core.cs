@@ -626,6 +626,8 @@ namespace MonoCore
         {
             public String keyName;
             public String command;
+            public String classOwner;
+            public string methodCaller;
             public System.Action<CommandMatch> method;
             public ConcurrentQueue<CommandMatch> queuedEvents = new ConcurrentQueue<CommandMatch>();
         }
@@ -665,12 +667,14 @@ namespace MonoCore
             public string eventName;
             public eventType typeOfEvent=eventType.Unknown;
         }
-        public static bool RegisterCommand(string commandName, Action<CommandMatch> method)
+        public static bool RegisterCommand(string commandName, Action<CommandMatch> method, [CallerMemberName] string memberName = "", [CallerFilePath] string fileName = "", [CallerLineNumber] int lineNumber = 0)
         {
             CommandListItem c = new CommandListItem();
             c.command = commandName;
             c.method = method;
             c.keyName = commandName;
+            c.methodCaller = memberName;
+            c.classOwner = Logging.GetClassName(fileName);
      
             bool returnvalue =  Core.mqInstance.AddCommand(commandName);
      
@@ -1617,7 +1621,7 @@ namespace MonoCore
             CriticalError = 90000,
             Default = 99999
         }
-        private static String GetClassName(string fileName)
+        public static String GetClassName(string fileName)
         {
             string className;
             if (!_classLookup.ContainsKey(fileName))
