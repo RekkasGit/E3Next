@@ -508,8 +508,9 @@ namespace E3Core.Processors
         public static bool ActionTaken = false;
         public static bool Following = false;
         public static long StartTimeStamp;
-        public static bool IsInit = false;
-        public static bool IsBadState = false;
+		[ExposedData("Core", "IsInit")]
+		public static bool IsInit = false;
+		public static bool IsBadState = false;
         public static IMQ MQ = Core.mqInstance;
         public static Logging Log = Core.logInstance;
         public static Settings.CharacterSettings CharacterSettings = null;

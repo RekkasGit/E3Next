@@ -432,7 +432,7 @@ namespace E3Core.Processors
 
         public static bool CanRez()
         {
-            MQ.Cmd("/consider",500);
+            MQ.Cmd("/consider",1500);
             
             //check for the event.
             if(HasEventItem("CanRez"))

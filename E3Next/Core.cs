@@ -169,11 +169,11 @@ namespace MonoCore
                 //some filter regular expressions so we can quicly get rid of combat and "has cast a spell" stuff. 
                 //if your app needs them remove these :)
                 System.Text.RegularExpressions.Regex filterRegex = new Regex(@" points of damage\.");
-                _filterRegexes.Add(filterRegex);
-                filterRegex = new Regex(@" points of non-melee damage\.");
-                _filterRegexes.Add(filterRegex);
-                filterRegex = new Regex(@" begins to cast a spell\.");
-                _filterRegexes.Add(filterRegex);
+                //  _filterRegexes.Add(filterRegex);
+                // filterRegex = new Regex(@" points of non-melee damage\.");
+                // _filterRegexes.Add(filterRegex);
+                //filterRegex = new Regex(@" begins to cast a spell\.");
+                // _filterRegexes.Add(filterRegex);
 
                 _regExProcessingTask =Task.Factory.StartNew(() => { ProcessEventsIntoQueues(); }, CancellationToken.None, TaskCreationOptions.DenyChildAttach, TaskScheduler.Default);
                 _isInit = true;
@@ -215,18 +215,32 @@ namespace MonoCore
                         //do filter matching
                         //does it match our filter ? if so we can leave
                         bool matchFilter = false;
-                        //locl this so someone can clear/add more filters are runtime.
-                        lock (_filterRegexes)
+                        
+                        //using contains as live/emu are different ont heir log messages for endings
+                        //so instead of doing endswith + contains, just do contains.
+                        //contains uses an Ordinal compiarson sa well, so should be fairly fast
+                        if (line.Contains("points of damage.") && !line.Contains("(Rampage)")) matchFilter = true;
+						else if (line.Contains("points of non-melee damage.")) matchFilter = true;
+					
+                        //filters are just there in case we need to dynamically add a regex to filter out stuff.
+                        if (!matchFilter)
                         {
-                            foreach (var filter in _filterRegexes)
-                            {
-                                var match = filter.Match(line);
-                                if (match.Success)
-                                {
-                                    matchFilter = true;
-                                    break;
-                                }
-                            }
+                            //needed for live as they have differnt log messages
+                            if(_filterRegexes.Count>0)
+							{
+								lock (_filterRegexes)
+								{
+									foreach (var filter in _filterRegexes)
+									{
+										var match = filter.Match(line);
+										if (match.Success)
+										{
+											matchFilter = true;
+											break;
+										}
+									}
+								}
+							}
                         }
 
                         if (!matchFilter)
@@ -612,6 +626,8 @@ namespace MonoCore
         {
             public String keyName;
             public String command;
+            public String classOwner;
+            public string methodCaller;
             public System.Action<CommandMatch> method;
             public ConcurrentQueue<CommandMatch> queuedEvents = new ConcurrentQueue<CommandMatch>();
         }
@@ -651,12 +667,14 @@ namespace MonoCore
             public string eventName;
             public eventType typeOfEvent=eventType.Unknown;
         }
-        public static bool RegisterCommand(string commandName, Action<CommandMatch> method)
+        public static bool RegisterCommand(string commandName, Action<CommandMatch> method, [CallerMemberName] string memberName = "", [CallerFilePath] string fileName = "", [CallerLineNumber] int lineNumber = 0)
         {
             CommandListItem c = new CommandListItem();
             c.command = commandName;
             c.method = method;
             c.keyName = commandName;
+            c.methodCaller = memberName;
+            c.classOwner = Logging.GetClassName(fileName);
      
             bool returnvalue =  Core.mqInstance.AddCommand(commandName);
      
@@ -1353,9 +1371,13 @@ namespace MonoCore
 
         public void Write(string query, [CallerMemberName] string memberName = "", [CallerFilePath] string fileName = "", [CallerLineNumber] int lineNumber = 0)
         {
-              //write on current thread, it will be queued up by MQ. 
+            //write on current thread, it will be queued up by MQ. 
             //needed to deal with certain lock situations and just keeps things simple. 
-            Core.mq_Echo($"\a#336699[{MainProcessor.ApplicationName}]\a-w{System.DateTime.Now.ToString("HH:mm:ss")} \aw- {query}");
+            if(E3Core.Processors.Setup._broadcastWrites)
+            {
+				E3.Bots.Broadcast(query);
+			}
+			Core.mq_Echo($"\a#336699[{MainProcessor.ApplicationName}]\a-w{System.DateTime.Now.ToString("HH:mm:ss")} \aw- {query}");
             return;
 
         }
@@ -1599,7 +1621,7 @@ namespace MonoCore
             CriticalError = 90000,
             Default = 99999
         }
-        private static String GetClassName(string fileName)
+        public static String GetClassName(string fileName)
         {
             string className;
             if (!_classLookup.ContainsKey(fileName))

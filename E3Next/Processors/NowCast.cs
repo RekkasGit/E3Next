@@ -220,6 +220,10 @@ namespace E3Core.Processors
 					{
 						return CastReturn.CAST_OUTOFMANA;
 					}
+                    if(targetid>0 && targetid!=E3.CurrentId)
+                    {
+						Casting.TrueTarget(targetid);
+					}
 			        var returnValue = Casting.Cast(targetid, spell, null, true);
 					if(returnValue== CastReturn.CAST_FIZZLE)
                     {

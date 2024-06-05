@@ -349,7 +349,7 @@ namespace E3Core.Server
 				try
 				{
 					
-					subSocket.Options.ReceiveHighWatermark = 1000;
+					subSocket.Options.ReceiveHighWatermark = 100000;
 					subSocket.Options.TcpKeepalive = true;
 					subSocket.Options.TcpKeepaliveIdle = TimeSpan.FromSeconds(5);
 					subSocket.Options.TcpKeepaliveInterval = TimeSpan.FromSeconds(1);

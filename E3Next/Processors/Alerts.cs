@@ -183,19 +183,33 @@ namespace E3Core.Processors
 
             #endregion
 
-            pattern = @"(.+) spell has been reflected by (.+)\.";
-            EventProcessor.RegisterEvent("ReflectSpell", pattern, (x) => {
+            pattern = $@"(.+) hits YOU for ([0-9]+) points of damage. \(Rampage\)";
+            EventProcessor.RegisterEvent("RampageDamage", pattern, (x) => {
 
                 if(x.match.Groups.Count>2)
                 {
-                    string mobname = x.match.Groups[1].Value;
-                    string personName = x.match.Groups[2].Value;
-                    if(E3.CurrentName==personName)
-                    {
-                        MQ.Cmd($"/g I have reflected {mobname} spell!");
-                    }
-                }
+					Int32 aggroPct = MQ.Query<Int32>("${Me.PctAggro}");
+					if(aggroPct <100)
+					{
+						string mobname = x.match.Groups[1].Value;
+						string damage = x.match.Groups[2].Value;
+						E3.Bots.Broadcast($"\arRAMPAGE\aw for \ar{damage}\aw damage from \ag{mobname}");
+					}
+				}
             });
+			pattern = @"(.+) spell has been reflected by (.+)\.";
+			EventProcessor.RegisterEvent("ReflectSpell", pattern, (x) => {
+
+				if (x.match.Groups.Count > 2)
+				{
+					string mobname = x.match.Groups[1].Value;
+					string personName = x.match.Groups[2].Value;
+					if (E3.CurrentName == personName)
+					{
+						MQ.Cmd($"/g I have reflected {mobname} spell!");
+					}
+				}
+			});
 			pattern = @"You abandon your preparations to camp\.";
 			EventProcessor.RegisterEvent("PauseForCampUndo", pattern, (x) => {
 
@@ -238,6 +252,7 @@ namespace E3Core.Processors
 				}
 				
 			});
+
             if(e3util.IsEQLive())
             {
 				pattern = @"You gain party experience";

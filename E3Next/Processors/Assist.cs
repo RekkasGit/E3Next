@@ -273,22 +273,7 @@ namespace E3Core.Processors
                                         E3.Bots.Broadcast($"Taunting {s.CleanName}: {tt.ClassShortName} - {tt.CleanName} has agro and not a tank");
 
                                     }
-                                    //else if (MQ.Query<bool>("${Me.AltAbilityReady[Divine Stun]}"))
-                                    //{
-                                    //    if (Casting.CheckReady(_divineStun))
-                                    //    {
-                                    //        Casting.Cast(AssistTargetID, _divineStun);
-                                    //    }
-
-                                    //}
-                                    //else if (MQ.Query<bool>("${Me.SpellReady[Terror of Discord]}"))
-                                    //{
-                                    //    if (Casting.CheckReady(_terrorOfDiscord))
-                                    //    {
-                                    //        Casting.Cast(AssistTargetID, _terrorOfDiscord);
-                                    //    }
-
-                                    //}
+                                   
                                 }
                             }
                         }
