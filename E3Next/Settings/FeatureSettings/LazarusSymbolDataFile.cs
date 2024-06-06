@@ -121,7 +121,7 @@ namespace E3Core.Settings.FeatureSettings
             "Mask of the Void", "Ring of the Serpent", "Ruby of Determined Assault", "Tome of Discordant Magic",
             
             // tacvi - Zun`Muram Kvxe Pirik
-            "Bloodstone Blade of the Zun'Muram", "Brutish Blade of Balance", "Gauntlets of Malicious",
+            "Bloodstone Blade of the Zun'Muram", "Brutish Blade of Balance", "Gauntlets of Malicious Intent",
             "Girdle of the Zun'Muram", "Luxurious Satin Slippers", "Pauldron of Dark Auspices",
             "Scepter of Incantations", "Weighted Hammer of Conviction",
 
