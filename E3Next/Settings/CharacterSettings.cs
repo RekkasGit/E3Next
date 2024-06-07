@@ -349,6 +349,8 @@ namespace E3Core.Settings
 		public List<string> ManaStone_ExceptionMQQuery = new List<string>();
 		[INI_Section("Startup Commands", "Command")]
 		public List<string> StartupCommands = new List<string>();
+		[INI_Section("Zoning Commands", "Command")]
+		public List<string> ZoningCommands = new List<string>();
 		//heals
 		[INI_Section("Heals", "Tank")]
 		public List<string> HealTankTargets = new List<string>();
@@ -798,6 +800,7 @@ namespace E3Core.Settings
 
 
 			LoadKeyData("Startup Commands", "Command", ParsedData, StartupCommands);
+			LoadKeyData("Zoning Commands", "Command", ParsedData, ZoningCommands);
 
 
 			LoadKeyData("Buffs", "Cast Aura(On/Off)", ParsedData, ref Buffs_CastAuras);
@@ -1264,6 +1267,9 @@ namespace E3Core.Settings
 
 			newFile.Sections.AddSection("Startup Commands");
 			section = newFile.Sections.GetSectionData("Startup Commands");
+			section.Keys.AddKey("Command", "");
+			newFile.Sections.AddSection("Zoning Commands");
+			section = newFile.Sections.GetSectionData("Zoning Commands");
 			section.Keys.AddKey("Command", "");
 
 			newFile.Sections.AddSection("E3BotsPublishData (key/value)");

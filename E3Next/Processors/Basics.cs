@@ -239,6 +239,10 @@ namespace E3Core.Processors
                 BuffCheck.Reset();
 		        Zoning.Zoned(MQ.Query<Int32>("${Zone.ID}"));
 				E3.StateUpdates();
+				foreach (var command in E3.CharacterSettings.ZoningCommands)
+				{
+					MQ.Cmd(command);
+				}
 			});
             EventProcessor.RegisterEvent("Summoned", @"You have been summoned!", (x) =>
             {

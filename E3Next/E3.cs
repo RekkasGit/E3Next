@@ -347,7 +347,10 @@ namespace E3Core.Processors
 					{
 						foreach (var pair in E3.CharacterSettings.E3BotsPublishData)
 						{
-							PubServer.AddTopicMessage(pair.Key, MQ.Query<string>(pair.Value));
+							//to parse out custom values
+							string valueToCheck = Casting.Ifs_Results(pair.Value);
+							string resultvalue= MQ.Query<string>(valueToCheck);
+							PubServer.AddTopicMessage(pair.Key, resultvalue);
 						}
 					}
 					string nameOfPet = MQ.Query<string>("${Me.Pet.CleanName}");

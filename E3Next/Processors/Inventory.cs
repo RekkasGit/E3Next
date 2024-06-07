@@ -470,8 +470,8 @@ namespace E3Core.Processors
                 }
 
             });
-            EventProcessor.RegisterCommand("/getfrombank", (x) => GetFrom("Bank", x.args));
-            EventProcessor.RegisterCommand("/getfrominv", (x) => GetFrom("Inventory", x.args));
+            EventProcessor.RegisterCommand("/e3getfrombank", (x) => GetFrom("Bank", x.args));
+            EventProcessor.RegisterCommand("/e3getfrominv", (x) => GetFrom("Inventory", x.args));
             EventProcessor.RegisterCommand("/upgrade", (x) => Upgrade(x.args));
             //restock generic reusable items from vendors
             
