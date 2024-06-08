@@ -1408,11 +1408,55 @@ namespace E3Core.Processors
         public static void CheckAutoMed()
         {
             if (!e3util.ShouldCheck(ref _nextAutoMedCheck, _nextAutoMedCheckInterval)) return;
-            if (!E3.CharacterSettings.Misc_AutoMedBreak) return;
-            int autoMedPct = E3.GeneralSettings.General_AutoMedBreakPctMana;
-            if (autoMedPct == 0) return;
+
+			if (Casting.SpellBookWndOpen()) return;
+			if (e3util.IsManualControl()) return;
+			if (Casting.IsCasting() && E3.CurrentClass != Class.Bard) return;
+
+			bool isCasterOrPriest = (E3.CurrentClass & Class.Caster) == E3.CurrentClass || (E3.CurrentClass & Class.Priest) == E3.CurrentClass;
+			//check to see if enabled, and if override ws enabled
+			if (E3.CharacterSettings.AutoMed_OverrideOldSettings)
+            {
+                if (!E3.CharacterSettings.AutoMed_AutoMedBreak) return;
+				if (E3.CharacterSettings.AutoMed_EndMedBreakInCombat || (Assist.IsAssisting && !isCasterOrPriest))
+				{
+
+					if (InCombat()) return;
+
+				}
+			}
+            else
+            {
+				if (!E3.CharacterSettings.Misc_AutoMedBreak) return;
+				if (E3.CharacterSettings.Misc_EndMedBreakInCombat || (Assist.IsAssisting && !isCasterOrPriest))
+				{
+
+					if (InCombat()) return;
+
+				}
+			}
+
+		
+
+			int autoMedPct = E3.GeneralSettings.General_AutoMedBreakPctMana;
+            int autoMedManaPct = autoMedPct;
+            int autoMedStamPct = autoMedPct;
+            int autoMedHealthPct = autoMedPct;
+
+            if(E3.CharacterSettings.AutoMed_OverrideOldSettings)
+            {
+                if(E3.CharacterSettings.AutoMed_AutoMedBreak)
+                {
+                    autoMedManaPct = E3.CharacterSettings.AutoMed_AutoMedBreakPctMana;
+					autoMedStamPct = E3.CharacterSettings.AutoMed_AutoMedBreakPctStam;
+					autoMedHealthPct = E3.CharacterSettings.AutoMed_AutoMedBreakPctHealth;
+				}
+            }
+           
             
-            if(Misc_LastTimeAutoMedHappened==0)
+          
+			#region automed_checkifRecent
+			if (Misc_LastTimeAutoMedHappened==0)
             {
                 Misc_LastTimeAutoMedHappened = Core.StopWatch.ElapsedMilliseconds;
             }
@@ -1435,17 +1479,11 @@ namespace E3Core.Processors
             {
                 return;
             }
-            bool isCasterOrPriest = (E3.CurrentClass & Class.Caster) == E3.CurrentClass || (E3.CurrentClass & Class.Priest) == E3.CurrentClass;
+			#endregion
 
-            if (E3.CharacterSettings.Misc_EndMedBreakInCombat || (Assist.IsAssisting && !isCasterOrPriest))
-            {
-
-				if (InCombat()) return;
-
-			}
-			if (Casting.SpellBookWndOpen()) return;
-            if (e3util.IsManualControl()) return;
-            if (Casting.IsCasting() && E3.CurrentClass!= Class.Bard) return;
+		
+         
+			
 			bool amIStanding = MQ.Query<bool>("${Me.Standing}");
 			int pctMana = MQ.Query<int>("${Me.PctMana}");
 			int pctEndurance = MQ.Query<int>("${Me.PctEndurance}");
@@ -1470,26 +1508,25 @@ namespace E3Core.Processors
                     if (Movement.Following || Movement.IsMoving()) return;
                 }
 
-               
-                string combatState = MQ.Query<string>("${Me.CombatState}");
-				
-
-				if (amIStanding && autoMedPct > 0)
+          
+				if (amIStanding && (autoMedManaPct>0 || autoMedHealthPct>0 || autoMedStamPct>0))
                 {
                    
-                    if (pctMana < autoMedPct && (E3.CurrentClass & Class.ManaUsers) == E3.CurrentClass)
+                    if (pctMana < autoMedManaPct && (E3.CurrentClass & Class.ManaUsers) == E3.CurrentClass)
                     {
                         MQ.Cmd("/sit");
                         Misc_LastTimeAutoMedHappened = Core.StopWatch.ElapsedMilliseconds;
-
-						return;
                     }
-
-                    if (pctEndurance < autoMedPct)
+                    else if (pctEndurance < autoMedStamPct)
                     {
                         MQ.Cmd("/sit");
 						Misc_LastTimeAutoMedHappened = Core.StopWatch.ElapsedMilliseconds;
 
+					}
+                    else if (pctHealth < autoMedHealthPct)
+					{
+						MQ.Cmd("/sit");
+						Misc_LastTimeAutoMedHappened = Core.StopWatch.ElapsedMilliseconds;
 					}
 				}
                 

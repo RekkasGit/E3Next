@@ -353,7 +353,9 @@ namespace E3Core.Processors
 			return false;
 		}
 		public static bool SomeoneNeedEmergencyHealing(Int32 currentMana, Int32 pctMana, bool CastIfNeed = false)
-		{	
+		{
+			if (Zoning.CurrentZone.IsSafeZone) return false;
+
 			foreach (var spell in E3.CharacterSettings.Heal_EmergencyHeals)
 			{
 				string target = spell.CastTarget;
@@ -399,7 +401,8 @@ namespace E3Core.Processors
 		}
 		public static bool SomeoneNeedEmergencyHealingGroup(Int32 currentMana, Int32 pctMana, bool CastIfNeeded = false)
 		{
-			if (E3.CharacterSettings.Heal_EmergencyHeals.Count == 0) return false;
+			if (E3.CharacterSettings.Heal_EmergecyGroupHeals.Count == 0) return false;
+			if (Zoning.CurrentZone.IsSafeZone) return false;
 
 			Int32 groupmemberCount = MQ.Query<Int32>("${Group.Members}");
 
