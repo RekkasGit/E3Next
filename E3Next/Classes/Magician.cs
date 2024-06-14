@@ -161,17 +161,26 @@ namespace E3Core.Classes
                         return;
                     }
 
-                    if (_spawns.Get().First(w => w.ID == theirPetId).Distance > 50)
+                    if(_spawns.TryByID(theirPetId, out var petSpawn))
                     {
-                        MQ.Cmd($"/t {_requester} Your pet is too far away!");
-                        return;
-                    }
+                        if (petSpawn.Distance>30)
+                        {
+							MQ.Cmd($"/t {_requester} Your pet is too far away!");
+							return;
+						}
+                        if(petSpawn.Level==1)
+                        {
 
-                    if (_spawns.Get().First(w => w.ID == theirPetId).Level == 1)
-                    {
-                        MQ.Cmd($"/t {_requester} Your pet is just a familiar!");
-                        return;
+							MQ.Cmd($"/t {_requester} Your pet is just a familiar!");
+							return;
+						}
                     }
+                    else
+                    {
+						MQ.Cmd($"/t {_requester} Cannot find your pet in zone!");
+						return;
+
+					}
 
                     ArmPet(theirPetId, $"{weaponSplit[0]}|{weaponSplit[1]}");
                 }
@@ -229,17 +238,27 @@ namespace E3Core.Classes
                             MQ.Cmd($"/t {_requester} You don't have a pet to equip!");
                             return;
                         }
-                        if (_spawns.Get().First(w => w.ID == theirPetId).Distance > 50)
-                        {
-                            MQ.Cmd($"/t {_requester} Your pet is too far away!");
-                            return;
-                        }
-                        if (_spawns.Get().First(w => w.ID == theirPetId).Level == 1)
-                        {
-                            MQ.Cmd($"/t {_requester} Your pet is just a familiar!");
-                            return;
-                        }
-                        if (!Casting.CheckReady(_dskGloveSpell))
+						if (_spawns.TryByID(theirPetId, out var petSpawn))
+						{
+							if (petSpawn.Distance > 30)
+							{
+								MQ.Cmd($"/t {_requester} Your pet is too far away!");
+								return;
+							}
+							if (petSpawn.Level == 1)
+							{
+
+								MQ.Cmd($"/t {_requester} Your pet is just a familiar!");
+								return;
+							}
+						}
+						else
+						{
+							MQ.Cmd($"/t {_requester} Cannot find your pet in zone!");
+							return;
+
+						}
+						if (!Casting.CheckReady(_dskGloveSpell))
                         {
                             MQ.Cmd($"/t {_requester} Is in cooldown, try again shortly.");
                             return;

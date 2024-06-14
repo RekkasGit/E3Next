@@ -60,11 +60,11 @@ namespace E3Core.Classes
         {
             if (E3.IsInvis) return;
             if (!e3util.ShouldCheck(ref _nextAutoSonataCheck, 1000)) return;
-			if (!MQ.Query<bool>("${Me.Standing}"))
-			{
-				//we are sitting, don't do anything
-				return;
-			}
+			//if (!MQ.Query<bool>("${Me.Standing}"))
+			//{
+			//	//we are sitting, don't do anything
+			//	return;
+			//}
 			if (E3.CharacterSettings.Bard_AutoSonata)
             {
                 Int32 spellIDToLookup = SelosBuffID;

@@ -894,6 +894,10 @@ namespace E3Core.Processors
 							importantItem = true;
 						}
 					}
+					if (LootStackableSettings.HonorLootFileSkips && LootDataFile.Skip.Contains(corpseItem))
+					{
+						importantItem = false;
+					}
 				}
 				else if (E3.GeneralSettings.Loot_OnlyStackableEnabled)
                 {
