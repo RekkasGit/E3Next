@@ -10,6 +10,7 @@ using System.Collections.Concurrent;
 using System.Collections.Generic;
 using System.Globalization;
 using System.Linq;
+using System.Reflection;
 using System.Text;
 using System.Threading;
 using System.Threading.Tasks;
@@ -121,6 +122,8 @@ namespace E3Core.Server
 		}
 		//primary E3N C# thread, we pull off the collections that was populated by the network thread
 		//this way we can do queries/command/etc.
+
+		
 		public void ProcessCommands()
 		{
 			while (CommandQueue.Count > 0)
@@ -140,22 +143,23 @@ namespace E3Core.Server
 						Int32 indexOfSeperator = message.IndexOf(':');
 						Int32 currentIndex = 0;
 						string user = message.Substring(currentIndex, indexOfSeperator);
-						
+
 						if (typeInfo == OnCommandData.CommandType.BroadCastMessageZone)
 						{
 							//check to see if we are in the same zone as the person
 							Int32 spawnID = MQ.Query<Int32>($"${{Spawn[{user}].ID}}");
-							if(spawnID<1)
+							if (spawnID < 1)
 							{
 								//we can safely ignore this.
 								continue;
 							}
 						}
-						
+
 						currentIndex = indexOfSeperator + 1;
 						string bcMessage = message.Substring(currentIndex, message.Length - currentIndex);
 
 						MQ.Cmd($"/noparse /echo \a#336699[{MainProcessor.ApplicationName}]\a-w{System.DateTime.Now.ToString("HH:mm:ss")}\ar<\ay{user}\ar> \aw{bcMessage}");
+
 					}
 					else
 					{
@@ -276,9 +280,25 @@ namespace E3Core.Server
 
 				}
 
+		
 			}
 		}
-	
+		/// <summary>
+		/// As this is just an /echo command, we can send this out from a different thread , as long as we use the delayed part of the command so its queued up on the MQ side
+		/// </summary>
+		/// <param name="message"></param>
+		private void ProcessBroadcast(string message)
+		{
+			Int32 indexOfSeperator = message.IndexOf(':');
+			Int32 currentIndex = 0;
+			string user = message.Substring(currentIndex, indexOfSeperator);
+			currentIndex = indexOfSeperator + 1;
+			string bcMessage = message.Substring(currentIndex, message.Length - currentIndex);
+
+			Core.mq_DoCommandDelayed($"/noparse /echo \a#336699[{MainProcessor.ApplicationName}]\a-w{System.DateTime.Now.ToString("HH:mm:ss")}\ar<\ay{user}\ar> \aw{bcMessage}");
+
+		}
+
 		/// <summary>
 		/// Note, in P2P mode, we would have 1 thread per toon, but I had to enable proxy mode to handle larger number of clients (54) so i couldn't have 
 		/// one thread per toon, as that would be like nearly 3,000 threads. so the user name was put into the payload so that a proxy could be used. 
@@ -290,8 +310,6 @@ namespace E3Core.Server
 		{
 
 			//get the user from the payload
-			
-
 			ConcurrentDictionary<string, ShareDataEntry> usertopics;
 			if (!TopicUpdates.TryGetValue(user,out usertopics))
 			{
@@ -331,7 +349,7 @@ namespace E3Core.Server
 				try
 				{
 					
-					subSocket.Options.ReceiveHighWatermark = 1000;
+					subSocket.Options.ReceiveHighWatermark = 100000;
 					subSocket.Options.TcpKeepalive = true;
 					subSocket.Options.TcpKeepaliveIdle = TimeSpan.FromSeconds(5);
 					subSocket.Options.TcpKeepaliveInterval = TimeSpan.FromSeconds(1);
@@ -467,11 +485,13 @@ namespace E3Core.Server
 							}
 							else if (messageTopicReceived == "BroadCastMessage")
 							{
-								var data = OnCommandData.Aquire();
-								data.Data = messageReceived;
-								data.TypeOfCommand = OnCommandData.CommandType.BroadCastMessage;
+								//send this message, even if we are on a different thread, just use delayed.
+								ProcessBroadcast(messageReceived);
+								//var data = OnCommandData.Aquire();
+								//data.Data = messageReceived;
+								//data.TypeOfCommand = OnCommandData.CommandType.BroadCastMessage;
 
-								CommandQueue.Enqueue(data);
+								//CommandQueue.Enqueue(data);
 							}
 							else if (messageTopicReceived == "BroadCastMessageZone")
 							{

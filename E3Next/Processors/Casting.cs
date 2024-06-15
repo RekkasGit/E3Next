@@ -852,14 +852,19 @@ namespace E3Core.Processors
 				{
 					spell.AfterSpellData = new Data.Spell(spell.AfterSpell);
 				}
-				//Wait for GCD if spell
-
+			
 				_log.Write("Doing AfterSpell:{spell.AfterSpell}");
 				if (CheckReady(spell.AfterSpellData) && CheckMana(spell.AfterSpellData))
 				{
-					retrycast:
+				retrycast:
+					Int32 retryCounter = 0;
 					if(Casting.Cast(targetID, spell.AfterSpellData)== CastReturn.CAST_FIZZLE) 
 					{ 
+						retryCounter++;
+						if(retryCounter>5)
+						{
+							return;
+						}
 						goto retrycast;
 
 					}

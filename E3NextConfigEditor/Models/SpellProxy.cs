@@ -59,6 +59,13 @@ namespace E3NextConfigEditor.Models
 			get { return _spell.Level; }
 
 		}
+		[Category("Spell Data")]
+		[Description("Recast")]
+		public Int32 Recast
+		{
+			get { return _spell.RecastTime; }
+
+		}
 		[Category("Flags")]
 		[Description("PctAggro you have to be at before this ability will fire")]
 		public Int32 PctAggro
@@ -69,7 +76,7 @@ namespace E3NextConfigEditor.Models
 		[Category("Flags")]
 		[Description("Prevent this from being interrupted")]
 		public bool NoInterrupt
-		{
+		{ 
 			get { return _spell.NoInterrupt; }
 			set { _spell.NoInterrupt = value; }
 		}
@@ -301,6 +308,13 @@ namespace E3NextConfigEditor.Models
 		public Int32 Level
 		{
 			get { return _spell.Level; }
+
+		}
+		[Category("Spell Data")]
+		[Description("Recast")]
+		public Int32 Recast
+		{
+			get { return _spell.RecastTime; }
 
 		}
 		[Category("Flags")]

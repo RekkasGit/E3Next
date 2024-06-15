@@ -32,7 +32,7 @@ namespace E3Core.Processors
         public static DoorDataFile _doorData = new DoorDataFile();
         private static Int64 _nextAnchorCheck = 0;
         private static Int64 _nextAnchorCheckInterval = 1000;
-        private static Int64 _nextFollowCheck = 0;
+        public static Int64 _nextFollowCheck = 0;
         private static Int64 _nextFollowCheckInterval = 1000;
         private static Int64 _nextChaseCheck = 0;
         private static Int64 _nextChaseCheckInterval = 10;

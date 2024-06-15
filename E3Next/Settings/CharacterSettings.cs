@@ -107,6 +107,20 @@ namespace E3Core.Settings
 		[INI_Section("Misc", "Auto-Forage (On/Off)")]
 		public bool Misc_AutoForage = false;
 
+		[INI_Section("AutoMed", "Override Old Settings and use This(On/Off)")]
+		public bool AutoMed_OverrideOldSettings;
+		[INI_Section("AutoMed", "End MedBreak in Combat(On/Off)")]
+		public bool AutoMed_EndMedBreakInCombat;
+		[INI_Section("AutoMed", "AutoMedBreak (On/Off)")]
+		public bool AutoMed_AutoMedBreak;
+		[INI_Section("AutoMed", "PctMana")]
+		public Int32 AutoMed_AutoMedBreakPctMana;
+		[INI_Section("AutoMed", "PctStam")]
+		public Int32 AutoMed_AutoMedBreakPctStam;
+		[INI_Section("AutoMed", "PctHealth")]
+		public Int32 AutoMed_AutoMedBreakPctHealth;
+
+
 
 		[INI_Section("Rogue", "Auto-Hide (On/Off)")]
 		public bool Rogue_AutoHide = false;
@@ -349,6 +363,8 @@ namespace E3Core.Settings
 		public List<string> ManaStone_ExceptionMQQuery = new List<string>();
 		[INI_Section("Startup Commands", "Command")]
 		public List<string> StartupCommands = new List<string>();
+		[INI_Section("Zoning Commands", "Command")]
+		public List<string> ZoningCommands = new List<string>();
 		//heals
 		[INI_Section("Heals", "Tank")]
 		public List<string> HealTankTargets = new List<string>();
@@ -631,7 +647,13 @@ namespace E3Core.Settings
 
             LoadKeyData("Report", "ReportEntry", ParsedData, Report_Entries);
 
-		
+
+			LoadKeyData("AutoMed", "Override Old Settings and use This(On/Off)", ParsedData, ref AutoMed_OverrideOldSettings);
+			LoadKeyData("AutoMed", "AutoMedBreak (On/Off)", ParsedData, ref AutoMed_AutoMedBreak);
+			LoadKeyData("AutoMed", "End MedBreak in Combat(On/Off)", ParsedData, ref AutoMed_EndMedBreakInCombat);
+			LoadKeyData("AutoMed", "PctMana", ParsedData, ref AutoMed_AutoMedBreakPctMana);
+			LoadKeyData("AutoMed", "PctStam", ParsedData, ref AutoMed_AutoMedBreakPctStam);
+			LoadKeyData("AutoMed", "PctHealth", ParsedData, ref AutoMed_AutoMedBreakPctHealth);
 
 
 			LoadKeyData("Bando Buff", "Enabled", ParsedData, ref BandoBuff_Enabled);
@@ -644,6 +666,7 @@ namespace E3Core.Settings
 			LoadKeyData("Bando Buff", "BandoNameWithBuff", ParsedData, ref BandoBuff_BandoName);
 			LoadKeyData("Bando Buff", "BandoNameWithoutBuff", ParsedData, ref BandoBuff_BandoNameWithoutBuff);
 			LoadKeyData("Bando Buff", "BandoNameWithoutDeBuff", ParsedData, ref BandoBuff_BandoNameWithoutDeBuff);
+
 			LoadKeyData("Assist Settings", "Assist Type (Melee/Ranged/Off)", ParsedData, ref Assist_Type);
             LoadKeyData("Assist Settings", "Melee Stick Point", ParsedData, ref Assist_MeleeStickPoint);
             LoadKeyData("Assist Settings", "Taunt(On/Off)", ParsedData, ref Assist_TauntEnabled);
@@ -798,6 +821,7 @@ namespace E3Core.Settings
 
 
 			LoadKeyData("Startup Commands", "Command", ParsedData, StartupCommands);
+			LoadKeyData("Zoning Commands", "Command", ParsedData, ZoningCommands);
 
 
 			LoadKeyData("Buffs", "Cast Aura(On/Off)", ParsedData, ref Buffs_CastAuras);
@@ -943,7 +967,15 @@ namespace E3Core.Settings
 			section.Keys.AddKey("Delay in MS After CastWindow Drops For Spell Completion", "0");
 			section.Keys.AddKey("If FD stay down (true/false)", "False");
 			section.Keys.AddKey("Debuffs/Dots are visible", "True");
-		
+
+			newFile.Sections.AddSection("AutoMed");
+			section = newFile.Sections.GetSectionData("AutoMed");
+			section.Keys.AddKey("Override Old Settings and use This(On/Off)", "Off");
+			section.Keys.AddKey("AutoMedBreak (On/Off)", "Off");
+			section.Keys.AddKey("End MedBreak in Combat(On/Off)", "On");
+			section.Keys.AddKey("PctMana", "100");
+			section.Keys.AddKey("PctStam", "100");
+			section.Keys.AddKey("PctHealth", "100");
 
 			newFile.Sections.AddSection("Assist Settings");
 			section = newFile.Sections.GetSectionData("Assist Settings");
@@ -1264,6 +1296,9 @@ namespace E3Core.Settings
 
 			newFile.Sections.AddSection("Startup Commands");
 			section = newFile.Sections.GetSectionData("Startup Commands");
+			section.Keys.AddKey("Command", "");
+			newFile.Sections.AddSection("Zoning Commands");
+			section = newFile.Sections.GetSectionData("Zoning Commands");
 			section.Keys.AddKey("Command", "");
 
 			newFile.Sections.AddSection("E3BotsPublishData (key/value)");

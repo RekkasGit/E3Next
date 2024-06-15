@@ -72,6 +72,8 @@
 			this.kryptonContextMenuItem13 = new Krypton.Toolkit.KryptonContextMenuItem();
 			this.donateButton = new Krypton.Toolkit.KryptonButton();
 			this.viewFileButton = new Krypton.Toolkit.KryptonButton();
+			this.valueList_CloneSpell = new Krypton.Toolkit.KryptonCommand();
+			this.kryptonContextMenuItem15 = new Krypton.Toolkit.KryptonContextMenuItem();
 			((System.ComponentModel.ISupportInitialize)(this.sectionComboBox)).BeginInit();
 			((System.ComponentModel.ISupportInitialize)(this.subsectionComboBox)).BeginInit();
 			this.SuspendLayout();
@@ -175,6 +177,7 @@
             this.kryptonContextMenuItem8,
             this.kryptonContextMenuItem9,
             this.kryptonContextMenuItem11,
+            this.kryptonContextMenuItem15,
             this.kryptonContextMenuItem5});
 			// 
 			// kryptonContextMenuItem2
@@ -348,6 +351,17 @@
 			this.viewFileButton.Values.Text = "View Text";
 			this.viewFileButton.Click += new System.EventHandler(this.viewFileButton_Click);
 			// 
+			// valueList_CloneSpell
+			// 
+			this.valueList_CloneSpell.Text = "Clone Spell";
+			this.valueList_CloneSpell.TextLine1 = "Copy data to new Spell";
+			this.valueList_CloneSpell.Execute += new System.EventHandler(this.valueList_CloneSpell_Execute);
+			// 
+			// kryptonContextMenuItem15
+			// 
+			this.kryptonContextMenuItem15.KryptonCommand = this.valueList_CloneSpell;
+			this.kryptonContextMenuItem15.Text = "Clone Spell";
+			// 
 			// ConfigEditor
 			// 
 			this.AutoScaleDimensions = new System.Drawing.SizeF(6F, 13F);
@@ -419,6 +433,8 @@
 		private Krypton.Toolkit.KryptonContextMenuItem kryptonContextMenuItem14;
 		private Krypton.Toolkit.KryptonButton donateButton;
 		private Krypton.Toolkit.KryptonButton viewFileButton;
+		private Krypton.Toolkit.KryptonCommand valueList_CloneSpell;
+		private Krypton.Toolkit.KryptonContextMenuItem kryptonContextMenuItem15;
 	}
 }
 

@@ -227,7 +227,7 @@ namespace E3Core.Processors
             // e3util.PrintTimerStatus(_dotTimers, ref _nextDoTCheck, "Damage over Time");
             //person in manual control and they are not on the assist target, chill.
            
-            if (targetId != Assist.AssistTargetID && e3util.IsManualControl())
+            if (Assist.AssistTargetID>0 && targetId != Assist.AssistTargetID && e3util.IsManualControl())
             {
                 return;
             }
@@ -263,8 +263,14 @@ namespace E3Core.Processors
         }
         private static void RegisterEvents()
         {
+			EventProcessor.RegisterCommand("/e3print-debuffdottimers", (x) =>
+			{
+				e3util.PrintTimerStatus(_debuffdotTimers, "Debuff/Dot Timers");
 
-            e3util.RegisterCommandWithTarget("/dotson", DotsOn);
+			});
+			
+
+			e3util.RegisterCommandWithTarget("/dotson", DotsOn);
             e3util.RegisterCommandWithTarget("/dot", DotsOn);
             EventProcessor.RegisterCommand("/debuffsoff", (x) =>
             {

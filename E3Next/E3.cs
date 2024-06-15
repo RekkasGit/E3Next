@@ -347,7 +347,10 @@ namespace E3Core.Processors
 					{
 						foreach (var pair in E3.CharacterSettings.E3BotsPublishData)
 						{
-							PubServer.AddTopicMessage(pair.Key, MQ.Query<string>(pair.Value));
+							//to parse out custom values
+							string valueToCheck = Casting.Ifs_Results(pair.Value);
+							string resultvalue= MQ.Query<string>(valueToCheck);
+							PubServer.AddTopicMessage(pair.Key, resultvalue);
 						}
 					}
 					string nameOfPet = MQ.Query<string>("${Me.Pet.CleanName}");
@@ -508,8 +511,9 @@ namespace E3Core.Processors
         public static bool ActionTaken = false;
         public static bool Following = false;
         public static long StartTimeStamp;
-        public static bool IsInit = false;
-        public static bool IsBadState = false;
+		[ExposedData("Core", "IsInit")]
+		public static bool IsInit = false;
+		public static bool IsBadState = false;
         public static IMQ MQ = Core.mqInstance;
         public static Logging Log = Core.logInstance;
         public static Settings.CharacterSettings CharacterSettings = null;
