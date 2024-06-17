@@ -72,7 +72,26 @@ namespace E3Core.Processors
         /// </summary>
         public static void RegisterEvents()
         {
+			var pattern = $@"(.+) YOU for ([0-9]+) points of damage. \(Rampage\)";
+			EventProcessor.RegisterEvent("RampageDamageAction", pattern, (x) => {
 
+                if (E3.CharacterSettings.RampageSpells.Count>0)
+                {
+					if (x.match.Groups.Count > 2)
+					{
+						string mobname = x.match.Groups[1].Value;
+						string damage = x.match.Groups[2].Value;
+
+                        foreach(var spell in E3.CharacterSettings.RampageSpells)
+                        {
+                            if(Casting.CheckReady(spell) && Casting.CheckMana(spell))
+                            {
+                                Casting.Cast(E3.CurrentId, spell);
+                            }
+                        }
+					}
+				}
+			});
 
 			EventProcessor.RegisterCommand("/e3listcommands", (x) =>
 			{

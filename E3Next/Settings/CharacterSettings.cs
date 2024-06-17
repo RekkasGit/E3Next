@@ -199,6 +199,9 @@ namespace E3Core.Settings
         [INI_Section("Dispel", "Ignore")]
 		public List<Spell> DispelIgnore = new List<Spell>();
 
+		[INI_Section("Rampage Actions", "Action")]
+		public List<Spell> RampageSpells = new List<Spell>();
+
 		[INI_Section("Buffs", "Instant Buff")]
 		public List<Spell> InstantBuffs = new List<Spell>();
 		[INI_Section("Buffs", "Self Buff")]
@@ -644,8 +647,10 @@ namespace E3Core.Settings
 
 			LoadKeyData("Manastone", "ExceptionMQQuery", ParsedData, ManaStone_ExceptionMQQuery);
 
+			LoadKeyData("Rampage Actions", "Action", ParsedData, RampageSpells);
+		
 
-            LoadKeyData("Report", "ReportEntry", ParsedData, Report_Entries);
+			LoadKeyData("Report", "ReportEntry", ParsedData, Report_Entries);
 
 
 			LoadKeyData("AutoMed", "Override Old Settings and use This(On/Off)", ParsedData, ref AutoMed_OverrideOldSettings);
@@ -1236,7 +1241,10 @@ namespace E3Core.Settings
 			section.Keys.AddKey("BandoNameWithoutBuff", "");
 			section.Keys.AddKey("BandoNameWithoutDeBuff", "");
 
-
+			newFile.Sections.AddSection("Rampage Actions");
+			section = newFile.Sections.GetSectionData("Rampage Actions");
+			section.Keys.AddKey("Action", "");
+		
 			newFile.Sections.AddSection("Blocked Buffs");
 			section = newFile.Sections.GetSectionData("Blocked Buffs");
 			section.Keys.AddKey("BuffName", "");

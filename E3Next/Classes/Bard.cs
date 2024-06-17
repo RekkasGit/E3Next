@@ -400,7 +400,7 @@ namespace E3Core.Classes
 		public static void check_BardSongs()
         {
 
-			if (!_playingMelody && !Assist.IsAssisting)
+			if (!_playingMelody)
             {
                 return;
             }
@@ -494,7 +494,27 @@ namespace E3Core.Classes
             {
                
                 MQ.Write($"\atTwist \ag{songToPlay.SpellName}");
-				_nextBardCast = Core.StopWatch.ElapsedMilliseconds + (int)songToPlay.MyCastTime + 300;
+
+                if(e3util.IsEQLive())
+                {
+					bool hasQuickTime = MQ.Query<bool>("${Bool[${Me.Song[Quick Time].ID}]}");
+
+					if (hasQuickTime)
+                    {
+                        //max quicktime on live is 0.75 seconds, need to do this in a better way?
+						_nextBardCast = Core.StopWatch.ElapsedMilliseconds + (int)songToPlay.MyCastTime + 300 - 750;
+					}
+                    else
+                    {
+						_nextBardCast = Core.StopWatch.ElapsedMilliseconds + (int)songToPlay.MyCastTime + 300;
+					}
+					
+				}
+                else
+                {
+					_nextBardCast = Core.StopWatch.ElapsedMilliseconds + (int)songToPlay.MyCastTime + 300;
+				}
+			
 				Casting.Sing(0, songToPlay);
 			}
             else

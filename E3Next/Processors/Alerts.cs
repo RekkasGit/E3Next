@@ -183,7 +183,7 @@ namespace E3Core.Processors
 
             #endregion
 
-            pattern = $@"(.+) hits YOU for ([0-9]+) points of damage. \(Rampage\)";
+            pattern = $@"(.+) YOU for ([0-9]+) points of damage. \(Rampage\)";
             EventProcessor.RegisterEvent("RampageDamage", pattern, (x) => {
 
                 if(x.match.Groups.Count>2)

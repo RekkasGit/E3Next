@@ -1006,17 +1006,54 @@ namespace E3Core.Processors
             if (MQ.Query<Int32>("${Corpse.Items}")>0)
             {   //link what is ever left over.
                 //should we should notify if we have not looted.
+                
                 if (!String.IsNullOrWhiteSpace(E3.GeneralSettings.Loot_LinkChannel))
                 {
+                    
                     if(MQ.Query<bool>("${Group}"))
                     {
-						PrintLink($"{E3.GeneralSettings.Loot_LinkChannel} {corpse.ID} - ");
+                        PrintCorpseItems(corpse);
+//						PrintLink($"{E3.GeneralSettings.Loot_LinkChannel} {corpse.ID} - ");
 					}
 				}
             }
 
         }
+       
+        private static void PrintCorpseItems(Spawn corpse)
+		{
+			Int32 corpseItems = MQ.Query<Int32>("${Corpse.Items}");
 
+			if (corpseItems == 0)
+			{
+				//no items on the corpse, kick out
+
+				return;
+			}
+
+            List<string> items = new List<string>();
+			for (Int32 i = 1; i <= corpseItems; i++)
+			{
+				var itemId = MQ.Query<int>($"${{Corpse.Item[{i}].ID}}");
+
+				if (itemId > 0)
+				{
+					string corpseItem = MQ.Query<string>($"${{Corpse.Item[{i}].Name}}");
+                    if(corpseItem != "NULL")
+                    {
+                        string link = MQ.Query<string>($"${{Corpse.Item[{i}].ItemLink[CLICKABLE]}}");
+                        items.Add(link);
+						
+
+					}
+				}
+			}
+            if(items.Count > 0 )
+            {
+				MQ.Cmd($"/{E3.GeneralSettings.Loot_LinkChannel} {corpse.ID}) - {String.Join(",",items)}");
+			}
+
+		}
         private static void PrintLink(string message)
         {
             MQ.Cmd("/nomodkey /keypress /");
