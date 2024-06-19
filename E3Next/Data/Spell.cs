@@ -331,11 +331,11 @@ namespace E3Core.Data
                     }
                     else if (value.StartsWith("AfterEvent|", StringComparison.OrdinalIgnoreCase))
                     {
-                        string ifKey = GetArgument<string>(value);
+                        AfterEventKeys = GetArgument<string>(value);
                         var section = parsedData.Sections["Events"];
                         if (section != null)
                         {
-                            var keyData = section[ifKey];
+                            var keyData = section[AfterEventKeys];
                             if (!String.IsNullOrWhiteSpace(keyData))
                             {
                                 AfterEvent = keyData;
@@ -344,11 +344,11 @@ namespace E3Core.Data
                     }
                     else if (value.StartsWith("BeforeEvent|", StringComparison.OrdinalIgnoreCase))
                     {
-                        string ifKey = GetArgument<string>(value);
+                        BeforeEventKeys = GetArgument<string>(value);
                         var section = parsedData.Sections["Events"];
                         if (section != null)
                         {
-                            var keyData = section[ifKey];
+                            var keyData = section[BeforeEventKeys];
                             if (!String.IsNullOrWhiteSpace(keyData))
                             {
                                 BeforeEvent = keyData;
@@ -868,6 +868,8 @@ namespace E3Core.Data
         public String CastIF = String.Empty;
         public string Ifs = String.Empty;
         public string IfsKeys = String.Empty;
+        public string AfterEventKeys = String.Empty;
+        public string BeforeEventKeys = String.Empty;
         public string InitName = String.Empty;
         public bool ReagentOutOfStock = false;
         public bool SpellInBook = false;
@@ -893,9 +895,11 @@ namespace E3Core.Data
         {
 			Spell r = new Spell();
 			r.AfterEvent = source.AfterEvent;
+            r.AfterEventKeys = source.AfterEventKeys;
 			r.AfterSpell = source.AfterSpell;
 			r.AllowSpellSwap = source.AllowSpellSwap;
 			r.BeforeEvent = source.BeforeEvent;
+            r.BeforeEventKeys = source.BeforeEventKeys;
 			r.BeforeSpell = source.BeforeSpell;
 			r.CastID = source.CastID;
 			r.CastIF = source.CastIF;
@@ -983,9 +987,11 @@ namespace E3Core.Data
 
             SpellData r = new SpellData();
             r.AfterEvent = this.AfterEvent;
+            r.AfterEventKeys = this.AfterEventKeys;
             r.AfterSpell = this.AfterSpell;
             r.AllowSpellSwap = this.AllowSpellSwap;
             r.BeforeEvent = this.BeforeEvent;
+            r.BeforeEventKeys = this.BeforeEventKeys;
             r.BeforeSpell = this.BeforeSpell;
             r.CastID = this.CastID;
             r.CastIF = this.CastIF;
@@ -1110,8 +1116,8 @@ namespace E3Core.Data
 			string t_MaxTries = (MaxTries == MaxTiresDefault) ? String.Empty : $"/MaxTries|{MaxTries}";
 			string t_CastIF = (String.IsNullOrWhiteSpace(this.CastIF)) ? String.Empty : $"/CastIF|{CastIF}";
 			string t_MinEnd = (MinEnd == 0) ? String.Empty : $"/MinEnd|{MinEnd}";
-			string t_AfterEvent = (String.IsNullOrWhiteSpace(this.AfterEvent)) ? String.Empty : $"/AfterEvent|{AfterEvent}";
-			string t_BeforeEvent = (String.IsNullOrWhiteSpace(this.BeforeEvent)) ? String.Empty : $"/BeforeEvent|{BeforeEvent}";
+			string t_AfterEvent = (String.IsNullOrWhiteSpace(this.AfterEventKeys)) ? String.Empty : $"/AfterEvent|{AfterEventKeys}";
+			string t_BeforeEvent = (String.IsNullOrWhiteSpace(this.BeforeEventKeys)) ? String.Empty : $"/BeforeEvent|{BeforeEventKeys}";
 			string t_Reagent = (String.IsNullOrWhiteSpace(this.Reagent)) ? String.Empty : $"/Reagent|{Reagent}";
 			string t_CastTypeOverride = (this.CastTypeOverride== CastingType.None) ? String.Empty : $"/CastType|{CastTypeOverride.ToString()}";
 			string t_GemNumber = (this.SpellGem == 0) ? String.Empty : $"/Gem|{SpellGem}";

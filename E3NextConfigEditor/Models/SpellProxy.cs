@@ -82,7 +82,7 @@ namespace E3NextConfigEditor.Models
 		}
 		[Category("Flags")]
 		[Description("Ifs Keys to be used, comma seperated")]
-		public string IfsKeys
+		public string Ifs
 		{
 			get { return _spell.IfsKeys; }
 			set { _spell.IfsKeys = value; }
@@ -143,15 +143,15 @@ namespace E3NextConfigEditor.Models
 		[Description("After Event Name, follows normal heircy rules")]
 		public string AfterEvent
 		{
-			get { return _spell.AfterEvent; }
-			set { _spell.AfterEvent = value; }
+			get { return _spell.AfterEventKeys; }
+			set { _spell.AfterEventKeys = value; }
 		}
 		[Category("Flags")]
 		[Description("Before Event Name, follows normal heircy rules")]
 		public string BeforeEvent
 		{
-			get { return _spell.BeforeEvent; }
-			set { _spell.BeforeEvent = value; }
+			get { return _spell.BeforeEventKeys; }
+			set { _spell.BeforeEventKeys = value; }
 		}
 		[Category("Flags")]
 		[Description("Zone to Enable in. Honetly not sure this works!")]
@@ -326,7 +326,7 @@ namespace E3NextConfigEditor.Models
 		}
 		[Category("Flags")]
 		[Description("Ifs Keys to be used, comma seperated")]
-		public string IfsKeys
+		public string Ifs
 		{
 			get { return _spell.IfsKeys; }
 			set { _spell.IfsKeys = value; }
@@ -393,15 +393,15 @@ namespace E3NextConfigEditor.Models
 		[Description("After Event Name, follows normal heircy rules")]
 		public string AfterEvent
 		{
-			get { return _spell.AfterEvent; }
-			set { _spell.AfterEvent = value; }
+			get { return _spell.AfterEventKeys; }
+			set { _spell.AfterEventKeys = value; }
 		}
 		[Category("Flags")]
 		[Description("Before Event Name, follows normal heircy rules")]
 		public string BeforeEvent
 		{
-			get { return _spell.BeforeEvent; }
-			set { _spell.BeforeEvent = value; }
+			get { return _spell.BeforeEventKeys; }
+			set { _spell.BeforeEventKeys = value; }
 		}
 		[Category("Flags")]
 		[Description("Zone to Enable in. Honetly not sure this works!")]

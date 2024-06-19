@@ -801,16 +801,16 @@ namespace E3Core.Processors
 
             MQ.Delay(E3.GeneralSettings.Loot_LootItemDelay);//wait a little longer to let the items finish populating, for EU people they may need to increase this.
 
-            Int32 corpseItems = MQ.Query<Int32>("${Corpse.Items}");
+            Int32 corpseItemsCount = MQ.Query<Int32>("${Corpse.Items}");
 
-            if (corpseItems == 0)
+            if (corpseItemsCount == 0)
             {
                 //no items on the corpse, kick out
 
                 return;
             }
 
-            for(Int32 i =1;i<=corpseItems;i++)
+            for(Int32 i =1;i<=corpseItemsCount;i++)
             {
                 //lets try and loot them.
                 importantItem = false;
@@ -1012,47 +1012,39 @@ namespace E3Core.Processors
                     
                     if(MQ.Query<bool>("${Group}"))
                     {
-                        PrintCorpseItems(corpse);
+                        PrintCorpseItems(corpse,corpseItemsCount);
 //						PrintLink($"{E3.GeneralSettings.Loot_LinkChannel} {corpse.ID} - ");
 					}
 				}
             }
 
         }
-       
-        private static void PrintCorpseItems(Spawn corpse)
-		{
-			Int32 corpseItems = MQ.Query<Int32>("${Corpse.Items}");
 
+        private static List<string> _printCorpseItemList = new List<string>(10); 
+        private static void PrintCorpseItems(Spawn corpse,Int32 initialCountOfItems)
+		{
+            //need the initial count in case items were looted, so that we display all items
+			Int32 corpseItems = initialCountOfItems;
 			if (corpseItems == 0)
 			{
 				//no items on the corpse, kick out
-
 				return;
 			}
-
-            List<string> items = new List<string>();
+            _printCorpseItemList.Clear();
 			for (Int32 i = 1; i <= corpseItems; i++)
 			{
 				var itemId = MQ.Query<int>($"${{Corpse.Item[{i}].ID}}");
-
 				if (itemId > 0)
 				{
-					string corpseItem = MQ.Query<string>($"${{Corpse.Item[{i}].Name}}");
-                    if(corpseItem != "NULL")
-                    {
-                        string link = MQ.Query<string>($"${{Corpse.Item[{i}].ItemLink[CLICKABLE]}}");
-                        items.Add(link);
-						
-
-					}
+					string link = MQ.Query<string>($"${{Corpse.Item[{i}].ItemLink[CLICKABLE]}}");
+					_printCorpseItemList.Add(link);
 				}
 			}
-            if(items.Count > 0 )
+            if(_printCorpseItemList.Count > 0 )
             {
-				MQ.Cmd($"/{E3.GeneralSettings.Loot_LinkChannel} {corpse.ID}) - {String.Join(",",items)}");
+				MQ.Cmd($"/{E3.GeneralSettings.Loot_LinkChannel} {corpse.ID}) - {String.Join(",", _printCorpseItemList)}");
+				_printCorpseItemList.Clear();//clear out so the values don't live long
 			}
-
 		}
         private static void PrintLink(string message)
         {
