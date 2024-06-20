@@ -490,7 +490,7 @@ namespace E3Core.Classes
                     return;
                 }
             }
-            if (Casting.CheckReady(songToPlay))
+            if (Casting.CheckReady(songToPlay) && Casting.CheckMana(songToPlay))
             {
                
                 MQ.Write($"\atTwist \ag{songToPlay.SpellName}");
