@@ -27,7 +27,7 @@ namespace E3Core.Settings.FeatureSettings
             "Time's Antithesis", "Veil of Lost Hopes",
 
             // tz
-            "Amulet of Crystal Dreams", "Band of Prismatic", "Bracer of Precision", "Circlet of Flowing Time",
+            "Amulet of Crystal Dreams", "Band of Prismatic Focus", "Bracer of Precision", "Circlet of Flowing Time",
             "Cloak of the Falling Skies", "Hopebringer", "Mantle of Deadly Precision", "Serpent of Vindication",
             "Tactician's Shield", "Winged Storm Boots",
 
