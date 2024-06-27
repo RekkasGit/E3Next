@@ -1173,6 +1173,8 @@ namespace E3Core.Processors
 
 		public static Boolean CheckMana(Data.Spell spell)
 		{
+			if (!spell.Initialized) spell.ReInit();
+
 			Int32 currentMana = MQ.Query<Int32>("${Me.CurrentMana}");
 			Int32 pctMana = MQ.Query<Int32>("${Me.PctMana}");
 			if (currentMana >= spell.Mana)
@@ -1243,7 +1245,7 @@ namespace E3Core.Processors
 			return true;
 		}
 
-		private static System.Collections.Generic.Dictionary<String, Int64> _ItemCooldownLookup = new Dictionary<string, long>() { { "Invocation Rune: Vulka's Chant of Lightning", 18000 } };
+		private static System.Collections.Generic.Dictionary<String, Int64> _ItemCooldownLookup = new Dictionary<string, long>() { { "Invocation Rune: Vulka's Chant of Lightning", 18000 }, { "Invocation Glyph: Vulka's Chant of Lightning", 12000 } };
 		private static System.Collections.Generic.Dictionary<String, Int64> _ItemsInCooldown = new Dictionary<string, long>() { };
 		private static System.Collections.Generic.Dictionary<String, Int64> _AAInCooldown = new Dictionary<string, long>() { };
 
@@ -1323,7 +1325,7 @@ namespace E3Core.Processors
 			}
 			else
 			{
-				if (MQ.Query<bool>($"${{Me.ItemReady[{spell.CastName}]}}"))
+				if (MQ.Query<bool>($"${{Me.ItemReady[={spell.CastName}]}}"))
 				{
 					return false;
 				}
@@ -1397,6 +1399,8 @@ namespace E3Core.Processors
 		public static Boolean CheckReady(Data.Spell spell, bool skipCastCheck = false)
 		{
 			if (!spell.Enabled) return false;
+			if (!spell.Initialized) spell.ReInit();
+
 			//if your stunned nothing is ready
 			if (MQ.Query<bool>("${Me.Stunned}"))
 			{
@@ -1505,6 +1509,8 @@ namespace E3Core.Processors
 		}
 		public static bool InRange(Int32 targetId, Data.Spell spell)
 		{
+			if (!spell.Initialized) spell.ReInit(); 
+
 			if (spell.MyRange == 0) return true;
 
 			Spawn s;

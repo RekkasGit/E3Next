@@ -30,7 +30,9 @@ namespace E3Core.Data
         public static Dictionary<string, Data.Spell> LoadedSpellByConfigEntry = new Dictionary<string, Data.Spell>();
 		static Dictionary<string, Int32> _spellIDLookup = new Dictionary<string, Int32>();
 		public static IMQ MQ = E3.MQ;
-
+        //mainly to deal with temp items that you might not have but specified in your ini
+        public bool Initialized = false;
+        
 
         public static Int32 SpellIDLookup(string spellName)
         {
@@ -437,9 +439,19 @@ namespace E3Core.Data
 
             return default(T);
         }
+        //mainly to deal with temporary items
+        public bool ReInit()
+        {
+            if(!Initialized)
+            {
+				QueryMQ();
+         	}
+			return Initialized;
+        }
         void QueryMQ()
         {
-			if(CastTypeOverride == CastingType.None)
+            Initialized = true;
+			if (CastTypeOverride == CastingType.None)
 			{
 				if (MQ.Query<bool>($"${{Me.AltAbility[{CastName}].Spell}}"))
 				{
@@ -489,6 +501,15 @@ namespace E3Core.Data
                 //check if this is an itemID
 
                 Int32 itemID = -1;
+
+                bool itemFound = MQ.Query<bool>($"${{FindItem[{CastName}]}}");
+
+                if (!itemFound )
+                {
+                    //didn't find the item, cannot get information on it kick out
+                    Initialized = false;
+                    return;
+                }
 
 
                 if (Int32.TryParse(CastName, out itemID))
@@ -1091,6 +1112,7 @@ namespace E3Core.Data
 			d.BeforeEvent = BeforeEvent;
 			d.Reagent = Reagent;
 			d.Enabled = Enabled;
+            d.CastTarget = CastTarget;
 		
 		}
 

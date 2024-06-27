@@ -84,7 +84,15 @@ namespace E3Core.Processors
 
                         foreach(var spell in E3.CharacterSettings.RampageSpells)
                         {
-                            if(Casting.CheckReady(spell) && Casting.CheckMana(spell))
+							if (!String.IsNullOrWhiteSpace(spell.Ifs))
+							{
+								if (!Casting.Ifs(spell))
+								{
+									continue;
+								}
+							}
+
+							if (Casting.CheckReady(spell) && Casting.CheckMana(spell))
                             {
                                 Casting.Cast(E3.CurrentId, spell);
                             }

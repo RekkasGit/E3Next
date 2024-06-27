@@ -499,6 +499,7 @@ namespace E3Core.Classes
                 {
 					bool hasQuickTime = MQ.Query<bool>("${Bool[${Me.Song[Quick Time].ID}]}");
 
+					//${Me.CastTimeLeft}?
 					if (hasQuickTime)
                     {
                         //max quicktime on live is 0.75 seconds, need to do this in a better way?
