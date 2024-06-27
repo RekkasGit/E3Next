@@ -933,14 +933,19 @@ namespace E3Core.Processors
 					MQ.Cmd("/stopsong");
 					PubServer.AddTopicMessage("${Me.Casting}", spell.CastName);
 					MQ.Cmd($"/cast \"{spell.CastName}\"");
-					MQ.Delay(300, IsCasting);
-					if(e3util.IsEQLive())
+
+					if(spell.MyCastTime>500)
 					{
-						if (IsCasting())
+						MQ.Delay(300, IsCasting);
+						if (e3util.IsEQLive())
 						{
-							//on live the cast window comes up on a missed note, so we check just for a bit to make sure so we can recast. 
-							MQ.Delay(500);
+							if (IsCasting())
+							{
+								//on live the cast window comes up on a missed note, so we check just for a bit to make sure so we can recast. 
+								MQ.Delay(500);
+							}
 						}
+
 					}
 					//sometimes the cast isn't fully complete even if the window is done
 					///allow the player to 'tweak' this value.

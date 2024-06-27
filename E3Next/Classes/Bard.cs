@@ -37,8 +37,9 @@ namespace E3Core.Classes
         private static HashSet<Int64> _autoMezFullMobList = new HashSet<long>();
 		private static HashSet<Int64> _mobsToAutoMez = new HashSet<Int64>();
 		public static Dictionary<Int32, SpellTimer> _autoMezTimers = new Dictionary<Int32, SpellTimer>();
+        public static Data.Spell _currentSongPlaying = null;
 
-        public static void ResetNextBardSong()
+		public static void ResetNextBardSong()
         {
             _nextBardCast = 0;
         }
@@ -452,8 +453,19 @@ namespace E3Core.Classes
 			//a counter to determine if we have looped through all the songs before finding a good one
 			Int32 trycounter = 0;
     		pickASong:
-			songToPlay = _songs.Dequeue();
-	      
+
+            //this is to deal with nowcasts early termination of the last song, replay last song that got interrupted
+            if(_nextBardCast==0 && _currentSongPlaying!=null)
+            {
+                _nextBardCast = Core.StopWatch.ElapsedMilliseconds + (int)MQ.Query<int>("${Me.CastTimeLeft}") + 300;
+				Casting.Sing(0, _currentSongPlaying);
+                return;
+			}
+            else
+            {
+				songToPlay = _songs.Dequeue();
+			}
+
 			//we have gone through all the songs and not found a valid one to use, kick out
 			if (trycounter > _songs.Count)
 			{
@@ -494,29 +506,9 @@ namespace E3Core.Classes
             {
                
                 MQ.Write($"\atTwist \ag{songToPlay.SpellName}");
-
-                if(e3util.IsEQLive())
-                {
-					bool hasQuickTime = MQ.Query<bool>("${Bool[${Me.Song[Quick Time].ID}]}");
-
-					//${Me.CastTimeLeft}?
-					if (hasQuickTime)
-                    {
-                        //max quicktime on live is 0.75 seconds, need to do this in a better way?
-						_nextBardCast = Core.StopWatch.ElapsedMilliseconds + (int)songToPlay.MyCastTime + 300 - 750;
-					}
-                    else
-                    {
-						_nextBardCast = Core.StopWatch.ElapsedMilliseconds + (int)songToPlay.MyCastTime + 300;
-					}
-					
-				}
-                else
-                {
-					_nextBardCast = Core.StopWatch.ElapsedMilliseconds + (int)songToPlay.MyCastTime + 300;
-				}
-			
-				Casting.Sing(0, songToPlay);
+                _nextBardCast = Core.StopWatch.ElapsedMilliseconds + (int)MQ.Query<int>("${Me.CastTimeLeft}") + 300;
+                _currentSongPlaying = songToPlay;
+                Casting.Sing(0, songToPlay);
 			}
             else
             {

@@ -301,10 +301,10 @@ namespace E3Core.Server
 				commandToSend = $"/noparse /echo \a#336699[{MainProcessor.ApplicationName}]\a-w{System.DateTime.Now.ToString("HH:mm:ss")}\ar<\ay{user}\ar> \aw{bcMessage}";
 				Core.mq_DoCommandDelayed(commandToSend);
 			}
-			catch(Exception e) 
+			catch(Exception) 
 			{
-				MQ.Write("Error in shared data thread. ProcessBroadcast:" + message + " fullCommand:"+commandToSend);
-				throw e;
+				//MQ.Write("Error in shared data thread. ProcessBroadcast:" + message + " fullCommand:"+commandToSend);
+				//throw e;
 			}
 
 			
@@ -581,9 +581,9 @@ namespace E3Core.Server
 					
 					subSocket.Dispose();
 				}
-				catch (Exception ex)
+				catch (Exception)
 				{
-					MQ.Write("Error in shared data thread. Message:" + ex.Message + "  stack:" + ex.StackTrace);
+					//MQ.Write("Error in shared data thread. Message:" + ex.Message + "  stack:" + ex.StackTrace);
 				}
 
 			}
