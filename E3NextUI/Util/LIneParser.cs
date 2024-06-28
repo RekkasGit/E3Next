@@ -185,7 +185,7 @@ namespace E3NextUI.Util
         //damage shield
         static System.Text.RegularExpressions.Regex _damageshieldByYou = new System.Text.RegularExpressions.Regex(@".+ was hit by non-melee for ([0-9]+) points of damage\\.");
         //eqlive damage shield
-		static System.Text.RegularExpressions.Regex _damageshieldByYou2 = new System.Text.RegularExpressions.Regex(@".+ is pierced by YOUR thorns for ([0-9]+) points of non-melee damage\.");
+		static System.Text.RegularExpressions.Regex _damageshieldByYou2 = new System.Text.RegularExpressions.Regex(@".+ is .+ by YOUR .+ for ([0-9]+) points of non-melee damage\.");
 		//healing
 
 		static System.Text.RegularExpressions.Regex _healingYou = new System.Text.RegularExpressions.Regex(@".+ has healed you for ([0-9]+) points\\.");

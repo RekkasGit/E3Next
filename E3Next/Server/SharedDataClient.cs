@@ -289,13 +289,25 @@ namespace E3Core.Server
 		/// <param name="message"></param>
 		private void ProcessBroadcast(string message)
 		{
-			Int32 indexOfSeperator = message.IndexOf(':');
-			Int32 currentIndex = 0;
-			string user = message.Substring(currentIndex, indexOfSeperator);
-			currentIndex = indexOfSeperator + 1;
-			string bcMessage = message.Substring(currentIndex, message.Length - currentIndex);
 
-			Core.mq_DoCommandDelayed($"/noparse /echo \a#336699[{MainProcessor.ApplicationName}]\a-w{System.DateTime.Now.ToString("HH:mm:ss")}\ar<\ay{user}\ar> \aw{bcMessage}");
+			string commandToSend = string.Empty;
+			try
+			{
+				Int32 indexOfSeperator = message.IndexOf(':');
+				Int32 currentIndex = 0;
+				string user = message.Substring(currentIndex, indexOfSeperator);
+				currentIndex = indexOfSeperator + 1;
+				string bcMessage = message.Substring(currentIndex, message.Length - currentIndex);
+				commandToSend = $"/noparse /echo \a#336699[{MainProcessor.ApplicationName}]\a-w{System.DateTime.Now.ToString("HH:mm:ss")}\ar<\ay{user}\ar> \aw{bcMessage}";
+				Core.mq_DoCommandDelayed(commandToSend);
+			}
+			catch(Exception) 
+			{
+				//MQ.Write("Error in shared data thread. ProcessBroadcast:" + message + " fullCommand:"+commandToSend);
+				//throw e;
+			}
+
+			
 
 		}
 
@@ -571,6 +583,7 @@ namespace E3Core.Server
 				}
 				catch (Exception)
 				{
+					//MQ.Write("Error in shared data thread. Message:" + ex.Message + "  stack:" + ex.StackTrace);
 				}
 
 			}

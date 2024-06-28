@@ -96,4 +96,6 @@ message SpellData {
 	bool Enabled = 78;
 	bool IsBuff = 79;
     int32 MinHPTotal=80;
+    string AfterEventKeys=81;
+    string BeforeEventKeys=82;
 }

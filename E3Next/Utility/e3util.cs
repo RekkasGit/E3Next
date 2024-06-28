@@ -620,55 +620,46 @@ namespace E3Core.Utility
 
         }
 
-        public static void PrintTimerStatus(Dictionary<Int32, SpellTimer> timers, ref Int64 printTimer, string Caption, Int64 delayInMS = 10000)
+        public static void PrintTimerStatus(Dictionary<Int32, SpellTimer> timers,  string Caption)
         {
-            //Printing out debuff timers
-            if (printTimer < Core.StopWatch.ElapsedMilliseconds)
+            if (timers.Count > 0)
             {
-                if (timers.Count > 0)
+                MQ.Write($"\at{Caption}");
+                MQ.Write("\aw===================");
+            }
+
+            foreach (var kvp in timers)
+            {
+                foreach (var kvp2 in kvp.Value.Timestamps)
                 {
-                    MQ.Write($"\at{Caption}");
-                    MQ.Write("\aw===================");
-
-
-                }
-
-                foreach (var kvp in timers)
-                {
-                    foreach (var kvp2 in kvp.Value.TimestampBySpellDuration)
+                    Data.Spell spell;
+                    if (Spell._loadedSpells.TryGetValue(kvp2.Key, out spell))
                     {
-                        Data.Spell spell;
-                        if (Spell._loadedSpells.TryGetValue(kvp2.Key, out spell))
+                        Spawn s;
+                        if (_spawns.TryByID(kvp.Value.MobID, out s))
                         {
-                            Spawn s;
-                            if (_spawns.TryByID(kvp.Value.MobID, out s))
-                            {
-                                MQ.Write($"\ap{s.CleanName} \aw: \ag{spell.CastName} \aw: {(kvp2.Value - Core.StopWatch.ElapsedMilliseconds) / 1000} seconds");
-
-                            }
+                            MQ.Write($"\ap{s.CleanName} \aw: \ag{spell.CastName} \aw: {(kvp2.Value - Core.StopWatch.ElapsedMilliseconds) / 1000} seconds");
 
                         }
-                        else
+                    }
+                    else
+                    {
+                        Spawn s;
+                        if (_spawns.TryByID(kvp.Value.MobID, out s))
                         {
-                            Spawn s;
-                            if (_spawns.TryByID(kvp.Value.MobID, out s))
-                            {
-                                MQ.Write($"\ap{s.CleanName} \aw: \agspellid:{kvp2.Key} \aw: {(kvp2.Value - Core.StopWatch.ElapsedMilliseconds) / 1000} seconds");
-
-                            }
+                            MQ.Write($"\ap{s.CleanName} \aw: \agspellid:{kvp2.Key} \aw: {(kvp2.Value - Core.StopWatch.ElapsedMilliseconds) / 1000} seconds");
 
                         }
 
                     }
                 }
-                if (timers.Count > 0)
-                {
-                    MQ.Write("\aw===================");
-
-                }
-                printTimer = Core.StopWatch.ElapsedMilliseconds + delayInMS;
+            }
+            if (timers.Count > 0)
+            {
+                MQ.Write("\aw===================");
 
             }
+          
         }
         public static bool ClearCursor()
         {

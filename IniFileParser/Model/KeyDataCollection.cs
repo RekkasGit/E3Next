@@ -213,7 +213,8 @@ namespace IniParser.Model
                 
                 return true;
             }
-            if (!_keyData[keyName].ValueList.Contains(keyValue))
+            //don't check for duplicates as that is valid.
+            //if (!_keyData[keyName].ValueList.Contains(keyValue))
             {
                 _keyData[keyName].ValueList.Add(keyValue);
             }

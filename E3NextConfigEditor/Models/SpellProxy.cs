@@ -1,4 +1,5 @@
 ﻿using E3Core.Data;
+using Google.Protobuf.WellKnownTypes;
 using System;
 using System.Collections.Generic;
 using System.ComponentModel;
@@ -82,12 +83,44 @@ namespace E3NextConfigEditor.Models
 		}
 		[Category("Flags")]
 		[Description("Ifs Keys to be used, comma seperated")]
-		public string IfsKeys
+		public string Ifs
 		{
 			get { return _spell.IfsKeys; }
 			set { _spell.IfsKeys = value; }
 		}
-		
+		[Category("Flags")]
+		[Description("Delay, in seconds")]
+		public string Delay
+		{
+			get { 
+				
+				
+				return $"{_spell.Delay}"; 
+			
+			
+			
+			}
+			set { 
+				
+				string tvalue = value;
+				bool isMinute = false;
+				if (value.EndsWith("s", StringComparison.OrdinalIgnoreCase))
+				{
+					tvalue = tvalue.Substring(0, value.Length - 1);
+				}
+				else if (value.EndsWith("m", StringComparison.OrdinalIgnoreCase))
+				{
+					isMinute = true;
+					tvalue = tvalue.Substring(0, value.Length - 1);
+				}
+				_spell.Delay = Int32.Parse(tvalue);
+				if (isMinute)
+				{
+					_spell.Delay=_spell.Delay * 60;
+				}
+
+			}
+		}
 		[Category("Flags")]
 		[Description("Check for, comma seperated. For Detremental it is the debuff on the mob. For Buffs/songs its the buff on you.")]
 		public string CheckFor
@@ -143,15 +176,15 @@ namespace E3NextConfigEditor.Models
 		[Description("After Event Name, follows normal heircy rules")]
 		public string AfterEvent
 		{
-			get { return _spell.AfterEvent; }
-			set { _spell.AfterEvent = value; }
+			get { return _spell.AfterEventKeys; }
+			set { _spell.AfterEventKeys = value; }
 		}
 		[Category("Flags")]
 		[Description("Before Event Name, follows normal heircy rules")]
 		public string BeforeEvent
 		{
-			get { return _spell.BeforeEvent; }
-			set { _spell.BeforeEvent = value; }
+			get { return _spell.BeforeEventKeys; }
+			set { _spell.BeforeEventKeys = value; }
 		}
 		[Category("Flags")]
 		[Description("Zone to Enable in. Honetly not sure this works!")]
@@ -249,7 +282,7 @@ namespace E3NextConfigEditor.Models
 		public string CastTypeOverride
 		{
 			get { return _spell.CastTypeOverride.ToString(); }
-			set { Enum.TryParse(value, true, out _spell.CastTypeOverride); }
+			set { System.Enum.TryParse(value, true, out _spell.CastTypeOverride); }
 		}
 		[Category("Spell Enabled")]
 		[Description("if disabled, the spell will not be cast")]
@@ -326,7 +359,7 @@ namespace E3NextConfigEditor.Models
 		}
 		[Category("Flags")]
 		[Description("Ifs Keys to be used, comma seperated")]
-		public string IfsKeys
+		public string Ifs
 		{
 			get { return _spell.IfsKeys; }
 			set { _spell.IfsKeys = value; }
@@ -393,15 +426,15 @@ namespace E3NextConfigEditor.Models
 		[Description("After Event Name, follows normal heircy rules")]
 		public string AfterEvent
 		{
-			get { return _spell.AfterEvent; }
-			set { _spell.AfterEvent = value; }
+			get { return _spell.AfterEventKeys; }
+			set { _spell.AfterEventKeys = value; }
 		}
 		[Category("Flags")]
 		[Description("Before Event Name, follows normal heircy rules")]
 		public string BeforeEvent
 		{
-			get { return _spell.BeforeEvent; }
-			set { _spell.BeforeEvent = value; }
+			get { return _spell.BeforeEventKeys; }
+			set { _spell.BeforeEventKeys = value; }
 		}
 		[Category("Flags")]
 		[Description("Zone to Enable in. Honetly not sure this works!")]
@@ -409,6 +442,35 @@ namespace E3NextConfigEditor.Models
 		{
 			get { return _spell.Zone; }
 			set { _spell.Zone = value; }
+		}
+		[Category("Flags")]
+		[Description("Delay, in seconds")]
+		public string Delay
+		{
+			get
+			{
+				return $"{_spell.Delay}";
+			}
+			set
+			{
+
+				string tvalue = value;
+				bool isMinute = false;
+				if (value.EndsWith("s", StringComparison.OrdinalIgnoreCase))
+				{
+					tvalue = tvalue.Substring(0, value.Length - 1);
+				}
+				else if (value.EndsWith("m", StringComparison.OrdinalIgnoreCase))
+				{
+					isMinute = true;
+					tvalue = tvalue.Substring(0, value.Length - 1);
+				}
+				_spell.Delay = Int32.Parse(tvalue);
+				if (isMinute)
+				{
+					_spell.Delay = _spell.Delay * 60;
+				}
+			}
 		}
 		[Category("Heal Flags")]
 		[Description("For heals, Heal Percentage you start casting")]
@@ -509,7 +571,7 @@ namespace E3NextConfigEditor.Models
 			set
 			{
 				CastingType tempType = CastingType.None;
-				if (Enum.TryParse(value, true, out tempType))
+				if (System.Enum.TryParse(value, true, out tempType))
 				{
 					_spell.CastTypeOverride = (SpellData.Types.CastingType)tempType;
 				}

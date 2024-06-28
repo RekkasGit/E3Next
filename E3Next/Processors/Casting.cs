@@ -852,14 +852,19 @@ namespace E3Core.Processors
 				{
 					spell.AfterSpellData = new Data.Spell(spell.AfterSpell);
 				}
-				//Wait for GCD if spell
-
+			
 				_log.Write("Doing AfterSpell:{spell.AfterSpell}");
 				if (CheckReady(spell.AfterSpellData) && CheckMana(spell.AfterSpellData))
 				{
-					retrycast:
+				retrycast:
+					Int32 retryCounter = 0;
 					if(Casting.Cast(targetID, spell.AfterSpellData)== CastReturn.CAST_FIZZLE) 
 					{ 
+						retryCounter++;
+						if(retryCounter>5)
+						{
+							return;
+						}
 						goto retrycast;
 
 					}
@@ -928,14 +933,19 @@ namespace E3Core.Processors
 					MQ.Cmd("/stopsong");
 					PubServer.AddTopicMessage("${Me.Casting}", spell.CastName);
 					MQ.Cmd($"/cast \"{spell.CastName}\"");
-					MQ.Delay(300, IsCasting);
-					if(e3util.IsEQLive())
+
+					if(spell.MyCastTime>500)
 					{
-						if (IsCasting())
+						MQ.Delay(300, IsCasting);
+						if (e3util.IsEQLive())
 						{
-							//on live the cast window comes up on a missed note, so we check just for a bit to make sure so we can recast. 
-							MQ.Delay(500);
+							if (IsCasting())
+							{
+								//on live the cast window comes up on a missed note, so we check just for a bit to make sure so we can recast. 
+								MQ.Delay(500);
+							}
 						}
+
 					}
 					//sometimes the cast isn't fully complete even if the window is done
 					///allow the player to 'tweak' this value.
@@ -1168,6 +1178,8 @@ namespace E3Core.Processors
 
 		public static Boolean CheckMana(Data.Spell spell)
 		{
+			if (!spell.Initialized) spell.ReInit();
+
 			Int32 currentMana = MQ.Query<Int32>("${Me.CurrentMana}");
 			Int32 pctMana = MQ.Query<Int32>("${Me.PctMana}");
 			if (currentMana >= spell.Mana)
@@ -1238,7 +1250,7 @@ namespace E3Core.Processors
 			return true;
 		}
 
-		private static System.Collections.Generic.Dictionary<String, Int64> _ItemCooldownLookup = new Dictionary<string, long>() { { "Invocation Rune: Vulka's Chant of Lightning", 18000 } };
+		private static System.Collections.Generic.Dictionary<String, Int64> _ItemCooldownLookup = new Dictionary<string, long>() { { "Invocation Rune: Vulka's Chant of Lightning", 18000 }, { "Invocation Glyph: Vulka's Chant of Lightning", 12000 } };
 		private static System.Collections.Generic.Dictionary<String, Int64> _ItemsInCooldown = new Dictionary<string, long>() { };
 		private static System.Collections.Generic.Dictionary<String, Int64> _AAInCooldown = new Dictionary<string, long>() { };
 
@@ -1318,7 +1330,7 @@ namespace E3Core.Processors
 			}
 			else
 			{
-				if (MQ.Query<bool>($"${{Me.ItemReady[{spell.CastName}]}}"))
+				if (MQ.Query<bool>($"${{Me.ItemReady[={spell.CastName}]}}"))
 				{
 					return false;
 				}
@@ -1392,6 +1404,8 @@ namespace E3Core.Processors
 		public static Boolean CheckReady(Data.Spell spell, bool skipCastCheck = false)
 		{
 			if (!spell.Enabled) return false;
+			if (!spell.Initialized) spell.ReInit();
+
 			//if your stunned nothing is ready
 			if (MQ.Query<bool>("${Me.Stunned}"))
 			{
@@ -1500,6 +1514,8 @@ namespace E3Core.Processors
 		}
 		public static bool InRange(Int32 targetId, Data.Spell spell)
 		{
+			if (!spell.Initialized) spell.ReInit(); 
+
 			if (spell.MyRange == 0) return true;
 
 			Spawn s;

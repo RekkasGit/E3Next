@@ -30,7 +30,9 @@ namespace E3Core.Data
         public static Dictionary<string, Data.Spell> LoadedSpellByConfigEntry = new Dictionary<string, Data.Spell>();
 		static Dictionary<string, Int32> _spellIDLookup = new Dictionary<string, Int32>();
 		public static IMQ MQ = E3.MQ;
-
+        //mainly to deal with temp items that you might not have but specified in your ini
+        public bool Initialized = false;
+        
 
         public static Int32 SpellIDLookup(string spellName)
         {
@@ -331,11 +333,11 @@ namespace E3Core.Data
                     }
                     else if (value.StartsWith("AfterEvent|", StringComparison.OrdinalIgnoreCase))
                     {
-                        string ifKey = GetArgument<string>(value);
+                        AfterEventKeys = GetArgument<string>(value);
                         var section = parsedData.Sections["Events"];
                         if (section != null)
                         {
-                            var keyData = section[ifKey];
+                            var keyData = section[AfterEventKeys];
                             if (!String.IsNullOrWhiteSpace(keyData))
                             {
                                 AfterEvent = keyData;
@@ -344,11 +346,11 @@ namespace E3Core.Data
                     }
                     else if (value.StartsWith("BeforeEvent|", StringComparison.OrdinalIgnoreCase))
                     {
-                        string ifKey = GetArgument<string>(value);
+                        BeforeEventKeys = GetArgument<string>(value);
                         var section = parsedData.Sections["Events"];
                         if (section != null)
                         {
-                            var keyData = section[ifKey];
+                            var keyData = section[BeforeEventKeys];
                             if (!String.IsNullOrWhiteSpace(keyData))
                             {
                                 BeforeEvent = keyData;
@@ -437,9 +439,19 @@ namespace E3Core.Data
 
             return default(T);
         }
+        //mainly to deal with temporary items
+        public bool ReInit()
+        {
+            if(!Initialized)
+            {
+				QueryMQ();
+         	}
+			return Initialized;
+        }
         void QueryMQ()
         {
-			if(CastTypeOverride == CastingType.None)
+            Initialized = true;
+			if (CastTypeOverride == CastingType.None)
 			{
 				if (MQ.Query<bool>($"${{Me.AltAbility[{CastName}].Spell}}"))
 				{
@@ -489,6 +501,15 @@ namespace E3Core.Data
                 //check if this is an itemID
 
                 Int32 itemID = -1;
+
+                bool itemFound = MQ.Query<bool>($"${{FindItem[{CastName}]}}");
+
+                if (!itemFound )
+                {
+                    //didn't find the item, cannot get information on it kick out
+                    Initialized = false;
+                    return;
+                }
 
 
                 if (Int32.TryParse(CastName, out itemID))
@@ -868,6 +889,8 @@ namespace E3Core.Data
         public String CastIF = String.Empty;
         public string Ifs = String.Empty;
         public string IfsKeys = String.Empty;
+        public string AfterEventKeys = String.Empty;
+        public string BeforeEventKeys = String.Empty;
         public string InitName = String.Empty;
         public bool ReagentOutOfStock = false;
         public bool SpellInBook = false;
@@ -893,9 +916,11 @@ namespace E3Core.Data
         {
 			Spell r = new Spell();
 			r.AfterEvent = source.AfterEvent;
+            r.AfterEventKeys = source.AfterEventKeys;
 			r.AfterSpell = source.AfterSpell;
 			r.AllowSpellSwap = source.AllowSpellSwap;
 			r.BeforeEvent = source.BeforeEvent;
+            r.BeforeEventKeys = source.BeforeEventKeys;
 			r.BeforeSpell = source.BeforeSpell;
 			r.CastID = source.CastID;
 			r.CastIF = source.CastIF;
@@ -983,9 +1008,11 @@ namespace E3Core.Data
 
             SpellData r = new SpellData();
             r.AfterEvent = this.AfterEvent;
+            r.AfterEventKeys = this.AfterEventKeys;
             r.AfterSpell = this.AfterSpell;
             r.AllowSpellSwap = this.AllowSpellSwap;
             r.BeforeEvent = this.BeforeEvent;
+            r.BeforeEventKeys = this.BeforeEventKeys;
             r.BeforeSpell = this.BeforeSpell;
             r.CastID = this.CastID;
             r.CastIF = this.CastIF;
@@ -1085,6 +1112,7 @@ namespace E3Core.Data
 			d.BeforeEvent = BeforeEvent;
 			d.Reagent = Reagent;
 			d.Enabled = Enabled;
+            d.CastTarget = CastTarget;
 		
 		}
 
@@ -1110,16 +1138,17 @@ namespace E3Core.Data
 			string t_MaxTries = (MaxTries == MaxTiresDefault) ? String.Empty : $"/MaxTries|{MaxTries}";
 			string t_CastIF = (String.IsNullOrWhiteSpace(this.CastIF)) ? String.Empty : $"/CastIF|{CastIF}";
 			string t_MinEnd = (MinEnd == 0) ? String.Empty : $"/MinEnd|{MinEnd}";
-			string t_AfterEvent = (String.IsNullOrWhiteSpace(this.AfterEvent)) ? String.Empty : $"/AfterEvent|{AfterEvent}";
-			string t_BeforeEvent = (String.IsNullOrWhiteSpace(this.BeforeEvent)) ? String.Empty : $"/BeforeEvent|{BeforeEvent}";
+			string t_AfterEvent = (String.IsNullOrWhiteSpace(this.AfterEventKeys)) ? String.Empty : $"/AfterEvent|{AfterEventKeys}";
+			string t_BeforeEvent = (String.IsNullOrWhiteSpace(this.BeforeEventKeys)) ? String.Empty : $"/BeforeEvent|{BeforeEventKeys}";
 			string t_Reagent = (String.IsNullOrWhiteSpace(this.Reagent)) ? String.Empty : $"/Reagent|{Reagent}";
 			string t_CastTypeOverride = (this.CastTypeOverride== CastingType.None) ? String.Empty : $"/CastType|{CastTypeOverride.ToString()}";
 			string t_GemNumber = (this.SpellGem == 0) ? String.Empty : $"/Gem|{SpellGem}";
 			string t_Enabled = (Enabled == true) ? String.Empty : $"/Disabled";
 			string t_CastTarget = (String.IsNullOrWhiteSpace(this.CastTarget) || this.IsBuff==false) ? String.Empty : $"/{CastTarget}";
 			string t_PctAggro = (PctAggro == 0) ? String.Empty : $"/PctAggro|{PctAggro}";
+            string t_Delay = (Delay == 0) ? String.Empty : $"/Delay|{Delay}s";
 			//Main=Terror of Mirenilla Rk. II/Gem|4/Ifs|Tanking
-			string returnValue = $"{CastName}{t_CastTarget}{t_GemNumber}{t_Ifs}{t_checkFor}{t_CastIF}{t_healPct}{t_healthMax}{t_noInterrupt}{t_Zone}{t_MinSick}{t_BeforeSpell}{t_AfterSpell}{t_BeforeEvent}{t_AfterEvent}{t_minMana}{t_maxMana}{t_MinEnd}{t_ignoreStackRules}{t_MinDurationBeforeRecast}{t_MaxTries}{t_Reagent}{t_CastTypeOverride}{t_PctAggro}{t_Enabled}";
+			string returnValue = $"{CastName}{t_CastTarget}{t_GemNumber}{t_Ifs}{t_checkFor}{t_CastIF}{t_healPct}{t_healthMax}{t_noInterrupt}{t_Zone}{t_MinSick}{t_BeforeSpell}{t_AfterSpell}{t_BeforeEvent}{t_AfterEvent}{t_minMana}{t_maxMana}{t_MinEnd}{t_ignoreStackRules}{t_MinDurationBeforeRecast}{t_MaxTries}{t_Reagent}{t_CastTypeOverride}{t_PctAggro}{t_Delay}{t_Enabled}";
 			return returnValue;
 
 		}

@@ -960,10 +960,10 @@ namespace E3NextConfigEditor
 						item.ShortText = nameOfSpell;
 						item.LongText = string.Empty;
 						item.Tag = newSpell;
-						if (newSpell.SpellIcon > -1)
+						Bitmap imageValue;
+						if (TryGetSpellIcon(newSpell.SpellIcon, out imageValue))
 						{
-							item.Image = _spellIcons[newSpell.SpellIcon];
-
+							item.Image = imageValue;
 						}
 						spellList.Insert(index, newSpell);
 						valuesListBox.Items.Insert(index, item);
@@ -980,9 +980,10 @@ namespace E3NextConfigEditor
 						item.ShortText = nameOfSpell;
 						item.LongText = string.Empty;
 						item.Tag = newSpell;
-						if (newSpell.SpellIcon > -1)
+						Bitmap imageValue;
+						if (TryGetSpellIcon(newSpell.SpellIcon, out imageValue))
 						{
-							item.Image = _spellIcons[newSpell.SpellIcon];
+							item.Image = imageValue;
 						}
 						valuesListBox.Items.Add(item);
 					}
@@ -1120,10 +1121,10 @@ namespace E3NextConfigEditor
 					item.LongText = string.Empty;
 					item.Tag = spell;
 
-					if (spell.SpellIcon > -1)
+					Bitmap imageValue;
+					if (TryGetSpellIcon(spell.SpellIcon, out imageValue))
 					{
-						item.Image = _spellIcons[spell.SpellIcon];
-
+						item.Image = imageValue;
 					}
 					valuesListBox.Items.Add(item);
 				}
@@ -1144,10 +1145,10 @@ namespace E3NextConfigEditor
 					item.LongText = string.Empty;
 					item.Tag = spell;
 
-					if (spell.SpellIcon > -1)
+					Bitmap imageValue;
+					if (TryGetSpellIcon(spell.SpellIcon, out imageValue))
 					{
-						item.Image = _spellIcons[spell.SpellIcon];
-
+						item.Image = imageValue;
 					}
 					valuesListBox.Items.Add(item);
 				}
@@ -1168,14 +1169,24 @@ namespace E3NextConfigEditor
 				item.ShortText = nameOfSpell;
 				item.LongText = string.Empty;
 				item.Tag = spell;
-				
-				if (spell.SpellIcon > -1)
-				{
-					item.Image = _spellIcons[spell.SpellIcon];
 
+				Bitmap imageValue;
+				if (TryGetSpellIcon(spell.SpellIcon, out imageValue))
+				{
+					item.Image = imageValue;
 				}
 				valuesListBox.Items.Add(item);
 			}
+		}
+		private bool TryGetSpellIcon(Int32 index, out Bitmap output)
+		{
+			output = null;
+			if (index > -1 && index < _spellIcons.Count)
+			{
+				output = _spellIcons[index];
+				return true;
+			}
+			return false;
 		}
 		private void UpdateListView(FieldInfo objectList)
 		{
@@ -1200,11 +1211,12 @@ namespace E3NextConfigEditor
 					item.ShortText = nameOfSpell;
 					item.LongText = string.Empty;
 					item.Tag = spell;
-					if (spell.SpellIcon > -1)
+					Bitmap imageValue;
+					if(TryGetSpellIcon(spell.SpellIcon, out imageValue))
 					{
-						item.Image = _spellIcons[spell.SpellIcon];
-
+						item.Image = imageValue;
 					}
+				
 					valuesListBox.Items.Add(item);
 				}
 
@@ -1219,11 +1231,12 @@ namespace E3NextConfigEditor
 					item.ShortText = spell.CastName;
 					item.LongText = string.Empty;
 					item.Tag = spell;
-					if (spell.SpellIcon > -1)
+					Bitmap imageValue;
+					if (TryGetSpellIcon(spell.SpellIcon, out imageValue))
 					{
-						item.Image = _spellIcons[spell.SpellIcon];
-
+						item.Image = imageValue;
 					}
+
 					valuesListBox.Items.Add(item);
 				}
 			}
@@ -1399,11 +1412,13 @@ namespace E3NextConfigEditor
 					item.ShortText = nameOfSpell;
 					item.LongText = string.Empty;
 					item.Tag = newSpell;
-					if (newSpell.SpellIcon > -1)
+					Bitmap imageValue;
+					if (TryGetSpellIcon(newSpell.SpellIcon, out imageValue))
 					{
-						item.Image = _spellIcons[newSpell.SpellIcon];
-
+						item.Image = imageValue;
 					}
+
+					
 					spellList.Insert(index, newSpell);
 					valuesListBox.Items.Insert(index, item);
 				}
@@ -1419,10 +1434,12 @@ namespace E3NextConfigEditor
 					item.ShortText = nameOfSpell;
 					item.LongText = string.Empty;
 					item.Tag = newSpell;
-					if (newSpell.SpellIcon > -1)
+					Bitmap imageValue;
+					if (TryGetSpellIcon(newSpell.SpellIcon, out imageValue))
 					{
-						item.Image = _spellIcons[newSpell.SpellIcon];
+						item.Image = imageValue;
 					}
+					
 					valuesListBox.Items.Add(item);
 				}
 			}
@@ -1448,10 +1465,10 @@ namespace E3NextConfigEditor
 					item.ShortText = nameOfSpell;
 					item.LongText = string.Empty;
 					item.Tag = newSpell;
-					if (newSpell.SpellIcon > -1)
+					Bitmap imageValue;
+					if (TryGetSpellIcon(newSpell.SpellIcon, out imageValue))
 					{
-						item.Image = _spellIcons[newSpell.SpellIcon];
-
+						item.Image = imageValue;
 					}
 					Spell oldSpell = ((Spell)((KryptonListItem)valuesListBox.SelectedItem).Tag);
 					oldSpell.TransferFlags(newSpell);
