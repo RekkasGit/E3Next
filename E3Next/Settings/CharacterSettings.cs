@@ -458,6 +458,17 @@ namespace E3Core.Settings
 		[INI_Section("CPU", "Camp Shutdown at 5 seconds")]
 		public bool CPU_Camping_ShutdownAt5Seconds = true;
 
+		[INI_Section("Ranger", "Enabled Bullshittery (On/Off)")]
+		public bool Ranger_EnabledBullshittery = true;
+		[INI_Section("Ranger", "Delay 1")]
+		public int Ranger_DelayOne = 200;
+		[INI_Section("Ranger", "Delay 2")]
+		public int Ranger_DelayTwo = 300;
+		[INI_Section("Ranger", "Delay 3")]
+		public int Ranger_DelayThree = 300;
+		[INI_Section("Ranger", "Delay 4")]
+		public int Ranger_DelayFour = 100;
+
 		[INI_Section("Magician", "Pet Weapons")]
 		public Dictionary<string, string> PetWeapons = new Dictionary<string, string>();
 		[INI_Section("Magician", "Auto-Pet Weapons (On/Off)")]
@@ -666,6 +677,14 @@ namespace E3Core.Settings
                 LoadKeyData("Rogue", "PoisonCR", ParsedData, ref Rogue_PoisonCR);
                 LoadKeyData("Rogue", "PoisonFR", ParsedData, ref Rogue_PoisonFR);
             }
+
+			if (CharacterClass == Class.Ranger) {
+				LoadKeyData("Ranger", "Enabled Bullshittery (On/Off)", ParsedData, ref Ranger_EnabledBullshittery);
+				LoadKeyData("Ranger", "Delay 1", ParsedData, ref Ranger_DelayOne);
+				LoadKeyData("Ranger", "Delay 2", ParsedData, ref Ranger_DelayTwo);
+				LoadKeyData("Ranger", "Delay 3", ParsedData, ref Ranger_DelayThree);
+				LoadKeyData("Ranger", "Delay 4", ParsedData, ref Ranger_DelayFour);
+			}
 
             if (CharacterClass == Class.Bard)
             {
@@ -1053,6 +1072,16 @@ namespace E3Core.Settings
 				section.Keys.AddKey("PoisonPR", "");
 				section.Keys.AddKey("PoisonFR", "");
 				section.Keys.AddKey("PoisonCR", "");
+			}
+
+			if (CharacterClass == Class.Ranger){
+				newFile.Sections.AddSection("Ranger");
+				section = newFile.Sections.GetSectionData("Ranger");
+				section.Keys.AddKey("Enabled Bullshittery (On/Off)", "Off");
+				section.Keys.AddKey("Delay 1", "200");
+				section.Keys.AddKey("Delay 2", "300");
+				section.Keys.AddKey("Delay 3", "300");
+				section.Keys.AddKey("Delay 4", "100");
 			}
 
 			if (CharacterClass == Class.Bard)

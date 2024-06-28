@@ -24,7 +24,7 @@ namespace E3Core.Processors
 		public static Int32 AssistTargetID = 0;
 
         public static long LastAssistEndedTimestamp = 0;
-
+        private static List<string> _whiteListedRangers = new List<String>() { "Gwendy", "Dredgg", "Atreyu", "Debarchery"};
         private static Logging _log = E3.Log;
         private static IMQ MQ = E3.MQ;
         private static ISpawns _spawns = E3.Spawns;
@@ -142,7 +142,6 @@ namespace E3Core.Processors
             Spawn s;
             Int32 targetId = MQ.Query<Int32>("${Target.ID}");
             bool manualControl = e3util.IsManualControl();
-
             if (targetId != AssistTargetID && manualControl) return;
 
             _spawns.RefreshList();
@@ -169,11 +168,25 @@ namespace E3Core.Processors
 
                         if (MQ.Query<bool>("${Me.AutoFire}"))
                         {
-                            MQ.Delay(1000);
-                            //turn off autofire
-                            MQ.Cmd("/autofire");
-                            //delay is needed to give time for it to actually process
-                            MQ.Delay(1000);
+                            if (_whiteListedRangers.Any(ranger => ranger.Equals(E3.CurrentName, StringComparison.OrdinalIgnoreCase)) && E3.CharacterSettings.Ranger_EnabledBullshittery) {
+                                //delay is needed to give time for it to actually process
+                                MQ.Delay(E3.CharacterSettings.Ranger_DelayOne);
+                                //turn on autofire
+                                MQ.Cmd("/autofire");
+                                MQ.Delay(E3.CharacterSettings.Ranger_DelayTwo);
+                                MQ.Cmd("/squelch /stick moveback 16 behind");
+                                //delay is needed to give time for it to actually process
+                                MQ.Delay(E3.CharacterSettings.Ranger_DelayThree);
+                                MQ.Cmd("/autofire off");
+                                MQ.Delay(E3.CharacterSettings.Ranger_DelayFour);
+                                MQ.Cmd("/attack on");
+                            } else {
+                                MQ.Delay(1000);
+                                //turn off autofire
+                                MQ.Cmd("/autofire");
+                                //delay is needed to give time for it to actually process
+                                MQ.Delay(1000);
+                            }
                         }
                         if (!AllowControl && !_assistIsEnraged)
                         {
@@ -216,12 +229,28 @@ namespace E3Core.Processors
 
                         if (!MQ.Query<bool>("${Me.AutoFire}"))
                         {
-                            //delay is needed to give time for it to actually process
-                            MQ.Delay(1000);
-                            //turn on autofire
-                            MQ.Cmd("/autofire");
-                            //delay is needed to give time for it to actually process
-                            MQ.Delay(1000);
+                            if (_whiteListedRangers.Any(ranger => ranger.Equals(E3.CurrentName, StringComparison.OrdinalIgnoreCase)) && E3.CharacterSettings.Ranger_EnabledBullshittery)
+                            {
+                                //delay is needed to give time for it to actually process
+                                MQ.Delay(E3.CharacterSettings.Ranger_DelayOne);
+                                //turn on autofire
+                                MQ.Cmd("/autofire");
+                                MQ.Delay(E3.CharacterSettings.Ranger_DelayTwo);
+                                MQ.Cmd("/squelch /stick moveback 16 behind");
+                                //delay is needed to give time for it to actually process
+                                MQ.Delay(E3.CharacterSettings.Ranger_DelayThree);
+                                MQ.Cmd("/autofire off");
+                                MQ.Delay(E3.CharacterSettings.Ranger_DelayFour);
+                                MQ.Cmd("/attack on");
+                            }
+                            else
+                            {
+                                MQ.Delay(1000);
+                                //turn off autofire
+                                MQ.Cmd("/autofire");
+                                //delay is needed to give time for it to actually process
+                                MQ.Delay(1000);
+                            }
                         }
                     }
                     //call combat abilites
@@ -632,13 +661,28 @@ namespace E3Core.Processors
                 }
                 else if (_rangeTypes.Contains(E3.CharacterSettings.Assist_Type, StringComparer.OrdinalIgnoreCase))
                 {
-                    if (!MQ.Query<bool>("${Me.AutoFire}"))
+                    if (_whiteListedRangers.Any(ranger => ranger.Equals(E3.CurrentName, StringComparison.OrdinalIgnoreCase)) && E3.CharacterSettings.Ranger_EnabledBullshittery)
+                    {
+                        //delay is needed to give time for it to actually process
+                        MQ.Delay(E3.CharacterSettings.Ranger_DelayOne);
+                        //turn on autofire
+                        MQ.Cmd("/autofire");
+                        MQ.Delay(E3.CharacterSettings.Ranger_DelayTwo);
+                        MQ.Cmd("/squelch /stick moveback 16 behind");
+                        //delay is needed to give time for it to actually process
+                        MQ.Delay(E3.CharacterSettings.Ranger_DelayThree);
+                        MQ.Cmd("/autofire off");
+                        MQ.Delay(E3.CharacterSettings.Ranger_DelayFour);
+                        MQ.Cmd("/attack on");
+                    }
+                    else
                     {
                         MQ.Delay(1000);
+                        //turn off autofire
                         MQ.Cmd("/autofire");
+                        //delay is needed to give time for it to actually process
                         MQ.Delay(1000);
                     }
-
                     if (!AllowControl && E3.CharacterSettings.Assist_Type.Equals("Ranged"))
                     {
                         if (E3.CharacterSettings.Assist_RangeDistance.Equals("Clamped"))
