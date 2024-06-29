@@ -429,7 +429,7 @@ namespace E3Core.Settings
 
 		//charm data
 		[INI_Section("Charm", "CharmSpell")]
-		public Spell Charm_CharmSpell = null;
+		public List<Spell> Charm_CharmSpells = new List<Spell>();
 		[INI_Section("Charm", "CharmOhShitSpells")]
 		public List<Spell> Charm_CharmOhShitSpells = new List<Spell>();
 		[INI_Section("Charm", "SelfDebuffSpells")]
@@ -927,14 +927,8 @@ namespace E3Core.Settings
             LoadKeyData("Gimme", "Gimme", ParsedData, Gimme);
             LoadKeyData("Gimme", "Gimme-InCombat", ParsedData, ref Gimme_InCombat);
 
-            List<Spell> tcharmSpells = new List<Spell>();
-
-            LoadKeyData("Charm", "CharmSpell",ParsedData, tcharmSpells);
-            foreach(Spell spell in tcharmSpells)
-            {
-                Charm_CharmSpell = spell;
-                break;
-            }
+            LoadKeyData("Charm", "CharmSpell",ParsedData, Charm_CharmSpells);
+         
 			LoadKeyData("Charm", "CharmOhShitSpells", ParsedData, Charm_CharmOhShitSpells);
 			LoadKeyData("Charm", "SelfDebuffSpells", ParsedData, Charm_SelfDebuffSpells);
 			LoadKeyData("Charm", "BadPetBuffs", ParsedData, Charm_BadPetBuffs);

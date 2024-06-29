@@ -37,7 +37,7 @@ namespace E3Core.Processors
 
 
 
-				if (E3.CharacterSettings.Charm_CharmSpell == null)
+				if (E3.CharacterSettings.Charm_CharmSpells.Count==0)
 				{
 					E3.Bots.Broadcast($"\agCharm spell not set in INI file.");
 					return;
@@ -96,7 +96,7 @@ namespace E3Core.Processors
 
 		private static void CharmProcess()
 		{
-			if(E3.CharacterSettings.Charm_CharmSpell==null) return;
+			if (E3.CharacterSettings.Charm_CharmSpells.Count == 0) return;
 
 			if (MQ.Query<int>("${Me.Pet.ID}") == _charmTargetId) return;
 			//enchanter names are invisable men, should probably just change this to petid for other charmers
@@ -177,9 +177,9 @@ namespace E3Core.Processors
 
 			}
 			E3.Bots.Broadcast($"\agDebuffs should have landed; attempting to charm");
-			if (Casting.CheckReady(E3.CharacterSettings.Charm_CharmSpell))
+			if (Casting.CheckReady(E3.CharacterSettings.Charm_CharmSpells[0]))
 			{
-				var castResult = Casting.Cast(_charmTargetId, E3.CharacterSettings.Charm_CharmSpell);
+				var castResult = Casting.Cast(_charmTargetId, E3.CharacterSettings.Charm_CharmSpells[0]);
 				MQ.Delay(200);
 				var petId = MQ.Query<int>("${Me.Pet.ID}");
 
@@ -209,7 +209,7 @@ namespace E3Core.Processors
 		[AdvSettingInvoke]
 		public static void check_Charm()
 		{
-			if (E3.CharacterSettings.Charm_CharmSpell == null) return;
+			if (E3.CharacterSettings.Charm_CharmSpells.Count==0) return;
 
 			if (_charmTargetId == 0) return;
 			if (!e3util.ShouldCheck(ref _nextCharmCheck, _nextCharmRefreshTimeInterval)) return;
@@ -235,9 +235,9 @@ namespace E3Core.Processors
 			}
 			if (MQ.Query<int>("${Me.Pet.ID}") == _charmTargetId)
 			{
-				if (MQ.Query<bool>($"${{Bool[${{Me.PetBuff[{E3.CharacterSettings.Charm_CharmSpell.CastName}]}}]}}"))
+				if (MQ.Query<bool>($"${{Bool[${{Me.PetBuff[{E3.CharacterSettings.Charm_CharmSpells[0].CastName}]}}]}}"))
 				{
-					Int32 charmDuration = MQ.Query<Int32>($"${{Pet.BuffDuration[{E3.CharacterSettings.Charm_CharmSpell.CastName}].TotalSeconds}}");
+					Int32 charmDuration = MQ.Query<Int32>($"${{Pet.BuffDuration[{E3.CharacterSettings.Charm_CharmSpells[0].CastName}].TotalSeconds}}");
 					if (charmDuration > 60)
 					{
 						if (_charmTimer - Core.StopWatch.ElapsedMilliseconds < 18)
