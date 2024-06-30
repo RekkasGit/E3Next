@@ -112,36 +112,21 @@ namespace E3Core.Processors
 				{
 					foreach (var methodName in _methodsToInvokeAsStrings)
 					{
-						//using (Log.Trace($"{methodName}-Burns"))
+						Burns.UseBurns();
+						//if an action was taken, start over
+						if (ActionTaken)
 						{
-							Burns.UseBurns();
-
+							break;
 						}
-
-						//using (Log.Trace($"{methodName}-Main"))
+						Action methodToInvoke;
+						if (AdvancedSettings.MethodLookup.TryGetValue(methodName, out methodToInvoke))
 						{
-							//if an action was taken, start over
-							if (ActionTaken)
-							{
-								break;
-							}
-							Action methodToInvoke;
-							if (AdvancedSettings.MethodLookup.TryGetValue(methodName, out methodToInvoke))
-							{
-								methodToInvoke.Invoke();
-
-							}
+							methodToInvoke.Invoke();
 						}
-
 						//check backoff
 						//check nowcast
-						//using (Log.Trace($"{methodName}-CheckQueues"))
-						{
-							EventProcessor.ProcessEventsInQueues("/nowcast");
-							EventProcessor.ProcessEventsInQueues("/backoff");
-
-						}
-
+						EventProcessor.ProcessEventsInQueues("/nowcast");
+						EventProcessor.ProcessEventsInQueues("/backoff");
 					}
 				}
 			}
