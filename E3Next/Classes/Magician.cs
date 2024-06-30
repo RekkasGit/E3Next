@@ -78,7 +78,8 @@ namespace E3Core.Classes
         private static long _nextInventoryCheckInterval = 5000;
 
         private const int EnchanterPetPrimaryWeaponId = 10702;
-
+	private const int CodexWeaponId = 12227;
+	    
         /// <summary>
         /// Accepts a pet equipment request.
         /// </summary>
@@ -300,7 +301,8 @@ namespace E3Core.Classes
             // my pet
             var primary = MQ.Query<int>("${Me.Pet.Primary}");
             var myPetId = MQ.Query<int>("${Me.Pet.ID}");
-            if (myPetId > 0 && primary == 0)
+            var hasDskGloves = MQ.Query<bool>($"${{FindItem[{_dskGloveItem}]}}");
+            if (myPetId > 0 && (primary == 0 || (primary == CodexWeaponId) && hasDskGloves))
             {
                 E3.CharacterSettings.PetWeapons.TryGetValue(E3.CurrentName, out var weapons);
                 if (e3util.IsShuttingDown() || E3.IsPaused()) return;
@@ -335,7 +337,7 @@ namespace E3Core.Classes
                     }
 
                     var theirPetPrimary = MQ.Query<int>($"${{Spawn[{ownerSpawn.Name}].Pet.Primary}}");
-                    if (theirPetPrimary == 0 || theirPetPrimary == EnchanterPetPrimaryWeaponId)
+                    if ((theirPetPrimary == 0 || theirPetPrimary == EnchanterPetPrimaryWeaponId) || (hasDskGloves && (theirPetPrimary == CodexWeaponId)))
                     {
                         ArmPet(theirPetId, kvp.Value);
                     }
@@ -432,7 +434,8 @@ namespace E3Core.Classes
 		
 			var hasDskGloves = MQ.Query<bool>($"${{FindItem[{_dskGloveItem}]}}");
 			var hasDskCodex = MQ.Query<bool>($"${{FindItem[{_dskCodex}]}}");
-
+			var theirPetPrimary = MQ.Query<int>($"${{Spawn[{petId}].Primary}}");
+		
 			// so we can move back
 			var currentX = MQ.Query<double>("${Me.X}");
             var currentY = MQ.Query<double>("${Me.Y}");
@@ -504,6 +507,7 @@ namespace E3Core.Classes
 				}
 				//we are done if its our pet and we have applied the codex
 				if (petId == myPetID && hasDskCodex) return;
+				if (theirPetPrimary == CodexWeaponId) return;
 
 				var spell = new Spell(_armorSpell);
 				Casting.MemorizeSpell(spell);
