@@ -457,9 +457,10 @@ namespace E3Core.Classes
             //this is to deal with nowcasts early termination of the last song, replay last song that got interrupted
             if(_nextBardCast==0 && _currentSongPlaying!=null)
             {
-                _nextBardCast = Core.StopWatch.ElapsedMilliseconds + (int)MQ.Query<int>("${Me.CastTimeLeft}") + 300;
+              
 				Casting.Sing(0, _currentSongPlaying);
-                return;
+				_nextBardCast = Core.StopWatch.ElapsedMilliseconds + (int)MQ.Query<int>("${Me.CastTimeLeft}") + 300;
+				return;
 			}
             else
             {
@@ -506,9 +507,10 @@ namespace E3Core.Classes
             {
                
                 MQ.Write($"\atTwist \ag{songToPlay.SpellName}");
-                _nextBardCast = Core.StopWatch.ElapsedMilliseconds + (int)MQ.Query<int>("${Me.CastTimeLeft}") + 300;
+               
                 _currentSongPlaying = songToPlay;
                 Casting.Sing(0, songToPlay);
+				_nextBardCast = Core.StopWatch.ElapsedMilliseconds + (int)MQ.Query<int>("${Me.CastTimeLeft}")+300;
 			}
             else
             {
