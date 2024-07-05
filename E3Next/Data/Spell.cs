@@ -1147,8 +1147,10 @@ namespace E3Core.Data
 			string t_CastTarget = (String.IsNullOrWhiteSpace(this.CastTarget) || this.IsBuff==false) ? String.Empty : $"/{CastTarget}";
 			string t_PctAggro = (PctAggro == 0) ? String.Empty : $"/PctAggro|{PctAggro}";
             string t_Delay = (Delay == 0) ? String.Empty : $"/Delay|{Delay}s";
+			string t_NoTarget = NoTarget == false ? String.Empty : $"/NoTarget";
+
 			//Main=Terror of Mirenilla Rk. II/Gem|4/Ifs|Tanking
-			string returnValue = $"{CastName}{t_CastTarget}{t_GemNumber}{t_Ifs}{t_checkFor}{t_CastIF}{t_healPct}{t_healthMax}{t_noInterrupt}{t_Zone}{t_MinSick}{t_BeforeSpell}{t_AfterSpell}{t_BeforeEvent}{t_AfterEvent}{t_minMana}{t_maxMana}{t_MinEnd}{t_ignoreStackRules}{t_MinDurationBeforeRecast}{t_MaxTries}{t_Reagent}{t_CastTypeOverride}{t_PctAggro}{t_Delay}{t_Enabled}";
+			string returnValue = $"{CastName}{t_CastTarget}{t_GemNumber}{t_Ifs}{t_checkFor}{t_CastIF}{t_healPct}{t_healthMax}{t_noInterrupt}{t_Zone}{t_MinSick}{t_BeforeSpell}{t_AfterSpell}{t_BeforeEvent}{t_AfterEvent}{t_minMana}{t_maxMana}{t_MinEnd}{t_ignoreStackRules}{t_MinDurationBeforeRecast}{t_MaxTries}{t_Reagent}{t_CastTypeOverride}{t_PctAggro}{t_Delay}{t_NoTarget}{t_Enabled}";
 			return returnValue;
 
 		}

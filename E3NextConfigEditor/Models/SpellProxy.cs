@@ -187,6 +187,13 @@ namespace E3NextConfigEditor.Models
 			set { _spell.BeforeEventKeys = value; }
 		}
 		[Category("Flags")]
+		[Description("Give a no target hint to E3N to not swap targets to use the spell.")]
+		public bool NoTarget
+		{
+			get { return _spell.NoTarget; }
+			set { _spell.NoTarget = value; }
+		}
+		[Category("Flags")]
 		[Description("Zone to Enable in. Honetly not sure this works!")]
 		public string Zone
 		{
@@ -364,7 +371,13 @@ namespace E3NextConfigEditor.Models
 			get { return _spell.IfsKeys; }
 			set { _spell.IfsKeys = value; }
 		}
-
+		[Category("Flags")]
+		[Description("Give a no target hint to E3N to not swap targets to use the spell.")]
+		public bool NoTarget
+		{
+			get { return _spell.NoTarget; }
+			set { _spell.NoTarget = value; }
+		}
 		[Category("Flags")]
 		[Description("Check for, comma seperated. For Detremental it is the debuff on the mob. For Buffs/songs its the buff on you.")]
 		public string CheckFor

@@ -230,9 +230,9 @@ namespace E3Core.Processors
                     else if (dcSynonyms.Contains(whatToGive, StringComparer.OrdinalIgnoreCase))
                     {
                         MQ.Cmd("/invoke ${Window[InventoryWindow].DoOpen}");
-                        MQ.Cmd("/notify InventoryWindow IW_Subwindows tabselect 5", 100);
-                        MQ.Cmd("/notify InventoryWindow IW_AltCurr_ReclaimButton leftmouseup", 100);
-                        MQ.Cmd("/notify InventoryWindow AltCurr_PointList listselect ${Window[InventoryWindow].Child[AltCurr_PointList].List[=Diamond Coins,2]}", 100);
+                        MQ.Cmd("/notify InventoryWindow IW_Subwindows tabselect 5", 300);
+                        MQ.Cmd("/notify InventoryWindow IW_AltCurr_ReclaimButton leftmouseup", 300);
+                        MQ.Cmd("/notify InventoryWindow AltCurr_PointList listselect ${Window[InventoryWindow].Child[AltCurr_PointList].List[=Diamond Coins,2]}", 300);
                         for (int i = 1; i <= 8; i++)
                         {
                             MQ.Cmd("/shiftkey /notify InventoryWindow IW_AltCurr_CreateItemButton leftmouseup", 100);
