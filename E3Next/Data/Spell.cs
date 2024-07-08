@@ -314,7 +314,7 @@ namespace E3Core.Data
                     {
                         TriggerSpell = GetArgument<String>(value);
                     }
-                    else if (value.StartsWith("Ifs|", StringComparison.OrdinalIgnoreCase))
+                    else if (parsedData!=null && value.StartsWith("Ifs|", StringComparison.OrdinalIgnoreCase))
                     {
                         IfsKeys = GetArgument<string>(value);
                         var section = parsedData.Sections["Ifs"];
@@ -331,7 +331,7 @@ namespace E3Core.Data
                             }
                         }
                     }
-                    else if (value.StartsWith("AfterEvent|", StringComparison.OrdinalIgnoreCase))
+                    else if (parsedData != null && value.StartsWith("AfterEvent|", StringComparison.OrdinalIgnoreCase))
                     {
                         AfterEventKeys = GetArgument<string>(value);
                         var section = parsedData.Sections["Events"];
@@ -344,7 +344,7 @@ namespace E3Core.Data
                             }
                         }
                     }
-                    else if (value.StartsWith("BeforeEvent|", StringComparison.OrdinalIgnoreCase))
+                    else if (parsedData != null && value.StartsWith("BeforeEvent|", StringComparison.OrdinalIgnoreCase))
                     {
                         BeforeEventKeys = GetArgument<string>(value);
                         var section = parsedData.Sections["Events"];

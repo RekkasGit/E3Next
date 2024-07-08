@@ -13,7 +13,7 @@ namespace E3Core.Processors
 
         public GiveMeItem(string input)
         {
-            //eg: Alara|Sanguine Mind Crystal III|30s
+            //eg: Alara|Sanguine Mind Crystal III|30s|SpellNameToUse
             //split this up by |
 
             string[] splits = input.Split('|');
@@ -48,14 +48,21 @@ namespace E3Core.Processors
                                 Delay = Delay * 60;
                             }
                         }
+						if(splits.Length>3)
+						{
+							SpellToUse = splits[3].Trim();
+							
+						}
                     }
                 }
             }
         }
         public string Supplier = String.Empty;
         public string ItemName = String.Empty;
+		public string SpellToUse = String.Empty;
         public Int32 Delay = 30;
         public double NextCheck = 0;
+		public bool NoCombat = false;
     }
 
     public static class GiveMe
@@ -74,16 +81,21 @@ namespace E3Core.Processors
         {
             RegisterEvents();
 
+			//laz spells
             _groupSpellRequests.Add("Azure Mind Crystal III", new Spell("Azure Mind Crystal"));
             _groupSpellRequests.Add("Summoned: Large Modulation Shard", new Spell("Large Modulation Shard"));
-            _groupSpellRequests.Add("Sanguine Mind Crystal III", new Spell("Sanguine Mind Crystal"));
+			_groupSpellRequests.Add("Sanguine Mind Crystal III", new Spell("Sanguine Mind Crystal"));
 			_groupSpellRequests.Add("Blazing Void Orb", new Spell("Glyphwielder's Eternal Bracer"));
 			_groupSpellRequests.Add("Molten orb", new Spell("Summon: Molten Orb"));
             _groupSpellRequests.Add("Lava orb", new Spell("Summon: Lava Orb"));
             _groupSpellRequests.Add("Rod of Mystical Transvergence", new Spell("Mass Mystical Transvergence"));
-          
+			//Live spells
+			_groupSpellRequests.Add("Summoned: Modulation Shard VIII", new Spell("Summon Modulation Shard"));
+			_groupSpellRequests.Add("Summoned: Modulation Shard VII", new Spell("Summon Modulation Shard"));
+			_groupSpellRequests.Add("Summoned: Modulation Shard VI", new Spell("Summon Modulation Shard"));
+			_groupSpellRequests.Add("Summoned: Modulation Shard V", new Spell("Summon Modulation Shard"));
 
-            foreach (var input in E3.CharacterSettings.Gimme)
+			foreach (var input in E3.CharacterSettings.Gimme)
             {
                 var item = new GiveMeItem(input);
                 if (!(String.IsNullOrWhiteSpace(item.Supplier) || String.IsNullOrWhiteSpace(item.ItemName)))
@@ -91,7 +103,16 @@ namespace E3Core.Processors
                     _supplyList.Add(item);
                 }
             }
-        }
+			foreach (var input in E3.CharacterSettings.Gimme_NoCombat)
+			{
+				var item = new GiveMeItem(input);
+				item.NoCombat = true;
+				if (!(String.IsNullOrWhiteSpace(item.Supplier) || String.IsNullOrWhiteSpace(item.ItemName)))
+				{
+					_supplyList.Add(item);
+				}
+			}
+		}
         public static void Reset()
         {
             _supplyList.Clear();
@@ -114,16 +135,31 @@ namespace E3Core.Processors
                 if (Basics.InCombat() && !E3.CharacterSettings.Gimme_InCombat) return;
                
                 Int32 qty = int.MaxValue;
-                //giveme Alara "Something" qty Rekken
-                if (x.args.Count > 3)
+				//giveme Alara "Something" qty Rekken
+
+				if(x.args.Count>4)
+				{
+					string user = x.args[0];
+					string something = x.args[1];
+					if (x.args.Count > 2)
+					{
+						Int32.TryParse(x.args[2], out qty);
+					}
+					string reciver = x.args[3];
+					string spellName = x.args[4];
+					
+					GiveTo(reciver, something, qty,spellName);
+				}
+				else if (x.args.Count > 3)
                 {
                     string user = x.args[0];
                     string something = x.args[1];
-                    string reciver = x.args[3];
-                    if (x.args.Count > 2)
-                    {
-                        Int32.TryParse(x.args[2], out qty);
-                    }
+					if (x.args.Count > 2)
+					{
+						Int32.TryParse(x.args[2], out qty);
+					}
+					string reciver = x.args[3];
+                  
                     GiveTo(reciver, something, qty);
 
                 }//giveme Alara "Something" qty
@@ -159,11 +195,16 @@ namespace E3Core.Processors
         {
             if (!e3util.ShouldCheck(ref _nextSupplyCheck, _nextSupplyCheckInterval)) return;
             if (Basics.AmIDead()) return;
+			if (E3.IsInvis) return;
+
             if (_supplyList.Count > 0)
             {
                 //make sure we have the items or we need to request.
                 foreach (var item in _supplyList)
                 {
+
+					if (item.NoCombat && Basics.InCombat()) continue;
+
                     if (item.NextCheck < Core.StopWatch.ElapsedMilliseconds)
                     {
                         item.NextCheck = Core.StopWatch.ElapsedMilliseconds + (item.Delay * 1000);
@@ -182,7 +223,15 @@ namespace E3Core.Processors
                                     if (E3.Bots.BotsConnected().Contains(s.CleanName))
                                     {
                                         //lets ask for it!
-                                        E3.Bots.BroadcastCommandToPerson(item.Supplier, $"/giveme {item.Supplier} \"{item.ItemName}\" {1} {E3.CurrentName}");
+										if(!String.IsNullOrWhiteSpace(item.SpellToUse))
+										{
+											E3.Bots.BroadcastCommandToPerson(item.Supplier, $"/giveme {item.Supplier} \"{item.ItemName}\" {1} {E3.CurrentName} \"{item.SpellToUse}\"");
+										}
+										else
+										{
+											E3.Bots.BroadcastCommandToPerson(item.Supplier, $"/giveme {item.Supplier} \"{item.ItemName}\" {1} {E3.CurrentName}");
+										}
+                                       
                                     }
                                 }
 
@@ -192,7 +241,7 @@ namespace E3Core.Processors
                 }
             }
         }
-        public static void GiveTo(string whoToGiveTo, string whatToGive, Int32 qtyToGive)
+        public static void GiveTo(string whoToGiveTo, string whatToGive, Int32 qtyToGive, string SpellName = "")
         {
             //exceptions for group spells
             if (_groupSpellRequests.ContainsKey(whatToGive))
@@ -201,8 +250,15 @@ namespace E3Core.Processors
                 DoGroupSpellGive(whoToGiveTo, whatToGive);
                 return;
             }
-
-            Spawn s;
+			//exception for indivdual spell
+			if (!String.IsNullOrWhiteSpace(SpellName))
+			{
+			
+				DoSpellGive(whoToGiveTo,whatToGive, SpellName);
+				return;
+			}
+			//normal stuff
+			Spawn s;
             if (_spawns.TryByName(whoToGiveTo, out s))
             {
                 if (Casting.TrueTarget(s.ID))
@@ -308,9 +364,51 @@ namespace E3Core.Processors
                         e3util.DeleteNoRentItem(whatToGive);
                         MQ.Delay(2000);
                         Casting.Cast(0, s);
+						MQ.Delay(1000);
+						e3util.ClearCursor();
                     }
                 }
             }
         }
-    }
+		private static void DoSpellGive(string whoToGiveTo, string whatToGive, string spellToUse)
+		{
+			Spawn spawn;
+			if (_spawns.TryByName(whoToGiveTo, out spawn))
+			{
+			
+				//check if group member
+				if (!Basics.GroupMembers.Contains(spawn.ID)) return;
+				Casting.TrueTarget(spawn.ID);
+				Spell s;
+				if (!Spell.LoadedSpellsByName.TryGetValue(spellToUse, out s))
+				{
+					s = new Spell(spellToUse);
+				}
+				e3util.ClearCursor();
+				Int32 cursorID = MQ.Query<Int32>("${Cursor.ID}");
+
+				if (cursorID<1 && Casting.CheckReady(s) && Casting.CheckMana(s))
+				{
+				
+					e3util.DeleteNoRentItem(spellToUse);
+					Casting.Cast(0, s);
+					MQ.Delay(1000);
+					if (whoToGiveTo == E3.CurrentName)
+					{
+						e3util.ClearCursor();
+					}
+					else
+					{
+						cursorID = MQ.Query<Int32>("${Cursor.ID}");
+						if (cursorID > 0)
+						{
+							//the spell that was requested put something on our curosr, give it to them.
+							e3util.GiveItemOnCursorToTarget();
+
+						}
+					}
+				}
+			}
+		}
+	}
 }
