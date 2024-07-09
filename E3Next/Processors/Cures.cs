@@ -50,6 +50,14 @@ namespace E3Core.Processors
         [AdvSettingInvoke]
         public static void Check_Cures()
         {
+            //if configured to not cure while naving check to see if we are naving
+            if (!E3.GeneralSettings.General_CureWhileNavigating)
+            {
+                if (!Assist.IsAssisting && Movement.IsNavigating())
+                {
+                    return;
+                }
+            }
 
             if (!e3util.ShouldCheck(ref _nextRCureCheck, _nexRCureCheckInterval)) return;
 
