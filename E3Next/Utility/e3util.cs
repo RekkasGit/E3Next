@@ -860,6 +860,11 @@ namespace E3Core.Utility
         }
         public static string GetLocalIPAddress()
         {
+            if (!string.IsNullOrWhiteSpace(E3.GeneralSettings.General_Networking_LocalIPOverride))
+            {
+                return E3.GeneralSettings.General_Networking_LocalIPOverride;
+            }
+
 			//https://stackoverflow.com/questions/6803073/get-local-ip-address
 
 			string localIP;

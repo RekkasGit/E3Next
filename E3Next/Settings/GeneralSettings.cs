@@ -33,8 +33,9 @@ namespace E3Core.Settings
         public bool General_LazarusManaRecovery = true;
 
         public string General_Networking_ExternalIPToQueryForLocal = "8.8.8.8";
+        public string General_Networking_LocalIPOverride = string.Empty;
 
-		public Int32 Loot_LootItemDelay = 300;
+        public Int32 Loot_LootItemDelay = 300;
         public string Loot_LinkChannel = String.Empty;
         public List<string> Loot_LinkChannelValid = new List<string>() {"g","gu","say","rsay","shout","gsay", "rs","bc","e3bc"};
         public Int32 MaxGemSlots = 8 + MQ.Query<Int32>("${Me.AltAbility[Mnemonic Retention].Rank}");
@@ -145,10 +146,16 @@ namespace E3Core.Settings
             LoadKeyData("General", "Beep Notifications (On/Off)", parsedData, ref General_BeepNotifications);
             LoadKeyData("General", "LazarusManaRecovery (On/Off)", parsedData, ref General_LazarusManaRecovery);
             LoadKeyData("General", "ExternalIP To Query For Local Address (8.8.8.8 default)", parsedData, ref General_Networking_ExternalIPToQueryForLocal);
+            LoadKeyData("General", "Local IP Override", parsedData, ref General_Networking_LocalIPOverride);
 
-            if(!IPAddress.TryParse(General_Networking_ExternalIPToQueryForLocal,out var result))
+            if (!IPAddress.TryParse(General_Networking_ExternalIPToQueryForLocal,out var result))
             {
                 General_Networking_ExternalIPToQueryForLocal = "8.8.8.8";
+            }
+
+            if (!IPAddress.TryParse(General_Networking_LocalIPOverride, out var localIpResult))
+            {
+                General_Networking_LocalIPOverride = null;
             }
 
 
