@@ -255,17 +255,12 @@ namespace E3Core.Processors
                 {
                     Int32.TryParse(x.args[0], out Distance);
                 }
-
                 double currentX = MQ.Query<double>("${Me.X}");
                 double currentY = MQ.Query<double>("${Me.Y}");
              
                 E3.Bots.BroadcastCommandToGroup($"/e3movetorandomloc \"{currentX}\" \"{currentY}\" \"{Distance}\"",x,true);
-            
-
             });
             EventProcessor.RegisterCommand("/e3movetorandomloc", (x) => {
-
-
                 double currentX = 0;
                 double currentY = 0;
                 Int32 distance = 10;
@@ -280,14 +275,12 @@ namespace E3Core.Processors
                 {
                     return;
                 }
-
 				if (e3util.IsEQLive())
 				{
 					//random delay so it isn't quite so ovious
 					MQ.Delay(E3.Random.Next(1500, 3000));
 
 				}
-
 				double currentZ = MQ.Query<double>("${Me.Z}");
                 e3util.TryMoveToLoc(currentX+E3.Random.Next(-1*distance,distance), currentY + E3.Random.Next(-1 * distance, distance), currentZ);
 

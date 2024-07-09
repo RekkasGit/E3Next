@@ -1100,7 +1100,7 @@ namespace E3Core.Utility
             MQ.Cmd($"/nav id {spawnID} distance={stopDistance}");
             
             Int64 endTime = Core.StopWatch.ElapsedMilliseconds + timeoutInMS;
-            MQ.Delay(300);
+            MQ.Delay(600);
 
             while (navPathExists && MQ.Query<int>("${Navigation.Velocity}") > 0)
             {

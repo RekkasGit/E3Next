@@ -30,8 +30,10 @@ namespace E3Core.Processors
         private static void RegisterEvents()
         {
             EventProcessor.RegisterCommand("/nowcast", (x) =>
-            {
-                if (x.args.Count > 1)
+			{
+				CastReturn castResult = CastReturn.CAST_SUCCESS;
+				Data.Spell spellThatWasCast = null;
+				if (x.args.Count > 1)
                 {
                     //nowcast person "spell name" targetid
                     //nowcast me "spell name" targetid
@@ -48,32 +50,41 @@ namespace E3Core.Processors
                         Int32.TryParse(x.args[2], out targetid);
                     }
 
-                    CastReturn castResult = CastReturn.CAST_SUCCESS;
+                 
                     if (user.Equals("all", StringComparison.OrdinalIgnoreCase))
                     {
                         if (targetid > 0)
                         {
                             E3.Bots.BroadcastCommandToGroup($"/nowcast me \"{spell}\" {targetid}",x);
-                            castResult = NowCastSpell(spell, targetid);
+							var result = NowCastSpell(spell, targetid);
+							castResult = result.Item1;
+							spellThatWasCast = result.Item2;
                         }
                         else
                         {
                             E3.Bots.BroadcastCommandToGroup($"/nowcast me \"{spell}\"", x);
-                            castResult = NowCastSpell(spell, 0);
-
-                        }
+                          
+							var result = NowCastSpell(spell, 0);
+							castResult = result.Item1;
+							spellThatWasCast = result.Item2;
+						}
 
                     }
                     else if (user.Equals("me", StringComparison.OrdinalIgnoreCase))
                     {
                         if (targetid > 0)
                         {
-                            castResult = NowCastSpell(spell, targetid);
-                        }
+							var result = NowCastSpell(spell, targetid);
+							castResult = result.Item1;
+							spellThatWasCast = result.Item2;
+						}
                         else
                         {
-                            castResult = NowCastSpell(spell, 0);
-                        }
+                         
+							var result = NowCastSpell(spell, 0);
+							castResult = result.Item1;
+							spellThatWasCast = result.Item2;
+						}
                     }
                     else
                     {
@@ -94,9 +105,9 @@ namespace E3Core.Processors
                     if (castResult != CastReturn.CAST_SUCCESS)
                     {
                         E3.Bots.Broadcast($"\arNowcast of {spell} unsuccessful due to {castResult}!");
-                        if (castResult== CastReturn.CAST_NOTREADY)
+                        if (castResult== CastReturn.CAST_NOTREADY && spellThatWasCast != null)
                         {
-                            Basics.PrintE3TReport(new Spell(spell));
+                            Basics.PrintE3TReport(spellThatWasCast);
                         }
                     }
                 }
@@ -112,7 +123,7 @@ namespace E3Core.Processors
             }
             return false;
         }
-        private static CastReturn NowCastSpell(string spellName, Int32 targetid)
+        private static (CastReturn, Data.Spell) NowCastSpell(string spellName, Int32 targetid)
         {
             Int32 orgTargetID = MQ.Query<Int32>("${Target.ID}");
 
@@ -168,7 +179,7 @@ namespace E3Core.Processors
                         Casting.TrueTarget(targetid);
                         if (!Casting.Ifs(spell))
                         {
-                            return CastReturn.CAST_IFFAILURE;
+                            return (CastReturn.CAST_IFFAILURE, spell);
                         }
                     }
 					
@@ -186,7 +197,7 @@ namespace E3Core.Processors
 									//can't check for target song buffs, be aware. will have to check netbots. 
 									if (hasCheckFor)
 									{
-										return CastReturn.CAST_TAKEHOLD;
+										return (CastReturn.CAST_TAKEHOLD,spell);
 									}
 								}
 							}
@@ -199,7 +210,7 @@ namespace E3Core.Processors
 								{
 									if (MQ.Query<bool>($"${{Bool[${{Target.Buff[{checkforItem}]}}]}}"))
 									{
-										return CastReturn.CAST_TAKEHOLD;
+										return (CastReturn.CAST_TAKEHOLD,spell);
 									}
 								}
 
@@ -210,15 +221,15 @@ namespace E3Core.Processors
 				recast:
 					if (!Casting.CheckReady(spell))
                     {
-                        return CastReturn.CAST_NOTREADY;
+                        return (CastReturn.CAST_NOTREADY,spell);
                     }
                     if(!Casting.InRange(targetid,spell))
                     {
-                        return CastReturn.CAST_OUTOFRANGE;
+                        return (CastReturn.CAST_OUTOFRANGE,spell);
                     }
 					if (!Casting.CheckMana(spell))
 					{
-						return CastReturn.CAST_OUTOFMANA;
+						return (CastReturn.CAST_OUTOFMANA,spell);
 					}
                     if(targetid>0 && targetid!=E3.CurrentId)
                     {
@@ -234,10 +245,10 @@ namespace E3Core.Processors
                         //bards need a moment before they start back up their twist on a nowcast
                         MQ.Delay(300);
                     }
-                    return returnValue;
+                    return (returnValue,spell);
                 }
 
-                return CastReturn.CAST_INVALID;
+                return (CastReturn.CAST_INVALID,spell);
             }
             finally
             { 
