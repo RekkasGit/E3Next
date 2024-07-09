@@ -259,6 +259,10 @@ namespace IniParser.Model
             return null;
         }
 
+        public List<string> AllKeys() {
+            return new List<string>(_keyData.Keys);
+        }
+
         /// <summary>
         /// need to do special logic on merges
         /// empty values do not get copied over

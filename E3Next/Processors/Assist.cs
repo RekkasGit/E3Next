@@ -24,7 +24,7 @@ namespace E3Core.Processors
 		public static Int32 AssistTargetID = 0;
 
         public static long LastAssistEndedTimestamp = 0;
-        private static List<string> _whiteListedRangers = new List<String>() { "Gwendy", "Dredgg", "Atreyu", "Debarchery"};
+        public static List<string> WhiteListedRangers = new List<String>() { "Gwendy", "Dredgg", "Atreyu", "Debarchery", "Belmont", "Killingmoon", "Bodega", "Seabiscuit"};
         private static Logging _log = E3.Log;
         private static IMQ MQ = E3.MQ;
         private static ISpawns _spawns = E3.Spawns;
@@ -168,7 +168,7 @@ namespace E3Core.Processors
 
                         if (MQ.Query<bool>("${Me.AutoFire}"))
                         {
-                            if (_whiteListedRangers.Any(ranger => ranger.Equals(E3.CurrentName, StringComparison.OrdinalIgnoreCase)) && E3.CharacterSettings.Ranger_EnabledBullshittery) {
+                            if (WhiteListedRangers.Any(ranger => ranger.Equals(E3.CurrentName, StringComparison.OrdinalIgnoreCase)) && E3.CharacterSettings.Ranger_EnabledBullshittery) {
                                 //delay is needed to give time for it to actually process
                                 MQ.Delay(E3.CharacterSettings.Ranger_DelayOne);
                                 //turn on autofire
@@ -229,7 +229,7 @@ namespace E3Core.Processors
 
                         if (!MQ.Query<bool>("${Me.AutoFire}"))
                         {
-                            if (_whiteListedRangers.Any(ranger => ranger.Equals(E3.CurrentName, StringComparison.OrdinalIgnoreCase)) && E3.CharacterSettings.Ranger_EnabledBullshittery)
+                            if (WhiteListedRangers.Any(ranger => ranger.Equals(E3.CurrentName, StringComparison.OrdinalIgnoreCase)) && E3.CharacterSettings.Ranger_EnabledBullshittery)
                             {
                                 //delay is needed to give time for it to actually process
                                 MQ.Delay(E3.CharacterSettings.Ranger_DelayOne);
@@ -664,7 +664,7 @@ namespace E3Core.Processors
                 }
                 else if (_rangeTypes.Contains(E3.CharacterSettings.Assist_Type, StringComparer.OrdinalIgnoreCase))
                 {
-                    if (_whiteListedRangers.Any(ranger => ranger.Equals(E3.CurrentName, StringComparison.OrdinalIgnoreCase)) && E3.CharacterSettings.Ranger_EnabledBullshittery)
+                    if (WhiteListedRangers.Any(ranger => ranger.Equals(E3.CurrentName, StringComparison.OrdinalIgnoreCase)) && E3.CharacterSettings.Ranger_EnabledBullshittery)
                     {
                         //delay is needed to give time for it to actually process
                         MQ.Delay(E3.CharacterSettings.Ranger_DelayOne);

@@ -21,6 +21,8 @@ namespace E3Core.Classes
         private static IMQ MQ = E3.MQ;
         private static ISpawns _spawns = E3.Spawns;
 
+        private static DateTime _lastBow = DateTime.Now;
+
         private static Int64 _nextAggroCheck = 0;
         private static Int64 _nextAggroRefreshTimeInterval = 1000;
 
@@ -67,6 +69,37 @@ namespace E3Core.Classes
 
             }
             
+        }
+
+        [SubSystemInit] 
+        public static void Init()
+        {
+            var patterns = new List<string> { @"hit (.+) for (.+)", @"You try to hit (.+), but miss" };
+            EventProcessor.RegisterEvent("youhit", patterns, x =>
+            {
+                if (Assist.WhiteListedRangers.Any(ranger => ranger.Equals(E3.CurrentName, StringComparison.OrdinalIgnoreCase)) && E3.CharacterSettings.Ranger_EnabledBullshittery2) {
+                    _lastBow = DateTime.Now;
+                    //MQ.Write("\aoBowing done - switching to melee");
+                    E3.CharacterSettings.Assist_Type = "Melee";
+                }
+            });
+        }
+
+        [ClassInvoke(Class.Ranger)]
+        public static void SwapAssistType()
+        {
+            if (Assist.WhiteListedRangers.Any(ranger => ranger.Equals(E3.CurrentName, StringComparison.OrdinalIgnoreCase)) && E3.CharacterSettings.Ranger_EnabledBullshittery2) {
+                var autofire = MQ.Query<bool>("${Me.AutoFire}");
+                var autoAttack = MQ.Query<bool>("${Me.Combat}");
+                if (!autofire && !autoAttack) return;
+                //if (!e3util.ShouldCheck(ref _nextSwapCheck, _nextSwapRefreshTimeInterval)) return;
+                var timeSinceLastBow = (DateTime.Now - _lastBow).TotalMilliseconds;
+                if (timeSinceLastBow > E3.CharacterSettings.Ranger_SecondDelayOne && !autofire)
+                {
+                    //MQ.Write($"\agTime since last bow: {timeSinceLastBow} - switching to autofire");
+                    E3.CharacterSettings.Assist_Type = "Autofire";
+                }
+            }
         }
 
 

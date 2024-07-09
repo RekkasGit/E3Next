@@ -279,6 +279,7 @@ namespace E3Core.Settings
 		public List<Spell> LongBurns = new List<Spell>();
 		[INI_Section("Burn", "Full Burn")]
 		public List<Spell> FullBurns = new List<Spell>();
+		public Dictionary<string, List<Spell>> BurnsDictionary = new Dictionary<string, List<Spell>>(StringComparer.OrdinalIgnoreCase);
 		//cures
 		[INI_Section("Cures", "Cure")]
 		public List<Spell> Cures = new List<Spell>();
@@ -487,6 +488,11 @@ namespace E3Core.Settings
 		public int Ranger_DelayThree = 300;
 		[INI_Section("Ranger", "Delay 4")]
 		public int Ranger_DelayFour = 100;
+		[INI_Section("Ranger", "Enabled Bullshittery 2 (On/Off)")]
+		public bool Ranger_EnabledBullshittery2 = true;
+		[INI_Section("Ranger", "Second Delay 1")]
+			public int Ranger_SecondDelayOne = 800;
+
 
 		[INI_Section("Magician", "Pet Weapons")]
 		public Dictionary<string, string> PetWeapons = new Dictionary<string, string>();
@@ -712,6 +718,8 @@ namespace E3Core.Settings
 				LoadKeyData("Ranger", "Delay 2", ParsedData, ref Ranger_DelayTwo);
 				LoadKeyData("Ranger", "Delay 3", ParsedData, ref Ranger_DelayThree);
 				LoadKeyData("Ranger", "Delay 4", ParsedData, ref Ranger_DelayFour);
+				LoadKeyData("Ranger", "Enabled Bullshittery 2 (On/Off)", ParsedData, ref Ranger_EnabledBullshittery2);
+				LoadKeyData("Ranger", "Second Delay 1", ParsedData, ref Ranger_SecondDelayOne);
 			}
 
             if (CharacterClass == Class.Bard)
@@ -876,8 +884,8 @@ namespace E3Core.Settings
             LoadKeyData("Burn", "Quick Burn", ParsedData, QuickBurns);
             LoadKeyData("Burn", "Long Burn", ParsedData, LongBurns);
             LoadKeyData("Burn", "Full Burn", ParsedData, FullBurns);
-
-
+			LoadKeyData("Burn", ParsedData, BurnsDictionary);
+			
             LoadKeyData("Pets", "Pet Spell", ParsedData, PetSpell);
             LoadKeyData("Pets", "Pet Buff", ParsedData, PetOwnerBuffs);
 			LoadKeyData("Pets", "Combat Pet Buff", ParsedData, CombatPetOwnerBuffs);
@@ -1119,6 +1127,8 @@ namespace E3Core.Settings
 				section.Keys.AddKey("Delay 2", "300");
 				section.Keys.AddKey("Delay 3", "300");
 				section.Keys.AddKey("Delay 4", "100");
+				section.Keys.AddKey("Enabled Bullshittery 2 (On/Off)", "Off");
+				section.Keys.AddKey("Second Delay 1", "800");
 			}
 
 			if (CharacterClass == Class.Bard)
