@@ -27,7 +27,7 @@ namespace E3Discord
 
             _handler += new EventHandler(Handler);
             SetConsoleCtrlHandler(_handler, true);
-            FactOrJoke();
+            //FactOrJoke();
 
             while (true)
             {
@@ -48,7 +48,7 @@ namespace E3Discord
 
         private static void OnTimedEvent(object source, ElapsedEventArgs e)
         {
-            FactOrJoke();
+            //FactOrJoke();
         }
 
         private static void FactOrJoke()
