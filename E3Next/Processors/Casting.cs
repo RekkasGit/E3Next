@@ -189,7 +189,8 @@ namespace E3Core.Processors
 				else if (E3.CurrentClass == Class.Bard && spell.CastType == CastingType.Spell)
 				{
 					Sing(targetID, spell);
-					MQ.Delay((int)spell.MyCastTime);
+					Int32 delay =(int)MQ.Query<int>("${Me.CastTimeLeft}") + Classes.Bard.BardLatency();
+					MQ.Delay(delay);
 					return CastReturn.CAST_SUCCESS;
 				}
 				else

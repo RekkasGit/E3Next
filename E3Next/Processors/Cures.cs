@@ -140,7 +140,10 @@ namespace E3Core.Processors
         {
             foreach (var spell in curesSpells)
             {
-
+				if(!String.IsNullOrWhiteSpace(spell.Ifs))
+				{
+					if (!Casting.Ifs(spell)) continue;
+				}
                 //check each member of the group for counters
                 foreach (var target in E3.Bots.BotsConnected())
                 {
@@ -156,7 +159,12 @@ namespace E3Core.Processors
                             bool foundBadBuff = false;
                             foreach (var bb in ignoreSpells)
                             {
-                                if (badbuffs.Contains(bb.SpellID))
+								if (!String.IsNullOrWhiteSpace(bb.Ifs))
+								{
+									if (!Casting.Ifs(bb)) continue;
+								}
+
+								if (badbuffs.Contains(bb.SpellID))
                                 {
                                     foundBadBuff = true;
                                     break;

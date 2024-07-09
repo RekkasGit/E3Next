@@ -415,16 +415,18 @@ namespace E3Core.Classes
             {
                 return;
             }
-
+		
 			if (_songs.Count == 1 && MQ.Query<bool>("${Me.Casting}")) return;
 
 			if (E3.CharacterSettings.Misc_DelayAfterCastWindowDropsForSpellCompletion > 0)
 			{
 				MQ.Delay(E3.CharacterSettings.Misc_DelayAfterCastWindowDropsForSpellCompletion);
 			}
+			
 			//necessary in case to stop the situation of the song not fully reigstering on the server as being complete
 			//even if the client thinks it does. basically the debuff/buff won't appear before even tho the client says we have completed the song
 			Int64 curTimeStamp = Core.StopWatch.ElapsedMilliseconds;
+			//MQ.Write($"current:{curTimeStamp} next:{_nextBardCast}");
 			if (curTimeStamp < _nextBardCast)
 			{
 				return;
@@ -459,7 +461,7 @@ namespace E3Core.Classes
             {
               
 				Casting.Sing(0, _currentSongPlaying);
-				_nextBardCast = Core.StopWatch.ElapsedMilliseconds + (int)MQ.Query<int>("${Me.CastTimeLeft}") + 300;
+				SetNextBardCast();
 				return;
 			}
             else
@@ -510,14 +512,20 @@ namespace E3Core.Classes
                
                 _currentSongPlaying = songToPlay;
                 Casting.Sing(0, songToPlay);
-				_nextBardCast = Core.StopWatch.ElapsedMilliseconds + (int)MQ.Query<int>("${Me.CastTimeLeft}")+300;
+				SetNextBardCast();
 			}
             else
             {
                 MQ.Write($"\arTwists-Skip \ag{songToPlay.SpellName}");
             }
         }
-
+		public static void SetNextBardCast()
+		{
+			Int32 castTimeLeft = (int)MQ.Query<int>("${Me.CastTimeLeft}");
+			Int32 bardLatency = BardLatency();
+			_nextBardCast = Core.StopWatch.ElapsedMilliseconds + castTimeLeft + bardLatency;
+			//MQ.Write($"CastTime:{castTimeLeft} latency: {bardLatency} nextbardcast:{_nextBardCast}");
+		}
         /// <summary>
         /// Starts the melody.
         /// </summary>
@@ -560,6 +568,23 @@ namespace E3Core.Classes
 				}
 			}
 			
+		}
+		//necessary so that buffs land even when the song is completed.
+		public static Int32 BardLatency()
+		{
+			Int32 realLatency = e3util.Latency();
+			//i have tested on 75, i cannot be sure for lower values.
+
+			if(realLatency==0)
+			{
+				realLatency = 300;
+				return realLatency;
+			}
+			else if (realLatency < 75)
+			{
+				realLatency = 75;
+			}
+			return (int)(realLatency * 1.7);
 		}
 
     }
