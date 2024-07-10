@@ -367,6 +367,38 @@ namespace E3Core.Settings
                 }
             }
         }
+
+        public static void LoadKeyData(string sectionKey, IniData parsedData, Dictionary<string, List<Data.Spell>> collectionToAddTo) {
+            _log.Write($"{sectionKey}");
+            var section = parsedData.Sections[sectionKey];
+            if (section != null)
+            {
+                foreach (var curKey in section.AllKeys()) {
+                    var keyData = section.GetKeyData(curKey);
+                    if (keyData != null)
+                    {
+                        foreach (var data in keyData.ValueList)
+                        {
+                            if (!String.IsNullOrWhiteSpace(data))
+                            {
+                                CheckFor(data, sectionKey,keyData);
+                                if (!collectionToAddTo.TryGetValue(curKey, out List<Data.Spell> spells))
+                                {
+                                    // Key does not exist, create a new list and add it to the dictionary
+                                    spells = new List<Data.Spell>();
+                                    collectionToAddTo[curKey.ToLower()] = spells;
+                                }
+
+                            // Append the new spell to the list
+                                spells.Add(new Data.Spell(data, parsedData));
+                            }
+
+                        }
+                    }
+                }
+            }
+        }
+        
         public static void LoadKeyData(string sectionKey, string Key, IniData parsedData, List<Data.SpellRequest> collectionToAddTo)
         {
             _log.Write($"{sectionKey} {Key}");

@@ -275,12 +275,16 @@ namespace E3Core.Settings
 		[INI_Section("PBAE", "PBAE")]
 		public List<Spell> PBAE = new List<Spell>();
 		//burns
-		[INI_Section("Burn", "Quick Burn")]
-		public List<Spell> QuickBurns = new List<Spell>();
-		[INI_Section("Burn", "Long Burn")]
-		public List<Spell> LongBurns = new List<Spell>();
-		[INI_Section("Burn", "Full Burn")]
-		public List<Spell> FullBurns = new List<Spell>();
+		// [INI_Section("Burn", "Quick Burn")]
+		// public List<Spell> QuickBurns = new List<Spell>();
+		// [INI_Section("Burn", "Long Burn")]
+		// public List<Spell> LongBurns = new List<Spell>();
+		// [INI_Section("Burn", "Full Burn")]
+		// public List<Spell> FullBurns = new List<Spell>();
+		/// Burns
+		/// TODO: Add INI Section?
+		public Dictionary<string, List<Spell>> BurnsDictionary = new Dictionary<string, List<Spell>>(StringComparer.OrdinalIgnoreCase);
+		
 		//cures
 		[INI_Section("Cures", "Cure")]
 		public List<Spell> Cures = new List<Spell>();
@@ -856,10 +860,7 @@ namespace E3Core.Settings
             //LoadKeyData("LootCommander", "Enabled",ParsedData, ref LootCommander_Enabled);
             //LoadKeyData("LootCommander", "Looter", ParsedData, LootCommander_Looters);
 
-            LoadKeyData("Burn", "Quick Burn", ParsedData, QuickBurns);
-            LoadKeyData("Burn", "Long Burn", ParsedData, LongBurns);
-            LoadKeyData("Burn", "Full Burn", ParsedData, FullBurns);
-
+			LoadKeyData("Burn", ParsedData, BurnsDictionary);
 
             LoadKeyData("Pets", "Pet Spell", ParsedData, PetSpell);
             LoadKeyData("Pets", "Pet Buff", ParsedData, PetOwnerBuffs);

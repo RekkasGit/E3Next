@@ -1870,31 +1870,33 @@ namespace E3Core.Processors
 			{
 				tIF = tIF.ReplaceInsensitive("${AssistType}", E3.CharacterSettings.Assist_Type);
 			}
-			if (tIF.IndexOf("${use_QUICKBurns}", 0, StringComparison.OrdinalIgnoreCase) > -1)
-			{
-				//lets replace it with TRUE/FALSE
-				tIF = tIF.ReplaceInsensitive("${use_QUICKBurns}", Burns.use_QUICKBurns.ToString());
-			}
-			if (tIF.IndexOf("${use_LONGBurns}", 0, StringComparison.OrdinalIgnoreCase) > -1)
-			{
-				//lets replace it with TRUE/FALSE
-				tIF = tIF.Replace("${use_LONGBurns}", Burns.use_LONGBurns.ToString());
-			}
-			if (tIF.IndexOf("${use_FULLBurns}", 0, StringComparison.OrdinalIgnoreCase) > -1)
-			{
-				//lets replace it with TRUE/FALSE
-				tIF = tIF.ReplaceInsensitive("${use_FULLBurns}", Burns.use_FULLBurns.ToString());
-			}
-			if (tIF.IndexOf("${use_EPICBurns}", 0, StringComparison.OrdinalIgnoreCase) > -1)
-			{
-				//lets replace it with TRUE/FALSE
-				tIF = tIF.ReplaceInsensitive("${use_EPICBurns}", Burns.use_EPICBurns.ToString());
-			}
-			if (tIF.IndexOf("${use_Swarms}", 0, StringComparison.OrdinalIgnoreCase) > -1)
-			{
-				//lets replace it with TRUE/FALSE
-				tIF = tIF.ReplaceInsensitive("${use_Swarms}", Burns.use_Swarms.ToString());
-			}
+
+			/// TODO: Replace these
+			// if (tIF.IndexOf("${use_QUICKBurns}", 0, StringComparison.OrdinalIgnoreCase) > -1)
+			// {
+			// 	//lets replace it with TRUE/FALSE
+			// 	tIF = tIF.ReplaceInsensitive("${use_QUICKBurns}", Burns.use_QUICKBurns.ToString());
+			// }
+			// if (tIF.IndexOf("${use_LONGBurns}", 0, StringComparison.OrdinalIgnoreCase) > -1)
+			// {
+			// 	//lets replace it with TRUE/FALSE
+			// 	tIF = tIF.Replace("${use_LONGBurns}", Burns.use_LONGBurns.ToString());
+			// }
+			// if (tIF.IndexOf("${use_FULLBurns}", 0, StringComparison.OrdinalIgnoreCase) > -1)
+			// {
+			// 	//lets replace it with TRUE/FALSE
+			// 	tIF = tIF.ReplaceInsensitive("${use_FULLBurns}", Burns.use_FULLBurns.ToString());
+			// }
+			// if (tIF.IndexOf("${use_EPICBurns}", 0, StringComparison.OrdinalIgnoreCase) > -1)
+			// {
+			// 	//lets replace it with TRUE/FALSE
+			// 	tIF = tIF.ReplaceInsensitive("${use_EPICBurns}", Burns.use_EPICBurns.ToString());
+			// }
+			// if (tIF.IndexOf("${use_Swarms}", 0, StringComparison.OrdinalIgnoreCase) > -1)
+			// {
+			// 	//lets replace it with TRUE/FALSE
+			// 	tIF = tIF.ReplaceInsensitive("${use_Swarms}", Burns.use_Swarms.ToString());
+			// }
 			if (tIF.IndexOf("${charmTarget}", 0, StringComparison.OrdinalIgnoreCase) > -1)
 			{
 				//lets replace it with TRUE/FALSE
