@@ -32,6 +32,8 @@ namespace E3Core.Settings
 		public bool General_CureWhileNavigating = true;
         public bool General_BeepNotifications = true;
         public bool General_LazarusManaRecovery = true;
+        public Int32 General_DelayAfterShortCastTime = 300;
+        public Int32 General_DelayAfterLongCastTime = 500;
 
         public string General_Networking_ExternalIPToQueryForLocal = "8.8.8.8";
         public string General_Networking_LocalIPOverride = string.Empty;
@@ -149,7 +151,8 @@ namespace E3Core.Settings
             LoadKeyData("General", "LazarusManaRecovery (On/Off)", parsedData, ref General_LazarusManaRecovery);
             LoadKeyData("General", "ExternalIP To Query For Local Address (8.8.8.8 default)", parsedData, ref General_Networking_ExternalIPToQueryForLocal);
             LoadKeyData("General", "Local IP Override", parsedData, ref General_Networking_LocalIPOverride);
-
+            LoadKeyData("General", "Delay After Short CastTime", parsedData, ref General_DelayAfterShortCastTime);
+            LoadKeyData("General", "Delay After Long CastTime", parsedData, ref General_DelayAfterLongCastTime);
             if (!IPAddress.TryParse(General_Networking_ExternalIPToQueryForLocal,out var result))
             {
                 General_Networking_ExternalIPToQueryForLocal = "8.8.8.8";
@@ -331,6 +334,10 @@ namespace E3Core.Settings
             section.Keys.AddKey("E3NetworkAddPathToMonitor", "");
         	section.Keys.AddKey("LazarusManaRecovery (On/Off)", "On");
 			section.Keys.AddKey("ExternalIP To Query For Local Address (8.8.8.8 default)", "8.8.8.8");
+            section.Keys.AddKey("Delay after Short CastTime", "300");
+            section.Keys.AddKey("Delay after Long CastTime", "500");
+
+
 
 			section.Keys.AddKey("Heal While Navigating (On/Off)","On");
             section.Keys.AddKey("Cure While Navigating (On/Off)", "On");

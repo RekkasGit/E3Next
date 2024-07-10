@@ -532,7 +532,7 @@ namespace E3Core.Processors
 									MQ.Cmd($"/casting \"{spell.CastName}|{spell.SpellGem}\"");
 									if (spell.MyCastTime > 500)
 									{
-										MQ.Delay(500);
+										MQ.Delay(E3.GeneralSettings.General_DelayAfterLongCastTime);
 									}
 								}
 								else
@@ -548,11 +548,11 @@ namespace E3Core.Processors
 
 										if (spell.MyCastTime > 500)
 										{
-											MQ.Delay(500);
+											MQ.Delay(E3.GeneralSettings.General_DelayAfterLongCastTime);
 										}
 										else
 										{
-											MQ.Delay(300);
+											MQ.Delay(E3.GeneralSettings.General_DelayAfterShortCastTime);
 										}
 									}
 									else
@@ -566,7 +566,7 @@ namespace E3Core.Processors
 										UpdateItemInCooldown(spell);
 										if (spell.MyCastTime > 500)
 										{
-											MQ.Delay(500);
+											MQ.Delay(E3.GeneralSettings.General_DelayAfterLongCastTime);
 										}
 									}
 								}
@@ -581,7 +581,7 @@ namespace E3Core.Processors
 									MQ.Cmd($"/casting \"{spell.CastName}|{spell.SpellGem}\" \"-targetid|{targetID}\"");
 									if (spell.MyCastTime > 500)
 									{
-										MQ.Delay(500);
+										MQ.Delay(E3.GeneralSettings.General_DelayAfterLongCastTime);
 									}
 								}
 								else
@@ -596,11 +596,11 @@ namespace E3Core.Processors
 
 										if (spell.MyCastTime > 500)
 										{
-											MQ.Delay(500);
+											MQ.Delay(E3.GeneralSettings.General_DelayAfterLongCastTime);
 										}
 										else
 										{
-											MQ.Delay(300);
+											MQ.Delay(E3.GeneralSettings.General_DelayAfterShortCastTime);
 										}
 									}
 									else
@@ -611,7 +611,7 @@ namespace E3Core.Processors
 										UpdateItemInCooldown(spell);
 										if (spell.MyCastTime > 500)
 										{
-											MQ.Delay(500);
+											MQ.Delay(E3.GeneralSettings.General_DelayAfterLongCastTime);
 										}
 									}
 								}
@@ -944,7 +944,7 @@ namespace E3Core.Processors
 							if (IsCasting())
 							{
 								//on live the cast window comes up on a missed note, so we check just for a bit to make sure so we can recast. 
-								MQ.Delay(500);
+								MQ.Delay(E3.GeneralSettings.General_DelayAfterLongCastTime);
 							}
 						}
 					}
