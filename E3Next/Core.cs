@@ -1186,7 +1186,8 @@ namespace MonoCore
         void Cmd(string query, bool delayed = false);
         void Cmd(string query,Int32 delay,bool delayed=false);
         void Write(string query, [CallerMemberName] string memberName = "", [CallerFilePath] string fileName = "", [CallerLineNumber] int lineNumber = 0);
-        void TraceStart(string methodName);
+		void WriteDelay(string query, [CallerMemberName] string memberName = "", [CallerFilePath] string fileName = "", [CallerLineNumber] int lineNumber = 0);
+		void TraceStart(string methodName);
         void TraceEnd(string methodName);
         void Delay(Int32 value);
         Boolean Delay(Int32 maxTimeToWait, string Condition);
@@ -1377,13 +1378,22 @@ namespace MonoCore
             {
 				E3.Bots.Broadcast(query);
 			}
-			Core.mq_DoCommandDelayed($"/noparse /echo \a#336699[{MainProcessor.ApplicationName}]\a-w{System.DateTime.Now.ToString("HH:mm:ss")} \aw- {query}");
-			//Core.mq_Echo($"\a#336699[{MainProcessor.ApplicationName}]\a-w{System.DateTime.Now.ToString("HH:mm:ss")} \aw- {query}");
+			//Core.mq_DoCommandDelayed($"/noparse /echo \a#336699[{MainProcessor.ApplicationName}]\a-w{System.DateTime.Now.ToString("HH:mm:ss")} \aw- {query}");
+			Core.mq_Echo($"\a#336699[{MainProcessor.ApplicationName}]\a-w{System.DateTime.Now.ToString("HH:mm:ss")} \aw- {query}");
 			return;
-
         }
-
-        public void TraceStart(string methodName)
+		public void WriteDelay(string query, [CallerMemberName] string memberName = "", [CallerFilePath] string fileName = "", [CallerLineNumber] int lineNumber = 0)
+		{
+			//write on current thread, it will be queued up by MQ. 
+			//needed to deal with certain lock situations and just keeps things simple. 
+			if (E3Core.Processors.Setup._broadcastWrites)
+			{
+				E3.Bots.Broadcast(query);
+			}
+			Core.mq_DoCommandDelayed($"/noparse /echo \a#336699[{MainProcessor.ApplicationName}]\a-w{System.DateTime.Now.ToString("HH:mm:ss")} \aw- {query}");
+			return;
+		}
+		public void TraceStart(string methodName)
         {
             if (String.IsNullOrWhiteSpace(methodName))
             {
@@ -1529,7 +1539,18 @@ namespace MonoCore
         {
             MQ = mqInstance;
         }
-        public void Write(string message, LogLevels logLevel = LogLevels.Default, string eventName = "Logging", [CallerMemberName] string memberName = "", [CallerFilePath] string fileName = "", [CallerLineNumber] int lineNumber = 0, Dictionary<String, String> headers = null)
+		public void WriteDelay(string message, LogLevels logLevel = LogLevels.Default, string eventName = "Logging", [CallerMemberName] string memberName = "", [CallerFilePath] string fileName = "", [CallerLineNumber] int lineNumber = 0, Dictionary<String, String> headers = null)
+		{
+
+			if (logLevel == LogLevels.Default)
+			{
+				logLevel = DefaultLogLevel;
+			}
+
+			WriteStaticDelay(message, logLevel, eventName, memberName, fileName, lineNumber, headers);
+
+		}
+		public void Write(string message, LogLevels logLevel = LogLevels.Default, string eventName = "Logging", [CallerMemberName] string memberName = "", [CallerFilePath] string fileName = "", [CallerLineNumber] int lineNumber = 0, Dictionary<String, String> headers = null)
         {
 
             if (logLevel == LogLevels.Default)
@@ -1540,8 +1561,30 @@ namespace MonoCore
             WriteStatic(message, logLevel, eventName, memberName, fileName, lineNumber, headers);
 
         }
+		public static void WriteStaticDelay(string message, LogLevels logLevel = LogLevels.Info, string eventName = "Logging", [CallerMemberName] string memberName = "", [CallerFilePath] string fileName = "", [CallerLineNumber] int lineNumber = 0, Dictionary<String, String> headers = null)
+		{
+			if ((Int32)logLevel < (Int32)MinLogLevelTolog)
+			{
+				return;//log level is too low to currently log. 
+			}
+			string className = GetClassName(fileName);
 
-        public static void WriteStatic(string message, LogLevels logLevel = LogLevels.Info, string eventName = "Logging", [CallerMemberName] string memberName = "", [CallerFilePath] string fileName = "", [CallerLineNumber] int lineNumber = 0, Dictionary<String, String> headers = null)
+			if (logLevel == LogLevels.CriticalError)
+			{
+				eventName += "._CriticalError_";
+			}
+
+			if (logLevel == LogLevels.Debug)
+			{
+				MQ.WriteDelay($"\ag{className}:\ao{memberName}\aw:({lineNumber}) {message}", "", "Logging");
+
+			}
+			else
+			{
+				MQ.WriteDelay($"{message}");
+			}
+		}
+		public static void WriteStatic(string message, LogLevels logLevel = LogLevels.Info, string eventName = "Logging", [CallerMemberName] string memberName = "", [CallerFilePath] string fileName = "", [CallerLineNumber] int lineNumber = 0, Dictionary<String, String> headers = null)
         {
             if ((Int32)logLevel < (Int32)MinLogLevelTolog)
             {

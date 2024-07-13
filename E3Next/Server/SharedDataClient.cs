@@ -381,8 +381,7 @@ namespace E3Core.Server
 					subSocket.Subscribe("${Me."); //all Me stuff should be subscribed to
 					subSocket.Subscribe("${Data."); //all the custom data keys a user can create
 					subSocket.Subscribe("${DataChannel.");
-					//Core.mq_DoCommandDelayed($"/noparse /echo \agShared Data Client: Connecting to user:" + user + " on port:" + port + " server:" + serverName);
-					//MQ.Write("\agShared Data Client: Connecting to user:" + user + " on port:" + port + " server:"+serverName); ;
+					MQ.WriteDelay("\agShared Data Client: Connecting to user:" + user + " on port:" + port + " server:"+serverName); ;
 
 					while (Core.IsProcessing && E3.NetMQ_SharedDataServerThradRun)
 					{
@@ -550,14 +549,14 @@ namespace E3Core.Server
 								System.DateTime currentTime = System.IO.File.GetLastWriteTime(fileName);
 								if (currentTime > lastFileUpdate)
 								{
-									MQ.Write($"\agShared Data Client: Disconnecting server:{serverName} port:" + port + " for toon:" + user);
+									MQ.WriteDelay($"\agShared Data Client: Disconnecting server:{serverName} port:" + port + " for toon:" + user);
 									//shutown the socket and restart it
 									subSocket.Disconnect($"tcp://{serverName}:" + port);
 									string data = System.IO.File.ReadAllText(fileName);
 									string[] splitData = data.Split(new char[] { ',' });
 									port = splitData[0];
 									serverName = splitData[1];
-									MQ.Write($"\agShared Data Client: Reconnecting to server:{serverName} port:" + port + " for toon:" + user);
+									MQ.WriteDelay($"\agShared Data Client: Reconnecting to server:{serverName} port:" + port + " for toon:" + user);
 									subSocket.Connect($"tcp://{serverName}:" + port);
 									lastFileUpdate = currentTime;
 								}
@@ -565,7 +564,7 @@ namespace E3Core.Server
 							catch (Exception ex)
 							{
 								//file deleted most likely, kill the thread
-								MQ.Write("\agShared Data Client: Issue reading port file, shutting down thread for toon:" + user + " stack:"+ex.Message);
+								MQ.WriteDelay("\agShared Data Client: Issue reading port file, shutting down thread for toon:" + user + " stack:"+ex.Message);
 
 								subSocket.Dispose();
 								if (TopicUpdates.TryRemove(user, out var tout))
@@ -584,12 +583,12 @@ namespace E3Core.Server
 				}
 				catch (Exception)
 				{
-					//MQ.Write("Error in shared data thread. Message:" + ex.Message + "  stack:" + ex.StackTrace);
+					//MQ.WriteDelay("Error in shared data thread. Message:" + ex.Message + "  stack:" + ex.StackTrace);
 				}
 
 			}
 
-			Core.mq_DoCommandDelayed($"/noparse /echo Shutting down Share Data Thread for {user}.");
+			MQ.WriteDelay($"Shutting down Share Data Thread for {user}.");
 			lock (_processLock)
 			{
 				_processTasks.Remove(user);
