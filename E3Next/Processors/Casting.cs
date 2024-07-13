@@ -714,7 +714,7 @@ namespace E3Core.Processors
 								EventProcessor.ProcessEventsInQueues("/shutdown");
 								return CastReturn.CAST_INTERRUPTED;
 							}
-							if (MQ.Query<bool>("${Me.Invis}"))
+							if (!isNowCast && MQ.Query<bool>("${Me.Invis}"))
 							{
 								Interrupt();
 								return CastReturn.CAST_INVIS;

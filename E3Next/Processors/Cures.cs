@@ -108,7 +108,11 @@ namespace E3Core.Processors
                 //spell here is the spell debuff we are looking for
                 foreach (var spell in E3.CharacterSettings.RadiantCure)
                 {
-                    Int32 numberSick = 0;
+					if (!String.IsNullOrWhiteSpace(spell.Ifs))
+					{
+						if (!Casting.Ifs(spell)) continue;
+					}
+					Int32 numberSick = 0;
 
                     foreach (var id in Basics.GroupMembers)
                     {

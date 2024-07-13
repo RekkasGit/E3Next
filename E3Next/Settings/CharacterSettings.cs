@@ -91,7 +91,7 @@ namespace E3Core.Settings
 		public bool Misc_EndMedBreakInCombat;
 		[INI_Section("Misc", "AutoMedBreak (On/Off)")]
 		public bool Misc_AutoMedBreak;
-		[INI_Section("Misc", "Auto-Loot (On/Off)")]
+		[INI_Section("Misc", "and")]
 		public bool Misc_AutoLootEnabled;
 		[INI_Section("Misc", "Debuffs/Dots are visible")]
 		public bool Misc_VisibleDebuffsDots=true;
@@ -1580,7 +1580,7 @@ namespace E3Core.Settings
 					defaultFile.Sections.AddSection(header);
 					var section = defaultFile.Sections[header];
 					var old_section = ParsedData.Sections.GetSectionData(header);
-					KeyData oldKey = null;
+					//KeyData oldKey = null;
 					if(old_section!=null)
 					{
 						foreach (var keyData in old_section.Keys)

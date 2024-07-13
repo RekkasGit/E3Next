@@ -381,7 +381,8 @@ namespace E3Core.Server
 					subSocket.Subscribe("${Me."); //all Me stuff should be subscribed to
 					subSocket.Subscribe("${Data."); //all the custom data keys a user can create
 					subSocket.Subscribe("${DataChannel.");
-					MQ.Write("\agShared Data Client: Connecting to user:" + user + " on port:" + port + " server:"+serverName); ;
+					//Core.mq_DoCommandDelayed($"/noparse /echo \agShared Data Client: Connecting to user:" + user + " on port:" + port + " server:" + serverName);
+					//MQ.Write("\agShared Data Client: Connecting to user:" + user + " on port:" + port + " server:"+serverName); ;
 
 					while (Core.IsProcessing && E3.NetMQ_SharedDataServerThradRun)
 					{
@@ -588,8 +589,7 @@ namespace E3Core.Server
 
 			}
 
-
-			MQ.Write($"Shutting down Share Data Thread for {user}.");
+			Core.mq_DoCommandDelayed($"/noparse /echo Shutting down Share Data Thread for {user}.");
 			lock (_processLock)
 			{
 				_processTasks.Remove(user);

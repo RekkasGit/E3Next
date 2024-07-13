@@ -1377,8 +1377,9 @@ namespace MonoCore
             {
 				E3.Bots.Broadcast(query);
 			}
-			Core.mq_Echo($"\a#336699[{MainProcessor.ApplicationName}]\a-w{System.DateTime.Now.ToString("HH:mm:ss")} \aw- {query}");
-            return;
+			Core.mq_DoCommandDelayed($"/noparse /echo \a#336699[{MainProcessor.ApplicationName}]\a-w{System.DateTime.Now.ToString("HH:mm:ss")} \aw- {query}");
+			//Core.mq_Echo($"\a#336699[{MainProcessor.ApplicationName}]\a-w{System.DateTime.Now.ToString("HH:mm:ss")} \aw- {query}");
+			return;
 
         }
 
@@ -1558,7 +1559,7 @@ namespace MonoCore
 
             if (logLevel == LogLevels.Debug)
             {
-                MQ.Write($"\ag{className}:\ao{memberName}\aw:({lineNumber}) {message}", "", "Logging");
+				MQ.Write($"\ag{className}:\ao{memberName}\aw:({lineNumber}) {message}", "", "Logging");
 
             }
             else
@@ -1624,21 +1625,29 @@ namespace MonoCore
         public static String GetClassName(string fileName)
         {
             string className;
-            if (!_classLookup.ContainsKey(fileName))
-            {
-                if (!String.IsNullOrWhiteSpace(fileName))
-                {
-                    string[] tempArray = fileName.Split('\\');
-                    className = tempArray[tempArray.Length - 1];
-                    className = className.Replace(".cs", String.Empty).Replace(".vb", String.Empty);
-                    _classLookup.TryAdd(fileName, className);
+			try
+			{
+				if (!_classLookup.ContainsKey(fileName))
+				{
+					if (!String.IsNullOrWhiteSpace(fileName))
+					{
+						string[] tempArray = fileName.Split('\\');
+						className = tempArray[tempArray.Length - 1];
+						className = className.Replace(".cs", String.Empty).Replace(".vb", String.Empty);
+						_classLookup.TryAdd(fileName, className);
 
-                }
-                else
-                {
-                    _classLookup.TryAdd(fileName, "Unknown/ErrorGettingClass");
-                }
-            }
+					}
+					else
+					{
+						_classLookup.TryAdd(fileName, "Unknown/ErrorGettingClass");
+					}
+				}
+			}
+			catch(Exception)
+			{
+				_classLookup.TryAdd(fileName, "Unknown/ErrorGettingClass");
+			}
+           
             className = _classLookup[fileName];
             return className;
         }
@@ -1689,7 +1698,7 @@ namespace MonoCore
             {
                 if (CallBackDispose != null)
                 {
-                    CallBackDispose.Invoke(this); //this should null out the CallbackDispose so the normal dispose can then run.
+                    CallBackDispose.Invoke(this); 
                 }
 
                 ResetObject();

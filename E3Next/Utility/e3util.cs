@@ -253,6 +253,12 @@ namespace E3Core.Utility
             }
 
         }
+		public static void SetXTargetSlotToAutoHater(Int32 slot)
+		{
+			MQ.Cmd($"/squelch /xtarg set {slot} ET");
+			MQ.Delay(100);
+			MQ.Cmd($"/squelch /xtarg set {slot} AH");
+		}
         public static bool TargetIsPCOrPCPet()
         {
             Spawn ct;
@@ -1325,38 +1331,44 @@ namespace E3Core.Utility
 		}
 		public static List<Data.Spell> ListAllActiveAA()
         {
-            List<Data.Spell> returnValue = new List<Data.Spell>();
-            for(Int32 i=0;i<10000;i++)
-            {
-                string spellName = MQ.Query<String>($"${{Me.AltAbility[{i}].Name}}");
-                if(spellName!="NULL")
-                {
-                    var spell = new Data.Spell(spellName);
-                    if(spell.CastType== CastingType.AA)
-                    {
-						returnValue.Add(spell);
+			//using (_log.Trace("AA List Call"))
+			{
+				List<Data.Spell> returnValue = new List<Data.Spell>();
+				for(Int32 i=0;i<10000;i++)
+				{
+					string spellName = MQ.Query<String>($"${{Me.AltAbility[{i}].Name}}");
+					if(spellName!="NULL")
+					{
+						var spell = new Data.Spell(spellName);
+						if(spell.CastType== CastingType.AA)
+						{
+							returnValue.Add(spell);
+						}
 					}
 				}
-            }
-            return returnValue;
-        }
+				return returnValue;
+			}
+		}
 		
 		public static List<Data.Spell> ListAllActiveSkills()
 		{
-			List<Data.Spell> returnValue = new List<Data.Spell>();
-			for (Int32 i = 0; i < Skills.IDToName.Count; i++)
-			{
-				bool haveSkill = MQ.Query<bool>($"${{Me.Ability[{i}]}}");
-				if (haveSkill)
+			
+				List<Data.Spell> returnValue = new List<Data.Spell>();
+				for (Int32 i = 0; i < Skills.IDToName.Count; i++)
 				{
-					var spell = new Data.Spell(Skills.IDToName[i]);
-					if (spell.CastType == CastingType.Ability)
+					bool haveSkill = MQ.Query<bool>($"${{Me.Ability[{i}]}}");
+					if (haveSkill)
 					{
-						returnValue.Add(spell);
+						var spell = new Data.Spell(Skills.IDToName[i]);
+						if (spell.CastType == CastingType.Ability)
+						{
+							returnValue.Add(spell);
+						}
 					}
 				}
-			}
-			return returnValue;
+				return returnValue;
+			
+			
 		}
 		public static List<Data.Spell> ListAllBookSpells()
         {
