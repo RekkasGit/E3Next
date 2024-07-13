@@ -229,7 +229,7 @@ namespace TestCore
                 return "NULL";
 			}
 
-			public void WriteDelay(string query, [CallerMemberName] string memberName = "", [CallerFilePath] string fileName = "", [CallerLineNumber] int lineNumber = 0)
+			public void WriteDelayed(string query, [CallerMemberName] string memberName = "", [CallerFilePath] string fileName = "", [CallerLineNumber] int lineNumber = 0)
 			{
 				Console.WriteLine($"[{System.DateTime.Now.ToString("HH:mm:ss")}] {query}");
 			}

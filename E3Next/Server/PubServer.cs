@@ -186,9 +186,9 @@ namespace E3Core.Server
 				}
 				catch (Exception)
                 {
-                    MQ.Write("Issue deleting pubsub.txt file");
+                    MQ.WriteDelayed("Issue deleting pubsub.txt file");
                 }
-				MQ.Write("Shutting down PubServer Thread.");
+				MQ.WriteDelayed("Shutting down PubServer Thread.");
             }
         }
     }

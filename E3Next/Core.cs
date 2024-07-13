@@ -38,7 +38,7 @@ namespace MonoCore
     /// </summary>
     public static class MainProcessor
     {
-        public static IMQ MQ = Core.mqInstance;
+        public static IMQ _mq = Core.mqInstance;
        
         private static Logging _log = Core.logInstance;
         public static string ApplicationName = "";
@@ -106,13 +106,23 @@ namespace MonoCore
                     Delay(E3.CharacterSettings.CPU_ProcessLoopDelay);//this calls the reset events and sets the delay to 10ms at min
                 }
             }
-           
-            //E3.Shutdown();
-            MQ.Write("Shutting down E3 Main C# Thread.");
-            MQ.Write("Doing netmq cleanup.");
-            //NetMQConfig.Cleanup(false);
 
-            Core.CoreResetEvent.Set();
+			//E3.Shutdown();
+			_mq.Write("Shutting down E3 Main C# Thread.");
+			_mq.Write("Doing netmq cleanup.");
+			//NetMQConfig.Cleanup(false);
+			if (MQ.DelayedWrites.Count > 0)
+			{
+				while (MQ.DelayedWrites.Count > 0)
+				{
+					string message;
+					if (MQ.DelayedWrites.TryDequeue(out message))
+					{
+						Core.mq_Echo(message);
+					}
+				}
+			}
+			Core.CoreResetEvent.Set();
         }
 
         static public void Delay(Int32 value)
@@ -874,7 +884,19 @@ namespace MonoCore
 			E3Core.Server.NetMQServer.KillAllProcesses();
             NetMQConfig.Cleanup(false);
             System.Threading.Thread.Sleep(500);
-            GC.Collect();
+			//write out any writes that have been delayed
+			if (MQ.DelayedWrites.Count > 0)
+			{
+				while (MQ.DelayedWrites.Count > 0)
+				{
+					string message;
+					if (MQ.DelayedWrites.TryDequeue(out message))
+					{
+						Core.mq_Echo(message);
+					}
+				}
+			}
+			GC.Collect();
             ////NOTE , there are situations where the unload of the domain will lock up. I've done everything I can do to prevent this, but it 'can' and will happen. 
             ////I've written a script to reload constantly for 5-6 min before lockup, but again its a % chance. 
         }
@@ -956,8 +978,18 @@ namespace MonoCore
                 Core.mq_Delay(CurrentDelay);
                 CurrentDelay = 0;
             }
-  
-
+			//write out any writes that have been delayed
+			if(MQ.DelayedWrites.Count>0)
+			{
+				while(MQ.DelayedWrites.Count>0)
+				{
+					string message;
+					if(MQ.DelayedWrites.TryDequeue(out message))
+					{
+						Core.mq_Echo(message);
+					}
+				}
+			}
         }
 
         //Comment these out if you are not using events so that C++ doesn't waste time sending the string to C#
@@ -1186,7 +1218,10 @@ namespace MonoCore
         void Cmd(string query, bool delayed = false);
         void Cmd(string query,Int32 delay,bool delayed=false);
         void Write(string query, [CallerMemberName] string memberName = "", [CallerFilePath] string fileName = "", [CallerLineNumber] int lineNumber = 0);
-		void WriteDelay(string query, [CallerMemberName] string memberName = "", [CallerFilePath] string fileName = "", [CallerLineNumber] int lineNumber = 0);
+		/// <summary>
+		/// This is used when on a different thread so its queued up on the main thread in MQ
+		/// </summary>
+		void WriteDelayed(string query, [CallerMemberName] string memberName = "", [CallerFilePath] string fileName = "", [CallerLineNumber] int lineNumber = 0);
 		void TraceStart(string methodName);
         void TraceEnd(string methodName);
         void Delay(Int32 value);
@@ -1210,6 +1245,7 @@ namespace MonoCore
         public static Int64 SinceLastDelay = 0;
         public static Int64 _totalQueryCounts;
         public static bool _noDelay = false;
+		public static ConcurrentQueue<String> DelayedWrites = new ConcurrentQueue<string>();
         public T Query<T>(string query)
         {
             if (!Core.IsProcessing)
@@ -1378,19 +1414,17 @@ namespace MonoCore
             {
 				E3.Bots.Broadcast(query);
 			}
-			//Core.mq_DoCommandDelayed($"/noparse /echo \a#336699[{MainProcessor.ApplicationName}]\a-w{System.DateTime.Now.ToString("HH:mm:ss")} \aw- {query}");
 			Core.mq_Echo($"\a#336699[{MainProcessor.ApplicationName}]\a-w{System.DateTime.Now.ToString("HH:mm:ss")} \aw- {query}");
 			return;
         }
-		public void WriteDelay(string query, [CallerMemberName] string memberName = "", [CallerFilePath] string fileName = "", [CallerLineNumber] int lineNumber = 0)
+		public void WriteDelayed(string query, [CallerMemberName] string memberName = "", [CallerFilePath] string fileName = "", [CallerLineNumber] int lineNumber = 0)
 		{
-			//write on current thread, it will be queued up by MQ. 
-			//needed to deal with certain lock situations and just keeps things simple. 
+			//delay the write until we are in the C# area and the MQ thread are haulted to prevent crashes
 			if (E3Core.Processors.Setup._broadcastWrites)
 			{
 				E3.Bots.Broadcast(query);
 			}
-			Core.mq_DoCommandDelayed($"/noparse /echo \a#336699[{MainProcessor.ApplicationName}]\a-w{System.DateTime.Now.ToString("HH:mm:ss")} \aw- {query}");
+			DelayedWrites.Enqueue($"\a#336699[{MainProcessor.ApplicationName}]\a-w{System.DateTime.Now.ToString("HH:mm:ss")} \aw- {query}");
 			return;
 		}
 		public void TraceStart(string methodName)
@@ -1539,7 +1573,7 @@ namespace MonoCore
         {
             MQ = mqInstance;
         }
-		public void WriteDelay(string message, LogLevels logLevel = LogLevels.Default, string eventName = "Logging", [CallerMemberName] string memberName = "", [CallerFilePath] string fileName = "", [CallerLineNumber] int lineNumber = 0, Dictionary<String, String> headers = null)
+		public void WriteDelayed(string message, LogLevels logLevel = LogLevels.Default, string eventName = "Logging", [CallerMemberName] string memberName = "", [CallerFilePath] string fileName = "", [CallerLineNumber] int lineNumber = 0, Dictionary<String, String> headers = null)
 		{
 
 			if (logLevel == LogLevels.Default)
@@ -1547,7 +1581,7 @@ namespace MonoCore
 				logLevel = DefaultLogLevel;
 			}
 
-			WriteStaticDelay(message, logLevel, eventName, memberName, fileName, lineNumber, headers);
+			WriteStaticDelayed(message, logLevel, eventName, memberName, fileName, lineNumber, headers);
 
 		}
 		public void Write(string message, LogLevels logLevel = LogLevels.Default, string eventName = "Logging", [CallerMemberName] string memberName = "", [CallerFilePath] string fileName = "", [CallerLineNumber] int lineNumber = 0, Dictionary<String, String> headers = null)
@@ -1561,7 +1595,7 @@ namespace MonoCore
             WriteStatic(message, logLevel, eventName, memberName, fileName, lineNumber, headers);
 
         }
-		public static void WriteStaticDelay(string message, LogLevels logLevel = LogLevels.Info, string eventName = "Logging", [CallerMemberName] string memberName = "", [CallerFilePath] string fileName = "", [CallerLineNumber] int lineNumber = 0, Dictionary<String, String> headers = null)
+		public static void WriteStaticDelayed(string message, LogLevels logLevel = LogLevels.Info, string eventName = "Logging", [CallerMemberName] string memberName = "", [CallerFilePath] string fileName = "", [CallerLineNumber] int lineNumber = 0, Dictionary<String, String> headers = null)
 		{
 			if ((Int32)logLevel < (Int32)MinLogLevelTolog)
 			{
@@ -1576,12 +1610,12 @@ namespace MonoCore
 
 			if (logLevel == LogLevels.Debug)
 			{
-				MQ.WriteDelay($"\ag{className}:\ao{memberName}\aw:({lineNumber}) {message}", "", "Logging");
+				MQ.WriteDelayed($"\ag{className}:\ao{memberName}\aw:({lineNumber}) {message}", "", "Logging");
 
 			}
 			else
 			{
-				MQ.WriteDelay($"{message}");
+				MQ.WriteDelayed($"{message}");
 			}
 		}
 		public static void WriteStatic(string message, LogLevels logLevel = LogLevels.Info, string eventName = "Logging", [CallerMemberName] string memberName = "", [CallerFilePath] string fileName = "", [CallerLineNumber] int lineNumber = 0, Dictionary<String, String> headers = null)
