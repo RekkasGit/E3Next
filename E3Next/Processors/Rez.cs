@@ -88,51 +88,68 @@ namespace E3Core.Processors
                     //something went wrong kick out.
                     return;
                 }
+				Int32 totalLootAttempts = 0;
+				tryLootAgain:
 
-                //okay, we are rezed, and now need to loot our corpse. 
-                //it should be the closest so we will use spawn as it will grab the closest first.
-                Int32 corpseID = MQ.Query<Int32>("${Spawn[${Me}'s].ID}");
+				if (totalLootAttempts > 1) return;
+				//okay, we are rezed, and now need to loot our corpse. 
+				//it should be the closest so we will use spawn as it will grab the closest first.
+				Int32 corpseID = MQ.Query<Int32>("${Spawn[${Me}'s].ID}");
                 Casting.TrueTarget(corpseID);
 
                 //check if its rezable.
                 if (!CanRez())
                 {
-                    tryLootAgain:
-                    MQ.Cmd("/corpse",1000);
+					MQ.Cmd("/corpse",1000);
                         
                     MQ.Cmd("/loot");
                     MQ.Delay(1000, "${Window[LootWnd].Open}");
                     MQ.Cmd("/nomodkey /notify LootWnd LootAllButton leftmouseup");
-                    MQ.Delay(20000, "!${Window[LootWnd].Open}");
 
-                    if (MQ.Query<bool>("${Window[LootWnd].Open}"))
-                    {
-                        _waitingOnRez = false;
-                        e3util.Beep();
-                        E3.Bots.Broadcast("\agWaitForRez:\arERROR! \atLoot Window stuck open, please help.");
-                        E3.Bots.BroadcastCommand("/popup ${Me} loot window stuck open", false);
-                        MQ.Delay(1000);
-                        return;
+					MQ.Delay(300);
+					Int32 corpseItems = MQ.Query<Int32>("${Corpse.Items}");
 
-                    }
-                 
-                    string corpseName = E3.CurrentName + "'s corpse";
-                    foreach (var spawn in _spawns.Get())
-                    {
-                        if (spawn.CleanName.StartsWith(corpseName))
-                        {
-                            if (spawn.Distance < 100)
-                            {
-                                Casting.TrueTarget(spawn.ID);
-                                MQ.Delay(500);
-                                if (!CanRez())
-                                {
-                                    goto tryLootAgain;
-                                }
-                            }
-                        }
-                    }
-                    _waitingOnRez = false;
+					Int32 lastCorpseItemCount = corpseItems;
+					Int32 corpseItemTryCount = 0;
+					while(corpseItems>0 || MQ.Query<bool>("${Window[LootWnd].Open}"))
+					{
+						MQ.Delay(2000);
+						corpseItems = MQ.Query<Int32>("${Corpse.Items}");
+						if (lastCorpseItemCount == corpseItems)
+						{
+							corpseItemTryCount++;
+							if (corpseItemTryCount > 2)
+							{
+								//we are stuck, reload the entire UI, unsure if it will return before the UI is finished
+								MQ.Cmd("/reload");
+								totalLootAttempts++;
+
+								if (totalLootAttempts > 1)
+								{
+									_waitingOnRez = false;
+									e3util.Beep();
+									E3.Bots.Broadcast("\agWaitForRez:\arERROR! \atLoot Window stuck open, please help.");
+									E3.Bots.BroadcastCommand("/popup ${Me} loot window stuck open", false);
+									MQ.Delay(1000);
+									return;
+
+								}
+								goto tryLootAgain;
+							}
+							//the number hasn't changed, increment our try count
+						}
+						else
+						{
+							lastCorpseItemCount = corpseItems;
+						}
+					}
+
+					//We may have died while looting. Need to put us back into a state so we can reloot our corpse.
+					if(Zoning.CurrentZone.Id!=MQ.Query<Int32>("${Zone.ID}"))
+					{
+						return;
+					}
+					_waitingOnRez = false;
                     E3.Bots.Broadcast("\atReady to die again!");
                 }
 

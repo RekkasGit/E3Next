@@ -682,6 +682,15 @@ namespace E3Core.Processors
 										EventProcessor.ProcessEventsInQueues("/followme");
 										if (!IsCasting()) return CastReturn.CAST_INTERRUPTED;
 									}
+									if (E3.CurrentClass == Class.Druid || E3.CurrentClass == Class.Wizard)
+									{
+										if (EventProcessor.CommandList["/evac"].queuedEvents.Count > 0)
+										{
+											Interrupt();
+											EventProcessor.ProcessEventsInQueues("/evac");
+											if (!IsCasting()) return CastReturn.CAST_INTERRUPTED;
+										}
+									}
 								}
 							}
 							if (spell.SpellType.Equals("Detrimental") && (spell.TargetType != "PB AE" && spell.TargetType!="Self"))

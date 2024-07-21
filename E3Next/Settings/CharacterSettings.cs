@@ -91,7 +91,7 @@ namespace E3Core.Settings
 		public bool Misc_EndMedBreakInCombat;
 		[INI_Section("Misc", "AutoMedBreak (On/Off)")]
 		public bool Misc_AutoMedBreak;
-		[INI_Section("Misc", "and")]
+		[INI_Section("Misc", "Auto-Loot (On/Off)")]
 		public bool Misc_AutoLootEnabled;
 		[INI_Section("Misc", "Debuffs/Dots are visible")]
 		public bool Misc_VisibleDebuffsDots=true;
