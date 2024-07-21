@@ -8,7 +8,7 @@ using E3Core.Processors;
 
 namespace E3Core.Settings.FeatureSettings
 {
-	public  class LootStackable : BaseSettings
+	public class LootStackable : BaseSettings
 	{
 		IniData _stackableAlwaysLootData;
 		string _fileName;
@@ -19,6 +19,7 @@ namespace E3Core.Settings.FeatureSettings
 		public Boolean LootAllTradeSkillItems = false;
 		public Int32 LootValueGreaterThanInCopper = 1;
 		public Boolean Enabled = false;
+		public Boolean LootInCombat = false;
 		public bool HonorLootFileSkips = false;
 
 		public void LoadData()
@@ -29,6 +30,7 @@ namespace E3Core.Settings.FeatureSettings
 			//this is so we can get the merged data as well. 
 			parsedData = CreateSettings(_fileName);
 			LoadKeyData("Settings", "Enable (On/Off)", parsedData, ref Enabled);
+			LoadKeyData("Settings", "Loot In Combat (On/Off)", parsedData, ref LootInCombat);
 			LoadKeyData("Settings", "With Value Greater Than Or Equal in Copper", parsedData, ref LootValueGreaterThanInCopper);
 			LoadKeyData("Settings", "Loot all Tradeskill items (On/Off)", parsedData, ref LootAllTradeSkillItems);
 			LoadKeyData("Settings", "Loot common tradeskill items ie:pelts ores silks etc (On/Off)", parsedData, ref LootOnlyCommonTradeSkillItems);
@@ -45,6 +47,7 @@ namespace E3Core.Settings.FeatureSettings
 			newFile.Sections.AddSection("Settings");
 			var section = newFile.Sections.GetSectionData("Settings");
 			section.Keys.AddKey("Enable (On/Off)", "Off");
+			section.Keys.AddKey("Loot In Combat (On/Off)", "Off");
 			section.Keys.AddKey("With Value Greater Than Or Equal in Copper", "10000");
 			section.Keys.AddKey("Loot common tradeskill items ie:pelts ores silks etc (On/Off)", "Off");
 			section.Keys.AddKey("Loot all Tradeskill items (On/Off)", "Off");

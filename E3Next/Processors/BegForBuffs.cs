@@ -418,7 +418,7 @@ namespace E3Core.Processors
                 spell = realSpell;
             }
            
-            if(!String.IsNullOrWhiteSpace(user))
+            if(!String.IsNullOrWhiteSpace(user) && user!=E3.CurrentName)
             {
                 MQ.Cmd($"/t {user} I'm queuing up {spell} to use on you, please wait.");
                

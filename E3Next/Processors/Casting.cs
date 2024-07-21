@@ -189,7 +189,8 @@ namespace E3Core.Processors
 				else if (E3.CurrentClass == Class.Bard && spell.CastType == CastingType.Spell)
 				{
 					Sing(targetID, spell);
-					MQ.Delay((int)spell.MyCastTime);
+					Int32 delay =(int)MQ.Query<int>("${Me.CastTimeLeft}") + Classes.Bard.BardLatency();
+					MQ.Delay(delay);
 					return CastReturn.CAST_SUCCESS;
 				}
 				else
@@ -681,6 +682,15 @@ namespace E3Core.Processors
 										EventProcessor.ProcessEventsInQueues("/followme");
 										if (!IsCasting()) return CastReturn.CAST_INTERRUPTED;
 									}
+									if (E3.CurrentClass == Class.Druid || E3.CurrentClass == Class.Wizard)
+									{
+										if (EventProcessor.CommandList["/evac"].queuedEvents.Count > 0)
+										{
+											Interrupt();
+											EventProcessor.ProcessEventsInQueues("/evac");
+											if (!IsCasting()) return CastReturn.CAST_INTERRUPTED;
+										}
+									}
 								}
 							}
 							if (spell.SpellType.Equals("Detrimental") && (spell.TargetType != "PB AE" && spell.TargetType!="Self"))
@@ -713,7 +723,7 @@ namespace E3Core.Processors
 								EventProcessor.ProcessEventsInQueues("/shutdown");
 								return CastReturn.CAST_INTERRUPTED;
 							}
-							if (MQ.Query<bool>("${Me.Invis}"))
+							if (!isNowCast && MQ.Query<bool>("${Me.Invis}"))
 							{
 								Interrupt();
 								return CastReturn.CAST_INVIS;
@@ -905,6 +915,7 @@ namespace E3Core.Processors
 		}
 		public static void Sing(Int32 targetid, Data.Spell spell)
 		{
+		
 			if (E3.CurrentClass != Data.Class.Bard) return;
 			//Stop following for spell/item/aa with a cast time > 0 MyCastTime, unless im a bard
 			//anything under 300 is insta cast
@@ -945,7 +956,6 @@ namespace E3Core.Processors
 								MQ.Delay(500);
 							}
 						}
-
 					}
 					//sometimes the cast isn't fully complete even if the window is done
 					///allow the player to 'tweak' this value.
@@ -977,7 +987,6 @@ namespace E3Core.Processors
 				if (spell.MyCastTime > 500)
 				{
 					MQ.Cmd("/stopsong", 100);
-
 				}
 				// special exception for this item
 				var luteName = "Lute of the Flowing Waters";
@@ -1030,7 +1039,6 @@ namespace E3Core.Processors
 					MQ.Cmd($"/docommand {spell.AfterEvent}");
 				}
 			}
-
 		}
 		public static bool IsSpellMemed(string spellName)
 		{

@@ -31,7 +31,11 @@ namespace E3Core.Processors
 		[ExposedData("Basics", "GroupMembers")]
 		public static List<int> GroupMembers = new List<int>();
         private static long _nextGroupCheck = 0;
-        private static long _nextGroupCheckInterval = 1000;
+        private static long _nextGroupCheckInterval = 3000;
+
+		private static long _nextAutoHaterFixCheck = 0;
+		private static long _nextAutoHaterFixCheckInterval = 1000;
+
         private static long _nextResourceCheck = 0;
         private static long _nextResourceCheckInterval = 1000;
         private static long _nextAutoMedCheck = 0;
@@ -571,14 +575,14 @@ namespace E3Core.Processors
                 if (Logging.MinLogLevelTolog == Logging.LogLevels.Error)
                 {
                     Logging.MinLogLevelTolog = Logging.LogLevels.Debug;
-                    Logging.TraceLogLevel = traceLevel;
-                    Debug_PreviousCPUDelay = E3.CharacterSettings.CPU_ProcessLoopDelay;
+					Logging.TraceLogLevel = traceLevel;
+					Debug_PreviousCPUDelay = E3.CharacterSettings.CPU_ProcessLoopDelay;
 					E3.CharacterSettings.CPU_ProcessLoopDelay = 1000;
-                    _log.Write("Debug has been turned on:");
+					MQ.Write("Debug has been turned on:");
                 }
                 else
                 {
-                    _log.Write("Debug has been turned off.");
+					MQ.Write("Debug has been turned off.");
                     Logging.MinLogLevelTolog = Logging.LogLevels.Error;
                     Logging.TraceLogLevel = Logging.LogLevels.None;
 					E3.CharacterSettings.CPU_ProcessLoopDelay = Debug_PreviousCPUDelay;
@@ -1427,7 +1431,37 @@ namespace E3Core.Processors
                 }
             }
         }
+		[ClassInvoke(Data.Class.All)]
+		public static void EMU_FixXTarget()
+		{
+			
+			if (!e3util.ShouldCheck(ref _nextAutoHaterFixCheck, _nextAutoHaterFixCheckInterval)) return;
+			if (e3util.IsEQLive()) return;
+			if (Basics.InCombat()) return;
 
+			Int32 XtargetMax = e3util.XtargetMax;
+			//dealing with index of 1.
+			for (Int32 x = 1; x <= XtargetMax; x++)
+			{
+				if (!MQ.Query<bool>($"${{Me.XTarget[{x}].TargetType.Equal[Auto Hater]}}")) continue;
+
+				Int32 targetID = MQ.Query<Int32>($"${{Me.XTarget[{x}].ID}}");
+				if (targetID > 0)
+				{
+					//check to see if they are in zone.
+					Spawn s;
+					if (!_spawns.TryByID(targetID, out s))
+					{
+						e3util.SetXTargetSlotToAutoHater(x);
+					}
+					else if(s.TypeDesc == "Corpse")
+					{
+						e3util.SetXTargetSlotToAutoHater(x);
+					}
+				}
+			}
+		}
+		
         /// <summary>
         /// Do I need to med?
         /// </summary>

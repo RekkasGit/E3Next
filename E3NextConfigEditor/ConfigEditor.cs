@@ -138,8 +138,11 @@ namespace E3NextConfigEditor
 			IMQ _mqClient = new MQ.MQClient(_tloClient);
 
 			_splashScreen.Invoke(new Action(() =>_splashScreen.splashLabel.Text="Requesting AA list..."));
+
 			byte[] result = _tloClient.RequestRawData("${E3.AA.ListAll}");
 			SpellDataList aas = SpellDataList.Parser.ParseFrom(result);
+
+
 			_splashScreen.Invoke(new Action(() => _splashScreen.splashLabel.Text = "Requesting SpellBook list..."));
 			result = _tloClient.RequestRawData("${E3.SpellBook.ListAll}");
 			SpellDataList bookSpells = SpellDataList.Parser.ParseFrom(result);

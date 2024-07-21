@@ -31,22 +31,28 @@ namespace E3NextUI
 
             string exePath = textBoxInstallPath.Text;
             var assets = client.Repository.Release.GetAllAssets("RekkasGit", "E3Next", latestID).Result;
-            var zipFile = assets[0];
-            lblStatus.Text = "Status: Downloading ....";
-            var resp = client.Connection.Get<byte[]>(new Uri(zipFile.BrowserDownloadUrl), new Dictionary<string, string>(), null).Result;
-            var data = resp.Body;
 
-            lblStatus.Text = "Status: Extracting ....";
-            using (System.IO.Stream stream = new System.IO.MemoryStream(data))
-            {
-                using (ZipFile zip = ZipFile.Read(stream))
-                {
-                    zip.ExtractAll(exePath, ExtractExistingFileAction.OverwriteSilently);
+			foreach (var asset in assets)
+			{
+				if (asset.Name == "e3.zip")
+				{
+					var zipFile = assets[0];
+					lblStatus.Text = "Status: Downloading ....";
+					var resp = client.Connection.Get<byte[]>(new Uri(zipFile.BrowserDownloadUrl), new Dictionary<string, string>(), null).Result;
+					var data = resp.Body;
 
-                }
-            }
+					lblStatus.Text = "Status: Extracting ....";
+					using (System.IO.Stream stream = new System.IO.MemoryStream(data))
+					{
+						using (ZipFile zip = ZipFile.Read(stream))
+						{
+							zip.ExtractAll(exePath, ExtractExistingFileAction.OverwriteSilently);
 
-            var mb = new MessageBox();
+						}
+					}
+				}
+			}
+			var mb = new MessageBox();
             mb.Owner = this;
             mb.StartPosition = FormStartPosition.CenterParent;
          

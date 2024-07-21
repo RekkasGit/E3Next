@@ -33,8 +33,8 @@ namespace E3Discord
         { 
             try
             {
-                // exe path, publisher port, router port, pub client port, discord bot token, discord guild chat channel id, discord server id
-                WriteMessageToConsole($"Running init method with args {string.Join(",", args)}", ConsoleColor.Green);
+				// exe path, publisher port, router port, pub client port, discord bot token, discord guild chat channel id, discord server id
+				WriteMessageToConsole($"Running init method with args {string.Join(",", args)}", ConsoleColor.Green);
                 //WriteMessageToConsole("Press any key to continue...", ConsoleColor.Green);
                 //Console.ReadKey();
 
@@ -141,7 +141,7 @@ namespace E3Discord
                             }
                         }
 
-                        SendMessageToGame($"/gu {user} from discord: {messageContent}");
+                        SendMessageToGame($"/gu {user}: {messageContent}");
                     }
                 }
             }

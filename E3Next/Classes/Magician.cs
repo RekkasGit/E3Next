@@ -565,9 +565,14 @@ namespace E3Core.Classes
 
         private static bool GiveWeapons(int petId, string weaponString)
         {
-            var weapons = weaponString.Split('|');
+			if(String.IsNullOrWhiteSpace(weaponString) || !weaponString.Contains('|'))
+			{
+				weaponString = "Water|Fire";
+			}
+
+			var weapons = weaponString.Split('|');
             var weaponsToEquip = new List<string>();
-            _weaponMap.TryGetValue(weapons[0], out var primary);
+		    _weaponMap.TryGetValue(weapons[0], out var primary);
             _weaponMap.TryGetValue(weapons[1], out var secondary);
 
             if (primary != null) weaponsToEquip.Add(primary);

@@ -15,7 +15,6 @@ namespace E3NextConfigEditor.Client
 		public DealerClient(Int32 port)
 		{
 			_port = port;
-
 		}
 
 		private void ResetSocket()
@@ -48,19 +47,14 @@ namespace E3NextConfigEditor.Client
 				_requestMsg.InitEmpty();
 				//send empty frame
 				_requestSocket.TrySend(ref _requestMsg, SendTimeout, true);
-
 				_payloadLength = System.Text.Encoding.Default.GetBytes(query, 0, query.Length, _payload, 0);
-
 				_requestMsg.Close();
-
 				//include command+ length in payload
 				_requestMsg.InitPool(_payloadLength + 8);
-
 				unsafe
 				{
 					fixed (byte* src = _payload)
 					{
-
 						fixed (byte* dest = _requestMsg.Data)
 						{   //4 bytes = commandtype
 							//4 bytes = length
@@ -72,13 +66,10 @@ namespace E3NextConfigEditor.Client
 							tPtr += 4;
 							Buffer.MemoryCopy(src, tPtr, _requestMsg.Data.Length, _payloadLength);
 						}
-
 					}
 				}
 
 				_requestSocket.TrySend(ref _requestMsg, SendTimeout, false);
-
-
 				_requestMsg.Close();
 				_requestMsg.InitEmpty();
 

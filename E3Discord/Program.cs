@@ -16,6 +16,16 @@ namespace E3Discord
         private static EventHandler _handler;
         private static Random _random = new Random();
 
+		/// <summary>
+		/// Note you will have to setup Privileged gateway intents so that getting members of a discord channel work. 
+		/// basically just allow
+		/// 
+		/// Presence intent
+		/// server member intent
+		/// message content intent
+		/// </summary>
+
+
         static void Main()
         {
             var args = Environment.GetCommandLineArgs();
@@ -27,9 +37,9 @@ namespace E3Discord
 
             _handler += new EventHandler(Handler);
             SetConsoleCtrlHandler(_handler, true);
-            FactOrJoke();
-
-            while (true)
+			//FactOrJoke();
+			DiscordMessager.SendMessageToDiscord("Discord bot now active.");
+			while (true)
             {
                 var task = Task.Run(() => DiscordMessager.PollDiscord());
                 if (task.Wait(TimeSpan.FromSeconds(60))) // if it didn't return in 60 seconds, the bot's everquest client likely went disconnected. kill this process
@@ -48,7 +58,7 @@ namespace E3Discord
 
         private static void OnTimedEvent(object source, ElapsedEventArgs e)
         {
-            FactOrJoke();
+            //FactOrJoke();
         }
 
         private static void FactOrJoke()
@@ -65,7 +75,7 @@ namespace E3Discord
 
         private static bool Handler()
         {
-            DiscordMessager.SendMessageToDiscord("Disconnected because Chadbot app died or was closed :sob:");
+            DiscordMessager.SendMessageToDiscord("Disconnected because app died or was closed :sob:");
             Environment.Exit(0);
 
             return true;

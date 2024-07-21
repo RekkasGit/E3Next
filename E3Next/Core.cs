@@ -38,7 +38,7 @@ namespace MonoCore
     /// </summary>
     public static class MainProcessor
     {
-        public static IMQ MQ = Core.mqInstance;
+        public static IMQ _mq = Core.mqInstance;
        
         private static Logging _log = Core.logInstance;
         public static string ApplicationName = "";
@@ -106,13 +106,23 @@ namespace MonoCore
                     Delay(E3.CharacterSettings.CPU_ProcessLoopDelay);//this calls the reset events and sets the delay to 10ms at min
                 }
             }
-           
-            //E3.Shutdown();
-            MQ.Write("Shutting down E3 Main C# Thread.");
-            MQ.Write("Doing netmq cleanup.");
-            //NetMQConfig.Cleanup(false);
 
-            Core.CoreResetEvent.Set();
+			//E3.Shutdown();
+			_mq.Write("Shutting down E3 Main C# Thread.");
+			_mq.Write("Doing netmq cleanup.");
+			//NetMQConfig.Cleanup(false);
+			if (MQ.DelayedWrites.Count > 0)
+			{
+				while (MQ.DelayedWrites.Count > 0)
+				{
+					string message;
+					if (MQ.DelayedWrites.TryDequeue(out message))
+					{
+						Core.mq_Echo(message);
+					}
+				}
+			}
+			Core.CoreResetEvent.Set();
         }
 
         static public void Delay(Int32 value)
@@ -874,7 +884,19 @@ namespace MonoCore
 			E3Core.Server.NetMQServer.KillAllProcesses();
             NetMQConfig.Cleanup(false);
             System.Threading.Thread.Sleep(500);
-            GC.Collect();
+			//write out any writes that have been delayed
+			if (MQ.DelayedWrites.Count > 0)
+			{
+				while (MQ.DelayedWrites.Count > 0)
+				{
+					string message;
+					if (MQ.DelayedWrites.TryDequeue(out message))
+					{
+						Core.mq_Echo(message);
+					}
+				}
+			}
+			GC.Collect();
             ////NOTE , there are situations where the unload of the domain will lock up. I've done everything I can do to prevent this, but it 'can' and will happen. 
             ////I've written a script to reload constantly for 5-6 min before lockup, but again its a % chance. 
         }
@@ -956,8 +978,18 @@ namespace MonoCore
                 Core.mq_Delay(CurrentDelay);
                 CurrentDelay = 0;
             }
-  
-
+			//write out any writes that have been delayed
+			if(MQ.DelayedWrites.Count>0)
+			{
+				while(MQ.DelayedWrites.Count>0)
+				{
+					string message;
+					if(MQ.DelayedWrites.TryDequeue(out message))
+					{
+						Core.mq_Echo(message);
+					}
+				}
+			}
         }
 
         //Comment these out if you are not using events so that C++ doesn't waste time sending the string to C#
@@ -1186,7 +1218,11 @@ namespace MonoCore
         void Cmd(string query, bool delayed = false);
         void Cmd(string query,Int32 delay,bool delayed=false);
         void Write(string query, [CallerMemberName] string memberName = "", [CallerFilePath] string fileName = "", [CallerLineNumber] int lineNumber = 0);
-        void TraceStart(string methodName);
+		/// <summary>
+		/// This is used when on a different thread so its queued up on the main thread in MQ
+		/// </summary>
+		void WriteDelayed(string query, [CallerMemberName] string memberName = "", [CallerFilePath] string fileName = "", [CallerLineNumber] int lineNumber = 0);
+		void TraceStart(string methodName);
         void TraceEnd(string methodName);
         void Delay(Int32 value);
         Boolean Delay(Int32 maxTimeToWait, string Condition);
@@ -1209,6 +1245,7 @@ namespace MonoCore
         public static Int64 SinceLastDelay = 0;
         public static Int64 _totalQueryCounts;
         public static bool _noDelay = false;
+		public static ConcurrentQueue<String> DelayedWrites = new ConcurrentQueue<string>();
         public T Query<T>(string query)
         {
             if (!Core.IsProcessing)
@@ -1378,11 +1415,19 @@ namespace MonoCore
 				E3.Bots.Broadcast(query);
 			}
 			Core.mq_Echo($"\a#336699[{MainProcessor.ApplicationName}]\a-w{System.DateTime.Now.ToString("HH:mm:ss")} \aw- {query}");
-            return;
-
+			return;
         }
-
-        public void TraceStart(string methodName)
+		public void WriteDelayed(string query, [CallerMemberName] string memberName = "", [CallerFilePath] string fileName = "", [CallerLineNumber] int lineNumber = 0)
+		{
+			//delay the write until we are in the C# area and the MQ thread are haulted to prevent crashes
+			if (E3Core.Processors.Setup._broadcastWrites)
+			{
+				E3.Bots.Broadcast(query);
+			}
+			DelayedWrites.Enqueue($"\a#336699[{MainProcessor.ApplicationName}]\a-w{System.DateTime.Now.ToString("HH:mm:ss")} \aw- {query}");
+			return;
+		}
+		public void TraceStart(string methodName)
         {
             if (String.IsNullOrWhiteSpace(methodName))
             {
@@ -1528,7 +1573,18 @@ namespace MonoCore
         {
             MQ = mqInstance;
         }
-        public void Write(string message, LogLevels logLevel = LogLevels.Default, string eventName = "Logging", [CallerMemberName] string memberName = "", [CallerFilePath] string fileName = "", [CallerLineNumber] int lineNumber = 0, Dictionary<String, String> headers = null)
+		public void WriteDelayed(string message, LogLevels logLevel = LogLevels.Default, string eventName = "Logging", [CallerMemberName] string memberName = "", [CallerFilePath] string fileName = "", [CallerLineNumber] int lineNumber = 0, Dictionary<String, String> headers = null)
+		{
+
+			if (logLevel == LogLevels.Default)
+			{
+				logLevel = DefaultLogLevel;
+			}
+
+			WriteStaticDelayed(message, logLevel, eventName, memberName, fileName, lineNumber, headers);
+
+		}
+		public void Write(string message, LogLevels logLevel = LogLevels.Default, string eventName = "Logging", [CallerMemberName] string memberName = "", [CallerFilePath] string fileName = "", [CallerLineNumber] int lineNumber = 0, Dictionary<String, String> headers = null)
         {
 
             if (logLevel == LogLevels.Default)
@@ -1539,8 +1595,30 @@ namespace MonoCore
             WriteStatic(message, logLevel, eventName, memberName, fileName, lineNumber, headers);
 
         }
+		public static void WriteStaticDelayed(string message, LogLevels logLevel = LogLevels.Info, string eventName = "Logging", [CallerMemberName] string memberName = "", [CallerFilePath] string fileName = "", [CallerLineNumber] int lineNumber = 0, Dictionary<String, String> headers = null)
+		{
+			if ((Int32)logLevel < (Int32)MinLogLevelTolog)
+			{
+				return;//log level is too low to currently log. 
+			}
+			string className = GetClassName(fileName);
 
-        public static void WriteStatic(string message, LogLevels logLevel = LogLevels.Info, string eventName = "Logging", [CallerMemberName] string memberName = "", [CallerFilePath] string fileName = "", [CallerLineNumber] int lineNumber = 0, Dictionary<String, String> headers = null)
+			if (logLevel == LogLevels.CriticalError)
+			{
+				eventName += "._CriticalError_";
+			}
+
+			if (logLevel == LogLevels.Debug)
+			{
+				MQ.WriteDelayed($"\ag{className}:\ao{memberName}\aw:({lineNumber}) {message}", "", "Logging");
+
+			}
+			else
+			{
+				MQ.WriteDelayed($"{message}");
+			}
+		}
+		public static void WriteStatic(string message, LogLevels logLevel = LogLevels.Info, string eventName = "Logging", [CallerMemberName] string memberName = "", [CallerFilePath] string fileName = "", [CallerLineNumber] int lineNumber = 0, Dictionary<String, String> headers = null)
         {
             if ((Int32)logLevel < (Int32)MinLogLevelTolog)
             {
@@ -1558,7 +1636,7 @@ namespace MonoCore
 
             if (logLevel == LogLevels.Debug)
             {
-                MQ.Write($"\ag{className}:\ao{memberName}\aw:({lineNumber}) {message}", "", "Logging");
+				MQ.Write($"\ag{className}:\ao{memberName}\aw:({lineNumber}) {message}", "", "Logging");
 
             }
             else
@@ -1624,21 +1702,29 @@ namespace MonoCore
         public static String GetClassName(string fileName)
         {
             string className;
-            if (!_classLookup.ContainsKey(fileName))
-            {
-                if (!String.IsNullOrWhiteSpace(fileName))
-                {
-                    string[] tempArray = fileName.Split('\\');
-                    className = tempArray[tempArray.Length - 1];
-                    className = className.Replace(".cs", String.Empty).Replace(".vb", String.Empty);
-                    _classLookup.TryAdd(fileName, className);
+			try
+			{
+				if (!_classLookup.ContainsKey(fileName))
+				{
+					if (!String.IsNullOrWhiteSpace(fileName))
+					{
+						string[] tempArray = fileName.Split('\\');
+						className = tempArray[tempArray.Length - 1];
+						className = className.Replace(".cs", String.Empty).Replace(".vb", String.Empty);
+						_classLookup.TryAdd(fileName, className);
 
-                }
-                else
-                {
-                    _classLookup.TryAdd(fileName, "Unknown/ErrorGettingClass");
-                }
-            }
+					}
+					else
+					{
+						_classLookup.TryAdd(fileName, "Unknown/ErrorGettingClass");
+					}
+				}
+			}
+			catch(Exception)
+			{
+				_classLookup.TryAdd(fileName, "Unknown/ErrorGettingClass");
+			}
+           
             className = _classLookup[fileName];
             return className;
         }
@@ -1689,7 +1775,7 @@ namespace MonoCore
             {
                 if (CallBackDispose != null)
                 {
-                    CallBackDispose.Invoke(this); //this should null out the CallbackDispose so the normal dispose can then run.
+                    CallBackDispose.Invoke(this); 
                 }
 
                 ResetObject();

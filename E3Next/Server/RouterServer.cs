@@ -62,7 +62,7 @@ namespace E3Core.Server
         Int64 counter = 0;
         static TimeSpan timeout = new TimeSpan(0, 0, 0, 5);
 
-        public static ConcurrentQueue<RouterMessage> _tloRequets = new ConcurrentQueue<RouterMessage>();
+        public static ConcurrentQueue<RouterMessage> _tloRequests = new ConcurrentQueue<RouterMessage>();
         public static ConcurrentQueue<RouterMessage> _tloResposne = new ConcurrentQueue<RouterMessage>();
         
 
@@ -78,10 +78,10 @@ namespace E3Core.Server
         public static void ProcessRequests()
         {
             bool _inBulkMode = false;
-            while (_tloRequets.Count > 0 )
+            while (_tloRequests.Count > 0 )
             {
                 RouterMessage message;
-                _tloRequets.TryDequeue(out message);
+                _tloRequests.TryDequeue(out message);
                 //lets pull out the string
                 string query = System.Text.Encoding.Default.GetString(message.payload, 0, message.payloadLength);
                 string response = String.Empty;
@@ -192,7 +192,7 @@ namespace E3Core.Server
                 {
 
                     Int32 bulkSleepCounter = 0;
-                    while(_tloRequets.Count==0 && bulkSleepCounter<1000)
+                    while(_tloRequests.Count==0 && bulkSleepCounter<1000)
                     {
                         //if bulk mode lasts too log without data, kick out of bulk mode after about 1 second
                         bulkSleepCounter++;
@@ -277,7 +277,7 @@ namespace E3Core.Server
 
                         if (message.commandType == 1)
                         {
-                            _tloRequets.Enqueue(message);
+                            _tloRequests.Enqueue(message);
                         }
                         else
                         {
@@ -342,7 +342,7 @@ namespace E3Core.Server
 
 
             _rpcRouter.Dispose();
-            MQ.Write("Shutting down RouterServer Thread.");
+            MQ.WriteDelayed("Shutting down RouterServer Thread.");
 
         }
 

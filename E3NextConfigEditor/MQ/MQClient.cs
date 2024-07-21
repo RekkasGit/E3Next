@@ -183,5 +183,10 @@ namespace E3NextConfigEditor.MQ
 		{
 			
 		}
+
+		public void WriteDelayed(string query, [CallerMemberName] string memberName = "", [CallerFilePath] string fileName = "", [CallerLineNumber] int lineNumber = 0)
+		{
+			
+		}
 	}
 }

@@ -50,6 +50,14 @@ namespace E3Core.Processors
         [AdvSettingInvoke]
         public static void Check_Cures()
         {
+            //if configured to not cure while naving check to see if we are naving
+            if (!E3.GeneralSettings.General_CureWhileNavigating)
+            {
+                if (!Assist.IsAssisting && Movement.IsNavigating())
+                {
+                    return;
+                }
+            }
 
             if (!e3util.ShouldCheck(ref _nextRCureCheck, _nexRCureCheckInterval)) return;
 
@@ -100,7 +108,11 @@ namespace E3Core.Processors
                 //spell here is the spell debuff we are looking for
                 foreach (var spell in E3.CharacterSettings.RadiantCure)
                 {
-                    Int32 numberSick = 0;
+					if (!String.IsNullOrWhiteSpace(spell.Ifs))
+					{
+						if (!Casting.Ifs(spell)) continue;
+					}
+					Int32 numberSick = 0;
 
                     foreach (var id in Basics.GroupMembers)
                     {
@@ -140,7 +152,10 @@ namespace E3Core.Processors
         {
             foreach (var spell in curesSpells)
             {
-
+				if(!String.IsNullOrWhiteSpace(spell.Ifs))
+				{
+					if (!Casting.Ifs(spell)) continue;
+				}
                 //check each member of the group for counters
                 foreach (var target in E3.Bots.BotsConnected())
                 {
@@ -156,7 +171,12 @@ namespace E3Core.Processors
                             bool foundBadBuff = false;
                             foreach (var bb in ignoreSpells)
                             {
-                                if (badbuffs.Contains(bb.SpellID))
+								if (!String.IsNullOrWhiteSpace(bb.Ifs))
+								{
+									if (!Casting.Ifs(bb)) continue;
+								}
+
+								if (badbuffs.Contains(bb.SpellID))
                                 {
                                     foundBadBuff = true;
                                     break;

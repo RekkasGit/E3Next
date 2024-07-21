@@ -34,6 +34,20 @@ namespace E3Core.Utility
 		//share this as we can reuse as its only 1 thread
 		private static StringBuilder _resultStringBuilder = new StringBuilder(1024);
 		//modified from https://stackoverflow.com/questions/6275980/string-replace-ignoring-case
+
+
+		
+		public static Int32 Latency()
+		{
+			Int32 returnValue = 0;
+			Int32 result = MQ.Query<Int32>("${EverQuest.Ping}");
+			if(result>0)
+			{
+				returnValue = result;
+			}
+			return returnValue;
+		}
+		
 		public static string ArgsToCommand(List<String> args)
 		{
 			_resultStringBuilder.Clear();
@@ -239,6 +253,12 @@ namespace E3Core.Utility
             }
 
         }
+		public static void SetXTargetSlotToAutoHater(Int32 slot)
+		{
+			MQ.Cmd($"/squelch /xtarg set {slot} ET");
+			MQ.Delay(100);
+			MQ.Cmd($"/squelch /xtarg set {slot} AH");
+		}
         public static bool TargetIsPCOrPCPet()
         {
             Spawn ct;
@@ -846,6 +866,11 @@ namespace E3Core.Utility
         }
         public static string GetLocalIPAddress()
         {
+            if (!string.IsNullOrWhiteSpace(E3.GeneralSettings.General_Networking_LocalIPOverride))
+            {
+                return E3.GeneralSettings.General_Networking_LocalIPOverride;
+            }
+
 			//https://stackoverflow.com/questions/6803073/get-local-ip-address
 
 			string localIP;
@@ -1086,7 +1111,7 @@ namespace E3Core.Utility
             MQ.Cmd($"/nav id {spawnID} distance={stopDistance}");
             
             Int64 endTime = Core.StopWatch.ElapsedMilliseconds + timeoutInMS;
-            MQ.Delay(300);
+            MQ.Delay(600);
 
             while (navPathExists && MQ.Query<int>("${Navigation.Velocity}") > 0)
             {
@@ -1306,38 +1331,44 @@ namespace E3Core.Utility
 		}
 		public static List<Data.Spell> ListAllActiveAA()
         {
-            List<Data.Spell> returnValue = new List<Data.Spell>();
-            for(Int32 i=0;i<10000;i++)
-            {
-                string spellName = MQ.Query<String>($"${{Me.AltAbility[{i}].Name}}");
-                if(spellName!="NULL")
-                {
-                    var spell = new Data.Spell(spellName);
-                    if(spell.CastType== CastingType.AA)
-                    {
-						returnValue.Add(spell);
+			//using (_log.Trace("AA List Call"))
+			{
+				List<Data.Spell> returnValue = new List<Data.Spell>();
+				for(Int32 i=0;i<10000;i++)
+				{
+					string spellName = MQ.Query<String>($"${{Me.AltAbility[{i}].Name}}");
+					if(spellName!="NULL")
+					{
+						var spell = new Data.Spell(spellName);
+						if(spell.CastType== CastingType.AA)
+						{
+							returnValue.Add(spell);
+						}
 					}
 				}
-            }
-            return returnValue;
-        }
+				return returnValue;
+			}
+		}
 		
 		public static List<Data.Spell> ListAllActiveSkills()
 		{
-			List<Data.Spell> returnValue = new List<Data.Spell>();
-			for (Int32 i = 0; i < Skills.IDToName.Count; i++)
-			{
-				bool haveSkill = MQ.Query<bool>($"${{Me.Ability[{i}]}}");
-				if (haveSkill)
+			
+				List<Data.Spell> returnValue = new List<Data.Spell>();
+				for (Int32 i = 0; i < Skills.IDToName.Count; i++)
 				{
-					var spell = new Data.Spell(Skills.IDToName[i]);
-					if (spell.CastType == CastingType.Ability)
+					bool haveSkill = MQ.Query<bool>($"${{Me.Ability[{i}]}}");
+					if (haveSkill)
 					{
-						returnValue.Add(spell);
+						var spell = new Data.Spell(Skills.IDToName[i]);
+						if (spell.CastType == CastingType.Ability)
+						{
+							returnValue.Add(spell);
+						}
 					}
 				}
-			}
-			return returnValue;
+				return returnValue;
+			
+			
 		}
 		public static List<Data.Spell> ListAllBookSpells()
         {

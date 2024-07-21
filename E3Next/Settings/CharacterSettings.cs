@@ -240,6 +240,8 @@ namespace E3Core.Settings
 
 		[INI_Section("Gimme", "Gimme")]
 		public List<string> Gimme = new List<string>();
+		[INI_Section("Gimme", "Gimme-NoCombat")]
+		public List<string> Gimme_NoCombat = new List<string>();
 		[INI_Section("Gimme", "Gimme-InCombat")]
 		public bool Gimme_InCombat = true;
 
@@ -925,7 +927,8 @@ namespace E3Core.Settings
             LoadKeyData("Heals", "Auto Cast Necro Heal Orbs (On/Off)", ParsedData, ref HealAutoNecroOrbs);
             LoadKeyData("Off Assist Spells", "Main", ParsedData, OffAssistSpells);
             LoadKeyData("Gimme", "Gimme", ParsedData, Gimme);
-            LoadKeyData("Gimme", "Gimme-InCombat", ParsedData, ref Gimme_InCombat);
+			LoadKeyData("Gimme", "Gimme-NoCombat", ParsedData, Gimme_NoCombat);
+			LoadKeyData("Gimme", "Gimme-InCombat", ParsedData, ref Gimme_InCombat);
 
             LoadKeyData("Charm", "CharmSpell",ParsedData, Charm_CharmSpells);
          
@@ -1251,7 +1254,7 @@ namespace E3Core.Settings
 			section = newFile.Sections.GetSectionData("Gimme");
 			section.Keys.AddKey("Gimme-InCombat", "On");
 			section.Keys.AddKey("Gimme", "");
-
+			section.Keys.AddKey("Gimme-NoCombat", "");
 
 			//newFile.Sections.AddSection("LootCommander");
 			//section = newFile.Sections.GetSectionData("LootCommander");
@@ -1577,7 +1580,7 @@ namespace E3Core.Settings
 					defaultFile.Sections.AddSection(header);
 					var section = defaultFile.Sections[header];
 					var old_section = ParsedData.Sections.GetSectionData(header);
-					KeyData oldKey = null;
+					//KeyData oldKey = null;
 					if(old_section!=null)
 					{
 						foreach (var keyData in old_section.Keys)

@@ -356,7 +356,7 @@ namespace E3Core.Processors
 					}
 					catch (Exception ex)
                     {
-                        _log.Write($"Auto Reg user eror for path:{path} message:{ex.ToString()}"); ;
+                        _log.WriteDelayed($"Auto Reg user eror for path:{path} message:{ex.ToString()}"); ;
 						System.Threading.Thread.Sleep(1000);
 					}
 				}
