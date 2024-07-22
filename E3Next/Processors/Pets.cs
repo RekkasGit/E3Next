@@ -122,7 +122,8 @@ namespace E3Core.Processors
                     petID = MQ.Query<Int32>("${Me.Pet.ID}");
                     if (petID > 0)
                     {
-                        MQ.Cmd("/squelch /pet ghold on");
+						MQ.Cmd("/squelch /pet hold on");
+						MQ.Cmd("/squelch /pet ghold on");
                     }
                 }
               

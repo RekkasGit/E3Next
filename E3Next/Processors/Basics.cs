@@ -762,7 +762,8 @@ namespace E3Core.Processors
                     {
                         foreach (var spell in E3.CharacterSettings.CasterEvacs)
                         {
-                            if (!Casting.SpellInCooldown(spell))
+							//don't try and mem a spell if its not already mem
+                            if ((spell.CastType != CastingType.Spell) || !Casting.SpellInCooldown(spell))
                             {
                                 if (Casting.CheckReady(spell) && Casting.CheckMana(spell))
                                 {
