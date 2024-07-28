@@ -696,8 +696,8 @@ namespace E3Core.Processors
                     }
                 }
             });
-
-            EventProcessor.RegisterCommand("/bark-send", (x) =>
+			
+			EventProcessor.RegisterCommand("/bark-send", (x) =>
             {
                 if (x.args.Count > 1)
                 {
@@ -751,8 +751,92 @@ namespace E3Core.Processors
                     }
                 }
             });
+			EventProcessor.RegisterCommand("/e3bark", (x) =>
+			{
+				//rebuild the bark message, and do a /say
+				if (x.args.Count > 0)
+				{
+					int targetid = MQ.Query<int>("${Target.ID}");
+					if (targetid > 0)
+					{
+						Spawn s;
+						if (_spawns.TryByID(targetid, out s))
+						{
+							System.Text.StringBuilder sb = new StringBuilder();
+							bool first = true;
+							foreach (string arg in x.args)
+							{
+								if (!first) sb.Append(" ");
+								sb.Append(arg);
+								first = false;
+							}
+							string message = sb.ToString();
+							E3.Bots.BroadcastCommandToGroup($"/e3bark-send {targetid} \"{message}\" {Zoning.CurrentZone.Id}", x);
+							Int32 numberToBark = 1;
 
-            EventProcessor.RegisterCommand("/evac", (x) =>
+							MQ.Cmd("/makemevisible");
+							for (int i = 0; i < numberToBark; i++)
+							{
+								MQ.Cmd($"/say {message}");
+								MQ.Delay(1500);
+								if (EventProcessor.EventList["Zoned"].queuedEvents.Count > 0)
+								{
+									//means we have zoned and can stop
+									break;
+								}
+							}
+						}
+					}
+				}
+			});
+			EventProcessor.RegisterCommand("/e3bark-send", (x) =>
+			{
+				if (x.args.Count > 1)
+				{
+					if (x.args.Count > 2)
+					{
+						string zoneid = x.args[2];
+						if (zoneid != Zoning.CurrentZone.Id.ToString())
+						{
+							return;
+						}
+					}
+					int targetid;
+					if (int.TryParse(x.args[0], out targetid))
+					{
+						if (targetid > 0)
+						{
+
+							Spawn s;
+							if (_spawns.TryByID(targetid, out s))
+							{
+								if (e3util.IsEQLive())
+								{
+									//random delay so it isn't quite so ovious
+									MQ.Delay(E3.Random.Next(100, 1000));
+
+								}
+								Casting.TrueTarget(targetid);
+								MQ.Delay(100);
+								MQ.Cmd("/makemevisible");
+								Int32 numberToBark = 1;
+								string message = x.args[1];
+								for (int i = 0; i < numberToBark; i++)
+								{
+									MQ.Cmd($"/say {message}", 1000);
+
+									if (EventProcessor.EventList["Zoned"].queuedEvents.Count > 0)
+									{
+										//means we have zoned and can stop
+										break;
+									}
+								}
+							}
+						}
+					}
+				}
+			});
+			EventProcessor.RegisterCommand("/evac", (x) =>
             {
                 if (E3.CurrentClass == Class.Druid || E3.CurrentClass == Class.Wizard)
                 {
