@@ -192,7 +192,16 @@ namespace E3Core.Processors
 				}
 			
             });
-            EventProcessor.RegisterEvent("InviteToRaid", "(.+) invites you to join a raid.", (x) =>
+			EventProcessor.RegisterEvent("GMBuff", "(.+) A GM has cast (.+) world-wide!", (x) =>
+			{
+				if (x.match.Groups.Count == 3)
+				{
+					var buff = x.match.Groups[2].Value.Replace("[", "").Replace("]", "");
+					PubServer.AddTopicMessage("ServerMessage", $"A GM just cast {buff}!");
+				}
+			});
+
+			EventProcessor.RegisterEvent("InviteToRaid", "(.+) invites you to join a raid.", (x) =>
             {
 				if (e3util.IsEQLive())
 				{     
@@ -1802,6 +1811,7 @@ namespace E3Core.Processors
 				}
 			}
 		}
+		
 
 		[ClassInvoke(Class.All)]
         public static void CheckForage()

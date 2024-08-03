@@ -413,7 +413,16 @@ namespace E3Core.Processors
                         
                         foreach (var spell in _currentRezSpells)
                         {
-                            if (Casting.CheckReady(spell) && Casting.CheckMana(spell))
+
+							if (!String.IsNullOrWhiteSpace(spell.Ifs))
+							{
+								if (!Casting.Ifs(spell))
+								{
+									continue;
+								}
+							}
+
+							if (Casting.CheckReady(spell) && Casting.CheckMana(spell))
                             {
                                 if (Basics.InCombat())
                                 {
