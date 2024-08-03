@@ -940,6 +940,13 @@ namespace E3Core.Processors
                     Movement.AcquireFollow();
 
             });
+
+            EventProcessor.RegisterCommand("/e3smarttaunt", (x) =>
+            {
+				//swap them
+				e3util.ToggleBooleanSetting(ref E3.CharacterSettings.Assist_SmartTaunt, "SmartTaunt", x.args);
+            });
+
             e3util.RegisterCommandWithTarget("/e3offassistignore", (x) => { _offAssistIgnore.Add(x); });
             EventProcessor.RegisterEvent("EnrageOn", "(.+) has become ENRAGED.", (x) =>
             {
