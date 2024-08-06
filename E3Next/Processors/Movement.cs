@@ -40,7 +40,7 @@ namespace E3Core.Processors
 		public static string _chaseTarget = String.Empty;
 
         [SubSystemInit]
-        public static void Init()
+        public static void Movement_Init()
         {
             RegisterEvents();
              _doorData.LoadData();

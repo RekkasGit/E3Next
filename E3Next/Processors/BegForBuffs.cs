@@ -35,7 +35,7 @@ namespace E3Core.Processors
         private static SpellAliasDataFile _spellAliasesDataFile = new SpellAliasDataFile();
         public static Dictionary<string, string> SpellAliases;
         [SubSystemInit]
-        public static void Init()
+        public static void BegForBuffs_Init()
         {
             RegsterEvents();
             _spellAliasesDataFile.LoadData();

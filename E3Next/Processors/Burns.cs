@@ -50,7 +50,7 @@ namespace E3Core.Processors
 
 
         [SubSystemInit]
-        public static void Init()
+        public static void Burns_Init()
         {
             RegisterEpicAndAnguishBP();
             RegisterSwarppets();

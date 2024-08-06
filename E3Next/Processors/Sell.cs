@@ -14,7 +14,7 @@ namespace E3Core.Processors
 
 
         [SubSystemInit]
-        public static void Init()
+        public static void Sell_Init()
         {
             RegisterEvents();
         }

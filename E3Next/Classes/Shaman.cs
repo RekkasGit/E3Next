@@ -30,7 +30,7 @@ namespace E3Core.Classes
         private static Int32 _maxAggroCap = 90;
 
 		[SubSystemInit]
-		public static void Init()
+		public static void Shaman_Init()
 		{
 			RegisterEvents();
 		}

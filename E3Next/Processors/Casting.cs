@@ -1540,7 +1540,7 @@ namespace E3Core.Processors
 
 		public static Dictionary<string, string> VarsetValues = new Dictionary<string, string>(StringComparer.OrdinalIgnoreCase);
 		[SubSystemInit]
-		public static void InitCommands()
+		public static void Casting_InitCommands()
 		{
 
 			EventProcessor.RegisterCommand("/e3resetcounters", (x) =>
@@ -2304,7 +2304,7 @@ namespace E3Core.Processors
 
 		}
 		[SubSystemInit]
-		public static void Init()
+		public static void Casting_Init()
 		{
 			RegisterEventsCasting();
 			RegisterEventsCastResults();

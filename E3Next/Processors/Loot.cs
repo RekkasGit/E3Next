@@ -29,7 +29,7 @@ namespace E3Core.Processors
 		public static Settings.FeatureSettings.LootStackable LootStackableSettings = null;
 
 		[SubSystemInit]
-        public static void Init()
+        public static void Loot_Init()
         {
             RegisterEvents();
             try

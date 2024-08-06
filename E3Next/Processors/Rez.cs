@@ -39,7 +39,7 @@ namespace E3Core.Processors
 		private static List<int> _corpsesToRemoveFromRecentlyRezzed = new List<int>();
 
         [SubSystemInit]
-        public static void Init()
+        public static void Rez_Init()
         {
             RegisterEvents();
             InitRezSpells();

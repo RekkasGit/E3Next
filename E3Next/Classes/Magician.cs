@@ -83,7 +83,7 @@ namespace E3Core.Classes
         /// Accepts a pet equipment request.
         /// </summary>
         [SubSystemInit]
-        public static void PetEquipmentRequest()
+        public static void Magician_PetEquipmentRequest()
         {
             if (E3.CurrentClass != Class.Magician || e3util.IsEQLive())
             {

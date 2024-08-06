@@ -152,7 +152,7 @@ namespace E3Core.Settings.FeatureSettings
         public static Dictionary<string, string> TaelosianSymbols = new Dictionary<string, string>(StringComparer.OrdinalIgnoreCase);
 
         [SubSystemInit]
-        public static void Init()
+        public static void SymbolItemsDataFile_Init()
         {
             if (!(e3util.IsEQEMU() && E3.ServerName == "Lazarus")) return;
 

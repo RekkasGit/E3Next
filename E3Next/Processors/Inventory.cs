@@ -25,7 +25,7 @@ namespace E3Core.Processors
         private static long _nextTradeCheckInterval = 1000;
 
         [SubSystemInit]
-        public static void Init()
+        public static void Inventory_Init()
         {
             RegisterEvents();
         }

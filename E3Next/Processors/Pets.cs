@@ -27,7 +27,7 @@ namespace E3Core.Processors
 		private static List<string> _petShrinkSpells = new List<string>() { "Diminutive Companion", "Gemstone of Dark Flame", "Symbol of Ancient Summoning", "Tiny Companion",  };
 
         [SubSystemInit]
-        public static void Init()
+        public static void Pets_Init()
         {
             RegisterEvents();
         }

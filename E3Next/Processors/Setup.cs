@@ -132,6 +132,7 @@ namespace E3Core.Processors
 
             foreach (var foundMethod in methods) // iterate through all found methods
             {
+				
                 //these are static don't need to create an instance
                 var func = (Action)foundMethod.CreateDelegate(typeof(Action));
                 try
@@ -139,9 +140,9 @@ namespace E3Core.Processors
 					func.Invoke();
 
 				}
-				catch (Exception ex)
+				catch (TargetInvocationException ex)
                 {
-                    MQ.Write("Issue with InitSubsystem:" + foundMethod.ToString());
+                    MQ.Write($"Issue with InitSubsystem:{foundMethod.ToString()} message: [{ex.Message}] inner:[{ex.InnerException?.Message}] inner_stack:{ex.InnerException?.StackTrace}");
                     throw ex;
                 }
             }

@@ -39,7 +39,7 @@ namespace E3Core.Processors
         private static List<Data.Spell> _tempOffAssistSpellList = new List<Spell>();
 
         [SubSystemInit]
-        public static void Init()
+        public static void DebuffDot_Init()
         {
             RegisterEvents();
         }

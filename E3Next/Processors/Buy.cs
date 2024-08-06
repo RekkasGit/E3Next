@@ -16,7 +16,7 @@ namespace E3Core.Processors
         private static IMQ MQ = E3.MQ;
         private static ISpawns Spawns = E3.Spawns;
         [SubSystemInit]
-        public static void Init()
+        public static void Buy_Init()
         {
             RegisterEvents();
         }
