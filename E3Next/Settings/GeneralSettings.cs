@@ -331,6 +331,7 @@ namespace E3Core.Settings
             section.Keys.AddKey("E3NetworkAddPathToMonitor", "");
         	section.Keys.AddKey("LazarusManaRecovery (On/Off)", "On");
 			section.Keys.AddKey("ExternalIP To Query For Local Address (8.8.8.8 default)", "8.8.8.8");
+			section.Keys.AddKey("Local IP Override", "");
 
 			section.Keys.AddKey("Heal While Navigating (On/Off)","On");
             section.Keys.AddKey("Cure While Navigating (On/Off)", "On");

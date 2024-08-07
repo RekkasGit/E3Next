@@ -54,7 +54,7 @@ namespace E3Core.Processors
 		private static List<Int32> _gmBuffs = new List<int>() { 34835, 35989, 35361, 25732, 34567, 36838, 43040, 36266, 36423 };
 		private static Int64 _nextBlockBuffCheck = 0;
 		[ExposedData("BuffCheck", "BlockBuffCheckInterval")]
-		private static Int64 _nextBlockBuffCheckInterval = 1000;
+		private static Int64 _nextBlockBuffCheckInterval = 250;
 		[ExposedData("BuffCheck", "InitAuras")]
 		static bool _initAuras = false;
 

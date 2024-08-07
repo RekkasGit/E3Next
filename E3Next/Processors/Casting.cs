@@ -32,6 +32,12 @@ namespace E3Core.Processors
 
 		public static CastReturn Cast(int targetID, Data.Spell spell, Func<Spell, Int32, Int32, bool> interruptCheck = null, bool isNowCast = false, bool isEmergency = false)
 		{
+
+			if(e3util.IsActionBlockingWindowOpen())
+			{
+				return CastReturn.CAST_BLOCKINGWINDOWOPEN;
+			}
+
 			bool navActive = false;
 			bool navPaused = false;
 			bool e3PausedNav = false;
@@ -1414,6 +1420,10 @@ namespace E3Core.Processors
 			if (!spell.Enabled) return false;
 			if (!spell.Initialized) spell.ReInit();
 
+			if (e3util.IsActionBlockingWindowOpen())
+			{
+				return false;
+			}
 			//if your stunned nothing is ready
 			if (MQ.Query<bool>("${Me.Stunned}"))
 			{
@@ -2677,6 +2687,7 @@ namespace E3Core.Processors
 		CAST_ZONING,
 		CAST_FEIGN,
 		CAST_SPELLBOOKOPEN,
+		CAST_BLOCKINGWINDOWOPEN,
 		CAST_ACTIVEDISC,
 		CAST_INTERRUPTFORHEAL,
 		CAST_CORPSEOPEN,
