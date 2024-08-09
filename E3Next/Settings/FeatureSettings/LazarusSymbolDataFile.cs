@@ -12,7 +12,7 @@ namespace E3Core.Settings.FeatureSettings
 {
     public class SymbolItemsDataFile : BaseSettings
     {
-        private static readonly string _fileName = "Lazarus_SymbolItems.ini";
+        private static string _fileName = "";
 
         // Planar Symbols
         private static readonly HashSet<string> _planarSymbolItems = new HashSet<string>
@@ -160,7 +160,8 @@ namespace E3Core.Settings.FeatureSettings
 
             try
             {
-                LoadData();
+				_fileName = $"Lazarus_SymbolItems_{E3.CurrentName}.ini";
+				LoadData();
             }
             catch (Exception ex)
             {
