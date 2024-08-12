@@ -1102,15 +1102,29 @@ namespace MonoCore
             Spawn s;
             if(Spawns.SpawnsByID.TryGetValue(ID, out s))
             {
-                //just update the value
-                s.Init(data, size);
-            }
+				//just update the value
+				try
+				{
+					s.Init(data, size);
+
+				}
+				catch (Exception) { };
+
+			}
             else
             {
                 var spawn = Spawn.Aquire();
-                spawn.Init(data, size);
-                Spawns._spawns.Add(spawn);
-            }
+				try
+				{
+					spawn.Init(data, size);
+					Spawns._spawns.Add(spawn);
+
+				}
+				catch(Exception)
+				{
+					spawn.Dispose();
+				}
+			}
 
             
             //copy the data out into the current array set. 

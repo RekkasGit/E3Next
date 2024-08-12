@@ -328,6 +328,14 @@ namespace E3Core.Data
                                 {
                                     Ifs = string.IsNullOrWhiteSpace(Ifs) ? keyData : Ifs + " && " + keyData;
                                 }
+								else
+								{
+									//check the global ifs
+									if(E3.GlobalIfs.Ifs.ContainsKey(key))
+									{
+										Ifs = string.IsNullOrWhiteSpace(Ifs) ? E3.GlobalIfs.Ifs[key] : Ifs + " && " + E3.GlobalIfs.Ifs[key];
+									}
+								}
                             }
                         }
                     }

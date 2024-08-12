@@ -190,7 +190,18 @@ namespace E3Core.Processors
         {
             if (!e3util.ShouldCheck(ref _nextReloadSettingsCheck, _nextReloadSettingsInterval)) return;
 
-            if (CharacterSettings.ShouldReload())
+
+			if (GlobalIfs.ShouldReload())
+			{
+				E3.Bots.Broadcast("\aoAuto-Reloading Global Ifs/Character settings settings file...");
+				E3.GlobalIfs = new GlobalIfs();
+				CharacterSettings = new CharacterSettings();
+				Loot.Reset();
+				GiveMe.Reset();
+				Bard.RestartMelody();
+				E3.Bots.Broadcast("\aoComplete!");
+			}
+			else if (CharacterSettings.ShouldReload())
             {
                 E3.Bots.Broadcast("\aoAuto-Reloading Character settings file...");
                 CharacterSettings = new CharacterSettings();
@@ -200,6 +211,7 @@ namespace E3Core.Processors
                 E3.Bots.Broadcast("\aoComplete!");
                
             }
+			
             if (GeneralSettings.ShouldReload())
             {
                 E3.Bots.Broadcast("\aoAuto-Reloading General settings file...");
@@ -443,6 +455,7 @@ namespace E3Core.Processors
                     //    Bots = new Bots();
                     //}
                 }
+				GlobalIfs = new GlobalIfs();
 				CharacterSettings = new Settings.CharacterSettings();
                 AdvancedSettings = new Settings.AdvancedSettings();
 				
@@ -502,6 +515,7 @@ namespace E3Core.Processors
         public static IMQ MQ = Core.mqInstance;
         public static Logging Log = Core.logInstance;
         public static Settings.CharacterSettings CharacterSettings = null;
+		public static Settings.FeatureSettings.GlobalIfs GlobalIfs = null;
 		public static Settings.GeneralSettings GeneralSettings = null;
         public static Settings.AdvancedSettings AdvancedSettings = null;
         public static IBots Bots = null;

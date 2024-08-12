@@ -1,16 +1,11 @@
-﻿using E3Core.Processors;
-using E3Core.Utility;
+﻿using E3Core.Utility;
 using IniParser;
 using IniParser.Model;
 using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Net;
-using System.Runtime.CompilerServices;
-using System.Runtime.Serialization.Formatters;
-using System.Text;
-using System.Threading.Tasks;
-using static System.Collections.Specialized.BitVector32;
+
 
 namespace E3Core.Settings
 {
