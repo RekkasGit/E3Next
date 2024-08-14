@@ -478,7 +478,37 @@ namespace E3Core.Utility
                 }
             }
 
-            return !inputSetValue;
+			if (inputs.Contains("Plate", StringComparer.OrdinalIgnoreCase))
+			{
+				if ((E3.CurrentClass & Class.Plate) == E3.CurrentClass)
+				{
+					returnValue = inputSetValue;
+				}
+			}
+			if (inputs.Contains("Chain", StringComparer.OrdinalIgnoreCase))
+			{
+				if ((E3.CurrentClass & Class.Chain) == E3.CurrentClass)
+				{
+					returnValue = inputSetValue;
+				}
+			}
+			if (inputs.Contains("Leather", StringComparer.OrdinalIgnoreCase))
+			{
+				if ((E3.CurrentClass & Class.Leather) == E3.CurrentClass)
+				{
+					returnValue = inputSetValue;
+				}
+			}
+			if (inputs.Contains("Silk", StringComparer.OrdinalIgnoreCase))
+			{
+				if ((E3.CurrentClass & Class.Silk) == E3.CurrentClass)
+				{
+					returnValue = inputSetValue;
+				}
+			}
+			
+
+			return !inputSetValue;
         }
         public static bool IsEQLive()
         {

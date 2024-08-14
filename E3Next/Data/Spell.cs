@@ -217,6 +217,7 @@ namespace E3Core.Data
                     }
 					else if (value.StartsWith("MinHPTotal|", StringComparison.OrdinalIgnoreCase))
 					{
+						//mainly for shaman canni AA, should probably put it for all spell checks
 						MinHPTotal = GetArgument<Int32>(value);
 					}
 					else if (value.StartsWith("HealPct|", StringComparison.OrdinalIgnoreCase))

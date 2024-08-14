@@ -59,7 +59,7 @@ namespace E3Core.Processors
 
 			}
 			try
-			{
+			{ 
 				if (spell.NoTarget)
 				{
                     targetID = 0;
@@ -385,7 +385,11 @@ namespace E3Core.Processors
 							{
 								MQ.Cmd("/stick pause");
 							}
-							TrueTarget(targetID);
+							if(!TrueTarget(targetID))
+							{
+								E3.Bots.Broadcast($"Spell Target failure for targetid:{targetID} for spell {spell.SpellName}");
+								return CastReturn.CAST_NOTARGET;
+							}
 						}
 
 						BeforeEventCheck(spell);

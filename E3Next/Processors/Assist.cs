@@ -22,8 +22,10 @@ namespace E3Core.Processors
         public static Boolean IsAssisting = false;
 		[ExposedData("Assist", "AssistTargetID")]
 		public static Int32 AssistTargetID = 0;
-
-        public static long LastAssistEndedTimestamp = 0;
+		public static long LastAssistEndedTimestamp = 0;
+		public static long LastAssistStartedTimeStamp = 0;
+		[ExposedData("Assist", "CurrentSecondsInCombat")]
+		public static long CurrentSecondsInCombat = 0;
 
         private static Logging _log = E3.Log;
         private static IMQ MQ = E3.MQ;
@@ -60,6 +62,11 @@ namespace E3Core.Processors
         /// </summary>
         public static void Process()
         {
+			if(LastAssistStartedTimeStamp > 0)
+			{
+				CurrentSecondsInCombat = (Core.StopWatch.ElapsedMilliseconds - LastAssistStartedTimeStamp) / 1000;
+			}
+
             CheckAssistStatus();
             ProcessCombat();
         }
@@ -443,7 +450,11 @@ namespace E3Core.Processors
                 MQ.Delay(1000);
             }
             if (MQ.Query<Int32>("${Me.Pet.ID}") > 0) MQ.Cmd("/squelch /pet back off");
-            IsAssisting = false;
+
+
+			CurrentSecondsInCombat = 0;
+			LastAssistStartedTimeStamp = 0;
+			IsAssisting = false;
             AllowControl = false;
             AssistTargetID = 0;
             _assistIsEnraged = false;
@@ -473,6 +484,7 @@ namespace E3Core.Processors
             if (zoneId != Zoning.CurrentZone.Id) return;
 			
            
+			
 			//clear in case its not reset by other means
 			//or you want to attack in enrage
 			_assistIsEnraged = false;
@@ -543,8 +555,12 @@ namespace E3Core.Processors
 
                 Movement.PauseMovement();
 
+				if (!IsAssisting)
+				{
+					LastAssistStartedTimeStamp = Core.StopWatch.ElapsedMilliseconds;
+				}
 
-                IsAssisting = true;
+				IsAssisting = true;
                 AssistTargetID = mobID;
                 if (MQ.Query<Int32>("${Target.ID}") != AssistTargetID)
                 {
