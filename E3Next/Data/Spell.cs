@@ -622,6 +622,7 @@ namespace E3Core.Data
                 Description = MQ.Query<String>($"${{Spell[{CastName}].Description}}");
 				ResistType = MQ.Query<String>($"${{Me.AltAbility[{CastName}].Spell.ResistType}}");
 				ResistAdj = MQ.Query<Int32>($"${{Me.AltAbility[{CastName}].Spell.ResistAdj}}");
+				AAID = MQ.Query<Int32>($"${{Me.AltAbility[{CastName}].ID}}");
 
 				if (SpellType.Equals("Detrimental", StringComparison.OrdinalIgnoreCase))
                 {
@@ -848,6 +849,7 @@ namespace E3Core.Data
                 }
             }
         }
+		public Int32 AAID = 0;
         public decimal MyCastTimeInSeconds = 0;
         public Double MyRange;
         public Int32 Mana;

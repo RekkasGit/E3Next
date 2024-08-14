@@ -539,7 +539,9 @@ namespace E3Core.Processors
 									PubServer.AddTopicMessage("${Me.Casting}",spell.CastName);
 									MQ.Write($"\ag{spell.CastName} \at{spell.SpellID} \am{targetName} \ao{targetID} \aw({spell.MyCastTime / 1000}sec)");
 
-									MQ.Cmd($"/casting \"{spell.CastName}|{spell.SpellGem}\"");
+									MQ.Cmd($"/cast \"{spell.CastName}\"");
+									//MQ.Cmd($"/casting \"{spell.CastName}|{spell.SpellGem}\"");
+
 									if (spell.MyCastTime > 500)
 									{
 										MQ.Delay(500);
@@ -553,7 +555,8 @@ namespace E3Core.Processors
 										PubServer.AddTopicMessage("${Me.Casting}", spell.CastName);
 										MQ.Write($"\ag{spell.CastName} \at{spell.SpellID} \am{targetName} \ao{targetID} \aw({spell.MyCastTime / 1000}sec)");
 
-										MQ.Cmd($"/casting \"{spell.CastName}|alt\"");
+										//MQ.Cmd($"/casting \"{spell.CastName}|alt\"");
+										MQ.Cmd($"/alt activate {spell.AAID}");
 										UpdateAAInCooldown(spell);
 
 										if (spell.MyCastTime > 500)
@@ -572,7 +575,8 @@ namespace E3Core.Processors
 										MQ.Write($"\ag{spell.CastName} \at{spell.SpellID} \am{targetName} \ao{targetID} \aw({spell.MyCastTime / 1000}sec)");
 
 										//else its an item
-										MQ.Cmd($"/casting \"{spell.CastName}|{spell.CastType.ToString()}\"");
+										//MQ.Cmd($"/casting \"{spell.CastName}|{spell.CastType.ToString()}\"");
+										MQ.Cmd($"/useitem \"{spell.CastName}\"");
 										UpdateItemInCooldown(spell);
 										if (spell.MyCastTime > 500)
 										{
@@ -588,7 +592,9 @@ namespace E3Core.Processors
 									PubServer.AddTopicMessage("${Casting}", $"{spell.CastName} on {targetName}");
 									PubServer.AddTopicMessage("${Me.Casting}", spell.CastName);
 									MQ.Write($"\ag{spell.CastName} \at{spell.SpellID} \am{targetName} \ao{targetID} \aw({spell.MyCastTime / 1000}sec)");
-									MQ.Cmd($"/casting \"{spell.CastName}|{spell.SpellGem}\" \"-targetid|{targetID}\"");
+									//MQ.Cmd($"/casting \"{spell.CastName}|{spell.SpellGem}\" \"-targetid|{targetID}\"");
+									MQ.Cmd($"/cast \"{spell.CastName}\"");
+
 									if (spell.MyCastTime > 500)
 									{
 										MQ.Delay(500);
@@ -601,7 +607,8 @@ namespace E3Core.Processors
 									MQ.Write($"\ag{spell.CastName} \at{spell.SpellID} \am{targetName} \ao{targetID} \aw({spell.MyCastTime / 1000}sec)");
 									if (spell.CastType == CastingType.AA)
 									{
-										MQ.Cmd($"/casting \"{spell.CastName}|alt\" \"-targetid|{targetID}\"");
+										//MQ.Cmd($"/casting \"{spell.CastName}|alt\" \"-targetid|{targetID}\"");
+										MQ.Cmd($"/alt activate {spell.AAID}");
 										UpdateAAInCooldown(spell);
 
 										if (spell.MyCastTime > 500)
@@ -617,7 +624,8 @@ namespace E3Core.Processors
 									{
 										//else its an item
 										PubServer.AddTopicMessage("${Me.Casting}", spell.CastName);
-										MQ.Cmd($"/casting \"{spell.CastName}|item\" \"-targetid|{targetID}\"");
+										//MQ.Cmd($"/casting \"{spell.CastName}|item\" \"-targetid|{targetID}\"");
+										MQ.Cmd($"/useitem \"{spell.CastName}\"");
 										UpdateItemInCooldown(spell);
 										if (spell.MyCastTime > 500)
 										{
@@ -1040,8 +1048,9 @@ namespace E3Core.Processors
 					if (spell.BeforeEvent.StartsWith("/exchange", StringComparison.OrdinalIgnoreCase)) MQ.Delay(300);
 				}
 				PubServer.AddTopicMessage("${Me.Casting}", spell.CastName);
-				MQ.Cmd($"/casting \"{spell.CastName}\" alt", 300);
 
+				//MQ.Cmd($"/casting \"{spell.CastName}\" alt", 300);
+				MQ.Cmd($"/alt activate {spell.AAID}",300);
 				//after event, after all things are done               
 				if (!String.IsNullOrWhiteSpace(spell.AfterEvent))
 				{
