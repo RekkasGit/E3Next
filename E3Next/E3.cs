@@ -74,6 +74,11 @@ namespace E3Core.Processors
 				//attribute class calls
 				ClassMethodCalls();
 			}
+			else
+			{
+				//follow/rez/etc
+				ClassMethodCalls();
+			}
 
 			
             //final cleanup/actions after the main loop has done processing
