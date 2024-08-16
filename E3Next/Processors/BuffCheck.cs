@@ -1634,14 +1634,13 @@ namespace E3Core.Processors
 
 			if (!E3.CharacterSettings.BandoBuff_Enabled) return;
 			if (String.IsNullOrWhiteSpace(E3.CharacterSettings.BandoBuff_BuffName)) return;
-			if (String.IsNullOrWhiteSpace(E3.CharacterSettings.BandoBuff_Primary)) return;
-			if (String.IsNullOrWhiteSpace(E3.CharacterSettings.BandoBuff_PrimaryWithoutBuff)) return;
 			if (String.IsNullOrWhiteSpace(E3.CharacterSettings.BandoBuff_BandoName)) return;
 			if (String.IsNullOrWhiteSpace(E3.CharacterSettings.BandoBuff_BandoNameWithoutBuff)) return;
 
 			bool hasBuff = true;
+			bool buffWillStack = MQ.Query<bool>($"${{Spell[{E3.CharacterSettings.BandoBuff_BuffName}].WillLand}}");
 
-			if (E3.CharacterSettings.BandoBuff_BuffName != String.Empty)
+			if (E3.CharacterSettings.BandoBuff_BuffName != String.Empty && buffWillStack)
 			{
 				hasBuff = MQ.Query<bool>($"${{Bool[${{Me.Buff[{E3.CharacterSettings.BandoBuff_BuffName}]}}]}}");
 				if (!hasBuff)
@@ -1649,29 +1648,37 @@ namespace E3Core.Processors
 					hasBuff = MQ.Query<bool>($"${{Bool[${{Me.Song[{E3.CharacterSettings.BandoBuff_BuffName}]}}]}}");
 				}
 			}
+
+			//Debuff code, only activate if either, we cannot land the buff configured or it doesn't exist.
+			//hasbuff is true by default
 			if (hasBuff && Basics.InCombat() && MQ.Query<Int32>("${Target.ID}") > 0)
 			{
 				bool hasDebuff = MQ.Query<bool>($"${{Bool[${{Target.Buff[{E3.CharacterSettings.BandoBuff_DebuffName}]}}]}}");
 				if (!hasDebuff)
 				{
-					bool willStack = MQ.Query<bool>($"${{Spell[{E3.CharacterSettings.BandoBuff_DebuffName}].StacksTarget}}");
+					bool bandoWithoutDeBuffIsActive = MQ.Query<bool>($"${{Me.Bandolier[{E3.CharacterSettings.BandoBuff_BandoNameWithoutDeBuff}].Active}}");
 
-					if (willStack)
+					if(!bandoWithoutDeBuffIsActive)
 					{
-						E3.Bots.Broadcast($"Swapping to {E3.CharacterSettings.BandoBuff_BandoNameWithoutDeBuff}");
+						bool willStack = MQ.Query<bool>($"${{Spell[{E3.CharacterSettings.BandoBuff_DebuffName}].StacksTarget}}");
 
-						MQ.Cmd($"/bando activate {E3.CharacterSettings.BandoBuff_BandoNameWithoutDeBuff}");
-						return;
+						if (willStack)
+						{
+							E3.Bots.Broadcast($"Swapping to {E3.CharacterSettings.BandoBuff_BandoNameWithoutDeBuff}");
+
+							MQ.Cmd($"/bando activate {E3.CharacterSettings.BandoBuff_BandoNameWithoutDeBuff}");
+							return;
+						}
 					}
 				}
 			}
 
-			//we have the debuff or we have the buff.
-			string primaryName = MQ.Query<String>("${Me.Inventory[13]}");
-			string secondaryName = MQ.Query<String>("${Me.Inventory[14]}");
+			bool bandoWhenBuffIsActive = MQ.Query<bool>($"${{Me.Bandolier[{E3.CharacterSettings.BandoBuff_BandoName}].Active}}");
+			bool bandoWithoutBuffIsActive = MQ.Query<bool>($"${{Me.Bandolier[{E3.CharacterSettings.BandoBuff_BandoNameWithoutBuff}].Active}}");
+
 			if (hasBuff)
 			{
-				if (!(String.Equals(primaryName, E3.CharacterSettings.BandoBuff_Primary, StringComparison.OrdinalIgnoreCase) && String.Equals(secondaryName, E3.CharacterSettings.BandoBuff_Secondary, StringComparison.OrdinalIgnoreCase)))
+				if (!bandoWhenBuffIsActive)
 				{
 					E3.Bots.Broadcast($"Swapping to {E3.CharacterSettings.BandoBuff_BandoName}");
 					MQ.Cmd($"/bando activate {E3.CharacterSettings.BandoBuff_BandoName}");
@@ -1679,7 +1686,7 @@ namespace E3Core.Processors
 			}
 			else
 			{
-				if (!(String.Equals(primaryName, E3.CharacterSettings.BandoBuff_PrimaryWithoutBuff, StringComparison.OrdinalIgnoreCase) && String.Equals(secondaryName, E3.CharacterSettings.BandoBuff_SecondaryWithoutBuff, StringComparison.OrdinalIgnoreCase)))
+				if (!bandoWithoutBuffIsActive)
 				{
 					E3.Bots.Broadcast($"Swapping to {E3.CharacterSettings.BandoBuff_BandoNameWithoutBuff}");
 

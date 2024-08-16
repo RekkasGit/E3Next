@@ -323,14 +323,6 @@ namespace E3Core.Settings
 		public string BandoBuff_BuffName = String.Empty;
 		[INI_Section("Bando Buff", "DebuffName")]
 		public string BandoBuff_DebuffName = String.Empty;
-		[INI_Section("Bando Buff", "PrimaryWithBuff")]
-		public string BandoBuff_Primary = String.Empty;
-		[INI_Section("Bando Buff", "SecondaryWithBuff")]
-		public string BandoBuff_Secondary = String.Empty;
-		[INI_Section("Bando Buff", "PrimaryWithoutBuff")]
-		public string BandoBuff_PrimaryWithoutBuff = String.Empty;
-		[INI_Section("Bando Buff", "SecondaryWithoutBuff")]
-		public string BandoBuff_SecondaryWithoutBuff = String.Empty;
 		[INI_Section("Bando Buff", "BandoNameWithBuff")]
 		public string BandoBuff_BandoName = String.Empty;
 		[INI_Section("Bando Buff", "BandoNameWithoutBuff")]
@@ -667,10 +659,6 @@ namespace E3Core.Settings
 			LoadKeyData("Bando Buff", "Enabled", ParsedData, ref BandoBuff_Enabled);
 			LoadKeyData("Bando Buff", "DebuffName", ParsedData, ref BandoBuff_DebuffName);
 			LoadKeyData("Bando Buff", "BuffName", ParsedData, ref BandoBuff_BuffName);
-			LoadKeyData("Bando Buff", "PrimaryWithBuff", ParsedData, ref BandoBuff_Primary);
-			LoadKeyData("Bando Buff", "SecondaryWithBuff", ParsedData, ref BandoBuff_Secondary);
-			LoadKeyData("Bando Buff", "PrimaryWithoutBuff", ParsedData, ref BandoBuff_PrimaryWithoutBuff);
-			LoadKeyData("Bando Buff", "SecondaryWithoutBuff", ParsedData, ref BandoBuff_SecondaryWithoutBuff);
 			LoadKeyData("Bando Buff", "BandoNameWithBuff", ParsedData, ref BandoBuff_BandoName);
 			LoadKeyData("Bando Buff", "BandoNameWithoutBuff", ParsedData, ref BandoBuff_BandoNameWithoutBuff);
 			LoadKeyData("Bando Buff", "BandoNameWithoutDeBuff", ParsedData, ref BandoBuff_BandoNameWithoutDeBuff);
@@ -1263,13 +1251,11 @@ namespace E3Core.Settings
 			section.Keys.AddKey("Enabled", "Off");
 			section.Keys.AddKey("BuffName", "");
 			section.Keys.AddKey("DebuffName", "");
-			section.Keys.AddKey("PrimaryWithBuff", "");
-			section.Keys.AddKey("SecondaryWithBuff", "");
-			section.Keys.AddKey("PrimaryWithoutBuff", "");
-			section.Keys.AddKey("SecondaryWithoutBuff", "");
 			section.Keys.AddKey("BandoNameWithBuff", "");
 			section.Keys.AddKey("BandoNameWithoutBuff", "");
 			section.Keys.AddKey("BandoNameWithoutDeBuff", "");
+			section.Keys.AddKey("ExceptionZone", "poknowledge");
+			section.Keys.AddKey("ExceptionZone", "guildlobby");
 
 			newFile.Sections.AddSection("Rampage Actions");
 			section = newFile.Sections.GetSectionData("Rampage Actions");

@@ -1069,28 +1069,43 @@ namespace E3Core.Processors
             }
         }
 
-        /// <summary>
-        /// Am I dead?
-        /// </summary>
-        /// <returns>Returns a bool indicating whether or not you're dead.</returns>
+		/// <summary>
+		/// Am I dead?
+		/// </summary>
+		/// <returns>Returns a bool indicating whether or not you're dead.</returns>
+		private static bool _amIDeadCachedValue = false;
+		private static Int64 _amIDeadLastCheck = 0;
         public static bool AmIDead()
         {
-            //scan through our inventory looking for a container.
+			if(_amIDeadLastCheck >0)
+			{
+				if((_amIDeadLastCheck + 500) > Core.StopWatch.ElapsedMilliseconds)
+				{
+					return _amIDeadCachedValue;
+				}
+			}
+			//scan through our inventory looking for a container.
+
+			_amIDeadLastCheck = Core.StopWatch.ElapsedMilliseconds;
+
             for (int i = 1; i <= 10; i++)
             {
                 bool SlotExists = MQ.Query<bool>($"${{Me.Inventory[pack{i}]}}");
                 if (SlotExists)
                 {
-                    return false;
+					_amIDeadCachedValue = false;
+					return _amIDeadCachedValue;
                 }
             }
             if(MQ.Query<Int32>("${Me.Inventory[Chest].ID}")>0)
             {
-                return false;
-            }
+				_amIDeadCachedValue = false;
+				return _amIDeadCachedValue;
+			}
 
-            return true;
-        }
+			_amIDeadCachedValue = true;
+			return _amIDeadCachedValue;
+		}
 
         private static void PrintE3TReport_Information(Spell spell, Int32 timeInMS,Int32 charges=0)
 		{
