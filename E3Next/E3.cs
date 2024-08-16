@@ -193,7 +193,9 @@ namespace E3Core.Processors
 		}
 		private static void FinalCalls()
 		{
-			if(_amIDead)
+
+
+			if(!_amIDead)
 			{
 				using (Log.Trace("LootProcessing"))
 				{
