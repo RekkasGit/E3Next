@@ -94,8 +94,9 @@ namespace E3Core.Processors
 			//nowcast before all.
 			EventProcessor.ProcessEventsInQueues("/nowcast");
 			EventProcessor.ProcessEventsInQueues("/backoff");
+			EventProcessor.ProcessEventsInQueues("/assistme");
 
-			if(!_amIDead)
+			if (!_amIDead)
 			{
 				//use burns if able, this is high as some heals need burns as well
 				Burns.UseBurns();
@@ -110,10 +111,10 @@ namespace E3Core.Processors
 				}
 				//instant buffs have their own shouldcheck, need it snappy so check quickly.
 				BuffCheck.BuffInstant(E3.CharacterSettings.InstantBuffs);
-				Rez.Process();
 				Assist.Process();
 			}
-		
+			Rez.Process();
+
 		}
 		private static void AdvancedSettingsCalls()
 		{
@@ -148,6 +149,8 @@ namespace E3Core.Processors
 		private static void AfterAdvancedSettingsCalls()
 		{
 			EventProcessor.ProcessEventsInQueues("/backoff");
+			EventProcessor.ProcessEventsInQueues("/assistme");
+
 			Assist.Process();
 
 			//process any requests commands from the UI.
@@ -181,6 +184,7 @@ namespace E3Core.Processors
 					}
 					EventProcessor.ProcessEventsInQueues("/nowcast");
 					EventProcessor.ProcessEventsInQueues("/backoff");
+					EventProcessor.ProcessEventsInQueues("/assistme");
 				}
 				e3util.PutOriginalTargetBackIfNeeded(orgTargetID);
 			}

@@ -246,6 +246,20 @@ namespace E3Core.Processors
 							if (!IsCasting()) return CastReturn.CAST_INTERRUPTED;
 
 						}
+						if (EventProcessor.CommandList["/assistme"].queuedEvents.Count > 0)
+						{
+							Int32 tAssistID = Assist.AssistTargetID;
+
+							EventProcessor.ProcessEventsInQueues("/assistme");
+						
+							if(tAssistID>0 && Assist.AssistTargetID>0 && tAssistID != Assist.AssistTargetID)
+							{
+								Interrupt();
+								if (!IsCasting()) return CastReturn.CAST_INTERRUPTED;
+							}
+							
+
+						}
 						if (EventProcessor.CommandList["/followme"].queuedEvents.Count > 0)
 						{
 							EventProcessor.ProcessEventsInQueues("/followme");
@@ -694,6 +708,18 @@ namespace E3Core.Processors
 										EventProcessor.ProcessEventsInQueues("/backoff");
 										if (!IsCasting()) return CastReturn.CAST_INTERRUPTED;
 
+									}
+									if (EventProcessor.CommandList["/assistme"].queuedEvents.Count > 0)
+									{
+										Int32 tAssistID = Assist.AssistTargetID;
+
+										EventProcessor.ProcessEventsInQueues("/assistme");
+
+										if (tAssistID > 0 && Assist.AssistTargetID > 0 && tAssistID != Assist.AssistTargetID)
+										{
+											Interrupt();
+											if (!IsCasting()) return CastReturn.CAST_INTERRUPTED;
+										}
 									}
 									if (EventProcessor.CommandList["/followme"].queuedEvents.Count > 0)
 									{

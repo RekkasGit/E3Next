@@ -443,7 +443,10 @@ namespace E3Core.Processors
         /// </summary>
         public static void AssistOff()
         {  
-            if (MQ.Query<bool>("${Me.Combat}")) MQ.Cmd("/attack off");
+			while(MQ.Query<bool>("${Me.Combat}")) MQ.Cmd("/attack off");
+
+			
+
             if (MQ.Query<bool>("${Me.AutoFire}"))
             {
                 MQ.Cmd("/autofire");
