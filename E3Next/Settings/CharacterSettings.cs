@@ -357,6 +357,8 @@ namespace E3Core.Settings
 		public List<string> ManaStone_ExceptionZones = new List<string> {};
 		[INI_Section("Manastone", "ExceptionMQQuery")]
 		public List<string> ManaStone_ExceptionMQQuery = new List<string>();
+		[INI_Section("Manastone", "UseForLazarusEncEpicBuff")]
+		public bool ManaStone_UseForLazarusEncEpicBuff = false;
 		[INI_Section("Startup Commands", "Command")]
 		public List<string> StartupCommands = new List<string>();
 		[INI_Section("Zoning Commands", "Command")]
@@ -641,6 +643,7 @@ namespace E3Core.Settings
 			}
 
 			LoadKeyData("Manastone", "ExceptionMQQuery", ParsedData, ManaStone_ExceptionMQQuery);
+			LoadKeyData("Manastone", "UseForLazarusEncEpicBuff", ParsedData, ref ManaStone_UseForLazarusEncEpicBuff);
 
 			LoadKeyData("Rampage Actions", "Action", ParsedData, RampageSpells);
 		
@@ -1318,6 +1321,7 @@ namespace E3Core.Settings
 			section.Keys.AddKey("ExceptionZone", "poknowledge");
 			section.Keys.AddKey("ExceptionZone", "thevoida");
 			section.Keys.AddKey("ExceptionMQQuery", "");
+			section.Keys.AddKey("UseForLazarusEncEpicBuff", "Off");
 
 			newFile.Sections.AddSection("Startup Commands");
 			section = newFile.Sections.GetSectionData("Startup Commands");
