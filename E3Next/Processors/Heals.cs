@@ -598,7 +598,7 @@ namespace E3Core.Processors
 								}
 							}
 							//if a pet and we are here, kick out.
-							if (healPets) return false;
+							if (healPets) continue;
 
 							//check netbots
 							bool isABot = E3.Bots.BotsConnected().Contains(name, StringComparer.OrdinalIgnoreCase);
