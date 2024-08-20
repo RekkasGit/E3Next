@@ -160,7 +160,7 @@ namespace E3Core.Settings.FeatureSettings
 
             try
             {
-				_fileName = $"Lazarus_SymbolItems_{E3.CurrentName}.ini";
+				_fileName = $"Lazarus_SymbolItems.ini";
 				LoadData();
             }
             catch (Exception ex)
@@ -206,7 +206,13 @@ namespace E3Core.Settings.FeatureSettings
                 MQ.Delay(30000, "${Spawn[zenma].Distance3D} <= 15");
                 AutoSymbols("zenma");
             });
-        }
+
+			EventProcessor.RegisterCommand("/e3lazsymbolfileupdate", (x) =>
+			{
+				PopulateDefaultData();
+				SaveData();
+			});
+		}
 
         public static void LoadData()
         {
@@ -218,16 +224,13 @@ namespace E3Core.Settings.FeatureSettings
                 {
                     Directory.CreateDirectory(_configFolder + _settingsFolder);
                 }
-                //file straight up doesn't exist, lets create it
-                using (FileStream fs = File.Create(fileNameFullPath))
-                {
-
-                }
-            }
+				//file straight up doesn't exist, lets create it
+				PopulateDefaultData();
+				SaveData();
+			}
             else
             {
                 //File already exists, may need to merge in new items lets check
-
                 FileIniDataParser fileIniData = e3util.CreateIniParser();
                 _log.Write($"Reading Symbol Items Settings: {fileNameFullPath}");
                 var parsedData = fileIniData.ReadFile(fileNameFullPath);
@@ -238,23 +241,22 @@ namespace E3Core.Settings.FeatureSettings
                     var section = parsedData["Planar Symbols"];
                     foreach (var keyData in section)
                     {
-                        var value = keyData.Value;
-                        if (value != "Trade" && value != "Keep")
-                        {
+						var value = e3util.FirstCharToUpper(keyData.Value.ToLower())?.Trim();
+						if (value != "Trade" && value != "Keep")
+						{
                             value = "Trade";
                         }
                         PlanarSymbols[keyData.KeyName] = value;
                     }
                 }
-
                 // Taelosian Symbols
                 if (parsedData.Sections.ContainsSection("Taelosian Symbols"))
                 {
                     var section = parsedData["Taelosian Symbols"];
                     foreach (var keyData in section)
                     {
-                        var value = keyData.Value;
-                        if (value != "Trade" && value != "Keep")
+                        var value = e3util.FirstCharToUpper(keyData.Value.ToLower())?.Trim();
+						if (value != "Trade" && value != "Keep")
                         {
                             value = "Trade";
                         }
@@ -263,9 +265,6 @@ namespace E3Core.Settings.FeatureSettings
                 }
             }
 
-            // make sure all valid items from the hash sets are included
-            PopulateDefaultData();
-            SaveData();
         }
 
         private static void PopulateDefaultData()
@@ -309,7 +308,15 @@ namespace E3Core.Settings.FeatureSettings
             }
 
             string fileNameFullPath = GetSettingsFilePath(_fileName);
-            parser.WriteFile(fileNameFullPath, newFile);
+			try
+			{
+				parser.WriteFile(fileNameFullPath, newFile);
+
+			}
+			catch (Exception ex)
+			{
+				MQ.Write($"Issue saving Symbol file, possibly already in use. message:{ex.Message}");
+			}
         }
         
         // Handles the automatic symbol conversion
