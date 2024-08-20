@@ -66,7 +66,7 @@ namespace E3Core.Processors
 		/// Initializes this instance.
 		/// </summary>
 		[SubSystemInit]
-        public static void Init()
+        public static void Basics_Init()
         {
             RegisterEvents();
         }
@@ -192,7 +192,16 @@ namespace E3Core.Processors
 				}
 			
             });
-            EventProcessor.RegisterEvent("InviteToRaid", "(.+) invites you to join a raid.", (x) =>
+			EventProcessor.RegisterEvent("GMBuff", "(.+) A GM has cast (.+) world-wide!", (x) =>
+			{
+				if (x.match.Groups.Count == 3)
+				{
+					var buff = x.match.Groups[2].Value.Replace("[", "").Replace("]", "");
+					PubServer.AddTopicMessage("ServerMessage", $"A GM just cast {buff}!");
+				}
+			});
+
+			EventProcessor.RegisterEvent("InviteToRaid", "(.+) invites you to join a raid.", (x) =>
             {
 				if (e3util.IsEQLive())
 				{     
@@ -696,8 +705,8 @@ namespace E3Core.Processors
                     }
                 }
             });
-
-            EventProcessor.RegisterCommand("/bark-send", (x) =>
+			
+			EventProcessor.RegisterCommand("/bark-send", (x) =>
             {
                 if (x.args.Count > 1)
                 {
@@ -751,8 +760,92 @@ namespace E3Core.Processors
                     }
                 }
             });
+			EventProcessor.RegisterCommand("/e3bark", (x) =>
+			{
+				//rebuild the bark message, and do a /say
+				if (x.args.Count > 0)
+				{
+					int targetid = MQ.Query<int>("${Target.ID}");
+					if (targetid > 0)
+					{
+						Spawn s;
+						if (_spawns.TryByID(targetid, out s))
+						{
+							System.Text.StringBuilder sb = new StringBuilder();
+							bool first = true;
+							foreach (string arg in x.args)
+							{
+								if (!first) sb.Append(" ");
+								sb.Append(arg);
+								first = false;
+							}
+							string message = sb.ToString();
+							E3.Bots.BroadcastCommandToGroup($"/e3bark-send {targetid} \"{message}\" {Zoning.CurrentZone.Id}", x);
+							Int32 numberToBark = 1;
 
-            EventProcessor.RegisterCommand("/evac", (x) =>
+							MQ.Cmd("/makemevisible");
+							for (int i = 0; i < numberToBark; i++)
+							{
+								MQ.Cmd($"/say {message}");
+								MQ.Delay(1500);
+								if (EventProcessor.EventList["Zoned"].queuedEvents.Count > 0)
+								{
+									//means we have zoned and can stop
+									break;
+								}
+							}
+						}
+					}
+				}
+			});
+			EventProcessor.RegisterCommand("/e3bark-send", (x) =>
+			{
+				if (x.args.Count > 1)
+				{
+					if (x.args.Count > 2)
+					{
+						string zoneid = x.args[2];
+						if (zoneid != Zoning.CurrentZone.Id.ToString())
+						{
+							return;
+						}
+					}
+					int targetid;
+					if (int.TryParse(x.args[0], out targetid))
+					{
+						if (targetid > 0)
+						{
+
+							Spawn s;
+							if (_spawns.TryByID(targetid, out s))
+							{
+								if (e3util.IsEQLive())
+								{
+									//random delay so it isn't quite so ovious
+									MQ.Delay(E3.Random.Next(100, 1000));
+
+								}
+								Casting.TrueTarget(targetid);
+								MQ.Delay(100);
+								MQ.Cmd("/makemevisible");
+								Int32 numberToBark = 1;
+								string message = x.args[1];
+								for (int i = 0; i < numberToBark; i++)
+								{
+									MQ.Cmd($"/say {message}", 1000);
+
+									if (EventProcessor.EventList["Zoned"].queuedEvents.Count > 0)
+									{
+										//means we have zoned and can stop
+										break;
+									}
+								}
+							}
+						}
+					}
+				}
+			});
+			EventProcessor.RegisterCommand("/evac", (x) =>
             {
                 if (E3.CurrentClass == Class.Druid || E3.CurrentClass == Class.Wizard)
                 {
@@ -762,7 +855,8 @@ namespace E3Core.Processors
                     {
                         foreach (var spell in E3.CharacterSettings.CasterEvacs)
                         {
-                            if (!Casting.SpellInCooldown(spell))
+							//don't try and mem a spell if its not already mem
+                            if ((spell.CastType != CastingType.Spell) || !Casting.SpellInCooldown(spell))
                             {
                                 if (Casting.CheckReady(spell) && Casting.CheckMana(spell))
                                 {
@@ -975,28 +1069,43 @@ namespace E3Core.Processors
             }
         }
 
-        /// <summary>
-        /// Am I dead?
-        /// </summary>
-        /// <returns>Returns a bool indicating whether or not you're dead.</returns>
+		/// <summary>
+		/// Am I dead?
+		/// </summary>
+		/// <returns>Returns a bool indicating whether or not you're dead.</returns>
+		private static bool _amIDeadCachedValue = false;
+		private static Int64 _amIDeadLastCheck = 0;
         public static bool AmIDead()
         {
-            //scan through our inventory looking for a container.
+			if(_amIDeadLastCheck >0)
+			{
+				if((_amIDeadLastCheck + 500) > Core.StopWatch.ElapsedMilliseconds)
+				{
+					return _amIDeadCachedValue;
+				}
+			}
+			//scan through our inventory looking for a container.
+
+			_amIDeadLastCheck = Core.StopWatch.ElapsedMilliseconds;
+
             for (int i = 1; i <= 10; i++)
             {
                 bool SlotExists = MQ.Query<bool>($"${{Me.Inventory[pack{i}]}}");
                 if (SlotExists)
                 {
-                    return false;
+					_amIDeadCachedValue = false;
+					return _amIDeadCachedValue;
                 }
             }
             if(MQ.Query<Int32>("${Me.Inventory[Chest].ID}")>0)
             {
-                return false;
-            }
+				_amIDeadCachedValue = false;
+				return _amIDeadCachedValue;
+			}
 
-            return true;
-        }
+			_amIDeadCachedValue = true;
+			return _amIDeadCachedValue;
+		}
 
         private static void PrintE3TReport_Information(Spell spell, Int32 timeInMS,Int32 charges=0)
 		{
@@ -1717,6 +1826,7 @@ namespace E3Core.Processors
 				}
 			}
 		}
+		
 
 		[ClassInvoke(Class.All)]
         public static void CheckForage()

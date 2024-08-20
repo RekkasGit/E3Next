@@ -25,7 +25,7 @@ namespace E3Core.Processors
         private static long _nextTradeCheckInterval = 1000;
 
         [SubSystemInit]
-        public static void Init()
+        public static void Inventory_Init()
         {
             RegisterEvents();
         }
@@ -387,14 +387,12 @@ namespace E3Core.Processors
             EventProcessor.RegisterCommand("/fds", (x) =>
             {
 
-                if (e3util.FilterMe(x)) return;
-                
-                List<string> validReportChannels = new List<string>() { "/g", "/gu", "/say", "/rsay", "/gsay", "/rs", "/bc" };
+                List<string> validReportChannels = new List<string>() { "/g", "/gu", "/say", "/rsay", "/gsay", "/rs", "/e3bc" };
 
                 string channel = "/gsay";
                 if(e3util.IsEQLive())
                 {
-                    channel = "/gsay";
+                    channel = "/e3bc";
                 }
                 else
                 {
@@ -424,13 +422,16 @@ namespace E3Core.Processors
                     }
                     else
                     {
-						if (FDSPrint(slot, channel))
+						if (!x.args.Contains("group"))
 						{
-							if (!x.args.Contains("group"))
+							if (_fdsSlots.Contains(slot))
 							{
 								E3.Bots.BroadcastCommandToGroup($"/fds {slot} {channel} group", x);
 							}
 						}
+						if (e3util.FilterMe(x)) return;
+						FDSPrint(slot, channel);
+						
 					}
                    
                 }

@@ -77,7 +77,7 @@ namespace E3Core.Processors
         private static List<GiveMeItem> _supplyList = new List<GiveMeItem>();
 
         [SubSystemInit]
-        public static void Init()
+        public static void GiveMe_Init()
         {
             RegisterEvents();
 

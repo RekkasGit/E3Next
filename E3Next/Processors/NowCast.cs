@@ -22,7 +22,7 @@ namespace E3Core.Processors
 		private static ISpawns _spawns = E3.Spawns;
 
 		[SubSystemInit]
-        public static void Init()
+        public static void NowCast_Init()
         {
             RegisterEvents();
         }

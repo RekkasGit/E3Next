@@ -29,9 +29,16 @@ namespace E3Core.Processors
 		public static Int64 _currentSpellGemsLastRefresh = 0;
 		private static ISpawns _spawns = E3.Spawns;
 		private static Logging.LogLevels _previousLogLevel = Logging.LogLevels.Error;
+		private static Int64 _lastSpellCastTimeStamp = 0;
 
 		public static CastReturn Cast(int targetID, Data.Spell spell, Func<Spell, Int32, Int32, bool> interruptCheck = null, bool isNowCast = false, bool isEmergency = false)
 		{
+
+			if(e3util.IsActionBlockingWindowOpen())
+			{
+				return CastReturn.CAST_BLOCKINGWINDOWOPEN;
+			}
+
 			bool navActive = false;
 			bool navPaused = false;
 			bool e3PausedNav = false;
@@ -53,7 +60,7 @@ namespace E3Core.Processors
 
 			}
 			try
-			{
+			{ 
 				if (spell.NoTarget)
 				{
                     targetID = 0;
@@ -240,6 +247,20 @@ namespace E3Core.Processors
 							if (!IsCasting()) return CastReturn.CAST_INTERRUPTED;
 
 						}
+						if (EventProcessor.CommandList["/assistme"].queuedEvents.Count > 0)
+						{
+							Int32 tAssistID = Assist.AssistTargetID;
+
+							EventProcessor.ProcessEventsInQueues("/assistme");
+						
+							if(tAssistID>0 && Assist.AssistTargetID>0 && tAssistID != Assist.AssistTargetID)
+							{
+								Interrupt();
+								if (!IsCasting()) return CastReturn.CAST_INTERRUPTED;
+							}
+							
+
+						}
 						if (EventProcessor.CommandList["/followme"].queuedEvents.Count > 0)
 						{
 							EventProcessor.ProcessEventsInQueues("/followme");
@@ -379,7 +400,11 @@ namespace E3Core.Processors
 							{
 								MQ.Cmd("/stick pause");
 							}
-							TrueTarget(targetID);
+							if(!TrueTarget(targetID))
+							{
+								E3.Bots.Broadcast($"Spell Target failure for targetid:{targetID} for spell {spell.SpellName}");
+								return CastReturn.CAST_NOTARGET;
+							}
 						}
 
 						BeforeEventCheck(spell);
@@ -529,11 +554,18 @@ namespace E3Core.Processors
 									PubServer.AddTopicMessage("${Me.Casting}",spell.CastName);
 									MQ.Write($"\ag{spell.CastName} \at{spell.SpellID} \am{targetName} \ao{targetID} \aw({spell.MyCastTime / 1000}sec)");
 
-									MQ.Cmd($"/casting \"{spell.CastName}|{spell.SpellGem}\"");
+									MQ.Cmd($"/cast \"{spell.CastName}\"");
+									//MQ.Cmd($"/casting \"{spell.CastName}|{spell.SpellGem}\"");
+									_lastSpellCastTimeStamp = Core.StopWatch.ElapsedMilliseconds;
 									if (spell.MyCastTime > 500)
 									{
 										MQ.Delay(500);
 									}
+									//else
+									//{
+									//	_lastSpellCastTimeStamp = Core.StopWatch.ElapsedMilliseconds;
+									//	MQ.Delay(300);
+									//}
 								}
 								else
 								{
@@ -543,16 +575,12 @@ namespace E3Core.Processors
 										PubServer.AddTopicMessage("${Me.Casting}", spell.CastName);
 										MQ.Write($"\ag{spell.CastName} \at{spell.SpellID} \am{targetName} \ao{targetID} \aw({spell.MyCastTime / 1000}sec)");
 
-										MQ.Cmd($"/casting \"{spell.CastName}|alt\"");
+										//MQ.Cmd($"/casting \"{spell.CastName}|alt\"");
+										MQ.Cmd($"/alt activate {spell.AAID}");
 										UpdateAAInCooldown(spell);
-
 										if (spell.MyCastTime > 500)
 										{
 											MQ.Delay(500);
-										}
-										else
-										{
-											MQ.Delay(300);
 										}
 									}
 									else
@@ -562,7 +590,8 @@ namespace E3Core.Processors
 										MQ.Write($"\ag{spell.CastName} \at{spell.SpellID} \am{targetName} \ao{targetID} \aw({spell.MyCastTime / 1000}sec)");
 
 										//else its an item
-										MQ.Cmd($"/casting \"{spell.CastName}|{spell.CastType.ToString()}\"");
+										//MQ.Cmd($"/casting \"{spell.CastName}|{spell.CastType.ToString()}\"");
+										MQ.Cmd($"/useitem \"{spell.CastName}\"");
 										UpdateItemInCooldown(spell);
 										if (spell.MyCastTime > 500)
 										{
@@ -578,7 +607,9 @@ namespace E3Core.Processors
 									PubServer.AddTopicMessage("${Casting}", $"{spell.CastName} on {targetName}");
 									PubServer.AddTopicMessage("${Me.Casting}", spell.CastName);
 									MQ.Write($"\ag{spell.CastName} \at{spell.SpellID} \am{targetName} \ao{targetID} \aw({spell.MyCastTime / 1000}sec)");
-									MQ.Cmd($"/casting \"{spell.CastName}|{spell.SpellGem}\" \"-targetid|{targetID}\"");
+									//MQ.Cmd($"/casting \"{spell.CastName}|{spell.SpellGem}\" \"-targetid|{targetID}\"");
+									MQ.Cmd($"/cast \"{spell.CastName}\"");
+									_lastSpellCastTimeStamp = Core.StopWatch.ElapsedMilliseconds;
 									if (spell.MyCastTime > 500)
 									{
 										MQ.Delay(500);
@@ -591,23 +622,21 @@ namespace E3Core.Processors
 									MQ.Write($"\ag{spell.CastName} \at{spell.SpellID} \am{targetName} \ao{targetID} \aw({spell.MyCastTime / 1000}sec)");
 									if (spell.CastType == CastingType.AA)
 									{
-										MQ.Cmd($"/casting \"{spell.CastName}|alt\" \"-targetid|{targetID}\"");
+										//MQ.Cmd($"/casting \"{spell.CastName}|alt\" \"-targetid|{targetID}\"");
+										MQ.Cmd($"/alt activate {spell.AAID}");
 										UpdateAAInCooldown(spell);
 
 										if (spell.MyCastTime > 500)
 										{
 											MQ.Delay(500);
 										}
-										else
-										{
-											MQ.Delay(300);
-										}
 									}
 									else
 									{
 										//else its an item
 										PubServer.AddTopicMessage("${Me.Casting}", spell.CastName);
-										MQ.Cmd($"/casting \"{spell.CastName}|item\" \"-targetid|{targetID}\"");
+										//MQ.Cmd($"/casting \"{spell.CastName}|item\" \"-targetid|{targetID}\"");
+										MQ.Cmd($"/useitem \"{spell.CastName}\"");
 										UpdateItemInCooldown(spell);
 										if (spell.MyCastTime > 500)
 										{
@@ -625,9 +654,12 @@ namespace E3Core.Processors
 						currentMana = MQ.Query<Int32>("${Me.CurrentMana}");
 						pctMana = MQ.Query<Int32>("${Me.PctMana}");
 						
-
+						
 						while (IsCasting())
 						{
+
+							_lastSpellCastTimeStamp = Core.StopWatch.ElapsedMilliseconds;
+							
 							//means that we didn't fizzle and are now casting the spell
 
 							//these are outside the no interrupt check
@@ -676,6 +708,18 @@ namespace E3Core.Processors
 										EventProcessor.ProcessEventsInQueues("/backoff");
 										if (!IsCasting()) return CastReturn.CAST_INTERRUPTED;
 
+									}
+									if (EventProcessor.CommandList["/assistme"].queuedEvents.Count > 0)
+									{
+										Int32 tAssistID = Assist.AssistTargetID;
+
+										EventProcessor.ProcessEventsInQueues("/assistme");
+
+										if (tAssistID > 0 && Assist.AssistTargetID > 0 && tAssistID != Assist.AssistTargetID)
+										{
+											Interrupt();
+											if (!IsCasting()) return CastReturn.CAST_INTERRUPTED;
+										}
 									}
 									if (EventProcessor.CommandList["/followme"].queuedEvents.Count > 0)
 									{
@@ -730,6 +774,7 @@ namespace E3Core.Processors
 							}
 							//get updated information after delays
 							E3.StateUpdates();
+							_lastSpellCastTimeStamp = Core.StopWatch.ElapsedMilliseconds;
 						}
 						//sometimes the cast isn't fully complete even if the window is done
 						///allow the player to 'tweak' this value.
@@ -742,8 +787,7 @@ namespace E3Core.Processors
 							MQ.Delay(spell.DelayAfterCast);
 						}
 
-						MQ.Delay(2000, "!${Cast.Status.Find[C]}");
-
+						
 						returnValue = CheckForReist(spell);
 
 						if (returnValue == CastReturn.CAST_SUCCESS)
@@ -864,6 +908,15 @@ namespace E3Core.Processors
 				}
 			
 				_log.Write("Doing AfterSpell:{spell.AfterSpell}");
+
+				//we may have just cast a spell, and may be in global cooldown
+				if(spell.CastType== CastingType.Spell)
+				{
+					while(InGlobalCooldown())
+					{
+						MQ.Delay(50);
+					}
+				}
 				if (CheckReady(spell.AfterSpellData) && CheckMana(spell.AfterSpellData))
 				{
 				retrycast:
@@ -891,8 +944,14 @@ namespace E3Core.Processors
 					spell.BeforeSpellData = new Data.Spell(spell.BeforeSpell);
 				}
 				//Wait for GCD if spell
-
-				_log.Write("Doing AfterSpell:{spell.AfterSpell}");
+				//we may have just cast a spell, and may be in global cooldown
+				if (spell.CastType == CastingType.Spell)
+				{
+					while (InGlobalCooldown())
+					{
+						MQ.Delay(50);
+					}
+				}
 				if (CheckReady(spell.BeforeSpellData) && CheckMana(spell.BeforeSpellData))
 				{
 					retrycast:
@@ -1030,8 +1089,9 @@ namespace E3Core.Processors
 					if (spell.BeforeEvent.StartsWith("/exchange", StringComparison.OrdinalIgnoreCase)) MQ.Delay(300);
 				}
 				PubServer.AddTopicMessage("${Me.Casting}", spell.CastName);
-				MQ.Cmd($"/casting \"{spell.CastName}\" alt", 300);
 
+				//MQ.Cmd($"/casting \"{spell.CastName}\" alt", 300);
+				MQ.Cmd($"/alt activate {spell.AAID}",300);
 				//after event, after all things are done               
 				if (!String.IsNullOrWhiteSpace(spell.AfterEvent))
 				{
@@ -1251,6 +1311,11 @@ namespace E3Core.Processors
 			//pure melee don't have 
 			if ((E3.CurrentClass & Class.PureMelee) == E3.CurrentClass) return false;
 
+			if (_lastSpellCastTimeStamp + 1500 > Core.StopWatch.ElapsedMilliseconds)
+			{
+				return true;
+			}
+
 			if (MQ.Query<bool>("${Me.SpellReady[${Me.Gem[1].Name}]}") || MQ.Query<bool>("${Me.SpellReady[${Me.Gem[3].Name}]}") || MQ.Query<bool>("${Me.SpellReady[${Me.Gem[5].Name}]}") || MQ.Query<bool>("${Me.SpellReady[${Me.Gem[7].Name}]}"))
 			{
 				return false;
@@ -1349,14 +1414,12 @@ namespace E3Core.Processors
 
 		public static bool SpellInCooldown(Data.Spell spell)
 		{
-
-		recheckCooldown:
-			bool returnValue = false;
-
+			if (InGlobalCooldown())
+			{
+				return true;
+			}
 			//if (SpellInSharedCooldown(spell)) return true;
-
-			_log.Write($"Checking if spell is ready on {spell.CastName}");
-
+			//_log.Write($"Checking if spell is ready on {spell.CastName}");
 			if (MQ.Query<Int32>($"${{Me.GemTimer[{spell.CastName}]}}") ==0)
 			{
 				//check if we are out of stock still
@@ -1365,19 +1428,8 @@ namespace E3Core.Processors
 					Int32 itemCount = MQ.Query<Int32>($"${{FindItemCount[={spell.Reagent}]}}");
 					if (itemCount<1) return true;
 				}
-				_log.Write($"CheckReady Success! on {spell.CastName}");
-
-				returnValue = false;
-				return returnValue;
-			}
-			_log.Write($"Checking if spell are on cooldown for {spell.CastName}");
-
-			//if (MQ.Query<bool>("${Me.SpellInCooldown}") && MQ.Query<bool>($"${{Bool[${{Me.Gem[{spell.CastName}]}}]}}"))
-			if (InGlobalCooldown())
-			{
-				_log.Write("Spells in cooldown, redoing check.");
-				MQ.Delay(20);
-				goto recheckCooldown;
+				//_log.Write($"CheckReady Success! on {spell.CastName}");
+				return false;
 			}
 
 			return true;
@@ -1414,6 +1466,10 @@ namespace E3Core.Processors
 			if (!spell.Enabled) return false;
 			if (!spell.Initialized) spell.ReInit();
 
+			if (e3util.IsActionBlockingWindowOpen())
+			{
+				return false;
+			}
 			//if your stunned nothing is ready
 			if (MQ.Query<bool>("${Me.Stunned}"))
 			{
@@ -1540,7 +1596,7 @@ namespace E3Core.Processors
 
 		public static Dictionary<string, string> VarsetValues = new Dictionary<string, string>(StringComparer.OrdinalIgnoreCase);
 		[SubSystemInit]
-		public static void InitCommands()
+		public static void Casting_InitCommands()
 		{
 
 			EventProcessor.RegisterCommand("/e3resetcounters", (x) =>
@@ -2304,7 +2360,7 @@ namespace E3Core.Processors
 
 		}
 		[SubSystemInit]
-		public static void Init()
+		public static void Casting_Init()
 		{
 			RegisterEventsCasting();
 			RegisterEventsCastResults();
@@ -2677,6 +2733,7 @@ namespace E3Core.Processors
 		CAST_ZONING,
 		CAST_FEIGN,
 		CAST_SPELLBOOKOPEN,
+		CAST_BLOCKINGWINDOWOPEN,
 		CAST_ACTIVEDISC,
 		CAST_INTERRUPTFORHEAL,
 		CAST_CORPSEOPEN,

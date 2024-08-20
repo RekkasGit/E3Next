@@ -709,7 +709,39 @@ namespace MonoCore
             }
 
         }
-        public static void RegisterEvent(string keyName, string pattern, Action<EventMatch> method)
+
+		public static void ClearDynamicEvents()
+		{
+			List<string> eventKeys = EventList.Keys.ToList();
+			foreach(var key in eventKeys)
+			{
+
+				if(key.StartsWith("DynamicEvent_"))
+				{
+					if(EventList.TryRemove(key, out var eventListItem))
+					{
+						//removed item
+						
+					}
+				
+				}
+			}
+
+		}
+		public static void RegisterDynamicEvent(string keyName, string pattern, Action<EventMatch> method)
+		{
+			keyName = "DynamicEvent_" + keyName;
+			EventListItem eventToAdd = new EventListItem();
+			eventToAdd.regexs = new List<Regex>();
+
+			eventToAdd.regexs.Add(new System.Text.RegularExpressions.Regex(pattern));
+			eventToAdd.method = method;
+			eventToAdd.keyName = keyName;
+
+			EventList.TryAdd(keyName, eventToAdd);
+
+		}
+		public static void RegisterEvent(string keyName, string pattern, Action<EventMatch> method)
         {
             EventListItem eventToAdd = new EventListItem();
             eventToAdd.regexs = new List<Regex>();
@@ -1070,15 +1102,29 @@ namespace MonoCore
             Spawn s;
             if(Spawns.SpawnsByID.TryGetValue(ID, out s))
             {
-                //just update the value
-                s.Init(data, size);
-            }
+				//just update the value
+				try
+				{
+					s.Init(data, size);
+
+				}
+				catch (Exception) { };
+
+			}
             else
             {
                 var spawn = Spawn.Aquire();
-                spawn.Init(data, size);
-                Spawns._spawns.Add(spawn);
-            }
+				try
+				{
+					spawn.Init(data, size);
+					Spawns._spawns.Add(spawn);
+
+				}
+				catch(Exception)
+				{
+					spawn.Dispose();
+				}
+			}
 
             
             //copy the data out into the current array set. 

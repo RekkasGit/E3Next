@@ -25,7 +25,7 @@ namespace E3Core.Classes
         private static Int32 _maxAggroCap = 75;
 
         [SubSystemInit]
-        public static void Init()
+        public static void Necromancer_Init()
         {
 
             if((E3.CurrentClass& Data.Class.Necromancer)==Data.Class.Necromancer)

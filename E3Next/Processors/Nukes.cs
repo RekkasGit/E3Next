@@ -27,8 +27,8 @@ namespace E3Core.Processors
             PBAEEnabled = false;
         }
 
-        [SubSystemInit()]
-        public static void Init()
+        [SubSystemInit]
+        public static void Nukes_Init()
         {
             RegisterEvents();
         }

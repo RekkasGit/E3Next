@@ -20,7 +20,7 @@ namespace E3Core.Processors
         private static IMQ MQ = E3.MQ;
 
         [SubSystemInit]
-        public static void Init()
+        public static void Zoning_Init()
         {
             InitZoneLookup();
         }

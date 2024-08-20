@@ -9,6 +9,7 @@ using System.IO;
 using System.Linq;
 using System.Reflection;
 using static System.Collections.Specialized.BitVector32;
+using MonoCore;
 
 namespace E3Core.Settings
 {
@@ -119,8 +120,6 @@ namespace E3Core.Settings
 		public Int32 AutoMed_AutoMedBreakPctStam;
 		[INI_Section("AutoMed", "PctHealth")]
 		public Int32 AutoMed_AutoMedBreakPctHealth;
-
-
 
 		[INI_Section("Rogue", "Auto-Hide (On/Off)")]
 		public bool Rogue_AutoHide = false;
@@ -324,14 +323,6 @@ namespace E3Core.Settings
 		public string BandoBuff_BuffName = String.Empty;
 		[INI_Section("Bando Buff", "DebuffName")]
 		public string BandoBuff_DebuffName = String.Empty;
-		[INI_Section("Bando Buff", "PrimaryWithBuff")]
-		public string BandoBuff_Primary = String.Empty;
-		[INI_Section("Bando Buff", "SecondaryWithBuff")]
-		public string BandoBuff_Secondary = String.Empty;
-		[INI_Section("Bando Buff", "PrimaryWithoutBuff")]
-		public string BandoBuff_PrimaryWithoutBuff = String.Empty;
-		[INI_Section("Bando Buff", "SecondaryWithoutBuff")]
-		public string BandoBuff_SecondaryWithoutBuff = String.Empty;
 		[INI_Section("Bando Buff", "BandoNameWithBuff")]
 		public string BandoBuff_BandoName = String.Empty;
 		[INI_Section("Bando Buff", "BandoNameWithoutBuff")]
@@ -366,6 +357,8 @@ namespace E3Core.Settings
 		public List<string> ManaStone_ExceptionZones = new List<string> {};
 		[INI_Section("Manastone", "ExceptionMQQuery")]
 		public List<string> ManaStone_ExceptionMQQuery = new List<string>();
+		[INI_Section("Manastone", "UseForLazarusEncEpicBuff")]
+		public bool ManaStone_UseForLazarusEncEpicBuff = false;
 		[INI_Section("Startup Commands", "Command")]
 		public List<string> StartupCommands = new List<string>();
 		[INI_Section("Zoning Commands", "Command")]
@@ -428,6 +421,9 @@ namespace E3Core.Settings
 		[INI_Section("EventLoop", "")]
 		public SortedDictionary<string, string> EventLoop = new SortedDictionary<string, string>();
 
+
+		[INI_Section("EventRegMatch", "")]
+		public SortedDictionary<string, string> EventMatches = new SortedDictionary<string, string>();
 
 		//charm data
 		[INI_Section("Charm", "CharmSpell")]
@@ -623,7 +619,6 @@ namespace E3Core.Settings
 			LoadKeyData("Misc", "If FD stay down (true/false)", ParsedData, ref IfFDStayDown);
 			LoadKeyData("Misc", "Debuffs/Dots are visible", ParsedData, ref Misc_VisibleDebuffsDots);
 
-
 			LoadKeyData("Manastone", "Override General Settings (On/Off)", ParsedData, ref Manastone_OverrideGeneralSettings);
             LoadKeyData("Manastone", "Manastone Enabled (On/Off)", ParsedData, ref Manastone_Enabled);
 
@@ -648,6 +643,7 @@ namespace E3Core.Settings
 			}
 
 			LoadKeyData("Manastone", "ExceptionMQQuery", ParsedData, ManaStone_ExceptionMQQuery);
+			LoadKeyData("Manastone", "UseForLazarusEncEpicBuff", ParsedData, ref ManaStone_UseForLazarusEncEpicBuff);
 
 			LoadKeyData("Rampage Actions", "Action", ParsedData, RampageSpells);
 		
@@ -666,10 +662,6 @@ namespace E3Core.Settings
 			LoadKeyData("Bando Buff", "Enabled", ParsedData, ref BandoBuff_Enabled);
 			LoadKeyData("Bando Buff", "DebuffName", ParsedData, ref BandoBuff_DebuffName);
 			LoadKeyData("Bando Buff", "BuffName", ParsedData, ref BandoBuff_BuffName);
-			LoadKeyData("Bando Buff", "PrimaryWithBuff", ParsedData, ref BandoBuff_Primary);
-			LoadKeyData("Bando Buff", "SecondaryWithBuff", ParsedData, ref BandoBuff_Secondary);
-			LoadKeyData("Bando Buff", "PrimaryWithoutBuff", ParsedData, ref BandoBuff_PrimaryWithoutBuff);
-			LoadKeyData("Bando Buff", "SecondaryWithoutBuff", ParsedData, ref BandoBuff_SecondaryWithoutBuff);
 			LoadKeyData("Bando Buff", "BandoNameWithBuff", ParsedData, ref BandoBuff_BandoName);
 			LoadKeyData("Bando Buff", "BandoNameWithoutBuff", ParsedData, ref BandoBuff_BandoNameWithoutBuff);
 			LoadKeyData("Bando Buff", "BandoNameWithoutDeBuff", ParsedData, ref BandoBuff_BandoNameWithoutDeBuff);
@@ -781,8 +773,40 @@ namespace E3Core.Settings
             LoadKeyData("Ifs", ParsedData, Ifs);
 			LoadKeyData("Events", ParsedData, Events);
 			LoadKeyData("EventLoop", ParsedData, EventLoop);
+			LoadKeyData("EventRegMatches", ParsedData, EventMatches);
 
-		
+			//clear any events that were already registered
+			EventProcessor.ClearDynamicEvents();
+			foreach (var regexMatchPair in EventMatches)
+			{
+				var key = regexMatchPair.Key;
+				var regex = regexMatchPair.Value;
+				if (!String.IsNullOrWhiteSpace(regex))
+				{
+					if (Events.ContainsKey(key))
+					{
+						var eventToExecute = Events[key];
+						if (!String.IsNullOrWhiteSpace(eventToExecute))
+						{	
+							EventProcessor.RegisterDynamicEvent(key, regex, (x) => {
+
+								string tempEvent = eventToExecute;
+								if(x.match.Groups.Count>1)
+								{
+									for(Int32 i =1;i<x.match.Groups.Count;i++)
+									{
+										var matchValue = x.match.Groups[i].Value;
+										tempEvent=tempEvent.Replace($"${i}", matchValue);
+									}
+								}
+								tempEvent=Casting.Ifs_Results(tempEvent);
+								MQ.Cmd($"/docommand {tempEvent}",true);
+							});
+						}
+					}
+				}
+			}
+	
 			LoadKeyData("E3ChatChannelsToJoin", "Channel", ParsedData, E3ChatChannelsToJoinRaw);
 			foreach (var value in E3ChatChannelsToJoinRaw)
 			{
@@ -969,7 +993,7 @@ namespace E3Core.Settings
 			section.Keys.AddKey("Delay in MS After CastWindow Drops For Spell Completion", "0");
 			section.Keys.AddKey("If FD stay down (true/false)", "False");
 			section.Keys.AddKey("Debuffs/Dots are visible", "True");
-
+		
 			newFile.Sections.AddSection("AutoMed");
 			section = newFile.Sections.GetSectionData("AutoMed");
 			section.Keys.AddKey("Override Old Settings and use This(On/Off)", "Off");
@@ -1230,13 +1254,11 @@ namespace E3Core.Settings
 			section.Keys.AddKey("Enabled", "Off");
 			section.Keys.AddKey("BuffName", "");
 			section.Keys.AddKey("DebuffName", "");
-			section.Keys.AddKey("PrimaryWithBuff", "");
-			section.Keys.AddKey("SecondaryWithBuff", "");
-			section.Keys.AddKey("PrimaryWithoutBuff", "");
-			section.Keys.AddKey("SecondaryWithoutBuff", "");
 			section.Keys.AddKey("BandoNameWithBuff", "");
 			section.Keys.AddKey("BandoNameWithoutBuff", "");
 			section.Keys.AddKey("BandoNameWithoutDeBuff", "");
+			section.Keys.AddKey("ExceptionZone", "poknowledge");
+			section.Keys.AddKey("ExceptionZone", "guildlobby");
 
 			newFile.Sections.AddSection("Rampage Actions");
 			section = newFile.Sections.GetSectionData("Rampage Actions");
@@ -1266,6 +1288,7 @@ namespace E3Core.Settings
 		
 			newFile.Sections.AddSection("Events");
 			newFile.Sections.AddSection("EventLoop");
+			newFile.Sections.AddSection("EventRegMatches");
 			newFile.Sections.AddSection("Report");
 			section = newFile.Sections.GetSectionData("Report");
 			section.Keys.AddKey("ReportEntry", "");
@@ -1298,6 +1321,7 @@ namespace E3Core.Settings
 			section.Keys.AddKey("ExceptionZone", "poknowledge");
 			section.Keys.AddKey("ExceptionZone", "thevoida");
 			section.Keys.AddKey("ExceptionMQQuery", "");
+			section.Keys.AddKey("UseForLazarusEncEpicBuff", "Off");
 
 			newFile.Sections.AddSection("Startup Commands");
 			section = newFile.Sections.GetSectionData("Startup Commands");

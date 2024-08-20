@@ -491,7 +491,13 @@ namespace E3Core.Settings
         {
             if (!string.IsNullOrEmpty(_fileLastModifiedFileName))
             {
-                if (_fileLastModified != System.IO.File.GetLastWriteTime(_fileLastModifiedFileName))
+				var currentLastModified = System.IO.File.GetLastWriteTime(_fileLastModifiedFileName);
+
+				if(System.Diagnostics.Debugger.IsAttached)
+				{ return false;
+				}
+
+				if (_fileLastModified != currentLastModified)
                 {
                     return true;
                 }

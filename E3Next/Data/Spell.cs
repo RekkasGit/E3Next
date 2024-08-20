@@ -217,6 +217,7 @@ namespace E3Core.Data
                     }
 					else if (value.StartsWith("MinHPTotal|", StringComparison.OrdinalIgnoreCase))
 					{
+						//mainly for shaman canni AA, should probably put it for all spell checks
 						MinHPTotal = GetArgument<Int32>(value);
 					}
 					else if (value.StartsWith("HealPct|", StringComparison.OrdinalIgnoreCase))
@@ -328,6 +329,14 @@ namespace E3Core.Data
                                 {
                                     Ifs = string.IsNullOrWhiteSpace(Ifs) ? keyData : Ifs + " && " + keyData;
                                 }
+								else
+								{
+									//check the global ifs
+									if(E3.GlobalIfs.Ifs.ContainsKey(key))
+									{
+										Ifs = string.IsNullOrWhiteSpace(Ifs) ? E3.GlobalIfs.Ifs[key] : Ifs + " && " + E3.GlobalIfs.Ifs[key];
+									}
+								}
                             }
                         }
                     }
@@ -613,6 +622,7 @@ namespace E3Core.Data
                 Description = MQ.Query<String>($"${{Spell[{CastName}].Description}}");
 				ResistType = MQ.Query<String>($"${{Me.AltAbility[{CastName}].Spell.ResistType}}");
 				ResistAdj = MQ.Query<Int32>($"${{Me.AltAbility[{CastName}].Spell.ResistAdj}}");
+				AAID = MQ.Query<Int32>($"${{Me.AltAbility[{CastName}].ID}}");
 
 				if (SpellType.Equals("Detrimental", StringComparison.OrdinalIgnoreCase))
                 {
@@ -839,6 +849,7 @@ namespace E3Core.Data
                 }
             }
         }
+		public Int32 AAID = 0;
         public decimal MyCastTimeInSeconds = 0;
         public Double MyRange;
         public Int32 Mana;

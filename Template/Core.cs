@@ -454,74 +454,109 @@ namespace MonoCore
             foreach (var item in EventList)
             {
                 if (!Core.IsProcessing) return;
-                //check to see if we have to have a filter on the events to process
-                if (!String.IsNullOrWhiteSpace(keyName))
-                {
-                    //if keyName is specified, verify that its the key we want. 
-                    if (!item.Value.keyName.Equals(keyName, StringComparison.OrdinalIgnoreCase))
-                    {
+				if (item.Value == null) continue;//sanity check code based of Raz's error message. Its odd to get a null exception here.
+				try
+				{
+					//check to see if we have to have a filter on the events to process
+					if (!String.IsNullOrWhiteSpace(keyName))
+					{
+						//if keyName is specified, verify that its the key we want. 
+						if (!item.Value.keyName.Equals(keyName, StringComparison.OrdinalIgnoreCase))
+						{
 
-                        continue;
-                    }
-                }
-                //_log.Write($"Checking Event queue. Total:{item.Value.queuedEvents.Count}");
-                while (item.Value.queuedEvents.Count > 0)
-                {
-                    if (!Core.IsProcessing) return;
-                    EventMatch line;
-                    if (item.Value.queuedEvents.TryDequeue(out line))
-                    {
-                        item.Value.method.Invoke(line);
-                    }
-                }
+							continue;
+						}
+					}
+					//_log.Write($"Checking Event queue. Total:{item.Value.queuedEvents.Count}");
+					while (item.Value.queuedEvents.Count > 0)
+					{
+						if (!Core.IsProcessing) return;
+						EventMatch line;
+						if (item.Value.queuedEvents.TryDequeue(out line))
+						{
+							item.Value.method.Invoke(line);
+						}
+					}
+				}
+				catch(Exception ex)
+				{
+					//sanity check code based of Raz's error message. Its odd to get a null exception here.
+
+					Core.mqInstance.Write($"Error: {ex.Message}  stack:{ex.StackTrace}");
+					throw ex;
+				}
+				
 
             }
             foreach (var item in CommandList)
             {
                 if (!Core.IsProcessing) return;
-                //check to see if we have to have a filter on the events to process
-                if (!String.IsNullOrWhiteSpace(keyName))
-                {
-                    //if keyName is specified, verify that its the key we want. 
-                    if (!item.Value.keyName.Equals(keyName, StringComparison.OrdinalIgnoreCase))
-                    {
+				if (item.Value == null) continue;
+				//check to see if we have to have a filter on the events to process
+				try
+				{
+					if (!String.IsNullOrWhiteSpace(keyName))
+					{
+						//if keyName is specified, verify that its the key we want. 
+						if (!item.Value.keyName.Equals(keyName, StringComparison.OrdinalIgnoreCase))
+						{
 
-                        continue;
-                    }
-                }
-                while (item.Value.queuedEvents.Count > 0)
-                {
-                    if (!Core.IsProcessing) return;
-                    CommandMatch line;
-                    if (item.Value.queuedEvents.TryDequeue(out line))
-                    {
-                        item.Value.method.Invoke(line);
-                    }
-                }
+							continue;
+						}
+					}
+					while (item.Value.queuedEvents.Count > 0)
+					{
+						if (!Core.IsProcessing) return;
+						CommandMatch line;
+						if (item.Value.queuedEvents.TryDequeue(out line))
+						{
+							item.Value.method.Invoke(line);
+						}
+					}
 
-            }
+				}
+				catch (Exception ex)
+				{
+					//sanity check code based of Raz's error message. Its odd to get a null exception here.
+					Core.mqInstance.Write($"Error: {ex.Message}  stack:{ex.StackTrace}");
+					throw ex;
+				}
+
+
+			}
             foreach (var item in _unfilteredEventList)
             {
                 if (!Core.IsProcessing) return;
-                //check to see if we have to have a filter on the events to process
-                if (!String.IsNullOrWhiteSpace(keyName))
-                {
-                    //if keyName is specified, verify that its the key we want. 
-                    if (!item.Value.keyName.Equals(keyName, StringComparison.OrdinalIgnoreCase))
-                    {
+				if (item.Value == null) continue;
+				try
+				{
+					//check to see if we have to have a filter on the events to process
+					if (!String.IsNullOrWhiteSpace(keyName))
+					{
+						//if keyName is specified, verify that its the key we want. 
+						if (!item.Value.keyName.Equals(keyName, StringComparison.OrdinalIgnoreCase))
+						{
 
-                        continue;
-                    }
-                }
-                while (item.Value.queuedEvents.Count > 0)
-                {
-                    if (!Core.IsProcessing) return;
-                    EventMatch line;
-                    if (item.Value.queuedEvents.TryDequeue(out line))
-                    {
-                        item.Value.method.Invoke(line);
-                    }
-                }
+							continue;
+						}
+					}
+					while (item.Value.queuedEvents.Count > 0)
+					{
+						if (!Core.IsProcessing) return;
+						EventMatch line;
+						if (item.Value.queuedEvents.TryDequeue(out line))
+						{
+							item.Value.method.Invoke(line);
+						}
+					}
+				}
+				catch (Exception ex)
+				{
+					//sanity check code based of Raz's error message. Its odd to get a null exception here.
+					Core.mqInstance.Write($"Error: {ex.Message}  stack:{ex.StackTrace}");
+					throw ex;
+				}
+				
 
             }
         }

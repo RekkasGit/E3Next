@@ -43,7 +43,7 @@ namespace E3Core.Processors
         static public Int32 _numInventorySlots = 10;
         static public Int32 _previousSpellGemThatWasCast = -1;
 		[ExposedData("Setup", "Version")]
-		public const string _e3Version = "1.42.2_devbuild";
+		public const string _e3Version = "1.42.2";
 		[ExposedData("Setup", "BuildDate")]
 		public static string _buildDate = string.Empty;
         public static Boolean _debug = true;
@@ -132,6 +132,7 @@ namespace E3Core.Processors
 
             foreach (var foundMethod in methods) // iterate through all found methods
             {
+				
                 //these are static don't need to create an instance
                 var func = (Action)foundMethod.CreateDelegate(typeof(Action));
                 try
@@ -139,9 +140,9 @@ namespace E3Core.Processors
 					func.Invoke();
 
 				}
-				catch (Exception ex)
+				catch (TargetInvocationException ex)
                 {
-                    MQ.Write("Issue with InitSubsystem:" + foundMethod.ToString());
+                    MQ.Write($"Issue with InitSubsystem:{foundMethod.ToString()} message: [{ex.Message}] inner:[{ex.InnerException?.Message}] inner_stack:{ex.InnerException?.StackTrace}");
                     throw ex;
                 }
             }
@@ -211,14 +212,14 @@ namespace E3Core.Processors
 						MQ.Write("***WARNING*** Could not load MQ2Debuffs! Macro functionality may be limited.");
 					}
 				}
-				if (!MQ.Query<bool>("${Plugin[MQ2Cast]}"))
-				{
-					MQ.Cmd("/plugin mq2cast");
-					if (!MQ.Delay(3000, "${Plugin[MQ2Cast]}"))
-					{
-						MQ.Write("***WARNING*** Could not load MQ2Cast! Macro functionality may be limited.");
-					}
-				}
+				//if (!MQ.Query<bool>("${Plugin[MQ2Cast]}"))
+				//{
+				//	MQ.Cmd("/plugin mq2cast");
+				//	if (!MQ.Delay(3000, "${Plugin[MQ2Cast]}"))
+				//	{
+				//		MQ.Write("***WARNING*** Could not load MQ2Cast! Macro functionality may be limited.");
+				//	}
+				//}
 				if (!MQ.Query<bool>($"${{Plugin[MQ2AdvPath].Name.Length}}"))
                 {
                     MQ.Write("Plugin MQ2AdvPath is not loaded, attempting to resolve...");

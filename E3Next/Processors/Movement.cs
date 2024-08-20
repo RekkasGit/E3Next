@@ -40,7 +40,7 @@ namespace E3Core.Processors
 		public static string _chaseTarget = String.Empty;
 
         [SubSystemInit]
-        public static void Init()
+        public static void Movement_Init()
         {
             RegisterEvents();
              _doorData.LoadData();
@@ -331,7 +331,7 @@ namespace E3Core.Processors
                 Int32 closestID = _doorData.ClosestDoorID();
 
                 //eqlives doors have differnt IDs, do the basic click
-                if (closestID > 0 && !e3util.IsEQLive())
+                if (closestID > 0 && !e3util.IsEQLive() && Zoning.CurrentZone.ShortName=="poknowledge")
                 {
                     MQ.Cmd($"/doortarget id {closestID}");
                     double currentDistance = MQ.Query<Double>("${DoorTarget.Distance}");

@@ -54,7 +54,7 @@ namespace E3Core.Processors
 		private static List<Int32> _gmBuffs = new List<int>() { 34835, 35989, 35361, 25732, 34567, 36838, 43040, 36266, 36423 };
 		private static Int64 _nextBlockBuffCheck = 0;
 		[ExposedData("BuffCheck", "BlockBuffCheckInterval")]
-		private static Int64 _nextBlockBuffCheckInterval = 1000;
+		private static Int64 _nextBlockBuffCheckInterval = 250;
 		[ExposedData("BuffCheck", "InitAuras")]
 		static bool _initAuras = false;
 
@@ -64,7 +64,7 @@ namespace E3Core.Processors
 		}
 
 		[SubSystemInit]
-		public static void Init()
+		public static void BuffCheck_Init()
 		{
 			RegisterEvents();
 		}
@@ -1634,14 +1634,13 @@ namespace E3Core.Processors
 
 			if (!E3.CharacterSettings.BandoBuff_Enabled) return;
 			if (String.IsNullOrWhiteSpace(E3.CharacterSettings.BandoBuff_BuffName)) return;
-			if (String.IsNullOrWhiteSpace(E3.CharacterSettings.BandoBuff_Primary)) return;
-			if (String.IsNullOrWhiteSpace(E3.CharacterSettings.BandoBuff_PrimaryWithoutBuff)) return;
 			if (String.IsNullOrWhiteSpace(E3.CharacterSettings.BandoBuff_BandoName)) return;
 			if (String.IsNullOrWhiteSpace(E3.CharacterSettings.BandoBuff_BandoNameWithoutBuff)) return;
 
 			bool hasBuff = true;
+			bool buffWillStack = MQ.Query<bool>($"${{Spell[{E3.CharacterSettings.BandoBuff_BuffName}].WillLand}}");
 
-			if (E3.CharacterSettings.BandoBuff_BuffName != String.Empty)
+			if (E3.CharacterSettings.BandoBuff_BuffName != String.Empty && buffWillStack)
 			{
 				hasBuff = MQ.Query<bool>($"${{Bool[${{Me.Buff[{E3.CharacterSettings.BandoBuff_BuffName}]}}]}}");
 				if (!hasBuff)
@@ -1649,29 +1648,37 @@ namespace E3Core.Processors
 					hasBuff = MQ.Query<bool>($"${{Bool[${{Me.Song[{E3.CharacterSettings.BandoBuff_BuffName}]}}]}}");
 				}
 			}
+
+			//Debuff code, only activate if either, we cannot land the buff configured or it doesn't exist.
+			//hasbuff is true by default
 			if (hasBuff && Basics.InCombat() && MQ.Query<Int32>("${Target.ID}") > 0)
 			{
 				bool hasDebuff = MQ.Query<bool>($"${{Bool[${{Target.Buff[{E3.CharacterSettings.BandoBuff_DebuffName}]}}]}}");
 				if (!hasDebuff)
 				{
-					bool willStack = MQ.Query<bool>($"${{Spell[{E3.CharacterSettings.BandoBuff_DebuffName}].StacksTarget}}");
+					bool bandoWithoutDeBuffIsActive = MQ.Query<bool>($"${{Me.Bandolier[{E3.CharacterSettings.BandoBuff_BandoNameWithoutDeBuff}].Active}}");
 
-					if (willStack)
+					if(!bandoWithoutDeBuffIsActive)
 					{
-						E3.Bots.Broadcast($"Swapping to {E3.CharacterSettings.BandoBuff_BandoNameWithoutDeBuff}");
+						bool willStack = MQ.Query<bool>($"${{Spell[{E3.CharacterSettings.BandoBuff_DebuffName}].StacksTarget}}");
 
-						MQ.Cmd($"/bando activate {E3.CharacterSettings.BandoBuff_BandoNameWithoutDeBuff}");
-						return;
+						if (willStack)
+						{
+							E3.Bots.Broadcast($"Swapping to {E3.CharacterSettings.BandoBuff_BandoNameWithoutDeBuff}");
+
+							MQ.Cmd($"/bando activate {E3.CharacterSettings.BandoBuff_BandoNameWithoutDeBuff}");
+							return;
+						}
 					}
 				}
 			}
 
-			//we have the debuff or we have the buff.
-			string primaryName = MQ.Query<String>("${Me.Inventory[13]}");
-			string secondaryName = MQ.Query<String>("${Me.Inventory[14]}");
+			bool bandoWhenBuffIsActive = MQ.Query<bool>($"${{Me.Bandolier[{E3.CharacterSettings.BandoBuff_BandoName}].Active}}");
+			bool bandoWithoutBuffIsActive = MQ.Query<bool>($"${{Me.Bandolier[{E3.CharacterSettings.BandoBuff_BandoNameWithoutBuff}].Active}}");
+
 			if (hasBuff)
 			{
-				if (!(String.Equals(primaryName, E3.CharacterSettings.BandoBuff_Primary, StringComparison.OrdinalIgnoreCase) && String.Equals(secondaryName, E3.CharacterSettings.BandoBuff_Secondary, StringComparison.OrdinalIgnoreCase)))
+				if (!bandoWhenBuffIsActive)
 				{
 					E3.Bots.Broadcast($"Swapping to {E3.CharacterSettings.BandoBuff_BandoName}");
 					MQ.Cmd($"/bando activate {E3.CharacterSettings.BandoBuff_BandoName}");
@@ -1679,13 +1686,158 @@ namespace E3Core.Processors
 			}
 			else
 			{
-				if (!(String.Equals(primaryName, E3.CharacterSettings.BandoBuff_PrimaryWithoutBuff, StringComparison.OrdinalIgnoreCase) && String.Equals(secondaryName, E3.CharacterSettings.BandoBuff_SecondaryWithoutBuff, StringComparison.OrdinalIgnoreCase)))
+				if (!bandoWithoutBuffIsActive)
 				{
 					E3.Bots.Broadcast($"Swapping to {E3.CharacterSettings.BandoBuff_BandoNameWithoutBuff}");
 
 					MQ.Cmd($"/bando activate {E3.CharacterSettings.BandoBuff_BandoNameWithoutBuff}");
 				}
 			}
+		}
+		private static Int64 _nextLazEncEpicBuffCheck = 0;
+		private static Int64 _nextLazEncEpicBuffCheckInterval = 1000;
+		[ClassInvoke(Data.Class.All)]
+		public static void CheckLazEncEpicBuff()
+		{
+			if (!e3util.ShouldCheck(ref _nextLazEncEpicBuffCheck, _nextLazEncEpicBuffCheckInterval)) return;
+
+			if (!E3.CharacterSettings.ManaStone_UseForLazarusEncEpicBuff) return;
+
+			if (e3util.IsEQLive()) return;
+
+			if (e3util.IsEQEMU() && E3.ServerName == "Lazarus")
+			{
+				if (MQ.Query<bool>("${Me.Invis}")) return;
+				if (E3.CharacterSettings.ManaStone_ExceptionZones.Contains(Zoning.CurrentZone.ShortName)) return;
+
+				//using (_log.Trace())
+				{
+					if (E3.IsInvis) return;
+					if (Basics.AmIDead()) return;
+					if (e3util.IsEQLive()) return;
+					//if (!Basics.InCombat()) return;
+
+					/*
+					 *  ${Bool[${Math.Calc[${Me.Song[Mana Convergence IV].Duration}<10000]}]})
+					 */
+					Int32 pctAggro = MQ.Query<Int32>("${Me.PctAggro}");
+					if (pctAggro > 99) return;
+					bool hasManaStone = MQ.Query<bool>("${Bool[${FindItem[=Manastone]}]}");
+					bool hasSongBuffv1 = MQ.Query<bool>("${Bool[${Me.Song[Mana Convergence I]}]}");
+					bool hasSongBuffv2 = MQ.Query<bool>("${Bool[${Me.Song[Mana Convergence II]}]}");
+					bool hasSongBuffv3 = MQ.Query<bool>("${Bool[${Me.Song[Mana Convergence III]}]}");
+					bool hasSongBuffv4 = MQ.Query<bool>("${Bool[${Me.Song[Mana Convergence IV]}]}");
+					Int32 songv4MaxDuration = 8000;
+
+					Int64 Songv4Duration = 0;
+					if (hasSongBuffv4)
+					{
+						Songv4Duration = MQ.Query<Int32>("${Me.Song[Mana Convergence IV].Duration}");
+
+					}
+					if (!hasManaStone) return;
+					if (!(hasSongBuffv1 || hasSongBuffv2 || hasSongBuffv3 || hasSongBuffv4)) return;
+
+
+
+					int pctMana = MQ.Query<int>("${Me.PctMana}");
+					var pctHps = MQ.Query<int>("${Me.PctHPs}");
+					int currentHps = MQ.Query<int>("${Me.CurrentHPs}");
+					int minHP = 70;
+
+					if (E3.CharacterSettings.ManaStone_ExceptionZones.Contains(Zoning.CurrentZone.ShortName)) return;
+
+					if (E3.CharacterSettings.ManaStone_ExceptionMQQuery.Count > 0)
+					{
+						foreach (var query in E3.CharacterSettings.ManaStone_ExceptionMQQuery)
+						{
+							if (String.IsNullOrEmpty(query)) continue;
+
+							if (Casting.Ifs(query))
+							{
+								return;
+							}
+						}
+					}
+
+					pctHps = MQ.Query<int>("${Me.PctHPs}");
+					if (pctHps < minHP) return;
+
+
+					string manastoneName = "Manastone";
+					Int32 totalClicksToTry = 5;
+					Int32 delayBetweenClicks = 40;
+					Int32 maxLoop = 25;
+					if (hasManaStone && (hasSongBuffv1 || hasSongBuffv2 || hasSongBuffv3 || hasSongBuffv4))
+					{
+						string manastoneCommand = $"/useitem \"{manastoneName}\"";
+
+						if (hasSongBuffv4)
+						{
+							if (Songv4Duration > songv4MaxDuration) return;
+						}
+
+						MQ.Write("\agUsing Manastone for Laz Enc Epic...");
+						pctHps = MQ.Query<int>("${Me.PctHPs}");
+						pctMana = MQ.Query<int>("${Me.PctMana}");
+						int currentLoop = 0;
+						while (pctHps > minHP && (hasSongBuffv1 || hasSongBuffv2 || hasSongBuffv3 || hasSongBuffv4))
+						{
+							currentLoop++;
+							int currentMana = MQ.Query<int>("${Me.CurrentMana}");
+
+							if (hasSongBuffv4)
+							{
+								if (Songv4Duration > songv4MaxDuration) return;
+							}
+
+							for (int i = 0; i < totalClicksToTry; i++)
+							{
+								MQ.Cmd(manastoneCommand);
+							}
+							//allow mq to have the commands sent to the server
+							MQ.Delay(delayBetweenClicks);
+							NetMQServer.SharedDataClient.ProcessCommands();
+							PubClient.ProcessRequests();
+							if (EventProcessor.CommandList["/followme"].queuedEvents.Count > 0)
+							{
+								return;
+							}
+							if (EventProcessor.CommandList["/chaseme"].queuedEvents.Count > 0)
+							{
+								return;
+							}
+							if (MQ.Query<bool>("${Me.Invis}")) return;
+							if ((E3.CurrentClass & Class.Priest) == E3.CurrentClass && Basics.InCombat())
+							{
+								if (Heals.SomeoneNeedsHealing(null, currentMana, pctMana))
+								{
+									return;
+								}
+							}
+							if (currentLoop > maxLoop)
+							{
+								return;
+							}
+							e3util.YieldToEQ();
+							pctHps = MQ.Query<int>("${Me.PctHPs}");
+							pctMana = MQ.Query<int>("${Me.PctMana}");
+							hasSongBuffv1 = MQ.Query<bool>("${Bool[${Me.Song[Mana Convergence I]}]}");
+							hasSongBuffv2 = MQ.Query<bool>("${Bool[${Me.Song[Mana Convergence II]}]}");
+							hasSongBuffv3 = MQ.Query<bool>("${Bool[${Me.Song[Mana Convergence III]}]}");
+							hasSongBuffv4 = MQ.Query<bool>("${Bool[${Me.Song[Mana Convergence IV]}]}");
+							if (hasSongBuffv4)
+							{
+								Songv4Duration = MQ.Query<Int32>("${Me.Song[Mana Convergence IV].Duration}");
+							}
+						}
+					}
+				}
+
+
+			}
+
+
 		}
 
 	}

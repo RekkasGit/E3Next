@@ -98,4 +98,5 @@ message SpellData {
     int32 MinHPTotal=80;
     string AfterEventKeys=81;
     string BeforeEventKeys=82;
+	int32 AAID=83;
 }

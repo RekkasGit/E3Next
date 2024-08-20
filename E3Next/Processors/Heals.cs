@@ -388,7 +388,7 @@ namespace E3Core.Processors
 					{
 						if (CastIfNeed)
 						{
-							E3.Bots.Broadcast($"Casting Emergency Heal. Target:{target} PctHealth:{pctHealth}");
+							E3.Bots.Broadcast($"Casting Emergency Heal. {spell.CastName} Target:{target} PctHealth:{pctHealth}");
 							Heal(currentMana, pctMana, new List<string> { target }, E3.CharacterSettings.Heal_EmergencyHeals, false, false, true);
 							return true;
 						}
@@ -440,7 +440,7 @@ namespace E3Core.Processors
 						{
 							if (CastIfNeeded)
 							{
-								E3.Bots.Broadcast($"Casting Emergency Heal Group. Target:{name} PctHealth:{pctHealth}");
+								E3.Bots.Broadcast($"Casting Emergency Heal Group. {spell.CastName} Target:{name} PctHealth:{pctHealth}");
 								Heal(currentMana, pctMana, new List<string> { name }, E3.CharacterSettings.Heal_EmergecyGroupHeals, false, false, true);
 							}
 							return true;
@@ -598,7 +598,7 @@ namespace E3Core.Processors
 								}
 							}
 							//if a pet and we are here, kick out.
-							if (healPets) return false;
+							if (healPets) continue;
 
 							//check netbots
 							bool isABot = E3.Bots.BotsConnected().Contains(name, StringComparer.OrdinalIgnoreCase);

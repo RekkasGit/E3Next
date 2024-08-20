@@ -24,51 +24,63 @@ namespace E3Core.Processors
     /// </summary>
     public static class E3
 	{
+		public static bool _amIDead = false;
 		/// <summary>
 		/// The main processing loop. Things are broken up to keep this loop small and understandable.
 		/// </summary>
 		public static void Process()
-        {
-
-            if (!ShouldRun())
-            {
-                return;
-            }
+		{
+			_amIDead = Basics.AmIDead();
+			if (!ShouldRun())
+			{
+				return;
+			}
 			//Init is here to make sure we only Init while InGame, as some queries will fail if not in game
 			if (!IsInit) { Init(); }
 			var sw = new Stopwatch();
 			sw.Start();
 			//auto 5 min gc check
 			CheckGC();
-	
+
 			//did someone send us a command? lets process it. 
 			ProcessExternalCommands();
 
 			//update all states, important.
 			StateUpdates();
-	        RefreshCaches();
-    
-            //kickout after updates if paused
-            if (IsPaused()) return;
+			RefreshCaches();
+
+			//kickout after updates if paused
+			if (IsPaused()) return;
 			//stunned, no sense in processing
 			if (MQ.Query<bool>("${Me.Stunned}")) return;
 			if (MQ.Query<Int32>("${Me.CurrentHPs}") < 1) return; //we are dead
 			if (MQ.Query<bool>("${Me.Feigning}") && E3.CharacterSettings.IfFDStayDown) return;
-			
+
 
 			//global action taken key, used by adv settings
 			//if true, adv settings will stop processing for this loop.
 			ActionTaken = false;
-            BeforeAdvancedSettingsCalls();
-            if (!ActionTaken)
+			BeforeAdvancedSettingsCalls();
+
+			if (!_amIDead)
 			{
-				//All the advanced Ini stuff here
-				AdvancedSettingsCalls();
-             }
-            AfterAdvancedSettingsCalls();
-           
-            //attribute class calls
-            ClassMethodCalls();
+				if (!ActionTaken)
+				{
+					//All the advanced Ini stuff here
+					AdvancedSettingsCalls();
+				}
+				AfterAdvancedSettingsCalls();
+
+				//attribute class calls
+				ClassMethodCalls();
+			}
+			else
+			{
+				//follow/rez/etc
+				ClassMethodCalls();
+			}
+
+			
             //final cleanup/actions after the main loop has done processing
             FinalCalls();
         }
@@ -82,24 +94,26 @@ namespace E3Core.Processors
 			//nowcast before all.
 			EventProcessor.ProcessEventsInQueues("/nowcast");
 			EventProcessor.ProcessEventsInQueues("/backoff");
-			//use burns if able, this is high as some heals need burns as well
-			Burns.UseBurns();
-			//do the basics first
-			//first and formost, do healing checks
-			if ((CurrentClass & Data.Class.Priest) == CurrentClass)
+			EventProcessor.ProcessEventsInQueues("/assistme");
+
+			if (!_amIDead)
 			{
-				ActionTaken = false;
-				Heals.Check_Heals();
-				Basics.CheckManaResources();
-				if (ActionTaken) return; //we did a heal, kick out as we may need to do another heal.
+				//use burns if able, this is high as some heals need burns as well
+				Burns.UseBurns();
+				//do the basics first
+				//first and formost, do healing checks
+				if ((CurrentClass & Data.Class.Priest) == CurrentClass)
+				{
+					ActionTaken = false;
+					Heals.Check_Heals();
+					Basics.CheckManaResources();
+					if (ActionTaken) return; //we did a heal, kick out as we may need to do another heal.
+				}
+				//instant buffs have their own shouldcheck, need it snappy so check quickly.
+				BuffCheck.BuffInstant(E3.CharacterSettings.InstantBuffs);
+				Assist.Process();
 			}
-
-			//instant buffs have their own shouldcheck, need it snappy so check quickly.
-			BuffCheck.BuffInstant(E3.CharacterSettings.InstantBuffs);
-
 			Rez.Process();
-			if (Basics.AmIDead()) return;
-			Assist.Process();
 
 		}
 		private static void AdvancedSettingsCalls()
@@ -135,6 +149,8 @@ namespace E3Core.Processors
 		private static void AfterAdvancedSettingsCalls()
 		{
 			EventProcessor.ProcessEventsInQueues("/backoff");
+			EventProcessor.ProcessEventsInQueues("/assistme");
+
 			Assist.Process();
 
 			//process any requests commands from the UI.
@@ -168,6 +184,7 @@ namespace E3Core.Processors
 					}
 					EventProcessor.ProcessEventsInQueues("/nowcast");
 					EventProcessor.ProcessEventsInQueues("/backoff");
+					EventProcessor.ProcessEventsInQueues("/assistme");
 				}
 				e3util.PutOriginalTargetBackIfNeeded(orgTargetID);
 			}
@@ -176,12 +193,18 @@ namespace E3Core.Processors
 		}
 		private static void FinalCalls()
 		{
-			using (Log.Trace("LootProcessing"))
+
+
+			if(!_amIDead)
 			{
-				Loot.Process();
+				using (Log.Trace("LootProcessing"))
+				{
+					Loot.Process();
+				}
+				//instant buffs have their own shouldcheck, need it snappy so check quickly.
+				BuffCheck.BuffInstant(E3.CharacterSettings.InstantBuffs);
+
 			}
-			//instant buffs have their own shouldcheck, need it snappy so check quickly.
-			BuffCheck.BuffInstant(E3.CharacterSettings.InstantBuffs);
 
 			//were modifications made to the settings files?
 			CheckModifiedSettings();
@@ -190,7 +213,18 @@ namespace E3Core.Processors
         {
             if (!e3util.ShouldCheck(ref _nextReloadSettingsCheck, _nextReloadSettingsInterval)) return;
 
-            if (CharacterSettings.ShouldReload())
+
+			if (GlobalIfs.ShouldReload())
+			{
+				E3.Bots.Broadcast("\aoAuto-Reloading Global Ifs/Character settings settings file...");
+				E3.GlobalIfs = new GlobalIfs();
+				CharacterSettings = new CharacterSettings();
+				Loot.Reset();
+				GiveMe.Reset();
+				Bard.RestartMelody();
+				E3.Bots.Broadcast("\aoComplete!");
+			}
+			else if (CharacterSettings.ShouldReload())
             {
                 E3.Bots.Broadcast("\aoAuto-Reloading Character settings file...");
                 CharacterSettings = new CharacterSettings();
@@ -200,6 +234,7 @@ namespace E3Core.Processors
                 E3.Bots.Broadcast("\aoComplete!");
                
             }
+			
             if (GeneralSettings.ShouldReload())
             {
                 E3.Bots.Broadcast("\aoAuto-Reloading General settings file...");
@@ -443,6 +478,7 @@ namespace E3Core.Processors
                     //    Bots = new Bots();
                     //}
                 }
+				GlobalIfs = new GlobalIfs();
 				CharacterSettings = new Settings.CharacterSettings();
                 AdvancedSettings = new Settings.AdvancedSettings();
 				
@@ -502,6 +538,7 @@ namespace E3Core.Processors
         public static IMQ MQ = Core.mqInstance;
         public static Logging Log = Core.logInstance;
         public static Settings.CharacterSettings CharacterSettings = null;
+		public static Settings.FeatureSettings.GlobalIfs GlobalIfs = null;
 		public static Settings.GeneralSettings GeneralSettings = null;
         public static Settings.AdvancedSettings AdvancedSettings = null;
         public static IBots Bots = null;
