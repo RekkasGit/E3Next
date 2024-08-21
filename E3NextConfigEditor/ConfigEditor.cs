@@ -373,7 +373,11 @@ namespace E3NextConfigEditor
             }
 
             tvSection.Nodes.Clear();
-            tvSection.Nodes.Add(_sectionRootNodes);
+			foreach(var subnode in _sectionRootNodes.Nodes)
+			{
+				tvSection.Nodes.Add((TreeNode)subnode);
+			}
+          
         }
 
         /// <summary>
