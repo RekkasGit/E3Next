@@ -1853,9 +1853,9 @@ namespace E3Core.Processors
                     string autoinvItem = MQ.Query<string>("${Cursor}");
                     if (E3.CharacterSettings.Cursor_Delete.Contains(autoinvItem, StringComparer.OrdinalIgnoreCase))
                     {
-                        //configured to delete this item.
-                        MQ.Cmd("/destroy");
-                        if (autoinvItem != "NULL")
+						//configured to delete this item.
+						e3util.CursorTryDestroyItem(autoinvItem);
+						if (autoinvItem != "NULL")
                         {
                             E3.Bots.Broadcast($"\agAutoDestroy\aw:\ao{autoinvItem}");
                         }
@@ -1894,9 +1894,9 @@ namespace E3Core.Processors
                     string autoinvItem = MQ.Query<string>("${Cursor}");
                     if (E3.CharacterSettings.Cursor_Delete.Contains(autoinvItem, StringComparer.OrdinalIgnoreCase))
                     {
-                        //configured to delete this item.
-                        MQ.Cmd("/destroy");
-                        if (autoinvItem != "NULL")
+						//configured to delete this item.
+						e3util.CursorTryDestroyItem(autoinvItem);
+						if (autoinvItem != "NULL")
                         {
                             E3.Bots.Broadcast($"\agAutoDestroy\aw:\ao{autoinvItem}");
                         }

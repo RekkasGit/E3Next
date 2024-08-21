@@ -70,8 +70,9 @@ namespace E3NextConfigEditor
 		//list the Dictionary or Key/Value based sections that are valid
 		static List<string> _dictionarySections = new List<string>() { "Ifs", "E3BotsPublishData (key/value)", "Events", "EventLoop" };
 
+        TreeNode _sectionRootNodes = null;
 
-		public ConfigEditor()
+        public ConfigEditor()
 		{
 			InitializeComponent();
 			this.StartPosition = FormStartPosition.CenterScreen;
@@ -138,11 +139,8 @@ namespace E3NextConfigEditor
 			IMQ _mqClient = new MQ.MQClient(_tloClient);
 
 			_splashScreen.Invoke(new Action(() =>_splashScreen.splashLabel.Text="Requesting AA list..."));
-
 			byte[] result = _tloClient.RequestRawData("${E3.AA.ListAll}");
 			SpellDataList aas = SpellDataList.Parser.ParseFrom(result);
-
-
 			_splashScreen.Invoke(new Action(() => _splashScreen.splashLabel.Text = "Requesting SpellBook list..."));
 			result = _tloClient.RequestRawData("${E3.SpellBook.ListAll}");
 			SpellDataList bookSpells = SpellDataList.Parser.ParseFrom(result);
@@ -171,9 +169,10 @@ namespace E3NextConfigEditor
 			//need the proper class so that the settings can load correctly
 			string classValue = e3util.ClassNameFix(_tloClient.RequestData("${Me.Class}"));
 			System.Enum.TryParse(classValue, out _currentClass);
+            labelClass.Text = classValue;
 
-			//lets sort all the spells by cataegory/subcategory and levels
-			PopulateItemData(items.Data, _itemDataOrganized);
+            //lets sort all the spells by cataegory/subcategory and levels
+            PopulateItemData(items.Data, _itemDataOrganized);
 			PopulateData(skills.Data, _skilldataOrganized);
 			PopulateData(bookSpells.Data, _spellDataOrganized);
 			PopulateData(aas.Data, _altdataOrganized);
@@ -222,7 +221,6 @@ namespace E3NextConfigEditor
 			E3.CurrentName = _mqClient.Query<string>("${Me.CleanName}");
 			E3.ServerName = e3util.FormatServerName(_mqClient.Query<string>("${MacroQuest.Server}"));
 			E3.CurrentClass = _currentClass;
-			E3.GlobalIfs = new E3Core.Settings.FeatureSettings.GlobalIfs();
 
 			//we bulk to inform E3N that they are going to come fast, and to keep checking for 100-200miliseconds before continuing on with the game loop.
 			_tloClient.RequestData("${E3.TLO.BulkBegin}");
@@ -233,8 +231,8 @@ namespace E3NextConfigEditor
 			//this will auto end after 1 second, but its good to end it properly.
 			_tloClient.RequestData("${E3.TLO.BulkEnd}");
 
-			//set window title
-			this.Text = $"({E3.CurrentName})({E3.ServerName})";
+            //set window title
+            this.Text = $"INI Editor ({E3.CurrentName})"; // $"({E3.CurrentName})({E3.ServerName})";
 			
 			//load image data
 			for (Int32 i = 1; i <= 63; i++)
@@ -276,10 +274,9 @@ namespace E3NextConfigEditor
 				sectionNames.Add(_bardDynamicMelodyName);
 			}
 
-			
-			//find all the section that end in Melody like [main Melody] and ignore them.
-			//at one time this was the main ini file, now we are doing the base, so this is probably not needed anymore
-			foreach (var section in _baseIniData.Sections)
+            //find all the section that end in Melody like [main Melody] and ignore them.
+            //at one time this was the main ini file, now we are doing the base, so this is probably not needed anymore
+            foreach (var section in _baseIniData.Sections)
 			{
 				//bards are special, do not include their dynamic melodies
 				if (section.SectionName.EndsWith(" Melody", StringComparison.OrdinalIgnoreCase)) continue;
@@ -309,13 +306,81 @@ namespace E3NextConfigEditor
 
 			}
 
-		}
-		/// <summary>
-		/// This is used to decide what sections are important and thus shown first to a class
-		/// </summary>
-		/// <param name="characterClass"></param>
-		/// <returns></returns>
-		List<string> GetSectionSortOrderByClass(Class characterClass)
+            labelName.Text = E3.CurrentName;
+            labelServer.Text = E3.ServerName;
+            labelLevel.Text = _mqClient.Query<string>("${Me.Level}");
+
+            FillTreeView();
+        }
+
+        void FillTreeView()
+        {
+            _sectionRootNodes = new TreeNode();
+            _sectionRootNodes.Text = "Sections";
+
+            if (E3.CurrentClass == Class.Bard)
+            {
+                TreeNode node = new TreeNode();
+                node.Text = _bardDynamicMelodyName;
+                _sectionRootNodes.Nodes.Add(node);
+
+                valuesListBox.Tag = _bardDynamicMelodyName;
+                IDictionary<string, List<Spell>> dictionary = E3.CharacterSettings.Bard_MelodySets;
+                foreach (var key in dictionary.Keys)
+                {
+                    node.Nodes.Add(key);
+                }
+            }
+
+            List<string> importantSections = GetSectionSortOrderByClass(E3.CurrentClass);
+
+            foreach (string impsec in importantSections)
+            {
+                if (impsec.Contains(_bardDynamicMelodyName)) continue;
+
+                TreeNode node = new TreeNode();
+                node.Text = impsec;
+                _sectionRootNodes.Nodes.Add(node);
+
+                var subsection = _baseIniData.Sections[impsec];
+                if (subsection != null)
+                {
+                    foreach (var key in subsection)
+                    {
+                        node.Nodes.Add(key.KeyName);
+                    }
+                }
+            }
+
+            foreach (var section in _baseIniData.Sections)
+            {
+                if (importantSections.Contains(section.SectionName, StringComparer.OrdinalIgnoreCase))
+                    continue;
+
+                TreeNode node = new TreeNode();
+                node.Text = section.SectionName;
+                _sectionRootNodes.Nodes.Add(node);
+
+                var subsection = _baseIniData.Sections[section.SectionName];
+                if (subsection != null)
+                {
+                    foreach (var key in subsection)
+                    {
+                        node.Nodes.Add(key.KeyName);
+                    }
+                }
+            }
+
+            tvSection.Nodes.Clear();
+            tvSection.Nodes.Add(_sectionRootNodes);
+        }
+
+        /// <summary>
+        /// This is used to decide what sections are important and thus shown first to a class
+        /// </summary>
+        /// <param name="characterClass"></param>
+        /// <returns></returns>
+        List<string> GetSectionSortOrderByClass(Class characterClass)
 		{
 
 			var returnValue = new List<string>() { "Misc", "Assist Settings", "Nukes", "Debuffs", "DoTs on Assist", "DoTs on Command", "Heals", "Buffs", "Melee Abilities", "Burn", "Pets", "Ifs" };
@@ -1165,10 +1230,14 @@ namespace E3NextConfigEditor
 			foreach (var spell in spellList)
 			{
 				KryptonListItem item = new KryptonListItem();
-				string nameOfSpell = spell.CastName;
+                string nameOfSpell;
 
-				//visual showing of if the spell is disabled
-				if (!spell.Enabled) nameOfSpell = nameOfSpell + " (disabled)";
+                nameOfSpell = !String.IsNullOrWhiteSpace(spell.CastTarget)
+                    ? spell.CastName + $"\nTgt: {spell.CastTarget}"
+                    : spell.CastName;
+
+                //visual showing of if the spell is disabled
+                if (!spell.Enabled) nameOfSpell = nameOfSpell + " (disabled)";
 
 				item.ShortText = nameOfSpell;
 				item.LongText = string.Empty;
@@ -1206,7 +1275,11 @@ namespace E3NextConfigEditor
 				foreach (var spell in spellList)
 				{
 					KryptonListItem item = new KryptonListItem();
-					string nameOfSpell = spell.CastName;
+                    string nameOfSpell;
+
+                    nameOfSpell = !String.IsNullOrWhiteSpace(spell.CastTarget) 
+                        ? spell.CastName + $"\nTgt: {spell.CastTarget}"
+                        : spell.CastName;
 
 					//visual showing of if the spell is disabled
 					if (!spell.Enabled) nameOfSpell = nameOfSpell + " (disabled)";
@@ -1598,6 +1671,92 @@ namespace E3NextConfigEditor
 			ShouldProcess = false;
 		}
 
-	
-	}
+        TreeNode prevParent = null;
+        TreeNode prevNode = null;
+
+        private void SetNodeHighlight(TreeNode node)
+        {
+            if (node.Parent == null) return;
+
+            if (prevParent != null) prevParent.ForeColor = Color.Empty;
+            if (prevNode != null) prevNode.ForeColor = Color.Empty;
+
+            if (node.Parent.Text.Contains("Sections"))
+            {
+                prevParent = null;
+                prevNode = node;
+                node.ForeColor = SystemColors.Highlight;
+            }
+            else
+            {
+                prevParent = node.Parent;
+                prevNode = node;
+
+                node.Parent.ForeColor = SystemColors.Highlight;
+                node.ForeColor = SystemColors.Highlight;
+            }
+        }
+
+        private void tvSection_AfterSelect(object sender, TreeViewEventArgs e)
+        {
+            TreeNode node = tvSection.SelectedNode;
+
+            if (node.Parent == null) return;
+
+            if (node.Parent.Text.Contains("Sections"))
+            {
+                if (_dictionarySections.Contains(node.Text, StringComparer.OrdinalIgnoreCase))
+                {
+                    FieldInfo objectList = _charSettingsMappings[node.Text][""];
+
+                    UpdateListView(objectList);
+                    propertyGrid.SelectedObject = null;
+                }
+                else
+                {
+                    subsectionComboBox.Items.Clear();
+                    valuesListBox.Items.Clear();
+                    propertyGrid.SelectedObject = null;
+                }
+
+                SetNodeHighlight(node);
+                sectionComboBox.SelectedItem = node.Text;
+
+                return;
+            }
+
+
+            var section = node.Parent.Text;
+            if (section != null)
+            {
+                if (section == _bardDynamicMelodyName)
+                {   //sigh bards, special snowflakes
+                    FieldInfo objectList = _charSettingsMappings["Bard"]["DynamicMelodySets"];
+                    if (objectList.IsGenericSortedDictonary(typeof(string), typeof(List<Spell>)))
+                    {
+                        IDictionary<string, List<Spell>> dynamicMelodies = (IDictionary<string, List<Spell>>)objectList.GetValue(E3.CharacterSettings);
+                        string selectedSubSection = node.Text;
+                        List<Spell> melodies = dynamicMelodies[selectedSubSection];
+                        UpdateListView(melodies);
+                    }
+                }
+                else
+                {
+                    FieldInfo objectList = _charSettingsMappings[section][node.Text];
+
+                    UpdateListView(objectList);
+                    propertyGrid.SelectedObject = null;
+                }
+                SetNodeHighlight(node);
+            }
+            else
+            {
+                valuesListBox.Items.Clear();
+                propertyGrid.SelectedObject = null;
+
+                propertyGrid.SelectedObject = null;
+            }
+            subsectionComboBox.SelectedItem = node.Text;
+        }
+    }
 }

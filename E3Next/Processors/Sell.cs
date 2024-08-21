@@ -179,7 +179,8 @@ namespace E3Core.Processors
 									if (e3util.ValidateCursor(MQ.Query<int>($"${{FindItem[={itemName}].ID}}")))
 									{
 										E3.Bots.Broadcast("<AutoSell> Destroying: " + itemName);
-										MQ.Cmd("/destroy",300);
+										e3util.CursorTryDestroyItem(itemName);
+										MQ.Delay(300);
                                        
 									}
 								}
