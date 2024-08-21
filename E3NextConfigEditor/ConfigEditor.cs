@@ -221,6 +221,7 @@ namespace E3NextConfigEditor
 			E3.CurrentName = _mqClient.Query<string>("${Me.CleanName}");
 			E3.ServerName = e3util.FormatServerName(_mqClient.Query<string>("${MacroQuest.Server}"));
 			E3.CurrentClass = _currentClass;
+			E3.GlobalIfs = new E3Core.Settings.FeatureSettings.GlobalIfs();
 
 			//we bulk to inform E3N that they are going to come fast, and to keep checking for 100-200miliseconds before continuing on with the game loop.
 			_tloClient.RequestData("${E3.TLO.BulkBegin}");
