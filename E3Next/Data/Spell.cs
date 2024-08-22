@@ -520,7 +520,7 @@ namespace E3Core.Data
 				if(ItemDataLookup.ContainsKey(CastName))
 				{
 					var SpellData = ItemDataLookup[CastName];
-					Spell.FromProto(SpellData, this);
+					Spell.TransferSpellData(SpellData, this);
 					goto gotoCheckCollectionPopulation;
 				}
 				
@@ -628,7 +628,8 @@ namespace E3Core.Data
 				if (AltDataLookup.ContainsKey(CastName))
 				{
 					var SpellData = AltDataLookup[CastName];
-					Spell.FromProto(SpellData, this);
+					Spell.TransferSpellData(SpellData, this);
+
 					goto gotoCheckCollectionPopulation;
 				}
 				TargetType = MQ.Query<String>($"${{Me.AltAbility[{CastName}].Spell.TargetType}}");
@@ -692,7 +693,7 @@ namespace E3Core.Data
 					if (SpellDataLookup.ContainsKey(CastName))
 					{
 						var SpellData = SpellDataLookup[CastName];
-						Spell.FromProto(SpellData, this);
+						Spell.TransferSpellData(SpellData, this);
 						goto gotoCheckCollectionPopulation;
 					}
 					string bookNumber = MQ.Query<string>($"${{Me.Book[{CastName}]}}");
@@ -805,7 +806,7 @@ namespace E3Core.Data
 				if (DiscDataLookup.ContainsKey(CastName))
 				{
 					var SpellData = DiscDataLookup[CastName];
-					Spell.FromProto(SpellData, this);
+					Spell.TransferSpellData(SpellData, this);
 					goto gotoCheckCollectionPopulation;
 				}
 				TargetType = MQ.Query<String>($"${{Spell[{CastName}].TargetType}}");
@@ -1067,7 +1068,53 @@ namespace E3Core.Data
 			
 			return r;
 		}
-        public SpellData ToProto()
+		public static void TransferSpellData(SpellData source, Spell dest)
+		{
+			Spell r;
+			if (dest == null)
+			{
+				r = new Spell();
+			}
+			else
+			{
+				r = dest;
+			}
+			r.CastID = source.CastID;
+			r.CastName = source.CastName;
+			r.CastType = (CastingType)source.CastType;
+			r.Category = source.Category;
+			
+			r.Duration = source.Duration;
+			r.DurationTotalSeconds = source.DurationTotalSeconds;
+			r.EnduranceCost = source.EnduranceCost;
+			r.InitName = source.InitName;
+			r.ItemMustEquip = source.ItemMustEquip;
+			r.Mana = source.Mana;
+			r.MyCastTime = (Decimal)source.MyCastTime;
+			r.MyCastTimeInSeconds = (Decimal)source.MyCastTimeInSeconds;
+			r.MyRange = source.MyRange;
+			r.NoAggro = source.NoAggro;
+			r.RecastTime = source.RecastTime;
+			r.RecoveryTime = (Decimal)source.RecoveryTime;
+			r.SpellIcon = source.SpellIcon;
+			r.SpellID = source.SpellID;
+			r.SpellInBook = source.SpellInBook;
+			r.SpellName = source.SpellName;
+			r.SpellType = source.SpellType;
+			r.Subcategory = source.Subcategory;
+			r.TargetType = source.TargetType;
+			r.Level = source.Level;
+			r.Description = source.Description;
+			r.ResistType = source.ResistType;
+			r.ResistAdj = source.ResistAdj;
+			r.CastTypeOverride = (CastingType)source.CastTypeOverride;
+			
+			foreach (var entry in source.SpellEffects)
+			{
+				r.SpellEffects.Add(entry);
+			}
+		}
+		public SpellData ToProto()
         {
 
             SpellData r = new SpellData();

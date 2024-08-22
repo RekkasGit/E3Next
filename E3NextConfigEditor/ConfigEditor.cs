@@ -529,6 +529,7 @@ namespace E3NextConfigEditor
 
 			propertyGrid.SelectedObject = null;
 
+			if (sectionComboBox.SelectedItem == null) return;
 
 			string selectedSection = sectionComboBox.SelectedItem.ToString();
 
@@ -1743,9 +1744,9 @@ namespace E3NextConfigEditor
         {
             TreeNode node = tvSection.SelectedNode;
 
-            if (node.Parent == null) return;
+           // if (node.Parent == null) return;
 
-            if (node.Parent.Text.Contains("Sections"))
+            if (node.Parent==null)
             {
                 if (_dictionarySections.Contains(node.Text, StringComparer.OrdinalIgnoreCase))
                 {
@@ -1762,9 +1763,10 @@ namespace E3NextConfigEditor
                 }
 
                 SetNodeHighlight(node);
-                sectionComboBox.SelectedItem = node.Text;
-
-                return;
+				sectionComboBox.SelectedItem = null;
+				sectionComboBox.SelectedItem = node.Text;
+				
+				return;
             }
 
 
