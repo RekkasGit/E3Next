@@ -1788,10 +1788,13 @@ namespace E3NextConfigEditor
                 {
                     FieldInfo objectList = _charSettingsMappings[section][node.Text];
 
-                    UpdateListView(objectList);
+					sectionComboBox.SelectedItem = section;
+					subsectionComboBox.SelectedItem = node.Text;
+					UpdateListView(objectList);
                     propertyGrid.SelectedObject = null;
                 }
                 SetNodeHighlight(node);
+				return;
             }
             else
             {
