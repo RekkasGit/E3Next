@@ -1376,8 +1376,16 @@ namespace E3Core.Utility
 					if(spellName!="NULL")
 					{
 						var spell = new Data.Spell(spellName);
+
+						
+
 						if(spell.CastType== CastingType.AA)
 						{
+							for (Int32 x = 0; x < 12; x++)
+							{
+								string teffect = MQ.SpellDataGetLine(spell.SpellID.ToString(), x);
+								spell.SpellEffects.Add(teffect);
+							}
 							returnValue.Add(spell);
 						}
 					}
@@ -1417,6 +1425,12 @@ namespace E3Core.Utility
 					var spell = new Data.Spell(spellName);
 					if (spell.CastType == CastingType.Spell)
 					{
+
+						for (Int32 x = 0; x < 12; x++)
+						{
+							string teffect = MQ.SpellDataGetLine(spell.SpellID.ToString(), x);
+							spell.SpellEffects.Add(teffect);
+						}
 						returnValue.Add(spell);
 					}
 				}
@@ -1435,6 +1449,11 @@ namespace E3Core.Utility
 					var spell = new Data.Spell(spellName);
 					if (spell.CastType == CastingType.Disc)
 					{
+						for (Int32 x = 0; x < 12; x++)
+						{
+							string teffect = MQ.SpellDataGetLine(spell.SpellID.ToString(), x);
+							spell.SpellEffects.Add(teffect);
+						}
 						returnValue.Add(spell);
 					}
 				}
@@ -1456,6 +1475,12 @@ namespace E3Core.Utility
 				{
 					string itemName = MQ.Query<string>($"${{Me.Inventory[{i}]}}");
 					var newSpell = new Data.Spell(itemName, null);
+
+					for (Int32 x = 0; x < 12; x++)
+					{
+						string teffect = MQ.SpellDataGetLine(newSpell.SpellName, x);
+						newSpell.SpellEffects.Add(teffect);
+					}
 					returnValue.Add(newSpell);
 				}
 			}
@@ -1475,6 +1500,11 @@ namespace E3Core.Utility
 							{
 								String bagItem = MQ.Query<String>($"${{Me.Inventory[pack{i}].Item[{e}]}}");
 								var newSpell = new Data.Spell(bagItem, null);
+								for (Int32 x = 0; x < 12; x++)
+								{
+									string teffect = MQ.SpellDataGetLine(newSpell.SpellName, x);
+									newSpell.SpellEffects.Add(teffect);
+								}
 								returnValue.Add(newSpell);
 							}
 						}
@@ -1488,6 +1518,11 @@ namespace E3Core.Utility
 						{
 							string itemName = MQ.Query<string>($"${{Me.Inventory[pack{i}]}}");
 							var newSpell = new Data.Spell(itemName, null);
+							for (Int32 x = 0; x < 12; x++)
+							{
+								string teffect = MQ.SpellDataGetLine(newSpell.SpellName, x);
+								newSpell.SpellEffects.Add(teffect);
+							}
 							returnValue.Add(newSpell);
 						}
 					}

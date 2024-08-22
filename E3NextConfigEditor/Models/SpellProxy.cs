@@ -67,6 +67,90 @@ namespace E3NextConfigEditor.Models
 			get { return _spell.RecastTime; }
 
 		}
+		[Category("Spell Slot Data")]
+		[Description("Slot01")]
+		public string Slot01
+		{
+			get { return _spell.SpellEffects.Count > 0 ? _spell.SpellEffects[0] : String.Empty;}
+
+		}
+		[Category("Spell Slot Data")]
+		[Description("Slot02")]
+		public string Slot02
+		{
+			get { return _spell.SpellEffects.Count > 1 ? _spell.SpellEffects[1] : String.Empty; }
+
+		}
+		[Category("Spell Slot Data")]
+		[Description("Slot03")]
+		public string Slot03
+		{
+			get { return _spell.SpellEffects.Count > 2 ? _spell.SpellEffects[2] : String.Empty; }
+
+		}
+		[Category("Spell Slot Data")]
+		[Description("Slot04")]
+		public string Slot04
+		{
+			get { return _spell.SpellEffects.Count > 3 ? _spell.SpellEffects[3] : String.Empty; }
+
+		}
+		[Category("Spell Slot Data")]
+		[Description("Slot05")]
+		public string Slot05
+		{
+			get { return _spell.SpellEffects.Count > 4 ? _spell.SpellEffects[4] : String.Empty; }
+
+		}
+		[Category("Spell Slot Data")]
+		[Description("Slot06")]
+		public string Slot06
+		{
+			get { return _spell.SpellEffects.Count > 5 ? _spell.SpellEffects[5] : String.Empty; }
+
+		}
+		[Category("Spell Slot Data")]
+		[Description("Slot07")]
+		public string Slot07
+		{
+			get { return _spell.SpellEffects.Count > 6 ? _spell.SpellEffects[6] : String.Empty; }
+
+		}
+		[Category("Spell Slot Data")]
+		[Description("Slot08")]
+		public string Slot08
+		{
+			get { return _spell.SpellEffects.Count > 7 ? _spell.SpellEffects[7] : String.Empty; }
+
+		}
+		[Category("Spell Slot Data")]
+		[Description("Slot09")]
+		public string Slot09
+		{
+			get { return _spell.SpellEffects.Count > 8 ? _spell.SpellEffects[8] : String.Empty; }
+
+		}
+		[Category("Spell Slot Data")]
+		[Description("Slot10")]
+		public string Slot10
+		{
+			get { return _spell.SpellEffects.Count > 9 ? _spell.SpellEffects[9] : String.Empty; }
+
+		}
+		[Category("Spell Slot Data")]
+		[Description("Slot11")]
+		public string Slot11
+		{
+			get { return _spell.SpellEffects.Count > 10 ? _spell.SpellEffects[10] : String.Empty; }
+
+		}
+		[Category("Spell Slot Data")]
+		[Description("Slot12")]
+		public string Slot12
+		{
+			get { return _spell.SpellEffects.Count > 11 ? _spell.SpellEffects[11] : String.Empty; }
+
+		}
 		[Category("Flags")]
 		[Description("PctAggro you have to be at before this ability will fire")]
 		public Int32 PctAggro
@@ -355,6 +439,90 @@ namespace E3NextConfigEditor.Models
 		public Int32 Recast
 		{
 			get { return _spell.RecastTime; }
+
+		}
+		[Category("Spell Slot Data")]
+		[Description("Slot01")]
+		public string Slot01
+		{
+			get { return _spell.SpellEffects.Count > 0 ? _spell.SpellEffects[0] : String.Empty; }
+
+		}
+		[Category("Spell Slot Data")]
+		[Description("Slot02")]
+		public string Slot02
+		{
+			get { return _spell.SpellEffects.Count > 1 ? _spell.SpellEffects[1] : String.Empty; }
+
+		}
+		[Category("Spell Slot Data")]
+		[Description("Slot03")]
+		public string Slot03
+		{
+			get { return _spell.SpellEffects.Count > 2 ? _spell.SpellEffects[2] : String.Empty; }
+
+		}
+		[Category("Spell Slot Data")]
+		[Description("Slot04")]
+		public string Slot04
+		{
+			get { return _spell.SpellEffects.Count > 3 ? _spell.SpellEffects[3] : String.Empty; }
+
+		}
+		[Category("Spell Slot Data")]
+		[Description("Slot05")]
+		public string Slot05
+		{
+			get { return _spell.SpellEffects.Count > 4 ? _spell.SpellEffects[4] : String.Empty; }
+
+		}
+		[Category("Spell Slot Data")]
+		[Description("Slot06")]
+		public string Slot06
+		{
+			get { return _spell.SpellEffects.Count > 5 ? _spell.SpellEffects[5] : String.Empty; }
+
+		}
+		[Category("Spell Slot Data")]
+		[Description("Slot07")]
+		public string Slot07
+		{
+			get { return _spell.SpellEffects.Count > 6 ? _spell.SpellEffects[6] : String.Empty; }
+
+		}
+		[Category("Spell Slot Data")]
+		[Description("Slot08")]
+		public string Slot08
+		{
+			get { return _spell.SpellEffects.Count > 7 ? _spell.SpellEffects[7] : String.Empty; }
+
+		}
+		[Category("Spell Slot Data")]
+		[Description("Slot09")]
+		public string Slot09
+		{
+			get { return _spell.SpellEffects.Count > 8 ? _spell.SpellEffects[8] : String.Empty; }
+
+		}
+		[Category("Spell Slot Data")]
+		[Description("Slot10")]
+		public string Slot10
+		{
+			get { return _spell.SpellEffects.Count > 9 ? _spell.SpellEffects[9] : String.Empty; }
+
+		}
+		[Category("Spell Slot Data")]
+		[Description("Slot11")]
+		public string Slot11
+		{
+			get { return _spell.SpellEffects.Count > 10 ? _spell.SpellEffects[10] : String.Empty; }
+
+		}
+		[Category("Spell Slot Data")]
+		[Description("Slot12")]
+		public string Slot12
+		{
+			get { return _spell.SpellEffects.Count > 11 ? _spell.SpellEffects[11] : String.Empty; }
 
 		}
 		[Category("Flags")]

@@ -55,6 +55,15 @@ namespace E3NextConfigEditor
 		public static SortedDictionary<string, SortedDictionary<string, List<SpellData>>> _skilldataOrganized = new SortedDictionary<string, SortedDictionary<string, List<SpellData>>>();
 		public static SortedDictionary<string, SortedDictionary<string, List<SpellData>>> _itemDataOrganized = new SortedDictionary<string, SortedDictionary<string, List<SpellData>>>();
 
+		/// <summary>
+		/// Spell Cache for the Spell/Item/AA lookup information for quick lookup
+		/// </summary>
+		public static Dictionary<string, SpellData> _spellDataLookup = new Dictionary<string, SpellData>(StringComparer.OrdinalIgnoreCase);
+		public static Dictionary<string, SpellData> _altDataLookup = new Dictionary<string, SpellData>(StringComparer.OrdinalIgnoreCase);
+		public static Dictionary<string, SpellData> _discDataLookup = new Dictionary<string, SpellData>(StringComparer.OrdinalIgnoreCase);
+		public static Dictionary<string, SpellData> _itemDataLookup = new Dictionary<string, SpellData>(StringComparer.OrdinalIgnoreCase);
+
+
 		//used to kill the process if the parent process dies
 		Task _globalUpdate;
 		public static volatile bool ShouldProcess = true;
@@ -138,6 +147,16 @@ namespace E3NextConfigEditor
 			//create an IMQ interface, so that we can use this when loading the settings
 			IMQ _mqClient = new MQ.MQClient(_tloClient);
 
+			//set the global IMQ so that settinsg can load correctly
+			//and other necessary properties
+			E3.MQ = _mqClient;
+			E3.Bots = new Client.Bots();
+			E3.Log = new Logging(E3.MQ); ;
+			E3.CurrentName = _mqClient.Query<string>("${Me.CleanName}");
+			E3.ServerName = e3util.FormatServerName(_mqClient.Query<string>("${MacroQuest.Server}"));
+			E3.CurrentClass = _currentClass;
+
+
 			_splashScreen.Invoke(new Action(() =>_splashScreen.splashLabel.Text="Requesting AA list..."));
 			byte[] result = _tloClient.RequestRawData("${E3.AA.ListAll}");
 			SpellDataList aas = SpellDataList.Parser.ParseFrom(result);
@@ -172,11 +191,13 @@ namespace E3NextConfigEditor
             labelClass.Text = classValue;
 
             //lets sort all the spells by cataegory/subcategory and levels
-            PopulateItemData(items.Data, _itemDataOrganized);
+            PopulateItemData(items.Data, _itemDataOrganized,_itemDataLookup);
 			PopulateData(skills.Data, _skilldataOrganized);
-			PopulateData(bookSpells.Data, _spellDataOrganized);
-			PopulateData(aas.Data, _altdataOrganized);
-			PopulateData(discs.Data, _discdataOrganized);
+			PopulateData(bookSpells.Data, _spellDataOrganized,_spellDataLookup);
+			PopulateData(aas.Data, _altdataOrganized,_altDataLookup);
+			PopulateData(discs.Data, _discdataOrganized,_discDataLookup);
+
+		
 
 			//now sort all the data. 
 			//spells are by level the the leaf level
@@ -213,14 +234,16 @@ namespace E3NextConfigEditor
 				}
 			}
 
-			//set the global IMQ so that settinsg can load correctly
-			//and other necessary properties
-			E3.MQ = _mqClient;
-			E3.Bots = new Client.Bots();
-			E3.Log = new Logging(E3.MQ); ;
-			E3.CurrentName = _mqClient.Query<string>("${Me.CleanName}");
-			E3.ServerName = e3util.FormatServerName(_mqClient.Query<string>("${MacroQuest.Server}"));
-			E3.CurrentClass = _currentClass;
+
+
+			//to force the spell creation to use these lookups to populate data instead
+			//of chatty calls
+			Spell.MQ = E3.MQ;
+			Spell.AltDataLookup = _altDataLookup;
+			Spell.ItemDataLookup = _itemDataLookup;
+			Spell.DiscDataLookup = _discDataLookup;
+			Spell.SpellDataLookup = _spellDataLookup;
+
 			E3.GlobalIfs = new E3Core.Settings.FeatureSettings.GlobalIfs();
 
 			//we bulk to inform E3N that they are going to come fast, and to keep checking for 100-200miliseconds before continuing on with the game loop.
@@ -411,7 +434,7 @@ namespace E3NextConfigEditor
 		/// </summary>
 		/// <param name="spells"></param>
 		/// <param name="dest"></param>
-		public void PopulateData(RepeatedField<SpellData> spells, SortedDictionary<string, SortedDictionary<string, List<SpellData>>> dest)
+		public void PopulateData(RepeatedField<SpellData> spells, SortedDictionary<string, SortedDictionary<string, List<SpellData>>> dest, Dictionary<string, SpellData> cacheLookup = null)
 		{
 			foreach (SpellData s in spells)
 			{
@@ -430,7 +453,13 @@ namespace E3NextConfigEditor
 				}
 
 				spellList.Add(s);
-
+				if (cacheLookup != null)
+				{
+					if (!cacheLookup.ContainsKey(s.CastName))
+					{
+						cacheLookup.Add(s.CastName, s);
+					}
+				}
 			}
 		}
 		/// <summary>
@@ -438,7 +467,7 @@ namespace E3NextConfigEditor
 		/// </summary>
 		/// <param name="spells"></param>
 		/// <param name="dest"></param>
-		public void PopulateItemData(RepeatedField<SpellData> spells, SortedDictionary<string, SortedDictionary<string, List<SpellData>>> dest)
+		public void PopulateItemData(RepeatedField<SpellData> spells, SortedDictionary<string, SortedDictionary<string, List<SpellData>>> dest, Dictionary<string,SpellData> cacheLookup = null)
 		{
 			foreach (SpellData s in spells)
 			{
@@ -457,6 +486,14 @@ namespace E3NextConfigEditor
 				}
 
 				spellList.Add(s);
+
+				if(cacheLookup!=null)
+				{
+					if(!cacheLookup.ContainsKey(s.CastName))
+					{
+						cacheLookup.Add(s.CastName, s);
+					}
+				}
 
 			}
 		}

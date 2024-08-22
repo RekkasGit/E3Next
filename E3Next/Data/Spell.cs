@@ -28,6 +28,13 @@ namespace E3Core.Data
         public static Dictionary<Int32, Data.Spell> _loadedSpells = new Dictionary<int, Spell>();
         public static Dictionary<string, Data.Spell> LoadedSpellsByName = new Dictionary<string, Spell>();
         public static Dictionary<string, Data.Spell> LoadedSpellByConfigEntry = new Dictionary<string, Data.Spell>();
+
+		//these can be set to use these lookup spells, mainly used for the config editor so that we don't have to query MQ in a chatty fashion
+		public static Dictionary<string, SpellData> SpellDataLookup = new Dictionary<string, SpellData>(StringComparer.OrdinalIgnoreCase);
+		public static Dictionary<string, SpellData> AltDataLookup = new Dictionary<string, SpellData>(StringComparer.OrdinalIgnoreCase);
+		public static Dictionary<string, SpellData> DiscDataLookup = new Dictionary<string, SpellData>(StringComparer.OrdinalIgnoreCase);
+		public static Dictionary<string, SpellData> ItemDataLookup = new Dictionary<string, SpellData>(StringComparer.OrdinalIgnoreCase);
+
 		static Dictionary<string, Int32> _spellIDLookup = new Dictionary<string, Int32>();
 		public static IMQ MQ = E3.MQ;
         //mainly to deal with temp items that you might not have but specified in your ini
@@ -509,7 +516,17 @@ namespace E3Core.Data
                 Int32 bagSlot;
                 //check if this is an itemID
 
+				//we already have this data populated, just kick out
+				if(ItemDataLookup.ContainsKey(CastName))
+				{
+					var SpellData = ItemDataLookup[CastName];
+					Spell.FromProto(SpellData, this);
+					goto gotoCheckCollectionPopulation;
+				}
+				
                 Int32 itemID = -1;
+
+
 
                 bool itemFound = MQ.Query<bool>($"${{FindItem[{CastName}]}}");
 
@@ -607,7 +624,14 @@ namespace E3Core.Data
             }
             else if (CastType == CastingType.AA)
             {
-                TargetType = MQ.Query<String>($"${{Me.AltAbility[{CastName}].Spell.TargetType}}");
+				//we already have this data populated, just kick out
+				if (AltDataLookup.ContainsKey(CastName))
+				{
+					var SpellData = AltDataLookup[CastName];
+					Spell.FromProto(SpellData, this);
+					goto gotoCheckCollectionPopulation;
+				}
+				TargetType = MQ.Query<String>($"${{Me.AltAbility[{CastName}].Spell.TargetType}}");
                 Duration = MQ.Query<Int32>($"${{Me.AltAbility[{CastName}].Spell.Duration}}");
                 DurationTotalSeconds = MQ.Query<Int32>($"${{Me.AltAbility[{CastName}].Spell.Duration.TotalSeconds}}");
 
@@ -661,10 +685,17 @@ namespace E3Core.Data
 			}
 			else if (CastType == CastingType.Spell)
             {
-              
-                if(SpellInBook)
+				
+				if (SpellInBook)
                 {
-                    string bookNumber = MQ.Query<string>($"${{Me.Book[{CastName}]}}");
+					//we already have this data populated, just kick out
+					if (SpellDataLookup.ContainsKey(CastName))
+					{
+						var SpellData = SpellDataLookup[CastName];
+						Spell.FromProto(SpellData, this);
+						goto gotoCheckCollectionPopulation;
+					}
+					string bookNumber = MQ.Query<string>($"${{Me.Book[{CastName}]}}");
 
                     TargetType = MQ.Query<String>($"${{Me.Book[{bookNumber}].TargetType}}");
                     Duration = MQ.Query<Int32>($"${{Me.Book[{bookNumber}].Duration}}");
@@ -712,6 +743,7 @@ namespace E3Core.Data
                     CastID = SpellID;
                     SpellIcon = MQ.Query<Int32>($"${{Me.Book[{bookNumber}].SpellIcon}}");
 					Level = MQ.Query<Int32>($"${{Me.Book[{bookNumber}].Level}}");
+
 				}
                 else
                 {
@@ -769,7 +801,14 @@ namespace E3Core.Data
             }
             else if (CastType == CastingType.Disc)
             {
-                TargetType = MQ.Query<String>($"${{Spell[{CastName}].TargetType}}");
+				//we already have this data populated, just kick out
+				if (DiscDataLookup.ContainsKey(CastName))
+				{
+					var SpellData = DiscDataLookup[CastName];
+					Spell.FromProto(SpellData, this);
+					goto gotoCheckCollectionPopulation;
+				}
+				TargetType = MQ.Query<String>($"${{Spell[{CastName}].TargetType}}");
                 Duration = MQ.Query<Int32>($"${{Spell[{CastName}].Duration}}");
                 DurationTotalSeconds = MQ.Query<Int32>($"${{Spell[{CastName}].Duration.TotalSeconds}}");
                 EnduranceCost = MQ.Query<Int32>($"${{Spell[{CastName}].EnduranceCost}}");
@@ -797,7 +836,7 @@ namespace E3Core.Data
             {
                 //nothing to update here
             }
-
+			gotoCheckCollectionPopulation:
             foreach(string key in CheckForCollection.Keys.ToList())
             {
                 Int32 tcID = 0;
@@ -920,12 +959,21 @@ namespace E3Core.Data
         public Int32 ResistAdj = 0;
         public string ResistType = String.Empty;
 		public bool Enabled = true;
+		public List<String> SpellEffects = new List<string>();
 
 		//.\protoc --csharp_out=.\ SpellData.proto
 		//add field to this class, you need to update the proto file as well.
-		public static Spell FromProto(SpellData source)
+		public static Spell FromProto(SpellData source, Spell dest = null)
         {
-			Spell r = new Spell();
+			Spell r;
+			if(dest==null)
+			{
+				r = new Spell();
+			}
+			else
+			{
+				r = dest;
+			}
 			r.AfterEvent = source.AfterEvent;
             r.AfterEventKeys = source.AfterEventKeys;
 			r.AfterSpell = source.AfterSpell;
@@ -1011,6 +1059,11 @@ namespace E3Core.Data
 				}
 			}
 			r.Enabled = source.Enabled;
+
+			foreach(var entry in source.SpellEffects)
+			{
+				r.SpellEffects.Add(entry);
+			}
 			
 			return r;
 		}
@@ -1097,7 +1150,11 @@ namespace E3Core.Data
 			r.IfsKeys = IfsKeys;
 			r.CheckForCollection.AddRange(CheckForCollection.Keys.ToList());
 			r.Enabled = Enabled;
-            return r;
+			foreach (var entry in SpellEffects)
+			{
+				r.SpellEffects.Add(entry);
+			}
+			return r;
 
         }
 		public void TransferFlags(Spell d)

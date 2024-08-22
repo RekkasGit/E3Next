@@ -270,10 +270,35 @@ namespace MonoCore
                             }
                            
                         }
+						while (RouterServer._getSpellDataEffectCountRequest.Count > 0)
+						{
+							RouterMessage message;
+							if (RouterServer._getSpellDataEffectCountRequest.TryDequeue(out message))
+							{
+								string query = System.Text.Encoding.Default.GetString(message.payload, 0, message.payloadLength);
+								string response = MQ.SpellDataGetLineCount(query).ToString();
 
-                        ///FOR THE WEB SERVER, NOT IN USE ANYMORE
+								message.payloadLength = System.Text.Encoding.Default.GetBytes(response, 0, response.Length, message.payload, 0);
+								RouterServer._getSpellDataEffectCountResponse.Enqueue(message);
+							}
 
-                        while (_queuedQuery.Count > 0)
+						}
+						while (RouterServer._getSpellDataEffectRequest.Count > 0)
+						{
+							RouterMessage message;
+							if (RouterServer._getSpellDataEffectRequest.TryDequeue(out message))
+							{
+								string query = System.Text.Encoding.Default.GetString(message.payload, 0, message.payloadLength);
+								string[] qparams = query.Split(',');
+								string response = MQ.SpellDataGetLine(qparams[0], Int32.Parse(qparams[1]));
+								message.payloadLength = System.Text.Encoding.Default.GetBytes(response, 0, response.Length, message.payload, 0);
+								RouterServer._getSpellDataEffectResponse.Enqueue(message);
+							}
+
+						}
+						///FOR THE WEB SERVER, NOT IN USE ANYMORE
+
+						while (_queuedQuery.Count > 0)
                         {
                             //have a query to do!
                             string query;
@@ -428,10 +453,14 @@ namespace MonoCore
         public static ConcurrentQueue<RouterMessage> _removeCommandRequests = new ConcurrentQueue<RouterMessage>();
         public static ConcurrentQueue<RouterMessage> _getSpawnsRequests = new ConcurrentQueue<RouterMessage>();
         public static ConcurrentQueue<RouterMessage> _getSpawnsResponse = new ConcurrentQueue<RouterMessage>();
+		public static ConcurrentQueue<RouterMessage> _getSpellDataEffectCountRequest = new ConcurrentQueue<RouterMessage>();
+		public static ConcurrentQueue<RouterMessage> _getSpellDataEffectCountResponse = new ConcurrentQueue<RouterMessage>();
+		public static ConcurrentQueue<RouterMessage> _getSpellDataEffectRequest = new ConcurrentQueue<RouterMessage>();
+		public static ConcurrentQueue<RouterMessage> _getSpellDataEffectResponse = new ConcurrentQueue<RouterMessage>();
 
 
 
-        public void Start()
+		public void Start()
         {
 
             _serverThread = Task.Factory.StartNew(() => { Process(); }, CancellationToken.None, TaskCreationOptions.DenyChildAttach, TaskScheduler.Default);
@@ -537,7 +566,15 @@ namespace MonoCore
                         {
                             _getSpawnsRequests.Enqueue(message);
                         }
-                        else
+						else if (message.commandType == 8)
+						{
+							_getSpellDataEffectCountRequest.Enqueue(message);
+						}
+						else if (message.commandType == 9)
+						{
+							_getSpellDataEffectRequest.Enqueue(message);
+						}
+						else
                         {
                             message.Dispose();
                         }
@@ -565,32 +602,18 @@ namespace MonoCore
                     //process all the responses that we have to give
                     while (_tloResposne.Count > 0)
                     {
-                        RouterMessage message;
-                        _tloResposne.TryDequeue(out message);
-                        if (message != null)
-                        {
-                            try
-                            {
-                                routerResponse.InitPool(message.identiyLength);
-                                Buffer.BlockCopy(message.identity, 0, routerResponse.Data, 0, message.identiyLength);
-                                _rpcRouter.TrySend(ref routerResponse, timeout, true);
-                                routerResponse.Close();
-                                routerResponse.InitEmpty();
-                                _rpcRouter.TrySend(ref routerResponse, timeout, true);
-                                routerResponse.Close();
-                                routerResponse.InitPool(message.payloadLength);
-                                Buffer.BlockCopy(message.payload, 0, routerResponse.Data, 0, message.payloadLength);
-                                _rpcRouter.TrySend(ref routerResponse, timeout, false);
-                                routerResponse.Close();
-                            }
-                            finally
-                            {
-                                //put back into the object pool.
-                                message.Dispose();
-                            }
-                        }
-                    }
-                    while (_getSpawnsResponse.Count > 0)
+						SendResponse(_tloResposne);
+
+					}
+					while (_getSpellDataEffectCountResponse.Count > 0)
+					{
+						SendResponse(_getSpellDataEffectCountResponse);
+					}
+					while (_getSpellDataEffectResponse.Count > 0)
+					{
+						SendResponse(_getSpellDataEffectResponse);
+					}
+					while (_getSpawnsResponse.Count > 0)
                     {
                         RouterMessage message;
                         _getSpawnsResponse.TryDequeue(out message);
@@ -645,7 +668,33 @@ namespace MonoCore
 
 
         }
-
+		public void SendResponse(ConcurrentQueue<RouterMessage> queue)
+		{
+			RouterMessage message;
+			queue.TryDequeue(out message);
+			if (message != null)
+			{
+				try
+				{
+					routerResponse.InitPool(message.identiyLength);
+					Buffer.BlockCopy(message.identity, 0, routerResponse.Data, 0, message.identiyLength);
+					_rpcRouter.TrySend(ref routerResponse, timeout, true);
+					routerResponse.Close();
+					routerResponse.InitEmpty();
+					_rpcRouter.TrySend(ref routerResponse, timeout, true);
+					routerResponse.Close();
+					routerResponse.InitPool(message.payloadLength);
+					Buffer.BlockCopy(message.payload, 0, routerResponse.Data, 0, message.payloadLength);
+					_rpcRouter.TrySend(ref routerResponse, timeout, false);
+					routerResponse.Close();
+				}
+				finally
+				{
+					//put back into the object pool.
+					message.Dispose();
+				}
+			}
+		}
         public RouterServer()
         {
 
@@ -943,6 +992,10 @@ namespace MonoCore
 		public extern static string mq_GetFocusedWindowName();
 		[MethodImpl(MethodImplOptions.InternalCall)]
 		public extern static string mq_GetMQ2MonoVersion();
+		[MethodImpl(MethodImplOptions.InternalCall)]
+		public extern static int mq_GetSpellDataEffectCount(string query);
+		[MethodImpl(MethodImplOptions.InternalCall)]
+		public extern static string mq_GetSpellDataEffect(string query,int line);
 
 		#region IMGUI
 		[MethodImpl(MethodImplOptions.InternalCall)]
@@ -1014,6 +1067,8 @@ namespace MonoCore
         bool AddCommand(string command);
         void ClearCommands();
         void RemoveCommand(string commandName);
+		string SpellDataGetLine(string query, Int32 line);
+		Int32 SpellDataGetLineCount(string query);
 
     }
     public class MQ : IMQ
@@ -1197,7 +1252,18 @@ namespace MonoCore
         {
             Core.mq_RemoveCommand(commandName);
         }
-    }
+
+		public string SpellDataGetLine(string query, int line)
+		{
+			return Core.mq_GetSpellDataEffect(query, line);
+		}
+
+		public Int32 SpellDataGetLineCount(string query)
+		{
+			return Core.mq_GetSpellDataEffectCount(query);
+		
+		}
+	}
 
     public class Logging
     {

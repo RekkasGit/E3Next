@@ -99,4 +99,5 @@ message SpellData {
     string AfterEventKeys=81;
     string BeforeEventKeys=82;
 	int32 AAID=83;
+	repeated string SpellEffects=84;
 }
