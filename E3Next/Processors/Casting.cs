@@ -437,7 +437,10 @@ namespace E3Core.Processors
 								
 								MQ.Write($"\ag{spell.CastName} \at{spell.SpellID} \am{targetName} \ao{targetID} \aw({spell.MyCastTime / 1000}sec)");
 								MQ.Cmd($"/disc {spell.CastName}");
-								MQ.Delay(300);
+								if(spell.TargetType.Equals("Self"))
+								{
+									MQ.Delay(300);
+								}
 								returnValue = CastReturn.CAST_SUCCESS;
 								goto startCasting;
 							}

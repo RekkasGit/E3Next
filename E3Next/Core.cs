@@ -1171,7 +1171,10 @@ namespace MonoCore
 		[MethodImpl(MethodImplOptions.InternalCall)]
 		private extern static string mq_GetMQ2MonoVersion();
 		[MethodImpl(MethodImplOptions.InternalCall)]
-		public extern static string mq_DoesNotExist();
+		public extern static int mq_GetSpellDataEffectCount(string query);
+		[MethodImpl(MethodImplOptions.InternalCall)]
+		public extern static string mq_GetSpellDataEffect(string query, int line);
+
 
 		#region IMGUI
 		[MethodImpl(MethodImplOptions.InternalCall)]
@@ -1277,8 +1280,9 @@ namespace MonoCore
         bool AddCommand(string query);
         void ClearCommands();
         void RemoveCommand(string commandName);
-        
-        bool FeatureEnabled(MQFeature feature);
+		string SpellDataGetLine(string query, Int32 line);
+		Int32 SpellDataGetLineCount(string query);
+		bool FeatureEnabled(MQFeature feature);
         string GetFocusedWindowName();
 
     }
@@ -1292,7 +1296,30 @@ namespace MonoCore
         public static Int64 _totalQueryCounts;
         public static bool _noDelay = false;
 		public static ConcurrentQueue<String> DelayedWrites = new ConcurrentQueue<string>();
-        public T Query<T>(string query)
+		public string SpellDataGetLine(string query, int line)
+		{
+			if (Core._MQ2MonoVersion > 0.30M)
+			{
+				return Core.mq_GetSpellDataEffect(query, line);
+			}
+			else
+			{
+				return String.Empty;
+			}
+		}
+
+		public Int32 SpellDataGetLineCount(string query)
+		{
+			if (Core._MQ2MonoVersion > 0.30M)
+			{
+				return Core.mq_GetSpellDataEffectCount(query);
+			}
+			else
+			{
+				return 12;
+			}
+		}
+		public T Query<T>(string query)
         {
             if (!Core.IsProcessing)
             {

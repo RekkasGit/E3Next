@@ -712,6 +712,11 @@ namespace E3Core.Utility
             }
           
         }
+		public static void CursorTryDestroyItem(string item)
+		{
+			string itemWithoutComma = item.Replace(",", "");
+			MQ.Cmd($"/docommand ${{If[${{Bool[${{Cursor.Name.Equal[{item}]}}]}},/destroy,/e3bc Error! went to delete [{itemWithoutComma}] item on cursor but name does not match what is there]}}");
+		}
         public static bool ClearCursor()
         {
             Int32 cursorID = MQ.Query<Int32>("${Cursor.ID}");
@@ -724,9 +729,9 @@ namespace E3Core.Utility
 
                     if(E3.CharacterSettings.Cursor_Delete.Contains(autoinvItem, StringComparer.OrdinalIgnoreCase))
                     {
-                        //configured to delete this item.
-                        MQ.Cmd("/destroy");
-                        if (autoinvItem != "NULL")
+						//configured to delete this item.
+						CursorTryDestroyItem(autoinvItem);
+						if (autoinvItem != "NULL")
                         {
                             E3.Bots.Broadcast($"\agAutoDestroy\aw:\ao{autoinvItem}");
                         }
@@ -769,8 +774,8 @@ namespace E3Core.Utility
                     bool isNoRent = MQ.Query<bool>("${Cursor.NoRent}");
                     if(isNoRent)
                     {
-                        MQ.Cmd("/destroy");
-                        MQ.Delay(300);                        
+						CursorTryDestroyItem(itemName);
+						MQ.Delay(300);                        
                     }
                     ClearCursor();
                 }
@@ -1371,8 +1376,16 @@ namespace E3Core.Utility
 					if(spellName!="NULL")
 					{
 						var spell = new Data.Spell(spellName);
+
+						
+
 						if(spell.CastType== CastingType.AA)
 						{
+							for (Int32 x = 0; x < 12; x++)
+							{
+								string teffect = MQ.SpellDataGetLine(spell.SpellID.ToString(), x);
+								spell.SpellEffects.Add(teffect);
+							}
 							returnValue.Add(spell);
 						}
 					}
@@ -1412,6 +1425,12 @@ namespace E3Core.Utility
 					var spell = new Data.Spell(spellName);
 					if (spell.CastType == CastingType.Spell)
 					{
+
+						for (Int32 x = 0; x < 12; x++)
+						{
+							string teffect = MQ.SpellDataGetLine(spell.SpellID.ToString(), x);
+							spell.SpellEffects.Add(teffect);
+						}
 						returnValue.Add(spell);
 					}
 				}
@@ -1430,6 +1449,11 @@ namespace E3Core.Utility
 					var spell = new Data.Spell(spellName);
 					if (spell.CastType == CastingType.Disc)
 					{
+						for (Int32 x = 0; x < 12; x++)
+						{
+							string teffect = MQ.SpellDataGetLine(spell.SpellID.ToString(), x);
+							spell.SpellEffects.Add(teffect);
+						}
 						returnValue.Add(spell);
 					}
 				}
@@ -1451,6 +1475,12 @@ namespace E3Core.Utility
 				{
 					string itemName = MQ.Query<string>($"${{Me.Inventory[{i}]}}");
 					var newSpell = new Data.Spell(itemName, null);
+
+					for (Int32 x = 0; x < 12; x++)
+					{
+						string teffect = MQ.SpellDataGetLine(newSpell.SpellName, x);
+						newSpell.SpellEffects.Add(teffect);
+					}
 					returnValue.Add(newSpell);
 				}
 			}
@@ -1470,6 +1500,11 @@ namespace E3Core.Utility
 							{
 								String bagItem = MQ.Query<String>($"${{Me.Inventory[pack{i}].Item[{e}]}}");
 								var newSpell = new Data.Spell(bagItem, null);
+								for (Int32 x = 0; x < 12; x++)
+								{
+									string teffect = MQ.SpellDataGetLine(newSpell.SpellName, x);
+									newSpell.SpellEffects.Add(teffect);
+								}
 								returnValue.Add(newSpell);
 							}
 						}
@@ -1483,6 +1518,11 @@ namespace E3Core.Utility
 						{
 							string itemName = MQ.Query<string>($"${{Me.Inventory[pack{i}]}}");
 							var newSpell = new Data.Spell(itemName, null);
+							for (Int32 x = 0; x < 12; x++)
+							{
+								string teffect = MQ.SpellDataGetLine(newSpell.SpellName, x);
+								newSpell.SpellEffects.Add(teffect);
+							}
 							returnValue.Add(newSpell);
 						}
 					}

@@ -233,6 +233,16 @@ namespace TestCore
 			{
 				Console.WriteLine($"[{System.DateTime.Now.ToString("HH:mm:ss")}] {query}");
 			}
+
+			public string SpellDataGetLine(string query, int line)
+			{
+				return "NULL";
+			}
+
+			public int SpellDataGetLineCount(string query)
+			{
+				return -1;
+			}
 		}
 
     }

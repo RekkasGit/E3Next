@@ -578,6 +578,7 @@ namespace E3Core.Settings
             CharacterName = E3.CurrentName;
             ServerName = E3.ServerName;
             CharacterClass = E3.CurrentClass;
+			MQ = E3.MQ;
             LoadData();
 			//map everything to the dictionary for settings lookup. 
 			GetSettingsMappedToDictionary();
