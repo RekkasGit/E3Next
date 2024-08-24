@@ -20,7 +20,7 @@ namespace E3Core.Settings
         public Int32 General_AutoMedBreakPctMana;
         public bool AutoMisfitBox;
         public bool AttackOffOnEnrage;
-        public bool RelayTells;
+        public bool RelayTells=true;
         public string General_NetworkMethod = "EQBC";
         public DefaultBroadcast General_BroadCast_Default = DefaultBroadcast.Group;
         public bool General_HealWhileNavigating = true;

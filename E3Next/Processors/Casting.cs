@@ -1466,6 +1466,7 @@ namespace E3Core.Processors
 
 		public static Boolean CheckReady(Data.Spell spell, bool skipCastCheck = false)
 		{
+			if (spell == null) return false;
 			if (!spell.Enabled) return false;
 			if (!spell.Initialized) spell.ReInit();
 
@@ -2412,6 +2413,7 @@ namespace E3Core.Processors
 			CheckForResistByName("CAST_RESIST", endtime);
 			CheckForResistByName("CAST_FIZZLE", endtime);
 			CheckForResistByName("CAST_IMMUNE", endtime);
+			CheckForResistByName("CAST_INTERRUPTED", endtime);
 		}
 		public static CastReturn CheckForReist(Data.Spell spell)
 		{
@@ -2445,7 +2447,7 @@ namespace E3Core.Processors
 				//if (CheckForResistByName("CAST_CANNOTSEE", endtime)) return CastReturn.CAST_NOTARGET;
 				//if (CheckForResistByName("CAST_COMPONENTS", endtime)) return CastReturn.CAST_COMPONENTS;
 				//if (CheckForResistByName("CAST_DISTRACTED", endtime)) return CastReturn.CAST_DISTRACTED;
-				//if (CheckForResistByName("CAST_INTERRUPTED", endtime)) return CastReturn.CAST_INTERRUPTED;
+				if (CheckForResistByName("CAST_INTERRUPTED", endtime)) return CastReturn.CAST_INTERRUPTED;
 				//if (CheckForResistByName("CAST_NOTARGET", endtime)) return CastReturn.CAST_NOTARGET;
 				//if (CheckForResistByName("CAST_OUTDOORS", endtime)) return CastReturn.CAST_DISTRACTED;
 				MQ.Delay(100);
@@ -2613,12 +2615,13 @@ namespace E3Core.Processors
 			});
 
 
-			//r = new List<string>();
-			//r.Add("Your .+ is interrupted.");
-			//r.Add("Your spell is interrupted.");
-			//r.Add("Your casting has been interrupted.");
-			//EventProcessor.RegisterEvent("CAST_INTERRUPTED", r, (x) => {
-			//});
+			r = new List<string>();
+			r.Add("Your .+ is interrupted.");
+			r.Add("Your spell is interrupted.");
+			r.Add("Your casting has been interrupted.");
+			EventProcessor.RegisterEvent("CAST_INTERRUPTED", r, (x) =>
+			{
+			});
 
 			r = new List<string>();
 			r.Add("Your spell fizzles.");
