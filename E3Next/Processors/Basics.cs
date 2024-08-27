@@ -1718,12 +1718,12 @@ namespace E3Core.Processors
                 var toEat = E3.CharacterSettings.Misc_AutoFood;
                 var toDrink = E3.CharacterSettings.Misc_AutoDrink;
 
-                if (MQ.Query<bool>($"${{FindItem[{toEat}].ID}}") && MQ.Query<int>("${Me.Hunger}") < 4500)
+                if (MQ.Query<bool>($"${{FindItem[{toEat}].ID}}") && MQ.Query<int>("${Me.Hunger}") < 3400)
                 {
                     MQ.Cmd($"/useitem \"{toEat}\"");
                 }
 
-                if (MQ.Query<bool>($"${{FindItem[{toDrink}].ID}}") && MQ.Query<int>("${Me.Thirst}") < 4500)
+                if (MQ.Query<bool>($"${{FindItem[{toDrink}].ID}}") && MQ.Query<int>("${Me.Thirst}") < 3400)
                 {
                     MQ.Cmd($"/useitem \"{toDrink}\"");
                 }

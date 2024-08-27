@@ -471,10 +471,12 @@ namespace E3Core.Processors
                 Burns.Reset();
             }
             LastAssistEndedTimestamp = Core.StopWatch.ElapsedMilliseconds;
-            //add 1 seconds before we follow check again, to handle /cleartarget assist spam
-            Movement._nextFollowCheck = Core.StopWatch.ElapsedMilliseconds + 1000;
 
-
+			if(Basics.InGameCombat())
+			{
+				//add 1 seconds before we follow check again, to handle /cleartarget assist spam
+				Movement._nextFollowCheck = Core.StopWatch.ElapsedMilliseconds + 1000;
+			}
 		}
 
         /// <summary>

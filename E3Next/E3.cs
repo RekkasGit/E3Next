@@ -49,6 +49,8 @@ namespace E3Core.Processors
 			StateUpdates();
 			RefreshCaches();
 
+			//don't eat stat food even if paused!
+			Basics.CheckFood();
 			//kickout after updates if paused
 			if (IsPaused()) return;
 			//stunned, no sense in processing
