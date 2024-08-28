@@ -1717,16 +1717,27 @@ namespace E3Core.Processors
             {
                 var toEat = E3.CharacterSettings.Misc_AutoFood;
                 var toDrink = E3.CharacterSettings.Misc_AutoDrink;
-
-                if (MQ.Query<bool>($"${{FindItem[{toEat}].ID}}") && MQ.Query<int>("${Me.Hunger}") < 3400)
+				int hungerLevel = MQ.Query<int>("${Me.Hunger}");
+				int thirstLevel = MQ.Query<int>("${Me.Thirst}");
+				bool foundFood = MQ.Query<bool>($"${{FindItem[{toEat}].ID}}");
+				bool foundDrink = MQ.Query<bool>($"${{FindItem[{toDrink}].ID}}");
+				int foundFoodCount = 0;
+				int foundDrinkCount = 0;
+					
+				if (foundFood && hungerLevel < 3400)
                 {
-                    MQ.Cmd($"/useitem \"{toEat}\"");
-                }
+	                MQ.Cmd($"/useitem \"{toEat}\"");
+					foundFoodCount = MQ.Query<Int32>($"${{FindItem[{toEat}].StackCount}}");
+					E3.Bots.Broadcast($"\ar<\ayAutoFood\ar>\ag Eating: {toEat} because of hunger level:{hungerLevel}. Total left:{foundFoodCount}");
+				}
 
-                if (MQ.Query<bool>($"${{FindItem[{toDrink}].ID}}") && MQ.Query<int>("${Me.Thirst}") < 3400)
+                if (foundDrink && thirstLevel < 3400)
                 {
-                    MQ.Cmd($"/useitem \"{toDrink}\"");
-                }
+					MQ.Cmd($"/useitem \"{toDrink}\"");
+					foundDrinkCount = MQ.Query<Int32>($"${{FindItem[{toDrink}].StackCount}}");
+					E3.Bots.Broadcast($"\ar<\ayAutoFood\ar>\ag Drinking: {toDrink} because of thirst level:{thirstLevel}. Total left:{foundDrinkCount}");
+					
+				}
             }
         }
 
