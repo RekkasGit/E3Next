@@ -1862,7 +1862,8 @@ namespace E3Core.Processors
 
                     //auto delete stuff on cursor that is configured to do so
                     string autoinvItem = MQ.Query<string>("${Cursor}");
-                    if (E3.CharacterSettings.Cursor_Delete.Contains(autoinvItem, StringComparer.OrdinalIgnoreCase))
+                    if (E3.CharacterSettings.Cursor_Delete.Contains(autoinvItem, StringComparer.OrdinalIgnoreCase) || 
+                        E3.GlobalCursorDelete.Cursor_Delete.Contains(autoinvItem, StringComparer.OrdinalIgnoreCase))
                     {
 						//configured to delete this item.
 						e3util.CursorTryDestroyItem(autoinvItem);
@@ -1903,7 +1904,8 @@ namespace E3Core.Processors
                 {
                     //auto delete stuff on cursor that is configured to do so
                     string autoinvItem = MQ.Query<string>("${Cursor}");
-                    if (E3.CharacterSettings.Cursor_Delete.Contains(autoinvItem, StringComparer.OrdinalIgnoreCase))
+                    if (E3.CharacterSettings.Cursor_Delete.Contains(autoinvItem, StringComparer.OrdinalIgnoreCase) ||
+                        E3.GlobalCursorDelete.Cursor_Delete.Contains(autoinvItem, StringComparer.OrdinalIgnoreCase))
                     {
 						//configured to delete this item.
 						e3util.CursorTryDestroyItem(autoinvItem);
