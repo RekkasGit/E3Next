@@ -236,7 +236,18 @@ namespace E3Core.Processors
                 E3.Bots.Broadcast("\aoComplete!");
                
             }
-			
+
+            if (GlobalCursorDelete.ShouldReload())
+            {
+                E3.Bots.Broadcast("\aoAuto-Reloading Global Cursor Delete/Character settings settings file...");
+                E3.GlobalCursorDelete = new GlobalCursorDelete();
+                CharacterSettings = new CharacterSettings();
+                Loot.Reset();
+                GiveMe.Reset();
+                Bard.RestartMelody();
+                E3.Bots.Broadcast("\aoComplete!");
+            }
+
             if (GeneralSettings.ShouldReload())
             {
                 E3.Bots.Broadcast("\aoAuto-Reloading General settings file...");
@@ -481,6 +492,7 @@ namespace E3Core.Processors
                     //}
                 }
 				GlobalIfs = new GlobalIfs();
+				GlobalCursorDelete = new GlobalCursorDelete();
 				CharacterSettings = new Settings.CharacterSettings();
                 AdvancedSettings = new Settings.AdvancedSettings();
 				
@@ -541,6 +553,7 @@ namespace E3Core.Processors
         public static Logging Log = Core.logInstance;
         public static Settings.CharacterSettings CharacterSettings = null;
 		public static Settings.FeatureSettings.GlobalIfs GlobalIfs = null;
+		public static Settings.FeatureSettings.GlobalCursorDelete GlobalCursorDelete = null;
 		public static Settings.GeneralSettings GeneralSettings = null;
         public static Settings.AdvancedSettings AdvancedSettings = null;
         public static IBots Bots = null;
