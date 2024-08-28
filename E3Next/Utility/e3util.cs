@@ -726,8 +726,9 @@ namespace E3Core.Utility
                 if (cursorID > 0)
                 {
                     string autoinvItem = MQ.Query<string>("${Cursor}");
-
-                    if(E3.CharacterSettings.Cursor_Delete.Contains(autoinvItem, StringComparer.OrdinalIgnoreCase))
+                    
+                    if (E3.CharacterSettings.Cursor_Delete.Contains(autoinvItem, StringComparer.OrdinalIgnoreCase) || 
+                        E3.GlobalCursorDelete.Cursor_Delete.Contains(autoinvItem, StringComparer.OrdinalIgnoreCase))
                     {
 						//configured to delete this item.
 						CursorTryDestroyItem(autoinvItem);
