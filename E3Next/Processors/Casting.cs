@@ -656,8 +656,9 @@ namespace E3Core.Processors
 					
 						currentMana = MQ.Query<Int32>("${Me.CurrentMana}");
 						pctMana = MQ.Query<Int32>("${Me.PctMana}");
-						
-						
+
+						if (spell.AfterCastDelay > 0) MQ.Delay(spell.AfterCastDelay);
+
 						while (IsCasting())
 						{
 
@@ -882,18 +883,21 @@ namespace E3Core.Processors
 				_log.Write($"Doing BeforeEvent:{spell.BeforeEvent}");
 				MQ.Cmd($"/docommand {spell.BeforeEvent}");
 				if (spell.BeforeEvent.StartsWith("/exchange", StringComparison.OrdinalIgnoreCase)) MQ.Delay(500);
-
+				if (spell.BeforeEventDelay > 0) MQ.Delay(spell.BeforeEventDelay);
 			}
 
 		}
 		private static void AfterEventCheck(Spell spell)
 		{
 
-			//after event, after all things are done               
-			_log.Write("Checking AfterEvent...");
+			//after event, after all things are done
+			if (spell.AfterEventDelay > 0) MQ.Delay(spell.AfterEventDelay);
+
+			_log.Write($"Checking AfterEvent...[{spell.AfterEvent}]");
 			if (!String.IsNullOrWhiteSpace(spell.AfterEvent))
 			{
 				_log.Write($"Doing AfterEvent:{spell.AfterEvent}");
+				
 				MQ.Cmd($"/docommand {spell.AfterEvent}");
 			}
 
@@ -904,6 +908,7 @@ namespace E3Core.Processors
 			_log.Write("Checking AfterSpell...");
 			if (!String.IsNullOrWhiteSpace(spell.AfterSpell))
 			{
+				if (spell.AfterSpellDelay > 0) MQ.Delay(spell.AfterSpellDelay);
 
 				if (spell.AfterSpellData == null)
 				{
@@ -942,6 +947,7 @@ namespace E3Core.Processors
 			_log.Write("Checking BeforeSpell...");
 			if (!String.IsNullOrWhiteSpace(spell.BeforeSpell))
 			{
+			
 				if (spell.BeforeSpellData == null)
 				{
 					spell.BeforeSpellData = new Data.Spell(spell.BeforeSpell);
@@ -964,7 +970,7 @@ namespace E3Core.Processors
 					}
 				}
 				_log.Write($"Doing BeforeSpell:{spell.BeforeSpell}");
-
+				if (spell.BeforeSpellDelay > 0) MQ.Delay(spell.BeforeSpellDelay);
 			}
 		}
 		private static bool NowCastReady()

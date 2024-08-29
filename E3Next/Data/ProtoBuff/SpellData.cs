@@ -23,7 +23,7 @@ public static partial class SpellDataReflection {
     byte[] descriptorData = global::System.Convert.FromBase64String(
         string.Concat(
           "Cg9TcGVsbERhdGEucHJvdG8iKQoNU3BlbGxEYXRhTGlzdBIYCgRkYXRhGAEg",
-          "AygLMgouU3BlbGxEYXRhIogOCglTcGVsbERhdGESEQoJU3BlbGxOYW1lGAEg",
+          "AygLMgouU3BlbGxEYXRhIoYPCglTcGVsbERhdGESEQoJU3BlbGxOYW1lGAEg",
           "ASgJEhAKCENhc3ROYW1lGAIgASgJEhMKC1N1YmNhdGVnb3J5GAMgASgJEhAK",
           "CENhdGVnb3J5GAQgASgJEigKCENhc3RUeXBlGAUgASgOMhYuU3BlbGxEYXRh",
           "LkNhc3RpbmdUeXBlEhIKClRhcmdldFR5cGUYBiABKAkSEAoIU3BlbGxHZW0Y",
@@ -61,14 +61,17 @@ public static partial class SpellDataReflection {
           "Y3Rpb24YTCADKAkSDwoHSWZzS2V5cxhNIAEoCRIPCgdFbmFibGVkGE4gASgI",
           "Eg4KBklzQnVmZhhPIAEoCBISCgpNaW5IUFRvdGFsGFAgASgFEhYKDkFmdGVy",
           "RXZlbnRLZXlzGFEgASgJEhcKD0JlZm9yZUV2ZW50S2V5cxhSIAEoCRIMCgRB",
-          "QUlEGFMgASgFEhQKDFNwZWxsRWZmZWN0cxhUIAMoCSJLCgtDYXN0aW5nVHlw",
-          "ZRIGCgJBQRAAEgkKBVNwZWxsEAESCAoERGlzYxACEgsKB0FiaWxpdHkQAxII",
-          "CgRJdGVtEAQSCAoETm9uZRAFYgZwcm90bzM="));
+          "QUlEGFMgASgFEhQKDFNwZWxsRWZmZWN0cxhUIAMoCRIXCg9BZnRlckV2ZW50",
+          "RGVsYXkYVSABKAUSGAoQQmVmb3JlRXZlbnREZWxheRhWIAEoBRIXCg9BZnRl",
+          "clNwZWxsRGVsYXkYVyABKAUSGAoQQmVmb3JlU3BlbGxEZWxheRhYIAEoBRIW",
+          "Cg5BZnRlckNhc3REZWxheRhZIAEoBSJLCgtDYXN0aW5nVHlwZRIGCgJBQRAA",
+          "EgkKBVNwZWxsEAESCAoERGlzYxACEgsKB0FiaWxpdHkQAxIICgRJdGVtEAQS",
+          "CAoETm9uZRAFYgZwcm90bzM="));
     descriptor = pbr::FileDescriptor.FromGeneratedCode(descriptorData,
         new pbr::FileDescriptor[] { },
         new pbr::GeneratedClrTypeInfo(null, null, new pbr::GeneratedClrTypeInfo[] {
           new pbr::GeneratedClrTypeInfo(typeof(global::SpellDataList), global::SpellDataList.Parser, new[]{ "Data" }, null, null, null, null),
-          new pbr::GeneratedClrTypeInfo(typeof(global::SpellData), global::SpellData.Parser, new[]{ "SpellName", "CastName", "Subcategory", "Category", "CastType", "TargetType", "SpellGem", "GiveUpTimer", "MaxTries", "Duration", "DurationTotalSeconds", "RecastTime", "RecoveryTime", "MyCastTime", "MyCastTimeInSeconds", "MyRange", "Mana", "MinMana", "MaxMana", "MinHP", "HealPct", "Debug", "Reagent", "ItemMustEquip", "NoBurn", "NoTarget", "NoAggro", "Mode", "EnduranceCost", "Delay", "DelayAfterCast", "CastID", "MinEnd", "CastInvis", "SpellType", "CastTarget", "StackRequestTargets", "StackIntervalCheck", "StackIntervalNextCheck", "StackRecastDelay", "StackRequestItem", "GiftOfMana", "SpellID", "PctAggro", "Zone", "MinSick", "AllowSpellSwap", "NoEarlyRecast", "NoStack", "TriggerSpell", "BeforeSpell", "NoInterrupt", "AfterEvent", "BeforeEvent", "CastIF", "Ifs", "InitName", "ReagentOutOfStock", "SpellInBook", "SpellIcon", "NoMidSongCast", "MinDurationBeforeRecast", "IsShortBuff", "HealthMax", "IgnoreStackRules", "IsDebuff", "IsDoT", "Rotate", "AfterSpell", "Level", "Description", "ResistType", "ResistAdj", "CastTypeOverride", "CheckForCollection", "IfsKeys", "Enabled", "IsBuff", "MinHPTotal", "AfterEventKeys", "BeforeEventKeys", "AAID", "SpellEffects" }, null, new[]{ typeof(global::SpellData.Types.CastingType) }, null, null)
+          new pbr::GeneratedClrTypeInfo(typeof(global::SpellData), global::SpellData.Parser, new[]{ "SpellName", "CastName", "Subcategory", "Category", "CastType", "TargetType", "SpellGem", "GiveUpTimer", "MaxTries", "Duration", "DurationTotalSeconds", "RecastTime", "RecoveryTime", "MyCastTime", "MyCastTimeInSeconds", "MyRange", "Mana", "MinMana", "MaxMana", "MinHP", "HealPct", "Debug", "Reagent", "ItemMustEquip", "NoBurn", "NoTarget", "NoAggro", "Mode", "EnduranceCost", "Delay", "DelayAfterCast", "CastID", "MinEnd", "CastInvis", "SpellType", "CastTarget", "StackRequestTargets", "StackIntervalCheck", "StackIntervalNextCheck", "StackRecastDelay", "StackRequestItem", "GiftOfMana", "SpellID", "PctAggro", "Zone", "MinSick", "AllowSpellSwap", "NoEarlyRecast", "NoStack", "TriggerSpell", "BeforeSpell", "NoInterrupt", "AfterEvent", "BeforeEvent", "CastIF", "Ifs", "InitName", "ReagentOutOfStock", "SpellInBook", "SpellIcon", "NoMidSongCast", "MinDurationBeforeRecast", "IsShortBuff", "HealthMax", "IgnoreStackRules", "IsDebuff", "IsDoT", "Rotate", "AfterSpell", "Level", "Description", "ResistType", "ResistAdj", "CastTypeOverride", "CheckForCollection", "IfsKeys", "Enabled", "IsBuff", "MinHPTotal", "AfterEventKeys", "BeforeEventKeys", "AAID", "SpellEffects", "AfterEventDelay", "BeforeEventDelay", "AfterSpellDelay", "BeforeSpellDelay", "AfterCastDelay" }, null, new[]{ typeof(global::SpellData.Types.CastingType) }, null, null)
         }));
   }
   #endregion
@@ -372,6 +375,11 @@ public sealed partial class SpellData : pb::IMessage<SpellData>
     beforeEventKeys_ = other.beforeEventKeys_;
     aAID_ = other.aAID_;
     spellEffects_ = other.spellEffects_.Clone();
+    afterEventDelay_ = other.afterEventDelay_;
+    beforeEventDelay_ = other.beforeEventDelay_;
+    afterSpellDelay_ = other.afterSpellDelay_;
+    beforeSpellDelay_ = other.beforeSpellDelay_;
+    afterCastDelay_ = other.afterCastDelay_;
     _unknownFields = pb::UnknownFieldSet.Clone(other._unknownFields);
   }
 
@@ -1374,6 +1382,66 @@ public sealed partial class SpellData : pb::IMessage<SpellData>
     get { return spellEffects_; }
   }
 
+  /// <summary>Field number for the "AfterEventDelay" field.</summary>
+  public const int AfterEventDelayFieldNumber = 85;
+  private int afterEventDelay_;
+  [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
+  [global::System.CodeDom.Compiler.GeneratedCode("protoc", null)]
+  public int AfterEventDelay {
+    get { return afterEventDelay_; }
+    set {
+      afterEventDelay_ = value;
+    }
+  }
+
+  /// <summary>Field number for the "BeforeEventDelay" field.</summary>
+  public const int BeforeEventDelayFieldNumber = 86;
+  private int beforeEventDelay_;
+  [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
+  [global::System.CodeDom.Compiler.GeneratedCode("protoc", null)]
+  public int BeforeEventDelay {
+    get { return beforeEventDelay_; }
+    set {
+      beforeEventDelay_ = value;
+    }
+  }
+
+  /// <summary>Field number for the "AfterSpellDelay" field.</summary>
+  public const int AfterSpellDelayFieldNumber = 87;
+  private int afterSpellDelay_;
+  [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
+  [global::System.CodeDom.Compiler.GeneratedCode("protoc", null)]
+  public int AfterSpellDelay {
+    get { return afterSpellDelay_; }
+    set {
+      afterSpellDelay_ = value;
+    }
+  }
+
+  /// <summary>Field number for the "BeforeSpellDelay" field.</summary>
+  public const int BeforeSpellDelayFieldNumber = 88;
+  private int beforeSpellDelay_;
+  [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
+  [global::System.CodeDom.Compiler.GeneratedCode("protoc", null)]
+  public int BeforeSpellDelay {
+    get { return beforeSpellDelay_; }
+    set {
+      beforeSpellDelay_ = value;
+    }
+  }
+
+  /// <summary>Field number for the "AfterCastDelay" field.</summary>
+  public const int AfterCastDelayFieldNumber = 89;
+  private int afterCastDelay_;
+  [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
+  [global::System.CodeDom.Compiler.GeneratedCode("protoc", null)]
+  public int AfterCastDelay {
+    get { return afterCastDelay_; }
+    set {
+      afterCastDelay_ = value;
+    }
+  }
+
   [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
   [global::System.CodeDom.Compiler.GeneratedCode("protoc", null)]
   public override bool Equals(object other) {
@@ -1472,6 +1540,11 @@ public sealed partial class SpellData : pb::IMessage<SpellData>
     if (BeforeEventKeys != other.BeforeEventKeys) return false;
     if (AAID != other.AAID) return false;
     if(!spellEffects_.Equals(other.spellEffects_)) return false;
+    if (AfterEventDelay != other.AfterEventDelay) return false;
+    if (BeforeEventDelay != other.BeforeEventDelay) return false;
+    if (AfterSpellDelay != other.AfterSpellDelay) return false;
+    if (BeforeSpellDelay != other.BeforeSpellDelay) return false;
+    if (AfterCastDelay != other.AfterCastDelay) return false;
     return Equals(_unknownFields, other._unknownFields);
   }
 
@@ -1562,6 +1635,11 @@ public sealed partial class SpellData : pb::IMessage<SpellData>
     if (BeforeEventKeys.Length != 0) hash ^= BeforeEventKeys.GetHashCode();
     if (AAID != 0) hash ^= AAID.GetHashCode();
     hash ^= spellEffects_.GetHashCode();
+    if (AfterEventDelay != 0) hash ^= AfterEventDelay.GetHashCode();
+    if (BeforeEventDelay != 0) hash ^= BeforeEventDelay.GetHashCode();
+    if (AfterSpellDelay != 0) hash ^= AfterSpellDelay.GetHashCode();
+    if (BeforeSpellDelay != 0) hash ^= BeforeSpellDelay.GetHashCode();
+    if (AfterCastDelay != 0) hash ^= AfterCastDelay.GetHashCode();
     if (_unknownFields != null) {
       hash ^= _unknownFields.GetHashCode();
     }
@@ -1903,6 +1981,26 @@ public sealed partial class SpellData : pb::IMessage<SpellData>
       output.WriteInt32(AAID);
     }
     spellEffects_.WriteTo(output, _repeated_spellEffects_codec);
+    if (AfterEventDelay != 0) {
+      output.WriteRawTag(168, 5);
+      output.WriteInt32(AfterEventDelay);
+    }
+    if (BeforeEventDelay != 0) {
+      output.WriteRawTag(176, 5);
+      output.WriteInt32(BeforeEventDelay);
+    }
+    if (AfterSpellDelay != 0) {
+      output.WriteRawTag(184, 5);
+      output.WriteInt32(AfterSpellDelay);
+    }
+    if (BeforeSpellDelay != 0) {
+      output.WriteRawTag(192, 5);
+      output.WriteInt32(BeforeSpellDelay);
+    }
+    if (AfterCastDelay != 0) {
+      output.WriteRawTag(200, 5);
+      output.WriteInt32(AfterCastDelay);
+    }
     if (_unknownFields != null) {
       _unknownFields.WriteTo(output);
     }
@@ -2236,6 +2334,26 @@ public sealed partial class SpellData : pb::IMessage<SpellData>
       output.WriteInt32(AAID);
     }
     spellEffects_.WriteTo(ref output, _repeated_spellEffects_codec);
+    if (AfterEventDelay != 0) {
+      output.WriteRawTag(168, 5);
+      output.WriteInt32(AfterEventDelay);
+    }
+    if (BeforeEventDelay != 0) {
+      output.WriteRawTag(176, 5);
+      output.WriteInt32(BeforeEventDelay);
+    }
+    if (AfterSpellDelay != 0) {
+      output.WriteRawTag(184, 5);
+      output.WriteInt32(AfterSpellDelay);
+    }
+    if (BeforeSpellDelay != 0) {
+      output.WriteRawTag(192, 5);
+      output.WriteInt32(BeforeSpellDelay);
+    }
+    if (AfterCastDelay != 0) {
+      output.WriteRawTag(200, 5);
+      output.WriteInt32(AfterCastDelay);
+    }
     if (_unknownFields != null) {
       _unknownFields.WriteTo(ref output);
     }
@@ -2489,6 +2607,21 @@ public sealed partial class SpellData : pb::IMessage<SpellData>
       size += 2 + pb::CodedOutputStream.ComputeInt32Size(AAID);
     }
     size += spellEffects_.CalculateSize(_repeated_spellEffects_codec);
+    if (AfterEventDelay != 0) {
+      size += 2 + pb::CodedOutputStream.ComputeInt32Size(AfterEventDelay);
+    }
+    if (BeforeEventDelay != 0) {
+      size += 2 + pb::CodedOutputStream.ComputeInt32Size(BeforeEventDelay);
+    }
+    if (AfterSpellDelay != 0) {
+      size += 2 + pb::CodedOutputStream.ComputeInt32Size(AfterSpellDelay);
+    }
+    if (BeforeSpellDelay != 0) {
+      size += 2 + pb::CodedOutputStream.ComputeInt32Size(BeforeSpellDelay);
+    }
+    if (AfterCastDelay != 0) {
+      size += 2 + pb::CodedOutputStream.ComputeInt32Size(AfterCastDelay);
+    }
     if (_unknownFields != null) {
       size += _unknownFields.CalculateSize();
     }
@@ -2744,6 +2877,21 @@ public sealed partial class SpellData : pb::IMessage<SpellData>
       AAID = other.AAID;
     }
     spellEffects_.Add(other.spellEffects_);
+    if (other.AfterEventDelay != 0) {
+      AfterEventDelay = other.AfterEventDelay;
+    }
+    if (other.BeforeEventDelay != 0) {
+      BeforeEventDelay = other.BeforeEventDelay;
+    }
+    if (other.AfterSpellDelay != 0) {
+      AfterSpellDelay = other.AfterSpellDelay;
+    }
+    if (other.BeforeSpellDelay != 0) {
+      BeforeSpellDelay = other.BeforeSpellDelay;
+    }
+    if (other.AfterCastDelay != 0) {
+      AfterCastDelay = other.AfterCastDelay;
+    }
     _unknownFields = pb::UnknownFieldSet.MergeFrom(_unknownFields, other._unknownFields);
   }
 
@@ -3091,6 +3239,26 @@ public sealed partial class SpellData : pb::IMessage<SpellData>
           spellEffects_.AddEntriesFrom(input, _repeated_spellEffects_codec);
           break;
         }
+        case 680: {
+          AfterEventDelay = input.ReadInt32();
+          break;
+        }
+        case 688: {
+          BeforeEventDelay = input.ReadInt32();
+          break;
+        }
+        case 696: {
+          AfterSpellDelay = input.ReadInt32();
+          break;
+        }
+        case 704: {
+          BeforeSpellDelay = input.ReadInt32();
+          break;
+        }
+        case 712: {
+          AfterCastDelay = input.ReadInt32();
+          break;
+        }
       }
     }
   #endif
@@ -3436,6 +3604,26 @@ public sealed partial class SpellData : pb::IMessage<SpellData>
         }
         case 674: {
           spellEffects_.AddEntriesFrom(ref input, _repeated_spellEffects_codec);
+          break;
+        }
+        case 680: {
+          AfterEventDelay = input.ReadInt32();
+          break;
+        }
+        case 688: {
+          BeforeEventDelay = input.ReadInt32();
+          break;
+        }
+        case 696: {
+          AfterSpellDelay = input.ReadInt32();
+          break;
+        }
+        case 704: {
+          BeforeSpellDelay = input.ReadInt32();
+          break;
+        }
+        case 712: {
+          AfterCastDelay = input.ReadInt32();
           break;
         }
       }

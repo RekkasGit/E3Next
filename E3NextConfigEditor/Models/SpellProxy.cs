@@ -271,6 +271,41 @@ namespace E3NextConfigEditor.Models
 			set { _spell.BeforeEventKeys = value; }
 		}
 		[Category("Flags")]
+		[Description("After Event Name, follows normal heircy rules")]
+		public Int32 AfterEventDelay
+		{
+			get { return _spell.AfterEventDelay; }
+			set { _spell.AfterEventDelay = value; }
+		}
+		[Category("Flags")]
+		[Description("After Spell Name, follows normal heircy rules")]
+		public Int32 AfterSpellDelay
+		{
+			get { return _spell.AfterSpellDelay; }
+			set { _spell.AfterSpellDelay = value; }
+		}
+		[Category("Flags")]
+		[Description("Before Event Name, follows normal heircy rules")]
+		public Int32 BeforeEventDelay
+		{
+			get { return _spell.BeforeEventDelay; }
+			set { _spell.BeforeEventDelay = value; }
+		}
+		[Category("Flags")]
+		[Description("Before Spell Name, follows normal heircy rules")]
+		public Int32 BeforeSpellDelay
+		{
+			get { return _spell.BeforeSpellDelay; }
+			set { _spell.BeforeSpellDelay = value; }
+		}
+		[Category("Flags")]
+		[Description("After Spell Name, follows normal heircy rules")]
+		public Int32 AfterCastDelay
+		{
+			get { return _spell.AfterCastDelay; }
+			set { _spell.AfterCastDelay = value; }
+		}
+		[Category("Flags")]
 		[Description("Give a no target hint to E3N to not swap targets to use the spell.")]
 		public bool NoTarget
 		{
@@ -609,6 +644,41 @@ namespace E3NextConfigEditor.Models
 		{
 			get { return _spell.AfterEventKeys; }
 			set { _spell.AfterEventKeys = value; }
+		}
+		[Category("Flags")]
+		[Description("After Event Name, follows normal heircy rules")]
+		public Int32 AfterEventDelay
+		{
+			get { return _spell.AfterEventDelay; }
+			set { _spell.AfterEventDelay = value; }
+		}
+		[Category("Flags")]
+		[Description("After Spell Name, follows normal heircy rules")]
+		public Int32 AfterSpellDelay
+		{
+			get { return _spell.AfterSpellDelay; }
+			set { _spell.AfterSpellDelay = value; }
+		}
+		[Category("Flags")]
+		[Description("Before Event Name, follows normal heircy rules")]
+		public Int32 BeforeEventDelay
+		{
+			get { return _spell.BeforeEventDelay; }
+			set { _spell.BeforeEventDelay = value; }
+		}
+		[Category("Flags")]
+		[Description("Before Spell Name, follows normal heircy rules")]
+		public Int32 BeforeSpellDelay
+		{
+			get { return _spell.BeforeSpellDelay; }
+			set { _spell.BeforeSpellDelay = value; }
+		}
+		[Category("Flags")]
+		[Description("After Spell Name, follows normal heircy rules")]
+		public Int32 AfterCastDelay
+		{
+			get { return _spell.AfterCastDelay; }
+			set { _spell.AfterCastDelay = value; }
 		}
 		[Category("Flags")]
 		[Description("Before Event Name, follows normal heircy rules")]
