@@ -881,7 +881,8 @@ namespace E3Core.Processors
 			if (!String.IsNullOrWhiteSpace(spell.BeforeEvent))
 			{
 				_log.Write($"Doing BeforeEvent:{spell.BeforeEvent}");
-				MQ.Cmd($"/docommand {spell.BeforeEvent}");
+				string tevent = Ifs_Results(spell.BeforeEvent);
+				MQ.Cmd($"/docommand {tevent}");
 				if (spell.BeforeEvent.StartsWith("/exchange", StringComparison.OrdinalIgnoreCase)) MQ.Delay(500);
 				if (spell.BeforeEventDelay > 0) MQ.Delay(spell.BeforeEventDelay);
 			}
@@ -897,8 +898,8 @@ namespace E3Core.Processors
 			if (!String.IsNullOrWhiteSpace(spell.AfterEvent))
 			{
 				_log.Write($"Doing AfterEvent:{spell.AfterEvent}");
-				
-				MQ.Cmd($"/docommand {spell.AfterEvent}");
+				string tevent = Ifs_Results(spell.AfterEvent);
+				MQ.Cmd($"/docommand {tevent}");
 			}
 
 		}
