@@ -242,24 +242,33 @@ namespace E3Core.Processors
                 if (x.match.Groups.Count > 2)
                 {
                     string name = x.match.Groups[1].Value;
-                    Int32 petID = MQ.Query<Int32>("${Me.Pet.ID");
-                    foreach (var spawn in _spawns.Get())
-                    {
-                        if(spawn.CleanName==name && spawn.TypeDesc=="NPC")
-                        {
-                            return;
-                        }
-                        if (petID > 0)
-                        {
-                            if (petID == spawn.ID)
-                            {
-                                return;
-                            }
-                        }
+                    Int32 petID = MQ.Query<Int32>("${Me.Pet.ID}");
 
-
-                    }
-                    E3.Bots.Broadcast($"\agTell from: \ap{name}\ag, message: \ao'{x.match.Groups[2].Value}'");
+					if (_spawns.TryByName(name, out var spawn))
+					{
+						//they are a PC in zone, reply
+						E3.Bots.Broadcast($"\agTell from: \ap{name}\ag, message: \ao'{x.match.Groups[2].Value}'");
+						return;
+					}
+					else
+					{
+						//they are not in zone or maybe a npc?
+						if (petID > 0 && _spawns.TryByID(petID, out var petSpawn))
+						{
+							//ignore our pets
+							if (petSpawn.CleanName == name) return;
+						}
+						//now to make sure its not a PC in zone
+						foreach (var npcspawn in _spawns.Get())
+						{
+							if (npcspawn.CleanName == name && npcspawn.TypeDesc == "NPC")
+							{
+								return;
+							}
+						}
+						//there is No NPC with that name, assume its a player from a different zone.
+						E3.Bots.Broadcast($"\agTell from: \ap{name}\ag, message: \ao'{x.match.Groups[2].Value}'");
+					}
                 }
             });
 
@@ -378,13 +387,18 @@ namespace E3Core.Processors
 			EventProcessor.RegisterCommand("/e3camp", (x) =>
 			{
 				string user = string.Empty;
-
+				string toDesktop = "";
+				if(x.args.Contains("desktop"))
+				{
+					toDesktop =  " desktop";
+					x.args.Remove("desktop");
+				}
 				if (x.args.Count > 0)
 				{
 					if (!e3util.FilterMe(x))
 					{
                         Pause(true);
-                        MQ.Cmd("/camp");
+					    MQ.Cmd($"/camp{toDesktop}");
 					}
 				}
 				else
@@ -392,10 +406,10 @@ namespace E3Core.Processors
                     if (!e3util.FilterMe(x))
                     {
                         Pause(true);
-                        MQ.Cmd("/camp");
-                    }
+						MQ.Cmd($"/camp{toDesktop}");
+					}
 					//we are telling people to follow us
-					E3.Bots.BroadcastCommandToGroup("/e3camp " + E3.CurrentName, x);
+					E3.Bots.BroadcastCommandToGroup($"/e3camp{toDesktop} " + E3.CurrentName, x);
 				}
 			});
 			EventProcessor.RegisterCommand("/e3treport", (x) =>
@@ -1717,16 +1731,27 @@ namespace E3Core.Processors
             {
                 var toEat = E3.CharacterSettings.Misc_AutoFood;
                 var toDrink = E3.CharacterSettings.Misc_AutoDrink;
-
-                if (MQ.Query<bool>($"${{FindItem[{toEat}].ID}}") && MQ.Query<int>("${Me.Hunger}") < 4500)
+				int hungerLevel = MQ.Query<int>("${Me.Hunger}");
+				int thirstLevel = MQ.Query<int>("${Me.Thirst}");
+				bool foundFood = MQ.Query<bool>($"${{FindItem[{toEat}].ID}}");
+				bool foundDrink = MQ.Query<bool>($"${{FindItem[{toDrink}].ID}}");
+				int foundFoodCount = 0;
+				int foundDrinkCount = 0;
+					
+				if (foundFood && hungerLevel < 3400)
                 {
-                    MQ.Cmd($"/useitem \"{toEat}\"");
-                }
+	                MQ.Cmd($"/useitem \"{toEat}\"");
+					foundFoodCount = MQ.Query<Int32>($"${{FindItem[{toEat}].StackCount}}");
+					E3.Bots.Broadcast($"\ar<\ayAutoFood\ar>\ag Eating: {toEat} because of hunger level:{hungerLevel}. Total left:{foundFoodCount}");
+				}
 
-                if (MQ.Query<bool>($"${{FindItem[{toDrink}].ID}}") && MQ.Query<int>("${Me.Thirst}") < 4500)
+                if (foundDrink && thirstLevel < 3400)
                 {
-                    MQ.Cmd($"/useitem \"{toDrink}\"");
-                }
+					MQ.Cmd($"/useitem \"{toDrink}\"");
+					foundDrinkCount = MQ.Query<Int32>($"${{FindItem[{toDrink}].StackCount}}");
+					E3.Bots.Broadcast($"\ar<\ayAutoFood\ar>\ag Drinking: {toDrink} because of thirst level:{thirstLevel}. Total left:{foundDrinkCount}");
+					
+				}
             }
         }
 
@@ -1851,7 +1876,8 @@ namespace E3Core.Processors
 
                     //auto delete stuff on cursor that is configured to do so
                     string autoinvItem = MQ.Query<string>("${Cursor}");
-                    if (E3.CharacterSettings.Cursor_Delete.Contains(autoinvItem, StringComparer.OrdinalIgnoreCase))
+                    if (E3.CharacterSettings.Cursor_Delete.Contains(autoinvItem, StringComparer.OrdinalIgnoreCase) || 
+                        E3.GlobalCursorDelete.Cursor_Delete.Contains(autoinvItem, StringComparer.OrdinalIgnoreCase))
                     {
 						//configured to delete this item.
 						e3util.CursorTryDestroyItem(autoinvItem);
@@ -1892,7 +1918,8 @@ namespace E3Core.Processors
                 {
                     //auto delete stuff on cursor that is configured to do so
                     string autoinvItem = MQ.Query<string>("${Cursor}");
-                    if (E3.CharacterSettings.Cursor_Delete.Contains(autoinvItem, StringComparer.OrdinalIgnoreCase))
+                    if (E3.CharacterSettings.Cursor_Delete.Contains(autoinvItem, StringComparer.OrdinalIgnoreCase) ||
+                        E3.GlobalCursorDelete.Cursor_Delete.Contains(autoinvItem, StringComparer.OrdinalIgnoreCase))
                     {
 						//configured to delete this item.
 						e3util.CursorTryDestroyItem(autoinvItem);

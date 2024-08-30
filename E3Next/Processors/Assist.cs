@@ -471,10 +471,12 @@ namespace E3Core.Processors
                 Burns.Reset();
             }
             LastAssistEndedTimestamp = Core.StopWatch.ElapsedMilliseconds;
-            //add 1 seconds before we follow check again, to handle /cleartarget assist spam
-            Movement._nextFollowCheck = Core.StopWatch.ElapsedMilliseconds + 1000;
 
-
+			if(Basics.InGameCombat())
+			{
+				//add 1 seconds before we follow check again, to handle /cleartarget assist spam
+				Movement._nextFollowCheck = Core.StopWatch.ElapsedMilliseconds + 1000;
+			}
 		}
 
         /// <summary>
@@ -508,9 +510,9 @@ namespace E3Core.Processors
                     E3.Bots.Broadcast("Cannot assist, a corpse");
                     return;
                 }
-                if (!(s.TypeDesc == "NPC" || s.TypeDesc == "Pet"))
+                if (!(s.TypeDesc == "NPC" || s.TypeDesc == "Pet" || s.TypeDesc == "Chest" || s.TypeDesc == "PC"))
                 {
-                    E3.Bots.Broadcast("Cannot assist, not a NPC or Pet");
+                    E3.Bots.Broadcast("Cannot assist, not a NPC,PC,Chest or Pet");
                     return;
                 }
 

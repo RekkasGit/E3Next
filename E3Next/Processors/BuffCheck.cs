@@ -480,7 +480,7 @@ namespace E3Core.Processors
 		public static void Check_Buffs()
 		{
 			if (E3.IsInvis) return;
-
+			
 			//e3util.PrintTimerStatus(_buffTimers, ref _printoutTimer, "Buff timers");
 			//RefresBuffCacheForBots();
 			//instant buffs have their own shouldcheck, need it snappy so check quickly.
@@ -490,9 +490,10 @@ namespace E3Core.Processors
 			//using (_log.Trace("Buffs-CheckDeath"))
 			{
 				if (Basics.AmIDead()) return;
+				if (e3util.IsManualControl() && !Basics.InCombat() && !MQ.Query<bool>("${Me.Standing}")) return;
 
 			}
-			
+
 			Int32 targetID = MQ.Query<Int32>("${Target.ID}");
 			try
 			{
@@ -649,6 +650,8 @@ namespace E3Core.Processors
 		{
 			if (e3util.IsActionBlockingWindowOpen()) return;
 			//Logging.LogLevels previousLogLevel = Logging.LogLevels.Error;
+
+		
 
 			foreach (var spell in buffs)
 			{

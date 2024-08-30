@@ -62,30 +62,30 @@ namespace E3Core.Processors
         private static void RegisterEvents()
         {
 
-			EventProcessor.RegisterCommand("/lootcommand", (x) =>
-			{
-				if (x.args.Count > 1 && !x.args[0].Equals(E3.CurrentName, StringComparison.OrdinalIgnoreCase))
-				{
-                    //send command to person
-					E3.Bots.BroadcastCommandToPerson(x.args[0], $"/lootcommand {x.args[0]} \"{x.args[1]}\"");
-				}
-				else
-				{
-                    //process command
+			//EventProcessor.RegisterCommand("/e3lootcommand", (x) =>
+			//{
+			//	if (x.args.Count > 1 && !x.args[0].Equals(E3.CurrentName, StringComparison.OrdinalIgnoreCase))
+			//	{
+   //                 //send command to person
+			//		E3.Bots.BroadcastCommandToPerson(x.args[0], $"/lootcommand {x.args[0]} \"{x.args[1]}\"");
+			//	}
+			//	else
+			//	{
+   //                 //process command
 	
-                    if(x.args.Count>1)
-                    {
-                        string corpseIdsString = x.args[1];
-                        E3.Bots.Broadcast("LootCommander Assigning to loot:" + corpseIdsString);
-                        List<Int32> corpseIds = new List<int>();
-                        e3util.StringsToNumbers(corpseIdsString, ',', corpseIds);
-                        foreach(var corpseId in corpseIds)
-                        {
-                            _lootCommanderAssisngedCorpsesToLoot.PushBack(corpseId);
-                        }
-                    }
-   			}
-			});
+   //                 if(x.args.Count>1)
+   //                 {
+   //                     string corpseIdsString = x.args[1];
+   //                     E3.Bots.Broadcast("LootCommander Assigning to loot:" + corpseIdsString);
+   //                     List<Int32> corpseIds = new List<int>();
+   //                     e3util.StringsToNumbers(corpseIdsString, ',', corpseIds);
+   //                     foreach(var corpseId in corpseIds)
+   //                     {
+   //                         _lootCommanderAssisngedCorpsesToLoot.PushBack(corpseId);
+   //                     }
+   //                 }
+   //			}
+			//});
 
 
             EventProcessor.RegisterCommand("/E3LootStackAdd", (x) =>

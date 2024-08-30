@@ -34,7 +34,7 @@ namespace E3Core.Data
 			r.Category = source.Category;
 			r.Debug = source.Debug;
 			r.Delay = source.Delay;
-			r.DelayAfterCast = source.DelayAfterCast;
+			r.AfterCastCompletedDelay = source.AfterCastCompletedDelay;
 			r.Duration = source.Duration;
 			r.DurationTotalSeconds = source.DurationTotalSeconds;
 			r.EnduranceCost = source.EnduranceCost;

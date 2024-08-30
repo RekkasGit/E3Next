@@ -1019,6 +1019,9 @@ namespace E3Core.Settings
 			section.Keys.AddKey("Pet back off on Enrage (On/Off)", "Off");
 			section.Keys.AddKey("Back off on Enrage (On/Off)", "Off");
 
+			newFile.Sections.AddSection("Melee Abilities");
+			section = newFile.Sections.GetSectionData("Melee Abilities");
+			section.Keys.AddKey("Ability", "");
 
 			newFile.Sections.AddSection("Buffs");
 			section = newFile.Sections.GetSectionData("Buffs");

@@ -129,9 +129,9 @@ namespace E3Core.Processors
 					{
 						MQ.Delay(E3.CharacterSettings.Misc_DelayAfterCastWindowDropsForSpellCompletion);
 					}
-					if (spell.DelayAfterCast > 0)
+					if (spell.AfterCastCompletedDelay > 0)
 					{
-						MQ.Delay(spell.DelayAfterCast);
+						MQ.Delay(spell.AfterCastCompletedDelay);
 					}
 					return CastReturn.CAST_SUCCESS;
 				}
@@ -656,8 +656,9 @@ namespace E3Core.Processors
 					
 						currentMana = MQ.Query<Int32>("${Me.CurrentMana}");
 						pctMana = MQ.Query<Int32>("${Me.PctMana}");
-						
-						
+
+						if (spell.AfterCastDelay > 0) MQ.Delay(spell.AfterCastDelay);
+
 						while (IsCasting())
 						{
 
@@ -785,9 +786,9 @@ namespace E3Core.Processors
 						{
 							MQ.Delay(E3.CharacterSettings.Misc_DelayAfterCastWindowDropsForSpellCompletion);
 						}
-						if (spell.DelayAfterCast > 0)
+						if (spell.AfterCastCompletedDelay > 0)
 						{
-							MQ.Delay(spell.DelayAfterCast);
+							MQ.Delay(spell.AfterCastCompletedDelay);
 						}
 
 						
@@ -880,21 +881,25 @@ namespace E3Core.Processors
 			if (!String.IsNullOrWhiteSpace(spell.BeforeEvent))
 			{
 				_log.Write($"Doing BeforeEvent:{spell.BeforeEvent}");
-				MQ.Cmd($"/docommand {spell.BeforeEvent}");
+				string tevent = Ifs_Results(spell.BeforeEvent);
+				MQ.Cmd($"/docommand {tevent}");
 				if (spell.BeforeEvent.StartsWith("/exchange", StringComparison.OrdinalIgnoreCase)) MQ.Delay(500);
-
+				if (spell.BeforeEventDelay > 0) MQ.Delay(spell.BeforeEventDelay);
 			}
 
 		}
 		private static void AfterEventCheck(Spell spell)
 		{
 
-			//after event, after all things are done               
-			_log.Write("Checking AfterEvent...");
+			//after event, after all things are done
+			if (spell.AfterEventDelay > 0) MQ.Delay(spell.AfterEventDelay);
+
+			_log.Write($"Checking AfterEvent...[{spell.AfterEvent}]");
 			if (!String.IsNullOrWhiteSpace(spell.AfterEvent))
 			{
 				_log.Write($"Doing AfterEvent:{spell.AfterEvent}");
-				MQ.Cmd($"/docommand {spell.AfterEvent}");
+				string tevent = Ifs_Results(spell.AfterEvent);
+				MQ.Cmd($"/docommand {tevent}");
 			}
 
 		}
@@ -904,6 +909,7 @@ namespace E3Core.Processors
 			_log.Write("Checking AfterSpell...");
 			if (!String.IsNullOrWhiteSpace(spell.AfterSpell))
 			{
+				if (spell.AfterSpellDelay > 0) MQ.Delay(spell.AfterSpellDelay);
 
 				if (spell.AfterSpellData == null)
 				{
@@ -942,6 +948,7 @@ namespace E3Core.Processors
 			_log.Write("Checking BeforeSpell...");
 			if (!String.IsNullOrWhiteSpace(spell.BeforeSpell))
 			{
+			
 				if (spell.BeforeSpellData == null)
 				{
 					spell.BeforeSpellData = new Data.Spell(spell.BeforeSpell);
@@ -964,7 +971,7 @@ namespace E3Core.Processors
 					}
 				}
 				_log.Write($"Doing BeforeSpell:{spell.BeforeSpell}");
-
+				if (spell.BeforeSpellDelay > 0) MQ.Delay(spell.BeforeSpellDelay);
 			}
 		}
 		private static bool NowCastReady()
@@ -1466,6 +1473,7 @@ namespace E3Core.Processors
 
 		public static Boolean CheckReady(Data.Spell spell, bool skipCastCheck = false)
 		{
+			if (spell == null) return false;
 			if (!spell.Enabled) return false;
 			if (!spell.Initialized) spell.ReInit();
 
@@ -2412,6 +2420,7 @@ namespace E3Core.Processors
 			CheckForResistByName("CAST_RESIST", endtime);
 			CheckForResistByName("CAST_FIZZLE", endtime);
 			CheckForResistByName("CAST_IMMUNE", endtime);
+			CheckForResistByName("CAST_INTERRUPTED", endtime);
 		}
 		public static CastReturn CheckForReist(Data.Spell spell)
 		{
@@ -2445,7 +2454,7 @@ namespace E3Core.Processors
 				//if (CheckForResistByName("CAST_CANNOTSEE", endtime)) return CastReturn.CAST_NOTARGET;
 				//if (CheckForResistByName("CAST_COMPONENTS", endtime)) return CastReturn.CAST_COMPONENTS;
 				//if (CheckForResistByName("CAST_DISTRACTED", endtime)) return CastReturn.CAST_DISTRACTED;
-				//if (CheckForResistByName("CAST_INTERRUPTED", endtime)) return CastReturn.CAST_INTERRUPTED;
+				if (CheckForResistByName("CAST_INTERRUPTED", endtime)) return CastReturn.CAST_INTERRUPTED;
 				//if (CheckForResistByName("CAST_NOTARGET", endtime)) return CastReturn.CAST_NOTARGET;
 				//if (CheckForResistByName("CAST_OUTDOORS", endtime)) return CastReturn.CAST_DISTRACTED;
 				MQ.Delay(100);
@@ -2613,12 +2622,13 @@ namespace E3Core.Processors
 			});
 
 
-			//r = new List<string>();
-			//r.Add("Your .+ is interrupted.");
-			//r.Add("Your spell is interrupted.");
-			//r.Add("Your casting has been interrupted.");
-			//EventProcessor.RegisterEvent("CAST_INTERRUPTED", r, (x) => {
-			//});
+			r = new List<string>();
+			r.Add("Your .+ is interrupted.");
+			r.Add("Your spell is interrupted.");
+			r.Add("Your casting has been interrupted.");
+			EventProcessor.RegisterEvent("CAST_INTERRUPTED", r, (x) =>
+			{
+			});
 
 			r = new List<string>();
 			r.Add("Your spell fizzles.");

@@ -177,6 +177,7 @@
     <Compile Include="Processors\Rez.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
     <Compile Include="Settings\FeatureSettings\DoorDataFile.cs" />
+    <Compile Include="Settings\FeatureSettings\GlobalCursorDelete.cs" />
     <Compile Include="Settings\FeatureSettings\GlobalIfs.cs" />
     <Compile Include="Settings\FeatureSettings\LazarusSymbolDataFile.cs" />
     <Compile Include="Settings\FeatureSettings\LootDataFile.cs" />

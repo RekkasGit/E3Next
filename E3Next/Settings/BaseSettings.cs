@@ -294,9 +294,11 @@ namespace E3Core.Settings
                     {
                         if (!String.IsNullOrWhiteSpace(data))
                         {
-                            valueToSet = Int32.Parse(data);
-
-                        }
+							if(!Int32.TryParse(data,out valueToSet))
+							{
+								MQ.Write($"\arERROR! Invalid Int32 value for [{sectionKey}][{Key}]");
+							}
+	                    }
                     }
                 }
             }

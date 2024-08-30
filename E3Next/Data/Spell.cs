@@ -4,7 +4,6 @@ using IniParser.Model;
 using MonoCore;
 using System;
 using System.Collections.Generic;
-using System.Diagnostics;
 using System.Linq;
 using System.Reflection;
 using System.Text;
@@ -13,7 +12,7 @@ namespace E3Core.Data
 {
 
 
-    public enum CastingType
+	public enum CastingType
     {
         AA,
         Spell,
@@ -283,8 +282,14 @@ namespace E3Core.Data
 					else if (value.StartsWith("DelayAfterCast|", StringComparison.OrdinalIgnoreCase))
 					{
 						
-						DelayAfterCast = GetArgument<Int32>(value);
+						AfterCastCompletedDelay = GetArgument<Int32>(value);
 						
+					}
+					else if (value.StartsWith("AfterCastCompletedDelay|", StringComparison.OrdinalIgnoreCase))
+					{
+
+						AfterCastCompletedDelay = GetArgument<Int32>(value);
+
 					}
 					else if (value.Equals("GoM", StringComparison.OrdinalIgnoreCase))
                     {
@@ -302,7 +307,27 @@ namespace E3Core.Data
                     {
                         MinSick = GetArgument<Int32>(value);
                     }
-                    else if (value.StartsWith("MinEnd|", StringComparison.OrdinalIgnoreCase))
+					else if (value.StartsWith("AfterEventDelay|", StringComparison.OrdinalIgnoreCase))
+					{
+						AfterEventDelay = GetArgument<Int32>(value);
+					}
+					else if (value.StartsWith("BeforeEventDelay|", StringComparison.OrdinalIgnoreCase))
+					{
+						BeforeEventDelay = GetArgument<Int32>(value);
+					}
+					else if (value.StartsWith("AfterSpellDelay|", StringComparison.OrdinalIgnoreCase))
+					{
+						AfterSpellDelay = GetArgument<Int32>(value);
+					}
+					else if (value.StartsWith("BeforeSpellDelay|", StringComparison.OrdinalIgnoreCase))
+					{
+						BeforeSpellDelay = GetArgument<Int32>(value);
+					}
+					else if (value.StartsWith("AfterCastDelay|", StringComparison.OrdinalIgnoreCase))
+					{
+						AfterCastDelay = GetArgument<Int32>(value);
+					}
+					else if (value.StartsWith("MinEnd|", StringComparison.OrdinalIgnoreCase))
                     {
                         MinEnd = GetArgument<Int32>(value);
                     }
@@ -908,7 +933,7 @@ namespace E3Core.Data
         public Boolean Rotate;
         public Int32 EnduranceCost;
         public Int32 Delay;
-        public Int32 DelayAfterCast = 0;
+        public Int32 AfterCastCompletedDelay = 0;
         public Int32 CastID;
         public Int32 MinEnd;
         public Boolean CastInvis;
@@ -935,9 +960,17 @@ namespace E3Core.Data
         public String AfterSpell = String.Empty;
         public Data.Spell AfterSpellData;
         public Boolean NoInterrupt;
-        public String AfterEvent = String.Empty;
-        public String BeforeEvent = String.Empty;
-        public String CastIF = String.Empty;
+
+		public Int32 AfterEventDelay = 0;
+		public Int32 BeforeEventDelay = 0;
+		public Int32 AfterSpellDelay = 0;
+		public Int32 BeforeSpellDelay = 0;
+		public Int32 AfterCastDelay = 0;
+
+		public String AfterEvent = String.Empty;
+		public String BeforeEvent = String.Empty;
+		
+		public String CastIF = String.Empty;
         public string Ifs = String.Empty;
         public string IfsKeys = String.Empty;
         public string AfterEventKeys = String.Empty;
@@ -991,7 +1024,7 @@ namespace E3Core.Data
 			r.Category = source.Category;
 			r.Debug = source.Debug;
 			r.Delay = source.Delay;
-			r.DelayAfterCast = source.DelayAfterCast;
+			r.AfterCastCompletedDelay = source.AfterCastCompletedDelay;
 			r.Duration = source.Duration;
 			r.DurationTotalSeconds = source.DurationTotalSeconds;
 			r.EnduranceCost = source.EnduranceCost;
@@ -1065,7 +1098,12 @@ namespace E3Core.Data
 			{
 				r.SpellEffects.Add(entry);
 			}
-			
+			r.AfterEventDelay = source.AfterEventDelay;
+			r.BeforeEventDelay = source.BeforeEventDelay;
+			r.BeforeSpellDelay = source.BeforeSpellDelay;
+			r.AfterCastDelay = source.AfterCastDelay;
+			r.AfterSpellDelay = source.AfterSpellDelay;
+
 			return r;
 		}
 		public static void TransferSpellData(SpellData source, Spell dest)
@@ -1134,7 +1172,7 @@ namespace E3Core.Data
             r.Category = this.Category;
             r.Debug = this.Debug;
             r.Delay = this.Delay;
-            r.DelayAfterCast = this.DelayAfterCast;
+            r.AfterCastCompletedDelay = this.AfterCastCompletedDelay;
             r.Duration = this.Duration;
             r.DurationTotalSeconds = this.DurationTotalSeconds;
             r.EnduranceCost = this.EnduranceCost;
@@ -1201,6 +1239,11 @@ namespace E3Core.Data
 			{
 				r.SpellEffects.Add(entry);
 			}
+			r.AfterEventDelay = AfterEventDelay;
+			r.BeforeEventDelay = BeforeEventDelay;
+			r.BeforeSpellDelay =BeforeSpellDelay;
+			r.AfterCastDelay = AfterCastDelay;
+			r.AfterSpellDelay = AfterSpellDelay;
 			return r;
 
         }
@@ -1228,7 +1271,11 @@ namespace E3Core.Data
 			d.Reagent = Reagent;
 			d.Enabled = Enabled;
             d.CastTarget = CastTarget;
-		
+			d.AfterEventDelay = AfterEventDelay;
+			d.BeforeEventDelay = BeforeEventDelay;
+			d.BeforeSpellDelay = BeforeSpellDelay;
+			d.AfterCastDelay = AfterCastDelay;
+			d.AfterSpellDelay = AfterSpellDelay;
 		}
 
         public string ToConfigEntry()
@@ -1263,9 +1310,15 @@ namespace E3Core.Data
 			string t_PctAggro = (PctAggro == 0) ? String.Empty : $"/PctAggro|{PctAggro}";
             string t_Delay = (Delay == 0) ? String.Empty : $"/Delay|{Delay}s";
 			string t_NoTarget = NoTarget == false ? String.Empty : $"/NoTarget";
+			string t_AfterEventDelay = AfterEventDelay == 0 ? String.Empty : $"/AfterEventDelay|{AfterEventDelay}";
+			string t_AfterSpellDelay = AfterSpellDelay == 0 ? String.Empty : $"/AfterEventDelay|{AfterSpellDelay}";
+			string t_BeforeEventDelay = BeforeEventDelay == 0 ? String.Empty : $"/BeforeEventDelay|{BeforeEventDelay}";
+			string t_BeforeSpellDelay = BeforeSpellDelay == 0 ? String.Empty : $"/BeforeEventDelay|{BeforeSpellDelay}";
+			string t_AfterCastDelay = AfterCastDelay == 0 ? String.Empty : $"/AfterEventDelay|{AfterCastDelay}";
+			string t_AfterCastCompletedDelay= AfterCastCompletedDelay == 0 ? String.Empty : $"/AfterCastCompletedDelay|{AfterCastCompletedDelay}";
 
 			//Main=Terror of Mirenilla Rk. II/Gem|4/Ifs|Tanking
-			string returnValue = $"{CastName}{t_CastTarget}{t_GemNumber}{t_Ifs}{t_checkFor}{t_CastIF}{t_healPct}{t_healthMax}{t_noInterrupt}{t_Zone}{t_MinSick}{t_BeforeSpell}{t_AfterSpell}{t_BeforeEvent}{t_AfterEvent}{t_minMana}{t_maxMana}{t_MinEnd}{t_ignoreStackRules}{t_MinDurationBeforeRecast}{t_MaxTries}{t_Reagent}{t_CastTypeOverride}{t_PctAggro}{t_Delay}{t_NoTarget}{t_Enabled}";
+			string returnValue = $"{CastName}{t_CastTarget}{t_GemNumber}{t_Ifs}{t_checkFor}{t_CastIF}{t_healPct}{t_healthMax}{t_noInterrupt}{t_Zone}{t_MinSick}{t_BeforeSpell}{t_AfterSpell}{t_BeforeEvent}{t_AfterEvent}{t_minMana}{t_maxMana}{t_MinEnd}{t_ignoreStackRules}{t_MinDurationBeforeRecast}{t_MaxTries}{t_Reagent}{t_CastTypeOverride}{t_PctAggro}{t_Delay}{t_NoTarget}{t_AfterEventDelay}{t_AfterSpellDelay}{t_BeforeEventDelay}{t_BeforeSpellDelay}{t_AfterCastDelay}{t_AfterCastCompletedDelay}{t_Enabled}";
 			return returnValue;
 
 		}

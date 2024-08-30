@@ -263,6 +263,18 @@ namespace E3Core.Processors
         }
         private static void RegisterEvents()
         {
+
+			EventProcessor.RegisterCommand("/e3clear-debuffdottimers", (x) =>
+			{
+				E3.Bots.Broadcast("Clearing debuff/dot timers");
+				foreach (var pair in _debuffdotTimers)
+				{
+
+					pair.Value.Dispose();
+				}
+				_debuffdotTimers.Clear();
+
+			});
 			EventProcessor.RegisterCommand("/e3print-debuffdottimers", (x) =>
 			{
 				e3util.PrintTimerStatus(_debuffdotTimers, "Debuff/Dot Timers");
