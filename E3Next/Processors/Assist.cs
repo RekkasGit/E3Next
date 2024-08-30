@@ -510,9 +510,9 @@ namespace E3Core.Processors
                     E3.Bots.Broadcast("Cannot assist, a corpse");
                     return;
                 }
-                if (!(s.TypeDesc == "NPC" || s.TypeDesc == "Pet"))
+                if (!(s.TypeDesc == "NPC" || s.TypeDesc == "Pet" || s.TypeDesc == "Chest" || s.TypeDesc == "PC"))
                 {
-                    E3.Bots.Broadcast("Cannot assist, not a NPC or Pet");
+                    E3.Bots.Broadcast("Cannot assist, not a NPC,PC,Chest or Pet");
                     return;
                 }
 

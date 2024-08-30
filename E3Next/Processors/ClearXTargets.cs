@@ -52,20 +52,35 @@ namespace E3Core.Processors
                 //lets see if we have anything on xtarget that is valid
                 if (MobToAttack == 0)
                 {
-                    foreach (var s in _spawns.Get().OrderBy(x => x.Distance))
-                    {
-                        //find all mobs that are close
-                        if (s.TypeDesc != "NPC") continue;
-                        if (!s.Targetable) continue;
-                        if (!s.Aggressive) continue;
-                        if (s.CleanName.EndsWith("s pet")) continue;
-                        if (!MQ.Query<bool>($"${{Spawn[npc id {s.ID}].LineOfSight}}")) continue;
-                        if (s.Distance > 60) break;//mob is too far away, and since it is ordered, kick out.
-                        //its valid to attack!
-                        MobToAttack = s.ID;
-                        break;
-                    }
-                    if (MobToAttack == 0)
+					//first check to see if our driver already has a target
+					Int32 targetedMobID = MQ.Query<Int32>("${Target.ID}");
+					if(targetedMobID>0)
+					{
+						if (_spawns.TryByID(targetedMobID, out var tmob))
+						{
+							if (tmob.TypeDesc == "NPC" && tmob.Targetable && tmob.Aggressive)
+							{
+								MobToAttack = tmob.ID;
+							}
+						}
+					}
+					if(MobToAttack==0)
+					{
+						foreach (var s in _spawns.Get().OrderBy(x => x.Distance))
+						{
+							//find all mobs that are close
+							if (s.TypeDesc != "NPC") continue;
+							if (!s.Targetable) continue;
+							if (!s.Aggressive) continue;
+							if (s.CleanName.EndsWith("s pet")) continue;
+							if (!MQ.Query<bool>($"${{Spawn[npc id {s.ID}].LineOfSight}}")) continue;
+							if (s.Distance > 60) break;//mob is too far away, and since it is ordered, kick out.
+													   //its valid to attack!
+							MobToAttack = s.ID;
+							break;
+						}
+					}
+					if (MobToAttack == 0)
                     {
                         //we are done, stop killing
                         Enabled = false;
@@ -98,10 +113,6 @@ namespace E3Core.Processors
                             }
                             if (StickTarget)
                             {
-                              
-
-
-
 								//MQ.Write($"Setting stick with :/squelch /stick {E3.CharacterSettings.Assist_MeleeStickPoint} {Assist._assistDistance}");
                                 MQ.Cmd($"/squelch /stick {E3.CharacterSettings.Assist_MeleeStickPoint} {Assist._assistDistance}");
                             }

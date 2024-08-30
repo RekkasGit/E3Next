@@ -482,8 +482,9 @@ namespace E3Core.Processors
                     {
                         //so we can be sure our cursor was empty before we cast
                         Int32 cursorID = MQ.Query<Int32>("${Cursor.ID}");
-
+						Casting.TrueTarget(spawn.ID);
 					recast:
+
 						var result = Casting.Cast(spawn.ID, s, Heals.SomeoneNeedsHealing);
 						if (result == CastReturn.CAST_FIZZLE) goto recast;
 

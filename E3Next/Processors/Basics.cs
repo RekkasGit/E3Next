@@ -378,13 +378,18 @@ namespace E3Core.Processors
 			EventProcessor.RegisterCommand("/e3camp", (x) =>
 			{
 				string user = string.Empty;
-
+				string toDesktop = "";
+				if(x.args.Contains("desktop"))
+				{
+					toDesktop =  " desktop";
+					x.args.Remove("desktop");
+				}
 				if (x.args.Count > 0)
 				{
 					if (!e3util.FilterMe(x))
 					{
                         Pause(true);
-                        MQ.Cmd("/camp");
+					    MQ.Cmd($"/camp{toDesktop}");
 					}
 				}
 				else
@@ -392,10 +397,10 @@ namespace E3Core.Processors
                     if (!e3util.FilterMe(x))
                     {
                         Pause(true);
-                        MQ.Cmd("/camp");
-                    }
+						MQ.Cmd($"/camp{toDesktop}");
+					}
 					//we are telling people to follow us
-					E3.Bots.BroadcastCommandToGroup("/e3camp " + E3.CurrentName, x);
+					E3.Bots.BroadcastCommandToGroup($"/e3camp{toDesktop} " + E3.CurrentName, x);
 				}
 			});
 			EventProcessor.RegisterCommand("/e3treport", (x) =>
