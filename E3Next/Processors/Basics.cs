@@ -242,11 +242,34 @@ namespace E3Core.Processors
                 if (x.match.Groups.Count > 2)
                 {
                     string name = x.match.Groups[1].Value;
-					if(_spawns.TryByName(name, out var spawn))
+                    Int32 petID = MQ.Query<Int32>("${Me.Pet.ID}");
+
+					if (_spawns.TryByName(name, out var spawn))
 					{
+						//they are a PC in zone, reply
+						E3.Bots.Broadcast($"\agTell from: \ap{name}\ag, message: \ao'{x.match.Groups[2].Value}'");
+						return;
+					}
+					else
+					{
+						//they are not in zone or maybe a npc?
+						if (petID > 0 && _spawns.TryByID(petID, out var petSpawn))
+						{
+							//ignore our pets
+							if (petSpawn.CleanName == name) return;
+						}
+						//now to make sure its not a PC in zone
+						foreach (var npcspawn in _spawns.Get())
+						{
+							if (npcspawn.CleanName == name && npcspawn.TypeDesc == "NPC")
+							{
+								return;
+							}
+						}
+						//there is No NPC with that name, assume its a player from a different zone.
 						E3.Bots.Broadcast($"\agTell from: \ap{name}\ag, message: \ao'{x.match.Groups[2].Value}'");
 					}
-				}
+                }
             });
 
             EventProcessor.RegisterEvent("Zoned", @"You have entered (.+)\.", (x) =>
