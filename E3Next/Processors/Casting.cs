@@ -129,9 +129,9 @@ namespace E3Core.Processors
 					{
 						MQ.Delay(E3.CharacterSettings.Misc_DelayAfterCastWindowDropsForSpellCompletion);
 					}
-					if (spell.DelayAfterCast > 0)
+					if (spell.AfterCastCompletedDelay > 0)
 					{
-						MQ.Delay(spell.DelayAfterCast);
+						MQ.Delay(spell.AfterCastCompletedDelay);
 					}
 					return CastReturn.CAST_SUCCESS;
 				}
@@ -786,9 +786,9 @@ namespace E3Core.Processors
 						{
 							MQ.Delay(E3.CharacterSettings.Misc_DelayAfterCastWindowDropsForSpellCompletion);
 						}
-						if (spell.DelayAfterCast > 0)
+						if (spell.AfterCastCompletedDelay > 0)
 						{
-							MQ.Delay(spell.DelayAfterCast);
+							MQ.Delay(spell.AfterCastCompletedDelay);
 						}
 
 						

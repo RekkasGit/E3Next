@@ -23,7 +23,7 @@ public static partial class SpellDataReflection {
     byte[] descriptorData = global::System.Convert.FromBase64String(
         string.Concat(
           "Cg9TcGVsbERhdGEucHJvdG8iKQoNU3BlbGxEYXRhTGlzdBIYCgRkYXRhGAEg",
-          "AygLMgouU3BlbGxEYXRhIoYPCglTcGVsbERhdGESEQoJU3BlbGxOYW1lGAEg",
+          "AygLMgouU3BlbGxEYXRhIo8PCglTcGVsbERhdGESEQoJU3BlbGxOYW1lGAEg",
           "ASgJEhAKCENhc3ROYW1lGAIgASgJEhMKC1N1YmNhdGVnb3J5GAMgASgJEhAK",
           "CENhdGVnb3J5GAQgASgJEigKCENhc3RUeXBlGAUgASgOMhYuU3BlbGxEYXRh",
           "LkNhc3RpbmdUeXBlEhIKClRhcmdldFR5cGUYBiABKAkSEAoIU3BlbGxHZW0Y",
@@ -36,42 +36,42 @@ public static partial class SpellDataReflection {
           "bFBjdBgVIAEoBRINCgVEZWJ1ZxgWIAEoCBIPCgdSZWFnZW50GBcgASgJEhUK",
           "DUl0ZW1NdXN0RXF1aXAYGCABKAgSDgoGTm9CdXJuGBkgASgIEhAKCE5vVGFy",
           "Z2V0GBogASgIEg8KB05vQWdncm8YGyABKAgSDAoETW9kZRgcIAEoBRIVCg1F",
-          "bmR1cmFuY2VDb3N0GB0gASgFEg0KBURlbGF5GB4gASgFEhYKDkRlbGF5QWZ0",
-          "ZXJDYXN0GB8gASgFEg4KBkNhc3RJRBggIAEoBRIOCgZNaW5FbmQYISABKAUS",
-          "EQoJQ2FzdEludmlzGCIgASgIEhEKCVNwZWxsVHlwZRgjIAEoCRISCgpDYXN0",
-          "VGFyZ2V0GCQgASgJEhsKE1N0YWNrUmVxdWVzdFRhcmdldHMYJSADKAkSGgoS",
-          "U3RhY2tJbnRlcnZhbENoZWNrGCYgASgDEh4KFlN0YWNrSW50ZXJ2YWxOZXh0",
-          "Q2hlY2sYJyABKAMSGAoQU3RhY2tSZWNhc3REZWxheRgoIAEoAxIYChBTdGFj",
-          "a1JlcXVlc3RJdGVtGCkgASgJEhIKCkdpZnRPZk1hbmEYKiABKAgSDwoHU3Bl",
-          "bGxJRBgrIAEoBRIQCghQY3RBZ2dybxgsIAEoBRIMCgRab25lGC0gASgJEg8K",
-          "B01pblNpY2sYLiABKAUSFgoOQWxsb3dTcGVsbFN3YXAYLyABKAgSFQoNTm9F",
-          "YXJseVJlY2FzdBgwIAEoCBIPCgdOb1N0YWNrGDEgASgIEhQKDFRyaWdnZXJT",
-          "cGVsbBgyIAEoCRITCgtCZWZvcmVTcGVsbBgzIAEoCRITCgtOb0ludGVycnVw",
-          "dBg1IAEoCBISCgpBZnRlckV2ZW50GDYgASgJEhMKC0JlZm9yZUV2ZW50GDcg",
-          "ASgJEg4KBkNhc3RJRhg4IAEoCRILCgNJZnMYOSABKAkSEAoISW5pdE5hbWUY",
-          "OiABKAkSGQoRUmVhZ2VudE91dE9mU3RvY2sYOyABKAgSEwoLU3BlbGxJbkJv",
-          "b2sYPCABKAgSEQoJU3BlbGxJY29uGD0gASgFEhUKDU5vTWlkU29uZ0Nhc3QY",
-          "PiABKAgSHwoXTWluRHVyYXRpb25CZWZvcmVSZWNhc3QYPyABKAMSEwoLSXNT",
-          "aG9ydEJ1ZmYYQCABKAgSEQoJSGVhbHRoTWF4GEEgASgFEhgKEElnbm9yZVN0",
-          "YWNrUnVsZXMYQiABKAgSEAoISXNEZWJ1ZmYYQyABKAgSDQoFSXNEb1QYRCAB",
-          "KAgSDgoGUm90YXRlGEUgASgIEhIKCkFmdGVyU3BlbGwYRiABKAkSDQoFTGV2",
-          "ZWwYRyABKAUSEwoLRGVzY3JpcHRpb24YSCABKAkSEgoKUmVzaXN0VHlwZRhJ",
-          "IAEoCRIRCglSZXNpc3RBZGoYSiABKAUSMAoQQ2FzdFR5cGVPdmVycmlkZRhL",
-          "IAEoDjIWLlNwZWxsRGF0YS5DYXN0aW5nVHlwZRIaChJDaGVja0ZvckNvbGxl",
-          "Y3Rpb24YTCADKAkSDwoHSWZzS2V5cxhNIAEoCRIPCgdFbmFibGVkGE4gASgI",
-          "Eg4KBklzQnVmZhhPIAEoCBISCgpNaW5IUFRvdGFsGFAgASgFEhYKDkFmdGVy",
-          "RXZlbnRLZXlzGFEgASgJEhcKD0JlZm9yZUV2ZW50S2V5cxhSIAEoCRIMCgRB",
-          "QUlEGFMgASgFEhQKDFNwZWxsRWZmZWN0cxhUIAMoCRIXCg9BZnRlckV2ZW50",
-          "RGVsYXkYVSABKAUSGAoQQmVmb3JlRXZlbnREZWxheRhWIAEoBRIXCg9BZnRl",
-          "clNwZWxsRGVsYXkYVyABKAUSGAoQQmVmb3JlU3BlbGxEZWxheRhYIAEoBRIW",
-          "Cg5BZnRlckNhc3REZWxheRhZIAEoBSJLCgtDYXN0aW5nVHlwZRIGCgJBQRAA",
-          "EgkKBVNwZWxsEAESCAoERGlzYxACEgsKB0FiaWxpdHkQAxIICgRJdGVtEAQS",
-          "CAoETm9uZRAFYgZwcm90bzM="));
+          "bmR1cmFuY2VDb3N0GB0gASgFEg0KBURlbGF5GB4gASgFEh8KF0FmdGVyQ2Fz",
+          "dENvbXBsZXRlZERlbGF5GB8gASgFEg4KBkNhc3RJRBggIAEoBRIOCgZNaW5F",
+          "bmQYISABKAUSEQoJQ2FzdEludmlzGCIgASgIEhEKCVNwZWxsVHlwZRgjIAEo",
+          "CRISCgpDYXN0VGFyZ2V0GCQgASgJEhsKE1N0YWNrUmVxdWVzdFRhcmdldHMY",
+          "JSADKAkSGgoSU3RhY2tJbnRlcnZhbENoZWNrGCYgASgDEh4KFlN0YWNrSW50",
+          "ZXJ2YWxOZXh0Q2hlY2sYJyABKAMSGAoQU3RhY2tSZWNhc3REZWxheRgoIAEo",
+          "AxIYChBTdGFja1JlcXVlc3RJdGVtGCkgASgJEhIKCkdpZnRPZk1hbmEYKiAB",
+          "KAgSDwoHU3BlbGxJRBgrIAEoBRIQCghQY3RBZ2dybxgsIAEoBRIMCgRab25l",
+          "GC0gASgJEg8KB01pblNpY2sYLiABKAUSFgoOQWxsb3dTcGVsbFN3YXAYLyAB",
+          "KAgSFQoNTm9FYXJseVJlY2FzdBgwIAEoCBIPCgdOb1N0YWNrGDEgASgIEhQK",
+          "DFRyaWdnZXJTcGVsbBgyIAEoCRITCgtCZWZvcmVTcGVsbBgzIAEoCRITCgtO",
+          "b0ludGVycnVwdBg1IAEoCBISCgpBZnRlckV2ZW50GDYgASgJEhMKC0JlZm9y",
+          "ZUV2ZW50GDcgASgJEg4KBkNhc3RJRhg4IAEoCRILCgNJZnMYOSABKAkSEAoI",
+          "SW5pdE5hbWUYOiABKAkSGQoRUmVhZ2VudE91dE9mU3RvY2sYOyABKAgSEwoL",
+          "U3BlbGxJbkJvb2sYPCABKAgSEQoJU3BlbGxJY29uGD0gASgFEhUKDU5vTWlk",
+          "U29uZ0Nhc3QYPiABKAgSHwoXTWluRHVyYXRpb25CZWZvcmVSZWNhc3QYPyAB",
+          "KAMSEwoLSXNTaG9ydEJ1ZmYYQCABKAgSEQoJSGVhbHRoTWF4GEEgASgFEhgK",
+          "EElnbm9yZVN0YWNrUnVsZXMYQiABKAgSEAoISXNEZWJ1ZmYYQyABKAgSDQoF",
+          "SXNEb1QYRCABKAgSDgoGUm90YXRlGEUgASgIEhIKCkFmdGVyU3BlbGwYRiAB",
+          "KAkSDQoFTGV2ZWwYRyABKAUSEwoLRGVzY3JpcHRpb24YSCABKAkSEgoKUmVz",
+          "aXN0VHlwZRhJIAEoCRIRCglSZXNpc3RBZGoYSiABKAUSMAoQQ2FzdFR5cGVP",
+          "dmVycmlkZRhLIAEoDjIWLlNwZWxsRGF0YS5DYXN0aW5nVHlwZRIaChJDaGVj",
+          "a0ZvckNvbGxlY3Rpb24YTCADKAkSDwoHSWZzS2V5cxhNIAEoCRIPCgdFbmFi",
+          "bGVkGE4gASgIEg4KBklzQnVmZhhPIAEoCBISCgpNaW5IUFRvdGFsGFAgASgF",
+          "EhYKDkFmdGVyRXZlbnRLZXlzGFEgASgJEhcKD0JlZm9yZUV2ZW50S2V5cxhS",
+          "IAEoCRIMCgRBQUlEGFMgASgFEhQKDFNwZWxsRWZmZWN0cxhUIAMoCRIXCg9B",
+          "ZnRlckV2ZW50RGVsYXkYVSABKAUSGAoQQmVmb3JlRXZlbnREZWxheRhWIAEo",
+          "BRIXCg9BZnRlclNwZWxsRGVsYXkYVyABKAUSGAoQQmVmb3JlU3BlbGxEZWxh",
+          "eRhYIAEoBRIWCg5BZnRlckNhc3REZWxheRhZIAEoBSJLCgtDYXN0aW5nVHlw",
+          "ZRIGCgJBQRAAEgkKBVNwZWxsEAESCAoERGlzYxACEgsKB0FiaWxpdHkQAxII",
+          "CgRJdGVtEAQSCAoETm9uZRAFYgZwcm90bzM="));
     descriptor = pbr::FileDescriptor.FromGeneratedCode(descriptorData,
         new pbr::FileDescriptor[] { },
         new pbr::GeneratedClrTypeInfo(null, null, new pbr::GeneratedClrTypeInfo[] {
           new pbr::GeneratedClrTypeInfo(typeof(global::SpellDataList), global::SpellDataList.Parser, new[]{ "Data" }, null, null, null, null),
-          new pbr::GeneratedClrTypeInfo(typeof(global::SpellData), global::SpellData.Parser, new[]{ "SpellName", "CastName", "Subcategory", "Category", "CastType", "TargetType", "SpellGem", "GiveUpTimer", "MaxTries", "Duration", "DurationTotalSeconds", "RecastTime", "RecoveryTime", "MyCastTime", "MyCastTimeInSeconds", "MyRange", "Mana", "MinMana", "MaxMana", "MinHP", "HealPct", "Debug", "Reagent", "ItemMustEquip", "NoBurn", "NoTarget", "NoAggro", "Mode", "EnduranceCost", "Delay", "DelayAfterCast", "CastID", "MinEnd", "CastInvis", "SpellType", "CastTarget", "StackRequestTargets", "StackIntervalCheck", "StackIntervalNextCheck", "StackRecastDelay", "StackRequestItem", "GiftOfMana", "SpellID", "PctAggro", "Zone", "MinSick", "AllowSpellSwap", "NoEarlyRecast", "NoStack", "TriggerSpell", "BeforeSpell", "NoInterrupt", "AfterEvent", "BeforeEvent", "CastIF", "Ifs", "InitName", "ReagentOutOfStock", "SpellInBook", "SpellIcon", "NoMidSongCast", "MinDurationBeforeRecast", "IsShortBuff", "HealthMax", "IgnoreStackRules", "IsDebuff", "IsDoT", "Rotate", "AfterSpell", "Level", "Description", "ResistType", "ResistAdj", "CastTypeOverride", "CheckForCollection", "IfsKeys", "Enabled", "IsBuff", "MinHPTotal", "AfterEventKeys", "BeforeEventKeys", "AAID", "SpellEffects", "AfterEventDelay", "BeforeEventDelay", "AfterSpellDelay", "BeforeSpellDelay", "AfterCastDelay" }, null, new[]{ typeof(global::SpellData.Types.CastingType) }, null, null)
+          new pbr::GeneratedClrTypeInfo(typeof(global::SpellData), global::SpellData.Parser, new[]{ "SpellName", "CastName", "Subcategory", "Category", "CastType", "TargetType", "SpellGem", "GiveUpTimer", "MaxTries", "Duration", "DurationTotalSeconds", "RecastTime", "RecoveryTime", "MyCastTime", "MyCastTimeInSeconds", "MyRange", "Mana", "MinMana", "MaxMana", "MinHP", "HealPct", "Debug", "Reagent", "ItemMustEquip", "NoBurn", "NoTarget", "NoAggro", "Mode", "EnduranceCost", "Delay", "AfterCastCompletedDelay", "CastID", "MinEnd", "CastInvis", "SpellType", "CastTarget", "StackRequestTargets", "StackIntervalCheck", "StackIntervalNextCheck", "StackRecastDelay", "StackRequestItem", "GiftOfMana", "SpellID", "PctAggro", "Zone", "MinSick", "AllowSpellSwap", "NoEarlyRecast", "NoStack", "TriggerSpell", "BeforeSpell", "NoInterrupt", "AfterEvent", "BeforeEvent", "CastIF", "Ifs", "InitName", "ReagentOutOfStock", "SpellInBook", "SpellIcon", "NoMidSongCast", "MinDurationBeforeRecast", "IsShortBuff", "HealthMax", "IgnoreStackRules", "IsDebuff", "IsDoT", "Rotate", "AfterSpell", "Level", "Description", "ResistType", "ResistAdj", "CastTypeOverride", "CheckForCollection", "IfsKeys", "Enabled", "IsBuff", "MinHPTotal", "AfterEventKeys", "BeforeEventKeys", "AAID", "SpellEffects", "AfterEventDelay", "BeforeEventDelay", "AfterSpellDelay", "BeforeSpellDelay", "AfterCastDelay" }, null, new[]{ typeof(global::SpellData.Types.CastingType) }, null, null)
         }));
   }
   #endregion
@@ -322,7 +322,7 @@ public sealed partial class SpellData : pb::IMessage<SpellData>
     mode_ = other.mode_;
     enduranceCost_ = other.enduranceCost_;
     delay_ = other.delay_;
-    delayAfterCast_ = other.delayAfterCast_;
+    afterCastCompletedDelay_ = other.afterCastCompletedDelay_;
     castID_ = other.castID_;
     minEnd_ = other.minEnd_;
     castInvis_ = other.castInvis_;
@@ -749,15 +749,15 @@ public sealed partial class SpellData : pb::IMessage<SpellData>
     }
   }
 
-  /// <summary>Field number for the "DelayAfterCast" field.</summary>
-  public const int DelayAfterCastFieldNumber = 31;
-  private int delayAfterCast_;
+  /// <summary>Field number for the "AfterCastCompletedDelay" field.</summary>
+  public const int AfterCastCompletedDelayFieldNumber = 31;
+  private int afterCastCompletedDelay_;
   [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
   [global::System.CodeDom.Compiler.GeneratedCode("protoc", null)]
-  public int DelayAfterCast {
-    get { return delayAfterCast_; }
+  public int AfterCastCompletedDelay {
+    get { return afterCastCompletedDelay_; }
     set {
-      delayAfterCast_ = value;
+      afterCastCompletedDelay_ = value;
     }
   }
 
@@ -1487,7 +1487,7 @@ public sealed partial class SpellData : pb::IMessage<SpellData>
     if (Mode != other.Mode) return false;
     if (EnduranceCost != other.EnduranceCost) return false;
     if (Delay != other.Delay) return false;
-    if (DelayAfterCast != other.DelayAfterCast) return false;
+    if (AfterCastCompletedDelay != other.AfterCastCompletedDelay) return false;
     if (CastID != other.CastID) return false;
     if (MinEnd != other.MinEnd) return false;
     if (CastInvis != other.CastInvis) return false;
@@ -1582,7 +1582,7 @@ public sealed partial class SpellData : pb::IMessage<SpellData>
     if (Mode != 0) hash ^= Mode.GetHashCode();
     if (EnduranceCost != 0) hash ^= EnduranceCost.GetHashCode();
     if (Delay != 0) hash ^= Delay.GetHashCode();
-    if (DelayAfterCast != 0) hash ^= DelayAfterCast.GetHashCode();
+    if (AfterCastCompletedDelay != 0) hash ^= AfterCastCompletedDelay.GetHashCode();
     if (CastID != 0) hash ^= CastID.GetHashCode();
     if (MinEnd != 0) hash ^= MinEnd.GetHashCode();
     if (CastInvis != false) hash ^= CastInvis.GetHashCode();
@@ -1778,9 +1778,9 @@ public sealed partial class SpellData : pb::IMessage<SpellData>
       output.WriteRawTag(240, 1);
       output.WriteInt32(Delay);
     }
-    if (DelayAfterCast != 0) {
+    if (AfterCastCompletedDelay != 0) {
       output.WriteRawTag(248, 1);
-      output.WriteInt32(DelayAfterCast);
+      output.WriteInt32(AfterCastCompletedDelay);
     }
     if (CastID != 0) {
       output.WriteRawTag(128, 2);
@@ -2131,9 +2131,9 @@ public sealed partial class SpellData : pb::IMessage<SpellData>
       output.WriteRawTag(240, 1);
       output.WriteInt32(Delay);
     }
-    if (DelayAfterCast != 0) {
+    if (AfterCastCompletedDelay != 0) {
       output.WriteRawTag(248, 1);
-      output.WriteInt32(DelayAfterCast);
+      output.WriteInt32(AfterCastCompletedDelay);
     }
     if (CastID != 0) {
       output.WriteRawTag(128, 2);
@@ -2454,8 +2454,8 @@ public sealed partial class SpellData : pb::IMessage<SpellData>
     if (Delay != 0) {
       size += 2 + pb::CodedOutputStream.ComputeInt32Size(Delay);
     }
-    if (DelayAfterCast != 0) {
-      size += 2 + pb::CodedOutputStream.ComputeInt32Size(DelayAfterCast);
+    if (AfterCastCompletedDelay != 0) {
+      size += 2 + pb::CodedOutputStream.ComputeInt32Size(AfterCastCompletedDelay);
     }
     if (CastID != 0) {
       size += 2 + pb::CodedOutputStream.ComputeInt32Size(CastID);
@@ -2724,8 +2724,8 @@ public sealed partial class SpellData : pb::IMessage<SpellData>
     if (other.Delay != 0) {
       Delay = other.Delay;
     }
-    if (other.DelayAfterCast != 0) {
-      DelayAfterCast = other.DelayAfterCast;
+    if (other.AfterCastCompletedDelay != 0) {
+      AfterCastCompletedDelay = other.AfterCastCompletedDelay;
     }
     if (other.CastID != 0) {
       CastID = other.CastID;
@@ -3028,7 +3028,7 @@ public sealed partial class SpellData : pb::IMessage<SpellData>
           break;
         }
         case 248: {
-          DelayAfterCast = input.ReadInt32();
+          AfterCastCompletedDelay = input.ReadInt32();
           break;
         }
         case 256: {
@@ -3395,7 +3395,7 @@ public sealed partial class SpellData : pb::IMessage<SpellData>
           break;
         }
         case 248: {
-          DelayAfterCast = input.ReadInt32();
+          AfterCastCompletedDelay = input.ReadInt32();
           break;
         }
         case 256: {

@@ -4,7 +4,6 @@ using IniParser.Model;
 using MonoCore;
 using System;
 using System.Collections.Generic;
-using System.Diagnostics;
 using System.Linq;
 using System.Reflection;
 using System.Text;
@@ -13,7 +12,7 @@ namespace E3Core.Data
 {
 
 
-    public enum CastingType
+	public enum CastingType
     {
         AA,
         Spell,
@@ -283,8 +282,14 @@ namespace E3Core.Data
 					else if (value.StartsWith("DelayAfterCast|", StringComparison.OrdinalIgnoreCase))
 					{
 						
-						DelayAfterCast = GetArgument<Int32>(value);
+						AfterCastCompletedDelay = GetArgument<Int32>(value);
 						
+					}
+					else if (value.StartsWith("AfterCastCompletedDelay|", StringComparison.OrdinalIgnoreCase))
+					{
+
+						AfterCastCompletedDelay = GetArgument<Int32>(value);
+
 					}
 					else if (value.Equals("GoM", StringComparison.OrdinalIgnoreCase))
                     {
@@ -928,7 +933,7 @@ namespace E3Core.Data
         public Boolean Rotate;
         public Int32 EnduranceCost;
         public Int32 Delay;
-        public Int32 DelayAfterCast = 0;
+        public Int32 AfterCastCompletedDelay = 0;
         public Int32 CastID;
         public Int32 MinEnd;
         public Boolean CastInvis;
@@ -1019,7 +1024,7 @@ namespace E3Core.Data
 			r.Category = source.Category;
 			r.Debug = source.Debug;
 			r.Delay = source.Delay;
-			r.DelayAfterCast = source.DelayAfterCast;
+			r.AfterCastCompletedDelay = source.AfterCastCompletedDelay;
 			r.Duration = source.Duration;
 			r.DurationTotalSeconds = source.DurationTotalSeconds;
 			r.EnduranceCost = source.EnduranceCost;
@@ -1167,7 +1172,7 @@ namespace E3Core.Data
             r.Category = this.Category;
             r.Debug = this.Debug;
             r.Delay = this.Delay;
-            r.DelayAfterCast = this.DelayAfterCast;
+            r.AfterCastCompletedDelay = this.AfterCastCompletedDelay;
             r.Duration = this.Duration;
             r.DurationTotalSeconds = this.DurationTotalSeconds;
             r.EnduranceCost = this.EnduranceCost;
@@ -1310,10 +1315,10 @@ namespace E3Core.Data
 			string t_BeforeEventDelay = BeforeEventDelay == 0 ? String.Empty : $"/BeforeEventDelay|{BeforeEventDelay}";
 			string t_BeforeSpellDelay = BeforeSpellDelay == 0 ? String.Empty : $"/BeforeEventDelay|{BeforeSpellDelay}";
 			string t_AfterCastDelay = AfterCastDelay == 0 ? String.Empty : $"/AfterEventDelay|{AfterCastDelay}";
-
+			string t_AfterCastCompletedDelay= AfterCastCompletedDelay == 0 ? String.Empty : $"/AfterCastCompletedDelay|{AfterCastCompletedDelay}";
 
 			//Main=Terror of Mirenilla Rk. II/Gem|4/Ifs|Tanking
-			string returnValue = $"{CastName}{t_CastTarget}{t_GemNumber}{t_Ifs}{t_checkFor}{t_CastIF}{t_healPct}{t_healthMax}{t_noInterrupt}{t_Zone}{t_MinSick}{t_BeforeSpell}{t_AfterSpell}{t_BeforeEvent}{t_AfterEvent}{t_minMana}{t_maxMana}{t_MinEnd}{t_ignoreStackRules}{t_MinDurationBeforeRecast}{t_MaxTries}{t_Reagent}{t_CastTypeOverride}{t_PctAggro}{t_Delay}{t_NoTarget}{t_AfterEventDelay}{t_AfterSpellDelay}{t_BeforeEventDelay}{t_BeforeSpellDelay}{t_AfterCastDelay}{t_Enabled}";
+			string returnValue = $"{CastName}{t_CastTarget}{t_GemNumber}{t_Ifs}{t_checkFor}{t_CastIF}{t_healPct}{t_healthMax}{t_noInterrupt}{t_Zone}{t_MinSick}{t_BeforeSpell}{t_AfterSpell}{t_BeforeEvent}{t_AfterEvent}{t_minMana}{t_maxMana}{t_MinEnd}{t_ignoreStackRules}{t_MinDurationBeforeRecast}{t_MaxTries}{t_Reagent}{t_CastTypeOverride}{t_PctAggro}{t_Delay}{t_NoTarget}{t_AfterEventDelay}{t_AfterSpellDelay}{t_BeforeEventDelay}{t_BeforeSpellDelay}{t_AfterCastDelay}{t_AfterCastCompletedDelay}{t_Enabled}";
 			return returnValue;
 
 		}

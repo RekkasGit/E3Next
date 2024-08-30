@@ -47,7 +47,7 @@ message SpellData {
    
     int32 EnduranceCost=29;
     int32 Delay=30;
-    int32 DelayAfterCast=31;
+    int32 AfterCastCompletedDelay=31;
     int32 CastID=32;
     int32 MinEnd=33;
     bool CastInvis=34;
