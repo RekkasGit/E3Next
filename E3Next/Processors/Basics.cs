@@ -242,25 +242,11 @@ namespace E3Core.Processors
                 if (x.match.Groups.Count > 2)
                 {
                     string name = x.match.Groups[1].Value;
-                    Int32 petID = MQ.Query<Int32>("${Me.Pet.ID");
-                    foreach (var spawn in _spawns.Get())
-                    {
-                        if(spawn.CleanName==name && spawn.TypeDesc=="NPC")
-                        {
-                            return;
-                        }
-                        if (petID > 0)
-                        {
-                            if (petID == spawn.ID)
-                            {
-                                return;
-                            }
-                        }
-
-
-                    }
-                    E3.Bots.Broadcast($"\agTell from: \ap{name}\ag, message: \ao'{x.match.Groups[2].Value}'");
-                }
+					if(_spawns.TryByName(name, out var spawn))
+					{
+						E3.Bots.Broadcast($"\agTell from: \ap{name}\ag, message: \ao'{x.match.Groups[2].Value}'");
+					}
+				}
             });
 
             EventProcessor.RegisterEvent("Zoned", @"You have entered (.+)\.", (x) =>
