@@ -385,6 +385,13 @@ namespace E3NextConfigEditor.Models
 			set { _spell.MaxMana = value; }
 		}
 		[Category("Flags")]
+		[Description("Song min time left before recasting song, in seconds")]
+		public Int32 SongRefreshTime
+		{
+			get { return _spell.SongRefreshTime; }
+			set { _spell.SongRefreshTime = value; }
+		}
+		[Category("Flags")]
 		[Description("Min endurance before you try and cast an ability")]
 		public Int32 MinEnd
 		{
@@ -646,6 +653,13 @@ namespace E3NextConfigEditor.Models
 		{
 			get { return _spell.BeforeSpell; }
 			set { _spell.BeforeSpell = value; }
+		}
+		[Category("Flags")]
+		[Description("Song min time left before recasting song, in seconds")]
+		public Int32 SongRefreshTime
+		{
+			get { return _spell.SongRefreshTime; }
+			set { _spell.SongRefreshTime = value; }
 		}
 		[Category("Flags")]
 		[Description("After Event Name, follows normal heircy rules")]

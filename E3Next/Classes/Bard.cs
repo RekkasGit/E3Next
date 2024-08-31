@@ -500,7 +500,7 @@ namespace E3Core.Classes
             {
                 string BuffSecondsLeftQuery = "${Me.Buff[" + songToPlay.SpellName + "].Duration.TotalSeconds}";
                 string SongSecondsLeftQuery = "${Me.Song[" + songToPlay.SpellName + "].Duration.TotalSeconds}";
-                if (MQ.Query<Int32>(BuffSecondsLeftQuery) > 18 || MQ.Query<Int32>(SongSecondsLeftQuery) > 18)
+                if (MQ.Query<Int32>(BuffSecondsLeftQuery) > songToPlay.SongRefreshTime || MQ.Query<Int32>(SongSecondsLeftQuery) > songToPlay.SongRefreshTime)
                 {
                     return;
                 }
