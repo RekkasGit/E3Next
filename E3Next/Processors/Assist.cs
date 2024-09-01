@@ -763,6 +763,12 @@ namespace E3Core.Processors
                 //or you want to attack in enrage
                 _assistIsEnraged = false;
 
+			   //being told to asssist, clear out ignored targets from pullers.
+			   if(Heals.IgnoreHealTargets.Count>0)
+			   {
+				   Heals.IgnoreHealTargets.Clear();
+			   }
+
                bool ignoreme = false;
                if(x.args.Contains("/ignoreme"))
                {
