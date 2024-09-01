@@ -29,7 +29,7 @@ namespace E3Core.Processors
 		[SubSystemInit]
 		public static void Init_Heals()
 		{
-			List<string> pattern  =new List<string>() { $@"(.+) tells the raid, 'E3Pulling'", "(.+) tells the group, 'E3Pulling'" };
+			List<string> pattern  =new List<string>() { $@"(.+) tells the raid, 'Pulling'", "(.+) tells the group, 'Pulling'" };
 			EventProcessor.RegisterEvent("PullingIgnoreHeals", pattern, (x) => {
 
 				if (x.match.Groups.Count > 1)
@@ -41,6 +41,20 @@ namespace E3Core.Processors
 					}
 					E3.Bots.Broadcast($"\arIgnore Healing \ag for \ap{user}\ag till next assist or in combat.");
 					
+				}
+			});
+			pattern = new List<string>() { $@"(.+) tells the raid, 'PullingOff'", "(.+) tells the group, 'PullingOff'" };
+			EventProcessor.RegisterEvent("PullingIgnoreHealsClear", pattern, (x) => {
+
+				if (x.match.Groups.Count > 1)
+				{
+					string user = x.match.Groups[1].Value;
+					if (IgnoreHealTargets.Contains(user))
+					{
+						IgnoreHealTargets.Remove(user);
+						E3.Bots.Broadcast($"\arIgnore Healing \ag Removing \ap{user}\ag from ignore list.");
+					}
+		
 				}
 			});
 		}

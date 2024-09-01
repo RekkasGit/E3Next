@@ -390,12 +390,12 @@ namespace E3Core.Processors
                                     {
                                         if (!MQ.Query<bool>("${Me.ActiveDisc.ID}"))
                                         {
-                                            Casting.Cast(0, ability);
+                                            Casting.Cast(AssistTargetID, ability);
                                         }
                                     }
                                     else
                                     {
-                                        Casting.Cast(0, ability);
+                                        Casting.Cast(AssistTargetID, ability);
                                     }
 
                                 }
