@@ -766,6 +766,7 @@ namespace E3Core.Processors
 			   //being told to asssist, clear out ignored targets from pullers.
 			   if(Heals.IgnoreHealTargets.Count>0)
 			   {
+				   E3.Bots.Broadcast($"\arIgnore Healing \ag Clearing users from list.");
 				   Heals.IgnoreHealTargets.Clear();
 			   }
 

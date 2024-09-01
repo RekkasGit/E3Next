@@ -65,6 +65,7 @@ namespace E3Core.Processors
 			//reset ignored targets once in combat
 			if (inCombat && IgnoreHealTargets.Count>0)
 			{
+				E3.Bots.Broadcast($"\arIgnore Healing \ag Clearing users from list.");
 				IgnoreHealTargets.Clear();
 			}
 
