@@ -432,17 +432,26 @@ namespace E3Core.Processors
 							else
 							{
 								//activate disc!
-								TrueTarget(targetID);
-								E3.ActionTaken = true;
-								
-								MQ.Write($"\ag{spell.CastName} \at{spell.SpellID} \am{targetName} \ao{targetID} \aw({spell.MyCastTime / 1000}sec)");
-								MQ.Cmd($"/disc {spell.CastName}");
-								if(spell.TargetType.Equals("Self"))
+								if (TrueTarget(targetID))
 								{
-									MQ.Delay(300);
+									E3.ActionTaken = true;
+
+									MQ.Write($"\ag{spell.CastName} \at{spell.SpellID} \am{targetName} \ao{targetID} \aw({spell.MyCastTime / 1000}sec)");
+									MQ.Cmd($"/disc {spell.CastName}");
+									if (spell.TargetType.Equals("Self"))
+									{
+										MQ.Delay(300);
+									}
+									returnValue = CastReturn.CAST_SUCCESS;
+									goto startCasting;
+
 								}
-								returnValue = CastReturn.CAST_SUCCESS;
-								goto startCasting;
+								else
+								{
+									returnValue = CastReturn.CAST_NOTARGET;
+									return returnValue;
+								}
+								
 							}
 
 						}
