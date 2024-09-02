@@ -44,6 +44,7 @@ namespace E3Core.Classes
             {"Malo", "Summoned: Spear of Maliciousness" },
             {"Dispel", "Summoned: Wand of Dismissal" },
             {"Snare", "Summoned: Tendon Carver" },
+	    {"DSK", "Summoned: Companion's Corrupted Dirk" },
             {"None", null }
         };
 
@@ -78,6 +79,7 @@ namespace E3Core.Classes
         private static long _nextInventoryCheckInterval = 5000;
 
         private const int EnchanterPetPrimaryWeaponId = 10702;
+   	private const int CodexWeaponId = 12227;
 
         /// <summary>
         /// Accepts a pet equipment request.
@@ -300,7 +302,8 @@ namespace E3Core.Classes
             // my pet
             var primary = MQ.Query<int>("${Me.Pet.Primary}");
             var myPetId = MQ.Query<int>("${Me.Pet.ID}");
-            if (myPetId > 0 && primary == 0)
+            var hasDskGloves = MQ.Query<bool>($"${{FindItem[{_dskGloveItem}]}}");
+            if (myPetId > 0 && (primary == 0 || (primary == CodexWeaponId) && hasDskGloves))
             {
                 E3.CharacterSettings.PetWeapons.TryGetValue(E3.CurrentName, out var weapons);
                 if (e3util.IsShuttingDown() || E3.IsPaused()) return;
@@ -335,7 +338,7 @@ namespace E3Core.Classes
                     }
 
                     var theirPetPrimary = MQ.Query<int>($"${{Spawn[{ownerSpawn.Name}].Pet.Primary}}");
-                    if (theirPetPrimary == 0 || theirPetPrimary == EnchanterPetPrimaryWeaponId)
+                    if ((theirPetPrimary == 0 || theirPetPrimary == EnchanterPetPrimaryWeaponId) || (hasDskGloves && (theirPetPrimary == CodexWeaponId)))
                     {
                         ArmPet(theirPetId, kvp.Value);
                     }
@@ -443,6 +446,60 @@ namespace E3Core.Classes
 		
 			try
 			{
+               			var skipNonDSKWeapons = false;
+               			if (((weapons == "dsk|dsk") || (weapons == "none|none")) && hasDskGloves) skipNonDSKWeapons = true;
+                		if (!skipNonDSKWeapons)
+				{
+					if (!GiveWeapons(petId, weapons ?? "Water|Fire"))
+					{
+						if (_isExternalRequest)
+						{
+							MQ.Cmd($"/t {_requester} There was an issue with pet weapon summoning and we are unable to continue.");
+
+						}
+						else
+						{
+							E3.Bots.Broadcast("\arThere was an issue with pet weapon summoning and we are unable to continue.");
+
+						}
+						return;
+					}
+				}
+				
+				var skipMageArmorSpells = false;
+				if ((theirPetPrimary == CodexWeaponId) || (petId == myPetID && hasDskCodex)) skipMageArmorSpells = true;
+				if (!skipMageArmorSpells)
+				{
+				    var spell = new Spell(_armorSpell);
+				    Casting.MemorizeSpell(spell);
+				    MQ.Delay(10000, $"${{Me.SpellReady[${{Me.Gem[{spell.SpellGem}].Name}}]}}");
+			
+				    Int32 castAttempts = 0;
+				    if (Casting.CheckReady(spell) && Casting.CheckMana(spell))
+				    {
+					while (Casting.Cast(petId, spell) == CastReturn.CAST_FIZZLE)
+					{
+					    if (castAttempts > 7) break;
+					    MQ.Delay(1500);
+					    castAttempts++;
+					}
+				    }
+				    castAttempts = 0;
+				    spell = new Spell(_focusSpell);
+				    Casting.MemorizeSpell(spell);
+				    MQ.Delay(10000, $"${{Me.SpellReady[${{Me.Gem[{spell.SpellGem}].Name}}]}}");
+			
+				    if (Casting.CheckReady(spell) && Casting.CheckMana(spell))
+				    {
+					while (Casting.Cast(petId, spell) == CastReturn.CAST_FIZZLE)
+					{
+					    if (castAttempts > 7) break;
+					    MQ.Delay(1500);
+					    castAttempts++;
+					}
+				    }
+				}
+
 				if (petId == myPetID && hasDskCodex)
 				{
 					if (_dskCodexSpell == null)
@@ -485,55 +542,6 @@ namespace E3Core.Classes
 						Casting.Cast(petId, _dskGloveSpell);
 					}
 				}
-				else 
-				{
-					if (!GiveWeapons(petId, weapons ?? "Water|Fire"))
-					{
-						if (_isExternalRequest)
-						{
-							MQ.Cmd($"/t {_requester} There was an issue with pet weapon summoning and we are unable to continue.");
-
-						}
-						else
-						{
-							E3.Bots.Broadcast("\arThere was an issue with pet weapon summoning and we are unable to continue.");
-
-						}
-						return;
-					}
-				}
-				//we are done if its our pet and we have applied the codex
-				if (petId == myPetID && hasDskCodex) return;
-
-				var spell = new Spell(_armorSpell);
-				Casting.MemorizeSpell(spell);
-				MQ.Delay(10000, $"${{Me.SpellReady[${{Me.Gem[{spell.SpellGem}].Name}}]}}");
-
-				Int32 castAttempts = 0;
-				if (Casting.CheckReady(spell) && Casting.CheckMana(spell))
-				{
-					while (Casting.Cast(petId, spell) == CastReturn.CAST_FIZZLE)
-					{
-						if (castAttempts > 7) break;
-						MQ.Delay(1500);
-						castAttempts++;
-					}
-				}
-				castAttempts = 0;
-				spell = new Spell(_focusSpell);
-				Casting.MemorizeSpell(spell);
-				MQ.Delay(10000, $"${{Me.SpellReady[${{Me.Gem[{spell.SpellGem}].Name}}]}}");
-
-				if (Casting.CheckReady(spell) && Casting.CheckMana(spell))
-				{
-					while (Casting.Cast(petId, spell) == CastReturn.CAST_FIZZLE)
-					{
-						if (castAttempts > 7) break;
-						MQ.Delay(1500);
-						castAttempts++;
-					}
-				}
-
 
 				var pet = _spawns.Get().FirstOrDefault(f => f.ID == petId);
 				if (pet != null)
