@@ -29,8 +29,10 @@ namespace E3Core.Processors
 		public static bool HasAllFlag = false;
 		[ExposedData("ClearXTargets", "StickTarget")]
 		public static bool StickTarget = false;
+		[ExposedData("ClearXTargets", "UseMyTarget")]
+		public static bool UseMyTarget = false;
 
-        [ClassInvoke(Data.Class.All)]
+		[ClassInvoke(Data.Class.All)]
         public static void Check_Xtargets()
         {
             if (Enabled)
@@ -53,18 +55,21 @@ namespace E3Core.Processors
                 if (MobToAttack == 0)
                 {
 					//first check to see if our driver already has a target
-					Int32 targetedMobID = MQ.Query<Int32>("${Target.ID}");
-					if(targetedMobID>0)
+					if(UseMyTarget)
 					{
-						if (_spawns.TryByID(targetedMobID, out var tmob))
+						Int32 targetedMobID = MQ.Query<Int32>("${Target.ID}");
+						if (targetedMobID > 0)
 						{
-							if (tmob.TypeDesc == "NPC" && tmob.Targetable && tmob.Aggressive)
+							if (_spawns.TryByID(targetedMobID, out var tmob))
 							{
-								MobToAttack = tmob.ID;
+								if (tmob.TypeDesc == "NPC" && tmob.Targetable && tmob.Aggressive)
+								{
+									MobToAttack = tmob.ID;
+								}
 							}
 						}
 					}
-					if(MobToAttack==0)
+					if (MobToAttack==0)
 					{
 						foreach (var s in _spawns.Get().OrderBy(x => x.Distance))
 						{

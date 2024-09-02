@@ -872,6 +872,7 @@ namespace E3Core.Processors
                     ClearXTargets.Enabled = true;
                     ClearXTargets.FaceTarget = true;
                     ClearXTargets.StickTarget = false;
+					ClearXTargets.UseMyTarget = false;
 
                 }
                 else if (x.args.Count == 1 && x.args[0] == "off")
@@ -893,7 +894,11 @@ namespace E3Core.Processors
                         ClearXTargets.Filters.AddRange(x.filters);
                     }
                     ClearXTargets.HasAllFlag = x.hasAllFlag;
-                    foreach (var argValue in x.args)
+					ClearXTargets.UseMyTarget = false;
+					ClearXTargets.FaceTarget = true;
+					ClearXTargets.StickTarget = false;
+
+					foreach (var argValue in x.args)
                     {
                         if (argValue.Equals("noface", StringComparison.OrdinalIgnoreCase))
                         {
@@ -903,7 +908,11 @@ namespace E3Core.Processors
                         {
                             ClearXTargets.StickTarget = true;
                         }
-                    }
+						else if (argValue.Equals("usemytarget", StringComparison.OrdinalIgnoreCase))
+						{
+							ClearXTargets.UseMyTarget = true;
+						}
+					}
 
                     ClearXTargets.Enabled = true;
 
