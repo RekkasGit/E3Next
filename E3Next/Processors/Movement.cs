@@ -38,9 +38,9 @@ namespace E3Core.Processors
         private static Int64 _nextChaseCheckInterval = 10;
 		[ExposedData("Movement", "ChaseTarget")]
 		public static string _chaseTarget = String.Empty;
-		public static List<string> _clickitUseDoorZones = new List<string>() { "poknowledge", "potranq", "potimeb", "potimeb","anguish" };
+		public static List<string> _clickitUseDoorZones = new List<string>() { "poknowledge", "potranq", "potimeb", "potimeb","anguish","solrotower" };
 
-        [SubSystemInit]
+		[SubSystemInit]
         public static void Movement_Init()
         {
             RegisterEvents();

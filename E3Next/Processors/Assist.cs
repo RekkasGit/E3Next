@@ -487,13 +487,9 @@ namespace E3Core.Processors
         {
 
             if (zoneId != Zoning.CurrentZone.Id) return;
-			
-           
-			
 			//clear in case its not reset by other means
 			//or you want to attack in enrage
 			_assistIsEnraged = false;
-
             if (mobID == 0)
             {
                 //something wrong with the assist, kickout
@@ -503,8 +499,6 @@ namespace E3Core.Processors
             Spawn s;
             if (_spawns.TryByID(mobID, out s))
             {
-
-
                 if (s.TypeDesc == "Corpse")
                 {
                     E3.Bots.Broadcast("Cannot assist, a corpse");
@@ -515,7 +509,6 @@ namespace E3Core.Processors
                     E3.Bots.Broadcast("Cannot assist, not a NPC,PC,Chest or Pet");
                     return;
                 }
-
                 if (s.Distance3D > E3.GeneralSettings.Assists_MaxEngagedDistance)
                 {
                     E3.Bots.Broadcast($"{s.CleanName} is too far away.");
@@ -526,11 +519,15 @@ namespace E3Core.Processors
                 {
                     //if (E3.CharacterSettings.IfFDStayDown) return;
                     MQ.Cmd("/stand");
-                }else
+                }
+				else
                 {
-					if (!amIStanding)
+					if(E3.CharacterSettings.AutoMed_EndMedBreakInCombat)
 					{
-						MQ.Cmd("/stand");
+						if (!amIStanding)
+						{
+							MQ.Cmd("/stand");
+						}
 					}
 				}
 

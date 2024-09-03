@@ -154,8 +154,15 @@ namespace E3NextConfigEditor
 			E3.Log = new Logging(E3.MQ); ;
 			E3.CurrentName = _mqClient.Query<string>("${Me.CleanName}");
 			E3.ServerName = e3util.FormatServerName(_mqClient.Query<string>("${MacroQuest.Server}"));
-			E3.CurrentClass = _currentClass;
 
+
+			//need the proper class so that the settings can load correctly
+			string classValue = e3util.ClassNameFix(_tloClient.RequestData("${Me.Class}"));
+			System.Enum.TryParse(classValue, out _currentClass);
+			labelClass.Text = classValue;
+
+			E3.CurrentClass = _currentClass;
+	
 
 			_splashScreen.Invoke(new Action(() =>_splashScreen.splashLabel.Text="Requesting AA list..."));
 			byte[] result = _tloClient.RequestRawData("${E3.AA.ListAll}");
@@ -185,10 +192,7 @@ namespace E3NextConfigEditor
 				skill.Subcategory = "Basic";
 			}
 
-			//need the proper class so that the settings can load correctly
-			string classValue = e3util.ClassNameFix(_tloClient.RequestData("${Me.Class}"));
-			System.Enum.TryParse(classValue, out _currentClass);
-            labelClass.Text = classValue;
+			
 
             //lets sort all the spells by cataegory/subcategory and levels
             PopulateItemData(items.Data, _itemDataOrganized,_itemDataLookup);
