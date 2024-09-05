@@ -1,4 +1,4 @@
-﻿using E3Core.Data;
+using E3Core.Data;
 using E3Core.Processors;
 using E3Core.Settings;
 using E3Core.Utility;
@@ -44,6 +44,7 @@ namespace E3Core.Classes
             {"Malo", "Summoned: Spear of Maliciousness" },
             {"Dispel", "Summoned: Wand of Dismissal" },
             {"Snare", "Summoned: Tendon Carver" },
+            {"DSK", "Summoned: Companion's Corrupted Dirk" },
             {"None", null }
         };
 
@@ -78,6 +79,7 @@ namespace E3Core.Classes
         private static long _nextInventoryCheckInterval = 5000;
 
         private const int EnchanterPetPrimaryWeaponId = 10702;
+        private const int CodexWeaponId = 12227;
 
         /// <summary>
         /// Accepts a pet equipment request.
@@ -300,7 +302,8 @@ namespace E3Core.Classes
             // my pet
             var primary = MQ.Query<int>("${Me.Pet.Primary}");
             var myPetId = MQ.Query<int>("${Me.Pet.ID}");
-            if (myPetId > 0 && primary == 0)
+            var hasDskGloves = MQ.Query<bool>($"${{FindItem[{_dskGloveItem}]}}");
+            if (myPetId > 0 && (primary == 0 || (primary == CodexWeaponId) && hasDskGloves))
             {
                 E3.CharacterSettings.PetWeapons.TryGetValue(E3.CurrentName, out var weapons);
                 if (e3util.IsShuttingDown() || E3.IsPaused()) return;
@@ -335,7 +338,7 @@ namespace E3Core.Classes
                     }
 
                     var theirPetPrimary = MQ.Query<int>($"${{Spawn[{ownerSpawn.Name}].Pet.Primary}}");
-                    if (theirPetPrimary == 0 || theirPetPrimary == EnchanterPetPrimaryWeaponId)
+                    if ((theirPetPrimary == 0 || theirPetPrimary == EnchanterPetPrimaryWeaponId) || (hasDskGloves && (theirPetPrimary == CodexWeaponId)))
                     {
                         ArmPet(theirPetId, kvp.Value);
                     }
@@ -432,9 +435,10 @@ namespace E3Core.Classes
 		
 			var hasDskGloves = MQ.Query<bool>($"${{FindItem[{_dskGloveItem}]}}");
 			var hasDskCodex = MQ.Query<bool>($"${{FindItem[{_dskCodex}]}}");
+            var theirPetPrimary = MQ.Query<int>($"${{Spawn[{petId}].Primary}}");
 
-			// so we can move back
-			var currentX = MQ.Query<double>("${Me.X}");
+            // so we can move back
+            var currentX = MQ.Query<double>("${Me.X}");
             var currentY = MQ.Query<double>("${Me.Y}");
             var currentZ = MQ.Query<double>("${Me.Z}");
 			Casting.TrueTarget(petId);
@@ -443,99 +447,124 @@ namespace E3Core.Classes
 		
 			try
 			{
-				if (petId == myPetID && hasDskCodex)
-				{
-					if (_dskCodexSpell == null)
-					{
-						_dskCodexSpell = new Spell(_dskCodex);
-					}
-					//if not ready, wait till its ready
-					Int32 counter = 0;
-					while (!Casting.CheckReady(_dskCodexSpell))
-					{
-						//if more than 10 seconds, break out
-						if (counter > 100) break;
-						MQ.Delay(100);
-						counter++;
-					}
-					if (Casting.CheckReady(_dskCodexSpell))
-					{
-						Casting.Cast(petId, _dskCodexSpell);
-					}
-				}
-				if (hasDskGloves)
-				{
-					if (_dskGloveSpell == null)
-					{
-						_dskGloveSpell = new Spell(_dskGloveItem);
-					}
-				
-					//if not ready, wait till its ready
-					Int32 counter = 0;
-					while (!Casting.CheckReady(_dskGloveSpell))
-					{
-						//if more than 10 seconds, break out
-						if (counter > 100) break;
-						MQ.Delay(100);
-						counter++;
-					}
+                var skipMageArmorSpells = false;
+                if ((theirPetPrimary == CodexWeaponId) || (petId == myPetID && hasDskCodex)) skipMageArmorSpells = true;
+                if (!skipMageArmorSpells)
+                {
+                    var spell = new Spell(_armorSpell);
+                    Casting.MemorizeSpell(spell);
+                    MQ.Delay(10000, $"${{Me.SpellReady[${{Me.Gem[{spell.SpellGem}].Name}}]}}");
 
-					if (Casting.CheckReady(_dskGloveSpell))
-					{
-						Casting.Cast(petId, _dskGloveSpell);
-					}
-				}
-				else 
-				{
-					if (!GiveWeapons(petId, weapons ?? "Water|Fire"))
-					{
-						if (_isExternalRequest)
-						{
-							MQ.Cmd($"/t {_requester} There was an issue with pet weapon summoning and we are unable to continue.");
+                    Int32 counter = 0;
+                    while (!Casting.CheckReady(spell))
+                    {
+                        //if more than 2 seconds, break out
+                        if (counter > 20) break;
+                        MQ.Delay(100);
+                        counter++;
+                    }
 
-						}
-						else
-						{
-							E3.Bots.Broadcast("\arThere was an issue with pet weapon summoning and we are unable to continue.");
+                    Int32 castAttempts = 0;
+                    if (Casting.CheckReady(spell) && Casting.CheckMana(spell))
+                    {
+                        while (Casting.Cast(petId, spell) == CastReturn.CAST_FIZZLE)
+                        {
+                            if (castAttempts > 7) break;
+                            MQ.Delay(1500);
+                            castAttempts++;
+                        }
+                    }
 
-						}
-						return;
-					}
-				}
-				//we are done if its our pet and we have applied the codex
-				if (petId == myPetID && hasDskCodex) return;
+                    castAttempts = 0;
+                    spell = new Spell(_focusSpell);
+                    Casting.MemorizeSpell(spell);
+                    MQ.Delay(10000, $"${{Me.SpellReady[${{Me.Gem[{spell.SpellGem}].Name}}]}}");
 
-				var spell = new Spell(_armorSpell);
-				Casting.MemorizeSpell(spell);
-				MQ.Delay(10000, $"${{Me.SpellReady[${{Me.Gem[{spell.SpellGem}].Name}}]}}");
+                    counter = 0;
+                    while (!Casting.CheckReady(spell))
+                    {
+                        //if more than 2 seconds, break out
+                        if (counter > 20) break;
+                        MQ.Delay(100);
+                        counter++;
+                    }
 
-				Int32 castAttempts = 0;
-				if (Casting.CheckReady(spell) && Casting.CheckMana(spell))
-				{
-					while (Casting.Cast(petId, spell) == CastReturn.CAST_FIZZLE)
-					{
-						if (castAttempts > 7) break;
-						MQ.Delay(1500);
-						castAttempts++;
-					}
-				}
-				castAttempts = 0;
-				spell = new Spell(_focusSpell);
-				Casting.MemorizeSpell(spell);
-				MQ.Delay(10000, $"${{Me.SpellReady[${{Me.Gem[{spell.SpellGem}].Name}}]}}");
+                    if (Casting.CheckReady(spell) && Casting.CheckMana(spell))
+                    {
+                        while (Casting.Cast(petId, spell) == CastReturn.CAST_FIZZLE)
+                        {
+                            if (castAttempts > 7) break;
+                            MQ.Delay(1500);
+                            castAttempts++;
+                        }
+                    }
+                }
 
-				if (Casting.CheckReady(spell) && Casting.CheckMana(spell))
-				{
-					while (Casting.Cast(petId, spell) == CastReturn.CAST_FIZZLE)
-					{
-						if (castAttempts > 7) break;
-						MQ.Delay(1500);
-						castAttempts++;
-					}
-				}
+                var skipNonDSKWeapons = false;
+                if (weapons.IndexOf("dsk", StringComparison.OrdinalIgnoreCase) > -1 || (weapons.IndexOf("none", StringComparison.OrdinalIgnoreCase) > -1)) skipNonDSKWeapons = true;
+                if (!skipNonDSKWeapons)
+                {
+                    if (!GiveWeapons(petId, weapons ?? "Water|Fire"))
+                    {
+                        if (_isExternalRequest)
+                        {
+                            MQ.Cmd($"/t {_requester} There was an issue with pet weapon summoning and we are unable to continue.");
+
+                        }
+                        else
+                        {
+                            E3.Bots.Broadcast("\arThere was an issue with pet weapon summoning and we are unable to continue.");
+
+                        }
+                        return;
+                    }
+                }
+
+                if (petId == myPetID && hasDskCodex)
+                {
+                    if (_dskCodexSpell == null)
+                    {
+                        _dskCodexSpell = new Spell(_dskCodex);
+                    }
+                    //if not ready, wait till its ready
+                    Int32 counter = 0;
+                    while (!Casting.CheckReady(_dskCodexSpell))
+                    {
+                        //if more than 10 seconds, break out
+                        if (counter > 100) break;
+                        MQ.Delay(100);
+                        counter++;
+                    }
+                    if (Casting.CheckReady(_dskCodexSpell))
+                    {
+                        Casting.Cast(petId, _dskCodexSpell);
+                    }
+                }
+                if (hasDskGloves)
+                {
+                    if (_dskGloveSpell == null)
+                    {
+                        _dskGloveSpell = new Spell(_dskGloveItem);
+                    }
+
+                    //if not ready, wait till its ready
+                    Int32 counter = 0;
+                    while (!Casting.CheckReady(_dskGloveSpell))
+                    {
+                        //if more than 10 seconds, break out
+                        if (counter > 100) break;
+                        MQ.Delay(100);
+                        counter++;
+                    }
+
+                    if (Casting.CheckReady(_dskGloveSpell))
+                    {
+                        Casting.Cast(petId, _dskGloveSpell);
+                    }
+                }
 
 
-				var pet = _spawns.Get().FirstOrDefault(f => f.ID == petId);
+                var pet = _spawns.Get().FirstOrDefault(f => f.ID == petId);
 				if (pet != null)
 				{
 					if (_isExternalRequest)
@@ -675,6 +704,16 @@ namespace E3Core.Classes
             var id = E3.CurrentId;
             Casting.TrueTarget(id);
             var spell = new Spell(itemToSummon);
+
+            Int32 counter = 0;
+            while (!Casting.CheckReady(spell))
+            {
+                //if more than 2 seconds, break out
+                if (counter > 20) break;
+                MQ.Delay(100);
+                counter++;
+            }
+
             if (Casting.CheckReady(spell) && Casting.CheckMana(spell))
             {
                 int cursorId = 0;
