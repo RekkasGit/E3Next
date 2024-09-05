@@ -38,6 +38,13 @@ namespace E3Core.Processors
 			{
 				return CastReturn.CAST_BLOCKINGWINDOWOPEN;
 			}
+			//this isn't a nowcast but we have one ready to be processed, kick out
+			if (!isNowCast && !isEmergency && NowCast.IsNowCastInQueue())
+			{
+				//we have a nowcast ready to be processed
+				Interrupt();
+				return CastReturn.CAST_INTERRUPTED;
+			}
 
 			bool navActive = false;
 			bool navPaused = false;
@@ -672,7 +679,9 @@ namespace E3Core.Processors
 						{
 
 							_lastSpellCastTimeStamp = Core.StopWatch.ElapsedMilliseconds;
-							
+
+							e3util.ProcessE3BCCommands();
+							e3util.ProcessNowCastCommandsForOthers();
 							//means that we didn't fizzle and are now casting the spell
 
 							//these are outside the no interrupt check
@@ -716,6 +725,14 @@ namespace E3Core.Processors
 								//check if we need to process any events,if healing tho, ignore. 
 								if ((spell.SpellType.Equals("Detrimental") || spell.Duration>0)|| E3.CurrentClass == Class.Bard)
 								{
+									if (EventProcessor.CommandList["/backoff"].queuedEvents.Count > 0)
+									{
+										EventProcessor.ProcessEventsInQueues("/backoff");
+										if (!IsCasting()) return CastReturn.CAST_INTERRUPTED;
+									}
+									//in case the user sends out e3bc commands while casting
+								
+
 									if (EventProcessor.CommandList["/backoff"].queuedEvents.Count > 0)
 									{
 										EventProcessor.ProcessEventsInQueues("/backoff");
@@ -884,6 +901,7 @@ namespace E3Core.Processors
 				}
 			}
 		}
+		
 		private static void BeforeEventCheck(Spell spell)
 		{
 			_log.Write("Checking BeforeEvent...");

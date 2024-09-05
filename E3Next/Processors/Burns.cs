@@ -241,7 +241,12 @@ namespace E3Core.Processors
                             E3.Bots.Broadcast(chatOutput);
                         }
                     }
-                }
+					//make sure we are back on our proper assist target if one is assigned
+					if(Assist.AssistTargetID>0)
+					{
+						Casting.TrueTarget(Assist.AssistTargetID);
+					}
+				}
 
             }
         }
