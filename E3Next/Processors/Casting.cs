@@ -920,11 +920,13 @@ namespace E3Core.Processors
 		{
 
 			//after event, after all things are done
-			if (spell.AfterEventDelay > 0) MQ.Delay(spell.AfterEventDelay);
+	
 
 			_log.Write($"Checking AfterEvent...[{spell.AfterEvent}]");
 			if (!String.IsNullOrWhiteSpace(spell.AfterEvent))
 			{
+				if (spell.AfterEventDelay > 0) MQ.Delay(spell.AfterEventDelay);
+
 				_log.Write($"Doing AfterEvent:{spell.AfterEvent}");
 				string tevent = Ifs_Results(spell.AfterEvent);
 				MQ.Cmd($"/docommand {tevent}");
