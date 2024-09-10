@@ -171,6 +171,10 @@ namespace E3Core.Processors
 							BeforeEventCheck(spell);
 							MQ.Write($"\ag{spell.CastName} \am{targetName} \ao{targetID}");
                             MQ.Cmd($"/doability \"{spell.CastName}\"");
+							if (spell.AfterCastCompletedDelay > 0)
+							{
+								MQ.Delay(spell.AfterCastCompletedDelay);
+							}
 							AfterEventCheck(spell);
 							return CastReturn.CAST_SUCCESS;
                         }
@@ -180,6 +184,10 @@ namespace E3Core.Processors
 							BeforeEventCheck(spell);
 							MQ.Cmd($"/alt activate {spell.CastID}");
 							UpdateAAInCooldown(spell);
+							if (spell.AfterCastCompletedDelay > 0)
+							{
+								MQ.Delay(spell.AfterCastCompletedDelay);
+							}
 							AfterEventCheck(spell);
 							E3.ActionTaken = true;
 							return CastReturn.CAST_SUCCESS;
@@ -190,6 +198,10 @@ namespace E3Core.Processors
 							//else its an item
 							MQ.Cmd($"/useitem \"{spell.CastName}\"", 300);
 							UpdateItemInCooldown(spell);
+							if (spell.AfterCastCompletedDelay > 0)
+							{
+								MQ.Delay(spell.AfterCastCompletedDelay);
+							}
 							AfterEventCheck(spell);
 							E3.ActionTaken = true;
 							return CastReturn.CAST_SUCCESS;
@@ -1043,8 +1055,7 @@ namespace E3Core.Processors
 					MQ.Cmd("/stopsong");
 					PubServer.AddTopicMessage("${Me.Casting}", spell.CastName);
 					MQ.Cmd($"/cast \"{spell.CastName}\"");
-
-					if(spell.MyCastTime>500)
+					if (spell.MyCastTime>500)
 					{
 						MQ.Delay(300, IsCasting);
 						if (e3util.IsEQLive())
