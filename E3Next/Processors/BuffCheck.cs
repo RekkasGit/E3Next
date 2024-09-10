@@ -485,8 +485,10 @@ namespace E3Core.Processors
 			//RefresBuffCacheForBots();
 			//instant buffs have their own shouldcheck, need it snappy so check quickly.
 			//BuffInstant(E3.CharacterSettings.InstantBuffs);
-
-			if (!e3util.ShouldCheck(ref _nextBuffCheck, _nextBuffCheckInterval)) return;
+			if(!E3.CurrentInCombat)
+			{
+				if (!e3util.ShouldCheck(ref _nextBuffCheck, _nextBuffCheckInterval)) return;
+			}
 			//using (_log.Trace("Buffs-CheckDeath"))
 			{
 				if (Basics.AmIDead()) return;
@@ -509,7 +511,7 @@ namespace E3Core.Processors
 
 					if ((!Movement.IsMoving() && String.IsNullOrWhiteSpace(Movement.FollowTargetName)) || Movement.StandingStillForTimePeriod())
 					{
-						if (!Basics.InCombat())
+						if (!E3.CurrentInCombat)
 						{
 							//using(_log.Trace("Buffs-Aura"))
 							{

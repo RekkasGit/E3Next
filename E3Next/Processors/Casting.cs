@@ -445,6 +445,7 @@ namespace E3Core.Processors
 
 									MQ.Write($"\ag{spell.CastName} \at{spell.SpellID} \am{targetName} \ao{targetID} \aw({spell.MyCastTime / 1000}sec)");
 									MQ.Cmd($"/disc {spell.CastName}");
+									UpdateDiscInCooldown(spell);
 									if (spell.TargetType.Equals("Self"))
 									{
 										MQ.Delay(300);
@@ -1363,6 +1364,60 @@ namespace E3Core.Processors
 		private static System.Collections.Generic.Dictionary<String, Int64> _ItemCooldownLookup = new Dictionary<string, long>() { { "Invocation Rune: Vulka's Chant of Lightning", 18000 }, { "Invocation Glyph: Vulka's Chant of Lightning", 12000 } };
 		private static System.Collections.Generic.Dictionary<String, Int64> _ItemsInCooldown = new Dictionary<string, long>() { };
 		private static System.Collections.Generic.Dictionary<String, Int64> _AAInCooldown = new Dictionary<string, long>() { };
+		private static System.Collections.Generic.Dictionary<String, Int64> _DiscInCooldown = new Dictionary<string, long>() { };
+
+
+		public static void UpdateDiscInCooldown(Data.Spell spell)
+		{
+			//check to see if its one of the items we are tracking
+			if (!_DiscInCooldown.ContainsKey(spell.CastName))
+			{
+				_DiscInCooldown.Add(spell.CastName, 0);
+			}
+			_DiscInCooldown[spell.CastName] = Core.StopWatch.ElapsedMilliseconds;
+		}
+		public static bool DiscInCooldown(Data.Spell spell)
+		{
+			if (_DiscInCooldown.ContainsKey(spell.CastName))
+			{
+				//going to hard code a 1 sec cooldown on all Dsics's to allow time for the client to get updated info for ability ready
+				Int64 timestampOfLastCast = _DiscInCooldown[spell.CastName];
+				Int64 numberOfMilliSecondCooldown = 1000;
+				if (Core.StopWatch.ElapsedMilliseconds - timestampOfLastCast < numberOfMilliSecondCooldown)
+				{
+					//still in cooldown
+					return true;
+				}
+				else
+				{
+					if (spell.SpellID == 8001) return false;
+
+					if (MQ.Query<Int32>($"${{Me.CombatAbilityTimer[{spell.CastName}]}}") == 0)
+					{
+						return false;
+					}
+					if (MQ.Query<bool>($"${{Me.CombatAbilityReady[{spell.CastName}]}}"))
+					{
+						return false;
+					}
+				
+				}
+			}
+			else
+			{
+				if (spell.SpellID == 8001) return false;
+
+				if (MQ.Query<Int32>($"${{Me.CombatAbilityTimer[{spell.CastName}]}}") == 0)
+				{
+					return false;
+				}
+				if (MQ.Query<bool>($"${{Me.CombatAbilityReady[{spell.CastName}]}}"))
+				{
+					return false;
+				}
+			}
+			return true;
+		}
 
 		public static void UpdateAAInCooldown(Data.Spell spell)
 		{
@@ -1373,6 +1428,8 @@ namespace E3Core.Processors
 			}
 			_AAInCooldown[spell.CastName] = Core.StopWatch.ElapsedMilliseconds;
 		}
+
+
 		public static bool AAInCooldown(Data.Spell spell)
 		{
 			if (_AAInCooldown.ContainsKey(spell.CastName))
@@ -1405,9 +1462,6 @@ namespace E3Core.Processors
 
 		public static void UpdateItemInCooldown(Data.Spell spell)
 		{
-			//check to see if its one of the items we are tracking
-			if (!_ItemCooldownLookup.ContainsKey(spell.CastName)) return;
-
 			if (!_ItemsInCooldown.ContainsKey(spell.CastName))
 			{
 				_ItemsInCooldown.Add(spell.CastName, 0);
@@ -1416,6 +1470,7 @@ namespace E3Core.Processors
 		}
 		public static bool ItemInCooldown(Data.Spell spell)
 		{
+			//if one of the special items we are checking in cooldown (augs mostly)
 			if (_ItemCooldownLookup.ContainsKey(spell.CastName))
 			{
 				if (!_ItemsInCooldown.ContainsKey(spell.CastName))
@@ -1440,10 +1495,33 @@ namespace E3Core.Processors
 			}
 			else
 			{
-				if (MQ.Query<bool>($"${{Me.ItemReady[={spell.CastName}]}}"))
+				if (!_ItemsInCooldown.ContainsKey(spell.CastName))
 				{
-					return false;
+					if (MQ.Query<bool>($"${{Me.ItemReady[={spell.CastName}]}}"))
+					{
+						return false;
+					}
+					return true;
 				}
+				else
+				{
+					//minium of a 1 sec cooldown on items, to make sure their cooldown is respected
+					Int64 timestampOfLastCast = _ItemsInCooldown[spell.CastName];
+					Int64 numberOfMilliSecondCooldown = 1000;
+					if (Core.StopWatch.ElapsedMilliseconds - timestampOfLastCast < numberOfMilliSecondCooldown)
+					{
+						//still in cooldown
+						return true;
+					}
+					else
+					{
+						if (MQ.Query<bool>($"${{Me.ItemReady[={spell.CastName}]}}"))
+						{
+							return false;
+						}
+					}
+				}
+				
 			}
 			return true;
 		}
@@ -1585,14 +1663,7 @@ namespace E3Core.Processors
 			}
 			else if (spell.CastType == Data.CastingType.Disc)
 			{
-				//bug with thiefs eyes, always return true
-				if (spell.SpellID == 8001) return true;
-
-				if (MQ.Query<Int32>($"${{Me.CombatAbilityTimer[{spell.CastName}]}}") == 0)
-				{
-					return true;
-				}
-				if (MQ.Query<bool>($"${{Me.CombatAbilityReady[{spell.CastName}]}}"))
+				if(!DiscInCooldown(spell))
 				{
 					return true;
 				}

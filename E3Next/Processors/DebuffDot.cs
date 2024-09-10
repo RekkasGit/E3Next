@@ -33,7 +33,7 @@ namespace E3Core.Processors
         private static Int64 _nextDoTCheck = 0;
         private static Int64 _nextDoTCheckInterval = 1000;
         private static Int64 _nextOffAssistCheck = 0;
-        private static Int64 _nextOffAssistCheckInterval = 500;
+        private static Int64 _nextOffAssistCheckInterval = 1000;
 		[ExposedData("DebuffDot", "ShouldOffAssist")]
 		private static bool _shouldOffAssist = true;
         private static List<Data.Spell> _tempOffAssistSpellList = new List<Spell>();
@@ -66,7 +66,12 @@ namespace E3Core.Processors
             if (!Assist.IsAssisting) return;
            
             if (E3.CharacterSettings.OffAssistSpells.Count == 0) return;
-            if (!e3util.ShouldCheck(ref _nextOffAssistCheck, _nextOffAssistCheckInterval)) return;
+
+			if(!E3.CurrentInCombat)
+			{
+				if (!e3util.ShouldCheck(ref _nextOffAssistCheck, _nextOffAssistCheckInterval)) return;
+
+			}
 
 			if (!Basics.InCombat())
             {
@@ -74,12 +79,12 @@ namespace E3Core.Processors
             }
 
 				Int32 targetId = MQ.Query<Int32>("${Target.ID}");
-            //if (targetId != Assist.AssistTargetID && e3util.IsManualControl())
-            //{
-            //    return;
-            //}
-            //do not off assist if you are in the middle of gather dusk. It sucks to put it on an add. 
-            if(e3util.IsEQEMU() && String.Equals(E3.ServerName,"Lazarus", StringComparison.OrdinalIgnoreCase))
+			if (targetId != Assist.AssistTargetID && e3util.IsManualControl())
+			{
+				return;
+			}
+			//do not off assist if you are in the middle of gather dusk. It sucks to put it on an add. 
+			if (e3util.IsEQEMU() && String.Equals(E3.ServerName,"Lazarus", StringComparison.OrdinalIgnoreCase))
             {
 				if (E3.CurrentClass == Data.Class.Necromancer)
 				{
@@ -182,7 +187,12 @@ namespace E3Core.Processors
                 if (E3.ActionTaken) return;
             }
 
-            if (!e3util.ShouldCheck(ref _nextDebuffCheck, _nextDebuffCheckInterval)) return;
+			if (!E3.CurrentInCombat)
+			{
+				if (!e3util.ShouldCheck(ref _nextDebuffCheck, _nextDebuffCheckInterval)) return;
+
+			}
+		
             using (_log.Trace())
             {
                 //e3util.PrintTimerStatus(_debuffTimers, ref _nextDebuffCheck, "Debuffs");
@@ -215,24 +225,26 @@ namespace E3Core.Processors
             {
                 //person in manual control and they are not on the assist target, chill.
                
-                if (targetId != Assist.AssistTargetID && e3util.IsManualControl())
-                {
-                    return;
-                }
+                //if (targetId != Assist.AssistTargetID && e3util.IsManualControl())
+                //{
+                //    return;
+                //}
                 CastLongTermSpell(Assist.AssistTargetID, E3.CharacterSettings.Dots_Assist, _debuffdotTimers);
                 if (E3.ActionTaken) return;
             }
+			if (!E3.CurrentInCombat)
+			{
+				if (!e3util.ShouldCheck(ref _nextDoTCheck, _nextDoTCheckInterval)) return;
+			}
+			// e3util.PrintTimerStatus(_dotTimers, ref _nextDoTCheck, "Damage over Time");
+			//person in manual control and they are not on the assist target, chill.
 
-            if (!e3util.ShouldCheck(ref _nextDoTCheck, _nextDoTCheckInterval)) return;
-            // e3util.PrintTimerStatus(_dotTimers, ref _nextDoTCheck, "Damage over Time");
-            //person in manual control and they are not on the assist target, chill.
-           
-            if (Assist.AssistTargetID>0 && targetId != Assist.AssistTargetID && e3util.IsManualControl())
-            {
-                return;
-            }
-            using (_log.Trace())
-            {
+			if (Assist.AssistTargetID > 0 && targetId != Assist.AssistTargetID && e3util.IsManualControl())
+			{
+				return;
+			}
+			//using (_log.Trace())
+			{
                 try
                 {
                     foreach (var mobid in _mobsToDot.ToList())
@@ -423,7 +435,7 @@ namespace E3Core.Processors
                     }
                 }
 
-                if (!String.IsNullOrWhiteSpace(spell.Ifs) && !spell.Ifs.Contains("${Target"))
+                if (!String.IsNullOrWhiteSpace(spell.Ifs) && !spell.Ifs.Contains("${Target}"))
                 {
 					//its safe to run the Ifs before the check ready
 					if (!Casting.Ifs(spell))
@@ -452,7 +464,7 @@ namespace E3Core.Processors
                     MQ.Delay(2000, "${Target.BuffsPopulated}");
                     //check if the if condition works
                     //if it has a target tlo, process, other wise it was tested above.
-                    if (!String.IsNullOrWhiteSpace(spell.Ifs) && spell.Ifs.Contains("${Target"))
+                    if (!String.IsNullOrWhiteSpace(spell.Ifs) && spell.Ifs.Contains("${Target}"))
                     {
                         if (!Casting.Ifs(spell))
                         {

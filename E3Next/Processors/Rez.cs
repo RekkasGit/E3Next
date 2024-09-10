@@ -81,9 +81,11 @@ namespace E3Core.Processors
                 MQ.Cmd("/nomodkey /notify ConfirmationDialogBox Yes_Button leftmouseup",2000);//start zone
                     
                 //zone may to happen
-                MQ.Delay(30000, "${Spawn[${Me}'s].ID}");
-                Zoning.Zoned(MQ.Query<Int32>("${Zone.ID}"));
-                if (!MQ.Query<bool>("${Spawn[${Me}'s].ID}"))
+                MQ.Delay(15000, "${Spawn[${Me}'s].ID}");
+				//save the current zone we have just zoned into
+				Zoning.Zoned(MQ.Query<Int32>("${Zone.ID}"));
+
+				if (!MQ.Query<bool>("${Spawn[${Me}'s].ID}"))
                 {
                     //something went wrong kick out.
                     return;

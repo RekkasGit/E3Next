@@ -303,7 +303,7 @@ namespace E3Core.Processors
 					
                 }
             });
-            var raidbuffBeg = new List<string> {"(.+) tells the raid,  '"+E3.CurrentName+@":(.+)'" };
+            var raidbuffBeg = new List<string> {@"(.+) tells the raid,\s+'"+E3.CurrentName+@":(.+)'" };
             EventProcessor.RegisterEvent("RaidBuffBeg", raidbuffBeg, (x) =>
             {
 				//disable if on EQ live

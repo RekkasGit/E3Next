@@ -29,7 +29,7 @@ namespace E3Core.Processors
 		[SubSystemInit]
 		public static void Init_Heals()
 		{
-			List<string> pattern  =new List<string>() { $@"(.+) tells the raid, 'Pulling'", "(.+) tells the group, 'Pulling'" };
+			List<string> pattern  =new List<string>() { $@"(.+) tells the raid,\s+'Pulling'", @"(.+) tells the group,\s+'Pulling'" };
 			EventProcessor.RegisterEvent("PullingIgnoreHeals", pattern, (x) => {
 
 				if (x.match.Groups.Count > 1)
@@ -43,7 +43,7 @@ namespace E3Core.Processors
 					
 				}
 			});
-			pattern = new List<string>() { $@"(.+) tells the raid, 'PullingOff'", "(.+) tells the group, 'PullingOff'" };
+			pattern = new List<string>() { $@"(.+) tells the raid,\s+'PullingOff'", @"(.+) tells the group,\s+'PullingOff'" };
 			EventProcessor.RegisterEvent("PullingIgnoreHealsClear", pattern, (x) => {
 
 				if (x.match.Groups.Count > 1)
@@ -74,7 +74,7 @@ namespace E3Core.Processors
 			}
 
 
-			bool inCombat = Basics.InCombat();
+			bool inCombat = E3.CurrentInCombat;
 
 			//reset ignored targets once in combat
 			if (inCombat && IgnoreHealTargets.Count>0)
