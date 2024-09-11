@@ -89,7 +89,7 @@ namespace E3Core.Processors
 								{
 									if (Casting.CheckReady(spell) && Casting.CheckMana(spell))
 									{
-										Casting.Cast(s.ID, spell, Heals.SomeoneNeedsHealing);
+										Casting.Cast(s.ID, spell);
 										return;
 									}
 								}
@@ -185,7 +185,7 @@ namespace E3Core.Processors
                             if (foundBadBuff) continue;
                             if (Casting.InRange(s.ID,spell) && Casting.CheckReady(spell) && Casting.CheckMana(spell))
                             {
-                                Casting.Cast(s.ID, spell, Heals.SomeoneNeedsHealing);
+                                Casting.Cast(s.ID, spell);
                                 return true;
                             }
                         }
@@ -213,7 +213,7 @@ namespace E3Core.Processors
                             {
 								if (Casting.InRange(s.ID, spell) && Casting.CheckReady(spell) && Casting.CheckMana(spell))
 								{
-									Casting.Cast(s.ID, spell, Heals.SomeoneNeedsHealing);
+									Casting.Cast(s.ID, spell);
 									return;
 								}
 							}

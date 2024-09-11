@@ -584,13 +584,13 @@ namespace E3Core.Processors
 			EventProcessor.RegisterCommand("/debug", (x) =>
             {
 
-                var traceLevel = Logging.LogLevels.Trace;
+                var traceLevel = Logging.LogLevels.None;
 
                 if(x.args.Count>0)
                 {
-                    if(String.Equals(x.args[0],"notrace", StringComparison.OrdinalIgnoreCase))
+                    if(String.Equals(x.args[0],"trace", StringComparison.OrdinalIgnoreCase))
                     {
-                        traceLevel = Logging.LogLevels.None;
+                        traceLevel = Logging.LogLevels.Trace;
                     }
 
                 }
@@ -1291,7 +1291,11 @@ namespace E3Core.Processors
 					}
 					if (s.CastType != CastingType.None)
 					{
-						Casting.Cast(0, s);
+						var result = Casting.Cast(0, s);
+						if(result== CastReturn.CAST_INTERRUPTFORHEAL)
+						{
+							return true;
+						}
 						return true;
 					}
 				}
