@@ -222,7 +222,7 @@ namespace E3Core.Processors
 						if (currentLowestHealth < spell.HealPct)
 						{
 							
-							if (Casting.CheckReady(spell) && Casting.CheckMana(spell))
+							if (Casting.CheckReady(spell,JustCheck,JustCheck) && Casting.CheckMana(spell))
 							{
 								if (JustCheck) return true;
 
@@ -353,18 +353,21 @@ namespace E3Core.Processors
 		/// used as an action to determine if a spell should be interrupted in case someone needs a heal.
 		/// </summary>
 		/// <returns>true if a heal is needed, otherwise false</returns>
-		public static bool SomeoneNeedsHealing(Spell spell,Int32 currentMana, Int32 pctMana)
+		public static bool SomeoneNeedsHealing(Spell spell, Int32 currentMana, Int32 pctMana, bool healIfNeeded = false)
 		{
 			if (!((E3.CurrentClass & Data.Class.Priest) == E3.CurrentClass))
 			{
 				return false;
 			}
 
-			//Int32 currentMana = MQ.Query<Int32>("${Me.CurrentMana}");
-			//Int32 pctMana = MQ.Query<Int32>("${Me.PctMana}");
+			bool justCheck = true;
+			if (healIfNeeded)
+			{
+				justCheck = false;
+			}
 			if (E3.CharacterSettings.WhoToHeal.Contains("Tanks"))
 			{
-				if (Heal(currentMana, pctMana, E3.CharacterSettings.HealTankTargets, E3.CharacterSettings.HealTanks, false, true))
+				if (Heal(currentMana, pctMana, E3.CharacterSettings.HealTankTargets, E3.CharacterSettings.HealTanks, false, justCheck))
 				{
 					return true;
 				}
@@ -378,14 +381,14 @@ namespace E3Core.Processors
 			}
 			if (E3.CharacterSettings.HealXTarget.Count > 0)
 			{
-				if (HealXTargets(E3.CharacterSettings.HealXTarget,currentMana, pctMana, true))
+				if (HealXTargets(E3.CharacterSettings.HealXTarget, currentMana, pctMana, justCheck))
 				{
 					return true;
 				}
 			}
 			if (E3.CharacterSettings.HealParty.Count > 0)
 			{
-				if (HealParty(currentMana, pctMana, E3.CharacterSettings.HealParty, true))
+				if (HealParty(currentMana, pctMana, E3.CharacterSettings.HealParty, justCheck))
 				{
 					return true;
 				}
@@ -425,7 +428,7 @@ namespace E3Core.Processors
 				{
 					continue;
 				}
-				if (Casting.CheckReady(spell,true) && Casting.CheckMana(spell))
+				if (Casting.CheckReady(spell, false, !CastIfNeed) && Casting.CheckMana(spell))
 				{
 					if (pctHealth < spell.HealPct && pctHealth != 0)
 					{
@@ -480,7 +483,7 @@ namespace E3Core.Processors
 					{
 						continue;
 					}
-					if(Casting.CheckReady(spell,true) && Casting.CheckMana(spell))
+					if(Casting.CheckReady(spell,true,!CastIfNeeded) && Casting.CheckMana(spell))
 					{
 						if (pctHealth < spell.HealPct)
 						{
@@ -627,9 +630,13 @@ namespace E3Core.Processors
 													}
 												}
 												//should cast a heal!
-												if (Casting.CheckReady(spell) && Casting.CheckMana(spell))
+												if (Casting.CheckReady(spell, JustCheck, JustCheck) && Casting.CheckMana(spell))
 												{
-													if (JustCheck) return true;
+													if (JustCheck)
+													{
+														_log.Write($"eq group {name} pct:{pctHealth} forcing interrupt");
+														return true;
+													}
 
 													if (Casting.Cast(targetID, spell, TargetDoesNotNeedHeals,false,isEmergency) == CastReturn.CAST_FIZZLE)
 													{
@@ -654,6 +661,7 @@ namespace E3Core.Processors
 							{
 								//they are a bot and they are in zone
 								Int32 pctHealth = E3.Bots.PctHealth(name);
+
 								foreach (var spell in spells)
 								{
 									//check Ifs on the spell
@@ -696,9 +704,14 @@ namespace E3Core.Processors
 										{
 										
 											//should cast a heal!
-											if (Casting.CheckReady(spell) && Casting.CheckMana(spell))
+											if (Casting.CheckReady(spell, JustCheck, JustCheck) && Casting.CheckMana(spell))
 											{
-												if (JustCheck) return true;
+												if (JustCheck)
+												{
+													_log.Write($"e3n bot {name} pct:{pctHealth} forcing interrupt");
+													return true;
+												}
+											
 												if (Casting.Cast(targetID, spell, TargetDoesNotNeedHeals,false,isEmergency) == CastReturn.CAST_FIZZLE)
 												{
 													currentMana = MQ.Query<Int32>("${Me.CurrentMana}");
@@ -816,7 +829,7 @@ namespace E3Core.Processors
 											if (pctHealth < spell.HealPct)
 											{
 												//should cast a heal!
-												if (Casting.CheckReady(spell) && Casting.CheckMana(spell))
+												if (Casting.CheckReady(spell, JustCheck, JustCheck) && Casting.CheckMana(spell))
 												{
 													if (JustCheck) return true;
 													if (Casting.Cast(targetID, spell) == CastReturn.CAST_FIZZLE)

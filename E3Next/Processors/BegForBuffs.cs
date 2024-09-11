@@ -485,7 +485,7 @@ namespace E3Core.Processors
 						Casting.TrueTarget(spawn.ID);
 					recast:
 
-						var result = Casting.Cast(spawn.ID, s, Heals.SomeoneNeedsHealing);
+						var result = Casting.Cast(spawn.ID, s);
 						if (result == CastReturn.CAST_FIZZLE) goto recast;
 
                         if (result == CastReturn.CAST_INTERRUPTFORHEAL)

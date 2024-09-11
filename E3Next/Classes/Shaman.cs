@@ -114,7 +114,7 @@ namespace E3Core.Classes
 
 						if (castCanniSpell)
 						{
-							var result = Casting.Cast(0, canniSpell,Heals.SomeoneNeedsHealing);
+							var result = Casting.Cast(0, canniSpell);
 							if (result == CastReturn.CAST_SUCCESS)
 							{
 								break;

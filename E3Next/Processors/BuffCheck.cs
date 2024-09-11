@@ -777,11 +777,11 @@ namespace E3Core.Processors
 								CastReturn result;
 								if (spell.TargetType == "Self" || spell.TargetType == "Group v1" || spell.TargetType == "Group v2")
 								{
-									result = Casting.Cast(0, spell, Heals.SomeoneNeedsHealing);
+									result = Casting.Cast(0, spell);
 								}
 								else
 								{
-									result = Casting.Cast(s.ID, spell, Heals.SomeoneNeedsHealing);
+									result = Casting.Cast(s.ID, spell);
 								}
 
 								if (result == CastReturn.CAST_INTERRUPTED || result == CastReturn.CAST_INTERRUPTFORHEAL || result == CastReturn.CAST_FIZZLE)
@@ -847,7 +847,7 @@ namespace E3Core.Processors
 							{
 								CastReturn result;
 
-								result = Casting.Cast(s.ID, spell, Heals.SomeoneNeedsHealing);
+								result = Casting.Cast(s.ID, spell);
 								if (result == CastReturn.CAST_INTERRUPTED || result == CastReturn.CAST_INTERRUPTFORHEAL || result == CastReturn.CAST_FIZZLE)
 								{
 									return;
@@ -939,7 +939,7 @@ namespace E3Core.Processors
 									//E3.Bots.Broadcast($"{spell.CastTarget} is missing the buff {spell.CastName} with id:{spell.SpellID}. current list:{String.Join(",",list)}");
 
 									//then we can cast!
-									var result = Casting.Cast(s.ID, spell, Heals.SomeoneNeedsHealing);
+									var result = Casting.Cast(s.ID, spell);
 									if (result == CastReturn.CAST_INTERRUPTED || result == CastReturn.CAST_INTERRUPTFORHEAL || result == CastReturn.CAST_FIZZLE)
 									{
 										return;
@@ -1026,7 +1026,7 @@ namespace E3Core.Processors
 									//not one of our buffs uhh, try and cast and see if we get a non success message.
 									if (Casting.CheckReady(spell) && Casting.CheckMana(spell))
 									{
-										var result = Casting.Cast(s.ID, spell, Heals.SomeoneNeedsHealing);
+										var result = Casting.Cast(s.ID, spell);
 										if (result == CastReturn.CAST_INTERRUPTED || result == CastReturn.CAST_INTERRUPTFORHEAL || result == CastReturn.CAST_FIZZLE)
 										{
 											return;
@@ -1054,7 +1054,7 @@ namespace E3Core.Processors
 									{
 										if (Casting.CheckReady(spell) && Casting.CheckMana(spell))
 										{
-											var result = Casting.Cast(s.ID, spell, Heals.SomeoneNeedsHealing);
+											var result = Casting.Cast(s.ID, spell);
 											if (result == CastReturn.CAST_INTERRUPTED || result == CastReturn.CAST_INTERRUPTFORHEAL || result == CastReturn.CAST_FIZZLE)
 											{
 												return;

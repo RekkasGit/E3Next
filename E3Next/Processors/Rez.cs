@@ -434,7 +434,7 @@ namespace E3Core.Processors
                                     }
 									E3.Bots.Broadcast($"Trying to rez {spawn.DisplayName}");
 									MQ.Cmd("/corpse");
-									if (Casting.Cast(spawn.ID, spell, Heals.SomeoneNeedsHealing)== CastReturn.CAST_SUCCESS)
+									if (Casting.Cast(spawn.ID, spell)== CastReturn.CAST_SUCCESS)
                                     {
 										_recentlyRezzed.Add(spawn.ID, DateTime.Now);
 										break;

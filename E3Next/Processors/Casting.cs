@@ -588,7 +588,7 @@ namespace E3Core.Processors
 
 									MQ.Cmd($"/cast \"{spell.CastName}\"");
 									//MQ.Cmd($"/casting \"{spell.CastName}|{spell.SpellGem}\"");
-									_lastSpellCastTimeStamp = Core.StopWatch.ElapsedMilliseconds;
+									
 									if (spell.MyCastTime > 500)
 									{
 										MQ.Delay(500);
@@ -641,7 +641,6 @@ namespace E3Core.Processors
 									MQ.Write($"\ag{spell.CastName} \at{spell.SpellID} \am{targetName} \ao{targetID} \aw({spell.MyCastTime / 1000}sec)");
 									//MQ.Cmd($"/casting \"{spell.CastName}|{spell.SpellGem}\" \"-targetid|{targetID}\"");
 									MQ.Cmd($"/cast \"{spell.CastName}\"");
-									_lastSpellCastTimeStamp = Core.StopWatch.ElapsedMilliseconds;
 									if (spell.MyCastTime > 500)
 									{
 										MQ.Delay(500);
@@ -687,12 +686,10 @@ namespace E3Core.Processors
 						pctMana = MQ.Query<Int32>("${Me.PctMana}");
 
 						if (spell.AfterCastDelay > 0) MQ.Delay(spell.AfterCastDelay);
-
+						_log.Write("\ag Going into main While loop for spell casting bar...");
 						while (IsCasting())
 						{
-
-							_lastSpellCastTimeStamp = Core.StopWatch.ElapsedMilliseconds;
-
+							//_log.Write("\am In main cast window loop...");
 							e3util.ProcessE3BCCommands();
 							e3util.ProcessNowCastCommandsForOthers();
 							//means that we didn't fizzle and are now casting the spell
@@ -700,7 +697,7 @@ namespace E3Core.Processors
 							//these are outside the no interrupt check
 							if (!isEmergency && Heals.SomeoneNeedEmergencyHealing(currentMana, pctMana))
 							{
-								E3.Bots.Broadcast($"Interrupting [{spell.CastName}] for Emergecy Heal.");
+								E3.Bots.Broadcast($"\arInterrupting \aw[\ag{spell.CastName}\aw] \agfor Emergecy Heal.");
 								Interrupt();
 								E3.ActionTaken = true;
 								//fire of emergency heal asap! checks targets in network and xtarget
@@ -710,7 +707,7 @@ namespace E3Core.Processors
 							if (!isEmergency && Heals.SomeoneNeedEmergencyHealingGroup(currentMana, pctMana))
 							{
 
-								E3.Bots.Broadcast($"Interrupting [{spell.CastName}] for Emergecy Group Heal.");
+								E3.Bots.Broadcast($"\arInterrupting \aw[\ag{spell.CastName}\aw] \agfor Emergecy Group Heal.");
 								Interrupt();
 								E3.ActionTaken = true;
 								//fire of emergency heal asap!
@@ -718,14 +715,28 @@ namespace E3Core.Processors
 								Heals.SomeoneNeedEmergencyHealingGroup(currentMana, pctMana, true);
 								return CastReturn.CAST_INTERRUPTFORHEAL;
 							}
+							
 
 							if (!spell.NoInterrupt)
 							{
+								//if detremental or a buff, interrupt for healing if necessary
+								if ((spell.SpellType.Equals("Detrimental") || spell.Duration>0) && Heals.SomeoneNeedsHealing(null, currentMana, pctMana))
+								{
+									MQ.Write($"\arInterrupting \aw[\ag{spell.CastName}\aw] \agfor Healing.");
+									Interrupt();
+									E3.ActionTaken = true;
+									//fire of emergency heal asap!
+									//checks group members
+									Heals.SomeoneNeedsHealing(null, currentMana, pctMana, true);
+									return CastReturn.CAST_INTERRUPTFORHEAL;
+								}
+
 								if (interruptCheck != null && interruptCheck(spell, currentMana, pctMana))
 								{
 									Interrupt();
 									E3.ActionTaken = true;
-									return CastReturn.CAST_INTERRUPTFORHEAL;
+									E3.Bots.Broadcast(@"\arInterrupting \aw[\ag{spell.CastName}\aw] because of interrupt check.");
+									return CastReturn.CAST_INTERRUPTED;
 								}
 
 								//check to see if there is a nowcast queued up, if so we need to kickout.
@@ -817,8 +828,9 @@ namespace E3Core.Processors
 							}
 							//get updated information after delays
 							E3.StateUpdates();
-							_lastSpellCastTimeStamp = Core.StopWatch.ElapsedMilliseconds;
+							
 						}
+						
 						//sometimes the cast isn't fully complete even if the window is done
 						///allow the player to 'tweak' this value.
 						if (E3.CharacterSettings.Misc_DelayAfterCastWindowDropsForSpellCompletion > 0)
@@ -879,7 +891,11 @@ namespace E3Core.Processors
 						AfterSpellCheck(spell, targetID);
 						AfterEventCheck(spell);
 						//TODO: bard resume twist
-
+						//start the GCD
+						if (spell.CastType == Data.CastingType.Spell)
+						{
+							_lastSpellCastTimeStamp = Core.StopWatch.ElapsedMilliseconds;
+						}
 						E3.ActionTaken = true;
 						//clear out the queues for the resist counters as they may have a few that lagged behind.
 						ClearResistChecks();
@@ -1321,8 +1337,9 @@ namespace E3Core.Processors
 		}
 		public static void Interrupt()
 		{
+			_lastSpellCastTimeStamp = 0;
+			_log.Write("\arINTERRUPTING\ag Spell..");
 			if (!IsCasting()) return;
-
 			bool onMount = MQ.Query<bool>("${Me.Mount.ID}");
 			if (onMount && e3util.IsEQEMU())
 			{
@@ -1342,6 +1359,8 @@ namespace E3Core.Processors
 				}
 			}
 			MQ.Cmd("/stopcast");
+			//take us out of the GCD
+			
 		}
 		public static Boolean IsCasting()
 		{
@@ -1362,7 +1381,7 @@ namespace E3Core.Processors
 			//pure melee don't have 
 			if ((E3.CurrentClass & Class.PureMelee) == E3.CurrentClass) return false;
 
-			if (_lastSpellCastTimeStamp + 1500 > Core.StopWatch.ElapsedMilliseconds)
+			if (_lastSpellCastTimeStamp + 1000 > Core.StopWatch.ElapsedMilliseconds)
 			{
 				return true;
 			}
@@ -1542,14 +1561,12 @@ namespace E3Core.Processors
 
 		public static bool SpellInCooldown(Data.Spell spell)
 		{
-			if (InGlobalCooldown())
-			{
-				return true;
-			}
+			_log.Write($@"SpellInCooldown for spell: {spell.CastName} checking gem timer.");
 			//if (SpellInSharedCooldown(spell)) return true;
 			//_log.Write($"Checking if spell is ready on {spell.CastName}");
 			if (MQ.Query<Int32>($"${{Me.GemTimer[{spell.CastName}]}}") ==0)
 			{
+				_log.Write($@"{spell.CastName} gem timer is zero.");
 				//check if we are out of stock still
 				if(spell.ReagentOutOfStock)
 				{
@@ -1589,7 +1606,7 @@ namespace E3Core.Processors
 		}
 
 
-		public static Boolean CheckReady(Data.Spell spell, bool skipCastCheck = false)
+		public static Boolean CheckReady(Data.Spell spell, bool skipCastCheck = false, bool skipGCDCheck=false)
 		{
 			if (spell == null) return false;
 			if (!spell.Enabled) return false;
@@ -1624,6 +1641,7 @@ namespace E3Core.Processors
 			bool returnValue = false;
 			if (spell.CastType == Data.CastingType.Spell && spell.SpellInBook)
 			{
+				_log.Write("Checking spell in book cooldown...");
 				//do we already have it memed?
 				bool spellMemed = false;
 				foreach (var spellid in _currentSpellGems.Values)
@@ -1652,12 +1670,22 @@ namespace E3Core.Processors
 						return false;
 					}
 				}
+				if (!skipGCDCheck)
+				{
+					_log.Write("Checking global cool cooldown...");
+					if (InGlobalCooldown())
+					{
+						_log.Write("In GCD returning false");
+						return false;
+					}
+				}
 
 				if (!SpellInCooldown(spell))
 				{
+					_log.Write("NOT Spell cooldown returning true");
 					return true;
 				}
-
+				
 			}
 			else if (spell.CastType == Data.CastingType.Item)
 			{

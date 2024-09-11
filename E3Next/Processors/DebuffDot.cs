@@ -510,7 +510,7 @@ namespace E3Core.Processors
 						}
 					}
 
-					var result = Casting.Cast(mobid, spell, Heals.SomeoneNeedsHealing);
+					var result = Casting.Cast(mobid, spell);
                     if (result == CastReturn.CAST_INTERRUPTFORHEAL)
                     {
                         return;

@@ -180,7 +180,7 @@ namespace E3Core.Processors
                                 if (s.Distance < spell.MyRange)
                                 {
 
-                                    CastReturn result = Casting.Cast(Assist.AssistTargetID, spell, Heals.SomeoneNeedsHealing);
+                                    CastReturn result = Casting.Cast(Assist.AssistTargetID, spell);
                                     if (result == CastReturn.CAST_INTERRUPTFORHEAL)
                                     {
                                         return;
@@ -258,7 +258,7 @@ namespace E3Core.Processors
                         }
                 
                     
-                        CastReturn result = Casting.Cast(0, spell, Heals.SomeoneNeedsHealing);
+                        CastReturn result = Casting.Cast(0, spell);
                         if (result == CastReturn.CAST_INTERRUPTFORHEAL)
                         {
                             return;
