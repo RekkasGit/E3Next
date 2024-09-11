@@ -1381,7 +1381,7 @@ namespace E3Core.Processors
 			//pure melee don't have 
 			if ((E3.CurrentClass & Class.PureMelee) == E3.CurrentClass) return false;
 
-			if (_lastSpellCastTimeStamp + 1000 > Core.StopWatch.ElapsedMilliseconds)
+			if (_lastSpellCastTimeStamp + 1500 > Core.StopWatch.ElapsedMilliseconds)
 			{
 				return true;
 			}
@@ -1561,12 +1561,13 @@ namespace E3Core.Processors
 
 		public static bool SpellInCooldown(Data.Spell spell)
 		{
-			_log.Write($@"SpellInCooldown for spell: {spell.CastName} checking gem timer.");
+			Int32 gemCooldown = MQ.Query<Int32>($"${{Me.GemTimer[{spell.CastName}]}}");
+			//_log.Write($@"SpellInCooldown for spell: {spell.CastName} checking gem timer [{gemCooldown}].");
 			//if (SpellInSharedCooldown(spell)) return true;
 			//_log.Write($"Checking if spell is ready on {spell.CastName}");
-			if (MQ.Query<Int32>($"${{Me.GemTimer[{spell.CastName}]}}") ==0)
+			if(gemCooldown ==0)
 			{
-				_log.Write($@"{spell.CastName} gem timer is zero.");
+				//_log.Write($@"{spell.CastName} gem timer is zero.");
 				//check if we are out of stock still
 				if(spell.ReagentOutOfStock)
 				{
