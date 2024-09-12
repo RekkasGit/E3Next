@@ -499,36 +499,43 @@ namespace E3Core.Processors
 								{
 									MQ.Write($"\ag{spell.CastName} \am{targetName} \ao{targetID}");
 									MQ.Cmd("/doability 1");
+									UpdateAbilityInCooldown(spell);
 								}
 								else if (MQ.Query<bool>("${Window[ActionsAbilitiesPage].Child[AAP_SecondAbilityButton].Text.Equal[Slam]}"))
 								{
 									MQ.Write($"\ag{spell.CastName} \am{targetName} \ao{targetID}");
 									MQ.Cmd("/doability 2");
+									UpdateAbilityInCooldown(spell);
 								}
 								else if (MQ.Query<bool>("${Window[ActionsAbilitiesPage].Child[AAP_ThirdAbilityButton].Text.Equal[Slam]}"))
 								{
 									MQ.Write($"\ag{spell.CastName} \am{targetName} \ao{targetID}");
 									MQ.Cmd("/doability 3");
+									UpdateAbilityInCooldown(spell);
 								}
 								else if (MQ.Query<bool>("${Window[ActionsAbilitiesPage].Child[AAP_FourthAbilityButton].Text.Equal[Slam]}"))
 								{
 									MQ.Write($"\ag{spell.CastName} \am{targetName} \ao{targetID}");
 									MQ.Cmd("/doability 4");
+									UpdateAbilityInCooldown(spell);
 								}
 								else if (MQ.Query<bool>("${Window[ActionsAbilitiesPage].Child[AAP_FourthAbilityButton].Text.Equal[Slam]}"))
 								{
 									MQ.Write($"\ag{spell.CastName} \am{targetName} \ao{targetID}");
 									MQ.Cmd("/doability 5");
+									UpdateAbilityInCooldown(spell);
 								}
 								else if (MQ.Query<bool>("${Window[ActionsAbilitiesPage].Child[AAP_FifthAbilityButton].Text.Equal[Slam]}"))
 								{
 									MQ.Write($"\ag{spell.CastName} \am{targetName} \ao{targetID}");
 									MQ.Cmd("/doability 5");
+									UpdateAbilityInCooldown(spell);
 								}
 								else if (MQ.Query<bool>("${Window[ActionsAbilitiesPage].Child[AAP_SixthAbilityButton].Text.Equal[Slam]}"))
 								{
 									MQ.Write($"\ag{spell.CastName} \am{targetName} \ao{targetID}");
 									MQ.Cmd("/doability 6");
+									UpdateAbilityInCooldown(spell);
 								}
 								else
 								{
@@ -539,6 +546,7 @@ namespace E3Core.Processors
 							{
 								MQ.Write($"\ag{spell.CastName} \am{targetName} \ao{targetID}");
 								MQ.Cmd($"/doability \"{spell.CastName}\"");
+								UpdateAbilityInCooldown(spell);
 							}
 
 							MQ.Delay(300, $"${{Me.AbilityReady[{spell.CastName}]}}");
@@ -1397,8 +1405,44 @@ namespace E3Core.Processors
 		private static System.Collections.Generic.Dictionary<String, Int64> _ItemsInCooldown = new Dictionary<string, long>() { };
 		private static System.Collections.Generic.Dictionary<String, Int64> _AAInCooldown = new Dictionary<string, long>() { };
 		private static System.Collections.Generic.Dictionary<String, Int64> _DiscInCooldown = new Dictionary<string, long>() { };
+		private static System.Collections.Generic.Dictionary<String, Int64> _AbilityInCooldown = new Dictionary<string, long>() { };
 
-
+		public static void UpdateAbilityInCooldown(Data.Spell spell)
+		{
+			string abilityToCheck = spell.CastName;
+			//check to see if its one of the items we are tracking
+			if (!_AbilityInCooldown.ContainsKey(spell.CastName))
+			{
+				_AbilityInCooldown.Add(spell.CastName, 0);
+			}
+			_AbilityInCooldown[spell.CastName] = Core.StopWatch.ElapsedMilliseconds;
+		}
+		public static bool AbilityInCooldown(Data.Spell spell)
+		{
+			if (_AbilityInCooldown.ContainsKey(spell.CastName))
+			{
+				//going to hard code a 1 sec cooldown on all Dsics's to allow time for the client to get updated info for ability ready
+				Int64 timestampOfLastCast = _AbilityInCooldown[spell.CastName];
+				Int64 numberOfMilliSecondCooldown = 1000;
+				if (Core.StopWatch.ElapsedMilliseconds - timestampOfLastCast < numberOfMilliSecondCooldown)
+				{
+					//still in cooldown
+					return true;
+				}
+			}
+			string abilityToCheck = spell.CastName;
+			//work around due to MQ bug with Slam
+			if (abilityToCheck.Equals("Slam", StringComparison.OrdinalIgnoreCase))
+			{
+				abilityToCheck = "Bash";
+			}
+			if (MQ.Query<bool>($"${{Me.AbilityReady[{abilityToCheck}]}}"))
+			{
+				return false;
+			}
+			
+			return true;
+		}
 		public static void UpdateDiscInCooldown(Data.Spell spell)
 		{
 			//check to see if its one of the items we are tracking
@@ -1420,34 +1464,18 @@ namespace E3Core.Processors
 					//still in cooldown
 					return true;
 				}
-				else
-				{
-					if (spell.SpellID == 8001) return false;
-
-					if (MQ.Query<Int32>($"${{Me.CombatAbilityTimer[{spell.CastName}]}}") == 0)
-					{
-						return false;
-					}
-					if (MQ.Query<bool>($"${{Me.CombatAbilityReady[{spell.CastName}]}}"))
-					{
-						return false;
-					}
-				
-				}
 			}
-			else
+			if (spell.SpellID == 8001) return false;
+
+			if (MQ.Query<Int32>($"${{Me.CombatAbilityTimer[{spell.CastName}]}}") == 0)
 			{
-				if (spell.SpellID == 8001) return false;
-
-				if (MQ.Query<Int32>($"${{Me.CombatAbilityTimer[{spell.CastName}]}}") == 0)
-				{
-					return false;
-				}
-				if (MQ.Query<bool>($"${{Me.CombatAbilityReady[{spell.CastName}]}}"))
-				{
-					return false;
-				}
+				return false;
 			}
+			if (MQ.Query<bool>($"${{Me.CombatAbilityReady[{spell.CastName}]}}"))
+			{
+				return false;
+			}
+			
 			return true;
 		}
 
@@ -1474,20 +1502,10 @@ namespace E3Core.Processors
 					//still in cooldown
 					return true;
 				}
-				else
-				{
-					if (MQ.Query<bool>($"${{Me.AltAbilityReady[{spell.CastName}]}}"))
-					{
-						return false;
-					}
-				}
 			}
-			else
+			if (MQ.Query<bool>($"${{Me.AltAbilityReady[{spell.CastName}]}}"))
 			{
-				if (MQ.Query<bool>($"${{Me.AltAbilityReady[{spell.CastName}]}}"))
-				{
-					return false;
-				}
+				return false;
 			}
 			return true;
 		}
@@ -1712,14 +1730,7 @@ namespace E3Core.Processors
 			}
 			else if (spell.CastType == Data.CastingType.Ability)
 			{
-				string abilityToCheck = spell.CastName;
-
-				//work around due to MQ bug with Slam
-				if (abilityToCheck.Equals("Slam", StringComparison.OrdinalIgnoreCase))
-				{
-					abilityToCheck = "Bash";
-				}
-				if (MQ.Query<bool>($"${{Me.AbilityReady[{abilityToCheck}]}}"))
+				if(!AbilityInCooldown(spell))
 				{
 					return true;
 				}
