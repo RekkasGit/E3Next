@@ -428,13 +428,13 @@ namespace E3Core.Processors
 				{
 					continue;
 				}
-				if (Casting.CheckReady(spell, false, !CastIfNeed) && Casting.CheckMana(spell))
+				if (Casting.CheckReady(spell, true, !CastIfNeed) && Casting.CheckMana(spell))
 				{
 					if (pctHealth < spell.HealPct && pctHealth != 0)
 					{
 						if (CastIfNeed)
 						{
-							E3.Bots.Broadcast($"Casting Emergency Heal. {spell.CastName} Target:{target} PctHealth:{pctHealth}");
+							E3.Bots.Broadcast($"\agTrying to Casting Emergency Heal. \aw[\ag{spell.CastName}\aw] \agTarget:\ap{target} \agPctHealth:{pctHealth}");
 							Heal(currentMana, pctMana, new List<string> { target }, E3.CharacterSettings.Heal_EmergencyHeals, false, false, true);
 							return true;
 						}
@@ -483,13 +483,13 @@ namespace E3Core.Processors
 					{
 						continue;
 					}
-					if(Casting.CheckReady(spell,true,!CastIfNeeded) && Casting.CheckMana(spell))
+					if(Casting.CheckReady(spell, true, !CastIfNeeded) && Casting.CheckMana(spell))
 					{
 						if (pctHealth < spell.HealPct)
 						{
 							if (CastIfNeeded)
 							{
-								E3.Bots.Broadcast($"Casting Emergency Heal Group. {spell.CastName} Target:{name} PctHealth:{pctHealth}");
+								E3.Bots.Broadcast($"\agTrying to Cast Emergency Heal Group. \aw[\ag{spell.CastName}\aw]\ag Target:\ap{name} \agPctHealth:{pctHealth}");
 								Heal(currentMana, pctMana, new List<string> { name }, E3.CharacterSettings.Heal_EmergecyGroupHeals, false, false, true);
 							}
 							return true;
