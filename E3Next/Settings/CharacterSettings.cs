@@ -422,7 +422,7 @@ namespace E3Core.Settings
 		public SortedDictionary<string, string> EventLoop = new SortedDictionary<string, string>();
 
 
-		[INI_Section("EventRegMatch", "")]
+		[INI_Section("EventRegMatches", "")]
 		public SortedDictionary<string, string> EventMatches = new SortedDictionary<string, string>();
 
 		//charm data
