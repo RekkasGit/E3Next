@@ -252,6 +252,13 @@ namespace E3Core.Processors
 				if (E3.CharacterSettings.IfFDStayDown) return;
 				MQ.Cmd("/stand");
 			}
+
+			//if you are driving, allow target change, so don't do abilities. 
+			if (AssistTargetID != MQ.Query<Int32>("${Target.ID}") && e3util.IsManualControl())
+			{
+				return;
+			}
+
 			//can we find our target?
 			Spawn s;
             if (_spawns.TryByID(AssistTargetID, out s))
@@ -370,7 +377,7 @@ namespace E3Core.Processors
                         }
                         else if (ability.CastType == Data.CastingType.AA)
                         {
-
+							
                             Casting.Cast(AssistTargetID, ability);
                         }
                         else if (ability.CastType == Data.CastingType.Disc)
