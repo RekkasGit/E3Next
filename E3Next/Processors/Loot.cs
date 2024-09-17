@@ -444,9 +444,12 @@ namespace E3Core.Processors
             foreach (var spawn in _spawns.Get())
             {
                 //only player corpses have a Deity
-                if (spawn.Distance3D < E3.GeneralSettings.Loot_CorpseSeekRadius && spawn.DeityID == 0 && spawn.TypeDesc == "Corpse")
+                if (spawn.Distance3D < E3.GeneralSettings.Loot_CorpseSeekRadius && spawn.DeityID == 0 && spawn.TypeDesc == "Corpse" )
                 {
-                    if (!Zoning.CurrentZone.IsSafeZone)
+					//is it too far above/below us? ignore it
+					if (Math.Abs(spawn.Z - startZ) > 20) continue;
+
+					if (!Zoning.CurrentZone.IsSafeZone)
                     {
                         if (!_unlootableCorpses.Contains(spawn.ID))
                         {
