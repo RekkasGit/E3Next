@@ -277,18 +277,20 @@ namespace E3Core.Processors
                             Spawn tt;
                             if (_spawns.TryByID(targetOfTargetID, out tt))
                             {
-                                //if not a tank on target of target, taunt it!
-                                if (!_tankTypes.Contains(tt.ClassShortName))
-                                {
-                                    if (MQ.Query<bool>("${Me.AbilityReady[Taunt]}"))
-                                    {
-                                        MQ.Cmd("/doability Taunt");
+								if(tt.TypeDesc == "PC")
+								{
+									//if not a tank on target of target, taunt it!
+									if (!_tankTypes.Contains(tt.ClassShortName))
+									{
+										if (MQ.Query<bool>("${Me.AbilityReady[Taunt]}"))
+										{
+											MQ.Cmd("/doability Taunt");
 
-                                        E3.Bots.Broadcast($"Taunting {s.CleanName}: {tt.ClassShortName} - {tt.CleanName} has agro and not a tank");
-
-                                    }
-                                   
-                                }
+											E3.Bots.Broadcast($"Taunting {s.CleanName}: {tt.ClassShortName} - {tt.CleanName} has agro and not a tank");
+										}
+									}
+								}
+                              
                             }
                         }
                     }

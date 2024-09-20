@@ -1331,7 +1331,7 @@ namespace E3Core.Data
 			string t_AfterSpellDelay = AfterSpellDelay == 0 ? String.Empty : $"/AfterEventDelay|{AfterSpellDelay}";
 			string t_BeforeEventDelay = BeforeEventDelay == 0 ? String.Empty : $"/BeforeEventDelay|{BeforeEventDelay}";
 			string t_BeforeSpellDelay = BeforeSpellDelay == 0 ? String.Empty : $"/BeforeEventDelay|{BeforeSpellDelay}";
-			string t_AfterCastDelay = AfterCastDelay == 0 ? String.Empty : $"/AfterEventDelay|{AfterCastDelay}";
+			string t_AfterCastDelay = AfterCastDelay == 0 ? String.Empty : $"/AfterCastDelay|{AfterCastDelay}";
 			string t_AfterCastCompletedDelay= AfterCastCompletedDelay == 0 ? String.Empty : $"/AfterCastCompletedDelay|{AfterCastCompletedDelay}";
 			string t_SongRefreshTime = SongRefreshTime == 18 ? String.Empty : $"/SongRefreshTime|{SongRefreshTime}";
 			//Main=Terror of Mirenilla Rk. II/Gem|4/Ifs|Tanking

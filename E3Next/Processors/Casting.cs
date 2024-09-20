@@ -33,8 +33,7 @@ namespace E3Core.Processors
 
 		public static CastReturn Cast(int targetID, Data.Spell spell, Func<Spell, Int32, Int32, bool> interruptCheck = null, bool isNowCast = false, bool isEmergency = false)
 		{
-
-			if(e3util.IsActionBlockingWindowOpen())
+			if (e3util.IsActionBlockingWindowOpen())
 			{
 				return CastReturn.CAST_BLOCKINGWINDOWOPEN;
 			}
@@ -688,8 +687,11 @@ namespace E3Core.Processors
 
 					startCasting:
 
+						//in case a spell was interrupted before this one, clear anything out.
+						ClearInterruptChecks();
+
 						//needed for heal interrupt check
-					
+
 						currentMana = MQ.Query<Int32>("${Me.CurrentMana}");
 						pctMana = MQ.Query<Int32>("${Me.PctMana}");
 
@@ -743,7 +745,7 @@ namespace E3Core.Processors
 								{
 									Interrupt();
 									E3.ActionTaken = true;
-									E3.Bots.Broadcast(@"\arInterrupting \aw[\ag{spell.CastName}\aw] because of interrupt check.");
+									E3.Bots.Broadcast($@"\arInterrupting \aw[\ag{spell.CastName}\aw] because of interrupt check.");
 									return CastReturn.CAST_INTERRUPTED;
 								}
 
@@ -1367,8 +1369,8 @@ namespace E3Core.Processors
 				}
 			}
 			MQ.Cmd("/stopcast");
-			//take us out of the GCD
-			
+			//we will get an interrupt event queued up, so we need to clear it out. 
+		
 		}
 		public static Boolean IsCasting()
 		{
@@ -2562,7 +2564,11 @@ namespace E3Core.Processors
 
 
 		}
-
+		public static void ClearInterruptChecks()
+		{
+			Double endtime = 0;
+			CheckForResistByName("CAST_INTERRUPTED", endtime);
+		}
 		public static void ClearResistChecks()
 		{
 			MQ.Delay(100);

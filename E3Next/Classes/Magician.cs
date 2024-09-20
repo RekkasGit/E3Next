@@ -433,6 +433,11 @@ namespace E3Core.Classes
 		{
 			//all this code needs to be abstracted out as it is Laz specific
 		
+			if(String.IsNullOrWhiteSpace(weapons))
+			{
+				weapons = "Water|Fire";
+			}
+
 			var hasDskGloves = MQ.Query<bool>($"${{FindItem[{_dskGloveItem}]}}");
 			var hasDskCodex = MQ.Query<bool>($"${{FindItem[{_dskCodex}]}}");
             var theirPetPrimary = MQ.Query<int>($"${{Spawn[{petId}].Primary}}");
