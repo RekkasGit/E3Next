@@ -40,8 +40,9 @@ namespace E3Core.Processors
         {
             _petMaxShrink = false;
             _petMaxShrinkID = 0;
-            MQ.Cmd("/squelch /pet ghold on");
-        }
+			MQ.Cmd("/squelch /pet hold on");
+			MQ.Cmd("/squelch /pet ghold on");
+		}
 
         [ClassInvoke(Data.Class.PetClass)]
         public static void Check_Pets()

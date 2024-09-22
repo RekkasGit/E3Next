@@ -81,9 +81,11 @@ namespace E3Core.Processors
                 MQ.Cmd("/nomodkey /notify ConfirmationDialogBox Yes_Button leftmouseup",2000);//start zone
                     
                 //zone may to happen
-                MQ.Delay(30000, "${Spawn[${Me}'s].ID}");
-                Zoning.Zoned(MQ.Query<Int32>("${Zone.ID}"));
-                if (!MQ.Query<bool>("${Spawn[${Me}'s].ID}"))
+                MQ.Delay(15000, "${Spawn[${Me}'s].ID}");
+				//save the current zone we have just zoned into
+				Zoning.Zoned(MQ.Query<Int32>("${Zone.ID}"));
+
+				if (!MQ.Query<bool>("${Spawn[${Me}'s].ID}"))
                 {
                     //something went wrong kick out.
                     return;
@@ -432,7 +434,7 @@ namespace E3Core.Processors
                                     }
 									E3.Bots.Broadcast($"Trying to rez {spawn.DisplayName}");
 									MQ.Cmd("/corpse");
-									if (Casting.Cast(spawn.ID, spell, Heals.SomeoneNeedsHealing)== CastReturn.CAST_SUCCESS)
+									if (Casting.Cast(spawn.ID, spell)== CastReturn.CAST_SUCCESS)
                                     {
 										_recentlyRezzed.Add(spawn.ID, DateTime.Now);
 										break;
@@ -898,7 +900,7 @@ namespace E3Core.Processors
             });
             EventProcessor.RegisterCommand("/lootcorpses", x => LootAllCorpses());
             EventProcessor.RegisterCommand("/gathercorpses", x => GatherCorpses());
-            var consentEvents = new List<string> { "(.+) tells you, '(?i)Consent'", "(.+) tells the raid,  '(?i)Consent'", "<(.+)> (?i)Consent" };
+            var consentEvents = new List<string> { "(.+) tells you, '(?i)Consent'", @"(.+) tells the raid,\s+'(?i)Consent'", "<(.+)> (?i)Consent" };
             EventProcessor.RegisterEvent("consent", consentEvents, x =>
             {
                 if (x.match.Groups.Count > 1)

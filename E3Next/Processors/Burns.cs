@@ -239,9 +239,11 @@ namespace E3Core.Processors
                         {
                             Casting.Cast(0, burn);
                             E3.Bots.Broadcast(chatOutput);
-                        }
+							
+						}
                     }
-                }
+					
+				}
 
             }
         }

@@ -136,6 +136,14 @@ namespace E3Core.Data
 					{
 						IgnoreStackRules = true;
 					}
+					else if (value.Equals("IgnoreStackRules", StringComparison.OrdinalIgnoreCase))
+					{
+						IgnoreStackRules = true;
+					}
+					else if (value.StartsWith("SongRefreshTime|", StringComparison.OrdinalIgnoreCase))
+					{
+						SongRefreshTime = GetArgument<Int32>(value);
+					}
 					else if (value.StartsWith("HealthMax|", StringComparison.OrdinalIgnoreCase))
 					{
 						HealthMax = GetArgument<Int32>(value);
@@ -154,6 +162,10 @@ namespace E3Core.Data
                         }
 						//StackIntervalCheck
 					}
+					else if (value.StartsWith("BeforeCast|", StringComparison.OrdinalIgnoreCase))
+                    {
+                        BeforeSpell = GetArgument<String>(value);
+                    }
 					else if (value.StartsWith("StackCheckInterval|", StringComparison.OrdinalIgnoreCase))
 					{
 						StackIntervalCheck = GetArgument<Int64>(value);
@@ -960,6 +972,7 @@ namespace E3Core.Data
         public String AfterSpell = String.Empty;
         public Data.Spell AfterSpellData;
         public Boolean NoInterrupt;
+		public Int32 SongRefreshTime = 18;
 
 		public Int32 AfterEventDelay = 0;
 		public Int32 BeforeEventDelay = 0;
@@ -1008,6 +1021,7 @@ namespace E3Core.Data
 			{
 				r = dest;
 			}
+			r.SongRefreshTime = source.SongRefreshTime;
 			r.AfterEvent = source.AfterEvent;
             r.AfterEventKeys = source.AfterEventKeys;
 			r.AfterSpell = source.AfterSpell;
@@ -1117,6 +1131,7 @@ namespace E3Core.Data
 			{
 				r = dest;
 			}
+			r.SongRefreshTime = source.SongRefreshTime;
 			r.CastID = source.CastID;
 			r.CastName = source.CastName;
 			r.CastType = (CastingType)source.CastType;
@@ -1156,7 +1171,8 @@ namespace E3Core.Data
         {
 
             SpellData r = new SpellData();
-            r.AfterEvent = this.AfterEvent;
+			r.SongRefreshTime = this.SongRefreshTime;
+			r.AfterEvent = this.AfterEvent;
             r.AfterEventKeys = this.AfterEventKeys;
             r.AfterSpell = this.AfterSpell;
             r.AllowSpellSwap = this.AllowSpellSwap;
@@ -1276,6 +1292,7 @@ namespace E3Core.Data
 			d.BeforeSpellDelay = BeforeSpellDelay;
 			d.AfterCastDelay = AfterCastDelay;
 			d.AfterSpellDelay = AfterSpellDelay;
+			d.SongRefreshTime = SongRefreshTime;
 		}
 
         public string ToConfigEntry()
@@ -1314,11 +1331,11 @@ namespace E3Core.Data
 			string t_AfterSpellDelay = AfterSpellDelay == 0 ? String.Empty : $"/AfterEventDelay|{AfterSpellDelay}";
 			string t_BeforeEventDelay = BeforeEventDelay == 0 ? String.Empty : $"/BeforeEventDelay|{BeforeEventDelay}";
 			string t_BeforeSpellDelay = BeforeSpellDelay == 0 ? String.Empty : $"/BeforeEventDelay|{BeforeSpellDelay}";
-			string t_AfterCastDelay = AfterCastDelay == 0 ? String.Empty : $"/AfterEventDelay|{AfterCastDelay}";
+			string t_AfterCastDelay = AfterCastDelay == 0 ? String.Empty : $"/AfterCastDelay|{AfterCastDelay}";
 			string t_AfterCastCompletedDelay= AfterCastCompletedDelay == 0 ? String.Empty : $"/AfterCastCompletedDelay|{AfterCastCompletedDelay}";
-
+			string t_SongRefreshTime = SongRefreshTime == 18 ? String.Empty : $"/SongRefreshTime|{SongRefreshTime}";
 			//Main=Terror of Mirenilla Rk. II/Gem|4/Ifs|Tanking
-			string returnValue = $"{CastName}{t_CastTarget}{t_GemNumber}{t_Ifs}{t_checkFor}{t_CastIF}{t_healPct}{t_healthMax}{t_noInterrupt}{t_Zone}{t_MinSick}{t_BeforeSpell}{t_AfterSpell}{t_BeforeEvent}{t_AfterEvent}{t_minMana}{t_maxMana}{t_MinEnd}{t_ignoreStackRules}{t_MinDurationBeforeRecast}{t_MaxTries}{t_Reagent}{t_CastTypeOverride}{t_PctAggro}{t_Delay}{t_NoTarget}{t_AfterEventDelay}{t_AfterSpellDelay}{t_BeforeEventDelay}{t_BeforeSpellDelay}{t_AfterCastDelay}{t_AfterCastCompletedDelay}{t_Enabled}";
+			string returnValue = $"{CastName}{t_CastTarget}{t_GemNumber}{t_Ifs}{t_checkFor}{t_CastIF}{t_healPct}{t_healthMax}{t_noInterrupt}{t_Zone}{t_MinSick}{t_BeforeSpell}{t_AfterSpell}{t_BeforeEvent}{t_AfterEvent}{t_minMana}{t_maxMana}{t_MinEnd}{t_ignoreStackRules}{t_MinDurationBeforeRecast}{t_MaxTries}{t_Reagent}{t_CastTypeOverride}{t_PctAggro}{t_Delay}{t_NoTarget}{t_AfterEventDelay}{t_AfterSpellDelay}{t_BeforeEventDelay}{t_BeforeSpellDelay}{t_AfterCastDelay}{t_AfterCastCompletedDelay}{t_SongRefreshTime}{t_Enabled}";
 			return returnValue;
 
 		}

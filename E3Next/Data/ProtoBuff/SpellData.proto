@@ -105,4 +105,5 @@ message SpellData {
 	int32 AfterSpellDelay = 87;
 	int32 BeforeSpellDelay = 88;
 	int32 AfterCastDelay = 89;
+	int32 SongRefreshTime=90;
 }

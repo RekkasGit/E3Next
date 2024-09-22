@@ -66,8 +66,8 @@ namespace E3Core.Processors
         }
 
 
-        [ClassInvoke(Data.Class.All)]
-        public static void CheckPBAE()
+		[AdvSettingInvoke]
+		public static void Check_AE()
         {
             if (PBAEEnabled  && E3.CharacterSettings.PBAE.Count>0&& MQ.Query<bool>($"!${{Bool[${{SpawnCount[npc radius {E3.GeneralSettings.Assists_AEThreatRange}]}}]}}"))
             {
@@ -180,7 +180,7 @@ namespace E3Core.Processors
                                 if (s.Distance < spell.MyRange)
                                 {
 
-                                    CastReturn result = Casting.Cast(Assist.AssistTargetID, spell, Heals.SomeoneNeedsHealing);
+                                    CastReturn result = Casting.Cast(Assist.AssistTargetID, spell);
                                     if (result == CastReturn.CAST_INTERRUPTFORHEAL)
                                     {
                                         return;
@@ -258,7 +258,7 @@ namespace E3Core.Processors
                         }
                 
                     
-                        CastReturn result = Casting.Cast(0, spell, Heals.SomeoneNeedsHealing);
+                        CastReturn result = Casting.Cast(0, spell);
                         if (result == CastReturn.CAST_INTERRUPTFORHEAL)
                         {
                             return;

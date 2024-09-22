@@ -23,8 +23,41 @@ namespace E3Core.Processors
 		private static bool _useEQGroupDataForHeals = true;
 		private static Data.Spell _orbOfShadowsSpell = null;
 		private static Data.Spell _orbOfSoulsSpell = null;
+		public static HashSet<string> IgnoreHealTargets = new HashSet<string>(StringComparer.OrdinalIgnoreCase);
 
 
+		[SubSystemInit]
+		public static void Init_Heals()
+		{
+			List<string> pattern  =new List<string>() { $@"(.+) tells the raid,\s+'Pulling'", @"(.+) tells the group,\s+'Pulling'" };
+			EventProcessor.RegisterEvent("PullingIgnoreHeals", pattern, (x) => {
+
+				if (x.match.Groups.Count > 1)
+				{
+					string user = x.match.Groups[1].Value;
+					if(!IgnoreHealTargets.Contains(user))
+					{
+						IgnoreHealTargets.Add(user);
+					}
+					E3.Bots.Broadcast($"\arIgnore Healing \ag for \ap{user}\ag till next assist or in combat.");
+					
+				}
+			});
+			pattern = new List<string>() { $@"(.+) tells the raid,\s+'PullingOff'", @"(.+) tells the group,\s+'PullingOff'" };
+			EventProcessor.RegisterEvent("PullingIgnoreHealsClear", pattern, (x) => {
+
+				if (x.match.Groups.Count > 1)
+				{
+					string user = x.match.Groups[1].Value;
+					if (IgnoreHealTargets.Contains(user))
+					{
+						IgnoreHealTargets.Remove(user);
+						E3.Bots.Broadcast($"\arIgnore Healing \ag Removing \ap{user}\ag from ignore list.");
+					}
+		
+				}
+			});
+		}
 
 		[AdvSettingInvoke]
 		public static void Check_Heals()
@@ -40,7 +73,17 @@ namespace E3Core.Processors
 				}
 			}
 
-			if (!Basics.InCombat())
+
+			bool inCombat = E3.CurrentInCombat;
+
+			//reset ignored targets once in combat
+			if (inCombat && IgnoreHealTargets.Count>0)
+			{
+				E3.Bots.Broadcast($"\arIgnore Healing \ag Clearing users from list.");
+				IgnoreHealTargets.Clear();
+			}
+
+			if (!inCombat)
 			{
 				if (!e3util.ShouldCheck(ref _nextHealCheck, _nextHealCheckInterval)) return;
 
@@ -83,9 +126,6 @@ namespace E3Core.Processors
 				e3util.PutOriginalTargetBackIfNeeded(targetID);
 			}
 		}
-
-
-
 		public static bool HealTanks(Int32 currentMana, Int32 pctMana)
 		{
 			if (E3.CharacterSettings.WhoToHeal.Contains("Tanks"))
@@ -129,27 +169,27 @@ namespace E3Core.Processors
 				Int32 targetID = MQ.Query<Int32>($"${{Me.XTarget[{x}].ID}}");
 				if (targetID > 0)
 				{
-
 					//check to see if they are in zone.
 					Spawn s;
 					if (_spawns.TryByID(targetID, out s))
 					{
-						if (s.TypeDesc != "Corpse")
+						if (!IgnoreHealTargets.Contains(s.CleanName))
 						{
-							if (s.Distance < 200)
+							if (s.TypeDesc != "Corpse")
 							{
-								Int32 pctHealth = MQ.Query<Int32>($"${{Me.XTarget[{x}].PctHPs}}");
-								if (pctHealth <= currentLowestHealth)
+								if (s.Distance < 200)
 								{
-									currentLowestHealth = pctHealth;
-									lowestHealthTargetid = targetID;
-									lowestHealthTargetDistance = s.Distance;
+									Int32 pctHealth = MQ.Query<Int32>($"${{Me.XTarget[{x}].PctHPs}}");
+									if (pctHealth <= currentLowestHealth)
+									{
+										currentLowestHealth = pctHealth;
+										lowestHealthTargetid = targetID;
+										lowestHealthTargetDistance = s.Distance;
+									}
 								}
 							}
-
 						}
 					}
-
 				}
 			}
 			//found someone to heal
@@ -182,7 +222,7 @@ namespace E3Core.Processors
 						if (currentLowestHealth < spell.HealPct)
 						{
 							
-							if (Casting.CheckReady(spell) && Casting.CheckMana(spell))
+							if (Casting.CheckReady(spell,JustCheck,JustCheck) && Casting.CheckMana(spell))
 							{
 								if (JustCheck) return true;
 
@@ -313,18 +353,21 @@ namespace E3Core.Processors
 		/// used as an action to determine if a spell should be interrupted in case someone needs a heal.
 		/// </summary>
 		/// <returns>true if a heal is needed, otherwise false</returns>
-		public static bool SomeoneNeedsHealing(Spell spell,Int32 currentMana, Int32 pctMana)
+		public static bool SomeoneNeedsHealing(Spell spell, Int32 currentMana, Int32 pctMana, bool healIfNeeded = false)
 		{
 			if (!((E3.CurrentClass & Data.Class.Priest) == E3.CurrentClass))
 			{
 				return false;
 			}
 
-			//Int32 currentMana = MQ.Query<Int32>("${Me.CurrentMana}");
-			//Int32 pctMana = MQ.Query<Int32>("${Me.PctMana}");
+			bool justCheck = true;
+			if (healIfNeeded)
+			{
+				justCheck = false;
+			}
 			if (E3.CharacterSettings.WhoToHeal.Contains("Tanks"))
 			{
-				if (Heal(currentMana, pctMana, E3.CharacterSettings.HealTankTargets, E3.CharacterSettings.HealTanks, false, true))
+				if (Heal(currentMana, pctMana, E3.CharacterSettings.HealTankTargets, E3.CharacterSettings.HealTanks, false, justCheck))
 				{
 					return true;
 				}
@@ -338,14 +381,14 @@ namespace E3Core.Processors
 			}
 			if (E3.CharacterSettings.HealXTarget.Count > 0)
 			{
-				if (HealXTargets(E3.CharacterSettings.HealXTarget,currentMana, pctMana, true))
+				if (HealXTargets(E3.CharacterSettings.HealXTarget, currentMana, pctMana, justCheck))
 				{
 					return true;
 				}
 			}
 			if (E3.CharacterSettings.HealParty.Count > 0)
 			{
-				if (HealParty(currentMana, pctMana, E3.CharacterSettings.HealParty, true))
+				if (HealParty(currentMana, pctMana, E3.CharacterSettings.HealParty, justCheck))
 				{
 					return true;
 				}
@@ -359,6 +402,9 @@ namespace E3Core.Processors
 			foreach (var spell in E3.CharacterSettings.Heal_EmergencyHeals)
 			{
 				string target = spell.CastTarget;
+
+				if (IgnoreHealTargets.Contains(target)) continue;
+
 				Int32 pctHealth = 0;
 				if (E3.Bots.IsMyBot(target))
 				{
@@ -382,13 +428,13 @@ namespace E3Core.Processors
 				{
 					continue;
 				}
-				if (Casting.CheckReady(spell,true) && Casting.CheckMana(spell))
+				if (Casting.CheckReady(spell, true, !CastIfNeed) && Casting.CheckMana(spell))
 				{
 					if (pctHealth < spell.HealPct && pctHealth != 0)
 					{
 						if (CastIfNeed)
 						{
-							E3.Bots.Broadcast($"Casting Emergency Heal. {spell.CastName} Target:{target} PctHealth:{pctHealth}");
+							E3.Bots.Broadcast($"\agTrying to Casting Emergency Heal. \aw[\ag{spell.CastName}\aw] \agTarget:\ap{target} \agPctHealth:{pctHealth}");
 							Heal(currentMana, pctMana, new List<string> { target }, E3.CharacterSettings.Heal_EmergencyHeals, false, false, true);
 							return true;
 						}
@@ -410,7 +456,10 @@ namespace E3Core.Processors
 			{
 				Int32 pctHealth = 0;
 				string name = MQ.Query<string>($"${{Group.Member[{i}].Name}}");
-				if(E3.Bots.IsMyBot(name))
+
+				if (IgnoreHealTargets.Contains(name)) continue;
+
+				if (E3.Bots.IsMyBot(name))
 				{
 					//lets look up their health
 					pctHealth = E3.Bots.PctHealth(name);
@@ -434,13 +483,13 @@ namespace E3Core.Processors
 					{
 						continue;
 					}
-					if(Casting.CheckReady(spell,true) && Casting.CheckMana(spell))
+					if(Casting.CheckReady(spell, true, !CastIfNeeded) && Casting.CheckMana(spell))
 					{
 						if (pctHealth < spell.HealPct)
 						{
 							if (CastIfNeeded)
 							{
-								E3.Bots.Broadcast($"Casting Emergency Heal Group. {spell.CastName} Target:{name} PctHealth:{pctHealth}");
+								E3.Bots.Broadcast($"\agTrying to Cast Emergency Heal Group. \aw[\ag{spell.CastName}\aw]\ag Target:\ap{name} \agPctHealth:{pctHealth}");
 								Heal(currentMana, pctMana, new List<string> { name }, E3.CharacterSettings.Heal_EmergecyGroupHeals, false, false, true);
 							}
 							return true;
@@ -459,6 +508,8 @@ namespace E3Core.Processors
 
 				foreach (var name in targets)
 				{
+					if (IgnoreHealTargets.Contains(name)) continue;
+
 					Int32 targetID = 0;
 					Spawn s;
 					if (_spawns.TryByName(name, out s))
@@ -579,9 +630,13 @@ namespace E3Core.Processors
 													}
 												}
 												//should cast a heal!
-												if (Casting.CheckReady(spell) && Casting.CheckMana(spell))
+												if (Casting.CheckReady(spell, JustCheck, JustCheck) && Casting.CheckMana(spell))
 												{
-													if (JustCheck) return true;
+													if (JustCheck)
+													{
+														_log.Write($"eq group {name} pct:{pctHealth} forcing interrupt");
+														return true;
+													}
 
 													if (Casting.Cast(targetID, spell, TargetDoesNotNeedHeals,false,isEmergency) == CastReturn.CAST_FIZZLE)
 													{
@@ -606,6 +661,7 @@ namespace E3Core.Processors
 							{
 								//they are a bot and they are in zone
 								Int32 pctHealth = E3.Bots.PctHealth(name);
+
 								foreach (var spell in spells)
 								{
 									//check Ifs on the spell
@@ -648,9 +704,14 @@ namespace E3Core.Processors
 										{
 										
 											//should cast a heal!
-											if (Casting.CheckReady(spell) && Casting.CheckMana(spell))
+											if (Casting.CheckReady(spell, JustCheck, JustCheck) && Casting.CheckMana(spell))
 											{
-												if (JustCheck) return true;
+												if (JustCheck)
+												{
+													_log.Write($"e3n bot {name} pct:{pctHealth} forcing interrupt");
+													return true;
+												}
+											
 												if (Casting.Cast(targetID, spell, TargetDoesNotNeedHeals,false,isEmergency) == CastReturn.CAST_FIZZLE)
 												{
 													currentMana = MQ.Query<Int32>("${Me.CurrentMana}");
@@ -680,10 +741,13 @@ namespace E3Core.Processors
 
 				foreach (var name in Basics.GroupMembers)
 				{
+					
 					Int32 targetID = 0;
 					Spawn s;
 					if (_spawns.TryByID(name, out s))
 					{
+						if (IgnoreHealTargets.Contains(s.CleanName)) continue;
+
 						targetID = healPets ? s.PetID : s.ID;
 
 						if (s.ID != targetID)
@@ -765,7 +829,7 @@ namespace E3Core.Processors
 											if (pctHealth < spell.HealPct)
 											{
 												//should cast a heal!
-												if (Casting.CheckReady(spell) && Casting.CheckMana(spell))
+												if (Casting.CheckReady(spell, JustCheck, JustCheck) && Casting.CheckMana(spell))
 												{
 													if (JustCheck) return true;
 													if (Casting.Cast(targetID, spell) == CastReturn.CAST_FIZZLE)
@@ -794,6 +858,8 @@ namespace E3Core.Processors
 			{
 				foreach (var name in targets)
 				{
+					if (IgnoreHealTargets.Contains(name)) continue;
+
 					Int32 targetID = 0;
 					Spawn s;
 					if (_spawns.TryByName(name, out s))

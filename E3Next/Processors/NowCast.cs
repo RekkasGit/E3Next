@@ -123,7 +123,8 @@ namespace E3Core.Processors
             }
             return false;
         }
-        private static (CastReturn, Data.Spell) NowCastSpell(string spellName, Int32 targetid)
+
+		private static (CastReturn, Data.Spell) NowCastSpell(string spellName, Int32 targetid)
         {
             Int32 orgTargetID = MQ.Query<Int32>("${Target.ID}");
 

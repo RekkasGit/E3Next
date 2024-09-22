@@ -584,13 +584,13 @@ namespace E3Core.Processors
 			EventProcessor.RegisterCommand("/debug", (x) =>
             {
 
-                var traceLevel = Logging.LogLevels.Trace;
+                var traceLevel = Logging.LogLevels.None;
 
                 if(x.args.Count>0)
                 {
-                    if(String.Equals(x.args[0],"notrace", StringComparison.OrdinalIgnoreCase))
+                    if(String.Equals(x.args[0],"trace", StringComparison.OrdinalIgnoreCase))
                     {
-                        traceLevel = Logging.LogLevels.None;
+                        traceLevel = Logging.LogLevels.Trace;
                     }
 
                 }
@@ -1278,24 +1278,28 @@ namespace E3Core.Processors
 				}
 			}
 
-			if (E3.CurrentClass == Data.Class.Shaman)
-			{
-				bool canniReady = MQ.Query<bool>("${Me.AltAbilityReady[Cannibalization]}");
+			//if (E3.CurrentClass == Data.Class.Shaman)
+			//{
+			//	bool canniReady = MQ.Query<bool>("${Me.AltAbilityReady[Cannibalization]}");
 
-				if (canniReady && currentHps > 7000 && MQ.Query<double>("${Math.Calc[${Me.MaxMana} - ${Me.CurrentMana}]}") > 4500)
-				{
-					Spell s;
-					if (!Spell.LoadedSpellsByName.TryGetValue("Cannibalization", out s))
-					{
-						s = new Spell("Cannibalization");
-					}
-					if (s.CastType != CastingType.None)
-					{
-						Casting.Cast(0, s);
-						return true;
-					}
-				}
-			}
+			//	if (canniReady && currentHps > 7000 && MQ.Query<double>("${Math.Calc[${Me.MaxMana} - ${Me.CurrentMana}]}") > 4500)
+			//	{
+			//		Spell s;
+			//		if (!Spell.LoadedSpellsByName.TryGetValue("Cannibalization", out s))
+			//		{
+			//			s = new Spell("Cannibalization");
+			//		}
+			//		if (s.CastType != CastingType.None)
+			//		{
+			//			var result = Casting.Cast(0, s);
+			//			if(result== CastReturn.CAST_INTERRUPTFORHEAL)
+			//			{
+			//				return true;
+			//			}
+			//			return true;
+			//		}
+			//	}
+			//}
 
 			if (MQ.Query<bool>("${Me.ItemReady[Summoned: Large Modulation Shard]}"))
 			{

@@ -252,6 +252,13 @@ namespace E3Core.Processors
 				if (E3.CharacterSettings.IfFDStayDown) return;
 				MQ.Cmd("/stand");
 			}
+
+			//if you are driving, allow target change, so don't do abilities. 
+			if (AssistTargetID != MQ.Query<Int32>("${Target.ID}") && e3util.IsManualControl())
+			{
+				return;
+			}
+
 			//can we find our target?
 			Spawn s;
             if (_spawns.TryByID(AssistTargetID, out s))
@@ -270,18 +277,20 @@ namespace E3Core.Processors
                             Spawn tt;
                             if (_spawns.TryByID(targetOfTargetID, out tt))
                             {
-                                //if not a tank on target of target, taunt it!
-                                if (!_tankTypes.Contains(tt.ClassShortName))
-                                {
-                                    if (MQ.Query<bool>("${Me.AbilityReady[Taunt]}"))
-                                    {
-                                        MQ.Cmd("/doability Taunt");
+								if(tt.TypeDesc == "PC")
+								{
+									//if not a tank on target of target, taunt it!
+									if (!_tankTypes.Contains(tt.ClassShortName))
+									{
+										if (MQ.Query<bool>("${Me.AbilityReady[Taunt]}"))
+										{
+											MQ.Cmd("/doability Taunt");
 
-                                        E3.Bots.Broadcast($"Taunting {s.CleanName}: {tt.ClassShortName} - {tt.CleanName} has agro and not a tank");
-
-                                    }
-                                   
-                                }
+											E3.Bots.Broadcast($"Taunting {s.CleanName}: {tt.ClassShortName} - {tt.CleanName} has agro and not a tank");
+										}
+									}
+								}
+                              
                             }
                         }
                     }
@@ -370,7 +379,7 @@ namespace E3Core.Processors
                         }
                         else if (ability.CastType == Data.CastingType.AA)
                         {
-
+							
                             Casting.Cast(AssistTargetID, ability);
                         }
                         else if (ability.CastType == Data.CastingType.Disc)
@@ -390,12 +399,12 @@ namespace E3Core.Processors
                                     {
                                         if (!MQ.Query<bool>("${Me.ActiveDisc.ID}"))
                                         {
-                                            Casting.Cast(0, ability);
+                                            Casting.Cast(AssistTargetID, ability);
                                         }
                                     }
                                     else
                                     {
-                                        Casting.Cast(0, ability);
+                                        Casting.Cast(AssistTargetID, ability);
                                     }
 
                                 }
@@ -487,13 +496,9 @@ namespace E3Core.Processors
         {
 
             if (zoneId != Zoning.CurrentZone.Id) return;
-			
-           
-			
 			//clear in case its not reset by other means
 			//or you want to attack in enrage
 			_assistIsEnraged = false;
-
             if (mobID == 0)
             {
                 //something wrong with the assist, kickout
@@ -503,8 +508,6 @@ namespace E3Core.Processors
             Spawn s;
             if (_spawns.TryByID(mobID, out s))
             {
-
-
                 if (s.TypeDesc == "Corpse")
                 {
                     E3.Bots.Broadcast("Cannot assist, a corpse");
@@ -515,7 +518,6 @@ namespace E3Core.Processors
                     E3.Bots.Broadcast("Cannot assist, not a NPC,PC,Chest or Pet");
                     return;
                 }
-
                 if (s.Distance3D > E3.GeneralSettings.Assists_MaxEngagedDistance)
                 {
                     E3.Bots.Broadcast($"{s.CleanName} is too far away.");
@@ -526,11 +528,15 @@ namespace E3Core.Processors
                 {
                     //if (E3.CharacterSettings.IfFDStayDown) return;
                     MQ.Cmd("/stand");
-                }else
+                }
+				else
                 {
-					if (!amIStanding)
+					if(E3.CharacterSettings.AutoMed_EndMedBreakInCombat)
 					{
-						MQ.Cmd("/stand");
+						if (!amIStanding)
+						{
+							MQ.Cmd("/stand");
+						}
 					}
 				}
 
@@ -763,6 +769,13 @@ namespace E3Core.Processors
                 //or you want to attack in enrage
                 _assistIsEnraged = false;
 
+			   //being told to asssist, clear out ignored targets from pullers.
+			   if(Heals.IgnoreHealTargets.Count>0)
+			   {
+				   E3.Bots.Broadcast($"\arIgnore Healing \ag Clearing users from list.");
+				   Heals.IgnoreHealTargets.Clear();
+			   }
+
                bool ignoreme = false;
                if(x.args.Contains("/ignoreme"))
                {
@@ -865,6 +878,7 @@ namespace E3Core.Processors
                     ClearXTargets.Enabled = true;
                     ClearXTargets.FaceTarget = true;
                     ClearXTargets.StickTarget = false;
+					ClearXTargets.UseMyTarget = false;
 
                 }
                 else if (x.args.Count == 1 && x.args[0] == "off")
@@ -886,7 +900,11 @@ namespace E3Core.Processors
                         ClearXTargets.Filters.AddRange(x.filters);
                     }
                     ClearXTargets.HasAllFlag = x.hasAllFlag;
-                    foreach (var argValue in x.args)
+					ClearXTargets.UseMyTarget = false;
+					ClearXTargets.FaceTarget = true;
+					ClearXTargets.StickTarget = false;
+
+					foreach (var argValue in x.args)
                     {
                         if (argValue.Equals("noface", StringComparison.OrdinalIgnoreCase))
                         {
@@ -896,7 +914,11 @@ namespace E3Core.Processors
                         {
                             ClearXTargets.StickTarget = true;
                         }
-                    }
+						else if (argValue.Equals("usemytarget", StringComparison.OrdinalIgnoreCase))
+						{
+							ClearXTargets.UseMyTarget = true;
+						}
+					}
 
                     ClearXTargets.Enabled = true;
 
