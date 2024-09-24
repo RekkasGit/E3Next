@@ -1335,12 +1335,12 @@ namespace E3Core.Data
 			string t_AfterCastDelay = AfterCastDelay == 0 ? String.Empty : $"/AfterCastDelay|{AfterCastDelay}";
 			string t_AfterCastCompletedDelay= AfterCastCompletedDelay == 0 ? String.Empty : $"/AfterCastCompletedDelay|{AfterCastCompletedDelay}";
 			string t_SongRefreshTime = SongRefreshTime == 18 ? String.Empty : $"/SongRefreshTime|{SongRefreshTime}";
-			string t_StackRequestItem = (String.IsNullOrWhiteSpace(this.StackRequestItem)) ? String.Empty : $"/StackRequestItem|{AfterEventDelay}";
+			string t_StackRequestItem = (String.IsNullOrWhiteSpace(this.StackRequestItem)) ? String.Empty : $"/StackRequestItem|{StackRequestItem}";
 			string t_StackRequestTargets = (StackRequestTargets.Count==0) ? String.Empty : $"/StackRequestTargets|{String.Join(",",StackRequestTargets)}";
-			string t_StackCheckInterval = StackIntervalCheck == _stackIntervalCheckDefault ? String.Empty : $"/StackCheckInterval|{StackIntervalCheck/1000}";
-			string t_StackRecastDelay = StackRecastDelay == 0 ? String.Empty : $"/StackRecastDelay|{StackRecastDelay}";
+			string t_StackCheckInterval = StackIntervalCheck == _stackIntervalCheckDefault ? String.Empty : $"/StackCheckInterval|{StackIntervalCheck/10000}";
+			string t_StackRecastDelay = StackRecastDelay == 0 ? String.Empty : $"/StackRecastDelay|{StackRecastDelay/1000}";
 
-			string returnValue = $"{CastName}{t_CastTarget}{t_GemNumber}{t_Ifs}{t_checkFor}{t_CastIF}{t_healPct}{t_healthMax}{t_noInterrupt}{t_Zone}{t_MinSick}{t_BeforeSpell}{t_AfterSpell}{t_BeforeEvent}{t_AfterEvent}{t_minMana}{t_maxMana}{t_MinEnd}{t_ignoreStackRules}{t_MinDurationBeforeRecast}{t_MaxTries}{t_Reagent}{t_CastTypeOverride}{t_PctAggro}{t_Delay}{t_NoTarget}{t_AfterEventDelay}{t_AfterSpellDelay}{t_BeforeEventDelay}{t_BeforeSpellDelay}{t_AfterCastDelay}{t_AfterCastCompletedDelay}{t_SongRefreshTime}{t_Enabled}";
+			string returnValue = $"{CastName}{t_CastTarget}{t_GemNumber}{t_Ifs}{t_checkFor}{t_CastIF}{t_healPct}{t_healthMax}{t_noInterrupt}{t_Zone}{t_MinSick}{t_BeforeSpell}{t_AfterSpell}{t_BeforeEvent}{t_AfterEvent}{t_minMana}{t_maxMana}{t_MinEnd}{t_ignoreStackRules}{t_MinDurationBeforeRecast}{t_MaxTries}{t_Reagent}{t_CastTypeOverride}{t_PctAggro}{t_Delay}{t_NoTarget}{t_AfterEventDelay}{t_AfterSpellDelay}{t_BeforeEventDelay}{t_BeforeSpellDelay}{t_AfterCastDelay}{t_AfterCastCompletedDelay}{t_SongRefreshTime}{t_StackRequestItem}{t_StackRequestTargets}{t_StackCheckInterval}{t_StackRecastDelay}{t_Enabled}";
 			return returnValue;
 
 		}
