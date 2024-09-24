@@ -415,7 +415,6 @@ namespace E3Core.Processors
                         
                         foreach (var spell in _currentRezSpells)
                         {
-
 							if (!String.IsNullOrWhiteSpace(spell.Ifs))
 							{
 								if (!Casting.Ifs(spell))

@@ -325,6 +325,7 @@ namespace E3Core.Processors
 
 			foreach (var spell in E3.CharacterSettings.GroupBuffRequests)
 			{
+				if (!spell.Enabled) continue;
 				if (spell.LastRequestTimeStamp > 0)
 				{
 					if ((Core.StopWatch.ElapsedMilliseconds - spell.LastRequestTimeStamp) < 15000) continue;
@@ -364,6 +365,7 @@ namespace E3Core.Processors
 
 			foreach (var spell in E3.CharacterSettings.StackBuffRequest)
 			{
+				if (!spell.Enabled) continue;
 				if (!e3util.ShouldCheck(ref spell.StackIntervalNextCheck, spell.StackIntervalCheck)) continue;
 
                 if (!String.IsNullOrWhiteSpace(spell.Ifs))
@@ -653,16 +655,11 @@ namespace E3Core.Processors
 			if (e3util.IsActionBlockingWindowOpen()) return;
 			//Logging.LogLevels previousLogLevel = Logging.LogLevels.Error;
 
-		
-
 			foreach (var spell in buffs)
 			{
-				//if (spell.Debug)
-				//{
-				//	previousLogLevel = Logging.MinLogLevelTolog;
-				//	Logging.MinLogLevelTolog = Logging.DefaultLogLevel;
+				if (!spell.Enabled) continue;
 
-				//}
+				if (spell.Debug) _log.Write($"Buffs-Spell-{spell.CastName}", Logging.LogLevels.Error);
 				//using (_log.Trace($"Buffs-Spell-{spell.CastName}"))
 				{
 					Spawn s;
@@ -759,7 +756,7 @@ namespace E3Core.Processors
 										{
 											buffDuration = 1000;
 										}
-										UpdateBuffTimers(s.ID, spell, 3000, buffDuration, true);
+										UpdateBuffTimers(s.ID, spell, 3000, buffDuration,true);
 										shouldContinue = true;
 										break;
 									}
@@ -1116,6 +1113,7 @@ namespace E3Core.Processors
 		   //its US!
 
 			Int64 timeinMS = TimeLeftFunction(spell);
+			if (spell.Debug) _log.Write($"Buffs-Spell-{spell.CastName} timeleft:{timeinMS}", Logging.LogLevels.Error);
 			if (timeinMS < 1)
 			{
 				return false;
@@ -1144,6 +1142,7 @@ namespace E3Core.Processors
 			{
 				keyToUse = "${Me.PetBuffInfo}";
 			}
+			if (spell.Debug) _log.Write($"Buffs-Spell-{spell.CastName} Checking bot data", Logging.LogLevels.Error);
 			string keyNameToUse = s.Name; //to get the pet or the owner
 			if(!NetMQServer.SharedDataClient.TopicUpdates.ContainsKey(spell.CastTarget))
 			{
@@ -1208,17 +1207,14 @@ namespace E3Core.Processors
 			SpellTimer st;
 			if (_buffTimers.TryGetValue(s.ID, out st))
 			{
+				if (spell.Debug) _log.Write($"Buffs-Spell-{spell.CastName} have buff timer", Logging.LogLevels.Error);
 				Int64 timestamp;
 				if (st.Timestamps.TryGetValue(spell.SpellID, out timestamp))
 				{
 					//our timer says the buff is still good, but lets make sure in case of dispel.
 					if (Core.StopWatch.ElapsedMilliseconds < timestamp)
 					{
-						///check for locked timestamps, just assume they are good period.
-						if (st.Lockedtimestamps.ContainsKey(spell.SpellID))
-						{
-							return true;
-						}
+						
 						//easy to check on just ourself
 						if (s.ID == E3.CurrentId)
 						{
@@ -1231,7 +1227,7 @@ namespace E3Core.Processors
 						}
 						else
 						{   //if a bot, check to see if the buff still exists
-							bool isABot = E3.Bots.BotsConnected().Contains(spell.CastTarget, StringComparer.OrdinalIgnoreCase);
+							bool isABot = E3.Bots.BotsConnected().Contains(s.CleanName, StringComparer.OrdinalIgnoreCase);
 							if (isABot)
 							{
 								//register the user to get their buff data if its not already there
@@ -1256,7 +1252,7 @@ namespace E3Core.Processors
 						{
 							return BuffTimerIsGood_CheckLocalData(spell, s, Casting.TimeLeftOnMyPetBuff,true);
 						}
-						else if (E3.Bots.BotsConnected().Contains(spell.CastTarget, StringComparer.OrdinalIgnoreCase))
+						else if (E3.Bots.BotsConnected().Contains(s.CleanName, StringComparer.OrdinalIgnoreCase))
 						{
 							return BuffTimerIsGood_CheckBotData(spell, s, usePets);
 						}
@@ -1301,7 +1297,7 @@ namespace E3Core.Processors
 						return BuffTimerIsGood_CheckLocalData(spell, s, Casting.TimeLeftOnMyPetBuff, true);
 
 					}
-					else if (E3.Bots.BotsConnected().Contains(spell.CastTarget, StringComparer.OrdinalIgnoreCase))
+					else if (E3.Bots.BotsConnected().Contains(s.CleanName, StringComparer.OrdinalIgnoreCase))
 					{
 						//bot
 						return BuffTimerIsGood_CheckBotData(spell, s, usePets);

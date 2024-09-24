@@ -298,7 +298,7 @@ namespace E3Core.Classes
 
 					foreach (var spell in E3.CharacterSettings.Bard_AutoMezSong)
 					{
-						
+						if (!spell.Enabled) continue;
 						//check if the if condition works
 						if (!String.IsNullOrWhiteSpace(spell.Ifs))
 						{

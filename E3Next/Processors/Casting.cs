@@ -1390,11 +1390,16 @@ namespace E3Core.Processors
 		{
 			//pure melee don't have 
 			if ((E3.CurrentClass & Class.PureMelee) == E3.CurrentClass) return false;
-
+			if (E3.CurrentClass == Class.Bard)
+			{
+				return false;
+			}
 			if (_lastSpellCastTimeStamp + 1500 > Core.StopWatch.ElapsedMilliseconds)
 			{
 				return true;
 			}
+
+			
 
 			if (MQ.Query<bool>("${Me.SpellReady[${Me.Gem[1].Name}]}") || MQ.Query<bool>("${Me.SpellReady[${Me.Gem[3].Name}]}") || MQ.Query<bool>("${Me.SpellReady[${Me.Gem[5].Name}]}") || MQ.Query<bool>("${Me.SpellReady[${Me.Gem[7].Name}]}"))
 			{

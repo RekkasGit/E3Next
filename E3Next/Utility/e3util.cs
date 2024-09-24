@@ -288,10 +288,11 @@ namespace E3Core.Utility
 		}
 		public static bool IsManualControl()
 		{
-			var isInForeground = MQ.Query<bool>("${EverQuest.Foreground}");
-			if (isInForeground) return true;
+			if (!Basics._allowManual) return false;
 
-			return false;
+			var isInForeground = MQ.Query<bool>("${EverQuest.Foreground}");
+
+			return isInForeground;
 		}
 
 

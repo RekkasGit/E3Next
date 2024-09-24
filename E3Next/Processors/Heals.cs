@@ -197,6 +197,7 @@ namespace E3Core.Processors
 			{
 				foreach (var spell in spellsToUse)
 				{
+					if (!spell.Enabled) continue;
 					//check Ifs on the spell
 					if (!String.IsNullOrWhiteSpace(spell.Ifs))
 					{
@@ -294,6 +295,7 @@ namespace E3Core.Processors
 		{
 			foreach (var spell in E3.CharacterSettings.HealGroup)
 			{
+				if (!spell.Enabled) continue;
 				//check Ifs on the spell
 				if (!String.IsNullOrWhiteSpace(spell.Ifs))
 				{
@@ -401,6 +403,7 @@ namespace E3Core.Processors
 
 			foreach (var spell in E3.CharacterSettings.Heal_EmergencyHeals)
 			{
+				if (!spell.Enabled) continue;
 				string target = spell.CastTarget;
 
 				if (IgnoreHealTargets.Contains(target)) continue;
@@ -531,6 +534,7 @@ namespace E3Core.Processors
 						bool inRange = false;
 						foreach (var spell in spells)
 						{
+							if (!spell.Enabled) continue;
 							if (Casting.InRange(targetID, spell))
 							{
 								inRange = true;
@@ -568,6 +572,7 @@ namespace E3Core.Processors
 									}
 									foreach (var spell in spells)
 									{
+										if (!spell.Enabled) continue;
 										//check Ifs on the spell
 										if (!String.IsNullOrWhiteSpace(spell.Ifs))
 										{
@@ -664,6 +669,7 @@ namespace E3Core.Processors
 
 								foreach (var spell in spells)
 								{
+									if (!spell.Enabled) continue;
 									//check Ifs on the spell
 									if (!String.IsNullOrWhiteSpace(spell.Ifs))
 									{
@@ -765,6 +771,7 @@ namespace E3Core.Processors
 						bool inRange = false;
 						foreach (var spell in spells)
 						{
+							if (!spell.Enabled) continue;
 							if (Casting.InRange(targetID, spell))
 							{
 								inRange = true;
@@ -802,6 +809,7 @@ namespace E3Core.Processors
 									}
 									foreach (var spell in spells)
 									{
+										if (!spell.Enabled) continue;
 										//check Ifs on the spell
 										if (!String.IsNullOrWhiteSpace(spell.Ifs))
 										{
@@ -884,6 +892,7 @@ namespace E3Core.Processors
 							bool inRange = false;
 							foreach (var spell in spells)
 							{
+								if (!spell.Enabled) continue;
 								if (Casting.InRange(targetID, spell))
 								{
 									inRange = true;
@@ -905,6 +914,7 @@ namespace E3Core.Processors
 									Int32 pctHealth = E3.Bots.PctHealth(name);
 									foreach (var spell in spells)
 									{
+										if (!spell.Enabled) continue;
 										//check Ifs on the spell
 										if (!String.IsNullOrWhiteSpace(spell.Ifs))
 										{
@@ -977,6 +987,7 @@ namespace E3Core.Processors
 			Int32 targetID = MQ.Query<Int32>("${Target.ID}");
 			foreach (var spell in E3.CharacterSettings.LifeSupport)
 			{
+				if (!spell.Enabled) continue;
 				if (pctHps < spell.HealPct)
 				{
 					if (!String.IsNullOrWhiteSpace(spell.Ifs))
