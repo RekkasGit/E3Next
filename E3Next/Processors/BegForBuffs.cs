@@ -81,7 +81,8 @@ namespace E3Core.Processors
 
 								foreach (var spell in E3.CharacterSettings.GroupBuffs)
 								{
-                                    _log.Write($"Checking spell {spell.CastName}");
+									if (!spell.Enabled) continue;
+									_log.Write($"Checking spell {spell.CastName}");
 									if (!String.IsNullOrWhiteSpace(spell.Ifs))
 									{
                                        
@@ -131,7 +132,8 @@ namespace E3Core.Processors
                             {
                                 foreach (var spell in E3.CharacterSettings.GroupBuffs)
                                 {
-                                    if (!String.IsNullOrWhiteSpace(spell.Ifs))
+									if (!spell.Enabled) continue;
+									if (!String.IsNullOrWhiteSpace(spell.Ifs))
                                     {
                                         if (!Casting.Ifs(spell))
                                         {
@@ -169,7 +171,8 @@ namespace E3Core.Processors
 					{
 						foreach (var spell in E3.CharacterSettings.GroupBuffs)
 						{
-            				_queuedBuffs.Enqueue(new BuffQueuedItem() { TargetID = spawn.ID, Spell = spell });
+							if (!spell.Enabled) continue;
+							_queuedBuffs.Enqueue(new BuffQueuedItem() { TargetID = spawn.ID, Spell = spell });
 						}
 					}
                 }
@@ -195,6 +198,7 @@ namespace E3Core.Processors
 						{
 							foreach (var spell in E3.CharacterSettings.GroupBuffs)
 							{
+								if (!spell.Enabled) continue;
 								_queuedBuffs.Enqueue(new BuffQueuedItem() { TargetID = spawn.PetID, Spell = spell });
 							}
 
@@ -207,7 +211,7 @@ namespace E3Core.Processors
 					{ 
 						foreach (var spell in E3.CharacterSettings.GroupBuffs)
 						{
-
+							if (!spell.Enabled) continue;
 							_queuedBuffs.Enqueue(new BuffQueuedItem() { TargetID = spawn.PetID, Spell = spell });
 
 						}
@@ -225,7 +229,8 @@ namespace E3Core.Processors
                     {
                         foreach (var spell in E3.CharacterSettings.GroupBuffs)
                         {
-                            _queuedBuffs.Enqueue(new BuffQueuedItem() { TargetID = spawnid, Spell = spell });
+							if (!spell.Enabled) continue;
+							_queuedBuffs.Enqueue(new BuffQueuedItem() { TargetID = spawnid, Spell = spell });
 
                         }
                     }

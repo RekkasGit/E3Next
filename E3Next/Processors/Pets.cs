@@ -101,7 +101,8 @@ namespace E3Core.Processors
                 //we have no pet, do we have a pet configurd to summon?               
                 foreach (var spell in E3.CharacterSettings.PetSpell)
                 {
-                    if (!String.IsNullOrWhiteSpace(spell.Ifs))
+					if (!spell.Enabled) continue;
+					if (!String.IsNullOrWhiteSpace(spell.Ifs))
                     {
                         if (!Casting.Ifs(spell))
                         {
@@ -152,7 +153,8 @@ namespace E3Core.Processors
             }
             foreach (var spell in E3.CharacterSettings.PetHeals)
             {
-                if (pctHps <= spell.HealPct)
+				if (!spell.Enabled) continue;
+				if (pctHps <= spell.HealPct)
                 {
                     if (Casting.CheckReady(spell) && Casting.CheckMana(spell))
                     {
@@ -180,7 +182,7 @@ namespace E3Core.Processors
             {
                 foreach (var spellName in _petShrinkSpells)
                 {
-                    Spell s;
+					Spell s;
                     if (!Spell.LoadedSpellsByName.TryGetValue(spellName, out s))
                     {
                         s = new Spell(spellName);

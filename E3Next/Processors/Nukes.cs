@@ -113,8 +113,9 @@ namespace E3Core.Processors
 
                         foreach (var spell in spells)
                         {
-                            //check Ifs on the spell
-                            if (!String.IsNullOrWhiteSpace(spell.Ifs))
+							if (!spell.Enabled) continue;
+							//check Ifs on the spell
+							if (!String.IsNullOrWhiteSpace(spell.Ifs))
                             {
                                 if (!Casting.Ifs(spell))
                                 {
@@ -216,8 +217,9 @@ namespace E3Core.Processors
 
                 foreach (var spell in spells)
                 {
-                    //check Ifs on the spell
-                    if (!String.IsNullOrWhiteSpace(spell.Ifs))
+					if (!spell.Enabled) continue;
+					//check Ifs on the spell
+					if (!String.IsNullOrWhiteSpace(spell.Ifs))
                     {
                         if (!Casting.Ifs(spell))
                         {

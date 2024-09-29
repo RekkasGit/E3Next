@@ -32,10 +32,11 @@ namespace E3Core.Processors
 		public static List<int> GroupMembers = new List<int>();
         private static long _nextGroupCheck = 0;
         private static long _nextGroupCheckInterval = 3000;
-
 		private static long _nextAutoHaterFixCheck = 0;
 		private static long _nextAutoHaterFixCheckInterval = 1000;
-
+		[ExposedData("Basics","AllowManual")]
+		public static bool _allowManual = true;
+		
         private static long _nextResourceCheck = 0;
         private static long _nextResourceCheckInterval = 1000;
         private static long _nextAutoMedCheck = 0;
@@ -56,6 +57,9 @@ namespace E3Core.Processors
 		private static DateTime? _cursorOccupiedSince;
         private static TimeSpan _cursorOccupiedTime;
         private static TimeSpan _cursorOccupiedThreshold = new TimeSpan(0, 0, 0, 30);
+
+		[ExposedData("Basics", "XTargetFixEnabled")]
+		private static bool _enableXTargetFix = false;
 
 		[ExposedData("Basics", "CusrorPreviousID")]
 		private static Int32 _cusrorPreviousID;
@@ -159,6 +163,23 @@ namespace E3Core.Processors
 					}
 				}
 			});
+			//_enableXTargetFix
+
+
+			EventProcessor.RegisterCommand("/e3xtargetfix", (x) =>
+			{
+				//swap them
+				e3util.ToggleBooleanSetting(ref _enableXTargetFix, "Enable XTargetFix", x.args);
+
+			});
+
+			EventProcessor.RegisterCommand("/e3allowmanual", (x) =>
+			{
+				//swap them
+				e3util.ToggleBooleanSetting(ref _allowManual, "Allow Manual", x.args);
+
+			});
+
 			EventProcessor.RegisterCommand("/e3forage", (x) =>
 			{
 				//swap them
@@ -869,8 +890,9 @@ namespace E3Core.Processors
                     {
                         foreach (var spell in E3.CharacterSettings.CasterEvacs)
                         {
+							if (!spell.Enabled) continue;
 							//don't try and mem a spell if its not already mem
-                            if ((spell.CastType != CastingType.Spell) || !Casting.SpellInCooldown(spell))
+							if ((spell.CastType != CastingType.Spell) || !Casting.SpellInCooldown(spell))
                             {
                                 if (Casting.CheckReady(spell) && Casting.CheckMana(spell))
                                 {
@@ -1303,7 +1325,7 @@ namespace E3Core.Processors
 
 			if (MQ.Query<bool>("${Me.ItemReady[Summoned: Large Modulation Shard]}"))
 			{
-				if (MQ.Query<double>("${Math.Calc[${Me.MaxMana} - ${Me.CurrentMana}]}") > 3500 && currentHps > 6000)
+				if (MQ.Query<double>("${Math.Calc[${Me.MaxMana} - ${Me.CurrentMana}]}") > 3500 && currentHps > 8000)
 				{
 					Spell s;
 					if (!Spell.LoadedSpellsByName.TryGetValue("Summoned: Large Modulation Shard", out s))
@@ -1561,7 +1583,7 @@ namespace E3Core.Processors
 		[ClassInvoke(Data.Class.All)]
 		public static void EMU_FixXTarget()
 		{
-			
+			if (!_enableXTargetFix) return;
 			if (!e3util.ShouldCheck(ref _nextAutoHaterFixCheck, _nextAutoHaterFixCheckInterval)) return;
 			if (e3util.IsEQLive()) return;
 			if (Basics.InCombat()) return;
