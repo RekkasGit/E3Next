@@ -740,21 +740,6 @@ namespace E3Core.Settings
                 LoadKeyData("Auto Paragon", "Focused Paragon Spell", ParsedData, out FocusedParagonSpell);
                 LoadKeyData("Auto Paragon", "Focused Paragon Mana (Pct)", ParsedData, ref FocusedParagonManaPct);
                 LoadKeyData("Auto Paragon", "Character", ParsedData, FocusedParagonCharacters);
-                if (AutoFocusedParagon)
-                {
-                    MQ.Cmd("/plugin mq2dannet");
-                    if (!MQ.Query<bool>("${Plugin[mq2dannet]}"))
-                    {
-                        E3.Bots.Broadcast("\arUnable to load mq2dannet - disabling auto focused paragon");
-                        AutoFocusedParagon = false;
-                    }
-
-                    E3.Bots.Broadcast("Adding dannet observers for focused paragon characters' mana");
-                    foreach (var character in FocusedParagonCharacters)
-                    {
-                        MQ.Cmd($"/dobserve {character} -q Me.PctMana");
-                    }
-                }
             }
 
          

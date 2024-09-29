@@ -204,9 +204,17 @@ namespace E3Core.Processors
 
             EventProcessor.RegisterCommand("/lootkeep", (x) =>
             {
-                string cursorItem = MQ.Query<string>("${Cursor.Name}");
+				string cursorItem;
+				if (x.args.Count > 0)
+				{
+					cursorItem = x.args[0];
+				}
+				else
+				{
+					cursorItem = MQ.Query<string>("${Cursor.Name}");
+				}
 
-                if (cursorItem.Equals("NULL", StringComparison.OrdinalIgnoreCase) || String.IsNullOrWhiteSpace(cursorItem))
+				if (cursorItem.Equals("NULL", StringComparison.OrdinalIgnoreCase) || String.IsNullOrWhiteSpace(cursorItem))
                 {
                     MQ.Write("You don't have an item on your cursor, cannot modify the loot file.");
                     MQ.Write("Place an item on your cursor and then give the proper /lootkeep, /lootsell, /lootskip /lootdestroy command");
@@ -252,10 +260,21 @@ namespace E3Core.Processors
 
 			EventProcessor.RegisterCommand("/lootskip", (x) =>
             {
-                string cursorItem = MQ.Query<string>("${Cursor.Name}");
+				string cursorItem;
+				if (x.args.Count > 0)
+				{
+					cursorItem = x.args[0];
+				}
+				else
+				{
+					cursorItem = MQ.Query<string>("${Cursor.Name}");
+				}
 
-                if (cursorItem.Equals("NULL", StringComparison.OrdinalIgnoreCase) || String.IsNullOrWhiteSpace(cursorItem))
+				if (cursorItem.Equals("NULL", StringComparison.OrdinalIgnoreCase) || String.IsNullOrWhiteSpace(cursorItem))
                 {
+					//what about a param?
+				
+
                     MQ.Write("You don't have an item on your cursor, cannot modify the loot file.");
                     MQ.Write("Place an item on your cursor and then give the proper /lootkeep, /lootsell, /lootskip command");
                     return;
@@ -274,9 +293,17 @@ namespace E3Core.Processors
 
             EventProcessor.RegisterCommand("/lootsell", (x) =>
             {
-                string cursorItem = MQ.Query<string>("${Cursor.Name}");
+				string cursorItem;
+				if (x.args.Count > 0)
+				{
+					cursorItem = x.args[0];
+				}
+				else
+				{
+					cursorItem = MQ.Query<string>("${Cursor.Name}");
+				}
 
-                if (cursorItem.Equals("NULL", StringComparison.OrdinalIgnoreCase) || String.IsNullOrWhiteSpace(cursorItem))
+				if (cursorItem.Equals("NULL", StringComparison.OrdinalIgnoreCase) || String.IsNullOrWhiteSpace(cursorItem))
                 {
                     MQ.Write("You don't have an item on your cursor, cannot modify the loot file.");
                     MQ.Write("Place an item on your cursor and then give the proper /lootkeep, /lootsell, /lootskip /lootdestroy command");

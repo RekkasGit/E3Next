@@ -1325,7 +1325,7 @@ namespace E3Core.Processors
 
 			if (MQ.Query<bool>("${Me.ItemReady[Summoned: Large Modulation Shard]}"))
 			{
-				if (MQ.Query<double>("${Math.Calc[${Me.MaxMana} - ${Me.CurrentMana}]}") > 3500 && currentHps > 6000)
+				if (MQ.Query<double>("${Math.Calc[${Me.MaxMana} - ${Me.CurrentMana}]}") > 3500 && currentHps > 8000)
 				{
 					Spell s;
 					if (!Spell.LoadedSpellsByName.TryGetValue("Summoned: Large Modulation Shard", out s))

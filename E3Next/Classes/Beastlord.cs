@@ -51,12 +51,11 @@ namespace E3Core.Classes
             {
                 foreach(var character in E3.CharacterSettings.FocusedParagonCharacters)
                 {
-                    MQ.Cmd($"/dobserve {character} -q Me.PctMana");
                     if (_spawns.TryByName(character, out var characterSpawn))
                     {
-                        if (!Casting.CheckReady(E3.CharacterSettings.FocusedParagonSpell)) return;
-                        var pctMana = MQ.Query<int>($"${{DanNet[{character}].Observe[Me.PctMana]}}");
-                        if (pctMana < E3.CharacterSettings.FocusedParagonManaPct)
+						if (!Casting.CheckReady(E3.CharacterSettings.FocusedParagonSpell)) return;
+						var pctMana = E3.Bots.PctMana(character);
+						if (pctMana < E3.CharacterSettings.FocusedParagonManaPct)
                         {
                             if (characterSpawn.Distance < E3.CharacterSettings.FocusedParagonSpell.MyRange)
                                 Casting.Cast(characterSpawn.ID, E3.CharacterSettings.FocusedParagonSpell);

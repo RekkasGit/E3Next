@@ -25,7 +25,8 @@ namespace E3Core.Processors
        
      //   Boolean InZone(string Name);
         Int32 PctHealth(string name);
-        List<string> BotsConnected();
+		Int32 PctMana(string name);
+		List<string> BotsConnected();
         Boolean HasShortBuff(string name, Int32 buffid);
         void BroadcastCommand(string command, bool noparse = false, CommandMatch match = null);
         void BroadcastCommandToGroup(string command, CommandMatch match=null, bool noparse = false);
@@ -928,7 +929,44 @@ namespace E3Core.Processors
 			
             return sharedInfo.Data;
 		}
-        public string Query(string name,string query)
+		Dictionary<string, SharedNumericDataInt32> _PctManaCollection = new Dictionary<string, SharedNumericDataInt32>();
+		public int PctMana(string name)
+		{
+			//register the user to get their buff data if its not already there
+			if (!NetMQServer.SharedDataClient.TopicUpdates.ContainsKey(name))
+			{
+				return 100; //dunno just say full mana
+			}
+			var userTopics = NetMQServer.SharedDataClient.TopicUpdates[name];
+			//check to see if it has been filled out yet.
+			string keyToUse = "${Me.PctMana}";
+			if (!userTopics.ContainsKey(keyToUse))
+			{
+				//don't have the data yet kick out and assume everything is ok.
+				return 100;//dunno just say full mana
+			}
+			var entry = userTopics[keyToUse];
+			if (!_PctManaCollection.ContainsKey(name))
+			{
+				_PctManaCollection.Add(name, new SharedNumericDataInt32 { Data = 100 });
+			}
+			var sharedInfo = _PctManaCollection[name];
+			lock (entry)
+			{
+				if (entry.LastUpdate > sharedInfo.LastUpdate)
+				{
+					if (Int32.TryParse(entry.Data, out var result))
+					{
+
+						sharedInfo.Data = result;
+						sharedInfo.LastUpdate = entry.LastUpdate;
+					}
+				}
+			}
+
+			return sharedInfo.Data;
+		}
+		public string Query(string name,string query)
         {
 			//register the user to get their buff data if its not already there
 			if (!NetMQServer.SharedDataClient.TopicUpdates.ContainsKey(name))

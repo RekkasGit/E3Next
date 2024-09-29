@@ -484,9 +484,7 @@ namespace E3Core.Processors
 			if (E3.IsInvis) return;
 			
 			//e3util.PrintTimerStatus(_buffTimers, ref _printoutTimer, "Buff timers");
-			//RefresBuffCacheForBots();
 			//instant buffs have their own shouldcheck, need it snappy so check quickly.
-			//BuffInstant(E3.CharacterSettings.InstantBuffs);
 			if(!E3.CurrentInCombat)
 			{
 				if (!e3util.ShouldCheck(ref _nextBuffCheck, _nextBuffCheckInterval)) return;
@@ -928,11 +926,19 @@ namespace E3Core.Processors
 								{
 									continue;
 								}
-								Casting.TrueTarget(s.ID);
-								MQ.Delay(2000, "${Target.BuffsPopulated}");
-								bool willStack = MQ.Query<bool>($"${{Spell[{spell.SpellName}].StacksTarget}}");
-								if (willStack && Casting.CheckReady(spell) && Casting.CheckMana(spell))
+								
+								if (Casting.CheckReady(spell) && Casting.CheckMana(spell))
 								{
+
+									Casting.TrueTarget(s.ID);
+									MQ.Delay(2000, "${Target.BuffsPopulated}");
+									bool willStack = MQ.Query<bool>($"${{Spell[{spell.SpellName}].StacksTarget}}");
+									if (!willStack)
+									{
+										UpdateBuffTimers(s.ID, spell, 15000, 15000,true);
+										continue;
+									}
+
 									//E3.Bots.Broadcast($"{spell.CastTarget} is missing the buff {spell.CastName} with id:{spell.SpellID}. current list:{String.Join(",",list)}");
 
 									//then we can cast!
@@ -957,7 +963,8 @@ namespace E3Core.Processors
 									return;
 								}
 								else
-								{   //spell not ready or won't stack
+								{   
+									//spell not ready 
 									UpdateBuffTimers(s.ID, spell, 15000, -1, true, true);
 
 								}
@@ -1214,7 +1221,21 @@ namespace E3Core.Processors
 					//our timer says the buff is still good, but lets make sure in case of dispel.
 					if (Core.StopWatch.ElapsedMilliseconds < timestamp)
 					{
-						
+						//is this timestamp locked?
+						if(st.Lockedtimestamps.TryGetValue(spell.SpellID,out var lockedtimestamp))
+						{
+							if(lockedtimestamp<Core.StopWatch.ElapsedMilliseconds)
+							{
+								//means this lock is no longer valuid
+								st.Lockedtimestamps.Remove(spell.SpellID);
+							}
+							else
+							{
+								//we have a locked time stamp, say its still good
+								return true;
+							}
+						}
+
 						//easy to check on just ourself
 						if (s.ID == E3.CurrentId)
 						{
@@ -1590,7 +1611,7 @@ namespace E3Core.Processors
 				{
 					if (!s.Lockedtimestamps.ContainsKey(spell.SpellID))
 					{
-						s.Lockedtimestamps.Add(spell.SpellID, timeLeftInMS);
+						s.Lockedtimestamps.Add(spell.SpellID, Core.StopWatch.ElapsedMilliseconds + timeLeftInMS);
 					}
 				}
 				else
@@ -1614,7 +1635,7 @@ namespace E3Core.Processors
 				{
 					if (!ts.Lockedtimestamps.ContainsKey(spell.SpellID))
 					{
-						ts.Lockedtimestamps.Add(spell.SpellID, timeLeftInMS);
+						ts.Lockedtimestamps.Add(spell.SpellID, Core.StopWatch.ElapsedMilliseconds + timeLeftInMS);
 					}
 				}
 				else
