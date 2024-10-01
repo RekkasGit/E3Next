@@ -96,6 +96,9 @@ namespace E3Core.Settings
 		public bool Misc_AutoLootEnabled;
 		[INI_Section("Misc", "Debuffs/Dots are visible")]
 		public bool Misc_VisibleDebuffsDots=true;
+		[INI_Section("Misc", "Enhanced rotation speed")]
+		public bool Misc_EnchancedRotationSpeed = false;
+
 
 		[INI_Section("Misc", "Anchor (Char to Anchor to)")]
 		public string Misc_AnchorChar = String.Empty;
@@ -619,7 +622,7 @@ namespace E3Core.Settings
             LoadKeyData("Misc", "Delay in MS After CastWindow Drops For Spell Completion",ParsedData, ref Misc_DelayAfterCastWindowDropsForSpellCompletion);
 			LoadKeyData("Misc", "If FD stay down (true/false)", ParsedData, ref IfFDStayDown);
 			LoadKeyData("Misc", "Debuffs/Dots are visible", ParsedData, ref Misc_VisibleDebuffsDots);
-
+			LoadKeyData("Misc", "Enhanced rotation speed", ParsedData, ref Misc_EnchancedRotationSpeed);
 
 			LoadKeyData("Manastone", "Override General Settings (On/Off)", ParsedData, ref Manastone_OverrideGeneralSettings);
             LoadKeyData("Manastone", "Manastone Enabled (On/Off)", ParsedData, ref Manastone_Enabled);
@@ -980,6 +983,7 @@ namespace E3Core.Settings
 			section.Keys.AddKey("Delay in MS After CastWindow Drops For Spell Completion", "0");
 			section.Keys.AddKey("If FD stay down (true/false)", "False");
 			section.Keys.AddKey("Debuffs/Dots are visible", "True");
+			section.Keys.AddKey("Enhanced rotation speed", "Off");
 		
 			newFile.Sections.AddSection("AutoMed");
 			section = newFile.Sections.GetSectionData("AutoMed");
