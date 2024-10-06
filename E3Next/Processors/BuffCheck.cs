@@ -965,7 +965,7 @@ namespace E3Core.Processors
 								else
 								{   
 									//spell not ready 
-									UpdateBuffTimers(s.ID, spell, 15000, -1, true, true);
+									UpdateBuffTimers(s.ID, spell, 15000, 15000, true, true);
 
 								}
 							}
@@ -975,6 +975,7 @@ namespace E3Core.Processors
 								{
 									continue;
 								}
+								if (!Casting.CheckReady(spell)) continue;
 								//its someone not in our buff group, do it the hacky way.
 								Casting.TrueTarget(s.ID);
 

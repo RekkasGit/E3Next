@@ -291,18 +291,6 @@ namespace E3Core.Data
                         }
 
                     }
-					else if (value.StartsWith("DelayAfterCast|", StringComparison.OrdinalIgnoreCase))
-					{
-						
-						AfterCastCompletedDelay = GetArgument<Int32>(value);
-						
-					}
-					else if (value.StartsWith("AfterCastCompletedDelay|", StringComparison.OrdinalIgnoreCase))
-					{
-
-						AfterCastCompletedDelay = GetArgument<Int32>(value);
-
-					}
 					else if (value.Equals("GoM", StringComparison.OrdinalIgnoreCase))
                     {
                         GiftOfMana = true;
@@ -319,6 +307,16 @@ namespace E3Core.Data
                     {
                         MinSick = GetArgument<Int32>(value);
                     }
+					else if (value.StartsWith("DelayAfterCast|", StringComparison.OrdinalIgnoreCase))
+					{
+						AfterCastCompletedDelay = GetArgument<Int32>(value);
+					}
+					else if (value.StartsWith("AfterCastCompletedDelay|", StringComparison.OrdinalIgnoreCase))
+					{
+
+						AfterCastCompletedDelay = GetArgument<Int32>(value);
+
+					}
 					else if (value.StartsWith("AfterEventDelay|", StringComparison.OrdinalIgnoreCase))
 					{
 						AfterEventDelay = GetArgument<Int32>(value);
@@ -345,7 +343,7 @@ namespace E3Core.Data
                     }
                     else if (value.Equals("AllowSpellSwap", StringComparison.OrdinalIgnoreCase))
                     {
-                        GiftOfMana = true;
+                        AllowSpellSwap = true;
                     }
                     else if (value.Equals("NoEarlyRecast", StringComparison.OrdinalIgnoreCase))
                     {

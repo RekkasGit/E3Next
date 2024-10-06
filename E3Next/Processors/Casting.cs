@@ -170,6 +170,7 @@ namespace E3Core.Processors
 							BeforeEventCheck(spell);
 							MQ.Write($"\ag{spell.CastName} \am{targetName} \ao{targetID}");
                             MQ.Cmd($"/doability \"{spell.CastName}\"");
+							if (!E3.CharacterSettings.Misc_EnchancedRotationSpeed) MQ.Delay(300);
 							if (spell.AfterCastCompletedDelay > 0)
 							{
 								MQ.Delay(spell.AfterCastCompletedDelay);
@@ -182,6 +183,7 @@ namespace E3Core.Processors
 						{
 							BeforeEventCheck(spell);
 							MQ.Cmd($"/alt activate {spell.CastID}");
+							if (!E3.CharacterSettings.Misc_EnchancedRotationSpeed) MQ.Delay(300);
 							UpdateAAInCooldown(spell);
 							if (spell.AfterCastCompletedDelay > 0)
 							{
@@ -594,17 +596,13 @@ namespace E3Core.Processors
 									MQ.Write($"\ag{spell.CastName} \at{spell.SpellID} \am{targetName} \ao{targetID} \aw({spell.MyCastTime / 1000}sec)");
 
 									MQ.Cmd($"/cast \"{spell.CastName}\"");
-									//MQ.Cmd($"/casting \"{spell.CastName}|{spell.SpellGem}\"");
-									
+									if (!E3.CharacterSettings.Misc_EnchancedRotationSpeed) MQ.Delay(300);
+									//give time for the casting bar to actulaly appear
 									if (spell.MyCastTime > 500)
 									{
 										MQ.Delay(500);
 									}
-									//else
-									//{
-									//	_lastSpellCastTimeStamp = Core.StopWatch.ElapsedMilliseconds;
-									//	MQ.Delay(300);
-									//}
+									
 								}
 								else
 								{
@@ -617,6 +615,9 @@ namespace E3Core.Processors
 										//MQ.Cmd($"/casting \"{spell.CastName}|alt\"");
 										MQ.Cmd($"/alt activate {spell.AAID}");
 										UpdateAAInCooldown(spell);
+
+										if (!E3.CharacterSettings.Misc_EnchancedRotationSpeed) MQ.Delay(300);
+										//give time for the casting bar to actulaly appear
 										if (spell.MyCastTime > 500)
 										{
 											MQ.Delay(500);
@@ -632,6 +633,8 @@ namespace E3Core.Processors
 										//MQ.Cmd($"/casting \"{spell.CastName}|{spell.CastType.ToString()}\"");
 										MQ.Cmd($"/useitem \"{spell.CastName}\"");
 										UpdateItemInCooldown(spell);
+										if (!E3.CharacterSettings.Misc_EnchancedRotationSpeed) MQ.Delay(300);
+										//give time for the casting bar to actulaly appear
 										if (spell.MyCastTime > 500)
 										{
 											MQ.Delay(500);
@@ -648,6 +651,8 @@ namespace E3Core.Processors
 									MQ.Write($"\ag{spell.CastName} \at{spell.SpellID} \am{targetName} \ao{targetID} \aw({spell.MyCastTime / 1000}sec)");
 									//MQ.Cmd($"/casting \"{spell.CastName}|{spell.SpellGem}\" \"-targetid|{targetID}\"");
 									MQ.Cmd($"/cast \"{spell.CastName}\"");
+									if (!E3.CharacterSettings.Misc_EnchancedRotationSpeed) MQ.Delay(300);
+									//give time for the casting bar to actulaly appear
 									if (spell.MyCastTime > 500)
 									{
 										MQ.Delay(500);
@@ -662,8 +667,9 @@ namespace E3Core.Processors
 									{
 										//MQ.Cmd($"/casting \"{spell.CastName}|alt\" \"-targetid|{targetID}\"");
 										MQ.Cmd($"/alt activate {spell.AAID}");
+										if (!E3.CharacterSettings.Misc_EnchancedRotationSpeed) MQ.Delay(300);
 										UpdateAAInCooldown(spell);
-
+										//give time for the casting bar to actulaly appear
 										if (spell.MyCastTime > 500)
 										{
 											MQ.Delay(500);
@@ -676,6 +682,8 @@ namespace E3Core.Processors
 										//MQ.Cmd($"/casting \"{spell.CastName}|item\" \"-targetid|{targetID}\"");
 										MQ.Cmd($"/useitem \"{spell.CastName}\"");
 										UpdateItemInCooldown(spell);
+										if (!E3.CharacterSettings.Misc_EnchancedRotationSpeed) MQ.Delay(300);
+										//give time for the casting bar to actulaly appear
 										if (spell.MyCastTime > 500)
 										{
 											MQ.Delay(500);
