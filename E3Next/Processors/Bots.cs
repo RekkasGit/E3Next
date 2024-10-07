@@ -284,7 +284,8 @@ namespace E3Core.Processors
             string searchPattern = $"*_{E3.ServerName}_pubsubport.txt";
 			bool inProxyState = false;
 			string proxyFileFullName = string.Empty;
-			DateTime proxyFileLastUpdateTime = DateTime.MinValue; 
+			DateTime proxyFileLastUpdateTime = DateTime.MinValue;
+			TimeSpan maxAgeOfRegisteredUser = new TimeSpan(7, 0, 0, 0);
 			while (Core.IsProcessing)
             {
 				//currently have proxy file, to just keep the thread checking for updates
@@ -343,6 +344,7 @@ namespace E3Core.Processors
 						string[] fileNames = System.IO.Directory.GetFiles(path, searchPattern);
 						foreach (string file in fileNames)
 						{
+							
 							//D:\\EQ\\E3_ROF2_MQ2Next\\Config\\e3 Macro Inis\\Rekken_Lazarus_pubsubport.txt
 							Int32 currentIndex = file.LastIndexOf(@"\") + 1;
 							Int32 indexOfUnderline = file.IndexOf('_', currentIndex);
@@ -350,6 +352,10 @@ namespace E3Core.Processors
 
 							if (!NetMQServer.SharedDataClient.TopicUpdates.ContainsKey(name))
 							{
+								FileInfo tFileInfo = new FileInfo(file);
+								if (!tFileInfo.Exists) continue;
+								//in case its a super old connection, don't even try and register it. 
+								if ((DateTime.UtcNow - tFileInfo.LastWriteTimeUtc) > maxAgeOfRegisteredUser) continue;
 								NetMQServer.SharedDataClient.RegisterUser(name, path);
 							}
 						}
@@ -361,7 +367,7 @@ namespace E3Core.Processors
 						System.Threading.Thread.Sleep(1000);
 					}
 				}
-     			System.Threading.Thread.Sleep(500);
+     			System.Threading.Thread.Sleep(1000);
             }
         }
         /// <summary>
