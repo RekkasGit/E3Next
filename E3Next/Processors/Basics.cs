@@ -1743,11 +1743,12 @@ namespace E3Core.Processors
                 
             }
         }
-        
-        /// <summary>
-        /// Checks hunger and thirst levels, and eats the configured food and drink in order to save stat food.
-        /// </summary>
-        [ClassInvoke(Class.All)]
+
+		/// <summary>
+		/// Checks hunger and thirst levels, and eats the configured food and drink in order to save stat food.
+		/// </summary>
+		static Int32 _notifyFoodDrinkAmount = 200;
+		[ClassInvoke(Class.All)]
         public static void CheckFood()
         {
             if (!e3util.ShouldCheck(ref _nextFoodCheck, _nextFoodCheckInterval)) return;
@@ -1764,19 +1765,26 @@ namespace E3Core.Processors
 				int foundFoodCount = 0;
 				int foundDrinkCount = 0;
 					
-				if (foundFood && hungerLevel < 3400)
+				if (foundFood && hungerLevel < 3400 )
                 {
 	                MQ.Cmd($"/useitem \"{toEat}\"");
 					foundFoodCount = MQ.Query<Int32>($"${{FindItem[{toEat}].StackCount}}");
-					E3.Bots.Broadcast($"\ar<\ayAutoFood\ar>\ag Eating: {toEat} because of hunger level:{hungerLevel}. Total left:{foundFoodCount}");
+					if (foundFoodCount < _notifyFoodDrinkAmount)
+					{
+						E3.Bots.Broadcast($"\ar<\ayAutoFood\ar>\ag Eating: {toEat} because of hunger level:{hungerLevel}. Total left:{foundFoodCount}");
+
+					}
 				}
 
                 if (foundDrink && thirstLevel < 3400)
                 {
 					MQ.Cmd($"/useitem \"{toDrink}\"");
 					foundDrinkCount = MQ.Query<Int32>($"${{FindItem[{toDrink}].StackCount}}");
-					E3.Bots.Broadcast($"\ar<\ayAutoFood\ar>\ag Drinking: {toDrink} because of thirst level:{thirstLevel}. Total left:{foundDrinkCount}");
-					
+					if (foundDrinkCount < _notifyFoodDrinkAmount)
+					{
+						E3.Bots.Broadcast($"\ar<\ayAutoFood\ar>\ag Drinking: {toDrink} because of thirst level:{thirstLevel}. Total left:{foundDrinkCount}");
+					}
+
 				}
             }
         }
