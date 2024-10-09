@@ -336,9 +336,8 @@ namespace E3Core.Processors
 		public static void ProcessExternalCommands()
 		{
 			NetMQServer.SharedDataClient.ProcessCommands(); //recieving data
-			NetMQServer.SharedDataClient.ProcessE3BCCommands();//sending out data
-															   //process any tlo request from the UI, or anything really.
-			RouterServer.ProcessRequests();
+			e3util.ProcessE3BCCommands(); //send out data we may have queued up for /e3bc commands
+			RouterServer.ProcessRequests();//process any tlo request from the UI, or anything really.
 			//process any commands we need to process from the UI
 			PubClient.ProcessRequests();
 		}
