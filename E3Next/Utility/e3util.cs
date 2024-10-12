@@ -70,6 +70,14 @@ namespace E3Core.Utility
 		{
 			//put the target back to where it was
 			Int32 currentTargetID = MQ.Query<Int32>("${Target.ID}");
+			var targetType = MQ.Query<string>("${Target.Type}");
+
+			//if manual control and its another mob, don't put target back
+			if(currentTargetID>0 && targetType != "PC" && e3util.IsManualControl())
+			{
+				return;
+			}
+
 			if (targetid > 0 && currentTargetID != targetid)
 			{
 				bool orgTargetCorpse = MQ.Query<bool>($"${{Spawn[id {targetid}].Type.Equal[Corpse]}}");
