@@ -28,24 +28,43 @@ namespace E3Core.Settings.FeatureSettings
 			IniData parsedData;
 
 			FileIniDataParser fileIniData = e3util.CreateIniParser();
-
-
-		
-
-
-			if (!System.IO.File.Exists(_filename))
+			try
 			{
-				if (!System.IO.Directory.Exists(_configFolder + _settingsFolder))
+				if (!System.IO.File.Exists(_filename))
 				{
-					System.IO.Directory.CreateDirectory(_configFolder + _settingsFolder);
+					if (!System.IO.Directory.Exists(_configFolder + _settingsFolder))
+					{
+						System.IO.Directory.CreateDirectory(_configFolder + _settingsFolder);
+					}
+
+					parsedData = CreateSettings(_filename);
+				}
+				else
+				{
+					parsedData = fileIniData.ReadFile(_filename);
 				}
 
-				parsedData = CreateSettings(_filename);
 			}
-			else
+			catch(Exception)
 			{
-				parsedData = fileIniData.ReadFile(_filename);
+				//if the file doesn't exist but you restart all at the same time, they can fight over the creation
+				//and some will throw exceptions, chill out and try again after the fighting is done.
+				System.Threading.Thread.Sleep(1000);
+				if (!System.IO.File.Exists(_filename))
+				{
+					if (!System.IO.Directory.Exists(_configFolder + _settingsFolder))
+					{
+						System.IO.Directory.CreateDirectory(_configFolder + _settingsFolder);
+					}
+
+					parsedData = CreateSettings(_filename);
+				}
+				else
+				{
+					parsedData = fileIniData.ReadFile(_filename);
+				}
 			}
+
 			_fileLastModifiedFileName = _filename;
 			_fileLastModified = System.IO.File.GetLastWriteTime(_filename);
 			//have the data now!

@@ -1,9 +1,7 @@
 ﻿using IniParser.Model;
 using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
+using MonoCore;
+using E3Core.Processors;
 
 namespace E3Core.Data
 {
@@ -33,7 +31,15 @@ namespace E3Core.Data
                     {
                         MelodyIf = keyData;
                     }
-                }
+					else
+					{
+						//check the global ifs
+						if (E3.GlobalIfs.Ifs.ContainsKey(MelodyIfName))
+						{
+							MelodyIf = string.IsNullOrWhiteSpace(keyData) ? E3.GlobalIfs.Ifs[MelodyIfName] : MelodyIf + " && " + E3.GlobalIfs.Ifs[keyData];
+						}
+					}
+				}
             }
         }
 		public string ToConfigEntry()

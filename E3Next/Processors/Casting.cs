@@ -574,7 +574,7 @@ namespace E3Core.Processors
 									MQ.Cmd("/nav pause");
 									e3PausedNav = true;
 								}
-								MQ.Delay(300, "${Bool[!${Me.Moving}]}");
+								MQ.Delay(300, "${If[${Me.Moving},false,true]}");
 
 							}
 
