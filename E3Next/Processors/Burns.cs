@@ -106,7 +106,7 @@ namespace E3Core.Processors
         public static void UseBurns()
         {
             //  if (!e3util.ShouldCheck(ref _nextBurnCheck, _nextBurnCheckInterval)) return;
-            //lets check if there are any events in the queue that we need to check on. 
+            //lets check if there are any events in the queue that we need to check on.
             EventProcessor.ProcessEventsInQueues("/quickburns");
 			EventProcessor.ProcessEventsInQueues("/epicburns");
 			EventProcessor.ProcessEventsInQueues("/fullburns");
@@ -124,7 +124,7 @@ namespace E3Core.Processors
 
         public static void CheckTimeouts()
         {
-           
+
             if (use_QUICKBurns) CheckTimeouts_SubCheck(ref use_QUICKBurns, ref _quickburnTimeout, ref _quickburnStartTimeStamp, "QuickBurns");
             if (use_LONGBurns) CheckTimeouts_SubCheck(ref use_LONGBurns, ref _longburnTimeout, ref _longburnStartTimeStamp, "LongBurns");
             if (use_FULLBurns) CheckTimeouts_SubCheck(ref use_FULLBurns, ref _fullburnTimeout, ref _fullburnStartTimeStamp, "FullBurns");
@@ -205,23 +205,24 @@ namespace E3Core.Processors
                             isMyPet = (previousTarget == MQ.Query<Int32>("${Me.Pet.ID}"));
 
                         }
-                        var chatOutput = $"{burnType}: {burn.CastName}";
+
+                        var bcOutput = $"{burnType}: {burn.CastName}";
+                        var chatOutput = $"/g {burnType}: {burn.CastName}";
+
                         //so you don't target other groups or your pet for burns if your target happens to be on them.
-						if(!String.IsNullOrWhiteSpace(burn.CastTarget) && _spawns.TryByName(burn.CastTarget, out var spelltarget))
-						{
-
-							Casting.Cast(spelltarget.ID, burn);
-							if (previousTarget > 0)
-							{
-								Int32 currentTarget = MQ.Query<Int32>("${Target.ID}");
-								if (previousTarget != currentTarget)
-								{
-									Casting.TrueTarget(previousTarget);
-								}
-							}
-							E3.Bots.Broadcast(chatOutput);
-
-						}
+                        if(!String.IsNullOrWhiteSpace(burn.CastTarget) && _spawns.TryByName(burn.CastTarget, out var spelltarget))
+                        {
+                            Casting.Cast(spelltarget.ID, burn);
+                            if (previousTarget > 0)
+                            {
+                                Int32 currentTarget = MQ.Query<Int32>("${Target.ID}");
+                                if (previousTarget != currentTarget)
+                                {
+                                    Casting.TrueTarget(previousTarget);
+                                }
+                            }
+                            ProcessBurnOutput(bcOutput, chatOutput);
+                        }
                         else if (((isMyPet) || (targetPC && !isGroupMember)) && (burn.TargetType == "Group v1" || burn.TargetType == "Group v2"))
                         {
                             Casting.Cast(E3.CurrentId, burn);
@@ -233,20 +234,30 @@ namespace E3Core.Processors
                                     Casting.TrueTarget(previousTarget);
                                 }
                             }
-                            E3.Bots.Broadcast(chatOutput);
+                            ProcessBurnOutput(bcOutput, chatOutput);
                         }
                         else
                         {
                             Casting.Cast(0, burn);
-                            E3.Bots.Broadcast(chatOutput);
-							
-						}
+                            ProcessBurnOutput(bcOutput, chatOutput);
+                        }
                     }
-					
-				}
-
+                }
             }
         }
+
+        private static void ProcessBurnOutput(string bcOutput, string chatOutput)
+        {
+            if (E3.GeneralSettings.General_ShowBurnsAsGroupChat)
+            {
+                MQ.Cmd(chatOutput);
+            }
+            else
+            {
+                E3.Bots.Broadcast(bcOutput);
+            }
+        }
+
         private static void ProcessBurnRequest(string command, EventProcessor.CommandMatch x, ref bool burnType, ref Int32 timeoutForBurn, ref Int64 timeoutTimeStamp)
         {
             Int32 mobid;
@@ -290,7 +301,7 @@ namespace E3Core.Processors
                 {
                     if (!e3util.FilterMe(x))
                     {
-                       
+
                         burnType = true;
                         if (timeout > 0)
                         {
@@ -314,7 +325,7 @@ namespace E3Core.Processors
                 Int32 targetID = MQ.Query<Int32>("${Target.ID}");
                 if (targetID > 0)
                 {
-                   
+
                     if(timeout>0)
                     {
                         E3.Bots.BroadcastCommandToGroup($"{command} {targetID} timeout={timeout}", x);

@@ -25,6 +25,7 @@ namespace E3Core.Settings
         public DefaultBroadcast General_BroadCast_Default = DefaultBroadcast.Group;
         public bool General_HealWhileNavigating = true;
 		public bool General_CureWhileNavigating = true;
+        public bool General_ShowBurnsAsGroupChat = false;
         public bool General_BeepNotifications = true;
         public bool General_LazarusManaRecovery = true;
 
@@ -141,6 +142,7 @@ namespace E3Core.Settings
             LoadKeyData("General", "Heal While Navigating (On/Off)", parsedData, ref General_HealWhileNavigating);
             LoadKeyData("General", "Beep Notifications (On/Off)", parsedData, ref General_BeepNotifications);
             LoadKeyData("General", "Cure While Navigating (On/Off)", parsedData, ref General_CureWhileNavigating);
+            LoadKeyData("General", "Should we show burns as Group Chat (On/Off)", parsedData, ref General_ShowBurnsAsGroupChat);
             LoadKeyData("General", "LazarusManaRecovery (On/Off)", parsedData, ref General_LazarusManaRecovery);
             LoadKeyData("General", "ExternalIP To Query For Local Address (8.8.8.8 default)", parsedData, ref General_Networking_ExternalIPToQueryForLocal);
             LoadKeyData("General", "Local IP Override", parsedData, ref General_Networking_LocalIPOverride);
@@ -332,6 +334,7 @@ namespace E3Core.Settings
             section.Keys.AddKey("Cure While Navigating (On/Off)", "On");
             section.Keys.AddKey("Beep Notifications (On/Off)", "On");
 
+            section.Keys.AddKey("Should we show burns as Group Chat (On/Off)", "Off");
             newFile.Sections.AddSection("Discord Bot");
             section = newFile.Sections.GetSectionData("Discord Bot");
             section.Keys.AddKey("Token", "");
