@@ -228,12 +228,18 @@ namespace MonoCore
 							//does it match our filter ? if so we can leave
 							bool matchFilter = false;
 
-							//using contains as live/emu are different ont heir log messages for endings
+
+
+							//using contains as live/emu are different on their log messages for endings
 							//so instead of doing endswith + contains, just do contains.
 							//contains uses an Ordinal compiarson sa well, so should be fairly fast
-							if (line.Contains("points of damage.") && !line.Contains("(Rampage)")) matchFilter = true;
+							if (Int32.TryParse(line,out var temp)) matchFilter = true; //if only in hitmode number, filter it out
+							else if (line.Contains("scores a critical hit!")) matchFilter = true;
+							else if (line.Contains("delivers a critical blast!")) matchFilter = true;
+							else if (line.Contains("lands a Crippling Blow!")) matchFilter = true;
+							else if (line.Contains("points of damage.") && !line.Contains("(Rampage)")) matchFilter = true;
 							else if (line.Contains("points of non-melee damage.")) matchFilter = true;
-
+						
 							//filters are just there in case we need to dynamically add a regex to filter out stuff.
 							if (!matchFilter)
 							{
@@ -642,6 +648,7 @@ namespace MonoCore
             public String command;
             public String classOwner;
             public string methodCaller;
+			public string description;
             public System.Action<CommandMatch> method;
             public ConcurrentQueue<CommandMatch> queuedEvents = new ConcurrentQueue<CommandMatch>();
         }
@@ -681,13 +688,14 @@ namespace MonoCore
             public string eventName;
             public eventType typeOfEvent=eventType.Unknown;
         }
-        public static bool RegisterCommand(string commandName, Action<CommandMatch> method, [CallerMemberName] string memberName = "", [CallerFilePath] string fileName = "", [CallerLineNumber] int lineNumber = 0)
+        public static bool RegisterCommand(string commandName, Action<CommandMatch> method,string description="", [CallerMemberName] string memberName = "", [CallerFilePath] string fileName = "", [CallerLineNumber] int lineNumber = 0)
         {
             CommandListItem c = new CommandListItem();
             c.command = commandName;
             c.method = method;
             c.keyName = commandName;
             c.methodCaller = memberName;
+			c.description = description;
             c.classOwner = Logging.GetClassName(fileName);
      
             bool returnvalue =  Core.mqInstance.AddCommand(commandName);

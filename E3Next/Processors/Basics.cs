@@ -116,9 +116,18 @@ namespace E3Core.Processors
                 
 				foreach (var command in list)
 				{
-					E3.Bots.Broadcast($"\atcommand:\ag{command.command} \atclass:\ag{command.classOwner}");
+					if(string.IsNullOrWhiteSpace(command.description))
+					{
+						E3.Bots.Broadcast($"\atcommand:\ag{command.command} \atclass:\ag{command.classOwner}");
+
+					}
+					else
+					{
+						E3.Bots.Broadcast($"\atcommand:\ag{command.command} \atclass:\ag{command.classOwner} \atinfo:\ag{command.description}");
+
+					}
 				}
-			});
+			},"list all commands available");
 
 			EventProcessor.RegisterCommand("/e3printAA", (x) =>
 			{
@@ -132,7 +141,7 @@ namespace E3Core.Processors
                 E3.Bots.Broadcast("Total Count:" + aas.Count);
                 //E3.Bots.Broadcast(output);
 
-			});
+			},"Print out AA you currently have");
 			EventProcessor.RegisterCommand("/e3printDics", (x) =>
 			{
 				List<Data.Spell> aas = e3util.ListAllDiscData();
@@ -144,7 +153,7 @@ namespace E3Core.Processors
 				}
 				E3.Bots.Broadcast("Total Count:" + aas.Count);
 			
-			});
+			}, "print out discs you currently have");
 
 			EventProcessor.RegisterCommand("/e3printini", (x) =>
 			{
@@ -162,7 +171,7 @@ namespace E3Core.Processors
 						MQ.Write("---" + key.KeyName + " = " + key.Value);
 					}
 				}
-			});
+			},"Print out your character ini file");
 			//_enableXTargetFix
 
 
@@ -171,21 +180,21 @@ namespace E3Core.Processors
 				//swap them
 				e3util.ToggleBooleanSetting(ref _enableXTargetFix, "Enable XTargetFix", x.args);
 
-			});
+			},"try and unstick your xtargets on emu as they are buggy. this is a on/off/toggle");
 
 			EventProcessor.RegisterCommand("/e3allowmanual", (x) =>
 			{
 				//swap them
 				e3util.ToggleBooleanSetting(ref _allowManual, "Allow Manual", x.args);
 
-			});
+			},"this will force override if you allow manual control at all. useful if you have a bot on another machine and its the focused window");
 
 			EventProcessor.RegisterCommand("/e3forage", (x) =>
 			{
 				//swap them
 				e3util.ToggleBooleanSetting(ref E3.CharacterSettings.Misc_AutoForage, "Auto Forage", x.args);
 
-			});
+			},"on/off/toggle the forage feature");
 
 			EventProcessor.RegisterEvent("InviteToGroup", "(.+) invites you to join a group.", (x) =>
             {
@@ -432,7 +441,7 @@ namespace E3Core.Processors
 					//we are telling people to follow us
 					E3.Bots.BroadcastCommandToGroup($"/e3camp{toDesktop} " + E3.CurrentName, x);
 				}
-			});
+			},"camp out all toons, can use filters and also desktop param");
 			EventProcessor.RegisterCommand("/e3treport", (x) =>
 			{
                 if(x.args.Count > 0)
@@ -445,7 +454,7 @@ namespace E3Core.Processors
 					EventProcessor.ProcessMQCommand("/e3treport me");//make sure we do the command as well
 				}
                 
-			});
+			},"list the configured report items in your character ini file");
 
 			EventProcessor.RegisterCommand("/e3settings", (x) =>
             {
@@ -462,14 +471,14 @@ namespace E3Core.Processors
                     }
                 }
 
-            });
+            },"create new settings with 'createdefault' param");
            	EventProcessor.RegisterCommand("/e3echo", (x) =>
 			{
                 string argumentLine = e3util.ArgsToCommand(x.args);
                 string processedLine = Casting.Ifs_Results(argumentLine);
 				MQ.Cmd($"/echo {processedLine}");
 				MQ.Cmd($"/varset E3N_var {processedLine}");
-			});
+			},"echo out statements using E3N, this allows you to print out variables that are specific to E3N");
 			EventProcessor.RegisterCommand("/e3echobool", (x) =>
 			{
 				string argumentLine = e3util.ArgsToCommand(x.args);
@@ -481,12 +490,12 @@ namespace E3Core.Processors
             {
                 E3.Bots.BroadcastCommandToGroup("/makemevisible",x);
                 MQ.Cmd("/makemevisible");
-            });
+            },"remove invis for your entire group");
             EventProcessor.RegisterCommand("/droplev", (x) =>
             {
                 E3.Bots.BroadcastCommandToGroup("/removelev",x);
                 MQ.Cmd("/removelev");
-            });
+            }, "remove levitate for your entire group");
             EventProcessor.RegisterCommand("/shutdown", (x) =>
             {
 
@@ -521,7 +530,7 @@ namespace E3Core.Processors
 
 				}
 
-			});
+			},"Completely shutdown E3N");
             EventProcessor.RegisterCommand("/e3reload", (x) =>
             {
                 E3.Bots.Broadcast("\aoReloading settings files...");
@@ -548,7 +557,7 @@ namespace E3Core.Processors
                 E3.Bots.Broadcast("\aoComplete!");
                 //mem all new spells that may be configured
                 Casting.MemorizeAllSpells();
-            });
+            },"Reload advanced/character/general settings. Can also specify which 'template to reload'");
 			EventProcessor.RegisterCommand("/e3cpudelay", (x) =>
 			{
 
@@ -600,7 +609,7 @@ namespace E3Core.Processors
 					}
                 }
 
-			});
+			}, "Specify the polling time of E3N and other delay settings. default = cpu delay also has PublishStateDataInMS,PublishBuffDataInMS,PublishSlowDataInMS");
 
 			EventProcessor.RegisterCommand("/debug", (x) =>
             {
