@@ -260,6 +260,16 @@ namespace IniParser.Model
         }
 
         /// <summary>
+        /// Retrieves all the keys in the collection
+        /// </summary>
+        /// <returns>
+        /// A list of all the key names in the collection
+        /// </returns>
+        public List<string> AllKeys() {
+            return new List<string>(_keyData.Keys);
+        }
+
+        /// <summary>
         /// need to do special logic on merges
         /// empty values do not get copied over
         /// </summary>
