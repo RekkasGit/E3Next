@@ -283,8 +283,10 @@ namespace E3Core.Settings
 		public List<Spell> LongBurns = new List<Spell>();
 		[INI_Section("Burn", "Full Burn")]
 		public List<Spell> FullBurns = new List<Spell>();
-		//cures
-		[INI_Section("Cures", "Cure")]
+        [INI_Section("Burn", "Epic Burn")]
+        public List<Spell> EpicBurns = new List<Spell>();
+        //cures
+        [INI_Section("Cures", "Cure")]
 		public List<Spell> Cures = new List<Spell>();
 		[INI_Section("Cures", "CureAll")]
 		public List<Spell> CureAll = new List<Spell>();
@@ -873,6 +875,7 @@ namespace E3Core.Settings
             LoadKeyData("Burn", "Quick Burn", ParsedData, QuickBurns);
             LoadKeyData("Burn", "Long Burn", ParsedData, LongBurns);
             LoadKeyData("Burn", "Full Burn", ParsedData, FullBurns);
+			LoadKeyData("Burn", "Epic Burn", ParsedData, EpicBurns);
 
 
             LoadKeyData("Pets", "Pet Spell", ParsedData, PetSpell);

@@ -27,11 +27,7 @@ namespace E3Core.Processors
 		public static bool use_LONGBurns = false;
 		[ExposedData("Burns", "UsingSwarmBurns")]
 		public static bool use_Swarms = false;
-        public static List<Data.Spell> _epicWeapon = new List<Data.Spell>();
-        public static List<Data.Spell> _anguishBP = new List<Data.Spell>();
         public static List<Data.Spell> _swarmPets = new List<Spell>();
-        public static string _epicWeaponName = String.Empty;
-        public static string _anguishBPName = String.Empty;
         //private static Int64 _nextBurnCheck = 0;
         //private static Int64 _nextBurnCheckInterval = 50;
 
@@ -52,7 +48,6 @@ namespace E3Core.Processors
         [SubSystemInit]
         public static void Burns_Init()
         {
-            RegisterEpicAndAnguishBP();
             RegisterSwarppets();
             RegisterEvents();
         }
@@ -113,8 +108,7 @@ namespace E3Core.Processors
 			EventProcessor.ProcessEventsInQueues("/longburns");
 			CheckTimeouts();
 
-            UseBurn(_epicWeapon, use_EPICBurns, "EpicBurns");
-            UseBurn(_anguishBP, use_EPICBurns, "AnguishBPBurns");
+            UseBurn(E3.CharacterSettings.EpicBurns, use_EPICBurns, nameof(E3.CharacterSettings.EpicBurns));
             UseBurn(E3.CharacterSettings.QuickBurns, use_QUICKBurns, nameof(E3.CharacterSettings.QuickBurns));
             UseBurn(E3.CharacterSettings.FullBurns, use_FULLBurns, nameof(E3.CharacterSettings.FullBurns));
             UseBurn(E3.CharacterSettings.LongBurns, use_LONGBurns, nameof(E3.CharacterSettings.LongBurns));
@@ -344,34 +338,6 @@ namespace E3Core.Processors
                 }
             }
         }
-        private static void RegisterEpicAndAnguishBP()
-        {
-            foreach (string name in _epicList)
-            {
-                if (MQ.Query<Int32>($"${{FindItemCount[={name}]}}") > 0)
-                {
-                    _epicWeaponName = name;
-                }
-            }
-
-            foreach (string name in _anguishBPList)
-            {
-                if (MQ.Query<Int32>($"${{FindItemCount[={name}]}}") > 0)
-                {
-                    _anguishBPName = name;
-                }
-            }
-
-            if (!String.IsNullOrWhiteSpace(_epicWeaponName))
-            {
-                _epicWeapon.Add(new Data.Spell(_epicWeaponName));
-            }
-            if (!String.IsNullOrWhiteSpace(_anguishBPName))
-            {
-                _anguishBP.Add(new Data.Spell(_anguishBPName));
-            }
-
-        }
         private static void RegisterSwarppets()
         {
             foreach (string pet in _swarmPetList)
@@ -396,48 +362,5 @@ namespace E3Core.Processors
             "Tarnished Skeleton Key","Celestial Hammer","Graverobber's Icon","Battered Smuggler's Barrel",
             "Phantasmal Opponent","Spirits of Nature", "Nature's Guardian"
         };
-
-        private static List<string> _anguishBPList = new List<string>() {
-            "Bladewhisper Chain Vest of Journeys",
-            "Farseeker's Plate Chestguard of Harmony",
-            "Wrathbringer's Chain Chestguard of the Vindicator",
-            "Savagesoul Jerkin of the Wilds",
-            "Glyphwielder's Tunic of the Summoner",
-            "Whispering Tunic of Shadows",
-            "Ritualchanter's Tunic of the Ancestors",
-            "Deadeye's Ascendant Vest of Journeys",
-            "Farseeker's Ascendant Chestguard of Harmony",
-            "Wrathbringer's Ascendant Chestguard of the Vindicator",
-            "Savagesoul's Ascendant Jerkin of the Wilds",
-            "Glyphwielder's Ascendant Tunic of the Summoner",
-            "Whisperer's Ascendant Tunic of Shadows",
-            "Ritualchanter's Ascendant Tunic of the Ancestors",
-        };
-
-        private static List<string> _epicList = new List<string>() {
-            "Prismatic Dragon Blade",
-            "Blade of Vesagran",
-            "Raging Taelosian Alloy Axe",
-            "Vengeful Taelosian Blood Axe",
-            "Staff of Living Brambles",
-            "Staff of Everliving Brambles",
-            "Fistwraps of Celestial Discipline",
-            "Transcended Fistwraps of Immortality",
-            "Redemption",
-            "Nightbane, Sword of the Valiant",
-            "Heartwood Blade",
-            "Heartwood Infused Bow",
-            "Aurora, the Heartwood Blade",
-            "Aurora, the Heartwood Bow",
-            "Fatestealer",
-            "Nightshade, Blade of Entropy",
-            "Innoruuk's Voice",
-            "Innoruuk's Dark Blessing",
-            "Crafted Talisman of Fates",
-            "Blessed Spiritstaff of the Heyokah",
-            "Staff of Prismatic Power",
-            "Staff of Phenomenal Power",
-            "Soulwhisper",
-            "Deathwhisper"};
     }
 }
