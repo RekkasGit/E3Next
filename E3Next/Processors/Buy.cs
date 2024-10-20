@@ -60,7 +60,7 @@ namespace E3Core.Processors
                         break;
                 }
                     
-            });
+            },"used to buy food/water/emeralds");
         }
         /// <summary>
         /// Check how many are in a stack of the given item and give back how many of the item you need to make a full stack
