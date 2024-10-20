@@ -52,9 +52,16 @@ namespace E3Core.Processors
 				if (x.args.Count>0)
 				{
 					string burnToUseKey = x.args[0].Trim();
-					if(E3.CharacterSettings.BurnCollection.TryGetValue(burnToUseKey,out var burnToUse))
+					if (E3.CharacterSettings.BurnCollection.TryGetValue(burnToUseKey, out var burnToUse))
 					{
 						ProcessBurnRequest(x, burnToUse);
+					}
+					else;
+					{
+						//we don't have this burn locally, so just pass in an empty one
+						Burn tburn = new Burn();
+						tburn.Name = burnToUseKey;
+						ProcessBurnRequest(x, tburn);
 					}
 				}
 			});
@@ -175,6 +182,7 @@ namespace E3Core.Processors
 					{
 						E3.Bots.BroadcastCommandToGroup($"/e3burns \"{burn.Name}\" {targetID}", x);
 					}
+
 					if (!e3util.FilterMe(x))
 					{
 						burn.Active = true;
