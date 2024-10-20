@@ -278,6 +278,7 @@ namespace E3Core.Settings
 		public List<Spell> PBAE = new List<Spell>();
 		//burns
 		[INI_Section("Burn","")]
+		[ExposedData("Burn","")]
 		public Dictionary<string, Burn> BurnCollection = new Dictionary<string, Burn>(StringComparer.OrdinalIgnoreCase);
 		//cures
 		[INI_Section("Cures", "Cure")]

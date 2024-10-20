@@ -225,6 +225,7 @@ namespace E3Core.Processors
 				GiveMe.Reset();
 				Burns.Reset();
 				Bard.RestartMelody();
+				Setup.GetExposedDataMappedToDictionary();
 				E3.Bots.Broadcast("\aoComplete!");
 			}
 			else if (CharacterSettings.ShouldReload())
@@ -235,7 +236,8 @@ namespace E3Core.Processors
                 GiveMe.Reset();
 				Burns.Reset();
 				Bard.RestartMelody();
-                E3.Bots.Broadcast("\aoComplete!");
+				Setup.GetExposedDataMappedToDictionary();
+				E3.Bots.Broadcast("\aoComplete!");
                
             }
 
@@ -248,7 +250,8 @@ namespace E3Core.Processors
                 GiveMe.Reset();
 				Burns.Reset();
 				Bard.RestartMelody();
-                E3.Bots.Broadcast("\aoComplete!");
+				Setup.GetExposedDataMappedToDictionary();
+				E3.Bots.Broadcast("\aoComplete!");
             }
 
             if (GeneralSettings.ShouldReload())

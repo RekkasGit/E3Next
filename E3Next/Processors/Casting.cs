@@ -2028,7 +2028,7 @@ namespace E3Core.Processors
 				foreach (var pair in Setup.ExposedDataReflectionLookup)
 				{
 					var field = pair.Value;
-					if(field.IsStatic)
+					//if(field.IsStatic)
 					{
 						if (tIF.IndexOf(pair.Key, 0, StringComparison.OrdinalIgnoreCase) > -1)
 						{
@@ -2036,7 +2036,7 @@ namespace E3Core.Processors
 							if (field.IsGenericList(typeof(String)))
 							{
 								List<string> fieldValue = (List<string>)field.GetValue(null);
-								string finallist = string.Join(",",fieldValue);
+								string finallist = string.Join(",", fieldValue);
 								tIF = tIF.ReplaceInsensitive(pair.Key, finallist);
 							}
 							else if (field.IsGenericList(typeof(Spell)))
@@ -2067,6 +2067,20 @@ namespace E3Core.Processors
 								List<Int64> fieldValue = (List<Int64>)field.GetValue(null);
 								string finallist = string.Join(",", fieldValue);
 								tIF = tIF.ReplaceInsensitive(pair.Key, finallist);
+							}
+							else if (field.IsGenericDictonary(typeof(string), typeof(Burn)))
+							{
+								//{E3N.State.Burn.Key}}
+								//get the last section of the 
+								string[] keylookupArray = pair.Key.Split('.');
+								string keytoUse = keylookupArray[3].Replace("}", "");
+
+								Dictionary<string, Burn> fieldValue = (Dictionary<string,Burn>)field.GetValue(E3.CharacterSettings);
+								if(fieldValue.TryGetValue(keytoUse,out var tburn))
+								{
+									tIF = tIF.ReplaceInsensitive(pair.Key,tburn.Active.ToString());
+								}
+								
 							}
 							else
 							{

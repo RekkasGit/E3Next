@@ -272,13 +272,14 @@ namespace E3Core.Processors
 
             }
         }
-		private static void GetExposedDataMappedToDictionary()
+		public static void GetExposedDataMappedToDictionary()
 		{
+			ExposedDataReflectionLookup.Clear();
 			//now for some ... reflection again.
 			var fields = AppDomain.CurrentDomain.GetAssemblies()
 			.SelectMany(x => x.GetTypes())
 			.Where(x => x.IsClass)
-			.SelectMany(x => x.GetFields(BindingFlags.Public|BindingFlags.NonPublic | BindingFlags.Static))
+			.SelectMany(x => x.GetFields(BindingFlags.Public|BindingFlags.NonPublic | BindingFlags.Static | BindingFlags.Instance))
 			.Where(x => x.GetCustomAttributes(typeof(ExposedData), false).FirstOrDefault() != null); // returns only methods that have the InvokeAttribute
 
 			foreach (var foundField in fields) // iterate through all found methods
@@ -291,12 +292,28 @@ namespace E3Core.Processors
 				{
 					if (attribute is ExposedData)
 					{
-						var tattribute = ((ExposedData)attribute);
+						if (foundField.IsGenericDictonary(typeof(string), typeof(Burn)))
+						{
+							var burnCollection = (Dictionary<string,Burn>)foundField.GetValue(E3.CharacterSettings);
+							var tattribute = ((ExposedData)attribute);
+							section = tattribute.Header;
+							foreach(var pair in burnCollection)
+							{
+								key = pair.Key;
+								string dictKey = $"${{E3N.State.{section}.{key}}}";
+								ExposedDataReflectionLookup.Add(dictKey, foundField);
+							}
+						}
+						else
+						{
+							var tattribute = ((ExposedData)attribute);
+							section = tattribute.Header;
+							key = tattribute.Key;
+							string dictKey = $"${{E3N.State.{section}.{key}}}";
+							ExposedDataReflectionLookup.Add(dictKey, foundField);
+						}
 
-						section = tattribute.Header;
-						key = tattribute.Key;
-						string dictKey = $"${{E3N.State.{section}.{key}}}";
-						ExposedDataReflectionLookup.Add(dictKey, foundField);
+						
 					}
 				}
 			}
