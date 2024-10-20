@@ -169,11 +169,11 @@ namespace E3Core.Processors
 
 					if (timeout > 0)
 					{
-						E3.Bots.BroadcastCommandToGroup($"/e3burns {burn.Name} {targetID} timeout={timeout}", x);
+						E3.Bots.BroadcastCommandToGroup($"/e3burns \"{burn.Name}\" {targetID} timeout={timeout}", x);
 					}
 					else
 					{
-						E3.Bots.BroadcastCommandToGroup($"/e3burns {burn.Name} {targetID}", x);
+						E3.Bots.BroadcastCommandToGroup($"/e3burns \"{burn.Name}\" {targetID}", x);
 					}
 					if (!e3util.FilterMe(x))
 					{
