@@ -185,7 +185,32 @@ namespace E3Core.Settings
                 }
             }
         }
-		public static void LoadKeyData<K, V>(string sectionKey, IniData parsedData, IDictionary<K, V> dictionary)
+		public static void LoadKeyData<K>(string sectionKey, IniData parsedData, IDictionary<K, Burn> dictionary)
+		{
+			var section = parsedData.Sections[sectionKey];
+			if (section != null)
+			{
+				var keyData = section;
+				if (keyData != null)
+				{
+					foreach (var data in keyData)
+					{
+						Burn tburn = new Burn();
+						tburn.Name = data.KeyName;
+						foreach (var value in data.ValueList)
+						{
+							if (String.IsNullOrWhiteSpace(value)) continue;
+							var newSpell = new Data.Spell(value, parsedData);
+							tburn.ItemsToBurn.Add(newSpell);
+						}
+
+						dictionary.Add((K)(object)data.KeyName, tburn);
+						
+					}
+				}
+			}
+		}
+		public static void LoadKeyData<K>(string sectionKey, IniData parsedData, IDictionary<K, String> dictionary)
 		{
 			
 			var section = parsedData.Sections[sectionKey];
@@ -196,12 +221,13 @@ namespace E3Core.Settings
 				{
 					foreach (var data in keyData)
 					{
-						dictionary.Add((K)(object)data.KeyName, (V)(object)data.Value);
+						dictionary.Add((K)(object)data.KeyName, data.Value);
 						
 					}
 				}
 			}
 		}
+		
 		public static string LoadKeyData(string sectionKey, string Key, IniData parsedData)
         {
             _log.Write($"{sectionKey} {Key}");

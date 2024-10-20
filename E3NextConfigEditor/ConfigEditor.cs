@@ -77,7 +77,7 @@ namespace E3NextConfigEditor
 		public static IniParser.Model.IniData _baseIniData = null;
 
 		//list the Dictionary or Key/Value based sections that are valid
-		static List<string> _dictionarySections = new List<string>() { "Ifs", "E3BotsPublishData (key/value)", "Events", "EventLoop" };
+		static List<string> _dictionarySections = new List<string>() { "Ifs", "E3BotsPublishData (key/value)", "Events", "EventLoop","Burn" };
 
         TreeNode _sectionRootNodes = null;
 
@@ -346,11 +346,12 @@ namespace E3NextConfigEditor
             _sectionRootNodes = new TreeNode();
             _sectionRootNodes.Text = "Sections";
 
+			
             if (E3.CurrentClass == Class.Bard)
             {
                 TreeNode node = new TreeNode();
                 node.Text = _bardDynamicMelodyName;
-                _sectionRootNodes.Nodes.Add(node);
+				_sectionRootNodes.Nodes.Add(node);
 
                 valuesListBox.Tag = _bardDynamicMelodyName;
                 IDictionary<string, List<Spell>> dictionary = E3.CharacterSettings.Bard_MelodySets;
@@ -360,34 +361,56 @@ namespace E3NextConfigEditor
                 }
             }
 
-            List<string> importantSections = GetSectionSortOrderByClass(E3.CurrentClass);
+			//do burns that are now a dictionary
+			
+			List<string> importantSections = GetSectionSortOrderByClass(E3.CurrentClass);
 
             foreach (string impsec in importantSections)
             {
-                if (impsec.Contains(_bardDynamicMelodyName)) continue;
 
-                TreeNode node = new TreeNode();
-                node.Text = impsec;
-                _sectionRootNodes.Nodes.Add(node);
 
-                var subsection = _baseIniData.Sections[impsec];
-                if (subsection != null)
-                {
-                    foreach (var key in subsection)
-                    {
-                        node.Nodes.Add(key.KeyName);
-                    }
-                }
+				if(impsec=="Burn")
+				{
+					TreeNode burnNode = new TreeNode();
+					burnNode.Text = "Burn";
+					_sectionRootNodes.Nodes.Add(burnNode);
+
+					valuesListBox.Tag = "Burn";
+					IDictionary<string, Burn> tburns = E3.CharacterSettings.BurnCollection;
+					foreach (var key in tburns.Keys)
+					{
+						burnNode.Nodes.Add(key);
+					}
+
+				}
+				else
+				{
+					if (impsec.Contains(_bardDynamicMelodyName)) continue;
+					if (_sectionRootNodes.Nodes.ContainsKey(impsec)) continue;
+					TreeNode node = new TreeNode();
+					node.Text = impsec;
+					_sectionRootNodes.Nodes.Add(node);
+
+					var subsection = _baseIniData.Sections[impsec];
+					if (subsection != null)
+					{
+						foreach (var key in subsection)
+						{
+							node.Nodes.Add(key.KeyName);
+						}
+					}
+				}
+
+				
             }
 
             foreach (var section in _baseIniData.Sections)
             {
-                if (importantSections.Contains(section.SectionName, StringComparer.OrdinalIgnoreCase))
-                    continue;
-
+                if (importantSections.Contains(section.SectionName, StringComparer.OrdinalIgnoreCase)) continue;
+			
                 TreeNode node = new TreeNode();
                 node.Text = section.SectionName;
-                _sectionRootNodes.Nodes.Add(node);
+			    _sectionRootNodes.Nodes.Add(node);
 
                 var subsection = _baseIniData.Sections[section.SectionName];
                 if (subsection != null)
@@ -548,6 +571,15 @@ namespace E3NextConfigEditor
 					subsectionComboBox.Items.Add(pair.Key);
 				}
 			}
+			if(selectedSection=="Burn")
+			{
+				valuesListBox.Tag = "Burn";
+				IDictionary<string, Burn> dictionary = E3.CharacterSettings.BurnCollection;
+				foreach (var pair in dictionary)
+				{
+					subsectionComboBox.Items.Add(pair.Key);
+				}
+			}
 			else
 			{
 				var section = _baseIniData.Sections[selectedSection];
@@ -610,6 +642,18 @@ namespace E3NextConfigEditor
 					string selectedSubSection = subsectionComboBox.SelectedItem.ToString();
 					List<Spell> melodies = dynamicMelodies[selectedSubSection];
 					UpdateListView(melodies);
+
+				}
+			}
+			else if(selectedSection=="Burn")
+			{
+				FieldInfo objectList = _charSettingsMappings["Burn"][""];
+				if (objectList.IsGenericDictonary(typeof(string), typeof(Burn)))
+				{
+					IDictionary<string, Burn> BurnCollection = (IDictionary<string, Burn>)objectList.GetValue(E3.CharacterSettings);
+					string selectedSubSection = subsectionComboBox.SelectedItem.ToString();
+					List<Spell> itemsToBurn = BurnCollection[selectedSubSection].ItemsToBurn;
+					UpdateListView(itemsToBurn);
 
 				}
 			}
@@ -948,6 +992,7 @@ namespace E3NextConfigEditor
 				var stringRef = (Models.Ref<string, string>)((KryptonListItem)data).Tag;
 				stringDict.Remove(stringRef.Key);
 			}
+			
 
 			valuesListBox.Items.Remove(data);
 			valuesListBox.SelectedItem = null;
@@ -1315,7 +1360,6 @@ namespace E3NextConfigEditor
 
 			if (objectList.IsGenericList(typeof(Spell)))
 			{
-
 				List<Spell> spellList = (List<Spell>)objectList.GetValue(E3.CharacterSettings);
 
 				valuesListBox.Tag = spellList;
@@ -1788,7 +1832,31 @@ namespace E3NextConfigEditor
                         UpdateListView(melodies);
                     }
                 }
-                else
+				else if (section == "Burn")
+				{
+					FieldInfo objectList = _charSettingsMappings["Burn"][""];
+					if (objectList.IsGenericDictonary(typeof(string), typeof(Burn)))
+					{
+						IDictionary<string, Burn> BurnCollection = (IDictionary<string, Burn>)objectList.GetValue(E3.CharacterSettings);
+						string selectedSubSection = node.Text;
+						if (BurnCollection.ContainsKey(selectedSubSection))
+						{
+							List<Spell> itemsToBurn = BurnCollection[selectedSubSection].ItemsToBurn;
+							sectionComboBox.SelectedItem = section;
+							subsectionComboBox.SelectedItem = node.Text;
+							UpdateListView(itemsToBurn);
+						}
+						else
+						{
+							valuesListBox.Items.Clear();
+							propertyGrid.SelectedObject = null;
+
+							propertyGrid.SelectedObject = null;
+						}
+					
+					}
+				}
+				else
                 {
                     FieldInfo objectList = _charSettingsMappings[section][node.Text];
 

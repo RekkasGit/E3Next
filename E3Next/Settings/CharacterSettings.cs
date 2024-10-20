@@ -277,12 +277,8 @@ namespace E3Core.Settings
 		[INI_Section("PBAE", "PBAE")]
 		public List<Spell> PBAE = new List<Spell>();
 		//burns
-		[INI_Section("Burn", "Quick Burn")]
-		public List<Spell> QuickBurns = new List<Spell>();
-		[INI_Section("Burn", "Long Burn")]
-		public List<Spell> LongBurns = new List<Spell>();
-		[INI_Section("Burn", "Full Burn")]
-		public List<Spell> FullBurns = new List<Spell>();
+		[INI_Section("Burn","")]
+		public Dictionary<string, Burn> BurnCollection = new Dictionary<string, Burn>(StringComparer.OrdinalIgnoreCase);
 		//cures
 		[INI_Section("Cures", "Cure")]
 		public List<Spell> Cures = new List<Spell>();
@@ -867,13 +863,10 @@ namespace E3Core.Settings
             LoadKeyData("Debuffs", "Debuff on Assist", ParsedData, Debuffs_OnAssist);
             LoadKeyData("Debuffs", "Debuff on Command", ParsedData, Debuffs_Command);
 
-            //LoadKeyData("LootCommander", "Enabled",ParsedData, ref LootCommander_Enabled);
-            //LoadKeyData("LootCommander", "Looter", ParsedData, LootCommander_Looters);
+			//LoadKeyData("LootCommander", "Enabled",ParsedData, ref LootCommander_Enabled);
+			//LoadKeyData("LootCommander", "Looter", ParsedData, LootCommander_Looters);
 
-            LoadKeyData("Burn", "Quick Burn", ParsedData, QuickBurns);
-            LoadKeyData("Burn", "Long Burn", ParsedData, LongBurns);
-            LoadKeyData("Burn", "Full Burn", ParsedData, FullBurns);
-
+			LoadKeyData("Burn", ParsedData, BurnCollection);
 
             LoadKeyData("Pets", "Pet Spell", ParsedData, PetSpell);
             LoadKeyData("Pets", "Pet Buff", ParsedData, PetOwnerBuffs);
@@ -1528,6 +1521,26 @@ namespace E3Core.Settings
 								foreach (var tpair in stringDict)
 								{
 									section_keyCollection.AddKey(tpair.Key, tpair.Value);
+								}
+							}
+							else if (reference is IDictionary<string, Burn>)
+							{
+								IDictionary<string, Burn> stringDict = (IDictionary<string, Burn>)reference;
+								foreach (var tpair in stringDict)
+								{
+									if(tpair.Value.ItemsToBurn.Count>0)
+									{
+										foreach (var burn in tpair.Value.ItemsToBurn)
+										{
+											section_keyCollection.AddKey(tpair.Key, burn.ToConfigEntry());
+										}
+									}
+									else
+									{
+										section_keyCollection.AddKey(tpair.Key, "");
+
+									}
+									
 								}
 							}
 							else

@@ -223,6 +223,7 @@ namespace E3Core.Processors
 				CharacterSettings = new CharacterSettings();
 				Loot.Reset();
 				GiveMe.Reset();
+				Burns.Reset();
 				Bard.RestartMelody();
 				E3.Bots.Broadcast("\aoComplete!");
 			}
@@ -232,6 +233,7 @@ namespace E3Core.Processors
                 CharacterSettings = new CharacterSettings();
                 Loot.Reset();
                 GiveMe.Reset();
+				Burns.Reset();
 				Bard.RestartMelody();
                 E3.Bots.Broadcast("\aoComplete!");
                
@@ -244,7 +246,8 @@ namespace E3Core.Processors
                 CharacterSettings = new CharacterSettings();
                 Loot.Reset();
                 GiveMe.Reset();
-                Bard.RestartMelody();
+				Burns.Reset();
+				Bard.RestartMelody();
                 E3.Bots.Broadcast("\aoComplete!");
             }
 
