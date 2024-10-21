@@ -239,7 +239,7 @@ namespace E3Core.Processors
 		{
 			if (burn.Active && burn.StartTimeStamp > 0)
 			{   //turn off after 60 seconds
-				if (burn.StartTimeStamp + (burn.Timeout * 1000) < Core.StopWatch.ElapsedMilliseconds)
+				if ((burn.StartTimeStamp + (burn.Timeout * 1000)) < Core.StopWatch.ElapsedMilliseconds)
 				{
 					E3.Bots.Broadcast($"Turning off {burn.Name} due to timeout of : {burn.Timeout}");
 					burn.Active = false;
