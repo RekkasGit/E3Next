@@ -56,7 +56,7 @@ namespace E3Core.Processors
 					{
 						ProcessBurnRequest(x, burnToUse);
 					}
-					else;
+					else
 					{
 						//we don't have this burn locally, so just pass in an empty one
 						Burn tburn = new Burn();
