@@ -50,10 +50,10 @@ namespace E3Core.Processors
 			bool e3PausedNav = false;
 			Int32 currentMana = 0;
 			Int32 pctMana = 0;
-			
+
 			currentMana = MQ.Query<Int32>("${Me.CurrentMana}");
 			pctMana = MQ.Query<Int32>("${Me.PctMana}");
-			
+
 
 			if (MQ.Query<bool>("${Cursor.ID}"))
 			{
@@ -66,11 +66,11 @@ namespace E3Core.Processors
 
 			}
 			try
-			{ 
+			{
 				if (spell.NoTarget)
 				{
-                    targetID = 0;
-                }
+					targetID = 0;
+				}
 
 				if (targetID == 0)
 				{
@@ -129,7 +129,7 @@ namespace E3Core.Processors
 					AfterEventCheck(spell);
 					UpdateAAInCooldown(spell);
 					E3.ActionTaken = true;
-					
+
 					///allow the player to 'tweak' this value.
 					if (E3.CharacterSettings.Misc_DelayAfterCastWindowDropsForSpellCompletion > 0)
 					{
@@ -141,14 +141,14 @@ namespace E3Core.Processors
 					}
 					return CastReturn.CAST_SUCCESS;
 				}
-                //bard can cast insta cast items while singing, they be special.
-                else if (E3.CurrentClass == Class.Bard && spell.NoMidSongCast == false && spell.MyCastTime <= 500 && (spell.CastType == CastingType.Item || spell.CastType == CastingType.AA || spell.CastType == Data.CastingType.Ability))
-                {
-                    //instant cast item, can cast while singing
-                    //note bards are special and cast do insta casts while doing normal singing. they have their own 
-                    //sing area, so only go here to do item/aa casts while singing. can't do IsCasting checks as it will catch
-                    //on the singing... so just kick out and assume all is well.
-                    if (_spawns.TryByID(targetID, out var s))
+				//bard can cast insta cast items while singing, they be special.
+				else if (E3.CurrentClass == Class.Bard && spell.NoMidSongCast == false && spell.MyCastTime <= 500 && (spell.CastType == CastingType.Item || spell.CastType == CastingType.AA || spell.CastType == Data.CastingType.Ability))
+				{
+					//instant cast item, can cast while singing
+					//note bards are special and cast do insta casts while doing normal singing. they have their own 
+					//sing area, so only go here to do item/aa casts while singing. can't do IsCasting checks as it will catch
+					//on the singing... so just kick out and assume all is well.
+					if (_spawns.TryByID(targetID, out var s))
 					{
 
 						String targetName = String.Empty;
@@ -163,13 +163,13 @@ namespace E3Core.Processors
 						}
 						TrueTarget(targetID);
 
-                        //this lets bard kick regardless of current song status, otherwise will wait until between songs to kick
-                        string abilityToCheck = spell.CastName;
-                        if (spell.CastType == Data.CastingType.Ability && abilityToCheck.Equals("Kick", StringComparison.OrdinalIgnoreCase))
-                        {
+						//this lets bard kick regardless of current song status, otherwise will wait until between songs to kick
+						string abilityToCheck = spell.CastName;
+						if (spell.CastType == Data.CastingType.Ability && abilityToCheck.Equals("Kick", StringComparison.OrdinalIgnoreCase))
+						{
 							BeforeEventCheck(spell);
 							MQ.Write($"\ag{spell.CastName} \am{targetName} \ao{targetID}");
-                            MQ.Cmd($"/doability \"{spell.CastName}\"");
+							MQ.Cmd($"/doability \"{spell.CastName}\"");
 							if (!E3.CharacterSettings.Misc_EnchancedRotationSpeed) MQ.Delay(300);
 							if (spell.AfterCastCompletedDelay > 0)
 							{
@@ -177,8 +177,8 @@ namespace E3Core.Processors
 							}
 							AfterEventCheck(spell);
 							return CastReturn.CAST_SUCCESS;
-                        }
-                        MQ.Write($"\agBardCast {spell.CastName} \at{spell.SpellID} \am{targetName} \ao{targetID} \aw({spell.MyCastTime / 1000}sec)");
+						}
+						MQ.Write($"\agBardCast {spell.CastName} \at{spell.SpellID} \am{targetName} \ao{targetID} \aw({spell.MyCastTime / 1000}sec)");
 						if (spell.CastType == CastingType.AA)
 						{
 							BeforeEventCheck(spell);
@@ -193,8 +193,8 @@ namespace E3Core.Processors
 							E3.ActionTaken = true;
 							return CastReturn.CAST_SUCCESS;
 						}
-                        if (spell.CastType == CastingType.Item)
-                        {
+						if (spell.CastType == CastingType.Item)
+						{
 							BeforeEventCheck(spell);
 							//else its an item
 							MQ.Cmd($"/useitem \"{spell.CastName}\"", 300);
@@ -216,7 +216,7 @@ namespace E3Core.Processors
 				else if (E3.CurrentClass == Class.Bard && spell.CastType == CastingType.Spell)
 				{
 					Sing(targetID, spell);
-					Int32 delay =(int)MQ.Query<int>("${Me.CastTimeLeft}") + Classes.Bard.BardLatency();
+					Int32 delay = (int)MQ.Query<int>("${Me.CastTimeLeft}") + Classes.Bard.BardLatency();
 					MQ.Delay(delay);
 					return CastReturn.CAST_SUCCESS;
 				}
@@ -226,7 +226,7 @@ namespace E3Core.Processors
 					while (IsCasting())
 					{
 						MQ.Delay(50);
-						
+
 						if (E3.IsPaused())
 						{
 							Interrupt();
@@ -272,13 +272,13 @@ namespace E3Core.Processors
 							Int32 tAssistID = Assist.AssistTargetID;
 
 							EventProcessor.ProcessEventsInQueues("/assistme");
-						
-							if(tAssistID>0 && Assist.AssistTargetID>0 && tAssistID != Assist.AssistTargetID)
+
+							if (tAssistID > 0 && Assist.AssistTargetID > 0 && tAssistID != Assist.AssistTargetID)
 							{
 								Interrupt();
 								if (!IsCasting()) return CastReturn.CAST_INTERRUPTED;
 							}
-							
+
 
 						}
 						if (EventProcessor.CommandList["/followme"].queuedEvents.Count > 0)
@@ -331,7 +331,7 @@ namespace E3Core.Processors
 
 						if (!String.IsNullOrWhiteSpace(spell.Reagent))
 						{
-							
+
 							_log.Write($"Checking for reagent required for spell cast:{targetName} value:{spell.Reagent}");
 							//spell requires a regent, lets check if we have it.
 							Int32 itemCount = MQ.Query<Int32>($"${{FindItemCount[={spell.Reagent}]}}");
@@ -368,9 +368,9 @@ namespace E3Core.Processors
 							return CastReturn.CAST_FEIGN;
 						}
 						_log.Write("Checking for Open spell book....");
-						if (MQ.Query<bool>("${Window[SpellBookWnd].Open}") )
+						if (MQ.Query<bool>("${Window[SpellBookWnd].Open}"))
 						{
-							if(!e3util.IsManualControl())
+							if (!e3util.IsManualControl())
 							{
 								MQ.Cmd("/stand");
 							}
@@ -381,7 +381,7 @@ namespace E3Core.Processors
 								MQ.Delay(200);
 								return CastReturn.CAST_SPELLBOOKOPEN;
 							}
-							
+
 						}
 						_log.Write("Checking for Open corpse....");
 						if (MQ.Query<bool>("${Corpse.Open}"))
@@ -420,7 +420,7 @@ namespace E3Core.Processors
 							{
 								MQ.Cmd("/stick pause");
 							}
-							if(!TrueTarget(targetID))
+							if (!TrueTarget(targetID))
 							{
 								E3.Bots.Broadcast($"Spell Target failure for targetid:{targetID} for spell {spell.SpellName}");
 								return CastReturn.CAST_NOTARGET;
@@ -472,7 +472,7 @@ namespace E3Core.Processors
 									returnValue = CastReturn.CAST_NOTARGET;
 									return returnValue;
 								}
-								
+
 							}
 
 						}
@@ -592,7 +592,7 @@ namespace E3Core.Processors
 								if (spell.CastType == Data.CastingType.Spell)
 								{
 									PubServer.AddTopicMessage("${Casting}", $"{spell.CastName} on {targetName}");
-									PubServer.AddTopicMessage("${Me.Casting}",spell.CastName);
+									PubServer.AddTopicMessage("${Me.Casting}", spell.CastName);
 									MQ.Write($"\ag{spell.CastName} \at{spell.SpellID} \am{targetName} \ao{targetID} \aw({spell.MyCastTime / 1000}sec)");
 
 									MQ.Cmd($"/cast \"{spell.CastName}\"");
@@ -602,7 +602,7 @@ namespace E3Core.Processors
 									{
 										MQ.Delay(500);
 									}
-									
+
 								}
 								else
 								{
@@ -733,12 +733,12 @@ namespace E3Core.Processors
 								Heals.SomeoneNeedEmergencyHealingGroup(currentMana, pctMana, true);
 								return CastReturn.CAST_INTERRUPTFORHEAL;
 							}
-							
+
 
 							if (!spell.NoInterrupt)
 							{
 								//if detremental or a buff, interrupt for healing if necessary
-								if ((spell.SpellType.Equals("Detrimental") || spell.Duration>0) && Heals.SomeoneNeedsHealing(null, currentMana, pctMana))
+								if ((spell.SpellType.Equals("Detrimental") || spell.Duration > 0) && Heals.SomeoneNeedsHealing(null, currentMana, pctMana))
 								{
 									MQ.Write($"\arInterrupting \aw[\ag{spell.CastName}\aw] \agfor Healing.");
 									Interrupt();
@@ -765,7 +765,7 @@ namespace E3Core.Processors
 									return CastReturn.CAST_INTERRUPTED;
 								}
 								//check if we need to process any events,if healing tho, ignore. 
-								if ((spell.SpellType.Equals("Detrimental") || spell.Duration>0)|| E3.CurrentClass == Class.Bard)
+								if ((spell.SpellType.Equals("Detrimental") || spell.Duration > 0) || E3.CurrentClass == Class.Bard)
 								{
 									if (EventProcessor.CommandList["/backoff"].queuedEvents.Count > 0)
 									{
@@ -773,7 +773,7 @@ namespace E3Core.Processors
 										if (!IsCasting()) return CastReturn.CAST_INTERRUPTED;
 									}
 									//in case the user sends out e3bc commands while casting
-								
+
 
 									if (EventProcessor.CommandList["/backoff"].queuedEvents.Count > 0)
 									{
@@ -809,7 +809,7 @@ namespace E3Core.Processors
 									}
 								}
 							}
-							if (spell.SpellType.Equals("Detrimental") && (spell.TargetType != "PB AE" && spell.TargetType!="Self"))
+							if (spell.SpellType.Equals("Detrimental") && (spell.TargetType != "PB AE" && spell.TargetType != "Self"))
 							{
 								bool isCorpse = MQ.Query<bool>("${Target.Type.Equal[Corpse]}");
 
@@ -846,9 +846,9 @@ namespace E3Core.Processors
 							}
 							//get updated information after delays
 							E3.StateUpdates();
-							
+
 						}
-						
+
 						//sometimes the cast isn't fully complete even if the window is done
 						///allow the player to 'tweak' this value.
 						if (E3.CharacterSettings.Misc_DelayAfterCastWindowDropsForSpellCompletion > 0)
@@ -860,7 +860,7 @@ namespace E3Core.Processors
 							MQ.Delay(spell.AfterCastCompletedDelay);
 						}
 
-						
+
 						returnValue = CheckForReist(spell);
 
 						if (returnValue == CastReturn.CAST_SUCCESS)
@@ -948,7 +948,7 @@ namespace E3Core.Processors
 				}
 			}
 		}
-		
+
 		private static void BeforeEventCheck(Spell spell)
 		{
 			_log.Write("Checking BeforeEvent...");
@@ -966,7 +966,7 @@ namespace E3Core.Processors
 		{
 
 			//after event, after all things are done
-	
+
 
 			_log.Write($"Checking AfterEvent...[{spell.AfterEvent}]");
 			if (!String.IsNullOrWhiteSpace(spell.AfterEvent))
@@ -991,13 +991,13 @@ namespace E3Core.Processors
 				{
 					spell.AfterSpellData = new Data.Spell(spell.AfterSpell);
 				}
-			
+
 				_log.Write("Doing AfterSpell:{spell.AfterSpell}");
 
 				//we may have just cast a spell, and may be in global cooldown
-				if(spell.CastType== CastingType.Spell)
+				if (spell.CastType == CastingType.Spell)
 				{
-					while(InGlobalCooldown())
+					while (InGlobalCooldown())
 					{
 						MQ.Delay(50);
 					}
@@ -1006,10 +1006,10 @@ namespace E3Core.Processors
 				{
 				retrycast:
 					Int32 retryCounter = 0;
-					if(Casting.Cast(targetID, spell.AfterSpellData)== CastReturn.CAST_FIZZLE) 
-					{ 
+					if (Casting.Cast(targetID, spell.AfterSpellData) == CastReturn.CAST_FIZZLE)
+					{
 						retryCounter++;
-						if(retryCounter>5)
+						if (retryCounter > 5)
 						{
 							return;
 						}
@@ -1024,7 +1024,7 @@ namespace E3Core.Processors
 			_log.Write("Checking BeforeSpell...");
 			if (!String.IsNullOrWhiteSpace(spell.BeforeSpell))
 			{
-			
+
 				if (spell.BeforeSpellData == null)
 				{
 					spell.BeforeSpellData = new Data.Spell(spell.BeforeSpell);
@@ -1040,7 +1040,7 @@ namespace E3Core.Processors
 				}
 				if (CheckReady(spell.BeforeSpellData) && CheckMana(spell.BeforeSpellData))
 				{
-					retrycast:
+				retrycast:
 					if (Casting.Cast(targetID, spell.BeforeSpellData) == CastReturn.CAST_FIZZLE)
 					{
 						goto retrycast;
@@ -1060,7 +1060,7 @@ namespace E3Core.Processors
 		}
 		public static void Sing(Int32 targetid, Data.Spell spell)
 		{
-		
+
 			if (E3.CurrentClass != Data.Class.Bard) return;
 			//Stop following for spell/item/aa with a cast time > 0 MyCastTime, unless im a bard
 			//anything under 300 is insta cast
@@ -1069,7 +1069,7 @@ namespace E3Core.Processors
 			{
 				TrueTarget(targetid);
 			}
-			
+
 			if (spell.CastType == CastingType.Spell)
 			{
 				//if (MQ.Query<bool>($"${{Bool[${{Me.Book[{spell.CastName}]}}]}}"))
@@ -1085,11 +1085,11 @@ namespace E3Core.Processors
 						//if (spell.BeforeEvent.StartsWith("/bando", StringComparison.OrdinalIgnoreCase)) MQ.Delay(300);
 					}
 					Int32 retryCounter = 0;
-					retrysong:
+				retrysong:
 					MQ.Cmd("/stopsong");
 					PubServer.AddTopicMessage("${Me.Casting}", spell.CastName);
 					MQ.Cmd($"/cast \"{spell.CastName}\"");
-					if (spell.MyCastTime>500)
+					if (spell.MyCastTime > 500)
 					{
 						MQ.Delay(300, IsCasting);
 						if (e3util.IsEQLive())
@@ -1176,7 +1176,7 @@ namespace E3Core.Processors
 				PubServer.AddTopicMessage("${Me.Casting}", spell.CastName);
 
 				//MQ.Cmd($"/casting \"{spell.CastName}\" alt", 300);
-				MQ.Cmd($"/alt activate {spell.AAID}",300);
+				MQ.Cmd($"/alt activate {spell.AAID}", 300);
 				//after event, after all things are done               
 				if (!String.IsNullOrWhiteSpace(spell.AfterEvent))
 				{
@@ -1204,8 +1204,8 @@ namespace E3Core.Processors
 		}
 		public static void MemorizeAllSpells()
 		{
-			MQ.Cmd("/squelch /windowstate SpellBookWnd open",1000);
-			foreach(Spell s in E3.CharacterSettings.Nukes)
+			MQ.Cmd("/squelch /windowstate SpellBookWnd open", 1000);
+			foreach (Spell s in E3.CharacterSettings.Nukes)
 			{
 				if (!SpellBookWndOpen()) return;
 				MemorizeSpell(s, true);
@@ -1248,7 +1248,7 @@ namespace E3Core.Processors
 			foreach (Spell s in E3.CharacterSettings.HealAll)
 			{
 				if (!SpellBookWndOpen()) return;
-				MemorizeSpell(s,true);
+				MemorizeSpell(s, true);
 			}
 
 			MQ.Cmd("/stand");
@@ -1256,7 +1256,27 @@ namespace E3Core.Processors
 		public static bool SpellBookWndOpen()
 		{
 			return MQ.Query<bool>("${Window[SpellBookWnd].Open}");
-			
+
+		}
+
+		public static bool BuffNotReady(Data.Spell spell)
+		{
+			if (spell.CastType == CastingType.Spell && spell.SpellInBook && Casting.SpellMemorized(spell) && Casting.SpellInCooldown(spell)) return true;
+			if (spell.CastType == CastingType.Item && Casting.ItemInCooldown(spell)) return true;
+
+			return false;
+		}
+		public static bool SpellMemorized(Data.Spell spell)
+		{
+			foreach (var spellid in _currentSpellGems.Values)
+			{
+				if (spellid == spell.SpellID && spellid != 0)
+				{
+					return true;
+				}
+			}
+
+			return false;
 		}
 		public static bool MemorizeSpell(Data.Spell spell,bool ignoreWait=false)
 		{

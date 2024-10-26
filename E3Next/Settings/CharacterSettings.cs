@@ -1055,7 +1055,7 @@ namespace E3Core.Settings
 
 				
 			}
-			if ((CharacterClass & Class.ManaUsers) == CharacterClass)
+			if ((CharacterClass & Class.ManaUsers) == CharacterClass && CharacterClass!= Class.Bard)
 			{
 				newFile.Sections.AddSection("Off Assist Spells");
 				section = newFile.Sections.GetSectionData("Off Assist Spells");

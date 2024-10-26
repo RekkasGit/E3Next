@@ -904,8 +904,8 @@ namespace E3Core.Data
         public String TargetType = String.Empty;
         public Int32 SpellGem;
         public Int32 GiveUpTimer;
-        private const Int32 MaxTiresDefault = 5;
-        public Int32 MaxTries = MaxTiresDefault;
+        private const Int32 MaxTriesDefault = 5;
+        public Int32 MaxTries = MaxTriesDefault;
         public Dictionary<string, Int32> CheckForCollection = new Dictionary<string, int>();
         public Int32 Duration;
         public Int32 DurationTotalSeconds;
@@ -1313,7 +1313,7 @@ namespace E3Core.Data
 			string t_ignoreStackRules = (!IgnoreStackRules) ? String.Empty : $"/IgnoreStackRules";
 			string t_healthMax = (HealthMax == 100) ? String.Empty : $"/HealthMax|{HealthMax}";
 			string t_MinDurationBeforeRecast = (MinDurationBeforeRecast == 0) ? String.Empty : $"/MinDurationBeforeRecast|{MinDurationBeforeRecast/1000}";
-			string t_MaxTries = (MaxTries == MaxTiresDefault) ? String.Empty : $"/MaxTries|{MaxTries}";
+			string t_MaxTries = (MaxTries == MaxTriesDefault) ? String.Empty : $"/MaxTries|{MaxTries}";
 			string t_CastIF = (String.IsNullOrWhiteSpace(this.CastIF)) ? String.Empty : $"/CastIF|{CastIF}";
 			string t_MinEnd = (MinEnd == 0) ? String.Empty : $"/MinEnd|{MinEnd}";
 			string t_AfterEvent = (String.IsNullOrWhiteSpace(this.AfterEventKeys)) ? String.Empty : $"/AfterEvent|{AfterEventKeys}";

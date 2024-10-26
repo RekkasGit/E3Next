@@ -762,6 +762,9 @@ namespace E3Core.Processors
 								if (shouldContinue) { continue; }
 							}
 							//Is the buff still good? if so, skip
+
+							if(Casting.BuffNotReady(spell)) continue;
+
 							if (BuffTimerIsGood(spell, s, usePets))
 							{
 								continue;
@@ -832,6 +835,7 @@ namespace E3Core.Processors
 								}
 								if (shouldContinue) { continue; }
 							}
+							if (Casting.BuffNotReady(spell)) continue;
 							//Is the buff still good? if so, skip
 							if (BuffTimerIsGood(spell, s, usePets))
 							{
@@ -921,6 +925,7 @@ namespace E3Core.Processors
 										continue; 
 									}
 								}
+								if (Casting.BuffNotReady(spell)) continue;
 								//Is the buff still good? if so, skip
 								if (BuffTimerIsGood(spell, s, usePets))
 								{
@@ -970,7 +975,9 @@ namespace E3Core.Processors
 								}
 							}
 							else
-							{   //Is the buff still good? if so, skip
+							{
+								if (Casting.BuffNotReady(spell)) continue;
+								//Is the buff still good? if so, skip
 								if (BuffTimerIsGood(spell, s, usePets))
 								{
 									continue;

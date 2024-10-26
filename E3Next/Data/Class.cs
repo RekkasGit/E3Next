@@ -35,7 +35,7 @@ namespace E3Core.Data
 		PetClass = Shadowknight | Druid | Necromancer | Magician | Enchanter | Beastlord | Shaman,
 		HealHybrid = Paladin | Ranger | Beastlord,
 		FeignDeathClass = Necromancer | Shadowknight | Monk,
-		ManaUsers = Caster | Priest | HealHybrid | Shadowknight,
+		ManaUsers = Caster | Priest | HealHybrid | Shadowknight | Bard,
 		Ranged = Caster | Ranger,
 		Charmer = Enchanter | Druid | Necromancer,
 		Plate = Warrior | Cleric | Shadowknight | Paladin | Bard,

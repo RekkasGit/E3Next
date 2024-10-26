@@ -1283,6 +1283,7 @@ namespace E3Core.Processors
             if (E3.IsInvis) return false;
 			if (Basics.AmIDead()) return false;
 			if (e3util.IsEQLive()) return false;
+			if (E3.CurrentClass == Class.Bard) return false;
 
 			int pctMana = MQ.Query<int>("${Me.PctMana}");
 			var pctHps = MQ.Query<int>("${Me.PctHPs}");
