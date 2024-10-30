@@ -1829,7 +1829,9 @@ namespace E3NextConfigEditor
                         IDictionary<string, List<Spell>> dynamicMelodies = (IDictionary<string, List<Spell>>)objectList.GetValue(E3.CharacterSettings);
                         string selectedSubSection = node.Text;
                         List<Spell> melodies = dynamicMelodies[selectedSubSection];
-                        UpdateListView(melodies);
+						sectionComboBox.SelectedItem = section;
+						subsectionComboBox.SelectedItem = node.Text;
+						UpdateListView(melodies);
                     }
                 }
 				else if (section == "Burn")

@@ -164,9 +164,12 @@ namespace E3Core.Processors
 
                     if (spell.CastType == CastingType.Spell)
                     {
+						Int32 maxTries = 0;
 						while (Casting.InGlobalCooldown())
 						{
 							MQ.Delay(100);
+							maxTries++;
+							if (maxTries > 40) break;
 						}
 					
 					}

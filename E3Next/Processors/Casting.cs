@@ -997,9 +997,12 @@ namespace E3Core.Processors
 				//we may have just cast a spell, and may be in global cooldown
 				if (spell.CastType == CastingType.Spell)
 				{
+					Int32 maxTries = 0;
 					while (InGlobalCooldown())
 					{
 						MQ.Delay(50);
+						maxTries++;
+						if (maxTries > 40) break;
 					}
 				}
 				if (CheckReady(spell.AfterSpellData) && CheckMana(spell.AfterSpellData))
@@ -1033,9 +1036,12 @@ namespace E3Core.Processors
 				//we may have just cast a spell, and may be in global cooldown
 				if (spell.CastType == CastingType.Spell)
 				{
+					Int32 maxTries = 0;
 					while (InGlobalCooldown())
 					{
 						MQ.Delay(50);
+						maxTries++;
+						if (maxTries > 40) break;
 					}
 				}
 				if (CheckReady(spell.BeforeSpellData) && CheckMana(spell.BeforeSpellData))
@@ -1278,6 +1284,17 @@ namespace E3Core.Processors
 
 			return false;
 		}
+		public static bool AnySpellMemorized()
+		{
+			foreach (var spellid in _currentSpellGems.Values)
+			{
+				if (spellid != 0)
+				{
+					return true;
+				}
+			}
+			return false;
+		}
 		public static bool MemorizeSpell(Data.Spell spell,bool ignoreWait=false)
 		{
 		
@@ -1427,9 +1444,11 @@ namespace E3Core.Processors
 				return true;
 			}
 
-			
-
-			if (MQ.Query<bool>("${Me.SpellReady[${Me.Gem[1].Name}]}") || MQ.Query<bool>("${Me.SpellReady[${Me.Gem[3].Name}]}") || MQ.Query<bool>("${Me.SpellReady[${Me.Gem[5].Name}]}") || MQ.Query<bool>("${Me.SpellReady[${Me.Gem[7].Name}]}"))
+			if(!AnySpellMemorized())
+			{
+				return false;
+			}
+			if (MQ.Query<bool>("${Me.SpellReady[${Me.Gem[1].Name}]}") || MQ.Query<bool>("${Me.SpellReady[${Me.Gem[2].Name}]}") || MQ.Query<bool>("${Me.SpellReady[${Me.Gem[3].Name}]}") || MQ.Query<bool>("${Me.SpellReady[${Me.Gem[4].Name}]}") || MQ.Query<bool>("${Me.SpellReady[${Me.Gem[5].Name}]}") || MQ.Query<bool>("${Me.SpellReady[${Me.Gem[6].Name}]}") || MQ.Query<bool>("${Me.SpellReady[${Me.Gem[7].Name}]}") || MQ.Query<bool>("${Me.SpellReady[${Me.Gem[8].Name}]}"))
 			{
 				return false;
 			}

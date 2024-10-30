@@ -181,9 +181,12 @@ namespace E3Core.Processors
                 //giveme Alara "Something" qty Rekken
                 if (x.args.Count > 0)
                 {
+					Int32 maxTries = 0;
                     while(Casting.InGlobalCooldown())
                     {
                         MQ.Delay(50);
+						maxTries++;
+						if (maxTries > 40) break;
                     }
                     e3util.DeleteNoRentItem(x.args[0]);
                 }
