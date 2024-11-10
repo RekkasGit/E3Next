@@ -71,9 +71,10 @@ namespace E3Core.Utility
 			//put the target back to where it was
 			Int32 currentTargetID = MQ.Query<Int32>("${Target.ID}");
 			var targetType = MQ.Query<string>("${Target.Type}");
+			var myPetID = MQ.Query<Int32>("${Me.Pet.ID}");
 
 			//if manual control and its another mob, don't put target back
-			if(currentTargetID>0 && targetType != "PC" && e3util.IsManualControl())
+			if(currentTargetID>0 && targetType != "PC"  && currentTargetID != myPetID && e3util.IsManualControl())
 			{
 				return;
 			}

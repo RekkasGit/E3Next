@@ -428,6 +428,7 @@ namespace E3Core.Processors
 					if (!e3util.FilterMe(x))
 					{
                         Pause(true);
+						MQ.Cmd("/dismount");
 					    MQ.Cmd($"/camp{toDesktop}");
 					}
 				}
@@ -436,6 +437,7 @@ namespace E3Core.Processors
                     if (!e3util.FilterMe(x))
                     {
                         Pause(true);
+						MQ.Cmd("/dismount");
 						MQ.Cmd($"/camp{toDesktop}");
 					}
 					//we are telling people to follow us
