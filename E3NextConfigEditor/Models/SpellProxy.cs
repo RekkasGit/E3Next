@@ -322,6 +322,13 @@ namespace E3NextConfigEditor.Models
 			set { _spell.NoTarget = value; }
 		}
 		[Category("Flags")]
+		[Description("Do not execute if you have aggro on the current target")]
+		public bool NoAggro
+		{
+			get { return _spell.NoAggro; }
+			set { _spell.NoAggro = value; }
+		}
+		[Category("Flags")]
 		[Description("Zone to Enable in. Honetly not sure this works!")]
 		public string Zone
 		{
@@ -596,6 +603,13 @@ namespace E3NextConfigEditor.Models
 		{
 			get { return _spell.NoTarget; }
 			set { _spell.NoTarget = value; }
+		}
+		[Category("Flags")]
+		[Description("Do not execute if you have aggro on the current target")]
+		public bool NoAggro
+		{
+			get { return _spell.NoAggro; }
+			set { _spell.NoAggro = value; }
 		}
 		[Category("Flags")]
 		[Description("Check for, comma seperated. For Detremental it is the debuff on the mob. For Buffs/songs its the buff on you.")]
