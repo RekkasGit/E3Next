@@ -329,6 +329,13 @@ namespace E3NextConfigEditor.Models
 			set { _spell.NoAggro = value; }
 		}
 		[Category("Flags")]
+		[Description("Max Tries to execute on a debuff/dot")]
+		public Int32 MaxTries
+		{
+			get { return _spell.MaxTries; }
+			set { _spell.MaxTries = value; }
+		}
+		[Category("Flags")]
 		[Description("Zone to Enable in. Honetly not sure this works!")]
 		public string Zone
 		{
@@ -610,6 +617,13 @@ namespace E3NextConfigEditor.Models
 		{
 			get { return _spell.NoAggro; }
 			set { _spell.NoAggro = value; }
+		}
+		[Category("Flags")]
+		[Description("Max Tries to execute on a debuff/dot")]
+		public Int32 MaxTries
+		{
+			get { return _spell.MaxTries; }
+			set { _spell.MaxTries = value; }
 		}
 		[Category("Flags")]
 		[Description("Check for, comma seperated. For Detremental it is the debuff on the mob. For Buffs/songs its the buff on you.")]
