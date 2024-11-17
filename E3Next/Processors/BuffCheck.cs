@@ -773,6 +773,7 @@ namespace E3Core.Processors
 							if (willStack && Casting.CheckReady(spell) && Casting.CheckMana(spell))
 							{
 								CastReturn result;
+								recastSpell:
 								if (spell.TargetType == "Self" || spell.TargetType == "Group v1" || spell.TargetType == "Group v2")
 								{
 									result = Casting.Cast(0, spell);
@@ -781,8 +782,11 @@ namespace E3Core.Processors
 								{
 									result = Casting.Cast(s.ID, spell);
 								}
-
-								if (result == CastReturn.CAST_INTERRUPTED || result == CastReturn.CAST_INTERRUPTFORHEAL || result == CastReturn.CAST_FIZZLE)
+								if (result == CastReturn.CAST_FIZZLE)
+								{
+									goto recastSpell;
+								}
+								if (result == CastReturn.CAST_INTERRUPTED || result == CastReturn.CAST_INTERRUPTFORHEAL)
 								{
 									return;
 								}
@@ -842,12 +846,17 @@ namespace E3Core.Processors
 								continue;
 							}
 							bool willStack = MQ.Query<bool>($"${{Spell[{spell.SpellName}].WillLandPet}}");
+							recastSpell:
 							if (willStack && Casting.CheckReady(spell) && Casting.CheckMana(spell))
 							{
 								CastReturn result;
 
 								result = Casting.Cast(s.ID, spell);
-								if (result == CastReturn.CAST_INTERRUPTED || result == CastReturn.CAST_INTERRUPTFORHEAL || result == CastReturn.CAST_FIZZLE)
+								if (result == CastReturn.CAST_FIZZLE)
+								{
+									goto recastSpell;
+								}
+								if (result == CastReturn.CAST_INTERRUPTED || result == CastReturn.CAST_INTERRUPTFORHEAL)
 								{
 									return;
 								}
@@ -940,14 +949,18 @@ namespace E3Core.Processors
 									UpdateBuffTimers(s.ID, spell, 15000, 15000, true);
 									continue;
 								}
+								recastSpell:
 								if (willStack && Casting.CheckReady(spell) && Casting.CheckMana(spell))
 								{
 
 									//E3.Bots.Broadcast($"{spell.CastTarget} is missing the buff {spell.CastName} with id:{spell.SpellID}. current list:{String.Join(",",list)}");
-
 									//then we can cast!
 									var result = Casting.Cast(s.ID, spell);
-									if (result == CastReturn.CAST_INTERRUPTED || result == CastReturn.CAST_INTERRUPTFORHEAL || result == CastReturn.CAST_FIZZLE)
+									if(result== CastReturn.CAST_FIZZLE)
+									{
+										goto recastSpell;
+									}
+									if (result == CastReturn.CAST_INTERRUPTED || result == CastReturn.CAST_INTERRUPTFORHEAL)
 									{
 										return;
 									}
@@ -1035,10 +1048,17 @@ namespace E3Core.Processors
 									//we cannot do target based checks if a short duration type.
 
 									//not one of our buffs uhh, try and cast and see if we get a non success message.
+									recastSpell:
 									if (Casting.CheckReady(spell) && Casting.CheckMana(spell))
 									{
 										var result = Casting.Cast(s.ID, spell);
-										if (result == CastReturn.CAST_INTERRUPTED || result == CastReturn.CAST_INTERRUPTFORHEAL || result == CastReturn.CAST_FIZZLE)
+
+										if (result == CastReturn.CAST_FIZZLE)
+										{
+											goto recastSpell;
+										}
+
+										if (result == CastReturn.CAST_INTERRUPTED || result == CastReturn.CAST_INTERRUPTFORHEAL)
 										{
 											return;
 										}
@@ -1063,10 +1083,15 @@ namespace E3Core.Processors
 
 									if (timeLeftInMS < 15000)
 									{
+										recastSpell:
 										if (Casting.CheckReady(spell) && Casting.CheckMana(spell))
 										{
 											var result = Casting.Cast(s.ID, spell);
-											if (result == CastReturn.CAST_INTERRUPTED || result == CastReturn.CAST_INTERRUPTFORHEAL || result == CastReturn.CAST_FIZZLE)
+											if (result == CastReturn.CAST_FIZZLE)
+											{
+												goto recastSpell;
+											}
+											if (result == CastReturn.CAST_INTERRUPTED || result == CastReturn.CAST_INTERRUPTFORHEAL)
 											{
 												return;
 											}
