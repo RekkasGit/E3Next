@@ -931,18 +931,17 @@ namespace E3Core.Processors
 								{
 									continue;
 								}
-								
-								if (Casting.CheckReady(spell) && Casting.CheckMana(spell))
-								{
 
-									Casting.TrueTarget(s.ID);
-									MQ.Delay(2000, "${Target.BuffsPopulated}");
-									bool willStack = MQ.Query<bool>($"${{Spell[{spell.SpellName}].StacksTarget}}");
-									if (!willStack)
-									{
-										UpdateBuffTimers(s.ID, spell, 15000, 15000,true);
-										continue;
-									}
+								Casting.TrueTarget(s.ID);
+								MQ.Delay(2000, "${Target.BuffsPopulated}");
+								bool willStack = MQ.Query<bool>($"${{Spell[{spell.SpellName}].StacksTarget}}");
+								if (!willStack)
+								{
+									UpdateBuffTimers(s.ID, spell, 15000, 15000, true);
+									continue;
+								}
+								if (willStack && Casting.CheckReady(spell) && Casting.CheckMana(spell))
+								{
 
 									//E3.Bots.Broadcast($"{spell.CastTarget} is missing the buff {spell.CastName} with id:{spell.SpellID}. current list:{String.Join(",",list)}");
 
