@@ -861,7 +861,7 @@ namespace E3Core.Processors
 						}
 
 
-						returnValue = CheckForReist(spell);
+						returnValue = CheckForReist(spell,isNowCast);
 
 						if (returnValue == CastReturn.CAST_SUCCESS)
 						{
@@ -2676,13 +2676,14 @@ namespace E3Core.Processors
 			CheckForResistByName("CAST_IMMUNE", endtime);
 			CheckForResistByName("CAST_INTERRUPTED", endtime);
 		}
-		public static CastReturn CheckForReist(Data.Spell spell)
+		public static CastReturn CheckForReist(Data.Spell spell, bool isNowCast)
 		{
 			//it takes time to wait for a spell resist, up to 2-400 millieconds.
 			//basically 0 or is non detrimental to not resist, mostly nukes/spells
-			//what this buys is is a much faster nuke/heal cycle, at the expense of checking for their resist status
+			//what this buys us is a much faster nuke/heal cycle, at the expense of checking for their resist status
 			//tho debuffs/dots/buffs its more important as we have to keep track of timers, so we will pay the cost of waiting for resist checks.
-			if (spell.Duration == 0)
+			//always check for resists/whatever if its a nowcast.
+			if (spell.Duration == 0 && !isNowCast)
 			{
 				return CastReturn.CAST_SUCCESS;
 			}
