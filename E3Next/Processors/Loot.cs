@@ -549,7 +549,7 @@ namespace E3Core.Processors
         }
         private static bool SafeToLoot()
         {
-			foreach (var s in _spawns.Get().OrderBy(x => x.Distance))
+			foreach (var s in _spawns.Get().OrderBy(x => x.Distance3D))
 			{
 				//find all mobs that are close
 				if (s.TypeDesc != "NPC") continue;
@@ -557,7 +557,7 @@ namespace E3Core.Processors
 				if (!s.Aggressive) continue;
 				if (s.CleanName.EndsWith("s pet")) continue;
 				if (!MQ.Query<bool>($"${{Spawn[npc id {s.ID}].LineOfSight}}")) continue;
-				if (s.Distance > 30) break;//mob is too far away, and since it is ordered, kick out.
+				if (s.Distance3D > 30) break;//mob is too far away, and since it is ordered, kick out.
                                           
                 return false;
 			}

@@ -245,7 +245,7 @@ namespace E3Core.Classes
 			{
 				_autoMezFullMobList.Clear();
 
-				foreach (var s in _spawns.Get().OrderBy(x => x.Distance))
+				foreach (var s in _spawns.Get().OrderBy(x => x.Distance3D))
 				{
 					_autoMezFullMobList.Add(s.ID);
 					if (s.ID == Assist.AssistTargetID) continue;
@@ -257,7 +257,7 @@ namespace E3Core.Classes
 					if (!s.Aggressive) continue;
 					if (s.CleanName.EndsWith("s pet")) continue;
 					if (!MQ.Query<bool>($"${{Spawn[npc id {s.ID}].LineOfSight}}")) continue;
-					if (s.Distance > 60) break;//mob is too far away, and since it is ordered, kick out.
+					if (s.Distance3D > 60) break;//mob is too far away, and since it is ordered, kick out.
 											   //its valid to attack!
 					_mobsToAutoMez.Add(s.ID);
 				}

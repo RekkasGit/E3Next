@@ -138,22 +138,28 @@ namespace E3Core.Processors
                 Spell spell = new Spell(spellName, E3.CharacterSettings.ParsedData);
 
                 if (spell.SpellID > 0)
-                {
-
-                    //wait for GCD to be over.
-                    bool wasCasting = false;
-                    if (E3.CurrentClass != Class.Bard)
+				{
+					//get a valid target for ifs check
+					if (targetid == 0)
+					{
+						targetid = E3.CurrentId;
+					}
+					//check ifs check before we interrupt anything
+					if (!String.IsNullOrWhiteSpace(spell.Ifs))
+					{
+						Casting.TrueTarget(targetid);
+						if (!Casting.Ifs(spell))
+						{
+							return (CastReturn.CAST_IFFAILURE, spell);
+						}
+					}
+					//interrupt any spell that is currently casting.
+					if (E3.CurrentClass != Class.Bard)
                     {
-                        while (Casting.IsCasting())
-                        {
-                            wasCasting = true;
-                            MQ.Delay(50);
-                        }
-
-                        if (wasCasting)
-                        {
-                            MQ.Delay(600);
-                        }
+						if(Casting.IsCasting())
+						{
+							Casting.Interrupt();
+						}
                     }
                     else
                     {
@@ -161,8 +167,8 @@ namespace E3Core.Processors
                         MQ.Cmd("/stopsong");
                         Bard.ResetNextBardSong();
                     }
-
-                    if (spell.CastType == CastingType.Spell)
+					//wait for GCD to be over.
+					if (spell.CastType == CastingType.Spell)
                     {
 						Int32 maxTries = 0;
 						while (Casting.InGlobalCooldown())
@@ -171,22 +177,7 @@ namespace E3Core.Processors
 							maxTries++;
 							if (maxTries > 40) break;
 						}
-					
 					}
-
-					if (targetid == 0)
-                    {
-                        targetid = E3.CurrentId;
-                    }
-                    if (!String.IsNullOrWhiteSpace(spell.Ifs))
-                    {
-                        Casting.TrueTarget(targetid);
-                        if (!Casting.Ifs(spell))
-                        {
-                            return (CastReturn.CAST_IFFAILURE, spell);
-                        }
-                    }
-					
 					if (spell.CheckForCollection.Count > 0)
 					{
                         if(_spawns.TryByID(targetid, out var spawn))
