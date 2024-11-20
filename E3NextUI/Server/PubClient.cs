@@ -65,7 +65,8 @@ namespace E3NextUI.Server
                                 if (Application.OpenForms.Count > 0 && Application.OpenForms[0] is E3UI)
                                 {
                                     ((E3UI)Application.OpenForms[0]).AddConsoleLine(messageReceived, E3UI.MQConsole);
-                                }
+									_ttsprocessor.AddMessageToMQQueue(messageReceived);
+								}
 
                             }
                             else if (messageTopicReceived == "OnIncomingChat")

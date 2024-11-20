@@ -14,7 +14,8 @@ namespace E3NextUI.Util
 		enum TTSType
 		{
 			Normal,
-			Spell
+			Spell,
+			MQWindow
 		}
 
 		class TTSItem
@@ -68,7 +69,13 @@ namespace E3NextUI.Util
 			item.type = TTSType.Spell;
 			_queue.Enqueue(item);
 		}
-
+		public void AddMessageToMQQueue(string message)
+		{
+			var item = TTSItem.Aquire();
+			item.message = message;
+			item.type = TTSType.MQWindow;
+			_queue.Enqueue(item);
+		}
 		public void Start()
 		{
 			_processingTask = Task.Factory.StartNew(() => { Process(); }, CancellationToken.None, TaskCreationOptions.DenyChildAttach, TaskScheduler.Default);
@@ -86,11 +93,15 @@ namespace E3NextUI.Util
 						if (item.type == TTSType.Normal)
 						{
 							Speak(item.message);
-							
+
 						}
-						else if(item.type == TTSType.Spell)
+						else if (item.type == TTSType.Spell)
 						{
 							SpeakSpell(item.message);
+						}
+						else if (item.type == TTSType.MQWindow)
+						{
+							SpeakMQWindow(item.message);
 						}
 						item.Dispose();
 					}
@@ -178,6 +189,40 @@ namespace E3NextUI.Util
 				}
 			}
 
+
+			_synth.Rate = E3UI._genSettings.TTS_Speed;
+			_synth.Volume = E3UI._genSettings.TTS_Volume;
+			_synth.Speak(message);
+		}
+		void SpeakMQWindow(string message)
+		{
+			if (!E3UI._genSettings.TTS_Enabled) return;
+			
+			if(message.StartsWith("[E3]"))
+			{
+				//get rid of the start time
+				Int32 indexOfLessThan = message.IndexOf("<");
+				if(indexOfLessThan>0)
+				{
+					message = message.Substring(indexOfLessThan);
+				}
+			}
+			if (!String.IsNullOrWhiteSpace(E3UI._genSettings.TTS_RegEx))
+			{
+				var match = System.Text.RegularExpressions.Regex.Match(message, E3UI._genSettings.TTS_RegEx);
+				if (!match.Success)
+				{
+					return;
+				}
+			}
+			if (!String.IsNullOrWhiteSpace(E3UI._genSettings.TTS_RegExExclude))
+			{
+				var match = System.Text.RegularExpressions.Regex.Match(message, E3UI._genSettings.TTS_RegExExclude);
+				if (match.Success)
+				{
+					return;
+				}
+			}
 
 			_synth.Rate = E3UI._genSettings.TTS_Speed;
 			_synth.Volume = E3UI._genSettings.TTS_Volume;
