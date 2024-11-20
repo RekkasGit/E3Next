@@ -35,6 +35,9 @@
 			this.checkBox_channel_say = new System.Windows.Forms.CheckBox();
 			this.checkBox_channel_auction = new System.Windows.Forms.CheckBox();
 			this.groupBox1 = new System.Windows.Forms.GroupBox();
+			this.checkBox_channel_pcspells = new System.Windows.Forms.CheckBox();
+			this.checkBox_channel_mobspells = new System.Windows.Forms.CheckBox();
+			this.checkBox_channel_shout = new System.Windows.Forms.CheckBox();
 			this.checkBox_channel_tell = new System.Windows.Forms.CheckBox();
 			this.textBox_tts_regex = new System.Windows.Forms.TextBox();
 			this.label1 = new System.Windows.Forms.Label();
@@ -52,9 +55,6 @@
 			this.textBox_tts_regex_exclude = new System.Windows.Forms.TextBox();
 			this.label6 = new System.Windows.Forms.Label();
 			this.numericUpDown_tts_wordlimit = new System.Windows.Forms.NumericUpDown();
-			this.checkBox_channel_shout = new System.Windows.Forms.CheckBox();
-			this.checkBox_channel_mobspells = new System.Windows.Forms.CheckBox();
-			this.checkBox_channel_pcspells = new System.Windows.Forms.CheckBox();
 			this.groupBox1.SuspendLayout();
 			((System.ComponentModel.ISupportInitialize)(this.trackBar_tts_volume)).BeginInit();
 			((System.ComponentModel.ISupportInitialize)(this.trackBar_tts_speed)).BeginInit();
@@ -139,6 +139,36 @@
 			this.groupBox1.TabIndex = 6;
 			this.groupBox1.TabStop = false;
 			this.groupBox1.Text = "Channels";
+			// 
+			// checkBox_channel_pcspells
+			// 
+			this.checkBox_channel_pcspells.AutoSize = true;
+			this.checkBox_channel_pcspells.Location = new System.Drawing.Point(141, 46);
+			this.checkBox_channel_pcspells.Name = "checkBox_channel_pcspells";
+			this.checkBox_channel_pcspells.Size = new System.Drawing.Size(71, 17);
+			this.checkBox_channel_pcspells.TabIndex = 9;
+			this.checkBox_channel_pcspells.Text = "PC Spells";
+			this.checkBox_channel_pcspells.UseVisualStyleBackColor = true;
+			// 
+			// checkBox_channel_mobspells
+			// 
+			this.checkBox_channel_mobspells.AutoSize = true;
+			this.checkBox_channel_mobspells.Location = new System.Drawing.Point(141, 23);
+			this.checkBox_channel_mobspells.Name = "checkBox_channel_mobspells";
+			this.checkBox_channel_mobspells.Size = new System.Drawing.Size(78, 17);
+			this.checkBox_channel_mobspells.TabIndex = 8;
+			this.checkBox_channel_mobspells.Text = "Mob Spells";
+			this.checkBox_channel_mobspells.UseVisualStyleBackColor = true;
+			// 
+			// checkBox_channel_shout
+			// 
+			this.checkBox_channel_shout.AutoSize = true;
+			this.checkBox_channel_shout.Location = new System.Drawing.Point(71, 92);
+			this.checkBox_channel_shout.Name = "checkBox_channel_shout";
+			this.checkBox_channel_shout.Size = new System.Drawing.Size(54, 17);
+			this.checkBox_channel_shout.TabIndex = 7;
+			this.checkBox_channel_shout.Text = "Shout";
+			this.checkBox_channel_shout.UseVisualStyleBackColor = true;
 			// 
 			// checkBox_channel_tell
 			// 
@@ -257,7 +287,7 @@
 			this.checkBox_tts_breifmode.Name = "checkBox_tts_breifmode";
 			this.checkBox_tts_breifmode.Size = new System.Drawing.Size(77, 17);
 			this.checkBox_tts_breifmode.TabIndex = 18;
-			this.checkBox_tts_breifmode.Text = "Breif Mode";
+			this.checkBox_tts_breifmode.Text = "Brief Mode";
 			this.checkBox_tts_breifmode.UseVisualStyleBackColor = true;
 			// 
 			// label5
@@ -296,36 +326,6 @@
 			this.numericUpDown_tts_wordlimit.Name = "numericUpDown_tts_wordlimit";
 			this.numericUpDown_tts_wordlimit.Size = new System.Drawing.Size(120, 20);
 			this.numericUpDown_tts_wordlimit.TabIndex = 22;
-			// 
-			// checkBox_channel_shout
-			// 
-			this.checkBox_channel_shout.AutoSize = true;
-			this.checkBox_channel_shout.Location = new System.Drawing.Point(71, 92);
-			this.checkBox_channel_shout.Name = "checkBox_channel_shout";
-			this.checkBox_channel_shout.Size = new System.Drawing.Size(54, 17);
-			this.checkBox_channel_shout.TabIndex = 7;
-			this.checkBox_channel_shout.Text = "Shout";
-			this.checkBox_channel_shout.UseVisualStyleBackColor = true;
-			// 
-			// checkBox_channel_mobspells
-			// 
-			this.checkBox_channel_mobspells.AutoSize = true;
-			this.checkBox_channel_mobspells.Location = new System.Drawing.Point(141, 23);
-			this.checkBox_channel_mobspells.Name = "checkBox_channel_mobspells";
-			this.checkBox_channel_mobspells.Size = new System.Drawing.Size(78, 17);
-			this.checkBox_channel_mobspells.TabIndex = 8;
-			this.checkBox_channel_mobspells.Text = "Mob Spells";
-			this.checkBox_channel_mobspells.UseVisualStyleBackColor = true;
-			// 
-			// checkBox_channel_pcspells
-			// 
-			this.checkBox_channel_pcspells.AutoSize = true;
-			this.checkBox_channel_pcspells.Location = new System.Drawing.Point(141, 46);
-			this.checkBox_channel_pcspells.Name = "checkBox_channel_pcspells";
-			this.checkBox_channel_pcspells.Size = new System.Drawing.Size(71, 17);
-			this.checkBox_channel_pcspells.TabIndex = 9;
-			this.checkBox_channel_pcspells.Text = "PC Spells";
-			this.checkBox_channel_pcspells.UseVisualStyleBackColor = true;
 			// 
 			// TTSConfig
 			// 
