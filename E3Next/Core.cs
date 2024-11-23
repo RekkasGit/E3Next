@@ -2398,7 +2398,15 @@ namespace MonoCore
 
 
         }
-        public Int32 DeityID;
+		//used in recording data stuff, not really part of spawn
+		public Int32 TableID;
+		public Int32 GridID;
+	    public float Initial_Heading;
+        public bool Recording_Complete=false;
+		public bool Recording_MovementOccured = false;
+        public Int32 Recording_StepCount;
+		///end recording data stuff
+		public Int32 DeityID;
         public float playerZ;
         public float playerY;
         public float playerX;
@@ -2638,6 +2646,9 @@ namespace MonoCore
         public void Dispose()
         {
             _dataSize = 0;
+			TableID = 0;
+			Recording_MovementOccured = false;
+            Recording_StepCount = 0;
             StaticObjectPool.Push(this);
         }
     }
