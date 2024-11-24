@@ -21,7 +21,7 @@ namespace E3Core.Processors
 		private static ISpawns _spawns = E3.Spawns;
 		private static Dictionary<Int32, Spawn> _recordedSpawns = new Dictionary<Int32, Spawn>();
 		private static long _nextRecordingCheck = 0;
-		private static long _nextRecordingInterval = 1000;
+		private static long _nextRecordingInterval = 500;
 		private static bool _recordingSpawnLocations = false;
 		private static string _recordingFileName = String.Empty;
 		private static Int32 _recordingZoneID = 0;
@@ -200,14 +200,16 @@ namespace E3Core.Processors
 			{
 				if (!e3util.ShouldCheck(ref _nextRecordingCheck, _nextRecordingInterval)) return;
 
+				_spawns.RefreshList();
+
 				foreach (var s in _recordedSpawns.Values)
 				{
 					if (s.Recording_Complete) continue;
 
 					if(_spawns.TryByID(s.ID, out var cs))
 					{
-
-						if (cs.Heading != s.Heading && cs.X != s.X && cs.Y != s.Y && cs.Z != s.Z)
+						float lastHeading = s.Heading;
+						if (cs.Heading != lastHeading && cs.X != s.X && cs.Y != s.Y && cs.Z != s.Z)
 						{
 							//if we have some how wrapped back around to our initial headig, assume we are at the start of our pathing, and end recording.
 							if (cs.Heading == s.Initial_Heading)
@@ -216,36 +218,30 @@ namespace E3Core.Processors
 								continue;
 							}
 
-							//check to make sure we have moved a decent amount
-							if (Math.Abs(cs.X - s.X) > _recordingMaxDelta || Math.Abs(cs.Y - s.Y) > _recordingMaxDelta || Math.Abs(cs.Z - s.Z) > _recordingMaxDelta)
+							using (var stream = new System.IO.FileStream(_recordingFileName, System.IO.FileMode.Append))
 							{
-								using (var stream = new System.IO.FileStream(_recordingFileName, System.IO.FileMode.Append))
+								String sqlStatement = String.Empty;
+								using (var streamWriter = new System.IO.StreamWriter(stream))
 								{
-									String sqlStatement = String.Empty;
-									using (var streamWriter = new System.IO.StreamWriter(stream))
+									if (!s.Recording_MovementOccured)
 									{
-										if (!s.Recording_MovementOccured)
-										{
-											s.Recording_MovementOccured = true;
-											//update the npc table with the new grid we are creating
-											sqlStatement = $@"update npc_types set pathgrid={s.GridID} where id ={s.TableID}";
-											streamWriter.WriteLine(sqlStatement);
-											sqlStatement = $@"insert into grid (id,zoneid,type,type2) values({s.GridID},{_recordingZoneID},{0},{0})";
-											streamWriter.WriteLine(sqlStatement);
-										}
-
-										sqlStatement = $@"insert into grid_entries (gridid,zoneid,number,x,y,z,heading,pause,centerpoint)
-																	Values({s.GridID},{_recordingZoneID},{s.Recording_StepCount + 1},{cs.X},{cs.Y},{cs.Z},{cs.Heading},{0},{0})";
-
+										s.Recording_MovementOccured = true;
+										//update the npc table with the new grid we are creating
+										sqlStatement = $@"update npc_types set pathgrid={s.GridID} where id ={s.TableID}";
 										streamWriter.WriteLine(sqlStatement);
-										s.Heading = cs.Heading;
-										s.X = cs.X;
-										s.Y = cs.Y;
-										s.Z = cs.Z;
-										s.Recording_StepCount++;
+										sqlStatement = $@"insert into grid (id,zoneid,type,type2) values({s.GridID},{_recordingZoneID},{0},{0})";
+										streamWriter.WriteLine(sqlStatement);
 									}
+
+									sqlStatement = $@"insert into grid_entries (gridid,zoneid,number,x,y,z,heading,pause,centerpoint)
+																Values({s.GridID},{_recordingZoneID},{s.Recording_StepCount + 1},{cs.X},{cs.Y},{cs.Z},{cs.Heading},{0},{0})";
+
+									streamWriter.WriteLine(sqlStatement);
+									s.Heading = cs.Heading;
+									s.Recording_StepCount++;
 								}
 							}
+							
 						}
 
 					}
