@@ -1455,14 +1455,7 @@ namespace E3Core.Processors
 				string currentAura = MQ.Query<string>("${Me.Aura[1]}");
 				if (currentAura != "NULL")
 				{
-					//we already have an aura, check if its different
-					//if (currentAura.Equals(_selectAura.SpellName, StringComparison.OrdinalIgnoreCase))
-					{
-						//don't need to do anything
-						return;
-					}
-					//else remove it as we are putting on something else.
-					MQ.Cmd($"/removeaura {currentAura}");
+							return;
 				}
 
 				//need to put on new aura

@@ -191,7 +191,6 @@ namespace E3Core.Processors
 
 
 		}
-		private static Int32 _recordingMaxDelta = 10;
 		[ClassInvoke(Class.All)]
 		public static void RecordZoneData()
 		{

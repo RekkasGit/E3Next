@@ -79,10 +79,11 @@ namespace E3NextUI
 	    HTBOTTOMLEFT = 16,
 	    HTBOTTOMRIGHT = 17;
 		const int _ = 10; // you can rename this variable if you like
-		Rectangle Top { get { return new Rectangle(0, 0, this.ClientSize.Width, _); } }
-		Rectangle Left { get { return new Rectangle(0, 0, _, this.ClientSize.Height); } }
-		Rectangle Bottom { get { return new Rectangle(0, this.ClientSize.Height - _, this.ClientSize.Width, _); } }
-		Rectangle Right { get { return new Rectangle(this.ClientSize.Width - _, 0, _, this.ClientSize.Height); } }
+
+		new Rectangle Top { get { return new Rectangle(0, 0, this.ClientSize.Width, _); } }
+		new Rectangle Left { get { return new Rectangle(0, 0, _, this.ClientSize.Height); } }
+		new Rectangle Bottom { get { return new Rectangle(0, this.ClientSize.Height - _, this.ClientSize.Width, _); } }
+		new Rectangle Right { get { return new Rectangle(this.ClientSize.Width - _, 0, _, this.ClientSize.Height); } }
 
 		Rectangle TopLeft { get { return new Rectangle(0, 0, _, _); } }
 		Rectangle TopRight { get { return new Rectangle(this.ClientSize.Width - _, 0, _, _); } }

@@ -17,7 +17,7 @@ namespace E3Core.Data
         {
 
         }
-		public static new SpellRequest FromProto(SpellData source)
+		public static SpellRequest FromProto(SpellData source)
 		{
 			SpellRequest r = new SpellRequest();
 			r.AfterEvent = source.AfterEvent;

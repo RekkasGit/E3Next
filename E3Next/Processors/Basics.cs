@@ -331,28 +331,28 @@ namespace E3Core.Processors
 				//coth, or summoned by a mob?
 				///a Tae Ew warder says 'You will not evade me, Alara!' 
 				///You have been summoned!
-				if (Assist.AllowControl) return; //this is our driver and most likely a tank, ignore this.
+				//if (Assist.AllowControl) return; //this is our driver and most likely a tank, ignore this.
 
-                _spawns.RefreshList();//make sure we get a new refresh of this zone.
-                //check to see if your target is on top of you, if so... well, good luck!
-                Int32 targetID = MQ.Query<Int32>("${Target.ID}");
-                if(_spawns.TryByID(targetID, out var spawn))
-                {
-                    if(spawn.Distance<5 && spawn.Aggressive && spawn.TypeDesc=="NPC")
-                    {
-                        //oh dear, the mob is in your face, best of luck.
-                        if(Movement.AnchorTarget>0)
-                        {
-                            Movement.MoveToAnchor();
-                        }
-                    }
-                    else
-                    {
-                        //you have been cothed, reset stuff
-                        Movement.Reset();
-                        Assist.Reset();
-                    }
-                }
+    //            _spawns.RefreshList();//make sure we get a new refresh of this zone.
+    //            //check to see if your target is on top of you, if so... well, good luck!
+    //            Int32 targetID = MQ.Query<Int32>("${Target.ID}");
+    //            if(_spawns.TryByID(targetID, out var spawn))
+    //            {
+    //                if(spawn.Distance<5 && spawn.Aggressive && spawn.TypeDesc=="NPC")
+    //                {
+    //                    //oh dear, the mob is in your face, best of luck.
+    //                    if(Movement.AnchorTarget>0)
+    //                    {
+    //                        Movement.MoveToAnchor();
+    //                    }
+    //                }
+    //                else
+    //                {
+    //                    //you have been cothed, reset stuff
+    //                    Movement.Reset();
+    //                    Assist.Reset();
+    //                }
+    //            }
             });
             //
             EventProcessor.RegisterEvent("AskedForRaidInvite", "(.+) tells you, 'raidadd'", (x) =>

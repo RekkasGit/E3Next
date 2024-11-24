@@ -10,7 +10,6 @@ namespace E3Core.Settings.FeatureSettings
 {
 	public class LootStackable : BaseSettings
 	{
-		IniData _stackableAlwaysLootData;
 		string _fileName;
 		public IniData parsedData;
 		public HashSet<string> AlwaysStackableItems = new HashSet<string>(StringComparer.OrdinalIgnoreCase);

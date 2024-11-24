@@ -19,7 +19,7 @@ namespace E3NextUI.Util
 		/// defines the callback type for the hook
 		/// </summary>
 		public delegate int keyboardHookProc(int code, int wParam, ref keyboardHookStruct lParam);
-		public event EventHandler<KeyEventArgs> KeyboardPressed;
+		//public event EventHandler<KeyEventArgs> KeyboardPressed;
 		private static keyboardHookProc _functionProc;
 		public struct keyboardHookStruct
 		{
