@@ -210,14 +210,28 @@ namespace E3Core.Classes
             {
                 using (_log.Trace())
                 {
-                    bool idolUp = MQ.Query<bool>("${Bool[${Spawn[Spirit Idol]}]}");
+                    string idolSpellName = string.Empty;
+                    string idolName = string.Empty;
+
+                    if (MQ.Query<bool>($"${{Me.Book[Idol of Malos]}}"))
+                    {
+                        idolSpellName = "Idol of Malos";
+                        idolName = "Spirit Idol";
+                    }
+                    else
+                    {
+                        idolSpellName = "Idol of Malo";
+                        idolName = "Soul Idol";
+                    }
+
+                    bool idolUp = MQ.Query<bool>("${Bool[${Spawn[" + idolName + "]}]}");
 
                     if (!idolUp)
                     {
                         Spell s;                        
-                        if (!Spell.LoadedSpellsByName.TryGetValue("Idol of Malos", out s))
+                        if (!Spell.LoadedSpellsByName.TryGetValue(idolSpellName, out s))
                         {
-                            s = new Spell($"Idol of Malos/Gem|{E3.CharacterSettings.MalosTotemSpellGem}");
+                            s = new Spell($"{idolSpellName}/Gem|{E3.CharacterSettings.MalosTotemSpellGem}");
                         }
                         if (Casting.CheckReady(s) && Casting.CheckMana(s))
                         {
@@ -226,10 +240,7 @@ namespace E3Core.Classes
                         }
                     }
                 }
-                
             }
-
-
         }
     }
 }
