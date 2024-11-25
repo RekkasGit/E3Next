@@ -235,7 +235,7 @@ namespace E3Core.Processors
 
 						if (!isEmergency && Heals.SomeoneNeedEmergencyHealing(currentMana, pctMana))
 						{
-							E3.Bots.Broadcast($"Interrupting [{spell.CastName}] for Emergecy Heal.");
+							E3.Bots.Broadcast($"Interrupting [{spell.CastName}] for Emergency Heal.");
 							Interrupt();
 							E3.ActionTaken = true;
 							//fire of emergency heal asap! checks targets in network and xtarget
@@ -245,7 +245,7 @@ namespace E3Core.Processors
 						if (!isEmergency && Heals.SomeoneNeedEmergencyHealingGroup(currentMana, pctMana))
 						{
 
-							E3.Bots.Broadcast($"Interrupting [{spell.CastName}] for Emergecy Group Heal.");
+							E3.Bots.Broadcast($"Interrupting [{spell.CastName}] for Emergency Group Heal.");
 							Interrupt();
 							E3.ActionTaken = true;
 							//fire of emergency heal asap!
@@ -715,7 +715,7 @@ namespace E3Core.Processors
 							//these are outside the no interrupt check
 							if (!isEmergency && Heals.SomeoneNeedEmergencyHealing(currentMana, pctMana))
 							{
-								E3.Bots.Broadcast($"\arInterrupting \aw[\ag{spell.CastName}\aw] \agfor Emergecy Heal.");
+								E3.Bots.Broadcast($"\arInterrupting \aw[\ag{spell.CastName}\aw] \agfor Emergency Heal.");
 								Interrupt();
 								E3.ActionTaken = true;
 								//fire of emergency heal asap! checks targets in network and xtarget
@@ -725,7 +725,7 @@ namespace E3Core.Processors
 							if (!isEmergency && Heals.SomeoneNeedEmergencyHealingGroup(currentMana, pctMana))
 							{
 
-								E3.Bots.Broadcast($"\arInterrupting \aw[\ag{spell.CastName}\aw] \agfor Emergecy Group Heal.");
+								E3.Bots.Broadcast($"\arInterrupting \aw[\ag{spell.CastName}\aw] \agfor Emergency Group Heal.");
 								Interrupt();
 								E3.ActionTaken = true;
 								//fire of emergency heal asap!

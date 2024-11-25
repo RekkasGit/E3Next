@@ -404,7 +404,10 @@ namespace E3Core.Processors
                         // if it's a cleric or warrior corpse and we're in combat, try to use divine res
                         if (Basics.InCombat() && _classesToDivineRez.Contains(spawn.ClassName))
                         {
-                            if (Casting.CheckReady(_divineRes))
+                         
+							var result = Casting.Cast(spawn.ID, _divineRes);
+							if (result == CastReturn.CAST_INTERRUPTFORHEAL) return;
+							if (result == CastReturn.CAST_SUCCESS)
 							{
 								E3.Bots.Broadcast($"Trying to rez {spawn.DisplayName}");
 								MQ.Cmd("/corpse");
@@ -433,19 +436,24 @@ namespace E3Core.Processors
                                     }
 									E3.Bots.Broadcast($"Trying to rez {spawn.DisplayName}");
 									MQ.Cmd("/corpse");
-									if (Casting.Cast(spawn.ID, spell)== CastReturn.CAST_SUCCESS)
+									var result = Casting.Cast(spawn.ID, spell);
+									if (result == CastReturn.CAST_INTERRUPTFORHEAL) return;
+									if (result == CastReturn.CAST_SUCCESS)
                                     {
 										_recentlyRezzed.Add(spawn.ID, DateTime.Now);
 										break;
 
 									}
+								
 								}
                                 else
 								{
 									E3.Bots.Broadcast($"Trying to rez {spawn.DisplayName}");
 									MQ.Cmd("/corpse");
-									if (Casting.Cast(spawn.ID, spell)== CastReturn.CAST_SUCCESS)
-                                    {
+									var result = Casting.Cast(spawn.ID, spell);
+									if (result == CastReturn.CAST_INTERRUPTFORHEAL) return;
+									if (result == CastReturn.CAST_SUCCESS)
+									{
 										_recentlyRezzed.Add(spawn.ID, DateTime.Now);
 										break;
 									}
@@ -590,8 +598,11 @@ namespace E3Core.Processors
 						{
 							E3.Bots.Broadcast($"Trying to rez {s.DisplayName}");
 							MQ.Cmd("/corpse");
-                            if(Casting.Cast(s.ID, spell) == CastReturn.CAST_SUCCESS)
-                            {
+
+							var result = Casting.Cast(s.ID, spell);
+							if (result == CastReturn.CAST_INTERRUPTFORHEAL) return;
+							if (result == CastReturn.CAST_SUCCESS)
+							{
 								corpsesRaised.Add(s.ID);
 								rezRetries = 0;
 								break;

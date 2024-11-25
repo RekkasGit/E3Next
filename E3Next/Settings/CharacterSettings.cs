@@ -392,7 +392,7 @@ namespace E3Core.Settings
 		[INI_Section("Heals", "Emergency Heal")]
 		public List<Spell> Heal_EmergencyHeals = new List<Spell>();
 		[INI_Section("Heals", "Emergency Group Heal")]
-		public List<Spell> Heal_EmergecyGroupHeals = new List<Spell>();
+		public List<Spell> Heal_EmergencyGroupHeals = new List<Spell>();
 
 		//rez spells
 		[INI_Section("Rez", "Auto Rez Spells")]
@@ -908,7 +908,7 @@ namespace E3Core.Settings
 			LoadKeyData("Heals", "Pet Heal", ParsedData, HealPets);
             LoadKeyData("Heals", "Number Of Injured Members For Group Heal", ParsedData, ref HealGroup_NumberOfInjuredMembers);
 
-            LoadKeyData("Heals", "Emergency Group Heal", ParsedData, Heal_EmergecyGroupHeals);
+            LoadKeyData("Heals", "Emergency Group Heal", ParsedData, Heal_EmergencyGroupHeals);
             LoadKeyData("Heals", "Emergency Heal", ParsedData, Heal_EmergencyHeals);
 
             LoadKeyData("Heals", "Tank", ParsedData, HealTankTargets);

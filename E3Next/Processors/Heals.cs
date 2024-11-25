@@ -450,7 +450,7 @@ namespace E3Core.Processors
 		}
 		public static bool SomeoneNeedEmergencyHealingGroup(Int32 currentMana, Int32 pctMana, bool CastIfNeeded = false)
 		{
-			if (E3.CharacterSettings.Heal_EmergecyGroupHeals.Count == 0) return false;
+			if (E3.CharacterSettings.Heal_EmergencyGroupHeals.Count == 0) return false;
 			if (Zoning.CurrentZone.IsSafeZone) return false;
 
 			Int32 groupmemberCount = MQ.Query<Int32>("${Group.Members}");
@@ -472,7 +472,7 @@ namespace E3Core.Processors
 					//have to do a normal health check
 					pctHealth = MQ.Query<Int32>($"${{Group.Member[{i}].Spawn.CurrentHPs}}");
 				}
-				foreach (Spell spell in E3.CharacterSettings.Heal_EmergecyGroupHeals)
+				foreach (Spell spell in E3.CharacterSettings.Heal_EmergencyGroupHeals)
 				{
 
 					if (_spawns.TryByName(name, out var s))
@@ -493,7 +493,7 @@ namespace E3Core.Processors
 							if (CastIfNeeded)
 							{
 								E3.Bots.Broadcast($"\agTrying to Cast Emergency Heal Group. \aw[\ag{spell.CastName}\aw]\ag Target:\ap{name} \agPctHealth:{pctHealth}");
-								Heal(currentMana, pctMana, new List<string> { name }, E3.CharacterSettings.Heal_EmergecyGroupHeals, false, false, true);
+								Heal(currentMana, pctMana, new List<string> { name }, E3.CharacterSettings.Heal_EmergencyGroupHeals, false, false, true);
 							}
 							return true;
 						}
