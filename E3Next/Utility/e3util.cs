@@ -1100,52 +1100,79 @@ namespace E3Core.Utility
 		}
 		public static string ClassNameFix(string className)
 		{
+
+
+
+			string serverName = MQ.Query<string>("${MacroQuest.Server}");
+
+
 			//fix for the MQ ShadowKnight vs the enum "shadowknight"
 			if (className == "Shadow Knight")
 			{
 				return "Shadowknight";
 			}
-			//Sanctuary EQ has custom classes ,that need to be mapped. 
-			if (className == "Adventurer")
+
+			if (String.Equals(serverName, "thrulesanc", StringComparison.OrdinalIgnoreCase))
 			{
-				return "Warrior";
-			}
-			if (className == "Alchemist")
-			{
-				return "Shaman";
-			}
-			if (className == "Archer")
-			{
-				return "Ranger";
-			}
-			if (className == "Assassin")
-			{
-				return "Rogue";
-			}
-			if (className == "Dragoon")
-			{
+
+				//Sanctuary EQ has custom classes ,that need to be mapped. 
+				if (className == "Adventurer")
+				{
+					return "Warrior";
+				}
+				if (className == "Alchemist")
+				{
+					return "Shaman";
+				}
+				if (className == "Archer")
+				{
+					return "Ranger";
+				}
+				if (className == "Assassin")
+				{
+					return "Rogue";
+				}
+				if (className == "Dragoon")
+				{
+					return "Paladin";
+				}
+				if (className == "Priest")
+				{
+					return "Cleric";
+				}
+				if (className == "Summoner")
+				{
+					return "Magician";
+				}
+				if (className == "Tamer")
+				{
+					return "Beastlord";
+				}
+				if (className == "Witch")
+				{
+					return "Druid";
+				}
+				if (className == "Sorcerer")
+				{
+					return "Wizard";
+				}
+				if(className== "OCCULTIST")
+				{
+					return "Wizard";
+				}
+				if (className == "GALAXIAN")
+				{
+					return "Paladin";
+				}
+				if (className == "FAUSTIAN")
+				{
+					return "Druid";
+				}
 				return "Paladin";
 			}
-			if (className == "Priest")
-			{
-				return "Cleric";
-			}
-			if (className == "Summoner")
-			{
-				return "Magician";
-			}
-			if (className == "Tamer")
-			{
-				return "Beastlord";
-			}
-			if (className == "Witch")
-			{
-				return "Druid";
-			}
-			if (className == "Sorcerer")
-			{
-				return "Wizard";
-			}
+
+			
+			
 			return className;
 		}
 		public static string FormatServerName(string serverName)

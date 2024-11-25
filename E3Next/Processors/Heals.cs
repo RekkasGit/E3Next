@@ -408,6 +408,15 @@ namespace E3Core.Processors
 
 				if (IgnoreHealTargets.Contains(target)) continue;
 
+				if (!String.IsNullOrWhiteSpace(spell.Ifs))
+				{
+					if (!Casting.Ifs(spell))
+					{
+						//failed check, onto the next
+						continue;
+					}
+				}
+
 				Int32 pctHealth = 0;
 				if (E3.Bots.IsMyBot(target))
 				{
@@ -418,8 +427,6 @@ namespace E3Core.Processors
 					//not our bot
 					continue;
 				}
-
-				
 				if(_spawns.TryByName(target,out var s))
 				{
 					if (!Casting.InRange(s.ID, spell))
@@ -474,7 +481,14 @@ namespace E3Core.Processors
 				}
 				foreach (Spell spell in E3.CharacterSettings.Heal_EmergencyGroupHeals)
 				{
-
+					if (!String.IsNullOrWhiteSpace(spell.Ifs))
+					{
+						if (!Casting.Ifs(spell))
+						{
+							//failed check, onto the next
+							continue;
+						}
+					}
 					if (_spawns.TryByName(name, out var s))
 					{
 						if (!Casting.InRange(s.ID, spell))
