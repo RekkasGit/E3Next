@@ -425,19 +425,19 @@ namespace MonoCore
 
             foreach (string value in values)
             {
-                if (value.StartsWith("/only", StringComparison.OrdinalIgnoreCase) )
+                if (value.StartsWith("/only|", StringComparison.OrdinalIgnoreCase) )
                 {
                     returnValue.Add(value);
                 }
-                else if (value.StartsWith("/not", StringComparison.OrdinalIgnoreCase) )
+                else if (value.StartsWith("/not|", StringComparison.OrdinalIgnoreCase) )
                 {
                     returnValue.Add(value);
                 }
-                else if (value.StartsWith("/exclude",  StringComparison.OrdinalIgnoreCase))
+                else if (value.StartsWith("/exclude|",  StringComparison.OrdinalIgnoreCase))
                 {
                     returnValue.Add(value);
                 }
-                else if (value.StartsWith("/include",StringComparison.OrdinalIgnoreCase))
+                else if (value.StartsWith("/include|",StringComparison.OrdinalIgnoreCase))
                 {
                     returnValue.Add(value);
                 }
