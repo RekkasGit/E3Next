@@ -1005,7 +1005,7 @@ namespace E3Core.Processors
 						if (maxTries > 40) break;
 					}
 				}
-				if (CheckReady(spell.AfterSpellData) && CheckMana(spell.AfterSpellData))
+				if (CheckMana(spell.AfterSpellData) && CheckReady(spell.AfterSpellData))
 				{
 				retrycast:
 					Int32 retryCounter = 0;
@@ -1044,7 +1044,7 @@ namespace E3Core.Processors
 						if (maxTries > 40) break;
 					}
 				}
-				if (CheckReady(spell.BeforeSpellData) && CheckMana(spell.BeforeSpellData))
+				if (CheckMana(spell.BeforeSpellData) && CheckReady(spell.BeforeSpellData))
 				{
 				retrycast:
 					if (Casting.Cast(targetID, spell.BeforeSpellData) == CastReturn.CAST_FIZZLE)

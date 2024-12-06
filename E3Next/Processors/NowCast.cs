@@ -214,10 +214,6 @@ namespace E3Core.Processors
 						}
 					}
 				recast:
-					if (!Casting.CheckReady(spell))
-                    {
-                        return (CastReturn.CAST_NOTREADY,spell);
-                    }
                     if(!Casting.InRange(targetid,spell))
                     {
                         return (CastReturn.CAST_OUTOFRANGE,spell);
@@ -226,6 +222,10 @@ namespace E3Core.Processors
 					{
 						return (CastReturn.CAST_OUTOFMANA,spell);
 					}
+					if (!Casting.CheckReady(spell))
+                    {
+                        return (CastReturn.CAST_NOTREADY,spell);
+                    }
                     if(targetid>0 && targetid!=E3.CurrentId)
                     {
 						Casting.TrueTarget(targetid);

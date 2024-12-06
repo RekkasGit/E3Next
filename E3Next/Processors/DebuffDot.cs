@@ -444,7 +444,7 @@ namespace E3Core.Processors
 					}
 				}
 
-                if (Casting.InRange(mobid, spell) && Casting.CheckReady(spell) && Casting.CheckMana(spell))
+                if (Casting.InRange(mobid, spell) && Casting.CheckMana(spell) && Casting.CheckReady(spell))
                 {
 
                     //lets make sure the buffs/debuffs are there

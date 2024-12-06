@@ -70,7 +70,7 @@ namespace E3Core.Processors
                                 foreach (var spell in E3.CharacterSettings.Dispels)
                                 {
                                     //now have it as a target, need to check its beneficial buffs
-                                    if (Casting.CheckReady(spell) && Casting.CheckMana(spell))
+                                    if (Casting.CheckMana(spell) && Casting.CheckReady(spell))
                                     {
                                         Casting.Cast(0, spell);
                                         return;
