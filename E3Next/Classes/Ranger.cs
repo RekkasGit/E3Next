@@ -45,7 +45,7 @@ namespace E3Core.Classes
                     {
                         s = new Spell("Cover Tracks");
                     }
-                    if (MQ.Query<bool>("${Target.Named}") && Casting.CheckReady(s) && Casting.CheckMana(s))
+                    if (MQ.Query<bool>("${Target.Named}") && Casting.CheckMana(s) && Casting.CheckReady(s))
                     {
                         Casting.Cast(0, s);
                         return;

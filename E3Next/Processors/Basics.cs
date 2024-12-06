@@ -100,7 +100,7 @@ namespace E3Core.Processors
 								}
 							}
 
-							if (Casting.CheckReady(spell) && Casting.CheckMana(spell))
+							if (Casting.CheckMana(spell) && Casting.CheckReady(spell))
                             {
                                 Casting.Cast(E3.CurrentId, spell);
                             }
@@ -906,7 +906,7 @@ namespace E3Core.Processors
 							//don't try and mem a spell if its not already mem
 							if ((spell.CastType != CastingType.Spell) || !Casting.SpellInCooldown(spell))
                             {
-                                if (Casting.CheckReady(spell) && Casting.CheckMana(spell))
+                                if (Casting.CheckMana(spell) && Casting.CheckReady(spell))
                                 {
                                     Casting.Cast(0, spell);
                                     return;
@@ -944,7 +944,7 @@ namespace E3Core.Processors
                             {
                                 s = new Spell(spellToCheck);
                             }
-                            if (Casting.CheckReady(s) && Casting.CheckMana(s))
+                            if (Casting.CheckMana(s) && Casting.CheckReady(s))
                             {
                                 Casting.Cast(0, s);
                             }

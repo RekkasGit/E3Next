@@ -426,7 +426,7 @@ namespace E3Core.Processors
 								}
 							}
 
-							if (Casting.CheckReady(spell) && Casting.CheckMana(spell))
+							if (Casting.CheckMana(spell) && Casting.CheckReady(spell))
                             {
                                 if (Basics.InCombat())
                                 {
@@ -528,7 +528,7 @@ namespace E3Core.Processors
 
 					foreach (var spell in _currentRezSpells)
                     {
-                        if (Casting.CheckReady(spell) && Casting.CheckMana(spell) && CanRez())
+                        if (CanRez() && Casting.CheckMana(spell) && Casting.CheckReady(spell))
                         {
                             E3.Bots.Broadcast($"Rezing {s.DisplayName}");
                             Casting.Cast(s.ID, spell);
@@ -594,7 +594,7 @@ namespace E3Core.Processors
 					E3.Bots.Broadcast($"Rezing {s.DisplayName}");
 		            foreach (var spell in _currentRezSpells)
                     {
-                        if (Casting.CheckReady(spell) && Casting.CheckMana(spell))
+                        if (Casting.CheckMana(spell) && Casting.CheckReady(spell))
 						{
 							E3.Bots.Broadcast($"Trying to rez {s.DisplayName}");
 							MQ.Cmd("/corpse");
@@ -647,7 +647,7 @@ namespace E3Core.Processors
         {
             foreach (var spell in _currentRezSpells)
             {
-                if (Casting.CheckReady(spell) && Casting.CheckMana(spell))
+                if (Casting.CheckMana(spell) && Casting.CheckReady(spell))
                 {
                     return true;
                 }

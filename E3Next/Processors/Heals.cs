@@ -223,7 +223,7 @@ namespace E3Core.Processors
 						if (currentLowestHealth < spell.HealPct)
 						{
 							
-							if (Casting.CheckReady(spell,JustCheck,JustCheck) && Casting.CheckMana(spell))
+							if (Casting.CheckMana(spell) && Casting.CheckReady(spell,JustCheck,JustCheck))
 							{
 								if (JustCheck) return true;
 
@@ -438,7 +438,7 @@ namespace E3Core.Processors
 				{
 					continue;
 				}
-				if (Casting.CheckReady(spell, true, !CastIfNeed) && Casting.CheckMana(spell))
+				if (Casting.CheckMana(spell) && Casting.CheckReady(spell, true, !CastIfNeed))
 				{
 					if (pctHealth < spell.HealPct && pctHealth != 0)
 					{
@@ -500,7 +500,7 @@ namespace E3Core.Processors
 					{
 						continue;
 					}
-					if(Casting.CheckReady(spell, true, !CastIfNeeded) && Casting.CheckMana(spell))
+					if(Casting.CheckMana(spell) && Casting.CheckReady(spell, true, !CastIfNeeded))
 					{
 						if (pctHealth < spell.HealPct)
 						{
@@ -649,7 +649,7 @@ namespace E3Core.Processors
 													}
 												}
 												//should cast a heal!
-												if (Casting.CheckReady(spell, JustCheck, JustCheck) && Casting.CheckMana(spell))
+												if (Casting.CheckMana(spell) && Casting.CheckReady(spell, JustCheck, JustCheck))
 												{
 													if (JustCheck)
 													{
@@ -724,7 +724,7 @@ namespace E3Core.Processors
 										{
 										
 											//should cast a heal!
-											if (Casting.CheckReady(spell, JustCheck, JustCheck) && Casting.CheckMana(spell))
+											if (Casting.CheckMana(spell) && Casting.CheckReady(spell, JustCheck, JustCheck))
 											{
 												if (JustCheck)
 												{
@@ -851,7 +851,7 @@ namespace E3Core.Processors
 											if (pctHealth < spell.HealPct)
 											{
 												//should cast a heal!
-												if (Casting.CheckReady(spell, JustCheck, JustCheck) && Casting.CheckMana(spell))
+												if (Casting.CheckMana(spell) && Casting.CheckReady(spell, JustCheck, JustCheck))
 												{
 													if (JustCheck) return true;
 													if (Casting.Cast(targetID, spell) == CastReturn.CAST_FIZZLE)
@@ -970,7 +970,7 @@ namespace E3Core.Processors
 											{
 												if (!E3.Bots.HasShortBuff(name, spell.SpellID))
 												{
-													if (Casting.CheckReady(spell) && Casting.CheckMana(spell))
+													if (Casting.CheckMana(spell) && Casting.CheckReady(spell))
 													{
 														if (Casting.Cast(targetID, spell) == CastReturn.CAST_FIZZLE)
 														{
@@ -1011,7 +1011,7 @@ namespace E3Core.Processors
 							continue;
 						}
 					}
-					if (Casting.CheckReady(spell) && Casting.CheckMana(spell))
+					if (Casting.CheckMana(spell) && Casting.CheckReady(spell))
 					{
 						if (JustCheck) return true;
 						Int32 targetIDToUse = myID;
