@@ -483,7 +483,7 @@ namespace E3Core.Processors
 					}
 					
 
-                    if ((s.TargetType=="Self" ||Casting.InRange(spawn.ID, s)) && Casting.CheckReady(s) && Casting.CheckMana(s))
+                    if ((s.TargetType=="Self" || Casting.InRange(spawn.ID, s)) && Casting.CheckMana(s) && Casting.CheckReady(s))
                     {
                         //so we can be sure our cursor was empty before we cast
                         Int32 cursorID = MQ.Query<Int32>("${Cursor.ID}");

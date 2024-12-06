@@ -110,7 +110,7 @@ namespace E3Core.Processors
                         }
                     }
 
-                    if (Casting.CheckReady(spell) && Casting.CheckMana(spell))
+                    if (Casting.CheckMana(spell) && Casting.CheckReady(spell))
                     {
                         Casting.Cast(0, spell);
                         castPet = true;
@@ -156,7 +156,7 @@ namespace E3Core.Processors
 				if (!spell.Enabled) continue;
 				if (pctHps <= spell.HealPct)
                 {
-                    if (Casting.CheckReady(spell) && Casting.CheckMana(spell))
+                    if (Casting.CheckMana(spell) && Casting.CheckReady(spell))
                     {
                         Casting.Cast(petID, spell);
                         return;

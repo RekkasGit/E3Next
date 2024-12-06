@@ -621,7 +621,7 @@ namespace E3Core.Processors
 					if (!(hasBuff || hasSong))
 					{
 						bool willStack = MQ.Query<bool>($"${{Spell[{spell.SpellName}].WillLand}}");
-						if (willStack && Casting.CheckReady(spell) && Casting.CheckMana(spell))
+						if (willStack && Casting.CheckMana(spell) && Casting.CheckReady(spell))
 						{
 							if (spell.TargetType == "Self" || spell.TargetType == "Group v1")
 							{
@@ -770,7 +770,7 @@ namespace E3Core.Processors
 								continue;
 							}
 							bool willStack = MQ.Query<bool>($"${{Spell[{spell.SpellName}].WillLand}}");
-							if (willStack && Casting.CheckReady(spell) && Casting.CheckMana(spell))
+							if (willStack && Casting.CheckMana(spell) && Casting.CheckReady(spell))
 							{
 								CastReturn result;
 								recastSpell:
@@ -847,7 +847,7 @@ namespace E3Core.Processors
 							}
 							bool willStack = MQ.Query<bool>($"${{Spell[{spell.SpellName}].WillLandPet}}");
 							recastSpell:
-							if (willStack && Casting.CheckReady(spell) && Casting.CheckMana(spell))
+							if (willStack && Casting.CheckMana(spell) && Casting.CheckReady(spell))
 							{
 								CastReturn result;
 
@@ -950,7 +950,7 @@ namespace E3Core.Processors
 									continue;
 								}
 								recastSpell:
-								if (willStack && Casting.CheckReady(spell) && Casting.CheckMana(spell))
+								if (willStack && Casting.CheckMana(spell) && Casting.CheckReady(spell))
 								{
 
 									//E3.Bots.Broadcast($"{spell.CastTarget} is missing the buff {spell.CastName} with id:{spell.SpellID}. current list:{String.Join(",",list)}");
@@ -1049,7 +1049,7 @@ namespace E3Core.Processors
 
 									//not one of our buffs uhh, try and cast and see if we get a non success message.
 									recastSpell:
-									if (Casting.CheckReady(spell) && Casting.CheckMana(spell))
+									if (Casting.CheckMana(spell) && Casting.CheckReady(spell))
 									{
 										var result = Casting.Cast(s.ID, spell);
 
@@ -1084,7 +1084,7 @@ namespace E3Core.Processors
 									if (timeLeftInMS < 15000)
 									{
 										recastSpell:
-										if (Casting.CheckReady(spell) && Casting.CheckMana(spell))
+										if (Casting.CheckMana(spell) && Casting.CheckReady(spell))
 										{
 											var result = Casting.Cast(s.ID, spell);
 											if (result == CastReturn.CAST_FIZZLE)
@@ -1463,7 +1463,7 @@ namespace E3Core.Processors
 				if (_selectAura.CastType == CastingType.Spell)
 				{
 					//this is a spell, need to mem, then cast. 
-					if (Casting.CheckReady(_selectAura) && Casting.CheckMana(_selectAura))
+					if (Casting.CheckMana(_selectAura) && Casting.CheckReady(_selectAura))
 					{
 						Casting.Cast(meID, _selectAura);
 					}

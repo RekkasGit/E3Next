@@ -124,7 +124,7 @@ namespace E3Core.Processors
                                 }
                             }
                             //can't cast if it isn't ready
-                            if (Casting.InRange(Assist.AssistTargetID, spell) && Casting.CheckReady(spell) && Casting.CheckMana(spell))
+                            if (Casting.InRange(Assist.AssistTargetID, spell) && Casting.CheckMana(spell) && Casting.CheckReady(spell))
                             {
                                 //we should have a valid target via check_assistStatus
                                 if (spell.Delay > 0 && delayTimeStamp > 0 && Core.StopWatch.ElapsedMilliseconds < delayTimeStamp)
@@ -228,7 +228,7 @@ namespace E3Core.Processors
                         }
                     }
                     //can't cast if it isn't ready
-                    if (Casting.CheckReady(spell) && Casting.CheckMana(spell))
+                    if (Casting.CheckMana(spell) && Casting.CheckReady(spell))
                     {
                         //we should have a valid target via check_assistStatus
                         if (spell.Delay > 0 && delayTimeStamp > 0 && Core.StopWatch.ElapsedMilliseconds < delayTimeStamp)
