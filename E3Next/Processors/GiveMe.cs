@@ -360,7 +360,7 @@ namespace E3Core.Processors
                 Spell s;
                 if (_groupSpellRequests.TryGetValue(whatToGive, out s))
                 {
-                    if (Casting.CheckReady(s) && Casting.CheckMana(s))
+                    if (Casting.CheckMana(s) && Casting.CheckReady(s))
                     {
                         //lets tell everyone else to destroy their items and destroy our own.
                         E3.Bots.BroadcastCommandToGroup($"/DestroyNoRent \"{whatToGive}\"");
@@ -390,7 +390,7 @@ namespace E3Core.Processors
 				e3util.ClearCursor();
 				Int32 cursorID = MQ.Query<Int32>("${Cursor.ID}");
 
-				if (cursorID<1 && Casting.CheckReady(s) && Casting.CheckMana(s))
+				if (cursorID<1 && Casting.CheckMana(s) && Casting.CheckReady(s))
 				{
 				
 					e3util.DeleteNoRentItem(spellToUse);

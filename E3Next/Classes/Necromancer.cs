@@ -45,7 +45,7 @@ namespace E3Core.Classes
                         {
                             s = new Spell("Improved Death Peace");
                         }
-                        if (Casting.CheckReady(s) && Casting.CheckMana(s))
+                        if (Casting.CheckMana(s) && Casting.CheckReady(s))
                         {
                             Casting.Cast(0, s);
                           
@@ -83,7 +83,7 @@ namespace E3Core.Classes
                 {
                     s = new Spell("Improved Death Peace");
                 }
-                if (Casting.CheckReady(s) && Casting.CheckMana(s))
+                if (Casting.CheckMana(s) && Casting.CheckReady(s))
                 {
                     Casting.Cast(0, s);
                     FD = true;
@@ -151,7 +151,7 @@ namespace E3Core.Classes
 					{
 						s = new Spell("Improved Death Peace");
 					}
-					if (Casting.CheckReady(s) && Casting.CheckMana(s))
+					if (Casting.CheckMana(s) && Casting.CheckReady(s))
 					{
 						Casting.Cast(0, s);
 						//check to see if we can stand based off the # of group members.
@@ -179,7 +179,7 @@ namespace E3Core.Classes
                 {
                     s = new Spell("Death Peace");
                 }
-                if (Casting.CheckReady(s) && Casting.CheckMana(s))
+                if (Casting.CheckMana(s) && Casting.CheckReady(s))
                 {
                     Casting.Cast(0, s);
                     //check to see if we can stand based off the # of group members.

@@ -470,7 +470,7 @@ namespace E3Core.Classes
                     }
 
                     Int32 castAttempts = 0;
-                    if (Casting.CheckReady(spell) && Casting.CheckMana(spell))
+                    if (Casting.CheckMana(spell) && Casting.CheckReady(spell))
                     {
                         while (Casting.Cast(petId, spell) == CastReturn.CAST_FIZZLE)
                         {
@@ -494,7 +494,7 @@ namespace E3Core.Classes
                         counter++;
                     }
 
-                    if (Casting.CheckReady(spell) && Casting.CheckMana(spell))
+                    if (Casting.CheckMana(spell) && Casting.CheckReady(spell))
                     {
                         while (Casting.Cast(petId, spell) == CastReturn.CAST_FIZZLE)
                         {
@@ -719,7 +719,7 @@ namespace E3Core.Classes
                 counter++;
             }
 
-            if (Casting.CheckReady(spell) && Casting.CheckMana(spell))
+            if (Casting.CheckMana(spell) && Casting.CheckReady(spell))
             {
                 int cursorId = 0;
                 // try several times to summon

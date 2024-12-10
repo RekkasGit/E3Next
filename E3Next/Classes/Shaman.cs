@@ -186,7 +186,7 @@ namespace E3Core.Classes
                     {
                         s = new Spell("Inconspicuous Totem");
                     }
-                    if (Casting.CheckReady(s) && Casting.CheckMana(s))
+                    if (Casting.CheckMana(s) && Casting.CheckReady(s))
                     {
                         Casting.Cast(0, s);
                         MQ.Delay(400);
@@ -233,7 +233,7 @@ namespace E3Core.Classes
                         {
                             s = new Spell($"{idolSpellName}/Gem|{E3.CharacterSettings.MalosTotemSpellGem}");
                         }
-                        if (Casting.CheckReady(s) && Casting.CheckMana(s))
+                        if (Casting.CheckMana(s) && Casting.CheckReady(s))
                         {
                             Casting.Cast(0, s);
                             return;
