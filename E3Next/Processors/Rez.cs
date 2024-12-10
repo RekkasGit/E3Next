@@ -402,18 +402,21 @@ namespace E3Core.Processors
                       
 		
                         // if it's a cleric or warrior corpse and we're in combat, try to use divine res
-                        if (Basics.InCombat() && _classesToDivineRez.Contains(spawn.ClassName))
+                        if (Basics.InCombat() && _divineRes.CastType == CastingType.AA && _classesToDivineRez.Contains(spawn.ClassName))
                         {
-                         
-							var result = Casting.Cast(spawn.ID, _divineRes);
-							if (result == CastReturn.CAST_INTERRUPTFORHEAL) return;
-							if (result == CastReturn.CAST_SUCCESS)
-							{
-								E3.Bots.Broadcast($"Trying to rez {spawn.DisplayName}");
-								MQ.Cmd("/corpse");
-								Casting.Cast(spawn.ID, _divineRes);
-                                break;
-                            }
+                            if(Casting.CheckReady(_divineRes))
+                            {
+								var result = Casting.Cast(spawn.ID, _divineRes);
+								if (result == CastReturn.CAST_INTERRUPTFORHEAL) return;
+								if (result == CastReturn.CAST_SUCCESS)
+								{
+									E3.Bots.Broadcast($"Trying to rez {spawn.DisplayName}");
+									MQ.Cmd("/corpse");
+									Casting.Cast(spawn.ID, _divineRes);
+									break;
+								}
+							}
+                        	
                         }
                         
                         foreach (var spell in _currentRezSpells)
