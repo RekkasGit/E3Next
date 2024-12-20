@@ -83,7 +83,7 @@ namespace E3Core.Processors
             #region CharacterFlag
             pattern = "You receive a character flag.";
             EventProcessor.RegisterEvent("CharacterFlag", pattern, (x) => {
-                E3.Bots.Broadcast("I have recieved a characer flag!");
+                E3.Bots.Broadcast("I have recieved a character flag!");
             });
 
             #endregion

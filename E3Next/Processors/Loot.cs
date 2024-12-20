@@ -497,9 +497,10 @@ namespace E3Core.Processors
                 MQ.Cmd("/squelch /hidecorpse looted");
                 MQ.Delay(100);
 
+				E3.Bots.Broadcast("\agStarting to loot area");
 
-                //lets check if we can loot.
-                Movement.PauseMovement();
+				//lets check if we can loot.
+				Movement.PauseMovement();
 
                // bool destroyCorpses = false;
 
