@@ -76,41 +76,45 @@ namespace E3Core.Processors
             using (_log.Trace())
             {
 
+               
 
-                if (_chaseTarget != String.Empty && !Assist.IsAssisting)
+				if (_chaseTarget != String.Empty && !Assist.IsAssisting)
                 {
-                    double distance = MQ.Query<double>($"${{Spawn[={_chaseTarget}].Distance}}");
-                    double minDistanceToChase = E3.GeneralSettings.Movement_ChaseDistanceMin;
-                    double maxDistanceToChase = E3.GeneralSettings.Movement_ChaseDistanceMax;
-                    
-
-                    if (distance != -1)
+					if(_spawns.TryByName(_chaseTarget, out var spawn))
                     {
-                        Following = true;
-                        bool InLoS = MQ.Query<bool>($"${{Spawn[={_chaseTarget}].LineOfSight}}");
-                        bool navLoaded = MQ.Query<bool>("${Bool[${Navigation.MeshLoaded}]}");
-                        if (navLoaded)
-                        {
-                            Int32 spawnID = MQ.Query<Int32>($"${{Spawn[={_chaseTarget}].ID}}");
-                            Double navPathLength = MQ.Query<Double>($"${{Navigation.PathLength[id {spawnID}]}}");
+                        double distance = spawn.Distance;
+						double minDistanceToChase = E3.GeneralSettings.Movement_ChaseDistanceMin;
+						double maxDistanceToChase = E3.GeneralSettings.Movement_ChaseDistanceMax;
 
-                            if (distance > minDistanceToChase && navPathLength < maxDistanceToChase)
-                            {
-                                e3util.NavToSpawnID(spawnID);
-                            }
 
-                        }
-                        else
-                        {
-                            if (distance > minDistanceToChase && distance < 150 && InLoS)
-                            {
-                                double x = MQ.Query<double>($"${{Spawn[={_chaseTarget}].X}}");
-                                double y = MQ.Query<double>($"${{Spawn[={_chaseTarget}].Y}}");
-                                double z = MQ.Query<double>($"${{Spawn[={_chaseTarget}].Z}}");
-                                e3util.TryMoveToLoc(x, y,z, 5, -1);
-                            }
-                        }
-                    }
+						if (distance != -1)
+						{
+							Following = true;
+							bool InLoS = MQ.Query<bool>($"${{Spawn[={_chaseTarget}].LineOfSight}}");
+							bool navLoaded = MQ.Query<bool>("${Bool[${Navigation.MeshLoaded}]}");
+							if (navLoaded)
+							{
+								
+								Double navPathLength = MQ.Query<Double>($"${{Navigation.PathLength[id {spawn.ID}]}}");
+
+								if (distance > minDistanceToChase && navPathLength < maxDistanceToChase)
+								{
+									e3util.NavToSpawnID(spawn.ID);
+								}
+
+							}
+							else
+							{
+								if (distance > minDistanceToChase && distance < 150 && InLoS)
+								{
+                                    double x = spawn.X;
+                                    double y = spawn.Y;
+                                    double z = spawn.Z;
+									e3util.TryMoveToLoc(x, y, z, 5, -1);
+								}
+							}
+						}
+					}
                 }
             }
         }
