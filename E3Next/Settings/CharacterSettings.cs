@@ -94,7 +94,9 @@ namespace E3Core.Settings
 		public bool Misc_AutoMedBreak;
 		[INI_Section("Misc", "Auto-Loot (On/Off)")]
 		public bool Misc_AutoLootEnabled;
-		[INI_Section("Misc", "Debuffs/Dots are visible")]
+        [INI_Section("Misc", "Auto-Loot Beep on Full Inventory (On/Off)")]
+        public bool Misc_AutoLootFullInventoryBeep;
+        [INI_Section("Misc", "Debuffs/Dots are visible")]
 		public bool Misc_VisibleDebuffsDots=true;
 		[INI_Section("Misc", "Enhanced rotation speed")]
 		public bool Misc_EnchancedRotationSpeed = false;
@@ -612,6 +614,7 @@ namespace E3Core.Settings
             LoadKeyData("Misc", "End MedBreak in Combat(On/Off)", ParsedData, ref Misc_EndMedBreakInCombat);
             LoadKeyData("Misc", "AutoMedBreak (On/Off)", ParsedData, ref Misc_AutoMedBreak);
             LoadKeyData("Misc", "Auto-Loot (On/Off)", ParsedData, ref Misc_AutoLootEnabled);
+            LoadKeyData("Misc", "Auto-Loot Beep on Full Inventory (On/Off)", ParsedData, ref Misc_AutoLootFullInventoryBeep);
             LoadKeyData("Misc", "Anchor (Char to Anchor to)", ParsedData, ref Misc_AnchorChar);
             LoadKeyData("Misc", "Remove Torpor After Combat", ParsedData, ref Misc_RemoveTorporAfterCombat);
             LoadKeyData("Misc", "Auto-Forage (On/Off)", ParsedData, ref Misc_AutoForage);
@@ -970,7 +973,8 @@ namespace E3Core.Settings
 			section.Keys.AddKey("End MedBreak in Combat(On/Off)", "On");
 			section.Keys.AddKey("AutoMedBreak (On/Off)", "Off");
 			section.Keys.AddKey("Auto-Loot (On/Off)", "Off");
-			section.Keys.AddKey("Anchor (Char to Anchor to)", "");
+            section.Keys.AddKey("Auto-Loot Beep on Full Inventory (On/Off)", "On");
+            section.Keys.AddKey("Anchor (Char to Anchor to)", "");
 			section.Keys.AddKey("Remove Torpor After Combat", "On");
 			section.Keys.AddKey("Auto-Forage (On/Off)", "Off");
 			section.Keys.AddKey("Dismount On Interrupt (On/Off)", "On");
