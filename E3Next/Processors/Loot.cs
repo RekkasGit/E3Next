@@ -19,7 +19,7 @@ namespace E3Core.Processors
         public static Logging _log = E3.Log;
         private static IMQ MQ = E3.MQ;
         private static ISpawns _spawns = E3.Spawns;
-      
+
         private static HashSet<Int32> _unlootableCorpses = new HashSet<int>();
         private static bool _fullInventoryAlert = false;
         private static Int64 _nextLootCheck = 0;
@@ -27,6 +27,9 @@ namespace E3Core.Processors
         private static CircularBuffer<Int32> _lootCommanderAssisngedCorpsesToLoot = new CircularBuffer<int>(100);
         private static Dictionary<string, List<Int32>> _lootCommanderAssignmentBuilder = new Dictionary<string, List<int>>();
 		public static Settings.FeatureSettings.LootStackable LootStackableSettings = null;
+
+        [ExposedData("Loot", "IsLooting")]
+        public static bool IsLooting = false;
 
 		[SubSystemInit]
         public static void Loot_Init()
@@ -325,8 +328,8 @@ namespace E3Core.Processors
 
         public static void Process()
         {
-
             if (E3.IsInvis) return;
+            if (Casting.IsCasting()) return;
             if (!e3util.ShouldCheck(ref _nextLootCheck, _nextLootCheckInterval)) return;
 
             if(!Assist.IsAssisting)
@@ -344,7 +347,7 @@ namespace E3Core.Processors
 
 				if ((!Basics.InCombat() && currentTimestamp - Assist.LastAssistEndedTimestamp > E3.GeneralSettings.Loot_TimeToWaitAfterAssist) && SafeToLoot() || E3.GeneralSettings.Loot_LootInCombat)
                 {
-                    LootArea();
+                    LootNextCorpse();
         		}
             }
         }
@@ -461,7 +464,7 @@ namespace E3Core.Processors
 			E3.Bots.Broadcast("\agFinished looting commanded corpses");
 			
 		}
-		private static void LootArea()
+		private static void LootNextCorpse()
         {
             Double startX = MQ.Query<Double>("${Me.X}");
             Double startY = MQ.Query<Double>("${Me.Y}");
@@ -485,68 +488,64 @@ namespace E3Core.Processors
                     }
                 }
             }
+
             if (corpses.Count==0)
             {
+                if (IsLooting)
+                {
+                    IsLooting = false;
+                    E3.Bots.Broadcast("\agFinished looting area");
+                }
                 return;
             }
-                //sort all the corpses, removing the ones we cannot loot
-             corpses = corpses.OrderBy(x => x.Distance).ToList();
-
-            if (corpses.Count > 0)
+            else if (!IsLooting)
             {
-                MQ.Cmd("/squelch /hidecorpse looted");
-                MQ.Delay(100);
+                IsLooting = true;
+                E3.Bots.Broadcast("\agStarting to loot area");
+            }
 
-				E3.Bots.Broadcast("\agStarting to loot area");
+            //sort all the corpses, removing the ones we cannot loot
+            corpses = corpses.OrderBy(x => x.Distance).ToList();
 
-				//lets check if we can loot.
-				Movement.PauseMovement();
+            MQ.Cmd("/squelch /hidecorpse looted");
+            MQ.Delay(100);
 
-               // bool destroyCorpses = false;
+            //lets check if we can loot.
+            Movement.PauseMovement();
 
-                foreach (var c in corpses)
+            // bool destroyCorpses = false;
+
+            var c = corpses[0];
+
+            //allow eq time to send the message to us
+            e3util.YieldToEQ();
+            if (e3util.IsShuttingDown() || E3.IsPaused()) return;
+            EventProcessor.ProcessEventsInQueues("/lootoff");
+            EventProcessor.ProcessEventsInQueues("/assistme");
+            if (!E3.CharacterSettings.Misc_AutoLootEnabled) return;
+            if (!E3.GeneralSettings.Loot_LootInCombat)
+            {
+                if (Basics.InCombat()) return;
+            }
+
+            Casting.TrueTarget(c.ID);
+            //MQ.Delay(2000, "${Target.ID}");
+
+            if(MQ.Query<bool>("${Target.ID}"))
+            {
+                e3util.TryMoveToTarget();
+                MQ.Delay(2250, "${Target.Distance} < 10"); // Give Time to get to Corpse 
+                LootCorpse(c);
+
+                if (MQ.Query<bool>("${Window[LootWnd].Open}"))
                 {
-					
-					//allow eq time to send the message to us
-					e3util.YieldToEQ();
-                    if (e3util.IsShuttingDown() || E3.IsPaused()) return;
-                    EventProcessor.ProcessEventsInQueues("/lootoff");
-					EventProcessor.ProcessEventsInQueues("/assistme");
-					if (!E3.CharacterSettings.Misc_AutoLootEnabled) return;
-                    if (!E3.GeneralSettings.Loot_LootInCombat)
-                    {
-                        if (Basics.InCombat()) return;
-                    }
-
-
-                    if (MQ.Query<double>($"${{Spawn[id {c.ID}].Distance3D}}") > E3.GeneralSettings.Loot_CorpseSeekRadius*2)
-                    {
-                        E3.Bots.Broadcast($"\arSkipping corpse: {c.ID} because of distance: ${{Spawn[id {c.ID}].Distance3D}}");
-                        continue;
-                    }
-
-                    Casting.TrueTarget(c.ID);
-                    //MQ.Delay(2000, "${Target.ID}");
-                   
-                    if(MQ.Query<bool>("${Target.ID}"))
-                    {
-                        e3util.TryMoveToTarget();
-                        MQ.Delay(2250, "${Target.Distance} < 10"); // Give Time to get to Corpse 
-                        LootCorpse(c);
-                       
-                        if (MQ.Query<bool>("${Window[LootWnd].Open}"))
-                        {
-                            MQ.Cmd("/nomodkey /notify LootWnd DoneButton leftmouseup");
-                        }
-
-                        MQ.Delay(300);
-                    }
-                    
+                    MQ.Cmd("/nomodkey /notify LootWnd DoneButton leftmouseup");
                 }
 
-                E3.Bots.Broadcast("\agFinished looting area");
-                MQ.Delay(100); // Wait for fading corpses to disappear
+                MQ.Delay(300);
             }
+
+            MQ.Delay(100); // Wait for fading corpses to disappear
         }
         private static bool SafeToLoot()
         {
