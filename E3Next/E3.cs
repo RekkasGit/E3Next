@@ -317,6 +317,7 @@ namespace E3Core.Processors
 			PubServer.AddTopicMessage("${InCombat}", CurrentInCombat.ToString());
 			PubServer.AddTopicMessage("${EQ.CurrentFocusedWindowName}", MQ.GetFocusedWindowName());
 			PubServer.AddTopicMessage("${Me.CurrentTargetID}", MQ.Query<string>("${Target.ID}"));
+			PubServer.AddTopicMessage("${Me.IsLooting}", Loot.IsLooting.ToString());
 		}
 		public static void StateUpdates_Stats()
 		{

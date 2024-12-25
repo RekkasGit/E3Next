@@ -502,13 +502,12 @@ namespace E3Core.Processors
             {
                 IsLooting = true;
                 E3.Bots.Broadcast("\agStarting to loot area");
+                MQ.Cmd("/squelch /hidecorpse looted");
+                MQ.Delay(100);
             }
 
             //sort all the corpses, removing the ones we cannot loot
             corpses = corpses.OrderBy(x => x.Distance).ToList();
-
-            MQ.Cmd("/squelch /hidecorpse looted");
-            MQ.Delay(100);
 
             //lets check if we can loot.
             Movement.PauseMovement();

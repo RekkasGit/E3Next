@@ -26,6 +26,7 @@ namespace E3Core.Processors
      //   Boolean InZone(string Name);
         Int32 PctHealth(string name);
 		Int32 PctMana(string name);
+		bool IsLooting(string name);
 		List<string> BotsConnected();
         Boolean HasShortBuff(string name, Int32 buffid);
         void BroadcastCommand(string command, bool noparse = false, CommandMatch match = null);
@@ -971,6 +972,19 @@ namespace E3Core.Processors
 			}
 
 			return sharedInfo.Data;
+		}
+		public bool IsLooting(string name)
+		{
+			string sharedClientDataValue = Query(name, "${Me.IsLooting}");
+			
+			if (!String.IsNullOrWhiteSpace(sharedClientDataValue) && sharedClientDataValue != "NULL" && bool.TryParse(sharedClientDataValue, out bool isLooting))
+			{
+				return isLooting;
+			}
+			else
+			{
+				return false;
+			}
 		}
 		public string Query(string name,string query)
         {
