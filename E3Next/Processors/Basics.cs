@@ -466,10 +466,6 @@ namespace E3Core.Processors
                     if(x.args[0].Equals("createdefault", StringComparison.OrdinalIgnoreCase))
                     {
                         string newFileName = BaseSettings.GetSettingsFilePath("General Settings_default.ini");
-                        if(System.IO.File.Exists(newFileName))
-                        {
-                            System.IO.File.Delete(newFileName);
-                        }
                         E3.GeneralSettings.CreateSettings(newFileName);
                     }
                 }
