@@ -320,6 +320,44 @@ namespace IniParser.Model
         }
 
         /// <summary>
+        ///     Compares this IniData instance to another IniData instance and returns true if this instance contains all the same sections and settings as the other instance.
+        /// </summary>
+        /// <param name="otherIniData">The other IniData instance whose settings we want to search for in this instance</param>
+        /// <returns>False if the other instance contains any sections or settings which do not exist in this instance; otherwise returns True</returns>
+        public bool ContainsAllSettingsFoundIn(IniData otherIniData)
+        {
+            foreach (var globalSetting in otherIniData.Global)
+            {
+                if (!this.Global.ContainsKey(globalSetting.KeyName))
+                {
+                    return false;
+                }
+            }
+
+            foreach (var section in otherIniData.Sections)
+            {
+                if (!this.Sections.ContainsSection(section.SectionName))
+                {
+                    return false;
+                }
+                else
+                {
+                    var sectionData = this.Sections.GetSectionData(section.SectionName);
+
+                    foreach (var sectionSetting in section.Keys)
+                    {
+                        if (!sectionData.Keys.ContainsKey(sectionSetting.KeyName))
+                        {
+                            return false;
+                        }
+                    }
+                }
+            }
+
+            return true;
+        }
+
+        /// <summary>
         ///     Merge the sections into this by overwriting this sections.
         /// </summary>
         private void MergeSection(SectionData otherSection)
