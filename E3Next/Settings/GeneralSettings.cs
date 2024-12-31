@@ -103,7 +103,7 @@ namespace E3Core.Settings
         private void LoadData()
         {
             FileIniDataParser fileIniData = e3util.CreateIniParser();
-            IniData defaultIniData;
+            IniData defaultIniData = CreateDefaultIniData();
             IniData parsedData;
             bool areUnsavedChanges = false;
 
@@ -115,19 +115,12 @@ namespace E3Core.Settings
             
             if (!File.Exists(_filename))
             {
-                defaultIniData = CreateSettings(_filename);
-                parsedData = defaultIniData;
+                parsedData = CreateDefaultIniData();
+                areUnsavedChanges = true;
             }
             else
             {
                 parsedData = fileIniData.ReadFile(_filename);
-
-                if (parsedData == null)
-                {
-                    throw new Exception("Could not load General Settings file");
-                }
-
-                defaultIniData = CreateDefaultIniData();
                 if (!parsedData.ContainsAllSettingsFoundIn(defaultIniData))
                 {
                     // The existing file was missing some settings. Add them and save over it.
@@ -135,8 +128,6 @@ namespace E3Core.Settings
                     areUnsavedChanges = true;
                 }
             }
-            _fileLastModifiedFileName = _filename;
-            _fileLastModified = File.GetLastWriteTime(_filename);
 
             LoadKeyData("General", "AutoMedBreak PctMana", parsedData, ref General_AutoMedBreakPctMana);
             //    section.Keys.AddKey("NetworkMethod", "EQBC");
@@ -244,18 +235,27 @@ namespace E3Core.Settings
             LoadKeyData("Movement", "Milliseconds till standing Still",parsedData,ref Movement_StandingStill);
             CheckMovementValues();
 
-            // Update the "unused setting" comments
+            // Update the "unused setting" comments.
+            // It's important that this happens AFTER the value of General_MarkUnusedSettingsWithComments has been loaded from parsedData.
             parsedData.UpdateUnusedSettingComments(defaultIniData, (!General_MarkUnusedSettingsWithComments), null, null, null, out bool wereCommentsChanged);
             if (wereCommentsChanged)
             {
                 areUnsavedChanges = true;
             }
 
+            // Save file changes if necessary
             if (areUnsavedChanges)
             {
                 try
                 {
-                    File.Delete(_filename);
+                    if (File.Exists(_filename))
+                    {
+                        File.Delete(_filename);
+                    }
+                    if (!Directory.Exists(_configFolder + _settingsFolder))
+                    {
+                        Directory.CreateDirectory(_configFolder + _settingsFolder);
+                    }
                     fileIniData.WriteFile(_filename, parsedData);
                 }
                 catch (Exception ex)
@@ -264,10 +264,10 @@ namespace E3Core.Settings
                     // it's probably because a different instance of the software (i.e. a different running bot) is doing the same thing at the same time.
                     _log.Write("Exception thrown while attempting to write " + _filename + ": " + ex.ToString());
                 }
-
-                _fileLastModifiedFileName = _filename;
-                _fileLastModified = File.GetLastWriteTime(_filename);
             }
+
+            _fileLastModifiedFileName = _filename;
+            _fileLastModified = File.GetLastWriteTime(_filename);
         }
 
         private void CheckAssistValues()
@@ -350,7 +350,6 @@ namespace E3Core.Settings
             {
                 File.Delete(filename);
             }
-
             if (!Directory.Exists(_configFolder + _settingsFolder))
             {
                 Directory.CreateDirectory(_configFolder + _settingsFolder);
@@ -360,6 +359,7 @@ namespace E3Core.Settings
             FileIniDataParser parser = e3util.CreateIniParser();
             IniData newFile = CreateDefaultIniData();
             parser.WriteFile(filename, newFile);
+            _filename = filename;
 
             return newFile;
         }
