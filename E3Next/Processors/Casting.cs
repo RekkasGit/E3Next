@@ -2501,6 +2501,15 @@ namespace E3Core.Processors
 								replaceValue = result;
 							}
 						}
+						else if (query == "IsLooting")
+						{
+							replaceValue = "";
+							string result = E3.Bots.Query(targetname, "${Me.IsLooting}");
+							if (result != "NULL")
+							{
+								replaceValue = result;
+							}
+						}
 						//check to see if some modification was done
 						if (replaceString != replaceValue)
 						{

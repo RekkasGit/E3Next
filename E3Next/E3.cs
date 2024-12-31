@@ -230,15 +230,7 @@ namespace E3Core.Processors
 			}
 			else if (CharacterSettings.ShouldReload())
             {
-                E3.Bots.Broadcast("\aoAuto-Reloading Character settings file...");
-                CharacterSettings = new CharacterSettings();
-                Loot.Reset();
-                GiveMe.Reset();
-				Burns.Reset();
-				Bard.RestartMelody();
-				Setup.GetExposedDataMappedToDictionary();
-				E3.Bots.Broadcast("\aoComplete!");
-               
+                reloadCharacterSettings();
             }
 
             if (GlobalCursorDelete.ShouldReload())
@@ -260,6 +252,10 @@ namespace E3Core.Processors
                 GeneralSettings = new GeneralSettings();
                 Loot.Reset();
                 E3.Bots.Broadcast("\aoComplete!");
+
+                // Also reload the character file because there's at least one General setting that affects
+                // the contents of the character files ("Mark Unused Settings With Comments")
+                reloadCharacterSettings();
             }
             if (Zoning.TributeDataFile.ShouldReload())
             {
@@ -275,6 +271,18 @@ namespace E3Core.Processors
 				E3.Bots.Broadcast("\aoComplete!");
 			}
 		}
+
+        private static void reloadCharacterSettings()
+        {
+            E3.Bots.Broadcast("\aoAuto-Reloading Character settings file...");
+            CharacterSettings = new CharacterSettings();
+            Loot.Reset();
+            GiveMe.Reset();
+            Burns.Reset();
+            Bard.RestartMelody();
+            Setup.GetExposedDataMappedToDictionary();
+            E3.Bots.Broadcast("\aoComplete!");
+        }
        
 		public static bool IsPaused()
         {
@@ -317,6 +325,7 @@ namespace E3Core.Processors
 			PubServer.AddTopicMessage("${InCombat}", CurrentInCombat.ToString());
 			PubServer.AddTopicMessage("${EQ.CurrentFocusedWindowName}", MQ.GetFocusedWindowName());
 			PubServer.AddTopicMessage("${Me.CurrentTargetID}", MQ.Query<string>("${Target.ID}"));
+			PubServer.AddTopicMessage("${Me.IsLooting}", Loot.IsLooting.ToString());
 		}
 		public static void StateUpdates_Stats()
 		{

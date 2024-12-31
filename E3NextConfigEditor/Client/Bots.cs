@@ -91,6 +91,11 @@ namespace E3NextConfigEditor.Client
 			return 100;
 		}
 
+		public bool IsLooting(string name)
+		{
+			return false;
+		}
+
 		public List<int> PetBuffList(string name)
 		{
 			return new List<int>();

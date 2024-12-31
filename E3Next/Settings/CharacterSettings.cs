@@ -94,6 +94,8 @@ namespace E3Core.Settings
 		public bool Misc_AutoMedBreak;
 		[INI_Section("Misc", "Auto-Loot (On/Off)")]
 		public bool Misc_AutoLootEnabled;
+		[INI_Section("Misc", "Auto-Loot Beep on Full Inventory (On/Off)")]
+		public bool Misc_AutoLootFullInventoryBeep;
 		[INI_Section("Misc", "Debuffs/Dots are visible")]
 		public bool Misc_VisibleDebuffsDots=true;
 		[INI_Section("Misc", "Enhanced rotation speed")]
@@ -591,12 +593,32 @@ namespace E3Core.Settings
         /// </summary>
         private void LoadData()
         {
+            FileIniDataParser fileIniData = e3util.CreateIniParser();
+            IniData defaultIniData = createNewINIData();
+            bool areUnsavedChanges = false;
 
-            //this is so we can get the merged data as well. 
-            string filename = GetBoTFilePath($"{CharacterName}_{ServerName}.ini");
-            ParsedData = CreateSettings(filename);
-
-
+            _fileName = GetBoTFilePath($"{CharacterName}_{ServerName}.ini");
+            if (!String.IsNullOrEmpty(CurrentSet))
+            {
+                _fileName = _fileName.Replace(".ini", "_" + CurrentSet + ".ini");
+            }
+            
+            if (!File.Exists(_fileName))
+            {
+                ParsedData = createNewINIData();
+                areUnsavedChanges = true;
+            }
+            else
+            {
+                ParsedData = fileIniData.ReadFile(_fileName);
+                if (_mergeUpdates && !ParsedData.ContainsAllSettingsFoundIn(defaultIniData))
+                {
+                    // The existing file was missing some settings. Add them and save over it.
+                    ParsedData.Merge(defaultIniData);
+                    areUnsavedChanges = true;
+                }
+            }
+            
             LoadKeyData("CPU", "ProcessLoopDelayInMS", ParsedData, ref CPU_ProcessLoopDelay);
 			LoadKeyData("CPU", "PublishStateDataInMS", ParsedData, ref CPU_PublishStateDataInMS);
 			LoadKeyData("CPU", "PublishBuffDataInMS", ParsedData, ref CPU_PublishBuffDataInMS);
@@ -612,6 +634,7 @@ namespace E3Core.Settings
             LoadKeyData("Misc", "End MedBreak in Combat(On/Off)", ParsedData, ref Misc_EndMedBreakInCombat);
             LoadKeyData("Misc", "AutoMedBreak (On/Off)", ParsedData, ref Misc_AutoMedBreak);
             LoadKeyData("Misc", "Auto-Loot (On/Off)", ParsedData, ref Misc_AutoLootEnabled);
+            LoadKeyData("Misc", "Auto-Loot Beep on Full Inventory (On/Off)", ParsedData, ref Misc_AutoLootFullInventoryBeep);
             LoadKeyData("Misc", "Anchor (Char to Anchor to)", ParsedData, ref Misc_AnchorChar);
             LoadKeyData("Misc", "Remove Torpor After Combat", ParsedData, ref Misc_RemoveTorporAfterCombat);
             LoadKeyData("Misc", "Auto-Forage (On/Off)", ParsedData, ref Misc_AutoForage);
@@ -623,7 +646,6 @@ namespace E3Core.Settings
 
 			LoadKeyData("Manastone", "Override General Settings (On/Off)", ParsedData, ref Manastone_OverrideGeneralSettings);
             LoadKeyData("Manastone", "Manastone Enabled (On/Off)", ParsedData, ref Manastone_Enabled);
-
             LoadKeyData("Manastone", "NumberOfClicksPerLoop", ParsedData, ref ManaStone_NumberOfClicksPerLoop);
             LoadKeyData("Manastone", "NumberOfLoops", ParsedData, ref ManaStone_NumberOfLoops);
             LoadKeyData("Manastone", "DelayBetweenLoops (in milliseconds)", ParsedData, ref ManaStone_DelayBetweenLoops);
@@ -635,7 +657,6 @@ namespace E3Core.Settings
             LoadKeyData("Manastone", "Out of Combat MaxMana", ParsedData, ref ManaStone_OutOfCombatMaxMana);
             List<string> zoneList = new List<string>();
             LoadKeyData("Manastone", "ExceptionZone", ParsedData, zoneList);
-
             foreach(var zone in zoneList)
             {
                 if(!ManaStone_ExceptionZones.Contains(zone))
@@ -643,15 +664,12 @@ namespace E3Core.Settings
 					ManaStone_ExceptionZones.Add(zone);
 				}
 			}
-
 			LoadKeyData("Manastone", "ExceptionMQQuery", ParsedData, ManaStone_ExceptionMQQuery);
 			LoadKeyData("Manastone", "UseForLazarusEncEpicBuff", ParsedData, ref ManaStone_UseForLazarusEncEpicBuff);
 
 			LoadKeyData("Rampage Actions", "Action", ParsedData, RampageSpells);
-		
 
 			LoadKeyData("Report", "ReportEntry", ParsedData, Report_Entries);
-
 
 			LoadKeyData("AutoMed", "Override Old Settings and use This(On/Off)", ParsedData, ref AutoMed_OverrideOldSettings);
 			LoadKeyData("AutoMed", "AutoMedBreak (On/Off)", ParsedData, ref AutoMed_AutoMedBreak);
@@ -659,7 +677,6 @@ namespace E3Core.Settings
 			LoadKeyData("AutoMed", "PctMana", ParsedData, ref AutoMed_AutoMedBreakPctMana);
 			LoadKeyData("AutoMed", "PctStam", ParsedData, ref AutoMed_AutoMedBreakPctStam);
 			LoadKeyData("AutoMed", "PctHealth", ParsedData, ref AutoMed_AutoMedBreakPctHealth);
-
 
 			LoadKeyData("Bando Buff", "Enabled", ParsedData, ref BandoBuff_Enabled);
 			LoadKeyData("Bando Buff", "DebuffName", ParsedData, ref BandoBuff_DebuffName);
@@ -679,7 +696,6 @@ namespace E3Core.Settings
             LoadKeyData("Assist Settings", "Pet back off on Enrage (On/Off)", ParsedData, ref Assist_PetBackOffOnenrage);
 			LoadKeyData("Assist Settings", "Back off on Enrage (On/Off)", ParsedData, ref Assist_BackOffOnEnrage);
            
-
 			if (CharacterClass == Class.Rogue)
             {
                 LoadKeyData("Rogue", "Auto-Hide (On/Off)", ParsedData, ref Rogue_AutoHide);
@@ -698,10 +714,7 @@ namespace E3Core.Settings
 				LoadKeyData("Bard", "AutoMezSongDuration in seconds", ParsedData,ref Bard_AutoMezSongDuration);
                 LoadKeyData("Bard", "Auto-Sonata (On/Off)", ParsedData, ref Bard_AutoSonata);
 				//load up all melody sets
-
 				Bard_MelodySets= LoadMeldoySetData(ParsedData);
-				
-
             }
 
             if ((CharacterClass & Class.Druid) == CharacterClass)
@@ -742,9 +755,7 @@ namespace E3Core.Settings
                 LoadKeyData("Auto Paragon", "Character", ParsedData, FocusedParagonCharacters);
             }
 
-         
             LoadKeyData("E3BotsPublishData (key/value)", ParsedData, E3BotsPublishDataRaw);
-            
             //now we need to change the keys to be in a specific format
             foreach(var pair in E3BotsPublishDataRaw)
             {
@@ -753,15 +764,15 @@ namespace E3Core.Settings
                 {
 					E3BotsPublishData.Add("${Data." + pair.Key + "}", pair.Value);
 				}
-
-				
             }
             
             LoadKeyData("Ifs", ParsedData, Ifs);
-			LoadKeyData("Events", ParsedData, Events);
-			LoadKeyData("EventLoop", ParsedData, EventLoop);
-			LoadKeyData("EventRegMatches", ParsedData, EventMatches);
 
+			LoadKeyData("Events", ParsedData, Events);
+
+			LoadKeyData("EventLoop", ParsedData, EventLoop);
+
+			LoadKeyData("EventRegMatches", ParsedData, EventMatches);
 			//clear any events that were already registered
 			EventProcessor.ClearDynamicEvents();
 			foreach (var regexMatchPair in EventMatches)
@@ -804,12 +815,8 @@ namespace E3Core.Settings
 				}
 			}
 
-
 			LoadKeyData("Buffs", "Instant Buff", ParsedData, InstantBuffs);
-
 			foreach (var buff in InstantBuffs) buff.IsBuff = true;
-			
-
 			LoadKeyData("Buffs", "Self Buff", ParsedData, SelfBuffs);
             //set target on self buffs
             foreach (var buff in SelfBuffs)
@@ -817,7 +824,6 @@ namespace E3Core.Settings
                 buff.CastTarget = CharacterName;
 				buff.IsBuff = true;
 			}
-
             LoadKeyData("Buffs", "Bot Buff", ParsedData, BotBuffs);
 			foreach (var buff in BotBuffs) buff.IsBuff = true;
 			LoadKeyData("Buffs", "Combat Buff", ParsedData, CombatBuffs);
@@ -837,10 +843,9 @@ namespace E3Core.Settings
 			LoadKeyData("Buffs", "Aura", ParsedData, Buffs_Auras);
 			foreach (var buff in Buffs_Auras) buff.IsBuff = true;
 
-
 			LoadKeyData("Startup Commands", "Command", ParsedData, StartupCommands);
-			LoadKeyData("Zoning Commands", "Command", ParsedData, ZoningCommands);
 
+			LoadKeyData("Zoning Commands", "Command", ParsedData, ZoningCommands);
 
 			LoadKeyData("Buffs", "Cast Aura(On/Off)", ParsedData, ref Buffs_CastAuras);
 
@@ -849,6 +854,7 @@ namespace E3Core.Settings
             LoadKeyData("Cursor Delete", "Delete", ParsedData, Cursor_Delete);
 
             LoadKeyData("Nukes", "Main", ParsedData, Nukes);
+
             LoadKeyData("Stuns", "Main", ParsedData, Stuns);
 
             LoadKeyData("Dispel", "Main", ParsedData, Dispels);
@@ -859,6 +865,7 @@ namespace E3Core.Settings
             LoadKeyData("Life Support", "Life Support", ParsedData, LifeSupport);
 
             LoadKeyData("DoTs on Assist", "Main", ParsedData, Dots_Assist);
+
             LoadKeyData("DoTs on Command", "Main", ParsedData, Dots_OnCommand);
 
             LoadKeyData("Debuffs", "Debuff on Assist", ParsedData, Debuffs_OnAssist);
@@ -907,39 +914,33 @@ namespace E3Core.Settings
 			//LoadKeyData("Heals", "Pet Heal", ParsedData, PetHeals);
 			LoadKeyData("Heals", "Pet Heal", ParsedData, HealPets);
             LoadKeyData("Heals", "Number Of Injured Members For Group Heal", ParsedData, ref HealGroup_NumberOfInjuredMembers);
-
             LoadKeyData("Heals", "Emergency Group Heal", ParsedData, Heal_EmergencyGroupHeals);
             LoadKeyData("Heals", "Emergency Heal", ParsedData, Heal_EmergencyHeals);
-
             LoadKeyData("Heals", "Tank", ParsedData, HealTankTargets);
             for (Int32 i = 0; i < HealTankTargets.Count; i++)
             {
                 HealTankTargets[i] = e3util.FirstCharToUpper(HealTankTargets[i]);
             }
-
             LoadKeyData("Heals", "Important Bot", ParsedData, HealImportantBotTargets);
             //upper case first letter on all important bots, netbots bug that doesn't like lower case.
             for (Int32 i = 0; i < HealImportantBotTargets.Count; i++)
             {
                 HealImportantBotTargets[i] = e3util.FirstCharToUpper(HealImportantBotTargets[i]);
             }
-
-          
-
             //parse out the Tanks/XTargets/etc into collections via the Set method on the
             //property set method
             WhoToHealString = LoadKeyData("Heals", "Who to Heal", ParsedData);
             WhoToHoTString = LoadKeyData("Heals", "Who to HoT", ParsedData);
             LoadKeyData("Heals", "Pet Owner", ParsedData, HealPetOwners);
-
             LoadKeyData("Heals", "Auto Cast Necro Heal Orbs (On/Off)", ParsedData, ref HealAutoNecroOrbs);
+
             LoadKeyData("Off Assist Spells", "Main", ParsedData, OffAssistSpells);
+
             LoadKeyData("Gimme", "Gimme", ParsedData, Gimme);
 			LoadKeyData("Gimme", "Gimme-NoCombat", ParsedData, Gimme_NoCombat);
 			LoadKeyData("Gimme", "Gimme-InCombat", ParsedData, ref Gimme_InCombat);
 
             LoadKeyData("Charm", "CharmSpell",ParsedData, Charm_CharmSpells);
-         
 			LoadKeyData("Charm", "CharmOhShitSpells", ParsedData, Charm_CharmOhShitSpells);
 			LoadKeyData("Charm", "SelfDebuffSpells", ParsedData, Charm_SelfDebuffSpells);
 			LoadKeyData("Charm", "BadPetBuffs", ParsedData, Charm_BadPetBuffs);
@@ -953,13 +954,44 @@ namespace E3Core.Settings
 			LoadKeyData("Charm", "PeelDebuffPerson", ParsedData, ref Charm_PeelDebuffPerson);
 			LoadKeyData("Charm", "PeelDebuffSpells", ParsedData, Charm_PeelDebuffSpells);
 
-			// _log.Write($"Finished processing and loading: {fullPathToUse}");
+            // Update the "unused setting" comments.
+            // It's important that this happens AFTER Bard_MelodySets has been populated.
+            var sectionsToLeaveUncommented = new List<string>() { "Ifs", "Events", "EventLoop", "EventRegMatches", "E3BotsPublishData (key/value)" };
+            foreach (string melodyName in Bard_MelodySets.Keys)
+            {
+                sectionsToLeaveUncommented.Add(melodyName + " Melody");
+            }
+            var sectionSettingsToLeaveUncommented = new Dictionary<string, IEnumerable<string>>();
+            sectionSettingsToLeaveUncommented.Add("Assist Settings", new string[] { "Taunt(On/Off)" }); // legacy setting, still used but not longer included in the default settings
+            ParsedData.UpdateUnusedSettingComments(defaultIniData, (!E3.GeneralSettings.General_MarkUnusedSettingsWithComments), null, sectionsToLeaveUncommented, sectionSettingsToLeaveUncommented, out bool wereCommentsChanged);
+            if (wereCommentsChanged)
+            {
+                areUnsavedChanges = true;
+            }
 
-		}
+            // Save file changes if necessary
+            if (areUnsavedChanges)
+            {
+                if (File.Exists(_fileName))
+                {
+                    File.Delete(_fileName);
+                }
+                if (!Directory.Exists(_configFolder + _settingsFolder))
+                {
+                    Directory.CreateDirectory(_configFolder + _settingsFolder);
+                }
+                fileIniData.WriteFile(_fileName, ParsedData);
+            }
+
+            _fileLastModifiedFileName = _fileName;
+            _fileLastModified = File.GetLastWriteTime(_fileName);
+
+            // _log.Write($"Finished processing and loading: {fullPathToUse}");
+        }
 
 		public IniData createNewINIData()
 		{
-			IniData newFile = new IniData();
+			IniData newFile = new IniDataCaseInsensitive();
 
 
 			newFile.Sections.AddSection("Misc");
@@ -970,6 +1002,7 @@ namespace E3Core.Settings
 			section.Keys.AddKey("End MedBreak in Combat(On/Off)", "On");
 			section.Keys.AddKey("AutoMedBreak (On/Off)", "Off");
 			section.Keys.AddKey("Auto-Loot (On/Off)", "Off");
+			section.Keys.AddKey("Auto-Loot Beep on Full Inventory (On/Off)", "On");
 			section.Keys.AddKey("Anchor (Char to Anchor to)", "");
 			section.Keys.AddKey("Remove Torpor After Combat", "On");
 			section.Keys.AddKey("Auto-Forage (On/Off)", "Off");
@@ -1267,12 +1300,11 @@ namespace E3Core.Settings
 			//section.Keys.AddKey("Enabled (On/Off)", "Off");
 			//section.Keys.AddKey("Looter", "");
 
-
 			newFile.Sections.AddSection("Ifs");
-		
 			newFile.Sections.AddSection("Events");
 			newFile.Sections.AddSection("EventLoop");
 			newFile.Sections.AddSection("EventRegMatches");
+
 			newFile.Sections.AddSection("Report");
 			section = newFile.Sections.GetSectionData("Report");
 			section.Keys.AddKey("ReportEntry", "");
@@ -1283,14 +1315,12 @@ namespace E3Core.Settings
 			section.Keys.AddKey("PublishStateDataInMS", "50");
 			section.Keys.AddKey("PublishBuffDataInMS", "1000");
 			section.Keys.AddKey("PublishSlowDataInMS", "1000");
-
 			section.Keys.AddKey("Camp Pause at 30 seconds", "True");
 			section.Keys.AddKey("Camp Pause at 20 seconds", "True");
 			section.Keys.AddKey("Camp Shutdown at 5 seconds", "True");
 
 			newFile.Sections.AddSection("Manastone");
 			section = newFile.Sections.GetSectionData("Manastone");
-
 			section.Keys.AddKey("Override General Settings (On/Off)", "Off");
 			section.Keys.AddKey("Manastone Enabled (On/Off)", "On");
 			section.Keys.AddKey("NumberOfClicksPerLoop", "40");
@@ -1310,11 +1340,13 @@ namespace E3Core.Settings
 			newFile.Sections.AddSection("Startup Commands");
 			section = newFile.Sections.GetSectionData("Startup Commands");
 			section.Keys.AddKey("Command", "");
+
 			newFile.Sections.AddSection("Zoning Commands");
 			section = newFile.Sections.GetSectionData("Zoning Commands");
 			section.Keys.AddKey("Command", "");
 
 			newFile.Sections.AddSection("E3BotsPublishData (key/value)");
+
 			newFile.Sections.AddSection("E3ChatChannelsToJoin");
 			section = newFile.Sections.GetSectionData("E3ChatChannelsToJoin");
 			section.Keys.AddKey("Channel");
@@ -1327,53 +1359,19 @@ namespace E3Core.Settings
 		/// <returns></returns>
 		public IniData CreateSettings(string fileName)
         {
-            //if we need to , its easier to just output the entire file. 
+            if (File.Exists(fileName))
+            {
+                File.Delete(fileName);
+            }
+            if (!Directory.Exists(_configFolder + _botFolder))
+            {
+                Directory.CreateDirectory(_configFolder + _botFolder);
+            }
 
             FileIniDataParser parser = e3util.CreateIniParser();
-
-			IniData newFile = createNewINIData();
-
-			if (!String.IsNullOrEmpty(CurrentSet))
-            {
-                fileName = fileName.Replace(".ini", "_" + CurrentSet + ".ini");
-            }
-
-
-            if (!File.Exists(fileName))
-            {
-                if (!Directory.Exists(_configFolder + _botFolder))
-                {
-                    Directory.CreateDirectory(_configFolder + _botFolder);
-                }
-                //file straight up doesn't exist, lets create it
-                parser.WriteFile(fileName, newFile);
-                _fileLastModified = System.IO.File.GetLastWriteTime(fileName);
-                _fileLastModifiedFileName = fileName;
-                _fileName = fileName;
-            }
-            else
-            {
-				//File already exists, may need to merge in new settings lets check
-				//Parse the ini file
-				//Create an instance of a ini file parser
-				FileIniDataParser fileIniData = e3util.CreateIniParser();
-				IniData tParsedData = fileIniData.ReadFile(fileName);
-				if (_mergeUpdates)
-                {
-					//overwrite newfile with what was already there
-					tParsedData.Merge(newFile);
-					//save it it out now
-					File.Delete(fileName);
-					parser.WriteFile(fileName, tParsedData);
-
-				}
-				newFile = tParsedData;
-				_fileLastModified = System.IO.File.GetLastWriteTime(fileName);
-                _fileLastModifiedFileName = fileName;
-                _fileName = fileName;
-                
-            }
-
+            var newFile = createNewINIData();
+            parser.WriteFile(fileName, newFile);
+            _fileName = fileName;
 
             return newFile;
         }

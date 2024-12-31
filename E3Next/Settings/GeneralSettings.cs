@@ -3,6 +3,7 @@ using IniParser;
 using IniParser.Model;
 using System;
 using System.Collections.Generic;
+using System.IO;
 using System.Linq;
 using System.Net;
 
@@ -27,9 +28,9 @@ namespace E3Core.Settings
 		public bool General_CureWhileNavigating = true;
         public bool General_BeepNotifications = true;
         public bool General_LazarusManaRecovery = true;
-
         public string General_Networking_ExternalIPToQueryForLocal = "8.8.8.8";
         public string General_Networking_LocalIPOverride = string.Empty;
+        public bool General_MarkUnusedSettingsWithComments = false;
 
         public Int32 Loot_LootItemDelay = 300;
         public string Loot_LinkChannel = String.Empty;
@@ -99,37 +100,33 @@ namespace E3Core.Settings
         {
             LoadData();
         }
-        public void LoadData()
+        private void LoadData()
         {
+            FileIniDataParser fileIniData = e3util.CreateIniParser();
+            IniData defaultIniData = CreateDefaultIniData();
+            IniData parsedData;
+            bool areUnsavedChanges = false;
 
             _filename = GetSettingsFilePath("General Settings.ini");
             if (!String.IsNullOrEmpty(CurrentSet))
             {
                 _filename = _filename.Replace(".ini", "_" + CurrentSet + ".ini");
             }
-            IniData parsedData;
-
-            FileIniDataParser fileIniData = e3util.CreateIniParser();
-
-            if (!System.IO.File.Exists(_filename))
+            
+            if (!File.Exists(_filename))
             {
-                if (!System.IO.Directory.Exists(_configFolder + _settingsFolder))
-                {
-                    System.IO.Directory.CreateDirectory(_configFolder + _settingsFolder);
-                }
-             
-                parsedData = CreateSettings(_filename);
+                parsedData = CreateDefaultIniData();
+                areUnsavedChanges = true;
             }
             else
             {
                 parsedData = fileIniData.ReadFile(_filename);
-            }
-            _fileLastModifiedFileName = _filename;
-            _fileLastModified = System.IO.File.GetLastWriteTime(_filename);
-            //have the data now!
-            if (parsedData==null)
-            {
-                throw new Exception("Could not load General Settings file");
+                if (!parsedData.ContainsAllSettingsFoundIn(defaultIniData))
+                {
+                    // The existing file was missing some settings. Add them and save over it.
+                    parsedData.Merge(defaultIniData);
+                    areUnsavedChanges = true;
+                }
             }
 
             LoadKeyData("General", "AutoMedBreak PctMana", parsedData, ref General_AutoMedBreakPctMana);
@@ -144,6 +141,7 @@ namespace E3Core.Settings
             LoadKeyData("General", "LazarusManaRecovery (On/Off)", parsedData, ref General_LazarusManaRecovery);
             LoadKeyData("General", "ExternalIP To Query For Local Address (8.8.8.8 default)", parsedData, ref General_Networking_ExternalIPToQueryForLocal);
             LoadKeyData("General", "Local IP Override", parsedData, ref General_Networking_LocalIPOverride);
+            LoadKeyData("General", "Mark Unused Settings With Comments", parsedData, ref General_MarkUnusedSettingsWithComments);
 
             if (!IPAddress.TryParse(General_Networking_ExternalIPToQueryForLocal,out var result))
             {
@@ -194,7 +192,7 @@ namespace E3Core.Settings
             LoadKeyData("Loot", "Loot Only Stackable: Loot common tradeskill items ie:pelts ores silks etc (On/Off)", parsedData, ref Loot_OnlyStackableOnlyCommonTradeSkillItems);
             LoadKeyData("Loot", "Loot Only Stackable: Always Loot Item", parsedData, Loot_OnlyStackableAlwaysLoot);
             LoadKeyData("Loot", "Loot Only Stackable: Honor Loot File Skip Settings (On/Off)", parsedData, ref Loot_OnlyStackableHonorLootFileSkips);
-        
+
             LoadKeyData("Manastone", "NumerOfClicksPerLoop", parsedData, ref ManaStone_NumerOfClicksPerLoop);
             LoadKeyData("Manastone", "NumberOfLoops", parsedData, ref ManaStone_NumberOfLoops);
             LoadKeyData("Manastone", "DelayBetweenLoops (in milliseconds)", parsedData, ref ManaStone_DelayBetweenLoops);
@@ -236,6 +234,40 @@ namespace E3Core.Settings
             LoadKeyData("Movement", "Anchor Distance Maximum", parsedData, ref Movement_AnchorDistanceMax);
             LoadKeyData("Movement", "Milliseconds till standing Still",parsedData,ref Movement_StandingStill);
             CheckMovementValues();
+
+            // Update the "unused setting" comments.
+            // It's important that this happens AFTER the value of General_MarkUnusedSettingsWithComments has been loaded from parsedData.
+            parsedData.UpdateUnusedSettingComments(defaultIniData, (!General_MarkUnusedSettingsWithComments), null, null, null, out bool wereCommentsChanged);
+            if (wereCommentsChanged)
+            {
+                areUnsavedChanges = true;
+            }
+
+            // Save file changes if necessary
+            if (areUnsavedChanges)
+            {
+                try
+                {
+                    if (File.Exists(_filename))
+                    {
+                        File.Delete(_filename);
+                    }
+                    if (!Directory.Exists(_configFolder + _settingsFolder))
+                    {
+                        Directory.CreateDirectory(_configFolder + _settingsFolder);
+                    }
+                    fileIniData.WriteFile(_filename, parsedData);
+                }
+                catch (Exception ex)
+                {
+                    // This file is shared between all running instances of the software, so if an exception is thrown while attempting to save the file,
+                    // it's probably because a different instance of the software (i.e. a different running bot) is doing the same thing at the same time.
+                    _log.Write("Exception thrown while attempting to write " + _filename + ": " + ex.ToString());
+                }
+            }
+
+            _fileLastModifiedFileName = _filename;
+            _fileLastModified = File.GetLastWriteTime(_filename);
         }
 
         private void CheckAssistValues()
@@ -314,55 +346,74 @@ namespace E3Core.Settings
         }
         public IniData CreateSettings(string filename)
         {
+            if (File.Exists(filename))
+            {
+                File.Delete(filename);
+            }
+            if (!Directory.Exists(_configFolder + _settingsFolder))
+            {
+                Directory.CreateDirectory(_configFolder + _settingsFolder);
+            }
 
-            IniParser.FileIniDataParser parser = e3util.CreateIniParser();
-            IniData newFile = new IniData();
+            _log.Write($"Creating new General Settings file:{filename}");
+            FileIniDataParser parser = e3util.CreateIniParser();
+            IniData newFile = CreateDefaultIniData();
+            parser.WriteFile(filename, newFile);
+            _filename = filename;
 
+            return newFile;
+        }
 
-            newFile.Sections.AddSection("General");
-            var section = newFile.Sections.GetSectionData("General");
+        private IniData CreateDefaultIniData()
+        {
+            IniData defaultData = new IniDataCaseInsensitive();
+
+            defaultData.Sections.AddSection("General");
+            var section = defaultData.Sections.GetSectionData("General");
             section.Keys.AddKey("AutoMedBreak PctMana", "70");
             section.Keys.AddKey("NetworkMethod", "EQBC");
             section.Keys.AddKey("E3NetworkAddPathToMonitor", "");
-        	section.Keys.AddKey("LazarusManaRecovery (On/Off)", "On");
-			section.Keys.AddKey("ExternalIP To Query For Local Address (8.8.8.8 default)", "8.8.8.8");
-			section.Keys.AddKey("Local IP Override", "");
-
-			section.Keys.AddKey("Heal While Navigating (On/Off)","On");
+            section.Keys.AddKey("LazarusManaRecovery (On/Off)", "On");
+            section.Keys.AddKey("ExternalIP To Query For Local Address (8.8.8.8 default)", "8.8.8.8");
+            section.Keys.AddKey("Local IP Override", "");
+            section.Keys.AddKey("Heal While Navigating (On/Off)", "On");
             section.Keys.AddKey("Cure While Navigating (On/Off)", "On");
             section.Keys.AddKey("Beep Notifications (On/Off)", "On");
+            section.Keys.AddKey("Mark Unused Settings With Comments", "TRUE");
 
-            newFile.Sections.AddSection("Discord Bot");
-            section = newFile.Sections.GetSectionData("Discord Bot");
+            defaultData.Sections.AddSection("Discord Bot");
+            section = defaultData.Sections.GetSectionData("Discord Bot");
             section.Keys.AddKey("Token", "");
             section.Keys.AddKey("Guild Channel ID", "");
             section.Keys.AddKey("Server ID", "");
             section.Keys.AddKey("My Discord User ID", "");
-            
+
             //Misc
-            newFile.Sections.AddSection("Misc");
-            section = newFile.Sections.GetSectionData("Misc");
+            defaultData.Sections.AddSection("Misc");
+            section = defaultData.Sections.GetSectionData("Misc");
             section.Keys.AddKey("Automatically Use Misfit Box (On/Off)", "Off");
             section.Keys.AddKey("Turn Player Attack Off During Enrage (On/Off)", "On");
             section.Keys.AddKey("Relay Tells (On/Off)", "Off");
+
             //Loot
-            newFile.Sections.AddSection("Loot");
-            section = newFile.Sections.GetSectionData("Loot");
-            section.Keys.AddKey("Loot Link Channel","say");
-	        section.Keys.AddKey("Corpse Seek Radius","125");
-            section.Keys.AddKey("Loot in Combat","TRUE");
+            defaultData.Sections.AddSection("Loot");
+            section = defaultData.Sections.GetSectionData("Loot");
+            section.Keys.AddKey("Loot Link Channel", "say");
+            section.Keys.AddKey("Corpse Seek Radius", "125");
+            section.Keys.AddKey("Loot in Combat", "TRUE");
             section.Keys.AddKey("Milliseconds To Wait To Loot", "2000");
-            section.Keys.AddKey("NumOfFreeSlotsOpen(1+)","0");
+            section.Keys.AddKey("NumOfFreeSlotsOpen(1+)", "0");
             section.Keys.AddKey("Loot Only Stackable: Enable (On/Off)", "Off");
             section.Keys.AddKey("Loot Only Stackable: With Value Greater Than Or Equal in Copper", "10000");
             section.Keys.AddKey("Loot Only Stackable: Loot common tradeskill items ie:pelts ores silks etc (On/Off)", "Off");
+            section.Keys.AddKey("Loot Only Stackable: Always Loot Item", "");
             section.Keys.AddKey("Loot Only Stackable: Loot all Tradeskill items (On/Off)", "Off");
             section.Keys.AddKey("Loot Only Stackable: Honor Loot File Skip Settings (On/Off)", "Off");
             section.Keys.AddKey("LootItemDelay", "300");
 
             //Manastone
-            newFile.Sections.AddSection("Manastone");
-            section = newFile.Sections.GetSectionData("Manastone");
+            defaultData.Sections.AddSection("Manastone");
+            section = defaultData.Sections.GetSectionData("Manastone");
             section.Keys.AddKey("NumerOfClicksPerLoop", "40");
             section.Keys.AddKey("NumberOfLoops", "25");
             section.Keys.AddKey("DelayBetweenLoops (in milliseconds)", "50");
@@ -372,41 +423,39 @@ namespace E3Core.Settings
             section.Keys.AddKey("Min HP", "60");
             section.Keys.AddKey("Out of Combat MinMana", "85");
             section.Keys.AddKey("Out of Combat MaxMana", "95");
-          
+
             //Casting
-            newFile.Sections.AddSection("Casting");
-            section = newFile.Sections.GetSectionData("Casting");
-            section.Keys.AddKey("Default Spell Gem","8");
+            defaultData.Sections.AddSection("Casting");
+            section = defaultData.Sections.GetSectionData("Casting");
+            section.Keys.AddKey("Default Spell Gem", "8");
 
             //Buff Requests
-            newFile.Sections.AddSection("Buff Requests");
-            section = newFile.Sections.GetSectionData("Buff Requests");
-            section.Keys.AddKey("Allow Buff Requests (On/Off)","On");
-            section.Keys.AddKey("Restricted PCs (When Requests [On])","");
-            section.Keys.AddKey("Allowed PCs (When Requests [Off])","");
-
+            defaultData.Sections.AddSection("Buff Requests");
+            section = defaultData.Sections.GetSectionData("Buff Requests");
+            section.Keys.AddKey("Allow Buff Requests (On/Off)", "On");
+            section.Keys.AddKey("Restricted PCs (When Requests [On])", "");
+            section.Keys.AddKey("Allowed PCs (When Requests [Off])", "");
 
             //Assists
-            newFile.Sections.AddSection("Assists");
-            section = newFile.Sections.GetSectionData("Assists");
+            defaultData.Sections.AddSection("Assists");
+            section = defaultData.Sections.GetSectionData("Assists");
             section.Keys.AddKey("Auto-Assist (On/Off)", "Off");
             section.Keys.AddKey("Max Engage Distance", "250");
             section.Keys.AddKey("AE Threat Range", "100");
-            
 
             //Trade
-            newFile.Sections.AddSection("AutoTrade");
-            section = newFile.Sections.GetSectionData("AutoTrade");
+            defaultData.Sections.AddSection("AutoTrade");
+            section = defaultData.Sections.GetSectionData("AutoTrade");
             section.Keys.AddKey("Active Window Wait for Trade Accept (On/Off)", "On");
             section.Keys.AddKey("All (On/Off)", "Off");
             section.Keys.AddKey("Bots (On/Off)", "On");
             section.Keys.AddKey("Group (On/Off)", "Off");
             section.Keys.AddKey("Guild (On/Off)", "Off");
             section.Keys.AddKey("Raid (On/Off)", "Off");
-            
 
-            newFile.Sections.AddSection("Movement");
-            section = newFile.Sections.GetSectionData("Movement");
+            //Movement
+            defaultData.Sections.AddSection("Movement");
+            section = defaultData.Sections.GetSectionData("Movement");
             section.Keys.AddKey("Chase Distance Minimum", "10");
             section.Keys.AddKey("Chase Distance Maximum", "500");
             section.Keys.AddKey("Nav Stop Distance", "10");
@@ -414,32 +463,7 @@ namespace E3Core.Settings
             section.Keys.AddKey("Anchor Distance Maximum", "150");
             section.Keys.AddKey("Milliseconds till standing Still", "10000");
 
-           
-            if (!System.IO.File.Exists(filename))
-            {
-                if (!System.IO.Directory.Exists(_configFolder + _settingsFolder))
-                {
-                    System.IO.Directory.CreateDirectory(_configFolder + _settingsFolder);
-                }
-                _log.Write($"Creating new General Settings file:{filename}");
-                //file straight up doesn't exist, lets create it
-                parser.WriteFile(filename, newFile);
-
-            }
-            else
-            {
-                //some reason we were called when this already exists, just return what is there.
-
-                FileIniDataParser fileIniData = e3util.CreateIniParser();
-                IniData parsedData = fileIniData.ReadFile(filename);
-
-                return parsedData;
-               
-            }
-
-
-            return newFile;
-
+            return defaultData;
         }
     }
     public enum DefaultBroadcast

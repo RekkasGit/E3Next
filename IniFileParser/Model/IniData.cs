@@ -1,6 +1,9 @@
 using System;
+using System.Collections.Generic;
+using System.Linq;
 using IniParser.Model.Configuration;
 using IniParser.Model.Formatting;
+using static System.Collections.Specialized.BitVector32;
 
 namespace IniParser.Model
 {
@@ -317,6 +320,127 @@ namespace IniParser.Model
         {
             KeyData result;
             return TryGetKeyData(key, out result) ? result : null;
+        }
+
+        /// <summary>
+        ///     Compares this IniData instance to another IniData instance and returns true if this instance contains all the same sections and settings as the other instance.
+        /// </summary>
+        /// <param name="otherIniData">The other IniData instance whose settings we want to search for in this instance</param>
+        /// <returns>False if the other instance contains any sections or settings which do not exist in this instance; otherwise returns True</returns>
+        public bool ContainsAllSettingsFoundIn(IniData otherIniData)
+        {
+            foreach (var globalSetting in otherIniData.Global)
+            {
+                if (!this.Global.ContainsKey(globalSetting.KeyName))
+                {
+                    return false;
+                }
+            }
+
+            foreach (var section in otherIniData.Sections)
+            {
+                if (!this.Sections.ContainsSection(section.SectionName))
+                {
+                    return false;
+                }
+                else
+                {
+                    var sectionData = this.Sections.GetSectionData(section.SectionName);
+
+                    foreach (var sectionSetting in section.Keys)
+                    {
+                        if (!sectionData.Keys.ContainsKey(sectionSetting.KeyName))
+                        {
+                            return false;
+                        }
+                    }
+                }
+            }
+
+            return true;
+        }
+
+        /// <summary>
+        /// Adds comments to all unused settings, indicating them as such.  Removes the comments from settings that are now used.
+        /// </summary>
+        /// <param name="defaultIniData">An instance of IniData which contains only the default settings</param>
+        /// <param name="removeAllComments">If true, then the comments will be removed from all settings, period.</param>
+        /// <param name="globalSettingsToLeaveUncommented">Which global settings to leave uncommented</param>
+        /// <param name="sectionsToLeaveUncommented">The names of any sections in which to leave their settings uncommented</param>
+        /// <param name="sectionSettingsToLeaveUncommented">Which settings to leave uncommented within the sections. Usage is sectionSettingsToLeaveUncommented[sectionName] = collection of setting keys to leave uncommented in that section.</param>
+        /// <param name="wasDataChanged">True if any changes were made to this ini data while executing this method call</param>
+        public void UpdateUnusedSettingComments(IniData defaultIniData, bool removeAllComments, IEnumerable<string> globalSettingsToLeaveUncommented, IEnumerable<string> sectionsToLeaveUncommented, Dictionary<string, IEnumerable<string>> sectionSettingsToLeaveUncommented, out bool wasDataChanged)
+        {
+            wasDataChanged = false;
+
+            // Make sure that sectionSettingsToLeaveUncommented uses a case-insensitive comparer
+            if (sectionSettingsToLeaveUncommented != null)
+            {
+                sectionSettingsToLeaveUncommented = new Dictionary<string, IEnumerable<string>>(sectionSettingsToLeaveUncommented, StringComparer.OrdinalIgnoreCase);
+            }
+
+            // comment or uncomment the global settings
+            foreach (var globalSetting in this.Global)
+            {
+                string commentText = "This setting is not used (" + globalSetting.KeyName + ")";
+                int commentIndex = globalSetting.Comments.IndexOf(commentText);
+                
+                bool shouldBeMarkedAsUnused = false;
+                if ((!removeAllComments)
+                    && (!defaultIniData.Global.ContainsKey(globalSetting.KeyName)) 
+                    && (globalSettingsToLeaveUncommented == null || !globalSettingsToLeaveUncommented.Any(settingName => settingName.Equals(globalSetting.KeyName, StringComparison.OrdinalIgnoreCase)))
+                )
+                {
+                    shouldBeMarkedAsUnused = true;
+                }
+
+                if (commentIndex < 0 && shouldBeMarkedAsUnused)
+                {
+                    // Add the comment
+                    globalSetting.Comments.Add(commentText);
+                    wasDataChanged = true;
+                }
+                else if (commentIndex >= 0 && !shouldBeMarkedAsUnused)
+                {
+                    // Remove the previously existing comment
+                    globalSetting.Comments.RemoveAt(commentIndex);
+                    wasDataChanged = true;
+                }
+            }
+
+            // comment or uncomment the settings in the sections
+            foreach (var section in this.Sections)
+            {
+                foreach (var sectionSetting in section.Keys)
+                {
+                    string commentText = "This setting is not used (" + sectionSetting.KeyName + ")";
+                    int commentIndex = sectionSetting.Comments.IndexOf(commentText);
+
+                    bool shouldBeMarkedAsUnused = false;
+                    if (
+                        (!removeAllComments)
+                        && ((!defaultIniData.Sections.ContainsSection(section.SectionName)) || (!defaultIniData.Sections[section.SectionName].ContainsKey(sectionSetting.KeyName)))
+                        && (sectionsToLeaveUncommented == null || !sectionsToLeaveUncommented.Any(sectionName => sectionName.Equals(section.SectionName, StringComparison.OrdinalIgnoreCase)))
+                        && (sectionSettingsToLeaveUncommented == null || (!sectionSettingsToLeaveUncommented.ContainsKey(section.SectionName)) || !sectionSettingsToLeaveUncommented[section.SectionName].Any(settingName => settingName.Equals(sectionSetting.KeyName, StringComparison.OrdinalIgnoreCase)))
+                    )
+                    {
+                        shouldBeMarkedAsUnused = true;
+                    }
+
+                    if (commentIndex < 0 && shouldBeMarkedAsUnused)
+                    {
+                        // Add the comment
+                        sectionSetting.Comments.Add(commentText);
+                        wasDataChanged = true;
+                    }
+                    else if (commentIndex >= 0 && !shouldBeMarkedAsUnused)
+                    {
+                        // Remove the previously existing comment
+                        sectionSetting.Comments.RemoveAt(commentIndex);
+                        wasDataChanged = true;
+                    }
+                }
+            }
         }
 
         /// <summary>
