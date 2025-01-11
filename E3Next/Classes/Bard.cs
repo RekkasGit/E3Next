@@ -25,7 +25,8 @@ namespace E3Core.Classes
         private static Queue<Data.Spell> _songs = new Queue<Spell>();
         private static bool _isInit = false;
         private static bool _playingMelody = true;
-        private static string _currentMelody = String.Empty;
+		[ExposedData("Bard", "CurrentMelody")]
+		public static string _currentMelody = String.Empty;
         private static Int64 _nextMelodyIfCheck = 0;
         private static Int64 _nextMelodyIfRefreshTimeInterval = 1000;
         private static bool _forceOverride = false;

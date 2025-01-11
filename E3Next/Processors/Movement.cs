@@ -76,8 +76,6 @@ namespace E3Core.Processors
             using (_log.Trace())
             {
 
-               
-
 				if (_chaseTarget != String.Empty && !Assist.IsAssisting)
                 {
 					if(_spawns.TryByName(_chaseTarget, out var spawn))

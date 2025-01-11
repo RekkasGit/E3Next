@@ -27,18 +27,25 @@ namespace E3Core.Data
                 if (section != null)
                 {
                     var keyData = section[MelodyIfName];
-                    if (!String.IsNullOrWhiteSpace(keyData))
-                    {
-                        MelodyIf = keyData;
-                    }
-					else
+                    var keys = keyData.Split(',');
+
+					foreach (var key in keys)
 					{
-						//check the global ifs
-						if (E3.GlobalIfs.Ifs.ContainsKey(MelodyIfName))
+						if (!String.IsNullOrWhiteSpace(key))
 						{
-							MelodyIf = string.IsNullOrWhiteSpace(keyData) ? E3.GlobalIfs.Ifs[MelodyIfName] : MelodyIf + " && " + E3.GlobalIfs.Ifs[keyData];
+							MelodyIf = string.IsNullOrWhiteSpace(key) ? key : MelodyIf + " && " + key; ;
+						}
+						else
+						{
+							//check the global ifs
+							if (E3.GlobalIfs.Ifs.ContainsKey(MelodyIfName))
+							{
+								MelodyIf = string.IsNullOrWhiteSpace(key) ? E3.GlobalIfs.Ifs[MelodyIfName] : MelodyIf + " && " + E3.GlobalIfs.Ifs[key];
+							}
 						}
 					}
+
+					
 				}
             }
         }

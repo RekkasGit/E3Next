@@ -709,7 +709,10 @@ namespace E3Core.Processors
 						{
 							//_log.Write("\am In main cast window loop...");
 							e3util.ProcessE3BCCommands();
-							e3util.ProcessNowCastCommandsForOthers();
+							if(!isNowCast)
+							{
+								e3util.ProcessNowCastCommandsForOthers();
+							}
 							//means that we didn't fizzle and are now casting the spell
 
 							//these are outside the no interrupt check

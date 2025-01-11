@@ -78,7 +78,7 @@ namespace E3Core.Processors
                 return;
             }
 
-				Int32 targetId = MQ.Query<Int32>("${Target.ID}");
+			Int32 targetId = MQ.Query<Int32>("${Target.ID}");
 			if (targetId != Assist.AssistTargetID && e3util.IsManualControl())
 			{
 				return;
@@ -112,6 +112,8 @@ namespace E3Core.Processors
 					if (!MQ.Query<bool>($"${{Spawn[npc id {s.ID}].LineOfSight}}")) continue;
 					if (s.Distance > 60) break;//mob is too far away, and since it is ordered, kick out.
 											   //its valid to attack!
+                    if(_mobsToIgnoreOffAsist.Contains(s.ID)) continue;
+
 					_mobsToOffAsist.Add(s.ID);
 				}
 				List<Int64> mobIdsToRemove = new List<Int64>();
