@@ -2504,6 +2504,24 @@ namespace E3Core.Processors
 								replaceValue = result;
 							}
 						}
+						else if (query == "ZoneID")
+						{
+							replaceValue = "0";
+							string result = E3.Bots.Query(targetname, "${Me.ZoneID}");
+							if (result != "NULL")
+							{
+								replaceValue = result;
+							}
+						}
+						else if (query == "Instance")
+						{
+							replaceValue = "0";
+							string result = E3.Bots.Query(targetname, "${Me.Instance}");
+							if (result != "NULL")
+							{
+								replaceValue = result;
+							}
+						}
 						//check to see if some modification was done
 						if (replaceString != replaceValue)
 						{
