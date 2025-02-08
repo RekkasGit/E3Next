@@ -1017,7 +1017,7 @@ namespace E3Core.Processors
 
 					}
                 }
-			});
+			},"set assist range locally. 1-100 or max");
 
 			EventProcessor.RegisterCommand("/e3smarttaunt", (x) =>
             {
