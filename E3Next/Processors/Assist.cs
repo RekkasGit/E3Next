@@ -7,6 +7,7 @@ using System;
 using System.Collections.Generic;
 using System.Dynamic;
 using System.Linq;
+using System.Windows.Forms;
 using System.Xml.Linq;
 
 namespace E3Core.Processors
@@ -694,6 +695,7 @@ namespace E3Core.Processors
             }
         }
 
+        
         private static void StickToAssistTarget()
         {
             //needed a case insensitive switch, that was easy to read, thus this.
@@ -984,7 +986,40 @@ namespace E3Core.Processors
 
             });
 
-            EventProcessor.RegisterCommand("/e3smarttaunt", (x) =>
+			EventProcessor.RegisterCommand("/e3assistdistance", (x) =>
+            {
+                if (x.args.Count == 1)
+                {
+                    if(Int32.TryParse(x.args[0], out int assistDistance))
+                    {
+                        if(assistDistance>1 && assistDistance < 100)
+                        {
+                            E3.CharacterSettings.Assist_MeleeDistance = assistDistance.ToString();
+							_assistDistance = assistDistance;
+                            E3.Bots.Broadcast($"\agChanging assist range to:\ar{E3.CharacterSettings.Assist_MeleeDistance}");
+                            if(IsAssisting)
+                            {
+								StickToAssistTarget();
+							}
+						}
+                    }
+                    else if (x.args[0] =="max")
+                    {
+
+                        E3.CharacterSettings.Assist_MeleeDistance = "MaxMelee";
+                        _assistDistance = 33;
+						E3.Bots.Broadcast($"\agChanging assist range to:\ar{E3.CharacterSettings.Assist_MeleeDistance}, please reassist to get proper max range of target, setting to 33");
+						if (IsAssisting)
+						{
+							StickToAssistTarget();
+						}
+
+
+					}
+                }
+			});
+
+			EventProcessor.RegisterCommand("/e3smarttaunt", (x) =>
             {
 				//swap them
 				e3util.ToggleBooleanSetting(ref E3.CharacterSettings.Assist_SmartTaunt, "SmartTaunt", x.args);
