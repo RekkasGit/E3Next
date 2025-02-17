@@ -54,11 +54,14 @@ namespace E3NextUI.Server
 
 						Int32 indexOfColon = messageReceived.IndexOf(':');
 						string payloaduser = messageReceived.Substring(0, indexOfColon);
-						string payload = messageReceived.Substring(indexOfColon + 1, messageReceived.Length - indexOfColon - 1);
-						messageReceived = payload;
+						messageReceived = messageReceived.Substring(indexOfColon + 1, messageReceived.Length - indexOfColon - 1);
+						indexOfColon = messageReceived.IndexOf(':');
+						string payloadServer = messageReceived.Substring(0, indexOfColon);
+						messageReceived = messageReceived.Substring(indexOfColon + 1, messageReceived.Length - indexOfColon - 1);
+
 
 						try
-                        {
+						{
                             //Console.WriteLine(messageReceived);
                             if (messageTopicReceived == "OnWriteChatColor")
                             {

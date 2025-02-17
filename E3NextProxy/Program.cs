@@ -19,7 +19,6 @@ namespace E3NextProxy
 	{
 		[DllImport("Kernel32")]
 		private static extern bool SetConsoleCtrlHandler(EventHandler handler, bool add);
-
 		private delegate bool EventHandler(CtrlType sig);
 		static EventHandler _handler;
 
@@ -42,12 +41,14 @@ namespace E3NextProxy
 			return true;
 		}
 
-		static E3NextProxy.Proxy m_proxy;
+		static E3NextProxy.Proxy_Manual m_proxy;
 		//lets scan the file system to find files so we can connect to start the proxy
 		static string _directoryLocation = $@"D:\EQ\MQLive\config\e3 Macro Inis\SharedData\";
 		static string _fileName = "proxy_pubsubport.txt";
 		static string _fullFileName = _fileName;
-
+		static Int32 _XPublisherPort;
+		//static Int32 _XSubPort;
+		static string _localIP = "127.0.0.1";
 		static void Main(string[] args)
 		{
 			//capture to clean up on force close
@@ -58,53 +59,63 @@ namespace E3NextProxy
 			//this is useful if you run a lot of bots as its far more efficent thread wise. 
 			//if running 54 bots, that would be 2900+ threads vs just 108 threads using the proxy, it scales a lot better, tho less convient to run a server vs just peer to peer. 
 			
-			Int32 XPublisherPort = FreeTcpPort();
-			Int32 XSubPort = FreeTcpPort();
-			string localIP = GetLocalIPAddress();
+			_XPublisherPort = FreeTcpPort();
+			//_XSubPort = FreeTcpPort();
+			_localIP = GetLocalIPAddress();
 
-			if (!CreateInfoFile(localIP, XPublisherPort))
+			if (!CreateInfoFile(_localIP, _XPublisherPort))
 			{
 				return;
 			}
 
 
-			try
-			{
-				using (var xpubSocket = new XPublisherSocket())
-				using (var xsubSocket = new XSubscriberSocket())
-				{
-					string connectionString = $"tcp://{localIP}:{XPublisherPort}";
-					xpubSocket.Bind(connectionString);
+			m_proxy = new Proxy_Manual();
+			m_proxy.Start(_XPublisherPort);
+			var xSubTaskAdd = Task.Factory.StartNew(() => { AddSubscribers(_localIP); }, CancellationToken.None, TaskCreationOptions.DenyChildAttach, TaskScheduler.Default);
+			var sub1task = Task.Factory.StartNew(() => { SubScribeReader(_XPublisherPort, _localIP); }, CancellationToken.None, TaskCreationOptions.DenyChildAttach, TaskScheduler.Default);
+			Console.WriteLine("Press enter to end");
+			Console.ReadLine();
 
 
-					var sub1task = Task.Factory.StartNew(() => { SubScribeReader(XPublisherPort, localIP); }, CancellationToken.None, TaskCreationOptions.DenyChildAttach, TaskScheduler.Default);
-
-					m_proxy = new E3NextProxy.Proxy(xsubSocket, xpubSocket);
-					var xSubTaskAdd = Task.Factory.StartNew(() => { AddSubscribers(localIP, new List<int>() { XSubPort }); }, CancellationToken.None, TaskCreationOptions.DenyChildAttach, TaskScheduler.Default);
-
-					// blocks indefinitely
-					m_proxy.StartAsync();
-					Console.WriteLine($"Publish connection string:{connectionString}");
-					Console.WriteLine("Press enter to end");
-					Console.ReadLine();
-					m_proxy.Stop();
-				}
-			}
-			finally 
-			{ 
-				if(File.Exists(_fullFileName))
-				{
-					File.Delete(_fullFileName);
-
-				}
-			}
 
 
-		
-			
+
+
 		}
+		public static void OldMain(string localIP, int XPublisherPort)
+		{
+			//try
+			//{
+			//	using (var xpubSocket = new XPublisherSocket())
+			//	using (var xsubSocket = new XSubscriberSocket())
+			//	{
+			//		string connectionString = $"tcp://{localIP}:{XPublisherPort}";
+			//		xpubSocket.Bind(connectionString);
 
-		public static void AddSubscribers(string localIP,List<Int32> publisherPorts)
+
+			//		var sub1task = Task.Factory.StartNew(() => { SubScribeReader(XPublisherPort, localIP); }, CancellationToken.None, TaskCreationOptions.DenyChildAttach, TaskScheduler.Default);
+
+			//		m_proxy = new E3NextProxy.Proxy(xsubSocket, xpubSocket);
+			//		var xSubTaskAdd = Task.Factory.StartNew(() => { AddSubscribers(localIP, new List<int>() { _XSubPort }); }, CancellationToken.None, TaskCreationOptions.DenyChildAttach, TaskScheduler.Default);
+
+			//		// blocks indefinitely
+			//		m_proxy.StartAsync();
+			//		Console.WriteLine($"Publish connection string:{connectionString}");
+			//		Console.WriteLine("Press enter to end");
+			//		Console.ReadLine();
+			//		m_proxy.Stop();
+			//	}
+			//}
+			//finally
+			//{
+			//	if (File.Exists(_fullFileName))
+			//	{
+			//		File.Delete(_fullFileName);
+
+			//	}
+			//}
+		}
+		public static void AddSubscribers(string localIP)
 		{
 		
 			System.Threading.Thread.Sleep(1000);
@@ -135,6 +146,9 @@ namespace E3NextProxy
 				{
 					string[] files = Directory.GetFiles(folder);
 
+					//file format is Name_Server_pubsubport.txt
+					//IE: Rekken_Lazarus_pubsubport.txt
+
 					foreach (var fileName in files)
 					{
 						if (String.Equals(fileName, _fullFileName, StringComparison.OrdinalIgnoreCase))
@@ -150,7 +164,11 @@ namespace E3NextProxy
 							string port = splitData[0];
 							string ipaddress = splitData[1];
 							string connectionString = $"tcp://{ipaddress}:{port}";
-							m_proxy.AddSubBinding(connectionString);
+							FileInfo fileInfo = new FileInfo(fileName);
+							string userNameAndServer = fileInfo.Name.Replace("_pubsubport.txt","");
+							//change to Name:Server format as that is what the payload uses
+							userNameAndServer=ReplaceFirst(userNameAndServer, "_", ":");
+							m_proxy.AddLocalSubBinding(userNameAndServer, connectionString);
 							Console.WriteLine($"[{System.DateTime.Now.ToString()}] New File Found: {fileName}. Connection String: {connectionString}");
 							currentlyProcessing.Add(fileName, new SubInfo() { LastUpdateTime = lastFileUpdate, connectionString = connectionString });
 						}
@@ -162,8 +180,11 @@ namespace E3NextProxy
 							{
 								string connectionString = currentlyProcessing[fileName].connectionString;
 								Console.WriteLine($"[{System.DateTime.Now.ToString()}] Reconnecting: {fileName}. Connection String: {connectionString}");
+								FileInfo fileInfo = new FileInfo(fileName);
+								Int32 indexOfUnderScore = fileInfo.Name.IndexOf("_");
+								string userName = fileInfo.Name.Substring(0, indexOfUnderScore);
 								//it has, remove it from processing, so that we can get the new one
-								m_proxy.RemoveSubBinding(connectionString);
+								m_proxy.RemoveSubBinding(userName,connectionString);
 								currentlyProcessing.Remove(fileName);
 							}
 						}
@@ -177,8 +198,11 @@ namespace E3NextProxy
 							string fileName = info.Key;
 							string connectionString = info.Value.connectionString;
 							Console.WriteLine($"[{System.DateTime.Now.ToString()}] Disconnecting: {fileName} as it no longer exists. Connection String: {connectionString}");
+							FileInfo fileInfo = new FileInfo(fileName);
+							Int32 indexOfUnderScore = fileInfo.Name.IndexOf("_");
+							string userName = fileInfo.Name.Substring(0, indexOfUnderScore);
 							//it has, remove it from processing, so that we can get the new one
-							m_proxy.RemoveSubBinding(connectionString);
+							m_proxy.RemoveSubBinding(userName,connectionString);
 							removeItems.Add(fileName);
 						}
 					}
@@ -239,6 +263,7 @@ namespace E3NextProxy
 				{
 					string messageTopicReceived = subSocket.ReceiveFrameString();
 					string messageReceived = subSocket.ReceiveFrameString();
+					//Console.WriteLine($"[{messageTopicReceived}] {messageReceived}");
 					_totalMessageCount++;
 
 					if(_stopWatch.ElapsedMilliseconds > _lastUpdateTime)
@@ -267,7 +292,7 @@ namespace E3NextProxy
 
 			if(System.Diagnostics.Debugger.IsAttached)
 			{
-				dllFullPath=@"D:\EQ\MQLive\mono\macros\e3\";
+				dllFullPath= @"D:\EQ\MQEmu\mono\macros\e3\";
 			}
 
 			DirectoryInfo currentDirectory = new DirectoryInfo(dllFullPath);
@@ -307,6 +332,15 @@ namespace E3NextProxy
 			File.WriteAllText(_fullFileName, $"{XPublisherPort},{localIP}");
 
 			return true;
+		}
+		public static string ReplaceFirst(string text, string search, string replace)
+		{
+			int pos = text.IndexOf(search);
+			if (pos < 0)
+			{
+				return text;
+			}
+			return text.Substring(0, pos) + replace + text.Substring(pos + search.Length);
 		}
 		public static string GetLocalIPAddress()
 		{

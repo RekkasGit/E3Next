@@ -392,8 +392,16 @@ namespace E3Core.Server
 
 							Int32 indexOfColon = messageReceived.IndexOf(':');
 							string payloaduser = messageReceived.Substring(0, indexOfColon);
-							string payload = messageReceived.Substring(indexOfColon + 1, messageReceived.Length - indexOfColon - 1);
-							messageReceived = payload;
+							messageReceived = messageReceived.Substring(indexOfColon + 1, messageReceived.Length - indexOfColon - 1);
+							indexOfColon = messageReceived.IndexOf(':');
+							string payloadServer = messageReceived.Substring(0, indexOfColon);
+							messageReceived = messageReceived.Substring(indexOfColon + 1, messageReceived.Length - indexOfColon - 1);
+
+							//message not from the same server, skip it.
+							if (!String.Equals(payloadServer, E3.ServerName))
+							{
+								continue;
+							}
 
 							//most common goes first
 							if (messageTopicReceived.StartsWith("${Me."))

@@ -1451,7 +1451,7 @@ namespace E3Core.Utility
 			//using (_log.Trace("AA List Call"))
 			{
 				List<Data.Spell> returnValue = new List<Data.Spell>();
-				for (Int32 i = 0; i < 10000; i++)
+				for (Int32 i = 0; i < 20000; i++)
 				{
 					string spellName = MQ.Query<String>($"${{Me.AltAbility[{i}].Name}}");
 					if (spellName != "NULL")

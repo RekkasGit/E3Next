@@ -31,6 +31,7 @@ namespace E3NextProxy
 			tPoller.Run(() =>
 			{
 				m_frontend.Connect(connectionString);
+				//((XPublisherSocket)m_backend).SendMoreFrame("").SendFrame("");
 			});
 		}
 		public void RemoveSubBinding(string connectionString)

@@ -144,7 +144,7 @@ namespace E3Core.Server
                             //using so that we put it back into the memory pool
                             using(value)
                             {
-								pubSocket.SendMoreFrame(value.topic).SendFrame($"{E3.CurrentName}:{value.message}");
+								pubSocket.SendMoreFrame(value.topic).SendFrame($"{E3.CurrentName}:{E3.ServerName}:{value.message}");
 							}
                         }
                     }
@@ -154,7 +154,7 @@ namespace E3Core.Server
                         if (IncomingChatMessages.TryDequeue(out message))
                         {
 
-                            pubSocket.SendMoreFrame("OnIncomingChat").SendFrame($"{E3.CurrentName}:{message}");
+                            pubSocket.SendMoreFrame("OnIncomingChat").SendFrame($"{E3.CurrentName}:{E3.ServerName}:{message}");
                         }
                     }
                    while (MQChatMessages.Count > 0)
@@ -163,7 +163,7 @@ namespace E3Core.Server
                         if (MQChatMessages.TryDequeue(out message))
                         {
 
-                            pubSocket.SendMoreFrame("OnWriteChatColor").SendFrame($"{E3.CurrentName}:{message}");
+                            pubSocket.SendMoreFrame("OnWriteChatColor").SendFrame($"{E3.CurrentName}:{E3.ServerName}:{message}");
 
                         }
                     }
@@ -173,7 +173,7 @@ namespace E3Core.Server
                         if (CommandsToSend.TryDequeue(out message))
                         {
 
-                            pubSocket.SendMoreFrame("OnCommand").SendFrame($"{E3.CurrentName}:{message}");
+                            pubSocket.SendMoreFrame("OnCommand").SendFrame($"{E3.CurrentName}:{E3.ServerName}:{message}");
 
                         }
                     }
