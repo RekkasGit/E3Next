@@ -11,6 +11,7 @@ using System.Collections.Generic;
 using E3NextProxy.Models;
 using System.Diagnostics;
 using System.Runtime.InteropServices;
+using System.Linq;
 
 namespace E3NextProxy
 {
@@ -58,8 +59,9 @@ namespace E3NextProxy
 			//purpose of this program is to provide a Proxy between clients and consumers. This is basically the Server mode instead of the P2P mode that is default for E3N Networking
 			//this is useful if you run a lot of bots as its far more efficent thread wise. 
 			//if running 54 bots, that would be 2900+ threads vs just 108 threads using the proxy, it scales a lot better, tho less convient to run a server vs just peer to peer. 
-			
-			_XPublisherPort = FreeTcpPort();
+
+			//_XPublisherPort = FreeTcpPort();
+			_XPublisherPort = 5698;  //5697-5699 are current unassigned
 			//_XSubPort = FreeTcpPort();
 			_localIP = GetLocalIPAddress();
 
@@ -74,12 +76,19 @@ namespace E3NextProxy
 			var xSubTaskAdd = Task.Factory.StartNew(() => { AddSubscribers(_localIP); }, CancellationToken.None, TaskCreationOptions.DenyChildAttach, TaskScheduler.Default);
 			var sub1task = Task.Factory.StartNew(() => { SubScribeReader(_XPublisherPort, _localIP); }, CancellationToken.None, TaskCreationOptions.DenyChildAttach, TaskScheduler.Default);
 			Console.WriteLine("Press enter to end");
+
+			var proxiesToConnecTo = System.Configuration.ConfigurationManager.AppSettings["ProxiesToConnectTo"];
+			
+			List<string> proxies = proxiesToConnecTo.Split(new char[] {','}, StringSplitOptions.RemoveEmptyEntries).ToList();
+
+			foreach (string proxy in proxies)
+			{
+				string tproxy = proxy.Replace(" ", "");
+				if (tproxy == _localIP) continue;
+				//external connections are +1 the port number. 
+				m_proxy.AddExteranlProxySubBinding($"tcp://{tproxy}:{_XPublisherPort+1}");
+			}
 			Console.ReadLine();
-
-
-
-
-
 
 		}
 		public static void OldMain(string localIP, int XPublisherPort)
@@ -122,24 +131,9 @@ namespace E3NextProxy
 
 			Dictionary<string,SubInfo> currentlyProcessing = new Dictionary<string, SubInfo>();
 			List<string> removeItems = new List<string>();
-
-			var networkFoldersToMonitor = System.Configuration.ConfigurationManager.AppSettings["NetworkFoldersToMonitor"];
-
 			List<string> foldersToMonitor = new List<string>();
 			foldersToMonitor.Add(_directoryLocation);
-			if(!String.IsNullOrWhiteSpace(networkFoldersToMonitor))
-			{
-				string[] folders = networkFoldersToMonitor.Split(new char[] { ';' });
-				foreach(var folder in folders)
-				{
-					string tempFolder = folder;
-					if(!tempFolder.EndsWith(@"\"))
-					{
-						tempFolder+=@"\";
-					}
-					foldersToMonitor.Add(tempFolder.Trim());
-				}
-			}
+			
 			while (true)
 			{
 				foreach(var folder in foldersToMonitor)
