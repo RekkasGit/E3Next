@@ -265,7 +265,7 @@ namespace E3NextProxy
 						if(_lastTotalMessageCount > 0)
 						{
 							Int64 messageDelta =_totalMessageCount - _lastTotalMessageCount;
-							Console.WriteLine($"{messageDelta} per {_stopWatch.ElapsedMilliseconds - (_lastUpdateTime-1000)} milliseconds");
+							Console.Write($"\r{messageDelta} per {_stopWatch.ElapsedMilliseconds - (_lastUpdateTime-1000)} milliseconds");
 						}
 
 						_lastTotalMessageCount = _totalMessageCount;
