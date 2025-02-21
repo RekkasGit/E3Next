@@ -592,8 +592,9 @@ namespace E3Core.Settings
         private void LoadData()
         {
 
-            //this is so we can get the merged data as well. 
-            string filename = GetBoTFilePath($"{CharacterName}_{ServerName}.ini");
+			//this is so we can get the merged data as well. 
+			string filename = GetBoTFilePath(CharacterName, ServerName, CharacterClass.ToString());
+			MQ.Write($"Loading settings file: [{filename}]");
             ParsedData = CreateSettings(filename);
 
 

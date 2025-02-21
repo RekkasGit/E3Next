@@ -34,23 +34,18 @@ namespace E3Core.Settings
 
 
 		}
-        public static string GetBoTFilePath(string fileName)
+        public static string GetBoTFilePath(string characterName,string serverName,string characterClass)
         {
-            string macroFile = _macroFolder + _botFolder + fileName;
-            string configFile = _configFolder + _botFolder + fileName;
-            string fullPathToUse = macroFile;
+            string fileName = $"{characterName}_{serverName}.ini";
+            string classFileName = $"_{characterClass}_{serverName}.ini";
 
-            if (!System.IO.File.Exists(macroFile) && !System.IO.File.Exists(configFile))
-            {
+            string botFileInConfigFolder = _configFolder + _botFolder;
 
-                fullPathToUse = configFile;
-            }
-            else
+            if(System.IO.File.Exists(botFileInConfigFolder + classFileName))
             {
-                fullPathToUse = macroFile;
-                if (System.IO.File.Exists(configFile)) fullPathToUse = configFile;
-            }
-            return fullPathToUse;
+                return botFileInConfigFolder + classFileName;
+			}
+            return botFileInConfigFolder + fileName;
         }
         public static string GetSettingsFilePath(string fileName)
         {
