@@ -68,9 +68,12 @@ namespace E3Core.Processors
 
             //don't do this on live as a GM will kill you and see if you auto accept a rez.
             if (e3util.IsEQLive()) return;
+            if (Basics.InCombat()) return;
 
             if (MQ.Query<bool>("${Window[ConfirmationDialogBox].Open}"))
             {
+
+
                 //check if its a valid confirmation box
                 string message = MQ.Query<string>("${Window[ConfirmationDialogBox].Child[cd_textoutput].Text}");
                 if (!(message.Contains("percent)")||message.Contains("RESURRECT you.")))

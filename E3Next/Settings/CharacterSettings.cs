@@ -594,6 +594,10 @@ namespace E3Core.Settings
 
 			//this is so we can get the merged data as well. 
 			string filename = GetBoTFilePath(CharacterName, ServerName, CharacterClass.ToString());
+
+			//if this is a global file with multiple writers, don't merge data as multiple writers for a single file = bad mojo.
+			if (filename.StartsWith("_")) _mergeUpdates = false;
+
 			MQ.Write($"Loading settings file: [{filename}]");
             ParsedData = CreateSettings(filename);
 

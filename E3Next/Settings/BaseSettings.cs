@@ -43,6 +43,7 @@ namespace E3Core.Settings
 
             if(System.IO.File.Exists(botFileInConfigFolder + classFileName))
             {
+                
                 return botFileInConfigFolder + classFileName;
 			}
             return botFileInConfigFolder + fileName;
