@@ -136,7 +136,7 @@ namespace E3Core.Processors
                                 }
 
                                 //sell the item finally
-                                MQ.Cmd("/nomodkey /shift /notify MerchantWnd MW_Sell_Button leftmouseup",300);
+                                MQ.Cmd("/nomodkey /shift /notify MerchantWnd MW_Sell_Button leftmouseup",400+e3util.Latency());
                                 string tItemName = MQ.Query<String>($"${{Me.Inventory[pack{i}].Item[{e}]}}");
                                 if (itemName == tItemName)
                                 {

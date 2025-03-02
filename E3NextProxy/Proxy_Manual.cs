@@ -72,7 +72,7 @@ namespace E3NextProxy
 
 				if (_isRunning)
 				{
-					Console.WriteLine($"Subscriber socket disconnecting...{connectionString}");
+					Console.WriteLine($"Subscriber socket disconnecting [{user}]...{connectionString}");
 					_localUseres.TryRemove(user,out var cs);
 					_localSubscriberSocket.Disconnect(connectionString);
 				}
