@@ -9,6 +9,7 @@ using System.Collections.Specialized;
 using System.Dynamic;
 using System.Linq;
 using System.Net.Configuration;
+using System.ServiceModel.Configuration;
 using System.ServiceModel.PeerResolvers;
 using System.Windows.Forms;
 
@@ -188,7 +189,56 @@ namespace E3Core.Processors
                     E3.Bots.Broadcast("\agTurning on Loot.");
                 }
             });
-            EventProcessor.RegisterCommand("/lootoff", (x) =>
+			EventProcessor.RegisterCommand("/e3lootall", (x) =>
+			{
+
+				if (x.args.Count > 0 && E3.Bots.BotsConnected().Contains(x.args[0], StringComparer.OrdinalIgnoreCase) && !x.args[0].Equals(E3.CurrentName, StringComparison.OrdinalIgnoreCase))
+				{
+                    Int32 targetID = MQ.Query<Int32>("${Target.ID}");
+
+                    if (targetID == 0)
+                    {
+                        return;
+                    }
+
+					E3.Bots.BroadcastCommandToPerson(x.args[0], $"/e3lootall {targetID}");
+					
+				}
+				else if(x.args.Count > 0 && !x.args[0].Equals(E3.CurrentName, StringComparison.OrdinalIgnoreCase))
+				{
+					//we are turning our own loot on.
+					if (x.args.Count == 1)
+					{
+                        Int32 targetID = 0;
+                        if(Int32.TryParse(x.args[0], out targetID))
+                        {
+                            if(Casting.TrueTarget(targetID))
+                            {
+
+								bool isCorpse = MQ.Query<bool>("${Target.Type.Equal[Corpse]}");
+
+                                if (isCorpse)
+                                {
+									E3.Bots.Broadcast($"\agFully looting the corpse id {targetID}");
+                                    if (_spawns.TryByID(targetID, out var s))
+                                    {
+										e3util.TryMoveToTarget();
+										MQ.Delay(2250, "${Target.Distance} < 10"); // Give Time to get to Corpse 
+										LootCorpse(s, false, true);
+                                    }
+								}
+                                else
+                                {
+									E3.Bots.Broadcast($"\ag{targetID} is not a corpse");
+								}
+							}
+
+						}
+					}
+				
+				}
+			});
+			EventProcessor.RegisterCommand("/lootoff", (x) =>
             {
                 if (x.args.Count > 0 && !x.args[0].Equals(E3.CurrentName, StringComparison.OrdinalIgnoreCase))
                 {
@@ -794,7 +844,7 @@ namespace E3Core.Processors
             }
             return false;
         }
-        public static void LootCorpse(Spawn corpse, bool bypassLootSettings = false)
+        public static void LootCorpse(Spawn corpse, bool bypassLootSettings = false, bool lootAll = false)
         {
             
             Int32 freeInventorySlots = MQ.Query<Int32>("${Me.FreeInventory}");
@@ -883,113 +933,123 @@ namespace E3Core.Processors
                     }
 					continue;
 				}
-
-				if (LootStackableSettings.Enabled)
-				{   //this is the new character specific loot stackable
-					//check if in our always loot.
-					if (LootStackableSettings.AlwaysStackableItems.Contains(corpseItem, StringComparer.OrdinalIgnoreCase))
-					{
-						importantItem = true;
-						nodropImportantItem = nodrop;
-						MQ.Write("\ayStackable: always loot item " + corpseItem);
-					}
-					if (!importantItem && LootStackableSettings.AlwaysStackableItemsContains.Count > 0)
-					{
-						foreach (var item in LootStackableSettings.AlwaysStackableItemsContains)
+                if(!lootAll)
+                {
+					if (LootStackableSettings.Enabled)
+					{   //this is the new character specific loot stackable
+						//check if in our always loot.
+						if (LootStackableSettings.AlwaysStackableItems.Contains(corpseItem, StringComparer.OrdinalIgnoreCase))
 						{
-							if (corpseItem.IndexOf(item, StringComparison.OrdinalIgnoreCase) > -1)
+							importantItem = true;
+							nodropImportantItem = nodrop;
+							MQ.Write("\ayStackable: always loot item " + corpseItem);
+						}
+						if (!importantItem && LootStackableSettings.AlwaysStackableItemsContains.Count > 0)
+						{
+							foreach (var item in LootStackableSettings.AlwaysStackableItemsContains)
 							{
-								importantItem = true;
-								break;
+								if (corpseItem.IndexOf(item, StringComparison.OrdinalIgnoreCase) > -1)
+								{
+									importantItem = true;
+									break;
+								}
 							}
 						}
-					}
 
-					if (stackable && !nodrop)
-					{
-						if (!importantItem && LootStackableSettings.LootOnlyCommonTradeSkillItems)
+						if (stackable && !nodrop)
 						{
-							if (corpseItem.Contains(" Pelt")) importantItem = true;
-							if (corpseItem.Contains(" Silk")) importantItem = true;
-							if (corpseItem.Contains(" Ore")) importantItem = true;
+							if (!importantItem && LootStackableSettings.LootOnlyCommonTradeSkillItems)
+							{
+								if (corpseItem.Contains(" Pelt")) importantItem = true;
+								if (corpseItem.Contains(" Silk")) importantItem = true;
+								if (corpseItem.Contains(" Ore")) importantItem = true;
+							}
+							if (!importantItem && itemValue >= LootStackableSettings.LootValueGreaterThanInCopper)
+							{
+								importantItem = true;
+							}
+							if (!importantItem && LootStackableSettings.LootAllTradeSkillItems)
+							{
+								if (tradeskillItem) importantItem = true;
+							}
+
+							if (!importantItem && itemValue >= LootStackableSettings.LootValueGreaterThanInCopper)
+							{
+								importantItem = true;
+							}
 						}
-						if (!importantItem && itemValue >= LootStackableSettings.LootValueGreaterThanInCopper)
+						if (LootStackableSettings.HonorLootFileSkips && LootDataFile.Skip.Contains(corpseItem))
+						{
+							importantItem = false;
+						}
+					}
+					else if (E3.GeneralSettings.Loot_OnlyStackableEnabled)
+					{
+						//check if in our always loot.
+						if (E3.GeneralSettings.Loot_OnlyStackableAlwaysLoot.Contains(corpseItem, StringComparer.OrdinalIgnoreCase))
 						{
 							importantItem = true;
-						}
-						if (!importantItem && LootStackableSettings.LootAllTradeSkillItems)
-						{
-							if (tradeskillItem) importantItem = true;
+							nodropImportantItem = nodrop;
+							MQ.Write("\ayStackable: always loot item " + corpseItem);
 						}
 
-						if (!importantItem && itemValue >= LootStackableSettings.LootValueGreaterThanInCopper)
+						if (stackable && !nodrop)
 						{
-							importantItem = true;
+							if (!importantItem && E3.GeneralSettings.Loot_OnlyStackableOnlyCommonTradeSkillItems)
+							{
+								if (corpseItem.Contains(" Pelt")) importantItem = true;
+								if (corpseItem.Contains(" Silk")) importantItem = true;
+								if (corpseItem.Contains(" Ore")) importantItem = true;
+							}
+							if (!importantItem && E3.GeneralSettings.Loot_OnlyStackableAllTradeSkillItems)
+							{
+								if (tradeskillItem) importantItem = true;
+							}
+							if (!importantItem && itemValue >= E3.GeneralSettings.Loot_OnlyStackableValueGreaterThanInCopper)
+							{
+								importantItem = true;
+							}
+						}
+
+						if (E3.GeneralSettings.Loot_OnlyStackableHonorLootFileSkips && LootDataFile.Skip.Contains(corpseItem))
+						{
+							importantItem = false;
 						}
 					}
-					if (LootStackableSettings.HonorLootFileSkips && LootDataFile.Skip.Contains(corpseItem))
+					else
 					{
-						importantItem = false;
+						//use normal loot settings
+						bool foundInFile = false;
+						if (LootDataFile.Keep.Contains(corpseItem) || LootDataFile.Sell.Contains(corpseItem))
+						{
+							importantItem = true;
+							foundInFile = true;
+							//loot nodrop items in inifile
+							nodropImportantItem = nodrop;
+						}
+						else if (LootDataFile.Skip.Contains(corpseItem))
+						{
+							importantItem = false;
+							foundInFile = true;
+						}
+						if (!foundInFile && !nodrop)
+						{
+							importantItem = true;
+							LootDataFile.Keep.Add(corpseItem);
+							E3.Bots.BroadcastCommandToGroup($"/E3LootAdd \"{corpseItem}\" KEEP");
+							LootDataFile.SaveData();
+						}
+
 					}
+
 				}
-				else if (E3.GeneralSettings.Loot_OnlyStackableEnabled)
-                {
-                    //check if in our always loot.
-                    if (E3.GeneralSettings.Loot_OnlyStackableAlwaysLoot.Contains(corpseItem, StringComparer.OrdinalIgnoreCase))
-                    {
-                        importantItem = true;
-                        nodropImportantItem = nodrop;
-                        MQ.Write("\ayStackable: always loot item " + corpseItem);
-                    }
-
-                    if (stackable && !nodrop)
-                    {
-                        if (!importantItem && E3.GeneralSettings.Loot_OnlyStackableOnlyCommonTradeSkillItems)
-                        {
-                            if (corpseItem.Contains(" Pelt")) importantItem = true;
-                            if (corpseItem.Contains(" Silk")) importantItem = true;
-                            if (corpseItem.Contains(" Ore")) importantItem = true;
-                        }
-                        if (!importantItem && E3.GeneralSettings.Loot_OnlyStackableAllTradeSkillItems)
-                        {
-                            if (tradeskillItem) importantItem = true;
-                        }
-                        if (!importantItem && itemValue >= E3.GeneralSettings.Loot_OnlyStackableValueGreaterThanInCopper)
-                        {
-                            importantItem = true;
-                        }
-                    }
-
-                    if (E3.GeneralSettings.Loot_OnlyStackableHonorLootFileSkips && LootDataFile.Skip.Contains(corpseItem))
-                    {
-                        importantItem = false;
-                    }
-                }
                 else
                 {
-                    //use normal loot settings
-                    bool foundInFile = false;
-                    if (LootDataFile.Keep.Contains(corpseItem) || LootDataFile.Sell.Contains(corpseItem))
-                    {
-                        importantItem = true;
-                        foundInFile = true;
-                        //loot nodrop items in inifile
-                        nodropImportantItem = nodrop;
-                    }
-                    else if(LootDataFile.Skip.Contains(corpseItem))
-                    {
-                        importantItem = false;
-                        foundInFile = true;
-                    }
-					if (!foundInFile && !nodrop)
-                    {
-                        importantItem = true;
-                        LootDataFile.Keep.Add(corpseItem);
-                        E3.Bots.BroadcastCommandToGroup($"/E3LootAdd \"{corpseItem}\" KEEP");
-                        LootDataFile.SaveData();
-                    }
-
+                    //we are told to loot all, ignore settings
+                    nodropImportantItem = true;
+                    importantItem = true;
                 }
+				
 
                 //check if its lore
                 bool isLore = MQ.Query<bool>($"${{Corpse.Item[{i}].Lore}}");
@@ -1025,12 +1085,12 @@ namespace E3Core.Processors
                 if (importantItem || bypassLootSettings)
                 {
                     //lets loot it if we can!
-                    MQ.Cmd($"/nomodkey /shift /itemnotify loot{i} rightmouseup",300);
+                    MQ.Cmd($"/nomodkey /shift /itemnotify loot{i} rightmouseup", E3.GeneralSettings.Loot_LootItemDelay + e3util.Latency());
                     //loot nodrop items if important
                     if (nodropImportantItem)
                     {
                         bool confirmationBox = MQ.Query<bool>("${Window[ConfirmationDialogBox].Open}");
-                        if (confirmationBox) MQ.Cmd($"/nomodkey /notify ConfirmationDialogBox CD_Yes_Button leftmouseup", 300);
+                        if (confirmationBox) MQ.Cmd($"/nomodkey /notify ConfirmationDialogBox CD_Yes_Button leftmouseup", E3.GeneralSettings.Loot_LootItemDelay + e3util.Latency());
                     }
                 }
                 
