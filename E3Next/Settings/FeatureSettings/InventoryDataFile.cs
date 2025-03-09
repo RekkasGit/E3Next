@@ -122,180 +122,220 @@ namespace E3Core.Settings.FeatureSettings
 								command.CommandText = sql_CreateTable_Bank;
 								command.ExecuteNonQuery();
 
-							command.CommandText = "delete from gear_equiped";
-							command.ExecuteNonQuery();
 
-							MQ.Write($"Processing equipment");
-							//search equiped items
-							for (int i = 0; i <= 22; i++)
+							using (var transaction = _sqlite.BeginTransaction())
 							{
-								string name = MQ.Query<string>($"${{Me.Inventory[{i}]}}");
 
-								if (name == "NULL") continue;
-
-								Int32 id = MQ.Query<Int32>($"${{Me.Inventory[{i}].ID}}");
-								Int32 iconid = MQ.Query<Int32>($"${{Me.Inventory[{i}].Icon}}");
-								string slotName = _invSlots[i];
-
-								command.CommandText = $"insert into gear_equiped (slotid,itemid,name,icon,slotname) values({i},{id},$name,{iconid},$slotName);";
-								command.Parameters.Clear();
-								command.Parameters.AddWithValue("name", name);
-								command.Parameters.AddWithValue("slotName", slotName);
+								command.CommandText = "delete from gear_equiped";
 								command.ExecuteNonQuery();
-								Int32 augCount = MQ.Query<Int32>($"${{Me.Inventory[{i}].Augs}}");
-								if (augCount > 0)
+
+								MQ.Write($"Processing equipment");
+								//search equiped items
+								for (int i = 0; i <= 22; i++)
 								{
-									for (int a = 1; a <= 6; a++)
+									string name = MQ.Query<string>($"${{Me.Inventory[{i}]}}");
+
+									if (name == "NULL") continue;
+
+									Int32 id = MQ.Query<Int32>($"${{Me.Inventory[{i}].ID}}");
+									Int32 iconid = MQ.Query<Int32>($"${{Me.Inventory[{i}].Icon}}");
+									string slotName = _invSlots[i];
+
+									command.CommandText = $"insert into gear_equiped (slotid,itemid,name,icon,slotname) values({i},{id},$name,{iconid},$slotName);";
+									command.Parameters.Clear();
+									command.Parameters.AddWithValue("name", name);
+									command.Parameters.AddWithValue("slotName", slotName);
+									command.ExecuteNonQuery();
+									Int32 augCount = MQ.Query<Int32>($"${{Me.Inventory[{i}].Augs}}");
+									if (augCount > 0)
 									{
-										string augname = MQ.Query<string>($"${{Me.Inventory[{i}].AugSlot[{a}].Name}}");
-										if(augname!="NULL")
+										for (int a = 1; a <= 6; a++)
 										{
-											command.CommandText = $"update gear_equiped set aug{a}Name = $augname where slotid={i}";
-											command.Parameters.Clear();
-											command.Parameters.AddWithValue("augname", augname);
-											command.ExecuteNonQuery();
+											string augname = MQ.Query<string>($"${{Me.Inventory[{i}].AugSlot[{a}].Name}}");
+											if (augname != "NULL")
+											{
+												command.CommandText = $"update gear_equiped set aug{a}Name = $augname where slotid={i}";
+												command.Parameters.Clear();
+												command.Parameters.AddWithValue("augname", augname);
+												command.ExecuteNonQuery();
+											}
 										}
 									}
+
 								}
-
-							}
-							MQ.Write($"Processing bags");
-							command.CommandText = "delete from gear_bags";
-							command.ExecuteNonQuery();
-							//bags
-							for (Int32 i = 1; i <= 10; i++)
-							{
-								bool SlotExists = MQ.Query<bool>($"${{Me.Inventory[pack{i}]}}");
-								if (SlotExists)
+								MQ.Write($"Processing bags");
+								command.CommandText = "delete from gear_bags";
+								command.ExecuteNonQuery();
+								//bags
+								for (Int32 i = 1; i <= 10; i++)
 								{
-									Int32 ContainerSlots = MQ.Query<Int32>($"${{Me.Inventory[pack{i}].Container}}");
-
-									if (ContainerSlots > 0)
+									bool SlotExists = MQ.Query<bool>($"${{Me.Inventory[pack{i}]}}");
+									if (SlotExists)
 									{
-										for (Int32 e = 1; e <= ContainerSlots; e++)
+										Int32 ContainerSlots = MQ.Query<Int32>($"${{Me.Inventory[pack{i}].Container}}");
+
+										if (ContainerSlots > 0)
 										{
-											//${Me.Inventory[${itemSlot}].Item[${j}].Name.Equal[${itemName}]}
-											String bagItem = MQ.Query<String>($"${{Me.Inventory[pack{i}].Item[{e}]}}");
+											for (Int32 e = 1; e <= ContainerSlots; e++)
+											{
+												//${Me.Inventory[${itemSlot}].Item[${j}].Name.Equal[${itemName}]}
+												String bagItem = MQ.Query<String>($"${{Me.Inventory[pack{i}].Item[{e}]}}");
+												if (bagItem == "NULL") continue;
+												Int32 stackCount = MQ.Query<Int32>($"${{Me.Inventory[pack{i}].Item[{e}].Stack}}");
+
+												Int32 id = MQ.Query<Int32>($"${{Me.Inventory[pack{i}].Item[{e}].ID}}");
+												Int32 iconid = MQ.Query<Int32>($"${{Me.Inventory[pack{i}].Item[{e}].Icon}}");
+												Int32 wornSlot = MQ.Query<Int32>($"${{Me.Inventory[pack{i}].Item[{e}].WornSlot[1]}}");
+												string slotName = "";
+												if (wornSlot >= 0 && wornSlot < _invSlots.Count) slotName = _invSlots[wornSlot];
+
+
+												command.CommandText = $"insert into gear_bags (bagid,slotid,itemid,name,qty,icon,slotname) values({i},{e},{id},$name,{stackCount},{iconid},$slotName);";
+												command.Parameters.Clear();
+												command.Parameters.AddWithValue("name", bagItem);
+												command.Parameters.AddWithValue("slotName", slotName);
+												command.ExecuteNonQuery();
+
+
+												Int32 augCount = MQ.Query<Int32>($"${{Me.Inventory[pack{i}].Item[{e}].Augs}}");
+												if (augCount > 0)
+												{
+													for (int a = 1; a <= 6; a++)
+													{
+														string augname = MQ.Query<string>($"${{Me.Inventory[pack{i}].Item[{e}].AugSlot[{a}].Name}}");
+
+														if (augname != "NULL")
+														{
+															command.CommandText = $"update gear_bags set aug{a}Name = $augname where bagid={i} and slotid={e}";
+															command.Parameters.Clear();
+															command.Parameters.AddWithValue("augname", augname);
+															command.ExecuteNonQuery();
+														}
+													}
+												}
+											}
+										}
+										else
+										{
+											//its a single item
+
+											String bagItem = MQ.Query<String>($"${{Me.Inventory[pack{i}]}}");
+
 											if (bagItem == "NULL") continue;
-											Int32 stackCount = MQ.Query<Int32>($"${{Me.Inventory[pack{i}].Item[{e}].Stack}}");
+											Int32 stackCount = MQ.Query<Int32>($"${{Me.Inventory[pack{i}].Stack}}");
 
-											Int32 id = MQ.Query<Int32>($"${{Me.Inventory[pack{i}].Item[{e}].ID}}");
-											Int32 iconid = MQ.Query<Int32>($"${{Me.Inventory[pack{i}].Item[{e}].Icon}}");
-											Int32 wornSlot = MQ.Query<Int32>($"${{Me.Inventory[pack{i}].Item[{e}].WornSlot[1]}}");
+											Int32 id = MQ.Query<Int32>($"${{Me.Inventory[pack{i}].ID}}");
+											Int32 iconid = MQ.Query<Int32>($"${{Me.Inventory[pack{i}].Icon}}");
+											Int32 wornSlot = MQ.Query<Int32>($"${{Me.Inventory[pack{i}].WornSlot[1]}}");
 											string slotName = "";
-											if(wornSlot>=0 && wornSlot< _invSlots.Count) slotName = _invSlots[wornSlot];
+											if (wornSlot >= 0 && wornSlot < _invSlots.Count) slotName = _invSlots[wornSlot];
 
 
-											command.CommandText = $"insert into gear_bags (bagid,slotid,itemid,name,qty,icon,slotname) values({i},{e},{id},$name,{stackCount},{iconid},$slotName);";
+											command.CommandText = $"insert into gear_bags (bagid,slotid,itemid,name,qty,icon,slotname) values({i},-1,{id},$name,{stackCount},{iconid},$slotName);";
 											command.Parameters.Clear();
 											command.Parameters.AddWithValue("name", bagItem);
 											command.Parameters.AddWithValue("slotName", slotName);
 											command.ExecuteNonQuery();
 
-
-											Int32 augCount = MQ.Query<Int32>($"${{Me.Inventory[pack{i}].Item[{e}].Augs}}");
+											Int32 augCount = MQ.Query<Int32>($"${{Me.Inventory[pack{i}].Augs}}");
 											if (augCount > 0)
 											{
 												for (int a = 1; a <= 6; a++)
 												{
-													string augname = MQ.Query<string>($"${{Me.Inventory[pack{i}].Item[{e}].AugSlot[{a}].Name}}");
+													string augname = MQ.Query<string>($"${{Me.Inventory[pack{i}].AugSlot[{a}].Name}}");
 
 													if (augname != "NULL")
 													{
-														command.CommandText = $"update gear_bags set aug{a}Name = $augname where bagid={i} and slotid={e}";
+														command.CommandText = $"update gear_bags set aug{a}Name = $augname where bagid={i} and slotid = -1";
 														command.Parameters.Clear();
 														command.Parameters.AddWithValue("augname", augname);
 														command.ExecuteNonQuery();
 													}
 												}
 											}
-										}
-									}
-									else
-									{
-										//its a single item
 
-										String bagItem = MQ.Query<String>($"${{Me.Inventory[pack{i}]}}");
-
-										if (bagItem == "NULL") continue;
-										Int32 stackCount = MQ.Query<Int32>($"${{Me.Inventory[pack{i}].Stack}}");
-
-										Int32 id = MQ.Query<Int32>($"${{Me.Inventory[pack{i}].ID}}");
-										Int32 iconid = MQ.Query<Int32>($"${{Me.Inventory[pack{i}].Icon}}");
-										Int32 wornSlot = MQ.Query<Int32>($"${{Me.Inventory[pack{i}].WornSlot[1]}}");
-										string slotName = "";
-										if (wornSlot >= 0 && wornSlot < _invSlots.Count) slotName = _invSlots[wornSlot];
-
-
-										command.CommandText = $"insert into gear_bags (bagid,slotid,itemid,name,qty,icon,slotname) values({i},-1,{id},$name,{stackCount},{iconid},$slotName);";
-										command.Parameters.Clear();
-										command.Parameters.AddWithValue("name", bagItem);
-										command.Parameters.AddWithValue("slotName", slotName);
-										command.ExecuteNonQuery();
-
-										Int32 augCount = MQ.Query<Int32>($"${{Me.Inventory[pack{i}].Augs}}");
-										if (augCount > 0)
-										{
-											for (int a = 1; a <= 6; a++)
-											{
-												string augname = MQ.Query<string>($"${{Me.Inventory[pack{i}].AugSlot[{a}].Name}}");
-
-												if (augname != "NULL")
-												{
-													command.CommandText = $"update gear_bags set aug{a}Name = $augname where bagid={i}";
-													command.Parameters.Clear();
-													command.Parameters.AddWithValue("augname", augname);
-													command.ExecuteNonQuery();
-												}
-											}
 										}
 
 									}
 
 								}
-
-							}
-							MQ.Write($"Processing bank");
-							command.CommandText = "delete from gear_bank";
-							command.ExecuteNonQuery();
-							//bank
-							for (int i = 1; i <= 26; i++)
-							{
-								string bankItemName = MQ.Query<string>($"${{Me.Bank[{i}].Name}}");
-
-								if (bankItemName == "NULL") continue;
-
-								//look through container
-								Int32 ContainerSlots = MQ.Query<Int32>($"${{Me.Bank[{i}].Container}}");
-								if (ContainerSlots > 0)
+								MQ.Write($"Processing bank");
+								command.CommandText = "delete from gear_bank";
+								command.ExecuteNonQuery();
+								//bank
+								for (int i = 1; i <= 26; i++)
 								{
-									for (int e = 1; e <= ContainerSlots; e++)
+									string bankItemName = MQ.Query<string>($"${{Me.Bank[{i}].Name}}");
+
+									if (bankItemName == "NULL") continue;
+
+									//look through container
+									Int32 ContainerSlots = MQ.Query<Int32>($"${{Me.Bank[{i}].Container}}");
+									if (ContainerSlots > 0)
 									{
-										bankItemName = MQ.Query<string>($"${{Me.Bank[{i}].Item[{e}].Name}}");
-										if (bankItemName == "NULL") continue;
-										Int32 stackCount = MQ.Query<Int32>($"${{Me.Bank[{i}].Item[{e}].Stack}}");
-										Int32 id = MQ.Query<Int32>($"${{Me.Bank[{i}].Item[{e}].ID}}");
-										Int32 iconid = MQ.Query<Int32>($"${{Me.Bank[{i}].Item[{e}].Icon}}");
-										Int32 wornSlot = MQ.Query<Int32>($"${{Me.Bank[{i}].Item[{e}].WornSlot[1]}}");
+										for (int e = 1; e <= ContainerSlots; e++)
+										{
+											bankItemName = MQ.Query<string>($"${{Me.Bank[{i}].Item[{e}].Name}}");
+											if (bankItemName == "NULL") continue;
+											Int32 stackCount = MQ.Query<Int32>($"${{Me.Bank[{i}].Item[{e}].Stack}}");
+											Int32 id = MQ.Query<Int32>($"${{Me.Bank[{i}].Item[{e}].ID}}");
+											Int32 iconid = MQ.Query<Int32>($"${{Me.Bank[{i}].Item[{e}].Icon}}");
+											Int32 wornSlot = MQ.Query<Int32>($"${{Me.Bank[{i}].Item[{e}].WornSlot[1]}}");
+											string slotName = "";
+											if (wornSlot >= 0 && wornSlot < _invSlots.Count) slotName = _invSlots[wornSlot];
+											command.CommandText = $"insert into gear_bank (bankslotid,slotid,itemid,name,qty,icon,slotname) values({i},{e},{id},$name,{stackCount},{iconid},$slotName);";
+											command.Parameters.Clear();
+											command.Parameters.AddWithValue("name", bankItemName);
+											command.Parameters.AddWithValue("slotName", slotName);
+											command.ExecuteNonQuery();
+
+											Int32 augCount = MQ.Query<Int32>($"${{Me.Bank[{i}].Item[{e}].Augs}}");
+											if (augCount > 0)
+											{
+												for (int a = 1; a <= 6; a++)
+												{
+													string augname = MQ.Query<string>($"${{Me.Bank[{i}].Item[{e}].AugSlot[{a}].Name}}");
+
+
+													if (augname != "NULL")
+													{
+														command.CommandText = $"update gear_bank set aug{a}Name = $augname where bankslotid={i} and slotid={e}";
+														command.Parameters.Clear();
+														command.Parameters.AddWithValue("augname", augname);
+														command.ExecuteNonQuery();
+													}
+
+												}
+											}
+										}
+
+
+									}
+									else
+									{
+
+										Int32 stackCount = MQ.Query<Int32>($"${{Me.Bank[{i}].Stack}}");
+										Int32 id = MQ.Query<Int32>($"${{Me.Bank[{i}].ID}}");
+										Int32 iconid = MQ.Query<Int32>($"${{Me.Bank[{i}].Icon}}");
+										Int32 wornSlot = MQ.Query<Int32>($"${{Me.Bank[{i}].WornSlot[1]}}");
 										string slotName = "";
 										if (wornSlot >= 0 && wornSlot < _invSlots.Count) slotName = _invSlots[wornSlot];
-										command.CommandText = $"insert into gear_bank (bankslotid,slotid,itemid,name,qty,icon,slotname) values({i},{e},{id},$name,{stackCount},{iconid},$slotName);";
+										command.CommandText = $"insert into gear_bank (bankslotid,slotid,itemid,name,qty,icon,slotname) values({i},-1,{id},$name,{stackCount},{iconid},$slotName);";
 										command.Parameters.Clear();
 										command.Parameters.AddWithValue("name", bankItemName);
 										command.Parameters.AddWithValue("slotName", slotName);
 										command.ExecuteNonQuery();
-
-										Int32 augCount = MQ.Query<Int32>($"${{Me.Bank[{i}].Item[{e}].Augs}}");
+										Int32 augCount = MQ.Query<Int32>($"${{Me.Bank[{i}].Augs}}");
 										if (augCount > 0)
 										{
 											for (int a = 1; a <= 6; a++)
 											{
-												string augname = MQ.Query<string>($"${{Me.Bank[{i}].Item[{e}].AugSlot[{a}].Name}}");
+												string augname = MQ.Query<string>($"${{Me.Bank[{i}].AugSlot[{a}].Name}}");
 
 
 												if (augname != "NULL")
 												{
-													command.CommandText = $"update gear_bank set aug{a}Name = $augname where bankslotid={i} and slotid={e}";
+													command.CommandText = $"update gear_bank set aug{a}Name = $augname where bankslotid={i} and slotid = -1";
 													command.Parameters.Clear();
 													command.Parameters.AddWithValue("augname", augname);
 													command.ExecuteNonQuery();
@@ -305,42 +345,9 @@ namespace E3Core.Settings.FeatureSettings
 										}
 									}
 
-
 								}
-								else
-								{
 
-									Int32 stackCount = MQ.Query<Int32>($"${{Me.Bank[{i}].Stack}}");
-									Int32 id = MQ.Query<Int32>($"${{Me.Bank[{i}].ID}}");
-									Int32 iconid = MQ.Query<Int32>($"${{Me.Bank[{i}].Icon}}");
-									Int32 wornSlot = MQ.Query<Int32>($"${{Me.Bank[{i}].WornSlot[1]}}");
-									string slotName = "";
-									if (wornSlot >= 0 && wornSlot < _invSlots.Count) slotName = _invSlots[wornSlot];
-									command.CommandText = $"insert into gear_bank (bankslotid,slotid,itemid,name,qty,icon,slotname) values({i},-1,{id},$name,{stackCount},{iconid},$slotName);";
-									command.Parameters.Clear();
-									command.Parameters.AddWithValue("name", bankItemName);
-									command.Parameters.AddWithValue("slotName", slotName);
-									command.ExecuteNonQuery();
-									Int32 augCount = MQ.Query<Int32>($"${{Me.Bank[{i}].Augs}}");
-									if (augCount > 0)
-									{
-										for (int a = 1; a <= 6; a++)
-										{
-											string augname = MQ.Query<string>($"${{Me.Bank[{i}].AugSlot[{a}].Name}}");
-
-
-											if (augname != "NULL")
-											{
-												command.CommandText = $"update gear_bank set aug{a}Name = $augname where bankslotid={i}";
-												command.Parameters.Clear();
-												command.Parameters.AddWithValue("augname", augname);
-												command.ExecuteNonQuery();
-											}
-
-										}
-									}
-								}
-								
+								transaction.Commit();
 							}
 
 						}
