@@ -14,6 +14,8 @@ using System.Text;
 using static MonoCore.EventProcessor;
 using E3Core.Server;
 using System.Reflection;
+using System.Diagnostics;
+using System.Runtime.InteropServices;
 
 namespace E3Core.Utility
 {
@@ -1708,7 +1710,30 @@ namespace E3Core.Utility
 			}
 			return false;
 		}
+		[DllImport("kernel32.dll", SetLastError = true, CallingConvention = CallingConvention.Winapi)]
+		[return: MarshalAs(UnmanagedType.Bool)]
+		public static extern bool IsWow64Process([In] IntPtr hProcess, [Out] out bool lpSystemInfo);
 
+		public static bool Is64Bit()
+		{
+			if (IntPtr.Size == 8)
+			{
+				return true;
+			}
+			else
+			{
+				return false;
+			}
+		}
+
+		private static bool Is32BitProcessOn64BitProcessor()
+		{
+			bool retVal;
+
+			IsWow64Process(Process.GetCurrentProcess().Handle, out retVal);
+
+			return retVal;
+		}
 
 	}
 }

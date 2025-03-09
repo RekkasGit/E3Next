@@ -1,4 +1,5 @@
-﻿using E3Core.Utility;
+﻿using E3Core.Settings.FeatureSettings;
+using E3Core.Utility;
 using MonoCore;
 using System;
 using System.Collections.Generic;
@@ -60,10 +61,13 @@ namespace E3Core.Processors
         private static IMQ MQ = E3.MQ;
 		public static Dictionary<string, FieldInfo> ExposedDataReflectionLookup = new Dictionary<string, FieldInfo>();
 
+		public static InventoryDataFile _inventoryDataFile;
+
 		public static Boolean Init()
         {
             using (_log.Trace())
             {
+				
 				RegisterEvents();
 				E3.MQBuildVersion = (MQBuild)MQ.Query<Int32>("${MacroQuest.Build}");
                 if(MQ.Query<bool>("!${Defined[E3N_var]}"))
@@ -80,16 +84,31 @@ namespace E3Core.Processors
 				_buildDate = Properties.Resources.BuildDate;
 				_buildDate = _buildDate.Replace("\r\n", "");
 				MQ.Write($"Loading nE³xt v{_e3Version} builddate:{_buildDate}...Mq2Mono v{Core._MQ2MonoVersion}");
-                
 
-                InitPlugins();
+                //setup the library path loading, mainly used for sqlite atm
+				string MQPath = MQ.Query<String>("${MacroQuest.Path}");
+				string libPath;
+				if (!e3util.Is64Bit())
+				{
+					libPath = MQPath + @"\mono\libs\32bit\";
+				}
+				else
+				{
+					libPath = MQPath + @"\mono\libs\64bit\";
+
+				}
+			    //temp add the path for just this process/app domain
+                Environment.SetEnvironmentVariable("PATH", Environment.GetEnvironmentVariable("PATH") + ";" + libPath);
+
+				InitPlugins();
                 InitSubSystems();
 				GetExposedDataMappedToDictionary();
+
 				foreach (var command in E3.CharacterSettings.StartupCommands)
                 {
                     MQ.Cmd(command);
                 }
-
+                _inventoryDataFile = new InventoryDataFile();
 				//needed for IsMyGuild(namn), to supply a user generated list of guild members
 				_guildListFilePath = Settings.BaseSettings.GetSettingsFilePath("GuildList.txt");
 				if(System.IO.File.Exists(_guildListFilePath))
@@ -103,6 +122,7 @@ namespace E3Core.Processors
 			}
 
         }
+        
 		public static void RegisterEvents()
 		{
 
