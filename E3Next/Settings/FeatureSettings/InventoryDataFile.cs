@@ -26,7 +26,7 @@ namespace E3Core.Settings.FeatureSettings
 		}
 
 		private void RegisterEvents()
-		{	
+		{
 			EventProcessor.RegisterCommand("/e3inventoryfile_sync", x =>
 			{
 				SaveData();
@@ -38,9 +38,7 @@ namespace E3Core.Settings.FeatureSettings
 		{
 			string fileName = GetSettingsFilePath($"Inventory_{E3.CurrentName}_{E3.ServerName}.db");
 			bool fileExists = File.Exists(fileName);
-
-			MQ.Write("excuting save data");
-
+		
 			try
 			{
 				//TryToLoadSQLite();
@@ -60,71 +58,75 @@ namespace E3Core.Settings.FeatureSettings
 					{
 						using (var command = _sqlite.CreateCommand())
 						{
-
-							
+							using (var transaction = _sqlite.BeginTransaction())
+							{
 								//create tables
+								command.CommandText = "DROP TABLE IF EXISTS gear_equiped;";
+								command.ExecuteNonQuery();
 
 								string sql_CreateTable_Equipment = @"CREATE TABLE IF NOT EXISTS gear_equiped (
-													slotid INTEGER PRIMARY KEY,
-													itemid INTEGER NOT NULL,
-													name TEXT NOT NULL,
-													icon INTEGER NOT NULL,
-													slotname TEXT NOT NULL,
-													aug1Name TEXT DEFAULT '',
-													aug2Name TEXT DEFAULT '',
-													aug3Name TEXT DEFAULT '',
-													aug4Name TEXT DEFAULT '',
-													aug5Name TEXT DEFAULT '',
-													aug6Name TEXT DEFAULT ''
-												);";
-								MQ.Write($"Creating equipment table if not exists");
+												slotid INTEGER PRIMARY KEY,
+												itemid INTEGER NOT NULL,
+												name TEXT NOT NULL,
+												icon INTEGER NOT NULL,
+												slotname TEXT NOT NULL,
+												aug1Name TEXT DEFAULT '',
+												aug2Name TEXT DEFAULT '',
+												aug3Name TEXT DEFAULT '',
+												aug4Name TEXT DEFAULT '',
+												aug5Name TEXT DEFAULT '',
+												aug6Name TEXT DEFAULT '',
+												itemlink TEXT DEFAULT ''
+											);";
 								command.CommandText = sql_CreateTable_Equipment;
 								command.ExecuteNonQuery();
 
-								string sql_CreateTable_Bags = @"CREATE TABLE IF NOT EXISTS gear_bags (
-													bagid INTEGER NOT NULL,
-													slotid INTEGER NOT NULL,
-													itemid INTEGER NOT NULL,
-													name TEXT NOT NULL,
-													qty INTEGER NOT NULL,
-													icon INTEGER NOT NULL,
-													slotname TEXT NOT NULL,
-													aug1Name TEXT DEFAULT '',
-													aug2Name TEXT DEFAULT '',
-													aug3Name TEXT DEFAULT '',
-													aug4Name TEXT DEFAULT '',
-													aug5Name TEXT DEFAULT '',
-													aug6Name TEXT DEFAULT '',
-													PRIMARY KEY (bagid,slotid)
-												);";
 
-								MQ.Write($"Creating bag table if not exists");
+								command.CommandText = "DROP TABLE IF EXISTS gear_bags;";
+								command.ExecuteNonQuery();
+								string sql_CreateTable_Bags = @"CREATE TABLE IF NOT EXISTS gear_bags (
+												bagid INTEGER NOT NULL,
+												slotid INTEGER NOT NULL,
+												itemid INTEGER NOT NULL,
+												name TEXT NOT NULL,
+												qty INTEGER NOT NULL,
+												icon INTEGER NOT NULL,
+												slotname TEXT NOT NULL,
+												aug1Name TEXT DEFAULT '',
+												aug2Name TEXT DEFAULT '',
+												aug3Name TEXT DEFAULT '',
+												aug4Name TEXT DEFAULT '',
+												aug5Name TEXT DEFAULT '',
+												aug6Name TEXT DEFAULT '',
+												itemlink TEXT DEFAULT '',
+												PRIMARY KEY (bagid,slotid)
+											);";
+
 								command.CommandText = sql_CreateTable_Bags;
 								command.ExecuteNonQuery();
 
-								string sql_CreateTable_Bank = @"CREATE TABLE IF NOT EXISTS gear_bank (
-													bankslotid INTEGER NOT NULL,
-													slotid INTEGER NOT NULL,
-													itemid INTEGER NOT NULL,
-													name TEXT NOT NULL,
-													qty INTEGER NOT NULL,
-													icon INTEGER NOT NULL,
-													slotname TEXT NOT NULL,
-													aug1Name TEXT DEFAULT '',
-													aug2Name TEXT DEFAULT '',
-													aug3Name TEXT DEFAULT '',
-													aug4Name TEXT DEFAULT '',
-													aug5Name TEXT DEFAULT '',
-													aug6Name TEXT DEFAULT '',
-													PRIMARY KEY (bankslotid,slotid)
-												);";
-								MQ.Write($"Creating bank table if not exists");
-								command.CommandText = sql_CreateTable_Bank;
+								command.CommandText = "DROP TABLE IF EXISTS gear_bank;";
 								command.ExecuteNonQuery();
 
-
-							using (var transaction = _sqlite.BeginTransaction())
-							{
+								string sql_CreateTable_Bank = @"CREATE TABLE IF NOT EXISTS gear_bank (
+												bankslotid INTEGER NOT NULL,
+												slotid INTEGER NOT NULL,
+												itemid INTEGER NOT NULL,
+												name TEXT NOT NULL,
+												qty INTEGER NOT NULL,
+												icon INTEGER NOT NULL,
+												slotname TEXT NOT NULL,
+												aug1Name TEXT DEFAULT '',
+												aug2Name TEXT DEFAULT '',
+												aug3Name TEXT DEFAULT '',
+												aug4Name TEXT DEFAULT '',
+												aug5Name TEXT DEFAULT '',
+												aug6Name TEXT DEFAULT '',
+												itemlink TEXT DEFAULT '',
+												PRIMARY KEY (bankslotid,slotid)
+											);";
+								command.CommandText = sql_CreateTable_Bank;
+								command.ExecuteNonQuery();
 
 								command.CommandText = "delete from gear_equiped";
 								command.ExecuteNonQuery();
@@ -140,11 +142,13 @@ namespace E3Core.Settings.FeatureSettings
 									Int32 id = MQ.Query<Int32>($"${{Me.Inventory[{i}].ID}}");
 									Int32 iconid = MQ.Query<Int32>($"${{Me.Inventory[{i}].Icon}}");
 									string slotName = _invSlots[i];
+									string itemlink = MQ.Query<string>($"${{Me.Inventory[{i}].ItemLink[CLICKABLE]}}");
 
-									command.CommandText = $"insert into gear_equiped (slotid,itemid,name,icon,slotname) values({i},{id},$name,{iconid},$slotName);";
+									command.CommandText = $"insert into gear_equiped (slotid,itemid,name,icon,slotname,itemlink) values({i},{id},$name,{iconid},$slotName,$itemlink);";
 									command.Parameters.Clear();
 									command.Parameters.AddWithValue("name", name);
 									command.Parameters.AddWithValue("slotName", slotName);
+									command.Parameters.AddWithValue("itemlink", itemlink);
 									command.ExecuteNonQuery();
 									Int32 augCount = MQ.Query<Int32>($"${{Me.Inventory[{i}].Augs}}");
 									if (augCount > 0)
@@ -188,12 +192,14 @@ namespace E3Core.Settings.FeatureSettings
 												Int32 wornSlot = MQ.Query<Int32>($"${{Me.Inventory[pack{i}].Item[{e}].WornSlot[1]}}");
 												string slotName = "";
 												if (wornSlot >= 0 && wornSlot < _invSlots.Count) slotName = _invSlots[wornSlot];
+												string itemlink = MQ.Query<string>($"${{Me.Inventory[pack{i}].Item[{e}].ItemLink[CLICKABLE]}}");
 
 
-												command.CommandText = $"insert into gear_bags (bagid,slotid,itemid,name,qty,icon,slotname) values({i},{e},{id},$name,{stackCount},{iconid},$slotName);";
+												command.CommandText = $"insert into gear_bags (bagid,slotid,itemid,name,qty,icon,slotname,itemlink) values({i},{e},{id},$name,{stackCount},{iconid},$slotName,$itemlink);";
 												command.Parameters.Clear();
 												command.Parameters.AddWithValue("name", bagItem);
 												command.Parameters.AddWithValue("slotName", slotName);
+												command.Parameters.AddWithValue("itemlink", itemlink);
 												command.ExecuteNonQuery();
 
 
@@ -229,12 +235,14 @@ namespace E3Core.Settings.FeatureSettings
 											Int32 wornSlot = MQ.Query<Int32>($"${{Me.Inventory[pack{i}].WornSlot[1]}}");
 											string slotName = "";
 											if (wornSlot >= 0 && wornSlot < _invSlots.Count) slotName = _invSlots[wornSlot];
+											string itemlink = MQ.Query<string>($"${{Me.Inventory[pack{i}].ItemLink[CLICKABLE]}}");
 
 
-											command.CommandText = $"insert into gear_bags (bagid,slotid,itemid,name,qty,icon,slotname) values({i},-1,{id},$name,{stackCount},{iconid},$slotName);";
+											command.CommandText = $"insert into gear_bags (bagid,slotid,itemid,name,qty,icon,slotname,itemlink) values({i},-1,{id},$name,{stackCount},{iconid},$slotName,$itemlink);";
 											command.Parameters.Clear();
 											command.Parameters.AddWithValue("name", bagItem);
 											command.Parameters.AddWithValue("slotName", slotName);
+											command.Parameters.AddWithValue("itemlink", itemlink);
 											command.ExecuteNonQuery();
 
 											Int32 augCount = MQ.Query<Int32>($"${{Me.Inventory[pack{i}].Augs}}");
@@ -283,10 +291,14 @@ namespace E3Core.Settings.FeatureSettings
 											Int32 wornSlot = MQ.Query<Int32>($"${{Me.Bank[{i}].Item[{e}].WornSlot[1]}}");
 											string slotName = "";
 											if (wornSlot >= 0 && wornSlot < _invSlots.Count) slotName = _invSlots[wornSlot];
-											command.CommandText = $"insert into gear_bank (bankslotid,slotid,itemid,name,qty,icon,slotname) values({i},{e},{id},$name,{stackCount},{iconid},$slotName);";
+											string itemlink = MQ.Query<string>($"${{Me.Bank[{i}].Item[{e}].ItemLink[CLICKABLE]}}");
+
+
+											command.CommandText = $"insert into gear_bank (bankslotid,slotid,itemid,name,qty,icon,slotname,itemlink) values({i},{e},{id},$name,{stackCount},{iconid},$slotName,$itemlink);";
 											command.Parameters.Clear();
 											command.Parameters.AddWithValue("name", bankItemName);
 											command.Parameters.AddWithValue("slotName", slotName);
+											command.Parameters.AddWithValue("itemlink", itemlink);
 											command.ExecuteNonQuery();
 
 											Int32 augCount = MQ.Query<Int32>($"${{Me.Bank[{i}].Item[{e}].Augs}}");
@@ -320,10 +332,14 @@ namespace E3Core.Settings.FeatureSettings
 										Int32 wornSlot = MQ.Query<Int32>($"${{Me.Bank[{i}].WornSlot[1]}}");
 										string slotName = "";
 										if (wornSlot >= 0 && wornSlot < _invSlots.Count) slotName = _invSlots[wornSlot];
-										command.CommandText = $"insert into gear_bank (bankslotid,slotid,itemid,name,qty,icon,slotname) values({i},-1,{id},$name,{stackCount},{iconid},$slotName);";
+										string itemlink = MQ.Query<string>($"${{Me.Bank[{i}].ItemLink[CLICKABLE]}}");
+
+
+										command.CommandText = $"insert into gear_bank (bankslotid,slotid,itemid,name,qty,icon,slotname,itemlink) values({i},-1,{id},$name,{stackCount},{iconid},$slotName,$itemlink);";
 										command.Parameters.Clear();
 										command.Parameters.AddWithValue("name", bankItemName);
 										command.Parameters.AddWithValue("slotName", slotName);
+										command.Parameters.AddWithValue("itemlink", itemlink);
 										command.ExecuteNonQuery();
 										Int32 augCount = MQ.Query<Int32>($"${{Me.Bank[{i}].Augs}}");
 										if (augCount > 0)
@@ -360,7 +376,7 @@ namespace E3Core.Settings.FeatureSettings
 
 				}
 			}
-			catch(Exception ex)
+			catch (Exception ex)
 			{
 				MQ.Write(ex.Message);
 			}
