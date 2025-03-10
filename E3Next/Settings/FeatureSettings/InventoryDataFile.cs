@@ -76,7 +76,8 @@ namespace E3Core.Settings.FeatureSettings
 												aug4Name TEXT DEFAULT '',
 												aug5Name TEXT DEFAULT '',
 												aug6Name TEXT DEFAULT '',
-												itemlink TEXT DEFAULT ''
+												itemlink TEXT DEFAULT '',
+												nodrop INTEGER DEFAULT 0
 											);";
 								command.CommandText = sql_CreateTable_Equipment;
 								command.ExecuteNonQuery();
@@ -99,6 +100,8 @@ namespace E3Core.Settings.FeatureSettings
 												aug5Name TEXT DEFAULT '',
 												aug6Name TEXT DEFAULT '',
 												itemlink TEXT DEFAULT '',
+												bagname TEXT DEFAULT '',
+												nodrop INTEGER DEFAULT 0,
 												PRIMARY KEY (bagid,slotid)
 											);";
 
@@ -123,6 +126,8 @@ namespace E3Core.Settings.FeatureSettings
 												aug5Name TEXT DEFAULT '',
 												aug6Name TEXT DEFAULT '',
 												itemlink TEXT DEFAULT '',
+												bagname TEXT DEFAULT '',
+												nodrop INTEGER DEFAULT 0,
 												PRIMARY KEY (bankslotid,slotid)
 											);";
 								command.CommandText = sql_CreateTable_Bank;
@@ -143,12 +148,16 @@ namespace E3Core.Settings.FeatureSettings
 									Int32 iconid = MQ.Query<Int32>($"${{Me.Inventory[{i}].Icon}}");
 									string slotName = _invSlots[i];
 									string itemlink = MQ.Query<string>($"${{Me.Inventory[{i}].ItemLink[CLICKABLE]}}");
+									bool nodrop = MQ.Query<bool>($"${{Me.Inventory[{i}].NoDrop}}");
 
-									command.CommandText = $"insert into gear_equiped (slotid,itemid,name,icon,slotname,itemlink) values({i},{id},$name,{iconid},$slotName,$itemlink);";
+
+									command.CommandText = $"insert into gear_equiped (slotid,itemid,name,icon,slotname,itemlink,nodrop) values({i},{id},$name,{iconid},$slotName,$itemlink,$nodrop);";
 									command.Parameters.Clear();
 									command.Parameters.AddWithValue("name", name);
 									command.Parameters.AddWithValue("slotName", slotName);
 									command.Parameters.AddWithValue("itemlink", itemlink);
+									command.Parameters.AddWithValue("nodrop", nodrop);
+
 									command.ExecuteNonQuery();
 									Int32 augCount = MQ.Query<Int32>($"${{Me.Inventory[{i}].Augs}}");
 									if (augCount > 0)
@@ -176,6 +185,8 @@ namespace E3Core.Settings.FeatureSettings
 									bool SlotExists = MQ.Query<bool>($"${{Me.Inventory[pack{i}]}}");
 									if (SlotExists)
 									{
+										string bagname = MQ.Query<string>($"${{Me.Inventory[pack{i}]}}");
+
 										Int32 ContainerSlots = MQ.Query<Int32>($"${{Me.Inventory[pack{i}].Container}}");
 
 										if (ContainerSlots > 0)
@@ -184,6 +195,7 @@ namespace E3Core.Settings.FeatureSettings
 											{
 												//${Me.Inventory[${itemSlot}].Item[${j}].Name.Equal[${itemName}]}
 												String bagItem = MQ.Query<String>($"${{Me.Inventory[pack{i}].Item[{e}]}}");
+											
 												if (bagItem == "NULL") continue;
 												Int32 stackCount = MQ.Query<Int32>($"${{Me.Inventory[pack{i}].Item[{e}].Stack}}");
 
@@ -193,12 +205,15 @@ namespace E3Core.Settings.FeatureSettings
 												string slotName = "";
 												if (wornSlot >= 0 && wornSlot < _invSlots.Count) slotName = _invSlots[wornSlot];
 												string itemlink = MQ.Query<string>($"${{Me.Inventory[pack{i}].Item[{e}].ItemLink[CLICKABLE]}}");
+												bool nodrop = MQ.Query<bool>($"${{Me.Inventory[pack{i}].Item[{e}].NoDrop}}");
 
 
-												command.CommandText = $"insert into gear_bags (bagid,slotid,itemid,name,qty,icon,slotname,itemlink) values({i},{e},{id},$name,{stackCount},{iconid},$slotName,$itemlink);";
+												command.CommandText = $"insert into gear_bags (bagid,slotid,itemid,name,qty,icon,slotname,itemlink,bagname,nodrop) values({i},{e},{id},$name,{stackCount},{iconid},$slotName,$itemlink,$bagname,$nodrop);";
 												command.Parameters.Clear();
 												command.Parameters.AddWithValue("name", bagItem);
 												command.Parameters.AddWithValue("slotName", slotName);
+												command.Parameters.AddWithValue("bagname", bagname);
+												command.Parameters.AddWithValue("nodrop", nodrop);
 												command.Parameters.AddWithValue("itemlink", itemlink);
 												command.ExecuteNonQuery();
 
@@ -236,13 +251,14 @@ namespace E3Core.Settings.FeatureSettings
 											string slotName = "";
 											if (wornSlot >= 0 && wornSlot < _invSlots.Count) slotName = _invSlots[wornSlot];
 											string itemlink = MQ.Query<string>($"${{Me.Inventory[pack{i}].ItemLink[CLICKABLE]}}");
+											bool nodrop = MQ.Query<bool>($"${{Me.Inventory[pack{i}].NoDrop}}");
 
-
-											command.CommandText = $"insert into gear_bags (bagid,slotid,itemid,name,qty,icon,slotname,itemlink) values({i},-1,{id},$name,{stackCount},{iconid},$slotName,$itemlink);";
+											command.CommandText = $"insert into gear_bags (bagid,slotid,itemid,name,qty,icon,slotname,itemlink,bagname,nodrop) values({i},-1,{id},$name,{stackCount},{iconid},$slotName,$itemlink,'',$nodrop);";
 											command.Parameters.Clear();
 											command.Parameters.AddWithValue("name", bagItem);
 											command.Parameters.AddWithValue("slotName", slotName);
 											command.Parameters.AddWithValue("itemlink", itemlink);
+											command.Parameters.AddWithValue("nodrop", nodrop);
 											command.ExecuteNonQuery();
 
 											Int32 augCount = MQ.Query<Int32>($"${{Me.Inventory[pack{i}].Augs}}");
@@ -273,17 +289,19 @@ namespace E3Core.Settings.FeatureSettings
 								//bank
 								for (int i = 1; i <= 26; i++)
 								{
-									string bankItemName = MQ.Query<string>($"${{Me.Bank[{i}].Name}}");
+									string bankSlotItem = MQ.Query<string>($"${{Me.Bank[{i}].Name}}");
 
-									if (bankItemName == "NULL") continue;
+									if (bankSlotItem == "NULL") continue;
 
 									//look through container
 									Int32 ContainerSlots = MQ.Query<Int32>($"${{Me.Bank[{i}].Container}}");
 									if (ContainerSlots > 0)
 									{
+
+									
 										for (int e = 1; e <= ContainerSlots; e++)
 										{
-											bankItemName = MQ.Query<string>($"${{Me.Bank[{i}].Item[{e}].Name}}");
+											string bankItemName = MQ.Query<string>($"${{Me.Bank[{i}].Item[{e}].Name}}");
 											if (bankItemName == "NULL") continue;
 											Int32 stackCount = MQ.Query<Int32>($"${{Me.Bank[{i}].Item[{e}].Stack}}");
 											Int32 id = MQ.Query<Int32>($"${{Me.Bank[{i}].Item[{e}].ID}}");
@@ -292,13 +310,15 @@ namespace E3Core.Settings.FeatureSettings
 											string slotName = "";
 											if (wornSlot >= 0 && wornSlot < _invSlots.Count) slotName = _invSlots[wornSlot];
 											string itemlink = MQ.Query<string>($"${{Me.Bank[{i}].Item[{e}].ItemLink[CLICKABLE]}}");
+											bool nodrop = MQ.Query<bool>($"${{Me.Bank[{i}].Item[{e}].NoDrop}}");
 
-
-											command.CommandText = $"insert into gear_bank (bankslotid,slotid,itemid,name,qty,icon,slotname,itemlink) values({i},{e},{id},$name,{stackCount},{iconid},$slotName,$itemlink);";
+											command.CommandText = $"insert into gear_bank (bankslotid,slotid,itemid,name,qty,icon,slotname,itemlink,bagname,nodrop) values({i},{e},{id},$name,{stackCount},{iconid},$slotName,$itemlink,$bagname,$nodrop);";
 											command.Parameters.Clear();
 											command.Parameters.AddWithValue("name", bankItemName);
 											command.Parameters.AddWithValue("slotName", slotName);
 											command.Parameters.AddWithValue("itemlink", itemlink);
+											command.Parameters.AddWithValue("bagname", bankSlotItem);
+											command.Parameters.AddWithValue("nodrop", nodrop);
 											command.ExecuteNonQuery();
 
 											Int32 augCount = MQ.Query<Int32>($"${{Me.Bank[{i}].Item[{e}].Augs}}");
@@ -333,13 +353,15 @@ namespace E3Core.Settings.FeatureSettings
 										string slotName = "";
 										if (wornSlot >= 0 && wornSlot < _invSlots.Count) slotName = _invSlots[wornSlot];
 										string itemlink = MQ.Query<string>($"${{Me.Bank[{i}].ItemLink[CLICKABLE]}}");
+										bool nodrop = MQ.Query<bool>($"${{Me.Bank[{i}].NoDrop}}");
 
 
-										command.CommandText = $"insert into gear_bank (bankslotid,slotid,itemid,name,qty,icon,slotname,itemlink) values({i},-1,{id},$name,{stackCount},{iconid},$slotName,$itemlink);";
+										command.CommandText = $"insert into gear_bank (bankslotid,slotid,itemid,name,qty,icon,slotname,itemlink,bagname,nodrop) values({i},-1,{id},$name,{stackCount},{iconid},$slotName,$itemlink,'',$nodrop);";
 										command.Parameters.Clear();
-										command.Parameters.AddWithValue("name", bankItemName);
+										command.Parameters.AddWithValue("name", bankSlotItem);
 										command.Parameters.AddWithValue("slotName", slotName);
 										command.Parameters.AddWithValue("itemlink", itemlink);
+										command.Parameters.AddWithValue("nodrop", nodrop);
 										command.ExecuteNonQuery();
 										Int32 augCount = MQ.Query<Int32>($"${{Me.Bank[{i}].Augs}}");
 										if (augCount > 0)
