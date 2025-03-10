@@ -34,6 +34,40 @@ namespace E3Core.Settings.FeatureSettings
 		}
 
 
+		
+		//this is needed as we only drop the table if the bank data is available
+		private void CreateBankTable(SQLiteCommand command)
+		{
+
+			command.CommandText = "DROP TABLE IF EXISTS gear_bank;";
+			command.ExecuteNonQuery();
+
+
+
+			string sql_CreateTable_Bank = @"CREATE TABLE IF NOT EXISTS gear_bank (
+												bankslotid INTEGER NOT NULL,
+												slotid INTEGER NOT NULL,
+												itemid INTEGER NOT NULL,
+												name TEXT NOT NULL,
+												qty INTEGER NOT NULL,
+												icon INTEGER NOT NULL,
+												slotname TEXT NOT NULL,
+												aug1Name TEXT DEFAULT '',
+												aug2Name TEXT DEFAULT '',
+												aug3Name TEXT DEFAULT '',
+												aug4Name TEXT DEFAULT '',
+												aug5Name TEXT DEFAULT '',
+												aug6Name TEXT DEFAULT '',
+												itemlink TEXT DEFAULT '',
+												bagname TEXT DEFAULT '',
+												nodrop INTEGER DEFAULT 0,
+												PRIMARY KEY (bankslotid,slotid)
+											);";
+			command.CommandText = sql_CreateTable_Bank;
+			command.ExecuteNonQuery();
+
+
+		}
 		public void SaveData()
 		{
 			string fileName = GetSettingsFilePath($"Inventory_{E3.CurrentName}_{E3.ServerName}.db");
@@ -108,9 +142,8 @@ namespace E3Core.Settings.FeatureSettings
 								command.CommandText = sql_CreateTable_Bags;
 								command.ExecuteNonQuery();
 
-								command.CommandText = "DROP TABLE IF EXISTS gear_bank;";
-								command.ExecuteNonQuery();
-
+								//we dont' drop the bank table, as we might need to keep it
+								//note if you update this create statement,  be sure to update the method create statement too
 								string sql_CreateTable_Bank = @"CREATE TABLE IF NOT EXISTS gear_bank (
 												bankslotid INTEGER NOT NULL,
 												slotid INTEGER NOT NULL,
@@ -133,8 +166,6 @@ namespace E3Core.Settings.FeatureSettings
 								command.CommandText = sql_CreateTable_Bank;
 								command.ExecuteNonQuery();
 
-								command.CommandText = "delete from gear_equiped";
-								command.ExecuteNonQuery();
 
 								MQ.Write($"Processing equipment");
 								//search equiped items
@@ -177,8 +208,7 @@ namespace E3Core.Settings.FeatureSettings
 
 								}
 								MQ.Write($"Processing bags");
-								command.CommandText = "delete from gear_bags";
-								command.ExecuteNonQuery();
+
 								//bags
 								for (Int32 i = 1; i <= 10; i++)
 								{
@@ -283,9 +313,12 @@ namespace E3Core.Settings.FeatureSettings
 									}
 
 								}
+
+
+								Boolean recreatedBank = false;
+						
 								MQ.Write($"Processing bank");
-								command.CommandText = "delete from gear_bank";
-								command.ExecuteNonQuery();
+								
 								//bank
 								for (int i = 1; i <= 26; i++)
 								{
@@ -297,7 +330,7 @@ namespace E3Core.Settings.FeatureSettings
 									Int32 ContainerSlots = MQ.Query<Int32>($"${{Me.Bank[{i}].Container}}");
 									if (ContainerSlots > 0)
 									{
-
+										if (!recreatedBank) { CreateBankTable(command); recreatedBank = true; }
 									
 										for (int e = 1; e <= ContainerSlots; e++)
 										{
@@ -355,6 +388,7 @@ namespace E3Core.Settings.FeatureSettings
 										string itemlink = MQ.Query<string>($"${{Me.Bank[{i}].ItemLink[CLICKABLE]}}");
 										bool nodrop = MQ.Query<bool>($"${{Me.Bank[{i}].NoDrop}}");
 
+										if (!recreatedBank) { CreateBankTable(command); recreatedBank = true; }
 
 										command.CommandText = $"insert into gear_bank (bankslotid,slotid,itemid,name,qty,icon,slotname,itemlink,bagname,nodrop) values({i},-1,{id},$name,{stackCount},{iconid},$slotName,$itemlink,'',$nodrop);";
 										command.Parameters.Clear();

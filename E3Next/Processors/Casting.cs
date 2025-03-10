@@ -2004,6 +2004,18 @@ namespace E3Core.Processors
 					}
 				}
 			}
+			if (VarsetValues.Count > 0)
+			{
+				foreach (var key in VarsetValues.Keys)
+				{
+					if (tIF.IndexOf($"${{{key}}}", 0, StringComparison.OrdinalIgnoreCase) > -1)
+					{
+
+						tIF = tIF.ReplaceInsensitive($"${{{key}}}", VarsetValues[key]);
+					}
+				}
+			}
+
 			//to deal with an issue of ( and [ in the parser
 			if (tIF.Contains(@"\["))
 			{
