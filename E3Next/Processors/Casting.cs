@@ -2004,6 +2004,7 @@ namespace E3Core.Processors
 					}
 				}
 			}
+			//we need to do this again in case the ifs drags in new values
 			if (VarsetValues.Count > 0)
 			{
 				foreach (var key in VarsetValues.Keys)

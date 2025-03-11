@@ -24,28 +24,42 @@ namespace E3Core.Data
             {
 				MelodyIfName = Spell.GetArgument<string>(melodyArray[1]);
                 var section = parsedData.Sections["Ifs"];
-                if (section != null)
-                {
-                    var keyData = section[MelodyIfName];
-                    var keys = keyData.Split(',');
+				if (section != null)
+				{
+					var keyData = section[MelodyIfName];
 
-					foreach (var key in keys)
+					if (keyData != null)
 					{
-						if (!String.IsNullOrWhiteSpace(key))
+						var keys = keyData.Split(',');
+
+						foreach (var key in keys)
 						{
-							MelodyIf = string.IsNullOrWhiteSpace(key) ? key : MelodyIf + " && " + key; ;
-						}
-						else
-						{
-							//check the global ifs
-							if (E3.GlobalIfs.Ifs.ContainsKey(MelodyIfName))
+							if (!String.IsNullOrWhiteSpace(key))
 							{
-								MelodyIf = string.IsNullOrWhiteSpace(key) ? E3.GlobalIfs.Ifs[MelodyIfName] : MelodyIf + " && " + E3.GlobalIfs.Ifs[key];
+								MelodyIf = string.IsNullOrWhiteSpace(key) ? key : MelodyIf + " && " + key; ;
 							}
+							else
+							{
+								//check the global ifs
+								if (E3.GlobalIfs.Ifs.ContainsKey(MelodyIfName))
+								{
+									MelodyIf = string.IsNullOrWhiteSpace(key) ? E3.GlobalIfs.Ifs[MelodyIfName] : MelodyIf + " && " + E3.GlobalIfs.Ifs[key];
+								}
+							}
+						}
+
+
+					}
+					else
+					{
+						//check the global ifs
+						if (E3.GlobalIfs.Ifs.ContainsKey(MelodyIfName))
+						{
+							MelodyIf = E3.GlobalIfs.Ifs[MelodyIfName];
 						}
 					}
 
-					
+
 				}
             }
         }
