@@ -36,14 +36,14 @@ namespace E3Core.Data
 						{
 							if (!String.IsNullOrWhiteSpace(key))
 							{
-								MelodyIf = string.IsNullOrWhiteSpace(key) ? key : MelodyIf + " && " + key; ;
+								MelodyIf = string.IsNullOrWhiteSpace(MelodyIf) ? key : MelodyIf + " && " + key;
 							}
 							else
 							{
 								//check the global ifs
 								if (E3.GlobalIfs.Ifs.ContainsKey(MelodyIfName))
 								{
-									MelodyIf = string.IsNullOrWhiteSpace(key) ? E3.GlobalIfs.Ifs[MelodyIfName] : MelodyIf + " && " + E3.GlobalIfs.Ifs[key];
+									MelodyIf = string.IsNullOrWhiteSpace(MelodyIf) ? E3.GlobalIfs.Ifs[MelodyIfName] : MelodyIf + " && " + E3.GlobalIfs.Ifs[key];
 								}
 							}
 						}
