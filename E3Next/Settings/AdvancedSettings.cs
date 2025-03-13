@@ -78,7 +78,7 @@ namespace E3Core.Settings
             parsedData = fileIniData.ReadFile(filename);
 
 
-            foreach (var shortname in Data.Classes.ClassShortNames)
+            foreach (var shortname in Data.EQClasses.ClassShortNames)
             {
                 ClassMethodsAsStrings.Add(shortname, new List<string>());
                 LoadKeyData($"{shortname} Functions", $"{shortname} Function", parsedData, ClassMethodsAsStrings[shortname]);

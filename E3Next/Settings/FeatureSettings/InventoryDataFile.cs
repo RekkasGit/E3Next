@@ -58,6 +58,12 @@ namespace E3Core.Settings.FeatureSettings
 												aug4Name TEXT DEFAULT '',
 												aug5Name TEXT DEFAULT '',
 												aug6Name TEXT DEFAULT '',
+												aug1link TEXT DEFAULT '',
+												aug2link TEXT DEFAULT '',
+												aug3link TEXT DEFAULT '',
+												aug4link TEXT DEFAULT '',
+												aug5link TEXT DEFAULT '',
+												aug6link TEXT DEFAULT '',
 												itemlink TEXT DEFAULT '',
 												bagname TEXT DEFAULT '',
 												nodrop INTEGER DEFAULT 0,
@@ -110,6 +116,12 @@ namespace E3Core.Settings.FeatureSettings
 												aug4Name TEXT DEFAULT '',
 												aug5Name TEXT DEFAULT '',
 												aug6Name TEXT DEFAULT '',
+												aug1link TEXT DEFAULT '',
+												aug2link TEXT DEFAULT '',
+												aug3link TEXT DEFAULT '',
+												aug4link TEXT DEFAULT '',
+												aug5link TEXT DEFAULT '',
+												aug6link TEXT DEFAULT '',
 												itemlink TEXT DEFAULT '',
 												nodrop INTEGER DEFAULT 0
 											);";
@@ -133,6 +145,12 @@ namespace E3Core.Settings.FeatureSettings
 												aug4Name TEXT DEFAULT '',
 												aug5Name TEXT DEFAULT '',
 												aug6Name TEXT DEFAULT '',
+												aug1link TEXT DEFAULT '',
+												aug2link TEXT DEFAULT '',
+												aug3link TEXT DEFAULT '',
+												aug4link TEXT DEFAULT '',
+												aug5link TEXT DEFAULT '',
+												aug6link TEXT DEFAULT '',
 												itemlink TEXT DEFAULT '',
 												bagname TEXT DEFAULT '',
 												nodrop INTEGER DEFAULT 0,
@@ -158,6 +176,12 @@ namespace E3Core.Settings.FeatureSettings
 												aug4Name TEXT DEFAULT '',
 												aug5Name TEXT DEFAULT '',
 												aug6Name TEXT DEFAULT '',
+												aug1link TEXT DEFAULT '',
+												aug2link TEXT DEFAULT '',
+												aug3link TEXT DEFAULT '',
+												aug4link TEXT DEFAULT '',
+												aug5link TEXT DEFAULT '',
+												aug6link TEXT DEFAULT '',
 												itemlink TEXT DEFAULT '',
 												bagname TEXT DEFAULT '',
 												nodrop INTEGER DEFAULT 0,
@@ -196,11 +220,13 @@ namespace E3Core.Settings.FeatureSettings
 										for (int a = 1; a <= 6; a++)
 										{
 											string augname = MQ.Query<string>($"${{Me.Inventory[{i}].AugSlot[{a}].Name}}");
+											string auglink = MQ.Query<string>($"${{InvSlot[{i}].Item.AugSlot[{a}].Item.ItemLink[CLICKABLE]}}");
 											if (augname != "NULL")
 											{
-												command.CommandText = $"update gear_equiped set aug{a}Name = $augname where slotid={i}";
+												command.CommandText = $"update gear_equiped set aug{a}Name = $augname, aug{a}link=$auglink where slotid={i}";
 												command.Parameters.Clear();
 												command.Parameters.AddWithValue("augname", augname);
+												command.Parameters.AddWithValue("auglink", auglink);
 												command.ExecuteNonQuery();
 											}
 										}
@@ -254,12 +280,13 @@ namespace E3Core.Settings.FeatureSettings
 													for (int a = 1; a <= 6; a++)
 													{
 														string augname = MQ.Query<string>($"${{Me.Inventory[pack{i}].Item[{e}].AugSlot[{a}].Name}}");
-
+														string auglink = MQ.Query<string>($"${{Me.Inventory[pack{i}].Item[{e}].AugSlot[{a}].Item.ItemLink[CLICKABLE]}}");
 														if (augname != "NULL")
 														{
-															command.CommandText = $"update gear_bags set aug{a}Name = $augname where bagid={i} and slotid={e}";
+															command.CommandText = $"update gear_bags set aug{a}Name = $augname, aug{a}link=$auglink where bagid={i} and slotid={e}";
 															command.Parameters.Clear();
 															command.Parameters.AddWithValue("augname", augname);
+															command.Parameters.AddWithValue("auglink", auglink);
 															command.ExecuteNonQuery();
 														}
 													}
@@ -297,12 +324,14 @@ namespace E3Core.Settings.FeatureSettings
 												for (int a = 1; a <= 6; a++)
 												{
 													string augname = MQ.Query<string>($"${{Me.Inventory[pack{i}].AugSlot[{a}].Name}}");
+													string auglink = MQ.Query<string>($"${{Me.Inventory[pack{i}].AugSlot[{a}].Item.ItemLink[CLICKABLE]}}");
 
 													if (augname != "NULL")
 													{
-														command.CommandText = $"update gear_bags set aug{a}Name = $augname where bagid={i} and slotid = -1";
+														command.CommandText = $"update gear_bags set aug{a}Name = $augname, aug{a}link=$auglink where bagid={i} and slotid = -1";
 														command.Parameters.Clear();
 														command.Parameters.AddWithValue("augname", augname);
+														command.Parameters.AddWithValue("auglink", auglink);
 														command.ExecuteNonQuery();
 													}
 												}
@@ -360,13 +389,14 @@ namespace E3Core.Settings.FeatureSettings
 												for (int a = 1; a <= 6; a++)
 												{
 													string augname = MQ.Query<string>($"${{Me.Bank[{i}].Item[{e}].AugSlot[{a}].Name}}");
-
+													string auglink = MQ.Query<string>($"${{Me.Bank[{i}].Item[{e}].AugSlot[{a}].Item.ItemLink[CLICKABLE]}}");
 
 													if (augname != "NULL")
 													{
-														command.CommandText = $"update gear_bank set aug{a}Name = $augname where bankslotid={i} and slotid={e}";
+														command.CommandText = $"update gear_bank set aug{a}Name = $augname, aug{a}link=$auglink where bankslotid={i} and slotid={e}";
 														command.Parameters.Clear();
 														command.Parameters.AddWithValue("augname", augname);
+														command.Parameters.AddWithValue("auglink", auglink);
 														command.ExecuteNonQuery();
 													}
 
@@ -403,13 +433,15 @@ namespace E3Core.Settings.FeatureSettings
 											for (int a = 1; a <= 6; a++)
 											{
 												string augname = MQ.Query<string>($"${{Me.Bank[{i}].AugSlot[{a}].Name}}");
+												string auglink = MQ.Query<string>($"${{Me.Bank[{i}].AugSlot[{a}].Item.ItemLink[CLICKABLE]}}");
 
 
 												if (augname != "NULL")
 												{
-													command.CommandText = $"update gear_bank set aug{a}Name = $augname where bankslotid={i} and slotid = -1";
+													command.CommandText = $"update gear_bank set aug{a}Name = $augname, aug{a}link=$auglink where bankslotid={i} and slotid = -1";
 													command.Parameters.Clear();
 													command.Parameters.AddWithValue("augname", augname);
+													command.Parameters.AddWithValue("auglink", auglink);
 													command.ExecuteNonQuery();
 												}
 

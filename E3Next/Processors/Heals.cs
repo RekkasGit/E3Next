@@ -438,6 +438,15 @@ namespace E3Core.Processors
 				{
 					continue;
 				}
+
+				if(CastIfNeed && spell.CastType== CastingType.Spell)
+				{
+					while (Casting.InGlobalCooldown())
+					{
+						MQ.Delay(10);
+					}
+				}
+
 				if (Casting.CheckMana(spell) && Casting.CheckReady(spell, true, !CastIfNeed))
 				{
 					if (pctHealth < spell.HealPct && pctHealth != 0)

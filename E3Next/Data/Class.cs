@@ -44,11 +44,11 @@ namespace E3Core.Data
 		Silk = Caster
 	}
 
-	public static class Classes
+	public static class EQClasses
 	{
 
 
-		static Classes()
+		static EQClasses()
 		{
 			foreach (var pair in ClassLongToShort)
 			{
@@ -74,6 +74,8 @@ namespace E3Core.Data
 																			"BER",
 																			"MER",
 																			"CLR"};
+
+		public static HashSet<string> ClassShortNamesLookup = new HashSet<string>(ClassShortNames,StringComparer.OrdinalIgnoreCase);
 
 		public static Dictionary<string, string> ClassLongToShort = new Dictionary<string, string>(StringComparer.OrdinalIgnoreCase) {{"Warrior","WAR"},
 																										{"Cleric","CLR"},

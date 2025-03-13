@@ -443,7 +443,7 @@ namespace E3Core.Processors
 			string classValue = e3util.ClassNameFix(MQ.Query<string>("${Me.Class}"));
 			Enum.TryParse(classValue, out CurrentClass);
 			CurrentLongClassString = CurrentClass.ToString();
-			CurrentShortClassString = Data.Classes.ClassLongToShort[CurrentLongClassString];
+			CurrentShortClassString = Data.EQClasses.ClassLongToShort[CurrentLongClassString];
 			if(e3util.IsEQLive())
 			{
 				e3util.MobMaxDebuffSlots = 200;
@@ -480,7 +480,7 @@ namespace E3Core.Processors
                 string classValue =e3util.ClassNameFix(MQ.Query<string>("${Me.Class}"));
                 Enum.TryParse(classValue, out CurrentClass);
                 CurrentLongClassString = CurrentClass.ToString();
-                CurrentShortClassString = Data.Classes.ClassLongToShort[CurrentLongClassString];
+                CurrentShortClassString = Data.EQClasses.ClassLongToShort[CurrentLongClassString];
 
                 //Init the settings
                 GeneralSettings = new Settings.GeneralSettings();

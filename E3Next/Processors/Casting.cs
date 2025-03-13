@@ -1711,7 +1711,6 @@ namespace E3Core.Processors
 						MQ.Delay(20);
 					}
 				}
-
 			}
 
 			bool returnValue = false;

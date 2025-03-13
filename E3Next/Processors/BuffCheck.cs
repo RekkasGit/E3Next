@@ -647,504 +647,549 @@ namespace E3Core.Processors
 			}
 
 		}
-
+	
 		private static void BuffBots(List<Data.Spell> buffs, bool usePets = false)
 		{
 			if (e3util.IsActionBlockingWindowOpen()) return;
-			//Logging.LogLevels previousLogLevel = Logging.LogLevels.Error;
-
 			foreach (var spell in buffs)
 			{
-				if (!spell.Enabled) continue;
-
-				if (spell.Debug) _log.Write($"Buffs-Spell-{spell.CastName}", Logging.LogLevels.Error);
-				//using (_log.Trace($"Buffs-Spell-{spell.CastName}"))
+				//if it the target is one of our base class short names, check all bots and their short name type for possible targets.
+				if (EQClasses.ClassShortNamesLookup.Contains(spell.CastTarget))
 				{
-					Spawn s;
-					Spawn master = null;
-
-					string target = E3.CurrentName;
-					if (!String.IsNullOrWhiteSpace(spell.CastTarget))
+					//check for class name types
+					foreach (var name in E3.Bots.BotsConnected())
 					{
-						if (spell.CastTarget.Equals("Self", StringComparison.OrdinalIgnoreCase))
+						if (_spawns.TryByName(name, out var s))
 						{
-							target = E3.CurrentName;
-						}
-						else
-						{
-							target = spell.CastTarget;
-							if (string.Equals(spell.TargetType, "Single in Group", StringComparison.OrdinalIgnoreCase))
+							string classShortName = s.ClassShortName;
+							if (spell.CastTarget.Equals(classShortName, StringComparison.OrdinalIgnoreCase))
 							{
-								if (!_spawns.TryByName(target, out var spawn))
+								string previousTarget = spell.CastTarget;
+								try
 								{
-									continue;
+									spell.CastTarget = name;
+									//change the name
+									if (BuffBots_SingleBuff(spell, usePets) == BuffBots_ReturnType.ExitOut)
+									{
+										return;
+									}
 								}
+								finally
+								{
+									spell.CastTarget = previousTarget;
+								}
+							}
+							
+						}
+					}
+				}
+				else
+				{
+					if (BuffBots_SingleBuff(spell, usePets) == BuffBots_ReturnType.ExitOut)
+					{
+						return;
+					}
+				}
+			}
+		}
+		//this was created as a big method was broken up that used a lot of continues/returns
+	    //so that we could call it in a single buff manner. kinda a hack, but works.
+		public enum BuffBots_ReturnType
+		{
+			Continue,
+			ExitOut,
+		}
+		private static BuffBots_ReturnType BuffBots_SingleBuff(Data.Spell spell,bool usePets = false)
+		{
+			if (!spell.Enabled) return BuffBots_ReturnType.Continue;
 
-								if (!Basics.GroupMembers.Any() || !Basics.GroupMembers.Contains(spawn.ID))
-								{
-									continue;
-								}
+			if (spell.Debug) _log.Write($"Buffs-Spell-{spell.CastName}", Logging.LogLevels.Error);
+			//using (_log.Trace($"Buffs-Spell-{spell.CastName}"))
+			{
+				Spawn s;
+				Spawn master = null;
+
+				string target = E3.CurrentName;
+				if (!String.IsNullOrWhiteSpace(spell.CastTarget))
+				{
+					if (spell.CastTarget.Equals("Self", StringComparison.OrdinalIgnoreCase))
+					{
+						target = E3.CurrentName;
+					}
+					else
+					{
+						target = spell.CastTarget;
+						if (string.Equals(spell.TargetType, "Single in Group", StringComparison.OrdinalIgnoreCase))
+						{
+							if (!_spawns.TryByName(target, out var spawn))
+							{
+								return BuffBots_ReturnType.Continue;
+							}
+
+							if (!Basics.GroupMembers.Any() || !Basics.GroupMembers.Contains(spawn.ID))
+							{
+								return BuffBots_ReturnType.Continue;
 							}
 						}
 					}
+				}
 
-					if (_spawns.TryByName(target, out s))
+				if (_spawns.TryByName(target, out s))
+				{
+					if (usePets && s.PetID < 1)
 					{
-						if (usePets && s.PetID < 1)
-						{
-							continue;
-						}
+						return BuffBots_ReturnType.Continue;
+					}
 
-						if (usePets && s.PetID > 0)
+					if (usePets && s.PetID > 0)
+					{
+						Spawn ts;
+						if (_spawns.TryByID(s.PetID, out ts))
 						{
-							Spawn ts;
-							if (_spawns.TryByID(s.PetID, out ts))
+							master = s;
+							s = ts;
+						}
+					}
+					if (!String.IsNullOrWhiteSpace(spell.Ifs))
+					{
+						if (!Casting.Ifs(spell))
+						{
+							//ifs failed do a 30 sec`retry
+
+							UpdateBuffTimers(s.ID, spell, 1500, -1, true);
+							return BuffBots_ReturnType.Continue;
+						}
+					}
+
+
+					if (!Casting.InRange(s.ID, spell))
+					{
+						return BuffBots_ReturnType.Continue;
+					}
+					if (s.ID == E3.CurrentId)
+					{
+
+
+						bool hasCheckFor = false;
+						bool shouldContinue = false;
+						if (spell.CheckForCollection.Count > 0)
+						{
+							foreach (var checkforItem in spell.CheckForCollection.Keys)
 							{
-								master = s;
-								s = ts;
-							}
-						}
-						if (!String.IsNullOrWhiteSpace(spell.Ifs))
-						{
-							if (!Casting.Ifs(spell))
-							{
-								//ifs failed do a 30 sec`retry
-
-								UpdateBuffTimers(s.ID, spell, 1500, -1, true);
-								continue;
-							}
-						}
-
-
-						if (!Casting.InRange(s.ID, spell))
-						{
-							continue;
-						}
-						if (s.ID == E3.CurrentId)
-						{
-
-
-							bool hasCheckFor = false;
-							bool shouldContinue = false;
-							if (spell.CheckForCollection.Count > 0)
-							{
-								foreach (var checkforItem in spell.CheckForCollection.Keys)
+								hasCheckFor = MQ.Query<bool>($"${{Bool[${{Me.Buff[{checkforItem}]}}]}}");
+								if (!hasCheckFor)
 								{
-									hasCheckFor = MQ.Query<bool>($"${{Bool[${{Me.Buff[{checkforItem}]}}]}}");
-									if (!hasCheckFor)
+									hasCheckFor = MQ.Query<bool>($"${{Bool[${{Me.Song[{checkforItem}]}}]}}");
+									if (hasCheckFor)
 									{
-										hasCheckFor = MQ.Query<bool>($"${{Bool[${{Me.Song[{checkforItem}]}}]}}");
-										if (hasCheckFor)
-										{
-											Int64 buffDuration = MQ.Query<Int64>($"${{Me.Song[{checkforItem}].Duration}}");
-											if (buffDuration < 1000)
-											{
-												buffDuration = 1000;
-											}
-											//don't let the refresh update this
-											UpdateBuffTimers(s.ID, spell, 3000, buffDuration, true);
-											shouldContinue = true;
-											break;
-										}
-									}
-									else
-									{
-										Int64 buffDuration = MQ.Query<Int64>($"${{Me.Buff[{checkforItem}].Duration}}");
+										Int64 buffDuration = MQ.Query<Int64>($"${{Me.Song[{checkforItem}].Duration}}");
 										if (buffDuration < 1000)
 										{
 											buffDuration = 1000;
 										}
-										UpdateBuffTimers(s.ID, spell, 3000, buffDuration,true);
+										//don't let the refresh update this
+										UpdateBuffTimers(s.ID, spell, 3000, buffDuration, true);
 										shouldContinue = true;
 										break;
 									}
 								}
-								if (shouldContinue) { continue; }
-							}
-							//Is the buff still good? if so, skip
-
-							if(Casting.BuffNotReady(spell)) continue;
-
-							if (BuffTimerIsGood(spell, s, usePets))
-							{
-								continue;
-							}
-							bool willStack = MQ.Query<bool>($"${{Spell[{spell.SpellName}].WillLand}}");
-							if (willStack && Casting.CheckMana(spell) && Casting.CheckReady(spell))
-							{
-								CastReturn result;
-								recastSpell:
-								if (spell.TargetType == "Self" || spell.TargetType == "Group v1" || spell.TargetType == "Group v2")
-								{
-									result = Casting.Cast(0, spell);
-								}
 								else
 								{
-									result = Casting.Cast(s.ID, spell);
+									Int64 buffDuration = MQ.Query<Int64>($"${{Me.Buff[{checkforItem}].Duration}}");
+									if (buffDuration < 1000)
+									{
+										buffDuration = 1000;
+									}
+									UpdateBuffTimers(s.ID, spell, 3000, buffDuration, true);
+									shouldContinue = true;
+									break;
 								}
-								if (result == CastReturn.CAST_FIZZLE)
-								{
-									goto recastSpell;
-								}
-								if (result == CastReturn.CAST_INTERRUPTED || result == CastReturn.CAST_INTERRUPTFORHEAL)
-								{
-									return;
-								}
-								if (result != CastReturn.CAST_SUCCESS)
-								{
-									//possibly some kind of issue/blocking. set a 60 sec timer to try and recast later.
-									UpdateBuffTimers(s.ID, spell, 60 * 1000, -1, true);
-								}
-								else
-								{
-									//lets verify what we have.
-									MQ.Delay(300);
-									Int64 timeLeftInMS = Casting.TimeLeftOnMyBuff(spell);
-									UpdateBuffTimers(s.ID, spell, timeLeftInMS, timeLeftInMS);
-								}
-								return;
 							}
-							else if (!willStack)
+							if (shouldContinue) { return BuffBots_ReturnType.Continue; }
+						}
+						//Is the buff still good? if so, skip
+
+						if (Casting.BuffNotReady(spell)) return BuffBots_ReturnType.Continue;
+
+						if (BuffTimerIsGood(spell, s, usePets))
+						{
+							return BuffBots_ReturnType.Continue;
+						}
+						bool willStack = MQ.Query<bool>($"${{Spell[{spell.SpellName}].WillLand}}");
+						if (willStack && Casting.CheckMana(spell) && Casting.CheckReady(spell))
+						{
+							CastReturn result;
+						recastSpell:
+							if (spell.TargetType == "Self" || spell.TargetType == "Group v1" || spell.TargetType == "Group v2")
 							{
-								//won't stack don't check back for awhile, be sure to lock the timer so that it will fully play out.
-								UpdateBuffTimers(s.ID, spell, 12 * 1000, -1, true);
+								result = Casting.Cast(0, spell);
 							}
 							else
 							{
-								//we don't have mana for this? or ifs failed? chill for 12 sec., be sure to lock the timer so that it will fully play out.
-								UpdateBuffTimers(s.ID, spell, 12 * 1000, -1, true);
+								result = Casting.Cast(s.ID, spell);
 							}
-
+							if (result == CastReturn.CAST_FIZZLE)
+							{
+								goto recastSpell;
+							}
+							if (result == CastReturn.CAST_INTERRUPTED || result == CastReturn.CAST_INTERRUPTFORHEAL)
+							{
+								return BuffBots_ReturnType.ExitOut;
+							}
+							if (result != CastReturn.CAST_SUCCESS)
+							{
+								//possibly some kind of issue/blocking. set a 60 sec timer to try and recast later.
+								UpdateBuffTimers(s.ID, spell, 60 * 1000, -1, true);
+							}
+							else
+							{
+								//lets verify what we have.
+								MQ.Delay(300);
+								Int64 timeLeftInMS = Casting.TimeLeftOnMyBuff(spell);
+								UpdateBuffTimers(s.ID, spell, timeLeftInMS, timeLeftInMS);
+							}
+							return BuffBots_ReturnType.Continue;
 						}
-						else if (s.ID == MQ.Query<Int32>("${Me.Pet.ID}"))
+						else if (!willStack)
 						{
-							//its my pet
+							//won't stack don't check back for awhile, be sure to lock the timer so that it will fully play out.
+							UpdateBuffTimers(s.ID, spell, 12 * 1000, -1, true);
+						}
+						else
+						{
+							//we don't have mana for this? or ifs failed? chill for 12 sec., be sure to lock the timer so that it will fully play out.
+							UpdateBuffTimers(s.ID, spell, 12 * 1000, -1, true);
+						}
 
-							bool hasCheckFor = false;
-							bool hasCachedCheckFor = false;
+					}
+					else if (s.ID == MQ.Query<Int32>("${Me.Pet.ID}"))
+					{
+						//its my pet
+
+						bool hasCheckFor = false;
+						bool hasCachedCheckFor = false;
+						bool shouldContinue = false;
+						if (spell.CheckForCollection.Count > 0)
+						{
+							foreach (var checkforItem in spell.CheckForCollection.Keys)
+							{
+								hasCheckFor = MQ.Query<bool>($"${{Bool[${{Me.Pet.Buff[{checkforItem}]}}]}}");
+								hasCachedCheckFor = MQ.Query<bool>($"${{Bool[${{Spawn[${{Me.Pet.ID}}].Buff[{checkforItem}]}}]}}");
+								if (hasCheckFor || hasCachedCheckFor)
+								{
+
+									UpdateBuffTimers(s.ID, spell, 3000, -1, true);
+									shouldContinue = true;
+									break;
+								}
+							}
+							if (shouldContinue) { return BuffBots_ReturnType.Continue; }
+						}
+						if (Casting.BuffNotReady(spell)) return BuffBots_ReturnType.Continue;
+						//Is the buff still good? if so, skip
+						if (BuffTimerIsGood(spell, s, usePets))
+						{
+							return BuffBots_ReturnType.Continue;
+						}
+						bool willStack = MQ.Query<bool>($"${{Spell[{spell.SpellName}].WillLandPet}}");
+					recastSpell:
+						if (willStack && Casting.CheckMana(spell) && Casting.CheckReady(spell))
+						{
+							CastReturn result;
+
+							result = Casting.Cast(s.ID, spell);
+							if (result == CastReturn.CAST_FIZZLE)
+							{
+								goto recastSpell;
+							}
+							if (result == CastReturn.CAST_INTERRUPTED || result == CastReturn.CAST_INTERRUPTFORHEAL)
+							{
+								return BuffBots_ReturnType.ExitOut;
+							}
+							if (result != CastReturn.CAST_SUCCESS)
+							{
+								//possibly some kind of issue/blocking. set a 120 sec timer to try and recast later.
+								UpdateBuffTimers(s.ID, spell, 60 * 1000, -1, true);
+							}
+							else
+							{
+								//lets verify what we have.
+
+								Int32 buffCount = MQ.Query<Int32>("${Me.Pet.BuffCount}");
+								if (buffCount < 31)
+								{
+									MQ.Delay(300);
+									Int64 timeLeftInMS = Casting.TimeLeftOnMyPetBuff(spell);
+									UpdateBuffTimers(s.ID, spell, timeLeftInMS, timeLeftInMS);
+								}
+								else
+								{
+									UpdateBuffTimers(s.ID, spell, (spell.DurationTotalSeconds * 1000), (spell.DurationTotalSeconds * 1000), true);
+								}
+
+							}
+							return BuffBots_ReturnType.ExitOut;
+						}
+						else if (!willStack)
+						{
+							//won't stack don't check back for awhile
+							UpdateBuffTimers(s.ID, spell, 12 * 1000, -1, true);
+						}
+						else
+						{
+							//we don't have mana for this? or ifs failed? chill for 12 sec.
+							UpdateBuffTimers(s.ID, spell, 12 * 1000, -1, true);
+						}
+					}
+					else
+					{
+						//someone other than us.
+						//if its a netbots, we initially do target, then have the cache refreshed
+						//using a func here so that we can swap out the logic of Pet buff vs normal buffs
+						Func<String, List<Int32>> findBuffList = E3.Bots.BuffList;
+						if (usePets)
+						{
+							findBuffList = E3.Bots.PetBuffList;
+						}
+
+						bool isABot = E3.Bots.BotsConnected().Contains(spell.CastTarget, StringComparer.OrdinalIgnoreCase);
+
+						if (isABot)
+						{
+
 							bool shouldContinue = false;
 							if (spell.CheckForCollection.Count > 0)
 							{
 								foreach (var checkforItem in spell.CheckForCollection.Keys)
 								{
-									hasCheckFor = MQ.Query<bool>($"${{Bool[${{Me.Pet.Buff[{checkforItem}]}}]}}");
-									hasCachedCheckFor = MQ.Query<bool>($"${{Bool[${{Spawn[${{Me.Pet.ID}}].Buff[{checkforItem}]}}]}}");
-									if (hasCheckFor || hasCachedCheckFor)
-									{
+									//keys are check for spell names, the value is the spell id
 
+									bool hasCheckFor = findBuffList(spell.CastTarget).Contains(spell.CheckForCollection[checkforItem]);
+									//can't check for target song buffs, be aware. will have to check netbots. 
+									if (hasCheckFor)
+									{
+										//can't see the time, just set it for this time to recheck
+										//3 seconds
 										UpdateBuffTimers(s.ID, spell, 3000, -1, true);
 										shouldContinue = true;
 										break;
 									}
 								}
-								if (shouldContinue) { continue; }
+								if (shouldContinue)
+								{
+									return BuffBots_ReturnType.Continue;
+								}
 							}
-							if (Casting.BuffNotReady(spell)) continue;
+							if (Casting.BuffNotReady(spell)) return BuffBots_ReturnType.Continue;
 							//Is the buff still good? if so, skip
 							if (BuffTimerIsGood(spell, s, usePets))
 							{
-								continue;
+								return BuffBots_ReturnType.Continue;
 							}
-							bool willStack = MQ.Query<bool>($"${{Spell[{spell.SpellName}].WillLandPet}}");
-							recastSpell:
+
+							Casting.TrueTarget(s.ID);
+							MQ.Delay(2000, "${Target.BuffsPopulated}");
+							bool willStack = MQ.Query<bool>($"${{Spell[{spell.SpellName}].StacksTarget}}");
+							if (!willStack)
+							{
+								UpdateBuffTimers(s.ID, spell, 15000, 15000, true);
+								return BuffBots_ReturnType.Continue;
+							}
+						recastSpell:
 							if (willStack && Casting.CheckMana(spell) && Casting.CheckReady(spell))
 							{
-								CastReturn result;
 
-								result = Casting.Cast(s.ID, spell);
+								//E3.Bots.Broadcast($"{spell.CastTarget} is missing the buff {spell.CastName} with id:{spell.SpellID}. current list:{String.Join(",",list)}");
+								//then we can cast!
+								var result = Casting.Cast(s.ID, spell);
 								if (result == CastReturn.CAST_FIZZLE)
 								{
 									goto recastSpell;
 								}
 								if (result == CastReturn.CAST_INTERRUPTED || result == CastReturn.CAST_INTERRUPTFORHEAL)
 								{
-									return;
+									return BuffBots_ReturnType.ExitOut;
 								}
 								if (result != CastReturn.CAST_SUCCESS)
 								{
-									//possibly some kind of issue/blocking. set a 120 sec timer to try and recast later.
-									UpdateBuffTimers(s.ID, spell, 60 * 1000, -1, true);
+									//possibly some kind of issue/blocking.
+									UpdateBuffTimers(s.ID, spell, 12000, -1, true);
 								}
 								else
 								{
-									//lets verify what we have.
-
-									Int32 buffCount = MQ.Query<Int32>("${Me.Pet.BuffCount}");
-									if (buffCount < 31)
-									{
-										MQ.Delay(300);
-										Int64 timeLeftInMS = Casting.TimeLeftOnMyPetBuff(spell);
-										UpdateBuffTimers(s.ID, spell, timeLeftInMS, timeLeftInMS);
-									}
-									else
-									{
-										UpdateBuffTimers(s.ID, spell, (spell.DurationTotalSeconds * 1000), (spell.DurationTotalSeconds * 1000), true);
-									}
+									MQ.Delay(300);
+									Int64 timeLeftInMS = Casting.TimeLeftOnTargetBuff(spell);
+									//lets verify what we have on that target.
+									UpdateBuffTimers(s.ID, spell, timeLeftInMS, timeLeftInMS);
 
 								}
-								return;
-							}
-							else if (!willStack)
-							{
-								//won't stack don't check back for awhile
-								UpdateBuffTimers(s.ID, spell, 12 * 1000, -1, true);
+								return BuffBots_ReturnType.ExitOut;
 							}
 							else
 							{
-								//we don't have mana for this? or ifs failed? chill for 12 sec.
-								UpdateBuffTimers(s.ID, spell, 12 * 1000, -1, true);
+								//spell not ready 
+								UpdateBuffTimers(s.ID, spell, 15000, 15000, true, true);
+
 							}
 						}
 						else
 						{
-							//someone other than us.
-							//if its a netbots, we initially do target, then have the cache refreshed
-							//using a func here so that we can swap out the logic of Pet buff vs normal buffs
-							Func<String, List<Int32>> findBuffList = E3.Bots.BuffList;
-							if (usePets)
+							if (Casting.BuffNotReady(spell)) return BuffBots_ReturnType.Continue;
+							//Is the buff still good? if so, skip
+							if (BuffTimerIsGood(spell, s, usePets))
 							{
-								findBuffList = E3.Bots.PetBuffList;
+								return BuffBots_ReturnType.Continue;
+							}
+							if (!Casting.CheckReady(spell)) return BuffBots_ReturnType.Continue;
+							//its someone not in our buff group, do it the hacky way.
+							Casting.TrueTarget(s.ID);
+
+							//greater than 0, so we don't get things like shrink that don't have a duration
+							bool isShortDuration = spell.IsShortBuff;
+
+							if (!isShortDuration || spell.CheckForCollection.Count > 0)
+							{
+								//we can't see the short duration buffs anyway, so no need to delay.
+								MQ.Delay(2000, "${Target.BuffsPopulated}");
 							}
 
-							bool isABot = E3.Bots.BotsConnected().Contains(spell.CastTarget, StringComparer.OrdinalIgnoreCase);
-
-							if (isABot)
+							bool shouldContinue = false;
+							if (spell.CheckForCollection.Count > 0)
 							{
-
-								bool shouldContinue = false;
-								if (spell.CheckForCollection.Count > 0)
+								foreach (var checkforItem in spell.CheckForCollection.Keys)
 								{
-									foreach (var checkforItem in spell.CheckForCollection.Keys)
+									Int64 timeinMS = MQ.Query<Int64>($"${{Target.Buff[${{Spell[{checkforItem}]}}].Duration}}");
+									if (timeinMS > 0)
 									{
-										//keys are check for spell names, the value is the spell id
-
-										bool hasCheckFor = findBuffList(spell.CastTarget).Contains(spell.CheckForCollection[checkforItem]);
-										//can't check for target song buffs, be aware. will have to check netbots. 
-										if (hasCheckFor)
-										{
-											//can't see the time, just set it for this time to recheck
-											//3 seconds
-											UpdateBuffTimers(s.ID, spell, 3000, -1, true);
-											shouldContinue = true;
-											break;
-										}
-									}
-									if (shouldContinue) 
-									{ 
-										continue; 
+										//they have the check for
+										UpdateBuffTimers(s.ID, spell, timeinMS, timeinMS, true);
+										shouldContinue = true;
+										break;
 									}
 								}
-								if (Casting.BuffNotReady(spell)) continue;
-								//Is the buff still good? if so, skip
-								if (BuffTimerIsGood(spell, s, usePets))
-								{
-									continue;
-								}
-
-								Casting.TrueTarget(s.ID);
-								MQ.Delay(2000, "${Target.BuffsPopulated}");
+								if (shouldContinue) { return BuffBots_ReturnType.Continue; }
+							}
+							if (!isShortDuration || spell.CheckForCollection.Count > 0)
+							{
 								bool willStack = MQ.Query<bool>($"${{Spell[{spell.SpellName}].StacksTarget}}");
+								//MQ.Write($"Will stack:{spell.SpellName}:" + willStack);
 								if (!willStack)
 								{
-									UpdateBuffTimers(s.ID, spell, 15000, 15000, true);
-									continue;
+									//won't stack don't check back for awhile
+									UpdateBuffTimers(s.ID, spell, 30 * 1000, -1, true);
 								}
-								recastSpell:
-								if (willStack && Casting.CheckMana(spell) && Casting.CheckReady(spell))
+							}
+							//double ifs check, so if their if included Target, we have it
+							if (!String.IsNullOrWhiteSpace(spell.Ifs))
+							{
+								if (!Casting.Ifs(spell))
 								{
+									//ifs failed do a 30 sec retry, so we don't keep swapping targets
+									UpdateBuffTimers(s.ID, spell, 30 * 1000, -1, true);
+									return BuffBots_ReturnType.Continue;
+								}
+							}
+							if (isShortDuration)
+							{
+							//we cannot do target based checks if a short duration type.
 
-									//E3.Bots.Broadcast($"{spell.CastTarget} is missing the buff {spell.CastName} with id:{spell.SpellID}. current list:{String.Join(",",list)}");
-									//then we can cast!
+							//not one of our buffs uhh, try and cast and see if we get a non success message.
+							recastSpell:
+								if (Casting.CheckMana(spell) && Casting.CheckReady(spell))
+								{
 									var result = Casting.Cast(s.ID, spell);
-									if(result== CastReturn.CAST_FIZZLE)
+
+									if (result == CastReturn.CAST_FIZZLE)
 									{
 										goto recastSpell;
 									}
+
 									if (result == CastReturn.CAST_INTERRUPTED || result == CastReturn.CAST_INTERRUPTFORHEAL)
 									{
-										return;
+										return BuffBots_ReturnType.ExitOut;
 									}
 									if (result != CastReturn.CAST_SUCCESS)
 									{
-										//possibly some kind of issue/blocking.
-										UpdateBuffTimers(s.ID, spell, 12000, -1, true);
+										//possibly some kind of issue/blocking. set a N sec timer to try and recast later.
+										UpdateBuffTimers(s.ID, spell, 60 * 1000, -1, true);
 									}
 									else
 									{
-										MQ.Delay(300);
-										Int64 timeLeftInMS = Casting.TimeLeftOnTargetBuff(spell);
-										//lets verify what we have on that target.
-										UpdateBuffTimers(s.ID, spell, timeLeftInMS, timeLeftInMS);
-
+										UpdateBuffTimers(s.ID, spell, spell.DurationTotalSeconds * 1000, spell.DurationTotalSeconds * 1000, true);
 									}
-									return;
+									return BuffBots_ReturnType.ExitOut;
 								}
-								else
-								{   
-									//spell not ready 
-									UpdateBuffTimers(s.ID, spell, 15000, 15000, true, true);
+								return BuffBots_ReturnType.Continue;
 
-								}
 							}
 							else
 							{
-								if (Casting.BuffNotReady(spell)) continue;
-								//Is the buff still good? if so, skip
-								if (BuffTimerIsGood(spell, s, usePets))
-								{
-									continue;
-								}
-								if (!Casting.CheckReady(spell)) continue;
-								//its someone not in our buff group, do it the hacky way.
-								Casting.TrueTarget(s.ID);
+								Int64 timeLeftInMS = -1;
+								timeLeftInMS = Casting.TimeLeftOnTargetBuff(spell);
 
-								//greater than 0, so we don't get things like shrink that don't have a duration
-								bool isShortDuration = spell.IsShortBuff;
-
-								if(!isShortDuration || spell.CheckForCollection.Count>0)
+								if (timeLeftInMS < 15000)
 								{
-									//we can't see the short duration buffs anyway, so no need to delay.
-									MQ.Delay(2000, "${Target.BuffsPopulated}");
-								}
-								
-								bool shouldContinue = false;
-								if (spell.CheckForCollection.Count > 0)
-								{
-									foreach (var checkforItem in spell.CheckForCollection.Keys)
-									{
-										Int64 timeinMS = MQ.Query<Int64>($"${{Target.Buff[${{Spell[{checkforItem}]}}].Duration}}");
-										if (timeinMS > 0)
-										{
-											//they have the check for
-											UpdateBuffTimers(s.ID, spell, timeinMS, timeinMS, true);
-											shouldContinue = true;
-											break;
-										}
-									}
-									if (shouldContinue) { continue; }
-								}
-								if (!isShortDuration || spell.CheckForCollection.Count > 0)
-								{
-									bool willStack = MQ.Query<bool>($"${{Spell[{spell.SpellName}].StacksTarget}}");
-									//MQ.Write($"Will stack:{spell.SpellName}:" + willStack);
-									if (!willStack)
-									{
-										//won't stack don't check back for awhile
-										UpdateBuffTimers(s.ID, spell, 30 * 1000, -1, true);
-									}
-								}
-								//double ifs check, so if their if included Target, we have it
-								if (!String.IsNullOrWhiteSpace(spell.Ifs))
-								{
-									if (!Casting.Ifs(spell))
-									{
-										//ifs failed do a 30 sec retry, so we don't keep swapping targets
-										UpdateBuffTimers(s.ID, spell, 30 * 1000, -1, true);
-										continue;
-									}
-								}
-								if (isShortDuration)
-								{
-									//we cannot do target based checks if a short duration type.
-
-									//not one of our buffs uhh, try and cast and see if we get a non success message.
-									recastSpell:
+								recastSpell:
 									if (Casting.CheckMana(spell) && Casting.CheckReady(spell))
 									{
 										var result = Casting.Cast(s.ID, spell);
-
 										if (result == CastReturn.CAST_FIZZLE)
 										{
 											goto recastSpell;
 										}
-
 										if (result == CastReturn.CAST_INTERRUPTED || result == CastReturn.CAST_INTERRUPTFORHEAL)
 										{
-											return;
+											return BuffBots_ReturnType.ExitOut;
 										}
 										if (result != CastReturn.CAST_SUCCESS)
 										{
-											//possibly some kind of issue/blocking. set a N sec timer to try and recast later.
-											UpdateBuffTimers(s.ID, spell, 60 * 1000, -1, true);
+											//possibly some kind of issue/blocking. set a 120 sec timer to try and recast later.
+											UpdateBuffTimers(s.ID, spell, 120 * 1000, -1, true);
+											return BuffBots_ReturnType.Continue;
 										}
 										else
-										{	
-											UpdateBuffTimers(s.ID, spell, spell.DurationTotalSeconds * 1000, spell.DurationTotalSeconds * 1000,true);
-										}
-										return;
-									}
-									continue;
+										{
+											if (spell.Duration > 0)
+											{
+												//lets verify what we have on that target.
+												Casting.TrueTarget(s.ID);
+												MQ.Delay(2000, "${Target.BuffsPopulated}");
+												MQ.Delay(300);
+												timeLeftInMS = Casting.TimeLeftOnTargetBuff(spell);
+												if (timeLeftInMS < 0)
+												{
+													timeLeftInMS = 120 * 1000;
+													UpdateBuffTimers(s.ID, spell, timeLeftInMS, timeLeftInMS, true);
 
+												}
+												else
+												{
+													UpdateBuffTimers(s.ID, spell, timeLeftInMS, timeLeftInMS);
+												}
+
+												return BuffBots_ReturnType.Continue;
+											}
+											else
+											{   //stuff like shrink
+												//UpdateBuffTimers(s.ID, spell, Int32.MaxValue, true);
+												return BuffBots_ReturnType.Continue;
+											}
+										}
+									}
 								}
 								else
 								{
-									Int64 timeLeftInMS = -1;
-									timeLeftInMS = Casting.TimeLeftOnTargetBuff(spell);
-
-									if (timeLeftInMS < 15000)
-									{
-										recastSpell:
-										if (Casting.CheckMana(spell) && Casting.CheckReady(spell))
-										{
-											var result = Casting.Cast(s.ID, spell);
-											if (result == CastReturn.CAST_FIZZLE)
-											{
-												goto recastSpell;
-											}
-											if (result == CastReturn.CAST_INTERRUPTED || result == CastReturn.CAST_INTERRUPTFORHEAL)
-											{
-												return;
-											}
-											if (result != CastReturn.CAST_SUCCESS)
-											{
-												//possibly some kind of issue/blocking. set a 120 sec timer to try and recast later.
-												UpdateBuffTimers(s.ID, spell, 120 * 1000, -1, true);
-												continue;
-											}
-											else
-											{
-												if (spell.Duration > 0)
-												{
-													//lets verify what we have on that target.
-													Casting.TrueTarget(s.ID);
-													MQ.Delay(2000, "${Target.BuffsPopulated}");
-													MQ.Delay(300);
-													timeLeftInMS = Casting.TimeLeftOnTargetBuff(spell);
-													if (timeLeftInMS < 0)
-													{
-														timeLeftInMS = 120 * 1000;
-														UpdateBuffTimers(s.ID, spell, timeLeftInMS, timeLeftInMS, true);
-
-													}
-													else
-													{
-														UpdateBuffTimers(s.ID, spell, timeLeftInMS, timeLeftInMS);
-													}
-
-													continue;
-												}
-												else
-												{   //stuff like shrink
-													//UpdateBuffTimers(s.ID, spell, Int32.MaxValue, true);
-													continue;
-												}
-											}
-										}
-									}
-									else
-									{
-										UpdateBuffTimers(s.ID, spell, timeLeftInMS, timeLeftInMS);
-										continue;
-									}
+									UpdateBuffTimers(s.ID, spell, timeLeftInMS, timeLeftInMS);
+									return BuffBots_ReturnType.Continue;
 								}
 							}
 						}
 					}
 				}
-				
 			}
-			// Casting.TrueTarget(currentid, true);
+			return BuffBots_ReturnType.Continue;
 		}
+		
 		private static Dictionary<string, CharacterBuffs> _characterBuffs = new Dictionary<string, CharacterBuffs>();
 
 		private static bool BuffTimerIsGood_CheckLocalData(Data.Spell spell, Spawn s, Func<Data.Spell,Int64> TimeLeftFunction, bool updateTImers = false)

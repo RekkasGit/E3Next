@@ -136,76 +136,84 @@ namespace E3NextProxy
 			
 			while (true)
 			{
-				foreach(var folder in foldersToMonitor)
+				try
 				{
-					string[] files = Directory.GetFiles(folder);
-
-					//file format is Name_Server_pubsubport.txt
-					//IE: Rekken_Lazarus_pubsubport.txt
-
-					foreach (var fileName in files)
+					foreach (var folder in foldersToMonitor)
 					{
-						if (String.Equals(fileName, _fullFileName, StringComparison.OrdinalIgnoreCase))
+						string[] files = Directory.GetFiles(folder);
+
+						//file format is Name_Server_pubsubport.txt
+						//IE: Rekken_Lazarus_pubsubport.txt
+
+						foreach (var fileName in files)
 						{
-							continue;
-						}
-						if (!currentlyProcessing.ContainsKey(fileName))
-						{
-							System.DateTime lastFileUpdate = System.IO.File.GetLastWriteTime(fileName);
-							string data = System.IO.File.ReadAllText(fileName);
-							//its now port:ipaddress
-							string[] splitData = data.Split(new char[] { ',' });
-							string port = splitData[0];
-							string ipaddress = splitData[1];
-							string connectionString = $"tcp://{ipaddress}:{port}";
-							FileInfo fileInfo = new FileInfo(fileName);
-							string userNameAndServer = fileInfo.Name.Replace("_pubsubport.txt","");
-							//change to Name:Server format as that is what the payload uses
-							userNameAndServer=ReplaceFirst(userNameAndServer, "_", ":");
-							m_proxy.AddLocalSubBinding(userNameAndServer, connectionString);
-							Console.WriteLine($"[{System.DateTime.Now.ToString()}] New File Found: {fileName}. Connection String: {connectionString}");
-							currentlyProcessing.Add(fileName, new SubInfo() { LastUpdateTime = lastFileUpdate, connectionString = connectionString });
-						}
-						else
-						{
-							//question is.. has it been modified?
-							System.DateTime lastFileUpdate = System.IO.File.GetLastWriteTime(fileName);
-							if (currentlyProcessing[fileName].LastUpdateTime < lastFileUpdate)
+							if (String.Equals(fileName, _fullFileName, StringComparison.OrdinalIgnoreCase))
 							{
-								string connectionString = currentlyProcessing[fileName].connectionString;
-								Console.WriteLine($"[{System.DateTime.Now.ToString()}] Reconnecting: {fileName}. Connection String: {connectionString}");
+								continue;
+							}
+							if (!currentlyProcessing.ContainsKey(fileName))
+							{
+								System.DateTime lastFileUpdate = System.IO.File.GetLastWriteTime(fileName);
+								string data = System.IO.File.ReadAllText(fileName);
+								//its now port:ipaddress
+								string[] splitData = data.Split(new char[] { ',' });
+								string port = splitData[0];
+								string ipaddress = splitData[1];
+								string connectionString = $"tcp://{ipaddress}:{port}";
+								FileInfo fileInfo = new FileInfo(fileName);
+								string userNameAndServer = fileInfo.Name.Replace("_pubsubport.txt", "");
+								//change to Name:Server format as that is what the payload uses
+								userNameAndServer = ReplaceFirst(userNameAndServer, "_", ":");
+								m_proxy.AddLocalSubBinding(userNameAndServer, connectionString);
+								Console.WriteLine($"[{System.DateTime.Now.ToString()}] New File Found: {fileName}. Connection String: {connectionString}");
+								currentlyProcessing.Add(fileName, new SubInfo() { LastUpdateTime = lastFileUpdate, connectionString = connectionString });
+							}
+							else
+							{
+								//question is.. has it been modified?
+								System.DateTime lastFileUpdate = System.IO.File.GetLastWriteTime(fileName);
+								if (currentlyProcessing[fileName].LastUpdateTime < lastFileUpdate)
+								{
+									string connectionString = currentlyProcessing[fileName].connectionString;
+									Console.WriteLine($"[{System.DateTime.Now.ToString()}] Reconnecting: {fileName}. Connection String: {connectionString}");
+									FileInfo fileInfo = new FileInfo(fileName);
+									Int32 indexOfUnderScore = fileInfo.Name.IndexOf("_");
+									string userName = fileInfo.Name.Substring(0, indexOfUnderScore);
+									//it has, remove it from processing, so that we can get the new one
+									m_proxy.RemoveSubBinding(userName, connectionString);
+									currentlyProcessing.Remove(fileName);
+								}
+							}
+
+						}
+
+						foreach (var info in currentlyProcessing)
+						{
+							if (!File.Exists(info.Key))
+							{
+								string fileName = info.Key;
+								string connectionString = info.Value.connectionString;
+								Console.WriteLine($"[{System.DateTime.Now.ToString()}] Disconnecting: {fileName} as it no longer exists. Connection String: {connectionString}");
 								FileInfo fileInfo = new FileInfo(fileName);
 								Int32 indexOfUnderScore = fileInfo.Name.IndexOf("_");
 								string userName = fileInfo.Name.Substring(0, indexOfUnderScore);
 								//it has, remove it from processing, so that we can get the new one
-								m_proxy.RemoveSubBinding(userName,connectionString);
-								currentlyProcessing.Remove(fileName);
+								m_proxy.RemoveSubBinding(userName, connectionString);
+								removeItems.Add(fileName);
 							}
 						}
-
-					}
-
-					foreach (var info in currentlyProcessing)
-					{
-						if (!File.Exists(info.Key))
+						foreach (var file in removeItems)
 						{
-							string fileName = info.Key;
-							string connectionString = info.Value.connectionString;
-							Console.WriteLine($"[{System.DateTime.Now.ToString()}] Disconnecting: {fileName} as it no longer exists. Connection String: {connectionString}");
-							FileInfo fileInfo = new FileInfo(fileName);
-							Int32 indexOfUnderScore = fileInfo.Name.IndexOf("_");
-							string userName = fileInfo.Name.Substring(0, indexOfUnderScore);
-							//it has, remove it from processing, so that we can get the new one
-							m_proxy.RemoveSubBinding(userName,connectionString);
-							removeItems.Add(fileName);
+							currentlyProcessing.Remove(file);
 						}
+						removeItems.Clear();
 					}
-					foreach (var file in removeItems)
-					{
-						currentlyProcessing.Remove(file);
-					}
-					removeItems.Clear();
 				}
+				catch (Exception ex) 
+				{ 
+					Console.WriteLine($"[{System.DateTime.Now.ToString()}] Error:" + ex.ToString());
+				}
+				
 				Thread.Sleep(1000);
 			}
 		}
