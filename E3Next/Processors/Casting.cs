@@ -2408,131 +2408,16 @@ namespace E3Core.Processors
 						//CurrentHps
 						string query = match.Groups[2].Value;
 
-						if (query == "PctHPs")
+						replaceValue = "0";
+						if (query == "PctHPs"|| query == "PctMana" || query == "PctEndurance")
 						{
 							replaceValue = "100";
-							string result = E3.Bots.Query(targetname, "${Me.PctHPs}");
-							if (result != "NULL")
-							{
-								replaceValue = result;
-							}
 						}
-						else if (query == "PctMana")
+				
+						string result = E3.Bots.Query(targetname, $"${{Me.{query}}}");
+						if (result != "NULL")
 						{
-							replaceValue = "100";
-							string result = E3.Bots.Query(targetname, "${Me.PctMana}");
-							if (result != "NULL")
-							{
-								replaceValue = result;
-							}
-						}
-						else if (query == "PctEndurance")
-						{
-							replaceValue = "100";
-							string result = E3.Bots.Query(targetname, "${Me.PctEndurance}");
-							if (result != "NULL")
-							{
-								replaceValue = result;
-							}
-						}
-						else if (query == "CurrentHPs")
-						{
-							replaceValue = "0";
-							string result = E3.Bots.Query(targetname, "${Me.CurrentHPs}");
-							if (result != "NULL")
-							{
-								replaceValue = result;
-							}
-						}
-						else if (query == "CurrentMana")
-						{
-							replaceValue = "0";
-							string result = E3.Bots.Query(targetname, "${Me.CurrentMana}");
-							if (result != "NULL")
-							{
-								replaceValue = result;
-							}
-						}
-						else if (query == "CurrentEndurance")
-						{
-							replaceValue = "0";
-							string result = E3.Bots.Query(targetname, "${Me.CurrentEndurance}");
-							if (result != "NULL")
-							{
-								replaceValue = result;
-							}
-						}
-						else if (query == "CurrentTargetID")
-						{
-							replaceValue = "0";
-							string result = E3.Bots.Query(targetname, "${Me.CurrentTargetID}");
-							if (result != "NULL")
-							{
-								replaceValue = result;
-							}
-						}
-						else if (query == "Casting")
-						{
-							replaceValue = "";
-							string result = E3.Bots.Query(targetname, "${Me.Casting}");
-							if (result != "NULL")
-							{
-								replaceValue = result;
-							}
-						}
-						else if (query == "AAPoints")
-						{
-							replaceValue = "0";
-							string result = E3.Bots.Query(targetname, "${Me.AAPoints}");
-							if (result != "NULL")
-							{
-								replaceValue = result;
-							}
-						}
-						else if (query == "AAPointsAssigned")
-						{
-							replaceValue = "0";
-							string result = E3.Bots.Query(targetname, "${Me.AAPointsAssigned}");
-							if (result != "NULL")
-							{
-								replaceValue = result;
-							}
-						}
-						else if (query == "AAPointsSpent")
-						{
-							replaceValue = "0";
-							string result = E3.Bots.Query(targetname, "${Me.AAPointsSpent}");
-							if (result != "NULL")
-							{
-								replaceValue = result;
-							}
-						}
-						else if (query == "AAPointsTotal")
-						{
-							replaceValue = "0";
-							string result = E3.Bots.Query(targetname, "${Me.AAPointsTotal}");
-							if (result != "NULL")
-							{
-								replaceValue = result;
-							}
-						}
-						else if (query == "ZoneID")
-						{
-							replaceValue = "0";
-							string result = E3.Bots.Query(targetname, "${Me.ZoneID}");
-							if (result != "NULL")
-							{
-								replaceValue = result;
-							}
-						}
-						else if (query == "Instance")
-						{
-							replaceValue = "0";
-							string result = E3.Bots.Query(targetname, "${Me.Instance}");
-							if (result != "NULL")
-							{
-								replaceValue = result;
-							}
+							replaceValue = result;
 						}
 						//check to see if some modification was done
 						if (replaceString != replaceValue)

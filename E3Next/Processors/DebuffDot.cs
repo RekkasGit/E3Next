@@ -437,7 +437,7 @@ namespace E3Core.Processors
                     }
                 }
 
-                if (!String.IsNullOrWhiteSpace(spell.Ifs) && !spell.Ifs.Contains("${Target}"))
+                if (!String.IsNullOrWhiteSpace(spell.Ifs) && !spell.Ifs.Contains("${Target"))
                 {
 					//its safe to run the Ifs before the check ready
 					if (!Casting.Ifs(spell))
@@ -466,7 +466,7 @@ namespace E3Core.Processors
                     MQ.Delay(2000, "${Target.BuffsPopulated}");
                     //check if the if condition works
                     //if it has a target tlo, process, other wise it was tested above.
-                    if (!String.IsNullOrWhiteSpace(spell.Ifs) && spell.Ifs.Contains("${Target}"))
+                    if (!String.IsNullOrWhiteSpace(spell.Ifs) && spell.Ifs.Contains("${Target"))
                     {
                         if (!Casting.Ifs(spell))
                         {

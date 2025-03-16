@@ -44,7 +44,7 @@ namespace E3Core.Processors
 			MQ.Cmd("/squelch /pet ghold on");
 		}
 
-        [ClassInvoke(Data.Class.PetClass)]
+        [AdvSettingInvoke]
         public static void Check_Pets()
         {
             if (E3.IsInvis) return;
