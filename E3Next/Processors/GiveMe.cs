@@ -316,13 +316,21 @@ namespace E3Core.Processors
                             if (e3util.ClearCursor())
                             {
                                 Int32 packNumber = MQ.Query<Int32>($"${{Math.Calc[${{FindItem[{whatToGive}].ItemSlot}}-22].Int}}");
-                                bool bagOpen = MQ.Query<bool>($"${{Bool[${{Window[Pack{packNumber}].Open}}]}}");
-                                if (!bagOpen)
-                                {
-                                    //have to open the bag to get the qty count to work
-                                    MQ.Cmd($"/nomodkey /itemnotify pack{packNumber} rightmouseup");
-                                    MQ.Delay(200);
-                                }
+
+                                //check to see if the slot is a bag
+
+                                bool isBag = MQ.Query<Boolean>($"${{Me.Inventory[pack{packNumber}].Container}}");
+
+								if (isBag)
+								{
+									bool bagOpen = MQ.Query<bool>($"${{Bool[${{Window[pack{packNumber}].Open}}]}}");
+									if (!bagOpen)
+									{
+										//have to open the bag to get the qty count to work
+										MQ.Cmd($"/nomodkey /itemnotify pack{packNumber} rightmouseup");
+										MQ.Delay(200);
+									}
+								}
                                 //put item on cursor
                                 MQ.Cmd($"/nomodkey /itemnotify \"{whatToGive}\" leftmouseup");
                                 MQ.Delay(200);
@@ -334,9 +342,13 @@ namespace E3Core.Processors
                                     MQ.Cmd($"/nomodkey /notify QuantityWnd QTYW_Accept_Button leftmouseup");
                                     MQ.Delay(200);
                                 }
-                                //close the bag
-                                MQ.Cmd($"/nomodkey /itemnotify pack{packNumber} rightmouseup");
-                            }
+                                if(isBag)
+                                {
+									//close the bag
+									MQ.Cmd($"/nomodkey /itemnotify pack{packNumber} rightmouseup");
+
+								}
+							}
                         }
                         else
                         {

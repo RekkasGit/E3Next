@@ -107,7 +107,16 @@ namespace E3Core.Settings.FeatureSettings
                 parsedData.Sections.AddSection(zoneName.Substring(0, 1));
                 parsedData.Sections[zoneName.Substring(0, 1)].AddKey(zoneName, useTribute ? "On" : "Off");
             }
-            fileIniData.WriteFile(fileName, parsedData);
+
+            //save may fail if multiple toons try and write it out at the same time. this is why shared settings suck
+            try
+            {
+				fileIniData.WriteFile(fileName, parsedData);
+			}
+            catch(Exception)
+            {
+                MQ.Delay(500);
+            }
             LoadData();
         }
     }
