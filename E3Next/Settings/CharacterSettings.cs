@@ -1555,6 +1555,26 @@ namespace E3Core.Settings
 									
 								}
 							}
+							else if (reference is IDictionary<string, CommandSet>)
+							{
+								IDictionary<string, CommandSet> stringDict = (IDictionary<string, CommandSet>)reference;
+								foreach (var tpair in stringDict)
+								{
+									if (tpair.Value.Commands.Count > 0)
+									{
+										foreach (var commandValue in tpair.Value.Commands)
+										{
+											section_keyCollection.AddKey(tpair.Key, commandValue);
+										}
+									}
+									else
+									{
+										section_keyCollection.AddKey(tpair.Key, "");
+
+									}
+
+								}
+							}
 							else
 							{
 								if (reference is string)

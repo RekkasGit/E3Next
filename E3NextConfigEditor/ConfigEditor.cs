@@ -77,7 +77,7 @@ namespace E3NextConfigEditor
 		public static IniParser.Model.IniData _baseIniData = null;
 
 		//list the Dictionary or Key/Value based sections that are valid
-		static List<string> _dictionarySections = new List<string>() { "Ifs", "E3BotsPublishData (key/value)", "Events", "EventLoop","Burn" };
+		static List<string> _dictionarySections = new List<string>() { "Ifs", "E3BotsPublishData (key/value)", "Events", "EventLoop","Burn","CommandSets" };
 
         TreeNode _sectionRootNodes = null;
 
@@ -383,6 +383,20 @@ namespace E3NextConfigEditor
 					}
 
 				}
+				else if (impsec == "CommandSets")
+				{
+					TreeNode commandSetNode = new TreeNode();
+					commandSetNode.Text = "CommandSets";
+					_sectionRootNodes.Nodes.Add(commandSetNode);
+
+					valuesListBox.Tag = "CommandSets";
+					IDictionary<string, CommandSet> tburns = E3.CharacterSettings.CommandCollection;
+					foreach (var key in tburns.Keys)
+					{
+						commandSetNode.Nodes.Add(key);
+					}
+
+				}
 				else
 				{
 					if (impsec.Contains(_bardDynamicMelodyName)) continue;
@@ -438,20 +452,20 @@ namespace E3NextConfigEditor
         List<string> GetSectionSortOrderByClass(Class characterClass)
 		{
 
-			var returnValue = new List<string>() { "Misc", "Assist Settings", "Nukes", "Debuffs", "DoTs on Assist", "DoTs on Command", "Heals", "Buffs", "Melee Abilities", "Burn", "Pets", "Ifs" };
+			var returnValue = new List<string>() { "Misc", "Assist Settings", "Nukes", "Debuffs", "DoTs on Assist", "DoTs on Command", "Heals", "Buffs", "Melee Abilities", "Burn","CommandSets", "Pets", "Ifs" };
 
 
 			if (characterClass == Class.Bard)
 			{
-				returnValue = new List<string>() { _bardDynamicMelodyName, "Bard", "Melee Abilities", "Burn", "Ifs", "Assist Settings", "Buffs" };
+				returnValue = new List<string>() { _bardDynamicMelodyName, "Bard", "Melee Abilities", "Burn", "CommandSets", "Ifs", "Assist Settings", "Buffs" };
 			}
 			if (characterClass == Class.Necromancer)
 			{
-				returnValue = new List<string>() { "DoTs on Assist","DoTs on Command", "Debuffs","Pets", "Burn", "Ifs", "Assist Settings", "Buffs" };
+				returnValue = new List<string>() { "DoTs on Assist","DoTs on Command", "Debuffs","Pets", "Burn", "CommandSets", "Ifs", "Assist Settings", "Buffs" };
 			}
 			if (characterClass == Class.Shadowknight)
 			{
-				returnValue = new List<string>() { "Nukes", "Assist Settings", "Buffs","DoTs on Assist", "DoTs on Command", "Debuffs", "Pets", "Burn", "Ifs"  };
+				returnValue = new List<string>() { "Nukes", "Assist Settings", "Buffs","DoTs on Assist", "DoTs on Command", "Debuffs", "Pets", "Burn", "CommandSets", "Ifs"  };
 			}
 
 			return returnValue;
@@ -580,6 +594,15 @@ namespace E3NextConfigEditor
 					subsectionComboBox.Items.Add(pair.Key);
 				}
 			}
+			else if (selectedSection == "CommandSets")
+			{
+				valuesListBox.Tag = "CommandSets";
+				IDictionary<string, CommandSet> dictionary = E3.CharacterSettings.CommandCollection;
+				foreach (var pair in dictionary)
+				{
+					subsectionComboBox.Items.Add(pair.Key);
+				}
+			}
 			else
 			{
 				var section = _baseIniData.Sections[selectedSection];
@@ -654,6 +677,18 @@ namespace E3NextConfigEditor
 					string selectedSubSection = subsectionComboBox.SelectedItem.ToString();
 					List<Spell> itemsToBurn = BurnCollection[selectedSubSection].ItemsToBurn;
 					UpdateListView(itemsToBurn);
+
+				}
+			}
+			else if (selectedSection == "CommandSets")
+			{
+				FieldInfo objectList = _charSettingsMappings["CommandSets"][""];
+				if (objectList.IsGenericDictonary(typeof(string), typeof(CommandSet)))
+				{
+					IDictionary<string, CommandSet> BurnCollection = (IDictionary<string, CommandSet>)objectList.GetValue(E3.CharacterSettings);
+					string selectedSubSection = subsectionComboBox.SelectedItem.ToString();
+					List<String> commandsToDo = BurnCollection[selectedSubSection].Commands;
+					UpdateListView(commandsToDo);
 
 				}
 			}
@@ -1050,13 +1085,50 @@ namespace E3NextConfigEditor
 				valueList.Add(a.Value);
 
 				string selectedSection = sectionComboBox.SelectedItem.ToString();
-				var section = _baseIniData.Sections[selectedSection];
-				if (section != null)
+
+				if(selectedSection=="CommandSets")
 				{
-					string selectedSubSection = subsectionComboBox.SelectedItem.ToString();
-					FieldInfo objectList = _charSettingsMappings[selectedSection][selectedSubSection];
-					UpdateListView(objectList);
+
+					var section = _baseIniData.Sections[selectedSection];
+					if (section != null)
+					{
+						//dynamic type, just fill out the list below with the loaded types
+						if (_dictionarySections.Contains(selectedSection, StringComparer.OrdinalIgnoreCase))
+						{
+							FieldInfo objectList = _charSettingsMappings[selectedSection][""];
+
+							string selectedSubSection = subsectionComboBox.SelectedItem.ToString();
+
+							Dictionary<string, CommandSet> dictionary = (Dictionary<string, CommandSet>)objectList.GetValue(E3.CharacterSettings);
+							
+							CommandSet commandSet = dictionary[selectedSubSection];
+							valuesListBox.Tag = commandSet.Commands;
+							valuesListBox.Items.Clear();
+							foreach (var commandValue in commandSet.Commands)
+							{
+								KryptonListItem item = new KryptonListItem();
+								item.ShortText = commandValue;
+								item.LongText = string.Empty;
+								item.Tag = commandValue;
+								valuesListBox.Items.Add(item);
+							}
+
+						}
+					}
+
 				}
+				else
+				{
+					var section = _baseIniData.Sections[selectedSection];
+					if (section != null)
+					{
+						string selectedSubSection = subsectionComboBox.SelectedItem.ToString();
+						FieldInfo objectList = _charSettingsMappings[selectedSection][selectedSubSection];
+						UpdateListView(objectList);
+					}
+
+				}
+				
 			}
 		}
 		private void valueList_AddKeyValue_Execute(object sender, EventArgs e)
@@ -1343,6 +1415,19 @@ namespace E3NextConfigEditor
 				valuesListBox.Items.Add(item);
 			}
 		}
+		private void UpdateListView(List<string> itemList)
+		{
+			valuesListBox.Items.Clear();
+			valuesListBox.Tag = itemList;
+			foreach (var itemValue in itemList)
+			{
+				KryptonListItem item = new KryptonListItem();
+				item.ShortText = itemValue;
+				item.LongText = string.Empty;
+				item.Tag = itemValue;
+				valuesListBox.Items.Add(item);
+			}
+		}
 		private bool TryGetSpellIcon(Int32 index, out Bitmap output)
 		{
 			output = null;
@@ -1440,7 +1525,6 @@ namespace E3NextConfigEditor
 					i++;
 				}
 			}
-
 			else if (objectList.IsGenericDictonary(typeof(string), typeof(string)))
 			{
 				Dictionary<string, string> dictionary = (Dictionary<string, string>)objectList.GetValue(E3.CharacterSettings);
@@ -1856,6 +1940,30 @@ namespace E3NextConfigEditor
 							propertyGrid.SelectedObject = null;
 						}
 					
+					}
+				}
+				else if (section == "CommandSets")
+				{
+					FieldInfo objectList = _charSettingsMappings["CommandSets"][""];
+					if (objectList.IsGenericDictonary(typeof(string), typeof(CommandSet)))
+					{
+						IDictionary<string, CommandSet> CommandCollection = (IDictionary<string, CommandSet>)objectList.GetValue(E3.CharacterSettings);
+						string selectedSubSection = node.Text;
+						if (CommandCollection.ContainsKey(selectedSubSection))
+						{
+							List<String> commandsToDo = CommandCollection[selectedSubSection].Commands;
+							sectionComboBox.SelectedItem = section;
+							subsectionComboBox.SelectedItem = node.Text;
+							UpdateListView(commandsToDo);
+						}
+						else
+						{
+							valuesListBox.Items.Clear();
+							propertyGrid.SelectedObject = null;
+
+							propertyGrid.SelectedObject = null;
+						}
+
 					}
 				}
 				else
