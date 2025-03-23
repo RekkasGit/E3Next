@@ -206,6 +206,30 @@ namespace E3Core.Settings
 				}
 			}
 		}
+		public static void LoadKeyData<K>(string sectionKey, IniData parsedData, IDictionary<K, CommandSet> dictionary)
+		{
+			var section = parsedData.Sections[sectionKey];
+			if (section != null)
+			{
+				var keyData = section;
+				if (keyData != null)
+				{
+					foreach (var data in keyData)
+					{
+						CommandSet commandSet = new CommandSet();
+						commandSet.Name = data.KeyName;
+						foreach (var value in data.ValueList)
+						{
+							if (String.IsNullOrWhiteSpace(value)) continue;
+							commandSet.Commands.Add(value);
+						}
+
+						dictionary.Add((K)(object)data.KeyName, commandSet);
+
+					}
+				}
+			}
+		}
 		public static void LoadKeyData<K>(string sectionKey, IniData parsedData, IDictionary<K, String> dictionary)
 		{
 			

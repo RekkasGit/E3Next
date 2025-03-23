@@ -130,6 +130,7 @@
     <Compile Include="Processors\Burns.cs" />
     <Compile Include="Processors\Charm.cs" />
     <Compile Include="Processors\ClearXTargets.cs" />
+    <Compile Include="Processors\Commands.cs" />
     <Compile Include="Processors\DebuffDot.cs" />
     <Compile Include="Processors\Dispel.cs" />
     <Compile Include="Processors\GiveMe.cs" />

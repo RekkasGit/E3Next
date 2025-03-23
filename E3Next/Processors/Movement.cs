@@ -50,7 +50,7 @@ namespace E3Core.Processors
 
         public static bool StandingStillForTimePeriod()
         {
-            if(Core.StopWatch.ElapsedMilliseconds - E3.LastMovementTimeStamp > E3.GeneralSettings.Movement_StandingStill)
+            if((Core.StopWatch.ElapsedMilliseconds - E3.LastMovementTimeStamp) > E3.GeneralSettings.Movement_StandingStill)
             {
                 return true;
             }

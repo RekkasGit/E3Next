@@ -280,6 +280,9 @@ namespace E3Core.Settings
 		[INI_Section("Burn","")]
 		[ExposedData("Burn","")]
 		public Dictionary<string, Burn> BurnCollection = new Dictionary<string, Burn>(StringComparer.OrdinalIgnoreCase);
+		[INI_Section("CommandSets", "")]
+		[ExposedData("CommandSets", "")]
+		public Dictionary<string, CommandSet> CommandCollection = new Dictionary<string, CommandSet>(StringComparer.OrdinalIgnoreCase);
 		//cures
 		[INI_Section("Cures", "Cure")]
 		public List<Spell> Cures = new List<Spell>();
@@ -873,6 +876,7 @@ namespace E3Core.Settings
 			//LoadKeyData("LootCommander", "Looter", ParsedData, LootCommander_Looters);
 
 			LoadKeyData("Burn", ParsedData, BurnCollection);
+			LoadKeyData("CommandSets", ParsedData, CommandCollection);
 
             LoadKeyData("Pets", "Pet Spell", ParsedData, PetSpell);
             LoadKeyData("Pets", "Pet Buff", ParsedData, PetOwnerBuffs);
@@ -1088,6 +1092,8 @@ namespace E3Core.Settings
 			section.Keys.AddKey("Long Burn", "");
 			section.Keys.AddKey("Full Burn", "");
 
+			newFile.Sections.AddSection("CommandSets");
+		
 
 			if (CharacterClass == Class.Rogue)
 			{

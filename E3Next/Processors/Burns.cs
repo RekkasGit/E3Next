@@ -1,13 +1,8 @@
-﻿using E3Core.Classes;
-using E3Core.Data;
-using E3Core.Settings;
+﻿using E3Core.Data;
 using E3Core.Utility;
 using MonoCore;
 using System;
 using System.Collections.Generic;
-using System.Dynamic;
-using System.Linq;
-using System.Runtime.CompilerServices;
 
 namespace E3Core.Processors
 {
