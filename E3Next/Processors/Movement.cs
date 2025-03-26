@@ -37,7 +37,7 @@ namespace E3Core.Processors
         private static Int64 _nextChaseCheck = 0;
         private static Int64 _nextChaseCheckInterval = 10;
 		[ExposedData("Movement", "ChaseTarget")]
-		public static string _chaseTarget = String.Empty;
+		public static string ChaseTargetName = String.Empty;
 		public static List<string> _clickitUseDoorZones = new List<string>() { "poknowledge", "potranq", "potimea", "potimeb","anguish","solrotower" };
 
 		[SubSystemInit]
@@ -65,20 +65,20 @@ namespace E3Core.Processors
             Anchor_Z = double.MinValue;
             Following = false;
             FollowTargetName = String.Empty;
-            _chaseTarget = String.Empty;
+            ChaseTargetName = String.Empty;
         }
         [ClassInvoke(Data.Class.All)]
         public static void Check_Chase()
         {
-            if (_chaseTarget == String.Empty) return;
+            if (ChaseTargetName == String.Empty) return;
             if (!e3util.ShouldCheck(ref _nextChaseCheck, _nextChaseCheckInterval)) return;
 
             using (_log.Trace())
             {
 
-				if (_chaseTarget != String.Empty && !Assist.IsAssisting)
+				if (ChaseTargetName != String.Empty && !Assist.IsAssisting)
                 {
-					if(_spawns.TryByName(_chaseTarget, out var spawn))
+					if(_spawns.TryByName(ChaseTargetName, out var spawn))
                     {
                         double distance = spawn.Distance;
 						double minDistanceToChase = E3.GeneralSettings.Movement_ChaseDistanceMin;
@@ -88,7 +88,7 @@ namespace E3Core.Processors
 						if (distance != -1)
 						{
 							Following = true;
-							bool InLoS = MQ.Query<bool>($"${{Spawn[={_chaseTarget}].LineOfSight}}");
+							bool InLoS = MQ.Query<bool>($"${{Spawn[={ChaseTargetName}].LineOfSight}}");
 							bool navLoaded = MQ.Query<bool>("${Bool[${Navigation.MeshLoaded}]}");
 							if (navLoaded)
 							{
@@ -119,7 +119,7 @@ namespace E3Core.Processors
 
         public static void RemoveFollow()
         {
-            _chaseTarget = String.Empty;
+            ChaseTargetName = String.Empty;
             FollowTargetName = string.Empty;
             Following = false;
             MQ.Cmd("/squelch /afollow off");
@@ -480,7 +480,7 @@ namespace E3Core.Processors
                         Spawn s;
                         if (_spawns.TryByName(x.args[0], out s))
                         {
-                            _chaseTarget = x.args[0];
+                            ChaseTargetName = x.args[0];
                             Following = true;
                         }
 
@@ -490,7 +490,7 @@ namespace E3Core.Processors
                 else if (x.args.Count == 1 && x.args[0] == "off")
                 {
                     E3.Bots.BroadcastCommandToGroup($"/chaseme off {E3.CurrentName}", x);
-                    _chaseTarget = String.Empty;
+                    ChaseTargetName = String.Empty;
                     Following = false;
                 }
                 //chaseme off <toon name>
@@ -498,7 +498,7 @@ namespace E3Core.Processors
                 {
                     if (!e3util.FilterMe(x))
                     {
-                        _chaseTarget = String.Empty;
+                        ChaseTargetName = String.Empty;
                         Following = false;
 
                     }
@@ -583,7 +583,7 @@ namespace E3Core.Processors
             {
                 if (!x.args.Contains("me",StringComparer.OrdinalIgnoreCase))
                 {
-                    _chaseTarget = String.Empty;
+                    ChaseTargetName = String.Empty;
                     FollowTargetName = string.Empty;
                     Following = false;
 

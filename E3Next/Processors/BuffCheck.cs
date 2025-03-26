@@ -509,7 +509,9 @@ namespace E3Core.Processors
 						BuffBots(E3.CharacterSettings.CombatPetOwnerBuffs, true);
 					}
 
-					if ((!Movement.IsMoving() && String.IsNullOrWhiteSpace(Movement.FollowTargetName)) || Movement.StandingStillForTimePeriod())
+					/*if you are NOT following someone, and not moving, it will buff instantly. 
+					If you ARE following someone and not moving for 10+ seconds, it will buff.*/
+					if ((!Movement.IsMoving() && (String.IsNullOrWhiteSpace(Movement.FollowTargetName) && String.IsNullOrWhiteSpace(Movement.ChaseTargetName))) || Movement.StandingStillForTimePeriod())
 					{
 						if (!E3.CurrentInCombat)
 						{

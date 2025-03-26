@@ -572,6 +572,7 @@ namespace E3Core.Processors
 		public static string CurrentMercName = String.Empty;
         public static bool CurrentInCombat = false;
         public static int CurrentId;
+		[ExposedData("Core", "LastMovementTimeStamp")]
         public static Int64 LastMovementTimeStamp;
         public static string CurrentLongClassString;
         public static string CurrentShortClassString;
