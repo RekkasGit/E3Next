@@ -316,6 +316,7 @@ namespace E3Core.Processors
 		{
 			PubServer.AddTopicMessage("${InCombat}", CurrentInCombat.ToString());
 			PubServer.AddTopicMessage("${EQ.CurrentFocusedWindowName}", MQ.GetFocusedWindowName());
+			//PubServer.AddTopicMessage("${EQ.CurrentHoveredWindowName}", MQ.GetHoverWindowName());
 			PubServer.AddTopicMessage("${Me.CurrentTargetID}", MQ.Query<string>("${Target.ID}"));
 			PubServer.AddTopicMessage("${Me.ZoneID}", MQ.Query<string>("${Zone.ID}"));
 			PubServer.AddTopicMessage("${Me.Instance}", MQ.Query<string>("${Me.Instance}"));

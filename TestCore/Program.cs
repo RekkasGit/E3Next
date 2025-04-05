@@ -243,6 +243,11 @@ namespace TestCore
 			{
 				return -1;
 			}
+
+			public string GetHoverWindowName()
+			{
+				return "NULL";
+			}
 		}
 
     }

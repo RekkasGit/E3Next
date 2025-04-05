@@ -875,8 +875,8 @@ namespace MonoCore
         public static ISpawns spawnInstance;
         public static Logging logInstance;
         public volatile static bool IsProcessing = false;
-        public const string _coreVersion = "0.1";
-        public static Decimal _MQ2MonoVersion = 0.1M;
+        public const string _coreVersion = "0.2";
+        public static Decimal _MQ2MonoVersion = 0.2M;
 
         //Note, if you comment out a method, this will tell MQ2Mono to not try and execute it
         //only use the events you need to prevent string allocations to be passed in
@@ -1218,6 +1218,8 @@ namespace MonoCore
         [MethodImpl(MethodImplOptions.InternalCall)]
         public extern static string mq_GetFocusedWindowName();
 		[MethodImpl(MethodImplOptions.InternalCall)]
+		public extern static string mq_GetHoverWindowName();
+		[MethodImpl(MethodImplOptions.InternalCall)]
 		private extern static string mq_GetMQ2MonoVersion();
 		[MethodImpl(MethodImplOptions.InternalCall)]
 		public extern static int mq_GetSpellDataEffectCount(string query);
@@ -1333,8 +1335,8 @@ namespace MonoCore
 		Int32 SpellDataGetLineCount(string query);
 		bool FeatureEnabled(MQFeature feature);
         string GetFocusedWindowName();
-
-    }
+		string GetHoverWindowName();
+	}
     public class MQ : IMQ
     {   //**************************************************************************************************
         //NONE OF THESE METHODS SHOULD BE CALLED ON THE C++ Thread, as it will cause a deadlock due to delay calls
@@ -1680,6 +1682,17 @@ namespace MonoCore
                 return "NULL";
             }
 			
+		}
+        public string GetHoverWindowName()
+        {
+			if (Core._MQ2MonoVersion > 0.31M)
+			{
+				return Core.mq_GetFocusedWindowName();
+			}
+			else
+			{
+				return "NULL";
+			}
 		}
 	}
 

@@ -64,6 +64,11 @@ namespace E3NextConfigEditor.MQ
 			throw new NotImplementedException();
 		}
 
+		public string GetHoverWindowName()
+		{
+			throw new NotImplementedException();
+		}
+
 		public T Query<T>(string query)
 		{
 			string mqReturnValue = _tloClient.RequestData(query);

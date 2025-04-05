@@ -73,6 +73,7 @@ namespace E3Core.Processors
             if (MQ.Query<bool>("${Window[ConfirmationDialogBox].Open}"))
             {
 
+                MQ.Delay(1000);
 
                 //check if its a valid confirmation box
                 string message = MQ.Query<string>("${Window[ConfirmationDialogBox].Child[cd_textoutput].Text}");

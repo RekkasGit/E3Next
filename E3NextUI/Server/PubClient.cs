@@ -199,7 +199,15 @@ namespace E3NextUI.Server
 								    ((E3UI)Application.OpenForms[0]).SetCurrentWindow(messageReceived);
 								}
 							}
-                            else if (messageTopicReceived == "GuildChatForDiscord")
+							else if (messageTopicReceived == "${EQ.CurrentHoveredWindowName}")
+							{
+
+								if (Application.OpenForms.Count > 0 && Application.OpenForms[0] is E3UI)
+								{
+									((E3UI)Application.OpenForms[0]).SetCurrentHoverWindow(messageReceived);
+								}
+							}
+							else if (messageTopicReceived == "GuildChatForDiscord")
                             {
                                 var messageParts = messageReceived.Split('|');
                                 if (messageParts.Length == 2)

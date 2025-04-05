@@ -933,6 +933,11 @@ namespace MQServerClient
 
 			return Int32.Parse(mqReturnValue);
 		}
+
+		public string GetHoverWindowName()
+		{
+			return "NULL";
+		}
 	}
 
 }

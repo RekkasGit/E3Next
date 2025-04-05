@@ -678,7 +678,8 @@ namespace E3Core.Processors
                     //tell others to rtz
                     //get our faced heading
                     double heading = MQ.Query<double>("${Me.Heading.Degrees}");
-                    E3.Bots.BroadcastCommandToGroup($"/rtz {heading}",x);
+                   
+                    E3.Bots.BroadcastCommandToGroupZone($"/rtz {heading}",x,false);
                     if (e3util.FilterMe(x)) return;
                     MQ.Delay(1000);
                     if(e3util.IsEQLive())

@@ -65,7 +65,8 @@ namespace E3NextUI
         public static String _playerSP;
         private globalKeyboardHook _globalKeyboard;
         public static string _currentWindowName = "NULL";
-        public static object _currentWindowLock = new object();
+		public static string _currentHoverWindowName = "NULL";
+		public static object _currentWindowLock = new object();
         private FormBorderStyle _startingStyle;
 		//resizing stuff for when in buttonmode
 		//https://stackoverflow.com/questions/2575216/how-to-move-and-resize-a-form-without-a-border
@@ -817,7 +818,17 @@ namespace E3NextUI
 			if (value == _currentWindowName) return;
             lock(_currentWindowLock)
             {
+				AddConsoleLine($"CurrentFocusedWindow:[{value}]", E3UI.MQConsole);
 				_currentWindowName = value;
+			}
+		}
+		public void SetCurrentHoverWindow(string value)
+		{
+			if (value == _currentHoverWindowName) return;
+			lock (_currentWindowLock)
+			{
+				AddConsoleLine($"CurrentHoverWindow:[{value}]", E3UI.MQConsole);
+				_currentHoverWindowName = value;
 			}
 		}
 		#endregion

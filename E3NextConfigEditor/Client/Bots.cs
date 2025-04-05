@@ -51,7 +51,17 @@ namespace E3NextConfigEditor.Client
 			
 		}
 
+		public void BroadcastCommandAllZone(string command, bool noparse = false, EventProcessor.CommandMatch match = null)
+		{
+			
+		}
+
 		public void BroadcastCommandToGroup(string command, EventProcessor.CommandMatch match = null, bool noparse = false)
+		{
+			
+		}
+
+		public void BroadcastCommandToGroupZone(string command, EventProcessor.CommandMatch match = null, bool noparse = false)
 		{
 			
 		}
