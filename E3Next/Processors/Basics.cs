@@ -737,9 +737,16 @@ namespace E3Core.Processors
                             {
                                 numberToBark = 1;
                             }
+                            
+                            if (MQ.Query<bool>("${Me.Sneaking}"))
+                            {
+                                MQ.Cmd("/doability sneak");
+                                MQ.Delay(500);
+                            }
+
+                            MQ.Cmd("/makemevisible");
                             for (int i = 0; i < numberToBark; i++)
                             {
-
                                 MQ.Cmd($"/say {message}");
                                 MQ.Delay(1500);
                                 if (EventProcessor.EventList["Zoned"].queuedEvents.Count > 0)
@@ -792,6 +799,14 @@ namespace E3Core.Processors
 									numberToBark = 1;
 								}
 								string message = x.args[1];
+                                
+                                if (MQ.Query<bool>("${Me.Sneaking}"))
+                                {
+                                    MQ.Cmd("/doability sneak");
+                                    MQ.Delay(500);
+                                }
+
+                                MQ.Cmd("/makemevisible");
                                 for (int i = 0; i < numberToBark; i++)
                                 {
                                     MQ.Cmd($"/say {message}",1000);
@@ -829,9 +844,16 @@ namespace E3Core.Processors
 							string message = sb.ToString();
 							E3.Bots.BroadcastCommandToGroup($"/e3bark-send {targetid} \"{message}\" {Zoning.CurrentZone.Id}", x);
 							Int32 numberToBark = 1;
+                            
+                            if (MQ.Query<bool>("${Me.Sneaking}"))
+                            {
+                                MQ.Cmd("/doability sneak");
+                                MQ.Delay(500);
+                            }
 
-							MQ.Cmd("/makemevisible");
-							for (int i = 0; i < numberToBark; i++)
+                            MQ.Cmd("/makemevisible");
+                            MQ.Delay(500);
+                            for (int i = 0; i < numberToBark; i++)
 							{
 								MQ.Cmd($"/say {message}");
 								MQ.Delay(1500);
@@ -874,8 +896,16 @@ namespace E3Core.Processors
 								}
 								Casting.TrueTarget(targetid);
 								MQ.Delay(100);
-								MQ.Cmd("/makemevisible");
-								Int32 numberToBark = 1;
+                                
+                                if (MQ.Query<bool>("${Me.Sneaking}"))
+                                {
+                                    MQ.Cmd("/doability sneak");
+                                    MQ.Delay(500);
+                                }
+
+                                MQ.Cmd("/makemevisible");
+                                MQ.Delay(500);
+                                Int32 numberToBark = 1;
 								string message = x.args[1];
 								for (int i = 0; i < numberToBark; i++)
 								{
