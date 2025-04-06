@@ -40,8 +40,18 @@ namespace E3Core.Processors
         {
             _petMaxShrink = false;
             _petMaxShrinkID = 0;
-			MQ.Cmd("/squelch /pet hold on");
-			MQ.Cmd("/squelch /pet ghold on");
+
+            //try out hold if on enc, then after 3 sec try ghold
+			if (E3.CurrentClass == Class.Enchanter)
+            {
+				MQ.Cmd("/squelch /pet hold on");
+				MQ.Cmd("/timed 30 /squelch /pet ghold on");
+			}
+            else
+            {
+				MQ.Cmd("/squelch /pet ghold on");
+			}
+         
 		}
 
         [AdvSettingInvoke]
