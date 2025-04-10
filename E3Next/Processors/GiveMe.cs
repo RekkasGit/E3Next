@@ -83,7 +83,9 @@ namespace E3Core.Processors
 
 			//laz spells
             _groupSpellRequests.Add("Azure Mind Crystal III", new Spell("Azure Mind Crystal"));
-            _groupSpellRequests.Add("Summoned: Large Modulation Shard", new Spell("Large Modulation Shard"));
+			_groupSpellRequests.Add("Azure Mind Crystal II", new Spell("Azure Mind Crystal"));
+			_groupSpellRequests.Add("Azure Mind Crystal I", new Spell("Azure Mind Crystal"));
+			_groupSpellRequests.Add("Summoned: Large Modulation Shard", new Spell("Large Modulation Shard"));
 			_groupSpellRequests.Add("Sanguine Mind Crystal III", new Spell("Sanguine Mind Crystal"));
 			_groupSpellRequests.Add("Blazing Void Orb", new Spell("Glyphwielder's Eternal Bracer"));
 			_groupSpellRequests.Add("Molten orb", new Spell("Summon: Molten Orb"));
@@ -405,7 +407,7 @@ namespace E3Core.Processors
 				if (cursorID<1 && Casting.CheckMana(s) && Casting.CheckReady(s))
 				{
 				
-					e3util.DeleteNoRentItem(spellToUse);
+					e3util.DeleteNoRentItem(whatToGive);
 					Casting.Cast(0, s);
 					MQ.Delay(1000);
 					if (whoToGiveTo == E3.CurrentName)
