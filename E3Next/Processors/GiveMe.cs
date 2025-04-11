@@ -10,6 +10,11 @@ namespace E3Core.Processors
 {
     public class GiveMeItem
     {
+        public enum TargetTypes
+        {
+            Single,
+            Group
+        }
 
         public GiveMeItem(string input)
         {
@@ -53,13 +58,19 @@ namespace E3Core.Processors
 							SpellToUse = splits[3].Trim();
 							
 						}
-                    }
+						if (splits.Length > 4)
+						{
+                            var targetTypeString = splits[4].Trim();
+                            Enum.TryParse(targetTypeString, true, out TargetType);
+						}
+					}
                 }
             }
         }
         public string Supplier = String.Empty;
         public string ItemName = String.Empty;
 		public string SpellToUse = String.Empty;
+        public TargetTypes TargetType = TargetTypes.Single;
         public Int32 Delay = 30;
         public double NextCheck = 0;
 		public bool NoCombat = false;
@@ -87,6 +98,8 @@ namespace E3Core.Processors
 			_groupSpellRequests.Add("Azure Mind Crystal I", new Spell("Azure Mind Crystal"));
 			_groupSpellRequests.Add("Summoned: Large Modulation Shard", new Spell("Large Modulation Shard"));
 			_groupSpellRequests.Add("Sanguine Mind Crystal III", new Spell("Sanguine Mind Crystal"));
+			_groupSpellRequests.Add("Sanguine Mind Crystal II", new Spell("Sanguine Mind Crystal"));
+			_groupSpellRequests.Add("Sanguine Mind Crystal I", new Spell("Sanguine Mind Crystal"));
 			_groupSpellRequests.Add("Blazing Void Orb", new Spell("Glyphwielder's Eternal Bracer"));
 			_groupSpellRequests.Add("Molten orb", new Spell("Summon: Molten Orb"));
             _groupSpellRequests.Add("Lava orb", new Spell("Summon: Lava Orb"));
@@ -138,8 +151,24 @@ namespace E3Core.Processors
                
                 Int32 qty = int.MaxValue;
 				//giveme Alara "Something" qty Rekken
+				if (x.args.Count >5)
+				{
+					string user = x.args[0];
+					string something = x.args[1];
+					if (x.args.Count > 2)
+					{
+						Int32.TryParse(x.args[2], out qty);
+					}
+					string reciver = x.args[3];
+					string spellName = x.args[4];
+                    string targetType = x.args[5];
 
-				if(x.args.Count>4)
+                    GiveMeItem.TargetTypes targetTypeEnum = GiveMeItem.TargetTypes.Single;
+                    Enum.TryParse(targetType,out targetTypeEnum);
+
+					GiveTo(reciver, something, qty, spellName, targetTypeEnum);
+				}
+				else if (x.args.Count>4)
 				{
 					string user = x.args[0];
 					string something = x.args[1];
@@ -164,7 +193,8 @@ namespace E3Core.Processors
                   
                     GiveTo(reciver, something, qty);
 
-                }//giveme Alara "Something" qty
+                }
+                //giveme Alara "Something" qty
                 else if (x.args.Count > 1)
                 {
                     //need to broadcast 
@@ -230,7 +260,7 @@ namespace E3Core.Processors
                                         //lets ask for it!
 										if(!String.IsNullOrWhiteSpace(item.SpellToUse))
 										{
-											E3.Bots.BroadcastCommandToPerson(item.Supplier, $"/giveme {item.Supplier} \"{item.ItemName}\" {1} {E3.CurrentName} \"{item.SpellToUse}\"");
+											E3.Bots.BroadcastCommandToPerson(item.Supplier, $"/giveme {item.Supplier} \"{item.ItemName}\" {1} {E3.CurrentName} \"{item.SpellToUse}\" \"{item.TargetType.ToString()}\"");
 										}
 										else
 										{
@@ -246,13 +276,13 @@ namespace E3Core.Processors
                 }
             }
         }
-        public static void GiveTo(string whoToGiveTo, string whatToGive, Int32 qtyToGive, string SpellName = "")
+        public static void GiveTo(string whoToGiveTo, string whatToGive, Int32 qtyToGive, string SpellName = "", GiveMeItem.TargetTypes targetType = GiveMeItem.TargetTypes.Single)
         {
             //exceptions for group spells
-            if (_groupSpellRequests.ContainsKey(whatToGive))
+            if (_groupSpellRequests.ContainsKey(whatToGive) || (targetType == GiveMeItem.TargetTypes.Group && !String.IsNullOrWhiteSpace(SpellName)))
             {
                 if (Basics.AmIDead()) return;
-                DoGroupSpellGive(whoToGiveTo, whatToGive);
+                DoGroupSpellGive(whoToGiveTo, whatToGive,SpellName);
                 return;
             }
 			//exception for indivdual spell
@@ -363,7 +393,7 @@ namespace E3Core.Processors
                 }
             }
         }
-        private static void DoGroupSpellGive(string whoToGiveTo, string whatToGive)
+        private static void DoGroupSpellGive(string whoToGiveTo, string whatToGive, string spellToUse = "")
         {
             Spawn spawn;
             if(_spawns.TryByName(whoToGiveTo, out spawn))
@@ -372,7 +402,24 @@ namespace E3Core.Processors
                 if (!Basics.GroupMembers.Contains(spawn.ID)) return;
 
                 Spell s;
-                if (_groupSpellRequests.TryGetValue(whatToGive, out s))
+                if(!String.IsNullOrWhiteSpace(spellToUse))
+                {
+					if (!Spell.LoadedSpellsByName.TryGetValue(spellToUse, out s))
+					{
+						s = new Spell(spellToUse);
+					}
+					if (Casting.CheckMana(s) && Casting.CheckReady(s))
+					{
+						//lets tell everyone else to destroy their items and destroy our own.
+						E3.Bots.BroadcastCommandToGroup($"/DestroyNoRent \"{whatToGive}\"");
+						e3util.DeleteNoRentItem(whatToGive);
+						MQ.Delay(2000);
+						Casting.Cast(0, s);
+						MQ.Delay(1000);
+						e3util.ClearCursor();
+					}
+				}
+                else if (_groupSpellRequests.TryGetValue(whatToGive, out s))
                 {
                     if (Casting.CheckMana(s) && Casting.CheckReady(s))
                     {
@@ -385,6 +432,7 @@ namespace E3Core.Processors
 						e3util.ClearCursor();
                     }
                 }
+                
             }
         }
 		private static void DoSpellGive(string whoToGiveTo, string whatToGive, string spellToUse)
