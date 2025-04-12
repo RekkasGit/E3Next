@@ -1118,55 +1118,55 @@ namespace E3Core.Utility
 			{
 
 				//Sanctuary EQ has custom classes ,that need to be mapped. 
-				if (className == "Adventurer")
+				if (String.Equals(className, "Adventurer", StringComparison.OrdinalIgnoreCase))
 				{
 					return "Warrior";
 				}
-				if (className == "Alchemist")
+				if (String.Equals(className, "Alchemist", StringComparison.OrdinalIgnoreCase))
 				{
 					return "Shaman";
 				}
-				if (className == "Archer")
+				if (String.Equals(className, "Archer", StringComparison.OrdinalIgnoreCase))	
 				{
 					return "Ranger";
 				}
-				if (className == "Assassin")
+				if (String.Equals(className, "Assassin", StringComparison.OrdinalIgnoreCase))
 				{
 					return "Rogue";
 				}
-				if (className == "Dragoon")
+				if (String.Equals(className, "Dragoon", StringComparison.OrdinalIgnoreCase))
 				{
 					return "Paladin";
 				}
-				if (className == "Priest")
+				if (String.Equals(className, "Priest", StringComparison.OrdinalIgnoreCase))
 				{
 					return "Cleric";
 				}
-				if (className == "Summoner")
+				if (String.Equals(className, "Summoner", StringComparison.OrdinalIgnoreCase))
 				{
 					return "Magician";
 				}
-				if (className == "Tamer")
+				if (String.Equals(className, "Tamer", StringComparison.OrdinalIgnoreCase))
 				{
 					return "Beastlord";
 				}
-				if (className == "Witch")
+				if (String.Equals(className, "Witch", StringComparison.OrdinalIgnoreCase))
 				{
 					return "Druid";
 				}
-				if (className == "Sorcerer")
+				if (String.Equals(className, "Sorcerer", StringComparison.OrdinalIgnoreCase))
 				{
 					return "Wizard";
 				}
-				if(className== "OCCULTIST")
+				if(String.Equals(className, "OCCULTIST", StringComparison.OrdinalIgnoreCase))
 				{
 					return "Wizard";
 				}
-				if (className == "GALAXIAN")
+				if (String.Equals(className, "GALAXIAN", StringComparison.OrdinalIgnoreCase))
 				{
 					return "Paladin";
 				}
-				if (className == "FAUSTIAN")
+				if (String.Equals(className, "FAUSTIAN", StringComparison.OrdinalIgnoreCase))
 				{
 					return "Druid";
 				}
