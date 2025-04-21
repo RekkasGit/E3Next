@@ -80,7 +80,7 @@ namespace E3Core.Settings
         public Int32 Movement_ChaseDistanceMax = 500;
         public Int32 Movement_NavStopDistance = 10;
         public Int32 Movement_AnchorDistanceMin = 15;
-        public Int32 Movement_AnchorDistanceMax = 150;
+        public Int32 Movement_AnchorDistanceMax = 200;
         public Int32 ManaStone_NumerOfClicksPerLoop = 40;
         public Int32 ManaStone_NumberOfLoops = 25;
         public Int32 ManaStone_DelayBetweenLoops = 50;

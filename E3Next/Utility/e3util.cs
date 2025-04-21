@@ -908,15 +908,26 @@ namespace E3Core.Utility
 			double currentY = MQ.Query<double>("${Me.Y}");
 			double currentZ = MQ.Query<double>("${Me.Z}");
 			TryMoveToTarget();
+			tryTrade:
+			Int32 tryTradeCount = 0;
 			MQ.Cmd("/click left target");
 			var targetType = MQ.Query<string>("${Target.Type}");
 			var windowType = string.Equals(targetType, "PC", StringComparison.OrdinalIgnoreCase) ? "TradeWnd" : "GiveWnd";
 			var buttonType = string.Equals(targetType, "PC", StringComparison.OrdinalIgnoreCase) ? "TRDW_Trade_Button" : "GVW_Give_Button";
 			var windowOpenQuery = $"${{Window[{windowType}].Open}}";
-			MQ.Delay(3000, windowOpenQuery);
+			MQ.Delay(2000, windowOpenQuery);
 			bool windowOpen = MQ.Query<bool>(windowOpenQuery);
 			if (!windowOpen)
 			{
+				if (tryTradeCount <5)
+				{
+					Int32 randomSleepTime = E3.Random.Next(500, 2000);
+					MQ.Write($"\arTrade failed, retrying in \ag{randomSleepTime} milliseconds");
+					tryTradeCount++;
+					MQ.Delay(randomSleepTime);
+					goto tryTrade;
+				}
+
 				MQ.Write("\arError could not give target what is on our cursor, putting it in inventory");
 				E3.Bots.BroadcastCommand($"/popup ${{Me}} cannot give ${{Cursor.Name}} to ${{Target}}", false);
 				e3util.Beep();
@@ -1170,7 +1181,7 @@ namespace E3Core.Utility
 				{
 					return "Druid";
 				}
-				return "Paladin";
+				
 			}
 
 			
