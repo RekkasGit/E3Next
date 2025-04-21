@@ -908,8 +908,9 @@ namespace E3Core.Utility
 			double currentY = MQ.Query<double>("${Me.Y}");
 			double currentZ = MQ.Query<double>("${Me.Z}");
 			TryMoveToTarget();
-			tryTrade:
+			
 			Int32 tryTradeCount = 0;
+		tryTrade:
 			MQ.Cmd("/click left target");
 			var targetType = MQ.Query<string>("${Target.Type}");
 			var windowType = string.Equals(targetType, "PC", StringComparison.OrdinalIgnoreCase) ? "TradeWnd" : "GiveWnd";
