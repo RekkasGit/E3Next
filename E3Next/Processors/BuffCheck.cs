@@ -656,7 +656,30 @@ namespace E3Core.Processors
 			foreach (var spell in buffs)
 			{
 				//if it the target is one of our base class short names, check all bots and their short name type for possible targets.
-				if (EQClasses.ClassShortNamesLookup.Contains(spell.CastTarget))
+				if(String.Equals(spell.CastTarget,"bots",StringComparison.OrdinalIgnoreCase))
+				{
+					foreach (var name in E3.Bots.BotsConnected())
+					{
+						if (_spawns.TryByName(name, out var s))
+						{
+							string previousTarget = spell.CastTarget;
+							try
+							{
+								spell.CastTarget = name;
+								//change the name
+								if (BuffBots_SingleBuff(spell, usePets) == BuffBots_ReturnType.ExitOut)
+								{
+									return;
+								}
+							}
+							finally
+							{
+								spell.CastTarget = previousTarget;
+							}
+						}
+					}
+				}
+				else if (EQClasses.ClassShortNamesLookup.Contains(spell.CastTarget))
 				{
 					//check for class name types
 					foreach (var name in E3.Bots.BotsConnected())
