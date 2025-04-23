@@ -1020,6 +1020,21 @@ namespace E3Core.Processors
 							continue;
 						}
 					}
+
+					bool shouldContinue = false;
+					if (spell.CheckForCollection.Count > 0)
+					{
+						var bufflist = E3.Bots.BuffList(E3.CurrentName);
+						foreach (var checkforItem in spell.CheckForCollection.Keys)
+						{
+							if (bufflist.Contains(spell.CheckForCollection[checkforItem]))
+							{
+								shouldContinue = true;
+								break;
+							}
+						}
+						if (shouldContinue) { continue; }
+					}
 					if (Casting.CheckMana(spell) && Casting.CheckReady(spell))
 					{
 						if (JustCheck) return true;
