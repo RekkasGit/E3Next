@@ -1896,7 +1896,7 @@ namespace E3Core.Processors
                 e3util.Exchange("ammo", ammoItem);
             }
         }
-
+        static Dictionary<String, Int64> _eventLoopLastRunTime = new Dictionary<string, long>();
 		[ClassInvoke(Class.All)]
         public static void EventLoop()
         {
@@ -1911,6 +1911,25 @@ namespace E3Core.Processors
 					if (!String.IsNullOrWhiteSpace(keyData))
 					{
                         string EventToParse = keyData;
+
+                        var eventTimingSection = E3.CharacterSettings.ParsedData.Sections["EventLoopTiming"];
+                        if (eventTimingSection != null && _eventLoopLastRunTime.ContainsKey(key.KeyName))
+                        {
+                            if (eventTimingSection.ContainsKey(key.KeyName))
+                            {
+								var timeKeyData = eventTimingSection[key.KeyName];
+
+                                if(Int32.TryParse(timeKeyData, out var eventTime))
+                                {
+                                    if(Core.StopWatch.ElapsedMilliseconds - _eventLoopLastRunTime[key.KeyName] < (eventTime*1000))
+                                    {
+                                        //not time to process it again yet. 
+                                        continue;
+                                    }
+                                }
+							}
+						}
+
                         if(Casting.Ifs(EventToParse))
                         {
 							string ifKey = key.KeyName;
@@ -1921,6 +1940,8 @@ namespace E3Core.Processors
 								if (!String.IsNullOrWhiteSpace(eventToExecute))
 								{
 									MQ.Cmd($"/docommand {eventToExecute}");
+                                    if (!_eventLoopLastRunTime.ContainsKey(key.KeyName)) _eventLoopLastRunTime.Add(key.KeyName, 0);
+                                    _eventLoopLastRunTime[key.KeyName] = Core.StopWatch.ElapsedMilliseconds;
 								}
 							}
 						}

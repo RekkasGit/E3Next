@@ -423,7 +423,8 @@ namespace E3Core.Settings
 		public SortedDictionary<string, string> Events = new SortedDictionary<string, string>();
 		[INI_Section("EventLoop", "")]
 		public SortedDictionary<string, string> EventLoop = new SortedDictionary<string, string>();
-
+		[INI_Section("EventLoopTiming", "")]
+		public SortedDictionary<string, string> EventLoopTiming = new SortedDictionary<string, string>();
 
 		[INI_Section("EventRegMatches", "")]
 		public SortedDictionary<string, string> EventMatches = new SortedDictionary<string, string>();
@@ -768,6 +769,7 @@ namespace E3Core.Settings
             LoadKeyData("Ifs", ParsedData, Ifs);
 			LoadKeyData("Events", ParsedData, Events);
 			LoadKeyData("EventLoop", ParsedData, EventLoop);
+			LoadKeyData("EventLoopTiming", ParsedData, EventLoopTiming);
 			LoadKeyData("EventRegMatches", ParsedData, EventMatches);
 
 			//clear any events that were already registered
@@ -1283,6 +1285,7 @@ namespace E3Core.Settings
 		
 			newFile.Sections.AddSection("Events");
 			newFile.Sections.AddSection("EventLoop");
+			newFile.Sections.AddSection("EventLoopTiming");
 			newFile.Sections.AddSection("EventRegMatches");
 			newFile.Sections.AddSection("Report");
 			section = newFile.Sections.GetSectionData("Report");

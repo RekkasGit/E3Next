@@ -77,7 +77,7 @@ namespace E3NextConfigEditor
 		public static IniParser.Model.IniData _baseIniData = null;
 
 		//list the Dictionary or Key/Value based sections that are valid
-		static List<string> _dictionarySections = new List<string>() { "Ifs", "E3BotsPublishData (key/value)", "Events", "EventLoop","Burn","CommandSets" };
+		static List<string> _dictionarySections = new List<string>() { "Ifs", "E3BotsPublishData (key/value)", "Events", "EventLoop","EventLoopTiming","Burn","CommandSets" };
 
         TreeNode _sectionRootNodes = null;
 
