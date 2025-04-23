@@ -391,11 +391,19 @@ namespace E3Core.Processors
 					E3.CharacterSettings.Misc_AutoLootEnabled = false;
 					return;
 				}
-
-				if ((!Basics.InCombat() && currentTimestamp - Assist.LastAssistEndedTimestamp > E3.GeneralSettings.Loot_TimeToWaitAfterAssist) && SafeToLoot() || E3.GeneralSettings.Loot_LootInCombat)
+                bool inCombat = Basics.InCombat();
+                if (inCombat)
                 {
-                    LootArea();
-        		}
+                    //if individual settings and not set to loot in combat, return
+					if (LootStackableSettings.Enabled && !LootStackableSettings.LootInCombat) return;
+					//if not individual settings, and global loot in combat isn't on, return
+                    if (!LootStackableSettings.Enabled && !E3.GeneralSettings.Loot_LootInCombat) return;
+				}
+                else
+                {
+                    if (currentTimestamp - Assist.LastAssistEndedTimestamp < E3.GeneralSettings.Loot_TimeToWaitAfterAssist) return;
+                }
+				LootArea();
             }
         }
   //      private static void LootCommanderAssignCorpses()
