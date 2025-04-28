@@ -459,6 +459,20 @@ namespace E3Core.Processors
                 
 			},"list the configured report items in your character ini file");
 
+			EventProcessor.RegisterCommand("/e3burnreport", (x) =>
+			{
+				if (x.args.Count > 0)
+				{
+					PrintE3BReportEntries();
+				}
+				else
+				{
+					E3.Bots.BroadcastCommandToGroup("/e3burnreport me");//send command to everyone else
+					EventProcessor.ProcessMQCommand("/e3burnreport me");//make sure we do the command as well
+				}
+
+			}, "list burn timers");
+
 			EventProcessor.RegisterCommand("/e3settings", (x) =>
             {
                 if(x.args.Count>0)
@@ -524,7 +538,7 @@ namespace E3Core.Processors
 					}
 					if (String.Compare(command, "shareddata", true) == 0)
 					{
-						E3.NetMQ_SharedDataServerThradRun = false;
+						E3.NetMQ_SharedDataServerThreadRun = false;
 					}
 					if (String.Compare(command, "routerserver", true) == 0)
 					{
@@ -1248,9 +1262,21 @@ namespace E3Core.Processors
             {
                 PrintE3TReport(spell);
             }
+          
         }
+		private static void PrintE3BReportEntries()
+		{
+			foreach (var pair in E3.CharacterSettings.BurnCollection)
+			{
+				foreach (var spell in pair.Value.ItemsToBurn)
+				{
+					PrintE3TReport(spell);
+				}
+			}
 
-        public static void PrintE3TReport(Spell spell)
+		}
+
+		public static void PrintE3TReport(Spell spell)
         {
             if (spell.CastType == CastingType.AA)
             {

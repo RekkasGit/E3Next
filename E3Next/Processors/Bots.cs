@@ -299,6 +299,12 @@ namespace E3Core.Processors
 					{    //proxy file poofed, will need to restart proxy
 						continue;
 					}
+					if (!NetMQServer.SharedDataClient.UsersConnectedTo.ContainsKey("proxy"))
+					{
+						//they are not connected, reconnect them
+						NetMQServer.SharedDataClient.RegisterUser("proxy", settingsPaths[0], true);
+
+					}
 					//need to check for proxy file update
 					DateTime lastUpdate = System.IO.File.GetLastWriteTime(proxyFileFullName);
 
@@ -307,30 +313,25 @@ namespace E3Core.Processors
 						inProxyState = false;
 					
 					}
-
 					continue;
 				}
 				//check to see if there are any proxy setups, if so do them first
-				foreach (var path in settingsPaths)
+				string localPath = settingsPaths[0];
+				if (!localPath.EndsWith(@"\"))
 				{
-					string tpath = path;
-					if (!tpath.EndsWith(@"\"))
-					{
-						tpath += @"\";
-					}
-					if (File.Exists($@"{tpath}proxy_pubsubport.txt"))
-					{
-
-						//we are in proxy mode, set proxy state and kick out
-
-						NetMQServer.SharedDataClient.RegisterUser("proxy", tpath, true);
-						inProxyState = true;
-						proxyFileFullName = $@"{tpath}proxy_pubsubport.txt";
-						proxyFileLastUpdateTime = System.IO.File.GetLastWriteTime(proxyFileFullName);
-						break;
-
-					}
+					localPath += @"\";
 				}
+				if (File.Exists($@"{localPath}proxy_pubsubport.txt"))
+				{
+					//we are in proxy mode, set proxy state and kick out
+					NetMQServer.SharedDataClient.RegisterUser("proxy", localPath, true);
+					inProxyState = true;
+					proxyFileFullName = $@"{localPath}proxy_pubsubport.txt";
+					proxyFileLastUpdateTime = System.IO.File.GetLastWriteTime(proxyFileFullName);
+					break;
+
+				}
+				
 				if (inProxyState) continue;
 				foreach (var path in settingsPaths)
 				{
@@ -352,7 +353,7 @@ namespace E3Core.Processors
 							Int32 indexOfUnderline = file.IndexOf('_', currentIndex);
 							string name = file.Substring(currentIndex, indexOfUnderline - currentIndex);
 
-							if (!NetMQServer.SharedDataClient.TopicUpdates.ContainsKey(name))
+							if (!NetMQServer.SharedDataClient.UsersConnectedTo.ContainsKey(name))
 							{
 								FileInfo tFileInfo = new FileInfo(file);
 								if (!tFileInfo.Exists) continue;

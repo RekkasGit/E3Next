@@ -10,7 +10,9 @@ using System.Collections.Concurrent;
 using System.Collections.Generic;
 using System.Globalization;
 using System.Linq;
+using System.Net.WebSockets;
 using System.Reflection;
+using System.Runtime.CompilerServices;
 using System.Text;
 using System.Threading;
 using System.Threading.Tasks;
@@ -34,11 +36,23 @@ namespace E3Core.Server
 		public ConcurrentQueue<OnCommandData> CommandQueue = new ConcurrentQueue<OnCommandData>();
 
 		private static IMQ MQ = E3.MQ;
+		public class ConnectionInfo
+		{
+			public string User { get; set; }
+			public string Port { get; set; }
+			public string IPAddress { get; set; }
+			public string FilePath { get; set; }
+			public DateTime FileLastUpdateTime { get; set; }
+			public Int64 LastMessageTimeStamp { get; set; }
 
+		}
 
-		Dictionary<string, Task> _processTasks = new Dictionary<string, Task>();
+		//Dictionary<string, Task> _processTasks = new Dictionary<string, Task>();
 		static object _processLock = new object();
 		static bool _isProxyMode = false;
+		ConcurrentQueue<ConnectionInfo> _usersToConnectTo = new ConcurrentQueue<ConnectionInfo>();
+		public ConcurrentDictionary<string, ConnectionInfo> UsersConnectedTo = new ConcurrentDictionary<string, ConnectionInfo>(StringComparer.OrdinalIgnoreCase);
+		Task _mainProcessingTask = null;
 		public bool RegisterUser(string user, string path, bool isproxy = false)
 		{
 			_isProxyMode = isproxy;
@@ -48,37 +62,44 @@ namespace E3Core.Server
 				path  += @"\";
 			}
 
-			//sanity check area
-			if (!TopicUpdates.ContainsKey(user))
+
+			lock (_processLock)
 			{
-				lock (_processLock)
+				if (!UsersConnectedTo.ContainsKey(user))
 				{
-					if (!_processTasks.ContainsKey(user))
+					//lets see if the file exists
+					string filePath =$"{path}{user}_{E3.ServerName}_pubsubport.txt";
+					if(isproxy)
 					{
-						//lets see if the file exists
-						string filePath =$"{path}{user}_{E3.ServerName}_pubsubport.txt";
-						if(isproxy)
-						{
-							filePath = $"{path}{user}_pubsubport.txt";
-						}
+						filePath = $"{path}{user}_pubsubport.txt";
+					}
 
-						if (System.IO.File.Exists(filePath))
-						{
-							//lets load up the port information
+					if (System.IO.File.Exists(filePath))
+					{
+						//lets load up the port information
 							
-							string data = System.IO.File.ReadAllText(filePath);
-							//its now port:ipaddress
-							string[] splitData = data.Split(new char[] { ',' });
-							string port = splitData[0];
-							string ipaddress = splitData[1];
+						string data = System.IO.File.ReadAllText(filePath);
+						//its now port:ipaddress
+						string[] splitData = data.Split(new char[] { ',' });
+						string port = splitData[0];
+						string ipaddress = splitData[1];
 
-							var newTask = Task.Factory.StartNew(() => { Process(user, port,ipaddress, filePath); }, CancellationToken.None, TaskCreationOptions.DenyChildAttach, TaskScheduler.Default);
-							_processTasks.Add(user, newTask);
-							return true;
+						
+						ConnectionInfo info = new ConnectionInfo() { User = user, Port = port, IPAddress = ipaddress, FilePath = filePath };
+
+						_usersToConnectTo.Enqueue(info);
+						UsersConnectedTo.TryAdd(info.User, info);
+						if(_mainProcessingTask==null)
+						{
+							_mainProcessingTask= Task.Factory.StartNew(() => { Process(); }, CancellationToken.None, TaskCreationOptions.DenyChildAttach, TaskScheduler.Default);
 						}
+						//var newTask = Task.Factory.StartNew(() => { Process(user, port,ipaddress, filePath); }, CancellationToken.None, TaskCreationOptions.DenyChildAttach, TaskScheduler.Default);
+						//_processTasks.Add(user, newTask);
+						return true;
 					}
 				}
 			}
+			
 			return false;
 		}
 		public void ProcessE3BCCommands()
@@ -346,26 +367,93 @@ namespace E3Core.Server
 				}
 			}
 		}
-		public void Process(string user, string port,string serverName, string fileName)
+		[MethodImpl(MethodImplOptions.AggressiveInlining)]
+		public void Process_CheckNewConnections(SubscriberSocket subSocket)
 		{
-			System.DateTime lastFileUpdate = System.IO.File.GetLastWriteTime(fileName);
+			//lets connect up to anything that is queued up
+			while (_usersToConnectTo.Count > 0 && _usersToConnectTo.TryDequeue(out var conInfo))
+			{
+				subSocket.Connect($"tcp://{conInfo.IPAddress}:" + conInfo.Port);
+				//update the file date for when we connected
+				conInfo.FileLastUpdateTime = System.IO.File.GetLastWriteTime(conInfo.FilePath);
+				//set the initial timestamp so we know the delay from the least message recieved
+				conInfo.LastMessageTimeStamp = Core.StopWatch.ElapsedMilliseconds;
+				MQ.WriteDelayed("\agShared Data Client: Connecting to user:" + conInfo.User + " on port:" + conInfo.Port + " server:" + conInfo.IPAddress); ;
+			}
+		}
+		[MethodImpl(MethodImplOptions.AggressiveInlining)]
+		public void Process_CheckConnectionsIfStillValid(SubscriberSocket subSocket,ref  Int64 lastConnectionCheck)
+		{
+			if ((Core.StopWatch.ElapsedMilliseconds - lastConnectionCheck) > 2000)
+			{
+				lastConnectionCheck= Core.StopWatch.ElapsedMilliseconds;
+
+				//lets been over 2 seconds, lets check to see if there are anyone we need to reconnect to
+				foreach (var userInfo in UsersConnectedTo.Values.ToList())
+				{
+					if ((Core.StopWatch.ElapsedMilliseconds - userInfo.LastMessageTimeStamp) > 2000)
+					{
+						//been at least 2 seconds from this user, lets check to see what has happened to them.
+						try
+						{
+							if(!System.IO.File.Exists(userInfo.FilePath))
+							{
+								//client shut down?
+								subSocket.Disconnect($"tcp://{userInfo.IPAddress}:" + userInfo.Port);
+								MQ.WriteDelayed("\arDisconnecting User:\ag" + userInfo.User);
+								UsersConnectedTo.TryRemove(userInfo.User, out var tuserInfo);
+								continue;
+							}
+
+							System.DateTime currentTime = System.IO.File.GetLastWriteTime(userInfo.FilePath);
+
+							if (currentTime > userInfo.FileLastUpdateTime)
+							{
+								//user file has been updated with new information, need to disconnect the old connection and connect the new one. 
+
+								MQ.WriteDelayed($"\agShared Data Client: Disconnecting server:{userInfo.IPAddress} port:" + userInfo.Port + " for toon:" + userInfo.User);
+								//shutown the socket and restart it
+								subSocket.Disconnect($"tcp://{userInfo.IPAddress}:" + userInfo.Port);
+								string data = System.IO.File.ReadAllText(userInfo.FilePath);
+								string[] splitData = data.Split(new char[] { ',' });
+								userInfo.Port = splitData[0];
+								userInfo.IPAddress = splitData[1];
+								MQ.WriteDelayed($"\agShared Data Client: Reconnecting to server:{userInfo.IPAddress} port:" + userInfo.Port + " for toon:" + userInfo.User);
+								subSocket.Connect($"tcp://{userInfo.IPAddress}:" + userInfo.Port);
+								userInfo.FileLastUpdateTime = currentTime;
+							}
+						}
+						catch (Exception ex)
+						{
+
+							MQ.WriteDelayed("\arError, Disconnecting User:\ag" + userInfo.User + " Message:"+ex.Message);
+							UsersConnectedTo.TryRemove(userInfo.User, out var tuserInfo);
+						}
+					}
+				}
+			}
+
+		}
+		/// <summary>
+		/// Main thread for processing updates from other clients
+		/// this was multiple threads one for each client, its been modified to be a single thread for all clients. 
+		/// </summary>
+		public void Process()
+		{
+			Int64 lastConnectionCheck = Core.StopWatch.ElapsedMilliseconds;
 			string OnCommandName = "OnCommand-" + E3.CurrentName;
 			//need to do this so double parses work in other languages
 			Thread.CurrentThread.CurrentCulture = new CultureInfo("en-US");
 			//timespan we expect to have some type of message
 			TimeSpan recieveTimeout = new TimeSpan(0, 0, 0, 2, 0);
-
-
 			using (var subSocket = new SubscriberSocket())
 			{
 				try
 				{
-					
 					subSocket.Options.ReceiveHighWatermark = 100000;
 					subSocket.Options.TcpKeepalive = true;
 					subSocket.Options.TcpKeepaliveIdle = TimeSpan.FromSeconds(5);
 					subSocket.Options.TcpKeepaliveInterval = TimeSpan.FromSeconds(1);
-					subSocket.Connect($"tcp://{serverName}:" + port);
 					subSocket.Subscribe(OnCommandName);
 					subSocket.Subscribe("OnCommand-All");
 					subSocket.Subscribe("OnCommand-AllZone");
@@ -381,10 +469,12 @@ namespace E3Core.Server
 					subSocket.Subscribe("${Me."); //all Me stuff should be subscribed to
 					subSocket.Subscribe("${Data."); //all the custom data keys a user can create
 					subSocket.Subscribe("${DataChannel.");
-					MQ.WriteDelayed("\agShared Data Client: Connecting to user:" + user + " on port:" + port + " server:"+serverName); ;
-
-					while (Core.IsProcessing && E3.NetMQ_SharedDataServerThradRun)
+				
+					while (Core.IsProcessing && E3.NetMQ_SharedDataServerThreadRun)
 					{
+						Process_CheckNewConnections(subSocket);
+						Process_CheckConnectionsIfStillValid(subSocket, ref lastConnectionCheck);
+
 						string messageTopicReceived;
 						if (subSocket.TryReceiveFrameString(recieveTimeout, out messageTopicReceived))
 						{
@@ -402,7 +492,10 @@ namespace E3Core.Server
 							{
 								continue;
 							}
-
+							if (UsersConnectedTo.TryGetValue(payloaduser, out var connectionInfo))
+							{
+								connectionInfo.LastMessageTimeStamp=Core.StopWatch.ElapsedMilliseconds;
+							}
 							//most common goes first
 							if (messageTopicReceived.StartsWith("${Me."))
 							{
@@ -550,57 +643,18 @@ namespace E3Core.Server
 
 							}
 						}
-						else
-						{   //we didn't get a message in the timespan we were expecting, verify if we need to reconnect
-							try
-							{
-								System.DateTime currentTime = System.IO.File.GetLastWriteTime(fileName);
-								if (currentTime > lastFileUpdate)
-								{
-									MQ.WriteDelayed($"\agShared Data Client: Disconnecting server:{serverName} port:" + port + " for toon:" + user);
-									//shutown the socket and restart it
-									subSocket.Disconnect($"tcp://{serverName}:" + port);
-									string data = System.IO.File.ReadAllText(fileName);
-									string[] splitData = data.Split(new char[] { ',' });
-									port = splitData[0];
-									serverName = splitData[1];
-									MQ.WriteDelayed($"\agShared Data Client: Reconnecting to server:{serverName} port:" + port + " for toon:" + user);
-									subSocket.Connect($"tcp://{serverName}:" + port);
-									lastFileUpdate = currentTime;
-								}
-							}
-							catch (Exception ex)
-							{
-								//file deleted most likely, kill the thread
-								MQ.WriteDelayed("\agShared Data Client: Issue reading port file, shutting down thread for toon:" + user + " stack:"+ex.Message);
-
-								subSocket.Dispose();
-								if (TopicUpdates.TryRemove(user, out var tout))
-								{
-
-								}
-
-								break;
-
-							}
-						}
-
+		
 					}
 					
 					subSocket.Dispose();
 				}
-				catch (Exception)
+				catch (Exception ex)
 				{
-					//MQ.WriteDelay("Error in shared data thread. Message:" + ex.Message + "  stack:" + ex.StackTrace);
+					//MQ.WriteDelayed("Error in shared data thread. Message:" + ex.Message + "  stack:" + ex.StackTrace);
 				}
 
 			}
-
-			MQ.WriteDelayed($"Shutting down Share Data Thread for {user}.");
-			lock (_processLock)
-			{
-				_processTasks.Remove(user);
-			}
+			MQ.WriteDelayed($"Shutting down Share Data Thread.");
 		}
 
 		public class OnCommandData
