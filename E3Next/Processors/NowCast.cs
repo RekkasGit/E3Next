@@ -117,7 +117,7 @@ namespace E3Core.Processors
 
         public static bool IsNowCastInQueue()
         {
-            if(EventProcessor.CommandList["/nowcast"].queuedEvents.Count > 0)
+            if(EventProcessor.CommandListQueueHasCommand("/nowcast"))
             {
                 return true;
             }

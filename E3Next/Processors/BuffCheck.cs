@@ -1916,11 +1916,11 @@ namespace E3Core.Processors
 							MQ.Delay(delayBetweenClicks);
 							NetMQServer.SharedDataClient.ProcessCommands();
 							PubClient.ProcessRequests();
-							if (EventProcessor.CommandList["/followme"].queuedEvents.Count > 0)
+							if (EventProcessor.CommandListQueueHasCommand("/followme"))
 							{
 								return;
 							}
-							if (EventProcessor.CommandList["/chaseme"].queuedEvents.Count > 0)
+							if (EventProcessor.CommandListQueueHasCommand("/chaseme"))
 							{
 								return;
 							}

@@ -861,7 +861,7 @@ namespace E3Core.Utility
 			{
 				if (pair.Key.StartsWith("/e3bc"))
 				{
-					if (EventProcessor.CommandList[pair.Key].queuedEvents.Count > 0)
+					if (EventProcessor.CommandListQueueHasCommand(pair.Key))
 					{
 						EventProcessor.ProcessEventsInQueues(pair.Key);
 					}
@@ -871,35 +871,33 @@ namespace E3Core.Utility
 		}
 		public static void ProcessNowCastCommandsForOthers()
 		{
-			if (EventProcessor.CommandList["/nowcast"].queuedEvents.Count > 0)
+			if (EventProcessor.CommandListQueueHasCommand("/nowcast"))
 			{
 				List<CommandMatch> reinsertList = new List<CommandMatch>();
-				while (EventProcessor.CommandList["/nowcast"].queuedEvents.Count > 0)
-				{
-					CommandMatch line;
-					if (EventProcessor.CommandList["/nowcast"].queuedEvents.TryDequeue(out line))
-					{
-						if (line.args[0] != "me")
-						{
-							EventProcessor.CommandList["/nowcast"].method.Invoke(line);
+				
+				Int32 CommandListQueueCount = EventProcessor.CommandListQueue.Count;
 
+				List<CommandMatch> nowcastsToExecute = new List<CommandMatch>();
+				for (Int32 i = 0; i < CommandListQueueCount; i++)
+				{
+					if (EventProcessor.CommandListQueue.TryDequeue(out var line))
+					{
+						if (line.eventName == "/nowcast" && line.args[0] != "me")
+						{
+							//add to collection as the invoke can take some time and we want to execute this fast to prevent the queue from being modifified.
+							nowcastsToExecute.Add(line);
 						}
 						else
 						{
-							//its a me, add this back to the queue. 
-							reinsertList.Add(line);
+							EventProcessor.CommandListQueue.Enqueue(line);
 						}
 					}
-
 				}
-
-				foreach(var line in reinsertList)
+				foreach (var line in nowcastsToExecute) 
 				{
-					EventProcessor.CommandList["/nowcast"].queuedEvents.Enqueue(line);
+					EventProcessor.CommandList["/nowcast"].method.Invoke(line);
 				}
 			}
-
-
 		}
 		public static void GiveItemOnCursorToTarget(bool moveBackToOriginalLocation = true, bool clearTarget = true)
 		{
@@ -988,7 +986,7 @@ namespace E3Core.Utility
 		public static bool IsShuttingDown()
 		{
 			NetMQServer.SharedDataClient.ProcessCommands();
-			if (EventProcessor.CommandList.ContainsKey("/shutdown") && EventProcessor.CommandList["/shutdown"].queuedEvents.Count > 0)
+			if (EventProcessor.CommandList.ContainsKey("/shutdown") && EventProcessor.CommandListQueueHasCommand("/shutdown"))
 			{
 				return true;
 			}

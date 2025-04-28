@@ -104,39 +104,39 @@ namespace E3Core.Server
 		}
 		public void ProcessE3BCCommands()
 		{
-			if (EventProcessor.CommandList.ContainsKey("/e3bc") && EventProcessor.CommandList["/e3bc"].queuedEvents.Count > 0)
+			if (EventProcessor.CommandList.ContainsKey("/e3bc") && EventProcessor.CommandListQueueHasCommand("/e3bc"))
 			{
 				EventProcessor.ProcessEventsInQueues("/e3bc");
 			}
-			if (EventProcessor.CommandList.ContainsKey("/e3bcz") && EventProcessor.CommandList["/e3bcz"].queuedEvents.Count > 0)
+			if (EventProcessor.CommandList.ContainsKey("/e3bcz") && EventProcessor.CommandListQueueHasCommand("/e3bcz"))
 			{
 				EventProcessor.ProcessEventsInQueues("/e3bcz");
 			}
-			if (EventProcessor.CommandList.ContainsKey("/e3bcg") && EventProcessor.CommandList["/e3bcg"].queuedEvents.Count > 0)
+			if (EventProcessor.CommandList.ContainsKey("/e3bcg") && EventProcessor.CommandListQueueHasCommand("/e3bcg"))
 			{
 				EventProcessor.ProcessEventsInQueues("/e3bcg");
 			}
-			if (EventProcessor.CommandList.ContainsKey("/e3bcgz") && EventProcessor.CommandList["/e3bcgz"].queuedEvents.Count > 0)
+			if (EventProcessor.CommandList.ContainsKey("/e3bcgz") && EventProcessor.CommandListQueueHasCommand("/e3bcgz"))
 			{
 				EventProcessor.ProcessEventsInQueues("/e3bcgz");
 			}
-			if (EventProcessor.CommandList.ContainsKey("/e3bct") && EventProcessor.CommandList["/e3bct"].queuedEvents.Count > 0)
+			if (EventProcessor.CommandList.ContainsKey("/e3bct") && EventProcessor.CommandListQueueHasCommand("/e3bct"))
 			{
 				EventProcessor.ProcessEventsInQueues("/e3bct");
 			}
-			if (EventProcessor.CommandList.ContainsKey("/e3bcga") && EventProcessor.CommandList["/e3bcga"].queuedEvents.Count > 0)
+			if (EventProcessor.CommandList.ContainsKey("/e3bcga") && EventProcessor.CommandListQueueHasCommand("/e3bcga"))
 			{
 				EventProcessor.ProcessEventsInQueues("/e3bcga");
 			}
-			if (EventProcessor.CommandList.ContainsKey("/e3bcgaz") && EventProcessor.CommandList["/e3bcgaz"].queuedEvents.Count > 0)
+			if (EventProcessor.CommandList.ContainsKey("/e3bcgaz") && EventProcessor.CommandListQueueHasCommand("/e3bcgaz"))
 			{
 				EventProcessor.ProcessEventsInQueues("/e3bcgaz");
 			}
-			if (EventProcessor.CommandList.ContainsKey("/e3bcaa") && EventProcessor.CommandList["/e3bcaa"].queuedEvents.Count > 0)
+			if (EventProcessor.CommandList.ContainsKey("/e3bcaa") && EventProcessor.CommandListQueueHasCommand("/e3bcaa"))
 			{
 				EventProcessor.ProcessEventsInQueues("/e3bcaa");
 			}
-			if (EventProcessor.CommandList.ContainsKey("/e3bcaaz") && EventProcessor.CommandList["/e3bcaaz"].queuedEvents.Count > 0)
+			if (EventProcessor.CommandList.ContainsKey("/e3bcaaz") && EventProcessor.CommandListQueueHasCommand("/e3bcaaz"))
 			{
 				EventProcessor.ProcessEventsInQueues("/e3bcaaz");
 			}

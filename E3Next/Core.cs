@@ -155,6 +155,7 @@ namespace MonoCore
         public static ConcurrentDictionary<string, Action<EventMatch>> _unfilteredEventMethodList = new ConcurrentDictionary<string, Action<EventMatch>>();
         public static ConcurrentDictionary<string, EventListItem> _unfilteredEventList = new ConcurrentDictionary<string, EventListItem>();
         public static ConcurrentDictionary<string, EventListItem> EventList = new ConcurrentDictionary<string, EventListItem>();
+        public static ConcurrentQueue<CommandMatch> CommandListQueue = new ConcurrentQueue<CommandMatch>();
         public static ConcurrentDictionary<string, CommandListItem> CommandList = new ConcurrentDictionary<string, CommandListItem>();
         //this is the first queue that strings get put into, will be processed by its own thread
         public static ConcurrentQueue<String> _eventProcessingQueue = new ConcurrentQueue<String>();
@@ -190,6 +191,15 @@ namespace MonoCore
             
             }
 
+        }
+
+        public static bool CommandListQueueHasCommand(string command)
+        {
+            foreach (var value in CommandListQueue)
+            {
+                if (value.eventName == command) return true;
+            }
+            return false;
         }
 
         public static void ProcessEventsIntoQueue_EventProcessing()
@@ -359,6 +369,12 @@ namespace MonoCore
 				if (_mqCommandProcessingQueue.TryDequeue(out line))
 				{
 					processedCommand = true;
+					//prevent spamming of an event to a user
+					if (CommandListQueue.Count > 50)
+					{
+						Core.mqInstance.Write("event limiter");
+						return true;
+					}
 					try
 					{
 						if (!String.IsNullOrWhiteSpace(line))
@@ -366,27 +382,18 @@ namespace MonoCore
 
 							foreach (var item in CommandList)
 							{
-								//prevent spamming of an event to a user
-								if (item.Value.queuedEvents.Count > 50)
-								{
-									Core.mqInstance.Write("event limiter");
-
-									continue;
-								}
 								if (line.Equals(item.Value.command, StringComparison.OrdinalIgnoreCase) || line.StartsWith(item.Value.command + " ", StringComparison.OrdinalIgnoreCase))
 								{
 									//need to split out the params
 									List<String> args = ParseParms(line, ' ', '"').ToList();
 									args.RemoveAt(0);
-
 									bool hasAllFlag = HasAllFlag(args);
-
-									item.Value.queuedEvents.Enqueue(new CommandMatch() { eventName = item.Value.keyName, eventString = line, args = args, hasAllFlag = hasAllFlag });
-
+                                    CommandMatch commandMatch = new CommandMatch() { eventName = item.Value.keyName, eventString = line, args = args, hasAllFlag = hasAllFlag };
+                                    CommandListQueue.Enqueue(commandMatch);
+									//item.Value.queuedEvents.Enqueue(new CommandMatch() { eventName = item.Value.keyName, eventString = line, args = args, hasAllFlag = hasAllFlag });
 								}
 							}
 						}
-                       
 					}
 					catch (Exception e)
 					{
@@ -581,30 +588,61 @@ namespace MonoCore
                 }
 
             }
-            foreach (var item in CommandList)
+
+
+            //if a key name is specified we only want to process those event types
+           
+
+            if(CommandListQueue.Count > 0)
             {
-                if (!Core.IsProcessing) return;
-                //check to see if we have to have a filter on the events to process
-                if (!String.IsNullOrWhiteSpace(keyName))
-                {
-                    //if keyName is specified, verify that its the key we want. 
-                    if (!item.Value.keyName.Equals(keyName, StringComparison.OrdinalIgnoreCase))
-                    {
+        		Int32 CommandListSize = CommandListQueue.Count;
+				for (Int32 i = 0; i < CommandListSize; i++)
+				{
+					if (!Core.IsProcessing) return;
 
-                        continue;
-                    }
-                }
-                while (item.Value.queuedEvents.Count > 0)
-                {
-                    if (!Core.IsProcessing) return;
-                    CommandMatch line;
-                    if (item.Value.queuedEvents.TryDequeue(out line))
-                    {
-                        item.Value.method.Invoke(line);
-                    }
-                }
+					CommandMatch line;
+					if (CommandListQueue.TryDequeue(out line))
+					{
+						if (!String.IsNullOrWhiteSpace(keyName) && line.eventName != keyName)
+						{
+							//don't match just put back into the queue
+							CommandListQueue.Enqueue(line);
+						}
+						else
+						{
+							//it matches or no match specified, lets process stuff!
+							if (CommandList.ContainsKey(line.eventName))
+							{
+								CommandList[line.eventName].method.Invoke(line);
+        					}
+						}
+					}
+				}
+			}
+            //foreach (var item in CommandList)
+            //{
+            //    if (!Core.IsProcessing) return;
+            //    //check to see if we have to have a filter on the events to process
+            //    if (!String.IsNullOrWhiteSpace(keyName))
+            //    {
+            //        //if keyName is specified, verify that its the key we want. 
+            //        if (!item.Value.keyName.Equals(keyName, StringComparison.OrdinalIgnoreCase))
+            //        {
 
-            }
+            //            continue;
+            //        }
+            //    }
+            //    while (item.Value.queuedEvents.Count > 0)
+            //    {
+            //        if (!Core.IsProcessing) return;
+            //        CommandMatch line;
+            //        if (item.Value.queuedEvents.TryDequeue(out line))
+            //        {
+            //            item.Value.method.Invoke(line);
+            //        }
+            //    }
+
+            //}
             foreach (var item in _unfilteredEventList)
             {
                 if (!Core.IsProcessing) return;
@@ -687,7 +725,7 @@ namespace MonoCore
             public string methodCaller;
 			public string description;
             public System.Action<CommandMatch> method;
-            public ConcurrentQueue<CommandMatch> queuedEvents = new ConcurrentQueue<CommandMatch>();
+            //public ConcurrentQueue<CommandMatch> queuedEvents = new ConcurrentQueue<CommandMatch>();
         }
         public class CommandMatch
         {

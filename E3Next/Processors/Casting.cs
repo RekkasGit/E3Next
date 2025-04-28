@@ -260,14 +260,14 @@ namespace E3Core.Processors
 							Interrupt();
 							return CastReturn.CAST_INTERRUPTED;
 						}
-						if (EventProcessor.CommandList["/backoff"].queuedEvents.Count > 0)
+						if (EventProcessor.CommandListQueueHasCommand("/backoff"))
 						{
 							EventProcessor.ProcessEventsInQueues("/backoff");
 							Interrupt();
 							if (!IsCasting()) return CastReturn.CAST_INTERRUPTED;
 
 						}
-						if (EventProcessor.CommandList["/assistme"].queuedEvents.Count > 0)
+						if (EventProcessor.CommandListQueueHasCommand("/assistme"))
 						{
 							Int32 tAssistID = Assist.AssistTargetID;
 
@@ -281,7 +281,7 @@ namespace E3Core.Processors
 
 
 						}
-						if (EventProcessor.CommandList["/followme"].queuedEvents.Count > 0)
+						if (EventProcessor.CommandListQueueHasCommand("/followme"))
 						{
 							EventProcessor.ProcessEventsInQueues("/followme");
 							Interrupt();
@@ -770,7 +770,7 @@ namespace E3Core.Processors
 								//check if we need to process any events,if healing tho, ignore. 
 								if ((spell.SpellType.Equals("Detrimental") || spell.Duration > 0) || E3.CurrentClass == Class.Bard)
 								{
-									if (EventProcessor.CommandList["/backoff"].queuedEvents.Count > 0)
+									if (EventProcessor.CommandListQueueHasCommand("/backoff"))
 									{
 										EventProcessor.ProcessEventsInQueues("/backoff");
 										if (!IsCasting()) return CastReturn.CAST_INTERRUPTED;
@@ -778,13 +778,13 @@ namespace E3Core.Processors
 									//in case the user sends out e3bc commands while casting
 
 
-									if (EventProcessor.CommandList["/backoff"].queuedEvents.Count > 0)
+									if (EventProcessor.CommandListQueueHasCommand("/backoff"))
 									{
 										EventProcessor.ProcessEventsInQueues("/backoff");
 										if (!IsCasting()) return CastReturn.CAST_INTERRUPTED;
 
 									}
-									if (EventProcessor.CommandList["/assistme"].queuedEvents.Count > 0)
+									if (EventProcessor.CommandListQueueHasCommand("/assistme"))
 									{
 										Int32 tAssistID = Assist.AssistTargetID;
 
@@ -796,14 +796,14 @@ namespace E3Core.Processors
 											if (!IsCasting()) return CastReturn.CAST_INTERRUPTED;
 										}
 									}
-									if (EventProcessor.CommandList["/followme"].queuedEvents.Count > 0)
+									if (EventProcessor.CommandListQueueHasCommand("/followme"))
 									{
 										EventProcessor.ProcessEventsInQueues("/followme");
 										if (!IsCasting()) return CastReturn.CAST_INTERRUPTED;
 									}
 									if (E3.CurrentClass == Class.Druid || E3.CurrentClass == Class.Wizard)
 									{
-										if (EventProcessor.CommandList["/evac"].queuedEvents.Count > 0)
+										if (EventProcessor.CommandListQueueHasCommand("/evac"))
 										{
 											Interrupt();
 											EventProcessor.ProcessEventsInQueues("/evac");
@@ -1061,7 +1061,7 @@ namespace E3Core.Processors
 		}
 		private static bool NowCastReady()
 		{
-			if (((EventProcessor.CommandList.ContainsKey("/nowcast") && EventProcessor.CommandList["/nowcast"].queuedEvents.Count > 0) || PubClient.NowCastInQueue()))
+			if (((EventProcessor.CommandList.ContainsKey("/nowcast") && EventProcessor.CommandListQueueHasCommand("/nowcast")) || PubClient.NowCastInQueue()))
 			{
 				return true;
 			}
