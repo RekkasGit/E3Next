@@ -27,6 +27,10 @@ namespace E3Core.Processors
 		public static long LastAssistStartedTimeStamp = 0;
 		[ExposedData("Assist", "CurrentSecondsInCombat")]
 		public static long CurrentSecondsInCombat = 0;
+		[ExposedData("Assist", "CurrentMaxAggro")]
+		public static Int32 CurrentMaxAggro = 0;
+		[ExposedData("Assist", "CurrentMinAggro")]
+		public static Int32 CurrentMinAggro = 0;
 
         private static Logging _log = E3.Log;
         private static IMQ MQ = E3.MQ;
@@ -63,10 +67,28 @@ namespace E3Core.Processors
         /// </summary>
         public static void Process()
         {
-			if(LastAssistStartedTimeStamp > 0)
+
+			if (LastAssistStartedTimeStamp > 0)
 			{
 				CurrentSecondsInCombat = (Core.StopWatch.ElapsedMilliseconds - LastAssistStartedTimeStamp) / 1000;
 			}
+			if (Basics.InCombat())
+            {
+                CurrentMaxAggro = e3util.GetXtargetMaxAggro();
+                if(CurrentMaxAggro==0)
+                {
+                    CurrentMinAggro = 0;
+                }
+                else
+                {
+					CurrentMinAggro = e3util.GetXtargetMinAggro();
+				}
+			}
+            else
+            {
+                CurrentMaxAggro = 0;
+                CurrentMinAggro = 0;
+            }
 
             CheckAssistStatus();
             ProcessCombat();

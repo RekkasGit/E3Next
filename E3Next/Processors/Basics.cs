@@ -1519,7 +1519,11 @@ namespace E3Core.Processors
 				if (Basics.AmIDead()) return;
 				if (e3util.IsEQLive()) return;
 
-				int pctMana = MQ.Query<int>("${Me.PctMana}");
+				//do we have aggro?
+				if (MQ.Query<Int32>("${Me.PctAggro}") == 100) return;
+				if (Assist.CurrentMaxAggro == 100) return;
+                
+                int pctMana = MQ.Query<int>("${Me.PctMana}");
 				var pctHps = MQ.Query<int>("${Me.PctHPs}");
 				int currentHps = MQ.Query<int>("${Me.CurrentHPs}");
 
