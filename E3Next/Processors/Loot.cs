@@ -571,12 +571,14 @@ namespace E3Core.Processors
                     EventProcessor.ProcessEventsInQueues("/lootoff");
 					EventProcessor.ProcessEventsInQueues("/assistme");
 					if (!E3.CharacterSettings.Misc_AutoLootEnabled) return;
-                    if (!E3.GeneralSettings.Loot_LootInCombat)
+                    
+                    if(Basics.InCombat())
                     {
-                        if (Basics.InCombat()) return;
-                    }
-
-
+						if (LootStackableSettings.Enabled && !LootStackableSettings.LootInCombat) return;
+						//if not individual settings, and global loot in combat isn't on, return
+						if (!LootStackableSettings.Enabled && !E3.GeneralSettings.Loot_LootInCombat) return;
+					}
+                   
                     if (MQ.Query<double>($"${{Spawn[id {c.ID}].Distance3D}}") > E3.GeneralSettings.Loot_CorpseSeekRadius*2)
                     {
                         E3.Bots.Broadcast($"\arSkipping corpse: {c.ID} because of distance: ${{Spawn[id {c.ID}].Distance3D}}");
