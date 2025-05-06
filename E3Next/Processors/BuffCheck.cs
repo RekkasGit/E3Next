@@ -679,6 +679,38 @@ namespace E3Core.Processors
 						}
 					}
 				}
+				if (String.Equals(spell.CastTarget, "gbots", StringComparison.OrdinalIgnoreCase))
+				{
+					foreach (var name in E3.Bots.BotsConnected())
+					{
+						if (_spawns.TryByName(name, out var s))
+						{
+
+							Int32 groupMemberIndex = MQ.Query<Int32>($"${{Group.Member[{name}].Index}}");
+
+							if (groupMemberIndex < 0)
+							{
+								//ignore it
+								continue;
+							}
+
+							string previousTarget = spell.CastTarget;
+							try
+							{
+								spell.CastTarget = name;
+								//change the name
+								if (BuffBots_SingleBuff(spell, usePets) == BuffBots_ReturnType.ExitOut)
+								{
+									return;
+								}
+							}
+							finally
+							{
+								spell.CastTarget = previousTarget;
+							}
+						}
+					}
+				}
 				else if (EQClasses.ClassShortNamesLookup.Contains(spell.CastTarget))
 				{
 					//check for class name types
