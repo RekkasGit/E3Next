@@ -454,7 +454,7 @@ namespace E3Core.Processors
 						if (CastIfNeed)
 						{
 							E3.Bots.Broadcast($"\agTrying to Casting Emergency Heal. \aw[\ag{spell.CastName}\aw] \agTarget:\ap{target} \agPctHealth:{pctHealth}");
-							Heal(currentMana, pctMana, new List<string> { target }, E3.CharacterSettings.Heal_EmergencyHeals, false, false, true);
+							Heal(currentMana, pctMana, new List<string> { target },new List<Spell>() {spell}, false, false, true);
 							return true;
 						}
 
@@ -516,7 +516,7 @@ namespace E3Core.Processors
 							if (CastIfNeeded)
 							{
 								E3.Bots.Broadcast($"\agTrying to Cast Emergency Heal Group. \aw[\ag{spell.CastName}\aw]\ag Target:\ap{name} \agPctHealth:{pctHealth}");
-								Heal(currentMana, pctMana, new List<string> { name }, E3.CharacterSettings.Heal_EmergencyGroupHeals, false, false, true);
+								Heal(currentMana, pctMana, new List<string> { name }, new List<Spell>() {spell}, false, false, true);
 							}
 							return true;
 						}
