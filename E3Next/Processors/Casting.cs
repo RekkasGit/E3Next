@@ -814,6 +814,7 @@ namespace E3Core.Processors
 							}
 							if (spell.SpellType.Equals("Detrimental") && (spell.TargetType != "PB AE" && spell.TargetType != "Self"))
 							{
+								TrueTarget(targetID);
 								bool isCorpse = MQ.Query<bool>("${Target.Type.Equal[Corpse]}");
 
 								if (isCorpse || !MQ.Query<bool>("${Target.ID}"))

@@ -201,7 +201,7 @@ namespace E3Core.Server
 
 							//this is a zone type command lets verify zone logic
 							//check to see if we are in the same zone as the person
-							Int32 spawnID = MQ.Query<Int32>($"${{Spawn[{user}].ID}}");
+							Int32 spawnID = MQ.Query<Int32>($"${{Spawn[pc {user}].ID}}");
 							if (spawnID < 1)
 							{
 								//we can safely ignore this.
