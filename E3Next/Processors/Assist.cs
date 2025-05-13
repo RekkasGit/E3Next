@@ -593,7 +593,10 @@ namespace E3Core.Processors
 				{
 					LastAssistStartedTimeStamp = Core.StopWatch.ElapsedMilliseconds;
 				}
-
+                if (!String.IsNullOrWhiteSpace(E3.CharacterSettings.Assist_CommandOnAssist))
+                {
+                    MQ.Cmd(E3.CharacterSettings.Assist_CommandOnAssist);
+                }
 				IsAssisting = true;
                 AssistTargetID = mobID;
                 if (MQ.Query<Int32>("${Target.ID}") != AssistTargetID)

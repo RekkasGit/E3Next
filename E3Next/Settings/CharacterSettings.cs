@@ -177,8 +177,11 @@ namespace E3Core.Settings
 		public int Assist_AutoAssistPercent = 98;
 		[INI_Section("Assist Settings", "Delayed Strafe Enabled (On/Off)")]
 		public bool Assist_DelayStrafeEnabled = true;
-	
-        //not explosed for some reason?
+		[INI_Section("Assist Settings", "CommandOnAssist")]
+		public string Assist_CommandOnAssist = String.Empty;
+
+
+		//not explosed for some reason?
 		public Int32 Assist_DelayStrafeDelay = 1500;
        
 		[INI_Section("Assist Settings", "Pet back off on Enrage (On/Off)")]
@@ -685,7 +688,9 @@ namespace E3Core.Settings
             LoadKeyData("Assist Settings", "Ranged Distance", ParsedData, ref Assist_RangeDistance);
             LoadKeyData("Assist Settings", "Auto-Assist Engage Percent", ParsedData, ref Assist_AutoAssistPercent);
 			LoadKeyData("Assist Settings", "Delayed Strafe Enabled (On/Off)", ParsedData, ref Assist_DelayStrafeEnabled);
-            LoadKeyData("Assist Settings", "Pet back off on Enrage (On/Off)", ParsedData, ref Assist_PetBackOffOnenrage);
+			LoadKeyData("Assist Settings", "CommandOnAssist", ParsedData, ref Assist_CommandOnAssist);
+
+			LoadKeyData("Assist Settings", "Pet back off on Enrage (On/Off)", ParsedData, ref Assist_PetBackOffOnenrage);
 			LoadKeyData("Assist Settings", "Back off on Enrage (On/Off)", ParsedData, ref Assist_BackOffOnEnrage);
            
 
@@ -1004,6 +1009,7 @@ namespace E3Core.Settings
 			section.Keys.AddKey("Assist Type (Melee/Ranged/Off)", "Melee");
 			section.Keys.AddKey("Melee Stick Point", "Behind");
 			section.Keys.AddKey("Delayed Strafe Enabled (On/Off)", "On");
+			section.Keys.AddKey("CommandOnAssist", "");
 			if (((CharacterClass & Class.Tank) == CharacterClass) || CharacterClass == Class.Ranger)
 			{
 				section.Keys.AddKey("SmartTaunt(On/Off)", "On");
