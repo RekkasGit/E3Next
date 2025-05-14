@@ -426,6 +426,19 @@ namespace E3Core.Processors
 								return CastReturn.CAST_NOTARGET;
 							}
 						}
+						if (spell.SpellType.Equals("Detrimental") && (spell.TargetType != "PB AE" && spell.TargetType != "Self"))
+						{
+							TrueTarget(targetID);
+							bool isCorpse = MQ.Query<bool>("${Target.Type.Equal[Corpse]}");
+
+							if (isCorpse || !MQ.Query<bool>("${Target.ID}"))
+							{
+								//shouldn't nuke dead things
+								Assist.AssistOff();
+								Interrupt();
+								return CastReturn.CAST_INTERRUPTED;
+							}
+						}
 
 						BeforeEventCheck(spell);
 

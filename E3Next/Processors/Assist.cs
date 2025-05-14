@@ -593,10 +593,7 @@ namespace E3Core.Processors
 				{
 					LastAssistStartedTimeStamp = Core.StopWatch.ElapsedMilliseconds;
 				}
-                if (!String.IsNullOrWhiteSpace(E3.CharacterSettings.Assist_CommandOnAssist))
-                {
-                    MQ.Cmd(E3.CharacterSettings.Assist_CommandOnAssist);
-                }
+               
 				IsAssisting = true;
                 AssistTargetID = mobID;
                 if (MQ.Query<Int32>("${Target.ID}") != AssistTargetID)
@@ -609,8 +606,11 @@ namespace E3Core.Processors
                         return;
                     }
                 }
-
-                //rogues have discs that they need to be sneaking/invisiable for
+				if (!String.IsNullOrWhiteSpace(E3.CharacterSettings.Assist_CommandOnAssist))
+				{
+					MQ.Cmd(E3.CharacterSettings.Assist_CommandOnAssist);
+				}
+				//rogues have discs that they need to be sneaking/invisiable for
 				if (String.IsNullOrWhiteSpace(E3.CharacterSettings.Rogue_SneakAttack))
 				{
 					MQ.Cmd("/makemevisible");
