@@ -27,6 +27,12 @@ namespace E3Core.Processors
 		public static long LastAssistStartedTimeStamp = 0;
 		[ExposedData("Assist", "CurrentSecondsInCombat")]
 		public static long CurrentSecondsInCombat = 0;
+		[ExposedData("Assist", "MobPctHealthWhenAssistStarted")]
+		public static long MobPctHealthWhenAssistStarted = 0;
+		[ExposedData("Assist", "MobPctHealthLossPerSecond")]
+		public static long MobPctHealthLossPerSecond = 0;
+		[ExposedData("Assist", "MobLifeExpectancy")]
+		public static long MobLifeExpectancy = 0;
 		[ExposedData("Assist", "CurrentMaxAggro")]
 		public static Int32 CurrentMaxAggro = 0;
 		[ExposedData("Assist", "CurrentMinAggro")]
@@ -71,6 +77,15 @@ namespace E3Core.Processors
 			if (LastAssistStartedTimeStamp > 0)
 			{
 				CurrentSecondsInCombat = (Core.StopWatch.ElapsedMilliseconds - LastAssistStartedTimeStamp) / 1000;
+			}
+			if (CurrentSecondsInCombat > 0)
+			{
+				Int32 MobPctHealth = MQ.Query<Int32>("${Target.PctHPs}");
+				MobPctHealthLossPerSecond = ((MobPctHealthWhenAssistStarted - MobPctHealth) / CurrentSecondsInCombat);
+				if (MobPctHealthLossPerSecond > 0)
+				{
+			    		MobLifeExpectancy = ((MobPctHealth) / (MobPctHealthLossPerSecond));
+				}
 			}
 			if (Basics.InCombat())
             {
@@ -616,7 +631,8 @@ namespace E3Core.Processors
 					MQ.Cmd("/makemevisible");
 
 				}
-				
+
+				MobPctHealthWhenAssistStarted = MQ.Query<Int32>("${Target.PctHPs}");
 
 				if (!AllowControl)
                 {
