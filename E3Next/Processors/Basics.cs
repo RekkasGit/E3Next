@@ -305,9 +305,18 @@ namespace E3Core.Processors
 
             EventProcessor.RegisterEvent("Zoned", @"You have entered (.+)\.", (x) =>
             {
-               
-                //means we have zoned.
-                _spawns.RefreshList();//make sure we get a new refresh of this zone.
+                if (x.match.Groups.Count > 1)
+                {
+                    //sometimes we have effects that also use "you have entered" IE:
+					//an area where levitation effects do not function
+					if (x.match.Groups[1].Value.Contains("an area "))
+                    {
+                        return;
+                    }
+                }
+
+				//means we have zoned.
+				_spawns.RefreshList();//make sure we get a new refresh of this zone.
                 Loot.Reset();
                 Movement.ResetKeepFollow();
                 Assist.Reset();
