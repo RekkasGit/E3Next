@@ -355,6 +355,8 @@ namespace E3Core.Settings
 		public Int32 ManaStone_InCombatMaxMana = 75;
 		[INI_Section("Manastone", "Min HP")]
 		public Int32 ManaStone_MinHP = 60;
+		[INI_Section("Manastone", "Min HP Out of Combat")]
+		public Int32 ManaStone_MinHPOutOfCombat = 40;
 		[INI_Section("Manastone", "Out of Combat MinMana")]
 		public Int32 ManaStone_OutOfCombatMinMana = 85;
 		[INI_Section("Manastone", "Out of Combat MaxMana")]
@@ -643,7 +645,8 @@ namespace E3Core.Settings
             LoadKeyData("Manastone", "In Combat MaxMana", ParsedData, ref ManaStone_InCombatMaxMana);
             LoadKeyData("Manastone", "Use In Combat", ParsedData, ref ManaStone_EnabledInCombat);
             LoadKeyData("Manastone", "Min HP", ParsedData, ref ManaStone_MinHP);
-            LoadKeyData("Manastone", "Out of Combat MinMana", ParsedData, ref ManaStone_OutOfCombatMinMana);
+			LoadKeyData("Manastone", "Min HP Out of Combat", ParsedData, ref ManaStone_MinHPOutOfCombat);
+			LoadKeyData("Manastone", "Out of Combat MinMana", ParsedData, ref ManaStone_OutOfCombatMinMana);
             LoadKeyData("Manastone", "Out of Combat MaxMana", ParsedData, ref ManaStone_OutOfCombatMaxMana);
             List<string> zoneList = new List<string>();
             LoadKeyData("Manastone", "ExceptionZone", ParsedData, zoneList);
@@ -1320,6 +1323,7 @@ namespace E3Core.Settings
 			section.Keys.AddKey("In Combat MaxMana", "75");
 			section.Keys.AddKey("Use In Combat", "On");
 			section.Keys.AddKey("Min HP", "60");
+			section.Keys.AddKey("Min HP Out of Combat", "60");
 			section.Keys.AddKey("Out of Combat MinMana", "85");
 			section.Keys.AddKey("Out of Combat MaxMana", "95");
 			section.Keys.AddKey("ExceptionZone", "poknowledge");

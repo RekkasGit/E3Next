@@ -1279,35 +1279,38 @@ namespace E3Core.Processors
 			{
 				foreach (var spell in pair.Value.ItemsToBurn)
 				{
-					PrintE3TReport(spell);
+					PrintE3TReport(spell,true);
 				}
 			}
-
 		}
 
-		public static void PrintE3TReport(Spell spell)
+		public static void PrintE3TReport(Spell spell, bool onlyReportCooldowns = false)
         {
             if (spell.CastType == CastingType.AA)
             {
                 Int32 timeInMS = MQ.Query<Int32>($"${{Me.AltAbilityTimer[{spell.CastName}]}}");
+                if (onlyReportCooldowns && timeInMS == 0) return;
                 PrintE3TReport_Information(spell, timeInMS);
             }
             else if (spell.CastType == CastingType.Spell)
             {
 
                 Int32 timeInMS = MQ.Query<Int32>($"${{Me.GemTimer[{spell.CastName}]}}");
-                PrintE3TReport_Information(spell, timeInMS);
+				if (onlyReportCooldowns && timeInMS == 0) return;
+				PrintE3TReport_Information(spell, timeInMS);
             }
             else if (spell.CastType == CastingType.Disc)
             {
                 Int32 timeInTicks = MQ.Query<Int32>($"${{Me.CombatAbilityTimer[{spell.CastName}]}}");
-                PrintE3TReport_Information(spell, timeInTicks * 6 * 1000);
+				if (onlyReportCooldowns && timeInTicks == 0) return;
+				PrintE3TReport_Information(spell, timeInTicks * 6 * 1000);
 
             }
             else if (spell.CastType == Data.CastingType.Ability)
             {
                 Int32 timeInMS = MQ.Query<Int32>($"${{Me.AbilityTimer[{spell.CastName}]}}");
-                PrintE3TReport_Information(spell, timeInMS);
+				if (onlyReportCooldowns && timeInMS == 0) return;
+				PrintE3TReport_Information(spell, timeInMS);
             }
             else if (spell.CastType == CastingType.Item || spell.CastType == CastingType.None)
             {
@@ -1316,7 +1319,8 @@ namespace E3Core.Processors
                 {
                     Int32 timeInTicks = MQ.Query<Int32>($"${{FindItem[{spell.CastName}].Timer}}");
                     Int32 charges = MQ.Query<Int32>($"${{FindItem[{spell.CastName}].Charges}}");
-                    PrintE3TReport_Information(spell, timeInTicks * 6 * 1000, charges);
+					if (onlyReportCooldowns && timeInTicks == 0 && charges>0) return;
+					PrintE3TReport_Information(spell, timeInTicks * 6 * 1000, charges);
 
                 }
             }
@@ -1558,7 +1562,8 @@ namespace E3Core.Processors
 				//manastone code
 				int minMana = E3.GeneralSettings.ManaStone_InCombatMinMana;
                 int minHP = E3.GeneralSettings.ManaStone_MinHP;
-                int maxMana = E3.GeneralSettings.ManaStone_InCombatMaxMana;
+               
+				int maxMana = E3.GeneralSettings.ManaStone_InCombatMaxMana;
                 int maxLoop = E3.GeneralSettings.ManaStone_NumberOfLoops;
                 int totalClicksToTry =E3.GeneralSettings.ManaStone_NumerOfClicksPerLoop;
                 int delayBetweenClicks = E3.GeneralSettings.ManaStone_DelayBetweenLoops;
@@ -1574,7 +1579,18 @@ namespace E3Core.Processors
                 if(E3.CharacterSettings.Manastone_OverrideGeneralSettings)
                 {
                     minMana = E3.CharacterSettings.ManaStone_InCombatMinMana;
-                    minHP = E3.CharacterSettings.ManaStone_MinHP;
+
+                    if(InCombat())
+                    {
+						minHP = E3.CharacterSettings.ManaStone_MinHP;
+					
+
+                    }
+                    else
+                    {
+                        minHP = E3.CharacterSettings.ManaStone_MinHPOutOfCombat;
+					}
+                    
                     maxMana = E3.CharacterSettings.ManaStone_InCombatMaxMana;
                     maxLoop = E3.CharacterSettings.ManaStone_NumberOfLoops;
                     totalClicksToTry = E3.CharacterSettings.ManaStone_NumberOfClicksPerLoop;
