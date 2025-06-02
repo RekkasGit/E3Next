@@ -81,11 +81,17 @@ namespace E3Core.Processors
 			if (CurrentSecondsInCombat > 0)
 			{
 				Int32 MobPctHealth = MQ.Query<Int32>("${Target.PctHPs}");
-				MobPctHealthLossPerSecond = ((MobPctHealthWhenAssistStarted - MobPctHealth) / CurrentSecondsInCombat);
-				if (MobPctHealthLossPerSecond > 0)
-				{
-			    		MobLifeExpectancy = ((MobPctHealth) / (MobPctHealthLossPerSecond));
+
+             
+                if(MobPctHealth<MobPctHealthWhenAssistStarted)
+                {
+					MobPctHealthLossPerSecond = ((MobPctHealthWhenAssistStarted - MobPctHealth) / CurrentSecondsInCombat);
+					if (MobPctHealthLossPerSecond > 0)
+					{
+						MobLifeExpectancy = ((MobPctHealth) / (MobPctHealthLossPerSecond));
+					}
 				}
+
 			}
 			if (Basics.InCombat())
             {

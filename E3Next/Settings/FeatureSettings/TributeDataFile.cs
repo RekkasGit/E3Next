@@ -33,7 +33,20 @@ namespace E3Core.Settings.FeatureSettings
                 SaveData(Zoning.CurrentZone.ShortName, useTribute);
                 ToggleTribute();
             });
-        }
+
+			EventProcessor.RegisterCommand("/e3tribute-list", x =>
+			{
+              
+                if(x.args.Count==0)
+                {
+                    E3.Bots.BroadcastCommandToGroup("/e3tribute-list me",x);
+                }
+               
+				Int32 currentFavor = MQ.Query<Int32>("${Me.CurrentFavor}");
+				E3.Bots.Broadcast($"\agTotal Tribute:{currentFavor:n0}");
+
+			});
+		}
 
         public void LoadData()
         {
