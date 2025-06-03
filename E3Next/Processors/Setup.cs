@@ -44,7 +44,7 @@ namespace E3Core.Processors
         static public Int32 _numInventorySlots = 10;
         static public Int32 _previousSpellGemThatWasCast = -1;
 		[ExposedData("Setup", "Version")]
-		public const string _e3Version = "1.47";
+		public const string _e3Version = "1.48";
 		[ExposedData("Setup", "BuildDate")]
 		public static string _buildDate = string.Empty;
         public static Boolean _debug = true;
@@ -125,6 +125,12 @@ namespace E3Core.Processors
         
 		public static void RegisterEvents()
 		{
+			EventProcessor.RegisterCommand("/e3version", (x) =>
+			{
+
+				MQ.Write($"nE³xt v{_e3Version} builddate:{_buildDate}...Mq2Mono v{Core._MQ2MonoVersion}");
+
+			}, "Shows current version");
 
 			EventProcessor.RegisterCommand("/e3ListExposedData", (x) =>
 			{

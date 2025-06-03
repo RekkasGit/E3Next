@@ -45,7 +45,7 @@ namespace E3Core.Settings.FeatureSettings
 				Int32 currentFavor = MQ.Query<Int32>("${Me.CurrentFavor}");
 				E3.Bots.Broadcast($"\agTotal Tribute:{currentFavor:n0}");
 
-			});
+			},"Lists out current favor");
 		}
 
         public void LoadData()

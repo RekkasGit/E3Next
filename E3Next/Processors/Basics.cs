@@ -129,6 +129,8 @@ namespace E3Core.Processors
 				}
 			},"list all commands available");
 
+			
+
 			EventProcessor.RegisterCommand("/e3printAA", (x) =>
 			{
                 List<Data.Spell> aas = e3util.ListAllActiveAA();
