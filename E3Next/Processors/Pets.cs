@@ -49,7 +49,7 @@ namespace E3Core.Processors
 			}
             else
             {
-				MQ.Cmd("/squelch /pet ghold on");
+				MQ.Cmd("/timed 30 /squelch /pet ghold on");
 			}
          
 		}

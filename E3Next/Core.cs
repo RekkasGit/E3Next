@@ -224,41 +224,50 @@ namespace MonoCore
 						//do filter matching
 						//does it match our filter ? if so we can leave
 						bool matchFilter = false;
+                        bool bypassFilter = false;
+
+                        if (line.Contains("(Rampage)")) bypassFilter = true;
+						else if (line.Contains("YOU for ")) bypassFilter = true;
+						else if (line.Contains("You have taken ")) bypassFilter = true;
 
 
 
-						//using contains as live/emu are different on their log messages for endings
-						//so instead of doing endswith + contains, just do contains.
-						//contains uses an Ordinal compiarson sa well, so should be fairly fast
-						if (Int32.TryParse(line, out var temp)) matchFilter = true; //if only in hitmode number, filter it out
-						else if (line.Contains("scores a critical hit!")) matchFilter = true;
-						else if (line.Contains("delivers a critical blast!")) matchFilter = true;
-						else if (line.Contains("lands a Crippling Blow!")) matchFilter = true;
-						else if (line.Contains("points of damage.") && !line.Contains("(Rampage)")) matchFilter = true;
-						else if (line.Contains("points of non-melee damage.")) matchFilter = true;
+						if (!bypassFilter)
+                        {
+							//using contains as live/emu are different on their log messages for endings
+							//so instead of doing endswith + contains, just do contains.
+							//contains uses an Ordinal compiarson sa well, so should be fairly fast
+							if (Int32.TryParse(line, out var temp)) matchFilter = true; //if only in hitmode number, filter it out
+							else if (line.Contains("scores a critical hit!")) matchFilter = true;
+							else if (line.Contains("delivers a critical blast!")) matchFilter = true;
+							else if (line.Contains("lands a Crippling Blow!")) matchFilter = true;
+							else if (line.Contains("points of damage.") && !line.Contains("(Rampage)")) matchFilter = true;
+							else if (line.Contains("points of non-melee damage.")) matchFilter = true;
 
-						//filters are just there in case we need to dynamically add a regex to filter out stuff.
-						if (!matchFilter)
-						{
-							//needed for live as they have differnt log messages
-							if (_filterRegexes.Count > 0)
+							//filters are just there in case we need to dynamically add a regex to filter out stuff.
+							if (!matchFilter)
 							{
-								lock (_filterRegexes)
+								//needed for live as they have differnt log messages
+								if (_filterRegexes.Count > 0)
 								{
-									foreach (var filter in _filterRegexes)
+									lock (_filterRegexes)
 									{
-										var match = filter.Match(line);
-										if (match.Success)
+										foreach (var filter in _filterRegexes)
 										{
-											matchFilter = true;
-											break;
+											var match = filter.Match(line);
+											if (match.Success)
+											{
+												matchFilter = true;
+												break;
+											}
 										}
 									}
 								}
 							}
 						}
+						
 
-						if (!matchFilter)
+						if (!matchFilter || bypassFilter)
 						{
 							foreach (var item in EventList)
 							{

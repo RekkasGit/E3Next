@@ -552,7 +552,9 @@ namespace E3Core.Processors
             Spawn s;
             if (_spawns.TryByID(mobID, out s))
             {
-                if (s.TypeDesc == "Corpse")
+                MobLifeExpectancy = 1;
+
+				if (s.TypeDesc == "Corpse")
                 {
                     E3.Bots.Broadcast("Cannot assist, a corpse");
                     return;

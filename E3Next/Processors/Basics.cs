@@ -99,6 +99,28 @@ namespace E3Core.Processors
 									continue;
 								}
 							}
+                            //see if we have any checkfors we should be doing
+							if (spell.CheckForCollection.Count > 0)
+							{
+                                bool shouldContinue = false;
+                                bool hasCheckFor = false;
+								foreach (var checkforItem in spell.CheckForCollection.Keys)
+								{
+									hasCheckFor = MQ.Query<bool>($"${{Bool[${{Me.Buff[{checkforItem}]}}]}}");
+									if (hasCheckFor)
+									{
+										shouldContinue = true;
+										break;
+									}
+									hasCheckFor = MQ.Query<bool>($"${{Bool[${{Me.Song[{checkforItem}]}}]}}");
+									if (hasCheckFor)
+									{
+										shouldContinue = true;
+										break;
+									}
+								}
+								if (shouldContinue) { continue; }
+							}
 
 							if (Casting.CheckMana(spell) && Casting.CheckReady(spell))
                             {
@@ -1321,7 +1343,7 @@ namespace E3Core.Processors
                 {
                     Int32 timeInTicks = MQ.Query<Int32>($"${{FindItem[{spell.CastName}].Timer}}");
                     Int32 charges = MQ.Query<Int32>($"${{FindItem[{spell.CastName}].Charges}}");
-					if (onlyReportCooldowns && timeInTicks == 0 && charges>0) return;
+					if (onlyReportCooldowns && timeInTicks == 0) return;
 					PrintE3TReport_Information(spell, timeInTicks * 6 * 1000, charges);
 
                 }

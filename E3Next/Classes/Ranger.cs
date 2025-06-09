@@ -50,12 +50,12 @@ namespace E3Core.Classes
                         Casting.Cast(0, s);
                         return;
                     }
-                    E3.Bots.Broadcast($"\ag<check_RangerAggro> \awI have stolen aggro again ({aggroPct}%), Delaying for a bit till agro is below 75% or 5 seconds");
+                    E3.Bots.Broadcast($"\ag<check_RangerAggro> \awI have stolen aggro again ({aggroPct}%), Delaying for a bit till agro is below 85% or 5 seconds");
                     Int32 assistid = Assist.AssistTargetID;
 					bool allowControl = Assist.AllowControl;
                     Assist.AssistOff();
                     Int32 counter = 0;
-                    while (MQ.Query<Int32>("${Target.PctAggro}") >= 75 && counter<50)
+                    while (MQ.Query<Int32>("${Target.PctAggro}") >= 85 && counter<50)
                     {
                         MQ.Delay(100);
                         counter++;

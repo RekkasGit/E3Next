@@ -5,6 +5,8 @@ using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
 using E3Core.Utility;
+using E3Core.Data;
+using static System.Collections.Specialized.BitVector32;
 
 namespace E3Core.Processors
 {
@@ -197,6 +199,44 @@ namespace E3Core.Processors
 					}
 				}
             });
+
+			//if not a tank, lets broadcast out that we are taking damage
+			if ((E3.CurrentClass & Class.Tank) != E3.CurrentClass)
+			{
+				//You have taken 7840 points of damage.
+				pattern = $@"\.  You have taken ([0-9]+) points of damage.";
+				EventProcessor.RegisterEvent("NormalDamageToYou", pattern, (x) => {
+
+					if (x.match.Groups.Count > 1)
+					{
+							string damage = x.match.Groups[1].Value;
+							E3.Bots.Broadcast($"\arDAMAGE!\aw for \ar{damage}");
+					}
+				});
+				//You have taken 7840 points of damage.
+				pattern = $@"You have taken ([0-9]+) damage from (.+) by (.+)";
+				EventProcessor.RegisterEvent("NormalDamageToYou2", pattern, (x) => {
+
+					if (x.match.Groups.Count > 3)
+					{
+						string damage = x.match.Groups[1].Value;
+						string mobname = x.match.Groups[2].Value;
+						string by = x.match.Groups[3].Value;
+						E3.Bots.Broadcast($"\arDAMAGE!\aw for \ar{damage}\aw damage from \ag{mobname} \awby {by}");
+					}
+				});
+				pattern = $@"^(.+) YOU for ([0-9]+) points of damage\.$";
+				EventProcessor.RegisterEvent("NormalDamageToYou3", pattern, (x) => {
+
+					if (x.match.Groups.Count > 2)
+					{
+						string damage = x.match.Groups[2].Value;
+						string mobname = x.match.Groups[1].Value;
+						E3.Bots.Broadcast($"\arDAMAGE!\aw for \ar{damage}\aw damage from \ag{mobname}");
+						
+					}
+				});
+			}
 			pattern = @"(.+) spell has been reflected by (.+)\.";
 			EventProcessor.RegisterEvent("ReflectSpell", pattern, (x) => {
 
