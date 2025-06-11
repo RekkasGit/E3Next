@@ -23,6 +23,7 @@ namespace E3Core.Processors
         public static Boolean IsAssisting = false;
 		[ExposedData("Assist", "AssistTargetID")]
 		public static Int32 AssistTargetID = 0;
+        public static Int32 OffAssistTargetID = 0;
 		public static long LastAssistEndedTimestamp = 0;
 		public static long LastAssistStartedTimeStamp = 0;
 		[ExposedData("Assist", "CurrentSecondsInCombat")]
