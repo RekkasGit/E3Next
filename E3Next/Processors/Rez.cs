@@ -422,9 +422,16 @@ namespace E3Core.Processors
 							}
                         	
                         }
-                        
-                        foreach (var spell in _currentRezSpells)
+                        string spawnsCleanName = spawn.CleanName.Replace("'s corpse", "");
+
+						foreach (var spell in _currentRezSpells)
                         {
+
+                            if(!String.IsNullOrEmpty(spell.CastTarget))
+                            {
+                                if (!String.Equals(spell.CastTarget, spawnsCleanName, StringComparison.OrdinalIgnoreCase)) continue;
+                            }
+
 							if (!String.IsNullOrWhiteSpace(spell.Ifs))
 							{
 								if (!Casting.Ifs(spell))
@@ -605,8 +612,8 @@ namespace E3Core.Processors
 						{
 							E3.Bots.Broadcast($"Trying to rez {s.DisplayName}");
 							MQ.Cmd("/corpse");
-
-							var result = Casting.Cast(s.ID, spell);
+                            //rez, don't care about anything else.
+							var result = Casting.Cast(s.ID, spell,null,true,true);
 							if (result == CastReturn.CAST_INTERRUPTFORHEAL) return;
 							if (result == CastReturn.CAST_SUCCESS)
 							{
@@ -666,24 +673,13 @@ namespace E3Core.Processors
         private static void InitRezSpells(RezType rezType = RezType.Normal)
         {
             _currentRezSpells.Clear();
-            List<String> spellList = E3.CharacterSettings.Rez_RezSpells;
-
+            List<Spell> spellList = E3.CharacterSettings.Rez_RezSpells;
             if(rezType== RezType.Auto) spellList= E3.CharacterSettings.Rez_AutoRezSpells;
-
-            foreach (var spellName in spellList)
+            foreach (var spell in spellList)
             {
                 //if (MQ.Query<bool>($"${{FindItem[={spellName}]}}") || MQ.Query<bool>($"${{Me.AltAbility[{spellName}]}}") || MQ.Query<bool>($"${{Me.Book[{spellName}]}}"))
                 {
-                    Data.Spell s;
-                    if(!Spell.LoadedSpellsByName.TryGetValue(spellName,out s))
-                    {
-                        s = new Spell(spellName);
-                    }
-                    if(s.CastType!= CastingType.None)
-                    {
-                        _currentRezSpells.Add(s);
-
-                    }
+                   _currentRezSpells.Add(spell);
                 }
             }
         }

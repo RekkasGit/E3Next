@@ -18,8 +18,9 @@ namespace E3Core.Processors
         public static Logging Log = E3.Log;
         private static IMQ MQ = E3.MQ;
         private static ISpawns _spawns = E3.Spawns;
-        private static Spell _radiantCure;
-        private static bool _shouldCastCure = true;
+        private static List<Spell> _radiantCures = new List<Spell>();
+		private static List<Spell> _rcSpellTotal = new List<Spell>();
+		private static bool _shouldCastCure = true;
         private static Int64 _nextRCureCheck = 0;
         private static Int64 _nexRCureCheckInterval = 500;
 
@@ -29,7 +30,6 @@ namespace E3Core.Processors
         [SubSystemInit]
         public static void Cures_Init()
         {
-            _radiantCure = new Spell("Radiant Cure");
             RegisterEvents();
         }
 
@@ -103,38 +103,48 @@ namespace E3Core.Processors
         private static void CheckRadiant()
         {
             //raidient cure cast
-            if (MQ.Query<bool>("${Me.AltAbilityReady[Radiant Cure]}"))
+            
+            
+            if (_radiantCures.Count>0)
             {
-                //spell here is the spell debuff we are looking for
-                foreach (var spell in E3.CharacterSettings.RadiantCure)
+              
+                foreach(var rcSpell in E3.CharacterSettings.RadiantCureSpells)
                 {
-					if (!String.IsNullOrWhiteSpace(spell.Ifs))
-					{
-						if (!Casting.Ifs(spell)) continue;
+                    if(Casting.CheckReady(rcSpell))
+                    {
+						//spell here is the spell debuff we are looking for
+						foreach (var spell in E3.CharacterSettings.RadiantCure)
+						{
+							if (!String.IsNullOrWhiteSpace(spell.Ifs))
+							{
+								if (!Casting.Ifs(spell)) continue;
+							}
+							Int32 numberSick = 0;
+
+							foreach (var id in Basics.GroupMembers)
+							{
+								Spawn s;
+								if (_spawns.TryByID(id, out s))
+								{
+									if (E3.Bots.BuffList(s.CleanName).Contains(spell.SpellID))
+									{
+										if (s.Distance < rcSpell.MyRange)
+										{
+											numberSick++;
+
+										}
+									}
+								}
+							}
+							if (numberSick >= spell.MinSick)
+							{
+								CastRadiantCure(rcSpell);
+								return;
+							}
+						}
 					}
-					Int32 numberSick = 0;
-
-                    foreach (var id in Basics.GroupMembers)
-                    {
-                        Spawn s;
-                        if (_spawns.TryByID(id, out s))
-                        {
-                            if (E3.Bots.BuffList(s.CleanName).Contains(spell.SpellID))
-                            {
-                                if (s.Distance < _radiantCure.MyRange)
-                                {
-                                    numberSick++;
-
-                                }
-                            }
-                        }
-                    }
-                    if (numberSick >= spell.MinSick)
-                    {
-                        CastRadiantCure();
-                        return;
-                    }
-                }
+				}
+                
             }
             //end R-CURE
         }
@@ -223,7 +233,7 @@ namespace E3Core.Processors
                 }
             }
         }
-        private static void CastRadiantCure()
+        private static void CastRadiantCure(Spell rcSpell)
         {
 
             //check the event queue
@@ -232,7 +242,7 @@ namespace E3Core.Processors
             {
                 E3.Bots.BroadcastCommandToGroup("/CastingRadiantCure FALSE");
                 //did we find enough sick people? if so, cast cure.
-                Casting.Cast(0, _radiantCure);
+                Casting.Cast(0, rcSpell);
                 E3.Bots.BroadcastCommandToGroup("/CastingRadiantCure TRUE");
             }
         }

@@ -1,17 +1,18 @@
-﻿using NetMQ.Sockets;
+﻿using E3NextProxy.Models;
 using NetMQ;
+using NetMQ.Sockets;
 using System;
-using System.Threading.Tasks;
-using System.Net.Sockets;
-using System.Net;
-using System.Reflection;
-using System.IO;
-using System.Threading;
 using System.Collections.Generic;
-using E3NextProxy.Models;
 using System.Diagnostics;
-using System.Runtime.InteropServices;
+using System.IO;
 using System.Linq;
+using System.Net;
+using System.Net.NetworkInformation;
+using System.Net.Sockets;
+using System.Reflection;
+using System.Runtime.InteropServices;
+using System.Threading;
+using System.Threading.Tasks;
 
 namespace E3NextProxy
 {
@@ -50,6 +51,7 @@ namespace E3NextProxy
 		static Int32 _XPublisherPort;
 		//static Int32 _XSubPort;
 		static string _localIP = "127.0.0.1";
+		static string _FQDN = "";
 		static void Main(string[] args)
 		{
 			//capture to clean up on force close
@@ -64,7 +66,7 @@ namespace E3NextProxy
 			_XPublisherPort = 5698;  //5697-5699 are current unassigned
 			//_XSubPort = FreeTcpPort();
 			_localIP = GetLocalIPAddress();
-
+			_FQDN = GetFQDN();
 			if (!CreateInfoFile(_localIP, _XPublisherPort))
 			{
 				return;
@@ -84,12 +86,26 @@ namespace E3NextProxy
 			foreach (string proxy in proxies)
 			{
 				string tproxy = proxy.Replace(" ", "");
-				if (tproxy == _localIP) continue;
+				if (tproxy == _localIP || String.Equals(tproxy,_FQDN,StringComparison.OrdinalIgnoreCase)) continue;
 				//external connections are +1 the port number. 
 				m_proxy.AddExteranlProxySubBinding($"tcp://{tproxy}:{_XPublisherPort+1}");
 			}
 			Console.ReadLine();
 
+		}
+		public static string GetFQDN()
+		{
+			string domainName = IPGlobalProperties.GetIPGlobalProperties().DomainName;
+			string hostName = Dns.GetHostName();
+			if(!string.IsNullOrEmpty(domainName) )
+			{
+				domainName = "." + domainName;
+				if (!hostName.EndsWith(domainName))  // if hostname does not already include domain name
+				{
+					hostName += domainName;   // add the domain name part
+				}
+			}
+			return hostName;                    // return the fully qualified name
 		}
 		public static void OldMain(string localIP, int XPublisherPort)
 		{

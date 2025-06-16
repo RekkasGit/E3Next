@@ -742,7 +742,7 @@ namespace E3Core.Processors
             {
                 List<string> validReportChannels = new List<string>() { "/g", "/gu", "/say", "/rsay","/gsay", "/rs" };
 
-                string channel = "/gu";
+                string channel = "/gsay";
                 if(x.args.Count>0 && validReportChannels.Contains(x.args[0], StringComparer.OrdinalIgnoreCase))
                 {
 

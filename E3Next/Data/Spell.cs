@@ -291,6 +291,27 @@ namespace E3Core.Data
                         }
 
                     }
+					else if (value.StartsWith("RecastDelay|", StringComparison.OrdinalIgnoreCase))
+					{
+						string tvalue = value;
+						bool isMinute = false;
+						if (value.EndsWith("s", StringComparison.OrdinalIgnoreCase))
+						{
+							tvalue = tvalue.Substring(0, value.Length - 1);
+						}
+						else if (value.EndsWith("m", StringComparison.OrdinalIgnoreCase))
+						{
+							isMinute = true;
+							tvalue = tvalue.Substring(0, value.Length - 1);
+						}
+
+						RecastDelay = GetArgument<Int32>(tvalue);
+						if (isMinute)
+						{
+							RecastDelay = RecastDelay * 60;
+						}
+
+					}
 					else if (value.Equals("GoM", StringComparison.OrdinalIgnoreCase))
                     {
                         GiftOfMana = true;
@@ -975,6 +996,9 @@ namespace E3Core.Data
         public Boolean Rotate;
         public Int32 EnduranceCost;
         public Int32 Delay;
+        public Int32 RecastDelay;
+        public Int64 LastCastTimeStamp;
+        public Int64 LastAssistTimeStampForCast;
         public Int32 AfterCastCompletedDelay = 0;
         public Int32 CastID;
         public Int32 MinEnd;
@@ -1069,6 +1093,7 @@ namespace E3Core.Data
 			r.Category = source.Category;
 			r.Debug = source.Debug;
 			r.Delay = source.Delay;
+            r.RecastDelay = source.RecastDelay;
 			r.AfterCastCompletedDelay = source.AfterCastCompletedDelay;
 			r.Duration = source.Duration;
 			r.DurationTotalSeconds = source.DurationTotalSeconds;
@@ -1219,6 +1244,7 @@ namespace E3Core.Data
             r.Category = this.Category;
             r.Debug = this.Debug;
             r.Delay = this.Delay;
+            r.RecastDelay = this.RecastDelay;
             r.AfterCastCompletedDelay = this.AfterCastCompletedDelay;
             r.Duration = this.Duration;
             r.DurationTotalSeconds = this.DurationTotalSeconds;
@@ -1357,6 +1383,7 @@ namespace E3Core.Data
 			string t_CastTarget = (String.IsNullOrWhiteSpace(this.CastTarget) || this.IsBuff==false) ? String.Empty : $"/{CastTarget}";
 			string t_PctAggro = (PctAggro == 0) ? String.Empty : $"/PctAggro|{PctAggro}";
             string t_Delay = (Delay == 0) ? String.Empty : $"/Delay|{Delay}s";
+            string t_RecastDelay = (RecastDelay == 0) ? String.Empty : $"/RecastDelay|{RecastDelay}s";
 			string t_NoTarget = NoTarget == false ? String.Empty : $"/NoTarget";
 			string t_NoAggro = NoAggro == false ? String.Empty : $"/NoAggro";
 
@@ -1372,7 +1399,7 @@ namespace E3Core.Data
 			string t_StackCheckInterval = StackIntervalCheck == _stackIntervalCheckDefault ? String.Empty : $"/StackCheckInterval|{StackIntervalCheck/10000}";
 			string t_StackRecastDelay = StackRecastDelay == 0 ? String.Empty : $"/StackRecastDelay|{StackRecastDelay/1000}";
 
-			string returnValue = $"{CastName}{t_CastTarget}{t_GemNumber}{t_Ifs}{t_checkFor}{t_CastIF}{t_healPct}{t_healthMax}{t_noInterrupt}{t_Zone}{t_MinSick}{t_BeforeSpell}{t_AfterSpell}{t_BeforeEvent}{t_AfterEvent}{t_minMana}{t_maxMana}{t_MinEnd}{t_ignoreStackRules}{t_MinDurationBeforeRecast}{t_MaxTries}{t_Reagent}{t_CastTypeOverride}{t_PctAggro}{t_Delay}{t_NoTarget}{t_NoAggro}{t_AfterEventDelay}{t_AfterSpellDelay}{t_BeforeEventDelay}{t_BeforeSpellDelay}{t_AfterCastDelay}{t_AfterCastCompletedDelay}{t_SongRefreshTime}{t_StackRequestItem}{t_StackRequestTargets}{t_StackCheckInterval}{t_StackRecastDelay}{t_Enabled}";
+			string returnValue = $"{CastName}{t_CastTarget}{t_GemNumber}{t_Ifs}{t_checkFor}{t_CastIF}{t_healPct}{t_healthMax}{t_noInterrupt}{t_Zone}{t_MinSick}{t_BeforeSpell}{t_AfterSpell}{t_BeforeEvent}{t_AfterEvent}{t_minMana}{t_maxMana}{t_MinEnd}{t_ignoreStackRules}{t_MinDurationBeforeRecast}{t_MaxTries}{t_Reagent}{t_CastTypeOverride}{t_PctAggro}{t_Delay}{t_RecastDelay}{t_NoTarget}{t_NoAggro}{t_AfterEventDelay}{t_AfterSpellDelay}{t_BeforeEventDelay}{t_BeforeSpellDelay}{t_AfterCastDelay}{t_AfterCastCompletedDelay}{t_SongRefreshTime}{t_StackRequestItem}{t_StackRequestTargets}{t_StackCheckInterval}{t_StackRecastDelay}{t_Enabled}";
 			return returnValue;
 
 		}
