@@ -75,21 +75,22 @@ namespace E3Core.Processors
 										if (commandName.Equals(pair.Key, StringComparison.OrdinalIgnoreCase))
 										{
 											internalComand = true;
-											//no need to send this to mq if its our own command, just drop it into the queues to be processed. 
-											EventProcessor.ProcessMQCommand(command);
+
+											MQ.Cmd(command);
+											//EventProcessor.ProcessMQCommand(command);
 											//moving data between threads, have to wait till its actually there
-											while(!EventProcessor.ProcessEventsIntoQueue_MQCommandProcessing())
-											{
-												System.Threading.Thread.Sleep(0);
-											}
-											EventProcessor.ProcessEventsInQueues(pair.Key);//process just that command
-											if(commandName.StartsWith("/e3bc"))
-											{
-												MQ.Write("e3bc command, delaying then processing it");
-												//need to do a slight pause in case the command is also including us 
-												MQ.Delay(10);
-												NetMQServer.SharedDataClient.ProcessCommands(); //recieving data
-											}
+											//while(!EventProcessor.ProcessEventsIntoQueue_MQCommandProcessing())
+											//{
+											//	System.Threading.Thread.Sleep(0);
+											//}
+											//EventProcessor.ProcessEventsInQueues(pair.Key);//process just that command
+											//if(commandName.StartsWith("/e3bc"))
+											//{
+											//	MQ.Write("e3bc command, delaying then processing it");
+											//	//need to do a slight pause in case the command is also including us 
+											//	MQ.Delay(10);
+											//	NetMQServer.SharedDataClient.ProcessCommands(); //recieving data
+											//}
 										}
 									}
 									if (!internalComand)

@@ -18,11 +18,9 @@ namespace E3Core.Processors
         public static Logging Log = E3.Log;
         private static IMQ MQ = E3.MQ;
         private static ISpawns _spawns = E3.Spawns;
-        private static List<Spell> _radiantCures = new List<Spell>();
-		private static List<Spell> _rcSpellTotal = new List<Spell>();
 		private static bool _shouldCastCure = true;
         private static Int64 _nextRCureCheck = 0;
-        private static Int64 _nexRCureCheckInterval = 500;
+        private static Int64 _nexRCureCheckInterval = 1500;
 
         /// <summary>
         /// Initializes this instance.
@@ -105,7 +103,7 @@ namespace E3Core.Processors
             //raidient cure cast
             
             
-            if (_radiantCures.Count>0)
+            if (E3.CharacterSettings.RadiantCureSpells.Count > 0)
             {
               
                 foreach(var rcSpell in E3.CharacterSettings.RadiantCureSpells)

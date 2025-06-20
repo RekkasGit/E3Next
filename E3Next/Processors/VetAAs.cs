@@ -86,7 +86,27 @@ namespace E3Core.Processors
                     MQ.Delay(20000, Casting.IsNotCasting);
                 }
             });
-            EventProcessor.RegisterCommand("/jester", (x) =>
+			EventProcessor.RegisterCommand("/origin", (x) =>
+			{
+				if (x.args.Count == 0)
+				{
+					E3.Bots.BroadcastCommandToGroup("/origin me", x);
+				}
+				Casting.Interrupt();
+				MQ.Delay(500);
+				MQ.Cmd("/alt act 331");
+				MQ.Delay(500);
+				if (E3.CurrentClass == Class.Bard)
+				{
+					MQ.Delay(17000);
+
+				}
+				else
+				{
+					MQ.Delay(20000, Casting.IsNotCasting);
+				}
+			});
+			EventProcessor.RegisterCommand("/jester", (x) =>
             {
                 VetAA("Chaotic Jester", "/jester", x);
             });

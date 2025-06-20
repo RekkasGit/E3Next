@@ -856,8 +856,10 @@ namespace E3Core.Processors
         }
         public static void LootCorpse(Spawn corpse, bool bypassLootSettings = false, bool lootAll = false)
         {
-            
-            Int32 freeInventorySlots = MQ.Query<Int32>("${Me.FreeInventory}");
+			Int32 lootTryCount = 0;
+	
+            tryandLoot:
+			Int32 freeInventorySlots = MQ.Query<Int32>("${Me.FreeInventory}");
             //keep some free if configured to do so.
             freeInventorySlots -= E3.GeneralSettings.Loot_NumberOfFreeSlotsOpen;
 
@@ -872,22 +874,30 @@ namespace E3Core.Processors
                 e3util.Beep();
 
             }
-			if (!MQ.Query<bool>("${Window[LootWnd].Open}"))
-			{
-				MQ.Cmd("/loot");
-				MQ.Delay(3000, "${Window[LootWnd].Open}");
-				MQ.Delay(100);
-				if (!MQ.Query<bool>("${Window[LootWnd].Open}"))
-				{
-					MQ.Write($"\arERROR, Loot Window not opening, adding {corpse.CleanName}-{corpse.ID} to ignore corpse list.");
-					if (!_unlootableCorpses.Contains(corpse.ID))
-					{
-						_unlootableCorpses.Add(corpse.ID);
-					}
-					return;
-                    
-				}
-			}
+       
+            if (!MQ.Query<bool>("${Window[LootWnd].Open}"))
+            {
+               
+                MQ.Cmd("/loot");
+                MQ.Delay(1500, "${Window[LootWnd].Open}");
+                MQ.Delay(100);
+                if (!MQ.Query<bool>("${Window[LootWnd].Open}"))
+                {
+                    //Retry once
+                    lootTryCount++;
+                    if (lootTryCount < 2)
+                    {
+                        goto tryandLoot;
+                    }
+                    MQ.Write($"\arERROR, Loot Window not opening, adding {corpse.CleanName}-{corpse.ID} to ignore corpse list.");
+                    if (!_unlootableCorpses.Contains(corpse.ID))
+                    {
+                        _unlootableCorpses.Add(corpse.ID);
+                    }
+                    return;
+
+                }
+            }
             
             MQ.Delay(500, "${Corpse.Items}");
 
