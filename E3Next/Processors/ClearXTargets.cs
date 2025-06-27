@@ -31,6 +31,95 @@ namespace E3Core.Processors
 		public static bool StickTarget = false;
 		[ExposedData("ClearXTargets", "UseMyTarget")]
 		public static bool UseMyTarget = false;
+		[ExposedData("ClearXTargets", "FindLowestHPTarget")]
+		public static bool FindLowestHPTarget = false;
+		[ExposedData("ClearXTargets", "FindHighestHPTarget")]
+		public static bool FindHighestHPTarget = false;
+
+		[SubSystemInit]
+		public static void ClearTargets_Init()
+		{
+			RegisterEvents();
+
+		}
+		private static void RegisterEvents()
+        {
+			EventProcessor.RegisterCommand("/cleartargets", (x) =>
+			{
+				ClearXTargets.FaceTarget = true;
+				ClearXTargets.StickTarget = false;
+
+				if (x.args.Count == 0)
+				{
+					ClearXTargets.MobToAttack = 0;
+					Assist.AssistOff();
+					E3.Bots.BroadcastCommandToGroup($"/backoff all", x);
+					ClearXTargets.Filters.Clear();
+					if (x.filters.Count > 0)
+					{
+						ClearXTargets.Filters.Clear();
+						ClearXTargets.Filters.AddRange(x.filters);
+					}
+					ClearXTargets.HasAllFlag = x.hasAllFlag;
+					ClearXTargets.Enabled = true;
+					ClearXTargets.FaceTarget = true;
+					ClearXTargets.StickTarget = false;
+					ClearXTargets.UseMyTarget = false;
+
+				}
+				else if (x.args.Count == 1 && x.args[0] == "off")
+				{
+					Assist.AssistOff();
+					ClearXTargets.Enabled = false;
+					ClearXTargets.Filters.Clear();
+					ClearXTargets.HasAllFlag = false;
+					E3.Bots.BroadcastCommandToGroup($"/backoff all", x);
+				}
+				else if (x.args.Count >= 1)
+				{
+					ClearXTargets.MobToAttack = 0;
+					Assist.AssistOff();
+					E3.Bots.BroadcastCommandToGroup($"/backoff all", x);
+					if (x.filters.Count > 0)
+					{
+						ClearXTargets.Filters.Clear();
+						ClearXTargets.Filters.AddRange(x.filters);
+					}
+					ClearXTargets.HasAllFlag = x.hasAllFlag;
+					ClearXTargets.UseMyTarget = false;
+					ClearXTargets.FaceTarget = true;
+					ClearXTargets.StickTarget = false;
+
+					foreach (var argValue in x.args)
+					{
+						if (argValue.Equals("noface", StringComparison.OrdinalIgnoreCase))
+						{
+							ClearXTargets.FaceTarget = false;
+						}
+						else if (argValue.Equals("stick", StringComparison.OrdinalIgnoreCase))
+						{
+							ClearXTargets.StickTarget = true;
+						}
+						else if (argValue.Equals("usemytarget", StringComparison.OrdinalIgnoreCase))
+						{
+							ClearXTargets.UseMyTarget = true;
+						}
+						else if (argValue.Equals("FindLowestHPTarget", StringComparison.OrdinalIgnoreCase))
+						{
+							ClearXTargets.FindLowestHPTarget = true;
+						}
+						else if (argValue.Equals("FindHighestHPTarget", StringComparison.OrdinalIgnoreCase))
+						{
+							ClearXTargets.FindHighestHPTarget = true;
+						}
+					}
+
+					ClearXTargets.Enabled = true;
+
+				}
+
+			});
+		}
 
 		[ClassInvoke(Data.Class.All)]
         public static void Check_Xtargets()
@@ -69,7 +158,15 @@ namespace E3Core.Processors
 							}
 						}
 					}
-					if (MobToAttack==0)
+					if (FindLowestHPTarget)
+					{
+						MobToAttack = e3util.GetXtargetLowestHP();
+					}
+					else if (FindHighestHPTarget)
+					{
+						MobToAttack = e3util.GetXtargetHighestHP();
+					}
+					if (MobToAttack<1)
 					{
 						foreach (var s in _spawns.Get().OrderBy(x => x.Distance3D))
 						{

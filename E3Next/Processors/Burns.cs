@@ -254,12 +254,20 @@ namespace E3Core.Processors
             if (burnToUse.Active)
             {
                 Int32 previousTarget = MQ.Query<Int32>("${Target.ID}");
-                foreach (var burn in burnToUse.ItemsToBurn)
+				Int32 petId = MQ.Query<Int32>("${Me.Pet.ID}");
+
+				foreach (var burn in burnToUse.ItemsToBurn)
                 {
-                    if (MQ.Query<Int32>("${Me.CurrentHPs}") < 1) return; //can't burn if dead
+					BuffCheck.Check_BlockedBuffs();
+					if(petId>0)
+					{
+						Pets.CheckPetBuffs();
+
+					}
+					if (MQ.Query<Int32>("${Me.CurrentHPs}") < 1) return; //can't burn if dead
                     //can't do gathering dusk if not in combat, skip it
                     if (burn.SpellName == "Gathering Dusk" && !Basics.InGameCombat()) continue;
-                    if (burn.TargetType == "Pet" && MQ.Query<int>("${Me.Pet.ID}") < 1) continue;
+                    if (burn.TargetType == "Pet" && petId < 1) continue;
 
                     if (!String.IsNullOrWhiteSpace(burn.Ifs))
                     {

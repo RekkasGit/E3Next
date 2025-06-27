@@ -30,6 +30,7 @@ namespace E3Core.Processors
 		public static bool IsPaused = false;
 		[ExposedData("Basics", "GroupMembers")]
 		public static List<int> GroupMembers = new List<int>();
+        public static List<string> GroupMemberNames = new List<string>();
         private static long _nextGroupCheck = 0;
         private static long _nextGroupCheckInterval = 3000;
 		private static long _nextAutoHaterFixCheck = 0;
@@ -1163,7 +1164,7 @@ namespace E3Core.Processors
                 }
                 else if (string.Equals(x.args[0], "Laz", StringComparison.OrdinalIgnoreCase))
                 {
-                    Process.Start(new ProcessStartInfo { FileName = "https://www.lazaruseq.com/Wiki/index.php/Main_Page", UseShellExecute = true });
+                    Process.Start(new ProcessStartInfo { FileName = "https://www.lazaruseq.com/Wiki_/index.php/Main_Page", UseShellExecute = true });
                 }
 				else if (string.Equals(x.args[0], "Ret", StringComparison.OrdinalIgnoreCase))
 				{
@@ -1182,6 +1183,7 @@ namespace E3Core.Processors
             int groupCount = MQ.Query<int>("${Group}");
             groupCount++;
             GroupMembers.Clear();
+            GroupMemberNames.Clear();
             //refresh group members.
             
             for (int i = 0; i < groupCount; i++)
@@ -1189,9 +1191,13 @@ namespace E3Core.Processors
                 int id = MQ.Query<int>($"${{Group.Member[{i}].ID}}");
                 if(id>0)
                 {
-                    GroupMembers.Add(id);
+                    string name = MQ.Query<string>($"${{Group.Member[{i}].Name}}");
+					GroupMembers.Add(id);
+                    GroupMemberNames.Add(name);
                 }
             }
+
+
         }
 
 		/// <summary>

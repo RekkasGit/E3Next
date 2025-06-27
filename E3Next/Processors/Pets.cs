@@ -83,7 +83,7 @@ namespace E3Core.Processors
 
         public static void removeBuffsIfNecessary(List<Spell> buffs) {
             foreach (var buff in buffs) {
-		if (!String.IsNullOrWhiteSpace(buff.Ifs))
+		    if (!String.IsNullOrWhiteSpace(buff.Ifs))
                 {
                     if (!Casting.Ifs(buff.Ifs))
                     {
@@ -98,7 +98,7 @@ namespace E3Core.Processors
             }
         }
 
-        private static void CheckPetBuffs()
+        public static void CheckPetBuffs()
         {
             Pets.removeBuffsIfNecessary(E3.CharacterSettings.BlockedPetBuffs);
         }

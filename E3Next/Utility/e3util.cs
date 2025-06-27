@@ -1,21 +1,22 @@
 ﻿using E3Core.Data;
 using E3Core.Processors;
+using E3Core.Server;
 using E3Core.Settings;
 using IniParser;
 using MonoCore;
 using System;
 using System.Collections.Generic;
+using System.Diagnostics;
 using System.Linq;
-using System.Net.Sockets;
 using System.Net;
+using System.Net.Sockets;
+using System.Reflection;
 using System.Reflection.Emit;
 using System.Runtime.CompilerServices;
+using System.Runtime.InteropServices;
+using System.Security.Cryptography;
 using System.Text;
 using static MonoCore.EventProcessor;
-using E3Core.Server;
-using System.Reflection;
-using System.Diagnostics;
-using System.Runtime.InteropServices;
 
 namespace E3Core.Utility
 {
@@ -1023,6 +1024,70 @@ namespace E3Core.Utility
 			}
 
 			return tempMaxAggro;
+		}
+		public static Int32 GetXtargetLowestHP()
+		{
+			Int32 tempLowestHP = 100;
+			Int32 currentLowestHP = 100;
+			Int32 lowstHPMob = -1;
+
+			for (Int32 i = 1; i <= 13; i++)
+			{
+				bool autoHater = MQ.Query<bool>($"${{Me.XTarget[{i}].TargetType.Equal[Auto Hater]}}");
+				if (!autoHater) continue;
+				Int32 mobId = MQ.Query<Int32>($"${{Me.XTarget[{i}].ID}}");
+				if (mobId > 0)
+				{
+					Spawn s;
+					if (_spawns.TryByID(mobId, out s))
+					{
+						if (s.Aggressive)
+						{
+							tempLowestHP = MQ.Query<Int32>($"${{Me.XTarget[{i}].PctHPs}}");
+							if (tempLowestHP >0 && tempLowestHP < currentLowestHP)
+							{
+								currentLowestHP = tempLowestHP;
+								lowstHPMob = mobId;
+							}
+						}
+					}
+				}
+			}
+			MQ.Write($"Lowest HP is mob:{lowstHPMob} with percent of {currentLowestHP}");
+			return lowstHPMob;
+		}
+		public static Int32 GetXtargetHighestHP()
+		{
+			Int32 tempHighestHP = 100;
+			Int32 currentHighestHP = 0;
+			Int32 highestHPMob = -1;
+
+			for (Int32 i = 1; i <= 13; i++)
+			{
+				bool autoHater = MQ.Query<bool>($"${{Me.XTarget[{i}].TargetType.Equal[Auto Hater]}}");
+				if (!autoHater) continue;
+				Int32 mobId = MQ.Query<Int32>($"${{Me.XTarget[{i}].ID}}");
+				if (mobId > 0)
+				{
+					Spawn s;
+					if (_spawns.TryByID(mobId, out s))
+					{
+						if (s.Aggressive)
+						{
+							tempHighestHP = MQ.Query<Int32>($"${{Me.XTarget[{i}].PctHPs}}");
+							if (tempHighestHP > 0 && tempHighestHP > currentHighestHP)
+							{
+								currentHighestHP = tempHighestHP;
+								highestHPMob = mobId;
+								if (currentHighestHP == 100) break;
+								
+							}
+						}
+					}
+				}
+			}
+			MQ.Write($"Hiest HP is mob:{highestHPMob} with percent of {currentHighestHP}");
+			return highestHPMob;
 		}
 		public static Int32 GetXtargetMinAggro()
 		{
