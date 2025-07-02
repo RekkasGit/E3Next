@@ -159,6 +159,9 @@ namespace E3Core.Server
 
 					data.Dispose(); //put back to be reused ,we have the data we want out of it.
 
+					//allow macro escape sequence for tlos to be executed on the dest client
+					if(message.Contains("$\\{")) message = message.Replace("$\\{", "${");
+
 					if (typeInfo == OnCommandData.CommandType.BroadCastMessage || typeInfo== OnCommandData.CommandType.BroadCastMessageZone)
 					{
 						Int32 indexOfSeperator = message.IndexOf(':');
