@@ -658,7 +658,6 @@ namespace E3Core.Processors
                         {
 							MQ.Cmd($"/face fast heading {heading * -1}");
 						}
-                       
                         MQ.Delay(600);
                         MQ.Cmd("/nomodkey /keypress forward hold");
                         MQ.Delay(3000);
@@ -669,8 +668,6 @@ namespace E3Core.Processors
                             MQ.Delay(100);
                             currentZone = MQ.Query<Int32>("${Zone.ID}");
                         }
-                        //MQ.Cmd("/nomodkey /keypress forward");
-
                     }
                 }
                 else
@@ -690,9 +687,7 @@ namespace E3Core.Processors
                     {
 						MQ.Cmd($"/face fast heading {heading * -1}");
 					}
-                    
                     MQ.Cmd("/nomodkey /keypress forward hold");
-
                 }
             });
             EventProcessor.RegisterCommand("/coth", (x) =>

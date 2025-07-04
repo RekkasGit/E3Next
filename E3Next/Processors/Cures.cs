@@ -149,14 +149,14 @@ namespace E3Core.Processors
 		private static void CheckCounterCures()
 		{
 
-			if (CheckCounterCure(E3.CharacterSettings.CurseCounterCure, E3.CharacterSettings.CurseCounterIgnore, E3.Bots.BaseCursedCounters)) return;
-			if (CheckCounterCure(E3.CharacterSettings.PoisonCounterCure, E3.CharacterSettings.PoisonCounterIgnore, E3.Bots.BasePoisonedCounters)) return;
-			if (CheckCounterCure(E3.CharacterSettings.DiseaseCounterCure, E3.CharacterSettings.DiseaseCounterIgnore, E3.Bots.BaseDiseasedCounters)) return;
-			if (CheckCounterCure(E3.CharacterSettings.CorruptedCounterCure, E3.CharacterSettings.CorruptedCounterIgnore, E3.Bots.BaseCorruptedCounters)) return;
+			if (CheckCounterCure(E3.CharacterSettings.CurseCounterCure, E3.CharacterSettings.CurseCounterIgnore, E3.Bots.BaseCursedCounters,"Curse")) return;
+			if (CheckCounterCure(E3.CharacterSettings.PoisonCounterCure, E3.CharacterSettings.PoisonCounterIgnore, E3.Bots.BasePoisonedCounters,"Poison")) return;
+			if (CheckCounterCure(E3.CharacterSettings.DiseaseCounterCure, E3.CharacterSettings.DiseaseCounterIgnore, E3.Bots.BaseDiseasedCounters,"Disease")) return;
+			if (CheckCounterCure(E3.CharacterSettings.CorruptedCounterCure, E3.CharacterSettings.CorruptedCounterIgnore, E3.Bots.BaseCorruptedCounters,"Corrupt")) return;
 
 
 		}
-		private static bool CheckCounterCure(List<Spell> curesSpells, List<Spell> ignoreSpells, Func<string, int> counterFunc)
+		private static bool CheckCounterCure(List<Spell> curesSpells, List<Spell> ignoreSpells, Func<string, int> counterFunc,string description="")
 		{
 			//we do spells first as each spell might be group only or single target for out of group
 
@@ -199,6 +199,7 @@ namespace E3Core.Processors
 							if (foundBadBuff) continue;
 							if (Casting.InRange(s.ID, spell) && Casting.CheckMana(spell) && Casting.CheckReady(spell))
 							{
+								E3.Bots.Broadcast($"\am{s.CleanName}\aw needs a cure! Casting \ag{spell.CastName}\aw because of \ar{description}\aw counters");
 								Casting.Cast(s.ID, spell);
 								return true;
 							}
