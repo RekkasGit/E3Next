@@ -573,6 +573,7 @@ namespace E3Core.Data
                 //check if this is an itemID
 
 				//we already have this data populated, just kick out
+                //used in the config editor to limit the number of calls.
 				if(ItemDataLookup.ContainsKey(CastName))
 				{
 					var SpellData = ItemDataLookup[CastName];

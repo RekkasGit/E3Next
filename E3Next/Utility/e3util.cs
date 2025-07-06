@@ -50,6 +50,66 @@ namespace E3Core.Utility
 			}
 			return returnValue;
 		}
+		public static List<String> _raidHealers = new List<string>();
+		public static List<String> GetRaidHealers()
+		{
+			_raidHealers.Clear();
+			Int32 raidSize = MQ.Query<Int32>("${Raid.Members}");
+
+			for (Int32 x = 0; x < raidSize; x++)
+			{
+				string className = MQ.Query<String>($"${{Raid.Member[{x}].Class.ShortName}}");
+
+				if (className == "CLR" || className == "DRU" || className == "SHM")
+				{
+					string raidMemberName = MQ.Query<String>($"${{Raid.Member[{x}].Name}}");
+					if (Basics.GroupMemberNames.Contains(raidMemberName, StringComparer.OrdinalIgnoreCase)) continue;
+
+					_raidHealers.Add(raidMemberName);
+				}
+			}
+			return _raidHealers;
+		}
+
+		public static List<String> _raidTanks = new List<string>();
+		public static List<String> GetRaidTanks()
+		{
+			_raidTanks.Clear();
+			Int32 raidSize = MQ.Query<Int32>("${Raid.Members}");
+
+			for (Int32 x = 0; x < raidSize; x++)
+			{
+				string className = MQ.Query<String>($"${{Raid.Member[{x}].Class.ShortName}}");
+
+				if(className=="SHD"|| className=="WAR" || className=="PAL")
+				{
+					string raidMemberName = MQ.Query<String>($"${{Raid.Member[{x}].Name}}");
+
+					if (Basics.GroupMemberNames.Contains(raidMemberName,StringComparer.OrdinalIgnoreCase)) continue;
+
+					_raidTanks.Add(raidMemberName);
+				}
+			}
+			return _raidTanks;
+		}
+		public static Dictionary<String, Int32> _xtargetPlayers = new Dictionary<string, int>(StringComparer.OrdinalIgnoreCase);
+		public static Dictionary<String, Int32> GetXTargetPlayers()
+		{
+			_xtargetPlayers.Clear();
+
+			for (Int32 x = 1; x <= XtargetMax; x++)
+			{
+
+				if (!MQ.Query<bool>($"${{Me.XTarget[{x}].TargetType.Equal[Specific PC]}}")) continue;
+				string name = MQ.Query<String>($"${{Me.XTarget[{x}].CleanName}}");
+			
+				if (name!="NULL")
+				{
+					_xtargetPlayers.Add(name,x);
+				}
+			}
+			return _xtargetPlayers;
+		}
 
 		public static string ArgsToCommand(List<String> args)
 		{

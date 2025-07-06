@@ -201,7 +201,7 @@ namespace E3Core.Processors
 			//_enableXTargetFix
 
 
-			EventProcessor.RegisterCommand("/e3xtargetfix", (x) =>
+			EventProcessor.RegisterCommand("/e3bugs_xtargetfix", (x) =>
 			{
 				//swap them
 				e3util.ToggleBooleanSetting(ref _enableXTargetFix, "Enable XTargetFix", x.args);

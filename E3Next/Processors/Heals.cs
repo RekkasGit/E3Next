@@ -6,6 +6,7 @@ using MonoCore;
 using System;
 using System.Collections.Generic;
 using System.Linq;
+using System.Numerics;
 using System.Text;
 using System.Threading.Tasks;
 using System.Xml.Linq;
@@ -17,8 +18,11 @@ namespace E3Core.Processors
 		public static ISpawns _spawns = E3.Spawns;
 
 		private static Int64 _nextHealCheck = 0;
+		private static Int64 _nextXTargetPlayersCheck = 0;
 		[ExposedData("Heals", "HealCheckInterval")]
 		private static Int64 _nextHealCheckInterval = 250;
+		private static Int64 _nextXTargetPlayersInterval = 2000;
+
 		[ExposedData("Heals", "UseEQGroupDataForHeals")]
 		private static bool _useEQGroupDataForHeals = true;
 		private static Data.Spell _orbOfShadowsSpell = null;
@@ -57,8 +61,157 @@ namespace E3Core.Processors
 		
 				}
 			});
+
+			EventProcessor.RegisterCommand("/e3xtarget", (x) => {
+
+
+				if (x.args.Count > 0 && E3.Bots.BotsConnected().Contains(x.args[0], StringComparer.OrdinalIgnoreCase) && !x.args[0].Equals(E3.CurrentName, StringComparison.OrdinalIgnoreCase))
+				{
+					var toon01 = x.args[0];
+					x.args.RemoveAt(0);
+					string restOfCommand = e3util.ArgsToCommand(x.args);
+					E3.Bots.BroadcastCommandToPerson(toon01, $"/e3xtarget {restOfCommand}");
+					
+				}
+				else
+				{
+					if(x.args.Count>0)
+					{
+						//this is so we don't take over the xtarget functionality unless its been used.
+						_useXTargetCommand = true;
+						//first we need to know what type of command this is
+						string command = x.args[0].ToLower();
+						if (command == "add")
+						{
+							if (x.args.Count < 2) return;
+							string target = x.args[1].ToLower();
+							if (!_XTargetSetupUsers.Contains(target))
+							{
+								_XTargetSetupUsers.Add(target);
+							}
+						}
+						else if (command == "remove")
+						{
+							if (x.args.Count < 2) return;
+							string target = x.args[1].ToLower();
+							if (_XTargetSetupUsers.Contains(target))
+							{
+								_XTargetSetupUsers.Remove(target);
+							}
+						}
+						else if (command == "add-tanks")
+						{
+							var tanks = e3util.GetRaidTanks();
+							foreach (var tank in tanks)
+							{
+								if (!_XTargetSetupUsers.Contains(tank))
+								{
+									_XTargetSetupUsers.Add(tank);
+								}
+							}
+						}
+						else if (command == "remove-tanks")
+						{
+							var tanks = e3util.GetRaidTanks();
+							foreach (var tank in tanks)
+							{
+								if (_XTargetSetupUsers.Contains(tank))
+								{
+									_XTargetSetupUsers.Remove(tank);
+								}
+							}
+						}
+						else if (command == "add-heals")
+						{
+							var tanks = e3util.GetRaidHealers();
+							foreach (var tank in tanks)
+							{
+								if (!_XTargetSetupUsers.Contains(tank))
+								{
+									_XTargetSetupUsers.Add(tank);
+								}
+							}
+						}
+						else if (command == "remove-heals")
+						{
+							var tanks = e3util.GetRaidHealers();
+							foreach (var tank in tanks)
+							{
+								if (_XTargetSetupUsers.Contains(tank))
+								{
+									_XTargetSetupUsers.Remove(tank);
+								}
+							}
+						}
+						else if (command == "clear")
+						{
+							_XTargetSetupUsers.Clear();
+						}
+						else if (command == "manual")
+						{
+							_useXTargetCommand = false;//turn auto off
+						}
+						else if (command == "auto")
+						{
+							_useXTargetCommand = true;//turn auto on
+						}
+					}
+				}
+			}, "setup for xtarget healing and what not");
 		}
 
+		private static bool _useXTargetCommand = false;
+		public static HashSet<String> _XTargetSetupUsers = new HashSet<String>(StringComparer.OrdinalIgnoreCase);
+
+		[ClassInvoke(Class.All)]
+		public static void Check_XTargetPlayers()
+		{
+			if (!_useXTargetCommand) return;
+			if (!e3util.ShouldCheck(ref _nextXTargetPlayersCheck, _nextXTargetPlayersInterval)) return;
+
+			//get players with their slot ID's
+			var xtargetPlayers = e3util.GetXTargetPlayers();
+			HashSet<Int32> freeSlots = new HashSet<int>(20) { 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13 };
+			Queue<Int32> freeSlotQueue = new Queue<int>();
+			foreach( var x in xtargetPlayers )
+			{
+				freeSlots.Remove(x.Value);	
+			}
+			foreach (var slot in freeSlots) {
+				freeSlotQueue.Enqueue(slot);
+			}
+
+			foreach (String player in _XTargetSetupUsers)
+			{
+				//see if there are any missing
+				if(!xtargetPlayers.ContainsKey(player))
+				{
+					if(_spawns.TryByName(player, out var s))
+					{
+
+						if(Casting.TrueTarget(s.ID))
+						{
+							if(freeSlotQueue.Count > 0)
+							{
+								Int32 slotToUse = freeSlotQueue.Dequeue();
+								MQ.Cmd($"/xtarget set {slotToUse} {player}");
+								E3.Bots.Broadcast($"Adding \am{player}\aw to slot {slotToUse} xtarget!");
+							}
+						}
+					}
+				}
+			}
+
+			foreach (var x in xtargetPlayers)
+			{
+				if(!_XTargetSetupUsers.Contains(x.Key))
+				{
+					Int32 slotToUse = x.Value;
+					MQ.Cmd($"/xtarget set {slotToUse} AH");
+					E3.Bots.Broadcast($"Removing \am{x.Key}\aw from xtarget slot {slotToUse}!");
+				}
+			}
+		}
 		[AdvSettingInvoke]
 		public static void Check_Heals()
 		{
