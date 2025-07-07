@@ -482,7 +482,7 @@ namespace E3Core.Processors
 		public static void Check_Buffs()
 		{
 			if (E3.IsInvis) return;
-			if (Heals.IgnoreHealTargets.Count > 1) return;
+			if (Heals.IgnoreHealTargets.Count > 0) return;
 			//e3util.PrintTimerStatus(_buffTimers, ref _printoutTimer, "Buff timers");
 			//instant buffs have their own shouldcheck, need it snappy so check quickly.
 			if(!E3.CurrentInCombat)
