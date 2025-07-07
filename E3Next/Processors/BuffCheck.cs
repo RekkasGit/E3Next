@@ -791,6 +791,8 @@ namespace E3Core.Processors
 					}
 				}
 
+				if (Heals.IgnoreHealTargets.Contains(target)) return BuffBots_ReturnType.Continue;
+
 				if (_spawns.TryByName(target, out s))
 				{
 					if (usePets && s.PetID < 1)

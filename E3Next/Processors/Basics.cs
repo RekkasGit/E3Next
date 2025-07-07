@@ -1164,7 +1164,7 @@ namespace E3Core.Processors
                 }
                 else if (string.Equals(x.args[0], "Laz", StringComparison.OrdinalIgnoreCase))
                 {
-                    Process.Start(new ProcessStartInfo { FileName = "https://www.lazaruseq.com/Wiki_/index.php/Main_Page", UseShellExecute = true });
+                    Process.Start(new ProcessStartInfo { FileName = "https://www.lazaruseq.com/", UseShellExecute = true });
                 }
 				else if (string.Equals(x.args[0], "Ret", StringComparison.OrdinalIgnoreCase))
 				{
