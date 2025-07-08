@@ -1550,10 +1550,8 @@ namespace E3Core.Processors
 
             if(e3util.IsEQEMU() && E3.ServerName=="Lazarus")
             {
-                if(LazarusManaRecovery())
-                {
-                    return;
-                }
+                LazarusManaRecovery();
+                
             }
 
             using (_log.Trace())

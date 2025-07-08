@@ -30,7 +30,8 @@ namespace E3Core.Classes
         public static void AutoCheeta()
         {
             if (E3.IsInvis) return;
-            if (!e3util.ShouldCheck(ref _nextAutoCheetaCheck, 1000)) return;
+			if (Heals.IgnoreHealTargets.Count > 0) return;
+			if (!e3util.ShouldCheck(ref _nextAutoCheetaCheck, 1000)) return;
             if (E3.CharacterSettings.Druid_AutoCheetah)
             {
 

@@ -61,7 +61,8 @@ namespace E3Core.Classes
         public static void AutoSonata()
         {
             if (E3.IsInvis) return;
-            if (!e3util.ShouldCheck(ref _nextAutoSonataCheck, 1000)) return;
+			if (Heals.IgnoreHealTargets.Count > 0) return;
+			if (!e3util.ShouldCheck(ref _nextAutoSonataCheck, 1000)) return;
 			//if (!MQ.Query<bool>("${Me.Standing}"))
 			//{
 			//	//we are sitting, don't do anything
