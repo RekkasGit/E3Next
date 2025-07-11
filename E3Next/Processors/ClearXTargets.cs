@@ -103,14 +103,20 @@ namespace E3Core.Processors
 						else if (argValue.Equals("usemytarget", StringComparison.OrdinalIgnoreCase))
 						{
 							ClearXTargets.UseMyTarget = true;
+							ClearXTargets.FindLowestHPTarget = false;
+							ClearXTargets.FindHighestHPTarget = false;
 						}
 						else if (argValue.Equals("FindLowestHPTarget", StringComparison.OrdinalIgnoreCase))
 						{
 							ClearXTargets.FindLowestHPTarget = true;
+							ClearXTargets.FindHighestHPTarget = false;
+							ClearXTargets.UseMyTarget = false;
 						}
 						else if (argValue.Equals("FindHighestHPTarget", StringComparison.OrdinalIgnoreCase))
 						{
 							ClearXTargets.FindHighestHPTarget = true;
+							ClearXTargets.FindLowestHPTarget = false;
+							ClearXTargets.UseMyTarget = false;
 						}
 					}
 
