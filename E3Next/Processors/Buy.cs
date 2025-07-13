@@ -323,7 +323,7 @@ namespace E3Core.Processors
                 MQ.Cmd($"/nomodkey /notify QuantityWnd QTYW_Accept_Button leftmouseup");
                 MQ.Delay(300);
             }
-
+            E3.Bots.Broadcast($"Bought{itemQty} {itemName}");
         }
         
     }
