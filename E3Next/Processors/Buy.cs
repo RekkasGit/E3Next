@@ -25,6 +25,7 @@ namespace E3Core.Processors
         {
             EventProcessor.RegisterCommand("/restock", (x) =>
             {
+                E3.Bots.Broadcast("This command is deprecated, please use /e3restock with the vendor targeted. this will auto broadcast.");
                 string itemName = "food";
                 if(x.args.Count>1)
                 {
@@ -40,33 +41,122 @@ namespace E3Core.Processors
                     }
                     else
                     {
-                        E3.Bots.BroadcastCommand($"You must pass a number value for the 2nd parameter to restock {itemName}.");
+                        E3.Bots.Broadcast($"You must pass a number value for the 2nd parameter to restock {itemName}.");
                     }
                 }
                 itemName = itemName.ToLower();
-                switch(itemName)
+				int zoneID = Zoning.CurrentZone.Id;
+				int vendorID = 0;
+				if (vendorID == 0) vendorID = MQ.Query<Int32>("${Target.ID}");
+
+				if (vendorID == 0 && zoneID == 345)
+				{
+					//zoneID 345 = Guild Hall
+					string vendorName = "Yenny Werlikanin";
+					vendorID = MQ.Query<int>($"${{Spawn[{vendorName}].ID}}");
+
+				}
+				else if (vendorID == 0 && (zoneID == 202 || zoneID == 386))
+				{
+					//zoneID 202 = Plane of Knowledge
+					//zoneId 386 = Marr temple
+					string vendorName = "Vori";
+					vendorID = MQ.Query<int>($"${{Spawn[{vendorName}].ID}}");
+				}
+                if(vendorID>0)
                 {
-                    case "emerald":
-                        RestockItem(itemName, qtyNeeded);
-                        break;
-                    case "food":
-                        RestockFoodWater();
-                        break;
-                    case "water":
-                        RestockFoodWater();
-                        break;
-                    default:
-                        RestockFoodWater();
-                        break;
-                }
-                    
-            },"used to buy food/water/emeralds");
-        }
+					switch (itemName)
+					{
+						case "emerald":
+							RestockItem(vendorID, itemName, qtyNeeded);
+							break;
+						case "food":
+							RestockFoodWater(vendorID);
+							break;
+						case "water":
+							RestockFoodWater(vendorID);
+							break;
+						default:
+							RestockFoodWater(vendorID);
+							break;
+					}
+				}
+            }, "(deprecated use /e3restock) used to buy food/water/emeralds");
+
+			EventProcessor.RegisterCommand("/e3restock", (x) =>
+			{
+				int vendorID = 0;
+
+
+				//just used to see if this is a rebroadcasted command or not.
+				bool localCommand = false;
+				if (x.args.Count>0 && x.args[0]=="me")
+				{
+					localCommand = true;
+                    x.args.RemoveAt(0);
+				}
+                //default in case they don't specify what they want
+				string itemName = "food";
+				if (x.args.Count > 0)
+				{
+					itemName = x.args[0];
+				}
+				int qtyNeeded = -1;
+				if (x.args.Count > 1)
+				{
+					if (!int.TryParse(x.args[1], out qtyNeeded))
+					{
+                        E3.Bots.Broadcast("Not a valid number for qty needed for e3restock.");
+						return;
+					}
+				}
+                if(x.args.Count>2)
+                {
+					//vendor id specified?
+					if (!int.TryParse(x.args[2], out vendorID))
+					{
+						E3.Bots.Broadcast("Not a valid vendor id");
+						return;
+					}
+				}
+				if (!localCommand)
+				{
+					vendorID = MQ.Query<Int32>("${Target.ID}");
+					//broadcast out this command to others with the necessary filter attached.
+					E3.Bots.BroadcastCommandToGroup($"/e3restock me {itemName} {qtyNeeded} {vendorID}", x);
+				}
+				if (!e3util.FilterMe(x))
+				{
+					itemName = itemName.ToLower();
+					
+					if(vendorID == 0) vendorID = MQ.Query<Int32>("${Target.ID}");
+
+					if (vendorID > 0)
+					{
+						switch (itemName)
+						{
+							case "food":
+								RestockFoodWater(vendorID);
+								break;
+							case "water":
+								RestockFoodWater(vendorID);
+								break;
+							default:
+								RestockItem(vendorID, itemName, qtyNeeded);
+								break;
+						}
+					}
+
+				}
+				
+
+			}, "used to buy food/water/emeralds. /e3restock food, /e3restock emerald 500 /only|Healers");
+		}
         /// <summary>
         /// Check how many are in a stack of the given item and give back how many of the item you need to make a full stack
         /// </summary>
         /// <param name="itemName"> Name of the item to check</param>
-        private static int CheckQtyStackSize(string itemName)
+        private static int GetQtyNeededForFullStack(string itemName)
         {
             
             int itemQtyStackSize = MQ.Query<int>($"${{FindItem[{itemName}].StackSize}}");
@@ -80,7 +170,7 @@ namespace E3Core.Processors
 
             if (itemQty >= itemQtyStackSize )
             {
-                MQ.Write($"\arYou already have more than a stack of {itemName}!");
+                //MQ.Write($"\arYou already have more than a stack of {itemName}!");
                 return qtyNeeded;
             }
 
@@ -89,12 +179,11 @@ namespace E3Core.Processors
             return qtyNeeded;
         }
         
-        private static void RestockFoodWater()
+        private static void RestockFoodWater(Int32 vendorID)
         {
             string toEat = "Iron Ration";
             string toDrink = "Water Flask";
                         
-
             //check how many items are needed to make a stack of the specified food and drink, return -1 if they already have more than a stack
 
             Int32 foodAvail = MQ.Query<int>($"${{FindItemCount[{toEat}]}}");
@@ -103,48 +192,24 @@ namespace E3Core.Processors
             int toEatQty = 20;
             if (foodAvail > 0)
             {
-                toEatQty=CheckQtyStackSize(toEat);
+                toEatQty=GetQtyNeededForFullStack(toEat);
             }
             int toDrinkQty = 20;
             if (drinkAvail > 0)
             {
-                toDrinkQty=CheckQtyStackSize(toDrink);
+                toDrinkQty=GetQtyNeededForFullStack(toDrink);
 
             }
-
-
             if (toEatQty <= 0 && toDrinkQty <= 0)
             {
-                MQ.Write($"\arYou already have more than a stack of {toEat} and {toDrink}! Skipping restock. ");
+                E3.Bots.Broadcast($"\arAlready have more than a stack of {toEat} and {toDrink}! Skipping restock. ");
                 return;
             }
             else
             {
-                MQ.Write($"\agInitiating restock for {toEat} and {toDrink}");
+				E3.Bots.Broadcast($"\agInitiating restock for {toEat} and/or {toDrink}");
                 //we have something we need to get
-                int zoneID = Zoning.CurrentZone.Id;
-                int vendorID = 0;
-
-                if (zoneID == 345)
-                {
-                    //zoneID 345 = Guild Hall
-                    string vendorName = "Yenny Werlikanin";
-                    vendorID = MQ.Query<int>($"${{Spawn[{vendorName}].ID}}");
-
-                }
-                else if (zoneID == 202 || zoneID == 386)
-                {                
-                    //zoneID 202 = Plane of Knowledge
-                    //zoneId 386 = Marr temple
-                    string vendorName = "Vori";
-                    vendorID = MQ.Query<int>($"${{Spawn[{vendorName}].ID}}");
-                }
-
-                if(vendorID==0)
-                {
-                    vendorID = MQ.Query<Int32>("${Target.ID}");
-                }
-
+               
                 if (vendorID > 0)
                 {
                     Casting.TrueTarget(vendorID);
@@ -164,29 +229,52 @@ namespace E3Core.Processors
                 }
                 else
                 {
-                    MQ.Write($"\arNo valid vendor ID available.");
+					E3.Bots.Broadcast($"\arNo valid vendor ID available.");
                 }
             }
         }
 
-        private static void RestockItem(string itemName, int qtyNeeded)
+        private static void RestockItem(Int32 vendorID,string itemName, int maxQty)
         {
-            
-            //check how many items are needed to make a stack of the specified item, return -1 if they already have more than a stack
-            int restockQty = CheckQtyStackSize(itemName);
-            
+			//check how many items are needed to make a stack of the specified food and drink, return -1 if they already have more than a stack
 
-            if (restockQty <= 0)
-            {
-                MQ.Write($"\arYou already have more than a stack of {itemName}! Skipping restock. ");
-                return;
-            }
-            else
-            {
-                MQ.Write($"\agInitiating restock for {itemName}.");
-                
-            }
-        }
+			Int32 itemAvail = MQ.Query<int>($"${{FindItemCount[{itemName}]}}");
+			
+			int qtyToBuy = 20; //default stack size if we don't have it
+			if (itemAvail > 0)
+			{
+				qtyToBuy = GetQtyNeededForFullStack(itemName);
+			}
+
+            if (qtyToBuy > maxQty && maxQty>0) qtyToBuy = maxQty;
+
+			if (qtyToBuy <= 0)
+			{
+				E3.Bots.Broadcast($"\arAlready have a max stack of {itemName}! Skipping restock. ");
+				return;
+			}
+			else
+			{
+				E3.Bots.Broadcast($"\agInitiating restock for {itemName}");
+				//we have something we need to get
+
+				if (vendorID > 0)
+				{
+					Casting.TrueTarget(vendorID);
+					e3util.NavToSpawnID(vendorID);
+					e3util.OpenMerchant();
+					if (qtyToBuy > -1)
+					{
+						Buy.BuyItem(itemName, qtyToBuy);
+					}
+					e3util.CloseMerchant();
+				}
+				else
+				{
+					E3.Bots.Broadcast($"\arNo valid vendor ID available.");
+				}
+			}
+		}
         /// <summary>
         /// Buy specified item from an open vendor window
         /// </summary>
@@ -212,6 +300,7 @@ namespace E3Core.Processors
             if (buyingItemText != itemName)
             {
                 E3.Bots.Broadcast($"\arERROR: Buying item cannot get vendor to select, exiting. Item:{itemName}");
+                return;
             }
 
             //we have the item selected via the vendor, check we can buy.

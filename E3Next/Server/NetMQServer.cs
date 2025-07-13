@@ -62,6 +62,11 @@ namespace E3Core.Server
 			{
                 MQ.Write("/ui has been depreciated, please use /e3ui");
 			});
+			EventProcessor.RegisterCommand("/e3debug-config", (x) =>
+			{
+                PrintCharConfigLaunch();
+			});
+
 			EventProcessor.RegisterCommand("/e3config", (x) =>
 			{
 				LaunchCharConfig();
@@ -130,6 +135,17 @@ namespace E3Core.Server
 				}
 			}
 			
+		}
+        static void PrintCharConfigLaunch()
+        {
+
+			string dllFullPath = Assembly.GetExecutingAssembly().CodeBase.Replace("file:///", "").Replace("/", "\\").Replace("e3.dll", "");
+			string exeName = "E3NextConfigEditor.exe";
+			Int32 processID = System.Diagnostics.Process.GetCurrentProcess().Id;
+			
+            string startInfoString = dllFullPath + exeName + $" {RouterPort} {processID}";
+			MQ.Write(startInfoString);
+
 		}
 		static void LaunchCharConfig()
 		{
