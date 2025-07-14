@@ -10,6 +10,7 @@ using System.Net.Sockets;
 using System.Reflection;
 using System.Text;
 using System.Threading.Tasks;
+using System.Xml.Linq;
 
 namespace E3Core.Server
 {
@@ -253,7 +254,11 @@ namespace E3Core.Server
                 var discordMyUserId = string.IsNullOrEmpty(E3.GeneralSettings.DiscordMyUserId) ? string.Empty : E3.GeneralSettings.DiscordMyUserId;
                 var commandLineArgs = $"{PubPort} {RouterPort} {PubClientPort} {E3.GeneralSettings.DiscordBotToken} " +
                     $"{E3.GeneralSettings.DiscordGuildChannelId} {E3.GeneralSettings.DiscordServerId} {processID} {E3.GeneralSettings.DiscordMyUserId}";
-                DiscordProcess = System.Diagnostics.Process.Start(dllFullPath + "E3Discord.exe", commandLineArgs);
+				var startInfo = new ProcessStartInfo(processName);
+				startInfo.WorkingDirectory = dllFullPath;// working directory
+                startInfo.Arguments = commandLineArgs;
+				startInfo.UseShellExecute = false;
+				DiscordProcess = System.Diagnostics.Process.Start(startInfo);
                 MQ.Write($"\agStarted {processName}");
             }
             else
