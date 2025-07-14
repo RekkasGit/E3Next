@@ -27,39 +27,38 @@ namespace E3Core.Classes
         [SubSystemInit]
         public static void Necromancer_Init()
         {
+            if(E3.CurrentClass!=Class.Necromancer) return;
 
-            if((E3.CurrentClass& Data.Class.Necromancer)==Data.Class.Necromancer)
+            EventProcessor.RegisterEvent("NecroFDBreak", "You are no longer feigning death, because a spell hit you.", (x) =>
             {
-                EventProcessor.RegisterEvent("NecroFDBreak", "You are no longer feigning death, because a spell hit you.", (x) =>
+
+                if (MQ.Query<bool>("${Me.Feigning}"))
                 {
+                    E3.Bots.Broadcast("My Feign was broken, retrying...");
+                    MQ.Cmd("/stand");
 
-                    if (MQ.Query<bool>("${Me.Feigning}"))
-                    {
-                        E3.Bots.Broadcast("My Feign was broken, retrying...");
-                        MQ.Cmd("/stand");
-
-                        //recast FD
+                    //recast FD
                       
-                        Spell s;
-                        if (!Spell.LoadedSpellsByName.TryGetValue("Improved Death Peace", out s))
-                        {
-                            s = new Spell("Improved Death Peace");
-                        }
-                        if (Casting.CheckMana(s) && Casting.CheckReady(s))
-                        {
-                            Casting.Cast(0, s);
+                    Spell s;
+                    if (!Spell.LoadedSpellsByName.TryGetValue("Improved Death Peace", out s))
+                    {
+                        s = new Spell("Improved Death Peace");
+                    }
+                    if (Casting.CheckMana(s) && Casting.CheckReady(s))
+                    {
+                        Casting.Cast(0, s);
                           
 
-                        }
-                        else if (!Spell.LoadedSpellsByName.TryGetValue("Death Peace", out s))
-                        {
-                            s = new Spell("Death Peace");
-                            Casting.Cast(0, s);
-                          
-                        }
                     }
-                });
-            }
+                    else if (!Spell.LoadedSpellsByName.TryGetValue("Death Peace", out s))
+                    {
+                        s = new Spell("Death Peace");
+                        Casting.Cast(0, s);
+                          
+                    }
+                }
+            });
+            
         }
 
         [AdvSettingInvoke]
@@ -68,10 +67,11 @@ namespace E3Core.Classes
 
             if (!Basics.InCombat()) return;
             //allow people to run to their death if they have the window focused. 
-          
             if (e3util.IsManualControl()) return;
+			if (Basics.GroupMembers.Count < 5) return;
 
-            Int32 GroupSize = MQ.Query<Int32>("${Group}");
+
+			Int32 GroupSize = MQ.Query<Int32>("${Group}");
             Int32 GroupInZone = MQ.Query<Int32>("${Group.Present}");
             Spell s;
 
@@ -113,9 +113,10 @@ namespace E3Core.Classes
 
             //if manual control, kickout
             if (e3util.IsManualControl()) return;
+			if (Basics.GroupMembers.Count < 5) return;
 
-            //if already FD, kickout
-            if (MQ.Query<bool>("${Me.Feigning}")) return;
+			//if already FD, kickout
+			if (MQ.Query<bool>("${Me.Feigning}")) return;
 
             Int32 currentAggro = 0;
             Int32 tempMaxAggro = 0;

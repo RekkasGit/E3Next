@@ -526,6 +526,7 @@ namespace E3Core.Processors
            	EventProcessor.RegisterCommand("/e3echo", (x) =>
 			{
                 string argumentLine = e3util.ArgsToCommand(x.args);
+                argumentLine = argumentLine.Replace("$\\{", "${");
                 string processedLine = Casting.Ifs_Results(argumentLine);
 				MQ.Cmd($"/echo {processedLine}");
 				MQ.Cmd($"/varset E3N_var {processedLine}");
