@@ -29,7 +29,12 @@ namespace E3Core.Processors
 			{
 				if (!e3util.ShouldCheck(ref _nextDispelCheck, _nextDispelCheckInterval)) return;
 			}
-
+			//person in manual control and they are not on the assist target, chill.
+			Int32 targetId = MQ.Query<Int32>("${Target.ID}");
+			if (targetId != Assist.AssistTargetID && e3util.IsManualControl())
+			{
+				return;
+			}
 			if (Casting.TrueTarget(Assist.AssistTargetID))
             {
                 //let the game process to make sure we have a valid beneficial

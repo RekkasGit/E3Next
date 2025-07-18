@@ -36,7 +36,29 @@ namespace E3Core.Processors
                 AutoSell(destroyOnSell);
                 
             });
-            EventProcessor.RegisterCommand("/syncinv", (x) =>
+			EventProcessor.RegisterCommand("/e3sell", (x) =>
+			{
+				if (!e3util.OpenMerchant())
+				{
+					E3.Bots.Broadcast("\arNo merchant targeted and no merchant found; exiting autosell");
+					return;
+				}
+			    if(x.args.Count<1)
+                {
+                    E3.Bots.Broadcast("What should i sell?");
+                }
+                string itemToSell = x.args[0];
+                if(!e3util.OpenMerchant())
+                {
+                    E3.Bots.Broadcast("Please target a merchant to sell to.");
+                    return;
+                }
+
+                SellItem(itemToSell);
+
+
+			});
+			EventProcessor.RegisterCommand("/syncinv", (x) =>
             {
                 SyncInventory();
             });
@@ -191,8 +213,79 @@ namespace E3Core.Processors
 			}
 			
 		}
+		private static void SellItem(string ItemToSell)
+		{
+			int platinumGain = MQ.Query<int>("${Me.Platinum}");
+			bool merchantWindowOpen = MQ.Query<bool>("${Window[MerchantWnd].Open}");
+			if (!merchantWindowOpen)
+			{
+				E3.Bots.Broadcast("\arError: <AutoSell> Merchant window not open. Exiting");
+				return;
+			}
+			//scan through our inventory looking for an item with a stackable
+			for (Int32 i = 1; i <= 10; i++)
+			{
+				bool SlotExists = MQ.Query<bool>($"${{Me.Inventory[pack{i}]}}");
+				if (SlotExists)
+				{
+					Int32 ContainerSlots = MQ.Query<Int32>($"${{Me.Inventory[pack{i}].Container}}");
 
-        private static void AutoStack()
+					if (ContainerSlots > 0)
+					{
+						for (Int32 e = 1; e <= ContainerSlots; e++)
+						{
+							//${Me.Inventory[${itemSlot}].Item[${j}].Name.Equal[${itemName}]}
+							String itemName = MQ.Query<String>($"${{Me.Inventory[pack{i}].Item[{e}]}}");
+							if (itemName == "NULL")
+							{
+								continue;
+							}
+							Int32 itemValue = MQ.Query<Int32>($"${{Me.Inventory[pack{i}].Item[{e}].Value}}");
+							if (String.Equals(itemName,ItemToSell,StringComparison.OrdinalIgnoreCase) && itemValue > 0)
+							{
+								MQ.Cmd($"/nomodkey /itemnotify in pack{i} {e} leftmouseup", 500);
+
+								string sellingItemText = MQ.Query<string>("${Window[MerchantWnd].Child[MW_SelectedItemLabel].Text}");
+								Int32 counter = 0;
+								while (sellingItemText != itemName && counter < 10)
+								{
+									counter++;
+									MQ.Cmd($"/nomodkey /itemnotify in pack{i} {e} leftmouseup", 500);
+
+									sellingItemText = MQ.Query<string>("${Window[MerchantWnd].Child[MW_SelectedItemLabel].Text}");
+								}
+								if (sellingItemText != itemName)
+								{
+									E3.Bots.Broadcast($"\arERROR: Selling item cannot get vendor to select, exiting. Item:{itemName}");
+								}
+								//we have the item selected via the vendor, sell it.
+								bool sellButtonEnabled = MQ.Query<bool>("${Window[MerchantWnd].Child[MW_Sell_Button].Enabled}");
+
+								if (!sellButtonEnabled)
+								{
+									//sell button not enabled for whatever reason
+									continue;
+								}
+
+								//sell the item finally
+								MQ.Cmd("/nomodkey /shift /notify MerchantWnd MW_Sell_Button leftmouseup", 400 + e3util.Latency());
+								string tItemName = MQ.Query<String>($"${{Me.Inventory[pack{i}].Item[{e}]}}");
+								if (itemName == tItemName)
+								{
+									E3.Bots.Broadcast($"\arERROR: Selling item. Item:{itemName} Tried to sell but still in inventory. PrimarySlot:{i} bagslot:{e}");
+								}
+							}
+						}
+					}
+				}
+			}
+			platinumGain = MQ.Query<int>("${Me.Platinum}") - platinumGain;
+			MQ.Write($"\ag You made {platinumGain.ToString("N0")} platinum");
+			MQ.Cmd("/nomodkey /notify MerchantWnd MW_Done_Button leftmouseup");
+			
+
+		}
+		private static void AutoStack()
         {
             var windowOpen = MQ.Query<bool>("${Window[BigBankWnd].Open}");
             if (!windowOpen)
