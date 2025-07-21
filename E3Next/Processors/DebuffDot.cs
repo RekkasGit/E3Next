@@ -145,22 +145,25 @@ namespace E3Core.Processors
                     foreach (var spell in E3.CharacterSettings.OffAssistSpells)
                     {
 						//check if the if condition works
-						if (!String.IsNullOrWhiteSpace(spell.Ifs))
-						{
-							if (!Casting.Ifs(spell))
-							{
-								continue;
-							}
-						}
+						
 						if (Casting.CheckMana(spell))
                         {
                             _tempOffAssistSpellList.Clear();
                             _tempOffAssistSpellList.Add(spell);
                     		foreach (Int32 mobid in _mobsToOffAsist.ToList())
                             {
+                                Assist.OffAssistTargetID = mobid;
+                                if (!String.IsNullOrWhiteSpace(spell.Ifs))
+                                {
+                                    if (!Casting.Ifs(spell))
+                                    {
+                                        continue;
+                                    }
+                                }
                                 CastLongTermSpell(mobid, _tempOffAssistSpellList, _debuffdotTimers);
                                 if (E3.ActionTaken) return;
                             }
+                            Assist.OffAssistTargetID = 0;
                         }
                     }
                 }
