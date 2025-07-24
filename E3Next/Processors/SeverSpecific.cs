@@ -16,10 +16,17 @@ namespace E3Core.Processors
 		[SubSystemInit]
 		public static void SeverSpecific_Init()
 		{
-
+			MQ.Write("Checking for server specific code..");
 			if (E3.ServerName == "EQ_Might")
 			{
+				MQ.Write("Loading EQ_Might specific code!");
 				Init_EQMight();
+			}
+			else
+			{
+
+				MQ.Write("None found for this server.");
+				
 			}
 		}
 
