@@ -414,7 +414,7 @@ namespace E3Core.Processors
 					else
 					{
 						string user = x.match.Groups[1].Value;
-
+						MQ.Cmd($"/notify RaidWindow Raid_UnlockButton leftmouseup");
 						//need to be in the same zone
 						if (_spawns.TryByName(user, out var s))
 						{

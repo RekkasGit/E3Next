@@ -1917,7 +1917,7 @@ namespace E3Core.Processors
 
 					string manastoneName = "Manastone";
 					Int32 totalClicksToTry = 5;
-					Int32 delayBetweenClicks = 40;
+					Int32 delayBetweenClicks = 20;
 					Int32 maxLoop = 25;
 					if (hasManaStone && (hasSongBuffv1 || hasSongBuffv2 || hasSongBuffv3 || hasSongBuffv4))
 					{

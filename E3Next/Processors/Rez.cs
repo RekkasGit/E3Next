@@ -4,11 +4,7 @@ using E3Core.Utility;
 using MonoCore;
 using System;
 using System.Collections.Generic;
-using System.Linq;
-using System.Runtime.CompilerServices;
-using System.Text;
-using System.Threading.Tasks;
-using static System.Windows.Forms.VisualStyles.VisualStyleElement;
+
 
 namespace E3Core.Processors
 {
@@ -383,6 +379,10 @@ namespace E3Core.Processors
 							// only care about group or raid members
 							var inGroup = MQ.Query<bool>($"${{Group.Member[{spawn.DisplayName}]}}");
 							var inRaid = MQ.Query<bool>($"${{Raid.Member[{spawn.DisplayName}]}}");
+                            var inZone = _spawns.TryByName(spawn.DisplayName, out _);
+
+                            //don't auto rez if in zone.
+                            if (inZone) continue;
 
 							if (!inGroup && !inRaid)
 							{
