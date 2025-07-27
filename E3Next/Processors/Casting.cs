@@ -1325,6 +1325,7 @@ namespace E3Core.Processors
 		{
 
 			//don't try and mem a spell if you are max aggro on anything as it will auto crit you.
+			if (Basics.InCombat() && (E3.CurrentClass & Data.Class.Tank) == E3.CurrentClass) return false;
 			if (e3util.GetXtargetMaxAggro() == 100) return false;
 
 		
