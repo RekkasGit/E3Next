@@ -869,7 +869,7 @@ namespace E3Core.Processors
 						//Is the buff still good? if so, skip
 
 						if (Casting.BuffNotReady(spell)) return BuffBots_ReturnType.Continue;
-
+						
 						if (BuffTimerIsGood(spell, s, usePets))
 						{
 							return BuffBots_ReturnType.Continue;
@@ -1345,7 +1345,7 @@ namespace E3Core.Processors
 			//doesn't have the buff, or its expired
 			return false;
 		}
-		private static bool BuffTimerIsGood(Data.Spell spell, Spawn s, bool usePets)
+		public static bool BuffTimerIsGood(Data.Spell spell, Spawn s, bool usePets)
 		{
 			SpellTimer st;
 			if (_buffTimers.TryGetValue(s.ID, out st))
