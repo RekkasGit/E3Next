@@ -227,6 +227,27 @@ namespace E3NextConfigEditor.Models
 				}
 			}
 		}
+		[Description("Class short name, comma seperated. Classes to exclude in your buff if your using GBots/Bots")]
+		public string ExcludedClasses
+		{
+			get { return String.Join(",", _spell.ExcludedClasses.ToList()); }
+			set
+			{
+				if (!String.IsNullOrWhiteSpace(value))
+				{
+					string[] splitArray = value.Split(',');
+					_spell.ExcludedClasses.Clear();
+					foreach (var spell in splitArray)
+					{
+						_spell.ExcludedClasses.Add(spell);
+					}
+				}
+				else
+				{
+					_spell.ExcludedClasses.Clear();
+				}
+			}
+		}
 		[Category("Spell Gem Flags")]
 		[Description("Spell Gem")]
 		public Int32 SpellGem
@@ -644,6 +665,27 @@ namespace E3NextConfigEditor.Models
 				else
 				{
 					_spell.CheckForCollection.Clear();
+				}
+			}
+		}
+		[Description("Class short name, comma seperated. Classes to exclude in your buff if your using GBots/Bots")]
+		public string ExcludedClasses
+		{
+			get { return String.Join(",", _spell.ExcludedClasses.ToList()); }
+			set
+			{
+				if (!String.IsNullOrWhiteSpace(value))
+				{
+					string[] splitArray = value.Split(',');
+					_spell.ExcludedClasses.Clear();
+					foreach (var spell in splitArray)
+					{
+						_spell.ExcludedClasses.Add(spell);
+					}
+				}
+				else
+				{
+					_spell.ExcludedClasses.Clear();
 				}
 			}
 		}

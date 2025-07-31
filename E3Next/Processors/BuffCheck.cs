@@ -662,6 +662,7 @@ namespace E3Core.Processors
 					{
 						if (_spawns.TryByName(name, out var s))
 						{
+							if (spell.ExcludedClasses.Contains(s.ClassShortName)) { continue; }
 							string previousTarget = spell.CastTarget;
 							try
 							{
@@ -685,15 +686,14 @@ namespace E3Core.Processors
 					{
 						if (_spawns.TryByName(name, out var s))
 						{
+							if (spell.ExcludedClasses.Contains(s.ClassShortName)) { continue; }
 
 							Int32 groupMemberIndex = MQ.Query<Int32>($"${{Group.Member[{name}].Index}}");
-
 							if (groupMemberIndex < 0)
 							{
 								//ignore it
 								continue;
 							}
-
 							string previousTarget = spell.CastTarget;
 							try
 							{
