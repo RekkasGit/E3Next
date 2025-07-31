@@ -289,6 +289,14 @@ namespace E3Core.Processors
 
 
 						}
+						if (EventProcessor.CommandListQueueHasCommand("/throne"))
+						{
+							EventProcessor.ProcessEventsInQueues("/throne");
+							Interrupt();
+							if (!IsCasting()) return CastReturn.CAST_INTERRUPTED;
+
+
+						}
 						if (EventProcessor.CommandListQueueHasCommand("/followme"))
 						{
 							EventProcessor.ProcessEventsInQueues("/followme");
