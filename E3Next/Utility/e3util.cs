@@ -1586,7 +1586,7 @@ namespace E3Core.Utility
 			if(dialogBoxOpen)
 			{
 				string message = MQ.Query<string>("${Window[ConfirmationDialogBox].Child[cd_textoutput].Text}");
-				if (!(message.Contains("percent)") || message.Contains("RESURRECT you.") || message.Contains(" later.")))
+				if ((message.Contains("percent)") || message.Contains("RESURRECT you.") || message.Contains(" later.")))
 				{
 					//MQ.Cmd("/nomodkey /notify ConfirmationDialogBox No_Button leftmouseup");
 					return true; //not a rez dialog box, do not accept.
