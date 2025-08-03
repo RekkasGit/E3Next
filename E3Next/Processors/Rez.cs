@@ -66,18 +66,9 @@ namespace E3Core.Processors
             if (e3util.IsEQLive()) return;
             if (Basics.InCombat()) return;
 
-            if (MQ.Query<bool>("${Window[ConfirmationDialogBox].Open}"))
+            if (e3util.IsRezDiaglogBoxOpen())
             {
-
                 MQ.Delay(1000);
-
-                //check if its a valid confirmation box
-                string message = MQ.Query<string>("${Window[ConfirmationDialogBox].Child[cd_textoutput].Text}");
-                if (!(message.Contains("percent)")||message.Contains("RESURRECT you.") || message.Contains(" later.")))
-                {
-                    //MQ.Cmd("/nomodkey /notify ConfirmationDialogBox No_Button leftmouseup");
-                    return; //not a rez dialog box, do not accept.
-                }
                 MQ.Cmd("/nomodkey /notify ConfirmationDialogBox Yes_Button leftmouseup",2000);//start zone
                     
                 //zone may to happen

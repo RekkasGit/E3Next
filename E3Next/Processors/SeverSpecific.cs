@@ -13,7 +13,12 @@ namespace E3Core.Processors
 
 		private static IMQ MQ = E3.MQ;
 		private static ISpawns _spawns = E3.Spawns;
-		[SubSystemInit]
+		
+		//Note you can override commands and regex's using
+		//OverrideRegisteredEvent
+		//OverrideCommandMethod
+		//as this is initialized last, all commands/events should be reisgered before this init is called. 
+
 		public static void SeverSpecific_Init()
 		{
 			MQ.Write("Checking for server specific code..");
@@ -24,16 +29,15 @@ namespace E3Core.Processors
 			}
 			else
 			{
-
 				MQ.Write("None found for this server.");
-				
 			}
 		}
-
-
+	
 		public static void Init_EQMight()
 		{
-			
+
+
+
 			EventProcessor.RegisterEvent("EQ_Might_Groupme", "(.+) tells you, 'groupme'", (x) =>
 			{
 				if (x.match.Groups.Count > 1)

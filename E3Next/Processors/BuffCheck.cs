@@ -652,11 +652,14 @@ namespace E3Core.Processors
 	
 		private static void BuffBots(List<Data.Spell> buffs, bool usePets = false)
 		{
-			if (e3util.IsActionBlockingWindowOpen()) return;
+			
+
 			foreach (var spell in buffs)
 			{
+				if (e3util.IsActionBlockingWindowOpen()) return;
+				if (e3util.IsRezDiaglogBoxOpen()) return;
 				//if it the target is one of our base class short names, check all bots and their short name type for possible targets.
-				if(String.Equals(spell.CastTarget,"bots",StringComparison.OrdinalIgnoreCase))
+				if (String.Equals(spell.CastTarget,"bots",StringComparison.OrdinalIgnoreCase))
 				{
 					foreach (var name in E3.Bots.BotsConnected())
 					{

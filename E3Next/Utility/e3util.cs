@@ -1580,7 +1580,21 @@ namespace E3Core.Utility
 
 			return expected == cursorId;
 		}
+		public static bool IsRezDiaglogBoxOpen()
+		{
+			bool dialogBoxOpen = MQ.Query<bool>("${Window[ConfirmationDialogBox].Open}");
+			if(dialogBoxOpen)
+			{
+				string message = MQ.Query<string>("${Window[ConfirmationDialogBox].Child[cd_textoutput].Text}");
+				if (!(message.Contains("percent)") || message.Contains("RESURRECT you.") || message.Contains(" later.")))
+				{
+					//MQ.Cmd("/nomodkey /notify ConfirmationDialogBox No_Button leftmouseup");
+					return true; //not a rez dialog box, do not accept.
+				}
+			}
 
+			return false;
+		}
 		public static bool IsActionBlockingWindowOpen()
 		{
 			var vendorOpen = MQ.Query<bool>("${Window[MerchantWnd]}");

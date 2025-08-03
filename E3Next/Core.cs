@@ -796,6 +796,13 @@ namespace MonoCore
             return false;
 
         }
+        public static void OverrideCommandMethod(string commandName,Action<CommandMatch> method)
+        {
+            if(CommandList.TryGetValue(commandName,out var c))
+            {
+                c.method = method;
+            }
+        }
         public static void UnRegisterCommand(string commandName)
         {
             CommandListItem c;
@@ -893,6 +900,13 @@ namespace MonoCore
 
             EventList.TryAdd(keyName, eventToAdd);
 
+        }
+        public static void OverrideRegisteredEvent(string keyname,Action<EventMatch> method)
+        {
+            if(EventList.TryGetValue(keyname,out var e))
+            {
+                e.method = method;
+            }
         }
 
     }
