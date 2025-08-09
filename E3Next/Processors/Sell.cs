@@ -215,6 +215,9 @@ namespace E3Core.Processors
 		}
 		private static void SellItem(string ItemToSell)
 		{
+
+            string orginalItemToSell = ItemToSell;
+
 			int platinumGain = MQ.Query<int>("${Me.Platinum}");
 			bool merchantWindowOpen = MQ.Query<bool>("${Window[MerchantWnd].Open}");
 			if (!merchantWindowOpen)
@@ -225,22 +228,29 @@ namespace E3Core.Processors
 			//scan through our inventory looking for an item with a stackable
 			for (Int32 i = 1; i <= 10; i++)
 			{
-				bool SlotExists = MQ.Query<bool>($"${{Me.Inventory[pack{i}]}}");
+				string bagToCheck = $"pack{i}";
+				bool SlotExists = MQ.Query<bool>($"${{Me.Inventory[{bagToCheck}]}}");
 				if (SlotExists)
 				{
-					Int32 ContainerSlots = MQ.Query<Int32>($"${{Me.Inventory[pack{i}].Container}}");
+					Int32 ContainerSlots = MQ.Query<Int32>($"${{Me.Inventory[{bagToCheck}].Container}}");
 
 					if (ContainerSlots > 0)
 					{
 						for (Int32 e = 1; e <= ContainerSlots; e++)
 						{
 							//${Me.Inventory[${itemSlot}].Item[${j}].Name.Equal[${itemName}]}
-							String itemName = MQ.Query<String>($"${{Me.Inventory[pack{i}].Item[{e}]}}");
+							String itemName = MQ.Query<String>($"${{Me.Inventory[{bagToCheck}].Item[{e}]}}");
 							if (itemName == "NULL")
 							{
 								continue;
 							}
-							Int32 itemValue = MQ.Query<Int32>($"${{Me.Inventory[pack{i}].Item[{e}].Value}}");
+							Int32 itemValue = MQ.Query<Int32>($"${{Me.Inventory[{bagToCheck}].Item[{e}].Value}}");
+                            //if we are passed in a pack1-10, just sell everything in the bag if possible
+                            //dangerous option, but hey they wanted it!
+                            if(bagToCheck== orginalItemToSell)
+                            {
+                                ItemToSell = itemName;
+                            }
 							if (String.Equals(itemName,ItemToSell,StringComparison.OrdinalIgnoreCase) && itemValue > 0)
 							{
 								MQ.Cmd($"/nomodkey /itemnotify in pack{i} {e} leftmouseup", 500);

@@ -793,9 +793,9 @@ namespace E3Core.Processors
 											{
 												if (E3.CharacterSettings.HealAutoNecroOrbs && !JustCheck)
 												{
-													if (_orbOfShadowsSpell == null && MQ.Query<bool>($"${{Me.ItemReady[Orb of Sanguine]}}"))
+													if (_orbOfShadowsSpell == null && MQ.Query<bool>($"${{Me.ItemReady[Orb of the Sanguine]}}"))
 													{
-														_orbOfShadowsSpell = new Data.Spell("Orb of Sanguine");
+														_orbOfShadowsSpell = new Data.Spell("Orb of the Sanguine");
 													}
 													if (_orbOfShadowsSpell == null && MQ.Query<bool>($"${{Me.ItemReady[Orb of Shadows]}}"))
 													{

@@ -501,18 +501,17 @@ namespace E3Core.Processors
 			{
 				using (_log.Trace())
 				{
-
-					if (Assist.IsAssisting || Nukes.PBAEEnabled)
-					{
-						BuffBots(E3.CharacterSettings.CombatBuffs);
-						BuffBots(E3.CharacterSettings.CombatPetBuffs,true);
-						BuffBots(E3.CharacterSettings.CombatPetOwnerBuffs, true);
-					}
-
 					/*if you are NOT following someone, and not moving, it will buff instantly. 
 					If you ARE following someone and not moving for 10+ seconds, it will buff.*/
-					if ((!(String.IsNullOrWhiteSpace(Movement.FollowTargetName) && String.IsNullOrWhiteSpace(Movement.ChaseTargetName))) || Movement.StandingStillForTimePeriod())
+					if ((!(String.IsNullOrWhiteSpace(Movement.FollowTargetName) && String.IsNullOrWhiteSpace(Movement.ChaseTargetName))) || Movement.StandingStillForTimePeriod() || Assist.IsAssisting)
 					{
+						if (Assist.IsAssisting || Nukes.PBAEEnabled)
+						{
+							BuffBots(E3.CharacterSettings.CombatBuffs);
+							BuffBots(E3.CharacterSettings.CombatPetBuffs, true);
+							BuffBots(E3.CharacterSettings.CombatPetOwnerBuffs, true);
+						}
+
 						if (!E3.CurrentInCombat)
 						{
 							//using(_log.Trace("Buffs-Aura"))
