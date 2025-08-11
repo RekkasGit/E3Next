@@ -503,7 +503,7 @@ namespace E3Core.Processors
 				{
 					/*if you are NOT following someone, and not moving, it will buff instantly. 
 					If you ARE following someone and not moving for 10+ seconds, it will buff.*/
-					if ((!(String.IsNullOrWhiteSpace(Movement.FollowTargetName) && String.IsNullOrWhiteSpace(Movement.ChaseTargetName))) || Movement.StandingStillForTimePeriod() || Assist.IsAssisting)
+					if (((String.IsNullOrWhiteSpace(Movement.FollowTargetName) && String.IsNullOrWhiteSpace(Movement.ChaseTargetName))) || Movement.StandingStillForTimePeriod() || Assist.IsAssisting)
 					{
 						if (Assist.IsAssisting || Nukes.PBAEEnabled)
 						{
