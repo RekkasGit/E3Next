@@ -409,8 +409,8 @@ namespace E3Core.Processors
 						CurrentMercName = nameOfMerc;
 						PubServer.AddTopicMessage("${Mercenary.CleanName}", CurrentMercName);
 					}
-					bool IsMoving = MQ.Query<bool>("${Me.Moving}");
-					if (IsMoving)
+					E3.IsMoving = MQ.Query<bool>("${Me.Moving}");
+					if (E3.IsMoving)
 					{
 						LastMovementTimeStamp = Core.StopWatch.ElapsedMilliseconds;
 					}
@@ -581,7 +581,9 @@ namespace E3Core.Processors
 		public static int PctHPs;
         public static ISpawns Spawns = Core.spawnInstance;
         public static bool IsInvis;
-        private static Int64 _nextReloadSettingsCheck = 0;
+		public static bool IsMoving;
+
+		private static Int64 _nextReloadSettingsCheck = 0;
         private static Int64 _nextReloadSettingsInterval = 2000;
         private static Int64 _lastGCCollect = 0;
         public volatile static bool NetMQ_PubServerThradRun = true;

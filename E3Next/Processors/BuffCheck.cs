@@ -493,7 +493,7 @@ namespace E3Core.Processors
 			{
 				if (Basics.AmIDead()) return;
 				if (e3util.IsManualControl() && !Basics.InCombat() && !MQ.Query<bool>("${Me.Standing}")) return;
-
+				if (E3.IsMoving && !Assist.IsAssisting) return;
 			}
 
 			Int32 targetID = MQ.Query<Int32>("${Target.ID}");
@@ -501,6 +501,7 @@ namespace E3Core.Processors
 			{
 				using (_log.Trace())
 				{
+					
 					/*if you are NOT following someone, and not moving, it will buff instantly. 
 					If you ARE following someone and not moving for 10+ seconds, it will buff.*/
 					if (((String.IsNullOrWhiteSpace(Movement.FollowTargetName) && String.IsNullOrWhiteSpace(Movement.ChaseTargetName))) || Movement.StandingStillForTimePeriod() || Assist.IsAssisting)
