@@ -88,7 +88,7 @@ namespace E3Core.Processors
 				{
 					string buffToDrop = x.args[0];
 					DropBuff(buffToDrop);
-					E3.Bots.BroadcastCommand($"/removebuff {buffToDrop}");
+					E3.Bots.BroadcastCommandToGroup($"/removebuff {buffToDrop}");
 				}
 			});
 			EventProcessor.RegisterCommand("/dropbuffid", (x) =>
