@@ -2,6 +2,8 @@
 using E3Core.Utility;
 using MonoCore;
 using System;
+using System.Security.Principal;
+using System.ServiceModel.Configuration;
 
 
 namespace E3Core.Processors
@@ -38,23 +40,29 @@ namespace E3Core.Processors
             });
 			EventProcessor.RegisterCommand("/e3sell", (x) =>
 			{
-				if (!e3util.OpenMerchant())
-				{
-					E3.Bots.Broadcast("\arNo merchant targeted and no merchant found; exiting autosell");
-					return;
-				}
+				
 			    if(x.args.Count<1)
                 {
                     E3.Bots.Broadcast("What should i sell?");
                 }
                 string itemToSell = x.args[0];
-                if(!e3util.OpenMerchant())
-                {
-                    E3.Bots.Broadcast("Please target a merchant to sell to.");
-                    return;
-                }
+               
 
-                SellItem(itemToSell);
+                bool printonly = false;
+
+                if(itemToSell.StartsWith("pack")) printonly = true;
+
+                if (x.args.Count == 2 && x.args[1] == "yes" ) printonly = false;
+                if(!printonly)
+                {
+					if (!e3util.OpenMerchant())
+					{
+						E3.Bots.Broadcast("Please target a merchant to sell to.");
+						return;
+					}
+				}
+
+				SellItem(itemToSell, printonly);
 
 
 			});
@@ -213,18 +221,19 @@ namespace E3Core.Processors
 			}
 			
 		}
-		private static void SellItem(string ItemToSell)
+		private static void SellItem(string ItemToSell,bool printOnly=false)
 		{
 
             string orginalItemToSell = ItemToSell;
 
 			int platinumGain = MQ.Query<int>("${Me.Platinum}");
 			bool merchantWindowOpen = MQ.Query<bool>("${Window[MerchantWnd].Open}");
-			if (!merchantWindowOpen)
+			if (!merchantWindowOpen && !printOnly)
 			{
 				E3.Bots.Broadcast("\arError: <AutoSell> Merchant window not open. Exiting");
 				return;
 			}
+            bool foundItemTosell = false;
 			//scan through our inventory looking for an item with a stackable
 			for (Int32 i = 1; i <= 10; i++)
 			{
@@ -240,6 +249,7 @@ namespace E3Core.Processors
 						{
 							//${Me.Inventory[${itemSlot}].Item[${j}].Name.Equal[${itemName}]}
 							String itemName = MQ.Query<String>($"${{Me.Inventory[{bagToCheck}].Item[{e}]}}");
+							Int32 stackCount = MQ.Query<Int32>($"${{Me.Inventory[{bagToCheck}].Item[{e}].Stack}}");
 							if (itemName == "NULL")
 							{
 								continue;
@@ -253,6 +263,13 @@ namespace E3Core.Processors
                             }
 							if (String.Equals(itemName,ItemToSell,StringComparison.OrdinalIgnoreCase) && itemValue > 0)
 							{
+                                foundItemTosell = true;
+
+								if (printOnly)
+								{
+									E3.Bots.Broadcast($"\ag Possible item to sell ${{Me.Inventory[{bagToCheck}].Item[{e}].ItemLink[CLICKABLE]}} - \awbag({i}) slot({e}) count({stackCount})");
+  				                    continue;
+                                }
 								MQ.Cmd($"/nomodkey /itemnotify in pack{i} {e} leftmouseup", 500);
 
 								string sellingItemText = MQ.Query<string>("${Window[MerchantWnd].Child[MW_SelectedItemLabel].Text}");
@@ -289,10 +306,16 @@ namespace E3Core.Processors
 					}
 				}
 			}
-			platinumGain = MQ.Query<int>("${Me.Platinum}") - platinumGain;
-			MQ.Write($"\ag You made {platinumGain.ToString("N0")} platinum");
-			MQ.Cmd("/nomodkey /notify MerchantWnd MW_Done_Button leftmouseup");
-			
+            if(!printOnly)
+            {
+				platinumGain = MQ.Query<int>("${Me.Platinum}") - platinumGain;
+				MQ.Write($"\ag You made {platinumGain.ToString("N0")} platinum");
+				MQ.Cmd("/nomodkey /notify MerchantWnd MW_Done_Button leftmouseup");
+			}
+			if (foundItemTosell && printOnly)
+            {
+                E3.Bots.Broadcast($"\ag Please use \aw\"/e3sell \"{orginalItemToSell}\" yes\" \ag to confirm selling");
+            }    
 
 		}
 		private static void AutoStack()
