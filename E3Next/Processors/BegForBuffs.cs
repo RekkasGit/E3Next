@@ -287,6 +287,9 @@ namespace E3Core.Processors
 						if (E3.GeneralSettings.BuffRequests_AllowBuffRequests || E3.Bots.IsMyBot(user))
 						{
 							string spell = x.match.Groups[2].Value;
+
+							if (spell.Contains("${")) return;
+
 							bool groupReply = false;
 							if (x.match.Groups[0].Value.Contains(" tells the group,"))
 							{

@@ -44,6 +44,8 @@ namespace E3Core.Processors
 			    if(x.args.Count<1)
                 {
                     E3.Bots.Broadcast("What should i sell?");
+					return;
+				
                 }
                 string itemToSell = x.args[0];
                
