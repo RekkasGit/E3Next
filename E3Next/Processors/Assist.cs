@@ -944,6 +944,7 @@ namespace E3Core.Processors
                     {
                         Casting.Interrupt();
                     }
+					ClearXTargets.Enabled = false;
                     AssistOff();
                     Burns.Reset();
                     DebuffDot.Reset();
