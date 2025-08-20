@@ -833,8 +833,6 @@ namespace E3Core.Processors
                    ignoreme = true;
                    x.args.Remove("/ignoreme");
                }
-
-              
                //Rez.Reset();
                if (x.args.Count == 0)
                {

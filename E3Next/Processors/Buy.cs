@@ -186,8 +186,8 @@ namespace E3Core.Processors
                         
             //check how many items are needed to make a stack of the specified food and drink, return -1 if they already have more than a stack
 
-            Int32 foodAvail = MQ.Query<int>($"${{FindItemCount[{toEat}]}}");
-            Int32 drinkAvail = MQ.Query<int>($"${{FindItemCount[{toDrink}]}}");
+            Int32 foodAvail = MQ.Query<int>($"${{FindItemCount[={toEat}]}}");
+            Int32 drinkAvail = MQ.Query<int>($"${{FindItemCount[={toDrink}]}}");
 
             int toEatQty = 20;
             if (foodAvail > 0)
@@ -238,7 +238,7 @@ namespace E3Core.Processors
         {
 			//check how many items are needed to make a stack of the specified food and drink, return -1 if they already have more than a stack
 
-			Int32 itemAvail = MQ.Query<int>($"${{FindItemCount[{itemName}]}}");
+			Int32 itemAvail = MQ.Query<int>($"${{FindItemCount[={itemName}]}}");
 			
 			int qtyToBuy = 20; //default stack size if we don't have it
 			if (itemAvail > 0)
@@ -282,14 +282,16 @@ namespace E3Core.Processors
         /// <param name="itemQty"></param>
         public static void BuyItem(string itemName, int itemQty)
         {
+			itemName = itemName.Trim();
             //set listposition as the slot of the desired item on the vendor
             int listPosition = MQ.Query<int>($"${{Window[MerchantWnd].Child[ItemList].List[={itemName},2]}}");
 
 
-            string buyingItemText = MQ.Query<string>("${Window[MerchantWnd].Child[MW_SelectedItemLabel].Text}");
-
+			string buyingItemText = MQ.Query<string>("${Window[MerchantWnd].Child[MW_SelectedItemLabel].Text}").Trim();
+			MQ.Delay(300);
             Int32 counter = 0;
-            while (buyingItemText != itemName && counter < 10)
+
+			while (!string.Equals(itemName,buyingItemText, StringComparison.OrdinalIgnoreCase) && counter < 10)
             {
                 counter++;
                 MQ.Cmd($"/nomodkey /notify MerchantWnd ItemList listselect {listPosition}");
@@ -297,12 +299,14 @@ namespace E3Core.Processors
                 buyingItemText = MQ.Query<string>("${Window[MerchantWnd].Child[MW_SelectedItemLabel].Text}");
             }
             
-            if (buyingItemText != itemName)
+            if (!string.Equals(itemName, buyingItemText, StringComparison.OrdinalIgnoreCase))
             {
                 E3.Bots.Broadcast($"\arERROR: Buying item cannot get vendor to select, exiting. Item:{itemName}");
                 return;
-            }
+			}
 
+			//give time for the buy button to enable
+			MQ.Delay(300);
             //we have the item selected via the vendor, check we can buy.
             bool buyButtonEnabled = MQ.Query<bool>("${Window[MerchantWnd].Child[MW_Buy_Button].Enabled}");
 
