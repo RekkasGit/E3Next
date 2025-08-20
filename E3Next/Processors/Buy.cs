@@ -240,9 +240,16 @@ namespace E3Core.Processors
 
 			Int32 itemAvail = MQ.Query<int>($"${{FindItemCount[={itemName}]}}");
 			
+		
+
 			int qtyToBuy = 20; //default stack size if we don't have it
 			if (itemAvail > 0)
 			{
+				if (maxQty>0 && itemAvail >= maxQty)
+				{
+					E3.Bots.Broadcast($"\arAlready have a at least {maxQty} ({itemAvail}) stack of {itemName}! Skipping restock. ");
+					return;
+				}
 				qtyToBuy = GetQtyNeededForFullStack(itemName);
 			}
 
