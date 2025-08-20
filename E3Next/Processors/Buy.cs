@@ -253,7 +253,7 @@ namespace E3Core.Processors
 				qtyToBuy = GetQtyNeededForFullStack(itemName);
 			}
 
-            if (qtyToBuy > maxQty && maxQty>0) qtyToBuy = maxQty;
+            if (qtyToBuy > maxQty && maxQty>0) qtyToBuy = (maxQty-itemAvail);
 
 			if (qtyToBuy <= 0)
 			{
