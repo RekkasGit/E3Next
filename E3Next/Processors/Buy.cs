@@ -127,7 +127,7 @@ namespace E3Core.Processors
 				}
 				if (!e3util.FilterMe(x))
 				{
-					itemName = itemName.ToLower();
+					itemName = itemName.ToLower().Trim();
 					
 					if(vendorID == 0) vendorID = MQ.Query<Int32>("${Target.ID}");
 
@@ -159,13 +159,13 @@ namespace E3Core.Processors
         private static int GetQtyNeededForFullStack(string itemName)
         {
             
-            int itemQtyStackSize = MQ.Query<int>($"${{FindItem[{itemName}].StackSize}}");
+            int itemQtyStackSize = MQ.Query<int>($"${{FindItem[={itemName}].StackSize}}");
             int qtyNeeded = -1;
             int itemQty = -1;
             
             if (!String.IsNullOrWhiteSpace(itemName))
             {
-                itemQty = MQ.Query<int>($"${{FindItemCount[{itemName}]}}");
+                itemQty = MQ.Query<int>($"${{FindItemCount[={itemName}]}}");
             }
 
             if (itemQty >= itemQtyStackSize )
