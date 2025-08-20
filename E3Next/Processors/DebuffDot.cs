@@ -183,12 +183,6 @@ namespace E3Core.Processors
 			}
 			if (Assist.AssistTargetID > 0)
             {
-                //person in manual control and they are not on the assist target, chill.
-
-                if (targetId != Assist.AssistTargetID && e3util.IsManualControl())
-                {
-                    return;
-                }
                 CastLongTermSpell(Assist.AssistTargetID, E3.CharacterSettings.Debuffs_OnAssist, _debuffdotTimers);
                 if (E3.ActionTaken) return;
             }
