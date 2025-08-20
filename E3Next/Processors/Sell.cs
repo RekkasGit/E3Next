@@ -75,7 +75,7 @@ namespace E3Core.Processors
             EventProcessor.RegisterCommand("/e3autostack", (x) =>
             {
                 AutoStack();
-            });
+            },"Auto stacks stackble items from your inventory to your bank if they exist.");
         }
         public static void SyncInventory()
         {
