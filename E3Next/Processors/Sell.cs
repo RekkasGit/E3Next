@@ -72,9 +72,9 @@ namespace E3Core.Processors
             {
                 SyncInventory();
             });
-            EventProcessor.RegisterCommand("/e3autostack", (x) =>
+            EventProcessor.RegisterCommand("/e3autobank", (x) =>
             {
-                AutoStack();
+                AutoBank();
             },"Auto stacks stackble items from your inventory to your bank if they exist.");
         }
         public static void SyncInventory()
@@ -320,7 +320,7 @@ namespace E3Core.Processors
             }    
 
 		}
-		private static void AutoStack()
+		private static void AutoBank()
         {
 			if (!e3util.OpenBank())
 			{
@@ -359,8 +359,9 @@ namespace E3Core.Processors
 
                         if (MQ.Query<bool>($"${{FindItemBank[={item}]}}"))
                         {
-							E3.Bots.Broadcast($"\ar<\ayAutoStack\ar> \agTrying to stack \aw{item} \aginto the bank");
-                            MQ.Cmd($"/nomodkey /itemnotify \"{item}\" leftmouseup",500);
+							E3.Bots.Broadcast($"\ar<\ayAutoBank\ar> \agTrying to stack \aw{item} \aginto the bank");
+
+							MQ.Cmd($"/nomodkey /itemnotify in pack{i} {j} leftmouseup",500);
                             
                             if (MQ.Query<bool>("${Window[QuantityWnd].Open}"))
                             {
