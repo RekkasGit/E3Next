@@ -72,7 +72,7 @@ namespace E3Core.Processors
             {
                 SyncInventory();
             });
-            EventProcessor.RegisterCommand("/autostack", (x) =>
+            EventProcessor.RegisterCommand("/e3autostack", (x) =>
             {
                 AutoStack();
             });
@@ -322,14 +322,28 @@ namespace E3Core.Processors
 		}
 		private static void AutoStack()
         {
-            var windowOpen = MQ.Query<bool>("${Window[BigBankWnd].Open}");
+			if (!e3util.OpenBank())
+			{
+				E3.Bots.Broadcast("Please target a banker.");
+				return;
+			}
+		
+			var windowOpen = MQ.Query<bool>("${Window[BigBankWnd].Open}");
             if (!windowOpen)
             {
-                E3.Bots.Broadcast("\arError: <AutoStack> Bank window not open. Exiting");
-				return;
-            }
-
-            for (int i = 1; i <= 10; i++)
+				if (!e3util.OpenBank())
+				{
+					E3.Bots.Broadcast("Please target a banker.");
+					return;
+				}
+				windowOpen = MQ.Query<bool>("${Window[BigBankWnd].Open}");
+				if(!windowOpen)
+				{
+					E3.Bots.Broadcast("\arError: <AutoStack> Bank window not open. Exiting");
+					return;
+				}
+			}
+		    for (int i = 1; i <= 10; i++)
             {
                 if (MQ.Query<bool>($"${{Me.Inventory[pack{i}]}}"))
                 {
@@ -345,6 +359,7 @@ namespace E3Core.Processors
 
                         if (MQ.Query<bool>($"${{FindItemBank[={item}]}}"))
                         {
+							E3.Bots.Broadcast($"\ar<\ayAutoStack\ar> \agTrying to stack \aw{item} \aginto the bank");
                             MQ.Cmd($"/nomodkey /itemnotify \"{item}\" leftmouseup",500);
                             
                             if (MQ.Query<bool>("${Window[QuantityWnd].Open}"))
@@ -352,25 +367,14 @@ namespace E3Core.Processors
                                 MQ.Cmd("/nomodkey /notify QuantityWnd QTYW_Accept_Button leftmouseup", 500);
                             }
 
-                            var slot = MQ.Query<int>($"${{FindItemBank[={item}].ItemSlot}}");
-                            var slot2 = MQ.Query<int>($"${{FindItemBank[={item}].ItemSlot2}}");
-                            // different syntax for if the item is in a bag vs if it's not
-                            if (slot2 >= 0)
-                            {
-                                MQ.Cmd($"/nomodkey /itemnotify in bank{slot + 1} {slot2 + 1} leftmouseup");
-                            }
-                            else
-                            {
-                                MQ.Cmd($"/nomodkey /itemnotify bank{slot + 1} leftmouseup");
-                            }
+							MQ.Cmd("/invoke ${Window[BigBankWnd].Child[BIGB_AutoButton].LeftMouseUp}",500);
 
-                            MQ.Delay(500);
                         }
                     }
                 }
             }
-
-            MQ.Cmd("/nomodkey /notify BigBankWnd BIGB_DoneButton leftmouseup");
+			//close bags, any way to tell we are in an open state?
+			MQ.Cmd("/nomodkey /notify BigBankWnd BIGB_DoneButton leftmouseup");
             MQ.Write("\agFinished stacking items in bank");            
         }
     }
