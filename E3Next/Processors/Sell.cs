@@ -376,7 +376,7 @@ namespace E3Core.Processors
             }
 			//close bags, any way to tell we are in an open state?
 			MQ.Cmd("/nomodkey /notify BigBankWnd BIGB_DoneButton leftmouseup");
-            MQ.Write("\agFinished stacking items in bank");            
+            E3.Bots.Broadcast("\agFinished stacking items in bank");            
         }
     }
 }
