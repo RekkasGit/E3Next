@@ -506,7 +506,7 @@ namespace E3Core.Processors
 					If you ARE following someone and not moving for 10+ seconds, it will buff.*/
 					if (((String.IsNullOrWhiteSpace(Movement.FollowTargetName) && String.IsNullOrWhiteSpace(Movement.ChaseTargetName))) || Movement.StandingStillForTimePeriod() || Assist.IsAssisting)
 					{
-						if (Assist.IsAssisting || Nukes.PBAEEnabled)
+						if (E3.CurrentInCombat || Nukes.PBAEEnabled)
 						{
 							BuffBots(E3.CharacterSettings.CombatBuffs);
 							BuffBots(E3.CharacterSettings.CombatPetBuffs, true);
