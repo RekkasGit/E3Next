@@ -23,10 +23,18 @@ namespace E3Core.Server
 
         Task _serverThread;
         private Int32 _port;
+        private CancellationTokenSource _cancellationTokenSource;
+        
         public void Start(Int32 port)
         {
             _port = port;
-            _serverThread = Task.Factory.StartNew(() => { Process(); }, CancellationToken.None, TaskCreationOptions.DenyChildAttach, TaskScheduler.Default);
+            _cancellationTokenSource = new CancellationTokenSource();
+            _serverThread = Task.Factory.StartNew(() => { Process(); }, _cancellationTokenSource.Token, TaskCreationOptions.DenyChildAttach, TaskScheduler.Default);
+        }
+        
+        public void Stop()
+        {
+            _cancellationTokenSource?.Cancel();
         }
         public static bool NowCastInQueue()
         {

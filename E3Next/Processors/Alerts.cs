@@ -195,7 +195,10 @@ namespace E3Core.Processors
 					{
 						string mobname = x.match.Groups[1].Value;
 						string damage = x.match.Groups[2].Value;
-						E3.Bots.Broadcast($"\arRAMPAGE\aw for \ar{damage}\aw damage from \ag{mobname}");
+						if (E3.CharacterSettings.Misc_DamageReports)
+						{
+							E3.Bots.Broadcast($"\arRAMPAGE\aw for \ar{damage}\aw damage from \ag{mobname}");
+						}
 					}
 				}
             });
@@ -205,38 +208,80 @@ namespace E3Core.Processors
 			{
 				//You have taken 7840 points of damage.
 				pattern = $@"\.  You have taken ([0-9]+) points of damage.";
-				EventProcessor.RegisterEvent("NormalDamageToYou", pattern, (x) => {
+                EventProcessor.RegisterEvent("NormalDamageToYou", pattern, (x) => {
 
 					if (x.match.Groups.Count > 1)
 					{
 							string damage = x.match.Groups[1].Value;
-							E3.Bots.Broadcast($"\arDAMAGE!\aw for \ar{damage}");
+							if (E3.CharacterSettings.Misc_DamageReports)
+							{
+								E3.Bots.Broadcast($"\arDAMAGE!\aw for \ar{damage}");
+							}
 					}
 				});
 				//You have taken 7840 points of damage.
 				pattern = $@"You have taken ([0-9]+) damage from (.+) by (.+)";
-				EventProcessor.RegisterEvent("NormalDamageToYou2", pattern, (x) => {
+                EventProcessor.RegisterEvent("NormalDamageToYou2", pattern, (x) => {
 
 					if (x.match.Groups.Count > 3)
 					{
 						string damage = x.match.Groups[1].Value;
 						string mobname = x.match.Groups[2].Value;
 						string by = x.match.Groups[3].Value;
-						E3.Bots.Broadcast($"\arDAMAGE!\aw for \ar{damage}\aw damage from \ag{mobname} \awby {by}");
+						if (E3.CharacterSettings.Misc_DamageReports)
+						{
+							E3.Bots.Broadcast($"\arDAMAGE!\aw for \ar{damage}\aw damage from \ag{mobname} \awby {by}");
+						}
 					}
 				});
 				pattern = $@"^(.+) YOU for ([0-9]+) points of damage\.$";
-				EventProcessor.RegisterEvent("NormalDamageToYou3", pattern, (x) => {
+                EventProcessor.RegisterEvent("NormalDamageToYou3", pattern, (x) => {
 
 					if (x.match.Groups.Count > 2)
 					{
 						string damage = x.match.Groups[2].Value;
 						string mobname = x.match.Groups[1].Value;
-						E3.Bots.Broadcast($"\arDAMAGE!\aw for \ar{damage}\aw damage from \ag{mobname}");
+						if (E3.CharacterSettings.Misc_DamageReports)
+						{
+							E3.Bots.Broadcast($"\arDAMAGE!\aw for \ar{damage}\aw damage from \ag{mobname}");
+						}
 						
 					}
 				});
-			}
+            }
+
+            // command: /e3damage [on|off]
+            EventProcessor.RegisterCommand("/e3damage", (x) =>
+            {
+                bool? newState = null;
+                if (x.args.Count > 0)
+                {
+                    var a0 = x.args[0];
+                    if (a0.Equals("on", StringComparison.OrdinalIgnoreCase)) newState = true;
+                    else if (a0.Equals("off", StringComparison.OrdinalIgnoreCase)) newState = false;
+                }
+
+                if (newState.HasValue)
+                {
+                    E3.CharacterSettings.Misc_DamageReports = newState.Value;
+                }
+                else
+                {
+                    // toggle
+                    E3.CharacterSettings.Misc_DamageReports = !E3.CharacterSettings.Misc_DamageReports;
+                }
+
+                MQ.Write($"Damage reports {(E3.CharacterSettings.Misc_DamageReports ? "ON" : "OFF")}");
+                // persist cleanly by saving the character settings file
+                try { E3.CharacterSettings.SaveData(); } catch {}
+                // Propagate to group unless this call already includes the 'all' marker
+                bool hasAllMarker = x.args.Any(a => a.Equals("all", StringComparison.OrdinalIgnoreCase));
+                if (!hasAllMarker)
+                {
+                    var stateStr = E3.CharacterSettings.Misc_DamageReports ? "on" : "off";
+                    E3.Bots.BroadcastCommandToGroup($"/e3damage {stateStr} all", x);
+                }
+            });
 			pattern = @"(.+) spell has been reflected by (.+)\.";
 			EventProcessor.RegisterEvent("ReflectSpell", pattern, (x) => {
 

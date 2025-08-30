@@ -74,6 +74,11 @@ namespace E3Core.Server
             _serverThread = Task.Factory.StartNew(() => { Process(); }, CancellationToken.None, TaskCreationOptions.DenyChildAttach, TaskScheduler.Default);
 
         }
+        
+        public void Stop()
+        {
+            E3.NetMQ_RouterServerThradRun = false;
+        }
         //called by the main C# thread
         public static void ProcessRequests()
         {
@@ -149,8 +154,8 @@ namespace E3Core.Server
 					Buffer.BlockCopy(bytes, 0, message.payload, 0, message.payloadLength);
 
 				}
-				else if (String.Equals(query, "${E3.ItemsWithSpells.ListAll}", StringComparison.OrdinalIgnoreCase))
-				{
+                else if (String.Equals(query, "${E3.ItemsWithSpells.ListAll}", StringComparison.OrdinalIgnoreCase))
+                {
 					List<Data.Spell> spells = e3util.ListAllItemWithClickyData();
 
 					SpellDataList spellDatas = new SpellDataList();
@@ -162,8 +167,18 @@ namespace E3Core.Server
 					message.payloadLength = bytes.Length;
 					Buffer.BlockCopy(bytes, 0, message.payload, 0, message.payloadLength);
 
-				}
-				else
+                }
+                else if (String.Equals(query, "${E3.Inventory.ListFood}", StringComparison.OrdinalIgnoreCase))
+                {
+                    string dataOut = ListInventoryByType("Food");
+                    message.payloadLength = System.Text.Encoding.Default.GetBytes(dataOut, 0, dataOut.Length, message.payload, 0);
+                }
+                else if (String.Equals(query, "${E3.Inventory.ListDrink}", StringComparison.OrdinalIgnoreCase))
+                {
+                    string dataOut = ListInventoryByType("Drink");
+                    message.payloadLength = System.Text.Encoding.Default.GetBytes(dataOut, 0, dataOut.Length, message.payload, 0);
+                }
+                else
                 {
                     //string return types
 					if (String.Equals(query, "${E3.TLO.BulkBegin}", StringComparison.OrdinalIgnoreCase))
@@ -202,6 +217,53 @@ namespace E3Core.Server
                 }
 
             }
+        }
+
+        private static string ListInventoryByType(string typeFilter)
+        {
+            try
+            {
+                var set = new HashSet<string>(StringComparer.OrdinalIgnoreCase);
+                string tf = typeFilter ?? string.Empty;
+                Func<string, string> Q = (q) => E3.MQ.Query<string>(q);
+                // Top level slots 0..22
+                for (int i = 0; i <= 22; i++)
+                {
+                    string name = Q($"${{Me.Inventory[{i}]}}");
+                    if (string.IsNullOrEmpty(name) || name.Equals("NULL", StringComparison.OrdinalIgnoreCase)) continue;
+                    string type = Q($"${{Me.Inventory[{i}].Type}}");
+                    if (!string.IsNullOrEmpty(type) && type.IndexOf(tf, StringComparison.OrdinalIgnoreCase) >= 0) set.Add(name);
+                }
+                // Bags pack1..pack12
+                for (int b = 1; b <= 12; b++)
+                {
+                    string pack = $"pack{b}";
+                    string present = Q($"${{Me.Inventory[{pack}]}}");
+                    if (string.IsNullOrEmpty(present) || present.Equals("NULL", StringComparison.OrdinalIgnoreCase)) continue;
+                    int slots = 0; int.TryParse(Q($"${{Me.Inventory[{pack}].Container}}"), out slots);
+                    if (slots > 0)
+                    {
+                        for (int j = 1; j <= slots; j++)
+                        {
+                            string name = Q($"${{Me.Inventory[{pack}].Item[{j}]}}");
+                            if (string.IsNullOrEmpty(name) || name.Equals("NULL", StringComparison.OrdinalIgnoreCase)) continue;
+                            string type = Q($"${{Me.Inventory[{pack}].Item[{j}].Type}}");
+                            if (!string.IsNullOrEmpty(type) && type.IndexOf(tf, StringComparison.OrdinalIgnoreCase) >= 0) set.Add(name);
+                        }
+                    }
+                    else
+                    {
+                        string name = present;
+                        string type = Q($"${{Me.Inventory[{pack}].Type}}");
+                        if (!string.IsNullOrEmpty(type) && type.IndexOf(tf, StringComparison.OrdinalIgnoreCase) >= 0 && !name.Equals("NULL", StringComparison.OrdinalIgnoreCase))
+                            set.Add(name);
+                    }
+                }
+                var list = set.ToList();
+                list.Sort(StringComparer.OrdinalIgnoreCase);
+                return string.Join("\n", list);
+            }
+            catch { return string.Empty; }
         }
 
         private void Process()

@@ -28,22 +28,27 @@ namespace E3Core.Processors
 		/// <summary>
 		/// The main processing loop. Things are broken up to keep this loop small and understandable.
 		/// </summary>
-		public static void Process()
-		{
+        public static void Process()
+        {
 			_amIDead = Basics.AmIDead();
-			if (!ShouldRun())
-			{
-				return;
-			}
-			//Init is here to make sure we only Init while InGame, as some queries will fail if not in game
-			if (!IsInit) { Init(); }
-			var sw = new Stopwatch();
-			sw.Start();
-			//auto 5 min gc check
-			CheckGC();
+            if (!ShouldRun())
+            {
+                return;
+            }
+            //Init is here to make sure we only Init while InGame, as some queries will fail if not in game
+            if (!IsInit) { Init(); }
+            var sw = new Stopwatch();
+            sw.Start();
+            //auto 5 min gc check
+            CheckGC();
 
-			//did someone send us a command? lets process it. 
-			ProcessExternalCommands();
+            //did someone send us a command? lets process it. 
+            ProcessExternalCommands();
+
+            // apply any UI-driven changes safely on the main loop
+            ApplyUIQueuedActions();
+            // run any background work requested by UI (e.g., loading catalogs)
+            try { MonoCore.Core.ProcessBackgroundWork(); } catch { }
 
 			//update all states, important.
 			StateUpdates();
@@ -85,6 +90,18 @@ namespace E3Core.Processors
 			
             //final cleanup/actions after the main loop has done processing
             FinalCalls();
+        }
+
+        private static void ApplyUIQueuedActions()
+        {
+            Action act;
+            int guard = 0;
+            while (MonoCore.Core.UIApplyQueue.TryDequeue(out act))
+            {
+                try { act?.Invoke(); }
+                catch (Exception ex) { MQ.Write($"UI apply error: {ex.Message}"); }
+                if (++guard > 50) break; // prevent starvation
+            }
         }
 	
 		private static void BeforeAdvancedSettingsCalls()
@@ -193,8 +210,8 @@ namespace E3Core.Processors
 
 
 		}
-		private static void FinalCalls()
-		{
+        private static void FinalCalls()
+        {
 
 
 			if(!_amIDead)
@@ -261,6 +278,12 @@ namespace E3Core.Processors
                 Loot.Reset();
                 E3.Bots.Broadcast("\aoComplete!");
             }
+            if (ButtonBar != null && ButtonBar.ShouldReload())
+            {
+                E3.Bots.Broadcast("\aoAuto-Reloading Buttons file...");
+                ButtonBar = new Settings.FeatureSettings.ButtonBar();
+                E3.Bots.Broadcast("\aoComplete!");
+            }
             if (Zoning.TributeDataFile.ShouldReload())
             {
                 E3.Bots.Broadcast("\aoAuto-Reloading Tribute settings file...");
@@ -285,6 +308,64 @@ namespace E3Core.Processors
                 return true;
             }
             return false;
+        }
+
+        public static void ApplyCharacterIniEdits()
+        {
+            try
+            {
+                var pd = E3.CharacterSettings?.ParsedData;
+                if (pd == null) return;
+                int changed = 0;
+                foreach (var kv in MonoCore.Core._charIniEditsSnapshot())
+                {
+                    var parts = kv.Key.Split('|');
+                    if (parts.Length != 4) continue;
+                    string sectionName = parts[1];
+                    string keyName = parts[2];
+                    int idx = 0; int.TryParse(parts[3], out idx);
+                    var section = pd.Sections.GetSectionData(sectionName);
+                    if (section == null)
+                    {
+                        pd.Sections.AddSection(sectionName);
+                        section = pd.Sections.GetSectionData(sectionName);
+                    }
+                    var keyData = section.Keys.GetKeyData(keyName);
+                    if (keyData == null)
+                    {
+                        section.Keys.AddKey(keyName);
+                        keyData = section.Keys.GetKeyData(keyName);
+                    }
+                    var newVal = kv.Value ?? string.Empty;
+                    if (keyData.ValueList != null && keyData.ValueList.Count > 0)
+                    {
+                        if (idx >= 0 && idx < keyData.ValueList.Count)
+                        {
+                            if (!string.Equals(keyData.ValueList[idx], newVal, StringComparison.Ordinal))
+                            { keyData.ValueList[idx] = newVal; changed++; }
+                        }
+                        else if (idx == 0)
+                        {
+                            if (!string.Equals(keyData.Value, newVal, StringComparison.Ordinal)) { keyData.Value = newVal; changed++; }
+                        }
+                    }
+                    else
+                    {
+                        if (!string.Equals(keyData.Value, newVal, StringComparison.Ordinal)) { keyData.Value = newVal; changed++; }
+                    }
+                }
+                if (changed > 0)
+                {
+                    var parser = E3Core.Utility.e3util.CreateIniParser();
+                    parser.WriteFile(E3.CharacterSettings._fileName, pd);
+                    MonoCore.Core._charIniEditsClear();
+                    MQ.Write($"Saved {changed} change(s) to {E3.CharacterSettings._fileName}");
+                }
+            }
+            catch (Exception ex)
+            {
+                MQ.Write($"Failed to apply changes: {ex.Message}");
+            }
         }
 		/// <summary>
 		/// This is used during thigns like casting, while we are delaying a ton
@@ -343,6 +424,10 @@ namespace E3Core.Processors
 			PubServer.AddTopicMessage("${Me.AAPointsSpent}", MQ.Query<string>("${Me.AAPointsSpent}"));
 			PubServer.AddTopicMessage("${Me.AAPointsTotal}", MQ.Query<string>("${Me.AAPointsTotal}"));
 		}
+		public static void StateUpdates_InventoryInformation()
+		{
+			InventoryScanner.ScanAndPublishInventory();
+		}
 		public static void ProcessExternalCommands()
 		{
 			NetMQServer.SharedDataClient.ProcessCommands(); //recieving data
@@ -384,6 +469,7 @@ namespace E3Core.Processors
 				if (e3util.ShouldCheck(ref _nextSlowUpdateCheckTime, E3.CharacterSettings.CPU_PublishSlowDataInMS))
 				{
 					StateUpdates_AAInformation();
+					// StateUpdates_InventoryInformation();
 					//lets query the data we are configured to send out extra
 					if (E3.CharacterSettings.E3BotsPublishData.Count > 0)
 					{
@@ -501,13 +587,22 @@ namespace E3Core.Processors
                     //}
                 }
 				GlobalIfs = new GlobalIfs();
+				ButtonBar = new Settings.FeatureSettings.ButtonBar();
 				GlobalCursorDelete = new GlobalCursorDelete();
 				CharacterSettings = new Settings.CharacterSettings();
                 AdvancedSettings = new Settings.AdvancedSettings();
 				
-				//setup is done after the settings are setup.
-				//as there is an order dependecy
-				Setup.Init();
+                //setup is done after the settings are setup.
+                //as there is an order dependecy
+                Setup.Init();
+
+                // Register ImGui toggle commands for in-game usage
+                try
+                {
+                    MQ.AddCommand("/e3imgui");
+                    MQ.AddCommand("/e3buttons");
+                }
+                catch { }
                 IsInit = true;
                 MonoCore.Spawns.RefreshTimePeriodInMS = 500;
 			}
@@ -528,13 +623,31 @@ namespace E3Core.Processors
         public static void Shutdown()
         {
             IsBadState = true;
+
+            // Stop all network components gracefully
+            try
+            {
+                Server.NetMQServer.Stop();
+            }
+            catch (Exception ex)
+            {
+                MQ.Write($"Error stopping NetMQServer during shutdown: {ex.Message}");
+            }
+
+            // Unregister our custom commands
+            try
+            {
+                MQ.RemoveCommand("/e3imgui");
+                MQ.RemoveCommand("/e3buttons");
+            }
+            catch { }
+            
             AdvancedSettings.Reset();
             CharacterSettings = null;
             GeneralSettings = null;
             AdvancedSettings = null;
             Spawns.EmptyLists();
            
-
         }
         //test to see if we need to GC every 5 min to maintain proper memory profile
         private static void CheckGC()
@@ -562,6 +675,7 @@ namespace E3Core.Processors
         public static Logging Log = Core.logInstance;
         public static Settings.CharacterSettings CharacterSettings = null;
 		public static Settings.FeatureSettings.GlobalIfs GlobalIfs = null;
+		public static Settings.FeatureSettings.ButtonBar ButtonBar = null;
 		public static Settings.FeatureSettings.GlobalCursorDelete GlobalCursorDelete = null;
 		public static Settings.GeneralSettings GeneralSettings = null;
         public static Settings.AdvancedSettings AdvancedSettings = null;

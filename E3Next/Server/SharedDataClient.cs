@@ -44,6 +44,9 @@ namespace E3Core.Server
 			public string FilePath { get; set; }
 			public DateTime FileLastUpdateTime { get; set; }
 			public Int64 LastMessageTimeStamp { get; set; }
+			public int RouterPort { get; set; }
+			public int PubClientPort { get; set; }
+			public int ProcessId { get; set; }
 
 		}
 
@@ -53,6 +56,8 @@ namespace E3Core.Server
 		ConcurrentQueue<ConnectionInfo> _usersToConnectTo = new ConcurrentQueue<ConnectionInfo>();
 		public ConcurrentDictionary<string, ConnectionInfo> UsersConnectedTo = new ConcurrentDictionary<string, ConnectionInfo>(StringComparer.OrdinalIgnoreCase);
 		Task _mainProcessingTask = null;
+		private CancellationTokenSource _cancellationTokenSource = null;
+		
 		public bool RegisterUser(string user, string path, bool isproxy = false)
 		{
 			_isProxyMode = isproxy;
@@ -82,16 +87,20 @@ namespace E3Core.Server
 						//its now port:ipaddress
 						string[] splitData = data.Split(new char[] { ',' });
 						string port = splitData[0];
-						string ipaddress = splitData[1];
+						string ipaddress = splitData.Length > 1 ? splitData[1] : "127.0.0.1";
 
-						
-						ConnectionInfo info = new ConnectionInfo() { User = user, Port = port, IPAddress = ipaddress, FilePath = filePath };
+						int routerPort = 0; int pubClientPort = 0; int pid = 0;
+						if (splitData.Length >= 3) int.TryParse(splitData[2], out routerPort);
+						if (splitData.Length >= 4) int.TryParse(splitData[3], out pubClientPort);
+						if (splitData.Length >= 5) int.TryParse(splitData[4], out pid);
+						ConnectionInfo info = new ConnectionInfo() { User = user, Port = port, IPAddress = ipaddress, FilePath = filePath, RouterPort = routerPort, PubClientPort = pubClientPort, ProcessId = pid };
 
 						_usersToConnectTo.Enqueue(info);
 						UsersConnectedTo.TryAdd(info.User, info);
 						if(_mainProcessingTask==null)
 						{
-							_mainProcessingTask= Task.Factory.StartNew(() => { Process(); }, CancellationToken.None, TaskCreationOptions.DenyChildAttach, TaskScheduler.Default);
+							_cancellationTokenSource = new CancellationTokenSource();
+							_mainProcessingTask= Task.Factory.StartNew(() => { Process(); }, _cancellationTokenSource.Token, TaskCreationOptions.DenyChildAttach, TaskScheduler.Default);
 						}
 						//var newTask = Task.Factory.StartNew(() => { Process(user, port,ipaddress, filePath); }, CancellationToken.None, TaskCreationOptions.DenyChildAttach, TaskScheduler.Default);
 						//_processTasks.Add(user, newTask);
@@ -101,6 +110,12 @@ namespace E3Core.Server
 			}
 			
 			return false;
+		}
+		
+		public void Stop()
+		{
+			E3.NetMQ_SharedDataServerThreadRun = false;
+			_cancellationTokenSource?.Cancel();
 		}
 		public void ProcessE3BCCommands()
 		{
@@ -368,8 +383,61 @@ namespace E3Core.Server
 					entry.Data = messageReceived;
 					entry.LastUpdate = updateTime;
 				}
+				
+				// Forward inventory topics to MMF/pipe server for C++ plugin access
+				ForwardInventoryTopicToNamedPipe(user, messageTopicReceived, messageReceived);
 			}
 		}
+		
+		/// <summary>
+		/// Forward peer inventory data to named pipe server
+		/// </summary>
+		/// <param name="user">Character name</param>
+		/// <param name="topic">Original topic (e.g., "${Me.InventoryEquipped}")</param>
+		/// <param name="data">Binary inventory data</param>
+		private void ForwardInventoryTopicToNamedPipe(string user, string topic, string data)
+		{
+			try
+			{
+				// Forward all inventory topics from pub/sub into InventoryNamedPipeServer for MMF publishing
+				// Expected topics: ${Me.InventoryEquipped}, ${Me.InventoryBags.1-4}, ${Me.InventoryBank}
+				if (!topic.StartsWith("${Me.Inventory", StringComparison.OrdinalIgnoreCase))
+					return;
+
+				string pipeTopicName = null;
+
+				if (topic.IndexOf("InventoryEquipped", StringComparison.OrdinalIgnoreCase) >= 0)
+				{
+					pipeTopicName = $"{user}.equipped";
+				}
+				else if (topic.IndexOf("InventoryBags.", StringComparison.OrdinalIgnoreCase) >= 0)
+				{
+					// Extract bag range (e.g., "1-4" from "${Me.InventoryBags.1-4}")
+					int lastDot = topic.LastIndexOf('.');
+					int closeBrace = topic.LastIndexOf('}');
+					if (lastDot >= 0 && closeBrace > lastDot)
+					{
+						var bagRange = topic.Substring(lastDot + 1, closeBrace - (lastDot + 1));
+						pipeTopicName = $"{user}.bags.{bagRange}";
+					}
+				}
+				else if (topic.IndexOf("InventoryBank", StringComparison.OrdinalIgnoreCase) >= 0)
+				{
+					pipeTopicName = $"{user}.bank";
+				}
+
+				if (!string.IsNullOrEmpty(pipeTopicName))
+				{
+					// UpdateInventoryData will immediately publish to MMF as wired earlier
+					InventoryNamedPipeServer_v2.UpdateInventoryData(pipeTopicName, data);
+				}
+			}
+			catch
+			{
+				// swallow; do not impact shared data processing
+			}
+		}
+		
 		[MethodImpl(MethodImplOptions.AggressiveInlining)]
 		public void Process_CheckNewConnections(SubscriberSocket subSocket)
 		{

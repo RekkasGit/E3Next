@@ -23,6 +23,17 @@ namespace E3Core.Server
         static RouterServer _routerServer;
         static PubClient _pubClient;
         public static SharedDataClient SharedDataClient;
+        static InventoryNamedPipeServer_v2 _inventoryNamedPipeServer;
+        
+        public static void Stop()
+        {
+            // Stop all server components in proper order
+            _inventoryNamedPipeServer?.Stop();
+            _pubClient?.Stop();
+            _routerServer?.Stop();
+            _pubServer?.Stop();
+            SharedDataClient?.Stop();
+        }
 
 		public static Int32 RouterPort;
         public static Int32 PubPort;
@@ -56,6 +67,10 @@ namespace E3Core.Server
             _pubServer.Start(PubPort);
             _routerServer.Start(RouterPort);
             _pubClient.Start(PubClientPort);
+            
+            // Start named pipe server for C++ plugin access
+            _inventoryNamedPipeServer = new InventoryNamedPipeServer_v2();
+            _inventoryNamedPipeServer.Start();
 		
 		
 			EventProcessor.RegisterCommand("/ui", (x) =>

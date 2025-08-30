@@ -11,7 +11,11 @@ using System.Text.RegularExpressions;
 using E3Core.Processors;
 using System.Runtime.InteropServices;
 using NetMQ;
+using NetMQ.Sockets;
+using Google.Protobuf;
 using System.Globalization;
+using IniParser.Model;
+using System.IO;
 
 /// <summary>
 /// Version 0.1
@@ -1000,6 +1004,9 @@ namespace MonoCore
                     _taskThread = Task.Factory.StartNew(() => { MainProcessor.Process(); }, CancellationToken.None, TaskCreationOptions.DenyChildAttach, TaskScheduler.Default);
                 }
                 _isInit = true;
+
+                // Register a simple toggle command for the ImGui window
+                try { mqInstance.AddCommand("/e3imgui"); } catch { /* older MQ2Mono ok */ }
             }
         }
         public static void OnStop()
@@ -1010,6 +1017,7 @@ namespace MonoCore
             //tell the C# thread that it can now process and since processing is false, we can then end the application.
             MainProcessor.ProcessResetEvent.Set();
 			E3Core.Server.NetMQServer.KillAllProcesses();
+            E3Core.Server.NetMQServer.Stop();
             NetMQConfig.Cleanup(false);
             System.Threading.Thread.Sleep(500);
 			//write out any writes that have been delayed
@@ -1135,9 +1143,102 @@ namespace MonoCore
             {
                 return;
             }
-            mq_Echo("command recieved:" + commandLine);
+            // Intercept our ImGui toggle
+            if (commandLine.StartsWith("/e3imgui", StringComparison.OrdinalIgnoreCase))
+            {
+                try
+                {
+                    bool open = imgui_Begin_OpenFlagGet(_e3ImGuiWindow);
+                    imgui_Begin_OpenFlagSet(_e3ImGuiWindow, !open);
+                }
+                catch { }
+                return;
+            }
+            if (commandLine.StartsWith("/e3importifs", StringComparison.OrdinalIgnoreCase))
+            {
+                try
+                {
+                    int added = ImportSampleIfs();
+                    mq_Echo(added > 0 ? $"Imported {added} IF(s) into GlobalIfs.ini" : "No new IFs to import.");
+                }
+                catch (Exception ex)
+                {
+                    mq_Echo($"Import failed: {ex.Message}");
+                }
+                return;
+            }
+            if (commandLine.StartsWith("/e3buttons", StringComparison.OrdinalIgnoreCase))
+            {
+                try
+                {
+                    // support optional index: /e3buttons 2
+                    int idx = 1;
+                    var parts = commandLine.Split(' ');
+                    if (parts.Length > 1)
+                    {
+                        int.TryParse(parts[1], out idx);
+                        if (idx < 1) idx = 1;
+                    }
+                    string windowName = idx == 1 ? _e3ButtonsWindow : _e3ButtonsWindow + " #" + idx.ToString();
+                    bool open = imgui_Begin_OpenFlagGet(windowName);
+                    imgui_Begin_OpenFlagSet(windowName, !open);
+                }
+                catch { }
+                return;
+            }
 
+            mq_Echo("command recieved:" + commandLine);
             EventProcessor.ProcessMQCommand(commandLine);
+        }
+        private static int ImportSampleIfs()
+        {
+            // Locate sample file
+            string sample1 = System.IO.Path.Combine(AppDomain.CurrentDomain.BaseDirectory ?? string.Empty, "sample ifs");
+            string sample = System.IO.File.Exists(sample1) ? sample1 : string.Empty;
+            if (string.IsNullOrEmpty(sample) || !System.IO.File.Exists(sample)) return 0;
+
+            // Determine GlobalIfs.ini path (respect CurrentSet)
+            string gfPath = E3Core.Settings.BaseSettings.GetSettingsFilePath("GlobalIfs.ini");
+            if (!string.IsNullOrEmpty(E3Core.Settings.BaseSettings.CurrentSet))
+                gfPath = gfPath.Replace(".ini", "_" + E3Core.Settings.BaseSettings.CurrentSet + ".ini");
+
+            var parser = E3Core.Utility.e3util.CreateIniParser();
+            IniParser.Model.IniData data = null;
+            if (System.IO.File.Exists(gfPath))
+            {
+                data = parser.ReadFile(gfPath);
+            }
+            else
+            {
+                // Create new with defaults (this will also seed from sample if available)
+                data = E3.GlobalIfs != null ? E3.GlobalIfs.CreateSettings(gfPath) : new IniParser.Model.IniData();
+                if (!data.Sections.ContainsSection("Ifs")) data.Sections.AddSection("Ifs");
+            }
+
+            // Use SectionData instead of KeyDataCollection to match types
+            var ifsSection = data.Sections.GetSectionData("Ifs") ?? new IniParser.Model.SectionData("Ifs");
+            if (!data.Sections.ContainsSection("Ifs")) data.Sections.Add(ifsSection);
+
+            int added = 0;
+            foreach (var raw in System.IO.File.ReadAllLines(sample))
+            {
+                var line = (raw ?? string.Empty).Trim();
+                if (line.Length == 0) continue;
+                if (line.StartsWith("#") || line.StartsWith(";")) continue;
+                int eq = line.IndexOf('=');
+                if (eq <= 0) continue;
+                string key = line.Substring(0, eq).Trim();
+                string val = line.Substring(eq + 1).Trim();
+                if (string.IsNullOrEmpty(key)) continue;
+                if (!ifsSection.Keys.ContainsKey(key))
+                {
+                    ifsSection.Keys.AddKey(key, val);
+                    added++;
+                }
+            }
+            parser.WriteFile(gfPath, data);
+            try { E3.GlobalIfs?.LoadData(); } catch { }
+            return added;
         }
         public static void OnIncomingChat(string line)
         {
@@ -1226,18 +1327,2375 @@ namespace MonoCore
             //copy the data out into the current array set. 
         }
 
-        //public static void OnUpdateImGui()
-        //{
+        // Simple in-game ImGui windows.
+        // Config UI toggle: "/e3imgui". Buttons bar toggle: "/e3buttons".
+        private static readonly string _e3ImGuiWindow = "E3Next Config";
+        private static readonly string _e3ButtonsWindow = "E3 Buttons";
+        private static bool _imguiInitDone = false;
+        // Queue to apply UI-driven changes safely on the processing loop
+        public static ConcurrentQueue<Action> UIApplyQueue = new ConcurrentQueue<Action>();
+        public static void EnqueueUI(Action a)
+        {
+            if (a != null) UIApplyQueue.Enqueue(a);
+        }
 
-        //    if (imgui_Begin_OpenFlagGet("e3TestWindow"))
-        //    {
-        //        imgui_Begin("e3TestWindow", (int)ImGuiWindowFlags.ImGuiWindowFlags_None);
-        //        imgui_Button("Test button");
-        //        imgui_End();
-        //    }
+        // Settings viewer state/cache
+        private enum SettingsTab { Character, General, Advanced }
+        private static SettingsTab _activeSettingsTab = SettingsTab.Character;
+        private static string _activeSettingsFilePath = string.Empty;
+        private static string[] _activeSettingsFileLines = Array.Empty<string>();
+        private static long _nextIniRefreshAtMs = 0;
+        private static string _selectedCharacterSection = string.Empty;
+        private static Dictionary<string, string> _charIniEdits = new Dictionary<string, string>(StringComparer.OrdinalIgnoreCase);
+
+        // Character .ini selection state
+        private static string _selectedCharIniPath = string.Empty; // defaults to current character
+        private static IniData _selectedCharIniParsedData = null;  // parsed data for non-current selection
+        private static string[] _charIniFiles = Array.Empty<string>();
+        private static long _nextIniFileScanAtMs = 0;
+        // Dropdown support (feature-detect combo availability to avoid crashes on older MQ2Mono)
+        private static bool _comboAvailable = true;
+        private static void RefreshSettingsViewIfNeeded()
+        {
+            try
+            {
+                if (Core.StopWatch.ElapsedMilliseconds < _nextIniRefreshAtMs) return;
+                _nextIniRefreshAtMs = Core.StopWatch.ElapsedMilliseconds + 1000; // 1s throttle
+
+                string path = GetActiveSettingsPath();
+                if (!string.Equals(path, _activeSettingsFilePath, StringComparison.OrdinalIgnoreCase))
+                {
+                    _activeSettingsFilePath = path;
+                    _activeSettingsFileLines = Array.Empty<string>();
+                }
+                if (!string.IsNullOrEmpty(path) && System.IO.File.Exists(path))
+                {
+                    _activeSettingsFileLines = System.IO.File.ReadAllLines(path);
+                }
+                else
+                {
+                    _activeSettingsFileLines = new[] { "Settings file not found.", path ?? string.Empty };
+                }
+            }
+            catch
+            {
+                _activeSettingsFileLines = new[] { "Error reading settings file." };
+            }
+        }
+        private static string GetActiveSettingsPath()
+        {
+            switch (_activeSettingsTab)
+            {
+                case SettingsTab.General:
+                    if (E3.GeneralSettings != null && !string.IsNullOrEmpty(E3.GeneralSettings._fileLastModifiedFileName))
+                        return E3.GeneralSettings._fileLastModifiedFileName;
+                    return E3Core.Settings.BaseSettings.GetSettingsFilePath("General Settings.ini");
+                case SettingsTab.Advanced:
+                    var adv = E3Core.Settings.BaseSettings.GetSettingsFilePath("Advanced Settings.ini");
+                    if (!string.IsNullOrEmpty(E3Core.Settings.BaseSettings.CurrentSet)) adv = adv.Replace(".ini", "_" + E3Core.Settings.BaseSettings.CurrentSet + ".ini");
+                    return adv;
+                case SettingsTab.Character:
+                default:
+                    // current character path
+                    var currentPath = GetCurrentCharacterIniPath();
+                    if (string.IsNullOrEmpty(_selectedCharIniPath))
+                        _selectedCharIniPath = currentPath;
+                    return _selectedCharIniPath;
+            }
+        }
+
+        private static string GetCurrentCharacterIniPath()
+        {
+            if (E3.CharacterSettings != null && !string.IsNullOrEmpty(E3.CharacterSettings._fileName))
+                return E3.CharacterSettings._fileName;
+            // fallback
+            var name = E3.CurrentName ?? string.Empty;
+            var server = E3.ServerName ?? string.Empty;
+            var klass = E3.CurrentClass.ToString();
+            return E3Core.Settings.BaseSettings.GetBoTFilePath(name, server, klass);
+        }
+
+        private static void ScanCharIniFilesIfNeeded()
+        {
+            try
+            {
+                if (Core.StopWatch.ElapsedMilliseconds < _nextIniFileScanAtMs) return;
+                _nextIniFileScanAtMs = Core.StopWatch.ElapsedMilliseconds + 3000; // 3s throttle
+
+                var curPath = GetCurrentCharacterIniPath();
+                if (string.IsNullOrEmpty(curPath) || !File.Exists(curPath)) return;
+                var dir = Path.GetDirectoryName(curPath);
+                var server = E3.ServerName ?? string.Empty;
+                // Prefer files that end with _{server}.ini to keep list relevant
+                var pattern = "*_*" + server + ".ini";
+                var files = Directory.GetFiles(dir, pattern, SearchOption.TopDirectoryOnly);
+                // Fallback: if no server-suffixed files found, list all ini
+                if (files == null || files.Length == 0)
+                    files = Directory.GetFiles(dir, "*.ini", SearchOption.TopDirectoryOnly);
+                Array.Sort(files, StringComparer.OrdinalIgnoreCase);
+                _charIniFiles = files;
+            }
+            catch { /* ignore scan errors */ }
+        }
+
+        private static IniData GetActiveCharacterIniData()
+        {
+            var currentPath = GetCurrentCharacterIniPath();
+            if (string.Equals(_selectedCharIniPath, currentPath, StringComparison.OrdinalIgnoreCase))
+                return E3.CharacterSettings?.ParsedData;
+            return _selectedCharIniParsedData;
+        }
+
+        private static void RenderCharacterIniSelector()
+        {
+            ScanCharIniFilesIfNeeded();
+
+            var currentPath = GetCurrentCharacterIniPath();
+            string currentDisplay = Path.GetFileName(currentPath);
+            // True dropdown using ImGui combo if available; else graceful fallback
+            string selName = Path.GetFileName(_selectedCharIniPath ?? currentPath);
+            if (string.IsNullOrEmpty(selName)) selName = currentDisplay;
+            bool opened = _comboAvailable && BeginComboSafe("Ini File", selName);
+            if (opened)
+            {
+                // Current (live) file
+                if (!string.IsNullOrEmpty(currentPath))
+                {
+                    bool sel = string.Equals(_selectedCharIniPath, currentPath, StringComparison.OrdinalIgnoreCase);
+                    if (imgui_Selectable($"Current: {currentDisplay}", sel))
+                    {
+                        _selectedCharIniPath = currentPath;
+                        _selectedCharIniParsedData = null; // use live current
+                        _selectedCharacterSection = string.Empty;
+                        _charIniEdits.Clear();
+                        _nextIniRefreshAtMs = 0;
+                    }
+                }
+
+                foreach (var f in _charIniFiles)
+                {
+                    if (string.Equals(f, currentPath, StringComparison.OrdinalIgnoreCase)) continue;
+                    string name = Path.GetFileName(f);
+                    bool sel = string.Equals(_selectedCharIniPath, f, StringComparison.OrdinalIgnoreCase);
+                    if (imgui_Selectable(name, sel))
+                    {
+                        try
+                        {
+                            var parser = E3Core.Utility.e3util.CreateIniParser();
+                            var pd = parser.ReadFile(f);
+                            _selectedCharIniPath = f;
+                            _selectedCharIniParsedData = pd;
+                            _selectedCharacterSection = string.Empty;
+                            _charIniEdits.Clear();
+                            _nextIniRefreshAtMs = 0;
+                        }
+                        catch
+                        {
+                            mq_Echo($"Failed to load ini: {name}");
+                        }
+                    }
+                }
+                EndComboSafe();
+            }
+            else if (!_comboAvailable)
+            {
+                // Fallback UI: simple list while older MQ2Mono is in use
+                imgui_Text("Update MQ2Mono to enable dropdown. Temporary list:");
+                float availX = imgui_GetContentRegionAvailX();
+                float listH = 160f;
+                if (imgui_BeginChild("CharIni_FallbackList", availX, listH, true))
+                {
+                    if (!string.IsNullOrEmpty(currentPath))
+                    {
+                        bool sel = string.Equals(_selectedCharIniPath, currentPath, StringComparison.OrdinalIgnoreCase);
+                        if (imgui_Selectable($"Current: {currentDisplay}", sel))
+                        {
+                            _selectedCharIniPath = currentPath;
+                            _selectedCharIniParsedData = null;
+                            _selectedCharacterSection = string.Empty;
+                            _charIniEdits.Clear();
+                            _nextIniRefreshAtMs = 0;
+                        }
+                    }
+                    foreach (var f in _charIniFiles)
+                    {
+                        if (string.Equals(f, currentPath, StringComparison.OrdinalIgnoreCase)) continue;
+                        string name = Path.GetFileName(f);
+                        bool sel = string.Equals(_selectedCharIniPath, f, StringComparison.OrdinalIgnoreCase);
+                        if (imgui_Selectable(name, sel))
+                        {
+                            try
+                            {
+                                var parser = E3Core.Utility.e3util.CreateIniParser();
+                                var pd = parser.ReadFile(f);
+                                _selectedCharIniPath = f;
+                                _selectedCharIniParsedData = pd;
+                                _selectedCharacterSection = string.Empty;
+                                _charIniEdits.Clear();
+                                _nextIniRefreshAtMs = 0;
+                            }
+                            catch
+                            {
+                                mq_Echo($"Failed to load ini: {name}");
+                            }
+                        }
+                    }
+                }
+                imgui_EndChild();
+            }
+            // Right-aligned Save button (via MQ2Mono helper). Fallback to normal button if helper unavailable.
+            // Keep on the same line as the Ini selector for consistency.
+            imgui_SameLine();
+            try
+            {
+                if (imgui_RightAlignButton("Save Changes"))
+                {
+                    SaveActiveIniData();
+                }
+            }
+            catch
+            {
+                if (imgui_Button("Save Changes"))
+                {
+                    SaveActiveIniData();
+                }
+            }
+            imgui_Separator();
+        }
+
+        // Tools: Spell Data and Spell Icons
+        private enum ToolsTab { SpellData, SpellIcons }
+        private static ToolsTab _toolsActive = ToolsTab.SpellData;
+        private static string _spellQueryInput = string.Empty;
+        private static string _spellLoadedKey = string.Empty; // last loaded key
+        private static E3Core.Data.Spell _spellLoaded = null;
+        private static string[] _spellEffects = Array.Empty<string>();
+        private static long _nextSpellQueryAtMs = 0;
+
+        private static void RenderTools()
+        {
+            imgui_Text("Tools");
+            if (imgui_Button(_toolsActive == ToolsTab.SpellData ? "> Spell Data" : "Spell Data")) { _toolsActive = ToolsTab.SpellData; }
+            imgui_SameLine();
+            if (imgui_Button(_toolsActive == ToolsTab.SpellIcons ? "> Spell Icons" : "Spell Icons")) { _toolsActive = ToolsTab.SpellIcons; }
+            imgui_Separator();
+
+            switch (_toolsActive)
+            {
+                case ToolsTab.SpellIcons:
+                    RenderSpellIconsTab();
+                    break;
+                case ToolsTab.SpellData:
+                default:
+                    RenderSpellDataTab();
+                    break;
+            }
+        }
+
+        // =========================
+        // Config Editor (ImGui) — initial scaffolding similar to /e3config
+        // =========================
+        private static bool _cfg_Inited = false;
+        private static SortedDictionary<string, SortedDictionary<string, List<E3Core.Data.Spell>>> _cfgSpells = new SortedDictionary<string, SortedDictionary<string, List<E3Core.Data.Spell>>>();
+        private static SortedDictionary<string, SortedDictionary<string, List<E3Core.Data.Spell>>> _cfgAAs = new SortedDictionary<string, SortedDictionary<string, List<E3Core.Data.Spell>>>();
+        private static SortedDictionary<string, SortedDictionary<string, List<E3Core.Data.Spell>>> _cfgDiscs = new SortedDictionary<string, SortedDictionary<string, List<E3Core.Data.Spell>>>();
+        private static SortedDictionary<string, SortedDictionary<string, List<E3Core.Data.Spell>>> _cfgSkills = new SortedDictionary<string, SortedDictionary<string, List<E3Core.Data.Spell>>>();
+        private static SortedDictionary<string, SortedDictionary<string, List<E3Core.Data.Spell>>> _cfgItems = new SortedDictionary<string, SortedDictionary<string, List<E3Core.Data.Spell>>>();
+        // Manual input state for generic editor
+        private static string _cfgManualInput = string.Empty;
+        private static string _cfgManualInputKeySig = string.Empty;
+        // Add modal If's appending state
+        private static bool _cfgAddWithIf = false;
+        private static string _cfgAddIfName = string.Empty;
+        // Editor append If's state
+        private static string _cfgAppendIfName = string.Empty;
+        private static long _cfg_NextCatalogRefreshAtMs = 0;
+        private static bool _cfg_CatalogsReady = false;
+        private static bool _cfg_CatalogLoadRequested = false;
+        private static bool _cfg_CatalogLoading = false;
+        private static string _cfg_CatalogStatus = string.Empty;
+        private static List<string> _cfgSectionsOrdered = new List<string>();
+        private static string _cfg_LastIniPath = string.Empty;
+        private static string _cfgSelectedSection = string.Empty;
+        private static string _cfgSelectedKey = string.Empty; // subsection / key name
+        private static int _cfgSelectedValueIndex = -1;
+        private static bool _cfgShowAddModal = false;
+        private enum AddType { Spells, AAs, Discs, Skills, Items }
+        private static AddType _cfgAddType = AddType.Spells;
+        private static string _cfgAddCategory = string.Empty;
+        private static string _cfgAddSubcategory = string.Empty;
+        // Food/Drink picker modal
+        private static bool _cfgShowFoodDrinkModal = false;
+        private static string _cfgFoodDrinkKey = string.Empty; // "Food" or "Drink"
+        private static List<string> _cfgFoodDrinkCandidates = new List<string>();
+        private static bool _cfgFoodDrinkScanRequested = false;
+        private static bool _cfgFoodDrinkScanning = false;
+        private static string _cfgFoodDrinkStatus = string.Empty;
+        private static long _cfg_NextUIRefreshAtMs = 0;
+        private static bool _cfg_Dirty = false;
+        // If's sample modal state
+        private static bool _cfgShowIfSampleModal = false;
+        private static List<System.Collections.Generic.KeyValuePair<string, string>> _cfgIfSampleLines = new List<System.Collections.Generic.KeyValuePair<string, string>>();
+        private static string _cfgIfSampleStatus = string.Empty;
+        private static string _cfgIfNewName = string.Empty;
+        private static string _cfgIfNewValue = string.Empty;
+        private static string _cfgIfEditName = string.Empty;
+        private static string _cfgIfEditValue = string.Empty;
+        private static string _cfgIfEditSelectedKeySig = string.Empty;
+
+        private static void EnsureConfigEditorInit()
+        {
+            if (_cfg_Inited) return;
+            _cfg_Inited = true;
+            BuildConfigSectionOrder();
+        }
+        private static void BuildConfigSectionOrder()
+        {
+            _cfgSectionsOrdered.Clear();
+            var klass = E3.CurrentClass;
+            // Order aligned with ConfigEditor.GetSectionSortOrderByClass
+            var defaults = new List<string>() { "Misc", "Assist Settings", "Nukes", "Debuffs", "DoTs on Assist", "DoTs on Command", "Heals", "Buffs", "Melee Abilities", "Burn", "CommandSets", "Pets", "Ifs" };
+            if (klass == E3Core.Data.Class.Bard)
+                defaults = new List<string>() { "Bard", "Melee Abilities", "Burn", "CommandSets", "Ifs", "Assist Settings", "Buffs" };
+            else if (klass == E3Core.Data.Class.Necromancer)
+                defaults = new List<string>() { "DoTs on Assist", "DoTs on Command", "Debuffs", "Pets", "Burn", "CommandSets", "Ifs", "Assist Settings", "Buffs" };
+            else if (klass == E3Core.Data.Class.Shadowknight)
+                defaults = new List<string>() { "Nukes", "Assist Settings", "Buffs", "DoTs on Assist", "DoTs on Command", "Debuffs", "Pets", "Burn", "CommandSets", "Ifs" };
+
+            var pd = GetActiveCharacterIniData();
+            var seen = new HashSet<string>(StringComparer.OrdinalIgnoreCase);
+            if (pd != null && pd.Sections != null)
+            {
+                foreach (var s in defaults)
+                {
+                    if (pd.Sections.ContainsSection(s) && seen.Add(s)) _cfgSectionsOrdered.Add(s);
+                }
+                foreach (SectionData s in pd.Sections)
+                {
+                    if (!seen.Contains(s.SectionName)) _cfgSectionsOrdered.Add(s.SectionName);
+                }
+            }
+            // set sensible defaults
+            if (_cfgSectionsOrdered.Count > 0)
+            {
+                if (string.IsNullOrEmpty(_cfgSelectedSection) || !_cfgSectionsOrdered.Contains(_cfgSelectedSection, StringComparer.OrdinalIgnoreCase))
+                {
+                    _cfgSelectedSection = _cfgSectionsOrdered[0];
+                    var section = pd?.Sections?.GetSectionData(_cfgSelectedSection);
+                    _cfgSelectedKey = section?.Keys?.FirstOrDefault()?.KeyName ?? string.Empty;
+                    _cfgSelectedValueIndex = -1;
+                }
+            }
+        }
+        private static void EnsureCatalogsLoaded()
+        {
+            // No-op in ImGui thread; loading is moved to main processing loop
+            // to avoid freezing the ImGui render callback.
+            return;
+        }
+        // Called from main processing loop (safe)
+        public static void ProcessBackgroundWork()
+        {
+            // Catalog background loader
+            if (!_cfg_CatalogsReady && _cfg_CatalogLoadRequested && !_cfg_CatalogLoading)
+            {
+                _cfg_CatalogLoading = true;
+                try
+                {
+                    // Force-load catalogs synchronously (one-shot)
+                    string targetToon = GetSelectedIniOwnerName();
+                    bool useLocal = string.IsNullOrEmpty(targetToon) || targetToon.Equals(E3.CurrentName, StringComparison.OrdinalIgnoreCase);
+                    if (useLocal)
+                    {
+                        _cfg_CatalogStatus = "Loading spells...";
+                        var spells = E3Core.Utility.e3util.ListAllBookSpells();
+                        _cfgSpells = OrganizeCatalog(spells);
+                        _cfg_CatalogStatus = "Loading AAs...";
+                        var aas = E3Core.Utility.e3util.ListAllActiveAA();
+                        _cfgAAs = OrganizeCatalog(aas);
+                        _cfg_CatalogStatus = "Loading discs...";
+                        var discs = E3Core.Utility.e3util.ListAllDiscData();
+                        _cfgDiscs = OrganizeCatalog(discs);
+                        _cfg_CatalogStatus = "Loading skills...";
+                        var skills = E3Core.Utility.e3util.ListAllActiveSkills();
+                        _cfgSkills = OrganizeCatalog(skills);
+                        _cfg_CatalogStatus = "Loading items...";
+                        var items = E3Core.Utility.e3util.ListAllItemWithClickyData();
+                        _cfgItems = OrganizeCatalog(items);
+                        _cfg_CatalogStatus = $"Catalogs loaded for {E3.CurrentName}.";
+                    }
+                    else
+                    {
+                        _cfg_CatalogStatus = $"Loading catalogs from {targetToon}...";
+                        if (!TryLoadPeerCatalogs(targetToon, out var spells, out var aas, out var discs, out var skills, out var items, out string why))
+                        {
+                            _cfg_CatalogStatus = (string.IsNullOrEmpty(why) ? "Peer catalog query failed" : why) + "; falling back to local.";
+                            spells = E3Core.Utility.e3util.ListAllBookSpells();
+                            aas = E3Core.Utility.e3util.ListAllActiveAA();
+                            discs = E3Core.Utility.e3util.ListAllDiscData();
+                            skills = E3Core.Utility.e3util.ListAllActiveSkills();
+                            items = E3Core.Utility.e3util.ListAllItemWithClickyData();
+                        }
+                        _cfgSpells = OrganizeCatalog(spells);
+                        _cfgAAs = OrganizeCatalog(aas);
+                        _cfgDiscs = OrganizeCatalog(discs);
+                        _cfgSkills = OrganizeCatalog(skills);
+                        _cfgItems = OrganizeCatalog(items);
+                        _cfg_CatalogStatus += " Done.";
+                    }
+                    _cfg_CatalogsReady = true;
+                }
+                catch (Exception ex)
+                {
+                    _cfg_CatalogStatus = "Catalog load failed: " + (ex.Message ?? "error");
+                }
+                finally
+                {
+                    _cfg_CatalogLoading = false;
+                    _cfg_CatalogLoadRequested = false;
+                }
+            }
+
+            // Food/Drink background scanner
+            if (_cfgFoodDrinkScanRequested && !_cfgFoodDrinkScanning)
+            {
+                _cfgFoodDrinkScanning = true;
+                try
+                {
+                    var list = ScanFoodDrinkCandidates(_cfgFoodDrinkKey);
+                    _cfgFoodDrinkCandidates = list ?? new List<string>();
+                    _cfgFoodDrinkStatus = _cfgFoodDrinkCandidates.Count == 0 ? "No matches found." : $"Found {_cfgFoodDrinkCandidates.Count} items.";
+                }
+                catch (Exception ex)
+                {
+                    _cfgFoodDrinkStatus = "Scan failed: " + (ex.Message ?? "error");
+                }
+                finally
+                {
+                    _cfgFoodDrinkScanRequested = false;
+                    _cfgFoodDrinkScanning = false;
+                }
+            }
+        }
+
+        private static string GetSelectedIniOwnerName()
+        {
+            try
+            {
+                var path = GetActiveSettingsPath();
+                var cur = GetCurrentCharacterIniPath();
+                if (string.IsNullOrEmpty(path) || string.Equals(path, cur, StringComparison.OrdinalIgnoreCase)) return E3.CurrentName;
+                var file = Path.GetFileName(path) ?? string.Empty;
+                if (string.IsNullOrEmpty(file) || file.StartsWith("_")) return E3.CurrentName;
+                int us = file.IndexOf('_');
+                if (us > 0) return file.Substring(0, us);
+                return E3.CurrentName;
+            }
+            catch { return E3.CurrentName; }
+        }
+
+        private static bool TryLoadPeerCatalogs(string toon, out ListE3Spells spellsOut)
+        {
+            spellsOut = new ListE3Spells();
+            try
+            {
+                if (string.IsNullOrEmpty(toon)) return false;
+                if (!E3Core.Server.NetMQServer.SharedDataClient.UsersConnectedTo.TryGetValue(toon, out var info)) return false;
+                if (info.RouterPort <= 0) return false;
+                using (var req = new RequestSocket())
+                {
+                    req.Connect($"tcp://127.0.0.1:{info.RouterPort}");
+                    Func<string, List<E3Core.Data.Spell>> fetch = (q) =>
+                    {
+                        var payload = Encoding.Default.GetBytes(q);
+                        byte[] frame = new byte[8 + payload.Length];
+                        Buffer.BlockCopy(BitConverter.GetBytes(1), 0, frame, 0, 4);
+                        Buffer.BlockCopy(BitConverter.GetBytes(payload.Length), 0, frame, 4, 4);
+                        Buffer.BlockCopy(payload, 0, frame, 8, payload.Length);
+                        req.SendFrame(frame);
+                        if (!req.TryReceiveFrameBytes(TimeSpan.FromMilliseconds(1500), out var resp)) return new List<E3Core.Data.Spell>();
+                        var list = SpellDataList.Parser.ParseFrom(resp);
+                        var outList = new List<E3Core.Data.Spell>(list.Data.Count);
+                        foreach (var d in list.Data) outList.Add(E3Core.Data.Spell.FromProto(d));
+                        return outList;
+                    };
+                    spellsOut.Spells = fetch("${E3.SpellBook.ListAll}");
+                    spellsOut.AAs = fetch("${E3.AA.ListAll}");
+                    spellsOut.Discs = fetch("${E3.Discs.ListAll}");
+                    spellsOut.Skills = fetch("${E3.Skills.ListAll}");
+                    spellsOut.Items = fetch("${E3.ItemsWithSpells.ListAll}");
+                }
+                return true;
+            }
+            catch { return false; }
+        }
+
+        private struct ListE3Spells
+        {
+            public List<E3Core.Data.Spell> Spells;
+            public List<E3Core.Data.Spell> AAs;
+            public List<E3Core.Data.Spell> Discs;
+            public List<E3Core.Data.Spell> Skills;
+            public List<E3Core.Data.Spell> Items;
+        }
+
+        private static bool TryLoadPeerCatalogs(string toon, out List<E3Core.Data.Spell> spells, out List<E3Core.Data.Spell> aas,
+            out List<E3Core.Data.Spell> discs, out List<E3Core.Data.Spell> skills, out List<E3Core.Data.Spell> items, out string reason)
+        {
+            spells = new List<E3Core.Data.Spell>(); aas = new List<E3Core.Data.Spell>(); discs = new List<E3Core.Data.Spell>(); skills = new List<E3Core.Data.Spell>(); items = new List<E3Core.Data.Spell>();
+            reason = string.Empty;
+            try
+            {
+                if (!TryLoadPeerCatalogs(toon, out var all)) { reason = "Peer not available"; return false; }
+                spells = all.Spells ?? new List<E3Core.Data.Spell>();
+                aas = all.AAs ?? new List<E3Core.Data.Spell>();
+                discs = all.Discs ?? new List<E3Core.Data.Spell>();
+                skills = all.Skills ?? new List<E3Core.Data.Spell>();
+                items = all.Items ?? new List<E3Core.Data.Spell>();
+                return true;
+            }
+            catch (Exception ex) { reason = ex.Message; return false; }
+        }
+        private static SortedDictionary<string, SortedDictionary<string, List<E3Core.Data.Spell>>> OrganizeCatalog(List<E3Core.Data.Spell> list)
+        {
+            var dest = new SortedDictionary<string, SortedDictionary<string, List<E3Core.Data.Spell>>>(StringComparer.OrdinalIgnoreCase);
+            foreach (var s in list)
+            {
+                if (s == null) continue;
+                string cat = s.Category ?? string.Empty;
+                string sub = s.Subcategory ?? string.Empty;
+                if (!dest.TryGetValue(cat, out var submap))
+                {
+                    submap = new SortedDictionary<string, List<E3Core.Data.Spell>>(StringComparer.OrdinalIgnoreCase);
+                    dest.Add(cat, submap);
+                }
+                if (!submap.TryGetValue(sub, out var l))
+                {
+                    l = new List<E3Core.Data.Spell>();
+                    submap.Add(sub, l);
+                }
+                l.Add(s);
+            }
+            // Sort leaf lists in-place by level desc to avoid modifying dictionary during enumeration
+            foreach (var submap in dest.Values)
+            {
+                foreach (var l in submap.Values)
+                {
+                    l.Sort((a, b) => b.Level.CompareTo(a.Level));
+                }
+            }
+            return dest;
+        }
+        private static void RenderConfigEditor()
+        {
+            EnsureConfigEditorInit();
+
+            var pd = GetActiveCharacterIniData();
+            if (pd == null || pd.Sections == null)
+            {
+                imgui_Text("No character INI loaded.");
+                return;
+            }
+            // If we initialized before the INI data was available, the ordered list may be empty.
+            // Ensure we build the section order once valid data is present so the left pane populates.
+            if (_cfgSectionsOrdered.Count == 0)
+            {
+                BuildConfigSectionOrder();
+            }
+            // If no section is selected but the INI has sections, auto-select the first
+            if (string.IsNullOrEmpty(_cfgSelectedSection))
+            {
+                foreach (SectionData s in pd.Sections)
+                {
+                    _cfgSelectedSection = s.SectionName;
+                    var firstSection = pd.Sections.GetSectionData(_cfgSelectedSection);
+                    _cfgSelectedKey = firstSection?.Keys?.FirstOrDefault()?.KeyName ?? string.Empty;
+                    _cfgSelectedValueIndex = -1;
+                    break;
+                }
+            }
+            // Rebuild sections order when ini path changes
+            string activeIniPath = GetActiveSettingsPath() ?? string.Empty;
+            if (!string.Equals(activeIniPath, _cfg_LastIniPath, StringComparison.OrdinalIgnoreCase))
+            {
+                _cfg_LastIniPath = activeIniPath;
+                _cfgSelectedSection = string.Empty;
+                _cfgSelectedKey = string.Empty;
+                _cfgSelectedValueIndex = -1;
+                BuildConfigSectionOrder();
+                // Trigger catalog reload for the newly selected ini owner
+                _cfg_CatalogsReady = false;
+                _cfg_CatalogLoadRequested = true;
+            }
+            // Catalog status / load control
+            if (!_cfg_CatalogsReady)
+            {
+                if (_cfg_CatalogLoading)
+                {
+                    imgui_Text(string.IsNullOrEmpty(_cfg_CatalogStatus) ? "Loading catalogs..." : _cfg_CatalogStatus);
+                }
+                else
+                {
+                    imgui_Text(string.IsNullOrEmpty(_cfg_CatalogStatus) ? "Catalogs not loaded." : _cfg_CatalogStatus);
+                    imgui_SameLine();
+                    if (imgui_Button("Load Catalogs"))
+                    {
+                        EnqueueUI(() => { _cfg_CatalogLoadRequested = true; });
+                        _cfg_CatalogStatus = "Queued catalog load...";
+                    }
+                }
+            }
+
+            float availY = imgui_GetContentRegionAvailY();
+            float leftW = 220f;
+            if (imgui_BeginChild("Cfg_Left", leftW, Math.Max(120f, availY * 0.8f), true))
+            {
+                foreach (var sec in _cfgSectionsOrdered)
+                {
+                    bool sel = string.Equals(_cfgSelectedSection, sec, StringComparison.OrdinalIgnoreCase);
+                    if (imgui_Selectable(sec, sel))
+                    {
+                        _cfgSelectedSection = sec;
+                        // choose first key by default
+                        var secData = pd.Sections.GetSectionData(sec);
+                        _cfgSelectedKey = secData?.Keys?.FirstOrDefault()?.KeyName ?? string.Empty;
+                        _cfgSelectedValueIndex = -1;
+                    }
+                }
+            }
+            imgui_EndChild();
+
+            imgui_SameLine();
+
+            // Middle pane: list subsections (keys) of selected section
+            float midW = 260f;
+            var selectedSection = pd.Sections.GetSectionData(_cfgSelectedSection ?? string.Empty);
+            if (imgui_BeginChild("Cfg_Middle", midW, Math.Max(120f, availY * 0.8f), true))
+            {
+                if (selectedSection == null)
+                {
+                    imgui_Text("Select a section.");
+                }
+                else
+                {
+                    KeyDataCollection keysEnum = (selectedSection != null && selectedSection.Keys != null)
+                        ? selectedSection.Keys
+                        : new KeyDataCollection();
+                    string[] keys = keysEnum.Select(k => k.KeyName).ToArray();
+                    if (keys.Length == 0)
+                    {
+                        imgui_Text("(No subsections)");
+                    }
+                    else
+                    {
+                        if (string.IsNullOrEmpty(_cfgSelectedKey) || !keys.Contains(_cfgSelectedKey, StringComparer.OrdinalIgnoreCase))
+                        {
+                            _cfgSelectedKey = keys[0];
+                            _cfgSelectedValueIndex = -1;
+                        }
+                        foreach (var k in keys)
+                        {
+                            bool sel = string.Equals(_cfgSelectedKey, k, StringComparison.OrdinalIgnoreCase);
+                            if (imgui_Selectable(k, sel))
+                            {
+                                _cfgSelectedKey = k;
+                                _cfgSelectedValueIndex = -1;
+                            }
+                        }
+                    }
+                }
+            }
+            imgui_EndChild();
+
+            imgui_SameLine();
+
+            // Right pane: values list and actions for selected subsection
+            float rightW = imgui_GetContentRegionAvailX();
+            if (imgui_BeginChild("Cfg_Right", rightW, Math.Max(120f, availY * 0.8f), true))
+            {
+                selectedSection = pd.Sections.GetSectionData(_cfgSelectedSection ?? string.Empty);
+                if (selectedSection == null)
+                {
+                    imgui_Text("Select a section.");
+                }
+                else
+                {
+                    bool isIfsSection = string.Equals(_cfgSelectedSection, "Ifs", StringComparison.OrdinalIgnoreCase);
+                    // Ifs section: always show new IF controls and Sample If's access, even if no key is selected
+                    if (isIfsSection)
+                    {
+                        // Sample If's button
+                        if (imgui_Button("Sample If's"))
+                        {
+                            try { LoadSampleIfsForModal(); _cfgShowIfSampleModal = true; }
+                            catch (Exception ex) { _cfgIfSampleStatus = "Load failed: " + (ex.Message ?? "error"); _cfgShowIfSampleModal = true; }
+                        }
+                        // Inline add-new IF controls
+                        imgui_SameLine();
+                        imgui_Text("New If:");
+                        if (imgui_InputText("If_NewName", _cfgIfNewName)) _cfgIfNewName = imgui_InputText_Get("If_NewName") ?? string.Empty;
+                        imgui_SameLine();
+                        if (imgui_InputText("If_NewValue", _cfgIfNewValue)) _cfgIfNewValue = imgui_InputText_Get("If_NewValue") ?? string.Empty;
+                        imgui_SameLine();
+                        if (imgui_Button("Add If") && !string.IsNullOrWhiteSpace(_cfgIfNewName))
+                        {
+                            if (AddIfToActiveIni(_cfgIfNewName.Trim(), _cfgIfNewValue?.Trim() ?? string.Empty))
+                            {
+                                _cfgIfNewName = string.Empty; _cfgIfNewValue = string.Empty;
+                            }
+                        }
+                        imgui_Separator();
+                    }
+                    var keyData = selectedSection.Keys?.GetKeyData(_cfgSelectedKey ?? string.Empty);
+                    // Special editor for Ifs entries (name/value pairs)
+                    if (isIfsSection && keyData != null)
+                    {
+                        // Seed edit buffers when selection changes
+                        string sig = ($"Ifs::{_cfgSelectedKey ?? string.Empty}");
+                        if (!string.Equals(_cfgIfEditSelectedKeySig, sig, StringComparison.Ordinal))
+                        {
+                            _cfgIfEditSelectedKeySig = sig;
+                            _cfgIfEditName = _cfgSelectedKey ?? string.Empty;
+                            _cfgIfEditValue = keyData.Value ?? (keyData.ValueList != null && keyData.ValueList.Count > 0 ? keyData.ValueList[0] : string.Empty);
+                        }
+                        imgui_Text("Edit If");
+                        if (imgui_InputText("If_EditName", _cfgIfEditName)) _cfgIfEditName = imgui_InputText_Get("If_EditName") ?? string.Empty;
+                        if (imgui_InputText("If_EditValue", _cfgIfEditValue)) _cfgIfEditValue = imgui_InputText_Get("If_EditValue") ?? string.Empty;
+                        if (imgui_Button("Save If"))
+                        {
+                            try
+                            {
+                                var keys = selectedSection.Keys;
+                                string newName = _cfgIfEditName?.Trim() ?? string.Empty;
+                                if (!string.IsNullOrEmpty(newName))
+                                {
+                                    if (!string.Equals(newName, _cfgSelectedKey, StringComparison.Ordinal))
+                                    {
+                                        // rename by add+remove to avoid collisions
+                                        var existing = keys.GetKeyData(newName);
+                                        if (existing == null)
+                                        {
+                                            keys.AddKey(newName, _cfgIfEditValue ?? string.Empty);
+                                            keys.RemoveKey(_cfgSelectedKey);
+                                            _cfgSelectedKey = newName;
+                                        }
+                                        else
+                                        {
+                                            // overwrite value of existing and remove old key
+                                            existing.Value = _cfgIfEditValue ?? string.Empty;
+                                            keys.RemoveKey(_cfgSelectedKey);
+                                            _cfgSelectedKey = newName;
+                                        }
+                                    }
+                                    else
+                                    {
+                                        // same name: just update value
+                                        keyData.Value = _cfgIfEditValue ?? string.Empty;
+                                        if (keyData.ValueList != null && keyData.ValueList.Count > 0)
+                                        {
+                                            keyData.ValueList.Clear();
+                                            keyData.ValueList.Add(keyData.Value);
+                                        }
+                                    }
+                                    _cfg_Dirty = true;
+                                }
+                            }
+                            catch { }
+                        }
+                        imgui_SameLine();
+                        if (imgui_Button("Delete If"))
+                        {
+                            try
+                            {
+                                selectedSection.Keys.RemoveKey(_cfgSelectedKey ?? string.Empty);
+                                _cfgSelectedKey = string.Empty;
+                                _cfgIfEditName = string.Empty; _cfgIfEditValue = string.Empty; _cfgIfEditSelectedKeySig = string.Empty;
+                                _cfg_Dirty = true;
+                            }
+                            catch { }
+                        }
+                        // do not render generic editor for Ifs
+                    }
+                    else if (keyData != null)
+                    {
+                        // Special-case editors by Section/Key first
+                        // If this key is a boolean, render a simple On/Off dropdown everywhere
+                        if (IsBooleanConfigKey(_cfgSelectedKey, keyData))
+                        {
+                            var values = keyData.ValueList;
+                            string current = keyData.Value;
+                            if (string.IsNullOrEmpty(current) && values != null && values.Count > 0) current = values[0];
+                            bool isOn = string.Equals(current, "On", StringComparison.OrdinalIgnoreCase) || string.Equals(current, "True", StringComparison.OrdinalIgnoreCase);
+
+                            string preview = isOn ? "On" : "Off";
+                            if (BeginComboSafe(_cfgSelectedKey, preview))
+                            {
+                                string[] opts = new[] { "On", "Off" };
+                                for (int oi = 0; oi < opts.Length; oi++)
+                                {
+                                    string opt = opts[oi];
+                                    bool sel = string.Equals(preview, opt, StringComparison.OrdinalIgnoreCase);
+                                    if (imgui_Selectable($"{opt}##Bool_{oi}", sel))
+                                    {
+                                        keyData.Value = opt;
+                                        if (values != null)
+                                        {
+                                            values.Clear();
+                                            values.Add(opt);
+                                        }
+                                        _cfg_Dirty = true;
+                                    }
+                                }
+                                EndComboSafe();
+                            }
+                        }
+                        // Special-case: Assist Settings -> Assist Type (Melee/Ranged/Off)
+                        else if (string.Equals(_cfgSelectedSection, "Assist Settings", StringComparison.OrdinalIgnoreCase)
+                              && string.Equals(_cfgSelectedKey, "Assist Type (Melee/Ranged/Off)", StringComparison.OrdinalIgnoreCase))
+                        {
+                            var values = keyData.ValueList;
+                            string current = keyData.Value;
+                            if (string.IsNullOrEmpty(current) && values != null && values.Count > 0) current = values[0];
+                            if (string.IsNullOrEmpty(current)) current = "Melee";
+
+                            string[] opts = new[] { "Melee", "Ranged", "Off" };
+                            string preview = current;
+
+                            bool opened = _comboAvailable && BeginComboSafe(_cfgSelectedKey, preview);
+                            if (opened)
+                            {
+                                for (int oi = 0; oi < opts.Length; oi++)
+                                {
+                                    string opt = opts[oi];
+                                    bool sel = string.Equals(preview, opt, StringComparison.OrdinalIgnoreCase);
+                                    if (imgui_Selectable($"{opt}##AssistType_{oi}", sel))
+                                    {
+                                        keyData.Value = opt;
+                                        if (values != null)
+                                        {
+                                            values.Clear();
+                                            values.Add(opt);
+                                        }
+                                        _cfg_Dirty = true;
+                                    }
+                                }
+                                EndComboSafe();
+                            }
+                            else if (!_comboAvailable)
+                            {
+                                // Fallback list when combo isn't available in current MQ2Mono
+                                imgui_Text("Update MQ2Mono to enable dropdown. Temporary list:");
+                                float availX = imgui_GetContentRegionAvailX();
+                                float listH = 120f;
+                                if (imgui_BeginChild("Cfg_AssistType_Fallback", availX, listH, true))
+                                {
+                                    // Show current selection and options
+                                    if (imgui_Selectable($"Current: {preview}##AssistType_Current", false)) { /* no-op */ }
+                                    for (int oi = 0; oi < opts.Length; oi++)
+                                    {
+                                        string opt = opts[oi];
+                                        bool sel = string.Equals(preview, opt, StringComparison.OrdinalIgnoreCase);
+                                        if (imgui_Selectable($"{opt}##AssistType_FB_{oi}", sel))
+                                        {
+                                            keyData.Value = opt;
+                                            if (values != null)
+                                            {
+                                                values.Clear();
+                                                values.Add(opt);
+                                            }
+                                            _cfg_Dirty = true;
+                                        }
+                                    }
+                                }
+                                imgui_EndChild();
+                            }
+                        }
+                        else
+                        {
+                            // Default generic editor (list values)
+                            var values = keyData.ValueList;
+                            float listH = Math.Max(120f, imgui_GetContentRegionAvailY() * 0.6f);
+                            if (imgui_BeginChild("Cfg_Values", imgui_GetContentRegionAvailX(), listH, true))
+                            {
+                                if (values != null && values.Count > 0)
+                                {
+                                    for (int i = 0; i < values.Count; i++)
+                                    {
+                                        string v = values[i] ?? string.Empty;
+                                        bool sel = (_cfgSelectedValueIndex == i);
+                                        if (imgui_Selectable($"{i + 1}. {v}", sel)) _cfgSelectedValueIndex = i;
+                                    }
+                                }
+                                else
+                                {
+                                    imgui_Text("(No values)");
+                                }
+                            }
+                            imgui_EndChild();
+
+                            // Manual input for non-boolean, no-dropdown keys
+                            try
+                            {
+                                string keySig = ($"{_cfgSelectedSection}::{_cfgSelectedKey}") ?? string.Empty;
+                                if (!string.Equals(_cfgManualInputKeySig, keySig, StringComparison.OrdinalIgnoreCase))
+                                {
+                                    _cfgManualInputKeySig = keySig;
+                                    // Seed manual input with current single value if present
+                                    string seed = keyData.Value ?? string.Empty;
+                                    if (values != null && values.Count > 0) seed = values[0] ?? seed;
+                                    _cfgManualInput = seed;
+                                }
+                                imgui_Text("Manual input (exact value)");
+                                if (imgui_InputText("##Cfg_ManualInput", _cfgManualInput))
+                                {
+                                    _cfgManualInput = imgui_InputText_Get("##Cfg_ManualInput") ?? string.Empty;
+                                }
+                                string typed = (_cfgManualInput ?? string.Empty).Trim();
+                                bool hasTyped = !string.IsNullOrEmpty(typed);
+
+                                // Add Manual: use existing helper to respect single vs list behavior
+                                if (imgui_Button("Add Manual") && hasTyped)
+                                {
+                                    AddValueToActiveIni(typed);
+                                    _cfg_Dirty = true;
+                                    // Clear manual input after successful add
+                                    _cfgManualInput = string.Empty;
+                                    _cfgManualInputKeySig = ($"{_cfgSelectedSection}::{_cfgSelectedKey}");
+                                }
+                                imgui_SameLine();
+                                // Set Manual: update selected list value if one is selected; otherwise set single value
+                                if (imgui_Button("Set Manual") && hasTyped)
+                                {
+                                    if (values != null && values.Count > 0 && _cfgSelectedValueIndex >= 0 && _cfgSelectedValueIndex < values.Count)
+                                    {
+                                        values[_cfgSelectedValueIndex] = typed;
+                                    }
+                                    else if (values != null && values.Count > 0)
+                                    {
+                                        // No selection; replace first
+                                        values[0] = typed;
+                                    }
+                                    else
+                                    {
+                                        keyData.Value = typed;
+                                        if (values != null && values.Count == 0)
+                                        {
+                                            values.Add(typed);
+                                        }
+                                    }
+                                    _cfg_Dirty = true;
+                                    // Clear manual input after set to avoid sticky carryover
+                                    _cfgManualInput = string.Empty;
+                                    _cfgManualInputKeySig = ($"{_cfgSelectedSection}::{_cfgSelectedKey}");
+                                }
+
+                                // Visual separator between Manual Inputs and Append If's
+                                imgui_Separator();
+                                // Append If's to selected or current value
+                                // Gather If names from current ini
+                                var pdIfs = GetActiveCharacterIniData();
+                                var ifSec = pdIfs?.Sections?.GetSectionData("Ifs");
+                                string[] ifNames2 = ifSec != null ? ifSec.Keys.Select(k => k.KeyName).ToArray() : Array.Empty<string>();
+                                if (ifNames2.Length > 0)
+                                {
+                                    string previewIf = string.IsNullOrEmpty(_cfgAppendIfName) ? ifNames2[0] : _cfgAppendIfName;
+                                    if (BeginComboSafe("Append If's##Editor", previewIf))
+                                    {
+                                        for (int ii = 0; ii < ifNames2.Length; ii++)
+                                        {
+                                            string nm = ifNames2[ii];
+                                            bool sel = string.Equals(_cfgAppendIfName, nm, StringComparison.OrdinalIgnoreCase);
+                                            if (imgui_Selectable($"{nm}##AppendIf_{ii}", sel)) _cfgAppendIfName = nm;
+                                        }
+                                        EndComboSafe();
+                                    }
+                                    // Place buttons on the same line, below the dropdown
+                                    if (imgui_Button("Append to Selected"))
+                                    {
+                                        string ifNameToUse = string.IsNullOrEmpty(_cfgAppendIfName) ? previewIf : _cfgAppendIfName;
+                                        if (!string.IsNullOrEmpty(ifNameToUse))
+                                        {
+                                            if (values != null && values.Count > 0 && _cfgSelectedValueIndex >= 0 && _cfgSelectedValueIndex < values.Count)
+                                            {
+                                                string cur = values[_cfgSelectedValueIndex] ?? string.Empty;
+                                                values[_cfgSelectedValueIndex] = ReplaceIfSuffix(cur, ifNameToUse);
+                                                _cfg_Dirty = true;
+                                            }
+                                            else if (values != null && values.Count > 0)
+                                            {
+                                                values[0] = ReplaceIfSuffix(values[0] ?? string.Empty, ifNameToUse);
+                                                _cfg_Dirty = true;
+                                            }
+                                            else
+                                            {
+                                                string cur = keyData.Value ?? string.Empty;
+                                                keyData.Value = ReplaceIfSuffix(cur, ifNameToUse);
+                                                if (values != null && values.Count == 0) values.Add(keyData.Value);
+                                                _cfg_Dirty = true;
+                                            }
+                                        }
+                                    }
+                                    imgui_SameLine();
+                                    if (imgui_Button("Remove If's"))
+                                    {
+                                        if (values != null && values.Count > 0 && _cfgSelectedValueIndex >= 0 && _cfgSelectedValueIndex < values.Count)
+                                        {
+                                            values[_cfgSelectedValueIndex] = RemoveIfSuffix(values[_cfgSelectedValueIndex] ?? string.Empty);
+                                            _cfg_Dirty = true;
+                                        }
+                                        else if (values != null && values.Count > 0)
+                                        {
+                                            values[0] = RemoveIfSuffix(values[0] ?? string.Empty);
+                                            _cfg_Dirty = true;
+                                        }
+                                        else
+                                        {
+                                            keyData.Value = RemoveIfSuffix(keyData.Value ?? string.Empty);
+                                            if (values != null && values.Count == 0) values.Add(keyData.Value);
+                                            _cfg_Dirty = true;
+                                        }
+                                    }
+                                }
+                            }
+                            catch { /* manual input UI safe-guard */ }
+
+                            // Special Add handling for Food/Drink: scan inventory instead of catalogs
+                            bool isFoodDrink = string.Equals(_cfgSelectedSection, "Misc", StringComparison.OrdinalIgnoreCase) &&
+                                                (string.Equals(_cfgSelectedKey, "Food", StringComparison.OrdinalIgnoreCase) || string.Equals(_cfgSelectedKey, "Drink", StringComparison.OrdinalIgnoreCase));
+                            bool canAddFromCatalog = _cfg_CatalogsReady && !isFoodDrink;
+                            if (!canAddFromCatalog)
+                            {
+                                imgui_Text("(Load catalogs to enable Add from Spells/AAs/etc)");
+                            }
+                            if (imgui_Button("Add"))
+                            {
+                                if (isFoodDrink)
+                                {
+                                    string keyToScan = _cfgSelectedKey;
+                                    EnqueueUI(() =>
+                                    {
+                                        _cfgFoodDrinkKey = keyToScan;
+                                        _cfgFoodDrinkScanRequested = true;
+                                        _cfgFoodDrinkStatus = "Scanning inventory...";
+                                        _cfgShowFoodDrinkModal = true;
+                                    });
+                                }
+                                else if (canAddFromCatalog)
+                                {
+                                    _cfgShowAddModal = true; _cfgAddType = AddType.Spells; _cfgAddCategory = string.Empty; _cfgAddSubcategory = string.Empty;
+                                    _cfgAddWithIf = false; _cfgAddIfName = string.Empty;
+                                }
+                            }
+                            // Keep Add/Delete inline
+                            imgui_SameLine();
+                            if (imgui_Button("Delete") && _cfgSelectedValueIndex >= 0 && values != null && _cfgSelectedValueIndex < values.Count)
+                            {
+                                values.RemoveAt(_cfgSelectedValueIndex);
+                                _cfgSelectedValueIndex = -1;
+                                _cfg_Dirty = true;
+                            }
+                            // If's: offer to pick from bundled samples (inline with Add/Delete)
+                            if (string.Equals(_cfgSelectedSection, "Ifs", StringComparison.OrdinalIgnoreCase))
+                            {
+                                imgui_SameLine();
+                                if (imgui_Button("Sample If's"))
+                                {
+                                    try
+                                    {
+                                        LoadSampleIfsForModal();
+                                        _cfgShowIfSampleModal = true;
+                                    }
+                                    catch (Exception ex)
+                                    {
+                                        _cfgIfSampleStatus = "Load failed: " + (ex.Message ?? "error");
+                                        _cfgShowIfSampleModal = true;
+                                    }
+                                }
+                            }
+                            // Save moved to global button at bottom of the window
+                        }
+                    }
+                    else
+                    {
+                        if (!isIfsSection)
+                            imgui_Text("Select a subsection.");
+                    }
+                }
+            }
+            imgui_EndChild();
+
+            // Food/Drink modal
+            if (_cfgShowFoodDrinkModal)
+            {
+                string title = $"Select {_cfgFoodDrinkKey}";
+                if (imgui_Begin(title, (int)ImGuiWindowFlags.ImGuiWindowFlags_AlwaysAutoResize))
+                {
+                    float h = 260f; float w = 520f;
+                    if (imgui_BeginChild("FoodDrinkList", w, h, true))
+                    {
+                        if (_cfgFoodDrinkScanning)
+                        {
+                            imgui_Text(string.IsNullOrEmpty(_cfgFoodDrinkStatus) ? "Scanning inventory..." : _cfgFoodDrinkStatus);
+                        }
+                        // Clean list appearance: one selectable row per item
+                        for (int i = 0; i < _cfgFoodDrinkCandidates.Count; i++)
+                        {
+                            string name = _cfgFoodDrinkCandidates[i];
+                            if (imgui_Selectable($"{name}##FD_{i}", false))
+                            {
+                                var pd2 = GetActiveCharacterIniData();
+                                var sec2 = pd2?.Sections?.GetSectionData(_cfgSelectedSection ?? string.Empty);
+                                var kd2 = sec2?.Keys?.GetKeyData(_cfgSelectedKey ?? string.Empty);
+                                if (kd2 != null)
+                                {
+                                    kd2.Value = name;
+                                    if (kd2.ValueList != null) { kd2.ValueList.Clear(); kd2.ValueList.Add(name); }
+                                    _cfg_Dirty = true;
+                                    // Clear manual input for this key to avoid sticky carryover
+                                    _cfgManualInput = string.Empty;
+                                    _cfgManualInputKeySig = ($"{_cfgSelectedSection}::{_cfgSelectedKey}");
+                                }
+                                _cfgShowFoodDrinkModal = false;
+                                break; // ensure only a single selection applies
+                            }
+                        }
+                    }
+                    imgui_EndChild();
+                    if (imgui_Button("Close")) _cfgShowFoodDrinkModal = false;
+                }
+                imgui_End();
+            }
+
+            // If's sample modal
+            if (_cfgShowIfSampleModal)
+            {
+                if (imgui_Begin("Sample If's", (int)ImGuiWindowFlags.ImGuiWindowFlags_AlwaysAutoResize))
+                {
+                    if (!string.IsNullOrEmpty(_cfgIfSampleStatus)) imgui_Text(_cfgIfSampleStatus);
+                    float h = 300f; float w = 640f;
+                    if (imgui_BeginChild("IfsSampleList", w, h, true))
+                    {
+                        for (int i = 0; i < _cfgIfSampleLines.Count; i++)
+                        {
+                            var kv = _cfgIfSampleLines[i];
+                            string display = string.IsNullOrEmpty(kv.Value) ? kv.Key : (kv.Key + " = " + kv.Value);
+                            if (imgui_Selectable($"{display}##IF_{i}", false))
+                            {
+                                AddIfToActiveIni(kv.Key, kv.Value);
+                                // keep modal open to allow adding multiple
+                            }
+                        }
+                    }
+                    imgui_EndChild();
+                    imgui_SameLine();
+                    if (imgui_Button("Import All"))
+                    {
+                        int cnt = 0;
+                        for (int i = 0; i < _cfgIfSampleLines.Count; i++) { var kv = _cfgIfSampleLines[i]; if (AddIfToActiveIni(kv.Key, kv.Value)) cnt++; }
+                        _cfgIfSampleStatus = cnt > 0 ? ($"Imported {cnt} If(s)") : "No new If's to import.";
+                    }
+                    imgui_SameLine();
+                    if (imgui_Button("Close")) _cfgShowIfSampleModal = false;
+                }
+                imgui_End();
+            }
+
+            // Add modal (simple window)
+            if (_cfgShowAddModal)
+            {
+                if (imgui_Begin("Add Entry", (int)ImGuiWindowFlags.ImGuiWindowFlags_AlwaysAutoResize))
+                {
+                    // Type tabs
+                    if (imgui_Button(_cfgAddType == AddType.Spells ? "> Spells" : "Spells")) _cfgAddType = AddType.Spells;
+                    imgui_SameLine();
+                    if (imgui_Button(_cfgAddType == AddType.AAs ? "> AAs" : "AAs")) _cfgAddType = AddType.AAs;
+                    imgui_SameLine();
+                    if (imgui_Button(_cfgAddType == AddType.Discs ? "> Discs" : "Discs")) _cfgAddType = AddType.Discs;
+                    imgui_SameLine();
+                    if (imgui_Button(_cfgAddType == AddType.Skills ? "> Skills" : "Skills")) _cfgAddType = AddType.Skills;
+                    imgui_SameLine();
+                    if (imgui_Button(_cfgAddType == AddType.Items ? "> Items" : "Items")) _cfgAddType = AddType.Items;
+
+                    // Optional If's appending for added entries
+                    var pdIf = GetActiveCharacterIniData();
+                    var ifSection = pdIf?.Sections?.GetSectionData("Ifs");
+                    string[] ifNames = ifSection != null ? ifSection.Keys.Select(k => k.KeyName).ToArray() : Array.Empty<string>();
+                    bool appendChecked = imgui_Checkbox("Append If's", _cfgAddWithIf);
+                    if (appendChecked != _cfgAddWithIf) { _cfgAddWithIf = appendChecked; }
+                    if (_cfgAddWithIf)
+                    {
+                        imgui_SameLine();
+                        string ifPreview = string.IsNullOrEmpty(_cfgAddIfName) ? (ifNames.Length > 0 ? ifNames[0] : "") : _cfgAddIfName;
+                        bool ifCombo = _comboAvailable && BeginComboSafe("If Name", ifPreview);
+                        if (ifCombo)
+                        {
+                            for (int ii = 0; ii < ifNames.Length; ii++)
+                            {
+                                string nm = ifNames[ii];
+                                bool sel = string.Equals(_cfgAddIfName, nm, StringComparison.OrdinalIgnoreCase);
+                                if (imgui_Selectable($"{nm}##IfNm_{ii}", sel)) _cfgAddIfName = nm;
+                            }
+                            EndComboSafe();
+                        }
+                        if (ifNames.Length == 0)
+                        {
+                            // Fallback manual entry for If name
+                            if (imgui_InputText("Add_IfName", _cfgAddIfName))
+                                _cfgAddIfName = imgui_InputText_Get("Add_IfName") ?? string.Empty;
+                        }
+                    }
+
+                    var catalog = GetActiveCatalog();
+
+                    if (_cfgAddType == AddType.Spells || _cfgAddType == AddType.AAs || _cfgAddType == AddType.Discs)
+                    {
+                        // Category/Subcategory for Spells/AAs/Discs
+                        string[] cats = catalog.Keys.ToArray();
+                        string cat = string.IsNullOrEmpty(_cfgAddCategory) ? (cats.Length > 0 ? cats[0] : string.Empty) : _cfgAddCategory;
+                        if (imgui_BeginCombo("Category", cat, 0))
+                        {
+                            for (int ci = 0; ci < cats.Length; ci++)
+                            {
+                                var c = cats[ci];
+                                bool sel = (c == cat);
+                                if (imgui_Selectable($"{c}##AddCat_{ci}", sel)) { _cfgAddCategory = c; _cfgAddSubcategory = string.Empty; }
+                            }
+                            imgui_EndCombo();
+                        }
+                        var submap = (catalog.TryGetValue(cat, out var sm) ? sm : new SortedDictionary<string, List<E3Core.Data.Spell>>());
+                        string[] subs = submap.Keys.ToArray();
+                        string sub = string.IsNullOrEmpty(_cfgAddSubcategory) ? (subs.Length > 0 ? subs[0] : string.Empty) : _cfgAddSubcategory;
+                        if (imgui_BeginCombo("Subcategory", sub, 0))
+                        {
+                            for (int si = 0; si < subs.Length; si++)
+                            {
+                                var sname = subs[si];
+                                bool sel = (sname == sub);
+                                if (imgui_Selectable($"{sname}##AddSub_{si}", sel)) { _cfgAddSubcategory = sname; }
+                            }
+                            imgui_EndCombo();
+                        }
+
+                        if (submap.TryGetValue(string.IsNullOrEmpty(_cfgAddSubcategory) ? sub : _cfgAddSubcategory, out var list))
+                        {
+                            float h = 240f; float w = 520f;
+                            if (imgui_BeginChild("AddList", w, h, true))
+                            {
+                                for (int i = 0; i < list.Count; i++)
+                                {
+                                    var s = list[i];
+                                    string display = $"{s.SpellName} [{s.Level}]";
+                                    int uniqueId = s.SpellID;
+                                    string id = $"{display}##AddSel_{(int)_cfgAddType}_{i}_{uniqueId}";
+                                    if (imgui_Selectable(id, false))
+                                    {
+                                        string toAdd = s.CastName;
+                                        if (_cfgAddWithIf && !string.IsNullOrEmpty(_cfgAddIfName)) toAdd = toAdd + "/Ifs|" + _cfgAddIfName;
+                                        AddValueToActiveIni(toAdd);
+                                    }
+                                }
+                            }
+                            imgui_EndChild();
+                        }
+                    }
+                    else
+                    {
+                        // Items or Skills: no category/subcategory — show a flat list
+                        var flat = new List<E3Core.Data.Spell>();
+                        foreach (var catKvp in catalog)
+                        {
+                            var submap = catKvp.Value;
+                            foreach (var subKvp in submap)
+                            {
+                                var lst = subKvp.Value;
+                                if (lst != null) flat.AddRange(lst);
+                            }
+                        }
+                        float h = 240f; float w = 520f;
+                        if (imgui_BeginChild("AddList", w, h, true))
+                        {
+                            for (int i = 0; i < flat.Count; i++)
+                            {
+                                var s = flat[i];
+                                string display;
+                                int uniqueId;
+                                if (_cfgAddType == AddType.Items)
+                                {
+                                    display = $"{s.CastName} [{s.SpellName}]"; // item name with click effect
+                                    uniqueId = s.CastID > 0 ? s.CastID : (s.SpellID != 0 ? s.SpellID : i);
+                                }
+                                else
+                                {
+                                    // Skills: just list the skill/spell name (level often 0)
+                                    display = s.SpellName;
+                                    uniqueId = s.SpellID != 0 ? s.SpellID : i;
+                                }
+                                string id = $"{display}##AddSel_{(int)_cfgAddType}_{i}_{uniqueId}";
+                                if (imgui_Selectable(id, false))
+                                {
+                                    string toAdd = s.CastName;
+                                    if (_cfgAddWithIf && !string.IsNullOrEmpty(_cfgAddIfName)) toAdd = toAdd + "/Ifs|" + _cfgAddIfName;
+                                    AddValueToActiveIni(toAdd);
+                                }
+                            }
+                        }
+                        imgui_EndChild();
+                    }
+                    if (imgui_Button("Close")) _cfgShowAddModal = false;
+                }
+                imgui_End();
+            }
+        }
+        private static bool IsBooleanConfigKey(string keyName, KeyData keyData)
+        {
+            try
+            {
+                string k = keyName ?? string.Empty;
+                if (k.IndexOf("(On/Off)", StringComparison.OrdinalIgnoreCase) >= 0) return true;
+                if (k.IndexOf("(true/false)", StringComparison.OrdinalIgnoreCase) >= 0) return true;
+                string v = keyData?.Value ?? string.Empty;
+                if (string.IsNullOrEmpty(v) && keyData?.ValueList != null && keyData.ValueList.Count > 0)
+                    v = keyData.ValueList[0];
+                if (string.Equals(v, "On", StringComparison.OrdinalIgnoreCase)) return true;
+                if (string.Equals(v, "Off", StringComparison.OrdinalIgnoreCase)) return true;
+                if (string.Equals(v, "True", StringComparison.OrdinalIgnoreCase)) return true;
+                if (string.Equals(v, "False", StringComparison.OrdinalIgnoreCase)) return true;
+            }
+            catch { }
+            return false;
+        }
+        private static SortedDictionary<string, SortedDictionary<string, List<E3Core.Data.Spell>>> GetActiveCatalog()
+        {
+            switch (_cfgAddType)
+            {
+                case AddType.AAs: return _cfgAAs;
+                case AddType.Discs: return _cfgDiscs;
+                case AddType.Skills: return _cfgSkills;
+                case AddType.Items: return _cfgItems;
+                case AddType.Spells:
+                default: return _cfgSpells;
+            }
+        }
+        private static void AddValueToActiveIni(string value)
+        {
+            try
+            {
+                var pd = GetActiveCharacterIniData();
+                if (pd == null) return;
+                var section = pd.Sections.GetSectionData(_cfgSelectedSection ?? string.Empty);
+                if (section == null) return;
+                var keyData = section.Keys.GetKeyData(_cfgSelectedKey ?? string.Empty);
+                if (keyData == null)
+                {
+                    section.Keys.AddKey(_cfgSelectedKey);
+                    keyData = section.Keys.GetKeyData(_cfgSelectedKey);
+                }
+                if (keyData.ValueList == null || keyData.ValueList.Count == 0)
+                {
+                    keyData.Value = value ?? string.Empty;
+                }
+                else
+                {
+                    keyData.ValueList.Add(value ?? string.Empty);
+                }
+                _cfg_Dirty = true;
+                _cfgShowAddModal = false;
+            }
+            catch { }
+        }
+
+        private static string ResolveSampleIfsPath()
+        {
+            // Directories to search
+            var dirs = new System.Collections.Generic.List<string>();
+            try
+            {
+                string cfg = GetActiveSettingsPath();
+                if (!string.IsNullOrEmpty(cfg))
+                {
+                    var dir = System.IO.Path.GetDirectoryName(cfg);
+                    if (!string.IsNullOrEmpty(dir)) dirs.Add(dir);
+                }
+            }
+            catch { }
+            try
+            {
+                string botIni = GetCurrentCharacterIniPath();
+                if (!string.IsNullOrEmpty(botIni))
+                {
+                    var botDir = System.IO.Path.GetDirectoryName(botIni);
+                    if (!string.IsNullOrEmpty(botDir)) dirs.Add(botDir);
+                }
+            }
+            catch { }
+            dirs.Add(System.IO.Path.Combine(AppDomain.CurrentDomain.BaseDirectory ?? string.Empty));
+            dirs.Add(System.IO.Path.Combine(AppDomain.CurrentDomain.BaseDirectory ?? string.Empty, "E3Next"));
+            dirs.Add(System.IO.Directory.GetCurrentDirectory());
+            dirs.Add(System.IO.Path.Combine(System.IO.Directory.GetCurrentDirectory(), "E3Next"));
+
+            // Filenames to try
+            string[] names = new string[]
+            {
+                "sample ifs",
+                "sample ifs.txt",
+                "Sample Ifs.txt",
+                "sample_ifs.txt"
+            };
+
+            foreach (var d in dirs)
+            {
+                if (string.IsNullOrEmpty(d)) continue;
+                foreach (var n in names)
+                {
+                    try
+                    {
+                        var p = System.IO.Path.Combine(d, n);
+                        if (System.IO.File.Exists(p)) return p;
+                    }
+                    catch { }
+                }
+                // Last resort: search directory for a file named (case-insensitive) "sample ifs" regardless of extension
+                try
+                {
+                    foreach (var f in System.IO.Directory.EnumerateFiles(d, "*", System.IO.SearchOption.TopDirectoryOnly))
+                    {
+                        string fn = System.IO.Path.GetFileNameWithoutExtension(f) ?? string.Empty;
+                        if (fn.Equals("sample ifs", StringComparison.OrdinalIgnoreCase)) return f;
+                    }
+                }
+                catch { }
+            }
+            return string.Empty;
+        }
+
+        private static void LoadSampleIfsForModal()
+        {
+            _cfgIfSampleLines.Clear();
+            _cfgIfSampleStatus = string.Empty;
+            try
+            {
+                string sample = ResolveSampleIfsPath();
+                if (string.IsNullOrEmpty(sample)) { _cfgIfSampleStatus = "Sample file not found."; return; }
+                _cfgIfSampleStatus = "Loaded: " + System.IO.Path.GetFileName(sample);
+                int added = 0;
+                foreach (var raw in System.IO.File.ReadAllLines(sample))
+                {
+                    var line = (raw ?? string.Empty).Trim();
+                    if (line.Length == 0) continue;
+                    if (line.StartsWith("#") || line.StartsWith(";")) continue;
+                    string key = string.Empty; string val = string.Empty;
+                    int eq = line.IndexOf('=');
+                    if (eq > 0)
+                    {
+                        key = (line.Substring(0, eq).Trim());
+                        val = (line.Substring(eq + 1).Trim());
+                    }
+                    else
+                    {
+                        // Accept other common delimiters: ':' or '-' (first occurrence)
+                        int colon = line.IndexOf(':');
+                        int dash = line.IndexOf('-');
+                        int pos = -1;
+                        if (colon > 0) pos = colon; else if (dash > 0) pos = dash;
+                        if (pos > 0)
+                        {
+                            key = line.Substring(0, pos).Trim();
+                            val = line.Substring(pos + 1).Trim();
+                        }
+                        else
+                        {
+                            // No delimiter; treat as key-only name
+                            key = line;
+                            val = string.Empty;
+                        }
+                    }
+                    if (!string.IsNullOrEmpty(key))
+                    {
+                        _cfgIfSampleLines.Add(new System.Collections.Generic.KeyValuePair<string, string>(key, val));
+                        added++;
+                    }
+                }
+                if (added == 0) _cfgIfSampleStatus = "No entries found in sample file.";
+                if (_cfgIfSampleLines.Count == 0) _cfgIfSampleStatus = "No entries found in sample file.";
+            }
+            catch (Exception ex)
+            {
+                _cfgIfSampleStatus = "Error reading sample IFs: " + (ex.Message ?? "error");
+            }
+        }
+
+        private static bool AddIfToActiveIni(string key, string value)
+        {
+            try
+            {
+                var pd = GetActiveCharacterIniData();
+                if (pd == null) return false;
+                var section = pd.Sections.GetSectionData("Ifs");
+                if (section == null)
+                {
+                    pd.Sections.AddSection("Ifs");
+                    section = pd.Sections.GetSectionData("Ifs");
+                }
+                if (section == null) return false;
+                string baseKey = key ?? string.Empty;
+                if (string.IsNullOrWhiteSpace(baseKey)) return false;
+                string unique = baseKey;
+                int idx = 1;
+                while (section.Keys.ContainsKey(unique)) { unique = baseKey + " (" + idx.ToString() + ")"; idx++; if (idx > 1000) break; }
+                if (!section.Keys.ContainsKey(unique))
+                {
+                    section.Keys.AddKey(unique, value ?? string.Empty);
+                    _cfg_Dirty = true;
+                    // Focus selection on the new IF key
+                    _cfgSelectedSection = "Ifs";
+                    _cfgSelectedKey = unique;
+                    _cfgSelectedValueIndex = -1;
+                    return true;
+                }
+                return false;
+            }
+            catch { return false; }
+        }
+
+        private static List<string> ScanFoodDrinkCandidates(string key)
+        {
+            var list = new List<string>();
+            try
+            {
+                bool wantFood = string.Equals(key, "Food", StringComparison.OrdinalIgnoreCase);
+                string owner = GetSelectedIniOwnerName();
+                bool local = owner.Equals(E3.CurrentName, StringComparison.OrdinalIgnoreCase);
+
+                if (!local)
+                {
+                    if (!E3Core.Server.NetMQServer.SharedDataClient.UsersConnectedTo.TryGetValue(owner, out var info) || info.RouterPort <= 0)
+                        return list;
+                    using (var req = new RequestSocket())
+                    {
+                        req.Connect($"tcp://127.0.0.1:{info.RouterPort}");
+                        string cmd = wantFood ? "${E3.Inventory.ListFood}" : "${E3.Inventory.ListDrink}";
+                        string resp = RouterQuery(req, cmd) ?? string.Empty;
+                        // Normalize newlines: handle actual CR/LF and literal \r\n or \n coming over the wire
+                        string norm = resp.Replace("\r\n", "\n");
+                        norm = norm.Replace("\\r\\n", "\n").Replace("\\n", "\n").Replace("\\r", "\n");
+                        foreach (var line in norm.Split(new[] { '\n' }, StringSplitOptions.RemoveEmptyEntries))
+                        {
+                            AddUnique(list, line.Trim());
+                        }
+                    }
+                }
+                else
+                {
+                    Func<string, string> Q = (q) => E3.MQ.Query<string>(q);
+                    // Top-level inventory slots 0..22
+                    for (int i = 0; i <= 22; i++)
+                    {
+                        string name = Q($"${{Me.Inventory[{i}]}}");
+                        if (string.IsNullOrEmpty(name) || string.Equals(name, "NULL", StringComparison.OrdinalIgnoreCase)) continue;
+                        string type = Q($"${{Me.Inventory[{i}].Type}}");
+                        if (IsTypeMatch(type, wantFood)) AddUnique(list, name);
+                    }
+                    // Bags pack1..pack12
+                    for (int b = 1; b <= 12; b++)
+                    {
+                        string pack = $"pack{b}";
+                        string present = Q($"${{Me.Inventory[{pack}]}}");
+                        if (string.IsNullOrEmpty(present) || string.Equals(present, "NULL", StringComparison.OrdinalIgnoreCase)) continue;
+                        int slots = 0; int.TryParse(Q($"${{Me.Inventory[{pack}].Container}}"), out slots);
+                        if (slots > 0)
+                        {
+                            for (int j = 1; j <= slots; j++)
+                            {
+                                string name = Q($"${{Me.Inventory[{pack}].Item[{j}]}}");
+                                if (string.IsNullOrEmpty(name) || string.Equals(name, "NULL", StringComparison.OrdinalIgnoreCase)) continue;
+                                string type = Q($"${{Me.Inventory[{pack}].Item[{j}].Type}}");
+                                if (IsTypeMatch(type, wantFood)) AddUnique(list, name);
+                            }
+                        }
+                        else
+                        {
+                            // single item in the pack slot
+                            string name = present;
+                            string type = Q($"${{Me.Inventory[{pack}].Type}}");
+                            if (!string.IsNullOrEmpty(name) && !string.Equals(name, "NULL", StringComparison.OrdinalIgnoreCase) && IsTypeMatch(type, wantFood))
+                                AddUnique(list, name);
+                        }
+                    }
+                }
+            }
+            catch { }
+            list.Sort(StringComparer.OrdinalIgnoreCase);
+            return list;
+        }
+
+        private static bool IsTypeMatch(string type, bool wantFood)
+        {
+            if (string.IsNullOrEmpty(type)) return false;
+            if (wantFood) return type.IndexOf("Food", StringComparison.OrdinalIgnoreCase) >= 0;
+            return type.IndexOf("Drink", StringComparison.OrdinalIgnoreCase) >= 0;
+        }
+        private static void AddUnique(List<string> list, string name)
+        {
+            if (string.IsNullOrEmpty(name)) return;
+            if (!list.Contains(name, StringComparer.OrdinalIgnoreCase)) list.Add(name);
+        }
+        private static string RouterQuery(RequestSocket req, string query)
+        {
+            try
+            {
+                var payload = Encoding.Default.GetBytes(query ?? string.Empty);
+                byte[] frame = new byte[8 + payload.Length];
+                Buffer.BlockCopy(BitConverter.GetBytes(1), 0, frame, 0, 4);
+                Buffer.BlockCopy(BitConverter.GetBytes(payload.Length), 0, frame, 4, 4);
+                Buffer.BlockCopy(payload, 0, frame, 8, payload.Length);
+                req.SendFrame(frame);
+                if (!req.TryReceiveFrameBytes(TimeSpan.FromMilliseconds(1000), out var respBytes)) return string.Empty;
+                return Encoding.Default.GetString(respBytes ?? Array.Empty<byte>());
+            }
+            catch { return string.Empty; }
+        }
+        private static void SaveActiveIniData()
+        {
+            try
+            {
+                if (!_cfg_Dirty) return;
+                var parser = E3Core.Utility.e3util.CreateIniParser();
+                string path = GetActiveSettingsPath();
+                var pd = GetActiveCharacterIniData();
+                if (!string.IsNullOrEmpty(path) && pd != null)
+                {
+                    parser.WriteFile(path, pd);
+                    _cfg_Dirty = false;
+                    _nextIniRefreshAtMs = 0;
+                    mq_Echo($"Saved changes to {System.IO.Path.GetFileName(path)}");
+                }
+            }
+            catch (Exception ex) { mq_Echo($"Save failed: {ex.Message}"); }
+        }
+
+        private static void RenderSpellDataTab()
+        {
+            imgui_Text("Lookup by Spell Name or ID");
+            imgui_SameLine();
+            if (imgui_InputText("##SpellQuery", _spellQueryInput))
+            {
+                _spellQueryInput = imgui_InputText_Get("##SpellQuery") ?? string.Empty;
+            }
+            imgui_SameLine();
+            if (imgui_Button("Load"))
+            {
+                TryLoadSpell(_spellQueryInput);
+            }
+
+            if (_spellLoaded != null)
+            {
+                // Basic info
+                imgui_Text($"Name: {_spellLoaded.SpellName}");
+                imgui_Text($"ID: {_spellLoaded.SpellID}");
+                imgui_Text($"Level: {_spellLoaded.Level}");
+                imgui_Text($"Type: {_spellLoaded.SpellType}");
+                imgui_Text($"Target: {_spellLoaded.TargetType}");
+                imgui_Text($"Category: {_spellLoaded.Category} / {_spellLoaded.Subcategory}");
+                imgui_Text($"Mana: {_spellLoaded.Mana}  Cast: {_spellLoaded.MyCastTime}  Recast: {_spellLoaded.RecastTime}  Recovery: {_spellLoaded.RecoveryTime}");
+                imgui_Text($"Range: {_spellLoaded.MyRange}");
+                imgui_Text($"Resist: {_spellLoaded.ResistType} ({_spellLoaded.ResistAdj})");
+                imgui_Text($"Duration: {_spellLoaded.Duration} ticks ({_spellLoaded.DurationTotalSeconds}s)  ShortBuff: {_spellLoaded.IsShortBuff}");
+                imgui_Text($"Icon ID: {_spellLoaded.SpellIcon}");
+
+                imgui_Separator();
+                imgui_Text("Effects");
+                foreach (var line in _spellEffects)
+                {
+                    imgui_Text(line);
+                }
+                if (_spellEffects.Length == 0) imgui_Text("(no effects)");
+            }
+        }
+
+        private static void RenderSpellIconsTab()
+        {
+            imgui_Text("Lookup Spell Icon by Name or ID");
+            imgui_SameLine();
+            if (imgui_InputText("##SpellIconQuery", _spellQueryInput))
+            {
+                _spellQueryInput = imgui_InputText_Get("##SpellIconQuery") ?? string.Empty;
+            }
+            imgui_SameLine();
+            if (imgui_Button("Load"))
+            {
+                TryLoadSpell(_spellQueryInput);
+            }
+            if (_spellLoaded != null)
+            {
+                imgui_Text($"Name: {_spellLoaded.SpellName}");
+                imgui_Text($"ID: {_spellLoaded.SpellID}");
+                imgui_Text($"Icon ID: {_spellLoaded.SpellIcon}");
+                imgui_Text("(Icon rendering not yet available; ID shown above)");
+            }
+        }
+
+        private static void TryLoadSpell(string key)
+        {
+            try
+            {
+                if (string.IsNullOrWhiteSpace(key)) return;
+                // Prevent excessive queries
+                if (Core.StopWatch.ElapsedMilliseconds < _nextSpellQueryAtMs) return;
+                _nextSpellQueryAtMs = Core.StopWatch.ElapsedMilliseconds + 250; // 250ms throttle
+
+                // Normalize: allow ID or name
+                string castKey = key.Trim();
+                int id;
+                if (int.TryParse(castKey, out id) && id > 0)
+                {
+                    // Resolve ID -> name for Spell ctor
+                    string name = E3.MQ.Query<string>($"${{Spell[{id}]}}");
+                    if (!string.IsNullOrEmpty(name)) castKey = name;
+                }
+
+                var sp = new E3Core.Data.Spell(castKey);
+                if (sp != null && sp.SpellID > 0)
+                {
+                    _spellLoadedKey = castKey;
+                    _spellLoaded = sp;
+                    LoadSpellEffects(sp);
+                }
+                else
+                {
+                    _spellLoadedKey = string.Empty;
+                    _spellLoaded = null;
+                    _spellEffects = Array.Empty<string>();
+                }
+            }
+            catch { _spellLoaded = null; _spellEffects = Array.Empty<string>(); }
+        }
+
+        private static void LoadSpellEffects(E3Core.Data.Spell sp)
+        {
+            try
+            {
+                if (sp == null) { _spellEffects = Array.Empty<string>(); return; }
+                // Use MQ2Mono helpers to get effect lines by ID
+                string key = sp.SpellID > 0 ? sp.SpellID.ToString() : sp.SpellName;
+                int cnt = E3.MQ.SpellDataGetLineCount(key);
+                if (cnt <= 0) { _spellEffects = Array.Empty<string>(); return; }
+                var lines = new List<string>(cnt);
+                for (int i = 0; i < cnt; i++)
+                {
+                    var line = E3.MQ.SpellDataGetLine(key, i) ?? string.Empty;
+                    if (!string.IsNullOrWhiteSpace(line)) lines.Add(line);
+                }
+                _spellEffects = lines.ToArray();
+            }
+            catch { _spellEffects = Array.Empty<string>(); }
+        }
+
+        private static string RemoveIfSuffix(string s)
+        {
+            try
+            {
+                if (string.IsNullOrEmpty(s)) return string.Empty;
+                int idx = s.LastIndexOf("/Ifs|", StringComparison.OrdinalIgnoreCase);
+                if (idx >= 0) return s.Substring(0, idx);
+                return s;
+            }
+            catch { return s ?? string.Empty; }
+        }
+        private static string ReplaceIfSuffix(string s, string ifName)
+        {
+            try
+            {
+                string basePart = RemoveIfSuffix(s ?? string.Empty).TrimEnd();
+                if (string.IsNullOrEmpty(ifName)) return basePart;
+                return basePart + "/Ifs|" + ifName;
+            }
+            catch { return s ?? string.Empty; }
+        }
+
+        // Combo wrappers with safety for older MQ2Mono builds lacking the functions
+        private static bool BeginComboSafe(string label, string preview)
+        {
+            try
+            {
+                return imgui_BeginCombo(label, preview, 0);
+            }
+            catch
+            {
+                _comboAvailable = false;
+                return false;
+            }
+        }
+        private static void EndComboSafe()
+        {
+            try { imgui_EndCombo(); } catch { }
+        }
+
+        private static void ApplyCharacterIniEditsForActiveSelection()
+        {
+            try
+            {
+                var selectedPath = _selectedCharIniPath;
+                var currentPath = GetCurrentCharacterIniPath();
+                if (string.IsNullOrEmpty(selectedPath)) selectedPath = currentPath;
+
+                if (string.Equals(selectedPath, currentPath, StringComparison.OrdinalIgnoreCase))
+                {
+                    // Apply using existing mechanism for current character
+                    E3Core.Processors.E3.ApplyCharacterIniEdits();
+                    _nextIniRefreshAtMs = 0;
+                    return;
+                }
+
+                // Apply to non-current file selection
+                if (!File.Exists(selectedPath)) { mq_Echo("Selected ini does not exist."); return; }
+
+                // Load ini (use cached parsed if available)
+                var parser = E3Core.Utility.e3util.CreateIniParser();
+                var pd = _selectedCharIniParsedData ?? parser.ReadFile(selectedPath);
+                int changed = 0;
+                foreach (var kv in _charIniEditsSnapshot())
+                {
+                    var parts = kv.Key.Split('|');
+                    if (parts.Length != 4) continue;
+                    string sectionName = parts[1];
+                    string keyName = parts[2];
+                    int idx = 0; int.TryParse(parts[3], out idx);
+                    var section = pd.Sections.GetSectionData(sectionName);
+                    if (section == null)
+                    {
+                        pd.Sections.AddSection(sectionName);
+                        section = pd.Sections.GetSectionData(sectionName);
+                    }
+                    var keyData = section.Keys.GetKeyData(keyName);
+                    if (keyData == null)
+                    {
+                        section.Keys.AddKey(keyName);
+                        keyData = section.Keys.GetKeyData(keyName);
+                    }
+                    var newVal = kv.Value ?? string.Empty;
+                    if (keyData.ValueList != null && keyData.ValueList.Count > 0)
+                    {
+                        if (idx >= 0 && idx < keyData.ValueList.Count)
+                        {
+                            if (!string.Equals(keyData.ValueList[idx], newVal, StringComparison.Ordinal))
+                            { keyData.ValueList[idx] = newVal; changed++; }
+                        }
+                        else if (idx == 0)
+                        {
+                            if (!string.Equals(keyData.Value, newVal, StringComparison.Ordinal)) { keyData.Value = newVal; changed++; }
+                        }
+                    }
+                    else
+                    {
+                        if (!string.Equals(keyData.Value, newVal, StringComparison.Ordinal)) { keyData.Value = newVal; changed++; }
+                    }
+                }
+
+                if (changed > 0)
+                {
+                    parser.WriteFile(selectedPath, pd);
+                    _charIniEditsClear();
+                    _selectedCharIniParsedData = pd; // keep updated
+                    mq_Echo($"Saved {changed} change(s) to {Path.GetFileName(selectedPath)}");
+                    _nextIniRefreshAtMs = 0;
+                }
+            }
+            catch (Exception ex)
+            {
+                mq_Echo($"Failed to apply changes: {ex.Message}");
+            }
+        }
+        public static void OnUpdateImGui()
+        {
+            // Initialize window visibility once (default hidden)
+            if (!_imguiInitDone)
+            {
+                try { imgui_Begin_OpenFlagSet(_e3ImGuiWindow, false); }
+                catch { /* older MQ2Mono versions may not support this */ }
+                try { imgui_Begin_OpenFlagSet(_e3ButtonsWindow, false); }
+                catch { /* older MQ2Mono versions may not support this */ }
+                _imguiInitDone = true;
+            }
+
+            if (imgui_Begin_OpenFlagGet(_e3ImGuiWindow))
+            {
+                imgui_Begin(_e3ImGuiWindow, (int)ImGuiWindowFlags.ImGuiWindowFlags_None);
+
+                // Header
+                imgui_Text($"nE³xt v{E3Core.Processors.Setup._e3Version} | Build {E3Core.Processors.Setup._buildDate}");
+                imgui_Separator();
+
+                // Removed Echo Test and Broadcast Writes controls per request
+
+                // Character INI selector (used by Config Editor)
+                RenderCharacterIniSelector();
+
+                imgui_Separator();
+                // Config Editor only
+                imgui_Text("Config Editor");
+                RenderConfigEditor();
+
+                imgui_End();
+            }
+
+            // Buttons windows (multi-window aware)
+            RenderButtonsWindows();
+        }
+
+        private static void RenderButtonsWindows()
+        {
+            var bb = E3Core.Processors.E3.ButtonBar;
+            if (bb == null)
+            {
+                if (imgui_Begin_OpenFlagGet(_e3ButtonsWindow))
+                {
+                    imgui_Begin(_e3ButtonsWindow, (int)ImGuiWindowFlags.ImGuiWindowFlags_AlwaysAutoResize);
+                    imgui_Text("No buttons configured. Edit 'E3 Buttons.ini'.");
+                    imgui_End();
+                }
+                return;
+            }
+
+            string charKey = (E3Core.Processors.E3.ServerName ?? string.Empty) + "_" + (E3Core.Processors.E3.CurrentName ?? string.Empty);
+            if (bb.WindowsByChar != null && bb.WindowsByChar.TryGetValue(charKey, out var windows) && windows != null && windows.Count > 0)
+            {
+                for (int i = 0; i < windows.Count; i++)
+                {
+                    var w = windows[i];
+                    string windowName = i == 0 ? _e3ButtonsWindow : _e3ButtonsWindow + " #" + (i + 1).ToString();
+                    int flags = (int)ImGuiWindowFlags.ImGuiWindowFlags_None;
+                    if (w.HideTitleBar) flags |= (int)ImGuiWindowFlags.ImGuiWindowFlags_NoTitleBar;
+                    if (w.Locked) flags |= (int)ImGuiWindowFlags.ImGuiWindowFlags_NoMove;
+                    if (w.AutoResize) flags |= (int)ImGuiWindowFlags.ImGuiWindowFlags_AlwaysAutoResize;
+
+                    if (!imgui_Begin_OpenFlagGet(windowName)) continue;
+                    imgui_Begin(windowName, flags);
+
+                    // Only show editor toggle in the first window to avoid duplicates
+                    if (i == 0)
+                    {
+                        RenderButtonsEditor(bb, charKey);
+                        imgui_Separator();
+                    }
+
+                    if (w.Sets == null || w.Sets.Count == 0)
+                    {
+                        imgui_Text("No sets assigned. Edit 'E3 Buttons.ini'.");
+                        imgui_End();
+                        continue;
+                    }
+
+                    if (w.Compact)
+                    {
+                        var first = FindSet(bb, w.Sets[0]);
+                        if (first != null)
+                        {
+                            RenderButtonsList(first);
+                        }
+                    }
+                    else
+                    {
+                        if (imgui_BeginTabBar(windowName + "_Tabs"))
+                        {
+                            foreach (var setName in w.Sets)
+                            {
+                                var set = FindSet(bb, setName);
+                                if (set == null) continue;
+                                if (imgui_BeginTabItem(set.Name))
+                                {
+                                    RenderButtonsList(set);
+                                    imgui_EndTabItem();
+                                }
+                            }
+                            imgui_EndTabBar();
+                        }
+                    }
+
+                    imgui_End();
+                }
+            }
+            else
+            {
+                // Fallback to single-window behavior for backwards compatibility
+                if (imgui_Begin_OpenFlagGet(_e3ButtonsWindow))
+                {
+                    imgui_Begin(_e3ButtonsWindow, (int)ImGuiWindowFlags.ImGuiWindowFlags_AlwaysAutoResize);
+                    RenderButtonsEditor(bb, charKey);
+                    imgui_Separator();
+                    if (bb.Sets != null && bb.Sets.Count > 0)
+                    {
+                        if (imgui_BeginTabBar("E3ButtonsTabs"))
+                        {
+                            foreach (var set in bb.Sets)
+                            {
+                                if (imgui_BeginTabItem(set.Name))
+                                {
+                                    RenderButtonsList(set);
+                                    imgui_EndTabItem();
+                                }
+                            }
+                            imgui_EndTabBar();
+                        }
+                    }
+                    else
+                    {
+                        foreach (var btn in bb.Buttons)
+                        {
+                            if (imgui_Button(btn.Label)) ExecuteButtonCommand(btn.Command);
+                        }
+                    }
+                    imgui_End();
+                }
+            }
+        }
+
+        private static bool _buttonsEditMode = false;
+        private static int _buttonsEditSelectedSet = 0;
+        private static string _buttonsEditNewSetName = string.Empty;
+        private static string _buttonsEditNewBtnLabel = string.Empty;
+        private static string _buttonsEditNewBtnCmd = string.Empty;
+
+        private static void RenderButtonsEditor(E3Core.Settings.FeatureSettings.ButtonBar bb, string charKey)
+        {
+            if (imgui_Button(_buttonsEditMode ? "Exit Edit Mode" : "Edit Buttons"))
+            {
+                _buttonsEditMode = !_buttonsEditMode;
+            }
+            if (!_buttonsEditMode) return;
+
+            imgui_Separator();
+            imgui_Text("Sets");
+
+            float leftW = 260f;
+            float availY = imgui_GetContentRegionAvailY();
+
+            // --- Left: Sets list -----------------------------------------------------
+            {
+                bool open = imgui_BeginChild("BB_Sets", leftW, availY * 0.5f, true);
+                if (open)
+                {
+                    for (int i = 0; i < (bb.Sets?.Count ?? 0); i++)
+                    {
+                        bool sel = (i == _buttonsEditSelectedSet);
+                        if (imgui_Selectable(bb.Sets[i].Name, sel))
+                            _buttonsEditSelectedSet = i;
+                    }
+                }
+                imgui_EndChild();
+            }
+
+            imgui_SameLine();
+
+            // --- Right: Set editor (add/rename/delete) -------------------------------
+            float rightW = imgui_GetContentRegionAvailX();
+            {
+                bool open2 = imgui_BeginChild("BB_SetEditor", rightW, availY * 0.5f, true);
+                if (open2)
+                {
+                    // Add/Rename/Delete set
+                    imgui_Text("Add Set");
+                    if (imgui_InputText("BB_NewSet", _buttonsEditNewSetName))
+                    {
+                        _buttonsEditNewSetName = imgui_InputText_Get("BB_NewSet");
+                    }
+                    if (imgui_Button("Add Set"))
+                    {
+                        var name = (_buttonsEditNewSetName ?? string.Empty).Trim();
+                        if (name.Length > 0)
+                        {
+                            EnqueueUI(() =>
+                            {
+                                bb.Sets.Add(new E3Core.Settings.FeatureSettings.ButtonBar.ButtonSet { Name = name });
+                                _buttonsEditSelectedSet = bb.Sets.Count - 1;
+                                _buttonsEditNewSetName = string.Empty;
+                            });
+                        }
+                    }
+
+                    if (bb.Sets != null && bb.Sets.Count > 0 && _buttonsEditSelectedSet >= 0 && _buttonsEditSelectedSet < bb.Sets.Count)
+                    {
+                        var set = bb.Sets[_buttonsEditSelectedSet];
+                        imgui_Separator();
+                        imgui_Text($"Edit Set: {set.Name}");
+
+                        // Rename
+                        if (imgui_InputText("BB_RenameSet", set.Name))
+                        {
+                            var newName = imgui_InputText_Get("BB_RenameSet");
+                            EnqueueUI(() =>
+                            {
+                                // Update window references
+                                if (bb.WindowsByChar.TryGetValue(charKey, out var charWindowsRename) && charWindowsRename != null)
+                                {
+                                    foreach (var w in charWindowsRename)
+                                    {
+                                        for (int si = 0; si < w.Sets.Count; si++)
+                                        {
+                                            if (string.Equals(w.Sets[si], set.Name, StringComparison.OrdinalIgnoreCase))
+                                                w.Sets[si] = newName;
+                                        }
+                                    }
+                                }
+                                set.Name = newName;
+                            });
+                        }
+
+                        // Delete
+                        if (imgui_Button("Delete Set"))
+                        {
+                            EnqueueUI(() =>
+                            {
+                                string old = set.Name;
+                                bb.Sets.RemoveAt(_buttonsEditSelectedSet);
+
+                                if (bb.WindowsByChar.TryGetValue(charKey, out var charWindowsDelete) && charWindowsDelete != null)
+                                {
+                                    foreach (var w in charWindowsDelete)
+                                    {
+                                        w.Sets.RemoveAll(s => string.Equals(s, old, StringComparison.OrdinalIgnoreCase));
+                                    }
+                                }
+
+                                _buttonsEditSelectedSet = 0;
+                            });
+                        }
+                    }
+                }
+                imgui_EndChild();
+            }
+
+            // --- Buttons of the selected set -----------------------------------------
+            if (bb.Sets != null && bb.Sets.Count > 0 && _buttonsEditSelectedSet >= 0 && _buttonsEditSelectedSet < bb.Sets.Count)
+            {
+                var set = bb.Sets[_buttonsEditSelectedSet];
+                imgui_Separator();
+                imgui_Text($"Buttons in: {set.Name}");
+
+                {
+                    bool open3 = imgui_BeginChild("BB_Buttons", imgui_GetContentRegionAvailX(), imgui_GetContentRegionAvailY() * 0.5f, true);
+                    if (open3)
+                    {
+                        for (int bi = 0; bi < set.Buttons.Count; bi++)
+                        {
+                            var b = set.Buttons[bi];
+                            string idLabel = $"BB_Label_{_buttonsEditSelectedSet}_{bi}";
+                            string idCmd = $"BB_Cmd_{_buttonsEditSelectedSet}_{bi}";
+
+                            imgui_Text("Label:");
+                            imgui_SameLine();
+                            if (imgui_InputText(idLabel, b.Label))
+                            {
+                                string nv = imgui_InputText_Get(idLabel);
+                                EnqueueUI(() => b.Label = nv);
+                            }
+
+                            imgui_Text("Cmd (use \\n for newline):");
+                            imgui_SameLine();
+                            if (imgui_InputText(idCmd, b.Command))
+                            {
+                                string nv = imgui_InputText_Get(idCmd);
+                                EnqueueUI(() => b.Command = nv);
+                            }
+
+                            imgui_SameLine();
+                            if (imgui_Button($"Delete##{_buttonsEditSelectedSet}_{bi}"))
+                            {
+                                int rmIndex = bi;
+                                EnqueueUI(() => set.Buttons.RemoveAt(rmIndex));
+                            }
+
+                            imgui_Separator();
+                        }
+
+                        imgui_Text("Add Button");
+                        if (imgui_InputText("BB_NewBtn_Label", _buttonsEditNewBtnLabel))
+                            _buttonsEditNewBtnLabel = imgui_InputText_Get("BB_NewBtn_Label");
+
+                        if (imgui_InputText("BB_NewBtn_Cmd", _buttonsEditNewBtnCmd))
+                            _buttonsEditNewBtnCmd = imgui_InputText_Get("BB_NewBtn_Cmd");
+
+                        if (imgui_Button("Add Button"))
+                        {
+                            var label = (_buttonsEditNewBtnLabel ?? string.Empty).Trim();
+                            var cmd = _buttonsEditNewBtnCmd ?? string.Empty;
+
+                            if (label.Length > 0)
+                            {
+                                EnqueueUI(() =>
+                                {
+                                    set.Buttons.Add(new E3Core.Settings.FeatureSettings.ButtonBar.ButtonDef
+                                    {
+                                        Label = label,
+                                        Command = cmd
+                                    });
+                                    _buttonsEditNewBtnLabel = string.Empty;
+                                    _buttonsEditNewBtnCmd = string.Empty;
+                                });
+                            }
+                        }
+                    }
+                    imgui_EndChild();
+                } // end inner scope for BB_Buttons child
+            }     // end: if selected set
+
+            // --- Windows configuration for current character --------------------------
+            imgui_Separator();
+            imgui_Text("Windows (current character)");
+
+            if (!bb.WindowsByChar.TryGetValue(charKey, out var charWindows) || charWindows == null)
+            {
+                // Seed a default window referencing all sets
+                EnqueueUI(() =>
+                {
+                    var w = new E3Core.Settings.FeatureSettings.ButtonBar.WindowDef
+                    {
+                        Id = "1",
+                        Visible = true,
+                        Locked = false,
+                        HideTitleBar = false,
+                        Compact = false,
+                        AutoResize = true
+                    };
+                    w.Sets = new List<string>();
+                    foreach (var s in bb.Sets) w.Sets.Add(s.Name);
+
+                    bb.WindowsByChar[charKey] = new List<E3Core.Settings.FeatureSettings.ButtonBar.WindowDef> { w };
+                });
+            }
+            else
+            {
+                var windows = charWindows;
+
+                {
+                    bool open4 = imgui_BeginChild("BB_Windows", imgui_GetContentRegionAvailX(), imgui_GetContentRegionAvailY() * 0.4f, true);
+                    if (open4)
+                    {
+                        for (int wi = 0; wi < windows.Count; wi++)
+                        {
+                            var w = windows[wi];
+
+                            imgui_Text($"Window {wi + 1}");
+
+                            bool v;
+                            v = imgui_Checkbox($"Locked##W{wi}", w.Locked);
+                            if (v != w.Locked) { bool nv = v; EnqueueUI(() => w.Locked = nv); }
+
+                            imgui_SameLine();
+                            v = imgui_Checkbox($"HideTitle##W{wi}", w.HideTitleBar);
+                            if (v != w.HideTitleBar) { bool nv = v; EnqueueUI(() => w.HideTitleBar = nv); }
+
+                            imgui_SameLine();
+                            v = imgui_Checkbox($"Compact##W{wi}", w.Compact);
+                            if (v != w.Compact) { bool nv = v; EnqueueUI(() => w.Compact = nv); }
+
+                            imgui_SameLine();
+                            v = imgui_Checkbox($"AutoResize##W{wi}", w.AutoResize);
+                            if (v != w.AutoResize) { bool nv = v; EnqueueUI(() => w.AutoResize = nv); }
+
+                            imgui_Text("Sets:");
+                            foreach (var s in bb.Sets)
+                            {
+                                bool has = w.Sets.Exists(n => string.Equals(n, s.Name, StringComparison.OrdinalIgnoreCase));
+                                bool inc = imgui_Checkbox($"{s.Name}##W{wi}_{s.Name}", has);
+
+                                if (inc != has)
+                                {
+                                    if (inc)
+                                    {
+                                        EnqueueUI(() =>
+                                        {
+                                            if (!w.Sets.Exists(n => string.Equals(n, s.Name, StringComparison.OrdinalIgnoreCase)))
+                                                w.Sets.Add(s.Name);
+                                        });
+                                    }
+                                    else
+                                    {
+                                        EnqueueUI(() =>
+                                            w.Sets.RemoveAll(n => string.Equals(n, s.Name, StringComparison.OrdinalIgnoreCase))
+                                        );
+                                    }
+                                }
+                            }
+
+                            imgui_Separator();
+                        }
+
+                        if (imgui_Button("Add Window"))
+                        {
+                            EnqueueUI(() =>
+                            {
+                                var w = new E3Core.Settings.FeatureSettings.ButtonBar.WindowDef
+                                {
+                                    Id = (windows.Count + 1).ToString(),
+                                    Visible = true,
+                                    Locked = false,
+                                    HideTitleBar = false,
+                                    Compact = false,
+                                    AutoResize = true
+                                };
+                                w.Sets = new List<string>();
+                                foreach (var s in bb.Sets) w.Sets.Add(s.Name);
+                                windows.Add(w);
+                            });
+                        }
+
+                        imgui_SameLine();
+
+                        if (windows.Count > 1 && imgui_Button("Remove Last Window"))
+                        {
+                            EnqueueUI(() =>
+                            {
+                                windows.RemoveAt(windows.Count - 1);
+                            });
+                        }
+                    }
+                    imgui_EndChild();
+                } // end inner scope for BB_Windows child
+            }     // end else (windows present)
+
+            // --- Save -----------------------------------------------------------------
+            imgui_Separator();
+            if (imgui_Button("Save Buttons.ini"))
+            {
+                EnqueueUI(() =>
+                {
+                    try
+                    {
+                        E3Core.Processors.E3.ButtonBar.Save();
+                        E3Core.Processors.E3.MQ.Write("Saved E3 Buttons.ini");
+                    }
+                    catch { }
+                });
+            }
+        }
 
 
-        //}
+        private static E3Core.Settings.FeatureSettings.ButtonBar.ButtonSet FindSet(E3Core.Settings.FeatureSettings.ButtonBar bb, string name)
+        {
+            if (bb == null || bb.Sets == null) return null;
+            foreach (var s in bb.Sets) if (string.Equals(s.Name, name, StringComparison.OrdinalIgnoreCase)) return s;
+            return null;
+        }
+
+        private static void RenderButtonsList(E3Core.Settings.FeatureSettings.ButtonBar.ButtonSet set)
+        {
+            foreach (var btn in set.Buttons)
+            {
+                if (imgui_Button(btn.Label)) ExecuteButtonCommand(btn.Command);
+            }
+        }
+
+        private static void ExecuteButtonCommand(string cmd)
+        {
+            var normalized = (cmd ?? string.Empty).Replace("\\n", "\n").Replace("\r", "\n");
+            var parts = normalized.Split(new char[] { '\n' }, StringSplitOptions.None);
+            foreach (var line in parts)
+            {
+                var l = (line ?? string.Empty).Trim();
+                if (l.Length == 0) continue;
+                try { E3Core.Processors.E3.MQ.Cmd(l); } catch { }
+            }
+        }
 
         #region MQMethods
         [MethodImpl(MethodImplOptions.InternalCall)]
@@ -1282,11 +3740,60 @@ namespace MonoCore
         [MethodImpl(MethodImplOptions.InternalCall)]
         public extern static bool imgui_Begin_OpenFlagGet(string name);
         [MethodImpl(MethodImplOptions.InternalCall)]
-        public extern static void imgui_Button(string name);
+        public extern static bool imgui_Button(string name);
+        [MethodImpl(MethodImplOptions.InternalCall)]
+        public extern static void imgui_Text(string text);
+        [MethodImpl(MethodImplOptions.InternalCall)]
+        public extern static void imgui_Separator();
+        [MethodImpl(MethodImplOptions.InternalCall)]
+        public extern static void imgui_SameLine();
+        [MethodImpl(MethodImplOptions.InternalCall)]
+        public extern static bool imgui_Checkbox(string name, bool defaultValue);
+        [MethodImpl(MethodImplOptions.InternalCall)]
+        public extern static bool imgui_BeginTabBar(string name);
+        [MethodImpl(MethodImplOptions.InternalCall)]
+        public extern static void imgui_EndTabBar();
+        [MethodImpl(MethodImplOptions.InternalCall)]
+        public extern static bool imgui_BeginTabItem(string label);
+        [MethodImpl(MethodImplOptions.InternalCall)]
+        public extern static void imgui_EndTabItem();
+        [MethodImpl(MethodImplOptions.InternalCall)]
+        public extern static bool imgui_BeginChild(string id, float width, float height, bool border);
+        [MethodImpl(MethodImplOptions.InternalCall)]
+        public extern static void imgui_EndChild();
+        [MethodImpl(MethodImplOptions.InternalCall)]
+        public extern static bool imgui_Selectable(string label, bool selected);
+        [MethodImpl(MethodImplOptions.InternalCall)]
+        public extern static float imgui_GetContentRegionAvailX();
+        [MethodImpl(MethodImplOptions.InternalCall)]
+        public extern static float imgui_GetContentRegionAvailY();
+        [MethodImpl(MethodImplOptions.InternalCall)]
+        public extern static void imgui_SetNextItemWidth(float width);
+        [MethodImpl(MethodImplOptions.InternalCall)]
+        public extern static bool imgui_BeginCombo(string label, string preview, int flags);
+        [MethodImpl(MethodImplOptions.InternalCall)]
+        public extern static void imgui_EndCombo();
+        // Helper provided by MQ2Mono to right-align a button within the current row/region
+        [MethodImpl(MethodImplOptions.InternalCall)]
+        public extern static bool imgui_RightAlignButton(string name);
+        [MethodImpl(MethodImplOptions.InternalCall)]
+        public extern static bool imgui_InputText(string id, string initial);
+        [MethodImpl(MethodImplOptions.InternalCall)]
+        public extern static string imgui_InputText_Get(string id);
         [MethodImpl(MethodImplOptions.InternalCall)]
         public extern static void imgui_End();
         #endregion
         #endregion
+
+        // expose pending edit helpers for E3.ApplyCharacterIniEdits()
+        internal static IEnumerable<KeyValuePair<string,string>> _charIniEditsSnapshot()
+        {
+            return _charIniEdits.ToList();
+        }
+        internal static void _charIniEditsClear()
+        {
+            _charIniEdits.Clear();
+        }
 
         [DllImport("user32.dll")]
         public static extern bool UnregisterClass(string lpClassName, IntPtr hInstance);

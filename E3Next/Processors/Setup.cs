@@ -140,13 +140,18 @@ namespace E3Core.Processors
 				}
 
 			});
-			EventProcessor.RegisterCommand("/e3broadcastwrites", (x) =>
+            // Removed /e3broadcastwrites command
+
+			// Toggle the in-game ImGui config window
+			EventProcessor.RegisterCommand("/e3imgui", (x) =>
 			{
-
-				e3util.ToggleBooleanSetting(ref _broadcastWrites, "Broadcast Writes", x.args);
-
-
-			});
+				try
+				{
+					bool open = Core.imgui_Begin_OpenFlagGet("E3Next Config");
+					Core.imgui_Begin_OpenFlagSet("E3Next Config", !open);
+				}
+				catch { }
+			}, "Toggle E3Next ImGui window");
 		}
 			private static void InitSubSystems()
         {

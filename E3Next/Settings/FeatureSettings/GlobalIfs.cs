@@ -80,15 +80,15 @@ namespace E3Core.Settings.FeatureSettings
 		}
 
 		
-		public IniData CreateSettings(string filename)
-		{
+        public IniData CreateSettings(string filename)
+        {
 
-			IniParser.FileIniDataParser parser = e3util.CreateIniParser();
-			IniData newFile = new IniData();
+            IniParser.FileIniDataParser parser = e3util.CreateIniParser();
+            IniData newFile = new IniData();
 
 
-			newFile.Sections.AddSection("Ifs");
-			var section = newFile.Sections.GetSectionData("Ifs");
+            newFile.Sections.AddSection("Ifs");
+            var section = newFile.Sections.GetSectionData("Ifs");
 		
 			if (!System.IO.File.Exists(filename))
 			{

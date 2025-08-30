@@ -99,6 +99,9 @@ namespace E3Core.Settings
 		[INI_Section("Misc", "Enhanced rotation speed")]
 		public bool Misc_EnchancedRotationSpeed = false;
 
+		[INI_Section("Misc", "Damage Reports (On/Off)")]
+		public bool Misc_DamageReports = true;
+
 
 		[INI_Section("Misc", "Anchor (Char to Anchor to)")]
 		public string Misc_AnchorChar = String.Empty;
@@ -636,6 +639,7 @@ namespace E3Core.Settings
 			LoadKeyData("Misc", "If FD stay down (true/false)", ParsedData, ref IfFDStayDown);
 			LoadKeyData("Misc", "Debuffs/Dots are visible", ParsedData, ref Misc_VisibleDebuffsDots);
 			LoadKeyData("Misc", "Enhanced rotation speed", ParsedData, ref Misc_EnchancedRotationSpeed);
+			LoadKeyData("Misc", "Damage Reports (On/Off)", ParsedData, ref Misc_DamageReports);
 
 			LoadKeyData("Manastone", "Override General Settings (On/Off)", ParsedData, ref Manastone_OverrideGeneralSettings);
             LoadKeyData("Manastone", "Manastone Enabled (On/Off)", ParsedData, ref Manastone_Enabled);
@@ -1004,6 +1008,7 @@ namespace E3Core.Settings
 			section.Keys.AddKey("If FD stay down (true/false)", "False");
 			section.Keys.AddKey("Debuffs/Dots are visible", "True");
 			section.Keys.AddKey("Enhanced rotation speed", "Off");
+			section.Keys.AddKey("Damage Reports (On/Off)", "On");
 		
 			newFile.Sections.AddSection("AutoMed");
 			section = newFile.Sections.GetSectionData("AutoMed");

@@ -1,0 +1,51 @@
+syntax = "proto3";
+
+message InventoryItemList {
+    repeated InventoryItem items = 1;
+    string character = 2;
+    string server = 3;
+    string class = 4;
+    int64 timestamp = 5;
+}
+
+message InventoryItem {
+    enum ItemLocation {
+        UNKNOWN = 0;
+        EQUIPPED = 1;
+        BAG = 2;
+        BANK = 3;
+    }
+    
+    // Core item data
+    int32 id = 1;
+    string name = 2;
+    int32 icon = 3;
+    int32 stack = 4;
+    bool no_drop = 5;
+    string item_link = 6;
+    
+    // Location information
+    ItemLocation location = 7;
+    int32 slot_id = 8;          // Equipped slot (0-22) or bag/bank slot
+    int32 bag_id = 9;           // Bag ID (1-12) for bag items, -1 otherwise
+    int32 bank_slot_id = 10;    // Bank slot (1-24) for bank items, -1 otherwise
+    string bag_name = 11;       // Name of the container bag
+    
+    // Item stats
+    int32 ac = 12;
+    int32 hp = 13;
+    int32 mana = 14;
+    int32 endurance = 15;
+    string item_type = 16;
+    int32 value = 17;
+    int32 tribute = 18;
+    
+    // Augments (up to 6 slots)
+    repeated AugmentData augments = 19;
+}
+
+message AugmentData {
+    string name = 1;
+    string item_link = 2;
+    int32 icon = 3;
+}

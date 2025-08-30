@@ -63,6 +63,7 @@ namespace E3Core.Server
         private static ConcurrentQueue<topicMessagePair> _topicMessages = new ConcurrentQueue<topicMessagePair>();
 
         public static Int32 PubPort = 0;
+        private CancellationTokenSource _cancellationTokenSource;
 
 
 
@@ -90,7 +91,7 @@ namespace E3Core.Server
                 {
                 }
             }
-			string filePath = settingsFilePath+$"{E3.CurrentName}_{E3.ServerName}_pubsubport.txt";
+            string filePath = settingsFilePath+$"{E3.CurrentName}_{E3.ServerName}_pubsubport.txt";
 
             //System.IO.File.Delete(filePath);
             bool updatedFile = false;
@@ -101,7 +102,15 @@ namespace E3Core.Server
 				try
 				{
 
-					System.IO.File.WriteAllText(filePath, port.ToString() + "," + localIP);
+                    // Write pub/sub port info, plus optional router/pubclient ports for richer peers
+                    // Format: PubPort,IP[,RouterPort,PubClientPort,ProcessId]
+                    string extended = port.ToString() + "," + localIP;
+                    try
+                    {
+                        extended += "," + NetMQServer.RouterPort.ToString() + "," + NetMQServer.PubClientPort.ToString() + "," + System.Diagnostics.Process.GetCurrentProcess().Id.ToString();
+                    }
+                    catch { }
+                    System.IO.File.WriteAllText(filePath, extended);
 					updatedFile = true;
 				}
 				catch (Exception ex)
@@ -114,8 +123,14 @@ namespace E3Core.Server
                 }
 
 			}
-			_serverThread = Task.Factory.StartNew(() => { Process(filePath); }, CancellationToken.None, TaskCreationOptions.DenyChildAttach, TaskScheduler.Default);
+            _cancellationTokenSource = new CancellationTokenSource();
+			_serverThread = Task.Factory.StartNew(() => { Process(filePath); }, _cancellationTokenSource.Token, TaskCreationOptions.DenyChildAttach, TaskScheduler.Default);
 
+        }
+        
+        public void Stop()
+        {
+            _cancellationTokenSource?.Cancel();
         }
         public  static void AddTopicMessage(string topic, string message)
         {  
