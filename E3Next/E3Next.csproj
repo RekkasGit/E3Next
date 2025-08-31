@@ -138,6 +138,7 @@
     <Compile Include="Processors\Movement.cs" />
     <Compile Include="Processors\Nukes.cs" />
     <Compile Include="Processors\PrivateCode.cs" />
+    <Compile Include="Processors\SeverSpecific.cs" />
     <Compile Include="Processors\VetAAs.cs" />
     <Compile Include="Processors\Zoning.cs" />
     <Compile Include="Properties\Resources.Designer.cs">

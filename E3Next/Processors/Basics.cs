@@ -414,7 +414,7 @@ namespace E3Core.Processors
 					else
 					{
 						string user = x.match.Groups[1].Value;
-
+						MQ.Cmd($"/notify RaidWindow Raid_UnlockButton leftmouseup");
 						//need to be in the same zone
 						if (_spawns.TryByName(user, out var s))
 						{
@@ -877,10 +877,10 @@ namespace E3Core.Processors
 				if (x.args.Count > 0)
 				{
 					int targetid = MQ.Query<int>("${Target.ID}");
-					if (targetid > 0)
+					//if (targetid > 0)
 					{
-						Spawn s;
-						if (_spawns.TryByID(targetid, out s))
+						//Spawn spawn;
+						//if (_spawns.TryByID(targetid, out spawn))
 						{
 							System.Text.StringBuilder sb = new StringBuilder();
 							bool first = true;
@@ -914,6 +914,7 @@ namespace E3Core.Processors
 							}
 						}
 					}
+                    
 				}
 			});
 			EventProcessor.RegisterCommand("/e3bark-send", (x) =>
@@ -931,11 +932,11 @@ namespace E3Core.Processors
 					int targetid;
 					if (int.TryParse(x.args[0], out targetid))
 					{
-						if (targetid > 0)
+						//if (targetid > 0)
 						{
 
 							Spawn s;
-							if (_spawns.TryByID(targetid, out s))
+							//if (_spawns.TryByID(targetid, out s))
 							{
 								if (e3util.IsEQLive())
 								{
@@ -943,7 +944,7 @@ namespace E3Core.Processors
 									MQ.Delay(E3.Random.Next(100, 1000));
 
 								}
-								Casting.TrueTarget(targetid);
+                                if(targetid>0) Casting.TrueTarget(targetid);
 								MQ.Delay(100);
                                 
                                 if (MQ.Query<bool>("${Me.Sneaking}"))

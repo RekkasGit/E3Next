@@ -19,6 +19,7 @@ namespace E3Core.Processors
         {
             public String Requester = String.Empty;
             public String SpellTouse = String.Empty;
+            public Int32 BuffRecastDelay = 0;
             public Spell Spell;
             public Int32 TargetID = 0;
             public Int64 TimeStamp = 0;
@@ -164,15 +165,36 @@ namespace E3Core.Processors
 
             EventProcessor.RegisterCommand("/buffme", (x) =>
             {
-                if (x.args.Count > 0)
+                //param being added on an old command, thus the odd removal of the arg
+                string minDurationArg = String.Empty;
+                foreach(var arg in x.args)
+                {
+                    if(arg.StartsWith("MinDuration|"))
+                    {
+                        minDurationArg = arg;
+
+					}
+                }
+                //remove the args
+                if(!String.IsNullOrWhiteSpace(minDurationArg)){ x.args.Remove(minDurationArg); }
+
+				Int32 buffrecastDelay = 0;
+				if (!String.IsNullOrEmpty(minDurationArg))
+				{
+					Int32.TryParse(minDurationArg.Split('|')[1], out buffrecastDelay);
+				}
+
+				if (x.args.Count > 0)
                 {
 					string spawnid = x.args[0];
+                   
+
 					if (_spawns.TryByName(spawnid, out var spawn))
 					{
 						foreach (var spell in E3.CharacterSettings.GroupBuffs)
 						{
 							if (!spell.Enabled) continue;
-							_queuedBuffs.Enqueue(new BuffQueuedItem() { TargetID = spawn.ID, Spell = spell });
+							_queuedBuffs.Enqueue(new BuffQueuedItem() { TargetID = spawn.ID, Spell = spell, BuffRecastDelay = buffrecastDelay });
 						}
 					}
                 }
@@ -180,11 +202,11 @@ namespace E3Core.Processors
                 {
                     foreach (var spell in E3.CharacterSettings.GroupBuffs)
                     {
-                        _queuedBuffs.Enqueue(new BuffQueuedItem() { TargetID = E3.CurrentId, Spell = spell });
+                        _queuedBuffs.Enqueue(new BuffQueuedItem() { TargetID = E3.CurrentId, Spell = spell,BuffRecastDelay=buffrecastDelay });
 
                     }
                     
-                    E3.Bots.BroadcastCommand($"/buffme {E3.CurrentName}");
+                    E3.Bots.BroadcastCommand($"/buffme {E3.CurrentName} MinDuration|{buffrecastDelay}");
                 }
             });
 			EventProcessor.RegisterCommand("/buffpet", (x) =>
@@ -265,6 +287,9 @@ namespace E3Core.Processors
 						if (E3.GeneralSettings.BuffRequests_AllowBuffRequests || E3.Bots.IsMyBot(user))
 						{
 							string spell = x.match.Groups[2].Value;
+
+							if (spell.Contains("${")) return;
+
 							bool groupReply = false;
 							if (x.match.Groups[0].Value.Contains(" tells the group,"))
 							{
@@ -453,8 +478,16 @@ namespace E3Core.Processors
                         s = new Spell(askedForSpell.SpellTouse, E3.CharacterSettings.ParsedData);
                     }
 
-                    //not a valid spell
-                    if (s.CastType==CastingType.None)
+                    if(askedForSpell.BuffRecastDelay>0)
+                    {
+						if (BuffCheck.BuffTimerIsGood(s, spawn, false))
+						{
+							_queuedBuffs.Dequeue();
+							return;
+						}
+					}
+					//not a valid spell
+					if (s.CastType==CastingType.None)
                     {
                         _queuedBuffs.Dequeue();
                         return;

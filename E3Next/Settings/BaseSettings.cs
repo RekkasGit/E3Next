@@ -196,7 +196,9 @@ namespace E3Core.Settings
 						foreach (var value in data.ValueList)
 						{
 							if (String.IsNullOrWhiteSpace(value)) continue;
+
 							var newSpell = new Data.Spell(value, parsedData);
+							CheckFor(value, sectionKey, data);
 							tburn.ItemsToBurn.Add(newSpell);
 						}
 

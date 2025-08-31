@@ -189,7 +189,7 @@ namespace E3Core.Processors
 							break;
 						}
 					}
-					if (MobToAttack == 0)
+					if (MobToAttack <=0)
                     {
                         //we are done, stop killing
                         Enabled = false;

@@ -123,11 +123,11 @@ namespace E3Core.Processors
 				{
 					vendorID = MQ.Query<Int32>("${Target.ID}");
 					//broadcast out this command to others with the necessary filter attached.
-					E3.Bots.BroadcastCommandToGroup($"/e3restock me {itemName} {qtyNeeded} {vendorID}", x);
+					E3.Bots.BroadcastCommandToGroup($"/e3restock me \"{itemName}\" {qtyNeeded} {vendorID}", x);
 				}
 				if (!e3util.FilterMe(x))
 				{
-					itemName = itemName.ToLower();
+					itemName = itemName.ToLower().Trim();
 					
 					if(vendorID == 0) vendorID = MQ.Query<Int32>("${Target.ID}");
 
@@ -159,13 +159,13 @@ namespace E3Core.Processors
         private static int GetQtyNeededForFullStack(string itemName)
         {
             
-            int itemQtyStackSize = MQ.Query<int>($"${{FindItem[{itemName}].StackSize}}");
+            int itemQtyStackSize = MQ.Query<int>($"${{FindItem[={itemName}].StackSize}}");
             int qtyNeeded = -1;
             int itemQty = -1;
             
             if (!String.IsNullOrWhiteSpace(itemName))
             {
-                itemQty = MQ.Query<int>($"${{FindItemCount[{itemName}]}}");
+                itemQty = MQ.Query<int>($"${{FindItemCount[={itemName}]}}");
             }
 
             if (itemQty >= itemQtyStackSize )
@@ -186,15 +186,16 @@ namespace E3Core.Processors
                         
             //check how many items are needed to make a stack of the specified food and drink, return -1 if they already have more than a stack
 
-            Int32 foodAvail = MQ.Query<int>($"${{FindItemCount[{toEat}]}}");
-            Int32 drinkAvail = MQ.Query<int>($"${{FindItemCount[{toDrink}]}}");
+            Int32 foodAvail = MQ.Query<int>($"${{FindItemCount[={toEat}]}}");
+            Int32 drinkAvail = MQ.Query<int>($"${{FindItemCount[={toDrink}]}}");
 
             int toEatQty = 20;
             if (foodAvail > 0)
             {
                 toEatQty=GetQtyNeededForFullStack(toEat);
             }
-            int toDrinkQty = 20;
+			
+            int toDrinkQty =20;
             if (drinkAvail > 0)
             {
                 toDrinkQty=GetQtyNeededForFullStack(toDrink);
@@ -207,7 +208,9 @@ namespace E3Core.Processors
             }
             else
             {
+			
 				E3.Bots.Broadcast($"\agInitiating restock for {toEat} and/or {toDrink}");
+
                 //we have something we need to get
                
                 if (vendorID > 0)
@@ -215,15 +218,18 @@ namespace E3Core.Processors
                     Casting.TrueTarget(vendorID);
                     e3util.NavToSpawnID(vendorID);
                     e3util.OpenMerchant();
-                    if (toEatQty > -1)
-                    {
-                        Buy.BuyItem(toEat, toEatQty);
-                    }
-
-                    MQ.Delay(500);
-                    if (toDrinkQty > -1)
-                    {
-                        Buy.BuyItem(toDrink, toDrinkQty);
+                    if (toEatQty > 0)
+					{
+						//buy full stack if we don't have any
+						if (foodAvail == 0) toEatQty = -1;
+						Buy.BuyItem(toEat, toEatQty);
+						MQ.Delay(500);
+					}
+                    if (toDrinkQty > 0)
+					{
+						//buy full stack ikf we don't have any
+						if (drinkAvail == 0) toDrinkQty = -1;
+						Buy.BuyItem(toDrink, toDrinkQty);
                     }
                     e3util.CloseMerchant();
                 }
@@ -238,42 +244,72 @@ namespace E3Core.Processors
         {
 			//check how many items are needed to make a stack of the specified food and drink, return -1 if they already have more than a stack
 
-			Int32 itemAvail = MQ.Query<int>($"${{FindItemCount[{itemName}]}}");
+			Int32 itemAvail = MQ.Query<int>($"${{FindItemCount[={itemName}]}}");
+
+			int qtyDifference = maxQty - itemAvail;
+			//start off trying to buy what e have been requested to.
+			int qtyToBuy = -1; //default stack size if we don't have it
 			
-			int qtyToBuy = 20; //default stack size if we don't have it
+			
+			//figure out how much a full stack will be.
 			if (itemAvail > 0)
 			{
-				qtyToBuy = GetQtyNeededForFullStack(itemName);
-			}
+				int itemQtyStackSize = MQ.Query<int>($"${{FindItem[={itemName}].StackSize}}");
 
-            if (qtyToBuy > maxQty && maxQty>0) qtyToBuy = maxQty;
 
-			if (qtyToBuy <= 0)
-			{
-				E3.Bots.Broadcast($"\arAlready have a max stack of {itemName}! Skipping restock. ");
-				return;
-			}
-			else
-			{
-				E3.Bots.Broadcast($"\agInitiating restock for {itemName}");
-				//we have something we need to get
-
-				if (vendorID > 0)
+				//guard clause
+				if (maxQty>0 && itemAvail >= maxQty)
 				{
-					Casting.TrueTarget(vendorID);
-					e3util.NavToSpawnID(vendorID);
-					e3util.OpenMerchant();
-					if (qtyToBuy > -1)
+					E3.Bots.Broadcast($"\arAlready have a at least {maxQty} ({itemAvail}) stack of {itemName}! Skipping restock. ");
+					return;
+				}
+				//we are not specifying qty, just get a full stack.
+				if (maxQty == -1)
+				{
+					int qtyToBuyForFullStack = GetQtyNeededForFullStack(itemName);
+					if(qtyToBuyForFullStack<1)
 					{
-						Buy.BuyItem(itemName, qtyToBuy);
+						E3.Bots.Broadcast($"\arThe stack is full for  {itemName}! ({itemAvail}) Skipping restock. ");
+						return;
 					}
-					e3util.CloseMerchant();
+					qtyToBuy = qtyToBuyForFullStack;
 				}
 				else
 				{
-					E3.Bots.Broadcast($"\arNo valid vendor ID available.");
+					//we specified qty, lets get the difference from what we have and what we are requesting.
+					qtyToBuy = qtyDifference;
+
+					if((qtyToBuy +itemAvail) > itemQtyStackSize)
+					{
+						E3.Bots.Broadcast($"\arThe stack is full for  {itemName}! ({itemAvail}) Skipping restock. ");
+						return;
+					}
 				}
 			}
+			
+			E3.Bots.Broadcast($"\agInitiating restock for {itemName}");
+			//we have something we need to get
+
+			if (vendorID > 0)
+			{
+				Casting.TrueTarget(vendorID);
+				e3util.NavToSpawnID(vendorID);
+				e3util.OpenMerchant();
+				
+				Buy.BuyItem(itemName, qtyToBuy);
+				
+				e3util.CloseMerchant();
+			}
+			else if(MQ.Query<bool>("${Window[MerchantWnd].Open}"))
+			{
+				Buy.BuyItem(itemName, qtyToBuy);
+				e3util.CloseMerchant();
+			}
+			else
+			{
+				E3.Bots.Broadcast($"\arNo valid vendor ID available.");
+			}
+			
 		}
         /// <summary>
         /// Buy specified item from an open vendor window
@@ -282,14 +318,16 @@ namespace E3Core.Processors
         /// <param name="itemQty"></param>
         public static void BuyItem(string itemName, int itemQty)
         {
+			itemName = itemName.Trim();
             //set listposition as the slot of the desired item on the vendor
             int listPosition = MQ.Query<int>($"${{Window[MerchantWnd].Child[ItemList].List[={itemName},2]}}");
 
 
-            string buyingItemText = MQ.Query<string>("${Window[MerchantWnd].Child[MW_SelectedItemLabel].Text}");
-
+			string buyingItemText = MQ.Query<string>("${Window[MerchantWnd].Child[MW_SelectedItemLabel].Text}").Trim();
+			MQ.Delay(300);
             Int32 counter = 0;
-            while (buyingItemText != itemName && counter < 10)
+
+			while (!string.Equals(itemName,buyingItemText, StringComparison.OrdinalIgnoreCase) && counter < 10)
             {
                 counter++;
                 MQ.Cmd($"/nomodkey /notify MerchantWnd ItemList listselect {listPosition}");
@@ -297,12 +335,14 @@ namespace E3Core.Processors
                 buyingItemText = MQ.Query<string>("${Window[MerchantWnd].Child[MW_SelectedItemLabel].Text}");
             }
             
-            if (buyingItemText != itemName)
+            if (!string.Equals(itemName, buyingItemText, StringComparison.OrdinalIgnoreCase))
             {
                 E3.Bots.Broadcast($"\arERROR: Buying item cannot get vendor to select, exiting. Item:{itemName}");
                 return;
-            }
+			}
 
+			//give time for the buy button to enable
+			MQ.Delay(300);
             //we have the item selected via the vendor, check we can buy.
             bool buyButtonEnabled = MQ.Query<bool>("${Window[MerchantWnd].Child[MW_Buy_Button].Enabled}");
 
@@ -319,8 +359,15 @@ namespace E3Core.Processors
             bool qtyWindowOpen = MQ.Query<bool>("${Window[QuantityWnd].Open}");
             if (qtyWindowOpen)
             {
-                MQ.Cmd($"/nomodkey /notify QuantityWnd QTYW_Slider newvalue {itemQty}");
-                MQ.Cmd($"/nomodkey /notify QuantityWnd QTYW_Accept_Button leftmouseup");
+				if(itemQty>0)
+				{
+					MQ.Cmd($"/nomodkey /notify QuantityWnd QTYW_Slider newvalue {itemQty}");
+				}
+				else
+				{
+					itemQty = MQ.Query<Int32>("${Window[QuantityWnd].Child[QTYW_SliderInput].Text}");
+				}
+				MQ.Cmd($"/nomodkey /notify QuantityWnd QTYW_Accept_Button leftmouseup");
                 MQ.Delay(300);
             }
             E3.Bots.Broadcast($"Bought {itemQty} {itemName}");

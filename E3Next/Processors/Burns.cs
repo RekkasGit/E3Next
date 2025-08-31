@@ -270,8 +270,6 @@ namespace E3Core.Processors
 
 					}
 					if (MQ.Query<Int32>("${Me.CurrentHPs}") < 1) return; //can't burn if dead
-                    //can't do gathering dusk if not in combat, skip it
-                    if (burn.SpellName == "Gathering Dusk" && !Basics.InGameCombat()) continue;
                     if (burn.TargetType == "Pet" && petId < 1) continue;
 
                     if (!String.IsNullOrWhiteSpace(burn.Ifs))
@@ -295,7 +293,7 @@ namespace E3Core.Processors
 						if (shouldContinue) { continue; }
 					}
 
-                    if (Casting.CheckReady(burn))
+                    if (Casting.CheckReady(burn) && Casting.InRange(previousTarget, burn))
                     {
                         if (burn.CastType == Data.CastingType.Disc)
                         {
@@ -325,7 +323,10 @@ namespace E3Core.Processors
 						if(!String.IsNullOrWhiteSpace(burn.CastTarget) && _spawns.TryByName(burn.CastTarget, out var spelltarget))
 						{
 
-							Casting.Cast(spelltarget.ID, burn);
+							if(Casting.Cast(spelltarget.ID, burn) == CastReturn.CAST_INTERRUPTFORHEAL)
+							{
+								return;
+							}
 							if (previousTarget > 0)
 							{
 								Int32 currentTarget = MQ.Query<Int32>("${Target.ID}");
@@ -339,8 +340,12 @@ namespace E3Core.Processors
 						}
                         else if (((isMyPet) || (targetPC && !isGroupMember)) && (burn.TargetType == "Group v1" || burn.TargetType == "Group v2"))
                         {
-                            Casting.Cast(E3.CurrentId, burn);
-                            if (previousTarget > 0)
+                            if(Casting.Cast(E3.CurrentId, burn)== CastReturn.CAST_INTERRUPTFORHEAL)
+							{
+								return;
+							}
+                            
+							if (previousTarget > 0)
                             {
                                 Int32 currentTarget = MQ.Query<Int32>("${Target.ID}");
                                 if (previousTarget != currentTarget)
@@ -352,7 +357,11 @@ namespace E3Core.Processors
                         }
                         else
                         {
-                            Casting.Cast(0, burn);
+
+                            if (Casting.Cast(0, burn) == CastReturn.CAST_INTERRUPTFORHEAL)
+							{
+								return;
+							}
                             E3.Bots.Broadcast(chatOutput);
 							
 						}

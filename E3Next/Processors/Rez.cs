@@ -4,11 +4,7 @@ using E3Core.Utility;
 using MonoCore;
 using System;
 using System.Collections.Generic;
-using System.Linq;
-using System.Runtime.CompilerServices;
-using System.Text;
-using System.Threading.Tasks;
-using static System.Windows.Forms.VisualStyles.VisualStyleElement;
+
 
 namespace E3Core.Processors
 {
@@ -70,18 +66,9 @@ namespace E3Core.Processors
             if (e3util.IsEQLive()) return;
             if (Basics.InCombat()) return;
 
-            if (MQ.Query<bool>("${Window[ConfirmationDialogBox].Open}"))
+            if (e3util.IsRezDiaglogBoxOpen())
             {
-
                 MQ.Delay(1000);
-
-                //check if its a valid confirmation box
-                string message = MQ.Query<string>("${Window[ConfirmationDialogBox].Child[cd_textoutput].Text}");
-                if (!(message.Contains("percent)")||message.Contains("RESURRECT you.") || message.Contains(" later.")))
-                {
-                    //MQ.Cmd("/nomodkey /notify ConfirmationDialogBox No_Button leftmouseup");
-                    return; //not a rez dialog box, do not accept.
-                }
                 MQ.Cmd("/nomodkey /notify ConfirmationDialogBox Yes_Button leftmouseup",2000);//start zone
                     
                 //zone may to happen
@@ -383,6 +370,10 @@ namespace E3Core.Processors
 							// only care about group or raid members
 							var inGroup = MQ.Query<bool>($"${{Group.Member[{spawn.DisplayName}]}}");
 							var inRaid = MQ.Query<bool>($"${{Raid.Member[{spawn.DisplayName}]}}");
+                            var inZone = _spawns.TryByName(spawn.DisplayName, out _);
+
+                            //don't auto rez if in zone.
+                            if (inZone) continue;
 
 							if (!inGroup && !inRaid)
 							{

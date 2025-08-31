@@ -833,8 +833,6 @@ namespace E3Core.Processors
                    ignoreme = true;
                    x.args.Remove("/ignoreme");
                }
-
-              
                //Rez.Reset();
                if (x.args.Count == 0)
                {
@@ -927,11 +925,12 @@ namespace E3Core.Processors
                 else if (x.args.Count == 1)
                 {
                     string assisttype = x.args[0];
-                    if (_meleeTypes.Contains(assisttype, StringComparer.OrdinalIgnoreCase) || _rangeTypes.Contains(assisttype, StringComparer.OrdinalIgnoreCase))
+                    if (_meleeTypes.Contains(assisttype, StringComparer.OrdinalIgnoreCase) || _rangeTypes.Contains(assisttype, StringComparer.OrdinalIgnoreCase) || assisttype.ToLower()=="off")
                     {
                         E3.CharacterSettings.Assist_Type = assisttype;
                         E3.Bots.Broadcast("\agChanging assist type to :\ao" + assisttype);
                     }
+
                 }
 
             });
@@ -943,6 +942,7 @@ namespace E3Core.Processors
                     {
                         Casting.Interrupt();
                     }
+					ClearXTargets.Enabled = false;
                     AssistOff();
                     Burns.Reset();
                     DebuffDot.Reset();

@@ -107,4 +107,5 @@ message SpellData {
 	int32 AfterCastDelay = 89;
 	int32 SongRefreshTime=90;
     int32 RecastDelay=91;
+    repeated string ExcludedClasses=92;
 }

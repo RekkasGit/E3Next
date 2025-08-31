@@ -1562,6 +1562,25 @@ namespace E3Core.Utility
 			MQ.Delay(2000, "${Merchant.ItemsReceived}");
 			return true;
 		}
+		public static bool OpenBank()
+		{
+			var target = MQ.Query<int>("${Target.ID}");
+			if (target <= 0)
+			{
+				var merchantId = MQ.Query<int>("${Spawn[banker los].ID}");
+				if (merchantId <= 0)
+				{
+					return false;
+				}
+
+				Casting.TrueTarget(merchantId);
+			}
+
+			TryMoveToTarget();
+			MQ.Cmd("/click right target");
+			MQ.Delay(2000, "${Merchant.ItemsReceived}");
+			return true;
+		}
 		public static void CloseMerchant()
 		{
 			bool merchantWindowOpen = MQ.Query<bool>("${Window[MerchantWnd].Open}");
@@ -1580,7 +1599,21 @@ namespace E3Core.Utility
 
 			return expected == cursorId;
 		}
+		public static bool IsRezDiaglogBoxOpen()
+		{
+			bool dialogBoxOpen = MQ.Query<bool>("${Window[ConfirmationDialogBox].Open}");
+			if(dialogBoxOpen)
+			{
+				string message = MQ.Query<string>("${Window[ConfirmationDialogBox].Child[cd_textoutput].Text}");
+				if ((message.Contains("percent)") || message.Contains("RESURRECT you.") || message.Contains(" later.")))
+				{
+					//MQ.Cmd("/nomodkey /notify ConfirmationDialogBox No_Button leftmouseup");
+					return true; //not a rez dialog box, do not accept.
+				}
+			}
 
+			return false;
+		}
 		public static bool IsActionBlockingWindowOpen()
 		{
 			var vendorOpen = MQ.Query<bool>("${Window[MerchantWnd]}");

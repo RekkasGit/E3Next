@@ -289,6 +289,14 @@ namespace E3Core.Processors
 
 
 						}
+						if (EventProcessor.CommandListQueueHasCommand("/throne"))
+						{
+							EventProcessor.ProcessEventsInQueues("/throne");
+							Interrupt();
+							if (!IsCasting()) return CastReturn.CAST_INTERRUPTED;
+
+
+						}
 						if (EventProcessor.CommandListQueueHasCommand("/followme"))
 						{
 							EventProcessor.ProcessEventsInQueues("/followme");
@@ -1323,6 +1331,11 @@ namespace E3Core.Processors
 		}
 		public static bool MemorizeSpell(Data.Spell spell,bool ignoreWait=false)
 		{
+
+			//don't try and mem a spell if you are max aggro on anything as it will auto crit you.
+			if (Basics.InCombat() && (E3.CurrentClass & Data.Class.Tank) == E3.CurrentClass) return false;
+			if (e3util.GetXtargetMaxAggro() == 100) return false;
+
 		
 			if (!(spell.CastType == CastingType.Spell && spell.SpellInBook))
 			{
