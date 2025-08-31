@@ -1620,6 +1620,10 @@ namespace MonoCore
         private static string _cfgSelectedKey = string.Empty; // subsection / key name
         private static int _cfgSelectedValueIndex = -1;
         private static bool _cfgShowAddModal = false;
+        // When true, the Add modal operates in edit mode and replaces an existing value
+        private static bool _cfgAddIsEditMode = false;
+        private static int _cfgAddEditTargetIndex = -1;
+        private static string _cfgAddEditOriginal = string.Empty;
         private enum AddType { Spells, AAs, Discs, Skills, Items }
         private static AddType _cfgAddType = AddType.Spells;
         private static string _cfgAddCategory = string.Empty;
@@ -1642,6 +1646,10 @@ namespace MonoCore
         private static string _cfgIfEditName = string.Empty;
         private static string _cfgIfEditValue = string.Empty;
         private static string _cfgIfEditSelectedKeySig = string.Empty;
+        // Inline edit state for values list
+        private static int _cfgInlineEditIndex = -1;
+        private static string _cfgInlineEditBuffer = string.Empty;
+        private static string _cfgInlineEditKeySig = string.Empty;
 
         private static void EnsureConfigEditorInit()
         {
@@ -2219,11 +2227,89 @@ namespace MonoCore
                             {
                                 if (values != null && values.Count > 0)
                                 {
+                                    // Reset inline edit state if selection changed
+                                    string curSig = ($"{_cfgSelectedSection}::{_cfgSelectedKey}") ?? string.Empty;
+                                    if (!string.Equals(_cfgInlineEditKeySig, curSig, StringComparison.Ordinal))
+                                    {
+                                        _cfgInlineEditKeySig = string.Empty;
+                                        _cfgInlineEditIndex = -1;
+                                        _cfgInlineEditBuffer = string.Empty;
+                                    }
                                     for (int i = 0; i < values.Count; i++)
                                     {
                                         string v = values[i] ?? string.Empty;
                                         bool sel = (_cfgSelectedValueIndex == i);
-                                        if (imgui_Selectable($"{i + 1}. {v}", sel)) _cfgSelectedValueIndex = i;
+                                        if (_cfgInlineEditIndex == i && string.Equals(_cfgInlineEditKeySig, curSig, StringComparison.Ordinal))
+                                        {
+                                            string id = $"##Cfg_Edit_{i}";
+                                            if (imgui_InputText(id, _cfgInlineEditBuffer))
+                                            {
+                                                _cfgInlineEditBuffer = imgui_InputText_Get(id) ?? string.Empty;
+                                            }
+                                            imgui_SameLine();
+                                            if (imgui_Button($"Save##Edit_{i}"))
+                                            {
+                                                values[i] = _cfgInlineEditBuffer ?? string.Empty;
+                                                _cfg_Dirty = true;
+                                                _cfgInlineEditKeySig = string.Empty;
+                                                _cfgInlineEditIndex = -1;
+                                                _cfgInlineEditBuffer = string.Empty;
+                                            }
+                                            imgui_SameLine();
+                                            if (imgui_Button($"Cancel##Edit_{i}"))
+                                            {
+                                                _cfgInlineEditKeySig = string.Empty;
+                                                _cfgInlineEditIndex = -1;
+                                                _cfgInlineEditBuffer = string.Empty;
+                                            }
+                                        }
+                                        else
+                                        {
+                                            if (imgui_Selectable($"{i + 1}. {v}", sel)) _cfgSelectedValueIndex = i;
+                                        }
+                                        // Right-click context menu for this item
+                                        string ctxId = $"CfgValCtx_{i}";
+                                        if (BeginPopupContextItemSafe(ctxId))
+                                        {
+                                            if (MenuItemSafe("Edit"))
+                                            {
+                                                _cfgInlineEditIndex = i;
+                                                _cfgInlineEditKeySig = curSig;
+                                                _cfgInlineEditBuffer = v ?? string.Empty;
+                                            }
+                                            if (MenuItemSafe("Add"))
+                                            {
+                                                bool isFoodDrink3 = string.Equals(_cfgSelectedSection, "Misc", StringComparison.OrdinalIgnoreCase) &&
+                                                                    (string.Equals(_cfgSelectedKey, "Food", StringComparison.OrdinalIgnoreCase) || string.Equals(_cfgSelectedKey, "Drink", StringComparison.OrdinalIgnoreCase));
+                                                bool canAddFromCatalog3 = _cfg_CatalogsReady && !isFoodDrink3;
+                                                if (isFoodDrink3)
+                                                {
+                                                    string keyToScan3 = _cfgSelectedKey;
+                                                    EnqueueUI(() =>
+                                                    {
+                                                        _cfgFoodDrinkKey = keyToScan3;
+                                                        _cfgFoodDrinkScanRequested = true;
+                                                        _cfgFoodDrinkStatus = "Scanning inventory...";
+                                                        _cfgShowFoodDrinkModal = true;
+                                                    });
+                                                }
+                                                else if (canAddFromCatalog3)
+                                                {
+                                                    _cfgShowAddModal = true; _cfgAddIsEditMode = false; _cfgAddType = AddType.Spells; _cfgAddCategory = string.Empty; _cfgAddSubcategory = string.Empty;
+                                                    _cfgAddWithIf = false; _cfgAddIfName = string.Empty;
+                                                }
+                                            }
+                                            if (MenuItemSafe("Remove"))
+                                            {
+                                                if (i >= 0 && i < values.Count)
+                                                {
+                                                    values.RemoveAt(i);
+                                                    if (_cfgSelectedValueIndex == i) _cfgSelectedValueIndex = -1;
+                                                    _cfg_Dirty = true;
+                                                }
+                                            }
+                                            EndPopupSafe();
+                                        }
                                     }
                                 }
                                 else
@@ -2232,6 +2318,34 @@ namespace MonoCore
                                 }
                             }
                             imgui_EndChild();
+
+                            // Context menu on empty space in values pane for quick Add
+                            if (BeginPopupContextWindowSafe("CfgValPaneCtx"))
+                            {
+                                if (MenuItemSafe("Add"))
+                                {
+                                    bool isFoodDrink4 = string.Equals(_cfgSelectedSection, "Misc", StringComparison.OrdinalIgnoreCase) &&
+                                                        (string.Equals(_cfgSelectedKey, "Food", StringComparison.OrdinalIgnoreCase) || string.Equals(_cfgSelectedKey, "Drink", StringComparison.OrdinalIgnoreCase));
+                                    bool canAddFromCatalog4 = _cfg_CatalogsReady && !isFoodDrink4;
+                                    if (isFoodDrink4)
+                                    {
+                                        string keyToScan4 = _cfgSelectedKey;
+                                        EnqueueUI(() =>
+                                        {
+                                            _cfgFoodDrinkKey = keyToScan4;
+                                            _cfgFoodDrinkScanRequested = true;
+                                            _cfgFoodDrinkStatus = "Scanning inventory...";
+                                            _cfgShowFoodDrinkModal = true;
+                                        });
+                                    }
+                                    else if (canAddFromCatalog4)
+                                    {
+                                        _cfgShowAddModal = true; _cfgAddIsEditMode = false; _cfgAddType = AddType.Spells; _cfgAddCategory = string.Empty; _cfgAddSubcategory = string.Empty;
+                                        _cfgAddWithIf = false; _cfgAddIfName = string.Empty;
+                                    }
+                                }
+                                EndPopupSafe();
+                            }
 
                             // Manual input for non-boolean, no-dropdown keys
                             try
@@ -2382,7 +2496,7 @@ namespace MonoCore
                                 }
                                 else if (canAddFromCatalog)
                                 {
-                                    _cfgShowAddModal = true; _cfgAddType = AddType.Spells; _cfgAddCategory = string.Empty; _cfgAddSubcategory = string.Empty;
+                                    _cfgShowAddModal = true; _cfgAddIsEditMode = false; _cfgAddType = AddType.Spells; _cfgAddCategory = string.Empty; _cfgAddSubcategory = string.Empty;
                                     _cfgAddWithIf = false; _cfgAddIfName = string.Empty;
                                 }
                             }
@@ -2394,6 +2508,7 @@ namespace MonoCore
                                 _cfgSelectedValueIndex = -1;
                                 _cfg_Dirty = true;
                             }
+                            // Right-click a value to Edit/Add/Remove via context menu
                             // If's: offer to pick from bundled samples (inline with Add/Delete)
                             if (string.Equals(_cfgSelectedSection, "Ifs", StringComparison.OrdinalIgnoreCase))
                             {
@@ -2501,9 +2616,10 @@ namespace MonoCore
             }
 
             // Add modal (simple window)
-            if (_cfgShowAddModal)
-            {
-                if (imgui_Begin("Add Entry", (int)ImGuiWindowFlags.ImGuiWindowFlags_AlwaysAutoResize))
+                if (_cfgShowAddModal)
+                {
+                string modalTitle = _cfgAddIsEditMode ? "Edit Entry" : "Add Entry";
+                if (imgui_Begin(modalTitle, (int)ImGuiWindowFlags.ImGuiWindowFlags_AlwaysAutoResize))
                 {
                     // Type tabs
                     if (imgui_Button(_cfgAddType == AddType.Spells ? "> Spells" : "Spells")) _cfgAddType = AddType.Spells;
@@ -2641,7 +2757,7 @@ namespace MonoCore
                         }
                         imgui_EndChild();
                     }
-                    if (imgui_Button("Close")) _cfgShowAddModal = false;
+                    if (imgui_Button("Close")) { _cfgShowAddModal = false; _cfgAddIsEditMode = false; _cfgAddEditTargetIndex = -1; _cfgAddEditOriginal = string.Empty; }
                 }
                 imgui_End();
             }
@@ -2690,16 +2806,59 @@ namespace MonoCore
                     section.Keys.AddKey(_cfgSelectedKey);
                     keyData = section.Keys.GetKeyData(_cfgSelectedKey);
                 }
-                if (keyData.ValueList == null || keyData.ValueList.Count == 0)
+                // Edit mode: replace an existing entry instead of adding
+                if (_cfgAddIsEditMode)
                 {
-                    keyData.Value = value ?? string.Empty;
+                    string newVal = value ?? string.Empty;
+                    // If the edit modal has an If specified, honor it; otherwise preserve existing suffix
+                    string explicitIf = _cfgAddWithIf ? (_cfgAddIfName ?? string.Empty) : string.Empty;
+                    if (!string.IsNullOrEmpty(explicitIf))
+                    {
+                        newVal = ReplaceIfSuffix(newVal, explicitIf);
+                    }
+                    else
+                    {
+                        string existingIf = ExtractIfSuffixName(_cfgAddEditOriginal ?? string.Empty);
+                        if (!string.IsNullOrEmpty(existingIf)) newVal = ReplaceIfSuffix(newVal, existingIf);
+                    }
+
+                    if (keyData.ValueList != null && keyData.ValueList.Count > 0)
+                    {
+                        int idx = _cfgAddEditTargetIndex;
+                        if (idx < 0 || idx >= keyData.ValueList.Count) idx = 0;
+                        keyData.ValueList[idx] = newVal;
+                    }
+                    else
+                    {
+                        keyData.Value = newVal;
+                        if (keyData.ValueList != null && keyData.ValueList.Count == 0)
+                        {
+                            keyData.ValueList.Add(newVal);
+                        }
+                    }
+                    _cfg_Dirty = true;
+                    // close and reset edit state
+                    _cfgShowAddModal = false;
+                    _cfgAddIsEditMode = false;
+                    _cfgAddEditTargetIndex = -1;
+                    _cfgAddEditOriginal = string.Empty;
+                    // Don't carry over If settings unintentionally
+                    _cfgAddWithIf = false; _cfgAddIfName = string.Empty;
                 }
                 else
                 {
-                    keyData.ValueList.Add(value ?? string.Empty);
+                    // Add mode: append or set
+                    if (keyData.ValueList == null || keyData.ValueList.Count == 0)
+                    {
+                        keyData.Value = value ?? string.Empty;
+                    }
+                    else
+                    {
+                        keyData.ValueList.Add(value ?? string.Empty);
+                    }
+                    _cfg_Dirty = true;
+                    _cfgShowAddModal = false;
                 }
-                _cfg_Dirty = true;
-                _cfgShowAddModal = false;
             }
             catch { }
         }
@@ -3111,6 +3270,17 @@ namespace MonoCore
             }
             catch { return s ?? string.Empty; }
         }
+        private static string ExtractIfSuffixName(string s)
+        {
+            try
+            {
+                if (string.IsNullOrEmpty(s)) return string.Empty;
+                int idx = s.LastIndexOf("/Ifs|", StringComparison.OrdinalIgnoreCase);
+                if (idx < 0 || idx + 5 >= s.Length) return string.Empty;
+                return s.Substring(idx + 5).Trim();
+            }
+            catch { return string.Empty; }
+        }
 
         // Combo wrappers with safety for older MQ2Mono builds lacking the functions
         private static bool BeginComboSafe(string label, string preview)
@@ -3128,6 +3298,26 @@ namespace MonoCore
         private static void EndComboSafe()
         {
             try { imgui_EndCombo(); } catch { }
+        }
+
+        // Popup/context wrappers with safety for older MQ2Mono builds
+        private static bool BeginPopupContextItemSafe(string id)
+        {
+            // 1 == ImGuiPopupFlags_MouseButtonRight
+            try { return imgui_BeginPopupContextItem(id, 1); } catch { return false; }
+        }
+        private static bool BeginPopupContextWindowSafe(string id)
+        {
+            // 1 == ImGuiPopupFlags_MouseButtonRight
+            try { return imgui_BeginPopupContextWindow(id, 1); } catch { return false; }
+        }
+        private static bool MenuItemSafe(string label)
+        {
+            try { return imgui_MenuItem(label); } catch { return false; }
+        }
+        private static void EndPopupSafe()
+        {
+            try { imgui_EndPopup(); } catch { }
         }
 
         private static void ApplyCharacterIniEditsForActiveSelection()
@@ -3782,6 +3972,15 @@ namespace MonoCore
         public extern static string imgui_InputText_Get(string id);
         [MethodImpl(MethodImplOptions.InternalCall)]
         public extern static void imgui_End();
+        // Context menus / popup
+        [MethodImpl(MethodImplOptions.InternalCall)]
+        public extern static bool imgui_BeginPopupContextItem(string id, int flags);
+        [MethodImpl(MethodImplOptions.InternalCall)]
+        public extern static bool imgui_BeginPopupContextWindow(string id, int flags);
+        [MethodImpl(MethodImplOptions.InternalCall)]
+        public extern static void imgui_EndPopup();
+        [MethodImpl(MethodImplOptions.InternalCall)]
+        public extern static bool imgui_MenuItem(string label);
         #endregion
         #endregion
 
