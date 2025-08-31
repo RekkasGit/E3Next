@@ -1361,6 +1361,24 @@ namespace MonoCore
         private static long _nextIniRefreshAtMs = 0;
         private static string _selectedCharacterSection = string.Empty;
         private static Dictionary<string, string> _charIniEdits = new Dictionary<string, string>(StringComparer.OrdinalIgnoreCase);
+        // "All Players" key view state/cache
+        private static bool _cfgAllPlayersView = false; // when true, show aggregated view of a key across all toon INIs
+        private static string _cfgAllPlayersSig = string.Empty; // section::key signature
+        private static long _cfgAllPlayersNextRefreshAtMs = 0;
+        private static List<System.Collections.Generic.KeyValuePair<string, string>> _cfgAllPlayersRows = new List<System.Collections.Generic.KeyValuePair<string, string>>(); // (toon -> value)
+        private static Dictionary<string, string> _cfgAllPlayersServerByToon = new Dictionary<string, string>(StringComparer.OrdinalIgnoreCase);
+        private static HashSet<string> _cfgAllPlayersIsRemote = new HashSet<string>(StringComparer.OrdinalIgnoreCase);
+        private static Dictionary<string, string> _cfgAllPlayersEditBuf = new Dictionary<string, string>(StringComparer.OrdinalIgnoreCase);
+        private static readonly object _cfgAllPlayersLock = new object();
+        private static System.Threading.Tasks.Task _cfgAllPlayersWorkerTask = null;
+        // Background refresh control for All Players view (avoid doing IO on ImGui thread)
+        private static bool _cfgAllPlayersRefreshRequested = false;
+        private static bool _cfgAllPlayersRefreshing = false;
+        private static string _cfgAllPlayersReqSection = string.Empty;
+        private static string _cfgAllPlayersReqKey = string.Empty;
+        private static long _cfgAllPlayersLastUpdatedAt = 0;
+        private static int _cfgAllPlayersRefreshIntervalMs = 5000; // default 5s between auto refreshes
+        private static string _cfgAllPlayersStatus = string.Empty;
 
         // Character .ini selection state
         private static string _selectedCharIniPath = string.Empty; // defaults to current character
@@ -1501,6 +1519,7 @@ namespace MonoCore
                             _selectedCharIniParsedData = pd;
                             _selectedCharacterSection = string.Empty;
                             _charIniEdits.Clear();
+                            _cfgAllPlayersSig = string.Empty; // force refresh on next open
                             _nextIniRefreshAtMs = 0;
                         }
                         catch
@@ -1539,19 +1558,20 @@ namespace MonoCore
                         if (imgui_Selectable(name, sel))
                         {
                             try
-                            {
-                                var parser = E3Core.Utility.e3util.CreateIniParser();
-                                var pd = parser.ReadFile(f);
-                                _selectedCharIniPath = f;
-                                _selectedCharIniParsedData = pd;
-                                _selectedCharacterSection = string.Empty;
-                                _charIniEdits.Clear();
-                                _nextIniRefreshAtMs = 0;
-                            }
-                            catch
-                            {
-                                mq_Echo($"Failed to load ini: {name}");
-                            }
+                        {
+                            var parser = E3Core.Utility.e3util.CreateIniParser();
+                            var pd = parser.ReadFile(f);
+                            _selectedCharIniPath = f;
+                            _selectedCharIniParsedData = pd;
+                            _selectedCharacterSection = string.Empty;
+                            _charIniEdits.Clear();
+                            _cfgAllPlayersSig = string.Empty; // force refresh on next open
+                            _nextIniRefreshAtMs = 0;
+                        }
+                        catch
+                        {
+                            mq_Echo($"Failed to load ini: {name}");
+                        }
                         }
                     }
                 }
@@ -1798,6 +1818,34 @@ namespace MonoCore
                     _cfgFoodDrinkScanning = false;
                 }
             }
+
+            // All Players aggregated view background refresh
+            if (_cfgAllPlayersRefreshRequested && !_cfgAllPlayersRefreshing)
+            {
+                _cfgAllPlayersRefreshing = true;
+                _cfgAllPlayersRefreshRequested = false;
+                var sec = _cfgAllPlayersReqSection ?? string.Empty;
+                var key = _cfgAllPlayersReqKey ?? string.Empty;
+                _cfgAllPlayersWorkerTask = System.Threading.Tasks.Task.Run(() =>
+                {
+                    try
+                    {
+                        // Build snapshot off-thread (reuses existing method)
+                        _cfgAllPlayersNextRefreshAtMs = 0; // force internal throttle to allow work
+                        RefreshAllPlayersCacheIfNeeded(sec, key);
+                        _cfgAllPlayersLastUpdatedAt = Core.StopWatch.ElapsedMilliseconds;
+                        _cfgAllPlayersStatus = string.Empty;
+                    }
+                    catch (Exception ex)
+                    {
+                        _cfgAllPlayersStatus = "Refresh failed: " + (ex.Message ?? "error");
+                    }
+                    finally
+                    {
+                        _cfgAllPlayersRefreshing = false;
+                    }
+                });
+            }
         }
 
         private static string GetSelectedIniOwnerName()
@@ -2042,6 +2090,29 @@ namespace MonoCore
                 }
                 else
                 {
+                    // Toggle to view this key across all character INIs
+                    bool canMulti = (_activeSettingsTab == SettingsTab.Character) && !string.IsNullOrEmpty(_cfgSelectedSection) && !string.IsNullOrEmpty(_cfgSelectedKey);
+                    if (canMulti)
+                    {
+                        if (imgui_Button(_cfgAllPlayersView ? "This Player View" : "All Players View"))
+                        {
+                            _cfgAllPlayersView = !_cfgAllPlayersView;
+                            _cfgAllPlayersSig = string.Empty; // force refresh
+                        }
+                        imgui_SameLine();
+                        imgui_Text($"[{_cfgSelectedSection}] {_cfgSelectedKey}");
+                        imgui_Separator();
+                        if (_cfgAllPlayersView)
+                        {
+                            RenderAllPlayersKeyView(_cfgSelectedSection ?? string.Empty, _cfgSelectedKey ?? string.Empty);
+                            imgui_EndChild();
+                            return; // skip normal editor when in all-players view
+                        }
+                    }
+                    else
+                    {
+                        _cfgAllPlayersView = false;
+                    }
                     bool isIfsSection = string.Equals(_cfgSelectedSection, "Ifs", StringComparison.OrdinalIgnoreCase);
                     // Ifs section: always show new IF controls and Sample If's access, even if no key is selected
                     if (isIfsSection)
@@ -3144,6 +3215,324 @@ namespace MonoCore
                 }
             }
             catch (Exception ex) { mq_Echo($"Save failed: {ex.Message}"); }
+        }
+
+        // --- All Players aggregated key view ----------------------------------------
+        private static void RenderAllPlayersKeyView(string section, string key)
+        {
+            TryRequestAllPlayersRefresh(section ?? string.Empty, key ?? string.Empty);
+
+            float listH = Math.Max(180f, imgui_GetContentRegionAvailY() * 0.7f);
+            if (imgui_BeginChild("Cfg_AllPlayersKey", imgui_GetContentRegionAvailX(), listH, true))
+            {
+                // Optional status removed for cleaner look per request
+
+                // Take a snapshot under lock to avoid racing with background updater
+                List<System.Collections.Generic.KeyValuePair<string, string>> rows;
+                Dictionary<string, string> serverMap;
+                HashSet<string> remoteSet;
+                lock (_cfgAllPlayersLock)
+                {
+                    rows = new List<System.Collections.Generic.KeyValuePair<string, string>>(_cfgAllPlayersRows);
+                    serverMap = new Dictionary<string, string>(_cfgAllPlayersServerByToon, StringComparer.OrdinalIgnoreCase);
+                    remoteSet = new HashSet<string>(_cfgAllPlayersIsRemote, StringComparer.OrdinalIgnoreCase);
+                }
+
+                if (rows.Count == 0)
+                {
+                    imgui_Text("No character INIs found in directory.");
+                }
+                else
+                {
+                    // Header row for readability
+                    imgui_Text("Name    | Current Value                          | New Value");
+                    imgui_Separator();
+
+                    // Determine if this key is boolean (match single-view behavior)
+                    bool isBoolKey = false;
+                    try
+                    {
+                        var pdActive = GetActiveCharacterIniData();
+                        var secActive = pdActive?.Sections?.GetSectionData(section ?? string.Empty);
+                        var kdActive = secActive?.Keys?.GetKeyData(key ?? string.Empty);
+                        if (kdActive != null)
+                        {
+                            isBoolKey = IsBooleanConfigKey(key ?? string.Empty, kdActive);
+                        }
+                    }
+                    catch { }
+
+                    foreach (var kv in rows)
+                    {
+                        string toon = kv.Key ?? string.Empty;
+                        string val = kv.Value ?? string.Empty;
+                        // Row layout: Name (line 1), Current + New + Set (line 2) with consistent input width
+                        imgui_Text(toon);
+                        imgui_Text($"Current: {val}");
+                        imgui_SameLine();
+                        // Inline edit buffer per toon
+                        string editKey = "AP_Edit_" + toon;
+                        string curBuf = _cfgAllPlayersEditBuf.TryGetValue(toon, out var b) ? (b ?? string.Empty) : string.Empty;
+                        if (isBoolKey)
+                        {
+                            // Normalize current to On/Off
+                            bool currentOn = val.Equals("On", StringComparison.OrdinalIgnoreCase) || val.Equals("True", StringComparison.OrdinalIgnoreCase);
+                            string preview = string.IsNullOrEmpty(curBuf) ? (currentOn ? "On" : "Off") : curBuf;
+                            if (BeginComboSafe(editKey + "_Bool", preview))
+                            {
+                                string[] opts = new[] { "On", "Off" };
+                                for (int oi = 0; oi < opts.Length; oi++)
+                                {
+                                    string opt = opts[oi];
+                                    bool sel = string.Equals(preview, opt, StringComparison.OrdinalIgnoreCase);
+                                    if (imgui_Selectable($"{opt}##APBool_{toon}_{oi}", sel))
+                                    {
+                                        _cfgAllPlayersEditBuf[toon] = opt;
+                                        preview = opt;
+                                    }
+                                }
+                                EndComboSafe();
+                            }
+                        }
+                        else
+                        {
+                            imgui_SetNextItemWidth(260f);
+                            if (imgui_InputText(editKey, curBuf))
+                            {
+                                _cfgAllPlayersEditBuf[toon] = imgui_InputText_Get(editKey) ?? string.Empty;
+                            }
+                        }
+                        imgui_SameLine();
+                        if (imgui_Button("Set##AP_" + toon))
+                        {
+                            string newVal = _cfgAllPlayersEditBuf.TryGetValue(toon, out var nb) ? (nb ?? string.Empty) : string.Empty;
+                            if (isBoolKey && string.IsNullOrEmpty(newVal))
+                            {
+                                // Default to current normalized value if nothing was explicitly chosen
+                                bool currentOn = val.Equals("On", StringComparison.OrdinalIgnoreCase) || val.Equals("True", StringComparison.OrdinalIgnoreCase);
+                                newVal = currentOn ? "On" : "Off";
+                            }
+                            string server = serverMap.TryGetValue(toon, out var sv) ? (sv ?? string.Empty) : string.Empty;
+                            if (!string.IsNullOrWhiteSpace(newVal) && !string.IsNullOrWhiteSpace(server))
+                            {
+                                bool isRemote = remoteSet.Contains(toon) && !string.Equals(toon, E3.CurrentName, StringComparison.OrdinalIgnoreCase);
+                                if (isRemote)
+                                {
+                                    string iniRel = $"e3 Bot Inis\\{toon}_{server}.ini";
+                                    string cmd = $"/ini \"{iniRel}\" \"{section}\" \"{key}\" \"{newVal}\"";
+                                    string targetToon = toon; // capture for closure
+                                    EnqueueUI(() =>
+                                    {
+                                        try { E3Core.Processors.E3.Bots.BroadcastCommandToPerson(targetToon, cmd); }
+                                        catch { }
+                                    });
+                                }
+                                else
+                                {
+                                    // Local update: write to disk and refresh
+                                    TrySetLocalIniValue(toon, server, section, key, newVal);
+                                }
+                                // force refresh next frame
+                                _cfgAllPlayersNextRefreshAtMs = 0;
+                            }
+                        }
+                        imgui_Separator();
+                    }
+                }
+            }
+            imgui_EndChild();
+        }
+
+        private static void TryRequestAllPlayersRefresh(string section, string key, bool force = false)
+        {
+            try
+            {
+                string sig = (section ?? string.Empty) + "::" + (key ?? string.Empty);
+                long now = Core.StopWatch.ElapsedMilliseconds;
+                bool sigChanged = !string.Equals(sig, _cfgAllPlayersSig, StringComparison.Ordinal);
+                bool timeOk = (now - _cfgAllPlayersLastUpdatedAt) >= _cfgAllPlayersRefreshIntervalMs;
+                if (force || sigChanged || timeOk)
+                {
+                    _cfgAllPlayersReqSection = section ?? string.Empty;
+                    _cfgAllPlayersReqKey = key ?? string.Empty;
+                    _cfgAllPlayersRefreshRequested = true;
+                }
+            }
+            catch { }
+        }
+
+        private static void RefreshAllPlayersCacheIfNeeded(string section, string key)
+        {
+            try
+            {
+                string sig = (section ?? string.Empty) + "::" + (key ?? string.Empty);
+                long now = Core.StopWatch.ElapsedMilliseconds;
+                if (string.Equals(sig, _cfgAllPlayersSig, StringComparison.Ordinal) && now < _cfgAllPlayersNextRefreshAtMs) return;
+
+                _cfgAllPlayersSig = sig;
+                _cfgAllPlayersNextRefreshAtMs = now + 1000; // 1s throttle
+                // Do not clear live data here; build a new snapshot and swap in atomically to avoid flicker.
+
+                // Build set of files to scan
+                ScanCharIniFilesIfNeeded();
+                var files = new HashSet<string>(StringComparer.OrdinalIgnoreCase);
+                foreach (var f in _charIniFiles) if (!string.IsNullOrEmpty(f)) files.Add(f);
+                var cur = GetCurrentCharacterIniPath();
+                if (!string.IsNullOrEmpty(cur)) files.Add(cur);
+
+                // Aggregate by toon name
+                var map = new Dictionary<string, string>(StringComparer.OrdinalIgnoreCase);
+                var tmpServerMap = new Dictionary<string, string>(StringComparer.OrdinalIgnoreCase);
+                var tmpRemoteSet = new HashSet<string>(StringComparer.OrdinalIgnoreCase);
+
+                // Local: Read each ini and extract value(s)
+                foreach (var f in files)
+                {
+                    try
+                    {
+                        string fileName = System.IO.Path.GetFileName(f) ?? string.Empty;
+                        if (string.IsNullOrEmpty(fileName)) continue;
+                        // Extract toon name from file name: Name_Server.ini
+                        string toon = fileName;
+                        int us = toon.IndexOf('_');
+                        string server = string.Empty;
+                        if (us > 0)
+                        {
+                            server = fileName.Substring(us + 1);
+                            int dot = server.LastIndexOf('.');
+                            if (dot > 0) server = server.Substring(0, dot);
+                            toon = toon.Substring(0, us);
+                        }
+
+                        var parser = E3Core.Utility.e3util.CreateIniParser();
+                        var pd = parser.ReadFile(f);
+                        var sec = pd?.Sections?.GetSectionData(section);
+                        var kd = sec?.Keys?.GetKeyData(key);
+                        string val = string.Empty;
+                        if (kd != null)
+                        {
+                            if (kd.ValueList != null && kd.ValueList.Count > 0)
+                            {
+                                val = string.Join(" | ", kd.ValueList.Where(x => !string.IsNullOrEmpty(x)));
+                            }
+                            else
+                            {
+                                val = kd.Value ?? string.Empty;
+                            }
+                        }
+                        else
+                        {
+                            val = "(missing)";
+                        }
+                        map[toon] = val;
+                        if (!string.IsNullOrEmpty(server)) tmpServerMap[toon] = server;
+                    }
+                    catch { /* ignore individual ini read errors */ }
+                }
+
+                // Remote: Query connected toons via Router for server and ini value
+                try
+                {
+                    foreach (var kv in E3Core.Server.NetMQServer.SharedDataClient.UsersConnectedTo)
+                    {
+                        string toon = kv.Key;
+                        var info = kv.Value;
+                        if (info == null || info.RouterPort <= 0) continue;
+                        using (var req = new RequestSocket())
+                        {
+                            req.Connect($"tcp://127.0.0.1:{info.RouterPort}");
+                            // Bulk mode to reduce round trips
+                            RouterQuery(req, "${E3.TLO.BulkBegin}");
+
+                            string server;
+                            if (!tmpServerMap.TryGetValue(toon, out server) || string.IsNullOrEmpty(server))
+                            {
+                                server = RouterQuery(req, "${IniServerName}") ?? string.Empty;
+                                if (!string.IsNullOrEmpty(server)) tmpServerMap[toon] = server;
+                            }
+
+                            string iniRel = $"e3 Bot Inis\\{toon}_{server}.ini";
+                            // Use quotes for section/key because of spaces
+                            string query = "${Ini[\"" + iniRel + "\",\"" + section + "\",\"" + key + "\"]}";
+                            string resp = RouterQuery(req, query) ?? string.Empty;
+
+                            RouterQuery(req, "${E3.TLO.BulkEnd}");
+
+                            if (string.IsNullOrEmpty(resp) || string.Equals(resp, "NULL", StringComparison.OrdinalIgnoreCase)) resp = "(missing)";
+                            map[toon] = resp;
+                            tmpRemoteSet.Add(toon);
+                        }
+                    }
+                }
+                catch { }
+
+                // Build rows list and swap into live snapshot under lock
+                var tmpRows = new List<System.Collections.Generic.KeyValuePair<string, string>>();
+                foreach (var pair in map)
+                {
+                    tmpRows.Add(new System.Collections.Generic.KeyValuePair<string, string>(pair.Key, pair.Value));
+                }
+                tmpRows.Sort((a, b) => string.Compare(a.Key, b.Key, StringComparison.OrdinalIgnoreCase));
+                lock (_cfgAllPlayersLock)
+                {
+                    _cfgAllPlayersRows = tmpRows;
+                    _cfgAllPlayersServerByToon = tmpServerMap;
+                    _cfgAllPlayersIsRemote = tmpRemoteSet;
+                }
+            }
+            catch { /* ignore aggregate errors */ }
+        }
+
+        private static void TrySetLocalIniValue(string toon, string server, string section, string key, string value)
+        {
+            try
+            {
+                if (string.IsNullOrEmpty(toon) || string.IsNullOrEmpty(server)) return;
+                string currentCharIni = GetCurrentCharacterIniPath();
+                string dir = System.IO.Path.GetDirectoryName(currentCharIni) ?? string.Empty;
+                if (string.IsNullOrEmpty(dir)) return;
+                string path = System.IO.Path.Combine(dir, toon + "_" + server + ".ini");
+                var parser = E3Core.Utility.e3util.CreateIniParser();
+                IniData pd;
+                if (System.IO.File.Exists(path)) pd = parser.ReadFile(path); else pd = new IniData();
+                var sec = pd.Sections.GetSectionData(section) ?? new SectionData(section);
+                if (!pd.Sections.ContainsSection(section)) pd.Sections.Add(sec);
+                var keys = sec.Keys;
+                var kd = keys.GetKeyData(key);
+                if (kd == null)
+                {
+                    keys.AddKey(key, value ?? string.Empty);
+                }
+                else
+                {
+                    kd.Value = value ?? string.Empty;
+                    kd.ValueList?.Clear();
+                }
+                parser.WriteFile(path, pd);
+                // If editing our own active ini, update in-memory and mark dirty for save if needed
+                if (string.Equals(toon, E3Core.Processors.E3.CurrentName, StringComparison.OrdinalIgnoreCase))
+                {
+                    try
+                    {
+                        var live = GetActiveCharacterIniData();
+                        if (live != null)
+                        {
+                            var lsec = live.Sections.GetSectionData(section);
+                            if (lsec == null)
+                            {
+                                live.Sections.AddSection(section);
+                                lsec = live.Sections.GetSectionData(section);
+                            }
+                            var lkd = lsec.Keys.GetKeyData(key);
+                            if (lkd == null) lsec.Keys.AddKey(key, value ?? string.Empty); else lkd.Value = value ?? string.Empty;
+                            _cfg_Dirty = true;
+                            _nextIniRefreshAtMs = 0;
+                        }
+                    }
+                    catch { }
+                }
+            }
+            catch { }
         }
 
         private static void RenderSpellDataTab()
