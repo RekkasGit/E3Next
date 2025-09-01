@@ -77,7 +77,8 @@ namespace E3Core.Processors
 							//get rid of dead mobs
 							_mobsToDispel.Remove(target);
 						}
-						if (Casting.TrueTarget(s.ID))
+						//most dispels are 200 ranage, ignore if its too far away, also check line of sight to th emob.
+						if (s.Distance3D<200 && MQ.Query<bool>($"${{Spawn[id {s.ID}].LineOfSight}}") && Casting.TrueTarget(s.ID))
 						{
 							if (!CheckDispelCurrentTarget())
 							{
@@ -142,9 +143,10 @@ namespace E3Core.Processors
 									if (Casting.InRange(targetId,spell) && Casting.CheckMana(spell) && Casting.CheckReady(spell))
 									{
 										Casting.Cast(0, spell);
-										return true;
 									}
 								}
+								//returning true so that it can be called again and eventually return false when there are no more buffs on the mob
+								return true;
 							}
 						}
 					}
