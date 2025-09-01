@@ -265,6 +265,14 @@ namespace E3Core.Settings
 		[INI_Section("Pets", "Pet Summon Combat (On/Off)")]
 		public bool Pet_SummonCombat;
 
+		//Alerts
+		[INI_Section("Alerts", "Damage Messages(On/Off)")]
+		public bool Alerts_DamageMessages = true;
+		[INI_Section("Alerts", "Rampage Messages(On/Off)")]
+		public bool Alerts_RampageMessages = true;
+		[INI_Section("Alerts", "Reflect Messages(On/Off)")]
+		public bool Alerts_ReflectMessages = true;
+
 		//debuffs
 		[INI_Section("Debuffs", "Debuff on Assist")]
 		public List<Spell> Debuffs_OnAssist = new List<Spell>();
@@ -636,6 +644,11 @@ namespace E3Core.Settings
 			LoadKeyData("Misc", "If FD stay down (true/false)", ParsedData, ref IfFDStayDown);
 			LoadKeyData("Misc", "Debuffs/Dots are visible", ParsedData, ref Misc_VisibleDebuffsDots);
 			LoadKeyData("Misc", "Enhanced rotation speed", ParsedData, ref Misc_EnchancedRotationSpeed);
+
+			LoadKeyData("Alerts", "Rampage Messages(On/Off)", ParsedData, ref Alerts_RampageMessages);
+			LoadKeyData("Alerts", "Damage Messages(On/Off)", ParsedData, ref Alerts_DamageMessages);
+			LoadKeyData("Alerts", "Reflect Messages(On/Off)", ParsedData, ref Alerts_ReflectMessages);
+
 
 			LoadKeyData("Manastone", "Override General Settings (On/Off)", ParsedData, ref Manastone_OverrideGeneralSettings);
             LoadKeyData("Manastone", "Manastone Enabled (On/Off)", ParsedData, ref Manastone_Enabled);
@@ -1013,6 +1026,13 @@ namespace E3Core.Settings
 			section.Keys.AddKey("PctMana", "100");
 			section.Keys.AddKey("PctStam", "100");
 			section.Keys.AddKey("PctHealth", "100");
+
+			newFile.Sections.AddSection("Alerts");
+			section = newFile.Sections.GetSectionData("Alerts");
+			section.Keys.AddKey("Rampage Messages(On/Off)", "On");
+			section.Keys.AddKey("Damage Messages(On/Off)", "On");
+			section.Keys.AddKey("Reflect Messages(On/Off)", "On");
+
 
 			newFile.Sections.AddSection("Assist Settings");
 			section = newFile.Sections.GetSectionData("Assist Settings");
