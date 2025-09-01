@@ -146,8 +146,6 @@
       <DesignTime>True</DesignTime>
       <DependentUpon>Resources.resx</DependentUpon>
     </Compile>
-    <Compile Include="Server\InventoryMmfPublisher.cs" />
-    <Compile Include="Server\InventoryNamedPipeServer_v2.cs" />
     <Compile Include="Server\NetMQServer.cs" />
     <Compile Include="Server\PubClient.cs" />
     <Compile Include="Server\PubServer.cs" />
@@ -183,7 +181,6 @@
     <Compile Include="Settings\FeatureSettings\DoorDataFile.cs" />
     <Compile Include="Settings\FeatureSettings\GlobalCursorDelete.cs" />
     <Compile Include="Settings\FeatureSettings\GlobalIfs.cs" />
-    <Compile Include="Settings\FeatureSettings\ButtonBar.cs" />
     <Compile Include="Settings\FeatureSettings\InventoryDataFile.cs" />
     <Compile Include="Settings\FeatureSettings\LazarusSymbolDataFile.cs" />
     <Compile Include="Settings\FeatureSettings\LootDataFile.cs" />

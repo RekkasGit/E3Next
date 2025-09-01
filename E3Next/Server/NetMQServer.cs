@@ -24,12 +24,11 @@ namespace E3Core.Server
         static RouterServer _routerServer;
         static PubClient _pubClient;
         public static SharedDataClient SharedDataClient;
-        static InventoryNamedPipeServer_v2 _inventoryNamedPipeServer;
+        // Removed: Named pipe server (unused)
         
         public static void Stop()
         {
             // Stop all server components in proper order
-            _inventoryNamedPipeServer?.Stop();
             _pubClient?.Stop();
             _routerServer?.Stop();
             _pubServer?.Stop();
@@ -69,9 +68,7 @@ namespace E3Core.Server
             _routerServer.Start(RouterPort);
             _pubClient.Start(PubClientPort);
             
-            // Start named pipe server for C++ plugin access
-            _inventoryNamedPipeServer = new InventoryNamedPipeServer_v2();
-            _inventoryNamedPipeServer.Start();
+            // Named pipes removed; MMF publisher is used directly by data sources
 		
 		
 			EventProcessor.RegisterCommand("/ui", (x) =>

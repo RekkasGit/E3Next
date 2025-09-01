@@ -572,8 +572,7 @@ namespace E3Core.Utility
                 var compactData = SerializeItemsToBinary(equippedItems);
                 PubServer.AddTopicMessage("${Me.InventoryEquipped}", compactData);
 
-                // Also update named pipe for C++ access
-                Server.InventoryNamedPipeServer_v2.UpdateInventoryData("equipped", compactData);
+                // Removed external IPC publishing of inventory data
 
                 _log.Write($"Published {equippedItems.Count} equipped items ({compactData.Length} chars)");
             }
@@ -611,8 +610,7 @@ namespace E3Core.Utility
                     var topicName = $"${{Me.InventoryBags.{chunkStart}-{chunkEnd}}}";
                     PubServer.AddTopicMessage(topicName, compactData);
 
-                    // Also update named pipe for C++ access
-                    Server.InventoryNamedPipeServer_v2.UpdateInventoryData($"bags.{chunkStart}-{chunkEnd}", compactData);
+                    // Removed external IPC publishing of inventory data
 
                     _log.Write($"Published {chunkItems.Count} items for bags {chunkStart}-{chunkEnd} ({compactData.Length} chars)");
                 }
@@ -634,8 +632,7 @@ namespace E3Core.Utility
                 var compactData = SerializeItemsToBinary(bankItems);
                 PubServer.AddTopicMessage("${Me.InventoryBank}", compactData);
 
-                // Also update named pipe for C++ access
-                Server.InventoryNamedPipeServer_v2.UpdateInventoryData("bank", compactData);
+                // Removed external IPC publishing of inventory data
 
                 _log.Write($"Published {bankItems.Count} bank items ({compactData.Length} chars)");
             }

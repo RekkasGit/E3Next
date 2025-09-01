@@ -384,59 +384,11 @@ namespace E3Core.Server
 					entry.LastUpdate = updateTime;
 				}
 				
-				// Forward inventory topics to MMF/pipe server for C++ plugin access
-				ForwardInventoryTopicToNamedPipe(user, messageTopicReceived, messageReceived);
+                // Removed: no longer forwarding inventory topics to any IPC publisher
 			}
 		}
 		
-		/// <summary>
-		/// Forward peer inventory data to named pipe server
-		/// </summary>
-		/// <param name="user">Character name</param>
-		/// <param name="topic">Original topic (e.g., "${Me.InventoryEquipped}")</param>
-		/// <param name="data">Binary inventory data</param>
-		private void ForwardInventoryTopicToNamedPipe(string user, string topic, string data)
-		{
-			try
-			{
-				// Forward all inventory topics from pub/sub into InventoryNamedPipeServer for MMF publishing
-				// Expected topics: ${Me.InventoryEquipped}, ${Me.InventoryBags.1-4}, ${Me.InventoryBank}
-				if (!topic.StartsWith("${Me.Inventory", StringComparison.OrdinalIgnoreCase))
-					return;
-
-				string pipeTopicName = null;
-
-				if (topic.IndexOf("InventoryEquipped", StringComparison.OrdinalIgnoreCase) >= 0)
-				{
-					pipeTopicName = $"{user}.equipped";
-				}
-				else if (topic.IndexOf("InventoryBags.", StringComparison.OrdinalIgnoreCase) >= 0)
-				{
-					// Extract bag range (e.g., "1-4" from "${Me.InventoryBags.1-4}")
-					int lastDot = topic.LastIndexOf('.');
-					int closeBrace = topic.LastIndexOf('}');
-					if (lastDot >= 0 && closeBrace > lastDot)
-					{
-						var bagRange = topic.Substring(lastDot + 1, closeBrace - (lastDot + 1));
-						pipeTopicName = $"{user}.bags.{bagRange}";
-					}
-				}
-				else if (topic.IndexOf("InventoryBank", StringComparison.OrdinalIgnoreCase) >= 0)
-				{
-					pipeTopicName = $"{user}.bank";
-				}
-
-				if (!string.IsNullOrEmpty(pipeTopicName))
-				{
-					// UpdateInventoryData will immediately publish to MMF as wired earlier
-					InventoryNamedPipeServer_v2.UpdateInventoryData(pipeTopicName, data);
-				}
-			}
-			catch
-			{
-				// swallow; do not impact shared data processing
-			}
-		}
+        // Removed forwarding helper; no external publisher in use
 		
 		[MethodImpl(MethodImplOptions.AggressiveInlining)]
 		public void Process_CheckNewConnections(SubscriberSocket subSocket)

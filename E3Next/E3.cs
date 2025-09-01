@@ -278,12 +278,7 @@ namespace E3Core.Processors
                 Loot.Reset();
                 E3.Bots.Broadcast("\aoComplete!");
             }
-            if (ButtonBar != null && ButtonBar.ShouldReload())
-            {
-                E3.Bots.Broadcast("\aoAuto-Reloading Buttons file...");
-                ButtonBar = new Settings.FeatureSettings.ButtonBar();
-                E3.Bots.Broadcast("\aoComplete!");
-            }
+            // Removed button bar reload logic
             if (Zoning.TributeDataFile.ShouldReload())
             {
                 E3.Bots.Broadcast("\aoAuto-Reloading Tribute settings file...");
@@ -587,7 +582,6 @@ namespace E3Core.Processors
                     //}
                 }
 				GlobalIfs = new GlobalIfs();
-				ButtonBar = new Settings.FeatureSettings.ButtonBar();
 				GlobalCursorDelete = new GlobalCursorDelete();
 				CharacterSettings = new Settings.CharacterSettings();
                 AdvancedSettings = new Settings.AdvancedSettings();
@@ -596,13 +590,8 @@ namespace E3Core.Processors
                 //as there is an order dependecy
                 Setup.Init();
 
-                // Register ImGui toggle commands for in-game usage
-                try
-                {
-                    MQ.AddCommand("/e3imgui");
-                    MQ.AddCommand("/e3buttons");
-                }
-                catch { }
+                // Register ImGui toggle command for in-game usage
+                try { MQ.AddCommand("/e3imgui"); } catch { }
                 IsInit = true;
                 MonoCore.Spawns.RefreshTimePeriodInMS = 500;
 			}
@@ -635,12 +624,7 @@ namespace E3Core.Processors
             }
 
             // Unregister our custom commands
-            try
-            {
-                MQ.RemoveCommand("/e3imgui");
-                MQ.RemoveCommand("/e3buttons");
-            }
-            catch { }
+            try { MQ.RemoveCommand("/e3imgui"); } catch { }
             
             AdvancedSettings.Reset();
             CharacterSettings = null;
@@ -675,7 +659,6 @@ namespace E3Core.Processors
         public static Logging Log = Core.logInstance;
         public static Settings.CharacterSettings CharacterSettings = null;
 		public static Settings.FeatureSettings.GlobalIfs GlobalIfs = null;
-		public static Settings.FeatureSettings.ButtonBar ButtonBar = null;
 		public static Settings.FeatureSettings.GlobalCursorDelete GlobalCursorDelete = null;
 		public static Settings.GeneralSettings GeneralSettings = null;
         public static Settings.AdvancedSettings AdvancedSettings = null;

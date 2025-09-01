@@ -1181,25 +1181,6 @@ namespace MonoCore
                 }
                 return;
             }
-            if (commandLine.StartsWith("/e3buttons", StringComparison.OrdinalIgnoreCase))
-            {
-                try
-                {
-                    // support optional index: /e3buttons 2
-                    int idx = 1;
-                    var parts = commandLine.Split(' ');
-                    if (parts.Length > 1)
-                    {
-                        int.TryParse(parts[1], out idx);
-                        if (idx < 1) idx = 1;
-                    }
-                    string windowName = idx == 1 ? _e3ButtonsWindow : _e3ButtonsWindow + " #" + idx.ToString();
-                    bool open = imgui_Begin_OpenFlagGet(windowName);
-                    imgui_Begin_OpenFlagSet(windowName, !open);
-                }
-                catch { }
-                return;
-            }
 
             mq_Echo("command recieved:" + commandLine);
             EventProcessor.ProcessMQCommand(commandLine);
@@ -1341,10 +1322,9 @@ namespace MonoCore
             //copy the data out into the current array set. 
         }
 
-        // Simple in-game ImGui windows.
-        // Config UI toggle: "/e3imgui". Buttons bar toggle: "/e3buttons".
+        // Simple in-game ImGui window.
+        // Config UI toggle: "/e3imgui".
         private static readonly string _e3ImGuiWindow = "E3Next Config";
-        private static readonly string _e3ButtonsWindow = "E3 Buttons";
         private static bool _imguiInitDone = false;
         // Queue to apply UI-driven changes safely on the processing loop
         public static ConcurrentQueue<Action> UIApplyQueue = new ConcurrentQueue<Action>();
@@ -1673,6 +1653,11 @@ namespace MonoCore
         private static bool _cfg_Dirty = false;
         // If's sample modal state
         private static bool _cfgShowIfSampleModal = false;
+        // Heals helpers: Add Connected Players modal state
+        private static bool _cfgShowAddConnectedModal = false;
+        private static List<string> _cfgAddConnectedCandidates = new List<string>();
+        private static HashSet<string> _cfgAddConnectedSelected = new HashSet<string>(StringComparer.OrdinalIgnoreCase);
+        private static string _cfgAddConnectedStatus = string.Empty;
         private static List<System.Collections.Generic.KeyValuePair<string, string>> _cfgIfSampleLines = new List<System.Collections.Generic.KeyValuePair<string, string>>();
         private static string _cfgIfSampleStatus = string.Empty;
         private static string _cfgIfNewName = string.Empty;
@@ -2432,6 +2417,62 @@ namespace MonoCore
                                 EndPopupSafe();
                             }
 
+                            // Heals helpers for Tank / Important Bot: Add Connected Players
+                            try
+                            {
+                                bool isHeals = string.Equals(_cfgSelectedSection, "Heals", StringComparison.OrdinalIgnoreCase);
+                                bool isTankOrImportant = string.Equals(_cfgSelectedKey, "Tank", StringComparison.OrdinalIgnoreCase)
+                                                          || string.Equals(_cfgSelectedKey, "Important Bot", StringComparison.OrdinalIgnoreCase);
+                                if (isHeals && isTankOrImportant)
+                                {
+                                    imgui_Separator();
+                                    if (imgui_Button("Add Connected Players"))
+                                    {
+                                        // Build candidate list from connected users + local player
+                                        var candidates = new List<string>();
+                                        try
+                                        {
+                                            foreach (var kv in E3Core.Server.NetMQServer.SharedDataClient.UsersConnectedTo)
+                                            {
+                                                string toon = kv.Key ?? string.Empty;
+                                                if (!string.IsNullOrWhiteSpace(toon)) AddUnique(candidates, toon);
+                                            }
+                                        }
+                                        catch { }
+
+                                        // Include current player name as well
+                                        if (!string.IsNullOrWhiteSpace(E3.CurrentName)) AddUnique(candidates, E3.CurrentName);
+
+                                        // Filter out names that already exist in the list
+                                        var existing = new HashSet<string>(StringComparer.OrdinalIgnoreCase);
+                                        try
+                                        {
+                                            if (values != null)
+                                            {
+                                                foreach (var v in values) { existing.Add((RemoveIfSuffix(v ?? string.Empty) ?? string.Empty).Trim()); }
+                                            }
+                                            else if (!string.IsNullOrEmpty(keyData.Value))
+                                            {
+                                                existing.Add((RemoveIfSuffix(keyData.Value ?? string.Empty) ?? string.Empty).Trim());
+                                            }
+                                        }
+                                        catch { }
+                                        var filtered = new List<string>();
+                                        foreach (var c in candidates)
+                                        {
+                                            string baseName = (RemoveIfSuffix(c ?? string.Empty) ?? string.Empty).Trim();
+                                            if (!string.IsNullOrEmpty(baseName) && !existing.Contains(baseName)) AddUnique(filtered, baseName);
+                                        }
+                                        filtered.Sort(StringComparer.OrdinalIgnoreCase);
+                                        _cfgAddConnectedCandidates = filtered;
+                                        _cfgAddConnectedSelected.Clear();
+                                        _cfgAddConnectedStatus = filtered.Count == 0 ? "No new connected players to add." : string.Empty;
+                                        _cfgShowAddConnectedModal = true;
+                                    }
+                                }
+                            }
+                            catch { }
+
                             // Manual input for non-boolean, no-dropdown keys
                             try
                             {
@@ -2488,7 +2529,43 @@ namespace MonoCore
                                     _cfgManualInputKeySig = ($"{_cfgSelectedSection}::{_cfgSelectedKey}");
                                 }
 
-                                // Visual separator between Manual Inputs and Append If's
+                                // Special Add handling for Food/Drink: scan inventory instead of catalogs
+                                bool isFoodDrink = string.Equals(_cfgSelectedSection, "Misc", StringComparison.OrdinalIgnoreCase) &&
+                                                    (string.Equals(_cfgSelectedKey, "Food", StringComparison.OrdinalIgnoreCase) || string.Equals(_cfgSelectedKey, "Drink", StringComparison.OrdinalIgnoreCase));
+                                bool canAddFromCatalog = _cfg_CatalogsReady && !isFoodDrink;
+                                if (!canAddFromCatalog)
+                                {
+                                    imgui_Text("(Load catalogs to enable Add from Spells/AAs/etc)");
+                                }
+                                if (imgui_Button("Add"))
+                                {
+                                    if (isFoodDrink)
+                                    {
+                                        string keyToScan = _cfgSelectedKey;
+                                        EnqueueUI(() =>
+                                        {
+                                            _cfgFoodDrinkKey = keyToScan;
+                                            _cfgFoodDrinkScanRequested = true;
+                                            _cfgFoodDrinkStatus = "Scanning inventory...";
+                                            _cfgShowFoodDrinkModal = true;
+                                        });
+                                    }
+                                    else if (canAddFromCatalog)
+                                    {
+                                        _cfgShowAddModal = true; _cfgAddIsEditMode = false; _cfgAddType = AddType.Spells; _cfgAddCategory = string.Empty; _cfgAddSubcategory = string.Empty;
+                                        _cfgAddWithIf = false; _cfgAddIfName = string.Empty;
+                                    }
+                                }
+                                // Keep Add/Delete inline
+                                imgui_SameLine();
+                                if (imgui_Button("Delete") && _cfgSelectedValueIndex >= 0 && values != null && _cfgSelectedValueIndex < values.Count)
+                                {
+                                    values.RemoveAt(_cfgSelectedValueIndex);
+                                    _cfgSelectedValueIndex = -1;
+                                    _cfg_Dirty = true;
+                                }
+
+                                // Visual separator between Value Add/Delete and Append If's
                                 imgui_Separator();
                                 // Append If's to selected or current value
                                 // Gather If names from current ini
@@ -2558,41 +2635,6 @@ namespace MonoCore
                             }
                             catch { /* manual input UI safe-guard */ }
 
-                            // Special Add handling for Food/Drink: scan inventory instead of catalogs
-                            bool isFoodDrink = string.Equals(_cfgSelectedSection, "Misc", StringComparison.OrdinalIgnoreCase) &&
-                                                (string.Equals(_cfgSelectedKey, "Food", StringComparison.OrdinalIgnoreCase) || string.Equals(_cfgSelectedKey, "Drink", StringComparison.OrdinalIgnoreCase));
-                            bool canAddFromCatalog = _cfg_CatalogsReady && !isFoodDrink;
-                            if (!canAddFromCatalog)
-                            {
-                                imgui_Text("(Load catalogs to enable Add from Spells/AAs/etc)");
-                            }
-                            if (imgui_Button("Add"))
-                            {
-                                if (isFoodDrink)
-                                {
-                                    string keyToScan = _cfgSelectedKey;
-                                    EnqueueUI(() =>
-                                    {
-                                        _cfgFoodDrinkKey = keyToScan;
-                                        _cfgFoodDrinkScanRequested = true;
-                                        _cfgFoodDrinkStatus = "Scanning inventory...";
-                                        _cfgShowFoodDrinkModal = true;
-                                    });
-                                }
-                                else if (canAddFromCatalog)
-                                {
-                                    _cfgShowAddModal = true; _cfgAddIsEditMode = false; _cfgAddType = AddType.Spells; _cfgAddCategory = string.Empty; _cfgAddSubcategory = string.Empty;
-                                    _cfgAddWithIf = false; _cfgAddIfName = string.Empty;
-                                }
-                            }
-                            // Keep Add/Delete inline
-                            imgui_SameLine();
-                            if (imgui_Button("Delete") && _cfgSelectedValueIndex >= 0 && values != null && _cfgSelectedValueIndex < values.Count)
-                            {
-                                values.RemoveAt(_cfgSelectedValueIndex);
-                                _cfgSelectedValueIndex = -1;
-                                _cfg_Dirty = true;
-                            }
                             // Right-click a value to Edit/Add/Remove via context menu
                             // If's: offer to pick from bundled samples (inline with Add/Delete)
                             if (string.Equals(_cfgSelectedSection, "Ifs", StringComparison.OrdinalIgnoreCase))
@@ -2662,6 +2704,84 @@ namespace MonoCore
                     }
                     imgui_EndChild();
                     if (imgui_Button("Close")) _cfgShowFoodDrinkModal = false;
+                }
+                imgui_End();
+            }
+
+            // Add Connected Players modal (Heals -> Tank / Important Bot)
+            if (_cfgShowAddConnectedModal)
+            {
+                if (imgui_Begin("Add Connected Players", (int)ImGuiWindowFlags.ImGuiWindowFlags_AlwaysAutoResize))
+                {
+                    if (!string.IsNullOrEmpty(_cfgAddConnectedStatus)) imgui_Text(_cfgAddConnectedStatus);
+                    float h = 280f; float w = 420f;
+                    if (imgui_BeginChild("AddConn_List", w, h, true))
+                    {
+                        for (int i = 0; i < _cfgAddConnectedCandidates.Count; i++)
+                        {
+                            string name = _cfgAddConnectedCandidates[i];
+                            bool cur = _cfgAddConnectedSelected.Contains(name);
+                            bool now = imgui_Checkbox(name + "##APC_" + i, cur);
+                            if (now != cur)
+                            {
+                                if (now) _cfgAddConnectedSelected.Add(name); else _cfgAddConnectedSelected.Remove(name);
+                            }
+                        }
+                        if (_cfgAddConnectedCandidates.Count == 0)
+                        {
+                            imgui_Text("(No candidates)");
+                        }
+                    }
+                    imgui_EndChild();
+
+                    bool anySel = _cfgAddConnectedSelected.Count > 0;
+                    if (imgui_Button(anySel ? "Add Selected" : "Add All"))
+                    {
+                        try
+                        {
+                            var toAdd = new List<string>();
+                            if (anySel) toAdd.AddRange(_cfgAddConnectedSelected);
+                            else toAdd.AddRange(_cfgAddConnectedCandidates);
+
+                            // Avoid duplicates against current list
+                            var iniData = GetActiveCharacterIniData();
+                            var sec = iniData?.Sections?.GetSectionData(_cfgSelectedSection ?? string.Empty);
+                            var kd = sec?.Keys?.GetKeyData(_cfgSelectedKey ?? string.Empty);
+                            var existing = new HashSet<string>(StringComparer.OrdinalIgnoreCase);
+                            if (kd != null)
+                            {
+                                if (kd.ValueList != null)
+                                {
+                                    foreach (var v in kd.ValueList) existing.Add((RemoveIfSuffix(v ?? string.Empty) ?? string.Empty).Trim());
+                                }
+                                if (!string.IsNullOrEmpty(kd.Value)) existing.Add((RemoveIfSuffix(kd.Value ?? string.Empty) ?? string.Empty).Trim());
+                            }
+
+                            foreach (var nm in toAdd)
+                            {
+                                string baseName = (RemoveIfSuffix(nm ?? string.Empty) ?? string.Empty).Trim();
+                                if (string.IsNullOrEmpty(baseName)) continue;
+                                if (!existing.Contains(baseName))
+                                {
+                                    AddValueToActiveIni(baseName);
+                                    existing.Add(baseName);
+                                }
+                            }
+                        }
+                        catch { }
+                        _cfgShowAddConnectedModal = false;
+                        _cfgAddConnectedSelected.Clear();
+                        _cfgAddConnectedCandidates.Clear();
+                        _cfgAddConnectedStatus = string.Empty;
+                    }
+                    imgui_SameLine();
+                    if (imgui_Button("Close"))
+                    {
+                        _cfgShowAddConnectedModal = false;
+                        _cfgAddConnectedSelected.Clear();
+                        _cfgAddConnectedCandidates.Clear();
+                        _cfgAddConnectedStatus = string.Empty;
+                    }
                 }
                 imgui_End();
             }
@@ -3458,8 +3578,13 @@ namespace MonoCore
 
                             RouterQuery(req, "${E3.TLO.BulkEnd}");
 
-                            if (string.IsNullOrEmpty(resp) || string.Equals(resp, "NULL", StringComparison.OrdinalIgnoreCase)) resp = "(missing)";
-                            map[toon] = resp;
+                            bool respMissing = string.IsNullOrEmpty(resp) || string.Equals(resp, "NULL", StringComparison.OrdinalIgnoreCase);
+                            string respValue = respMissing ? "(missing)" : resp;
+                            // Do not overwrite previously-read local value with a missing remote response
+                            if (!map.ContainsKey(toon) || !respMissing)
+                            {
+                                map[toon] = respValue;
+                            }
                             tmpRemoteSet.Add(toon);
                         }
                     }
@@ -3805,8 +3930,6 @@ namespace MonoCore
             {
                 try { imgui_Begin_OpenFlagSet(_e3ImGuiWindow, false); }
                 catch { /* older MQ2Mono versions may not support this */ }
-                try { imgui_Begin_OpenFlagSet(_e3ButtonsWindow, false); }
-                catch { /* older MQ2Mono versions may not support this */ }
                 _imguiInitDone = true;
             }
 
@@ -3831,464 +3954,12 @@ namespace MonoCore
                 imgui_End();
             }
 
-            // Buttons windows (multi-window aware)
-            RenderButtonsWindows();
+            // Buttons UI removed
         }
 
-        private static void RenderButtonsWindows()
-        {
-            var bb = E3Core.Processors.E3.ButtonBar;
-            if (bb == null)
-            {
-                if (imgui_Begin_OpenFlagGet(_e3ButtonsWindow))
-                {
-                    imgui_Begin(_e3ButtonsWindow, (int)ImGuiWindowFlags.ImGuiWindowFlags_AlwaysAutoResize);
-                    imgui_Text("No buttons configured. Edit 'E3 Buttons.ini'.");
-                    imgui_End();
-                }
-                return;
-            }
+        // RenderButtonsWindows removed
 
-            string charKey = (E3Core.Processors.E3.ServerName ?? string.Empty) + "_" + (E3Core.Processors.E3.CurrentName ?? string.Empty);
-            if (bb.WindowsByChar != null && bb.WindowsByChar.TryGetValue(charKey, out var windows) && windows != null && windows.Count > 0)
-            {
-                for (int i = 0; i < windows.Count; i++)
-                {
-                    var w = windows[i];
-                    string windowName = i == 0 ? _e3ButtonsWindow : _e3ButtonsWindow + " #" + (i + 1).ToString();
-                    int flags = (int)ImGuiWindowFlags.ImGuiWindowFlags_None;
-                    if (w.HideTitleBar) flags |= (int)ImGuiWindowFlags.ImGuiWindowFlags_NoTitleBar;
-                    if (w.Locked) flags |= (int)ImGuiWindowFlags.ImGuiWindowFlags_NoMove;
-                    if (w.AutoResize) flags |= (int)ImGuiWindowFlags.ImGuiWindowFlags_AlwaysAutoResize;
-
-                    if (!imgui_Begin_OpenFlagGet(windowName)) continue;
-                    imgui_Begin(windowName, flags);
-
-                    // Only show editor toggle in the first window to avoid duplicates
-                    if (i == 0)
-                    {
-                        RenderButtonsEditor(bb, charKey);
-                        imgui_Separator();
-                    }
-
-                    if (w.Sets == null || w.Sets.Count == 0)
-                    {
-                        imgui_Text("No sets assigned. Edit 'E3 Buttons.ini'.");
-                        imgui_End();
-                        continue;
-                    }
-
-                    if (w.Compact)
-                    {
-                        var first = FindSet(bb, w.Sets[0]);
-                        if (first != null)
-                        {
-                            RenderButtonsList(first);
-                        }
-                    }
-                    else
-                    {
-                        if (imgui_BeginTabBar(windowName + "_Tabs"))
-                        {
-                            foreach (var setName in w.Sets)
-                            {
-                                var set = FindSet(bb, setName);
-                                if (set == null) continue;
-                                if (imgui_BeginTabItem(set.Name))
-                                {
-                                    RenderButtonsList(set);
-                                    imgui_EndTabItem();
-                                }
-                            }
-                            imgui_EndTabBar();
-                        }
-                    }
-
-                    imgui_End();
-                }
-            }
-            else
-            {
-                // Fallback to single-window behavior for backwards compatibility
-                if (imgui_Begin_OpenFlagGet(_e3ButtonsWindow))
-                {
-                    imgui_Begin(_e3ButtonsWindow, (int)ImGuiWindowFlags.ImGuiWindowFlags_AlwaysAutoResize);
-                    RenderButtonsEditor(bb, charKey);
-                    imgui_Separator();
-                    if (bb.Sets != null && bb.Sets.Count > 0)
-                    {
-                        if (imgui_BeginTabBar("E3ButtonsTabs"))
-                        {
-                            foreach (var set in bb.Sets)
-                            {
-                                if (imgui_BeginTabItem(set.Name))
-                                {
-                                    RenderButtonsList(set);
-                                    imgui_EndTabItem();
-                                }
-                            }
-                            imgui_EndTabBar();
-                        }
-                    }
-                    else
-                    {
-                        foreach (var btn in bb.Buttons)
-                        {
-                            if (imgui_Button(btn.Label)) ExecuteButtonCommand(btn.Command);
-                        }
-                    }
-                    imgui_End();
-                }
-            }
-        }
-
-        private static bool _buttonsEditMode = false;
-        private static int _buttonsEditSelectedSet = 0;
-        private static string _buttonsEditNewSetName = string.Empty;
-        private static string _buttonsEditNewBtnLabel = string.Empty;
-        private static string _buttonsEditNewBtnCmd = string.Empty;
-
-        private static void RenderButtonsEditor(E3Core.Settings.FeatureSettings.ButtonBar bb, string charKey)
-        {
-            if (imgui_Button(_buttonsEditMode ? "Exit Edit Mode" : "Edit Buttons"))
-            {
-                _buttonsEditMode = !_buttonsEditMode;
-            }
-            if (!_buttonsEditMode) return;
-
-            imgui_Separator();
-            imgui_Text("Sets");
-
-            float leftW = 260f;
-            float availY = imgui_GetContentRegionAvailY();
-
-            // --- Left: Sets list -----------------------------------------------------
-            {
-                bool open = imgui_BeginChild("BB_Sets", leftW, availY * 0.5f, true);
-                if (open)
-                {
-                    for (int i = 0; i < (bb.Sets?.Count ?? 0); i++)
-                    {
-                        bool sel = (i == _buttonsEditSelectedSet);
-                        if (imgui_Selectable(bb.Sets[i].Name, sel))
-                            _buttonsEditSelectedSet = i;
-                    }
-                }
-                imgui_EndChild();
-            }
-
-            imgui_SameLine();
-
-            // --- Right: Set editor (add/rename/delete) -------------------------------
-            float rightW = imgui_GetContentRegionAvailX();
-            {
-                bool open2 = imgui_BeginChild("BB_SetEditor", rightW, availY * 0.5f, true);
-                if (open2)
-                {
-                    // Add/Rename/Delete set
-                    imgui_Text("Add Set");
-                    if (imgui_InputText("BB_NewSet", _buttonsEditNewSetName))
-                    {
-                        _buttonsEditNewSetName = imgui_InputText_Get("BB_NewSet");
-                    }
-                    if (imgui_Button("Add Set"))
-                    {
-                        var name = (_buttonsEditNewSetName ?? string.Empty).Trim();
-                        if (name.Length > 0)
-                        {
-                            EnqueueUI(() =>
-                            {
-                                bb.Sets.Add(new E3Core.Settings.FeatureSettings.ButtonBar.ButtonSet { Name = name });
-                                _buttonsEditSelectedSet = bb.Sets.Count - 1;
-                                _buttonsEditNewSetName = string.Empty;
-                            });
-                        }
-                    }
-
-                    if (bb.Sets != null && bb.Sets.Count > 0 && _buttonsEditSelectedSet >= 0 && _buttonsEditSelectedSet < bb.Sets.Count)
-                    {
-                        var set = bb.Sets[_buttonsEditSelectedSet];
-                        imgui_Separator();
-                        imgui_Text($"Edit Set: {set.Name}");
-
-                        // Rename
-                        if (imgui_InputText("BB_RenameSet", set.Name))
-                        {
-                            var newName = imgui_InputText_Get("BB_RenameSet");
-                            EnqueueUI(() =>
-                            {
-                                // Update window references
-                                if (bb.WindowsByChar.TryGetValue(charKey, out var charWindowsRename) && charWindowsRename != null)
-                                {
-                                    foreach (var w in charWindowsRename)
-                                    {
-                                        for (int si = 0; si < w.Sets.Count; si++)
-                                        {
-                                            if (string.Equals(w.Sets[si], set.Name, StringComparison.OrdinalIgnoreCase))
-                                                w.Sets[si] = newName;
-                                        }
-                                    }
-                                }
-                                set.Name = newName;
-                            });
-                        }
-
-                        // Delete
-                        if (imgui_Button("Delete Set"))
-                        {
-                            EnqueueUI(() =>
-                            {
-                                string old = set.Name;
-                                bb.Sets.RemoveAt(_buttonsEditSelectedSet);
-
-                                if (bb.WindowsByChar.TryGetValue(charKey, out var charWindowsDelete) && charWindowsDelete != null)
-                                {
-                                    foreach (var w in charWindowsDelete)
-                                    {
-                                        w.Sets.RemoveAll(s => string.Equals(s, old, StringComparison.OrdinalIgnoreCase));
-                                    }
-                                }
-
-                                _buttonsEditSelectedSet = 0;
-                            });
-                        }
-                    }
-                }
-                imgui_EndChild();
-            }
-
-            // --- Buttons of the selected set -----------------------------------------
-            if (bb.Sets != null && bb.Sets.Count > 0 && _buttonsEditSelectedSet >= 0 && _buttonsEditSelectedSet < bb.Sets.Count)
-            {
-                var set = bb.Sets[_buttonsEditSelectedSet];
-                imgui_Separator();
-                imgui_Text($"Buttons in: {set.Name}");
-
-                {
-                    bool open3 = imgui_BeginChild("BB_Buttons", imgui_GetContentRegionAvailX(), imgui_GetContentRegionAvailY() * 0.5f, true);
-                    if (open3)
-                    {
-                        for (int bi = 0; bi < set.Buttons.Count; bi++)
-                        {
-                            var b = set.Buttons[bi];
-                            string idLabel = $"BB_Label_{_buttonsEditSelectedSet}_{bi}";
-                            string idCmd = $"BB_Cmd_{_buttonsEditSelectedSet}_{bi}";
-
-                            imgui_Text("Label:");
-                            imgui_SameLine();
-                            if (imgui_InputText(idLabel, b.Label))
-                            {
-                                string nv = imgui_InputText_Get(idLabel);
-                                EnqueueUI(() => b.Label = nv);
-                            }
-
-                            imgui_Text("Cmd (use \\n for newline):");
-                            imgui_SameLine();
-                            if (imgui_InputText(idCmd, b.Command))
-                            {
-                                string nv = imgui_InputText_Get(idCmd);
-                                EnqueueUI(() => b.Command = nv);
-                            }
-
-                            imgui_SameLine();
-                            if (imgui_Button($"Delete##{_buttonsEditSelectedSet}_{bi}"))
-                            {
-                                int rmIndex = bi;
-                                EnqueueUI(() => set.Buttons.RemoveAt(rmIndex));
-                            }
-
-                            imgui_Separator();
-                        }
-
-                        imgui_Text("Add Button");
-                        if (imgui_InputText("BB_NewBtn_Label", _buttonsEditNewBtnLabel))
-                            _buttonsEditNewBtnLabel = imgui_InputText_Get("BB_NewBtn_Label");
-
-                        if (imgui_InputText("BB_NewBtn_Cmd", _buttonsEditNewBtnCmd))
-                            _buttonsEditNewBtnCmd = imgui_InputText_Get("BB_NewBtn_Cmd");
-
-                        if (imgui_Button("Add Button"))
-                        {
-                            var label = (_buttonsEditNewBtnLabel ?? string.Empty).Trim();
-                            var cmd = _buttonsEditNewBtnCmd ?? string.Empty;
-
-                            if (label.Length > 0)
-                            {
-                                EnqueueUI(() =>
-                                {
-                                    set.Buttons.Add(new E3Core.Settings.FeatureSettings.ButtonBar.ButtonDef
-                                    {
-                                        Label = label,
-                                        Command = cmd
-                                    });
-                                    _buttonsEditNewBtnLabel = string.Empty;
-                                    _buttonsEditNewBtnCmd = string.Empty;
-                                });
-                            }
-                        }
-                    }
-                    imgui_EndChild();
-                } // end inner scope for BB_Buttons child
-            }     // end: if selected set
-
-            // --- Windows configuration for current character --------------------------
-            imgui_Separator();
-            imgui_Text("Windows (current character)");
-
-            if (!bb.WindowsByChar.TryGetValue(charKey, out var charWindows) || charWindows == null)
-            {
-                // Seed a default window referencing all sets
-                EnqueueUI(() =>
-                {
-                    var w = new E3Core.Settings.FeatureSettings.ButtonBar.WindowDef
-                    {
-                        Id = "1",
-                        Visible = true,
-                        Locked = false,
-                        HideTitleBar = false,
-                        Compact = false,
-                        AutoResize = true
-                    };
-                    w.Sets = new List<string>();
-                    foreach (var s in bb.Sets) w.Sets.Add(s.Name);
-
-                    bb.WindowsByChar[charKey] = new List<E3Core.Settings.FeatureSettings.ButtonBar.WindowDef> { w };
-                });
-            }
-            else
-            {
-                var windows = charWindows;
-
-                {
-                    bool open4 = imgui_BeginChild("BB_Windows", imgui_GetContentRegionAvailX(), imgui_GetContentRegionAvailY() * 0.4f, true);
-                    if (open4)
-                    {
-                        for (int wi = 0; wi < windows.Count; wi++)
-                        {
-                            var w = windows[wi];
-
-                            imgui_Text($"Window {wi + 1}");
-
-                            bool v;
-                            v = imgui_Checkbox($"Locked##W{wi}", w.Locked);
-                            if (v != w.Locked) { bool nv = v; EnqueueUI(() => w.Locked = nv); }
-
-                            imgui_SameLine();
-                            v = imgui_Checkbox($"HideTitle##W{wi}", w.HideTitleBar);
-                            if (v != w.HideTitleBar) { bool nv = v; EnqueueUI(() => w.HideTitleBar = nv); }
-
-                            imgui_SameLine();
-                            v = imgui_Checkbox($"Compact##W{wi}", w.Compact);
-                            if (v != w.Compact) { bool nv = v; EnqueueUI(() => w.Compact = nv); }
-
-                            imgui_SameLine();
-                            v = imgui_Checkbox($"AutoResize##W{wi}", w.AutoResize);
-                            if (v != w.AutoResize) { bool nv = v; EnqueueUI(() => w.AutoResize = nv); }
-
-                            imgui_Text("Sets:");
-                            foreach (var s in bb.Sets)
-                            {
-                                bool has = w.Sets.Exists(n => string.Equals(n, s.Name, StringComparison.OrdinalIgnoreCase));
-                                bool inc = imgui_Checkbox($"{s.Name}##W{wi}_{s.Name}", has);
-
-                                if (inc != has)
-                                {
-                                    if (inc)
-                                    {
-                                        EnqueueUI(() =>
-                                        {
-                                            if (!w.Sets.Exists(n => string.Equals(n, s.Name, StringComparison.OrdinalIgnoreCase)))
-                                                w.Sets.Add(s.Name);
-                                        });
-                                    }
-                                    else
-                                    {
-                                        EnqueueUI(() =>
-                                            w.Sets.RemoveAll(n => string.Equals(n, s.Name, StringComparison.OrdinalIgnoreCase))
-                                        );
-                                    }
-                                }
-                            }
-
-                            imgui_Separator();
-                        }
-
-                        if (imgui_Button("Add Window"))
-                        {
-                            EnqueueUI(() =>
-                            {
-                                var w = new E3Core.Settings.FeatureSettings.ButtonBar.WindowDef
-                                {
-                                    Id = (windows.Count + 1).ToString(),
-                                    Visible = true,
-                                    Locked = false,
-                                    HideTitleBar = false,
-                                    Compact = false,
-                                    AutoResize = true
-                                };
-                                w.Sets = new List<string>();
-                                foreach (var s in bb.Sets) w.Sets.Add(s.Name);
-                                windows.Add(w);
-                            });
-                        }
-
-                        imgui_SameLine();
-
-                        if (windows.Count > 1 && imgui_Button("Remove Last Window"))
-                        {
-                            EnqueueUI(() =>
-                            {
-                                windows.RemoveAt(windows.Count - 1);
-                            });
-                        }
-                    }
-                    imgui_EndChild();
-                } // end inner scope for BB_Windows child
-            }     // end else (windows present)
-
-            // --- Save -----------------------------------------------------------------
-            imgui_Separator();
-            if (imgui_Button("Save Buttons.ini"))
-            {
-                EnqueueUI(() =>
-                {
-                    try
-                    {
-                        E3Core.Processors.E3.ButtonBar.Save();
-                        E3Core.Processors.E3.MQ.Write("Saved E3 Buttons.ini");
-                    }
-                    catch { }
-                });
-            }
-        }
-
-
-        private static E3Core.Settings.FeatureSettings.ButtonBar.ButtonSet FindSet(E3Core.Settings.FeatureSettings.ButtonBar bb, string name)
-        {
-            if (bb == null || bb.Sets == null) return null;
-            foreach (var s in bb.Sets) if (string.Equals(s.Name, name, StringComparison.OrdinalIgnoreCase)) return s;
-            return null;
-        }
-
-        private static void RenderButtonsList(E3Core.Settings.FeatureSettings.ButtonBar.ButtonSet set)
-        {
-            foreach (var btn in set.Buttons)
-            {
-                if (imgui_Button(btn.Label)) ExecuteButtonCommand(btn.Command);
-            }
-        }
-
-        private static void ExecuteButtonCommand(string cmd)
-        {
-            var normalized = (cmd ?? string.Empty).Replace("\\n", "\n").Replace("\r", "\n");
-            var parts = normalized.Split(new char[] { '\n' }, StringSplitOptions.None);
-            foreach (var line in parts)
-            {
-                var l = (line ?? string.Empty).Trim();
-                if (l.Length == 0) continue;
-                try { E3Core.Processors.E3.MQ.Cmd(l); } catch { }
-            }
-        }
+        // Buttons UI removed
 
         #region MQMethods
         [MethodImpl(MethodImplOptions.InternalCall)]
