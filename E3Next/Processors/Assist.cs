@@ -124,6 +124,7 @@ namespace E3Core.Processors
             Casting.ResetResistCounters();
             //put them back in their object pools
             DebuffDot.Reset();
+			Dispel.Reset();
 			Burns.Reset();
             AssistOff();
          
@@ -521,7 +522,8 @@ namespace E3Core.Processors
                 Casting.ResetResistCounters();
                 //put them back in their object pools
                 DebuffDot.Reset();
-                Burns.Reset();
+				Dispel.Reset();
+				Burns.Reset();
             }
             LastAssistEndedTimestamp = Core.StopWatch.ElapsedMilliseconds;
 
@@ -946,6 +948,7 @@ namespace E3Core.Processors
                     AssistOff();
                     Burns.Reset();
                     DebuffDot.Reset();
+                    Dispel.Reset();
                     Movement.AcquireFollow();
 
                 }
@@ -965,7 +968,8 @@ namespace E3Core.Processors
                     AssistOff();
                     Burns.Reset();
                     DebuffDot.Reset();
-                    Movement.AcquireFollow();
+				    Dispel.Reset();
+				    Movement.AcquireFollow();
 
             });
 

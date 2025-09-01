@@ -19,6 +19,20 @@ namespace E3NextConfigEditor.Models
 		
 		}
 		[Category("Spell Data")]
+		[Description("Spell Type")]
+		public string SpellType
+		{
+			get { return _spell.SpellType; }
+
+		}
+		[Category("Spell Data")]
+		[Description("Spell Target Type")]
+		public string TargetType
+		{
+			get { return _spell.TargetType; }
+
+		}
+		[Category("Spell Data")]
 		[Description("Spell Name")]
 		public string SpellName
 		{
@@ -476,6 +490,20 @@ namespace E3NextConfigEditor.Models
 		public SpellDataProxy(SpellData spell)
 		{
 			_spell = spell;
+
+		}
+		[Category("Spell Data")]
+		[Description("Spell Type")]
+		public string SpellType
+		{
+			get { return _spell.SpellType; }
+
+		}
+		[Category("Spell Data")]
+		[Description("Spell Target Type")]
+		public string TargetType
+		{
+			get { return _spell.TargetType; }
 
 		}
 		[Category("Spell Data")]
