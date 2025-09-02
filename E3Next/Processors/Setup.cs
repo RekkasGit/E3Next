@@ -154,7 +154,29 @@ namespace E3Core.Processors
 
 
 			},"Have your toon broadcast writes out to the MQ window for a conssolidated view.");
-		}
+
+            // Toggle the in-game ImGui config window
+            EventProcessor.RegisterCommand("/e3imgui", (x) =>
+            {
+                try
+                {
+                    // Check if MQ2Mono is loaded
+                    if (!MQ.Query<bool>("${Plugin[MQ2Mono]}"))
+                    {
+                        MQ.Write("MQ2Mono plugin required for ImGui. Load it first: /plugin MQ2Mono");
+                        return;
+                    }
+                    
+                    // Defer to the UI thread/context to avoid CTD
+                    Core.EnqueueUI(() => Core.ToggleImGuiWindow());
+                }
+                catch (Exception ex)
+                {
+                    MQ.Write($"ImGui error: {ex.Message}");
+                }
+            }, "Toggle E3Next ImGui window");
+
+        }
 			private static void InitSubSystems()
         {
             var methods = AppDomain.CurrentDomain.GetAssemblies()

@@ -3,6 +3,7 @@ using E3Core.Data;
 using E3Core.Processors;
 using E3Core.Settings;
 using MonoCore;
+using Google.Protobuf;
 using NetMQ;
 using NetMQ.Sockets;
 using System;
@@ -469,7 +470,14 @@ namespace E3Core.Server
 					subSocket.Subscribe("OnCommand-Zone");
 					subSocket.Subscribe("BroadCastMessage");
 					subSocket.Subscribe("BroadCastMessageZone");
-					subSocket.Subscribe("${Me."); //all Me stuff should be subscribed to
+                    // e3imgui Add From Catalog peer relay topics
+                    // Requests addressed to specific toons and responses back to requester
+                    subSocket.Subscribe("CatalogReq-");
+                    subSocket.Subscribe("CatalogResp-");
+                    // e3imgui Food/Drink inventory peer relay topics
+                    subSocket.Subscribe("InvReq-");
+                    subSocket.Subscribe("InvResp-");
+                    subSocket.Subscribe("${Me."); //all Me stuff should be subscribed to
 					subSocket.Subscribe("${Data."); //all the custom data keys a user can create
 					subSocket.Subscribe("${DataChannel.");
 				
@@ -631,7 +639,58 @@ namespace E3Core.Server
 									}
 								}
 							}
-							else if (messageTopicReceived == OnCommandName)
+                            else if (messageTopicReceived.StartsWith("CatalogReq-", StringComparison.Ordinal))
+                            {
+                                // e3imgui peer catalog request via PubSub relay
+                                // Topic: CatalogReq-<TargetToon>
+                                // payloaduser is requester; if TargetToon equals our name, publish base64 SpellDataList frames back
+                                string target = messageTopicReceived.Substring("CatalogReq-".Length);
+                                if (!string.IsNullOrEmpty(target) && target.Equals(E3.CurrentName, StringComparison.OrdinalIgnoreCase))
+                                {
+                                    try
+                                    {
+                                        var spells = E3Core.Utility.e3util.ListAllBookSpells();
+                                        var aas = E3Core.Utility.e3util.ListAllActiveAA();
+                                        var discs = E3Core.Utility.e3util.ListAllDiscData();
+                                        var skills = E3Core.Utility.e3util.ListAllActiveSkills();
+                                        var items = E3Core.Utility.e3util.ListAllItemWithClickyData();
+
+                                        Func<List<E3Core.Data.Spell>, string> pack = (lst) =>
+                                        {
+                                            var sdl = new SpellDataList();
+                                            foreach (var s in lst) sdl.Data.Add(s.ToProto());
+                                            return Convert.ToBase64String(sdl.ToByteArray());
+                                        };
+                                        PubServer.AddTopicMessage($"CatalogResp-{payloaduser}-Spells", pack(spells));
+                                        PubServer.AddTopicMessage($"CatalogResp-{payloaduser}-AAs", pack(aas));
+                                        PubServer.AddTopicMessage($"CatalogResp-{payloaduser}-Discs", pack(discs));
+                                        PubServer.AddTopicMessage($"CatalogResp-{payloaduser}-Skills", pack(skills));
+                                        PubServer.AddTopicMessage($"CatalogResp-{payloaduser}-Items", pack(items));
+                                    }
+                                    catch { }
+                                }
+                            }
+                            else if (messageTopicReceived.StartsWith("InvReq-", StringComparison.Ordinal))
+                            {
+                                // e3imgui Food/Drink peer inventory request via PubSub relay
+                                // Topic: InvReq-<TargetToon>
+                                // payloaduser is requester; messageReceived is type key ("Food" or "Drink")
+                                string target = messageTopicReceived.Substring("InvReq-".Length);
+                                if (!string.IsNullOrEmpty(target) && target.Equals(E3.CurrentName, StringComparison.OrdinalIgnoreCase))
+                                {
+                                    try
+                                    {
+                                        string type = (messageReceived ?? string.Empty).Trim();
+                                        List<string> items = ScanInventoryByType(type);
+                                        // pack as base64 of newline-delimited names
+                                        string joined = string.Join("\n", items ?? new List<string>());
+                                        string b64 = Convert.ToBase64String(System.Text.Encoding.UTF8.GetBytes(joined));
+                                        PubServer.AddTopicMessage($"InvResp-{payloaduser}-{type}", b64);
+                                    }
+                                    catch { }
+                                }
+                            }
+                            else if (messageTopicReceived == OnCommandName)
 							{	//bct commands
 								var data = OnCommandData.Aquire();
 								data.Data = messageReceived;
@@ -660,7 +719,55 @@ namespace E3Core.Server
 			MQ.WriteDelayed($"Shutting down Share Data Thread.");
 		}
 
-		public class OnCommandData
+        // Helper to scan local inventory for a given item type (e.g., "Food" or "Drink")
+        private static List<string> ScanInventoryByType(string type)
+        {
+            var results = new HashSet<string>(StringComparer.OrdinalIgnoreCase);
+            if (string.IsNullOrWhiteSpace(type)) return results.ToList();
+            string key = type.Trim();
+            try
+            {
+                // scan top-level inventory slots generously
+                for (int inv = 1; inv <= 40; inv++)
+                {
+                    try
+                    {
+                        bool present = E3.MQ.Query<bool>($"${{Me.Inventory[{inv}]}}");
+                        if (!present) continue;
+                        string t = E3.MQ.Query<string>($"${{Me.Inventory[{inv}].Type}}") ?? string.Empty;
+                        if (!string.IsNullOrEmpty(t) && t.Equals(key, StringComparison.OrdinalIgnoreCase))
+                        {
+                            string name = E3.MQ.Query<string>($"${{Me.Inventory[{inv}]}}") ?? string.Empty;
+                            if (!string.IsNullOrEmpty(name)) results.Add(name);
+                        }
+                        int slots = E3.MQ.Query<int>($"${{Me.Inventory[{inv}].Container}}");
+                        if (slots > 0)
+                        {
+                            for (int i = 1; i <= slots; i++)
+                            {
+                                try
+                                {
+                                    bool ipresent = E3.MQ.Query<bool>($"${{Me.Inventory[{inv}].Item[{i}]}}");
+                                    if (!ipresent) continue;
+                                    string it = E3.MQ.Query<string>($"${{Me.Inventory[{inv}].Item[{i}].Type}}") ?? string.Empty;
+                                    if (!string.IsNullOrEmpty(it) && it.Equals(key, StringComparison.OrdinalIgnoreCase))
+                                    {
+                                        string iname = E3.MQ.Query<string>($"${{Me.Inventory[{inv}].Item[{i}]}}") ?? string.Empty;
+                                        if (!string.IsNullOrEmpty(iname)) results.Add(iname);
+                                    }
+                                }
+                                catch { }
+                            }
+                        }
+                    }
+                    catch { }
+                }
+            }
+            catch { }
+            return results.OrderBy(x => x, StringComparer.OrdinalIgnoreCase).ToList();
+        }
+
+        public class OnCommandData
 		{
 			public enum CommandType
 			{
