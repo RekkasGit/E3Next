@@ -1013,7 +1013,7 @@ namespace MonoCore
         [MethodImpl(MethodImplOptions.InternalCall)]
         public extern static bool imgui_Begin_OpenFlagGet(string name);
         [MethodImpl(MethodImplOptions.InternalCall)]
-        public extern static void imgui_Button(string name);
+        public extern static bool imgui_Button(string name);
         [MethodImpl(MethodImplOptions.InternalCall)]
         public extern static void imgui_End();
         #endregion
