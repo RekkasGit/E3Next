@@ -427,8 +427,8 @@ namespace MonoCore
                 }
                 imgui_EndCombo();
             }
-            
-            imgui_Separator();
+
+            imgui_SameLine();
             
             // Save button with better styling
             if (imgui_Button(_cfg_Dirty ? "Save Changes*" : "Save Changes"))
@@ -1962,54 +1962,53 @@ namespace MonoCore
 
         private static void RenderAddFromCatalogModal(IniData pd, SectionData selectedSection)
         {
-            float totalW = Math.Max(880f, imgui_GetContentRegionAvailX());
-            float listH = Math.Max(420f, imgui_GetContentRegionAvailY() * 0.8f);
-            // Ensure window open flag is set when we intend to show it (allows reopening after X)
             imgui_Begin_OpenFlagSet("Add From Catalog", true);
-            bool _open_Add = imgui_Begin("Add From Catalog", (int)ImGuiWindowFlags.ImGuiWindowFlags_None);
+            bool _open_Add = imgui_Begin("Add From Catalog", (int)ImGuiWindowFlags.ImGuiWindowFlags_AlwaysAutoResize);
             if (_open_Add)
             {
-                // Type tabs with better styling
-                imgui_TextColored(0.9f, 0.95f, 1.0f, 1.0f, "Select Spell Type");
-                
-                imgui_SameLine(); 
-                if (imgui_Button(_cfgAddType == AddType.Spells ? "> Spells" : "Spells")) _cfgAddType = AddType.Spells;
-                imgui_SameLine(); 
-                if (imgui_Button(_cfgAddType == AddType.AAs ? "> AAs" : "AAs")) _cfgAddType = AddType.AAs;
-                imgui_SameLine(); 
-                if (imgui_Button(_cfgAddType == AddType.Discs ? "> Discs" : "Discs")) _cfgAddType = AddType.Discs;
-                imgui_SameLine(); 
-                if (imgui_Button(_cfgAddType == AddType.Skills ? "> Skills" : "Skills")) _cfgAddType = AddType.Skills;
-                imgui_SameLine(); 
-                if (imgui_Button(_cfgAddType == AddType.Items ? "> Items" : "Items")) _cfgAddType = AddType.Items;
+                float totalW = Math.Max(880f, imgui_GetContentRegionAvailX());
+                float listH = Math.Max(420f, imgui_GetContentRegionAvailY() * 0.8f);
+                float thirdW = Math.Max(220f, totalW / 3.0f - 8.0f);
+
+                // Header: type + filter
+                imgui_TextColored(0.95f, 0.85f, 0.35f, 1.0f, "Add From Catalog");
+                imgui_SameLine();
+                if (imgui_BeginCombo("##type", _cfgAddType.ToString(), 0))
+                {
+                    foreach (AddType t in Enum.GetValues(typeof(AddType)))
+                    {
+                        bool sel = t == _cfgAddType;
+                        if (imgui_Selectable(t.ToString(), sel)) _cfgAddType = t;
+                    }
+                    EndComboSafe();
+                }
+                imgui_SameLine();
+                imgui_Text("Filter:");
+                imgui_SameLine();
+                if (imgui_InputText("##filter", _cfgAddFilter ?? string.Empty))
+                    _cfgAddFilter = imgui_InputText_Get("##filter") ?? string.Empty;
+
                 imgui_Separator();
 
-                // Filter with better styling
-                imgui_TextColored(0.8f, 0.9f, 0.95f, 1.0f, "Filter Spells");
-                
-                imgui_SameLine();
-                if (imgui_InputText("Filter", _cfgAddFilter))
-                    _cfgAddFilter = imgui_InputText_Get("Filter") ?? string.Empty;
-
-                // Source map and columns
+                // Resolve the catalog for the chosen type
                 var src = GetCatalogByType(_cfgAddType);
-                var cats = src.Keys.ToList();
-                cats.Sort(StringComparer.OrdinalIgnoreCase);
-                float leftW = Math.Max(200f, totalW * 0.25f);
-                float midW = Math.Max(200f, totalW * 0.25f);
-                float thirdW = Math.Max(360f, totalW - leftW - midW - 24f);
 
-                // Categories column
-                imgui_TextColored(0.9f, 0.95f, 1.0f, 1.0f, "Categories");
-                
-                if (imgui_BeginChild("CatList", leftW, listH, true))
+                // -------- LEFT: Top-level categories --------
+                if (imgui_BeginChild("TopLevelCats", thirdW, listH, true))
                 {
+                    imgui_TextColored(0.9f, 0.95f, 1.0f, 1.0f, "Categories");
+                    var cats = src.Keys.ToList();
+                    cats.Sort(StringComparer.OrdinalIgnoreCase);
                     int ci = 0;
                     foreach (var c in cats)
                     {
                         bool sel = string.Equals(_cfgAddCategory, c, StringComparison.OrdinalIgnoreCase);
-                        string label = $"{c}##Cat_{_cfgAddType}_{ci}";
-                        if (imgui_Selectable(label, sel)) { _cfgAddCategory = c; _cfgAddSubcategory = string.Empty; }
+                        string id = $"{c}##Cat_{_cfgAddType}_{ci}";
+                        if (imgui_Selectable(id, sel))
+                        {
+                            _cfgAddCategory = c;
+                            _cfgAddSubcategory = string.Empty; // reset mid level on cat change
+                        }
                         ci++;
                     }
                 }
@@ -2017,33 +2016,37 @@ namespace MonoCore
 
                 imgui_SameLine();
 
-                // Subcategories column
-                imgui_TextColored(0.9f, 0.95f, 1.0f, 1.0f, "Subcategories");
-                
-                if (imgui_BeginChild("SubList", midW, listH, true))
+                // -------- MIDDLE: Subcategories for selected category --------
+                if (imgui_BeginChild("SubCats", thirdW, listH, true))
                 {
+                    imgui_TextColored(0.9f, 0.95f, 1.0f, 1.0f, "Subcategories");
                     if (!string.IsNullOrEmpty(_cfgAddCategory) && src.TryGetValue(_cfgAddCategory, out var submap))
                     {
-                        var subs = submap.Keys.ToList(); subs.Sort(StringComparer.OrdinalIgnoreCase);
+                        var subs = submap.Keys.ToList();
+                        subs.Sort(StringComparer.OrdinalIgnoreCase);
                         int si = 0;
                         foreach (var sc in subs)
                         {
                             bool sel = string.Equals(_cfgAddSubcategory, sc, StringComparison.OrdinalIgnoreCase);
-                            string label = $"{sc}##Sub_{_cfgAddType}_{_cfgAddCategory}_{si}";
-                            if (imgui_Selectable(label, sel)) { _cfgAddSubcategory = sc; }
+                            string id = $"{sc}##Sub_{_cfgAddType}_{_cfgAddCategory}_{si}";
+                            if (imgui_Selectable(id, sel)) _cfgAddSubcategory = sc;
                             si++;
                         }
+                    }
+                    else
+                    {
+                        imgui_Text("Select a category.");
                     }
                 }
                 imgui_EndChild();
 
                 imgui_SameLine();
 
-                // Entries column
-                imgui_TextColored(0.9f, 0.95f, 1.0f, 1.0f, "Spell Entries");
-                
+                // -------- RIGHT: Entries (with Add / Info) --------
                 if (imgui_BeginChild("EntryList", thirdW, listH, true))
                 {
+                    imgui_TextColored(0.9f, 0.95f, 1.0f, 1.0f, "Entries");
+
                     IEnumerable<E3Spell> entries = Enumerable.Empty<E3Spell>();
                     if (!string.IsNullOrEmpty(_cfgAddCategory) && src.TryGetValue(_cfgAddCategory, out var submap2))
                     {
@@ -2052,63 +2055,65 @@ namespace MonoCore
                         else
                             entries = submap2.Values.SelectMany(x => x);
                     }
+
                     string filter = (_cfgAddFilter ?? string.Empty).Trim();
-                    if (filter.Length > 0) entries = entries.Where(e => e.Name.IndexOf(filter, StringComparison.OrdinalIgnoreCase) >= 0);
-                    // Sort globally by Level (desc), then Name to stabilize order
-                    entries = entries
-                        .OrderByDescending(e => e.Level)
-                        .ThenBy(e => e.Name, StringComparer.OrdinalIgnoreCase);
+                    if (filter.Length > 0)
+                        entries = entries.Where(e => e.Name.IndexOf(filter, StringComparison.OrdinalIgnoreCase) >= 0);
+
+                    // stable ordering
+                    entries = entries.OrderByDescending(e => e.Level)
+                                     .ThenBy(e => e.Name, StringComparer.OrdinalIgnoreCase);
+
                     int i = 0;
                     foreach (var e in entries)
                     {
-                        // Row controls: Add | Info | Name (non-clickable text)
                         string uid = $"{_cfgAddType}_{_cfgAddCategory}_{_cfgAddSubcategory}_{i}";
-                        
-                        imgui_SameLine();
-                        if (imgui_Button($"➕ Add##add_{uid}"))
+
+                        // Add
+                        if (imgui_Button($"Add##add_{uid}"))
                         {
                             var kd = selectedSection?.Keys?.GetKeyData(_cfgSelectedKey ?? string.Empty);
                             if (kd != null)
                             {
                                 var vals = GetValues(kd);
-                                string toAdd = (e.Name ?? string.Empty).Trim();
-                                if (!vals.Contains(toAdd, StringComparer.OrdinalIgnoreCase))
+                                string v = (e.Name ?? string.Empty).Trim();
+                                if (!vals.Contains(v, StringComparer.OrdinalIgnoreCase))
                                 {
-                                    vals.Add(toAdd);
+                                    vals.Add(v);
                                     WriteValues(kd, vals);
                                 }
                             }
                         }
                         imgui_SameLine();
-                        if (imgui_Button($"ℹ️ Info##info_{uid}"))
+
+                        // Info
+                        if (imgui_Button($"Info##info_{uid}"))
                         {
-                            _cfgSpellInfoSpell = e;
+                            _cfgSpellInfoSpell = e;   // <- use the field that exists in your file
                             _cfgShowSpellInfoModal = true;
                         }
                         imgui_SameLine();
-                        
-                        // Display spell info with level
-                        string spellDisplay = $"📦 [{e.Level}] {e.Name}";
-                        imgui_Text(spellDisplay);
+
+                        // Row text: show level + name (no ToDisplayString needed)
+                        imgui_Text($"[{e.Level}] {e.Name}");
                         i++;
                     }
-                    if (i == 0) imgui_Text("❌ No entries found");
+
+                    if (i == 0) imgui_Text("No entries found");
                 }
                 imgui_EndChild();
 
-                // Footer actions with better styling
                 imgui_Separator();
-                imgui_TextColored(0.9f, 0.95f, 1.0f, 1.0f, "Quick Actions");
-                
-                imgui_SameLine();
-                if (imgui_Button("📦 Add All Visible"))
+                // One-click bulk add of the currently visible entries
+                if (imgui_Button("Add All Visible"))
                 {
                     TryAddVisibleEntriesToSelectedKey(selectedSection);
                 }
                 imgui_SameLine();
-                if (imgui_Button("❌ Close")) { _cfgShowAddModal = false; }
+                if (imgui_Button("Close")) { _cfgShowAddModal = false; }
             }
             imgui_End();
+
             // If user clicked the X, reflect that in our show flag
             if (!_open_Add || !imgui_Begin_OpenFlagGet("Add From Catalog")) _cfgShowAddModal = false;
         }
