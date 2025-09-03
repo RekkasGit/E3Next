@@ -103,19 +103,50 @@ namespace MonoCore
             // Only render if ImGui is available and ready
             if (_imguiContextReady && imgui_Begin_OpenFlagGet(_e3ImGuiWindow))
             {
+                
                 imgui_Begin(_e3ImGuiWindow, (int)ImGuiWindowFlags.ImGuiWindowFlags_None);
 
-                // Header
-                imgui_Text($"nE³xt v{E3Core.Processors.Setup._e3Version} | Build {E3Core.Processors.Setup._buildDate}");
+                // Header with better styling
+                imgui_TextColored(0.95f, 0.85f, 0.35f, 1.0f, $"nE³xt v{E3Core.Processors.Setup._e3Version} | Build {E3Core.Processors.Setup._buildDate}");
+                
                 imgui_Separator();
 
                 // Character INI selector (used by Config Editor)
                 RenderCharacterIniSelector();
 
                 imgui_Separator();
+                
+                // All Players View toggle with better styling
+                imgui_Text("View Mode:");
+                imgui_SameLine();
+                if (imgui_Button(_cfgAllPlayersView ? "Switch to Character View" : "Switch to All Players View"))
+                {
+                    _cfgAllPlayersView = !_cfgAllPlayersView;
+                }
+                imgui_SameLine();
+                imgui_TextColored(0.3f, 0.8f, 0.3f, 1.0f, _cfgAllPlayersView ? "All Players Mode" : "Character Mode");
+
+                imgui_Separator();
+
+                if (_cfgAllPlayersView)
+                {
+                    string currentSig = $"{_cfgSelectedSection}::{_cfgSelectedKey}";
+                    if (!string.Equals(currentSig, _cfgAllPlayersSig, StringComparison.OrdinalIgnoreCase))
+                    {
+                        _cfgAllPlayersSig = currentSig;
+                        _cfgAllPlayersRefreshRequested = true;
+                    }
+                }
+
                 // Config Editor only
-                imgui_Text("Config Editor");
-                RenderConfigEditor();
+                if (_cfgAllPlayersView)
+                {
+                    RenderAllPlayersView();
+                }
+                else
+                {
+                    RenderConfigEditor();
+                }
 
                 imgui_End();
             }
@@ -196,6 +227,90 @@ namespace MonoCore
             }
         }
 
+        // Resolves a toon’s ini path by scanning known .ini files and preferring a match
+        // that includes the server name if we have it.
+        private static bool TryGetIniPathForToon(string toon, out string path)
+        {
+            path = null;
+            if (string.IsNullOrWhiteSpace(toon)) return false;
+
+            // Keep our list of ini files fresh
+            ScanCharIniFilesIfNeeded();
+
+            // Current character is easy
+            if (!string.IsNullOrEmpty(E3.CurrentName) &&
+                string.Equals(E3.CurrentName, toon, StringComparison.OrdinalIgnoreCase))
+            {
+                path = GetCurrentCharacterIniPath();
+                return !string.IsNullOrEmpty(path);
+            }
+
+            if (_charIniFiles == null || _charIniFiles.Length == 0) return false;
+
+            // Optional: prefer matches that also contain server in the filename
+            _cfgAllPlayersServerByToon.TryGetValue(toon, out var serverHint);
+            serverHint = serverHint ?? string.Empty;
+
+            // Gather candidates: filename starts with "<Toon>_" or equals "<Toon>.ini"
+            var candidates = new List<string>();
+            foreach (var f in _charIniFiles)
+            {
+                var name = System.IO.Path.GetFileName(f);
+                if (name.StartsWith(toon + "_", StringComparison.OrdinalIgnoreCase) ||
+                    name.Equals(toon + ".ini", StringComparison.OrdinalIgnoreCase))
+                {
+                    candidates.Add(f);
+                }
+            }
+
+            if (candidates.Count == 0) return false;
+
+            // Prefer one that mentions the server (common pattern: Toon_Server_Class.ini)
+            if (!string.IsNullOrEmpty(serverHint))
+            {
+                var withServer = candidates.FirstOrDefault(f =>
+                    System.IO.Path.GetFileName(f).IndexOf("_" + serverHint + "_", StringComparison.OrdinalIgnoreCase) >= 0);
+                if (!string.IsNullOrEmpty(withServer))
+                {
+                    path = withServer;
+                    return true;
+                }
+            }
+
+            // Fallback: first candidate
+            path = candidates[0];
+            return true;
+        }
+
+        // Reads, updates, and writes a single INI value for a toon.
+        private static bool TrySaveIniValueForToon(string toon, string section, string key, string newValue, out string error)
+        {
+            error = null;
+            if (!TryGetIniPathForToon(toon, out var iniPath))
+            {
+                error = $"Could not resolve ini path for '{toon}'.";
+                return false;
+            }
+
+            try
+            {
+                var parser = E3Core.Utility.e3util.CreateIniParser();       // you already use this elsewhere
+                var data = parser.ReadFile(iniPath);                         // IniParser.Model.IniData
+                if (!data.Sections.ContainsSection(section))
+                    data.Sections.AddSection(section);
+                data[section][key] = newValue ?? string.Empty;               // simplest way to set a value
+                parser.WriteFile(iniPath, data);                             // persist to disk
+
+                return true;
+            }
+            catch (Exception ex)
+            {
+                error = ex.Message;
+                return false;
+            }
+        }
+
+
         private static string GetCurrentCharacterIniPath()
         {
             if (E3.CharacterSettings != null && !string.IsNullOrEmpty(E3.CharacterSettings._fileName))
@@ -243,7 +358,16 @@ namespace MonoCore
             string currentDisplay = Path.GetFileName(currentPath);
             string selName = Path.GetFileName(_selectedCharIniPath ?? currentPath);
             if (string.IsNullOrEmpty(selName)) selName = currentDisplay;
-            bool opened = _comboAvailable && BeginComboSafe("Ini File", selName);
+            
+            // Section header
+            imgui_TextColored(0.8f, 0.9f, 0.95f, 1.0f, "Character Configuration");
+            
+            imgui_SameLine();
+            imgui_TextColored(0.7f, 0.7f, 0.7f, 1.0f, $"({Path.GetFileNameWithoutExtension(currentDisplay)})");
+            
+            imgui_Separator();
+            
+            bool opened = _comboAvailable && BeginComboSafe("Select Character", selName);
             if (opened)
             {
                 if (!string.IsNullOrEmpty(currentPath))
@@ -267,12 +391,15 @@ namespace MonoCore
                     }
                 }
 
+                imgui_Separator();
+                imgui_Text("Other Characters:");
+                
                 foreach (var f in _charIniFiles)
                 {
                     if (string.Equals(f, currentPath, StringComparison.OrdinalIgnoreCase)) continue;
                     string name = Path.GetFileName(f);
                     bool sel = string.Equals(_selectedCharIniPath, f, StringComparison.OrdinalIgnoreCase);
-                    if (imgui_Selectable(name, sel))
+                    if (imgui_Selectable($"{name}", sel))
                     {
                         try
                         {
@@ -300,11 +427,17 @@ namespace MonoCore
                 }
                 imgui_EndCombo();
             }
-            imgui_SameLine();
+            
+            imgui_Separator();
+            
+            // Save button with better styling
             if (imgui_Button(_cfg_Dirty ? "Save Changes*" : "Save Changes"))
             {
                 SaveActiveIniData();
             }
+            imgui_SameLine();
+            imgui_TextColored(0.6f, 0.6f, 0.6f, 1.0f, _cfg_Dirty ? "Unsaved changes" : "All changes saved");
+            
             imgui_Separator();
         }
 
@@ -559,6 +692,122 @@ namespace MonoCore
             if (!_open_ifs) _cfgShowIfSampleModal = false;
         }
 
+        private static void RenderAllPlayersView()
+        {
+            imgui_Text("All Players View");
+            imgui_Separator();
+
+            var pd = GetActiveCharacterIniData();
+            if (pd == null || pd.Sections == null || string.IsNullOrEmpty(_cfgSelectedSection) || string.IsNullOrEmpty(_cfgSelectedKey))
+            {
+                imgui_Text("Select a section and key in the Config Editor first.");
+                return;
+            }
+
+            
+
+            imgui_Text($"Viewing: [{_cfgSelectedSection}] -> [{_cfgSelectedKey}]");
+            imgui_SameLine();
+            if (imgui_Button("Refresh")) _cfgAllPlayersRefreshRequested = true;
+
+            imgui_Separator();
+
+            if (imgui_BeginChild("AllPlayersList", 0, 0, true))
+            {
+                float outerW = Math.Max(720f, imgui_GetContentRegionAvailX()); // keep it roomy
+                                                                               // Columns: Toon | Server | Remote | Value (editable) | Actions
+                if (imgui_BeginTable("AllPlayersTable", 4, 0, outerW))
+                {
+                    imgui_TableSetupColumn("Toon", 0, 180f);
+                    imgui_TableSetupColumn("Remote", 0, 80f);
+                    imgui_TableSetupColumn("Value", 0, Math.Max(260f, outerW - (180f + 80f + 120f))); // leave room for Save
+                    imgui_TableSetupColumn("Actions", 0, 100f);
+                    imgui_TableHeadersRow();
+
+                    lock (_cfgAllPlayersLock)
+                    {
+                        foreach (var row in _cfgAllPlayersRows)
+                        {
+                            string toon = row.Key ?? string.Empty;
+                            string server = _cfgAllPlayersServerByToon.TryGetValue(toon, out var sv) ? (sv ?? string.Empty) : string.Empty;
+                            bool isRemote = _cfgAllPlayersIsRemote.Contains(toon);
+
+                            if (!_cfgAllPlayersEditBuf.ContainsKey(toon))
+                                _cfgAllPlayersEditBuf[toon] = row.Value ?? string.Empty;
+
+                            imgui_TableNextRow();
+
+                            // Toon
+                            imgui_TableNextColumn();
+                            imgui_Text(toon);
+
+                            // Remote
+                            imgui_TableNextColumn();
+                            imgui_Text(isRemote ? "Yes" : "No");
+
+                            // Value (editable)
+                            imgui_TableNextColumn();
+                            string currentValue = _cfgAllPlayersEditBuf[toon];
+                            bool isBool = string.Equals(currentValue, "true", StringComparison.OrdinalIgnoreCase) || string.Equals(currentValue, "false", StringComparison.OrdinalIgnoreCase)
+                                || string.Equals(currentValue, "on", StringComparison.OrdinalIgnoreCase) || string.Equals(currentValue, "off", StringComparison.OrdinalIgnoreCase);
+
+                            if (isBool)
+                            {
+                                if (BeginComboSafe($"##value_{toon}", currentValue))
+                                {
+                                    if (imgui_Selectable("True", string.Equals(currentValue, "True", StringComparison.OrdinalIgnoreCase)))
+                                    {
+                                        _cfgAllPlayersEditBuf[toon] = "True";
+                                    }
+                                    if (imgui_Selectable("False", string.Equals(currentValue, "False", StringComparison.OrdinalIgnoreCase)))
+                                    {
+                                        _cfgAllPlayersEditBuf[toon] = "False";
+                                    }
+                                    if (imgui_Selectable("On", string.Equals(currentValue, "On", StringComparison.OrdinalIgnoreCase)))
+                                    {
+                                        _cfgAllPlayersEditBuf[toon] = "On";
+                                    }
+                                    if (imgui_Selectable("Off", string.Equals(currentValue, "Off", StringComparison.OrdinalIgnoreCase)))
+                                    {
+                                        _cfgAllPlayersEditBuf[toon] = "Off";
+                                    }
+                                    EndComboSafe();
+                                }
+                            }
+                            else
+                            {
+                                string inputId = $"##edit_{toon}";
+                                if (imgui_InputText(inputId, currentValue))
+                                {
+                                    _cfgAllPlayersEditBuf[toon] = imgui_InputText_Get(inputId) ?? string.Empty;
+                                }
+                            }
+
+                            // Actions
+                            imgui_TableNextColumn();
+                            if (imgui_Button($"Save##{row.Key}"))
+                            {
+                                string newValue = _cfgAllPlayersEditBuf[row.Key] ?? string.Empty;
+
+                                if (TrySaveIniValueForToon(row.Key, _cfgSelectedSection, _cfgSelectedKey, newValue, out var err))
+                                {
+                                    E3.MQ.Write($"Saved [{_cfgSelectedSection}] {_cfgSelectedKey} for {row.Key}.");
+                                }
+                                else
+                                {
+                                    E3.MQ.Write($"Save failed for {row.Key}: {err}");
+                                }
+                            }
+                        }
+                    }
+
+                    imgui_EndTable();
+                }
+            }
+            imgui_EndChild();
+        }
+
+
         // Catalogs and Add modal state
         private static bool _cfg_CatalogsReady = false;
         private static bool _cfg_CatalogLoadRequested = false;
@@ -668,20 +917,22 @@ namespace MonoCore
             var pd = GetActiveCharacterIniData();
             if (pd == null || pd.Sections == null)
             {
-                imgui_Text("No character INI loaded.");
+                imgui_TextColored(1.0f, 0.8f, 0.8f, 1.0f, "No character INI loaded.");
                 return;
             }
 
-            // Catalog status / loader
+            // Catalog status / loader with better styling
             if (!_cfg_CatalogsReady)
             {
+                imgui_TextColored(1.0f, 0.9f, 0.3f, 1.0f, "Catalog Status");
+                
                 if (_cfg_CatalogLoading)
                 {
                     imgui_Text(string.IsNullOrEmpty(_cfg_CatalogStatus) ? "Loading catalogs..." : _cfg_CatalogStatus);
                 }
                 else
                 {
-                    imgui_Text(string.IsNullOrEmpty(_cfg_CatalogStatus) ? "Catalogs not loaded." : _cfg_CatalogStatus);
+                    imgui_Text(string.IsNullOrEmpty(_cfg_CatalogStatus) ? "Catalogs not loaded" : _cfg_CatalogStatus);
                     imgui_SameLine();
                     if (imgui_Button("Load Catalogs"))
                     {
@@ -714,12 +965,20 @@ namespace MonoCore
 
             float availY = imgui_GetContentRegionAvailY();
             float leftW = 220f;
+            
+            // Left pane: sections with better styling
+            imgui_TextColored(0.9f, 0.95f, 1.0f, 1.0f, "Main Ini Sections");
+            imgui_SameLine(245);
+            imgui_TextColored(0.8f, 0.9f, 0.95f, 1.0f, "Section Topics");
+
             if (imgui_BeginChild("Cfg_Left", leftW, Math.Max(120f, availY * 0.8f), true))
             {
                 foreach (var sec in _cfgSectionsOrdered)
                 {
                     bool sel = string.Equals(_cfgSelectedSection, sec, StringComparison.OrdinalIgnoreCase);
-                    if (imgui_Selectable(sec, sel))
+                    // Add emoji to section names for better visual distinction
+                    string sectionDisplay = sec;
+                    if (imgui_Selectable(sectionDisplay, sel))
                     {
                         _cfgSelectedSection = sec;
                         var secData = pd.Sections.GetSectionData(sec);
@@ -758,6 +1017,7 @@ namespace MonoCore
                             _cfgSelectedKey = keys[0];
                             _cfgSelectedValueIndex = -1;
                         }
+                        
                         foreach (var k in keys)
                         {
                             bool sel = string.Equals(_cfgSelectedKey, k, StringComparison.OrdinalIgnoreCase);
@@ -793,8 +1053,8 @@ namespace MonoCore
                         imgui_Separator();
                     }
 
-                    // Title row
-                    imgui_Text($"[{_cfgSelectedSection}] {_cfgSelectedKey}");
+                    // Title row with better styling
+                    imgui_TextColored(0.95f, 0.85f, 0.35f, 1.0f, $"[{_cfgSelectedSection}] {_cfgSelectedKey}");
                     imgui_Separator();
 
                     // Enumerated options derived from key label e.g. "(Melee/Ranged/Off)"
@@ -826,7 +1086,7 @@ namespace MonoCore
                         }
                         imgui_Separator();
                     }
-                    // Boolean fast toggle support → dropdown selector
+                    // Boolean fast toggle support → dropdown selector with better styling
                     else if (IsBooleanConfigKey(_cfgSelectedKey, kd))
                     {
                         string current = (raw ?? string.Empty).Trim();
@@ -852,13 +1112,14 @@ namespace MonoCore
                             baseOpts = new List<string> { "On", "Off" };
                         }
 
-                        string display = current.Length == 0 ? "(unset)" : current;
+                        string display = current.Length == 0 ? "(unset)" : (string.Equals(current, "True", StringComparison.OrdinalIgnoreCase) || string.Equals(current, "On", StringComparison.OrdinalIgnoreCase) ? "" + current : "" + current);
                         if (BeginComboSafe("Value", display))
                         {
                             foreach (var opt in baseOpts)
                             {
                                 bool sel = string.Equals(current, opt, StringComparison.OrdinalIgnoreCase);
-                                if (imgui_Selectable(opt, sel))
+                                string optDisplay = string.Equals(opt, "True", StringComparison.OrdinalIgnoreCase) || string.Equals(opt, "On", StringComparison.OrdinalIgnoreCase) ? "" + opt : "" + opt;
+                                if (imgui_Selectable(optDisplay, sel))
                                 {
                                     string chosen = opt;
                                     var pdAct = GetActiveCharacterIniData();
@@ -878,25 +1139,32 @@ namespace MonoCore
                         imgui_Separator();
                     }
 
-                    // Values list
+                    // Values list with improved styling
                     bool listChanged = false;
+                    imgui_TextColored(0.9f, 0.95f, 1.0f, 1.0f, "Configuration Values");
+                    
                     for (int i = 0; i < parts.Count; i++)
                     {
                         string v = parts[i];
                         bool editing = (_cfgInlineEditIndex == i);
                         // Create a unique ID for this item that doesn't depend on its position in the list
                         string itemUid = $"{_cfgSelectedSection}_{_cfgSelectedKey}_{i}_{(v ?? string.Empty).GetHashCode()}";
+                        
                         if (!editing)
                         {
-                            // Align buttons across rows by placing them before variable-length text
+                            // Row with better styling and alignment
                             imgui_Text($"{i + 1}.");
                             imgui_SameLine();
+                            
+                            // Edit button with icon
                             if (imgui_Button($"Edit##edit_{itemUid}"))
                             {
                                 _cfgInlineEditIndex = i;
                                 _cfgInlineEditBuffer = v;
                             }
                             imgui_SameLine();
+                            
+                            // Delete button with icon
                             if (imgui_Button($"Delete##delete_{itemUid}"))
                             {
                                 int idx = i;
@@ -916,6 +1184,7 @@ namespace MonoCore
                                 // continue to render items; parts refresh handled below
                             }
                             imgui_SameLine();
+                            
                             // Append If button for rows that support Ifs (typically spell-like entries)
                             if (imgui_Button($"If+##if_{itemUid}"))
                             {
@@ -950,17 +1219,23 @@ namespace MonoCore
                                 _cfgShowIfAppendModal = true;
                             }
                             imgui_SameLine();
-                            imgui_Text(v);
+                            
+                            // Value display with better formatting
+                            imgui_TextColored(0.9f, 0.9f, 0.9f, 1.0f, v);
                         }
                         else
                         {
-                            imgui_Text($"{i + 1}.");
+                            // Edit mode with better styling
+                            imgui_Text($"🔹 {i + 1}.");
                             imgui_SameLine();
+                            
+                            imgui_SetNextItemWidth(300f);
                             if (imgui_InputText($"##edit_text_{itemUid}", _cfgInlineEditBuffer))
                             {
                                 _cfgInlineEditBuffer = imgui_InputText_Get($"##edit_text_{itemUid}");
                             }
                             imgui_SameLine();
+                            
                             if (imgui_Button($"Save##save_{itemUid}"))
                             {
                                 string newText = _cfgInlineEditBuffer ?? string.Empty;
@@ -983,6 +1258,7 @@ namespace MonoCore
                                 // continue to render items; parts refresh handled below
                             }
                             imgui_SameLine();
+                            
                             if (imgui_Button($"Cancel##cancel_{itemUid}"))
                             {
                                 _cfgInlineEditIndex = -1;
@@ -1081,10 +1357,14 @@ namespace MonoCore
                         }
                     }
 
-                    // Add new value
+                    // Add new value with improved styling
                     if (!listChanged && _cfgInlineEditIndex == -1)
                     {
-                        if (imgui_Button("Add"))
+                        imgui_Separator();
+                        imgui_TextColored(0.8f, 0.9f, 0.95f, 1.0f, "Add New Values");
+                        
+                        imgui_SameLine();
+                        if (imgui_Button("Add Manual"))
                         {
                             _cfgInlineEditIndex = parts.Count;
                             _cfgInlineEditBuffer = string.Empty;
@@ -1094,14 +1374,17 @@ namespace MonoCore
                         {
                             _cfgShowAddModal = true;
                         }
-                        imgui_SameLine();
+                        
+                        // Special section buttons with icons
+                        imgui_Separator();
+                        
                         // Heals: Tank / Important Bot → pick from connected toons
                         bool isHeals = string.Equals(_cfgSelectedSection, "Heals", StringComparison.OrdinalIgnoreCase);
                         bool isTankKey = string.Equals(_cfgSelectedKey, "Tank", StringComparison.OrdinalIgnoreCase);
                         bool isImpKey = string.Equals(_cfgSelectedKey, "Important Bot", StringComparison.OrdinalIgnoreCase);
                         if (isHeals && (isTankKey || isImpKey))
                         {
-                            if (imgui_Button("Pick Toons"))
+                            if (imgui_Button("👥 Pick Toons"))
                             {
                                 try
                                 {
@@ -1115,6 +1398,7 @@ namespace MonoCore
                             }
                             imgui_SameLine();
                         }
+                        
                         if (_cfgSelectedKey.Equals("Food", StringComparison.OrdinalIgnoreCase) || _cfgSelectedKey.Equals("Drink", StringComparison.OrdinalIgnoreCase))
                         {
                             if (imgui_Button("Pick From Inventory"))
@@ -1127,6 +1411,7 @@ namespace MonoCore
                                 _cfgShowFoodDrinkModal = true;
                             }
                         }
+                        
                         // Ifs sample import button (only when editing the Ifs section)
                         if (string.Equals(_cfgSelectedSection, "Ifs", StringComparison.OrdinalIgnoreCase))
                         {
@@ -1344,6 +1629,80 @@ namespace MonoCore
                     _cfgFoodDrinkCandidates = new List<string>();
                     _cfgFoodDrinkPending = false;
                 }
+            }
+
+            if (_cfgAllPlayersRefreshRequested && !_cfgAllPlayersRefreshing)
+            {
+                _cfgAllPlayersRefreshing = true;
+                _cfgAllPlayersReqSection = _cfgSelectedSection;
+                _cfgAllPlayersReqKey = _cfgSelectedKey;
+
+                System.Threading.Tasks.Task.Run(() =>
+                {
+                    try
+                    {
+                        _cfgAllPlayersStatus = "Refreshing...";
+                        var connectedToons = E3Core.Server.NetMQServer.SharedDataClient?.UsersConnectedTo?.Keys?.ToList() ?? new List<string>();
+                        if (!connectedToons.Contains(E3.CurrentName, StringComparer.OrdinalIgnoreCase))
+                        {
+                            connectedToons.Add(E3.CurrentName);
+                        }
+
+                        var newRows = new List<KeyValuePair<string, string>>();
+                        string section = _cfgAllPlayersReqSection;
+                        string key = _cfgAllPlayersReqKey;
+
+                        foreach (var toon in connectedToons)
+                        {
+                            string value = "";
+                            if (toon.Equals(E3.CurrentName, StringComparison.OrdinalIgnoreCase))
+                            {
+                                // Get local value
+                                var pd = GetActiveCharacterIniData();
+                                value = pd?.Sections?.GetSectionData(section)?.Keys?.GetKeyData(key)?.Value ?? "";
+                            }
+                            else
+                            {
+                                // Request from peer
+                                string requestTopic = $"ConfigValueReq-{toon}";
+                                string payload = $"{section}:{key}";
+                                E3Core.Server.PubServer.AddTopicMessage(requestTopic, payload);
+
+                                string responseTopic = $"ConfigValueResp-{E3.CurrentName}-{section}:{key}";
+                                long end = Core.StopWatch.ElapsedMilliseconds + 2000;
+                                bool found = false;
+                                while (Core.StopWatch.ElapsedMilliseconds < end)
+                                {
+                                    if (E3Core.Server.NetMQServer.SharedDataClient.TopicUpdates.TryGetValue(toon, out var topics) &&
+                                        topics.TryGetValue(responseTopic, out var entry))
+                                    {
+                                        value = entry.Data;
+                                        found = true;
+                                        break;
+                                    }
+                                    System.Threading.Thread.Sleep(25);
+                                }
+                                if (!found) value = "<timeout>";
+                            }
+                            newRows.Add(new KeyValuePair<string, string>(toon, value));
+                        }
+
+                        lock (_cfgAllPlayersLock)
+                        {
+                            _cfgAllPlayersRows = newRows;
+                        }
+                        _cfgAllPlayersLastUpdatedAt = Core.StopWatch.ElapsedMilliseconds;
+                    }
+                    catch (Exception ex)
+                    {
+                        _cfgAllPlayersStatus = "Refresh failed: " + ex.Message;
+                    }
+                    finally
+                    {
+                        _cfgAllPlayersRefreshing = false;
+                        _cfgAllPlayersRefreshRequested = false;
+                    }
+                });
             }
         }
 
@@ -1610,15 +1969,25 @@ namespace MonoCore
             bool _open_Add = imgui_Begin("Add From Catalog", (int)ImGuiWindowFlags.ImGuiWindowFlags_None);
             if (_open_Add)
             {
-                // Type tabs
+                // Type tabs with better styling
+                imgui_TextColored(0.9f, 0.95f, 1.0f, 1.0f, "Select Spell Type");
+                
+                imgui_SameLine(); 
                 if (imgui_Button(_cfgAddType == AddType.Spells ? "> Spells" : "Spells")) _cfgAddType = AddType.Spells;
-                imgui_SameLine(); if (imgui_Button(_cfgAddType == AddType.AAs ? "> AAs" : "AAs")) _cfgAddType = AddType.AAs;
-                imgui_SameLine(); if (imgui_Button(_cfgAddType == AddType.Discs ? "> Discs" : "Discs")) _cfgAddType = AddType.Discs;
-                imgui_SameLine(); if (imgui_Button(_cfgAddType == AddType.Skills ? "> Skills" : "Skills")) _cfgAddType = AddType.Skills;
-                imgui_SameLine(); if (imgui_Button(_cfgAddType == AddType.Items ? "> Items" : "Items")) _cfgAddType = AddType.Items;
+                imgui_SameLine(); 
+                if (imgui_Button(_cfgAddType == AddType.AAs ? "> AAs" : "AAs")) _cfgAddType = AddType.AAs;
+                imgui_SameLine(); 
+                if (imgui_Button(_cfgAddType == AddType.Discs ? "> Discs" : "Discs")) _cfgAddType = AddType.Discs;
+                imgui_SameLine(); 
+                if (imgui_Button(_cfgAddType == AddType.Skills ? "> Skills" : "Skills")) _cfgAddType = AddType.Skills;
+                imgui_SameLine(); 
+                if (imgui_Button(_cfgAddType == AddType.Items ? "> Items" : "Items")) _cfgAddType = AddType.Items;
                 imgui_Separator();
 
-                // Filter
+                // Filter with better styling
+                imgui_TextColored(0.8f, 0.9f, 0.95f, 1.0f, "Filter Spells");
+                
+                imgui_SameLine();
                 if (imgui_InputText("Filter", _cfgAddFilter))
                     _cfgAddFilter = imgui_InputText_Get("Filter") ?? string.Empty;
 
@@ -1631,6 +2000,8 @@ namespace MonoCore
                 float thirdW = Math.Max(360f, totalW - leftW - midW - 24f);
 
                 // Categories column
+                imgui_TextColored(0.9f, 0.95f, 1.0f, 1.0f, "Categories");
+                
                 if (imgui_BeginChild("CatList", leftW, listH, true))
                 {
                     int ci = 0;
@@ -1647,6 +2018,8 @@ namespace MonoCore
                 imgui_SameLine();
 
                 // Subcategories column
+                imgui_TextColored(0.9f, 0.95f, 1.0f, 1.0f, "Subcategories");
+                
                 if (imgui_BeginChild("SubList", midW, listH, true))
                 {
                     if (!string.IsNullOrEmpty(_cfgAddCategory) && src.TryGetValue(_cfgAddCategory, out var submap))
@@ -1667,6 +2040,8 @@ namespace MonoCore
                 imgui_SameLine();
 
                 // Entries column
+                imgui_TextColored(0.9f, 0.95f, 1.0f, 1.0f, "Spell Entries");
+                
                 if (imgui_BeginChild("EntryList", thirdW, listH, true))
                 {
                     IEnumerable<E3Spell> entries = Enumerable.Empty<E3Spell>();
@@ -1688,7 +2063,9 @@ namespace MonoCore
                     {
                         // Row controls: Add | Info | Name (non-clickable text)
                         string uid = $"{_cfgAddType}_{_cfgAddCategory}_{_cfgAddSubcategory}_{i}";
-                        if (imgui_Button($"Add##add_{uid}"))
+                        
+                        imgui_SameLine();
+                        if (imgui_Button($"➕ Add##add_{uid}"))
                         {
                             var kd = selectedSection?.Keys?.GetKeyData(_cfgSelectedKey ?? string.Empty);
                             if (kd != null)
@@ -1703,26 +2080,33 @@ namespace MonoCore
                             }
                         }
                         imgui_SameLine();
-                        if (imgui_Button($"Info##info_{uid}"))
+                        if (imgui_Button($"ℹ️ Info##info_{uid}"))
                         {
                             _cfgSpellInfoSpell = e;
                             _cfgShowSpellInfoModal = true;
                         }
                         imgui_SameLine();
-                        imgui_Text(e.Name ?? string.Empty);
+                        
+                        // Display spell info with level
+                        string spellDisplay = $"📦 [{e.Level}] {e.Name}";
+                        imgui_Text(spellDisplay);
                         i++;
                     }
-                    if (i == 0) imgui_Text("(No entries)");
+                    if (i == 0) imgui_Text("❌ No entries found");
                 }
                 imgui_EndChild();
 
-                // Footer actions
-                if (imgui_Button("Add All Visible"))
+                // Footer actions with better styling
+                imgui_Separator();
+                imgui_TextColored(0.9f, 0.95f, 1.0f, 1.0f, "Quick Actions");
+                
+                imgui_SameLine();
+                if (imgui_Button("📦 Add All Visible"))
                 {
                     TryAddVisibleEntriesToSelectedKey(selectedSection);
                 }
                 imgui_SameLine();
-                if (imgui_Button("Close")) { _cfgShowAddModal = false; }
+                if (imgui_Button("❌ Close")) { _cfgShowAddModal = false; }
             }
             imgui_End();
             // If user clicked the X, reflect that in our show flag
@@ -1911,19 +2295,19 @@ namespace MonoCore
             var s = _cfgSpellInfoSpell;
             if (s == null) { _cfgShowSpellInfoModal = false; return; }
             imgui_Begin_OpenFlagSet("Spell Info", true);
-            bool _open_info = imgui_Begin("Spell Info", (int)ImGuiWindowFlags.ImGuiWindowFlags_AlwaysAutoResize);
+            bool _open_info = imgui_Begin("Spell Information", (int)ImGuiWindowFlags.ImGuiWindowFlags_AlwaysAutoResize);
             if (_open_info)
             {
-                // Header
-                imgui_Text(s.Name ?? string.Empty);
+                // Header with better styling
+                imgui_TextColored(0.95f, 0.85f, 0.35f, 1.0f, $"{s.Name ?? string.Empty}");
                 imgui_Separator();
 
-                // Build table rows (label, value)
+                // Build table rows (label, value) with better formatting
                 var rows = new List<KeyValuePair<string, string>>();
                 rows.Add(new KeyValuePair<string, string>("Type", s.CastType ?? string.Empty));
                 rows.Add(new KeyValuePair<string, string>("Level", s.Level > 0 ? s.Level.ToString() : string.Empty));
                 rows.Add(new KeyValuePair<string, string>("Mana", s.Mana > 0 ? s.Mana.ToString() : string.Empty));
-                rows.Add(new KeyValuePair<string, string>("Cast", s.CastTime > 0 ? $"{s.CastTime:0.00}s" : string.Empty));
+                rows.Add(new KeyValuePair<string, string>("Cast Time", s.CastTime > 0 ? $"{s.CastTime:0.00}s" : string.Empty));
                 rows.Add(new KeyValuePair<string, string>("Recast", s.Recast > 0 ? FormatMsSmart(s.Recast) : string.Empty));
                 rows.Add(new KeyValuePair<string, string>("Range", s.Range > 0 ? s.Range.ToString("0") : string.Empty));
                 rows.Add(new KeyValuePair<string, string>("Target", s.TargetType ?? string.Empty));
@@ -1935,7 +2319,7 @@ namespace MonoCore
                 float width = Math.Max(520f, imgui_GetContentRegionAvailX());
                 if (imgui_BeginTable("SpellInfoTable", 2, 0, width))
                 {
-                    imgui_TableSetupColumn("Field", 0, 140f);
+                    imgui_TableSetupColumn("Property", 0, 140f);
                     imgui_TableSetupColumn("Value", 0, Math.Max(260f, width - 160f));
                     imgui_TableHeadersRow();
 
@@ -1944,7 +2328,7 @@ namespace MonoCore
                         imgui_TableNextRow();
                         imgui_TableNextColumn();
                         // Colored label (soft yellow)
-                        imgui_TextColored(0.95f, 0.85f, 0.35f, 1f, kv.Key + ":");
+                        imgui_TextColored(0.95f, 0.85f, 0.35f, 1f, kv.Key);
                         imgui_TableNextColumn();
                         imgui_Text(kv.Value);
                     }
@@ -1959,7 +2343,7 @@ namespace MonoCore
                 }
 
                 imgui_Separator();
-                if (imgui_Button("Close")) { _cfgShowSpellInfoModal = false; _cfgSpellInfoSpell = null; }
+                if (imgui_Button("❌ Close")) { _cfgShowSpellInfoModal = false; _cfgSpellInfoSpell = null; }
             }
             imgui_End();
             if (!_open_info) { _cfgShowSpellInfoModal = false; _cfgSpellInfoSpell = null; }

@@ -1305,6 +1305,14 @@ namespace MonoCore
         [MethodImpl(MethodImplOptions.InternalCall)]
         public extern static void imgui_SameLine();
         [MethodImpl(MethodImplOptions.InternalCall)]
+        public extern static void imgui_SameLineEx(float offsetFromStartX, float spacing);
+        public static void imgui_SameLine(float offsetFromStartX)
+    => imgui_SameLineEx(offsetFromStartX, -1f);
+
+        public static void imgui_SameLine(float offsetFromStartX, float spacing)
+            => imgui_SameLineEx(offsetFromStartX, spacing);
+
+        [MethodImpl(MethodImplOptions.InternalCall)]
         public extern static bool imgui_Checkbox(string name, bool defaultValue);
         [MethodImpl(MethodImplOptions.InternalCall)]
         public extern static bool imgui_BeginTabBar(string name);

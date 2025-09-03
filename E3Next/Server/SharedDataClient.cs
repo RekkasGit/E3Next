@@ -1,4 +1,4 @@
-﻿using E3Core.Classes;
+using E3Core.Classes;
 using E3Core.Data;
 using E3Core.Processors;
 using E3Core.Settings;
@@ -477,9 +477,12 @@ namespace E3Core.Server
                     // e3imgui Food/Drink inventory peer relay topics
                     subSocket.Subscribe("InvReq-");
                     subSocket.Subscribe("InvResp-");
+                    subSocket.Subscribe("ConfigValueReq-");
+                    subSocket.Subscribe("ConfigValueResp-");
+                    subSocket.Subscribe("ConfigValueUpdate-");
                     subSocket.Subscribe("${Me."); //all Me stuff should be subscribed to
 					subSocket.Subscribe("${Data."); //all the custom data keys a user can create
-					subSocket.Subscribe("${DataChannel.");
+					subSocket.Subscribe("${DataChannel.}");
 				
 					while (Core.IsProcessing && E3.NetMQ_SharedDataServerThreadRun)
 					{
@@ -494,7 +497,7 @@ namespace E3Core.Server
 							Int32 indexOfColon = messageReceived.IndexOf(':');
 							string payloaduser = messageReceived.Substring(0, indexOfColon);
 							messageReceived = messageReceived.Substring(indexOfColon + 1, messageReceived.Length - indexOfColon - 1);
-							indexOfColon = messageReceived.IndexOf(':');
+							indexOfColon = messageReceived.IndexOf(':', indexOfColon + 1);
 							string payloadServer = messageReceived.Substring(0, indexOfColon);
 							messageReceived = messageReceived.Substring(indexOfColon + 1, messageReceived.Length - indexOfColon - 1);
 
@@ -690,6 +693,43 @@ namespace E3Core.Server
                                     catch { }
                                 }
                             }
+                            else if (messageTopicReceived.StartsWith("ConfigValueReq-", StringComparison.Ordinal))
+                            {
+                                string target = messageTopicReceived.Substring("ConfigValueReq-".Length);
+                                if (!string.IsNullOrEmpty(target) && target.Equals(E3.CurrentName, StringComparison.OrdinalIgnoreCase))
+                                {
+                                    try
+                                    {
+                                        string[] parts = messageReceived.Split(new[] { ':' }, 2);
+                                        string section = parts[0];
+                                        string key = parts[1];
+                                        string value = E3.CharacterSettings.ParsedData.Sections[section][key] ?? "";
+                                        PubServer.AddTopicMessage($"ConfigValueResp-{payloaduser}-{section}:{key}", value);
+                                    }
+                                    catch { }
+                                }
+                            }
+                            else if (messageTopicReceived.StartsWith("ConfigValueResp-", StringComparison.Ordinal))
+                            {
+                                ProcessTopicMessage(payloaduser, messageTopicReceived, messageReceived);
+                            }
+                            else if (messageTopicReceived.StartsWith("ConfigValueUpdate-", StringComparison.Ordinal))
+                            {
+                                string target = messageTopicReceived.Substring("ConfigValueUpdate-".Length);
+                                if (!string.IsNullOrEmpty(target) && target.Equals(E3.CurrentName, StringComparison.OrdinalIgnoreCase))
+                                {
+                                    try
+                                    {
+                                        string[] parts = messageReceived.Split(new[] { ':' }, 3);
+                                        string section = parts[0];
+                                        string key = parts[1];
+                                        string value = parts[2];
+                                        E3.CharacterSettings.ParsedData[section][key] = value;
+                                        E3.CharacterSettings.SaveData();
+                                    }
+                                    catch { }
+                                }
+                            }
                             else if (messageTopicReceived == OnCommandName)
 							{	//bct commands
 								var data = OnCommandData.Aquire();
@@ -705,7 +745,7 @@ namespace E3Core.Server
 
 							}
 						}
-		
+					
 					}
 					
 					subSocket.Dispose();
