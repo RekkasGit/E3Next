@@ -666,6 +666,7 @@ namespace E3Core.Processors
 						if (_spawns.TryByName(name, out var s))
 						{
 							if (spell.ExcludedClasses.Contains(s.ClassShortName)) { continue; }
+							if(spell.ExcludedNames.Contains(s.CleanName)) { continue; }	
 							string previousTarget = spell.CastTarget;
 							try
 							{
@@ -690,6 +691,7 @@ namespace E3Core.Processors
 						if (_spawns.TryByName(name, out var s))
 						{
 							if (spell.ExcludedClasses.Contains(s.ClassShortName)) { continue; }
+							if (spell.ExcludedNames.Contains(s.CleanName)) { continue; }
 
 							Int32 groupMemberIndex = MQ.Query<Int32>($"${{Group.Member[{name}].Index}}");
 							if (groupMemberIndex < 0)

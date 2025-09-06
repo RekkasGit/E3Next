@@ -23,7 +23,7 @@ public static partial class SpellDataReflection {
     byte[] descriptorData = global::System.Convert.FromBase64String(
         string.Concat(
           "Cg9TcGVsbERhdGEucHJvdG8iKQoNU3BlbGxEYXRhTGlzdBIYCgRkYXRhGAEg",
-          "AygLMgouU3BlbGxEYXRhItYPCglTcGVsbERhdGESEQoJU3BlbGxOYW1lGAEg",
+          "AygLMgouU3BlbGxEYXRhIu0PCglTcGVsbERhdGESEQoJU3BlbGxOYW1lGAEg",
           "ASgJEhAKCENhc3ROYW1lGAIgASgJEhMKC1N1YmNhdGVnb3J5GAMgASgJEhAK",
           "CENhdGVnb3J5GAQgASgJEigKCENhc3RUeXBlGAUgASgOMhYuU3BlbGxEYXRh",
           "LkNhc3RpbmdUeXBlEhIKClRhcmdldFR5cGUYBiABKAkSEAoIU3BlbGxHZW0Y",
@@ -66,14 +66,14 @@ public static partial class SpellDataReflection {
           "BRIXCg9BZnRlclNwZWxsRGVsYXkYVyABKAUSGAoQQmVmb3JlU3BlbGxEZWxh",
           "eRhYIAEoBRIWCg5BZnRlckNhc3REZWxheRhZIAEoBRIXCg9Tb25nUmVmcmVz",
           "aFRpbWUYWiABKAUSEwoLUmVjYXN0RGVsYXkYWyABKAUSFwoPRXhjbHVkZWRD",
-          "bGFzc2VzGFwgAygJIksKC0Nhc3RpbmdUeXBlEgYKAkFBEAASCQoFU3BlbGwQ",
-          "ARIICgREaXNjEAISCwoHQWJpbGl0eRADEggKBEl0ZW0QBBIICgROb25lEAVi",
-          "BnByb3RvMw=="));
+          "bGFzc2VzGFwgAygJEhUKDUV4Y2x1ZGVkTmFtZXMYXSADKAkiSwoLQ2FzdGlu",
+          "Z1R5cGUSBgoCQUEQABIJCgVTcGVsbBABEggKBERpc2MQAhILCgdBYmlsaXR5",
+          "EAMSCAoESXRlbRAEEggKBE5vbmUQBWIGcHJvdG8z"));
     descriptor = pbr::FileDescriptor.FromGeneratedCode(descriptorData,
         new pbr::FileDescriptor[] { },
         new pbr::GeneratedClrTypeInfo(null, null, new pbr::GeneratedClrTypeInfo[] {
           new pbr::GeneratedClrTypeInfo(typeof(global::SpellDataList), global::SpellDataList.Parser, new[]{ "Data" }, null, null, null, null),
-          new pbr::GeneratedClrTypeInfo(typeof(global::SpellData), global::SpellData.Parser, new[]{ "SpellName", "CastName", "Subcategory", "Category", "CastType", "TargetType", "SpellGem", "GiveUpTimer", "MaxTries", "Duration", "DurationTotalSeconds", "RecastTime", "RecoveryTime", "MyCastTime", "MyCastTimeInSeconds", "MyRange", "Mana", "MinMana", "MaxMana", "MinHP", "HealPct", "Debug", "Reagent", "ItemMustEquip", "NoBurn", "NoTarget", "NoAggro", "Mode", "EnduranceCost", "Delay", "AfterCastCompletedDelay", "CastID", "MinEnd", "CastInvis", "SpellType", "CastTarget", "StackRequestTargets", "StackIntervalCheck", "StackIntervalNextCheck", "StackRecastDelay", "StackRequestItem", "GiftOfMana", "SpellID", "PctAggro", "Zone", "MinSick", "AllowSpellSwap", "NoEarlyRecast", "NoStack", "TriggerSpell", "BeforeSpell", "NoInterrupt", "AfterEvent", "BeforeEvent", "CastIF", "Ifs", "InitName", "ReagentOutOfStock", "SpellInBook", "SpellIcon", "NoMidSongCast", "MinDurationBeforeRecast", "IsShortBuff", "HealthMax", "IgnoreStackRules", "IsDebuff", "IsDoT", "Rotate", "AfterSpell", "Level", "Description", "ResistType", "ResistAdj", "CastTypeOverride", "CheckForCollection", "IfsKeys", "Enabled", "IsBuff", "MinHPTotal", "AfterEventKeys", "BeforeEventKeys", "AAID", "SpellEffects", "AfterEventDelay", "BeforeEventDelay", "AfterSpellDelay", "BeforeSpellDelay", "AfterCastDelay", "SongRefreshTime", "RecastDelay", "ExcludedClasses" }, null, new[]{ typeof(global::SpellData.Types.CastingType) }, null, null)
+          new pbr::GeneratedClrTypeInfo(typeof(global::SpellData), global::SpellData.Parser, new[]{ "SpellName", "CastName", "Subcategory", "Category", "CastType", "TargetType", "SpellGem", "GiveUpTimer", "MaxTries", "Duration", "DurationTotalSeconds", "RecastTime", "RecoveryTime", "MyCastTime", "MyCastTimeInSeconds", "MyRange", "Mana", "MinMana", "MaxMana", "MinHP", "HealPct", "Debug", "Reagent", "ItemMustEquip", "NoBurn", "NoTarget", "NoAggro", "Mode", "EnduranceCost", "Delay", "AfterCastCompletedDelay", "CastID", "MinEnd", "CastInvis", "SpellType", "CastTarget", "StackRequestTargets", "StackIntervalCheck", "StackIntervalNextCheck", "StackRecastDelay", "StackRequestItem", "GiftOfMana", "SpellID", "PctAggro", "Zone", "MinSick", "AllowSpellSwap", "NoEarlyRecast", "NoStack", "TriggerSpell", "BeforeSpell", "NoInterrupt", "AfterEvent", "BeforeEvent", "CastIF", "Ifs", "InitName", "ReagentOutOfStock", "SpellInBook", "SpellIcon", "NoMidSongCast", "MinDurationBeforeRecast", "IsShortBuff", "HealthMax", "IgnoreStackRules", "IsDebuff", "IsDoT", "Rotate", "AfterSpell", "Level", "Description", "ResistType", "ResistAdj", "CastTypeOverride", "CheckForCollection", "IfsKeys", "Enabled", "IsBuff", "MinHPTotal", "AfterEventKeys", "BeforeEventKeys", "AAID", "SpellEffects", "AfterEventDelay", "BeforeEventDelay", "AfterSpellDelay", "BeforeSpellDelay", "AfterCastDelay", "SongRefreshTime", "RecastDelay", "ExcludedClasses", "ExcludedNames" }, null, new[]{ typeof(global::SpellData.Types.CastingType) }, null, null)
         }));
   }
   #endregion
@@ -385,6 +385,7 @@ public sealed partial class SpellData : pb::IMessage<SpellData>
     songRefreshTime_ = other.songRefreshTime_;
     recastDelay_ = other.recastDelay_;
     excludedClasses_ = other.excludedClasses_.Clone();
+    excludedNames_ = other.excludedNames_.Clone();
     _unknownFields = pb::UnknownFieldSet.Clone(other._unknownFields);
   }
 
@@ -1482,6 +1483,17 @@ public sealed partial class SpellData : pb::IMessage<SpellData>
     get { return excludedClasses_; }
   }
 
+  /// <summary>Field number for the "ExcludedNames" field.</summary>
+  public const int ExcludedNamesFieldNumber = 93;
+  private static readonly pb::FieldCodec<string> _repeated_excludedNames_codec
+      = pb::FieldCodec.ForString(746);
+  private readonly pbc::RepeatedField<string> excludedNames_ = new pbc::RepeatedField<string>();
+  [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
+  [global::System.CodeDom.Compiler.GeneratedCode("protoc", null)]
+  public pbc::RepeatedField<string> ExcludedNames {
+    get { return excludedNames_; }
+  }
+
   [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
   [global::System.CodeDom.Compiler.GeneratedCode("protoc", null)]
   public override bool Equals(object other) {
@@ -1588,6 +1600,7 @@ public sealed partial class SpellData : pb::IMessage<SpellData>
     if (SongRefreshTime != other.SongRefreshTime) return false;
     if (RecastDelay != other.RecastDelay) return false;
     if(!excludedClasses_.Equals(other.excludedClasses_)) return false;
+    if(!excludedNames_.Equals(other.excludedNames_)) return false;
     return Equals(_unknownFields, other._unknownFields);
   }
 
@@ -1686,6 +1699,7 @@ public sealed partial class SpellData : pb::IMessage<SpellData>
     if (SongRefreshTime != 0) hash ^= SongRefreshTime.GetHashCode();
     if (RecastDelay != 0) hash ^= RecastDelay.GetHashCode();
     hash ^= excludedClasses_.GetHashCode();
+    hash ^= excludedNames_.GetHashCode();
     if (_unknownFields != null) {
       hash ^= _unknownFields.GetHashCode();
     }
@@ -2056,6 +2070,7 @@ public sealed partial class SpellData : pb::IMessage<SpellData>
       output.WriteInt32(RecastDelay);
     }
     excludedClasses_.WriteTo(output, _repeated_excludedClasses_codec);
+    excludedNames_.WriteTo(output, _repeated_excludedNames_codec);
     if (_unknownFields != null) {
       _unknownFields.WriteTo(output);
     }
@@ -2418,6 +2433,7 @@ public sealed partial class SpellData : pb::IMessage<SpellData>
       output.WriteInt32(RecastDelay);
     }
     excludedClasses_.WriteTo(ref output, _repeated_excludedClasses_codec);
+    excludedNames_.WriteTo(ref output, _repeated_excludedNames_codec);
     if (_unknownFields != null) {
       _unknownFields.WriteTo(ref output);
     }
@@ -2693,6 +2709,7 @@ public sealed partial class SpellData : pb::IMessage<SpellData>
       size += 2 + pb::CodedOutputStream.ComputeInt32Size(RecastDelay);
     }
     size += excludedClasses_.CalculateSize(_repeated_excludedClasses_codec);
+    size += excludedNames_.CalculateSize(_repeated_excludedNames_codec);
     if (_unknownFields != null) {
       size += _unknownFields.CalculateSize();
     }
@@ -2970,6 +2987,7 @@ public sealed partial class SpellData : pb::IMessage<SpellData>
       RecastDelay = other.RecastDelay;
     }
     excludedClasses_.Add(other.excludedClasses_);
+    excludedNames_.Add(other.excludedNames_);
     _unknownFields = pb::UnknownFieldSet.MergeFrom(_unknownFields, other._unknownFields);
   }
 
@@ -3349,6 +3367,10 @@ public sealed partial class SpellData : pb::IMessage<SpellData>
           excludedClasses_.AddEntriesFrom(input, _repeated_excludedClasses_codec);
           break;
         }
+        case 746: {
+          excludedNames_.AddEntriesFrom(input, _repeated_excludedNames_codec);
+          break;
+        }
       }
     }
   #endif
@@ -3726,6 +3748,10 @@ public sealed partial class SpellData : pb::IMessage<SpellData>
         }
         case 738: {
           excludedClasses_.AddEntriesFrom(ref input, _repeated_excludedClasses_codec);
+          break;
+        }
+        case 746: {
+          excludedNames_.AddEntriesFrom(ref input, _repeated_excludedNames_codec);
           break;
         }
       }

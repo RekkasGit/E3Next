@@ -262,6 +262,27 @@ namespace E3NextConfigEditor.Models
 				}
 			}
 		}
+		[Description("Toon Name, comma seperated. Names to exclude in your buff if your using GBots/Bots")]
+		public string ExcludedNames
+		{
+			get { return String.Join(",", _spell.ExcludedNames.ToList()); }
+			set
+			{
+				if (!String.IsNullOrWhiteSpace(value))
+				{
+					string[] splitArray = value.Split(',');
+					_spell.ExcludedNames.Clear();
+					foreach (var spell in splitArray)
+					{
+						_spell.ExcludedNames.Add(spell);
+					}
+				}
+				else
+				{
+					_spell.ExcludedNames.Clear();
+				}
+			}
+		}
 		[Category("Spell Gem Flags")]
 		[Description("Spell Gem")]
 		public Int32 SpellGem
