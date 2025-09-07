@@ -283,7 +283,7 @@ namespace E3Core.Server
 							foreach (var pair in EventProcessor.CommandList)
 							{
 								string compareCommandTo = pair.Key;
-								if(compareCommandTo.Contains(" "))
+								if(command.Contains(" "))
 								{
 									compareCommandTo = pair.Value.commandwithSpace;
 								}
@@ -299,7 +299,7 @@ namespace E3Core.Server
 							}
 							if (!internalComand)
 							{
-								MQ.Cmd(command);
+								MQ.Cmd(command,true);
 
 							}
 						}
