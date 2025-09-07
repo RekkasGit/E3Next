@@ -1374,6 +1374,15 @@ namespace MonoCore
         public extern static void imgui_PushStyleColor(int which, float r, float g, float b, float a);
         [MethodImpl(MethodImplOptions.InternalCall)]
         public extern static void imgui_PopStyleColor(int count);
+        // Wrapping and window constraints
+        [MethodImpl(MethodImplOptions.InternalCall)]
+        public extern static void imgui_TextWrapped(string text);
+        [MethodImpl(MethodImplOptions.InternalCall)]
+        public extern static void imgui_PushTextWrapPos(float wrapPosX);
+        [MethodImpl(MethodImplOptions.InternalCall)]
+        public extern static void imgui_PopTextWrapPos();
+        [MethodImpl(MethodImplOptions.InternalCall)]
+        public extern static void imgui_SetNextWindowSizeConstraints(float minW, float minH, float maxW, float maxH);
         #endregion
         #endregion
 
@@ -1524,25 +1533,21 @@ namespace MonoCore
             string mqReturnValue = Core.mq_ParseTLO(query);
             if (typeof(T) == typeof(Int32))
             {
-                if (!mqReturnValue.Contains("."))
+                // Prefer direct int parsing first
+                if (Int32.TryParse(mqReturnValue, out var intValueDirect))
                 {
-                    Int32 value;
-                    if (Int32.TryParse(mqReturnValue, out value))
-                    {
-                        return (T)(object)value;
-                    }
-                    else { return (T)(object)-1; }
+                    return (T)(object)intValueDirect;
                 }
-                else
+                // Some TLOs return decimals (e.g., coordinates). Gracefully coerce to int.
+                if (Decimal.TryParse(mqReturnValue, out var decValue))
                 {
-                    Decimal value;
-                    if (decimal.TryParse(mqReturnValue, out value))
-                    {
-                        return (T)(object)value;
-                    }
-                    else { return (T)(object)-1; }
-
+                    return (T)(object)(Int32)System.Math.Truncate(decValue);
                 }
+                if (Double.TryParse(mqReturnValue, out var dblValue))
+                {
+                    return (T)(object)(Int32)System.Math.Truncate(dblValue);
+                }
+                return (T)(object)-1;
             }
             else if (typeof(T) == typeof(Boolean))
             {
