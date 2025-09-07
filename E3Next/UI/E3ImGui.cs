@@ -1591,10 +1591,36 @@ namespace MonoCore
                     string toon = _cfgFoodDrinkPendingToon;
                     string type = _cfgFoodDrinkPendingType;
                     string topic = $"InvResp-{E3.CurrentName}-{type}";
+                    // Prefer remote publisher bucket
                     if (E3Core.Server.NetMQServer.SharedDataClient.TopicUpdates.TryGetValue(toon, out var topics)
                         && topics.TryGetValue(topic, out var entry))
                     {
                         string payload = entry.Data ?? string.Empty;
+                        int first = payload.IndexOf(':');
+                        int second = first >= 0 ? payload.IndexOf(':', first + 1) : -1;
+                        string b64 = (second > 0 && second + 1 < payload.Length) ? payload.Substring(second + 1) : payload;
+                        try
+                        {
+                            var bytes = Convert.FromBase64String(b64);
+                            var joined = Encoding.UTF8.GetString(bytes);
+                            _cfgFoodDrinkCandidates = (joined ?? string.Empty).Split(new[] { '\n' }, StringSplitOptions.RemoveEmptyEntries)
+                                .Select(s => s.Trim())
+                                .Where(s => s.Length > 0)
+                                .Distinct(StringComparer.OrdinalIgnoreCase)
+                                .OrderBy(s => s, StringComparer.OrdinalIgnoreCase)
+                                .ToList();
+                        }
+                        catch
+                        {
+                            _cfgFoodDrinkCandidates = new List<string>();
+                        }
+                        _cfgFoodDrinkStatus = _cfgFoodDrinkCandidates.Count == 0 ? $"No {type} found on {toon}." : $"Found {_cfgFoodDrinkCandidates.Count} items on {toon}.";
+                        _cfgFoodDrinkPending = false;
+                    }
+                    else if (E3Core.Server.NetMQServer.SharedDataClient.TopicUpdates.TryGetValue(E3.CurrentName, out var topics2)
+                             && topics2.TryGetValue(topic, out var entry2))
+                    {
+                        string payload = entry2.Data ?? string.Empty;
                         int first = payload.IndexOf(':');
                         int second = first >= 0 ? payload.IndexOf(':', first + 1) : -1;
                         string b64 = (second > 0 && second + 1 < payload.Length) ? payload.Substring(second + 1) : payload;
@@ -1673,10 +1699,19 @@ namespace MonoCore
                                 bool found = false;
                                 while (Core.StopWatch.ElapsedMilliseconds < end)
                                 {
+                                    // Prefer remote publisher bucket
                                     if (E3Core.Server.NetMQServer.SharedDataClient.TopicUpdates.TryGetValue(toon, out var topics) &&
                                         topics.TryGetValue(responseTopic, out var entry))
                                     {
                                         value = entry.Data;
+                                        found = true;
+                                        break;
+                                    }
+                                    // Fallback: requester bucket
+                                    if (E3Core.Server.NetMQServer.SharedDataClient.TopicUpdates.TryGetValue(E3.CurrentName, out var topics2) &&
+                                        topics2.TryGetValue(responseTopic, out var entry2))
+                                    {
+                                        value = entry2.Data;
                                         found = true;
                                         break;
                                     }
@@ -1774,23 +1809,32 @@ namespace MonoCore
                 E3Core.Server.PubServer.AddTopicMessage($"CatalogReq-{toon}", listKey);
                 string topic = $"CatalogResp-{E3.CurrentName}-{listKey}";
                 // Poll SharedDataClient.TopicUpdates for up to ~2s
-                long end = Core.StopWatch.ElapsedMilliseconds + 2000;
+                long end = Core.StopWatch.ElapsedMilliseconds + 4000;
                 while (Core.StopWatch.ElapsedMilliseconds < end)
                 {
-                    if (E3Core.Server.NetMQServer.SharedDataClient.TopicUpdates.TryGetValue(toon, out var topics))
+                    if (E3Core.Server.NetMQServer.SharedDataClient.TopicUpdates.TryGetValue(toon, out var topics)
+                        && topics.TryGetValue(topic, out var entry))
                     {
-                        if (topics.TryGetValue(topic, out var entry))
-                        {
-                            string payload = entry.Data;
-                            // entry.Data includes "user:server:message"; peel off prefix
-                            int first = payload.IndexOf(':');
-                            int second = first >= 0 ? payload.IndexOf(':', first + 1) : -1;
-                            string b64 = (second > 0 && second + 1 < payload.Length) ? payload.Substring(second + 1) : payload;
-                            byte[] bytes = Convert.FromBase64String(b64);
-                            var list = SpellDataList.Parser.ParseFrom(bytes);
-                            data = list.Data;
-                            return true;
-                        }
+                        string payload = entry.Data;
+                        int first = payload.IndexOf(':');
+                        int second = first >= 0 ? payload.IndexOf(':', first + 1) : -1;
+                        string b64 = (second > 0 && second + 1 < payload.Length) ? payload.Substring(second + 1) : payload;
+                        byte[] bytes = Convert.FromBase64String(b64);
+                        var list = SpellDataList.Parser.ParseFrom(bytes);
+                        data = list.Data;
+                        return true;
+                    }
+                    if (E3Core.Server.NetMQServer.SharedDataClient.TopicUpdates.TryGetValue(E3.CurrentName, out var topics2)
+                        && topics2.TryGetValue(topic, out var entry2))
+                    {
+                        string payload = entry2.Data;
+                        int first = payload.IndexOf(':');
+                        int second = first >= 0 ? payload.IndexOf(':', first + 1) : -1;
+                        string b64 = (second > 0 && second + 1 < payload.Length) ? payload.Substring(second + 1) : payload;
+                        byte[] bytes = Convert.FromBase64String(b64);
+                        var list = SpellDataList.Parser.ParseFrom(bytes);
+                        data = list.Data;
+                        return true;
                     }
                     System.Threading.Thread.Sleep(25);
                 }
@@ -1798,8 +1842,6 @@ namespace MonoCore
             catch { }
             return false;
         }
-
-        // Note: Remote Food/Drink inventory now uses non-blocking pending state above.
 
         private static string GetSelectedIniOwnerName()
         {
