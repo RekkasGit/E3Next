@@ -282,13 +282,19 @@ namespace E3Core.Server
 							bool internalComand = false;
 							foreach (var pair in EventProcessor.CommandList)
 							{
-								if (command.StartsWith(pair.Key, StringComparison.OrdinalIgnoreCase))
+								string compareCommandTo = pair.Key;
+								if(compareCommandTo.Contains(" "))
+								{
+									compareCommandTo = pair.Value.commandwithSpace;
+								}
+								if (command.StartsWith(compareCommandTo, StringComparison.OrdinalIgnoreCase))
 								{
 									internalComand = true;
 									//no need to send this to mq if its our own command, just drop it into the queues to be processed. 
 									EventProcessor.ProcessMQCommand(command);
 									break;
 								}
+
 
 							}
 							if (!internalComand)

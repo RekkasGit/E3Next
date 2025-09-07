@@ -730,6 +730,7 @@ namespace MonoCore
         {
             public String keyName;
             public String command;
+            public string commandwithSpace;
             public String classOwner;
             public string methodCaller;
 			public string description;
@@ -776,6 +777,7 @@ namespace MonoCore
         {
             CommandListItem c = new CommandListItem();
             c.command = commandName;
+            c.commandwithSpace = c.command + " ";
             c.method = method;
             c.keyName = commandName;
             c.methodCaller = memberName;
