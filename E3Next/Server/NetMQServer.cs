@@ -36,9 +36,9 @@ namespace E3Core.Server
         
         public static void Init()
         {
-			SharedDataClient = new SharedDataClient();
+            SharedDataClient = new SharedDataClient();
 
-			RouterPort = FreeTcpPort();
+            RouterPort = FreeTcpPort();
             PubPort = FreeTcpPort();
             PubClientPort = FreeTcpPort();
 

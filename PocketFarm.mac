@@ -1,0 +1,563 @@
+|PocketFarm.mac
+|
+| 	V1.0
+| - Fixed inifile error if ini was not there first time you run.
+| - Fixed /pkf ignore/pull to actually work, remeber to use "", example /pkf ignore "skeleton"
+|
+|	v1.5
+| - Changed nav chase logic
+| - Fixed spelling mistakes
+| - Added resting for endurance|mana|hp
+| - if monk use distant strike to pull
+| - added throwing and ranged attack, it should work, i ran out of throwing knifes while testing
+| - added pet attack logic, but its not super tight yet, but if you are a pet class your pet will be told to attack, but so will you.
+|
+|	V1.8
+| - Fixed and rewrote pull routine, to respect ranges and such
+| - Added some checks so we dont spam target dead mobs.
+| - Made mq2nav be quiet.
+| - Now loads mq2melee as noauto if you dont have it auto load, this will be nice for you.
+| - Also Laods mq2cast so mq2melee dont get sad and lonely
+| - Included camp as start option to setup a camp.
+| -- This means if you do /mac pocketfarm camp, it will kill anything inside your set radius.
+| -- Places a circle and  X Marks te spot in your camp that shows your camp and the size of the hunting area.
+|
+|	V1.9
+| - Attempts to fix timing issues with regards to rest and pulling mobs.
+| - Trying to fix sit spam when trying to cast while rest mode.
+|
+|	V2.0
+| - changed message from reloading the ini to show the loaded settings.
+| - attempt to fix rest mode and casting, it keeps being stupid.
+| - made desision not to load and use mq2rogue and mq2berzerker, but if you have them loaded it will use as normal.
+| - mq2melee and mq2cast is loaded and unloaded as needed, with noauto, so should not change your macroquest.ini
+| - added posibitlity of Camp radious setting on start, /mac pocketfarm camp 500 ,if no radius is supplied it will
+|	use from ini setting or default of 250.
+|
+|	V2.01
+| - Fixed sit dance during resting when trying to cast something and the cast window dont show fast enough.
+|
+|	V2.10
+| - Added Big zone logic to limit the scan size to a smaller number of mobs when in a hugely populated zone.
+| - Nicked eqmules placement routine to find a valid loc in case we cant hit mob proper.
+| - Added Auto ignore of quest npcs, for missions, quests, and such things, not all are ignored, but it should help a lot on what you have to add to ignore
+| - Added go/pause feature so you can turn do your settings and then start it, pause if you need to go pee, then it will still self defend.
+|
+|  V2.21
+| - Fixed bug in commadn to load the pull list, thanks to EQMule
+| - Fixed crashing bug in zones with many many autoignore mobs, thanks to Aipoc76
+
+#warning
+
+#bind pkf /pkf
+
+#define /debug "/if (${DebugOn}) /echo \ar[\aw${Time.Second}\ar : \aw${Macro.CurLine}\ar]\ay"
+#define /message "/echo \at[\ayPKF\at]\aw "
+#define /error "/echo \at[\ayPKF\at]\ar "
+
+#Event CantHit "You can't hit them from here."
+#Event CantHit "You cannot see your target."
+
+Sub Main(string Param0,int Param1)
+	/declare DebugOn			bool		outer	FALSE
+	/declare ppCamp				string		outer 	${Param0}
+	/declare ppCampRadius		int			outer 	${Param1}
+	/declare version			float		outer 	2.11
+	
+	/call Init
+
+	/while (1) {
+		|- death handling
+		/if (${Me.Hovering}) {
+			/error We dieded, turning of pocketfarm so we dont try to murder things at bind spot.
+			/endmac
+		}
+		
+		|- Handles enganging in combat if we have alive things on xtarget.
+		/if ((!${Spawn[${myTargetID}].ID} || ${Spawn[${myTargetID}].Type.Equal[Corpse]}) && ${Me.XTarget}) {
+			/delay 5 ${Me.XTarget} == 0
+			/if (${Me.XTarget})  {
+				/varset myTargetID ${Me.XTarget[1].ID}
+				/call combat
+			}
+		}
+
+		/if (${Me.Sitting} && ${Me.XTarget}) {
+			/stand
+		}
+		
+		/if (!${Spawn[${myTargetID}].ID} || ${Spawn[${myTargetID}].Type.Equal[Corpse]} && !${Me.XTarget}) /call Rest
+		/if (${Target.Type.Equal[corpse]} || ${Target.ID} == ${Me.ID} && !${Me.Casting.ID}) /squelch /target clear
+		/if (${Target.Type.Equal[corpse]} || ${Target.ID} == ${Me.ID} || !${Target.ID}) /squelch /attack off
+
+		/if (${goFarming}) {
+		|- Find a Mob To kill
+			/if (!${Me.Casting.ID} && (!${Spawn[${myTargetID}].ID} || ${Spawn[${myTargetID}].Type.Equal[Corpse]}) && !${Me.XTarget}) /call FindMob
+		}
+		/if (!${Me.Rooted.ID} && ${Spawn[${myTargetID}].ID} && ${Spawn[${myTargetID}].Distance3D} > ${Spawn[${myTargetID}].MaxRangeTo}) /call NavToMob
+		/if (!${Me.Rooted.ID} && ${Spawn[${myTargetID}].ID} && ${Spawn[${myTargetID}].Distance3D} <= ${Spawn[${myTargetID}].MaxRangeTo}) /call Combat
+		
+		|Making sure we face our fight target.
+		/if (${Me.Combat} && ${myTargetID} == ${Target.ID} && ${Spawn[${Target.ID}].HeadingTo.ShortName.NotEqual[${Me.Heading}]} ) /face fast
+
+		|Sometimes you pull a quest mob, you cant kill, or merchant or what not. this code will attempt to auto ignore it for you.
+		/if (${Me.Combat} && ${Me.XTarget[1].ID} != ${myTargetID} && ${myTargetID} == ${Target.ID} && ${Target.PctHPs}==100 && !${Me.Moving}) /varcalc NoKillCounter ${NoKillCounter}+1
+		/if (${NoKillCounter} >=30) /call NoKill
+		/doevents CantHit
+		/varset goFarming ${goFarming}
+		/delay 3
+		
+	}
+	
+:OnExit
+	/message Removing camp and resetting nav info
+	/squelch /maploc remove
+	/squelch /nav setopt log=info
+	/endmac
+/return
+
+Sub Init
+
+	/if (${ppCamp.Equal[camp]}) {
+		/declare	CampOn		bool	outer	TRUE
+	} else {
+		/declare	CampOn		bool	outer	FALSE
+	}
+	/declare 	Radius 		int 	outer	250	
+	/declare	CampX		int		outer	${Me.X}
+	/declare	CampY		int		outer	${Me.Y}
+	/declare	CampZ		int		outer	${Me.Z}
+
+	/declare LastHeading		string	outer	
+	/declare Announce			bool	outer	FALSE
+	/declare ZRadius 			int 	outer	125
+	/declare Ignore				string	outer	NONE
+	/declare Pull				string	outer	ALL
+	/declare myTargetID 		int 	outer	0
+	/declare NoKillCounter		int 	outer	0
+	/declare Attach				bool 	outer	0
+	/declare Resting			bool	outer	0
+	/declare CantHit			bool	outer	false
+	/declare CantHitTimer		timer 	outer	1s
+   /declare autoadd      int local 0
+	/if (${ppCamp.Equal[go]}) {
+		/declare goFarming			bool	outer 	true
+	} else {
+		/declare goFarming			bool	outer 	false
+	}
+	/declare autoignore			string	local 
+	/declare i					int		local 1
+	
+	/cleanup
+|	/mqclear
+	/squelch /alert clear 1
+	/squelch /alert clear 10
+
+	/message \ayPocketFarm.mac \aw- \atV${version} \awby \agKaen01
+	/message \ay/pkf \awfor help
+	/call IniFile
+  /message Addding Mobs to Auto ignore:
+   /for i 1 to ${SpawnCount[npc targetable]}
+      /if (${NearestSpawn[${i},npc targetable].Surname.Length}) {
+         /varset autoignore ${autoignore}\ax - \ao${NearestSpawn[${i},npc targetable].CleanName} <\a-o${NearestSpawn[${i},npc targetable].Surname}\ax>
+         /varcalc autoadd ${autoadd}+1
+		}
+      /if (${autoadd} == 3 || ${i} == ${SpawnCount[npc targetable]}) {
+         /message ${autoignore}
+         /varset autoadd 0
+         /varset autoignore
+         /delay 1
+      }
+	/next i
+
+
+	/if (${CampOn}) {
+		/message \agCamp Feature Enabled!
+		/message Setting Camp at : \agY\aw=\ay${Me.Y} \agX\aw\aw=\ay${Me.X} \agZ\aw=\ay${Me.Z}
+		/squelch /maploc ${CampY} ${CampX} Size 20 width 5 color 0 0 255 radius ${Radius} color 0 0 255
+		/squelch /mapfilter SpellRadius 0
+	} else {
+		/squelch /mapfilter SpellRadius ${Radius}
+	}
+	
+	/nav setopt log=critical
+
+	/if (${Select[${Me.Class.ShortName},rog,ber]} && ${Bool[${Plugin[mq2melee]}]} && (${Bool[${Plugin[mq2berzerker]}]} || ${Bool[${Plugin[mq2rogue]}]})) {
+		/message Found Combat plugin, unloading mq2melee and mq2cast temporarily.
+		/squelch /plugin mq2melee unload noauto
+		/squelch /plugin mq2cast unload noauto
+	} else {
+		/if (!${Bool[${Plugin[mq2melee]}]}) /squelch /plugin mq2melee noauto
+		/if (!${Bool[${Plugin[mq2cast]}]}) /squelch /plugin mq2cast noauto
+	}
+	/if (${goFarming}) {
+		/message PocketFarm was called with the \aggo \axparamter, so lets get to farming some stuff
+	} else {
+		/message PocketFarm awaiting your command use \at/pkf go\ax to start farming with your current settings.
+	}
+/return
+
+Sub Rest
+	|if endurance drops below 10%, health below 30 and or mana below 15%
+	/if ((${Me.PctEndurance} < 10  || ${Me.PctHPs} < 30  || ${Range.Between[1,15:${Me.PctMana}]}) && !${Resting}) {
+		/varset Resting TRUE
+		/varset myTargetID 0
+		/message We need a small rest before we continue, will rest to full, will self defend if need arises
+	}
+	|When resources get to 99 or more we stop resting
+	/if (${Me.PctEndurance} >= 99 && ${Me.PctHPs} >= 99 && ${If[${Me.Class.CanCast},${Me.PctMana} >= 99,1]} && ${Resting}) {
+		/varset Resting FALSE
+		/message Awesome, we are fully rested, lets continue farming
+	}
+
+	|if we are resting, and standing, and not casting spells, sit down
+	/if (${Resting}) {
+		/delay 15 ${Me.Casting.ID}
+		/if (${Me.Casting.ID}) {
+			/message Casting \ao${Me.Casting}
+			/delay ${Me.Casting.CastTime.Float}s
+			/delay 2
+		} else /if (${Me.Standing}) {
+			/sit
+			/delay 1s ${Me.Sitting}
+		}
+	}
+	
+/return
+
+Sub CameraMob
+	/if (${Attach}) {
+		/if (!${Spawn[${myTargetID}].ID} || ${Spawn[${myTargetID}].Type.Equal[Corpse]}) {
+			/camera detach
+			/varset Attach false
+		}
+	} else /if (!${Attach}) {
+		/if (${Spawn[${myTargetID}].ID} && !${Spawn[${myTargetID}].Type.Equal[Corpse]}) {
+			/camera attach id ${Spawn[${myTargetID}].ID}
+			/varset Attach true
+		}
+	}
+/return
+
+Sub NoKill
+	/message \atMob \ay${Spawn[${myTargetID}].CleanName} \atis not killable, adding to Ignore with ID:\ay${myTargetID}
+	/Squelch /alert add 1 id ${Target.ID}
+	/Squelch /target clear
+	/Squelch /attack off
+	/varset myTargetID 0
+	/varset NoKillCounter 0
+/return
+
+Sub NavToMob
+	/declare pullnow	bool	local	0
+	/if (!${Navigation.Active}) {
+		/squelch /nav id ${myTargetID} dist=10
+	} else /if (${LastHeading.NotEqual[${Spawn[${myTargetID}].HeadingTo}]} && ${Spawn[${myTargetID}].Speed}>25) {
+		/squelch /nav id ${myTargetID} dist=10
+		/varset LastHeading ${Spawn[${myTargetID}].HeadingTo}
+	} 
+	/call EngageMob
+/return
+
+Sub EngageMob
+	|lets validate again before we engage
+	/call MobIDValidate ${myTargetID}
+	/if (!${Macro.Return}) {
+		/varset myTargetID 0
+		/return False
+	}
+	
+	/if (${Spawn[npc id ${myTargetID}].LineOfSight}) {
+		/if (${Target.ID} != ${myTargetID} && ${Spawn[npc id ${myTargetID}].Distance3D} <360) {
+			/squelch /target id ${myTargetID}
+			/delay 5s ${Target.ID} == ${myTargetID}
+		}
+
+		/if (${Target.Aggressive}) /return
+		/if (${Range.Between[35,${If[${Me.Inventory[ranged].Type.Find[Archery]},${Math.Calc[${Me.Inventory[ranged].Range}+${Me.Inventory[ranged].Range}]},${Me.Inventory[ranged].Range}]}:${Target.Distance3D}]}) {
+			/if (${Me.Inventory[ranged].Type.Find[Throwing]}) /ranged
+			/if (${Me.Inventory[ranged].Type.Find[Archery]} && ${Me.Inventory[ammo].Type.Find[Arrow]}) /ranged
+			/delay 5
+		}
+		
+		/if (${Me.Class.Name.Equal[Monk]} && ${Me.Level} >=96 && ${Target.Distance3D} < 300 && ${Me.AltAbilityReady[Distant Strike]}) {
+			/alt act 376 
+			/delay 1s !${Me.AltAbilityReady[Distant Strike]}
+		}
+		/if (${Me.Class.Name.Equal[Bard]} && ${Me.Level} >=63 && ${Target.Distance3D} < 250 && ${Me.AltAbilityReady[Sonic Disturbance]}) /alt act 200
+		/if (${Target.Distance3D} <= 70 && ${Me.CombatAbility[Throw Stone]} && ${Me.CombatAbilityReady[Throw Stone]}) {
+			/disc Throw Stone
+		}
+		
+		/if (${Target.ID} && ${Target.Distance3D} < 25 && ${Me.Skill[Taunt]} && ${Me.AbilityReady[Taunt]}) /doability Taunt
+
+		/if (${Me.Class.PetClass} && ${Me.Pet.ID}) {
+			/if (!${Target.Aggressive}) /pet attack
+			/delay 5s ${Target.Aggressive}
+		}
+
+	}
+/return
+
+Sub Combat
+	/if (!${Me.Combat}) {
+		/squelch /target id ${myTargetID}
+		/squelch /attack on
+		/squelch /assistme /all
+		/squelch /face fast id ${Target.ID}
+		/varset NoKillCounter 0
+	} else /if (${Target.ID} != ${myTargetID}) {
+		/squelch /target id ${myTargetID}
+		/squelch /face id ${Target.ID}
+		/varset NoKillCounter 0
+	}
+	/if (${Target.Type.Equal[corpse]}) { 
+		/squelch /target clear
+		/varset myTargetID 0
+	}
+/return
+
+Sub FindMob
+	/if (${CampOn}) {
+		/declare MobsInRadius 	int 	local 	${SpawnCount[npc noalert 1 targetable loc ${CampX} ${CampY} radius ${Radius} zradius ${ZRadius} alert 10]}
+	} else {
+		/declare MobsInRadius 	int 	local 	${SpawnCount[npc noalert 1 targetable radius ${Radius} zradius ${ZRadius} alert 10]}
+	}
+
+	|- Makes scanning in big zones super efficient.
+	/if (${MobsInRadius} > 25) {
+		/varset MobsInRadius 25
+	}
+	/declare MobCounter 		int 	local 	0
+	/declare MobID 			int 	local 	0
+	/declare PathLength		float	local	0
+	/declare MobIDDistance	float	local	0
+	/declare PathCount		int		local	1
+	/declare PathShortest	int 	local 	0
+	/declare MobIDValid		int		local	0
+	/if (${Resting}) /return
+
+	/varset myTargetID 0
+	/if (${MobsInRadius}) {
+		/for MobCounter 1 to ${MobsInRadius}
+		/if (${CampOn}) {
+			/varset MobID ${NearestSpawn[${MobCounter},npc targetable loc ${CampX} ${CampY} radius ${Radius} zradius ${ZRadius} alert 10 noalert 1 ].ID}
+		} else {
+			/varset MobID ${NearestSpawn[${MobCounter},npc targetable radius ${Radius} zradius ${ZRadius} alert 10 noalert 1].ID}
+		}
+		/if (${Select[${Spawn[ID ${MobID}].Type},AURA,BANNER,CAMPFIRE,CORPSE,CHEST,ITEM,TRIGGER,TRAP,TIMER,MOUNT,MERCENARY,OBJECT]}) /continue
+		/if (${Spawn[ID ${MobID}].Surname.Length}) /continue
+
+		/varset MobIDValid 0
+		/call MobIDValidate ${MobID}
+		/if (${Macro.Return}) { 
+			/varset MobIDValid 1
+		} else /continue
+		/varset PathLength ${Navigation.PathLength[id ${MobID}]}
+		/if (${PathLength} > 0 && ${MobIDValid} ) {
+			/if (${PathCount}==1) {
+				/varset myTargetID ${MobID}
+				/varset PathShortest ${PathLength}
+			} else /if (${PathLength} <= ${PathShortest}) {
+				/varset myTargetID ${MobID}
+				/varset PathShortest ${PathLength}
+			}
+			/varcalc PathCount ${PathCount}+1 
+		}
+		/next MobCounter
+		/if (${myTargetID}) /message \agPulling \at${Spawn[${myTargetID}].Name}(${myTargetID}) \axat \ay${PathShortest} \axfeet.
+		/varset Announce FALSE
+		/varset NoKillCounter 0
+	} else {
+		/varset myTargetID 0
+		/delay 5s ${Me.XTarget} == 0
+		/if (!${Me.XTarget}) {
+			/if (!${Announce}) {
+				/message No more mobs to pull, lets Wait for Respawn!
+				/varset Announce TRUE
+				/if (${CampOn}) {
+					/message Heading back to camp
+					/nav loc  ${CampY} ${CampX} ${CampZ}
+				}
+			}
+			/if (${Me.Standing} && !${Navigation.Active}) /sit
+		}
+		/if (${Me.XTarget}) /return
+	}
+	/delay 1
+/return
+
+Sub MobIDValidate(int ValidateMobID)
+	/declare locX		int	local	${Spawn[id ${ValidateMobID}].X}
+	/declare locY		int	local	${Spawn[id ${ValidateMobID}].Y}
+	/declare groupCount	int local	${SpawnCount[loc ${locX} ${locY} radius 75 pc group notid ${Me.ID}]}
+	/declare pcCount	int local 	${SpawnCount[loc ${locX} ${locY} radius 75 pc notid ${Me.ID}]}
+	/varcalc pcCount ${pcCount} - ${groupCount}
+	|/declare pcPetCount	int local ${SpawnCount[loc ${locX} ${locY} radius 150 pcpet notid ${Pet.ID}]}
+	/if (${pcCount}>0) {
+		/popcustom 13 1 Player close to selected target, finding new!
+		/delay 1s
+		/return FALSE
+	}
+	|/if (${pcPetCount}>0) /return FALSE
+/return TRUE
+
+Sub IniFile
+	/declare c			int		0
+	|Readini settings for your zone
+	/if (${ppCampRadius}) {
+		/ini "PocketFarm.ini" "${Zone.ShortName}" "Radius" "${ppCampRadius}"
+	}
+	/varset Radius ${Ini[PocketFarm.ini,${Zone.ShortName},Radius]}
+	/varset ZRadius ${Ini[PocketFarm.ini,${Zone.ShortName},ZRadius]}
+	/varset Ignore ${Ini[PocketFarm.ini,${Zone.ShortName},Ignore]}
+	/varset Pull ${Ini[PocketFarm.ini,${Zone.ShortName},Pull]}
+
+	|if settings not there, create them.
+	/if (!${Radius}) {
+		/ini "PocketFarm.ini" "${Zone.ShortName}" "Radius" "250"
+		/varset Radius 250
+	}
+	/if (!${ZRadius}) {
+		/ini "PocketFarm.ini" "${Zone.ShortName}" "ZRadius" "125"
+		/varset ZRadius 125
+	}
+	/if (${Ignore.Equal[NULL]}) {
+		/ini "PocketFarm.ini" "${Zone.ShortName}" "Ignore" "NONE"
+		/varset Ignore NONE
+	}
+	/if (${Pull.Equal[NULL]}) {
+		/ini "PocketFarm.ini" "${Zone.ShortName}" "Pull" "ALL"
+		/varset Pull ALL
+	}
+	/if (!${Ignore.Equal[NULL]}) {
+		/if (!${Ignore.Equal[none]}) {
+			/if (!${Ignore.Count[|]}) {
+				/squelch /alert add 1 ${Ignore}
+			} else /if (${Ignore.Count[|]}) {
+				/for c 1 to ${Math.Calc[${Ignore.Count[|]}+1]}
+				/squelch /alert add 1 ${Ignore.Arg[${c},|]}
+				/next c
+			}
+		}
+	}
+	
+	/if (!${Pull.Equal[NULL]}) {
+		/if (!${Pull.Equal[all]}) {
+			/if (!${Pull.Count[|]}) {
+				/squelch /alert add 10 ${Pull}
+			} else /if (${Pull.Count[|]}) {
+				/for c 1 to ${Math.Calc[${Pull.Count[|]}+1]}
+					/squelch /alert add 10 ${Pull.Arg[${c},|]}
+				/next c
+			}
+		}
+	}
+   
+	/if (${CampOn}) {
+		/message \agCamp radius \aw<\at${Radius}\ax> \agZRadius \aw<\at${ZRadius}\ax> \agIgnore \aw<\at${Ignore}\ax> \agPull \aw<\at${Pull}\ax>
+	} else {
+		/message \agRadius \aw<\at${Radius}\ax> \agZRadius \aw<\at${ZRadius}\ax> \agIgnore \aw<\at${Ignore}\ax> \agPull \aw<\at${Pull}\ax>
+	}
+
+/return
+
+
+Sub Event_CantHit
+/if (!${CantHit} && ${CantHitTimer}==0) {
+	/varset CantHit true
+	/varset CantHitTimer 5
+	/declare targetID int local  ${Target.ID}
+	/declare radius int local 15
+	/declare i int local 0
+	/declare XOff float local 0
+	/declare YOff float local 0
+	/declare ZOff float local 0
+	/declare XMove float local 0
+	/declare YMove float local 0
+	/declare BaseRadians local
+	|we incrememnt by 5 feet around the circle...
+	/declare Multiplier local 5
+	/declare MyHeading float local ${Math.Calc[${Spawn[${targetID}].Heading.Degrees} - ${Multiplier}]}
+	/declare BaseRadian float local ${Math.Calc[360 / 36]}
+	/for i 1 to 72
+		/varcalc XMove ${Math.Cos[ ${BaseRadian} * ${Float[${i}]} + (${MyHeading}) ]}
+		/varcalc YMove ${Math.Sin[ ${BaseRadian} * ${Float[${i}]} + (${MyHeading}) ]}
+		/varcalc XOff ${Spawn[${targetID}].X} + ( ${Int[${radius}]} * ${XMove} )
+		/varcalc YOff ${Spawn[${targetID}].Y} + ( ${Int[${radius}]} * ${YMove} )
+		/varcalc ZOff ${Spawn[${targetID}].Z}
+		/if (${Navigation.PathExists[locyxz ${YOff} ${XOff} ${ZOff}]}) {
+			/if (${LineOfSight[${YOff},${XOff},${ZOff}:${Spawn[${targetID}].Y},${Spawn[${targetID}].X},${Spawn[${targetID}].Z}]}==TRUE) {
+				/if (${EverQuest.ValidLoc[${XOff} ${YOff} ${ZOff}]}) {
+				|	/echo [${i}] We have a valid loc at ${YOff} ${XOff} ${ZOff}
+					/nav locyxz ${YOff} ${XOff} ${ZOff} facing=backward
+					/delay 1s ${Navigation.Active}==TRUE
+					/delay 5s ${Navigation.Active}==FALSE
+					/if (${Target.ID}) /face fast
+					/varset CantHit false
+					/varset CantHitTimer 10
+					/doevents flush CantHit
+					/break
+				}
+			}
+		}
+	/next i
+}
+/return
+
+Sub Bind_pkf(string Command, string Command2)
+
+	/if (${Command.Equal[load]}) {
+		/message \arReloading INI.
+		/call IniFile
+	} else /if (${Command.Equal[clear]}) {
+		/if (${Command2.Equal[ignore]}) {
+			/squelch /alert clear 1
+			/message \arIgnore list cleared.
+		}
+		/if (${Command2.Equal[pull]}) {
+			/squelch /alert clear 10
+			/message \arPull list cleared.
+		}	
+	} else /if (${Command.Equal[list]}) {
+		/alert list 1
+		/alert list 10
+	} else /if (${Command.Equal[radius]}) {
+		/varset Radius ${Command2}
+		/if (${CampOn}) {
+			/squelch /maploc ${CampY} ${CampX} Size 20 width 5 color 0 0 255 radius ${Radius} color 0 0 255
+			/squelch /mapfilter SpellRadius 0
+		} else {
+			/squelch /mapfilter SpellRadius ${Radius}
+		}
+		/message \agSetting Radius to \at ${Radius}
+		/ini "PocketFarm.ini" "${Zone.ShortName}" "Radius" "${Radius}"
+	} else /if (${Command.Equal[zradius]}) {
+		/varset ZRadius ${Command2}
+		/message \agSetting Z-Radius to \at${ZRadius}
+		/ini "PocketFarm.ini" "${Zone.ShortName}" "ZRadius" "${ZRadius}"
+	} else /if (${Command.Equal[ignore]}) {
+		/alert add 1 "${Command2}"
+	} else /if (${Command.Equal[pull]}) {
+		/alert add 10 "${Command2}"
+	} else /if (${Command.Equal[go]}) {
+		/varset goFarming true
+		/message PocketFarm \agGO
+	} else /if (${Command.Equal[pause]}) {
+		/varset goFarming false
+		/message PocketFarm \arPause
+	} else {
+		/message \ag Commands while running:
+		/message \ag- \at/pkf go \agmakes PocketFarm start farming
+		/message \ag- \at/pkf pause \agmakes PocketFarm pause farming, but will self defend.
+		/message \ag- \at/pkf list \agShows both ignore and pull lists
+		/message \ag- \at/pkf ignore "<spawn search>" \ag- Add spawns to temp ignore list, remember to use " ". \arWill not be saved in ini.
+		/message \ag- \at/pkf pull "<spawn search>" \ag- Add spawns to temp pull list, remember to use " ". \arWill not be saved in ini.
+		/message \ag- \at/pkf clear <ignore/pull> ## \ag- Clear the ignore or pull list.
+		/message \ag- \at/pkf radius ## \ag- Change the radius around you to look for mobs in.
+		/message \ag- \at/pkf zradius ## \ag- Change the  Z radius.
+		/message \ag- \at/pkf load \ag load reload the ini.
+	}
+/return
+
+

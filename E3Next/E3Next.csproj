@@ -176,6 +176,7 @@
     <Compile Include="Processors\Cures.cs" />
     <Compile Include="E3.cs" />
     <Compile Include="Processors\Heals.cs" />
+    <Compile Include="Processors\Hunt.cs" />
     <Compile Include="Processors\Loot.cs" />
     <Compile Include="Processors\NowCast.cs" />
     <Compile Include="Processors\Pets.cs" />

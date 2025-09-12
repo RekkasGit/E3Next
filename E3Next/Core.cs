@@ -1301,6 +1301,8 @@ namespace MonoCore
         [MethodImpl(MethodImplOptions.InternalCall)]
         public extern static bool imgui_ButtonEx(string name, float width, float height);
         [MethodImpl(MethodImplOptions.InternalCall)]
+        public extern static bool imgui_SmallButton(string name);
+        [MethodImpl(MethodImplOptions.InternalCall)]
         public extern static void imgui_Text(string text);
         [MethodImpl(MethodImplOptions.InternalCall)]
         public extern static void imgui_Separator();
@@ -1413,6 +1415,31 @@ namespace MonoCore
         public extern static IntPtr mq_CreateTextureFromData(byte[] data, int width, int height, int channels);
         [MethodImpl(MethodImplOptions.InternalCall)]
         public extern static void mq_DestroyTexture(IntPtr textureId);
+       
+        // Convenience wrapper to pop a single style color
+        public static void imgui_PopStyleColor() => imgui_PopStyleColor(1);
+        // Wrapping and window constraints
+        [MethodImpl(MethodImplOptions.InternalCall)]
+        public extern static void imgui_TextWrapped(string text);
+        [MethodImpl(MethodImplOptions.InternalCall)]
+        public extern static void imgui_PushTextWrapPos(float wrapPosX);
+        [MethodImpl(MethodImplOptions.InternalCall)]
+        public extern static void imgui_PopTextWrapPos();
+        [MethodImpl(MethodImplOptions.InternalCall)]
+        public extern static void imgui_SetNextWindowSizeConstraints(float minW, float minH, float maxW, float maxH);
+        [MethodImpl(MethodImplOptions.InternalCall)]
+        public extern static void imgui_SetNextWindowBgAlpha(float alpha);
+        [MethodImpl(MethodImplOptions.InternalCall)]
+        public extern static void imgui_SetNextWindowSize(float width, float height);
+        [MethodImpl(MethodImplOptions.InternalCall)]
+        public extern static bool imgui_IsWindowHovered();
+        [MethodImpl(MethodImplOptions.InternalCall)]
+        public extern static bool imgui_IsMouseClicked(int button);
+        // New slider helpers
+        [MethodImpl(MethodImplOptions.InternalCall)]
+        public extern static bool imgui_SliderInt(string id, ref int value, int min, int max);
+        [MethodImpl(MethodImplOptions.InternalCall)]
+        public extern static bool imgui_SliderDouble(string id, ref double value, double min, double max, string format);
         #endregion
         #endregion
 
@@ -1704,25 +1731,21 @@ namespace MonoCore
             string mqReturnValue = Core.mq_ParseTLO(query);
             if (typeof(T) == typeof(Int32))
             {
-                if (!mqReturnValue.Contains("."))
+                // Prefer direct int parsing first
+                if (Int32.TryParse(mqReturnValue, out var intValueDirect))
                 {
-                    Int32 value;
-                    if (Int32.TryParse(mqReturnValue, out value))
-                    {
-                        return (T)(object)value;
-                    }
-                    else { return (T)(object)-1; }
+                    return (T)(object)intValueDirect;
                 }
-                else
+                // Some TLOs return decimals (e.g., coordinates). Gracefully coerce to int.
+                if (Decimal.TryParse(mqReturnValue, out var decValue))
                 {
-                    Decimal value;
-                    if (decimal.TryParse(mqReturnValue, out value))
-                    {
-                        return (T)(object)value;
-                    }
-                    else { return (T)(object)-1; }
-
+                    return (T)(object)(Int32)System.Math.Truncate(decValue);
                 }
+                if (Double.TryParse(mqReturnValue, out var dblValue))
+                {
+                    return (T)(object)(Int32)System.Math.Truncate(dblValue);
+                }
+                return (T)(object)-1;
             }
             else if (typeof(T) == typeof(Boolean))
             {
