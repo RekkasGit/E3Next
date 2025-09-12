@@ -57,6 +57,7 @@ namespace E3Core.Processors
             _navigationOwned = false;
             _log.Write($"Hunt: Navigation control released by {releaser}");
             try { MQ.Cmd("/nav stop"); } catch { }
+            try { Hunt.ResetNavTargetTracking(); } catch { }
         }
 
         public static bool IsNavigationOwned => _navigationOwned;
@@ -66,6 +67,7 @@ namespace E3Core.Processors
             if (_currentState == newState && reason == _stateReason) return;
 
             _log.Write($"Hunt: State {_currentState} -> {newState} ({reason})");
+            try { Hunt.DebugLog($"STATE: {_currentState} -> {newState} ({reason})"); } catch { }
 
             // Exit current state
             ExitState(_currentState);
@@ -122,7 +124,10 @@ namespace E3Core.Processors
                 case HuntState.InCombat: return "In Combat";
                 case HuntState.WaitingForLoot: return !string.IsNullOrEmpty(_stateReason) ? _stateReason : "Waiting for loot";
                 case HuntState.NavigatingToCamp: return "Returning to camp";
-                case HuntState.Paused: return "Paused";
+                // If we're "Paused" due to a specific reason (e.g., waiting on peers), surface that
+                // so the UI reflects an active-but-waiting state rather than just "Paused".
+                case HuntState.Paused:
+                    return !string.IsNullOrEmpty(_stateReason) ? _stateReason : "Paused";
                 case HuntState.ManualControl: return "Manual control";
                 default: return _currentState.ToString();
             }
@@ -161,13 +166,15 @@ namespace E3Core.Processors
 
         [ExposedData("Hunt", "Status")]
         public static string Status = string.Empty;
+        // Back-compat shim: expose HuntStateMachine.CurrentState via Hunt.CurrentState
+        public static HuntState CurrentState => HuntStateMachine.CurrentState;
 
         // Cached target name for UI (avoid MQ queries on UI thread)
         [ExposedData("Hunt", "TargetName")]
         public static string TargetName = string.Empty;
 
         // Pulling configuration
-        [ExposedData("Hunt", "PullMethod")] // None|Ranged|Spell|Item|AA|Disc
+        [ExposedData("Hunt", "PullMethod")] // None|Ranged|Spell|Item|AA|Disc|Attack
         public static string PullMethod = "None";
         [ExposedData("Hunt", "PullSpell")] public static string PullSpell = string.Empty;
         [ExposedData("Hunt", "PullItem")] public static string PullItem = string.Empty;
@@ -182,10 +189,48 @@ namespace E3Core.Processors
         public static bool SmartLootActive = false; // derived activity flag for peers
         [ExposedData("Hunt", "SmartLootMode")]
         public static string SmartLootMode = "Disabled";
+        // Telemetry updates pulled from SmartLoot TLO
+        private static bool _slIsProcessing = false;
+        private static bool _slSafeToLoot = true;
+        private static int _slCorpseCount = 0;
+        private static bool _slHasNewCorpses = false;
+        private static bool _slIsPeerTriggered = false;
+        private static string _slState = "Unknown";
+        private static string _slMode = "Disabled";
+
+        // Adjustable loot wait (ms)
+        [ExposedData("Hunt", "LootMinWaitMs")] public static int LootMinWaitMs = 2000;
+        [ExposedData("Hunt", "LootMaxWaitMs")] public static int LootMaxWaitMs = 10000;
+
+        private static T Q<T>(string expr, T fallback = default)
+        {
+            try { return MQ.Query<T>(expr); } catch { return fallback; }
+        }
+
+        private static void UpdateSmartLootTelemetry()
+        {
+            _slState = Q("${SmartLoot.State}", "Unknown");
+            _slMode = Q("${SmartLoot.Mode}", "Disabled");
+            _slIsProcessing = Q("${SmartLoot.IsProcessing}", false);
+            _slSafeToLoot = Q("${SmartLoot.SafeToLoot}", true);
+            _slCorpseCount = Q("${SmartLoot.CorpseCount}", 0);
+            _slHasNewCorpses = Q("${SmartLoot.HasNewCorpses}", false);
+            _slIsPeerTriggered = Q("${SmartLoot.IsPeerTriggered}", false);
+
+            // Publish to shared-data for peers / your /hunt smartloot command
+            SmartLootState = _slState;
+            SmartLootMode = _slMode;
+            SmartLootActive = _slIsProcessing || _slCorpseCount > 0;
+        }
+
 
         // Optional camp point
         [ExposedData("Hunt", "CampOn")]
         public static bool CampOn = false;
+        
+        // When true, scan from the player's current position after each pull (rgmercs HuntFromPlayer behavior)
+        [ExposedData("Hunt", "HuntFromPlayer")]
+        public static bool HuntFromPlayer = false;
 
         [ExposedData("Hunt", "CampX")]
         public static int CampX = 0;
@@ -197,11 +242,48 @@ namespace E3Core.Processors
         private static long _nextTickAt = 0;
         private static readonly int _tickIntervalMs = 200; // snappy responsiveness
         private static long _nextScanAt = 0;
-        private static readonly int _scanIntervalMs = 800; // throttle scanning a bit
+        private static readonly int _scanIntervalMs = 350; // faster scans for snappier target acquisition (rgmercs-like)
         private static long _nextPullAt = 0;
-        private static readonly int _pullCooldownMs = 2000;
+        private static readonly int _pullCooldownMs = 1800; // slightly faster retry cadence
         private static long _nextNavAt = 0;
-        private static readonly int _navCooldownMs = 1000; // prevent rapid nav calls
+        private static readonly int _navCooldownMs = 350; // more responsive navigation updates
+        private static int _navTargetID = 0; // last spawn id we commanded /nav towards
+        private static long _lastAssistCmdAt = 0;
+        private static readonly int _assistCmdCooldownMs = 2000; // avoid assist spam
+        // Track the current nav command target
+        internal static void ResetNavTargetTracking() { _navTargetID = 0; }
+        private static void BeginLootWait(string reason)
+        {
+            _waitingForLoot = true;
+            _lootWaitStartMs = Core.StopWatch.ElapsedMilliseconds;
+            HuntStateMachine.TransitionTo(HuntState.WaitingForLoot, reason);
+            // Let SmartLoot drive; drop nav
+            if (HuntStateMachine.IsNavigationOwned)
+                HuntStateMachine.ReleaseNavigationControl("BeginLootWait");
+        }
+
+        private static bool LootWaitComplete()
+        {
+            UpdateSmartLootTelemetry();
+
+            long elapsed = Core.StopWatch.ElapsedMilliseconds - _lootWaitStartMs;
+            bool minElapsed = elapsed >= Math.Max(0, LootMinWaitMs);
+            bool maxElapsed = elapsed >= Math.Max(LootMinWaitMs, LootMaxWaitMs);
+
+            // Done if SmartLoot is idle and no corpses nearby and we've honored the minimum dwell
+            bool slIdle = !_slIsProcessing && _slCorpseCount == 0;
+
+            return (minElapsed && slIdle) || maxElapsed;
+        }
+
+        // Track repeated no-path detections for the current target
+        private static int _noPathTarget = 0;
+        private static int _noPathAttempts = 0;
+        private static void ResetNoPathTracking(int forTargetId = 0)
+        {
+            _noPathTarget = forTargetId;
+            _noPathAttempts = 0;
+        }
 
         // Loot wait handling: pause scanning after combat ends until SmartLoot finishes
         private static int _lastXTargetCount = 0;
@@ -210,11 +292,139 @@ namespace E3Core.Processors
         private static readonly int _lootMinWaitMs = 2000;   // always wait at least 2s after XTarget clears
         private static readonly int _lootWaitFallbackMs = 10000; // fallback max wait
 
+        // Helper: detect when XTarget just dropped to 0 since last tick
+        private static bool XTargetJustCleared()
+        {
+            int current = 0;
+            try { current = MQ.Query<int>("${Me.XTarget}"); } catch { current = 0; }
+            return _lastXTargetCount > 0 && current == 0;
+        }
+
         // Zone-specific ignore list (zone -> HashSet of mob names)
         private static readonly Dictionary<string, HashSet<string>> _zoneIgnoreLists = new Dictionary<string, HashSet<string>>(StringComparer.OrdinalIgnoreCase);
         private static string _currentZone = string.Empty;
         private static string _ignoreListPath = string.Empty;
         private static string _huntSettingsPath = string.Empty;
+
+        // Temporary per-spawn ignore to avoid repeatedly attempting stuck/unreachable mobs (rgmercs-style PullIgnoreTime)
+        [ExposedData("Hunt", "MaxPathRange")] public static int MaxPathRange = 1000; // 0 disables path length limit
+        [ExposedData("Hunt", "PullIgnoreTimeSec")] public static int PullIgnoreTimeSec = 15;
+        [ExposedData("Hunt", "TempIgnoreDurationSec")] public static int TempIgnoreDurationSec = 60; // temp ignore duration used by UI actions
+        [ExposedData("Hunt", "RangedApproachFactor")] public static double RangedApproachFactor = 0.5; // portion of max ranged pull distance to approach
+        // Preferred approach distance for non-ranged pulls (spell/item/aa/disc)
+        [ExposedData("Hunt", "PullApproachDistance")] public static int PullApproachDistance = 60;
+        // Detect stuck targets with no available nav path and move on
+        [ExposedData("Hunt", "NoPathMaxAttempts")] public static int NoPathMaxAttempts = 3; // consecutive no-path checks before we give up
+        [ExposedData("Hunt", "NoPathIgnoreDurationSec")] public static int NoPathIgnoreDurationSec = 30; // temporary ignore when stuck
+        private static readonly Dictionary<int, long> _tempIgnoreUntil = new Dictionary<int, long>();
+        private static long _pullAttemptStartMs = 0;
+
+        // Recent scan candidates for UI (no MQ on UI thread)
+        // Debug log for UI window
+        private struct DebugEntry { public long Ts; public string Msg; }
+        private static readonly List<DebugEntry> _debug = new List<DebugEntry>(256);
+        private static readonly object _debugLock = new object();
+        [ExposedData("Hunt", "DebugEnabled")] public static bool DebugEnabled = true;
+
+        public static void DebugLog(string msg)
+        {
+            if (!DebugEnabled || string.IsNullOrEmpty(msg)) return;
+            try
+            {
+                var e = new DebugEntry { Ts = Core.StopWatch.ElapsedMilliseconds, Msg = msg };
+                lock (_debugLock)
+                {
+                    _debug.Add(e);
+                    if (_debug.Count > 400) _debug.RemoveRange(0, _debug.Count - 400);
+                }
+            }
+            catch { }
+        }
+
+        public static List<(long ts, string msg)> GetDebugLogSnapshot(int max = 200)
+        {
+            var list = new List<(long, string)>(Math.Min(max, 400));
+            try
+            {
+                lock (_debugLock)
+                {
+                    int start = Math.Max(0, _debug.Count - Math.Max(1, max));
+                    for (int i = start; i < _debug.Count; i++)
+                    {
+                        list.Add((_debug[i].Ts, _debug[i].Msg ?? string.Empty));
+                    }
+                }
+            }
+            catch { }
+            return list;
+        }
+
+        private struct HuntCandidate
+        {
+            public int ID;
+            public string Name;
+            public int Level;
+            public double Distance;
+            public double PathLen;
+            public string Loc;
+            public string Con;
+        }
+        private static readonly List<HuntCandidate> _lastCandidates = new List<HuntCandidate>();
+        private static long _candidatesUpdatedAt = 0;
+
+        public static List<(int id, string name, int level, double distance, double pathLen, string loc, string con)> GetCandidatesSnapshot()
+        {
+            // Return a shallow copy suitable for UI consumption
+            var list = new List<(int, string, int, double, double, string, string)>(_lastCandidates.Count);
+            foreach (var c in _lastCandidates)
+            {
+                list.Add((c.ID, c.Name ?? string.Empty, c.Level, c.Distance, c.PathLen, c.Loc ?? string.Empty, c.Con ?? string.Empty));
+            }
+            return list;
+        }
+
+        public static void ClearDebugLog()
+        {
+            try { lock (_debugLock) { _debug.Clear(); } } catch { }
+        }
+
+        public static void ClearTempIgnores()
+        {
+            _tempIgnoreUntil.Clear();
+        }
+
+        public static void ForceSetTarget(int id)
+        {
+            if (id <= 0) return;
+            TargetID = id;
+            TargetName = GetSpawnName(id);
+            _nextNavAt = 0; // allow immediate nav
+            HuntStateMachine.TransitionTo(HuntState.NavigatingToTarget, "Forced target");
+        }
+
+        public static void TempIgnoreID(int id, int durationSeconds)
+        {
+            if (id <= 0) return;
+            if (durationSeconds <= 0) durationSeconds = TempIgnoreDurationSec;
+            _tempIgnoreUntil[id] = Core.StopWatch.ElapsedMilliseconds + durationSeconds * 1000L;
+        }
+
+        // Expose timing info for UI
+        public static int GetMsUntilNextScan()
+        {
+            long now = Core.StopWatch.ElapsedMilliseconds;
+            return (int)Math.Max(0, _nextScanAt - now);
+        }
+        public static int GetMsUntilNextNav()
+        {
+            long now = Core.StopWatch.ElapsedMilliseconds;
+            return (int)Math.Max(0, _nextNavAt - now);
+        }
+        public static int GetMsUntilNextPull()
+        {
+            long now = Core.StopWatch.ElapsedMilliseconds;
+            return (int)Math.Max(0, _nextPullAt - now);
+        }
 
         [SubSystemInit]
         public static void Hunt_Init()
@@ -227,6 +437,8 @@ namespace E3Core.Processors
                 LoadIgnoreList();
                 _huntSettingsPath = E3Core.Settings.BaseSettings.GetSettingsFilePath("Hunt Settings.ini");
                 LoadHuntSettings();
+                // Prime cached zone name early (avoids UI doing MQ queries)
+                UpdateCurrentZoneCached();
             }
             catch { }
         }
@@ -237,7 +449,7 @@ namespace E3Core.Processors
             {
                 if (x.args.Count == 0)
                 {
-                    MQ.Write("Usage: /hunt [go|pause|on|off|radius <n>|zradius <n>|pull <patterns>|ignore <patterns>|ignoreadd [name]|ignorelist|ignoreclear|ignoreallzones|smartloot|camp [set|off]|pullmethod <type>|pullspell <name>|pullitem <name>|pullaa <name>|pulldisc <name>]");
+                    MQ.Write("Usage: /hunt [go|pause|on|off|radius <n>|zradius <n>|pull <patterns>|ignore <patterns>|ignoreadd [name]|ignorelist|ignoreclear|ignoreallzones|smartloot|zonecheck|camp [set|off]|fromplayer <on|off>|pullmethod <type>|pullspell <name>|pullitem <name>|pullaa <name>|pulldisc <name>|debug]");
                     return;
                 }
 
@@ -332,6 +544,20 @@ namespace E3Core.Processors
                             }
                         }
                         break;
+                    case "fromplayer":
+                        {
+                            bool newVal = HuntFromPlayer;
+                            if (x.args.Count > 1)
+                            {
+                                var v = x.args[1].ToLowerInvariant();
+                                if (v == "on" || v == "1" || v == "true") newVal = true;
+                                else if (v == "off" || v == "0" || v == "false") newVal = false;
+                            }
+                            HuntFromPlayer = newVal;
+                            MQ.Write($"HuntFromPlayer = {(HuntFromPlayer ? "ON" : "OFF")}");
+                            try { SaveHuntPullSettings(); } catch { }
+                        }
+                        break;
                     case "smartloot":
                         {
                             MQ.Write("Hunt: SmartLoot coordination status:");
@@ -380,6 +606,54 @@ namespace E3Core.Processors
                             }
                         }
                         break;
+                    case "zonecheck":
+                        {
+                            try
+                            {
+                                var connectedBots = E3.Bots.BotsConnected();
+                                string currentZone = GetCurrentZone();
+                                MQ.Write($"Hunt: Zone check for {E3.CurrentName} in {currentZone}");
+                                MQ.Write($"  Connected bots: {connectedBots.Count}");
+                                
+                                foreach (string botName in connectedBots)
+                                {
+                                    if (string.Equals(botName, E3.CurrentName, StringComparison.OrdinalIgnoreCase))
+                                    {
+                                        MQ.Write($"  {botName}: (self) in {currentZone}");
+                                        continue;
+                                    }
+                                    
+                                    try
+                                    {
+                                        string peerZone = E3.Bots.Query(botName, "${Zone.ShortName}");
+                                        string peerDead = E3.Bots.Query(botName, "${Me.Dead}");
+                                        bool isPeerDead = string.Equals(peerDead, "TRUE", StringComparison.OrdinalIgnoreCase);
+                                        
+                                        if (string.IsNullOrEmpty(peerZone) || peerZone.Equals("NULL", StringComparison.OrdinalIgnoreCase))
+                                        {
+                                            MQ.Write($"  {botName}: Zone info unavailable");
+                                        }
+                                        else if (!string.Equals(peerZone, currentZone, StringComparison.OrdinalIgnoreCase))
+                                        {
+                                            MQ.Write($"  {botName}: In {peerZone} (different from {currentZone})");
+                                        }
+                                        else
+                                        {
+                                            MQ.Write($"  {botName}: In {peerZone} {(isPeerDead ? "(DEAD)" : "")}");
+                                        }
+                                    }
+                                    catch (Exception ex)
+                                    {
+                                        MQ.Write($"  {botName}: Error - {ex.Message}");
+                                    }
+                                }
+                            }
+                            catch (Exception ex)
+                            {
+                                MQ.Write($"  Error checking zone status: {ex.Message}");
+                            }
+                        }
+                        break;
                     case "pullmethod":
                         if (x.args.Count > 1)
                         {
@@ -418,6 +692,17 @@ namespace E3Core.Processors
                             else if (v == "toggle") AutoAssistAtMelee = !AutoAssistAtMelee;
                         }
                         MQ.Write($"Hunt AutoAssistAtMelee = {AutoAssistAtMelee}");
+                        break;
+                    case "debug":
+                        try
+                        {
+                            if (!MQ.Query<bool>("${Plugin[MQ2Mono]}")) { MQ.Write("MQ2Mono required for ImGui: /plugin MQ2Mono"); break; }
+                            Core.EnqueueUI(() => MonoCore.Core.ToggleImGuiHuntDebugWindow());
+                        }
+                        catch (Exception ex)
+                        {
+                            MQ.Write($"ImGui error: {ex.Message}");
+                        }
                         break;
                     case "camp":
                         if (x.args.Count > 1 && x.args[1].Equals("set", StringComparison.OrdinalIgnoreCase))
@@ -466,6 +751,9 @@ namespace E3Core.Processors
         [ClassInvoke(Data.Class.All)]
         public static void Tick()
         {
+            // Keep cached zone current on the processing loop (not the UI thread)
+            UpdateCurrentZoneCached();
+
             // Throttle work, including publishing SmartLoot state
             if (!e3util.ShouldCheck(ref _nextTickAt, _tickIntervalMs)) return;
 
@@ -473,11 +761,28 @@ namespace E3Core.Processors
             // even when Hunt is disabled on this character
             UpdateSmartLootState();
 
+            // If we were previously paused only due to Go=false (reason "Hunt paused"),
+            // and Go has been turned back on, immediately resume into Scanning so
+            // the status reflects the active state without waiting for the scan throttle.
+            if (Enabled && Go && HuntStateMachine.CurrentState == HuntState.Paused)
+            {
+                var reason = HuntStateMachine.StateReason ?? string.Empty;
+                if (reason.Equals("Hunt paused", StringComparison.OrdinalIgnoreCase))
+                {
+                    _waitingForLoot = false;
+                    _nextScanAt = 0; // allow immediate scan
+                    HuntStateMachine.TransitionTo(HuntState.Scanning, "Resumed");
+                    // fall through to normal handling this tick
+                }
+            }
+
             if (!Enabled)
             {
                 HuntStateMachine.TransitionTo(HuntState.Disabled, "Hunt disabled");
                 return;
             }
+
+            // Peer zone checks are handled centrally in DetermineTargetState() to avoid duplication
 
             // Determine what state we should be in
             DetermineTargetState();
@@ -515,6 +820,42 @@ namespace E3Core.Processors
                 return;
             }
 
+            // Check if any connected peers are in a different zone or dead
+            try
+            {
+                var connectedBots = E3.Bots.BotsConnected();
+                string currentZone = GetCurrentZone();
+                foreach (string botName in connectedBots)
+                {
+                    if (string.Equals(botName, E3.CurrentName, StringComparison.OrdinalIgnoreCase))
+                        continue; // Skip self
+
+                    // Check if peer is in a different zone
+                    string peerZone = E3.Bots.Query(botName, "${Zone.ShortName}");
+                    if (!string.IsNullOrEmpty(peerZone) && !peerZone.Equals("NULL", StringComparison.OrdinalIgnoreCase))
+                    {
+                        if (!string.Equals(peerZone, currentZone, StringComparison.OrdinalIgnoreCase))
+                        {
+                            HuntStateMachine.TransitionTo(HuntState.Paused, $"Waiting for {botName} to return to zone");
+                            return;
+                        }
+                    }
+                    
+                    // Check if peer is dead
+                    string peerDead = E3.Bots.Query(botName, "${Me.Dead}");
+                    bool isPeerDead = string.Equals(peerDead, "TRUE", StringComparison.OrdinalIgnoreCase);
+                    if (isPeerDead)
+                    {
+                        HuntStateMachine.TransitionTo(HuntState.Paused, $"Waiting for {botName} to respawn");
+                        return;
+                    }
+                }
+            }
+            catch (Exception ex)
+            {
+                _log.Write($"Hunt: Error checking connected bots zone states: {ex.Message}");
+            }
+
             if (MQ.Query<bool>("${Me.Stunned}"))
             {
                 HuntStateMachine.TransitionTo(HuntState.InCombat, "Stunned");
@@ -533,6 +874,17 @@ namespace E3Core.Processors
                 return;
             }
 
+            // If we're already in loot-wait mode, keep yielding while SmartLoot remains active
+            try
+            {
+                if (_waitingForLoot && IsSmartLootActiveForLootWait())
+                {
+                    HuntStateMachine.TransitionTo(HuntState.WaitingForLoot, "SmartLoot active");
+                    return;
+                }
+            }
+            catch { }
+
             // Track XTarget changes
             int currentXTargets = 0;
             try { currentXTargets = MQ.Query<int>("${Me.XTarget}"); } catch { currentXTargets = 0; }
@@ -543,43 +895,118 @@ namespace E3Core.Processors
             }
 
             // Check if we should enter loot wait
-            if (currentXTargets == 0 && _lastXTargetCount > 0)
+            // In your main tick, where you detect "combat just ended"
+            if (Hunt.CurrentState == HuntState.InCombat && XTargetJustCleared())
             {
-                if (ShouldEnterLootWait())
-                {
-                    _waitingForLoot = true;
-                    _lootWaitStartMs = Core.StopWatch.ElapsedMilliseconds;
-                    HuntStateMachine.TransitionTo(HuntState.WaitingForLoot, "XTarget cleared - entering loot wait");
-                }
+                BeginLootWait("Waiting for SmartLoot to process corpses");
+                return;
             }
+
             _lastXTargetCount = currentXTargets;
 
+            // Ensure we've called assist on a nearby XTarget NPC if applicable
+            TryEnsureAssistOnNearbyXTarget(currentXTargets);
+
             // If waiting for loot, check if we should continue waiting
-            if (_waitingForLoot)
+            if (HuntStateMachine.CurrentState == HuntState.WaitingForLoot)
             {
-                if (!IsLootWaitComplete())
+                // OPTIONAL: nudge SmartLoot to do a single pass if you're running it in Background mode
+                if (string.Equals(_slMode, "Background", StringComparison.OrdinalIgnoreCase) && _slCorpseCount > 0)
                 {
-                    string lootReason = GetLootWaitReason();
-                    HuntStateMachine.TransitionTo(HuntState.WaitingForLoot, lootReason);
+                    MQ.Cmd("/echo Hunt nudging SmartLoot once");
+                    MQ.Query<string>("${SmartLoot.Command[once]}"); // triggers a single looting pass
+                }
+
+                if (LootWaitComplete())
+                {
+                    _waitingForLoot = false;
+                    DebugLog("Loot wait complete; resuming scanning.");
+                    HuntStateMachine.TransitionTo(HuntState.Scanning, "Loot complete");
+                    _nextScanAt = 0; // allow immediate rescan
+                }
+                else
+                {
+                    // stay paused; do not scan or nav
+                    return;
+                }
+            }
+
+            // Prefer adopting player's current EQ target if it is a valid NPC for hunting
+            try
+            {
+                int curEqTarget = MQ.Query<int>("${Target.ID}");
+                if (curEqTarget > 0 && curEqTarget != TargetID)
+                {
+                    // Validate
+                    bool isNpc = MQ.Query<bool>($"${{Spawn[id {curEqTarget}].Type.Equal[NPC]}}" );
+                    bool targetable = MQ.Query<bool>($"${{Spawn[id {curEqTarget}].Targetable}}" );
+                    bool corpse = MQ.Query<bool>($"${{Spawn[id {curEqTarget}].Type.Equal[Corpse]}}" );
+                    if (isNpc && targetable && !corpse && IsValidCombatTarget(curEqTarget))
+                    {
+                        // Respect filters and temporary ignores
+                        string nm = GetSpawnName(curEqTarget);
+                        if (!MatchesIgnore(nm) && !IsIgnored(nm) && PassesPullFilters(nm))
+                        {
+                            // Optional: stay within configured search radius to avoid far-away manual clicks
+                            double d = MQ.Query<double>($"${{Spawn[id {curEqTarget}].Distance3D}}" );
+                            if (d <= Math.Max(50, Radius + 50))
+                            {
+                                TargetID = curEqTarget;
+                                TargetName = nm;
+                                ResetNoPathTracking(TargetID);
+                                _log.Write($"Hunt: Adopted current EQ target {TargetID} ({TargetName})");
+                                DebugLog($"TARGET: adopt EQ -> {TargetID} ({TargetName})");
+                                HuntStateMachine.TransitionTo(HuntState.NavigatingToTarget, "Adopted current target");
+                                return;
+                            }
+                        }
+                    }
+                }
+            }
+            catch { }
+
+            // Adopt XTarget as hunt target if needed - Enhanced with combat state validation
+            if (TargetID <= 0 && currentXTargets > 0)
+            {
+                // First, check if we're actually in combat
+                bool currentlyInCombat = Basics.InCombat();
+                _log.Write($"Hunt: XTarget adoption check - InCombat: {currentlyInCombat}, XTargets: {currentXTargets}");
+                
+                if (!currentlyInCombat)
+                {
+                    // Not in combat, be more selective about XTarget adoption
+                    int validTarget = AcquireNextValidXTarget();
+                    if (validTarget > 0)
+                    {
+                        TargetID = validTarget;
+                        TargetName = GetSpawnName(validTarget);
+                        _log.Write($"Hunt: Adopting validated XTarget {TargetID} ({TargetName})");
+                        HuntStateMachine.TransitionTo(HuntState.NavigatingToTarget, $"Adopted validated XTarget");
+                        return;
+                    }
+                    else
+                    {
+                        _log.Write($"Hunt: No valid combat targets found in XTarget list");
+                    }
+                    // If no valid targets in XTarget, don't adopt anything
                     return;
                 }
                 else
                 {
-                    _waitingForLoot = false;
-                    _log.Write("Hunt: Loot wait completed - resuming normal hunting");
-                }
-            }
-
-            // Adopt XTarget as hunt target if needed
-            if (TargetID <= 0 && currentXTargets > 0)
-            {
-                int nextTarget = AcquireNextFromXTarget();
-                if (nextTarget > 0)
-                {
-                    TargetID = nextTarget;
-                    try { TargetName = MQ.Query<string>($"${{Spawn[id {TargetID}].Name}}") ?? string.Empty; } catch { TargetName = string.Empty; }
-                    HuntStateMachine.TransitionTo(HuntState.NavigatingToTarget, $"Adopted XTarget {TargetID}");
-                    return;
+                    // In combat, adopt more aggressively but still validate
+                    int nextTarget = AcquireNextFromXTarget();
+                    if (nextTarget > 0)
+                    {
+                        TargetID = nextTarget;
+                        TargetName = GetSpawnName(nextTarget);
+                        _log.Write($"Hunt: Adopting combat XTarget {TargetID} ({TargetName})");
+                        HuntStateMachine.TransitionTo(HuntState.InCombat, $"Adopted combat XTarget");
+                        return;
+                    }
+                    else
+                    {
+                        _log.Write($"Hunt: No valid targets found in XTarget during combat");
+                    }
                 }
             }
 
@@ -603,6 +1030,11 @@ namespace E3Core.Processors
                 if (isCorpse || !MQ.Query<bool>($"${{Spawn[id {TargetID}]}}"))
                 {
                     _log.Write($"Hunt: Target {TargetID} became invalid or corpse");
+                    // Only stop nav if we currently own it; avoid interrupting SmartLoot corpse nav
+                    if (HuntStateMachine.IsNavigationOwned)
+                    {
+                        try { MQ.Cmd("/nav stop"); } catch { }
+                    }
                     TargetID = 0; 
                     TargetName = string.Empty;
                     _waitingForLoot = true;
@@ -611,10 +1043,63 @@ namespace E3Core.Processors
                     return;
                 }
 
-                // Check for unexpected aggro
+                // Additional validation: ensure not self and ensure valid NPC
+                try
+                {
+                    int meId = MQ.Query<int>("${Me.ID}");
+                    if (TargetID == meId)
+                    {
+                        _log.Write("Hunt: Clearing self-targeted selection");
+                        if (HuntStateMachine.IsNavigationOwned)
+                        {
+                            try { MQ.Cmd("/nav stop"); } catch { }
+                        }
+                        _navTargetID = 0;
+                        TargetID = 0;
+                        TargetName = string.Empty;
+                        _nextScanAt = 0; // rescan immediately
+                        HuntStateMachine.TransitionTo(HuntState.Scanning, "Self was targeted");
+                        return;
+                    }
+
+                    bool isNpc = MQ.Query<bool>($"${{Spawn[id {TargetID}].Type.Equal[NPC]}}" );
+                    bool targetable = MQ.Query<bool>($"${{Spawn[id {TargetID}].Targetable}}" );
+                    if (!isNpc || !targetable)
+                    {
+                        _log.Write($"Hunt: Target {TargetID} rejected (NPC={isNpc}, Targetable={targetable})");
+                        if (HuntStateMachine.IsNavigationOwned)
+                        {
+                            try { MQ.Cmd("/nav stop"); } catch { }
+                        }
+                        _navTargetID = 0;
+                        TargetID = 0;
+                        TargetName = string.Empty;
+                        _nextScanAt = 0; // rescan immediately
+                        HuntStateMachine.TransitionTo(HuntState.Scanning, "Invalid target");
+                        return;
+                    }
+                }
+                catch { }
+
+                // Do not auto-switch to other XTargets while navigating; keep the selected TargetID
+
                 string aggroCheck = CheckForUnexpectedAggro();
                 if (!string.IsNullOrEmpty(aggroCheck))
                 {
+                    if (HuntStateMachine.IsNavigationOwned)
+                    {
+                        try { MQ.Cmd("/nav stop"); } catch { }
+                    }
+                    _navTargetID = 0;
+                    int threatId = 0;
+                    try { threatId = AcquireNextValidXTarget(); } catch { threatId = 0; }
+                    if (threatId > 0)
+                    {
+                        TargetID = threatId;
+                        TargetName = GetSpawnName(threatId);
+                        TrySetTargetNonBlocking(TargetID);
+                    }
+                    DebugLog($"COMBAT: unexpected aggro -> {TargetID} ({TargetName})");
                     HuntStateMachine.TransitionTo(HuntState.InCombat, aggroCheck);
                     return;
                 }
@@ -626,15 +1111,61 @@ namespace E3Core.Processors
 
                 if (dist > 0 && dist <= meleeRange)
                 {
-                    // Close enough for combat
-                    if (AutoAssistAtMelee && !Assist.IsAssisting)
+                    // Enhanced combat state transition with validation
+                    if (ShouldTransitionToCombat())
                     {
-                        MQ.Cmd("/assistme /all");
-                        MQ.Delay(500);
-                        MQ.Cmd("/face");
+                        // Close enough for combat
+                        if (AutoAssistAtMelee && !Assist.IsAssisting)
+                        {
+                            long now = Core.StopWatch.ElapsedMilliseconds;
+                            if (now - _lastAssistCmdAt >= _assistCmdCooldownMs)
+                            {
+                                // Ensure a valid EQ target before assisting
+                                bool haveValidTarget = false;
+                                try
+                                {
+                                    int curT = MQ.Query<int>("${Target.ID}");
+                                    haveValidTarget = curT > 0 && IsValidCombatTarget(curT);
+                                    if (!haveValidTarget && TargetID > 0 && IsValidCombatTarget(TargetID))
+                                    {
+                                        TrySetTargetNonBlocking(TargetID);
+                                        curT = MQ.Query<int>("${Target.ID}");
+                                        haveValidTarget = (curT == TargetID);
+                                    }
+                                    if (!haveValidTarget)
+                                    {
+                                        int xid = AcquireNextValidXTarget();
+                                        if (xid > 0)
+                                        {
+                                            TrySetTargetNonBlocking(xid);
+                                            haveValidTarget = true;
+                                        }
+                                    }
+                                }
+                                catch { haveValidTarget = false; }
+
+                                if (haveValidTarget)
+                                {
+                                    MQ.Cmd("/assistme /all");
+                                    _lastAssistCmdAt = now;
+                                }
+                            }
+
+                            MQ.Delay(200);
+                            MQ.Cmd("/face");
+                            MQ.Delay(300);
+                            MQ.Cmd("/stick 10 moveback");
+                        }
+                        HuntStateMachine.TransitionTo(HuntState.InCombat, "At melee range with valid target");
+                        return;
                     }
-                    HuntStateMachine.TransitionTo(HuntState.InCombat, "At melee range");
-                    return;
+                    else
+                    {
+                        // Target is in melee range but not valid for combat
+                        _log.Write($"Hunt: Target {TargetID} in melee range but not valid for combat");
+                        HuntStateMachine.TransitionTo(HuntState.NavigatingToTarget, "Invalid target in melee range");
+                        return;
+                    }
                 }
                 else if (CanPull() && ShouldPull(dist))
                 {
@@ -660,6 +1191,81 @@ namespace E3Core.Processors
 
                 HuntStateMachine.TransitionTo(HuntState.Scanning, "Ready to scan for targets");
             }
+        }
+
+        // If there are mobs on XTarget and we haven't called assist on any of those NPCs,
+        // and at least one is within 50 units, issue an assist call.
+        private static void TryEnsureAssistOnNearbyXTarget(int currentXTargets)
+        {
+            try
+            {
+                if (currentXTargets <= 0) return;
+                long now = Core.StopWatch.ElapsedMilliseconds;
+                if (now - _lastAssistCmdAt < _assistCmdCooldownMs) return; // cooldown
+
+                // Build list of valid XTarget NPC IDs and check proximity
+                int max = e3util.XtargetMax;
+                bool anyNearby = false;
+                bool assistedOnAny = false;
+                int assistTargetId = 0;
+                int candidateId = 0;
+                double candidateDist = double.MaxValue;
+                try { assistTargetId = Assist.AssistTargetID; } catch { assistTargetId = 0; }
+
+                for (int i = 1; i <= max && i <= currentXTargets; i++)
+                {
+                    int xid = 0;
+                    try { xid = MQ.Query<int>($"${{Me.XTarget[{i}].ID}}"); } catch { xid = 0; }
+                    if (xid <= 0) continue;
+
+                    // Only consider targetable NPCs
+                    bool isNpc = false;
+                    bool targetable = false;
+                    try { isNpc = MQ.Query<bool>($"${{Spawn[id {xid}].Type.Equal[NPC]}}" ); } catch { }
+                    try { targetable = MQ.Query<bool>($"${{Spawn[id {xid}].Targetable}}" ); } catch { }
+                    if (!isNpc || !targetable) continue;
+
+                    // If we're already assisting one of them, we're good
+                    if (assistTargetId > 0 && xid == assistTargetId) { assistedOnAny = true; break; }
+
+                    // Check distance
+                    double dist = 0;
+                    try { dist = MQ.Query<double>($"${{Spawn[id {xid}].Distance3D}}" ); } catch { dist = 0; }
+                    if (dist > 0 && dist < 50.0)
+                    {
+                        anyNearby = true;
+                        if (dist < candidateDist)
+                        {
+                            candidateDist = dist;
+                            candidateId = xid;
+                        }
+                    }
+                }
+
+                if (!assistedOnAny && anyNearby)
+                {
+                    // Ensure a valid EQ target before assisting
+                    bool haveValidTarget = false;
+                    try
+                    {
+                        int curT = MQ.Query<int>("${Target.ID}");
+                        haveValidTarget = curT > 0 && IsValidCombatTarget(curT);
+                        if (!haveValidTarget && candidateId > 0)
+                        {
+                            TrySetTargetNonBlocking(candidateId);
+                            haveValidTarget = true;
+                        }
+                    }
+                    catch { haveValidTarget = false; }
+
+                    if (haveValidTarget)
+                    {
+                        MQ.Cmd("/assistme /all");
+                        _lastAssistCmdAt = now;
+                    }
+                }
+            }
+            catch { }
         }
 
         private static void HandleCurrentState()
@@ -706,18 +1312,43 @@ namespace E3Core.Processors
 
         private static void HandleNavigatingToTarget()
         {
-            if (!HuntStateMachine.RequestNavigationControl("NavigateToTarget"))
+            // Let SmartLoot drive only when it reports new corpses or peer triggered
+            UpdateSmartLootTelemetry();
+            if (_slHasNewCorpses || _slIsPeerTriggered)
             {
-                // Can't get navigation control, check if SmartLoot needs it
-                if (IsSmartLootActive())
+                if (HuntStateMachine.IsNavigationOwned)
                 {
-                    HuntStateMachine.TransitionTo(HuntState.WaitingForLoot, "SmartLoot needs navigation");
-                    return;
+                    HuntStateMachine.ReleaseNavigationControl("NavigateToTarget->SmartLoot active");
                 }
+                // Stay in NavigatingToTarget; skip issuing nav this tick
             }
 
+            // Remove corpse-nearby preemption; gating happens in CanNavNow() using HasNewCorpses and IsPeerTriggered
+
+            // Attempt to get nav control; if we can't, just continue (another system may be navigating)
+            HuntStateMachine.RequestNavigationControl("NavigateToTarget");
+
+            // Ensure EQ target and nav are heading to the current TargetID
+            try
+            {
+                int curT = MQ.Query<int>("${Target.ID}");
+                if (TargetID > 0 && curT != TargetID)
+                {
+                    TrySetTargetNonBlocking(TargetID);
+                }
+                bool navActive = MQ.Query<bool>("${Navigation.Active}");
+                // Only stop nav if WE own nav and WE previously issued nav to a different id.
+                // Do not interrupt SmartLoot navigation to corpses.
+                if (navActive && HuntStateMachine.IsNavigationOwned && _navTargetID > 0 && _navTargetID != TargetID && TargetID > 0)
+                {
+                    MQ.Cmd("/nav stop");
+                    _navTargetID = 0;
+                }
+            }
+            catch { }
+
             // Navigate towards target with cooldown to prevent spam
-            if (e3util.ShouldCheck(ref _nextNavAt, _navCooldownMs))
+            if (TargetID > 0 && e3util.ShouldCheck(ref _nextNavAt, _navCooldownMs))
             {
                 StartNavNonBlocking(TargetID);
             }
@@ -725,6 +1356,97 @@ namespace E3Core.Processors
 
         private static void HandlePullingTarget()
         {
+            // Initialize or monitor pull attempt timer
+            if (_pullAttemptStartMs == 0 || TargetID != _lastTargetID)
+            {
+                _pullAttemptStartMs = Core.StopWatch.ElapsedMilliseconds;
+            }
+
+            // Abort pulling if taking too long (temporary ignore, then rescan)
+            if (PullIgnoreTimeSec > 0)
+            {
+                long elapsed = Core.StopWatch.ElapsedMilliseconds - _pullAttemptStartMs;
+                if (elapsed >= PullIgnoreTimeSec * 1000)
+                {
+                    try
+                    {
+                        if (TargetID > 0)
+                        {
+                            _tempIgnoreUntil[TargetID] = Core.StopWatch.ElapsedMilliseconds + 60_000; // ignore for 60s
+                            _log.Write($"Hunt: Aborting pull on {TargetID} after {elapsed}ms; temporarily ignoring for 60s");
+                        }
+                    }
+                    catch { }
+
+                    TargetID = 0;
+                    TargetName = string.Empty;
+                    _pullAttemptStartMs = 0;
+                    HuntStateMachine.TransitionTo(HuntState.Scanning, "Pull timeout");
+                    return;
+                }
+            }
+
+            // Let SmartLoot drive only when it reports new corpses or peer triggered; otherwise continue pulling
+            UpdateSmartLootTelemetry();
+            if (_slHasNewCorpses || _slIsPeerTriggered)
+            {
+                if (HuntStateMachine.IsNavigationOwned)
+                {
+                    HuntStateMachine.ReleaseNavigationControl("PullingTarget->SmartLoot active");
+                }
+                // Skip nav/positioning on this tick
+                return;
+            }
+
+            // Try to keep within a reasonable pull distance and line of sight
+            int curTarget = MQ.Query<int>("${Target.ID}");
+            if (curTarget != TargetID)
+            {
+                TrySetTargetNonBlocking(TargetID);
+                DebugLog($"PULL: sync EQ target -> {TargetID}");
+            }
+
+            bool los = MQ.Query<bool>($"${{Spawn[id {TargetID}].LineOfSight}}" );
+            double dist = MQ.Query<double>($"${{Spawn[id {TargetID}].Distance3D}}" );
+
+            // Acquire navigation control so we can fine-position for pull
+            HuntStateMachine.RequestNavigationControl("PullingTarget");
+
+            // Decide desired stop distance by method
+            string method = NormalizeMethod(PullMethod);
+            int desiredStop = E3.GeneralSettings.Movement_NavStopDistance;
+            if (method.Equals("Ranged", StringComparison.OrdinalIgnoreCase))
+            {
+                try
+                {
+                    int baseRange = MQ.Query<int>("${Me.Inventory[ranged].Range}");
+                    bool isArchery = MQ.Query<bool>("${Me.Inventory[ranged].Type.Find[Archery]}");
+                    int maxRange = isArchery ? baseRange * 2 : baseRange;
+                    if (maxRange <= 0) maxRange = 200;
+                    int minRange = 35;
+                    double factor = Math.Max(0.3, Math.Min(0.9, RangedApproachFactor));
+                    desiredStop = (int)Math.Max(minRange, Math.Min(maxRange - 5, maxRange * factor));
+                }
+                catch { desiredStop = Math.Max(desiredStop, 35); }
+            }
+            else
+            {
+                desiredStop = Math.Max(20, PullApproachDistance);
+            }
+
+            // If too far or no LoS, step into position using nav with a cooldown
+            if ((dist <= 0 || dist > desiredStop + 2 || !los) && e3util.ShouldCheck(ref _nextNavAt, _navCooldownMs))
+            {
+                DebugLog($"PULL: approach id={TargetID} desiredStop={desiredStop} dist={dist:0.0} los={(los?"Y":"N")}");
+                StartNavNonBlocking(TargetID, desiredStop);
+                return; // let nav update and retry on next tick
+            }
+
+            // Face the target for better LoS before the pull action
+            try { MQ.Cmd("/face fast"); } catch { }
+
+            // Attempt the pull action now that we're in position
+            DebugLog($"PULL: attempt method={method}");
             TryPull();
         }
 
@@ -744,17 +1466,34 @@ namespace E3Core.Processors
             {
                 HuntStateMachine.ReleaseNavigationControl("WaitingForLoot");
             }
+
+            // If loot wait has completed, resume previous activity without retargeting if possible
+            if (IsLootWaitComplete())
+            {
+                _waitingForLoot = false;
+                _log.Write("Hunt: Loot wait completed - resuming");
+                // Prefer resuming navigation to existing TargetID if still valid
+                if (TargetID > 0 && IsValidCombatTarget(TargetID))
+                {
+                    HuntStateMachine.TransitionTo(HuntState.NavigatingToTarget, "Loot complete");
+                }
+                else
+                {
+                    _nextScanAt = 0; // allow immediate scanning
+                    HuntStateMachine.TransitionTo(HuntState.Scanning, "Loot complete");
+                }
+            }
         }
 
         private static void HandleNavigatingToCamp()
         {
-            if (!HuntStateMachine.RequestNavigationControl("NavigateToCamp"))
+            if (!HuntFromPlayer && !HuntStateMachine.RequestNavigationControl("NavigateToCamp"))
             {
                 HuntStateMachine.TransitionTo(HuntState.Paused, "Can't get navigation control for camp");
                 return;
             }
 
-            if (CampOn && !Movement.IsNavigating())
+            if (CampOn && !HuntFromPlayer && !Movement.IsNavigating())
             {
                 e3util.TryMoveToLoc(CampX, CampY, CampZ, 10, 3000);
             }
@@ -781,42 +1520,36 @@ namespace E3Core.Processors
         {
             long elapsed = Core.StopWatch.ElapsedMilliseconds - _lootWaitStartMs;
             int lootWaitTime = E3.GeneralSettings.Loot_TimeToWaitAfterAssist;
-            bool timeDelayPassed = elapsed >= lootWaitTime;
-            bool smartLootIdle = true;
+            int minWait = Math.Max(_lootMinWaitMs, Math.Max(0, lootWaitTime));
+            bool timeDelayPassed = elapsed >= minWait;
 
+            // Consider SmartLoot fully inactive using robust criteria
+            bool smartLootActive = IsSmartLootActiveForLootWait();
+
+            // If SmartLoot detects combat, exit loot wait immediately
             try
             {
-                bool smartLootLoaded = MQ.Query<bool>("${Plugin[MQ2SmartLoot]}");
-                if (smartLootLoaded)
+                string smartLootState = MQ.Query<string>("${SmartLoot.State}");
+                if (!string.IsNullOrEmpty(smartLootState) && smartLootState.Equals("CombatDetected", StringComparison.OrdinalIgnoreCase))
                 {
-                    string smartLootState = MQ.Query<string>("${SmartLoot.State}");
-                    smartLootIdle = smartLootState.Equals("Idle", StringComparison.OrdinalIgnoreCase);
-
-                    // If SmartLoot detects combat, exit loot wait immediately
-                    if (smartLootState.Equals("CombatDetected", StringComparison.OrdinalIgnoreCase))
-                    {
-                        _waitingForLoot = false;
-                        _log.Write("Hunt: SmartLoot detected combat - exiting loot wait");
-                        return true;
-                    }
+                    _waitingForLoot = false;
+                    _log.Write("Hunt: SmartLoot detected combat - exiting loot wait");
+                    return true;
                 }
             }
-            catch (Exception ex)
-            {
-                _log.Write($"Hunt: Error checking SmartLoot during loot wait: {ex.Message}");
-                smartLootIdle = true;
-            }
+            catch { }
 
-            // Fallback timeout
+            // Fallback timeout only applies when SmartLoot is not active
             bool fallbackTimeout = elapsed >= _lootWaitFallbackMs;
-            return (timeDelayPassed && smartLootIdle) || fallbackTimeout;
+            return (!smartLootActive && timeDelayPassed) || (!smartLootActive && fallbackTimeout);
         }
 
         private static string GetLootWaitReason()
         {
             long elapsed = Core.StopWatch.ElapsedMilliseconds - _lootWaitStartMs;
             int lootWaitTime = E3.GeneralSettings.Loot_TimeToWaitAfterAssist;
-            bool timeDelayPassed = elapsed >= lootWaitTime;
+            int minWait = Math.Max(_lootMinWaitMs, Math.Max(0, lootWaitTime));
+            bool timeDelayPassed = elapsed >= minWait;
 
             try
             {
@@ -824,34 +1557,130 @@ namespace E3Core.Processors
                 if (smartLootLoaded)
                 {
                     string smartLootState = MQ.Query<string>("${SmartLoot.State}");
-                    bool smartLootIdle = smartLootState.Equals("Idle", StringComparison.OrdinalIgnoreCase);
+                    bool isProcessing = false;
+                    bool needsDecision = false;
+                    bool lootWindowOpen = false;
+                    try { isProcessing = MQ.Query<bool>("${SmartLoot.IsProcessing}"); } catch { }
+                    try { needsDecision = MQ.Query<bool>("${SmartLoot.NeedsDecision}"); } catch { }
+                    try { lootWindowOpen = MQ.Query<bool>("${SmartLoot.LootWindowOpen}"); } catch { }
+
+                    bool smartLootIdle = smartLootState.Equals("Idle", StringComparison.OrdinalIgnoreCase) && !isProcessing && !needsDecision && !lootWindowOpen;
 
                     if (!smartLootIdle)
-                        return $"Waiting for SmartLoot ({smartLootState})";
+                    {
+                        string extra = needsDecision ? ", NeedsDecision" : (lootWindowOpen ? ", LootWindowOpen" : (isProcessing ? ", Processing" : ""));
+                        return $"Waiting for SmartLoot ({smartLootState}{extra})";
+                    }
                 }
             }
             catch { }
 
             if (!timeDelayPassed)
-                return $"Waiting for loot delay ({elapsed}ms/{lootWaitTime}ms)";
+                return $"Waiting for loot delay ({elapsed}ms/{minWait}ms)";
 
             return "Waiting for loot";
         }
 
-        private static bool IsSmartLootActive()
+        // Debounced SmartLoot activity detection for nav preemption
+        private static long _smartLootFirstActiveAt = 0;
+        private static string _smartLootLastState = string.Empty;
+        private static readonly int _smartLootDebounceMs = 1200;
+        // Loot-wait hysteresis to allow scanning between multiple corpses
+        private static long _smartLootLastActiveSignalAt = 0;
+        private static readonly int _smartLootIdleGraceMs = 500;
+
+        // Use this to decide if SmartLoot should preempt navigation (avoid thrash)
+        private static bool IsSmartLootActiveForNav()
         {
             try
             {
                 bool smartLootLoaded = MQ.Query<bool>("${Plugin[MQ2SmartLoot]}");
                 if (!smartLootLoaded) return false;
 
-                string smartLootState = MQ.Query<string>("${SmartLoot.State}");
-                return !smartLootState.Equals("Idle", StringComparison.OrdinalIgnoreCase);
+                string state = MQ.Query<string>("${SmartLoot.State}");
+                bool needsDecision = false;
+                bool lootWindowOpen = false;
+                try { needsDecision = MQ.Query<bool>("${SmartLoot.NeedsDecision}"); } catch { }
+                try { lootWindowOpen = MQ.Query<bool>("${SmartLoot.LootWindowOpen}"); } catch { }
+
+                // Treat only these as nav-preempting states
+                bool stateIsPreempting = !string.IsNullOrEmpty(state) && (
+                    state.Equals("OpeningLootWindow", StringComparison.OrdinalIgnoreCase) ||
+                    state.Equals("ProcessingItems", StringComparison.OrdinalIgnoreCase) ||
+                    state.Equals("WaitingForPendingDecision", StringComparison.OrdinalIgnoreCase) ||
+                    state.Equals("CleaningUpCorpse", StringComparison.OrdinalIgnoreCase)
+                );
+
+                // Explicitly consider these benign for navigation
+                bool stateIsBenign = !string.IsNullOrEmpty(state) && (
+                    state.Equals("FindingCorpse", StringComparison.OrdinalIgnoreCase) ||
+                    state.Equals("NavigatingToCorpse", StringComparison.OrdinalIgnoreCase) ||
+                    state.Equals("Scan", StringComparison.OrdinalIgnoreCase) ||
+                    state.Equals("Scanning", StringComparison.OrdinalIgnoreCase)
+                );
+
+                if (!string.IsNullOrEmpty(state) && state.Equals("CombatDetected", StringComparison.OrdinalIgnoreCase))
+                    return false; // do not preempt nav due to combat detection
+
+                bool rawActive = lootWindowOpen || needsDecision || stateIsPreempting;
+
+                long now = Core.StopWatch.ElapsedMilliseconds;
+                if (rawActive && !stateIsBenign)
+                {
+                    if (_smartLootFirstActiveAt == 0 || !string.Equals(_smartLootLastState, state, StringComparison.OrdinalIgnoreCase))
+                    {
+                        _smartLootFirstActiveAt = now;
+                        _smartLootLastState = state ?? string.Empty;
+                    }
+                    // Require sustained active state to avoid thrashing due to periodic scans
+                    return (now - _smartLootFirstActiveAt) >= _smartLootDebounceMs;
+                }
+                else
+                {
+                    _smartLootFirstActiveAt = 0;
+                    _smartLootLastState = state ?? string.Empty;
+                    return false;
+                }
             }
-            catch
+            catch { return false; }
+        }
+
+        // Use this for loot-wait gating; keep waiting through transitions like "FindingCorpse"
+        private static bool IsSmartLootActiveForLootWait()
+        {
+            try
             {
-                return false;
+                bool smartLootLoaded = MQ.Query<bool>("${Plugin[MQ2SmartLoot]}");
+                if (!smartLootLoaded) return false;
+
+                string state = MQ.Query<string>("${SmartLoot.State}");
+                bool isProcessing = false, needsDecision = false, lootWindowOpen = false;
+                try { isProcessing = MQ.Query<bool>("${SmartLoot.IsProcessing}"); } catch { }
+                try { needsDecision = MQ.Query<bool>("${SmartLoot.NeedsDecision}"); } catch { }
+                try { lootWindowOpen = MQ.Query<bool>("${SmartLoot.LootWindowOpen}"); } catch { }
+
+                // Strong active signals
+                bool strong = isProcessing || needsDecision || lootWindowOpen;
+                long now = Core.StopWatch.ElapsedMilliseconds;
+
+                if (!string.IsNullOrEmpty(state) && state.Equals("CombatDetected", StringComparison.OrdinalIgnoreCase))
+                {
+                    // Not a loot-active state
+                    return false;
+                }
+
+                bool nonIdle = !string.IsNullOrEmpty(state) && !state.Equals("Idle", StringComparison.OrdinalIgnoreCase);
+                if (strong || nonIdle)
+                {
+                    // Any non-idle (including FindingCorpse) extends active session to allow successive corpses
+                    _smartLootLastActiveSignalAt = now;
+                    return true;
+                }
+
+                // Grace period to bridge brief Idle gaps between corpses
+                return (now - _smartLootLastActiveSignalAt) < _smartLootIdleGraceMs;
             }
+            catch { return false; }
         }
 
         private static bool CanPull()
@@ -898,6 +1727,9 @@ namespace E3Core.Processors
                     bool discReady = MQ.Query<bool>($"${{Me.CombatAbilityReady[{PullDisc}]}}");
                     return discReady && distance >= 30 && distance <= 200;
 
+                case "Attack":
+                    return distance >= 5 && distance <= 40;
+
                 default:
                     return false;
             }
@@ -907,30 +1739,62 @@ namespace E3Core.Processors
         {
             try
             {
-                // Only check for unexpected aggro if we're currently navigating
+                // Enhanced unexpected aggro detection with better threat assessment
                 bool isNavigating = MQ.Query<bool>("${Navigation.Active}");
-                if (!isNavigating) return string.Empty; // Not navigating, no need to check
+                if (!isNavigating) return string.Empty;
                 
                 int currentXTargets = MQ.Query<int>("${Me.XTarget}");
-                if (currentXTargets == 0) return string.Empty; // No XTargets, we're good
+                if (currentXTargets == 0) return string.Empty;
+                
+                // Get current combat state
+                bool inCombat = Basics.InCombat();
+                double playerHealthPct = MQ.Query<double>("${Me.PctHPs}");
+                
+                // If we're not in combat but have XTargets, investigate more carefully
+                if (!inCombat && currentXTargets > 0)
+                {
+                    // Check if any XTarget is actually threatening
+                    for (int i = 1; i <= currentXTargets; i++)
+                    {
+                        int xid = MQ.Query<int>($"${{Me.XTarget[{i}].ID}}");
+                        if (xid <= 0) continue;
+                        
+                        // Use enhanced validation
+                        if (IsValidCombatTarget(xid))
+                        {
+                            double mobDist = MQ.Query<double>($"${{Spawn[id {xid}].Distance3D}}");
+                            bool isAggressive = MQ.Query<bool>($"${{Spawn[id {xid}].Aggressive}}");
+                            
+                            // If mob is close and aggressive, this might be unexpected aggro
+                            if (mobDist <= 50 && isAggressive)
+                            {
+                                string mobName = GetSpawnName(xid);
+                                return $"Unexpected combat target detected: {mobName}";
+                            }
+                        }
+                    }
+                    return string.Empty; // No threatening targets found
+                }
                 
                 // If we only have 1 XTarget and it's our intended target, we're good
-                if (currentXTargets == 1)
+                if (currentXTargets == 1 && TargetID > 0)
                 {
                     int xTargetID = MQ.Query<int>("${Me.XTarget[1].ID}");
                     if (xTargetID == TargetID) return string.Empty;
                     
-                    // We have 1 XTarget but it's NOT our intended target - this could be unexpected aggro
-                    // But only if we haven't reached our target yet (distance check)
-                    try
+                    // We have 1 XTarget but it's NOT our intended target - check if it's a real threat
+                    if (IsValidCombatTarget(xTargetID))
                     {
-                        double distToTarget = MQ.Query<double>($"${{Spawn[id {TargetID}].Distance3D}}");
-                        if (distToTarget <= 50) return string.Empty; // Close to target, probably expected combat
+                        try
+                        {
+                            double distToTarget = MQ.Query<double>($"${{Spawn[id {TargetID}].Distance3D}}");
+                            if (distToTarget <= 50) return string.Empty; // Close to original target, probably expected
+                        }
+                        catch { return string.Empty; }
                     }
-                    catch { return string.Empty; } // If we can't check distance, don't stop
                 }
                 
-                // Check if we have multiple XTargets or unexpected ones, but be smarter about it
+                // Check for multiple unexpected XTargets with better threat assessment
                 int max = e3util.XtargetMax;
                 var unexpectedMobs = new List<string>();
                 bool hasIntendedTarget = false;
@@ -949,21 +1813,21 @@ namespace E3Core.Processors
                             continue;
                         }
                         
-                        // Skip corpses
-                        if (MQ.Query<bool>($"${{Spawn[id {xTargetID}].Type.Equal[Corpse]}}")) continue;
+                        // Use enhanced validation instead of basic checks
+                        if (!IsValidCombatTarget(xTargetID)) continue;
                         
-                        // Check distance - if we're close to our target, additional mobs might be expected
-                        double distToTarget = MQ.Query<double>($"${{Spawn[id {TargetID}].Distance3D}}");
-                        if (distToTarget <= 50) continue; // Close to target, additional aggro might be normal
-                        
-                        // This is potentially an unexpected mob, but check if it's close to us (might be a legitimate add)
+                        // Check if this is actually a threat
                         double mobDist = MQ.Query<double>($"${{Spawn[id {xTargetID}].Distance3D}}");
-                        if (mobDist > 100) continue; // Too far away, probably not our problem
+                        bool isAggressive = MQ.Query<bool>($"${{Spawn[id {xTargetID}].Aggressive}}");
                         
-                        string mobName = MQ.Query<string>($"${{Spawn[id {xTargetID}].CleanName}}");
-                        if (!string.IsNullOrEmpty(mobName))
+                        // Only consider it unexpected aggro if it's close and aggressive
+                        if (mobDist <= 100 && isAggressive)
                         {
-                            unexpectedMobs.Add($"{mobName}({xTargetID})");
+                            string mobName = GetSpawnName(xTargetID);
+                            if (!string.IsNullOrEmpty(mobName))
+                            {
+                                unexpectedMobs.Add($"{mobName}({xTargetID})");
+                            }
                         }
                     }
                     catch (Exception ex)
@@ -972,13 +1836,13 @@ namespace E3Core.Processors
                     }
                 }
                 
-                // Only report unexpected aggro if we have adds AND we're not close to our intended target
+                // Only report unexpected aggro if we have actual threatening adds
                 if (unexpectedMobs.Count > 0)
                 {
                     return $"Unexpected aggro: {string.Join(", ", unexpectedMobs)}";
                 }
                 
-                return string.Empty; // All XTargets are expected
+                return string.Empty; // All XTargets are expected or non-threatening
             }
             catch (Exception ex)
             {
@@ -994,14 +1858,12 @@ namespace E3Core.Processors
                 // 1) Check local SmartLoot state - don't pull if SmartLoot is actively looting
                 try
                 {
-                    bool smartLootLoaded = MQ.Query<bool>("${Plugin[MQ2SmartLoot]}");
-                    if (smartLootLoaded)
+                    if (IsSmartLootActiveForLootWait())
                     {
-                        string smartLootState = MQ.Query<string>("${SmartLoot.State}");
-                        if (!smartLootState.Equals("Idle", StringComparison.OrdinalIgnoreCase))
-                        {
-                            return $"Waiting for local SmartLoot ({smartLootState})";
-                        }
+                        string smartLootState = "";
+                        try { smartLootState = MQ.Query<string>("${SmartLoot.State}") ?? "Active"; } catch { smartLootState = "Active"; }
+                        _log.Write($"Hunt: ValidateReadyToHunt - Waiting for local SmartLoot ({smartLootState})");
+                        return $"Waiting for local SmartLoot ({smartLootState})";
                     }
                 }
                 catch (Exception ex)
@@ -1042,6 +1904,7 @@ namespace E3Core.Processors
                             if (peerActive || isActionableState)
                             {
                                 string display = isNullish ? (peerActive ? "Active" : "Unknown") : state;
+                                _log.Write($"Hunt: ValidateReadyToHunt - Waiting for {botName} SmartLoot ({display})");
                                 return $"Waiting for {botName} SmartLoot ({display})";
                             }
                         }
@@ -1056,6 +1919,9 @@ namespace E3Core.Processors
                     _log.Write($"Hunt: Error checking connected bots SmartLoot states: {ex.Message}");
                 }
 
+                // Peer zone/death checks removed here to avoid duplication;
+                // DetermineTargetState() is authoritative for peer gating.
+
                 return string.Empty; // All checks passed
             }
             catch (Exception ex)
@@ -1068,10 +1934,43 @@ namespace E3Core.Processors
         private static void TryAcquireTarget()
         {
             Status = "Scanning";
+            // Clean up expired temporary ignores
+            if (_tempIgnoreUntil.Count > 0)
+            {
+                var now = Core.StopWatch.ElapsedMilliseconds;
+                var expired = _tempIgnoreUntil.Where(kv => kv.Value <= now).Select(kv => kv.Key).ToList();
+                foreach (var idExpired in expired) _tempIgnoreUntil.Remove(idExpired);
+            }
+            
+            // First check: are we already engaged with something valid?
+            if (TargetID > 0)
+            {
+                if (IsValidCombatTarget(TargetID))
+                {
+                    // Current target is still valid, don't scan for new ones unless it's too far
+                    double currentDist = MQ.Query<double>($"${{Spawn[id {TargetID}].Distance3D}}");
+                    if (currentDist <= 200) // Still in reasonable range
+                    {
+                        _log.Write($"Hunt: Current target {TargetID} still valid, skipping scan");
+                        return;
+                    }
+                }
+                else
+                {
+                    // Current target is no longer valid
+                    _log.Write($"Hunt: Current target {TargetID} is no longer valid");
+                    TargetID = 0;
+                    TargetName = string.Empty;
+                    ResetNoPathTracking(0);
+                }
+            }
+            
             int mobsInRadius = 0;
             try
             {
-                if (CampOn)
+                // If HuntFromPlayer is enabled, always scan from current player location
+                bool useCampOrigin = CampOn && !HuntFromPlayer;
+                if (useCampOrigin)
                 {
                     mobsInRadius = MQ.Query<int>($"${{SpawnCount[npc targetable loc {CampX} {CampY} radius {Radius} zradius {ZRadius}]}}" );
                 }
@@ -1088,15 +1987,18 @@ namespace E3Core.Processors
 
             if (mobsInRadius > 10) mobsInRadius = 10; // reduce for stability
 
-            double bestPath = double.MaxValue;
+            double bestPath = double.MaxValue; // Prefer path length
             int bestId = 0;
 
+            bool anyPathable = false;
+            var candidateList = new List<HuntCandidate>(mobsInRadius);
             for (int i = 1; i <= mobsInRadius; i++)
             {
                 int id = 0;
                 try
                 {
-                    if (CampOn)
+                    bool useCampOrigin = CampOn && !HuntFromPlayer;
+                    if (useCampOrigin)
                     {
                         id = MQ.Query<int>($"${{NearestSpawn[{i},npc targetable loc {CampX} {CampY} radius {Radius} zradius {ZRadius}].ID}}" );
                     }
@@ -1112,7 +2014,12 @@ namespace E3Core.Processors
 
                 if (id <= 0) continue;
 
-                // Filter out invalid types (pocketfarm excludes many item-like types; we focus on targetable NPC only)
+                // Skip temporarily ignored spawns
+                if (_tempIgnoreUntil.ContainsKey(id)) continue;
+
+                // Use enhanced validation instead of basic checks
+                if (!IsValidCombatTarget(id)) continue;
+
                 // Auto-ignore quest/mission NPCs with surname
                 try
                 {
@@ -1139,34 +2046,92 @@ namespace E3Core.Processors
                     continue;
                 }
 
-                // Prefer lighter checks: ensure a path exists, then use straight-line distance as heuristic
+                // Prefer pathable targets with shortest path length; enforce MaxPathRange if configured
                 bool pathExists = false;
-                try { pathExists = MQ.Query<bool>($"${{Navigation.PathExists[id {id}]}}"); } catch { pathExists = false; }
-                if (!pathExists) continue;
-
-                double dist3d = 0;
-                try { dist3d = MQ.Query<double>($"${{Spawn[id {id}].Distance3D}}" ); } catch { continue; }
-                if (dist3d <= 0) continue;
-                if (dist3d < bestPath)
+                double navLen = 0;
+                try { navLen = MQ.Query<double>($"${{Navigation.PathLength[id {id}]}}" ); pathExists = navLen > 0; } catch { pathExists = false; }
+                if (!pathExists)
                 {
-                    bestPath = dist3d;
+                    try { pathExists = MQ.Query<bool>($"${{Navigation.PathExists[id {id}]}}" ); } catch { pathExists = false; }
+                }
+                if (pathExists)
+                {
+                    anyPathable = true;
+                    if (MaxPathRange > 0 && navLen > MaxPathRange) continue;
+                }
+
+                if (!pathExists && anyPathable)
+                {
+                    // If we've already found a pathable candidate, skip non-pathable ones
+                    continue;
+                }
+
+                double score = navLen;
+                if (score <= 0)
+                {
+                    try { score = MQ.Query<double>($"${{Spawn[id {id}].Distance3D}}" ); } catch { score = 0; }
+                }
+                if (score <= 0) continue;
+
+                // Collect candidate for UI snapshot
+                try
+                {
+                    var cand = new HuntCandidate
+                    {
+                        ID = id,
+                        Name = name,
+                        Level = MQ.Query<int>($"${{Spawn[id {id}].Level}}"),
+                        Distance = MQ.Query<double>($"${{Spawn[id {id}].Distance3D}}"),
+                        PathLen = navLen,
+                        Loc = MQ.Query<string>($"${{Spawn[id {id}].LocYXZ}}") ?? string.Empty,
+                        Con = MQ.Query<string>($"${{Spawn[id {id}].ConColor}}") ?? string.Empty
+                    };
+                    candidateList.Add(cand);
+                }
+                catch { }
+
+                if (score < bestPath)
+                {
+                    bestPath = score;
                     bestId = id;
                 }
             }
 
+            // Store candidate snapshot (top N by PathLen/Distance)
+            try
+            {
+                _lastCandidates.Clear();
+                if (candidateList.Count > 0)
+                {
+                    foreach (var c in candidateList
+                        .OrderBy(c => c.PathLen > 0 ? c.PathLen : c.Distance)
+                        .Take(10))
+                    {
+                        _lastCandidates.Add(c);
+                    }
+                }
+                _candidatesUpdatedAt = Core.StopWatch.ElapsedMilliseconds;
+            }
+            catch { }
+
             if (bestId > 0)
             {
                 TargetID = bestId;
-                try { TargetName = MQ.Query<string>($"${{Spawn[id {TargetID}].Name}}" ) ?? string.Empty; } catch { TargetName = string.Empty; }
+                TargetName = GetSpawnName(bestId);
                 Status = string.IsNullOrEmpty(TargetName) ? "Pulling" : $"Pulling {TargetName}";
                 _log.Write($"Hunt: State -> Acquired new target {TargetID} ({TargetName}) at distance {bestPath:0}");
+                DebugLog($"SCAN: acquired {TargetID} ({TargetName}) path={bestPath:0}");
                 // Set target non-blocking to avoid UI stalls
                 TrySetTargetNonBlocking(TargetID);
-                if (e3util.ShouldCheck(ref _nextNavAt, _navCooldownMs))
+                ResetNoPathTracking(TargetID);
+                // Immediately retarget navigation to the new TargetID. Only stop nav if we own it.
+                if (HuntStateMachine.IsNavigationOwned)
                 {
-                    // fire-and-forget navigation to avoid blocking the main loop
-                    StartNavNonBlocking(TargetID);
+                    try { MQ.Cmd("/nav stop"); } catch { }
                 }
+                _navTargetID = 0;
+                _nextNavAt = 0;
+                StartNavNonBlocking(TargetID);
             }
             else
             {
@@ -1176,7 +2141,7 @@ namespace E3Core.Processors
                     Status = "No targets found";
                 }
                 // If camp is set, optionally move back to camp
-                if (CampOn && !Movement.IsNavigating())
+                if (CampOn && !HuntFromPlayer && !Movement.IsNavigating())
                 {
                     e3util.TryMoveToLoc(CampX, CampY, CampZ, 10, 3000);
                 }
@@ -1186,12 +2151,41 @@ namespace E3Core.Processors
         // Issue a non-blocking nav command to MQ2Nav to prevent UI freezes
         private static void StartNavNonBlocking(int spawnId)
         {
+            StartNavNonBlocking(spawnId, -1);
+        }
+
+        private static bool CanNavNow(out string because)
+        {
+            because = null;
+            UpdateSmartLootTelemetry();
+
+            // Gate nav only on HasNewCorpses AND IsPeerTriggered.
+            // Do NOT block nav due to Processing/State/CorpseCount/SafeToLoot by themselves.
+            if (_slHasNewCorpses || _slIsPeerTriggered)
+            {
+                because = $"SmartLoot active (NewCorpses={_slHasNewCorpses}, PeerTriggered={_slIsPeerTriggered})";
+                if (HuntStateMachine.IsNavigationOwned)
+                    HuntStateMachine.ReleaseNavigationControl("SmartLoot owns nav");
+                return false;
+            }
+
+            // Acquire nav only when clear
+            if (!HuntStateMachine.IsNavigationOwned)
+                HuntStateMachine.RequestNavigationControl("Hunt");
+
+            return true;
+        }
+
+        // Issue a non-blocking nav command to MQ2Nav with optional override stop distance
+        private static void StartNavNonBlocking(int spawnId, int overrideStopDistance)
+        {
             if (spawnId <= 0) return;
             
             // Only navigate if we own navigation control
             if (!HuntStateMachine.IsNavigationOwned)
             {
                 _log.Write($"Hunt: Cannot navigate to {spawnId} - navigation control not owned");
+                DebugLog($"NAV: denied to {spawnId} (no nav control)");
                 return;
             }
             
@@ -1199,18 +2193,95 @@ namespace E3Core.Processors
             {
                 // Only attempt if a path exists to reduce churn
                 bool pathExists = MQ.Query<bool>($"${{Navigation.PathExists[id {spawnId}]}}");
-                if (!pathExists) 
-                { 
-                    _log.Write($"Hunt: No nav path to id {spawnId}"); 
-                    return; 
+                if (!pathExists)
+                {
+                    OnNoNavPath(spawnId);
+                    return;
                 }
 
-                int stopDist = E3.GeneralSettings.Movement_NavStopDistance;
-                MQ.Cmd($"/nav id {spawnId} distance={stopDist}");
+                // Reset no-path tracking when we do have a path
+                if (_noPathTarget != spawnId || _noPathAttempts > 0)
+                {
+                    ResetNoPathTracking(spawnId);
+                }
+
+                int stopDist = overrideStopDistance > 0 ? overrideStopDistance : E3.GeneralSettings.Movement_NavStopDistance;
+                try
+                {
+                    if (overrideStopDistance <= 0 && string.Equals(PullMethod, "Ranged", StringComparison.OrdinalIgnoreCase))
+                    {
+                        int baseRange = MQ.Query<int>("${Me.Inventory[ranged].Range}");
+                        bool isArchery = MQ.Query<bool>("${Me.Inventory[ranged].Type.Find[Archery]}");
+                        int maxRange = isArchery ? baseRange * 2 : baseRange;
+                        double factor = Math.Max(0.3, Math.Min(0.9, RangedApproachFactor));
+                        int desired = (int)Math.Max(35, maxRange * factor);
+                        if (desired > 0) stopDist = desired;
+                    }
+                }
+                catch { }
+
+                if (CanNavNow(out var whyNot))
+                {
+                    MQ.Cmd($"/nav id {spawnId}");
+                    _nextNavAt = Core.StopWatch.ElapsedMilliseconds + _navCooldownMs;
+                }
+                else
+                {
+                    DebugLog($"Nav suppressed: {whyNot}");
+                    return; // skip this tick
+                }
+                _navTargetID = spawnId;
             }
             catch (Exception ex)
             {
                 _log.Write($"Hunt: Error starting navigation to {spawnId}: {ex.Message}");
+                DebugLog($"NAV: error starting nav to {spawnId}: {ex.Message}");
+            }
+        }
+
+        // Handle repeated cases where MQ2Nav reports no path to the current target
+        private static void OnNoNavPath(int spawnId)
+        {
+            // Increment per-target failure count
+            if (_noPathTarget != spawnId)
+            {
+                _noPathTarget = spawnId;
+                _noPathAttempts = 1;
+            }
+            else
+            {
+                _noPathAttempts++;
+            }
+
+            _log.Write($"Hunt: No nav path to id {spawnId} (attempt {_noPathAttempts}/{Math.Max(1, NoPathMaxAttempts)})");
+            DebugLog($"NAV: no path to {spawnId} ({_noPathAttempts}/{Math.Max(1, NoPathMaxAttempts)})");
+
+            // If we've failed enough times, give up, ignore temporarily, and rescan
+            if (_noPathAttempts >= Math.Max(1, NoPathMaxAttempts))
+            {
+                if (HuntStateMachine.IsNavigationOwned)
+                {
+                    try { MQ.Cmd("/nav stop"); } catch { }
+                }
+                _navTargetID = 0;
+
+                // Temp-ignore this spawn id to avoid immediate re-selection
+                int ignoreSec = Math.Max(1, NoPathIgnoreDurationSec);
+                try { _tempIgnoreUntil[spawnId] = Core.StopWatch.ElapsedMilliseconds + ignoreSec * 1000L; } catch { }
+
+                if (TargetID == spawnId)
+                {
+                    TargetID = 0;
+                    TargetName = string.Empty;
+                }
+
+                // Allow immediate rescan and transition state
+                _nextScanAt = 0;
+                Status = "No path to target - rescanning";
+                _log.Write($"Hunt: Clearing stuck target {spawnId} and rescanning (ignored for {ignoreSec}s)");
+                DebugLog($"NAV: clear stuck target {spawnId}, ignore {ignoreSec}s, rescan");
+                ResetNoPathTracking(0);
+                HuntStateMachine.TransitionTo(HuntState.Scanning, "No path to target");
             }
         }
 
@@ -1222,6 +2293,7 @@ namespace E3Core.Processors
             {
                 if (MQ.Query<int>($"${{SpawnCount[id {spawnId}]}}") == 0) return;
                 MQ.Cmd($"/squelch /target id {spawnId}");
+                DebugLog($"TARGET: EQ target -> {spawnId}");
             }
             catch { }
         }
@@ -1309,6 +2381,20 @@ namespace E3Core.Processors
             var currentIgnoreList = GetCurrentZoneIgnoreList();
             return new List<string>(currentIgnoreList);
         }
+
+        // UI-safe cached accessors (no MQ queries; used by ImGui during render)
+        public static string GetCurrentZoneCached()
+        {
+            return string.IsNullOrWhiteSpace(_currentZone) ? "Unknown" : _currentZone;
+        }
+
+        public static List<string> GetIgnoreListSnapshotCached()
+        {
+            var zone = GetCurrentZoneCached();
+            if (string.IsNullOrWhiteSpace(zone)) return new List<string>();
+            if (_zoneIgnoreLists.TryGetValue(zone, out var set)) return new List<string>(set);
+            return new List<string>();
+        }
         
         public static Dictionary<string, List<string>> GetAllZoneIgnoreListsSnapshot()
         {
@@ -1329,6 +2415,188 @@ namespace E3Core.Processors
             catch
             {
                 return "Unknown";
+            }
+        }
+
+        // Updates the cached zone name without exposing MQ queries to UI code
+        private static void UpdateCurrentZoneCached()
+        {
+            try
+            {
+                var z = MQ.Query<string>("${Zone.ShortName}") ?? "Unknown";
+                if (!string.Equals(_currentZone, z, StringComparison.OrdinalIgnoreCase))
+                {
+                    _currentZone = z;
+                }
+            }
+            catch { }
+        }
+
+        // Helper method to check if any connected peers are in a different zone or dead
+        // Removed duplicate peer-zone status helper; logic lives in DetermineTargetState()
+
+        // Helper method to check if a peer is in the same zone as the current character
+        private static bool IsPeerInSameZone(string peerName)
+        {
+            try
+            {
+                if (string.IsNullOrWhiteSpace(peerName))
+                    return false;
+
+                // Skip self-check
+                if (string.Equals(peerName, E3.CurrentName, StringComparison.OrdinalIgnoreCase))
+                    return true;
+
+                string currentZone = GetCurrentZone();
+                string peerZone = E3.Bots.Query(peerName, "${Zone.ShortName}");
+                
+                // If we can't determine peer zone, assume they're not in the same zone
+                if (string.IsNullOrEmpty(peerZone) || peerZone.Equals("NULL", StringComparison.OrdinalIgnoreCase))
+                    return false;
+
+                return string.Equals(peerZone, currentZone, StringComparison.OrdinalIgnoreCase);
+            }
+            catch (Exception ex)
+            {
+                _log.Write($"Hunt: Error checking if peer {peerName} is in same zone: {ex.Message}");
+                return false; // On error, assume they're not in the same zone for safety
+            }
+        }
+
+        // Helper method to check if a peer is dead
+        private static bool IsPeerDead(string peerName)
+        {
+            try
+            {
+                if (string.IsNullOrWhiteSpace(peerName))
+                    return false;
+
+                // Skip self-check
+                if (string.Equals(peerName, E3.CurrentName, StringComparison.OrdinalIgnoreCase))
+                    return E3._amIDead;
+
+                string peerDead = E3.Bots.Query(peerName, "${Me.Dead}");
+                return string.Equals(peerDead, "TRUE", StringComparison.OrdinalIgnoreCase);
+            }
+            catch (Exception ex)
+            {
+                _log.Write($"Hunt: Error checking if peer {peerName} is dead: {ex.Message}");
+                return false; // On error, assume they're not dead
+            }
+        }
+
+        // Enhanced target validation function
+        private static bool IsValidCombatTarget(int spawnId)
+        {
+            if (spawnId <= 0) return false;
+            
+            try
+            {
+                // Basic validity checks
+                if (MQ.Query<bool>($"${{Spawn[id {spawnId}].Type.Equal[Corpse]}}")) return false;
+                // Must be NPC
+                if (!MQ.Query<bool>($"${{Spawn[id {spawnId}].Type.Equal[NPC]}}")) return false;
+                // Not self
+                try { if (MQ.Query<int>("${Me.ID}") == spawnId) return false; } catch { }
+                // Must be targetable
+                if (!MQ.Query<bool>($"${{Spawn[id {spawnId}].Targetable}}")) return false;
+                
+                // Do not gate validity on distance here; scanning and nav will handle approach.
+                // Aggression and validity checks
+                bool isAggressive = MQ.Query<bool>($"${{Spawn[id {spawnId}].Aggressive}}");
+                bool isPet = MQ.Query<bool>($"${{Spawn[id {spawnId}].Type.Equal[Pet]}}");
+                bool isMount = MQ.Query<bool>($"${{Spawn[id {spawnId}].Type.Equal[Mount]}}");
+                
+                if (isPet || isMount) return false;
+                
+                // Level/con check (optional, configurable)
+                string conColor = MQ.Query<string>($"${{Spawn[id {spawnId}].ConColor}}");
+                if (string.IsNullOrEmpty(conColor) || conColor.Equals("GREY", StringComparison.OrdinalIgnoreCase))
+                    return false;
+                    
+                return true;
+            }
+            catch
+            {
+                return false;
+            }
+        }
+
+        // Helper function to get spawn name safely
+        private static string GetSpawnName(int spawnId)
+        {
+            if (spawnId <= 0) return string.Empty;
+            try 
+            { 
+                return MQ.Query<string>($"${{Spawn[id {spawnId}].Name}}") ?? string.Empty; 
+            }
+            catch 
+            { 
+                return string.Empty; 
+            }
+        }
+
+        // Enhanced XTarget acquisition with validation
+        private static int AcquireNextValidXTarget()
+        {
+            int bestId = 0;
+            double bestDist = double.MaxValue;
+            int max = e3util.XtargetMax;
+            
+            for (int i = 1; i <= max; i++)
+            {
+                int id = 0;
+                try { id = MQ.Query<int>($"${{Me.XTarget[{i}].ID}}"); } catch { id = 0; }
+                if (id <= 0) continue;
+                
+                // Use enhanced validation
+                if (!IsValidCombatTarget(id)) continue;
+                
+                bool pathExists = false;
+                try { pathExists = MQ.Query<bool>($"${{Navigation.PathExists[id {id}]}}"); } catch { pathExists = false; }
+                if (!pathExists) continue;
+
+                double dist = 0;
+                try { dist = MQ.Query<double>($"${{Spawn[id {id}].Distance3D}}" ); } catch { dist = 0; }
+                if (dist <= 0) continue;
+
+                if (dist < bestDist)
+                {
+                    bestDist = dist;
+                    bestId = id;
+                }
+            }
+            return bestId;
+        }
+
+        // Better state transition validation
+        private static bool ShouldTransitionToCombat()
+        {
+            // Multiple validation checks before entering combat state
+            if (TargetID <= 0) return false;
+            
+            bool targetValid = IsValidCombatTarget(TargetID);
+            bool inCombatRange = IsInCombatRange(TargetID);
+            bool targetAggressive = MQ.Query<bool>($"${{Spawn[id {TargetID}].Aggressive}}");
+            
+            // Only transition to combat if we have a valid, aggressive target in range
+            return targetValid && inCombatRange && (targetAggressive || Basics.InCombat());
+        }
+
+        // Check if target is in combat range
+        private static bool IsInCombatRange(int spawnId)
+        {
+            if (spawnId <= 0) return false;
+            try
+            {
+                double dist = MQ.Query<double>($"${{Spawn[id {spawnId}].Distance3D}}");
+                int meleeRange = MQ.Query<int>($"${{Spawn[id {spawnId}].MaxRangeTo}}");
+                if (meleeRange <= 0) meleeRange = 25;
+                return dist > 0 && dist <= meleeRange;
+            }
+            catch
+            {
+                return false;
             }
         }
 
@@ -1508,6 +2776,14 @@ namespace E3Core.Processors
                 v = sec["PullItem"]; if (!string.IsNullOrWhiteSpace(v)) PullItem = v;
                 v = sec["PullAA"]; if (!string.IsNullOrWhiteSpace(v)) PullAA = v;
                 v = sec["PullDisc"]; if (!string.IsNullOrWhiteSpace(v)) PullDisc = v;
+                v = sec["MaxPathRange"]; if (!string.IsNullOrWhiteSpace(v) && int.TryParse(v, out var mpr)) MaxPathRange = Math.Max(0, mpr);
+                v = sec["PullIgnoreTimeSec"]; if (!string.IsNullOrWhiteSpace(v) && int.TryParse(v, out var pits)) PullIgnoreTimeSec = Math.Max(0, pits);
+                v = sec["TempIgnoreDurationSec"]; if (!string.IsNullOrWhiteSpace(v) && int.TryParse(v, out var tids)) TempIgnoreDurationSec = Math.Max(1, tids);
+                v = sec["RangedApproachFactor"]; if (!string.IsNullOrWhiteSpace(v) && double.TryParse(v, out var raf)) RangedApproachFactor = Math.Max(0.3, Math.Min(0.9, raf));
+                v = sec["PullApproachDistance"]; if (!string.IsNullOrWhiteSpace(v) && int.TryParse(v, out var pad)) PullApproachDistance = Math.Max(20, pad);
+                v = sec["NoPathMaxAttempts"]; if (!string.IsNullOrWhiteSpace(v) && int.TryParse(v, out var npma)) NoPathMaxAttempts = Math.Max(1, npma);
+                v = sec["NoPathIgnoreDurationSec"]; if (!string.IsNullOrWhiteSpace(v) && int.TryParse(v, out var npids)) NoPathIgnoreDurationSec = Math.Max(1, npids);
+                v = sec["HuntFromPlayer"]; if (!string.IsNullOrWhiteSpace(v)) bool.TryParse(v, out HuntFromPlayer);
             }
             catch { }
         }
@@ -1529,6 +2805,14 @@ namespace E3Core.Processors
                 sec["PullItem"] = PullItem ?? string.Empty;
                 sec["PullAA"] = PullAA ?? string.Empty;
                 sec["PullDisc"] = PullDisc ?? string.Empty;
+                sec["MaxPathRange"] = MaxPathRange.ToString();
+                sec["PullIgnoreTimeSec"] = PullIgnoreTimeSec.ToString();
+                sec["TempIgnoreDurationSec"] = TempIgnoreDurationSec.ToString();
+                sec["RangedApproachFactor"] = RangedApproachFactor.ToString(System.Globalization.CultureInfo.InvariantCulture);
+                sec["PullApproachDistance"] = Math.Max(20, PullApproachDistance).ToString();
+                sec["NoPathMaxAttempts"] = Math.Max(1, NoPathMaxAttempts).ToString();
+                sec["NoPathIgnoreDurationSec"] = Math.Max(1, NoPathIgnoreDurationSec).ToString();
+                sec["HuntFromPlayer"] = HuntFromPlayer ? "true" : "false";
                 parser.WriteFile(_huntSettingsPath, data);
             }
             catch { }
@@ -1538,7 +2822,7 @@ namespace E3Core.Processors
         {
             switch (NormalizeMethod(m))
             {
-                case "None": case "Ranged": case "Spell": case "Item": case "AA": case "Disc": return true;
+                case "None": case "Ranged": case "Spell": case "Item": case "AA": case "Disc": case "Attack": return true;
                 default: return false;
             }
         }
@@ -1552,6 +2836,7 @@ namespace E3Core.Processors
             if (m.Equals("item", StringComparison.OrdinalIgnoreCase)) return "Item";
             if (m.Equals("aa", StringComparison.OrdinalIgnoreCase)) return "AA";
             if (m.Equals("disc", StringComparison.OrdinalIgnoreCase) || m.Equals("discipline", StringComparison.OrdinalIgnoreCase)) return "Disc";
+            if (m.Equals("attack", StringComparison.OrdinalIgnoreCase)) return "Attack";
             return m;
         }
 
@@ -1566,6 +2851,18 @@ namespace E3Core.Processors
             // skip if casting or stunned
             if (MQ.Query<int>("${Me.Casting.ID}") > 0) return;
             if (MQ.Query<bool>("${Me.Stunned}")) return;
+
+            // Ensure current EQ target matches our stored TargetID before pulling
+            try
+            {
+                int curT = MQ.Query<int>("${Target.ID}");
+                if (curT != TargetID)
+                {
+                    TrySetTargetNonBlocking(TargetID);
+                    return; // wait until next tick to pull on the correct target
+                }
+            }
+            catch { }
 
             bool los = MQ.Query<bool>($"${{Spawn[id {TargetID}].LineOfSight}}" );
             double dist = MQ.Query<double>($"${{Spawn[id {TargetID}].Distance3D}}" );
@@ -1589,10 +2886,13 @@ namespace E3Core.Processors
                 case "Disc":
                     TryPull_Disc();
                     break;
+                case "Attack":
+                    TryPull_Attack();
+                    break;
             }
         }
 
-        // Choose the closest valid XTarget NPC with a navigation path
+        // Choose the closest valid XTarget NPC with a navigation path - Enhanced version
         private static int AcquireNextFromXTarget()
         {
             int bestId = 0;
@@ -1603,14 +2903,9 @@ namespace E3Core.Processors
                 int id = 0;
                 try { id = MQ.Query<int>($"${{Me.XTarget[{i}].ID}}"); } catch { id = 0; }
                 if (id <= 0) continue;
-                // skip corpses and non-NPCs
-                try
-                {
-                    if (MQ.Query<bool>($"${{Spawn[id {id}].Type.Equal[Corpse]}}")) continue;
-                    if (!MQ.Query<bool>($"${{Spawn[id {id}].Type.Equal[NPC]}}")) continue;
-                    if (!MQ.Query<bool>($"${{Spawn[id {id}].Targetable}}")) continue;
-                }
-                catch { continue; }
+                
+                // Use enhanced validation for better target selection
+                if (!IsValidCombatTarget(id)) continue;
 
                 bool pathExists = false;
                 try { pathExists = MQ.Query<bool>($"${{Navigation.PathExists[id {id}]}}"); } catch { pathExists = false; }
@@ -1690,6 +2985,12 @@ namespace E3Core.Processors
                 MQ.Cmd($"/disc {PullDisc}");
                 SetPullCooldown();
             }
+        }
+
+        private static void TryPull_Attack()
+        {
+            MQ.Cmd("/attack on");
+            SetPullCooldown();
         }
     }
 }

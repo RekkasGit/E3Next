@@ -4,6 +4,7 @@ using System.Linq;
 using System.Collections.Concurrent;
 using System.IO;
 using System.Text;
+using System.Reflection;
 using IniParser.Model;
 using E3Core.Processors;
 using NetMQ;
@@ -22,6 +23,7 @@ namespace MonoCore
         // Hunt window state
         private static readonly string _e3HuntWindow = "E3Next Hunt";
         private static bool _huntWindowOpen = false;
+        private static bool _huntWindowMinimized = false;
         private static string _huntRadiusBuf = string.Empty;
         private static string _huntZRadiusBuf = string.Empty;
         private static string _huntPullBuf = string.Empty;
@@ -31,6 +33,33 @@ namespace MonoCore
         private static string _huntPullItem = string.Empty;
         private static string _huntPullAA = string.Empty;
         private static string _huntPullDisc = string.Empty;
+        // Hunt debug window state
+        private static readonly string _e3HuntDebugWindow = "E3Next Hunt Debug";
+        private static bool _huntDebugWindowOpen = false;
+        private static int _huntDebugLines = 200;
+        private static string _huntDebugCopyStatus = string.Empty;
+        private static bool TryCopyToClipboard(string text)
+        {
+            try
+            {
+                // Try common clipboard helpers if MQ2Mono exposes them
+                var t = typeof(MonoCore.Core);
+                var m = t.GetMethod("imgui_SetClipboardText", BindingFlags.Public | BindingFlags.Static);
+                if (m != null)
+                {
+                    m.Invoke(null, new object[] { text ?? string.Empty });
+                    return true;
+                }
+                m = t.GetMethod("imgui_LogTextToClipboard", BindingFlags.Public | BindingFlags.Static);
+                if (m != null)
+                {
+                    m.Invoke(null, new object[] { text ?? string.Empty });
+                    return true;
+                }
+            }
+            catch { }
+            return false;
+        }
         
         // Static UI data to completely avoid MQ queries during rendering
         private static List<string> _uiIgnoreList = new List<string>();
@@ -182,32 +211,98 @@ namespace MonoCore
             // Render Hunt window if toggled
             if (_imguiContextReady && _huntWindowOpen)
             {
-                // Set window size constraints for better layout
-                imgui_SetNextWindowSizeConstraints(450, 300, 800, 600);
-                bool open = imgui_Begin(_e3HuntWindow, (int)ImGuiWindowFlags.ImGuiWindowFlags_None);
-                if (open)
+                if (_huntWindowMinimized)
                 {
-                    // Header with status indicator
-                    if (imgui_BeginTable("##hunt_header", 2, 0, 0))
+                    // Floating UI - clean and compact
+                    int windowFlags = (int)(ImGuiWindowFlags.ImGuiWindowFlags_NoDecoration | 
+                                           ImGuiWindowFlags.ImGuiWindowFlags_AlwaysAutoResize | 
+                                           ImGuiWindowFlags.ImGuiWindowFlags_NoFocusOnAppearing | 
+                                           ImGuiWindowFlags.ImGuiWindowFlags_NoNav);
+                    
+                    // Semi-transparent background for subtle appearance
+                    imgui_SetNextWindowBgAlpha(0.9f);
+                    
+                    bool open = imgui_Begin("E3Hunt Float", windowFlags);
+                    if (open)
                     {
-                        imgui_TableSetupColumn("Title", 0, 0);
-                        imgui_TableSetupColumn("Status", 0, 0);
-                        
-                        imgui_TableNextColumn();
-                        imgui_TextColored(0.75f, 0.9f, 0.75f, 1.0f, "E3Next Hunt Mode");
-                        
-                        imgui_TableNextColumn();
-                        string status = E3Core.Processors.Hunt.Status ?? "Unknown";
+                        // Get current status for color coding
                         bool isActive = E3Core.Processors.Hunt.Enabled && E3Core.Processors.Hunt.Go;
-                        if (isActive && status.Contains("Scanning"))
-                            imgui_TextColored(0.2f, 0.8f, 0.2f, 1.0f, $"{status}");
-                        else if (isActive)
-                            imgui_TextColored(0.8f, 0.8f, 0.2f, 1.0f, $"{status}");
-                        else
-                            imgui_TextColored(0.6f, 0.6f, 0.6f, 1.0f, $"{status}");
+                        bool enabled = E3Core.Processors.Hunt.Enabled;
                         
-                        imgui_EndTable();
+                        // Single line status with simple text
+                        string statusText = isActive ? "HUNTING" : (enabled ? "READY" : "OFF");
+                        if (isActive)
+                            imgui_TextColored(0.2f, 0.9f, 0.2f, 1.0f, statusText);
+                        else if (enabled)
+                            imgui_TextColored(0.9f, 0.7f, 0.2f, 1.0f, statusText);
+                        else
+                            imgui_TextColored(0.6f, 0.6f, 0.6f, 1.0f, statusText);
+
+                        // Compact button layout with ASCII characters
+                        if (imgui_ButtonEx(enabled ? "ON" : "OFF", 35, 25))
+                        {
+                            bool now = !enabled;
+                            EnqueueUI(() => E3Core.Processors.Hunt.Enabled = now);
+                        }
+                        
+                        imgui_SameLine();
+                        bool go = E3Core.Processors.Hunt.Go;
+                        if (imgui_ButtonEx(go ? "GO" : "||", 35, 25))
+                        {
+                            bool now = !go;
+                            EnqueueUI(() => E3Core.Processors.Hunt.Go = now);
+                        }
+
+                        imgui_SameLine();
+                        // Expand button
+                        if (imgui_ButtonEx("+", 25, 25))
+                        {
+                            _huntWindowMinimized = false;
+                        }
+
+                        // Right-click anywhere on window to expand
+                        if (imgui_IsWindowHovered() && imgui_IsMouseClicked(1))
+                        {
+                            _huntWindowMinimized = false;
+                        }
                     }
+                    imgui_End();
+                }
+                else
+                {
+                    // Full window - original layout
+                    imgui_SetNextWindowSizeConstraints(450, 300, 800, 600);
+                    bool open = imgui_Begin(_e3HuntWindow, (int)ImGuiWindowFlags.ImGuiWindowFlags_None);
+                    if (open)
+                    {
+                        // Header with status indicator and minimize button
+                        if (imgui_BeginTable("##hunt_header", 3, 0, 0))
+                        {
+                            imgui_TableSetupColumn("Title", 0, 0);
+                            imgui_TableSetupColumn("Status", 0, 0);
+                            imgui_TableSetupColumn("Controls", 0, 0);
+                            
+                            imgui_TableNextColumn();
+                            imgui_TextColored(0.75f, 0.9f, 0.75f, 1.0f, "E3Next Hunt Mode");
+                            
+                            imgui_TableNextColumn();
+                            string status = E3Core.Processors.Hunt.Status ?? "Unknown";
+                            bool isActive = E3Core.Processors.Hunt.Enabled && E3Core.Processors.Hunt.Go;
+                            if (isActive && status.Contains("Scanning"))
+                                imgui_TextColored(0.2f, 0.8f, 0.2f, 1.0f, $"{status}");
+                            else if (isActive)
+                                imgui_TextColored(0.8f, 0.8f, 0.2f, 1.0f, $"{status}");
+                            else
+                                imgui_TextColored(0.6f, 0.6f, 0.6f, 1.0f, $"{status}");
+                            
+                            imgui_TableNextColumn();
+                            if (imgui_Button("Float"))
+                            {
+                                _huntWindowMinimized = true;
+                            }
+                            
+                            imgui_EndTable();
+                        }
                     
                     imgui_Separator();
 
@@ -506,7 +601,133 @@ namespace MonoCore
                                 bool now = newAA;
                                 EnqueueUI(() => E3Core.Processors.Hunt.AutoAssistAtMelee = now);
                             }
-                            
+
+                            // Advanced pull tuning similar to rgmercs
+                            imgui_Separator();
+                            imgui_TextColored(0.9f, 0.9f, 0.7f, 1.0f, "Advanced Tuning");
+
+                            // MaxPathRange
+                            int mpr = E3Core.Processors.Hunt.MaxPathRange;
+                            imgui_Text("Max Path Range (0 disables):");
+                            imgui_SetNextItemWidth(220);
+                            if (imgui_SliderInt("##hunt_mpr", ref mpr, 0, 10000))
+                            {
+                                int v = Math.Max(0, mpr);
+                                EnqueueUI(() => { E3Core.Processors.Hunt.MaxPathRange = v; E3Core.Processors.Hunt.SaveHuntPullSettings(); });
+                            }
+
+                            // PullIgnoreTimeSec
+                            int pits = E3Core.Processors.Hunt.PullIgnoreTimeSec;
+                            imgui_Text("Pull Attempt Timeout (sec):");
+                            imgui_SetNextItemWidth(220);
+                            if (imgui_SliderInt("##hunt_pits", ref pits, 5, 60))
+                            {
+                                int v = Math.Max(0, pits);
+                                EnqueueUI(() => { E3Core.Processors.Hunt.PullIgnoreTimeSec = v; E3Core.Processors.Hunt.SaveHuntPullSettings(); });
+                            }
+
+                            // TempIgnoreDurationSec
+                            int tids = E3Core.Processors.Hunt.TempIgnoreDurationSec;
+                            imgui_Text("Temp Ignore Duration (sec):");
+                            imgui_SetNextItemWidth(220);
+                            if (imgui_SliderInt("##hunt_tids", ref tids, 15, 120))
+                            {
+                                int v = Math.Max(1, tids);
+                                EnqueueUI(() => { E3Core.Processors.Hunt.TempIgnoreDurationSec = v; E3Core.Processors.Hunt.SaveHuntPullSettings(); });
+                            }
+
+                            // RangedApproachFactor
+                            double raf = E3Core.Processors.Hunt.RangedApproachFactor;
+                            imgui_Text("Ranged Approach Factor (0.3 - 0.9):");
+                            imgui_SetNextItemWidth(220);
+                            if (imgui_SliderDouble("##hunt_raf", ref raf, 0.3, 0.9, "%.2f"))
+                            {
+                                double v = Math.Max(0.3, Math.Min(0.9, raf));
+                                EnqueueUI(() => { E3Core.Processors.Hunt.RangedApproachFactor = v; E3Core.Processors.Hunt.SaveHuntPullSettings(); });
+                            }
+
+                            imgui_EndTabItem();
+                        }
+
+                        // Targets Tab
+                        if (imgui_BeginTabItem("Targets"))
+                        {
+                            imgui_TextColored(0.85f, 0.9f, 1.0f, 1.0f, "Hunt Candidates (last scan)");
+                            imgui_SameLine();
+                            if (imgui_Button("Clear Temp Ignores"))
+                            {
+                                EnqueueUI(() => E3Core.Processors.Hunt.ClearTempIgnores());
+                            }
+
+                            var candidates = E3Core.Processors.Hunt.GetCandidatesSnapshot();
+                            if (candidates == null || candidates.Count == 0)
+                            {
+                                imgui_TextColored(0.6f, 0.6f, 0.6f, 1.0f, "No candidates seen yet.");
+                            }
+                            else if (imgui_BeginChild("HuntTargetsChild", 0, 0, true))
+                            {
+                                float outerW = imgui_GetContentRegionAvailX();
+                                float colNum = 40f;
+                                float colLvl = 50f;
+                                float colDist = 60f;
+                                float colPath = 60f;
+                                float colLoc = 180f;
+                                float colActions = 140f;
+                                float colName = Math.Max(160f, outerW - (colNum + colLvl + colDist + colPath + colLoc + colActions));
+
+                                if (imgui_BeginTable("##hunt_candidates", 6, 0, outerW))
+                                {
+                                    imgui_TableSetupColumn("#", 0, colNum);
+                                    imgui_TableSetupColumn("Name", 0, colName);
+                                    imgui_TableSetupColumn("Lvl", 0, colLvl);
+                                    imgui_TableSetupColumn("Dist", 0, colDist);
+                                    imgui_TableSetupColumn("Path", 0, colPath);
+                                    imgui_TableSetupColumn("Actions", 0, colActions);
+                                    imgui_TableHeadersRow();
+
+                                    for (int i = 0; i < candidates.Count; i++)
+                                    {
+                                        var c = candidates[i];
+                                        imgui_TableNextRow();
+                                        imgui_TableNextColumn(); imgui_Text((i + 1).ToString());
+                                        imgui_TableNextColumn();
+                                        // Con color styling similar to rgmercs
+                                        var con = (c.con ?? string.Empty).ToUpperInvariant();
+                                        float r=1f,g=1f,b=1f;
+                                        if (con.Contains("GREY")) { r=.6f; g=.6f; b=.6f; }
+                                        else if (con.Contains("GREEN")) { r=.2f; g=.9f; b=.2f; }
+                                        else if (con.Contains("LIGHT") && con.Contains("BLUE")) { r=.4f; g=.7f; b=1f; }
+                                        else if (con.Contains("BLUE")) { r=.2f; g=.5f; b=1f; }
+                                        else if (con.Contains("WHITE")) { r=1f; g=1f; b=1f; }
+                                        else if (con.Contains("YELLOW")) { r=1f; g=.9f; b=.2f; }
+                                        else if (con.Contains("RED")) { r=1f; g=.2f; b=.2f; }
+                                        imgui_TextColored(r,g,b,1.0f, c.name ?? string.Empty);
+                                        imgui_TableNextColumn(); imgui_Text(c.level.ToString());
+                                        imgui_TableNextColumn(); imgui_Text(string.Format("{0:0.0}", c.distance));
+                                        imgui_TableNextColumn(); imgui_Text(c.pathLen > 0 ? string.Format("{0:0}", c.pathLen) : "-");
+                                        imgui_TableNextColumn();
+                                        if (imgui_Button($"Target##{i}"))
+                                        {
+                                            int tid = c.id;
+                                            EnqueueUI(() => E3Core.Processors.Hunt.ForceSetTarget(tid));
+                                        }
+                                        imgui_SameLine();
+                                        // Stack action buttons vertically to avoid pushing table width
+                                        if (imgui_Button($"Ignore Name##{i}"))
+                                        {
+                                            string nm = c.name ?? string.Empty;
+                                            if (!string.IsNullOrEmpty(nm))
+                                            {
+                                                EnqueueUI(() => E3Core.Processors.Hunt.AddIgnoreName(nm));
+                                                _uiDataNeedsRefresh = true;
+                                            }
+                                        }
+                                    }
+                                    imgui_EndTable();
+                                }
+                                imgui_EndChild();
+                            }
+
                             imgui_EndTabItem();
                         }
 
@@ -520,6 +741,25 @@ namespace MonoCore
                                 imgui_TableSetupColumn("Property", 0, 120);
                                 imgui_TableSetupColumn("Value", 0, 200);
                                 
+                                imgui_TableNextRow();
+                                imgui_TableNextColumn();
+                                imgui_Text("Hunt State:");
+                                imgui_TableNextColumn();
+                                imgui_Text(E3Core.Processors.HuntStateMachine.CurrentState.ToString());
+
+                                imgui_TableNextRow();
+                                imgui_TableNextColumn();
+                                imgui_Text("State Reason:");
+                                imgui_TableNextColumn();
+                                imgui_Text(E3Core.Processors.HuntStateMachine.StateReason ?? "");
+
+                                imgui_TableNextRow();
+                                imgui_TableNextColumn();
+                                imgui_Text("State Elapsed:");
+                                imgui_TableNextColumn();
+                                var ms = E3Core.Processors.HuntStateMachine.StateElapsedMs;
+                                imgui_Text(string.Format("{0:0.0}s", ms/1000.0));
+
                                 imgui_TableNextRow();
                                 imgui_TableNextColumn();
                                 imgui_Text("Hunt Status:");
@@ -551,6 +791,30 @@ namespace MonoCore
                                 imgui_Text("Z-Radius:");
                                 imgui_TableNextColumn();
                                 imgui_Text($"{E3Core.Processors.Hunt.ZRadius} units");
+
+                                imgui_TableNextRow();
+                                imgui_TableNextColumn();
+                                imgui_Text("Next Scan In:");
+                                imgui_TableNextColumn();
+                                imgui_Text(string.Format("{0} ms", E3Core.Processors.Hunt.GetMsUntilNextScan()));
+
+                                imgui_TableNextRow();
+                                imgui_TableNextColumn();
+                                imgui_Text("Next Nav In:");
+                                imgui_TableNextColumn();
+                                imgui_Text(string.Format("{0} ms", E3Core.Processors.Hunt.GetMsUntilNextNav()));
+
+                                imgui_TableNextRow();
+                                imgui_TableNextColumn();
+                                imgui_Text("Next Pull In:");
+                                imgui_TableNextColumn();
+                                imgui_Text(string.Format("{0} ms", E3Core.Processors.Hunt.GetMsUntilNextPull()));
+
+                                imgui_TableNextRow();
+                                imgui_TableNextColumn();
+                                imgui_Text("Nav Owned:");
+                                imgui_TableNextColumn();
+                                imgui_Text(E3Core.Processors.HuntStateMachine.IsNavigationOwned ? "Yes" : "No");
                                 
                                 int tid = E3Core.Processors.Hunt.TargetID;
                                 if (tid > 0)
@@ -577,6 +841,91 @@ namespace MonoCore
                     if (imgui_RightAlignButton("Close"))
                     {
                         _huntWindowOpen = false;
+                    }
+                    }
+                    imgui_End();
+                }
+            }
+            
+            // Render Hunt Debug window if toggled
+            if (_imguiContextReady && _huntDebugWindowOpen)
+            {
+                int windowFlags = (int)(ImGuiWindowFlags.ImGuiWindowFlags_AlwaysAutoResize);
+                bool open = imgui_Begin(_e3HuntDebugWindow, windowFlags);
+                if (open)
+                {
+                    imgui_TextColored(0.9f, 0.8f, 0.2f, 1.0f, "Hunt Debug");
+                    imgui_SameLine();
+                    if (imgui_Button("Clear")) { EnqueueUI(() => E3Core.Processors.Hunt.ClearDebugLog()); }
+                    imgui_SameLine();
+                    if (imgui_Button("Copy All"))
+                    {
+                        try
+                        {
+                            var lines = E3Core.Processors.Hunt.GetDebugLogSnapshot(_huntDebugLines);
+                            var sb = new StringBuilder(lines.Count * 64);
+                            long baseTs = lines.Count > 0 ? lines[0].ts : 0;
+                            for (int i = 0; i < lines.Count; i++)
+                            {
+                                double dt = baseTs > 0 ? (lines[i].ts - baseTs) / 1000.0 : 0;
+                                sb.AppendFormat("+{0:0.000}s  {1}\n", dt, lines[i].msg ?? string.Empty);
+                            }
+                            string text = sb.ToString();
+                            if (TryCopyToClipboard(text))
+                            {
+                                _huntDebugCopyStatus = "Copied to clipboard.";
+                            }
+                            else
+                            {
+                                // Fallback: dump to temp file
+                                string tmp = System.IO.Path.Combine(System.IO.Path.GetTempPath(),
+                                    $"E3Next_HuntDebug_{DateTime.Now:yyyyMMdd_HHmmss}.txt");
+                                System.IO.File.WriteAllText(tmp, text ?? string.Empty);
+                                _huntDebugCopyStatus = $"Saved to {tmp}";
+                            }
+                        }
+                        catch (Exception ex)
+                        {
+                            _huntDebugCopyStatus = $"Copy failed: {ex.Message}";
+                        }
+                    }
+                    imgui_SameLine();
+                    if (imgui_Button("Close")) { _huntDebugWindowOpen = false; }
+                    imgui_Separator();
+
+                    // Summary
+                    var state = E3Core.Processors.HuntStateMachine.CurrentState.ToString();
+                    var reason = E3Core.Processors.HuntStateMachine.StateReason ?? string.Empty;
+                    var status = E3Core.Processors.Hunt.Status ?? string.Empty;
+                    int tid = E3Core.Processors.Hunt.TargetID;
+                    string tname = E3Core.Processors.Hunt.TargetName ?? string.Empty;
+                    imgui_TextColored(0.75f, 0.85f, 0.95f, 1.0f, $"State: {state}  |  Reason: {reason}");
+                    imgui_TextColored(0.70f, 0.90f, 0.70f, 1.0f, $"Status: {status}");
+                    if (tid > 0) imgui_TextColored(0.90f, 0.60f, 0.60f, 1.0f, $"Target: {tname} (ID: {tid})");
+                    else imgui_TextColored(0.60f, 0.60f, 0.60f, 1.0f, "Target: None");
+                    if (!string.IsNullOrEmpty(_huntDebugCopyStatus))
+                    {
+                        imgui_TextColored(0.6f, 0.8f, 0.6f, 1.0f, _huntDebugCopyStatus);
+                    }
+                    imgui_Separator();
+
+                    if (imgui_BeginChild("##hunt_debug_scroll", 0, 280, true))
+                    {
+                        var lines = E3Core.Processors.Hunt.GetDebugLogSnapshot(_huntDebugLines);
+                        if (lines.Count == 0)
+                        {
+                            imgui_TextColored(0.6f, 0.6f, 0.6f, 1.0f, "No debug entries yet.");
+                        }
+                        else
+                        {
+                            long baseTs = lines[0].ts;
+                            for (int i = 0; i < lines.Count; i++)
+                            {
+                                double dt = (lines[i].ts - baseTs) / 1000.0;
+                                imgui_Text(string.Format("+{0:0.000}s  {1}", dt, lines[i].msg ?? string.Empty));
+                            }
+                        }
+                        imgui_EndChild();
                     }
                 }
                 imgui_End();
@@ -615,10 +964,10 @@ namespace MonoCore
             {
                 // Only refresh once per call to prevent loops
                 _uiDataNeedsRefresh = false;
-                
-                // Get zone and ignore list data safely
-                _uiCurrentZone = E3Core.Processors.Hunt.GetCurrentZone();
-                _uiIgnoreList = E3Core.Processors.Hunt.GetIgnoreListSnapshot();
+
+                // Use cached, UI-safe accessors to avoid MQ queries during rendering
+                _uiCurrentZone = E3Core.Processors.Hunt.GetCurrentZoneCached();
+                _uiIgnoreList = E3Core.Processors.Hunt.GetIgnoreListSnapshotCached();
             }
             catch (Exception ex)
             {
@@ -638,6 +987,8 @@ namespace MonoCore
             _huntWindowOpen = !_huntWindowOpen;
             if (_huntWindowOpen)
             {
+                // Start in minimized mode by default
+                _huntWindowMinimized = true;
                 // refresh text buffers from current values
                 _huntRadiusBuf = E3Core.Processors.Hunt.Radius.ToString();
                 _huntZRadiusBuf = E3Core.Processors.Hunt.ZRadius.ToString();
@@ -652,6 +1003,25 @@ namespace MonoCore
                 // Mark UI data for refresh when window opens
                 _uiDataNeedsRefresh = true;
             }
+        }
+
+        public static void ToggleImGuiHuntWindowMinimized()
+        {
+            if (!_imguiContextReady || !_huntWindowOpen)
+            {
+                return;
+            }
+            _huntWindowMinimized = !_huntWindowMinimized;
+        }
+
+        public static void ToggleImGuiHuntDebugWindow()
+        {
+            if (!_imguiContextReady)
+            {
+                E3.Log.Write("ImGui not available. Load MQ2Mono: /plugin MQ2Mono", Logging.LogLevels.Info);
+                return;
+            }
+            _huntDebugWindowOpen = !_huntDebugWindowOpen;
         }
 
         private static void RefreshSettingsViewIfNeeded()
@@ -1688,7 +2058,7 @@ namespace MonoCore
                             imgui_SameLine();
                             
                             // Append If button for rows that support Ifs (typically spell-like entries)
-                            if (imgui_Button($"If+##if_{itemUid}"))
+                            if (imgui_Button($"If##if_{itemUid}"))
                             {
                                 try
                                 {

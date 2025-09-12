@@ -1299,6 +1299,10 @@ namespace MonoCore
         [MethodImpl(MethodImplOptions.InternalCall)]
         public extern static bool imgui_Button(string name);
         [MethodImpl(MethodImplOptions.InternalCall)]
+        public extern static bool imgui_ButtonEx(string name, float width, float height);
+        [MethodImpl(MethodImplOptions.InternalCall)]
+        public extern static bool imgui_SmallButton(string name);
+        [MethodImpl(MethodImplOptions.InternalCall)]
         public extern static void imgui_Text(string text);
         [MethodImpl(MethodImplOptions.InternalCall)]
         public extern static void imgui_Separator();
@@ -1383,6 +1387,19 @@ namespace MonoCore
         public extern static void imgui_PopTextWrapPos();
         [MethodImpl(MethodImplOptions.InternalCall)]
         public extern static void imgui_SetNextWindowSizeConstraints(float minW, float minH, float maxW, float maxH);
+        [MethodImpl(MethodImplOptions.InternalCall)]
+        public extern static void imgui_SetNextWindowBgAlpha(float alpha);
+        [MethodImpl(MethodImplOptions.InternalCall)]
+        public extern static void imgui_SetNextWindowSize(float width, float height);
+        [MethodImpl(MethodImplOptions.InternalCall)]
+        public extern static bool imgui_IsWindowHovered();
+        [MethodImpl(MethodImplOptions.InternalCall)]
+        public extern static bool imgui_IsMouseClicked(int button);
+        // New slider helpers
+        [MethodImpl(MethodImplOptions.InternalCall)]
+        public extern static bool imgui_SliderInt(string id, ref int value, int min, int max);
+        [MethodImpl(MethodImplOptions.InternalCall)]
+        public extern static bool imgui_SliderDouble(string id, ref double value, double min, double max, string format);
         #endregion
         #endregion
 
