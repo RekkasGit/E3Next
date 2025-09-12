@@ -1378,7 +1378,44 @@ namespace MonoCore
         public extern static void imgui_PushStyleColor(int which, float r, float g, float b, float a);
         [MethodImpl(MethodImplOptions.InternalCall)]
         public extern static void imgui_PopStyleColor(int count);
-        
+        // Tree nodes
+        [MethodImpl(MethodImplOptions.InternalCall)]
+        public extern static bool imgui_TreeNode(string label);
+        [MethodImpl(MethodImplOptions.InternalCall)]
+        public extern static bool imgui_TreeNodeEx(string label, int flags);
+        [MethodImpl(MethodImplOptions.InternalCall)]
+        public extern static void imgui_TreePop();
+        [MethodImpl(MethodImplOptions.InternalCall)]
+        public extern static bool imgui_CollapsingHeader(string label, int flags);
+        // Tooltips and hover detection
+        [MethodImpl(MethodImplOptions.InternalCall)]
+        public extern static bool imgui_IsItemHovered();
+        [MethodImpl(MethodImplOptions.InternalCall)]
+        public extern static void imgui_BeginTooltip();
+        [MethodImpl(MethodImplOptions.InternalCall)]
+        public extern static void imgui_EndTooltip();
+        [MethodImpl(MethodImplOptions.InternalCall)]
+        public extern static void imgui_TextWrapped(string text);
+        [MethodImpl(MethodImplOptions.InternalCall)]
+        public extern static void imgui_PushTextWrapPos(float wrapLocalPosX);
+        [MethodImpl(MethodImplOptions.InternalCall)]
+        public extern static void imgui_PopTextWrapPos();
+        [MethodImpl(MethodImplOptions.InternalCall)]
+        public extern static bool imgui_IsMouseClicked(int button);
+        // Image display
+        [MethodImpl(MethodImplOptions.InternalCall)]
+        public extern static void imgui_Image(IntPtr textureId, float width, float height);
+        // Native spell icon drawing
+        [MethodImpl(MethodImplOptions.InternalCall)]
+        public extern static void imgui_DrawSpellIconByIconIndex(int iconIndex, float size);
+        [MethodImpl(MethodImplOptions.InternalCall)]
+        public extern static void imgui_DrawSpellIconBySpellID(int spellId, float size);
+        // Texture creation from raw data
+        [MethodImpl(MethodImplOptions.InternalCall)]
+        public extern static IntPtr mq_CreateTextureFromData(byte[] data, int width, int height, int channels);
+        [MethodImpl(MethodImplOptions.InternalCall)]
+        public extern static void mq_DestroyTexture(IntPtr textureId);
+       
         // Convenience wrapper to pop a single style color
         public static void imgui_PopStyleColor() => imgui_PopStyleColor(1);
         // Wrapping and window constraints
@@ -1467,10 +1504,151 @@ namespace MonoCore
         ImGuiWindowFlags_Modal = 1 << 27,  // Don't use! For internal use by BeginPopupModal()
         ImGuiWindowFlags_ChildMenu = 1 << 28,  // Don't use! For internal use by BeginMenu()
         ImGuiWindowFlags_DockNodeHost = 1 << 29   // Don't use! For internal use by Begin()/NewFrame()
-
+        
         // [Obsolete]
         //ImGuiWindowFlags_ResizeFromAnySide    = 1 << 17,  // --> Set io.ConfigWindowsResizeFromEdges=true and make sure mouse cursors are supported by backend (io.BackendFlags & ImGuiBackendFlags_HasMouseCursors)
-    };
+    }
+    
+    enum ImGuiCol
+    {
+        Text,
+        TextDisabled,
+        WindowBg,
+        ChildBg,
+        PopupBg,
+        Border,
+        BorderShadow,
+        FrameBg,
+        FrameBgHovered,
+        FrameBgActive,
+        TitleBg,
+        TitleBgActive,
+        TitleBgCollapsed,
+        MenuBarBg,
+        ScrollbarBg,
+        ScrollbarGrab,
+        ScrollbarGrabHovered,
+        ScrollbarGrabActive,
+        CheckMark,
+        SliderGrab,
+        SliderGrabActive,
+        Button,
+        ButtonHovered,
+        ButtonActive,
+        Header,
+        HeaderHovered,
+        HeaderActive,
+        Separator,
+        SeparatorHovered,
+        SeparatorActive,
+        ResizeGrip,
+        ResizeGripHovered,
+        ResizeGripActive,
+        Tab,
+        TabHovered,
+        TabActive,
+        TabUnfocused,
+        TabUnfocusedActive,
+        PlotLines,
+        PlotLinesHovered,
+        PlotHistogram,
+        PlotHistogramHovered,
+        TextSelectedBg,
+        DragDropTarget,
+        NavHighlight,
+        NavWindowingHighlight,
+        NavWindowingDimBg,
+        ModalWindowDimBg,
+        COUNT
+    }
+
+    enum ImGuiTreeNodeFlags
+    {
+        ImGuiTreeNodeFlags_None = 0,
+        ImGuiTreeNodeFlags_Selected = 1 << 0,   // Draw as selected
+        ImGuiTreeNodeFlags_Framed = 1 << 1,   // Draw frame with background (e.g. for CollapsingHeader)
+        ImGuiTreeNodeFlags_AllowItemOverlap = 1 << 2,   // Hit testing to allow subsequent widgets to overlap this one
+        ImGuiTreeNodeFlags_NoTreePushOnOpen = 1 << 3,   // Don't do a TreePush() when open (e.g. for CollapsingHeader) = no extra indent nor pushing on ID stack
+        ImGuiTreeNodeFlags_NoAutoOpenOnLog = 1 << 4,   // Don't automatically and temporarily open node when Logging is active (by default logging will automatically open tree nodes)
+        ImGuiTreeNodeFlags_DefaultOpen = 1 << 5,   // Default node to be open
+        ImGuiTreeNodeFlags_OpenOnDoubleClick = 1 << 6,   // Need double-click to open node
+        ImGuiTreeNodeFlags_OpenOnArrow = 1 << 7,   // Only open when clicking on the arrow part. If ImGuiTreeNodeFlags_OpenOnDoubleClick is also set, single-click arrow or double-click all box to open.
+        ImGuiTreeNodeFlags_Leaf = 1 << 8,   // No collapsing, no arrow (use as a convenience for leaf nodes)
+        ImGuiTreeNodeFlags_Bullet = 1 << 9,   // Display a bullet instead of arrow
+        ImGuiTreeNodeFlags_FramePadding = 1 << 10,  // Use FramePadding (even for an unframed text node) to vertically align text baseline to regular widget height. Equivalent to calling AlignTextToFramePadding().
+        ImGuiTreeNodeFlags_SpanAvailWidth = 1 << 11,  // Extend hit box to the right-most edge, even if not framed. This is not the default in order to allow adding other items on the same line. In the future we may refactor the hit system to be front-to-back, allowing natural overlaps and then this can become the default.
+        ImGuiTreeNodeFlags_SpanFullWidth = 1 << 12,  // Extend hit box to the left-most and right-most edges (bypass the indented area).
+        ImGuiTreeNodeFlags_NavLeftJumpsBackHere = 1 << 13  // (WIP) Nav: left direction may move to this TreeNode() from any of its child (items submitted between TreeNode and TreePop)
+    }
+
+    enum ImGuiTableFlags
+    {
+        ImGuiTableFlags_None = 0,
+        ImGuiTableFlags_Resizable = 1 << 0,   // Enable resizing columns.
+        ImGuiTableFlags_Reorderable = 1 << 1,   // Enable reordering columns in header row (need calling TableSetupColumn() + TableHeadersRow() to display headers)
+        ImGuiTableFlags_Hideable = 1 << 2,   // Enable hiding/disabling columns in context menu.
+        ImGuiTableFlags_Sortable = 1 << 3,   // Enable sorting. Call TableGetSortSpecs() to obtain sort specs. Also see ImGuiTableFlags_SortMulti and ImGuiTableFlags_SortTristate.
+        ImGuiTableFlags_NoSavedSettings = 1 << 4,   // Disable persisting columns order, width and sort settings in the .ini file.
+        ImGuiTableFlags_ContextMenuInBody = 1 << 5,   // Right-click on columns body/contents will display table context menu. By default it is available in TableHeadersRow().
+        // Decorations
+        ImGuiTableFlags_RowBg = 1 << 6,   // Set each RowBg color with ImGuiCol_TableRowBg or ImGuiCol_TableRowBgAlt (equivalent of calling TableSetBgColor with ImGuiTableBgFlags_RowBg0 on each row)
+        ImGuiTableFlags_BordersInnerH = 1 << 7,   // Draw horizontal borders between rows.
+        ImGuiTableFlags_BordersOuterH = 1 << 8,   // Draw horizontal borders at the top and bottom.
+        ImGuiTableFlags_BordersInnerV = 1 << 9,   // Draw vertical borders between columns.
+        ImGuiTableFlags_BordersOuterV = 1 << 10,  // Draw vertical borders on the left and right sides.
+        ImGuiTableFlags_BordersH = ImGuiTableFlags_BordersInnerH | ImGuiTableFlags_BordersOuterH, // Draw horizontal borders.
+        ImGuiTableFlags_BordersV = ImGuiTableFlags_BordersInnerV | ImGuiTableFlags_BordersOuterV, // Draw vertical borders.
+        ImGuiTableFlags_BordersInner = ImGuiTableFlags_BordersInnerV | ImGuiTableFlags_BordersInnerH, // Draw inner borders.
+        ImGuiTableFlags_BordersOuter = ImGuiTableFlags_BordersOuterV | ImGuiTableFlags_BordersOuterH, // Draw outer borders.
+        ImGuiTableFlags_Borders = ImGuiTableFlags_BordersInner | ImGuiTableFlags_BordersOuter,   // Draw all borders.
+        ImGuiTableFlags_NoBordersInBody = 1 << 11,  // [ALPHA] Disable vertical borders in columns Body (borders will always appear in Headers). -> May move to style
+        ImGuiTableFlags_NoBordersInBodyUntilResize = 1 << 12,  // [ALPHA] Disable vertical borders in columns Body until hovered for resize (borders will always appear in Headers). -> May move to style
+        // Sizing Policy (read above for defaults)
+        ImGuiTableFlags_SizingFixedFit = 1 << 13,  // Columns default to _WidthFixed or _WidthAuto (if resizable or not resizable), matching contents width.
+        ImGuiTableFlags_SizingFixedSame = 2 << 13,  // Columns default to _WidthFixed or _WidthAuto (if resizable or not resizable), matching the maximum contents width of all columns. Implicitly enable ImGuiTableFlags_NoKeepColumnsVisible.
+        ImGuiTableFlags_SizingStretchProp = 3 << 13,  // Columns default to _WidthStretch with default weights proportional to each columns contents widths.
+        ImGuiTableFlags_SizingStretchSame = 4 << 13,  // Columns default to _WidthStretch with default weights all equal, unless overridden by TableSetupColumn().
+        // Sizing Extra Options
+        ImGuiTableFlags_NoHostExtendX = 1 << 16,  // Make outer width auto-fit to columns, overriding outer_size.x value. Only available when ScrollX/ScrollY are disabled and Stretch columns are not used.
+        ImGuiTableFlags_NoHostExtendY = 1 << 17,  // Make outer height stop exactly at outer_size.y (prevent auto-extending table past the limit). Only available when ScrollX/ScrollY are disabled. Data below the limit will be clipped and not visible.
+        ImGuiTableFlags_NoKeepColumnsVisible = 1 << 18,  // Disable keeping column always minimally visible when ScrollX is off and table gets too small. Not recommended if columns are resizable.
+        ImGuiTableFlags_PreciseWidths = 1 << 19,  // Disable distributing remainder width to stretched columns (width allocation on a 100-wide table with 3 columns: Without this flag: 33,33,34. With this flag: 33,33,33). With larger number of columns, resizing will appear to be less smooth.
+        // Clipping
+        ImGuiTableFlags_NoClip = 1 << 20,  // Disable clipping rectangle for every individual columns (reduce draw command count, items will be able to overflow into other columns). Generally incompatible with TableSetupScrollFreeze().
+        // Padding
+        ImGuiTableFlags_PadOuterX = 1 << 21,  // Default if BordersOuterV is on. Enable outer-most padding. Generally desirable if you have headers.
+        ImGuiTableFlags_NoPadOuterX = 1 << 22,  // Default if BordersOuterV is off. Disable outer-most padding.
+        ImGuiTableFlags_NoPadInnerX = 1 << 23,  // Disable inner padding between columns (double inner padding if BordersOuterV is on, single inner padding if BordersOuterV is off).
+        // Scrolling
+        ImGuiTableFlags_ScrollX = 1 << 24,  // Enable horizontal scrolling. Require 'outer_size' parameter of BeginTable() to specify the container size. Changes default sizing policy. Because this creates a child window, ScrollY is currently generally recommended when using ScrollX.
+        ImGuiTableFlags_ScrollY = 1 << 25,  // Enable vertical scrolling. Require 'outer_size' parameter of BeginTable() to specify the container size.
+        // Sorting
+        ImGuiTableFlags_SortMulti = 1 << 26,  // Hold shift when clicking headers to sort on multiple column. TableGetSortSpecs() may return specs where (SpecsCount > 1).
+        ImGuiTableFlags_SortTristate = 1 << 27,  // Allow no sorting, disable default sorting. TableGetSortSpecs() may return specs where (SpecsCount == 0).
+    }
+
+    enum ImGuiTableColumnFlags
+    {
+        ImGuiTableColumnFlags_None = 0,
+        ImGuiTableColumnFlags_Disabled = 1 << 0,   // Overriding/master disable flag: hide column, won't show in context menu (unlike calling TableSetColumnEnabled() which manipulates the user accessible state)
+        ImGuiTableColumnFlags_DefaultHide = 1 << 1,   // Default as a hidden/disabled column.
+        ImGuiTableColumnFlags_DefaultSort = 1 << 2,   // Default as a sorting column.
+        ImGuiTableColumnFlags_WidthStretch = 1 << 3,   // Column will stretch. Preferable with horizontal scrolling disabled (default if table sizing policy is _SizingStretchSame or _SizingStretchProp).
+        ImGuiTableColumnFlags_WidthFixed = 1 << 4,   // Column will not stretch. Preferable with horizontal scrolling enabled (default if table sizing policy is _SizingFixedFit and table is resizable).
+        ImGuiTableColumnFlags_NoResize = 1 << 5,   // Disable manual resizing.
+        ImGuiTableColumnFlags_NoReorder = 1 << 6,   // Disable manual reordering this column, this will also prevent other columns from crossing over this column.
+        ImGuiTableColumnFlags_NoHide = 1 << 7,   // Disable ability to hide/disable this column.
+        ImGuiTableColumnFlags_NoClip = 1 << 8,   // Disable clipping for this column (all NoClip columns will render in a same draw command).
+        ImGuiTableColumnFlags_NoSort = 1 << 9,   // Disable ability to sort on this field (even if ImGuiTableFlags_Sortable is set on the table).
+        ImGuiTableColumnFlags_NoSortAscending = 1 << 10,  // Disable ability to sort in the ascending direction.
+        ImGuiTableColumnFlags_NoSortDescending = 1 << 11,  // Disable ability to sort in the descending direction.
+        ImGuiTableColumnFlags_NoHeaderLabel = 1 << 12,  // TableHeadersRow() will not submit label for this column. Convenient for some small columns. Name will still appear in context menu.
+        ImGuiTableColumnFlags_NoHeaderWidth = 1 << 13,  // Disable header text width contribution to automatic column width.
+        ImGuiTableColumnFlags_PreferSortAscending = 1 << 14,  // Make the initial sort direction Ascending when first sorting on this column (default).
+        ImGuiTableColumnFlags_PreferSortDescending = 1 << 15,  // Make the initial sort direction Descending when first sorting on this column.
+        ImGuiTableColumnFlags_IndentEnable = 1 << 16,  // Use current Indent value when entering cell (default for column 0).
+        ImGuiTableColumnFlags_IndentDisable = 1 << 17,  // Ignore current Indent value when entering cell (default for columns > 0). Indentation changes _within_ the cell will still be honored.
+    }
     public enum MQFeature
     {
         TLO_Dispellable

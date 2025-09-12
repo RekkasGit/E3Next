@@ -98,6 +98,7 @@
     <Reference Include="System.Data.DataSetExtensions" />
     <Reference Include="Microsoft.CSharp" />
     <Reference Include="System.Data" />
+    <Reference Include="System.Drawing" />
     <Reference Include="System.Net.Http" />
     <Reference Include="System.Xml" />
   </ItemGroup>
@@ -129,6 +130,8 @@
     <Compile Include="Data\SpellTimer.cs" />
     <Compile Include="Data\Zone.cs" />
     <Compile Include="UI\E3ImGui.cs" />
+    <Compile Include="UI\TGALoader.cs" />
+    <Compile Include="UI\SpellIconManager.cs" />
     <Compile Include="Processors\BaseProcessor.cs" />
     <Compile Include="Processors\Bots.cs" />
     <Compile Include="Processors\Burns.cs" />
