@@ -669,6 +669,10 @@ namespace E3Core.Server
                                         PubServer.AddTopicMessage($"CatalogResp-{payloaduser}-Discs", pack(discs));
                                         PubServer.AddTopicMessage($"CatalogResp-{payloaduser}-Skills", pack(skills));
                                         PubServer.AddTopicMessage($"CatalogResp-{payloaduser}-Items", pack(items));
+                                        
+                                        // Also send memorized spell gems data
+                                        var gemData = CollectSpellGemData();
+                                        PubServer.AddTopicMessage($"CatalogResp-{payloaduser}-Gems", gemData);
                                     }
                                     catch { }
                                 }
@@ -807,6 +811,79 @@ namespace E3Core.Server
             return results.OrderBy(x => x, StringComparer.OrdinalIgnoreCase).ToList();
         }
 
+        // Collect current memorized spell gem data as pipe-separated string with icon indices
+        private static string CollectSpellGemData()
+        {
+            try
+            {
+                var gemData = new List<string>();
+                
+                // Query gems 1-12 safely on the background thread
+                for (int gem = 1; gem <= 12; gem++)
+                {
+                    try
+                    {
+                        string spellName = MQ.Query<string>($"${{Me.Gem[{gem}]}}");
+                        if (string.IsNullOrEmpty(spellName) || spellName.Equals("NULL", StringComparison.OrdinalIgnoreCase))
+                        {
+                            gemData.Add("NULL:-1");
+                        }
+                        else
+                        {
+                            // Try to get spell icon index from catalog data
+                            int iconIndex = GetSpellIconIndex(spellName);
+                            gemData.Add($"{spellName}:{iconIndex}");
+                        }
+                    }
+                    catch
+                    {
+                        gemData.Add("ERROR:-1");
+                    }
+                }
+                
+                // Return as pipe-separated string for easy parsing
+                return string.Join("|", gemData);
+            }
+            catch
+            {
+                // If all fails, return empty gems with no icons
+                return string.Join("|", Enumerable.Repeat("ERROR:-1", 12));
+            }
+        }
+        
+        // Helper method to get spell icon index from catalog lookups
+        private static int GetSpellIconIndex(string spellName)
+        {
+            if (string.IsNullOrEmpty(spellName)) return -1;
+            
+            try
+            {
+                // Check spell data lookup first
+                if (E3Core.Data.Spell.SpellDataLookup.TryGetValue(spellName, out var spellData) && spellData.SpellIcon >= 0)
+                    return spellData.SpellIcon;
+                
+                // Check alt data lookup
+                if (E3Core.Data.Spell.AltDataLookup.TryGetValue(spellName, out var altData) && altData.SpellIcon >= 0)
+                    return altData.SpellIcon;
+                
+                // Check disc data lookup
+                if (E3Core.Data.Spell.DiscDataLookup.TryGetValue(spellName, out var discData) && discData.SpellIcon >= 0)
+                    return discData.SpellIcon;
+                
+                // Check item data lookup
+                if (E3Core.Data.Spell.ItemDataLookup.TryGetValue(spellName, out var itemData) && itemData.SpellIcon >= 0)
+                    return itemData.SpellIcon;
+                
+                // Fallback: Query MQ directly for spell icon (safe on background thread)
+                int iconIndex = MQ.Query<int>($"${{Spell[{spellName}].SpellIcon}}");
+                return iconIndex > 0 ? iconIndex : -1;
+            }
+            catch
+            {
+                return -1;
+            }
+        }
+        
         public class OnCommandData
 		{
 			public enum CommandType

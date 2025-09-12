@@ -44,6 +44,10 @@ namespace MonoCore
         // Inline edit helpers
         private static int _cfgInlineEditIndex = -1;
         private static string _cfgInlineEditBuffer = string.Empty;
+        
+        // Collapsible section state tracking
+        private static Dictionary<string, bool> _cfgSectionExpanded = new Dictionary<string, bool>(StringComparer.OrdinalIgnoreCase);
+        private static string _cfgNewKeyBuffer = string.Empty;
 
         // "All Players" key view state/cache
         private static bool _cfgAllPlayersView = false; // aggregated view
@@ -147,6 +151,7 @@ namespace MonoCore
                 {
                     RenderConfigEditor();
                 }
+
 
                 imgui_End();
             }
@@ -306,6 +311,30 @@ namespace MonoCore
             catch (Exception ex)
             {
                 error = ex.Message;
+                return false;
+            }
+        }
+
+        // Reads a single INI value for a toon. Returns true if the toon/path exists and read succeeded.
+        private static bool TryReadIniValueForToon(string toon, string section, string key, out string value)
+        {
+            value = string.Empty;
+            try
+            {
+                if (!TryGetIniPathForToon(toon, out var iniPath))
+                    return false;
+
+                var parser = E3Core.Utility.e3util.CreateIniParser();
+                var data = parser.ReadFile(iniPath);
+                if (!data.Sections.ContainsSection(section))
+                    return true; // file exists but section missing -> empty
+
+                value = data[section][key] ?? string.Empty;
+                return true;
+            }
+            catch
+            {
+                value = string.Empty;
                 return false;
             }
         }
@@ -808,11 +837,19 @@ namespace MonoCore
         }
 
 
+        // Spell icon system state
+        private static bool _cfg_IconSystemInitialized = false;
+        
         // Catalogs and Add modal state
         private static bool _cfg_CatalogsReady = false;
         private static bool _cfg_CatalogLoadRequested = false;
         private static bool _cfg_CatalogLoading = false;
         private static string _cfg_CatalogStatus = string.Empty;
+        private static string _cfg_CatalogSource = "Unknown"; // "Local", "Remote (ToonName)", or "Unknown"
+        // Memorized gem data from catalog responses with spell icon support
+        private static string[] _cfg_CatalogGems = new string[12]; // Gem data from catalog response
+        private static int[] _cfg_CatalogGemIcons = new int[12]; // Spell icon indices for gems
+        private static bool _cfg_GemsAvailable = false; // Whether we have gem data
         private static SortedDictionary<string, SortedDictionary<string, List<E3Spell>>> _cfgSpells = new SortedDictionary<string, SortedDictionary<string, List<E3Spell>>>();
         private static SortedDictionary<string, SortedDictionary<string, List<E3Spell>>> _cfgAAs = new SortedDictionary<string, SortedDictionary<string, List<E3Spell>>>();
         private static SortedDictionary<string, SortedDictionary<string, List<E3Spell>>> _cfgDiscs = new SortedDictionary<string, SortedDictionary<string, List<E3Spell>>>();
@@ -835,6 +872,7 @@ namespace MonoCore
             public string ResistType;
             public int ResistAdj;
             public string CastType; // AA/Spell/Disc/Ability/Item/None
+            public int SpellIcon = -1; // Spell icon index for display
             public override string ToString() => Name;
         }
         private static E3Spell _cfgCatalogInfoSpell = null;
@@ -963,473 +1001,723 @@ namespace MonoCore
                 _cfg_CatalogStatus = "Queued catalog load...";
             }
 
+            // Use ImGui Table for responsive 3-column layout
             float availY = imgui_GetContentRegionAvailY();
-            float leftW = 220f;
             
-            // Left pane: sections with better styling
-            imgui_TextColored(0.9f, 0.95f, 1.0f, 1.0f, "Main Ini Sections");
-            imgui_SameLine(245);
-            imgui_TextColored(0.8f, 0.9f, 0.95f, 1.0f, "Section Topics");
-
-            if (imgui_BeginChild("Cfg_Left", leftW, Math.Max(120f, availY * 0.8f), true))
+            if (imgui_BeginTable("ConfigEditorTable", 3, 
+                (int)(ImGuiTableFlags.ImGuiTableFlags_Borders | 
+                     ImGuiTableFlags.ImGuiTableFlags_Resizable | 
+                     ImGuiTableFlags.ImGuiTableFlags_SizingStretchProp), 
+                imgui_GetContentRegionAvailX()))
             {
-                foreach (var sec in _cfgSectionsOrdered)
-                {
-                    bool sel = string.Equals(_cfgSelectedSection, sec, StringComparison.OrdinalIgnoreCase);
-                    // Add emoji to section names for better visual distinction
-                    string sectionDisplay = sec;
-                    if (imgui_Selectable(sectionDisplay, sel))
-                    {
-                        _cfgSelectedSection = sec;
-                        var secData = pd.Sections.GetSectionData(sec);
-                        _cfgSelectedKey = secData?.Keys?.FirstOrDefault()?.KeyName ?? string.Empty;
-                        _cfgSelectedValueIndex = -1;
-                    }
-                }
-            }
-            imgui_EndChild();
+                // Set up columns with initial proportions
+                imgui_TableSetupColumn("Sections & Keys", (int)ImGuiTableColumnFlags.ImGuiTableColumnFlags_WidthStretch, 0.35f);
+                imgui_TableSetupColumn("Values", (int)ImGuiTableColumnFlags.ImGuiTableColumnFlags_WidthStretch, 0.35f);
+                imgui_TableSetupColumn("Tools & Info", (int)ImGuiTableColumnFlags.ImGuiTableColumnFlags_WidthStretch, 0.30f);
+                imgui_TableHeadersRow();
 
-            imgui_SameLine();
+                imgui_TableNextRow();
+                
+                // Column 1: Sections and Keys (with TreeNodes)
+                if (imgui_TableNextColumn())
+                {
+                    if (imgui_BeginChild("SectionsTree", 0, Math.Max(200f, availY * 0.75f), false))
+                    {
+                        foreach (var sec in _cfgSectionsOrdered)
+                        {
+                            var secData = pd.Sections.GetSectionData(sec);
+                            if (secData?.Keys == null) continue;
+                            
+                            // Get or initialize expanded state for this section
+                            if (!_cfgSectionExpanded.ContainsKey(sec))
+                                _cfgSectionExpanded[sec] = false; // Default to collapsed
+                            
+                            // Use TreeNodeEx for better control
+                            int treeFlags = (int)ImGuiTreeNodeFlags.ImGuiTreeNodeFlags_SpanAvailWidth;
+                            if (_cfgSectionExpanded[sec])
+                                treeFlags |= (int)ImGuiTreeNodeFlags.ImGuiTreeNodeFlags_DefaultOpen;
+                            
+                            bool nodeOpen = imgui_TreeNodeEx($"{sec}##section_{sec}", treeFlags);
+                            _cfgSectionExpanded[sec] = nodeOpen;
 
-            // Middle pane: keys of selected section
-            float midW = 240f;
-            var selectedSection = pd.Sections.GetSectionData(_cfgSelectedSection ?? string.Empty);
-            if (imgui_BeginChild("Cfg_Middle", midW, Math.Max(120f, availY * 0.8f), true))
-            {
-                if (selectedSection == null)
-                {
-                    imgui_Text("Select a section.");
-                }
-                else
-                {
-                    KeyDataCollection keysEnum = (selectedSection != null && selectedSection.Keys != null)
-                        ? selectedSection.Keys
-                        : new KeyDataCollection();
-                    string[] keys = keysEnum.Select(k => k.KeyName).ToArray();
-                    if (keys.Length == 0)
-                    {
-                        imgui_Text("(No keys)");
-                    }
-                    else
-                    {
-                        if (string.IsNullOrEmpty(_cfgSelectedKey) || !keys.Contains(_cfgSelectedKey, StringComparer.OrdinalIgnoreCase))
-                        {
-                            _cfgSelectedKey = keys[0];
-                            _cfgSelectedValueIndex = -1;
-                        }
-                        
-                        foreach (var k in keys)
-                        {
-                            bool sel = string.Equals(_cfgSelectedKey, k, StringComparison.OrdinalIgnoreCase);
-                            if (imgui_Selectable(k, sel))
+                            // If user clicks the section header, select the section (even if it has no keys)
+                            if (imgui_IsItemHovered() && imgui_IsMouseClicked(0))
                             {
-                                _cfgSelectedKey = k;
-                                _cfgSelectedValueIndex = -1;
+                                _cfgSelectedSection = sec;
+                                _cfgSelectedKey = string.Empty;
                             }
-                        }
-                    }
-                }
-            }
-            imgui_EndChild();
-
-            imgui_SameLine();
-
-            // Right pane: values for selected key
-            float rightW = Math.Max(600f, imgui_GetContentRegionAvailX() - leftW - midW - 20f);
-            if (imgui_BeginChild("Cfg_Right", rightW, Math.Max(120f, availY * 0.8f), true))
-            {
-                if (selectedSection == null)
-                {
-                    imgui_Text("No section selected.");
-                }
-                else
-                {
-                    var kd = selectedSection.Keys.GetKeyData(_cfgSelectedKey ?? string.Empty);
-                    string raw = kd?.Value ?? string.Empty;
-                    var parts = GetValues(kd);
-                    if (parts.Count == 0)
-                    {
-                        imgui_Text("(No values)");
-                        imgui_Separator();
-                    }
-
-                    // Title row with better styling
-                    imgui_TextColored(0.95f, 0.85f, 0.35f, 1.0f, $"[{_cfgSelectedSection}] {_cfgSelectedKey}");
-                    imgui_Separator();
-
-                    // Enumerated options derived from key label e.g. "(Melee/Ranged/Off)"
-                    if (TryGetKeyOptions(_cfgSelectedKey, out var enumOpts))
-                    {
-                        string current = (raw ?? string.Empty).Trim();
-                        string display = current.Length == 0 ? "(unset)" : current;
-                        if (BeginComboSafe("Value", display))
-                        {
-                            foreach (var opt in enumOpts)
+                            
+                            if (nodeOpen)
                             {
-                                bool sel = string.Equals(current, opt, StringComparison.OrdinalIgnoreCase);
-                                if (imgui_Selectable(opt, sel))
+                                // Show keys in this section
+                                var keys = secData.Keys.Select(k => k.KeyName).ToArray();
+                                foreach (var key in keys)
                                 {
-                                    string chosen = opt;
-                                    var pdAct = GetActiveCharacterIniData();
-                                    var selSec = pdAct.Sections.GetSectionData(_cfgSelectedSection);
-                                    if (selSec != null && selSec.Keys.ContainsKey(_cfgSelectedKey))
+                                    bool keySelected = string.Equals(_cfgSelectedSection, sec, StringComparison.OrdinalIgnoreCase) && 
+                                                     string.Equals(_cfgSelectedKey, key, StringComparison.OrdinalIgnoreCase);
+                                    
+                                    int leafFlags = (int)(ImGuiTreeNodeFlags.ImGuiTreeNodeFlags_Leaf | 
+                                                         ImGuiTreeNodeFlags.ImGuiTreeNodeFlags_NoTreePushOnOpen | 
+                                                         ImGuiTreeNodeFlags.ImGuiTreeNodeFlags_SpanAvailWidth);
+                                    if (keySelected)
+                                        leafFlags |= (int)ImGuiTreeNodeFlags.ImGuiTreeNodeFlags_Selected;
+                                    
+                                    // Use Selectable instead of TreeNodeEx for leaf items to get proper click detection
+                                    if (imgui_Selectable($"  {key}", keySelected))
                                     {
-                                        var kdata = selSec.Keys.GetKeyData(_cfgSelectedKey);
-                                        if (kdata != null)
-                                        {
-                                            WriteValues(kdata, new List<string> { chosen });
-                                        }
+                                        // Key was clicked - reset value selection
+                                        _cfgSelectedSection = sec;
+                                        _cfgSelectedKey = key;
+                                        _cfgSelectedValueIndex = -1; // Clear value selection when changing keys
                                     }
                                 }
+                                
+                                imgui_TreePop();
                             }
-                            EndComboSafe();
                         }
-                        imgui_Separator();
                     }
-                    // Boolean fast toggle support → dropdown selector with better styling
-                    else if (IsBooleanConfigKey(_cfgSelectedKey, kd))
+                    imgui_EndChild();
+                }
+                
+                // Column 2: Values
+                if (imgui_TableNextColumn())
+                {
+                    var selectedSection = pd.Sections.GetSectionData(_cfgSelectedSection ?? string.Empty);
+                    if (imgui_BeginChild("ValuesPanel", 0, Math.Max(200f, availY * 0.75f), false))
                     {
-                        string current = (raw ?? string.Empty).Trim();
-                        // Derive allowed options from base E3 conventions
-                        List<string> baseOpts;
-                        var keyLabel = _cfgSelectedKey ?? string.Empty;
-                        bool mentionsOnOff = keyLabel.IndexOf("(On/Off)", StringComparison.OrdinalIgnoreCase) >= 0
-                                             || keyLabel.IndexOf("On/Off", StringComparison.OrdinalIgnoreCase) >= 0
-                                             || keyLabel.IndexOf("Enable", StringComparison.OrdinalIgnoreCase) >= 0
-                                             || keyLabel.StartsWith("Use ", StringComparison.OrdinalIgnoreCase);
-                        if (string.Equals(current, "True", StringComparison.OrdinalIgnoreCase) || string.Equals(current, "False", StringComparison.OrdinalIgnoreCase))
+                        if (selectedSection == null)
                         {
-                            // Preserve True/False style if that's what's used
-                            baseOpts = new List<string> { "True", "False" };
+                            imgui_Text("No section selected.");
                         }
-                        else if (mentionsOnOff || string.Equals(current, "On", StringComparison.OrdinalIgnoreCase) || string.Equals(current, "Off", StringComparison.OrdinalIgnoreCase))
+                        else if (selectedSection.Keys == null || selectedSection.Keys.Count() == 0)
                         {
-                            baseOpts = new List<string> { "On", "Off" };
+                            // Empty section: allow creating a new key directly here
+                            imgui_TextColored(0.8f, 0.9f, 0.95f, 1.0f, $"[{_cfgSelectedSection}] (empty)");
+                            imgui_Separator();
+                            imgui_Text("Create a new key:");
+                            imgui_SameLine();
+                            imgui_SetNextItemWidth(220f);
+                            if (imgui_InputText("##new_key_name", _cfgNewKeyBuffer))
+                            {
+                                _cfgNewKeyBuffer = imgui_InputText_Get("##new_key_name") ?? string.Empty;
+                            }
+                            imgui_SameLine();
+                            if (imgui_Button("Add Key"))
+                            {
+                                string newKey = (_cfgNewKeyBuffer ?? string.Empty).Trim();
+                                if (newKey.Length > 0 && !selectedSection.Keys.ContainsKey(newKey))
+                                {
+                                    selectedSection.Keys.AddKey(newKey, string.Empty);
+                                    _cfgSelectedKey = newKey;
+                                    _cfgNewKeyBuffer = string.Empty;
+                                    _cfgInlineEditIndex = -1;
+                                    // On next frame the normal values editor will show for the new key
+                                }
+                            }
+                        }
+                        else if (string.IsNullOrEmpty(_cfgSelectedKey))
+                        {
+                            // Section has keys, but no key selected yet: keep values panel empty
+                            imgui_Text("Select a configuration key from the left panel.");
                         }
                         else
                         {
-                            // Default to On/Off per E3 defaults
-                            baseOpts = new List<string> { "On", "Off" };
+                            RenderSelectedKeyValues(selectedSection);
                         }
-
-                        string display = current.Length == 0 ? "(unset)" : (string.Equals(current, "True", StringComparison.OrdinalIgnoreCase) || string.Equals(current, "On", StringComparison.OrdinalIgnoreCase) ? "" + current : "" + current);
-                        if (BeginComboSafe("Value", display))
-                        {
-                            foreach (var opt in baseOpts)
-                            {
-                                bool sel = string.Equals(current, opt, StringComparison.OrdinalIgnoreCase);
-                                string optDisplay = string.Equals(opt, "True", StringComparison.OrdinalIgnoreCase) || string.Equals(opt, "On", StringComparison.OrdinalIgnoreCase) ? "" + opt : "" + opt;
-                                if (imgui_Selectable(optDisplay, sel))
-                                {
-                                    string chosen = opt;
-                                    var pdAct = GetActiveCharacterIniData();
-                                    var selSec = pdAct.Sections.GetSectionData(_cfgSelectedSection);
-                                    if (selSec != null && selSec.Keys.ContainsKey(_cfgSelectedKey))
-                                    {
-                                        var kdata = selSec.Keys.GetKeyData(_cfgSelectedKey);
-                                        if (kdata != null)
-                                        {
-                                            WriteValues(kdata, new List<string> { chosen });
-                                        }
-                                    }
-                                }
-                            }
-                            EndComboSafe();
-                        }
-                        imgui_Separator();
                     }
-
-                    // Values list with improved styling
-                    bool listChanged = false;
-                    imgui_TextColored(0.9f, 0.95f, 1.0f, 1.0f, "Configuration Values");
+                    imgui_EndChild();
+                }
+                
+                // Column 3: Tools and Info
+                if (imgui_TableNextColumn())
+                {
+                    var selectedSection = pd.Sections.GetSectionData(_cfgSelectedSection ?? string.Empty);
+                    if (imgui_BeginChild("ToolsPanel", 0, Math.Max(200f, availY * 0.75f), false))
+                    {
+                        RenderConfigurationTools(selectedSection);
+                    }
+                    imgui_EndChild();
+                }
+                
+                imgui_EndTable();
+            }
+            
+            // Display memorized spells if available from catalog data (safe)
+            RenderCatalogGemData();
+        }
+        
+        
+        // Safe gem display using catalog data (no TLO queries from UI thread)
+        private static void RenderCatalogGemData()
+        {
+            if (!_cfg_GemsAvailable || _cfg_CatalogGems == null) return;
+            
+            try
+            {
+                imgui_Separator();
+                
+                // Show header with source info
+                string sourceText = _cfg_CatalogSource.StartsWith("Remote") ? "Memorized Spells" : "Currently Memorized Spells";
+                imgui_TextColored(0.8f, 0.9f, 1.0f, 1.0f, sourceText);
+                
+                if (_cfg_CatalogSource.StartsWith("Remote"))
+                {
+                    imgui_SameLine();
+                    imgui_TextColored(0.7f, 1.0f, 0.7f, 1.0f, $"({_cfg_CatalogSource.Replace("Remote (", "").Replace(")", "")})")
+;
+                }
+                
+                // Use horizontal table for gem display
+                if (imgui_BeginTable("CatalogGems", 12, (int)(ImGuiTableFlags.ImGuiTableFlags_Borders | ImGuiTableFlags.ImGuiTableFlags_SizingStretchSame), imgui_GetContentRegionAvailX()))
+                {
+                    // Column headers
+                    for (int gem = 1; gem <= 12; gem++)
+                    {
+                        imgui_TableSetupColumn($"Gem {gem}", (int)ImGuiTableColumnFlags.ImGuiTableColumnFlags_WidthStretch, 1.0f);
+                    }
+                    imgui_TableHeadersRow();
                     
-                    for (int i = 0; i < parts.Count; i++)
+                    imgui_TableNextRow();
+                    
+                    // Display gem data from catalog
+                    for (int gem = 0; gem < 12; gem++)
                     {
-                        string v = parts[i];
-                        bool editing = (_cfgInlineEditIndex == i);
-                        // Create a unique ID for this item that doesn't depend on its position in the list
-                        string itemUid = $"{_cfgSelectedSection}_{_cfgSelectedKey}_{i}_{(v ?? string.Empty).GetHashCode()}";
+                        imgui_TableNextColumn();
                         
-                        if (!editing)
+                        string spellName = _cfg_CatalogGems[gem];
+                        
+                        if (!string.IsNullOrEmpty(spellName) && !spellName.Equals("NULL", StringComparison.OrdinalIgnoreCase) && !spellName.Equals("ERROR", StringComparison.OrdinalIgnoreCase))
                         {
-                            // Row with better styling and alignment
-                            imgui_Text($"{i + 1}.");
-                            imgui_SameLine();
+                            // Get spell icon index for this gem
+                            int iconIndex = (_cfg_CatalogGemIcons != null && gem < _cfg_CatalogGemIcons.Length) ? _cfg_CatalogGemIcons[gem] : -1;
                             
-                            // Edit button with icon
-                            if (imgui_Button($"Edit##edit_{itemUid}"))
+                            // Display spell icon using native EQ texture
+                            if (iconIndex >= 0)
                             {
-                                _cfgInlineEditIndex = i;
-                                _cfgInlineEditBuffer = v;
+                                imgui_DrawSpellIconByIconIndex(iconIndex, 40.0f);
                             }
-                            imgui_SameLine();
                             
-                            // Delete button with icon
-                            if (imgui_Button($"Delete##delete_{itemUid}"))
+                            // Try to find spell info for color coding
+                            if (_cfg_CatalogsReady)
                             {
-                                int idx = i;
-                                var pdAct = GetActiveCharacterIniData();
-                                var selSec = pdAct.Sections.GetSectionData(_cfgSelectedSection);
-                                var key = selSec?.Keys.GetKeyData(_cfgSelectedKey);
-                                if (key != null)
+                                var spellInfo = FindSpellItemAAByName(spellName);
+                                if (spellInfo != null && spellInfo.Level > 0)
                                 {
-                                    var vals = GetValues(key);
-                                    if (idx >= 0 && idx < vals.Count)
+                                    // Color code by spell level
+                                    float r = 0.9f, g = 0.9f, b = 0.9f;
+                                    if (spellInfo.Level <= 10) { r = 0.7f; g = 1.0f; b = 0.7f; }
+                                    else if (spellInfo.Level <= 50) { r = 0.9f; g = 0.9f; b = 0.7f; }
+                                    else if (spellInfo.Level <= 85) { r = 1.0f; g = 0.8f; b = 0.6f; }
+                                    else { r = 1.0f; g = 0.7f; b = 0.7f; }
+                                    
+                                    // Only show details in tooltip (no inline name)
+                                    if (imgui_IsItemHovered())
                                     {
-                                        vals.RemoveAt(idx);
-                                        WriteValues(key, vals);
-                                        listChanged = true;
-                                    }
-                                }
-                                // continue to render items; parts refresh handled below
-                            }
-                            imgui_SameLine();
-                            
-                            // Append If button for rows that support Ifs (typically spell-like entries)
-                            if (imgui_Button($"If+##if_{itemUid}"))
-                            {
-                                try
-                                {
-                                    _cfgIfAppendRow = i;
-                                    // Collect IF keys from current INI [Ifs] and GlobalIfs
-                                    var list = new List<string>();
-                                    try
-                                    {
-                                        var ini = GetActiveCharacterIniData();
-                                        var secIf = ini?.Sections?.GetSectionData("Ifs");
-                                        if (secIf?.Keys != null)
+                                        imgui_BeginTooltip();
+                                        imgui_Text($"Spell: {spellName}");
+                                        imgui_Text($"Level: {spellInfo.Level}");
+                                        if (iconIndex >= 0)
+                                            imgui_Text($"Icon: {iconIndex}");
+                                        if (!string.IsNullOrEmpty(spellInfo.Description))
                                         {
-                                            foreach (var k in secIf.Keys) if (!string.IsNullOrEmpty(k.KeyName)) list.Add(k.KeyName);
+                                            imgui_Separator();
+                                            imgui_TextWrapped(spellInfo.Description);
                                         }
+                                        imgui_EndTooltip();
                                     }
-                                    catch { }
-                                    try
-                                    {
-                                        if (E3.GlobalIfs?.Ifs != null)
-                                        {
-                                            foreach (var k in E3.GlobalIfs.Ifs.Keys) if (!string.IsNullOrEmpty(k)) list.Add(k);
-                                        }
-                                    }
-                                    catch { }
-                                    list = list.Distinct(StringComparer.OrdinalIgnoreCase).OrderBy(x => x, StringComparer.OrdinalIgnoreCase).ToList();
-                                    _cfgIfAppendCandidates = list;
-                                    _cfgIfAppendStatus = list.Count == 0 ? "No Ifs found in [Ifs] or Global Ifs." : $"{list.Count} If(s) found.";
+                                    
                                 }
-                                catch { _cfgIfAppendCandidates = new List<string>(); _cfgIfAppendStatus = "Error loading Ifs."; }
-                                _cfgShowIfAppendModal = true;
-                            }
-                            imgui_SameLine();
-                            
-                            // Value display with better formatting
-                            imgui_TextColored(0.9f, 0.9f, 0.9f, 1.0f, v);
-                        }
-                        else
-                        {
-                            // Edit mode with better styling
-                            imgui_Text($"🔹 {i + 1}.");
-                            imgui_SameLine();
-                            
-                            imgui_SetNextItemWidth(300f);
-                            if (imgui_InputText($"##edit_text_{itemUid}", _cfgInlineEditBuffer))
-                            {
-                                _cfgInlineEditBuffer = imgui_InputText_Get($"##edit_text_{itemUid}");
-                            }
-                            imgui_SameLine();
-                            
-                            if (imgui_Button($"Save##save_{itemUid}"))
-                            {
-                                string newText = _cfgInlineEditBuffer ?? string.Empty;
-                                int idx = i;
-                                var pdAct = GetActiveCharacterIniData();
-                                var selSec = pdAct.Sections.GetSectionData(_cfgSelectedSection);
-                                var key = selSec?.Keys.GetKeyData(_cfgSelectedKey);
-                                if (key != null)
+                                else
                                 {
-                                    var vals = GetValues(key);
-                                    if (idx >= 0 && idx < vals.Count)
+                                    // Only show details in tooltip (no inline name)
+                                    
+                                    // Add basic hover tooltip
+                                    if (imgui_IsItemHovered())
                                     {
-                                        vals[idx] = newText;
-                                        WriteValues(key, vals);
-                                        listChanged = true;
+                                        imgui_BeginTooltip();
+                                        imgui_Text($"Spell: {spellName}");
+                                        if (iconIndex >= 0)
+                                            imgui_Text($"Icon: {iconIndex}");
+                                        imgui_EndTooltip();
                                     }
-                                }
-                                _cfgInlineEditIndex = -1;
-                                _cfgInlineEditBuffer = string.Empty;
-                                // continue to render items; parts refresh handled below
-                            }
-                            imgui_SameLine();
-                            
-                            if (imgui_Button($"Cancel##cancel_{itemUid}"))
-                            {
-                                _cfgInlineEditIndex = -1;
-                                _cfgInlineEditBuffer = string.Empty;
-                            }
-                        }
-
-                        // Context menu: right-click to Edit/Delete or Stop Editing
-                        // Open context menu on right-click only (1 = ImGuiMouseButton_Right)
-                        if (imgui_BeginPopupContextItem($"##context_{itemUid}", 1))
-                        {
-                            if (!editing)
-                            {
-                                if (imgui_MenuItem("Edit"))
-                                {
-                                    _cfgInlineEditIndex = i;
-                                    _cfgInlineEditBuffer = v;
                                 }
                             }
                             else
                             {
-                                if (imgui_MenuItem("Stop Editing"))
+                                imgui_TextColored(0.9f, 0.9f, 0.9f, 1.0f, spellName);
+                                
+                                // Add basic hover tooltip
+                                if (imgui_IsItemHovered())
                                 {
-                                    _cfgInlineEditIndex = -1;
-                                    _cfgInlineEditBuffer = string.Empty;
+                                    imgui_BeginTooltip();
+                                    imgui_Text($"Spell: {spellName}");
+                                    if (iconIndex >= 0)
+                                        imgui_Text($"Icon: {iconIndex}");
+                                    imgui_EndTooltip();
                                 }
                             }
-                            if (imgui_MenuItem("Delete"))
-                            {
-                                int idx = i;
-                                var pdAct = GetActiveCharacterIniData();
-                                var selSec = pdAct.Sections.GetSectionData(_cfgSelectedSection);
-                                var key = selSec?.Keys.GetKeyData(_cfgSelectedKey);
-                                if (key != null)
-                                {
-                                    var vals = GetValues(key);
-                                    if (idx >= 0 && idx < vals.Count)
-                                    {
-                                        vals.RemoveAt(idx);
-                                        WriteValues(key, vals);
-                                        listChanged = true;
-                                    }
-                                }
-                                imgui_EndPopup();
-                                // Don't break here, continue to render all items
-                            }
-                            imgui_EndPopup();
                         }
-                        
-                        // If a change was made, we need to refresh the parts list for subsequent iterations
-                        if (listChanged)
+                        else if (spellName == "ERROR")
                         {
-                            // Re-get the values after modification
-                            var updatedKd = selectedSection.Keys.GetKeyData(_cfgSelectedKey ?? string.Empty);
-                            parts = GetValues(updatedKd);
-                            listChanged = false; // Reset the flag
-                            // Adjust the loop counter since we've removed an item
-                            i--;
+                            imgui_TextColored(0.8f, 0.4f, 0.4f, 1.0f, "(error)");
+                        }
+                        else
+                        {
+                            imgui_TextColored(0.5f, 0.5f, 0.5f, 1.0f, "(empty)");
                         }
                     }
-
-                    // New-row inline editor when adding at end
-                    if (!listChanged && _cfgInlineEditIndex >= 0 && _cfgInlineEditIndex == parts.Count)
-                    {
-                        // Render input for a new value (not yet persisted)
-                        if (imgui_InputText($"##edit_new_{_cfgSelectedSection}_{_cfgSelectedKey}", _cfgInlineEditBuffer))
-                        {
-                            _cfgInlineEditBuffer = imgui_InputText_Get($"##edit_new_{_cfgSelectedSection}_{_cfgSelectedKey}");
-                        }
-                        imgui_SameLine();
-                        if (imgui_Button("Save##new"))
-                        {
-                            string newText = _cfgInlineEditBuffer ?? string.Empty;
-                            var pdAct = GetActiveCharacterIniData();
-                            var selSec = pdAct.Sections.GetSectionData(_cfgSelectedSection);
-                            var key = selSec?.Keys.GetKeyData(_cfgSelectedKey);
-                            if (key != null)
-                            {
-                                var vals = GetValues(key);
-                                // Only add non-empty values to avoid accidental blank rows
-                                if (!string.IsNullOrWhiteSpace(newText))
-                                {
-                                    vals.Add(newText);
-                                    WriteValues(key, vals);
-                                    listChanged = true;
-                                }
-                            }
-                            _cfgInlineEditIndex = -1;
-                            _cfgInlineEditBuffer = string.Empty;
-                        }
-                        imgui_SameLine();
-                        if (imgui_Button("Cancel##new"))
-                        {
-                            _cfgInlineEditIndex = -1;
-                            _cfgInlineEditBuffer = string.Empty;
-                        }
-                    }
-
-                    // Add new value with improved styling
-                    if (!listChanged && _cfgInlineEditIndex == -1)
-                    {
-                        imgui_Separator();
-                        imgui_TextColored(0.8f, 0.9f, 0.95f, 1.0f, "Add New Values");
-                        
-                        imgui_SameLine();
-                        if (imgui_Button("Add Manual"))
-                        {
-                            _cfgInlineEditIndex = parts.Count;
-                            _cfgInlineEditBuffer = string.Empty;
-                        }
-                        imgui_SameLine();
-                        if (imgui_Button("Add From Catalog"))
-                        {
-                            _cfgShowAddModal = true;
-                        }
-                        
-                        // Special section buttons with icons
-                        imgui_Separator();
-                        
-                        // Heals: Tank / Important Bot → pick from connected toons
-                        bool isHeals = string.Equals(_cfgSelectedSection, "Heals", StringComparison.OrdinalIgnoreCase);
-                        bool isTankKey = string.Equals(_cfgSelectedKey, "Tank", StringComparison.OrdinalIgnoreCase);
-                        bool isImpKey = string.Equals(_cfgSelectedKey, "Important Bot", StringComparison.OrdinalIgnoreCase);
-                        if (isHeals && (isTankKey || isImpKey))
-                        {
-                            if (imgui_Button("👥 Pick Toons"))
-                            {
-                                try
-                                {
-                                    var keys = E3Core.Server.NetMQServer.SharedDataClient?.UsersConnectedTo?.Keys?.ToList() ?? new List<string>();
-                                    keys.Sort(StringComparer.OrdinalIgnoreCase);
-                                    _cfgToonCandidates = keys;
-                                    _cfgToonPickerStatus = keys.Count == 0 ? "No connected toons detected." : $"{keys.Count} connected.";
-                                }
-                                catch { _cfgToonCandidates = new List<string>(); _cfgToonPickerStatus = "Error loading toons."; }
-                                _cfgShowToonPickerModal = true;
-                            }
-                            imgui_SameLine();
-                        }
-                        
-                        if (_cfgSelectedKey.Equals("Food", StringComparison.OrdinalIgnoreCase) || _cfgSelectedKey.Equals("Drink", StringComparison.OrdinalIgnoreCase))
-                        {
-                            if (imgui_Button("Pick From Inventory"))
-                            {
-                                // Reset scan state so results don't carry over between Food/Drink
-                                _cfgFoodDrinkKey = _cfgSelectedKey; // "Food" or "Drink"
-                                _cfgFoodDrinkStatus = string.Empty;
-                                _cfgFoodDrinkCandidates.Clear();
-                                _cfgFoodDrinkScanRequested = true; // auto-trigger scan for new kind
-                                _cfgShowFoodDrinkModal = true;
-                            }
-                        }
-                        
-                        // Ifs sample import button (only when editing the Ifs section)
-                        if (string.Equals(_cfgSelectedSection, "Ifs", StringComparison.OrdinalIgnoreCase))
-                        {
-                            imgui_SameLine();
-                            if (imgui_Button("Sample If's"))
-                            {
-                                try { LoadSampleIfsForModal(); _cfgShowIfSampleModal = true; }
-                                catch (Exception ex) { _cfgIfSampleStatus = "Load failed: " + (ex.Message ?? "error"); _cfgShowIfSampleModal = true; }
-                            }
-                        }
-                    }
+                    
+                    imgui_EndTable();
                 }
             }
-            imgui_EndChild();
+            catch (Exception ex)
+            {
+                imgui_TextColored(0.8f, 0.4f, 0.4f, 1.0f, $"Error displaying gems: {ex.Message}");
+            }
+        }
+        
+        // Helper method to render values for the selected key
+        private static void RenderSelectedKeyValues(SectionData selectedSection)
+        {
+            var kd = selectedSection.Keys.GetKeyData(_cfgSelectedKey ?? string.Empty);
+            string raw = kd?.Value ?? string.Empty;
+            var parts = GetValues(kd);
+            
+            // Title row with better styling
+            imgui_TextColored(0.95f, 0.85f, 0.35f, 1.0f, $"[{_cfgSelectedSection}] {_cfgSelectedKey}");
+            imgui_Separator();
 
+            
+            if (parts.Count == 0)
+            {
+                imgui_Text("(No values)");
+                imgui_Separator();
+            }
+
+            // Enumerated options derived from key label e.g. "(Melee/Ranged/Off)"
+            if (TryGetKeyOptions(_cfgSelectedKey, out var enumOpts))
+            {
+                string current = (raw ?? string.Empty).Trim();
+                string display = current.Length == 0 ? "(unset)" : current;
+                if (BeginComboSafe("Value", display))
+                {
+                    foreach (var opt in enumOpts)
+                    {
+                        bool sel = string.Equals(current, opt, StringComparison.OrdinalIgnoreCase);
+                        if (imgui_Selectable(opt, sel))
+                        {
+                            string chosen = opt;
+                            var pdAct = GetActiveCharacterIniData();
+                            var selSec = pdAct.Sections.GetSectionData(_cfgSelectedSection);
+                            if (selSec != null && selSec.Keys.ContainsKey(_cfgSelectedKey))
+                            {
+                                var kdata = selSec.Keys.GetKeyData(_cfgSelectedKey);
+                                if (kdata != null)
+                                {
+                                    WriteValues(kdata, new List<string> { chosen });
+                                }
+                            }
+                        }
+                    }
+                    EndComboSafe();
+                }
+                imgui_Separator();
+            }
+            // Boolean fast toggle support → dropdown selector with better styling
+            else if (IsBooleanConfigKey(_cfgSelectedKey, kd))
+            {
+                string current = (raw ?? string.Empty).Trim();
+                // Derive allowed options from base E3 conventions
+                List<string> baseOpts;
+                var keyLabel = _cfgSelectedKey ?? string.Empty;
+                bool mentionsOnOff = keyLabel.IndexOf("(On/Off)", StringComparison.OrdinalIgnoreCase) >= 0
+                                     || keyLabel.IndexOf("On/Off", StringComparison.OrdinalIgnoreCase) >= 0
+                                     || keyLabel.IndexOf("Enable", StringComparison.OrdinalIgnoreCase) >= 0
+                                     || keyLabel.StartsWith("Use ", StringComparison.OrdinalIgnoreCase);
+                if (string.Equals(current, "True", StringComparison.OrdinalIgnoreCase) || string.Equals(current, "False", StringComparison.OrdinalIgnoreCase))
+                {
+                    // Preserve True/False style if that's what's used
+                    baseOpts = new List<string> { "True", "False" };
+                }
+                else if (mentionsOnOff || string.Equals(current, "On", StringComparison.OrdinalIgnoreCase) || string.Equals(current, "Off", StringComparison.OrdinalIgnoreCase))
+                {
+                    baseOpts = new List<string> { "On", "Off" };
+                }
+                else
+                {
+                    // Default to On/Off per E3 defaults
+                    baseOpts = new List<string> { "On", "Off" };
+                }
+
+                string display = current.Length == 0 ? "(unset)" : current;
+                if (BeginComboSafe("Value", display))
+                {
+                    foreach (var opt in baseOpts)
+                    {
+                        bool sel = string.Equals(current, opt, StringComparison.OrdinalIgnoreCase);
+                        if (imgui_Selectable(opt, sel))
+                        {
+                            string chosen = opt;
+                            var pdAct = GetActiveCharacterIniData();
+                            var selSec = pdAct.Sections.GetSectionData(_cfgSelectedSection);
+                            if (selSec != null && selSec.Keys.ContainsKey(_cfgSelectedKey))
+                            {
+                                var kdata = selSec.Keys.GetKeyData(_cfgSelectedKey);
+                                if (kdata != null)
+                                {
+                                    WriteValues(kdata, new List<string> { chosen });
+                                }
+                            }
+                        }
+                    }
+                    EndComboSafe();
+                }
+                imgui_Separator();
+            }
+
+            // Values list with improved styling
+            bool listChanged = false;
+            imgui_TextColored(0.9f, 0.95f, 1.0f, 1.0f, "Configuration Values");
+            
+            for (int i = 0; i < parts.Count; i++)
+            {
+                string v = parts[i];
+                bool editing = (_cfgInlineEditIndex == i);
+                // Create a unique ID for this item that doesn't depend on its position in the list
+                string itemUid = $"{_cfgSelectedSection}_{_cfgSelectedKey}_{i}_{(v ?? string.Empty).GetHashCode()}";
+                
+                if (!editing)
+                {
+                    // Row with better styling and alignment
+                    imgui_Text($"{i + 1}.");
+                    imgui_SameLine();
+                    
+                    // Edit button
+                    if (imgui_Button($"Edit##edit_{itemUid}"))
+                    {
+                        _cfgInlineEditIndex = i;
+                        _cfgInlineEditBuffer = v;
+                    }
+                    imgui_SameLine();
+                    
+                    // Delete button
+                    if (imgui_Button($"Delete##delete_{itemUid}"))
+                    {
+                        int idx = i;
+                        var pdAct = GetActiveCharacterIniData();
+                        var selSec = pdAct.Sections.GetSectionData(_cfgSelectedSection);
+                        var key = selSec?.Keys.GetKeyData(_cfgSelectedKey);
+                        if (key != null)
+                        {
+                            var vals = GetValues(key);
+                            if (idx >= 0 && idx < vals.Count)
+                            {
+                                vals.RemoveAt(idx);
+                                WriteValues(key, vals);
+                                listChanged = true;
+                            }
+                        }
+                        // continue to render items; parts refresh handled below
+                    }
+                    imgui_SameLine();
+                    
+                    // Make value selectable to show info in right panel
+                    bool isSelected = (_cfgSelectedValueIndex == i);
+                    if (imgui_Selectable($"{v}##select_{itemUid}", isSelected))
+                    {
+                        _cfgSelectedValueIndex = i;
+                    }
+                }
+                else
+                {
+                    // Edit mode with better styling
+                    imgui_Text($"* {i + 1}.");
+                    imgui_SameLine();
+                    
+                    imgui_SetNextItemWidth(200f);
+                    if (imgui_InputText($"##edit_text_{itemUid}", _cfgInlineEditBuffer))
+                    {
+                        _cfgInlineEditBuffer = imgui_InputText_Get($"##edit_text_{itemUid}");
+                    }
+                    imgui_SameLine();
+                    
+                    if (imgui_Button($"Save##save_{itemUid}"))
+                    {
+                        string newText = _cfgInlineEditBuffer ?? string.Empty;
+                        int idx = i;
+                        var pdAct = GetActiveCharacterIniData();
+                        var selSec = pdAct.Sections.GetSectionData(_cfgSelectedSection);
+                        var key = selSec?.Keys.GetKeyData(_cfgSelectedKey);
+                        if (key != null)
+                        {
+                            var vals = GetValues(key);
+                            if (idx >= 0 && idx < vals.Count)
+                            {
+                                vals[idx] = newText;
+                                WriteValues(key, vals);
+                                listChanged = true;
+                            }
+                        }
+                        _cfgInlineEditIndex = -1;
+                        _cfgInlineEditBuffer = string.Empty;
+                        // continue to render items; parts refresh handled below
+                    }
+                    imgui_SameLine();
+                    
+                    if (imgui_Button($"Cancel##cancel_{itemUid}"))
+                    {
+                        _cfgInlineEditIndex = -1;
+                        _cfgInlineEditBuffer = string.Empty;
+                    }
+                }
+
+                // If a change was made, we need to refresh the parts list for subsequent iterations
+                if (listChanged)
+                {
+                    // Re-get the values after modification
+                    var updatedKd = selectedSection.Keys.GetKeyData(_cfgSelectedKey ?? string.Empty);
+                    parts = GetValues(updatedKd);
+                    listChanged = false; // Reset the flag
+                    // Clear selection since list changed
+                    _cfgSelectedValueIndex = -1;
+                    // Adjust the loop counter since we've removed an item
+                    i--;
+                }
+            }
+            
+            // Handle adding a new manual entry (if we're in add mode)
+            if (_cfgInlineEditIndex >= parts.Count)
+            {
+                imgui_Separator();
+                imgui_TextColored(0.8f, 0.9f, 0.95f, 1.0f, "Add New Value");
+                
+                imgui_Text($"+ {parts.Count + 1}.");
+                imgui_SameLine();
+                
+                imgui_SetNextItemWidth(200f);
+                if (imgui_InputText($"##add_new_manual", _cfgInlineEditBuffer))
+                {
+                    _cfgInlineEditBuffer = imgui_InputText_Get($"##add_new_manual");
+                }
+                imgui_SameLine();
+                
+                if (imgui_Button($"Add##add_manual"))
+                {
+                    string newText = _cfgInlineEditBuffer ?? string.Empty;
+                    if (!string.IsNullOrWhiteSpace(newText))
+                    {
+                        var pdAct = GetActiveCharacterIniData();
+                        var selSec = pdAct.Sections.GetSectionData(_cfgSelectedSection);
+                        var key = selSec?.Keys.GetKeyData(_cfgSelectedKey);
+                        if (key != null)
+                        {
+                            var vals = GetValues(key);
+                            vals.Add(newText.Trim());
+                            WriteValues(key, vals);
+                        }
+                    }
+                    _cfgInlineEditIndex = -1;
+                    _cfgInlineEditBuffer = string.Empty;
+                }
+                imgui_SameLine();
+                
+                if (imgui_Button($"Cancel##cancel_manual"))
+                {
+                    _cfgInlineEditIndex = -1;
+                    _cfgInlineEditBuffer = string.Empty;
+                }
+            }
+            // Add new value button (only show when not editing)
+            else if (!listChanged && _cfgInlineEditIndex == -1)
+            {
+                imgui_Separator();
+                imgui_TextColored(0.8f, 0.9f, 0.95f, 1.0f, "Add New Values");
+                
+                if (imgui_Button("Add Manual"))
+                {
+                    _cfgInlineEditIndex = parts.Count;
+                    _cfgInlineEditBuffer = string.Empty;
+                }
+                imgui_SameLine();
+                if (imgui_Button("Add From Catalog"))
+                {
+                    _cfgShowAddModal = true;
+                }
+            }
+        }
+        
+        // Helper method to render configuration tools panel
+        private static void RenderConfigurationTools(SectionData selectedSection)
+        {
+            if (selectedSection == null || string.IsNullOrEmpty(_cfgSelectedKey))
+            {
+                imgui_TextColored(0.9f, 0.9f, 0.9f, 1.0f, "Select a configuration key to see available tools.");
+                return;
+            }
+            
+            imgui_TextColored(0.95f, 0.85f, 0.35f, 1.0f, "Configuration Tools");
+            imgui_Separator();
+            
+            
+            // Special section buttons
+            bool isHeals = string.Equals(_cfgSelectedSection, "Heals", StringComparison.OrdinalIgnoreCase);
+            bool isTankKey = string.Equals(_cfgSelectedKey, "Tank", StringComparison.OrdinalIgnoreCase);
+            bool isImpKey = string.Equals(_cfgSelectedKey, "Important Bot", StringComparison.OrdinalIgnoreCase);
+            
+            if (isHeals && (isTankKey || isImpKey))
+            {
+                if (imgui_Button("Pick Toons"))
+                {
+                    try
+                    {
+                        var keys = E3Core.Server.NetMQServer.SharedDataClient?.UsersConnectedTo?.Keys?.ToList() ?? new List<string>();
+                        keys.Sort(StringComparer.OrdinalIgnoreCase);
+                        _cfgToonCandidates = keys;
+                        _cfgToonPickerStatus = keys.Count == 0 ? "No connected toons detected." : $"{keys.Count} connected.";
+                    }
+                    catch { _cfgToonCandidates = new List<string>(); _cfgToonPickerStatus = "Error loading toons."; }
+                    _cfgShowToonPickerModal = true;
+                }
+            }
+            
+            if (_cfgSelectedKey.Equals("Food", StringComparison.OrdinalIgnoreCase) || _cfgSelectedKey.Equals("Drink", StringComparison.OrdinalIgnoreCase))
+            {
+                if (imgui_Button("Pick From Inventory"))
+                {
+                    // Reset scan state so results don't carry over between Food/Drink
+                    _cfgFoodDrinkKey = _cfgSelectedKey; // "Food" or "Drink"
+                    _cfgFoodDrinkStatus = string.Empty;
+                    _cfgFoodDrinkCandidates.Clear();
+                    _cfgFoodDrinkScanRequested = true; // auto-trigger scan for new kind
+                    _cfgShowFoodDrinkModal = true;
+                }
+            }
+            
+            // Ifs sample import button (only when editing the Ifs section)
+            if (string.Equals(_cfgSelectedSection, "Ifs", StringComparison.OrdinalIgnoreCase))
+            {
+                if (imgui_Button("Sample If's"))
+                {
+                    try { LoadSampleIfsForModal(); _cfgShowIfSampleModal = true; }
+                    catch (Exception ex) { _cfgIfSampleStatus = "Load failed: " + (ex.Message ?? "error"); _cfgShowIfSampleModal = true; }
+                }
+            }
+            
+            // Add our HealPct suffix helper for heal-related keys
+            if (IsHealingKey(_cfgSelectedSection, _cfgSelectedKey))
+            {
+                imgui_Separator();
+                imgui_TextColored(0.8f, 0.9f, 0.95f, 1.0f, "HealPct Helper");
+                imgui_Text("(HealPct suffix functionality to be added)");
+            }
+            
+            imgui_Separator();
+            
+            // Display selected value information
+            if (_cfgSelectedValueIndex >= 0)
+            {
+                var kd = selectedSection?.Keys?.GetKeyData(_cfgSelectedKey ?? string.Empty);
+                var values = GetValues(kd);
+                if (_cfgSelectedValueIndex < values.Count)
+                {
+                    string selectedValue = values[_cfgSelectedValueIndex];
+                    imgui_TextColored(0.95f, 0.85f, 0.35f, 1.0f, "Selected Value Info");
+                    imgui_Text($"Value: {selectedValue}");
+                    
+                    // Try to find spell/item/AA information
+                    if (_cfg_CatalogsReady)
+                    {
+                        var spellInfo = FindSpellItemAAByName(selectedValue);
+                        if (spellInfo != null)
+                        {
+                            imgui_Separator();
+                            
+                            // Display spell/item/AA details using a compact table
+                            if (imgui_BeginTable("SelectedValueInfo", 2, 0, imgui_GetContentRegionAvailX()))
+                            {
+                                imgui_TableSetupColumn("Property", 0, 80f);
+                                imgui_TableSetupColumn("Value", 0, imgui_GetContentRegionAvailX() - 100f);
+                                
+                                // Type
+                                imgui_TableNextRow();
+                                imgui_TableNextColumn();
+                                imgui_TextColored(0.8f, 0.9f, 1.0f, 1.0f, "Type:");
+                                imgui_TableNextColumn();
+                                imgui_Text(spellInfo.CastType ?? "Unknown");
+                                
+                                // Level (if applicable)
+                                if (spellInfo.Level > 0)
+                                {
+                                    imgui_TableNextRow();
+                                    imgui_TableNextColumn();
+                                    imgui_TextColored(0.8f, 0.9f, 1.0f, 1.0f, "Level:");
+                                    imgui_TableNextColumn();
+                                    imgui_Text(spellInfo.Level.ToString());
+                                }
+                                
+                                // Mana (if applicable)
+                                if (spellInfo.Mana > 0)
+                                {
+                                    imgui_TableNextRow();
+                                    imgui_TableNextColumn();
+                                    imgui_TextColored(0.8f, 0.9f, 1.0f, 1.0f, "Mana:");
+                                    imgui_TableNextColumn();
+                                    imgui_Text(spellInfo.Mana.ToString());
+                                }
+                                
+                                // Cast Time (if applicable)
+                                if (spellInfo.CastTime > 0)
+                                {
+                                    imgui_TableNextRow();
+                                    imgui_TableNextColumn();
+                                    imgui_TextColored(0.8f, 0.9f, 1.0f, 1.0f, "Cast Time:");
+                                    imgui_TableNextColumn();
+                                    imgui_Text($"{spellInfo.CastTime:0.00}s");
+                                }
+                                
+                                // Target (if applicable)
+                                if (!string.IsNullOrEmpty(spellInfo.TargetType))
+                                {
+                                    imgui_TableNextRow();
+                                    imgui_TableNextColumn();
+                                    imgui_TextColored(0.8f, 0.9f, 1.0f, 1.0f, "Target:");
+                                    imgui_TableNextColumn();
+                                    imgui_Text(spellInfo.TargetType);
+                                }
+                                
+                                imgui_EndTable();
+                            }
+                            
+                            // Description (if available)
+                            if (!string.IsNullOrEmpty(spellInfo.Description))
+                            {
+                                imgui_Separator();
+                                imgui_TextColored(0.75f, 0.85f, 1.0f, 1.0f, "Description:");
+                                imgui_Text(spellInfo.Description);
+                            }
+                        }
+                        else
+                        {
+                            imgui_TextColored(0.8f, 0.8f, 0.6f, 1.0f, "(No catalog info found)");
+                        }
+                    }
+                    else
+                    {
+                        imgui_TextColored(0.8f, 0.8f, 0.6f, 1.0f, "(Catalogs not loaded)");
+                    }
+                    
+                    imgui_Separator();
+                }
+            }
+            
+            imgui_TextColored(0.8f, 0.9f, 0.95f, 1.0f, "Configuration Info");
+            imgui_Text($"Section: {_cfgSelectedSection}");
+            imgui_Text($"Key: {_cfgSelectedKey}");
+            
+            // Show modals
             if (_cfgShowAddModal)
             {
-                RenderAddFromCatalogModal(pd, selectedSection);
+                RenderAddFromCatalogModal(GetActiveCharacterIniData(), selectedSection);
             }
             if (_cfgShowFoodDrinkModal)
             {
@@ -1451,6 +1739,15 @@ namespace MonoCore
             {
                 RenderIfsSampleModal();
             }
+        }
+        
+        // Helper to determine if a key is healing-related
+        private static bool IsHealingKey(string section, string key)
+        {
+            if (string.IsNullOrEmpty(section) || string.IsNullOrEmpty(key)) return false;
+            
+            var healingSections = new[] { "Heals", "Tank", "Important Bot" };
+            return healingSections.Any(s => string.Equals(section, s, StringComparison.OrdinalIgnoreCase));
         }
 
         // Save out active ini data (current or selected)
@@ -1475,9 +1772,28 @@ namespace MonoCore
             }
         }
 
-        // Background worker tick invoked from E3.Process(): handle catalog loads
+        // Background worker tick invoked from E3.Process(): handle catalog loads and icon system
         public static void ProcessBackgroundWork()
         {
+            // Initialize spell icon system if not already done
+            if (!_cfg_IconSystemInitialized)
+            {
+                try
+                {
+                    string eqPath = E3.MQ.Query<string>("${EverQuest.Path}");
+                    if (!string.IsNullOrEmpty(eqPath))
+                    {
+                        E3Next.UI.SpellIconManager.Initialize(eqPath);
+                        _cfg_IconSystemInitialized = true;
+                        E3Core.Utility.e3util._log.Write("Spell icon system initialized.");
+                    }
+                }
+                catch (Exception ex)
+                {
+                    E3Core.Utility.e3util._log.Write($"Failed to initialize spell icon system: {ex.Message}");
+                }
+            }
+            
             if (_cfg_CatalogLoadRequested && !_cfg_CatalogLoading)
             {
                 _cfg_CatalogLoading = true;
@@ -1515,22 +1831,77 @@ namespace MonoCore
                             peerSuccess &= TryFetchPeerSpellDataListPub(targetToon, "Items", out var pi);
                             if (peerSuccess) mapItems = OrganizeItemsCatalog(pi); else mapItems = new SortedDictionary<string, SortedDictionary<string, List<E3Spell>>>();
                             
+                            // Also try to fetch gem data
+                            if (peerSuccess && TryFetchPeerGemData(targetToon, out var gemData))
+                            {
+                                _cfg_CatalogGems = gemData;
+                                _cfg_GemsAvailable = true;
+                            }
+                            else
+                            {
+                                _cfg_GemsAvailable = false;
+                            }
+                            
                             // If any peer fetch failed, fallback to local
                             if (!peerSuccess)
                             {
                                 _cfg_CatalogStatus = "Peer catalog fetch failed; using local.";
+                                _cfg_CatalogSource = "Local (fallback)";
                                 isLocal = true;
+                            }
+                            else
+                            {
+                                _cfg_CatalogSource = $"Remote ({targetToon})";
                             }
                         }
                         
                         if (isLocal)
                         {
                             _cfg_CatalogStatus = "Loading catalogs (local)...";
+                            _cfg_CatalogSource = "Local";
                             mapSpells = OrganizeCatalog(FetchSpellDataList("${E3.SpellBook.ListAll}"));
                             mapAAs = OrganizeCatalog(FetchSpellDataList("${E3.AA.ListAll}"));
                             mapDiscs = OrganizeCatalog(FetchSpellDataList("${E3.Discs.ListAll}"));
                             mapSkills = OrganizeSkillsCatalog(FetchSpellDataList("${E3.Skills.ListAll}"));
                             mapItems = OrganizeItemsCatalog(FetchSpellDataList("${E3.ItemsWithSpells.ListAll}"));
+                            
+                            // Also collect local gem data with spell icon indices
+                            try
+                            {
+                                var localGems = new string[12];
+                                var localGemIcons = new int[12];
+                                
+                                for (int gem = 1; gem <= 12; gem++)
+                                {
+                                    try
+                                    {
+                                        string spellName = E3.MQ.Query<string>($"${{Me.Gem[{gem}]}}");
+                                        localGems[gem - 1] = spellName ?? "NULL";
+                                        
+                                        // Get spell icon index if we have a valid spell
+                                        if (!string.IsNullOrEmpty(spellName) && !spellName.Equals("NULL", StringComparison.OrdinalIgnoreCase))
+                                        {
+                                            localGemIcons[gem - 1] = GetLocalSpellIconIndex(spellName);
+                                        }
+                                        else
+                                        {
+                                            localGemIcons[gem - 1] = -1;
+                                        }
+                                    }
+                                    catch
+                                    {
+                                        localGems[gem - 1] = "ERROR";
+                                        localGemIcons[gem - 1] = -1;
+                                    }
+                                }
+                                _cfg_CatalogGems = localGems;
+                                _cfg_CatalogGemIcons = localGemIcons;
+                                _cfg_GemsAvailable = true;
+                            }
+                            catch
+                            {
+                                _cfg_GemsAvailable = false;
+                            }
                         }
 
                         // Publish atomically
@@ -1680,16 +2051,14 @@ namespace MonoCore
 
                         foreach (var toon in connectedToons)
                         {
-                            string value = "";
-                            if (toon.Equals(E3.CurrentName, StringComparison.OrdinalIgnoreCase))
+                            string value = string.Empty;
+
+                            // First, try reading directly from the toon's local INI (if present on this machine)
+                            bool gotLocal = TryReadIniValueForToon(toon, section, key, out value);
+
+                            // If we didn't get a value locally and it's a remote toon, request from peer
+                            if (!gotLocal && !toon.Equals(E3.CurrentName, StringComparison.OrdinalIgnoreCase))
                             {
-                                // Get local value
-                                var pd = GetActiveCharacterIniData();
-                                value = pd?.Sections?.GetSectionData(section)?.Keys?.GetKeyData(key)?.Value ?? "";
-                            }
-                            else
-                            {
-                                // Request from peer
                                 string requestTopic = $"ConfigValueReq-{toon}";
                                 string payload = $"{section}:{key}";
                                 E3Core.Server.PubServer.AddTopicMessage(requestTopic, payload);
@@ -1699,7 +2068,6 @@ namespace MonoCore
                                 bool found = false;
                                 while (Core.StopWatch.ElapsedMilliseconds < end)
                                 {
-                                    // Prefer remote publisher bucket
                                     if (E3Core.Server.NetMQServer.SharedDataClient.TopicUpdates.TryGetValue(toon, out var topics) &&
                                         topics.TryGetValue(responseTopic, out var entry))
                                     {
@@ -1707,7 +2075,6 @@ namespace MonoCore
                                         found = true;
                                         break;
                                     }
-                                    // Fallback: requester bucket
                                     if (E3Core.Server.NetMQServer.SharedDataClient.TopicUpdates.TryGetValue(E3.CurrentName, out var topics2) &&
                                         topics2.TryGetValue(responseTopic, out var entry2))
                                     {
@@ -1719,6 +2086,7 @@ namespace MonoCore
                                 }
                                 if (!found) value = "<timeout>";
                             }
+
                             newRows.Add(new KeyValuePair<string, string>(toon, value));
                         }
 
@@ -1798,6 +2166,129 @@ namespace MonoCore
             return false;
         }
 
+        // Fetch gem data from peer catalog response (now includes spell icon indices)
+        private static bool TryFetchPeerGemData(string toon, out string[] gemData)
+        {
+            gemData = new string[12];
+            try
+            {
+                if (string.IsNullOrEmpty(toon)) return false;
+                
+                string topic = $"CatalogResp-{E3.CurrentName}-Gems";
+                // Poll SharedDataClient.TopicUpdates for gem data
+                long end = Core.StopWatch.ElapsedMilliseconds + 2000; // 2 second timeout
+                while (Core.StopWatch.ElapsedMilliseconds < end)
+                {
+                    if (E3Core.Server.NetMQServer.SharedDataClient.TopicUpdates.TryGetValue(toon, out var topics)
+                        && topics.TryGetValue(topic, out var entry))
+                    {
+                        string payload = entry.Data;
+                        ParseGemDataWithIcons(payload, out gemData, out _cfg_CatalogGemIcons);
+                        return true;
+                    }
+                    
+                    // Also check if data came back under current name
+                    if (E3Core.Server.NetMQServer.SharedDataClient.TopicUpdates.TryGetValue(E3.CurrentName, out var topics2)
+                        && topics2.TryGetValue(topic, out var entry2))
+                    {
+                        string payload = entry2.Data;
+                        ParseGemDataWithIcons(payload, out gemData, out _cfg_CatalogGemIcons);
+                        return true;
+                    }
+                    
+                    System.Threading.Thread.Sleep(25);
+                }
+            }
+            catch { }
+            
+            // Fill with ERROR if failed
+            for (int i = 0; i < 12; i++)
+            {
+                gemData[i] = "ERROR";
+                _cfg_CatalogGemIcons[i] = -1;
+            }
+            return false;
+        }
+        
+        // Helper method to parse gem data with icon indices from pipe-separated format
+        private static void ParseGemDataWithIcons(string payload, out string[] gemNames, out int[] gemIcons)
+        {
+            gemNames = new string[12];
+            gemIcons = new int[12];
+            
+            try
+            {
+                // Parse pipe-separated gem data: "SpellName:IconIndex|SpellName:IconIndex|..."
+                var gems = payload.Split('|');
+                int count = Math.Min(gems.Length, 12);
+                
+                for (int i = 0; i < count; i++)
+                {
+                    string gemEntry = gems[i] ?? "NULL:-1";
+                    string[] parts = gemEntry.Split(':');
+                    
+                    if (parts.Length >= 2)
+                    {
+                        gemNames[i] = parts[0] ?? "NULL";
+                        if (int.TryParse(parts[1], out int iconIndex))
+                        {
+                            gemIcons[i] = iconIndex;
+                        }
+                        else
+                        {
+                            gemIcons[i] = -1;
+                        }
+                    }
+                    else
+                    {
+                        // Fallback for old format without icons
+                        gemNames[i] = gemEntry ?? "NULL";
+                        gemIcons[i] = -1;
+                    }
+                }
+                
+                // Fill remaining slots if needed
+                for (int i = count; i < 12; i++)
+                {
+                    gemNames[i] = "NULL";
+                    gemIcons[i] = -1;
+                }
+            }
+            catch
+            {
+                // Error case - fill with defaults
+                for (int i = 0; i < 12; i++)
+                {
+                    gemNames[i] = "ERROR";
+                    gemIcons[i] = -1;
+                }
+            }
+        }
+        
+        // Helper method to get spell icon index for local spells
+        private static int GetLocalSpellIconIndex(string spellName)
+        {
+            if (string.IsNullOrEmpty(spellName)) return -1;
+            
+            try
+            {
+                // Use the catalog lookups if they're available
+                var spellInfo = FindSpellItemAAByName(spellName);
+                if (spellInfo != null && spellInfo.SpellIcon >= 0)
+                {
+                    return spellInfo.SpellIcon;
+                }
+                
+                // Fallback: Query MQ directly for spell icon
+                int iconIndex = E3.MQ.Query<int>($"${{Spell[{spellName}].SpellIcon}}");
+                return iconIndex > 0 ? iconIndex : -1;
+            }
+            catch
+            {
+                return -1;
+            }
+        }
+        
         // PubSub relay approach: request peer to publish SpellDataList as base64 on response topic
         private static bool TryFetchPeerSpellDataListPub(string toon, string listKey, out Google.Protobuf.Collections.RepeatedField<SpellData> data)
         {
@@ -1891,7 +2382,8 @@ namespace MonoCore
                     Description = s.Description ?? string.Empty,
                     ResistType = s.ResistType ?? string.Empty,
                     ResistAdj = s.ResistAdj,
-                    CastType = s.CastType.ToString()
+                    CastType = s.CastType.ToString(),
+                    SpellIcon = s.SpellIcon
                 });
             }
             foreach (var submap in dest.Values)
@@ -1924,7 +2416,8 @@ namespace MonoCore
                     TargetType = s.TargetType ?? string.Empty,
                     SpellType = s.SpellType ?? string.Empty,
                     CastType = s.CastType.ToString(),
-                    Description = s.Description ?? string.Empty
+                    Description = s.Description ?? string.Empty,
+                    SpellIcon = s.SpellIcon
                 });
             }
             list.Sort((a, b) => string.Compare(a.Name, b.Name, StringComparison.OrdinalIgnoreCase));
@@ -1965,7 +2458,8 @@ namespace MonoCore
                     Description = s.Description ?? string.Empty,
                     ResistType = s.ResistType ?? string.Empty,
                     ResistAdj = s.ResistAdj,
-                    CastType = s.CastType.ToString()
+                    CastType = s.CastType.ToString(),
+                    SpellIcon = s.SpellIcon
                 });
             }
             return dest;
@@ -1990,7 +2484,7 @@ namespace MonoCore
                     l = new List<E3Spell>();
                     submap.Add(sub, l);
                 }
-                l.Add(new E3Spell { Name = s.SpellName ?? string.Empty, Category = cat, Subcategory = sub, Level = s.Level });
+                l.Add(new E3Spell { Name = s.SpellName ?? string.Empty, Category = cat, Subcategory = sub, Level = s.Level, SpellIcon = s.SpellIcon });
             }
             foreach (var submap in dest.Values)
             {
@@ -2012,7 +2506,7 @@ namespace MonoCore
                 float listH = Math.Max(420f, imgui_GetContentRegionAvailY() * 0.8f);
                 float thirdW = Math.Max(220f, totalW / 3.0f - 8.0f);
 
-                // Header: type + filter
+                // Header: type + filter + catalog source
                 imgui_TextColored(0.95f, 0.85f, 0.35f, 1.0f, "Add From Catalog");
                 imgui_SameLine();
                 if (imgui_BeginCombo("##type", _cfgAddType.ToString(), 0))
@@ -2029,7 +2523,44 @@ namespace MonoCore
                 imgui_SameLine();
                 if (imgui_InputText("##filter", _cfgAddFilter ?? string.Empty))
                     _cfgAddFilter = imgui_InputText_Get("##filter") ?? string.Empty;
-
+                
+                // Catalog source info and refresh button
+                imgui_Separator();
+                imgui_TextColored(0.8f, 0.9f, 1.0f, 1.0f, "Catalog Source:");
+                imgui_SameLine();
+                
+                // Color code the source based on type
+                if (_cfg_CatalogSource.StartsWith("Remote"))
+                    imgui_TextColored(0.7f, 1.0f, 0.7f, 1.0f, _cfg_CatalogSource); // Green for remote
+                else if (_cfg_CatalogSource.StartsWith("Local (fallback)"))
+                    imgui_TextColored(1.0f, 0.8f, 0.4f, 1.0f, _cfg_CatalogSource); // Orange for fallback
+                else if (_cfg_CatalogSource.StartsWith("Local"))
+                    imgui_TextColored(0.8f, 0.8f, 1.0f, 1.0f, _cfg_CatalogSource); // Light blue for local
+                else
+                    imgui_TextColored(0.8f, 0.8f, 0.8f, 1.0f, _cfg_CatalogSource); // Gray for unknown
+                
+                imgui_SameLine();
+                if (imgui_Button("Refresh Catalog"))
+                {
+                    // Trigger catalog refresh
+                    _cfg_CatalogsReady = false;
+                    _cfgSpells.Clear();
+                    _cfgAAs.Clear();
+                    _cfgDiscs.Clear();
+                    _cfgSkills.Clear();
+                    _cfgItems.Clear();
+                    _cfg_CatalogLoadRequested = true;
+                    _cfg_CatalogStatus = "Queued catalog refresh...";
+                    _cfg_CatalogSource = "Refreshing...";
+                }
+                
+                // Show catalog status if loading
+                if (_cfg_CatalogLoading)
+                {
+                    imgui_SameLine();
+                    imgui_TextColored(0.9f, 0.9f, 0.4f, 1.0f, _cfg_CatalogStatus.Replace("Loading catalogs", "Loading"));
+                }
+                
                 imgui_Separator();
 
                 // Resolve the catalog for the chosen type
@@ -2172,6 +2703,42 @@ namespace MonoCore
                 default: return _cfgSpells;
             }
         }
+        
+        // Search all catalogs for a spell/item/AA by name
+        private static E3Spell FindSpellItemAAByName(string name)
+        {
+            if (string.IsNullOrEmpty(name)) return null;
+            
+            // Search all catalog types for an exact match
+            var catalogs = new[] 
+            {
+                (_cfgSpells, "Spell"),
+                (_cfgAAs, "AA"),
+                (_cfgDiscs, "Disc"), 
+                (_cfgSkills, "Skill"),
+                (_cfgItems, "Item")
+            };
+            
+            foreach (var (catalog, type) in catalogs)
+            {
+                foreach (var categoryKvp in catalog)
+                {
+                    foreach (var subCategoryKvp in categoryKvp.Value)
+                    {
+                        var match = subCategoryKvp.Value.FirstOrDefault(spell => 
+                            string.Equals(spell.Name, name, StringComparison.OrdinalIgnoreCase));
+                        if (match != null)
+                        {
+                            // Set the cast type if not already set
+                            if (string.IsNullOrEmpty(match.CastType)) match.CastType = type;
+                            return match;
+                        }
+                    }
+                }
+            }
+            
+            return null;
+        }
 
         private static void TryAddVisibleEntriesToSelectedKey(SectionData selectedSection)
         {
@@ -2239,12 +2806,17 @@ namespace MonoCore
         // Inventory scanning for Food/Drink using MQ TLOs (non-blocking via ProcessBackgroundWork trigger)
         private static void RenderFoodDrinkPicker(SectionData selectedSection)
         {
-            imgui_Begin_OpenFlagSet("Pick From Inventory", true);
-            bool _open_fd = imgui_Begin("Pick From Inventory", (int)ImGuiWindowFlags.ImGuiWindowFlags_None);
-            if (_open_fd)
+            // Use proper modal behavior
+            imgui_Begin_OpenFlagSet("Pick From Inventory##modal", true);
+            bool modalOpen = imgui_Begin("Pick From Inventory##modal", (int)(ImGuiWindowFlags.ImGuiWindowFlags_AlwaysAutoResize | ImGuiWindowFlags.ImGuiWindowFlags_NoCollapse));
+            
+            if (modalOpen)
             {
-                imgui_Text($"Pick {_cfgFoodDrinkKey} from inventory");
+                // Header with better styling
+                imgui_TextColored(0.95f, 0.85f, 0.35f, 1.0f, $"Pick {_cfgFoodDrinkKey} from inventory");
                 imgui_Separator();
+                
+                // Status and scan button
                 if (string.IsNullOrEmpty(_cfgFoodDrinkStatus))
                 {
                     if (imgui_Button("Scan Inventory"))
@@ -2252,46 +2824,82 @@ namespace MonoCore
                         _cfgFoodDrinkStatus = "Scanning...";
                         _cfgFoodDrinkScanRequested = true;
                     }
+                    imgui_Text("Click above to scan your inventory.");
                 }
                 else
                 {
-                    imgui_Text(_cfgFoodDrinkStatus);
+                    imgui_TextColored(0.7f, 0.9f, 0.7f, 1.0f, _cfgFoodDrinkStatus);
                 }
+                
+                imgui_Separator();
 
+                // Results list with better sizing
                 if (_cfgFoodDrinkCandidates.Count > 0)
                 {
-                    if (imgui_BeginChild("FoodDrinkList", Math.Max(200f, imgui_GetContentRegionAvailX()), Math.Max(300f, imgui_GetContentRegionAvailY() * 0.7f), true))
+                    imgui_TextColored(0.8f, 0.9f, 1.0f, 1.0f, "Found items (click to select):");
+                    
+                    // Use responsive sizing for the list
+                    float listHeight = Math.Min(400f, Math.Max(150f, _cfgFoodDrinkCandidates.Count * 20f + 40f));
+                    float listWidth = Math.Max(300f, imgui_GetContentRegionAvailX() * 0.9f);
+                    
+                    if (imgui_BeginChild("FoodDrinkList", listWidth, listHeight, true))
                     {
-                        foreach (var item in _cfgFoodDrinkCandidates)
+                        for (int i = 0; i < _cfgFoodDrinkCandidates.Count; i++)
                         {
-                            if (imgui_Selectable(item, false))
+                            var item = _cfgFoodDrinkCandidates[i];
+                            if (imgui_Selectable($"{item}##item_{i}", false))
                             {
-                                string picked = item;
+                                // Apply selection
                                 var pdAct = GetActiveCharacterIniData();
                                 var secData = pdAct.Sections.GetSectionData(_cfgSelectedSection);
-                                var key = secData?.Keys.GetKeyData(_cfgSelectedKey);
-                                if (key != null)
+                                var keyData = secData?.Keys.GetKeyData(_cfgSelectedKey);
+                                if (keyData != null)
                                 {
-                                    var vals = GetValues(key);
+                                    var vals = GetValues(keyData);
                                     // Replace first value or add if empty
-                                    if (vals.Count == 0) vals.Add(picked);
-                                    else vals[0] = picked;
-                                    WriteValues(key, vals);
+                                    if (vals.Count == 0) vals.Add(item);
+                                    else vals[0] = item;
+                                    WriteValues(keyData, vals);
                                 }
                                 _cfgShowFoodDrinkModal = false;
+                                break; // Exit loop after selection
                             }
                         }
                     }
                     imgui_EndChild();
                 }
+                else if (!string.IsNullOrEmpty(_cfgFoodDrinkStatus) && !_cfgFoodDrinkStatus.Contains("Scanning"))
+                {
+                    imgui_TextColored(0.9f, 0.7f, 0.7f, 1.0f, "No matching items found.");
+                }
 
+                imgui_Separator();
+                
+                // Action buttons
+                if (_cfgFoodDrinkCandidates.Count > 0)
+                {
+                    if (imgui_Button("Rescan"))
+                    {
+                        _cfgFoodDrinkStatus = "Scanning...";
+                        _cfgFoodDrinkCandidates.Clear();
+                        _cfgFoodDrinkScanRequested = true;
+                    }
+                    imgui_SameLine();
+                }
+                
                 if (imgui_Button("Close"))
                 {
                     _cfgShowFoodDrinkModal = false;
                 }
-                imgui_End();
             }
-            if (!_open_fd) _cfgShowFoodDrinkModal = false;
+            
+            imgui_End();
+            
+            // Handle window close via X button
+            if (!modalOpen)
+            {
+                _cfgShowFoodDrinkModal = false;
+            }
         }
 
         // Toon picker modal for Heals section (Tank / Important Bot)
@@ -2390,7 +2998,7 @@ namespace MonoCore
                 }
 
                 imgui_Separator();
-                if (imgui_Button("❌ Close")) { _cfgShowSpellInfoModal = false; _cfgSpellInfoSpell = null; }
+                if (imgui_Button("Close")) { _cfgShowSpellInfoModal = false; _cfgSpellInfoSpell = null; }
             }
             imgui_End();
             if (!_open_info) { _cfgShowSpellInfoModal = false; _cfgSpellInfoSpell = null; }
@@ -2549,5 +3157,217 @@ namespace MonoCore
             string n = name.ToLowerInvariant();
             return n.Contains("water") || n.Contains("milk") || n.Contains("wine") || n.Contains("ale") || n.Contains("beer") || n.Contains("tea") || n.Contains("juice") || n.Contains("elixir") || n.Contains("nectar") || n.Contains("brew");
         }
+
+        #region Spell Icon Rendering
+        
+        /// <summary>
+        /// Renders a spell icon with the specified size and optional tooltip
+        /// </summary>
+        /// <param name="spellId">The EQ spell ID</param>
+        /// <param name="size">Size of the icon (both width and height)</param>
+        /// <param name="showTooltip">Whether to show a tooltip on hover</param>
+        /// <returns>True if the icon was clicked</returns>
+        public static bool RenderSpellIcon(int spellId, float size = 40.0f, bool showTooltip = true)
+        {
+            if (spellId <= 0)
+            {
+                // Render a placeholder for invalid spell ID
+                RenderSpellIconPlaceholder(size);
+                return false;
+            }
+
+            // Draw natively by spell id
+            imgui_DrawSpellIconBySpellID(spellId, size);
+
+            bool clicked = imgui_IsItemHovered() && imgui_IsMouseClicked(0);
+
+            if (showTooltip && imgui_IsItemHovered())
+            {
+                RenderSpellTooltip(spellId, GetSpellIconIndex(spellId));
+            }
+
+            return clicked;
+        }
+
+        /// <summary>
+        /// Renders a spell icon by its icon index
+        /// </summary>
+        /// <param name="iconIndex">The spell icon index (0-based)</param>
+        /// <param name="size">Size of the icon</param>
+        /// <param name="showTooltip">Whether to show tooltip on hover</param>
+        /// <param name="spellId">Optional spell ID for tooltip info</param>
+        /// <returns>True if the icon was clicked</returns>
+        public static bool RenderSpellIconByIndex(int iconIndex, float size = 40.0f, bool showTooltip = true, int spellId = 0)
+        {
+            try
+            {
+                if (!E3Next.UI.SpellIconManager.IsReady())
+                {
+                    // Try to initialize if not ready
+                    InitializeSpellIcons();
+                    if (!E3Next.UI.SpellIconManager.IsReady())
+                    {
+                        RenderSpellIconPlaceholder(size);
+                        return false;
+                    }
+                }
+
+                // Draw via native EQ texture animation wrapper
+                imgui_DrawSpellIconByIconIndex(iconIndex, size);
+
+                // Compute click based on hover state
+                bool clicked = imgui_IsItemHovered() && imgui_IsMouseClicked(0);
+
+                // Show tooltip on hover if enabled
+                if (showTooltip && imgui_IsItemHovered())
+                {
+                    RenderSpellTooltip(spellId, iconIndex);
+                }
+
+                return clicked;
+            }
+            catch (Exception ex)
+            {
+                E3Core.Utility.e3util._log.Write($"Error rendering spell icon {iconIndex}: {ex.Message}");
+                RenderSpellIconPlaceholder(size);
+                return false;
+            }
+        }
+
+        /// <summary>
+        /// Renders a clickable image button
+        /// </summary>
+        private static bool RenderIconButton(IntPtr textureId, float size)
+        {
+            // Use the ImGui Image function to render the texture
+            imgui_Image(textureId, size, size);
+            
+            // Check if the image was clicked
+            return imgui_IsItemHovered() && imgui_IsMouseClicked(0); // Left mouse button
+        }
+
+        /// <summary>
+        /// Renders a placeholder when spell icon is not available
+        /// </summary>
+        private static void RenderSpellIconPlaceholder(float size)
+        {
+            // Draw a simple colored rectangle as placeholder
+            imgui_PushStyleColor((int)ImGuiCol.Button, 0.3f, 0.3f, 0.3f, 1.0f);
+            imgui_ButtonEx("?", size, size);
+            imgui_PopStyleColor(1);
+
+            if (imgui_IsItemHovered())
+            {
+                imgui_BeginTooltip();
+                imgui_TextWrapped("Spell icon not available");
+                imgui_EndTooltip();
+            }
+        }
+
+        /// <summary>
+        /// Renders a tooltip with spell information
+        /// </summary>
+        private static void RenderSpellTooltip(int spellId, int iconIndex)
+        {
+            imgui_BeginTooltip();
+            
+            if (spellId > 0)
+            {
+                try
+                {
+                    // Get spell information from MQ
+                    string spellName = mq_ParseTLO($"${{Spell[{spellId}].Name}}");
+                    string spellLevel = mq_ParseTLO($"${{Spell[{spellId}].Level}}");
+                    string spellDescription = mq_ParseTLO($"${{Spell[{spellId}].Description}}");
+                    
+                    if (spellName != "NULL" && !string.IsNullOrEmpty(spellName))
+                    {
+                        imgui_TextColored(0.9f, 0.9f, 0.3f, 1.0f, spellName);
+                        
+                        if (spellLevel != "NULL" && !string.IsNullOrEmpty(spellLevel))
+                        {
+                            imgui_Text($"Level: {spellLevel}");
+                        }
+                        
+                        if (spellDescription != "NULL" && !string.IsNullOrEmpty(spellDescription) && spellDescription.Length > 0)
+                        {
+                            imgui_Separator();
+                            imgui_PushTextWrapPos(300.0f); // Wrap at 300 pixels
+                            imgui_TextWrapped(spellDescription);
+                            imgui_PopTextWrapPos();
+                        }
+                    }
+                    else
+                    {
+                        imgui_Text($"Spell ID: {spellId}");
+                    }
+                }
+                catch (Exception ex)
+                {
+                    imgui_Text($"Spell ID: {spellId}");
+                    imgui_Text($"Error: {ex.Message}");
+                }
+            }
+            else
+            {
+                imgui_Text($"Icon Index: {iconIndex}");
+            }
+            
+            imgui_EndTooltip();
+        }
+
+        /// <summary>
+        /// Gets the spell icon index for a given spell ID
+        /// This needs to be implemented based on EQ's spell data mapping
+        /// </summary>
+        private static int GetSpellIconIndex(int spellId)
+        {
+            try
+            {
+                // Query MQ for the spell's icon ID
+                string iconIdStr = mq_ParseTLO($"${{Spell[{spellId}].SpellIcon}}");
+                if (iconIdStr != "NULL" && int.TryParse(iconIdStr, out int iconId))
+                {
+                    // EQ's spell icon IDs need to be converted to 0-based indices
+                    // This conversion may need adjustment based on how EQ stores icon IDs
+                    return Math.Max(0, iconId - 1); // Convert to 0-based index
+                }
+            }
+            catch (Exception ex)
+            {
+                E3Core.Utility.e3util._log.Write($"Error getting spell icon index for spell {spellId}: {ex.Message}");
+            }
+            
+            return 0; // Default to first icon
+        }
+
+        /// <summary>
+        /// Initializes the spell icon system if not already done
+        /// </summary>
+        private static void InitializeSpellIcons()
+        {
+            try
+            {
+                if (!E3Next.UI.SpellIconManager.IsReady())
+                {
+                    // Try to get EQ directory from MQ
+                    string eqDir = mq_ParseTLO("${EverQuest.Path}");
+                    if (eqDir != "NULL" && !string.IsNullOrEmpty(eqDir))
+                    {
+                        E3Next.UI.SpellIconManager.Initialize(eqDir);
+                    }
+                    else
+                    {
+                        E3Core.Utility.e3util._log.Write("Could not determine EQ directory for spell icon initialization");
+                    }
+                }
+            }
+            catch (Exception ex)
+            {
+                E3Core.Utility.e3util._log.Write($"Error initializing spell icons: {ex.Message}");
+            }
+        }
+
+        #endregion
     }
 }
