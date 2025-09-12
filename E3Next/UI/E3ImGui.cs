@@ -229,36 +229,56 @@ namespace MonoCore
                         bool isActive = E3Core.Processors.Hunt.Enabled && E3Core.Processors.Hunt.Go;
                         bool enabled = E3Core.Processors.Hunt.Enabled;
                         
-                        // Single line status with simple text
-                        string statusText = isActive ? "HUNTING" : (enabled ? "READY" : "OFF");
-                        if (isActive)
-                            imgui_TextColored(0.2f, 0.9f, 0.2f, 1.0f, statusText);
-                        else if (enabled)
-                            imgui_TextColored(0.9f, 0.7f, 0.2f, 1.0f, statusText);
+                        // Functional status line with key info
+                        string status = E3Core.Processors.Hunt.Status ?? "Idle";
+                        string targetName = E3Core.Processors.Hunt.TargetName;
+                        int radius = E3Core.Processors.Hunt.Radius;
+                        
+                        // Show current target if we have one
+                        if (!string.IsNullOrEmpty(targetName) && E3Core.Processors.Hunt.TargetID > 0)
+                        {
+                            imgui_TextColored(0.9f, 0.6f, 0.6f, 1.0f, $"Target: {targetName}");
+                        }
                         else
-                            imgui_TextColored(0.6f, 0.6f, 0.6f, 1.0f, statusText);
-
-                        // Compact button layout with ASCII characters
-                        if (imgui_ButtonEx(enabled ? "ON" : "OFF", 35, 25))
+                        {
+                            imgui_TextColored(0.7f, 0.7f, 0.9f, 1.0f, $"Status: {status}");
+                        }
+                        
+                        // Quick info line
+                        imgui_TextColored(0.8f, 0.8f, 0.8f, 1.0f, $"Range: {radius}  State: {(isActive ? "Active" : enabled ? "Ready" : "Off")}");
+                        
+                        imgui_Separator();
+                        
+                        // Power toggle
+                        imgui_PushStyleColor(21, enabled ? 0.2f : 0.6f, enabled ? 0.8f : 0.3f, enabled ? 0.2f : 0.3f, 1.0f);
+                        if (imgui_ButtonEx(enabled ? "ON" : "OFF", 40, 25))
                         {
                             bool now = !enabled;
                             EnqueueUI(() => E3Core.Processors.Hunt.Enabled = now);
                         }
+                        imgui_PopStyleColor();
                         
                         imgui_SameLine();
+                        
+                        // Go/Stop with proper sizing for PAUSE text
                         bool go = E3Core.Processors.Hunt.Go;
-                        if (imgui_ButtonEx(go ? "GO" : "||", 35, 25))
+                        imgui_PushStyleColor(21, go ? 0.1f : 0.7f, go ? 0.7f : 0.5f, go ? 0.1f : 0.1f, 1.0f);
+                        if (imgui_ButtonEx(go ? "GO" : "STOP", 50, 25))
                         {
                             bool now = !go;
                             EnqueueUI(() => E3Core.Processors.Hunt.Go = now);
                         }
+                        imgui_PopStyleColor();
 
                         imgui_SameLine();
-                        // Expand button
-                        if (imgui_ButtonEx("+", 25, 25))
+                        
+                        // Expand with better text
+                        imgui_PushStyleColor(21, 0.3f, 0.5f, 0.8f, 1.0f);
+                        if (imgui_ButtonEx("More", 40, 25))
                         {
                             _huntWindowMinimized = false;
                         }
+                        imgui_PopStyleColor();
 
                         // Right-click anywhere on window to expand
                         if (imgui_IsWindowHovered() && imgui_IsMouseClicked(1))
@@ -275,7 +295,7 @@ namespace MonoCore
                     bool open = imgui_Begin(_e3HuntWindow, (int)ImGuiWindowFlags.ImGuiWindowFlags_None);
                     if (open)
                     {
-                        // Header with status indicator and minimize button
+                        // Enhanced header with improved visual hierarchy
                         if (imgui_BeginTable("##hunt_header", 3, 0, 0))
                         {
                             imgui_TableSetupColumn("Title", 0, 0);
@@ -283,35 +303,98 @@ namespace MonoCore
                             imgui_TableSetupColumn("Controls", 0, 0);
                             
                             imgui_TableNextColumn();
-                            imgui_TextColored(0.75f, 0.9f, 0.75f, 1.0f, "E3Next Hunt Mode");
+                            // Title with enhanced styling
+                            imgui_TextColored(0.9f, 0.95f, 1.0f, 1.0f, "E3Next Hunt Mode");
                             
                             imgui_TableNextColumn();
+                            // Enhanced status display
                             string status = E3Core.Processors.Hunt.Status ?? "Unknown";
                             bool isActive = E3Core.Processors.Hunt.Enabled && E3Core.Processors.Hunt.Go;
+                            bool enabled = E3Core.Processors.Hunt.Enabled;
+                            
+                            // State indicator block
+                            string stateBlock = isActive ? "[ACTIVE]" : (enabled ? "[READY]" : "[OFF]");
                             if (isActive && status.Contains("Scanning"))
-                                imgui_TextColored(0.2f, 0.8f, 0.2f, 1.0f, $"{status}");
+                            {
+                                imgui_TextColored(0.3f, 1.0f, 0.3f, 1.0f, stateBlock);
+                                imgui_SameLine();
+                                imgui_TextColored(0.7f, 0.9f, 0.7f, 1.0f, $" {status}");
+                            }
                             else if (isActive)
-                                imgui_TextColored(0.8f, 0.8f, 0.2f, 1.0f, $"{status}");
+                            {
+                                imgui_TextColored(0.9f, 0.9f, 0.3f, 1.0f, stateBlock);
+                                imgui_SameLine();
+                                imgui_TextColored(0.9f, 0.8f, 0.6f, 1.0f, $" {status}");
+                            }
+                            else if (enabled)
+                            {
+                                imgui_TextColored(0.8f, 0.6f, 0.3f, 1.0f, stateBlock);
+                                imgui_SameLine();
+                                imgui_TextColored(0.7f, 0.7f, 0.7f, 1.0f, $" {status}");
+                            }
                             else
-                                imgui_TextColored(0.6f, 0.6f, 0.6f, 1.0f, $"{status}");
+                            {
+                                imgui_TextColored(0.6f, 0.6f, 0.6f, 1.0f, stateBlock);
+                                imgui_SameLine();
+                                imgui_TextColored(0.5f, 0.5f, 0.5f, 1.0f, $" {status}");
+                            }
                             
                             imgui_TableNextColumn();
+                            // Minimize button with better styling
+                            imgui_PushStyleColor(21, 0.2f, 0.4f, 0.7f, 1.0f); // Blue button
                             if (imgui_Button("Float"))
                             {
                                 _huntWindowMinimized = true;
                             }
+                            imgui_PopStyleColor();
                             
                             imgui_EndTable();
                         }
                     
                     imgui_Separator();
 
-                    // Tab bar for organized sections
+                    // Enhanced tab bar with visual styling
+                    imgui_PushStyleColor(33, 0.15f, 0.25f, 0.4f, 1.0f); // Tab background
+                    imgui_PushStyleColor(34, 0.3f, 0.5f, 0.8f, 1.0f);   // Tab active
+                    imgui_PushStyleColor(35, 0.2f, 0.4f, 0.6f, 1.0f);   // Tab hovered
+                    
                     if (imgui_BeginTabBar("##hunt_tabs"))
                     {
                         // Main Controls Tab
                         if (imgui_BeginTabItem("Controls"))
                         {
+                            // Quick action controls
+                            imgui_PushStyleColor(21, 0.2f, 0.6f, 0.2f, 1.0f);
+                            if (imgui_Button("Start Hunting"))
+                            {
+                                EnqueueUI(() => {
+                                    E3Core.Processors.Hunt.Enabled = true;
+                                    E3Core.Processors.Hunt.Go = true;
+                                });
+                            }
+                            imgui_PopStyleColor();
+                            
+                            imgui_SameLine();
+                            imgui_PushStyleColor(21, 0.6f, 0.6f, 0.2f, 1.0f);
+                            if (imgui_Button("Pause Hunt"))
+                            {
+                                EnqueueUI(() => E3Core.Processors.Hunt.Go = false);
+                            }
+                            imgui_PopStyleColor();
+                            
+                            imgui_SameLine();
+                            imgui_PushStyleColor(21, 0.6f, 0.2f, 0.2f, 1.0f);
+                            if (imgui_Button("Stop Hunt"))
+                            {
+                                EnqueueUI(() => {
+                                    E3Core.Processors.Hunt.Go = false;
+                                    E3Core.Processors.Hunt.Enabled = false;
+                                });
+                            }
+                            imgui_PopStyleColor();
+                            
+                            imgui_Separator();
+                            
                             // Control toggles in a table
                             if (imgui_BeginTable("##hunt_controls", 2, 0, 0))
                             {
@@ -347,8 +430,40 @@ namespace MonoCore
                             
                             imgui_Separator();
                             
-                            // Range settings
-                            imgui_TextColored(0.8f, 0.9f, 1.0f, 1.0f, "Search Range");
+                            // Range settings with enhanced header
+                            imgui_Separator();
+                            imgui_PushStyleColor(23, 0.2f, 0.3f, 0.5f, 0.3f); // Header background
+                            imgui_TextColored(0.9f, 1.0f, 1.0f, 1.0f, "Search Range Settings");
+                            imgui_PopStyleColor();
+                            
+                            // Quick range buttons
+                            int currentRadius = E3Core.Processors.Hunt.Radius;
+                            imgui_Text($"Current Radius: {currentRadius}");
+                            
+                            if (imgui_Button("100"))
+                            {
+                                EnqueueUI(() => E3Core.Processors.Hunt.Radius = 100);
+                                _huntRadiusBuf = "100";
+                            }
+                            imgui_SameLine();
+                            if (imgui_Button("250"))
+                            {
+                                EnqueueUI(() => E3Core.Processors.Hunt.Radius = 250);
+                                _huntRadiusBuf = "250";
+                            }
+                            imgui_SameLine();
+                            if (imgui_Button("500"))
+                            {
+                                EnqueueUI(() => E3Core.Processors.Hunt.Radius = 500);
+                                _huntRadiusBuf = "500";
+                            }
+                            imgui_SameLine();
+                            if (imgui_Button("1000"))
+                            {
+                                EnqueueUI(() => E3Core.Processors.Hunt.Radius = 1000);
+                                _huntRadiusBuf = "1000";
+                            }
+                            
                             if (imgui_BeginTable("##hunt_range", 2, 0, 0))
                             {
                                 imgui_TableSetupColumn("Parameter", 0, 100);
@@ -356,7 +471,7 @@ namespace MonoCore
                                 
                                 imgui_TableNextRow();
                                 imgui_TableNextColumn();
-                                imgui_Text("Radius:");
+                                imgui_Text("Custom Radius:");
                                 imgui_TableNextColumn();
                                 imgui_SetNextItemWidth(100);
                                 _huntRadiusBuf = string.IsNullOrEmpty(_huntRadiusBuf) ? E3Core.Processors.Hunt.Radius.ToString() : _huntRadiusBuf;
@@ -383,8 +498,11 @@ namespace MonoCore
                             
                             imgui_Separator();
                             
-                            // Camp settings
-                            imgui_TextColored(0.8f, 0.9f, 1.0f, 1.0f, "Camp Settings");
+                            // Camp settings with enhanced header
+                            imgui_Separator();
+                            imgui_PushStyleColor(23, 0.2f, 0.5f, 0.3f, 0.3f); // Green header background
+                            imgui_TextColored(0.9f, 1.0f, 0.9f, 1.0f, "Camp Settings");
+                            imgui_PopStyleColor();
                             bool camp = E3Core.Processors.Hunt.CampOn;
                             bool newCamp = imgui_Checkbox("Camp Mode", camp);
                             if (newCamp != camp)
@@ -414,8 +532,31 @@ namespace MonoCore
                         // Filters Tab
                         if (imgui_BeginTabItem("Filters"))
                         {
-                            imgui_TextColored(0.8f, 0.9f, 1.0f, 1.0f, "Target Filters");
+                            // Enhanced filter section header
+                            imgui_PushStyleColor(23, 0.5f, 0.2f, 0.3f, 0.3f); // Reddish header background
+                            imgui_TextColored(1.0f, 0.9f, 0.9f, 1.0f, "Target Filters");
+                            imgui_PopStyleColor();
                             imgui_TextWrapped("Use | to separate multiple filter terms. 'ALL' means no filter, 'NONE' means no exclusions.");
+                            
+                            // Quick filter presets
+                            imgui_Text("Quick Presets:");
+                            if (imgui_Button("All Mobs"))
+                            {
+                                EnqueueUI(() => E3Core.Processors.Hunt.PullFilters = "ALL");
+                                _huntPullBuf = "ALL";
+                            }
+                            imgui_SameLine();
+                            if (imgui_Button("Animals Only"))
+                            {
+                                EnqueueUI(() => E3Core.Processors.Hunt.PullFilters = "wolf|bear|spider|rat|bat|snake");
+                                _huntPullBuf = "wolf|bear|spider|rat|bat|snake";
+                            }
+                            imgui_SameLine();
+                            if (imgui_Button("Undead Only"))
+                            {
+                                EnqueueUI(() => E3Core.Processors.Hunt.PullFilters = "skeleton|zombie|spirit|ghost|wraith");
+                                _huntPullBuf = "skeleton|zombie|spirit|ghost|wraith";
+                            }
                             
                             imgui_Text("Pull Filters (Include):");
                             imgui_SetNextItemWidth(-1);
@@ -427,6 +568,26 @@ namespace MonoCore
                             }
 
                             imgui_Text("Ignore Filters (Exclude):");
+                            
+                            // Quick ignore presets
+                            if (imgui_Button("Clear Ignores"))
+                            {
+                                EnqueueUI(() => E3Core.Processors.Hunt.IgnoreFilters = "NONE");
+                                _huntIgnoreBuf = "NONE";
+                            }
+                            imgui_SameLine();
+                            if (imgui_Button("Ignore Guards"))
+                            {
+                                EnqueueUI(() => E3Core.Processors.Hunt.IgnoreFilters = "guard|merchant|banker|guildmaster");
+                                _huntIgnoreBuf = "guard|merchant|banker|guildmaster";
+                            }
+                            imgui_SameLine();
+                            if (imgui_Button("Ignore NPCs"))
+                            {
+                                EnqueueUI(() => E3Core.Processors.Hunt.IgnoreFilters = "merchant|banker|guildmaster|trainer|vendor");
+                                _huntIgnoreBuf = "merchant|banker|guildmaster|trainer|vendor";
+                            }
+                            
                             imgui_SetNextItemWidth(-1);
                             _huntIgnoreBuf = string.IsNullOrEmpty(_huntIgnoreBuf) ? (E3Core.Processors.Hunt.IgnoreFilters ?? string.Empty) : _huntIgnoreBuf;
                             if (imgui_InputText("##ignore_filters", _huntIgnoreBuf))
@@ -435,6 +596,8 @@ namespace MonoCore
                                 EnqueueUI(() => E3Core.Processors.Hunt.IgnoreFilters = _huntIgnoreBuf);
                             }
                             
+                            // Enhanced ignore button with warning styling
+                            imgui_PushStyleColor(21, 0.7f, 0.3f, 0.1f, 1.0f); // Orange warning button
                             if (imgui_Button("Ignore Current Target"))
                             {
                                 EnqueueUI(() => {
@@ -447,6 +610,7 @@ namespace MonoCore
                                 // Mark for refresh after adding
                                 _uiDataNeedsRefresh = true;
                             }
+                            imgui_PopStyleColor();
 
                             imgui_Separator();
                             imgui_TextColored(0.8f, 0.85f, 0.95f, 1.0f, $"Permanently Ignored Mobs - Zone: {_uiCurrentZone}");
@@ -515,8 +679,8 @@ namespace MonoCore
                             imgui_EndTabItem();
                         }
 
-                        // Pulling Tab
-                        if (imgui_BeginTabItem("Pulling"))
+                        // Pull Config Tab
+                        if (imgui_BeginTabItem("Pull Config"))
                         {
                             imgui_TextColored(0.9f, 0.8f, 0.6f, 1.0f, "Pull Configuration");
                             
@@ -652,12 +816,47 @@ namespace MonoCore
                         // Targets Tab
                         if (imgui_BeginTabItem("Targets"))
                         {
-                            imgui_TextColored(0.85f, 0.9f, 1.0f, 1.0f, "Hunt Candidates (last scan)");
+                            // Enhanced candidates header
+                            imgui_PushStyleColor(23, 0.2f, 0.4f, 0.2f, 0.3f); // Green header background
+                            imgui_TextColored(0.9f, 1.0f, 0.9f, 1.0f, "Hunt Candidates (Last Scan)");
+                            imgui_PopStyleColor();
+                            
+                            // Target management controls
+                            imgui_PushStyleColor(21, 0.2f, 0.6f, 0.2f, 1.0f); // Green action button
+                            if (imgui_Button("Target Nearest"))
+                            {
+                                EnqueueUI(() => {
+                                    var availableTargets = E3Core.Processors.Hunt.GetCandidatesSnapshot();
+                                    if (availableTargets.Count > 0)
+                                    {
+                                        var nearest = availableTargets.OrderBy(c => c.distance).FirstOrDefault();
+                                        if (nearest.id > 0)
+                                        {
+                                            E3Core.Processors.Hunt.ForceSetTarget(nearest.id);
+                                        }
+                                    }
+                                });
+                            }
+                            imgui_PopStyleColor();
+                            
                             imgui_SameLine();
+                            imgui_PushStyleColor(21, 0.6f, 0.4f, 0.1f, 1.0f); // Orange utility button
                             if (imgui_Button("Clear Temp Ignores"))
                             {
                                 EnqueueUI(() => E3Core.Processors.Hunt.ClearTempIgnores());
                             }
+                            imgui_PopStyleColor();
+                            
+                            imgui_SameLine();
+                            imgui_PushStyleColor(21, 0.6f, 0.2f, 0.2f, 1.0f); // Red button
+                            if (imgui_Button("Stop Current Target"))
+                            {
+                                EnqueueUI(() => {
+                                    E3Core.Processors.Hunt.TargetID = 0;
+                                    E3Core.Processors.Hunt.TargetName = string.Empty;
+                                });
+                            }
+                            imgui_PopStyleColor();
 
                             var candidates = E3Core.Processors.Hunt.GetCandidatesSnapshot();
                             if (candidates == null || candidates.Count == 0)
@@ -706,14 +905,20 @@ namespace MonoCore
                                         imgui_TableNextColumn(); imgui_Text(string.Format("{0:0.0}", c.distance));
                                         imgui_TableNextColumn(); imgui_Text(c.pathLen > 0 ? string.Format("{0:0}", c.pathLen) : "-");
                                         imgui_TableNextColumn();
+                                        // Target button with green styling
+                                        imgui_PushStyleColor(21, 0.2f, 0.7f, 0.2f, 1.0f); // Green target button
                                         if (imgui_Button($"Target##{i}"))
                                         {
                                             int tid = c.id;
                                             EnqueueUI(() => E3Core.Processors.Hunt.ForceSetTarget(tid));
                                         }
+                                        imgui_PopStyleColor();
+                                        
                                         imgui_SameLine();
-                                        // Stack action buttons vertically to avoid pushing table width
-                                        if (imgui_Button($"Ignore Name##{i}"))
+                                        
+                                        // Ignore button with red styling
+                                        imgui_PushStyleColor(21, 0.7f, 0.2f, 0.2f, 1.0f); // Red ignore button
+                                        if (imgui_Button($"Ignore##{i}"))
                                         {
                                             string nm = c.name ?? string.Empty;
                                             if (!string.IsNullOrEmpty(nm))
@@ -722,6 +927,7 @@ namespace MonoCore
                                                 _uiDataNeedsRefresh = true;
                                             }
                                         }
+                                        imgui_PopStyleColor();
                                     }
                                     imgui_EndTable();
                                 }
@@ -734,7 +940,10 @@ namespace MonoCore
                         // Status Tab
                         if (imgui_BeginTabItem("Status"))
                         {
-                            imgui_TextColored(0.8f, 0.9f, 1.0f, 1.0f, "Current Status");
+                            // Enhanced status header
+                            imgui_PushStyleColor(23, 0.3f, 0.2f, 0.5f, 0.3f); // Purple header background
+                            imgui_TextColored(1.0f, 0.9f, 1.0f, 1.0f, "Current Status");
+                            imgui_PopStyleColor();
                             
                             if (imgui_BeginTable("##hunt_status", 2, 0, 0))
                             {
@@ -835,13 +1044,18 @@ namespace MonoCore
                         
                         imgui_EndTabBar();
                     }
+                    
+                    // Clean up tab styling (pop 3 colors)
+                    imgui_PopStyleColor(3); // Tab background, active, hovered
 
-                    // Bottom controls
+                    // Bottom controls with enhanced styling
                     imgui_Separator();
+                    imgui_PushStyleColor(21, 0.5f, 0.2f, 0.2f, 1.0f); // Red close button
                     if (imgui_RightAlignButton("Close"))
                     {
                         _huntWindowOpen = false;
                     }
+                    imgui_PopStyleColor();
                     }
                     imgui_End();
                 }
@@ -2284,6 +2498,35 @@ namespace MonoCore
                             }
                         }
                         
+                        // HealPct suffix helper for healing-related sections and keys
+                        bool showHealPctHelper = false;
+                        if (isHeals || string.Equals(_cfgSelectedSection, "Heal EmergencyHeals", StringComparison.OrdinalIgnoreCase) ||
+                            string.Equals(_cfgSelectedSection, "Heal EmergencyGroupHeals", StringComparison.OrdinalIgnoreCase) ||
+                            string.Equals(_cfgSelectedSection, "LifeSupport", StringComparison.OrdinalIgnoreCase) ||
+                            string.Equals(_cfgSelectedSection, "HealXTarget", StringComparison.OrdinalIgnoreCase) ||
+                            string.Equals(_cfgSelectedSection, "HealGroup", StringComparison.OrdinalIgnoreCase) ||
+                            string.Equals(_cfgSelectedSection, "HealParty", StringComparison.OrdinalIgnoreCase))
+                        {
+                            showHealPctHelper = true;
+                        }
+                        
+                        if (showHealPctHelper)
+                        {
+                            imgui_Separator();
+                            imgui_TextColored(0.7f, 0.9f, 0.7f, 1.0f, "Quick HealPct Entry");
+                            
+                            // Render the HealPct suffix input helper
+                            string helperId = $"{_cfgSelectedSection}_{_cfgSelectedKey}";
+                            if (RenderHealPctSuffixInput(helperId, selectedSection, 200f))
+                            {
+                                // Successfully added a spell with HealPct suffix
+                                // The helper function handles adding to the configuration
+                            }
+                            
+                            // Help text
+                            imgui_TextColored(0.6f, 0.8f, 0.6f, 1.0f, "Enter spell manually or select from catalog, set threshold %, then click to add.");
+                        }
+                        
                         // Ifs sample import button (only when editing the Ifs section)
                         if (string.Equals(_cfgSelectedSection, "Ifs", StringComparison.OrdinalIgnoreCase))
                         {
@@ -3465,6 +3708,178 @@ namespace MonoCore
             }
 
             return found.OrderBy(x => x, StringComparer.OrdinalIgnoreCase).ToList();
+        }
+
+        // HealPct suffix input helper state
+        private static string _cfgHealPctInputBuffer = string.Empty;
+        private static string _cfgHealPctThreshold = "80";
+        private static AddType _cfgHealPctCatalogType = AddType.Spells;
+        private static string _cfgHealPctSelectedSpell = string.Empty;
+        private static string _cfgHealPctFilter = string.Empty;
+        
+        /// <summary>
+        /// Renders an input field with an inline '/HealPct|##' suffix button and catalog selection.
+        /// This makes it easy to add healing percentage thresholds to spell names when configuring heals.
+        /// </summary>
+        /// <param name="id">Unique ID for the input field</param>
+        /// <param name="selectedSection">The current ini section being edited</param>
+        /// <param name="width">Width of the input field (0 for auto)</param>
+        /// <returns>True if a spell with HealPct suffix was added</returns>
+        private static bool RenderHealPctSuffixInput(string id, SectionData selectedSection, float width = 0f)
+        {
+            bool spellAdded = false;
+            
+            // Manual entry row
+            if (width > 0) imgui_SetNextItemWidth(width);
+            if (imgui_InputText($"##healPctSpell_{id}", _cfgHealPctInputBuffer))
+            {
+                _cfgHealPctInputBuffer = imgui_InputText_Get($"##healPctSpell_{id}");
+            }
+            imgui_SameLine();
+            
+            imgui_SetNextItemWidth(50f);
+            if (imgui_InputText($"##healPctThreshold_{id}", _cfgHealPctThreshold))
+            {
+                _cfgHealPctThreshold = imgui_InputText_Get($"##healPctThreshold_{id}");
+            }
+            imgui_SameLine();
+            
+            imgui_PushStyleColor(21, 0.2f, 0.7f, 0.2f, 1.0f);
+            bool addManualClicked = imgui_Button($"+ /HealPct##{id}");
+            imgui_PopStyleColor();
+            
+            // Catalog selection row
+            imgui_TextColored(0.7f, 0.8f, 0.9f, 1.0f, "Or pick from catalog:");
+            
+            // Type selection
+            imgui_SetNextItemWidth(90f);
+            if (imgui_BeginCombo($"##healPctType_{id}", _cfgHealPctCatalogType.ToString(), 0))
+            {
+                foreach (AddType t in Enum.GetValues(typeof(AddType)))
+                {
+                    bool sel = t == _cfgHealPctCatalogType;
+                    if (imgui_Selectable(t.ToString(), sel)) _cfgHealPctCatalogType = t;
+                }
+                EndComboSafe();
+            }
+            imgui_SameLine();
+            
+            // Filter
+            imgui_SetNextItemWidth(120f);
+            if (imgui_InputText($"##healPctFilter_{id}", _cfgHealPctFilter))
+            {
+                _cfgHealPctFilter = imgui_InputText_Get($"##healPctFilter_{id}");
+            }
+            imgui_SameLine();
+            
+            // Spell selection dropdown - show filtered spells from selected catalog
+            var catalog = GetCatalogByType(_cfgHealPctCatalogType);
+            var allSpells = catalog.Values.SelectMany(submap => submap.Values.SelectMany(spells => spells));
+            
+            string filter = _cfgHealPctFilter?.Trim() ?? string.Empty;
+            if (!string.IsNullOrEmpty(filter))
+            {
+                allSpells = allSpells.Where(s => s.Name.IndexOf(filter, StringComparison.OrdinalIgnoreCase) >= 0);
+            }
+            
+            var sortedSpells = allSpells.OrderByDescending(s => s.Level).ThenBy(s => s.Name).Take(50).ToList();
+            string previewText = string.IsNullOrEmpty(_cfgHealPctSelectedSpell) ? "Select spell..." : _cfgHealPctSelectedSpell;
+            
+            imgui_SetNextItemWidth(200f);
+            if (imgui_BeginCombo($"##healPctSpellSelect_{id}", previewText, 0))
+            {
+                foreach (var spell in sortedSpells)
+                {
+                    bool sel = spell.Name.Equals(_cfgHealPctSelectedSpell, StringComparison.OrdinalIgnoreCase);
+                    string displayText = $"[{spell.Level}] {spell.Name}";
+                    if (imgui_Selectable(displayText, sel))
+                    {
+                        _cfgHealPctSelectedSpell = spell.Name;
+                    }
+                }
+                EndComboSafe();
+            }
+            imgui_SameLine();
+            
+            // Add from catalog button
+            imgui_PushStyleColor(21, 0.2f, 0.6f, 0.8f, 1.0f); // Blue button
+            bool addCatalogClicked = imgui_Button($"+ From Catalog##{id}");
+            imgui_PopStyleColor();
+            
+            // Handle manual entry
+            if (addManualClicked && !string.IsNullOrWhiteSpace(_cfgHealPctInputBuffer))
+            {
+                string spellName = _cfgHealPctInputBuffer.Trim();
+                string threshold = _cfgHealPctThreshold.Trim();
+                
+                if (!int.TryParse(threshold, out int thresholdValue))
+                {
+                    thresholdValue = 80;
+                    threshold = "80";
+                }
+                
+                thresholdValue = Math.Max(1, Math.Min(99, thresholdValue));
+                threshold = thresholdValue.ToString();
+                
+                string spellWithSuffix = $"{spellName}/HealPct|{threshold}";
+                
+                if (TryAddSpellToSelectedKey(selectedSection, spellWithSuffix))
+                {
+                    _cfgHealPctInputBuffer = string.Empty;
+                    spellAdded = true;
+                }
+            }
+            
+            // Handle catalog selection
+            if (addCatalogClicked && !string.IsNullOrWhiteSpace(_cfgHealPctSelectedSpell))
+            {
+                string threshold = _cfgHealPctThreshold.Trim();
+                
+                if (!int.TryParse(threshold, out int thresholdValue))
+                {
+                    thresholdValue = 80;
+                    threshold = "80";
+                }
+                
+                thresholdValue = Math.Max(1, Math.Min(99, thresholdValue));
+                threshold = thresholdValue.ToString();
+                
+                string spellWithSuffix = $"{_cfgHealPctSelectedSpell}/HealPct|{threshold}";
+                
+                if (TryAddSpellToSelectedKey(selectedSection, spellWithSuffix))
+                {
+                    _cfgHealPctSelectedSpell = string.Empty;
+                    spellAdded = true;
+                }
+            }
+            
+            return spellAdded;
+        }
+        
+        /// <summary>
+        /// Helper to add a spell to the currently selected configuration key
+        /// </summary>
+        private static bool TryAddSpellToSelectedKey(SectionData selectedSection, string spellWithSuffix)
+        {
+            if (selectedSection != null)
+            {
+                var keyData = selectedSection.Keys?.GetKeyData(_cfgSelectedKey ?? string.Empty);
+                if (keyData != null)
+                {
+                    var values = GetValues(keyData);
+                    // Check if the exact spell (without suffix) already exists
+                    string spellName = spellWithSuffix.Split('/')[0];
+                    bool alreadyExists = values.Any(v => v.Split('/')[0].Equals(spellName, StringComparison.OrdinalIgnoreCase));
+                    
+                    if (!alreadyExists)
+                    {
+                        values.Add(spellWithSuffix);
+                        WriteValues(keyData, values);
+                        return true;
+                    }
+                }
+            }
+            return false;
         }
     }
 }

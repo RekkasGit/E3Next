@@ -8,46 +8,34 @@ E3Next is an automation software for EverQuest using the MQ2Mono plugin, written
 
 **Dependencies**: Requires MQ2Mono plugin (https://github.com/RekkasGit/MQ2Mono)
 
-## Common Development Commands
+## Development Guidelines
 
-### Building the Project
-```bash
-# Build the entire solution
-msbuild MQ2MonoSharp.sln /p:Configuration=Debug
-
-# Build release version
-msbuild MQ2MonoSharp.sln /p:Configuration=Release
-
-# Build specific project (example: E3Next core)
-msbuild E3Next\E3Next.csproj /p:Configuration=Debug
-
-# Alternative using dotnet CLI (if applicable)
-dotnet build MQ2MonoSharp.sln
-```
+### Important Notes
+- **Do not attempt to build this project automatically** - It has specific dependencies on MQ2Mono and EverQuest runtime environment
+- This project requires MQ2Mono plugin to be properly installed and configured
+- Building should be done through Visual Studio or manually when needed
+- The solution contains both C# and C++ projects with complex interdependencies
 
 ### Development Environment Setup
-```bash
-# Set environment variable for build destination (optional)
-$env:E3BuildDest = "C:\path\to\your\eq\folder"
-
-# The PostBuildEvent will automatically copy files if E3BuildDest is set
-# Files copied: *.dll, *.exe, *.exe.config
-```
+- Ensure MQ2Mono plugin is installed: https://github.com/RekkasGit/MQ2Mono
+- Optional: Set `E3BuildDest` environment variable to automatically copy built files
+- The PostBuildEvent will copy *.dll, *.exe, *.exe.config files if E3BuildDest is set
 
 ### Testing/Running
-```bash
-# In EverQuest with MQ2Mono loaded, start E3Next:
-# /mono e3
-```
+- Load in EverQuest with MQ2Mono: `/mono e3`
+- Requires proper EverQuest and MacroQuest environment
 
-### Package Management
-```bash
-# Restore NuGet packages
-nuget restore MQ2MonoSharp.sln
+### Package Dependencies
+- Uses NuGet packages for various libraries (NetMQ, Google.Protobuf, etc.)
+- INI file parsing, SQLite, and networking components
+- Do not restore packages automatically - handle manually when needed
 
-# Or using dotnet
-dotnet restore MQ2MonoSharp.sln
-```
+### Development Workflow
+- Make code changes using Visual Studio or preferred editor
+- **Avoid automatic building/compilation** - this requires specific game environment
+- Test changes in actual EverQuest environment with MQ2Mono loaded
+- ImGui UI changes require MQ2Mono with ImGui support
+- Core.cs contains the bridge between C++ MQ2Mono and C# - handle with care
 
 ## Architecture Overview
 

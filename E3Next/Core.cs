@@ -1378,6 +1378,9 @@ namespace MonoCore
         public extern static void imgui_PushStyleColor(int which, float r, float g, float b, float a);
         [MethodImpl(MethodImplOptions.InternalCall)]
         public extern static void imgui_PopStyleColor(int count);
+        
+        // Convenience wrapper to pop a single style color
+        public static void imgui_PopStyleColor() => imgui_PopStyleColor(1);
         // Wrapping and window constraints
         [MethodImpl(MethodImplOptions.InternalCall)]
         public extern static void imgui_TextWrapped(string text);

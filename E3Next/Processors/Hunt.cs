@@ -56,7 +56,29 @@ namespace E3Core.Processors
             if (!_navigationOwned) return;
             _navigationOwned = false;
             _log.Write($"Hunt: Navigation control released by {releaser}");
-            try { MQ.Cmd("/nav stop"); } catch { }
+            
+            // Check if SmartLoot is actively navigating before stopping navigation
+            bool shouldStopNav = true;
+            try 
+            {
+                // Don't stop navigation if SmartLoot has new corpses or is peer-triggered
+                // This prevents interference with SmartLoot's corpse navigation
+                bool slHasNewCorpses = MQ.Query<bool>("${SmartLoot.HasNewCorpses}");
+                bool slIsPeerTriggered = MQ.Query<bool>("${SmartLoot.IsPeerTriggered}");
+                
+                if (slHasNewCorpses || slIsPeerTriggered)
+                {
+                    shouldStopNav = false;
+                    _log.Write($"Hunt: Not stopping nav - SmartLoot active (NewCorpses={slHasNewCorpses}, PeerTriggered={slIsPeerTriggered})");
+                }
+            } 
+            catch { /* If we can't check SmartLoot state, default to stopping nav */ }
+            
+            if (shouldStopNav)
+            {
+                try { MQ.Cmd("/nav stop"); } catch { }
+            }
+            
             try { Hunt.ResetNavTargetTracking(); } catch { }
         }
 
