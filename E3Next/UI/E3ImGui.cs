@@ -10,12 +10,59 @@ using E3Core.Processors;
 using NetMQ;
 using NetMQ.Sockets;
 using Google.Protobuf;
+using System.Runtime.InteropServices;
+using System.Runtime.CompilerServices;
 
 namespace MonoCore
 {
     // /e3imgui UI extracted into dedicated partial class file
     public static partial class Core
     {
+        // Theme: darker greys with teal accents
+        private static readonly int _themePushCount = 27;
+        private static void PushE3Theme()
+        {
+            // Backgrounds
+            imgui_PushStyleColor((int)ImGuiCol.WindowBg, 0.13f, 0.13f, 0.14f, 1.0f);
+            imgui_PushStyleColor((int)ImGuiCol.ChildBg,  0.11f, 0.11f, 0.12f, 1.0f);
+            // Frames
+            imgui_PushStyleColor((int)ImGuiCol.FrameBg,         0.17f, 0.18f, 0.20f, 1.0f);
+            imgui_PushStyleColor((int)ImGuiCol.FrameBgHovered,  0.20f, 0.21f, 0.23f, 1.0f);
+            imgui_PushStyleColor((int)ImGuiCol.FrameBgActive,   0.19f, 0.20f, 0.22f, 1.0f);
+            // Buttons (teal accent)
+            imgui_PushStyleColor((int)ImGuiCol.Button,         0.13f, 0.55f, 0.53f, 1.0f);
+            imgui_PushStyleColor((int)ImGuiCol.ButtonHovered,  0.17f, 0.66f, 0.64f, 1.0f);
+            imgui_PushStyleColor((int)ImGuiCol.ButtonActive,   0.12f, 0.48f, 0.47f, 1.0f);
+            // Headers (used by tree nodes, selectable headers)
+            imgui_PushStyleColor((int)ImGuiCol.Header,         0.12f, 0.50f, 0.49f, 0.55f);
+            imgui_PushStyleColor((int)ImGuiCol.HeaderHovered,  0.16f, 0.62f, 0.60f, 0.80f);
+            imgui_PushStyleColor((int)ImGuiCol.HeaderActive,   0.12f, 0.50f, 0.49f, 1.00f);
+            // Tabs
+            imgui_PushStyleColor((int)ImGuiCol.Tab,               0.11f, 0.48f, 0.46f, 1.0f);
+            imgui_PushStyleColor((int)ImGuiCol.TabHovered,        0.16f, 0.62f, 0.60f, 1.0f);
+            imgui_PushStyleColor((int)ImGuiCol.TabActive,         0.13f, 0.55f, 0.53f, 1.0f);
+            imgui_PushStyleColor((int)ImGuiCol.TabUnfocused,      0.09f, 0.09f, 0.10f, 1.0f);
+            imgui_PushStyleColor((int)ImGuiCol.TabUnfocusedActive,0.11f, 0.11f, 0.12f, 1.0f);
+            // Sliders / checks
+            imgui_PushStyleColor((int)ImGuiCol.SliderGrab,       0.29f, 0.79f, 0.76f, 1.0f);
+            imgui_PushStyleColor((int)ImGuiCol.SliderGrabActive, 0.36f, 0.86f, 0.80f, 1.0f);
+            imgui_PushStyleColor((int)ImGuiCol.CheckMark,        0.36f, 0.86f, 0.80f, 1.0f);
+            // Titles
+            imgui_PushStyleColor((int)ImGuiCol.TitleBg,        0.10f, 0.10f, 0.11f, 1.0f);
+            imgui_PushStyleColor((int)ImGuiCol.TitleBgActive,  0.12f, 0.12f, 0.14f, 1.0f);
+            // Separators
+            imgui_PushStyleColor((int)ImGuiCol.Separator,         0.25f, 0.27f, 0.30f, 1.0f);
+            imgui_PushStyleColor((int)ImGuiCol.SeparatorHovered,  0.30f, 0.33f, 0.36f, 1.0f);
+            imgui_PushStyleColor((int)ImGuiCol.SeparatorActive,   0.21f, 0.60f, 0.60f, 1.0f);
+            // Scrollbars
+            imgui_PushStyleColor((int)ImGuiCol.ScrollbarGrab,        0.28f, 0.30f, 0.32f, 1.0f);
+            imgui_PushStyleColor((int)ImGuiCol.ScrollbarGrabHovered, 0.32f, 0.34f, 0.36f, 1.0f);
+            imgui_PushStyleColor((int)ImGuiCol.ScrollbarGrabActive,  0.36f, 0.38f, 0.40f, 1.0f);
+        }
+        private static void PopE3Theme()
+        {
+            imgui_PopStyleColor(_themePushCount);
+        }
         // Config UI toggle: "/e3imgui".
         private static readonly string _e3ImGuiWindow = "E3Next Config";
         private static bool _imguiInitDone = false;
@@ -121,6 +168,7 @@ namespace MonoCore
         // Dropdown support (feature-detect combo availability to avoid crashes on older MQ2Mono)
         private static bool _comboAvailable = true;
 
+        
         public static void OnUpdateImGui()
         {
             try
@@ -153,7 +201,8 @@ namespace MonoCore
             // Only render if ImGui is available and ready
             if (_imguiContextReady && imgui_Begin_OpenFlagGet(_e3ImGuiWindow))
             {
-                
+                // Apply E3 theme (dark grey + teal accents)
+                PushE3Theme();
                 imgui_Begin(_e3ImGuiWindow, (int)ImGuiWindowFlags.ImGuiWindowFlags_None);
 
                 // Header with better styling
@@ -211,6 +260,7 @@ namespace MonoCore
 
 
                 imgui_End();
+                PopE3Theme();
             }
 
             // Render Hunt window if toggled
@@ -227,6 +277,8 @@ namespace MonoCore
                     // Semi-transparent background for subtle appearance
                     imgui_SetNextWindowBgAlpha(0.9f);
                     
+                    // Match E3 theme for the float window
+                    PushE3Theme();
                     bool open = imgui_Begin("E3Hunt Float", windowFlags);
                     if (open)
                     {
@@ -292,11 +344,13 @@ namespace MonoCore
                         }
                     }
                     imgui_End();
+                    PopE3Theme();
                 }
                 else
                 {
                     // Full window - original layout
                     imgui_SetNextWindowSizeConstraints(450, 300, 800, 600);
+                    PushE3Theme();
                     bool open = imgui_Begin(_e3HuntWindow, (int)ImGuiWindowFlags.ImGuiWindowFlags_None);
                     if (open)
                     {
@@ -1063,6 +1117,7 @@ namespace MonoCore
                     imgui_PopStyleColor();
                     }
                     imgui_End();
+                    PopE3Theme();
                 }
             }
             
@@ -1447,15 +1502,7 @@ namespace MonoCore
             string currentDisplay = Path.GetFileName(currentPath);
             string selName = Path.GetFileName(_selectedCharIniPath ?? currentPath);
             if (string.IsNullOrEmpty(selName)) selName = currentDisplay;
-            
-            // Section header
-            imgui_TextColored(0.8f, 0.9f, 0.95f, 1.0f, "Character Configuration");
-            
-            imgui_SameLine();
-            imgui_TextColored(0.7f, 0.7f, 0.7f, 1.0f, $"({Path.GetFileNameWithoutExtension(currentDisplay)})");
-            
-            imgui_Separator();
-            
+                        
             bool opened = _comboAvailable && BeginComboSafe("Select Character", selName);
             if (opened)
             {
@@ -1991,6 +2038,9 @@ namespace MonoCore
         private static bool _cfgShowIfSampleModal = false;
         private static List<System.Collections.Generic.KeyValuePair<string, string>> _cfgIfSampleLines = new List<System.Collections.Generic.KeyValuePair<string, string>>();
         private static string _cfgIfSampleStatus = string.Empty;
+        // Ifs: add-new helper input buffers
+        private static string _cfgIfNewKey = string.Empty;
+        private static string _cfgIfNewValue = string.Empty;
         // Remote fetch state (non-blocking)
         private static bool _cfgFoodDrinkPending = false;
         private static string _cfgFoodDrinkPendingToon = string.Empty;
@@ -2033,6 +2083,7 @@ namespace MonoCore
             options = parts;
             return true;
         }
+
 
         private static void RenderConfigEditor()
         {
@@ -2109,57 +2160,60 @@ namespace MonoCore
                 {
                     if (imgui_BeginChild("SectionsTree", 0, Math.Max(200f, availY * 0.75f), false))
                     {
-                        foreach (var sec in _cfgSectionsOrdered)
+                        // Use a 1-column table with RowBg to get built-in alternating backgrounds
+                        int tableFlags = (int)(ImGuiTableFlags.ImGuiTableFlags_RowBg | ImGuiTableFlags.ImGuiTableFlags_SizingStretchProp);
+                        if (imgui_BeginTable("SectionsTreeTable", 1, tableFlags, imgui_GetContentRegionAvailX()))
                         {
-                            var secData = pd.Sections.GetSectionData(sec);
-                            if (secData?.Keys == null) continue;
-                            
-                            // Get or initialize expanded state for this section
-                            if (!_cfgSectionExpanded.ContainsKey(sec))
-                                _cfgSectionExpanded[sec] = false; // Default to collapsed
-                            
-                            // Use TreeNodeEx for better control
-                            int treeFlags = (int)ImGuiTreeNodeFlags.ImGuiTreeNodeFlags_SpanAvailWidth;
-                            if (_cfgSectionExpanded[sec])
-                                treeFlags |= (int)ImGuiTreeNodeFlags.ImGuiTreeNodeFlags_DefaultOpen;
-                            
-                            bool nodeOpen = imgui_TreeNodeEx($"{sec}##section_{sec}", treeFlags);
-                            _cfgSectionExpanded[sec] = nodeOpen;
+                            imgui_TableSetupColumn("Section", 0, 0);
+                            foreach (var sec in _cfgSectionsOrdered)
+                            {
+                                var secData = pd.Sections.GetSectionData(sec);
+                                if (secData?.Keys == null) continue;
 
-                            // If user clicks the section header, select the section (even if it has no keys)
-                            if (imgui_IsItemHovered() && imgui_IsMouseClicked(0))
-                            {
-                                _cfgSelectedSection = sec;
-                                _cfgSelectedKey = string.Empty;
-                            }
-                            
-                            if (nodeOpen)
-                            {
-                                // Show keys in this section
-                                var keys = secData.Keys.Select(k => k.KeyName).ToArray();
-                                foreach (var key in keys)
+                                // Initialize expanded state defaults
+                                if (!_cfgSectionExpanded.ContainsKey(sec))
                                 {
-                                    bool keySelected = string.Equals(_cfgSelectedSection, sec, StringComparison.OrdinalIgnoreCase) && 
-                                                     string.Equals(_cfgSelectedKey, key, StringComparison.OrdinalIgnoreCase);
-                                    
-                                    int leafFlags = (int)(ImGuiTreeNodeFlags.ImGuiTreeNodeFlags_Leaf | 
-                                                         ImGuiTreeNodeFlags.ImGuiTreeNodeFlags_NoTreePushOnOpen | 
-                                                         ImGuiTreeNodeFlags.ImGuiTreeNodeFlags_SpanAvailWidth);
-                                    if (keySelected)
-                                        leafFlags |= (int)ImGuiTreeNodeFlags.ImGuiTreeNodeFlags_Selected;
-                                    
-                                    // Use Selectable instead of TreeNodeEx for leaf items to get proper click detection
-                                    if (imgui_Selectable($"  {key}", keySelected))
-                                    {
-                                        // Key was clicked - reset value selection
-                                        _cfgSelectedSection = sec;
-                                        _cfgSelectedKey = key;
-                                        _cfgSelectedValueIndex = -1; // Clear value selection when changing keys
-                                    }
+                                    var importantSections = new[] { "Misc", "Assist Settings", "General", "Heals" };
+                                    _cfgSectionExpanded[sec] = Array.Exists(importantSections, s => string.Equals(s, sec, StringComparison.OrdinalIgnoreCase));
                                 }
-                                
-                                imgui_TreePop();
+
+                                // Section row
+                                imgui_TableNextRow();
+                                imgui_TableNextColumn();
+                                int treeFlags = (int)ImGuiTreeNodeFlags.ImGuiTreeNodeFlags_SpanAvailWidth;
+                                if (_cfgSectionExpanded[sec])
+                                    treeFlags |= (int)ImGuiTreeNodeFlags.ImGuiTreeNodeFlags_DefaultOpen;
+                                string sectionLabel = $"{sec}##section_{sec}";
+                                bool nodeOpen = imgui_TreeNodeEx(sectionLabel, treeFlags);
+                                if (imgui_IsItemHovered() && imgui_IsMouseClicked(0))
+                                {
+                                    _cfgSelectedSection = sec;
+                                    _cfgSelectedKey = string.Empty;
+                                }
+                                _cfgSectionExpanded[sec] = nodeOpen;
+
+                                if (nodeOpen)
+                                {
+                                    // Key rows
+                                    var keys = secData.Keys.Select(k => k.KeyName).ToArray();
+                                    foreach (var key in keys)
+                                    {
+                                        imgui_TableNextRow();
+                                        imgui_TableNextColumn();
+                                        bool keySelected = string.Equals(_cfgSelectedSection, sec, StringComparison.OrdinalIgnoreCase) &&
+                                                           string.Equals(_cfgSelectedKey, key, StringComparison.OrdinalIgnoreCase);
+                                        string keyLabel = $"  {key}"; // simple indent under section
+                                        if (imgui_Selectable(keyLabel, keySelected))
+                                        {
+                                            _cfgSelectedSection = sec;
+                                            _cfgSelectedKey = key;
+                                            _cfgSelectedValueIndex = -1;
+                                        }
+                                    }
+                                    imgui_TreePop();
+                                }
                             }
+                            imgui_EndTable();
                         }
                     }
                     imgui_EndChild();
@@ -2682,6 +2736,38 @@ namespace MonoCore
             // Ifs sample import button (only when editing the Ifs section)
             if (string.Equals(_cfgSelectedSection, "Ifs", StringComparison.OrdinalIgnoreCase))
             {
+                // Add New If (top-level key under [Ifs])
+                imgui_TextColored(0.8f, 0.9f, 0.95f, 1.0f, "Add New If");
+                imgui_Text("Name:");
+                imgui_SameLine();
+                imgui_SetNextItemWidth(200f);
+                if (imgui_InputText("##ifs_new_key", _cfgIfNewKey))
+                {
+                    _cfgIfNewKey = imgui_InputText_Get("##ifs_new_key") ?? string.Empty;
+                }
+                imgui_Text("Value:");
+                imgui_SameLine();
+                imgui_SetNextItemWidth(260f);
+                if (imgui_InputText("##ifs_new_value", _cfgIfNewValue))
+                {
+                    _cfgIfNewValue = imgui_InputText_Get("##ifs_new_value") ?? string.Empty;
+                }
+                imgui_SameLine();
+                if (imgui_Button("Add"))
+                {
+                    var key = (_cfgIfNewKey ?? string.Empty).Trim();
+                    var val = _cfgIfNewValue ?? string.Empty;
+                    if (key.Length > 0)
+                    {
+                        if (AddIfToActiveIni(key, val))
+                        {
+                            _cfgIfNewKey = string.Empty;
+                            _cfgIfNewValue = string.Empty;
+                        }
+                    }
+                }
+                imgui_Separator();
+
                 if (imgui_Button("Sample If's"))
                 {
                     try { LoadSampleIfsForModal(); _cfgShowIfSampleModal = true; }

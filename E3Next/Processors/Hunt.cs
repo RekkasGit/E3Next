@@ -64,7 +64,8 @@ namespace E3Core.Processors
                 // Don't stop navigation if SmartLoot has new corpses or is peer-triggered
                 // This prevents interference with SmartLoot's corpse navigation
                 bool slHasNewCorpses = MQ.Query<bool>("${SmartLoot.HasNewCorpses}");
-                bool slIsPeerTriggered = MQ.Query<bool>("${SmartLoot.IsPeerTriggered}");
+                // Prefer Lua SmartLoot's AnyPeerLooting when the Lua script is running; otherwise fall back to plugin IsPeerTriggered
+                bool slIsPeerTriggered = Hunt.GetPeerLootingSignal();
                 
                 if (slHasNewCorpses || slIsPeerTriggered)
                 {
@@ -204,6 +205,12 @@ namespace E3Core.Processors
         [ExposedData("Hunt", "PullDisc")] public static string PullDisc = string.Empty;
         [ExposedData("Hunt", "AutoAssistAtMelee")] public static bool AutoAssistAtMelee = true;
 
+        // Raid corpse checking configuration
+        [ExposedData("Hunt", "RaidCorpseCheckEnabled")] public static bool RaidCorpseCheckEnabled = true;
+        [ExposedData("Hunt", "RaidCorpseCheckTimeout")] public static int RaidCorpseCheckTimeoutSec = 300; // 5 minutes default
+        private static readonly Dictionary<string, long> _raidMemberCorpseTimestamps = new Dictionary<string, long>();
+        private static bool _pcCorpsesPresent = false; // Track when PC corpses are blocking new pulls
+
         // SmartLoot coordination
         [ExposedData("Hunt", "SmartLootState")]
         public static string SmartLootState = "Unknown";
@@ -216,7 +223,7 @@ namespace E3Core.Processors
         private static bool _slSafeToLoot = true;
         private static int _slCorpseCount = 0;
         private static bool _slHasNewCorpses = false;
-        private static bool _slIsPeerTriggered = false;
+        private static bool _slIsPeerTriggered = false; // Peer-looting signal (Plugin: IsPeerTriggered, Lua: AnyPeerLooting)
         private static string _slState = "Unknown";
         private static string _slMode = "Disabled";
 
@@ -233,16 +240,55 @@ namespace E3Core.Processors
         {
             _slState = Q("${SmartLoot.State}", "Unknown");
             _slMode = Q("${SmartLoot.Mode}", "Disabled");
-            _slIsProcessing = Q("${SmartLoot.IsProcessing}", false);
-            _slSafeToLoot = Q("${SmartLoot.SafeToLoot}", true);
+            _slIsProcessing = QB("${SmartLoot.IsProcessing}");
+            _slSafeToLoot = QB("${SmartLoot.SafeToLoot}");
             _slCorpseCount = Q("${SmartLoot.CorpseCount}", 0);
-            _slHasNewCorpses = Q("${SmartLoot.HasNewCorpses}", false);
-            _slIsPeerTriggered = Q("${SmartLoot.IsPeerTriggered}", false);
+            _slHasNewCorpses = QB("${SmartLoot.HasNewCorpses}");
+            // Compute peer-looting using Plugin or Lua depending on which is active
+            _slIsPeerTriggered = GetPeerLootingSignal();
 
             // Publish to shared-data for peers / your /hunt smartloot command
             SmartLootState = _slState;
             SmartLootMode = _slMode;
             SmartLootActive = _slIsProcessing || _slCorpseCount > 0;
+        }
+
+        // Safe boolean query that treats typical MQ error strings as false
+        internal static bool QB(string expr)
+        {
+            try
+            {
+                string s = MQ.Query<string>(expr) ?? string.Empty;
+                s = s.Trim();
+                if (s.Length == 0 || s.Equals("NULL", StringComparison.OrdinalIgnoreCase)) return false;
+                if (s.IndexOf("No such", StringComparison.OrdinalIgnoreCase) >= 0) return false;
+                if (s.IndexOf("Error", StringComparison.OrdinalIgnoreCase) >= 0) return false;
+                if (s.Equals("TRUE", StringComparison.OrdinalIgnoreCase) || s.Equals("!FALSE", StringComparison.OrdinalIgnoreCase)) return true;
+                if (s.Equals("FALSE", StringComparison.OrdinalIgnoreCase) || s.Equals("!TRUE", StringComparison.OrdinalIgnoreCase)) return false;
+                if (int.TryParse(s, out var iv)) return iv > 0;
+                if (double.TryParse(s, out var dv)) return Math.Abs(dv) > double.Epsilon;
+                return false;
+            }
+            catch { return false; }
+        }
+
+        // Resolve peer-looting signal across Plugin and Lua variants of SmartLoot.
+        // - If the Lua script "SmartLoot" is RUNNING, prefer its exported AnyPeerLooting value.
+        // - Otherwise or on error, fall back to the plugin's SmartLoot.IsPeerTriggered.
+        internal static bool GetPeerLootingSignal()
+        {
+            try
+            {
+                string luaStatus = MQ.Query<string>("${Lua.Script[SmartLoot].Status}") ?? string.Empty;
+                if (!string.IsNullOrEmpty(luaStatus) && luaStatus.IndexOf("No such", StringComparison.OrdinalIgnoreCase) < 0 && luaStatus.Equals("RUNNING", StringComparison.OrdinalIgnoreCase))
+                {
+                    // Prefer a TLO-style exposure from the Lua SmartLoot script, if available
+                    return QB("${SmartLoot.AnyPeerLooting}");
+                }
+            }
+            catch { /* ignore and fall back */ }
+
+            return QB("${SmartLoot.IsPeerTriggered}");
         }
 
 
@@ -471,7 +517,7 @@ namespace E3Core.Processors
             {
                 if (x.args.Count == 0)
                 {
-                    MQ.Write("Usage: /hunt [go|pause|on|off|radius <n>|zradius <n>|pull <patterns>|ignore <patterns>|ignoreadd [name]|ignorelist|ignoreclear|ignoreallzones|smartloot|zonecheck|camp [set|off]|fromplayer <on|off>|pullmethod <type>|pullspell <name>|pullitem <name>|pullaa <name>|pulldisc <name>|debug]");
+                    MQ.Write("Usage: /hunt [go|pause|on|off|radius <n>|zradius <n>|pull <patterns>|ignore <patterns>|ignoreadd [name]|ignorelist|ignoreclear|ignoreallzones|smartloot|zonecheck|camp [set|off]|fromplayer <on|off>|pullmethod <type>|pullspell <name>|pullitem <name>|pullaa <name>|pulldisc <name>|raidcorpse <on|off>|raidcorpsetimeout <seconds>|debug]");
                     return;
                 }
 
@@ -715,6 +761,28 @@ namespace E3Core.Processors
                         }
                         MQ.Write($"Hunt AutoAssistAtMelee = {AutoAssistAtMelee}");
                         break;
+                    case "raidcorpse":
+                        if (x.args.Count > 1)
+                        {
+                            var v = x.args[1].ToLowerInvariant();
+                            if (v == "on" || v == "1" || v == "true") RaidCorpseCheckEnabled = true;
+                            else if (v == "off" || v == "0" || v == "false") RaidCorpseCheckEnabled = false;
+                            else if (v == "toggle") RaidCorpseCheckEnabled = !RaidCorpseCheckEnabled;
+                        }
+                        MQ.Write($"Hunt RaidCorpseCheck = {(RaidCorpseCheckEnabled ? "ON" : "OFF")}");
+                        if (!RaidCorpseCheckEnabled)
+                        {
+                            _raidMemberCorpseTimestamps.Clear();
+                            MQ.Write("Hunt: Cleared all raid member corpse timers");
+                        }
+                        break;
+                    case "raidcorpsetimeout":
+                        if (x.args.Count > 1 && int.TryParse(x.args[1], out var timeout))
+                        {
+                            RaidCorpseCheckTimeoutSec = Math.Max(30, timeout); // minimum 30 seconds
+                        }
+                        MQ.Write($"Hunt RaidCorpseCheckTimeout = {RaidCorpseCheckTimeoutSec} seconds");
+                        break;
                     case "debug":
                         try
                         {
@@ -876,6 +944,103 @@ namespace E3Core.Processors
             catch (Exception ex)
             {
                 _log.Write($"Hunt: Error checking connected bots zone states: {ex.Message}");
+            }
+
+            // Enhanced raid member corpse check for raiding scenarios
+            // Modified to allow combat with existing xtarget mobs while blocking new pulls
+            if (RaidCorpseCheckEnabled)
+            {
+                try
+                {
+                    // Only check raid members if we're in a raid
+                    int raidSize = MQ.Query<int>("${Raid.Members}");
+                    if (raidSize > 0)
+                    {
+                        var deadRaidMembers = e3util.GetDeadRaidMembers();
+                        var currentTime = Core.StopWatch.ElapsedMilliseconds;
+                        var membersStillWaitingFor = new List<string>();
+
+                        foreach (var deadMember in deadRaidMembers)
+                        {
+                            // Track when we first detected this member as dead
+                            if (!_raidMemberCorpseTimestamps.ContainsKey(deadMember))
+                            {
+                                _raidMemberCorpseTimestamps[deadMember] = currentTime;
+                                _log.Write($"Hunt: Raid member {deadMember} detected as dead, starting corpse timer");
+                            }
+
+                            // Check if we've exceeded the timeout for this member
+                            long deadDuration = currentTime - _raidMemberCorpseTimestamps[deadMember];
+                            if (deadDuration < RaidCorpseCheckTimeoutSec * 1000)
+                            {
+                                membersStillWaitingFor.Add(deadMember);
+                            }
+                            else
+                            {
+                                _log.Write($"Hunt: Raid member {deadMember} has been dead for {deadDuration / 1000}s, exceeding timeout of {RaidCorpseCheckTimeoutSec}s - no longer waiting");
+                            }
+                        }
+
+                        // Clean up timestamps for members who are no longer dead
+                        var membersToRemove = _raidMemberCorpseTimestamps.Keys.Where(member => !deadRaidMembers.Contains(member)).ToList();
+                        foreach (var member in membersToRemove)
+                        {
+                            _raidMemberCorpseTimestamps.Remove(member);
+                            _log.Write($"Hunt: Raid member {member} is no longer dead, removing from corpse timer");
+                        }
+
+                        // Store the PC corpse block status for use later in scanning logic
+                        _pcCorpsesPresent = membersStillWaitingFor.Count > 0;
+
+                        // Only block NEW pulls when PC corpses are present
+                        // Continue fighting existing xtarget mobs even with PC corpses
+                        if (_pcCorpsesPresent)
+                        {
+                            // Check if we have existing mobs on xtarget to continue fighting
+                            int xTargetCount = 0;
+                            try { xTargetCount = MQ.Query<int>("${Me.XTarget}"); } catch { xTargetCount = 0; }
+                            
+                            // If we have xtarget mobs, allow continuing combat but block new scanning
+                            if (xTargetCount > 0 && (TargetID > 0 || Basics.InCombat()))
+                            {
+                                string waitingMembersList = string.Join(", ", membersStillWaitingFor);
+                                string reasonText = membersStillWaitingFor.Count == 1 
+                                    ? $"PC corpse present ({waitingMembersList}) - fighting existing mobs only"
+                                    : $"PC corpses present ({waitingMembersList}) - fighting existing mobs only";
+                                _log.Write($"Hunt: {reasonText}");
+                                // Don't pause - allow continuing to existing state for combat
+                                // The scan block will be handled in TryAcquireTarget()
+                            }
+                            else
+                            {
+                                // No existing combat, fully pause until corpses are handled
+                                string waitingMembersList = string.Join(", ", membersStillWaitingFor);
+                                string reasonText = membersStillWaitingFor.Count == 1 
+                                    ? $"Waiting for raid member {waitingMembersList} to resurrect"
+                                    : $"Waiting for raid members {waitingMembersList} to resurrect";
+                                
+                                HuntStateMachine.TransitionTo(HuntState.Paused, reasonText);
+                                return;
+                            }
+                        }
+                    }
+                    else
+                    {
+                        // Not in a raid, clear PC corpse blocking
+                        _pcCorpsesPresent = false;
+                    }
+                }
+                catch (Exception ex)
+                {
+                    _log.Write($"Hunt: Error checking raid member corpse states: {ex.Message}");
+                    // On error, assume no PC corpse blocking to avoid getting stuck
+                    _pcCorpsesPresent = false;
+                }
+            }
+            else
+            {
+                // Raid corpse check disabled, clear PC corpse blocking
+                _pcCorpsesPresent = false;
             }
 
             if (MQ.Query<bool>("${Me.Stunned}"))
@@ -1168,8 +1333,9 @@ namespace E3Core.Processors
 
                                 if (haveValidTarget)
                                 {
+                                    MQ.Delay(1000);
                                     MQ.Cmd("/assistme /all");
-                                    _lastAssistCmdAt = now;
+                                    _lastAssistCmdAt = Core.StopWatch.ElapsedMilliseconds;
                                 }
                             }
 
@@ -1282,8 +1448,9 @@ namespace E3Core.Processors
 
                     if (haveValidTarget)
                     {
+                        MQ.Delay(1000);
                         MQ.Cmd("/assistme /all");
-                        _lastAssistCmdAt = now;
+                        _lastAssistCmdAt = Core.StopWatch.ElapsedMilliseconds;
                     }
                 }
             }
@@ -1956,6 +2123,15 @@ namespace E3Core.Processors
         private static void TryAcquireTarget()
         {
             Status = "Scanning";
+            
+            // Block new target acquisition if PC corpses are present
+            if (_pcCorpsesPresent)
+            {
+                _log.Write("Hunt: Blocking new target acquisition due to PC corpses present");
+                Status = "PC corpses present - no new pulls";
+                return;
+            }
+            
             // Clean up expired temporary ignores
             if (_tempIgnoreUntil.Count > 0)
             {

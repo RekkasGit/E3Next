@@ -222,6 +222,7 @@
     <None Include="app.config" />
     <None Include="Data\ProtoBuff\SpellData.proto" />
     <None Include="packages.config" />
+    <!-- Removed FontAwesome README from build -->
   </ItemGroup>
   <ItemGroup>
     <Folder Include="Data\Interfaces\" />
