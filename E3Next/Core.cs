@@ -1408,6 +1408,30 @@ namespace MonoCore
         public extern static void imgui_DrawSpellIconByIconIndex(int iconIndex, float size);
         [MethodImpl(MethodImplOptions.InternalCall)]
         public extern static void imgui_DrawSpellIconBySpellID(int spellId, float size);
+        // Drawing functions for custom backgrounds
+        [MethodImpl(MethodImplOptions.InternalCall)]
+        public extern static float imgui_GetCursorPosY();
+        [MethodImpl(MethodImplOptions.InternalCall)]
+        public extern static float imgui_GetCursorScreenPosX();
+        [MethodImpl(MethodImplOptions.InternalCall)]
+        public extern static float imgui_GetCursorScreenPosY();
+        [MethodImpl(MethodImplOptions.InternalCall)]
+        public extern static float imgui_GetTextLineHeightWithSpacing();
+        [MethodImpl(MethodImplOptions.InternalCall)]
+        public extern static float imgui_GetFrameHeight();
+        [MethodImpl(MethodImplOptions.InternalCall)]
+        public extern static void imgui_GetWindowDrawList_AddRectFilled(float x1, float y1, float x2, float y2, uint color);
+        // Item rect + color helpers
+        [MethodImpl(MethodImplOptions.InternalCall)]
+        public extern static float imgui_GetItemRectMinX();
+        [MethodImpl(MethodImplOptions.InternalCall)]
+        public extern static float imgui_GetItemRectMinY();
+        [MethodImpl(MethodImplOptions.InternalCall)]
+        public extern static float imgui_GetItemRectMaxX();
+        [MethodImpl(MethodImplOptions.InternalCall)]
+        public extern static float imgui_GetItemRectMaxY();
+        [MethodImpl(MethodImplOptions.InternalCall)]
+        public extern static uint imgui_GetColorU32(int imguiCol, float alphaMul);
         // Texture creation from raw data
         [MethodImpl(MethodImplOptions.InternalCall)]
         public extern static IntPtr mq_CreateTextureFromData(byte[] data, int width, int height, int channels);
