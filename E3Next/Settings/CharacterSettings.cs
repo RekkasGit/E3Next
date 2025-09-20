@@ -110,6 +110,8 @@ namespace E3Core.Settings
 
 		[INI_Section("Misc", "Auto-Forage (On/Off)")]
 		public bool Misc_AutoForage = false;
+		[INI_Section("Misc", "UI Theme")]
+		public string Misc_UITheme = "E3 Dark Teal";
 
 		[INI_Section("AutoMed", "Override Old Settings and use This(On/Off)")]
 		public bool AutoMed_OverrideOldSettings;
@@ -644,6 +646,7 @@ namespace E3Core.Settings
 			LoadKeyData("Misc", "If FD stay down (true/false)", ParsedData, ref IfFDStayDown);
 			LoadKeyData("Misc", "Debuffs/Dots are visible", ParsedData, ref Misc_VisibleDebuffsDots);
 			LoadKeyData("Misc", "Enhanced rotation speed", ParsedData, ref Misc_EnchancedRotationSpeed);
+			LoadKeyData("Misc", "UI Theme", ParsedData, ref Misc_UITheme);
 
 			LoadKeyData("Alerts", "Rampage Messages(On/Off)", ParsedData, ref Alerts_RampageMessages);
 			LoadKeyData("Alerts", "Damage Messages(On/Off)", ParsedData, ref Alerts_DamageMessages);
@@ -1017,6 +1020,7 @@ namespace E3Core.Settings
 			section.Keys.AddKey("If FD stay down (true/false)", "False");
 			section.Keys.AddKey("Debuffs/Dots are visible", "True");
 			section.Keys.AddKey("Enhanced rotation speed", "Off");
+			section.Keys.AddKey("UI Theme", "E3 Dark Teal");
 		
 			newFile.Sections.AddSection("AutoMed");
 			section = newFile.Sections.GetSectionData("AutoMed");

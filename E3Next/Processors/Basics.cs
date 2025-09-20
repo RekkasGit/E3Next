@@ -584,6 +584,7 @@ namespace E3Core.Processors
 					}
 					if (String.Compare(command, "shareddata", true) == 0)
 					{
+						MQ.Write("/shutdown shareddata received. Disabling Shared Data thread.");
 						E3.NetMQ_SharedDataServerThreadRun = false;
 					}
 					if (String.Compare(command, "routerserver", true) == 0)

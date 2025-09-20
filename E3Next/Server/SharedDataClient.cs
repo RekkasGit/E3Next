@@ -494,12 +494,24 @@ namespace E3Core.Server
 						{
 							string messageReceived = subSocket.ReceiveFrameString();
 
-							Int32 indexOfColon = messageReceived.IndexOf(':');
-							string payloaduser = messageReceived.Substring(0, indexOfColon);
-							messageReceived = messageReceived.Substring(indexOfColon + 1, messageReceived.Length - indexOfColon - 1);
-							indexOfColon = messageReceived.IndexOf(':', indexOfColon + 1);
-							string payloadServer = messageReceived.Substring(0, indexOfColon);
-							messageReceived = messageReceived.Substring(indexOfColon + 1, messageReceived.Length - indexOfColon - 1);
+                            // Expect two ':' separators: user:server:payload
+                            Int32 indexOfColon = messageReceived.IndexOf(':');
+                            if (indexOfColon <= 0)
+                            {
+                                // malformed frame, skip safely
+                                continue;
+                            }
+                            string payloaduser = messageReceived.Substring(0, indexOfColon);
+                            messageReceived = messageReceived.Substring(indexOfColon + 1);
+                            // find the next ':' from start of the updated string
+                            Int32 secondColon = messageReceived.IndexOf(':');
+                            if (secondColon <= 0)
+                            {
+                                // malformed frame, skip safely
+                                continue;
+                            }
+                            string payloadServer = messageReceived.Substring(0, secondColon);
+                            messageReceived = messageReceived.Substring(secondColon + 1);
 
 							//message not from the same server, skip it.
 							if (!String.Equals(payloadServer, E3.ServerName))
@@ -756,12 +768,24 @@ namespace E3Core.Server
 				}
 				catch (Exception ex)
 				{
-					//MQ.WriteDelayed("Error in shared data thread. Message:" + ex.Message + "  stack:" + ex.StackTrace);
+                    MQ.WriteDelayed("Error in shared data thread. Message:" + ex.Message);
 				}
 
+				}
+				// Provide a clearer shutdown reason to aid troubleshooting
+				if (!Core.IsProcessing && E3.NetMQ_SharedDataServerThreadRun)
+				{
+					MQ.WriteDelayed("Shutting down Share Data Thread. Reason: Core.IsProcessing=false (global shutdown/reload).");
+				}
+				else if (!E3.NetMQ_SharedDataServerThreadRun)
+				{
+					MQ.WriteDelayed("Shutting down Share Data Thread. Reason: /shutdown shareddata or flag cleared.");
+				}
+				else
+				{
+					MQ.WriteDelayed("Shutting down Share Data Thread.");
+				}
 			}
-			MQ.WriteDelayed($"Shutting down Share Data Thread.");
-		}
 
         // Helper to scan local inventory for a given item type (e.g., "Food" or "Drink")
         private static List<string> ScanInventoryByType(string type)

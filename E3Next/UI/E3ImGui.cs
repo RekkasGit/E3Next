@@ -12,56 +12,553 @@ using NetMQ.Sockets;
 using Google.Protobuf;
 using System.Runtime.InteropServices;
 using System.Runtime.CompilerServices;
+using System.Diagnostics;
 
 namespace MonoCore
 {
     // /e3imgui UI extracted into dedicated partial class file
     public static partial class Core
     {
-        // Theme: darker greys with teal accents
-        private static readonly int _themePushCount = 27;
+        private sealed class ThemeDefinition
+        {
+            public string Name { get; }
+            public Dictionary<ImGuiCol, float[]> Colors { get; }
+
+            public ThemeDefinition(string name, IDictionary<ImGuiCol, float[]> colors)
+            {
+                Name = name;
+                Colors = new Dictionary<ImGuiCol, float[]>(colors.Count);
+                foreach (var kvp in colors)
+                {
+                    Colors[kvp.Key] = (float[])kvp.Value.Clone();
+                }
+            }
+        }
+
+        private readonly struct ThemeColor
+        {
+            public ImGuiCol Color { get; }
+            public float R { get; }
+            public float G { get; }
+            public float B { get; }
+            public float A { get; }
+
+            public ThemeColor(ImGuiCol color, float r, float g, float b, float a)
+            {
+                Color = color;
+                R = r;
+                G = g;
+                B = b;
+                A = a;
+            }
+        }
+
+        private readonly struct ThemeColorEditorEntry
+        {
+            public ImGuiCol Color { get; }
+            public string Label { get; }
+
+            public ThemeColorEditorEntry(ImGuiCol color, string label)
+            {
+                Color = color;
+                Label = label;
+            }
+        }
+
+        private static readonly ImGuiCol[] _themeColorOrder = new[]
+        {
+            ImGuiCol.WindowBg,
+            ImGuiCol.ChildBg,
+            ImGuiCol.FrameBg,
+            ImGuiCol.FrameBgHovered,
+            ImGuiCol.FrameBgActive,
+            ImGuiCol.Button,
+            ImGuiCol.ButtonHovered,
+            ImGuiCol.ButtonActive,
+            ImGuiCol.Header,
+            ImGuiCol.HeaderHovered,
+            ImGuiCol.HeaderActive,
+            ImGuiCol.Tab,
+            ImGuiCol.TabHovered,
+            ImGuiCol.TabActive,
+            ImGuiCol.TabUnfocused,
+            ImGuiCol.TabUnfocusedActive,
+            ImGuiCol.SliderGrab,
+            ImGuiCol.SliderGrabActive,
+            ImGuiCol.CheckMark,
+            ImGuiCol.TitleBg,
+            ImGuiCol.TitleBgActive,
+            ImGuiCol.Separator,
+            ImGuiCol.SeparatorHovered,
+            ImGuiCol.SeparatorActive,
+            ImGuiCol.ScrollbarGrab,
+            ImGuiCol.ScrollbarGrabHovered,
+            ImGuiCol.ScrollbarGrabActive
+        };
+
+        private static readonly ThemeColor[] _themeBaseColors = new[]
+        {
+            new ThemeColor(ImGuiCol.WindowBg, 0.13f, 0.13f, 0.14f, 1.0f),
+            new ThemeColor(ImGuiCol.ChildBg, 0.11f, 0.11f, 0.12f, 1.0f),
+            new ThemeColor(ImGuiCol.FrameBg, 0.17f, 0.18f, 0.20f, 1.0f),
+            new ThemeColor(ImGuiCol.FrameBgHovered, 0.20f, 0.21f, 0.23f, 1.0f),
+            new ThemeColor(ImGuiCol.FrameBgActive, 0.19f, 0.20f, 0.22f, 1.0f),
+            new ThemeColor(ImGuiCol.Button, 0.13f, 0.55f, 0.53f, 1.0f),
+            new ThemeColor(ImGuiCol.ButtonHovered, 0.17f, 0.66f, 0.64f, 1.0f),
+            new ThemeColor(ImGuiCol.ButtonActive, 0.12f, 0.48f, 0.47f, 1.0f),
+            new ThemeColor(ImGuiCol.Header, 0.12f, 0.50f, 0.49f, 0.55f),
+            new ThemeColor(ImGuiCol.HeaderHovered, 0.16f, 0.62f, 0.60f, 0.80f),
+            new ThemeColor(ImGuiCol.HeaderActive, 0.12f, 0.50f, 0.49f, 1.00f),
+            new ThemeColor(ImGuiCol.Tab, 0.11f, 0.48f, 0.46f, 1.0f),
+            new ThemeColor(ImGuiCol.TabHovered, 0.16f, 0.62f, 0.60f, 1.0f),
+            new ThemeColor(ImGuiCol.TabActive, 0.13f, 0.55f, 0.53f, 1.0f),
+            new ThemeColor(ImGuiCol.TabUnfocused, 0.09f, 0.09f, 0.10f, 1.0f),
+            new ThemeColor(ImGuiCol.TabUnfocusedActive, 0.11f, 0.11f, 0.12f, 1.0f),
+            new ThemeColor(ImGuiCol.SliderGrab, 0.29f, 0.79f, 0.76f, 1.0f),
+            new ThemeColor(ImGuiCol.SliderGrabActive, 0.36f, 0.86f, 0.80f, 1.0f),
+            new ThemeColor(ImGuiCol.CheckMark, 0.36f, 0.86f, 0.80f, 1.0f),
+            new ThemeColor(ImGuiCol.TitleBg, 0.10f, 0.10f, 0.11f, 1.0f),
+            new ThemeColor(ImGuiCol.TitleBgActive, 0.12f, 0.12f, 0.14f, 1.0f),
+            new ThemeColor(ImGuiCol.Separator, 0.25f, 0.27f, 0.30f, 1.0f),
+            new ThemeColor(ImGuiCol.SeparatorHovered, 0.30f, 0.33f, 0.36f, 1.0f),
+            new ThemeColor(ImGuiCol.SeparatorActive, 0.21f, 0.60f, 0.60f, 1.0f),
+            new ThemeColor(ImGuiCol.ScrollbarGrab, 0.28f, 0.30f, 0.32f, 1.0f),
+            new ThemeColor(ImGuiCol.ScrollbarGrabHovered, 0.32f, 0.34f, 0.36f, 1.0f),
+            new ThemeColor(ImGuiCol.ScrollbarGrabActive, 0.36f, 0.38f, 0.40f, 1.0f)
+        };
+
+        private static readonly Dictionary<ImGuiCol, float[]> _themeDefaultColorMap = BuildColorMap(_themeBaseColors);
+
+        private static readonly ThemeDefinition[] _themePresets = new[]
+        {
+            CreateTheme("E3 Dark Teal"),
+            CreateTheme("Midnight Violet",
+                new ThemeColor(ImGuiCol.WindowBg, 0.12f, 0.10f, 0.16f, 1.0f),
+                new ThemeColor(ImGuiCol.ChildBg, 0.10f, 0.08f, 0.14f, 1.0f),
+                new ThemeColor(ImGuiCol.Button, 0.44f, 0.25f, 0.66f, 1.0f),
+                new ThemeColor(ImGuiCol.ButtonHovered, 0.52f, 0.30f, 0.76f, 1.0f),
+                new ThemeColor(ImGuiCol.ButtonActive, 0.38f, 0.19f, 0.60f, 1.0f),
+                new ThemeColor(ImGuiCol.Header, 0.42f, 0.29f, 0.64f, 0.55f),
+                new ThemeColor(ImGuiCol.HeaderHovered, 0.52f, 0.34f, 0.78f, 0.80f),
+                new ThemeColor(ImGuiCol.HeaderActive, 0.52f, 0.34f, 0.78f, 1.00f),
+                new ThemeColor(ImGuiCol.Tab, 0.28f, 0.18f, 0.46f, 1.0f),
+                new ThemeColor(ImGuiCol.TabHovered, 0.50f, 0.32f, 0.74f, 1.0f),
+                new ThemeColor(ImGuiCol.TabActive, 0.42f, 0.27f, 0.66f, 1.0f),
+                new ThemeColor(ImGuiCol.CheckMark, 0.86f, 0.72f, 0.96f, 1.0f),
+                new ThemeColor(ImGuiCol.SliderGrab, 0.70f, 0.44f, 0.94f, 1.0f),
+                new ThemeColor(ImGuiCol.SliderGrabActive, 0.83f, 0.53f, 1.00f, 1.0f),
+                new ThemeColor(ImGuiCol.SeparatorActive, 0.62f, 0.44f, 0.95f, 1.0f)),
+            CreateTheme("Gunmetal",
+                new ThemeColor(ImGuiCol.WindowBg, 0.15f, 0.15f, 0.16f, 1.0f),
+                new ThemeColor(ImGuiCol.ChildBg, 0.13f, 0.13f, 0.14f, 1.0f),
+                new ThemeColor(ImGuiCol.Button, 0.53f, 0.58f, 0.63f, 1.0f),
+                new ThemeColor(ImGuiCol.ButtonHovered, 0.63f, 0.68f, 0.73f, 1.0f),
+                new ThemeColor(ImGuiCol.ButtonActive, 0.44f, 0.49f, 0.54f, 1.0f),
+                new ThemeColor(ImGuiCol.Header, 0.37f, 0.43f, 0.49f, 0.65f),
+                new ThemeColor(ImGuiCol.HeaderHovered, 0.47f, 0.53f, 0.59f, 0.85f),
+                new ThemeColor(ImGuiCol.HeaderActive, 0.53f, 0.58f, 0.64f, 1.00f),
+                new ThemeColor(ImGuiCol.Tab, 0.30f, 0.34f, 0.39f, 1.0f),
+                new ThemeColor(ImGuiCol.TabHovered, 0.46f, 0.51f, 0.57f, 1.0f),
+                new ThemeColor(ImGuiCol.TabActive, 0.40f, 0.45f, 0.50f, 1.0f),
+                new ThemeColor(ImGuiCol.CheckMark, 0.88f, 0.91f, 0.95f, 1.0f),
+                new ThemeColor(ImGuiCol.SliderGrab, 0.69f, 0.74f, 0.78f, 1.0f),
+                new ThemeColor(ImGuiCol.SliderGrabActive, 0.80f, 0.84f, 0.88f, 1.0f),
+                new ThemeColor(ImGuiCol.SeparatorActive, 0.53f, 0.60f, 0.68f, 1.0f)),
+            CreateTheme("Sunset Ember",
+                new ThemeColor(ImGuiCol.WindowBg, 0.14f, 0.10f, 0.08f, 1.0f),
+                new ThemeColor(ImGuiCol.ChildBg, 0.12f, 0.09f, 0.07f, 1.0f),
+                new ThemeColor(ImGuiCol.Button, 0.78f, 0.35f, 0.18f, 1.0f),
+                new ThemeColor(ImGuiCol.ButtonHovered, 0.87f, 0.42f, 0.23f, 1.0f),
+                new ThemeColor(ImGuiCol.ButtonActive, 0.67f, 0.30f, 0.15f, 1.0f),
+                new ThemeColor(ImGuiCol.Header, 0.77f, 0.37f, 0.20f, 0.60f),
+                new ThemeColor(ImGuiCol.HeaderHovered, 0.90f, 0.46f, 0.26f, 0.90f),
+                new ThemeColor(ImGuiCol.HeaderActive, 0.92f, 0.50f, 0.28f, 1.00f),
+                new ThemeColor(ImGuiCol.Tab, 0.45f, 0.22f, 0.16f, 1.0f),
+                new ThemeColor(ImGuiCol.TabHovered, 0.70f, 0.36f, 0.22f, 1.0f),
+                new ThemeColor(ImGuiCol.TabActive, 0.60f, 0.30f, 0.19f, 1.0f),
+                new ThemeColor(ImGuiCol.CheckMark, 0.97f, 0.71f, 0.48f, 1.0f),
+                new ThemeColor(ImGuiCol.SliderGrab, 0.95f, 0.62f, 0.37f, 1.0f),
+                new ThemeColor(ImGuiCol.SliderGrabActive, 0.99f, 0.73f, 0.43f, 1.0f),
+                new ThemeColor(ImGuiCol.SeparatorActive, 0.84f, 0.42f, 0.23f, 1.0f)),
+            CreateTheme("Barbie Pink",
+                new ThemeColor(ImGuiCol.WindowBg, 0.18f, 0.12f, 0.16f, 1.0f),
+                new ThemeColor(ImGuiCol.ChildBg, 0.15f, 0.10f, 0.14f, 1.0f),
+                new ThemeColor(ImGuiCol.FrameBg, 0.25f, 0.15f, 0.22f, 1.0f),
+                new ThemeColor(ImGuiCol.FrameBgHovered, 0.30f, 0.18f, 0.26f, 1.0f),
+                new ThemeColor(ImGuiCol.FrameBgActive, 0.28f, 0.16f, 0.24f, 1.0f),
+                new ThemeColor(ImGuiCol.Button, 0.90f, 0.30f, 0.70f, 1.0f),
+                new ThemeColor(ImGuiCol.ButtonHovered, 0.95f, 0.40f, 0.78f, 1.0f),
+                new ThemeColor(ImGuiCol.ButtonActive, 0.85f, 0.25f, 0.65f, 1.0f),
+                new ThemeColor(ImGuiCol.Header, 0.88f, 0.35f, 0.75f, 0.65f),
+                new ThemeColor(ImGuiCol.HeaderHovered, 0.92f, 0.45f, 0.82f, 0.85f),
+                new ThemeColor(ImGuiCol.HeaderActive, 0.95f, 0.50f, 0.85f, 1.00f),
+                new ThemeColor(ImGuiCol.Tab, 0.70f, 0.25f, 0.58f, 1.0f),
+                new ThemeColor(ImGuiCol.TabHovered, 0.88f, 0.38f, 0.75f, 1.0f),
+                new ThemeColor(ImGuiCol.TabActive, 0.85f, 0.32f, 0.70f, 1.0f),
+                new ThemeColor(ImGuiCol.TabUnfocused, 0.40f, 0.15f, 0.30f, 1.0f),
+                new ThemeColor(ImGuiCol.TabUnfocusedActive, 0.50f, 0.18f, 0.38f, 1.0f),
+                new ThemeColor(ImGuiCol.CheckMark, 1.00f, 0.70f, 0.95f, 1.0f),
+                new ThemeColor(ImGuiCol.SliderGrab, 0.95f, 0.50f, 0.85f, 1.0f),
+                new ThemeColor(ImGuiCol.SliderGrabActive, 1.00f, 0.60f, 0.92f, 1.0f),
+                new ThemeColor(ImGuiCol.TitleBg, 0.22f, 0.12f, 0.18f, 1.0f),
+                new ThemeColor(ImGuiCol.TitleBgActive, 0.28f, 0.15f, 0.22f, 1.0f),
+                new ThemeColor(ImGuiCol.Separator, 0.55f, 0.25f, 0.45f, 1.0f),
+                new ThemeColor(ImGuiCol.SeparatorHovered, 0.65f, 0.35f, 0.55f, 1.0f),
+                new ThemeColor(ImGuiCol.SeparatorActive, 0.85f, 0.45f, 0.75f, 1.0f),
+                new ThemeColor(ImGuiCol.ScrollbarGrab, 0.60f, 0.25f, 0.50f, 1.0f),
+                new ThemeColor(ImGuiCol.ScrollbarGrabHovered, 0.70f, 0.35f, 0.60f, 1.0f),
+                new ThemeColor(ImGuiCol.ScrollbarGrabActive, 0.80f, 0.45f, 0.70f, 1.0f))
+        };
+
+        private static readonly Dictionary<ImGuiCol, float[]> _activeThemeColors = new Dictionary<ImGuiCol, float[]>(_themeColorOrder.Length);
+        private static ThemeDefinition _currentThemePreset = null;
+        private static bool _themeInitialized = false;
+        private static bool _themeDirty = false;
+        private static bool _themeWindowOpen = false;
+        private static bool _showDonateModal = false;
+        private static readonly string _themeWindowTitle = "E3 Theme Options";
+
+        private static readonly (string Header, ThemeColorEditorEntry[] Entries)[] _themeEditorSections = new[]
+        {
+            ("Backgrounds", new[]
+            {
+                new ThemeColorEditorEntry(ImGuiCol.WindowBg, "Window Background"),
+                new ThemeColorEditorEntry(ImGuiCol.ChildBg, "Child Background"),
+                new ThemeColorEditorEntry(ImGuiCol.TitleBg, "Title Background"),
+                new ThemeColorEditorEntry(ImGuiCol.TitleBgActive, "Title Active Background")
+            }),
+            ("Frames & Inputs", new[]
+            {
+                new ThemeColorEditorEntry(ImGuiCol.FrameBg, "Frame Background"),
+                new ThemeColorEditorEntry(ImGuiCol.FrameBgHovered, "Frame Hovered"),
+                new ThemeColorEditorEntry(ImGuiCol.FrameBgActive, "Frame Active"),
+                new ThemeColorEditorEntry(ImGuiCol.SliderGrab, "Slider Grab"),
+                new ThemeColorEditorEntry(ImGuiCol.SliderGrabActive, "Slider Grab Active"),
+                new ThemeColorEditorEntry(ImGuiCol.CheckMark, "Check Mark")
+            }),
+            ("Buttons & Tabs", new[]
+            {
+                new ThemeColorEditorEntry(ImGuiCol.Button, "Button"),
+                new ThemeColorEditorEntry(ImGuiCol.ButtonHovered, "Button Hovered"),
+                new ThemeColorEditorEntry(ImGuiCol.ButtonActive, "Button Active"),
+                new ThemeColorEditorEntry(ImGuiCol.Tab, "Tab"),
+                new ThemeColorEditorEntry(ImGuiCol.TabHovered, "Tab Hovered"),
+                new ThemeColorEditorEntry(ImGuiCol.TabActive, "Tab Active"),
+                new ThemeColorEditorEntry(ImGuiCol.TabUnfocused, "Tab Unfocused"),
+                new ThemeColorEditorEntry(ImGuiCol.TabUnfocusedActive, "Tab Unfocused Active")
+            }),
+            ("Headers & Separators", new[]
+            {
+                new ThemeColorEditorEntry(ImGuiCol.Header, "Header"),
+                new ThemeColorEditorEntry(ImGuiCol.HeaderHovered, "Header Hovered"),
+                new ThemeColorEditorEntry(ImGuiCol.HeaderActive, "Header Active"),
+                new ThemeColorEditorEntry(ImGuiCol.Separator, "Separator"),
+                new ThemeColorEditorEntry(ImGuiCol.SeparatorHovered, "Separator Hovered"),
+                new ThemeColorEditorEntry(ImGuiCol.SeparatorActive, "Separator Active")
+            }),
+            ("Scrollbars", new[]
+            {
+                new ThemeColorEditorEntry(ImGuiCol.ScrollbarGrab, "Scrollbar"),
+                new ThemeColorEditorEntry(ImGuiCol.ScrollbarGrabHovered, "Scrollbar Hovered"),
+                new ThemeColorEditorEntry(ImGuiCol.ScrollbarGrabActive, "Scrollbar Active")
+            })
+        };
+
+        private static Dictionary<ImGuiCol, float[]> BuildColorMap(IEnumerable<ThemeColor> colors)
+        {
+            var dict = new Dictionary<ImGuiCol, float[]>();
+            foreach (var color in colors)
+            {
+                dict[color.Color] = new[] { color.R, color.G, color.B, color.A };
+            }
+            return dict;
+        }
+
+        private static ThemeDefinition CreateTheme(string name, params ThemeColor[] overrides)
+        {
+            var map = new Dictionary<ImGuiCol, float[]>(_themeColorOrder.Length);
+            foreach (var col in _themeColorOrder)
+            {
+                var baseColor = _themeDefaultColorMap[col];
+                map[col] = (float[])baseColor.Clone();
+            }
+
+            foreach (var oc in overrides)
+            {
+                map[oc.Color] = new[] { oc.R, oc.G, oc.B, oc.A };
+            }
+
+            return new ThemeDefinition(name, map);
+        }
+
+        private static void EnsureThemeInitialized()
+        {
+            if (_themeInitialized)
+            {
+                return;
+            }
+
+            // Try to load the saved theme preference
+            string savedThemeName = E3.CharacterSettings.Misc_UITheme;
+            _currentThemePreset = _themePresets.FirstOrDefault(t => t.Name.Equals(savedThemeName, StringComparison.OrdinalIgnoreCase)) ?? _themePresets[0];
+            ApplyThemePreset(_currentThemePreset);
+            _themeInitialized = true;
+        }
+
+        private static void ApplyThemePreset(ThemeDefinition preset)
+        {
+            _activeThemeColors.Clear();
+            foreach (var col in _themeColorOrder)
+            {
+                if (!preset.Colors.TryGetValue(col, out var values))
+                {
+                    values = _themeDefaultColorMap[col];
+                }
+
+                _activeThemeColors[col] = (float[])values.Clone();
+            }
+
+            _currentThemePreset = preset;
+            _themeDirty = false;
+        }
+
         private static void PushE3Theme()
         {
-            // Backgrounds
-            imgui_PushStyleColor((int)ImGuiCol.WindowBg, 0.13f, 0.13f, 0.14f, 1.0f);
-            imgui_PushStyleColor((int)ImGuiCol.ChildBg,  0.11f, 0.11f, 0.12f, 1.0f);
-            // Frames
-            imgui_PushStyleColor((int)ImGuiCol.FrameBg,         0.17f, 0.18f, 0.20f, 1.0f);
-            imgui_PushStyleColor((int)ImGuiCol.FrameBgHovered,  0.20f, 0.21f, 0.23f, 1.0f);
-            imgui_PushStyleColor((int)ImGuiCol.FrameBgActive,   0.19f, 0.20f, 0.22f, 1.0f);
-            // Buttons (teal accent)
-            imgui_PushStyleColor((int)ImGuiCol.Button,         0.13f, 0.55f, 0.53f, 1.0f);
-            imgui_PushStyleColor((int)ImGuiCol.ButtonHovered,  0.17f, 0.66f, 0.64f, 1.0f);
-            imgui_PushStyleColor((int)ImGuiCol.ButtonActive,   0.12f, 0.48f, 0.47f, 1.0f);
-            // Headers (used by tree nodes, selectable headers)
-            imgui_PushStyleColor((int)ImGuiCol.Header,         0.12f, 0.50f, 0.49f, 0.55f);
-            imgui_PushStyleColor((int)ImGuiCol.HeaderHovered,  0.16f, 0.62f, 0.60f, 0.80f);
-            imgui_PushStyleColor((int)ImGuiCol.HeaderActive,   0.12f, 0.50f, 0.49f, 1.00f);
-            // Tabs
-            imgui_PushStyleColor((int)ImGuiCol.Tab,               0.11f, 0.48f, 0.46f, 1.0f);
-            imgui_PushStyleColor((int)ImGuiCol.TabHovered,        0.16f, 0.62f, 0.60f, 1.0f);
-            imgui_PushStyleColor((int)ImGuiCol.TabActive,         0.13f, 0.55f, 0.53f, 1.0f);
-            imgui_PushStyleColor((int)ImGuiCol.TabUnfocused,      0.09f, 0.09f, 0.10f, 1.0f);
-            imgui_PushStyleColor((int)ImGuiCol.TabUnfocusedActive,0.11f, 0.11f, 0.12f, 1.0f);
-            // Sliders / checks
-            imgui_PushStyleColor((int)ImGuiCol.SliderGrab,       0.29f, 0.79f, 0.76f, 1.0f);
-            imgui_PushStyleColor((int)ImGuiCol.SliderGrabActive, 0.36f, 0.86f, 0.80f, 1.0f);
-            imgui_PushStyleColor((int)ImGuiCol.CheckMark,        0.36f, 0.86f, 0.80f, 1.0f);
-            // Titles
-            imgui_PushStyleColor((int)ImGuiCol.TitleBg,        0.10f, 0.10f, 0.11f, 1.0f);
-            imgui_PushStyleColor((int)ImGuiCol.TitleBgActive,  0.12f, 0.12f, 0.14f, 1.0f);
-            // Separators
-            imgui_PushStyleColor((int)ImGuiCol.Separator,         0.25f, 0.27f, 0.30f, 1.0f);
-            imgui_PushStyleColor((int)ImGuiCol.SeparatorHovered,  0.30f, 0.33f, 0.36f, 1.0f);
-            imgui_PushStyleColor((int)ImGuiCol.SeparatorActive,   0.21f, 0.60f, 0.60f, 1.0f);
-            // Scrollbars
-            imgui_PushStyleColor((int)ImGuiCol.ScrollbarGrab,        0.28f, 0.30f, 0.32f, 1.0f);
-            imgui_PushStyleColor((int)ImGuiCol.ScrollbarGrabHovered, 0.32f, 0.34f, 0.36f, 1.0f);
-            imgui_PushStyleColor((int)ImGuiCol.ScrollbarGrabActive,  0.36f, 0.38f, 0.40f, 1.0f);
+            EnsureThemeInitialized();
+            foreach (var col in _themeColorOrder)
+            {
+                var values = _activeThemeColors[col];
+                imgui_PushStyleColor((int)col, values[0], values[1], values[2], values[3]);
+            }
         }
         private static void PopE3Theme()
         {
-            imgui_PopStyleColor(_themePushCount);
+            imgui_PopStyleColor(_themeColorOrder.Length);
+        }
+
+        private static bool RenderThemeColorEditor(ThemeColorEditorEntry entry)
+        {
+            if (!_activeThemeColors.TryGetValue(entry.Color, out var values))
+            {
+                return false;
+            }
+
+            bool changed = false;
+            imgui_Text(entry.Label);
+            imgui_SameLine();
+            imgui_TextColored(values[0], values[1], values[2], values[3], "###");
+
+            double r = values[0];
+            imgui_SetNextItemWidth(160f);
+            if (imgui_SliderDouble($"R##{entry.Color}", ref r, 0.0, 1.0, "%.2f"))
+            {
+                values[0] = (float)r;
+                changed = true;
+            }
+
+            double g = values[1];
+            imgui_SetNextItemWidth(160f);
+            if (imgui_SliderDouble($"G##{entry.Color}", ref g, 0.0, 1.0, "%.2f"))
+            {
+                values[1] = (float)g;
+                changed = true;
+            }
+
+            double b = values[2];
+            imgui_SetNextItemWidth(160f);
+            if (imgui_SliderDouble($"B##{entry.Color}", ref b, 0.0, 1.0, "%.2f"))
+            {
+                values[2] = (float)b;
+                changed = true;
+            }
+
+            double a = values[3];
+            imgui_SetNextItemWidth(160f);
+            if (imgui_SliderDouble($"A##{entry.Color}", ref a, 0.0, 1.0, "%.2f"))
+            {
+                values[3] = (float)a;
+                changed = true;
+            }
+
+            return changed;
+        }
+
+        private static void RenderThemeModal()
+        {
+            EnsureThemeInitialized();
+
+            PushE3Theme();
+            int flags = (int)(ImGuiWindowFlags.ImGuiWindowFlags_NoCollapse | ImGuiWindowFlags.ImGuiWindowFlags_AlwaysAutoResize | ImGuiWindowFlags.ImGuiWindowFlags_NoDocking);
+            bool open = imgui_Begin(_themeWindowTitle, flags);
+            if (open)
+            {
+                imgui_Text("Adjust the active UI theme or switch to a preset.");
+
+                string presetLabel = _themeDirty ? $"{_currentThemePreset.Name} (modified)" : _currentThemePreset.Name;
+                if (_comboAvailable)
+                {
+                    bool opened = BeginComboSafe("Theme Preset", presetLabel);
+                    if (opened)
+                    {
+                        foreach (var preset in _themePresets)
+                        {
+                            bool selected = ReferenceEquals(preset, _currentThemePreset) && !_themeDirty;
+                            if (imgui_Selectable(preset.Name, selected))
+                            {
+                                ApplyThemePreset(preset);
+                                // Save the selected theme to character settings
+                                E3.CharacterSettings.Misc_UITheme = preset.Name;
+                                E3.CharacterSettings.SaveData();
+                            }
+                        }
+                        EndComboSafe();
+                    }
+                }
+                else
+                {
+                    imgui_Text("Theme presets unavailable (combo unsupported).");
+                }
+
+                imgui_SameLine();
+                if (imgui_Button("Close"))
+                {
+                    _themeWindowOpen = false;
+                }
+
+                if (_themeDirty)
+                {
+                    imgui_SameLine();
+                    if (imgui_Button("Revert"))
+                    {
+                        ApplyThemePreset(_currentThemePreset);
+                    }
+                }
+
+                imgui_Separator();
+
+                foreach (var section in _themeEditorSections)
+                {
+                    if (imgui_CollapsingHeader(section.Header, 0))
+                    {
+                        foreach (var entry in section.Entries)
+                        {
+                            if (RenderThemeColorEditor(entry))
+                            {
+                                _themeDirty = true;
+                            }
+                            imgui_Separator();
+                        }
+                    }
+                }
+            }
+
+            imgui_End();
+            PopE3Theme();
+
+            if (!open)
+            {
+                _themeWindowOpen = false;
+            }
+        }
+
+        private static void RenderHeaderControls()
+        {
+            const float controlColumnWidth = 55f;
+
+            if (imgui_BeginTable("E3HeaderControlsTable", 4, (int)ImGuiTableFlags.ImGuiTableFlags_SizingStretchSame, 0f))
+            {
+                imgui_TableSetupColumn("Fill", (int)ImGuiTableColumnFlags.ImGuiTableColumnFlags_WidthStretch, 1f);
+                imgui_TableSetupColumn("DonateButton", (int)ImGuiTableColumnFlags.ImGuiTableColumnFlags_WidthFixed, controlColumnWidth);
+                imgui_TableSetupColumn("ThemeButton", (int)ImGuiTableColumnFlags.ImGuiTableColumnFlags_WidthFixed, controlColumnWidth);
+                imgui_TableSetupColumn("CloseButton", (int)ImGuiTableColumnFlags.ImGuiTableColumnFlags_WidthFixed, controlColumnWidth);
+                imgui_TableNextRow();
+
+                if (imgui_TableNextColumn())
+                {
+                    // Empty stretch column to push buttons to the right edge
+                }
+
+                if (imgui_TableNextColumn())
+                {
+                    if (imgui_Button("Donate"))
+                    {
+                        _showDonateModal = true;
+                    }
+                }
+
+                if (imgui_TableNextColumn())
+                {
+                    if (imgui_Button("Theme"))
+                    {
+                        _themeWindowOpen = !_themeWindowOpen;
+                    }
+                }
+
+                if (imgui_TableNextColumn())
+                {
+                    if (imgui_Button("Close"))
+                    {
+                        _themeWindowOpen = false;
+                        imgui_Begin_OpenFlagSet(_e3ImGuiWindow, false);
+                    }
+                }
+
+                imgui_EndTable();
+            }
+        }
+
+        private static void OpenUrl(string url)
+        {
+            try
+            {
+                var psi = new ProcessStartInfo
+                {
+                    FileName = url,
+                    UseShellExecute = true
+                };
+                Process.Start(psi);
+            }
+            catch (Exception ex)
+            {
+                E3.Log.Write($"Failed to open URL: {url} - {ex.Message}", Logging.LogLevels.Error);
+            }
+        }
+
+        private static void RenderDonateModal()
+        {
+            imgui_Begin_OpenFlagSet("Support E3", true);
+            bool open = imgui_Begin("Support E3", (int)ImGuiWindowFlags.ImGuiWindowFlags_AlwaysAutoResize);
+            if (open)
+            {
+                imgui_TextColored(0.9f, 0.9f, 0.6f, 1.0f, "Hi, Ty for thinking of donating!\nIf you wish to donate, please use friends and family.");
+                imgui_Separator();
+                
+                // Buttons centered horizontally
+                float avail = imgui_GetContentRegionAvailX();
+                float yesW = 60f;
+                float noW = 60f;
+                float spacing = 8f;
+                float total = yesW + spacing + noW;
+                if (total < avail)
+                {
+                    imgui_SameLineEx((avail - total) / 2f, 0f);
+                }
+                if (imgui_Button("Yes"))
+                {
+                    OpenUrl("https://www.paypal.com/paypalme/RekkaSoftware");
+                    _showDonateModal = false;
+                }
+                imgui_SameLine();
+                if (imgui_Button("No"))
+                {
+                    _showDonateModal = false;
+                }
+            }
+            imgui_End();
+            if (!open)
+            {
+                _showDonateModal = false;
+            }
         }
         // Config UI toggle: "/e3imgui".
         private static readonly string _e3ImGuiWindow = "E3Next Config";
@@ -201,23 +698,29 @@ namespace MonoCore
             // Only render if ImGui is available and ready
             if (_imguiContextReady && imgui_Begin_OpenFlagGet(_e3ImGuiWindow))
             {
-                // Apply E3 theme (dark grey + teal accents)
+                // Apply active E3 theme colors
                 PushE3Theme();
                 imgui_Begin(_e3ImGuiWindow, (int)ImGuiWindowFlags.ImGuiWindowFlags_None);
 
                 // Header with better styling
-                imgui_TextColored(0.95f, 0.85f, 0.35f, 1.0f, $"nE³xt v{E3Core.Processors.Setup._e3Version} | Build {E3Core.Processors.Setup._buildDate}");
- 
-                imgui_SameLine();
-                    // Top-right Close button for the main window
-                    try
+                if (imgui_BeginTable("E3HeaderTable", 2, (int)ImGuiTableFlags.ImGuiTableFlags_SizingStretchSame, 0f))
+                {
+                    imgui_TableSetupColumn("Info", (int)ImGuiTableColumnFlags.ImGuiTableColumnFlags_WidthStretch, 1f);
+                    imgui_TableSetupColumn("Controls", (int)ImGuiTableColumnFlags.ImGuiTableColumnFlags_WidthStretch, 0f);
+                    imgui_TableNextRow();
+
+                    if (imgui_TableNextColumn())
                     {
-                        if (imgui_RightAlignButton("Close"))
-                        {
-                            imgui_Begin_OpenFlagSet(_e3ImGuiWindow, false);
-                        }
+                        imgui_TextColored(0.95f, 0.85f, 0.35f, 1.0f, $"nE³xt v{E3Core.Processors.Setup._e3Version} | Build {E3Core.Processors.Setup._buildDate}");
                     }
-                    catch { }
+
+                    if (imgui_TableNextColumn())
+                    {
+                        RenderHeaderControls();
+                    }
+
+                    imgui_EndTable();
+                }
 
                     imgui_Separator();
 
@@ -261,6 +764,16 @@ namespace MonoCore
 
                 imgui_End();
                 PopE3Theme();
+            }
+
+            if (_imguiContextReady && _themeWindowOpen)
+            {
+                RenderThemeModal();
+            }
+
+            if (_imguiContextReady && _showDonateModal)
+            {
+                RenderDonateModal();
             }
 
             // Render Hunt window if toggled
@@ -2173,8 +2686,7 @@ namespace MonoCore
                                 // Initialize expanded state defaults
                                 if (!_cfgSectionExpanded.ContainsKey(sec))
                                 {
-                                    var importantSections = new[] { "Misc", "Assist Settings", "General", "Heals" };
-                                    _cfgSectionExpanded[sec] = Array.Exists(importantSections, s => string.Equals(s, sec, StringComparison.OrdinalIgnoreCase));
+                                    _cfgSectionExpanded[sec] = false;
                                 }
 
                                 // Section row
