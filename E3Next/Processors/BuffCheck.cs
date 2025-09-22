@@ -46,6 +46,8 @@ namespace E3Core.Processors
 		//private static Int64 _printoutTimer;
 		private static Data.Spell _selectAura = null;
 		private static Int64 _nextBuffCheck = 0;
+		[ExposedData("BuffCheck", "BuffTargetID")]
+		public static Int32 BuffTargetID = -1;
 		[ExposedData("BuffCheck", "BuffCheckInterval")]
 		private static Int64 _nextBuffCheckInterval = 1000;
 		[ExposedData("BuffCheck", "XPBuffs")]
@@ -656,76 +658,20 @@ namespace E3Core.Processors
 
 			foreach (var spell in buffs)
 			{
-				if (e3util.IsActionBlockingWindowOpen()) return;
-				if (e3util.IsRezDiaglogBoxOpen()) return;
-				//if it the target is one of our base class short names, check all bots and their short name type for possible targets.
-				if (String.Equals(spell.CastTarget,"bots",StringComparison.OrdinalIgnoreCase))
+				try
 				{
-					foreach (var name in E3.Bots.BotsConnected())
+					BuffTargetID = -1; //reset the current buff target, this is mainly used for IF conditions
+					if (e3util.IsActionBlockingWindowOpen()) return;
+					if (e3util.IsRezDiaglogBoxOpen()) return;
+					//if it the target is one of our base class short names, check all bots and their short name type for possible targets.
+					if (String.Equals(spell.CastTarget, "bots", StringComparison.OrdinalIgnoreCase))
 					{
-						if (_spawns.TryByName(name, out var s))
+						foreach (var name in E3.Bots.BotsConnected())
 						{
-							if (spell.ExcludedClasses.Contains(s.ClassShortName)) { continue; }
-							if(spell.ExcludedNames.Contains(s.CleanName)) { continue; }	
-							string previousTarget = spell.CastTarget;
-							try
+							if (_spawns.TryByName(name, out var s))
 							{
-								spell.CastTarget = name;
-								//change the name
-								if (BuffBots_SingleBuff(spell, usePets) == BuffBots_ReturnType.ExitOut)
-								{
-									return;
-								}
-							}
-							finally
-							{
-								spell.CastTarget = previousTarget;
-							}
-						}
-					}
-				}
-				if (String.Equals(spell.CastTarget, "gbots", StringComparison.OrdinalIgnoreCase))
-				{
-					foreach (var name in E3.Bots.BotsConnected())
-					{
-						if (_spawns.TryByName(name, out var s))
-						{
-							if (spell.ExcludedClasses.Contains(s.ClassShortName)) { continue; }
-							if (spell.ExcludedNames.Contains(s.CleanName)) { continue; }
-
-							Int32 groupMemberIndex = MQ.Query<Int32>($"${{Group.Member[{name}].Index}}");
-							if (groupMemberIndex < 0)
-							{
-								//ignore it
-								continue;
-							}
-							string previousTarget = spell.CastTarget;
-							try
-							{
-								spell.CastTarget = name;
-								//change the name
-								if (BuffBots_SingleBuff(spell, usePets) == BuffBots_ReturnType.ExitOut)
-								{
-									return;
-								}
-							}
-							finally
-							{
-								spell.CastTarget = previousTarget;
-							}
-						}
-					}
-				}
-				else if (EQClasses.ClassShortNamesLookup.Contains(spell.CastTarget))
-				{
-					//check for class name types
-					foreach (var name in E3.Bots.BotsConnected())
-					{
-						if (_spawns.TryByName(name, out var s))
-						{
-							string classShortName = s.ClassShortName;
-							if (spell.CastTarget.Equals(classShortName, StringComparison.OrdinalIgnoreCase))
-							{
+								if (spell.ExcludedClasses.Contains(s.ClassShortName)) { continue; }
+								if (spell.ExcludedNames.Contains(s.CleanName)) { continue; }
 								string previousTarget = spell.CastTarget;
 								try
 								{
@@ -741,16 +687,80 @@ namespace E3Core.Processors
 									spell.CastTarget = previousTarget;
 								}
 							}
-							
+						}
+					}
+					if (String.Equals(spell.CastTarget, "gbots", StringComparison.OrdinalIgnoreCase))
+					{
+						foreach (var name in E3.Bots.BotsConnected())
+						{
+							if (_spawns.TryByName(name, out var s))
+							{
+								if (spell.ExcludedClasses.Contains(s.ClassShortName)) { continue; }
+								if (spell.ExcludedNames.Contains(s.CleanName)) { continue; }
+
+								Int32 groupMemberIndex = MQ.Query<Int32>($"${{Group.Member[{name}].Index}}");
+								if (groupMemberIndex < 0)
+								{
+									//ignore it
+									continue;
+								}
+								string previousTarget = spell.CastTarget;
+								try
+								{
+									spell.CastTarget = name;
+									//change the name
+									if (BuffBots_SingleBuff(spell, usePets) == BuffBots_ReturnType.ExitOut)
+									{
+										return;
+									}
+								}
+								finally
+								{
+									spell.CastTarget = previousTarget;
+								}
+							}
+						}
+					}
+					else if (EQClasses.ClassShortNamesLookup.Contains(spell.CastTarget))
+					{
+						//check for class name types
+						foreach (var name in E3.Bots.BotsConnected())
+						{
+							if (_spawns.TryByName(name, out var s))
+							{
+								string classShortName = s.ClassShortName;
+								if (spell.CastTarget.Equals(classShortName, StringComparison.OrdinalIgnoreCase))
+								{
+									string previousTarget = spell.CastTarget;
+									try
+									{
+										spell.CastTarget = name;
+										//change the name
+										if (BuffBots_SingleBuff(spell, usePets) == BuffBots_ReturnType.ExitOut)
+										{
+											return;
+										}
+									}
+									finally
+									{
+										spell.CastTarget = previousTarget;
+									}
+								}
+
+							}
+						}
+					}
+					else
+					{
+						if (BuffBots_SingleBuff(spell, usePets) == BuffBots_ReturnType.ExitOut)
+						{
+							return;
 						}
 					}
 				}
-				else
+				finally
 				{
-					if (BuffBots_SingleBuff(spell, usePets) == BuffBots_ReturnType.ExitOut)
-					{
-						return;
-					}
+					BuffTargetID = -1; //reset the current buff target, this is mainly used for IF conditions
 				}
 			}
 		}
@@ -796,10 +806,14 @@ namespace E3Core.Processors
 					}
 				}
 
+
+
 				if (Heals.IgnoreHealTargets.Count>1) return BuffBots_ReturnType.Continue;
 
 				if (_spawns.TryByName(target, out s))
 				{
+					
+
 					if (usePets && s.PetID < 1)
 					{
 						return BuffBots_ReturnType.Continue;
@@ -814,6 +828,9 @@ namespace E3Core.Processors
 							s = ts;
 						}
 					}
+
+					BuffTargetID = s.ID; //this needs to be set before the Ifs check is done, so ifs can be done on the target of said buff.
+
 					if (!String.IsNullOrWhiteSpace(spell.Ifs))
 					{
 						if (!Casting.Ifs(spell))
@@ -825,15 +842,13 @@ namespace E3Core.Processors
 						}
 					}
 
-
+					
 					if (!Casting.InRange(s.ID, spell))
 					{
 						return BuffBots_ReturnType.Continue;
 					}
 					if (s.ID == E3.CurrentId)
 					{
-
-
 						bool hasCheckFor = false;
 						bool shouldContinue = false;
 						if (spell.CheckForCollection.Count > 0)

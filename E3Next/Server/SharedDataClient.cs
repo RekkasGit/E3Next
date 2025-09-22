@@ -299,6 +299,7 @@ namespace E3Core.Server
 							}
 							if (!internalComand)
 							{
+								//need to be delayed for some commands (such as /notify), so just delay them all. 
 								MQ.Cmd(command,true);
 
 							}

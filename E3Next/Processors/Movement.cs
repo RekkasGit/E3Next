@@ -774,11 +774,11 @@ namespace E3Core.Processors
             //randomly pick group member
             foreach (int memberid in Basics.GroupMembers.OrderBy(x=>Guid.NewGuid()).ToList())
             {
-                if (Basics.InCombat())
-                {
-                    E3.Bots.Broadcast("In combat or assist was called, cancelling summon");
-                    return;
-                }
+                //if (Basics.InCombat())
+                //{
+                //    E3.Bots.Broadcast("In combat or assist was called, cancelling summon");
+                //    return;
+                //}
                 if (_spawns.TryByID(memberid, out s))
                 {
                     if (s.Distance < 50 && MQ.Query<bool>($"${{Spawn[id {s.ID}].LineOfSight}}"))

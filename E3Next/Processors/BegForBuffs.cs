@@ -85,12 +85,23 @@ namespace E3Core.Processors
 									if (!spell.Enabled) continue;
 									_log.Write($"Checking spell {spell.CastName}");
 									if (!String.IsNullOrWhiteSpace(spell.Ifs))
-									{
-                                       
-										if (!Casting.Ifs(spell))
-										{
-											continue;
+                                    {
+
+                                        try
+                                        {
+											BuffCheck.BuffTargetID = spawn.ID;
+
+											if (!Casting.Ifs(spell))
+											{
+												continue;
+											}
 										}
+                                        finally
+                                        {
+                                            BuffCheck.BuffTargetID = -1;
+
+										}
+                                       
 									}
 									_log.Write($"enquing spell to be called soon...");
 
@@ -136,11 +147,20 @@ namespace E3Core.Processors
 									if (!spell.Enabled) continue;
 									if (!String.IsNullOrWhiteSpace(spell.Ifs))
                                     {
-                                        if (!Casting.Ifs(spell))
-                                        {
-                                            continue;
-                                        }
-                                    }
+										try
+										{
+											BuffCheck.BuffTargetID = petid;
+											if (!Casting.Ifs(spell))
+											{
+												continue;
+											}
+										}
+										finally
+										{
+											BuffCheck.BuffTargetID = -1;
+
+										}
+									}
                                     _queuedBuffs.Enqueue(new BuffQueuedItem() { TargetID = petid, Spell = spell });
                                     totalQueuedSpells++;
                                 }
@@ -495,12 +515,22 @@ namespace E3Core.Processors
 
                     if (!String.IsNullOrWhiteSpace(s.Ifs))
                     {
-                        Casting.TrueTarget(spawn.ID);
-                        if (!Casting.Ifs(s))
-                        {
-                            _queuedBuffs.Dequeue();
-                            return;
-                        }
+						try
+						{
+							BuffCheck.BuffTargetID = spawn.ID;
+							Casting.TrueTarget(spawn.ID);
+							if (!Casting.Ifs(s))
+							{
+								_queuedBuffs.Dequeue();
+								return;
+							}
+						}
+						finally
+						{
+							BuffCheck.BuffTargetID = -1;
+
+						}
+						
                     }
                     if (s.CheckForCollection.Count > 0)
 					{
