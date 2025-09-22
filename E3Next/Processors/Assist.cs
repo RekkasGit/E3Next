@@ -194,18 +194,18 @@ namespace E3Core.Processors
             Spawn s;
             Int32 targetId = MQ.Query<Int32>("${Target.ID}");
             bool manualControl = e3util.IsManualControl();
-
+			
+            if (MQ.Query<bool>("${Me.Feigning}"))
+			{
+				if (E3.CharacterSettings.IfFDStayDown) return;
+				E3.Bots.Broadcast("I'm Fegined, trying to stand up");
+				MQ.Cmd("/stand");
+			}
+			
             if (targetId != AssistTargetID && manualControl) return;
-
             _spawns.RefreshList();
             if (_spawns.TryByID(AssistTargetID, out s))
             {
-                if (MQ.Query<bool>("${Me.Feigning}"))
-                {
-					if (E3.CharacterSettings.IfFDStayDown) return;
-					MQ.Cmd("/stand");
-                }
-
                 //if range/melee
                 if (_rangeTypes.Contains(E3.CharacterSettings.Assist_Type, StringComparer.OrdinalIgnoreCase) || _meleeTypes.Contains(E3.CharacterSettings.Assist_Type, StringComparer.OrdinalIgnoreCase))
                 {
@@ -295,6 +295,7 @@ namespace E3Core.Processors
 			if (MQ.Query<bool>("${Me.Feigning}"))
 			{
 				if (E3.CharacterSettings.IfFDStayDown) return;
+				E3.Bots.Broadcast("I'm Fegined, trying to stand up");
 				MQ.Cmd("/stand");
 			}
 
@@ -574,8 +575,9 @@ namespace E3Core.Processors
 				bool amIStanding = MQ.Query<bool>("${Me.Standing}");
 				if (MQ.Query<bool>("${Me.Feigning}"))
                 {
-                    //if (E3.CharacterSettings.IfFDStayDown) return;
-                    MQ.Cmd("/stand");
+					//if (E3.CharacterSettings.IfFDStayDown) return;
+					E3.Bots.Broadcast("I'm Fegined, trying to stand up");
+					MQ.Cmd("/stand");
                 }
 				else
                 {
