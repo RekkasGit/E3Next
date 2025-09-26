@@ -1262,7 +1262,7 @@ namespace MonoCore
                             string currentMethod = E3Core.Processors.Hunt.PullMethod ?? "None";
                             _huntPullMethod = string.IsNullOrEmpty(_huntPullMethod) ? currentMethod : _huntPullMethod;
                             
-                            string[] pullMethods = { "None", "Ranged", "Spell", "Item", "AA", "Disc" };
+                            string[] pullMethods = { "None", "Ranged", "Spell", "Item", "AA", "Disc", "Attack", "Melee" };
                             string previewMethod = _huntPullMethod;
                             if (imgui_BeginCombo("##pull_method", previewMethod, 0))
                             {
@@ -3287,12 +3287,12 @@ namespace MonoCore
                 }
             }
             
-            // Add our HealPct suffix helper for heal-related keys
+            // Add our HealPct+Gem helper for heal-related keys
             if (IsHealingKey(_cfgSelectedSection, _cfgSelectedKey))
             {
                 imgui_Separator();
-                imgui_TextColored(0.8f, 0.9f, 0.95f, 1.0f, "HealPct Helper");
-                imgui_Text("(HealPct suffix functionality to be added)");
+                imgui_TextColored(0.8f, 0.9f, 0.95f, 1.0f, "Heals Helper: Add with HealPct + Gem");
+                RenderHealPctSuffixInput("tools", selectedSection, 220f);
             }
             
             imgui_Separator();
@@ -4180,6 +4180,11 @@ namespace MonoCore
             return dest;
         }
 
+        // Options for appending HealPct/Gem when adding from catalog in Heals
+        private static bool _cfgAddAppendHealGem = true;
+        private static string _cfgAddHealPct = "80";
+        private static string _cfgAddGem = "1";
+
         private static void RenderAddFromCatalogModal(IniData pd, SectionData selectedSection)
         {
             imgui_Begin_OpenFlagSet("Add From Catalog", true);
@@ -4246,6 +4251,23 @@ namespace MonoCore
                 }
                 
                 imgui_Separator();
+
+                // If editing Heals keys, show append options
+                if (IsHealingKey(_cfgSelectedSection, _cfgSelectedKey))
+                {
+                    imgui_TextColored(0.8f, 0.9f, 1.0f, 1.0f, "Append options (Heals)");
+                    bool prev = _cfgAddAppendHealGem;
+                    _cfgAddAppendHealGem = imgui_Checkbox("Append HealPct + Gem", _cfgAddAppendHealGem);
+                    imgui_SameLine();
+                    imgui_Text("HealPct:"); imgui_SameLine();
+                    imgui_SetNextItemWidth(45f);
+                    if (imgui_InputText("##add_healpct", _cfgAddHealPct)) _cfgAddHealPct = imgui_InputText_Get("##add_healpct");
+                    imgui_SameLine();
+                    imgui_Text("Gem:"); imgui_SameLine();
+                    imgui_SetNextItemWidth(35f);
+                    if (imgui_InputText("##add_gem", _cfgAddGem)) _cfgAddGem = imgui_InputText_Get("##add_gem");
+                    imgui_Separator();
+                }
 
                 // Resolve the catalog for the chosen type
                 var src = GetCatalogByType(_cfgAddType);
@@ -4334,7 +4356,20 @@ namespace MonoCore
                             {
                                 var vals = GetValues(kd);
                                 string v = (e.Name ?? string.Empty).Trim();
-                                if (!vals.Contains(v, StringComparer.OrdinalIgnoreCase))
+
+                                // If we're in a Heals key and the option is enabled, append HealPct/Gem for spells
+                                if (IsHealingKey(_cfgSelectedSection, _cfgSelectedKey) && _cfgAddAppendHealGem && _cfgAddType == AddType.Spells)
+                                {
+                                    int hpct = 80; int gem = 1;
+                                    if (!int.TryParse(_cfgAddHealPct?.Trim(), out hpct)) hpct = 80;
+                                    hpct = Math.Max(1, Math.Min(99, hpct));
+                                    if (!int.TryParse(_cfgAddGem?.Trim(), out gem)) gem = 1;
+                                    gem = Math.Max(1, Math.Min(12, gem));
+                                    v = $"{v}/HealPct|{hpct}/Gem|{gem}";
+                                }
+
+                                // Prevent duplicate base spell entries (compare by leading token before '/')
+                                if (!vals.Any(x => (x ?? string.Empty).Split('/')[0].Equals((e.Name ?? string.Empty).Trim(), StringComparison.OrdinalIgnoreCase)))
                                 {
                                     vals.Add(v);
                                     WriteValues(kd, vals);
@@ -4901,21 +4936,18 @@ namespace MonoCore
             return found.OrderBy(x => x, StringComparer.OrdinalIgnoreCase).ToList();
         }
 
-        // HealPct suffix input helper state
+        // HealPct + Gem suffix input helper state
         private static string _cfgHealPctInputBuffer = string.Empty;
         private static string _cfgHealPctThreshold = "80";
+        private static string _cfgHealGemIndex = "1";
         private static AddType _cfgHealPctCatalogType = AddType.Spells;
         private static string _cfgHealPctSelectedSpell = string.Empty;
         private static string _cfgHealPctFilter = string.Empty;
         
         /// <summary>
-        /// Renders an input field with an inline '/HealPct|##' suffix button and catalog selection.
-        /// This makes it easy to add healing percentage thresholds to spell names when configuring heals.
+        /// Renders inputs to append '/HealPct|##' and '/Gem|#' to a spell name and add it to the current key.
+        /// Supports manual entry or selection from the catalog.
         /// </summary>
-        /// <param name="id">Unique ID for the input field</param>
-        /// <param name="selectedSection">The current ini section being edited</param>
-        /// <param name="width">Width of the input field (0 for auto)</param>
-        /// <returns>True if a spell with HealPct suffix was added</returns>
         private static bool RenderHealPctSuffixInput(string id, SectionData selectedSection, float width = 0f)
         {
             bool spellAdded = false;
@@ -4928,15 +4960,25 @@ namespace MonoCore
             }
             imgui_SameLine();
             
-            imgui_SetNextItemWidth(50f);
+            imgui_Text("HealPct:");
+            imgui_SameLine();
+            imgui_SetNextItemWidth(45f);
             if (imgui_InputText($"##healPctThreshold_{id}", _cfgHealPctThreshold))
             {
                 _cfgHealPctThreshold = imgui_InputText_Get($"##healPctThreshold_{id}");
             }
             imgui_SameLine();
+            imgui_Text("Gem:");
+            imgui_SameLine();
+            imgui_SetNextItemWidth(35f);
+            if (imgui_InputText($"##healGemIdx_{id}", _cfgHealGemIndex))
+            {
+                _cfgHealGemIndex = imgui_InputText_Get($"##healGemIdx_{id}");
+            }
+            imgui_SameLine();
             
             imgui_PushStyleColor(21, 0.2f, 0.7f, 0.2f, 1.0f);
-            bool addManualClicked = imgui_Button($"+ /HealPct##{id}");
+            bool addManualClicked = imgui_Button($"Add##healpct_{id}");
             imgui_PopStyleColor();
             
             // Catalog selection row
@@ -4994,26 +5036,22 @@ namespace MonoCore
             
             // Add from catalog button
             imgui_PushStyleColor(21, 0.2f, 0.6f, 0.8f, 1.0f); // Blue button
-            bool addCatalogClicked = imgui_Button($"+ From Catalog##{id}");
+            bool addCatalogClicked = imgui_Button($"Add From Catalog##{id}");
             imgui_PopStyleColor();
+            
+            // Normalized and bounded inputs
+            int hpct = 80;
+            if (!int.TryParse(_cfgHealPctThreshold?.Trim(), out hpct)) hpct = 80;
+            hpct = Math.Max(1, Math.Min(99, hpct));
+            int gem = 1;
+            if (!int.TryParse(_cfgHealGemIndex?.Trim(), out gem)) gem = 1;
+            gem = Math.Max(1, Math.Min(12, gem));
             
             // Handle manual entry
             if (addManualClicked && !string.IsNullOrWhiteSpace(_cfgHealPctInputBuffer))
             {
                 string spellName = _cfgHealPctInputBuffer.Trim();
-                string threshold = _cfgHealPctThreshold.Trim();
-                
-                if (!int.TryParse(threshold, out int thresholdValue))
-                {
-                    thresholdValue = 80;
-                    threshold = "80";
-                }
-                
-                thresholdValue = Math.Max(1, Math.Min(99, thresholdValue));
-                threshold = thresholdValue.ToString();
-                
-                string spellWithSuffix = $"{spellName}/HealPct|{threshold}";
-                
+                string spellWithSuffix = $"{spellName}/HealPct|{hpct}/Gem|{gem}";
                 if (TryAddSpellToSelectedKey(selectedSection, spellWithSuffix))
                 {
                     _cfgHealPctInputBuffer = string.Empty;
@@ -5024,19 +5062,7 @@ namespace MonoCore
             // Handle catalog selection
             if (addCatalogClicked && !string.IsNullOrWhiteSpace(_cfgHealPctSelectedSpell))
             {
-                string threshold = _cfgHealPctThreshold.Trim();
-                
-                if (!int.TryParse(threshold, out int thresholdValue))
-                {
-                    thresholdValue = 80;
-                    threshold = "80";
-                }
-                
-                thresholdValue = Math.Max(1, Math.Min(99, thresholdValue));
-                threshold = thresholdValue.ToString();
-                
-                string spellWithSuffix = $"{_cfgHealPctSelectedSpell}/HealPct|{threshold}";
-                
+                string spellWithSuffix = $"{_cfgHealPctSelectedSpell}/HealPct|{hpct}/Gem|{gem}";
                 if (TryAddSpellToSelectedKey(selectedSection, spellWithSuffix))
                 {
                     _cfgHealPctSelectedSpell = string.Empty;

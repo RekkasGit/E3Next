@@ -197,7 +197,7 @@ namespace E3Core.Processors
         public static string TargetName = string.Empty;
 
         // Pulling configuration
-        [ExposedData("Hunt", "PullMethod")] // None|Ranged|Spell|Item|AA|Disc|Attack
+        [ExposedData("Hunt", "PullMethod")] // None|Ranged|Spell|Item|AA|Disc|Attack|Melee
         public static string PullMethod = "None";
         [ExposedData("Hunt", "PullSpell")] public static string PullSpell = string.Empty;
         [ExposedData("Hunt", "PullItem")] public static string PullItem = string.Empty;
@@ -1919,6 +1919,11 @@ namespace E3Core.Processors
                 case "Attack":
                     return distance >= 5 && distance <= 40;
 
+                case "Melee":
+                    // For melee pulls, we allow engaging when within a reasonable approach distance.
+                    // The PullingTarget handler will navigate the rest of the way.
+                    return distance > 0 && distance <= 200;
+
                 default:
                     return false;
             }
@@ -3020,7 +3025,7 @@ namespace E3Core.Processors
         {
             switch (NormalizeMethod(m))
             {
-                case "None": case "Ranged": case "Spell": case "Item": case "AA": case "Disc": case "Attack": return true;
+                case "None": case "Ranged": case "Spell": case "Item": case "AA": case "Disc": case "Attack": case "Melee": return true;
                 default: return false;
             }
         }
@@ -3035,6 +3040,7 @@ namespace E3Core.Processors
             if (m.Equals("aa", StringComparison.OrdinalIgnoreCase)) return "AA";
             if (m.Equals("disc", StringComparison.OrdinalIgnoreCase) || m.Equals("discipline", StringComparison.OrdinalIgnoreCase)) return "Disc";
             if (m.Equals("attack", StringComparison.OrdinalIgnoreCase)) return "Attack";
+            if (m.Equals("melee", StringComparison.OrdinalIgnoreCase)) return "Melee";
             return m;
         }
 
@@ -3086,6 +3092,9 @@ namespace E3Core.Processors
                     break;
                 case "Attack":
                     TryPull_Attack();
+                    break;
+                case "Melee":
+                    TryPull_Melee();
                     break;
             }
         }
@@ -3188,6 +3197,32 @@ namespace E3Core.Processors
         private static void TryPull_Attack()
         {
             MQ.Cmd("/attack on");
+            SetPullCooldown();
+        }
+
+        private static void TryPull_Melee()
+        {
+            // Ensure we're in melee range before engaging; if not, the PullingTarget handler will keep approaching
+            try
+            {
+                int meleeRange = MQ.Query<int>($"${{Spawn[id {TargetID}].MaxRangeTo}}" );
+                if (meleeRange <= 0) meleeRange = 25;
+                double dist = MQ.Query<double>($"${{Spawn[id {TargetID}].Distance3D}}" );
+                if (dist > meleeRange + 2)
+                {
+                    return; // keep approaching
+                }
+            }
+            catch { /* if queries fail, attempt anyway */ }
+
+            // Face, attack, then call assist for the group
+            MQ.Delay(200);
+            MQ.Cmd("/face fast");
+            MQ.Delay(200);
+            MQ.Cmd("/attack on");
+            MQ.Delay(500);
+            MQ.Cmd("/assistme /all");
+
             SetPullCooldown();
         }
     }
