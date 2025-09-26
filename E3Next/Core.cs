@@ -1376,6 +1376,13 @@ namespace MonoCore
         public extern static void imgui_PushStyleColor(int which, float r, float g, float b, float a);
         [MethodImpl(MethodImplOptions.InternalCall)]
         public extern static void imgui_PopStyleColor(int count);
+        // Style vars (rounding, padding, etc.)
+        [MethodImpl(MethodImplOptions.InternalCall)]
+        public extern static void imgui_PushStyleVarFloat(int which, float value);
+        [MethodImpl(MethodImplOptions.InternalCall)]
+        public extern static void imgui_PushStyleVarVec2(int which, float x, float y);
+        [MethodImpl(MethodImplOptions.InternalCall)]
+        public extern static void imgui_PopStyleVar(int count);
         // Tree nodes
         [MethodImpl(MethodImplOptions.InternalCall)]
         public extern static bool imgui_TreeNode(string label);
@@ -1506,6 +1513,35 @@ namespace MonoCore
         //ImGuiWindowFlags_ResizeFromAnySide    = 1 << 17,  // --> Set io.ConfigWindowsResizeFromEdges=true and make sure mouse cursors are supported by backend (io.BackendFlags & ImGuiBackendFlags_HasMouseCursors)
     }
     
+    enum ImGuiStyleVar
+    {
+        Alpha,
+        DisabledAlpha,
+        WindowPadding,          // ImVec2
+        WindowRounding,         // float
+        WindowBorderSize,       // float
+        WindowMinSize,          // ImVec2
+        WindowTitleAlign,       // ImVec2
+        ChildRounding,          // float
+        ChildBorderSize,        // float
+        PopupRounding,          // float
+        PopupBorderSize,        // float
+        FramePadding,           // ImVec2
+        FrameRounding,          // float
+        FrameBorderSize,        // float
+        ItemSpacing,            // ImVec2
+        ItemInnerSpacing,       // ImVec2
+        IndentSpacing,          // float
+        CellPadding,            // ImVec2
+        ScrollbarSize,          // float
+        ScrollbarRounding,      // float
+        GrabMinSize,            // float
+        GrabRounding,           // float
+        TabRounding,            // float
+        ButtonTextAlign,        // ImVec2
+        SelectableTextAlign     // ImVec2
+    }
+
     enum ImGuiCol
     {
         Text,

@@ -12,6 +12,7 @@ using Google.Protobuf;
 using System.Runtime.InteropServices;
 using System.Diagnostics;
 using System.Runtime.CompilerServices;
+using System.Globalization;
 
 namespace MonoCore
 {
@@ -32,9 +33,28 @@ namespace MonoCore
         private static bool _showThemeSettings = false;
         private static bool _showDonateModal = false;
         private static readonly int _themePushCount = 27;
+        // Rounding settings
+        private static float _rounding = 6.0f;
+        private static string _roundingBuf = string.Empty; // UI buffer for editing rounding
+        private static int _roundingVersion = 0; // bump to force InputText to refresh its content
+        private static readonly int _roundingPushCount = 7; // Window, Child, Popup, Frame, Grab, Tab, Scrollbar
+        
+        private static void PushCommonRounding()
+        {
+            // Apply consistent rounding across key style vars
+            imgui_PushStyleVarFloat((int)ImGuiStyleVar.WindowRounding, _rounding);
+            imgui_PushStyleVarFloat((int)ImGuiStyleVar.ChildRounding, _rounding);
+            imgui_PushStyleVarFloat((int)ImGuiStyleVar.PopupRounding, _rounding);
+            imgui_PushStyleVarFloat((int)ImGuiStyleVar.FrameRounding, _rounding);
+            imgui_PushStyleVarFloat((int)ImGuiStyleVar.GrabRounding, Math.Max(3.0f, _rounding - 2.0f));
+            imgui_PushStyleVarFloat((int)ImGuiStyleVar.TabRounding, _rounding);
+            imgui_PushStyleVarFloat((int)ImGuiStyleVar.ScrollbarRounding, _rounding);
+        }
         
         private static void PushCurrentTheme()
         {
+            // Always push rounding first so it applies consistently regardless of selected theme
+            PushCommonRounding();
             switch (_currentTheme)
             {
                 case UITheme.DarkTeal:
@@ -261,6 +281,8 @@ namespace MonoCore
         
         private static void PopCurrentTheme()
         {
+            // Pop in reverse order: style vars then colors
+            imgui_PopStyleVar(_roundingPushCount);
             imgui_PopStyleColor(_themePushCount);
         }
 
@@ -322,6 +344,54 @@ namespace MonoCore
                 imgui_TextColored(0.8f, 0.9f, 1.0f, 1.0f, "Theme Info:");
                 string themeDescription = GetThemeDescription(_currentTheme);
                 imgui_TextWrapped(themeDescription);
+                
+                imgui_Separator();
+                
+                // Rounding controls
+                imgui_Text("Corner Rounding:");
+                imgui_SameLine();
+                if (string.IsNullOrEmpty(_roundingBuf))
+                {
+                    _roundingBuf = _rounding.ToString("0.0", CultureInfo.InvariantCulture);
+                }
+                imgui_SetNextItemWidth(100f);
+                string roundingInputId = $"##rounding_value_{_roundingVersion}";
+                if (imgui_InputText(roundingInputId, _roundingBuf))
+                {
+                    _roundingBuf = imgui_InputText_Get(roundingInputId) ?? string.Empty;
+                    if (float.TryParse(_roundingBuf, NumberStyles.Float, CultureInfo.InvariantCulture, out var rv))
+                    {
+                        _rounding = Math.Max(0f, Math.Min(12f, rv));
+                    }
+                }
+                imgui_SameLine();
+                imgui_Text($"({_rounding.ToString("0.0", CultureInfo.InvariantCulture)})");
+                imgui_SameLine();
+                if (imgui_Button("-"))
+                {
+                    _rounding = Math.Max(0f, _rounding - 1f);
+                    _roundingBuf = _rounding.ToString("0.0", CultureInfo.InvariantCulture);
+                    _roundingVersion++;
+                }
+                imgui_SameLine();
+                if (imgui_Button("+"))
+                {
+                    _rounding = Math.Min(12f, _rounding + 1f);
+                    _roundingBuf = _rounding.ToString("0.0", CultureInfo.InvariantCulture);
+                    _roundingVersion++;
+                }
+                
+                // Presets
+                imgui_Text("Presets:");
+                if (imgui_Button("0")) { _rounding = 0f; _roundingBuf = _rounding.ToString("0.0", CultureInfo.InvariantCulture); _roundingVersion++; }
+                imgui_SameLine();
+                if (imgui_Button("3")) { _rounding = 3f; _roundingBuf = _rounding.ToString("0.0", CultureInfo.InvariantCulture); _roundingVersion++; }
+                imgui_SameLine();
+                if (imgui_Button("6")) { _rounding = 6f; _roundingBuf = _rounding.ToString("0.0", CultureInfo.InvariantCulture); _roundingVersion++; }
+                imgui_SameLine();
+                if (imgui_Button("9")) { _rounding = 9f; _roundingBuf = _rounding.ToString("0.0", CultureInfo.InvariantCulture); _roundingVersion++; }
+                imgui_SameLine();
+                if (imgui_Button("12")) { _rounding = 12f; _roundingBuf = _rounding.ToString("0.0", CultureInfo.InvariantCulture); _roundingVersion++; }
                 
                 imgui_Separator();
                 
