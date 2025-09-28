@@ -894,7 +894,17 @@ namespace E3Core.Processors
 						{
 							return BuffBots_ReturnType.Continue;
 						}
-						bool willStack = MQ.Query<bool>($"${{Spell[{spell.SpellName}].WillLand}}");
+
+						bool willStack = true;
+						if (spell.CastType == CastingType.AA)
+						{
+							willStack= MQ.Query<bool>($"${{${{Me.AltAbility[{spell.SpellName}].Spell.WillLand}}");
+						}
+						else
+						{
+							willStack = MQ.Query<bool>($"${{Spell[{spell.SpellName}].WillLand}}");
+						}
+
 						if (willStack && Casting.CheckMana(spell) && Casting.CheckReady(spell))
 						{
 							CastReturn result;
