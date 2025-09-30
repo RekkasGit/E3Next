@@ -1456,6 +1456,15 @@ namespace MonoCore
         public extern static bool imgui_SliderInt(string id, ref int value, int min, int max);
         [MethodImpl(MethodImplOptions.InternalCall)]
         public extern static bool imgui_SliderDouble(string id, ref double value, double min, double max, string format);
+        // Style variable functions for rounding and other style properties
+        [MethodImpl(MethodImplOptions.InternalCall)]
+        public extern static void imgui_PushStyleVarFloat(int styleVar, float value);
+        [MethodImpl(MethodImplOptions.InternalCall)]
+        public extern static void imgui_PushStyleVarVec2(int styleVar, float x, float y);
+        [MethodImpl(MethodImplOptions.InternalCall)]
+        public extern static void imgui_PopStyleVar(int count);
+        // Convenience wrapper to pop a single style var
+        public static void imgui_PopStyleVar() => imgui_PopStyleVar(1);
         #endregion
         #endregion
 
@@ -1664,6 +1673,36 @@ namespace MonoCore
         ImGuiTableColumnFlags_PreferSortDescending = 1 << 15,  // Make the initial sort direction Descending when first sorting on this column.
         ImGuiTableColumnFlags_IndentEnable = 1 << 16,  // Use current Indent value when entering cell (default for column 0).
         ImGuiTableColumnFlags_IndentDisable = 1 << 17,  // Ignore current Indent value when entering cell (default for columns > 0). Indentation changes _within_ the cell will still be honored.
+    }
+
+    enum ImGuiStyleVar
+    {
+        Alpha,               // float     Alpha
+        DisabledAlpha,       // float     DisabledAlpha
+        WindowPadding,       // ImVec2    WindowPadding
+        WindowRounding,      // float     WindowRounding
+        WindowBorderSize,    // float     WindowBorderSize
+        WindowMinSize,       // ImVec2    WindowMinSize
+        WindowTitleAlign,    // ImVec2    WindowTitleAlign
+        ChildRounding,       // float     ChildRounding
+        ChildBorderSize,     // float     ChildBorderSize
+        PopupRounding,       // float     PopupRounding
+        PopupBorderSize,     // float     PopupBorderSize
+        FramePadding,        // ImVec2    FramePadding
+        FrameRounding,       // float     FrameRounding
+        FrameBorderSize,     // float     FrameBorderSize
+        ItemSpacing,         // ImVec2    ItemSpacing
+        ItemInnerSpacing,    // ImVec2    ItemInnerSpacing
+        IndentSpacing,       // float     IndentSpacing
+        CellPadding,         // ImVec2    CellPadding
+        ScrollbarSize,       // float     ScrollbarSize
+        ScrollbarRounding,   // float     ScrollbarRounding
+        GrabMinSize,         // float     GrabMinSize
+        GrabRounding,        // float     GrabRounding
+        TabRounding,         // float     TabRounding
+        ButtonTextAlign,     // ImVec2    ButtonTextAlign
+        SelectableTextAlign, // ImVec2    SelectableTextAlign
+        COUNT
     }
     public enum MQFeature
     {

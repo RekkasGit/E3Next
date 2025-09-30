@@ -157,7 +157,7 @@ namespace E3Core.Processors
         }
     }
 
-    // Hunt mode: lightweight mob finder + navigator inspired by PocketFarm
+    // Hunt mode: lightweight mob finder + navigator
     public static class Hunt
     {
         private static readonly Logging _log = E3.Log;
@@ -310,7 +310,7 @@ namespace E3Core.Processors
         private static long _nextTickAt = 0;
         private static readonly int _tickIntervalMs = 200; // snappy responsiveness
         private static long _nextScanAt = 0;
-        private static readonly int _scanIntervalMs = 350; // faster scans for snappier target acquisition (rgmercs-like)
+        private static readonly int _scanIntervalMs = 350; // faster scans for snappier target acquisition
         private static long _nextPullAt = 0;
         private static readonly int _pullCooldownMs = 1800; // slightly faster retry cadence
         private static long _nextNavAt = 0;

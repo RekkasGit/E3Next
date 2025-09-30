@@ -19,21 +19,23 @@ namespace MonoCore
     // /e3imgui UI extracted into dedicated partial class file
     public static partial class Core
     {
-        private sealed class ThemeDefinition
-        {
-            public string Name { get; }
-            public Dictionary<ImGuiCol, float[]> Colors { get; }
+    private sealed class ThemeDefinition
+    {
+        public string Name { get; }
+        public Dictionary<ImGuiCol, float[]> Colors { get; }
+        public Dictionary<ImGuiStyleVar, float> StyleVars { get; }
 
-            public ThemeDefinition(string name, IDictionary<ImGuiCol, float[]> colors)
+        public ThemeDefinition(string name, IDictionary<ImGuiCol, float[]> colors, IDictionary<ImGuiStyleVar, float> styleVars = null)
+        {
+            Name = name;
+            Colors = new Dictionary<ImGuiCol, float[]>(colors.Count);
+            foreach (var kvp in colors)
             {
-                Name = name;
-                Colors = new Dictionary<ImGuiCol, float[]>(colors.Count);
-                foreach (var kvp in colors)
-                {
-                    Colors[kvp.Key] = (float[])kvp.Value.Clone();
-                }
+                Colors[kvp.Key] = (float[])kvp.Value.Clone();
             }
+            StyleVars = styleVars != null ? new Dictionary<ImGuiStyleVar, float>(styleVars) : new Dictionary<ImGuiStyleVar, float>();
         }
+    }
 
         private readonly struct ThemeColor
         {
@@ -62,6 +64,22 @@ namespace MonoCore
             {
                 Color = color;
                 Label = label;
+            }
+        }
+
+        private readonly struct ThemeStyleVarEditorEntry
+        {
+            public ImGuiStyleVar StyleVar { get; }
+            public string Label { get; }
+            public float MinValue { get; }
+            public float MaxValue { get; }
+
+            public ThemeStyleVarEditorEntry(ImGuiStyleVar styleVar, string label, float minValue = 0.0f, float maxValue = 20.0f)
+            {
+                StyleVar = styleVar;
+                Label = label;
+                MinValue = minValue;
+                MaxValue = maxValue;
             }
         }
 
@@ -129,10 +147,22 @@ namespace MonoCore
 
         private static readonly Dictionary<ImGuiCol, float[]> _themeDefaultColorMap = BuildColorMap(_themeBaseColors);
 
+        private static readonly Dictionary<ImGuiStyleVar, float> _themeDefaultStyleVars = new Dictionary<ImGuiStyleVar, float>
+        {
+            { ImGuiStyleVar.WindowRounding, 6.0f },
+            { ImGuiStyleVar.ChildRounding, 4.0f },
+            { ImGuiStyleVar.FrameRounding, 4.0f },
+            { ImGuiStyleVar.PopupRounding, 6.0f },
+            { ImGuiStyleVar.ScrollbarRounding, 8.0f },
+            { ImGuiStyleVar.GrabRounding, 4.0f },
+            { ImGuiStyleVar.TabRounding, 4.0f }
+        };
+
         private static readonly ThemeDefinition[] _themePresets = new[]
         {
             CreateTheme("E3 Dark Teal"),
-            CreateTheme("Midnight Violet",
+            CreateTheme("Midnight Violet", new ThemeColor[]
+            {
                 new ThemeColor(ImGuiCol.WindowBg, 0.12f, 0.10f, 0.16f, 1.0f),
                 new ThemeColor(ImGuiCol.ChildBg, 0.10f, 0.08f, 0.14f, 1.0f),
                 new ThemeColor(ImGuiCol.Button, 0.44f, 0.25f, 0.66f, 1.0f),
@@ -147,8 +177,10 @@ namespace MonoCore
                 new ThemeColor(ImGuiCol.CheckMark, 0.86f, 0.72f, 0.96f, 1.0f),
                 new ThemeColor(ImGuiCol.SliderGrab, 0.70f, 0.44f, 0.94f, 1.0f),
                 new ThemeColor(ImGuiCol.SliderGrabActive, 0.83f, 0.53f, 1.00f, 1.0f),
-                new ThemeColor(ImGuiCol.SeparatorActive, 0.62f, 0.44f, 0.95f, 1.0f)),
-            CreateTheme("Gunmetal",
+                new ThemeColor(ImGuiCol.SeparatorActive, 0.62f, 0.44f, 0.95f, 1.0f)
+            }),
+            CreateTheme("Gunmetal", new ThemeColor[]
+            {
                 new ThemeColor(ImGuiCol.WindowBg, 0.15f, 0.15f, 0.16f, 1.0f),
                 new ThemeColor(ImGuiCol.ChildBg, 0.13f, 0.13f, 0.14f, 1.0f),
                 new ThemeColor(ImGuiCol.Button, 0.53f, 0.58f, 0.63f, 1.0f),
@@ -163,8 +195,19 @@ namespace MonoCore
                 new ThemeColor(ImGuiCol.CheckMark, 0.88f, 0.91f, 0.95f, 1.0f),
                 new ThemeColor(ImGuiCol.SliderGrab, 0.69f, 0.74f, 0.78f, 1.0f),
                 new ThemeColor(ImGuiCol.SliderGrabActive, 0.80f, 0.84f, 0.88f, 1.0f),
-                new ThemeColor(ImGuiCol.SeparatorActive, 0.53f, 0.60f, 0.68f, 1.0f)),
-            CreateTheme("Sunset Ember",
+                new ThemeColor(ImGuiCol.SeparatorActive, 0.53f, 0.60f, 0.68f, 1.0f)
+            }, new ThemeStyleVar[]
+            {
+                new ThemeStyleVar(ImGuiStyleVar.WindowRounding, 2.0f),
+                new ThemeStyleVar(ImGuiStyleVar.ChildRounding, 1.0f),
+                new ThemeStyleVar(ImGuiStyleVar.FrameRounding, 2.0f),
+                new ThemeStyleVar(ImGuiStyleVar.PopupRounding, 2.0f),
+                new ThemeStyleVar(ImGuiStyleVar.ScrollbarRounding, 3.0f),
+                new ThemeStyleVar(ImGuiStyleVar.GrabRounding, 1.0f),
+                new ThemeStyleVar(ImGuiStyleVar.TabRounding, 2.0f)
+            }),
+            CreateTheme("Sunset Ember", new ThemeColor[]
+            {
                 new ThemeColor(ImGuiCol.WindowBg, 0.14f, 0.10f, 0.08f, 1.0f),
                 new ThemeColor(ImGuiCol.ChildBg, 0.12f, 0.09f, 0.07f, 1.0f),
                 new ThemeColor(ImGuiCol.Button, 0.78f, 0.35f, 0.18f, 1.0f),
@@ -179,8 +222,19 @@ namespace MonoCore
                 new ThemeColor(ImGuiCol.CheckMark, 0.97f, 0.71f, 0.48f, 1.0f),
                 new ThemeColor(ImGuiCol.SliderGrab, 0.95f, 0.62f, 0.37f, 1.0f),
                 new ThemeColor(ImGuiCol.SliderGrabActive, 0.99f, 0.73f, 0.43f, 1.0f),
-                new ThemeColor(ImGuiCol.SeparatorActive, 0.84f, 0.42f, 0.23f, 1.0f)),
-            CreateTheme("Barbie Pink",
+                new ThemeColor(ImGuiCol.SeparatorActive, 0.84f, 0.42f, 0.23f, 1.0f)
+            }, new ThemeStyleVar[]
+            {
+                new ThemeStyleVar(ImGuiStyleVar.WindowRounding, 8.0f),
+                new ThemeStyleVar(ImGuiStyleVar.ChildRounding, 6.0f),
+                new ThemeStyleVar(ImGuiStyleVar.FrameRounding, 6.0f),
+                new ThemeStyleVar(ImGuiStyleVar.PopupRounding, 8.0f),
+                new ThemeStyleVar(ImGuiStyleVar.ScrollbarRounding, 12.0f),
+                new ThemeStyleVar(ImGuiStyleVar.GrabRounding, 6.0f),
+                new ThemeStyleVar(ImGuiStyleVar.TabRounding, 6.0f)
+            }),
+            CreateTheme("Barbie Pink", new ThemeColor[]
+            {
                 new ThemeColor(ImGuiCol.WindowBg, 0.18f, 0.12f, 0.16f, 1.0f),
                 new ThemeColor(ImGuiCol.ChildBg, 0.15f, 0.10f, 0.14f, 1.0f),
                 new ThemeColor(ImGuiCol.FrameBg, 0.25f, 0.15f, 0.22f, 1.0f),
@@ -207,10 +261,21 @@ namespace MonoCore
                 new ThemeColor(ImGuiCol.SeparatorActive, 0.85f, 0.45f, 0.75f, 1.0f),
                 new ThemeColor(ImGuiCol.ScrollbarGrab, 0.60f, 0.25f, 0.50f, 1.0f),
                 new ThemeColor(ImGuiCol.ScrollbarGrabHovered, 0.70f, 0.35f, 0.60f, 1.0f),
-                new ThemeColor(ImGuiCol.ScrollbarGrabActive, 0.80f, 0.45f, 0.70f, 1.0f))
+                new ThemeColor(ImGuiCol.ScrollbarGrabActive, 0.80f, 0.45f, 0.70f, 1.0f)
+            }, new ThemeStyleVar[]
+            {
+                new ThemeStyleVar(ImGuiStyleVar.WindowRounding, 12.0f),
+                new ThemeStyleVar(ImGuiStyleVar.ChildRounding, 8.0f),
+                new ThemeStyleVar(ImGuiStyleVar.FrameRounding, 8.0f),
+                new ThemeStyleVar(ImGuiStyleVar.PopupRounding, 10.0f),
+                new ThemeStyleVar(ImGuiStyleVar.ScrollbarRounding, 16.0f),
+                new ThemeStyleVar(ImGuiStyleVar.GrabRounding, 8.0f),
+                new ThemeStyleVar(ImGuiStyleVar.TabRounding, 8.0f)
+            })
         };
 
         private static readonly Dictionary<ImGuiCol, float[]> _activeThemeColors = new Dictionary<ImGuiCol, float[]>(_themeColorOrder.Length);
+        private static readonly Dictionary<ImGuiStyleVar, float> _activeThemeStyleVars = new Dictionary<ImGuiStyleVar, float>();
         private static ThemeDefinition _currentThemePreset = null;
         private static bool _themeInitialized = false;
         private static bool _themeDirty = false;
@@ -264,6 +329,17 @@ namespace MonoCore
             })
         };
 
+        private static readonly ThemeStyleVarEditorEntry[] _themeRoundingEditorEntries = new[]
+        {
+            new ThemeStyleVarEditorEntry(ImGuiStyleVar.WindowRounding, "Window Rounding", 0.0f, 16.0f),
+            new ThemeStyleVarEditorEntry(ImGuiStyleVar.ChildRounding, "Child Window Rounding", 0.0f, 16.0f),
+            new ThemeStyleVarEditorEntry(ImGuiStyleVar.FrameRounding, "Frame Rounding", 0.0f, 16.0f),
+            new ThemeStyleVarEditorEntry(ImGuiStyleVar.PopupRounding, "Popup Rounding", 0.0f, 16.0f),
+            new ThemeStyleVarEditorEntry(ImGuiStyleVar.ScrollbarRounding, "Scrollbar Rounding", 0.0f, 20.0f),
+            new ThemeStyleVarEditorEntry(ImGuiStyleVar.GrabRounding, "Grab/Slider Rounding", 0.0f, 16.0f),
+            new ThemeStyleVarEditorEntry(ImGuiStyleVar.TabRounding, "Tab Rounding", 0.0f, 16.0f)
+        };
+
         private static Dictionary<ImGuiCol, float[]> BuildColorMap(IEnumerable<ThemeColor> colors)
         {
             var dict = new Dictionary<ImGuiCol, float[]>();
@@ -274,7 +350,19 @@ namespace MonoCore
             return dict;
         }
 
-        private static ThemeDefinition CreateTheme(string name, params ThemeColor[] overrides)
+        private readonly struct ThemeStyleVar
+        {
+            public ImGuiStyleVar StyleVar { get; }
+            public float Value { get; }
+
+            public ThemeStyleVar(ImGuiStyleVar styleVar, float value)
+            {
+                StyleVar = styleVar;
+                Value = value;
+            }
+        }
+
+        private static ThemeDefinition CreateTheme(string name, ThemeColor[] colorOverrides = null, ThemeStyleVar[] styleOverrides = null)
         {
             var map = new Dictionary<ImGuiCol, float[]>(_themeColorOrder.Length);
             foreach (var col in _themeColorOrder)
@@ -283,12 +371,24 @@ namespace MonoCore
                 map[col] = (float[])baseColor.Clone();
             }
 
-            foreach (var oc in overrides)
+            if (colorOverrides != null)
             {
-                map[oc.Color] = new[] { oc.R, oc.G, oc.B, oc.A };
+                foreach (var oc in colorOverrides)
+                {
+                    map[oc.Color] = new[] { oc.R, oc.G, oc.B, oc.A };
+                }
             }
 
-            return new ThemeDefinition(name, map);
+            var styleVars = new Dictionary<ImGuiStyleVar, float>(_themeDefaultStyleVars);
+            if (styleOverrides != null)
+            {
+                foreach (var sv in styleOverrides)
+                {
+                    styleVars[sv.StyleVar] = sv.Value;
+                }
+            }
+
+            return new ThemeDefinition(name, map, styleVars);
         }
 
         private static void EnsureThemeInitialized()
@@ -318,9 +418,25 @@ namespace MonoCore
                 _activeThemeColors[col] = (float[])values.Clone();
             }
 
+            _activeThemeStyleVars.Clear();
+            foreach (var kvp in _themeDefaultStyleVars)
+            {
+                if (preset.StyleVars.TryGetValue(kvp.Key, out var value))
+                {
+                    _activeThemeStyleVars[kvp.Key] = value;
+                }
+                else
+                {
+                    _activeThemeStyleVars[kvp.Key] = kvp.Value;
+                }
+            }
+
             _currentThemePreset = preset;
             _themeDirty = false;
         }
+
+        private static bool _styleVarsSupportAvailable = true; // MQ2Mono has these functions
+        private static int _pushedStyleVarCount = 0;
 
         private static void PushE3Theme()
         {
@@ -330,10 +446,29 @@ namespace MonoCore
                 var values = _activeThemeColors[col];
                 imgui_PushStyleColor((int)col, values[0], values[1], values[2], values[3]);
             }
+            
+            // Push style variables if we have any
+            _pushedStyleVarCount = 0;
+            if (_activeThemeStyleVars.Count > 0)
+            {
+                foreach (var kvp in _activeThemeStyleVars)
+                {
+                    imgui_PushStyleVarFloat((int)kvp.Key, kvp.Value);
+                    _pushedStyleVarCount++;
+                }
+            }
         }
+        
         private static void PopE3Theme()
         {
+            // Always pop colors first
             imgui_PopStyleColor(_themeColorOrder.Length);
+            // Only pop style variables if we pushed any
+            if (_pushedStyleVarCount > 0)
+            {
+                imgui_PopStyleVar(_pushedStyleVarCount);
+                _pushedStyleVarCount = 0;
+            }
         }
 
         private static bool RenderThemeColorEditor(ThemeColorEditorEntry entry)
@@ -381,6 +516,25 @@ namespace MonoCore
             }
 
             return changed;
+        }
+
+        private static bool RenderThemeStyleVarEditor(ThemeStyleVarEditorEntry entry)
+        {
+            if (!_activeThemeStyleVars.TryGetValue(entry.StyleVar, out var value))
+            {
+                return false;
+            }
+
+            imgui_Text(entry.Label);
+            double currentValue = value;
+            imgui_SetNextItemWidth(200f);
+            if (imgui_SliderDouble($"##{entry.StyleVar}", ref currentValue, entry.MinValue, entry.MaxValue, "%.1f"))
+            {
+                _activeThemeStyleVars[entry.StyleVar] = (float)currentValue;
+                return true;
+            }
+
+            return false;
         }
 
         private static void RenderThemeModal()
@@ -448,6 +602,19 @@ namespace MonoCore
                             }
                             imgui_Separator();
                         }
+                    }
+                }
+
+                // Rounding section
+                if (imgui_CollapsingHeader("Rounding", 0))
+                {
+                    foreach (var entry in _themeRoundingEditorEntries)
+                    {
+                        if (RenderThemeStyleVarEditor(entry))
+                        {
+                            _themeDirty = true;
+                        }
+                        imgui_Separator();
                     }
                 }
             }
