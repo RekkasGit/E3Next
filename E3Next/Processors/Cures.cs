@@ -181,6 +181,8 @@ namespace E3Core.Processors
 								if (!Casting.Ifs(spell)) continue;
 							}
 							//check and make sure they don't have one of the 'ignored debuffs'
+							//need to check on pet heals
+
 							List<Int32> badbuffs = E3.Bots.BuffList(s.CleanName);
 							bool foundBadBuff = false;
 							foreach (var bb in ignoreSpells)

@@ -1,17 +1,19 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
-using System.Runtime.CompilerServices;
-using System.Threading;
-using System.Diagnostics;
-using System.Collections.Concurrent;
-using System.Text.RegularExpressions;
-using E3Core.Processors;
-using System.Runtime.InteropServices;
+﻿using E3Core.Processors;
 using NetMQ;
+using System;
+using System.Collections.Concurrent;
+using System.Collections.Generic;
+using System.Diagnostics;
 using System.Globalization;
+using System.Linq;
+using System.Runtime.CompilerServices;
+using System.Runtime.InteropServices;
+using System.Text;
+using System.Text.RegularExpressions;
+using System.Threading;
+using System.Threading.Tasks;
+using System.Web.UI;
+
 
 /// <summary>
 /// Version 0.1
@@ -368,14 +370,14 @@ namespace MonoCore
 				line = string.Empty;
 			}
 		}
-		public static bool ProcessEventsIntoQueue_MQCommandProcessing()
+		public static bool ProcessEventsIntoQueue_MQCommandProcessing(ConcurrentQueue<string> _queue)
         {
             bool processedCommand = false;
-			if (_mqCommandProcessingQueue.Count > 0)
+			if (_queue.Count > 0)
 			{
 				//have to be careful here and process out anything that isn't boxchat or dannet.
 				string line;
-				if (_mqCommandProcessingQueue.TryDequeue(out line))
+				if (_queue.TryDequeue(out line))
 				{
 					processedCommand = true;
 					//prevent spamming of an event to a user
@@ -434,7 +436,7 @@ namespace MonoCore
 				{
 					ProcessEventsIntoQueue_EventProcessing();
 					ProcessEventsIntoQueue_MQEventProcessing();
-					ProcessEventsIntoQueue_MQCommandProcessing();
+					ProcessEventsIntoQueue_MQCommandProcessing(_mqCommandProcessingQueue);
 				}
                 else
                 {
@@ -692,6 +694,18 @@ namespace MonoCore
             _mqEventProcessingQueue.Enqueue(line);
 
         }
+        static ConcurrentQueue<string> _internalCommandToExecute = new ConcurrentQueue<string>();
+        public static void ProcessInternalCommandAndExecute(string line, string commandName)
+		{
+			_internalCommandToExecute.Enqueue(line);
+            while(_internalCommandToExecute.Count>0)
+            {
+				ProcessEventsIntoQueue_MQCommandProcessing(_internalCommandToExecute);
+			}
+			//3rd process just our specific command
+			ProcessEventsInQueues(commandName);
+
+		}
         public static void ProcessMQCommand(string line)
         {
            

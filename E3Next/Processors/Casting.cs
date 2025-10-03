@@ -990,7 +990,28 @@ namespace E3Core.Processors
 			{
 				_log.Write($"Doing BeforeEvent:{spell.BeforeEvent}");
 				string tevent = Ifs_Results(spell.BeforeEvent);
-				MQ.Cmd($"/docommand {tevent}");
+
+				bool internalComand = false;
+				foreach (var pair in EventProcessor.CommandList)
+				{
+					string compareCommandTo = pair.Key;
+					if (tevent.Contains(" "))
+					{
+						compareCommandTo = pair.Value.commandwithSpace;
+					}
+					if (tevent.StartsWith(compareCommandTo, StringComparison.OrdinalIgnoreCase))
+					{
+						internalComand = true;
+						//no need to send this to mq if its our own command, just drop it into the queues to be processed. 
+						EventProcessor.ProcessInternalCommandAndExecute(tevent, pair.Value.command);
+						break;
+					}
+				}
+				if (!internalComand)
+				{
+				
+					MQ.Cmd($"/docommand {tevent}");
+				}
 				if (spell.BeforeEvent.StartsWith("/exchange", StringComparison.OrdinalIgnoreCase)) MQ.Delay(500);
 				if (spell.BeforeEventDelay > 0) MQ.Delay(spell.BeforeEventDelay);
 			}
@@ -1009,6 +1030,28 @@ namespace E3Core.Processors
 
 				_log.Write($"Doing AfterEvent:{spell.AfterEvent}");
 				string tevent = Ifs_Results(spell.AfterEvent);
+
+				bool internalComand = false;
+				foreach (var pair in EventProcessor.CommandList)
+				{
+					string compareCommandTo = pair.Key;
+					if (tevent.Contains(" "))
+					{
+						compareCommandTo = pair.Value.commandwithSpace;
+					}
+					if (tevent.StartsWith(compareCommandTo, StringComparison.OrdinalIgnoreCase))
+					{
+						internalComand = true;
+						EventProcessor.ProcessInternalCommandAndExecute(tevent, pair.Value.command);
+						break;
+					}
+				}
+				if (!internalComand)
+				{
+
+					MQ.Cmd($"/docommand {tevent}");
+				}
+
 				MQ.Cmd($"/docommand {tevent}");
 			}
 
@@ -1019,6 +1062,8 @@ namespace E3Core.Processors
 			_log.Write("Checking AfterSpell...");
 			if (!String.IsNullOrWhiteSpace(spell.AfterSpell))
 			{
+				
+
 				if (spell.AfterSpellDelay > 0) MQ.Delay(spell.AfterSpellDelay);
 
 				if (spell.AfterSpellData == null)
@@ -1041,6 +1086,7 @@ namespace E3Core.Processors
 				}
 				if (CheckMana(spell.AfterSpellData) && CheckReady(spell.AfterSpellData))
 				{
+					e3util.ClearCursor();
 				retrycast:
 					Int32 retryCounter = 0;
 					if (Casting.Cast(targetID, spell.AfterSpellData) == CastReturn.CAST_FIZZLE)

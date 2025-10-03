@@ -851,6 +851,32 @@ namespace E3Core.Utility
 				}
 			}
 		}
+		public static void DeleteItem(string itemName)
+		{
+			while (Casting.IsCasting())
+			{
+				MQ.Delay(100);
+			}
+			if (ClearCursor())
+			{
+				bool foundItem = MQ.Query<bool>($"${{Bool[${{FindItem[={itemName}]}}]}}");
+				if (!foundItem) return;
+
+				Int32 foundItemID = MQ.Query<Int32>($"${{FindItem[={itemName}].ID}}");
+
+				MQ.Cmd($"/nomodkey /itemnotify \"{itemName}\" leftmouseup");
+				MQ.Delay(2000, "${Bool[${Cursor.ID}]}");
+				bool itemOnCursor = MQ.Query<bool>("${Bool[${Cursor.ID}]}");
+				Int32 itemIDOnCursor = MQ.Query<Int32>("${Cursor.ID}");
+
+				if (itemOnCursor && itemIDOnCursor == foundItemID)
+				{
+					CursorTryDestroyItem(itemName);
+					MQ.Delay(300);
+					ClearCursor();
+				}
+			}
+		}
 		static System.Text.StringBuilder buffInfoStringBuilder = new StringBuilder();
 		public static string GenerateBuffInfoForPubSub()
 		{

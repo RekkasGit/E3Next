@@ -208,7 +208,7 @@ namespace E3Core.Processors
                 }
             });
 
-            EventProcessor.RegisterCommand("/DestroyNoRent", (x) =>
+            EventProcessor.RegisterCommand("/E3DestroyNoRent", (x) =>
             {
                 //giveme Alara "Something" qty Rekken
                 if (x.args.Count > 0)
@@ -224,7 +224,23 @@ namespace E3Core.Processors
                 }
 
             });
-        }
+			EventProcessor.RegisterCommand("/E3DestroyItem", (x) =>
+			{
+				//giveme Alara "Something" qty Rekken
+				if (x.args.Count > 0)
+				{
+					Int32 maxTries = 0;
+					while (Casting.InGlobalCooldown())
+					{
+						MQ.Delay(50);
+						maxTries++;
+						if (maxTries > 40) break;
+					}
+					e3util.DeleteItem(x.args[0]);
+				}
+
+			});
+		}
         [ClassInvoke(Class.All)]
         public static void CheckSupply()
         {
@@ -411,7 +427,7 @@ namespace E3Core.Processors
 					if (Casting.CheckMana(s) && Casting.CheckReady(s))
 					{
 						//lets tell everyone else to destroy their items and destroy our own.
-						E3.Bots.BroadcastCommandToGroup($"/DestroyNoRent \"{whatToGive}\"");
+						E3.Bots.BroadcastCommandToGroup($"/E3DestroyNoRent \"{whatToGive}\"");
 						e3util.DeleteNoRentItem(whatToGive);
 						MQ.Delay(2000);
 						Casting.Cast(0, s);
@@ -424,7 +440,7 @@ namespace E3Core.Processors
                     if (Casting.CheckMana(s) && Casting.CheckReady(s))
                     {
                         //lets tell everyone else to destroy their items and destroy our own.
-                        E3.Bots.BroadcastCommandToGroup($"/DestroyNoRent \"{whatToGive}\"");
+                        E3.Bots.BroadcastCommandToGroup($"/E3DestroyNoRent \"{whatToGive}\"");
                         e3util.DeleteNoRentItem(whatToGive);
                         MQ.Delay(2000);
                         Casting.Cast(0, s);
