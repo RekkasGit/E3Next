@@ -835,11 +835,17 @@ namespace E3Core.Utility
 			if (ClearCursor())
 			{
 				bool foundItem = MQ.Query<bool>($"${{Bool[${{FindItem[={itemName}]}}]}}");
+			
 				if (!foundItem) return;
+
+				Int32 foundItemID = MQ.Query<Int32>($"${{FindItem[={itemName}].ID}}");
+
 				MQ.Cmd($"/nomodkey /itemnotify \"{itemName}\" leftmouseup");
 				MQ.Delay(2000, "${Bool[${Cursor.ID}]}");
 				bool itemOnCursor = MQ.Query<bool>("${Bool[${Cursor.ID}]}");
-				if (itemOnCursor)
+				Int32 itemIDOnCursor = MQ.Query<Int32>("${Cursor.ID}");
+
+				if (itemOnCursor && itemIDOnCursor == foundItemID)
 				{
 					bool isNoRent = MQ.Query<bool>("${Cursor.NoRent}");
 					if (isNoRent)
