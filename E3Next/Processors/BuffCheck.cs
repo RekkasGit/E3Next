@@ -93,6 +93,14 @@ namespace E3Core.Processors
 					E3.Bots.BroadcastCommandToGroup($"/removebuff {buffToDrop}");
 				}
 			});
+			EventProcessor.RegisterCommand("/e3buffs-clear", (x) =>
+			{
+				DropAllBuffs();
+				if (x.args.Count == 0)
+				{
+					E3.Bots.BroadcastCommandToGroup($"/e3buffs-clear me");
+				}
+			});
 			EventProcessor.RegisterCommand("/dropbuffid", (x) =>
 			{
 				if (x.args.Count > 0)
@@ -175,6 +183,28 @@ namespace E3Core.Processors
 				{
 					E3.CharacterSettings.BlockedBuffs.Add(s);
 					E3.CharacterSettings.SaveData();
+				}
+			}
+		}
+		public static void DropAllBuffs()
+		{
+			//lets look for a partial match.
+			for (Int32 i = 1; i <= 40; i++)
+			{
+				string buffName = MQ.Query<String>($"${{Me.Buff[{i}]}}");
+				if(buffName!="NULL")
+				{
+					MQ.Cmd($"/removebuff {buffName}");
+
+				}
+
+			}
+			for (Int32 i = 1; i <= 25; i++)
+			{
+				string buffName = MQ.Query<String>($"${{Me.Song[{i}]}}");
+				if (buffName != "NULL")
+				{
+					MQ.Cmd($"/removebuff {buffName}");
 				}
 			}
 		}
