@@ -928,7 +928,7 @@ namespace E3Core.Processors
 						bool willStack = true;
 						if (spell.CastType == CastingType.AA)
 						{
-							willStack= MQ.Query<bool>($"${{Me.AltAbility[{spell.SpellName}].Spell.WillLand}}");
+							willStack= MQ.Query<bool>($"${{Me.AltAbility[{spell.CastName}].Spell.WillLand}}");
 						}
 						else
 						{
