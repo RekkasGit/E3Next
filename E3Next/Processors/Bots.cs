@@ -165,13 +165,10 @@ namespace E3Core.Processors
 				int hitPoints = MQ.Query<Int32>("${Me.CurrentHPs}");
 				int manaPoints = MQ.Query<Int32>("${Me.CurrentMana}");
 				Broadcast($"HP:\ag{hitPoints}\aw MP:\ag{manaPoints} \awSpellShield:\ag{spellShield} \awSpell DMG:\ag{spellDamage}");
-
-
 				if (x.args.Count == 0)
 				{
 					BroadcastCommand("/e3botreport me");
 				}
-
 			});
 
 			EventProcessor.RegisterCommand("/e3bcgz", (x) =>
