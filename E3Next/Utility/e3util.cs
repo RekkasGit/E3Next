@@ -1578,7 +1578,8 @@ namespace E3Core.Utility
 		public static bool OpenMerchant()
 		{
 			var target = MQ.Query<int>("${Target.ID}");
-			if (target <= 0)
+
+			if (target <= 0 || MQ.Query<String>("${Target.Class}") != "Merchant")
 			{
 				var merchantId = MQ.Query<int>("${Spawn[merchant los].ID}");
 				if (merchantId <= 0)
