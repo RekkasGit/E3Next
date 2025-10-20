@@ -37,7 +37,41 @@ namespace E3Core.Processors
 		{
 
 
+			#region eq_might_temple
+			EventProcessor.RegisterCommand("/temple", (x) =>
+			{
+				if (x.args.Count == 0)
+				{
+					E3.Bots.BroadcastCommandToGroup("/temple me", x);
+					MQ.Delay(400);
+					MQ.Cmd("/alt act 12620");
+				}
 
+				if (x.args.Count == 1)
+				{
+					string target = x.args[0];
+					if (target.Equals("me"))
+					{
+						Casting.Interrupt();
+						MQ.Delay(500);
+						MQ.Cmd("/alt act 12620");
+						MQ.Delay(500);
+						if (E3.CurrentClass == Class.Bard)
+						{
+							MQ.Delay(17000);
+						}
+						else
+						{
+							MQ.Delay(20000, Casting.IsNotCasting);
+						}
+					}
+					else
+					{
+						E3.Bots.BroadcastCommandToPerson(target, "/temple me");
+					}
+				}
+			});
+			#endregion
 			EventProcessor.RegisterEvent("EQ_Might_Groupme", "(.+) tells you, 'groupme'", (x) =>
 			{
 				if (x.match.Groups.Count > 1)
