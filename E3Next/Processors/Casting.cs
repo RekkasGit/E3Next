@@ -1052,7 +1052,7 @@ namespace E3Core.Processors
 					MQ.Cmd($"/docommand {tevent}");
 				}
 
-				MQ.Cmd($"/docommand {tevent}");
+				
 			}
 
 		}
