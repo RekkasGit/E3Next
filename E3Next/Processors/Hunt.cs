@@ -477,6 +477,163 @@ namespace E3Core.Processors
             _tempIgnoreUntil[id] = Core.StopWatch.ElapsedMilliseconds + durationSeconds * 1000L;
         }
 
+        public static bool IgnoreCurrentTarget(bool addToPermanentList = true, bool addTemporaryIgnore = true)
+        {
+            int eqTargetId = 0;
+            string eqTargetName = string.Empty;
+
+            try { eqTargetId = MQ.Query<int>("${Target.ID}"); } catch { }
+            try { eqTargetName = MQ.Query<string>("${Target.CleanName}"); } catch { }
+
+            if (eqTargetId <= 0 && TargetID > 0) eqTargetId = TargetID;
+            if (string.IsNullOrWhiteSpace(eqTargetName) && TargetID > 0) eqTargetName = TargetName;
+
+            return IgnoreSpawn(eqTargetId, eqTargetName, addToPermanentList, addTemporaryIgnore, "UI");
+        }
+
+        public static bool IgnoreSpawn(int spawnId, string name = null, bool addToPermanentList = true, bool addTemporaryIgnore = true, string source = "UI")
+        {
+            int resolvedId = spawnId;
+            string resolvedName = NormalizeSpawnName(name);
+
+            if (resolvedId <= 0 && TargetID > 0)
+            {
+                resolvedId = TargetID;
+            }
+
+            if (string.IsNullOrEmpty(resolvedName))
+            {
+                if (resolvedId > 0)
+                {
+                    resolvedName = NormalizeSpawnName(GetSpawnName(resolvedId));
+                }
+
+                if (string.IsNullOrEmpty(resolvedName))
+                {
+                    try { resolvedName = NormalizeSpawnName(MQ.Query<string>("${Target.CleanName}")); } catch { }
+                }
+            }
+
+            if (resolvedId <= 0 && string.IsNullOrEmpty(resolvedName))
+            {
+                MQ.Write("Hunt: No valid target to ignore.");
+                return false;
+            }
+
+            if (addToPermanentList && !string.IsNullOrEmpty(resolvedName))
+            {
+                AddIgnoreName(resolvedName);
+            }
+
+            if (addTemporaryIgnore && resolvedId > 0)
+            {
+                TempIgnoreID(resolvedId, TempIgnoreDurationSec);
+            }
+
+            StopCombatActions();
+
+            if (resolvedId > 0)
+            {
+                try
+                {
+                    if (MQ.Query<int>("${Target.ID}") == resolvedId)
+                    {
+                        MQ.Cmd("/squelch /target clear");
+                    }
+                }
+                catch { }
+            }
+
+            bool clearedTarget = false;
+            if (resolvedId > 0 && TargetID == resolvedId)
+            {
+                clearedTarget = true;
+            }
+            else if (!string.IsNullOrEmpty(resolvedName))
+            {
+                string currentName = NormalizeSpawnName(TargetName);
+                if (string.IsNullOrEmpty(currentName) && TargetID > 0)
+                {
+                    currentName = NormalizeSpawnName(GetSpawnName(TargetID));
+                }
+
+                if (!string.IsNullOrEmpty(currentName) && string.Equals(currentName, resolvedName, StringComparison.OrdinalIgnoreCase))
+                {
+                    clearedTarget = true;
+                }
+            }
+
+            if (clearedTarget)
+            {
+                ClearActiveTargetInternal(resolvedId, resolvedName, "Target ignored");
+            }
+            else
+            {
+                // Even if we didn't directly clear a hunt target, make sure scans happen soon
+                _nextScanAt = 0;
+            }
+
+            string desc = !string.IsNullOrEmpty(resolvedName) ? resolvedName : (resolvedId > 0 ? $"ID {resolvedId}" : "target");
+            MQ.Write($"Hunt: Ignoring {desc}");
+            _log.Write($"Hunt: Ignoring {desc} (source={source})");
+            DebugLog($"IGNORE: {desc} (source={source})");
+
+            return true;
+        }
+
+        private static string NormalizeSpawnName(string name)
+        {
+            if (string.IsNullOrWhiteSpace(name)) return string.Empty;
+            var trimmed = name.Trim();
+            return string.Equals(trimmed, "NULL", StringComparison.OrdinalIgnoreCase) ? string.Empty : trimmed;
+        }
+
+        private static void StopCombatActions()
+        {
+            try { MQ.Cmd("/squelch /attack off"); } catch { }
+            try { MQ.Cmd("/squelch /autofire off"); } catch { }
+            try
+            {
+                if (MQ.Query<bool>("${Stick.Active}")) MQ.Cmd("/squelch /stick off");
+            }
+            catch { }
+        }
+
+        private static void ClearActiveTargetInternal(int spawnId, string spawnName, string reason)
+        {
+            StopCombatActions();
+
+            if (HuntStateMachine.IsNavigationOwned)
+            {
+                try { MQ.Cmd("/nav stop"); } catch { }
+            }
+
+            ResetNavTargetTracking();
+            ResetNoPathTracking(0);
+            _pullAttemptStartMs = 0;
+            _waitingForLoot = false;
+
+            if (spawnId > 0)
+            {
+                try
+                {
+                    if (MQ.Query<int>("${Target.ID}") == spawnId)
+                    {
+                        MQ.Cmd("/squelch /target clear");
+                    }
+                }
+                catch { }
+            }
+
+            TargetID = 0;
+            TargetName = string.Empty;
+            _nextScanAt = 0;
+
+            string nameInfo = !string.IsNullOrEmpty(spawnName) ? spawnName : (spawnId > 0 ? spawnId.ToString() : "unknown");
+            DebugLog($"IGNORE: Cleared active target {spawnId} ({nameInfo}) - {reason}");
+            HuntStateMachine.TransitionTo(HuntState.Scanning, reason);
+        }
+
         // Expose timing info for UI
         public static int GetMsUntilNextScan()
         {
@@ -553,16 +710,34 @@ namespace E3Core.Processors
                         MQ.Write($"Hunt IgnoreFilters = {IgnoreFilters}");
                         break;
                     case "ignoreadd":
+                    {
+                        if (x.args.Count > 1)
                         {
-                            string nm = x.args.Count > 1 ? string.Join(" ", x.args.GetRange(1, x.args.Count - 1)) : MQ.Query<string>("${Target.CleanName}");
+                            string nm = string.Join(" ", x.args.GetRange(1, x.args.Count - 1));
                             if (!string.IsNullOrWhiteSpace(nm) && !nm.Equals("NULL", StringComparison.OrdinalIgnoreCase))
                             {
                                 if (AddIgnoreName(nm)) MQ.Write($"Added '{nm}' to Hunt ignore list");
                                 else MQ.Write($"'{nm}' already in Hunt ignore list");
+
+                                try
+                                {
+                                    int curId = MQ.Query<int>("${Target.ID}");
+                                    string curName = MQ.Query<string>("${Target.CleanName}");
+                                    if (curId > 0 && !string.IsNullOrWhiteSpace(curName) && curName.Trim().Equals(nm.Trim(), StringComparison.OrdinalIgnoreCase))
+                                    {
+                                        IgnoreSpawn(curId, curName, false, true, "Command");
+                                    }
+                                }
+                                catch { }
                             }
                             else MQ.Write("No valid target/name to ignore.");
                         }
-                        break;
+                        else
+                        {
+                            if (!IgnoreCurrentTarget()) MQ.Write("No valid target/name to ignore.");
+                        }
+                    }
+                    break;
                     case "ignorelist":
                         {
                             var currentZone = GetCurrentZone();
@@ -847,8 +1022,9 @@ namespace E3Core.Processors
             // Throttle work, including publishing SmartLoot state
             if (!e3util.ShouldCheck(ref _nextTickAt, _tickIntervalMs)) return;
 
-            // Always publish SmartLoot state so peers can coordinate,
+            // Always update SmartLoot telemetry and publish state so peers can coordinate,
             // even when Hunt is disabled on this character
+            UpdateSmartLootTelemetry();
             UpdateSmartLootState();
 
             // If we were previously paused only due to Go=false (reason "Hunt paused"),
@@ -910,40 +1086,71 @@ namespace E3Core.Processors
                 return;
             }
 
-            // Check if any connected peers are in a different zone or dead
+            // Check if any group members are dead (zone checking handled via E3 bots network)
             try
             {
-                var connectedBots = E3.Bots.BotsConnected();
-                string currentZone = GetCurrentZone();
-                foreach (string botName in connectedBots)
+                int groupMembers = MQ.Query<int>("${Group.Members}");
+                if (groupMembers > 1)
                 {
-                    if (string.Equals(botName, E3.CurrentName, StringComparison.OrdinalIgnoreCase))
-                        continue; // Skip self
+                    string currentZone = GetCurrentZone();
+                    int maxGroupSlots = Math.Max(1, Math.Min(groupMembers, 6));
+                    var connectedBots = E3.Bots.BotsConnected();
 
-                    // Check if peer is in a different zone
-                    string peerZone = E3.Bots.Query(botName, "${Zone.ShortName}");
-                    if (!string.IsNullOrEmpty(peerZone) && !peerZone.Equals("NULL", StringComparison.OrdinalIgnoreCase))
+                    for (int slot = 1; slot <= maxGroupSlots; slot++)
                     {
-                        if (!string.Equals(peerZone, currentZone, StringComparison.OrdinalIgnoreCase))
+                        string memberName = string.Empty;
+                        try { memberName = MQ.Query<string>($"${{Group.Member[{slot}].Name}}"); } catch { memberName = string.Empty; }
+
+                        if (string.IsNullOrWhiteSpace(memberName) || string.Equals(memberName, "NULL", StringComparison.OrdinalIgnoreCase))
+                            continue;
+
+                        if (string.Equals(memberName, E3.CurrentName, StringComparison.OrdinalIgnoreCase))
+                            continue; // Skip self
+
+                        // Check zone via E3 networking if member is connected
+                        if (connectedBots.Contains(memberName))
                         {
-                            HuntStateMachine.TransitionTo(HuntState.Paused, $"Waiting for {botName} to return to zone");
-                            return;
+                            try
+                            {
+                                string memberZone = E3.Bots.Query(memberName, "${Zone.ShortName}");
+                                if (!string.IsNullOrEmpty(memberZone) && !memberZone.Equals("NULL", StringComparison.OrdinalIgnoreCase) &&
+                                    !string.Equals(memberZone, currentZone, StringComparison.OrdinalIgnoreCase))
+                                {
+                                    HuntStateMachine.TransitionTo(HuntState.Paused, $"Waiting for {memberName} to return to zone");
+                                    return;
+                                }
+
+                                string memberDead = E3.Bots.Query(memberName, "${Me.Dead}");
+                                bool isMemberDead = string.Equals(memberDead, "TRUE", StringComparison.OrdinalIgnoreCase);
+                                if (isMemberDead)
+                                {
+                                    HuntStateMachine.TransitionTo(HuntState.Paused, $"Waiting for {memberName} to respawn");
+                                    return;
+                                }
+                            }
+                            catch (Exception ex)
+                            {
+                                _log.Write($"Hunt: Error querying bot {memberName}: {ex.Message}");
+                            }
                         }
-                    }
-                    
-                    // Check if peer is dead
-                    string peerDead = E3.Bots.Query(botName, "${Me.Dead}");
-                    bool isPeerDead = string.Equals(peerDead, "TRUE", StringComparison.OrdinalIgnoreCase);
-                    if (isPeerDead)
-                    {
-                        HuntStateMachine.TransitionTo(HuntState.Paused, $"Waiting for {botName} to respawn");
-                        return;
+                        else
+                        {
+                            // Fallback: check if member is dead via Group TLO (zone info not available)
+                            bool isMemberDead = false;
+                            try { isMemberDead = MQ.Query<bool>($"${{Group.Member[{slot}].Dead}}"); } catch { isMemberDead = false; }
+
+                            if (isMemberDead)
+                            {
+                                HuntStateMachine.TransitionTo(HuntState.Paused, $"Waiting for {memberName} to respawn");
+                                return;
+                            }
+                        }
                     }
                 }
             }
             catch (Exception ex)
             {
-                _log.Write($"Hunt: Error checking connected bots zone states: {ex.Message}");
+                _log.Write($"Hunt: Error checking group member states: {ex.Message}");
             }
 
             // Enhanced raid member corpse check for raiding scenarios
@@ -2065,52 +2272,21 @@ namespace E3Core.Processors
                     MQ.Write($"Hunt: Error checking local SmartLoot: {ex.Message}");
                 }
 
-                // 2) Check all connected bots' SmartLoot states via E3Next communication
+                // 2) Check if our SmartLoot detects peer looting activity
                 try
                 {
-                    var connectedBots = E3.Bots.BotsConnected();
-                    foreach (string botName in connectedBots)
+                    // Update telemetry to get current IsPeerTriggered state
+                    UpdateSmartLootTelemetry();
+                    
+                    if (_slIsPeerTriggered)
                     {
-                        if (string.Equals(botName, E3.CurrentName, StringComparison.OrdinalIgnoreCase))
-                            continue; // Skip self, already checked above
-
-                        try
-                        {
-                            // First see if peer reports active explicitly
-                            string activeFlag = E3.Bots.Query(botName, "${Data.Hunt.SmartLootActive}");
-                            bool peerActive = string.Equals(activeFlag, "1", StringComparison.OrdinalIgnoreCase) ||
-                                             string.Equals(activeFlag, "TRUE", StringComparison.OrdinalIgnoreCase);
-                            // Prefer the new topic, but fall back to legacy ones for a state string
-                            string botSmartLootState =
-                                E3.Bots.Query(botName, "${Data.Hunt.SmartLootState}") ??
-                                E3.Bots.Query(botName, "${Data.SmartLootState}") ??
-                                E3.Bots.Query(botName, "${Data.Hunt_SmartLootState}");
-
-                            // Normalize and ignore non-actionable values (including literal "NULL")
-                            string state = botSmartLootState?.Trim();
-                            bool isNullish = string.IsNullOrEmpty(state) || state.Equals("NULL", StringComparison.OrdinalIgnoreCase);
-                            bool isActionableState = !isNullish &&
-                                !state.Equals("Idle", StringComparison.OrdinalIgnoreCase) &&
-                                !state.Equals("NotLoaded", StringComparison.OrdinalIgnoreCase) &&
-                                !state.Equals("Unknown", StringComparison.OrdinalIgnoreCase) &&
-                                !state.Equals("Error", StringComparison.OrdinalIgnoreCase);
-
-                            if (peerActive || isActionableState)
-                            {
-                                string display = isNullish ? (peerActive ? "Active" : "Unknown") : state;
-                                _log.Write($"Hunt: ValidateReadyToHunt - Waiting for {botName} SmartLoot ({display})");
-                                return $"Waiting for {botName} SmartLoot ({display})";
-                            }
-                        }
-                        catch (Exception ex)
-                        {
-                            _log.Write($"Hunt: Error checking {botName} SmartLoot state: {ex.Message}");
-                        }
+                        _log.Write($"Hunt: ValidateReadyToHunt - Waiting for peer SmartLoot activity");
+                        return "Waiting for peer SmartLoot activity";
                     }
                 }
                 catch (Exception ex)
                 {
-                    _log.Write($"Hunt: Error checking connected bots SmartLoot states: {ex.Message}");
+                    _log.Write($"Hunt: Error checking IsPeerTriggered: {ex.Message}");
                 }
 
                 // Peer zone/death checks removed here to avoid duplication;
@@ -2128,6 +2304,22 @@ namespace E3Core.Processors
         private static void TryAcquireTarget()
         {
             Status = "Scanning";
+            
+            // Check if peers are actively looting and we should wait
+            try
+            {
+                UpdateSmartLootTelemetry();
+                if (_slIsPeerTriggered)
+                {
+                    _log.Write("Hunt: Blocking new target acquisition - peer SmartLoot activity detected");
+                    Status = "Waiting for peer SmartLoot";
+                    return;
+                }
+            }
+            catch (Exception ex)
+            {
+                _log.Write($"Hunt: Error checking IsPeerTriggered in TryAcquireTarget: {ex.Message}");
+            }
             
             // Block new target acquisition if PC corpses are present
             if (_pcCorpsesPresent)
@@ -2148,6 +2340,30 @@ namespace E3Core.Processors
             // First check: are we already engaged with something valid?
             if (TargetID > 0)
             {
+                string currentName = NormalizeSpawnName(TargetName);
+                if (string.IsNullOrEmpty(currentName))
+                {
+                    currentName = NormalizeSpawnName(GetSpawnName(TargetID));
+                    if (!string.IsNullOrEmpty(currentName)) TargetName = currentName;
+                }
+
+                bool tempIgnored = false;
+                try
+                {
+                    tempIgnored = _tempIgnoreUntil.TryGetValue(TargetID, out var untilTs) && untilTs > Core.StopWatch.ElapsedMilliseconds;
+                }
+                catch { }
+
+                bool permanentlyIgnored = !string.IsNullOrEmpty(currentName) && (MatchesIgnore(currentName) || IsIgnored(currentName));
+
+                if (tempIgnored || permanentlyIgnored)
+                {
+                    _log.Write($"Hunt: Current target {TargetID} ({currentName}) is ignored (temp={tempIgnored}, perm={permanentlyIgnored}); clearing.");
+                    DebugLog($"IGNORE: drop active target {TargetID} ({currentName}) temp={tempIgnored} perm={permanentlyIgnored}");
+                    ClearActiveTargetInternal(TargetID, currentName, "Target ignored");
+                    return;
+                }
+
                 if (IsValidCombatTarget(TargetID))
                 {
                     // Current target is still valid, don't scan for new ones unless it's too far

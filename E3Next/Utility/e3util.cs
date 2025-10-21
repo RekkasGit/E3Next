@@ -1196,6 +1196,7 @@ public static List<String> _raidTanks = new List<string>();
 					Spawn s;
 					if (_spawns.TryByID(mobId, out s))
 					{
+						if (s.TypeDesc == "Corpse") continue; // Skip corpses
 						if (s.Aggressive)
 						{
 							tempLowestHP = MQ.Query<Int32>($"${{Me.XTarget[{i}].PctHPs}}");
@@ -1227,6 +1228,7 @@ public static List<String> _raidTanks = new List<string>();
 					Spawn s;
 					if (_spawns.TryByID(mobId, out s))
 					{
+						if (s.TypeDesc == "Corpse") continue; // Skip corpses
 						if (s.Aggressive)
 						{
 							tempHighestHP = MQ.Query<Int32>($"${{Me.XTarget[{i}].PctHPs}}");

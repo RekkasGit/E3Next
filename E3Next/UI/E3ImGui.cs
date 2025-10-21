@@ -1008,7 +1008,17 @@ namespace MonoCore
                         imgui_PopStyleColor();
 
                         imgui_SameLine();
-                        
+
+                        // Quick ignore for current target
+                        imgui_PushStyleColor(21, 0.7f, 0.2f, 0.2f, 1.0f);
+                        if (imgui_ButtonEx("Ignore", 60, 25))
+                        {
+                            EnqueueUI(() => E3Core.Processors.Hunt.IgnoreCurrentTarget());
+                        }
+                        imgui_PopStyleColor();
+
+                        imgui_SameLine();
+
                         // Expand with better text
                         imgui_PushStyleColor(21, 0.3f, 0.5f, 0.8f, 1.0f);
                         if (imgui_ButtonEx("More", 40, 25))
@@ -1339,13 +1349,7 @@ namespace MonoCore
                             imgui_PushStyleColor(21, 0.7f, 0.3f, 0.1f, 1.0f); // Orange warning button
                             if (imgui_Button("Ignore Current Target"))
                             {
-                                EnqueueUI(() => {
-                                    var nm = E3.MQ.Query<string>("${Target.CleanName}");
-                                    if (!string.IsNullOrWhiteSpace(nm) && !string.Equals(nm, "NULL", StringComparison.OrdinalIgnoreCase))
-                                    {
-                                        E3Core.Processors.Hunt.AddIgnoreName(nm);
-                                    }
-                                });
+                                EnqueueUI(() => E3Core.Processors.Hunt.IgnoreCurrentTarget());
                                 // Mark for refresh after adding
                                 _uiDataNeedsRefresh = true;
                             }
@@ -1659,12 +1663,10 @@ namespace MonoCore
                                         imgui_PushStyleColor(21, 0.7f, 0.2f, 0.2f, 1.0f); // Red ignore button
                                         if (imgui_Button($"Ignore##{i}"))
                                         {
+                                            int spawnId = c.id;
                                             string nm = c.name ?? string.Empty;
-                                            if (!string.IsNullOrEmpty(nm))
-                                            {
-                                                EnqueueUI(() => E3Core.Processors.Hunt.AddIgnoreName(nm));
-                                                _uiDataNeedsRefresh = true;
-                                            }
+                                            EnqueueUI(() => E3Core.Processors.Hunt.IgnoreSpawn(spawnId, nm, true, true, "UI-Candidate"));
+                                            _uiDataNeedsRefresh = true;
                                         }
                                         imgui_PopStyleColor();
                                     }
@@ -2714,6 +2716,41 @@ namespace MonoCore
         private static int _cfgIfAppendRow = -1;
         private static List<string> _cfgIfAppendCandidates = new List<string>();
         private static string _cfgIfAppendStatus = string.Empty;
+        // Flags editor modal state
+        private static int _cfgFlagsRow = -1;
+        private static int _cfgFlagsActiveIndex = -1;
+        private static string _cfgFlagsActiveSource = string.Empty;
+        private static string _cfgFlagsActiveSection = string.Empty;
+        private static string _cfgFlagsActiveKey = string.Empty;
+        // Parsed flag fields for editor
+        private static string _cfgFlagsBaseName = string.Empty; // value before first '/'
+        private static string _cfgFlagsTarget = string.Empty;   // e.g., Me, Pet, Target
+        private static int _cfgFlagsGem = 0;
+        private static int _cfgFlagsHealPct = 0;
+        private static string _cfgFlagsGemStr = string.Empty;
+        private static string _cfgFlagsHealPctStr = string.Empty;
+        private static string _cfgFlagsIfs = string.Empty; // comma-separated keys
+        private static string _cfgFlagsZone = string.Empty;
+        private static int _cfgFlagsMinMana = 0;
+        private static int _cfgFlagsMaxMana = 0;
+        private static string _cfgFlagsMinManaStr = string.Empty;
+        private static string _cfgFlagsMaxManaStr = string.Empty;
+        private static bool _cfgFlagsNoInterrupt = false;
+        private static int _cfgFlagsPctAggro = 0;
+        private static string _cfgFlagsPctAggroStr = string.Empty;
+        private static int _cfgFlagsDelaySec = 0;
+        private static int _cfgFlagsRecastDelaySec = 0;
+        private static string _cfgFlagsDelaySecStr = string.Empty;
+        private static string _cfgFlagsRecastDelaySecStr = string.Empty;
+        private static bool _cfgFlagsNoTarget = false;
+        private static bool _cfgFlagsNoAggro = false;
+        private static string _cfgFlagsBeforeEventKeys = string.Empty;
+        private static string _cfgFlagsAfterEventKeys = string.Empty;
+        private static string _cfgFlagsCheckForCsv = string.Empty;
+        private static string _cfgFlagsExcludedClassesCsv = string.Empty;
+        private static string _cfgFlagsCastIF = string.Empty;
+        private static bool _cfgFlagsDisabled = false;
+        private static List<string> _cfgFlagsUnknownTokens = new List<string>();
         // Ifs import (sample) modal state
         private static bool _cfgShowIfSampleModal = false;
         private static List<System.Collections.Generic.KeyValuePair<string, string>> _cfgIfSampleLines = new List<System.Collections.Generic.KeyValuePair<string, string>>();
@@ -3239,12 +3276,30 @@ namespace MonoCore
                         // continue to render items; parts refresh handled below
                     }
                     imgui_SameLine();
+                    // Flags editor
+                    if (imgui_Button($"Flags##flags_{itemUid}"))
+                    {
+                        // Ensure the selected/highlighted index matches the row we want to edit
+                        _cfgSelectedValueIndex = i;
+                        _cfgFlagsRow = i;
+                        _cfgFlagsActiveSection = _cfgSelectedSection ?? string.Empty;
+                        _cfgFlagsActiveKey = _cfgSelectedKey ?? string.Empty;
+                        PrepareFlagsEditorFromValue(v ?? string.Empty);
+                    }
+                    imgui_SameLine();
                     
                     // Make value selectable to show info in right panel
                     bool isSelected = (_cfgSelectedValueIndex == i);
                     if (imgui_Selectable($"{v}##select_{itemUid}", isSelected))
                     {
                         _cfgSelectedValueIndex = i;
+                        // Immediately sync Flags panel with this selection
+                        _cfgFlagsRow = i;
+                        _cfgFlagsActiveIndex = i;
+                        _cfgFlagsActiveSource = v ?? string.Empty;
+                        _cfgFlagsActiveSection = _cfgSelectedSection ?? string.Empty;
+                        _cfgFlagsActiveKey = _cfgSelectedKey ?? string.Empty;
+                        PrepareFlagsEditorFromValue(v ?? string.Empty);
                     }
                 }
                 else
@@ -3376,6 +3431,42 @@ namespace MonoCore
             
             imgui_TextColored(0.95f, 0.85f, 0.35f, 1.0f, "Configuration Tools");
             imgui_Separator();
+
+            // Ensure flags editor mirrors the highlighted value, but only when selection/value changes
+            var kdForFlags = selectedSection.Keys?.GetKeyData(_cfgSelectedKey ?? string.Empty);
+            var valsForFlags = GetValues(kdForFlags);
+            // If section/key context changed since last parse, clear cached state
+            if (!string.Equals(_cfgFlagsActiveSection, _cfgSelectedSection ?? string.Empty, StringComparison.OrdinalIgnoreCase) ||
+                !string.Equals(_cfgFlagsActiveKey, _cfgSelectedKey ?? string.Empty, StringComparison.OrdinalIgnoreCase))
+            {
+                _cfgFlagsActiveSection = _cfgSelectedSection ?? string.Empty;
+                _cfgFlagsActiveKey = _cfgSelectedKey ?? string.Empty;
+                _cfgFlagsActiveIndex = -1;
+                _cfgFlagsActiveSource = string.Empty;
+                _cfgFlagsRow = -1;
+            }
+
+            if (_cfgSelectedValueIndex >= 0 && _cfgSelectedValueIndex < valsForFlags.Count)
+            {
+                string selVal = valsForFlags[_cfgSelectedValueIndex];
+                if (_cfgFlagsRow != _cfgSelectedValueIndex || !string.Equals(_cfgFlagsActiveSource, selVal))
+                {
+                    _cfgFlagsRow = _cfgSelectedValueIndex;
+                    _cfgFlagsActiveIndex = _cfgSelectedValueIndex;
+                    _cfgFlagsActiveSource = selVal;
+                    _cfgFlagsActiveSection = _cfgSelectedSection ?? string.Empty;
+                    _cfgFlagsActiveKey = _cfgSelectedKey ?? string.Empty;
+                    PrepareFlagsEditorFromValue(selVal);
+                }
+                RenderFlagsEditorInline(selectedSection);
+                imgui_Separator();
+            }
+            else
+            {
+                _cfgFlagsRow = -1;
+                _cfgFlagsActiveSource = string.Empty;
+                _cfgFlagsActiveIndex = -1;
+            }
             
             
             // Special section buttons
@@ -4751,7 +4842,7 @@ namespace MonoCore
                                 break; // Exit loop after selection
                             }
                         }
-                        imgui_EndTable();
+                        imgui_EndChild();
                     }
                 }
                 else if (!string.IsNullOrEmpty(_cfgFoodDrinkStatus) && !_cfgFoodDrinkStatus.Contains("Scanning"))
@@ -5053,6 +5144,310 @@ namespace MonoCore
             if (!items.Contains(ifKey, StringComparer.OrdinalIgnoreCase)) items.Add(ifKey);
             string rebuilt = head + string.Join(",", items) + rest;
             return rebuilt;
+        }
+
+        // Parse a single config value into fields for the flags editor
+        private static void PrepareFlagsEditorFromValue(string value)
+        {
+            try
+            {
+                _cfgFlagsBaseName = string.Empty;
+                _cfgFlagsTarget = string.Empty;
+                _cfgFlagsGem = 0;
+                _cfgFlagsHealPct = 0;
+                _cfgFlagsGemStr = string.Empty;
+                _cfgFlagsHealPctStr = string.Empty;
+                _cfgFlagsIfs = string.Empty;
+                _cfgFlagsZone = string.Empty;
+                _cfgFlagsMinMana = 0;
+                _cfgFlagsMaxMana = 0;
+                _cfgFlagsMinManaStr = string.Empty;
+                _cfgFlagsMaxManaStr = string.Empty;
+                _cfgFlagsNoInterrupt = false;
+                _cfgFlagsPctAggro = 0;
+                _cfgFlagsPctAggroStr = string.Empty;
+                _cfgFlagsDelaySec = 0;
+                _cfgFlagsRecastDelaySec = 0;
+                _cfgFlagsDelaySecStr = string.Empty;
+                _cfgFlagsRecastDelaySecStr = string.Empty;
+                _cfgFlagsNoTarget = false;
+                _cfgFlagsNoAggro = false;
+                _cfgFlagsBeforeEventKeys = string.Empty;
+                _cfgFlagsAfterEventKeys = string.Empty;
+                _cfgFlagsCheckForCsv = string.Empty;
+                _cfgFlagsExcludedClassesCsv = string.Empty;
+                _cfgFlagsCastIF = string.Empty;
+                _cfgFlagsDisabled = false;
+                _cfgFlagsUnknownTokens.Clear();
+
+                string v = value ?? string.Empty;
+                var pieces = v.Split(new[] { '/' }, StringSplitOptions.RemoveEmptyEntries).Select(s => s.Trim()).ToList();
+                if (pieces.Count == 0) return;
+                _cfgFlagsBaseName = pieces[0];
+                for (int i = 1; i < pieces.Count; i++)
+                {
+                    var t = pieces[i];
+                    int p = t.IndexOf('|');
+                    if (p > 0)
+                    {
+                        string key = t.Substring(0, p).Trim();
+                        string val = t.Substring(p + 1).Trim();
+                        switch (key.ToLowerInvariant())
+                        {
+                            case "gem": int.TryParse(val, out _cfgFlagsGem); _cfgFlagsGemStr = _cfgFlagsGem.ToString(); break;
+                            case "healpct": int.TryParse(val, out _cfgFlagsHealPct); _cfgFlagsHealPctStr = _cfgFlagsHealPct.ToString(); break;
+                            case "ifs": _cfgFlagsIfs = val; break;
+                            case "zone": _cfgFlagsZone = val; break;
+                            case "minmana": int.TryParse(val, out _cfgFlagsMinMana); _cfgFlagsMinManaStr = _cfgFlagsMinMana.ToString(); break;
+                            case "maxmana": int.TryParse(val, out _cfgFlagsMaxMana); _cfgFlagsMaxManaStr = _cfgFlagsMaxMana.ToString(); break;
+                            case "pctaggro": int.TryParse(val, out _cfgFlagsPctAggro); _cfgFlagsPctAggroStr = _cfgFlagsPctAggro.ToString(); break;
+                            case "delay":
+                                val = val.EndsWith("s", StringComparison.OrdinalIgnoreCase) ? val.Substring(0, val.Length - 1) : val;
+                                int.TryParse(val, out _cfgFlagsDelaySec);
+                                _cfgFlagsDelaySecStr = _cfgFlagsDelaySec.ToString();
+                                break;
+                            case "recastdelay":
+                                val = val.EndsWith("s", StringComparison.OrdinalIgnoreCase) ? val.Substring(0, val.Length - 1) : val;
+                                int.TryParse(val, out _cfgFlagsRecastDelaySec);
+                                _cfgFlagsRecastDelaySecStr = _cfgFlagsRecastDelaySec.ToString();
+                                break;
+                            case "beforeevent": _cfgFlagsBeforeEventKeys = val; break;
+                            case "afterevent": _cfgFlagsAfterEventKeys = val; break;
+                            case "checkfor": _cfgFlagsCheckForCsv = val; break;
+                            case "excludedclasses": _cfgFlagsExcludedClassesCsv = val; break;
+                            case "castif": _cfgFlagsCastIF = val; break;
+                            default:
+                                _cfgFlagsUnknownTokens.Add(t);
+                                break;
+                        }
+                    }
+                    else
+                    {
+                        // bare tokens
+                        var bare = t.Trim();
+                        if (bare.Equals("NoInterrupt", StringComparison.OrdinalIgnoreCase)) _cfgFlagsNoInterrupt = true;
+                        else if (bare.Equals("NoTarget", StringComparison.OrdinalIgnoreCase)) _cfgFlagsNoTarget = true;
+                        else if (bare.Equals("NoAggro", StringComparison.OrdinalIgnoreCase)) _cfgFlagsNoAggro = true;
+                        else if (bare.Equals("Disabled", StringComparison.OrdinalIgnoreCase)) _cfgFlagsDisabled = true;
+                        else
+                        {
+                            // treat unknown bare as potential CastTarget, else keep as unknown
+                            if (string.IsNullOrEmpty(_cfgFlagsTarget)) _cfgFlagsTarget = bare;
+                            else _cfgFlagsUnknownTokens.Add(t);
+                        }
+                    }
+                }
+            }
+            catch { }
+        }
+
+        private static string BuildValueFromFlags()
+        {
+            var sb = new System.Text.StringBuilder();
+            sb.Append(_cfgFlagsBaseName ?? string.Empty);
+            // Target
+            if (!string.IsNullOrWhiteSpace(_cfgFlagsTarget)) sb.Append('/').Append(_cfgFlagsTarget.Trim());
+            // Ordered known tokens
+            if (_cfgFlagsGem > 0) sb.Append($"/Gem|{_cfgFlagsGem}");
+            if (!string.IsNullOrWhiteSpace(_cfgFlagsIfs)) sb.Append($"/Ifs|{_cfgFlagsIfs.Trim()}");
+            if (!string.IsNullOrWhiteSpace(_cfgFlagsCastIF)) sb.Append($"/CastIF|{_cfgFlagsCastIF.Trim()}");
+            if (_cfgFlagsHealPct > 0) sb.Append($"/HealPct|{_cfgFlagsHealPct}");
+            if (_cfgFlagsMinMana > 0) sb.Append($"/MinMana|{_cfgFlagsMinMana}");
+            if (_cfgFlagsMaxMana > 0) sb.Append($"/MaxMana|{_cfgFlagsMaxMana}");
+            if (_cfgFlagsPctAggro > 0) sb.Append($"/PctAggro|{_cfgFlagsPctAggro}");
+            if (_cfgFlagsDelaySec > 0) sb.Append($"/Delay|{_cfgFlagsDelaySec}s");
+            if (_cfgFlagsRecastDelaySec > 0) sb.Append($"/RecastDelay|{_cfgFlagsRecastDelaySec}s");
+            if (_cfgFlagsNoTarget) sb.Append("/NoTarget");
+            if (_cfgFlagsNoAggro) sb.Append("/NoAggro");
+            if (_cfgFlagsNoInterrupt) sb.Append("/NoInterrupt");
+            if (!string.IsNullOrWhiteSpace(_cfgFlagsZone)) sb.Append($"/Zone|{_cfgFlagsZone.Trim()}");
+            if (!string.IsNullOrWhiteSpace(_cfgFlagsBeforeEventKeys)) sb.Append($"/BeforeEvent|{_cfgFlagsBeforeEventKeys.Trim()}");
+            if (!string.IsNullOrWhiteSpace(_cfgFlagsAfterEventKeys)) sb.Append($"/AfterEvent|{_cfgFlagsAfterEventKeys.Trim()}");
+            if (!string.IsNullOrWhiteSpace(_cfgFlagsCheckForCsv)) sb.Append($"/CheckFor|{_cfgFlagsCheckForCsv.Trim()}");
+            if (!string.IsNullOrWhiteSpace(_cfgFlagsExcludedClassesCsv)) sb.Append($"/ExcludedClasses|{_cfgFlagsExcludedClassesCsv.Trim()}");
+            if (_cfgFlagsDisabled) sb.Append("/Disabled");
+            // Preserve unknown tokens
+            foreach (var tok in _cfgFlagsUnknownTokens)
+            {
+                if (!string.IsNullOrWhiteSpace(tok)) sb.Append('/').Append(tok.Trim());
+            }
+            return sb.ToString();
+        }
+
+        private static void RenderFlagsEditorInline(SectionData selectedSection)
+        {
+            // Base and target
+            imgui_TextColored(0.8f, 0.9f, 0.95f, 1.0f, "Flags Editor");
+            imgui_Separator();
+            // Context info for clarity (show 1-based row and current base name)
+            // Use parsed base name from the editor state to avoid ID/state confusion
+            try
+            {
+                string baseName = _cfgFlagsBaseName ?? string.Empty;
+                imgui_TextColored(0.7f, 0.85f, 1.0f, 1.0f, $"Editing: {baseName} (Row {_cfgFlagsRow + 1})");
+            }
+            catch { imgui_TextColored(0.7f, 0.85f, 1.0f, 1.0f, $"Editing Row: {_cfgFlagsRow + 1}"); }
+            imgui_Text("Base Name:"); imgui_SameLine();
+            imgui_SetNextItemWidth(220f);
+            string _id_base = $"##flags_basename_{_cfgFlagsRow}";
+            if (imgui_InputText(_id_base, _cfgFlagsBaseName)) { _cfgFlagsBaseName = imgui_InputText_Get(_id_base) ?? string.Empty; }
+
+            imgui_Text("Target:"); imgui_SameLine();
+            imgui_SetNextItemWidth(120f);
+            string tgtPreview = string.IsNullOrEmpty(_cfgFlagsTarget) ? "(none)" : _cfgFlagsTarget;
+            string _id_target = $"##flags_target_{_cfgFlagsRow}";
+            if (imgui_BeginCombo(_id_target, tgtPreview, 0))
+            {
+                string[] targets = new[] { "", "Me", "Pet", "Target" };
+                foreach (var t in targets)
+                {
+                    bool sel = string.Equals(_cfgFlagsTarget ?? string.Empty, t ?? string.Empty, StringComparison.OrdinalIgnoreCase);
+                    if (imgui_Selectable(string.IsNullOrEmpty(t) ? "(none)" : t, sel)) _cfgFlagsTarget = t;
+                }
+                EndComboSafe();
+            }
+
+            // Common numeric flags row 1
+            imgui_Text("Gem:"); imgui_SameLine(); imgui_SetNextItemWidth(50f);
+            string _id_gem = $"##flags_gem_{_cfgFlagsRow}";
+            if (imgui_InputText(_id_gem, _cfgFlagsGemStr))
+            {
+                _cfgFlagsGemStr = imgui_InputText_Get(_id_gem) ?? string.Empty;
+                if (int.TryParse(_cfgFlagsGemStr, out var n)) _cfgFlagsGem = n;
+            }
+            imgui_SameLine();
+            imgui_Text("HealPct:"); imgui_SameLine(); imgui_SetNextItemWidth(60f);
+            string _id_healpct = $"##flags_healpct_{_cfgFlagsRow}";
+            if (imgui_InputText(_id_healpct, _cfgFlagsHealPctStr))
+            {
+                _cfgFlagsHealPctStr = imgui_InputText_Get(_id_healpct) ?? string.Empty;
+                if (int.TryParse(_cfgFlagsHealPctStr, out var n)) _cfgFlagsHealPct = n;
+            }
+            imgui_SameLine();
+            imgui_Text("PctAggro:"); imgui_SameLine(); imgui_SetNextItemWidth(60f);
+            string _id_pctaggro = $"##flags_pctaggro_{_cfgFlagsRow}";
+            if (imgui_InputText(_id_pctaggro, _cfgFlagsPctAggroStr))
+            {
+                _cfgFlagsPctAggroStr = imgui_InputText_Get(_id_pctaggro) ?? string.Empty;
+                if (int.TryParse(_cfgFlagsPctAggroStr, out var n)) _cfgFlagsPctAggro = n;
+            }
+
+            // Mana
+            imgui_Text("MinMana:"); imgui_SameLine(); imgui_SetNextItemWidth(70f);
+            string _id_minmana = $"##flags_minmana_{_cfgFlagsRow}";
+            if (imgui_InputText(_id_minmana, _cfgFlagsMinManaStr))
+            {
+                _cfgFlagsMinManaStr = imgui_InputText_Get(_id_minmana) ?? string.Empty;
+                if (int.TryParse(_cfgFlagsMinManaStr, out var n)) _cfgFlagsMinMana = n;
+            }
+            imgui_SameLine();
+            imgui_Text("MaxMana:"); imgui_SameLine(); imgui_SetNextItemWidth(70f);
+            string _id_maxmana = $"##flags_maxmana_{_cfgFlagsRow}";
+            if (imgui_InputText(_id_maxmana, _cfgFlagsMaxManaStr))
+            {
+                _cfgFlagsMaxManaStr = imgui_InputText_Get(_id_maxmana) ?? string.Empty;
+                if (int.TryParse(_cfgFlagsMaxManaStr, out var n)) _cfgFlagsMaxMana = n;
+            }
+
+            // Delays
+            imgui_Text("Delay(s):"); imgui_SameLine(); imgui_SetNextItemWidth(70f);
+            string _id_delay = $"##flags_delay_{_cfgFlagsRow}";
+            if (imgui_InputText(_id_delay, _cfgFlagsDelaySecStr))
+            {
+                _cfgFlagsDelaySecStr = imgui_InputText_Get(_id_delay) ?? string.Empty;
+                if (int.TryParse(_cfgFlagsDelaySecStr, out var n)) _cfgFlagsDelaySec = n;
+            }
+            imgui_SameLine();
+            imgui_Text("Recast(s):"); imgui_SameLine(); imgui_SetNextItemWidth(70f);
+            string _id_recast = $"##flags_recast_{_cfgFlagsRow}";
+            if (imgui_InputText(_id_recast, _cfgFlagsRecastDelaySecStr))
+            {
+                _cfgFlagsRecastDelaySecStr = imgui_InputText_Get(_id_recast) ?? string.Empty;
+                if (int.TryParse(_cfgFlagsRecastDelaySecStr, out var n)) _cfgFlagsRecastDelaySec = n;
+            }
+
+            // Booleans
+            {
+                bool v1 = imgui_Checkbox("NoInterrupt", _cfgFlagsNoInterrupt);
+                if (v1 != _cfgFlagsNoInterrupt) _cfgFlagsNoInterrupt = v1;
+                imgui_SameLine();
+                bool v2 = imgui_Checkbox("NoTarget", _cfgFlagsNoTarget);
+                if (v2 != _cfgFlagsNoTarget) _cfgFlagsNoTarget = v2;
+                imgui_SameLine();
+                bool v3 = imgui_Checkbox("NoAggro", _cfgFlagsNoAggro);
+                if (v3 != _cfgFlagsNoAggro) _cfgFlagsNoAggro = v3;
+                imgui_SameLine();
+                bool v4 = imgui_Checkbox("Disabled", _cfgFlagsDisabled);
+                if (v4 != _cfgFlagsDisabled) _cfgFlagsDisabled = v4;
+            }
+
+            // Text fields
+            imgui_Text("Ifs (csv):"); imgui_SameLine(); imgui_SetNextItemWidth(260f);
+            string _id_ifs = $"##flags_ifs_{_cfgFlagsRow}";
+            if (imgui_InputText(_id_ifs, _cfgFlagsIfs)) { _cfgFlagsIfs = imgui_InputText_Get(_id_ifs) ?? string.Empty; }
+
+            imgui_Text("CastIF:"); imgui_SameLine(); imgui_SetNextItemWidth(260f);
+            string _id_castif = $"##flags_castif_{_cfgFlagsRow}";
+            if (imgui_InputText(_id_castif, _cfgFlagsCastIF)) { _cfgFlagsCastIF = imgui_InputText_Get(_id_castif) ?? string.Empty; }
+
+            imgui_Text("Zone:"); imgui_SameLine(); imgui_SetNextItemWidth(200f);
+            string _id_zone = $"##flags_zone_{_cfgFlagsRow}";
+            if (imgui_InputText(_id_zone, _cfgFlagsZone)) { _cfgFlagsZone = imgui_InputText_Get(_id_zone) ?? string.Empty; }
+
+            imgui_Text("BeforeEvent Keys:"); imgui_SameLine(); imgui_SetNextItemWidth(220f);
+            string _id_before = $"##flags_beforeevent_{_cfgFlagsRow}";
+            if (imgui_InputText(_id_before, _cfgFlagsBeforeEventKeys)) { _cfgFlagsBeforeEventKeys = imgui_InputText_Get(_id_before) ?? string.Empty; }
+
+            imgui_Text("AfterEvent Keys:"); imgui_SameLine(); imgui_SetNextItemWidth(220f);
+            string _id_after = $"##flags_afterevent_{_cfgFlagsRow}";
+            if (imgui_InputText(_id_after, _cfgFlagsAfterEventKeys)) { _cfgFlagsAfterEventKeys = imgui_InputText_Get(_id_after) ?? string.Empty; }
+
+            imgui_Text("CheckFor (csv):"); imgui_SameLine(); imgui_SetNextItemWidth(260f);
+            string _id_checkfor = $"##flags_checkfor_{_cfgFlagsRow}";
+            if (imgui_InputText(_id_checkfor, _cfgFlagsCheckForCsv)) { _cfgFlagsCheckForCsv = imgui_InputText_Get(_id_checkfor) ?? string.Empty; }
+
+            imgui_Text("ExcludedClasses (csv):"); imgui_SameLine(); imgui_SetNextItemWidth(260f);
+            string _id_exclasses = $"##flags_exclasses_{_cfgFlagsRow}";
+            if (imgui_InputText(_id_exclasses, _cfgFlagsExcludedClassesCsv)) { _cfgFlagsExcludedClassesCsv = imgui_InputText_Get(_id_exclasses) ?? string.Empty; }
+
+            imgui_Separator();
+            if (imgui_Button("Save Flags"))
+            {
+                try
+                {
+                    var kd = selectedSection?.Keys?.GetKeyData(_cfgSelectedKey ?? string.Empty);
+                    if (kd != null && _cfgFlagsRow >= 0)
+                    {
+                        var vals = GetValues(kd);
+                        if (_cfgFlagsRow < vals.Count)
+                        {
+                            string rebuilt = BuildValueFromFlags();
+                            vals[_cfgFlagsRow] = rebuilt;
+                            WriteValues(kd, vals);
+                            // keep editor pinned to current selection and refresh source snapshot
+                            _cfgFlagsActiveIndex = _cfgFlagsRow;
+                            _cfgFlagsActiveSource = rebuilt;
+                            PrepareFlagsEditorFromValue(rebuilt);
+                        }
+                    }
+                }
+                catch { }
+            }
+            imgui_SameLine();
+            if (imgui_Button("Cancel"))
+            {
+                // Revert edits back to current selected value
+                var kd = selectedSection?.Keys?.GetKeyData(_cfgSelectedKey ?? string.Empty);
+                var vals = GetValues(kd);
+                if (_cfgSelectedValueIndex >= 0 && _cfgSelectedValueIndex < vals.Count)
+                {
+                    string selVal = vals[_cfgSelectedValueIndex];
+                    _cfgFlagsRow = _cfgSelectedValueIndex;
+                    _cfgFlagsActiveIndex = _cfgSelectedValueIndex;
+                    _cfgFlagsActiveSource = selVal;
+                    PrepareFlagsEditorFromValue(selVal);
+                }
+            }
         }
 
         // Inventory helper that uses MQ TLOs to scan for Food/Drink items

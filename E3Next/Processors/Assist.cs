@@ -394,14 +394,36 @@ namespace E3Core.Processors
                         if (ability.CastType == Data.CastingType.Ability)
                         {
 
-                            if(String.Equals(ability.CastName,"Bash",StringComparison.OrdinalIgnoreCase))
+                            if (String.Equals(ability.CastName, "Bash", StringComparison.OrdinalIgnoreCase))
                             {
-                                //check if we can actually bash
-                                if (MQ.Query<double>("${Target.Distance}") > 15 || !(MQ.Query<bool>("${Select[${Me.Inventory[Offhand].Type},Shield]}") || MQ.Query<bool>("${Me.AltAbility[2 Hand Bash]}")))
+                                // Always check range first
+                                if (MQ.Query<double>("${Target.Distance}") > 15)
+                                {
+                                    continue;
+                                }
+
+                                // Query mainhand name
+                                string mainHandName = MQ.Query<string>("${Me.Inventory[MainHand].Name}");
+
+                                // Special weapons that allow bashing
+                                bool specialWeapon =
+                                    String.Equals(mainHandName, "Fiery Defender", StringComparison.OrdinalIgnoreCase) ||
+                                    String.Equals(mainHandName, "Innoruuk's Curse", StringComparison.OrdinalIgnoreCase) ||
+                                    String.Equals(mainHandName, "Redemption", StringComparison.OrdinalIgnoreCase) ||
+                                    String.Equals(mainHandName, "Nightbane, Sword of the Valiant", StringComparison.OrdinalIgnoreCase);
+
+                                // Can bash if: shield in offhand, OR AA, OR any of the special weapons
+                                bool canBash =
+                                    MQ.Query<bool>("${Select[${Me.Inventory[Offhand].Type},Shield]}") ||
+                                    MQ.Query<bool>("${Me.AltAbility[2 Hand Bash]}") ||
+                                    specialWeapon;
+
+                                if (!canBash)
                                 {
                                     continue;
                                 }
                             }
+
 
                             if (String.Equals(ability.CastName, "Slam", StringComparison.OrdinalIgnoreCase))
                             {

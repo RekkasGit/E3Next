@@ -58,6 +58,25 @@ namespace E3Core.Processors
 		[ExposedData("BuffCheck", "InitAuras")]
 		static bool _initAuras = false;
 
+		// EZ server-specific: zones where auto-buffing should be paused
+		private static readonly HashSet<string> _ezPausedAutoBuffZones = new HashSet<string>(StringComparer.OrdinalIgnoreCase)
+		{
+			"poknowledge",
+			"nexus",
+			"guildlobby",
+			"qrg",
+			"stonehive",
+		};
+
+		private static bool ShouldPauseAutoBuffsForServerAndZone()
+		{
+			// Only apply on EZ (Linux) x4 Exp server; E3 formats server names by replacing spaces with underscores
+			// e.g., "EZ (Linux) x4 Exp" -> "EZ_(Linux)_x4_Exp"
+			if (!string.Equals(E3.ServerName, "EZ_(Linux)_x4_Exp", StringComparison.OrdinalIgnoreCase)) return false;
+			var zoneShort = Zoning.CurrentZone?.ShortName ?? string.Empty;
+			return _ezPausedAutoBuffZones.Contains(zoneShort);
+		}
+
 		public static void AddToBuffCheckTimer(int millisecondsToAdd)
 		{
 			_nextBuffCheck = Core.StopWatch.ElapsedMilliseconds + millisecondsToAdd;
@@ -483,6 +502,8 @@ namespace E3Core.Processors
 		{
 			if (E3.IsInvis) return;
 			if (Heals.IgnoreHealTargets.Count > 0) return;
+			// On EZ server in designated safe zones, pause automatic buff routines
+			if (ShouldPauseAutoBuffsForServerAndZone()) return;
 			//e3util.PrintTimerStatus(_buffTimers, ref _printoutTimer, "Buff timers");
 			//instant buffs have their own shouldcheck, need it snappy so check quickly.
 			if(!E3.CurrentInCombat)
@@ -567,6 +588,8 @@ namespace E3Core.Processors
 		{
 			if (E3.IsInvis) return;
 			if (e3util.IsActionBlockingWindowOpen()) return;
+			// On EZ server in designated safe zones, pause automatic instant buffing
+			if (ShouldPauseAutoBuffsForServerAndZone()) return;
 			if (!e3util.ShouldCheck(ref _nextInstantBuffRefresh, _nextInstantRefreshTimeInterval)) return;
 			//self only, instacast buffs only
 			Int32 id = E3.CurrentId;
