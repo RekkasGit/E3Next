@@ -430,6 +430,7 @@ namespace E3Core.Processors
                                 }
                             }
 
+
                             if (String.Equals(ability.CastName, "Slam", StringComparison.OrdinalIgnoreCase))
                             {
                                 //check if we can actually bash

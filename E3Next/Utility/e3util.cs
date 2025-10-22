@@ -16,6 +16,7 @@ using System.Runtime.CompilerServices;
 using System.Runtime.InteropServices;
 using System.Security.Cryptography;
 using System.Text;
+using System.Linq;
 using static MonoCore.EventProcessor;
 
 namespace E3Core.Utility
@@ -71,27 +72,121 @@ namespace E3Core.Utility
 			return _raidHealers;
 		}
 
-		public static List<String> _raidTanks = new List<string>();
-		public static List<String> GetRaidTanks()
+public static List<String> _raidTanks = new List<string>();
+	public static List<String> GetRaidTanks()
+	{
+		_raidTanks.Clear();
+		Int32 raidSize = MQ.Query<Int32>("${Raid.Members}");
+
+		for (Int32 x = 0; x < raidSize; x++)
 		{
-			_raidTanks.Clear();
-			Int32 raidSize = MQ.Query<Int32>("${Raid.Members}");
+			string className = MQ.Query<String>($"${{Raid.Member[{x}].Class.ShortName}}");
 
-			for (Int32 x = 0; x < raidSize; x++)
+		if(className=="SHD"|| className=="WAR" || className=="PAL")
 			{
-				string className = MQ.Query<String>($"${{Raid.Member[{x}].Class.ShortName}}");
+				string raidMemberName = MQ.Query<String>($"${{Raid.Member[{x}].Name}}");
 
-				if(className=="SHD"|| className=="WAR" || className=="PAL")
+				if (Basics.GroupMemberNames.Contains(raidMemberName,StringComparer.OrdinalIgnoreCase)) continue;
+
+				_raidTanks.Add(raidMemberName);
+			}
+		}
+		return _raidTanks;
+	}
+
+	private static List<String> _deadRaidMembers = new List<string>();
+	/// <summary>
+	/// Checks the raid for any dead or corpse form members. Detects both members in your zone and members reported via the bot network.
+	/// </summary>
+	/// <returns>A list of dead raid member names. If empty, no dead raid members were found.</returns>
+	public static List<String> GetDeadRaidMembers()
+	{
+		_deadRaidMembers.Clear();
+
+		// 1. First check raid members in the current zone
+		Int32 raidSize = MQ.Query<Int32>("${Raid.Members}");
+		for (Int32 i = 0; i < raidSize; i++)
+		{
+			// Get the raid member's name
+			string memberName = MQ.Query<String>($"${{Raid.Member[{i}].Name}}");
+			if (string.IsNullOrEmpty(memberName) || memberName == "NULL") continue;
+			
+			// Skip ourselves - we'll be checked elsewhere in the hunt logic
+			if (string.Equals(memberName, E3.CurrentName, StringComparison.OrdinalIgnoreCase)) continue;
+
+			// Check if they're dead by scanning for a matching corpse in the current zone
+			bool isDead = false;
+			try
+			{
+				// Player corpse naming typically follows: "<Name>'s corpse" or sometimes "<Name>`s corpse"
+				string pattern1 = $"{memberName}'s corpse";
+				string pattern2 = $"{memberName}`s corpse";
+				var corpse = _spawns.Get().FirstOrDefault(sp =>
+					sp.TypeDesc == "Corpse" && (
+						string.Equals(sp.CleanName, pattern1, StringComparison.OrdinalIgnoreCase) ||
+						string.Equals(sp.Name, pattern1, StringComparison.OrdinalIgnoreCase) ||
+						string.Equals(sp.CleanName, pattern2, StringComparison.OrdinalIgnoreCase) ||
+						string.Equals(sp.Name, pattern2, StringComparison.OrdinalIgnoreCase) ||
+						sp.CleanName.StartsWith(pattern1, StringComparison.OrdinalIgnoreCase) ||
+						sp.Name.StartsWith(pattern1, StringComparison.OrdinalIgnoreCase) ||
+						sp.CleanName.StartsWith(pattern2, StringComparison.OrdinalIgnoreCase) ||
+						sp.Name.StartsWith(pattern2, StringComparison.OrdinalIgnoreCase)
+					)
+				);
+				if (corpse != null && corpse.ID > 0)
 				{
-					string raidMemberName = MQ.Query<String>($"${{Raid.Member[{x}].Name}}");
-
-					if (Basics.GroupMemberNames.Contains(raidMemberName,StringComparer.OrdinalIgnoreCase)) continue;
-
-					_raidTanks.Add(raidMemberName);
+					isDead = true;
 				}
 			}
-			return _raidTanks;
+			catch { }
+
+			// Add to the list if dead
+			if (isDead && !_deadRaidMembers.Contains(memberName))
+			{
+				_deadRaidMembers.Add(memberName);
+			}
 		}
+
+		// 2. Check connected bots in the raid (may include members in other zones)
+		var connectedBots = E3.Bots.BotsConnected();
+		foreach (string botName in connectedBots)
+		{
+			// Skip if already found dead or if it's us
+			if (_deadRaidMembers.Contains(botName, StringComparer.OrdinalIgnoreCase) ||
+			    string.Equals(botName, E3.CurrentName, StringComparison.OrdinalIgnoreCase))
+			{
+				continue;
+			}
+
+			// Check if this bot is in the raid
+			bool inRaid = false;
+			for (Int32 i = 0; i < raidSize; i++)
+			{
+				string memberName = MQ.Query<String>($"${{Raid.Member[{i}].Name}}");
+				if (string.Equals(memberName, botName, StringComparison.OrdinalIgnoreCase))
+				{
+					inRaid = true;
+					break;
+				}
+			}
+
+			if (!inRaid) continue;
+
+			// Query if the bot is dead
+			try
+			{
+				string peerDead = E3.Bots.Query(botName, "${Me.Dead}");
+				bool isPeerDead = string.Equals(peerDead, "TRUE", StringComparison.OrdinalIgnoreCase);
+				if (isPeerDead && !_deadRaidMembers.Contains(botName))
+				{
+					_deadRaidMembers.Add(botName);
+				}
+			}
+			catch { /* Skip if query fails */ }
+		}
+
+		return _deadRaidMembers;
+	}
 		public static Dictionary<String, Int32> _xtargetPlayers = new Dictionary<string, int>(StringComparer.OrdinalIgnoreCase);
 		public static Dictionary<String, Int32> GetXTargetPlayers()
 		{
@@ -1133,6 +1228,7 @@ namespace E3Core.Utility
 					Spawn s;
 					if (_spawns.TryByID(mobId, out s))
 					{
+						if (s.TypeDesc == "Corpse") continue; // Skip corpses
 						if (s.Aggressive)
 						{
 							tempLowestHP = MQ.Query<Int32>($"${{Me.XTarget[{i}].PctHPs}}");
@@ -1164,6 +1260,7 @@ namespace E3Core.Utility
 					Spawn s;
 					if (_spawns.TryByID(mobId, out s))
 					{
+						if (s.TypeDesc == "Corpse") continue; // Skip corpses
 						if (s.Aggressive)
 						{
 							tempHighestHP = MQ.Query<Int32>($"${{Me.XTarget[{i}].PctHPs}}");

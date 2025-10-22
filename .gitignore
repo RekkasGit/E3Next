@@ -7,6 +7,8 @@ Mono
 .vscode
 .vs
 documentation/help
+/rgmercs/
+WARP.md
 
 # jetbrains
 .idea
@@ -118,6 +120,7 @@ Backup*/
 UpgradeLog*.XML
 
 # Mono Developt ignores
+/MQ2Mono/
 
 #User Specific
 *.userprefs
@@ -127,5 +130,4 @@ UpgradeLog*.XML
 *.pidb
 *.resources
 test-results/
->>>>>>> Stashed changes
-/DiscordApiLibrary/obj
+

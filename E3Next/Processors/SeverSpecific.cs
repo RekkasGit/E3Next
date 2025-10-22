@@ -27,10 +27,21 @@ namespace E3Core.Processors
 				MQ.Write("Loading EQ_Might specific code!");
 				Init_EQMight();
 			}
+			else if (string.Equals(E3.ServerName, "EZ_(Linux)_x4_Exp", StringComparison.OrdinalIgnoreCase))
+			{
+				MQ.Write("Loading EZServer specific code!");
+				Init_EZ();
+			}
 			else
 			{
-				MQ.Write("None found for this server.");
+				MQ.Write($"None found for this server: {E3.ServerName}.");
 			}
+		}
+
+		public static void Init_EZ()
+		{
+			// Placeholder for EZ-specific behaviors. Auto-buff pausing for safe zones
+			// is handled inside BuffCheck via server/zone guard.
 		}
 	
 		public static void Init_EQMight()

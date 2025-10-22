@@ -16,6 +16,7 @@ namespace E3NextUI.Server
     {
         Task _serverThread;
         private Int32 _port;
+        private static string _oocChannelId;
         
 		public void Start(Int32 port)
         {
@@ -143,6 +144,15 @@ namespace E3NextUI.Server
                                         ((E3UI)Application.OpenForms[0]).ToggleShow();
                                     }
                                 }
+                                else if (messageReceived.StartsWith("#SetOOCChannelId|"))
+                                {
+                                    var parts = messageReceived.Split('|');
+                                    if (parts.Length == 2)
+                                    {
+                                        _oocChannelId = parts[1];
+                                        WriteMessageToConsole($"OOC Channel ID set to: {_oocChannelId}", ConsoleColor.Green);
+                                    }
+                                }
                             }
                             else if (messageTopicReceived == "${Me.CurrentHPs}")
                             {
@@ -214,6 +224,15 @@ namespace E3NextUI.Server
                                 {
                                     var message = $"**{messageParts[0]} Guild**: {messageParts[1]}";
                                     ApiLibrary.ApiLibrary.SendMessageToDiscord(message);
+                                }
+                            }
+                            else if (messageTopicReceived == "OOCChatForDiscord")
+                            {
+                                var messageParts = messageReceived.Split('|');
+                                if (messageParts.Length == 2)
+                                {
+                                    var message = $"**{messageParts[0]} OOC**: {messageParts[1]}";
+                                    ApiLibrary.ApiLibrary.SendMessageToDiscord(message, _oocChannelId);
                                 }
                             }
                             else if (messageTopicReceived == "WorldShutdown")

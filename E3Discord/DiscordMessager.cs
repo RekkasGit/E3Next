@@ -28,12 +28,13 @@ namespace E3Discord
 
         public static bool IsInit;
         public static string DiscordDmChannel;
+        public static string DiscordOocChannelId;
 
         public static void Init(string[] args) 
         { 
             try
             {
-				// exe path, publisher port, router port, pub client port, discord bot token, discord guild chat channel id, discord server id
+				// exe path, publisher port, router port, pub client port, discord bot token, discord guild chat channel id, discord server id, discord ooc channel id
 				WriteMessageToConsole($"Running init method with args {string.Join(",", args)}", ConsoleColor.Green);
                 //WriteMessageToConsole("Press any key to continue...", ConsoleColor.Green);
                 //Console.ReadKey();
@@ -44,6 +45,7 @@ namespace E3Discord
                 _discordBotToken = args[4];
                 var discordGuildChannelId = args[5];
                 var discordServerId = args[6];
+                var discordOocChannelId = args.Length > 7 ? args[7] : discordGuildChannelId; // fallback to guild channel if not provided
                 string myDiscordUserId = string.Empty;
                 if (args.Length > 8)
                      myDiscordUserId = args[8];
@@ -57,6 +59,8 @@ namespace E3Discord
                 _tloClient = new DealerClient(tloClientPort);
                 var configFolder = _tloClient.RequestData("${MacroQuest.Path[config]}");
 
+                DiscordOocChannelId = discordOocChannelId;
+                
                 ApiLibrary.ApiLibrary.DiscordBotToken = _discordBotToken;
                 ApiLibrary.ApiLibrary.DiscordGuildChannelMessageResource = $"channels/{discordGuildChannelId}/messages";
                 ApiLibrary.ApiLibrary.DiscordServerId = discordServerId;
@@ -68,6 +72,9 @@ namespace E3Discord
                 if (!string.IsNullOrEmpty(myDiscordUserId))
                     SetupDiscordDmChannel(myDiscordUserId);
 
+                // Send OOC channel ID to PubClient via command queue
+                PubServer.PubCommands.Enqueue($"#SetOOCChannelId|{DiscordOocChannelId}");
+                
                 SendMessageToDiscord("Connected :fire:");
                 SendMessageToGame("/gu Connected");
 

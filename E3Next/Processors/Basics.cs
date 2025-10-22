@@ -437,6 +437,17 @@ namespace E3Core.Processors
                 }
             });
 
+            EventProcessor.RegisterEvent("OOCChat", "(.+) says out of character, '(.+)'", (x) =>
+            {
+                if (x.match.Groups.Count == 3)
+                {
+                    var character = x.match.Groups[1].Value;
+                    var message = x.match.Groups[2].Value;
+
+                    PubServer.AddTopicMessage("OOCChatForDiscord", $"{character}|{message}");
+                }
+            });
+
             EventProcessor.RegisterEvent("ServerDown", "(.+) The world will be coming down in (.+)", (x) =>
             {
                 if (x.match.Groups.Count == 3)
@@ -573,6 +584,7 @@ namespace E3Core.Processors
 					}
 					if (String.Compare(command, "shareddata", true) == 0)
 					{
+						MQ.Write("/shutdown shareddata received. Disabling Shared Data thread.");
 						E3.NetMQ_SharedDataServerThreadRun = false;
 					}
 					if (String.Compare(command, "routerserver", true) == 0)
