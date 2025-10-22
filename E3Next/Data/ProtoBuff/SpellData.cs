@@ -73,7 +73,7 @@ public static partial class SpellDataReflection {
         new pbr::FileDescriptor[] { },
         new pbr::GeneratedClrTypeInfo(null, null, new pbr::GeneratedClrTypeInfo[] {
           new pbr::GeneratedClrTypeInfo(typeof(global::SpellDataList), global::SpellDataList.Parser, new[]{ "Data" }, null, null, null, null),
-          new pbr::GeneratedClrTypeInfo(typeof(global::SpellData), global::SpellData.Parser, new[]{ "SpellName", "CastName", "Subcategory", "Category", "CastType", "TargetType", "SpellGem", "GiveUpTimer", "MaxTries", "Duration", "DurationTotalSeconds", "RecastTime", "RecoveryTime", "MyCastTime", "MyCastTimeInSeconds", "MyRange", "Mana", "MinMana", "MaxMana", "MinHP", "HealPct", "Debug", "Reagent", "ItemMustEquip", "NoBurn", "NoTarget", "NoAggro", "Mode", "EnduranceCost", "Delay", "AfterCastCompletedDelay", "CastID", "MinEnd", "CastInvis", "SpellType", "CastTarget", "StackRequestTargets", "StackIntervalCheck", "StackIntervalNextCheck", "StackRecastDelay", "StackRequestItem", "GiftOfMana", "SpellID", "PctAggro", "Zone", "MinSick", "AllowSpellSwap", "NoEarlyRecast", "NoStack", "TriggerSpell", "BeforeSpell", "NoInterrupt", "AfterEvent", "BeforeEvent", "CastIF", "Ifs", "InitName", "ReagentOutOfStock", "SpellInBook", "SpellIcon", "NoMidSongCast", "MinDurationBeforeRecast", "IsShortBuff", "HealthMax", "IgnoreStackRules", "IsDebuff", "IsDoT", "Rotate", "AfterSpell", "Level", "Description", "ResistType", "ResistAdj", "CastTypeOverride", "CheckForCollection", "IfsKeys", "Enabled", "IsBuff", "MinHPTotal", "AfterEventKeys", "BeforeEventKeys", "AAID", "SpellEffects", "AfterEventDelay", "BeforeEventDelay", "AfterSpellDelay", "BeforeSpellDelay", "AfterCastDelay", "SongRefreshTime", "RecastDelay", "ExcludedClasses", "ExcludedNames" }, null, new[]{ typeof(global::SpellData.Types.CastingType) }, null, null)
+          new pbr::GeneratedClrTypeInfo(typeof(global::SpellData), global::SpellData.Parser, new[]{ "SpellName", "CastName", "Subcategory", "Category", "CastType", "TargetType", "SpellGem", "GiveUpTimer", "MaxTries", "Duration", "DurationTotalSeconds", "RecastTime", "RecoveryTime", "MyCastTime", "MyCastTimeInSeconds", "MyRange", "Mana", "MinMana", "MaxMana", "MinHP", "HealPct", "Debug", "Reagent", "ItemMustEquip", "NoBurn", "NoTarget", "NoAggro", "Mode", "EnduranceCost", "Delay", "AfterCastCompletedDelay", "CastID", "MinEnd", "CastInvis", "SpellType", "CastTarget", "StackRequestTargets", "StackIntervalCheck", "StackIntervalNextCheck", "StackRecastDelay", "StackRequestItem", "GiftOfMana", "SpellID", "PctAggro", "Zone", "MinSick", "AllowSpellSwap", "NoEarlyRecast", "NoStack", "TriggerSpell", "BeforeSpell", "NoInterrupt", "AfterEvent", "BeforeEvent", "CastIF", "Ifs", "InitName", "ReagentOutOfStock", "SpellInBook", "SpellIcon", "NoMidSongCast", "MinDurationBeforeRecast", "IsShortBuff", "HealthMax", "IgnoreStackRules", "IsDebuff", "IsDoT", "Rotate", "AfterSpell", "Level", "Description", "ResistType", "ResistAdj", "CastTypeOverride", "CheckForCollection", "IfsKeys", "Enabled", "IsBuff", "MinHPTotal", "AfterEventKeys", "BeforeEventKeys", "AAID", "SpellEffects", "AfterEventDelay", "BeforeEventDelay", "AfterSpellDelay", "BeforeSpellDelay", "AfterCastDelay", "SongRefreshTime", "RecastDelay", "ExcludedClasses", "ExcludedNames", "MinAggro", "MaxAggro" }, null, new[]{ typeof(global::SpellData.Types.CastingType) }, null, null)
         }));
   }
   #endregion
@@ -338,6 +338,8 @@ public sealed partial class SpellData : pb::IMessage<SpellData>
     giftOfMana_ = other.giftOfMana_;
     spellID_ = other.spellID_;
     pctAggro_ = other.pctAggro_;
+    minAggro_ = other.minAggro_;
+    maxAggro_ = other.maxAggro_;
     zone_ = other.zone_;
     minSick_ = other.minSick_;
     allowSpellSwap_ = other.allowSpellSwap_;
@@ -1494,6 +1496,30 @@ public sealed partial class SpellData : pb::IMessage<SpellData>
     get { return excludedNames_; }
   }
 
+  /// <summary>Field number for the "MinAggro" field.</summary>
+  public const int MinAggroFieldNumber = 94;
+  private int minAggro_;
+  [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
+  [global::System.CodeDom.Compiler.GeneratedCode("protoc", null)]
+  public int MinAggro {
+    get { return minAggro_; }
+    set {
+      minAggro_ = value;
+    }
+  }
+
+  /// <summary>Field number for the "MaxAggro" field.</summary>
+  public const int MaxAggroFieldNumber = 95;
+  private int maxAggro_;
+  [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
+  [global::System.CodeDom.Compiler.GeneratedCode("protoc", null)]
+  public int MaxAggro {
+    get { return maxAggro_; }
+    set {
+      maxAggro_ = value;
+    }
+  }
+
   [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
   [global::System.CodeDom.Compiler.GeneratedCode("protoc", null)]
   public override bool Equals(object other) {
@@ -1553,6 +1579,8 @@ public sealed partial class SpellData : pb::IMessage<SpellData>
     if (GiftOfMana != other.GiftOfMana) return false;
     if (SpellID != other.SpellID) return false;
     if (PctAggro != other.PctAggro) return false;
+    if (MinAggro != other.MinAggro) return false;
+    if (MaxAggro != other.MaxAggro) return false;
     if (Zone != other.Zone) return false;
     if (MinSick != other.MinSick) return false;
     if (AllowSpellSwap != other.AllowSpellSwap) return false;
@@ -1652,6 +1680,8 @@ public sealed partial class SpellData : pb::IMessage<SpellData>
     if (GiftOfMana != false) hash ^= GiftOfMana.GetHashCode();
     if (SpellID != 0) hash ^= SpellID.GetHashCode();
     if (PctAggro != 0) hash ^= PctAggro.GetHashCode();
+    if (MinAggro != 0) hash ^= MinAggro.GetHashCode();
+    if (MaxAggro != 0) hash ^= MaxAggro.GetHashCode();
     if (Zone.Length != 0) hash ^= Zone.GetHashCode();
     if (MinSick != 0) hash ^= MinSick.GetHashCode();
     if (AllowSpellSwap != false) hash ^= AllowSpellSwap.GetHashCode();
@@ -1890,6 +1920,14 @@ public sealed partial class SpellData : pb::IMessage<SpellData>
     if (PctAggro != 0) {
       output.WriteRawTag(224, 2);
       output.WriteInt32(PctAggro);
+    }
+    if (MinAggro != 0) {
+      output.WriteRawTag(240, 5);
+      output.WriteInt32(MinAggro);
+    }
+    if (MaxAggro != 0) {
+      output.WriteRawTag(248, 5);
+      output.WriteInt32(MaxAggro);
     }
     if (Zone.Length != 0) {
       output.WriteRawTag(234, 2);
@@ -2254,6 +2292,14 @@ public sealed partial class SpellData : pb::IMessage<SpellData>
       output.WriteRawTag(224, 2);
       output.WriteInt32(PctAggro);
     }
+    if (MinAggro != 0) {
+      output.WriteRawTag(240, 5);
+      output.WriteInt32(MinAggro);
+    }
+    if (MaxAggro != 0) {
+      output.WriteRawTag(248, 5);
+      output.WriteInt32(MaxAggro);
+    }
     if (Zone.Length != 0) {
       output.WriteRawTag(234, 2);
       output.WriteString(Zone);
@@ -2574,6 +2620,12 @@ public sealed partial class SpellData : pb::IMessage<SpellData>
     if (PctAggro != 0) {
       size += 2 + pb::CodedOutputStream.ComputeInt32Size(PctAggro);
     }
+    if (MinAggro != 0) {
+      size += 2 + pb::CodedOutputStream.ComputeInt32Size(MinAggro);
+    }
+    if (MaxAggro != 0) {
+      size += 2 + pb::CodedOutputStream.ComputeInt32Size(MaxAggro);
+    }
     if (Zone.Length != 0) {
       size += 2 + pb::CodedOutputStream.ComputeStringSize(Zone);
     }
@@ -2851,6 +2903,12 @@ public sealed partial class SpellData : pb::IMessage<SpellData>
     }
     if (other.PctAggro != 0) {
       PctAggro = other.PctAggro;
+    }
+    if (other.MinAggro != 0) {
+      MinAggro = other.MinAggro;
+    }
+    if (other.MaxAggro != 0) {
+      MaxAggro = other.MaxAggro;
     }
     if (other.Zone.Length != 0) {
       Zone = other.Zone;
@@ -3177,6 +3235,14 @@ public sealed partial class SpellData : pb::IMessage<SpellData>
         }
         case 352: {
           PctAggro = input.ReadInt32();
+          break;
+        }
+        case 752: {
+          MinAggro = input.ReadInt32();
+          break;
+        }
+        case 760: {
+          MaxAggro = input.ReadInt32();
           break;
         }
         case 362: {
@@ -3560,6 +3626,14 @@ public sealed partial class SpellData : pb::IMessage<SpellData>
         }
         case 352: {
           PctAggro = input.ReadInt32();
+          break;
+        }
+        case 752: {
+          MinAggro = input.ReadInt32();
+          break;
+        }
+        case 760: {
+          MaxAggro = input.ReadInt32();
           break;
         }
         case 362: {
