@@ -198,7 +198,7 @@ namespace E3Core.Processors
             if (MQ.Query<bool>("${Me.Feigning}"))
 			{
 				if (E3.CharacterSettings.IfFDStayDown) return;
-				E3.Bots.Broadcast("I'm Fegined, trying to stand up");
+				E3.Bots.Broadcast("I'm Feigned, trying to stand up");
 				MQ.Cmd("/stand");
 			}
 			
@@ -295,7 +295,7 @@ namespace E3Core.Processors
 			if (MQ.Query<bool>("${Me.Feigning}"))
 			{
 				if (E3.CharacterSettings.IfFDStayDown) return;
-				E3.Bots.Broadcast("I'm Fegined, trying to stand up");
+				E3.Bots.Broadcast("I'm Feigned, trying to stand up");
 				MQ.Cmd("/stand");
 			}
 
@@ -602,7 +602,7 @@ namespace E3Core.Processors
 				if (MQ.Query<bool>("${Me.Feigning}"))
                 {
 					//if (E3.CharacterSettings.IfFDStayDown) return;
-					E3.Bots.Broadcast("I'm Fegined, trying to stand up");
+					E3.Bots.Broadcast("I'm Feigned, trying to stand up");
 					MQ.Cmd("/stand");
                 }
 				else
