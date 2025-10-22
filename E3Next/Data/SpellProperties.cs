@@ -111,6 +111,10 @@ namespace E3Core.Data
             _spellPropIndex.Add("iAfterEvent", 46);
             _spellPropIndex.Add("iBeforeEvent", 47);
             _spellPropIndex.Add("iCastIf", 48);
+            _spellPropMapping.Add("MinAggro");
+            _spellPropMapping.Add("MaxAggro");
+            _spellPropIndex.Add("iMinAggro", 49);
+            _spellPropIndex.Add("iMaxAggro", 50);
 
         }
 

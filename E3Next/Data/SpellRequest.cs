@@ -71,6 +71,8 @@ namespace E3Core.Data
 			r.NoStack = source.NoStack;
 			r.NoTarget = source.NoTarget;
 			r.PctAggro = source.PctAggro;
+			r.MinAggro = source.MinAggro;
+			r.MaxAggro = source.MaxAggro;
 			r.Reagent = source.Reagent;
 			r.ReagentOutOfStock = source.ReagentOutOfStock;
 			r.RecastTime = source.RecastTime;

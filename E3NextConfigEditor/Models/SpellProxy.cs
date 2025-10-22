@@ -172,6 +172,20 @@ namespace E3NextConfigEditor.Models
 			get { return _spell.PctAggro; }
 			set { _spell.PctAggro = value; }
 		}
+			[Category("Flags")]
+			[Description("Minimum aggro percentage required before this ability will fire")]
+			public Int32 MinAggro
+			{
+				get { return _spell.MinAggro; }
+				set { _spell.MinAggro = value; }
+			}
+			[Category("Flags")]
+			[Description("Maximum aggro percentage (exclusive) allowed for this ability to fire")]
+			public Int32 MaxAggro
+			{
+				get { return _spell.MaxAggro; }
+				set { _spell.MaxAggro = value; }
+			}
 		[Category("Flags")]
 		[Description("Prevent this from being interrupted")]
 		public bool NoInterrupt
@@ -900,6 +914,20 @@ namespace E3NextConfigEditor.Models
 		{
 			get { return _spell.PctAggro; }
 			set { _spell.PctAggro = value; }
+		}
+		[Category("Flags")]
+		[Description("Minimum aggro percentage required before this ability will fire")]
+		public Int32 MinAggro
+		{
+			get { return _spell.MinAggro; }
+			set { _spell.MinAggro = value; }
+		}
+		[Category("Flags")]
+		[Description("Maximum aggro percentage (exclusive) allowed for this ability to fire")]
+		public Int32 MaxAggro
+		{
+			get { return _spell.MaxAggro; }
+			set { _spell.MaxAggro = value; }
 		}
 		[Category("Flags")]
 		[Description("Minimum mana level before try and cast the spell")]

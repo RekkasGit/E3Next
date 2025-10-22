@@ -162,9 +162,21 @@ namespace E3Core.Processors
                                         continue;
                                     }
                                 }
-                                if (spell.PctAggro > 0 && MQ.Query<Int32>("${Me.PctAggro}") > spell.PctAggro)
+                                if (spell.PctAggro > 0 || spell.MinAggro > 0 || spell.MaxAggro > 0)
                                 {
-                                    continue;
+                                    Int32 pctAggro = MQ.Query<Int32>("${Me.PctAggro}");
+                                    if (spell.PctAggro > 0 && pctAggro > spell.PctAggro)
+                                    {
+                                        continue;
+                                    }
+                                    if (spell.MinAggro > 0 && pctAggro < spell.MinAggro)
+                                    {
+                                        continue;
+                                    }
+                                    if (spell.MaxAggro > 0 && pctAggro >= spell.MaxAggro)
+                                    {
+                                        continue;
+                                    }
                                 }
                                 //end aggro checks
 

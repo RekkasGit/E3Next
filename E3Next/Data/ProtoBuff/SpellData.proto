@@ -109,4 +109,6 @@ message SpellData {
     int32 RecastDelay=91;
     repeated string ExcludedClasses=92;
     repeated string ExcludedNames=93;
+    int32 MinAggro=94;
+    int32 MaxAggro=95;
 }
