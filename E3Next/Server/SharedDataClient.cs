@@ -1,8 +1,9 @@
-﻿using E3Core.Classes;
+using E3Core.Classes;
 using E3Core.Data;
 using E3Core.Processors;
 using E3Core.Settings;
 using MonoCore;
+using Google.Protobuf;
 using NetMQ;
 using NetMQ.Sockets;
 using System;
@@ -476,9 +477,19 @@ namespace E3Core.Server
 					subSocket.Subscribe("OnCommand-Zone");
 					subSocket.Subscribe("BroadCastMessage");
 					subSocket.Subscribe("BroadCastMessageZone");
-					subSocket.Subscribe("${Me."); //all Me stuff should be subscribed to
+                    // e3imgui Add From Catalog peer relay topics
+                    // Requests addressed to specific toons and responses back to requester
+                    subSocket.Subscribe("CatalogReq-");
+                    subSocket.Subscribe("CatalogResp-");
+                    // e3imgui Food/Drink inventory peer relay topics
+                    subSocket.Subscribe("InvReq-");
+                    subSocket.Subscribe("InvResp-");
+                    subSocket.Subscribe("ConfigValueReq-");
+                    subSocket.Subscribe("ConfigValueResp-");
+                    subSocket.Subscribe("ConfigValueUpdate-");
+                    subSocket.Subscribe("${Me."); //all Me stuff should be subscribed to
 					subSocket.Subscribe("${Data."); //all the custom data keys a user can create
-					subSocket.Subscribe("${DataChannel.");
+					subSocket.Subscribe("${DataChannel.}");
 				
 					while (Core.IsProcessing && E3.NetMQ_SharedDataServerThreadRun)
 					{
@@ -493,7 +504,7 @@ namespace E3Core.Server
 							Int32 indexOfColon = messageReceived.IndexOf(':');
 							string payloaduser = messageReceived.Substring(0, indexOfColon);
 							messageReceived = messageReceived.Substring(indexOfColon + 1, messageReceived.Length - indexOfColon - 1);
-							indexOfColon = messageReceived.IndexOf(':');
+							indexOfColon = messageReceived.IndexOf(':', indexOfColon + 1);
 							string payloadServer = messageReceived.Substring(0, indexOfColon);
 							messageReceived = messageReceived.Substring(indexOfColon + 1, messageReceived.Length - indexOfColon - 1);
 
@@ -638,7 +649,99 @@ namespace E3Core.Server
 									}
 								}
 							}
-							else if (messageTopicReceived == OnCommandName)
+                            else if (messageTopicReceived.StartsWith("CatalogReq-", StringComparison.Ordinal))
+                            {
+                                // e3imgui peer catalog request via PubSub relay
+                                // Topic: CatalogReq-<TargetToon>
+                                // payloaduser is requester; if TargetToon equals our name, publish base64 SpellDataList frames back
+                                string target = messageTopicReceived.Substring("CatalogReq-".Length);
+                                if (!string.IsNullOrEmpty(target) && target.Equals(E3.CurrentName, StringComparison.OrdinalIgnoreCase))
+                                {
+                                    try
+                                    {
+                                        var spells = E3Core.Utility.e3util.ListAllBookSpells();
+                                        var aas = E3Core.Utility.e3util.ListAllActiveAA();
+                                        var discs = E3Core.Utility.e3util.ListAllDiscData();
+                                        var skills = E3Core.Utility.e3util.ListAllActiveSkills();
+                                        var items = E3Core.Utility.e3util.ListAllItemWithClickyData();
+
+                                        Func<List<E3Core.Data.Spell>, string> pack = (lst) =>
+                                        {
+                                            var sdl = new SpellDataList();
+                                            foreach (var s in lst) sdl.Data.Add(s.ToProto());
+                                            return Convert.ToBase64String(sdl.ToByteArray());
+                                        };
+                                        PubServer.AddTopicMessage($"CatalogResp-{payloaduser}-Spells", pack(spells));
+                                        PubServer.AddTopicMessage($"CatalogResp-{payloaduser}-AAs", pack(aas));
+                                        PubServer.AddTopicMessage($"CatalogResp-{payloaduser}-Discs", pack(discs));
+                                        PubServer.AddTopicMessage($"CatalogResp-{payloaduser}-Skills", pack(skills));
+                                        PubServer.AddTopicMessage($"CatalogResp-{payloaduser}-Items", pack(items));
+                                        
+                                        // Also send memorized spell gems data
+                                        var gemData = CollectSpellGemData();
+                                        PubServer.AddTopicMessage($"CatalogResp-{payloaduser}-Gems", gemData);
+                                    }
+                                    catch { }
+                                }
+                            }
+                            else if (messageTopicReceived.StartsWith("InvReq-", StringComparison.Ordinal))
+                            {
+                                // e3imgui Food/Drink peer inventory request via PubSub relay
+                                // Topic: InvReq-<TargetToon>
+                                // payloaduser is requester; messageReceived is type key ("Food" or "Drink")
+                                string target = messageTopicReceived.Substring("InvReq-".Length);
+                                if (!string.IsNullOrEmpty(target) && target.Equals(E3.CurrentName, StringComparison.OrdinalIgnoreCase))
+                                {
+                                    try
+                                    {
+                                        string type = (messageReceived ?? string.Empty).Trim();
+                                        List<string> items = ScanInventoryByType(type);
+                                        // pack as base64 of newline-delimited names
+                                        string joined = string.Join("\n", items ?? new List<string>());
+                                        string b64 = Convert.ToBase64String(System.Text.Encoding.UTF8.GetBytes(joined));
+                                        PubServer.AddTopicMessage($"InvResp-{payloaduser}-{type}", b64);
+                                    }
+                                    catch { }
+                                }
+                            }
+                            else if (messageTopicReceived.StartsWith("ConfigValueReq-", StringComparison.Ordinal))
+                            {
+                                string target = messageTopicReceived.Substring("ConfigValueReq-".Length);
+                                if (!string.IsNullOrEmpty(target) && target.Equals(E3.CurrentName, StringComparison.OrdinalIgnoreCase))
+                                {
+                                    try
+                                    {
+                                        string[] parts = messageReceived.Split(new[] { ':' }, 2);
+                                        string section = parts[0];
+                                        string key = parts[1];
+                                        string value = E3.CharacterSettings.ParsedData.Sections[section][key] ?? "";
+                                        PubServer.AddTopicMessage($"ConfigValueResp-{payloaduser}-{section}:{key}", value);
+                                    }
+                                    catch { }
+                                }
+                            }
+                            else if (messageTopicReceived.StartsWith("ConfigValueResp-", StringComparison.Ordinal))
+                            {
+                                ProcessTopicMessage(payloaduser, messageTopicReceived, messageReceived);
+                            }
+                            else if (messageTopicReceived.StartsWith("ConfigValueUpdate-", StringComparison.Ordinal))
+                            {
+                                string target = messageTopicReceived.Substring("ConfigValueUpdate-".Length);
+                                if (!string.IsNullOrEmpty(target) && target.Equals(E3.CurrentName, StringComparison.OrdinalIgnoreCase))
+                                {
+                                    try
+                                    {
+                                        string[] parts = messageReceived.Split(new[] { ':' }, 3);
+                                        string section = parts[0];
+                                        string key = parts[1];
+                                        string value = parts[2];
+                                        E3.CharacterSettings.ParsedData[section][key] = value;
+                                        E3.CharacterSettings.SaveData();
+                                    }
+                                    catch { }
+                                }
+                            }
+                            else if (messageTopicReceived == OnCommandName)
 							{	//bct commands
 								var data = OnCommandData.Aquire();
 								data.Data = messageReceived;
@@ -653,7 +756,7 @@ namespace E3Core.Server
 
 							}
 						}
-		
+					
 					}
 					
 					subSocket.Dispose();
@@ -667,7 +770,128 @@ namespace E3Core.Server
 			MQ.WriteDelayed($"Shutting down Share Data Thread.");
 		}
 
-		public class OnCommandData
+        // Helper to scan local inventory for a given item type (e.g., "Food" or "Drink")
+        private static List<string> ScanInventoryByType(string type)
+        {
+            var results = new HashSet<string>(StringComparer.OrdinalIgnoreCase);
+            if (string.IsNullOrWhiteSpace(type)) return results.ToList();
+            string key = type.Trim();
+            try
+            {
+                // scan top-level inventory slots generously
+                for (int inv = 1; inv <= 40; inv++)
+                {
+                    try
+                    {
+                        bool present = E3.MQ.Query<bool>($"${{Me.Inventory[{inv}]}}");
+                        if (!present) continue;
+                        string t = E3.MQ.Query<string>($"${{Me.Inventory[{inv}].Type}}") ?? string.Empty;
+                        if (!string.IsNullOrEmpty(t) && t.Equals(key, StringComparison.OrdinalIgnoreCase))
+                        {
+                            string name = E3.MQ.Query<string>($"${{Me.Inventory[{inv}]}}") ?? string.Empty;
+                            if (!string.IsNullOrEmpty(name)) results.Add(name);
+                        }
+                        int slots = E3.MQ.Query<int>($"${{Me.Inventory[{inv}].Container}}");
+                        if (slots > 0)
+                        {
+                            for (int i = 1; i <= slots; i++)
+                            {
+                                try
+                                {
+                                    bool ipresent = E3.MQ.Query<bool>($"${{Me.Inventory[{inv}].Item[{i}]}}");
+                                    if (!ipresent) continue;
+                                    string it = E3.MQ.Query<string>($"${{Me.Inventory[{inv}].Item[{i}].Type}}") ?? string.Empty;
+                                    if (!string.IsNullOrEmpty(it) && it.Equals(key, StringComparison.OrdinalIgnoreCase))
+                                    {
+                                        string iname = E3.MQ.Query<string>($"${{Me.Inventory[{inv}].Item[{i}]}}") ?? string.Empty;
+                                        if (!string.IsNullOrEmpty(iname)) results.Add(iname);
+                                    }
+                                }
+                                catch { }
+                            }
+                        }
+                    }
+                    catch { }
+                }
+            }
+            catch { }
+            return results.OrderBy(x => x, StringComparer.OrdinalIgnoreCase).ToList();
+        }
+
+        // Collect current memorized spell gem data as pipe-separated string with icon indices
+        private static string CollectSpellGemData()
+        {
+            try
+            {
+                var gemData = new List<string>();
+                
+                // Query gems 1-12 safely on the background thread
+                for (int gem = 1; gem <= 12; gem++)
+                {
+                    try
+                    {
+                        string spellName = MQ.Query<string>($"${{Me.Gem[{gem}]}}");
+                        if (string.IsNullOrEmpty(spellName) || spellName.Equals("NULL", StringComparison.OrdinalIgnoreCase))
+                        {
+                            gemData.Add("NULL:-1");
+                        }
+                        else
+                        {
+                            // Try to get spell icon index from catalog data
+                            int iconIndex = GetSpellIconIndex(spellName);
+                            gemData.Add($"{spellName}:{iconIndex}");
+                        }
+                    }
+                    catch
+                    {
+                        gemData.Add("ERROR:-1");
+                    }
+                }
+                
+                // Return as pipe-separated string for easy parsing
+                return string.Join("|", gemData);
+            }
+            catch
+            {
+                // If all fails, return empty gems with no icons
+                return string.Join("|", Enumerable.Repeat("ERROR:-1", 12));
+            }
+        }
+        
+        // Helper method to get spell icon index from catalog lookups
+        private static int GetSpellIconIndex(string spellName)
+        {
+            if (string.IsNullOrEmpty(spellName)) return -1;
+            
+            try
+            {
+                // Check spell data lookup first
+                if (E3Core.Data.Spell.SpellDataLookup.TryGetValue(spellName, out var spellData) && spellData.SpellIcon >= 0)
+                    return spellData.SpellIcon;
+                
+                // Check alt data lookup
+                if (E3Core.Data.Spell.AltDataLookup.TryGetValue(spellName, out var altData) && altData.SpellIcon >= 0)
+                    return altData.SpellIcon;
+                
+                // Check disc data lookup
+                if (E3Core.Data.Spell.DiscDataLookup.TryGetValue(spellName, out var discData) && discData.SpellIcon >= 0)
+                    return discData.SpellIcon;
+                
+                // Check item data lookup
+                if (E3Core.Data.Spell.ItemDataLookup.TryGetValue(spellName, out var itemData) && itemData.SpellIcon >= 0)
+                    return itemData.SpellIcon;
+                
+                // Fallback: Query MQ directly for spell icon (safe on background thread)
+                int iconIndex = MQ.Query<int>($"${{Spell[{spellName}].SpellIcon}}");
+                return iconIndex > 0 ? iconIndex : -1;
+            }
+            catch
+            {
+                return -1;
+            }
+        }
+        
+        public class OnCommandData
 		{
 			public enum CommandType
 			{

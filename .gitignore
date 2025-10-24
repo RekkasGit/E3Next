@@ -110,6 +110,7 @@ ClientBin
 ~$*
 *.dbmdl
 Generated_Code #added for RIA/Silverlight projects
+WARP.md
 
 # Backup & report files from converting an old project file to a newer
 # Visual Studio version. Backup files are not needed, because we have git ;-)
@@ -118,6 +119,7 @@ Backup*/
 UpgradeLog*.XML
 
 # Mono Developt ignores
+/MQ2Mono/
 
 #User Specific
 *.userprefs
@@ -127,5 +129,4 @@ UpgradeLog*.XML
 *.pidb
 *.resources
 test-results/
->>>>>>> Stashed changes
-/DiscordApiLibrary/obj
+
