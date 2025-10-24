@@ -19,7 +19,8 @@ namespace E3Core.Data
         Disc,
         Ability,
         Item,
-        None
+        None,
+        SpellInBook
     }
 
     public class Spell
@@ -587,6 +588,7 @@ namespace E3Core.Data
 			else
 			{
 				CastType = CastTypeOverride;
+                if(CastType== CastingType.SpellInBook) SpellInBook = true;
 			}
            
 
@@ -799,10 +801,10 @@ namespace E3Core.Data
                 Subcategory = MQ.Query<String>($"${{Me.AltAbility[{CastName}].Spell.Subcategory}}");
                
 			}
-			else if (CastType == CastingType.Spell)
+			else if (CastType == CastingType.Spell || CastType== CastingType.SpellInBook)
             {
 				
-				if (SpellInBook)
+				if (SpellInBook && Int32.TryParse(CastName, out _)==false)
                 {
 					//we already have this data populated, just kick out
 					if (SpellDataLookup.ContainsKey(CastName))
@@ -863,6 +865,9 @@ namespace E3Core.Data
 				}
                 else
                 {
+                   
+
+
                     TargetType = MQ.Query<String>($"${{Spell[{CastName}].TargetType}}");
                     Duration = MQ.Query<Int32>($"${{Spell[{CastName}].Duration}}");
                     DurationTotalSeconds = MQ.Query<Int32>($"${{Spell[{CastName}].Duration.TotalSeconds}}");
@@ -910,8 +915,14 @@ namespace E3Core.Data
                     SpellName = CastName;
                     SpellID = MQ.Query<Int32>($"${{Spell[{CastName}].ID}}");
                     CastID = SpellID;
+					//this was to work around issues using spell IDs
+					if (CastType == CastingType.SpellInBook)
+					{
+						CastName = MQ.Query<String>($"${{Spell[{CastName}].Name}}");
+						CastType = CastingType.Spell; //set this back to spell, in case it was spellby book
+					}
 
-                }
+				}
 
                 
             }
