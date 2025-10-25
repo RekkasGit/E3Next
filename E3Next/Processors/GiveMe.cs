@@ -400,7 +400,7 @@ namespace E3Core.Processors
                         }
                         else
                         {
-                            MQ.Cmd($"/t {whoToGiveTo} I'm afraid I can't do that, as I don't have any {whatToGive}");
+                            E3.Bots.Broadcast($"{whoToGiveTo} I'm afraid I can't do that, as I don't have any {whatToGive}");
                             return;
                         }
                     }
