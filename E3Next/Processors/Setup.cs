@@ -200,7 +200,7 @@ namespace E3Core.Processors
                     MQ.Cmd("/plugin MQ2AdvPath");
                     if (!MQ.Delay(3000, "${AdvPath}"))
                     {
-                        MQ.Write("\ar***WARNING*** Could not load MQ2AdvPath. Please ensure you're using a copy of MQ2 which was compiled with the MQ2AdvPath plugin and try again.");
+                        MQ.Write("\ar***WARNING*** Could not load MQ2AdvPath. Please ensure you're using a copy of MQ which was compiled with the MQ2AdvPath plugin and try again.");
                     }
 
                 }
