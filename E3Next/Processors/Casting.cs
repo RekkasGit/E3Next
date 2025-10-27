@@ -623,7 +623,6 @@ namespace E3Core.Processors
 									PubServer.AddTopicMessage("${Casting}", $"{spell.CastName} on {targetName}");
 									PubServer.AddTopicMessage("${Me.Casting}", spell.CastName);
 									MQ.Write($"\ag{spell.CastName} \at{spell.SpellID} \am{targetName} \ao{targetID} \aw({spell.MyCastTime / 1000}sec)");
-
 									MQ.Cmd($"/cast \"{spell.CastName}\"");
 									if (!E3.CharacterSettings.Misc_EnchancedRotationSpeed) MQ.Delay(300);
 									//give time for the casting bar to actulaly appear

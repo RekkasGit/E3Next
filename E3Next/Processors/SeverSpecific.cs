@@ -4,6 +4,7 @@ using E3Core.Utility;
 using MonoCore;
 using System;
 using System.Collections.Generic;
+using System.Windows.Forms;
 
 
 namespace E3Core.Processors
@@ -27,12 +28,49 @@ namespace E3Core.Processors
 				MQ.Write("Loading EQ_Might specific code!");
 				Init_EQMight();
 			}
+			else if(E3.ServerName=="Lazarus")
+			{
+				MQ.Write("Loading Project Lazarus specific code!");
+
+				Init_Lazarus();
+			}
 			else
 			{
 				MQ.Write("None found for this server.");
 			}
 		}
-	
+		public static void Init_Lazarus()
+		{
+
+			EventProcessor.RegisterCommand("/e3laz-count-nv", (x) =>
+			{
+				List<string> items = new List<string>() {"Glass Key to the Nowhere Door","Blacksalt Compass","Coldfire Lantern","Fragment of the Maestra","the bone violin",
+				"Phantom's Bride Doll","Eternal Jack-o-Lantern","Shroud of the Forgotten King","Withered Rose","Map of Midnight", "The Ash Crown","The Witche's Bell","Fragment of Vzith","Crown of Radiant Dominion","Hat of the Forsaken Jester",
+				"Obsidian Chalice","the crimson dice","death quill","mirror of the last gaze","Scythe of Silence","Quill of Tomorrow","Ancient Alpha Skull"};
+
+				Int32 totalCount = 0;
+				foreach(string item in items)
+				{
+					totalCount+=Inventory.FindItemCompact(item);
+
+				}
+				E3.Bots.Broadcast($"Total NV Count: {totalCount}");
+
+
+				Int32 dream = Inventory.FindItemCompact("Scarlet Dream Essence");
+				E3.Bots.Broadcast($"Total Scarlet Dream Essence Count: {dream}");
+				Int32 pureDream = Inventory.FindItemCompact("Pure Dream Essence");
+				E3.Bots.Broadcast($"Total Pure Dream Essence Count: {pureDream}");
+				Int32 pristineDream = Inventory.FindItemCompact("Pristine Dream Essence");
+				E3.Bots.Broadcast($"Total Pristine Dream Essence Count: {pristineDream}");
+				Int32 perfectDream = Inventory.FindItemCompact("Perfect Dream Essenc");
+				E3.Bots.Broadcast($"Total Pristine Dream Essence Count: {perfectDream}");
+
+			});
+
+
+
+		}
 		public static void Init_EQMight()
 		{
 

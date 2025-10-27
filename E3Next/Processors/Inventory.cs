@@ -1,14 +1,15 @@
 ﻿using E3Core.Data;
+using E3Core.Processors;
 using E3Core.Settings;
 using E3Core.Settings.FeatureSettings;
 using E3Core.Utility;
-using E3Core.Processors;
 using IniParser;
 using MonoCore;
 using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Security.Cryptography.X509Certificates;
+using System.Security.Principal;
 using System.Text;
 using System.Threading.Tasks;
 
@@ -60,8 +61,9 @@ namespace E3Core.Processors
                 return false;
             }
         }
-        private static void FindItemCompact(string itemName)
+        public static Int32 FindItemCompact(string itemName)
         {
+
 
             bool weHaveItem = MQ.Query<bool>($"${{FindItemCount[={itemName}]}}");
             bool weHaveItemInBank = MQ.Query<bool>($"${{FindItemBankCount[={itemName}]}}");
@@ -113,6 +115,7 @@ namespace E3Core.Processors
                             Int32 stackCount = MQ.Query<Int32>($"${{Me.Inventory[pack{i}].Item[{e}].Stack}}");
                             if (bagItem.IndexOf(itemName, 0, StringComparison.OrdinalIgnoreCase) > -1)
                             {
+                                if (stackCount > 0) { totalItems += stackCount; } else { totalItems++; }
                                 report.Add($"\ag[Pack] ${{Me.Inventory[pack{i}].Item[{e}].ItemLink[CLICKABLE]}} - \awbag({i}) slot({e}) count({stackCount})");
                             }
                             Int32 augCount = MQ.Query<Int32>($"${{Me.Inventory[pack{i}].Item[{e}].Augs}}");
@@ -181,7 +184,9 @@ namespace E3Core.Processors
                     {
                         Int32 bankStack = MQ.Query<Int32>($"${{Me.Bank[{i}].Item[{e}].Stack}}");
                         report.Add($"\ag[Bank] ${{Me.Bank[{i}].Item[{e}].ItemLink[CLICKABLE]}} \aw- slot({i}) bagslot({e}) count({bankStack})");
-                    }
+						if (bankStack > 0) { totalItems += bankStack; } else { totalItems++; }
+
+				     }
                     Int32 augCount = MQ.Query<Int32>($"${{Me.Bank[{i}].Item[{e}].Augs}}");
                     if (augCount > 0)
                     {
@@ -205,6 +210,7 @@ namespace E3Core.Processors
                 E3.Bots.Broadcast(value);
 
             }
+            return totalItems;
         }
 
         private static void GetFrom(string where, List<string> args)

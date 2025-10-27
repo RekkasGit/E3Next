@@ -1141,9 +1141,9 @@ namespace E3Core.Settings
 				section.Keys.AddKey("Auto-Evade (On/Off)", "Off");
 				section.Keys.AddKey("Evade PctAggro", "75");
 				section.Keys.AddKey("Sneak Attack Discipline", "");
-				section.Keys.AddKey("PoisonPR", "");
-				section.Keys.AddKey("PoisonFR", "");
-				section.Keys.AddKey("PoisonCR", "");
+				//section.Keys.AddKey("PoisonPR", "");
+				//section.Keys.AddKey("PoisonFR", "");
+				//section.Keys.AddKey("PoisonCR", "");
 			}
 
 			if (CharacterClass == Class.Bard)
