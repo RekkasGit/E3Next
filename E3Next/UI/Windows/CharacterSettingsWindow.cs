@@ -381,6 +381,10 @@ namespace E3Core.UI.Windows
 		private static void RenderIMGUI()
 		{
 
+
+			///NOTE!!!! During the rendering process, do NOT release control back to C++ as this will leave an incomplete render and ImGUI will not be happy.
+			///So for any MQ.Query be sure to use the DelayPossible flag to false.
+
 			try
 			{
 				// Early exit if ImGui functions aren't available
@@ -757,7 +761,11 @@ namespace E3Core.UI.Windows
 					{
 						imgui_TableNextColumn();
 
-						string spellName = _cfg_CatalogGems[gem];
+
+						Int32 spellID = -1;
+						Int32.TryParse(_cfg_CatalogGems[gem], out spellID);
+						
+						string spellName = MQ.Query<string>($"${{Spell[{spellID}]}}",false);
 
 						if (!string.IsNullOrEmpty(spellName) && !spellName.Equals("NULL", StringComparison.OrdinalIgnoreCase) && !spellName.Equals("ERROR", StringComparison.OrdinalIgnoreCase))
 						{
@@ -1544,8 +1552,9 @@ namespace E3Core.UI.Windows
 						{
 							try
 							{
-								string spellName = E3.MQ.Query<string>($"${{Me.Gem[{gem}]}}");
-								localGems[gem - 1] = spellName ?? "NULL";
+								string spellName = MQ.Query<string>($"${{Me.Gem[{gem}]}}");
+								Int32 spellID = MQ.Query<Int32>($"${{Me.Gem[{gem}].ID}}");
+								localGems[gem - 1] = spellID.ToString();
 
 								// Get spell icon index if we have a valid spell
 								if (!string.IsNullOrEmpty(spellName) && !spellName.Equals("NULL", StringComparison.OrdinalIgnoreCase))
@@ -1933,7 +1942,7 @@ namespace E3Core.UI.Windows
 		{
 			gemNames = new string[12];
 			gemIcons = new int[12];
-			//E3.Log.WriteDelayed($"Parsing gem data with payload:{payload}", Logging.LogLevels.Debug);
+			E3.Log.WriteDelayed($"Parsing gem data with payload:{payload}", Logging.LogLevels.Debug);
 
 			try
 			{

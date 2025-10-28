@@ -69,7 +69,7 @@ namespace E3NextConfigEditor.MQ
 			throw new NotImplementedException();
 		}
 
-		public T Query<T>(string query)
+		public T Query<T>(string query, bool delayPossible = true)
 		{
 			string mqReturnValue = _tloClient.RequestData(query);
 			//Debug.WriteLine($"[{System.DateTime.Now.ToString()}] {mqReturnValue}");

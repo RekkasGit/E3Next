@@ -1346,7 +1346,14 @@ namespace MonoCore
 
     public interface IMQ
     {
-        T Query<T>(string query);
+        /// <summary>
+        /// Query data from MQ
+        /// </summary>
+        /// <typeparam name="T"></typeparam>
+        /// <param name="query">TLO Query</param>
+        /// <param name="delayPossible">set to false if you cannot let C++ control take over.</param>
+        /// <returns></returns>
+        T Query<T>(string query,bool delayPossible=true);
         void Cmd(string query, bool delayed = false);
         void Cmd(string query, Int32 delay, bool delayed = false);
         void Write(string query, [CallerMemberName] string memberName = "", [CallerFilePath] string fileName = "", [CallerLineNumber] int lineNumber = 0);
@@ -1402,7 +1409,7 @@ namespace MonoCore
                 return 12;
             }
         }
-        public T Query<T>(string query)
+        public T Query<T>(string query, bool delayPossible = true  )
         {
             if (!Core.IsProcessing)
             {
@@ -1413,7 +1420,7 @@ namespace MonoCore
             Int64 elapsedTime = Core.StopWatch.ElapsedMilliseconds;
             Int64 differenceTime = Core.StopWatch.ElapsedMilliseconds - SinceLastDelay;
 
-            if (MaxMillisecondsToWork < differenceTime)
+            if (MaxMillisecondsToWork < differenceTime && delayPossible)
             {
                 Delay(0);
             }

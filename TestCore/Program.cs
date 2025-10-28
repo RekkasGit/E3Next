@@ -160,7 +160,7 @@ namespace TestCore
                 return true;
             }
 
-            public T Query<T>(string query)
+            public T Query<T>(string query, bool delayPossible = true)
             {
 
                 if (typeof(T) == typeof(Int32))

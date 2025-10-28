@@ -896,20 +896,21 @@ namespace E3Core.Server
 					try
 					{
 						string spellName = MQ.Query<string>($"${{Me.Gem[{gem}]}}");
+						Int32 spellID = MQ.Query<Int32>($"${{Me.Gem[{gem}].ID}}");
 						if (string.IsNullOrEmpty(spellName) || spellName.Equals("NULL", StringComparison.OrdinalIgnoreCase))
 						{
-							gemData.Add("NULL:-1");
+							gemData.Add("-1:-1");
 						}
 						else
 						{
 							// Try to get spell icon index from catalog data
 							int iconIndex = GetSpellIconIndex(spellName);
-							gemData.Add($"{spellName}:{iconIndex}");
+							gemData.Add($"{spellID}:{iconIndex}");
 						}
 					}
 					catch
 					{
-						gemData.Add("ERROR:-1");
+						gemData.Add("-2:-1");
 					}
 				}
 
@@ -919,7 +920,7 @@ namespace E3Core.Server
 			catch
 			{
 				// If all fails, return empty gems with no icons
-				return string.Join("|", Enumerable.Repeat("ERROR:-1", 12));
+				return string.Join("|", Enumerable.Repeat("-2:-1", 12));
 			}
 		}
 
