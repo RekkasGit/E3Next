@@ -6,6 +6,7 @@ using IniParser.Model;
 using MonoCore;
 using System;
 using System.Collections.Generic;
+using System.Drawing;
 using System.Globalization;
 using System.IO;
 using System.Linq;
@@ -23,20 +24,22 @@ namespace E3Core.UI.Windows
 		private static IMQ MQ = E3.MQ;
 		private static ISpawns _spawns = E3.Spawns;
 
+		private static object _dataLock = new object();
+
 		#region Variables
 		// Spell icon system state
 		private static bool _cfg_IconSystemInitialized = false;
 
 		// Catalogs and Add modal state
-		private static bool _cfg_CatalogsReady = false;
-		private static bool _cfg_CatalogLoadRequested = false;
-		private static bool _cfg_CatalogLoading = false;
+		private static volatile bool _cfg_CatalogsReady = false;
+		private static volatile bool _cfg_CatalogLoadRequested = false;
+		private static volatile bool _cfg_CatalogLoading = false;
 		private static string _cfg_CatalogStatus = string.Empty;
 		private static string _cfg_CatalogSource = "Unknown"; // "Local", "Remote (ToonName)", or "Unknown"
 															  // Memorized gem data from catalog responses with spell icon support
 		private static string[] _cfg_CatalogGems = new string[12]; // Gem data from catalog response
 		private static int[] _cfg_CatalogGemIcons = new int[12]; // Spell icon indices for gems
-		private static bool _cfg_GemsAvailable = false; // Whether we have gem data
+		private static volatile bool _cfg_GemsAvailable = false; // Whether we have gem data
 		private static SortedDictionary<string, SortedDictionary<string, List<E3Spell>>> _cfgSpells = new SortedDictionary<string, SortedDictionary<string, List<E3Spell>>>();
 		private static SortedDictionary<string, SortedDictionary<string, List<E3Spell>>> _cfgAAs = new SortedDictionary<string, SortedDictionary<string, List<E3Spell>>>();
 		private static SortedDictionary<string, SortedDictionary<string, List<E3Spell>>> _cfgDiscs = new SortedDictionary<string, SortedDictionary<string, List<E3Spell>>>();
@@ -367,7 +370,7 @@ namespace E3Core.UI.Windows
 			{
 				bool open = imgui_Begin_OpenFlagGet(_e3ImGuiWindow);
 				imgui_Begin_OpenFlagSet(_e3ImGuiWindow, !open);
-				E3.Log.Write($"E3 ImGui window {(!open ? "opened" : "closed")}", Logging.LogLevels.Info);
+				E3.Log.WriteDelayed($"E3 ImGui window {(!open ? "opened" : "closed")}", Logging.LogLevels.Debug);
 			}
 			catch (Exception ex)
 			{
@@ -716,7 +719,11 @@ namespace E3Core.UI.Windows
 		// Safe gem display using catalog data (no TLO queries from UI thread)
 		private static void RenderCatalogGemData()
 		{
-			if (!_cfg_GemsAvailable || _cfg_CatalogGems == null) return;
+			lock(_dataLock)
+			{
+				if (!_cfg_GemsAvailable || _cfg_CatalogGems == null) return;
+
+			}
 
 			try
 			{
@@ -1472,6 +1479,7 @@ namespace E3Core.UI.Windows
 		// Background worker tick invoked from E3.Process(): handle catalog loads and icon system
 		private static void ProcessBackgroundWork()
 		{
+		
 			// Initialize spell icon system if not already done
 			if (!_cfg_IconSystemInitialized)
 			{
@@ -1494,23 +1502,113 @@ namespace E3Core.UI.Windows
 			if (_cfg_CatalogLoadRequested && !_cfg_CatalogLoading)
 			{
 				_cfg_CatalogLoading = true;
-				System.Threading.Tasks.Task.Run(() =>
+				_log.WriteDelayed("Making background request", Logging.LogLevels.Debug);
+
+
+				_log.WriteDelayed("Tryign to fetch data for user", Logging.LogLevels.Debug);
+
+				// Always fetch via RouterServer, same as e3config
+				string targetToon = GetSelectedIniOwnerName();
+
+				_log.WriteDelayed($"Target tooon: {targetToon}", Logging.LogLevels.Debug);
+
+				bool isLocal = string.IsNullOrEmpty(targetToon) || targetToon.Equals(E3.CurrentName, StringComparison.OrdinalIgnoreCase);
+				SortedDictionary<string, SortedDictionary<string, List<E3Spell>>> mapSpells = new SortedDictionary<string, SortedDictionary<string, List<E3Spell>>>(),
+					mapAAs = new SortedDictionary<string, SortedDictionary<string, List<E3Spell>>>(),
+					mapDiscs = new SortedDictionary<string, SortedDictionary<string, List<E3Spell>>>(),
+					mapSkills = new SortedDictionary<string, SortedDictionary<string, List<E3Spell>>>(),
+					mapItems = new SortedDictionary<string, SortedDictionary<string, List<E3Spell>>>();
+
+				_log.WriteDelayed($"Are they local?: {isLocal}", Logging.LogLevels.Debug);
+
+				if(isLocal)
 				{
+					_cfg_CatalogStatus = "Loading catalogs (local)...";
+					_cfg_CatalogSource = "Local";
+
+					_log.WriteDelayed($"Fetching data (local)", Logging.LogLevels.Debug);
+
+					mapSpells = OrganizeLoadingCatalog(e3util.ListAllBookSpells());
+					mapAAs = OrganizeLoadingCatalog(e3util.ListAllActiveAA());
+					mapDiscs = OrganizeLoadingCatalog(e3util.ListAllDiscData());
+					mapSkills = OrganizeLoadingSkillsCatalog(e3util.ListAllActiveSkills());
+					mapItems = OrganizeLoadingItemsCatalog(e3util.ListAllItemWithClickyData());
+
+					// Also collect local gem data with spell icon indices
 					try
 					{
-						// Always fetch via RouterServer, same as e3config
-						string targetToon = GetSelectedIniOwnerName();
-						bool isLocal = string.IsNullOrEmpty(targetToon) || targetToon.Equals(E3.CurrentName, StringComparison.OrdinalIgnoreCase);
-						SortedDictionary<string, SortedDictionary<string, List<E3Spell>>> mapSpells = new SortedDictionary<string, SortedDictionary<string, List<E3Spell>>>(),
-							mapAAs = new SortedDictionary<string, SortedDictionary<string, List<E3Spell>>>(),
-							mapDiscs = new SortedDictionary<string, SortedDictionary<string, List<E3Spell>>>(),
-							mapSkills = new SortedDictionary<string, SortedDictionary<string, List<E3Spell>>>(),
-							mapItems = new SortedDictionary<string, SortedDictionary<string, List<E3Spell>>>();
+						var localGems = new string[12];
+						var localGemIcons = new int[12];
 
-						// Always try to fetch from peer first if it's not the current toon
-						if (!isLocal)
+						for (int gem = 1; gem <= 12; gem++)
 						{
-							_cfg_CatalogStatus = $"Loading catalogs from {targetToon}...";
+							try
+							{
+								string spellName = E3.MQ.Query<string>($"${{Me.Gem[{gem}]}}");
+								localGems[gem - 1] = spellName ?? "NULL";
+
+								// Get spell icon index if we have a valid spell
+								if (!string.IsNullOrEmpty(spellName) && !spellName.Equals("NULL", StringComparison.OrdinalIgnoreCase))
+								{
+									localGemIcons[gem - 1] = GetLocalSpellIconIndex(spellName);
+								}
+								else
+								{
+									localGemIcons[gem - 1] = -1;
+								}
+							}
+							catch
+							{
+								localGems[gem - 1] = "ERROR";
+								localGemIcons[gem - 1] = -1;
+							}
+						}
+						lock(_dataLock)
+						{
+							_cfg_CatalogGems = localGems;
+							_cfg_CatalogGemIcons = localGemIcons;
+							_cfg_GemsAvailable = true;
+						}
+					}
+					catch
+					{
+						_cfg_GemsAvailable = false;
+					}
+					_log.WriteDelayed($"Fetching data (local) Complete!", Logging.LogLevels.Debug);
+
+					lock (_dataLock)
+					{
+						// Publish atomically
+						_cfgSpells = mapSpells;
+						_cfgAAs = mapAAs;
+						_cfgDiscs = mapDiscs;
+						_cfgSkills = mapSkills;
+						_cfgItems = mapItems;
+						_catalogLookups = new[]
+						{
+							(_cfgSpells, "Spell"),
+							(_cfgAAs, "AA"),
+							(_cfgDiscs, "Disc"),
+							(_cfgSkills, "Skill"),
+							(_cfgItems, "Item")
+							};
+						_cfg_CatalogsReady = true;
+						_cfg_CatalogStatus = "Catalogs loaded.";
+						_cfg_CatalogLoadRequested = false;
+						_cfg_CatalogLoading = false;
+
+					}
+				}
+				else
+				{
+					//have to make a network call and wait for a response. 
+					System.Threading.Tasks.Task.Run(() =>
+					{
+						try
+						{
+							_log.WriteDelayed($"Fetching data (remote)", Logging.LogLevels.Debug);
+
+							//_cfg_CatalogStatus = $"Loading catalogs from {targetToon}...";
 							bool peerSuccess = true;
 
 							peerSuccess &= TryFetchPeerSpellDataListPub(targetToon, "Spells", out var ps);
@@ -1528,15 +1626,23 @@ namespace E3Core.UI.Windows
 							peerSuccess &= TryFetchPeerSpellDataListPub(targetToon, "Items", out var pi);
 							if (peerSuccess) mapItems = OrganizeItemsCatalog(pi); else mapItems = new SortedDictionary<string, SortedDictionary<string, List<E3Spell>>>();
 
+
+				
 							// Also try to fetch gem data
 							if (peerSuccess && TryFetchPeerGemData(targetToon, out var gemData))
 							{
-								_cfg_CatalogGems = gemData;
-								_cfg_GemsAvailable = true;
+								lock(_dataLock)
+								{
+									_cfg_CatalogGems = gemData;
+									_cfg_GemsAvailable = true;
+								}
 							}
 							else
 							{
-								_cfg_GemsAvailable = false;
+								lock(_dataLock)
+								{
+									_cfg_GemsAvailable = false;
+								}
 							}
 
 							// If any peer fetch failed, fallback to local
@@ -1550,85 +1656,46 @@ namespace E3Core.UI.Windows
 							{
 								_cfg_CatalogSource = $"Remote ({targetToon})";
 							}
-						}
-						else
-						{
-							//its local
+							_log.WriteDelayed($"Fetching data (remote) Complete!", Logging.LogLevels.Debug);
 
-							_cfg_CatalogStatus = "Loading catalogs (local)...";
-							_cfg_CatalogSource = "Local";
-							mapSpells = OrganizeLoadingCatalog(e3util.ListAllBookSpells());
-							mapAAs = OrganizeLoadingCatalog(e3util.ListAllActiveAA());
-							mapDiscs = OrganizeLoadingCatalog(e3util.ListAllDiscData());
-							mapSkills = OrganizeLoadingSkillsCatalog(e3util.ListAllActiveSkills());
-							mapItems = OrganizeLoadingItemsCatalog(e3util.ListAllItemWithClickyData());
 
-							// Also collect local gem data with spell icon indices
-							try
+							lock (_dataLock)
 							{
-								var localGems = new string[12];
-								var localGemIcons = new int[12];
-
-								for (int gem = 1; gem <= 12; gem++)
+								// Publish atomically
+								_cfgSpells = mapSpells;
+								_cfgAAs = mapAAs;
+								_cfgDiscs = mapDiscs;
+								_cfgSkills = mapSkills;
+								_cfgItems = mapItems;
+								_catalogLookups = new[]
 								{
-									try
-									{
-										string spellName = E3.MQ.Query<string>($"${{Me.Gem[{gem}]}}");
-										localGems[gem - 1] = spellName ?? "NULL";
-
-										// Get spell icon index if we have a valid spell
-										if (!string.IsNullOrEmpty(spellName) && !spellName.Equals("NULL", StringComparison.OrdinalIgnoreCase))
-										{
-											localGemIcons[gem - 1] = GetLocalSpellIconIndex(spellName);
-										}
-										else
-										{
-											localGemIcons[gem - 1] = -1;
-										}
-									}
-									catch
-									{
-										localGems[gem - 1] = "ERROR";
-										localGemIcons[gem - 1] = -1;
-									}
-								}
-								_cfg_CatalogGems = localGems;
-								_cfg_CatalogGemIcons = localGemIcons;
-								_cfg_GemsAvailable = true;
-							}
-							catch
-							{
-								_cfg_GemsAvailable = false;
-							}
-						}
-
-						// Publish atomically
-						_cfgSpells = mapSpells;
-						_cfgAAs = mapAAs;
-						_cfgDiscs = mapDiscs;
-						_cfgSkills = mapSkills;
-						_cfgItems = mapItems;
-						_catalogLookups = new[]
-						{
 							(_cfgSpells, "Spell"),
 							(_cfgAAs, "AA"),
 							(_cfgDiscs, "Disc"),
 							(_cfgSkills, "Skill"),
 							(_cfgItems, "Item")
-						};
-						_cfg_CatalogsReady = true;
-						_cfg_CatalogStatus = "Catalogs loaded.";
-					}
-					catch (Exception ex)
-					{
-						_cfg_CatalogStatus = "Catalog load failed: " + (ex.Message ?? "error");
-					}
-					finally
-					{
-						_cfg_CatalogLoadRequested = false;
-						_cfg_CatalogLoading = false;
-					}
-				});
+							};
+								_cfg_CatalogsReady = true;
+								_cfg_CatalogStatus = "Catalogs loaded.";
+								_cfg_CatalogLoadRequested = false;
+								_cfg_CatalogLoading = false;
+
+							}
+
+						}
+						catch (Exception ex)
+						{
+							_cfg_CatalogStatus = "Catalog load failed: " + (ex.Message ?? "error");
+						}
+						finally
+						{
+							_cfg_CatalogLoadRequested = false;
+							_cfg_CatalogLoading = false;
+						}
+					});
+
+				}
+					
 			}
 			// Food/Drink inventory scan (local or remote peer) — non-blocking
 			if (_cfgFoodDrinkScanRequested && !_cfgFoodDrinkPending)
@@ -1821,6 +1888,8 @@ namespace E3Core.UI.Windows
 			gemData = new string[12];
 			try
 			{
+				E3.Log.WriteDelayed($"Tryign to fetch gem data for:{toon}", Logging.LogLevels.Debug);
+
 				if (string.IsNullOrEmpty(toon)) return false;
 
 				string topic = $"CatalogResp-{E3.CurrentName}-Gems";
@@ -1864,6 +1933,7 @@ namespace E3Core.UI.Windows
 		{
 			gemNames = new string[12];
 			gemIcons = new int[12];
+			//E3.Log.WriteDelayed($"Parsing gem data with payload:{payload}", Logging.LogLevels.Debug);
 
 			try
 			{
@@ -2681,14 +2751,17 @@ namespace E3Core.UI.Windows
 
 		private static SortedDictionary<string, SortedDictionary<string, List<E3Spell>>> GetCatalogByType(AddType t)
 		{
-			switch (t)
+			lock(_dataLock)
 			{
-				case AddType.AAs: return _cfgAAs;
-				case AddType.Discs: return _cfgDiscs;
-				case AddType.Skills: return _cfgSkills;
-				case AddType.Items: return _cfgItems;
-				case AddType.Spells:
-				default: return _cfgSpells;
+				switch (t)
+				{
+					case AddType.AAs: return _cfgAAs;
+					case AddType.Discs: return _cfgDiscs;
+					case AddType.Skills: return _cfgSkills;
+					case AddType.Items: return _cfgItems;
+					case AddType.Spells:
+					default: return _cfgSpells;
+				}
 			}
 		}
 		private static (SortedDictionary<string, SortedDictionary<string, List<E3Spell>>>, string)[] _catalogLookups = new[]
