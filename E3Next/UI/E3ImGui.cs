@@ -697,7 +697,9 @@ namespace MonoCore
                     return "Theme description not available.";
             }
         }
-
+        /// <summary>
+        /// Primary C++ entry point, calls the Invoke on all registered windows.
+        /// </summary>
         public static void OnUpdateImGui()
         {
             foreach(var pair in RegisteredWindows)
@@ -707,6 +709,8 @@ namespace MonoCore
 
         }
         public static ConcurrentDictionary<string, Action> RegisteredWindows = new ConcurrentDictionary<string, Action>();
+
+        //super simple registered method. no unregister, will add one if needed later.
         public static void RegisterWindow(string windowName, Action method, string description = "", [CallerMemberName] string memberName = "", [CallerFilePath] string fileName = "", [CallerLineNumber] int lineNumber = 0)
         {
             if (!RegisteredWindows.ContainsKey(windowName))

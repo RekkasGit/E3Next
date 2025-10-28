@@ -42,26 +42,7 @@ namespace E3Core.UI.Windows
 		private static SortedDictionary<string, SortedDictionary<string, List<E3Spell>>> _cfgDiscs = new SortedDictionary<string, SortedDictionary<string, List<E3Spell>>>();
 		private static SortedDictionary<string, SortedDictionary<string, List<E3Spell>>> _cfgSkills = new SortedDictionary<string, SortedDictionary<string, List<E3Spell>>>();
 		private static SortedDictionary<string, SortedDictionary<string, List<E3Spell>>> _cfgItems = new SortedDictionary<string, SortedDictionary<string, List<E3Spell>>>();
-		private class E3Spell
-		{
-			public string Name;
-			public string Category;
-			public string Subcategory;
-			public int Level;
-			public string CastName;
-			public string TargetType;
-			public string SpellType;
-			public int Mana;
-			public double CastTime;
-			public int Recast;
-			public double Range;
-			public string Description;
-			public string ResistType;
-			public int ResistAdj;
-			public string CastType; // AA/Spell/Disc/Ability/Item/None
-			public int SpellIcon = -1; // Spell icon index for display
-			public override string ToString() => Name;
-		}
+	
 		private static E3Spell _cfgCatalogInfoSpell = null;
 		private static bool _cfgShowSpellInfoModal = false;
 		private static E3Spell _cfgSpellInfoSpell = null;
@@ -2884,17 +2865,18 @@ namespace E3Core.UI.Windows
 					_roundingVersion++;
 				}
 
+				string roundingString = _rounding.ToString("0.0", CultureInfo.InvariantCulture);
 				// Presets
 				imgui_Text("Presets:");
-				if (imgui_Button("0")) { _rounding = 0f; _roundingBuf = _rounding.ToString("0.0", CultureInfo.InvariantCulture); _roundingVersion++; }
+				if (imgui_Button("0")) { _rounding = 0f; _roundingBuf = roundingString; _roundingVersion++; }
 				imgui_SameLine();
-				if (imgui_Button("3")) { _rounding = 3f; _roundingBuf = _rounding.ToString("0.0", CultureInfo.InvariantCulture); _roundingVersion++; }
+				if (imgui_Button("3")) { _rounding = 3f; _roundingBuf = roundingString; _roundingVersion++; }
 				imgui_SameLine();
-				if (imgui_Button("6")) { _rounding = 6f; _roundingBuf = _rounding.ToString("0.0", CultureInfo.InvariantCulture); _roundingVersion++; }
+				if (imgui_Button("6")) { _rounding = 6f; _roundingBuf = roundingString; _roundingVersion++; }
 				imgui_SameLine();
-				if (imgui_Button("9")) { _rounding = 9f; _roundingBuf = _rounding.ToString("0.0", CultureInfo.InvariantCulture); _roundingVersion++; }
+				if (imgui_Button("9")) { _rounding = 9f; _roundingBuf = roundingString; _roundingVersion++; }
 				imgui_SameLine();
-				if (imgui_Button("12")) { _rounding = 12f; _roundingBuf = _rounding.ToString("0.0", CultureInfo.InvariantCulture); _roundingVersion++; }
+				if (imgui_Button("12")) { _rounding = 12f; _roundingBuf = roundingString; _roundingVersion++; }
 
 				imgui_Separator();
 
@@ -3081,16 +3063,6 @@ namespace E3Core.UI.Windows
 				return false;
 			}
 		}
-
-
-
-
-
-
-
-
-
-
 
 
 		private static void EnsureConfigEditorInit()
@@ -4550,7 +4522,26 @@ namespace E3Core.UI.Windows
 				_showDonateModal = false;
 			}
 		}
-
+		private class E3Spell
+		{
+			public string Name;
+			public string Category;
+			public string Subcategory;
+			public int Level;
+			public string CastName;
+			public string TargetType;
+			public string SpellType;
+			public int Mana;
+			public double CastTime;
+			public int Recast;
+			public double Range;
+			public string Description;
+			public string ResistType;
+			public int ResistAdj;
+			public string CastType; // AA/Spell/Disc/Ability/Item/None
+			public int SpellIcon = -1; // Spell icon index for display
+			public override string ToString() => Name;
+		}
 		private class SpellValueEditState
 		{
 			public string Section = string.Empty;
