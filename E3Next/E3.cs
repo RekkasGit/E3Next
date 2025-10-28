@@ -45,11 +45,6 @@ namespace E3Core.Processors
 			//did someone send us a command? lets process it. 
 			ProcessExternalCommands();
 
-            //// apply any UI-driven changes safely on the main loop
-            //ApplyUIQueuedActions();
-            //// run any background work requested by UI (e.g., loading catalogs)
-           //try { E3ImGUI.ProcessBackgroundWork(); } catch { }
-
             //update all states, important.
             StateUpdates();
 			RefreshCaches();
@@ -91,18 +86,6 @@ namespace E3Core.Processors
             //final cleanup/actions after the main loop has done processing
             FinalCalls();
         }
-
-        //private static void ApplyUIQueuedActions()
-        //{
-        //    Action act;
-        //    int guard = 0;
-        //    while (E3ImGUI.UIApplyQueue.TryDequeue(out act))
-        //    {
-        //        try { act?.Invoke(); }
-        //        catch (Exception ex) { MQ.Write($"UI apply error: {ex.Message}"); }
-        //        if (++guard > 50) break; // prevent starvation
-        //    }
-        //}
 
         private static void BeforeAdvancedSettingsCalls()
 		{
