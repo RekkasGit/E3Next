@@ -13,6 +13,7 @@ using System.Linq;
 using System.Runtime.CompilerServices;
 using System.Text;
 using System.Threading.Tasks;
+using System.Web.SessionState;
 using static MonoCore.E3ImGUI;
 
 namespace E3Core.UI.Windows
@@ -154,9 +155,25 @@ namespace E3Core.UI.Windows
 			{"MinHpTotal", "MinHPTotal"},
 			{"MinHp", "MinHP"}
 		};
-		
-		
-	
+
+
+		public static (string Label, string Flag)[] _spellFlags = new (string Label, string Flag)[]
+				{
+					("No Interrupt", "NoInterrupt"),
+					("Ignore Stack Rules", "IgnoreStackRules"),
+					("No Target", "NoTarget"),
+					("No Aggro", "NoAggro"),
+					("No Burn", "NoBurn"),
+					("Rotate", "Rotate"),
+					("No Mid Song Cast", "NoMidSongCast"),
+					("Gift of Mana (GoM)", "GoM"),
+					("Allow Spell Swap", "AllowSpellSwap"),
+					("No Early Recast", "NoEarlyRecast"),
+					("No Stack", "NoStack"),
+					("Debug", "Debug"),
+					("Is Debuff", "IsDebuff"),
+					("Is DoT", "IsDoT")
+				};
 		private static readonly string[] _spellCastTypeOptions = new[] { "Spell", "AA", "Disc", "Ability", "Item", "None" };
 
 
@@ -221,10 +238,7 @@ namespace E3Core.UI.Windows
 		[ClassInvoke(Data.Class.All)]
 		public static void Process()
 		{
-
-
 			ProcessBackgroundWork();
-
 		}
 		public static void ToggleImGuiWindow()
 		{
@@ -232,7 +246,7 @@ namespace E3Core.UI.Windows
 			{
 				bool open = imgui_Begin_OpenFlagGet(_e3ImGuiWindow);
 				imgui_Begin_OpenFlagSet(_e3ImGuiWindow, !open);
-				E3.Log.WriteDelayed($"E3 ImGui window {(!open ? "opened" : "closed")}", Logging.LogLevels.Debug);
+				_log.WriteDelayed($"E3 ImGui window {(!open ? "opened" : "closed")}", Logging.LogLevels.Debug);
 			}
 			catch (Exception ex)
 			{
@@ -240,13 +254,15 @@ namespace E3Core.UI.Windows
 				_imguiContextReady = false; // Mark as failed for future calls
 			}
 		}
+		/// <summary>
+		///NOTE!!!! During the rendering process, do NOT release control back to C++ as this will leave an incomplete render and ImGUI will not be happy.
+		///So for any MQ.Query be sure to use the DelayPossible flag to false.
+		/// </summary>
 		private static void RenderIMGUI()
 		{
 
 
-			///NOTE!!!! During the rendering process, do NOT release control back to C++ as this will leave an incomplete render and ImGUI will not be happy.
-			///So for any MQ.Query be sure to use the DelayPossible flag to false.
-
+	
 			try
 			{
 				// Early exit if ImGui functions aren't available
@@ -1346,6 +1362,191 @@ namespace E3Core.UI.Windows
 			}
 		}
 
+		private static void ProcessBackground_UpdateRemotePlayer(string targetToon)
+		{
+		
+			//have to make a network call and wait for a response. 
+			System.Threading.Tasks.Task.Run(() =>
+			{
+				try
+				{
+					SortedDictionary<string, SortedDictionary<string, List<E3Spell>>> mapSpells = new SortedDictionary<string, SortedDictionary<string, List<E3Spell>>>(),
+					mapAAs = new SortedDictionary<string, SortedDictionary<string, List<E3Spell>>>(),
+					mapDiscs = new SortedDictionary<string, SortedDictionary<string, List<E3Spell>>>(),
+					mapSkills = new SortedDictionary<string, SortedDictionary<string, List<E3Spell>>>(),
+					mapItems = new SortedDictionary<string, SortedDictionary<string, List<E3Spell>>>();
+
+					_log.WriteDelayed($"Fetching data (remote)", Logging.LogLevels.Debug);
+
+					//_cfg_CatalogStatus = $"Loading catalogs from {targetToon}...";
+					bool peerSuccess = true;
+
+					peerSuccess &= TryFetchPeerSpellDataListPub(targetToon, "Spells", out var ps);
+					if (peerSuccess) mapSpells = OrganizeCatalog(ps); else mapSpells = new SortedDictionary<string, SortedDictionary<string, List<E3Spell>>>();
+
+					peerSuccess &= TryFetchPeerSpellDataListPub(targetToon, "AAs", out var pa);
+					if (peerSuccess) mapAAs = OrganizeCatalog(pa); else mapAAs = new SortedDictionary<string, SortedDictionary<string, List<E3Spell>>>();
+
+					peerSuccess &= TryFetchPeerSpellDataListPub(targetToon, "Discs", out var pd);
+					if (peerSuccess) mapDiscs = OrganizeCatalog(pd); else mapDiscs = new SortedDictionary<string, SortedDictionary<string, List<E3Spell>>>();
+
+					peerSuccess &= TryFetchPeerSpellDataListPub(targetToon, "Skills", out var pk);
+					if (peerSuccess) mapSkills = OrganizeSkillsCatalog(pk); else mapSkills = new SortedDictionary<string, SortedDictionary<string, List<E3Spell>>>();
+
+					peerSuccess &= TryFetchPeerSpellDataListPub(targetToon, "Items", out var pi);
+					if (peerSuccess) mapItems = OrganizeItemsCatalog(pi); else mapItems = new SortedDictionary<string, SortedDictionary<string, List<E3Spell>>>();
+
+
+
+					// Also try to fetch gem data
+					if (peerSuccess && TryFetchPeerGemData(targetToon, out var gemData))
+					{
+						lock (_dataLock)
+						{
+							_cfg_CatalogGems = gemData;
+							_cfg_GemsAvailable = true;
+						}
+					}
+					else
+					{
+						lock (_dataLock)
+						{
+							_cfg_GemsAvailable = false;
+						}
+					}
+
+					// If any peer fetch failed, fallback to local
+					if (!peerSuccess)
+					{
+						_cfg_CatalogStatus = "Peer catalog fetch failed; using local.";
+						_cfg_CatalogSource = "Local (fallback)";
+					}
+					else
+					{
+						_cfg_CatalogSource = $"Remote ({targetToon})";
+					}
+					_log.WriteDelayed($"Fetching data (remote) Complete!", Logging.LogLevels.Debug);
+
+
+					lock (_dataLock)
+					{
+						// Publish atomically
+						_cfgSpells = mapSpells;
+						_cfgAAs = mapAAs;
+						_cfgDiscs = mapDiscs;
+						_cfgSkills = mapSkills;
+						_cfgItems = mapItems;
+						_catalogLookups = new[]
+						{
+							(_cfgSpells, "Spell"),
+							(_cfgAAs, "AA"),
+							(_cfgDiscs, "Disc"),
+							(_cfgSkills, "Skill"),
+							(_cfgItems, "Item")
+							};
+						_cfg_CatalogsReady = true;
+						_cfg_CatalogStatus = "Catalogs loaded.";
+		
+					}
+
+				}
+				catch (Exception ex)
+				{
+					_cfg_CatalogStatus = "Catalog load failed: " + (ex.Message ?? "error");
+				}
+				finally
+				{
+					_cfg_CatalogLoadRequested = false;
+					_cfg_CatalogLoading = false;
+				}
+			});
+		}
+		private static void ProcessBackground_UpdateLocalPlayer()
+		{
+			SortedDictionary<string, SortedDictionary<string, List<E3Spell>>> mapSpells = new SortedDictionary<string, SortedDictionary<string, List<E3Spell>>>(),
+					mapAAs = new SortedDictionary<string, SortedDictionary<string, List<E3Spell>>>(),
+					mapDiscs = new SortedDictionary<string, SortedDictionary<string, List<E3Spell>>>(),
+					mapSkills = new SortedDictionary<string, SortedDictionary<string, List<E3Spell>>>(),
+					mapItems = new SortedDictionary<string, SortedDictionary<string, List<E3Spell>>>();
+
+			_cfg_CatalogStatus = "Loading catalogs (local)...";
+			_cfg_CatalogSource = "Local";
+
+			_log.WriteDelayed($"Fetching data (local)", Logging.LogLevels.Debug);
+
+			mapSpells = OrganizeLoadingCatalog(e3util.ListAllBookSpells());
+			mapAAs = OrganizeLoadingCatalog(e3util.ListAllActiveAA());
+			mapDiscs = OrganizeLoadingCatalog(e3util.ListAllDiscData());
+			mapSkills = OrganizeLoadingSkillsCatalog(e3util.ListAllActiveSkills());
+			mapItems = OrganizeLoadingItemsCatalog(e3util.ListAllItemWithClickyData());
+
+			// Also collect local gem data with spell icon indices
+			try
+			{
+				var localGems = new string[12];
+				var localGemIcons = new int[12];
+
+				for (int gem = 1; gem <= 12; gem++)
+				{
+					try
+					{
+						string spellName = MQ.Query<string>($"${{Me.Gem[{gem}]}}");
+						Int32 spellID = MQ.Query<Int32>($"${{Me.Gem[{gem}].ID}}");
+						localGems[gem - 1] = spellID.ToString();
+
+						// Get spell icon index if we have a valid spell
+						if (!string.IsNullOrEmpty(spellName) && !spellName.Equals("NULL", StringComparison.OrdinalIgnoreCase))
+						{
+							localGemIcons[gem - 1] = GetLocalSpellIconIndex(spellName);
+						}
+						else
+						{
+							localGemIcons[gem - 1] = -1;
+						}
+					}
+					catch
+					{
+						localGems[gem - 1] = "ERROR";
+						localGemIcons[gem - 1] = -1;
+					}
+				}
+				lock (_dataLock)
+				{
+					_cfg_CatalogGems = localGems;
+					_cfg_CatalogGemIcons = localGemIcons;
+					_cfg_GemsAvailable = true;
+				}
+			}
+			catch(Exception ex)
+			{
+				_log.WriteDelayed($"Fetching data Error: {ex.Message}", Logging.LogLevels.Debug);
+				_cfg_GemsAvailable = false;
+			}
+			_log.WriteDelayed($"Fetching data (local) Complete!", Logging.LogLevels.Debug);
+
+			lock (_dataLock)
+			{
+				// Publish atomically
+				_cfgSpells = mapSpells;
+				_cfgAAs = mapAAs;
+				_cfgDiscs = mapDiscs;
+				_cfgSkills = mapSkills;
+				_cfgItems = mapItems;
+				_catalogLookups = new[]
+				{
+							(_cfgSpells, "Spell"),
+							(_cfgAAs, "AA"),
+							(_cfgDiscs, "Disc"),
+							(_cfgSkills, "Skill"),
+							(_cfgItems, "Item")
+							};
+				_cfg_CatalogsReady = true;
+				_cfg_CatalogStatus = "Catalogs loaded.";
+				_cfg_CatalogLoadRequested = false;
+				_cfg_CatalogLoading = false;
+
+			}
+		}
 		// Background worker tick invoked from E3.Process(): handle catalog loads and icon system
 		private static void ProcessBackgroundWork()
 		{
@@ -1383,187 +1584,16 @@ namespace E3Core.UI.Windows
 				_log.WriteDelayed($"Target tooon: {targetToon}", Logging.LogLevels.Debug);
 
 				bool isLocal = string.IsNullOrEmpty(targetToon) || targetToon.Equals(E3.CurrentName, StringComparison.OrdinalIgnoreCase);
-				SortedDictionary<string, SortedDictionary<string, List<E3Spell>>> mapSpells = new SortedDictionary<string, SortedDictionary<string, List<E3Spell>>>(),
-					mapAAs = new SortedDictionary<string, SortedDictionary<string, List<E3Spell>>>(),
-					mapDiscs = new SortedDictionary<string, SortedDictionary<string, List<E3Spell>>>(),
-					mapSkills = new SortedDictionary<string, SortedDictionary<string, List<E3Spell>>>(),
-					mapItems = new SortedDictionary<string, SortedDictionary<string, List<E3Spell>>>();
-
+			
 				_log.WriteDelayed($"Are they local?: {isLocal}", Logging.LogLevels.Debug);
 
 				if(isLocal)
 				{
-					_cfg_CatalogStatus = "Loading catalogs (local)...";
-					_cfg_CatalogSource = "Local";
-
-					_log.WriteDelayed($"Fetching data (local)", Logging.LogLevels.Debug);
-
-					mapSpells = OrganizeLoadingCatalog(e3util.ListAllBookSpells());
-					mapAAs = OrganizeLoadingCatalog(e3util.ListAllActiveAA());
-					mapDiscs = OrganizeLoadingCatalog(e3util.ListAllDiscData());
-					mapSkills = OrganizeLoadingSkillsCatalog(e3util.ListAllActiveSkills());
-					mapItems = OrganizeLoadingItemsCatalog(e3util.ListAllItemWithClickyData());
-
-					// Also collect local gem data with spell icon indices
-					try
-					{
-						var localGems = new string[12];
-						var localGemIcons = new int[12];
-
-						for (int gem = 1; gem <= 12; gem++)
-						{
-							try
-							{
-								string spellName = MQ.Query<string>($"${{Me.Gem[{gem}]}}");
-								Int32 spellID = MQ.Query<Int32>($"${{Me.Gem[{gem}].ID}}");
-								localGems[gem - 1] = spellID.ToString();
-
-								// Get spell icon index if we have a valid spell
-								if (!string.IsNullOrEmpty(spellName) && !spellName.Equals("NULL", StringComparison.OrdinalIgnoreCase))
-								{
-									localGemIcons[gem - 1] = GetLocalSpellIconIndex(spellName);
-								}
-								else
-								{
-									localGemIcons[gem - 1] = -1;
-								}
-							}
-							catch
-							{
-								localGems[gem - 1] = "ERROR";
-								localGemIcons[gem - 1] = -1;
-							}
-						}
-						lock(_dataLock)
-						{
-							_cfg_CatalogGems = localGems;
-							_cfg_CatalogGemIcons = localGemIcons;
-							_cfg_GemsAvailable = true;
-						}
-					}
-					catch
-					{
-						_cfg_GemsAvailable = false;
-					}
-					_log.WriteDelayed($"Fetching data (local) Complete!", Logging.LogLevels.Debug);
-
-					lock (_dataLock)
-					{
-						// Publish atomically
-						_cfgSpells = mapSpells;
-						_cfgAAs = mapAAs;
-						_cfgDiscs = mapDiscs;
-						_cfgSkills = mapSkills;
-						_cfgItems = mapItems;
-						_catalogLookups = new[]
-						{
-							(_cfgSpells, "Spell"),
-							(_cfgAAs, "AA"),
-							(_cfgDiscs, "Disc"),
-							(_cfgSkills, "Skill"),
-							(_cfgItems, "Item")
-							};
-						_cfg_CatalogsReady = true;
-						_cfg_CatalogStatus = "Catalogs loaded.";
-						_cfg_CatalogLoadRequested = false;
-						_cfg_CatalogLoading = false;
-
-					}
+					ProcessBackground_UpdateLocalPlayer();
 				}
 				else
 				{
-					//have to make a network call and wait for a response. 
-					System.Threading.Tasks.Task.Run(() =>
-					{
-						try
-						{
-							_log.WriteDelayed($"Fetching data (remote)", Logging.LogLevels.Debug);
-
-							//_cfg_CatalogStatus = $"Loading catalogs from {targetToon}...";
-							bool peerSuccess = true;
-
-							peerSuccess &= TryFetchPeerSpellDataListPub(targetToon, "Spells", out var ps);
-							if (peerSuccess) mapSpells = OrganizeCatalog(ps); else mapSpells = new SortedDictionary<string, SortedDictionary<string, List<E3Spell>>>();
-
-							peerSuccess &= TryFetchPeerSpellDataListPub(targetToon, "AAs", out var pa);
-							if (peerSuccess) mapAAs = OrganizeCatalog(pa); else mapAAs = new SortedDictionary<string, SortedDictionary<string, List<E3Spell>>>();
-
-							peerSuccess &= TryFetchPeerSpellDataListPub(targetToon, "Discs", out var pd);
-							if (peerSuccess) mapDiscs = OrganizeCatalog(pd); else mapDiscs = new SortedDictionary<string, SortedDictionary<string, List<E3Spell>>>();
-
-							peerSuccess &= TryFetchPeerSpellDataListPub(targetToon, "Skills", out var pk);
-							if (peerSuccess) mapSkills = OrganizeSkillsCatalog(pk); else mapSkills = new SortedDictionary<string, SortedDictionary<string, List<E3Spell>>>();
-
-							peerSuccess &= TryFetchPeerSpellDataListPub(targetToon, "Items", out var pi);
-							if (peerSuccess) mapItems = OrganizeItemsCatalog(pi); else mapItems = new SortedDictionary<string, SortedDictionary<string, List<E3Spell>>>();
-
-
-				
-							// Also try to fetch gem data
-							if (peerSuccess && TryFetchPeerGemData(targetToon, out var gemData))
-							{
-								lock(_dataLock)
-								{
-									_cfg_CatalogGems = gemData;
-									_cfg_GemsAvailable = true;
-								}
-							}
-							else
-							{
-								lock(_dataLock)
-								{
-									_cfg_GemsAvailable = false;
-								}
-							}
-
-							// If any peer fetch failed, fallback to local
-							if (!peerSuccess)
-							{
-								_cfg_CatalogStatus = "Peer catalog fetch failed; using local.";
-								_cfg_CatalogSource = "Local (fallback)";
-								isLocal = true;
-							}
-							else
-							{
-								_cfg_CatalogSource = $"Remote ({targetToon})";
-							}
-							_log.WriteDelayed($"Fetching data (remote) Complete!", Logging.LogLevels.Debug);
-
-
-							lock (_dataLock)
-							{
-								// Publish atomically
-								_cfgSpells = mapSpells;
-								_cfgAAs = mapAAs;
-								_cfgDiscs = mapDiscs;
-								_cfgSkills = mapSkills;
-								_cfgItems = mapItems;
-								_catalogLookups = new[]
-								{
-							(_cfgSpells, "Spell"),
-							(_cfgAAs, "AA"),
-							(_cfgDiscs, "Disc"),
-							(_cfgSkills, "Skill"),
-							(_cfgItems, "Item")
-							};
-								_cfg_CatalogsReady = true;
-								_cfg_CatalogStatus = "Catalogs loaded.";
-								_cfg_CatalogLoadRequested = false;
-								_cfg_CatalogLoading = false;
-
-							}
-
-						}
-						catch (Exception ex)
-						{
-							_cfg_CatalogStatus = "Catalog load failed: " + (ex.Message ?? "error");
-						}
-						finally
-						{
-							_cfg_CatalogLoadRequested = false;
-							_cfg_CatalogLoading = false;
-						}
-					});
+					ProcessBackground_UpdateRemotePlayer(targetToon);
 
 				}
 					
@@ -1759,7 +1789,7 @@ namespace E3Core.UI.Windows
 			gemData = new string[12];
 			try
 			{
-				E3.Log.WriteDelayed($"Tryign to fetch gem data for:{toon}", Logging.LogLevels.Debug);
+				_log.WriteDelayed($"Tryign to fetch gem data for:{toon}", Logging.LogLevels.Debug);
 
 				if (string.IsNullOrEmpty(toon)) return false;
 
@@ -1804,7 +1834,7 @@ namespace E3Core.UI.Windows
 		{
 			gemNames = new string[12];
 			gemIcons = new int[12];
-			E3.Log.WriteDelayed($"Parsing gem data with payload:{payload}", Logging.LogLevels.Debug);
+			_log.WriteDelayed($"Parsing gem data with payload:{payload}", Logging.LogLevels.Debug);
 
 			try
 			{
@@ -2173,67 +2203,7 @@ namespace E3Core.UI.Windows
 			return dest;
 		}
 
-		// Helpers to organize catalog data
-		private static SortedDictionary<string, SortedDictionary<string, List<E3Spell>>> OrganizeCatalog(List<E3Core.Data.Spell> list)
-		{
-			var dest = new SortedDictionary<string, SortedDictionary<string, List<E3Spell>>>(StringComparer.OrdinalIgnoreCase);
-			foreach (var s in list)
-			{
-				if (s == null) continue;
-				string cat = s.Category ?? string.Empty;
-				string sub = s.Subcategory ?? string.Empty;
-				if (!dest.TryGetValue(cat, out var submap))
-				{
-					submap = new SortedDictionary<string, List<E3Spell>>(StringComparer.OrdinalIgnoreCase);
-					dest.Add(cat, submap);
-				}
-				if (!submap.TryGetValue(sub, out var l))
-				{
-					l = new List<E3Spell>();
-					submap.Add(sub, l);
-				}
-				l.Add(new E3Spell { Name = s.SpellName ?? string.Empty, Category = cat, Subcategory = sub, Level = s.Level, SpellIcon = s.SpellIcon });
-			}
-			foreach (var submap in dest.Values)
-			{
-				foreach (var l in submap.Values)
-				{
-					l.Sort((a, b) => b.Level.CompareTo(a.Level));
-				}
-			}
-			return dest;
-		}
-
-		private static void RefreshSettingsViewIfNeeded()
-		{
-			try
-			{
-				if (Core.StopWatch.ElapsedMilliseconds < _nextIniRefreshAtMs) return;
-				_nextIniRefreshAtMs = Core.StopWatch.ElapsedMilliseconds + 1000; // 1s throttle
-
-				string path = GetActiveSettingsPath();
-				if (!string.Equals(path, _activeSettingsFilePath, StringComparison.OrdinalIgnoreCase))
-				{
-					_activeSettingsFilePath = path;
-					_activeSettingsFileLines = Array.Empty<string>();
-				}
-				if (!string.IsNullOrEmpty(path) && System.IO.File.Exists(path))
-				{
-					_activeSettingsFileLines = System.IO.File.ReadAllLines(path);
-				}
-				else
-				{
-					_activeSettingsFileLines = new[] { "Settings file not found.", path ?? string.Empty };
-				}
-			}
-			catch
-			{
-				_activeSettingsFileLines = new[] { "Error reading settings file." };
-			}
-		}
-
-
-
+		
 		// Resolves a toon’s ini path by scanning known .ini files and preferring a match
 		// that includes the server name if we have it.
 		private static bool TryGetIniPathForToon(string toon, out string path)
@@ -2942,11 +2912,11 @@ namespace E3Core.UI.Windows
 
 								if (TrySaveIniValueForToon(row.Key, _cfgSelectedSection, _cfgSelectedKey, newValue, out var err))
 								{
-									E3.MQ.Write($"Saved [{_cfgSelectedSection}] {_cfgSelectedKey} for {row.Key}.");
+									_log.WriteDelayed($"Saved [{_cfgSelectedSection}] {_cfgSelectedKey} for {row.Key}.", Logging.LogLevels.Debug);
 								}
 								else
 								{
-									E3.MQ.Write($"Save failed for {row.Key}: {err}");
+									_log.WriteDelayed($"Save failed for {row.Key}: {err}", Logging.LogLevels.Debug);
 								}
 							}
 						}
@@ -3265,18 +3235,24 @@ namespace E3Core.UI.Windows
 		private static IniData GetActiveCharacterIniData()
         {
             var currentPath = GetCurrentCharacterIniPath();
+			_log.WriteDelayed($"Getting active character ini:{currentPath}");
             if (string.Equals(_selectedCharIniPath, currentPath, StringComparison.OrdinalIgnoreCase))
                 return E3.CharacterSettings?.ParsedData;
             return _selectedCharIniParsedData;
         }
 		private static string GetCurrentCharacterIniPath()
 		{
+			string returnValue = E3.CharacterSettings._fileName;
 			if (E3.CharacterSettings != null && !string.IsNullOrEmpty(E3.CharacterSettings._fileName))
-				return E3.CharacterSettings._fileName;
+			{
+				return returnValue;
+
+			}
 			var name = E3.CurrentName ?? string.Empty;
 			var server = E3.ServerName ?? string.Empty;
 			var klass = E3.CurrentClass.ToString();
-			return E3Core.Settings.BaseSettings.GetBoTFilePath(name, server, klass);
+			returnValue = E3Core.Settings.BaseSettings.GetBoTFilePath(name, server, klass);
+			return returnValue;
 		}
 		private static void ScanCharIniFilesIfNeeded()
 		{
@@ -3700,6 +3676,7 @@ namespace E3Core.UI.Windows
 
 			return baseName + "/" + string.Join("/", segments);
 		}
+	
 
 		private static void RenderSpellModifierEditor(SpellValueEditState state)
 		{
@@ -3959,30 +3936,13 @@ namespace E3Core.UI.Windows
 			{
 				imgui_TextColored(0.8f, 0.9f, 0.95f, 1.0f, "Behavior Flags");
 				imgui_Text("Toggle and Apply to commit changes.");
-				var flags = new (string Label, string Flag)[]
-				{
-					("No Interrupt", "NoInterrupt"),
-					("Ignore Stack Rules", "IgnoreStackRules"),
-					("No Target", "NoTarget"),
-					("No Aggro", "NoAggro"),
-					("No Burn", "NoBurn"),
-					("Rotate", "Rotate"),
-					("No Mid Song Cast", "NoMidSongCast"),
-					("Gift of Mana (GoM)", "GoM"),
-					("Allow Spell Swap", "AllowSpellSwap"),
-					("No Early Recast", "NoEarlyRecast"),
-					("No Stack", "NoStack"),
-					("Debug", "Debug"),
-					("Is Debuff", "IsDebuff"),
-					("Is DoT", "IsDoT")
-				};
-
+				
 				if (imgui_BeginTable($"SpellFlagTable_{idBase}", 2, (int)ImGuiTableFlags.ImGuiTableFlags_SizingStretchSame, imgui_GetContentRegionAvailX()))
 				{
 					imgui_TableSetupColumn("FlagColumnLeft", 0, 0f);
 					imgui_TableSetupColumn("FlagColumnRight", 0, 0f);
 					int col = 0;
-					foreach (var entry in flags)
+					foreach (var entry in _spellFlags)
 					{
 						if (col == 0)
 						{
@@ -3996,7 +3956,7 @@ namespace E3Core.UI.Windows
 				}
 				else
 				{
-					foreach (var entry in flags)
+					foreach (var entry in _spellFlags)
 					{
 						CheckboxFlag(entry.Label, entry.Flag);
 					}
@@ -4214,19 +4174,17 @@ namespace E3Core.UI.Windows
 
 		private static void WriteValues(KeyData kd, List<string> values)
 		{
-			try
+			
+			if (kd == null) return;
+			// Preserve exact row semantics: one value per row, including empties
+			if (kd.ValueList != null)
 			{
-				if (kd == null) return;
-				// Preserve exact row semantics: one value per row, including empties
-				if (kd.ValueList != null)
-				{
-					kd.ValueList.Clear();
-					foreach (var v in values) kd.ValueList.Add(v ?? string.Empty);
-				}
-				// Do NOT set kd.Value here; in our Ini parser, setting Value appends to ValueList.
-				_cfg_Dirty = true;
+				kd.ValueList.Clear();
+				foreach (var v in values) kd.ValueList.Add(v ?? string.Empty);
 			}
-			catch { }
+			// Do NOT set kd.Value here; in our Ini parser, setting Value appends to ValueList.
+			_cfg_Dirty = true;
+			
 		}
 
 		// Inventory scanning for Food/Drink using MQ TLOs (non-blocking via ProcessBackgroundWork trigger)
@@ -4371,6 +4329,7 @@ namespace E3Core.UI.Windows
 		}
 
 		// Spell Info modal (read-only details) using real ImGui tables + colored labels
+
 		private static void RenderSpellInfoModal()
 		{
 			var s = _cfgSpellInfoSpell;
@@ -4384,18 +4343,18 @@ namespace E3Core.UI.Windows
 				imgui_Separator();
 
 				// Build table rows (label, value) with better formatting
-				var rows = new List<KeyValuePair<string, string>>();
-				rows.Add(new KeyValuePair<string, string>("Type", s.CastType ?? string.Empty));
-				rows.Add(new KeyValuePair<string, string>("Level", s.Level > 0 ? s.Level.ToString() : string.Empty));
-				rows.Add(new KeyValuePair<string, string>("Mana", s.Mana > 0 ? s.Mana.ToString() : string.Empty));
-				rows.Add(new KeyValuePair<string, string>("Cast Time", s.CastTime > 0 ? $"{s.CastTime:0.00}s" : string.Empty));
-				rows.Add(new KeyValuePair<string, string>("Recast", s.Recast > 0 ? FormatMsSmart(s.Recast) : string.Empty));
-				rows.Add(new KeyValuePair<string, string>("Range", s.Range > 0 ? s.Range.ToString("0") : string.Empty));
-				rows.Add(new KeyValuePair<string, string>("Target", s.TargetType ?? string.Empty));
-				rows.Add(new KeyValuePair<string, string>("School", s.SpellType ?? string.Empty));
-				rows.Add(new KeyValuePair<string, string>("Resist", !string.IsNullOrEmpty(s.ResistType) ? ($"{s.ResistType} {(s.ResistAdj != 0 ? "(" + s.ResistAdj.ToString() + ")" : string.Empty)}") : string.Empty));
-				// Filter out empty values to avoid rendering blank rows
-				rows = rows.Where(kv => !string.IsNullOrEmpty(kv.Value)).ToList();
+				//var rows = new List<KeyValuePair<string, string>>();
+				//rows.Add(new KeyValuePair<string, string>("Type", s.CastType ?? string.Empty));
+				//rows.Add(new KeyValuePair<string, string>("Level", s.Level > 0 ? s.Level.ToString() : string.Empty));
+				//rows.Add(new KeyValuePair<string, string>("Mana", s.Mana > 0 ? s.Mana.ToString() : string.Empty));
+				//rows.Add(new KeyValuePair<string, string>("Cast Time", s.CastTime > 0 ? $"{s.CastTime:0.00}s" : string.Empty));
+				//rows.Add(new KeyValuePair<string, string>("Recast", s.Recast > 0 ? FormatMsSmart(s.Recast) : string.Empty));
+				//rows.Add(new KeyValuePair<string, string>("Range", s.Range > 0 ? s.Range.ToString("0") : string.Empty));
+				//rows.Add(new KeyValuePair<string, string>("Target", s.TargetType ?? string.Empty));
+				//rows.Add(new KeyValuePair<string, string>("School", s.SpellType ?? string.Empty));
+				//rows.Add(new KeyValuePair<string, string>("Resist", !string.IsNullOrEmpty(s.ResistType) ? ($"{s.ResistType} {(s.ResistAdj != 0 ? "(" + s.ResistAdj.ToString() + ")" : string.Empty)}") : string.Empty));
+				//// Filter out empty values to avoid rendering blank rows
+				//rows = rows.Where(kv => !string.IsNullOrEmpty(kv.Value)).ToList();
 
 				float width = Math.Max(520f, imgui_GetContentRegionAvailX());
 				if (imgui_BeginTable("SpellInfoTable", 2, 0, width))
@@ -4403,15 +4362,88 @@ namespace E3Core.UI.Windows
 					imgui_TableSetupColumn("Property", 0, 140f);
 					imgui_TableSetupColumn("Value", 0, Math.Max(260f, width - 160f));
 					imgui_TableHeadersRow();
-
-					foreach (var kv in rows)
+					if (!String.IsNullOrWhiteSpace(s.CastType))
 					{
 						imgui_TableNextRow();
 						imgui_TableNextColumn();
 						// Colored label (soft yellow)
-						imgui_TextColored(0.95f, 0.85f, 0.35f, 1f, kv.Key);
+						imgui_TextColored(0.95f, 0.85f, 0.35f, 1f, "Type");
 						imgui_TableNextColumn();
-						imgui_Text(kv.Value);
+						imgui_Text(s.CastType);
+					}
+
+					if (s.Level>0)
+					{
+						imgui_TableNextRow();
+						imgui_TableNextColumn();
+						// Colored label (soft yellow)
+						imgui_TextColored(0.95f, 0.85f, 0.35f, 1f, "Level");
+						imgui_TableNextColumn();
+						imgui_Text(s.Level.ToString());
+					}
+					if (s.Mana > 0)
+					{
+						imgui_TableNextRow();
+						imgui_TableNextColumn();
+						// Colored label (soft yellow)
+						imgui_TextColored(0.95f, 0.85f, 0.35f, 1f, "Mana");
+						imgui_TableNextColumn();
+						imgui_Text(s.Mana.ToString());
+					}
+					if (s.CastTime > 0)
+					{
+						imgui_TableNextRow();
+						imgui_TableNextColumn();
+						// Colored label (soft yellow)
+						imgui_TextColored(0.95f, 0.85f, 0.35f, 1f, "Cast Time");
+						imgui_TableNextColumn();
+						imgui_Text($"{s.CastTime:0.00}s");
+					}
+					if (s.Recast > 0)
+					{
+						imgui_TableNextRow();
+						imgui_TableNextColumn();
+						// Colored label (soft yellow)
+						imgui_TextColored(0.95f, 0.85f, 0.35f, 1f, "Recast");
+						imgui_TableNextColumn();
+						imgui_Text(FormatMsSmart(s.Recast));
+					}
+					if (s.Range > 0)
+					{
+						imgui_TableNextRow();
+						imgui_TableNextColumn();
+						// Colored label (soft yellow)
+						imgui_TextColored(0.95f, 0.85f, 0.35f, 1f, "Range");
+						imgui_TableNextColumn();
+						imgui_Text(s.Range.ToString("0"));
+					}
+					if (!String.IsNullOrWhiteSpace(s.TargetType))
+					{
+						imgui_TableNextRow();
+						imgui_TableNextColumn();
+						// Colored label (soft yellow)
+						imgui_TextColored(0.95f, 0.85f, 0.35f, 1f, "Target");
+						imgui_TableNextColumn();
+						imgui_Text(s.TargetType);
+					}
+					if (!String.IsNullOrWhiteSpace(s.SpellType))
+					{
+						imgui_TableNextRow();
+						imgui_TableNextColumn();
+						// Colored label (soft yellow)
+						imgui_TextColored(0.95f, 0.85f, 0.35f, 1f, "School");
+						imgui_TableNextColumn();
+						imgui_Text(s.SpellType);
+					}
+
+					if (!String.IsNullOrWhiteSpace(s.ResistType))
+					{
+						imgui_TableNextRow();
+						imgui_TableNextColumn();
+						// Colored label (soft yellow)
+						imgui_TextColored(0.95f, 0.85f, 0.35f, 1f, "Resist");
+						imgui_TableNextColumn();
+						imgui_Text(s.ResistType);
 					}
 					imgui_EndTable();
 				}
