@@ -371,6 +371,15 @@ namespace E3Core.UI.Windows
 			E3ImGUI.RegisterWindow(_e3ImGuiWindow, () => RenderIMGUI());
 
 		}
+
+		[ClassInvoke(Data.Class.All)]
+		public static void Process()
+		{
+
+
+			ProcessBackgroundWork();
+
+		}
 		public static void ToggleImGuiWindow()
 		{
 			try
@@ -1823,63 +1832,6 @@ namespace E3Core.UI.Windows
 					}
 				});
 			}
-		}
-
-		// Fetch SpellDataList via local RouterServer (same process), like e3config
-		private static Google.Protobuf.Collections.RepeatedField<SpellData> FetchSpellDataList(string query)
-		{
-			try
-			{
-				using (var sock = new NetMQ.Sockets.DealerSocket())
-				{
-					sock.Options.Identity = Guid.NewGuid().ToByteArray();
-					sock.Options.SendHighWatermark = 50000;
-					sock.Options.ReceiveHighWatermark = 50000;
-					sock.Connect("tcp://127.0.0.1:" + E3Core.Server.NetMQServer.RouterPort.ToString());
-
-					// Empty frame
-					var msg = new NetMQ.Msg();
-					msg.InitEmpty(); sock.TrySend(ref msg, new TimeSpan(0, 0, 5), true); msg.Close();
-
-					// Payload frame: 4-byte cmd, 4-byte len, bytes(query)
-					var data = Encoding.Default.GetBytes(query ?? string.Empty);
-					msg.InitPool(data.Length + 8);
-					unsafe
-					{
-						fixed (byte* dest = msg.Data)
-						fixed (byte* src = data)
-						{
-							byte* p = dest;
-							*(int*)p = 1; p += 4;
-							*(int*)p = data.Length; p += 4;
-							System.Buffer.MemoryCopy(src, p, data.Length, data.Length);
-						}
-					}
-					sock.TrySend(ref msg, new TimeSpan(0, 0, 5), false); msg.Close();
-
-					// Receive empty frame
-					msg.InitEmpty(); sock.TryReceive(ref msg, new TimeSpan(0, 0, 5)); msg.Close();
-					// Receive data frame
-					msg.InitEmpty(); sock.TryReceive(ref msg, new TimeSpan(0, 0, 10));
-					byte[] bytes = new byte[msg.Size];
-					Buffer.BlockCopy(msg.Data, 0, bytes, 0, msg.Size);
-					msg.Close();
-
-					var list = SpellDataList.Parser.ParseFrom(bytes);
-					return list.Data;
-				}
-			}
-			catch
-			{
-				return new Google.Protobuf.Collections.RepeatedField<SpellData>();
-			}
-		}
-
-		// Router-based direct fetch (kept for future), currently unused
-		private static bool TryFetchPeerSpellDataList(string toon, string query, out Google.Protobuf.Collections.RepeatedField<SpellData> data)
-		{
-			data = new Google.Protobuf.Collections.RepeatedField<SpellData>();
-			return false;
 		}
 
 		// Fetch gem data from peer catalog response (now includes spell icon indices)
@@ -4599,14 +4551,6 @@ namespace E3Core.UI.Windows
 			}
 		}
 
-		[ClassInvoke(Data.Class.All)]
-		public static void Process()
-		{
-
-
-			ProcessBackgroundWork();
-
-		}
 		private class SpellValueEditState
 		{
 			public string Section = string.Empty;
