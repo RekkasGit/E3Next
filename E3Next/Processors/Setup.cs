@@ -155,27 +155,10 @@ namespace E3Core.Processors
 
 			},"Have your toon broadcast writes out to the MQ window for a conssolidated view.");
 
-            // Toggle the in-game ImGui config window
-            EventProcessor.RegisterCommand("/e3imgui", (x) =>
-            {
-                try
-				{
-					if (Core._MQ2MonoVersion < 0.35m)
-					{
-						Core.mqInstance.Write("MQ2Mono Version needs to be at least 0.35 to use this command");
-						return;
-					}
-					//we are already on the main C# thread, so we can just toggle this.
-					E3ImGUI.ToggleImGuiWindow();
-                }
-                catch (Exception ex)
-                {
-                    MQ.Write($"ImGui error: {ex.Message}");
-                }
-            }, "Toggle E3Next ImGui window");
+           
 
         }
-			private static void InitSubSystems()
+		private static void InitSubSystems()
         {
             var methods = AppDomain.CurrentDomain.GetAssemblies()
             .SelectMany(x => x.GetTypes())

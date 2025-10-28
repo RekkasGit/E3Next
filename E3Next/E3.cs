@@ -45,10 +45,10 @@ namespace E3Core.Processors
 			//did someone send us a command? lets process it. 
 			ProcessExternalCommands();
 
-            // apply any UI-driven changes safely on the main loop
-            ApplyUIQueuedActions();
-            // run any background work requested by UI (e.g., loading catalogs)
-            try { E3ImGUI.ProcessBackgroundWork(); } catch { }
+            //// apply any UI-driven changes safely on the main loop
+            //ApplyUIQueuedActions();
+            //// run any background work requested by UI (e.g., loading catalogs)
+           //try { E3ImGUI.ProcessBackgroundWork(); } catch { }
 
             //update all states, important.
             StateUpdates();

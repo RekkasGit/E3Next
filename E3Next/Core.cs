@@ -789,7 +789,8 @@ namespace MonoCore
             public string eventName;
             public eventType typeOfEvent = eventType.Unknown;
         }
-        public static bool RegisterCommand(string commandName, Action<CommandMatch> method, string description = "", [CallerMemberName] string memberName = "", [CallerFilePath] string fileName = "", [CallerLineNumber] int lineNumber = 0)
+	
+		public static bool RegisterCommand(string commandName, Action<CommandMatch> method, string description = "", [CallerMemberName] string memberName = "", [CallerFilePath] string fileName = "", [CallerLineNumber] int lineNumber = 0)
         {
             CommandListItem c = new CommandListItem();
             c.command = commandName;

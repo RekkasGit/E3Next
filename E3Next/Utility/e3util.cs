@@ -1925,6 +1925,22 @@ namespace E3Core.Utility
 			}
 			return returnValue;
 		}
+		public static void OpenUrl(string url)
+		{
+			try
+			{
+				var psi = new ProcessStartInfo
+				{
+					FileName = url,
+					UseShellExecute = true
+				};
+				Process.Start(psi);
+			}
+			catch (Exception ex)
+			{
+				E3.Log.Write($"Failed to open URL: {url} - {ex.Message}", Logging.LogLevels.Error);
+			}
+		}
 		public static bool IsGenericList(this FieldInfo o, Type typeToCheck)
 		{
 			var oType = o.FieldType;
