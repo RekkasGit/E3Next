@@ -6,6 +6,7 @@ using IniParser.Model;
 using MonoCore;
 using System;
 using System.Collections.Generic;
+using System.ComponentModel.Design;
 using System.Drawing;
 using System.Globalization;
 using System.IO;
@@ -186,7 +187,6 @@ namespace E3Core.UI.Windows
 		private static HashSet<string> _cfgAllPlayersIsRemote = new HashSet<string>(StringComparer.OrdinalIgnoreCase);
 		private static Dictionary<string, string> _cfgAllPlayersEditBuf = new Dictionary<string, string>(StringComparer.OrdinalIgnoreCase);
 		private static readonly object _cfgAllPlayersLock = new object();
-		private static System.Threading.Tasks.Task _cfgAllPlayersWorkerTask = null;
 		private static bool _cfgAllPlayersRefreshRequested = false;
 		private static bool _cfgAllPlayersRefreshing = false;
 		private static string _cfgAllPlayersReqSection = string.Empty;
@@ -260,9 +260,6 @@ namespace E3Core.UI.Windows
 		/// </summary>
 		private static void RenderIMGUI()
 		{
-
-
-	
 			try
 			{
 				// Early exit if ImGui functions aren't available
@@ -396,7 +393,7 @@ namespace E3Core.UI.Windows
 			}
 			catch (Exception ex)
 			{
-				E3.Log.Write($"OnUpdateImGui error: {ex.Message}", Logging.LogLevels.Error);
+				_log.Write($"OnUpdateImGui error: {ex.Message}", Logging.LogLevels.Error);
 			}
 
 		}
@@ -534,6 +531,7 @@ namespace E3Core.UI.Windows
 				if (imgui_TableNextColumn())
 				{
 					var selectedSection = pd.Sections.GetSectionData(_cfgSelectedSection ?? string.Empty);
+					//_log.Write($"Rendering with selected section {selectedSection.SectionName} with keys count:{selectedSection.Keys.Count} with pd:");
 					if (imgui_BeginChild("ValuesPanel", 0, Math.Max(200f, availY * 0.75f), false))
 					{
 						if (selectedSection == null)
@@ -1522,6 +1520,7 @@ namespace E3Core.UI.Windows
 				_log.WriteDelayed($"Fetching data Error: {ex.Message}", Logging.LogLevels.Debug);
 				_cfg_GemsAvailable = false;
 			}
+
 			_log.WriteDelayed($"Fetching data (local) Complete!", Logging.LogLevels.Debug);
 
 			lock (_dataLock)
@@ -1572,6 +1571,12 @@ namespace E3Core.UI.Windows
 
 			if (_cfg_CatalogLoadRequested && !_cfg_CatalogLoading)
 			{
+				var connectedToons = E3Core.Server.NetMQServer.SharedDataClient?.UsersConnectedTo?.Keys?.ToList() ?? new List<string>();
+				if (!connectedToons.Contains(E3.CurrentName, StringComparer.OrdinalIgnoreCase))
+				{
+					connectedToons.Add(E3.CurrentName);
+				}
+
 				_cfg_CatalogLoading = true;
 				_log.WriteDelayed("Making background request", Logging.LogLevels.Debug);
 
@@ -1587,16 +1592,26 @@ namespace E3Core.UI.Windows
 			
 				_log.WriteDelayed($"Are they local?: {isLocal}", Logging.LogLevels.Debug);
 
-				if(isLocal)
+				try
 				{
-					ProcessBackground_UpdateLocalPlayer();
-				}
-				else
-				{
-					ProcessBackground_UpdateRemotePlayer(targetToon);
+					if (isLocal)
+					{
+						ProcessBackground_UpdateLocalPlayer();
+					}
+					else
+					{
+						if (connectedToons.Contains(targetToon, StringComparer.OrdinalIgnoreCase))
+						{
+							ProcessBackground_UpdateRemotePlayer(targetToon);
+						}
+					}
 
 				}
-					
+				finally
+				{
+					_cfg_CatalogLoadRequested = false;
+					_cfg_CatalogLoading = false;
+				}
 			}
 			// Food/Drink inventory scan (local or remote peer) — non-blocking
 			if (_cfgFoodDrinkScanRequested && !_cfgFoodDrinkPending)
@@ -1712,13 +1727,13 @@ namespace E3Core.UI.Windows
 				{
 					try
 					{
-						_cfgAllPlayersStatus = "Refreshing...";
 						var connectedToons = E3Core.Server.NetMQServer.SharedDataClient?.UsersConnectedTo?.Keys?.ToList() ?? new List<string>();
 						if (!connectedToons.Contains(E3.CurrentName, StringComparer.OrdinalIgnoreCase))
 						{
 							connectedToons.Add(E3.CurrentName);
 						}
-
+						_cfgAllPlayersStatus = "Refreshing...";
+						
 						var newRows = new List<KeyValuePair<string, string>>();
 						string section = _cfgAllPlayersReqSection;
 						string key = _cfgAllPlayersReqKey;
@@ -3048,9 +3063,12 @@ namespace E3Core.UI.Windows
 					return adv;
 				case SettingsTab.Character:
 				default:
-					var currentPath = GetCurrentCharacterIniPath();
+
 					if (string.IsNullOrEmpty(_selectedCharIniPath))
+					{
+						var currentPath = GetCurrentCharacterIniPath();
 						_selectedCharIniPath = currentPath;
+					}
 					return _selectedCharIniPath;
 			}
 		}
@@ -3235,10 +3253,16 @@ namespace E3Core.UI.Windows
 		private static IniData GetActiveCharacterIniData()
         {
             var currentPath = GetCurrentCharacterIniPath();
-			_log.WriteDelayed($"Getting active character ini:{currentPath}");
+			
             if (string.Equals(_selectedCharIniPath, currentPath, StringComparison.OrdinalIgnoreCase))
-                return E3.CharacterSettings?.ParsedData;
-            return _selectedCharIniParsedData;
+			{
+				//_log.WriteDelayed($"returning local parsed data:{currentPath}", Logging.LogLevels.Debug);
+				return E3.CharacterSettings.ParsedData;
+
+			}
+			//_log.WriteDelayed($"returning selected parsed data:{_selectedCharIniPath}", Logging.LogLevels.Debug);
+
+			return _selectedCharIniParsedData;
         }
 		private static string GetCurrentCharacterIniPath()
 		{
@@ -3298,7 +3322,7 @@ namespace E3Core.UI.Windows
 			var currentPath = GetCurrentCharacterIniPath();
 			string currentDisplay = Path.GetFileName(currentPath);
 			string selName = Path.GetFileName(_selectedCharIniPath ?? currentPath);
-			if (string.IsNullOrEmpty(selName)) selName = currentDisplay;
+			if (string.IsNullOrWhiteSpace(selName)) selName = currentDisplay;
 
 			bool opened = _comboAvailable && BeginComboSafe("Select Character", selName);
 			if (opened)
@@ -3308,10 +3332,13 @@ namespace E3Core.UI.Windows
 					bool sel = string.Equals(_selectedCharIniPath, currentPath, StringComparison.OrdinalIgnoreCase);
 					if (imgui_Selectable($"Current: {currentDisplay}", sel))
 					{
-						_selectedCharIniPath = currentPath;
-						_selectedCharIniParsedData = null; // use live current
-						_nextIniRefreshAtMs = 0;
+						_log.Write($"Selecting local:{currentPath}", Logging.LogLevels.Debug);
 
+						_selectedCharIniPath = currentPath;
+						
+						var pd = E3.CharacterSettings.ParsedData;
+						_selectedCharIniParsedData = pd;// use live current
+						_nextIniRefreshAtMs = 0;
 						// Trigger catalog reload for the selected peer
 						_cfg_CatalogsReady = false;
 						_cfgSpells.Clear();
@@ -3336,6 +3363,7 @@ namespace E3Core.UI.Windows
 					{
 						try
 						{
+							_log.Write($"Selecting other:{f}",Logging.LogLevels.Debug);
 							var parser = E3Core.Utility.e3util.CreateIniParser();
 							var pd = parser.ReadFile(f);
 							_selectedCharIniPath = f;
