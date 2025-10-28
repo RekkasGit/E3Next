@@ -19,6 +19,7 @@ using System.Threading;
 using System.Threading.Tasks;
 using System.Windows.Forms.VisualStyles;
 using System.Xml.Linq;
+using System.Diagnostics;
 
 namespace E3Core.Server
 {
@@ -164,14 +165,14 @@ namespace E3Core.Server
 					{
 						if (typeInfo == OnCommandData.CommandType.OnIMGUICommand_GetCatalogData)
 						{
-							
+
 							// e3imgui peer catalog request via PubSub relay
 							// Topic: CatalogReq-<TargetToon>
 							// payloaduser is requester; if TargetToon equals our name, publish base64 SpellDataList frames back
 							string target = messageTopicReceived.Substring("CatalogReq-".Length);
 							if (!string.IsNullOrEmpty(target) && target.Equals(E3.CurrentName, StringComparison.OrdinalIgnoreCase))
 							{
-									
+
 								var spells = E3Core.Utility.e3util.ListAllBookSpells();
 								var aas = E3Core.Utility.e3util.ListAllActiveAA();
 								var discs = E3Core.Utility.e3util.ListAllDiscData();
@@ -192,7 +193,7 @@ namespace E3Core.Server
 								// Also send memorized spell gems data
 								var gemData = CollectSpellGemData();
 								PubServer.AddTopicMessage($"CatalogResp-{payloaduser}-Gems", gemData);
-									
+
 							}
 						}
 						else if (typeInfo == OnCommandData.CommandType.OnIMGUICommand_GetItemsByType)
@@ -204,14 +205,14 @@ namespace E3Core.Server
 							string target = messageTopicReceived.Substring("InvReq-".Length);
 							if (!string.IsNullOrEmpty(target) && target.Equals(E3.CurrentName, StringComparison.OrdinalIgnoreCase))
 							{
-								
+
 								string type = (messageReceived ?? string.Empty).Trim();
 								List<string> items = ScanInventoryByType(type);
 								// pack as base64 of newline-delimited names
 								string joined = string.Join("\n", items ?? new List<string>());
 								string b64 = Convert.ToBase64String(System.Text.Encoding.UTF8.GetBytes(joined));
 								PubServer.AddTopicMessage($"InvResp-{payloaduser}-{type}", b64);
-								
+
 							}
 						}
 						else if (typeInfo == OnCommandData.CommandType.OnIMGUICommand_ConfigValueReq)
@@ -219,7 +220,7 @@ namespace E3Core.Server
 							string target = messageTopicReceived.Substring("ConfigValueReq-".Length);
 							if (!string.IsNullOrEmpty(target) && target.Equals(E3.CurrentName, StringComparison.OrdinalIgnoreCase))
 							{
-								
+
 								string[] parts = messageReceived.Split(new[] { ':' }, 2);
 								string section = parts[0];
 								string key = parts[1];
@@ -232,16 +233,16 @@ namespace E3Core.Server
 							string target = messageTopicReceived.Substring("ConfigValueUpdate-".Length);
 							if (!string.IsNullOrEmpty(target) && target.Equals(E3.CurrentName, StringComparison.OrdinalIgnoreCase))
 							{
-									string[] parts = messageReceived.Split(new[] { ':' }, 3);
-									string section = parts[0];
-									string key = parts[1];
-									string value = parts[2];
-									E3.CharacterSettings.ParsedData[section][key] = value;
-									E3.CharacterSettings.SaveData();
+								string[] parts = messageReceived.Split(new[] { ':' }, 3);
+								string section = parts[0];
+								string key = parts[1];
+								string value = parts[2];
+								E3.CharacterSettings.ParsedData[section][key] = value;
+								E3.CharacterSettings.SaveData();
 							}
 						}
 					}
-					catch(Exception ex)
+					catch (Exception ex)
 					{
 						MQ.Write($"Exception processing {typeInfo.ToString()}:" + ex.Message);
 
@@ -567,52 +568,57 @@ namespace E3Core.Server
 			TimeSpan recieveTimeout = new TimeSpan(0, 0, 0, 2, 0);
 			using (var subSocket = new SubscriberSocket())
 			{
-				try
+
+				subSocket.Options.ReceiveHighWatermark = 100000;
+				subSocket.Options.TcpKeepalive = true;
+				subSocket.Options.TcpKeepaliveIdle = TimeSpan.FromSeconds(5);
+				subSocket.Options.TcpKeepaliveInterval = TimeSpan.FromSeconds(1);
+				subSocket.Subscribe(OnCommandName);
+				subSocket.Subscribe("OnCommand-All");
+				subSocket.Subscribe("OnCommand-AllZone");
+				subSocket.Subscribe("OnCommand-AllExceptMe");
+				subSocket.Subscribe("OnCommand-AllExceptMeZone");
+				subSocket.Subscribe("OnCommand-Group");
+				subSocket.Subscribe("OnCommand-GroupAll");
+				subSocket.Subscribe("OnCommand-GroupAllZone");
+				subSocket.Subscribe("OnCommand-Raid");
+				subSocket.Subscribe("OnCommand-Zone");
+				subSocket.Subscribe("BroadCastMessage");
+				subSocket.Subscribe("BroadCastMessageZone");
+				// e3imgui Add From Catalog peer relay topics
+				// Requests addressed to specific toons and responses back to requester
+				subSocket.Subscribe("CatalogReq-");
+				subSocket.Subscribe("CatalogResp-");
+				// e3imgui Food/Drink inventory peer relay topics
+				subSocket.Subscribe("InvReq-");
+				subSocket.Subscribe("InvResp-");
+				subSocket.Subscribe("ConfigValueReq-");
+				subSocket.Subscribe("ConfigValueResp-");
+				subSocket.Subscribe("ConfigValueUpdate-");
+				subSocket.Subscribe("${Me."); //all Me stuff should be subscribed to
+				subSocket.Subscribe("${Data."); //all the custom data keys a user can create
+				subSocket.Subscribe("${DataChannel.");
+
+				while (Core.IsProcessing && E3.NetMQ_SharedDataServerThreadRun)
 				{
-					subSocket.Options.ReceiveHighWatermark = 100000;
-					subSocket.Options.TcpKeepalive = true;
-					subSocket.Options.TcpKeepaliveIdle = TimeSpan.FromSeconds(5);
-					subSocket.Options.TcpKeepaliveInterval = TimeSpan.FromSeconds(1);
-					subSocket.Subscribe(OnCommandName);
-					subSocket.Subscribe("OnCommand-All");
-					subSocket.Subscribe("OnCommand-AllZone");
-					subSocket.Subscribe("OnCommand-AllExceptMe");
-					subSocket.Subscribe("OnCommand-AllExceptMeZone");
-					subSocket.Subscribe("OnCommand-Group");
-					subSocket.Subscribe("OnCommand-GroupAll");
-					subSocket.Subscribe("OnCommand-GroupAllZone");
-					subSocket.Subscribe("OnCommand-Raid");
-					subSocket.Subscribe("OnCommand-Zone");
-					subSocket.Subscribe("BroadCastMessage");
-					subSocket.Subscribe("BroadCastMessageZone");
-					// e3imgui Add From Catalog peer relay topics
-					// Requests addressed to specific toons and responses back to requester
-					subSocket.Subscribe("CatalogReq-");
-					subSocket.Subscribe("CatalogResp-");
-					// e3imgui Food/Drink inventory peer relay topics
-					subSocket.Subscribe("InvReq-");
-					subSocket.Subscribe("InvResp-");
-					subSocket.Subscribe("ConfigValueReq-");
-					subSocket.Subscribe("ConfigValueResp-");
-					subSocket.Subscribe("ConfigValueUpdate-");
-					subSocket.Subscribe("${Me."); //all Me stuff should be subscribed to
-					subSocket.Subscribe("${Data."); //all the custom data keys a user can create
-					subSocket.Subscribe("${DataChannel.}");
+					Process_CheckNewConnections(subSocket);
+					Process_CheckConnectionsIfStillValid(subSocket, ref lastConnectionCheck);
 
-					while (Core.IsProcessing && E3.NetMQ_SharedDataServerThreadRun)
+					string messageTopicReceived;
+					if (subSocket.TryReceiveFrameString(recieveTimeout, out messageTopicReceived))
 					{
-						Process_CheckNewConnections(subSocket);
-						Process_CheckConnectionsIfStillValid(subSocket, ref lastConnectionCheck);
-
-						string messageTopicReceived;
-						if (subSocket.TryReceiveFrameString(recieveTimeout, out messageTopicReceived))
+						string messageReceived;
+						string originalMessage;
+						string payloaduser;
+						try
 						{
-							string messageReceived = subSocket.ReceiveFrameString();
-
+							messageReceived = subSocket.ReceiveFrameString();
+							originalMessage = messageReceived;
+							messageReceived = originalMessage;
 							Int32 indexOfColon = messageReceived.IndexOf(':');
-							string payloaduser = messageReceived.Substring(0, indexOfColon);
+							payloaduser = messageReceived.Substring(0, indexOfColon);
 							messageReceived = messageReceived.Substring(indexOfColon + 1, messageReceived.Length - indexOfColon - 1);
-							indexOfColon = messageReceived.IndexOf(':', indexOfColon + 1);
+							indexOfColon = messageReceived.IndexOf(':');
 							string payloadServer = messageReceived.Substring(0, indexOfColon);
 							messageReceived = messageReceived.Substring(indexOfColon + 1, messageReceived.Length - indexOfColon - 1);
 
@@ -774,7 +780,7 @@ namespace E3Core.Server
 								data.Data3 = messageReceived;
 								data.TypeOfCommand = OnCommandData.CommandType.OnIMGUICommand_GetItemsByType;
 								IMGUICommands.Enqueue(data);
-								
+
 							}
 							else if (messageTopicReceived.StartsWith("ConfigValueReq-", StringComparison.Ordinal))
 							{
@@ -784,7 +790,7 @@ namespace E3Core.Server
 								data.Data3 = messageReceived;
 								data.TypeOfCommand = OnCommandData.CommandType.OnIMGUICommand_ConfigValueReq;
 								IMGUICommands.Enqueue(data);
-								
+
 							}
 							else if (messageTopicReceived.StartsWith("ConfigValueResp-", StringComparison.Ordinal))
 							{
@@ -798,7 +804,7 @@ namespace E3Core.Server
 								data.Data3 = messageReceived;
 								data.TypeOfCommand = OnCommandData.CommandType.OnIMGUICommand_ConfigValueUpdate;
 								IMGUICommands.Enqueue(data);
-								
+
 							}
 							else if (messageTopicReceived == OnCommandName)
 							{   //bct commands
@@ -813,15 +819,17 @@ namespace E3Core.Server
 
 							}
 						}
-
+						catch (Exception ex)
+						{
+							Debug.WriteLine($"Error{ex.Message}");
+							//MQ.WriteDelayed("Error in shared data thread. Message:" + ex.Message + "  stack:" + ex.StackTrace);
+						}
 					}
 
-					subSocket.Dispose();
 				}
-				catch (Exception ex)
-				{
-					//MQ.WriteDelayed("Error in shared data thread. Message:" + ex.Message + "  stack:" + ex.StackTrace);
-				}
+
+				subSocket.Dispose();
+
 
 			}
 			MQ.WriteDelayed($"Shutting down Share Data Thread.");
