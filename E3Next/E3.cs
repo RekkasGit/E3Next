@@ -92,17 +92,17 @@ namespace E3Core.Processors
             FinalCalls();
         }
 
-        private static void ApplyUIQueuedActions()
-        {
-            Action act;
-            int guard = 0;
-            while (E3ImGUI.UIApplyQueue.TryDequeue(out act))
-            {
-                try { act?.Invoke(); }
-                catch (Exception ex) { MQ.Write($"UI apply error: {ex.Message}"); }
-                if (++guard > 50) break; // prevent starvation
-            }
-        }
+        //private static void ApplyUIQueuedActions()
+        //{
+        //    Action act;
+        //    int guard = 0;
+        //    while (E3ImGUI.UIApplyQueue.TryDequeue(out act))
+        //    {
+        //        try { act?.Invoke(); }
+        //        catch (Exception ex) { MQ.Write($"UI apply error: {ex.Message}"); }
+        //        if (++guard > 50) break; // prevent starvation
+        //    }
+        //}
 
         private static void BeforeAdvancedSettingsCalls()
 		{

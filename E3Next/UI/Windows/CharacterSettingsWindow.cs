@@ -23,6 +23,7 @@ namespace E3Core.UI.Windows
 		private static IMQ MQ = E3.MQ;
 		private static ISpawns _spawns = E3.Spawns;
 
+		#region Variables
 		// Spell icon system state
 		private static bool _cfg_IconSystemInitialized = false;
 
@@ -342,6 +343,7 @@ namespace E3Core.UI.Windows
 		private static bool _showDonateModal = false;
 		private static bool _cfg_Inited = false;
 
+		#endregion
 
 		[SubSystemInit]
 		public static void CharacterSettingsWindow_Init()
@@ -787,6 +789,7 @@ namespace E3Core.UI.Windows
 									// Only show details in tooltip (no inline name)
 									if (imgui_IsItemHovered())
 									{
+										imgui_SetNextWindowSize(200, 200);
 										imgui_BeginTooltip();
 										imgui_Text($"Spell: {spellName}");
 										imgui_Text($"Level: {spellInfo.Level}");
