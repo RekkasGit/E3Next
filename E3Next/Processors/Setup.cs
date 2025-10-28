@@ -166,7 +166,7 @@ namespace E3Core.Processors
 						return;
 					}
 					//we are already on the main C# thread, so we can just toggle this.
-					Core.ToggleImGuiWindow();
+					E3ImGUI.ToggleImGuiWindow();
                 }
                 catch (Exception ex)
                 {

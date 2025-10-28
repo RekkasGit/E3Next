@@ -48,7 +48,7 @@ namespace E3Core.Processors
             // apply any UI-driven changes safely on the main loop
             ApplyUIQueuedActions();
             // run any background work requested by UI (e.g., loading catalogs)
-            try { MonoCore.Core.ProcessBackgroundWork(); } catch { }
+            try { E3ImGUI.ProcessBackgroundWork(); } catch { }
 
             //update all states, important.
             StateUpdates();
@@ -96,7 +96,7 @@ namespace E3Core.Processors
         {
             Action act;
             int guard = 0;
-            while (MonoCore.Core.UIApplyQueue.TryDequeue(out act))
+            while (E3ImGUI.UIApplyQueue.TryDequeue(out act))
             {
                 try { act?.Invoke(); }
                 catch (Exception ex) { MQ.Write($"UI apply error: {ex.Message}"); }

@@ -129,7 +129,6 @@
     <Compile Include="Data\SpellRequest.cs" />
     <Compile Include="Data\SpellTimer.cs" />
     <Compile Include="Data\Zone.cs" />
-    <Compile Include="UI\E3ImGui.cs" />
     <Compile Include="UI\TGALoader.cs" />
     <Compile Include="UI\SpellIconManager.cs" />
     <Compile Include="Processors\BaseProcessor.cs" />

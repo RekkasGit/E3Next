@@ -1,3 +1,4 @@
+using MonoCore;
 using System;
 using System.Collections.Generic;
 using System.Drawing;
@@ -67,7 +68,7 @@ namespace E3Next.UI
                 {
                     try
                     {
-                        MonoCore.Core.mq_DestroyTexture(texture);
+                        E3ImGUI.mq_DestroyTexture(texture);
                     }
                     catch (Exception ex)
                     {
@@ -198,7 +199,7 @@ namespace E3Next.UI
             try
             {
                 // Call the native MQ2Mono function to create the texture
-                return MonoCore.Core.mq_CreateTextureFromData(data, width, height, 4); // 4 channels for RGBA
+                return E3ImGUI.mq_CreateTextureFromData(data, width, height, 4); // 4 channels for RGBA
             }
             catch (Exception ex)
             {
