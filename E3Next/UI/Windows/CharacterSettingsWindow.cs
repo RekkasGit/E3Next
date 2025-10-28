@@ -24,6 +24,8 @@ namespace E3Core.UI.Windows
 		private static IMQ MQ = E3.MQ;
 		private static ISpawns _spawns = E3.Spawns;
 
+		//A very large bandaid on the Threading of this window
+		//used when trying to get a pointer to the _cfg objects.
 		private static object _dataLock = new object();
 
 		#region Variables
@@ -31,15 +33,25 @@ namespace E3Core.UI.Windows
 		private static bool _cfg_IconSystemInitialized = false;
 
 		// Catalogs and Add modal state
+
+		//Note on Volatile variables... all this means is if its set on another thread, we will eventually get the update.
+		//its somewhat one way, us setting the variable on this side doesn't let the other thread see the update.
+		private static volatile bool _cfg_GemsAvailable = false; // Whether we have gem data
 		private static volatile bool _cfg_CatalogsReady = false;
 		private static volatile bool _cfg_CatalogLoadRequested = false;
 		private static volatile bool _cfg_CatalogLoading = false;
+
 		private static string _cfg_CatalogStatus = string.Empty;
 		private static string _cfg_CatalogSource = "Unknown"; // "Local", "Remote (ToonName)", or "Unknown"
-															  // Memorized gem data from catalog responses with spell icon support
+																 // Memorized gem data from catalog responses with spell icon support
+
 		private static string[] _cfg_CatalogGems = new string[12]; // Gem data from catalog response
 		private static int[] _cfg_CatalogGemIcons = new int[12]; // Spell icon indices for gems
-		private static volatile bool _cfg_GemsAvailable = false; // Whether we have gem data
+
+		/// <summary>
+		///Data organized into Category, Sub Category, List of Spells.
+		///always get a pointer to these via the method GetCatalogByType
+		/// </summary>
 		private static SortedDictionary<string, SortedDictionary<string, List<E3Spell>>> _cfgSpells = new SortedDictionary<string, SortedDictionary<string, List<E3Spell>>>();
 		private static SortedDictionary<string, SortedDictionary<string, List<E3Spell>>> _cfgAAs = new SortedDictionary<string, SortedDictionary<string, List<E3Spell>>>();
 		private static SortedDictionary<string, SortedDictionary<string, List<E3Spell>>> _cfgDiscs = new SortedDictionary<string, SortedDictionary<string, List<E3Spell>>>();
@@ -142,159 +154,9 @@ namespace E3Core.UI.Windows
 			{"MinHpTotal", "MinHPTotal"},
 			{"MinHp", "MinHP"}
 		};
-		private static readonly Dictionary<string, string> _spellFlagTooltips = new Dictionary<string, string>(StringComparer.OrdinalIgnoreCase)
-		{
-			{"NoInterrupt", "Do not interrupt this cast for emergency heals, nowcasts, or queued commands once the bar starts."},
-			{"IgnoreStackRules", "Skip the Spell.StacksTarget check; cast even if EQ reports the effect will not land due to stacking."},
-			{"NoTarget", "Leave the current target untouched so the spell can fire on self or without a target lock."},
-			{"NoAggro", "Suppress this spell if the mob currently has you targeted to reduce aggro spikes."},
-			{"NoBurn", "Exclude this entry from any burn rotation (it will still cast during normal rotation)."},
-			{"Rotate", "Mark the spell so it participates in rotation-based casting helpers (e.g. /rotate)."},
-			{"NoMidSongCast", "Bards: block this action while a song is already channeling so twisting is not disrupted."},
-			{"GoM", "Only cast when a Gift of Mana-style proc is active, saving mana on expensive spells."},
-			{"AllowSpellSwap", "Allow E3 to temporarily mem-swap this spell into a gem slot when needed."},
-			{"NoEarlyRecast", "Do not recast early based on focus extensions; wait for the original duration to finish."},
-			{"NoStack", "Bypass E3's duplicate-stack suppression so this entry can cast even if another spell has already claimed the slot."},
-			{"Debug", "Enable detailed logging for this spell to the MQ chat/log window."},
-			{"IsDoT", "Treat the entry as a damage-over-time effect for pacing and reporting."},
-			{"IsDebuff", "Treat the entry as a debuff for prioritisation, timers, and UI grouping."}
-		};
-		private static readonly Dictionary<string, string> _configKeyDescriptionsBySection = new Dictionary<string, string>(StringComparer.OrdinalIgnoreCase)
-		{
-			{"Misc::Autofood", "Turns on eating the food and drink defined below"},
-			{"Misc::Food", "Define what you would like to eat and drink. This can be used to keep stat food from getting consumed. Food=Misty Thicket Picnic Drink=Fuzzlecutter Formula 5000 Note: Multiple Food and Drink can be defined"},
-			{"Misc::Drink", "Define what you would like to eat and drink. This can be used to keep stat food from getting consumed. Food=Misty Thicket Picnic Drink=Fuzzlecutter Formula 5000 Note: Multiple Food and Drink can be defined"},
-			{"Misc::End MedBreak in Combat(On/Off)", "When enabled you will cancel medding to assist in combat even if you are not at defined mana percentage."},
-			{"Misc::AutoMedBreak (On/Off)", "Will sit and med when below the defind Mana percentage in your general_settings.ini"},
-			{"Misc::Auto-Loot (On/Off)", "When enabled your character will autoloot once combat is over. Looting in combact can be enabled in general_settings.ini"},
-			{"Misc::Anchor (Char to Anchor to)", "When one of your characters is defined, it will stick to that character. They will go out fight and loot(if on) and then return to the define anchored character."},
-			{"Misc::Remove Torpor After Combat", "if you would like Torpor automatically removed once combat is over."},
-			{"Misc::Auto-Forage (On/Off)", "When enabled you will start foraging. You can leverage [Cursor Delete] section in this Ini to manage the junk loot"},
-			{"Misc::Dismount On Interrupt (On/Off)", "If you are on a mount and your priority requires you to inturrupt a spell for a higher priority spell(ex: Nuking -> Heal)."},
-			{"Misc::Delay in MS After CastWindow Drops For Spell Completion", "Will interject a delay before casting or moving again after you are done casting. Sometimes lag can create an issue where you/bot see itself as done casting and then moves and then your spell gets canceled. This creates milliseconds of day to make sure cast finished."},
-			{"Misc::If FD stay down (true/false)", "If you are Feign Death and an assist command is giving it will stand you up."},
-			{"Misc::Debuffs/Dots are visible", "Set to On if you have the Leadership AA that allows you to see your DoTs and Debuffs on the target's buff window. When set to Off, E3 will internally track timers to determine when to recast DoTs and Debuffs since they won't be visible."},
-			{"Assist Settings::Assist Type (Melee/AutoAttack/Ranged/AutoFire/Off)", "Defines how your character will behave in combat. Melee - Will melee, stick, and use all configuration. AutoAttack - Will melee and use configuration without automated movement/stick. Ranged - Will ranged attack, stick, and use configuration. AutoFire - Will ranged attack and use configuration without automated movement/stick. Off - Will use no movement, stick, or facing and just use configuration."},
-			{"Assist Settings::SmartTaunt(On/Off)", "Automatically try and taunt off non-tank PCs to maintain aggro control."},
-			{"Assist Settings::Melee Stick Point", "The position you want you character stand during combat. behind - Will stay behind the target and readjust position behindonce - Will move behind target and not readjust unless a new assist command is giving. Front - Will place you in front of mob facing it. Normally used by tanks. Pin - Will put on you on the side of the of target. Not in front and not behind. !front Will place you anywhere that isn't the front of the mob."},
-			{"Assist Settings::Delayed Strafe Enabled (On/Off)", "The amount of time your character will wait before readjusting to a moved target."},
-			{"Assist Settings::CommandOnAssist", "E3 will execute these values as a command each time an assist is called. Useful for triggering custom actions or macros when engaging targets."},
-			{"Assist Settings::Melee Distance", "The distance you wish to stand from the target when melee'ing. MaxMelee - Will calculate based off the target the furthest point to melee, between 25 - 33."},
-			{"Assist Settings::Ranged Distance", "When Ranged is specified as Assist Type will keep you the defined distance away from target. Clamped - Doesn't care about a defined distance as long as you are between 30 and 200."},
-			{"Assist Settings::Auto-Assist Engage Percent", "Note: This is dependent on you enabling in you general_settings.ini(Off by default) What this setting is stating that when the character of this configed Ini's target hits the specfied percentage it will automatically tell all other bots to assist. It is NOT stating that this character starts assisting at defined percentage. My personal(Metaljacx) recommendation for those new; not to use autoassist. Leverage /assistme /cleartargets"},
-			{"Assist Settings::Pet back off on Enrage (On/Off)", "When Enrage is detected, E3 will stop attacks."},
-			{"Assist Settings::Back off on Enrage (On/Off)", "When Enrage is detected, E3 will stop attacks."},
-			{"Melee Abilities::Ability", "The name of a melee ability, skill, or discipline"},
-			{"Buffs::Instant Buff", "Any buff that is self targetable that has a cast time less then .1 second. This will make sure the buff stays up inside and outside of combat. Great for fights where buffs get dispell to keep cheap buffs in first few slots."},
-			{"Buffs::Self Buff", "For any spell where you can target yourself and has a castime greater then Instant Buff allows. Will only cast outside of combat"},
-			{"Buffs::Bot Buff", "This is for targeting your other characters for buffs. Will only cast outside of combat. Example: bot buff=buffname/target Bot Buff=Spirit of Might/Metaljacx Bot Buff=Spirit of Might/Silverjacx"},
-			{"Buffs::Combat Buff", "If you just want the buff during combat Example: Combat Buff=Artifact of the Leopard - If casting self Combat Buff=Artifact of the Leopard/Metaljacx - If casting on another character."},
-			{"Buffs::Group Buff", "Despite it's name this has nothing to do with automating buffs for your 6 Man Group What this key value actually does it buff anyone who asks you for buffs with the pharse \"Buff Me\" or \"Buff my Pet\". This is a triggered non-automated event. Who can ask for buff an be more defined in you general_settings.ini Example: Group Buff=Blessing of Aegolism Note: You may need to do /tgb on for group buffs to apply to people outside your group"},
-			{"Buffs::Pet Buff", "This is for other characters on your bot network pets.Must be a part of your bot network. If your class has a pet that will be defined in the [pet section]. Example: Pet Buff=buffname/PetownerName Pet Buff=Artifact of the Leopard/Copperjacx"},
-			{"Buffs::Group Buff Request", "This is to request a buff from someone else who is running E3 and not part of bot network. Example: Group Buff Request=buffname/target Group Buff Request=Torpor Rk. V/Tophet/Ifs|TorporIf Tip: In order to not not spam and annoy your friends. Try using an If Statement. TorporIf=!${Bool[${Me.Song[Torpor Rk. V].ID}]} || ${Me.Song[Torpor Rk. V].Duration} <=9000"},
-			{"Buffs::Raid Buff Request", "This is to request a buff from someone else who is running E3 and not part of bot network. Example: Group Buff Request=buffname/target Group Buff Request=Torpor Rk. V/Tophet/Ifs|TorporIf Tip: In order to not not spam and annoy your friends. Try using an If Statement. TorporIf=!${Bool[${Me.Song[Torpor Rk. V].ID}]} || ${Me.Song[Torpor Rk. V].Duration} <=9000"},
-			{"Buffs::Stack Buff Request", "This is where you can request the same buff from multiple characters who can provide the same buff. This is request, First IN First Out(FIFO). Switches /StackRequetTargets| - All the characters who can cast buff. /StackRecastDelay| - How long to wait before asking for buff again. /StackCheckInterval| - How often to check if you still have buff /StackRequestItem| - If the buff requires an Item to be clicked"},
-			{"Buffs::Cast Aura(On/Off)", "This will automatically cast your class's highest level aura if your class has one"},
-			{"Nukes::Main", "Add the spells or items you'd like to use for your nukes here. E3 will cast them in order from top down."},
-			{"Nukes/Stuns/PBAE::Main", "Name of the spell you wish to cast. Example: main=Spear of Ro"},
-			{"Nukes/Stuns/PBAE::PBAE", "Point Blank Area of Effect(PBAE) is turned off by default to turn on or off use /pbaeon and /pbaeoff. Otherwise it is the same as Nuke just input your poe spell Example: PBAE=Spear of Ro Reminder: Priority matters(FIFO) for Advanced Settings AE Order and what a spell CD is."},
-			{"DoTs on Assist::Main", "The spells or items here will be automatically cast or used on each assist call."},
-			{"Debuffs::Debuff on Assist", "The spells or items here will be automatically cast or used on each assist call."},
-			{"DoTs on Command::Main", "These items/spells will be used/cast on command (/dot), allowing for additional control on when they should be utilized."},
-			{"Debuffs::Debuff on Command", "These items/spells will be used/cast on command (/debuff), allowing for additional control on when they should be utilized."},
-			{"Dots/Debuffs::Main", "Don't ask why they are built different. This applies to main= under [DoTs on Assist] and Debuff on Assist=. These will automatically fire off once they receive one of the assist commands."},
-			{"Dots/Debuffs::Debuff on Assist", "Don't ask why they are built different. This applies to main= under [DoTs on Assist] and Debuff on Assist=. These will automatically fire off once they receive one of the assist commands."},
-			{"Dots/Debuffs::Debuff on Command", "This applies to main= under [DoTs on Command] and Debuff on Command=. These are turned off by default, and allow for more control if you want. To toggle on and off use /dot to toggle for dots and /debuff for debuffs."},
-			{"Off Assist Spells::Debuff on Assist", "These spells will be cast on every mob in the XTargets list when the bot receives an assist command."},
-			{"Dispel::Main", "Spell or Item you wish to use to dispell your current target. The looks for any benificals spells on the target. Example: Main=Abashi's Rod of Disempowerment"},
-			{"Dispel::Ignore", "Buffs on the target you wish to ignore from trying to debuff. Each bufff you wish to ignore is a new ignore= Example: Ignore=Yaulp III Ignore=Spirit of Wolf"},
-			{"LifeSupport::Life Support", "This is top priority whe it comes to what to process first and it based on your characters health percentage. Use this for self heal, mitigation, imunnitity, or evasions. Example: Life Support=Hymn of the Last Stand/HealPct|30 Life Support=Shield of Notes/HealPct|40 Life Support=Cazel's Distillate of Celestial Healing/HealPct|80"},
-			{"Rez::AutoRez", "If turn on will Rez in and out of combat"},
-			{"Rez::Auto Rez Spells", "This is the spell to be used if AutoRez=On Example: Auto Rez Spells=Blessing of Resurrection"},
-			{"Rez::Rez Spells", "These are the spell that will be used for the slash commands. You can use multiple rez spells for ones with longer CD. Example: Rez Spells=Blessing of Resurrection Rez Spells=Resurrection"},
-			{"Burn::Quick Burn", "Will accept any spell or item and the concept is for \"short\" CD spells. Your preferace on what \"short\" is."},
-			{"Burn::Long Burn", "Will accept any spell or item and the concept is for \"Long\" CD spells. Your preferace on what \"long\" is."},
-			{"Burn::Full Burn", "The spells or items you want to use in a full send moment"},
-			{"Pets::Pet Spell", "The pet spell you wish to use for summoning"},
-			{"Pets::Pet Heal", "Spells you wish to use to heal you pet. Example: Pet Heal=Healing of Mikkily/Gem|1/HealPct|55"},
-			{"Pets::Pet Buff", "Buff you wish for your pet to have. You can configure multiple Pet Buff= Example: Pet Buff=Spirit of Irionu Pet Buff=Growl of the Beast"},
-			{"Pets::Pet Mend (Pct)", "What percentage you want you character to use Mend AA. Example: Pet Mend(Pct)=40 This will trigger at 40% of pet's health"},
-			{"Pets::Pet Taunt (On/Off)", "Set's whether your pet taunts or not."},
-			{"Pets::Pet Auto-Shrink (On/Off)", "Will auto shrink your pet when summon or illusioned."},
-			{"Pets::Pet Summon Combat (On/Off)", "If your pet dies during combat will prioritize summonging your pet based on what is defined in Pet Spell="},
-			{"Pets::Pet Buff Combat (On/Off)", "If a buff drops off during combat your bot will rebuff during combat. Good if you casting puma/leopard line spell in combat."},
-			{"Cures::AutoRadiant (On/Off)", "Default is On. Will leverage your Radiant Cure AA if defined"},
-			{"Cures::Cure", "Specify a cure to a particular debuff to a particular person (Higher Prio(2)) Example: Cure=Remove Greater Curse/Steeljacx/CheckFor|Feeblemind/Gem|12 Cure=Crusader's Touch/Metaljacx/CheckFor|Ikaav's Venom"},
-			{"Cures::CureAll", "Specify a cure to a particular debuff to anyone in group (Lower Prio(3)) Example: CureAll=Remove Greater Curse/CheckFor|Relinquish Spirit/Gem|12 CureAll=Remove Greater Curse/CheckFor|Torment of Body/Gem|12"},
-			{"Cures::RadiantCure", "Specify a type of debuff to use radiant cure if at least this many people have it. (Highest Prio(1)) Example: RadiantCure=Fulmination/MinSick|1/Zone|txevu RadiantCure=Fabled Destruction/MinSick|1/Zone|Unrest"},
-			{"Cures::CurseCounters", "Cath All (Lowest Prio (4)) Use spell(s) to try and cure if you see this type of debuff counter on a toon in group. Example: CurseCounters=Remove Greater Curse PoisonCounters=Blood of Nadox DiseaseCounters=Blood of Nadox"},
-			{"Cures::PoisonCounters", "Cath All (Lowest Prio (4)) Use spell(s) to try and cure if you see this type of debuff counter on a toon in group. Example: CurseCounters=Remove Greater Curse PoisonCounters=Blood of Nadox DiseaseCounters=Blood of Nadox"},
-			{"Cures::DiseaseCounters", "Cath All (Lowest Prio (4)) Use spell(s) to try and cure if you see this type of debuff counter on a toon in group. Example: CurseCounters=Remove Greater Curse PoisonCounters=Blood of Nadox DiseaseCounters=Blood of Nadox"},
-			{"Cures::CorruptedCounters", "Cath All (Lowest Prio (4)) Use spell(s) to try and cure if you see this type of debuff counter on a toon in group. Example: CurseCounters=Remove Greater Curse PoisonCounters=Blood of Nadox DiseaseCounters=Blood of Nadox"},
-			{"Cures::CurseCountersIgnore", "Specify debuff names with curse counters that should NOT be cured automatically. This is for catch all counter curing only. Example: CurseCountersIgnore=Aura of Destruction"},
-			{"Cures::PoisonCountersIgnore", "Specify debuff names with poison counters that should NOT be cured automatically. This is for catch all counter curing only. Example: PoisonCountersIgnore=Aura of Destruction"},
-			{"Cures::DiseaseCountersIgnore", "Specify debuff names with disease counters that should NOT be cured automatically. This is for catch all counter curing only. Example: DiseaseCountersIgnore=Aura of Destruction"},
-			{"Cures::CorruptedCountersIgnore", "Specify debuff names with corruption counters that should NOT be cured automatically. This is for catch all counter curing only. Example: CorruptedCountersIgnore=Aura of Destruction"},
-			{"Heals::Who to Heal", "Default: Tanks/ImportantBots/XTargets/Pets/Party Defines which key you would like to be heal. This allows for quick on and off without having to comment lines out."},
-			{"Heals::Who to HoT", "Same as Who to Heal= just for Heal Over Time Spell= define key Example: Who to HoT=Tanks"},
-			{"Heals::Tank", "Define who your tank/tanks will be. The bots define here will recieve the highest priority for heals. Must be a part of your bot network. Example: Tank=Metaljacx"},
-			{"Heals::Tank Heal", "Heal spell/item/aa you wish to use on your tanks. Recommend you order in the order from lowest /healPct|10 to the highest /HealPct|90. One exception you might see is for the spells like Reptile. Example: Tank Heal=Artifact of the Reptile/HealPct|100/CheckFor|Skin of the Reptile Tank Heal=Aged Dragon Spine Staff/HealPct|50/NoInterrupt Tank Heal=Mask of the Ancients/HealPct|60/NoInterrupt Tank Heal=Chlorotrope/Gem|1/HealPct|85/NoInterrupt"},
-			{"Heals::Important Bot", "Define which bots you would like to pay close attention too just behind the tank priority. In essance \"second priority\". Alot use for other healers, offtanks, or high threat classes. Must be a part of your bot network. Example: Important Bot=Orihime Important Bot=Rukia Important Bot=Mayuri"},
-			{"Heals::Important Heal", "Heal spell/item/aa you wish to use on your important bots. Example: Important Heal=Chlorotrope/Gem|1/HealPct|65"},
-			{"Heals::Group Heal", "This is not based on individual group members, but on the average missing health of the group. There is a minimal number required to be injured which can be control with next explain setting. Example: Group Heal=Wave of Marr/Gem|10/HealPct|20/NoInterrupt Group Heal=Wave of Trushar/HealPct|40/NoInterrupt Group Heal=Healing Wave of Prexus/HealPct|65 Group Heal=Wave of Life/HealPct|70"},
-			{"Heals::Number Of Injured Members For Group Heal", "Default: 3 This define how many people need to be injured before triggering average Group heal."},
-			{"Heals::Party Heal", "This heals your individual party members and heals based on your configured. Wether they are part of your bot network or not /HealPct tag. Heals outside your bot network. Example: Party Heal=Touch of Piety/HealPct|60"},
-			{"Heals::Heal Over Time Spell", "The HoT spell/item/aa you wish to use for the groups defined in Who to HoT= Must be a part of your bot network. Example: Heal Over Time Spell=Breath of Trushar/Gem|9/HealPct|95"},
-			{"Heals::All Heal", "Heals all bots part of you network whether bots are in your group or not. Example: All Heal=Yoppa's Mending/Gem|1/HealPct|65"},
-			{"Heals::XTarget Heal", "How to heal individuals not part of your bot network and in your group. You will need to assign each player you want to heal to your xTarget Window. Heals outside your bot network. Example: XTarget=Chlorotrope/Gem|1/HealPct|65"},
-			{"Heals::Pet Owner", "The bot in your network which pet you would like to heal. Example: Pet Owner=Mayuri"},
-			{"Heals::Pet Heal", "Heal spell/item/aa you wish to use on pets. Example: XTarget=Chlorotrope/Gem|1/HealPct|55"},
-			{"Heals::Emergency Heal", "Heal spell/item/aa that will be used immediatly (cancels other casts) when health drops below the threshold for the specified target. Example: Emergy Heal=Burst of Life/Uguk/HealPct|40"},
-			{"Heals::Emergency Group Heal", "Heal spell/item/aa that will be used immediatly (cancels other casts) when health of any character drops below the threshold. Example: Emergy Group Heal=Divine Arbitration/HealPct|40"},
-			{"Bando Buff::Enabled", "Default: On Turn on and off"},
-			{"Bando Buff::BuffName", "The Buff Name on yourself you wish to monitor"},
-			{"Bando Buff::DebuffName", "The Debuff Name on target you wish to monitor"},
-			{"Bando Buff::PrimaryWithBuff", "The items you wish to have in your your equipment slots, with and without buff. These weapons need to match with/without your bandolier setup"},
-			{"Bando Buff::SecondaryWithBuff", "The items you wish to have in your your equipment slots, with and without buff. These weapons need to match with/without your bandolier setup"},
-			{"Bando Buff::PrimaryWithoutBuff", "The items you wish to have in your your equipment slots, with and without buff. These weapons need to match with/without your bandolier setup"},
-			{"Bando Buff::SecondaryWithoutBuff", "The items you wish to have in your your equipment slots, with and without buff. These weapons need to match with/without your bandolier setup"},
-			{"Bando Buff::BandoNameWithBuff", "The name of the bandolier when you have buff"},
-			{"Bando Buff::BandoNameWithoutBuff", "The name of the bandolier when you don't have buff"},
-			{"Bando Buff::BandoNameWithoutDeBuff", "When the mob doesn't have debuff. Should move back to BandoNameWithBuff= when debuff detected and you have your buff on"},
-			{"Events::_EventName_", "Allows you to define arbitrary commands for your bot to perform. These commands must be triggered by a /BeforeEvent or /AfterEvent conditional, or by a line in the [EventLoop] section. You make up your own _EventName_ on the left side of the equal sign, and then on the right side you write the command that will be performed when the event is triggered. The command will be executed whenever the event is triggered by a /BeforeEvent or /AfterEvent conditional, or by a line in the [EventLoop] section. Example: [Life Support] Life Support=Divine Barrier/HealPct|20/Gem|7/AfterEvent|TellGroupIUsedDivineBarrier [Events] TellGroupIUsedDivineBarrier=/g I just used Divine Barrier!"},
-			{"EventLoop::_EventName_", "Allows you to define conditions that will trigger lines from the [Events] section to execute. Lines in the [EventLoop] section are evaluated about once every second, and whenever one of the lines evaluates to True, its associated event is executed. On the left side of the equal sign you put the name of an event that's defined in your [Events] section, and on the right side you put the condition that you want to trigger the event and execute its command. Example: [Events] DropInvisCombat=/makemevisible [EventLoop] DropInvisCombat=(${Me.CombatState.Equal[Combat]} && ${Me.Invis})"},
-			{"AutoMed::Override Old Settings and use This(On/Off)", "Use the AutoMed section instead of the legacy med break settings."},
-			{"AutoMed::PctMana", "Minimum mana percent that will trigger the automatic med break routine."},
-			{"AutoMed::PctStam", "Minimum endurance percent that will trigger the automatic med break routine."},
-			{"AutoMed::PctHealth", "Minimum health percent that will trigger the automatic med break routine."},
-			{"Heals::AutoFood", "Allow the heal routine to eat/drink automatically when hunger or thirst is low."},
-			{"Heals::Food", "Food item used by the healer when AutoFood is enabled."},
-			{"Heals::Drink", "Drink item used by the healer when AutoFood is enabled."},
-			{"Buffs::AutoBuff (On/Off)", "Toggle automatic buffing for the entries configured in this section."},
-			{"Buffs::Check Interval", "Delay between automatic buff checks (supports s/m suffix)."},
-			{"Assist::Auto-Assist (On/Off)", "Automatically assist the designated main assist when the routine is active."},
-			{"Assist::Assist Target", "Name or alias of the character that this toon should assist."},
-			{"Assist::PctAggro", "Maximum aggro percent allowed before backing off when assisting."},
-			{"Burn::Auto-Burn (On/Off)", "Enable burn routines to trigger discs and abilities based on configured criteria."},
-			{"Burn::Trigger", "Condition or command that activates the burn routine (e.g. /burn)."},
-		};
-		private static readonly Dictionary<string, string> _configKeyDescriptionsByKey = new Dictionary<string, string>(StringComparer.OrdinalIgnoreCase)
-		{
-			{"Autofood", "Turns on eating the food and drink defined below."},
-			{"Food", "Define what you would like to eat and drink. This can be used to keep stat food from getting consumed."},
-			{"Drink", "Define what you would like to eat and drink. This can be used to keep stat food from getting consumed."},
-			{"Auto-Loot (On/Off)", "When enabled your character will autoloot once combat is over. Looting in combat can be enabled in general_settings.ini."},
-			{"AutoMezSong", "Song that the bard should use for automatic mezzing."},
-			{"AutoMezSongDuration in seconds", "Expected duration of the auto-mez song, used to schedule recasts."},
-			{"Evac Spell", "Emergency evac spell or AA used when evac routines trigger."},
-			{"Channel", "Chat channel name that this character should join on login."},
-			{"PctMana", "Mana percent threshold used by this routine."},
-			{"PctAggro", "Aggro percent threshold used by this routine."},
-			{"Delay", "Delay value controlling timing for this entry (supports values like 1000, 10s, or 1m)."},
-			{"RecastDelay", "Minimum time between casts for this entry (supports values like 1000, 10s, or 1m)."},
-			{"GiveUpTimer", "Milliseconds to wait before giving up on the action if it has not succeeded."},
-			{"Gem", "Spell gem number (1-12) that should be used for this spell."},
-		};
+		
+		
+	
 		private static readonly string[] _spellCastTypeOptions = new[] { "Spell", "AA", "Disc", "Ability", "Item", "None" };
 
 
@@ -3580,12 +3442,12 @@ namespace E3Core.UI.Windows
 			if (string.IsNullOrWhiteSpace(key)) return string.Empty;
 
 			string composite = string.IsNullOrEmpty(section) ? key : $"{section}::{key}";
-			if (_configKeyDescriptionsBySection.TryGetValue(composite, out var desc) && !string.IsNullOrWhiteSpace(desc))
+			if (CharacterSettings.ConfigKeyDescriptionsBySection.TryGetValue(composite, out var desc) && !string.IsNullOrWhiteSpace(desc))
 			{
 				return desc;
 			}
 
-			if (_configKeyDescriptionsByKey.TryGetValue(key, out var generic) && !string.IsNullOrWhiteSpace(generic))
+			if (CharacterSettings.ConfigKeyDescriptionsByKey.TryGetValue(key, out var generic) && !string.IsNullOrWhiteSpace(generic))
 			{
 				return generic;
 			}
@@ -3922,7 +3784,7 @@ namespace E3Core.UI.Windows
 			{
 				bool value = imgui_Checkbox($"{label}##spell_flag_{flag}_{idBase}", state.HasFlag(flag));
 				state.SetFlag(flag, value);
-				if (_spellFlagTooltips.TryGetValue(flag, out var tooltip) && !string.IsNullOrWhiteSpace(tooltip))
+				if (Spell.SpellFlagTooltips.TryGetValue(flag, out var tooltip) && !string.IsNullOrWhiteSpace(tooltip))
 				{
 					if (imgui_IsItemHovered())
 					{

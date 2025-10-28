@@ -1484,7 +1484,23 @@ namespace E3Core.Data
 			return returnValue;
 
 		}
-
+		public static readonly Dictionary<string, string> SpellFlagTooltips = new Dictionary<string, string>(StringComparer.OrdinalIgnoreCase)
+		{
+			{"NoInterrupt", "Do not interrupt this cast for emergency heals, nowcasts, or queued commands once the bar starts."},
+			{"IgnoreStackRules", "Skip the Spell.StacksTarget check; cast even if EQ reports the effect will not land due to stacking."},
+			{"NoTarget", "Leave the current target untouched so the spell can fire on self or without a target lock."},
+			{"NoAggro", "Suppress this spell if the mob currently has you targeted to reduce aggro spikes."},
+			{"NoBurn", "Exclude this entry from any burn rotation (it will still cast during normal rotation)."},
+			{"Rotate", "Mark the spell so it participates in rotation-based casting helpers (e.g. /rotate)."},
+			{"NoMidSongCast", "Bards: block this action while a song is already channeling so twisting is not disrupted."},
+			{"GoM", "Only cast when a Gift of Mana-style proc is active, saving mana on expensive spells."},
+			{"AllowSpellSwap", "Allow E3 to temporarily mem-swap this spell into a gem slot when needed."},
+			{"NoEarlyRecast", "Do not recast early based on focus extensions; wait for the original duration to finish."},
+			{"NoStack", "Bypass E3's duplicate-stack suppression so this entry can cast even if another spell has already claimed the slot."},
+			{"Debug", "Enable detailed logging for this spell to the MQ chat/log window."},
+			{"IsDoT", "Treat the entry as a damage-over-time effect for pacing and reporting."},
+			{"IsDebuff", "Treat the entry as a debuff for prioritisation, timers, and UI grouping."}
+		};
 		public override string ToString()
         {
             StringBuilder sb = new StringBuilder();
