@@ -1794,6 +1794,18 @@ namespace E3Core.Processors
 			{
 				return false;
 			}
+			if (spell.MinAggro > 0 || spell.MaxAggro > 0)
+			{
+				Int32 pctAggro = MQ.Query<Int32>("${Me.PctAggro}");
+				if (spell.MinAggro > 0 && pctAggro < spell.MinAggro)
+				{
+					return false;
+				}
+				if (spell.MaxAggro > 0 && pctAggro >= spell.MaxAggro)
+				{
+					return false;
+				}
+			}
 			//if your stunned nothing is ready
 			if (MQ.Query<bool>("${Me.Stunned}"))
 			{

@@ -347,6 +347,14 @@ namespace E3Core.Data
                     {
                         PctAggro = GetArgument<Int32>(value);
                     }
+                    else if (value.StartsWith("MinAggro|", StringComparison.OrdinalIgnoreCase))
+                    {
+                        MinAggro = GetArgument<Int32>(value);
+                    }
+                    else if (value.StartsWith("MaxAggro|", StringComparison.OrdinalIgnoreCase))
+                    {
+                        MaxAggro = GetArgument<Int32>(value);
+                    }
                     else if (value.StartsWith("Zone|", StringComparison.OrdinalIgnoreCase))
                     {
                         Zone = GetArgument<String>(value);
@@ -1056,6 +1064,8 @@ namespace E3Core.Data
 		public Boolean GiftOfMana;
         public Int32 SpellID;
         public Int32 PctAggro;
+        public Int32 MinAggro;
+        public Int32 MaxAggro;
         public String Zone = "All";
         private const Int32 MinSickDefault = 2;
         public Int32 MinSick = MinSickDefault;
@@ -1173,6 +1183,8 @@ namespace E3Core.Data
 			r.NoStack = source.NoStack;
 			r.NoTarget = source.NoTarget;
 			r.PctAggro = source.PctAggro;
+			r.MinAggro = source.MinAggro;
+			r.MaxAggro = source.MaxAggro;
 			r.Reagent = source.Reagent;
 			r.ReagentOutOfStock = source.ReagentOutOfStock;
 			r.RecastTime = source.RecastTime;
@@ -1337,6 +1349,8 @@ namespace E3Core.Data
             r.NoStack = this.NoStack;
             r.NoTarget = this.NoTarget;
             r.PctAggro = this.PctAggro;
+            r.MinAggro = this.MinAggro;
+            r.MaxAggro = this.MaxAggro;
             r.Reagent = this.Reagent;
             r.ReagentOutOfStock = this.ReagentOutOfStock;
             r.RecastTime= this.RecastTime;
@@ -1393,6 +1407,8 @@ namespace E3Core.Data
 			d.BeforeSpell = BeforeSpell;
 			d.MinMana = MinMana;
 			d.MaxMana = MaxMana;
+			d.MinAggro = MinAggro;
+			d.MaxAggro = MaxAggro;
 			d.IgnoreStackRules = IgnoreStackRules;
 			d.HealthMax = HealthMax;
 			d.MinDurationBeforeRecast = MinDurationBeforeRecast;
@@ -1445,6 +1461,8 @@ namespace E3Core.Data
 			string t_Enabled = (Enabled == true) ? String.Empty : $"/Disabled";
 			string t_CastTarget = (String.IsNullOrWhiteSpace(this.CastTarget) || this.IsBuff==false) ? String.Empty : $"/{CastTarget}";
 			string t_PctAggro = (PctAggro == 0) ? String.Empty : $"/PctAggro|{PctAggro}";
+			string t_MinAggro = (MinAggro == 0) ? String.Empty : $"/MinAggro|{MinAggro}";
+			string t_MaxAggro = (MaxAggro == 0) ? String.Empty : $"/MaxAggro|{MaxAggro}";
             string t_Delay = (Delay == 0) ? String.Empty : $"/Delay|{Delay}s";
             string t_RecastDelay = (RecastDelay == 0) ? String.Empty : $"/RecastDelay|{RecastDelay}s";
 			string t_NoTarget = NoTarget == false ? String.Empty : $"/NoTarget";
@@ -1462,7 +1480,7 @@ namespace E3Core.Data
 			string t_StackCheckInterval = StackIntervalCheck == _stackIntervalCheckDefault ? String.Empty : $"/StackCheckInterval|{StackIntervalCheck/10000}";
 			string t_StackRecastDelay = StackRecastDelay == 0 ? String.Empty : $"/StackRecastDelay|{StackRecastDelay/1000}";
 
-			string returnValue = $"{CastName}{t_CastTarget}{t_GemNumber}{t_Ifs}{t_checkFor}{t_CastIF}{t_healPct}{t_healthMax}{t_noInterrupt}{t_Zone}{t_MinSick}{t_BeforeSpell}{t_AfterSpell}{t_BeforeEvent}{t_AfterEvent}{t_minMana}{t_maxMana}{t_MinEnd}{t_ignoreStackRules}{t_MinDurationBeforeRecast}{t_MaxTries}{t_Reagent}{t_CastTypeOverride}{t_PctAggro}{t_Delay}{t_RecastDelay}{t_NoTarget}{t_NoAggro}{t_AfterEventDelay}{t_AfterSpellDelay}{t_BeforeEventDelay}{t_BeforeSpellDelay}{t_AfterCastDelay}{t_AfterCastCompletedDelay}{t_SongRefreshTime}{t_StackRequestItem}{t_StackRequestTargets}{t_StackCheckInterval}{t_StackRecastDelay}{t_excludeClasses}{t_excludeNames}{t_Enabled}";
+			string returnValue = $"{CastName}{t_CastTarget}{t_GemNumber}{t_Ifs}{t_checkFor}{t_CastIF}{t_healPct}{t_healthMax}{t_noInterrupt}{t_Zone}{t_MinSick}{t_BeforeSpell}{t_AfterSpell}{t_BeforeEvent}{t_AfterEvent}{t_minMana}{t_maxMana}{t_MinEnd}{t_ignoreStackRules}{t_MinDurationBeforeRecast}{t_MaxTries}{t_Reagent}{t_CastTypeOverride}{t_PctAggro}{t_MinAggro}{t_MaxAggro}{t_Delay}{t_RecastDelay}{t_NoTarget}{t_NoAggro}{t_AfterEventDelay}{t_AfterSpellDelay}{t_BeforeEventDelay}{t_BeforeSpellDelay}{t_AfterCastDelay}{t_AfterCastCompletedDelay}{t_SongRefreshTime}{t_StackRequestItem}{t_StackRequestTargets}{t_StackCheckInterval}{t_StackRecastDelay}{t_excludeClasses}{t_excludeNames}{t_Enabled}";
 			return returnValue;
 
 		}

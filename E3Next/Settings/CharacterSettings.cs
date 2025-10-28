@@ -161,8 +161,8 @@ namespace E3Core.Settings
 		[INI_Section("Bard", "Auto-Sonata (On/Off)")]
 		public bool Bard_AutoSonata = true;
 
-		[INI_Section("Assist Settings", "Assist Type (Melee/Ranged/Off)")]
-		public string Assist_Type = string.Empty;
+	[INI_Section("Assist Settings", "Assist Type (Melee/AutoAttack/Ranged/AutoFire/Off)")]
+	public string Assist_Type = string.Empty;
 		[INI_Section("Assist Settings", "Melee Stick Point")]
 		public string Assist_MeleeStickPoint = string.Empty;
 		[INI_Section("Assist Settings", "Taunt(On/Off)")]

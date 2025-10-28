@@ -45,8 +45,13 @@ namespace E3Core.Processors
 			//did someone send us a command? lets process it. 
 			ProcessExternalCommands();
 
-			//update all states, important.
-			StateUpdates();
+            // apply any UI-driven changes safely on the main loop
+            ApplyUIQueuedActions();
+            // run any background work requested by UI (e.g., loading catalogs)
+            try { MonoCore.Core.ProcessBackgroundWork(); } catch { }
+
+            //update all states, important.
+            StateUpdates();
 			RefreshCaches();
 
 			//don't eat stat food even if paused!
@@ -86,8 +91,20 @@ namespace E3Core.Processors
             //final cleanup/actions after the main loop has done processing
             FinalCalls();
         }
-	
-		private static void BeforeAdvancedSettingsCalls()
+
+        private static void ApplyUIQueuedActions()
+        {
+            Action act;
+            int guard = 0;
+            while (MonoCore.Core.UIApplyQueue.TryDequeue(out act))
+            {
+                try { act?.Invoke(); }
+                catch (Exception ex) { MQ.Write($"UI apply error: {ex.Message}"); }
+                if (++guard > 50) break; // prevent starvation
+            }
+        }
+
+        private static void BeforeAdvancedSettingsCalls()
 		{
 			if (PctHPs < 98)
 			{
@@ -350,6 +367,7 @@ namespace E3Core.Processors
 			RouterServer.ProcessRequests();//process any tlo request from the UI, or anything really.
 			//process any commands we need to process from the UI
 			PubClient.ProcessRequests();
+			
 		}
 		public static void StateUpdates()
         {
