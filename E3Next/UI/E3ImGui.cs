@@ -702,12 +702,14 @@ namespace MonoCore
         /// </summary>
         public static void OnUpdateImGui()
         {
-            foreach(var pair in RegisteredWindows)
+            if(Core.IsProcessing)
             {
-                pair.Value.Invoke();
-            }
-
-        }
+				foreach (var pair in RegisteredWindows)
+				{
+					pair.Value.Invoke();
+				}
+			}
+		}
         public static ConcurrentDictionary<string, Action> RegisteredWindows = new ConcurrentDictionary<string, Action>();
 
         //super simple registered method. no unregister, will add one if needed later.

@@ -1352,11 +1352,11 @@ namespace E3Core.UI.Windows
 				parser.WriteFile(selectedPath, pd);
 				_cfg_Dirty = false;
 				_nextIniRefreshAtMs = 0;
-				E3.MQ.Write($"Saved changes to {Path.GetFileName(selectedPath)}");
+				_log.Write($"Saved changes to {Path.GetFileName(selectedPath)}");
 			}
 			catch (Exception ex)
 			{
-				E3.MQ.Write($"Failed to save: {ex.Message}");
+				_log.Write($"Failed to save: {ex.Message}");
 			}
 		}
 
@@ -4111,7 +4111,7 @@ namespace E3Core.UI.Windows
 			var section = iniData.Sections.GetSectionData(state.Section ?? string.Empty);
 			if (section == null)
 			{
-				E3.MQ.Write($"Section '{state.Section}' not found; unable to update value.");
+				_log.Write($"Section '{state.Section}' not found; unable to update value.");
 				InvalidateSpellEditState();
 				return;
 			}
@@ -4119,7 +4119,7 @@ namespace E3Core.UI.Windows
 			var keyData = section.Keys.GetKeyData(state.Key ?? string.Empty);
 			if (keyData == null)
 			{
-				E3.MQ.Write($"Key '{state.Key}' not found in section '[{state.Section}]'.");
+				_log.Write($"Key '{state.Key}' not found in section '[{state.Section}]'.");
 				InvalidateSpellEditState();
 				return;
 			}
@@ -4127,7 +4127,7 @@ namespace E3Core.UI.Windows
 			var values = GetValues(keyData);
 			if (state.ValueIndex < 0 || state.ValueIndex >= values.Count)
 			{
-				E3.MQ.Write("Value index out of range; refresh the selection and try again.");
+				_log.Write("Value index out of range; refresh the selection and try again.");
 				InvalidateSpellEditState();
 				return;
 			}
@@ -4148,7 +4148,7 @@ namespace E3Core.UI.Windows
 			ClearSpellEditFields(_cfgSpellEditState);
 			_cfgSpellEditSignature = string.Empty;
 
-			E3.MQ.Write($"Updated [{state.Section}] {state.Key} entry #{state.ValueIndex + 1}.");
+			_log.Write($"Updated [{state.Section}] {state.Key} entry #{state.ValueIndex + 1}.");
 		}
 
 		private static void ResetSpellValueEditor(SpellValueEditState state)
