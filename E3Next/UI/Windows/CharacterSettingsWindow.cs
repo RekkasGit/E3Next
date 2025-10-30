@@ -301,10 +301,14 @@ namespace E3Core.UI.Windows
 					// Apply current theme
 					E3ImGUI.PushCurrentTheme();
 					imgui_Begin(_e3ImGuiWindow, (int)ImGuiWindowFlags.ImGuiWindowFlags_None);
+					try
+					{
 
 					// Header bar: version text on left, buttons on right
 					if (imgui_BeginTable("HeaderBar", 2, (int)ImGuiTableFlags.ImGuiTableFlags_SizingStretchProp, imgui_GetContentRegionAvailX()))
 					{
+						try
+						{
 						imgui_TableSetupColumn("Left", 0, 0.70f);
 						imgui_TableSetupColumn("Right", 0, 0.30f);
 						imgui_TableNextRow();
@@ -340,8 +344,11 @@ namespace E3Core.UI.Windows
 						{
 							imgui_Begin_OpenFlagSet(_e3ImGuiWindow, false);
 						}
-
-						imgui_EndTable();
+						}
+						finally
+						{
+							imgui_EndTable();
+						}
 					}
 
 					imgui_Separator();
@@ -394,9 +401,12 @@ namespace E3Core.UI.Windows
 					{
 						RenderDonateModal();
 					}
-
-					imgui_End();
-					PopCurrentTheme();
+					}
+					finally
+					{
+						imgui_End();
+						PopCurrentTheme();
+					}
 				}
 			}
 			catch (Exception ex)
@@ -470,6 +480,8 @@ namespace E3Core.UI.Windows
 					 ImGuiTableFlags.ImGuiTableFlags_NoPadOuterX),
 				imgui_GetContentRegionAvailX()))
 			{
+				try
+				{
 				// Set up columns with initial proportions
 				imgui_TableSetupColumn("Sections & Keys", (int)ImGuiTableColumnFlags.ImGuiTableColumnFlags_WidthStretch, 0.35f);
 				imgui_TableSetupColumn("Values", (int)ImGuiTableColumnFlags.ImGuiTableColumnFlags_WidthStretch, 0.35f);
@@ -483,10 +495,14 @@ namespace E3Core.UI.Windows
 				{
 					if (imgui_BeginChild("SectionsTree", 0, Math.Max(200f, availY * 0.75f), false))
 					{
+						try
+						{
 						// Use a 1-column table with RowBg to get built-in alternating backgrounds
 						int tableFlags = (int)(ImGuiTableFlags.ImGuiTableFlags_RowBg | ImGuiTableFlags.ImGuiTableFlags_SizingStretchProp);
 						if (imgui_BeginTable("SectionsTreeTable", 1, tableFlags, imgui_GetContentRegionAvailX()))
 						{
+							try
+							{
 							imgui_TableSetupColumn("Section", 0, 0);
 							foreach (var sec in _cfgSectionsOrdered)
 							{
@@ -605,10 +621,18 @@ namespace E3Core.UI.Windows
 									imgui_TreePop();
 								}
 							}
-							imgui_EndTable();
+							}
+							finally
+							{
+								imgui_EndTable();
+							}
+						}
+						}
+						finally
+						{
+							imgui_EndChild();
 						}
 					}
-					imgui_EndChild();
 				}
 
 				// Column 2: Values
@@ -618,6 +642,8 @@ namespace E3Core.UI.Windows
 					//_log.Write($"Rendering with selected section {selectedSection.SectionName} with keys count:{selectedSection.Keys.Count} with pd:");
 					if (imgui_BeginChild("ValuesPanel", 0, Math.Max(200f, availY * 0.75f), false))
 					{
+						try
+						{
 						if (selectedSection == null)
 						{
 							imgui_Text("No section selected.");
@@ -712,8 +738,12 @@ namespace E3Core.UI.Windows
 						{
 							RenderSelectedKeyValues(selectedSection);
 						}
+						}
+						finally
+						{
+							imgui_EndChild();
+						}
 					}
-					imgui_EndChild();
 				}
 
 				// Column 3: Tools and Info
@@ -722,12 +752,21 @@ namespace E3Core.UI.Windows
 				{
 					if (imgui_BeginChild("ToolsPanel", 0, Math.Max(200f, availY * 0.75f), false))
 					{
-						RenderConfigurationTools(activeSection);
+						try
+						{
+							RenderConfigurationTools(activeSection);
+						}
+						finally
+						{
+							imgui_EndChild();
+						}
 					}
-					imgui_EndChild();
 				}
-
-				imgui_EndTable();
+				}
+				finally
+				{
+					imgui_EndTable();
+				}
 			}
 
 			// Ensure popups/modals render even when the tools column is hidden
@@ -765,6 +804,8 @@ namespace E3Core.UI.Windows
 				// Use horizontal table for gem display
 				if (imgui_BeginTable("CatalogGems", 12, (int)(ImGuiTableFlags.ImGuiTableFlags_Borders | ImGuiTableFlags.ImGuiTableFlags_SizingStretchSame), imgui_GetContentRegionAvailX()))
 				{
+					try
+					{
 					// Column headers
 					for (int gem = 1; gem <= 12; gem++)
 					{
@@ -866,8 +907,11 @@ namespace E3Core.UI.Windows
 							imgui_TextColored(0.5f, 0.5f, 0.5f, 1.0f, "(empty)");
 						}
 					}
-
-					imgui_EndTable();
+					}
+					finally
+					{
+						imgui_EndTable();
+					}
 				}
 			}
 			catch (Exception ex)
