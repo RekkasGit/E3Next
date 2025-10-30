@@ -237,10 +237,11 @@ namespace E3Core.UI.Windows
 		private static bool _cfg_Inited = false;
 
 		#endregion
-
+		static string _versionInfo = String.Empty;
 		[SubSystemInit]
 		public static void CharacterSettingsWindow_Init()
 		{
+			_versionInfo = $"nE³xt v{Setup.E3Version} | Build {Setup.BuildDate}";
 			// Toggle the in-game ImGui config window
 			EventProcessor.RegisterCommand("/e3imgui", (x) =>
 			{
@@ -288,6 +289,8 @@ namespace E3Core.UI.Windows
 		///NOTE!!!! During the rendering process, do NOT release control back to C++ as this will leave an incomplete render and ImGUI will not be happy.
 		///So for any MQ.Query be sure to use the DelayPossible flag to false.
 		/// </summary>
+		/// 
+		
 		private static void RenderIMGUI()
 		{
 			try
@@ -337,7 +340,7 @@ namespace E3Core.UI.Windows
 
 						// Left: version/build text
 						imgui_TableNextColumn();
-						imgui_TextColored(0.95f, 0.85f, 0.35f, 1.0f, $"nE³xt v{E3Core.Processors.Setup._e3Version} | Build {E3Core.Processors.Setup._buildDate}");
+						imgui_TextColored(0.95f, 0.85f, 0.35f, 1.0f, _versionInfo);
 
 						// Right: buttons aligned to the right within the cell
 						imgui_TableNextColumn();
@@ -2280,9 +2283,19 @@ namespace E3Core.UI.Windows
 				return string.Equals(E3.CurrentClass.ToString(), "Bard", StringComparison.OrdinalIgnoreCase);
 			}
 		}
+		private static HashSet<string> _onlineToonsCache = new HashSet<string>(StringComparer.OrdinalIgnoreCase);
+		private static Int64 _onlineToonsLastUpdate = 0;
+		private static Int64 _onlineToonsLastsUpdateInterval = 3000;
 		private static HashSet<string> GetOnlineToonNames()
 		{
-			var set = new HashSet<string>(StringComparer.OrdinalIgnoreCase);
+
+			if(!e3util.ShouldCheck(ref _onlineToonsLastUpdate, _onlineToonsLastsUpdateInterval))
+			{
+				return _onlineToonsCache;
+			}
+
+			_onlineToonsCache.Clear();
+
 			try
 			{
 				var connected = E3Core.Server.NetMQServer.SharedDataClient?.UsersConnectedTo?.Keys;
@@ -2290,14 +2303,16 @@ namespace E3Core.UI.Windows
 				{
 					foreach (var name in connected)
 					{
-						if (!string.IsNullOrEmpty(name)) set.Add(name);
+						if (!string.IsNullOrEmpty(name)) _onlineToonsCache.Add(name);
 					}
 				}
 			}
 			catch { }
 
-			if (!string.IsNullOrEmpty(E3.CurrentName)) set.Add(E3.CurrentName);
-			return set;
+			if (!string.IsNullOrEmpty(E3.CurrentName)) _onlineToonsCache.Add(E3.CurrentName);
+
+			
+			return _onlineToonsCache;
 		}
 		private static bool IsIniForOnlineToon(string iniPath, HashSet<string> onlineToons)
 		{
