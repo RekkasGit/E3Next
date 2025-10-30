@@ -747,24 +747,28 @@ namespace E3Core.UI.Windows
 							&& string.IsNullOrEmpty(_cfgSelectedKey))
 						{
 							imgui_TextColored(0.8f, 0.9f, 0.95f, 1.0f, _cfgAddInlineSection.Equals("Ifs", StringComparison.OrdinalIgnoreCase) ? "Add New If" : "Add New Burn Key");
-							imgui_Text("Name:");
-							imgui_SameLine();
-							imgui_SetNextItemWidth(200f);
-							if (imgui_InputText("##inline_new_key", _cfgNewKeyBuffer))
-							{
-								_cfgNewKeyBuffer = imgui_InputText_Get("##inline_new_key") ?? string.Empty;
-							}
-							imgui_Text("Value:");
-							imgui_SameLine();
-							imgui_SetNextItemWidth(260f);
-							if (imgui_InputText("##inline_new_value", _cfgNewValue))
-							{
-								_cfgNewValue = imgui_InputText_Get("##inline_new_value") ?? string.Empty;
-							}
-							imgui_SameLine();
-							if (imgui_Button("Add##inline_add"))
-							{
-								string key = (_cfgNewKeyBuffer ?? string.Empty).Trim();
+						imgui_Text("Name:");
+						imgui_SameLine();
+						float inlineFieldAvail = imgui_GetContentRegionAvailX();
+						float inlineFieldWidth = Math.Max(320f, inlineFieldAvail * 0.45f);
+						inlineFieldWidth = Math.Min(inlineFieldWidth, Math.Max(260f, inlineFieldAvail - 60f));
+						imgui_SetNextItemWidth(inlineFieldWidth);
+						if (imgui_InputText("##inline_new_key", _cfgNewKeyBuffer))
+						{
+							_cfgNewKeyBuffer = imgui_InputText_Get("##inline_new_key") ?? string.Empty;
+						}
+						imgui_Text("Value:");
+						float inlineValueAvail = imgui_GetContentRegionAvailX();
+						float inlineValueWidth = Math.Max(420f, inlineValueAvail * 0.70f);
+						inlineValueWidth = Math.Min(inlineValueWidth, Math.Max(320f, inlineValueAvail - 80f));
+						float inlineValueHeight = Math.Max(140f, imgui_GetTextLineHeightWithSpacing() * 6f);
+						if (imgui_InputTextMultiline("##inline_new_value", _cfgNewValue ?? string.Empty, inlineValueWidth, inlineValueHeight))
+						{
+							_cfgNewValue = imgui_InputText_Get("##inline_new_value") ?? string.Empty;
+						}
+						if (imgui_Button("Add##inline_add"))
+						{
+							string key = (_cfgNewKeyBuffer ?? string.Empty).Trim();
 								string val = _cfgNewValue ?? string.Empty;
 								bool added = false;
 								if (_cfgAddInlineSection.Equals("Ifs", StringComparison.OrdinalIgnoreCase))
@@ -1189,12 +1193,14 @@ namespace E3Core.UI.Windows
 					imgui_Text($"* {i + 1}.");
 					imgui_SameLine();
 
-					imgui_SetNextItemWidth(200f);
-					if (imgui_InputText($"##edit_text_{itemUid}", _cfgInlineEditBuffer))
+					float editAvail = imgui_GetContentRegionAvailX();
+					float editWidth = Math.Max(420f, editAvail - 140f);
+					editWidth = Math.Min(editWidth, Math.Max(260f, editAvail - 80f));
+					float editHeight = Math.Max(140f, imgui_GetTextLineHeightWithSpacing() * 6f);
+					if (imgui_InputTextMultiline($"##edit_text_{itemUid}", _cfgInlineEditBuffer ?? string.Empty, editWidth, editHeight))
 					{
 						_cfgInlineEditBuffer = imgui_InputText_Get($"##edit_text_{itemUid}");
 					}
-					imgui_SameLine();
 
 					if (imgui_Button($"Save##save_{itemUid}"))
 					{
@@ -1256,15 +1262,17 @@ namespace E3Core.UI.Windows
 				imgui_Text($"+ {parts.Count + 1}.");
 				imgui_SameLine();
 
-				imgui_SetNextItemWidth(200f);
-				if (imgui_InputText($"##add_new_manual", _cfgInlineEditBuffer))
-				{
-					_cfgInlineEditBuffer = imgui_InputText_Get($"##add_new_manual");
-				}
-				imgui_SameLine();
+				float addAvail = imgui_GetContentRegionAvailX();
+				float addManualWidth = Math.Max(420f, addAvail - 140f);
+				addManualWidth = Math.Min(addManualWidth, Math.Max(260f, addAvail - 80f));
+			float addManualHeight = Math.Max(140f, imgui_GetTextLineHeightWithSpacing() * 6f);
+			if (imgui_InputTextMultiline($"##add_new_manual", _cfgInlineEditBuffer ?? string.Empty, addManualWidth, addManualHeight))
+			{
+				_cfgInlineEditBuffer = imgui_InputText_Get($"##add_new_manual");
+			}
 
-				if (imgui_Button($"Add##add_manual"))
-				{
+			if (imgui_Button($"Add##add_manual"))
+			{
 					string newText = _cfgInlineEditBuffer ?? string.Empty;
 					if (!string.IsNullOrWhiteSpace(newText))
 					{
@@ -1428,80 +1436,33 @@ namespace E3Core.UI.Windows
 				if (_cfgSelectedValueIndex < values.Count)
 				{
 					string selectedValue = values[_cfgSelectedValueIndex];
-					imgui_TextColored(0.95f, 0.85f, 0.35f, 1.0f, "Selected Value Info");
-					imgui_Text($"Value: {selectedValue}");
+					var editState = EnsureSpellEditState(_cfgSelectedSection, _cfgSelectedKey, _cfgSelectedValueIndex, selectedValue);
+					string lookupName = editState?.BaseName;
+					if (string.IsNullOrWhiteSpace(lookupName))
+					{
+						lookupName = selectedValue;
+					}
+					imgui_TextColored(0.95f, 0.85f, 0.35f, 1.0f, "Selected Entry");
+					imgui_TextWrapped(string.IsNullOrWhiteSpace(lookupName) ? "(empty entry)" : lookupName);
+					if (!string.Equals(lookupName, selectedValue, StringComparison.OrdinalIgnoreCase) && !string.IsNullOrWhiteSpace(selectedValue))
+					{
+						imgui_TextColored(0.7f, 0.8f, 0.9f, 0.9f, $"Raw: {selectedValue}");
+					}
 
-					// Try to find spell/item/AA information
+					// Try to find spell/item/AA information for description
 					if (_cfg_CatalogsReady)
 					{
-						var spellInfo = FindSpellItemAAByName(selectedValue);
-						if (spellInfo != null)
+						var spellInfo = FindSpellItemAAByName(lookupName);
+						if (spellInfo != null && !string.IsNullOrWhiteSpace(spellInfo.Description))
 						{
 							imgui_Separator();
-
-							// Display spell/item/AA details using a compact table
-							if (imgui_BeginTable("SelectedValueInfo", 2, 0, imgui_GetContentRegionAvailX()))
-							{
-								imgui_TableSetupColumn("Property", 0, 80f);
-								imgui_TableSetupColumn("Value", 0, imgui_GetContentRegionAvailX() - 100f);
-
-								// Type
-								imgui_TableNextRow();
-								imgui_TableNextColumn();
-								imgui_TextColored(0.8f, 0.9f, 1.0f, 1.0f, "Type:");
-								imgui_TableNextColumn();
-								imgui_Text(spellInfo.CastType ?? "Unknown");
-
-								// Level (if applicable)
-								if (spellInfo.Level > 0)
-								{
-									imgui_TableNextRow();
-									imgui_TableNextColumn();
-									imgui_TextColored(0.8f, 0.9f, 1.0f, 1.0f, "Level:");
-									imgui_TableNextColumn();
-									imgui_Text(spellInfo.Level.ToString());
-								}
-
-								// Mana (if applicable)
-								if (spellInfo.Mana > 0)
-								{
-									imgui_TableNextRow();
-									imgui_TableNextColumn();
-									imgui_TextColored(0.8f, 0.9f, 1.0f, 1.0f, "Mana:");
-									imgui_TableNextColumn();
-									imgui_Text(spellInfo.Mana.ToString());
-								}
-
-								// Cast Time (if applicable)
-								if (spellInfo.CastTime > 0)
-								{
-									imgui_TableNextRow();
-									imgui_TableNextColumn();
-									imgui_TextColored(0.8f, 0.9f, 1.0f, 1.0f, "Cast Time:");
-									imgui_TableNextColumn();
-									imgui_Text($"{spellInfo.CastTime:0.00}s");
-								}
-
-								// Target (if applicable)
-								if (!string.IsNullOrEmpty(spellInfo.TargetType))
-								{
-									imgui_TableNextRow();
-									imgui_TableNextColumn();
-									imgui_TextColored(0.8f, 0.9f, 1.0f, 1.0f, "Target:");
-									imgui_TableNextColumn();
-									imgui_Text(spellInfo.TargetType);
-								}
-
-								imgui_EndTable();
-							}
-
-							// Description (if available)
-							if (!string.IsNullOrEmpty(spellInfo.Description))
-							{
-								imgui_Separator();
-								imgui_TextColored(0.75f, 0.85f, 1.0f, 1.0f, "Description:");
-								imgui_Text(spellInfo.Description);
-							}
+							imgui_TextColored(0.75f, 0.85f, 1.0f, 1.0f, "Description");
+							imgui_TextWrapped(spellInfo.Description);
+						}
+						else if (spellInfo != null)
+						{
+							imgui_Separator();
+							imgui_TextColored(0.8f, 0.8f, 0.6f, 1.0f, "Catalog has no description for this entry.");
 						}
 						else
 						{
@@ -1515,12 +1476,9 @@ namespace E3Core.UI.Windows
 
 					imgui_Separator();
 
-					var editState = EnsureSpellEditState(_cfgSelectedSection, _cfgSelectedKey, _cfgSelectedValueIndex, selectedValue);
 					if (editState != null)
 					{
 						imgui_TextColored(0.75f, 0.9f, 1.0f, 1.0f, "Flags & Modifiers");
-						string preview = BuildSpellValueString(editState);
-						imgui_TextWrapped(string.IsNullOrEmpty(preview) ? "(empty)" : preview);
 
 						// Highlight the button with pulsing color to draw attention
 						float pulse = (float)Math.Abs(Math.Sin(DateTime.Now.Ticks / 3000000.0));
@@ -5537,9 +5495,10 @@ namespace E3Core.UI.Windows
 		{
 			var s = _cfgSpellInfoSpell;
 			if (s == null) { _cfgShowSpellInfoModal = false; return; }
-			imgui_Begin_OpenFlagSet("Spell Info", true);
-			bool _open_info = imgui_Begin("Spell Information", (int)ImGuiWindowFlags.ImGuiWindowFlags_AlwaysAutoResize);
-			if (_open_info)
+			const string winName = "Spell Information";
+			imgui_Begin_OpenFlagSet(winName, _cfgShowSpellInfoModal);
+			bool open = imgui_Begin(winName, (int)ImGuiWindowFlags.ImGuiWindowFlags_AlwaysAutoResize);
+			if (open)
 			{
 				// Header with better styling
 				imgui_TextColored(0.95f, 0.85f, 0.35f, 1.0f, $"{s.Name ?? string.Empty}");
@@ -5659,10 +5618,17 @@ namespace E3Core.UI.Windows
 				}
 
 				imgui_Separator();
-				if (imgui_Button("Close")) { _cfgShowSpellInfoModal = false; _cfgSpellInfoSpell = null; }
+
+				if (imgui_Button("Close"))
+				{
+					_cfgShowSpellInfoModal = false;
+					_cfgSpellInfoSpell = null;
+					imgui_Begin_OpenFlagSet(winName, false);
+				}
 			}
 			imgui_End();
-			if (!_open_info) { _cfgShowSpellInfoModal = false; _cfgSpellInfoSpell = null; }
+			_cfgShowSpellInfoModal = imgui_Begin_OpenFlagGet(winName);
+			if (!_cfgShowSpellInfoModal) { _cfgSpellInfoSpell = null; }
 		}
 
 		private static void RenderDonateModal()
