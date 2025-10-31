@@ -16,6 +16,7 @@ using System.Runtime.CompilerServices;
 using System.Text;
 using System.Threading.Tasks;
 using System.Web.SessionState;
+using System.Text.RegularExpressions;
 using static MonoCore.E3ImGUI;
 
 namespace E3Core.UI.Windows
@@ -149,6 +150,9 @@ namespace E3Core.UI.Windows
 		private static string _cfgInlineEditBuffer = string.Empty;
 		private static int _cfgPendingValueSelection = -1;
 		private static string _cfgSelectedClass = string.Empty;
+		private const float _valueRowActionStartOffset = 46f;
+		private static bool _cfgCatalogReplaceMode = false;
+		private static int _cfgCatalogReplaceIndex = -1;
 
 		// Collapsible section state tracking
 		private static Dictionary<string, bool> _cfgSectionExpanded = new Dictionary<string, bool>(StringComparer.OrdinalIgnoreCase);
@@ -1103,7 +1107,7 @@ namespace E3Core.UI.Windows
 				{
 					// Row with better styling and alignment
 					imgui_Text($"{i + 1}.");
-					imgui_SameLine();
+					imgui_SameLine(_valueRowActionStartOffset);
 
 					bool canMoveUp = i > 0;
 					bool canMoveDown = i < parts.Count - 1;
@@ -1125,6 +1129,29 @@ namespace E3Core.UI.Windows
 						WriteValues(key, vals);
 						listChanged = true;
 						_cfgPendingValueSelection = toIndex;
+					}
+
+					void StartInlineEdit(int index, string currentValue)
+					{
+						_cfgInlineEditIndex = index;
+						_cfgInlineEditBuffer = currentValue ?? string.Empty;
+					}
+
+					void DeleteValueAt(int index)
+					{
+						var pdAct = GetActiveCharacterIniData();
+						var selSec = pdAct.Sections.GetSectionData(_cfgSelectedSection);
+						var key = selSec?.Keys.GetKeyData(_cfgSelectedKey);
+						if (key != null)
+						{
+							var vals = GetValues(key);
+							if (index >= 0 && index < vals.Count)
+							{
+								vals.RemoveAt(index);
+								WriteValues(key, vals);
+								listChanged = true;
+							}
+						}
 					}
 
 					void RenderReorderButton(string label, bool enabled, Action onClick)
@@ -1152,29 +1179,14 @@ namespace E3Core.UI.Windows
 					// Edit button
 					if (imgui_Button($"E##edit_{itemUid}"))
 					{
-						_cfgInlineEditIndex = i;
-						_cfgInlineEditBuffer = v;
+						StartInlineEdit(i, v);
 					}
 					imgui_SameLine();
 
 					// Delete button
 					if (imgui_Button($"X##delete_{itemUid}"))
 					{
-						int idx = i;
-						var pdAct = GetActiveCharacterIniData();
-						var selSec = pdAct.Sections.GetSectionData(_cfgSelectedSection);
-						var key = selSec?.Keys.GetKeyData(_cfgSelectedKey);
-						if (key != null)
-						{
-							var vals = GetValues(key);
-							if (idx >= 0 && idx < vals.Count)
-							{
-								vals.RemoveAt(idx);
-								WriteValues(key, vals);
-								listChanged = true;
-							}
-						}
-						// continue to render items; parts refresh handled below
+						DeleteValueAt(i);
 					}
 					imgui_SameLine();
 
@@ -1184,12 +1196,32 @@ namespace E3Core.UI.Windows
 					{
 						_cfgSelectedValueIndex = i;
 					}
+					if (imgui_BeginPopupContextItem($"ValueCtx_{itemUid}", 1))
+					{
+						if (canMoveUp && imgui_MenuItem("Move Up")) SwapAndMark(i, i - 1);
+						if (canMoveDown && imgui_MenuItem("Move Down")) SwapAndMark(i, i + 1);
+						if (imgui_MenuItem("Replace From Catalog"))
+						{
+							_cfgCatalogReplaceMode = true;
+							_cfgCatalogReplaceIndex = i;
+							_cfgShowAddModal = true;
+						}
+						if (imgui_MenuItem("Replace Inline"))
+						{
+							StartInlineEdit(i, v);
+						}
+						if (imgui_MenuItem("Delete"))
+						{
+							DeleteValueAt(i);
+						}
+						imgui_EndPopup();
+					}
 				}
 				else
 				{
 					// Edit mode with better styling
 					imgui_Text($"* {i + 1}.");
-					imgui_SameLine();
+					imgui_SameLine(_valueRowActionStartOffset);
 
 					float editAvail = imgui_GetContentRegionAvailX();
 					float editWidth = Math.Max(420f, editAvail - 140f);
@@ -1258,7 +1290,7 @@ namespace E3Core.UI.Windows
 				imgui_TextColored(0.8f, 0.9f, 0.95f, 1.0f, "Add New Value");
 
 				imgui_Text($"+ {parts.Count + 1}.");
-				imgui_SameLine();
+				imgui_SameLine(_valueRowActionStartOffset);
 
 				float addAvail = imgui_GetContentRegionAvailX();
 				float addManualWidth = Math.Max(420f, addAvail - 140f);
@@ -1416,14 +1448,6 @@ namespace E3Core.UI.Windows
 			{
 			}
 
-			// Add our HealPct suffix helper for heal-related keys
-			if (IsHealingKey(_cfgSelectedSection, _cfgSelectedKey))
-			{
-				imgui_Separator();
-				imgui_TextColored(0.8f, 0.9f, 0.95f, 1.0f, "HealPct Helper");
-				imgui_Text("(HealPct suffix functionality to be added)");
-			}
-
 			imgui_Separator();
 
 			// Display selected value information
@@ -1451,6 +1475,7 @@ namespace E3Core.UI.Windows
 					if (_cfg_CatalogsReady)
 					{
 						var spellInfo = FindSpellItemAAByName(lookupName);
+						RenderSpellAdditionalInfo(spellInfo);
 						if (spellInfo != null && !string.IsNullOrWhiteSpace(spellInfo.Description))
 						{
 							imgui_Separator();
@@ -1507,9 +1532,6 @@ namespace E3Core.UI.Windows
 				InvalidateSpellEditState();
 			}
 
-		imgui_TextColored(0.8f, 0.9f, 0.95f, 1.0f, "Configuration Info");
-		imgui_Text($"Section: {_cfgSelectedSection}");
-		imgui_Text($"Key: {_cfgSelectedKey}");
 	}
 
 		private static void RenderActiveModals(SectionData selectedSection)
@@ -1553,14 +1575,6 @@ namespace E3Core.UI.Windows
 		}
 
 		// Helper to determine if a key is healing-related
-		private static bool IsHealingKey(string section, string key)
-		{
-			if (string.IsNullOrEmpty(section) || string.IsNullOrEmpty(key)) return false;
-
-			var healingSections = new[] { "Heals", "Tank", "Important Bot" };
-			return healingSections.Any(s => string.Equals(section, s, StringComparison.OrdinalIgnoreCase));
-		}
-
 		// Save out active ini data (current or selected)
 		private static void SaveActiveIniData()
 		{
@@ -2299,6 +2313,10 @@ namespace E3Core.UI.Windows
 					ResistType = s.ResistType ?? string.Empty,
 					ResistAdj = s.ResistAdj,
 					CastType = s.CastType.ToString(),
+					SpellGem = s.SpellGem,
+					SpellEffects = s.SpellEffects != null
+						? s.SpellEffects.Where(e => !string.IsNullOrWhiteSpace(e)).Select(e => e.Trim()).ToList()
+						: new List<string>(),
 					SpellIcon = s.SpellIcon
 				});
 			}
@@ -2347,6 +2365,10 @@ namespace E3Core.UI.Windows
 					ResistType = s.ResistType ?? string.Empty,
 					ResistAdj = s.ResistAdj,
 					CastType = s.CastType.ToString(),
+					SpellGem = s.SpellGem,
+					SpellEffects = s.SpellEffects != null
+						? s.SpellEffects.Where(e => !string.IsNullOrWhiteSpace(e)).Select(e => e.Trim()).ToList()
+						: new List<string>(),
 					SpellIcon = s.SpellIcon
 				});
 			}
@@ -2380,6 +2402,9 @@ namespace E3Core.UI.Windows
 					SpellType = s.SpellType ?? string.Empty,
 					CastType = s.CastType.ToString(),
 					Description = s.Description ?? string.Empty,
+					SpellEffects = s.SpellEffects != null
+						? s.SpellEffects.Where(e => !string.IsNullOrWhiteSpace(e)).Select(e => e.Trim()).ToList()
+						: new List<string>(),
 					SpellIcon = s.SpellIcon
 				});
 			}
@@ -2409,6 +2434,9 @@ namespace E3Core.UI.Windows
 					SpellType = s.SpellType ?? string.Empty,
 					CastType = s.CastType.ToString(),
 					Description = s.Description ?? string.Empty,
+					SpellEffects = s.SpellEffects != null
+						? s.SpellEffects.Where(e => !string.IsNullOrWhiteSpace(e)).Select(e => e.Trim()).ToList()
+						: new List<string>(),
 					SpellIcon = s.SpellIcon
 				});
 			}
@@ -2450,6 +2478,10 @@ namespace E3Core.UI.Windows
 					ResistType = s.ResistType ?? string.Empty,
 					ResistAdj = s.ResistAdj,
 					CastType = s.CastType.ToString(),
+					SpellGem = s.SpellGem,
+					SpellEffects = s.SpellEffects != null
+						? s.SpellEffects.Where(e => !string.IsNullOrWhiteSpace(e)).Select(e => e.Trim()).ToList()
+						: new List<string>(),
 					SpellIcon = s.SpellIcon
 				});
 			}
@@ -2491,6 +2523,10 @@ namespace E3Core.UI.Windows
 					ResistType = s.ResistType ?? string.Empty,
 					ResistAdj = s.ResistAdj,
 					CastType = s.CastType.ToString(),
+					SpellGem = s.SpellGem,
+					SpellEffects = s.SpellEffects != null
+						? s.SpellEffects.Where(e => !string.IsNullOrWhiteSpace(e)).Select(e => e.Trim()).ToList()
+						: new List<string>(),
 					SpellIcon = s.SpellIcon
 				});
 			}
@@ -2857,7 +2893,15 @@ namespace E3Core.UI.Windows
 								{
 									var vals = GetValues(kd);
 									string v = (e.Name ?? string.Empty).Trim();
-									if (!vals.Contains(v, StringComparer.OrdinalIgnoreCase))
+									if (_cfgCatalogReplaceMode && _cfgCatalogReplaceIndex >= 0 && _cfgCatalogReplaceIndex < vals.Count)
+									{
+										vals[_cfgCatalogReplaceIndex] = v;
+										WriteValues(kd, vals);
+										_cfgPendingValueSelection = _cfgCatalogReplaceIndex;
+										_cfgCatalogReplaceMode = false;
+										_cfgCatalogReplaceIndex = -1;
+									}
+									else if (!vals.Contains(v, StringComparer.OrdinalIgnoreCase))
 									{
 										vals.Add(v);
 										WriteValues(kd, vals);
@@ -2910,6 +2954,8 @@ namespace E3Core.UI.Windows
 				_cfgShowAddModal = false;
 				_cfgCatalogMode = CatalogMode.Standard;
 				_cfgBardSongPickerIndex = -1;
+				_cfgCatalogReplaceMode = false;
+				_cfgCatalogReplaceIndex = -1;
 			}
 		}
 
@@ -2976,6 +3022,105 @@ namespace E3Core.UI.Windows
 			double rs = totalSec - m * 60;
 			if (rs < 0.5) return m.ToString() + "m";
 			return m.ToString() + "m " + rs.ToString("0.#") + "s";
+		}
+
+		private static string FormatSecondsSmart(double seconds)
+		{
+			if (seconds <= 0) return string.Empty;
+			if (seconds < 1.0)
+			{
+				return seconds.ToString("0.###") + " s";
+			}
+			if (seconds < 60.0)
+			{
+				return seconds < 10.0 ? seconds.ToString("0.##") + " s" : seconds.ToString("0.#") + " s";
+			}
+			int minutes = (int)(seconds / 60.0);
+			double remainder = seconds - minutes * 60.0;
+			if (remainder < 0.5)
+			{
+				return minutes + "m";
+			}
+			return minutes + "m " + remainder.ToString("0.#") + "s";
+		}
+
+		private static readonly Regex _inlineNumberRegex = new Regex(@"\b\d{4,}\b", RegexOptions.Compiled);
+
+		private static string FormatWithSeparators(long value)
+		{
+			return value.ToString("N0", CultureInfo.InvariantCulture);
+		}
+
+		private static string FormatInlineNumbers(string input)
+		{
+			if (string.IsNullOrEmpty(input)) return input;
+			return _inlineNumberRegex.Replace(input, m =>
+			{
+				if (long.TryParse(m.Value, out var numeric))
+				{
+					return FormatWithSeparators(numeric);
+				}
+				return m.Value;
+			});
+		}
+
+		private static void RenderSpellAdditionalInfo(E3Spell spellInfo)
+		{
+			if (spellInfo == null) return;
+
+			bool hasMana = spellInfo.Mana > 0;
+			string castTimeText = FormatSecondsSmart(spellInfo.CastTime);
+			bool hasCastTime = !string.IsNullOrEmpty(castTimeText);
+			string recastText = FormatMsSmart(spellInfo.Recast);
+			bool hasRecast = !string.IsNullOrEmpty(recastText);
+			bool hasGem = spellInfo.SpellGem > 0;
+			var slotEffects = spellInfo.SpellEffects ?? new List<string>();
+			bool hasSlots = slotEffects.Any(effect => !string.IsNullOrWhiteSpace(effect));
+
+			if (!hasMana && !hasCastTime && !hasRecast && !hasGem && !hasSlots)
+			{
+				return;
+			}
+
+			imgui_Separator();
+
+			if (hasMana || hasCastTime || hasRecast || hasGem)
+			{
+				imgui_TextColored(0.75f, 0.9f, 1.0f, 1.0f, "Spell Details");
+				if (hasMana)
+				{
+					imgui_Text($"Mana: {FormatWithSeparators(spellInfo.Mana)}");
+				}
+				if (hasCastTime)
+				{
+					imgui_Text($"Cast Time: {castTimeText}");
+				}
+				if (hasRecast)
+				{
+					imgui_Text($"Recast: {recastText}");
+				}
+				if (hasGem)
+				{
+					imgui_Text($"Gem Slot: {spellInfo.SpellGem}");
+				}
+			}
+
+			if (hasMana && hasSlots || hasCastTime && hasSlots || hasRecast && hasSlots || hasGem && hasSlots)
+			{
+				imgui_Separator();
+			}
+
+			if (hasSlots)
+			{
+				imgui_TextColored(0.75f, 0.9f, 1.0f, 1.0f, "Spell Slots");
+				for (int i = 0; i < slotEffects.Count; i++)
+				{
+					string effect = slotEffects[i];
+					if (string.IsNullOrWhiteSpace(effect)) continue;
+					string formattedEffect = FormatInlineNumbers(effect);
+					imgui_TextWrapped($"Slot {i + 1}: {formattedEffect}");
+				}
+			}
 		}
 
 		// Append If modal: choose an If key to append to a specific row value
@@ -5524,7 +5669,7 @@ namespace E3Core.UI.Windows
 						// Colored label (soft yellow)
 						imgui_TextColored(0.95f, 0.85f, 0.35f, 1f, "Mana");
 						imgui_TableNextColumn();
-						imgui_Text(s.Mana.ToString());
+						imgui_Text(FormatWithSeparators(s.Mana));
 					}
 					if (s.CastTime > 0)
 					{
@@ -5658,6 +5803,8 @@ namespace E3Core.UI.Windows
 			public string ResistType;
 			public int ResistAdj;
 			public string CastType; // AA/Spell/Disc/Ability/Item/None
+			public int SpellGem;
+			public List<string> SpellEffects = new List<string>();
 			public int SpellIcon = -1; // Spell icon index for display
 			public override string ToString() => Name;
 		}
