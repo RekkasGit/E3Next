@@ -5,6 +5,7 @@ using E3Core.Utility;
 using IniParser.Model;
 using MonoCore;
 using System;
+using System.Collections.Concurrent;
 using System.Collections.Generic;
 using System.ComponentModel.Design;
 using System.Drawing;
@@ -31,10 +32,7 @@ namespace E3Core.UI.Windows
 		private static object _dataLock = new object();
 
 		#region Variables
-		// Spell icon system state
-		private static bool _cfg_IconSystemInitialized = false;
-
-		// Catalogs and Add modal state
+			// Catalogs and Add modal state
 
 		//Note on Volatile variables... all this means is if its set on another thread, we will eventually get the update.
 		//its somewhat one way, us setting the variable on this side doesn't let the other thread see the update.
@@ -746,7 +744,7 @@ namespace E3Core.UI.Windows
 							&& string.Equals(_cfgAddInlineSection, _cfgSelectedSection, StringComparison.OrdinalIgnoreCase)
 							&& string.IsNullOrEmpty(_cfgSelectedKey))
 						{
-							imgui_TextColored(0.8f, 0.9f, 0.95f, 1.0f, _cfgAddInlineSection.Equals("Ifs", StringComparison.OrdinalIgnoreCase) ? "Add New If" : "Add New Burn Key");
+						imgui_TextColored(0.8f, 0.9f, 0.95f, 1.0f, _cfgAddInlineSection.Equals("Ifs", StringComparison.OrdinalIgnoreCase) ? "Add New If" : "Add New Burn Key");
 						imgui_Text("Name:");
 						imgui_SameLine();
 						float inlineFieldAvail = imgui_GetContentRegionAvailX();
@@ -1774,33 +1772,13 @@ namespace E3Core.UI.Windows
 		// Background worker tick invoked from E3.Process(): handle catalog loads and icon system
 		private static void ProcessBackgroundWork()
 		{
-		
-			// Initialize spell icon system if not already done
-			if (!_cfg_IconSystemInitialized)
-			{
-				try
-				{
-					string eqPath = E3.MQ.Query<string>("${EverQuest.Path}");
-					if (!string.IsNullOrEmpty(eqPath))
-					{
-						_cfg_IconSystemInitialized = true;
-						_log.Write("Spell icon system initialized.");
-					}
-				}
-				catch (Exception ex)
-				{
-					_log.Write($"Failed to initialize spell icon system: {ex.Message}");
-				}
-			}
-
 			if (_cfg_CatalogLoadRequested && !_cfg_CatalogLoading)
 			{
-				var connectedToons = E3Core.Server.NetMQServer.SharedDataClient?.UsersConnectedTo?.Keys?.ToList() ?? new List<string>();
-				if (!connectedToons.Contains(E3.CurrentName, StringComparer.OrdinalIgnoreCase))
-				{
-					connectedToons.Add(E3.CurrentName);
-				}
 
+
+			
+
+			
 				_cfg_CatalogLoading = true;
 				_log.WriteDelayed("Making background request", Logging.LogLevels.Debug);
 
@@ -1824,7 +1802,7 @@ namespace E3Core.UI.Windows
 					}
 					else
 					{
-						if (connectedToons.Contains(targetToon, StringComparer.OrdinalIgnoreCase))
+						if (GetOnlineToonNames().ContainsKey(targetToon))
 						{
 							ProcessBackground_UpdateRemotePlayer(targetToon);
 						}
@@ -1952,18 +1930,14 @@ namespace E3Core.UI.Windows
 				{
 					try
 					{
-						var connectedToons = E3Core.Server.NetMQServer.SharedDataClient?.UsersConnectedTo?.Keys?.ToList() ?? new List<string>();
-						if (!connectedToons.Contains(E3.CurrentName, StringComparer.OrdinalIgnoreCase))
-						{
-							connectedToons.Add(E3.CurrentName);
-						}
+					
 						_cfgAllPlayersStatus = "Refreshing...";
 						
 						var newRows = new List<KeyValuePair<string, string>>();
 						string section = _cfgAllPlayersReqSection;
 						string key = _cfgAllPlayersReqKey;
 
-						foreach (var toon in connectedToons)
+						foreach (var toon in GetOnlineToonNames().Keys)
 						{
 							string value = string.Empty;
 
@@ -2240,49 +2214,52 @@ namespace E3Core.UI.Windows
 				return string.Equals(E3.CurrentClass.ToString(), "Bard", StringComparison.OrdinalIgnoreCase);
 			}
 		}
-		private static HashSet<string> _onlineToonsCache = new HashSet<string>(StringComparer.OrdinalIgnoreCase);
+		private static ConcurrentDictionary<string, string> _onlineToonsCache = new ConcurrentDictionary<string, string>(StringComparer.OrdinalIgnoreCase);
 		private static Int64 _onlineToonsLastUpdate = 0;
 		private static Int64 _onlineToonsLastsUpdateInterval = 3000;
-		private static HashSet<string> GetOnlineToonNames()
+		private static ConcurrentDictionary<string, string> GetOnlineToonNames()
 		{
 
 			if(!e3util.ShouldCheck(ref _onlineToonsLastUpdate, _onlineToonsLastsUpdateInterval))
 			{
-				return _onlineToonsCache;
-			}
-
-			_onlineToonsCache.Clear();
-
-			try
-			{
-				var connected = E3Core.Server.NetMQServer.SharedDataClient?.UsersConnectedTo?.Keys;
-				if (connected != null)
+				lock(_onlineToonsCache)
 				{
-					foreach (var name in connected)
-					{
-						if (!string.IsNullOrEmpty(name)) _onlineToonsCache.Add(name);
-					}
+					return _onlineToonsCache;
+
 				}
 			}
-			catch { }
+			lock(_onlineToonsCache)
+			{
+				_onlineToonsCache.Clear();
 
-			if (!string.IsNullOrEmpty(E3.CurrentName)) _onlineToonsCache.Add(E3.CurrentName);
+				try
+				{
+					var connected = E3Core.Server.NetMQServer.SharedDataClient?.UsersConnectedTo?.Keys;
+					if (connected != null)
+					{
+						foreach (var name in connected)
+						{
+							if (!string.IsNullOrEmpty(name)) _onlineToonsCache.TryAdd(name,name);
+						}
+					}
+				}
+				catch { }
 
+				if (!string.IsNullOrEmpty(E3.CurrentName)) _onlineToonsCache.TryAdd(E3.CurrentName,E3.CurrentName);
+
+
+				return _onlineToonsCache;
+			}
 			
-			return _onlineToonsCache;
 		}
-		private static bool IsIniForOnlineToon(string iniPath, HashSet<string> onlineToons)
+		private static bool IsIniForOnlineToon(string iniPath, ConcurrentDictionary<string,string> onlineToons)
 		{
 			if (onlineToons == null || onlineToons.Count == 0) return false;
-			try
-			{
-				string file = Path.GetFileNameWithoutExtension(iniPath) ?? string.Empty;
-				if (string.IsNullOrEmpty(file)) return false;
-				int underscore = file.IndexOf('_');
-				string toon = underscore > 0 ? file.Substring(0, underscore) : file;
-				return onlineToons.Contains(toon);
-			}
-			catch { return false; }
+			string file = Path.GetFileNameWithoutExtension(iniPath) ?? string.Empty;
+			if (string.IsNullOrEmpty(file)) return false;
+			int underscore = file.IndexOf('_');
+			string toon = underscore > 0 ? file.Substring(0, underscore) : file;
+			return onlineToons.ContainsKey(toon);
 		}
 
 		// Organize from SpellData (protobuf) into the UI catalog structure
@@ -3743,25 +3720,23 @@ namespace E3Core.UI.Windows
 			returnValue = E3Core.Settings.BaseSettings.GetBoTFilePath(name, server, klass);
 			return returnValue;
 		}
+
+		private static Int64 _iniFileScanInterval = 3000;
+		private static Int64 _iniFileScanTimeStamp = 0;
 		private static void ScanCharIniFilesIfNeeded()
 		{
-			try
+			if(!e3util.ShouldCheck(ref _iniFileScanTimeStamp,_iniFileScanInterval))
 			{
-				if (Core.StopWatch.ElapsedMilliseconds < _nextIniFileScanAtMs) return;
-				_nextIniFileScanAtMs = Core.StopWatch.ElapsedMilliseconds + 3000; // 3s throttle
-
-				var curPath = GetCurrentCharacterIniPath();
-				if (string.IsNullOrEmpty(curPath) || !File.Exists(curPath)) return;
-				var dir = Path.GetDirectoryName(curPath);
-				var server = E3.ServerName ?? string.Empty;
-				var pattern = "*_*" + server + ".ini";
-				var files = Directory.GetFiles(dir, pattern, SearchOption.TopDirectoryOnly);
-				if (files == null || files.Length == 0)
-					files = Directory.GetFiles(dir, "*.ini", SearchOption.TopDirectoryOnly);
-				Array.Sort(files, StringComparer.OrdinalIgnoreCase);
-				_charIniFiles = files;
+				return;
 			}
-			catch { }
+			var dir = BaseSettings.GetBotPath();// Path.GetDirectoryName(curPath);
+			var server = E3.ServerName ?? string.Empty;
+			var pattern = "*_*" + server + ".ini";
+			var files = Directory.GetFiles(dir, pattern, SearchOption.TopDirectoryOnly);
+			if (files == null || files.Length == 0)
+				files = Directory.GetFiles(dir, "*.ini", SearchOption.TopDirectoryOnly);
+			Array.Sort(files, StringComparer.OrdinalIgnoreCase);
+			_charIniFiles = files;
 		}
 		// Safe combo wrapper for older MQ2Mono
 		private static bool BeginComboSafe(string label, string preview)

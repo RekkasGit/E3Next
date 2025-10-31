@@ -601,18 +601,32 @@ namespace E3Core.Settings
             LoadData();
 			//map everything to the dictionary for settings lookup. 
 			GetSettingsMappedToDictionary();
-
 		}
 
-
-        /// <summary>
-        /// Loads the data.
-        /// </summary>
-        private void LoadData()
+		//used for the CharacerSettingsWindow
+		/// <summary>
+		/// only pass in the file name not the full path. full path will be loaded
+		/// </summary>
+		/// <param name="iniFileName"></param>
+		public CharacterSettings(string iniFileName)
+		{
+			//get full file name
+			iniFileName = GetBotFilePath(iniFileName);
+			_mergeUpdates = true;
+			MQ = E3.MQ;
+			LoadData(iniFileName);
+			//map everything to the dictionary for settings lookup. 
+			//GetSettingsMappedToDictionary();
+		}
+		/// <summary>
+		/// Loads the data.
+		/// </summary>
+		private void LoadData(string fileNameToUse = "")
         {
 
-			//this is so we can get the merged data as well. 
-			string filename = GetBoTFilePath(CharacterName, ServerName, CharacterClass.ToString());
+			string filename = fileNameToUse;
+			//if not specified, load based off the character name,servername, etc.
+			if(String.IsNullOrWhiteSpace(filename)) filename= GetBoTFilePath(CharacterName, ServerName, CharacterClass.ToString());
 
 			//if this is a global file with multiple writers, don't merge data as multiple writers for a single file = bad mojo.
 			if (filename.StartsWith("_")) _mergeUpdates = false;
