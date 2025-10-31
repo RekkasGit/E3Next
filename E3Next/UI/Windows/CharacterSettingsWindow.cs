@@ -1783,14 +1783,13 @@ namespace E3Core.UI.Windows
 					string eqPath = E3.MQ.Query<string>("${EverQuest.Path}");
 					if (!string.IsNullOrEmpty(eqPath))
 					{
-						E3Next.UI.SpellIconManager.Initialize(eqPath);
 						_cfg_IconSystemInitialized = true;
-						E3Core.Utility.e3util._log.Write("Spell icon system initialized.");
+						_log.Write("Spell icon system initialized.");
 					}
 				}
 				catch (Exception ex)
 				{
-					E3Core.Utility.e3util._log.Write($"Failed to initialize spell icon system: {ex.Message}");
+					_log.Write($"Failed to initialize spell icon system: {ex.Message}");
 				}
 			}
 

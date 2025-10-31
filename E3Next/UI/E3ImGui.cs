@@ -306,9 +306,11 @@ namespace MonoCore
 		[MethodImpl(MethodImplOptions.InternalCall)]
 		public extern static bool imgui_RightAlignButton(string name);
 		[MethodImpl(MethodImplOptions.InternalCall)]
-		public extern static bool imgui_InputText(string id, string initial);
-		[MethodImpl(MethodImplOptions.InternalCall)]
+
 		public extern static bool imgui_InputTextMultiline(string id, string initial, float width, float height);
+	
+		[MethodImpl(MethodImplOptions.InternalCall)]
+		public extern static bool imgui_InputText(string id, string initial);
 		[MethodImpl(MethodImplOptions.InternalCall)]
 		public extern static string imgui_InputText_Get(string id);
 		[MethodImpl(MethodImplOptions.InternalCall)]
@@ -710,6 +712,7 @@ namespace MonoCore
 				{
 					pair.Value.Invoke();
 				}
+
 			}
 		}
         public static ConcurrentDictionary<string, Action> RegisteredWindows = new ConcurrentDictionary<string, Action>();
@@ -723,218 +726,5 @@ namespace MonoCore
             }
         }
        
-
-
-        #region Spell Icon Rendering
-        
-        /// <summary>
-        /// Renders a spell icon with the specified size and optional tooltip
-        /// </summary>
-        /// <param name="spellId">The EQ spell ID</param>
-        /// <param name="size">Size of the icon (both width and height)</param>
-        /// <param name="showTooltip">Whether to show a tooltip on hover</param>
-        /// <returns>True if the icon was clicked</returns>
-        private static bool RenderSpellIcon(int spellId, float size = 40.0f, bool showTooltip = true)
-        {
-            if (spellId <= 0)
-            {
-                // Render a placeholder for invalid spell ID
-                RenderSpellIconPlaceholder(size);
-                return false;
-            }
-
-            // Draw natively by spell id
-            imgui_DrawSpellIconBySpellID(spellId, size);
-
-            bool clicked = imgui_IsItemHovered() && imgui_IsMouseClicked(0);
-
-            if (showTooltip && imgui_IsItemHovered())
-            {
-                RenderSpellTooltip(spellId, GetSpellIconIndex(spellId));
-            }
-
-            return clicked;
-        }
-
-        /// <summary>
-        /// Renders a spell icon by its icon index
-        /// </summary>
-        /// <param name="iconIndex">The spell icon index (0-based)</param>
-        /// <param name="size">Size of the icon</param>
-        /// <param name="showTooltip">Whether to show tooltip on hover</param>
-        /// <param name="spellId">Optional spell ID for tooltip info</param>
-        /// <returns>True if the icon was clicked</returns>
-        public static bool RenderSpellIconByIndex(int iconIndex, float size = 40.0f, bool showTooltip = true, int spellId = 0)
-        {
-            try
-            {
-                if (!E3Next.UI.SpellIconManager.IsReady())
-                {
-                    // Try to initialize if not ready
-                    InitializeSpellIcons();
-                    if (!E3Next.UI.SpellIconManager.IsReady())
-                    {
-                        RenderSpellIconPlaceholder(size);
-                        return false;
-                    }
-                }
-
-                // Draw via native EQ texture animation wrapper
-                imgui_DrawSpellIconByIconIndex(iconIndex, size);
-
-                // Compute click based on hover state
-                bool clicked = imgui_IsItemHovered() && imgui_IsMouseClicked(0);
-
-                // Show tooltip on hover if enabled
-                if (showTooltip && imgui_IsItemHovered())
-                {
-                    RenderSpellTooltip(spellId, iconIndex);
-                }
-
-                return clicked;
-            }
-            catch (Exception ex)
-            {
-                E3Core.Utility.e3util._log.Write($"Error rendering spell icon {iconIndex}: {ex.Message}");
-                RenderSpellIconPlaceholder(size);
-                return false;
-            }
-        }
-
-        /// <summary>
-        /// Renders a clickable image button
-        /// </summary>
-        private static bool RenderIconButton(IntPtr textureId, float size)
-        {
-            // Use the ImGui Image function to render the texture
-            imgui_Image(textureId, size, size);
-            
-            // Check if the image was clicked
-            return imgui_IsItemHovered() && imgui_IsMouseClicked(0); // Left mouse button
-        }
-
-        /// <summary>
-        /// Renders a placeholder when spell icon is not available
-        /// </summary>
-        private static void RenderSpellIconPlaceholder(float size)
-        {
-            // Draw a simple colored rectangle as placeholder
-            imgui_PushStyleColor((int)ImGuiCol.Button, 0.3f, 0.3f, 0.3f, 1.0f);
-            imgui_ButtonEx("?", size, size);
-            imgui_PopStyleColor(1);
-
-            if (imgui_IsItemHovered())
-            {
-                imgui_BeginTooltip();
-                imgui_TextWrapped("Spell icon not available");
-                imgui_EndTooltip();
-            }
-        }
-
-        /// <summary>
-        /// Renders a tooltip with spell information
-        /// </summary>
-        private static void RenderSpellTooltip(int spellId, int iconIndex)
-        {
-            imgui_BeginTooltip();
-            
-            if (spellId > 0)
-            {
-                try
-                {
-                    // Get spell information from MQ
-                    string spellName = Core.mq_ParseTLO($"${{Spell[{spellId}].Name}}");
-                    string spellLevel = Core.mq_ParseTLO($"${{Spell[{spellId}].Level}}");
-                    string spellDescription = Core.mq_ParseTLO($"${{Spell[{spellId}].Description}}");
-                    
-                    if (spellName != "NULL" && !string.IsNullOrEmpty(spellName))
-                    {
-                        imgui_TextColored(0.9f, 0.9f, 0.3f, 1.0f, spellName);
-                        
-                        if (spellLevel != "NULL" && !string.IsNullOrEmpty(spellLevel))
-                        {
-                            imgui_Text($"Level: {spellLevel}");
-                        }
-                        
-                        if (spellDescription != "NULL" && !string.IsNullOrEmpty(spellDescription) && spellDescription.Length > 0)
-                        {
-                            imgui_Separator();
-                            imgui_PushTextWrapPos(300.0f); // Wrap at 300 pixels
-                            imgui_TextWrapped(spellDescription);
-                            imgui_PopTextWrapPos();
-                        }
-                    }
-                    else
-                    {
-                        imgui_Text($"Spell ID: {spellId}");
-                    }
-                }
-                catch (Exception ex)
-                {
-                    imgui_Text($"Spell ID: {spellId}");
-                    imgui_Text($"Error: {ex.Message}");
-                }
-            }
-            else
-            {
-                imgui_Text($"Icon Index: {iconIndex}");
-            }
-            
-            imgui_EndTooltip();
-        }
-
-        /// <summary>
-        /// Gets the spell icon index for a given spell ID
-        /// This needs to be implemented based on EQ's spell data mapping
-        /// </summary>
-        private static int GetSpellIconIndex(int spellId)
-        {
-            try
-            {
-                // Query MQ for the spell's icon ID
-                string iconIdStr = Core.mq_ParseTLO($"${{Spell[{spellId}].SpellIcon}}");
-                if (iconIdStr != "NULL" && int.TryParse(iconIdStr, out int iconId))
-                {
-                    // EQ's spell icon IDs need to be converted to 0-based indices
-                    // This conversion may need adjustment based on how EQ stores icon IDs
-                    return Math.Max(0, iconId - 1); // Convert to 0-based index
-                }
-            }
-            catch (Exception ex)
-            {
-                E3Core.Utility.e3util._log.Write($"Error getting spell icon index for spell {spellId}: {ex.Message}");
-            }
-            
-            return 0; // Default to first icon
-        }
-
-        /// <summary>
-        /// Initializes the spell icon system if not already done
-        /// </summary>
-        private static void InitializeSpellIcons()
-        {
-            try
-            {
-                if (!E3Next.UI.SpellIconManager.IsReady())
-                {
-                    // Try to get EQ directory from MQ
-                    string eqDir = Core.mq_ParseTLO("${EverQuest.Path}");
-                    if (eqDir != "NULL" && !string.IsNullOrEmpty(eqDir))
-                    {
-                        E3Next.UI.SpellIconManager.Initialize(eqDir);
-                    }
-                    else
-                    {
-                        E3Core.Utility.e3util._log.Write("Could not determine EQ directory for spell icon initialization");
-                    }
-                }
-            }
-            catch (Exception ex)
-            {
-                E3Core.Utility.e3util._log.Write($"Error initializing spell icons: {ex.Message}");
-            }
-        }
-
-        #endregion
     }
 }
