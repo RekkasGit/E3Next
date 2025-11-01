@@ -325,7 +325,9 @@ namespace MonoCore
 		public extern static bool imgui_MenuItem(string label);
 		// Tables
 		[MethodImpl(MethodImplOptions.InternalCall)]
-		public extern static bool imgui_BeginTable(string id, int columns, int flags, float outerWidth);
+		public extern static bool imgui_BeginTable(string id, int columns, int flags, float outerWidth,float outerHeight);
+		[MethodImpl(MethodImplOptions.InternalCall)]
+		public extern static bool imgui_BeginTableS(string id, int columns, int flags);
 		[MethodImpl(MethodImplOptions.InternalCall)]
 		public extern static void imgui_EndTable();
 		[MethodImpl(MethodImplOptions.InternalCall)]
@@ -334,8 +336,21 @@ namespace MonoCore
 		public extern static void imgui_TableHeadersRow();
 		[MethodImpl(MethodImplOptions.InternalCall)]
 		public extern static void imgui_TableNextRow();
+
 		[MethodImpl(MethodImplOptions.InternalCall)]
 		public extern static bool imgui_TableNextColumn();
+
+		[MethodImpl(MethodImplOptions.InternalCall)]
+		public extern static bool imgui_TableSetColumnIndex(int index);
+
+		[MethodImpl(MethodImplOptions.InternalCall)]
+		public extern static bool imgui_PushID(int id);
+
+
+		[MethodImpl(MethodImplOptions.InternalCall)]
+		public extern static bool imgui_PopID();
+
+
 		// Colors / styled text
 		[MethodImpl(MethodImplOptions.InternalCall)]
 		public extern static void imgui_TextColored(float r, float g, float b, float a, string text);
@@ -413,6 +428,10 @@ namespace MonoCore
 		public extern static void mq_DestroyTexture(IntPtr textureId);
 		[MethodImpl(MethodImplOptions.InternalCall)]
 		public extern static void imgui_SetNextWindowSize(float width, float height);
+
+		[MethodImpl(MethodImplOptions.InternalCall)]
+		public extern static void imgui_SetNextWindowSizeConstraints(float min_width, float min_height,float max_width,float max_height);
+
 
 		#endregion
 
