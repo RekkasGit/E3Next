@@ -331,6 +331,7 @@ namespace E3Core.UI.Windows
 				}
 				_imguiInitDone = true;
 			}
+
 			if (_imguiContextReady && imgui_Begin_OpenFlagGet(_e3ImGuiWindow))
 			{
 				if (imgui_Begin(_e3ImGuiWindow, (int)ImGuiWindowFlags.ImGuiWindowFlags_None))
@@ -390,10 +391,14 @@ namespace E3Core.UI.Windows
 					// Apply current theme
 					E3ImGUI.PushCurrentTheme();
 					imgui_SetNextWindowSizeConstraints(200, 200, 2000, 1000);
-					if (imgui_Begin(_e3ImGuiWindow, (int)ImGuiWindowFlags.ImGuiWindowFlags_None))
+
+
+					if (imgui_Begin(_e3ImGuiWindow, (int)ImGuiWindowFlags.ImGuiWindowFlags_NoCollapse))
 					{
+						
 						try
 						{
+							//if (imgui_GetWindowHeight()< 150 || imgui_GetWindowWidth() < 150) return;
 
 							// Header bar: version text on left, buttons on right
 							if (imgui_BeginTable("E3HeaderBar", 2, (int)ImGuiTableFlags.ImGuiTableFlags_SizingStretchProp, imgui_GetContentRegionAvailX(),0))
@@ -778,7 +783,7 @@ namespace E3Core.UI.Windows
 					{
 						var selectedSection = pd.Sections.GetSectionData(_cfgSelectedSection ?? string.Empty);
 						//_log.Write($"Rendering with selected section {selectedSection.SectionName} with keys count:{selectedSection.Keys.Count} with pd:");
-						if (imgui_BeginChild("ValuesPanel", 0, Math.Max(200f, availY * 0.75f), false))
+						//if (imgui_BeginChild("ValuesPanel", 0, Math.Max(200f, availY * 0.75f), false))
 						{
 							try
 							{
@@ -883,7 +888,7 @@ namespace E3Core.UI.Windows
 							}
 							finally
 							{
-								imgui_EndChild();
+						//		imgui_EndChild();
 							}
 						}
 					}
@@ -892,7 +897,7 @@ namespace E3Core.UI.Windows
 					activeSection = pd.Sections.GetSectionData(_cfgSelectedSection ?? string.Empty);
 					if (imgui_TableNextColumn())
 					{
-						if (imgui_BeginChild("ToolsPanel", 0, Math.Max(200f, availY * 0.75f), false))
+						//if (imgui_BeginChild("ToolsPanel", 0, Math.Max(200f, availY * 0.75f), false))
 						{
 							try
 							{
@@ -900,7 +905,7 @@ namespace E3Core.UI.Windows
 							}
 							finally
 							{
-								imgui_EndChild();
+							//	imgui_EndChild();
 							}
 						}
 

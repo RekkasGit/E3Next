@@ -431,6 +431,10 @@ namespace MonoCore
 
 		[MethodImpl(MethodImplOptions.InternalCall)]
 		public extern static void imgui_SetNextWindowSizeConstraints(float min_width, float min_height,float max_width,float max_height);
+		[MethodImpl(MethodImplOptions.InternalCall)]
+		public extern static float imgui_GetWindowHeight();
+		[MethodImpl(MethodImplOptions.InternalCall)]
+		public extern static float imgui_GetWindowWidth();
 
 
 		#endregion
