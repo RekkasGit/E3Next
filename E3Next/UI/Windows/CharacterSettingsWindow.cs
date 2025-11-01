@@ -589,9 +589,9 @@ namespace E3Core.UI.Windows
 			SectionData activeSection = null;
 
 
-			Int32 flags = (int)(ImGuiTableFlags.ImGuiTableFlags_Borders | ImGuiTableFlags.ImGuiTableFlags_Resizable | ImGuiTableFlags.ImGuiTableFlags_SizingStretchProp | ImGuiTableFlags.ImGuiTableFlags_NoPadInnerX | ImGuiTableFlags.ImGuiTableFlags_NoPadOuterX);
+			Int32 flags = (int)(ImGuiTableFlags.ImGuiTableFlags_Borders | ImGuiTableFlags.ImGuiTableFlags_Resizable | ImGuiTableFlags.ImGuiTableFlags_ScrollY | ImGuiTableFlags.ImGuiTableFlags_SizingStretchProp | ImGuiTableFlags.ImGuiTableFlags_NoPadInnerX | ImGuiTableFlags.ImGuiTableFlags_NoPadOuterX);
 			
-			if (imgui_BeginTable("E3ConfigEditorTable", 3, flags, imgui_GetContentRegionAvailX(), 0))
+			if (imgui_BeginTable("E3ConfigEditorTable", 3, flags, imgui_GetContentRegionAvailX(), 600))
 			{
 
 				try
@@ -615,7 +615,7 @@ namespace E3Core.UI.Windows
 							{
 								//Use a 1 - column table with RowBg to get built-in alternating backgrounds
 								int tableFlags = (int)(ImGuiTableFlags.ImGuiTableFlags_RowBg| ImGuiTableFlags.ImGuiTableFlags_ScrollY | ImGuiTableFlags.ImGuiTableFlags_SizingStretchProp);
-								if (imgui_BeginTable("SectionsTreeTable", 1, tableFlags, imgui_GetContentRegionAvailX(), 500))
+								if (imgui_BeginTable("SectionsTreeTable", 1, tableFlags, imgui_GetContentRegionAvailX(), 0))
 								{
 									try
 									{
