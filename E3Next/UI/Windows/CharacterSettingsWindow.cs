@@ -18,6 +18,7 @@ using System.Threading.Tasks;
 using System.Web.SessionState;
 using System.Text.RegularExpressions;
 using static MonoCore.E3ImGUI;
+using E3Core.Server;
 
 namespace E3Core.UI.Windows
 {
@@ -312,48 +313,6 @@ namespace E3Core.UI.Windows
 		///So for any MQ.Query be sure to use the DelayPossible flag to false.
 		/// </summary>
 		/// 
-		private static void RenderIMGUI_Test()
-		{
-			if (!_imguiInitDone)
-			{
-				try
-				{
-					imgui_Begin_OpenFlagSet(_e3ImGuiWindow, false);
-					_imguiContextReady = true; // Mark as ready after first successful ImGui call
-					E3.Log.Write("ImGui initialized successfully", Logging.LogLevels.Info);
-				}
-				catch (Exception ex)
-				{
-					//E3.Log.Write($"ImGui initialization failed: {ex.Message}", Logging.LogLevels.Error);
-					_imguiContextReady = false; // Mark as failed
-					_imguiInitDone = true;
-					return; // Exit early to prevent further ImGui calls
-				}
-				_imguiInitDone = true;
-			}
-
-			if (_imguiContextReady && imgui_Begin_OpenFlagGet(_e3ImGuiWindow))
-			{
-				if (imgui_Begin(_e3ImGuiWindow, (int)ImGuiWindowFlags.ImGuiWindowFlags_None))
-				{
-					if (imgui_BeginTable("E3MyTable", 3, 0, 0,0)) // 3 columns
-					{
-						// Table content goes here
-						imgui_TableNextRow();
-						imgui_TableSetColumnIndex(0);
-						imgui_Text("Cell 1");
-						imgui_TableSetColumnIndex(1);
-						imgui_Text("Cell 2");
-						imgui_TableSetColumnIndex(2);
-						imgui_Text("Cell 3");
-
-						imgui_EndTable();
-
-					}
-					imgui_End();
-				}
-			}
-		}
 		private static void RenderIMGUI()
 		{
 			try
@@ -1671,42 +1630,108 @@ namespace E3Core.UI.Windows
 				_log.Write($"Failed to save: {ex.Message}");
 			}
 		}
+		static List<String> _catalogRefreshKeyTypes = new List<string>() { "Spells", "AAs", "Discs", "Skills", "Items" };
+		static Int64 _numberofMillisecondsBeforeCatalogNeedsRefresh = 30000;
 
 		private static void ProcessBackground_UpdateRemotePlayer(string targetToon)
 		{
+			//put lower case as zeromq is case sensitive
+			targetToon = targetToon.ToLower();
 
 			//have to make a network call and wait for a response. 
 			System.Threading.Tasks.Task.Run(() =>
 			{
 				try
 				{
-					SortedDictionary<string, SortedDictionary<string, List<E3Spell>>> mapSpells = new SortedDictionary<string, SortedDictionary<string, List<E3Spell>>>(),
+					//pre-create the new lookups
+					SortedDictionary<string, SortedDictionary<string, List<E3Spell>>> 
+					mapSpells = new SortedDictionary<string, SortedDictionary<string, List<E3Spell>>>(),
 					mapAAs = new SortedDictionary<string, SortedDictionary<string, List<E3Spell>>>(),
 					mapDiscs = new SortedDictionary<string, SortedDictionary<string, List<E3Spell>>>(),
 					mapSkills = new SortedDictionary<string, SortedDictionary<string, List<E3Spell>>>(),
 					mapItems = new SortedDictionary<string, SortedDictionary<string, List<E3Spell>>>();
+					Dictionary<string, SpellData> 
+					spellLookup = new Dictionary<string, SpellData>(StringComparer.OrdinalIgnoreCase),
+					aaLookup = new Dictionary<string, SpellData>(StringComparer.OrdinalIgnoreCase),
+					discLookup = new Dictionary<string, SpellData>(StringComparer.OrdinalIgnoreCase),
+					skillLookup = new Dictionary<string, SpellData>(StringComparer.OrdinalIgnoreCase),
+					itemLookup = new Dictionary<string, SpellData>(StringComparer.OrdinalIgnoreCase);
+
 
 					_log.WriteDelayed($"Fetching data (remote)", Logging.LogLevels.Debug);
 
 					//_cfg_CatalogStatus = $"Loading catalogs from {targetToon}...";
 					bool peerSuccess = true;
 
-					peerSuccess &= TryFetchPeerSpellDataListPub(targetToon, "Spells", out var ps);
-					if (peerSuccess) mapSpells = OrganizeCatalog(ps); else mapSpells = new SortedDictionary<string, SortedDictionary<string, List<E3Spell>>>();
 
-					peerSuccess &= TryFetchPeerSpellDataListPub(targetToon, "AAs", out var pa);
-					if (peerSuccess) mapAAs = OrganizeCatalog(pa); else mapAAs = new SortedDictionary<string, SortedDictionary<string, List<E3Spell>>>();
+					// Send request: CatalogReq-<Toon>
 
-					peerSuccess &= TryFetchPeerSpellDataListPub(targetToon, "Discs", out var pd);
-					if (peerSuccess) mapDiscs = OrganizeCatalog(pd); else mapDiscs = new SortedDictionary<string, SortedDictionary<string, List<E3Spell>>>();
-
-					peerSuccess &= TryFetchPeerSpellDataListPub(targetToon, "Skills", out var pk);
-					if (peerSuccess) mapSkills = OrganizeSkillsCatalog(pk); else mapSkills = new SortedDictionary<string, SortedDictionary<string, List<E3Spell>>>();
-
-					peerSuccess &= TryFetchPeerSpellDataListPub(targetToon, "Items", out var pi);
-					if (peerSuccess) mapItems = OrganizeItemsCatalog(pi); else mapItems = new SortedDictionary<string, SortedDictionary<string, List<E3Spell>>>();
+					//do we have that toons data already in memory or is it too old?
 
 
+					bool needDataRefresh = false;
+
+					Int64 dataMustBeNewerThan = Core.StopWatch.ElapsedMilliseconds - _numberofMillisecondsBeforeCatalogNeedsRefresh;
+					foreach (var key in _catalogRefreshKeyTypes)
+					{
+						string topicKey = $"CatalogResp-{E3.CurrentName}-{key}";
+						_log.WriteDelayed($"Checking for catalog key for target toon:{targetToon} key:{topicKey}", Logging.LogLevels.Debug);
+
+						if (NetMQServer.SharedDataClient.TopicUpdates.TryGetValue(targetToon, out var topics)
+							&& topics.TryGetValue(topicKey, out var entry))
+						{
+							//if we called within the last 60 seconds, just use the old data
+							if (entry.LastUpdate < dataMustBeNewerThan)
+							{
+								_log.WriteDelayed($"Catalog key found but too old, asking for refresh: old:{entry.LastUpdate} vs  new:{dataMustBeNewerThan}", Logging.LogLevels.Debug);
+
+								needDataRefresh = true;
+								dataMustBeNewerThan = 0;
+								break;
+							}
+						}
+						else
+						{
+							_log.WriteDelayed($"Catalog key not found, asking for refresh", Logging.LogLevels.Debug);
+
+							needDataRefresh = true;
+							dataMustBeNewerThan = 0;
+							break;
+						}
+					}
+
+
+
+					if (needDataRefresh)
+					{
+						PubServer.AddTopicMessage($"CatalogReq-{targetToon}", "");
+					}
+
+					if (TryFetchPeerSpellDataListPub(targetToon, "Spells", out var ps,dataMustBeNewerThan))
+					{
+						mapSpells = OrganizeCatalog(ps);
+						spellLookup = ConvertToSpellDataLookup(ps);
+					}
+					if(TryFetchPeerSpellDataListPub(targetToon, "AAs", out var pa, dataMustBeNewerThan))
+					{
+						mapAAs = OrganizeCatalog(pa);
+						aaLookup = ConvertToSpellDataLookup(ps);
+					}
+					if(TryFetchPeerSpellDataListPub(targetToon, "Discs", out var pd, dataMustBeNewerThan))
+					{
+						mapDiscs = OrganizeCatalog(pd);
+						discLookup = ConvertToSpellDataLookup(pd);
+					}
+					if(TryFetchPeerSpellDataListPub(targetToon, "Skills", out var pk, dataMustBeNewerThan))
+					{
+						mapSkills = OrganizeSkillsCatalog(pk);
+						skillLookup = ConvertToSpellDataLookup(pk);
+					}
+					if(TryFetchPeerSpellDataListPub(targetToon, "Items", out var pi, dataMustBeNewerThan))
+					{
+						mapItems = OrganizeItemsCatalog(pi);
+						itemLookup = ConvertToSpellDataLookup(pi);
+					}
 
 					// Also try to fetch gem data
 					if (peerSuccess && TryFetchPeerGemData(targetToon, out var gemData))
@@ -1784,7 +1809,7 @@ namespace E3Core.UI.Windows
 			}
 			return returnValue;
 		}
-		private static Dictionary<string, SpellData> ConvertToSpellDataLookup(List<SpellData> spells)
+		private static Dictionary<string, SpellData> ConvertToSpellDataLookup(Google.Protobuf.Collections.RepeatedField<SpellData> spells)
 		{
 			Dictionary<string, SpellData> returnValue = new Dictionary<string, SpellData>(StringComparer.OrdinalIgnoreCase);
 			foreach (var spell in spells)
@@ -2273,47 +2298,38 @@ namespace E3Core.UI.Windows
 		}
 
 		// PubSub relay approach: request peer to publish SpellDataList as base64 on response topic
-		private static bool TryFetchPeerSpellDataListPub(string toon, string listKey, out Google.Protobuf.Collections.RepeatedField<SpellData> data)
+		private static bool TryFetchPeerSpellDataListPub(string toon, string listKey, out Google.Protobuf.Collections.RepeatedField<SpellData> data, Int64 dataMustBeOlderThan)
 		{
 			data = new Google.Protobuf.Collections.RepeatedField<SpellData>();
-			try
+			//topics are stored in toon specific keys
+			string topic = $"CatalogResp-{E3.CurrentName}-{listKey}";
+			// Poll SharedDataClient.TopicUpdates for up to ~2s
+			long end = Core.StopWatch.ElapsedMilliseconds + 4000;
+
+			_log.WriteDelayed($"Trying to fetch data with key:{topic}", Logging.LogLevels.Debug);
+
+
+			while (Core.StopWatch.ElapsedMilliseconds < end)
 			{
-				if (string.IsNullOrEmpty(toon)) return false;
-				// Send request: CatalogReq-<Toon>
-				E3Core.Server.PubServer.AddTopicMessage($"CatalogReq-{toon}", listKey);
-				string topic = $"CatalogResp-{E3.CurrentName}-{listKey}";
-				// Poll SharedDataClient.TopicUpdates for up to ~2s
-				long end = Core.StopWatch.ElapsedMilliseconds + 4000;
-				while (Core.StopWatch.ElapsedMilliseconds < end)
+				if (NetMQServer.SharedDataClient.TopicUpdates.TryGetValue(toon, out var topics)
+					&& topics.TryGetValue(topic, out var entry))
 				{
-					if (E3Core.Server.NetMQServer.SharedDataClient.TopicUpdates.TryGetValue(toon, out var topics)
-						&& topics.TryGetValue(topic, out var entry))
-					{
-						string payload = entry.Data;
-						int first = payload.IndexOf(':');
-						int second = first >= 0 ? payload.IndexOf(':', first + 1) : -1;
-						string b64 = (second > 0 && second + 1 < payload.Length) ? payload.Substring(second + 1) : payload;
-						byte[] bytes = Convert.FromBase64String(b64);
-						var list = SpellDataList.Parser.ParseFrom(bytes);
-						data = list.Data;
-						return true;
-					}
-					if (E3Core.Server.NetMQServer.SharedDataClient.TopicUpdates.TryGetValue(E3.CurrentName, out var topics2)
-						&& topics2.TryGetValue(topic, out var entry2))
-					{
-						string payload = entry2.Data;
-						int first = payload.IndexOf(':');
-						int second = first >= 0 ? payload.IndexOf(':', first + 1) : -1;
-						string b64 = (second > 0 && second + 1 < payload.Length) ? payload.Substring(second + 1) : payload;
-						byte[] bytes = Convert.FromBase64String(b64);
-						var list = SpellDataList.Parser.ParseFrom(bytes);
-						data = list.Data;
-						return true;
-					}
-					System.Threading.Thread.Sleep(25);
+					if (entry.LastUpdate < dataMustBeOlderThan) continue;
+					_log.WriteDelayed($"Data found with key:{topic}", Logging.LogLevels.Debug);
+
+					string payload = entry.Data;
+					int first = payload.IndexOf(':');
+					int second = first >= 0 ? payload.IndexOf(':', first + 1) : -1;
+					string b64 = (second > 0 && second + 1 < payload.Length) ? payload.Substring(second + 1) : payload;
+					byte[] bytes = Convert.FromBase64String(b64);
+					var list = SpellDataList.Parser.ParseFrom(bytes);
+					data = list.Data;
+					return true;
 				}
+				System.Threading.Thread.Sleep(25);
 			}
-			catch { }
+			_log.WriteDelayed($"Data NOT FOUND with key:{topic}", Logging.LogLevels.Debug);
+
 			return false;
 		}
 

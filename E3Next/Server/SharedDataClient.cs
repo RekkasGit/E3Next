@@ -170,6 +170,7 @@ namespace E3Core.Server
 							// Topic: CatalogReq-<TargetToon>
 							// payloaduser is requester; if TargetToon equals our name, publish base64 SpellDataList frames back
 							string target = messageTopicReceived.Substring("CatalogReq-".Length);
+
 							if (!string.IsNullOrEmpty(target) && target.Equals(E3.CurrentName, StringComparison.OrdinalIgnoreCase))
 							{
 
@@ -184,6 +185,10 @@ namespace E3Core.Server
 									foreach (var s in lst) sdl.Data.Add(s.ToProto());
 									return Convert.ToBase64String(sdl.ToByteArray());
 								};
+
+								E3.Log.WriteDelayed($"RSending out data with :CatalogResp-{payloaduser}-Spells", Logging.LogLevels.Debug);
+
+
 								PubServer.AddTopicMessage($"CatalogResp-{payloaduser}-Spells", pack(spells));
 								PubServer.AddTopicMessage($"CatalogResp-{payloaduser}-AAs", pack(aas));
 								PubServer.AddTopicMessage($"CatalogResp-{payloaduser}-Discs", pack(discs));
@@ -466,7 +471,7 @@ namespace E3Core.Server
 			ConcurrentDictionary<string, ShareDataEntry> usertopics;
 			if (!TopicUpdates.TryGetValue(user, out usertopics))
 			{
-				usertopics = new ConcurrentDictionary<string, ShareDataEntry>();
+				usertopics = new ConcurrentDictionary<string, ShareDataEntry>(StringComparer.OrdinalIgnoreCase);
 				TopicUpdates.TryAdd(user, usertopics);
 			}
 
@@ -483,6 +488,13 @@ namespace E3Core.Server
 				{
 					//why do work if its the same data?	
 					entry.Data = messageReceived;
+					entry.LastUpdate = updateTime;
+				}
+			}
+			else
+			{
+				lock (entry)
+				{
 					entry.LastUpdate = updateTime;
 				}
 			}
@@ -587,8 +599,8 @@ namespace E3Core.Server
 				subSocket.Subscribe("BroadCastMessageZone");
 				// e3imgui Add From Catalog peer relay topics
 				// Requests addressed to specific toons and responses back to requester
-				subSocket.Subscribe("CatalogReq-");
-				subSocket.Subscribe("CatalogResp-");
+				subSocket.Subscribe($"CatalogReq-{E3.CurrentName.ToLower()}");
+				subSocket.Subscribe($"CatalogResp-");
 				// e3imgui Food/Drink inventory peer relay topics
 				subSocket.Subscribe("InvReq-");
 				subSocket.Subscribe("InvResp-");
@@ -765,6 +777,8 @@ namespace E3Core.Server
 							}
 							else if (messageTopicReceived.StartsWith("CatalogReq-", StringComparison.Ordinal))
 							{
+								E3.Log.WriteDelayed($"Request recieved for catalog data topic:{messageTopicReceived}", Logging.LogLevels.Debug);
+
 								var data = OnCommandData.Aquire();
 								data.Data = messageTopicReceived;
 								data.Data2 = payloaduser;
