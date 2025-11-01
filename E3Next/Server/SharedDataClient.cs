@@ -154,7 +154,7 @@ namespace E3Core.Server
 				if (IMGUICommands.TryDequeue(out var data))
 				{
 					string messageTopicReceived = data.Data;
-					string payloaduser = data.Data2;
+					string payloaduser = data.Data2.ToLower();
 					string messageReceived = data.Data3;
 
 					var typeInfo = data.TypeOfCommand;
@@ -600,7 +600,7 @@ namespace E3Core.Server
 				// e3imgui Add From Catalog peer relay topics
 				// Requests addressed to specific toons and responses back to requester
 				subSocket.Subscribe($"CatalogReq-{E3.CurrentName.ToLower()}");
-				subSocket.Subscribe($"CatalogResp-");
+				subSocket.Subscribe($"CatalogResp-{E3.CurrentName.ToLower()}");
 				// e3imgui Food/Drink inventory peer relay topics
 				subSocket.Subscribe("InvReq-");
 				subSocket.Subscribe("InvResp-");
