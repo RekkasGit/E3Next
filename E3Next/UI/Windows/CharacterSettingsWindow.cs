@@ -54,16 +54,20 @@ namespace E3Core.UI.Windows
 		///Data organized into Category, Sub Category, List of Spells.
 		///always get a pointer to these via the method GetCatalogByType
 		/// </summary>
-		private static SortedDictionary<string, SortedDictionary<string, List<E3Spell>>> _spellCatalog = new SortedDictionary<string, SortedDictionary<string, List<E3Spell>>>();
-		private static Dictionary<string, SpellData> _spellCatalogLookup = new Dictionary<string, SpellData>(StringComparer.OrdinalIgnoreCase);
-		private static SortedDictionary<string, SortedDictionary<string, List<E3Spell>>> _aaCatalog = new SortedDictionary<string, SortedDictionary<string, List<E3Spell>>>();
-		private static Dictionary<string, SpellData> _aaCatalogLookup = new Dictionary<string, SpellData>(StringComparer.OrdinalIgnoreCase);
-		private static SortedDictionary<string, SortedDictionary<string, List<E3Spell>>> _discCatalog = new SortedDictionary<string, SortedDictionary<string, List<E3Spell>>>();
-		private static Dictionary<string, SpellData> _discCatalogLookup = new Dictionary<string, SpellData>(StringComparer.OrdinalIgnoreCase);
-		private static SortedDictionary<string, SortedDictionary<string, List<E3Spell>>> _skillCatalog = new SortedDictionary<string, SortedDictionary<string, List<E3Spell>>>();
-		private static Dictionary<string, SpellData> _skillCatalogLookup = new Dictionary<string, SpellData>(StringComparer.OrdinalIgnoreCase);
-		private static SortedDictionary<string, SortedDictionary<string, List<E3Spell>>> _itemCatalog = new SortedDictionary<string, SortedDictionary<string, List<E3Spell>>>();
-		private static Dictionary<string, SpellData> _itemCatalogLookup = new Dictionary<string, SpellData>(StringComparer.OrdinalIgnoreCase);
+		private static SortedDictionary<string, SortedDictionary<string, List<E3Spell>>> _spellCatalog = new SortedDictionary<string, SortedDictionary<string, List<E3Spell>>>(),
+		_aaCatalog = new SortedDictionary<string, SortedDictionary<string, List<E3Spell>>>(),
+		_discCatalog = new SortedDictionary<string, SortedDictionary<string, List<E3Spell>>>(),
+		_skillCatalog = new SortedDictionary<string, SortedDictionary<string, List<E3Spell>>>(),
+		_itemCatalog = new SortedDictionary<string, SortedDictionary<string, List<E3Spell>>>();
+
+		private static Dictionary<string, SpellData> _spellCatalogLookup = new Dictionary<string, SpellData>(StringComparer.OrdinalIgnoreCase),
+		_discCatalogLookup = new Dictionary<string, SpellData>(StringComparer.OrdinalIgnoreCase),
+		_aaCatalogLookup = new Dictionary<string, SpellData>(StringComparer.OrdinalIgnoreCase),
+		_skillCatalogLookup = new Dictionary<string, SpellData>(StringComparer.OrdinalIgnoreCase),
+		_itemCatalogLookup = new Dictionary<string, SpellData>(StringComparer.OrdinalIgnoreCase);
+
+
+	
 
 		private static E3Spell _cfgCatalogInfoSpell = null;
 		private static bool _cfgShowSpellInfoModal = false;
@@ -994,7 +998,37 @@ namespace E3Core.UI.Windows
 				imgui_TextColored(0.8f, 0.4f, 0.4f, 1.0f, $"Error displaying gems: {ex.Message}");
 			}
 		}
+		private static Int32 GetIconFromIniString(string value)
+		{
+			Int32 indexOfSlash = value.IndexOf('/');
 
+			string spellName = value;
+			if (indexOfSlash != -1)
+			{
+				spellName = value.Substring(0, indexOfSlash);
+			}
+			Int32 iconID = 0;
+			if (_spellCatalogLookup.TryGetValue(spellName, out var tspell))
+			{
+				iconID = tspell.SpellIcon;
+			}
+			else if (_aaCatalogLookup.TryGetValue(spellName, out var taa))
+			{
+				iconID = taa.SpellIcon;
+			}
+			else if (_itemCatalogLookup.TryGetValue(spellName, out var titem))
+			{
+				iconID = titem.SpellIcon;
+
+			}
+			else if (_discCatalogLookup.TryGetValue(spellName, out var tdisc))
+			{
+				iconID = tdisc.SpellIcon;
+			}
+
+			return iconID;
+
+		}
 		// Helper method to render values for the selected key
 		private static void RenderSelectedKeyValues(SectionData selectedSection)
 		{
@@ -1108,8 +1142,11 @@ namespace E3Core.UI.Windows
 				if (!editing)
 				{
 					// Row with better styling and alignment
+					Int32 iconID = GetIconFromIniString(v);
+					imgui_DrawSpellIconByIconIndex(iconID, 30.0f);
+					imgui_SameLine();
 					imgui_Text($"{i + 1}.");
-					imgui_SameLine(_valueRowActionStartOffset);
+					imgui_SameLine(_valueRowActionStartOffset+20);
 
 					bool canMoveUp = i > 0;
 					bool canMoveDown = i < parts.Count - 1;
@@ -1735,10 +1772,16 @@ namespace E3Core.UI.Windows
 					{
 						// Publish atomically
 						_spellCatalog = mapSpells;
+						_spellCatalogLookup = spellLookup;
 						_aaCatalog = mapAAs;
+						_aaCatalogLookup = aaLookup;
 						_discCatalog = mapDiscs;
+						_discCatalogLookup = discLookup;
 						_skillCatalog = mapSkills;
+						_skillCatalogLookup = skillLookup;
 						_itemCatalog = mapItems;
+						_itemCatalogLookup = itemLookup;
+
 						_catalogLookups = new[]
 						{
 							(_spellCatalog, "Spell"),
@@ -3033,7 +3076,9 @@ namespace E3Core.UI.Windows
 							_cfgShowSpellInfoModal = true;
 						}
 						imgui_SameLine();
-
+						
+						imgui_DrawSpellIconByIconIndex(e.SpellIcon, 30.0f);
+						imgui_SameLine();
 						// Row text: show level + name (no ToDisplayString needed)
 						imgui_Text($"[{e.Level}] {e.Name}");
 						i++;
