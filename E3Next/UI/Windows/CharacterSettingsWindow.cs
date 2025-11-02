@@ -138,8 +138,8 @@ namespace E3Core.UI.Windows
 		private static string _cfgFoodDrinkPendingType = string.Empty;
 		private static long _cfgFoodDrinkTimeoutAt = 0;
 
-		// Config UI toggle: "/e3imgui".
-		private static readonly string _e3ImGuiWindow = "E3Next Config";
+	// Config UI toggle: "/e3imgui".
+	private static readonly string _e3ImGuiWindow = "E3Next Config";
 		private static bool _imguiInitDone = false;
 		private static bool _imguiContextReady = false;
 		private enum SettingsTab { Character, General, Advanced }
@@ -356,7 +356,7 @@ namespace E3Core.UI.Windows
 					E3ImGUI.PushCurrentTheme();
 					// No size constraints - allow window to be resized to any size
 
-					if (imgui_Begin(_e3ImGuiWindow, (int)ImGuiWindowFlags.ImGuiWindowFlags_NoCollapse))
+					if (imgui_Begin(_e3ImGuiWindow, (int)(ImGuiWindowFlags.ImGuiWindowFlags_NoCollapse | ImGuiWindowFlags.ImGuiWindowFlags_NoDocking)))
 					{
 
 						try
@@ -1615,27 +1615,70 @@ namespace E3Core.UI.Windows
 		}
 
 		// Helper to determine if a key is healing-related
-		// Save out active ini data (current or selected)
-		private static void SaveActiveIniData()
+	// Save out active ini data (current or selected)
+	private static void SaveActiveIniData()
+	{
+		try
 		{
-			try
-			{
-				string currentPath = GetCurrentCharacterIniPath();
-				string selectedPath = GetActiveSettingsPath();
-				var pd = GetActiveCharacterIniData();
-				if (string.IsNullOrEmpty(selectedPath) || pd == null) return;
+			string currentPath = GetCurrentCharacterIniPath();
+			string selectedPath = GetActiveSettingsPath();
+			var pd = GetActiveCharacterIniData();
+			if (string.IsNullOrEmpty(selectedPath) || pd == null) return;
 
-				var parser = E3Core.Utility.e3util.CreateIniParser();
-				parser.WriteFile(selectedPath, pd);
-				_cfg_Dirty = false;
-				_nextIniRefreshAtMs = 0;
-				_log.Write($"Saved changes to {Path.GetFileName(selectedPath)}");
-			}
-			catch (Exception ex)
-			{
-				_log.Write($"Failed to save: {ex.Message}");
-			}
+			var parser = E3Core.Utility.e3util.CreateIniParser();
+			parser.WriteFile(selectedPath, pd);
+			_cfg_Dirty = false;
+			_nextIniRefreshAtMs = 0;
+			_log.Write($"Saved changes to {Path.GetFileName(selectedPath)}");
 		}
+		catch (Exception ex)
+		{
+			_log.Write($"Failed to save: {ex.Message}");
+		}
+	}
+
+	// Clear pending changes on the selected ini (reload from disk)
+	private static void ClearPendingChanges()
+	{
+		try
+		{
+			string currentPath = GetCurrentCharacterIniPath();
+			string selectedPath = GetActiveSettingsPath();
+			
+			if (string.IsNullOrEmpty(selectedPath))
+			{
+				_log.Write("No ini file selected");
+				return;
+			}
+
+			// Reload from disk
+			var parser = E3Core.Utility.e3util.CreateIniParser();
+			var pd = parser.ReadFile(selectedPath);
+			
+			// Update the appropriate data reference
+			if (string.Equals(selectedPath, currentPath, StringComparison.OrdinalIgnoreCase))
+			{
+				// Reloading current character's ini
+				E3.CharacterSettings.ParsedData = pd;
+				_selectedCharIniParsedData = pd;
+			}
+			else
+			{
+				// Reloading a different character's ini
+				_selectedCharIniParsedData = pd;
+			}
+			
+			_cfg_Dirty = false;
+			_nextIniRefreshAtMs = 0;
+			_cfgSelectedValueIndex = -1;
+			InvalidateSpellEditState();
+			_log.Write($"Cleared pending changes for {Path.GetFileName(selectedPath)}");
+		}
+		catch (Exception ex)
+		{
+			_log.Write($"Failed to clear changes: {ex.Message}");
+		}
+	}
 		static List<String> _catalogRefreshKeyTypes = new List<string>() { "Spells", "AAs", "Discs", "Skills", "Items" };
 		static Int64 _numberofMillisecondsBeforeCatalogNeedsRefresh = 30000;
 
@@ -2882,12 +2925,12 @@ namespace E3Core.UI.Windows
 			string n = name.ToLowerInvariant();
 			return n.Contains("water") || n.Contains("milk") || n.Contains("wine") || n.Contains("ale") || n.Contains("beer") || n.Contains("tea") || n.Contains("juice") || n.Contains("elixir") || n.Contains("nectar") || n.Contains("brew");
 		}
-		private static void RenderAddFromCatalogModal(IniData pd, SectionData selectedSection)
-		{
-		imgui_Begin_OpenFlagSet("Add From Catalog", true);
-			// Set initial size only on first use - window is resizable and remembers user's size
-			imgui_SetNextWindowSizeWithCond(900f, 600f, 4); // ImGuiCond_FirstUseEver = 4
-			bool _open_Add = imgui_Begin("Add From Catalog", 0); // No AlwaysAutoResize = resizable
+	private static void RenderAddFromCatalogModal(IniData pd, SectionData selectedSection)
+	{
+	imgui_Begin_OpenFlagSet("E3Catalog", true);
+		// Set initial size only on first use - window is resizable and remembers user's size
+		imgui_SetNextWindowSizeWithCond(900f, 600f, 4); // ImGuiCond_FirstUseEver = 4
+		bool _open_Add = imgui_Begin("E3Catalog", (int)ImGuiWindowFlags.ImGuiWindowFlags_NoDocking); // No AlwaysAutoResize = resizable
 			if (_open_Add)
 			{
 		float totalW = imgui_GetContentRegionAvailX();
@@ -3368,10 +3411,10 @@ namespace E3Core.UI.Windows
 		}
 
 		// Append If modal: choose an If key to append to a specific row value
-		private static void RenderIfAppendModal(SectionData selectedSection)
-		{
-			imgui_Begin_OpenFlagSet("Append If", true);
-			bool _open_if = imgui_Begin("Append If", (int)ImGuiWindowFlags.ImGuiWindowFlags_AlwaysAutoResize);
+	private static void RenderIfAppendModal(SectionData selectedSection)
+	{
+		imgui_Begin_OpenFlagSet("E3AppendIf", true);
+		bool _open_if = imgui_Begin("E3AppendIf", (int)(ImGuiWindowFlags.ImGuiWindowFlags_AlwaysAutoResize | ImGuiWindowFlags.ImGuiWindowFlags_NoDocking));
 			if (_open_if)
 			{
 				if (!string.IsNullOrEmpty(_cfgIfAppendStatus)) imgui_Text(_cfgIfAppendStatus);
@@ -3413,10 +3456,10 @@ namespace E3Core.UI.Windows
 			if (!_open_if) _cfgShowIfAppendModal = false;
 		}
 
-		private static void RenderThemeSettingsModal()
-		{
-			imgui_Begin_OpenFlagSet("Theme Settings", true);
-			bool modalOpen = imgui_Begin("Theme Settings", (int)ImGuiWindowFlags.ImGuiWindowFlags_AlwaysAutoResize);
+	private static void RenderThemeSettingsModal()
+	{
+		imgui_Begin_OpenFlagSet("E3Theme", true);
+		bool modalOpen = imgui_Begin("E3Theme", (int)(ImGuiWindowFlags.ImGuiWindowFlags_AlwaysAutoResize | ImGuiWindowFlags.ImGuiWindowFlags_NoDocking));
 			if (modalOpen)
 			{
 				imgui_TextColored(0.95f, 0.85f, 0.35f, 1.0f, "UI Theme Selection");
@@ -4053,11 +4096,11 @@ namespace E3Core.UI.Windows
 			catch { return false; }
 		}
 
-		private static void RenderIfsSampleModal()
-		{
-			const string winName = "Sample If's";
-			imgui_Begin_OpenFlagSet(winName, _cfgShowIfSampleModal);
-			bool _open_ifs = imgui_Begin(winName, (int)ImGuiWindowFlags.ImGuiWindowFlags_AlwaysAutoResize);
+	private static void RenderIfsSampleModal()
+	{
+		const string winName = "E3SampleIfs";
+		imgui_Begin_OpenFlagSet(winName, _cfgShowIfSampleModal);
+		bool _open_ifs = imgui_Begin(winName, (int)(ImGuiWindowFlags.ImGuiWindowFlags_AlwaysAutoResize | ImGuiWindowFlags.ImGuiWindowFlags_NoDocking));
 			if (_open_ifs)
 			{
 				if (!string.IsNullOrEmpty(_cfgIfSampleStatus)) imgui_Text(_cfgIfSampleStatus);
@@ -4238,13 +4281,32 @@ namespace E3Core.UI.Windows
 		_showOfflineCharInis = imgui_Checkbox("Show offline", _showOfflineCharInis);
 			imgui_SameLine();
 
-			// Save button with better styling
-			if (imgui_Button(_cfg_Dirty ? "Save Changes*" : "Save Changes"))
+		// Save button with better styling
+		if (imgui_Button(_cfg_Dirty ? "Save Changes*" : "Save Changes"))
+		{
+			SaveActiveIniData();
+		}
+		imgui_SameLine();
+		
+		// Clear Changes button (only enabled when there are unsaved changes)
+		if (_cfg_Dirty)
+		{
+			if (imgui_Button("Clear Changes"))
 			{
-				SaveActiveIniData();
+				ClearPendingChanges();
 			}
 			imgui_SameLine();
-			imgui_TextColored(0.6f, 0.6f, 0.6f, 1.0f, _cfg_Dirty ? "Unsaved changes" : "All changes saved");
+		}
+		else
+		{
+			// Show disabled button when there are no changes
+			imgui_PushStyleVarFloat((int)ImGuiStyleVar.Alpha, 0.4f);
+			imgui_Button("Clear Changes");
+			imgui_PopStyleVar(1);
+			imgui_SameLine();
+		}
+		
+		imgui_TextColored(0.6f, 0.6f, 0.6f, 1.0f, _cfg_Dirty ? "Unsaved changes" : "All changes saved");
 
 			imgui_Separator();
 		}
@@ -4922,29 +4984,29 @@ namespace E3Core.UI.Windows
 			}
 		}
 
-		private static void RenderSpellModifierModal()
+	private static void RenderSpellModifierModal()
+	{
+		var iniData = GetActiveCharacterIniData();
+		var sectionData = iniData?.Sections?.GetSectionData(_cfgSelectedSection ?? string.Empty);
+		var keyData = sectionData?.Keys?.GetKeyData(_cfgSelectedKey ?? string.Empty);
+		var values = GetValues(keyData);
+		if (_cfgSelectedValueIndex < 0 || _cfgSelectedValueIndex >= values.Count)
 		{
-			var iniData = GetActiveCharacterIniData();
-			var sectionData = iniData?.Sections?.GetSectionData(_cfgSelectedSection ?? string.Empty);
-			var keyData = sectionData?.Keys?.GetKeyData(_cfgSelectedKey ?? string.Empty);
-			var values = GetValues(keyData);
-			if (_cfgSelectedValueIndex < 0 || _cfgSelectedValueIndex >= values.Count)
-			{
-				_cfgShowSpellModifierModal = false;
-				return;
-			}
+			_cfgShowSpellModifierModal = false;
+			return;
+		}
 
-			string rawValue = values[_cfgSelectedValueIndex] ?? string.Empty;
-			var state = EnsureSpellEditState(_cfgSelectedSection, _cfgSelectedKey, _cfgSelectedValueIndex, rawValue);
-			if (state == null)
-			{
-				_cfgShowSpellModifierModal = false;
-				return;
-			}
+		string rawValue = values[_cfgSelectedValueIndex] ?? string.Empty;
+		var state = EnsureSpellEditState(_cfgSelectedSection, _cfgSelectedKey, _cfgSelectedValueIndex, rawValue);
+		if (state == null)
+		{
+			_cfgShowSpellModifierModal = false;
+			return;
+		}
 
-			const string modalTitle = "Flags & Modifiers##spell_modal";
-			imgui_Begin_OpenFlagSet(modalTitle, true);
-			bool modalOpen = imgui_Begin(modalTitle, (int)ImGuiWindowFlags.ImGuiWindowFlags_NoCollapse);
+		const string modalTitle = "E3SpellModifiers";
+		imgui_Begin_OpenFlagSet(modalTitle, true);
+		bool modalOpen = imgui_Begin(modalTitle, (int)(ImGuiWindowFlags.ImGuiWindowFlags_NoCollapse | ImGuiWindowFlags.ImGuiWindowFlags_NoDocking));
 			if (modalOpen)
 			{
 				RenderSpellModifierEditor(state);
@@ -5079,12 +5141,12 @@ namespace E3Core.UI.Windows
 		}
 
 		// Inventory scanning for Food/Drink using MQ TLOs (non-blocking via ProcessBackgroundWork trigger)
-		private static void RenderFoodDrinkPicker(SectionData selectedSection)
-		{
-			// Respect current open state instead of forcing true every frame
-			const string winName = "Pick From Inventory##modal";
-			imgui_Begin_OpenFlagSet(winName, _cfgShowFoodDrinkModal);
-			bool shouldDraw = imgui_Begin(winName, (int)(ImGuiWindowFlags.ImGuiWindowFlags_AlwaysAutoResize | ImGuiWindowFlags.ImGuiWindowFlags_NoCollapse));
+	private static void RenderFoodDrinkPicker(SectionData selectedSection)
+	{
+		// Respect current open state instead of forcing true every frame
+		const string winName = "E3PickInventory";
+		imgui_Begin_OpenFlagSet(winName, _cfgShowFoodDrinkModal);
+		bool shouldDraw = imgui_Begin(winName, (int)(ImGuiWindowFlags.ImGuiWindowFlags_AlwaysAutoResize | ImGuiWindowFlags.ImGuiWindowFlags_NoCollapse | ImGuiWindowFlags.ImGuiWindowFlags_NoDocking));
 
 			if (shouldDraw)
 			{
@@ -5177,11 +5239,11 @@ namespace E3Core.UI.Windows
 			// Sync our open flag with the actual window state (handles Titlebar X)
 			_cfgShowFoodDrinkModal = imgui_Begin_OpenFlagGet(winName);
 		}
-		private static void RenderBardMelodyHelperModal()
-		{
-			const string winName = "Bard Melody Helper##modal";
-			imgui_Begin_OpenFlagSet(winName, _cfgShowBardMelodyHelper);
-			bool open = imgui_Begin(winName, (int)(ImGuiWindowFlags.ImGuiWindowFlags_AlwaysAutoResize | ImGuiWindowFlags.ImGuiWindowFlags_NoCollapse));
+	private static void RenderBardMelodyHelperModal()
+	{
+		const string winName = "E3BardMelody";
+		imgui_Begin_OpenFlagSet(winName, _cfgShowBardMelodyHelper);
+		bool open = imgui_Begin(winName, (int)(ImGuiWindowFlags.ImGuiWindowFlags_AlwaysAutoResize | ImGuiWindowFlags.ImGuiWindowFlags_NoCollapse | ImGuiWindowFlags.ImGuiWindowFlags_NoDocking));
 			if (open)
 			{
 				imgui_TextColored(0.95f, 0.85f, 0.35f, 1.0f, "Create a Bard Melody");
@@ -5526,11 +5588,11 @@ namespace E3Core.UI.Windows
 			_cfgShowAddModal = false;
 			_cfgCatalogMode = CatalogMode.Standard;
 		}
-		private static void RenderBardSampleIfModal()
-		{
-			const string winName = "Sample IFs##bard";
-			imgui_Begin_OpenFlagSet(winName, _cfgShowBardSampleIfModal);
-			bool open = imgui_Begin(winName, (int)(ImGuiWindowFlags.ImGuiWindowFlags_AlwaysAutoResize | ImGuiWindowFlags.ImGuiWindowFlags_NoCollapse));
+	private static void RenderBardSampleIfModal()
+	{
+		const string winName = "E3BardSampleIfs";
+		imgui_Begin_OpenFlagSet(winName, _cfgShowBardSampleIfModal);
+		bool open = imgui_Begin(winName, (int)(ImGuiWindowFlags.ImGuiWindowFlags_AlwaysAutoResize | ImGuiWindowFlags.ImGuiWindowFlags_NoCollapse | ImGuiWindowFlags.ImGuiWindowFlags_NoDocking));
 			if (open)
 			{
 				bool ready = EnsureBardSampleIfsLoaded();
@@ -5843,11 +5905,11 @@ namespace E3Core.UI.Windows
 			return unique;
 		}
 
-		// Toon picker modal for Heals section (Tank / Important Bot)
-		private static void RenderToonPickerModal(SectionData selectedSection)
-		{
-			imgui_Begin_OpenFlagSet("Pick Toons", true);
-			bool _open_toon = imgui_Begin("Pick Toons", (int)ImGuiWindowFlags.ImGuiWindowFlags_AlwaysAutoResize);
+	// Toon picker modal for Heals section (Tank / Important Bot)
+	private static void RenderToonPickerModal(SectionData selectedSection)
+	{
+		imgui_Begin_OpenFlagSet("E3PickToons", true);
+		bool _open_toon = imgui_Begin("E3PickToons", (int)(ImGuiWindowFlags.ImGuiWindowFlags_AlwaysAutoResize | ImGuiWindowFlags.ImGuiWindowFlags_NoDocking));
 			if (_open_toon)
 			{
 				if (!string.IsNullOrEmpty(_cfgToonPickerStatus)) imgui_Text(_cfgToonPickerStatus);
@@ -5887,13 +5949,13 @@ namespace E3Core.UI.Windows
 
 		// Spell Info modal (read-only details) using real ImGui tables + colored labels
 
-		private static void RenderSpellInfoModal()
-		{
-			var s = _cfgSpellInfoSpell;
-			if (s == null) { _cfgShowSpellInfoModal = false; return; }
-			const string winName = "Spell Information";
-			imgui_Begin_OpenFlagSet(winName, _cfgShowSpellInfoModal);
-			bool open = imgui_Begin(winName, (int)ImGuiWindowFlags.ImGuiWindowFlags_AlwaysAutoResize);
+	private static void RenderSpellInfoModal()
+	{
+		var s = _cfgSpellInfoSpell;
+		if (s == null) { _cfgShowSpellInfoModal = false; return; }
+		const string winName = "E3SpellInfo";
+		imgui_Begin_OpenFlagSet(winName, _cfgShowSpellInfoModal);
+		bool open = imgui_Begin(winName, (int)(ImGuiWindowFlags.ImGuiWindowFlags_AlwaysAutoResize | ImGuiWindowFlags.ImGuiWindowFlags_NoDocking));
 			if (open)
 			{
 				// Header with better styling
@@ -6033,10 +6095,10 @@ namespace E3Core.UI.Windows
 			if (!_cfgShowSpellInfoModal) { _cfgSpellInfoSpell = null; }
 		}
 
-		private static void RenderDonateModal()
-		{
-			imgui_Begin_OpenFlagSet("Support E3", true);
-			bool open = imgui_Begin("Support E3", (int)ImGuiWindowFlags.ImGuiWindowFlags_AlwaysAutoResize);
+	private static void RenderDonateModal()
+	{
+		imgui_Begin_OpenFlagSet("E3Donate", true);
+		bool open = imgui_Begin("E3Donate", (int)(ImGuiWindowFlags.ImGuiWindowFlags_AlwaysAutoResize | ImGuiWindowFlags.ImGuiWindowFlags_NoDocking));
 			if (open)
 			{
 				imgui_TextColored(0.9f, 0.9f, 0.6f, 1.0f, "Hi, Ty for thinking of donating!\nIf you wish to donate, please use friends and family.");
