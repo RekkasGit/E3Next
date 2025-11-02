@@ -236,7 +236,7 @@ namespace E3Core.UI.Windows
 		private static string _selectedCharIniPath = string.Empty; // defaults to current character
 		private static IniData _selectedCharIniParsedData = null;  // parsed data for non-current selection
 		private static string[] _charIniFiles = Array.Empty<string>();
-		private static bool _hideOfflineCharInis = false;
+		private static bool _showOfflineCharInis = false;
 		private static long _nextIniFileScanAtMs = 0;
 		// Dropdown support (feature-detect combo availability to avoid crashes on older MQ2Mono)
 		private static bool _comboAvailable = true;
@@ -349,8 +349,7 @@ namespace E3Core.UI.Windows
 
 					// Apply current theme
 					E3ImGUI.PushCurrentTheme();
-					imgui_SetNextWindowSizeConstraints(200, 200, 2000, 1000);
-
+					// No size constraints - allow window to be resized to any size
 
 					if (imgui_Begin(_e3ImGuiWindow, (int)ImGuiWindowFlags.ImGuiWindowFlags_NoCollapse))
 					{
@@ -552,10 +551,13 @@ namespace E3Core.UI.Windows
 
 			SectionData activeSection = null;
 
+			// Reserve space for spell gems display at bottom (header + separator + gem row with 40px icons + padding)
+			float reservedBottomSpace = _cfg_GemsAvailable ? 100f : 10f;
+			float tableHeight = Math.Max(200f, availY - reservedBottomSpace);
 
 			Int32 flags = (int)(ImGuiTableFlags.ImGuiTableFlags_Borders | ImGuiTableFlags.ImGuiTableFlags_Resizable | ImGuiTableFlags.ImGuiTableFlags_ScrollY | ImGuiTableFlags.ImGuiTableFlags_SizingStretchProp | ImGuiTableFlags.ImGuiTableFlags_NoPadInnerX | ImGuiTableFlags.ImGuiTableFlags_NoPadOuterX);
 
-			if (imgui_BeginTable("E3ConfigEditorTable", 3, flags, imgui_GetContentRegionAvailX(), 600))
+			if (imgui_BeginTable("E3ConfigEditorTable", 3, flags, 0, tableHeight))
 			{
 
 				try
@@ -572,8 +574,8 @@ namespace E3Core.UI.Windows
 					if (imgui_TableNextColumn())
 					{
 						//Use a 1 - column table with RowBg to get built-in alternating backgrounds
-						int tableFlags = (int)(ImGuiTableFlags.ImGuiTableFlags_RowBg | ImGuiTableFlags.ImGuiTableFlags_ScrollY | ImGuiTableFlags.ImGuiTableFlags_SizingStretchProp);
-						if (imgui_BeginTable("SectionsTreeTable", 1, tableFlags, imgui_GetContentRegionAvailX(), 0))
+						int tableFlags = (int)(ImGuiTableFlags.ImGuiTableFlags_RowBg | ImGuiTableFlags.ImGuiTableFlags_ScrollY);
+						if (imgui_BeginTable("SectionsTreeTable", 1, tableFlags, 0, 0))
 						{
 							try
 							{
@@ -2916,7 +2918,7 @@ namespace E3Core.UI.Windows
 				var src = GetCatalogByType(_cfgAddType);
 
 				// -------- LEFT: Top-level categories --------
-				if (imgui_BeginChild("TopLevelCats", thirdW, listH, true))
+				if (imgui_BeginChild("TopLevelCats", thirdW, listH, 1, 0))
 				{
 					imgui_TextColored(0.9f, 0.95f, 1.0f, 1.0f, "Categories");
 					var cats = src.Keys.ToList();
@@ -2939,7 +2941,7 @@ namespace E3Core.UI.Windows
 				imgui_SameLine();
 
 				// -------- MIDDLE: Subcategories for selected category --------
-				if (imgui_BeginChild("SubCats", thirdW, listH, true))
+				if (imgui_BeginChild("SubCats", thirdW, listH, 1, 0))
 				{
 					imgui_TextColored(0.9f, 0.95f, 1.0f, 1.0f, "Subcategories");
 					if (!string.IsNullOrEmpty(_cfgAddCategory) && src.TryGetValue(_cfgAddCategory, out var submap))
@@ -2965,7 +2967,7 @@ namespace E3Core.UI.Windows
 				imgui_SameLine();
 
 				// -------- RIGHT: Entries (with Add / Info) --------
-				if (imgui_BeginChild("EntryList", thirdW, listH, true))
+				if (imgui_BeginChild("EntryList", thirdW, listH, 1, 0))
 				{
 					imgui_TextColored(0.9f, 0.95f, 1.0f, 1.0f, "Entries");
 
@@ -3244,7 +3246,7 @@ namespace E3Core.UI.Windows
 			{
 				if (!string.IsNullOrEmpty(_cfgIfAppendStatus)) imgui_Text(_cfgIfAppendStatus);
 				float h = 300f; float w = 520f;
-				if (imgui_BeginChild("IfList", w, h, true))
+				if (imgui_BeginChild("IfList", w, h, 1, 0))
 				{
 					var list = _cfgIfAppendCandidates ?? new List<string>();
 					int i = 0;
@@ -3409,9 +3411,9 @@ namespace E3Core.UI.Windows
 			imgui_SameLine();
 			if (imgui_Button("Refresh")) _cfgAllPlayersRefreshRequested = true;
 
-			imgui_Separator();
+				imgui_Separator();
 
-			if (imgui_BeginChild("AllPlayersList", 0, 0, true))
+				if (imgui_BeginChild("AllPlayersList", 0, 0, 1, 0))
 			{
 				try
 				{
@@ -3930,7 +3932,7 @@ namespace E3Core.UI.Windows
 			{
 				if (!string.IsNullOrEmpty(_cfgIfSampleStatus)) imgui_Text(_cfgIfSampleStatus);
 				float h = 300f; float w = 640f;
-				if (imgui_BeginChild("IfsSampleList", w, h, true))
+				if (imgui_BeginChild("IfsSampleList", w, h, 1, 0))
 				{
 					for (int i = 0; i < _cfgIfSampleLines.Count; i++)
 					{
@@ -4068,8 +4070,8 @@ namespace E3Core.UI.Windows
 
 				foreach (var f in _charIniFiles)
 				{
-					if (string.Equals(f, currentPath, StringComparison.OrdinalIgnoreCase)) continue;
-					if (_hideOfflineCharInis && !IsIniForOnlineToon(f, onlineToons)) continue;
+				if (string.Equals(f, currentPath, StringComparison.OrdinalIgnoreCase)) continue;
+				if (!_showOfflineCharInis && !IsIniForOnlineToon(f, onlineToons)) continue;
 					string name = Path.GetFileName(f);
 					bool sel = string.Equals(_selectedCharIniPath, f, StringComparison.OrdinalIgnoreCase);
 					if (imgui_Selectable($"{name}", sel))
@@ -4102,8 +4104,8 @@ namespace E3Core.UI.Windows
 				imgui_EndCombo();
 			}
 
-			imgui_SameLine();
-			_hideOfflineCharInis = imgui_Checkbox("Hide offline", _hideOfflineCharInis);
+		imgui_SameLine();
+		_showOfflineCharInis = imgui_Checkbox("Show offline", _showOfflineCharInis);
 			imgui_SameLine();
 
 			// Save button with better styling
@@ -4986,7 +4988,7 @@ namespace E3Core.UI.Windows
 					float listHeight = Math.Min(400f, Math.Max(150f, _cfgFoodDrinkCandidates.Count * 20f + 40f));
 					float listWidth = Math.Max(300f, imgui_GetContentRegionAvailX() * 0.9f);
 
-					if (imgui_BeginChild("FoodDrinkList", listWidth, listHeight, true))
+					if (imgui_BeginChild("FoodDrinkList", listWidth, listHeight, 1, 0))
 					{
 						for (int i = 0; i < _cfgFoodDrinkCandidates.Count; i++)
 						{
@@ -5463,7 +5465,7 @@ namespace E3Core.UI.Windows
 				{
 					float tableWidth = Math.Max(520f, imgui_GetContentRegionAvailX());
 					float tableHeight = Math.Min(420f, Math.Max(220f, displayList.Count * 24f));
-					if (imgui_BeginChild("BardSampleIfList", tableWidth, tableHeight, true))
+					if (imgui_BeginChild("BardSampleIfList", tableWidth, tableHeight, 1, 0))
 					{
 						if (imgui_BeginTable("E3BardSampleIfTable", 3, 0, tableWidth, 0))
 						{
@@ -5720,7 +5722,7 @@ namespace E3Core.UI.Windows
 			{
 				if (!string.IsNullOrEmpty(_cfgToonPickerStatus)) imgui_Text(_cfgToonPickerStatus);
 				float h = 300f; float w = 420f;
-				if (imgui_BeginChild("ToonList", w, h, true))
+				if (imgui_BeginChild("ToonList", w, h, 1, 0))
 				{
 					var list = _cfgToonCandidates ?? new List<string>();
 					var kd = selectedSection?.Keys?.GetKeyData(_cfgSelectedKey ?? string.Empty);

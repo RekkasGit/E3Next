@@ -288,7 +288,7 @@ namespace MonoCore
 		[MethodImpl(MethodImplOptions.InternalCall)]
 		public extern static void imgui_EndTabItem();
 		[MethodImpl(MethodImplOptions.InternalCall)]
-		public extern static bool imgui_BeginChild(string id, float width, float height, bool border);
+		public extern static bool imgui_BeginChild(string id, float width, float height, int child_flags, int window_flags);
 		[MethodImpl(MethodImplOptions.InternalCall)]
 		public extern static void imgui_EndChild();
 		[MethodImpl(MethodImplOptions.InternalCall)]
