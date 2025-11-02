@@ -49,7 +49,7 @@ namespace E3Core.Settings
                 throw new Exception("Could not load UI Settings file");
             }
 
-            LoadKeyData("UI Theme", "Current Theme", parsedData, ref UI_Theme);
+            LoadKeyData("UI Theme", "E3 Config", parsedData, ref UI_Theme);
             LoadKeyData("UI Theme", "Rounding", parsedData, ref UI_Rounding);
         }
 
@@ -72,13 +72,23 @@ namespace E3Core.Settings
 
                 // Update values
                 var section = parsedData.Sections.GetSectionData("UI Theme");
+                if (section == null)
+                {
+                    parsedData.Sections.AddSection("UI Theme");
+                    section = parsedData.Sections.GetSectionData("UI Theme");
+                }
+                
                 if (section != null)
                 {
-                    var themeKey = section.Keys.GetKeyData("Current Theme");
+                    var themeKey = section.Keys.GetKeyData("E3 Config");
                     if (themeKey != null)
                     {
                         themeKey.ValueList.Clear();
                         themeKey.ValueList.Add(UI_Theme);
+                    }
+                    else
+                    {
+                        section.Keys.AddKey("E3 Config", UI_Theme);
                     }
 
                     var roundingKey = section.Keys.GetKeyData("Rounding");
@@ -86,6 +96,10 @@ namespace E3Core.Settings
                     {
                         roundingKey.ValueList.Clear();
                         roundingKey.ValueList.Add(UI_Rounding.ToString("F1"));
+                    }
+                    else
+                    {
+                        section.Keys.AddKey("Rounding", UI_Rounding.ToString("F1"));
                     }
                 }
 
@@ -104,10 +118,10 @@ namespace E3Core.Settings
             IniParser.FileIniDataParser parser = e3util.CreateIniParser();
             IniData newFile = new IniData();
 
-            // UI Theme section
+            // UI Theme section with per-window theme settings
             newFile.Sections.AddSection("UI Theme");
             var section = newFile.Sections.GetSectionData("UI Theme");
-            section.Keys.AddKey("Current Theme", "DarkTeal");
+            section.Keys.AddKey("E3 Config", "DarkTeal");
             section.Keys.AddKey("Rounding", "8.0");
 
             if (!System.IO.File.Exists(filename))
@@ -148,6 +162,28 @@ namespace E3Core.Settings
                             {
                                 valueToSet = result;
                             }
+                        }
+                    }
+                }
+            }
+        }
+        
+        // Helper method to load string values from INI
+        private static void LoadKeyData(string sectionKey, string Key, IniData parsedData, ref string valueToSet)
+        {
+            _log.Write($"{sectionKey} {Key}");
+            var section = parsedData.Sections[sectionKey];
+            if (section != null)
+            {
+                var keyData = section.GetKeyData(Key);
+                if (keyData != null)
+                {
+                    foreach (var data in keyData.ValueList)
+                    {
+                        if (!String.IsNullOrWhiteSpace(data))
+                        {
+                            valueToSet = data;
+                            break;
                         }
                     }
                 }

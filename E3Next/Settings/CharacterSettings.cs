@@ -108,8 +108,13 @@ namespace E3Core.Settings
 		public Int32 Misc_DelayAfterCastWindowDropsForSpellCompletion = 0;
 
 
-		[INI_Section("Misc", "Auto-Forage (On/Off)")]
-		public bool Misc_AutoForage = false;
+	[INI_Section("Misc", "Auto-Forage (On/Off)")]
+	public bool Misc_AutoForage = false;
+	
+	[INI_Section("UI Theme", "E3 Config")]
+	public string UITheme_E3Config = "DarkTeal";
+	[INI_Section("UI Theme", "Rounding")]
+	public float UITheme_Rounding = 8.0f;
 
 		[INI_Section("AutoMed", "Override Old Settings and use This(On/Off)")]
 		public bool AutoMed_OverrideOldSettings;
@@ -656,8 +661,11 @@ namespace E3Core.Settings
             LoadKeyData("Misc", "Dismount On Interrupt (On/Off)", ParsedData, ref Misc_DismountOnInterrupt);
             LoadKeyData("Misc", "Delay in MS After CastWindow Drops For Spell Completion",ParsedData, ref Misc_DelayAfterCastWindowDropsForSpellCompletion);
 			LoadKeyData("Misc", "If FD stay down (true/false)", ParsedData, ref IfFDStayDown);
-			LoadKeyData("Misc", "Debuffs/Dots are visible", ParsedData, ref Misc_VisibleDebuffsDots);
-			LoadKeyData("Misc", "Enhanced rotation speed", ParsedData, ref Misc_EnchancedRotationSpeed);
+		LoadKeyData("Misc", "Debuffs/Dots are visible", ParsedData, ref Misc_VisibleDebuffsDots);
+		LoadKeyData("Misc", "Enhanced rotation speed", ParsedData, ref Misc_EnchancedRotationSpeed);
+		
+		LoadKeyData("UI Theme", "E3 Config", ParsedData, ref UITheme_E3Config);
+		LoadFloatKeyData("UI Theme", "Rounding", ParsedData, ref UITheme_Rounding);
 
 			LoadKeyData("Alerts", "Rampage Messages(On/Off)", ParsedData, ref Alerts_RampageMessages);
 			LoadKeyData("Alerts", "Damage Messages(On/Off)", ParsedData, ref Alerts_DamageMessages);
@@ -1015,22 +1023,27 @@ namespace E3Core.Settings
 			IniData newFile = new IniData();
 
 
-			newFile.Sections.AddSection("Misc");
-			var section = newFile.Sections.GetSectionData("Misc");
-			section.Keys.AddKey("AutoFood", "Off");
-			section.Keys.AddKey("Food", "");
-			section.Keys.AddKey("Drink", "");
-			section.Keys.AddKey("End MedBreak in Combat(On/Off)", "On");
-			section.Keys.AddKey("AutoMedBreak (On/Off)", "Off");
-			section.Keys.AddKey("Auto-Loot (On/Off)", "Off");
-			section.Keys.AddKey("Anchor (Char to Anchor to)", "");
-			section.Keys.AddKey("Remove Torpor After Combat", "On");
-			section.Keys.AddKey("Auto-Forage (On/Off)", "Off");
-			section.Keys.AddKey("Dismount On Interrupt (On/Off)", "On");
-			section.Keys.AddKey("Delay in MS After CastWindow Drops For Spell Completion", "0");
-			section.Keys.AddKey("If FD stay down (true/false)", "False");
-			section.Keys.AddKey("Debuffs/Dots are visible", "True");
-			section.Keys.AddKey("Enhanced rotation speed", "Off");
+		newFile.Sections.AddSection("Misc");
+		var section = newFile.Sections.GetSectionData("Misc");
+		section.Keys.AddKey("AutoFood", "Off");
+		section.Keys.AddKey("Food", "");
+		section.Keys.AddKey("Drink", "");
+		section.Keys.AddKey("End MedBreak in Combat(On/Off)", "On");
+		section.Keys.AddKey("AutoMedBreak (On/Off)", "Off");
+		section.Keys.AddKey("Auto-Loot (On/Off)", "Off");
+		section.Keys.AddKey("Anchor (Char to Anchor to)", "");
+		section.Keys.AddKey("Remove Torpor After Combat", "On");
+		section.Keys.AddKey("Auto-Forage (On/Off)", "Off");
+		section.Keys.AddKey("Dismount On Interrupt (On/Off)", "On");
+		section.Keys.AddKey("Delay in MS After CastWindow Drops For Spell Completion", "0");
+		section.Keys.AddKey("If FD stay down (true/false)", "False");
+		section.Keys.AddKey("Debuffs/Dots are visible", "True");
+		section.Keys.AddKey("Enhanced rotation speed", "Off");
+		
+		newFile.Sections.AddSection("UI Theme");
+		section = newFile.Sections.GetSectionData("UI Theme");
+		section.Keys.AddKey("E3 Config", "DarkTeal");
+		section.Keys.AddKey("Rounding", "8.0");
 		
 			newFile.Sections.AddSection("AutoMed");
 			section = newFile.Sections.GetSectionData("AutoMed");
