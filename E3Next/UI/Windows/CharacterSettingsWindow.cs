@@ -69,18 +69,19 @@ namespace E3Core.UI.Windows
 
 	
 
-		private static E3Spell _cfgCatalogInfoSpell = null;
-		private static bool _cfgShowSpellInfoModal = false;
-		private static E3Spell _cfgSpellInfoSpell = null;
+	private static E3Spell _cfgCatalogInfoSpell = null;
+	private static bool _cfgShowSpellInfoModal = false;
+	private static E3Spell _cfgSpellInfoSpell = null;
 
-		private enum AddType { Spells, AAs, Discs, Skills, Items }
-		private enum CatalogMode { Standard, BardSong }
-		private static bool _cfgShowAddModal = false;
-		private static CatalogMode _cfgCatalogMode = CatalogMode.Standard;
-		private static AddType _cfgAddType = AddType.Spells;
-		private static string _cfgAddCategory = string.Empty;
-		private static string _cfgAddSubcategory = string.Empty;
-		private static string _cfgAddFilter = string.Empty;
+	private enum AddType { Spells, AAs, Discs, Skills, Items }
+	private enum CatalogMode { Standard, BardSong }
+	private static bool _cfgShowAddModal = false;
+	private static CatalogMode _cfgCatalogMode = CatalogMode.Standard;
+	private static AddType _cfgAddType = AddType.Spells;
+	private static string _cfgAddCategory = string.Empty;
+	private static string _cfgAddSubcategory = string.Empty;
+	private static string _cfgAddFilter = string.Empty;
+	private static E3Spell _cfgSelectedCatalogEntry = null; // Selected entry for info display
 
 		// Food/Drink picker state
 		private static bool _cfgShowFoodDrinkModal = false;
@@ -2883,13 +2884,17 @@ namespace E3Core.UI.Windows
 		}
 		private static void RenderAddFromCatalogModal(IniData pd, SectionData selectedSection)
 		{
-			imgui_Begin_OpenFlagSet("Add From Catalog", true);
-			bool _open_Add = imgui_Begin("Add From Catalog", (int)ImGuiWindowFlags.ImGuiWindowFlags_AlwaysAutoResize);
+		imgui_Begin_OpenFlagSet("Add From Catalog", true);
+			// Set initial size only on first use - window is resizable and remembers user's size
+			imgui_SetNextWindowSizeWithCond(900f, 600f, 4); // ImGuiCond_FirstUseEver = 4
+			bool _open_Add = imgui_Begin("Add From Catalog", 0); // No AlwaysAutoResize = resizable
 			if (_open_Add)
 			{
-				float totalW = Math.Max(880f, imgui_GetContentRegionAvailX());
-				float listH = Math.Max(420f, imgui_GetContentRegionAvailY() * 0.8f);
-				float thirdW = Math.Max(220f, totalW / 3.0f - 8.0f);
+		float totalW = imgui_GetContentRegionAvailX();
+				float listH = imgui_GetContentRegionAvailY() - 120f; // Reserve space for header/footer
+				float leftW = Math.Max(150f, totalW * 0.20f - 8.0f);    // 20% for categories
+				float middleW = Math.Max(280f, totalW * 0.45f - 8.0f);  // 45% for entries
+				float rightW = Math.Max(220f, totalW * 0.35f - 8.0f);   // 35% for info
 
 				// Header: type + filter + catalog source
 				imgui_TextColored(0.95f, 0.85f, 0.35f, 1.0f, "Add From Catalog");
@@ -2899,22 +2904,28 @@ namespace E3Core.UI.Windows
 					imgui_SameLine();
 					imgui_TextColored(0.7f, 0.9f, 0.7f, 1.0f, "(Select a song for the melody)");
 				}
-				else
+		else
 				{
 					imgui_SameLine();
+					imgui_SetNextItemWidth(100f); // Fixed width for type dropdown
 					if (imgui_BeginCombo("##type", _cfgAddType.ToString(), 0))
 					{
 						foreach (AddType t in Enum.GetValues(typeof(AddType)))
 						{
 							bool sel = t == _cfgAddType;
-							if (imgui_Selectable(t.ToString(), sel)) _cfgAddType = t;
+							if (imgui_Selectable(t.ToString(), sel))
+							{
+								_cfgAddType = t;
+								_cfgSelectedCatalogEntry = null; // Clear selection when type changes
+							}
 						}
 						EndComboSafe();
 					}
 				}
-				imgui_SameLine();
+		imgui_SameLine();
 				imgui_Text("Filter:");
 				imgui_SameLine();
+				imgui_SetNextItemWidth(200f); // Fixed width for filter input
 				if (imgui_InputText("##filter", _cfgAddFilter ?? string.Empty))
 					_cfgAddFilter = imgui_InputText_Get("##filter") ?? string.Empty;
 
@@ -2960,22 +2971,22 @@ namespace E3Core.UI.Windows
 				// Resolve the catalog for the chosen type
 				var src = GetCatalogByType(_cfgAddType);
 
-				// -------- LEFT: Top-level categories --------
-				if (imgui_BeginChild("TopLevelCats", thirdW, listH, 1, 0))
+			// -------- LEFT: Top-level categories --------
+				if (imgui_BeginChild("TopLevelCats", leftW, listH, 1, 0))
 				{
 					imgui_TextColored(0.9f, 0.95f, 1.0f, 1.0f, "Categories");
 					var cats = src.Keys.ToList();
 					cats.Sort(StringComparer.OrdinalIgnoreCase);
 					int ci = 0;
-					foreach (var c in cats)
-					{
-						bool sel = string.Equals(_cfgAddCategory, c, StringComparison.OrdinalIgnoreCase);
-						string id = $"{c}##Cat_{_cfgAddType}_{ci}";
-						if (imgui_Selectable(id, sel))
+						foreach (var c in cats)
 						{
-							_cfgAddCategory = c;
-							_cfgAddSubcategory = string.Empty; // reset mid level on cat change
-						}
+							bool sel = string.Equals(_cfgAddCategory, c, StringComparison.OrdinalIgnoreCase);
+							if (imgui_Selectable(c, sel))
+							{
+								_cfgAddCategory = c;
+								_cfgAddSubcategory = string.Empty; // reset mid level on cat change
+								_cfgSelectedCatalogEntry = null; // Clear selection when category changes
+							}
 						ci++;
 					}
 				}
@@ -2983,38 +2994,71 @@ namespace E3Core.UI.Windows
 
 				imgui_SameLine();
 
-				// -------- MIDDLE: Subcategories for selected category --------
-				if (imgui_BeginChild("SubCats", thirdW, listH, 1, 0))
+			// -------- MIDDLE: Subcategory dropdown + Entries --------
+				if (imgui_BeginChild("MiddlePanel", middleW, listH, 1, 0))
 				{
-					imgui_TextColored(0.9f, 0.95f, 1.0f, 1.0f, "Subcategories");
+					// Subcategory dropdown selector
+					imgui_TextColored(0.9f, 0.95f, 1.0f, 1.0f, "Subcategory:");
+					imgui_SameLine();
+					
+					string comboLabel = string.IsNullOrEmpty(_cfgAddSubcategory) ? "(All)" : _cfgAddSubcategory;
 					if (!string.IsNullOrEmpty(_cfgAddCategory) && src.TryGetValue(_cfgAddCategory, out var submap))
 					{
-						var subs = submap.Keys.ToList();
-						subs.Sort(StringComparer.OrdinalIgnoreCase);
-						int si = 0;
-						foreach (var sc in subs)
+						if (imgui_BeginCombo("##subcategory", comboLabel, 0))
 						{
-							bool sel = string.Equals(_cfgAddSubcategory, sc, StringComparison.OrdinalIgnoreCase);
-							string id = $"{sc}##Sub_{_cfgAddType}_{_cfgAddCategory}_{si}";
-							if (imgui_Selectable(id, sel)) _cfgAddSubcategory = sc;
-							si++;
+							// "(All)" option to show all entries in the category
+							bool selAll = string.IsNullOrEmpty(_cfgAddSubcategory);
+							if (imgui_Selectable("(All)##SubAll", selAll))
+							{
+								_cfgAddSubcategory = string.Empty;
+							}
+							
+					var subs = submap.Keys.ToList();
+							subs.Sort(StringComparer.OrdinalIgnoreCase);
+							foreach (var sc in subs)
+							{
+								// Find the highest level spell in this subcategory for icon display
+								int iconIndex = -1;
+								if (submap.TryGetValue(sc, out var spellList) && spellList.Count > 0)
+								{
+									var highestSpell = spellList.OrderByDescending(s => s.Level).FirstOrDefault();
+									if (highestSpell != null)
+									{
+										iconIndex = highestSpell.SpellIcon;
+									}
+								}
+								
+								// Draw icon if available
+								if (iconIndex >= 0)
+								{
+									imgui_DrawSpellIconByIconIndex(iconIndex, 20.0f);
+									imgui_SameLine();
+								}
+								
+								bool sel = string.Equals(_cfgAddSubcategory, sc, StringComparison.OrdinalIgnoreCase);
+								if (imgui_Selectable($"{sc}##Sub_{sc}", sel))
+								{
+									_cfgAddSubcategory = sc;
+								}
+							}
+							EndComboSafe();
 						}
 					}
 					else
 					{
-						imgui_Text("Select a category.");
+						imgui_SameLine();
+						imgui_TextColored(0.7f, 0.7f, 0.7f, 1.0f, "(Select a category)");
 					}
-				}
-				imgui_EndChild();
+					
+					imgui_Separator();
+					
+				// Entries list
+					float entriesHeight = listH - 50f; // Reserve space for dropdown above
+					if (imgui_BeginChild("EntryList", middleW - 10f, entriesHeight, 0, 0))
+					{
+						imgui_TextColored(0.9f, 0.95f, 1.0f, 1.0f, "Entries");
 
-				imgui_SameLine();
-
-				// -------- RIGHT: Entries (with Add / Info) --------
-				if (imgui_BeginChild("EntryList", thirdW, listH, 1, 0))
-				{
-					imgui_TextColored(0.9f, 0.95f, 1.0f, 1.0f, "Entries");
-
-					IEnumerable<E3Spell> entries = Enumerable.Empty<E3Spell>();
+						IEnumerable<E3Spell> entries = Enumerable.Empty<E3Spell>();
 					if (!string.IsNullOrEmpty(_cfgAddCategory) && src.TryGetValue(_cfgAddCategory, out var submap2))
 					{
 						if (!string.IsNullOrEmpty(_cfgAddSubcategory) && submap2.TryGetValue(_cfgAddSubcategory, out var l))
@@ -3031,17 +3075,48 @@ namespace E3Core.UI.Windows
 					entries = entries.OrderByDescending(e => e.Level)
 									 .ThenBy(e => e.Name, StringComparer.OrdinalIgnoreCase);
 
-					int i = 0;
+		int i = 0;
 					foreach (var e in entries)
 					{
 						string uid = $"{_cfgAddType}_{_cfgAddCategory}_{_cfgAddSubcategory}_{i}";
 
+						// Icon
+						imgui_DrawSpellIconByIconIndex(e.SpellIcon, 30.0f);
+						imgui_SameLine();
+						
+						// Selectable entry with level and name
+						bool isSelected = _cfgSelectedCatalogEntry != null && string.Equals(_cfgSelectedCatalogEntry.Name, e.Name, StringComparison.OrdinalIgnoreCase);
+						if (imgui_Selectable($"[{e.Level}] {e.Name}##{uid}", isSelected))
+						{
+							_cfgSelectedCatalogEntry = e;
+						}
+						i++;
+					}
+
+							if (i == 0) imgui_Text("No entries found");
+					}
+					imgui_EndChild(); // EntryList
+				}
+				imgui_EndChild(); // MiddlePanel
+				
+				imgui_SameLine();
+				
+				// -------- RIGHT: Info Panel --------
+				if (imgui_BeginChild("InfoPanel", rightW, listH, 1, 0))
+				{
+					imgui_TextColored(0.9f, 0.95f, 1.0f, 1.0f, "Info");
+					
+					// Add button on same line as Info header, right-aligned
+					if (_cfgSelectedCatalogEntry != null)
+					{
 						string addLabel = (_cfgCatalogMode == CatalogMode.BardSong) ? "Use" : "Add";
-						if (imgui_Button($"{addLabel}##add_{uid}"))
+						float buttonWidth = 60f;
+						imgui_SameLine(rightW - buttonWidth - 10f);
+						if (imgui_ButtonEx($"{addLabel}##add_selected", buttonWidth, 0))
 						{
 							if (_cfgCatalogMode == CatalogMode.BardSong)
 							{
-								ApplyBardSongSelection(e.Name ?? string.Empty);
+								ApplyBardSongSelection(_cfgSelectedCatalogEntry.Name ?? string.Empty);
 							}
 							else
 							{
@@ -3049,7 +3124,7 @@ namespace E3Core.UI.Windows
 								if (kd != null)
 								{
 									var vals = GetValues(kd);
-									string v = (e.Name ?? string.Empty).Trim();
+									string v = (_cfgSelectedCatalogEntry.Name ?? string.Empty).Trim();
 									if (_cfgCatalogReplaceMode && _cfgCatalogReplaceIndex >= 0 && _cfgCatalogReplaceIndex < vals.Count)
 									{
 										vals[_cfgCatalogReplaceIndex] = v;
@@ -3067,26 +3142,34 @@ namespace E3Core.UI.Windows
 								}
 							}
 						}
-						imgui_SameLine();
-
-						// Info
-						if (imgui_Button($"Info##info_{uid}"))
-						{
-							_cfgSpellInfoSpell = e;   // <- use the field that exists in your file
-							_cfgShowSpellInfoModal = true;
-						}
-						imgui_SameLine();
-						
-						imgui_DrawSpellIconByIconIndex(e.SpellIcon, 30.0f);
-						imgui_SameLine();
-						// Row text: show level + name (no ToDisplayString needed)
-						imgui_Text($"[{e.Level}] {e.Name}");
-						i++;
 					}
-
-					if (i == 0) imgui_Text("No entries found");
+					
+					imgui_Separator();
+					
+					if (_cfgSelectedCatalogEntry != null)
+					{
+						// Display name and icon
+						imgui_DrawSpellIconByIconIndex(_cfgSelectedCatalogEntry.SpellIcon, 40.0f);
+						imgui_SameLine();
+						imgui_TextColored(0.95f, 0.85f, 0.35f, 1.0f, _cfgSelectedCatalogEntry.Name ?? string.Empty);
+						
+						// Show additional info (mana, cast time, recast, etc.)
+						RenderSpellAdditionalInfo(_cfgSelectedCatalogEntry);
+						
+						// Show description if available
+						if (!string.IsNullOrEmpty(_cfgSelectedCatalogEntry.Description))
+						{
+							imgui_Separator();
+							imgui_TextColored(0.75f, 0.85f, 1.0f, 1.0f, "Description");
+							imgui_TextWrapped(_cfgSelectedCatalogEntry.Description);
+						}
+					}
+					else
+					{
+						imgui_TextColored(0.7f, 0.7f, 0.7f, 1.0f, "Select an entry to view details.");
+					}
 				}
-				imgui_EndChild();
+				imgui_EndChild(); // InfoPanel
 
 				imgui_Separator();
 				// One-click bulk add of the currently visible entries
@@ -3103,6 +3186,7 @@ namespace E3Core.UI.Windows
 					_cfgShowAddModal = false;
 					_cfgCatalogMode = CatalogMode.Standard;
 					_cfgBardSongPickerIndex = -1;
+					_cfgSelectedCatalogEntry = null; // Clear selection when closing
 				}
 			}
 			imgui_End();
@@ -3115,6 +3199,7 @@ namespace E3Core.UI.Windows
 				_cfgBardSongPickerIndex = -1;
 				_cfgCatalogReplaceMode = false;
 				_cfgCatalogReplaceIndex = -1;
+				_cfgSelectedCatalogEntry = null; // Clear selection when closing via X
 			}
 		}
 
