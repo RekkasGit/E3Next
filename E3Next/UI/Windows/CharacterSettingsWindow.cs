@@ -763,114 +763,144 @@ namespace E3Core.UI.Windows
 					// Column 2: Values
 					if (imgui_TableNextColumn())
 					{
-						var selectedSection = pd.Sections.GetSectionData(_cfgSelectedSection ?? string.Empty);
-						//_log.Write($"Rendering with selected section {selectedSection.SectionName} with keys count:{selectedSection.Keys.Count} with pd:");
+						int tableFlags = (int)(ImGuiTableFlags.ImGuiTableFlags_RowBg | ImGuiTableFlags.ImGuiTableFlags_ScrollY);
+						if (imgui_BeginTable("ValuesTable", 1, tableFlags, 0, 0))
+						{
+							try
+							{
+								imgui_TableSetupColumn("Values", 0, 0.35f);
+								imgui_TableNextRow();
+								imgui_TableNextColumn();
+								var selectedSection = pd.Sections.GetSectionData(_cfgSelectedSection ?? string.Empty);
+								//_log.Write($"Rendering with selected section {selectedSection.SectionName} with keys count:{selectedSection.Keys.Count} with pd:");
+								if (selectedSection == null)
+								{
+									imgui_Text("No section selected.");
+								}
+								else if (selectedSection.Keys == null || selectedSection.Keys.Count() == 0)
+								{
+									// Empty section: allow creating a new key directly here
+									imgui_TextColored(0.8f, 0.9f, 0.95f, 1.0f, $"[{_cfgSelectedSection}] (empty)");
+									imgui_Separator();
+									imgui_Text("Create new entry:");
+									imgui_SameLine();
+									imgui_SetNextItemWidth(220f);
+									if (imgui_InputText("##new_key_name", _cfgNewKeyBuffer))
+									{
+										_cfgNewKeyBuffer = imgui_InputText_Get("##new_key_name") ?? string.Empty;
+									}
+									imgui_SameLine();
+									if (imgui_Button("Add Key"))
+									{
+										string newKey = (_cfgNewKeyBuffer ?? string.Empty).Trim();
+										if (newKey.Length > 0 && !selectedSection.Keys.ContainsKey(newKey))
+										{
+											selectedSection.Keys.AddKey(newKey, string.Empty);
+											_cfgSelectedKey = newKey;
+											_cfgNewKeyBuffer = string.Empty;
+											_cfgInlineEditIndex = -1;
+											// On next frame the normal values editor will show for the new key
+										}
+									}
+								}
+								// Inline Add New editor (triggered from header context menu)
+								if (_cfgShowAddInline
+									&& string.Equals(_cfgAddInlineSection, _cfgSelectedSection, StringComparison.OrdinalIgnoreCase)
+									&& string.IsNullOrEmpty(_cfgSelectedKey))
+								{
+									imgui_TextColored(0.8f, 0.9f, 0.95f, 1.0f, _cfgAddInlineSection.Equals("Ifs", StringComparison.OrdinalIgnoreCase) ? "Add New If" : "Add New Burn Key");
+									imgui_Text("Name:");
+									imgui_SameLine();
+									float inlineFieldAvail = imgui_GetContentRegionAvailX();
+									float inlineFieldWidth = Math.Max(320f, inlineFieldAvail * 0.45f);
+									inlineFieldWidth = Math.Min(inlineFieldWidth, Math.Max(260f, inlineFieldAvail - 60f));
+									imgui_SetNextItemWidth(inlineFieldWidth);
+									if (imgui_InputText("##inline_new_key", _cfgNewKeyBuffer))
+									{
+										_cfgNewKeyBuffer = imgui_InputText_Get("##inline_new_key") ?? string.Empty;
+									}
+									imgui_Text("Value:");
+									float inlineValueAvail = imgui_GetContentRegionAvailX();
+									float inlineValueWidth = Math.Max(420f, inlineValueAvail * 0.70f);
+									inlineValueWidth = Math.Min(inlineValueWidth, Math.Max(320f, inlineValueAvail - 80f));
+									float inlineValueHeight = Math.Max(140f, imgui_GetTextLineHeightWithSpacing() * 6f);
+									if (imgui_InputTextMultiline("##inline_new_value", _cfgNewValue ?? string.Empty, inlineValueWidth, inlineValueHeight))
+									{
+										_cfgNewValue = imgui_InputText_Get("##inline_new_value") ?? string.Empty;
+									}
+									if (imgui_Button("Add##inline_add"))
+									{
+										string key = (_cfgNewKeyBuffer ?? string.Empty).Trim();
+										string val = _cfgNewValue ?? string.Empty;
+										bool added = false;
+										if (_cfgAddInlineSection.Equals("Ifs", StringComparison.OrdinalIgnoreCase))
+										{
+											added = AddIfToActiveIni(key, val);
+										}
+										else if (_cfgAddInlineSection.Equals("Burn", StringComparison.OrdinalIgnoreCase))
+										{
+											added = AddBurnToActiveIni(key, val);
+										}
+										if (added)
+										{
+											_cfgShowAddInline = false;
+											_cfgAddInlineSection = string.Empty;
+											_cfgNewKeyBuffer = string.Empty;
+											_cfgNewValue = string.Empty;
+											// Open blank value editor if value was empty
+											_cfgInlineEditIndex = 0;
+										}
+									}
+									imgui_SameLine();
+									if (imgui_Button("Cancel##inline_cancel"))
+									{
+										_cfgShowAddInline = false;
+										_cfgAddInlineSection = string.Empty;
+										_cfgNewKeyBuffer = string.Empty;
+										_cfgNewValue = string.Empty;
+									}
+									imgui_Separator();
+								}
 
+								else if (string.IsNullOrEmpty(_cfgSelectedKey))
+								{
+									// Section has keys, but no key selected yet: keep values panel empty
+									imgui_Text("Select a configuration key from the left panel.");
+								}
+								else
+								{
+									RenderSelectedKeyValues(selectedSection);
+								}
+							}
+							finally
+							{
+								imgui_EndTable();
+							}
 
-						if (selectedSection == null)
-						{
-							imgui_Text("No section selected.");
-						}
-						else if (selectedSection.Keys == null || selectedSection.Keys.Count() == 0)
-						{
-							// Empty section: allow creating a new key directly here
-							imgui_TextColored(0.8f, 0.9f, 0.95f, 1.0f, $"[{_cfgSelectedSection}] (empty)");
-							imgui_Separator();
-							imgui_Text("Create new entry:");
-							imgui_SameLine();
-							imgui_SetNextItemWidth(220f);
-							if (imgui_InputText("##new_key_name", _cfgNewKeyBuffer))
-							{
-								_cfgNewKeyBuffer = imgui_InputText_Get("##new_key_name") ?? string.Empty;
-							}
-							imgui_SameLine();
-							if (imgui_Button("Add Key"))
-							{
-								string newKey = (_cfgNewKeyBuffer ?? string.Empty).Trim();
-								if (newKey.Length > 0 && !selectedSection.Keys.ContainsKey(newKey))
-								{
-									selectedSection.Keys.AddKey(newKey, string.Empty);
-									_cfgSelectedKey = newKey;
-									_cfgNewKeyBuffer = string.Empty;
-									_cfgInlineEditIndex = -1;
-									// On next frame the normal values editor will show for the new key
-								}
-							}
-						}
-						// Inline Add New editor (triggered from header context menu)
-						if (_cfgShowAddInline
-							&& string.Equals(_cfgAddInlineSection, _cfgSelectedSection, StringComparison.OrdinalIgnoreCase)
-							&& string.IsNullOrEmpty(_cfgSelectedKey))
-						{
-							imgui_TextColored(0.8f, 0.9f, 0.95f, 1.0f, _cfgAddInlineSection.Equals("Ifs", StringComparison.OrdinalIgnoreCase) ? "Add New If" : "Add New Burn Key");
-							imgui_Text("Name:");
-							imgui_SameLine();
-							float inlineFieldAvail = imgui_GetContentRegionAvailX();
-							float inlineFieldWidth = Math.Max(320f, inlineFieldAvail * 0.45f);
-							inlineFieldWidth = Math.Min(inlineFieldWidth, Math.Max(260f, inlineFieldAvail - 60f));
-							imgui_SetNextItemWidth(inlineFieldWidth);
-							if (imgui_InputText("##inline_new_key", _cfgNewKeyBuffer))
-							{
-								_cfgNewKeyBuffer = imgui_InputText_Get("##inline_new_key") ?? string.Empty;
-							}
-							imgui_Text("Value:");
-							float inlineValueAvail = imgui_GetContentRegionAvailX();
-							float inlineValueWidth = Math.Max(420f, inlineValueAvail * 0.70f);
-							inlineValueWidth = Math.Min(inlineValueWidth, Math.Max(320f, inlineValueAvail - 80f));
-							float inlineValueHeight = Math.Max(140f, imgui_GetTextLineHeightWithSpacing() * 6f);
-							if (imgui_InputTextMultiline("##inline_new_value", _cfgNewValue ?? string.Empty, inlineValueWidth, inlineValueHeight))
-							{
-								_cfgNewValue = imgui_InputText_Get("##inline_new_value") ?? string.Empty;
-							}
-							if (imgui_Button("Add##inline_add"))
-							{
-								string key = (_cfgNewKeyBuffer ?? string.Empty).Trim();
-								string val = _cfgNewValue ?? string.Empty;
-								bool added = false;
-								if (_cfgAddInlineSection.Equals("Ifs", StringComparison.OrdinalIgnoreCase))
-								{
-									added = AddIfToActiveIni(key, val);
-								}
-								else if (_cfgAddInlineSection.Equals("Burn", StringComparison.OrdinalIgnoreCase))
-								{
-									added = AddBurnToActiveIni(key, val);
-								}
-								if (added)
-								{
-									_cfgShowAddInline = false;
-									_cfgAddInlineSection = string.Empty;
-									_cfgNewKeyBuffer = string.Empty;
-									_cfgNewValue = string.Empty;
-									// Open blank value editor if value was empty
-									_cfgInlineEditIndex = 0;
-								}
-							}
-							imgui_SameLine();
-							if (imgui_Button("Cancel##inline_cancel"))
-							{
-								_cfgShowAddInline = false;
-								_cfgAddInlineSection = string.Empty;
-								_cfgNewKeyBuffer = string.Empty;
-								_cfgNewValue = string.Empty;
-							}
-							imgui_Separator();
 						}
 
-						else if (string.IsNullOrEmpty(_cfgSelectedKey))
-						{
-							// Section has keys, but no key selected yet: keep values panel empty
-							imgui_Text("Select a configuration key from the left panel.");
-						}
-					else
-					{
-						RenderSelectedKeyValues(selectedSection);
-					}
+						
 				}
 				// Column 3: Tools and Info
 				activeSection = pd.Sections.GetSectionData(_cfgSelectedSection ?? string.Empty);
 				if (imgui_TableNextColumn())
 				{
-					RenderConfigurationTools(activeSection);
+						int tableFlags = (int)(ImGuiTableFlags.ImGuiTableFlags_RowBg | ImGuiTableFlags.ImGuiTableFlags_ScrollY);
+						if (imgui_BeginTable("ToolsInfoTable", 1, tableFlags, 0, 0))
+						{
+							try
+							{
+								imgui_TableSetupColumn("Tools & Info", 0, 0.35f);
+								imgui_TableNextRow();
+								imgui_TableNextColumn();
+
+								RenderConfigurationTools(activeSection);
+							}
+							finally
+							{
+								imgui_EndTable();
+							}
+						}
 				}
 			}
 			finally
