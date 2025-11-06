@@ -1,5 +1,6 @@
 using E3Core.Data;
 using E3Core.Processors;
+using E3Core.Server;
 using E3Core.Settings;
 using E3Core.Utility;
 using IniParser.Model;
@@ -7,27 +8,50 @@ using MonoCore;
 using System;
 using System.Collections.Concurrent;
 using System.Collections.Generic;
-using System.ComponentModel.Design;
-using System.Drawing;
 using System.Globalization;
 using System.IO;
 using System.Linq;
-using System.Runtime.CompilerServices;
 using System.Text;
-using System.Threading.Tasks;
-using System.Web.SessionState;
 using System.Text.RegularExpressions;
 using static MonoCore.E3ImGUI;
-using E3Core.Server;
 
 namespace E3Core.UI.Windows
 {
 
 	public static class CharacterSettingsWindow
 	{
+		private class CharacterSettingsState
+		{
+			//windows
+			public bool Show_Donate = false;
+			public bool Show_ThemeSettings = false;
+			public bool Show_AllPlayersView = false;
+
+			//buffers
+			public string Buffer_KeySearch = String.Empty;
+			
+			//data
+			public Dictionary<string, string> Data_AllPlayersEdit = new Dictionary<string, string>(StringComparer.OrdinalIgnoreCase);
+			public List<KeyValuePair<string, string>> Data_AllPlayerRows = new List<KeyValuePair<string, string>>();
+			public string State_AllPlayersSelection = String.Empty;
+
+			public void ClearWindows()
+			{
+				Show_Donate = false;
+				Show_ThemeSettings = false;
+				Show_AllPlayersView = false;
+			}
+			public void ClearState()
+			{
+				State_AllPlayersSelection = String.Empty;
+			}
+		}
+
 		public static Logging _log = E3.Log;
 		private static IMQ MQ = E3.MQ;
 		private static ISpawns _spawns = E3.Spawns;
+
+		private static CharacterSettingsState _state = new CharacterSettingsState();
 
 		//A very large bandaid on the Threading of this window
 		//used when trying to get a pointer to the _cfg objects.
@@ -67,21 +91,21 @@ namespace E3Core.UI.Windows
 		_itemCatalogLookup = new Dictionary<string, SpellData>(StringComparer.OrdinalIgnoreCase);
 
 
-	
 
-	private static E3Spell _cfgCatalogInfoSpell = null;
-	private static bool _cfgShowSpellInfoModal = false;
-	private static E3Spell _cfgSpellInfoSpell = null;
 
-	private enum AddType { Spells, AAs, Discs, Skills, Items }
-	private enum CatalogMode { Standard, BardSong }
-	private static bool _cfgShowAddModal = false;
-	private static CatalogMode _cfgCatalogMode = CatalogMode.Standard;
-	private static AddType _cfgAddType = AddType.Spells;
-	private static string _cfgAddCategory = string.Empty;
-	private static string _cfgAddSubcategory = string.Empty;
-	private static string _cfgAddFilter = string.Empty;
-	private static E3Spell _cfgSelectedCatalogEntry = null; // Selected entry for info display
+		private static E3Spell _cfgCatalogInfoSpell = null;
+		private static bool _cfgShowSpellInfoModal = false;
+		private static E3Spell _cfgSpellInfoSpell = null;
+
+		private enum AddType { Spells, AAs, Discs, Skills, Items }
+		private enum CatalogMode { Standard, BardSong }
+		private static bool _cfgShowAddModal = false;
+		private static CatalogMode _cfgCatalogMode = CatalogMode.Standard;
+		private static AddType _cfgAddType = AddType.Spells;
+		private static string _cfgAddCategory = string.Empty;
+		private static string _cfgAddSubcategory = string.Empty;
+		private static string _cfgAddFilter = string.Empty;
+		private static E3Spell _cfgSelectedCatalogEntry = null; // Selected entry for info display
 
 		// Food/Drink picker state
 		private static bool _cfgShowFoodDrinkModal = false;
@@ -138,8 +162,8 @@ namespace E3Core.UI.Windows
 		private static string _cfgFoodDrinkPendingType = string.Empty;
 		private static long _cfgFoodDrinkTimeoutAt = 0;
 
-	// Config UI toggle: "/e3imgui".
-	private static readonly string _e3ImGuiWindow = "E3Next Config";
+		// Config UI toggle: "/e3imgui".
+		private static readonly string _windowName = "E3Next Config";
 		private static bool _imguiInitDone = false;
 		private static bool _imguiContextReady = false;
 		private enum SettingsTab { Character, General, Advanced }
@@ -153,7 +177,7 @@ namespace E3Core.UI.Windows
 		private static string _cfg_LastIniPath = string.Empty;
 		private static string _cfgSelectedSection = string.Empty;
 		private static string _cfgSelectedKey = string.Empty; // subsection/key
-		private static string _cfgSectionSearch = string.Empty;
+	
 		private static int _cfgSelectedValueIndex = -1;
 		private static bool _cfg_Dirty = false;
 		// Inline edit helpers
@@ -168,13 +192,13 @@ namespace E3Core.UI.Windows
 		// Collapsible section state tracking
 		private static Dictionary<string, bool> _cfgSectionExpanded = new Dictionary<string, bool>(StringComparer.OrdinalIgnoreCase);
 
-	// Spell flag editor state
-	private static SpellValueEditState _cfgSpellEditState = null;
-	private static string _cfgSpellEditSignature = string.Empty;
-	private static bool _cfgShowSpellModifierModal = false;
-	// Integrated editor panel state (replaces modal)
-	private static bool _cfgShowIntegratedEditor = false;
-	private static string _cfgManualEditBuffer = string.Empty;
+		// Spell flag editor state
+		private static SpellValueEditState _cfgSpellEditState = null;
+		private static string _cfgSpellEditSignature = string.Empty;
+		private static bool _cfgShowSpellModifierModal = false;
+		// Integrated editor panel state (replaces modal)
+		private static bool _cfgShowIntegratedEditor = false;
+		private static string _cfgManualEditBuffer = string.Empty;
 		private static readonly string[] _spellKeyOutputOrder = new[]
 		{
 			"Gem", "Ifs", "CheckFor", "CastIF", "HealPct", "HealthMax", "Zone", "MinSick",
@@ -225,12 +249,8 @@ namespace E3Core.UI.Windows
 
 
 		// "All Players" key view state/cache
-		private static bool _cfgAllPlayersView = false; // aggregated view
-		private static string _cfgAllPlayersSig = string.Empty; // section::key
 		private static long _cfgAllPlayersNextRefreshAtMs = 0;
-		private static List<System.Collections.Generic.KeyValuePair<string, string>> _cfgAllPlayersRows = new List<System.Collections.Generic.KeyValuePair<string, string>>();
 		private static Dictionary<string, string> _cfgAllPlayersServerByToon = new Dictionary<string, string>(StringComparer.OrdinalIgnoreCase);
-		private static Dictionary<string, string> _cfgAllPlayersEditBuf = new Dictionary<string, string>(StringComparer.OrdinalIgnoreCase);
 		private static readonly object _cfgAllPlayersLock = new object();
 		private static bool _cfgAllPlayersRefreshRequested = false;
 		private static bool _cfgAllPlayersRefreshing = false;
@@ -247,73 +267,67 @@ namespace E3Core.UI.Windows
 		private static bool _showOfflineCharInis = false;
 		private static long _nextIniFileScanAtMs = 0;
 		// Dropdown support (feature-detect combo availability to avoid crashes on older MQ2Mono)
-	private static bool _comboAvailable = true;
-	private static bool _showThemeSettings = false;
-	private static bool _showDonateModal = false;
-	private static bool _cfg_Inited = false;
+		private static bool _comboAvailable = true;
+		
+		
+		private static bool _cfg_Inited = false;
 
-	#endregion
-	static string _versionInfo = String.Empty;
-	[SubSystemInit]
-	public static void CharacterSettingsWindow_Init()
-	{
-		_versionInfo = $"nE³xt v{Setup.E3Version} | Build {Setup.BuildDate}";
-		
-		// Load UI theme settings from character INI
-		try
+		#endregion
+		static string _versionInfo = String.Empty;
+		[SubSystemInit]
+		public static void CharacterSettingsWindow_Init()
 		{
-			if (E3.CharacterSettings != null)
+			_versionInfo = $"nE³xt v{Setup.E3Version} | Build {Setup.BuildDate}";
+
+			// Load UI theme settings from character INI
+			try
 			{
-				// Convert string theme name to enum and apply
-				if (Enum.TryParse<UITheme>(E3.CharacterSettings.UITheme_E3Config, true, out var theme))
+				if (E3.CharacterSettings != null)
 				{
-					_currentTheme = theme;
+					// Convert string theme name to enum and apply
+					if (Enum.TryParse<UITheme>(E3.CharacterSettings.UITheme_E3Config, true, out var theme))
+					{
+						_currentTheme = theme;
+					}
+					// Apply rounding setting
+					_rounding = E3.CharacterSettings.UITheme_Rounding;
+					_roundingBuf = _rounding.ToString("0.0", CultureInfo.InvariantCulture);
 				}
-				// Apply rounding setting
-				_rounding = E3.CharacterSettings.UITheme_Rounding;
-				_roundingBuf = _rounding.ToString("0.0", CultureInfo.InvariantCulture);
 			}
-		}
-		catch (Exception ex)
-		{
-			E3.Log.Write($"Failed to load UI Theme settings: {ex.Message}", Logging.LogLevels.Error);
-		}
-		
-		// Toggle the in-game ImGui config window
+			catch (Exception ex)
+			{
+				E3.Log.Write($"Failed to load UI Theme settings: {ex.Message}", Logging.LogLevels.Error);
+			}
+
+			// Toggle the in-game ImGui config window
 			EventProcessor.RegisterCommand("/e3imgui", (x) =>
 			{
+
+				if (Core._MQ2MonoVersion < 0.35m)
+				{
+					Core.mqInstance.Write("MQ2Mono Version needs to be at least 0.35 to use this command");
+					return;
+				}
+
 				try
 				{
-					if (Core._MQ2MonoVersion < 0.35m)
-					{
-						Core.mqInstance.Write("MQ2Mono Version needs to be at least 0.35 to use this command");
-						return;
-					}
 					//we are already on the main C# thread, so we can just toggle this.
 					ToggleImGuiWindow();
 				}
 				catch (Exception ex)
-				{
-					MQ.Write($"ImGui error: {ex.Message}");
-				}
+				{ MQ.Write($"ImGui error: {ex.Message}");}
+				
 			}, "Toggle E3Next ImGui window");
 
 
-			E3ImGUI.RegisterWindow(_e3ImGuiWindow, () =>
+			E3ImGUI.RegisterWindow(_windowName, () =>
 			{
-
-
 				try
-				{
-					RenderIMGUI();
-
-				}
-				catch (Exception ex)
-				{
-
-					MQ.WriteDelayed("Rendering Error:" + ex.Message);
-
-				}
+				{ 
+					RenderWindow();
+				
+				} catch (Exception ex)
+				{MQ.WriteDelayed("Rendering Error:" + ex.Message);}
 			});
 
 		}
@@ -323,13 +337,22 @@ namespace E3Core.UI.Windows
 		{
 			ProcessBackgroundWork();
 		}
+		public static bool _intialWindowOpened = false;
 		public static void ToggleImGuiWindow()
 		{
 			try
 			{
-				bool open = imgui_Begin_OpenFlagGet(_e3ImGuiWindow);
-				imgui_Begin_OpenFlagSet(_e3ImGuiWindow, !open);
-				_log.WriteDelayed($"E3 ImGui window {(!open ? "opened" : "closed")}", Logging.LogLevels.Debug);
+				if(!_intialWindowOpened)
+				{
+					_intialWindowOpened = true;
+					imgui_Begin_OpenFlagSet(_windowName, true);
+				}
+				else
+				{
+					bool open = imgui_Begin_OpenFlagGet(_windowName);
+					imgui_Begin_OpenFlagSet(_windowName, !open);
+				}
+				_imguiContextReady = true;
 			}
 			catch (Exception ex)
 			{
@@ -342,185 +365,134 @@ namespace E3Core.UI.Windows
 		///So for any MQ.Query be sure to use the DelayPossible flag to false.
 		/// </summary>
 		/// 
-		private static void RenderIMGUI()
+		private static void RenderWindow()
 		{
-			try
+			if (!_imguiContextReady) return;
+			// Only render if ImGui is available and ready
+			if (imgui_Begin_OpenFlagGet(_windowName))
 			{
-
-				// Early exit if ImGui functions aren't available
-				if (!_imguiContextReady && _imguiInitDone)
-				{
-					return; // ImGui failed to initialize, skip rendering
-				}
-
-				// Initialize window visibility once (default hidden)
-				if (!_imguiInitDone)
+				// Apply current theme
+				E3ImGUI.PushCurrentTheme();
+				// No size constraints - allow window to be resized to any size
+				if (imgui_Begin(_windowName, (int)(ImGuiWindowFlags.ImGuiWindowFlags_NoCollapse | ImGuiWindowFlags.ImGuiWindowFlags_NoDocking)))
 				{
 					try
 					{
-						imgui_Begin_OpenFlagSet(_e3ImGuiWindow, false);
-						_imguiContextReady = true; // Mark as ready after first successful ImGui call
-						E3.Log.Write("ImGui initialized successfully", Logging.LogLevels.Info);
+						RenderWindowHeader();
+						imgui_Separator();
+						RenderCharacterIniSelector();
+						imgui_Separator();
+						RenderSearchBar();
+
+						if (_state.Show_AllPlayersView) RenderAllPlayersView();
+						if (!_state.Show_AllPlayersView) RenderConfigEditor();
+						if (_state.Show_ThemeSettings) RenderThemeSettingsModal();
+						if (_state.Show_Donate) RenderDonateModal();
 					}
-					catch (Exception ex)
+					finally
 					{
-						//E3.Log.Write($"ImGui initialization failed: {ex.Message}", Logging.LogLevels.Error);
-						_imguiContextReady = false; // Mark as failed
-						_imguiInitDone = true;
-						return; // Exit early to prevent further ImGui calls
+						imgui_End();
+						PopCurrentTheme();
 					}
-					_imguiInitDone = true;
-				}
-
-				// Only render if ImGui is available and ready
-				if (_imguiContextReady && imgui_Begin_OpenFlagGet(_e3ImGuiWindow))
-				{
-
-					// Apply current theme
-					E3ImGUI.PushCurrentTheme();
-					// No size constraints - allow window to be resized to any size
-
-					if (imgui_Begin(_e3ImGuiWindow, (int)(ImGuiWindowFlags.ImGuiWindowFlags_NoCollapse | ImGuiWindowFlags.ImGuiWindowFlags_NoDocking)))
-					{
-
-						try
-						{
-							//if (imgui_GetWindowHeight()< 150 || imgui_GetWindowWidth() < 150) return;
-
-							// Header bar: version text on left, buttons on right
-							if (imgui_BeginTable("E3HeaderBar", 2, (int)ImGuiTableFlags.ImGuiTableFlags_SizingStretchProp, imgui_GetContentRegionAvailX(), 0))
-							{
-								try
-								{
-									imgui_TableSetupColumn("Left", 0, 0.70f);
-									imgui_TableSetupColumn("Right", 0, 0.30f);
-									imgui_TableNextRow();
-
-									//Left: version / build text
-									imgui_TableNextColumn();
-									imgui_TextColored(0.95f, 0.85f, 0.35f, 1.0f, _versionInfo);
-
-									//Right: buttons aligned to the right within the cell
-									imgui_TableNextColumn();
-									float cellAvail = imgui_GetContentRegionAvailX();
-									float donateBtnW = 70f;
-									float themeBtnW = 64f;
-									float closeBtnW = 64f;
-									float spacing = 6f;
-									float totalW = donateBtnW + spacing + themeBtnW + spacing + closeBtnW;
-									if (totalW < cellAvail)
-									{
-										imgui_SameLineEx(cellAvail - totalW, 0f);
-									}
-									//Donate button(opens confirmation modal)
-									if (imgui_Button("Donate"))
-									{
-										_showDonateModal = true;
-									}
-									imgui_SameLine();
-									if (imgui_Button("Theme"))
-									{
-										_showThemeSettings = !_showThemeSettings;
-									}
-									imgui_SameLine();
-									if (imgui_Button("Close"))
-									{
-										imgui_Begin_OpenFlagSet(_e3ImGuiWindow, false);
-									}
-								}
-								finally
-								{
-									imgui_EndTable();
-								}
-							}
-
-							imgui_Separator();
-
-							// Character INI selector (used by Config Editor)
-							RenderCharacterIniSelector();
-
-							imgui_Separator();
-
-							// All Players View toggle with better styling
-							imgui_Text("Search:");
-							imgui_SameLine();
-							imgui_SetNextItemWidth(Math.Max(200f, imgui_GetContentRegionAvailX() * 0.2f));
-							string searchId = $"##cfgSectionSearch_{_cfgSectionSearchVersion}";
-							string sectionSearchBefore = _cfgSectionSearch ?? string.Empty;
-							if (imgui_InputText(searchId, sectionSearchBefore))
-							{
-								_cfgSectionSearch = (imgui_InputText_Get(searchId) ?? string.Empty).Trim();
-							}
-							imgui_SameLine();
-							if (imgui_Button("Clear"))
-							{
-								_cfgSectionSearch = string.Empty;
-								_cfgSectionSearchVersion++;
-							}
-							imgui_SameLine();
-							imgui_Text("View Mode:");
-							imgui_SameLine();
-							if (imgui_Button(_cfgAllPlayersView ? "Switch to Character View" : "Switch to All Players View"))
-							{
-								_cfgAllPlayersView = !_cfgAllPlayersView;
-							}
-							imgui_SameLine();
-							imgui_TextColored(0.3f, 0.8f, 0.3f, 1.0f, _cfgAllPlayersView ? "All Players Mode" : "Character Mode");
-
-							imgui_Separator();
-
-							if (_cfgAllPlayersView)
-							{
-								string currentSig = $"{_cfgSelectedSection}::{_cfgSelectedKey}";
-								if (!string.Equals(currentSig, _cfgAllPlayersSig, StringComparison.OrdinalIgnoreCase))
-								{
-									_cfgAllPlayersSig = currentSig;
-									lock (_cfgAllPlayersLock)
-									{
-										_cfgAllPlayersRows = new List<KeyValuePair<string, string>>();
-										_cfgAllPlayersEditBuf = new Dictionary<string, string>(StringComparer.OrdinalIgnoreCase);
-									}
-									_cfgAllPlayersRefreshRequested = true;
-								}
-							}
-
-							//Config Editor only
-							if (_cfgAllPlayersView)
-							{
-								RenderAllPlayersView();
-							}
-							else
-							{
-								RenderConfigEditor();
-							}
-
-
-							////Render theme settings modal if open
-							if (_showThemeSettings)
-							{
-								RenderThemeSettingsModal();
-							}
-							// Render donate modal if open
-							if (_showDonateModal)
-							{
-								RenderDonateModal();
-							}
-						}
-						finally
-						{
-							imgui_End();
-							PopCurrentTheme();
-						}
-					}
-
 				}
 			}
-			catch (Exception ex)
-			{
-				_log.Write($"OnUpdateImGui error: {ex.Message}", Logging.LogLevels.Error);
-			}
-
 		}
+
+		private static void RenderWindowHeader()
+		{
+			// Header bar: version text on left, buttons on right
+			if (imgui_BeginTable("E3HeaderBar", 2, (int)ImGuiTableFlags.ImGuiTableFlags_SizingStretchProp, imgui_GetContentRegionAvailX(), 0))
+			{
+				try
+				{
+					imgui_TableSetupColumn("Left", 0, 0.70f);
+					imgui_TableSetupColumn("Right", 0, 0.30f);
+					imgui_TableNextRow();
+
+					//Left: version / build text
+					imgui_TableNextColumn();
+					imgui_TextColored(0.95f, 0.85f, 0.35f, 1.0f, _versionInfo);
+
+					//Right: buttons aligned to the right within the cell
+					imgui_TableNextColumn();
+					float cellAvail = imgui_GetContentRegionAvailX();
+					float donateBtnW = 70f;
+					float themeBtnW = 64f;
+					float closeBtnW = 64f;
+					float spacing = 6f;
+					float totalW = donateBtnW + spacing + themeBtnW + spacing + closeBtnW;
+					if (totalW < cellAvail)
+					{
+						imgui_SameLineEx(cellAvail - totalW, 0f);
+					}
+					//Donate button(opens confirmation modal)
+					if (imgui_Button("Donate"))
+					{
+						_state.Show_Donate = true;
+					}
+					imgui_SameLine();
+					if (imgui_Button("Theme"))
+					{
+						_state.Show_ThemeSettings = !_state.Show_ThemeSettings;
+					}
+					imgui_SameLine();
+					if (imgui_Button("Close"))
+					{
+						imgui_Begin_OpenFlagSet(_windowName, false);
+					}
+				}
+				finally
+				{
+					imgui_EndTable();
+				}
+			}
+		}
+		private static void RenderSearchBar()
+		{
+			// All Players View toggle with better styling
+			imgui_Text("Search:");
+			imgui_SameLine();
+			imgui_SetNextItemWidth(Math.Max(200f, imgui_GetContentRegionAvailX() * 0.2f));
+			string searchId = $"configKeySearch";
+			string sectionSearchBefore = _state.Buffer_KeySearch ?? string.Empty;
+			if (imgui_InputText(searchId, sectionSearchBefore))
+			{
+				_state.Buffer_KeySearch = (imgui_InputText_Get(searchId) ?? string.Empty).Trim();
+			}
+			imgui_SameLine();
+			if (imgui_Button("Clear"))
+			{
+				imgui_InputTextClear(searchId); //necessary to clear out the C++ buffer for the search
+				_state.Buffer_KeySearch = string.Empty;
+			}
+			imgui_SameLine();
+			imgui_Text("View Mode:");
+			imgui_SameLine();
+			if (imgui_Button(_state.Show_AllPlayersView ? "Switch to Character View" : "Switch to All Players View"))
+			{
+				_state.Show_AllPlayersView = !_state.Show_AllPlayersView;
+			}
+			imgui_SameLine();
+			imgui_TextColored(0.3f, 0.8f, 0.3f, 1.0f, _state.Show_AllPlayersView ? "All Players Mode" : "Character Mode");
+
+			imgui_Separator();
+
+			if (_state.Show_AllPlayersView)
+			{
+				string currentSig = $"{_cfgSelectedSection}::{_cfgSelectedKey}";
+				if (!string.Equals(currentSig, _state.State_AllPlayersSelection, StringComparison.OrdinalIgnoreCase))
+				{
+					_state.State_AllPlayersSelection = currentSig;
+					lock (_cfgAllPlayersLock)
+					{
+						_state.Data_AllPlayerRows = new List<KeyValuePair<string, string>>();
+						_state.Data_AllPlayersEdit= new Dictionary<string, string>(StringComparer.OrdinalIgnoreCase);
+					}
+					_cfgAllPlayersRefreshRequested = true;
+				}
+			}
+		}
+		
 		private static void RenderConfigEditor()
 		{
 
@@ -578,22 +550,21 @@ namespace E3Core.UI.Windows
 			// Use ImGui Table for responsive 3-column layout
 			float availY = imgui_GetContentRegionAvailY();
 
-		SectionData activeSection = null;
+			SectionData activeSection = null;
 
-		// Reserve space for spell gems display at bottom (header + separator + gem row with 40px icons + padding)
-		float reservedBottomSpace = _cfg_GemsAvailable ? 100f : 10f;
-		// Reserve additional space for integrated editor panel if open
-		if (_cfgShowIntegratedEditor && _cfgSelectedValueIndex >= 0)
-		{
-			reservedBottomSpace += 350f; // Space for integrated editor tabs and controls
-		}
-		float tableHeight = Math.Max(200f, availY - reservedBottomSpace);
+			// Reserve space for spell gems display at bottom (header + separator + gem row with 40px icons + padding)
+			float reservedBottomSpace = _cfg_GemsAvailable ? 100f : 10f;
+			// Reserve additional space for integrated editor panel if open
+			if (_cfgShowIntegratedEditor && _cfgSelectedValueIndex >= 0)
+			{
+				reservedBottomSpace += 350f; // Space for integrated editor tabs and controls
+			}
+			float tableHeight = Math.Max(200f, availY - reservedBottomSpace);
 
 			Int32 flags = (int)(ImGuiTableFlags.ImGuiTableFlags_Borders | ImGuiTableFlags.ImGuiTableFlags_Resizable | ImGuiTableFlags.ImGuiTableFlags_ScrollY | ImGuiTableFlags.ImGuiTableFlags_SizingStretchProp | ImGuiTableFlags.ImGuiTableFlags_NoPadInnerX | ImGuiTableFlags.ImGuiTableFlags_NoPadOuterX);
 
 			if (imgui_BeginTable("E3ConfigEditorTable", 3, flags, 0, tableHeight))
 			{
-
 				try
 				{
 					// Set up columns with initial proportions
@@ -736,16 +707,16 @@ namespace E3Core.UI.Windows
 													_cfgNewValue = string.Empty;
 												}
 
-											// Context menu for all keys (right-click)
-											if (imgui_BeginPopupContextItem(null, 1))
-											{
-												if (imgui_MenuItem("Delete Key"))
+												// Context menu for all keys (right-click)
+												if (imgui_BeginPopupContextItem(null, 1))
 												{
-													DeleteKeyFromActiveIni(sec, key);
-												}
+													if (imgui_MenuItem("Delete Key"))
+													{
+														DeleteKeyFromActiveIni(sec, key);
+													}
 
-												imgui_EndPopup();
-											}
+													imgui_EndPopup();
+												}
 											}
 
 											imgui_TreePop();
@@ -879,12 +850,12 @@ namespace E3Core.UI.Windows
 
 						}
 
-						
-				}
-				// Column 3: Tools and Info
-				activeSection = pd.Sections.GetSectionData(_cfgSelectedSection ?? string.Empty);
-				if (imgui_TableNextColumn())
-				{
+
+					}
+					// Column 3: Tools and Info
+					activeSection = pd.Sections.GetSectionData(_cfgSelectedSection ?? string.Empty);
+					if (imgui_TableNextColumn())
+					{
 						int tableFlags = (int)(ImGuiTableFlags.ImGuiTableFlags_RowBg | ImGuiTableFlags.ImGuiTableFlags_ScrollY);
 						if (imgui_BeginTable("ToolsInfoTable", 1, tableFlags, 0, 0))
 						{
@@ -901,58 +872,58 @@ namespace E3Core.UI.Windows
 								imgui_EndTable();
 							}
 						}
+					}
+				}
+				finally
+				{
+					imgui_EndTable();
 				}
 			}
-			finally
+
+			// Render integrated editor after table if active
+			if (_cfgShowIntegratedEditor && _cfgSelectedValueIndex >= 0)
 			{
-				imgui_EndTable();
+				RenderIntegratedModifierEditor();
 			}
+
+			//Ensure popups/ modals render even when the tools column is hidden
+			RenderActiveModals(activeSection);
+
+			//Display memorized spells if available from catalog data (safe)
+			RenderCatalogGemData();
 		}
 
-	// Render integrated editor after table if active
-	if (_cfgShowIntegratedEditor && _cfgSelectedValueIndex >= 0)
-	{
-		RenderIntegratedModifierEditor();
-	}
 
-	//Ensure popups/ modals render even when the tools column is hidden
-	RenderActiveModals(activeSection);
-
-		//Display memorized spells if available from catalog data (safe)
-		RenderCatalogGemData();
-	}
-
-
-	// Integrated editor panel - renders after the main table and spans full width
-	private static void RenderIntegratedModifierEditor()
-	{
-		var iniData = GetActiveCharacterIniData();
-		var sectionData = iniData?.Sections?.GetSectionData(_cfgSelectedSection ?? string.Empty);
-		var keyData = sectionData?.Keys?.GetKeyData(_cfgSelectedKey ?? string.Empty);
-		var values = GetValues(keyData);
-		if (_cfgSelectedValueIndex < 0 || _cfgSelectedValueIndex >= values.Count)
+		// Integrated editor panel - renders after the main table and spans full width
+		private static void RenderIntegratedModifierEditor()
 		{
-			_cfgShowIntegratedEditor = false;
-			return;
+			var iniData = GetActiveCharacterIniData();
+			var sectionData = iniData?.Sections?.GetSectionData(_cfgSelectedSection ?? string.Empty);
+			var keyData = sectionData?.Keys?.GetKeyData(_cfgSelectedKey ?? string.Empty);
+			var values = GetValues(keyData);
+			if (_cfgSelectedValueIndex < 0 || _cfgSelectedValueIndex >= values.Count)
+			{
+				_cfgShowIntegratedEditor = false;
+				return;
+			}
+
+			string rawValue = values[_cfgSelectedValueIndex] ?? string.Empty;
+			var state = EnsureSpellEditState(_cfgSelectedSection, _cfgSelectedKey, _cfgSelectedValueIndex, rawValue);
+			if (state == null)
+			{
+				_cfgShowIntegratedEditor = false;
+				return;
+			}
+
+			imgui_Separator();
+			imgui_TextColored(0.95f, 0.85f, 0.35f, 1.0f, "Spell Modifier Editor");
+			imgui_Separator();
+
+			RenderSpellModifierEditor(state);
 		}
 
-		string rawValue = values[_cfgSelectedValueIndex] ?? string.Empty;
-		var state = EnsureSpellEditState(_cfgSelectedSection, _cfgSelectedKey, _cfgSelectedValueIndex, rawValue);
-		if (state == null)
-		{
-			_cfgShowIntegratedEditor = false;
-			return;
-		}
-
-		imgui_Separator();
-		imgui_TextColored(0.95f, 0.85f, 0.35f, 1.0f, "Spell Modifier Editor");
-		imgui_Separator();
-		
-		RenderSpellModifierEditor(state);
-	}
-
-	// Safe gem display using catalog data (no TLO queries from UI thread)
-	private static void RenderCatalogGemData()
+		// Safe gem display using catalog data (no TLO queries from UI thread)
+		private static void RenderCatalogGemData()
 		{
 			lock (_dataLock)
 			{
@@ -1241,7 +1212,7 @@ namespace E3Core.UI.Windows
 					imgui_DrawSpellIconByIconIndex(iconID, 30.0f);
 					imgui_SameLine();
 					imgui_Text($"{i + 1}.");
-					imgui_SameLine(_valueRowActionStartOffset+20);
+					imgui_SameLine(_valueRowActionStartOffset + 20);
 
 					bool canMoveUp = i > 0;
 					bool canMoveDown = i < parts.Count - 1;
@@ -1305,29 +1276,30 @@ namespace E3Core.UI.Windows
 						}
 					}
 
-				RenderReorderButton($"^##moveup_{itemUid}", canMoveUp, () => SwapAndMark(i, i - 1));
-				imgui_SameLine();
-				RenderReorderButton($"v##movedown_{itemUid}", canMoveDown, () => SwapAndMark(i, i + 1));
-				imgui_SameLine();
+					RenderReorderButton($"^##moveup_{itemUid}", canMoveUp, () => SwapAndMark(i, i - 1));
+					imgui_SameLine();
+					RenderReorderButton($"v##movedown_{itemUid}", canMoveDown, () => SwapAndMark(i, i + 1));
+					imgui_SameLine();
 
-				// Make value selectable to show info in right panel
+					// Make value selectable to show info in right panel
 					bool isSelected = (_cfgSelectedValueIndex == i);
 					if (imgui_Selectable($"{v}##select_{itemUid}", isSelected))
 					{
 						_cfgSelectedValueIndex = i;
+						_cfgInlineEditBuffer = v;
 					}
-				if (imgui_BeginPopupContextItem($"ValueCtx_{itemUid}", 1))
-				{
-					if (canMoveUp && imgui_MenuItem("Move Up")) SwapAndMark(i, i - 1);
-					if (canMoveDown && imgui_MenuItem("Move Down")) SwapAndMark(i, i + 1);
-					if (imgui_MenuItem("Replace From Catalog"))
+					if (imgui_BeginPopupContextItem($"ValueCtx_{itemUid}", 1))
 					{
-						_cfgCatalogReplaceMode = true;
-						_cfgCatalogReplaceIndex = i;
-						_cfgShowAddModal = true;
+						if (canMoveUp && imgui_MenuItem("Move Up")) SwapAndMark(i, i - 1);
+						if (canMoveDown && imgui_MenuItem("Move Down")) SwapAndMark(i, i + 1);
+						if (imgui_MenuItem("Replace From Catalog"))
+						{
+							_cfgCatalogReplaceMode = true;
+							_cfgCatalogReplaceIndex = i;
+							_cfgShowAddModal = true;
+						}
+						imgui_EndPopup();
 					}
-					imgui_EndPopup();
-				}
 				}
 				else
 				{
@@ -1511,79 +1483,79 @@ namespace E3Core.UI.Windows
 				return;
 			}
 
-	imgui_TextColored(0.95f, 0.85f, 0.35f, 1.0f, "Configuration Tools");
-	imgui_Separator();
+			imgui_TextColored(0.95f, 0.85f, 0.35f, 1.0f, "Configuration Tools");
+			imgui_Separator();
 
-	// Value actions at the top (when a value is selected)
-	if (_cfgSelectedValueIndex >= 0 && hasKeySelected)
-	{
-		var kd = selectedSection?.Keys?.GetKeyData(_cfgSelectedKey ?? string.Empty);
-		var values = GetValues(kd);
-		if (_cfgSelectedValueIndex < values.Count)
-		{
-			string selectedValue = values[_cfgSelectedValueIndex];
-			var editState = EnsureSpellEditState(_cfgSelectedSection, _cfgSelectedKey, _cfgSelectedValueIndex, selectedValue);
-			if (editState != null)
+			// Value actions at the top (when a value is selected)
+			if (_cfgSelectedValueIndex >= 0 && hasKeySelected)
 			{
-				imgui_TextColored(0.95f, 0.85f, 0.35f, 1.0f, "Value Actions");
-				
-				// Delete Value button (red)
-				imgui_PushStyleColor((int)ImGuiCol.Button, 0.85f, 0.30f, 0.30f, 1.0f);
-				imgui_PushStyleColor((int)ImGuiCol.ButtonHovered, 0.95f, 0.40f, 0.40f, 1.0f);
-				imgui_PushStyleColor((int)ImGuiCol.ButtonActive, 0.75f, 0.20f, 0.20f, 1.0f);
-				if (imgui_Button("Delete Value"))
+				var kd = selectedSection?.Keys?.GetKeyData(_cfgSelectedKey ?? string.Empty);
+				var values = GetValues(kd);
+				if (_cfgSelectedValueIndex < values.Count)
 				{
-					// Delete the currently selected value
-					var pdAct = GetActiveCharacterIniData();
-					var selSec = pdAct.Sections.GetSectionData(_cfgSelectedSection);
-					var key = selSec?.Keys.GetKeyData(_cfgSelectedKey);
-					if (key != null)
+					string selectedValue = values[_cfgSelectedValueIndex];
+					var editState = EnsureSpellEditState(_cfgSelectedSection, _cfgSelectedKey, _cfgSelectedValueIndex, selectedValue);
+					if (editState != null)
 					{
-						var vals = GetValues(key);
-						if (_cfgSelectedValueIndex >= 0 && _cfgSelectedValueIndex < vals.Count)
+						imgui_TextColored(0.95f, 0.85f, 0.35f, 1.0f, "Value Actions");
+
+						// Delete Value button (red)
+						imgui_PushStyleColor((int)ImGuiCol.Button, 0.85f, 0.30f, 0.30f, 1.0f);
+						imgui_PushStyleColor((int)ImGuiCol.ButtonHovered, 0.95f, 0.40f, 0.40f, 1.0f);
+						imgui_PushStyleColor((int)ImGuiCol.ButtonActive, 0.75f, 0.20f, 0.20f, 1.0f);
+						if (imgui_Button("Delete Value"))
 						{
-							vals.RemoveAt(_cfgSelectedValueIndex);
-							WriteValues(key, vals);
-							_cfgSelectedValueIndex = -1; // Clear selection after delete
+							// Delete the currently selected value
+							var pdAct = GetActiveCharacterIniData();
+							var selSec = pdAct.Sections.GetSectionData(_cfgSelectedSection);
+							var key = selSec?.Keys.GetKeyData(_cfgSelectedKey);
+							if (key != null)
+							{
+								var vals = GetValues(key);
+								if (_cfgSelectedValueIndex >= 0 && _cfgSelectedValueIndex < vals.Count)
+								{
+									vals.RemoveAt(_cfgSelectedValueIndex);
+									WriteValues(key, vals);
+									_cfgSelectedValueIndex = -1; // Clear selection after delete
+								}
+							}
 						}
+						imgui_PopStyleColor(3);
+						imgui_SameLine();
+
+						// Show/Hide Editor button with pulsing highlight
+						float pulse = (float)Math.Abs(Math.Sin(DateTime.Now.Ticks / 3000000.0));
+						float highlightR = 0.95f + (pulse * 0.05f);
+						float highlightG = 0.75f + (pulse * 0.25f);
+						float highlightB = 0.35f + (pulse * 0.15f);
+						imgui_PushStyleColor((int)ImGuiCol.Button, highlightR, highlightG, highlightB, 1.0f);
+						imgui_PushStyleColor((int)ImGuiCol.ButtonHovered, 1.0f, 0.85f, 0.45f, 1.0f);
+						imgui_PushStyleColor((int)ImGuiCol.ButtonActive, 0.85f, 0.65f, 0.25f, 1.0f);
+						imgui_PushStyleColor((int)ImGuiCol.Text, 0.1f, 0.1f, 0.1f, 1.0f); // Dark text for readability
+
+						string btnLabel = _cfgShowIntegratedEditor ? "Hide Editor" : "Show Editor";
+						if (imgui_Button(btnLabel))
+						{
+							_cfgShowIntegratedEditor = !_cfgShowIntegratedEditor;
+							if (_cfgShowIntegratedEditor)
+							{
+								// Initialize manual edit buffer when opening
+								var keyData = selectedSection?.Keys?.GetKeyData(_cfgSelectedKey ?? string.Empty);
+								var valuesList = GetValues(keyData);
+								if (_cfgSelectedValueIndex >= 0 && _cfgSelectedValueIndex < valuesList.Count)
+								{
+									_cfgManualEditBuffer = valuesList[_cfgSelectedValueIndex] ?? string.Empty;
+								}
+							}
+						}
+
+						imgui_PopStyleColor(4);
+						string editorHint = _cfgShowIntegratedEditor ? "Editor panel is open below." : "Click to show the advanced editor.";
+						imgui_TextColored(0.7f, 0.8f, 0.9f, 1.0f, editorHint);
+						imgui_Separator();
 					}
 				}
-				imgui_PopStyleColor(3);
-				imgui_SameLine();
-				
-				// Show/Hide Editor button with pulsing highlight
-				float pulse = (float)Math.Abs(Math.Sin(DateTime.Now.Ticks / 3000000.0));
-				float highlightR = 0.95f + (pulse * 0.05f);
-				float highlightG = 0.75f + (pulse * 0.25f);
-				float highlightB = 0.35f + (pulse * 0.15f);
-				imgui_PushStyleColor((int)ImGuiCol.Button, highlightR, highlightG, highlightB, 1.0f);
-				imgui_PushStyleColor((int)ImGuiCol.ButtonHovered, 1.0f, 0.85f, 0.45f, 1.0f);
-				imgui_PushStyleColor((int)ImGuiCol.ButtonActive, 0.85f, 0.65f, 0.25f, 1.0f);
-				imgui_PushStyleColor((int)ImGuiCol.Text, 0.1f, 0.1f, 0.1f, 1.0f); // Dark text for readability
-
-				string btnLabel = _cfgShowIntegratedEditor ? "Hide Editor" : "Show Editor";
-				if (imgui_Button(btnLabel))
-				{
-					_cfgShowIntegratedEditor = !_cfgShowIntegratedEditor;
-					if (_cfgShowIntegratedEditor)
-					{
-						// Initialize manual edit buffer when opening
-						var keyData = selectedSection?.Keys?.GetKeyData(_cfgSelectedKey ?? string.Empty);
-						var valuesList = GetValues(keyData);
-						if (_cfgSelectedValueIndex >= 0 && _cfgSelectedValueIndex < valuesList.Count)
-						{
-							_cfgManualEditBuffer = valuesList[_cfgSelectedValueIndex] ?? string.Empty;
-						}
-					}
-				}
-
-				imgui_PopStyleColor(4);
-				string editorHint = _cfgShowIntegratedEditor ? "Editor panel is open below." : "Click to show the advanced editor.";
-				imgui_TextColored(0.7f, 0.8f, 0.9f, 1.0f, editorHint);
-				imgui_Separator();
 			}
-		}
-	}
 
 
 			// Special section buttons
@@ -1671,9 +1643,9 @@ namespace E3Core.UI.Windows
 						imgui_TextColored(0.8f, 0.8f, 0.6f, 1.0f, "(Catalogs not loaded)");
 					}
 
-			imgui_Separator();
-		}
-		else
+					imgui_Separator();
+				}
+				else
 				{
 					InvalidateSpellEditState();
 				}
@@ -1715,82 +1687,82 @@ namespace E3Core.UI.Windows
 			{
 				RenderIfAppendModal(selectedSection);
 			}
-		if (_cfgShowIfSampleModal)
-		{
-			RenderIfsSampleModal();
+			if (_cfgShowIfSampleModal)
+			{
+				RenderIfsSampleModal();
+			}
+			// Modal editor deprecated - now using integrated panel instead
+			// if (_cfgShowSpellModifierModal)
+			// {
+			// 	RenderSpellModifierModal();
+			// }
 		}
-		// Modal editor deprecated - now using integrated panel instead
-		// if (_cfgShowSpellModifierModal)
-		// {
-		// 	RenderSpellModifierModal();
-		// }
-	}
 
 		// Helper to determine if a key is healing-related
-	// Save out active ini data (current or selected)
-	private static void SaveActiveIniData()
-	{
-		try
+		// Save out active ini data (current or selected)
+		private static void SaveActiveIniData()
 		{
-			string currentPath = GetCurrentCharacterIniPath();
-			string selectedPath = GetActiveSettingsPath();
-			var pd = GetActiveCharacterIniData();
-			if (string.IsNullOrEmpty(selectedPath) || pd == null) return;
-
-			var parser = E3Core.Utility.e3util.CreateIniParser();
-			parser.WriteFile(selectedPath, pd);
-			_cfg_Dirty = false;
-			_nextIniRefreshAtMs = 0;
-			_log.Write($"Saved changes to {Path.GetFileName(selectedPath)}");
-		}
-		catch (Exception ex)
-		{
-			_log.Write($"Failed to save: {ex.Message}");
-		}
-	}
-
-	// Clear pending changes on the selected ini (reload from disk)
-	private static void ClearPendingChanges()
-	{
-		try
-		{
-			string currentPath = GetCurrentCharacterIniPath();
-			string selectedPath = GetActiveSettingsPath();
-			
-			if (string.IsNullOrEmpty(selectedPath))
+			try
 			{
-				_log.Write("No ini file selected");
-				return;
-			}
+				string currentPath = GetCurrentCharacterIniPath();
+				string selectedPath = GetActiveSettingsPath();
+				var pd = GetActiveCharacterIniData();
+				if (string.IsNullOrEmpty(selectedPath) || pd == null) return;
 
-			// Reload from disk
-			var parser = E3Core.Utility.e3util.CreateIniParser();
-			var pd = parser.ReadFile(selectedPath);
-			
-			// Update the appropriate data reference
-			if (string.Equals(selectedPath, currentPath, StringComparison.OrdinalIgnoreCase))
-			{
-				// Reloading current character's ini
-				E3.CharacterSettings.ParsedData = pd;
-				_selectedCharIniParsedData = pd;
+				var parser = E3Core.Utility.e3util.CreateIniParser();
+				parser.WriteFile(selectedPath, pd);
+				_cfg_Dirty = false;
+				_nextIniRefreshAtMs = 0;
+				_log.Write($"Saved changes to {Path.GetFileName(selectedPath)}");
 			}
-			else
+			catch (Exception ex)
 			{
-				// Reloading a different character's ini
-				_selectedCharIniParsedData = pd;
+				_log.Write($"Failed to save: {ex.Message}");
 			}
-			
-			_cfg_Dirty = false;
-			_nextIniRefreshAtMs = 0;
-			_cfgSelectedValueIndex = -1;
-			InvalidateSpellEditState();
-			_log.Write($"Cleared pending changes for {Path.GetFileName(selectedPath)}");
 		}
-		catch (Exception ex)
+
+		// Clear pending changes on the selected ini (reload from disk)
+		private static void ClearPendingChanges()
 		{
-			_log.Write($"Failed to clear changes: {ex.Message}");
+			try
+			{
+				string currentPath = GetCurrentCharacterIniPath();
+				string selectedPath = GetActiveSettingsPath();
+
+				if (string.IsNullOrEmpty(selectedPath))
+				{
+					_log.Write("No ini file selected");
+					return;
+				}
+
+				// Reload from disk
+				var parser = E3Core.Utility.e3util.CreateIniParser();
+				var pd = parser.ReadFile(selectedPath);
+
+				// Update the appropriate data reference
+				if (string.Equals(selectedPath, currentPath, StringComparison.OrdinalIgnoreCase))
+				{
+					// Reloading current character's ini
+					E3.CharacterSettings.ParsedData = pd;
+					_selectedCharIniParsedData = pd;
+				}
+				else
+				{
+					// Reloading a different character's ini
+					_selectedCharIniParsedData = pd;
+				}
+
+				_cfg_Dirty = false;
+				_nextIniRefreshAtMs = 0;
+				_cfgSelectedValueIndex = -1;
+				InvalidateSpellEditState();
+				_log.Write($"Cleared pending changes for {Path.GetFileName(selectedPath)}");
+			}
+			catch (Exception ex)
+			{
+				_log.Write($"Failed to clear changes: {ex.Message}");
+			}
 		}
-	}
 		static List<String> _catalogRefreshKeyTypes = new List<string>() { "Spells", "AAs", "Discs", "Skills", "Items" };
 		static Int64 _numberofMillisecondsBeforeCatalogNeedsRefresh = 30000;
 
@@ -2316,12 +2288,12 @@ namespace E3Core.UI.Windows
 
 						lock (_cfgAllPlayersLock)
 						{
-							_cfgAllPlayersRows = newRows;
-							_cfgAllPlayersEditBuf = new Dictionary<string, string>(StringComparer.OrdinalIgnoreCase);
+							_state.Data_AllPlayerRows = newRows;
+							_state.Data_AllPlayersEdit = new Dictionary<string, string>(StringComparer.OrdinalIgnoreCase);
 							foreach (var row in newRows)
 							{
 								var toonKey = row.Key ?? string.Empty;
-								_cfgAllPlayersEditBuf[toonKey] = row.Value ?? string.Empty;
+								_state.Data_AllPlayersEdit[toonKey] = row.Value ?? string.Empty;
 							}
 						}
 						_cfgAllPlayersLastUpdatedAt = Core.StopWatch.ElapsedMilliseconds;
@@ -3037,17 +3009,17 @@ namespace E3Core.UI.Windows
 			string n = name.ToLowerInvariant();
 			return n.Contains("water") || n.Contains("milk") || n.Contains("wine") || n.Contains("ale") || n.Contains("beer") || n.Contains("tea") || n.Contains("juice") || n.Contains("elixir") || n.Contains("nectar") || n.Contains("brew");
 		}
-	private static void RenderAddFromCatalogModal(IniData pd, SectionData selectedSection)
-	{
-	imgui_Begin_OpenFlagSet("E3Catalog", true);
-		// Set initial size only on first use - window is resizable and remembers user's size
-		imgui_SetNextWindowSizeWithCond(900f, 600f, 4); // ImGuiCond_FirstUseEver = 4
-		bool _open_Add = imgui_Begin("E3Catalog", (int)ImGuiWindowFlags.ImGuiWindowFlags_NoDocking); // No AlwaysAutoResize = resizable
+		private static void RenderAddFromCatalogModal(IniData pd, SectionData selectedSection)
+		{
+			imgui_Begin_OpenFlagSet("E3Catalog", true);
+			// Set initial size only on first use - window is resizable and remembers user's size
+			imgui_SetNextWindowSizeWithCond(900f, 600f, 4); // ImGuiCond_FirstUseEver = 4
+			bool _open_Add = imgui_Begin("E3Catalog", (int)ImGuiWindowFlags.ImGuiWindowFlags_NoDocking); // No AlwaysAutoResize = resizable
 			if (_open_Add)
 			{
-		float totalW = imgui_GetContentRegionAvailX();
+				float totalW = imgui_GetContentRegionAvailX();
 				float listH = imgui_GetContentRegionAvailY() - 120f; // Reserve space for header/footer
-				// Adjust panel widths based on type - Items need wider left panel for longer names
+																	 // Adjust panel widths based on type - Items need wider left panel for longer names
 				float leftW, middleW, rightW;
 				if (_cfgAddType == AddType.Items)
 				{
@@ -3070,7 +3042,7 @@ namespace E3Core.UI.Windows
 					imgui_SameLine();
 					imgui_TextColored(0.7f, 0.9f, 0.7f, 1.0f, "(Select a song for the melody)");
 				}
-		else
+				else
 				{
 					imgui_SameLine();
 					imgui_SetNextItemWidth(100f); // Fixed width for type dropdown
@@ -3088,7 +3060,7 @@ namespace E3Core.UI.Windows
 						EndComboSafe();
 					}
 				}
-		imgui_SameLine();
+				imgui_SameLine();
 				imgui_Text("Filter:");
 				imgui_SameLine();
 				imgui_SetNextItemWidth(200f); // Fixed width for filter input
@@ -3137,22 +3109,22 @@ namespace E3Core.UI.Windows
 				// Resolve the catalog for the chosen type
 				var src = GetCatalogByType(_cfgAddType);
 
-			// -------- LEFT: Top-level categories --------
+				// -------- LEFT: Top-level categories --------
 				if (imgui_BeginChild("TopLevelCats", leftW, listH, 1, 0))
 				{
 					imgui_TextColored(0.9f, 0.95f, 1.0f, 1.0f, "Categories");
 					var cats = src.Keys.ToList();
 					cats.Sort(StringComparer.OrdinalIgnoreCase);
 					int ci = 0;
-						foreach (var c in cats)
+					foreach (var c in cats)
+					{
+						bool sel = string.Equals(_cfgAddCategory, c, StringComparison.OrdinalIgnoreCase);
+						if (imgui_Selectable(c, sel))
 						{
-							bool sel = string.Equals(_cfgAddCategory, c, StringComparison.OrdinalIgnoreCase);
-							if (imgui_Selectable(c, sel))
-							{
-								_cfgAddCategory = c;
-								_cfgAddSubcategory = string.Empty; // reset mid level on cat change
-								_cfgSelectedCatalogEntry = null; // Clear selection when category changes
-							}
+							_cfgAddCategory = c;
+							_cfgAddSubcategory = string.Empty; // reset mid level on cat change
+							_cfgSelectedCatalogEntry = null; // Clear selection when category changes
+						}
 						ci++;
 					}
 				}
@@ -3160,7 +3132,7 @@ namespace E3Core.UI.Windows
 
 				imgui_SameLine();
 
-			// -------- MIDDLE: Subcategory dropdown + Entries --------
+				// -------- MIDDLE: Subcategory dropdown + Entries --------
 				if (imgui_BeginChild("MiddlePanel", middleW, listH, 1, 0))
 				{
 					// Subcategory dropdown selector (not shown for Items)
@@ -3169,7 +3141,7 @@ namespace E3Core.UI.Windows
 					{
 						imgui_TextColored(0.9f, 0.95f, 1.0f, 1.0f, "Subcategory:");
 						imgui_SameLine();
-						
+
 						string comboLabel = string.IsNullOrEmpty(_cfgAddSubcategory) ? "(All)" : _cfgAddSubcategory;
 						if (!string.IsNullOrEmpty(_cfgAddCategory) && src.TryGetValue(_cfgAddCategory, out var submap))
 						{
@@ -3181,7 +3153,7 @@ namespace E3Core.UI.Windows
 								{
 									_cfgAddSubcategory = string.Empty;
 								}
-								
+
 								var subs = submap.Keys.ToList();
 								subs.Sort(StringComparer.OrdinalIgnoreCase);
 								foreach (var sc in subs)
@@ -3196,14 +3168,14 @@ namespace E3Core.UI.Windows
 											iconIndex = highestSpell.SpellIcon;
 										}
 									}
-									
+
 									// Draw icon if available
 									if (iconIndex >= 0)
 									{
 										imgui_DrawSpellIconByIconIndex(iconIndex, 20.0f);
 										imgui_SameLine();
 									}
-									
+
 									bool sel = string.Equals(_cfgAddSubcategory, sc, StringComparison.OrdinalIgnoreCase);
 									if (imgui_Selectable($"{sc}##Sub_{sc}", sel))
 									{
@@ -3218,64 +3190,64 @@ namespace E3Core.UI.Windows
 							imgui_SameLine();
 							imgui_TextColored(0.7f, 0.7f, 0.7f, 1.0f, "(Select a category)");
 						}
-						
+
 						imgui_Separator();
 						entriesHeight = listH - 50f; // Reserve space for dropdown above
 					}
-					
-				// Entries list
+
+					// Entries list
 					if (imgui_BeginChild("EntryList", middleW - 10f, entriesHeight, 0, 0))
 					{
 						imgui_TextColored(0.9f, 0.95f, 1.0f, 1.0f, "Entries");
 
 						IEnumerable<E3Spell> entries = Enumerable.Empty<E3Spell>();
-					if (!string.IsNullOrEmpty(_cfgAddCategory) && src.TryGetValue(_cfgAddCategory, out var submap2))
-					{
-						if (!string.IsNullOrEmpty(_cfgAddSubcategory) && submap2.TryGetValue(_cfgAddSubcategory, out var l))
-							entries = l;
-						else
-							entries = submap2.Values.SelectMany(x => x);
-					}
-
-					string filter = (_cfgAddFilter ?? string.Empty).Trim();
-					if (filter.Length > 0)
-						entries = entries.Where(e => e.Name.IndexOf(filter, StringComparison.OrdinalIgnoreCase) >= 0);
-
-					// stable ordering
-					entries = entries.OrderByDescending(e => e.Level)
-									 .ThenBy(e => e.Name, StringComparer.OrdinalIgnoreCase);
-
-		int i = 0;
-					foreach (var e in entries)
-					{
-						string uid = $"{_cfgAddType}_{_cfgAddCategory}_{_cfgAddSubcategory}_{i}";
-
-						// Icon
-						imgui_DrawSpellIconByIconIndex(e.SpellIcon, 30.0f);
-						imgui_SameLine();
-						
-						// Selectable entry with level and name
-						bool isSelected = _cfgSelectedCatalogEntry != null && string.Equals(_cfgSelectedCatalogEntry.Name, e.Name, StringComparison.OrdinalIgnoreCase);
-						if (imgui_Selectable($"[{e.Level}] {e.Name}##{uid}", isSelected))
+						if (!string.IsNullOrEmpty(_cfgAddCategory) && src.TryGetValue(_cfgAddCategory, out var submap2))
 						{
-							_cfgSelectedCatalogEntry = e;
+							if (!string.IsNullOrEmpty(_cfgAddSubcategory) && submap2.TryGetValue(_cfgAddSubcategory, out var l))
+								entries = l;
+							else
+								entries = submap2.Values.SelectMany(x => x);
 						}
-						i++;
-					}
 
-							if (i == 0) imgui_Text("No entries found");
+						string filter = (_cfgAddFilter ?? string.Empty).Trim();
+						if (filter.Length > 0)
+							entries = entries.Where(e => e.Name.IndexOf(filter, StringComparison.OrdinalIgnoreCase) >= 0);
+
+						// stable ordering
+						entries = entries.OrderByDescending(e => e.Level)
+										 .ThenBy(e => e.Name, StringComparer.OrdinalIgnoreCase);
+
+						int i = 0;
+						foreach (var e in entries)
+						{
+							string uid = $"{_cfgAddType}_{_cfgAddCategory}_{_cfgAddSubcategory}_{i}";
+
+							// Icon
+							imgui_DrawSpellIconByIconIndex(e.SpellIcon, 30.0f);
+							imgui_SameLine();
+
+							// Selectable entry with level and name
+							bool isSelected = _cfgSelectedCatalogEntry != null && string.Equals(_cfgSelectedCatalogEntry.Name, e.Name, StringComparison.OrdinalIgnoreCase);
+							if (imgui_Selectable($"[{e.Level}] {e.Name}##{uid}", isSelected))
+							{
+								_cfgSelectedCatalogEntry = e;
+							}
+							i++;
+						}
+
+						if (i == 0) imgui_Text("No entries found");
 					}
 					imgui_EndChild(); // EntryList
 				}
 				imgui_EndChild(); // MiddlePanel
-				
+
 				imgui_SameLine();
-				
+
 				// -------- RIGHT: Info Panel --------
 				if (imgui_BeginChild("InfoPanel", rightW, listH, 1, 0))
 				{
 					imgui_TextColored(0.9f, 0.95f, 1.0f, 1.0f, "Info");
-					
+
 					// Add button on same line as Info header, right-aligned
 					if (_cfgSelectedCatalogEntry != null)
 					{
@@ -3313,19 +3285,19 @@ namespace E3Core.UI.Windows
 							}
 						}
 					}
-					
+
 					imgui_Separator();
-					
+
 					if (_cfgSelectedCatalogEntry != null)
 					{
 						// Display name and icon
 						imgui_DrawSpellIconByIconIndex(_cfgSelectedCatalogEntry.SpellIcon, 40.0f);
 						imgui_SameLine();
 						imgui_TextColored(0.95f, 0.85f, 0.35f, 1.0f, _cfgSelectedCatalogEntry.Name ?? string.Empty);
-						
+
 						// Show additional info (mana, cast time, recast, etc.)
 						RenderSpellAdditionalInfo(_cfgSelectedCatalogEntry);
-						
+
 						// Show description if available
 						if (!string.IsNullOrEmpty(_cfgSelectedCatalogEntry.Description))
 						{
@@ -3538,10 +3510,10 @@ namespace E3Core.UI.Windows
 		}
 
 		// Append If modal: choose an If key to append to a specific row value
-	private static void RenderIfAppendModal(SectionData selectedSection)
-	{
-		imgui_Begin_OpenFlagSet("E3AppendIf", true);
-		bool _open_if = imgui_Begin("E3AppendIf", (int)(ImGuiWindowFlags.ImGuiWindowFlags_AlwaysAutoResize | ImGuiWindowFlags.ImGuiWindowFlags_NoDocking));
+		private static void RenderIfAppendModal(SectionData selectedSection)
+		{
+			imgui_Begin_OpenFlagSet("E3AppendIf", true);
+			bool _open_if = imgui_Begin("E3AppendIf", (int)(ImGuiWindowFlags.ImGuiWindowFlags_AlwaysAutoResize | ImGuiWindowFlags.ImGuiWindowFlags_NoDocking));
 			if (_open_if)
 			{
 				if (!string.IsNullOrEmpty(_cfgIfAppendStatus)) imgui_Text(_cfgIfAppendStatus);
@@ -3583,10 +3555,10 @@ namespace E3Core.UI.Windows
 			if (!_open_if) _cfgShowIfAppendModal = false;
 		}
 
-	private static void RenderThemeSettingsModal()
-	{
-		imgui_Begin_OpenFlagSet("E3Theme", true);
-		bool modalOpen = imgui_Begin("E3Theme", (int)(ImGuiWindowFlags.ImGuiWindowFlags_AlwaysAutoResize | ImGuiWindowFlags.ImGuiWindowFlags_NoDocking));
+		private static void RenderThemeSettingsModal()
+		{
+			imgui_Begin_OpenFlagSet("E3Theme", true);
+			bool modalOpen = imgui_Begin("E3Theme", (int)(ImGuiWindowFlags.ImGuiWindowFlags_AlwaysAutoResize | ImGuiWindowFlags.ImGuiWindowFlags_NoDocking));
 			if (modalOpen)
 			{
 				imgui_TextColored(0.95f, 0.85f, 0.35f, 1.0f, "UI Theme Selection");
@@ -3603,17 +3575,17 @@ namespace E3Core.UI.Windows
 				{
 					bool isSelected = (_currentTheme == themeValues[i]);
 
-				// Use selectable for theme selection (acts like radio button)
-				if (imgui_Selectable(themeNames[i], isSelected))
-				{
-					_currentTheme = themeValues[i];
-					// Save theme to character INI
-					if (E3.CharacterSettings != null)
+					// Use selectable for theme selection (acts like radio button)
+					if (imgui_Selectable(themeNames[i], isSelected))
 					{
-						E3.CharacterSettings.UITheme_E3Config = _currentTheme.ToString();
-						E3.CharacterSettings.SaveData();
+						_currentTheme = themeValues[i];
+						// Save theme to character INI
+						if (E3.CharacterSettings != null)
+						{
+							E3.CharacterSettings.UITheme_E3Config = _currentTheme.ToString();
+							E3.CharacterSettings.SaveData();
+						}
 					}
-				}
 
 					// Show theme preview as colored text on the same line
 					if (isSelected)
@@ -3699,27 +3671,27 @@ namespace E3Core.UI.Windows
 				// Close button
 				if (imgui_Button("Close"))
 				{
-					_showThemeSettings = false;
+					_state.Show_ThemeSettings = false;
 				}
 			}
 			imgui_End();
 
 			if (!modalOpen)
 			{
-				_showThemeSettings = false;
+				_state.Show_ThemeSettings = false;
 			}
 		}
-	
-	private static void SaveRoundingToSettings()
-	{
-		if (E3.CharacterSettings != null)
+
+		private static void SaveRoundingToSettings()
 		{
-			E3.CharacterSettings.UITheme_Rounding = _rounding;
-			E3.CharacterSettings.SaveData();
+			if (E3.CharacterSettings != null)
+			{
+				E3.CharacterSettings.UITheme_Rounding = _rounding;
+				E3.CharacterSettings.SaveData();
+			}
 		}
-	}
-	
-	private static void RenderAllPlayersView()
+
+		private static void RenderAllPlayersView()
 		{
 			imgui_Text("All Players View");
 			imgui_Separator();
@@ -3735,9 +3707,9 @@ namespace E3Core.UI.Windows
 			imgui_SameLine();
 			if (imgui_Button("Refresh")) _cfgAllPlayersRefreshRequested = true;
 
-				imgui_Separator();
+			imgui_Separator();
 
-				if (imgui_BeginChild("AllPlayersList", 0, 0, 1, 0))
+			if (imgui_BeginChild("AllPlayersList", 0, 0, 1, 0))
 			{
 				try
 				{
@@ -3754,12 +3726,12 @@ namespace E3Core.UI.Windows
 
 							lock (_cfgAllPlayersLock)
 							{
-								foreach (var row in _cfgAllPlayersRows)
+								foreach (var row in _state.Data_AllPlayerRows)
 								{
 									string toon = row.Key ?? string.Empty;
 
-									if (!_cfgAllPlayersEditBuf.ContainsKey(toon))
-										_cfgAllPlayersEditBuf[toon] = row.Value ?? string.Empty;
+									if (!_state.Data_AllPlayersEdit.ContainsKey(toon))
+										_state.Data_AllPlayersEdit[toon] = row.Value ?? string.Empty;
 
 									imgui_TableNextRow();
 
@@ -3769,7 +3741,7 @@ namespace E3Core.UI.Windows
 
 									// Value (editable)
 									imgui_TableNextColumn();
-									string currentValue = _cfgAllPlayersEditBuf[toon];
+									string currentValue = _state.Data_AllPlayersEdit[toon];
 									bool isBool = string.Equals(currentValue, "true", StringComparison.OrdinalIgnoreCase) || string.Equals(currentValue, "false", StringComparison.OrdinalIgnoreCase)
 										|| string.Equals(currentValue, "on", StringComparison.OrdinalIgnoreCase) || string.Equals(currentValue, "off", StringComparison.OrdinalIgnoreCase);
 
@@ -3779,19 +3751,19 @@ namespace E3Core.UI.Windows
 										{
 											if (imgui_Selectable("True", string.Equals(currentValue, "True", StringComparison.OrdinalIgnoreCase)))
 											{
-												_cfgAllPlayersEditBuf[toon] = "True";
+												_state.Data_AllPlayersEdit[toon] = "True";
 											}
 											if (imgui_Selectable("False", string.Equals(currentValue, "False", StringComparison.OrdinalIgnoreCase)))
 											{
-												_cfgAllPlayersEditBuf[toon] = "False";
+												_state.Data_AllPlayersEdit[toon] = "False";
 											}
 											if (imgui_Selectable("On", string.Equals(currentValue, "On", StringComparison.OrdinalIgnoreCase)))
 											{
-												_cfgAllPlayersEditBuf[toon] = "On";
+												_state.Data_AllPlayersEdit[toon] = "On";
 											}
 											if (imgui_Selectable("Off", string.Equals(currentValue, "Off", StringComparison.OrdinalIgnoreCase)))
 											{
-												_cfgAllPlayersEditBuf[toon] = "Off";
+												_state.Data_AllPlayersEdit[toon] = "Off";
 											}
 											EndComboSafe();
 										}
@@ -3801,7 +3773,7 @@ namespace E3Core.UI.Windows
 										string inputId = $"##edit_{toon}";
 										if (imgui_InputText(inputId, currentValue))
 										{
-											_cfgAllPlayersEditBuf[toon] = imgui_InputText_Get(inputId) ?? string.Empty;
+											_state.Data_AllPlayersEdit[toon] = imgui_InputText_Get(inputId) ?? string.Empty;
 										}
 									}
 
@@ -3809,7 +3781,7 @@ namespace E3Core.UI.Windows
 									imgui_TableNextColumn();
 									if (imgui_Button($"Save##{row.Key}"))
 									{
-										string newValue = _cfgAllPlayersEditBuf[row.Key] ?? string.Empty;
+										string newValue = _state.Data_AllPlayersEdit[row.Key] ?? string.Empty;
 
 										if (TrySaveIniValueForToon(row.Key, _cfgSelectedSection, _cfgSelectedKey, newValue, out var err))
 										{
@@ -3946,7 +3918,7 @@ namespace E3Core.UI.Windows
 		}
 		private static List<string> GetSectionsForDisplay()
 		{
-			var search = (_cfgSectionSearch ?? string.Empty).Trim();
+			var search = (_state.Buffer_KeySearch ?? string.Empty).Trim();
 			if (string.IsNullOrEmpty(search))
 			{
 				return new List<string>(_cfgSectionsOrdered);
@@ -4247,11 +4219,11 @@ namespace E3Core.UI.Windows
 			catch { return false; }
 		}
 
-	private static void RenderIfsSampleModal()
-	{
-		const string winName = "E3SampleIfs";
-		imgui_Begin_OpenFlagSet(winName, _cfgShowIfSampleModal);
-		bool _open_ifs = imgui_Begin(winName, (int)(ImGuiWindowFlags.ImGuiWindowFlags_AlwaysAutoResize | ImGuiWindowFlags.ImGuiWindowFlags_NoDocking));
+		private static void RenderIfsSampleModal()
+		{
+			const string winName = "E3SampleIfs";
+			imgui_Begin_OpenFlagSet(winName, _cfgShowIfSampleModal);
+			bool _open_ifs = imgui_Begin(winName, (int)(ImGuiWindowFlags.ImGuiWindowFlags_AlwaysAutoResize | ImGuiWindowFlags.ImGuiWindowFlags_NoDocking));
 			if (_open_ifs)
 			{
 				if (!string.IsNullOrEmpty(_cfgIfSampleStatus)) imgui_Text(_cfgIfSampleStatus);
@@ -4394,8 +4366,8 @@ namespace E3Core.UI.Windows
 
 				foreach (var f in _charIniFiles)
 				{
-				if (string.Equals(f, currentPath, StringComparison.OrdinalIgnoreCase)) continue;
-				if (!_showOfflineCharInis && !IsIniForOnlineToon(f, onlineToons)) continue;
+					if (string.Equals(f, currentPath, StringComparison.OrdinalIgnoreCase)) continue;
+					if (!_showOfflineCharInis && !IsIniForOnlineToon(f, onlineToons)) continue;
 					string name = Path.GetFileName(f);
 					bool sel = string.Equals(_selectedCharIniPath, f, StringComparison.OrdinalIgnoreCase);
 					if (imgui_Selectable($"{name}", sel))
@@ -4409,7 +4381,9 @@ namespace E3Core.UI.Windows
 							_selectedCharIniParsedData = pd;
 							_selectedCharacterSection = string.Empty;
 							_charIniEdits.Clear();
-							_cfgAllPlayersSig = string.Empty; // force refresh
+							
+							_state.ClearState();
+
 							_nextIniRefreshAtMs = 0;
 
 							// Trigger catalog reload for the selected peer
@@ -4428,36 +4402,36 @@ namespace E3Core.UI.Windows
 				imgui_EndCombo();
 			}
 
-		imgui_SameLine();
-		_showOfflineCharInis = imgui_Checkbox("Show offline", _showOfflineCharInis);
+			imgui_SameLine();
+			_showOfflineCharInis = imgui_Checkbox("Show offline", _showOfflineCharInis);
 			imgui_SameLine();
 
-		// Save button with better styling
-		if (imgui_Button(_cfg_Dirty ? "Save Changes*" : "Save Changes"))
-		{
-			SaveActiveIniData();
-		}
-		imgui_SameLine();
-		
-		// Clear Changes button (only enabled when there are unsaved changes)
-		if (_cfg_Dirty)
-		{
-			if (imgui_Button("Clear Changes"))
+			// Save button with better styling
+			if (imgui_Button(_cfg_Dirty ? "Save Changes*" : "Save Changes"))
 			{
-				ClearPendingChanges();
+				SaveActiveIniData();
 			}
 			imgui_SameLine();
-		}
-		else
-		{
-			// Show disabled button when there are no changes
-			imgui_PushStyleVarFloat((int)ImGuiStyleVar.Alpha, 0.4f);
-			imgui_Button("Clear Changes");
-			imgui_PopStyleVar(1);
-			imgui_SameLine();
-		}
-		
-		imgui_TextColored(0.6f, 0.6f, 0.6f, 1.0f, _cfg_Dirty ? "Unsaved changes" : "All changes saved");
+
+			// Clear Changes button (only enabled when there are unsaved changes)
+			if (_cfg_Dirty)
+			{
+				if (imgui_Button("Clear Changes"))
+				{
+					ClearPendingChanges();
+				}
+				imgui_SameLine();
+			}
+			else
+			{
+				// Show disabled button when there are no changes
+				imgui_PushStyleVarFloat((int)ImGuiStyleVar.Alpha, 0.4f);
+				imgui_Button("Clear Changes");
+				imgui_PopStyleVar(1);
+				imgui_SameLine();
+			}
+
+			imgui_TextColored(0.6f, 0.6f, 0.6f, 1.0f, _cfg_Dirty ? "Unsaved changes" : "All changes saved");
 
 			imgui_Separator();
 		}
@@ -5028,60 +5002,62 @@ namespace E3Core.UI.Windows
 				});
 			}
 
-		void RenderManualEditTab()
-		{
-			imgui_TextColored(0.8f, 0.9f, 0.95f, 1.0f, "Manual Text Editor");
-			imgui_Text("Edit the raw configuration value directly. Changes apply when you click Apply.");
-			imgui_Separator();
+			void RenderManualEditTab()
+			{
+				imgui_TextColored(0.8f, 0.9f, 0.95f, 1.0f, "Manual Text Editor");
+				imgui_Text("Edit the raw configuration value directly. Changes apply when you click Apply.");
+				imgui_Separator();
 
-			// Text area for manual editing
-			float textWidth = Math.Max(500f, imgui_GetContentRegionAvailX() * 0.95f);
-			float textHeight = Math.Max(180f, imgui_GetTextLineHeightWithSpacing() * 10f);
-			if (imgui_InputTextMultiline($"##manual_edit_{idBase}", _cfgManualEditBuffer ?? string.Empty, textWidth, textHeight))
-			{
-				_cfgManualEditBuffer = imgui_InputText_Get($"##manual_edit_{idBase}") ?? string.Empty;
-			}
+				// Text area for manual editing
+				float textWidth = Math.Max(500f, imgui_GetContentRegionAvailX() * 0.95f);
+				float textHeight = Math.Max(180f, imgui_GetTextLineHeightWithSpacing() * 10f);
 
-			imgui_Separator();
-			if (imgui_Button($"Load From Current##manual_load_{idBase}"))
-			{
-				// Reload the buffer from the current state
-				_cfgManualEditBuffer = BuildSpellValueString(state) ?? string.Empty;
-			}
-			imgui_SameLine();
-			if (imgui_Button($"Parse Into Editor##manual_parse_{idBase}"))
-			{
-				// Try to parse the manual buffer and update the state
-				var tempState = ParseSpellValueEditState(state.Section, state.Key, state.ValueIndex, _cfgManualEditBuffer ?? string.Empty);
-				if (tempState != null)
+
+				if (imgui_InputTextMultiline($"##manual_edit_{idBase}", _cfgManualEditBuffer ?? string.Empty, textWidth, textHeight))
 				{
-					// Update the current state with parsed values
-					state.BaseName = tempState.BaseName;
-					state.CastTarget = tempState.CastTarget;
-					state.Enabled = tempState.Enabled;
-					state.KeyValues.Clear();
-					foreach (var kvp in tempState.KeyValues)
+					_cfgManualEditBuffer = imgui_InputText_Get($"##manual_edit_{idBase}") ?? string.Empty;
+				}
+
+				imgui_Separator();
+				if (imgui_Button($"Load From Current##manual_load_{idBase}"))
+				{
+					// Reload the buffer from the current state
+					_cfgManualEditBuffer = BuildSpellValueString(state) ?? string.Empty;
+				}
+				imgui_SameLine();
+				if (imgui_Button($"Parse Into Editor##manual_parse_{idBase}"))
+				{
+					// Try to parse the manual buffer and update the state
+					var tempState = ParseSpellValueEditState(state.Section, state.Key, state.ValueIndex, _cfgManualEditBuffer ?? string.Empty);
+					if (tempState != null)
 					{
-						state.KeyValues[kvp.Key] = kvp.Value;
-					}
-					state.Flags.Clear();
-					foreach (var flag in tempState.Flags)
-					{
-						state.Flags.Add(flag);
-					}
-					state.UnknownSegments.Clear();
-					foreach (var seg in tempState.UnknownSegments)
-					{
-						state.UnknownSegments.Add(seg);
+						// Update the current state with parsed values
+						state.BaseName = tempState.BaseName;
+						state.CastTarget = tempState.CastTarget;
+						state.Enabled = tempState.Enabled;
+						state.KeyValues.Clear();
+						foreach (var kvp in tempState.KeyValues)
+						{
+							state.KeyValues[kvp.Key] = kvp.Value;
+						}
+						state.Flags.Clear();
+						foreach (var flag in tempState.Flags)
+						{
+							state.Flags.Add(flag);
+						}
+						state.UnknownSegments.Clear();
+						foreach (var seg in tempState.UnknownSegments)
+						{
+							state.UnknownSegments.Add(seg);
+						}
 					}
 				}
 			}
-		}
 
-		void RenderFlagsTab()
-		{
-			imgui_TextColored(0.8f, 0.9f, 0.95f, 1.0f, "Behavior Flags");
-			imgui_Text("Toggle and Apply to commit changes.");
+			void RenderFlagsTab()
+			{
+				imgui_TextColored(0.8f, 0.9f, 0.95f, 1.0f, "Behavior Flags");
+				imgui_Text("Toggle and Apply to commit changes.");
 
 				if (imgui_BeginTable($"E3SpellFlagTable_{idBase}", 2, (int)ImGuiTableFlags.ImGuiTableFlags_SizingStretchSame, imgui_GetContentRegionAvailX(), 0))
 				{
@@ -5117,41 +5093,41 @@ namespace E3Core.UI.Windows
 				}
 			}
 
-		// Header row with title on left and buttons on right
-		string entryLabel = $"[{state.Section}] {state.Key} entry #{state.ValueIndex + 1}";
-		imgui_TextColored(0.95f, 0.85f, 0.35f, 1.0f, entryLabel);
-		
-		// Position Apply/Reset buttons on the same line, aligned to the right
-		float buttonWidth = 80f;
-		float spacing = 8f;
-		float totalButtonWidth = (buttonWidth * 2) + spacing;
-		float availWidth = imgui_GetContentRegionAvailX();
-		if (availWidth > totalButtonWidth)
-		{
-			imgui_SameLineEx(availWidth - totalButtonWidth, 0f);
-		}
-		else
-		{
-			imgui_SameLine();
-		}
-		
-		if (imgui_Button($"Apply##spell_apply_{idBase}"))
-		{
-			ApplySpellValueChanges(state);
-		}
-		imgui_SameLine();
-		if (imgui_Button($"Reset##spell_reset_{idBase}"))
-		{
-			ResetSpellValueEditor(state);
-		}
-		
-		if (!string.IsNullOrEmpty(state.OriginalValue))
-		{
-			imgui_TextColored(0.7f, 0.8f, 0.9f, 1.0f, "Original value:");
-			imgui_TextWrapped(state.OriginalValue);
-		}
+			// Header row with title on left and buttons on right
+			string entryLabel = $"[{state.Section}] {state.Key} entry #{state.ValueIndex + 1}";
+			imgui_TextColored(0.95f, 0.85f, 0.35f, 1.0f, entryLabel);
 
-		imgui_Separator();
+			// Position Apply/Reset buttons on the same line, aligned to the right
+			float buttonWidth = 80f;
+			float spacing = 8f;
+			float totalButtonWidth = (buttonWidth * 2) + spacing;
+			float availWidth = imgui_GetContentRegionAvailX();
+			if (availWidth > totalButtonWidth)
+			{
+				imgui_SameLineEx(availWidth - totalButtonWidth, 0f);
+			}
+			else
+			{
+				imgui_SameLine();
+			}
+
+			if (imgui_Button($"Apply##spell_apply_{idBase}"))
+			{
+				ApplySpellValueChanges(state);
+			}
+			imgui_SameLine();
+			if (imgui_Button($"Reset##spell_reset_{idBase}"))
+			{
+				ResetSpellValueEditor(state);
+			}
+
+			if (!string.IsNullOrEmpty(state.OriginalValue))
+			{
+				imgui_TextColored(0.7f, 0.8f, 0.9f, 1.0f, "Original value:");
+				imgui_TextWrapped(state.OriginalValue);
+			}
+
+			imgui_Separator();
 
 			if (imgui_BeginTabBar($"SpellModifierTabs_{idBase}"))
 			{
@@ -5180,18 +5156,18 @@ namespace E3Core.UI.Windows
 					RenderAdvancedTab();
 					imgui_EndTabItem();
 				}
-			if (imgui_BeginTabItem($"Flags##spell_tab_flags_{idBase}"))
-			{
-				RenderFlagsTab();
-				imgui_EndTabItem();
+				if (imgui_BeginTabItem($"Flags##spell_tab_flags_{idBase}"))
+				{
+					RenderFlagsTab();
+					imgui_EndTabItem();
+				}
+				if (imgui_BeginTabItem($"Manual Edit##spell_tab_manual_{idBase}"))
+				{
+					RenderManualEditTab();
+					imgui_EndTabItem();
+				}
+				imgui_EndTabBar();
 			}
-			if (imgui_BeginTabItem($"Manual Edit##spell_tab_manual_{idBase}"))
-			{
-				RenderManualEditTab();
-				imgui_EndTabItem();
-			}
-			imgui_EndTabBar();
-		}
 
 			if (state.UnknownSegments.Count > 0)
 			{
@@ -5200,35 +5176,35 @@ namespace E3Core.UI.Windows
 				imgui_TextWrapped(string.Join(", ", state.UnknownSegments));
 			}
 
-		imgui_Separator();
-		imgui_TextColored(0.8f, 0.9f, 0.95f, 1.0f, "Preview");
-		string preview = BuildSpellValueString(state);
-		imgui_TextWrapped(string.IsNullOrEmpty(preview) ? "(empty)" : preview);
-	}
-
-	private static void RenderSpellModifierModal()
-	{
-		var iniData = GetActiveCharacterIniData();
-		var sectionData = iniData?.Sections?.GetSectionData(_cfgSelectedSection ?? string.Empty);
-		var keyData = sectionData?.Keys?.GetKeyData(_cfgSelectedKey ?? string.Empty);
-		var values = GetValues(keyData);
-		if (_cfgSelectedValueIndex < 0 || _cfgSelectedValueIndex >= values.Count)
-		{
-			_cfgShowSpellModifierModal = false;
-			return;
+			imgui_Separator();
+			imgui_TextColored(0.8f, 0.9f, 0.95f, 1.0f, "Preview");
+			string preview = BuildSpellValueString(state);
+			imgui_TextWrapped(string.IsNullOrEmpty(preview) ? "(empty)" : preview);
 		}
 
-		string rawValue = values[_cfgSelectedValueIndex] ?? string.Empty;
-		var state = EnsureSpellEditState(_cfgSelectedSection, _cfgSelectedKey, _cfgSelectedValueIndex, rawValue);
-		if (state == null)
+		private static void RenderSpellModifierModal()
 		{
-			_cfgShowSpellModifierModal = false;
-			return;
-		}
+			var iniData = GetActiveCharacterIniData();
+			var sectionData = iniData?.Sections?.GetSectionData(_cfgSelectedSection ?? string.Empty);
+			var keyData = sectionData?.Keys?.GetKeyData(_cfgSelectedKey ?? string.Empty);
+			var values = GetValues(keyData);
+			if (_cfgSelectedValueIndex < 0 || _cfgSelectedValueIndex >= values.Count)
+			{
+				_cfgShowSpellModifierModal = false;
+				return;
+			}
 
-		const string modalTitle = "E3SpellModifiers";
-		imgui_Begin_OpenFlagSet(modalTitle, true);
-		bool modalOpen = imgui_Begin(modalTitle, (int)(ImGuiWindowFlags.ImGuiWindowFlags_NoCollapse | ImGuiWindowFlags.ImGuiWindowFlags_NoDocking));
+			string rawValue = values[_cfgSelectedValueIndex] ?? string.Empty;
+			var state = EnsureSpellEditState(_cfgSelectedSection, _cfgSelectedKey, _cfgSelectedValueIndex, rawValue);
+			if (state == null)
+			{
+				_cfgShowSpellModifierModal = false;
+				return;
+			}
+
+			const string modalTitle = "E3SpellModifiers";
+			imgui_Begin_OpenFlagSet(modalTitle, true);
+			bool modalOpen = imgui_Begin(modalTitle, (int)(ImGuiWindowFlags.ImGuiWindowFlags_NoCollapse | ImGuiWindowFlags.ImGuiWindowFlags_NoDocking));
 			if (modalOpen)
 			{
 				RenderSpellModifierEditor(state);
@@ -5329,22 +5305,19 @@ namespace E3Core.UI.Windows
 
 		private static List<string> GetValues(KeyData kd)
 		{
-			var vals = new List<string>();
-			try
-			{
-				if (kd.ValueList != null && kd.ValueList.Count > 0)
-				{
-					foreach (var v in kd.ValueList) vals.Add(v ?? string.Empty);
-				}
-				else if (!string.IsNullOrEmpty(kd.Value))
-				{
-					// Support pipe-delimited storage if present
-					var parts = (kd.Value ?? string.Empty).Split(new[] { '|' }, StringSplitOptions.RemoveEmptyEntries).Select(x => x.Trim());
-					foreach (var p in parts) vals.Add(p);
-				}
-			}
-			catch { }
-			return vals;
+			return kd.ValueList;
+			//var vals = new List<string>();
+			//if (kd.ValueList != null && kd.ValueList.Count > 0)
+			//{
+			//	foreach (var v in kd.ValueList) vals.Add(v ?? string.Empty);
+			//}
+			//else if (!string.IsNullOrEmpty(kd.Value))
+			//{
+			//	// Support pipe-delimited storage if present
+			//	var parts = (kd.Value ?? string.Empty).Split(new[] { '|' }, StringSplitOptions.RemoveEmptyEntries).Select(x => x.Trim());
+			//	foreach (var p in parts) vals.Add(p);
+			//}
+			//return vals;
 		}
 
 		private static void WriteValues(KeyData kd, List<string> values)
@@ -5363,12 +5336,12 @@ namespace E3Core.UI.Windows
 		}
 
 		// Inventory scanning for Food/Drink using MQ TLOs (non-blocking via ProcessBackgroundWork trigger)
-	private static void RenderFoodDrinkPicker(SectionData selectedSection)
-	{
-		// Respect current open state instead of forcing true every frame
-		const string winName = "E3PickInventory";
-		imgui_Begin_OpenFlagSet(winName, _cfgShowFoodDrinkModal);
-		bool shouldDraw = imgui_Begin(winName, (int)(ImGuiWindowFlags.ImGuiWindowFlags_AlwaysAutoResize | ImGuiWindowFlags.ImGuiWindowFlags_NoCollapse | ImGuiWindowFlags.ImGuiWindowFlags_NoDocking));
+		private static void RenderFoodDrinkPicker(SectionData selectedSection)
+		{
+			// Respect current open state instead of forcing true every frame
+			const string winName = "E3PickInventory";
+			imgui_Begin_OpenFlagSet(winName, _cfgShowFoodDrinkModal);
+			bool shouldDraw = imgui_Begin(winName, (int)(ImGuiWindowFlags.ImGuiWindowFlags_AlwaysAutoResize | ImGuiWindowFlags.ImGuiWindowFlags_NoCollapse | ImGuiWindowFlags.ImGuiWindowFlags_NoDocking));
 
 			if (shouldDraw)
 			{
@@ -5461,11 +5434,11 @@ namespace E3Core.UI.Windows
 			// Sync our open flag with the actual window state (handles Titlebar X)
 			_cfgShowFoodDrinkModal = imgui_Begin_OpenFlagGet(winName);
 		}
-	private static void RenderBardMelodyHelperModal()
-	{
-		const string winName = "E3BardMelody";
-		imgui_Begin_OpenFlagSet(winName, _cfgShowBardMelodyHelper);
-		bool open = imgui_Begin(winName, (int)(ImGuiWindowFlags.ImGuiWindowFlags_AlwaysAutoResize | ImGuiWindowFlags.ImGuiWindowFlags_NoCollapse | ImGuiWindowFlags.ImGuiWindowFlags_NoDocking));
+		private static void RenderBardMelodyHelperModal()
+		{
+			const string winName = "E3BardMelody";
+			imgui_Begin_OpenFlagSet(winName, _cfgShowBardMelodyHelper);
+			bool open = imgui_Begin(winName, (int)(ImGuiWindowFlags.ImGuiWindowFlags_AlwaysAutoResize | ImGuiWindowFlags.ImGuiWindowFlags_NoCollapse | ImGuiWindowFlags.ImGuiWindowFlags_NoDocking));
 			if (open)
 			{
 				imgui_TextColored(0.95f, 0.85f, 0.35f, 1.0f, "Create a Bard Melody");
@@ -5810,11 +5783,11 @@ namespace E3Core.UI.Windows
 			_cfgShowAddModal = false;
 			_cfgCatalogMode = CatalogMode.Standard;
 		}
-	private static void RenderBardSampleIfModal()
-	{
-		const string winName = "E3BardSampleIfs";
-		imgui_Begin_OpenFlagSet(winName, _cfgShowBardSampleIfModal);
-		bool open = imgui_Begin(winName, (int)(ImGuiWindowFlags.ImGuiWindowFlags_AlwaysAutoResize | ImGuiWindowFlags.ImGuiWindowFlags_NoCollapse | ImGuiWindowFlags.ImGuiWindowFlags_NoDocking));
+		private static void RenderBardSampleIfModal()
+		{
+			const string winName = "E3BardSampleIfs";
+			imgui_Begin_OpenFlagSet(winName, _cfgShowBardSampleIfModal);
+			bool open = imgui_Begin(winName, (int)(ImGuiWindowFlags.ImGuiWindowFlags_AlwaysAutoResize | ImGuiWindowFlags.ImGuiWindowFlags_NoCollapse | ImGuiWindowFlags.ImGuiWindowFlags_NoDocking));
 			if (open)
 			{
 				bool ready = EnsureBardSampleIfsLoaded();
@@ -6127,11 +6100,11 @@ namespace E3Core.UI.Windows
 			return unique;
 		}
 
-	// Toon picker modal for Heals section (Tank / Important Bot)
-	private static void RenderToonPickerModal(SectionData selectedSection)
-	{
-		imgui_Begin_OpenFlagSet("E3PickToons", true);
-		bool _open_toon = imgui_Begin("E3PickToons", (int)(ImGuiWindowFlags.ImGuiWindowFlags_AlwaysAutoResize | ImGuiWindowFlags.ImGuiWindowFlags_NoDocking));
+		// Toon picker modal for Heals section (Tank / Important Bot)
+		private static void RenderToonPickerModal(SectionData selectedSection)
+		{
+			imgui_Begin_OpenFlagSet("E3PickToons", true);
+			bool _open_toon = imgui_Begin("E3PickToons", (int)(ImGuiWindowFlags.ImGuiWindowFlags_AlwaysAutoResize | ImGuiWindowFlags.ImGuiWindowFlags_NoDocking));
 			if (_open_toon)
 			{
 				if (!string.IsNullOrEmpty(_cfgToonPickerStatus)) imgui_Text(_cfgToonPickerStatus);
@@ -6171,13 +6144,13 @@ namespace E3Core.UI.Windows
 
 		// Spell Info modal (read-only details) using real ImGui tables + colored labels
 
-	private static void RenderSpellInfoModal()
-	{
-		var s = _cfgSpellInfoSpell;
-		if (s == null) { _cfgShowSpellInfoModal = false; return; }
-		const string winName = "E3SpellInfo";
-		imgui_Begin_OpenFlagSet(winName, _cfgShowSpellInfoModal);
-		bool open = imgui_Begin(winName, (int)(ImGuiWindowFlags.ImGuiWindowFlags_AlwaysAutoResize | ImGuiWindowFlags.ImGuiWindowFlags_NoDocking));
+		private static void RenderSpellInfoModal()
+		{
+			var s = _cfgSpellInfoSpell;
+			if (s == null) { _cfgShowSpellInfoModal = false; return; }
+			const string winName = "E3SpellInfo";
+			imgui_Begin_OpenFlagSet(winName, _cfgShowSpellInfoModal);
+			bool open = imgui_Begin(winName, (int)(ImGuiWindowFlags.ImGuiWindowFlags_AlwaysAutoResize | ImGuiWindowFlags.ImGuiWindowFlags_NoDocking));
 			if (open)
 			{
 				// Header with better styling
@@ -6317,10 +6290,10 @@ namespace E3Core.UI.Windows
 			if (!_cfgShowSpellInfoModal) { _cfgSpellInfoSpell = null; }
 		}
 
-	private static void RenderDonateModal()
-	{
-		imgui_Begin_OpenFlagSet("E3Donate", true);
-		bool open = imgui_Begin("E3Donate", (int)(ImGuiWindowFlags.ImGuiWindowFlags_AlwaysAutoResize | ImGuiWindowFlags.ImGuiWindowFlags_NoDocking));
+		private static void RenderDonateModal()
+		{
+			imgui_Begin_OpenFlagSet("E3Donate", true);
+			bool open = imgui_Begin("E3Donate", (int)(ImGuiWindowFlags.ImGuiWindowFlags_AlwaysAutoResize | ImGuiWindowFlags.ImGuiWindowFlags_NoDocking));
 			if (open)
 			{
 				imgui_TextColored(0.9f, 0.9f, 0.6f, 1.0f, "Hi, Ty for thinking of donating!\nIf you wish to donate, please use friends and family.");
@@ -6339,18 +6312,18 @@ namespace E3Core.UI.Windows
 				if (imgui_Button("Yes"))
 				{
 					e3util.OpenUrl("https://www.paypal.com/paypalme/RekkaSoftware");
-					_showDonateModal = false;
+					_state.Show_Donate = false;
 				}
 				imgui_SameLine();
 				if (imgui_Button("No"))
 				{
-					_showDonateModal = false;
+					_state.Show_Donate = false;
 				}
 			}
 			imgui_End();
 			if (!open)
 			{
-				_showDonateModal = false;
+				_state.Show_Donate = false;
 			}
 		}
 		private class E3Spell
