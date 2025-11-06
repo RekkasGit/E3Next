@@ -26,7 +26,12 @@ namespace E3Core.UI.Windows
 			//state
 			public string State_SelectedSection = string.Empty;
 			public string State_SelectedKey = string.Empty;
+			public bool State_CatalogReady = false;
+			public bool State_CatalogLoading = false;
+			public bool State_CatalogLoadRequested = false;
 
+			//status
+			public string Status_CatalogRequest = String.Empty;
 
 			//windows
 			public bool Show_Donate = false;
@@ -73,11 +78,7 @@ namespace E3Core.UI.Windows
 		//Note on Volatile variables... all this means is if its set on another thread, we will eventually get the update.
 		//its somewhat one way, us setting the variable on this side doesn't let the other thread see the update.
 		private static volatile bool _cfg_GemsAvailable = false; // Whether we have gem data
-		private static volatile bool _cfg_CatalogsReady = false;
-		private static volatile bool _cfg_CatalogLoadRequested = false;
-		private static volatile bool _cfg_CatalogLoading = false;
-
-		private static string _cfg_CatalogStatus = string.Empty;
+	
 		private static string _cfg_CatalogSource = "Unknown"; // "Local", "Remote (ToonName)", or "Unknown"
 															  // Memorized gem data from catalog responses with spell icon support
 
@@ -513,22 +514,22 @@ namespace E3Core.UI.Windows
 			}
 
 			// Catalog status / loader with better styling
-			if (!_cfg_CatalogsReady)
+			if (!_state.State_CatalogReady)
 			{
 				imgui_TextColored(1.0f, 0.9f, 0.3f, 1.0f, "Catalog Status");
 
-				if (_cfg_CatalogLoading)
+				if (_state.State_CatalogLoading)
 				{
-					imgui_Text(string.IsNullOrEmpty(_cfg_CatalogStatus) ? "Loading catalogs..." : _cfg_CatalogStatus);
+					imgui_Text(string.IsNullOrEmpty(_state.Status_CatalogRequest) ? "Loading catalogs..." : _state.Status_CatalogRequest);
 				}
 				else
 				{
-					imgui_Text(string.IsNullOrEmpty(_cfg_CatalogStatus) ? "Catalogs not loaded" : _cfg_CatalogStatus);
+					imgui_Text(string.IsNullOrEmpty(_state.Status_CatalogRequest) ? "Catalogs not loaded" : _state.Status_CatalogRequest);
 					imgui_SameLine();
 					if (imgui_Button("Load Catalogs"))
 					{
-						_cfg_CatalogLoadRequested = true;
-						_cfg_CatalogStatus = "Queued catalog load...";
+						_state.State_CatalogLoadRequested = true;
+						_state.Status_CatalogRequest= "Queued catalog load...";
 					}
 				}
 				imgui_Separator();
@@ -544,14 +545,14 @@ namespace E3Core.UI.Windows
 				_cfgSelectedValueIndex = -1;
 				BuildConfigSectionOrder();
 				// Auto-load catalogs on ini switch without blocking UI
-				_cfg_CatalogsReady = false;
+				_state.State_CatalogReady = false;
 				_spellCatalog.Clear();
 				_aaCatalog.Clear();
 				_discCatalog.Clear();
 				_skillCatalog.Clear();
 				_itemCatalog.Clear();
-				_cfg_CatalogLoadRequested = true;
-				_cfg_CatalogStatus = "Queued catalog load...";
+				_state.State_CatalogLoading = true;
+				_state.Status_CatalogRequest = "Queued catalog load...";
 			}
 
 			// Use ImGui Table for responsive 3-column layout
@@ -990,7 +991,7 @@ namespace E3Core.UI.Windows
 								}
 
 								// Try to find spell info for color coding
-								if (_cfg_CatalogsReady)
+								if (_state.State_CatalogReady)
 								{
 									var spellInfo = FindSpellItemAAByName(spellName);
 									if (spellInfo != null && spellInfo.Level > 0)
@@ -1625,7 +1626,7 @@ namespace E3Core.UI.Windows
 					}
 
 					// Try to find spell/item/AA information for description
-					if (_cfg_CatalogsReady)
+					if (_state.State_CatalogReady)
 					{
 						var spellInfo = FindSpellItemAAByName(lookupName);
 						RenderSpellAdditionalInfo(spellInfo);
@@ -1800,7 +1801,7 @@ namespace E3Core.UI.Windows
 
 					_log.WriteDelayed($"Fetching data (remote)", Logging.LogLevels.Debug);
 
-					//_cfg_CatalogStatus = $"Loading catalogs from {targetToon}...";
+					//_state.Status_CatalogRequest = $"Loading catalogs from {targetToon}...";
 					bool peerSuccess = true;
 
 
@@ -1893,7 +1894,7 @@ namespace E3Core.UI.Windows
 					// If any peer fetch failed, fallback to local
 					if (!peerSuccess)
 					{
-						_cfg_CatalogStatus = "Peer catalog fetch failed; using local.";
+						_state.Status_CatalogRequest = "Peer catalog fetch failed; using local.";
 						_cfg_CatalogSource = "Local (fallback)";
 					}
 					else
@@ -1925,20 +1926,20 @@ namespace E3Core.UI.Windows
 							(_skillCatalog, "Skill"),
 							(_itemCatalog, "Item")
 							};
-						_cfg_CatalogsReady = true;
-						_cfg_CatalogStatus = "Catalogs loaded.";
+						_state.State_CatalogReady = true;
+						_state.Status_CatalogRequest = "Catalogs loaded.";
 
 					}
 
 				}
 				catch (Exception ex)
 				{
-					_cfg_CatalogStatus = "Catalog load failed: " + (ex.Message ?? "error");
+					_state.Status_CatalogRequest = "Catalog load failed: " + (ex.Message ?? "error");
 				}
 				finally
 				{
-					_cfg_CatalogLoadRequested = false;
-					_cfg_CatalogLoading = false;
+					_state.State_CatalogLoading = false;
+					_state.State_CatalogLoading = false;
 				}
 			});
 		}
@@ -2021,7 +2022,7 @@ namespace E3Core.UI.Windows
 					mapSkills = new SortedDictionary<string, SortedDictionary<string, List<E3Spell>>>(),
 					mapItems = new SortedDictionary<string, SortedDictionary<string, List<E3Spell>>>();
 
-			_cfg_CatalogStatus = "Loading catalogs (local)...";
+			_state.Status_CatalogRequest = "Loading catalogs (local)...";
 			_cfg_CatalogSource = "Local";
 
 			_log.WriteDelayed($"Fetching data (local)", Logging.LogLevels.Debug);
@@ -2077,24 +2078,24 @@ namespace E3Core.UI.Windows
 					(_skillCatalog, "Skill"),
 					(_itemCatalog, "Item")
 				};
-				_cfg_CatalogsReady = true;
-				_cfg_CatalogStatus = "Catalogs loaded.";
-				_cfg_CatalogLoadRequested = false;
-				_cfg_CatalogLoading = false;
+				_state.State_CatalogReady = true;
+				_state.Status_CatalogRequest = "Catalogs loaded.";
+				_state.State_CatalogLoading = false;
+				_state.State_CatalogLoading = false;
 
 			}
 		}
 		// Background worker tick invoked from E3.Process(): handle catalog loads and icon system
 		private static void ProcessBackgroundWork()
 		{
-			if (_cfg_CatalogLoadRequested && !_cfg_CatalogLoading)
+			if (_state.State_CatalogLoading && !_state.State_CatalogLoading)
 			{
 
 
 
 
 
-				_cfg_CatalogLoading = true;
+				_state.State_CatalogLoading = true;
 				_log.WriteDelayed("Making background request", Logging.LogLevels.Debug);
 
 
@@ -2126,8 +2127,8 @@ namespace E3Core.UI.Windows
 				}
 				finally
 				{
-					_cfg_CatalogLoadRequested = false;
-					_cfg_CatalogLoading = false;
+					_state.State_CatalogLoading = false;
+					_state.State_CatalogLoading = false;
 				}
 			}
 			// Food/Drink inventory scan (local or remote peer) — non-blocking
@@ -3093,22 +3094,22 @@ namespace E3Core.UI.Windows
 				if (imgui_Button("Refresh Catalog"))
 				{
 					// Trigger catalog refresh
-					_cfg_CatalogsReady = false;
+					_state.State_CatalogReady = false;
 					_spellCatalog.Clear();
 					_aaCatalog.Clear();
 					_discCatalog.Clear();
 					_skillCatalog.Clear();
 					_itemCatalog.Clear();
-					_cfg_CatalogLoadRequested = true;
-					_cfg_CatalogStatus = "Queued catalog refresh...";
+					_state.State_CatalogLoading = true;
+					_state.Status_CatalogRequest = "Queued catalog refresh...";
 					_cfg_CatalogSource = "Refreshing...";
 				}
 
 				// Show catalog status if loading
-				if (_cfg_CatalogLoading)
+				if (_state.State_CatalogLoading)
 				{
 					imgui_SameLine();
-					imgui_TextColored(0.9f, 0.9f, 0.4f, 1.0f, _cfg_CatalogStatus.Replace("Loading catalogs", "Loading"));
+					imgui_TextColored(0.9f, 0.9f, 0.4f, 1.0f, _state.Status_CatalogRequest.Replace("Loading catalogs", "Loading"));
 				}
 
 				imgui_Separator();
@@ -4267,16 +4268,7 @@ namespace E3Core.UI.Windows
 
 		private static IniData GetActiveCharacterIniData()
 		{
-			var currentPath = GetCurrentCharacterIniPath();
-
-			if (string.Equals(_selectedCharIniPath, currentPath, StringComparison.OrdinalIgnoreCase))
-			{
-				//_log.WriteDelayed($"returning local parsed data:{currentPath}", Logging.LogLevels.Debug);
-				return E3.CharacterSettings.ParsedData;
-
-			}
-			//_log.WriteDelayed($"returning selected parsed data:{_selectedCharIniPath}", Logging.LogLevels.Debug);
-
+		
 			return _selectedCharIniParsedData;
 		}
 		private static string GetCurrentCharacterIniPath()
@@ -4352,19 +4344,19 @@ namespace E3Core.UI.Windows
 						_log.Write($"Selecting local:{currentPath}", Logging.LogLevels.Debug);
 
 						_selectedCharIniPath = currentPath;
-
-						var pd = E3.CharacterSettings.ParsedData;
+						var parser = e3util.CreateIniParser();
+						var pd = parser.ReadFile(_selectedCharIniPath);
 						_selectedCharIniParsedData = pd;// use live current
 						_nextIniRefreshAtMs = 0;
 						// Trigger catalog reload for the selected peer
-						_cfg_CatalogsReady = false;
+						_state.State_CatalogReady = false;
 						_spellCatalog.Clear();
 						_aaCatalog.Clear();
 						_discCatalog.Clear();
 						_skillCatalog.Clear();
 						_itemCatalog.Clear();
-						_cfg_CatalogLoadRequested = true;
-						_cfg_CatalogStatus = "Queued catalog load...";
+						_state.State_CatalogLoading = true;
+						_state.Status_CatalogRequest = "Queued catalog load...";
 					}
 				}
 
@@ -4382,7 +4374,7 @@ namespace E3Core.UI.Windows
 						try
 						{
 							_log.Write($"Selecting other:{f}", Logging.LogLevels.Debug);
-							var parser = E3Core.Utility.e3util.CreateIniParser();
+							var parser = e3util.CreateIniParser();
 							var pd = parser.ReadFile(f);
 							_selectedCharIniPath = f;
 							_selectedCharIniParsedData = pd;
@@ -4394,14 +4386,14 @@ namespace E3Core.UI.Windows
 							_nextIniRefreshAtMs = 0;
 
 							// Trigger catalog reload for the selected peer
-							_cfg_CatalogsReady = false;
+							_state.State_CatalogReady = false;
 							_spellCatalog.Clear();
 							_aaCatalog.Clear();
 							_discCatalog.Clear();
 							_skillCatalog.Clear();
 							_itemCatalog.Clear();
-							_cfg_CatalogLoadRequested = true;
-							_cfg_CatalogStatus = "Queued catalog load...";
+							_state.State_CatalogLoading = true;
+							_state.Status_CatalogRequest = "Queued catalog load...";
 						}
 						catch { }
 					}
@@ -5466,7 +5458,7 @@ namespace E3Core.UI.Windows
 				imgui_Separator();
 
 				EnsureBardMelodySongEntries();
-				bool catalogsReady = _cfg_CatalogsReady;
+				bool catalogsReady = _state.State_CatalogReady;
 				imgui_Text("Songs (cast order):");
 				if (!catalogsReady)
 				{
