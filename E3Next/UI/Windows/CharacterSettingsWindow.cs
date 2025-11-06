@@ -11,6 +11,7 @@ using System.Collections.Generic;
 using System.Globalization;
 using System.IO;
 using System.Linq;
+using System.Runtime.CompilerServices;
 using System.Text;
 using System.Text.RegularExpressions;
 using static MonoCore.E3ImGUI;
@@ -29,6 +30,9 @@ namespace E3Core.UI.Windows
 			public bool State_CatalogReady = false;
 			public bool State_CatalogLoading = false;
 			public bool State_CatalogLoadRequested = false;
+			public string State_SectionAndKeySig = String.Empty;
+
+			public string State_CurrentINIFile = string.Empty;
 
 			//status
 			public string Status_CatalogRequest = String.Empty;
@@ -44,7 +48,7 @@ namespace E3Core.UI.Windows
 			//data
 			public Dictionary<string, string> Data_AllPlayersEdit = new Dictionary<string, string>(StringComparer.OrdinalIgnoreCase);
 			public List<KeyValuePair<string, string>> Data_AllPlayerRows = new List<KeyValuePair<string, string>>();
-			public string State_AllPlayersSelection = String.Empty;
+			public string[] Data_IniFilesFromDisk = Array.Empty<string>();
 
 			//requests
 			public bool Request_AllplayersRefresh = false;
@@ -58,7 +62,7 @@ namespace E3Core.UI.Windows
 			}
 			public void ClearState()
 			{
-				State_AllPlayersSelection = String.Empty;
+				State_SectionAndKeySig = String.Empty;
 			}
 		}
 
@@ -269,9 +273,8 @@ namespace E3Core.UI.Windows
 		private static string _cfgAllPlayersStatus = string.Empty;
 
 		// Character .ini selection state
-		private static string _selectedCharIniPath = string.Empty; // defaults to current character
+		
 		private static IniData _selectedCharIniParsedData = null;  // parsed data for non-current selection
-		private static string[] _charIniFiles = Array.Empty<string>();
 		private static bool _showOfflineCharInis = false;
 		private static long _nextIniFileScanAtMs = 0;
 		// Dropdown support (feature-detect combo availability to avoid crashes on older MQ2Mono)
@@ -488,9 +491,9 @@ namespace E3Core.UI.Windows
 			if (_state.Show_AllPlayersView)
 			{
 				string currentSig = $"{_state.State_SelectedSection}::{_state.State_SelectedKey}";
-				if (!string.Equals(currentSig, _state.State_AllPlayersSelection, StringComparison.OrdinalIgnoreCase))
+				if (!string.Equals(currentSig, _state.State_SectionAndKeySig, StringComparison.OrdinalIgnoreCase))
 				{
-					_state.State_AllPlayersSelection = currentSig;
+					_state.State_SectionAndKeySig = currentSig;
 					lock (_cfgAllPlayersLock)
 					{
 						_state.Data_AllPlayerRows = new List<KeyValuePair<string, string>>();
@@ -500,7 +503,125 @@ namespace E3Core.UI.Windows
 				}
 			}
 		}
-		
+		public static void RenderCharacterIniSelector()
+		{
+			ScanCharIniFilesIfNeeded();
+
+			var loggedInCharIniFile = GetCurrentCharacterIniPath();
+			string currentINIFileName = Path.GetFileName(loggedInCharIniFile);
+			string selectedINIFile = Path.GetFileName(_state.State_CurrentINIFile ?? loggedInCharIniFile);
+			
+			if (string.IsNullOrWhiteSpace(selectedINIFile)) selectedINIFile = currentINIFileName;
+
+			var onlineToons = GetOnlineToonNames();
+			imgui_Text("Select Character:");
+			imgui_SameLine();
+			imgui_SetNextItemWidth(260f);
+			if (BeginComboSafe("##Select Character", selectedINIFile))
+			{
+				try
+				{
+					if (!string.IsNullOrEmpty(loggedInCharIniFile))
+					{
+						bool isloggedInCharacterSelected = string.Equals(_state.State_CurrentINIFile, loggedInCharIniFile, StringComparison.OrdinalIgnoreCase);
+						if (imgui_Selectable($"Current: {currentINIFileName}", isloggedInCharacterSelected))
+						{
+							_log.Write($"Selecting local:{loggedInCharIniFile}", Logging.LogLevels.Debug);
+							_state.State_CurrentINIFile = loggedInCharIniFile;
+							var parser = e3util.CreateIniParser();
+							var pd = parser.ReadFile(_state.State_CurrentINIFile);
+							_selectedCharIniParsedData = pd;// use live current
+							_nextIniRefreshAtMs = 0;
+							// Trigger catalog reload for the selected peer
+							_state.State_CatalogReady = false;
+							_spellCatalog.Clear();
+							_aaCatalog.Clear();
+							_discCatalog.Clear();
+							_skillCatalog.Clear();
+							_itemCatalog.Clear();
+							_state.State_CatalogLoadRequested = true;
+							_state.Status_CatalogRequest = "Queued catalog load...";
+						}
+					}
+
+					imgui_Text("Other Characters:");
+					imgui_Separator();
+
+					foreach (var f in _state.Data_IniFilesFromDisk)
+					{
+						if (string.Equals(f, loggedInCharIniFile, StringComparison.OrdinalIgnoreCase)) continue;
+						if (!_showOfflineCharInis && !IsIniForOnlineToon(f, onlineToons)) continue;
+						string name = Path.GetFileName(f);
+						bool sel = string.Equals(_state.State_CurrentINIFile, f, StringComparison.OrdinalIgnoreCase);
+						if (imgui_Selectable($"{name}", sel))
+						{
+							try
+							{
+								_log.Write($"Selecting other:{f}", Logging.LogLevels.Debug);
+								var parser = e3util.CreateIniParser();
+								var pd = parser.ReadFile(f);
+								_state.State_CurrentINIFile = f;
+								_selectedCharIniParsedData = pd;
+								_selectedCharacterSection = string.Empty;
+								_charIniEdits.Clear();
+
+								_state.ClearState();
+
+								_nextIniRefreshAtMs = 0;
+
+								// Trigger catalog reload for the selected peer
+								_state.State_CatalogReady = false;
+								_spellCatalog.Clear();
+								_aaCatalog.Clear();
+								_discCatalog.Clear();
+								_skillCatalog.Clear();
+								_itemCatalog.Clear();
+								_state.State_CatalogLoadRequested = true;
+								_state.Status_CatalogRequest = "Queued catalog load...";
+							}
+							catch { }
+						}
+					}
+				}
+				finally
+				{
+					imgui_EndCombo();
+				}
+			}
+
+			imgui_SameLine();
+			_showOfflineCharInis = imgui_Checkbox("Show offline", _showOfflineCharInis);
+			imgui_SameLine();
+
+			// Save button with better styling
+			if (imgui_Button(_cfg_Dirty ? "Save Changes*" : "Save Changes"))
+			{
+				SaveActiveIniData();
+			}
+			imgui_SameLine();
+
+			// Clear Changes button (only enabled when there are unsaved changes)
+			if (_cfg_Dirty)
+			{
+				if (imgui_Button("Clear Changes"))
+				{
+					ClearPendingChanges();
+				}
+				imgui_SameLine();
+			}
+			else
+			{
+				// Show disabled button when there are no changes
+				imgui_PushStyleVarFloat((int)ImGuiStyleVar.Alpha, 0.4f);
+				imgui_Button("Clear Changes");
+				imgui_PopStyleVar(1);
+				imgui_SameLine();
+			}
+
+			imgui_TextColored(0.6f, 0.6f, 0.6f, 1.0f, _cfg_Dirty ? "Unsaved changes" : "All changes saved");
+
+			imgui_Separator();
+		}
 		private static void RenderConfigEditor()
 		{
 
@@ -548,10 +669,10 @@ namespace E3Core.UI.Windows
 				_state.State_CatalogReady = false;
 				_spellCatalog.Clear();
 				_aaCatalog.Clear();
-				_discCatalog.Clear();
+				_discCatalog.Clear();	
 				_skillCatalog.Clear();
 				_itemCatalog.Clear();
-				_state.State_CatalogLoading = true;
+				_state.State_CatalogLoadRequested = true;
 				_state.Status_CatalogRequest = "Queued catalog load...";
 			}
 
@@ -1939,7 +2060,7 @@ namespace E3Core.UI.Windows
 				finally
 				{
 					_state.State_CatalogLoading = false;
-					_state.State_CatalogLoading = false;
+					_state.State_CatalogLoadRequested = false;
 				}
 			});
 		}
@@ -2081,19 +2202,15 @@ namespace E3Core.UI.Windows
 				_state.State_CatalogReady = true;
 				_state.Status_CatalogRequest = "Catalogs loaded.";
 				_state.State_CatalogLoading = false;
-				_state.State_CatalogLoading = false;
+				_state.State_CatalogLoadRequested = false;
 
 			}
 		}
 		// Background worker tick invoked from E3.Process(): handle catalog loads and icon system
 		private static void ProcessBackgroundWork()
 		{
-			if (_state.State_CatalogLoading && !_state.State_CatalogLoading)
+			if (_state.State_CatalogLoadRequested && !_state.State_CatalogLoading)
 			{
-
-
-
-
 
 				_state.State_CatalogLoading = true;
 				_log.WriteDelayed("Making background request", Logging.LogLevels.Debug);
@@ -2128,7 +2245,7 @@ namespace E3Core.UI.Windows
 				finally
 				{
 					_state.State_CatalogLoading = false;
-					_state.State_CatalogLoading = false;
+					_state.State_CatalogLoadRequested = false;
 				}
 			}
 			// Food/Drink inventory scan (local or remote peer) — non-blocking
@@ -2521,6 +2638,7 @@ namespace E3Core.UI.Windows
 				return string.Equals(E3.CurrentClass.ToString(), "Bard", StringComparison.OrdinalIgnoreCase);
 			}
 		}
+
 		private static ConcurrentDictionary<string, string> _onlineToonsCache = new ConcurrentDictionary<string, string>(StringComparer.OrdinalIgnoreCase);
 		private static Int64 _onlineToonsLastUpdate = 0;
 		private static Int64 _onlineToonsLastsUpdateInterval = 3000;
@@ -2845,7 +2963,7 @@ namespace E3Core.UI.Windows
 				return !string.IsNullOrEmpty(path);
 			}
 
-			if (_charIniFiles == null || _charIniFiles.Length == 0) return false;
+			if (_state.Data_IniFilesFromDisk == null || _state.Data_IniFilesFromDisk.Length == 0) return false;
 
 			// Optional: prefer matches that also contain server in the filename
 			_cfgAllPlayersServerByToon.TryGetValue(toon, out var serverHint);
@@ -2853,7 +2971,7 @@ namespace E3Core.UI.Windows
 
 			// Gather candidates: filename starts with "<Toon>_" or equals "<Toon>.ini"
 			var candidates = new List<string>();
-			foreach (var f in _charIniFiles)
+			foreach (var f in _state.Data_IniFilesFromDisk)
 			{
 				var name = System.IO.Path.GetFileName(f);
 				if (name.StartsWith(toon + "_", StringComparison.OrdinalIgnoreCase) ||
@@ -3100,13 +3218,13 @@ namespace E3Core.UI.Windows
 					_discCatalog.Clear();
 					_skillCatalog.Clear();
 					_itemCatalog.Clear();
-					_state.State_CatalogLoading = true;
+					_state.State_CatalogLoadRequested = true;
 					_state.Status_CatalogRequest = "Queued catalog refresh...";
 					_cfg_CatalogSource = "Refreshing...";
 				}
 
 				// Show catalog status if loading
-				if (_state.State_CatalogLoading)
+				if (_state.State_CatalogLoading)	
 				{
 					imgui_SameLine();
 					imgui_TextColored(0.9f, 0.9f, 0.4f, 1.0f, _state.Status_CatalogRequest.Replace("Loading catalogs", "Loading"));
@@ -4025,12 +4143,12 @@ namespace E3Core.UI.Windows
 				case SettingsTab.Character:
 				default:
 
-					if (string.IsNullOrEmpty(_selectedCharIniPath))
+					if (string.IsNullOrEmpty(_state.State_CurrentINIFile))
 					{
 						var currentPath = GetCurrentCharacterIniPath();
-						_selectedCharIniPath = currentPath;
+						_state.State_CurrentINIFile = currentPath;
 					}
-					return _selectedCharIniPath;
+					return _state.State_CurrentINIFile;
 			}
 		}
 		// Ifs sample import helpers and modal
@@ -4301,139 +4419,18 @@ namespace E3Core.UI.Windows
 			if (files == null || files.Length == 0)
 				files = Directory.GetFiles(dir, "*.ini", SearchOption.TopDirectoryOnly);
 			Array.Sort(files, StringComparer.OrdinalIgnoreCase);
-			_charIniFiles = files;
+			_state.Data_IniFilesFromDisk = files;
 		}
 		// Safe combo wrapper for older MQ2Mono
 		private static bool BeginComboSafe(string label, string preview)
 		{
-			try
-			{
 				return imgui_BeginCombo(label, preview, 0);
-			}
-			catch
-			{
-				_comboAvailable = false;
-				return false;
-			}
 		}
 		private static void EndComboSafe()
 		{
-			try { imgui_EndCombo(); } catch { }
+			imgui_EndCombo();
 		}
-		public static void RenderCharacterIniSelector()
-		{
-			ScanCharIniFilesIfNeeded();
-
-			var currentPath = GetCurrentCharacterIniPath();
-			string currentDisplay = Path.GetFileName(currentPath);
-			string selName = Path.GetFileName(_selectedCharIniPath ?? currentPath);
-			if (string.IsNullOrWhiteSpace(selName)) selName = currentDisplay;
-
-			var onlineToons = GetOnlineToonNames();
-			imgui_Text("Select Character:");
-			imgui_SameLine();
-			imgui_SetNextItemWidth(260f);
-			bool opened = _comboAvailable && BeginComboSafe("##Select Character", selName);
-			if (opened)
-			{
-				if (!string.IsNullOrEmpty(currentPath))
-				{
-					bool sel = string.Equals(_selectedCharIniPath, currentPath, StringComparison.OrdinalIgnoreCase);
-					if (imgui_Selectable($"Current: {currentDisplay}", sel))
-					{
-						_log.Write($"Selecting local:{currentPath}", Logging.LogLevels.Debug);
-
-						_selectedCharIniPath = currentPath;
-						var parser = e3util.CreateIniParser();
-						var pd = parser.ReadFile(_selectedCharIniPath);
-						_selectedCharIniParsedData = pd;// use live current
-						_nextIniRefreshAtMs = 0;
-						// Trigger catalog reload for the selected peer
-						_state.State_CatalogReady = false;
-						_spellCatalog.Clear();
-						_aaCatalog.Clear();
-						_discCatalog.Clear();
-						_skillCatalog.Clear();
-						_itemCatalog.Clear();
-						_state.State_CatalogLoading = true;
-						_state.Status_CatalogRequest = "Queued catalog load...";
-					}
-				}
-
-				imgui_Text("Other Characters:");
-				imgui_Separator();
-
-				foreach (var f in _charIniFiles)
-				{
-					if (string.Equals(f, currentPath, StringComparison.OrdinalIgnoreCase)) continue;
-					if (!_showOfflineCharInis && !IsIniForOnlineToon(f, onlineToons)) continue;
-					string name = Path.GetFileName(f);
-					bool sel = string.Equals(_selectedCharIniPath, f, StringComparison.OrdinalIgnoreCase);
-					if (imgui_Selectable($"{name}", sel))
-					{
-						try
-						{
-							_log.Write($"Selecting other:{f}", Logging.LogLevels.Debug);
-							var parser = e3util.CreateIniParser();
-							var pd = parser.ReadFile(f);
-							_selectedCharIniPath = f;
-							_selectedCharIniParsedData = pd;
-							_selectedCharacterSection = string.Empty;
-							_charIniEdits.Clear();
-							
-							_state.ClearState();
-
-							_nextIniRefreshAtMs = 0;
-
-							// Trigger catalog reload for the selected peer
-							_state.State_CatalogReady = false;
-							_spellCatalog.Clear();
-							_aaCatalog.Clear();
-							_discCatalog.Clear();
-							_skillCatalog.Clear();
-							_itemCatalog.Clear();
-							_state.State_CatalogLoading = true;
-							_state.Status_CatalogRequest = "Queued catalog load...";
-						}
-						catch { }
-					}
-				}
-				imgui_EndCombo();
-			}
-
-			imgui_SameLine();
-			_showOfflineCharInis = imgui_Checkbox("Show offline", _showOfflineCharInis);
-			imgui_SameLine();
-
-			// Save button with better styling
-			if (imgui_Button(_cfg_Dirty ? "Save Changes*" : "Save Changes"))
-			{
-				SaveActiveIniData();
-			}
-			imgui_SameLine();
-
-			// Clear Changes button (only enabled when there are unsaved changes)
-			if (_cfg_Dirty)
-			{
-				if (imgui_Button("Clear Changes"))
-				{
-					ClearPendingChanges();
-				}
-				imgui_SameLine();
-			}
-			else
-			{
-				// Show disabled button when there are no changes
-				imgui_PushStyleVarFloat((int)ImGuiStyleVar.Alpha, 0.4f);
-				imgui_Button("Clear Changes");
-				imgui_PopStyleVar(1);
-				imgui_SameLine();
-			}
-
-			imgui_TextColored(0.6f, 0.6f, 0.6f, 1.0f, _cfg_Dirty ? "Unsaved changes" : "All changes saved");
-
-			imgui_Separator();
-		}
+		
 
 
 		private static void TryAddVisibleEntriesToSelectedKey(SectionData selectedSection)
