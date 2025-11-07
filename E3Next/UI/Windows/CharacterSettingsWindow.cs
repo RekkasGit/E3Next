@@ -32,7 +32,8 @@ namespace E3Core.UI.Windows
 			public bool State_CatalogLoadRequested = false;
 			public string State_SectionAndKeySig = String.Empty;
 
-			public string State_CurrentINIFile = string.Empty;
+			public string State_CurrentINIFileNameFull = string.Empty;
+			public IniData State_CurrentINIData;
 
 			//status
 			public string Status_CatalogRequest = String.Empty;
@@ -93,11 +94,11 @@ namespace E3Core.UI.Windows
 		///Data organized into Category, Sub Category, List of Spells.
 		///always get a pointer to these via the method GetCatalogByType
 		/// </summary>
-		private static SortedDictionary<string, SortedDictionary<string, List<E3Spell>>> _spellCatalog = new SortedDictionary<string, SortedDictionary<string, List<E3Spell>>>(),
-		_aaCatalog = new SortedDictionary<string, SortedDictionary<string, List<E3Spell>>>(),
-		_discCatalog = new SortedDictionary<string, SortedDictionary<string, List<E3Spell>>>(),
-		_skillCatalog = new SortedDictionary<string, SortedDictionary<string, List<E3Spell>>>(),
-		_itemCatalog = new SortedDictionary<string, SortedDictionary<string, List<E3Spell>>>();
+		private static SortedDictionary<string, SortedDictionary<string, List<E3Spell>>> _catalog_Spells = new SortedDictionary<string, SortedDictionary<string, List<E3Spell>>>(),
+		_catalog_AA = new SortedDictionary<string, SortedDictionary<string, List<E3Spell>>>(),
+		_catalog_Disc = new SortedDictionary<string, SortedDictionary<string, List<E3Spell>>>(),
+		_catalog_Skills = new SortedDictionary<string, SortedDictionary<string, List<E3Spell>>>(),
+		_catalog_Items = new SortedDictionary<string, SortedDictionary<string, List<E3Spell>>>();
 
 		private static Dictionary<string, SpellData> _spellCatalogLookup = new Dictionary<string, SpellData>(StringComparer.OrdinalIgnoreCase),
 		_discCatalogLookup = new Dictionary<string, SpellData>(StringComparer.OrdinalIgnoreCase),
@@ -185,7 +186,6 @@ namespace E3Core.UI.Windows
 		private static SettingsTab _activeSettingsTab = SettingsTab.Character;
 		private static string _activeSettingsFilePath = string.Empty;
 		private static string[] _activeSettingsFileLines = Array.Empty<string>();
-		private static long _nextIniRefreshAtMs = 0;
 		private static string _selectedCharacterSection = string.Empty;
 		private static Dictionary<string, string> _charIniEdits = new Dictionary<string, string>(StringComparer.OrdinalIgnoreCase);
 		private static List<string> _cfgSectionsOrdered = new List<string>();
@@ -274,7 +274,6 @@ namespace E3Core.UI.Windows
 
 		// Character .ini selection state
 		
-		private static IniData _selectedCharIniParsedData = null;  // parsed data for non-current selection
 		private static bool _showOfflineCharInis = false;
 		private static long _nextIniFileScanAtMs = 0;
 		// Dropdown support (feature-detect combo availability to avoid crashes on older MQ2Mono)
@@ -503,13 +502,28 @@ namespace E3Core.UI.Windows
 				}
 			}
 		}
+		private static void ResetCatalogs()
+		{
+			_catalog_Spells.Clear();
+			_catalog_AA.Clear();
+			_catalog_Disc.Clear();
+			_catalog_Skills.Clear();
+			_catalog_Items.Clear();
+		}
+		private static void RequestCatalogUpdate()
+		{
+			_state.State_CatalogReady = false;
+			ResetCatalogs();
+			_state.State_CatalogLoadRequested = true;
+			_state.Status_CatalogRequest = "Queued catalog load...";
+		}
 		public static void RenderCharacterIniSelector()
 		{
 			ScanCharIniFilesIfNeeded();
 
 			var loggedInCharIniFile = GetCurrentCharacterIniPath();
 			string currentINIFileName = Path.GetFileName(loggedInCharIniFile);
-			string selectedINIFile = Path.GetFileName(_state.State_CurrentINIFile ?? loggedInCharIniFile);
+			string selectedINIFile = Path.GetFileName(_state.State_CurrentINIFileNameFull ?? loggedInCharIniFile);
 			
 			if (string.IsNullOrWhiteSpace(selectedINIFile)) selectedINIFile = currentINIFileName;
 
@@ -523,24 +537,16 @@ namespace E3Core.UI.Windows
 				{
 					if (!string.IsNullOrEmpty(loggedInCharIniFile))
 					{
-						bool isloggedInCharacterSelected = string.Equals(_state.State_CurrentINIFile, loggedInCharIniFile, StringComparison.OrdinalIgnoreCase);
+						bool isloggedInCharacterSelected = string.Equals(_state.State_CurrentINIFileNameFull, loggedInCharIniFile, StringComparison.OrdinalIgnoreCase);
 						if (imgui_Selectable($"Current: {currentINIFileName}", isloggedInCharacterSelected))
 						{
 							_log.Write($"Selecting local:{loggedInCharIniFile}", Logging.LogLevels.Debug);
-							_state.State_CurrentINIFile = loggedInCharIniFile;
+							_state.State_CurrentINIFileNameFull = loggedInCharIniFile;
 							var parser = e3util.CreateIniParser();
-							var pd = parser.ReadFile(_state.State_CurrentINIFile);
-							_selectedCharIniParsedData = pd;// use live current
-							_nextIniRefreshAtMs = 0;
+							var pd = parser.ReadFile(_state.State_CurrentINIFileNameFull);
+							_state.State_CurrentINIData = pd;// use live current
 							// Trigger catalog reload for the selected peer
-							_state.State_CatalogReady = false;
-							_spellCatalog.Clear();
-							_aaCatalog.Clear();
-							_discCatalog.Clear();
-							_skillCatalog.Clear();
-							_itemCatalog.Clear();
-							_state.State_CatalogLoadRequested = true;
-							_state.Status_CatalogRequest = "Queued catalog load...";
+							RequestCatalogUpdate();
 						}
 					}
 
@@ -552,34 +558,19 @@ namespace E3Core.UI.Windows
 						if (string.Equals(f, loggedInCharIniFile, StringComparison.OrdinalIgnoreCase)) continue;
 						if (!_showOfflineCharInis && !IsIniForOnlineToon(f, onlineToons)) continue;
 						string name = Path.GetFileName(f);
-						bool sel = string.Equals(_state.State_CurrentINIFile, f, StringComparison.OrdinalIgnoreCase);
+						bool sel = string.Equals(_state.State_CurrentINIFileNameFull, f, StringComparison.OrdinalIgnoreCase);
 						if (imgui_Selectable($"{name}", sel))
 						{
-							try
-							{
-								_log.Write($"Selecting other:{f}", Logging.LogLevels.Debug);
-								var parser = e3util.CreateIniParser();
-								var pd = parser.ReadFile(f);
-								_state.State_CurrentINIFile = f;
-								_selectedCharIniParsedData = pd;
-								_selectedCharacterSection = string.Empty;
-								_charIniEdits.Clear();
-
-								_state.ClearState();
-
-								_nextIniRefreshAtMs = 0;
-
-								// Trigger catalog reload for the selected peer
-								_state.State_CatalogReady = false;
-								_spellCatalog.Clear();
-								_aaCatalog.Clear();
-								_discCatalog.Clear();
-								_skillCatalog.Clear();
-								_itemCatalog.Clear();
-								_state.State_CatalogLoadRequested = true;
-								_state.Status_CatalogRequest = "Queued catalog load...";
-							}
-							catch { }
+							_log.Write($"Selecting other:{f}", Logging.LogLevels.Debug);
+							var parser = e3util.CreateIniParser();
+							var pd = parser.ReadFile(f);
+							_state.State_CurrentINIFileNameFull = f;
+							_state.State_CurrentINIData = pd;
+							_selectedCharacterSection = string.Empty;
+							_charIniEdits.Clear();
+							_state.ClearState();
+							// Trigger catalog reload for the selected peer
+							RequestCatalogUpdate();
 						}
 					}
 				}
@@ -666,14 +657,7 @@ namespace E3Core.UI.Windows
 				_cfgSelectedValueIndex = -1;
 				BuildConfigSectionOrder();
 				// Auto-load catalogs on ini switch without blocking UI
-				_state.State_CatalogReady = false;
-				_spellCatalog.Clear();
-				_aaCatalog.Clear();
-				_discCatalog.Clear();	
-				_skillCatalog.Clear();
-				_itemCatalog.Clear();
-				_state.State_CatalogLoadRequested = true;
-				_state.Status_CatalogRequest = "Queued catalog load...";
+				RequestCatalogUpdate();
 			}
 
 			// Use ImGui Table for responsive 3-column layout
@@ -1841,7 +1825,6 @@ namespace E3Core.UI.Windows
 				var parser = E3Core.Utility.e3util.CreateIniParser();
 				parser.WriteFile(selectedPath, pd);
 				_cfg_Dirty = false;
-				_nextIniRefreshAtMs = 0;
 				_log.Write($"Saved changes to {Path.GetFileName(selectedPath)}");
 			}
 			catch (Exception ex)
@@ -1873,16 +1856,15 @@ namespace E3Core.UI.Windows
 				{
 					// Reloading current character's ini
 					E3.CharacterSettings.ParsedData = pd;
-					_selectedCharIniParsedData = pd;
+					_state.State_CurrentINIData = pd;
 				}
 				else
 				{
 					// Reloading a different character's ini
-					_selectedCharIniParsedData = pd;
+					_state.State_CurrentINIData = pd;
 				}
 
 				_cfg_Dirty = false;
-				_nextIniRefreshAtMs = 0;
 				_cfgSelectedValueIndex = -1;
 				InvalidateSpellEditState();
 				_log.Write($"Cleared pending changes for {Path.GetFileName(selectedPath)}");
@@ -2028,24 +2010,24 @@ namespace E3Core.UI.Windows
 					lock (_dataLock)
 					{
 						// Publish atomically
-						_spellCatalog = mapSpells;
+						_catalog_Spells = mapSpells;
 						_spellCatalogLookup = spellLookup;
-						_aaCatalog = mapAAs;
+						_catalog_AA = mapAAs;
 						_aaCatalogLookup = aaLookup;
-						_discCatalog = mapDiscs;
+						_catalog_Disc = mapDiscs;
 						_discCatalogLookup = discLookup;
-						_skillCatalog = mapSkills;
+						_catalog_Skills = mapSkills;
 						_skillCatalogLookup = skillLookup;
-						_itemCatalog = mapItems;
+						_catalog_Items = mapItems;
 						_itemCatalogLookup = itemLookup;
 
 						_catalogLookups = new[]
 						{
-							(_spellCatalog, "Spell"),
-							(_aaCatalog, "AA"),
-							(_discCatalog, "Disc"),
-							(_skillCatalog, "Skill"),
-							(_itemCatalog, "Item")
+							(_catalog_Spells, "Spell"),
+							(_catalog_AA, "AA"),
+							(_catalog_Disc, "Disc"),
+							(_catalog_Skills, "Skill"),
+							(_catalog_Items, "Item")
 							};
 						_state.State_CatalogReady = true;
 						_state.Status_CatalogRequest = "Catalogs loaded.";
@@ -2176,28 +2158,28 @@ namespace E3Core.UI.Windows
 			lock (_dataLock)
 			{
 				// Publish atomically
-				_spellCatalog = mapSpells;
+				_catalog_Spells = mapSpells;
 				_spellCatalogLookup = spellLookup;
 
-				_aaCatalog = mapAAs;
+				_catalog_AA = mapAAs;
 				_aaCatalogLookup = aaLookup;
 
-				_discCatalog = mapDiscs;
+				_catalog_Disc = mapDiscs;
 				_discCatalogLookup = discLookup;
 
-				_skillCatalog = mapSkills;
+				_catalog_Skills = mapSkills;
 				_skillCatalogLookup = skillLookup;
 
-				_itemCatalog = mapItems;
+				_catalog_Items = mapItems;
 				_itemCatalogLookup = itemLookup;
 
 				_catalogLookups = new[]
 				{
-					(_spellCatalog, "Spell"),
-					(_aaCatalog, "AA"),
-					(_discCatalog, "Disc"),
-					(_skillCatalog, "Skill"),
-					(_itemCatalog, "Item")
+					(_catalog_Spells, "Spell"),
+					(_catalog_AA, "AA"),
+					(_catalog_Disc, "Disc"),
+					(_catalog_Skills, "Skill"),
+					(_catalog_Items, "Item")
 				};
 				_state.State_CatalogReady = true;
 				_state.Status_CatalogRequest = "Catalogs loaded.";
@@ -3213,11 +3195,11 @@ namespace E3Core.UI.Windows
 				{
 					// Trigger catalog refresh
 					_state.State_CatalogReady = false;
-					_spellCatalog.Clear();
-					_aaCatalog.Clear();
-					_discCatalog.Clear();
-					_skillCatalog.Clear();
-					_itemCatalog.Clear();
+					_catalog_Spells.Clear();
+					_catalog_AA.Clear();
+					_catalog_Disc.Clear();
+					_catalog_Skills.Clear();
+					_catalog_Items.Clear();
 					_state.State_CatalogLoadRequested = true;
 					_state.Status_CatalogRequest = "Queued catalog refresh...";
 					_cfg_CatalogSource = "Refreshing...";
@@ -3477,22 +3459,22 @@ namespace E3Core.UI.Windows
 			{
 				switch (t)
 				{
-					case AddType.AAs: return _aaCatalog;
-					case AddType.Discs: return _discCatalog;
-					case AddType.Skills: return _skillCatalog;
-					case AddType.Items: return _itemCatalog;
+					case AddType.AAs: return _catalog_AA;
+					case AddType.Discs: return _catalog_Disc;
+					case AddType.Skills: return _catalog_Skills;
+					case AddType.Items: return _catalog_Items;
 					case AddType.Spells:
-					default: return _spellCatalog;
+					default: return _catalog_Spells;
 				}
 			}
 		}
 		private static (SortedDictionary<string, SortedDictionary<string, List<E3Spell>>>, string)[] _catalogLookups = new[]
 		{
-			(_spellCatalog, "Spell"),
-			(_aaCatalog, "AA"),
-			(_discCatalog, "Disc"),
-			(_skillCatalog, "Skill"),
-			(_itemCatalog, "Item")
+			(_catalog_Spells, "Spell"),
+			(_catalog_AA, "AA"),
+			(_catalog_Disc, "Disc"),
+			(_catalog_Skills, "Skill"),
+			(_catalog_Items, "Item")
 		};
 		// Search all catalogs for a spell/item/AA by name
 		private static E3Spell FindSpellItemAAByName(string name)
@@ -4143,12 +4125,12 @@ namespace E3Core.UI.Windows
 				case SettingsTab.Character:
 				default:
 
-					if (string.IsNullOrEmpty(_state.State_CurrentINIFile))
+					if (string.IsNullOrEmpty(_state.State_CurrentINIFileNameFull))
 					{
 						var currentPath = GetCurrentCharacterIniPath();
-						_state.State_CurrentINIFile = currentPath;
+						_state.State_CurrentINIFileNameFull = currentPath;
 					}
-					return _state.State_CurrentINIFile;
+					return _state.State_CurrentINIFileNameFull;
 			}
 		}
 		// Ifs sample import helpers and modal
@@ -4387,7 +4369,7 @@ namespace E3Core.UI.Windows
 		private static IniData GetActiveCharacterIniData()
 		{
 		
-			return _selectedCharIniParsedData;
+			return _state.State_CurrentINIData;
 		}
 		private static string GetCurrentCharacterIniPath()
 		{
