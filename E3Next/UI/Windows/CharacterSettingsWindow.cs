@@ -31,6 +31,8 @@ namespace E3Core.UI.Windows
 			public bool State_CatalogLoading = false;
 			public bool State_CatalogLoadRequested = false;
 			public string State_SectionAndKeySig = String.Empty;
+			public bool State_ShowOfflineCharacters = false;
+			public bool State_ConfigIsDirty = false;
 
 			public string State_CurrentINIFileNameFull = string.Empty;
 			public IniData State_CurrentINIData;
@@ -192,7 +194,6 @@ namespace E3Core.UI.Windows
 		private static string _cfg_LastIniPath = string.Empty;
 	
 		private static int _cfgSelectedValueIndex = -1;
-		private static bool _cfg_Dirty = false;
 		// Inline edit helpers
 		private static int _cfgInlineEditIndex = -1;
 		private static string _cfgInlineEditBuffer = string.Empty;
@@ -274,7 +275,6 @@ namespace E3Core.UI.Windows
 
 		// Character .ini selection state
 		
-		private static bool _showOfflineCharInis = false;
 		private static long _nextIniFileScanAtMs = 0;
 		// Dropdown support (feature-detect combo availability to avoid crashes on older MQ2Mono)
 		private static bool _comboAvailable = true;
@@ -556,7 +556,7 @@ namespace E3Core.UI.Windows
 					foreach (var f in _state.Data_IniFilesFromDisk)
 					{
 						if (string.Equals(f, loggedInCharIniFile, StringComparison.OrdinalIgnoreCase)) continue;
-						if (!_showOfflineCharInis && !IsIniForOnlineToon(f, onlineToons)) continue;
+						if (!_state.State_ShowOfflineCharacters && !IsIniForOnlineToon(f, onlineToons)) continue;
 						string name = Path.GetFileName(f);
 						bool sel = string.Equals(_state.State_CurrentINIFileNameFull, f, StringComparison.OrdinalIgnoreCase);
 						if (imgui_Selectable($"{name}", sel))
@@ -581,18 +581,18 @@ namespace E3Core.UI.Windows
 			}
 
 			imgui_SameLine();
-			_showOfflineCharInis = imgui_Checkbox("Show offline", _showOfflineCharInis);
+			_state.State_ShowOfflineCharacters = imgui_Checkbox("Show offline", _state.State_ShowOfflineCharacters);
 			imgui_SameLine();
 
 			// Save button with better styling
-			if (imgui_Button(_cfg_Dirty ? "Save Changes*" : "Save Changes"))
+			if (imgui_Button(_state.State_ConfigIsDirty ? "Save Changes*" : "Save Changes"))
 			{
 				SaveActiveIniData();
 			}
 			imgui_SameLine();
 
 			// Clear Changes button (only enabled when there are unsaved changes)
-			if (_cfg_Dirty)
+			if (_state.State_ConfigIsDirty)
 			{
 				if (imgui_Button("Clear Changes"))
 				{
@@ -609,7 +609,7 @@ namespace E3Core.UI.Windows
 				imgui_SameLine();
 			}
 
-			imgui_TextColored(0.6f, 0.6f, 0.6f, 1.0f, _cfg_Dirty ? "Unsaved changes" : "All changes saved");
+			imgui_TextColored(0.6f, 0.6f, 0.6f, 1.0f, _state.State_ConfigIsDirty ? "Unsaved changes" : "All changes saved");
 
 			imgui_Separator();
 		}
@@ -1824,12 +1824,12 @@ namespace E3Core.UI.Windows
 
 				var parser = E3Core.Utility.e3util.CreateIniParser();
 				parser.WriteFile(selectedPath, pd);
-				_cfg_Dirty = false;
+				_state.State_ConfigIsDirty = false;
 				_log.Write($"Saved changes to {Path.GetFileName(selectedPath)}");
 			}
 			catch (Exception ex)
 			{
-				_log.Write($"Failed to save: {ex.Message}");
+				_log.Write($"Failed to save: {ex.Message}", Logging.LogLevels.Error);
 			}
 		}
 
@@ -1864,7 +1864,7 @@ namespace E3Core.UI.Windows
 					_state.State_CurrentINIData = pd;
 				}
 
-				_cfg_Dirty = false;
+				_state.State_ConfigIsDirty = false;
 				_cfgSelectedValueIndex = -1;
 				InvalidateSpellEditState();
 				_log.Write($"Cleared pending changes for {Path.GetFileName(selectedPath)}");
@@ -4263,7 +4263,7 @@ namespace E3Core.UI.Windows
 				if (!section.Keys.ContainsKey(unique))
 				{
 					section.Keys.AddKey(unique, value ?? string.Empty);
-					_cfg_Dirty = true;
+					_state.State_ConfigIsDirty = true;
 					_state.State_SelectedSection = "Ifs";
 					_state.State_SelectedKey = unique;
 					_cfgSelectedValueIndex = -1;
@@ -4295,7 +4295,7 @@ namespace E3Core.UI.Windows
 				if (!section.Keys.ContainsKey(unique))
 				{
 					section.Keys.AddKey(unique, value ?? string.Empty);
-					_cfg_Dirty = true;
+					_state.State_ConfigIsDirty = true;
 					_state.State_SelectedSection = "Burn";
 					_state.State_SelectedKey = unique;
 					_cfgSelectedValueIndex = -1;
@@ -4316,7 +4316,7 @@ namespace E3Core.UI.Windows
 				if (section == null || section.Keys == null) return false;
 				if (!section.Keys.ContainsKey(keyName)) return false;
 				section.Keys.RemoveKey(keyName);
-				_cfg_Dirty = true;
+				_state.State_ConfigIsDirty = true;
 				_cfgSelectedValueIndex = -1;
 				InvalidateSpellEditState();
 				// Pick a new selected key if any remain
@@ -5309,7 +5309,7 @@ namespace E3Core.UI.Windows
 				foreach (var v in values) kd.ValueList.Add(v ?? string.Empty);
 			}
 			// Do NOT set kd.Value here; in our Ini parser, setting Value appends to ValueList.
-			_cfg_Dirty = true;
+			_state.State_ConfigIsDirty = true;
 
 		}
 
@@ -6000,7 +6000,7 @@ namespace E3Core.UI.Windows
 			_state.State_SelectedSection = melodySectionName;
 			_state.State_SelectedKey = "Song";
 			_cfgSelectedValueIndex = 0;
-			_cfg_Dirty = true;
+			_state.State_ConfigIsDirty = true;
 
 			successMessage = string.IsNullOrEmpty(melodyIfKeyName)
 				? $"Melody '{melodyName}' created with {songs.Count} song(s)."
@@ -6052,7 +6052,7 @@ namespace E3Core.UI.Windows
 
 			ifsSection.Keys.AddKey(unique, normalizedExpression);
 			actualKey = unique;
-			_cfg_Dirty = true;
+			_state.State_ConfigIsDirty = true;
 
 			if (!_cfgSectionsOrdered.Any(s => string.Equals(s, "Ifs", StringComparison.OrdinalIgnoreCase)))
 			{
