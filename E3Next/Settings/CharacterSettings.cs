@@ -72,7 +72,10 @@ namespace E3Core.Settings
     {
 		//the reflection lookup so that we can expose all settings data for custom looksup
 		//under the ${E3N.Settings.HEADER.KEY}
-		public Dictionary<string, FieldInfo> SettingsReflectionLookup = new Dictionary<string, FieldInfo>();
+		public Dictionary<string, FieldInfo> SettingsReflectionLookup = new Dictionary<string, FieldInfo>(StringComparer.OrdinalIgnoreCase);
+		public HashSet<String> SettingsReflectionBoolTypes = new HashSet<string>(StringComparer.OrdinalIgnoreCase);
+		public HashSet<String> SettingsReflectionIntTypes = new HashSet<string>(StringComparer.OrdinalIgnoreCase);
+		public HashSet<String> SettingsReflectionStringTypes = new HashSet<string>(StringComparer.OrdinalIgnoreCase);
 
 #pragma warning disable CS1591 // Missing XML comment for publicly visible type or member
 		public IniData ParsedData;
@@ -166,8 +169,8 @@ namespace E3Core.Settings
 		[INI_Section("Bard", "Auto-Sonata (On/Off)")]
 		public bool Bard_AutoSonata = true;
 
-	[INI_Section("Assist Settings", "Assist Type (Melee/AutoAttack/Ranged/AutoFire/Off)")]
-	public string Assist_Type = string.Empty;
+		[INI_Section("Assist Settings", "Assist Type (Melee/AutoAttack/Ranged/AutoFire/Off)")]
+		public string Assist_Type = string.Empty;
 		[INI_Section("Assist Settings", "Melee Stick Point")]
 		public string Assist_MeleeStickPoint = string.Empty;
 		[INI_Section("Assist Settings", "Taunt(On/Off)")]
@@ -1742,6 +1745,7 @@ namespace E3Core.Settings
 			foreach (var field in type.GetFields(BindingFlags.Public | BindingFlags.NonPublic | BindingFlags.Instance))
 			{
 				var oType = field.FieldType;
+				
 				if (!(oType == typeof(string)|| oType == typeof(Int32) || oType == typeof(Int64) || oType == typeof(bool) || oType==typeof(List<string>) || oType == typeof(List<Int32>) || oType == typeof(List<Int64>) || oType == typeof(List<Spell>)) ) continue;
 
 				var customAttributes = field.GetCustomAttributes();
@@ -1756,12 +1760,22 @@ namespace E3Core.Settings
 
 						section = tattribute.Header;
 						key = tattribute.Key;
+
+
+						if (oType == typeof(bool) && !SettingsReflectionBoolTypes.Contains(key)) SettingsReflectionBoolTypes.Add(key);
+						if ((oType == typeof(Int32) || oType==typeof(Int64)) && !SettingsReflectionIntTypes.Contains(key)) SettingsReflectionIntTypes.Add(key);
+						if (oType == typeof(string) && !SettingsReflectionStringTypes.Contains(key)) SettingsReflectionStringTypes.Add(key);
+
 						string dictKey = $"${{E3N.Settings.{section}.{key}}}";
 						SettingsReflectionLookup.Add(dictKey, field);
 
 					}
 					if (attribute is INI_Section2Attribute)
 					{
+						if (oType == typeof(bool) && !SettingsReflectionBoolTypes.Contains(key)) SettingsReflectionBoolTypes.Add(key);
+						if ((oType == typeof(Int32) || oType == typeof(Int64)) && !SettingsReflectionIntTypes.Contains(key)) SettingsReflectionIntTypes.Add(key);
+						if (oType == typeof(string) && !SettingsReflectionStringTypes.Contains(key)) SettingsReflectionStringTypes.Add(key);
+
 						var tattribute = ((INI_Section2Attribute)attribute);
 						section = tattribute.Header;
 						key = tattribute.Key;

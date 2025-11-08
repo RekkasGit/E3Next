@@ -310,9 +310,16 @@ namespace MonoCore
 		[MethodImpl(MethodImplOptions.InternalCall)]
 		public extern static bool imgui_InputTextClear(string id);
 
+
+		[MethodImpl(MethodImplOptions.InternalCall)]
+		public extern static bool imgui_InputInt(string id, int initial,int steps,int faststeps);
+		[MethodImpl(MethodImplOptions.InternalCall)]
+		public extern static int imgui_InputInt_Get(string id);
+
+
 		[MethodImpl(MethodImplOptions.InternalCall)]
 		public extern static bool imgui_InputText(string id, string initial);
-		[MethodImpl(MethodImplOptions.InternalCall)]
+				[MethodImpl(MethodImplOptions.InternalCall)]
 		public extern static string imgui_InputText_Get(string id);
 		[MethodImpl(MethodImplOptions.InternalCall)]
 		public extern static void imgui_End();

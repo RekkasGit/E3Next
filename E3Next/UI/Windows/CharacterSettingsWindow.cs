@@ -15,6 +15,7 @@ using System.Runtime.CompilerServices;
 using System.Text;
 using System.Text.RegularExpressions;
 using static MonoCore.E3ImGUI;
+using static System.Windows.Forms.AxHost;
 
 namespace E3Core.UI.Windows
 {
@@ -26,15 +27,19 @@ namespace E3Core.UI.Windows
 
 			//state
 			public string State_SelectedSection = string.Empty;
+			// "Ifs" or "Burn",// Inline add editor state (rendered in Values column)
+			public string State_SelectedAddInLine = String.Empty;
 			public string State_SelectedKey = string.Empty;
+			public string State_SectionAndKeySig = String.Empty;
+			public Int32 State_SelectedValueIndex = -1;
+
 			public bool State_CatalogReady = false;
 			public bool State_CatalogLoading = false;
 			public bool State_CatalogLoadRequested = false;
-			public string State_SectionAndKeySig = String.Empty;
 			public bool State_ShowOfflineCharacters = false;
 			public bool State_ConfigIsDirty = false;
-			public Int32 State_SelectedValueIndex = -1;
 			public string State_LastIniPath = String.Empty;
+			
 			//Note on Volatile variables... all this means is if its set on another thread, we will eventually get the update.
 			//its somewhat one way, us setting the variable on this side doesn't let the other thread see the update.
 			public volatile bool State_GemsAvailable = false; // Whether we have gem data
@@ -51,9 +56,13 @@ namespace E3Core.UI.Windows
 			public bool Show_ThemeSettings = false;
 			public bool Show_AllPlayersView = false;
 			public bool Show_ShowIntegratedEditor = false;
+			public bool Show_AddInLine = false;
 
 			//buffers
 			public string Buffer_KeySearch = String.Empty;
+			public string Buffer_NewKey = string.Empty;
+			public string Buffer_NewValue = String.Empty;
+
 			
 			//data
 			public Dictionary<string, string> Data_AllPlayersEdit = new Dictionary<string, string>(StringComparer.OrdinalIgnoreCase);
@@ -70,6 +79,14 @@ namespace E3Core.UI.Windows
 				Show_Donate = false;
 				Show_ThemeSettings = false;
 				Show_AllPlayersView = false;
+			}
+			public void ClearAddInLine()
+			{
+				_state.Show_AddInLine = false;
+				_state.State_SelectedKey = string.Empty;
+				_state.State_SelectedAddInLine = String.Empty;
+				_state.Buffer_NewKey = string.Empty;
+				_state.Buffer_NewValue = string.Empty;
 			}
 			public void ClearState()
 			{
@@ -149,8 +166,6 @@ namespace E3Core.UI.Windows
 		private static List<System.Collections.Generic.KeyValuePair<string, string>> _cfgIfSampleLines = new List<System.Collections.Generic.KeyValuePair<string, string>>();
 		private static string _cfgIfSampleStatus = string.Empty;
 		// Ifs: add-new helper input buffers
-		private static string _cfgNewKeyBuffer = string.Empty;
-		private static string _cfgNewValue = string.Empty;
 		private static bool _cfgShowBardMelodyHelper = false;
 		private static string _cfgBardMelodyName = string.Empty;
 		private static List<string> _cfgBardMelodySongs = new List<string>();
@@ -169,16 +184,10 @@ namespace E3Core.UI.Windows
 		private static string _cfgBardSampleIfStatus = string.Empty;
 		private static string _cfgBardSampleIfFilter = string.Empty;
 		private static List<KeyValuePair<string, string>> _cfgBardSampleIfLines = new List<KeyValuePair<string, string>>();
-		// Burn: add-new helper input buffers
-		private static string _cfgBurnNewKey = string.Empty;
-		private static string _cfgBurnNewValue = string.Empty;
+
 		// Context menu state for Ifs/Burn sections
 		private static bool _showContextMenu = false;
 		private static string _contextMenuFor = string.Empty; // "Ifs" or "Burn"
-															  // Inline add editor state (rendered in Values column)
-		private static bool _cfgShowAddInline = false;
-		private static string _cfgAddInlineSection = string.Empty; // "Ifs" or "Burn"
-																   // Remote fetch state (non-blocking)
 		private static bool _cfgFoodDrinkPending = false;
 		private static string _cfgFoodDrinkPendingToon = string.Empty;
 		private static string _cfgFoodDrinkPendingType = string.Empty;
@@ -337,7 +346,7 @@ namespace E3Core.UI.Windows
 					RenderWindow();
 				
 				} catch (Exception ex)
-				{MQ.WriteDelayed("Rendering Error:" + ex.Message);}
+				{MQ.WriteDelayed("Rendering Error:" + ex.Message + " stack:"+ex.StackTrace);}
 			});
 
 		}
@@ -736,10 +745,11 @@ namespace E3Core.UI.Windows
 				{
 					imgui_TableSetupColumn("Section", 0, 0.35f);
 					var sectionsToRender = GetSectionsForDisplay();
+					imgui_TableNextRow();
+					imgui_TableNextColumn();
+
 					if (sectionsToRender.Count == 0)
 					{
-						imgui_TableNextRow();
-						imgui_TableNextColumn();
 						imgui_TextColored(0.95f, 0.75f, 0.75f, 1.0f, "No sections match the current search.");
 					}
 					else
@@ -755,9 +765,6 @@ namespace E3Core.UI.Windows
 								_cfgSectionExpanded[sec] = false;
 							}
 
-							imgui_TableNextRow();
-							imgui_TableNextColumn();
-
 							int treeFlagsSection = (int)ImGuiTreeNodeFlags.ImGuiTreeNodeFlags_SpanAvailWidth;
 							if (_cfgSectionExpanded[sec])
 							{
@@ -771,11 +778,7 @@ namespace E3Core.UI.Windows
 							if (itemHovered && imgui_IsMouseClicked(0))
 							{
 								_state.State_SelectedSection = sec;
-								_state.State_SelectedKey = string.Empty;
-								_cfgShowAddInline = false;
-								_cfgAddInlineSection = string.Empty;
-								_cfgNewKeyBuffer = string.Empty;
-								_cfgNewValue = string.Empty;
+								_state.ClearAddInLine();
 							}
 
 							if (sec.Equals("Ifs", StringComparison.OrdinalIgnoreCase) || sec.Equals("Burn", StringComparison.OrdinalIgnoreCase))
@@ -798,13 +801,12 @@ namespace E3Core.UI.Windows
 
 									if (addIfs)
 									{
-										_cfgShowAddInline = true;
-										_cfgAddInlineSection = "Ifs";
+										_state.ClearAddInLine();
+										_state.Show_AddInLine = true;
+										_state.State_SelectedAddInLine = "Ifs";
 										_state.State_SelectedSection = "Ifs";
-										_state.State_SelectedKey = string.Empty;
 										_state.State_SelectedValueIndex = -1;
-										_cfgNewKeyBuffer = string.Empty;
-										_cfgNewValue = string.Empty;
+										
 									}
 
 									imgui_EndPopup();
@@ -820,13 +822,12 @@ namespace E3Core.UI.Windows
 
 									if (addBurn)
 									{
-										_cfgShowAddInline = true;
-										_cfgAddInlineSection = "Burn";
+										_state.ClearAddInLine();
+										_state.Show_AddInLine = true;
+										_state.State_SelectedAddInLine = "Burn";
 										_state.State_SelectedSection = "Burn";
-										_state.State_SelectedKey = string.Empty;
 										_state.State_SelectedValueIndex = -1;
-										_cfgBurnNewKey = string.Empty;
-										_cfgBurnNewValue = string.Empty;
+									
 									}
 
 									imgui_EndPopup();
@@ -848,13 +849,10 @@ namespace E3Core.UI.Windows
 									string keyLabel = $"  {key}"; // simple indent under section
 									if (imgui_Selectable(keyLabel, keySelected))
 									{
+										_state.ClearAddInLine();
 										_state.State_SelectedSection = sec;
 										_state.State_SelectedKey = key;
 										_state.State_SelectedValueIndex = -1;
-										_cfgShowAddInline = false;
-										_cfgAddInlineSection = string.Empty;
-										_cfgNewKeyBuffer = string.Empty;
-										_cfgNewValue = string.Empty;
 									}
 
 									// Context menu for all keys (right-click)
@@ -895,6 +893,7 @@ namespace E3Core.UI.Windows
 					if (selectedSection == null)
 					{
 						imgui_Text("No section selected.");
+						return;
 					}
 					else if (selectedSection.Keys == null || selectedSection.Keys.Count() == 0)
 					{
@@ -904,68 +903,65 @@ namespace E3Core.UI.Windows
 						imgui_Text("Create new entry:");
 						imgui_SameLine();
 						imgui_SetNextItemWidth(220f);
-						if (imgui_InputText("##new_key_name", _cfgNewKeyBuffer))
+						if (imgui_InputText("##new_key_name", _state.Buffer_NewKey))
 						{
-							_cfgNewKeyBuffer = imgui_InputText_Get("##new_key_name") ?? string.Empty;
+							_state.Buffer_NewKey = imgui_InputText_Get("##new_key_name") ?? string.Empty;
 						}
 						imgui_SameLine();
 						if (imgui_Button("Add Key"))
 						{
-							string newKey = (_cfgNewKeyBuffer ?? string.Empty).Trim();
+							string newKey = (_state.Buffer_NewKey ?? string.Empty).Trim();
 							if (newKey.Length > 0 && !selectedSection.Keys.ContainsKey(newKey))
 							{
 								selectedSection.Keys.AddKey(newKey, string.Empty);
 								_state.State_SelectedKey = newKey;
-								_cfgNewKeyBuffer = string.Empty;
+								_state.Buffer_NewKey = string.Empty;
 								_cfgInlineEditIndex = -1;
 								// On next frame the normal values editor will show for the new key
 							}
 						}
 					}
 					// Inline Add New editor (triggered from header context menu)
-					if (_cfgShowAddInline
-						&& string.Equals(_cfgAddInlineSection, _state.State_SelectedSection, StringComparison.OrdinalIgnoreCase)
+					if (_state.Show_AddInLine
+						&& string.Equals(_state.State_SelectedAddInLine, _state.State_SelectedSection, StringComparison.OrdinalIgnoreCase)
 						&& string.IsNullOrEmpty(_state.State_SelectedKey))
 					{
-						imgui_TextColored(0.8f, 0.9f, 0.95f, 1.0f, _cfgAddInlineSection.Equals("Ifs", StringComparison.OrdinalIgnoreCase) ? "Add New If" : "Add New Burn Key");
+						imgui_TextColored(0.8f, 0.9f, 0.95f, 1.0f, _state.State_SelectedAddInLine.Equals("Ifs", StringComparison.OrdinalIgnoreCase) ? "Add New If" : "Add New Burn Key");
 						imgui_Text("Name:");
 						imgui_SameLine();
 						float inlineFieldAvail = imgui_GetContentRegionAvailX();
 						float inlineFieldWidth = Math.Max(320f, inlineFieldAvail * 0.45f);
 						inlineFieldWidth = Math.Min(inlineFieldWidth, Math.Max(260f, inlineFieldAvail - 60f));
 						imgui_SetNextItemWidth(inlineFieldWidth);
-						if (imgui_InputText("##inline_new_key", _cfgNewKeyBuffer))
+						if (imgui_InputText("##inline_new_key", _state.Buffer_NewKey))
 						{
-							_cfgNewKeyBuffer = imgui_InputText_Get("##inline_new_key") ?? string.Empty;
+							_state.Buffer_NewKey = imgui_InputText_Get("##inline_new_key") ?? string.Empty;
 						}
 						imgui_Text("Value:");
 						float inlineValueAvail = imgui_GetContentRegionAvailX();
 						float inlineValueWidth = Math.Max(420f, inlineValueAvail * 0.70f);
 						inlineValueWidth = Math.Min(inlineValueWidth, Math.Max(320f, inlineValueAvail - 80f));
 						float inlineValueHeight = Math.Max(140f, imgui_GetTextLineHeightWithSpacing() * 6f);
-						if (imgui_InputTextMultiline("##inline_new_value", _cfgNewValue ?? string.Empty, inlineValueWidth, inlineValueHeight))
+						if (imgui_InputTextMultiline("##inline_new_value", _state.Buffer_NewValue ?? string.Empty, inlineValueWidth, inlineValueHeight))
 						{
-							_cfgNewValue = imgui_InputText_Get("##inline_new_value") ?? string.Empty;
+							_state.Buffer_NewValue = imgui_InputText_Get("##inline_new_value") ?? string.Empty;
 						}
 						if (imgui_Button("Add##inline_add"))
 						{
-							string key = (_cfgNewKeyBuffer ?? string.Empty).Trim();
-							string val = _cfgNewValue ?? string.Empty;
+							string key = (_state.Buffer_NewKey ?? string.Empty).Trim();
+							string val = _state.Buffer_NewValue ?? string.Empty;
 							bool added = false;
-							if (_cfgAddInlineSection.Equals("Ifs", StringComparison.OrdinalIgnoreCase))
+							if (_state.State_SelectedAddInLine.Equals("Ifs", StringComparison.OrdinalIgnoreCase))
 							{
 								added = AddIfToActiveIni(key, val);
 							}
-							else if (_cfgAddInlineSection.Equals("Burn", StringComparison.OrdinalIgnoreCase))
+							else if (_state.State_SelectedAddInLine.Equals("Burn", StringComparison.OrdinalIgnoreCase))
 							{
 								added = AddBurnToActiveIni(key, val);
 							}
 							if (added)
 							{
-								_cfgShowAddInline = false;
-								_cfgAddInlineSection = string.Empty;
-								_cfgNewKeyBuffer = string.Empty;
-								_cfgNewValue = string.Empty;
+								_state.ClearAddInLine();
 								// Open blank value editor if value was empty
 								_cfgInlineEditIndex = 0;
 							}
@@ -973,14 +969,10 @@ namespace E3Core.UI.Windows
 						imgui_SameLine();
 						if (imgui_Button("Cancel##inline_cancel"))
 						{
-							_cfgShowAddInline = false;
-							_cfgAddInlineSection = string.Empty;
-							_cfgNewKeyBuffer = string.Empty;
-							_cfgNewValue = string.Empty;
+							_state.ClearAddInLine();
 						}
 						imgui_Separator();
 					}
-
 					else if (string.IsNullOrEmpty(_state.State_SelectedKey))
 					{
 						// Section has keys, but no key selected yet: keep values panel empty
@@ -1222,9 +1214,18 @@ namespace E3Core.UI.Windows
 			return iconID;
 
 		}
+
+
+	
+
 		// Helper method to render values for the selected key
 		private static void RenderSelectedKeyValues(SectionData selectedSection)
 		{
+			if (selectedSection == null || selectedSection.Keys==null)
+			{
+				return;
+
+			}
 			var kd = selectedSection.Keys.GetKeyData(_state.State_SelectedKey ?? string.Empty);
 			string raw = kd?.Value ?? string.Empty;
 			var parts = GetValues(kd);
@@ -1234,7 +1235,7 @@ namespace E3Core.UI.Windows
 			imgui_Separator();
 
 
-			if (parts.Count == 0)
+			if (parts==null || parts.Count == 0)
 			{
 				imgui_Text("(No values)");
 				imgui_Separator();
@@ -1270,7 +1271,7 @@ namespace E3Core.UI.Windows
 				imgui_Separator();
 			}
 			// Boolean fast toggle support → dropdown selector with better styling
-			else if (IsBooleanConfigKey(_state.State_SelectedKey, kd))
+			else if (IsBooleanConfigKey(_state.State_SelectedKey))
 			{
 				string current = (raw ?? string.Empty).Trim();
 				// Derive allowed options from base E3 conventions
@@ -1320,263 +1321,290 @@ namespace E3Core.UI.Windows
 				}
 				imgui_Separator();
 			}
-
-			// Values list with improved styling
-			bool listChanged = false;
-			imgui_TextColored(0.9f, 0.95f, 1.0f, 1.0f, "Configuration Values");
-
-			for (int i = 0; i < parts.Count; i++)
+			else if(IsIntergerConfigKey(_state.State_SelectedKey))
 			{
-				string v = parts[i];
-				bool editing = (_cfgInlineEditIndex == i);
-				// Create a unique ID for this item that doesn't depend on its position in the list
-				string itemUid = $"{_state.State_SelectedSection}_{_state.State_SelectedKey}_{i}_{(v ?? string.Empty).GetHashCode()}";
 
-				if (!editing)
+				// Edit mode with better styling
+		
+				float editAvail = imgui_GetContentRegionAvailX();
+				float editWidth = Math.Max(420f, editAvail - 140f);
+				editWidth = Math.Min(editWidth, Math.Max(260f, editAvail - 80f));
+				float editHeight = Math.Max(140f, imgui_GetTextLineHeightWithSpacing() * 6f);
+				string v = parts[0];
+				if(_cfgInlineEditBuffer==String.Empty)
 				{
-					// Row with better styling and alignment
-					Int32 iconID = GetIconFromIniString(v);
-					imgui_DrawSpellIconByIconIndex(iconID, 30.0f);
-					imgui_SameLine();
-					imgui_Text($"{i + 1}.");
-					imgui_SameLine(_valueRowActionStartOffset + 20);
+					_cfgInlineEditBuffer = v;
+				}
+				Int32 intValue= 0;
+				Int32.TryParse(v,out intValue);
 
-					bool canMoveUp = i > 0;
-					bool canMoveDown = i < parts.Count - 1;
+				if (imgui_InputInt($"##edit_int_{_state.State_SelectedKey}", intValue,5,20))
+				{
+					parts[0] = imgui_InputInt_Get($"##edit_int_{_state.State_SelectedKey}").ToString();
+				}
+				imgui_Separator();
+			}
+			else
+			{
+				// Values list with improved styling
+				bool listChanged = false;
+				imgui_TextColored(0.9f, 0.95f, 1.0f, 1.0f, "Configuration Values");
 
-					void SwapAndMark(int fromIndex, int toIndex)
+				for (int i = 0; i < parts.Count; i++)
+				{
+					string v = parts[i];
+					bool editing = (_cfgInlineEditIndex == i);
+					// Create a unique ID for this item that doesn't depend on its position in the list
+					string itemUid = $"{_state.State_SelectedSection}_{_state.State_SelectedKey}_{i}_{(v ?? string.Empty).GetHashCode()}";
+
+					if (!editing)
 					{
-						var pdAct = GetActiveCharacterIniData();
-						var selSec = pdAct.Sections.GetSectionData(_state.State_SelectedSection);
-						var key = selSec?.Keys.GetKeyData(_state.State_SelectedKey);
-						if (key == null) return;
+						// Row with better styling and alignment
+						Int32 iconID = GetIconFromIniString(v);
+						imgui_DrawSpellIconByIconIndex(iconID, 30.0f);
+						imgui_SameLine();
+						imgui_Text($"{i + 1}.");
+						imgui_SameLine(_valueRowActionStartOffset + 20);
 
-						var vals = GetValues(key);
-						if (fromIndex < 0 || fromIndex >= vals.Count) return;
-						if (toIndex < 0 || toIndex >= vals.Count) return;
+						bool canMoveUp = i > 0;
+						bool canMoveDown = i < parts.Count - 1;
 
-						string temp = vals[toIndex];
-						vals[toIndex] = vals[fromIndex];
-						vals[fromIndex] = temp;
-						WriteValues(key, vals);
-						listChanged = true;
-						_cfgPendingValueSelection = toIndex;
-					}
-
-					void StartInlineEdit(int index, string currentValue)
-					{
-						_cfgInlineEditIndex = index;
-						_cfgInlineEditBuffer = currentValue ?? string.Empty;
-					}
-
-					void DeleteValueAt(int index)
-					{
-						var pdAct = GetActiveCharacterIniData();
-						var selSec = pdAct.Sections.GetSectionData(_state.State_SelectedSection);
-						var key = selSec?.Keys.GetKeyData(_state.State_SelectedKey);
-						if (key != null)
+						void SwapAndMark(int fromIndex, int toIndex)
 						{
+							var pdAct = GetActiveCharacterIniData();
+							var selSec = pdAct.Sections.GetSectionData(_state.State_SelectedSection);
+							var key = selSec?.Keys.GetKeyData(_state.State_SelectedKey);
+							if (key == null) return;
+
 							var vals = GetValues(key);
-							if (index >= 0 && index < vals.Count)
+							if (fromIndex < 0 || fromIndex >= vals.Count) return;
+							if (toIndex < 0 || toIndex >= vals.Count) return;
+
+							string temp = vals[toIndex];
+							vals[toIndex] = vals[fromIndex];
+							vals[fromIndex] = temp;
+							WriteValues(key, vals);
+							listChanged = true;
+							_cfgPendingValueSelection = toIndex;
+						}
+
+						void StartInlineEdit(int index, string currentValue)
+						{
+							_cfgInlineEditIndex = index;
+							_cfgInlineEditBuffer = currentValue ?? string.Empty;
+						}
+
+						void DeleteValueAt(int index)
+						{
+							var pdAct = GetActiveCharacterIniData();
+							var selSec = pdAct.Sections.GetSectionData(_state.State_SelectedSection);
+							var key = selSec?.Keys.GetKeyData(_state.State_SelectedKey);
+							if (key != null)
 							{
-								vals.RemoveAt(index);
-								WriteValues(key, vals);
-								listChanged = true;
+								var vals = GetValues(key);
+								if (index >= 0 && index < vals.Count)
+								{
+									vals.RemoveAt(index);
+									WriteValues(key, vals);
+									listChanged = true;
+								}
 							}
 						}
-					}
 
-					void RenderReorderButton(string label, bool enabled, Action onClick)
-					{
-						if (!enabled)
+						void RenderReorderButton(string label, bool enabled, Action onClick)
 						{
-							imgui_PushStyleVarFloat((int)ImGuiStyleVar.Alpha, 0.4f);
-						}
-						bool pressed = imgui_Button(label);
-						if (!enabled)
-						{
-							imgui_PopStyleVar(1);
-						}
-						if (pressed && enabled)
-						{
-							onClick?.Invoke();
-						}
-					}
-
-					RenderReorderButton($"^##moveup_{itemUid}", canMoveUp, () => SwapAndMark(i, i - 1));
-					imgui_SameLine();
-					RenderReorderButton($"v##movedown_{itemUid}", canMoveDown, () => SwapAndMark(i, i + 1));
-					imgui_SameLine();
-
-					// Make value selectable to show info in right panel
-					bool isSelected = (_state.State_SelectedValueIndex == i);
-					if (imgui_Selectable($"{v}##select_{itemUid}", isSelected))
-					{
-						_state.State_SelectedValueIndex = i;
-						_cfgInlineEditBuffer = v;
-					}
-					if (imgui_BeginPopupContextItem($"ValueCtx_{itemUid}", 1))
-					{
-						if (canMoveUp && imgui_MenuItem("Move Up")) SwapAndMark(i, i - 1);
-						if (canMoveDown && imgui_MenuItem("Move Down")) SwapAndMark(i, i + 1);
-						if (imgui_MenuItem("Replace From Catalog"))
-						{
-							_cfgCatalogReplaceMode = true;
-							_cfgCatalogReplaceIndex = i;
-							_cfgShowAddModal = true;
-						}
-						imgui_EndPopup();
-					}
-				}
-				else
-				{
-					// Edit mode with better styling
-					imgui_Text($"* {i + 1}.");
-					imgui_SameLine(_valueRowActionStartOffset);
-
-					float editAvail = imgui_GetContentRegionAvailX();
-					float editWidth = Math.Max(420f, editAvail - 140f);
-					editWidth = Math.Min(editWidth, Math.Max(260f, editAvail - 80f));
-					float editHeight = Math.Max(140f, imgui_GetTextLineHeightWithSpacing() * 6f);
-					if (imgui_InputTextMultiline($"##edit_text_{itemUid}", _cfgInlineEditBuffer ?? string.Empty, editWidth, editHeight))
-					{
-						_cfgInlineEditBuffer = imgui_InputText_Get($"##edit_text_{itemUid}");
-					}
-
-					if (imgui_Button($"Save##save_{itemUid}"))
-					{
-						string newText = _cfgInlineEditBuffer ?? string.Empty;
-						int idx = i;
-						var pdAct = GetActiveCharacterIniData();
-						var selSec = pdAct.Sections.GetSectionData(_state.State_SelectedSection);
-						var key = selSec?.Keys.GetKeyData(_state.State_SelectedKey);
-						if (key != null)
-						{
-							var vals = GetValues(key);
-							if (idx >= 0 && idx < vals.Count)
+							if (!enabled)
 							{
-								vals[idx] = newText;
-								WriteValues(key, vals);
-								listChanged = true;
+								imgui_PushStyleVarFloat((int)ImGuiStyleVar.Alpha, 0.4f);
+							}
+							bool pressed = imgui_Button(label);
+							if (!enabled)
+							{
+								imgui_PopStyleVar(1);
+							}
+							if (pressed && enabled)
+							{
+								onClick?.Invoke();
 							}
 						}
-						_cfgInlineEditIndex = -1;
-						_cfgInlineEditBuffer = string.Empty;
-						// continue to render items; parts refresh handled below
-					}
-					imgui_SameLine();
 
-					if (imgui_Button($"Cancel##cancel_{itemUid}"))
-					{
-						_cfgInlineEditIndex = -1;
-						_cfgInlineEditBuffer = string.Empty;
-					}
-				}
+						RenderReorderButton($"^##moveup_{itemUid}", canMoveUp, () => SwapAndMark(i, i - 1));
+						imgui_SameLine();
+						RenderReorderButton($"v##movedown_{itemUid}", canMoveDown, () => SwapAndMark(i, i + 1));
+						imgui_SameLine();
 
-				// If a change was made, we need to refresh the parts list for subsequent iterations
-				if (listChanged)
-				{
-					// Re-get the values after modification
-					var updatedKd = selectedSection.Keys.GetKeyData(_state.State_SelectedKey ?? string.Empty);
-					parts = GetValues(updatedKd);
-					listChanged = false; // Reset the flag
-					if (_cfgPendingValueSelection >= 0 && _cfgPendingValueSelection < parts.Count)
-					{
-						_state.State_SelectedValueIndex = _cfgPendingValueSelection;
+						// Make value selectable to show info in right panel
+						bool isSelected = (_state.State_SelectedValueIndex == i);
+						if (imgui_Selectable($"{v}##select_{itemUid}", isSelected))
+						{
+							_state.State_SelectedValueIndex = i;
+							_cfgInlineEditBuffer = v;
+						}
+						if (imgui_BeginPopupContextItem($"ValueCtx_{itemUid}", 1))
+						{
+							if (canMoveUp && imgui_MenuItem("Move Up")) SwapAndMark(i, i - 1);
+							if (canMoveDown && imgui_MenuItem("Move Down")) SwapAndMark(i, i + 1);
+							if (imgui_MenuItem("Replace From Catalog"))
+							{
+								_cfgCatalogReplaceMode = true;
+								_cfgCatalogReplaceIndex = i;
+								_cfgShowAddModal = true;
+							}
+							imgui_EndPopup();
+						}
 					}
 					else
 					{
-						_state.State_SelectedValueIndex = -1;
-					}
-					_cfgPendingValueSelection = -1;
-					// Adjust the loop counter since we've removed an item
-					i--;
-				}
-			}
+						// Edit mode with better styling
+						imgui_Text($"* {i + 1}.");
+						imgui_SameLine(_valueRowActionStartOffset);
 
-			// Handle adding a new manual entry (if we're in add mode)
-			if (_cfgInlineEditIndex >= parts.Count)
-			{
-				imgui_Separator();
-				imgui_TextColored(0.8f, 0.9f, 0.95f, 1.0f, "Add New Value");
-
-				imgui_Text($"+ {parts.Count + 1}.");
-				imgui_SameLine(_valueRowActionStartOffset);
-
-				float addAvail = imgui_GetContentRegionAvailX();
-				float addManualWidth = Math.Max(420f, addAvail - 140f);
-				addManualWidth = Math.Min(addManualWidth, Math.Max(260f, addAvail - 80f));
-				float addManualHeight = Math.Max(140f, imgui_GetTextLineHeightWithSpacing() * 6f);
-				if (imgui_InputTextMultiline($"##add_new_manual", _cfgInlineEditBuffer ?? string.Empty, addManualWidth, addManualHeight))
-				{
-					_cfgInlineEditBuffer = imgui_InputText_Get($"##add_new_manual");
-				}
-
-				if (imgui_Button($"Add##add_manual"))
-				{
-					string newText = _cfgInlineEditBuffer ?? string.Empty;
-					if (!string.IsNullOrWhiteSpace(newText))
-					{
-						var pdAct = GetActiveCharacterIniData();
-						var selSec = pdAct.Sections.GetSectionData(_state.State_SelectedSection);
-						var key = selSec?.Keys.GetKeyData(_state.State_SelectedKey);
-						if (key != null)
+						float editAvail = imgui_GetContentRegionAvailX();
+						float editWidth = Math.Max(420f, editAvail - 140f);
+						editWidth = Math.Min(editWidth, Math.Max(260f, editAvail - 80f));
+						float editHeight = Math.Max(140f, imgui_GetTextLineHeightWithSpacing() * 6f);
+						if (imgui_InputTextMultiline($"##edit_text_{itemUid}", _cfgInlineEditBuffer ?? string.Empty, editWidth, editHeight))
 						{
-							var vals = GetValues(key);
-							vals.Add(newText.Trim());
-							WriteValues(key, vals);
-							_cfgPendingValueSelection = vals.Count - 1;
+							_cfgInlineEditBuffer = imgui_InputText_Get($"##edit_text_{itemUid}");
+						}
+
+						if (imgui_Button($"Save##save_{itemUid}"))
+						{
+							string newText = _cfgInlineEditBuffer ?? string.Empty;
+							int idx = i;
+							var pdAct = GetActiveCharacterIniData();
+							var selSec = pdAct.Sections.GetSectionData(_state.State_SelectedSection);
+							var key = selSec?.Keys.GetKeyData(_state.State_SelectedKey);
+							if (key != null)
+							{
+								var vals = GetValues(key);
+								if (idx >= 0 && idx < vals.Count)
+								{
+									vals[idx] = newText;
+									WriteValues(key, vals);
+									listChanged = true;
+								}
+							}
+							_cfgInlineEditIndex = -1;
+							_cfgInlineEditBuffer = string.Empty;
+							// continue to render items; parts refresh handled below
+						}
+						imgui_SameLine();
+
+						if (imgui_Button($"Cancel##cancel_{itemUid}"))
+						{
+							_cfgInlineEditIndex = -1;
+							_cfgInlineEditBuffer = string.Empty;
 						}
 					}
-					_cfgInlineEditIndex = -1;
-					_cfgInlineEditBuffer = string.Empty;
-				}
-				imgui_SameLine();
 
-				if (imgui_Button($"Cancel##cancel_manual"))
-				{
-					_cfgInlineEditIndex = -1;
-					_cfgInlineEditBuffer = string.Empty;
-				}
-			}
-			// Add new value button (only show when not editing)
-			else if (!listChanged && _cfgInlineEditIndex == -1)
-			{
-				imgui_Separator();
-				imgui_TextColored(0.8f, 0.9f, 0.95f, 1.0f, "Add New Values");
-
-				// Check if this is a Food or Drink key
-				bool isFoodOrDrink = _state.State_SelectedKey.Equals("Food", StringComparison.OrdinalIgnoreCase) || _state.State_SelectedKey.Equals("Drink", StringComparison.OrdinalIgnoreCase);
-
-				if (imgui_Button("Add Manual"))
-				{
-					_cfgInlineEditIndex = parts.Count;
-					_cfgInlineEditBuffer = string.Empty;
-				}
-				imgui_SameLine();
-
-				// For Food/Drink keys, show "Pick From Inventory" instead of "Add From Catalog"
-				if (isFoodOrDrink)
-				{
-					if (imgui_Button("Pick From Inventory"))
+					// If a change was made, we need to refresh the parts list for subsequent iterations
+					if (listChanged)
 					{
-						// Reset scan state so results don't carry over between Food/Drink
-						_cfgFoodDrinkKey = _state.State_SelectedKey; // "Food" or "Drink"
-						_cfgFoodDrinkStatus = string.Empty;
-						_cfgFoodDrinkCandidates.Clear();
-						_cfgFoodDrinkScanRequested = true; // auto-trigger scan for new kind
-						_cfgShowFoodDrinkModal = true;
+						// Re-get the values after modification
+						var updatedKd = selectedSection.Keys.GetKeyData(_state.State_SelectedKey ?? string.Empty);
+						parts = GetValues(updatedKd);
+						listChanged = false; // Reset the flag
+						if (_cfgPendingValueSelection >= 0 && _cfgPendingValueSelection < parts.Count)
+						{
+							_state.State_SelectedValueIndex = _cfgPendingValueSelection;
+						}
+						else
+						{
+							_state.State_SelectedValueIndex = -1;
+						}
+						_cfgPendingValueSelection = -1;
+						// Adjust the loop counter since we've removed an item
+						i--;
 					}
 				}
-				else
+
+				// Handle adding a new manual entry (if we're in add mode)
+				if (_cfgInlineEditIndex >= parts.Count)
 				{
-					if (imgui_Button("Add From Catalog"))
+					imgui_Separator();
+					imgui_TextColored(0.8f, 0.9f, 0.95f, 1.0f, "Add New Value");
+
+					imgui_Text($"+ {parts.Count + 1}.");
+					imgui_SameLine(_valueRowActionStartOffset);
+
+					float addAvail = imgui_GetContentRegionAvailX();
+					float addManualWidth = Math.Max(420f, addAvail - 140f);
+					addManualWidth = Math.Min(addManualWidth, Math.Max(260f, addAvail - 80f));
+					float addManualHeight = Math.Max(140f, imgui_GetTextLineHeightWithSpacing() * 6f);
+					if (imgui_InputTextMultiline($"##add_new_manual", _cfgInlineEditBuffer ?? string.Empty, addManualWidth, addManualHeight))
 					{
-						_cfgCatalogMode = CatalogMode.Standard;
-						_cfgShowAddModal = true;
+						_cfgInlineEditBuffer = imgui_InputText_Get($"##add_new_manual");
+					}
+
+					if (imgui_Button($"Add##add_manual"))
+					{
+						string newText = _cfgInlineEditBuffer ?? string.Empty;
+						if (!string.IsNullOrWhiteSpace(newText))
+						{
+							var pdAct = GetActiveCharacterIniData();
+							var selSec = pdAct.Sections.GetSectionData(_state.State_SelectedSection);
+							var key = selSec?.Keys.GetKeyData(_state.State_SelectedKey);
+							if (key != null)
+							{
+								var vals = GetValues(key);
+								vals.Add(newText.Trim());
+								WriteValues(key, vals);
+								_cfgPendingValueSelection = vals.Count - 1;
+							}
+						}
+						_cfgInlineEditIndex = -1;
+						_cfgInlineEditBuffer = string.Empty;
+					}
+					imgui_SameLine();
+
+					if (imgui_Button($"Cancel##cancel_manual"))
+					{
+						_cfgInlineEditIndex = -1;
+						_cfgInlineEditBuffer = string.Empty;
+					}
+				}
+				// Add new value button (only show when not editing)
+				else if (!listChanged && _cfgInlineEditIndex == -1)
+				{
+					imgui_Separator();
+					imgui_TextColored(0.8f, 0.9f, 0.95f, 1.0f, "Add New Values");
+
+					// Check if this is a Food or Drink key
+					bool isFoodOrDrink = _state.State_SelectedKey.Equals("Food", StringComparison.OrdinalIgnoreCase) || _state.State_SelectedKey.Equals("Drink", StringComparison.OrdinalIgnoreCase);
+
+					if (imgui_Button("Add Manual"))
+					{
+						_cfgInlineEditIndex = parts.Count;
+						_cfgInlineEditBuffer = string.Empty;
+					}
+					imgui_SameLine();
+
+					// For Food/Drink keys, show "Pick From Inventory" instead of "Add From Catalog"
+					if (isFoodOrDrink)
+					{
+						if (imgui_Button("Pick From Inventory"))
+						{
+							// Reset scan state so results don't carry over between Food/Drink
+							_cfgFoodDrinkKey = _state.State_SelectedKey; // "Food" or "Drink"
+							_cfgFoodDrinkStatus = string.Empty;
+							_cfgFoodDrinkCandidates.Clear();
+							_cfgFoodDrinkScanRequested = true; // auto-trigger scan for new kind
+							_cfgShowFoodDrinkModal = true;
+						}
+					}
+					else
+					{
+						if (imgui_Button("Add From Catalog"))
+						{
+							_cfgCatalogMode = CatalogMode.Standard;
+							_cfgShowAddModal = true;
+						}
 					}
 				}
 			}
+
+		
 		}
 
 		// Helper method to render configuration tools panel
@@ -3000,42 +3028,71 @@ namespace E3Core.UI.Windows
 
 
 
-
-		private static bool IsBooleanConfigKey(string key, KeyData kd)
+		private static bool IsIntergerConfigKey(string key)
 		{
-			if (kd == null) return false;
-			// Heuristic: keys that are explicitly On/Off
-			var v = (kd.Value ?? string.Empty).Trim();
-			if (string.Equals(v, "On", StringComparison.OrdinalIgnoreCase) || string.Equals(v, "Off", StringComparison.OrdinalIgnoreCase))
+			if (E3.CharacterSettings.SettingsReflectionIntTypes.Contains(key))
+			{
+
 				return true;
-			// Common patterns
-			if (key.IndexOf("Enable", StringComparison.OrdinalIgnoreCase) >= 0) return true;
-			if (key.IndexOf("Use ", StringComparison.OrdinalIgnoreCase) == 0) return true;
+			}
 			return false;
 		}
+		private static bool IsBooleanConfigKey(string key)
+		{
+			if (E3.CharacterSettings.SettingsReflectionBoolTypes.Contains(key))
+			{
+				
+				return true;
+			}
+			return false;
+			//if (kd == null) return false;
+			//// Heuristic: keys that are explicitly On/Off
+			//var v = (kd.Value ?? string.Empty).Trim();
+			//if (string.Equals(v, "On", StringComparison.OrdinalIgnoreCase) || string.Equals(v, "Off", StringComparison.OrdinalIgnoreCase))
+			//	return true;
+			//// Common patterns
+			//if (key.IndexOf("Enable", StringComparison.OrdinalIgnoreCase) >= 0) return true;
+			//if (key.IndexOf("Use ", StringComparison.OrdinalIgnoreCase) == 0) return true;
+			//return false;
+		}
 
+
+		static Dictionary<string, List<String>> _KeyOptionsLookup = new Dictionary<string, List<string>>(StringComparer.OrdinalIgnoreCase) {
+			{"Assist Type (Melee/Ranged/Off)", new List<string>() { "Melee","AutoAttack","Ranged","AutoFire","Off" } },
+			{"Melee Stick Point", new List<string>() { "Front","Behind","BehindOnce","Pin","!Front" } }
+
+		};
+		static List<String> _KeyOptionsOnOff = new List<string>() { "On", "Off" };
 		// Attempt to derive an explicit set of allowed options from the key label, e.g.
 		// "Assist Type (Melee/Ranged/Off)" => ["Melee","Ranged","Off"]
 		private static bool TryGetKeyOptions(string keyLabel, out List<string> options)
 		{
+			if (_KeyOptionsLookup.TryGetValue(keyLabel, out var result))
+			{
+				options= result;
+				return true;
+			}
 			options = null;
-			if (string.IsNullOrEmpty(keyLabel)) return false;
-			int i = keyLabel.IndexOf('(');
-			int j = keyLabel.IndexOf(')');
-			if (i < 0 || j <= i) return false;
-			var inside = keyLabel.Substring(i + 1, j - i - 1).Trim();
-			// Only treat as options if slash-delimited list exists
-			if (inside.IndexOf('/') < 0) return false;
-			var parts = inside.Split(new[] { '/' }, StringSplitOptions.RemoveEmptyEntries)
-							  .Select(x => x.Trim())
-							  .Where(x => !string.IsNullOrEmpty(x))
-							  .ToList();
-			if (parts.Count <= 1) return false;
-			// Heuristic: ignore numeric unit hints like "(in milliseconds)" or "(Pct)" or "(1+)"
-			bool looksNumericHint = parts.Any(p => p.Any(char.IsDigit)) || parts.Any(p => p.Equals("Pct", StringComparison.OrdinalIgnoreCase)) || parts.Any(p => p.IndexOf("millisecond", StringComparison.OrdinalIgnoreCase) >= 0);
-			if (looksNumericHint) return false;
-			options = parts;
-			return true;
+			return false;
+
+			//options = null;
+			//if (string.IsNullOrEmpty(keyLabel)) return false;
+			//int i = keyLabel.IndexOf('(');
+			//int j = keyLabel.IndexOf(')');
+			//if (i < 0 || j <= i) return false;
+			//var inside = keyLabel.Substring(i + 1, j - i - 1).Trim();
+			//// Only treat as options if slash-delimited list exists
+			//if (inside.IndexOf('/') < 0) return false;
+			//var parts = inside.Split(new[] { '/' }, StringSplitOptions.RemoveEmptyEntries)
+			//				  .Select(x => x.Trim())
+			//				  .Where(x => !string.IsNullOrEmpty(x))
+			//				  .ToList();
+			//if (parts.Count <= 1) return false;
+			//// Heuristic: ignore numeric unit hints like "(in milliseconds)" or "(Pct)" or "(1+)"
+			//bool looksNumericHint = parts.Any(p => p.Any(char.IsDigit)) || parts.Any(p => p.Equals("Pct", StringComparison.OrdinalIgnoreCase)) || parts.Any(p => p.IndexOf("millisecond", StringComparison.OrdinalIgnoreCase) >= 0);
+			//if (looksNumericHint) return false;
+			//options = parts;
+			//return true;
 		}
 
 
@@ -4041,89 +4098,22 @@ namespace E3Core.UI.Windows
 		private static List<string> GetSectionsForDisplay()
 		{
 			var search = (_state.Buffer_KeySearch ?? string.Empty).Trim();
-			if (string.IsNullOrEmpty(search))
+			if (string.IsNullOrWhiteSpace(search))
 			{
-				return new List<string>(_state.Data_SectionsOrdered);
+				return _state.Data_SectionsOrdered;
 			}
-
-			var matches = new List<(string Section, int Score)>();
+			//lets look for the data based off search
+			var matches = new List<String>();
 			foreach (var section in _state.Data_SectionsOrdered)
 			{
-				if (TryFuzzyMatchSection(search, section, out var score))
+				if (section.IndexOf(search, 0, StringComparison.OrdinalIgnoreCase) > -1)
 				{
-					matches.Add((section, score));
+					matches.Add(section);
 				}
 			}
-
-			if (matches.Count == 0)
-			{
-				return new List<string>();
-			}
-
-			matches.Sort((a, b) =>
-			{
-				int scoreCompare = a.Score.CompareTo(b.Score);
-				if (scoreCompare != 0) return scoreCompare;
-				return StringComparer.OrdinalIgnoreCase.Compare(a.Section, b.Section);
-			});
-
-			return matches.Select(m => m.Section).ToList();
+			return matches;
 		}
-		private static bool TryFuzzyMatchSection(string search, string section, out int score)
-		{
-			score = int.MaxValue;
-			if (string.IsNullOrEmpty(section)) return false;
-
-			string query = (search ?? string.Empty).Trim();
-			if (query.Length == 0)
-			{
-				score = 0;
-				return true;
-			}
-
-			string sectionLower = section.ToLowerInvariant();
-			string queryLower = query.ToLowerInvariant();
-
-			int directIndex = sectionLower.IndexOf(queryLower, StringComparison.Ordinal);
-			if (directIndex >= 0)
-			{
-				score = directIndex;
-				return true;
-			}
-
-			string condensed = new string(queryLower.Where(c => !char.IsWhiteSpace(c)).ToArray());
-			if (condensed.Length == 0)
-			{
-				score = 0;
-				return true;
-			}
-
-			int lastIndex = -1;
-			int gapScore = 0;
-			for (int qi = 0; qi < condensed.Length; qi++)
-			{
-				char qc = condensed[qi];
-				bool found = false;
-				for (int si = lastIndex + 1; si < sectionLower.Length; si++)
-				{
-					if (sectionLower[si] == qc)
-					{
-						gapScore += si - lastIndex - 1;
-						lastIndex = si;
-						found = true;
-						break;
-					}
-				}
-				if (!found)
-				{
-					return false;
-				}
-			}
-
-			gapScore += sectionLower.Length - lastIndex - 1;
-			score = 1000 + gapScore;
-			return true;
-		}
+		
 		private static string GetActiveSettingsPath()
 		{
 			switch (_activeSettingsTab)
