@@ -1227,387 +1227,409 @@ namespace E3Core.UI.Windows
 
 			}
 			var kd = selectedSection.Keys.GetKeyData(_state.State_SelectedKey ?? string.Empty);
-			string raw = kd?.Value ?? string.Empty;
+
+			if(kd == null)
+			{
+				return;
+			}
+
 			var parts = GetValues(kd);
-
 			// Title row with better styling
-			imgui_TextColored(0.95f, 0.85f, 0.35f, 1.0f, $"[{_state.State_SelectedSection}] {_state.State_SelectedKey}");
+			imgui_TextColored(0.95f, 0.85f, 0.35f, 1.0f, $"[{_state.State_SelectedSection??""}] {_state.State_SelectedKey??""}");
 			imgui_Separator();
-
 
 			if (parts==null || parts.Count == 0)
 			{
 				imgui_Text("(No values)");
 				imgui_Separator();
+
+				if (parts == null) return;
 			}
 
 			// Enumerated options derived from key label e.g. "(Melee/Ranged/Off)"
 			if (TryGetKeyOptions(_state.State_SelectedKey, out var enumOpts))
 			{
-				string current = (raw ?? string.Empty).Trim();
-				string display = current.Length == 0 ? "(unset)" : current;
-				if (BeginComboSafe("Value", display))
-				{
-					foreach (var opt in enumOpts)
-					{
-						bool sel = string.Equals(current, opt, StringComparison.OrdinalIgnoreCase);
-						if (imgui_Selectable(opt, sel))
-						{
-							string chosen = opt;
-							var pdAct = GetActiveCharacterIniData();
-							var selSec = pdAct.Sections.GetSectionData(_state.State_SelectedSection);
-							if (selSec != null && selSec.Keys.ContainsKey(_state.State_SelectedKey))
-							{
-								var kdata = selSec.Keys.GetKeyData(_state.State_SelectedKey);
-								if (kdata != null)
-								{
-									WriteValues(kdata, new List<string> { chosen });
-								}
-							}
-						}
-					}
-					EndComboSafe();
-				}
-				imgui_Separator();
+				RenderSelectedKeyValues_Registered(parts, selectedSection, enumOpts);
 			}
 			// Boolean fast toggle support → dropdown selector with better styling
 			else if (IsBooleanConfigKey(_state.State_SelectedKey))
 			{
-				string current = (raw ?? string.Empty).Trim();
-				// Derive allowed options from base E3 conventions
-				List<string> baseOpts;
-				var keyLabel = _state.State_SelectedKey ?? string.Empty;
-				bool mentionsOnOff = keyLabel.IndexOf("(On/Off)", StringComparison.OrdinalIgnoreCase) >= 0
-									 || keyLabel.IndexOf("On/Off", StringComparison.OrdinalIgnoreCase) >= 0
-									 || keyLabel.IndexOf("Enable", StringComparison.OrdinalIgnoreCase) >= 0
-									 || keyLabel.StartsWith("Use ", StringComparison.OrdinalIgnoreCase);
-				if (string.Equals(current, "True", StringComparison.OrdinalIgnoreCase) || string.Equals(current, "False", StringComparison.OrdinalIgnoreCase))
-				{
-					// Preserve True/False style if that's what's used
-					baseOpts = new List<string> { "True", "False" };
-				}
-				else if (mentionsOnOff || string.Equals(current, "On", StringComparison.OrdinalIgnoreCase) || string.Equals(current, "Off", StringComparison.OrdinalIgnoreCase))
-				{
-					baseOpts = new List<string> { "On", "Off" };
-				}
-				else
-				{
-					// Default to On/Off per E3 defaults
-					baseOpts = new List<string> { "On", "Off" };
-				}
-
-				string display = current.Length == 0 ? "(unset)" : current;
-				if (BeginComboSafe("Value", display))
-				{
-					foreach (var opt in baseOpts)
-					{
-						bool sel = string.Equals(current, opt, StringComparison.OrdinalIgnoreCase);
-						if (imgui_Selectable(opt, sel))
-						{
-							string chosen = opt;
-							var pdAct = GetActiveCharacterIniData();
-							var selSec = pdAct.Sections.GetSectionData(_state.State_SelectedSection);
-							if (selSec != null && selSec.Keys.ContainsKey(_state.State_SelectedKey))
-							{
-								var kdata = selSec.Keys.GetKeyData(_state.State_SelectedKey);
-								if (kdata != null)
-								{
-									WriteValues(kdata, new List<string> { chosen });
-								}
-							}
-						}
-					}
-					EndComboSafe();
-				}
-				imgui_Separator();
+				RenderSelectedKeyValues_Boolean(parts,selectedSection);
 			}
 			else if(IsIntergerConfigKey(_state.State_SelectedKey))
 			{
-
-				// Edit mode with better styling
-				Int32 intValue= 0;
-				Int32.TryParse(parts[0], out intValue);
-
-				if (imgui_InputInt($"##edit_int_{_state.State_SelectedKey}", intValue,5,20))
-				{
-					//parts is a direct pointer to ValuesList from the IniData, so can update it directly. 
-					parts[0] = imgui_InputInt_Get($"##edit_int_{_state.State_SelectedKey}").ToString();
-					_state.State_ConfigIsDirty = true;
-				}
-				imgui_Separator();
+				RenderSelectedKeyValues_Integers(parts, selectedSection);
 			}
 			else if (IsStringConfigKey(_state.State_SelectedKey))
 			{
-				
-				if (imgui_InputText($"##edit_string_{_state.State_SelectedKey}", parts[0]))
+				RenderSelectedKeyValues_String(parts, selectedSection);
+			}
+			else if(!(String.IsNullOrWhiteSpace(_state.State_SelectedKey) || String.IsNullOrWhiteSpace(_state.State_SelectedSection)))
+			{
+				RenderSelectedKeyValues_Collections(parts,selectedSection);
+			}
+		}
+		private static void RenderSelectedKeyValues_String(List<string> parts, SectionData selectedSection)
+		{
+			if (imgui_InputText($"##edit_string_{_state.State_SelectedKey}", parts[0]))
+			{
+				//parts is a direct pointer to ValuesList from the IniData, so can update it directly. 
+				parts[0] = imgui_InputText_Get($"##edit_string_{_state.State_SelectedKey}");
+				_state.State_ConfigIsDirty = true;
+			}
+			imgui_Separator();
+		}
+		private static void RenderSelectedKeyValues_Integers(List<string> parts, SectionData selectedSection)
+		{
+			// Edit mode with better styling
+			Int32 intValue = 0;
+			Int32.TryParse(parts[0], out intValue);
+
+			if (imgui_InputInt($"##edit_int_{_state.State_SelectedKey}", intValue, 5, 20))
+			{
+				//parts is a direct pointer to ValuesList from the IniData, so can update it directly. 
+				parts[0] = imgui_InputInt_Get($"##edit_int_{_state.State_SelectedKey}").ToString();
+				_state.State_ConfigIsDirty = true;
+			}
+			imgui_Separator();
+		}
+
+
+		private static void RenderSelectedKeyValues_Registered(List<string> parts, SectionData selectedSection, List<string> enumOpts)
+		{
+			string current = parts[0];
+			string display = current.Length == 0 ? "(unset)" : current;
+			if (BeginComboSafe("Value", display))
+			{
+				foreach (var opt in enumOpts)
 				{
-					//parts is a direct pointer to ValuesList from the IniData, so can update it directly. 
-					parts[0] = imgui_InputText_Get($"##edit_string_{_state.State_SelectedKey}");
-					_state.State_ConfigIsDirty = true;
+					bool sel = string.Equals(current, opt, StringComparison.OrdinalIgnoreCase);
+					if (imgui_Selectable(opt, sel))
+					{
+						string chosen = opt;
+						var pdAct = GetActiveCharacterIniData();
+						var selSec = pdAct.Sections.GetSectionData(_state.State_SelectedSection);
+						if (selSec != null && selSec.Keys.ContainsKey(_state.State_SelectedKey))
+						{
+							var kdata = selSec.Keys.GetKeyData(_state.State_SelectedKey);
+							if (kdata != null)
+							{
+								WriteValues(kdata, new List<string> { chosen });
+							}
+						}
+					}
 				}
-				imgui_Separator();
+				EndComboSafe();
+			}
+			imgui_Separator();
+		}
+		private static void RenderSelectedKeyValues_Boolean(List<string> parts, SectionData selectedSection)
+		{
+			string current = parts[0];
+			// Derive allowed options from base E3 conventions
+			List<string> baseOpts;
+			var keyLabel = _state.State_SelectedKey ?? string.Empty;
+			bool mentionsOnOff = keyLabel.IndexOf("(On/Off)", StringComparison.OrdinalIgnoreCase) >= 0
+								 || keyLabel.IndexOf("On/Off", StringComparison.OrdinalIgnoreCase) >= 0
+								 || keyLabel.IndexOf("Enable", StringComparison.OrdinalIgnoreCase) >= 0
+								 || keyLabel.StartsWith("Use ", StringComparison.OrdinalIgnoreCase);
+			if (string.Equals(current, "True", StringComparison.OrdinalIgnoreCase) || string.Equals(current, "False", StringComparison.OrdinalIgnoreCase))
+			{
+				// Preserve True/False style if that's what's used
+				baseOpts = new List<string> { "True", "False" };
+			}
+			else if (mentionsOnOff || string.Equals(current, "On", StringComparison.OrdinalIgnoreCase) || string.Equals(current, "Off", StringComparison.OrdinalIgnoreCase))
+			{
+				baseOpts = new List<string> { "On", "Off" };
 			}
 			else
 			{
-				// Values list with improved styling
-				bool listChanged = false;
-				imgui_TextColored(0.9f, 0.95f, 1.0f, 1.0f, "Configuration Values");
+				// Default to On/Off per E3 defaults
+				baseOpts = new List<string> { "On", "Off" };
+			}
 
-				for (int i = 0; i < parts.Count; i++)
+			string display = current.Length == 0 ? "(unset)" : current;
+			if (BeginComboSafe("Value", display))
+			{
+				foreach (var opt in baseOpts)
 				{
-					string v = parts[i];
-					bool editing = (_cfgInlineEditIndex == i);
-					// Create a unique ID for this item that doesn't depend on its position in the list
-					string itemUid = $"{_state.State_SelectedSection}_{_state.State_SelectedKey}_{i}_{(v ?? string.Empty).GetHashCode()}";
-
-					if (!editing)
+					bool sel = string.Equals(current, opt, StringComparison.OrdinalIgnoreCase);
+					if (imgui_Selectable(opt, sel))
 					{
-						// Row with better styling and alignment
-						Int32 iconID = GetIconFromIniString(v);
-						imgui_DrawSpellIconByIconIndex(iconID, 30.0f);
-						imgui_SameLine();
-						imgui_Text($"{i + 1}.");
-						imgui_SameLine(_valueRowActionStartOffset + 20);
-
-						bool canMoveUp = i > 0;
-						bool canMoveDown = i < parts.Count - 1;
-
-						void SwapAndMark(int fromIndex, int toIndex)
+						string chosen = opt;
+						var pdAct = GetActiveCharacterIniData();
+						var selSec = pdAct.Sections.GetSectionData(_state.State_SelectedSection);
+						if (selSec != null && selSec.Keys.ContainsKey(_state.State_SelectedKey))
 						{
-							var pdAct = GetActiveCharacterIniData();
-							var selSec = pdAct.Sections.GetSectionData(_state.State_SelectedSection);
-							var key = selSec?.Keys.GetKeyData(_state.State_SelectedKey);
-							if (key == null) return;
+							var kdata = selSec.Keys.GetKeyData(_state.State_SelectedKey);
+							if (kdata != null)
+							{
+								WriteValues(kdata, new List<string> { chosen });
+							}
+						}
+					}
+				}
+				EndComboSafe();
+			}
+			imgui_Separator();
+		}
+		private static void RenderSelectedKeyValues_Collections(List<string> parts, SectionData selectedSection)
+		{
+			bool listChanged = false;
+			imgui_TextColored(0.9f, 0.95f, 1.0f, 1.0f, "Configuration Values");
 
+			for (int i = 0; i < parts.Count; i++)
+			{
+				string v = parts[i];
+				bool editing = (_cfgInlineEditIndex == i);
+				// Create a unique ID for this item that doesn't depend on its position in the list
+				string itemUid = $"{_state.State_SelectedSection}_{_state.State_SelectedKey}_{i}_{(v ?? string.Empty).GetHashCode()}";
+
+				if (!editing)
+				{
+					// Row with better styling and alignment
+					Int32 iconID = GetIconFromIniString(v);
+					imgui_DrawSpellIconByIconIndex(iconID, 30.0f);
+					imgui_SameLine();
+					imgui_Text($"{i + 1}.");
+					imgui_SameLine(_valueRowActionStartOffset + 20);
+
+					bool canMoveUp = i > 0;
+					bool canMoveDown = i < parts.Count - 1;
+
+					void SwapAndMark(int fromIndex, int toIndex)
+					{
+						var pdAct = GetActiveCharacterIniData();
+						var selSec = pdAct.Sections.GetSectionData(_state.State_SelectedSection);
+						var key = selSec?.Keys.GetKeyData(_state.State_SelectedKey);
+						if (key == null) return;
+
+						var vals = GetValues(key);
+						if (fromIndex < 0 || fromIndex >= vals.Count) return;
+						if (toIndex < 0 || toIndex >= vals.Count) return;
+
+						string temp = vals[toIndex];
+						vals[toIndex] = vals[fromIndex];
+						vals[fromIndex] = temp;
+						WriteValues(key, vals);
+						listChanged = true;
+						_cfgPendingValueSelection = toIndex;
+					}
+
+					void StartInlineEdit(int index, string currentValue)
+					{
+						_cfgInlineEditIndex = index;
+						_cfgInlineEditBuffer = currentValue ?? string.Empty;
+					}
+
+					void DeleteValueAt(int index)
+					{
+						var pdAct = GetActiveCharacterIniData();
+						var selSec = pdAct.Sections.GetSectionData(_state.State_SelectedSection);
+						var key = selSec?.Keys.GetKeyData(_state.State_SelectedKey);
+						if (key != null)
+						{
 							var vals = GetValues(key);
-							if (fromIndex < 0 || fromIndex >= vals.Count) return;
-							if (toIndex < 0 || toIndex >= vals.Count) return;
-
-							string temp = vals[toIndex];
-							vals[toIndex] = vals[fromIndex];
-							vals[fromIndex] = temp;
-							WriteValues(key, vals);
-							listChanged = true;
-							_cfgPendingValueSelection = toIndex;
-						}
-
-						void StartInlineEdit(int index, string currentValue)
-						{
-							_cfgInlineEditIndex = index;
-							_cfgInlineEditBuffer = currentValue ?? string.Empty;
-						}
-
-						void DeleteValueAt(int index)
-						{
-							var pdAct = GetActiveCharacterIniData();
-							var selSec = pdAct.Sections.GetSectionData(_state.State_SelectedSection);
-							var key = selSec?.Keys.GetKeyData(_state.State_SelectedKey);
-							if (key != null)
+							if (index >= 0 && index < vals.Count)
 							{
-								var vals = GetValues(key);
-								if (index >= 0 && index < vals.Count)
-								{
-									vals.RemoveAt(index);
-									WriteValues(key, vals);
-									listChanged = true;
-								}
-							}
-						}
-
-						void RenderReorderButton(string label, bool enabled, Action onClick)
-						{
-							if (!enabled)
-							{
-								imgui_PushStyleVarFloat((int)ImGuiStyleVar.Alpha, 0.4f);
-							}
-							bool pressed = imgui_Button(label);
-							if (!enabled)
-							{
-								imgui_PopStyleVar(1);
-							}
-							if (pressed && enabled)
-							{
-								onClick?.Invoke();
-							}
-						}
-
-						RenderReorderButton($"^##moveup_{itemUid}", canMoveUp, () => SwapAndMark(i, i - 1));
-						imgui_SameLine();
-						RenderReorderButton($"v##movedown_{itemUid}", canMoveDown, () => SwapAndMark(i, i + 1));
-						imgui_SameLine();
-
-						// Make value selectable to show info in right panel
-						bool isSelected = (_state.State_SelectedValueIndex == i);
-						if (imgui_Selectable($"{v}##select_{itemUid}", isSelected))
-						{
-							_state.State_SelectedValueIndex = i;
-							_cfgInlineEditBuffer = v;
-						}
-						if (imgui_BeginPopupContextItem($"ValueCtx_{itemUid}", 1))
-						{
-							if (canMoveUp && imgui_MenuItem("Move Up")) SwapAndMark(i, i - 1);
-							if (canMoveDown && imgui_MenuItem("Move Down")) SwapAndMark(i, i + 1);
-							if (imgui_MenuItem("Replace From Catalog"))
-							{
-								_cfgCatalogReplaceMode = true;
-								_cfgCatalogReplaceIndex = i;
-								_cfgShowAddModal = true;
-							}
-							imgui_EndPopup();
-						}
-					}
-					else
-					{
-						// Edit mode with better styling
-						imgui_Text($"* {i + 1}.");
-						imgui_SameLine(_valueRowActionStartOffset);
-
-						float editAvail = imgui_GetContentRegionAvailX();
-						float editWidth = Math.Max(420f, editAvail - 140f);
-						editWidth = Math.Min(editWidth, Math.Max(260f, editAvail - 80f));
-						float editHeight = Math.Max(140f, imgui_GetTextLineHeightWithSpacing() * 6f);
-						if (imgui_InputTextMultiline($"##edit_text_{itemUid}", _cfgInlineEditBuffer ?? string.Empty, editWidth, editHeight))
-						{
-							_cfgInlineEditBuffer = imgui_InputText_Get($"##edit_text_{itemUid}");
-						}
-
-						if (imgui_Button($"Save##save_{itemUid}"))
-						{
-							string newText = _cfgInlineEditBuffer ?? string.Empty;
-							int idx = i;
-							var pdAct = GetActiveCharacterIniData();
-							var selSec = pdAct.Sections.GetSectionData(_state.State_SelectedSection);
-							var key = selSec?.Keys.GetKeyData(_state.State_SelectedKey);
-							if (key != null)
-							{
-								var vals = GetValues(key);
-								if (idx >= 0 && idx < vals.Count)
-								{
-									vals[idx] = newText;
-									WriteValues(key, vals);
-									listChanged = true;
-								}
-							}
-							_cfgInlineEditIndex = -1;
-							_cfgInlineEditBuffer = string.Empty;
-							// continue to render items; parts refresh handled below
-						}
-						imgui_SameLine();
-
-						if (imgui_Button($"Cancel##cancel_{itemUid}"))
-						{
-							_cfgInlineEditIndex = -1;
-							_cfgInlineEditBuffer = string.Empty;
-						}
-					}
-
-					// If a change was made, we need to refresh the parts list for subsequent iterations
-					if (listChanged)
-					{
-						// Re-get the values after modification
-						var updatedKd = selectedSection.Keys.GetKeyData(_state.State_SelectedKey ?? string.Empty);
-						parts = GetValues(updatedKd);
-						listChanged = false; // Reset the flag
-						if (_cfgPendingValueSelection >= 0 && _cfgPendingValueSelection < parts.Count)
-						{
-							_state.State_SelectedValueIndex = _cfgPendingValueSelection;
-						}
-						else
-						{
-							_state.State_SelectedValueIndex = -1;
-						}
-						_cfgPendingValueSelection = -1;
-						// Adjust the loop counter since we've removed an item
-						i--;
-					}
-				}
-
-				// Handle adding a new manual entry (if we're in add mode)
-				if (_cfgInlineEditIndex >= parts.Count)
-				{
-					imgui_Separator();
-					imgui_TextColored(0.8f, 0.9f, 0.95f, 1.0f, "Add New Value");
-
-					imgui_Text($"+ {parts.Count + 1}.");
-					imgui_SameLine(_valueRowActionStartOffset);
-
-					float addAvail = imgui_GetContentRegionAvailX();
-					float addManualWidth = Math.Max(420f, addAvail - 140f);
-					addManualWidth = Math.Min(addManualWidth, Math.Max(260f, addAvail - 80f));
-					float addManualHeight = Math.Max(140f, imgui_GetTextLineHeightWithSpacing() * 6f);
-					if (imgui_InputTextMultiline($"##add_new_manual", _cfgInlineEditBuffer ?? string.Empty, addManualWidth, addManualHeight))
-					{
-						_cfgInlineEditBuffer = imgui_InputText_Get($"##add_new_manual");
-					}
-
-					if (imgui_Button($"Add##add_manual"))
-					{
-						string newText = _cfgInlineEditBuffer ?? string.Empty;
-						if (!string.IsNullOrWhiteSpace(newText))
-						{
-							var pdAct = GetActiveCharacterIniData();
-							var selSec = pdAct.Sections.GetSectionData(_state.State_SelectedSection);
-							var key = selSec?.Keys.GetKeyData(_state.State_SelectedKey);
-							if (key != null)
-							{
-								var vals = GetValues(key);
-								vals.Add(newText.Trim());
+								vals.RemoveAt(index);
 								WriteValues(key, vals);
-								_cfgPendingValueSelection = vals.Count - 1;
+								listChanged = true;
 							}
 						}
-						_cfgInlineEditIndex = -1;
-						_cfgInlineEditBuffer = string.Empty;
 					}
-					imgui_SameLine();
 
-					if (imgui_Button($"Cancel##cancel_manual"))
+					void RenderReorderButton(string label, bool enabled, Action onClick)
 					{
-						_cfgInlineEditIndex = -1;
-						_cfgInlineEditBuffer = string.Empty;
-					}
-				}
-				// Add new value button (only show when not editing)
-				else if (!listChanged && _cfgInlineEditIndex == -1)
-				{
-					imgui_Separator();
-					imgui_TextColored(0.8f, 0.9f, 0.95f, 1.0f, "Add New Values");
-
-					// Check if this is a Food or Drink key
-					bool isFoodOrDrink = _state.State_SelectedKey.Equals("Food", StringComparison.OrdinalIgnoreCase) || _state.State_SelectedKey.Equals("Drink", StringComparison.OrdinalIgnoreCase);
-
-					if (imgui_Button("Add Manual"))
-					{
-						_cfgInlineEditIndex = parts.Count;
-						_cfgInlineEditBuffer = string.Empty;
-					}
-					imgui_SameLine();
-
-					// For Food/Drink keys, show "Pick From Inventory" instead of "Add From Catalog"
-					if (isFoodOrDrink)
-					{
-						if (imgui_Button("Pick From Inventory"))
+						if (!enabled)
 						{
-							// Reset scan state so results don't carry over between Food/Drink
-							_cfgFoodDrinkKey = _state.State_SelectedKey; // "Food" or "Drink"
-							_cfgFoodDrinkStatus = string.Empty;
-							_cfgFoodDrinkCandidates.Clear();
-							_cfgFoodDrinkScanRequested = true; // auto-trigger scan for new kind
-							_cfgShowFoodDrinkModal = true;
+							imgui_PushStyleVarFloat((int)ImGuiStyleVar.Alpha, 0.4f);
+						}
+						bool pressed = imgui_Button(label);
+						if (!enabled)
+						{
+							imgui_PopStyleVar(1);
+						}
+						if (pressed && enabled)
+						{
+							onClick?.Invoke();
 						}
 					}
-					else
+
+					RenderReorderButton($"^##moveup_{itemUid}", canMoveUp, () => SwapAndMark(i, i - 1));
+					imgui_SameLine();
+					RenderReorderButton($"v##movedown_{itemUid}", canMoveDown, () => SwapAndMark(i, i + 1));
+					imgui_SameLine();
+
+					// Make value selectable to show info in right panel
+					bool isSelected = (_state.State_SelectedValueIndex == i);
+					if (imgui_Selectable($"{v}##select_{itemUid}", isSelected))
 					{
-						if (imgui_Button("Add From Catalog"))
+						_state.State_SelectedValueIndex = i;
+						_cfgInlineEditBuffer = v;
+					}
+					if (imgui_BeginPopupContextItem($"ValueCtx_{itemUid}", 1))
+					{
+						if (canMoveUp && imgui_MenuItem("Move Up")) SwapAndMark(i, i - 1);
+						if (canMoveDown && imgui_MenuItem("Move Down")) SwapAndMark(i, i + 1);
+						if (imgui_MenuItem("Replace From Catalog"))
 						{
-							_cfgCatalogMode = CatalogMode.Standard;
+							_cfgCatalogReplaceMode = true;
+							_cfgCatalogReplaceIndex = i;
 							_cfgShowAddModal = true;
 						}
+						imgui_EndPopup();
 					}
+				}
+				else
+				{
+					// Edit mode with better styling
+					imgui_Text($"* {i + 1}.");
+					imgui_SameLine(_valueRowActionStartOffset);
+
+					float editAvail = imgui_GetContentRegionAvailX();
+					float editWidth = Math.Max(420f, editAvail - 140f);
+					editWidth = Math.Min(editWidth, Math.Max(260f, editAvail - 80f));
+					float editHeight = Math.Max(140f, imgui_GetTextLineHeightWithSpacing() * 6f);
+					if (imgui_InputTextMultiline($"##edit_text_{itemUid}", _cfgInlineEditBuffer ?? string.Empty, editWidth, editHeight))
+					{
+						_cfgInlineEditBuffer = imgui_InputText_Get($"##edit_text_{itemUid}");
+					}
+
+					if (imgui_Button($"Save##save_{itemUid}"))
+					{
+						string newText = _cfgInlineEditBuffer ?? string.Empty;
+						int idx = i;
+						var pdAct = GetActiveCharacterIniData();
+						var selSec = pdAct.Sections.GetSectionData(_state.State_SelectedSection);
+						var key = selSec?.Keys.GetKeyData(_state.State_SelectedKey);
+						if (key != null)
+						{
+							var vals = GetValues(key);
+							if (idx >= 0 && idx < vals.Count)
+							{
+								vals[idx] = newText;
+								WriteValues(key, vals);
+								listChanged = true;
+							}
+						}
+						_cfgInlineEditIndex = -1;
+						_cfgInlineEditBuffer = string.Empty;
+						// continue to render items; parts refresh handled below
+					}
+					imgui_SameLine();
+
+					if (imgui_Button($"Cancel##cancel_{itemUid}"))
+					{
+						_cfgInlineEditIndex = -1;
+						_cfgInlineEditBuffer = string.Empty;
+					}
+				}
+
+				// If a change was made, we need to refresh the parts list for subsequent iterations
+				if (listChanged)
+				{
+					// Re-get the values after modification
+					var updatedKd = selectedSection.Keys.GetKeyData(_state.State_SelectedKey ?? string.Empty);
+					parts = GetValues(updatedKd);
+					listChanged = false; // Reset the flag
+					if (_cfgPendingValueSelection >= 0 && _cfgPendingValueSelection < parts.Count)
+					{
+						_state.State_SelectedValueIndex = _cfgPendingValueSelection;
+					}
+					else
+					{
+						_state.State_SelectedValueIndex = -1;
+					}
+					_cfgPendingValueSelection = -1;
+					// Adjust the loop counter since we've removed an item
+					i--;
 				}
 			}
 
-		
+			// Handle adding a new manual entry (if we're in add mode)
+			if (_cfgInlineEditIndex >= parts.Count)
+			{
+				imgui_Separator();
+				imgui_TextColored(0.8f, 0.9f, 0.95f, 1.0f, "Add New Value");
+
+				imgui_Text($"+ {parts.Count + 1}.");
+				imgui_SameLine(_valueRowActionStartOffset);
+
+				float addAvail = imgui_GetContentRegionAvailX();
+				float addManualWidth = Math.Max(420f, addAvail - 140f);
+				addManualWidth = Math.Min(addManualWidth, Math.Max(260f, addAvail - 80f));
+				float addManualHeight = Math.Max(140f, imgui_GetTextLineHeightWithSpacing() * 6f);
+				if (imgui_InputTextMultiline($"##add_new_manual", _cfgInlineEditBuffer ?? string.Empty, addManualWidth, addManualHeight))
+				{
+					_cfgInlineEditBuffer = imgui_InputText_Get($"##add_new_manual");
+				}
+
+				if (imgui_Button($"Add##add_manual"))
+				{
+					string newText = _cfgInlineEditBuffer ?? string.Empty;
+					if (!string.IsNullOrWhiteSpace(newText))
+					{
+						var pdAct = GetActiveCharacterIniData();
+						var selSec = pdAct.Sections.GetSectionData(_state.State_SelectedSection);
+						var key = selSec?.Keys.GetKeyData(_state.State_SelectedKey);
+						if (key != null)
+						{
+							var vals = GetValues(key);
+							vals.Add(newText.Trim());
+							WriteValues(key, vals);
+							_cfgPendingValueSelection = vals.Count - 1;
+						}
+					}
+					_cfgInlineEditIndex = -1;
+					_cfgInlineEditBuffer = string.Empty;
+				}
+				imgui_SameLine();
+
+				if (imgui_Button($"Cancel##cancel_manual"))
+				{
+					_cfgInlineEditIndex = -1;
+					_cfgInlineEditBuffer = string.Empty;
+				}
+			}
+			// Add new value button (only show when not editing)
+			else if (!listChanged && _cfgInlineEditIndex == -1)
+			{
+				imgui_Separator();
+				imgui_TextColored(0.8f, 0.9f, 0.95f, 1.0f, "Add New Values");
+
+				// Check if this is a Food or Drink key
+				bool isFoodOrDrink = _state.State_SelectedKey.Equals("Food", StringComparison.OrdinalIgnoreCase) || _state.State_SelectedKey.Equals("Drink", StringComparison.OrdinalIgnoreCase);
+
+				if (imgui_Button("Add Manual"))
+				{
+					_cfgInlineEditIndex = parts.Count;
+					_cfgInlineEditBuffer = string.Empty;
+				}
+				imgui_SameLine();
+
+				// For Food/Drink keys, show "Pick From Inventory" instead of "Add From Catalog"
+				if (isFoodOrDrink)
+				{
+					if (imgui_Button("Pick From Inventory"))
+					{
+						// Reset scan state so results don't carry over between Food/Drink
+						_cfgFoodDrinkKey = _state.State_SelectedKey; // "Food" or "Drink"
+						_cfgFoodDrinkStatus = string.Empty;
+						_cfgFoodDrinkCandidates.Clear();
+						_cfgFoodDrinkScanRequested = true; // auto-trigger scan for new kind
+						_cfgShowFoodDrinkModal = true;
+					}
+				}
+				else
+				{
+					if (imgui_Button("Add From Catalog"))
+					{
+						_cfgCatalogMode = CatalogMode.Standard;
+						_cfgShowAddModal = true;
+					}
+				}
+			}
 		}
 
 		// Helper method to render configuration tools panel
