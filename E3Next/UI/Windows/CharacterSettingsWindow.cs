@@ -1340,7 +1340,9 @@ namespace E3Core.UI.Windows
 
 				if (imgui_InputInt($"##edit_int_{_state.State_SelectedKey}", intValue,5,20))
 				{
+					//parts is a direct pointer to ValuesList from the IniData, so can update it directly. 
 					parts[0] = imgui_InputInt_Get($"##edit_int_{_state.State_SelectedKey}").ToString();
+					_state.State_ConfigIsDirty = true;
 				}
 				imgui_Separator();
 			}
@@ -1361,7 +1363,9 @@ namespace E3Core.UI.Windows
 				
 				if (imgui_InputText($"##edit_string_{_state.State_SelectedKey}", v))
 				{
+					//parts is a direct pointer to ValuesList from the IniData, so can update it directly. 
 					parts[0] = imgui_InputText_Get($"##edit_string_{_state.State_SelectedKey}");
+					_state.State_ConfigIsDirty = true;
 				}
 				imgui_Separator();
 			}
