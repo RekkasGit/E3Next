@@ -1325,18 +1325,8 @@ namespace E3Core.UI.Windows
 			{
 
 				// Edit mode with better styling
-		
-				float editAvail = imgui_GetContentRegionAvailX();
-				float editWidth = Math.Max(420f, editAvail - 140f);
-				editWidth = Math.Min(editWidth, Math.Max(260f, editAvail - 80f));
-				float editHeight = Math.Max(140f, imgui_GetTextLineHeightWithSpacing() * 6f);
-				string v = parts[0];
-				if(_cfgInlineEditBuffer==String.Empty)
-				{
-					_cfgInlineEditBuffer = v;
-				}
 				Int32 intValue= 0;
-				Int32.TryParse(v,out intValue);
+				Int32.TryParse(parts[0], out intValue);
 
 				if (imgui_InputInt($"##edit_int_{_state.State_SelectedKey}", intValue,5,20))
 				{
@@ -1348,20 +1338,8 @@ namespace E3Core.UI.Windows
 			}
 			else if (IsStringConfigKey(_state.State_SelectedKey))
 			{
-
-				// Edit mode with better styling
-
-				float editAvail = imgui_GetContentRegionAvailX();
-				float editWidth = Math.Max(420f, editAvail - 140f);
-				editWidth = Math.Min(editWidth, Math.Max(260f, editAvail - 80f));
-				float editHeight = Math.Max(140f, imgui_GetTextLineHeightWithSpacing() * 6f);
-				string v = parts[0];
-				if (_cfgInlineEditBuffer == String.Empty)
-				{
-					_cfgInlineEditBuffer = v;
-				}
 				
-				if (imgui_InputText($"##edit_string_{_state.State_SelectedKey}", v))
+				if (imgui_InputText($"##edit_string_{_state.State_SelectedKey}", parts[0]))
 				{
 					//parts is a direct pointer to ValuesList from the IniData, so can update it directly. 
 					parts[0] = imgui_InputText_Get($"##edit_string_{_state.State_SelectedKey}");
