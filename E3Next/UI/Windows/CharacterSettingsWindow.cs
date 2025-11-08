@@ -27,17 +27,7 @@ namespace E3Core.UI.Windows
 		{
 			public CharacterSettingsState() {
 				//set all initial windows to not show
-				Show_AddModal = false;
-				Show_Donate = false;
-				Show_BardMelodyHelper = false;
-				Show_BardSampleIfModal = false;
-				Show_FoodDrinkModal = false;
-				Show_IfAppendModal = false;
-				Show_IfSampleModal = false;
-				Show_SpellInfoModal = false;
-				Show_SpellModifier = false;
-				Show_ThemeSettings = false;
-				Show_ToonPickerModal = false;
+				ClearWindows();
 			}
 
 			//state
@@ -164,9 +154,17 @@ namespace E3Core.UI.Windows
 
 			public void ClearWindows()
 			{
+				Show_AddModal = false;
 				Show_Donate = false;
+				Show_BardMelodyHelper = false;
+				Show_BardSampleIfModal = false;
+				Show_FoodDrinkModal = false;
+				Show_IfAppendModal = false;
+				Show_IfSampleModal = false;
+				Show_SpellInfoModal = false;
+				Show_SpellModifier = false;
 				Show_ThemeSettings = false;
-				Show_AllPlayersView = false;
+				Show_ToonPickerModal = false;
 			}
 			public void ClearAddInLine()
 			{
