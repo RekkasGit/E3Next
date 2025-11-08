@@ -1344,6 +1344,27 @@ namespace E3Core.UI.Windows
 				}
 				imgui_Separator();
 			}
+			else if (IsStringConfigKey(_state.State_SelectedKey))
+			{
+
+				// Edit mode with better styling
+
+				float editAvail = imgui_GetContentRegionAvailX();
+				float editWidth = Math.Max(420f, editAvail - 140f);
+				editWidth = Math.Min(editWidth, Math.Max(260f, editAvail - 80f));
+				float editHeight = Math.Max(140f, imgui_GetTextLineHeightWithSpacing() * 6f);
+				string v = parts[0];
+				if (_cfgInlineEditBuffer == String.Empty)
+				{
+					_cfgInlineEditBuffer = v;
+				}
+				
+				if (imgui_InputText($"##edit_string_{_state.State_SelectedKey}", v))
+				{
+					parts[0] = imgui_InputText_Get($"##edit_string_{_state.State_SelectedKey}");
+				}
+				imgui_Separator();
+			}
 			else
 			{
 				// Values list with improved styling
@@ -3026,7 +3047,14 @@ namespace E3Core.UI.Windows
 
 		// Reads, updates, and writes a single INI value for a toon.
 
-
+		private static bool IsStringConfigKey(string key)
+		{
+			if (E3.CharacterSettings.SettingsReflectionStringTypes.Contains(key))
+			{
+				return true;
+			}
+			return false;
+		}
 
 		private static bool IsIntergerConfigKey(string key)
 		{
