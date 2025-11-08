@@ -1184,7 +1184,7 @@ namespace E3Core.Utility
 		public static Int32 GetXtargetMinAggro()
 		{
 			Int32 currentAggro = 0;
-			Int32 tempMinAggro = 0;
+			Int32 tempMinAggro = 101;
 
 			for (Int32 i = 1; i <= 13; i++)
 			{
@@ -1207,6 +1207,8 @@ namespace E3Core.Utility
 					}
 				}
 			}
+
+			if (tempMinAggro == 101) return 0;
 
 			return tempMinAggro;
 		}

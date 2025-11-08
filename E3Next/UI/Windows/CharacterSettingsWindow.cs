@@ -39,7 +39,8 @@ namespace E3Core.UI.Windows
 			public bool State_ShowOfflineCharacters = false;
 			public bool State_ConfigIsDirty = false;
 			public string State_LastIniPath = String.Empty;
-			
+			public int State_InLineEditIndex = -1;
+
 			//Note on Volatile variables... all this means is if its set on another thread, we will eventually get the update.
 			//its somewhat one way, us setting the variable on this side doesn't let the other thread see the update.
 			public volatile bool State_GemsAvailable = false; // Whether we have gem data
@@ -205,7 +206,6 @@ namespace E3Core.UI.Windows
 		private static Dictionary<string, string> _charIniEdits = new Dictionary<string, string>(StringComparer.OrdinalIgnoreCase);
 	
 		// Inline edit helpers
-		private static int _cfgInlineEditIndex = -1;
 		private static string _cfgInlineEditBuffer = string.Empty;
 		private static int _cfgPendingValueSelection = -1;
 		private static string _cfgSelectedClass = string.Empty;
@@ -916,7 +916,7 @@ namespace E3Core.UI.Windows
 								selectedSection.Keys.AddKey(newKey, string.Empty);
 								_state.State_SelectedKey = newKey;
 								_state.Buffer_NewKey = string.Empty;
-								_cfgInlineEditIndex = -1;
+								_state.State_InLineEditIndex = -1;
 								// On next frame the normal values editor will show for the new key
 							}
 						}
@@ -963,7 +963,7 @@ namespace E3Core.UI.Windows
 							{
 								_state.ClearAddInLine();
 								// Open blank value editor if value was empty
-								_cfgInlineEditIndex = 0;
+								_state.State_InLineEditIndex = 0;
 							}
 						}
 						imgui_SameLine();
@@ -1381,7 +1381,7 @@ namespace E3Core.UI.Windows
 			for (int i = 0; i < parts.Count; i++)
 			{
 				string v = parts[i];
-				bool editing = (_cfgInlineEditIndex == i);
+				bool editing = (_state.State_InLineEditIndex == i);
 				// Create a unique ID for this item that doesn't depend on its position in the list
 				string itemUid = $"{_state.State_SelectedSection}_{_state.State_SelectedKey}_{i}_{(v ?? string.Empty).GetHashCode()}";
 
@@ -1418,7 +1418,7 @@ namespace E3Core.UI.Windows
 
 					void StartInlineEdit(int index, string currentValue)
 					{
-						_cfgInlineEditIndex = index;
+						_state.State_InLineEditIndex = index;
 						_cfgInlineEditBuffer = currentValue ?? string.Empty;
 					}
 
@@ -1513,7 +1513,7 @@ namespace E3Core.UI.Windows
 								listChanged = true;
 							}
 						}
-						_cfgInlineEditIndex = -1;
+						_state.State_InLineEditIndex = -1;
 						_cfgInlineEditBuffer = string.Empty;
 						// continue to render items; parts refresh handled below
 					}
@@ -1521,7 +1521,7 @@ namespace E3Core.UI.Windows
 
 					if (imgui_Button($"Cancel##cancel_{itemUid}"))
 					{
-						_cfgInlineEditIndex = -1;
+						_state.State_InLineEditIndex = -1;
 						_cfgInlineEditBuffer = string.Empty;
 					}
 				}
@@ -1548,7 +1548,7 @@ namespace E3Core.UI.Windows
 			}
 
 			// Handle adding a new manual entry (if we're in add mode)
-			if (_cfgInlineEditIndex >= parts.Count)
+			if (_state.State_InLineEditIndex >= parts.Count)
 			{
 				imgui_Separator();
 				imgui_TextColored(0.8f, 0.9f, 0.95f, 1.0f, "Add New Value");
@@ -1581,19 +1581,19 @@ namespace E3Core.UI.Windows
 							_cfgPendingValueSelection = vals.Count - 1;
 						}
 					}
-					_cfgInlineEditIndex = -1;
+					_state.State_InLineEditIndex = -1;
 					_cfgInlineEditBuffer = string.Empty;
 				}
 				imgui_SameLine();
 
 				if (imgui_Button($"Cancel##cancel_manual"))
 				{
-					_cfgInlineEditIndex = -1;
+					_state.State_InLineEditIndex = -1;
 					_cfgInlineEditBuffer = string.Empty;
 				}
 			}
 			// Add new value button (only show when not editing)
-			else if (!listChanged && _cfgInlineEditIndex == -1)
+			else if (!listChanged && _state.State_InLineEditIndex == -1)
 			{
 				imgui_Separator();
 				imgui_TextColored(0.8f, 0.9f, 0.95f, 1.0f, "Add New Values");
@@ -1603,7 +1603,7 @@ namespace E3Core.UI.Windows
 
 				if (imgui_Button("Add Manual"))
 				{
-					_cfgInlineEditIndex = parts.Count;
+					_state.State_InLineEditIndex = parts.Count;
 					_cfgInlineEditBuffer = string.Empty;
 				}
 				imgui_SameLine();
