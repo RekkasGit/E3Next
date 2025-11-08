@@ -203,7 +203,6 @@ namespace E3Core.UI.Windows
 		private static string _activeSettingsFilePath = string.Empty;
 		private static string[] _activeSettingsFileLines = Array.Empty<string>();
 		private static string _selectedCharacterSection = string.Empty;
-		private static Dictionary<string, string> _charIniEdits = new Dictionary<string, string>(StringComparer.OrdinalIgnoreCase);
 	
 		// Inline edit helpers
 		private static string _cfgInlineEditBuffer = string.Empty;
@@ -296,7 +295,7 @@ namespace E3Core.UI.Windows
 		[SubSystemInit]
 		public static void CharacterSettingsWindow_Init()
 		{
-			_versionInfo = $"nE³xt v{Setup.E3Version} | Build {Setup.BuildDate}";
+			_versionInfo = $"nE³xt v{Setup.E3Version} by Rekka | Build {Setup.BuildDate}. Editor by Linamas/Rekka";
 
 			// Load UI theme settings from character INI
 			try
@@ -526,6 +525,18 @@ namespace E3Core.UI.Windows
 			_state.State_CatalogLoadRequested = true;
 			_state.Status_CatalogRequest = "Queued catalog load...";
 		}
+		private static void ChangeSelectedCharacter(string filename)
+		{
+			_log.Write($"Selecting other:{filename}", Logging.LogLevels.Debug);
+			var parser = e3util.CreateIniParser();
+			var pd = parser.ReadFile(filename);
+			_state.State_CurrentINIFileNameFull = filename;
+			_state.State_CurrentINIData = pd;
+			_selectedCharacterSection = string.Empty;
+			_state.ClearState();
+			// Trigger catalog reload for the selected peer
+			RequestCatalogUpdate();
+		}
 		public static void RenderCharacterIniSelector()
 		{
 			ScanCharIniFilesIfNeeded();
@@ -549,19 +560,11 @@ namespace E3Core.UI.Windows
 						bool isloggedInCharacterSelected = string.Equals(_state.State_CurrentINIFileNameFull, loggedInCharIniFile, StringComparison.OrdinalIgnoreCase);
 						if (imgui_Selectable($"Current: {currentINIFileName}", isloggedInCharacterSelected))
 						{
-							_log.Write($"Selecting local:{loggedInCharIniFile}", Logging.LogLevels.Debug);
-							_state.State_CurrentINIFileNameFull = loggedInCharIniFile;
-							var parser = e3util.CreateIniParser();
-							var pd = parser.ReadFile(_state.State_CurrentINIFileNameFull);
-							_state.State_CurrentINIData = pd;// use live current
-							// Trigger catalog reload for the selected peer
-							RequestCatalogUpdate();
+							ChangeSelectedCharacter(loggedInCharIniFile);
 						}
 					}
-
 					imgui_Text("Other Characters:");
 					imgui_Separator();
-
 					foreach (var f in _state.Data_IniFilesFromDisk)
 					{
 						if (string.Equals(f, loggedInCharIniFile, StringComparison.OrdinalIgnoreCase)) continue;
@@ -570,16 +573,7 @@ namespace E3Core.UI.Windows
 						bool sel = string.Equals(_state.State_CurrentINIFileNameFull, f, StringComparison.OrdinalIgnoreCase);
 						if (imgui_Selectable($"{name}", sel))
 						{
-							_log.Write($"Selecting other:{f}", Logging.LogLevels.Debug);
-							var parser = e3util.CreateIniParser();
-							var pd = parser.ReadFile(f);
-							_state.State_CurrentINIFileNameFull = f;
-							_state.State_CurrentINIData = pd;
-							_selectedCharacterSection = string.Empty;
-							_charIniEdits.Clear();
-							_state.ClearState();
-							// Trigger catalog reload for the selected peer
-							RequestCatalogUpdate();
+							ChangeSelectedCharacter(f);
 						}
 					}
 				}
