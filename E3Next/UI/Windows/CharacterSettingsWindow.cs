@@ -115,6 +115,21 @@ namespace E3Core.UI.Windows
 		//used when trying to get a pointer to the _cfg objects.
 		private static object _dataLock = new object();
 
+		private static readonly Dictionary<string, (float r, float g, float b, float a)> _inlineDescriptionColorMap = new Dictionary<string, (float, float, float, float)>(StringComparer.OrdinalIgnoreCase)
+		{
+			["gold"] = (0.95f, 0.85f, 0.35f, 1.0f),
+			["yellow"] = (1.0f, 0.92f, 0.23f, 1.0f),
+			["orange"] = (1.0f, 0.6f, 0.2f, 1.0f),
+			["red"] = (0.9f, 0.3f, 0.3f, 1.0f),
+			["green"] = (0.3f, 0.9f, 0.5f, 1.0f),
+			["blue"] = (0.35f, 0.6f, 0.95f, 1.0f),
+			["teal"] = (0.3f, 0.85f, 0.85f, 1.0f),
+			["purple"] = (0.75f, 0.55f, 0.95f, 1.0f),
+			["white"] = (0.95f, 0.95f, 0.95f, 1.0f),
+			["gray"] = (0.6f, 0.6f, 0.6f, 1.0f),
+			["silver"] = (0.8f, 0.8f, 0.85f, 1.0f)
+		};
+
 		#region Variables
 		// Catalogs and Add modal state
 
@@ -1260,7 +1275,7 @@ namespace E3Core.UI.Windows
 				using(var p = PushStyle.Aquire())
 				{
 					p.PushStyleColor((int)E3ImGUI.ImGuiCol.Text, 0.95f, 0.85f, 0.35f, 1.0f);
-					imgui_TextWrapped(description); 
+					RenderDescriptionRichText(description);
 					imgui_Separator();
 				}
 				//vs
@@ -4572,6 +4587,258 @@ namespace E3Core.UI.Windows
 			}
 
 			return string.Empty;
+		}
+
+		private static void RenderDescriptionRichText(string text)
+		{
+			if (string.IsNullOrWhiteSpace(text))
+			{
+				return;
+			}
+
+			imgui_PushTextWrapPos(0f);
+			try
+			{
+				RenderInlineRichText(text);
+			}
+			finally
+			{
+				imgui_PopTextWrapPos();
+			}
+		}
+
+		private static void RenderInlineRichText(string rawText)
+		{
+			if (string.IsNullOrEmpty(rawText))
+			{
+				return;
+			}
+
+			string normalized = rawText.Replace("\r\n", "\n").Replace('\r', '\n');
+			bool lineStart = true;
+			int pendingBlankLines = 0;
+
+			foreach (var run in ParseInlineColorMarkup(normalized))
+			{
+				string content = run.Text ?? string.Empty;
+				if (content.Length == 0)
+				{
+					continue;
+				}
+
+				var lines = content.Split('\n');
+				for (int i = 0; i < lines.Length; i++)
+				{
+					string line = lines[i];
+					bool isLast = i == lines.Length - 1;
+
+					if (line.Length == 0)
+					{
+						if (!isLast)
+						{
+							pendingBlankLines++;
+						}
+						lineStart = true;
+						continue;
+					}
+
+					EmitLine(line, run.Color);
+
+					if (!isLast)
+					{
+						lineStart = true;
+					}
+				}
+			}
+
+			void EmitLine(string text, (float r, float g, float b, float a)? color)
+			{
+				if (lineStart)
+				{
+					EmitPendingBlankLines();
+				}
+				else
+				{
+					imgui_SameLine(0f, 0f);
+				}
+
+				if (color.HasValue)
+				{
+					imgui_TextColored(color.Value.r, color.Value.g, color.Value.b, color.Value.a, text);
+				}
+				else
+				{
+					imgui_Text(text);
+				}
+
+				lineStart = false;
+			}
+
+			void EmitPendingBlankLines()
+			{
+				while (pendingBlankLines > 0)
+				{
+					imgui_Text(" ");
+					pendingBlankLines--;
+				}
+			}
+		}
+
+		private static IEnumerable<InlineRichTextRun> ParseInlineColorMarkup(string text)
+		{
+			if (string.IsNullOrEmpty(text))
+			{
+				yield break;
+			}
+
+			var buffer = new StringBuilder();
+			var colorStack = new Stack<(float r, float g, float b, float a)>();
+			(float r, float g, float b, float a)? activeColor = null;
+
+			for (int i = 0; i < text.Length;)
+			{
+				if (text[i] == '[')
+				{
+					int closing = text.IndexOf(']', i + 1);
+					if (closing > i)
+					{
+						string tag = text.Substring(i + 1, closing - i - 1);
+						if (tag.StartsWith("color=", StringComparison.OrdinalIgnoreCase))
+						{
+							if (buffer.Length > 0)
+							{
+								yield return new InlineRichTextRun(buffer.ToString(), activeColor);
+								buffer.Clear();
+							}
+
+							string spec = tag.Substring(6).Trim();
+							if (TryParseInlineColor(spec, out var parsed))
+							{
+								colorStack.Push(parsed);
+								activeColor = parsed;
+							}
+							else
+							{
+								activeColor = colorStack.Count > 0 ? colorStack.Peek() : ((float, float, float, float)?)null;
+							}
+
+							i = closing + 1;
+							continue;
+						}
+
+						if (tag.Equals("/color", StringComparison.OrdinalIgnoreCase))
+						{
+							if (buffer.Length > 0)
+							{
+								yield return new InlineRichTextRun(buffer.ToString(), activeColor);
+								buffer.Clear();
+							}
+
+							if (colorStack.Count > 0)
+							{
+								colorStack.Pop();
+								activeColor = colorStack.Count > 0 ? colorStack.Peek() : ((float, float, float, float)?)null;
+							}
+							else
+							{
+								activeColor = null;
+							}
+
+							i = closing + 1;
+							continue;
+						}
+					}
+				}
+
+				buffer.Append(text[i]);
+				i++;
+			}
+
+			if (buffer.Length > 0)
+			{
+				yield return new InlineRichTextRun(buffer.ToString(), activeColor);
+			}
+		}
+
+		private static bool TryParseInlineColor(string spec, out (float r, float g, float b, float a) parsed)
+		{
+			parsed = default;
+			if (string.IsNullOrWhiteSpace(spec))
+			{
+				return false;
+			}
+
+			spec = spec.Trim();
+			if (_inlineDescriptionColorMap.TryGetValue(spec, out parsed))
+			{
+				return true;
+			}
+
+			if (spec.StartsWith("#", StringComparison.Ordinal))
+			{
+				string hex = spec.Substring(1);
+				if (hex.Length == 6 || hex.Length == 8)
+				{
+					if (int.TryParse(hex.Substring(0, 2), NumberStyles.HexNumber, CultureInfo.InvariantCulture, out var r) &&
+						int.TryParse(hex.Substring(2, 2), NumberStyles.HexNumber, CultureInfo.InvariantCulture, out var g) &&
+						int.TryParse(hex.Substring(4, 2), NumberStyles.HexNumber, CultureInfo.InvariantCulture, out var b))
+					{
+						int a = 255;
+						if (hex.Length == 8 && int.TryParse(hex.Substring(6, 2), NumberStyles.HexNumber, CultureInfo.InvariantCulture, out var parsedA))
+						{
+							a = parsedA;
+						}
+
+						parsed = (r / 255f, g / 255f, b / 255f, a / 255f);
+						return true;
+					}
+				}
+			}
+
+			var parts = spec.Split(',');
+			if (parts.Length == 3 || parts.Length == 4)
+			{
+				var values = new float[4];
+				for (int i = 0; i < parts.Length; i++)
+				{
+					if (!float.TryParse(parts[i].Trim(), NumberStyles.Float, CultureInfo.InvariantCulture, out var component))
+					{
+						return false;
+					}
+
+					if (component > 1f)
+					{
+						component /= 255f;
+					}
+
+					values[i] = Clamp01(component);
+				}
+
+				values[3] = parts.Length == 4 ? values[3] : 1f;
+				parsed = (values[0], values[1], values[2], values[3]);
+				return true;
+			}
+
+			return false;
+		}
+
+		private static float Clamp01(float value)
+		{
+			if (value < 0f) return 0f;
+			if (value > 1f) return 1f;
+			return value;
+		}
+
+		private readonly struct InlineRichTextRun
+		{
+			public InlineRichTextRun(string text, (float r, float g, float b, float a)? color)
+			{
+				Text = text;
+				Color = color;
+			}
+
+			public string Text { get; }
+			public (float r, float g, float b, float a)? Color { get; }
 		}
 
 		private static void InvalidateSpellEditState()

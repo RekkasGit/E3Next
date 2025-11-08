@@ -1806,39 +1806,74 @@ namespace E3Core.Settings
 		public static readonly Dictionary<string, string> ConfigKeyDescriptionsBySection = new Dictionary<string, string>(StringComparer.OrdinalIgnoreCase)
 		{
 			{"Misc::Autofood", "Turns on eating the food and drink defined below"},
-			{"Misc::Food", "Define what you would like to eat and drink. This can be used to keep stat food from getting consumed. Food=Misty Thicket Picnic Drink=Fuzzlecutter Formula 5000 Note: Multiple Food and Drink can be defined"},
-			{"Misc::Drink", "Define what you would like to eat and drink. This can be used to keep stat food from getting consumed. Food=Misty Thicket Picnic Drink=Fuzzlecutter Formula 5000 Note: Multiple Food and Drink can be defined"},
-			{"Misc::End MedBreak in Combat(On/Off)", "When enabled you will cancel medding to assist in combat even if you are not at defined mana percentage."},
-			{"Misc::AutoMedBreak (On/Off)", "Will sit and med when below the defind Mana percentage in your general_settings.ini"},
-			{"Misc::Auto-Loot (On/Off)", "When enabled your character will autoloot once combat is over. Looting in combact can be enabled in general_settings.ini"},
-			{"Misc::Anchor (Char to Anchor to)", "When one of your characters is defined, it will stick to that character. They will go out fight and loot(if on) and then return to the define anchored character."},
-			{"Misc::Remove Torpor After Combat", "if you would like Torpor automatically removed once combat is over."},
-			{"Misc::Auto-Forage (On/Off)", "When enabled you will start foraging. You can leverage [Cursor Delete] section in this Ini to manage the junk loot"},
-			{"Misc::Dismount On Interrupt (On/Off)", "If you are on a mount and your priority requires you to inturrupt a spell for a higher priority spell(ex: Nuking -> Heal)."},
-			{"Misc::Delay in MS After CastWindow Drops For Spell Completion", "Will interject a delay before casting or moving again after you are done casting. Sometimes lag can create an issue where you/bot see itself as done casting and then moves and then your spell gets canceled. This creates milliseconds of day to make sure cast finished."},
-			{"Misc::If FD stay down (true/false)", "If you are Feign Death and an assist command is giving it will stand you up."},
-			{"Misc::Debuffs/Dots are visible", "Set to On if you have the Leadership AA that allows you to see your DoTs and Debuffs on the target's buff window. When set to Off, E3 will internally track timers to determine when to recast DoTs and Debuffs since they won't be visible."},
-			{"Assist Settings::Assist Type (Melee/AutoAttack/Ranged/AutoFire/Off)", "Defines how your character will behave in combat. Melee - Will melee, stick, and use all configuration. AutoAttack - Will melee and use configuration without automated movement/stick. Ranged - Will ranged attack, stick, and use configuration. AutoFire - Will ranged attack and use configuration without automated movement/stick. Off - Will use no movement, stick, or facing and just use configuration."},
-			{"Assist Settings::SmartTaunt(On/Off)", "Automatically try and taunt off non-tank PCs to maintain aggro control."},
-			{"Assist Settings::Melee Stick Point", "The position you want you character stand during combat. behind - Will stay behind the target and readjust position behindonce - Will move behind target and not readjust unless a new assist command is giving. Front - Will place you in front of mob facing it. Normally used by tanks. Pin - Will put on you on the side of the of target. Not in front and not behind. !front Will place you anywhere that isn't the front of the mob."},
+			{"Misc::Food", "Define what you would like to eat and drink. This can be used to keep stat food from getting consumed. \n     Misty Thicket Picnic \n     Fuzzlecutter Formula 5000 \nNote: Multiple Food and Drink can be defined"},
+			{"Misc::Drink", "Define what you would like to eat and drink. This can be used to keep stat drink from getting consumed. \n     Misty Thicket Picnic \n     Fuzzlecutter Formula 5000 \nNote: Multiple Food and Drink can be defined"},
+			{"Misc::End MedBreak in Combat(On/Off)", "When enabled, you will cancel medding to assist in combat even if you are not at defined mana percentage."},
+			{"Misc::AutoMedBreak (On/Off)", "Will sit and med when below the defined Mana percentage in your general_settings.ini"},
+			{"Misc::Auto-Loot (On/Off)", "When enabled your character will use E3's autoloot once combat is over. In-Combat Looting can be enabled in general_settings.ini"},
+			{"Misc::Anchor (Char to Anchor to)", "When a character is defined, this toon will stick to that character. They will go out and fight, loot (if enabled) and then return to the defined anchored character."},
+			{"Misc::Remove Torpor After Combat", "Enable if you would like Torpor automatically removed once combat is over."},
+			{"Misc::Auto-Forage (On/Off)", "When enabled you will start foraging. You can leverage [Cursor Delete] section in this Ini to manage the junk loot."},
+			{"Misc::Dismount On Interrupt (On/Off)", "If you are on a mount and your priority requires you to inturrupt a spell for a higher priority spell (ex: Nuking -> Heal)."},
+			{"Misc::Delay in MS After CastWindow Drops For Spell Completion", "Will delay the defined MS before beginning a new action. Useful when server lag creates an issue where you're finished castingt but the server hasn't caught up."},
+			{"Misc::If FD stay down (true/false)", "When enabled, if you are Feigned when an /assist command is issued, E3 will stand you up."},
+			{"Misc::Debuffs/Dots are visible", "If you have Leadership AA 'Inspect Buffs', set this to On. If not, E3 will internally track timers to determine when to recast DoTs and Debuffs."},
+            {"Assist Settings::Assist Type (Melee/Ranged/Off)",
+                "Defines how your character will behave in combat.\n\n"
+                + "     [color=teal]Melee[/color] - Engages in melee combat, uses /stick, and follows all configured abilities.\n"
+                + "     [color=teal]AutoAttack[/color] - Melees and uses configured abilities without automated movement or /stick.\n"
+                + "     [color=teal]Ranged[/color] - Uses ranged attacks, /stick, and full configuration logic.\n"
+                + "     [color=teal]AutoFire[/color] - Uses ranged attacks and configuration without automated movement or /stick.\n"
+                + "     [color=teal]Off[/color] - Disables all movement, facing, and /stick; only uses configuration-based abilities."
+            },
+            {"Assist Settings::SmartTaunt(On/Off)", "Automatically try and taunt off non-tank PCs to maintain aggro control."},
+			{"Assist Settings::Melee Stick Point", "The position you want your character to stand during combat.\n\n"
+				+ "     [color=teal]behind[/color] - Stay behind the target and constantly readjust to keep position.\n"
+				+ "     [color=teal]behindonce[/color] - Move behind the target once and only readjust when /assist is issued again.\n"
+				+ "     [color=teal]front[/color] - Plant yourself in front of the mob facing it. Ideal for tanks.\n"
+				+ "     [color=teal]pin[/color] - Stick to the side of the target, not quite front or rear.\n"
+				+ "     [color=teal]!front[/color] - Stand anywhere that is not the target's front arc."},
 			{"Assist Settings::Delayed Strafe Enabled (On/Off)", "The amount of time your character will wait before readjusting to a moved target."},
-			{"Assist Settings::CommandOnAssist", "E3 will execute these values as a command each time an assist is called. Useful for triggering custom actions or macros when engaging targets."},
+			{"Assist Settings::CommandOnAssist", "E3 will execute these values as a command each time an assist is called. Useful for triggering custom actions or macros when engaging targets.  Examples: \n\n   /stick 15 moveback  \n\n   /g Engaging %T"},
 			{"Assist Settings::Melee Distance", "The distance you wish to stand from the target when melee'ing. MaxMelee - Will calculate based off the target the furthest point to melee, between 25 - 33."},
 			{"Assist Settings::Ranged Distance", "When Ranged is specified as Assist Type will keep you the defined distance away from target. Clamped - Doesn't care about a defined distance as long as you are between 30 and 200."},
 			{"Assist Settings::Auto-Assist Engage Percent", "Note: This is dependent on you enabling in you general_settings.ini(Off by default) What this setting is stating that when the character of this configed Ini's target hits the specfied percentage it will automatically tell all other bots to assist. It is NOT stating that this character starts assisting at defined percentage. My personal(Metaljacx) recommendation for those new; not to use autoassist. Leverage /assistme /cleartargets"},
 			{"Assist Settings::Pet back off on Enrage (On/Off)", "When Enrage is detected, E3 will stop attacks."},
-			{"Assist Settings::Back off on Enrage (On/Off)", "When Enrage is detected, E3 will stop attacks."},
-			{"Melee Abilities::Ability", "The name of a melee ability, skill, or discipline"},
-			{"Buffs::Instant Buff", "Any buff that is self targetable that has a cast time less then .1 second. This will make sure the buff stays up inside and outside of combat. Great for fights where buffs get dispell to keep cheap buffs in first few slots."},
-			{"Buffs::Self Buff", "For any spell where you can target yourself and has a castime greater then Instant Buff allows. Will only cast outside of combat"},
-			{"Buffs::Bot Buff", "This is for targeting your other characters for buffs. Will only cast outside of combat. Example: bot buff=buffname/target Bot Buff=Spirit of Might/Metaljacx Bot Buff=Spirit of Might/Silverjacx"},
-			{"Buffs::Combat Buff", "If you just want the buff during combat Example: Combat Buff=Artifact of the Leopard - If casting self Combat Buff=Artifact of the Leopard/Metaljacx - If casting on another character."},
+			{"Assist Settings::Back off on Enrage (On/Off)", "If enabled, E3 will stop melee when NPC Enrage is detected."},
+            {"Melee Abilities::Ability",
+                "Defines which [color=teal]Ability[/color] you want to utilize.\n"
+                + "These are executed from top to bottom, using each ability as soon as it becomes available.\n\n"
+                + "     [color=teal]Kick[/color]\n"
+                + "     [color=teal]Bash[/color]\n"
+                + "     [color=teal]Backstab[/color]"},
+            {"Buffs::Instant Buff",
+                "Any buff that is self-targetable and has a cast time less than 0.1 seconds.\n"
+                + "This ensures the buff stays active both inside and outside of combat.\n\n"
+                + "Great for fights where buffs get dispelled — keeps cheap filler buffs in your first few slots."},
+            {"Buffs::Self Buff",
+                "Covers any buff where you can target yourself and the cast time is greater than that of an Instant Buff.\n\n"
+                + "Will only cast [color=teal]outside of combat[/color]."},
+            {"Buffs::Bot Buff",
+                "Used for targeting your other characters for buffs.\n"
+                + "Will only cast [color=teal]outside of combat[/color].\n\n"
+                + "Example:\n"
+                + "     buffname/gem/target\n\n"
+                + "     Spirit of Wolf/gem|3/MyTank\n"
+                + "     Spirit of Wolf/gem|3/MyHealer"},
+            {"Buffs::Combat Buff", "If you just want the buff during combat Example: Combat Buff=Artifact of the Leopard - If casting self Combat Buff=Artifact of the Leopard/Metaljacx - If casting on another character."},
 			{"Buffs::Group Buff", "Despite it's name this has nothing to do with automating buffs for your 6 Man Group What this key value actually does it buff anyone who asks you for buffs with the pharse \"Buff Me\" or \"Buff my Pet\". This is a triggered non-automated event. Who can ask for buff an be more defined in you general_settings.ini Example: Group Buff=Blessing of Aegolism Note: You may need to do /tgb on for group buffs to apply to people outside your group"},
 			{"Buffs::Pet Buff", "This is for other characters on your bot network pets.Must be a part of your bot network. If your class has a pet that will be defined in the [pet section]. Example: Pet Buff=buffname/PetownerName Pet Buff=Artifact of the Leopard/Copperjacx"},
 			{"Buffs::Group Buff Request", "This is to request a buff from someone else who is running E3 and not part of bot network. Example: Group Buff Request=buffname/target Group Buff Request=Torpor Rk. V/Tophet/Ifs|TorporIf Tip: In order to not not spam and annoy your friends. Try using an If Statement. TorporIf=!${Bool[${Me.Song[Torpor Rk. V].ID}]} || ${Me.Song[Torpor Rk. V].Duration} <=9000"},
 			{"Buffs::Raid Buff Request", "This is to request a buff from someone else who is running E3 and not part of bot network. Example: Group Buff Request=buffname/target Group Buff Request=Torpor Rk. V/Tophet/Ifs|TorporIf Tip: In order to not not spam and annoy your friends. Try using an If Statement. TorporIf=!${Bool[${Me.Song[Torpor Rk. V].ID}]} || ${Me.Song[Torpor Rk. V].Duration} <=9000"},
-			{"Buffs::Stack Buff Request", "This is where you can request the same buff from multiple characters who can provide the same buff. This is request, First IN First Out(FIFO). Switches /StackRequetTargets| - All the characters who can cast buff. /StackRecastDelay| - How long to wait before asking for buff again. /StackCheckInterval| - How often to check if you still have buff /StackRequestItem| - If the buff requires an Item to be clicked"},
-			{"Buffs::Cast Aura(On/Off)", "This will automatically cast your class's highest level aura if your class has one"},
+            {"Buffs::Stack Buff Request",
+                "Allows you to request the same buff from multiple characters who can provide it.\n\n"
+                + "This system processes requests in [color=teal]First In, First Out (FIFO)[/color] order.\n\n"
+                + "Parameters:\n"
+                + "     [color=teal]/StackRequestTargets[/color] - A list of all characters capable of casting the buff.\n"
+                + "     [color=teal]/StackRecastDelay[/color] - How long to wait before asking for the buff again.\n"
+                + "     [color=teal]/StackCheckInterval[/color] - How often to check whether you still have the buff.\n"
+                + "     [color=teal]/StackRequestItem[/color] - The item to click if the buff requires an item-based cast."},
+            {"Buffs::Cast Aura(On/Off)", "This will automatically cast your class's highest level aura if your class has one"},
 			{"Nukes::Main", "Add the spells or items you'd like to use for your nukes here. E3 will cast them in order from top down."},
 			{"Nukes/Stuns/PBAE::Main", "Name of the spell you wish to cast. Example: main=Spear of Ro"},
 			{"Nukes/Stuns/PBAE::PBAE", "Point Blank Area of Effect(PBAE) is turned off by default to turn on or off use /pbaeon and /pbaeoff. Otherwise it is the same as Nuke just input your poe spell Example: PBAE=Spear of Ro Reminder: Priority matters(FIFO) for Advanced Settings AE Order and what a spell CD is."},
