@@ -58,6 +58,16 @@ namespace E3Core.UI.Windows
 			public bool Show_AllPlayersView = false;
 			public bool Show_ShowIntegratedEditor = false;
 			public bool Show_AddInLine = false;
+			public bool Show_AddModal = false;
+			public bool Show_FoodDrinkModal = false;
+			public bool Show_BardMelodyHelper = false;
+			public bool Show_BardSampleIfModal = false;
+			public bool Show_ToonPickerModal = false;
+			public bool Show_SpellInfoModal = false;
+			public bool Show_IfAppendModal = false;
+			public bool Show_IfSampleModal = false;
+
+
 
 			//buffers
 			public string Buffer_KeySearch = String.Empty;
@@ -134,12 +144,11 @@ namespace E3Core.UI.Windows
 
 
 		private static E3Spell _cfgCatalogInfoSpell = null;
-		private static bool _cfgShowSpellInfoModal = false;
 		private static E3Spell _cfgSpellInfoSpell = null;
 
 		private enum AddType { Spells, AAs, Discs, Skills, Items }
 		private enum CatalogMode { Standard, BardSong }
-		private static bool _cfgShowAddModal = false;
+		
 		private static CatalogMode _cfgCatalogMode = CatalogMode.Standard;
 		private static AddType _cfgAddType = AddType.Spells;
 		private static string _cfgAddCategory = string.Empty;
@@ -148,26 +157,21 @@ namespace E3Core.UI.Windows
 		private static E3Spell _cfgSelectedCatalogEntry = null; // Selected entry for info display
 
 		// Food/Drink picker state
-		private static bool _cfgShowFoodDrinkModal = false;
 		private static string _cfgFoodDrinkKey = string.Empty; // "Food" or "Drink"
 		private static string _cfgFoodDrinkStatus = string.Empty;
 		private static List<string> _cfgFoodDrinkCandidates = new List<string>();
 		private static bool _cfgFoodDrinkScanRequested = false;
 		// Toon picker (Heals: Tank / Important Bot)
-		private static bool _cfgShowToonPickerModal = false;
 		private static string _cfgToonPickerStatus = string.Empty;
 		private static List<string> _cfgToonCandidates = new List<string>();
 		// Append If modal state
-		private static bool _cfgShowIfAppendModal = false;
 		private static int _cfgIfAppendRow = -1;
 		private static List<string> _cfgIfAppendCandidates = new List<string>();
 		private static string _cfgIfAppendStatus = string.Empty;
 		// Ifs import (sample) modal state
-		private static bool _cfgShowIfSampleModal = false;
 		private static List<System.Collections.Generic.KeyValuePair<string, string>> _cfgIfSampleLines = new List<System.Collections.Generic.KeyValuePair<string, string>>();
 		private static string _cfgIfSampleStatus = string.Empty;
 		// Ifs: add-new helper input buffers
-		private static bool _cfgShowBardMelodyHelper = false;
 		private static string _cfgBardMelodyName = string.Empty;
 		private static List<string> _cfgBardMelodySongs = new List<string>();
 		private static Dictionary<int, string> _cfgBardMelodyBuffers = new Dictionary<int, string>();
@@ -181,7 +185,6 @@ namespace E3Core.UI.Windows
 		private static int _cfgBardSongInputVersion = 0;
 		private static int _cfgBardConditionInputVersion = 0;
 		private static int _cfgSectionSearchVersion = 0;
-		private static bool _cfgShowBardSampleIfModal = false;
 		private static string _cfgBardSampleIfStatus = string.Empty;
 		private static string _cfgBardSampleIfFilter = string.Empty;
 		private static List<KeyValuePair<string, string>> _cfgBardSampleIfLines = new List<KeyValuePair<string, string>>();
@@ -632,14 +635,8 @@ namespace E3Core.UI.Windows
 				RequestCatalogUpdate();
 			}
 		}
-
-		private static void RenderConfigEditor()
+		private static void RenderConfigEditor_CatalogStatus()
 		{
-			EnsureConfigEditorInit();
-			var pd = GetActiveCharacterIniData();
-			
-			if (pd == null || pd.Sections == null){	imgui_TextColored(1.0f, 0.8f, 0.8f, 1.0f, "No character INI loaded.");return;}
-
 			// Catalog status / loader with better styling
 			if (!_state.State_CatalogReady)
 			{
@@ -656,20 +653,34 @@ namespace E3Core.UI.Windows
 					if (imgui_Button("Load Catalogs"))
 					{
 						_state.State_CatalogLoadRequested = true;
-						_state.Status_CatalogRequest= "Queued catalog load...";
+						_state.Status_CatalogRequest = "Queued catalog load...";
 					}
 				}
 				imgui_Separator();
 			}
+		}
+		private static SectionData GetCurrentSectionData()
+		{
+			if (_state.State_CurrentINIData != null)
+			{
+				var data = _state.State_CurrentINIData;
+				var sec = data.Sections.GetSectionData(_state.State_SelectedSection);
+				return sec;
+			}
+			return null;
+		}
 
+		private static void RenderConfigEditor()
+		{
+			EnsureConfigEditorInit();
+			var pd = GetActiveCharacterIniData();
+			if (pd == null || pd.Sections == null){	imgui_TextColored(1.0f, 0.8f, 0.8f, 1.0f, "No character INI loaded.");return;}
+
+			RenderConfigEditor_CatalogStatus();
 			RebuildSectionsOrderIfNeeded();
-
 			// Use ImGui Table for responsive 3-column layout
 			float availY = imgui_GetContentRegionAvailY();
-
-			SectionData activeSection = null;
-
-			// Reserve space for spell gems display at bottom (header + separator + gem row with 40px icons + padding)
+				// Reserve space for spell gems display at bottom (header + separator + gem row with 40px icons + padding)
 			float reservedBottomSpace = _state.State_GemsAvailable ? 100f : 10f;
 			// Reserve additional space for integrated editor panel if open
 			if (_state.Show_ShowIntegratedEditor && _state.State_SelectedValueIndex >= 0)
@@ -677,7 +688,6 @@ namespace E3Core.UI.Windows
 				reservedBottomSpace += 350f; // Space for integrated editor tabs and controls
 			}
 			float tableHeight = Math.Max(200f, availY - reservedBottomSpace);
-
 			Int32 flags = (int)(ImGuiTableFlags.ImGuiTableFlags_Borders | ImGuiTableFlags.ImGuiTableFlags_Resizable | ImGuiTableFlags.ImGuiTableFlags_ScrollY | ImGuiTableFlags.ImGuiTableFlags_SizingStretchProp | ImGuiTableFlags.ImGuiTableFlags_NoPadInnerX | ImGuiTableFlags.ImGuiTableFlags_NoPadOuterX);
 
 			if (imgui_BeginTable("E3ConfigEditorTable", 3, flags, 0, tableHeight))
@@ -689,26 +699,11 @@ namespace E3Core.UI.Windows
 					imgui_TableSetupColumn("Values", (int)ImGuiTableColumnFlags.ImGuiTableColumnFlags_WidthStretch, 0.35f);
 					imgui_TableSetupColumn("Tools & Info", (int)ImGuiTableColumnFlags.ImGuiTableColumnFlags_WidthStretch, 0.30f);
 					imgui_TableHeadersRow();
-
 					imgui_TableNextRow();
-
 					// Column 1: Sections and Keys (with TreeNodes)
-					if (imgui_TableNextColumn())
-					{
-						RenderConfigEditor_SelectionTree(pd);
-					}
-
-					// Column 2: Values
-					if (imgui_TableNextColumn())
-					{
-						RenderConfigEditor_Values(pd);
-
-					}
-					// Column 3: Tools and Info
-					if (imgui_TableNextColumn())
-					{
-						RenderConfigEditor_Tools(pd);
-					}
+					if (imgui_TableNextColumn()) { RenderConfigEditor_SelectionTree(pd);}
+					if (imgui_TableNextColumn()) { RenderConfigEditor_Values(pd); }
+					if (imgui_TableNextColumn()) { RenderConfigEditor_Tools(pd); }
 				}
 				finally
 				{
@@ -717,14 +712,10 @@ namespace E3Core.UI.Windows
 			}
 
 			// Render integrated editor after table if active
-			if (_state.Show_ShowIntegratedEditor && _state.State_SelectedValueIndex >= 0)
-			{
-				RenderIntegratedModifierEditor();
-			}
-
+			if (_state.Show_ShowIntegratedEditor && _state.State_SelectedValueIndex >= 0) { RenderIntegratedModifierEditor(); }
 			//Ensure popups/ modals render even when the tools column is hidden
+			SectionData activeSection = GetCurrentSectionData();
 			RenderActiveModals(activeSection);
-
 			//Display memorized spells if available from catalog data (safe)
 			RenderCatalogGemData();
 		}
@@ -1231,15 +1222,12 @@ namespace E3Core.UI.Windows
 			// Title row with better styling
 			imgui_TextColored(0.95f, 0.85f, 0.35f, 1.0f, $"[{_state.State_SelectedSection??""}] {_state.State_SelectedKey??""}");
 			imgui_Separator();
-
 			if (parts==null || parts.Count == 0)
 			{
 				imgui_Text("(No values)");
 				imgui_Separator();
-
 				if (parts == null) return;
 			}
-
 			// Enumerated options derived from key label e.g. "(Melee/Ranged/Off)"
 			if (TryGetKeyOptions(_state.State_SelectedKey, out var enumOpts))
 			{
@@ -1261,6 +1249,24 @@ namespace E3Core.UI.Windows
 			else if(!(String.IsNullOrWhiteSpace(_state.State_SelectedKey) || String.IsNullOrWhiteSpace(_state.State_SelectedSection)))
 			{
 				RenderSelectedKeyValues_Collections(parts,selectedSection);
+			}
+			string description = string.Empty;
+
+			CharacterSettings.ConfigKeyDescriptionsBySection.TryGetValue($"{_state.State_SelectedSection}::{_state.State_SelectedKey}", out description);
+
+			if (!String.IsNullOrWhiteSpace(description))
+			{
+				//was a test to see how doing this way vs try finally
+				using(var p = PushStyle.Aquire())
+				{
+					p.PushStyleColor((int)E3ImGUI.ImGuiCol.Text, 0.95f, 0.85f, 0.35f, 1.0f);
+					imgui_TextWrapped(description); 
+					imgui_Separator();
+				}
+				//vs
+				//imgui_PushStyleColor((int)E3ImGUI.ImGuiCol.Text, 0.95f, 0.85f, 0.35f, 1.0f);
+				//try { imgui_TextWrapped(description); imgui_Separator(); }
+				//finally { imgui_PopStyleColor(1); }
 			}
 		}
 		private static void RenderSelectedKeyValues_String(List<string> parts, SectionData selectedSection)
@@ -1470,7 +1476,7 @@ namespace E3Core.UI.Windows
 						{
 							_cfgCatalogReplaceMode = true;
 							_cfgCatalogReplaceIndex = i;
-							_cfgShowAddModal = true;
+							_state.Show_AddModal = true;
 						}
 						imgui_EndPopup();
 					}
@@ -1612,7 +1618,7 @@ namespace E3Core.UI.Windows
 						_cfgFoodDrinkStatus = string.Empty;
 						_cfgFoodDrinkCandidates.Clear();
 						_cfgFoodDrinkScanRequested = true; // auto-trigger scan for new kind
-						_cfgShowFoodDrinkModal = true;
+						_state.Show_FoodDrinkModal = true;
 					}
 				}
 				else
@@ -1620,7 +1626,7 @@ namespace E3Core.UI.Windows
 					if (imgui_Button("Add From Catalog"))
 					{
 						_cfgCatalogMode = CatalogMode.Standard;
-						_cfgShowAddModal = true;
+						_state.Show_AddModal = true;
 					}
 				}
 			}
@@ -1636,7 +1642,7 @@ namespace E3Core.UI.Windows
 				if (imgui_Button("Open Melody Helper"))
 				{
 					ResetBardMelodyHelperForm();
-					_cfgShowBardMelodyHelper = true;
+					_state.Show_BardMelodyHelper = true;
 				}
 				if (!string.IsNullOrEmpty(_cfgBardMelodyStatus))
 				{
@@ -1749,7 +1755,7 @@ namespace E3Core.UI.Windows
 						_cfgToonPickerStatus = keys.Count == 0 ? "No connected toons detected." : $"{keys.Count} connected.";
 					}
 					catch { _cfgToonCandidates = new List<string>(); _cfgToonPickerStatus = "Error loading toons."; }
-					_cfgShowToonPickerModal = true;
+					_state.Show_ToonPickerModal = true;
 				}
 			}
 
@@ -1758,8 +1764,8 @@ namespace E3Core.UI.Windows
 			{
 				if (imgui_Button("Sample If's"))
 				{
-					try { LoadSampleIfsForModal(); _cfgShowIfSampleModal = true; }
-					catch (Exception ex) { _cfgIfSampleStatus = "Load failed: " + (ex.Message ?? "error"); _cfgShowIfSampleModal = true; }
+					try { LoadSampleIfsForModal(); _state.Show_IfSampleModal = true; }
+					catch (Exception ex) { _cfgIfSampleStatus = "Load failed: " + (ex.Message ?? "error"); _state.Show_IfSampleModal = true; }
 				}
 			}
 
@@ -1833,35 +1839,35 @@ namespace E3Core.UI.Windows
 
 		private static void RenderActiveModals(SectionData selectedSection)
 		{
-			if (_cfgShowAddModal)
+			if (_state.Show_AddModal)
 			{
 				RenderAddFromCatalogModal(GetActiveCharacterIniData(), selectedSection);
 			}
-			if (_cfgShowFoodDrinkModal)
+			if (_state.Show_FoodDrinkModal)
 			{
 				RenderFoodDrinkPicker(selectedSection);
 			}
-			if (_cfgShowBardMelodyHelper)
+			if (_state.Show_BardMelodyHelper)
 			{
 				RenderBardMelodyHelperModal();
 			}
-			if (_cfgShowBardSampleIfModal)
+			if (_state.Show_BardSampleIfModal)
 			{
 				RenderBardSampleIfModal();
 			}
-			if (_cfgShowToonPickerModal)
+			if (_state.Show_ToonPickerModal)
 			{
 				RenderToonPickerModal(selectedSection);
 			}
-			if (_cfgShowSpellInfoModal)
+			if (_state.Show_SpellInfoModal)
 			{
 				RenderSpellInfoModal();
 			}
-			if (_cfgShowIfAppendModal)
+			if (_state.Show_IfAppendModal)
 			{
 				RenderIfAppendModal(selectedSection);
 			}
-			if (_cfgShowIfSampleModal)
+			if (_state.Show_IfSampleModal)
 			{
 				RenderIfsSampleModal();
 			}
@@ -3530,7 +3536,7 @@ namespace E3Core.UI.Windows
 				}
 				if (imgui_Button("Close"))
 				{
-					_cfgShowAddModal = false;
+					_state.Show_AddModal = false;
 					_cfgCatalogMode = CatalogMode.Standard;
 					_cfgBardSongPickerIndex = -1;
 					_cfgSelectedCatalogEntry = null; // Clear selection when closing
@@ -3541,7 +3547,7 @@ namespace E3Core.UI.Windows
 			// If user clicked the X, reflect that in our show flag
 			if (!_open_Add || !imgui_Begin_OpenFlagGet("Add From Catalog"))
 			{
-				_cfgShowAddModal = false;
+				_state.Show_AddModal = false;
 				_cfgCatalogMode = CatalogMode.Standard;
 				_cfgBardSongPickerIndex = -1;
 				_cfgCatalogReplaceMode = false;
@@ -3747,17 +3753,17 @@ namespace E3Core.UI.Windows
 								}
 							}
 							catch { }
-							_cfgShowIfAppendModal = false;
+							_state.Show_IfAppendModal = false;
 							break;
 						}
 						i++;
 					}
 				}
 				imgui_EndChild();
-				if (imgui_Button("Close")) _cfgShowIfAppendModal = false;
+				if (imgui_Button("Close")) _state.Show_IfAppendModal = false;
 			}
 			imgui_End();
-			if (!_open_if) _cfgShowIfAppendModal = false;
+			if (!_open_if) _state.Show_IfAppendModal = false;
 		}
 
 		private static void RenderThemeSettingsModal()
@@ -4360,7 +4366,7 @@ namespace E3Core.UI.Windows
 		private static void RenderIfsSampleModal()
 		{
 			const string winName = "E3SampleIfs";
-			imgui_Begin_OpenFlagSet(winName, _cfgShowIfSampleModal);
+			imgui_Begin_OpenFlagSet(winName, _state.Show_IfSampleModal);
 			bool _open_ifs = imgui_Begin(winName, (int)(ImGuiWindowFlags.ImGuiWindowFlags_AlwaysAutoResize | ImGuiWindowFlags.ImGuiWindowFlags_NoDocking));
 			if (_open_ifs)
 			{
@@ -4387,11 +4393,11 @@ namespace E3Core.UI.Windows
 					_cfgIfSampleStatus = cnt > 0 ? ($"Imported {cnt} If(s)") : "No new If's to import.";
 				}
 				imgui_SameLine();
-				if (imgui_Button("Close")) { _cfgShowIfSampleModal = false; imgui_Begin_OpenFlagSet(winName, false); }
+				if (imgui_Button("Close")) { _state.Show_IfSampleModal = false; imgui_Begin_OpenFlagSet(winName, false); }
 			}
 			imgui_End();
 			// Sync with X button on title bar
-			_cfgShowIfSampleModal = imgui_Begin_OpenFlagGet(winName);
+			_state.Show_IfSampleModal = imgui_Begin_OpenFlagGet(winName);
 		}
 
 
@@ -5348,7 +5354,7 @@ namespace E3Core.UI.Windows
 		{
 			// Respect current open state instead of forcing true every frame
 			const string winName = "E3PickInventory";
-			imgui_Begin_OpenFlagSet(winName, _cfgShowFoodDrinkModal);
+			imgui_Begin_OpenFlagSet(winName, _state.Show_FoodDrinkModal);
 			bool shouldDraw = imgui_Begin(winName, (int)(ImGuiWindowFlags.ImGuiWindowFlags_AlwaysAutoResize | ImGuiWindowFlags.ImGuiWindowFlags_NoCollapse | ImGuiWindowFlags.ImGuiWindowFlags_NoDocking));
 
 			if (shouldDraw)
@@ -5402,7 +5408,7 @@ namespace E3Core.UI.Windows
 									else vals[0] = item;
 									WriteValues(keyData, vals);
 								}
-								_cfgShowFoodDrinkModal = false;
+								_state.Show_FoodDrinkModal = false;
 								// Also close the underlying window state immediately
 								imgui_Begin_OpenFlagSet(winName, false);
 								break; // Exit loop after selection
@@ -5432,7 +5438,7 @@ namespace E3Core.UI.Windows
 
 				if (imgui_Button("Close"))
 				{
-					_cfgShowFoodDrinkModal = false;
+					_state.Show_FoodDrinkModal = false;
 					imgui_Begin_OpenFlagSet(winName, false);
 				}
 			}
@@ -5440,12 +5446,12 @@ namespace E3Core.UI.Windows
 			imgui_End();
 
 			// Sync our open flag with the actual window state (handles Titlebar X)
-			_cfgShowFoodDrinkModal = imgui_Begin_OpenFlagGet(winName);
+			_state.Show_FoodDrinkModal = imgui_Begin_OpenFlagGet(winName);
 		}
 		private static void RenderBardMelodyHelperModal()
 		{
 			const string winName = "E3BardMelody";
-			imgui_Begin_OpenFlagSet(winName, _cfgShowBardMelodyHelper);
+			imgui_Begin_OpenFlagSet(winName, _state.Show_BardMelodyHelper);
 			bool open = imgui_Begin(winName, (int)(ImGuiWindowFlags.ImGuiWindowFlags_AlwaysAutoResize | ImGuiWindowFlags.ImGuiWindowFlags_NoCollapse | ImGuiWindowFlags.ImGuiWindowFlags_NoDocking));
 			if (open)
 			{
@@ -5552,7 +5558,7 @@ namespace E3Core.UI.Windows
 							_cfgBardSampleIfStatus = "Sample file not found.";
 						}
 					}
-					_cfgShowBardSampleIfModal = true;
+					_state.Show_BardSampleIfModal = true;
 				}
 				imgui_TextColored(0.7f, 0.7f, 0.7f, 1.0f, "Optional E3 IF expression. Leave blank to run the melody whenever possible.");
 				imgui_Separator();
@@ -5579,12 +5585,12 @@ namespace E3Core.UI.Windows
 				imgui_SameLine();
 				if (imgui_Button("Cancel##bard_helper_cancel"))
 				{
-					_cfgShowBardMelodyHelper = false;
+					_state.Show_BardMelodyHelper = false;
 					imgui_Begin_OpenFlagSet(winName, false);
 				}
 			}
 			imgui_End();
-			_cfgShowBardMelodyHelper = imgui_Begin_OpenFlagGet(winName);
+			_state.Show_BardMelodyHelper = imgui_Begin_OpenFlagGet(winName);
 
 			// Reset the picker state after rendering
 			if (_cfgBardSongPickerJustSelected)
@@ -5767,7 +5773,7 @@ namespace E3Core.UI.Windows
 			_cfgAddType = AddType.Spells;
 			_cfgAddCategory = string.Empty;
 			_cfgAddSubcategory = string.Empty;
-			_cfgShowAddModal = true;
+			_state.Show_AddModal = true;
 			_cfgAddFilter = string.Empty;
 		}
 		private static void ApplyBardSongSelection(string songName)
@@ -5775,7 +5781,7 @@ namespace E3Core.UI.Windows
 			if (_cfgBardSongPickerIndex < 0)
 			{
 				_cfgCatalogMode = CatalogMode.Standard;
-				_cfgShowAddModal = false;
+				_state.Show_AddModal = false;
 				return;
 			}
 			EnsureBardMelodySongEntries();
@@ -5788,13 +5794,13 @@ namespace E3Core.UI.Windows
 			_cfgBardSongPickerJustSelected = true; // Flag to force input refresh
 			_cfgBardSongInputVersion++; // Change input ID to force text update
 										// _cfgBardSongPickerIndex = -1; // Moved to modal render to allow input text update
-			_cfgShowAddModal = false;
+			_state.Show_AddModal = false;
 			_cfgCatalogMode = CatalogMode.Standard;
 		}
 		private static void RenderBardSampleIfModal()
 		{
 			const string winName = "E3BardSampleIfs";
-			imgui_Begin_OpenFlagSet(winName, _cfgShowBardSampleIfModal);
+			imgui_Begin_OpenFlagSet(winName, _state.Show_BardSampleIfModal);
 			bool open = imgui_Begin(winName, (int)(ImGuiWindowFlags.ImGuiWindowFlags_AlwaysAutoResize | ImGuiWindowFlags.ImGuiWindowFlags_NoCollapse | ImGuiWindowFlags.ImGuiWindowFlags_NoDocking));
 			if (open)
 			{
@@ -5886,7 +5892,7 @@ namespace E3Core.UI.Windows
 									{
 										_cfgBardMelodyCondition = expression;
 										_cfgBardConditionInputVersion++;
-										_cfgShowBardSampleIfModal = false;
+										_state.Show_BardSampleIfModal = false;
 										imgui_Begin_OpenFlagSet(winName, false);
 										break;
 									}
@@ -5905,12 +5911,12 @@ namespace E3Core.UI.Windows
 				imgui_Separator();
 				if (imgui_Button("Close##bard_sample_if_close"))
 				{
-					_cfgShowBardSampleIfModal = false;
+					_state.Show_BardSampleIfModal = false;
 					imgui_Begin_OpenFlagSet(winName, false);
 				}
 			}
 			imgui_End();
-			_cfgShowBardSampleIfModal = imgui_Begin_OpenFlagGet(winName);
+			_state.Show_BardSampleIfModal = imgui_Begin_OpenFlagGet(winName);
 		}
 		private static bool TryCreateBardMelody(out string successMessage, out string errorMessage)
 		{
@@ -6144,10 +6150,10 @@ namespace E3Core.UI.Windows
 					}
 				}
 				imgui_EndChild();
-				if (imgui_Button("Close")) _cfgShowToonPickerModal = false;
+				if (imgui_Button("Close")) _state.Show_ToonPickerModal = false;
 			}
 			imgui_End();
-			if (!_open_toon) _cfgShowToonPickerModal = false;
+			if (!_open_toon) _state.Show_ToonPickerModal = false;
 		}
 
 		// Spell Info modal (read-only details) using real ImGui tables + colored labels
@@ -6155,9 +6161,9 @@ namespace E3Core.UI.Windows
 		private static void RenderSpellInfoModal()
 		{
 			var s = _cfgSpellInfoSpell;
-			if (s == null) { _cfgShowSpellInfoModal = false; return; }
+			if (s == null) { _state.Show_SpellInfoModal = false; return; }
 			const string winName = "E3SpellInfo";
-			imgui_Begin_OpenFlagSet(winName, _cfgShowSpellInfoModal);
+			imgui_Begin_OpenFlagSet(winName, _state.Show_SpellInfoModal);
 			bool open = imgui_Begin(winName, (int)(ImGuiWindowFlags.ImGuiWindowFlags_AlwaysAutoResize | ImGuiWindowFlags.ImGuiWindowFlags_NoDocking));
 			if (open)
 			{
@@ -6288,14 +6294,14 @@ namespace E3Core.UI.Windows
 
 				if (imgui_Button("Close"))
 				{
-					_cfgShowSpellInfoModal = false;
+					_state.Show_SpellInfoModal = false;
 					_cfgSpellInfoSpell = null;
 					imgui_Begin_OpenFlagSet(winName, false);
 				}
 			}
 			imgui_End();
-			_cfgShowSpellInfoModal = imgui_Begin_OpenFlagGet(winName);
-			if (!_cfgShowSpellInfoModal) { _cfgSpellInfoSpell = null; }
+			_state.Show_SpellInfoModal = imgui_Begin_OpenFlagGet(winName);
+			if (!_state.Show_SpellInfoModal) { _cfgSpellInfoSpell = null; }
 		}
 
 		private static void RenderDonateModal()

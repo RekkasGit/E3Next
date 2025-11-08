@@ -758,6 +758,45 @@ namespace MonoCore
                 RegisteredWindows.TryAdd(windowName, method);
             }
         }
-       
-    }
+
+		public class PushStyle : IDisposable
+		{
+
+			public void PushStyleColor(int type, float r, float g, float b, float a)
+			{
+				imgui_PushStyleColor(type, r, g, b, a);
+			}
+			#region objectPoolingStuff
+			//private constructor, needs to be created so that you are forced to use the pool.
+			private PushStyle()
+			{
+
+			}
+			public static PushStyle Aquire()
+			{
+				PushStyle obj;
+				if (!StaticObjectPool.TryPop<PushStyle>(out obj))
+				{
+					obj = new PushStyle();
+				}
+
+				return obj;
+			}
+			public void Dispose()
+			{
+				imgui_PopStyleColor(1);
+				StaticObjectPool.Push(this);
+			}
+			~PushStyle()
+			{
+				//DO NOT CALL DISPOSE FROM THE FINALIZER! This should only ever be used in using statements
+				//if this is called, it will cause the domain to hang in the GC when shuttind down
+				//This is only here to warn you
+
+			}
+
+			#endregion
+		}
+
+	}
 }
