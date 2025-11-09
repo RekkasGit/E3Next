@@ -152,7 +152,14 @@ namespace MonoCore
 			ModalWindowDimBg,
 			COUNT
 		}
-
+		public enum ImGuiCond
+		{
+			None = 0,        // No condition (always set the variable), same as _Always
+			Always = 1 << 0,   // No condition (always set the variable), same as _None
+			Once = 1 << 1,   // Set the variable once per runtime session (only the first call will succeed)
+			FirstUseEver = 1 << 2,   // Set the variable if the object/window has no persistently saved data (no entry in .ini file)
+			Appearing = 1 << 3,   // Set the variable if the object/window is appearing after being hidden/inactive (or the first time)
+		};
 		public enum ImGuiTreeNodeFlags
 		{
 			ImGuiTreeNodeFlags_None = 0,
