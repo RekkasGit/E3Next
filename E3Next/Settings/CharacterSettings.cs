@@ -10,6 +10,8 @@ using System.Linq;
 using System.Reflection;
 using static System.Collections.Specialized.BitVector32;
 using MonoCore;
+using System.Drawing.Drawing2D;
+using System.Text.RegularExpressions;
 
 namespace E3Core.Settings
 {
@@ -609,6 +611,7 @@ namespace E3Core.Settings
             LoadData();
 			//map everything to the dictionary for settings lookup. 
 			GetSettingsMappedToDictionary();
+			ConvertConfigKeyDescriptions();
 		}
 
 		//used for the CharacerSettingsWindow
@@ -625,6 +628,7 @@ namespace E3Core.Settings
 			LoadData(iniFileName);
 			//map everything to the dictionary for settings lookup. 
 			//GetSettingsMappedToDictionary();
+			ConvertConfigKeyDescriptions();
 		}
 		/// <summary>
 		/// Loads the data.
@@ -1803,6 +1807,29 @@ namespace E3Core.Settings
 			{"Gem", "Spell gem number (1-12) that should be used for this spell."},
 		};
 
+		private static void ConvertConfigKeyDescriptions()
+		{
+			string regexSplit = @"\[(color=.+)\](.+)\[\/color]";
+			foreach (var pair in ConfigKeyDescriptionsBySection)
+			{
+				var key = pair.Key;
+				var value = pair.Value;
+
+				List<string> valueList = new List<string>();
+
+				var lines  = value.Split('\n').ToList();
+
+				foreach(var line in lines)
+				{
+					if(!String.IsNullOrEmpty(line)) valueList.AddRange(Regex.Split(line, regexSplit));
+					valueList.Add("\n");
+				}
+
+				ConfigKeyDescriptionsForImGUI.Add(key, valueList);
+			}
+		}
+
+		public static readonly Dictionary<string, List<string>> ConfigKeyDescriptionsForImGUI = new Dictionary<string, List<string>>();
 		public static readonly Dictionary<string, string> ConfigKeyDescriptionsBySection = new Dictionary<string, string>(StringComparer.OrdinalIgnoreCase)
 		{
 			{"Misc::Autofood", "Turns on eating the food and drink defined below"},

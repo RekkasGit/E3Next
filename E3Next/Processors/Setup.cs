@@ -44,7 +44,7 @@ namespace E3Core.Processors
         static public Int32 _numInventorySlots = 10;
         static public Int32 _previousSpellGemThatWasCast = -1;
 		[ExposedData("Setup", "Version")]
-		public const string E3Version = "1.49.2";
+		public const string E3Version = "1.50-devbuild";
 		[ExposedData("Setup", "BuildDate")]
 		public static string BuildDate = string.Empty;
         public static Boolean _debug = true;

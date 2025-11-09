@@ -16,6 +16,7 @@ using System.Security.Permissions;
 using System.Text;
 using System.Text.RegularExpressions;
 using static MonoCore.E3ImGUI;
+using static System.Net.Mime.MediaTypeNames;
 using static System.Windows.Forms.AxHost;
 
 namespace E3Core.UI.Windows
@@ -27,7 +28,7 @@ namespace E3Core.UI.Windows
 		{
 			public CharacterSettingsState() {
 				//set all initial windows to not show
-				ClearWindows();
+				if(Core._MQ2MonoVersion>0.34m) ClearWindows();
 			}
 
 			//state
@@ -216,17 +217,17 @@ namespace E3Core.UI.Windows
 
 		private static readonly Dictionary<string, (float r, float g, float b, float a)> _inlineDescriptionColorMap = new Dictionary<string, (float, float, float, float)>(StringComparer.OrdinalIgnoreCase)
 		{
-			["gold"] = (0.95f, 0.85f, 0.35f, 1.0f),
-			["yellow"] = (1.0f, 0.92f, 0.23f, 1.0f),
-			["orange"] = (1.0f, 0.6f, 0.2f, 1.0f),
-			["red"] = (0.9f, 0.3f, 0.3f, 1.0f),
-			["green"] = (0.3f, 0.9f, 0.5f, 1.0f),
-			["blue"] = (0.35f, 0.6f, 0.95f, 1.0f),
-			["teal"] = (0.3f, 0.85f, 0.85f, 1.0f),
-			["purple"] = (0.75f, 0.55f, 0.95f, 1.0f),
-			["white"] = (0.95f, 0.95f, 0.95f, 1.0f),
-			["gray"] = (0.6f, 0.6f, 0.6f, 1.0f),
-			["silver"] = (0.8f, 0.8f, 0.85f, 1.0f)
+			["color=gold"] = (0.95f, 0.85f, 0.35f, 1.0f),
+			["color=yellow"] = (1.0f, 0.92f, 0.23f, 1.0f),
+			["color=orange"] = (1.0f, 0.6f, 0.2f, 1.0f),
+			["color=red"] = (0.9f, 0.3f, 0.3f, 1.0f),
+			["color=green"] = (0.3f, 0.9f, 0.5f, 1.0f),
+			["color=blue"] = (0.35f, 0.6f, 0.95f, 1.0f),
+			["color=teal"] = (0.3f, 0.85f, 0.85f, 1.0f),
+			["color=purple"] = (0.75f, 0.55f, 0.95f, 1.0f),
+			["color=white"] = (0.95f, 0.95f, 0.95f, 1.0f),
+			["color=gray"] = (0.6f, 0.6f, 0.6f, 1.0f),
+			["color=silver"] = (0.8f, 0.8f, 0.85f, 1.0f)
 		};
 
 		#region Variables
@@ -403,6 +404,7 @@ namespace E3Core.UI.Windows
 		[SubSystemInit]
 		public static void CharacterSettingsWindow_Init()
 		{
+			if (Core._MQ2MonoVersion < 0.35m) return;
 			_versionInfo = $"nE³xt v{Setup.E3Version} by Rekka | Build {Setup.BuildDate}. Editor by Linamas/Rekka";
 
 			// Load UI theme settings from character INI
@@ -461,6 +463,7 @@ namespace E3Core.UI.Windows
 		[ClassInvoke(Data.Class.All)]
 		public static void Process()
 		{
+			if (Core._MQ2MonoVersion < 0.35m) return;
 			ProcessBackgroundWork();
 		}
 		public static bool _intialWindowOpened = false;
@@ -1356,24 +1359,27 @@ namespace E3Core.UI.Windows
 			{
 				RenderSelectedKeyValues_Collections(parts,selectedSection);
 			}
-			string description = string.Empty;
-
-			CharacterSettings.ConfigKeyDescriptionsBySection.TryGetValue($"{_state.State_SelectedSection}::{_state.State_SelectedKey}", out description);
-
-			if (!String.IsNullOrWhiteSpace(description))
+			
+			if(CharacterSettings.ConfigKeyDescriptionsForImGUI.TryGetValue($"{_state.State_SelectedSection}::{_state.State_SelectedKey}", out var description))
 			{
-				//was a test to see how doing this way vs try finally
-				using(var p = PushStyle.Aquire())
+				if (description.Count>0)
 				{
-					p.PushStyleColor((int)E3ImGUI.ImGuiCol.Text, 0.95f, 0.85f, 0.35f, 1.0f);
-					RenderDescriptionRichText(description);
-					imgui_Separator();
+					//was a test to see how doing this way vs try finally
+					using (var p = PushStyle.Aquire())
+					{
+						p.PushStyleColor((int)E3ImGUI.ImGuiCol.Text, 0.95f, 0.85f, 0.35f, 1.0f);
+						RenderDescriptionRichText(description);
+						imgui_Separator();
+					}
+					//vs
+					//imgui_PushStyleColor((int)E3ImGUI.ImGuiCol.Text, 0.95f, 0.85f, 0.35f, 1.0f);
+					//try { imgui_TextWrapped(description); imgui_Separator(); }
+					//finally { imgui_PopStyleColor(1); }
 				}
-				//vs
-				//imgui_PushStyleColor((int)E3ImGUI.ImGuiCol.Text, 0.95f, 0.85f, 0.35f, 1.0f);
-				//try { imgui_TextWrapped(description); imgui_Separator(); }
-				//finally { imgui_PopStyleColor(1); }
+
 			}
+
+			
 		}
 		private static void RenderSelectedKeyValues_String(List<string> parts, SectionData selectedSection)
 		{
@@ -4673,258 +4679,46 @@ namespace E3Core.UI.Windows
 			return string.Empty;
 		}
 
-		private static void RenderDescriptionRichText(string text)
+		private static void RenderDescriptionRichText(List<string> rawText)
 		{
-			if (string.IsNullOrWhiteSpace(text))
+			if (rawText.Count==0)
 			{
 				return;
 			}
-
 			imgui_PushTextWrapPos(0f);
 			try
 			{
-				RenderInlineRichText(text);
+				imgui_Text("");
+				for (Int32 i = 0; i < rawText.Count; i++)
+				{
+					if (_inlineDescriptionColorMap.TryGetValue(rawText[i], out var color))
+					{
+						//next line is a color
+						if ((i + 1) < rawText.Count)
+						{
+							i++;
+							var nextline = rawText[i];
+							imgui_SameLine(0f, 0f);
+							imgui_TextColored(color.r, color.g, color.b, color.a, nextline);
+						}
+					}
+					else if (rawText[i] == "\n")
+					{
+						imgui_Text("");
+					}
+					else
+					{
+						imgui_SameLine(0f, 0f);
+						imgui_Text(rawText[i]);
+					}
+				}
 			}
 			finally
 			{
 				imgui_PopTextWrapPos();
 			}
 		}
-
-		private static void RenderInlineRichText(string rawText)
-		{
-			if (string.IsNullOrEmpty(rawText))
-			{
-				return;
-			}
-
-			string normalized = rawText.Replace("\r\n", "\n").Replace('\r', '\n');
-			bool lineStart = true;
-			int pendingBlankLines = 0;
-
-			foreach (var run in ParseInlineColorMarkup(normalized))
-			{
-				string content = run.Text ?? string.Empty;
-				if (content.Length == 0)
-				{
-					continue;
-				}
-
-				var lines = content.Split('\n');
-				for (int i = 0; i < lines.Length; i++)
-				{
-					string line = lines[i];
-					bool isLast = i == lines.Length - 1;
-
-					if (line.Length == 0)
-					{
-						if (!isLast)
-						{
-							pendingBlankLines++;
-						}
-						lineStart = true;
-						continue;
-					}
-
-					EmitLine(line, run.Color);
-
-					if (!isLast)
-					{
-						lineStart = true;
-					}
-				}
-			}
-
-			void EmitLine(string text, (float r, float g, float b, float a)? color)
-			{
-				if (lineStart)
-				{
-					EmitPendingBlankLines();
-				}
-				else
-				{
-					imgui_SameLine(0f, 0f);
-				}
-
-				if (color.HasValue)
-				{
-					imgui_TextColored(color.Value.r, color.Value.g, color.Value.b, color.Value.a, text);
-				}
-				else
-				{
-					imgui_Text(text);
-				}
-
-				lineStart = false;
-			}
-
-			void EmitPendingBlankLines()
-			{
-				while (pendingBlankLines > 0)
-				{
-					imgui_Text(" ");
-					pendingBlankLines--;
-				}
-			}
-		}
-
-		private static IEnumerable<InlineRichTextRun> ParseInlineColorMarkup(string text)
-		{
-			if (string.IsNullOrEmpty(text))
-			{
-				yield break;
-			}
-
-			var buffer = new StringBuilder();
-			var colorStack = new Stack<(float r, float g, float b, float a)>();
-			(float r, float g, float b, float a)? activeColor = null;
-
-			for (int i = 0; i < text.Length;)
-			{
-				if (text[i] == '[')
-				{
-					int closing = text.IndexOf(']', i + 1);
-					if (closing > i)
-					{
-						string tag = text.Substring(i + 1, closing - i - 1);
-						if (tag.StartsWith("color=", StringComparison.OrdinalIgnoreCase))
-						{
-							if (buffer.Length > 0)
-							{
-								yield return new InlineRichTextRun(buffer.ToString(), activeColor);
-								buffer.Clear();
-							}
-
-							string spec = tag.Substring(6).Trim();
-							if (TryParseInlineColor(spec, out var parsed))
-							{
-								colorStack.Push(parsed);
-								activeColor = parsed;
-							}
-							else
-							{
-								activeColor = colorStack.Count > 0 ? colorStack.Peek() : ((float, float, float, float)?)null;
-							}
-
-							i = closing + 1;
-							continue;
-						}
-
-						if (tag.Equals("/color", StringComparison.OrdinalIgnoreCase))
-						{
-							if (buffer.Length > 0)
-							{
-								yield return new InlineRichTextRun(buffer.ToString(), activeColor);
-								buffer.Clear();
-							}
-
-							if (colorStack.Count > 0)
-							{
-								colorStack.Pop();
-								activeColor = colorStack.Count > 0 ? colorStack.Peek() : ((float, float, float, float)?)null;
-							}
-							else
-							{
-								activeColor = null;
-							}
-
-							i = closing + 1;
-							continue;
-						}
-					}
-				}
-
-				buffer.Append(text[i]);
-				i++;
-			}
-
-			if (buffer.Length > 0)
-			{
-				yield return new InlineRichTextRun(buffer.ToString(), activeColor);
-			}
-		}
-
-		private static bool TryParseInlineColor(string spec, out (float r, float g, float b, float a) parsed)
-		{
-			parsed = default;
-			if (string.IsNullOrWhiteSpace(spec))
-			{
-				return false;
-			}
-
-			spec = spec.Trim();
-			if (_inlineDescriptionColorMap.TryGetValue(spec, out parsed))
-			{
-				return true;
-			}
-
-			if (spec.StartsWith("#", StringComparison.Ordinal))
-			{
-				string hex = spec.Substring(1);
-				if (hex.Length == 6 || hex.Length == 8)
-				{
-					if (int.TryParse(hex.Substring(0, 2), NumberStyles.HexNumber, CultureInfo.InvariantCulture, out var r) &&
-						int.TryParse(hex.Substring(2, 2), NumberStyles.HexNumber, CultureInfo.InvariantCulture, out var g) &&
-						int.TryParse(hex.Substring(4, 2), NumberStyles.HexNumber, CultureInfo.InvariantCulture, out var b))
-					{
-						int a = 255;
-						if (hex.Length == 8 && int.TryParse(hex.Substring(6, 2), NumberStyles.HexNumber, CultureInfo.InvariantCulture, out var parsedA))
-						{
-							a = parsedA;
-						}
-
-						parsed = (r / 255f, g / 255f, b / 255f, a / 255f);
-						return true;
-					}
-				}
-			}
-
-			var parts = spec.Split(',');
-			if (parts.Length == 3 || parts.Length == 4)
-			{
-				var values = new float[4];
-				for (int i = 0; i < parts.Length; i++)
-				{
-					if (!float.TryParse(parts[i].Trim(), NumberStyles.Float, CultureInfo.InvariantCulture, out var component))
-					{
-						return false;
-					}
-
-					if (component > 1f)
-					{
-						component /= 255f;
-					}
-
-					values[i] = Clamp01(component);
-				}
-
-				values[3] = parts.Length == 4 ? values[3] : 1f;
-				parsed = (values[0], values[1], values[2], values[3]);
-				return true;
-			}
-
-			return false;
-		}
-
-		private static float Clamp01(float value)
-		{
-			if (value < 0f) return 0f;
-			if (value > 1f) return 1f;
-			return value;
-		}
-
-		private readonly struct InlineRichTextRun
-		{
-			public InlineRichTextRun(string text, (float r, float g, float b, float a)? color)
-			{
-				Text = text;
-				Color = color;
-			}
-
-			public string Text { get; }
-			public (float r, float g, float b, float a)? Color { get; }
-		}
-
+		
 		private static void InvalidateSpellEditState()
 		{
 			_cfgSpellEditState = null;
