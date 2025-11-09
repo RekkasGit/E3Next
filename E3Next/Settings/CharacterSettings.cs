@@ -1809,7 +1809,8 @@ namespace E3Core.Settings
 
 		private static void ConvertConfigKeyDescriptions()
 		{
-			if (ConfigKeyDescriptionsBySection.Count > 0) return;
+			// Only build the helper map once; it stays static for the life of the process
+			if (ConfigKeyDescriptionsForImGUI.Count > 0) return;
 
 			string regexSplit = @"\[(color=.+)\](.+)\[\/color]";
 			foreach (var pair in ConfigKeyDescriptionsBySection)
@@ -1834,9 +1835,9 @@ namespace E3Core.Settings
 		public static readonly Dictionary<string, List<string>> ConfigKeyDescriptionsForImGUI = new Dictionary<string, List<string>>();
 		public static readonly Dictionary<string, string> ConfigKeyDescriptionsBySection = new Dictionary<string, string>(StringComparer.OrdinalIgnoreCase)
 		{
-			{"Misc::Autofood", "Turns on eating the food and drink defined below"},
-			{"Misc::Food", "Define what you would like to eat and drink. This can be used to keep stat food from getting consumed. \n     Misty Thicket Picnic \n     Fuzzlecutter Formula 5000 \nNote: Multiple Food and Drink can be defined"},
-			{"Misc::Drink", "Define what you would like to eat and drink. This can be used to keep stat drink from getting consumed. \n     Misty Thicket Picnic \n     Fuzzlecutter Formula 5000 \nNote: Multiple Food and Drink can be defined"},
+			{"Misc::AutoFood", "Monitors hunger & thirst to ensure you don't consume stat food/drink."},
+			{"Misc::Food", "Define what you would like to eat. This can be used to keep stat food from getting consumed. Entries here look like: \n     [color=teal]Misty Thicket Picnic[/color] \n     [color=teal]Fuzzlecutter Formula 5000[/color] \nNote: Multiple Food and Drink can be defined"},
+			{"Misc::Drink", "Define what you would like to drink. This can be used to keep stat drink from getting consumed. Entries here look like: \n     [color=teal]Misty Thicket Picnic[/color] \n     [color=teal]Fuzzlecutter Formula 5000[/color] \nNote: Multiple Food and Drink can be defined"},
 			{"Misc::End MedBreak in Combat(On/Off)", "When enabled, you will cancel medding to assist in combat even if you are not at defined mana percentage."},
 			{"Misc::AutoMedBreak (On/Off)", "Will sit and med when below the defined Mana percentage in your general_settings.ini"},
 			{"Misc::Auto-Loot (On/Off)", "When enabled your character will use E3's autoloot once combat is over. In-Combat Looting can be enabled in general_settings.ini"},
@@ -1855,19 +1856,19 @@ namespace E3Core.Settings
                 + "     [color=teal]AutoFire[/color] - Uses ranged attacks and configuration without automated movement or /stick.\n"
                 + "     [color=teal]Off[/color] - Disables all movement, facing, and /stick; only uses configuration-based abilities."
             },
-            {"Assist Settings::SmartTaunt(On/Off)", "Automatically try and taunt off non-tank PCs to maintain aggro control."},
+            {"Assist Settings::SmartTaunt(On/Off)", "If enabled, WAR/SK/PAL classes will automatically try and taunt off non-tank PCs to maintain aggro control."},
 			{"Assist Settings::Melee Stick Point", "The position you want your character to stand during combat.\n\n"
 				+ "     [color=teal]behind[/color] - Stay behind the target and constantly readjust to keep position.\n"
 				+ "     [color=teal]behindonce[/color] - Move behind the target once and only readjust when /assist is issued again.\n"
 				+ "     [color=teal]front[/color] - Plant yourself in front of the mob facing it. Ideal for tanks.\n"
 				+ "     [color=teal]pin[/color] - Stick to the side of the target, not quite front or rear.\n"
 				+ "     [color=teal]!front[/color] - Stand anywhere that is not the target's front arc."},
-			{"Assist Settings::Delayed Strafe Enabled (On/Off)", "The amount of time your character will wait before readjusting to a moved target."},
-			{"Assist Settings::CommandOnAssist", "E3 will execute these values as a command each time an assist is called. Useful for triggering custom actions or macros when engaging targets.  Examples: \n\n   /stick 15 moveback  \n\n   /g Engaging %T"},
+			{"Assist Settings::Delayed Strafe Enabled (On/Off)", "If Enabled, E3 will delay before readjusting position to a moved target."},
+			{"Assist Settings::CommandOnAssist", "E3 will execute these values as a command each time an assist is called. Useful for triggering custom actions or macros when engaging targets.  Examples: \n\n   [color=teal]/stick 15 moveback[/color]  \n\n   [color=teal]/g Engaging %T[/color]"},
 			{"Assist Settings::Melee Distance", "The distance you wish to stand from the target when melee'ing. MaxMelee - Will calculate based off the target the furthest point to melee, between 25 - 33."},
 			{"Assist Settings::Ranged Distance", "When Ranged is specified as Assist Type will keep you the defined distance away from target. Clamped - Doesn't care about a defined distance as long as you are between 30 and 200."},
-			{"Assist Settings::Auto-Assist Engage Percent", "Note: This is dependent on you enabling in you general_settings.ini(Off by default) What this setting is stating that when the character of this configed Ini's target hits the specfied percentage it will automatically tell all other bots to assist. It is NOT stating that this character starts assisting at defined percentage. My personal(Metaljacx) recommendation for those new; not to use autoassist. Leverage /assistme /cleartargets"},
-			{"Assist Settings::Pet back off on Enrage (On/Off)", "When Enrage is detected, E3 will stop attacks."},
+			{"Assist Settings::Auto-Assist Engage Percent", "Off by default.  When this character's target hits the specfied hit point percentage E3 will automatically issue /assistme.\n\n [color=red] It is generally recommended to not use Auto Assist.  Instead, manually issue the /assistme command for greater bot control.[/color]"},
+			{"Assist Settings::Pet back off on Enrage (On/Off)", "When Enrage is detected, E3 will automatically back off your pet."},
 			{"Assist Settings::Back off on Enrage (On/Off)", "If enabled, E3 will stop melee when NPC Enrage is detected."},
             {"Melee Abilities::Ability",
                 "Defines which [color=teal]Ability[/color] you want to utilize.\n"
@@ -1876,20 +1877,29 @@ namespace E3Core.Settings
                 + "     [color=teal]Bash[/color]\n"
                 + "     [color=teal]Backstab[/color]"},
             {"Buffs::Instant Buff",
-                "Any buff that is self-targetable and has a cast time less than 0.1 seconds.\n"
-                + "This ensures the buff stays active both inside and outside of combat.\n\n"
-                + "Great for fights where buffs get dispelled — keeps cheap filler buffs in your first few slots."},
+                "Any buff that is self-targetable.\n"
+                + "This ensures the buff stays active both [color=purple]during and out of combat[/color]. Generally, should be 'quick casting' buffs, as it will attempt to cast during combat.\n"
+                + "Great for fights where buffs get dispelled — keeps cheap filler buffs in your first few slots.\n"
+                + "Valid Entries include Spells, Items, AA's, or Abilities.  Modifiers available.  Entries here look like:\n"
+                + "[color=teal]Journeyman's Boots[/color]\n"
+                + "[color=teal]Froglok Gut String Lute/CheckFor|Cantata of Life[/color]"},
             {"Buffs::Self Buff",
-                "Covers any buff where you can target yourself and the cast time is greater than that of an Instant Buff.\n\n"
-                + "Will only cast [color=teal]outside of combat[/color]."},
+                "Covers any buff where you can target yourself.  [color=purple]Will not cast during combat[/color].\n\n"
+                + "Entries here look like:\n"
+                + "[color=teal]Armor of the Crusader/Gem|5[/color]\n"
+                + "[color=teal]Voice of Thule[/color]"},
             {"Buffs::Bot Buff",
-                "Used for targeting your other characters for buffs.\n"
+                "Used for buffing your other characters.\n"
                 + "Will only cast [color=teal]outside of combat[/color].\n\n"
                 + "Example:\n"
                 + "     buffname/gem/target\n\n"
                 + "     Spirit of Wolf/gem|3/MyTank\n"
                 + "     Spirit of Wolf/gem|3/MyHealer"},
-            {"Buffs::Combat Buff", "If you just want the buff during combat Example: Combat Buff=Artifact of the Leopard - If casting self Combat Buff=Artifact of the Leopard/Metaljacx - If casting on another character."},
+            {"Buffs::Combat Buff", "Buffs or Casts that are only used [color=purple]during combat[/color].\n"
+                + "Can use Spells, Items, AA's, or Abilities.  Modifiers available.  Example Entries:\n"
+                + "[color=teal]Artifact of the Leopard\n"
+                + "Spirit of the Puma/Gem|5/TargetName - this would cast on a PC named 'TargetName'\n"
+                + "Thief's Eyes[/color]"},
 			{"Buffs::Group Buff", "Despite it's name this has nothing to do with automating buffs for your 6 Man Group What this key value actually does it buff anyone who asks you for buffs with the pharse \"Buff Me\" or \"Buff my Pet\". This is a triggered non-automated event. Who can ask for buff an be more defined in you general_settings.ini Example: Group Buff=Blessing of Aegolism Note: You may need to do /tgb on for group buffs to apply to people outside your group"},
 			{"Buffs::Pet Buff", "This is for other characters on your bot network pets.Must be a part of your bot network. If your class has a pet that will be defined in the [pet section]. Example: Pet Buff=buffname/PetownerName Pet Buff=Artifact of the Leopard/Copperjacx"},
 			{"Buffs::Group Buff Request", "This is to request a buff from someone else who is running E3 and not part of bot network. Example: Group Buff Request=buffname/target Group Buff Request=Torpor Rk. V/Tophet/Ifs|TorporIf Tip: In order to not not spam and annoy your friends. Try using an If Statement. TorporIf=!${Bool[${Me.Song[Torpor Rk. V].ID}]} || ${Me.Song[Torpor Rk. V].Duration} <=9000"},
@@ -1903,8 +1913,12 @@ namespace E3Core.Settings
                 + "     [color=teal]/StackCheckInterval[/color] - How often to check whether you still have the buff.\n"
                 + "     [color=teal]/StackRequestItem[/color] - The item to click if the buff requires an item-based cast."},
             {"Buffs::Cast Aura(On/Off)", "This will automatically cast your class's highest level aura if your class has one"},
-			{"Nukes::Main", "Add the spells or items you'd like to use for your nukes here. E3 will cast them in order from top down."},
-			{"Nukes/Stuns/PBAE::Main", "Name of the spell you wish to cast. Example: main=Spear of Ro"},
+			{"Nukes::Main", "Add the Spells, Items or Abilities you'd like to use for your main nuke rotation here. E3 will cast them in order from top down. Valid Entries look like:\n\n"
+                + "     [color=teal]Chaos Flame/Gem|10[/color]\n"
+                + "     [color=teal]Concussive Intuition/Ifs|AggroCheck[/color]\n"
+                + "     [color=teal]Foresaken Sorcerer's Sleeves[/color]"},
+			{"Nukes/Stuns/PBAE::Main", "Name of the spell you wish to cast. Valid Entries look like:"
+                + "     [color=teal]Color Shift/Gem|5[/color]"},
 			{"Nukes/Stuns/PBAE::PBAE", "Point Blank Area of Effect(PBAE) is turned off by default to turn on or off use /pbaeon and /pbaeoff. Otherwise it is the same as Nuke just input your poe spell Example: PBAE=Spear of Ro Reminder: Priority matters(FIFO) for Advanced Settings AE Order and what a spell CD is."},
 			{"DoTs on Assist::Main", "The spells or items here will be automatically cast or used on each assist call."},
 			{"Debuffs::Debuff on Assist", "The spells or items here will be automatically cast or used on each assist call."},
