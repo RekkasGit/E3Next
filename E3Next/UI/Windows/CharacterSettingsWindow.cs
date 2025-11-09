@@ -4730,7 +4730,7 @@ namespace E3Core.UI.Windows
 							imgui_SameLine(0f, 0f);
 							imgui_Text(nextline);
 						}
-						else
+						else if(totalLineLength>0) 
 						{
 							//means our line won't fit, see if half the line will fit?
 							Int32 midpoint =nextline.Length / 2;
@@ -4747,6 +4747,10 @@ namespace E3Core.UI.Windows
 							{
 								imgui_Text(nextline);
 							}
+						}
+						else
+						{
+							imgui_Text(nextline);
 						}
 						totalLineLength += lengthOfText;
 					}
