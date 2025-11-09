@@ -4685,10 +4685,13 @@ namespace E3Core.UI.Windows
 			{
 				return;
 			}
-			imgui_PushTextWrapPos(0f);
+			imgui_PushTextWrapPos(imgui_GetContentRegionAvailX());
 			try
 			{
+
+				float contentRegionX = imgui_GetContentRegionAvailX();
 				imgui_Text("");
+				float totalLineLength = 0;
 				for (Int32 i = 0; i < rawText.Count; i++)
 				{
 					if (_inlineDescriptionColorMap.TryGetValue(rawText[i], out var color))
@@ -4698,18 +4701,36 @@ namespace E3Core.UI.Windows
 						{
 							i++;
 							var nextline = rawText[i];
-							imgui_SameLine(0f, 0f);
+							var lengthOfText = imgui_CalcTextSizeX(nextline);
+
+							if ((lengthOfText + totalLineLength)  < contentRegionX)
+							{
+								imgui_SameLine(0f, 0f);
+							}
 							imgui_TextColored(color.r, color.g, color.b, color.a, nextline);
+							totalLineLength += lengthOfText;
+							
 						}
 					}
 					else if (rawText[i] == "\n")
 					{
+					
 						imgui_Text("");
+						totalLineLength = 0;
 					}
 					else
 					{
-						imgui_SameLine(0f, 0f);
-						imgui_Text(rawText[i]);
+						
+						var nextline = rawText[i];
+						var lengthOfText = imgui_CalcTextSizeX(nextline);
+
+						if ((lengthOfText + totalLineLength) < contentRegionX)
+						{
+							imgui_SameLine(0f, 0f);
+						}
+						
+						imgui_Text(nextline);
+						totalLineLength += lengthOfText;
 					}
 				}
 			}

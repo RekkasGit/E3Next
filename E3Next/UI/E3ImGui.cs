@@ -365,10 +365,16 @@ namespace MonoCore
 		[MethodImpl(MethodImplOptions.InternalCall)]
 		public extern static bool imgui_PopID();
 
-
-		// Colors / styled text
 		[MethodImpl(MethodImplOptions.InternalCall)]
 		public extern static void imgui_TextColored(float r, float g, float b, float a, string text);
+		// Colors / styled text
+		[MethodImpl(MethodImplOptions.InternalCall)]
+		public extern static void imgui_TextUnformatted(string text);
+
+		[MethodImpl(MethodImplOptions.InternalCall)]
+		public extern static float imgui_CalcTextSizeX(string text);
+
+
 		[MethodImpl(MethodImplOptions.InternalCall)]
 		public extern static void imgui_PushStyleColor(int which, float r, float g, float b, float a);
 		[MethodImpl(MethodImplOptions.InternalCall)]
