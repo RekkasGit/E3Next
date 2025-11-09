@@ -7,6 +7,7 @@ using System.Linq;
 using System.Reflection;
 using System.Text;
 using System.Threading.Tasks;
+using System.Web.UI;
 
 namespace E3Core.Processors
 {
@@ -145,6 +146,20 @@ namespace E3Core.Processors
 				{
 					E3.Bots.Broadcast(pair.Key,true);
 				}
+				E3.Bots.Broadcast("${Assisting}", true);
+				E3.Bots.Broadcast("${InCombat}", true);
+				E3.Bots.Broadcast("${AssistTarget}", true);
+				E3.Bots.Broadcast("${AssistType}", true);
+				E3.Bots.Broadcast("${use_QUICKBurns}", true);
+				E3.Bots.Broadcast("${use_LONGBurns}", true);
+				E3.Bots.Broadcast("${use_FULLBurns}", true);
+				E3.Bots.Broadcast("${use_EPICBurns}", true);
+				E3.Bots.Broadcast("${use_Swarms}", true);
+				E3.Bots.Broadcast("${StandingStillForTimePeriod}", true);
+				E3.Bots.Broadcast("${NotStandingStillForTimePeriod}", true);
+				E3.Bots.Broadcast("${IsSafeZone}", true);
+				E3.Bots.Broadcast("${IsNotSafeZone}", true);
+				E3.Bots.Broadcast("${PBAEON}", true);
 
 			});
 			EventProcessor.RegisterCommand("/e3broadcastwrites", (x) =>
