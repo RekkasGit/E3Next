@@ -11,6 +11,7 @@ using System.Collections.Generic;
 using System.Globalization;
 using System.IO;
 using System.Linq;
+using System.Net;
 using System.Runtime.CompilerServices;
 using System.Security.Permissions;
 using System.Text;
@@ -4727,9 +4728,26 @@ namespace E3Core.UI.Windows
 						if ((lengthOfText + totalLineLength) < contentRegionX)
 						{
 							imgui_SameLine(0f, 0f);
+							imgui_Text(nextline);
 						}
-						
-						imgui_Text(nextline);
+						else
+						{
+							//means our line won't fit, see if half the line will fit?
+							Int32 midpoint =nextline.Length / 2;
+							string firstHalf = nextline.Substring(0, midpoint);
+							string secondHalf = nextline.Substring(midpoint);
+							var lengthOfHalfOfText = imgui_CalcTextSizeX(firstHalf);
+							if ((lengthOfHalfOfText + totalLineLength) < contentRegionX)
+							{
+								imgui_SameLine(0f, 0f);
+								imgui_Text(firstHalf);
+								imgui_Text(secondHalf);
+							}
+							else
+							{
+								imgui_Text(nextline);
+							}
+						}
 						totalLineLength += lengthOfText;
 					}
 				}
