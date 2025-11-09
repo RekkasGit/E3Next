@@ -1809,6 +1809,8 @@ namespace E3Core.Settings
 
 		private static void ConvertConfigKeyDescriptions()
 		{
+			if (ConfigKeyDescriptionsBySection.Count > 0) return;
+
 			string regexSplit = @"\[(color=.+)\](.+)\[\/color]";
 			foreach (var pair in ConfigKeyDescriptionsBySection)
 			{
