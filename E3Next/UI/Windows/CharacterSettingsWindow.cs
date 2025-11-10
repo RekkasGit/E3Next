@@ -3582,8 +3582,7 @@ namespace E3Core.UI.Windows
 								{
 									var vals = GetValues(kd);
 									string v = (_state.State_SelectedCatalogEntry.Name ?? string.Empty).Trim();
-									var catalogIndex = _state.State_CatalogReplaceIndex;
-									if (_state.State_CatalogReplaceMode && catalogIndex >= 0 && catalogIndex < vals.Count)
+									if (_state.State_CatalogReplaceMode && _state.State_CatalogReplaceIndex >= 0 && _state.State_CatalogReplaceIndex < vals.Count)
 									{
 										vals[_state.State_CatalogReplaceIndex] = v;
 										WriteValues(kd, vals);
@@ -4238,24 +4237,43 @@ namespace E3Core.UI.Windows
 				}
 			}
 		}
-		private static List<string> GetSectionsForDisplay()
+	private static List<string> GetSectionsForDisplay()
+	{
+		var search = (_state.Buffer_KeySearch ?? string.Empty).Trim();
+		if (string.IsNullOrWhiteSpace(search))
 		{
-			var search = (_state.Buffer_KeySearch ?? string.Empty).Trim();
-			if (string.IsNullOrWhiteSpace(search))
+			return _state.Data_SectionsOrdered;
+		}
+		//lets look for the data based off search
+		var matches = new List<String>();
+		var pd = GetActiveCharacterIniData();
+		if (pd == null) return matches;
+		
+		foreach (var section in _state.Data_SectionsOrdered)
+		{
+			// Check if section name matches
+			if (section.IndexOf(search, 0, StringComparison.OrdinalIgnoreCase) > -1)
 			{
-				return _state.Data_SectionsOrdered;
+				matches.Add(section);
+				continue;
 			}
-			//lets look for the data based off search
-			var matches = new List<String>();
-			foreach (var section in _state.Data_SectionsOrdered)
+			
+			// Check if any key in this section matches
+			var secData = pd.Sections.GetSectionData(section);
+			if (secData?.Keys != null)
 			{
-				if (section.IndexOf(search, 0, StringComparison.OrdinalIgnoreCase) > -1)
+				foreach (var key in secData.Keys)
 				{
-					matches.Add(section);
+					if (key.KeyName.IndexOf(search, 0, StringComparison.OrdinalIgnoreCase) > -1)
+					{
+						matches.Add(section);
+						break;
+					}
 				}
 			}
-			return matches;
 		}
+		return matches;
+	}
 		
 		private static string GetActiveSettingsPath()
 		{
@@ -4683,15 +4701,15 @@ namespace E3Core.UI.Windows
 
 		private static void RenderDescriptionRichText(List<string> rawText)
 		{
-			if (rawText.Count==0)
+			if (rawText.Count == 0)
 			{
 				return;
 			}
-			float contentRegionX = imgui_GetContentRegionAvailX();
-			imgui_PushTextWrapPos(contentRegionX);
+			imgui_PushTextWrapPos(imgui_GetContentRegionAvailX());
 			try
 			{
 
+				float contentRegionX = imgui_GetContentRegionAvailX();
 				imgui_Text("");
 				float totalLineLength = 0;
 				for (Int32 i = 0; i < rawText.Count; i++)
@@ -4705,24 +4723,24 @@ namespace E3Core.UI.Windows
 							var nextline = rawText[i];
 							var lengthOfText = imgui_CalcTextSizeX(nextline);
 
-							if ((lengthOfText + totalLineLength)  < contentRegionX)
+							if ((lengthOfText + totalLineLength) < contentRegionX)
 							{
 								imgui_SameLine(0f, 0f);
 							}
 							imgui_TextColored(color.r, color.g, color.b, color.a, nextline);
 							totalLineLength += lengthOfText;
-							
+
 						}
 					}
 					else if (rawText[i] == "\n")
 					{
-					
+
 						imgui_Text("");
 						totalLineLength = 0;
 					}
 					else
 					{
-						
+
 						var nextline = rawText[i];
 						var lengthOfText = imgui_CalcTextSizeX(nextline);
 
@@ -4731,10 +4749,10 @@ namespace E3Core.UI.Windows
 							imgui_SameLine(0f, 0f);
 							imgui_Text(nextline);
 						}
-						else if(totalLineLength>0) 
+						else if (totalLineLength > 0)
 						{
 							//means our line won't fit, see if half the line will fit?
-							Int32 midpoint =nextline.Length / 2;
+							Int32 midpoint = nextline.Length / 2;
 							string firstHalf = nextline.Substring(0, midpoint);
 							string secondHalf = nextline.Substring(midpoint);
 							var lengthOfHalfOfText = imgui_CalcTextSizeX(firstHalf);
@@ -4760,6 +4778,82 @@ namespace E3Core.UI.Windows
 			finally
 			{
 				imgui_PopTextWrapPos();
+			}
+		}
+
+		private static void RenderDescriptionRichText2(List<string> rawText)
+		{
+			if (rawText.Count == 0)
+			{
+				return;
+			}
+
+			// Start on a new line
+			imgui_Text("");
+
+			// Preprocess into parts with colors
+			var parts = new List<(string text, (float r, float g, float b, float a)? color)>();
+			for (int i = 0; i < rawText.Count; i++)
+			{
+				if (_inlineDescriptionColorMap.TryGetValue(rawText[i], out var color))
+				{
+					if ((i + 1) < rawText.Count)
+					{
+						i++;
+						parts.Add((rawText[i], color));
+					}
+				}
+				else if (rawText[i] == "\n")
+				{
+					parts.Add(("\n", null)); // newline marker
+				}
+				else
+				{
+					parts.Add((rawText[i], null)); // default color
+				}
+			}
+
+			// Render using ImGui text functions with wrapping
+			float maxWidth = imgui_GetContentRegionAvailX();
+			float currentWidth = 0;
+			foreach (var part in parts)
+			{
+				if (part.text == "\n")
+				{
+					imgui_Text("");
+					currentWidth = 0;
+					continue;
+				}
+				float partWidth = imgui_CalcTextSizeX(part.text);
+				bool useSameLine = partWidth <= maxWidth && currentWidth + partWidth <= maxWidth;
+				if (useSameLine)
+				{
+					imgui_SameLine(0f, 0f);
+				}
+				if (part.color.HasValue)
+				{
+					imgui_PushStyleColor((int)ImGuiCol.Text, part.color.Value.r, part.color.Value.g, part.color.Value.b, part.color.Value.a);
+				}
+				if (partWidth > maxWidth)
+				{
+					imgui_TextWrapped(part.text);
+				}
+				else
+				{
+					imgui_Text(part.text);
+				}
+				if (part.color.HasValue)
+				{
+					imgui_PopStyleColor(1);
+				}
+				if (useSameLine)
+				{
+					currentWidth += partWidth;
+				}
+				else
+				{
+					currentWidth = partWidth;
+				}
 			}
 		}
 		
