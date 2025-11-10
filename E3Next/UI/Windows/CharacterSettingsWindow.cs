@@ -63,7 +63,9 @@ namespace E3Core.UI.Windows
 			public string Buffer_KeySearch = String.Empty;
 			public string Buffer_NewKey = string.Empty;
 			public string Buffer_NewValue = String.Empty;
-			
+			public string Buffer_InlineEdit = string.Empty;
+			public int PendingValueSelection = -1;
+
 
 		}
 		private class State_AllPlayers
@@ -101,12 +103,17 @@ namespace E3Core.UI.Windows
 			public Dictionary<int, string> MelodyGemBuffers = new Dictionary<int, string>();
 
 		}
+		private class State_SpellInfo
+		{
+			public E3Spell Spell = null;
+		}
 		private class CharacterSettingsState
 		{
 			private State_CatalogWindow _catalogWindowState = new State_CatalogWindow();
 			private State_MainWindow _mainWindowState = new State_MainWindow();
 			private State_AllPlayers _allPlayersState = new State_AllPlayers();
 			private State_BardEditor _bardEditorState = new State_BardEditor();
+			private State_SpellInfo _spellInfoState = new State_SpellInfo();
 			public CharacterSettingsState() {
 				//set all initial windows to not show
 				if(Core._MQ2MonoVersion>0.34m) ClearWindows();
@@ -130,6 +137,10 @@ namespace E3Core.UI.Windows
 				else if (type == typeof(State_BardEditor))
 				{
 					return (T)(object)_bardEditorState;
+				}
+				else if (type == typeof(State_SpellInfo))
+				{
+					return (T)(object)_spellInfoState;
 				}
 				return default(T);
 			}
@@ -341,8 +352,7 @@ namespace E3Core.UI.Windows
 
 
 
-		private static E3Spell _cfgCatalogInfoSpell = null;
-		private static E3Spell _cfgSpellInfoSpell = null;
+	
 
 		private enum AddType { Spells, AAs, Discs, Skills, Items }
 		private enum CatalogMode { Standard, BardSong }
@@ -384,9 +394,7 @@ namespace E3Core.UI.Windows
 		
 	
 		// Inline edit helpers
-		private static string _cfgInlineEditBuffer = string.Empty;
-		private static int _cfgPendingValueSelection = -1;
-		private static string _cfgSelectedClass = string.Empty;
+		
 		private const float _valueRowActionStartOffset = 46f;
 	
 		// Collapsible section state tracking
@@ -1621,13 +1629,13 @@ namespace E3Core.UI.Windows
 						vals[fromIndex] = temp;
 						WriteValues(key, vals);
 						listChanged = true;
-						_cfgPendingValueSelection = toIndex;
+						mainWindowState.PendingValueSelection = toIndex;
 					}
 
 					void StartInlineEdit(int index, string currentValue)
 					{
 						mainWindowState.InLineEditIndex = index;
-						_cfgInlineEditBuffer = currentValue ?? string.Empty;
+						mainWindowState.Buffer_InlineEdit = currentValue ?? string.Empty;
 					}
 
 					void DeleteValueAt(int index)
@@ -1674,7 +1682,7 @@ namespace E3Core.UI.Windows
 					if (imgui_Selectable($"{v}##select_{itemUid}", isSelected))
 					{
 						mainWindowState.SelectedValueIndex = i;
-						_cfgInlineEditBuffer = v;
+						mainWindowState.Buffer_InlineEdit = v;
 					}
 					if (imgui_BeginPopupContextItem($"ValueCtx_{itemUid}", 1))
 					{
@@ -1700,14 +1708,14 @@ namespace E3Core.UI.Windows
 					float editWidth = Math.Max(420f, editAvail - 140f);
 					editWidth = Math.Min(editWidth, Math.Max(260f, editAvail - 80f));
 					float editHeight = Math.Max(140f, imgui_GetTextLineHeightWithSpacing() * 6f);
-					if (imgui_InputTextMultiline($"##edit_text_{itemUid}", _cfgInlineEditBuffer ?? string.Empty, editWidth, editHeight))
+					if (imgui_InputTextMultiline($"##edit_text_{itemUid}", mainWindowState.Buffer_InlineEdit ?? string.Empty, editWidth, editHeight))
 					{
-						_cfgInlineEditBuffer = imgui_InputText_Get($"##edit_text_{itemUid}");
+						mainWindowState.Buffer_InlineEdit = imgui_InputText_Get($"##edit_text_{itemUid}");
 					}
 
 					if (imgui_Button($"Save##save_{itemUid}"))
 					{
-						string newText = _cfgInlineEditBuffer ?? string.Empty;
+						string newText = mainWindowState.Buffer_InlineEdit ?? string.Empty;
 						int idx = i;
 						var pdAct = GetActiveCharacterIniData();
 						var selSec = pdAct.Sections.GetSectionData(mainWindowState.SelectedSection);
@@ -1723,7 +1731,7 @@ namespace E3Core.UI.Windows
 							}
 						}
 						mainWindowState.InLineEditIndex = -1;
-						_cfgInlineEditBuffer = string.Empty;
+						mainWindowState.Buffer_InlineEdit = string.Empty;
 						// continue to render items; parts refresh handled below
 					}
 					imgui_SameLine();
@@ -1731,7 +1739,7 @@ namespace E3Core.UI.Windows
 					if (imgui_Button($"Cancel##cancel_{itemUid}"))
 					{
 						mainWindowState.InLineEditIndex = -1;
-						_cfgInlineEditBuffer = string.Empty;
+						mainWindowState.Buffer_InlineEdit = string.Empty;
 					}
 				}
 
@@ -1742,15 +1750,15 @@ namespace E3Core.UI.Windows
 					var updatedKd = selectedSection.Keys.GetKeyData(mainWindowState.SelectedKey ?? string.Empty);
 					parts = GetValues(updatedKd);
 					listChanged = false; // Reset the flag
-					if (_cfgPendingValueSelection >= 0 && _cfgPendingValueSelection < parts.Count)
+					if (mainWindowState.PendingValueSelection >= 0 && mainWindowState.PendingValueSelection < parts.Count)
 					{
-						mainWindowState.SelectedValueIndex = _cfgPendingValueSelection;
+						mainWindowState.SelectedValueIndex = mainWindowState.PendingValueSelection;
 					}
 					else
 					{
 						mainWindowState.SelectedValueIndex = -1;
 					}
-					_cfgPendingValueSelection = -1;
+					mainWindowState.PendingValueSelection = -1;
 					// Adjust the loop counter since we've removed an item
 					i--;
 				}
@@ -1769,14 +1777,14 @@ namespace E3Core.UI.Windows
 				float addManualWidth = Math.Max(420f, addAvail - 140f);
 				addManualWidth = Math.Min(addManualWidth, Math.Max(260f, addAvail - 80f));
 				float addManualHeight = Math.Max(140f, imgui_GetTextLineHeightWithSpacing() * 6f);
-				if (imgui_InputTextMultiline($"##add_new_manual", _cfgInlineEditBuffer ?? string.Empty, addManualWidth, addManualHeight))
+				if (imgui_InputTextMultiline($"##add_new_manual", mainWindowState.Buffer_InlineEdit ?? string.Empty, addManualWidth, addManualHeight))
 				{
-					_cfgInlineEditBuffer = imgui_InputText_Get($"##add_new_manual");
+					mainWindowState.Buffer_InlineEdit = imgui_InputText_Get($"##add_new_manual");
 				}
 
 				if (imgui_Button($"Add##add_manual"))
 				{
-					string newText = _cfgInlineEditBuffer ?? string.Empty;
+					string newText = mainWindowState.Buffer_InlineEdit ?? string.Empty;
 					if (!string.IsNullOrWhiteSpace(newText))
 					{
 						var pdAct = GetActiveCharacterIniData();
@@ -1787,18 +1795,18 @@ namespace E3Core.UI.Windows
 							var vals = GetValues(key);
 							vals.Add(newText.Trim());
 							WriteValues(key, vals);
-							_cfgPendingValueSelection = vals.Count - 1;
+							mainWindowState.PendingValueSelection = vals.Count - 1;
 						}
 					}
 					mainWindowState.InLineEditIndex = -1;
-					_cfgInlineEditBuffer = string.Empty;
+					mainWindowState.Buffer_InlineEdit = string.Empty;
 				}
 				imgui_SameLine();
 
 				if (imgui_Button($"Cancel##cancel_manual"))
 				{
 					mainWindowState.InLineEditIndex = -1;
-					_cfgInlineEditBuffer = string.Empty;
+					mainWindowState.Buffer_InlineEdit = string.Empty;
 				}
 			}
 			// Add new value button (only show when not editing)
@@ -1813,7 +1821,7 @@ namespace E3Core.UI.Windows
 				if (imgui_Button("Add Manual"))
 				{
 					mainWindowState.InLineEditIndex = parts.Count;
-					_cfgInlineEditBuffer = string.Empty;
+					mainWindowState.Buffer_InlineEdit = string.Empty;
 				}
 				imgui_SameLine();
 
@@ -3702,7 +3710,7 @@ namespace E3Core.UI.Windows
 									{
 										vals[state.ReplaceIndex] = v;
 										WriteValues(kd, vals);
-										_cfgPendingValueSelection = state.ReplaceIndex;
+										mainWindowState.PendingValueSelection = state.ReplaceIndex;
 										state.ReplaceMode = false;
 										state.ReplaceIndex = -1;
 									}
@@ -3710,7 +3718,7 @@ namespace E3Core.UI.Windows
 									{
 										vals.Add(v);
 										WriteValues(kd, vals);
-										_cfgPendingValueSelection = vals.Count - 1;
+										mainWindowState.PendingValueSelection = vals.Count - 1;
 									}
 								}
 							}
@@ -6564,7 +6572,10 @@ namespace E3Core.UI.Windows
 
 		private static void RenderSpellInfoModal()
 		{
-			var s = _cfgSpellInfoSpell;
+			var state = _state.GetState<State_SpellInfo>();
+
+			var s = state.Spell;
+
 			if (s == null) { _state.Show_SpellInfoModal = false; return; }
 			bool open = imgui_Begin(_state.WinName_SpellInfoModal, (int)(ImGuiWindowFlags.ImGuiWindowFlags_AlwaysAutoResize | ImGuiWindowFlags.ImGuiWindowFlags_NoDocking));
 			if (open)
@@ -6683,11 +6694,11 @@ namespace E3Core.UI.Windows
 				if (imgui_Button("Close"))
 				{
 					_state.Show_SpellInfoModal = false;
-					_cfgSpellInfoSpell = null;
+					state.Spell = null;
 				}
 			}
 			imgui_End();
-			if (!_state.Show_SpellInfoModal) { _cfgSpellInfoSpell = null; }
+			if (!_state.Show_SpellInfoModal) { state.Spell = null; }
 		}
 
 		private static void RenderDonateModal()
