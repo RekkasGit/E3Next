@@ -11,14 +11,9 @@ using System.Collections.Generic;
 using System.Globalization;
 using System.IO;
 using System.Linq;
-using System.Net;
-using System.Runtime.CompilerServices;
-using System.Security.Permissions;
 using System.Text;
 using System.Text.RegularExpressions;
 using static MonoCore.E3ImGUI;
-using static System.Net.Mime.MediaTypeNames;
-using static System.Windows.Forms.AxHost;
 
 namespace E3Core.UI.Windows
 {
@@ -39,9 +34,55 @@ namespace E3Core.UI.Windows
 			public AddType CurrentAddType = AddType.Spells;
 			public Int32 BardSongPickerIndex = -1;
 		}
+		private class State_MainWindow
+		{
+			public IniData CurrentINIData;
+			public string CurrentINIFileNameFull = string.Empty;
+
+			public string SelectedCharacterSection = string.Empty;
+			public string SelectedSection = string.Empty;
+			public string SelectedAddInLine = String.Empty;
+			public string SelectedKey = string.Empty;
+			public Int32 SelectedValueIndex = -1;
+
+			public string SignatureOfSelectedKeyValue = String.Empty;
+
+			public string[] IniFilesFromDisk = Array.Empty<string>();
+			public List<string> SectionsOrdered = new List<string>();
+
+			public bool Show_ShowIntegratedEditor = false;
+			public bool Show_AddInLine = false;
+			public bool ShowOfflineCharacters = false;
+			public bool ConfigIsDirty = false;
+			public string LastIniPath = String.Empty;
+			public int InLineEditIndex = -1;
+			// Context menu state for Ifs/Burn sections
+			public bool Show_ContextMenu = false;
+			public string ContextMenuFor = string.Empty; // "Ifs" or "Burn"
+														  //buffers
+			public string Buffer_KeySearch = String.Empty;
+			public string Buffer_NewKey = string.Empty;
+			public string Buffer_NewValue = String.Empty;
+			
+
+		}
+		private class State_AllPlayers
+		{
+			public Dictionary<string, string> Data_AllPlayersEdit = new Dictionary<string, string>(StringComparer.OrdinalIgnoreCase);
+			public List<KeyValuePair<string, string>> Data_AllPlayerRows = new List<KeyValuePair<string, string>>();
+			public bool Show_AllPlayersView = false;
+			public object _cfgAllPlayersLock = new object();
+			public string _cfgAllPlayersReqSection = string.Empty;
+			public string _cfgAllPlayersReqKey = string.Empty;
+			public long _cfgAllPlayersLastUpdatedAt = 0;
+			public int _cfgAllPlayersRefreshIntervalMs = 5000;
+			public string _cfgAllPlayersStatus = string.Empty;
+		}
 		private class CharacterSettingsState
 		{
 			private State_CatalogWindow _catalogWindowState = new State_CatalogWindow();
+			private State_MainWindow _mainWindowState = new State_MainWindow();
+			private State_AllPlayers _allPlayersState = new State_AllPlayers();
 
 			public CharacterSettingsState() {
 				//set all initial windows to not show
@@ -50,38 +91,42 @@ namespace E3Core.UI.Windows
 
 			public T GetState<T>()
 			{
-				if (typeof(T) == typeof(State_CatalogWindow))
+				var type = typeof(T);
+				if (type == typeof(State_CatalogWindow))
 				{
 					return (T)(object)_catalogWindowState;
+				}
+				else if(type == typeof(State_MainWindow))
+				{
+					return (T)(object)_mainWindowState;
+				}
+				else if (type == typeof(State_AllPlayers))
+				{
+					return (T)(object)_allPlayersState;
 				}
 				return default(T);
 			}
 
 			//state
-			public string State_SelectedSection = string.Empty;
+			//public string State_SelectedSection = string.Empty;
 		
 			
-			// "Ifs" or "Burn",// Inline add editor state (rendered in Values column)
-			public string State_SelectedAddInLine = String.Empty;
-			public string State_SelectedKey = string.Empty;
-			public string State_SectionAndKeySig = String.Empty;
-			public Int32 State_SelectedValueIndex = -1;
+			//// "Ifs" or "Burn",// Inline add editor state (rendered in Values column)
+			//public string State_SelectedAddInLine = String.Empty;
+			//public string State_SelectedKey = string.Empty;
+			//public string State_SectionAndKeySig = String.Empty;
+			//public Int32 State_SelectedValueIndex = -1;
 			
 			public bool State_CatalogReady = false;
 			public bool State_CatalogLoading = false;
 			public bool State_CatalogLoadRequested = false;
-			public bool State_ShowOfflineCharacters = false;
-			public bool State_ConfigIsDirty = false;
-			public string State_LastIniPath = String.Empty;
-			public int State_InLineEditIndex = -1;
 
 			//Note on Volatile variables... all this means is if its set on another thread, we will eventually get the update.
 			//its somewhat one way, us setting the variable on this side doesn't let the other thread see the update.
 			public volatile bool State_GemsAvailable = false; // Whether we have gem data
 
 
-			public string State_CurrentINIFileNameFull = string.Empty;
-			public IniData State_CurrentINIData;
+		
 
 			//status
 			public string Status_CatalogRequest = String.Empty;
@@ -99,9 +144,7 @@ namespace E3Core.UI.Windows
 				get { return imgui_Begin_OpenFlagGet(WinName_ThemeSettings); }
 				set { imgui_Begin_OpenFlagSet(WinName_ThemeSettings, value); }
 			}
-			public bool Show_AllPlayersView = false;
-			public bool Show_ShowIntegratedEditor = false;
-			public bool Show_AddInLine = false;
+		
 			
 			public string WinName_AddModal = "E3Catalog";
 
@@ -182,17 +225,11 @@ namespace E3Core.UI.Windows
 			}
 
 
-			//buffers
-			public string Buffer_KeySearch = String.Empty;
-			public string Buffer_NewKey = string.Empty;
-			public string Buffer_NewValue = String.Empty;
+	
 
 			
 			//data
-			public Dictionary<string, string> Data_AllPlayersEdit = new Dictionary<string, string>(StringComparer.OrdinalIgnoreCase);
-			public List<KeyValuePair<string, string>> Data_AllPlayerRows = new List<KeyValuePair<string, string>>();
-			public string[] Data_IniFilesFromDisk = Array.Empty<string>();
-			public List<string> Data_SectionsOrdered = new List<string>();
+			
 
 			//requests
 			public bool Request_AllplayersRefresh = false;
@@ -214,16 +251,14 @@ namespace E3Core.UI.Windows
 			}
 			public void ClearAddInLine()
 			{
-				_state.Show_AddInLine = false;
-				_state.State_SelectedKey = string.Empty;
-				_state.State_SelectedAddInLine = String.Empty;
-				_state.Buffer_NewKey = string.Empty;
-				_state.Buffer_NewValue = string.Empty;
+				var state= _state.GetState<State_MainWindow>();
+				state.Show_AddInLine = false;
+				state.SelectedKey = string.Empty;
+				state.SelectedAddInLine = String.Empty;
+				state.Buffer_NewKey = string.Empty;
+				state.Buffer_NewValue = string.Empty;
 			}
-			public void ClearState()
-			{
-				State_SectionAndKeySig = String.Empty;
-			}
+		
 		}
 
 		public static Logging _log = E3.Log;
@@ -318,9 +353,7 @@ namespace E3Core.UI.Windows
 		private static string _cfgBardSampleIfFilter = string.Empty;
 		private static List<KeyValuePair<string, string>> _cfgBardSampleIfLines = new List<KeyValuePair<string, string>>();
 
-		// Context menu state for Ifs/Burn sections
-		private static bool _showContextMenu = false;
-		private static string _contextMenuFor = string.Empty; // "Ifs" or "Burn"
+		
 		private static bool _cfgFoodDrinkPending = false;
 		private static string _cfgFoodDrinkPendingToon = string.Empty;
 		private static string _cfgFoodDrinkPendingType = string.Empty;
@@ -334,7 +367,7 @@ namespace E3Core.UI.Windows
 		private static SettingsTab _activeSettingsTab = SettingsTab.Character;
 		private static string _activeSettingsFilePath = string.Empty;
 		private static string[] _activeSettingsFileLines = Array.Empty<string>();
-		private static string _selectedCharacterSection = string.Empty;
+		
 	
 		// Inline edit helpers
 		private static string _cfgInlineEditBuffer = string.Empty;
@@ -403,13 +436,8 @@ namespace E3Core.UI.Windows
 		// "All Players" key view state/cache
 		private static long _cfgAllPlayersNextRefreshAtMs = 0;
 		private static Dictionary<string, string> _cfgAllPlayersServerByToon = new Dictionary<string, string>(StringComparer.OrdinalIgnoreCase);
-		private static readonly object _cfgAllPlayersLock = new object();
+		
 		private static bool _cfgAllPlayersRefreshing = false;
-		private static string _cfgAllPlayersReqSection = string.Empty;
-		private static string _cfgAllPlayersReqKey = string.Empty;
-		private static long _cfgAllPlayersLastUpdatedAt = 0;
-		private static int _cfgAllPlayersRefreshIntervalMs = 5000;
-		private static string _cfgAllPlayersStatus = string.Empty;
 
 		// Character .ini selection state
 		
@@ -533,9 +561,9 @@ namespace E3Core.UI.Windows
 						RenderCharacterIniSelector();
 						imgui_Separator();
 						RenderSearchBar();
-
-						if (_state.Show_AllPlayersView) RenderAllPlayersView();
-						if (!_state.Show_AllPlayersView) RenderConfigEditor();
+						var allPlayersState = _state.GetState<State_AllPlayers>();
+						if (allPlayersState.Show_AllPlayersView) RenderAllPlayersView();
+						if (!allPlayersState.Show_AllPlayersView) RenderConfigEditor();
 						if (_state.Show_ThemeSettings) RenderThemeSettingsModal();
 						if (_state.Show_Donate) RenderDonateModal();
 					}
@@ -599,44 +627,47 @@ namespace E3Core.UI.Windows
 		}
 		private static void RenderSearchBar()
 		{
+			var mainWindowState = _state.GetState<State_MainWindow>();
+			var allPlayerState = _state.GetState<State_AllPlayers>();
 			// All Players View toggle with better styling
 			imgui_Text("Search:");
 			imgui_SameLine();
 			imgui_SetNextItemWidth(Math.Max(200f, imgui_GetContentRegionAvailX() * 0.2f));
 			string searchId = $"configKeySearch";
-			string sectionSearchBefore = _state.Buffer_KeySearch ?? string.Empty;
+			string sectionSearchBefore = mainWindowState.Buffer_KeySearch ?? string.Empty;
 			if (imgui_InputText(searchId, sectionSearchBefore))
 			{
-				_state.Buffer_KeySearch = (imgui_InputText_Get(searchId) ?? string.Empty).Trim();
+				mainWindowState.Buffer_KeySearch = (imgui_InputText_Get(searchId) ?? string.Empty).Trim();
 			}
 			imgui_SameLine();
 			if (imgui_Button("Clear"))
 			{
 				imgui_InputTextClear(searchId); //necessary to clear out the C++ buffer for the search
-				_state.Buffer_KeySearch = string.Empty;
+				mainWindowState.Buffer_KeySearch = string.Empty;
 			}
 			imgui_SameLine();
 			imgui_Text("View Mode:");
 			imgui_SameLine();
-			if (imgui_Button(_state.Show_AllPlayersView ? "Switch to Character View" : "Switch to All Players View"))
+			if (imgui_Button(allPlayerState.Show_AllPlayersView ? "Switch to Character View" : "Switch to All Players View"))
 			{
-				_state.Show_AllPlayersView = !_state.Show_AllPlayersView;
+				allPlayerState.Show_AllPlayersView = !allPlayerState.Show_AllPlayersView;
 			}
 			imgui_SameLine();
-			imgui_TextColored(0.3f, 0.8f, 0.3f, 1.0f, _state.Show_AllPlayersView ? "All Players Mode" : "Character Mode");
+			imgui_TextColored(0.3f, 0.8f, 0.3f, 1.0f, allPlayerState.Show_AllPlayersView ? "All Players Mode" : "Character Mode");
 
 			imgui_Separator();
 
-			if (_state.Show_AllPlayersView)
+		
+			if (allPlayerState.Show_AllPlayersView)
 			{
-				string currentSig = $"{_state.State_SelectedSection}::{_state.State_SelectedKey}";
-				if (!string.Equals(currentSig, _state.State_SectionAndKeySig, StringComparison.OrdinalIgnoreCase))
+				string currentSig = $"{mainWindowState.SelectedSection}::{mainWindowState.SelectedKey}";
+				if (!string.Equals(currentSig, mainWindowState.SignatureOfSelectedKeyValue, StringComparison.OrdinalIgnoreCase))
 				{
-					_state.State_SectionAndKeySig = currentSig;
-					lock (_cfgAllPlayersLock)
+					mainWindowState.SignatureOfSelectedKeyValue = currentSig;
+					lock (allPlayerState._cfgAllPlayersLock)
 					{
-						_state.Data_AllPlayerRows = new List<KeyValuePair<string, string>>();
-						_state.Data_AllPlayersEdit= new Dictionary<string, string>(StringComparer.OrdinalIgnoreCase);
+						allPlayerState.Data_AllPlayerRows = new List<KeyValuePair<string, string>>();
+						allPlayerState.Data_AllPlayersEdit= new Dictionary<string, string>(StringComparer.OrdinalIgnoreCase);
 					}
 					_state.Request_AllplayersRefresh = true;
 				}
@@ -660,23 +691,28 @@ namespace E3Core.UI.Windows
 		}
 		private static void ChangeSelectedCharacter(string filename)
 		{
+			var state = _state.GetState<State_MainWindow>();
+
 			_log.Write($"Selecting other:{filename}", Logging.LogLevels.Debug);
 			var parser = e3util.CreateIniParser();
 			var pd = parser.ReadFile(filename);
-			_state.State_CurrentINIFileNameFull = filename;
-			_state.State_CurrentINIData = pd;
-			_selectedCharacterSection = string.Empty;
-			_state.ClearState();
+			state.CurrentINIFileNameFull = filename;
+			state.CurrentINIData = pd;
+			state.SelectedCharacterSection = string.Empty;
+			state.SignatureOfSelectedKeyValue = String.Empty;
+			
 			// Trigger catalog reload for the selected peer
 			RequestCatalogUpdate();
 		}
 		public static void RenderCharacterIniSelector()
 		{
+			var state = _state.GetState<State_MainWindow>();
+
 			ScanCharIniFilesIfNeeded();
 
 			var loggedInCharIniFile = GetCurrentCharacterIniPath();
 			string currentINIFileName = Path.GetFileName(loggedInCharIniFile);
-			string selectedINIFile = Path.GetFileName(_state.State_CurrentINIFileNameFull ?? loggedInCharIniFile);
+			string selectedINIFile = Path.GetFileName(state.CurrentINIFileNameFull ?? loggedInCharIniFile);
 			
 			if (string.IsNullOrWhiteSpace(selectedINIFile)) selectedINIFile = currentINIFileName;
 
@@ -690,7 +726,7 @@ namespace E3Core.UI.Windows
 				{
 					if (!string.IsNullOrEmpty(loggedInCharIniFile))
 					{
-						bool isloggedInCharacterSelected = string.Equals(_state.State_CurrentINIFileNameFull, loggedInCharIniFile, StringComparison.OrdinalIgnoreCase);
+						bool isloggedInCharacterSelected = string.Equals(state.CurrentINIFileNameFull, loggedInCharIniFile, StringComparison.OrdinalIgnoreCase);
 						if (imgui_Selectable($"Current: {currentINIFileName}", isloggedInCharacterSelected))
 						{
 							ChangeSelectedCharacter(loggedInCharIniFile);
@@ -698,12 +734,12 @@ namespace E3Core.UI.Windows
 					}
 					imgui_Text("Other Characters:");
 					imgui_Separator();
-					foreach (var f in _state.Data_IniFilesFromDisk)
+					foreach (var f in state.IniFilesFromDisk)
 					{
 						if (string.Equals(f, loggedInCharIniFile, StringComparison.OrdinalIgnoreCase)) continue;
-						if (!_state.State_ShowOfflineCharacters && !IsIniForOnlineToon(f, onlineToons)) continue;
+						if (!state.ShowOfflineCharacters && !IsIniForOnlineToon(f, onlineToons)) continue;
 						string name = Path.GetFileName(f);
-						bool sel = string.Equals(_state.State_CurrentINIFileNameFull, f, StringComparison.OrdinalIgnoreCase);
+						bool sel = string.Equals(state.CurrentINIFileNameFull, f, StringComparison.OrdinalIgnoreCase);
 						if (imgui_Selectable($"{name}", sel))
 						{
 							ChangeSelectedCharacter(f);
@@ -717,18 +753,18 @@ namespace E3Core.UI.Windows
 			}
 
 			imgui_SameLine();
-			_state.State_ShowOfflineCharacters = imgui_Checkbox("Show offline", _state.State_ShowOfflineCharacters);
+			state.ShowOfflineCharacters = imgui_Checkbox("Show offline", state.ShowOfflineCharacters);
 			imgui_SameLine();
 
 			// Save button with better styling
-			if (imgui_Button(_state.State_ConfigIsDirty ? "Save Changes*" : "Save Changes"))
+			if (imgui_Button(state.ConfigIsDirty ? "Save Changes*" : "Save Changes"))
 			{
 				SaveActiveIniData();
 			}
 			imgui_SameLine();
 
 			// Clear Changes button (only enabled when there are unsaved changes)
-			if (_state.State_ConfigIsDirty)
+			if (state.ConfigIsDirty)
 			{
 				if (imgui_Button("Clear Changes"))
 				{
@@ -745,21 +781,23 @@ namespace E3Core.UI.Windows
 				imgui_SameLine();
 			}
 
-			imgui_TextColored(0.6f, 0.6f, 0.6f, 1.0f, _state.State_ConfigIsDirty ? "Unsaved changes" : "All changes saved");
+			imgui_TextColored(0.6f, 0.6f, 0.6f, 1.0f, state.ConfigIsDirty ? "Unsaved changes" : "All changes saved");
 
 			imgui_Separator();
 		}
 
 		private static void RebuildSectionsOrderIfNeeded()
 		{
+			var state = _state.GetState<State_MainWindow>();
+
 			// Rebuild sections order when ini path changes
 			string activeIniPath = GetActiveSettingsPath() ?? string.Empty;
-			if (!string.Equals(activeIniPath, _state.State_LastIniPath, StringComparison.OrdinalIgnoreCase))
+			if (!string.Equals(activeIniPath, state.LastIniPath, StringComparison.OrdinalIgnoreCase))
 			{
-				_state.State_LastIniPath = activeIniPath;
-				_state.State_SelectedSection = string.Empty;
-				_state.State_SelectedKey = string.Empty;
-				_state.State_SelectedValueIndex = -1;
+				state.LastIniPath = activeIniPath;
+				state.SelectedSection = string.Empty;
+				state.SelectedKey = string.Empty;
+				state.SelectedValueIndex = -1;
 				BuildConfigSectionOrder();
 				// Auto-load catalogs on ini switch without blocking UI
 				RequestCatalogUpdate();
@@ -791,10 +829,12 @@ namespace E3Core.UI.Windows
 		}
 		private static SectionData GetCurrentSectionData()
 		{
-			if (_state.State_CurrentINIData != null)
+			var mainWindowState = _state.GetState<State_MainWindow>();
+
+			if (mainWindowState.CurrentINIData != null)
 			{
-				var data = _state.State_CurrentINIData;
-				var sec = data.Sections.GetSectionData(_state.State_SelectedSection);
+				var data = mainWindowState.CurrentINIData;
+				var sec = data.Sections.GetSectionData(mainWindowState.SelectedSection);
 				return sec;
 			}
 			return null;
@@ -802,6 +842,8 @@ namespace E3Core.UI.Windows
 
 		private static void RenderConfigEditor()
 		{
+			var state = _state.GetState<State_MainWindow>();
+
 			EnsureConfigEditorInit();
 			var pd = GetActiveCharacterIniData();
 			if (pd == null || pd.Sections == null){	imgui_TextColored(1.0f, 0.8f, 0.8f, 1.0f, "No character INI loaded.");return;}
@@ -813,7 +855,7 @@ namespace E3Core.UI.Windows
 				// Reserve space for spell gems display at bottom (header + separator + gem row with 40px icons + padding)
 			float reservedBottomSpace = _state.State_GemsAvailable ? 100f : 10f;
 			// Reserve additional space for integrated editor panel if open
-			if (_state.Show_ShowIntegratedEditor && _state.State_SelectedValueIndex >= 0)
+			if (state.Show_ShowIntegratedEditor && state.SelectedValueIndex >= 0)
 			{
 				reservedBottomSpace += 350f; // Space for integrated editor tabs and controls
 			}
@@ -842,7 +884,7 @@ namespace E3Core.UI.Windows
 			}
 
 			// Render integrated editor after table if active
-			if (_state.Show_ShowIntegratedEditor && _state.State_SelectedValueIndex >= 0) { RenderIntegratedModifierEditor(); }
+			if (state.Show_ShowIntegratedEditor && state.SelectedValueIndex >= 0) { RenderIntegratedModifierEditor(); }
 			//Ensure popups/ modals render even when the tools column is hidden
 			SectionData activeSection = GetCurrentSectionData();
 			RenderActiveModals(activeSection);
@@ -852,6 +894,7 @@ namespace E3Core.UI.Windows
 		
 		public static void RenderConfigEditor_SelectionTree(IniData pd)
 		{
+			var state = _state.GetState<State_MainWindow>();
 			//Use a 1 - column table with RowBg to get built-in alternating backgrounds
 			int tableFlags = (int)(ImGuiTableFlags.ImGuiTableFlags_RowBg | ImGuiTableFlags.ImGuiTableFlags_ScrollY);
 			if (imgui_BeginTable("SectionsTreeTable", 1, tableFlags, 0, 0))
@@ -892,7 +935,7 @@ namespace E3Core.UI.Windows
 
 							if (itemHovered && imgui_IsMouseClicked(0))
 							{
-								_state.State_SelectedSection = sec;
+								state.SelectedSection = sec;
 								_state.ClearAddInLine();
 							}
 
@@ -900,9 +943,9 @@ namespace E3Core.UI.Windows
 							{
 								if (itemHovered && imgui_IsMouseClicked(1))
 								{
-									_showContextMenu = true;
-									_contextMenuFor = sec;
-									_state.State_SelectedSection = sec;
+									state.Show_ContextMenu = true;
+									state.ContextMenuFor = sec;
+									state.SelectedSection = sec;
 								}
 							}
 
@@ -917,10 +960,10 @@ namespace E3Core.UI.Windows
 									if (addIfs)
 									{
 										_state.ClearAddInLine();
-										_state.Show_AddInLine = true;
-										_state.State_SelectedAddInLine = "Ifs";
-										_state.State_SelectedSection = "Ifs";
-										_state.State_SelectedValueIndex = -1;
+										state.Show_AddInLine = true;
+										state.SelectedAddInLine = "Ifs";
+										state.SelectedSection = "Ifs";
+										state.SelectedValueIndex = -1;
 										
 									}
 
@@ -938,10 +981,10 @@ namespace E3Core.UI.Windows
 									if (addBurn)
 									{
 										_state.ClearAddInLine();
-										_state.Show_AddInLine = true;
-										_state.State_SelectedAddInLine = "Burn";
-										_state.State_SelectedSection = "Burn";
-										_state.State_SelectedValueIndex = -1;
+										state.Show_AddInLine = true;
+										state.SelectedAddInLine = "Burn";
+										state.SelectedSection = "Burn";
+										state.SelectedValueIndex = -1;
 									
 									}
 
@@ -958,16 +1001,16 @@ namespace E3Core.UI.Windows
 									//imgui_TableNextRow();
 									//imgui_TableNextColumn();
 
-									bool keySelected = string.Equals(_state.State_SelectedSection, sec, StringComparison.OrdinalIgnoreCase) &&
-										string.Equals(_state.State_SelectedKey, key, StringComparison.OrdinalIgnoreCase);
+									bool keySelected = string.Equals(state.SelectedSection, sec, StringComparison.OrdinalIgnoreCase) &&
+										string.Equals(state.SelectedKey, key, StringComparison.OrdinalIgnoreCase);
 
 									string keyLabel = $"  {key}"; // simple indent under section
 									if (imgui_Selectable(keyLabel, keySelected))
 									{
 										_state.ClearAddInLine();
-										_state.State_SelectedSection = sec;
-										_state.State_SelectedKey = key;
-										_state.State_SelectedValueIndex = -1;
+										state.SelectedSection = sec;
+										state.SelectedKey = key;
+										state.SelectedValueIndex = -1;
 									}
 
 									// Context menu for all keys (right-click)
@@ -995,6 +1038,8 @@ namespace E3Core.UI.Windows
 		}
 		private static void RenderConfigEditor_Values(IniData pd)
 		{
+			var state = _state.GetState<State_MainWindow>();
+
 			int tableFlags = (int)(ImGuiTableFlags.ImGuiTableFlags_RowBg | ImGuiTableFlags.ImGuiTableFlags_ScrollY);
 			if (imgui_BeginTable("ValuesTable", 1, tableFlags, 0, 0))
 			{
@@ -1003,7 +1048,7 @@ namespace E3Core.UI.Windows
 					imgui_TableSetupColumn("Values", 0, 0.35f);
 					imgui_TableNextRow();
 					imgui_TableNextColumn();
-					var selectedSection = pd.Sections.GetSectionData(_state.State_SelectedSection ?? string.Empty);
+					var selectedSection = pd.Sections.GetSectionData(state.SelectedSection ?? string.Empty);
 					//_log.Write($"Rendering with selected section {selectedSection.SectionName} with keys count:{selectedSection.Keys.Count} with pd:");
 					if (selectedSection == null)
 					{
@@ -1013,64 +1058,64 @@ namespace E3Core.UI.Windows
 					else if (selectedSection.Keys == null || selectedSection.Keys.Count() == 0)
 					{
 						// Empty section: allow creating a new key directly here
-						imgui_TextColored(0.8f, 0.9f, 0.95f, 1.0f, $"[{_state.State_SelectedSection}] (empty)");
+						imgui_TextColored(0.8f, 0.9f, 0.95f, 1.0f, $"[{state.SelectedSection}] (empty)");
 						imgui_Separator();
 						imgui_Text("Create new entry:");
 						imgui_SameLine();
 						imgui_SetNextItemWidth(220f);
-						if (imgui_InputText("##new_key_name", _state.Buffer_NewKey))
+						if (imgui_InputText("##new_key_name", state.Buffer_NewKey))
 						{
-							_state.Buffer_NewKey = imgui_InputText_Get("##new_key_name") ?? string.Empty;
+							state.Buffer_NewKey = imgui_InputText_Get("##new_key_name") ?? string.Empty;
 						}
 						imgui_SameLine();
 						if (imgui_Button("Add Key"))
 						{
-							string newKey = (_state.Buffer_NewKey ?? string.Empty).Trim();
+							string newKey = (state.Buffer_NewKey ?? string.Empty).Trim();
 							if (newKey.Length > 0 && !selectedSection.Keys.ContainsKey(newKey))
 							{
 								selectedSection.Keys.AddKey(newKey, string.Empty);
-								_state.State_SelectedKey = newKey;
-								_state.Buffer_NewKey = string.Empty;
-								_state.State_InLineEditIndex = -1;
+								state.SelectedKey = newKey;
+								state.Buffer_NewKey = string.Empty;
+								state.InLineEditIndex = -1;
 								// On next frame the normal values editor will show for the new key
 							}
 						}
 					}
 					// Inline Add New editor (triggered from header context menu)
-					if (_state.Show_AddInLine
-						&& string.Equals(_state.State_SelectedAddInLine, _state.State_SelectedSection, StringComparison.OrdinalIgnoreCase)
-						&& string.IsNullOrEmpty(_state.State_SelectedKey))
+					if (state.Show_AddInLine
+						&& string.Equals(state.SelectedAddInLine, state.SelectedSection, StringComparison.OrdinalIgnoreCase)
+						&& string.IsNullOrEmpty(state.SelectedKey))
 					{
-						imgui_TextColored(0.8f, 0.9f, 0.95f, 1.0f, _state.State_SelectedAddInLine.Equals("Ifs", StringComparison.OrdinalIgnoreCase) ? "Add New If" : "Add New Burn Key");
+						imgui_TextColored(0.8f, 0.9f, 0.95f, 1.0f, state.SelectedAddInLine.Equals("Ifs", StringComparison.OrdinalIgnoreCase) ? "Add New If" : "Add New Burn Key");
 						imgui_Text("Name:");
 						imgui_SameLine();
 						float inlineFieldAvail = imgui_GetContentRegionAvailX();
 						float inlineFieldWidth = Math.Max(320f, inlineFieldAvail * 0.45f);
 						inlineFieldWidth = Math.Min(inlineFieldWidth, Math.Max(260f, inlineFieldAvail - 60f));
 						imgui_SetNextItemWidth(inlineFieldWidth);
-						if (imgui_InputText("##inline_new_key", _state.Buffer_NewKey))
+						if (imgui_InputText("##inline_new_key", state.Buffer_NewKey))
 						{
-							_state.Buffer_NewKey = imgui_InputText_Get("##inline_new_key") ?? string.Empty;
+							state.Buffer_NewKey = imgui_InputText_Get("##inline_new_key") ?? string.Empty;
 						}
 						imgui_Text("Value:");
 						float inlineValueAvail = imgui_GetContentRegionAvailX();
 						float inlineValueWidth = Math.Max(420f, inlineValueAvail * 0.70f);
 						inlineValueWidth = Math.Min(inlineValueWidth, Math.Max(320f, inlineValueAvail - 80f));
 						float inlineValueHeight = Math.Max(140f, imgui_GetTextLineHeightWithSpacing() * 6f);
-						if (imgui_InputTextMultiline("##inline_new_value", _state.Buffer_NewValue ?? string.Empty, inlineValueWidth, inlineValueHeight))
+						if (imgui_InputTextMultiline("##inline_new_value", state.Buffer_NewValue ?? string.Empty, inlineValueWidth, inlineValueHeight))
 						{
-							_state.Buffer_NewValue = imgui_InputText_Get("##inline_new_value") ?? string.Empty;
+							state.Buffer_NewValue = imgui_InputText_Get("##inline_new_value") ?? string.Empty;
 						}
 						if (imgui_Button("Add##inline_add"))
 						{
-							string key = (_state.Buffer_NewKey ?? string.Empty).Trim();
-							string val = _state.Buffer_NewValue ?? string.Empty;
+							string key = (state.Buffer_NewKey ?? string.Empty).Trim();
+							string val = state.Buffer_NewValue ?? string.Empty;
 							bool added = false;
-							if (_state.State_SelectedAddInLine.Equals("Ifs", StringComparison.OrdinalIgnoreCase))
+							if (state.SelectedAddInLine.Equals("Ifs", StringComparison.OrdinalIgnoreCase))
 							{
 								added = AddIfToActiveIni(key, val);
 							}
-							else if (_state.State_SelectedAddInLine.Equals("Burn", StringComparison.OrdinalIgnoreCase))
+							else if (state.SelectedAddInLine.Equals("Burn", StringComparison.OrdinalIgnoreCase))
 							{
 								added = AddBurnToActiveIni(key, val);
 							}
@@ -1078,7 +1123,7 @@ namespace E3Core.UI.Windows
 							{
 								_state.ClearAddInLine();
 								// Open blank value editor if value was empty
-								_state.State_InLineEditIndex = 0;
+								state.InLineEditIndex = 0;
 							}
 						}
 						imgui_SameLine();
@@ -1088,7 +1133,7 @@ namespace E3Core.UI.Windows
 						}
 						imgui_Separator();
 					}
-					else if (string.IsNullOrEmpty(_state.State_SelectedKey))
+					else if (string.IsNullOrEmpty(state.SelectedKey))
 					{
 						// Section has keys, but no key selected yet: keep values panel empty
 						imgui_Text("Select a configuration key from the left panel.");
@@ -1108,7 +1153,9 @@ namespace E3Core.UI.Windows
 		}
 		public static void RenderConfigEditor_Tools(IniData pd)
 		{
-			var activeSection = pd.Sections.GetSectionData(_state.State_SelectedSection ?? string.Empty);
+			var state = _state.GetState<State_MainWindow>();
+
+			var activeSection = pd.Sections.GetSectionData(state.SelectedSection ?? string.Empty);
 
 			int tableFlags = (int)(ImGuiTableFlags.ImGuiTableFlags_RowBg | ImGuiTableFlags.ImGuiTableFlags_ScrollY);
 			if (imgui_BeginTable("ToolsInfoTable", 1, tableFlags, 0, 0))
@@ -1131,21 +1178,23 @@ namespace E3Core.UI.Windows
 		// Integrated editor panel - renders after the main table and spans full width
 		private static void RenderIntegratedModifierEditor()
 		{
+			var mainWindowState = _state.GetState<State_MainWindow>();
+
 			var iniData = GetActiveCharacterIniData();
-			var sectionData = iniData?.Sections?.GetSectionData(_state.State_SelectedSection ?? string.Empty);
-			var keyData = sectionData?.Keys?.GetKeyData(_state.State_SelectedKey ?? string.Empty);
+			var sectionData = iniData?.Sections?.GetSectionData(mainWindowState.SelectedSection ?? string.Empty);
+			var keyData = sectionData?.Keys?.GetKeyData(mainWindowState.SelectedKey ?? string.Empty);
 			var values = GetValues(keyData);
-			if (_state.State_SelectedValueIndex < 0 || _state.State_SelectedValueIndex >= values.Count)
+			if (mainWindowState.SelectedValueIndex < 0 || mainWindowState.SelectedValueIndex >= values.Count)
 			{
-				_state.Show_ShowIntegratedEditor = false;
+				mainWindowState.Show_ShowIntegratedEditor = false;
 				return;
 			}
 
-			string rawValue = values[_state.State_SelectedValueIndex] ?? string.Empty;
-			var state = EnsureSpellEditState(_state.State_SelectedSection, _state.State_SelectedKey, _state.State_SelectedValueIndex, rawValue);
+			string rawValue = values[mainWindowState.SelectedValueIndex] ?? string.Empty;
+			var state = EnsureSpellEditState(mainWindowState.SelectedSection, mainWindowState.SelectedKey, mainWindowState.SelectedValueIndex, rawValue);
 			if (state == null)
 			{
-				_state.Show_ShowIntegratedEditor = false;
+				mainWindowState.Show_ShowIntegratedEditor = false;
 				return;
 			}
 
@@ -1336,12 +1385,14 @@ namespace E3Core.UI.Windows
 		// Helper method to render values for the selected key
 		private static void RenderSelectedKeyValues(SectionData selectedSection)
 		{
+			var mainWindowState = _state.GetState<State_MainWindow>();
+
 			if (selectedSection == null || selectedSection.Keys==null)
 			{
 				return;
 
 			}
-			var kd = selectedSection.Keys.GetKeyData(_state.State_SelectedKey ?? string.Empty);
+			var kd = selectedSection.Keys.GetKeyData(mainWindowState.SelectedKey ?? string.Empty);
 
 			if(kd == null)
 			{
@@ -1350,7 +1401,7 @@ namespace E3Core.UI.Windows
 
 			var parts = GetValues(kd);
 			// Title row with better styling
-			imgui_TextColored(0.95f, 0.85f, 0.35f, 1.0f, $"[{_state.State_SelectedSection??""}] {_state.State_SelectedKey??""}");
+			imgui_TextColored(0.95f, 0.85f, 0.35f, 1.0f, $"[{mainWindowState.SelectedSection??""}] {mainWindowState.SelectedKey??""}");
 			imgui_Separator();
 			if (parts==null || parts.Count == 0)
 			{
@@ -1359,29 +1410,29 @@ namespace E3Core.UI.Windows
 				if (parts == null) return;
 			}
 			// Enumerated options derived from key label e.g. "(Melee/Ranged/Off)"
-			if (TryGetKeyOptions(_state.State_SelectedKey, out var enumOpts))
+			if (TryGetKeyOptions(mainWindowState.SelectedKey, out var enumOpts))
 			{
 				RenderSelectedKeyValues_Registered(parts, selectedSection, enumOpts);
 			}
 			// Boolean fast toggle support → dropdown selector with better styling
-			else if (IsBooleanConfigKey(_state.State_SelectedKey))
+			else if (IsBooleanConfigKey(mainWindowState.SelectedKey))
 			{
 				RenderSelectedKeyValues_Boolean(parts,selectedSection);
 			}
-			else if(IsIntergerConfigKey(_state.State_SelectedKey))
+			else if(IsIntergerConfigKey(mainWindowState.SelectedKey))
 			{
 				RenderSelectedKeyValues_Integers(parts, selectedSection);
 			}
-			else if (IsStringConfigKey(_state.State_SelectedKey))
+			else if (IsStringConfigKey(mainWindowState.SelectedKey))
 			{
 				RenderSelectedKeyValues_String(parts, selectedSection);
 			}
-			else if(!(String.IsNullOrWhiteSpace(_state.State_SelectedKey) || String.IsNullOrWhiteSpace(_state.State_SelectedSection)))
+			else if(!(String.IsNullOrWhiteSpace(mainWindowState.SelectedKey) || String.IsNullOrWhiteSpace(mainWindowState.SelectedSection)))
 			{
 				RenderSelectedKeyValues_Collections(parts,selectedSection);
 			}
 			
-			if(CharacterSettings.ConfigKeyDescriptionsForImGUI.TryGetValue($"{_state.State_SelectedSection}::{_state.State_SelectedKey}", out var description))
+			if(CharacterSettings.ConfigKeyDescriptionsForImGUI.TryGetValue($"{mainWindowState.SelectedSection}::{mainWindowState.SelectedKey}", out var description))
 			{
 				if (description.Count>0)
 				{
@@ -1404,25 +1455,29 @@ namespace E3Core.UI.Windows
 		}
 		private static void RenderSelectedKeyValues_String(List<string> parts, SectionData selectedSection)
 		{
-			if (imgui_InputText($"##edit_string_{_state.State_SelectedKey}", parts[0]))
+			var mainWindowState = _state.GetState<State_MainWindow>();
+
+			if (imgui_InputText($"##edit_string_{mainWindowState.SelectedKey}", parts[0]))
 			{
 				//parts is a direct pointer to ValuesList from the IniData, so can update it directly. 
-				parts[0] = imgui_InputText_Get($"##edit_string_{_state.State_SelectedKey}");
-				_state.State_ConfigIsDirty = true;
+				parts[0] = imgui_InputText_Get($"##edit_string_{mainWindowState.SelectedKey}");
+				mainWindowState.ConfigIsDirty = true;
 			}
 			imgui_Separator();
 		}
 		private static void RenderSelectedKeyValues_Integers(List<string> parts, SectionData selectedSection)
 		{
+			var mainWindowState = _state.GetState<State_MainWindow>();
+
 			// Edit mode with better styling
 			Int32 intValue = 0;
 			Int32.TryParse(parts[0], out intValue);
 
-			if (imgui_InputInt($"##edit_int_{_state.State_SelectedKey}", intValue, 5, 20))
+			if (imgui_InputInt($"##edit_int_{mainWindowState.SelectedKey}", intValue, 5, 20))
 			{
 				//parts is a direct pointer to ValuesList from the IniData, so can update it directly. 
-				parts[0] = imgui_InputInt_Get($"##edit_int_{_state.State_SelectedKey}").ToString();
-				_state.State_ConfigIsDirty = true;
+				parts[0] = imgui_InputInt_Get($"##edit_int_{mainWindowState.SelectedKey}").ToString();
+				mainWindowState.ConfigIsDirty = true;
 			}
 			imgui_Separator();
 		}
@@ -1430,6 +1485,8 @@ namespace E3Core.UI.Windows
 
 		private static void RenderSelectedKeyValues_Registered(List<string> parts, SectionData selectedSection, List<string> enumOpts)
 		{
+			var mainWindowState = _state.GetState<State_MainWindow>();
+
 			string current = parts[0];
 			string display = current.Length == 0 ? "(unset)" : current;
 			if (BeginComboSafe("Value", display))
@@ -1441,10 +1498,10 @@ namespace E3Core.UI.Windows
 					{
 						string chosen = opt;
 						var pdAct = GetActiveCharacterIniData();
-						var selSec = pdAct.Sections.GetSectionData(_state.State_SelectedSection);
-						if (selSec != null && selSec.Keys.ContainsKey(_state.State_SelectedKey))
+						var selSec = pdAct.Sections.GetSectionData(mainWindowState.SelectedSection);
+						if (selSec != null && selSec.Keys.ContainsKey(mainWindowState.SelectedKey))
 						{
-							var kdata = selSec.Keys.GetKeyData(_state.State_SelectedKey);
+							var kdata = selSec.Keys.GetKeyData(mainWindowState.SelectedKey);
 							if (kdata != null)
 							{
 								WriteValues(kdata, new List<string> { chosen });
@@ -1458,10 +1515,12 @@ namespace E3Core.UI.Windows
 		}
 		private static void RenderSelectedKeyValues_Boolean(List<string> parts, SectionData selectedSection)
 		{
+			var mainWindowState = _state.GetState<State_MainWindow>();
+
 			string current = parts[0];
 			// Derive allowed options from base E3 conventions
 			List<string> baseOpts;
-			var keyLabel = _state.State_SelectedKey ?? string.Empty;
+			var keyLabel = mainWindowState.SelectedKey ?? string.Empty;
 			bool mentionsOnOff = keyLabel.IndexOf("(On/Off)", StringComparison.OrdinalIgnoreCase) >= 0
 								 || keyLabel.IndexOf("On/Off", StringComparison.OrdinalIgnoreCase) >= 0
 								 || keyLabel.IndexOf("Enable", StringComparison.OrdinalIgnoreCase) >= 0
@@ -1491,10 +1550,10 @@ namespace E3Core.UI.Windows
 					{
 						string chosen = opt;
 						var pdAct = GetActiveCharacterIniData();
-						var selSec = pdAct.Sections.GetSectionData(_state.State_SelectedSection);
-						if (selSec != null && selSec.Keys.ContainsKey(_state.State_SelectedKey))
+						var selSec = pdAct.Sections.GetSectionData(mainWindowState.SelectedSection);
+						if (selSec != null && selSec.Keys.ContainsKey(mainWindowState.SelectedKey))
 						{
-							var kdata = selSec.Keys.GetKeyData(_state.State_SelectedKey);
+							var kdata = selSec.Keys.GetKeyData(mainWindowState.SelectedKey);
 							if (kdata != null)
 							{
 								WriteValues(kdata, new List<string> { chosen });
@@ -1509,15 +1568,16 @@ namespace E3Core.UI.Windows
 		private static void RenderSelectedKeyValues_Collections(List<string> parts, SectionData selectedSection)
 		{
 			var catalogState = _state.GetState<State_CatalogWindow>();
+			var mainWindowState = _state.GetState<State_MainWindow>();
 			bool listChanged = false;
 			imgui_TextColored(0.9f, 0.95f, 1.0f, 1.0f, "Configuration Values");
 
 			for (int i = 0; i < parts.Count; i++)
 			{
 				string v = parts[i];
-				bool editing = (_state.State_InLineEditIndex == i);
+				bool editing = (mainWindowState.InLineEditIndex == i);
 				// Create a unique ID for this item that doesn't depend on its position in the list
-				string itemUid = $"{_state.State_SelectedSection}_{_state.State_SelectedKey}_{i}_{(v ?? string.Empty).GetHashCode()}";
+				string itemUid = $"{mainWindowState.SelectedSection}_{mainWindowState.SelectedKey}_{i}_{(v ?? string.Empty).GetHashCode()}";
 
 				if (!editing)
 				{
@@ -1534,8 +1594,8 @@ namespace E3Core.UI.Windows
 					void SwapAndMark(int fromIndex, int toIndex)
 					{
 						var pdAct = GetActiveCharacterIniData();
-						var selSec = pdAct.Sections.GetSectionData(_state.State_SelectedSection);
-						var key = selSec?.Keys.GetKeyData(_state.State_SelectedKey);
+						var selSec = pdAct.Sections.GetSectionData(mainWindowState.SelectedSection);
+						var key = selSec?.Keys.GetKeyData(mainWindowState.SelectedKey);
 						if (key == null) return;
 
 						var vals = GetValues(key);
@@ -1552,15 +1612,15 @@ namespace E3Core.UI.Windows
 
 					void StartInlineEdit(int index, string currentValue)
 					{
-						_state.State_InLineEditIndex = index;
+						mainWindowState.InLineEditIndex = index;
 						_cfgInlineEditBuffer = currentValue ?? string.Empty;
 					}
 
 					void DeleteValueAt(int index)
 					{
 						var pdAct = GetActiveCharacterIniData();
-						var selSec = pdAct.Sections.GetSectionData(_state.State_SelectedSection);
-						var key = selSec?.Keys.GetKeyData(_state.State_SelectedKey);
+						var selSec = pdAct.Sections.GetSectionData(mainWindowState.SelectedSection);
+						var key = selSec?.Keys.GetKeyData(mainWindowState.SelectedKey);
 						if (key != null)
 						{
 							var vals = GetValues(key);
@@ -1596,10 +1656,10 @@ namespace E3Core.UI.Windows
 					imgui_SameLine();
 
 					// Make value selectable to show info in right panel
-					bool isSelected = (_state.State_SelectedValueIndex == i);
+					bool isSelected = (mainWindowState.SelectedValueIndex == i);
 					if (imgui_Selectable($"{v}##select_{itemUid}", isSelected))
 					{
-						_state.State_SelectedValueIndex = i;
+						mainWindowState.SelectedValueIndex = i;
 						_cfgInlineEditBuffer = v;
 					}
 					if (imgui_BeginPopupContextItem($"ValueCtx_{itemUid}", 1))
@@ -1636,8 +1696,8 @@ namespace E3Core.UI.Windows
 						string newText = _cfgInlineEditBuffer ?? string.Empty;
 						int idx = i;
 						var pdAct = GetActiveCharacterIniData();
-						var selSec = pdAct.Sections.GetSectionData(_state.State_SelectedSection);
-						var key = selSec?.Keys.GetKeyData(_state.State_SelectedKey);
+						var selSec = pdAct.Sections.GetSectionData(mainWindowState.SelectedSection);
+						var key = selSec?.Keys.GetKeyData(mainWindowState.SelectedKey);
 						if (key != null)
 						{
 							var vals = GetValues(key);
@@ -1648,7 +1708,7 @@ namespace E3Core.UI.Windows
 								listChanged = true;
 							}
 						}
-						_state.State_InLineEditIndex = -1;
+						mainWindowState.InLineEditIndex = -1;
 						_cfgInlineEditBuffer = string.Empty;
 						// continue to render items; parts refresh handled below
 					}
@@ -1656,7 +1716,7 @@ namespace E3Core.UI.Windows
 
 					if (imgui_Button($"Cancel##cancel_{itemUid}"))
 					{
-						_state.State_InLineEditIndex = -1;
+						mainWindowState.InLineEditIndex = -1;
 						_cfgInlineEditBuffer = string.Empty;
 					}
 				}
@@ -1665,16 +1725,16 @@ namespace E3Core.UI.Windows
 				if (listChanged)
 				{
 					// Re-get the values after modification
-					var updatedKd = selectedSection.Keys.GetKeyData(_state.State_SelectedKey ?? string.Empty);
+					var updatedKd = selectedSection.Keys.GetKeyData(mainWindowState.SelectedKey ?? string.Empty);
 					parts = GetValues(updatedKd);
 					listChanged = false; // Reset the flag
 					if (_cfgPendingValueSelection >= 0 && _cfgPendingValueSelection < parts.Count)
 					{
-						_state.State_SelectedValueIndex = _cfgPendingValueSelection;
+						mainWindowState.SelectedValueIndex = _cfgPendingValueSelection;
 					}
 					else
 					{
-						_state.State_SelectedValueIndex = -1;
+						mainWindowState.SelectedValueIndex = -1;
 					}
 					_cfgPendingValueSelection = -1;
 					// Adjust the loop counter since we've removed an item
@@ -1683,7 +1743,7 @@ namespace E3Core.UI.Windows
 			}
 
 			// Handle adding a new manual entry (if we're in add mode)
-			if (_state.State_InLineEditIndex >= parts.Count)
+			if (mainWindowState.InLineEditIndex >= parts.Count)
 			{
 				imgui_Separator();
 				imgui_TextColored(0.8f, 0.9f, 0.95f, 1.0f, "Add New Value");
@@ -1706,8 +1766,8 @@ namespace E3Core.UI.Windows
 					if (!string.IsNullOrWhiteSpace(newText))
 					{
 						var pdAct = GetActiveCharacterIniData();
-						var selSec = pdAct.Sections.GetSectionData(_state.State_SelectedSection);
-						var key = selSec?.Keys.GetKeyData(_state.State_SelectedKey);
+						var selSec = pdAct.Sections.GetSectionData(mainWindowState.SelectedSection);
+						var key = selSec?.Keys.GetKeyData(mainWindowState.SelectedKey);
 						if (key != null)
 						{
 							var vals = GetValues(key);
@@ -1716,29 +1776,29 @@ namespace E3Core.UI.Windows
 							_cfgPendingValueSelection = vals.Count - 1;
 						}
 					}
-					_state.State_InLineEditIndex = -1;
+					mainWindowState.InLineEditIndex = -1;
 					_cfgInlineEditBuffer = string.Empty;
 				}
 				imgui_SameLine();
 
 				if (imgui_Button($"Cancel##cancel_manual"))
 				{
-					_state.State_InLineEditIndex = -1;
+					mainWindowState.InLineEditIndex = -1;
 					_cfgInlineEditBuffer = string.Empty;
 				}
 			}
 			// Add new value button (only show when not editing)
-			else if (!listChanged && _state.State_InLineEditIndex == -1)
+			else if (!listChanged && mainWindowState.InLineEditIndex == -1)
 			{
 				imgui_Separator();
 				imgui_TextColored(0.8f, 0.9f, 0.95f, 1.0f, "Add New Values");
 
 				// Check if this is a Food or Drink key
-				bool isFoodOrDrink = _state.State_SelectedKey.Equals("Food", StringComparison.OrdinalIgnoreCase) || _state.State_SelectedKey.Equals("Drink", StringComparison.OrdinalIgnoreCase);
+				bool isFoodOrDrink = mainWindowState.SelectedKey.Equals("Food", StringComparison.OrdinalIgnoreCase) || mainWindowState.SelectedKey.Equals("Drink", StringComparison.OrdinalIgnoreCase);
 
 				if (imgui_Button("Add Manual"))
 				{
-					_state.State_InLineEditIndex = parts.Count;
+					mainWindowState.InLineEditIndex = parts.Count;
 					_cfgInlineEditBuffer = string.Empty;
 				}
 				imgui_SameLine();
@@ -1749,7 +1809,7 @@ namespace E3Core.UI.Windows
 					if (imgui_Button("Pick From Inventory"))
 					{
 						// Reset scan state so results don't carry over between Food/Drink
-						_cfgFoodDrinkKey = _state.State_SelectedKey; // "Food" or "Drink"
+						_cfgFoodDrinkKey = mainWindowState.SelectedKey; // "Food" or "Drink"
 						_cfgFoodDrinkStatus = string.Empty;
 						_cfgFoodDrinkCandidates.Clear();
 						_cfgFoodDrinkScanRequested = true; // auto-trigger scan for new kind
@@ -1770,6 +1830,8 @@ namespace E3Core.UI.Windows
 		// Helper method to render configuration tools panel
 		private static void RenderConfigurationTools(SectionData selectedSection)
 		{
+			var state = _state.GetState<State_MainWindow>();
+
 			bool isBardIni = IsActiveIniBard();
 			if (isBardIni)
 			{
@@ -1790,8 +1852,8 @@ namespace E3Core.UI.Windows
 				imgui_TextColored(0.9f, 0.9f, 0.9f, 1.0f, "Select a configuration key to see available tools.");
 				return;
 			}
-			bool hasKeySelected = !string.IsNullOrEmpty(_state.State_SelectedKey);
-			bool specialSectionAllowsNoKey = string.Equals(_state.State_SelectedSection, "Ifs", StringComparison.OrdinalIgnoreCase) || string.Equals(_state.State_SelectedSection, "Burn", StringComparison.OrdinalIgnoreCase);
+			bool hasKeySelected = !string.IsNullOrEmpty(state.SelectedKey);
+			bool specialSectionAllowsNoKey = string.Equals(state.SelectedSection, "Ifs", StringComparison.OrdinalIgnoreCase) || string.Equals(state.SelectedSection, "Burn", StringComparison.OrdinalIgnoreCase);
 			if (!hasKeySelected && !specialSectionAllowsNoKey)
 			{
 				imgui_TextColored(0.9f, 0.9f, 0.9f, 1.0f, "Select a configuration key to see available tools.");
@@ -1802,14 +1864,14 @@ namespace E3Core.UI.Windows
 			imgui_Separator();
 
 			// Value actions at the top (when a value is selected)
-			if (_state.State_SelectedValueIndex >= 0 && hasKeySelected)
+			if (state.SelectedValueIndex >= 0 && hasKeySelected)
 			{
-				var kd = selectedSection?.Keys?.GetKeyData(_state.State_SelectedKey ?? string.Empty);
+				var kd = selectedSection?.Keys?.GetKeyData(state.SelectedKey ?? string.Empty);
 				var values = GetValues(kd);
-				if (_state.State_SelectedValueIndex < values.Count)
+				if (state.SelectedValueIndex < values.Count)
 				{
-					string selectedValue = values[_state.State_SelectedValueIndex];
-					var editState = EnsureSpellEditState(_state.State_SelectedSection, _state.State_SelectedKey, _state.State_SelectedValueIndex, selectedValue);
+					string selectedValue = values[state.SelectedValueIndex];
+					var editState = EnsureSpellEditState(state.SelectedSection, state.SelectedKey, state.SelectedValueIndex, selectedValue);
 					if (editState != null)
 					{
 						imgui_TextColored(0.95f, 0.85f, 0.35f, 1.0f, "Value Actions");
@@ -1822,16 +1884,16 @@ namespace E3Core.UI.Windows
 						{
 							// Delete the currently selected value
 							var pdAct = GetActiveCharacterIniData();
-							var selSec = pdAct.Sections.GetSectionData(_state.State_SelectedSection);
-							var key = selSec?.Keys.GetKeyData(_state.State_SelectedKey);
+							var selSec = pdAct.Sections.GetSectionData(state.SelectedSection);
+							var key = selSec?.Keys.GetKeyData(state.SelectedKey);
 							if (key != null)
 							{
 								var vals = GetValues(key);
-								if (_state.State_SelectedValueIndex >= 0 && _state.State_SelectedValueIndex < vals.Count)
+								if (state.SelectedValueIndex >= 0 && state.SelectedValueIndex < vals.Count)
 								{
-									vals.RemoveAt(_state.State_SelectedValueIndex);
+									vals.RemoveAt(state.SelectedValueIndex);
 									WriteValues(key, vals);
-									_state.State_SelectedValueIndex = -1; // Clear selection after delete
+									state.SelectedValueIndex = -1; // Clear selection after delete
 								}
 							}
 						}
@@ -1848,24 +1910,24 @@ namespace E3Core.UI.Windows
 						imgui_PushStyleColor((int)ImGuiCol.ButtonActive, 0.85f, 0.65f, 0.25f, 1.0f);
 						imgui_PushStyleColor((int)ImGuiCol.Text, 0.1f, 0.1f, 0.1f, 1.0f); // Dark text for readability
 
-						string btnLabel = _state.Show_ShowIntegratedEditor ? "Hide Editor" : "Show Editor";
+						string btnLabel = state.Show_ShowIntegratedEditor ? "Hide Editor" : "Show Editor";
 						if (imgui_Button(btnLabel))
 						{
-							_state.Show_ShowIntegratedEditor = !_state.Show_ShowIntegratedEditor;
-							if (_state.Show_ShowIntegratedEditor)
+							state.Show_ShowIntegratedEditor = !state.Show_ShowIntegratedEditor;
+							if (state.Show_ShowIntegratedEditor)
 							{
 								// Initialize manual edit buffer when opening
-								var keyData = selectedSection?.Keys?.GetKeyData(_state.State_SelectedKey ?? string.Empty);
+								var keyData = selectedSection?.Keys?.GetKeyData(state.SelectedKey ?? string.Empty);
 								var valuesList = GetValues(keyData);
-								if (_state.State_SelectedValueIndex >= 0 && _state.State_SelectedValueIndex < valuesList.Count)
+								if (state.SelectedValueIndex >= 0 && state.SelectedValueIndex < valuesList.Count)
 								{
-									_cfgManualEditBuffer = valuesList[_state.State_SelectedValueIndex] ?? string.Empty;
+									_cfgManualEditBuffer = valuesList[state.SelectedValueIndex] ?? string.Empty;
 								}
 							}
 						}
 
 						imgui_PopStyleColor(4);
-						string editorHint = _state.Show_ShowIntegratedEditor ? "Editor panel is open below." : "Click to show the advanced editor.";
+						string editorHint = state.Show_ShowIntegratedEditor ? "Editor panel is open below." : "Click to show the advanced editor.";
 						imgui_TextColored(0.7f, 0.8f, 0.9f, 1.0f, editorHint);
 						imgui_Separator();
 					}
@@ -1874,9 +1936,9 @@ namespace E3Core.UI.Windows
 
 
 			// Special section buttons
-			bool isHeals = string.Equals(_state.State_SelectedSection, "Heals", StringComparison.OrdinalIgnoreCase);
-			bool isTankKey = string.Equals(_state.State_SelectedKey, "Tank", StringComparison.OrdinalIgnoreCase);
-			bool isImpKey = string.Equals(_state.State_SelectedKey, "Important Bot", StringComparison.OrdinalIgnoreCase);
+			bool isHeals = string.Equals(state.SelectedSection, "Heals", StringComparison.OrdinalIgnoreCase);
+			bool isTankKey = string.Equals(state.SelectedKey, "Tank", StringComparison.OrdinalIgnoreCase);
+			bool isImpKey = string.Equals(state.SelectedKey, "Important Bot", StringComparison.OrdinalIgnoreCase);
 
 			if (isHeals && (isTankKey || isImpKey))
 			{
@@ -1895,7 +1957,7 @@ namespace E3Core.UI.Windows
 			}
 
 			// Ifs section: add-new key helper
-			if (string.Equals(_state.State_SelectedSection, "Ifs", StringComparison.OrdinalIgnoreCase))
+			if (string.Equals(state.SelectedSection, "Ifs", StringComparison.OrdinalIgnoreCase))
 			{
 				if (imgui_Button("Sample If's"))
 				{
@@ -1905,21 +1967,21 @@ namespace E3Core.UI.Windows
 			}
 
 			// Burn section: add-new key helper
-			if (string.Equals(_state.State_SelectedSection, "Burn", StringComparison.OrdinalIgnoreCase))
+			if (string.Equals(state.SelectedSection, "Burn", StringComparison.OrdinalIgnoreCase))
 			{
 			}
 
 			imgui_Separator();
 
 			// Display selected value information
-			if (_state.State_SelectedValueIndex >= 0)
+			if (state.SelectedValueIndex >= 0)
 			{
-				var kd = selectedSection?.Keys?.GetKeyData(_state.State_SelectedKey ?? string.Empty);
+				var kd = selectedSection?.Keys?.GetKeyData(state.SelectedKey ?? string.Empty);
 				var values = GetValues(kd);
-				if (_state.State_SelectedValueIndex < values.Count)
+				if (state.SelectedValueIndex < values.Count)
 				{
-					string selectedValue = values[_state.State_SelectedValueIndex];
-					var editState = EnsureSpellEditState(_state.State_SelectedSection, _state.State_SelectedKey, _state.State_SelectedValueIndex, selectedValue);
+					string selectedValue = values[state.SelectedValueIndex];
+					var editState = EnsureSpellEditState(state.SelectedSection, state.SelectedKey, state.SelectedValueIndex, selectedValue);
 					string lookupName = editState?.BaseName;
 					if (string.IsNullOrWhiteSpace(lookupName))
 					{
@@ -2026,7 +2088,8 @@ namespace E3Core.UI.Windows
 
 				var parser = E3Core.Utility.e3util.CreateIniParser();
 				parser.WriteFile(selectedPath, pd);
-				_state.State_ConfigIsDirty = false;
+				var state = _state.GetState<State_MainWindow>();
+				state.ConfigIsDirty = false;
 				_log.Write($"Saved changes to {Path.GetFileName(selectedPath)}");
 			}
 			catch (Exception ex)
@@ -2038,6 +2101,7 @@ namespace E3Core.UI.Windows
 		// Clear pending changes on the selected ini (reload from disk)
 		private static void ClearPendingChanges()
 		{
+			var mainWindowState = _state.GetState<State_MainWindow>();
 			try
 			{
 				string currentPath = GetCurrentCharacterIniPath();
@@ -2058,16 +2122,16 @@ namespace E3Core.UI.Windows
 				{
 					// Reloading current character's ini
 					E3.CharacterSettings.ParsedData = pd;
-					_state.State_CurrentINIData = pd;
+					mainWindowState.CurrentINIData = pd;
 				}
 				else
 				{
 					// Reloading a different character's ini
-					_state.State_CurrentINIData = pd;
+					mainWindowState.CurrentINIData = pd;
 				}
 
-				_state.State_ConfigIsDirty = false;
-				_state.State_SelectedValueIndex = -1;
+				mainWindowState.ConfigIsDirty = false;
+				mainWindowState.SelectedValueIndex = -1;
 				InvalidateSpellEditState();
 				_log.Write($"Cleared pending changes for {Path.GetFileName(selectedPath)}");
 			}
@@ -2538,21 +2602,24 @@ namespace E3Core.UI.Windows
 
 			if (_state.Request_AllplayersRefresh && !_cfgAllPlayersRefreshing)
 			{
+				var mainWindowState = _state.GetState<State_MainWindow>();
+				var allPlayerState = _state.GetState<State_AllPlayers>();
+
 				_state.Request_AllplayersRefresh = false; // consume the pending request before we start
 				_cfgAllPlayersRefreshing = true;
-				_cfgAllPlayersReqSection = _state.State_SelectedSection;
-				_cfgAllPlayersReqKey = _state.State_SelectedKey;
+				allPlayerState._cfgAllPlayersReqSection = mainWindowState.SelectedSection;
+				allPlayerState._cfgAllPlayersReqKey = mainWindowState.SelectedKey;
 
 				System.Threading.Tasks.Task.Run(() =>
 				{
 					try
 					{
 
-						_cfgAllPlayersStatus = "Refreshing...";
+						allPlayerState._cfgAllPlayersStatus = "Refreshing...";
 
 						var newRows = new List<KeyValuePair<string, string>>();
-						string section = _cfgAllPlayersReqSection;
-						string key = _cfgAllPlayersReqKey;
+						string section = allPlayerState._cfgAllPlayersReqSection;
+						string key = allPlayerState._cfgAllPlayersReqKey;
 
 						foreach (var toon in GetOnlineToonNames().Keys)
 						{
@@ -2595,21 +2662,21 @@ namespace E3Core.UI.Windows
 							newRows.Add(new KeyValuePair<string, string>(toon, value));
 						}
 
-						lock (_cfgAllPlayersLock)
+						lock (allPlayerState._cfgAllPlayersLock)
 						{
-							_state.Data_AllPlayerRows = newRows;
-							_state.Data_AllPlayersEdit = new Dictionary<string, string>(StringComparer.OrdinalIgnoreCase);
+							allPlayerState.Data_AllPlayerRows = newRows;
+							allPlayerState.Data_AllPlayersEdit = new Dictionary<string, string>(StringComparer.OrdinalIgnoreCase);
 							foreach (var row in newRows)
 							{
 								var toonKey = row.Key ?? string.Empty;
-								_state.Data_AllPlayersEdit[toonKey] = row.Value ?? string.Empty;
+								allPlayerState.Data_AllPlayersEdit[toonKey] = row.Value ?? string.Empty;
 							}
 						}
-						_cfgAllPlayersLastUpdatedAt = Core.StopWatch.ElapsedMilliseconds;
+						allPlayerState._cfgAllPlayersLastUpdatedAt = Core.StopWatch.ElapsedMilliseconds;
 					}
 					catch (Exception ex)
 					{
-						_cfgAllPlayersStatus = "Refresh failed: " + ex.Message;
+						allPlayerState._cfgAllPlayersStatus = "Refresh failed: " + ex.Message;
 					}
 					finally
 					{
@@ -3133,6 +3200,8 @@ namespace E3Core.UI.Windows
 		// that includes the server name if we have it.
 		private static bool TryGetIniPathForToon(string toon, out string path)
 		{
+			var state = _state.GetState<State_MainWindow>();
+
 			path = null;
 			if (string.IsNullOrWhiteSpace(toon)) return false;
 
@@ -3147,7 +3216,7 @@ namespace E3Core.UI.Windows
 				return !string.IsNullOrEmpty(path);
 			}
 
-			if (_state.Data_IniFilesFromDisk == null || _state.Data_IniFilesFromDisk.Length == 0) return false;
+			if (state.IniFilesFromDisk == null || state.IniFilesFromDisk.Length == 0) return false;
 
 			// Optional: prefer matches that also contain server in the filename
 			_cfgAllPlayersServerByToon.TryGetValue(toon, out var serverHint);
@@ -3155,7 +3224,7 @@ namespace E3Core.UI.Windows
 
 			// Gather candidates: filename starts with "<Toon>_" or equals "<Toon>.ini"
 			var candidates = new List<string>();
-			foreach (var f in _state.Data_IniFilesFromDisk)
+			foreach (var f in state.IniFilesFromDisk)
 			{
 				var name = System.IO.Path.GetFileName(f);
 				if (name.StartsWith(toon + "_", StringComparison.OrdinalIgnoreCase) ||
@@ -3588,7 +3657,7 @@ namespace E3Core.UI.Windows
 		private static void ReaderAddFromCatalogModal_RightPanel(float rightW, float listH, SectionData selectedSection)
 		{
 			var state = _state.GetState<State_CatalogWindow>();
-
+			var mainWindowState = _state.GetState<State_MainWindow>();
 			// -------- RIGHT: Info Panel --------
 			if (imgui_BeginChild("InfoPanel", rightW, listH, 1, 0))
 			{
@@ -3609,7 +3678,7 @@ namespace E3Core.UI.Windows
 							}
 							else
 							{
-								var kd = selectedSection?.Keys?.GetKeyData(_state.State_SelectedKey ?? string.Empty);
+								var kd = selectedSection?.Keys?.GetKeyData(mainWindowState.SelectedKey ?? string.Empty);
 								if (kd != null)
 								{
 									var vals = GetValues(kd);
@@ -3869,6 +3938,8 @@ namespace E3Core.UI.Windows
 		// Append If modal: choose an If key to append to a specific row value
 		private static void RenderIfAppendModal(SectionData selectedSection)
 		{
+			var mainWindowState = _state.GetState<State_MainWindow>();
+
 			bool _open_if = imgui_Begin(_state.WinName_IfAppendModal, (int)(ImGuiWindowFlags.ImGuiWindowFlags_AlwaysAutoResize | ImGuiWindowFlags.ImGuiWindowFlags_NoDocking));
 			if (_open_if)
 			{
@@ -3885,7 +3956,7 @@ namespace E3Core.UI.Windows
 						{
 							try
 							{
-								var kd = selectedSection?.Keys?.GetKeyData(_state.State_SelectedKey ?? string.Empty);
+								var kd = selectedSection?.Keys?.GetKeyData(mainWindowState.SelectedKey ?? string.Empty);
 								if (kd != null && _cfgIfAppendRow >= 0)
 								{
 									var vals = GetValues(kd);
@@ -4048,17 +4119,20 @@ namespace E3Core.UI.Windows
 
 		private static void RenderAllPlayersView()
 		{
+			var mainWindowState = _state.GetState<State_MainWindow>();
+			var allPlayerState = _state.GetState<State_AllPlayers>();
+
 			imgui_Text("All Players View");
 			imgui_Separator();
 
 			var pd = GetActiveCharacterIniData();
-			if (pd == null || pd.Sections == null || string.IsNullOrEmpty(_state.State_SelectedSection) || string.IsNullOrEmpty(_state.State_SelectedKey))
+			if (pd == null || pd.Sections == null || string.IsNullOrEmpty(mainWindowState.SelectedSection) || string.IsNullOrEmpty(mainWindowState.SelectedKey))
 			{
 				imgui_Text("Select a section and key in the Config Editor first.");
 				return;
 			}
 
-			imgui_Text($"Viewing: [{_state.State_SelectedSection}] -> [{_state.State_SelectedKey}]");
+			imgui_Text($"Viewing: [{mainWindowState.SelectedSection}] -> [{mainWindowState.SelectedKey}]");
 			imgui_SameLine();
 			if (imgui_Button("Refresh")) _state.Request_AllplayersRefresh = true;
 
@@ -4079,14 +4153,14 @@ namespace E3Core.UI.Windows
 							imgui_TableSetupColumn("Actions", 0, 100f);
 							imgui_TableHeadersRow();
 
-							lock (_cfgAllPlayersLock)
+							lock (allPlayerState._cfgAllPlayersLock)
 							{
-								foreach (var row in _state.Data_AllPlayerRows)
+								foreach (var row in allPlayerState.Data_AllPlayerRows)
 								{
 									string toon = row.Key ?? string.Empty;
 
-									if (!_state.Data_AllPlayersEdit.ContainsKey(toon))
-										_state.Data_AllPlayersEdit[toon] = row.Value ?? string.Empty;
+									if (!allPlayerState.Data_AllPlayersEdit.ContainsKey(toon))
+										allPlayerState.Data_AllPlayersEdit[toon] = row.Value ?? string.Empty;
 
 									imgui_TableNextRow();
 
@@ -4096,7 +4170,7 @@ namespace E3Core.UI.Windows
 
 									// Value (editable)
 									imgui_TableNextColumn();
-									string currentValue = _state.Data_AllPlayersEdit[toon];
+									string currentValue = allPlayerState.Data_AllPlayersEdit[toon];
 									bool isBool = string.Equals(currentValue, "true", StringComparison.OrdinalIgnoreCase) || string.Equals(currentValue, "false", StringComparison.OrdinalIgnoreCase)
 										|| string.Equals(currentValue, "on", StringComparison.OrdinalIgnoreCase) || string.Equals(currentValue, "off", StringComparison.OrdinalIgnoreCase);
 
@@ -4106,19 +4180,19 @@ namespace E3Core.UI.Windows
 										{
 											if (imgui_Selectable("True", string.Equals(currentValue, "True", StringComparison.OrdinalIgnoreCase)))
 											{
-												_state.Data_AllPlayersEdit[toon] = "True";
+												allPlayerState.Data_AllPlayersEdit[toon] = "True";
 											}
 											if (imgui_Selectable("False", string.Equals(currentValue, "False", StringComparison.OrdinalIgnoreCase)))
 											{
-												_state.Data_AllPlayersEdit[toon] = "False";
+												allPlayerState.Data_AllPlayersEdit[toon] = "False";
 											}
 											if (imgui_Selectable("On", string.Equals(currentValue, "On", StringComparison.OrdinalIgnoreCase)))
 											{
-												_state.Data_AllPlayersEdit[toon] = "On";
+												allPlayerState.Data_AllPlayersEdit[toon] = "On";
 											}
 											if (imgui_Selectable("Off", string.Equals(currentValue, "Off", StringComparison.OrdinalIgnoreCase)))
 											{
-												_state.Data_AllPlayersEdit[toon] = "Off";
+												allPlayerState.Data_AllPlayersEdit[toon] = "Off";
 											}
 											EndComboSafe();
 										}
@@ -4128,7 +4202,7 @@ namespace E3Core.UI.Windows
 										string inputId = $"##edit_{toon}";
 										if (imgui_InputText(inputId, currentValue))
 										{
-											_state.Data_AllPlayersEdit[toon] = imgui_InputText_Get(inputId) ?? string.Empty;
+											allPlayerState.Data_AllPlayersEdit[toon] = imgui_InputText_Get(inputId) ?? string.Empty;
 										}
 									}
 
@@ -4136,11 +4210,11 @@ namespace E3Core.UI.Windows
 									imgui_TableNextColumn();
 									if (imgui_Button($"Save##{row.Key}"))
 									{
-										string newValue = _state.Data_AllPlayersEdit[row.Key] ?? string.Empty;
+										string newValue = allPlayerState.Data_AllPlayersEdit[row.Key] ?? string.Empty;
 
-										if (TrySaveIniValueForToon(row.Key, _state.State_SelectedSection, _state.State_SelectedKey, newValue, out var err))
+										if (TrySaveIniValueForToon(row.Key, mainWindowState.SelectedSection, mainWindowState.SelectedKey, newValue, out var err))
 										{
-											_log.WriteDelayed($"Saved [{_state.State_SelectedSection}] {_state.State_SelectedKey} for {row.Key}.", Logging.LogLevels.Debug);
+											_log.WriteDelayed($"Saved [{mainWindowState.SelectedSection}] {mainWindowState.SelectedKey} for {row.Key}.", Logging.LogLevels.Debug);
 										}
 										else
 										{
@@ -4228,7 +4302,7 @@ namespace E3Core.UI.Windows
 
 		private static void BuildConfigSectionOrder()
 		{
-
+			var mainWindowState = _state.GetState<State_MainWindow>();
 			var pd = GetActiveCharacterIniData();
 			if (pd?.Sections == null) return;
 
@@ -4247,43 +4321,45 @@ namespace E3Core.UI.Windows
 			{
 				currentOrder = _configSectionOrderSK;
 			}
-			_state.Data_SectionsOrdered.Clear();
+			mainWindowState.SectionsOrdered.Clear();
 			// Seed ordered list with defaults that exist in the INI
 			foreach (var d in currentOrder)
 			{
-				if (pd.Sections.ContainsSection(d)) _state.Data_SectionsOrdered.Add(d);
+				if (pd.Sections.ContainsSection(d)) mainWindowState.SectionsOrdered.Add(d);
 			}
 			// Append any remaining sections not included yet
 			foreach (SectionData s in pd.Sections)
 			{
-				if (!_state.Data_SectionsOrdered.Contains(s.SectionName, StringComparer.OrdinalIgnoreCase))
-					_state.Data_SectionsOrdered.Add(s.SectionName);
+				if (!mainWindowState.SectionsOrdered.Contains(s.SectionName, StringComparer.OrdinalIgnoreCase))
+					mainWindowState.SectionsOrdered.Add(s.SectionName);
 			}
 
-			if (_state.Data_SectionsOrdered.Count > 0)
+			if (mainWindowState.SectionsOrdered.Count > 0)
 			{
-				if (string.IsNullOrEmpty(_state.State_SelectedSection) || !_state.Data_SectionsOrdered.Contains(_state.State_SelectedSection, StringComparer.OrdinalIgnoreCase))
+				if (string.IsNullOrEmpty(mainWindowState.SelectedSection) || !mainWindowState.SectionsOrdered.Contains(mainWindowState.SelectedSection, StringComparer.OrdinalIgnoreCase))
 				{
-					_state.State_SelectedSection = _state.Data_SectionsOrdered[0];
-					var section = pd.Sections.GetSectionData(_state.State_SelectedSection);
-					_state.State_SelectedKey = section?.Keys?.FirstOrDefault()?.KeyName ?? string.Empty;
-					_state.State_SelectedValueIndex = -1;
+					mainWindowState.SelectedSection = mainWindowState.SectionsOrdered[0];
+					var section = pd.Sections.GetSectionData(mainWindowState.SelectedSection);
+					mainWindowState.SelectedKey = section?.Keys?.FirstOrDefault()?.KeyName ?? string.Empty;
+					mainWindowState.SelectedValueIndex = -1;
 				}
 			}
 		}
 	private static List<string> GetSectionsForDisplay()
-	{
-		var search = (_state.Buffer_KeySearch ?? string.Empty).Trim();
+	{	
+		var mainWindowState = _state.GetState<State_MainWindow>();
+		
+		var search = (mainWindowState.Buffer_KeySearch ?? string.Empty).Trim();
 		if (string.IsNullOrWhiteSpace(search))
 		{
-			return _state.Data_SectionsOrdered;
+			return mainWindowState.SectionsOrdered;
 		}
 		//lets look for the data based off search
 		var matches = new List<String>();
 		var pd = GetActiveCharacterIniData();
 		if (pd == null) return matches;
 		
-		foreach (var section in _state.Data_SectionsOrdered)
+		foreach (var section in mainWindowState.SectionsOrdered)
 		{
 			// Check if section name matches
 			if (section.IndexOf(search, 0, StringComparison.OrdinalIgnoreCase) > -1)
@@ -4323,13 +4399,13 @@ namespace E3Core.UI.Windows
 					return adv;
 				case SettingsTab.Character:
 				default:
-
-					if (string.IsNullOrEmpty(_state.State_CurrentINIFileNameFull))
+					var state = _state.GetState<State_MainWindow>();
+					if (string.IsNullOrEmpty(state.CurrentINIFileNameFull))
 					{
 						var currentPath = GetCurrentCharacterIniPath();
-						_state.State_CurrentINIFileNameFull = currentPath;
+						state.CurrentINIFileNameFull = currentPath;
 					}
-					return _state.State_CurrentINIFileNameFull;
+					return state.CurrentINIFileNameFull;
 			}
 		}
 		// Ifs sample import helpers and modal
@@ -4443,6 +4519,7 @@ namespace E3Core.UI.Windows
 
 		private static bool AddIfToActiveIni(string key, string value)
 		{
+			var mainWindowState  = _state.GetState<State_MainWindow>();
 			try
 			{
 				var pd = GetActiveCharacterIniData();
@@ -4462,10 +4539,10 @@ namespace E3Core.UI.Windows
 				if (!section.Keys.ContainsKey(unique))
 				{
 					section.Keys.AddKey(unique, value ?? string.Empty);
-					_state.State_ConfigIsDirty = true;
-					_state.State_SelectedSection = "Ifs";
-					_state.State_SelectedKey = unique;
-					_state.State_SelectedValueIndex = -1;
+					mainWindowState.ConfigIsDirty = true;
+					mainWindowState.SelectedSection = "Ifs";
+					mainWindowState.SelectedKey = unique;
+					mainWindowState.SelectedValueIndex = -1;
 					return true;
 				}
 				return false;
@@ -4475,6 +4552,8 @@ namespace E3Core.UI.Windows
 
 		private static bool AddBurnToActiveIni(string key, string value)
 		{
+			var mainWindowState = _state.GetState<State_MainWindow>();
+
 			try
 			{
 				var pd = GetActiveCharacterIniData();
@@ -4494,10 +4573,10 @@ namespace E3Core.UI.Windows
 				if (!section.Keys.ContainsKey(unique))
 				{
 					section.Keys.AddKey(unique, value ?? string.Empty);
-					_state.State_ConfigIsDirty = true;
-					_state.State_SelectedSection = "Burn";
-					_state.State_SelectedKey = unique;
-					_state.State_SelectedValueIndex = -1;
+					mainWindowState.ConfigIsDirty = true;
+					mainWindowState.SelectedSection = "Burn";
+					mainWindowState.SelectedKey = unique;
+					mainWindowState.SelectedValueIndex = -1;
 					return true;
 				}
 				return false;
@@ -4507,6 +4586,8 @@ namespace E3Core.UI.Windows
 
 		private static bool DeleteKeyFromActiveIni(string sectionName, string keyName)
 		{
+			var mainWindowState = _state.GetState<State_MainWindow>();
+
 			try
 			{
 				var pd = GetActiveCharacterIniData();
@@ -4515,12 +4596,12 @@ namespace E3Core.UI.Windows
 				if (section == null || section.Keys == null) return false;
 				if (!section.Keys.ContainsKey(keyName)) return false;
 				section.Keys.RemoveKey(keyName);
-				_state.State_ConfigIsDirty = true;
-				_state.State_SelectedValueIndex = -1;
+				mainWindowState.ConfigIsDirty = true;
+				mainWindowState.SelectedValueIndex = -1;
 				InvalidateSpellEditState();
 				// Pick a new selected key if any remain
 				var nextKey = section.Keys.FirstOrDefault()?.KeyName ?? string.Empty;
-				_state.State_SelectedKey = nextKey ?? string.Empty;
+				mainWindowState.SelectedKey = nextKey ?? string.Empty;
 				return true;
 			}
 			catch { return false; }
@@ -4563,8 +4644,9 @@ namespace E3Core.UI.Windows
 
 		private static IniData GetActiveCharacterIniData()
 		{
-		
-			return _state.State_CurrentINIData;
+			var mainWindowState = _state.GetState<State_MainWindow>();
+
+			return mainWindowState.CurrentINIData;
 		}
 		private static string GetCurrentCharacterIniPath()
 		{
@@ -4596,7 +4678,9 @@ namespace E3Core.UI.Windows
 			if (files == null || files.Length == 0)
 				files = Directory.GetFiles(dir, "*.ini", SearchOption.TopDirectoryOnly);
 			Array.Sort(files, StringComparer.OrdinalIgnoreCase);
-			_state.Data_IniFilesFromDisk = files;
+
+			var mainWindowState = _state.GetState<State_MainWindow>();
+			mainWindowState.IniFilesFromDisk = files;
 		}
 		// Safe combo wrapper for older MQ2Mono
 		private static bool BeginComboSafe(string label, string preview)
@@ -5486,18 +5570,19 @@ namespace E3Core.UI.Windows
 
 		private static void RenderSpellModifierModal()
 		{
+			var mainWindowState = _state.GetState<State_MainWindow>();
 			var iniData = GetActiveCharacterIniData();
-			var sectionData = iniData?.Sections?.GetSectionData(_state.State_SelectedSection ?? string.Empty);
-			var keyData = sectionData?.Keys?.GetKeyData(_state.State_SelectedKey ?? string.Empty);
+			var sectionData = iniData?.Sections?.GetSectionData(mainWindowState.SelectedSection ?? string.Empty);
+			var keyData = sectionData?.Keys?.GetKeyData(mainWindowState.SelectedKey ?? string.Empty);
 			var values = GetValues(keyData);
-			if (_state.State_SelectedValueIndex < 0 || _state.State_SelectedValueIndex >= values.Count)
+			if (mainWindowState.SelectedValueIndex < 0 || mainWindowState.SelectedValueIndex >= values.Count)
 			{
 				_cfgShowSpellModifierModal = false;
 				return;
 			}
 
-			string rawValue = values[_state.State_SelectedValueIndex] ?? string.Empty;
-			var state = EnsureSpellEditState(_state.State_SelectedSection, _state.State_SelectedKey, _state.State_SelectedValueIndex, rawValue);
+			string rawValue = values[mainWindowState.SelectedValueIndex] ?? string.Empty;
+			var state = EnsureSpellEditState(mainWindowState.SelectedSection, mainWindowState.SelectedKey, mainWindowState.SelectedValueIndex, rawValue);
 			if (state == null)
 			{
 				_cfgShowSpellModifierModal = false;
@@ -5619,6 +5704,8 @@ namespace E3Core.UI.Windows
 
 		private static void WriteValues(KeyData kd, List<string> values)
 		{
+			var mainWindowState = _state.GetState<State_MainWindow>();
+
 
 			if (kd == null) return;
 			// Preserve exact row semantics: one value per row, including empties
@@ -5628,7 +5715,7 @@ namespace E3Core.UI.Windows
 				foreach (var v in values) kd.ValueList.Add(v ?? string.Empty);
 			}
 			// Do NOT set kd.Value here; in our Ini parser, setting Value appends to ValueList.
-			_state.State_ConfigIsDirty = true;
+			mainWindowState.ConfigIsDirty = true;
 
 		}
 
@@ -5640,6 +5727,8 @@ namespace E3Core.UI.Windows
 
 			if (shouldDraw)
 			{
+				var mainWindowState = _state.GetState<State_MainWindow>();
+
 				// Header with better styling
 				imgui_TextColored(0.95f, 0.85f, 0.35f, 1.0f, $"Pick {_cfgFoodDrinkKey} from inventory");
 				imgui_Separator();
@@ -5679,8 +5768,8 @@ namespace E3Core.UI.Windows
 							{
 								// Apply selection
 								var pdAct = GetActiveCharacterIniData();
-								var secData = pdAct.Sections.GetSectionData(_state.State_SelectedSection);
-								var keyData = secData?.Keys.GetKeyData(_state.State_SelectedKey);
+								var secData = pdAct.Sections.GetSectionData(mainWindowState.SelectedSection);
+								var keyData = secData?.Keys.GetKeyData(mainWindowState.SelectedKey);
 								if (keyData != null)
 								{
 									var vals = GetValues(keyData);
@@ -6201,6 +6290,8 @@ namespace E3Core.UI.Windows
 		}
 		private static bool TryCreateBardMelody(out string successMessage, out string errorMessage)
 		{
+			var mainWindowState = _state.GetState<State_MainWindow>();
+
 			successMessage = string.Empty;
 			errorMessage = string.Empty;
 
@@ -6260,9 +6351,9 @@ namespace E3Core.UI.Windows
 				melodySection.Keys.AddKey("Song", songValue);
 			}
 
-			if (!_state.Data_SectionsOrdered.Any(s => string.Equals(s, melodySectionName, StringComparison.OrdinalIgnoreCase)))
+			if (!mainWindowState.SectionsOrdered.Any(s => string.Equals(s, melodySectionName, StringComparison.OrdinalIgnoreCase)))
 			{
-				_state.Data_SectionsOrdered.Add(melodySectionName);
+				mainWindowState.SectionsOrdered.Add(melodySectionName);
 			}
 			_cfgSectionExpanded[melodySectionName] = true;
 
@@ -6314,10 +6405,10 @@ namespace E3Core.UI.Windows
 				}
 			}
 
-			_state.State_SelectedSection = melodySectionName;
-			_state.State_SelectedKey = "Song";
-			_state.State_SelectedValueIndex = 0;
-			_state.State_ConfigIsDirty = true;
+			mainWindowState.SelectedSection = melodySectionName;
+			mainWindowState.SelectedKey = "Song";
+			mainWindowState.SelectedValueIndex = 0;
+			mainWindowState.ConfigIsDirty = true;
 
 			successMessage = string.IsNullOrEmpty(melodyIfKeyName)
 				? $"Melody '{melodyName}' created with {songs.Count} song(s)."
@@ -6326,6 +6417,8 @@ namespace E3Core.UI.Windows
 		}
 		private static bool TryEnsureBardIfEntry(string baseName, string expression, out string actualKey, out string errorMessage)
 		{
+			var mainWindowState = _state.GetState<State_MainWindow>();
+
 			actualKey = string.Empty;
 			errorMessage = string.Empty;
 
@@ -6369,11 +6462,11 @@ namespace E3Core.UI.Windows
 
 			ifsSection.Keys.AddKey(unique, normalizedExpression);
 			actualKey = unique;
-			_state.State_ConfigIsDirty = true;
+			mainWindowState.ConfigIsDirty = true;
 
-			if (!_state.Data_SectionsOrdered.Any(s => string.Equals(s, "Ifs", StringComparison.OrdinalIgnoreCase)))
+			if (!mainWindowState.SectionsOrdered.Any(s => string.Equals(s, "Ifs", StringComparison.OrdinalIgnoreCase)))
 			{
-				_state.Data_SectionsOrdered.Add("Ifs");
+				mainWindowState.SectionsOrdered.Add("Ifs");
 			}
 			_cfgSectionExpanded["Ifs"] = true;
 
@@ -6398,6 +6491,8 @@ namespace E3Core.UI.Windows
 		// Toon picker modal for Heals section (Tank / Important Bot)
 		private static void RenderToonPickerModal(SectionData selectedSection)
 		{
+			var mainWindowState = _state.GetState<State_MainWindow>();
+
 			bool _open_toon = imgui_Begin(_state.WinName_ToonPickerModal, (int)(ImGuiWindowFlags.ImGuiWindowFlags_AlwaysAutoResize | ImGuiWindowFlags.ImGuiWindowFlags_NoDocking));
 			if (_open_toon)
 			{
@@ -6406,7 +6501,7 @@ namespace E3Core.UI.Windows
 				if (imgui_BeginChild("ToonList", w, h, 1, 0))
 				{
 					var list = _cfgToonCandidates ?? new List<string>();
-					var kd = selectedSection?.Keys?.GetKeyData(_state.State_SelectedKey ?? string.Empty);
+					var kd = selectedSection?.Keys?.GetKeyData(mainWindowState.SelectedKey ?? string.Empty);
 					var current = kd != null ? GetValues(kd) : new List<string>();
 					int i = 0;
 					foreach (var name in list)
