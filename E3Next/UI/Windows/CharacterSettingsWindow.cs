@@ -25,23 +25,48 @@ namespace E3Core.UI.Windows
 
 	public static class CharacterSettingsWindow
 	{
+
+
+		private class State_CatalogWindow
+		{
+			public bool ReplaceMode = false;
+			public Int32 ReplaceIndex = -1;
+			public E3Spell SelectedCategorySpell = null;
+			public string SelectedCategory = String.Empty;
+			public string SelectedSubCategory = String.Empty;
+			public string Filter = string.Empty;
+			public CatalogMode Mode = CatalogMode.Standard;
+			public AddType CurrentAddType = AddType.Spells;
+			public Int32 BardSongPickerIndex = -1;
+		}
 		private class CharacterSettingsState
 		{
+			private State_CatalogWindow _catalogWindowState = new State_CatalogWindow();
+
 			public CharacterSettingsState() {
 				//set all initial windows to not show
 				if(Core._MQ2MonoVersion>0.34m) ClearWindows();
 			}
 
+			public T GetState<T>()
+			{
+				if (typeof(T) == typeof(State_CatalogWindow))
+				{
+					return (T)(object)_catalogWindowState;
+				}
+				return default(T);
+			}
+
 			//state
 			public string State_SelectedSection = string.Empty;
-			public CatalogMode State_CatalogMode = CatalogMode.Standard;
-			public Int32 State_BardSongPickerIndex = -1;
+		
+			
 			// "Ifs" or "Burn",// Inline add editor state (rendered in Values column)
 			public string State_SelectedAddInLine = String.Empty;
 			public string State_SelectedKey = string.Empty;
 			public string State_SectionAndKeySig = String.Empty;
 			public Int32 State_SelectedValueIndex = -1;
-			public AddType State_CurrentAddType = AddType.Spells;
+			
 			public bool State_CatalogReady = false;
 			public bool State_CatalogLoading = false;
 			public bool State_CatalogLoadRequested = false;
@@ -49,12 +74,7 @@ namespace E3Core.UI.Windows
 			public bool State_ConfigIsDirty = false;
 			public string State_LastIniPath = String.Empty;
 			public int State_InLineEditIndex = -1;
-			public bool State_CatalogReplaceMode = false;
-			public Int32 State_CatalogReplaceIndex = -1;
-			public E3Spell State_SelectedCatalogEntry = null;
-			public string State_AddFromCatalog_SelectedCategory=String.Empty;
-			public string State_AddFromCatalog_SelectedSubCategory=String.Empty;
-			public string State_AddFromCatalog_Filter = string.Empty;
+
 			//Note on Volatile variables... all this means is if its set on another thread, we will eventually get the update.
 			//its somewhat one way, us setting the variable on this side doesn't let the other thread see the update.
 			public volatile bool State_GemsAvailable = false; // Whether we have gem data
@@ -93,11 +113,11 @@ namespace E3Core.UI.Windows
 					//this is necessary as you can close via the X in C++ land and won't see the update till we check
 					if(!currentValue)
 					{
-						State_CatalogMode = CatalogMode.Standard;
-						State_BardSongPickerIndex = -1;
-						State_CatalogReplaceMode = false;
-						State_CatalogReplaceIndex = -1;
-						State_SelectedCatalogEntry = null; // Clear selection when closing via X
+						_catalogWindowState.BardSongPickerIndex = -1;
+						_catalogWindowState.Mode = CatalogMode.Standard;
+						_catalogWindowState.ReplaceMode = false;
+						_catalogWindowState.ReplaceIndex = -1;
+						_catalogWindowState.SelectedCategorySpell = null; // Clear selection when closing via X
 					}
 					return currentValue;
 				
@@ -1488,6 +1508,7 @@ namespace E3Core.UI.Windows
 		}
 		private static void RenderSelectedKeyValues_Collections(List<string> parts, SectionData selectedSection)
 		{
+			var catalogState = _state.GetState<State_CatalogWindow>();
 			bool listChanged = false;
 			imgui_TextColored(0.9f, 0.95f, 1.0f, 1.0f, "Configuration Values");
 
@@ -1587,8 +1608,9 @@ namespace E3Core.UI.Windows
 						if (canMoveDown && imgui_MenuItem("Move Down")) SwapAndMark(i, i + 1);
 						if (imgui_MenuItem("Replace From Catalog"))
 						{
-							_state.State_CatalogReplaceMode = true;
-							_state.State_CatalogReplaceIndex = i;
+
+							catalogState.ReplaceMode = true;
+							catalogState.ReplaceIndex = i;
 							_state.Show_AddModal = true;
 						}
 						imgui_EndPopup();
@@ -1738,7 +1760,7 @@ namespace E3Core.UI.Windows
 				{
 					if (imgui_Button("Add From Catalog"))
 					{
-						_state.State_CatalogMode = CatalogMode.Standard;
+						catalogState.Mode = CatalogMode.Standard;
 						_state.Show_AddModal = true;
 					}
 				}
@@ -3354,11 +3376,12 @@ namespace E3Core.UI.Windows
 		}
 		private static void RenderAddFromCatalogModal_Header()
 		{
+			var state = _state.GetState<State_CatalogWindow>();
 			// Header: type + filter + catalog source
 			imgui_TextColored(0.95f, 0.85f, 0.35f, 1.0f, "Add From Catalog");
-			if (_state.State_CatalogMode == CatalogMode.BardSong)
+			if (state.Mode == CatalogMode.BardSong)
 			{
-				_state.State_CurrentAddType = AddType.Spells;
+				state.CurrentAddType = AddType.Spells;
 				imgui_SameLine();
 				imgui_TextColored(0.7f, 0.9f, 0.7f, 1.0f, "(Select a song for the melody)");
 			}
@@ -3366,15 +3389,15 @@ namespace E3Core.UI.Windows
 			{
 				imgui_SameLine();
 				imgui_SetNextItemWidth(100f); // Fixed width for type dropdown
-				if (imgui_BeginCombo("##type", _state.State_CurrentAddType.ToString(), 0))
+				if (imgui_BeginCombo("##type", state.CurrentAddType.ToString(), 0))
 				{
 					foreach (AddType t in Enum.GetValues(typeof(AddType)))
 					{
-						bool sel = t == _state.State_CurrentAddType;
+						bool sel = t == state.CurrentAddType;
 						if (imgui_Selectable(t.ToString(), sel))
 						{
-							_state.State_CurrentAddType = t;
-							_state.State_SelectedCatalogEntry = null; // Clear selection when type changes
+							state.CurrentAddType = t;
+							state.SelectedCategorySpell = null; // Clear selection when type changes
 						}
 					}
 					EndComboSafe();
@@ -3384,8 +3407,8 @@ namespace E3Core.UI.Windows
 			imgui_Text("Filter:");
 			imgui_SameLine();
 			imgui_SetNextItemWidth(200f); // Fixed width for filter input
-			if (imgui_InputText("##filter", _state.State_AddFromCatalog_Filter ?? string.Empty))
-				_state.State_AddFromCatalog_Filter = imgui_InputText_Get("##filter") ?? string.Empty;
+			if (imgui_InputText("##filter", state.Filter ?? string.Empty))
+				state.Filter = imgui_InputText_Get("##filter") ?? string.Empty;
 
 			// Catalog source info and refresh button
 			imgui_Separator();
@@ -3412,6 +3435,9 @@ namespace E3Core.UI.Windows
 		}
 		private static void RenderAddFromCatalogModel_LeftPanel(float leftW,float listH, SortedDictionary<string,SortedDictionary<string,List<E3Spell>>> currentCatalog)
 		{
+			var state = _state.GetState<State_CatalogWindow>();
+
+			
 			// Resolve the catalog for the chosen type
 			// -------- LEFT: Top-level categories --------
 			if (imgui_BeginChild("TopLevelCats", leftW, listH, 1, 0))
@@ -3422,12 +3448,14 @@ namespace E3Core.UI.Windows
 					var cats = currentCatalog.Keys; //keys are already sorted in a sorted dictionary
 					foreach (var c in cats)
 					{
-						bool selectedCategory = string.Equals(_state.State_AddFromCatalog_SelectedCategory, c, StringComparison.OrdinalIgnoreCase);
+					
+
+						bool selectedCategory = string.Equals(state.SelectedCategory, c, StringComparison.OrdinalIgnoreCase);
 						if (imgui_Selectable(c, selectedCategory))
 						{
-							_state.State_AddFromCatalog_SelectedCategory = c;
-							_state.State_AddFromCatalog_SelectedSubCategory = string.Empty; // reset mid level on cat change
-							_state.State_SelectedCatalogEntry = null; // Clear selection when category changes
+							state.SelectedCategory = c;
+							state.SelectedSubCategory = string.Empty; // reset mid level on cat change
+							state.SelectedCategorySpell = null; // Clear selection when category changes
 						}
 					}
 				}
@@ -3439,26 +3467,28 @@ namespace E3Core.UI.Windows
 		}
 		private static void RenderAddFromCatalogModel_MiddlePanel(float middleW, float listH,SortedDictionary<string, SortedDictionary<string, List<E3Spell>>> currentCatalog)
 		{
+			var state = _state.GetState<State_CatalogWindow>();
+
 			// -------- MIDDLE: Subcategory dropdown + Entries --------
 			if (imgui_BeginChild("MiddlePanel", middleW, listH, 1, 0))
 			{	try
 				{	// Subcategory dropdown selector (not shown for Items)
 					float entriesHeight = listH;
-					if (_state.State_CurrentAddType != AddType.Items)
+					if (state.CurrentAddType != AddType.Items)
 					{
 						imgui_TextColored(0.9f, 0.95f, 1.0f, 1.0f, "Subcategory:");
 						imgui_SameLine();
 
-						string comboLabel = string.IsNullOrEmpty(_state.State_AddFromCatalog_SelectedSubCategory) ? "(All)" : _state.State_AddFromCatalog_SelectedSubCategory;
-						if (!string.IsNullOrEmpty(_state.State_AddFromCatalog_SelectedCategory) && currentCatalog.TryGetValue(_state.State_AddFromCatalog_SelectedCategory, out var submap))
+						string comboLabel = string.IsNullOrEmpty(state.SelectedSubCategory) ? "(All)" : state.SelectedSubCategory;
+						if (!string.IsNullOrEmpty(state.SelectedCategory) && currentCatalog.TryGetValue(state.SelectedCategory, out var submap))
 						{
 							if (imgui_BeginCombo("##subcategory", comboLabel, 0))
 							{
 								// "(All)" option to show all entries in the category
-								bool selAll = string.IsNullOrEmpty(_state.State_AddFromCatalog_SelectedSubCategory);
+								bool selAll = string.IsNullOrEmpty(state.SelectedSubCategory);
 								if (imgui_Selectable("(All)##SubAll", selAll))
 								{
-									_state.State_AddFromCatalog_SelectedSubCategory = string.Empty;
+									state.SelectedSubCategory = string.Empty;
 								}
 
 								var subs = submap.Keys.ToList();
@@ -3483,10 +3513,10 @@ namespace E3Core.UI.Windows
 										imgui_SameLine();
 									}
 
-									bool sel = string.Equals(_state.State_AddFromCatalog_SelectedSubCategory, sc, StringComparison.OrdinalIgnoreCase);
+									bool sel = string.Equals(state.SelectedSubCategory, sc, StringComparison.OrdinalIgnoreCase);
 									if (imgui_Selectable($"{sc}##Sub_{sc}", sel))
 									{
-										_state.State_AddFromCatalog_SelectedSubCategory = sc;
+										state.SelectedSubCategory = sc;
 									}
 								}
 								EndComboSafe();
@@ -3510,15 +3540,15 @@ namespace E3Core.UI.Windows
 							imgui_TextColored(0.9f, 0.95f, 1.0f, 1.0f, "Entries");
 
 							IEnumerable<E3Spell> entries = Enumerable.Empty<E3Spell>();
-							if (!string.IsNullOrEmpty(_state.State_AddFromCatalog_SelectedCategory) && currentCatalog.TryGetValue(_state.State_AddFromCatalog_SelectedCategory, out var submap2))
+							if (!string.IsNullOrEmpty(state.SelectedCategory) && currentCatalog.TryGetValue(state.SelectedCategory, out var submap2))
 							{
-								if (!string.IsNullOrEmpty(_state.State_AddFromCatalog_SelectedSubCategory) && submap2.TryGetValue(_state.State_AddFromCatalog_SelectedSubCategory, out var l))
+								if (!string.IsNullOrEmpty(state.SelectedSubCategory) && submap2.TryGetValue(state.SelectedSubCategory, out var l))
 									entries = l;
 								else
 									entries = submap2.Values.SelectMany(x => x);
 							}
 
-							string filter = (_state.State_AddFromCatalog_Filter ?? string.Empty).Trim();
+							string filter = (state.Filter ?? string.Empty).Trim();
 							if (filter.Length > 0)
 								entries = entries.Where(e => e.Name.IndexOf(filter, StringComparison.OrdinalIgnoreCase) >= 0);
 
@@ -3529,17 +3559,17 @@ namespace E3Core.UI.Windows
 							int i = 0;
 							foreach (var e in entries)
 							{
-								string uid = $"{_state.State_CurrentAddType}_{_state.State_AddFromCatalog_SelectedCategory}_{_state.State_AddFromCatalog_SelectedSubCategory}_{i}";
+								string uid = $"{state.CurrentAddType}_{state.SelectedCategory}_{state.SelectedSubCategory}_{i}";
 
 								// Icon
 								imgui_DrawSpellIconByIconIndex(e.SpellIcon, 30.0f);
 								imgui_SameLine();
 
 								// Selectable entry with level and name
-								bool isSelected = _state.State_SelectedCatalogEntry != null && string.Equals(_state.State_SelectedCatalogEntry.Name, e.Name, StringComparison.OrdinalIgnoreCase);
+								bool isSelected = state.SelectedCategorySpell != null && string.Equals(state.SelectedCategorySpell.Name, e.Name, StringComparison.OrdinalIgnoreCase);
 								if (imgui_Selectable($"[{e.Level}] {e.Name}##{uid}", isSelected))
 								{
-									_state.State_SelectedCatalogEntry = e;
+									state.SelectedCategorySpell = e;
 								}
 								i++;
 							}
@@ -3557,6 +3587,8 @@ namespace E3Core.UI.Windows
 		}
 		private static void ReaderAddFromCatalogModal_RightPanel(float rightW, float listH, SectionData selectedSection)
 		{
+			var state = _state.GetState<State_CatalogWindow>();
+
 			// -------- RIGHT: Info Panel --------
 			if (imgui_BeginChild("InfoPanel", rightW, listH, 1, 0))
 			{
@@ -3564,16 +3596,16 @@ namespace E3Core.UI.Windows
 				{
 					imgui_TextColored(0.9f, 0.95f, 1.0f, 1.0f, "Info");
 					// Add button on same line as Info header, right-aligned
-					if (_state.State_SelectedCatalogEntry != null)
+					if (state.SelectedCategorySpell != null)
 					{
-						string addLabel = (_state.State_CatalogMode == CatalogMode.BardSong) ? "Use" : "Add";
+						string addLabel = (state.Mode == CatalogMode.BardSong) ? "Use" : "Add";
 						float buttonWidth = 60f;
 						imgui_SameLine(rightW - buttonWidth - 10f);
 						if (imgui_ButtonEx($"{addLabel}##add_selected", buttonWidth, 0))
 						{
-							if (_state.State_CatalogMode == CatalogMode.BardSong)
+							if (state.Mode == CatalogMode.BardSong)
 							{
-								ApplyBardSongSelection(_state.State_SelectedCatalogEntry.Name ?? string.Empty);
+								ApplyBardSongSelection(state.SelectedCategorySpell.Name ?? string.Empty);
 							}
 							else
 							{
@@ -3581,14 +3613,14 @@ namespace E3Core.UI.Windows
 								if (kd != null)
 								{
 									var vals = GetValues(kd);
-									string v = (_state.State_SelectedCatalogEntry.Name ?? string.Empty).Trim();
-									if (_state.State_CatalogReplaceMode && _state.State_CatalogReplaceIndex >= 0 && _state.State_CatalogReplaceIndex < vals.Count)
+									string v = (state.SelectedCategorySpell.Name ?? string.Empty).Trim();
+									if (state.ReplaceMode && state.ReplaceIndex >= 0 && state.ReplaceIndex < vals.Count)
 									{
-										vals[_state.State_CatalogReplaceIndex] = v;
+										vals[state.ReplaceIndex] = v;
 										WriteValues(kd, vals);
-										_cfgPendingValueSelection = _state.State_CatalogReplaceIndex;
-										_state.State_CatalogReplaceMode = false;
-										_state.State_CatalogReplaceIndex = -1;
+										_cfgPendingValueSelection = state.ReplaceIndex;
+										state.ReplaceMode = false;
+										state.ReplaceIndex = -1;
 									}
 									else if (!vals.Contains(v, StringComparer.OrdinalIgnoreCase))
 									{
@@ -3603,22 +3635,22 @@ namespace E3Core.UI.Windows
 
 					imgui_Separator();
 
-					if (_state.State_SelectedCatalogEntry != null)
+					if (state.SelectedCategorySpell != null)
 					{
 						// Display name and icon
-						imgui_DrawSpellIconByIconIndex(_state.State_SelectedCatalogEntry.SpellIcon, 40.0f);
+						imgui_DrawSpellIconByIconIndex(state.SelectedCategorySpell.SpellIcon, 40.0f);
 						imgui_SameLine();
-						imgui_TextColored(0.95f, 0.85f, 0.35f, 1.0f, _state.State_SelectedCatalogEntry.Name ?? string.Empty);
+						imgui_TextColored(0.95f, 0.85f, 0.35f, 1.0f, state.SelectedCategorySpell.Name ?? string.Empty);
 
 						// Show additional info (mana, cast time, recast, etc.)
-						RenderSpellAdditionalInfo(_state.State_SelectedCatalogEntry);
+						RenderSpellAdditionalInfo(state.SelectedCategorySpell);
 
 						// Show description if available
-						if (!string.IsNullOrEmpty(_state.State_SelectedCatalogEntry.Description))
+						if (!string.IsNullOrEmpty(state.SelectedCategorySpell.Description))
 						{
 							imgui_Separator();
 							imgui_TextColored(0.75f, 0.85f, 1.0f, 1.0f, "Description");
-							imgui_TextWrapped(_state.State_SelectedCatalogEntry.Description);
+							imgui_TextWrapped(state.SelectedCategorySpell.Description);
 						}
 					}
 					else
@@ -3631,6 +3663,8 @@ namespace E3Core.UI.Windows
 		}
 		private static void RenderAddFromCatalogModal(IniData pd, SectionData selectedSection)
 		{
+			var state = _state.GetState<State_CatalogWindow>();
+
 			// Set initial size only on first use - window is resizable and remembers user's size
 			imgui_SetNextWindowSizeWithCond(900f, 600f, (int)ImGuiCond.FirstUseEver); // ImGuiCond_FirstUseEver = 4
 			if (imgui_Begin(_state.WinName_AddModal, (int)ImGuiWindowFlags.ImGuiWindowFlags_NoDocking))
@@ -3639,9 +3673,9 @@ namespace E3Core.UI.Windows
 				{
 					float listH = imgui_GetContentRegionAvailY() - 120f; // Reserve space for header/footer
 					float leftW, middleW, rightW;
-					var currentCatalog = GetCatalogByType(_state.State_CurrentAddType);
+					var currentCatalog = GetCatalogByType(state.CurrentAddType);
 
-					RenderAddFromCatalogModal_CalculateAddType(_state.State_CurrentAddType, out leftW, out middleW, out rightW);
+					RenderAddFromCatalogModal_CalculateAddType(state.CurrentAddType, out leftW, out middleW, out rightW);
 					RenderAddFromCatalogModal_Header();
 					// Show catalog status if loading
 					if (_state.State_CatalogLoading)
@@ -4574,35 +4608,6 @@ namespace E3Core.UI.Windows
 			imgui_EndCombo();
 		}
 		
-
-
-		private static void TryAddVisibleEntriesToSelectedKey(SectionData selectedSection)
-		{
-			if (selectedSection == null || string.IsNullOrEmpty(_state.State_SelectedKey)) return;
-			var kd = selectedSection.Keys?.GetKeyData(_state.State_SelectedKey);
-			if (kd == null) return;
-			var values = GetValues(kd);
-
-			var src = GetCatalogByType(_state.State_CurrentAddType);
-			IEnumerable<E3Spell> entries = Enumerable.Empty<E3Spell>();
-			if (!string.IsNullOrEmpty(_state.State_AddFromCatalog_SelectedCategory) && src.TryGetValue(_state.State_AddFromCatalog_SelectedCategory, out var submap2))
-			{
-				if (!string.IsNullOrEmpty(_state.State_AddFromCatalog_SelectedSubCategory) && submap2.TryGetValue(_state.State_AddFromCatalog_SelectedSubCategory, out var l))
-					entries = l;
-				else
-					entries = submap2.Values.SelectMany(x => x);
-			}
-			string filter = (_state.State_AddFromCatalog_Filter ?? string.Empty).Trim();
-			if (filter.Length > 0) entries = entries.Where(e => e.Name.IndexOf(filter, StringComparison.OrdinalIgnoreCase) >= 0);
-			foreach (var e in entries)
-			{
-				string toAdd = (e.Name ?? string.Empty).Trim();
-				if (!values.Contains(toAdd, StringComparer.OrdinalIgnoreCase)) values.Add(toAdd);
-			}
-			WriteValues(kd, values);
-		}
-
-
 
 		private static string NormalizeSpellKey(string key)
 		{
@@ -5864,7 +5869,9 @@ namespace E3Core.UI.Windows
 			// Reset the picker state after rendering
 			if (_cfgBardSongPickerJustSelected)
 			{
-				_state.State_BardSongPickerIndex = -1;
+				var catalogState = _state.GetState<State_CatalogWindow>();
+				catalogState.BardSongPickerIndex = -1;
+
 				_cfgBardSongPickerJustSelected = false;
 			}
 		}
@@ -5887,8 +5894,11 @@ namespace E3Core.UI.Windows
 				{1, "1"},
 				{2, "1"}
 			};
-			_state.State_BardSongPickerIndex = -1;
-			_state.State_CatalogMode = CatalogMode.Standard;
+
+			var catalogState = _state.GetState<State_CatalogWindow>();
+			catalogState.BardSongPickerIndex = -1;
+			catalogState.Mode = CatalogMode.Standard;
+
 		}
 		private static void EnsureBardMelodySongEntries()
 		{
@@ -6030,6 +6040,7 @@ namespace E3Core.UI.Windows
 		}
 		private static void OpenBardSongPicker(int index)
 		{
+			var state = _state.GetState<State_CatalogWindow>();
 			if (index < 0) return;
 			EnsureBardMelodySongEntries();
 			while (_cfgBardMelodySongs.Count <= index)
@@ -6037,34 +6048,40 @@ namespace E3Core.UI.Windows
 				_cfgBardMelodySongs.Add(string.Empty);
 			}
 
-			_state.State_BardSongPickerIndex = index;
-			_state.State_CatalogMode = CatalogMode.BardSong;
-			_state.State_CurrentAddType = AddType.Spells;
-			_state.State_AddFromCatalog_SelectedCategory = string.Empty;
-			_state.State_AddFromCatalog_SelectedSubCategory = string.Empty;
+			state.BardSongPickerIndex = index;
+			state.Mode = CatalogMode.BardSong;
+			state.CurrentAddType = AddType.Spells;
+			state.SelectedCategory = string.Empty;
+			state.SelectedSubCategory = string.Empty;
+			state.Filter = string.Empty;
+			
 			_state.Show_AddModal = true;
-			_state.State_AddFromCatalog_Filter = string.Empty;
+			
 		}
 		private static void ApplyBardSongSelection(string songName)
 		{
-			if (_state.State_BardSongPickerIndex < 0)
+			var state = _state.GetState<State_CatalogWindow>();
+
+			if (state.BardSongPickerIndex < 0)
 			{
-				_state.State_CatalogMode = CatalogMode.Standard;
+				state.Mode = CatalogMode.Standard;
 				_state.Show_AddModal = false;
 				return;
 			}
 			EnsureBardMelodySongEntries();
-			while (_cfgBardMelodySongs.Count <= _state.State_BardSongPickerIndex)
+			while (_cfgBardMelodySongs.Count <= state.BardSongPickerIndex)
 			{
 				_cfgBardMelodySongs.Add(string.Empty);
 			}
-			_cfgBardMelodySongs[_state.State_BardSongPickerIndex] = songName ?? string.Empty;
-			_cfgBardMelodyBuffers[_state.State_BardSongPickerIndex] = songName ?? string.Empty;
+			_cfgBardMelodySongs[state.BardSongPickerIndex] = songName ?? string.Empty;
+			_cfgBardMelodyBuffers[state.BardSongPickerIndex] = songName ?? string.Empty;
 			_cfgBardSongPickerJustSelected = true; // Flag to force input refresh
 			_cfgBardSongInputVersion++; // Change input ID to force text update
 										// _state.State_BardSongPickerIndex = -1; // Moved to modal render to allow input text update
+			state.Mode = CatalogMode.Standard;
+
 			_state.Show_AddModal = false;
-			_state.State_CatalogMode = CatalogMode.Standard;
+			
 		}
 		private static void RenderBardSampleIfModal()
 		{
