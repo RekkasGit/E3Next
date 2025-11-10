@@ -431,6 +431,8 @@ namespace MonoCore
 		public extern static float imgui_GetFrameHeight();
 		[MethodImpl(MethodImplOptions.InternalCall)]
 		public extern static void imgui_GetWindowDrawList_AddRectFilled(float x1, float y1, float x2, float y2, uint color);
+		[MethodImpl(MethodImplOptions.InternalCall)]
+		public extern static void imgui_GetWindowDrawList_AddText(float x, float y, uint color, string text);
 		// Item rect + color helpers
 		[MethodImpl(MethodImplOptions.InternalCall)]
 		public extern static float imgui_GetItemRectMinX();
