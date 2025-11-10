@@ -3582,7 +3582,8 @@ namespace E3Core.UI.Windows
 								{
 									var vals = GetValues(kd);
 									string v = (_state.State_SelectedCatalogEntry.Name ?? string.Empty).Trim();
-									if (_state.State_CatalogReplaceMode && _state.State_CatalogReplaceIndex >= 0 && _state.State_CatalogReplaceIndex < vals.Count)
+									var catalogIndex = _state.State_CatalogReplaceIndex;
+									if (_state.State_CatalogReplaceMode && catalogIndex >= 0 && catalogIndex < vals.Count)
 									{
 										vals[_state.State_CatalogReplaceIndex] = v;
 										WriteValues(kd, vals);
@@ -4686,11 +4687,11 @@ namespace E3Core.UI.Windows
 			{
 				return;
 			}
-			imgui_PushTextWrapPos(imgui_GetContentRegionAvailX());
+			float contentRegionX = imgui_GetContentRegionAvailX();
+			imgui_PushTextWrapPos(contentRegionX);
 			try
 			{
 
-				float contentRegionX = imgui_GetContentRegionAvailX();
 				imgui_Text("");
 				float totalLineLength = 0;
 				for (Int32 i = 0; i < rawText.Count; i++)
