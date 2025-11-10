@@ -39,7 +39,7 @@ namespace E3Core.UI.Windows
 			public IniData CurrentINIData;
 			public string CurrentINIFileNameFull = string.Empty;
 
-			public string SelectedCharacterSection = string.Empty;
+			public string SelectedCharacterSection = string.Empty;//In use?
 			public string SelectedSection = string.Empty;
 			public string SelectedAddInLine = String.Empty;
 			public string SelectedKey = string.Empty;
@@ -68,15 +68,15 @@ namespace E3Core.UI.Windows
 		}
 		private class State_AllPlayers
 		{
-			public Dictionary<string, string> Data_AllPlayersEdit = new Dictionary<string, string>(StringComparer.OrdinalIgnoreCase);
-			public List<KeyValuePair<string, string>> Data_AllPlayerRows = new List<KeyValuePair<string, string>>();
-			public bool Show_AllPlayersView = false;
-			public object _cfgAllPlayersLock = new object();
-			public string _cfgAllPlayersReqSection = string.Empty;
-			public string _cfgAllPlayersReqKey = string.Empty;
-			public long _cfgAllPlayersLastUpdatedAt = 0;
-			public int _cfgAllPlayersRefreshIntervalMs = 5000;
-			public string _cfgAllPlayersStatus = string.Empty;
+			public Dictionary<string, string> Data_Edit = new Dictionary<string, string>(StringComparer.OrdinalIgnoreCase);
+			public List<KeyValuePair<string, string>> Data_Rows = new List<KeyValuePair<string, string>>();
+			public bool ShowWindow = false;
+			public object DataLock = new object();
+			public string ReqSection = string.Empty;
+			public string ReqKey = string.Empty;
+			public long LastUpdatedAt = 0;
+			public int RefershInterval = 5000;
+			public string Status = string.Empty;
 		}
 		private class CharacterSettingsState
 		{
@@ -562,8 +562,8 @@ namespace E3Core.UI.Windows
 						imgui_Separator();
 						RenderSearchBar();
 						var allPlayersState = _state.GetState<State_AllPlayers>();
-						if (allPlayersState.Show_AllPlayersView) RenderAllPlayersView();
-						if (!allPlayersState.Show_AllPlayersView) RenderConfigEditor();
+						if (allPlayersState.ShowWindow) RenderAllPlayersView();
+						if (!allPlayersState.ShowWindow) RenderConfigEditor();
 						if (_state.Show_ThemeSettings) RenderThemeSettingsModal();
 						if (_state.Show_Donate) RenderDonateModal();
 					}
@@ -648,26 +648,26 @@ namespace E3Core.UI.Windows
 			imgui_SameLine();
 			imgui_Text("View Mode:");
 			imgui_SameLine();
-			if (imgui_Button(allPlayerState.Show_AllPlayersView ? "Switch to Character View" : "Switch to All Players View"))
+			if (imgui_Button(allPlayerState.ShowWindow ? "Switch to Character View" : "Switch to All Players View"))
 			{
-				allPlayerState.Show_AllPlayersView = !allPlayerState.Show_AllPlayersView;
+				allPlayerState.ShowWindow = !allPlayerState.ShowWindow;
 			}
 			imgui_SameLine();
-			imgui_TextColored(0.3f, 0.8f, 0.3f, 1.0f, allPlayerState.Show_AllPlayersView ? "All Players Mode" : "Character Mode");
+			imgui_TextColored(0.3f, 0.8f, 0.3f, 1.0f, allPlayerState.ShowWindow ? "All Players Mode" : "Character Mode");
 
 			imgui_Separator();
 
 		
-			if (allPlayerState.Show_AllPlayersView)
+			if (allPlayerState.ShowWindow)
 			{
 				string currentSig = $"{mainWindowState.SelectedSection}::{mainWindowState.SelectedKey}";
 				if (!string.Equals(currentSig, mainWindowState.SignatureOfSelectedKeyValue, StringComparison.OrdinalIgnoreCase))
 				{
 					mainWindowState.SignatureOfSelectedKeyValue = currentSig;
-					lock (allPlayerState._cfgAllPlayersLock)
+					lock (allPlayerState.DataLock)
 					{
-						allPlayerState.Data_AllPlayerRows = new List<KeyValuePair<string, string>>();
-						allPlayerState.Data_AllPlayersEdit= new Dictionary<string, string>(StringComparer.OrdinalIgnoreCase);
+						allPlayerState.Data_Rows = new List<KeyValuePair<string, string>>();
+						allPlayerState.Data_Edit= new Dictionary<string, string>(StringComparer.OrdinalIgnoreCase);
 					}
 					_state.Request_AllplayersRefresh = true;
 				}
@@ -2607,19 +2607,19 @@ namespace E3Core.UI.Windows
 
 				_state.Request_AllplayersRefresh = false; // consume the pending request before we start
 				_cfgAllPlayersRefreshing = true;
-				allPlayerState._cfgAllPlayersReqSection = mainWindowState.SelectedSection;
-				allPlayerState._cfgAllPlayersReqKey = mainWindowState.SelectedKey;
+				allPlayerState.ReqSection = mainWindowState.SelectedSection;
+				allPlayerState.ReqKey = mainWindowState.SelectedKey;
 
 				System.Threading.Tasks.Task.Run(() =>
 				{
 					try
 					{
 
-						allPlayerState._cfgAllPlayersStatus = "Refreshing...";
+						allPlayerState.Status = "Refreshing...";
 
 						var newRows = new List<KeyValuePair<string, string>>();
-						string section = allPlayerState._cfgAllPlayersReqSection;
-						string key = allPlayerState._cfgAllPlayersReqKey;
+						string section = allPlayerState.ReqSection;
+						string key = allPlayerState.ReqKey;
 
 						foreach (var toon in GetOnlineToonNames().Keys)
 						{
@@ -2662,21 +2662,21 @@ namespace E3Core.UI.Windows
 							newRows.Add(new KeyValuePair<string, string>(toon, value));
 						}
 
-						lock (allPlayerState._cfgAllPlayersLock)
+						lock (allPlayerState.DataLock)
 						{
-							allPlayerState.Data_AllPlayerRows = newRows;
-							allPlayerState.Data_AllPlayersEdit = new Dictionary<string, string>(StringComparer.OrdinalIgnoreCase);
+							allPlayerState.Data_Rows = newRows;
+							allPlayerState.Data_Edit = new Dictionary<string, string>(StringComparer.OrdinalIgnoreCase);
 							foreach (var row in newRows)
 							{
 								var toonKey = row.Key ?? string.Empty;
-								allPlayerState.Data_AllPlayersEdit[toonKey] = row.Value ?? string.Empty;
+								allPlayerState.Data_Edit[toonKey] = row.Value ?? string.Empty;
 							}
 						}
-						allPlayerState._cfgAllPlayersLastUpdatedAt = Core.StopWatch.ElapsedMilliseconds;
+						allPlayerState.LastUpdatedAt = Core.StopWatch.ElapsedMilliseconds;
 					}
 					catch (Exception ex)
 					{
-						allPlayerState._cfgAllPlayersStatus = "Refresh failed: " + ex.Message;
+						allPlayerState.Status = "Refresh failed: " + ex.Message;
 					}
 					finally
 					{
@@ -4153,14 +4153,14 @@ namespace E3Core.UI.Windows
 							imgui_TableSetupColumn("Actions", 0, 100f);
 							imgui_TableHeadersRow();
 
-							lock (allPlayerState._cfgAllPlayersLock)
+							lock (allPlayerState.DataLock)
 							{
-								foreach (var row in allPlayerState.Data_AllPlayerRows)
+								foreach (var row in allPlayerState.Data_Rows)
 								{
 									string toon = row.Key ?? string.Empty;
 
-									if (!allPlayerState.Data_AllPlayersEdit.ContainsKey(toon))
-										allPlayerState.Data_AllPlayersEdit[toon] = row.Value ?? string.Empty;
+									if (!allPlayerState.Data_Edit.ContainsKey(toon))
+										allPlayerState.Data_Edit[toon] = row.Value ?? string.Empty;
 
 									imgui_TableNextRow();
 
@@ -4170,7 +4170,7 @@ namespace E3Core.UI.Windows
 
 									// Value (editable)
 									imgui_TableNextColumn();
-									string currentValue = allPlayerState.Data_AllPlayersEdit[toon];
+									string currentValue = allPlayerState.Data_Edit[toon];
 									bool isBool = string.Equals(currentValue, "true", StringComparison.OrdinalIgnoreCase) || string.Equals(currentValue, "false", StringComparison.OrdinalIgnoreCase)
 										|| string.Equals(currentValue, "on", StringComparison.OrdinalIgnoreCase) || string.Equals(currentValue, "off", StringComparison.OrdinalIgnoreCase);
 
@@ -4180,19 +4180,19 @@ namespace E3Core.UI.Windows
 										{
 											if (imgui_Selectable("True", string.Equals(currentValue, "True", StringComparison.OrdinalIgnoreCase)))
 											{
-												allPlayerState.Data_AllPlayersEdit[toon] = "True";
+												allPlayerState.Data_Edit[toon] = "True";
 											}
 											if (imgui_Selectable("False", string.Equals(currentValue, "False", StringComparison.OrdinalIgnoreCase)))
 											{
-												allPlayerState.Data_AllPlayersEdit[toon] = "False";
+												allPlayerState.Data_Edit[toon] = "False";
 											}
 											if (imgui_Selectable("On", string.Equals(currentValue, "On", StringComparison.OrdinalIgnoreCase)))
 											{
-												allPlayerState.Data_AllPlayersEdit[toon] = "On";
+												allPlayerState.Data_Edit[toon] = "On";
 											}
 											if (imgui_Selectable("Off", string.Equals(currentValue, "Off", StringComparison.OrdinalIgnoreCase)))
 											{
-												allPlayerState.Data_AllPlayersEdit[toon] = "Off";
+												allPlayerState.Data_Edit[toon] = "Off";
 											}
 											EndComboSafe();
 										}
@@ -4202,7 +4202,7 @@ namespace E3Core.UI.Windows
 										string inputId = $"##edit_{toon}";
 										if (imgui_InputText(inputId, currentValue))
 										{
-											allPlayerState.Data_AllPlayersEdit[toon] = imgui_InputText_Get(inputId) ?? string.Empty;
+											allPlayerState.Data_Edit[toon] = imgui_InputText_Get(inputId) ?? string.Empty;
 										}
 									}
 
@@ -4210,7 +4210,7 @@ namespace E3Core.UI.Windows
 									imgui_TableNextColumn();
 									if (imgui_Button($"Save##{row.Key}"))
 									{
-										string newValue = allPlayerState.Data_AllPlayersEdit[row.Key] ?? string.Empty;
+										string newValue = allPlayerState.Data_Edit[row.Key] ?? string.Empty;
 
 										if (TrySaveIniValueForToon(row.Key, mainWindowState.SelectedSection, mainWindowState.SelectedKey, newValue, out var err))
 										{
