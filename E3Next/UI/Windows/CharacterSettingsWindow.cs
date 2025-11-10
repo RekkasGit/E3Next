@@ -32,7 +32,7 @@ namespace E3Core.UI.Windows
 			public string Filter = string.Empty;
 			public CatalogMode Mode = CatalogMode.Standard;
 			public AddType CurrentAddType = AddType.Spells;
-			public Int32 BardSongPickerIndex = -1;
+			
 		}
 		private class State_MainWindow
 		{
@@ -78,12 +78,35 @@ namespace E3Core.UI.Windows
 			public int RefershInterval = 5000;
 			public string Status = string.Empty;
 		}
+		private class State_BardEditor
+		{
+			public Int32 BardSongPickerIndex = -1;
+			//currently being used to 'empty' the input fields when a value is added. 
+			//this should be corrected
+			public int SongInputVersion = 0;
+			public int ConditionInputVersion = 0;
+			//end input correction
+			public string SampleIfStatus = string.Empty;
+			public string SampleIfFilter = string.Empty;
+			public string MelodyCondition = string.Empty;
+			public string MelodyModalStatus = string.Empty;
+			public string MelodyStatus = string.Empty;
+			public bool SongPickerJustSelected = false;
+			public List<KeyValuePair<string, string>> SampleIfLines = new List<KeyValuePair<string, string>>();
+			// Ifs: add-new helper input buffers
+			public string MelodyName = string.Empty;
+			public List<string> MelodySongs = new List<string>();
+			public Dictionary<int, string> MelodyBuffers = new Dictionary<int, string>();
+			public List<int> MelodyGems = new List<int>();
+			public Dictionary<int, string> MelodyGemBuffers = new Dictionary<int, string>();
+
+		}
 		private class CharacterSettingsState
 		{
 			private State_CatalogWindow _catalogWindowState = new State_CatalogWindow();
 			private State_MainWindow _mainWindowState = new State_MainWindow();
 			private State_AllPlayers _allPlayersState = new State_AllPlayers();
-
+			private State_BardEditor _bardEditorState = new State_BardEditor();
 			public CharacterSettingsState() {
 				//set all initial windows to not show
 				if(Core._MQ2MonoVersion>0.34m) ClearWindows();
@@ -103,6 +126,10 @@ namespace E3Core.UI.Windows
 				else if (type == typeof(State_AllPlayers))
 				{
 					return (T)(object)_allPlayersState;
+				}
+				else if (type == typeof(State_BardEditor))
+				{
+					return (T)(object)_bardEditorState;
 				}
 				return default(T);
 			}
@@ -156,7 +183,7 @@ namespace E3Core.UI.Windows
 					//this is necessary as you can close via the X in C++ land and won't see the update till we check
 					if(!currentValue)
 					{
-						_catalogWindowState.BardSongPickerIndex = -1;
+						_bardEditorState.BardSongPickerIndex = -1;
 						_catalogWindowState.Mode = CatalogMode.Standard;
 						_catalogWindowState.ReplaceMode = false;
 						_catalogWindowState.ReplaceIndex = -1;
@@ -336,22 +363,9 @@ namespace E3Core.UI.Windows
 		// Ifs import (sample) modal state
 		private static List<System.Collections.Generic.KeyValuePair<string, string>> _cfgIfSampleLines = new List<System.Collections.Generic.KeyValuePair<string, string>>();
 		private static string _cfgIfSampleStatus = string.Empty;
-		// Ifs: add-new helper input buffers
-		private static string _cfgBardMelodyName = string.Empty;
-		private static List<string> _cfgBardMelodySongs = new List<string>();
-		private static Dictionary<int, string> _cfgBardMelodyBuffers = new Dictionary<int, string>();
-		private static List<int> _cfgBardMelodyGems = new List<int>();
-		private static Dictionary<int, string> _cfgBardMelodyGemBuffers = new Dictionary<int, string>();
-		private static string _cfgBardMelodyCondition = string.Empty;
-		private static string _cfgBardMelodyModalStatus = string.Empty;
-		private static string _cfgBardMelodyStatus = string.Empty;
-		private static bool _cfgBardSongPickerJustSelected = false;
-		private static int _cfgBardSongInputVersion = 0;
-		private static int _cfgBardConditionInputVersion = 0;
-		private static int _cfgSectionSearchVersion = 0;
-		private static string _cfgBardSampleIfStatus = string.Empty;
-		private static string _cfgBardSampleIfFilter = string.Empty;
-		private static List<KeyValuePair<string, string>> _cfgBardSampleIfLines = new List<KeyValuePair<string, string>>();
+		
+		
+		
 
 		
 		private static bool _cfgFoodDrinkPending = false;
@@ -1831,6 +1845,7 @@ namespace E3Core.UI.Windows
 		private static void RenderConfigurationTools(SectionData selectedSection)
 		{
 			var state = _state.GetState<State_MainWindow>();
+			var bardEditorState = _state.GetState<State_BardEditor>();
 
 			bool isBardIni = IsActiveIniBard();
 			if (isBardIni)
@@ -1841,9 +1856,9 @@ namespace E3Core.UI.Windows
 					ResetBardMelodyHelperForm();
 					_state.Show_BardMelodyHelper = true;
 				}
-				if (!string.IsNullOrEmpty(_cfgBardMelodyStatus))
+				if (!string.IsNullOrEmpty(bardEditorState.MelodyStatus))
 				{
-					imgui_TextColored(0.7f, 0.9f, 0.7f, 1.0f, _cfgBardMelodyStatus);
+					imgui_TextColored(0.7f, 0.9f, 0.7f, 1.0f, bardEditorState.MelodyStatus);
 				}
 				imgui_Separator();
 			}
@@ -5817,6 +5832,8 @@ namespace E3Core.UI.Windows
 		private static void RenderBardMelodyHelperModal()
 		{
 		
+			var state = _state.GetState<State_BardEditor>();
+
 			bool open = imgui_Begin(_state.WinName_BardMelodyHelper, (int)(ImGuiWindowFlags.ImGuiWindowFlags_AlwaysAutoResize | ImGuiWindowFlags.ImGuiWindowFlags_NoCollapse | ImGuiWindowFlags.ImGuiWindowFlags_NoDocking));
 			if (open)
 			{
@@ -5827,11 +5844,11 @@ namespace E3Core.UI.Windows
 				imgui_Text("Melody name:");
 				imgui_SameLine();
 				imgui_SetNextItemWidth(260f);
-				if (imgui_InputText("##bard_melody_name", _cfgBardMelodyName ?? string.Empty))
+				if (imgui_InputText("##bard_melody_name", state.MelodyName ?? string.Empty))
 				{
-					_cfgBardMelodyName = (imgui_InputText_Get("##bard_melody_name") ?? string.Empty).Trim();
+					state.MelodyName = (imgui_InputText_Get("##bard_melody_name") ?? string.Empty).Trim();
 				}
-				if (string.IsNullOrEmpty(_cfgBardMelodyName))
+				if (string.IsNullOrEmpty(state.MelodyName))
 				{
 					imgui_TextColored(0.7f, 0.7f, 0.7f, 1.0f, "Example: \"Caster\" or \"Main\"");
 				}
@@ -5844,29 +5861,29 @@ namespace E3Core.UI.Windows
 				{
 					imgui_TextColored(0.8f, 0.6f, 0.6f, 1.0f, "Catalog data not yet loaded. Use manual entry or load catalogs first.");
 				}
-				for (int i = 0; i < _cfgBardMelodySongs.Count; i++)
+				for (int i = 0; i < state.MelodySongs.Count; i++)
 				{
 					string label = $"Song {i + 1}";
 					imgui_SetNextItemWidth(300f);
-					string inputId = $"{label}##bard_song_{i}_{_cfgBardSongInputVersion}";
+					string inputId = $"{label}##bard_song_{i}_{state.SongInputVersion}";
 
 					// Ensure buffer exists and is synchronized with the songs list
-					if (!_cfgBardMelodyBuffers.ContainsKey(i))
+					if (!state.MelodyBuffers.ContainsKey(i))
 					{
-						_cfgBardMelodyBuffers[i] = _cfgBardMelodySongs[i] ?? string.Empty;
+						state.MelodyBuffers[i] = state.MelodySongs[i] ?? string.Empty;
 					}
 
-					string buffer = _cfgBardMelodyBuffers[i];
+					string buffer = state.MelodyBuffers[i];
 					if (imgui_InputText(inputId, buffer))
 					{
 						buffer = imgui_InputText_Get(inputId) ?? string.Empty;
-						_cfgBardMelodyBuffers[i] = buffer;
-						_cfgBardMelodySongs[i] = buffer.Trim();
+						state.MelodyBuffers[i] = buffer;
+						state.MelodySongs[i] = buffer.Trim();
 					}
 					imgui_SameLine();
 					if (imgui_Button($"Remove##bard_song_remove_{i}"))
 					{
-						_cfgBardMelodySongs.RemoveAt(i);
+						state.MelodySongs.RemoveAt(i);
 						ReindexBardMelodyBuffers();
 						i--;
 						continue;
@@ -5883,15 +5900,15 @@ namespace E3Core.UI.Windows
 					imgui_Text("Gem:");
 					imgui_SameLine();
 					imgui_SetNextItemWidth(50f);
-					string gemPreview = _cfgBardMelodyGems[i].ToString();
-					if (imgui_BeginCombo($"##bard_gem_combo_{i}_{_cfgBardSongInputVersion}", gemPreview, 0))
+					string gemPreview = state.MelodyGems[i].ToString();
+					if (imgui_BeginCombo($"##bard_gem_combo_{i}_{state.SongInputVersion}", gemPreview, 0))
 					{
 						for (int gem = 1; gem <= 12; gem++)
 						{
 							if (imgui_MenuItem(gem.ToString()))
 							{
-								_cfgBardMelodyGems[i] = gem;
-								_cfgBardMelodyGemBuffers[i] = gem.ToString();
+								state.MelodyGems[i] = gem;
+								state.MelodyGemBuffers[i] = gem.ToString();
 							}
 						}
 						imgui_EndCombo();
@@ -5899,28 +5916,28 @@ namespace E3Core.UI.Windows
 				}
 				if (imgui_Button("Add Another Song"))
 				{
-					_cfgBardMelodySongs.Add(string.Empty);
-					_cfgBardMelodyBuffers[_cfgBardMelodySongs.Count - 1] = string.Empty;
-					_cfgBardMelodyGems.Add(1);
-					_cfgBardMelodyGemBuffers[_cfgBardMelodySongs.Count - 1] = "1";
+					state.MelodySongs.Add(string.Empty);
+					state.MelodyBuffers[state.MelodySongs.Count - 1] = string.Empty;
+					state.MelodyGems.Add(1);
+					state.MelodyGemBuffers[state.MelodySongs.Count - 1] = "1";
 				}
 				imgui_Separator();
 
 				imgui_Text("When should we play it?");
 				imgui_SetNextItemWidth(350f);
-				string conditionId = $"##bard_melody_condition_{_cfgBardConditionInputVersion}";
-				if (imgui_InputText(conditionId, _cfgBardMelodyCondition ?? string.Empty))
+				string conditionId = $"##bard_melody_condition_{state.ConditionInputVersion}";
+				if (imgui_InputText(conditionId, state.MelodyCondition ?? string.Empty))
 				{
-					_cfgBardMelodyCondition = (imgui_InputText_Get(conditionId) ?? string.Empty).Trim();
+					state.MelodyCondition = (imgui_InputText_Get(conditionId) ?? string.Empty).Trim();
 				}
 				imgui_SameLine();
 				if (imgui_Button("Sample IFs..."))
 				{
 					if (!EnsureBardSampleIfsLoaded())
 					{
-						if (string.IsNullOrEmpty(_cfgBardSampleIfStatus))
+						if (string.IsNullOrEmpty(state.SampleIfStatus))
 						{
-							_cfgBardSampleIfStatus = "Sample file not found.";
+							state.SampleIfStatus = "Sample file not found.";
 						}
 					}
 					_state.Show_BardSampleIfModal = true;
@@ -5928,9 +5945,9 @@ namespace E3Core.UI.Windows
 				imgui_TextColored(0.7f, 0.7f, 0.7f, 1.0f, "Optional E3 IF expression. Leave blank to run the melody whenever possible.");
 				imgui_Separator();
 
-				if (!string.IsNullOrEmpty(_cfgBardMelodyModalStatus))
+				if (!string.IsNullOrEmpty(state.MelodyModalStatus))
 				{
-					imgui_TextColored(0.9f, 0.6f, 0.6f, 1.0f, _cfgBardMelodyModalStatus);
+					imgui_TextColored(0.9f, 0.6f, 0.6f, 1.0f, state.MelodyModalStatus);
 					imgui_Separator();
 				}
 
@@ -5938,13 +5955,13 @@ namespace E3Core.UI.Windows
 				{
 					if (TryCreateBardMelody(out var successMessage, out var errorMessage))
 					{
-						_cfgBardMelodyStatus = successMessage;
-						_cfgBardMelodyModalStatus = string.Empty;
+						state.MelodyStatus = successMessage;
+						state.MelodyModalStatus = string.Empty;
 						ResetBardMelodyHelperForm();
 					}
 					else
 					{
-						_cfgBardMelodyModalStatus = errorMessage;
+						state.MelodyModalStatus = errorMessage;
 					}
 				}
 				imgui_SameLine();
@@ -5956,124 +5973,130 @@ namespace E3Core.UI.Windows
 			imgui_End();
 	
 			// Reset the picker state after rendering
-			if (_cfgBardSongPickerJustSelected)
+			if (state.SongPickerJustSelected)
 			{
-				var catalogState = _state.GetState<State_CatalogWindow>();
-				catalogState.BardSongPickerIndex = -1;
-
-				_cfgBardSongPickerJustSelected = false;
+				state.BardSongPickerIndex = -1;
+				state.SongPickerJustSelected = false;
 			}
 		}
 		private static void ResetBardMelodyHelperForm()
 		{
-			_cfgBardMelodyName = string.Empty;
-			_cfgBardMelodyCondition = string.Empty;
-			_cfgBardMelodyModalStatus = string.Empty;
-			_cfgBardMelodySongs = new List<string> { string.Empty, string.Empty, string.Empty };
-			_cfgBardMelodyBuffers = new Dictionary<int, string>
+			var state = _state.GetState<State_BardEditor>();
+
+			state.MelodyName = string.Empty;
+			state.MelodyCondition = string.Empty;
+			state.MelodyModalStatus = string.Empty;
+			state.MelodySongs = new List<string> { string.Empty, string.Empty, string.Empty };
+			state.MelodyBuffers = new Dictionary<int, string>
 			{
 				{0, string.Empty},
 				{1, string.Empty},
 				{2, string.Empty}
 			};
-			_cfgBardMelodyGems = new List<int> { 1, 1, 1 };
-			_cfgBardMelodyGemBuffers = new Dictionary<int, string>
+			state.MelodyGems = new List<int> { 1, 1, 1 };
+			state.MelodyGemBuffers = new Dictionary<int, string>
 			{
 				{0, "1"},
 				{1, "1"},
 				{2, "1"}
 			};
 
+			state.BardSongPickerIndex = -1;
 			var catalogState = _state.GetState<State_CatalogWindow>();
-			catalogState.BardSongPickerIndex = -1;
 			catalogState.Mode = CatalogMode.Standard;
 
 		}
 		private static void EnsureBardMelodySongEntries()
 		{
-			if (_cfgBardMelodySongs == null)
+			var state = _state.GetState<State_BardEditor>();
+
+			if (state.MelodySongs == null)
 			{
-				_cfgBardMelodySongs = new List<string>();
+				state.MelodySongs = new List<string>();
 			}
-			if (_cfgBardMelodyBuffers == null)
+			if (state.MelodyBuffers == null)
 			{
-				_cfgBardMelodyBuffers = new Dictionary<int, string>();
+				state.MelodyBuffers = new Dictionary<int, string>();
 			}
-			if (_cfgBardMelodyGems == null)
+			if (state.MelodyGems == null)
 			{
-				_cfgBardMelodyGems = new List<int>();
+				state.MelodyGems = new List<int>();
 			}
-			if (_cfgBardMelodyGemBuffers == null)
+			if (state.MelodyGemBuffers == null)
 			{
-				_cfgBardMelodyGemBuffers = new Dictionary<int, string>();
+				state.MelodyGemBuffers = new Dictionary<int, string>();
 			}
-			if (_cfgBardMelodySongs.Count == 0)
+			if (state.MelodySongs.Count == 0)
 			{
-				_cfgBardMelodySongs.Add(string.Empty);
+				state.MelodySongs.Add(string.Empty);
 			}
-			while (_cfgBardMelodyGems.Count < _cfgBardMelodySongs.Count)
+			while (state.MelodyGems.Count < state.MelodySongs.Count)
 			{
-				_cfgBardMelodyGems.Add(1);
+				state.MelodyGems.Add(1);
 			}
-			for (int i = 0; i < _cfgBardMelodySongs.Count; i++)
+			for (int i = 0; i < state.MelodySongs.Count; i++)
 			{
-				if (!_cfgBardMelodyBuffers.ContainsKey(i))
+				if (!state.MelodyBuffers.ContainsKey(i))
 				{
-					_cfgBardMelodyBuffers[i] = _cfgBardMelodySongs[i] ?? string.Empty;
+					state.MelodyBuffers[i] = state.MelodySongs[i] ?? string.Empty;
 				}
-				if (!_cfgBardMelodyGemBuffers.ContainsKey(i))
+				if (!state.MelodyGemBuffers.ContainsKey(i))
 				{
-					_cfgBardMelodyGemBuffers[i] = _cfgBardMelodyGems[i].ToString();
+					state.MelodyGemBuffers[i] = state.MelodyGems[i].ToString();
 				}
 			}
-			var keysToRemove = _cfgBardMelodyBuffers.Keys.Where(k => k >= _cfgBardMelodySongs.Count).ToList();
+			var keysToRemove = state.MelodyBuffers.Keys.Where(k => k >= state.MelodySongs.Count).ToList();
 			foreach (var key in keysToRemove)
 			{
-				_cfgBardMelodyBuffers.Remove(key);
+				state.MelodyBuffers.Remove(key);
 			}
-			var gemKeysToRemove = _cfgBardMelodyGemBuffers.Keys.Where(k => k >= _cfgBardMelodySongs.Count).ToList();
+			var gemKeysToRemove = state.MelodyGemBuffers.Keys.Where(k => k >= state.MelodySongs.Count).ToList();
 			foreach (var key in gemKeysToRemove)
 			{
-				_cfgBardMelodyGemBuffers.Remove(key);
+				state.MelodyGemBuffers.Remove(key);
 			}
-			while (_cfgBardMelodyGems.Count > _cfgBardMelodySongs.Count)
+			while (state.MelodyGems.Count > state.MelodySongs.Count)
 			{
-				_cfgBardMelodyGems.RemoveAt(_cfgBardMelodyGems.Count - 1);
+				state.MelodyGems.RemoveAt(state.MelodyGems.Count - 1);
 			}
 		}
 
 		private static void ReindexBardMelodyBuffers()
 		{
+			var state = _state.GetState<State_BardEditor>();
+
 			var newBuffers = new Dictionary<int, string>();
 			var newGemBuffers = new Dictionary<int, string>();
-			for (int i = 0; i < _cfgBardMelodySongs.Count; i++)
+			for (int i = 0; i < state.MelodySongs.Count; i++)
 			{
-				string value = _cfgBardMelodySongs[i] ?? string.Empty;
+				string value = state.MelodySongs[i] ?? string.Empty;
 				newBuffers[i] = value;
-				newGemBuffers[i] = _cfgBardMelodyGems[i].ToString();
+				newGemBuffers[i] = state.MelodyGems[i].ToString();
 			}
-			_cfgBardMelodyBuffers = newBuffers;
-			_cfgBardMelodyGemBuffers = newGemBuffers;
+			state.MelodyBuffers = newBuffers;
+			state.MelodyGemBuffers = newGemBuffers;
 		}
 		private static bool EnsureBardSampleIfsLoaded()
 		{
-			if (_cfgBardSampleIfLines.Count > 0)
+			var state = _state.GetState<State_BardEditor>();
+
+			if (state.SampleIfLines.Count > 0)
 			{
 				return true;
 			}
 
-			_cfgBardSampleIfLines.Clear();
-			_cfgBardSampleIfStatus = string.Empty;
+			state.SampleIfLines.Clear();
+			state.SampleIfStatus = string.Empty;
 			try
 			{
 				string samplePath = ResolveSampleIfsPath();
 				if (string.IsNullOrEmpty(samplePath))
 				{
-					_cfgBardSampleIfStatus = "Sample file not found.";
+					state.SampleIfStatus = "Sample file not found.";
 					return false;
 				}
 
-				_cfgBardSampleIfStatus = "Loaded: " + Path.GetFileName(samplePath);
+				state.SampleIfStatus = "Loaded: " + Path.GetFileName(samplePath);
 				int added = 0;
 				foreach (var raw in File.ReadAllLines(samplePath))
 				{
@@ -6110,39 +6133,41 @@ namespace E3Core.UI.Windows
 
 					if (!string.IsNullOrEmpty(key))
 					{
-						_cfgBardSampleIfLines.Add(new KeyValuePair<string, string>(key, val));
+						state.SampleIfLines.Add(new KeyValuePair<string, string>(key, val));
 						added++;
 					}
 				}
 
 				if (added == 0)
 				{
-					_cfgBardSampleIfStatus = "No entries found in sample file.";
+					state.SampleIfStatus = "No entries found in sample file.";
 				}
 			}
 			catch (Exception ex)
 			{
-				_cfgBardSampleIfStatus = "Error reading sample IFs: " + (ex.Message ?? "error");
+				state.SampleIfStatus = "Error reading sample IFs: " + (ex.Message ?? "error");
 			}
 
-			return _cfgBardSampleIfLines.Count > 0;
+			return state.SampleIfLines.Count > 0;
 		}
 		private static void OpenBardSongPicker(int index)
 		{
-			var state = _state.GetState<State_CatalogWindow>();
+			var mainWIndowState = _state.GetState<State_CatalogWindow>();
+			var bardEditorState = _state.GetState<State_BardEditor>();
+
 			if (index < 0) return;
 			EnsureBardMelodySongEntries();
-			while (_cfgBardMelodySongs.Count <= index)
+			while (bardEditorState.MelodySongs.Count <= index)
 			{
-				_cfgBardMelodySongs.Add(string.Empty);
+				bardEditorState.MelodySongs.Add(string.Empty);
 			}
 
-			state.BardSongPickerIndex = index;
-			state.Mode = CatalogMode.BardSong;
-			state.CurrentAddType = AddType.Spells;
-			state.SelectedCategory = string.Empty;
-			state.SelectedSubCategory = string.Empty;
-			state.Filter = string.Empty;
+			bardEditorState.BardSongPickerIndex = index;
+			mainWIndowState.Mode = CatalogMode.BardSong;
+			mainWIndowState.CurrentAddType = AddType.Spells;
+			mainWIndowState.SelectedCategory = string.Empty;
+			mainWIndowState.SelectedSubCategory = string.Empty;
+			mainWIndowState.Filter = string.Empty;
 			
 			_state.Show_AddModal = true;
 			
@@ -6150,22 +6175,23 @@ namespace E3Core.UI.Windows
 		private static void ApplyBardSongSelection(string songName)
 		{
 			var state = _state.GetState<State_CatalogWindow>();
+			var bardEditorState = _state.GetState<State_BardEditor>();
 
-			if (state.BardSongPickerIndex < 0)
+			if (bardEditorState.BardSongPickerIndex < 0)
 			{
 				state.Mode = CatalogMode.Standard;
 				_state.Show_AddModal = false;
 				return;
 			}
 			EnsureBardMelodySongEntries();
-			while (_cfgBardMelodySongs.Count <= state.BardSongPickerIndex)
+			while (bardEditorState.MelodySongs.Count <= bardEditorState.BardSongPickerIndex)
 			{
-				_cfgBardMelodySongs.Add(string.Empty);
+				bardEditorState.MelodySongs.Add(string.Empty);
 			}
-			_cfgBardMelodySongs[state.BardSongPickerIndex] = songName ?? string.Empty;
-			_cfgBardMelodyBuffers[state.BardSongPickerIndex] = songName ?? string.Empty;
-			_cfgBardSongPickerJustSelected = true; // Flag to force input refresh
-			_cfgBardSongInputVersion++; // Change input ID to force text update
+			bardEditorState.MelodySongs[bardEditorState.BardSongPickerIndex] = songName ?? string.Empty;
+			bardEditorState.MelodyBuffers[bardEditorState.BardSongPickerIndex] = songName ?? string.Empty;
+			bardEditorState.SongPickerJustSelected = true; // Flag to force input refresh
+			bardEditorState.SongInputVersion++; // Change input ID to force text update
 										// _state.State_BardSongPickerIndex = -1; // Moved to modal render to allow input text update
 			state.Mode = CatalogMode.Standard;
 
@@ -6174,6 +6200,8 @@ namespace E3Core.UI.Windows
 		}
 		private static void RenderBardSampleIfModal()
 		{
+			var state = _state.GetState<State_BardEditor>();
+
 			bool open = imgui_Begin(_state.WinName_BardSampleIfModal, (int)(ImGuiWindowFlags.ImGuiWindowFlags_AlwaysAutoResize | ImGuiWindowFlags.ImGuiWindowFlags_NoCollapse | ImGuiWindowFlags.ImGuiWindowFlags_NoDocking));
 			if (open)
 			{
@@ -6184,30 +6212,30 @@ namespace E3Core.UI.Windows
 
 				if (!ready)
 				{
-					imgui_TextColored(0.85f, 0.6f, 0.6f, 1.0f, string.IsNullOrEmpty(_cfgBardSampleIfStatus) ? "Sample file not found." : _cfgBardSampleIfStatus);
+					imgui_TextColored(0.85f, 0.6f, 0.6f, 1.0f, string.IsNullOrEmpty(state.SampleIfStatus) ? "Sample file not found." : state.SampleIfStatus);
 				}
-				else if (!string.IsNullOrEmpty(_cfgBardSampleIfStatus))
+				else if (!string.IsNullOrEmpty(state.SampleIfStatus))
 				{
-					imgui_TextColored(0.7f, 0.9f, 0.7f, 1.0f, _cfgBardSampleIfStatus);
+					imgui_TextColored(0.7f, 0.9f, 0.7f, 1.0f, state.SampleIfStatus);
 				}
 
 				if (imgui_Button("Reload Samples"))
 				{
-					_cfgBardSampleIfLines.Clear();
+					state.SampleIfLines.Clear();
 					EnsureBardSampleIfsLoaded();
 				}
 				imgui_SameLine();
 				imgui_Text("Filter:");
 				imgui_SameLine();
 				imgui_SetNextItemWidth(260f);
-				if (imgui_InputText("##bard_sample_if_filter", _cfgBardSampleIfFilter ?? string.Empty))
+				if (imgui_InputText("##bard_sample_if_filter", state.SampleIfFilter ?? string.Empty))
 				{
-					_cfgBardSampleIfFilter = (imgui_InputText_Get("##bard_sample_if_filter") ?? string.Empty).Trim();
+					state.SampleIfFilter = (imgui_InputText_Get("##bard_sample_if_filter") ?? string.Empty).Trim();
 				}
 				imgui_SameLine();
 				if (imgui_Button("Clear##bard_sample_if_filter_clear"))
 				{
-					_cfgBardSampleIfFilter = string.Empty;
+					state.SampleIfFilter = string.Empty;
 				}
 
 				imgui_Separator();
@@ -6215,14 +6243,14 @@ namespace E3Core.UI.Windows
 				var displayList = new List<KeyValuePair<string, string>>();
 				if (ready)
 				{
-					if (string.IsNullOrEmpty(_cfgBardSampleIfFilter))
+					if (string.IsNullOrEmpty(state.SampleIfFilter))
 					{
-						displayList.AddRange(_cfgBardSampleIfLines);
+						displayList.AddRange(state.SampleIfLines);
 					}
 					else
 					{
-						var tokens = _cfgBardSampleIfFilter.Split(new[] { ' ' }, StringSplitOptions.RemoveEmptyEntries);
-						foreach (var kv in _cfgBardSampleIfLines)
+						var tokens = state.SampleIfFilter.Split(new[] { ' ' }, StringSplitOptions.RemoveEmptyEntries);
+						foreach (var kv in state.SampleIfLines)
 						{
 							string searchText = (kv.Key + " " + kv.Value).ToLowerInvariant();
 							bool matches = tokens.All(t => searchText.Contains(t.ToLowerInvariant()));
@@ -6263,8 +6291,8 @@ namespace E3Core.UI.Windows
 									string expression = string.IsNullOrEmpty(kv.Value) ? kv.Key : kv.Value;
 									if (imgui_Button($"Use##bard_sample_if_use_{kv.Key}"))
 									{
-										_cfgBardMelodyCondition = expression;
-										_cfgBardConditionInputVersion++;
+										state.MelodyCondition = expression;
+										state.ConditionInputVersion++;
 										_state.Show_BardSampleIfModal = false;
 										break;
 									}
@@ -6291,6 +6319,7 @@ namespace E3Core.UI.Windows
 		private static bool TryCreateBardMelody(out string successMessage, out string errorMessage)
 		{
 			var mainWindowState = _state.GetState<State_MainWindow>();
+			var bardEditorState = _state.GetState<State_BardEditor>();
 
 			successMessage = string.Empty;
 			errorMessage = string.Empty;
@@ -6302,7 +6331,7 @@ namespace E3Core.UI.Windows
 				return false;
 			}
 
-			string rawName = (_cfgBardMelodyName ?? string.Empty).Trim();
+			string rawName = (bardEditorState.MelodyName ?? string.Empty).Trim();
 			if (rawName.Length == 0)
 			{
 				errorMessage = "Please provide a melody name.";
@@ -6313,8 +6342,8 @@ namespace E3Core.UI.Windows
 				? rawName.Substring(0, rawName.Length - " Melody".Length).TrimEnd()
 				: rawName;
 
-			var songGemPairs = (_cfgBardMelodySongs ?? new List<string>())
-				.Select((s, i) => new { Song = (s ?? string.Empty).Trim(), Gem = _cfgBardMelodyGems[i] })
+			var songGemPairs = (bardEditorState.MelodySongs ?? new List<string>())
+				.Select((s, i) => new { Song = (s ?? string.Empty).Trim(), Gem = bardEditorState.MelodyGems[i] })
 				.Where(p => p.Song.Length > 0)
 				.GroupBy(p => p.Song, StringComparer.OrdinalIgnoreCase)
 				.Select(g => g.First())
@@ -6326,7 +6355,7 @@ namespace E3Core.UI.Windows
 				return false;
 			}
 
-			string condition = (_cfgBardMelodyCondition ?? string.Empty).Trim();
+			string condition = (bardEditorState.MelodyCondition ?? string.Empty).Trim();
 			string melodySectionName = $"{melodyName} Melody";
 
 			var melodySection = pd.Sections.GetSectionData(melodySectionName);
