@@ -5081,7 +5081,7 @@ namespace E3Core.UI.Windows
 
 			return baseName + "/" + string.Join("/", segments);
 		}
-		private static void RenderSpellModifierEditor2_RenderEditRow(string id, string label,string original, Action<string> action)
+		private static void RenderTableTextEditRow(string id, string label,string original, Action<string> action)
 		{
 			var spellEditorState = _state.GetState<State_SpellEditor>();
 			imgui_TableNextRow();
@@ -5156,14 +5156,14 @@ namespace E3Core.UI.Windows
 					string id = "##SpellEditor_CastName";
 					//CastName
 
-					RenderSpellModifierEditor2_RenderEditRow(id,"Cast Name:", currentSpell.CastName, (u) =>
+					RenderTableTextEditRow(id,"Cast Name:", currentSpell.CastName, (u) =>
 					{
 						currentSpell.CastName = u;
 						currentSpell.SpellName = u;
 					});
 					//Cast Target
 					id = "##SpellEditor_CastTarget";
-					RenderSpellModifierEditor2_RenderEditRow(id,"Cast Target:", currentSpell.CastTarget, (u) =>
+					RenderTableTextEditRow(id,"Cast Target:", currentSpell.CastTarget, (u) =>
 					{
 						currentSpell.CastTarget = u;
 					});
@@ -5240,7 +5240,6 @@ namespace E3Core.UI.Windows
 		{
 			var spellEditorState = _state.GetState<State_SpellEditor>();
 
-
 			imgui_TextColored(0.8f, 0.9f, 0.95f, 1.0f, "Logic");
 			const ImGuiTableFlags FieldTableFlags = (ImGuiTableFlags.ImGuiTableFlags_SizingStretchProp | ImGuiTableFlags.ImGuiTableFlags_PadOuterX);
 			const ImGuiTableColumnFlags LabelColumnFlags = (ImGuiTableColumnFlags.ImGuiTableColumnFlags_WidthFixed | ImGuiTableColumnFlags.ImGuiTableColumnFlags_NoResize);
@@ -5253,15 +5252,8 @@ namespace E3Core.UI.Windows
 				{
 					imgui_TableSetupColumn("Label", (int)LabelColumnFlags, 0f);
 					imgui_TableSetupColumn("Value", (int)ValueColumnFlags, 0f);
-
-
-					string id = "##SpellEditor_ifsKeys";
-					RenderSpellModifierEditor2_RenderEditRow(id, "Ifs Keys:", currentSpell.IfsKeys, (u) =>
-					{
-						currentSpell.IfsKeys = u;
-					});
-					id = "##SpellEditor_CheckFor";
-					RenderSpellModifierEditor2_RenderEditRow(id, "Check For:", String.Join(",", currentSpell.CheckForCollection.Keys), (u) =>
+					RenderTableTextEditRow("##SpellEditor_ifsKeys", "Ifs Keys:", currentSpell.IfsKeys, (u) => { currentSpell.IfsKeys = u; });
+					RenderTableTextEditRow("##SpellEditor_CheckFor", "Check For:", String.Join(",", currentSpell.CheckForCollection.Keys), (u) =>
 					{
 						currentSpell.CheckForCollection.Clear();
 						var split = u.Split(',');
@@ -5274,40 +5266,16 @@ namespace E3Core.UI.Windows
 							}
 						}
 					});
-					id = "##SpellEditor_CastIfs";
-					RenderSpellModifierEditor2_RenderEditRow(id, "Cast If:", currentSpell.CastIF, (u) =>
-					{
-						currentSpell.CastIF = u;
-					});
-
-					id = "##SpellEditor_Zone";
-					RenderSpellModifierEditor2_RenderEditRow(id, "Zone:", currentSpell.Zone, (u) =>
-					{
-						currentSpell.Zone = u;
-					});
-
-					id = "##SpellEditor_MinSick";
-					RenderSpellModifierEditor2_RenderEditRow(id, "Min Sick:", currentSpell.MinSick.ToString(), (u) =>
-					{
-						Int32.TryParse(u, out currentSpell.MinSick);
-					});
-					id = "##SpellEditor_TriggerSpell";
-					RenderSpellModifierEditor2_RenderEditRow(id, "Trigger Spell:", currentSpell.TriggerSpell, (u) =>
-					{
-						currentSpell.TriggerSpell = u;
-					});
-
-
+					RenderTableTextEditRow("##SpellEditor_CastIfs", "Cast If:", currentSpell.CastIF, (u) =>{ currentSpell.CastIF = u; });
+					RenderTableTextEditRow("##SpellEditor_Zone", "Zone:", currentSpell.Zone, (u) =>{ currentSpell.Zone = u; });
+					RenderTableTextEditRow("##SpellEditor_MinSick", "Min Sick:", currentSpell.MinSick.ToString(), (u) => { Int32.TryParse(u, out currentSpell.MinSick);});
+					RenderTableTextEditRow("##SpellEditor_TriggerSpell", "Trigger Spell:", currentSpell.TriggerSpell, (u) => { currentSpell.TriggerSpell = u; });
 				}
 				finally
 				{
 					imgui_EndTable();
-
 				}
 			}
-
-		
-
 		}
 		private static void RenderSpellModifierEditor2_Tab_Resources()
 		{
