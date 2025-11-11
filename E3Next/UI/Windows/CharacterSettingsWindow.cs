@@ -673,7 +673,7 @@ namespace E3Core.UI.Windows
 			imgui_SameLine();
 			if (imgui_Button("Clear"))
 			{
-				imgui_InputTextClear(searchId); //necessary to clear out the C++ buffer for the search
+				imgui_InputText_Clear(searchId); //necessary to clear out the C++ buffer for the search
 				mainWindowState.Buffer_KeySearch = string.Empty;
 			}
 			imgui_SameLine();
@@ -5093,7 +5093,7 @@ namespace E3Core.UI.Windows
 			var current = imgui_InputText_Get(id);
 			if(!String.Equals(current,original))
 			{
-				imgui_InputTextClear(id);
+				imgui_InputText_Clear(id);
 			}
 		
 			if (imgui_InputText(id, original))
@@ -5103,7 +5103,36 @@ namespace E3Core.UI.Windows
 				spellEditorState.IsDirty = true;
 			}
 		}
-		private static void RenderSpellModifierEditor2_RenderGeneral()
+		private static void RenderSpellModifierEditor2_RenderIntEditRow(string id, string label, int original, Action<Int32> action, string tooltip=null)
+		{
+			var spellEditorState = _state.GetState<State_SpellEditor>();
+			imgui_TableNextRow();
+			imgui_TableNextColumn();
+			imgui_Text(label);
+			if (!string.IsNullOrWhiteSpace(tooltip) && imgui_IsItemHovered())
+			{
+				imgui_BeginTooltip();
+				imgui_PushTextWrapPos(320f);
+				imgui_TextWrapped(tooltip);
+				imgui_PopTextWrapPos();
+				imgui_EndTooltip();
+			}
+			imgui_TableNextColumn();
+
+			//clear it out if we need as the original changed from what we have in the C++ side
+			var current = imgui_InputInt_Get(id);
+			if (current!= original)
+			{
+				imgui_InputInt_Clear(id);
+			}
+			if (imgui_InputInt(id, original,1,2))
+			{
+				int updated = imgui_InputInt_Get(id);
+				action.Invoke(updated);
+				spellEditorState.IsDirty = true;
+			}
+		}
+		private static void RenderSpellModifierEditor2_Tab_General()
 		{
 			var spellEditorState = _state.GetState<State_SpellEditor>();
 
@@ -5207,6 +5236,164 @@ namespace E3Core.UI.Windows
 
 			}
 		}
+		private static void RenderSpellModifierEditor2_Tab_Conditions()
+		{
+			var spellEditorState = _state.GetState<State_SpellEditor>();
+
+
+			imgui_TextColored(0.8f, 0.9f, 0.95f, 1.0f, "Logic");
+			const ImGuiTableFlags FieldTableFlags = (ImGuiTableFlags.ImGuiTableFlags_SizingStretchProp | ImGuiTableFlags.ImGuiTableFlags_PadOuterX);
+			const ImGuiTableColumnFlags LabelColumnFlags = (ImGuiTableColumnFlags.ImGuiTableColumnFlags_WidthFixed | ImGuiTableColumnFlags.ImGuiTableColumnFlags_NoResize);
+			const ImGuiTableColumnFlags ValueColumnFlags = ImGuiTableColumnFlags.ImGuiTableColumnFlags_WidthStretch;
+			var currentSpell = spellEditorState.CurrentEditedSpell;
+
+			if (imgui_BeginTable("GeneralTabTable", 2, (int)FieldTableFlags, imgui_GetContentRegionAvailX(), 0))
+			{
+				try
+				{
+					imgui_TableSetupColumn("Label", (int)LabelColumnFlags, 0f);
+					imgui_TableSetupColumn("Value", (int)ValueColumnFlags, 0f);
+
+
+					string id = "##SpellEditor_ifsKeys";
+					RenderSpellModifierEditor2_RenderEditRow(id, "Ifs Keys:", currentSpell.IfsKeys, (u) =>
+					{
+						currentSpell.IfsKeys = u;
+					});
+					id = "##SpellEditor_CheckFor";
+					RenderSpellModifierEditor2_RenderEditRow(id, "Check For:", String.Join(",", currentSpell.CheckForCollection.Keys), (u) =>
+					{
+						currentSpell.CheckForCollection.Clear();
+						var split = u.Split(',');
+						foreach(var check in split)
+						{
+							string tKey = check.Trim();
+							if(!currentSpell.CheckForCollection.ContainsKey(tKey))
+							{
+								currentSpell.CheckForCollection.Add(tKey, 0);
+							}
+						}
+					});
+					id = "##SpellEditor_CastIfs";
+					RenderSpellModifierEditor2_RenderEditRow(id, "Cast If:", currentSpell.CastIF, (u) =>
+					{
+						currentSpell.CastIF = u;
+					});
+
+					id = "##SpellEditor_Zone";
+					RenderSpellModifierEditor2_RenderEditRow(id, "Zone:", currentSpell.Zone, (u) =>
+					{
+						currentSpell.Zone = u;
+					});
+
+					id = "##SpellEditor_MinSick";
+					RenderSpellModifierEditor2_RenderEditRow(id, "Min Sick:", currentSpell.MinSick.ToString(), (u) =>
+					{
+						Int32.TryParse(u, out currentSpell.MinSick);
+					});
+					id = "##SpellEditor_TriggerSpell";
+					RenderSpellModifierEditor2_RenderEditRow(id, "Trigger Spell:", currentSpell.TriggerSpell, (u) =>
+					{
+						currentSpell.TriggerSpell = u;
+					});
+
+
+				}
+				finally
+				{
+					imgui_EndTable();
+
+				}
+			}
+
+		
+
+		}
+		private static void RenderSpellModifierEditor2_Tab_Resources()
+		{
+			var spellEditorState = _state.GetState<State_SpellEditor>();
+
+
+			imgui_TextColored(0.8f, 0.9f, 0.95f, 1.0f, "Logic");
+			const ImGuiTableFlags FieldTableFlags = (ImGuiTableFlags.ImGuiTableFlags_SizingStretchProp | ImGuiTableFlags.ImGuiTableFlags_PadOuterX);
+			const ImGuiTableColumnFlags LabelColumnFlags = (ImGuiTableColumnFlags.ImGuiTableColumnFlags_WidthFixed | ImGuiTableColumnFlags.ImGuiTableColumnFlags_NoResize);
+			const ImGuiTableColumnFlags ValueColumnFlags = ImGuiTableColumnFlags.ImGuiTableColumnFlags_WidthStretch;
+			var currentSpell = spellEditorState.CurrentEditedSpell;
+
+			if (imgui_BeginTable("SpellResourceTable", 2, (int)FieldTableFlags, imgui_GetContentRegionAvailX(), 0))
+			{
+				try
+				{
+					imgui_TableSetupColumn("Label", (int)LabelColumnFlags, 0f);
+					imgui_TableSetupColumn("Value", (int)ValueColumnFlags, 0f);
+
+
+					string id = "##SpellEditor_MinMana";
+					RenderSpellModifierEditor2_RenderIntEditRow(id, "Min Mana:", currentSpell.MinMana, (u) =>
+					{
+						currentSpell.MinMana = u;
+					});
+					id = "##SpellEditor_MinEnd";
+					RenderSpellModifierEditor2_RenderIntEditRow(id, "Min End:", currentSpell.MinEnd, (u) =>
+					{
+						currentSpell.MinEnd = u;
+					});
+					id = "##SpellEditor_MinPctHP";
+					RenderSpellModifierEditor2_RenderIntEditRow(id, "Min HP%:", currentSpell.MinHP, (u) =>
+					{
+						currentSpell.MinEnd = u;
+					});
+					id = "##SpellEditor_MinHPTotal";
+					RenderSpellModifierEditor2_RenderIntEditRow(id, "Min HP%:", currentSpell.MinHPTotal, (u) =>
+					{
+						currentSpell.MinHPTotal = u;
+					});
+					id = "##SpellEditor_HealPct";
+					RenderSpellModifierEditor2_RenderIntEditRow(id, "Heal %:", currentSpell.HealPct, (u) =>
+					{
+						currentSpell.HealPct = u;
+					});
+					id = "##SpellEditor_HealthMax";
+					RenderSpellModifierEditor2_RenderIntEditRow(id, "Cancel Heal Above %:", currentSpell.HealthMax, (u) =>
+					{
+						currentSpell.HealthMax = u;
+					});
+					id = "##SpellEditor_PctAggro";
+					RenderSpellModifierEditor2_RenderIntEditRow(id, "Pct Aggro:", currentSpell.PctAggro, (u) =>
+					{
+						currentSpell.PctAggro = u;
+					}, tooltip:"Skip this entry if your current aggro percent exceeds the specified threshold.");
+					id = "##SpellEditor_MinAggro";
+					RenderSpellModifierEditor2_RenderIntEditRow(id, "Min Aggro:", currentSpell.MinAggro, (u) =>
+					{
+						currentSpell.MinAggro = u;
+					}, tooltip: "Only cast when your aggro percent is at least this value (helps gate low-threat openers).");
+					id = "##SpellEditor_MaxAggro";
+					RenderSpellModifierEditor2_RenderIntEditRow(id, "Max Aggro:", currentSpell.MaxAggro, (u) =>
+					{
+						currentSpell.MaxAggro = u;
+					}, tooltip: "Do not cast once your aggro percent is above this value (useful for backing off).");
+				}
+				finally
+				{
+					imgui_EndTable();
+
+				}
+			}
+
+			/*RenderLabeledValueField("Min Mana:", "MinMana");
+					RenderLabeledValueField("Max Mana:", "MaxMana");
+					RenderLabeledValueField("Min End:", "MinEnd");
+					RenderLabeledValueField("Min HP%:", "MinHP");
+					RenderLabeledValueField("Min HP Total:", "MinHPTotal", 280f);
+					RenderLabeledValueField("Heal %:", "HealPct");
+					RenderLabeledValueField("Cancel Heal Above %:", "HealthMax", 280f);
+					RenderLabeledValueField("Pct Aggro:", "PctAggro", tooltip: "Skip this entry if your current aggro percent exceeds the specified threshold.");
+					RenderLabeledValueField("Min Aggro:", "MinAggro", tooltip: "Only cast when your aggro percent is at least this value (helps gate low-threat openers).");
+					RenderLabeledValueField("Max Aggro:", "MaxAggro", tooltip: "Do not cast once your aggro percent is above this value (useful for backing off).");
+					RenderLabeledValueField("Give Up Timer:", "GiveUpTimer");*/
+
+		}
 		private static void RenderSpellModifierEditor2()
 		{
 
@@ -5271,15 +5458,17 @@ namespace E3Core.UI.Windows
 			{
 				if (imgui_BeginTabItem($"General##spell_tab_general"))
 				{
-					RenderSpellModifierEditor2_RenderGeneral();
+					RenderSpellModifierEditor2_Tab_General();
 					imgui_EndTabItem();
 				}
 				if (imgui_BeginTabItem($"Conditions##spell_tab_conditions"))
 				{
+					RenderSpellModifierEditor2_Tab_Conditions();
 					imgui_EndTabItem();
 				}
 				if (imgui_BeginTabItem($"Resources##spell_tab_resources"))
 				{
+					RenderSpellModifierEditor2_Tab_Resources();
 					imgui_EndTabItem();
 				}
 				if (imgui_BeginTabItem($"Timing##spell_tab_timing"))

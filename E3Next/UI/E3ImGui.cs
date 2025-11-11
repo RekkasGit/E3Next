@@ -315,8 +315,10 @@ namespace MonoCore
 
 		public extern static bool imgui_InputTextMultiline(string id, string initial, float width, float height);
 		[MethodImpl(MethodImplOptions.InternalCall)]
-		public extern static bool imgui_InputTextClear(string id);
+		public extern static bool imgui_InputText_Clear(string id);
 
+		[MethodImpl(MethodImplOptions.InternalCall)]
+		public extern static bool imgui_InputInt_Clear(string id);
 
 		[MethodImpl(MethodImplOptions.InternalCall)]
 		public extern static bool imgui_InputInt(string id, int initial,int steps,int faststeps);

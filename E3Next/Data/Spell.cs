@@ -211,6 +211,7 @@ namespace E3Core.Data
                     else if (value.StartsWith("CheckFor|", StringComparison.OrdinalIgnoreCase))
 					{
                         string checkFors = GetArgument<String>(value);
+                        CheckForRaw = checkFors;
                         string[] checkForItems = checkFors.Split(',');
 
                         foreach(var checkFor in checkForItems)
@@ -1009,6 +1010,7 @@ namespace E3Core.Data
         private const Int32 MaxTriesDefault = 5;
         public Int32 MaxTries = MaxTriesDefault;
         public Dictionary<string, Int32> CheckForCollection = new Dictionary<string, int>();
+        public string CheckForRaw = String.Empty;
 		public HashSet<string> ExcludedClasses = new HashSet<string>(StringComparer.OrdinalIgnoreCase);
 		public HashSet<string> ExcludedNames = new HashSet<string>(StringComparer.OrdinalIgnoreCase);
 

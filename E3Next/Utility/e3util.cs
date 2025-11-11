@@ -1579,6 +1579,11 @@ namespace E3Core.Utility
 
 		public static bool OpenMerchant()
 		{
+
+			bool merchantWindowOpen = MQ.Query<bool>("${Window[MerchantWnd].Open}");
+
+			if (merchantWindowOpen) { return true; }
+
 			var target = MQ.Query<int>("${Target.ID}");
 
 			if (target <= 0 || MQ.Query<String>("${Target.Class}") != "Merchant")
