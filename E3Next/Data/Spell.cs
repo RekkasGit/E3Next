@@ -60,7 +60,7 @@ namespace E3Core.Data
         {
 
         }
-        public Spell(string spellName, IniData parsedData = null)
+        public Spell(string spellName, IniData parsedData = null, bool queryMQ = true)
         {
 
             if(!LoadedSpellByConfigEntry.ContainsKey(spellName))
@@ -75,18 +75,21 @@ namespace E3Core.Data
             Parse(parsedData);
 
 
-
-            QueryMQ();
-            if (this.SpellID>0 && !_loadedSpells.ContainsKey(this.SpellID))
+            if(queryMQ)
             {
-                //sometimes an item can have the same spellid of a spell. prevent duplicates. 
-                //should deal with this later tho, and make it off maybe castID
-                if (!LoadedSpellsByName.ContainsKey(this.SpellName))
-                {
-                    LoadedSpellsByName.Add(this.SpellName, this);
-                    _loadedSpells.Add(this.SpellID, this);
-                }
-            }
+				QueryMQ();
+				if (this.SpellID > 0 && !_loadedSpells.ContainsKey(this.SpellID))
+				{
+					//sometimes an item can have the same spellid of a spell. prevent duplicates. 
+					//should deal with this later tho, and make it off maybe castID
+					if (!LoadedSpellsByName.ContainsKey(this.SpellName))
+					{
+						LoadedSpellsByName.Add(this.SpellName, this);
+						_loadedSpells.Add(this.SpellID, this);
+					}
+				}
+			}
+			
         }
 
         void Parse(IniData parsedData)

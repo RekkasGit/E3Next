@@ -3,6 +3,7 @@ using E3Core.Processors;
 using E3Core.Server;
 using E3Core.Settings;
 using E3Core.Utility;
+using E3NextUI;
 using IniParser.Model;
 using MonoCore;
 using System;
@@ -11,9 +12,13 @@ using System.Collections.Generic;
 using System.Globalization;
 using System.IO;
 using System.Linq;
+using System.Runtime.Remoting.Lifetime;
 using System.Text;
 using System.Text.RegularExpressions;
+using System.Web.UI.WebControls;
 using static MonoCore.E3ImGUI;
+using static System.Windows.Forms.AxHost;
+using static System.Windows.Forms.VisualStyles.VisualStyleElement.Tab;
 
 namespace E3Core.UI.Windows
 {
@@ -107,6 +112,12 @@ namespace E3Core.UI.Windows
 		{
 			public E3Spell Spell = null;
 		}
+		private class State_SpellEditor
+		{
+			public Data.Spell CurrentEditedSpell = null;
+			public string Signature_CurrentEditedSpell = String.Empty;
+			public bool IsDirty = false;
+		}
 		private class CharacterSettingsState
 		{
 			private State_CatalogWindow _catalogWindowState = new State_CatalogWindow();
@@ -114,6 +125,7 @@ namespace E3Core.UI.Windows
 			private State_AllPlayers _allPlayersState = new State_AllPlayers();
 			private State_BardEditor _bardEditorState = new State_BardEditor();
 			private State_SpellInfo _spellInfoState = new State_SpellInfo();
+			private State_SpellEditor _spellEditorState = new State_SpellEditor();
 			public CharacterSettingsState() {
 				//set all initial windows to not show
 				if(Core._MQ2MonoVersion>0.34m) ClearWindows();
@@ -141,6 +153,10 @@ namespace E3Core.UI.Windows
 				else if (type == typeof(State_SpellInfo))
 				{
 					return (T)(object)_spellInfoState;
+				}
+				else if (type == typeof(State_SpellEditor))
+				{
+					return (T)(object)_spellEditorState;
 				}
 				return default(T);
 			}
@@ -385,18 +401,11 @@ namespace E3Core.UI.Windows
 
 		// Config UI toggle: "/e3imgui".
 		private static readonly string _windowName = "E3Next Config";
-		private static bool _imguiInitDone = false;
 		private static bool _imguiContextReady = false;
 		private enum SettingsTab { Character, General, Advanced }
 		private static SettingsTab _activeSettingsTab = SettingsTab.Character;
-		private static string _activeSettingsFilePath = string.Empty;
-		private static string[] _activeSettingsFileLines = Array.Empty<string>();
-		
-	
 		// Inline edit helpers
-		
 		private const float _valueRowActionStartOffset = 46f;
-	
 		// Collapsible section state tracking
 		private static Dictionary<string, bool> _cfgSectionExpanded = new Dictionary<string, bool>(StringComparer.OrdinalIgnoreCase);
 
@@ -1223,8 +1232,8 @@ namespace E3Core.UI.Windows
 			imgui_Separator();
 			imgui_TextColored(0.95f, 0.85f, 0.35f, 1.0f, "Spell Modifier Editor");
 			imgui_Separator();
-
-			RenderSpellModifierEditor(state);
+			RenderSpellModifierEditor2();
+			//RenderSpellModifierEditor(state);
 		}
 
 		// Safe gem display using catalog data (no TLO queries from UI thread)
@@ -1852,7 +1861,7 @@ namespace E3Core.UI.Windows
 		// Helper method to render configuration tools panel
 		private static void RenderConfigurationTools(SectionData selectedSection)
 		{
-			var state = _state.GetState<State_MainWindow>();
+			var mainWindowState = _state.GetState<State_MainWindow>();
 			var bardEditorState = _state.GetState<State_BardEditor>();
 
 			bool isBardIni = IsActiveIniBard();
@@ -1875,8 +1884,8 @@ namespace E3Core.UI.Windows
 				imgui_TextColored(0.9f, 0.9f, 0.9f, 1.0f, "Select a configuration key to see available tools.");
 				return;
 			}
-			bool hasKeySelected = !string.IsNullOrEmpty(state.SelectedKey);
-			bool specialSectionAllowsNoKey = string.Equals(state.SelectedSection, "Ifs", StringComparison.OrdinalIgnoreCase) || string.Equals(state.SelectedSection, "Burn", StringComparison.OrdinalIgnoreCase);
+			bool hasKeySelected = !string.IsNullOrEmpty(mainWindowState.SelectedKey);
+			bool specialSectionAllowsNoKey = string.Equals(mainWindowState.SelectedSection, "Ifs", StringComparison.OrdinalIgnoreCase) || string.Equals(mainWindowState.SelectedSection, "Burn", StringComparison.OrdinalIgnoreCase);
 			if (!hasKeySelected && !specialSectionAllowsNoKey)
 			{
 				imgui_TextColored(0.9f, 0.9f, 0.9f, 1.0f, "Select a configuration key to see available tools.");
@@ -1887,14 +1896,14 @@ namespace E3Core.UI.Windows
 			imgui_Separator();
 
 			// Value actions at the top (when a value is selected)
-			if (state.SelectedValueIndex >= 0 && hasKeySelected)
+			if (mainWindowState.SelectedValueIndex >= 0 && hasKeySelected)
 			{
-				var kd = selectedSection?.Keys?.GetKeyData(state.SelectedKey ?? string.Empty);
+				var kd = selectedSection?.Keys?.GetKeyData(mainWindowState.SelectedKey ?? string.Empty);
 				var values = GetValues(kd);
-				if (state.SelectedValueIndex < values.Count)
+				if (mainWindowState.SelectedValueIndex < values.Count)
 				{
-					string selectedValue = values[state.SelectedValueIndex];
-					var editState = EnsureSpellEditState(state.SelectedSection, state.SelectedKey, state.SelectedValueIndex, selectedValue);
+					string selectedValue = values[mainWindowState.SelectedValueIndex];
+					var editState = EnsureSpellEditState(mainWindowState.SelectedSection, mainWindowState.SelectedKey, mainWindowState.SelectedValueIndex, selectedValue);
 					if (editState != null)
 					{
 						imgui_TextColored(0.95f, 0.85f, 0.35f, 1.0f, "Value Actions");
@@ -1907,16 +1916,16 @@ namespace E3Core.UI.Windows
 						{
 							// Delete the currently selected value
 							var pdAct = GetActiveCharacterIniData();
-							var selSec = pdAct.Sections.GetSectionData(state.SelectedSection);
-							var key = selSec?.Keys.GetKeyData(state.SelectedKey);
+							var selSec = pdAct.Sections.GetSectionData(mainWindowState.SelectedSection);
+							var key = selSec?.Keys.GetKeyData(mainWindowState.SelectedKey);
 							if (key != null)
 							{
 								var vals = GetValues(key);
-								if (state.SelectedValueIndex >= 0 && state.SelectedValueIndex < vals.Count)
+								if (mainWindowState.SelectedValueIndex >= 0 && mainWindowState.SelectedValueIndex < vals.Count)
 								{
-									vals.RemoveAt(state.SelectedValueIndex);
+									vals.RemoveAt(mainWindowState.SelectedValueIndex);
 									WriteValues(key, vals);
-									state.SelectedValueIndex = -1; // Clear selection after delete
+									mainWindowState.SelectedValueIndex = -1; // Clear selection after delete
 								}
 							}
 						}
@@ -1933,24 +1942,24 @@ namespace E3Core.UI.Windows
 						imgui_PushStyleColor((int)ImGuiCol.ButtonActive, 0.85f, 0.65f, 0.25f, 1.0f);
 						imgui_PushStyleColor((int)ImGuiCol.Text, 0.1f, 0.1f, 0.1f, 1.0f); // Dark text for readability
 
-						string btnLabel = state.Show_ShowIntegratedEditor ? "Hide Editor" : "Show Editor";
+						string btnLabel = mainWindowState.Show_ShowIntegratedEditor ? "Hide Editor" : "Show Editor";
 						if (imgui_Button(btnLabel))
 						{
-							state.Show_ShowIntegratedEditor = !state.Show_ShowIntegratedEditor;
-							if (state.Show_ShowIntegratedEditor)
+							mainWindowState.Show_ShowIntegratedEditor = !mainWindowState.Show_ShowIntegratedEditor;
+							if (mainWindowState.Show_ShowIntegratedEditor)
 							{
 								// Initialize manual edit buffer when opening
-								var keyData = selectedSection?.Keys?.GetKeyData(state.SelectedKey ?? string.Empty);
+								var keyData = selectedSection?.Keys?.GetKeyData(mainWindowState.SelectedKey ?? string.Empty);
 								var valuesList = GetValues(keyData);
-								if (state.SelectedValueIndex >= 0 && state.SelectedValueIndex < valuesList.Count)
+								if (mainWindowState.SelectedValueIndex >= 0 && mainWindowState.SelectedValueIndex < valuesList.Count)
 								{
-									_cfgManualEditBuffer = valuesList[state.SelectedValueIndex] ?? string.Empty;
+									_cfgManualEditBuffer = valuesList[mainWindowState.SelectedValueIndex] ?? string.Empty;
 								}
 							}
 						}
 
 						imgui_PopStyleColor(4);
-						string editorHint = state.Show_ShowIntegratedEditor ? "Editor panel is open below." : "Click to show the advanced editor.";
+						string editorHint = mainWindowState.Show_ShowIntegratedEditor ? "Editor panel is open below." : "Click to show the advanced editor.";
 						imgui_TextColored(0.7f, 0.8f, 0.9f, 1.0f, editorHint);
 						imgui_Separator();
 					}
@@ -1959,9 +1968,9 @@ namespace E3Core.UI.Windows
 
 
 			// Special section buttons
-			bool isHeals = string.Equals(state.SelectedSection, "Heals", StringComparison.OrdinalIgnoreCase);
-			bool isTankKey = string.Equals(state.SelectedKey, "Tank", StringComparison.OrdinalIgnoreCase);
-			bool isImpKey = string.Equals(state.SelectedKey, "Important Bot", StringComparison.OrdinalIgnoreCase);
+			bool isHeals = string.Equals(mainWindowState.SelectedSection, "Heals", StringComparison.OrdinalIgnoreCase);
+			bool isTankKey = string.Equals(mainWindowState.SelectedKey, "Tank", StringComparison.OrdinalIgnoreCase);
+			bool isImpKey = string.Equals(mainWindowState.SelectedKey, "Important Bot", StringComparison.OrdinalIgnoreCase);
 
 			if (isHeals && (isTankKey || isImpKey))
 			{
@@ -1980,7 +1989,7 @@ namespace E3Core.UI.Windows
 			}
 
 			// Ifs section: add-new key helper
-			if (string.Equals(state.SelectedSection, "Ifs", StringComparison.OrdinalIgnoreCase))
+			if (string.Equals(mainWindowState.SelectedSection, "Ifs", StringComparison.OrdinalIgnoreCase))
 			{
 				if (imgui_Button("Sample If's"))
 				{
@@ -1990,21 +1999,21 @@ namespace E3Core.UI.Windows
 			}
 
 			// Burn section: add-new key helper
-			if (string.Equals(state.SelectedSection, "Burn", StringComparison.OrdinalIgnoreCase))
+			if (string.Equals(mainWindowState.SelectedSection, "Burn", StringComparison.OrdinalIgnoreCase))
 			{
 			}
 
 			imgui_Separator();
 
 			// Display selected value information
-			if (state.SelectedValueIndex >= 0)
+			if (mainWindowState.SelectedValueIndex >= 0)
 			{
-				var kd = selectedSection?.Keys?.GetKeyData(state.SelectedKey ?? string.Empty);
+				var kd = selectedSection?.Keys?.GetKeyData(mainWindowState.SelectedKey ?? string.Empty);
 				var values = GetValues(kd);
-				if (state.SelectedValueIndex < values.Count)
+				if (mainWindowState.SelectedValueIndex < values.Count)
 				{
-					string selectedValue = values[state.SelectedValueIndex];
-					var editState = EnsureSpellEditState(state.SelectedSection, state.SelectedKey, state.SelectedValueIndex, selectedValue);
+					string selectedValue = values[mainWindowState.SelectedValueIndex];
+					var editState = EnsureSpellEditState(mainWindowState.SelectedSection, mainWindowState.SelectedKey, mainWindowState.SelectedValueIndex, selectedValue);
 					string lookupName = editState?.BaseName;
 					if (string.IsNullOrWhiteSpace(lookupName))
 					{
@@ -4893,81 +4902,6 @@ namespace E3Core.UI.Windows
 			}
 		}
 
-		private static void RenderDescriptionRichText2(List<string> rawText)
-		{
-			if (rawText.Count == 0)
-			{
-				return;
-			}
-
-			// Start on a new line
-			imgui_Text("");
-
-			// Preprocess into parts with colors
-			var parts = new List<(string text, (float r, float g, float b, float a)? color)>();
-			for (int i = 0; i < rawText.Count; i++)
-			{
-				if (_inlineDescriptionColorMap.TryGetValue(rawText[i], out var color))
-				{
-					if ((i + 1) < rawText.Count)
-					{
-						i++;
-						parts.Add((rawText[i], color));
-					}
-				}
-				else if (rawText[i] == "\n")
-				{
-					parts.Add(("\n", null)); // newline marker
-				}
-				else
-				{
-					parts.Add((rawText[i], null)); // default color
-				}
-			}
-
-			// Render using ImGui text functions with wrapping
-			float maxWidth = imgui_GetContentRegionAvailX();
-			float currentWidth = 0;
-			foreach (var part in parts)
-			{
-				if (part.text == "\n")
-				{
-					imgui_Text("");
-					currentWidth = 0;
-					continue;
-				}
-				float partWidth = imgui_CalcTextSizeX(part.text);
-				bool useSameLine = partWidth <= maxWidth && currentWidth + partWidth <= maxWidth;
-				if (useSameLine)
-				{
-					imgui_SameLine(0f, 0f);
-				}
-				if (part.color.HasValue)
-				{
-					imgui_PushStyleColor((int)ImGuiCol.Text, part.color.Value.r, part.color.Value.g, part.color.Value.b, part.color.Value.a);
-				}
-				if (partWidth > maxWidth)
-				{
-					imgui_TextWrapped(part.text);
-				}
-				else
-				{
-					imgui_Text(part.text);
-				}
-				if (part.color.HasValue)
-				{
-					imgui_PopStyleColor(1);
-				}
-				if (useSameLine)
-				{
-					currentWidth += partWidth;
-				}
-				else
-				{
-					currentWidth = partWidth;
-				}
-			}
-		}
 		
 		private static void InvalidateSpellEditState()
 		{
@@ -5147,7 +5081,233 @@ namespace E3Core.UI.Windows
 
 			return baseName + "/" + string.Join("/", segments);
 		}
+		private static void RenderSpellModifierEditor2_RenderEditRow(string id, string label,string original, Action<string> action)
+		{
+			var spellEditorState = _state.GetState<State_SpellEditor>();
+			imgui_TableNextRow();
+			imgui_TableNextColumn();
+			imgui_Text(label);
+			imgui_TableNextColumn();
+		
+			//clear it out if we need as the original changed from what we have in the C++ side
+			var current = imgui_InputText_Get(id);
+			if(!String.Equals(current,original))
+			{
+				imgui_InputTextClear(id);
+			}
+		
+			if (imgui_InputText(id, original))
+			{
+				string updated = imgui_InputText_Get(id) ?? string.Empty;
+				action.Invoke(updated);
+				spellEditorState.IsDirty = true;
+			}
+		}
+		private static void RenderSpellModifierEditor2_RenderGeneral()
+		{
+			var spellEditorState = _state.GetState<State_SpellEditor>();
 
+			imgui_TextColored(0.8f, 0.9f, 0.95f, 1.0f, "Basics");
+			const ImGuiTableFlags FieldTableFlags = (ImGuiTableFlags.ImGuiTableFlags_SizingStretchProp | ImGuiTableFlags.ImGuiTableFlags_PadOuterX);
+			const ImGuiTableColumnFlags LabelColumnFlags = (ImGuiTableColumnFlags.ImGuiTableColumnFlags_WidthFixed | ImGuiTableColumnFlags.ImGuiTableColumnFlags_NoResize);
+			const ImGuiTableColumnFlags ValueColumnFlags = ImGuiTableColumnFlags.ImGuiTableColumnFlags_WidthStretch;
+			const float ComboFieldWidth = 220f;
+			var currentSpell = spellEditorState.CurrentEditedSpell;
+
+			if (imgui_BeginTable("GeneralTabTable", 2, (int)FieldTableFlags, imgui_GetContentRegionAvailX(), 0))
+			{
+				try
+				{
+					imgui_TableSetupColumn("Label", (int)LabelColumnFlags, 0f);
+					imgui_TableSetupColumn("Value", (int)ValueColumnFlags, 0f);
+
+
+					//to specify the id of an input text use ## so its not visable
+					
+					string id = "##SpellEditor_CastName";
+					//CastName
+
+					RenderSpellModifierEditor2_RenderEditRow(id,"Cast Name:", currentSpell.CastName, (u) =>
+					{
+						currentSpell.CastName = u;
+						currentSpell.SpellName = u;
+					});
+					//Cast Target
+					id = "##SpellEditor_CastTarget";
+					RenderSpellModifierEditor2_RenderEditRow(id,"Cast Target:", currentSpell.CastTarget, (u) =>
+					{
+						currentSpell.CastTarget = u;
+					});
+
+					///GEM SLOTS
+					imgui_TableNextRow();
+					imgui_TableNextColumn();
+					imgui_Text("Gem Slot:");
+					imgui_TableNextColumn();
+					var gemSlot = currentSpell.SpellGem;
+					string gemPreview = gemSlot >= 1 && gemSlot <= 12 ? $"Gem {gemSlot}" : "No Gem";
+					imgui_SetNextItemWidth(ComboFieldWidth);
+					if (BeginComboSafe($"##spell_gem", gemPreview))
+					{
+						if (imgui_Selectable("No Gem", gemSlot == 0))
+						{
+							currentSpell.SpellGem = 0;
+							spellEditorState.IsDirty = true;
+						}
+						for (int g = 1; g <= 12; g++)
+						{
+							bool sel = gemSlot == g;
+							if (imgui_Selectable($"Gem {g}", sel))
+							{
+								currentSpell.SpellGem = g;
+								gemSlot = g;
+								spellEditorState.IsDirty = true;
+							}
+						}
+						EndComboSafe();
+					}
+
+					//CAST TYPES
+					imgui_TableNextRow();
+					imgui_TableNextColumn();
+					imgui_Text("Cast Type Override:");
+					imgui_TableNextColumn();
+					string castTypeString = currentSpell.CastTypeOverride.ToString();
+					//string castPreview = string.IsNullOrEmpty(castTypeString) ? "Auto (Detect)" : castTypeString;
+					imgui_SetNextItemWidth(ComboFieldWidth);
+					if (BeginComboSafe($"##spell_casttype", castTypeString))
+					{	
+						foreach (var option in _spellCastTypeOptions)
+						{
+							bool sel = string.Equals(castTypeString, option, StringComparison.OrdinalIgnoreCase);
+							if (imgui_Selectable(option, sel))
+							{
+								currentSpell.CastTypeOverride = (CastingType)Enum.Parse(typeof(CastingType), option);
+								spellEditorState.IsDirty = true;
+							}
+						}
+						EndComboSafe();
+					}
+					//ENABLED
+					imgui_TableNextRow();
+					imgui_TableNextColumn();
+					imgui_Text("Enabled:");
+					imgui_TableNextColumn();
+					bool enabled = imgui_Checkbox($"##spell_enabled", currentSpell.Enabled);
+					if(enabled!= currentSpell.Enabled)
+					{
+						currentSpell.Enabled = enabled;
+						spellEditorState.IsDirty = true;
+					}
+				}
+				finally
+				{
+					imgui_EndTable();
+				}
+
+			}
+		}
+		private static void RenderSpellModifierEditor2()
+		{
+
+			var mainWindowState = _state.GetState<State_MainWindow>();
+			var spellEditorState = _state.GetState<State_SpellEditor>();
+
+
+			// Header row with title on left and buttons on right
+			
+			string entryLabel = $"[{mainWindowState.SelectedSection}] {mainWindowState.SelectedKey} entry #{mainWindowState.SelectedValueIndex + 1}";
+
+			//lets get the actual entry
+			var data = mainWindowState.CurrentINIData;
+			if (data == null) return;
+			var sectionData = data.Sections.GetSectionData(mainWindowState.SelectedSection);
+			if (sectionData == null) return;
+			var kd = sectionData.Keys.GetKeyData(mainWindowState.SelectedKey);
+			if (kd == null) return;
+			if (kd.ValueList.Count <= mainWindowState.SelectedValueIndex) return;
+			var rawValue = kd.ValueList[mainWindowState.SelectedValueIndex];
+			//check if this has changed from what we were before
+			if (!String.Equals(spellEditorState.Signature_CurrentEditedSpell, entryLabel))
+			{
+				spellEditorState.Signature_CurrentEditedSpell = entryLabel;
+				spellEditorState.CurrentEditedSpell = new Spell(rawValue, data, false);
+				spellEditorState.IsDirty = false;
+			}
+			imgui_TextColored(0.95f, 0.85f, 0.35f, 1.0f, entryLabel);
+			// Position Apply/Reset buttons on the same line, aligned to the right
+			float buttonWidth = 80f;
+			float spacing = 8f;
+			float totalButtonWidth = (buttonWidth * 2) + spacing;
+			float availWidth = imgui_GetContentRegionAvailX();
+			if (availWidth > totalButtonWidth)
+			{
+				imgui_SameLineEx(availWidth - totalButtonWidth, 0f);
+			}
+			else
+			{
+				imgui_SameLine();
+			}
+			string idForAppply = $"Apply##spell_apply";
+			if(spellEditorState.IsDirty) idForAppply= $"Apply*##spell_apply";
+			if (imgui_Button(idForAppply))
+			{
+				kd.ValueList[mainWindowState.SelectedValueIndex] = spellEditorState.CurrentEditedSpell.ToConfigEntry();
+				spellEditorState.IsDirty = false;
+			}
+			imgui_SameLine();
+			if (imgui_Button($"Reset##spell_reset"))
+			{
+				spellEditorState.CurrentEditedSpell = new Spell(rawValue, data, false);
+				spellEditorState.IsDirty = false;
+			}
+			
+			var currentSpell = spellEditorState.CurrentEditedSpell;
+
+
+			imgui_Separator();
+
+			if (imgui_BeginTabBar($"SpellModifierTabs"))
+			{
+				if (imgui_BeginTabItem($"General##spell_tab_general"))
+				{
+					RenderSpellModifierEditor2_RenderGeneral();
+					imgui_EndTabItem();
+				}
+				if (imgui_BeginTabItem($"Conditions##spell_tab_conditions"))
+				{
+					imgui_EndTabItem();
+				}
+				if (imgui_BeginTabItem($"Resources##spell_tab_resources"))
+				{
+					imgui_EndTabItem();
+				}
+				if (imgui_BeginTabItem($"Timing##spell_tab_timing"))
+				{
+					imgui_EndTabItem();
+				}
+				if (imgui_BeginTabItem($"Advanced##spell_tab_advanced"))
+				{
+					imgui_EndTabItem();
+				}
+				if (imgui_BeginTabItem($"Flags##spell_tab_flags"))
+				{
+					imgui_EndTabItem();
+				}
+				if (imgui_BeginTabItem($"Manual Edit##spell_tab_manual"))
+				{
+					imgui_EndTabItem();
+				}
+				imgui_EndTabBar();
+			}
+
+		
+
+			imgui_Separator();
+			imgui_TextColored(0.8f, 0.9f, 0.95f, 1.0f, "Preview");
+			string preview = currentSpell.ToConfigEntry();
+			imgui_TextWrapped(string.IsNullOrEmpty(preview) ? "(empty)" : preview);
+		}
 
 		private static void RenderSpellModifierEditor(SpellValueEditState state)
 		{
@@ -5422,9 +5582,10 @@ namespace E3Core.UI.Windows
 				float textHeight = Math.Max(180f, imgui_GetTextLineHeightWithSpacing() * 10f);
 
 
-				if (imgui_InputTextMultiline($"##manual_edit_{idBase}", _cfgManualEditBuffer ?? string.Empty, textWidth, textHeight))
+				if (imgui_InputTextMultiline($"##manual_edit_{idBase}", state.OriginalValue ?? string.Empty, textWidth, textHeight))
 				{
-					_cfgManualEditBuffer = imgui_InputText_Get($"##manual_edit_{idBase}") ?? string.Empty;
+					string newRawValue = imgui_InputText_Get($"##manual_edit_{idBase}") ?? string.Empty;
+					state = ParseSpellValueEditState(state.Section, state.Key, state.ValueIndex, newRawValue);
 				}
 
 				imgui_Separator();
