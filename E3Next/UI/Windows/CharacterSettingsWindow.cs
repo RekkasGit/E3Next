@@ -5103,7 +5103,7 @@ namespace E3Core.UI.Windows
 				spellEditorState.IsDirty = true;
 			}
 		}
-		private static void RenderSpellModifierEditor2_RenderIntEditRow(string id, string label, int original, Action<Int32> action, string tooltip=null)
+		private static void RenderTableIntEditRow(string id, string label, int original, Action<Int32> action, string tooltip=null)
 		{
 			var spellEditorState = _state.GetState<State_SpellEditor>();
 			imgui_TableNextRow();
@@ -5312,8 +5312,6 @@ namespace E3Core.UI.Windows
 		private static void RenderSpellModifierEditor2_Tab_Resources()
 		{
 			var spellEditorState = _state.GetState<State_SpellEditor>();
-
-
 			imgui_TextColored(0.8f, 0.9f, 0.95f, 1.0f, "Logic");
 			const ImGuiTableFlags FieldTableFlags = (ImGuiTableFlags.ImGuiTableFlags_SizingStretchProp | ImGuiTableFlags.ImGuiTableFlags_PadOuterX);
 			const ImGuiTableColumnFlags LabelColumnFlags = (ImGuiTableColumnFlags.ImGuiTableColumnFlags_WidthFixed | ImGuiTableColumnFlags.ImGuiTableColumnFlags_NoResize);
@@ -5327,52 +5325,15 @@ namespace E3Core.UI.Windows
 					imgui_TableSetupColumn("Label", (int)LabelColumnFlags, 0f);
 					imgui_TableSetupColumn("Value", (int)ValueColumnFlags, 0f);
 
-
-					string id = "##SpellEditor_MinMana";
-					RenderSpellModifierEditor2_RenderIntEditRow(id, "Min Mana:", currentSpell.MinMana, (u) =>
-					{
-						currentSpell.MinMana = u;
-					});
-					id = "##SpellEditor_MinEnd";
-					RenderSpellModifierEditor2_RenderIntEditRow(id, "Min End:", currentSpell.MinEnd, (u) =>
-					{
-						currentSpell.MinEnd = u;
-					});
-					id = "##SpellEditor_MinPctHP";
-					RenderSpellModifierEditor2_RenderIntEditRow(id, "Min HP%:", currentSpell.MinHP, (u) =>
-					{
-						currentSpell.MinEnd = u;
-					});
-					id = "##SpellEditor_MinHPTotal";
-					RenderSpellModifierEditor2_RenderIntEditRow(id, "Min HP%:", currentSpell.MinHPTotal, (u) =>
-					{
-						currentSpell.MinHPTotal = u;
-					});
-					id = "##SpellEditor_HealPct";
-					RenderSpellModifierEditor2_RenderIntEditRow(id, "Heal %:", currentSpell.HealPct, (u) =>
-					{
-						currentSpell.HealPct = u;
-					});
-					id = "##SpellEditor_HealthMax";
-					RenderSpellModifierEditor2_RenderIntEditRow(id, "Cancel Heal Above %:", currentSpell.HealthMax, (u) =>
-					{
-						currentSpell.HealthMax = u;
-					});
-					id = "##SpellEditor_PctAggro";
-					RenderSpellModifierEditor2_RenderIntEditRow(id, "Pct Aggro:", currentSpell.PctAggro, (u) =>
-					{
-						currentSpell.PctAggro = u;
-					}, tooltip:"Skip this entry if your current aggro percent exceeds the specified threshold.");
-					id = "##SpellEditor_MinAggro";
-					RenderSpellModifierEditor2_RenderIntEditRow(id, "Min Aggro:", currentSpell.MinAggro, (u) =>
-					{
-						currentSpell.MinAggro = u;
-					}, tooltip: "Only cast when your aggro percent is at least this value (helps gate low-threat openers).");
-					id = "##SpellEditor_MaxAggro";
-					RenderSpellModifierEditor2_RenderIntEditRow(id, "Max Aggro:", currentSpell.MaxAggro, (u) =>
-					{
-						currentSpell.MaxAggro = u;
-					}, tooltip: "Do not cast once your aggro percent is above this value (useful for backing off).");
+					RenderTableIntEditRow("##SpellEditor_MinMana", "Min Mana:", currentSpell.MinMana, (u) =>{ currentSpell.MinMana = u; });
+					RenderTableIntEditRow("##SpellEditor_MinEnd", "Min End:", currentSpell.MinEnd, (u) =>{ currentSpell.MinEnd = u; });
+					RenderTableIntEditRow("##SpellEditor_MinPctHP", "Min HP%:", currentSpell.MinHP, (u) =>{	currentSpell.MinEnd = u; });
+					RenderTableIntEditRow("##SpellEditor_MinHPTotal", "Min HP%:", currentSpell.MinHPTotal, (u) =>{ currentSpell.MinHPTotal = u;});
+					RenderTableIntEditRow("##SpellEditor_HealPct", "Heal %:", currentSpell.HealPct, (u) =>{ currentSpell.HealPct = u;});
+					RenderTableIntEditRow("##SpellEditor_HealthMax", "Cancel Heal Above %:", currentSpell.HealthMax, (u) =>{ currentSpell.HealthMax = u;});
+					RenderTableIntEditRow("##SpellEditor_PctAggro", "Pct Aggro:", currentSpell.PctAggro, (u) =>{ currentSpell.PctAggro = u;}, tooltip:"Skip this entry if your current aggro percent exceeds the specified threshold.");
+					RenderTableIntEditRow("##SpellEditor_MinAggro", "Min Aggro:", currentSpell.MinAggro, (u) => { currentSpell.MinAggro = u; }, tooltip: "Only cast when your aggro percent is at least this value (helps gate low-threat openers).");
+					RenderTableIntEditRow("##SpellEditor_MaxAggro", "Max Aggro:", currentSpell.MaxAggro, (u) =>{ currentSpell.MaxAggro = u; }, tooltip: "Do not cast once your aggro percent is above this value (useful for backing off).");
 				}
 				finally
 				{
@@ -5380,19 +5341,6 @@ namespace E3Core.UI.Windows
 
 				}
 			}
-
-			/*RenderLabeledValueField("Min Mana:", "MinMana");
-					RenderLabeledValueField("Max Mana:", "MaxMana");
-					RenderLabeledValueField("Min End:", "MinEnd");
-					RenderLabeledValueField("Min HP%:", "MinHP");
-					RenderLabeledValueField("Min HP Total:", "MinHPTotal", 280f);
-					RenderLabeledValueField("Heal %:", "HealPct");
-					RenderLabeledValueField("Cancel Heal Above %:", "HealthMax", 280f);
-					RenderLabeledValueField("Pct Aggro:", "PctAggro", tooltip: "Skip this entry if your current aggro percent exceeds the specified threshold.");
-					RenderLabeledValueField("Min Aggro:", "MinAggro", tooltip: "Only cast when your aggro percent is at least this value (helps gate low-threat openers).");
-					RenderLabeledValueField("Max Aggro:", "MaxAggro", tooltip: "Do not cast once your aggro percent is above this value (useful for backing off).");
-					RenderLabeledValueField("Give Up Timer:", "GiveUpTimer");*/
-
 		}
 		private static void RenderSpellModifierEditor2()
 		{
