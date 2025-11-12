@@ -5320,8 +5320,8 @@ namespace E3Core.UI.Windows
 					RenderTableIntEditRow("##SpellEditor_BeforeSpellDelay", "Before Spell Delay:", currentSpell.BeforeSpellDelay, (u) => { currentSpell.BeforeSpellDelay = u; });
 					RenderTableIntEditRow("##SpellEditor_AfterSpellDelay", "After Spell Delay:", currentSpell.AfterSpellDelay, (u) => { currentSpell.AfterSpellDelay = u; });
 
-					RenderTableIntEditRow("##SpellEditor_BeforeEventDelay", "Before Spell Delay:", currentSpell.BeforeEventDelay, (u) => { currentSpell.BeforeEventDelay = u; });
-					RenderTableIntEditRow("##SpellEditor_AfterEventDelay", "After Spell Delay:", currentSpell.AfterEventDelay, (u) => { currentSpell.AfterEventDelay = u; });
+					RenderTableIntEditRow("##SpellEditor_BeforeEventDelay", "Before Event Delay:", currentSpell.BeforeEventDelay, (u) => { currentSpell.BeforeEventDelay = u; });
+					RenderTableIntEditRow("##SpellEditor_AfterEventDelay", "After Event Delay:", currentSpell.AfterEventDelay, (u) => { currentSpell.AfterEventDelay = u; });
 					
 					RenderTableIntEditRow("##SpellEditor_AfterCastDelay", "After Cast Delay:", currentSpell.AfterCastDelay, (u) => { currentSpell.AfterCastDelay = u; });
 					RenderTableIntEditRow("##SpellEditor_AfterCastCompletedDelay", "After Cast Completed Delay:", currentSpell.AfterCastCompletedDelay, (u) => { currentSpell.AfterCastCompletedDelay = u; });
