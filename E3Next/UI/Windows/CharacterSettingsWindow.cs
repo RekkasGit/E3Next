@@ -5153,21 +5153,8 @@ namespace E3Core.UI.Windows
 
 					//to specify the id of an input text use ## so its not visable
 					
-					string id = "##SpellEditor_CastName";
-					//CastName
-
-					RenderTableTextEditRow(id,"Cast Name:", currentSpell.CastName, (u) =>
-					{
-						currentSpell.CastName = u;
-						currentSpell.SpellName = u;
-					});
-					//Cast Target
-					id = "##SpellEditor_CastTarget";
-					RenderTableTextEditRow(id,"Cast Target:", currentSpell.CastTarget, (u) =>
-					{
-						currentSpell.CastTarget = u;
-					});
-
+					RenderTableTextEditRow("##SpellEditor_CastName", "Cast Name:", currentSpell.CastName, (u) =>{ currentSpell.CastName = u; currentSpell.SpellName = u; });
+					RenderTableTextEditRow("##SpellEditor_CastTarget", "Cast Target:", currentSpell.CastTarget, (u) =>{	currentSpell.CastTarget = u; });
 					///GEM SLOTS
 					imgui_TableNextRow();
 					imgui_TableNextColumn();
@@ -5309,6 +5296,66 @@ namespace E3Core.UI.Windows
 
 				}
 			}
+			/*imgui_TextColored(0.8f, 0.9f, 0.95f, 1.0f, "Delays");
+				imgui_Text("Use suffix 's' for seconds or 'm' for minutes (example: 10s).");
+
+				RenderFieldTable($"SpellTimingTable_{idBase}", () =>
+				{
+					RenderLabeledValueField("Delay:", "Delay");
+					RenderLabeledValueField("Recast Delay:", "RecastDelay");
+					RenderLabeledValueField("Min Duration Before Recast:", "MinDurationBeforeRecast", 300f);
+					RenderLabeledValueField("Max Tries:", "MaxTries");
+					RenderLabeledValueField("Song Refresh Time:", "SongRefreshTime", 260f);
+					RenderLabeledValueField("Before Spell Delay:", "BeforeSpellDelay", 260f);
+					RenderLabeledValueField("After Spell Delay:", "AfterSpellDelay", 260f);
+					RenderLabeledValueField("Before Event Delay:", "BeforeEventDelay", 260f);
+					RenderLabeledValueField("After Event Delay:", "AfterEventDelay", 260f);
+					RenderLabeledValueField("After Cast Delay:", "AfterCastDelay", 260f);
+					RenderLabeledValueField("After Cast Completed Delay:", "AfterCastCompletedDelay", 300f);
+				});*/
+		}
+		private static void RenderSpellModifierEditor2_Tab_Timing()
+		{
+			var spellEditorState = _state.GetState<State_SpellEditor>();
+			imgui_TextColored(0.8f, 0.9f, 0.95f, 1.0f, "Delays");
+			const ImGuiTableFlags FieldTableFlags = (ImGuiTableFlags.ImGuiTableFlags_SizingStretchProp | ImGuiTableFlags.ImGuiTableFlags_PadOuterX);
+			const ImGuiTableColumnFlags LabelColumnFlags = (ImGuiTableColumnFlags.ImGuiTableColumnFlags_WidthFixed | ImGuiTableColumnFlags.ImGuiTableColumnFlags_NoResize);
+			const ImGuiTableColumnFlags ValueColumnFlags = ImGuiTableColumnFlags.ImGuiTableColumnFlags_WidthStretch;
+			var currentSpell = spellEditorState.CurrentEditedSpell;
+
+			if (imgui_BeginTable("SpellTimingTable", 2, (int)FieldTableFlags, imgui_GetContentRegionAvailX(), 0))
+			{
+				try
+				{
+					imgui_TableSetupColumn("Label", (int)LabelColumnFlags, 0f);
+					imgui_TableSetupColumn("Value", (int)ValueColumnFlags, 0f);
+
+					RenderTableIntEditRow("##SpellEditor_Delay", "Delay:", currentSpell.Delay, (u) => { currentSpell.Delay = u; });
+					RenderTableIntEditRow("##SpellEditor_RecastDelay", "Recast Delay:", currentSpell.RecastDelay, (u) => { currentSpell.RecastDelay = u; });
+					RenderTableIntEditRow("##SpellEditor_DelayBeforeRecast", "Min Duration Before Recast:", (int)currentSpell.MinDurationBeforeRecast, (u) => { currentSpell.MinDurationBeforeRecast = u; });
+					RenderTableIntEditRow("##SpellEditor_BeforeSpellDelay", "Before Spell Delay:", currentSpell.BeforeSpellDelay, (u) => { currentSpell.BeforeSpellDelay = u; });
+					RenderTableIntEditRow("##SpellEditor_AfterSpellDelay", "After Spell Delay:", currentSpell.AfterSpellDelay, (u) => { currentSpell.AfterSpellDelay = u; });
+
+					RenderTableIntEditRow("##SpellEditor_BeforeEventDelay", "Before Spell Delay:", currentSpell.BeforeEventDelay, (u) => { currentSpell.BeforeEventDelay = u; });
+					RenderTableIntEditRow("##SpellEditor_AfterEventDelay", "After Spell Delay:", currentSpell.AfterEventDelay, (u) => { currentSpell.AfterEventDelay = u; });
+					
+					RenderTableIntEditRow("##SpellEditor_AfterCastDelay", "After Cast Delay:", currentSpell.AfterCastDelay, (u) => { currentSpell.AfterCastDelay = u; });
+					RenderTableIntEditRow("##SpellEditor_AfterCastCompletedDelay", "After Cast Completed Delay:", currentSpell.AfterCastCompletedDelay, (u) => { currentSpell.AfterCastCompletedDelay = u; });
+
+
+					RenderTableIntEditRow("##SpellEditor_MaxTries", "Max Tries:", currentSpell.MaxTries, (u) => { currentSpell.MaxTries = u; });
+					RenderTableIntEditRow("##SpellEditor_SongRefreshTime", "Song Refresh Time:", currentSpell.SongRefreshTime, (u) => { currentSpell.SongRefreshTime = u; });
+					
+					RenderTableIntEditRow("##SpellEditor_PctAggro", "Pct Aggro:", currentSpell.PctAggro, (u) => { currentSpell.PctAggro = u; }, tooltip: "Skip this entry if your current aggro percent exceeds the specified threshold.");
+					RenderTableIntEditRow("##SpellEditor_MinAggro", "Min Aggro:", currentSpell.MinAggro, (u) => { currentSpell.MinAggro = u; }, tooltip: "Only cast when your aggro percent is at least this value (helps gate low-threat openers).");
+					RenderTableIntEditRow("##SpellEditor_MaxAggro", "Max Aggro:", currentSpell.MaxAggro, (u) => { currentSpell.MaxAggro = u; }, tooltip: "Do not cast once your aggro percent is above this value (useful for backing off).");
+				}
+				finally
+				{
+					imgui_EndTable();
+
+				}
+			}
 		}
 		private static void RenderSpellModifierEditor2()
 		{
@@ -5389,6 +5436,7 @@ namespace E3Core.UI.Windows
 				}
 				if (imgui_BeginTabItem($"Timing##spell_tab_timing"))
 				{
+					RenderSpellModifierEditor2_Tab_Timing();
 					imgui_EndTabItem();
 				}
 				if (imgui_BeginTabItem($"Advanced##spell_tab_advanced"))
