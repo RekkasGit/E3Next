@@ -5014,8 +5014,9 @@ namespace E3Core.UI.Windows
 
 		private const float SpellEditorDefaultTextWidth = 320f;
 		private const float SpellEditorDefaultNumberWidth = 140f;
+        private const float SpellEditorDefaultCheckboxWidth = 20f;
 
-		private static void RenderTableTextEditRow(string id, string label,string current, Action<string> action, string tooltip = null, float width = SpellEditorDefaultTextWidth)
+        private static void RenderTableTextEditRow(string id, string label,string current, Action<string> action, string tooltip = null, float width = SpellEditorDefaultTextWidth)
 		{
 			var spellEditorState = _state.GetState<State_SpellEditor>();
 			imgui_TableNextRow();
@@ -5064,7 +5065,7 @@ namespace E3Core.UI.Windows
 			}
 		}
 
-		private static void RenderTableCheckboxEditRow(string id, string label, bool current, Action<bool> action, string tooltip = null)
+		private static void RenderTableCheckboxEditRow(string id, string label, bool current, Action<bool> action, string tooltip = null, float width = SpellEditorDefaultCheckboxWidth)
 		{
 			var spellEditorState = _state.GetState<State_SpellEditor>();
 			imgui_TableNextRow();
@@ -5079,8 +5080,9 @@ namespace E3Core.UI.Windows
 				imgui_EndTooltip();
 			}
 			imgui_TableNextColumn();
-			
-			if (imgui_Checkbox(id, current))
+            imgui_SetNextItemWidth(width);
+
+            if (imgui_Checkbox(id, current))
 			{
 				bool updated = imgui_Checkbox_Get(id);
 				action.Invoke(updated);
@@ -5381,24 +5383,29 @@ namespace E3Core.UI.Windows
 		{
 			var spellEditorState = _state.GetState<State_SpellEditor>();
 			imgui_TextColored(0.8f, 0.9f, 0.95f, 1.0f, "Flags");
-			const ImGuiTableFlags FieldTableFlags = (ImGuiTableFlags.ImGuiTableFlags_SizingStretchProp | ImGuiTableFlags.ImGuiTableFlags_PadOuterX);
-			const ImGuiTableColumnFlags LabelColumnFlags = (ImGuiTableColumnFlags.ImGuiTableColumnFlags_WidthFixed | ImGuiTableColumnFlags.ImGuiTableColumnFlags_NoResize);
-			const ImGuiTableColumnFlags ValueColumnFlags = ImGuiTableColumnFlags.ImGuiTableColumnFlags_WidthStretch;
+			const ImGuiTableFlags FlagTableFlags = (ImGuiTableFlags.ImGuiTableFlags_SizingStretchProp | ImGuiTableFlags.ImGuiTableFlags_PadOuterX);
+			const ImGuiTableColumnFlags FlagLabelColumnFlags = (ImGuiTableColumnFlags.ImGuiTableColumnFlags_WidthFixed | ImGuiTableColumnFlags.ImGuiTableColumnFlags_NoResize);
+			const ImGuiTableColumnFlags FlagCheckboxColumnFlags = (ImGuiTableColumnFlags.ImGuiTableColumnFlags_WidthFixed | ImGuiTableColumnFlags.ImGuiTableColumnFlags_NoResize);
+			const ImGuiTableColumnFlags FlagSpacerColumnFlags = ImGuiTableColumnFlags.ImGuiTableColumnFlags_WidthStretch;
+			const float FlagLabelPadding = 12f;
+			const float FlagCheckboxColumnWidth = 32f;
 			var currentSpell = spellEditorState.CurrentEditedSpell;
 
-			if(imgui_BeginTable($"E3SpellFlagTable", 2, (int)ImGuiTableFlags.ImGuiTableFlags_SizingStretchSame, imgui_GetContentRegionAvailX(), 0))
-				{
+			if (imgui_BeginTable($"E3SpellFlagTable", 3, (int)FlagTableFlags, imgui_GetContentRegionAvailX(), 0))
+			{
 				try
 				{
-					imgui_TableSetupColumn("FlagColumnLeft", 0, 0f);
-					imgui_TableSetupColumn("FlagColumnRight", 0, 0f);
-					RenderTableCheckboxEditRow("##Flag_NoInterrupt", "No Interrupt:",currentSpell.NoInterrupt, (u) => { currentSpell.NoInterrupt = u; },tooltip:"Do not interrupt this cast for emergency heals, nowcasts, or queued commands once the bar starts.");
-					RenderTableCheckboxEditRow("##Flag_IgnoreStackRules", "Ignore Stack Rules:", currentSpell.IgnoreStackRules, (u) => { currentSpell.IgnoreStackRules = u; },tooltip: "Skip the Spell.StacksTarget check; cast even if EQ reports the effect will not land due to stacking.");
-					RenderTableCheckboxEditRow("##Flag_NoTarget", "No Target:", currentSpell.NoTarget, (u) => { currentSpell.NoTarget = u; },tooltip: "Leave the current target untouched so the spell can fire on self or without a target lock.\"");
-					RenderTableCheckboxEditRow("##Flag_NoAggro", "No Aggro:", currentSpell.NoAggro, (u) => { currentSpell.NoAggro = u; },tooltip: "Suppress this spell if the mob currently has you targeted to reduce aggro spikes.");
-					RenderTableCheckboxEditRow("##Flag_NoMidSongCast", "No Mid Song Cast:", currentSpell.NoMidSongCast, (u) => { currentSpell.NoMidSongCast = u; },tooltip: "Bards: block this action while a song is already channeling so twisting is not disrupted.");
-					RenderTableCheckboxEditRow("##Flag_GoM", "Gift of Mana Required:", currentSpell.GiftOfMana, (u) => { currentSpell.GiftOfMana = u; },tooltip: "Only cast when a Gift of Mana-style proc is active, saving mana on expensive spells.");
-					RenderTableCheckboxEditRow("##Flag_Debug", "Debug output:", currentSpell.Debug, (u) => { currentSpell.Debug = u; },tooltip: "Enable detailed logging for this spell to the MQ chat/log window.");
+					float flagLabelColumnWidth = Math.Max(200f, imgui_CalcTextSizeX("Gift of Mana Required:") + FlagLabelPadding);
+					imgui_TableSetupColumn("FlagColumnLabel", (int)FlagLabelColumnFlags, flagLabelColumnWidth);
+					imgui_TableSetupColumn("FlagColumnCheckbox", (int)FlagCheckboxColumnFlags, FlagCheckboxColumnWidth);
+					imgui_TableSetupColumn("FlagColumnSpacer", (int)FlagSpacerColumnFlags, 0f);
+					RenderTableCheckboxEditRow("##Flag_NoInterrupt", "No Interrupt:", currentSpell.NoInterrupt, (u) => { currentSpell.NoInterrupt = u; }, tooltip: "Do not interrupt this cast for emergency heals, nowcasts, or queued commands once the bar starts.");
+					RenderTableCheckboxEditRow("##Flag_IgnoreStackRules", "Ignore Stack Rules:", currentSpell.IgnoreStackRules, (u) => { currentSpell.IgnoreStackRules = u; }, tooltip: "Skip the Spell.StacksTarget check; cast even if EQ reports the effect will not land due to stacking.");
+					RenderTableCheckboxEditRow("##Flag_NoTarget", "No Target:", currentSpell.NoTarget, (u) => { currentSpell.NoTarget = u; }, tooltip: "Leave the current target untouched so the spell can fire on self or without a target lock.\"");
+					RenderTableCheckboxEditRow("##Flag_NoAggro", "No Aggro:", currentSpell.NoAggro, (u) => { currentSpell.NoAggro = u; }, tooltip: "Suppress this spell if the mob currently has you targeted to reduce aggro spikes.");
+					RenderTableCheckboxEditRow("##Flag_NoMidSongCast", "No Mid Song Cast:", currentSpell.NoMidSongCast, (u) => { currentSpell.NoMidSongCast = u; }, tooltip: "Bards: block this action while a song is already channeling so twisting is not disrupted.");
+					RenderTableCheckboxEditRow("##Flag_GoM", "Gift of Mana Required:", currentSpell.GiftOfMana, (u) => { currentSpell.GiftOfMana = u; }, tooltip: "Only cast when a Gift of Mana-style proc is active, saving mana on expensive spells.");
+					RenderTableCheckboxEditRow("##Flag_Debug", "Debug output:", currentSpell.Debug, (u) => { currentSpell.Debug = u; }, tooltip: "Enable detailed logging for this spell to the MQ chat/log window.");
 				}
 				finally
 				{
