@@ -5081,12 +5081,20 @@ namespace E3Core.UI.Windows
 
 			return baseName + "/" + string.Join("/", segments);
 		}
-		private static void RenderTableTextEditRow(string id, string label,string original, Action<string> action)
+		private static void RenderTableTextEditRow(string id, string label,string original, Action<string> action, string tooltip = null)
 		{
 			var spellEditorState = _state.GetState<State_SpellEditor>();
 			imgui_TableNextRow();
 			imgui_TableNextColumn();
 			imgui_Text(label);
+			if (!string.IsNullOrWhiteSpace(tooltip) && imgui_IsItemHovered())
+			{
+				imgui_BeginTooltip();
+				imgui_PushTextWrapPos(320f);
+				imgui_TextWrapped(tooltip);
+				imgui_PopTextWrapPos();
+				imgui_EndTooltip();
+			}
 			imgui_TableNextColumn();
 		
 			//clear it out if we need as the original changed from what we have in the C++ side
@@ -5338,6 +5346,75 @@ namespace E3Core.UI.Windows
 				}
 			}
 		}
+		private static void RenderSpellModifierEditor2_Tab_Advanced()
+		{
+			var spellEditorState = _state.GetState<State_SpellEditor>();
+			imgui_TextColored(0.8f, 0.9f, 0.95f, 1.0f, "Ordering");
+			const ImGuiTableFlags FieldTableFlags = (ImGuiTableFlags.ImGuiTableFlags_SizingStretchProp | ImGuiTableFlags.ImGuiTableFlags_PadOuterX);
+			const ImGuiTableColumnFlags LabelColumnFlags = (ImGuiTableColumnFlags.ImGuiTableColumnFlags_WidthFixed | ImGuiTableColumnFlags.ImGuiTableColumnFlags_NoResize);
+			const ImGuiTableColumnFlags ValueColumnFlags = ImGuiTableColumnFlags.ImGuiTableColumnFlags_WidthStretch;
+			var currentSpell = spellEditorState.CurrentEditedSpell;
+
+			if (imgui_BeginTable("SpellOrderingTable", 2, (int)FieldTableFlags, imgui_GetContentRegionAvailX(), 0))
+			{
+				try
+				{
+					imgui_TableSetupColumn("Label", (int)LabelColumnFlags, 0f);
+					imgui_TableSetupColumn("Value", (int)ValueColumnFlags, 0f);
+					RenderTableTextEditRow("##SpellEditor_BeforeSpell", "Before Spell:", currentSpell.BeforeSpell, (u) => { currentSpell.BeforeSpell = u; });
+					RenderTableTextEditRow("##SpellEditor_AfterSpell", "After Spell:", currentSpell.AfterSpell, (u) => { currentSpell.AfterSpell = u; });
+					RenderTableTextEditRow("##SpellEditor_BeforeEvent", "Before Event:", currentSpell.BeforeEventKeys, (u) => { currentSpell.BeforeEventKeys = u; });
+					RenderTableTextEditRow("##SpellEditor_AfterEvent", "After Event:", currentSpell.AfterEventKeys, (u) => { currentSpell.AfterEventKeys = u; });
+					RenderTableTextEditRow("##SpellEditor_Regent", "Regent:", currentSpell.Reagent, (u) => { currentSpell.Reagent = u; });
+				}
+				finally
+				{
+					imgui_EndTable();
+				}
+			}
+			imgui_Separator();
+			imgui_TextColored(0.8f, 0.9f, 0.95f, 1.0f, "Exclusions");
+
+			if (imgui_BeginTable("SpellExclusionsTable", 2, (int)FieldTableFlags, imgui_GetContentRegionAvailX(), 0))
+			{
+				try
+				{
+					imgui_TableSetupColumn("Label", (int)LabelColumnFlags, 0f);
+					imgui_TableSetupColumn("Value", (int)ValueColumnFlags, 0f);
+					RenderTableTextEditRow("##SpellEditor_ExcludeClasses", "Excluded Classes:", String.Join(",", currentSpell.ExcludedClasses.ToList()), (u) => {
+
+						string[] excludeClasses = u.Split(',');
+						foreach (var eclass in excludeClasses)
+						{
+							var tclass = eclass.Trim();
+
+							if (!currentSpell.ExcludedClasses.Contains(tclass.Trim()))
+							{
+								currentSpell.ExcludedClasses.Add(tclass.Trim());
+							}
+						}
+					},tooltip:"Short class name: IE: WAR,PAL,SHD comma seperated");
+					RenderTableTextEditRow("##SpellEditor_ExcludeNames", "Excluded Names:", String.Join(",", currentSpell.ExcludedNames.ToList()), (u) => {
+
+						string[] excludeClasses = u.Split(',');
+						foreach (var ename in excludeClasses)
+						{
+							var tname = ename.Trim();
+
+							if (!currentSpell.ExcludedNames.Contains(tname.Trim()))
+							{
+								currentSpell.ExcludedNames.Add(tname.Trim());
+							}
+						}
+					}, tooltip: "Name of toons in your party, comma seperated");
+				}
+				finally
+				{
+					imgui_EndTable();
+
+				}
+			}
+		}
 		private static void RenderSpellModifierEditor2()
 		{
 
@@ -5422,6 +5499,7 @@ namespace E3Core.UI.Windows
 				}
 				if (imgui_BeginTabItem($"Advanced##spell_tab_advanced"))
 				{
+					RenderSpellModifierEditor2_Tab_Advanced();
 					imgui_EndTabItem();
 				}
 				if (imgui_BeginTabItem($"Flags##spell_tab_flags"))
