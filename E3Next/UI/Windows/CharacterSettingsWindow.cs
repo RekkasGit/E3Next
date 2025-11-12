@@ -116,6 +116,7 @@ namespace E3Core.UI.Windows
 		{
 			public Data.Spell CurrentEditedSpell = null;
 			public string Signature_CurrentEditedSpell = String.Empty;
+			public string CurrentSpellPreviewCache = String.Empty;
 			public bool IsDirty = false;
 		}
 		private class CharacterSettingsState
@@ -5441,6 +5442,7 @@ namespace E3Core.UI.Windows
 				spellEditorState.Signature_CurrentEditedSpell = entryLabel;
 				spellEditorState.CurrentEditedSpell = new Spell(rawValue, data, false);
 				spellEditorState.IsDirty = false;
+				spellEditorState.CurrentSpellPreviewCache = String.Empty;
 			}
 			imgui_TextColored(0.95f, 0.85f, 0.35f, 1.0f, entryLabel);
 			// Position Apply/Reset buttons on the same line, aligned to the right
@@ -5462,12 +5464,14 @@ namespace E3Core.UI.Windows
 			{
 				kd.ValueList[mainWindowState.SelectedValueIndex] = spellEditorState.CurrentEditedSpell.ToConfigEntry();
 				spellEditorState.IsDirty = false;
+				spellEditorState.CurrentSpellPreviewCache = String.Empty;
 			}
 			imgui_SameLine();
 			if (imgui_Button($"Reset##spell_reset"))
 			{
 				spellEditorState.CurrentEditedSpell = new Spell(rawValue, data, false);
 				spellEditorState.IsDirty = false;
+				spellEditorState.CurrentSpellPreviewCache = String.Empty;
 			}
 			
 			var currentSpell = spellEditorState.CurrentEditedSpell;
@@ -5517,7 +5521,14 @@ namespace E3Core.UI.Windows
 
 			imgui_Separator();
 			imgui_TextColored(0.8f, 0.9f, 0.95f, 1.0f, "Preview");
-			string preview = currentSpell.ToConfigEntry();
+
+			string previewString = spellEditorState.CurrentSpellPreviewCache;
+			if (String.IsNullOrWhiteSpace(previewString) || spellEditorState.IsDirty)
+			{
+				spellEditorState.CurrentSpellPreviewCache= currentSpell.ToConfigEntry();
+				previewString = spellEditorState.CurrentSpellPreviewCache;
+			}
+			string preview = previewString;
 			imgui_TextWrapped(string.IsNullOrEmpty(preview) ? "(empty)" : preview);
 		}
 
