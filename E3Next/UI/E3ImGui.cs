@@ -285,6 +285,13 @@ namespace MonoCore
 
 		[MethodImpl(MethodImplOptions.InternalCall)]
 		public extern static bool imgui_Checkbox(string name, bool defaultValue);
+
+		[MethodImpl(MethodImplOptions.InternalCall)]
+		public extern static bool imgui_Checkbox_Get(string id);
+		[MethodImpl(MethodImplOptions.InternalCall)]
+		public extern static bool imgui_Checkbox_Clear(string id);
+
+
 		[MethodImpl(MethodImplOptions.InternalCall)]
 		public extern static bool imgui_BeginTabBar(string name);
 		[MethodImpl(MethodImplOptions.InternalCall)]

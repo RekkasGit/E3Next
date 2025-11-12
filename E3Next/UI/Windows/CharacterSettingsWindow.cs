@@ -117,7 +117,17 @@ namespace E3Core.UI.Windows
 			public Data.Spell CurrentEditedSpell = null;
 			public string Signature_CurrentEditedSpell = String.Empty;
 			public string CurrentSpellPreviewCache = String.Empty;
+			public string ManualEditBuffer = String.Empty;
+			public bool ManualInputBufferInUse = false;
 			public bool IsDirty = false;
+
+			public void Reset()
+			{
+				IsDirty = false;
+				CurrentSpellPreviewCache = String.Empty;
+				ManualEditBuffer = String.Empty;
+				ManualInputBufferInUse = false;
+			}
 		}
 		private class CharacterSettingsState
 		{
@@ -445,23 +455,7 @@ namespace E3Core.UI.Windows
 		};
 
 
-		public static (string Label, string Flag)[] _spellFlags = new (string Label, string Flag)[]
-				{
-					("No Interrupt", "NoInterrupt"),
-					("Ignore Stack Rules", "IgnoreStackRules"),
-					("No Target", "NoTarget"),
-					("No Aggro", "NoAggro"),
-					("No Burn", "NoBurn"),
-					("Rotate", "Rotate"),
-					("No Mid Song Cast", "NoMidSongCast"),
-					("Gift of Mana (GoM)", "GoM"),
-					("Allow Spell Swap", "AllowSpellSwap"),
-					("No Early Recast", "NoEarlyRecast"),
-					("No Stack", "NoStack"),
-					("Debug", "Debug"),
-					("Is Debuff", "IsDebuff"),
-					("Is DoT", "IsDoT")
-				};
+		
 		private static readonly string[] _spellCastTypeOptions = new[] { "Spell", "AA", "Disc", "Ability", "Item", "None" };
 
 
@@ -785,7 +779,12 @@ namespace E3Core.UI.Windows
 			}
 
 			imgui_SameLine();
-			state.ShowOfflineCharacters = imgui_Checkbox("Show offline", state.ShowOfflineCharacters);
+
+			
+			if (imgui_Checkbox("Show offline", state.ShowOfflineCharacters))
+			{
+				state.ShowOfflineCharacters = imgui_Checkbox_Get("Show offline");
+			}
 			imgui_SameLine();
 
 			// Save button with better styling
@@ -5085,7 +5084,7 @@ namespace E3Core.UI.Windows
 		private const float SpellEditorDefaultTextWidth = 320f;
 		private const float SpellEditorDefaultNumberWidth = 140f;
 
-		private static void RenderTableTextEditRow(string id, string label,string original, Action<string> action, string tooltip = null, float width = SpellEditorDefaultTextWidth)
+		private static void RenderTableTextEditRow(string id, string label,string current, Action<string> action, string tooltip = null, float width = SpellEditorDefaultTextWidth)
 		{
 			var spellEditorState = _state.GetState<State_SpellEditor>();
 			imgui_TableNextRow();
@@ -5102,21 +5101,14 @@ namespace E3Core.UI.Windows
 			imgui_TableNextColumn();
 			imgui_SetNextItemWidth(width);
 		
-			//clear it out if we need as the original changed from what we have in the C++ side
-			var current = imgui_InputText_Get(id);
-			if(!String.Equals(current,original))
-			{
-				imgui_InputText_Clear(id);
-			}
-		
-			if (imgui_InputText(id, original))
+			if (imgui_InputText(id, current))
 			{
 				string updated = imgui_InputText_Get(id) ?? string.Empty;
 				action.Invoke(updated);
 				spellEditorState.IsDirty = true;
 			}
 		}
-		private static void RenderTableIntEditRow(string id, string label, int original, Action<Int32> action, string tooltip=null, float width = SpellEditorDefaultNumberWidth)
+		private static void RenderTableIntEditRow(string id, string label, int current, Action<Int32> action, string tooltip=null, float width = SpellEditorDefaultNumberWidth)
 		{
 			var spellEditorState = _state.GetState<State_SpellEditor>();
 			imgui_TableNextRow();
@@ -5133,19 +5125,39 @@ namespace E3Core.UI.Windows
 			imgui_TableNextColumn();
 			imgui_SetNextItemWidth(width);
 
-			//clear it out if we need as the original changed from what we have in the C++ side
-			var current = imgui_InputInt_Get(id);
-			if (current!= original)
-			{
-				imgui_InputInt_Clear(id);
-			}
-			if (imgui_InputInt(id, original,1,2))
+			if (imgui_InputInt(id, current,1,2))
 			{
 				int updated = imgui_InputInt_Get(id);
 				action.Invoke(updated);
 				spellEditorState.IsDirty = true;
 			}
 		}
+
+		private static void RenderTableCheckboxEditRow(string id, string label, bool current, Action<bool> action, string tooltip = null)
+		{
+			var spellEditorState = _state.GetState<State_SpellEditor>();
+			imgui_TableNextRow();
+			imgui_TableNextColumn();
+			imgui_Text(label);
+			if (!string.IsNullOrWhiteSpace(tooltip) && imgui_IsItemHovered())
+			{
+				imgui_BeginTooltip();
+				imgui_PushTextWrapPos(320f);
+				imgui_TextWrapped(tooltip);
+				imgui_PopTextWrapPos();
+				imgui_EndTooltip();
+			}
+			imgui_TableNextColumn();
+			
+			if (imgui_Checkbox(id, current))
+			{
+				bool updated = imgui_Checkbox_Get(id);
+				action.Invoke(updated);
+				spellEditorState.IsDirty = true;
+			}
+			
+		}
+
 		private static void RenderSpellModifierEditor2_Tab_General()
 		{
 			var spellEditorState = _state.GetState<State_SpellEditor>();
@@ -5218,17 +5230,8 @@ namespace E3Core.UI.Windows
 						}
 						EndComboSafe();
 					}
-					//ENABLED
-					imgui_TableNextRow();
-					imgui_TableNextColumn();
-					imgui_Text("Enabled:");
-					imgui_TableNextColumn();
-					bool enabled = imgui_Checkbox($"##spell_enabled", currentSpell.Enabled);
-					if(enabled!= currentSpell.Enabled)
-					{
-						currentSpell.Enabled = enabled;
-						spellEditorState.IsDirty = true;
-					}
+					RenderTableCheckboxEditRow("##spell_enabled", "Enabled:", currentSpell.Enabled, (u) => { currentSpell.Enabled = u; }, tooltip: "Enable or Disable entry");
+					
 				}
 				finally
 				{
@@ -5351,6 +5354,7 @@ namespace E3Core.UI.Windows
 
 				}
 			}
+
 		}
 		private static void RenderSpellModifierEditor2_Tab_Advanced()
 		{
@@ -5420,6 +5424,85 @@ namespace E3Core.UI.Windows
 
 				}
 			}
+			
+		}
+
+		public static (string Label, string Flag)[] _spellFlags = new (string Label, string Flag)[]
+				{
+					("No Interrupt", "NoInterrupt"),
+					("Ignore Stack Rules", "IgnoreStackRules"),
+					("No Target", "NoTarget"),
+					("No Aggro", "NoAggro"),
+					("No Burn", "NoBurn"),
+					("Rotate", "Rotate"),
+					("No Mid Song Cast", "NoMidSongCast"),
+					("Gift of Mana (GoM)", "GoM"),
+					("Allow Spell Swap", "AllowSpellSwap"),
+					("No Early Recast", "NoEarlyRecast"),
+					("No Stack", "NoStack"),
+					("Debug", "Debug"),
+					("Is Debuff", "IsDebuff"),
+					("Is DoT", "IsDoT")
+				};
+
+		
+		private static void RenderSpellModifierEditor2_Tab_Flags()
+		{
+			var spellEditorState = _state.GetState<State_SpellEditor>();
+			imgui_TextColored(0.8f, 0.9f, 0.95f, 1.0f, "Flags");
+			const ImGuiTableFlags FieldTableFlags = (ImGuiTableFlags.ImGuiTableFlags_SizingStretchProp | ImGuiTableFlags.ImGuiTableFlags_PadOuterX);
+			const ImGuiTableColumnFlags LabelColumnFlags = (ImGuiTableColumnFlags.ImGuiTableColumnFlags_WidthFixed | ImGuiTableColumnFlags.ImGuiTableColumnFlags_NoResize);
+			const ImGuiTableColumnFlags ValueColumnFlags = ImGuiTableColumnFlags.ImGuiTableColumnFlags_WidthStretch;
+			var currentSpell = spellEditorState.CurrentEditedSpell;
+
+			if(imgui_BeginTable($"E3SpellFlagTable", 2, (int)ImGuiTableFlags.ImGuiTableFlags_SizingStretchSame, imgui_GetContentRegionAvailX(), 0))
+				{
+				try
+				{
+					imgui_TableSetupColumn("FlagColumnLeft", 0, 0f);
+					imgui_TableSetupColumn("FlagColumnRight", 0, 0f);
+					RenderTableCheckboxEditRow("##Flag_NoInterrupt", "No Interrupt:",currentSpell.NoInterrupt, (u) => { currentSpell.NoInterrupt = u; },tooltip:"Do not interrupt this cast for emergency heals, nowcasts, or queued commands once the bar starts.");
+					RenderTableCheckboxEditRow("##Flag_IgnoreStackRules", "Ignore Stack Rules:", currentSpell.IgnoreStackRules, (u) => { currentSpell.IgnoreStackRules = u; },tooltip: "Skip the Spell.StacksTarget check; cast even if EQ reports the effect will not land due to stacking.");
+					RenderTableCheckboxEditRow("##Flag_NoTarget", "No Target:", currentSpell.NoTarget, (u) => { currentSpell.NoTarget = u; },tooltip: "Leave the current target untouched so the spell can fire on self or without a target lock.\"");
+					RenderTableCheckboxEditRow("##Flag_NoAggro", "No Aggro:", currentSpell.NoAggro, (u) => { currentSpell.NoAggro = u; },tooltip: "Suppress this spell if the mob currently has you targeted to reduce aggro spikes.");
+					RenderTableCheckboxEditRow("##Flag_NoMidSongCast", "No Mid Song Cast:", currentSpell.NoMidSongCast, (u) => { currentSpell.NoMidSongCast = u; },tooltip: "Bards: block this action while a song is already channeling so twisting is not disrupted.");
+					RenderTableCheckboxEditRow("##Flag_GoM", "Gift of Mana Required:", currentSpell.GiftOfMana, (u) => { currentSpell.GiftOfMana = u; },tooltip: "Only cast when a Gift of Mana-style proc is active, saving mana on expensive spells.");
+					RenderTableCheckboxEditRow("##Flag_Debug", "Debug output:", currentSpell.Debug, (u) => { currentSpell.Debug = u; },tooltip: "Enable detailed logging for this spell to the MQ chat/log window.");
+				}
+				finally
+				{
+					imgui_EndTable();
+				}
+
+			}
+			
+		}
+		private static void RenderSpellModifierEditor2_Tab_Manual()
+		{
+			var spellEditorState = _state.GetState<State_SpellEditor>();
+			var currentSpell = spellEditorState.CurrentEditedSpell;
+			imgui_TextColored(0.8f, 0.9f, 0.95f, 1.0f, "Manual Text Editor");
+			imgui_Text("Edit the raw configuration value directly. Changes apply when you click Apply.");
+			imgui_Separator();
+
+			// Text area for manual editing
+			float textWidth = Math.Max(500f, imgui_GetContentRegionAvailX() * 0.95f);
+			float textHeight = Math.Max(180f, imgui_GetTextLineHeightWithSpacing() * 10f);
+		
+	
+			if(String.IsNullOrWhiteSpace(spellEditorState.ManualEditBuffer))
+			{
+				spellEditorState.ManualEditBuffer = currentSpell.ToConfigEntry();
+			}
+
+			if (imgui_InputTextMultiline($"##manual_edit", spellEditorState.ManualEditBuffer, textWidth, textHeight))
+			{
+				spellEditorState.ManualEditBuffer = imgui_InputText_Get($"##manual_edit");
+				spellEditorState.IsDirty = true;
+				spellEditorState.ManualInputBufferInUse = true;
+
+			}
+
 		}
 		private static void RenderSpellModifierEditor2()
 		{
@@ -5444,10 +5527,10 @@ namespace E3Core.UI.Windows
 			//check if this has changed from what we were before
 			if (!String.Equals(spellEditorState.Signature_CurrentEditedSpell, entryLabel))
 			{
+				spellEditorState.Reset();
 				spellEditorState.Signature_CurrentEditedSpell = entryLabel;
 				spellEditorState.CurrentEditedSpell = new Spell(rawValue, data, false);
-				spellEditorState.IsDirty = false;
-				spellEditorState.CurrentSpellPreviewCache = String.Empty;
+				
 			}
 			imgui_TextColored(0.95f, 0.85f, 0.35f, 1.0f, entryLabel);
 			// Position Apply/Reset buttons on the same line, aligned to the right
@@ -5467,16 +5550,31 @@ namespace E3Core.UI.Windows
 			if(spellEditorState.IsDirty) idForAppply= $"Apply*##spell_apply";
 			if (imgui_Button(idForAppply))
 			{
+				_log.Write($"Manual Buffer update:[{spellEditorState.ManualEditBuffer}] bufferInuse:{spellEditorState.ManualInputBufferInUse}", Logging.LogLevels.Debug);
+
+				if (spellEditorState.ManualInputBufferInUse && !String.IsNullOrWhiteSpace(spellEditorState.ManualEditBuffer))
+				{
+					try
+					{
+						_log.Write($"Manual Buffer update:[{spellEditorState.ManualEditBuffer}]", Logging.LogLevels.Debug);
+
+						var tspell = new Spell(spellEditorState.ManualEditBuffer, data, false);
+						spellEditorState.CurrentEditedSpell= tspell;
+					}
+					catch(Exception ex)
+					{
+						_log.Write("Exception creating spell from the manual buffer.", Logging.LogLevels.Debug);
+					}
+				}
+
 				kd.ValueList[mainWindowState.SelectedValueIndex] = spellEditorState.CurrentEditedSpell.ToConfigEntry();
-				spellEditorState.IsDirty = false;
-				spellEditorState.CurrentSpellPreviewCache = String.Empty;
+				spellEditorState.Reset();
 			}
 			imgui_SameLine();
 			if (imgui_Button($"Reset##spell_reset"))
 			{
 				spellEditorState.CurrentEditedSpell = new Spell(rawValue, data, false);
-				spellEditorState.IsDirty = false;
-				spellEditorState.CurrentSpellPreviewCache = String.Empty;
+				spellEditorState.Reset();
 			}
 			
 			var currentSpell = spellEditorState.CurrentEditedSpell;
@@ -5513,10 +5611,12 @@ namespace E3Core.UI.Windows
 				}
 				if (imgui_BeginTabItem($"Flags##spell_tab_flags"))
 				{
+					RenderSpellModifierEditor2_Tab_Flags();
 					imgui_EndTabItem();
 				}
 				if (imgui_BeginTabItem($"Manual Edit##spell_tab_manual"))
 				{
+					RenderSpellModifierEditor2_Tab_Manual();
 					imgui_EndTabItem();
 				}
 				imgui_EndTabBar();

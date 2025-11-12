@@ -1435,43 +1435,46 @@ namespace E3Core.Data
 
         public string ToConfigEntry()
         {
-			//This is C#'s ternary conditional operator
+            //This is C#'s ternary conditional operator
             //its condition if true do 1st, else 2nd. 
-			//in this case, if ifskeys is null or empty, set to string empty
+            //in this case, if ifskeys is null or empty, set to string empty
             //else use /Ifs|{IfsKeys}
             string t_Ifs = (String.IsNullOrWhiteSpace(this.IfsKeys)) ? String.Empty : $"/Ifs|{IfsKeys}";
-            string t_Zone = (Zone=="All") ? String.Empty :  $"/Zone|{Zone}";
-			string t_MinSick = (MinSick == MinSickDefault) ? String.Empty : t_MinSick = $"/MinSick|{MinSick}";
-	        string t_checkFor = (CheckForCollection.Count == 0) ? String.Empty: t_checkFor = "/CheckFor|" + String.Join(",", CheckForCollection.Keys.ToList());
+            string t_Zone = (Zone == "All") ? String.Empty : $"/Zone|{Zone}";
+            string t_MinSick = (MinSick == MinSickDefault) ? String.Empty : t_MinSick = $"/MinSick|{MinSick}";
+            string t_checkFor = (CheckForCollection.Count == 0) ? String.Empty : t_checkFor = "/CheckFor|" + String.Join(",", CheckForCollection.Keys.ToList());
             string t_excludeClasses = (ExcludedClasses.Count == 0) ? String.Empty : t_excludeClasses = "/ExcludedClasses|" + String.Join(",", ExcludedClasses.ToList());
-			string t_excludeNames = (ExcludedNames.Count == 0) ? String.Empty : t_excludeNames = "/ExcludedNames|" + String.Join(",", ExcludedNames.ToList());
+            string t_excludeNames = (ExcludedNames.Count == 0) ? String.Empty : t_excludeNames = "/ExcludedNames|" + String.Join(",", ExcludedNames.ToList());
 
-			string t_healPct = (HealPct == 0) ?String.Empty :  $"/HealPct|{HealPct}";
-            string t_noInterrupt = (!NoInterrupt) ? String.Empty :$"/NoInterrupt";
-		    string t_AfterSpell = (String.IsNullOrWhiteSpace(this.AfterSpell)) ?String.Empty : t_AfterSpell = $"/AfterSpell|{AfterSpell}";
-			string t_BeforeSpell = (String.IsNullOrWhiteSpace(this.BeforeSpell)) ? String.Empty : t_BeforeSpell = $"/BeforeSpell|{BeforeSpell}";
-            string t_minMana = (MinMana==0) ?String.Empty: $"/MinMana|{MinMana}";
-			string t_maxMana = (MaxMana == 0) ? String.Empty : $"/MaxMana|{MaxMana}";
-			string t_ignoreStackRules = (!IgnoreStackRules) ? String.Empty : $"/IgnoreStackRules";
-			string t_healthMax = (HealthMax == 100) ? String.Empty : $"/HealthMax|{HealthMax}";
-			string t_MinDurationBeforeRecast = (MinDurationBeforeRecast == 0) ? String.Empty : $"/MinDurationBeforeRecast|{MinDurationBeforeRecast/1000}s";
-			string t_MaxTries = (MaxTries == MaxTriesDefault) ? String.Empty : $"/MaxTries|{MaxTries}";
-			string t_CastIF = (String.IsNullOrWhiteSpace(this.CastIF)) ? String.Empty : $"/CastIF|{CastIF}";
-			string t_MinEnd = (MinEnd == 0) ? String.Empty : $"/MinEnd|{MinEnd}";
-			string t_AfterEvent = (String.IsNullOrWhiteSpace(this.AfterEventKeys)) ? String.Empty : $"/AfterEvent|{AfterEventKeys}";
-			string t_BeforeEvent = (String.IsNullOrWhiteSpace(this.BeforeEventKeys)) ? String.Empty : $"/BeforeEvent|{BeforeEventKeys}";
-			string t_Reagent = (String.IsNullOrWhiteSpace(this.Reagent)) ? String.Empty : $"/Reagent|{Reagent}";
-			string t_CastTypeOverride = (this.CastTypeOverride== CastingType.None) ? String.Empty : $"/CastType|{CastTypeOverride.ToString()}";
-			string t_GemNumber = (this.SpellGem == 0) ? String.Empty : $"/Gem|{SpellGem}";
-			string t_Enabled = (Enabled == true) ? String.Empty : $"/Disabled";
-			string t_CastTarget = (String.IsNullOrWhiteSpace(this.CastTarget) || this.IsBuff==false) ? String.Empty : $"/{CastTarget}";
-			string t_PctAggro = (PctAggro == 0) ? String.Empty : $"/PctAggro|{PctAggro}";
-			string t_MinAggro = (MinAggro == 0) ? String.Empty : $"/MinAggro|{MinAggro}";
-			string t_MaxAggro = (MaxAggro == 0) ? String.Empty : $"/MaxAggro|{MaxAggro}";
+            string t_healPct = (HealPct == 0) ? String.Empty : $"/HealPct|{HealPct}";
+            string t_noInterrupt = (!NoInterrupt) ? String.Empty : $"/NoInterrupt";
+            string t_AfterSpell = (String.IsNullOrWhiteSpace(this.AfterSpell)) ? String.Empty : t_AfterSpell = $"/AfterSpell|{AfterSpell}";
+            string t_BeforeSpell = (String.IsNullOrWhiteSpace(this.BeforeSpell)) ? String.Empty : t_BeforeSpell = $"/BeforeSpell|{BeforeSpell}";
+            string t_minMana = (MinMana == 0) ? String.Empty : $"/MinMana|{MinMana}";
+            string t_maxMana = (MaxMana == 0) ? String.Empty : $"/MaxMana|{MaxMana}";
+            string t_ignoreStackRules = (!IgnoreStackRules) ? String.Empty : $"/IgnoreStackRules";
+            string t_healthMax = (HealthMax == 100) ? String.Empty : $"/HealthMax|{HealthMax}";
+            string t_MinDurationBeforeRecast = (MinDurationBeforeRecast == 0) ? String.Empty : $"/MinDurationBeforeRecast|{MinDurationBeforeRecast / 1000}s";
+            string t_MaxTries = (MaxTries == MaxTriesDefault) ? String.Empty : $"/MaxTries|{MaxTries}";
+            string t_CastIF = (String.IsNullOrWhiteSpace(this.CastIF)) ? String.Empty : $"/CastIF|{CastIF}";
+            string t_MinEnd = (MinEnd == 0) ? String.Empty : $"/MinEnd|{MinEnd}";
+            string t_AfterEvent = (String.IsNullOrWhiteSpace(this.AfterEventKeys)) ? String.Empty : $"/AfterEvent|{AfterEventKeys}";
+            string t_BeforeEvent = (String.IsNullOrWhiteSpace(this.BeforeEventKeys)) ? String.Empty : $"/BeforeEvent|{BeforeEventKeys}";
+            string t_Reagent = (String.IsNullOrWhiteSpace(this.Reagent)) ? String.Empty : $"/Reagent|{Reagent}";
+            string t_CastTypeOverride = (this.CastTypeOverride == CastingType.None) ? String.Empty : $"/CastType|{CastTypeOverride.ToString()}";
+            string t_GemNumber = (this.SpellGem == 0) ? String.Empty : $"/Gem|{SpellGem}";
+            string t_Enabled = (Enabled == true) ? String.Empty : $"/Disabled";
+            string t_CastTarget = (String.IsNullOrWhiteSpace(this.CastTarget) || this.IsBuff == false) ? String.Empty : $"/{CastTarget}";
+            string t_PctAggro = (PctAggro == 0) ? String.Empty : $"/PctAggro|{PctAggro}";
+            string t_MinAggro = (MinAggro == 0) ? String.Empty : $"/MinAggro|{MinAggro}";
+            string t_MaxAggro = (MaxAggro == 0) ? String.Empty : $"/MaxAggro|{MaxAggro}";
             string t_Delay = (Delay == 0) ? String.Empty : $"/Delay|{Delay}s";
             string t_RecastDelay = (RecastDelay == 0) ? String.Empty : $"/RecastDelay|{RecastDelay}s";
-			string t_NoTarget = NoTarget == false ? String.Empty : $"/NoTarget";
-			string t_NoAggro = NoAggro == false ? String.Empty : $"/NoAggro";
+            string t_NoTarget = NoTarget == false ? String.Empty : $"/NoTarget";
+            string t_NoAggro = NoAggro == false ? String.Empty : $"/NoAggro";
+            string t_GOM = GiftOfMana == false ? String.Empty : $"/GoM";
+            string t_NoMidSongCast = NoMidSongCast == false ? String.Empty : $"/NoMidSongCast";
+            string t_Debug = (Debug == false) ? String.Empty : "/Debug";
 
 			string t_AfterEventDelay = AfterEventDelay == 0 ? String.Empty : $"/AfterEventDelay|{AfterEventDelay}";
 			string t_AfterSpellDelay = AfterSpellDelay == 0 ? String.Empty : $"/AfterEventDelay|{AfterSpellDelay}";
@@ -1485,7 +1488,9 @@ namespace E3Core.Data
 			string t_StackCheckInterval = StackIntervalCheck == _stackIntervalCheckDefault ? String.Empty : $"/StackCheckInterval|{StackIntervalCheck/10000}";
 			string t_StackRecastDelay = StackRecastDelay == 0 ? String.Empty : $"/StackRecastDelay|{StackRecastDelay/1000}";
 
-			string returnValue = $"{CastName}{t_CastTarget}{t_GemNumber}{t_Ifs}{t_checkFor}{t_CastIF}{t_healPct}{t_healthMax}{t_noInterrupt}{t_Zone}{t_MinSick}{t_BeforeSpell}{t_AfterSpell}{t_BeforeEvent}{t_AfterEvent}{t_minMana}{t_maxMana}{t_MinEnd}{t_ignoreStackRules}{t_MinDurationBeforeRecast}{t_MaxTries}{t_Reagent}{t_CastTypeOverride}{t_PctAggro}{t_MinAggro}{t_MaxAggro}{t_Delay}{t_RecastDelay}{t_NoTarget}{t_NoAggro}{t_AfterEventDelay}{t_AfterSpellDelay}{t_BeforeEventDelay}{t_BeforeSpellDelay}{t_AfterCastDelay}{t_AfterCastCompletedDelay}{t_SongRefreshTime}{t_StackRequestItem}{t_StackRequestTargets}{t_StackCheckInterval}{t_StackRecastDelay}{t_excludeClasses}{t_excludeNames}{t_Enabled}";
+
+
+			string returnValue = $"{CastName}{t_CastTarget}{t_GemNumber}{t_Ifs}{t_checkFor}{t_CastIF}{t_healPct}{t_healthMax}{t_noInterrupt}{t_Zone}{t_MinSick}{t_BeforeSpell}{t_AfterSpell}{t_BeforeEvent}{t_AfterEvent}{t_minMana}{t_maxMana}{t_MinEnd}{t_ignoreStackRules}{t_MinDurationBeforeRecast}{t_MaxTries}{t_Reagent}{t_CastTypeOverride}{t_PctAggro}{t_MinAggro}{t_MaxAggro}{t_Delay}{t_RecastDelay}{t_NoTarget}{t_NoAggro}{t_AfterEventDelay}{t_AfterSpellDelay}{t_BeforeEventDelay}{t_BeforeSpellDelay}{t_AfterCastDelay}{t_AfterCastCompletedDelay}{t_SongRefreshTime}{t_StackRequestItem}{t_StackRequestTargets}{t_StackCheckInterval}{t_StackRecastDelay}{t_excludeClasses}{t_excludeNames}{t_GOM}{t_NoMidSongCast}{t_Debug}{t_Enabled}";
 			return returnValue;
 
 		}
@@ -1495,7 +1500,7 @@ namespace E3Core.Data
 			{"IgnoreStackRules", "Skip the Spell.StacksTarget check; cast even if EQ reports the effect will not land due to stacking."},
 			{"NoTarget", "Leave the current target untouched so the spell can fire on self or without a target lock."},
 			{"NoAggro", "Suppress this spell if the mob currently has you targeted to reduce aggro spikes."},
-			{"NoBurn", "Exclude this entry from any burn rotation (it will still cast during normal rotation)."},
+			{"NoBurn", "(NotInUse) Exclude this entry from any burn rotation (it will still cast during normal rotation)."},
 			{"Rotate", "Mark the spell so it participates in rotation-based casting helpers (e.g. /rotate)."},
 			{"NoMidSongCast", "Bards: block this action while a song is already channeling so twisting is not disrupted."},
 			{"GoM", "Only cast when a Gift of Mana-style proc is active, saving mana on expensive spells."},
@@ -1503,8 +1508,8 @@ namespace E3Core.Data
 			{"NoEarlyRecast", "Do not recast early based on focus extensions; wait for the original duration to finish."},
 			{"NoStack", "Bypass E3's duplicate-stack suppression so this entry can cast even if another spell has already claimed the slot."},
 			{"Debug", "Enable detailed logging for this spell to the MQ chat/log window."},
-			{"IsDoT", "Treat the entry as a damage-over-time effect for pacing and reporting."},
-			{"IsDebuff", "Treat the entry as a debuff for prioritisation, timers, and UI grouping."}
+			{"IsDoT", "(NotInUse) Treat the entry as a damage-over-time effect for pacing and reporting."},
+			{"IsDebuff", "(NotInUse) Treat the entry as a debuff for prioritisation, timers, and UI grouping."}
 		};
 		public override string ToString()
         {
