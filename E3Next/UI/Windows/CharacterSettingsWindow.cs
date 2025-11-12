@@ -5296,23 +5296,7 @@ namespace E3Core.UI.Windows
 
 				}
 			}
-			/*imgui_TextColored(0.8f, 0.9f, 0.95f, 1.0f, "Delays");
-				imgui_Text("Use suffix 's' for seconds or 'm' for minutes (example: 10s).");
-
-				RenderFieldTable($"SpellTimingTable_{idBase}", () =>
-				{
-					RenderLabeledValueField("Delay:", "Delay");
-					RenderLabeledValueField("Recast Delay:", "RecastDelay");
-					RenderLabeledValueField("Min Duration Before Recast:", "MinDurationBeforeRecast", 300f);
-					RenderLabeledValueField("Max Tries:", "MaxTries");
-					RenderLabeledValueField("Song Refresh Time:", "SongRefreshTime", 260f);
-					RenderLabeledValueField("Before Spell Delay:", "BeforeSpellDelay", 260f);
-					RenderLabeledValueField("After Spell Delay:", "AfterSpellDelay", 260f);
-					RenderLabeledValueField("Before Event Delay:", "BeforeEventDelay", 260f);
-					RenderLabeledValueField("After Event Delay:", "AfterEventDelay", 260f);
-					RenderLabeledValueField("After Cast Delay:", "AfterCastDelay", 260f);
-					RenderLabeledValueField("After Cast Completed Delay:", "AfterCastCompletedDelay", 300f);
-				});*/
+		
 		}
 		private static void RenderSpellModifierEditor2_Tab_Timing()
 		{
@@ -5346,9 +5330,6 @@ namespace E3Core.UI.Windows
 					RenderTableIntEditRow("##SpellEditor_MaxTries", "Max Tries:", currentSpell.MaxTries, (u) => { currentSpell.MaxTries = u; });
 					RenderTableIntEditRow("##SpellEditor_SongRefreshTime", "Song Refresh Time:", currentSpell.SongRefreshTime, (u) => { currentSpell.SongRefreshTime = u; });
 					
-					RenderTableIntEditRow("##SpellEditor_PctAggro", "Pct Aggro:", currentSpell.PctAggro, (u) => { currentSpell.PctAggro = u; }, tooltip: "Skip this entry if your current aggro percent exceeds the specified threshold.");
-					RenderTableIntEditRow("##SpellEditor_MinAggro", "Min Aggro:", currentSpell.MinAggro, (u) => { currentSpell.MinAggro = u; }, tooltip: "Only cast when your aggro percent is at least this value (helps gate low-threat openers).");
-					RenderTableIntEditRow("##SpellEditor_MaxAggro", "Max Aggro:", currentSpell.MaxAggro, (u) => { currentSpell.MaxAggro = u; }, tooltip: "Do not cast once your aggro percent is above this value (useful for backing off).");
 				}
 				finally
 				{
