@@ -5081,13 +5081,17 @@ namespace E3Core.UI.Windows
 
 			return baseName + "/" + string.Join("/", segments);
 		}
-		private static void RenderTableTextEditRow(string id, string label,string original, Action<string> action)
+		private const float SpellEditorDefaultTextWidth = 320f;
+		private const float SpellEditorDefaultNumberWidth = 140f;
+
+		private static void RenderTableTextEditRow(string id, string label,string original, Action<string> action, float width = SpellEditorDefaultTextWidth)
 		{
 			var spellEditorState = _state.GetState<State_SpellEditor>();
 			imgui_TableNextRow();
 			imgui_TableNextColumn();
 			imgui_Text(label);
 			imgui_TableNextColumn();
+			imgui_SetNextItemWidth(width);
 		
 			//clear it out if we need as the original changed from what we have in the C++ side
 			var current = imgui_InputText_Get(id);
@@ -5103,7 +5107,7 @@ namespace E3Core.UI.Windows
 				spellEditorState.IsDirty = true;
 			}
 		}
-		private static void RenderTableIntEditRow(string id, string label, int original, Action<Int32> action, string tooltip=null)
+		private static void RenderTableIntEditRow(string id, string label, int original, Action<Int32> action, string tooltip=null, float width = SpellEditorDefaultNumberWidth)
 		{
 			var spellEditorState = _state.GetState<State_SpellEditor>();
 			imgui_TableNextRow();
@@ -5118,6 +5122,7 @@ namespace E3Core.UI.Windows
 				imgui_EndTooltip();
 			}
 			imgui_TableNextColumn();
+			imgui_SetNextItemWidth(width);
 
 			//clear it out if we need as the original changed from what we have in the C++ side
 			var current = imgui_InputInt_Get(id);
@@ -5657,17 +5662,17 @@ namespace E3Core.UI.Windows
 
 				RenderFieldTable($"SpellTimingTable_{idBase}", () =>
 				{
-					RenderLabeledValueField("Delay:", "Delay");
-					RenderLabeledValueField("Recast Delay:", "RecastDelay");
-					RenderLabeledValueField("Min Duration Before Recast:", "MinDurationBeforeRecast", 300f);
+					RenderLabeledValueField("Delay:", "Delay", 30f);
+					RenderLabeledValueField("Recast Delay:", "RecastDelay", 30f);
+					RenderLabeledValueField("Min Duration Before Recast:", "MinDurationBeforeRecast", 30f);
 					RenderLabeledValueField("Max Tries:", "MaxTries");
-					RenderLabeledValueField("Song Refresh Time:", "SongRefreshTime", 260f);
-					RenderLabeledValueField("Before Spell Delay:", "BeforeSpellDelay", 260f);
-					RenderLabeledValueField("After Spell Delay:", "AfterSpellDelay", 260f);
-					RenderLabeledValueField("Before Event Delay:", "BeforeEventDelay", 260f);
-					RenderLabeledValueField("After Event Delay:", "AfterEventDelay", 260f);
-					RenderLabeledValueField("After Cast Delay:", "AfterCastDelay", 260f);
-					RenderLabeledValueField("After Cast Completed Delay:", "AfterCastCompletedDelay", 300f);
+					RenderLabeledValueField("Song Refresh Time:", "SongRefreshTime", 30f);
+					RenderLabeledValueField("Before Spell Delay:", "BeforeSpellDelay", 30f);
+					RenderLabeledValueField("After Spell Delay:", "AfterSpellDelay", 30f);
+					RenderLabeledValueField("Before Event Delay:", "BeforeEventDelay", 30f);
+					RenderLabeledValueField("After Event Delay:", "AfterEventDelay", 30f);
+					RenderLabeledValueField("After Cast Delay:", "AfterCastDelay", 30f);
+					RenderLabeledValueField("After Cast Completed Delay:", "AfterCastCompletedDelay", 30f);
 				});
 			}
 
