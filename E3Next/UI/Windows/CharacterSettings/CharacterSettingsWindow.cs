@@ -446,7 +446,7 @@ namespace E3Core.UI.Windows.CharacterSettings
 			}
 
 			// Render integrated editor after table if active
-			if (state.Show_ShowIntegratedEditor && state.SelectedValueIndex >= 0) { Render_MainWindow_ConfigEditor_SpellEditor(); }
+			if (state.Show_ShowIntegratedEditor && state.SelectedValueIndex >= 0) { Render_MainWindow_SpellEditor(); }
 			//Ensure popups/ modals render even when the tools column is hidden
 			SectionData activeSection = data.GetCurrentSectionData();
 			Render_Active_Windows(activeSection);
@@ -737,15 +737,9 @@ namespace E3Core.UI.Windows.CharacterSettings
 		}
 		#endregion
 		// Integrated editor panel - renders after the main table and spans full width
-		private static void Render_MainWindow_ConfigEditor_SpellEditor()
+		private static void Render_MainWindow_SpellEditor()
 		{
 			var mainWindowState = _state.GetState<State_MainWindow>();
-
-			var iniData = data.GetActiveCharacterIniData();
-			var sectionData = iniData?.Sections?.GetSectionData(mainWindowState.SelectedSection ?? string.Empty);
-			var keyData = sectionData?.Keys?.GetKeyData(mainWindowState.SelectedKey ?? string.Empty);
-			var values = GetValues(keyData);
-
 
 			var kd = data.GetCurrentEditedSpellKeyData();
 			if (kd == null) return;
@@ -2710,7 +2704,7 @@ namespace E3Core.UI.Windows.CharacterSettings
 			data.BuildConfigSectionOrder();
 		}
 	
-	private static List<string> GetSectionsForDisplay()
+		private static List<string> GetSectionsForDisplay()
 	{	
 		var mainWindowState = _state.GetState<State_MainWindow>();
 		
