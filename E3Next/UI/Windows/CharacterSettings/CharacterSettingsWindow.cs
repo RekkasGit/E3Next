@@ -579,7 +579,7 @@ namespace E3Core.UI.Windows.CharacterSettings
 									{
 										if (imgui_MenuItem("Delete Key"))
 										{
-											DeleteKeyFromActiveIni(sec, key);
+											data.DeleteKeyFromActiveIni(sec, key);
 										}
 
 										imgui_EndPopup();
@@ -674,11 +674,11 @@ namespace E3Core.UI.Windows.CharacterSettings
 							bool added = false;
 							if (state.SelectedAddInLine.Equals("Ifs", StringComparison.OrdinalIgnoreCase))
 							{
-								added = AddIfToActiveIni(key, val);
+								added = data.AddIfToActiveIni(key, val);
 							}
 							else if (state.SelectedAddInLine.Equals("Burn", StringComparison.OrdinalIgnoreCase))
 							{
-								added = AddBurnToActiveIni(key, val);
+								added = data.AddBurnToActiveIni(key, val);
 							}
 							if (added)
 							{
@@ -1978,7 +1978,7 @@ namespace E3Core.UI.Windows.CharacterSettings
 
 				mainWindowState.ConfigIsDirty = false;
 				mainWindowState.SelectedValueIndex = -1;
-				InvalidateSpellEditState();
+			
 				_log.Write($"Cleared pending changes for {Path.GetFileName(selectedPath)}");
 			}
 			catch (Exception ex)
@@ -2859,95 +2859,7 @@ namespace E3Core.UI.Windows.CharacterSettings
 			}
 		}
 
-		private static bool AddIfToActiveIni(string key, string value)
-		{
-			var mainWindowState  = _state.GetState<State_MainWindow>();
-			try
-			{
-				var pd = data.GetActiveCharacterIniData();
-				if (pd == null) return false;
-				var section = pd.Sections.GetSectionData("Ifs");
-				if (section == null)
-				{
-					pd.Sections.AddSection("Ifs");
-					section = pd.Sections.GetSectionData("Ifs");
-				}
-				if (section == null) return false;
-				string baseKey = key ?? string.Empty;
-				if (string.IsNullOrWhiteSpace(baseKey)) return false;
-				string unique = baseKey;
-				int idx = 1;
-				while (section.Keys.ContainsKey(unique)) { unique = baseKey + " (" + idx.ToString() + ")"; idx++; if (idx > 1000) break; }
-				if (!section.Keys.ContainsKey(unique))
-				{
-					section.Keys.AddKey(unique, value ?? string.Empty);
-					mainWindowState.ConfigIsDirty = true;
-					mainWindowState.SelectedSection = "Ifs";
-					mainWindowState.SelectedKey = unique;
-					mainWindowState.SelectedValueIndex = -1;
-					return true;
-				}
-				return false;
-			}
-			catch { return false; }
-		}
-
-		private static bool AddBurnToActiveIni(string key, string value)
-		{
-			var mainWindowState = _state.GetState<State_MainWindow>();
-
-			try
-			{
-				var pd = data.GetActiveCharacterIniData();
-				if (pd == null) return false;
-				var section = pd.Sections.GetSectionData("Burn");
-				if (section == null)
-				{
-					pd.Sections.AddSection("Burn");
-					section = pd.Sections.GetSectionData("Burn");
-				}
-				if (section == null) return false;
-				string baseKey = key ?? string.Empty;
-				if (string.IsNullOrWhiteSpace(baseKey)) return false;
-				string unique = baseKey;
-				int idx = 1;
-				while (section.Keys.ContainsKey(unique)) { unique = baseKey + " (" + idx.ToString() + ")"; idx++; if (idx > 1000) break; }
-				if (!section.Keys.ContainsKey(unique))
-				{
-					section.Keys.AddKey(unique, value ?? string.Empty);
-					mainWindowState.ConfigIsDirty = true;
-					mainWindowState.SelectedSection = "Burn";
-					mainWindowState.SelectedKey = unique;
-					mainWindowState.SelectedValueIndex = -1;
-					return true;
-				}
-				return false;
-			}
-			catch { return false; }
-		}
-
-		private static bool DeleteKeyFromActiveIni(string sectionName, string keyName)
-		{
-			var mainWindowState = _state.GetState<State_MainWindow>();
-
-			try
-			{
-				var pd = data.GetActiveCharacterIniData();
-				if (pd == null) return false;
-				var section = pd.Sections.GetSectionData(sectionName ?? string.Empty);
-				if (section == null || section.Keys == null) return false;
-				if (!section.Keys.ContainsKey(keyName)) return false;
-				section.Keys.RemoveKey(keyName);
-				mainWindowState.ConfigIsDirty = true;
-				mainWindowState.SelectedValueIndex = -1;
-				InvalidateSpellEditState();
-				// Pick a new selected key if any remain
-				var nextKey = section.Keys.FirstOrDefault()?.KeyName ?? string.Empty;
-				mainWindowState.SelectedKey = nextKey ?? string.Empty;
-				return true;
-			}
-			catch { return false; }
-		}
+		
 
 		private static void RenderIfsSampleModal()
 		{
@@ -2964,7 +2876,7 @@ namespace E3Core.UI.Windows.CharacterSettings
 						string display = string.IsNullOrEmpty(kv.Value) ? kv.Key : (kv.Key + " = " + kv.Value);
 						if (imgui_Selectable($"{display}##IF_{i}", false))
 						{
-							AddIfToActiveIni(kv.Key, kv.Value);
+							data.AddIfToActiveIni(kv.Key, kv.Value);
 						}
 					}
 				}
@@ -2973,7 +2885,7 @@ namespace E3Core.UI.Windows.CharacterSettings
 				if (imgui_Button("Import All"))
 				{
 					int cnt = 0;
-					for (int i = 0; i < _cfgIfSampleLines.Count; i++) { var kv = _cfgIfSampleLines[i]; if (AddIfToActiveIni(kv.Key, kv.Value)) cnt++; }
+					for (int i = 0; i < _cfgIfSampleLines.Count; i++) { var kv = _cfgIfSampleLines[i]; if (data.AddIfToActiveIni(kv.Key, kv.Value)) cnt++; }
 					_cfgIfSampleStatus = cnt > 0 ? ($"Imported {cnt} If(s)") : "No new If's to import.";
 				}
 				imgui_SameLine();
@@ -3074,11 +2986,7 @@ namespace E3Core.UI.Windows.CharacterSettings
 		}
 
 		
-		private static void InvalidateSpellEditState()
-		{
 		
-		}
-
 	
         private static void RenderTableTextEditRow(string id, string label,string current, Action<string> action, string tooltip = null, float width = SpellEditorDefaultTextWidth)
 		{

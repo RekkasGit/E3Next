@@ -1773,5 +1773,95 @@ namespace E3Core.UI.Windows.CharacterSettings
 			}
 		}
 
+
+		public static bool AddIfToActiveIni(string key, string value)
+		{
+			var mainWindowState = window._state.GetState<State_MainWindow>();
+			try
+			{
+				var pd = GetActiveCharacterIniData();
+				if (pd == null) return false;
+				var section = pd.Sections.GetSectionData("Ifs");
+				if (section == null)
+				{
+					pd.Sections.AddSection("Ifs");
+					section = pd.Sections.GetSectionData("Ifs");
+				}
+				if (section == null) return false;
+				string baseKey = key ?? string.Empty;
+				if (string.IsNullOrWhiteSpace(baseKey)) return false;
+				string unique = baseKey;
+				int idx = 1;
+				while (section.Keys.ContainsKey(unique)) { unique = baseKey + " (" + idx.ToString() + ")"; idx++; if (idx > 1000) break; }
+				if (!section.Keys.ContainsKey(unique))
+				{
+					section.Keys.AddKey(unique, value ?? string.Empty);
+					mainWindowState.ConfigIsDirty = true;
+					mainWindowState.SelectedSection = "Ifs";
+					mainWindowState.SelectedKey = unique;
+					mainWindowState.SelectedValueIndex = -1;
+					return true;
+				}
+				return false;
+			}
+			catch { return false; }
+		}
+
+		public static bool AddBurnToActiveIni(string key, string value)
+		{
+			var mainWindowState = window._state.GetState<State_MainWindow>();
+
+			try
+			{
+				var pd = GetActiveCharacterIniData();
+				if (pd == null) return false;
+				var section = pd.Sections.GetSectionData("Burn");
+				if (section == null)
+				{
+					pd.Sections.AddSection("Burn");
+					section = pd.Sections.GetSectionData("Burn");
+				}
+				if (section == null) return false;
+				string baseKey = key ?? string.Empty;
+				if (string.IsNullOrWhiteSpace(baseKey)) return false;
+				string unique = baseKey;
+				int idx = 1;
+				while (section.Keys.ContainsKey(unique)) { unique = baseKey + " (" + idx.ToString() + ")"; idx++; if (idx > 1000) break; }
+				if (!section.Keys.ContainsKey(unique))
+				{
+					section.Keys.AddKey(unique, value ?? string.Empty);
+					mainWindowState.ConfigIsDirty = true;
+					mainWindowState.SelectedSection = "Burn";
+					mainWindowState.SelectedKey = unique;
+					mainWindowState.SelectedValueIndex = -1;
+					return true;
+				}
+				return false;
+			}
+			catch { return false; }
+		}
+		
+		public static bool DeleteKeyFromActiveIni(string sectionName, string keyName)
+		{
+			var mainWindowState = window._state.GetState<State_MainWindow>();
+
+			try
+			{
+				var pd = GetActiveCharacterIniData();
+				if (pd == null) return false;
+				var section = pd.Sections.GetSectionData(sectionName ?? string.Empty);
+				if (section == null || section.Keys == null) return false;
+				if (!section.Keys.ContainsKey(keyName)) return false;
+				section.Keys.RemoveKey(keyName);
+				mainWindowState.ConfigIsDirty = true;
+				mainWindowState.SelectedValueIndex = -1;
+				// Pick a new selected key if any remain
+				var nextKey = section.Keys.FirstOrDefault()?.KeyName ?? string.Empty;
+				mainWindowState.SelectedKey = nextKey ?? string.Empty;
+				return true;
+			}
+			catch { return false; }
+		}
+
 	}
 }
