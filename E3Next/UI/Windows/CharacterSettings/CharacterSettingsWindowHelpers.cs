@@ -1216,7 +1216,62 @@ namespace E3Core.UI.Windows.CharacterSettings
 
 			return found.OrderBy(x => x, StringComparer.OrdinalIgnoreCase).ToList();
 		}
+		public static IniData GetActiveCharacterIniData()
+		{
+			var mainWindowState = window._state.GetState<State_MainWindow>();
 
+			return mainWindowState.CurrentINIData;
+		}
+		static List<String> _configSectionOrderDefault = new List<string>() { "Misc", "Assist Settings", "Nukes", "Debuffs", "DoTs on Assist", "DoTs on Command", "Heals", "Buffs", "Melee Abilities", "Burn", "CommandSets", "Pets", "Ifs" };
+		static List<String> _configSectionOrderNecro = new List<string>() { "DoTs on Assist", "DoTs on Command", "Debuffs", "Pets", "Burn", "CommandSets", "Ifs", "Assist Settings", "Buffs" };
+		static List<String> _configSectionOrderSK = new List<string>() { "Nukes", "Assist Settings", "Buffs", "DoTs on Assist", "DoTs on Command", "Debuffs", "Pets", "Burn", "CommandSets", "Ifs" };
+		static List<String> _configSectionOrderBard = new List<string>() { "Bard", "Melee Abilities", "Burn", "CommandSets", "Ifs", "Assist Settings", "Buffs" };
+
+		public static void BuildConfigSectionOrder()
+		{
+			var mainWindowState = window._state.GetState<State_MainWindow>();
+			var pd = GetActiveCharacterIniData();
+			if (pd?.Sections == null) return;
+
+			// Class-prioritized defaults similar to e3config
+			var cls = E3.CurrentClass;
+			List<String> currentOrder = _configSectionOrderDefault;
+			if (cls.ToString().Equals("Bard", StringComparison.OrdinalIgnoreCase))
+			{
+				currentOrder = _configSectionOrderBard;
+			}
+			else if (cls.ToString().Equals("Necromancer", StringComparison.OrdinalIgnoreCase))
+			{
+				currentOrder = _configSectionOrderNecro;
+			}
+			else if (cls.ToString().Equals("Shadowknight", StringComparison.OrdinalIgnoreCase))
+			{
+				currentOrder = _configSectionOrderSK;
+			}
+			mainWindowState.SectionsOrdered.Clear();
+			// Seed ordered list with defaults that exist in the INI
+			foreach (var d in currentOrder)
+			{
+				if (pd.Sections.ContainsSection(d)) mainWindowState.SectionsOrdered.Add(d);
+			}
+			// Append any remaining sections not included yet
+			foreach (SectionData s in pd.Sections)
+			{
+				if (!mainWindowState.SectionsOrdered.Contains(s.SectionName, StringComparer.OrdinalIgnoreCase))
+					mainWindowState.SectionsOrdered.Add(s.SectionName);
+			}
+
+			if (mainWindowState.SectionsOrdered.Count > 0)
+			{
+				if (string.IsNullOrEmpty(mainWindowState.SelectedSection) || !mainWindowState.SectionsOrdered.Contains(mainWindowState.SelectedSection, StringComparer.OrdinalIgnoreCase))
+				{
+					mainWindowState.SelectedSection = mainWindowState.SectionsOrdered[0];
+					var section = pd.Sections.GetSectionData(mainWindowState.SelectedSection);
+					mainWindowState.SelectedKey = section?.Keys?.FirstOrDefault()?.KeyName ?? string.Empty;
+					mainWindowState.SelectedValueIndex = -1;
+				}
+			}
+		}
 		// Background worker tick invoked from E3.Process(): handle catalog loads and icon system
 		public static void ProcessBackgroundWork()
 		{

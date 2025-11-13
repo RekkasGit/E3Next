@@ -435,7 +435,7 @@ namespace E3Core.UI.Windows.CharacterSettings
 				state.SelectedSection = string.Empty;
 				state.SelectedKey = string.Empty;
 				state.SelectedValueIndex = -1;
-				BuildConfigSectionOrder();
+				data.BuildConfigSectionOrder();
 				// Auto-load catalogs on ini switch without blocking UI
 				RequestCatalogUpdate();
 			}
@@ -486,7 +486,7 @@ namespace E3Core.UI.Windows.CharacterSettings
 			data.RefreshEditableSpellState();
 
 			EnsureConfigEditorInit();
-			var pd = GetActiveCharacterIniData();
+			var pd = data.GetActiveCharacterIniData();
 			if (pd == null || pd.Sections == null){	imgui_TextColored(1.0f, 0.8f, 0.8f, 1.0f, "No character INI loaded.");return;}
 
 			RenderConfigEditor_CatalogStatus();
@@ -822,7 +822,7 @@ namespace E3Core.UI.Windows.CharacterSettings
 		{
 			var mainWindowState = _state.GetState<State_MainWindow>();
 
-			var iniData = GetActiveCharacterIniData();
+			var iniData = data.GetActiveCharacterIniData();
 			var sectionData = iniData?.Sections?.GetSectionData(mainWindowState.SelectedSection ?? string.Empty);
 			var keyData = sectionData?.Keys?.GetKeyData(mainWindowState.SelectedKey ?? string.Empty);
 			var values = GetValues(keyData);
@@ -1106,7 +1106,7 @@ namespace E3Core.UI.Windows.CharacterSettings
 					if (imgui_Selectable(opt, sel))
 					{
 						string chosen = opt;
-						var pdAct = GetActiveCharacterIniData();
+						var pdAct = data.GetActiveCharacterIniData();
 						var selSec = pdAct.Sections.GetSectionData(mainWindowState.SelectedSection);
 						if (selSec != null && selSec.Keys.ContainsKey(mainWindowState.SelectedKey))
 						{
@@ -1158,7 +1158,7 @@ namespace E3Core.UI.Windows.CharacterSettings
 					if (imgui_Selectable(opt, sel))
 					{
 						string chosen = opt;
-						var pdAct = GetActiveCharacterIniData();
+						var pdAct = data.GetActiveCharacterIniData();
 						var selSec = pdAct.Sections.GetSectionData(mainWindowState.SelectedSection);
 						if (selSec != null && selSec.Keys.ContainsKey(mainWindowState.SelectedKey))
 						{
@@ -1202,7 +1202,7 @@ namespace E3Core.UI.Windows.CharacterSettings
 
 					void SwapAndMark(int fromIndex, int toIndex)
 					{
-						var pdAct = GetActiveCharacterIniData();
+						var pdAct = data.GetActiveCharacterIniData();
 						var selSec = pdAct.Sections.GetSectionData(mainWindowState.SelectedSection);
 						var key = selSec?.Keys.GetKeyData(mainWindowState.SelectedKey);
 						if (key == null) return;
@@ -1227,7 +1227,7 @@ namespace E3Core.UI.Windows.CharacterSettings
 
 					void DeleteValueAt(int index)
 					{
-						var pdAct = GetActiveCharacterIniData();
+						var pdAct = data.GetActiveCharacterIniData();
 						var selSec = pdAct.Sections.GetSectionData(mainWindowState.SelectedSection);
 						var key = selSec?.Keys.GetKeyData(mainWindowState.SelectedKey);
 						if (key != null)
@@ -1304,7 +1304,7 @@ namespace E3Core.UI.Windows.CharacterSettings
 					{
 						string newText = mainWindowState.Buffer_InlineEdit ?? string.Empty;
 						int idx = i;
-						var pdAct = GetActiveCharacterIniData();
+						var pdAct = data.GetActiveCharacterIniData();
 						var selSec = pdAct.Sections.GetSectionData(mainWindowState.SelectedSection);
 						var key = selSec?.Keys.GetKeyData(mainWindowState.SelectedKey);
 						if (key != null)
@@ -1374,7 +1374,7 @@ namespace E3Core.UI.Windows.CharacterSettings
 					string newText = mainWindowState.Buffer_InlineEdit ?? string.Empty;
 					if (!string.IsNullOrWhiteSpace(newText))
 					{
-						var pdAct = GetActiveCharacterIniData();
+						var pdAct = data.GetActiveCharacterIniData();
 						var selSec = pdAct.Sections.GetSectionData(mainWindowState.SelectedSection);
 						var key = selSec?.Keys.GetKeyData(mainWindowState.SelectedKey);
 						if (key != null)
@@ -1497,7 +1497,7 @@ namespace E3Core.UI.Windows.CharacterSettings
 						if (imgui_Button("Delete Value"))
 						{
 							// Delete the currently selected value
-							var pdAct = GetActiveCharacterIniData();
+							var pdAct = data.GetActiveCharacterIniData();
 							var selSec = pdAct.Sections.GetSectionData(mainWindowState.SelectedSection);
 							var key = selSec?.Keys.GetKeyData(mainWindowState.SelectedKey);
 							if (key != null)
@@ -1648,7 +1648,7 @@ namespace E3Core.UI.Windows.CharacterSettings
 		{
 			if (_state.Show_AddModal)
 			{
-				RenderAddFromCatalogModal(GetActiveCharacterIniData(), selectedSection);
+				RenderAddFromCatalogModal(data.GetActiveCharacterIniData(), selectedSection);
 			}
 			if (_state.Show_FoodDrinkModal)
 			{
@@ -1693,7 +1693,7 @@ namespace E3Core.UI.Windows.CharacterSettings
 			{
 				string currentPath = data.GetCurrentCharacterIniPath();
 				string selectedPath = data.GetActiveSettingsPath();
-				var pd = GetActiveCharacterIniData();
+				var pd = data.GetActiveCharacterIniData();
 				if (string.IsNullOrEmpty(selectedPath) || pd == null) return;
 
 				var parser = E3Core.Utility.e3util.CreateIniParser();
@@ -1763,7 +1763,7 @@ namespace E3Core.UI.Windows.CharacterSettings
 		{
 			try
 			{
-				var chardata = GetActiveCharacterIniData();
+				var chardata = data.GetActiveCharacterIniData();
 				if (chardata?.Sections != null)
 				{
 					if (chardata.Sections.ContainsSection("Bard")) return true;
@@ -2583,7 +2583,7 @@ namespace E3Core.UI.Windows.CharacterSettings
 			imgui_Text("All Players View");
 			imgui_Separator();
 
-			var pd = GetActiveCharacterIniData();
+			var pd = data.GetActiveCharacterIniData();
 			if (pd == null || pd.Sections == null || string.IsNullOrEmpty(mainWindowState.SelectedSection) || string.IsNullOrEmpty(mainWindowState.SelectedKey))
 			{
 				imgui_Text("Select a section and key in the Config Editor first.");
@@ -2700,58 +2700,9 @@ namespace E3Core.UI.Windows.CharacterSettings
 		{
 			if (_cfg_Inited) return;
 			_cfg_Inited = true;
-			BuildConfigSectionOrder();
+			data.BuildConfigSectionOrder();
 		}
-		static List<String> _configSectionOrderDefault = new List<string>() { "Misc", "Assist Settings", "Nukes", "Debuffs", "DoTs on Assist", "DoTs on Command", "Heals", "Buffs", "Melee Abilities", "Burn", "CommandSets", "Pets", "Ifs" };
-		static List<String> _configSectionOrderNecro = new List<string>() { "DoTs on Assist", "DoTs on Command", "Debuffs", "Pets", "Burn", "CommandSets", "Ifs", "Assist Settings", "Buffs" };
-		static List<String> _configSectionOrderSK = new List<string>() { "Nukes", "Assist Settings", "Buffs", "DoTs on Assist", "DoTs on Command", "Debuffs", "Pets", "Burn", "CommandSets", "Ifs" };
-		static List<String> _configSectionOrderBard = new List<string>() { "Bard", "Melee Abilities", "Burn", "CommandSets", "Ifs", "Assist Settings", "Buffs" };
-
-		private static void BuildConfigSectionOrder()
-		{
-			var mainWindowState = _state.GetState<State_MainWindow>();
-			var pd = GetActiveCharacterIniData();
-			if (pd?.Sections == null) return;
-
-			// Class-prioritized defaults similar to e3config
-			var cls = E3.CurrentClass;
-			List<String> currentOrder = _configSectionOrderDefault;
-			if (cls.ToString().Equals("Bard", StringComparison.OrdinalIgnoreCase))
-			{
-				currentOrder = _configSectionOrderBard;
-			}
-			else if (cls.ToString().Equals("Necromancer", StringComparison.OrdinalIgnoreCase))
-			{
-				currentOrder = _configSectionOrderNecro;
-			}
-			else if (cls.ToString().Equals("Shadowknight", StringComparison.OrdinalIgnoreCase))
-			{
-				currentOrder = _configSectionOrderSK;
-			}
-			mainWindowState.SectionsOrdered.Clear();
-			// Seed ordered list with defaults that exist in the INI
-			foreach (var d in currentOrder)
-			{
-				if (pd.Sections.ContainsSection(d)) mainWindowState.SectionsOrdered.Add(d);
-			}
-			// Append any remaining sections not included yet
-			foreach (SectionData s in pd.Sections)
-			{
-				if (!mainWindowState.SectionsOrdered.Contains(s.SectionName, StringComparer.OrdinalIgnoreCase))
-					mainWindowState.SectionsOrdered.Add(s.SectionName);
-			}
-
-			if (mainWindowState.SectionsOrdered.Count > 0)
-			{
-				if (string.IsNullOrEmpty(mainWindowState.SelectedSection) || !mainWindowState.SectionsOrdered.Contains(mainWindowState.SelectedSection, StringComparer.OrdinalIgnoreCase))
-				{
-					mainWindowState.SelectedSection = mainWindowState.SectionsOrdered[0];
-					var section = pd.Sections.GetSectionData(mainWindowState.SelectedSection);
-					mainWindowState.SelectedKey = section?.Keys?.FirstOrDefault()?.KeyName ?? string.Empty;
-					mainWindowState.SelectedValueIndex = -1;
-				}
-			}
-		}
+	
 	private static List<string> GetSectionsForDisplay()
 	{	
 		var mainWindowState = _state.GetState<State_MainWindow>();
@@ -2763,7 +2714,7 @@ namespace E3Core.UI.Windows.CharacterSettings
 		}
 		//lets look for the data based off search
 		var matches = new List<String>();
-		var pd = GetActiveCharacterIniData();
+		var pd = data.GetActiveCharacterIniData();
 		if (pd == null) return matches;
 		
 		foreach (var section in mainWindowState.SectionsOrdered)
@@ -2906,7 +2857,7 @@ namespace E3Core.UI.Windows.CharacterSettings
 			var mainWindowState  = _state.GetState<State_MainWindow>();
 			try
 			{
-				var pd = GetActiveCharacterIniData();
+				var pd = data.GetActiveCharacterIniData();
 				if (pd == null) return false;
 				var section = pd.Sections.GetSectionData("Ifs");
 				if (section == null)
@@ -2940,7 +2891,7 @@ namespace E3Core.UI.Windows.CharacterSettings
 
 			try
 			{
-				var pd = GetActiveCharacterIniData();
+				var pd = data.GetActiveCharacterIniData();
 				if (pd == null) return false;
 				var section = pd.Sections.GetSectionData("Burn");
 				if (section == null)
@@ -2974,7 +2925,7 @@ namespace E3Core.UI.Windows.CharacterSettings
 
 			try
 			{
-				var pd = GetActiveCharacterIniData();
+				var pd = data.GetActiveCharacterIniData();
 				if (pd == null) return false;
 				var section = pd.Sections.GetSectionData(sectionName ?? string.Empty);
 				if (section == null || section.Keys == null) return false;
@@ -3026,12 +2977,7 @@ namespace E3Core.UI.Windows.CharacterSettings
 
 
 
-		private static IniData GetActiveCharacterIniData()
-		{
-			var mainWindowState = _state.GetState<State_MainWindow>();
-
-			return mainWindowState.CurrentINIData;
-		}
+		
 	
 
 	
@@ -3800,7 +3746,7 @@ namespace E3Core.UI.Windows.CharacterSettings
 							if (imgui_Selectable($"{item}##item_{i}", false))
 							{
 								// Apply selection
-								var pdAct = GetActiveCharacterIniData();
+								var pdAct = data.GetActiveCharacterIniData();
 								var secData = pdAct.Sections.GetSectionData(mainWindowState.SelectedSection);
 								var keyData = secData?.Keys.GetKeyData(mainWindowState.SelectedKey);
 								if (keyData != null)
@@ -4342,7 +4288,7 @@ namespace E3Core.UI.Windows.CharacterSettings
 			successMessage = string.Empty;
 			errorMessage = string.Empty;
 
-			var pd = GetActiveCharacterIniData();
+			var pd = data.GetActiveCharacterIniData();
 			if (pd == null)
 			{
 				errorMessage = "No character INI is currently loaded.";
@@ -4469,7 +4415,7 @@ namespace E3Core.UI.Windows.CharacterSettings
 			actualKey = string.Empty;
 			errorMessage = string.Empty;
 
-			var pd = GetActiveCharacterIniData();
+			var pd = data.GetActiveCharacterIniData();
 			if (pd == null)
 			{
 				errorMessage = "No character INI is currently loaded.";
