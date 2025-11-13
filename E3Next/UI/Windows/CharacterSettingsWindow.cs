@@ -3446,16 +3446,6 @@ namespace E3Core.UI.Windows
 
 			return found.OrderBy(x => x, StringComparer.OrdinalIgnoreCase).ToList();
 		}
-		private static bool IsLikelyFood(string name)
-		{
-			string n = name.ToLowerInvariant();
-			return n.Contains("bread") || n.Contains("meat") || n.Contains("pie") || n.Contains("cake") || n.Contains("cookie") || n.Contains("muffin") || n.Contains("stew") || n.Contains("cheese") || n.Contains("tart") || n.Contains("sausage") || n.Contains("soup") || n.Contains("steak");
-		}
-		private static bool IsLikelyDrink(string name)
-		{
-			string n = name.ToLowerInvariant();
-			return n.Contains("water") || n.Contains("milk") || n.Contains("wine") || n.Contains("ale") || n.Contains("beer") || n.Contains("tea") || n.Contains("juice") || n.Contains("elixir") || n.Contains("nectar") || n.Contains("brew");
-		}
 		private static void RenderAddFromCatalogModal_CalculateAddType(AddType typeofadd,out float leftW, out float middleW, out float rightW)
 		{
 			float totalW = imgui_GetContentRegionAvailX();
@@ -5359,26 +5349,7 @@ namespace E3Core.UI.Windows
 			}
 			
 		}
-
-		public static (string Label, string Flag)[] _spellFlags = new (string Label, string Flag)[]
-				{
-					("No Interrupt", "NoInterrupt"),
-					("Ignore Stack Rules", "IgnoreStackRules"),
-					("No Target", "NoTarget"),
-					("No Aggro", "NoAggro"),
-					("No Burn", "NoBurn"),
-					("Rotate", "Rotate"),
-					("No Mid Song Cast", "NoMidSongCast"),
-					("Gift of Mana (GoM)", "GoM"),
-					("Allow Spell Swap", "AllowSpellSwap"),
-					("No Early Recast", "NoEarlyRecast"),
-					("No Stack", "NoStack"),
-					("Debug", "Debug"),
-					("Is Debuff", "IsDebuff"),
-					("Is DoT", "IsDoT")
-				};
-
-		
+	
 		private static void RenderSpellModifierEditor2_Tab_Flags()
 		{
 			var spellEditorState = _state.GetState<State_SpellEditor>();
