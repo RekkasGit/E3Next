@@ -518,6 +518,74 @@ namespace E3Core.UI.Windows.CharacterSettings
 
 			return kd;
 		}
+
+		public static void SaveActiveIniData()
+		{
+			try
+			{
+				string currentPath = GetCurrentCharacterIniPath();
+				string selectedPath = GetActiveSettingsPath();
+				var pd = GetActiveCharacterIniData();
+				if (string.IsNullOrEmpty(selectedPath) || pd == null) return;
+
+				var parser = E3Core.Utility.e3util.CreateIniParser();
+				parser.WriteFile(selectedPath, pd);
+				var state = window._state.GetState<State_MainWindow>();
+				state.ConfigIsDirty = false;
+				_log.Write($"Saved changes to {Path.GetFileName(selectedPath)}");
+			}
+			catch (Exception ex)
+			{
+				_log.Write($"Failed to save: {ex.Message}", Logging.LogLevels.Error);
+			}
+		}
+
+		static Dictionary<string, List<String>> _KeyOptionsLookup = new Dictionary<string, List<string>>(StringComparer.OrdinalIgnoreCase) {
+			{"Assist Type (Melee/Ranged/Off)", new List<string>() { "Melee","AutoAttack","Ranged","AutoFire","Off" } },
+			{"Melee Stick Point", new List<string>() { "Front","Behind","BehindOnce","Pin","!Front" } }
+
+		};
+		static List<String> _KeyOptionsOnOff = new List<string>() { "On", "Off" };
+		// Attempt to derive an explicit set of allowed options from the key label, e.g.
+		// "Assist Type (Melee/Ranged/Off)" => ["Melee","Ranged","Off"]
+		public static bool TryGetValidOptionsForKey(string keyLabel, out List<string> options)
+		{
+			if (_KeyOptionsLookup.TryGetValue(keyLabel, out var result))
+			{
+				options = result;
+				return true;
+			}
+			options = null;
+			return false;
+		}
+		public static bool IsStringConfigKey(string key)
+		{
+			if (E3.CharacterSettings.SettingsReflectionStringTypes.Contains(key))
+			{
+				return true;
+			}
+			return false;
+		}
+
+		public static bool IsIntergerConfigKey(string key)
+		{
+			if (E3.CharacterSettings.SettingsReflectionIntTypes.Contains(key))
+			{
+
+				return true;
+			}
+			return false;
+		}
+		public static bool IsBooleanConfigKey(string key)
+		{
+			if (E3.CharacterSettings.SettingsReflectionBoolTypes.Contains(key))
+			{
+
+				return true;
+			}
+			return false;
+		}
+
 		static List<String> _catalogRefreshKeyTypes = new List<string>() { "Spells", "AAs", "Discs", "Skills", "Items" };
 		static Int64 _numberofMillisecondsBeforeCatalogNeedsRefresh = 30000;
 

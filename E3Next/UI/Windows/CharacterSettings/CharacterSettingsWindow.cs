@@ -362,7 +362,7 @@ namespace E3Core.UI.Windows.CharacterSettings
 			// Save button with better styling
 			if (imgui_Button(state.ConfigIsDirty ? "Save Changes*" : "Save Changes"))
 			{
-				SaveActiveIniData();
+				data.SaveActiveIniData();
 			}
 			imgui_SameLine();
 
@@ -925,10 +925,6 @@ namespace E3Core.UI.Windows.CharacterSettings
 				imgui_TextColored(0.8f, 0.4f, 0.4f, 1.0f, $"Error displaying gems: {ex.Message}");
 			}
 		}
-
-
-
-
 		#region RenderSelectedKeyValues
 		// Helper method to render values for the selected key
 		private static void RenderSelectedKeyValues(SectionData selectedSection)
@@ -958,20 +954,20 @@ namespace E3Core.UI.Windows.CharacterSettings
 				if (parts == null) return;
 			}
 			// Enumerated options derived from key label e.g. "(Melee/Ranged/Off)"
-			if (TryGetValidOptionsForKey(mainWindowState.SelectedKey, out var enumOpts))
+			if (data.TryGetValidOptionsForKey(mainWindowState.SelectedKey, out var enumOpts))
 			{
 				RenderSelectedKeyValues_Registered(parts, selectedSection, enumOpts);
 			}
 			// Boolean fast toggle support → dropdown selector with better styling
-			else if (IsBooleanConfigKey(mainWindowState.SelectedKey))
+			else if (data.IsBooleanConfigKey(mainWindowState.SelectedKey))
 			{
 				RenderSelectedKeyValues_Boolean(parts,selectedSection);
 			}
-			else if(IsIntergerConfigKey(mainWindowState.SelectedKey))
+			else if(data.IsIntergerConfigKey(mainWindowState.SelectedKey))
 			{
 				RenderSelectedKeyValues_Integers(parts, selectedSection);
 			}
-			else if (IsStringConfigKey(mainWindowState.SelectedKey))
+			else if (data.IsStringConfigKey(mainWindowState.SelectedKey))
 			{
 				RenderSelectedKeyValues_String(parts, selectedSection);
 			}
@@ -1626,27 +1622,7 @@ namespace E3Core.UI.Windows.CharacterSettings
 
 		// Helper to determine if a key is healing-related
 		// Save out active ini data (current or selected)
-		private static void SaveActiveIniData()
-		{
-			try
-			{
-				string currentPath = data.GetCurrentCharacterIniPath();
-				string selectedPath = data.GetActiveSettingsPath();
-				var pd = data.GetActiveCharacterIniData();
-				if (string.IsNullOrEmpty(selectedPath) || pd == null) return;
-
-				var parser = E3Core.Utility.e3util.CreateIniParser();
-				parser.WriteFile(selectedPath, pd);
-				var state = _state.GetState<State_MainWindow>();
-				state.ConfigIsDirty = false;
-				_log.Write($"Saved changes to {Path.GetFileName(selectedPath)}");
-			}
-			catch (Exception ex)
-			{
-				_log.Write($"Failed to save: {ex.Message}", Logging.LogLevels.Error);
-			}
-		}
-
+		
 		// Clear pending changes on the selected ini (reload from disk)
 		private static void ClearPendingChanges()
 		{
@@ -1749,81 +1725,10 @@ namespace E3Core.UI.Windows.CharacterSettings
 		
 		// Reads, updates, and writes a single INI value for a toon.
 
-		private static bool IsStringConfigKey(string key)
-		{
-			if (E3.CharacterSettings.SettingsReflectionStringTypes.Contains(key))
-			{
-				return true;
-			}
-			return false;
-		}
-
-		private static bool IsIntergerConfigKey(string key)
-		{
-			if (E3.CharacterSettings.SettingsReflectionIntTypes.Contains(key))
-			{
-
-				return true;
-			}
-			return false;
-		}
-		private static bool IsBooleanConfigKey(string key)
-		{
-			if (E3.CharacterSettings.SettingsReflectionBoolTypes.Contains(key))
-			{
-				
-				return true;
-			}
-			return false;
-			//if (kd == null) return false;
-			//// Heuristic: keys that are explicitly On/Off
-			//var v = (kd.Value ?? string.Empty).Trim();
-			//if (string.Equals(v, "On", StringComparison.OrdinalIgnoreCase) || string.Equals(v, "Off", StringComparison.OrdinalIgnoreCase))
-			//	return true;
-			//// Common patterns
-			//if (key.IndexOf("Enable", StringComparison.OrdinalIgnoreCase) >= 0) return true;
-			//if (key.IndexOf("Use ", StringComparison.OrdinalIgnoreCase) == 0) return true;
-			//return false;
-		}
+	
 
 
-		static Dictionary<string, List<String>> _KeyOptionsLookup = new Dictionary<string, List<string>>(StringComparer.OrdinalIgnoreCase) {
-			{"Assist Type (Melee/Ranged/Off)", new List<string>() { "Melee","AutoAttack","Ranged","AutoFire","Off" } },
-			{"Melee Stick Point", new List<string>() { "Front","Behind","BehindOnce","Pin","!Front" } }
-
-		};
-		static List<String> _KeyOptionsOnOff = new List<string>() { "On", "Off" };
-		// Attempt to derive an explicit set of allowed options from the key label, e.g.
-		// "Assist Type (Melee/Ranged/Off)" => ["Melee","Ranged","Off"]
-		private static bool TryGetValidOptionsForKey(string keyLabel, out List<string> options)
-		{
-			if (_KeyOptionsLookup.TryGetValue(keyLabel, out var result))
-			{
-				options= result;
-				return true;
-			}
-			options = null;
-			return false;
-
-			//options = null;
-			//if (string.IsNullOrEmpty(keyLabel)) return false;
-			//int i = keyLabel.IndexOf('(');
-			//int j = keyLabel.IndexOf(')');
-			//if (i < 0 || j <= i) return false;
-			//var inside = keyLabel.Substring(i + 1, j - i - 1).Trim();
-			//// Only treat as options if slash-delimited list exists
-			//if (inside.IndexOf('/') < 0) return false;
-			//var parts = inside.Split(new[] { '/' }, StringSplitOptions.RemoveEmptyEntries)
-			//				  .Select(x => x.Trim())
-			//				  .Where(x => !string.IsNullOrEmpty(x))
-			//				  .ToList();
-			//if (parts.Count <= 1) return false;
-			//// Heuristic: ignore numeric unit hints like "(in milliseconds)" or "(Pct)" or "(1+)"
-			//bool looksNumericHint = parts.Any(p => p.Any(char.IsDigit)) || parts.Any(p => p.Equals("Pct", StringComparison.OrdinalIgnoreCase)) || parts.Any(p => p.IndexOf("millisecond", StringComparison.OrdinalIgnoreCase) >= 0);
-			//if (looksNumericHint) return false;
-			//options = parts;
-			//return true;
-		}
+		
 
 
 		// Helper to append or extend an Ifs| key list token in a config value
