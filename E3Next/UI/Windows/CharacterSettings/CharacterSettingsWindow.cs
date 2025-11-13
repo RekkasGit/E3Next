@@ -14,7 +14,7 @@ using System.Linq;
 using System.Text;
 using System.Text.RegularExpressions;
 using static MonoCore.E3ImGUI;
-
+using data = E3Core.UI.Windows.CharacterSettings.CharacterSettingsWindowHelpers;
 
 namespace E3Core.UI.Windows.CharacterSettings
 {
@@ -27,7 +27,7 @@ namespace E3Core.UI.Windows.CharacterSettings
 		private static IMQ MQ = E3.MQ;
 		private static ISpawns _spawns = E3.Spawns;
 
-		private static CharacterSettingsState _state = new CharacterSettingsState();
+		public static CharacterSettingsState _state = new CharacterSettingsState();
 
 		//A very large bandaid on the Threading of this window
 		//used when trying to get a pointer to the _cfg objects.
@@ -42,17 +42,9 @@ namespace E3Core.UI.Windows.CharacterSettings
 		///Data organized into Category, Sub Category, List of Spells.
 		///always get a pointer to these via the method GetCatalogByType
 		/// </summary>
-		private static SortedDictionary<string, SortedDictionary<string, List<E3Spell>>> _catalog_Spells = new SortedDictionary<string, SortedDictionary<string, List<E3Spell>>>(),
-		_catalog_AA = new SortedDictionary<string, SortedDictionary<string, List<E3Spell>>>(),
-		_catalog_Disc = new SortedDictionary<string, SortedDictionary<string, List<E3Spell>>>(),
-		_catalog_Skills = new SortedDictionary<string, SortedDictionary<string, List<E3Spell>>>(),
-		_catalog_Items = new SortedDictionary<string, SortedDictionary<string, List<E3Spell>>>();
+	
 		//lookups of spell name to spell data, used to display data/icons to user.
-		private static Dictionary<string, SpellData> _spellCatalogLookup = new Dictionary<string, SpellData>(StringComparer.OrdinalIgnoreCase),
-		_discCatalogLookup = new Dictionary<string, SpellData>(StringComparer.OrdinalIgnoreCase),
-		_aaCatalogLookup = new Dictionary<string, SpellData>(StringComparer.OrdinalIgnoreCase),
-		_skillCatalogLookup = new Dictionary<string, SpellData>(StringComparer.OrdinalIgnoreCase), // guess we are not showing much from skills :P 
-		_itemCatalogLookup = new Dictionary<string, SpellData>(StringComparer.OrdinalIgnoreCase);
+		
 
 		// Food/Drink picker state
 		private static string _cfgFoodDrinkKey = string.Empty; // "Food" or "Drink"
@@ -85,44 +77,9 @@ namespace E3Core.UI.Windows.CharacterSettings
 		// Collapsible section state tracking
 		private static Dictionary<string, bool> _cfgSectionExpanded = new Dictionary<string, bool>(StringComparer.OrdinalIgnoreCase);
 
-		// Spell flag editor state
-		private static SpellValueEditState _cfgSpellEditState = null;
-		private static string _cfgSpellEditSignature = string.Empty;
-		private static bool _cfgShowSpellModifierModal = false;
 		// Integrated editor panel state (replaces modal)
 		private static string _cfgManualEditBuffer = string.Empty;
-		private static readonly string[] _spellKeyOutputOrder = new[]
-		{
-			"Gem", "Ifs", "CheckFor", "CastIF", "HealPct", "HealthMax", "Zone", "MinSick",
-			"BeforeSpell", "AfterSpell", "BeforeEvent", "AfterEvent", "MinMana", "MaxMana", "MinEnd",
-			"MinDurationBeforeRecast", "MaxTries", "Reagent", "CastType", "PctAggro", "Delay", "RecastDelay",
-			"AfterEventDelay", "AfterSpellDelay", "BeforeEventDelay", "BeforeSpellDelay", "AfterCastDelay",
-			"AfterCastCompletedDelay", "SongRefreshTime", "StackRequestItem", "StackRequestTargets",
-			"StackCheckInterval", "StackRecastDelay", "MinHP", "MinHPTotal", "GiveUpTimer", "TriggerSpell",
-			"MinAggro", "MaxAggro",
-			"ExcludedClasses", "ExcludedNames"
-		};
-		private static readonly string[] _spellFlagOutputOrder = new[]
-		{
-			"NoInterrupt", "IgnoreStackRules", "NoTarget", "NoAggro", "NoBurn", "Rotate",
-			"NoMidSongCast", "GoM", "AllowSpellSwap", "NoEarlyRecast", "NoStack", "Debug", "IsDoT", "IsDebuff"
-		};
-		private static readonly HashSet<string> _spellKnownKeys = new HashSet<string>(_spellKeyOutputOrder, StringComparer.OrdinalIgnoreCase);
-		private static readonly HashSet<string> _spellKnownFlags = new HashSet<string>(_spellFlagOutputOrder, StringComparer.OrdinalIgnoreCase);
-		private static readonly Dictionary<string, string> _spellKeyAliasMap = new Dictionary<string, string>(StringComparer.OrdinalIgnoreCase)
-		{
-			{"AfterCast", "AfterSpell"},
-			{"BeforeCast", "BeforeSpell"},
-			{"DelayAfterCast", "AfterCastCompletedDelay"},
-			{"AfterCastCompletedDelay", "AfterCastCompletedDelay"},
-			{"MinHpTotal", "MinHPTotal"},
-			{"MinHp", "MinHP"}
-		};
-
-
 		
-		private static readonly string[] _spellCastTypeOptions = new[] { "Spell", "AA", "Disc", "Ability", "Item", "None" };
-
 
 		// "All Players" key view state/cache
 		private static long _cfgAllPlayersNextRefreshAtMs = 0;
@@ -366,11 +323,11 @@ namespace E3Core.UI.Windows.CharacterSettings
 		}
 		private static void ResetCatalogs()
 		{
-			_catalog_Spells.Clear();
-			_catalog_AA.Clear();
-			_catalog_Disc.Clear();
-			_catalog_Skills.Clear();
-			_catalog_Items.Clear();
+			data._catalog_Spells.Clear();
+			data._catalog_AA.Clear();
+			data._catalog_Disc.Clear();
+			data._catalog_Skills.Clear();
+			data._catalog_Items.Clear();
 		}
 		private static void RequestCatalogUpdate()
 		{
@@ -536,12 +493,13 @@ namespace E3Core.UI.Windows.CharacterSettings
 			return null;
 		}
 
+		#region RenderConfigEditor
 		private static void RenderConfigEditor()
 		{
 			var state = _state.GetState<State_MainWindow>();
 
 
-			RefreshEditableSpellState();
+			data.RefreshEditableSpellState();
 
 			EnsureConfigEditorInit();
 			var pd = GetActiveCharacterIniData();
@@ -873,6 +831,7 @@ namespace E3Core.UI.Windows.CharacterSettings
 				}
 			}
 		}
+		#endregion
 
 		// Integrated editor panel - renders after the main table and spans full width
 		private static void RenderIntegratedModifierEditor()
@@ -885,7 +844,7 @@ namespace E3Core.UI.Windows.CharacterSettings
 			var values = GetValues(keyData);
 
 
-			var kd = GetCurrentEditedSpellKeyData();
+			var kd = data.GetCurrentEditedSpellKeyData();
 			if (kd == null) return;
 
 			if (mainWindowState.SelectedValueIndex < 0 || mainWindowState.SelectedValueIndex >= kd.ValueList.Count)
@@ -1041,41 +1000,11 @@ namespace E3Core.UI.Windows.CharacterSettings
 				imgui_TextColored(0.8f, 0.4f, 0.4f, 1.0f, $"Error displaying gems: {ex.Message}");
 			}
 		}
-		private static Int32 GetIconFromIniString(string value)
-		{
-			Int32 indexOfSlash = value.IndexOf('/');
-
-			string spellName = value;
-			if (indexOfSlash != -1)
-			{
-				spellName = value.Substring(0, indexOfSlash);
-			}
-			Int32 iconID = 0;
-			if (_spellCatalogLookup.TryGetValue(spellName, out var tspell))
-			{
-				iconID = tspell.SpellIcon;
-			}
-			else if (_aaCatalogLookup.TryGetValue(spellName, out var taa))
-			{
-				iconID = taa.SpellIcon;
-			}
-			else if (_itemCatalogLookup.TryGetValue(spellName, out var titem))
-			{
-				iconID = titem.SpellIcon;
-
-			}
-			else if (_discCatalogLookup.TryGetValue(spellName, out var tdisc))
-			{
-				iconID = tdisc.SpellIcon;
-			}
-
-			return iconID;
-
-		}
 
 
-	
 
+
+		#region RenderSelectedKeyValues
 		// Helper method to render values for the selected key
 		private static void RenderSelectedKeyValues(SectionData selectedSection)
 		{
@@ -1276,7 +1205,7 @@ namespace E3Core.UI.Windows.CharacterSettings
 				if (!editing)
 				{
 					// Row with better styling and alignment
-					Int32 iconID = GetIconFromIniString(v);
+					Int32 iconID = data.GetIconFromIniString(v);
 					imgui_DrawSpellIconByIconIndex(iconID, 30.0f);
 					imgui_SameLine();
 					imgui_Text($"{i + 1}.");
@@ -1520,6 +1449,7 @@ namespace E3Core.UI.Windows.CharacterSettings
 				}
 			}
 		}
+		#endregion
 
 		// Helper method to render configuration tools panel
 		private static void RenderConfigurationTools(SectionData selectedSection)
@@ -1589,7 +1519,7 @@ namespace E3Core.UI.Windows.CharacterSettings
 								{
 									vals.RemoveAt(mainWindowState.SelectedValueIndex);
 									mainWindowState.SelectedValueIndex = -1; // Clear selection after delete
-									RefreshEditableSpellState(force: true);
+									data.RefreshEditableSpellState(force: true);
 
 
 								}
@@ -1911,28 +1841,28 @@ namespace E3Core.UI.Windows.CharacterSettings
 
 					if (TryFetchPeerSpellDataListPub(targetToon, "Spells", out var ps, dataMustBeNewerThan))
 					{
-						mapSpells = OrganizeCatalog(ps);
-						spellLookup = ConvertToSpellDataLookup(ps);
+						mapSpells = data.OrganizeCatalog(ps);
+						spellLookup = data.ConvertToSpellDataLookup(ps);
 					}
 					if (TryFetchPeerSpellDataListPub(targetToon, "AAs", out var pa, dataMustBeNewerThan))
 					{
-						mapAAs = OrganizeCatalog(pa);
-						aaLookup = ConvertToSpellDataLookup(ps);
+						mapAAs = data.OrganizeCatalog(pa);
+						aaLookup = data.ConvertToSpellDataLookup(ps);
 					}
 					if (TryFetchPeerSpellDataListPub(targetToon, "Discs", out var pd, dataMustBeNewerThan))
 					{
-						mapDiscs = OrganizeCatalog(pd);
-						discLookup = ConvertToSpellDataLookup(pd);
+						mapDiscs = data.OrganizeCatalog(pd);
+						discLookup = data.ConvertToSpellDataLookup(pd);
 					}
 					if (TryFetchPeerSpellDataListPub(targetToon, "Skills", out var pk, dataMustBeNewerThan))
 					{
-						mapSkills = OrganizeSkillsCatalog(pk);
-						skillLookup = ConvertToSpellDataLookup(pk);
+						mapSkills = data.OrganizeSkillsCatalog(pk);
+						skillLookup = data.ConvertToSpellDataLookup(pk);
 					}
 					if (TryFetchPeerSpellDataListPub(targetToon, "Items", out var pi, dataMustBeNewerThan))
 					{
 						mapItems = OrganizeItemsCatalog(pi);
-						itemLookup = ConvertToSpellDataLookup(pi);
+						itemLookup = data.ConvertToSpellDataLookup(pi);
 					}
 
 					// Also try to fetch gem data
@@ -1968,24 +1898,24 @@ namespace E3Core.UI.Windows.CharacterSettings
 					lock (_dataLock)
 					{
 						// Publish atomically
-						_catalog_Spells = mapSpells;
-						_spellCatalogLookup = spellLookup;
-						_catalog_AA = mapAAs;
-						_aaCatalogLookup = aaLookup;
-						_catalog_Disc = mapDiscs;
-						_discCatalogLookup = discLookup;
-						_catalog_Skills = mapSkills;
-						_skillCatalogLookup = skillLookup;
-						_catalog_Items = mapItems;
-						_itemCatalogLookup = itemLookup;
+						data._catalog_Spells = mapSpells;
+						data._spellCatalogLookup = spellLookup;
+						data._catalog_AA = mapAAs;
+						data._aaCatalogLookup = aaLookup;
+						data._catalog_Disc = mapDiscs;
+						data._discCatalogLookup = discLookup;
+						data._catalog_Skills = mapSkills;
+						data._skillCatalogLookup = skillLookup;
+						data._catalog_Items = mapItems;
+						data._itemCatalogLookup = itemLookup;
 
 						_catalogLookups = new[]
 						{
-							(_catalog_Spells, "Spell"),
-							(_catalog_AA, "AA"),
-							(_catalog_Disc, "Disc"),
-							(_catalog_Skills, "Skill"),
-							(_catalog_Items, "Item")
+							(data._catalog_Spells, "Spell"),
+							(data._catalog_AA, "AA"),
+							(data._catalog_Disc, "Disc"),
+							(data._catalog_Skills, "Skill"),
+							(data._catalog_Items, "Item")
 							};
 						_state.State_CatalogReady = true;
 						_state.Status_CatalogRequest = "Catalogs loaded.";
@@ -2004,33 +1934,7 @@ namespace E3Core.UI.Windows.CharacterSettings
 				}
 			});
 		}
-		private static Dictionary<string, SpellData> ConvertSpellsToSpellDataLookup(List<Spell> spells)
-		{
-			Dictionary<string, SpellData> returnValue = new Dictionary<string, SpellData>(StringComparer.OrdinalIgnoreCase);
-			foreach (var spell in spells)
-			{
-				var tspell = spell.ToProto();
-				if (!returnValue.ContainsKey(tspell.CastName))
-				{
-					returnValue.Add(tspell.CastName, tspell);
-				}
-			}
-			return returnValue;
-		}
-		private static Dictionary<string, SpellData> ConvertToSpellDataLookup(Google.Protobuf.Collections.RepeatedField<SpellData> spells)
-		{
-			Dictionary<string, SpellData> returnValue = new Dictionary<string, SpellData>(StringComparer.OrdinalIgnoreCase);
-			foreach (var spell in spells)
-			{
-				if (!returnValue.ContainsKey(spell.CastName))
-				{
-					returnValue.Add(spell.CastName, spell);
-				}
-
-			}
-			return returnValue;
-		}
-
+	
 		private static void UpdateLocalSpellGemDataViaLocal()
 		{
 			try
@@ -2089,24 +1993,24 @@ namespace E3Core.UI.Windows.CharacterSettings
 			_log.WriteDelayed($"Fetching data (local)", Logging.LogLevels.Debug);
 
 			var spellList = e3util.ListAllBookSpells();
-			mapSpells = OrganizeLoadingCatalog(spellList);
-			var spellLookup = ConvertSpellsToSpellDataLookup(spellList);
+			mapSpells = data.OrganizeLoadingCatalog(spellList);
+			var spellLookup = data.ConvertSpellsToSpellDataLookup(spellList);
 
 			var aaList = e3util.ListAllActiveAA();
-			mapAAs = OrganizeLoadingCatalog(aaList);
-			var aaLookup = ConvertSpellsToSpellDataLookup(aaList);
+			mapAAs = data.OrganizeLoadingCatalog(aaList);
+			var aaLookup = data.ConvertSpellsToSpellDataLookup(aaList);
 
 			var discList = e3util.ListAllDiscData();
-			mapDiscs = OrganizeLoadingCatalog(discList);
-			var discLookup = ConvertSpellsToSpellDataLookup(discList);
+			mapDiscs = data.OrganizeLoadingCatalog(discList);
+			var discLookup = data.ConvertSpellsToSpellDataLookup(discList);
 
 			var skillList = e3util.ListAllActiveSkills();
-			mapSkills = OrganizeLoadingSkillsCatalog(skillList);
-			var skillLookup = ConvertSpellsToSpellDataLookup(skillList);
+			mapSkills = data.OrganizeLoadingSkillsCatalog(skillList);
+			var skillLookup = data.ConvertSpellsToSpellDataLookup(skillList);
 
 			var itemList = e3util.ListAllItemWithClickyData();
 			mapItems = OrganizeLoadingItemsCatalog(itemList);
-			var itemLookup = ConvertSpellsToSpellDataLookup(itemList);
+			var itemLookup = data.ConvertSpellsToSpellDataLookup(itemList);
 
 			// Also collect local gem data with spell icon indices
 			UpdateLocalSpellGemDataViaLocal();
@@ -2116,28 +2020,28 @@ namespace E3Core.UI.Windows.CharacterSettings
 			lock (_dataLock)
 			{
 				// Publish atomically
-				_catalog_Spells = mapSpells;
-				_spellCatalogLookup = spellLookup;
+				data._catalog_Spells = mapSpells;
+				data._spellCatalogLookup = spellLookup;
 
-				_catalog_AA = mapAAs;
-				_aaCatalogLookup = aaLookup;
+				data._catalog_AA = mapAAs;
+				data._aaCatalogLookup = aaLookup;
 
-				_catalog_Disc = mapDiscs;
-				_discCatalogLookup = discLookup;
+				data._catalog_Disc = mapDiscs;
+				data._discCatalogLookup = discLookup;
 
-				_catalog_Skills = mapSkills;
-				_skillCatalogLookup = skillLookup;
+				data._catalog_Skills = mapSkills;
+				data._skillCatalogLookup = skillLookup;
 
-				_catalog_Items = mapItems;
-				_itemCatalogLookup = itemLookup;
+				data._catalog_Items = mapItems;
+				data._itemCatalogLookup = itemLookup;
 
 				_catalogLookups = new[]
 				{
-					(_catalog_Spells, "Spell"),
-					(_catalog_AA, "AA"),
-					(_catalog_Disc, "Disc"),
-					(_catalog_Skills, "Skill"),
-					(_catalog_Items, "Item")
+					(data._catalog_Spells, "Spell"),
+					(data._catalog_AA, "AA"),
+					(data._catalog_Disc, "Disc"),
+					(data._catalog_Skills, "Skill"),
+					(data._catalog_Items, "Item")
 				};
 				_state.State_CatalogReady = true;
 				_state.Status_CatalogRequest = "Catalogs loaded.";
@@ -2632,171 +2536,9 @@ namespace E3Core.UI.Windows.CharacterSettings
 
 		// Organize from SpellData (protobuf) into the UI catalog structure
 
-		private static SortedDictionary<string, SortedDictionary<string, List<E3Spell>>> OrganizeLoadingCatalog(List<Spell> data)
-		{
-			var dest = new SortedDictionary<string, SortedDictionary<string, List<E3Spell>>>(StringComparer.OrdinalIgnoreCase);
-			foreach (var s in data)
-			{
-				if (s == null) continue;
-				string cat = s.Category ?? string.Empty;
-				string sub = s.Subcategory ?? string.Empty;
-				if (!dest.TryGetValue(cat, out var submap))
-				{
-					submap = new SortedDictionary<string, List<E3Spell>>(StringComparer.OrdinalIgnoreCase);
-					dest.Add(cat, submap);
-				}
-				if (!submap.TryGetValue(sub, out var l))
-				{
-					l = new List<E3Spell>();
-					submap.Add(sub, l);
-				}
-				l.Add(new E3Spell
-				{
-					Name = s.SpellName ?? string.Empty,
-					Category = cat,
-					Subcategory = sub,
-					Level = s.Level,
-					CastName = s.CastName ?? string.Empty,
-					TargetType = s.TargetType ?? string.Empty,
-					SpellType = s.SpellType ?? string.Empty,
-					Mana = s.Mana,
-					CastTime = Convert.ToDouble(s.MyCastTimeInSeconds),
-					Recast = s.RecastTime != 0 ? s.RecastTime : s.RecastDelay,
-					Range = s.MyRange,
-					Description = s.Description ?? string.Empty,
-					ResistType = s.ResistType ?? string.Empty,
-					ResistAdj = s.ResistAdj,
-					CastType = s.CastType.ToString(),
-					SpellGem = s.SpellGem,
-					SpellEffects = s.SpellEffects != null
-						? s.SpellEffects.Where(e => !string.IsNullOrWhiteSpace(e)).Select(e => e.Trim()).ToList()
-						: new List<string>(),
-					SpellIcon = s.SpellIcon
-				});
-			}
-			foreach (var submap in dest.Values)
-			{
-				foreach (var l in submap.Values)
-				{
-					l.Sort((a, b) => b.Level.CompareTo(a.Level));
-				}
-			}
-			return dest;
-		}
+		
 
-		private static SortedDictionary<string, SortedDictionary<string, List<E3Spell>>> OrganizeCatalog(Google.Protobuf.Collections.RepeatedField<SpellData> data)
-		{
-			var dest = new SortedDictionary<string, SortedDictionary<string, List<E3Spell>>>(StringComparer.OrdinalIgnoreCase);
-			foreach (var s in data)
-			{
-				if (s == null) continue;
-				string cat = s.Category ?? string.Empty;
-				string sub = s.Subcategory ?? string.Empty;
-				if (!dest.TryGetValue(cat, out var submap))
-				{
-					submap = new SortedDictionary<string, List<E3Spell>>(StringComparer.OrdinalIgnoreCase);
-					dest.Add(cat, submap);
-				}
-				if (!submap.TryGetValue(sub, out var l))
-				{
-					l = new List<E3Spell>();
-					submap.Add(sub, l);
-				}
-				l.Add(new E3Spell
-				{
-					Name = s.SpellName ?? string.Empty,
-					Category = cat,
-					Subcategory = sub,
-					Level = s.Level,
-					CastName = s.CastName ?? string.Empty,
-					TargetType = s.TargetType ?? string.Empty,
-					SpellType = s.SpellType ?? string.Empty,
-					Mana = s.Mana,
-					CastTime = s.MyCastTimeInSeconds,
-					Recast = s.RecastTime != 0 ? s.RecastTime : s.RecastDelay,
-					Range = s.MyRange,
-					Description = s.Description ?? string.Empty,
-					ResistType = s.ResistType ?? string.Empty,
-					ResistAdj = s.ResistAdj,
-					CastType = s.CastType.ToString(),
-					SpellGem = s.SpellGem,
-					SpellEffects = s.SpellEffects != null
-						? s.SpellEffects.Where(e => !string.IsNullOrWhiteSpace(e)).Select(e => e.Trim()).ToList()
-						: new List<string>(),
-					SpellIcon = s.SpellIcon
-				});
-			}
-			foreach (var submap in dest.Values)
-			{
-				foreach (var l in submap.Values)
-				{
-					l.Sort((a, b) => b.Level.CompareTo(a.Level));
-				}
-			}
-			return dest;
-		}
-		private static SortedDictionary<string, SortedDictionary<string, List<E3Spell>>> OrganizeLoadingSkillsCatalog(List<Spell> data)
-		{
-			var dest = new SortedDictionary<string, SortedDictionary<string, List<E3Spell>>>(StringComparer.OrdinalIgnoreCase);
-			var cat = "Skill"; var sub = "Basic";
-			var submap = new SortedDictionary<string, List<E3Spell>>(StringComparer.OrdinalIgnoreCase);
-			dest[cat] = submap;
-			var list = new List<E3Spell>();
-			submap[sub] = list;
-			foreach (var s in data)
-			{
-				if (s == null) continue;
-				list.Add(new E3Spell
-				{
-					Name = s.SpellName ?? string.Empty,
-					Category = cat,
-					Subcategory = sub,
-					Level = s.Level,
-					TargetType = s.TargetType ?? string.Empty,
-					SpellType = s.SpellType ?? string.Empty,
-					CastType = s.CastType.ToString(),
-					Description = s.Description ?? string.Empty,
-					SpellEffects = s.SpellEffects != null
-						? s.SpellEffects.Where(e => !string.IsNullOrWhiteSpace(e)).Select(e => e.Trim()).ToList()
-						: new List<string>(),
-					SpellIcon = s.SpellIcon
-				});
-			}
-			list.Sort((a, b) => string.Compare(a.Name, b.Name, StringComparison.OrdinalIgnoreCase));
-			return dest;
-		}
-
-		// Organize skills like e3config: force into Skill/Basic and list by spell name
-		private static SortedDictionary<string, SortedDictionary<string, List<E3Spell>>> OrganizeSkillsCatalog(Google.Protobuf.Collections.RepeatedField<SpellData> data)
-		{
-			var dest = new SortedDictionary<string, SortedDictionary<string, List<E3Spell>>>(StringComparer.OrdinalIgnoreCase);
-			var cat = "Skill"; var sub = "Basic";
-			var submap = new SortedDictionary<string, List<E3Spell>>(StringComparer.OrdinalIgnoreCase);
-			dest[cat] = submap;
-			var list = new List<E3Spell>();
-			submap[sub] = list;
-			foreach (var s in data)
-			{
-				if (s == null) continue;
-				list.Add(new E3Spell
-				{
-					Name = s.SpellName ?? string.Empty,
-					Category = cat,
-					Subcategory = sub,
-					Level = s.Level,
-					TargetType = s.TargetType ?? string.Empty,
-					SpellType = s.SpellType ?? string.Empty,
-					CastType = s.CastType.ToString(),
-					Description = s.Description ?? string.Empty,
-					SpellEffects = s.SpellEffects != null
-						? s.SpellEffects.Where(e => !string.IsNullOrWhiteSpace(e)).Select(e => e.Trim()).ToList()
-						: new List<string>(),
-					SpellIcon = s.SpellIcon
-				});
-			}
-			list.Sort((a, b) => string.Compare(a.Name, b.Name, StringComparison.OrdinalIgnoreCase));
-			return dest;
-		}
+		
 		private static SortedDictionary<string, SortedDictionary<string, List<E3Spell>>> OrganizeLoadingItemsCatalog(List<Spell> data)
 		{
 			var dest = new SortedDictionary<string, SortedDictionary<string, List<E3Spell>>>(StringComparer.OrdinalIgnoreCase);
@@ -3361,7 +3103,7 @@ namespace E3Core.UI.Windows.CharacterSettings
 							else
 							{
 
-								var kd = GetCurrentEditedSpellKeyData();
+								var kd = data.GetCurrentEditedSpellKeyData();
 								if (kd != null)
 								{
 									var vals = GetValues(kd);
@@ -3372,7 +3114,7 @@ namespace E3Core.UI.Windows.CharacterSettings
 										mainWindowState.PendingValueSelection = state.ReplaceIndex;
 										state.ReplaceMode = false;
 										state.ReplaceIndex = -1;
-										RefreshEditableSpellState(force:true);
+										data.RefreshEditableSpellState(force:true);
 										_state.Show_AddModal = false;//close the window
 										
 									}
@@ -3462,22 +3204,22 @@ namespace E3Core.UI.Windows.CharacterSettings
 			{
 				switch (t)
 				{
-					case AddType.AAs: return _catalog_AA;
-					case AddType.Discs: return _catalog_Disc;
-					case AddType.Skills: return _catalog_Skills;
-					case AddType.Items: return _catalog_Items;
+					case AddType.AAs: return data._catalog_AA;
+					case AddType.Discs: return data._catalog_Disc;
+					case AddType.Skills: return data._catalog_Skills;
+					case AddType.Items: return data._catalog_Items;
 					case AddType.Spells:
-					default: return _catalog_Spells;
+					default: return data._catalog_Spells;
 				}
 			}
 		}
 		private static (SortedDictionary<string, SortedDictionary<string, List<E3Spell>>>, string)[] _catalogLookups = new[]
 		{
-			(_catalog_Spells, "Spell"),
-			(_catalog_AA, "AA"),
-			(_catalog_Disc, "Disc"),
-			(_catalog_Skills, "Skill"),
-			(_catalog_Items, "Item")
+			(data._catalog_Spells, "Spell"),
+			(data._catalog_AA, "AA"),
+			(data._catalog_Disc, "Disc"),
+			(data._catalog_Skills, "Skill"),
+			(data._catalog_Items, "Item")
 		};
 		// Search all catalogs for a spell/item/AA by name
 		private static E3Spell FindSpellItemAAByName(string name)
@@ -4381,7 +4123,7 @@ namespace E3Core.UI.Windows.CharacterSettings
 		private static string NormalizeSpellKey(string key)
 		{
 			if (string.IsNullOrWhiteSpace(key)) return key ?? string.Empty;
-			if (_spellKeyAliasMap.TryGetValue(key, out var mapped))
+			if (data._spellKeyAliasMap.TryGetValue(key, out var mapped))
 			{
 				return mapped;
 			}
@@ -4571,6 +4313,7 @@ namespace E3Core.UI.Windows.CharacterSettings
 			
 		}
 
+		#region RenderSpellEditor
 		private static void RenderSpellModifierEditor2_Tab_General()
 		{
 			var spellEditorState = _state.GetState<State_SpellEditor>();
@@ -4633,7 +4376,7 @@ namespace E3Core.UI.Windows.CharacterSettings
 					imgui_SetNextItemWidth(ComboFieldWidth);
 					if (BeginComboSafe($"##spell_casttype", castTypeString))
 					{	
-						foreach (var option in _spellCastTypeOptions)
+						foreach (var option in data._spellCastTypeOptions)
 						{
 							bool sel = string.Equals(castTypeString, option, StringComparison.OrdinalIgnoreCase);
 							if (imgui_Selectable(option, sel))
@@ -4913,73 +4656,13 @@ namespace E3Core.UI.Windows.CharacterSettings
 
 		}
 
+		#endregion
 
 		/// <summary>
 		/// Used to determine if the UI state can return a valid spell. 
 		/// </summary>
 		/// <returns>Spell object</returns>
-		private static void RefreshEditableSpellState(bool force = false)
-		{
-
-
-			var mainWindowState = _state.GetState<State_MainWindow>();
-			var spellEditorState = _state.GetState<State_SpellEditor>();
-
-			if (force) { mainWindowState.Currently_EditableSpell = null; }
-
-			//check if this has changed from what we were before
-			if (String.IsNullOrWhiteSpace(mainWindowState.SelectedSection))
-			{
-				mainWindowState.Signature_CurrentEditedSpell = String.Empty;
-				mainWindowState.Currently_EditableSpell = null;
-				return;
-
-			}
-			if (String.IsNullOrWhiteSpace(mainWindowState.SelectedKey))
-			{
-				mainWindowState.Signature_CurrentEditedSpell = String.Empty;
-				mainWindowState.Currently_EditableSpell = null;
-				return;
-
-			}
-			if (mainWindowState.SelectedValueIndex == -1)
-			{
-				mainWindowState.Signature_CurrentEditedSpell = String.Empty;
-				mainWindowState.Currently_EditableSpell = null;
-				return;
-
-			}
-			//lets get the actual entry
-			var kd = GetCurrentEditedSpellKeyData();
-			if (kd == null) return;
 		
-			var rawValue = kd.ValueList[mainWindowState.SelectedValueIndex];
-		
-			string entryLabel = $"[{mainWindowState.SelectedSection}] {mainWindowState.SelectedKey} entry #{mainWindowState.SelectedValueIndex + 1}";
-
-			if (!String.Equals(mainWindowState.Signature_CurrentEditedSpell, entryLabel) || mainWindowState.Currently_EditableSpell==null)
-			{
-				mainWindowState.Signature_CurrentEditedSpell = entryLabel;
-				mainWindowState.Currently_EditableSpell = new Spell(rawValue, mainWindowState.CurrentINIData, false);
-				spellEditorState.Reset();
-			}
-
-			
-		}
-		private static KeyData GetCurrentEditedSpellKeyData()
-		{
-			var mainWindowState = _state.GetState<State_MainWindow>();
-
-			var data = mainWindowState.CurrentINIData;
-			if (data == null) return null;
-			var sectionData = data.Sections.GetSectionData(mainWindowState.SelectedSection);
-			if (sectionData == null) return null;
-			var kd = sectionData.Keys.GetKeyData(mainWindowState.SelectedKey);
-			if (kd == null) return null;
-			if (kd.ValueList.Count <= mainWindowState.SelectedValueIndex) return null;
-
-			return kd;
-		}
 		private static void RenderSpellEditor()
 		{
 			var mainWindowState = _state.GetState<State_MainWindow>();
@@ -4989,7 +4672,7 @@ namespace E3Core.UI.Windows.CharacterSettings
 			var editableSpell = mainWindowState.Currently_EditableSpell;
 			if (editableSpell == null) return; //nothing to edit here
 			//necessary to update the actual entry.
-			var kd = GetCurrentEditedSpellKeyData();
+			var kd = data.GetCurrentEditedSpellKeyData();
 			if (kd == null) return;
 
 			
@@ -5040,7 +4723,7 @@ namespace E3Core.UI.Windows.CharacterSettings
 			imgui_SameLine();
 			if (imgui_Button($"Reset##spell_reset"))
 			{
-				RefreshEditableSpellState(force:true);
+				data.RefreshEditableSpellState(force:true);
 				editableSpell = mainWindowState.Currently_EditableSpell;
 				spellEditorState.Reset();
 			}
@@ -5123,18 +4806,21 @@ namespace E3Core.UI.Windows.CharacterSettings
 
 		private static void WriteValues(KeyData kd, List<string> values)
 		{
-			var mainWindowState = _state.GetState<State_MainWindow>();
-
 
 			if (kd == null) return;
+
+			//if we are the same object do anything.
+			var mainWindowState = _state.GetState<State_MainWindow>();
+			mainWindowState.ConfigIsDirty = true;
+
+			if (Object.ReferenceEquals(kd.ValueList, values)) return;
+
 			// Preserve exact row semantics: one value per row, including empties
 			if (kd.ValueList != null)
 			{
 				kd.ValueList.Clear();
 				foreach (var v in values) kd.ValueList.Add(v ?? string.Empty);
 			}
-			// Do NOT set kd.Value here; in our Ini parser, setting Value appends to ValueList.
-			mainWindowState.ConfigIsDirty = true;
 
 		}
 
@@ -5886,7 +5572,7 @@ namespace E3Core.UI.Windows.CharacterSettings
 
 			string baseKey = string.IsNullOrEmpty(baseName) ? "Melody If" : baseName.Trim();
 			if (baseKey.Length == 0) baseKey = "Melody If";
-			string unique = GenerateUniqueKey(ifsSection.Keys, baseKey);
+			string unique = data.GenerateUniqueKey(ifsSection.Keys, baseKey);
 			if (unique == null)
 			{
 				errorMessage = "Unable to generate a unique IF name.";
@@ -5905,21 +5591,7 @@ namespace E3Core.UI.Windows.CharacterSettings
 
 			return true;
 		}
-		private static string GenerateUniqueKey(KeyDataCollection keys, string baseName)
-		{
-			string unique = baseName;
-			int idx = 1;
-			while (keys.ContainsKey(unique))
-			{
-				unique = $"{baseName} ({idx})";
-				idx++;
-				if (idx > 1000)
-				{
-					return null;
-				}
-			}
-			return unique;
-		}
+		
 
 		// Toon picker modal for Heals section (Tank / Important Bot)
 		private static void RenderToonPickerModal(SectionData selectedSection)
@@ -6134,69 +5806,5 @@ namespace E3Core.UI.Windows.CharacterSettings
 			}
 		}
 		
-		private class SpellValueEditState
-		{
-			public string Section = string.Empty;
-			public string Key = string.Empty;
-			public int ValueIndex = -1;
-			public string OriginalValue = string.Empty;
-			public string BaseName = string.Empty;
-			public string CastTarget = string.Empty;
-			public Dictionary<string, string> KeyValues = new Dictionary<string, string>(StringComparer.OrdinalIgnoreCase);
-			public Dictionary<string, string> OriginalKeyNames = new Dictionary<string, string>(StringComparer.OrdinalIgnoreCase);
-			public HashSet<string> Flags = new HashSet<string>(StringComparer.OrdinalIgnoreCase);
-			public bool Enabled = true;
-			public List<string> UnknownSegments = new List<string>();
-
-			public string GetValue(string key)
-			{
-				return KeyValues.TryGetValue(key, out var value) ? value : string.Empty;
-			}
-
-
-			public void SetValue(string key, string value)
-			{
-				if (string.IsNullOrWhiteSpace(value))
-				{
-					KeyValues.Remove(key);
-				}
-				else
-				{
-					KeyValues[key] = value.Trim();
-				}
-			}
-
-			public void RememberAlias(string canonicalKey, string originalKey)
-			{
-				if (string.IsNullOrWhiteSpace(canonicalKey) || string.IsNullOrWhiteSpace(originalKey)) return;
-				if (!OriginalKeyNames.ContainsKey(canonicalKey))
-				{
-					OriginalKeyNames[canonicalKey] = originalKey;
-				}
-			}
-
-			public string GetOutputKey(string canonicalKey)
-			{
-				if (OriginalKeyNames.TryGetValue(canonicalKey, out var alias) && !string.IsNullOrWhiteSpace(alias))
-				{
-					return alias;
-				}
-				return canonicalKey;
-			}
-
-			public bool HasFlag(string flag) => Flags.Contains(flag);
-
-			public void SetFlag(string flag, bool enabled)
-			{
-				if (enabled)
-				{
-					Flags.Add(flag);
-				}
-				else
-				{
-					Flags.Remove(flag);
-				}
-			}
-		}
 	}
 }
