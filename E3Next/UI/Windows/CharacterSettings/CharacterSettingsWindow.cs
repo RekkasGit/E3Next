@@ -1588,8 +1588,10 @@ namespace E3Core.UI.Windows.CharacterSettings
 								if (mainWindowState.SelectedValueIndex >= 0 && mainWindowState.SelectedValueIndex < vals.Count)
 								{
 									vals.RemoveAt(mainWindowState.SelectedValueIndex);
-									WriteValues(key, vals);
 									mainWindowState.SelectedValueIndex = -1; // Clear selection after delete
+									RefreshEditableSpellState(force: true);
+
+
 								}
 							}
 						}
@@ -3370,11 +3372,15 @@ namespace E3Core.UI.Windows.CharacterSettings
 										mainWindowState.PendingValueSelection = state.ReplaceIndex;
 										state.ReplaceMode = false;
 										state.ReplaceIndex = -1;
+										RefreshEditableSpellState(force:true);
+										_state.Show_AddModal = false;//close the window
+										
 									}
 									else if (!vals.Contains(v, StringComparer.OrdinalIgnoreCase))
 									{
 										vals.Add(v);
 										mainWindowState.PendingValueSelection = vals.Count - 1;
+										_state.Show_AddModal = false;//close the window
 									}
 								}
 							}
@@ -4906,16 +4912,21 @@ namespace E3Core.UI.Windows.CharacterSettings
 			}
 
 		}
-		
-		
+
+
 		/// <summary>
 		/// Used to determine if the UI state can return a valid spell. 
 		/// </summary>
 		/// <returns>Spell object</returns>
-		private static void RefreshEditableSpellState()
+		private static void RefreshEditableSpellState(bool force = false)
 		{
+
+
 			var mainWindowState = _state.GetState<State_MainWindow>();
 			var spellEditorState = _state.GetState<State_SpellEditor>();
+
+			if (force) { mainWindowState.Currently_EditableSpell = null; }
+
 			//check if this has changed from what we were before
 			if (String.IsNullOrWhiteSpace(mainWindowState.SelectedSection))
 			{
@@ -5029,8 +5040,7 @@ namespace E3Core.UI.Windows.CharacterSettings
 			imgui_SameLine();
 			if (imgui_Button($"Reset##spell_reset"))
 			{
-				mainWindowState.Currently_EditableSpell = null;
-				RefreshEditableSpellState();
+				RefreshEditableSpellState(force:true);
 				editableSpell = mainWindowState.Currently_EditableSpell;
 				spellEditorState.Reset();
 			}
