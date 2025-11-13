@@ -194,7 +194,8 @@
     <Compile Include="Settings\FeatureSettings\LootStackable.cs" />
     <Compile Include="Settings\FeatureSettings\TributeDataFile.cs" />
     <Compile Include="Settings\GeneralSettings.cs" />
-    <Compile Include="UI\Windows\CharacterSettingsWindow.cs" />
+    <Compile Include="UI\Windows\CharacterSettings\CharacterSettingsWindow.cs" />
+    <Compile Include="UI\Windows\CharacterSettings\CharacterSettingsWindowStates.cs" />
     <Compile Include="Utility\e3util.cs" />
   </ItemGroup>
   <ItemGroup>

@@ -3,7 +3,6 @@ using E3Core.Processors;
 using E3Core.Server;
 using E3Core.Settings;
 using E3Core.Utility;
-using E3NextUI;
 using IniParser.Model;
 using MonoCore;
 using System;
@@ -12,319 +11,17 @@ using System.Collections.Generic;
 using System.Globalization;
 using System.IO;
 using System.Linq;
-using System.Runtime.Remoting.Lifetime;
 using System.Text;
 using System.Text.RegularExpressions;
-using System.Web.UI.WebControls;
 using static MonoCore.E3ImGUI;
-using static System.Windows.Forms.AxHost;
-using static System.Windows.Forms.VisualStyles.VisualStyleElement.Tab;
 
-namespace E3Core.UI.Windows
+
+namespace E3Core.UI.Windows.CharacterSettings
 {
-
+	
 	public static class CharacterSettingsWindow
 	{
-
-
-		private class State_CatalogWindow
-		{
-			public bool ReplaceMode = false;
-			public Int32 ReplaceIndex = -1;
-			public E3Spell SelectedCategorySpell = null;
-			public string SelectedCategory = String.Empty;
-			public string SelectedSubCategory = String.Empty;
-			public string Filter = string.Empty;
-			public CatalogMode Mode = CatalogMode.Standard;
-			public AddType CurrentAddType = AddType.Spells;
-			
-		}
-		private class State_MainWindow
-		{
-			public IniData CurrentINIData;
-			public string CurrentINIFileNameFull = string.Empty;
-
-			public string SelectedCharacterSection = string.Empty;//In use?
-			public string SelectedSection = string.Empty;
-			public string SelectedAddInLine = String.Empty;
-			public string SelectedKey = string.Empty;
-			public Int32 SelectedValueIndex = -1;
-
-			public string SignatureOfSelectedKeyValue = String.Empty;
-
-			public string[] IniFilesFromDisk = Array.Empty<string>();
-			public List<string> SectionsOrdered = new List<string>();
-
-			public bool Show_ShowIntegratedEditor = false;
-			public bool Show_AddInLine = false;
-			public bool ShowOfflineCharacters = false;
-			public bool ConfigIsDirty = false;
-			public string LastIniPath = String.Empty;
-			public int InLineEditIndex = -1;
-			// Context menu state for Ifs/Burn sections
-			public bool Show_ContextMenu = false;
-			public string ContextMenuFor = string.Empty; // "Ifs" or "Burn"
-														  //buffers
-			public string Buffer_KeySearch = String.Empty;
-			public string Buffer_NewKey = string.Empty;
-			public string Buffer_NewValue = String.Empty;
-			public string Buffer_InlineEdit = string.Empty;
-			public int PendingValueSelection = -1;
-
-
-		}
-		private class State_AllPlayers
-		{
-			public Dictionary<string, string> Data_Edit = new Dictionary<string, string>(StringComparer.OrdinalIgnoreCase);
-			public List<KeyValuePair<string, string>> Data_Rows = new List<KeyValuePair<string, string>>();
-			public bool ShowWindow = false;
-			public object DataLock = new object();
-			public string ReqSection = string.Empty;
-			public string ReqKey = string.Empty;
-			public long LastUpdatedAt = 0;
-			public int RefershInterval = 5000;
-			public string Status = string.Empty;
-		}
-		private class State_BardEditor
-		{
-			public Int32 BardSongPickerIndex = -1;
-			//currently being used to 'empty' the input fields when a value is added. 
-			//this should be corrected
-			public int SongInputVersion = 0;
-			public int ConditionInputVersion = 0;
-			//end input correction
-			public string SampleIfStatus = string.Empty;
-			public string SampleIfFilter = string.Empty;
-			public string MelodyCondition = string.Empty;
-			public string MelodyModalStatus = string.Empty;
-			public string MelodyStatus = string.Empty;
-			public bool SongPickerJustSelected = false;
-			public List<KeyValuePair<string, string>> SampleIfLines = new List<KeyValuePair<string, string>>();
-			// Ifs: add-new helper input buffers
-			public string MelodyName = string.Empty;
-			public List<string> MelodySongs = new List<string>();
-			public Dictionary<int, string> MelodyBuffers = new Dictionary<int, string>();
-			public List<int> MelodyGems = new List<int>();
-			public Dictionary<int, string> MelodyGemBuffers = new Dictionary<int, string>();
-
-		}
-		private class State_SpellInfo
-		{
-			public E3Spell Spell = null;
-		}
-		private class State_SpellEditor
-		{
-			public Data.Spell CurrentEditedSpell = null;
-			public string Signature_CurrentEditedSpell = String.Empty;
-			public string CurrentSpellPreviewCache = String.Empty;
-			public string ManualEditBuffer = String.Empty;
-			public bool ManualInputBufferInUse = false;
-			public bool IsDirty = false;
-
-			public void Reset()
-			{
-				IsDirty = false;
-				CurrentSpellPreviewCache = String.Empty;
-				ManualEditBuffer = String.Empty;
-				ManualInputBufferInUse = false;
-			}
-		}
-		private class CharacterSettingsState
-		{
-			private State_CatalogWindow _catalogWindowState = new State_CatalogWindow();
-			private State_MainWindow _mainWindowState = new State_MainWindow();
-			private State_AllPlayers _allPlayersState = new State_AllPlayers();
-			private State_BardEditor _bardEditorState = new State_BardEditor();
-			private State_SpellInfo _spellInfoState = new State_SpellInfo();
-			private State_SpellEditor _spellEditorState = new State_SpellEditor();
-			public CharacterSettingsState() {
-				//set all initial windows to not show
-				if(Core._MQ2MonoVersion>0.34m) ClearWindows();
-			}
-
-			public T GetState<T>()
-			{
-				var type = typeof(T);
-				if (type == typeof(State_CatalogWindow))
-				{
-					return (T)(object)_catalogWindowState;
-				}
-				else if(type == typeof(State_MainWindow))
-				{
-					return (T)(object)_mainWindowState;
-				}
-				else if (type == typeof(State_AllPlayers))
-				{
-					return (T)(object)_allPlayersState;
-				}
-				else if (type == typeof(State_BardEditor))
-				{
-					return (T)(object)_bardEditorState;
-				}
-				else if (type == typeof(State_SpellInfo))
-				{
-					return (T)(object)_spellInfoState;
-				}
-				else if (type == typeof(State_SpellEditor))
-				{
-					return (T)(object)_spellEditorState;
-				}
-				return default(T);
-			}
-
-			//state
-			//public string State_SelectedSection = string.Empty;
-		
-			
-			//// "Ifs" or "Burn",// Inline add editor state (rendered in Values column)
-			//public string State_SelectedAddInLine = String.Empty;
-			//public string State_SelectedKey = string.Empty;
-			//public string State_SectionAndKeySig = String.Empty;
-			//public Int32 State_SelectedValueIndex = -1;
-			
-			public bool State_CatalogReady = false;
-			public bool State_CatalogLoading = false;
-			public bool State_CatalogLoadRequested = false;
-
-			//Note on Volatile variables... all this means is if its set on another thread, we will eventually get the update.
-			//its somewhat one way, us setting the variable on this side doesn't let the other thread see the update.
-			public volatile bool State_GemsAvailable = false; // Whether we have gem data
-
-
-		
-
-			//status
-			public string Status_CatalogRequest = String.Empty;
-
-			//windows
-			public string WinName_Donate = "E3Donate";
-			public bool Show_Donate
-			{	
-				get { return imgui_Begin_OpenFlagGet(WinName_Donate); }
-				set { imgui_Begin_OpenFlagSet(WinName_Donate, value); }
-			}
-			public string WinName_ThemeSettings = "E3Theme";
-			public bool Show_ThemeSettings
-			{
-				get { return imgui_Begin_OpenFlagGet(WinName_ThemeSettings); }
-				set { imgui_Begin_OpenFlagSet(WinName_ThemeSettings, value); }
-			}
-		
-			
-			public string WinName_AddModal = "E3Catalog";
-
-			public bool Show_AddModal
-			{
-				get	{
-					bool currentValue = imgui_Begin_OpenFlagGet(WinName_AddModal);
-					//if the window is currently closed, clear out the values
-					//this is necessary as you can close via the X in C++ land and won't see the update till we check
-					if(!currentValue)
-					{
-						_bardEditorState.BardSongPickerIndex = -1;
-						_catalogWindowState.Mode = CatalogMode.Standard;
-						_catalogWindowState.ReplaceMode = false;
-						_catalogWindowState.ReplaceIndex = -1;
-						_catalogWindowState.SelectedCategorySpell = null; // Clear selection when closing via X
-					}
-					return currentValue;
-				
-				}
-				set	
-				{
-					imgui_Begin_OpenFlagSet(WinName_AddModal, value);
-				}
-			}
-			
-			public string WinName_FoodDrinkModal = "E3PickInventory";
-			public bool Show_FoodDrinkModal
-			{
-				get { return imgui_Begin_OpenFlagGet(WinName_FoodDrinkModal); }
-				set { imgui_Begin_OpenFlagSet(WinName_FoodDrinkModal, value); }
-			}
-
-			public string WinName_BardMelodyHelper = "E3BardMelody";
-			public bool Show_BardMelodyHelper
-			{
-				get { return imgui_Begin_OpenFlagGet(WinName_BardMelodyHelper); }
-				set { imgui_Begin_OpenFlagSet(WinName_BardMelodyHelper, value); }
-			}
-
-			public string WinName_BardSampleIfModal = "E3BardSampleIfs";
-			public bool Show_BardSampleIfModal
-			{
-				get { return imgui_Begin_OpenFlagGet(WinName_BardSampleIfModal); }
-				set { imgui_Begin_OpenFlagSet(WinName_BardSampleIfModal, value); }
-			}
-
-			public string WinName_ToonPickerModal = "E3PickToons";
-			public bool Show_ToonPickerModal
-			{
-				get { return imgui_Begin_OpenFlagGet(WinName_ToonPickerModal); }
-				set { imgui_Begin_OpenFlagSet(WinName_ToonPickerModal, value); }
-			}
-			public string WinName_SpellInfoModal= "E3SpellInfo";
-			public bool Show_SpellInfoModal
-			{
-				get { return imgui_Begin_OpenFlagGet(WinName_SpellInfoModal); }
-				set { imgui_Begin_OpenFlagSet(WinName_SpellInfoModal, value); }
-			}
-			public string WinName_SpellModifier = "E3SpellModifiers";
-			public bool Show_SpellModifier
-			{
-				get { return imgui_Begin_OpenFlagGet(WinName_SpellModifier); }
-				set { imgui_Begin_OpenFlagSet(WinName_SpellModifier, value); }
-			}
-
-			public string WinName_IfAppendModal = "E3AppendIf";
-			public bool Show_IfAppendModal
-			{
-				get { return imgui_Begin_OpenFlagGet(WinName_IfAppendModal); }
-				set { imgui_Begin_OpenFlagSet(WinName_IfAppendModal, value); }
-			}
-			public string WinName_IfSampleModal= "E3SampleIfs";
-			public bool Show_IfSampleModal
-			{
-				get { return imgui_Begin_OpenFlagGet(WinName_IfSampleModal); }
-				set { imgui_Begin_OpenFlagSet(WinName_IfSampleModal, value); }
-			}
-
-
-	
-
-			
-			//data
-			
-
-			//requests
-			public bool Request_AllplayersRefresh = false;
-
-
-			public void ClearWindows()
-			{
-				Show_AddModal = false;
-				Show_Donate = false;
-				Show_BardMelodyHelper = false;
-				Show_BardSampleIfModal = false;
-				Show_FoodDrinkModal = false;
-				Show_IfAppendModal = false;
-				Show_IfSampleModal = false;
-				Show_SpellInfoModal = false;
-				Show_SpellModifier = false;
-				Show_ThemeSettings = false;
-				Show_ToonPickerModal = false;
-			}
-			public void ClearAddInLine()
-			{
-				var state= _state.GetState<State_MainWindow>();
-				state.Show_AddInLine = false;
-				state.SelectedKey = string.Empty;
-				state.SelectedAddInLine = String.Empty;
-				state.Buffer_NewKey = string.Empty;
-				state.Buffer_NewValue = string.Empty;
-			}
-		
-		}
+		private static readonly string _windowName = "E3Next Config";
 
 		public static Logging _log = E3.Log;
 		private static IMQ MQ = E3.MQ;
@@ -336,30 +33,11 @@ namespace E3Core.UI.Windows
 		//used when trying to get a pointer to the _cfg objects.
 		private static object _dataLock = new object();
 
-		private static readonly Dictionary<string, (float r, float g, float b, float a)> _inlineDescriptionColorMap = new Dictionary<string, (float, float, float, float)>(StringComparer.OrdinalIgnoreCase)
-		{
-			["color=gold"] = (0.95f, 0.85f, 0.35f, 1.0f),
-			["color=yellow"] = (1.0f, 0.92f, 0.23f, 1.0f),
-			["color=orange"] = (1.0f, 0.6f, 0.2f, 1.0f),
-			["color=red"] = (0.9f, 0.3f, 0.3f, 1.0f),
-			["color=green"] = (0.3f, 0.9f, 0.5f, 1.0f),
-			["color=blue"] = (0.35f, 0.6f, 0.95f, 1.0f),
-			["color=teal"] = (0.3f, 0.85f, 0.85f, 1.0f),
-			["color=purple"] = (0.75f, 0.55f, 0.95f, 1.0f),
-			["color=white"] = (0.95f, 0.95f, 0.95f, 1.0f),
-			["color=gray"] = (0.6f, 0.6f, 0.6f, 1.0f),
-			["color=silver"] = (0.8f, 0.8f, 0.85f, 1.0f)
-		};
-
 		#region Variables
 		// Catalogs and Add modal state
-
 		private static string _cfg_CatalogSource = "Unknown"; // "Local", "Remote (ToonName)", or "Unknown"
-															  // Memorized gem data from catalog responses with spell icon support
-
 		private static string[] _cfg_CatalogGems = new string[12]; // Gem data from catalog response
 		private static int[] _cfg_CatalogGemIcons = new int[12]; // Spell icon indices for gems
-
 		/// <summary>
 		///Data organized into Category, Sub Category, List of Spells.
 		///always get a pointer to these via the method GetCatalogByType
@@ -369,22 +47,13 @@ namespace E3Core.UI.Windows
 		_catalog_Disc = new SortedDictionary<string, SortedDictionary<string, List<E3Spell>>>(),
 		_catalog_Skills = new SortedDictionary<string, SortedDictionary<string, List<E3Spell>>>(),
 		_catalog_Items = new SortedDictionary<string, SortedDictionary<string, List<E3Spell>>>();
-
+		//lookups of spell name to spell data, used to display data/icons to user.
 		private static Dictionary<string, SpellData> _spellCatalogLookup = new Dictionary<string, SpellData>(StringComparer.OrdinalIgnoreCase),
 		_discCatalogLookup = new Dictionary<string, SpellData>(StringComparer.OrdinalIgnoreCase),
 		_aaCatalogLookup = new Dictionary<string, SpellData>(StringComparer.OrdinalIgnoreCase),
-		_skillCatalogLookup = new Dictionary<string, SpellData>(StringComparer.OrdinalIgnoreCase),
+		_skillCatalogLookup = new Dictionary<string, SpellData>(StringComparer.OrdinalIgnoreCase), // guess we are not showing much from skills :P 
 		_itemCatalogLookup = new Dictionary<string, SpellData>(StringComparer.OrdinalIgnoreCase);
 
-
-
-
-	
-
-		private enum AddType { Spells, AAs, Discs, Skills, Items }
-		private enum CatalogMode { Standard, BardSong }
-		
-	
 		// Food/Drink picker state
 		private static string _cfgFoodDrinkKey = string.Empty; // "Food" or "Drink"
 		private static string _cfgFoodDrinkStatus = string.Empty;
@@ -401,17 +70,13 @@ namespace E3Core.UI.Windows
 		private static List<System.Collections.Generic.KeyValuePair<string, string>> _cfgIfSampleLines = new List<System.Collections.Generic.KeyValuePair<string, string>>();
 		private static string _cfgIfSampleStatus = string.Empty;
 		
-		
-		
-
-		
 		private static bool _cfgFoodDrinkPending = false;
 		private static string _cfgFoodDrinkPendingToon = string.Empty;
 		private static string _cfgFoodDrinkPendingType = string.Empty;
 		private static long _cfgFoodDrinkTimeoutAt = 0;
 
 		// Config UI toggle: "/e3imgui".
-		private static readonly string _windowName = "E3Next Config";
+		
 		private static bool _imguiContextReady = false;
 		private enum SettingsTab { Character, General, Advanced }
 		private static SettingsTab _activeSettingsTab = SettingsTab.Character;
@@ -875,6 +540,9 @@ namespace E3Core.UI.Windows
 		{
 			var state = _state.GetState<State_MainWindow>();
 
+
+			RefreshEditableSpellState();
+
 			EnsureConfigEditorInit();
 			var pd = GetActiveCharacterIniData();
 			if (pd == null || pd.Sections == null){	imgui_TextColored(1.0f, 0.8f, 0.8f, 1.0f, "No character INI loaded.");return;}
@@ -1220,20 +888,10 @@ namespace E3Core.UI.Windows
 				mainWindowState.Show_ShowIntegratedEditor = false;
 				return;
 			}
-
-			string rawValue = values[mainWindowState.SelectedValueIndex] ?? string.Empty;
-			var state = EnsureSpellEditState(mainWindowState.SelectedSection, mainWindowState.SelectedKey, mainWindowState.SelectedValueIndex, rawValue);
-			if (state == null)
-			{
-				mainWindowState.Show_ShowIntegratedEditor = false;
-				return;
-			}
-
 			imgui_Separator();
 			imgui_TextColored(0.95f, 0.85f, 0.35f, 1.0f, "Spell Modifier Editor");
 			imgui_Separator();
 			RenderSpellModifierEditor2();
-			//RenderSpellModifierEditor(state);
 		}
 
 		// Safe gem display using catalog data (no TLO queries from UI thread)
@@ -1463,7 +1121,7 @@ namespace E3Core.UI.Windows
 				RenderSelectedKeyValues_Collections(parts,selectedSection);
 			}
 			
-			if(CharacterSettings.ConfigKeyDescriptionsForImGUI.TryGetValue($"{mainWindowState.SelectedSection}::{mainWindowState.SelectedKey}", out var description))
+			if(Settings.CharacterSettings.ConfigKeyDescriptionsForImGUI.TryGetValue($"{mainWindowState.SelectedSection}::{mainWindowState.SelectedKey}", out var description))
 			{
 				if (description.Count>0)
 				{
@@ -4725,90 +4383,21 @@ namespace E3Core.UI.Windows
 			return key;
 		}
 
-		private static string GetConfigKeyDescription(string section, string key)
+	
+		private static readonly Dictionary<string, (float r, float g, float b, float a)> _richTextColorMapping = new Dictionary<string, (float, float, float, float)>(StringComparer.OrdinalIgnoreCase)
 		{
-			if (string.IsNullOrWhiteSpace(key)) return string.Empty;
-
-			string composite = string.IsNullOrEmpty(section) ? key : $"{section}::{key}";
-			if (CharacterSettings.ConfigKeyDescriptionsBySection.TryGetValue(composite, out var desc) && !string.IsNullOrWhiteSpace(desc))
-			{
-				return desc;
-			}
-
-			if (CharacterSettings.ConfigKeyDescriptionsByKey.TryGetValue(key, out var generic) && !string.IsNullOrWhiteSpace(generic))
-			{
-				return generic;
-			}
-
-			string baseKey = key;
-			int paren = baseKey.IndexOf('(');
-			if (paren >= 0)
-			{
-				baseKey = baseKey.Substring(0, paren).Trim();
-			}
-			baseKey = baseKey.Replace('_', ' ').Replace('-', ' ').Trim();
-
-			string lower = baseKey.ToLowerInvariant();
-
-			if (lower.StartsWith("auto "))
-			{
-				return $"Toggle automatic {lower.Substring(5)} behaviour for this character.";
-			}
-
-			if (lower.Contains("food"))
-			{
-				if (lower.Contains("auto")) return "Enable automatic food and drink consumption when hunger thresholds are reached.";
-				return "Item name used when the automatic food routine triggers.";
-			}
-
-			if (lower.Contains("drink"))
-			{
-				return "Item name used when the automatic drink routine triggers.";
-			}
-
-			if (lower.Contains("loot"))
-			{
-				return "Controls automatic looting behaviour for corpses.";
-			}
-
-			if (lower.Contains("pct"))
-			{
-				string friendly = lower.Replace("pct", "percent");
-				return $"Percentage threshold used by the {friendly} setting.";
-			}
-
-			if (lower.Contains("delay"))
-			{
-				return "Time delay used by this entry (supports values like 1000, 10s, or 1m).";
-			}
-
-			if (lower.Contains("timer"))
-			{
-				return "Timer value in milliseconds controlling this behaviour.";
-			}
-
-			if (lower.Contains("gem"))
-			{
-				return "Spell gem slot index that should be used for this spell (1-12).";
-			}
-
-			if (lower.Contains("stack"))
-			{
-				return "Stacking controls for this entry (items, spells, or timing).";
-			}
-
-			if (lower.Contains("reagent"))
-			{
-				return "Reagent item name required for this ability.";
-			}
-
-			if (lower.Contains("range"))
-			{
-				return "Range or distance threshold used by this setting.";
-			}
-
-			return string.Empty;
-		}
+			["color=gold"] = (0.95f, 0.85f, 0.35f, 1.0f),
+			["color=yellow"] = (1.0f, 0.92f, 0.23f, 1.0f),
+			["color=orange"] = (1.0f, 0.6f, 0.2f, 1.0f),
+			["color=red"] = (0.9f, 0.3f, 0.3f, 1.0f),
+			["color=green"] = (0.3f, 0.9f, 0.5f, 1.0f),
+			["color=blue"] = (0.35f, 0.6f, 0.95f, 1.0f),
+			["color=teal"] = (0.3f, 0.85f, 0.85f, 1.0f),
+			["color=purple"] = (0.75f, 0.55f, 0.95f, 1.0f),
+			["color=white"] = (0.95f, 0.95f, 0.95f, 1.0f),
+			["color=gray"] = (0.6f, 0.6f, 0.6f, 1.0f),
+			["color=silver"] = (0.8f, 0.8f, 0.85f, 1.0f)
+		};
 
 		private static void RenderDescriptionRichText(List<string> rawText)
 		{
@@ -4825,7 +4414,7 @@ namespace E3Core.UI.Windows
 				float totalLineLength = 0;
 				for (Int32 i = 0; i < rawText.Count; i++)
 				{
-					if (_inlineDescriptionColorMap.TryGetValue(rawText[i], out var color))
+					if (_richTextColorMapping.TryGetValue(rawText[i], out var color))
 					{
 						//next line is a color
 						if ((i + 1) < rawText.Count)
@@ -4899,18 +4488,6 @@ namespace E3Core.UI.Windows
 			_cfgSpellEditSignature = string.Empty;
 		}
 
-		private static void ClearSpellEditFields(SpellValueEditState state)
-		{
-			if (state == null) return;
-			state.BaseName = string.Empty;
-			state.CastTarget = string.Empty;
-			state.KeyValues.Clear();
-			state.OriginalKeyNames.Clear();
-			state.Flags.Clear();
-			state.UnknownSegments.Clear();
-			state.Enabled = true;
-			state.OriginalValue = string.Empty;
-		}
 
 		private static SpellValueEditState EnsureSpellEditState(string section, string key, int index, string rawValue)
 		{
@@ -5084,13 +4661,14 @@ namespace E3Core.UI.Windows
 		private static void RenderSpellModifierEditor2_Tab_General()
 		{
 			var spellEditorState = _state.GetState<State_SpellEditor>();
+			var mainWindowState = _state.GetState<State_MainWindow>();
 
 			imgui_TextColored(0.8f, 0.9f, 0.95f, 1.0f, "Basics");
 			const ImGuiTableFlags FieldTableFlags = (ImGuiTableFlags.ImGuiTableFlags_SizingStretchProp | ImGuiTableFlags.ImGuiTableFlags_PadOuterX);
 			const ImGuiTableColumnFlags LabelColumnFlags = (ImGuiTableColumnFlags.ImGuiTableColumnFlags_WidthFixed | ImGuiTableColumnFlags.ImGuiTableColumnFlags_NoResize);
 			const ImGuiTableColumnFlags ValueColumnFlags = ImGuiTableColumnFlags.ImGuiTableColumnFlags_WidthStretch;
 			const float ComboFieldWidth = 220f;
-			var currentSpell = spellEditorState.CurrentEditedSpell;
+			var currentSpell = mainWindowState.Currently_EditableSpell;
 
 			if (imgui_BeginTable("GeneralTabTable", 2, (int)FieldTableFlags, imgui_GetContentRegionAvailX(), 0))
 			{
@@ -5166,13 +4744,14 @@ namespace E3Core.UI.Windows
 		private static void RenderSpellModifierEditor2_Tab_Conditions()
 		{
 			var spellEditorState = _state.GetState<State_SpellEditor>();
+			var mainWindowState = _state.GetState<State_MainWindow>();
+			var currentSpell = mainWindowState.Currently_EditableSpell;
 
 			imgui_TextColored(0.8f, 0.9f, 0.95f, 1.0f, "Logic");
 			const ImGuiTableFlags FieldTableFlags = (ImGuiTableFlags.ImGuiTableFlags_SizingStretchProp | ImGuiTableFlags.ImGuiTableFlags_PadOuterX);
 			const ImGuiTableColumnFlags LabelColumnFlags = (ImGuiTableColumnFlags.ImGuiTableColumnFlags_WidthFixed | ImGuiTableColumnFlags.ImGuiTableColumnFlags_NoResize);
 			const ImGuiTableColumnFlags ValueColumnFlags = ImGuiTableColumnFlags.ImGuiTableColumnFlags_WidthStretch;
-			var currentSpell = spellEditorState.CurrentEditedSpell;
-
+		
 			if (imgui_BeginTable("GeneralTabTable", 2, (int)FieldTableFlags, imgui_GetContentRegionAvailX(), 0))
 			{
 				try
@@ -5211,7 +4790,8 @@ namespace E3Core.UI.Windows
 			const ImGuiTableFlags FieldTableFlags = (ImGuiTableFlags.ImGuiTableFlags_SizingStretchProp | ImGuiTableFlags.ImGuiTableFlags_PadOuterX);
 			const ImGuiTableColumnFlags LabelColumnFlags = (ImGuiTableColumnFlags.ImGuiTableColumnFlags_WidthFixed | ImGuiTableColumnFlags.ImGuiTableColumnFlags_NoResize);
 			const ImGuiTableColumnFlags ValueColumnFlags = ImGuiTableColumnFlags.ImGuiTableColumnFlags_WidthStretch;
-			var currentSpell = spellEditorState.CurrentEditedSpell;
+			var mainWindowState = _state.GetState<State_MainWindow>();
+			var currentSpell = mainWindowState.Currently_EditableSpell;
 
 			if (imgui_BeginTable("SpellResourceTable", 2, (int)FieldTableFlags, imgui_GetContentRegionAvailX(), 0))
 			{
@@ -5245,7 +4825,8 @@ namespace E3Core.UI.Windows
 			const ImGuiTableFlags FieldTableFlags = (ImGuiTableFlags.ImGuiTableFlags_SizingStretchProp | ImGuiTableFlags.ImGuiTableFlags_PadOuterX);
 			const ImGuiTableColumnFlags LabelColumnFlags = (ImGuiTableColumnFlags.ImGuiTableColumnFlags_WidthFixed | ImGuiTableColumnFlags.ImGuiTableColumnFlags_NoResize);
 			const ImGuiTableColumnFlags ValueColumnFlags = ImGuiTableColumnFlags.ImGuiTableColumnFlags_WidthStretch;
-			var currentSpell = spellEditorState.CurrentEditedSpell;
+			var mainWindowState = _state.GetState<State_MainWindow>();
+			var currentSpell = mainWindowState.Currently_EditableSpell;
 
 			if (imgui_BeginTable("SpellTimingTable", 2, (int)FieldTableFlags, imgui_GetContentRegionAvailX(), 0))
 			{
@@ -5286,7 +4867,8 @@ namespace E3Core.UI.Windows
 			const ImGuiTableFlags FieldTableFlags = (ImGuiTableFlags.ImGuiTableFlags_SizingStretchProp | ImGuiTableFlags.ImGuiTableFlags_PadOuterX);
 			const ImGuiTableColumnFlags LabelColumnFlags = (ImGuiTableColumnFlags.ImGuiTableColumnFlags_WidthFixed | ImGuiTableColumnFlags.ImGuiTableColumnFlags_NoResize);
 			const ImGuiTableColumnFlags ValueColumnFlags = ImGuiTableColumnFlags.ImGuiTableColumnFlags_WidthStretch;
-			var currentSpell = spellEditorState.CurrentEditedSpell;
+			var mainWindowState = _state.GetState<State_MainWindow>();
+			var currentSpell = mainWindowState.Currently_EditableSpell;
 
 			if (imgui_BeginTable("SpellOrderingTable", 2, (int)FieldTableFlags, imgui_GetContentRegionAvailX(), 0))
 			{
@@ -5360,7 +4942,8 @@ namespace E3Core.UI.Windows
 			const ImGuiTableColumnFlags FlagSpacerColumnFlags = ImGuiTableColumnFlags.ImGuiTableColumnFlags_WidthStretch;
 			const float FlagLabelPadding = 12f;
 			const float FlagCheckboxColumnWidth = 32f;
-			var currentSpell = spellEditorState.CurrentEditedSpell;
+			var mainWindowState = _state.GetState<State_MainWindow>();
+			var currentSpell = mainWindowState.Currently_EditableSpell;
 
 			if (imgui_BeginTable($"E3SpellFlagTable", 3, (int)FlagTableFlags, imgui_GetContentRegionAvailX(), 0))
 			{
@@ -5389,7 +4972,8 @@ namespace E3Core.UI.Windows
 		private static void RenderSpellModifierEditor2_Tab_Manual()
 		{
 			var spellEditorState = _state.GetState<State_SpellEditor>();
-			var currentSpell = spellEditorState.CurrentEditedSpell;
+			var mainWindowState = _state.GetState<State_MainWindow>();
+			var currentSpell = mainWindowState.Currently_EditableSpell;
 			imgui_TextColored(0.8f, 0.9f, 0.95f, 1.0f, "Manual Text Editor");
 			imgui_Text("Edit the raw configuration value directly. Changes apply when you click Apply.");
 			imgui_Separator();
@@ -5413,34 +4997,70 @@ namespace E3Core.UI.Windows
 			}
 
 		}
+		
+		
+		/// <summary>
+		/// Used to determine if the UI state can return a valid spell. 
+		/// </summary>
+		/// <returns>Spell object</returns>
+		private static void RefreshEditableSpellState()
+		{
+			var mainWindowState = _state.GetState<State_MainWindow>();
+			var spellEditorState = _state.GetState<State_SpellEditor>();
+			//check if this has changed from what we were before
+			if (String.IsNullOrWhiteSpace(mainWindowState.SelectedSection)) return;
+			if (String.IsNullOrWhiteSpace(mainWindowState.SelectedKey)) return;
+			if (mainWindowState.SelectedValueIndex == -1) return;
+			//lets get the actual entry
+			var kd = GetCurrentEditedSpellKeyData();
+			if (kd == null) return;
+		
+			var rawValue = kd.ValueList[mainWindowState.SelectedValueIndex];
+		
+			string entryLabel = $"[{mainWindowState.SelectedSection}] {mainWindowState.SelectedKey} entry #{mainWindowState.SelectedValueIndex + 1}";
+
+			if (!String.Equals(mainWindowState.Signature_CurrentEditedSpell, entryLabel) || mainWindowState.Currently_EditableSpell==null)
+			{
+				mainWindowState.Signature_CurrentEditedSpell = entryLabel;
+				mainWindowState.Currently_EditableSpell = new Spell(rawValue, mainWindowState.CurrentINIData, false);
+				spellEditorState.Reset();
+			}
+
+			
+		}
+		private static KeyData GetCurrentEditedSpellKeyData()
+		{
+			var mainWindowState = _state.GetState<State_MainWindow>();
+
+			var data = mainWindowState.CurrentINIData;
+			if (data == null) return null;
+			var sectionData = data.Sections.GetSectionData(mainWindowState.SelectedSection);
+			if (sectionData == null) return null;
+			var kd = sectionData.Keys.GetKeyData(mainWindowState.SelectedKey);
+			if (kd == null) return null;
+			if (kd.ValueList.Count <= mainWindowState.SelectedValueIndex) return null;
+
+			return kd;
+		}
 		private static void RenderSpellModifierEditor2()
 		{
-
 			var mainWindowState = _state.GetState<State_MainWindow>();
 			var spellEditorState = _state.GetState<State_SpellEditor>();
 
+			//check to see if there is a spell currently selected to edit.
+			var editableSpell = mainWindowState.Currently_EditableSpell;
+			if (editableSpell == null) return; //nothing to edit here
+			//necessary to update the actual entry.
+			var kd = GetCurrentEditedSpellKeyData();
+			if (kd == null) return;
 
-			// Header row with title on left and buttons on right
 			
+			var rawValue = editableSpell.RawEntry;
+	
 			string entryLabel = $"[{mainWindowState.SelectedSection}] {mainWindowState.SelectedKey} entry #{mainWindowState.SelectedValueIndex + 1}";
 
-			//lets get the actual entry
-			var data = mainWindowState.CurrentINIData;
-			if (data == null) return;
-			var sectionData = data.Sections.GetSectionData(mainWindowState.SelectedSection);
-			if (sectionData == null) return;
-			var kd = sectionData.Keys.GetKeyData(mainWindowState.SelectedKey);
-			if (kd == null) return;
-			if (kd.ValueList.Count <= mainWindowState.SelectedValueIndex) return;
-			var rawValue = kd.ValueList[mainWindowState.SelectedValueIndex];
-			//check if this has changed from what we were before
-			if (!String.Equals(spellEditorState.Signature_CurrentEditedSpell, entryLabel))
-			{
-				spellEditorState.Reset();
-				spellEditorState.Signature_CurrentEditedSpell = entryLabel;
-				spellEditorState.CurrentEditedSpell = new Spell(rawValue, data, false);
-				
-			}
+
+			// Header row with title on left and buttons on right
 			imgui_TextColored(0.95f, 0.85f, 0.35f, 1.0f, entryLabel);
 			// Position Apply/Reset buttons on the same line, aligned to the right
 			float buttonWidth = 80f;
@@ -5467,28 +5087,27 @@ namespace E3Core.UI.Windows
 					{
 						_log.Write($"Manual Buffer update:[{spellEditorState.ManualEditBuffer}]", Logging.LogLevels.Debug);
 
-						var tspell = new Spell(spellEditorState.ManualEditBuffer, data, false);
-						spellEditorState.CurrentEditedSpell= tspell;
+						var tspell = new Spell(spellEditorState.ManualEditBuffer, mainWindowState.CurrentINIData, false);
+						mainWindowState.Currently_EditableSpell = tspell;
 					}
 					catch(Exception ex)
 					{
 						_log.Write("Exception creating spell from the manual buffer.", Logging.LogLevels.Debug);
 					}
 				}
-
-				kd.ValueList[mainWindowState.SelectedValueIndex] = spellEditorState.CurrentEditedSpell.ToConfigEntry();
+				//save the value to the current key data
+				kd.ValueList[mainWindowState.SelectedValueIndex] = mainWindowState.Currently_EditableSpell.ToConfigEntry();
 				spellEditorState.Reset();
 			}
 			imgui_SameLine();
 			if (imgui_Button($"Reset##spell_reset"))
 			{
-				spellEditorState.CurrentEditedSpell = new Spell(rawValue, data, false);
+				mainWindowState.Currently_EditableSpell = null;
+				RefreshEditableSpellState();
+				editableSpell = mainWindowState.Currently_EditableSpell;
 				spellEditorState.Reset();
 			}
-			
-			var currentSpell = spellEditorState.CurrentEditedSpell;
-
-
+		
 			imgui_Separator();
 
 			if (imgui_BeginTabBar($"SpellModifierTabs"))
@@ -5539,7 +5158,7 @@ namespace E3Core.UI.Windows
 			string previewString = spellEditorState.CurrentSpellPreviewCache;
 			if (String.IsNullOrWhiteSpace(previewString) || spellEditorState.IsDirty)
 			{
-				spellEditorState.CurrentSpellPreviewCache= currentSpell.ToConfigEntry();
+				spellEditorState.CurrentSpellPreviewCache= editableSpell.ToConfigEntry();
 				previewString = spellEditorState.CurrentSpellPreviewCache;
 			}
 			string preview = previewString;
@@ -6577,28 +6196,7 @@ namespace E3Core.UI.Windows
 				_state.Show_Donate = false;
 			}
 		}
-		private class E3Spell
-		{
-			public string Name;
-			public string Category;
-			public string Subcategory;
-			public int Level;
-			public string CastName;
-			public string TargetType;
-			public string SpellType;
-			public int Mana;
-			public double CastTime;
-			public int Recast;
-			public double Range;
-			public string Description;
-			public string ResistType;
-			public int ResistAdj;
-			public string CastType; // AA/Spell/Disc/Ability/Item/None
-			public int SpellGem;
-			public List<string> SpellEffects = new List<string>();
-			public int SpellIcon = -1; // Spell icon index for display
-			public override string ToString() => Name;
-		}
+		
 		private class SpellValueEditState
 		{
 			public string Section = string.Empty;

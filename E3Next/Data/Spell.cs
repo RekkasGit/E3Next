@@ -67,7 +67,7 @@ namespace E3Core.Data
             {
                 LoadedSpellByConfigEntry.Add(spellName, this);
             }
-
+            RawEntry = spellName;
             SpellName = spellName; //what the thing actually casts
             CastName = spellName;//required to send command
             InitName = spellName;
@@ -998,6 +998,7 @@ namespace E3Core.Data
 
         //    return returnString;
         //}
+        public string RawEntry = String.Empty;
         public String Subcategory = String.Empty;
         public String Category = String.Empty;
         public String SpellName = String.Empty;//the spell's name. If the item clicks, this is the spell it casts
