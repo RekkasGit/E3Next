@@ -59,7 +59,7 @@ namespace E3Core.UI.Windows.CharacterSettings
 		public string[] IniFilesFromDisk = Array.Empty<string>();
 		public List<string> SectionsOrdered = new List<string>();
 
-		public bool Show_ShowIntegratedEditor = false;
+		public bool Show_ShowIntegratedEditor = true;
 		public bool Show_AddInLine = false;
 		public bool ShowOfflineCharacters = false;
 		public bool ConfigIsDirty = false;

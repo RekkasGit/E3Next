@@ -1104,7 +1104,7 @@ namespace E3Core.UI.Windows.CharacterSettings
 				if (parts == null) return;
 			}
 			// Enumerated options derived from key label e.g. "(Melee/Ranged/Off)"
-			if (TryGetKeyOptions(mainWindowState.SelectedKey, out var enumOpts))
+			if (TryGetValidOptionsForKey(mainWindowState.SelectedKey, out var enumOpts))
 			{
 				RenderSelectedKeyValues_Registered(parts, selectedSection, enumOpts);
 			}
@@ -1527,6 +1527,8 @@ namespace E3Core.UI.Windows.CharacterSettings
 			var mainWindowState = _state.GetState<State_MainWindow>();
 			var bardEditorState = _state.GetState<State_BardEditor>();
 
+			if (mainWindowState.Currently_EditableSpell == null) return;
+
 			bool isBardIni = IsActiveIniBard();
 			if (isBardIni)
 			{
@@ -1717,16 +1719,9 @@ namespace E3Core.UI.Windows.CharacterSettings
 
 					imgui_Separator();
 				}
-				else
-				{
-					InvalidateSpellEditState();
-				}
+				
 			}
-			else
-			{
-				InvalidateSpellEditState();
-			}
-
+			
 		}
 
 		private static void RenderActiveModals(SectionData selectedSection)
@@ -2996,7 +2991,7 @@ namespace E3Core.UI.Windows.CharacterSettings
 		static List<String> _KeyOptionsOnOff = new List<string>() { "On", "Off" };
 		// Attempt to derive an explicit set of allowed options from the key label, e.g.
 		// "Assist Type (Melee/Ranged/Off)" => ["Melee","Ranged","Off"]
-		private static bool TryGetKeyOptions(string keyLabel, out List<string> options)
+		private static bool TryGetValidOptionsForKey(string keyLabel, out List<string> options)
 		{
 			if (_KeyOptionsLookup.TryGetValue(keyLabel, out var result))
 			{
@@ -4489,8 +4484,7 @@ namespace E3Core.UI.Windows.CharacterSettings
 		
 		private static void InvalidateSpellEditState()
 		{
-			_cfgSpellEditState = null;
-			_cfgSpellEditSignature = string.Empty;
+		
 		}
 
 		private const float SpellEditorDefaultTextWidth = 320f;
