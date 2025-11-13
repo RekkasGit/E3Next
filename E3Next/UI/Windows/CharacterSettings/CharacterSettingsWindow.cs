@@ -116,7 +116,7 @@ namespace E3Core.UI.Windows.CharacterSettings
 			{
 				try
 				{ 
-					RenderMainWindow();
+					Render_MainWindow();
 				
 				} catch (Exception ex)
 				{MQ.WriteDelayed("Rendering Error:" + ex.Message + " stack:"+ex.StackTrace);}
@@ -158,7 +158,7 @@ namespace E3Core.UI.Windows.CharacterSettings
 		///So for any MQ.Query be sure to use the DelayPossible flag to false.
 		/// </summary>
 		/// 
-		private static void RenderMainWindow()
+		private static void Render_MainWindow()
 		{
 			if (!_imguiContextReady) return;
 			// Only render if ImGui is available and ready
@@ -171,14 +171,14 @@ namespace E3Core.UI.Windows.CharacterSettings
 				{
 					try
 					{
-						RenderMainWindow_Header();
+						Render_MainWindow_Header();
 						imgui_Separator();
-						RenderMainWindow_CharIniSelector();
+						Render_MainWindow_CharIniSelector();
 						imgui_Separator();
-						RenderMainWindow_SearchBar();
+						Render_MainWindow_SearchBar();
 						var allPlayersState = _state.GetState<State_AllPlayers>();
 						if (allPlayersState.ShowWindow) RenderAllPlayersView();
-						if (!allPlayersState.ShowWindow) RenderMainWindow_ConfigEditor();
+						if (!allPlayersState.ShowWindow) Render_MainWindow_ConfigEditor();
 						if (_state.Show_ThemeSettings) RenderThemeSettingsModal();
 						if (_state.Show_Donate) RenderDonateModal();
 					}
@@ -191,7 +191,7 @@ namespace E3Core.UI.Windows.CharacterSettings
 			}
 		}
 
-		private static void RenderMainWindow_Header()
+		private static void Render_MainWindow_Header()
 		{
 			// Header bar: version text on left, buttons on right
 			if (imgui_BeginTable("E3HeaderBar", 2, (int)ImGuiTableFlags.ImGuiTableFlags_SizingStretchProp, imgui_GetContentRegionAvailX(), 0))
@@ -240,7 +240,7 @@ namespace E3Core.UI.Windows.CharacterSettings
 				}
 			}
 		}
-		private static void RenderMainWindow_SearchBar()
+		private static void Render_MainWindow_SearchBar()
 		{
 			var mainWindowState = _state.GetState<State_MainWindow>();
 			var allPlayerState = _state.GetState<State_AllPlayers>();
@@ -288,10 +288,7 @@ namespace E3Core.UI.Windows.CharacterSettings
 				}
 			}
 		}
-		
-		
-	
-		public static void RenderMainWindow_CharIniSelector()
+		public static void Render_MainWindow_CharIniSelector()
 		{
 			var state = _state.GetState<State_MainWindow>();
 
@@ -377,9 +374,7 @@ namespace E3Core.UI.Windows.CharacterSettings
 
 			imgui_Separator();
 		}
-
-		
-		private static void RenderMainWindow_CatalogStatus()
+		private static void Render_MainWindow_CatalogStatus()
 		{
 			// Catalog status / loader with better styling
 			if (!_state.State_CatalogReady)
@@ -403,10 +398,8 @@ namespace E3Core.UI.Windows.CharacterSettings
 				imgui_Separator();
 			}
 		}
-
-
 		#region RenderConfigEditor
-		private static void RenderMainWindow_ConfigEditor()
+		private static void Render_MainWindow_ConfigEditor()
 		{
 			var state = _state.GetState<State_MainWindow>();
 
@@ -417,7 +410,7 @@ namespace E3Core.UI.Windows.CharacterSettings
 			var pd = data.GetActiveCharacterIniData();
 			if (pd == null || pd.Sections == null){	imgui_TextColored(1.0f, 0.8f, 0.8f, 1.0f, "No character INI loaded.");return;}
 
-			RenderMainWindow_CatalogStatus();
+			Render_MainWindow_CatalogStatus();
 			data.RebuildSectionsOrderIfNeeded();
 			// Use ImGui Table for responsive 3-column layout
 			float availY = imgui_GetContentRegionAvailY();
@@ -442,9 +435,9 @@ namespace E3Core.UI.Windows.CharacterSettings
 					imgui_TableHeadersRow();
 					imgui_TableNextRow();
 					// Column 1: Sections and Keys (with TreeNodes)
-					if (imgui_TableNextColumn()) { RenderMainWindow_ConfigEditor_SelectionTree(pd);}
-					if (imgui_TableNextColumn()) { RenderMainWindow_ConfigEditor_Values(pd); }
-					if (imgui_TableNextColumn()) { RenderMainWindow_ConfigEditor_Tools(pd); }
+					if (imgui_TableNextColumn()) { Render_MainWindow_ConfigEditor_SelectionTree(pd);}
+					if (imgui_TableNextColumn()) { Render_MainWindow_ConfigEditor_Values(pd); }
+					if (imgui_TableNextColumn()) { Render_MainWindow_ConfigEditor_Tools(pd); }
 				}
 				finally
 				{
@@ -453,15 +446,14 @@ namespace E3Core.UI.Windows.CharacterSettings
 			}
 
 			// Render integrated editor after table if active
-			if (state.Show_ShowIntegratedEditor && state.SelectedValueIndex >= 0) { RenderMainWindow_ConfigEditor_SpellEditor(); }
+			if (state.Show_ShowIntegratedEditor && state.SelectedValueIndex >= 0) { Render_MainWindow_ConfigEditor_SpellEditor(); }
 			//Ensure popups/ modals render even when the tools column is hidden
 			SectionData activeSection = data.GetCurrentSectionData();
-			RenderActiveModals(activeSection);
+			Render_Active_Windows(activeSection);
 			//Display memorized spells if available from catalog data (safe)
-			RenderMainwindow_CatalogGemData();
+			Render_MainWindow_CatalogGemData();
 		}
-		
-		public static void RenderMainWindow_ConfigEditor_SelectionTree(IniData pd)
+		public static void Render_MainWindow_ConfigEditor_SelectionTree(IniData pd)
 		{
 			var state = _state.GetState<State_MainWindow>();
 			//Use a 1 - column table with RowBg to get built-in alternating backgrounds
@@ -605,7 +597,7 @@ namespace E3Core.UI.Windows.CharacterSettings
 				}
 			}
 		}
-		private static void RenderMainWindow_ConfigEditor_Values(IniData pd)
+		private static void Render_MainWindow_ConfigEditor_Values(IniData pd)
 		{
 			var state = _state.GetState<State_MainWindow>();
 
@@ -709,7 +701,7 @@ namespace E3Core.UI.Windows.CharacterSettings
 					}
 					else
 					{
-						RenderMainWindow_ConfigEditor_SelectedKeyValues(selectedSection);
+						Render_MainWindow_ConfigEditor_SelectedKeyValues(selectedSection);
 					}
 				}
 				finally
@@ -720,7 +712,7 @@ namespace E3Core.UI.Windows.CharacterSettings
 			}
 
 		}
-		public static void RenderMainWindow_ConfigEditor_Tools(IniData pd)
+		public static void Render_MainWindow_ConfigEditor_Tools(IniData pd)
 		{
 			var state = _state.GetState<State_MainWindow>();
 
@@ -735,7 +727,7 @@ namespace E3Core.UI.Windows.CharacterSettings
 					imgui_TableNextRow();
 					imgui_TableNextColumn();
 
-					RenderMainWindow_ConfigEditor_ConfigurationTools(activeSection);
+					Render_MainWindow_ConfigEditor_ConfigurationTools(activeSection);
 				}
 				finally
 				{
@@ -744,9 +736,8 @@ namespace E3Core.UI.Windows.CharacterSettings
 			}
 		}
 		#endregion
-
 		// Integrated editor panel - renders after the main table and spans full width
-		private static void RenderMainWindow_ConfigEditor_SpellEditor()
+		private static void Render_MainWindow_ConfigEditor_SpellEditor()
 		{
 			var mainWindowState = _state.GetState<State_MainWindow>();
 
@@ -769,9 +760,8 @@ namespace E3Core.UI.Windows.CharacterSettings
 			imgui_Separator();
 			RenderSpellEditor();
 		}
-
 		// Safe gem display using catalog data (no TLO queries from UI thread)
-		private static void RenderMainwindow_CatalogGemData()
+		private static void Render_MainWindow_CatalogGemData()
 		{
 			var gemState = _state.GetState<State_CatalogGems>();
 
@@ -916,7 +906,7 @@ namespace E3Core.UI.Windows.CharacterSettings
 		}
 		#region RenderSelectedKeyValues
 		// Helper method to render values for the selected key
-		private static void RenderMainWindow_ConfigEditor_SelectedKeyValues(SectionData selectedSection)
+		private static void Render_MainWindow_ConfigEditor_SelectedKeyValues(SectionData selectedSection)
 		{
 			var mainWindowState = _state.GetState<State_MainWindow>();
 
@@ -945,24 +935,24 @@ namespace E3Core.UI.Windows.CharacterSettings
 			// Enumerated options derived from key label e.g. "(Melee/Ranged/Off)"
 			if (data.TryGetValidOptionsForKey(mainWindowState.SelectedKey, out var enumOpts))
 			{
-				RenderMainWindow_ConfigEditor_SelectedKeyValues_Registered(parts, selectedSection, enumOpts);
+				Render_MainWindow_ConfigEditor_SelectedKeyValues_Registered(parts, selectedSection, enumOpts);
 			}
 			// Boolean fast toggle support → dropdown selector with better styling
 			else if (data.IsBooleanConfigKey(mainWindowState.SelectedKey))
 			{
-				RenderMainWindow_ConfigEditor_SelectedKeyValues_Boolean(parts,selectedSection);
+				Render_MainWindow_ConfigEditor_SelectedKeyValues_Boolean(parts,selectedSection);
 			}
 			else if(data.IsIntergerConfigKey(mainWindowState.SelectedKey))
 			{
-				RenderMainWindow_ConfigEditor_SelectedKeyValues_Integers(parts, selectedSection);
+				Render_MainWindow_ConfigEditor_SelectedKeyValues_Integers(parts, selectedSection);
 			}
 			else if (data.IsStringConfigKey(mainWindowState.SelectedKey))
 			{
-				RenderMainWindow_ConfigEditor_SelectedKeyValues_String(parts, selectedSection);
+				Render_MainWindow_ConfigEditor_SelectedKeyValues_String(parts, selectedSection);
 			}
 			else if(!(String.IsNullOrWhiteSpace(mainWindowState.SelectedKey) || String.IsNullOrWhiteSpace(mainWindowState.SelectedSection)))
 			{
-				RenderMainWindow_ConfigEditor_SelectedKeyValues_Collections(parts,selectedSection);
+				Render_MainWindow_ConfigEditor_SelectedKeyValues_Collections(parts,selectedSection);
 			}
 			
 			if(Settings.CharacterSettings.ConfigKeyDescriptionsForImGUI.TryGetValue($"{mainWindowState.SelectedSection}::{mainWindowState.SelectedKey}", out var description))
@@ -986,7 +976,7 @@ namespace E3Core.UI.Windows.CharacterSettings
 
 			
 		}
-		private static void RenderMainWindow_ConfigEditor_SelectedKeyValues_String(List<string> parts, SectionData selectedSection)
+		private static void Render_MainWindow_ConfigEditor_SelectedKeyValues_String(List<string> parts, SectionData selectedSection)
 		{
 			var mainWindowState = _state.GetState<State_MainWindow>();
 
@@ -998,7 +988,7 @@ namespace E3Core.UI.Windows.CharacterSettings
 			}
 			imgui_Separator();
 		}
-		private static void RenderMainWindow_ConfigEditor_SelectedKeyValues_Integers(List<string> parts, SectionData selectedSection)
+		private static void Render_MainWindow_ConfigEditor_SelectedKeyValues_Integers(List<string> parts, SectionData selectedSection)
 		{
 			var mainWindowState = _state.GetState<State_MainWindow>();
 
@@ -1016,7 +1006,7 @@ namespace E3Core.UI.Windows.CharacterSettings
 		}
 
 
-		private static void RenderMainWindow_ConfigEditor_SelectedKeyValues_Registered(List<string> parts, SectionData selectedSection, List<string> enumOpts)
+		private static void Render_MainWindow_ConfigEditor_SelectedKeyValues_Registered(List<string> parts, SectionData selectedSection, List<string> enumOpts)
 		{
 			var mainWindowState = _state.GetState<State_MainWindow>();
 
@@ -1046,7 +1036,7 @@ namespace E3Core.UI.Windows.CharacterSettings
 			}
 			imgui_Separator();
 		}
-		private static void RenderMainWindow_ConfigEditor_SelectedKeyValues_Boolean(List<string> parts, SectionData selectedSection)
+		private static void Render_MainWindow_ConfigEditor_SelectedKeyValues_Boolean(List<string> parts, SectionData selectedSection)
 		{
 			var mainWindowState = _state.GetState<State_MainWindow>();
 
@@ -1098,7 +1088,7 @@ namespace E3Core.UI.Windows.CharacterSettings
 			}
 			imgui_Separator();
 		}
-		private static void RenderMainWindow_ConfigEditor_SelectedKeyValues_Collections(List<string> parts, SectionData selectedSection)
+		private static void Render_MainWindow_ConfigEditor_SelectedKeyValues_Collections(List<string> parts, SectionData selectedSection)
 		{
 			var catalogState = _state.GetState<State_CatalogWindow>();
 			var mainWindowState = _state.GetState<State_MainWindow>();
@@ -1364,7 +1354,7 @@ namespace E3Core.UI.Windows.CharacterSettings
 		#endregion
 
 		// Helper method to render configuration tools panel
-		private static void RenderMainWindow_ConfigEditor_ConfigurationTools(SectionData selectedSection)
+		private static void Render_MainWindow_ConfigEditor_ConfigurationTools(SectionData selectedSection)
 		{
 			var mainWindowState = _state.GetState<State_MainWindow>();
 			var bardEditorState = _state.GetState<State_BardEditor>();
@@ -1568,11 +1558,356 @@ namespace E3Core.UI.Windows.CharacterSettings
 			
 		}
 
-		private static void RenderActiveModals(SectionData selectedSection)
+		#region RenderSpellEditor
+		private static void Render_MainWindow_SpellEditor_Tab_General()
+		{
+			var spellEditorState = _state.GetState<State_SpellEditor>();
+			var mainWindowState = _state.GetState<State_MainWindow>();
+
+			imgui_TextColored(0.8f, 0.9f, 0.95f, 1.0f, "Basics");
+			const ImGuiTableFlags FieldTableFlags = (ImGuiTableFlags.ImGuiTableFlags_SizingStretchProp | ImGuiTableFlags.ImGuiTableFlags_PadOuterX);
+			const ImGuiTableColumnFlags LabelColumnFlags = (ImGuiTableColumnFlags.ImGuiTableColumnFlags_WidthFixed | ImGuiTableColumnFlags.ImGuiTableColumnFlags_NoResize);
+			const ImGuiTableColumnFlags ValueColumnFlags = ImGuiTableColumnFlags.ImGuiTableColumnFlags_WidthStretch;
+			const float ComboFieldWidth = 220f;
+			var currentSpell = mainWindowState.Currently_EditableSpell;
+
+			if (imgui_BeginTable("GeneralTabTable", 2, (int)FieldTableFlags, imgui_GetContentRegionAvailX(), 0))
+			{
+				try
+				{
+					imgui_TableSetupColumn("Label", (int)LabelColumnFlags, 0f);
+					imgui_TableSetupColumn("Value", (int)ValueColumnFlags, 0f);
+
+
+					//to specify the id of an input text use ## so its not visable
+
+					RenderTableTextEditRow("##SpellEditor_CastName", "Cast Name:", currentSpell.CastName, (u) => { currentSpell.CastName = u; currentSpell.SpellName = u; });
+					RenderTableTextEditRow("##SpellEditor_CastTarget", "Cast Target:", currentSpell.CastTarget, (u) => { currentSpell.CastTarget = u; });
+					///GEM SLOTS
+					imgui_TableNextRow();
+					imgui_TableNextColumn();
+					imgui_Text("Gem Slot:");
+					imgui_TableNextColumn();
+					var gemSlot = currentSpell.SpellGem;
+					string gemPreview = gemSlot >= 1 && gemSlot <= 12 ? $"Gem {gemSlot}" : "No Gem";
+					imgui_SetNextItemWidth(ComboFieldWidth);
+					if (BeginComboSafe($"##spell_gem", gemPreview))
+					{
+						if (imgui_Selectable("No Gem", gemSlot == 0))
+						{
+							currentSpell.SpellGem = 0;
+							spellEditorState.IsDirty = true;
+						}
+						for (int g = 1; g <= 12; g++)
+						{
+							bool sel = gemSlot == g;
+							if (imgui_Selectable($"Gem {g}", sel))
+							{
+								currentSpell.SpellGem = g;
+								gemSlot = g;
+								spellEditorState.IsDirty = true;
+							}
+						}
+						EndComboSafe();
+					}
+
+					//CAST TYPES
+					imgui_TableNextRow();
+					imgui_TableNextColumn();
+					imgui_Text("Cast Type Override:");
+					imgui_TableNextColumn();
+					string castTypeString = currentSpell.CastTypeOverride.ToString();
+					//string castPreview = string.IsNullOrEmpty(castTypeString) ? "Auto (Detect)" : castTypeString;
+					imgui_SetNextItemWidth(ComboFieldWidth);
+					if (BeginComboSafe($"##spell_casttype", castTypeString))
+					{
+						foreach (var option in data._spellCastTypeOptions)
+						{
+							bool sel = string.Equals(castTypeString, option, StringComparison.OrdinalIgnoreCase);
+							if (imgui_Selectable(option, sel))
+							{
+								currentSpell.CastTypeOverride = (CastingType)Enum.Parse(typeof(CastingType), option);
+								spellEditorState.IsDirty = true;
+							}
+						}
+						EndComboSafe();
+					}
+					RenderTableCheckboxEditRow("##spell_enabled", "Enabled:", currentSpell.Enabled, (u) => { currentSpell.Enabled = u; }, tooltip: "Enable or Disable entry");
+
+				}
+				finally
+				{
+					imgui_EndTable();
+				}
+
+			}
+		}
+		private static void Render_MainWindow_SpellEditor_Tab_Conditions()
+		{
+			var spellEditorState = _state.GetState<State_SpellEditor>();
+			var mainWindowState = _state.GetState<State_MainWindow>();
+			var currentSpell = mainWindowState.Currently_EditableSpell;
+
+			imgui_TextColored(0.8f, 0.9f, 0.95f, 1.0f, "Logic");
+			const ImGuiTableFlags FieldTableFlags = (ImGuiTableFlags.ImGuiTableFlags_SizingStretchProp | ImGuiTableFlags.ImGuiTableFlags_PadOuterX);
+			const ImGuiTableColumnFlags LabelColumnFlags = (ImGuiTableColumnFlags.ImGuiTableColumnFlags_WidthFixed | ImGuiTableColumnFlags.ImGuiTableColumnFlags_NoResize);
+			const ImGuiTableColumnFlags ValueColumnFlags = ImGuiTableColumnFlags.ImGuiTableColumnFlags_WidthStretch;
+
+			if (imgui_BeginTable("GeneralTabTable", 2, (int)FieldTableFlags, imgui_GetContentRegionAvailX(), 0))
+			{
+				try
+				{
+					imgui_TableSetupColumn("Label", (int)LabelColumnFlags, 0f);
+					imgui_TableSetupColumn("Value", (int)ValueColumnFlags, 0f);
+					RenderTableTextEditRow("##SpellEditor_ifsKeys", "Ifs Keys:", currentSpell.IfsKeys, (u) => { currentSpell.IfsKeys = u; });
+					RenderTableTextEditRow("##SpellEditor_CheckFor", "Check For:", String.Join(",", currentSpell.CheckForCollection.Keys), (u) =>
+					{
+						currentSpell.CheckForCollection.Clear();
+						var split = u.Split(',');
+						foreach (var check in split)
+						{
+
+							string tKey = check.Trim();
+							if (String.IsNullOrWhiteSpace(tKey)) continue;
+							if (!currentSpell.CheckForCollection.ContainsKey(tKey))
+							{
+								currentSpell.CheckForCollection.Add(tKey, 0);
+							}
+						}
+					});
+					RenderTableTextEditRow("##SpellEditor_CastIfs", "Cast If:", currentSpell.CastIF, (u) => { currentSpell.CastIF = u; });
+					RenderTableTextEditRow("##SpellEditor_Zone", "Zone:", currentSpell.Zone, (u) => { currentSpell.Zone = u; });
+					RenderTableTextEditRow("##SpellEditor_MinSick", "Min Sick:", currentSpell.MinSick.ToString(), (u) => { Int32.TryParse(u, out currentSpell.MinSick); });
+					RenderTableTextEditRow("##SpellEditor_TriggerSpell", "Trigger Spell:", currentSpell.TriggerSpell, (u) => { currentSpell.TriggerSpell = u; });
+				}
+				finally
+				{
+					imgui_EndTable();
+				}
+			}
+		}
+		private static void Render_MainWindow_SpellEditor_Tab_Resources()
+		{
+			var spellEditorState = _state.GetState<State_SpellEditor>();
+			imgui_TextColored(0.8f, 0.9f, 0.95f, 1.0f, "Logic");
+			const ImGuiTableFlags FieldTableFlags = (ImGuiTableFlags.ImGuiTableFlags_SizingStretchProp | ImGuiTableFlags.ImGuiTableFlags_PadOuterX);
+			const ImGuiTableColumnFlags LabelColumnFlags = (ImGuiTableColumnFlags.ImGuiTableColumnFlags_WidthFixed | ImGuiTableColumnFlags.ImGuiTableColumnFlags_NoResize);
+			const ImGuiTableColumnFlags ValueColumnFlags = ImGuiTableColumnFlags.ImGuiTableColumnFlags_WidthStretch;
+			var mainWindowState = _state.GetState<State_MainWindow>();
+			var currentSpell = mainWindowState.Currently_EditableSpell;
+
+			if (imgui_BeginTable("SpellResourceTable", 2, (int)FieldTableFlags, imgui_GetContentRegionAvailX(), 0))
+			{
+				try
+				{
+					imgui_TableSetupColumn("Label", (int)LabelColumnFlags, 0f);
+					imgui_TableSetupColumn("Value", (int)ValueColumnFlags, 0f);
+
+					RenderTableIntEditRow("##SpellEditor_MinMana", "Min Mana:", currentSpell.MinMana, (u) => { currentSpell.MinMana = u; });
+					RenderTableIntEditRow("##SpellEditor_MinEnd", "Min End:", currentSpell.MinEnd, (u) => { currentSpell.MinEnd = u; });
+					RenderTableIntEditRow("##SpellEditor_MinPctHP", "Min HP%:", currentSpell.MinHP, (u) => { currentSpell.MinEnd = u; });
+					RenderTableIntEditRow("##SpellEditor_MinHPTotal", "Min HP%:", currentSpell.MinHPTotal, (u) => { currentSpell.MinHPTotal = u; });
+					RenderTableIntEditRow("##SpellEditor_HealPct", "Heal %:", currentSpell.HealPct, (u) => { currentSpell.HealPct = u; });
+					RenderTableIntEditRow("##SpellEditor_HealthMax", "Cancel Heal Above %:", currentSpell.HealthMax, (u) => { currentSpell.HealthMax = u; });
+					RenderTableIntEditRow("##SpellEditor_PctAggro", "Pct Aggro:", currentSpell.PctAggro, (u) => { currentSpell.PctAggro = u; }, tooltip: "Skip this entry if your current aggro percent exceeds the specified threshold.");
+					RenderTableIntEditRow("##SpellEditor_MinAggro", "Min Aggro:", currentSpell.MinAggro, (u) => { currentSpell.MinAggro = u; }, tooltip: "Only cast when your aggro percent is at least this value (helps gate low-threat openers).");
+					RenderTableIntEditRow("##SpellEditor_MaxAggro", "Max Aggro:", currentSpell.MaxAggro, (u) => { currentSpell.MaxAggro = u; }, tooltip: "Do not cast once your aggro percent is above this value (useful for backing off).");
+				}
+				finally
+				{
+					imgui_EndTable();
+
+				}
+			}
+
+		}
+		private static void Render_MainWindow_SpellEditor_Tab_Timing()
+		{
+			var spellEditorState = _state.GetState<State_SpellEditor>();
+			imgui_TextColored(0.8f, 0.9f, 0.95f, 1.0f, "Delays");
+			const ImGuiTableFlags FieldTableFlags = (ImGuiTableFlags.ImGuiTableFlags_SizingStretchProp | ImGuiTableFlags.ImGuiTableFlags_PadOuterX);
+			const ImGuiTableColumnFlags LabelColumnFlags = (ImGuiTableColumnFlags.ImGuiTableColumnFlags_WidthFixed | ImGuiTableColumnFlags.ImGuiTableColumnFlags_NoResize);
+			const ImGuiTableColumnFlags ValueColumnFlags = ImGuiTableColumnFlags.ImGuiTableColumnFlags_WidthStretch;
+			var mainWindowState = _state.GetState<State_MainWindow>();
+			var currentSpell = mainWindowState.Currently_EditableSpell;
+
+			if (imgui_BeginTable("SpellTimingTable", 2, (int)FieldTableFlags, imgui_GetContentRegionAvailX(), 0))
+			{
+				try
+				{
+					imgui_TableSetupColumn("Label", (int)LabelColumnFlags, 0f);
+					imgui_TableSetupColumn("Value", (int)ValueColumnFlags, 0f);
+
+					RenderTableIntEditRow("##SpellEditor_Delay", "Delay:", currentSpell.Delay, (u) => { currentSpell.Delay = u; });
+					RenderTableIntEditRow("##SpellEditor_RecastDelay", "Recast Delay:", currentSpell.RecastDelay, (u) => { currentSpell.RecastDelay = u; });
+					RenderTableIntEditRow("##SpellEditor_DelayBeforeRecast", "Min Duration Before Recast:", (int)currentSpell.MinDurationBeforeRecast, (u) => { currentSpell.MinDurationBeforeRecast = u; });
+					RenderTableIntEditRow("##SpellEditor_BeforeSpellDelay", "Before Spell Delay:", currentSpell.BeforeSpellDelay, (u) => { currentSpell.BeforeSpellDelay = u; });
+					RenderTableIntEditRow("##SpellEditor_AfterSpellDelay", "After Spell Delay:", currentSpell.AfterSpellDelay, (u) => { currentSpell.AfterSpellDelay = u; });
+
+					RenderTableIntEditRow("##SpellEditor_BeforeEventDelay", "Before Event Delay:", currentSpell.BeforeEventDelay, (u) => { currentSpell.BeforeEventDelay = u; });
+					RenderTableIntEditRow("##SpellEditor_AfterEventDelay", "After Event Delay:", currentSpell.AfterEventDelay, (u) => { currentSpell.AfterEventDelay = u; });
+
+					RenderTableIntEditRow("##SpellEditor_AfterCastDelay", "After Cast Delay:", currentSpell.AfterCastDelay, (u) => { currentSpell.AfterCastDelay = u; });
+					RenderTableIntEditRow("##SpellEditor_AfterCastCompletedDelay", "After Cast Completed Delay:", currentSpell.AfterCastCompletedDelay, (u) => { currentSpell.AfterCastCompletedDelay = u; });
+
+
+					RenderTableIntEditRow("##SpellEditor_MaxTries", "Max Tries:", currentSpell.MaxTries, (u) => { currentSpell.MaxTries = u; });
+					RenderTableIntEditRow("##SpellEditor_SongRefreshTime", "Song Refresh Time:", currentSpell.SongRefreshTime, (u) => { currentSpell.SongRefreshTime = u; });
+
+				}
+				finally
+				{
+					imgui_EndTable();
+
+				}
+			}
+
+		}
+		private static void Render_MainWindow_SpellEditor_Tab_Advanced()
+		{
+			var spellEditorState = _state.GetState<State_SpellEditor>();
+			imgui_TextColored(0.8f, 0.9f, 0.95f, 1.0f, "Ordering");
+			const ImGuiTableFlags FieldTableFlags = (ImGuiTableFlags.ImGuiTableFlags_SizingStretchProp | ImGuiTableFlags.ImGuiTableFlags_PadOuterX);
+			const ImGuiTableColumnFlags LabelColumnFlags = (ImGuiTableColumnFlags.ImGuiTableColumnFlags_WidthFixed | ImGuiTableColumnFlags.ImGuiTableColumnFlags_NoResize);
+			const ImGuiTableColumnFlags ValueColumnFlags = ImGuiTableColumnFlags.ImGuiTableColumnFlags_WidthStretch;
+			var mainWindowState = _state.GetState<State_MainWindow>();
+			var currentSpell = mainWindowState.Currently_EditableSpell;
+
+			if (imgui_BeginTable("SpellOrderingTable", 2, (int)FieldTableFlags, imgui_GetContentRegionAvailX(), 0))
+			{
+				try
+				{
+					imgui_TableSetupColumn("Label", (int)LabelColumnFlags, 0f);
+					imgui_TableSetupColumn("Value", (int)ValueColumnFlags, 0f);
+					RenderTableTextEditRow("##SpellEditor_BeforeSpell", "Before Spell:", currentSpell.BeforeSpell, (u) => { currentSpell.BeforeSpell = u; });
+					RenderTableTextEditRow("##SpellEditor_AfterSpell", "After Spell:", currentSpell.AfterSpell, (u) => { currentSpell.AfterSpell = u; });
+					RenderTableTextEditRow("##SpellEditor_BeforeEvent", "Before Event:", currentSpell.BeforeEventKeys, (u) => { currentSpell.BeforeEventKeys = u; });
+					RenderTableTextEditRow("##SpellEditor_AfterEvent", "After Event:", currentSpell.AfterEventKeys, (u) => { currentSpell.AfterEventKeys = u; });
+					RenderTableTextEditRow("##SpellEditor_Regent", "Regent:", currentSpell.Reagent, (u) => { currentSpell.Reagent = u; });
+				}
+				finally
+				{
+					imgui_EndTable();
+				}
+			}
+			imgui_Separator();
+			imgui_TextColored(0.8f, 0.9f, 0.95f, 1.0f, "Exclusions");
+
+			if (imgui_BeginTable("SpellExclusionsTable", 2, (int)FieldTableFlags, imgui_GetContentRegionAvailX(), 0))
+			{
+				try
+				{
+					imgui_TableSetupColumn("Label", (int)LabelColumnFlags, 0f);
+					imgui_TableSetupColumn("Value", (int)ValueColumnFlags, 0f);
+					RenderTableTextEditRow("##SpellEditor_ExcludeClasses", "Excluded Classes:", String.Join(",", currentSpell.ExcludedClasses.ToList()), (u) => {
+
+						string[] excludeClasses = u.Split(',');
+						foreach (var eclass in excludeClasses)
+						{
+							var tclass = eclass.Trim();
+
+							if (!currentSpell.ExcludedClasses.Contains(tclass.Trim()))
+							{
+								currentSpell.ExcludedClasses.Add(tclass.Trim());
+							}
+						}
+					}, tooltip: "Short class name: IE: WAR,PAL,SHD comma seperated");
+					RenderTableTextEditRow("##SpellEditor_ExcludeNames", "Excluded Names:", String.Join(",", currentSpell.ExcludedNames.ToList()), (u) => {
+
+						string[] excludeClasses = u.Split(',');
+						foreach (var ename in excludeClasses)
+						{
+							var tname = ename.Trim();
+
+							if (!currentSpell.ExcludedNames.Contains(tname.Trim()))
+							{
+								currentSpell.ExcludedNames.Add(tname.Trim());
+							}
+						}
+					}, tooltip: "Name of toons in your party, comma seperated");
+				}
+				finally
+				{
+					imgui_EndTable();
+
+				}
+			}
+
+		}
+
+		private static void Render_MainWindow_SpellEditor_Tab_Flags()
+		{
+			var spellEditorState = _state.GetState<State_SpellEditor>();
+			imgui_TextColored(0.8f, 0.9f, 0.95f, 1.0f, "Flags");
+			const ImGuiTableFlags FlagTableFlags = (ImGuiTableFlags.ImGuiTableFlags_SizingStretchProp | ImGuiTableFlags.ImGuiTableFlags_PadOuterX);
+			const ImGuiTableColumnFlags FlagLabelColumnFlags = (ImGuiTableColumnFlags.ImGuiTableColumnFlags_WidthFixed | ImGuiTableColumnFlags.ImGuiTableColumnFlags_NoResize);
+			const ImGuiTableColumnFlags FlagCheckboxColumnFlags = (ImGuiTableColumnFlags.ImGuiTableColumnFlags_WidthFixed | ImGuiTableColumnFlags.ImGuiTableColumnFlags_NoResize);
+			const ImGuiTableColumnFlags FlagSpacerColumnFlags = ImGuiTableColumnFlags.ImGuiTableColumnFlags_WidthStretch;
+			const float FlagLabelPadding = 12f;
+			const float FlagCheckboxColumnWidth = 32f;
+			var mainWindowState = _state.GetState<State_MainWindow>();
+			var currentSpell = mainWindowState.Currently_EditableSpell;
+
+			if (imgui_BeginTable($"E3SpellFlagTable", 3, (int)FlagTableFlags, imgui_GetContentRegionAvailX(), 0))
+			{
+				try
+				{
+					float flagLabelColumnWidth = Math.Max(200f, imgui_CalcTextSizeX("Gift of Mana Required:") + FlagLabelPadding);
+					imgui_TableSetupColumn("FlagColumnLabel", (int)FlagLabelColumnFlags, flagLabelColumnWidth);
+					imgui_TableSetupColumn("FlagColumnCheckbox", (int)FlagCheckboxColumnFlags, FlagCheckboxColumnWidth);
+					imgui_TableSetupColumn("FlagColumnSpacer", (int)FlagSpacerColumnFlags, 0f);
+					RenderTableCheckboxEditRow("##Flag_NoInterrupt", "No Interrupt:", currentSpell.NoInterrupt, (u) => { currentSpell.NoInterrupt = u; }, tooltip: "Do not interrupt this cast for emergency heals, nowcasts, or queued commands once the bar starts.");
+					RenderTableCheckboxEditRow("##Flag_IgnoreStackRules", "Ignore Stack Rules:", currentSpell.IgnoreStackRules, (u) => { currentSpell.IgnoreStackRules = u; }, tooltip: "Skip the Spell.StacksTarget check; cast even if EQ reports the effect will not land due to stacking.");
+					RenderTableCheckboxEditRow("##Flag_NoTarget", "No Target:", currentSpell.NoTarget, (u) => { currentSpell.NoTarget = u; }, tooltip: "Leave the current target untouched so the spell can fire on self or without a target lock.\"");
+					RenderTableCheckboxEditRow("##Flag_NoAggro", "No Aggro:", currentSpell.NoAggro, (u) => { currentSpell.NoAggro = u; }, tooltip: "Suppress this spell if the mob currently has you targeted to reduce aggro spikes.");
+					RenderTableCheckboxEditRow("##Flag_NoMidSongCast", "No Mid Song Cast:", currentSpell.NoMidSongCast, (u) => { currentSpell.NoMidSongCast = u; }, tooltip: "Bards: block this action while a song is already channeling so twisting is not disrupted.");
+					RenderTableCheckboxEditRow("##Flag_GoM", "Gift of Mana Required:", currentSpell.GiftOfMana, (u) => { currentSpell.GiftOfMana = u; }, tooltip: "Only cast when a Gift of Mana-style proc is active, saving mana on expensive spells.");
+					RenderTableCheckboxEditRow("##Flag_Debug", "Debug output:", currentSpell.Debug, (u) => { currentSpell.Debug = u; }, tooltip: "Enable detailed logging for this spell to the MQ chat/log window.");
+				}
+				finally
+				{
+					imgui_EndTable();
+				}
+
+			}
+
+		}
+		private static void Render_MainWindow_SpellEditor_Tab_Manual()
+		{
+			var spellEditorState = _state.GetState<State_SpellEditor>();
+			var mainWindowState = _state.GetState<State_MainWindow>();
+			var currentSpell = mainWindowState.Currently_EditableSpell;
+			imgui_TextColored(0.8f, 0.9f, 0.95f, 1.0f, "Manual Text Editor");
+			imgui_Text("Edit the raw configuration value directly. Changes apply when you click Apply.");
+			imgui_Separator();
+
+			// Text area for manual editing
+			float textWidth = Math.Max(500f, imgui_GetContentRegionAvailX() * 0.95f);
+			float textHeight = Math.Max(180f, imgui_GetTextLineHeightWithSpacing() * 10f);
+
+
+			if (String.IsNullOrWhiteSpace(spellEditorState.ManualEditBuffer))
+			{
+				spellEditorState.ManualEditBuffer = currentSpell.ToConfigEntry();
+			}
+
+			if (imgui_InputTextMultiline($"##manual_edit", spellEditorState.ManualEditBuffer, textWidth, textHeight))
+			{
+				spellEditorState.ManualEditBuffer = imgui_InputText_Get($"##manual_edit");
+				spellEditorState.IsDirty = true;
+				spellEditorState.ManualInputBufferInUse = true;
+
+			}
+
+		}
+
+		#endregion
+
+		private static void Render_Active_Windows(SectionData selectedSection)
 		{
 			if (_state.Show_AddModal)
 			{
-				RenderAddFromCatalogModal(data.GetActiveCharacterIniData(), selectedSection);
+				Render_CatalogAddWindow(data.GetActiveCharacterIniData(), selectedSection);
 			}
 			if (_state.Show_FoodDrinkModal)
 			{
@@ -1655,7 +1990,7 @@ namespace E3Core.UI.Windows.CharacterSettings
 
 
 		#region RenderCatalog
-		private static void RenderAddFromCatalogModal_CalculateAddType(AddType typeofadd,out float leftW, out float middleW, out float rightW)
+		private static void Render_CatalogAddWindow_CalculateAddType(AddType typeofadd,out float leftW, out float middleW, out float rightW)
 		{
 			float totalW = imgui_GetContentRegionAvailX();
 																 // Adjust panel widths based on type - Items need wider left panel for longer names
@@ -1674,7 +2009,7 @@ namespace E3Core.UI.Windows.CharacterSettings
 			}
 
 		}
-		private static void RenderAddFromCatalogModal_Header()
+		private static void Render_CatalogAddWindow_Header()
 		{
 			var state = _state.GetState<State_CatalogWindow>();
 			// Header: type + filter + catalog source
@@ -1734,7 +2069,7 @@ namespace E3Core.UI.Windows.CharacterSettings
 			}
 
 		}
-		private static void RenderAddFromCatalogModel_LeftPanel(float leftW,float listH, SortedDictionary<string,SortedDictionary<string,List<E3Spell>>> currentCatalog)
+		private static void Render_CatalogAddWindow_LeftPanel(float leftW,float listH, SortedDictionary<string,SortedDictionary<string,List<E3Spell>>> currentCatalog)
 		{
 			var state = _state.GetState<State_CatalogWindow>();
 
@@ -1766,7 +2101,7 @@ namespace E3Core.UI.Windows.CharacterSettings
 				}
 			}
 		}
-		private static void RenderAddFromCatalogModel_MiddlePanel(float middleW, float listH,SortedDictionary<string, SortedDictionary<string, List<E3Spell>>> currentCatalog)
+		private static void Render_CatalogAddWindow_MiddlePanel(float middleW, float listH,SortedDictionary<string, SortedDictionary<string, List<E3Spell>>> currentCatalog)
 		{
 			var state = _state.GetState<State_CatalogWindow>();
 
@@ -1886,7 +2221,7 @@ namespace E3Core.UI.Windows.CharacterSettings
 			}
 			
 		}
-		private static void ReaderAddFromCatalogModal_RightPanel(float rightW, float listH, SectionData selectedSection)
+		private static void Render_CatalogAddWindow_RightPanel(float rightW, float listH, SectionData selectedSection)
 		{
 			var state = _state.GetState<State_CatalogWindow>();
 			var mainWindowState = _state.GetState<State_MainWindow>();
@@ -1965,7 +2300,7 @@ namespace E3Core.UI.Windows.CharacterSettings
 				finally { imgui_EndChild(); }
 			}
 		}
-		private static void RenderAddFromCatalogModal(IniData pd, SectionData selectedSection)
+		private static void Render_CatalogAddWindow(IniData pd, SectionData selectedSection)
 		{
 			var state = _state.GetState<State_CatalogWindow>();
 
@@ -1979,8 +2314,8 @@ namespace E3Core.UI.Windows.CharacterSettings
 					float leftW, middleW, rightW;
 					var currentCatalog = data.GetCatalogByType(state.CurrentAddType);
 
-					RenderAddFromCatalogModal_CalculateAddType(state.CurrentAddType, out leftW, out middleW, out rightW);
-					RenderAddFromCatalogModal_Header();
+					Render_CatalogAddWindow_CalculateAddType(state.CurrentAddType, out leftW, out middleW, out rightW);
+					Render_CatalogAddWindow_Header();
 					// Show catalog status if loading
 					if (_state.State_CatalogLoading)
 					{
@@ -1988,11 +2323,11 @@ namespace E3Core.UI.Windows.CharacterSettings
 						imgui_TextColored(0.9f, 0.9f, 0.4f, 1.0f, _state.Status_CatalogRequest.Replace("Loading catalogs", "Loading"));
 					}
 					imgui_Separator();
-					RenderAddFromCatalogModel_LeftPanel(leftW, listH, currentCatalog);
+					Render_CatalogAddWindow_LeftPanel(leftW, listH, currentCatalog);
 					imgui_SameLine();
-					RenderAddFromCatalogModel_MiddlePanel(middleW, listH, currentCatalog);
+					Render_CatalogAddWindow_MiddlePanel(middleW, listH, currentCatalog);
 					imgui_SameLine();
-					ReaderAddFromCatalogModal_RightPanel(rightW, listH, selectedSection);
+					Render_CatalogAddWindow_RightPanel(rightW, listH, selectedSection);
 					imgui_Separator();
 					if (imgui_Button("Close"))
 					{
@@ -2006,14 +2341,6 @@ namespace E3Core.UI.Windows.CharacterSettings
 			}
 		}
 		#endregion
-
-
-		// Search all catalogs for a spell/item/AA by name
-
-
-		// Helper: format milliseconds as seconds, or minutes+seconds over 60s
-
-
 		private static void RenderSpellAdditionalInfo(E3Spell spellInfo)
 		{
 			if (spellInfo == null) return;
@@ -2828,350 +3155,7 @@ namespace E3Core.UI.Windows.CharacterSettings
 			
 		}
 
-		#region RenderSpellEditor
-		private static void RenderSpellModifierEditor2_Tab_General()
-		{
-			var spellEditorState = _state.GetState<State_SpellEditor>();
-			var mainWindowState = _state.GetState<State_MainWindow>();
-
-			imgui_TextColored(0.8f, 0.9f, 0.95f, 1.0f, "Basics");
-			const ImGuiTableFlags FieldTableFlags = (ImGuiTableFlags.ImGuiTableFlags_SizingStretchProp | ImGuiTableFlags.ImGuiTableFlags_PadOuterX);
-			const ImGuiTableColumnFlags LabelColumnFlags = (ImGuiTableColumnFlags.ImGuiTableColumnFlags_WidthFixed | ImGuiTableColumnFlags.ImGuiTableColumnFlags_NoResize);
-			const ImGuiTableColumnFlags ValueColumnFlags = ImGuiTableColumnFlags.ImGuiTableColumnFlags_WidthStretch;
-			const float ComboFieldWidth = 220f;
-			var currentSpell = mainWindowState.Currently_EditableSpell;
-
-			if (imgui_BeginTable("GeneralTabTable", 2, (int)FieldTableFlags, imgui_GetContentRegionAvailX(), 0))
-			{
-				try
-				{
-					imgui_TableSetupColumn("Label", (int)LabelColumnFlags, 0f);
-					imgui_TableSetupColumn("Value", (int)ValueColumnFlags, 0f);
-
-
-					//to specify the id of an input text use ## so its not visable
-					
-					RenderTableTextEditRow("##SpellEditor_CastName", "Cast Name:", currentSpell.CastName, (u) =>{ currentSpell.CastName = u; currentSpell.SpellName = u; });
-					RenderTableTextEditRow("##SpellEditor_CastTarget", "Cast Target:", currentSpell.CastTarget, (u) =>{	currentSpell.CastTarget = u; });
-					///GEM SLOTS
-					imgui_TableNextRow();
-					imgui_TableNextColumn();
-					imgui_Text("Gem Slot:");
-					imgui_TableNextColumn();
-					var gemSlot = currentSpell.SpellGem;
-					string gemPreview = gemSlot >= 1 && gemSlot <= 12 ? $"Gem {gemSlot}" : "No Gem";
-					imgui_SetNextItemWidth(ComboFieldWidth);
-					if (BeginComboSafe($"##spell_gem", gemPreview))
-					{
-						if (imgui_Selectable("No Gem", gemSlot == 0))
-						{
-							currentSpell.SpellGem = 0;
-							spellEditorState.IsDirty = true;
-						}
-						for (int g = 1; g <= 12; g++)
-						{
-							bool sel = gemSlot == g;
-							if (imgui_Selectable($"Gem {g}", sel))
-							{
-								currentSpell.SpellGem = g;
-								gemSlot = g;
-								spellEditorState.IsDirty = true;
-							}
-						}
-						EndComboSafe();
-					}
-
-					//CAST TYPES
-					imgui_TableNextRow();
-					imgui_TableNextColumn();
-					imgui_Text("Cast Type Override:");
-					imgui_TableNextColumn();
-					string castTypeString = currentSpell.CastTypeOverride.ToString();
-					//string castPreview = string.IsNullOrEmpty(castTypeString) ? "Auto (Detect)" : castTypeString;
-					imgui_SetNextItemWidth(ComboFieldWidth);
-					if (BeginComboSafe($"##spell_casttype", castTypeString))
-					{	
-						foreach (var option in data._spellCastTypeOptions)
-						{
-							bool sel = string.Equals(castTypeString, option, StringComparison.OrdinalIgnoreCase);
-							if (imgui_Selectable(option, sel))
-							{
-								currentSpell.CastTypeOverride = (CastingType)Enum.Parse(typeof(CastingType), option);
-								spellEditorState.IsDirty = true;
-							}
-						}
-						EndComboSafe();
-					}
-					RenderTableCheckboxEditRow("##spell_enabled", "Enabled:", currentSpell.Enabled, (u) => { currentSpell.Enabled = u; }, tooltip: "Enable or Disable entry");
-					
-				}
-				finally
-				{
-					imgui_EndTable();
-				}
-
-			}
-		}
-		private static void RenderSpellModifierEditor2_Tab_Conditions()
-		{
-			var spellEditorState = _state.GetState<State_SpellEditor>();
-			var mainWindowState = _state.GetState<State_MainWindow>();
-			var currentSpell = mainWindowState.Currently_EditableSpell;
-
-			imgui_TextColored(0.8f, 0.9f, 0.95f, 1.0f, "Logic");
-			const ImGuiTableFlags FieldTableFlags = (ImGuiTableFlags.ImGuiTableFlags_SizingStretchProp | ImGuiTableFlags.ImGuiTableFlags_PadOuterX);
-			const ImGuiTableColumnFlags LabelColumnFlags = (ImGuiTableColumnFlags.ImGuiTableColumnFlags_WidthFixed | ImGuiTableColumnFlags.ImGuiTableColumnFlags_NoResize);
-			const ImGuiTableColumnFlags ValueColumnFlags = ImGuiTableColumnFlags.ImGuiTableColumnFlags_WidthStretch;
 		
-			if (imgui_BeginTable("GeneralTabTable", 2, (int)FieldTableFlags, imgui_GetContentRegionAvailX(), 0))
-			{
-				try
-				{
-					imgui_TableSetupColumn("Label", (int)LabelColumnFlags, 0f);
-					imgui_TableSetupColumn("Value", (int)ValueColumnFlags, 0f);
-					RenderTableTextEditRow("##SpellEditor_ifsKeys", "Ifs Keys:", currentSpell.IfsKeys, (u) => { currentSpell.IfsKeys = u; });
-					RenderTableTextEditRow("##SpellEditor_CheckFor", "Check For:", String.Join(",", currentSpell.CheckForCollection.Keys), (u) =>
-					{
-						currentSpell.CheckForCollection.Clear();
-						var split = u.Split(',');
-						foreach(var check in split)
-						{
-
-							string tKey = check.Trim();
-							if (String.IsNullOrWhiteSpace(tKey)) continue;
-							if(!currentSpell.CheckForCollection.ContainsKey(tKey))
-							{
-								currentSpell.CheckForCollection.Add(tKey, 0);
-							}
-						}
-					});
-					RenderTableTextEditRow("##SpellEditor_CastIfs", "Cast If:", currentSpell.CastIF, (u) =>{ currentSpell.CastIF = u; });
-					RenderTableTextEditRow("##SpellEditor_Zone", "Zone:", currentSpell.Zone, (u) =>{ currentSpell.Zone = u; });
-					RenderTableTextEditRow("##SpellEditor_MinSick", "Min Sick:", currentSpell.MinSick.ToString(), (u) => { Int32.TryParse(u, out currentSpell.MinSick);});
-					RenderTableTextEditRow("##SpellEditor_TriggerSpell", "Trigger Spell:", currentSpell.TriggerSpell, (u) => { currentSpell.TriggerSpell = u; });
-				}
-				finally
-				{
-					imgui_EndTable();
-				}
-			}
-		}
-		private static void RenderSpellModifierEditor2_Tab_Resources()
-		{
-			var spellEditorState = _state.GetState<State_SpellEditor>();
-			imgui_TextColored(0.8f, 0.9f, 0.95f, 1.0f, "Logic");
-			const ImGuiTableFlags FieldTableFlags = (ImGuiTableFlags.ImGuiTableFlags_SizingStretchProp | ImGuiTableFlags.ImGuiTableFlags_PadOuterX);
-			const ImGuiTableColumnFlags LabelColumnFlags = (ImGuiTableColumnFlags.ImGuiTableColumnFlags_WidthFixed | ImGuiTableColumnFlags.ImGuiTableColumnFlags_NoResize);
-			const ImGuiTableColumnFlags ValueColumnFlags = ImGuiTableColumnFlags.ImGuiTableColumnFlags_WidthStretch;
-			var mainWindowState = _state.GetState<State_MainWindow>();
-			var currentSpell = mainWindowState.Currently_EditableSpell;
-
-			if (imgui_BeginTable("SpellResourceTable", 2, (int)FieldTableFlags, imgui_GetContentRegionAvailX(), 0))
-			{
-				try
-				{
-					imgui_TableSetupColumn("Label", (int)LabelColumnFlags, 0f);
-					imgui_TableSetupColumn("Value", (int)ValueColumnFlags, 0f);
-
-					RenderTableIntEditRow("##SpellEditor_MinMana", "Min Mana:", currentSpell.MinMana, (u) =>{ currentSpell.MinMana = u; });
-					RenderTableIntEditRow("##SpellEditor_MinEnd", "Min End:", currentSpell.MinEnd, (u) =>{ currentSpell.MinEnd = u; });
-					RenderTableIntEditRow("##SpellEditor_MinPctHP", "Min HP%:", currentSpell.MinHP, (u) =>{	currentSpell.MinEnd = u; });
-					RenderTableIntEditRow("##SpellEditor_MinHPTotal", "Min HP%:", currentSpell.MinHPTotal, (u) =>{ currentSpell.MinHPTotal = u;});
-					RenderTableIntEditRow("##SpellEditor_HealPct", "Heal %:", currentSpell.HealPct, (u) =>{ currentSpell.HealPct = u;});
-					RenderTableIntEditRow("##SpellEditor_HealthMax", "Cancel Heal Above %:", currentSpell.HealthMax, (u) =>{ currentSpell.HealthMax = u;});
-					RenderTableIntEditRow("##SpellEditor_PctAggro", "Pct Aggro:", currentSpell.PctAggro, (u) =>{ currentSpell.PctAggro = u;}, tooltip:"Skip this entry if your current aggro percent exceeds the specified threshold.");
-					RenderTableIntEditRow("##SpellEditor_MinAggro", "Min Aggro:", currentSpell.MinAggro, (u) => { currentSpell.MinAggro = u; }, tooltip: "Only cast when your aggro percent is at least this value (helps gate low-threat openers).");
-					RenderTableIntEditRow("##SpellEditor_MaxAggro", "Max Aggro:", currentSpell.MaxAggro, (u) =>{ currentSpell.MaxAggro = u; }, tooltip: "Do not cast once your aggro percent is above this value (useful for backing off).");
-				}
-				finally
-				{
-					imgui_EndTable();
-
-				}
-			}
-		
-		}
-		private static void RenderSpellModifierEditor2_Tab_Timing()
-		{
-			var spellEditorState = _state.GetState<State_SpellEditor>();
-			imgui_TextColored(0.8f, 0.9f, 0.95f, 1.0f, "Delays");
-			const ImGuiTableFlags FieldTableFlags = (ImGuiTableFlags.ImGuiTableFlags_SizingStretchProp | ImGuiTableFlags.ImGuiTableFlags_PadOuterX);
-			const ImGuiTableColumnFlags LabelColumnFlags = (ImGuiTableColumnFlags.ImGuiTableColumnFlags_WidthFixed | ImGuiTableColumnFlags.ImGuiTableColumnFlags_NoResize);
-			const ImGuiTableColumnFlags ValueColumnFlags = ImGuiTableColumnFlags.ImGuiTableColumnFlags_WidthStretch;
-			var mainWindowState = _state.GetState<State_MainWindow>();
-			var currentSpell = mainWindowState.Currently_EditableSpell;
-
-			if (imgui_BeginTable("SpellTimingTable", 2, (int)FieldTableFlags, imgui_GetContentRegionAvailX(), 0))
-			{
-				try
-				{
-					imgui_TableSetupColumn("Label", (int)LabelColumnFlags, 0f);
-					imgui_TableSetupColumn("Value", (int)ValueColumnFlags, 0f);
-
-					RenderTableIntEditRow("##SpellEditor_Delay", "Delay:", currentSpell.Delay, (u) => { currentSpell.Delay = u; });
-					RenderTableIntEditRow("##SpellEditor_RecastDelay", "Recast Delay:", currentSpell.RecastDelay, (u) => { currentSpell.RecastDelay = u; });
-					RenderTableIntEditRow("##SpellEditor_DelayBeforeRecast", "Min Duration Before Recast:", (int)currentSpell.MinDurationBeforeRecast, (u) => { currentSpell.MinDurationBeforeRecast = u; });
-					RenderTableIntEditRow("##SpellEditor_BeforeSpellDelay", "Before Spell Delay:", currentSpell.BeforeSpellDelay, (u) => { currentSpell.BeforeSpellDelay = u; });
-					RenderTableIntEditRow("##SpellEditor_AfterSpellDelay", "After Spell Delay:", currentSpell.AfterSpellDelay, (u) => { currentSpell.AfterSpellDelay = u; });
-
-					RenderTableIntEditRow("##SpellEditor_BeforeEventDelay", "Before Event Delay:", currentSpell.BeforeEventDelay, (u) => { currentSpell.BeforeEventDelay = u; });
-					RenderTableIntEditRow("##SpellEditor_AfterEventDelay", "After Event Delay:", currentSpell.AfterEventDelay, (u) => { currentSpell.AfterEventDelay = u; });
-					
-					RenderTableIntEditRow("##SpellEditor_AfterCastDelay", "After Cast Delay:", currentSpell.AfterCastDelay, (u) => { currentSpell.AfterCastDelay = u; });
-					RenderTableIntEditRow("##SpellEditor_AfterCastCompletedDelay", "After Cast Completed Delay:", currentSpell.AfterCastCompletedDelay, (u) => { currentSpell.AfterCastCompletedDelay = u; });
-
-
-					RenderTableIntEditRow("##SpellEditor_MaxTries", "Max Tries:", currentSpell.MaxTries, (u) => { currentSpell.MaxTries = u; });
-					RenderTableIntEditRow("##SpellEditor_SongRefreshTime", "Song Refresh Time:", currentSpell.SongRefreshTime, (u) => { currentSpell.SongRefreshTime = u; });
-					
-				}
-				finally
-				{
-					imgui_EndTable();
-
-				}
-			}
-
-		}
-		private static void RenderSpellModifierEditor2_Tab_Advanced()
-		{
-			var spellEditorState = _state.GetState<State_SpellEditor>();
-			imgui_TextColored(0.8f, 0.9f, 0.95f, 1.0f, "Ordering");
-			const ImGuiTableFlags FieldTableFlags = (ImGuiTableFlags.ImGuiTableFlags_SizingStretchProp | ImGuiTableFlags.ImGuiTableFlags_PadOuterX);
-			const ImGuiTableColumnFlags LabelColumnFlags = (ImGuiTableColumnFlags.ImGuiTableColumnFlags_WidthFixed | ImGuiTableColumnFlags.ImGuiTableColumnFlags_NoResize);
-			const ImGuiTableColumnFlags ValueColumnFlags = ImGuiTableColumnFlags.ImGuiTableColumnFlags_WidthStretch;
-			var mainWindowState = _state.GetState<State_MainWindow>();
-			var currentSpell = mainWindowState.Currently_EditableSpell;
-
-			if (imgui_BeginTable("SpellOrderingTable", 2, (int)FieldTableFlags, imgui_GetContentRegionAvailX(), 0))
-			{
-				try
-				{
-					imgui_TableSetupColumn("Label", (int)LabelColumnFlags, 0f);
-					imgui_TableSetupColumn("Value", (int)ValueColumnFlags, 0f);
-					RenderTableTextEditRow("##SpellEditor_BeforeSpell", "Before Spell:", currentSpell.BeforeSpell, (u) => { currentSpell.BeforeSpell = u; });
-					RenderTableTextEditRow("##SpellEditor_AfterSpell", "After Spell:", currentSpell.AfterSpell, (u) => { currentSpell.AfterSpell = u; });
-					RenderTableTextEditRow("##SpellEditor_BeforeEvent", "Before Event:", currentSpell.BeforeEventKeys, (u) => { currentSpell.BeforeEventKeys = u; });
-					RenderTableTextEditRow("##SpellEditor_AfterEvent", "After Event:", currentSpell.AfterEventKeys, (u) => { currentSpell.AfterEventKeys = u; });
-					RenderTableTextEditRow("##SpellEditor_Regent", "Regent:", currentSpell.Reagent, (u) => { currentSpell.Reagent = u; });
-				}
-				finally
-				{
-					imgui_EndTable();
-				}
-			}
-			imgui_Separator();
-			imgui_TextColored(0.8f, 0.9f, 0.95f, 1.0f, "Exclusions");
-
-			if (imgui_BeginTable("SpellExclusionsTable", 2, (int)FieldTableFlags, imgui_GetContentRegionAvailX(), 0))
-			{
-				try
-				{
-					imgui_TableSetupColumn("Label", (int)LabelColumnFlags, 0f);
-					imgui_TableSetupColumn("Value", (int)ValueColumnFlags, 0f);
-					RenderTableTextEditRow("##SpellEditor_ExcludeClasses", "Excluded Classes:", String.Join(",", currentSpell.ExcludedClasses.ToList()), (u) => {
-
-						string[] excludeClasses = u.Split(',');
-						foreach (var eclass in excludeClasses)
-						{
-							var tclass = eclass.Trim();
-
-							if (!currentSpell.ExcludedClasses.Contains(tclass.Trim()))
-							{
-								currentSpell.ExcludedClasses.Add(tclass.Trim());
-							}
-						}
-					},tooltip:"Short class name: IE: WAR,PAL,SHD comma seperated");
-					RenderTableTextEditRow("##SpellEditor_ExcludeNames", "Excluded Names:", String.Join(",", currentSpell.ExcludedNames.ToList()), (u) => {
-
-						string[] excludeClasses = u.Split(',');
-						foreach (var ename in excludeClasses)
-						{
-							var tname = ename.Trim();
-
-							if (!currentSpell.ExcludedNames.Contains(tname.Trim()))
-							{
-								currentSpell.ExcludedNames.Add(tname.Trim());
-							}
-						}
-					}, tooltip: "Name of toons in your party, comma seperated");
-				}
-				finally
-				{
-					imgui_EndTable();
-
-				}
-			}
-			
-		}
-	
-		private static void RenderSpellModifierEditor2_Tab_Flags()
-		{
-			var spellEditorState = _state.GetState<State_SpellEditor>();
-			imgui_TextColored(0.8f, 0.9f, 0.95f, 1.0f, "Flags");
-			const ImGuiTableFlags FlagTableFlags = (ImGuiTableFlags.ImGuiTableFlags_SizingStretchProp | ImGuiTableFlags.ImGuiTableFlags_PadOuterX);
-			const ImGuiTableColumnFlags FlagLabelColumnFlags = (ImGuiTableColumnFlags.ImGuiTableColumnFlags_WidthFixed | ImGuiTableColumnFlags.ImGuiTableColumnFlags_NoResize);
-			const ImGuiTableColumnFlags FlagCheckboxColumnFlags = (ImGuiTableColumnFlags.ImGuiTableColumnFlags_WidthFixed | ImGuiTableColumnFlags.ImGuiTableColumnFlags_NoResize);
-			const ImGuiTableColumnFlags FlagSpacerColumnFlags = ImGuiTableColumnFlags.ImGuiTableColumnFlags_WidthStretch;
-			const float FlagLabelPadding = 12f;
-			const float FlagCheckboxColumnWidth = 32f;
-			var mainWindowState = _state.GetState<State_MainWindow>();
-			var currentSpell = mainWindowState.Currently_EditableSpell;
-
-			if (imgui_BeginTable($"E3SpellFlagTable", 3, (int)FlagTableFlags, imgui_GetContentRegionAvailX(), 0))
-			{
-				try
-				{
-					float flagLabelColumnWidth = Math.Max(200f, imgui_CalcTextSizeX("Gift of Mana Required:") + FlagLabelPadding);
-					imgui_TableSetupColumn("FlagColumnLabel", (int)FlagLabelColumnFlags, flagLabelColumnWidth);
-					imgui_TableSetupColumn("FlagColumnCheckbox", (int)FlagCheckboxColumnFlags, FlagCheckboxColumnWidth);
-					imgui_TableSetupColumn("FlagColumnSpacer", (int)FlagSpacerColumnFlags, 0f);
-					RenderTableCheckboxEditRow("##Flag_NoInterrupt", "No Interrupt:", currentSpell.NoInterrupt, (u) => { currentSpell.NoInterrupt = u; }, tooltip: "Do not interrupt this cast for emergency heals, nowcasts, or queued commands once the bar starts.");
-					RenderTableCheckboxEditRow("##Flag_IgnoreStackRules", "Ignore Stack Rules:", currentSpell.IgnoreStackRules, (u) => { currentSpell.IgnoreStackRules = u; }, tooltip: "Skip the Spell.StacksTarget check; cast even if EQ reports the effect will not land due to stacking.");
-					RenderTableCheckboxEditRow("##Flag_NoTarget", "No Target:", currentSpell.NoTarget, (u) => { currentSpell.NoTarget = u; }, tooltip: "Leave the current target untouched so the spell can fire on self or without a target lock.\"");
-					RenderTableCheckboxEditRow("##Flag_NoAggro", "No Aggro:", currentSpell.NoAggro, (u) => { currentSpell.NoAggro = u; }, tooltip: "Suppress this spell if the mob currently has you targeted to reduce aggro spikes.");
-					RenderTableCheckboxEditRow("##Flag_NoMidSongCast", "No Mid Song Cast:", currentSpell.NoMidSongCast, (u) => { currentSpell.NoMidSongCast = u; }, tooltip: "Bards: block this action while a song is already channeling so twisting is not disrupted.");
-					RenderTableCheckboxEditRow("##Flag_GoM", "Gift of Mana Required:", currentSpell.GiftOfMana, (u) => { currentSpell.GiftOfMana = u; }, tooltip: "Only cast when a Gift of Mana-style proc is active, saving mana on expensive spells.");
-					RenderTableCheckboxEditRow("##Flag_Debug", "Debug output:", currentSpell.Debug, (u) => { currentSpell.Debug = u; }, tooltip: "Enable detailed logging for this spell to the MQ chat/log window.");
-				}
-				finally
-				{
-					imgui_EndTable();
-				}
-
-			}
-			
-		}
-		private static void RenderSpellModifierEditor2_Tab_Manual()
-		{
-			var spellEditorState = _state.GetState<State_SpellEditor>();
-			var mainWindowState = _state.GetState<State_MainWindow>();
-			var currentSpell = mainWindowState.Currently_EditableSpell;
-			imgui_TextColored(0.8f, 0.9f, 0.95f, 1.0f, "Manual Text Editor");
-			imgui_Text("Edit the raw configuration value directly. Changes apply when you click Apply.");
-			imgui_Separator();
-
-			// Text area for manual editing
-			float textWidth = Math.Max(500f, imgui_GetContentRegionAvailX() * 0.95f);
-			float textHeight = Math.Max(180f, imgui_GetTextLineHeightWithSpacing() * 10f);
-		
-	
-			if(String.IsNullOrWhiteSpace(spellEditorState.ManualEditBuffer))
-			{
-				spellEditorState.ManualEditBuffer = currentSpell.ToConfigEntry();
-			}
-
-			if (imgui_InputTextMultiline($"##manual_edit", spellEditorState.ManualEditBuffer, textWidth, textHeight))
-			{
-				spellEditorState.ManualEditBuffer = imgui_InputText_Get($"##manual_edit");
-				spellEditorState.IsDirty = true;
-				spellEditorState.ManualInputBufferInUse = true;
-
-			}
-
-		}
-
-		#endregion
 		/// <summary>
 		/// Used to determine if the UI state can return a valid spell. 
 		/// </summary>
@@ -3248,37 +3232,37 @@ namespace E3Core.UI.Windows.CharacterSettings
 			{
 				if (imgui_BeginTabItem($"General##spell_tab_general"))
 				{
-					RenderSpellModifierEditor2_Tab_General();
+					Render_MainWindow_SpellEditor_Tab_General();
 					imgui_EndTabItem();
 				}
 				if (imgui_BeginTabItem($"Conditions##spell_tab_conditions"))
 				{
-					RenderSpellModifierEditor2_Tab_Conditions();
+					Render_MainWindow_SpellEditor_Tab_Conditions();
 					imgui_EndTabItem();
 				}
 				if (imgui_BeginTabItem($"Resources##spell_tab_resources"))
 				{
-					RenderSpellModifierEditor2_Tab_Resources();
+					Render_MainWindow_SpellEditor_Tab_Resources();
 					imgui_EndTabItem();
 				}
 				if (imgui_BeginTabItem($"Timing##spell_tab_timing"))
 				{
-					RenderSpellModifierEditor2_Tab_Timing();
+					Render_MainWindow_SpellEditor_Tab_Timing();
 					imgui_EndTabItem();
 				}
 				if (imgui_BeginTabItem($"Advanced##spell_tab_advanced"))
 				{
-					RenderSpellModifierEditor2_Tab_Advanced();
+					Render_MainWindow_SpellEditor_Tab_Advanced();
 					imgui_EndTabItem();
 				}
 				if (imgui_BeginTabItem($"Flags##spell_tab_flags"))
 				{
-					RenderSpellModifierEditor2_Tab_Flags();
+					Render_MainWindow_SpellEditor_Tab_Flags();
 					imgui_EndTabItem();
 				}
 				if (imgui_BeginTabItem($"Manual Edit##spell_tab_manual"))
 				{
-					RenderSpellModifierEditor2_Tab_Manual();
+					Render_MainWindow_SpellEditor_Tab_Manual();
 					imgui_EndTabItem();
 				}
 				imgui_EndTabBar();
