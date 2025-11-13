@@ -116,7 +116,7 @@ namespace E3Core.UI.Windows.CharacterSettings
 			{
 				try
 				{ 
-					RenderWindow();
+					RenderMainWindow();
 				
 				} catch (Exception ex)
 				{MQ.WriteDelayed("Rendering Error:" + ex.Message + " stack:"+ex.StackTrace);}
@@ -158,7 +158,7 @@ namespace E3Core.UI.Windows.CharacterSettings
 		///So for any MQ.Query be sure to use the DelayPossible flag to false.
 		/// </summary>
 		/// 
-		private static void RenderWindow()
+		private static void RenderMainWindow()
 		{
 			if (!_imguiContextReady) return;
 			// Only render if ImGui is available and ready
@@ -171,14 +171,14 @@ namespace E3Core.UI.Windows.CharacterSettings
 				{
 					try
 					{
-						RenderWindowHeader();
+						RenderMainWindow_Header();
 						imgui_Separator();
-						RenderCharacterIniSelector();
+						RenderMainWindow_CharIniSelector();
 						imgui_Separator();
-						RenderSearchBar();
+						RenderMainWindow_SearchBar();
 						var allPlayersState = _state.GetState<State_AllPlayers>();
 						if (allPlayersState.ShowWindow) RenderAllPlayersView();
-						if (!allPlayersState.ShowWindow) RenderConfigEditor();
+						if (!allPlayersState.ShowWindow) RenderMainWindow_ConfigEditor();
 						if (_state.Show_ThemeSettings) RenderThemeSettingsModal();
 						if (_state.Show_Donate) RenderDonateModal();
 					}
@@ -191,7 +191,7 @@ namespace E3Core.UI.Windows.CharacterSettings
 			}
 		}
 
-		private static void RenderWindowHeader()
+		private static void RenderMainWindow_Header()
 		{
 			// Header bar: version text on left, buttons on right
 			if (imgui_BeginTable("E3HeaderBar", 2, (int)ImGuiTableFlags.ImGuiTableFlags_SizingStretchProp, imgui_GetContentRegionAvailX(), 0))
@@ -240,7 +240,7 @@ namespace E3Core.UI.Windows.CharacterSettings
 				}
 			}
 		}
-		private static void RenderSearchBar()
+		private static void RenderMainWindow_SearchBar()
 		{
 			var mainWindowState = _state.GetState<State_MainWindow>();
 			var allPlayerState = _state.GetState<State_AllPlayers>();
@@ -290,22 +290,8 @@ namespace E3Core.UI.Windows.CharacterSettings
 		}
 		
 		
-		private static void ChangeSelectedCharacter(string filename)
-		{
-			var state = _state.GetState<State_MainWindow>();
-
-			_log.Write($"Selecting other:{filename}", Logging.LogLevels.Debug);
-			var parser = e3util.CreateIniParser();
-			var pd = parser.ReadFile(filename);
-			state.CurrentINIFileNameFull = filename;
-			state.CurrentINIData = pd;
-			state.SelectedCharacterSection = string.Empty;
-			state.SignatureOfSelectedKeyValue = String.Empty;
-			
-			// Trigger catalog reload for the selected peer
-			data.RequestCatalogUpdate();
-		}
-		public static void RenderCharacterIniSelector()
+	
+		public static void RenderMainWindow_CharIniSelector()
 		{
 			var state = _state.GetState<State_MainWindow>();
 
@@ -330,7 +316,7 @@ namespace E3Core.UI.Windows.CharacterSettings
 						bool isloggedInCharacterSelected = string.Equals(state.CurrentINIFileNameFull, loggedInCharIniFile, StringComparison.OrdinalIgnoreCase);
 						if (imgui_Selectable($"Current: {currentINIFileName}", isloggedInCharacterSelected))
 						{
-							ChangeSelectedCharacter(loggedInCharIniFile);
+							data.ChangeSelectedCharacter(loggedInCharIniFile);
 						}
 					}
 					imgui_Text("Other Characters:");
@@ -343,7 +329,7 @@ namespace E3Core.UI.Windows.CharacterSettings
 						bool sel = string.Equals(state.CurrentINIFileNameFull, f, StringComparison.OrdinalIgnoreCase);
 						if (imgui_Selectable($"{name}", sel))
 						{
-							ChangeSelectedCharacter(f);
+							data.ChangeSelectedCharacter(f);
 						}
 					}
 				}
@@ -393,7 +379,7 @@ namespace E3Core.UI.Windows.CharacterSettings
 		}
 
 		
-		private static void RenderConfigEditor_CatalogStatus()
+		private static void RenderMainWindow_CatalogStatus()
 		{
 			// Catalog status / loader with better styling
 			if (!_state.State_CatalogReady)
@@ -420,7 +406,7 @@ namespace E3Core.UI.Windows.CharacterSettings
 
 
 		#region RenderConfigEditor
-		private static void RenderConfigEditor()
+		private static void RenderMainWindow_ConfigEditor()
 		{
 			var state = _state.GetState<State_MainWindow>();
 
@@ -431,7 +417,7 @@ namespace E3Core.UI.Windows.CharacterSettings
 			var pd = data.GetActiveCharacterIniData();
 			if (pd == null || pd.Sections == null){	imgui_TextColored(1.0f, 0.8f, 0.8f, 1.0f, "No character INI loaded.");return;}
 
-			RenderConfigEditor_CatalogStatus();
+			RenderMainWindow_CatalogStatus();
 			data.RebuildSectionsOrderIfNeeded();
 			// Use ImGui Table for responsive 3-column layout
 			float availY = imgui_GetContentRegionAvailY();
@@ -456,9 +442,9 @@ namespace E3Core.UI.Windows.CharacterSettings
 					imgui_TableHeadersRow();
 					imgui_TableNextRow();
 					// Column 1: Sections and Keys (with TreeNodes)
-					if (imgui_TableNextColumn()) { RenderConfigEditor_SelectionTree(pd);}
-					if (imgui_TableNextColumn()) { RenderConfigEditor_Values(pd); }
-					if (imgui_TableNextColumn()) { RenderConfigEditor_Tools(pd); }
+					if (imgui_TableNextColumn()) { RenderMainWindow_ConfigEditor_SelectionTree(pd);}
+					if (imgui_TableNextColumn()) { RenderMainWindow_ConfigEditor_Values(pd); }
+					if (imgui_TableNextColumn()) { RenderMainWindow_ConfigEditor_Tools(pd); }
 				}
 				finally
 				{
@@ -467,15 +453,15 @@ namespace E3Core.UI.Windows.CharacterSettings
 			}
 
 			// Render integrated editor after table if active
-			if (state.Show_ShowIntegratedEditor && state.SelectedValueIndex >= 0) { RenderIntegratedModifierEditor(); }
+			if (state.Show_ShowIntegratedEditor && state.SelectedValueIndex >= 0) { RenderMainWindow_ConfigEditor_SpellEditor(); }
 			//Ensure popups/ modals render even when the tools column is hidden
 			SectionData activeSection = data.GetCurrentSectionData();
 			RenderActiveModals(activeSection);
 			//Display memorized spells if available from catalog data (safe)
-			RenderCatalogGemData();
+			RenderMainwindow_CatalogGemData();
 		}
 		
-		public static void RenderConfigEditor_SelectionTree(IniData pd)
+		public static void RenderMainWindow_ConfigEditor_SelectionTree(IniData pd)
 		{
 			var state = _state.GetState<State_MainWindow>();
 			//Use a 1 - column table with RowBg to get built-in alternating backgrounds
@@ -619,7 +605,7 @@ namespace E3Core.UI.Windows.CharacterSettings
 				}
 			}
 		}
-		private static void RenderConfigEditor_Values(IniData pd)
+		private static void RenderMainWindow_ConfigEditor_Values(IniData pd)
 		{
 			var state = _state.GetState<State_MainWindow>();
 
@@ -723,7 +709,7 @@ namespace E3Core.UI.Windows.CharacterSettings
 					}
 					else
 					{
-						RenderSelectedKeyValues(selectedSection);
+						RenderMainWindow_ConfigEditor_SelectedKeyValues(selectedSection);
 					}
 				}
 				finally
@@ -734,7 +720,7 @@ namespace E3Core.UI.Windows.CharacterSettings
 			}
 
 		}
-		public static void RenderConfigEditor_Tools(IniData pd)
+		public static void RenderMainWindow_ConfigEditor_Tools(IniData pd)
 		{
 			var state = _state.GetState<State_MainWindow>();
 
@@ -749,7 +735,7 @@ namespace E3Core.UI.Windows.CharacterSettings
 					imgui_TableNextRow();
 					imgui_TableNextColumn();
 
-					RenderConfigurationTools(activeSection);
+					RenderMainWindow_ConfigEditor_ConfigurationTools(activeSection);
 				}
 				finally
 				{
@@ -760,7 +746,7 @@ namespace E3Core.UI.Windows.CharacterSettings
 		#endregion
 
 		// Integrated editor panel - renders after the main table and spans full width
-		private static void RenderIntegratedModifierEditor()
+		private static void RenderMainWindow_ConfigEditor_SpellEditor()
 		{
 			var mainWindowState = _state.GetState<State_MainWindow>();
 
@@ -785,7 +771,7 @@ namespace E3Core.UI.Windows.CharacterSettings
 		}
 
 		// Safe gem display using catalog data (no TLO queries from UI thread)
-		private static void RenderCatalogGemData()
+		private static void RenderMainwindow_CatalogGemData()
 		{
 			var gemState = _state.GetState<State_CatalogGems>();
 
@@ -930,7 +916,7 @@ namespace E3Core.UI.Windows.CharacterSettings
 		}
 		#region RenderSelectedKeyValues
 		// Helper method to render values for the selected key
-		private static void RenderSelectedKeyValues(SectionData selectedSection)
+		private static void RenderMainWindow_ConfigEditor_SelectedKeyValues(SectionData selectedSection)
 		{
 			var mainWindowState = _state.GetState<State_MainWindow>();
 
@@ -959,24 +945,24 @@ namespace E3Core.UI.Windows.CharacterSettings
 			// Enumerated options derived from key label e.g. "(Melee/Ranged/Off)"
 			if (data.TryGetValidOptionsForKey(mainWindowState.SelectedKey, out var enumOpts))
 			{
-				RenderSelectedKeyValues_Registered(parts, selectedSection, enumOpts);
+				RenderMainWindow_ConfigEditor_SelectedKeyValues_Registered(parts, selectedSection, enumOpts);
 			}
 			// Boolean fast toggle support → dropdown selector with better styling
 			else if (data.IsBooleanConfigKey(mainWindowState.SelectedKey))
 			{
-				RenderSelectedKeyValues_Boolean(parts,selectedSection);
+				RenderMainWindow_ConfigEditor_SelectedKeyValues_Boolean(parts,selectedSection);
 			}
 			else if(data.IsIntergerConfigKey(mainWindowState.SelectedKey))
 			{
-				RenderSelectedKeyValues_Integers(parts, selectedSection);
+				RenderMainWindow_ConfigEditor_SelectedKeyValues_Integers(parts, selectedSection);
 			}
 			else if (data.IsStringConfigKey(mainWindowState.SelectedKey))
 			{
-				RenderSelectedKeyValues_String(parts, selectedSection);
+				RenderMainWindow_ConfigEditor_SelectedKeyValues_String(parts, selectedSection);
 			}
 			else if(!(String.IsNullOrWhiteSpace(mainWindowState.SelectedKey) || String.IsNullOrWhiteSpace(mainWindowState.SelectedSection)))
 			{
-				RenderSelectedKeyValues_Collections(parts,selectedSection);
+				RenderMainWindow_ConfigEditor_SelectedKeyValues_Collections(parts,selectedSection);
 			}
 			
 			if(Settings.CharacterSettings.ConfigKeyDescriptionsForImGUI.TryGetValue($"{mainWindowState.SelectedSection}::{mainWindowState.SelectedKey}", out var description))
@@ -1000,7 +986,7 @@ namespace E3Core.UI.Windows.CharacterSettings
 
 			
 		}
-		private static void RenderSelectedKeyValues_String(List<string> parts, SectionData selectedSection)
+		private static void RenderMainWindow_ConfigEditor_SelectedKeyValues_String(List<string> parts, SectionData selectedSection)
 		{
 			var mainWindowState = _state.GetState<State_MainWindow>();
 
@@ -1012,7 +998,7 @@ namespace E3Core.UI.Windows.CharacterSettings
 			}
 			imgui_Separator();
 		}
-		private static void RenderSelectedKeyValues_Integers(List<string> parts, SectionData selectedSection)
+		private static void RenderMainWindow_ConfigEditor_SelectedKeyValues_Integers(List<string> parts, SectionData selectedSection)
 		{
 			var mainWindowState = _state.GetState<State_MainWindow>();
 
@@ -1030,7 +1016,7 @@ namespace E3Core.UI.Windows.CharacterSettings
 		}
 
 
-		private static void RenderSelectedKeyValues_Registered(List<string> parts, SectionData selectedSection, List<string> enumOpts)
+		private static void RenderMainWindow_ConfigEditor_SelectedKeyValues_Registered(List<string> parts, SectionData selectedSection, List<string> enumOpts)
 		{
 			var mainWindowState = _state.GetState<State_MainWindow>();
 
@@ -1060,7 +1046,7 @@ namespace E3Core.UI.Windows.CharacterSettings
 			}
 			imgui_Separator();
 		}
-		private static void RenderSelectedKeyValues_Boolean(List<string> parts, SectionData selectedSection)
+		private static void RenderMainWindow_ConfigEditor_SelectedKeyValues_Boolean(List<string> parts, SectionData selectedSection)
 		{
 			var mainWindowState = _state.GetState<State_MainWindow>();
 
@@ -1112,7 +1098,7 @@ namespace E3Core.UI.Windows.CharacterSettings
 			}
 			imgui_Separator();
 		}
-		private static void RenderSelectedKeyValues_Collections(List<string> parts, SectionData selectedSection)
+		private static void RenderMainWindow_ConfigEditor_SelectedKeyValues_Collections(List<string> parts, SectionData selectedSection)
 		{
 			var catalogState = _state.GetState<State_CatalogWindow>();
 			var mainWindowState = _state.GetState<State_MainWindow>();
@@ -1378,7 +1364,7 @@ namespace E3Core.UI.Windows.CharacterSettings
 		#endregion
 
 		// Helper method to render configuration tools panel
-		private static void RenderConfigurationTools(SectionData selectedSection)
+		private static void RenderMainWindow_ConfigEditor_ConfigurationTools(SectionData selectedSection)
 		{
 			var mainWindowState = _state.GetState<State_MainWindow>();
 			var bardEditorState = _state.GetState<State_BardEditor>();
@@ -1622,10 +1608,7 @@ namespace E3Core.UI.Windows.CharacterSettings
 			// 	RenderSpellModifierModal();
 			// }
 		}
-
-		// Helper to determine if a key is healing-related
-		// Save out active ini data (current or selected)
-		
+				
 		// Clear pending changes on the selected ini (reload from disk)
 		private static void ClearPendingChanges()
 		{
@@ -1668,10 +1651,10 @@ namespace E3Core.UI.Windows.CharacterSettings
 				_log.Write($"Failed to clear changes: {ex.Message}");
 			}
 		}
-	
-		
 
-	
+
+
+		#region RenderCatalog
 		private static void RenderAddFromCatalogModal_CalculateAddType(AddType typeofadd,out float leftW, out float middleW, out float rightW)
 		{
 			float totalW = imgui_GetContentRegionAvailX();
@@ -2022,10 +2005,11 @@ namespace E3Core.UI.Windows.CharacterSettings
 				}
 			}
 		}
+		#endregion
 
-		
+
 		// Search all catalogs for a spell/item/AA by name
-	
+
 
 		// Helper: format milliseconds as seconds, or minutes+seconds over 60s
 

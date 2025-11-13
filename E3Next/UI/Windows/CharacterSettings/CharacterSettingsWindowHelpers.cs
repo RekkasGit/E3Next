@@ -628,6 +628,21 @@ namespace E3Core.UI.Windows.CharacterSettings
 			if (rs < 0.5) return m.ToString() + "m";
 			return m.ToString() + "m " + rs.ToString("0.#") + "s";
 		}
+		public static void ChangeSelectedCharacter(string filename)
+		{
+			var state = window._state.GetState<State_MainWindow>();
+
+			_log.Write($"Selecting other:{filename}", Logging.LogLevels.Debug);
+			var parser = e3util.CreateIniParser();
+			var pd = parser.ReadFile(filename);
+			state.CurrentINIFileNameFull = filename;
+			state.CurrentINIData = pd;
+			state.SelectedCharacterSection = string.Empty;
+			state.SignatureOfSelectedKeyValue = String.Empty;
+
+			// Trigger catalog reload for the selected peer
+			RequestCatalogUpdate();
+		}
 		public static string AppendIfToken(string value, string ifKey)
 		{
 			string v = value ?? string.Empty;
