@@ -415,6 +415,13 @@ namespace E3Core.Processors
 					{
 						LastMovementTimeStamp = Core.StopWatch.ElapsedMilliseconds;
 					}
+					E3.IsFD = MQ.Query<bool>("${Me.Feigning}");
+					if (E3.IsFD)
+					{
+						LastFDTimeStamp = Core.StopWatch.ElapsedMilliseconds;
+					}
+
+
 
 					if (MQ.Query<bool>("${MoveUtils.GM}"))
 					{
@@ -576,6 +583,8 @@ namespace E3Core.Processors
         public static int CurrentId;
 		[ExposedData("Core", "LastMovementTimeStamp")]
         public static Int64 LastMovementTimeStamp;
+		[ExposedData("Core", "LastFDTimeStamp")]
+		public static Int64 LastFDTimeStamp;
         public static string CurrentLongClassString;
         public static string CurrentShortClassString;
 		public static System.Random Random = new System.Random();
@@ -583,6 +592,7 @@ namespace E3Core.Processors
         public static ISpawns Spawns = Core.spawnInstance;
         public static bool IsInvis;
 		public static bool IsMoving;
+		public static bool IsFD;
 
 		private static Int64 _nextReloadSettingsCheck = 0;
         private static Int64 _nextReloadSettingsInterval = 2000;

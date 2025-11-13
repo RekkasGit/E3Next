@@ -48,16 +48,34 @@ namespace E3Core.Processors
     
         }
 
-        public static bool StandingStillForTimePeriod()
+        public static bool StandingStillForTimePeriod(Int32 periodToCheck=0)
         {
-            if((Core.StopWatch.ElapsedMilliseconds - E3.LastMovementTimeStamp) > E3.GeneralSettings.Movement_StandingStill)
+            if(periodToCheck==0)
             {
-                return true;
-            }
+				if ((Core.StopWatch.ElapsedMilliseconds - E3.LastMovementTimeStamp) > E3.GeneralSettings.Movement_StandingStill)
+				{
+					return true;
+				}
+			}
+            else
+            {
+				if ((Core.StopWatch.ElapsedMilliseconds - E3.LastMovementTimeStamp) > periodToCheck)
+				{
+					return true;
+				}
+			}
             return false;
         }
+		public static bool MillisecondsSinceLastFD(Int32 periodToCheck)
+		{
+			if ((Core.StopWatch.ElapsedMilliseconds - E3.LastFDTimeStamp) > periodToCheck)
+			{
+				return true;
+			}
+		    return false;
+		}
 
-        public static void Reset()
+		public static void Reset()
         {
             AnchorTarget = 0;
             Anchor_X = double.MinValue;

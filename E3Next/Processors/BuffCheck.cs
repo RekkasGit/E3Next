@@ -547,9 +547,11 @@ namespace E3Core.Processors
 						BuffBots(E3.CharacterSettings.CombatPetBuffs, true);
 						BuffBots(E3.CharacterSettings.CombatPetOwnerBuffs, true);
 					}
-					
-
-					if ((!inCombat && IsNotFollowing) && Movement.StandingStillForTimePeriod() )
+				
+					//if not manual control, and not in combat and your either not following or standing still for 10 sec
+					//if manual control, and not in combat and wait at least 3 seconds of standing still before you buff
+					if (( !isManualControl && !inCombat && (IsNotFollowing || Movement.StandingStillForTimePeriod()) && Movement.MillisecondsSinceLastFD(3000)) 
+						  || (isManualControl && !inCombat && Movement.StandingStillForTimePeriod(3000) && Movement.MillisecondsSinceLastFD(3000)))
 					{
 
 						if (!E3.CurrentInCombat)
