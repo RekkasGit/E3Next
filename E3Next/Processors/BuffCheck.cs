@@ -533,17 +533,24 @@ namespace E3Core.Processors
 			{
 				using (_log.Trace())
 				{
-					
+
 					/*if you are NOT following someone, and not moving, it will buff instantly. 
 					If you ARE following someone and not moving for 10+ seconds, it will buff.*/
-					if (((String.IsNullOrWhiteSpace(Movement.FollowTargetName) && String.IsNullOrWhiteSpace(Movement.ChaseTargetName))) || Movement.StandingStillForTimePeriod() || Assist.IsAssisting)
+
+					bool IsNotFollowing = (String.IsNullOrWhiteSpace(Movement.FollowTargetName) && String.IsNullOrWhiteSpace(Movement.ChaseTargetName));
+					bool inCombat = Basics.InCombat();
+					bool isManualControl = e3util.IsManualControl();
+
+					if (inCombat || Nukes.PBAEEnabled)
 					{
-						if (E3.CurrentInCombat || Nukes.PBAEEnabled)
-						{
-							BuffBots(E3.CharacterSettings.CombatBuffs);
-							BuffBots(E3.CharacterSettings.CombatPetBuffs, true);
-							BuffBots(E3.CharacterSettings.CombatPetOwnerBuffs, true);
-						}
+						BuffBots(E3.CharacterSettings.CombatBuffs);
+						BuffBots(E3.CharacterSettings.CombatPetBuffs, true);
+						BuffBots(E3.CharacterSettings.CombatPetOwnerBuffs, true);
+					}
+					
+
+					if ((!inCombat && IsNotFollowing) && Movement.StandingStillForTimePeriod() )
+					{
 
 						if (!E3.CurrentInCombat)
 						{

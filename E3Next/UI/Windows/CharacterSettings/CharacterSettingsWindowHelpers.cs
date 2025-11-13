@@ -115,7 +115,7 @@ namespace E3Core.UI.Windows.CharacterSettings
 			ResetCatalogs();
 			window._state.State_CatalogLoadRequested = true;
 			window._state.Status_CatalogRequest = "Queued catalog load...";
-			gemstate._cfg_CatalogSource = "Refreshing...";
+			gemstate.Source = "Refreshing...";
 		}
 		public static SectionData GetCurrentSectionData()
 		{
@@ -835,7 +835,7 @@ namespace E3Core.UI.Windows.CharacterSettings
 					{
 						lock (_dataLock)
 						{
-							gemState._cfg_CatalogGems = gemData;
+							gemState.Gems = gemData;
 							window._state.State_GemsAvailable = true;
 						}
 					}
@@ -851,11 +851,11 @@ namespace E3Core.UI.Windows.CharacterSettings
 					if (!peerSuccess)
 					{
 						window._state.Status_CatalogRequest = "Peer catalog fetch failed; using local.";
-						gemState._cfg_CatalogSource = "Local (fallback)";
+						gemState.Source = "Local (fallback)";
 					}
 					else
 					{
-						gemState._cfg_CatalogSource = $"Remote ({targetToon})";
+						gemState.Source = $"Remote ({targetToon})";
 					}
 					_log.WriteDelayed($"Fetching data (remote) Complete!", Logging.LogLevels.Debug);
 
@@ -982,8 +982,8 @@ namespace E3Core.UI.Windows.CharacterSettings
 				}
 				lock (_dataLock)
 				{
-					gemState._cfg_CatalogGems = localGems;
-					gemState._cfg_CatalogGemIcons = localGemIcons;
+					gemState.Gems = localGems;
+					gemState.GemIcons = localGemIcons;
 					window._state.State_GemsAvailable = true;
 				}
 			}
@@ -1004,7 +1004,7 @@ namespace E3Core.UI.Windows.CharacterSettings
 					mapItems = new SortedDictionary<string, SortedDictionary<string, List<E3Spell>>>();
 
 			window._state.Status_CatalogRequest = "Loading catalogs (local)...";
-			gemState._cfg_CatalogSource = "Local";
+			gemState.Source = "Local";
 
 			_log.WriteDelayed($"Fetching data (local)", Logging.LogLevels.Debug);
 
@@ -1143,7 +1143,7 @@ namespace E3Core.UI.Windows.CharacterSettings
 						&& topics.TryGetValue(topic, out var entry))
 					{
 						string payload = entry.Data;
-						ParseGemDataWithIcons(payload, out gemData, out gemState._cfg_CatalogGemIcons);
+						ParseGemDataWithIcons(payload, out gemData, out gemState.GemIcons);
 						return true;
 					}
 
@@ -1152,7 +1152,7 @@ namespace E3Core.UI.Windows.CharacterSettings
 						&& topics2.TryGetValue(topic, out var entry2))
 					{
 						string payload = entry2.Data;
-						ParseGemDataWithIcons(payload, out gemData, out gemState._cfg_CatalogGemIcons);
+						ParseGemDataWithIcons(payload, out gemData, out gemState.GemIcons);
 						return true;
 					}
 
@@ -1165,7 +1165,7 @@ namespace E3Core.UI.Windows.CharacterSettings
 			for (int i = 0; i < 12; i++)
 			{
 				gemData[i] = "ERROR";
-				gemState._cfg_CatalogGemIcons[i] = -1;
+				gemState.GemIcons[i] = -1;
 			}
 			return false;
 		}
@@ -1354,7 +1354,7 @@ namespace E3Core.UI.Windows.CharacterSettings
 			if (mainWindowState.IniFilesFromDisk == null || mainWindowState.IniFilesFromDisk.Length == 0) return false;
 
 			// Optional: prefer matches that also contain server in the filename
-			allPlayerState._cfgAllPlayersServerByToon.TryGetValue(toon, out var serverHint);
+			allPlayerState.ServerByToon.TryGetValue(toon, out var serverHint);
 			serverHint = serverHint ?? string.Empty;
 
 			// Gather candidates: filename starts with "<Toon>_" or equals "<Toon>.ini"
@@ -1584,9 +1584,9 @@ namespace E3Core.UI.Windows.CharacterSettings
 			}
 			var foodDrinkState = window._state.GetState<State_FoodDrink>();
 			// Food/Drink inventory scan (local or remote peer) — non-blocking
-			if (foodDrinkState._cfgFoodDrinkScanRequested && !foodDrinkState._cfgFoodDrinkPending)
+			if (foodDrinkState.ScanRequested && !foodDrinkState.Pending)
 			{
-				foodDrinkState._cfgFoodDrinkScanRequested = false;
+				foodDrinkState.ScanRequested = false;
 				try
 				{
 					string owner = GetSelectedIniOwnerName();
@@ -1594,32 +1594,32 @@ namespace E3Core.UI.Windows.CharacterSettings
 					if (!isLocal)
 					{
 						// Start remote request and mark pending; actual receive handled below
-						E3Core.Server.PubServer.AddTopicMessage($"InvReq-{owner}", foodDrinkState._cfgFoodDrinkKey);
-						foodDrinkState._cfgFoodDrinkPending = true;
-						foodDrinkState._cfgFoodDrinkPendingToon = owner;
-						foodDrinkState._cfgFoodDrinkPendingType = foodDrinkState._cfgFoodDrinkKey;
-						foodDrinkState._cfgFoodDrinkTimeoutAt = Core.StopWatch.ElapsedMilliseconds + 2000;
-						foodDrinkState._cfgFoodDrinkStatus = $"Scanning {foodDrinkState._cfgFoodDrinkKey} on {owner}...";
+						E3Core.Server.PubServer.AddTopicMessage($"InvReq-{owner}", foodDrinkState.Key);
+						foodDrinkState.Pending = true;
+						foodDrinkState.PendingToon = owner;
+						foodDrinkState.PendingType = foodDrinkState.Key;
+						foodDrinkState.TimeoutAt = Core.StopWatch.ElapsedMilliseconds + 2000;
+						foodDrinkState.Status = $"Scanning {foodDrinkState.Key} on {owner}...";
 					}
 					else
 					{
-						var list = ScanInventoryForType(foodDrinkState._cfgFoodDrinkKey);
-						foodDrinkState._cfgFoodDrinkCandidates = list ?? new List<string>();
-						foodDrinkState._cfgFoodDrinkStatus = foodDrinkState._cfgFoodDrinkCandidates.Count == 0 ? "No matches found in inventory." : $"Found {foodDrinkState._cfgFoodDrinkCandidates.Count} items.";
+						var list = ScanInventoryForType(foodDrinkState.Key);
+						foodDrinkState.Candidates = list ?? new List<string>();
+						foodDrinkState.Status = foodDrinkState.Candidates.Count == 0 ? "No matches found in inventory." : $"Found {foodDrinkState.Candidates.Count} items.";
 					}
 				}
 				catch (Exception ex)
 				{
-					foodDrinkState._cfgFoodDrinkStatus = "Scan failed: " + (ex.Message ?? "error");
+					foodDrinkState.Status = "Scan failed: " + (ex.Message ?? "error");
 				}
 			}
 			// Remote response polling — checked each tick without blocking
-			if (foodDrinkState._cfgFoodDrinkPending)
+			if (foodDrinkState.Pending)
 			{
 				try
 				{
-					string toon = foodDrinkState._cfgFoodDrinkPendingToon;
-					string type = foodDrinkState._cfgFoodDrinkPendingType;
+					string toon = foodDrinkState.PendingToon;
+					string type = foodDrinkState.PendingType;
 					string topic = $"InvResp-{E3.CurrentName}-{type}";
 					// Prefer remote publisher bucket
 					if (E3Core.Server.NetMQServer.SharedDataClient.TopicUpdates.TryGetValue(toon, out var topics)
@@ -1633,7 +1633,7 @@ namespace E3Core.UI.Windows.CharacterSettings
 						{
 							var bytes = Convert.FromBase64String(b64);
 							var joined = Encoding.UTF8.GetString(bytes);
-							foodDrinkState._cfgFoodDrinkCandidates = (joined ?? string.Empty).Split(new[] { '\n' }, StringSplitOptions.RemoveEmptyEntries)
+							foodDrinkState.Candidates = (joined ?? string.Empty).Split(new[] { '\n' }, StringSplitOptions.RemoveEmptyEntries)
 								.Select(s => s.Trim())
 								.Where(s => s.Length > 0)
 								.Distinct(StringComparer.OrdinalIgnoreCase)
@@ -1642,10 +1642,10 @@ namespace E3Core.UI.Windows.CharacterSettings
 						}
 						catch
 						{
-							foodDrinkState._cfgFoodDrinkCandidates = new List<string>();
+							foodDrinkState.Candidates = new List<string>();
 						}
-						foodDrinkState._cfgFoodDrinkStatus = foodDrinkState._cfgFoodDrinkCandidates.Count == 0 ? $"No {type} found on {toon}." : $"Found {foodDrinkState._cfgFoodDrinkCandidates.Count} items on {toon}.";
-						foodDrinkState._cfgFoodDrinkPending = false;
+						foodDrinkState.Status = foodDrinkState.Candidates.Count == 0 ? $"No {type} found on {toon}." : $"Found {foodDrinkState.Candidates.Count} items on {toon}.";
+						foodDrinkState.Pending = false;
 					}
 					else if (E3Core.Server.NetMQServer.SharedDataClient.TopicUpdates.TryGetValue(E3.CurrentName, out var topics2)
 							 && topics2.TryGetValue(topic, out var entry2))
@@ -1658,7 +1658,7 @@ namespace E3Core.UI.Windows.CharacterSettings
 						{
 							var bytes = Convert.FromBase64String(b64);
 							var joined = Encoding.UTF8.GetString(bytes);
-							foodDrinkState._cfgFoodDrinkCandidates = (joined ?? string.Empty).Split(new[] { '\n' }, StringSplitOptions.RemoveEmptyEntries)
+							foodDrinkState.Candidates = (joined ?? string.Empty).Split(new[] { '\n' }, StringSplitOptions.RemoveEmptyEntries)
 								.Select(s => s.Trim())
 								.Where(s => s.Length > 0)
 								.Distinct(StringComparer.OrdinalIgnoreCase)
@@ -1667,33 +1667,33 @@ namespace E3Core.UI.Windows.CharacterSettings
 						}
 						catch
 						{
-							foodDrinkState._cfgFoodDrinkCandidates = new List<string>();
+							foodDrinkState.Candidates = new List<string>();
 						}
-						foodDrinkState._cfgFoodDrinkStatus = foodDrinkState._cfgFoodDrinkCandidates.Count == 0 ? $"No {type} found on {toon}." : $"Found {foodDrinkState._cfgFoodDrinkCandidates.Count} items on {toon}.";
-						foodDrinkState._cfgFoodDrinkPending = false;
+						foodDrinkState.Status = foodDrinkState.Candidates.Count == 0 ? $"No {type} found on {toon}." : $"Found {foodDrinkState.Candidates.Count} items on {toon}.";
+						foodDrinkState.Pending = false;
 					}
-					else if (Core.StopWatch.ElapsedMilliseconds >= foodDrinkState._cfgFoodDrinkTimeoutAt)
+					else if (Core.StopWatch.ElapsedMilliseconds >= foodDrinkState.TimeoutAt)
 					{
-						foodDrinkState._cfgFoodDrinkStatus = $"Remote {type} scan timed out for {toon}.";
-						foodDrinkState._cfgFoodDrinkCandidates = new List<string>();
-						foodDrinkState._cfgFoodDrinkPending = false;
+						foodDrinkState.Status = $"Remote {type} scan timed out for {toon}.";
+						foodDrinkState.Candidates = new List<string>();
+						foodDrinkState.Pending = false;
 					}
 				}
 				catch
 				{
-					foodDrinkState._cfgFoodDrinkStatus = "Remote scan error.";
-					foodDrinkState._cfgFoodDrinkCandidates = new List<string>();
-					foodDrinkState._cfgFoodDrinkPending = false;
+					foodDrinkState.Status = "Remote scan error.";
+					foodDrinkState.Candidates = new List<string>();
+					foodDrinkState.Pending = false;
 				}
 			}
 
 			var allPlayerState = window._state.GetState<State_AllPlayers>();
-			if (window._state.Request_AllplayersRefresh && !allPlayerState._cfgAllPlayersRefreshing)
+			if (window._state.Request_AllplayersRefresh && !allPlayerState.Refreshing)
 			{
 				var mainWindowState = window._state.GetState<State_MainWindow>();
 		
 				window._state.Request_AllplayersRefresh = false; // consume the pending request before we start
-				allPlayerState._cfgAllPlayersRefreshing = true;
+				allPlayerState.Refreshing = true;
 				allPlayerState.ReqSection = mainWindowState.SelectedSection;
 				allPlayerState.ReqKey = mainWindowState.SelectedKey;
 
@@ -1767,7 +1767,7 @@ namespace E3Core.UI.Windows.CharacterSettings
 					}
 					finally
 					{
-						allPlayerState._cfgAllPlayersRefreshing = false;
+						allPlayerState.Refreshing = false;
 					}
 				});
 			}

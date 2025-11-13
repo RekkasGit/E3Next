@@ -93,10 +93,10 @@ namespace E3Core.UI.Windows.CharacterSettings
 		public long LastUpdatedAt = 0;
 		public int RefershInterval = 5000;
 		public string Status = string.Empty;
-		public Dictionary<string, string> _cfgAllPlayersServerByToon = new Dictionary<string, string>(StringComparer.OrdinalIgnoreCase);
+		public Dictionary<string, string> ServerByToon = new Dictionary<string, string>(StringComparer.OrdinalIgnoreCase);
 		// "All Players" key view state/cache
-		public long _cfgAllPlayersNextRefreshAtMs = 0;
-		public bool _cfgAllPlayersRefreshing = false;
+		public long NextRefreshAtMs = 0;
+		public bool Refreshing = false;
 
 
 	}
@@ -147,21 +147,21 @@ namespace E3Core.UI.Windows.CharacterSettings
 	public class State_CatalogGems
 	{
 
-		public string _cfg_CatalogSource = "Unknown"; // "Local", "Remote (ToonName)", or "Unknown"
-		public string[] _cfg_CatalogGems = new string[12]; // Gem data from catalog response
-		public int[] _cfg_CatalogGemIcons = new int[12]; // Spell icon indices for gems
+		public string Source = "Unknown"; // "Local", "Remote (ToonName)", or "Unknown"
+		public string[] Gems = new string[12]; // Gem data from catalog response
+		public int[] GemIcons = new int[12]; // Spell icon indices for gems
 
 	}
 	public class State_FoodDrink
 	{
-		public string _cfgFoodDrinkKey = string.Empty; // "Food" or "Drink"
-		public string _cfgFoodDrinkStatus = string.Empty;
-		public List<string> _cfgFoodDrinkCandidates = new List<string>();
-		public bool _cfgFoodDrinkScanRequested = false;
-		public bool _cfgFoodDrinkPending = false;
-		public string _cfgFoodDrinkPendingToon = string.Empty;
-		public string _cfgFoodDrinkPendingType = string.Empty;
-		public long _cfgFoodDrinkTimeoutAt = 0;
+		public string Key = string.Empty; // "Food" or "Drink"
+		public string Status = string.Empty;
+		public List<string> Candidates = new List<string>();
+		public bool ScanRequested = false;
+		public bool Pending = false;
+		public string PendingToon = string.Empty;
+		public string PendingType = string.Empty;
+		public long TimeoutAt = 0;
 	}
 
 	public class CharacterSettingsState

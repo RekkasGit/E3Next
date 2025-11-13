@@ -767,7 +767,7 @@ namespace E3Core.UI.Windows.CharacterSettings
 
 			lock (data._dataLock)
 			{
-				if (!_state.State_GemsAvailable || gemState._cfg_CatalogGems == null) return;
+				if (!_state.State_GemsAvailable || gemState.Gems == null) return;
 
 			}
 
@@ -776,13 +776,13 @@ namespace E3Core.UI.Windows.CharacterSettings
 				imgui_Separator();
 
 				// Show header with source info
-				string sourceText = gemState._cfg_CatalogSource.StartsWith("Remote") ? "Memorized Spells" : "Currently Memorized Spells";
+				string sourceText = gemState.Source.StartsWith("Remote") ? "Memorized Spells" : "Currently Memorized Spells";
 				imgui_TextColored(0.8f, 0.9f, 1.0f, 1.0f, sourceText);
 
-				if (gemState._cfg_CatalogSource.StartsWith("Remote"))
+				if (gemState.Source.StartsWith("Remote"))
 				{
 					imgui_SameLine();
-					imgui_TextColored(0.7f, 1.0f, 0.7f, 1.0f, $"({gemState._cfg_CatalogSource.Replace("Remote (", "").Replace(")", "")})")
+					imgui_TextColored(0.7f, 1.0f, 0.7f, 1.0f, $"({gemState.Source.Replace("Remote (", "").Replace(")", "")})")
 ;
 				}
 
@@ -807,14 +807,14 @@ namespace E3Core.UI.Windows.CharacterSettings
 
 
 							Int32 spellID = -1;
-							Int32.TryParse(gemState._cfg_CatalogGems[gem], out spellID);
+							Int32.TryParse(gemState.Gems[gem], out spellID);
 
 							string spellName = MQ.Query<string>($"${{Spell[{spellID}]}}", false);
 
 							if (!string.IsNullOrEmpty(spellName) && !spellName.Equals("NULL", StringComparison.OrdinalIgnoreCase) && !spellName.Equals("ERROR", StringComparison.OrdinalIgnoreCase))
 							{
 								// Get spell icon index for this gem
-								int iconIndex = (gemState._cfg_CatalogGemIcons != null && gem < gemState._cfg_CatalogGemIcons.Length) ? gemState._cfg_CatalogGemIcons[gem] : -1;
+								int iconIndex = (gemState.GemIcons != null && gem < gemState.GemIcons.Length) ? gemState.GemIcons[gem] : -1;
 
 								// Display spell icon using native EQ texture
 								if (iconIndex >= 0)
@@ -1334,10 +1334,10 @@ namespace E3Core.UI.Windows.CharacterSettings
 					if (imgui_Button("Pick From Inventory"))
 					{
 						// Reset scan state so results don't carry over between Food/Drink
-						foodDrinkState._cfgFoodDrinkKey = mainWindowState.SelectedKey; // "Food" or "Drink"
-						foodDrinkState._cfgFoodDrinkStatus = string.Empty;
-						foodDrinkState._cfgFoodDrinkCandidates.Clear();
-						foodDrinkState._cfgFoodDrinkScanRequested = true; // auto-trigger scan for new kind
+						foodDrinkState.Key = mainWindowState.SelectedKey; // "Food" or "Drink"
+						foodDrinkState.Status = string.Empty;
+						foodDrinkState.Candidates.Clear();
+						foodDrinkState.ScanRequested = true; // auto-trigger scan for new kind
 						_state.Show_FoodDrinkModal = true;
 					}
 				}
@@ -2052,14 +2052,14 @@ namespace E3Core.UI.Windows.CharacterSettings
 			var gemstate = _state.GetState<State_CatalogGems>();
 
 			// Color code the source based on type
-			if (gemstate._cfg_CatalogSource.StartsWith("Remote"))
-				imgui_TextColored(0.7f, 1.0f, 0.7f, 1.0f, gemstate._cfg_CatalogSource); // Green for remote
-			else if (gemstate._cfg_CatalogSource.StartsWith("Local (fallback)"))
-				imgui_TextColored(1.0f, 0.8f, 0.4f, 1.0f, gemstate._cfg_CatalogSource); // Orange for fallback
-			else if (gemstate._cfg_CatalogSource.StartsWith("Local"))
-				imgui_TextColored(0.8f, 0.8f, 1.0f, 1.0f, gemstate._cfg_CatalogSource); // Light blue for local
+			if (gemstate.Source.StartsWith("Remote"))
+				imgui_TextColored(0.7f, 1.0f, 0.7f, 1.0f, gemstate.Source); // Green for remote
+			else if (gemstate.Source.StartsWith("Local (fallback)"))
+				imgui_TextColored(1.0f, 0.8f, 0.4f, 1.0f, gemstate.Source); // Orange for fallback
+			else if (gemstate.Source.StartsWith("Local"))
+				imgui_TextColored(0.8f, 0.8f, 1.0f, 1.0f, gemstate.Source); // Light blue for local
 			else
-				imgui_TextColored(0.8f, 0.8f, 0.8f, 1.0f, gemstate._cfg_CatalogSource); // Gray for unknown
+				imgui_TextColored(0.8f, 0.8f, 0.8f, 1.0f, gemstate.Source); // Gray for unknown
 
 			imgui_SameLine();
 			if (imgui_Button("Refresh Catalog"))
@@ -3240,40 +3240,40 @@ namespace E3Core.UI.Windows.CharacterSettings
 
 
 				// Header with better styling
-				imgui_TextColored(0.95f, 0.85f, 0.35f, 1.0f, $"Pick {foodDrinkState._cfgFoodDrinkKey} from inventory");
+				imgui_TextColored(0.95f, 0.85f, 0.35f, 1.0f, $"Pick {foodDrinkState.Key} from inventory");
 				imgui_Separator();
 
 				// Status and scan button
-				if (string.IsNullOrEmpty(foodDrinkState._cfgFoodDrinkStatus))
+				if (string.IsNullOrEmpty(foodDrinkState.Status))
 				{
 					if (imgui_Button("Scan Inventory"))
 					{
-						foodDrinkState._cfgFoodDrinkStatus = "Scanning...";
-						foodDrinkState._cfgFoodDrinkScanRequested = true;
+						foodDrinkState.Status = "Scanning...";
+						foodDrinkState.ScanRequested = true;
 					}
 					imgui_Text("Click above to scan your inventory.");
 				}
 				else
 				{
-					imgui_TextColored(0.7f, 0.9f, 0.7f, 1.0f, foodDrinkState._cfgFoodDrinkStatus);
+					imgui_TextColored(0.7f, 0.9f, 0.7f, 1.0f, foodDrinkState.Status);
 				}
 
 				imgui_Separator();
 
 				// Results list with better sizing
-				if (foodDrinkState._cfgFoodDrinkCandidates.Count > 0)
+				if (foodDrinkState.Candidates.Count > 0)
 				{
 					imgui_TextColored(0.8f, 0.9f, 1.0f, 1.0f, "Found items (click to select):");
 
 					// Use responsive sizing for the list
-					float listHeight = Math.Min(400f, Math.Max(150f, foodDrinkState._cfgFoodDrinkCandidates.Count * 20f + 40f));
+					float listHeight = Math.Min(400f, Math.Max(150f, foodDrinkState.Candidates.Count * 20f + 40f));
 					float listWidth = Math.Max(300f, imgui_GetContentRegionAvailX() * 0.9f);
 
 					if (imgui_BeginChild("FoodDrinkList", listWidth, listHeight, 1, 0))
 					{
-						for (int i = 0; i < foodDrinkState._cfgFoodDrinkCandidates.Count; i++)
+						for (int i = 0; i < foodDrinkState.Candidates.Count; i++)
 						{
-							var item = foodDrinkState._cfgFoodDrinkCandidates[i];
+							var item = foodDrinkState.Candidates[i];
 							if (imgui_Selectable($"{item}##item_{i}", false))
 							{
 								// Apply selection
@@ -3295,7 +3295,7 @@ namespace E3Core.UI.Windows.CharacterSettings
 					}
 					imgui_EndChild();
 				}
-				else if (!string.IsNullOrEmpty(foodDrinkState._cfgFoodDrinkStatus) && !foodDrinkState._cfgFoodDrinkStatus.Contains("Scanning"))
+				else if (!string.IsNullOrEmpty(foodDrinkState.Status) && !foodDrinkState.Status.Contains("Scanning"))
 				{
 					imgui_TextColored(0.9f, 0.7f, 0.7f, 1.0f, "No matching items found.");
 				}
@@ -3303,13 +3303,13 @@ namespace E3Core.UI.Windows.CharacterSettings
 				imgui_Separator();
 
 				// Action buttons
-				if (foodDrinkState._cfgFoodDrinkCandidates.Count > 0)
+				if (foodDrinkState.Candidates.Count > 0)
 				{
 					if (imgui_Button("Rescan"))
 					{
-						foodDrinkState._cfgFoodDrinkStatus = "Scanning...";
-						foodDrinkState._cfgFoodDrinkCandidates.Clear();
-						foodDrinkState._cfgFoodDrinkScanRequested = true;
+						foodDrinkState.Status = "Scanning...";
+						foodDrinkState.Candidates.Clear();
+						foodDrinkState.ScanRequested = true;
 					}
 					imgui_SameLine();
 				}
