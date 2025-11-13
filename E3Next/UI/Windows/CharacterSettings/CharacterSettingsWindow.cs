@@ -31,13 +31,8 @@ namespace E3Core.UI.Windows.CharacterSettings
 
 		//A very large bandaid on the Threading of this window
 		//used when trying to get a pointer to the _cfg objects.
-		private static object _dataLock = new object();
-
+		
 		#region Variables
-		// Catalogs and Add modal state
-		private static string _cfg_CatalogSource = "Unknown"; // "Local", "Remote (ToonName)", or "Unknown"
-		private static string[] _cfg_CatalogGems = new string[12]; // Gem data from catalog response
-		private static int[] _cfg_CatalogGemIcons = new int[12]; // Spell icon indices for gems
 		/// <summary>
 		///Data organized into Category, Sub Category, List of Spells.
 		///always get a pointer to these via the method GetCatalogByType
@@ -47,10 +42,7 @@ namespace E3Core.UI.Windows.CharacterSettings
 		
 
 		// Food/Drink picker state
-		private static string _cfgFoodDrinkKey = string.Empty; // "Food" or "Drink"
-		private static string _cfgFoodDrinkStatus = string.Empty;
-		private static List<string> _cfgFoodDrinkCandidates = new List<string>();
-		private static bool _cfgFoodDrinkScanRequested = false;
+	
 		// Toon picker (Heals: Tank / Important Bot)
 		private static string _cfgToonPickerStatus = string.Empty;
 		private static List<string> _cfgToonCandidates = new List<string>();
@@ -61,17 +53,13 @@ namespace E3Core.UI.Windows.CharacterSettings
 		// Ifs import (sample) modal state
 		private static List<System.Collections.Generic.KeyValuePair<string, string>> _cfgIfSampleLines = new List<System.Collections.Generic.KeyValuePair<string, string>>();
 		private static string _cfgIfSampleStatus = string.Empty;
-		
-		private static bool _cfgFoodDrinkPending = false;
-		private static string _cfgFoodDrinkPendingToon = string.Empty;
-		private static string _cfgFoodDrinkPendingType = string.Empty;
-		private static long _cfgFoodDrinkTimeoutAt = 0;
+
+	
 
 		// Config UI toggle: "/e3imgui".
 		
 		private static bool _imguiContextReady = false;
-		private enum SettingsTab { Character, General, Advanced }
-		private static SettingsTab _activeSettingsTab = SettingsTab.Character;
+		public static SettingsTab _activeSettingsTab = SettingsTab.Character;
 		// Inline edit helpers
 		private const float _valueRowActionStartOffset = 46f;
 		// Collapsible section state tracking
@@ -81,12 +69,7 @@ namespace E3Core.UI.Windows.CharacterSettings
 		private static string _cfgManualEditBuffer = string.Empty;
 		
 
-		// "All Players" key view state/cache
-		private static long _cfgAllPlayersNextRefreshAtMs = 0;
-		private static Dictionary<string, string> _cfgAllPlayersServerByToon = new Dictionary<string, string>(StringComparer.OrdinalIgnoreCase);
-		
-		private static bool _cfgAllPlayersRefreshing = false;
-
+	
 		// Character .ini selection state
 		
 		private static long _nextIniFileScanAtMs = 0;
@@ -161,7 +144,7 @@ namespace E3Core.UI.Windows.CharacterSettings
 		public static void Process()
 		{
 			if (Core._MQ2MonoVersion < 0.35m) return;
-			ProcessBackgroundWork();
+			data.ProcessBackgroundWork();
 		}
 		public static bool _intialWindowOpened = false;
 		public static void ToggleImGuiWindow()
@@ -331,11 +314,12 @@ namespace E3Core.UI.Windows.CharacterSettings
 		}
 		private static void RequestCatalogUpdate()
 		{
+			var gemstate = _state.GetState<State_CatalogGems>();
 			_state.State_CatalogReady = false;
 			ResetCatalogs();
 			_state.State_CatalogLoadRequested = true;
 			_state.Status_CatalogRequest = "Queued catalog load...";
-			_cfg_CatalogSource = "Refreshing...";
+			gemstate._cfg_CatalogSource = "Refreshing...";
 		}
 		private static void ChangeSelectedCharacter(string filename)
 		{
@@ -356,15 +340,15 @@ namespace E3Core.UI.Windows.CharacterSettings
 		{
 			var state = _state.GetState<State_MainWindow>();
 
-			ScanCharIniFilesIfNeeded();
+			data.ScanCharIniFilesIfNeeded();
 
-			var loggedInCharIniFile = GetCurrentCharacterIniPath();
+			var loggedInCharIniFile = data.GetCurrentCharacterIniPath();
 			string currentINIFileName = Path.GetFileName(loggedInCharIniFile);
 			string selectedINIFile = Path.GetFileName(state.CurrentINIFileNameFull ?? loggedInCharIniFile);
 			
 			if (string.IsNullOrWhiteSpace(selectedINIFile)) selectedINIFile = currentINIFileName;
 
-			var onlineToons = GetOnlineToonNames();
+			var onlineToons = data.GetOnlineToonNames();
 			imgui_Text("Select Character:");
 			imgui_SameLine();
 			imgui_SetNextItemWidth(260f);
@@ -444,7 +428,7 @@ namespace E3Core.UI.Windows.CharacterSettings
 			var state = _state.GetState<State_MainWindow>();
 
 			// Rebuild sections order when ini path changes
-			string activeIniPath = GetActiveSettingsPath() ?? string.Empty;
+			string activeIniPath = data.GetActiveSettingsPath() ?? string.Empty;
 			if (!string.Equals(activeIniPath, state.LastIniPath, StringComparison.OrdinalIgnoreCase))
 			{
 				state.LastIniPath = activeIniPath;
@@ -861,9 +845,11 @@ namespace E3Core.UI.Windows.CharacterSettings
 		// Safe gem display using catalog data (no TLO queries from UI thread)
 		private static void RenderCatalogGemData()
 		{
-			lock (_dataLock)
+			var gemState = _state.GetState<State_CatalogGems>();
+
+			lock (data._dataLock)
 			{
-				if (!_state.State_GemsAvailable || _cfg_CatalogGems == null) return;
+				if (!_state.State_GemsAvailable || gemState._cfg_CatalogGems == null) return;
 
 			}
 
@@ -872,13 +858,13 @@ namespace E3Core.UI.Windows.CharacterSettings
 				imgui_Separator();
 
 				// Show header with source info
-				string sourceText = _cfg_CatalogSource.StartsWith("Remote") ? "Memorized Spells" : "Currently Memorized Spells";
+				string sourceText = gemState._cfg_CatalogSource.StartsWith("Remote") ? "Memorized Spells" : "Currently Memorized Spells";
 				imgui_TextColored(0.8f, 0.9f, 1.0f, 1.0f, sourceText);
 
-				if (_cfg_CatalogSource.StartsWith("Remote"))
+				if (gemState._cfg_CatalogSource.StartsWith("Remote"))
 				{
 					imgui_SameLine();
-					imgui_TextColored(0.7f, 1.0f, 0.7f, 1.0f, $"({_cfg_CatalogSource.Replace("Remote (", "").Replace(")", "")})")
+					imgui_TextColored(0.7f, 1.0f, 0.7f, 1.0f, $"({gemState._cfg_CatalogSource.Replace("Remote (", "").Replace(")", "")})")
 ;
 				}
 
@@ -903,14 +889,14 @@ namespace E3Core.UI.Windows.CharacterSettings
 
 
 							Int32 spellID = -1;
-							Int32.TryParse(_cfg_CatalogGems[gem], out spellID);
+							Int32.TryParse(gemState._cfg_CatalogGems[gem], out spellID);
 
 							string spellName = MQ.Query<string>($"${{Spell[{spellID}]}}", false);
 
 							if (!string.IsNullOrEmpty(spellName) && !spellName.Equals("NULL", StringComparison.OrdinalIgnoreCase) && !spellName.Equals("ERROR", StringComparison.OrdinalIgnoreCase))
 							{
 								// Get spell icon index for this gem
-								int iconIndex = (_cfg_CatalogGemIcons != null && gem < _cfg_CatalogGemIcons.Length) ? _cfg_CatalogGemIcons[gem] : -1;
+								int iconIndex = (gemState._cfg_CatalogGemIcons != null && gem < gemState._cfg_CatalogGemIcons.Length) ? gemState._cfg_CatalogGemIcons[gem] : -1;
 
 								// Display spell icon using native EQ texture
 								if (iconIndex >= 0)
@@ -921,7 +907,7 @@ namespace E3Core.UI.Windows.CharacterSettings
 								// Try to find spell info for color coding
 								if (_state.State_CatalogReady)
 								{
-									var spellInfo = FindSpellItemAAByName(spellName);
+									var spellInfo = data.FindSpellItemAAByName(spellName);
 									if (spellInfo != null && spellInfo.Level > 0)
 									{
 										// Color code by spell level
@@ -1429,13 +1415,15 @@ namespace E3Core.UI.Windows.CharacterSettings
 				// For Food/Drink keys, show "Pick From Inventory" instead of "Add From Catalog"
 				if (isFoodOrDrink)
 				{
+					var foodDrinkState = _state.GetState<State_FoodDrink>();
+
 					if (imgui_Button("Pick From Inventory"))
 					{
 						// Reset scan state so results don't carry over between Food/Drink
-						_cfgFoodDrinkKey = mainWindowState.SelectedKey; // "Food" or "Drink"
-						_cfgFoodDrinkStatus = string.Empty;
-						_cfgFoodDrinkCandidates.Clear();
-						_cfgFoodDrinkScanRequested = true; // auto-trigger scan for new kind
+						foodDrinkState._cfgFoodDrinkKey = mainWindowState.SelectedKey; // "Food" or "Drink"
+						foodDrinkState._cfgFoodDrinkStatus = string.Empty;
+						foodDrinkState._cfgFoodDrinkCandidates.Clear();
+						foodDrinkState._cfgFoodDrinkScanRequested = true; // auto-trigger scan for new kind
 						_state.Show_FoodDrinkModal = true;
 					}
 				}
@@ -1626,7 +1614,7 @@ namespace E3Core.UI.Windows.CharacterSettings
 					// Try to find spell/item/AA information for description
 					if (_state.State_CatalogReady)
 					{
-						var spellInfo = FindSpellItemAAByName(lookupName);
+						var spellInfo = data.FindSpellItemAAByName(lookupName);
 						RenderSpellAdditionalInfo(spellInfo);
 						if (spellInfo != null && !string.IsNullOrWhiteSpace(spellInfo.Description))
 						{
@@ -1703,8 +1691,8 @@ namespace E3Core.UI.Windows.CharacterSettings
 		{
 			try
 			{
-				string currentPath = GetCurrentCharacterIniPath();
-				string selectedPath = GetActiveSettingsPath();
+				string currentPath = data.GetCurrentCharacterIniPath();
+				string selectedPath = data.GetActiveSettingsPath();
 				var pd = GetActiveCharacterIniData();
 				if (string.IsNullOrEmpty(selectedPath) || pd == null) return;
 
@@ -1726,8 +1714,8 @@ namespace E3Core.UI.Windows.CharacterSettings
 			var mainWindowState = _state.GetState<State_MainWindow>();
 			try
 			{
-				string currentPath = GetCurrentCharacterIniPath();
-				string selectedPath = GetActiveSettingsPath();
+				string currentPath = data.GetCurrentCharacterIniPath();
+				string selectedPath = data.GetActiveSettingsPath();
 
 				if (string.IsNullOrEmpty(selectedPath))
 				{
@@ -1762,712 +1750,26 @@ namespace E3Core.UI.Windows.CharacterSettings
 				_log.Write($"Failed to clear changes: {ex.Message}");
 			}
 		}
-		static List<String> _catalogRefreshKeyTypes = new List<string>() { "Spells", "AAs", "Discs", "Skills", "Items" };
-		static Int64 _numberofMillisecondsBeforeCatalogNeedsRefresh = 30000;
-
-		private static void ProcessBackground_UpdateRemotePlayer(string targetToon)
-		{
-			//put lower case as zeromq is case sensitive
-			targetToon = targetToon.ToLower();
-
-			//have to make a network call and wait for a response. 
-			System.Threading.Tasks.Task.Run(() =>
-			{
-				try
-				{
-					//pre-create the new lookups
-					SortedDictionary<string, SortedDictionary<string, List<E3Spell>>>
-					mapSpells = new SortedDictionary<string, SortedDictionary<string, List<E3Spell>>>(),
-					mapAAs = new SortedDictionary<string, SortedDictionary<string, List<E3Spell>>>(),
-					mapDiscs = new SortedDictionary<string, SortedDictionary<string, List<E3Spell>>>(),
-					mapSkills = new SortedDictionary<string, SortedDictionary<string, List<E3Spell>>>(),
-					mapItems = new SortedDictionary<string, SortedDictionary<string, List<E3Spell>>>();
-					Dictionary<string, SpellData>
-					spellLookup = new Dictionary<string, SpellData>(StringComparer.OrdinalIgnoreCase),
-					aaLookup = new Dictionary<string, SpellData>(StringComparer.OrdinalIgnoreCase),
-					discLookup = new Dictionary<string, SpellData>(StringComparer.OrdinalIgnoreCase),
-					skillLookup = new Dictionary<string, SpellData>(StringComparer.OrdinalIgnoreCase),
-					itemLookup = new Dictionary<string, SpellData>(StringComparer.OrdinalIgnoreCase);
-
-
-					_log.WriteDelayed($"Fetching data (remote)", Logging.LogLevels.Debug);
-
-					//_state.Status_CatalogRequest = $"Loading catalogs from {targetToon}...";
-					bool peerSuccess = true;
-
-
-					// Send request: CatalogReq-<Toon>
-
-					//do we have that toons data already in memory or is it too old?
-
-
-					bool needDataRefresh = false;
-
-					Int64 dataMustBeNewerThan = Core.StopWatch.ElapsedMilliseconds - _numberofMillisecondsBeforeCatalogNeedsRefresh;
-					foreach (var key in _catalogRefreshKeyTypes)
-					{
-						string topicKey = $"CatalogResp-{E3.CurrentName}-{key}";
-						_log.WriteDelayed($"Checking for catalog key for target toon:{targetToon} key:{topicKey}", Logging.LogLevels.Debug);
-
-						if (NetMQServer.SharedDataClient.TopicUpdates.TryGetValue(targetToon, out var topics)
-							&& topics.TryGetValue(topicKey, out var entry))
-						{
-							//if we called within the last 60 seconds, just use the old data
-							if (entry.LastUpdate < dataMustBeNewerThan)
-							{
-								_log.WriteDelayed($"Catalog key found but too old, asking for refresh: old:{entry.LastUpdate} vs  new:{dataMustBeNewerThan}", Logging.LogLevels.Debug);
-
-								needDataRefresh = true;
-								dataMustBeNewerThan = 0;
-								break;
-							}
-						}
-						else
-						{
-							_log.WriteDelayed($"Catalog key not found, asking for refresh", Logging.LogLevels.Debug);
-
-							needDataRefresh = true;
-							dataMustBeNewerThan = 0;
-							break;
-						}
-					}
-
-
-
-					if (needDataRefresh)
-					{
-						PubServer.AddTopicMessage($"CatalogReq-{targetToon}", "");
-					}
-
-					if (TryFetchPeerSpellDataListPub(targetToon, "Spells", out var ps, dataMustBeNewerThan))
-					{
-						mapSpells = data.OrganizeCatalog(ps);
-						spellLookup = data.ConvertToSpellDataLookup(ps);
-					}
-					if (TryFetchPeerSpellDataListPub(targetToon, "AAs", out var pa, dataMustBeNewerThan))
-					{
-						mapAAs = data.OrganizeCatalog(pa);
-						aaLookup = data.ConvertToSpellDataLookup(ps);
-					}
-					if (TryFetchPeerSpellDataListPub(targetToon, "Discs", out var pd, dataMustBeNewerThan))
-					{
-						mapDiscs = data.OrganizeCatalog(pd);
-						discLookup = data.ConvertToSpellDataLookup(pd);
-					}
-					if (TryFetchPeerSpellDataListPub(targetToon, "Skills", out var pk, dataMustBeNewerThan))
-					{
-						mapSkills = data.OrganizeSkillsCatalog(pk);
-						skillLookup = data.ConvertToSpellDataLookup(pk);
-					}
-					if (TryFetchPeerSpellDataListPub(targetToon, "Items", out var pi, dataMustBeNewerThan))
-					{
-						mapItems = OrganizeItemsCatalog(pi);
-						itemLookup = data.ConvertToSpellDataLookup(pi);
-					}
-
-					// Also try to fetch gem data
-					if (peerSuccess && TryFetchPeerGemData(targetToon, out var gemData))
-					{
-						lock (_dataLock)
-						{
-							_cfg_CatalogGems = gemData;
-							_state.State_GemsAvailable = true;
-						}
-					}
-					else
-					{
-						lock (_dataLock)
-						{
-							_state.State_GemsAvailable = false;
-						}
-					}
-
-					// If any peer fetch failed, fallback to local
-					if (!peerSuccess)
-					{
-						_state.Status_CatalogRequest = "Peer catalog fetch failed; using local.";
-						_cfg_CatalogSource = "Local (fallback)";
-					}
-					else
-					{
-						_cfg_CatalogSource = $"Remote ({targetToon})";
-					}
-					_log.WriteDelayed($"Fetching data (remote) Complete!", Logging.LogLevels.Debug);
-
-
-					lock (_dataLock)
-					{
-						// Publish atomically
-						data._catalog_Spells = mapSpells;
-						data._spellCatalogLookup = spellLookup;
-						data._catalog_AA = mapAAs;
-						data._aaCatalogLookup = aaLookup;
-						data._catalog_Disc = mapDiscs;
-						data._discCatalogLookup = discLookup;
-						data._catalog_Skills = mapSkills;
-						data._skillCatalogLookup = skillLookup;
-						data._catalog_Items = mapItems;
-						data._itemCatalogLookup = itemLookup;
-
-						_catalogLookups = new[]
-						{
-							(data._catalog_Spells, "Spell"),
-							(data._catalog_AA, "AA"),
-							(data._catalog_Disc, "Disc"),
-							(data._catalog_Skills, "Skill"),
-							(data._catalog_Items, "Item")
-							};
-						_state.State_CatalogReady = true;
-						_state.Status_CatalogRequest = "Catalogs loaded.";
-
-					}
-
-				}
-				catch (Exception ex)
-				{
-					_state.Status_CatalogRequest = "Catalog load failed: " + (ex.Message ?? "error");
-				}
-				finally
-				{
-					_state.State_CatalogLoading = false;
-					_state.State_CatalogLoadRequested = false;
-				}
-			});
-		}
 	
-		private static void UpdateLocalSpellGemDataViaLocal()
-		{
-			try
-			{
-				var localGems = new string[12];
-				var localGemIcons = new int[12];
-
-				for (int gem = 1; gem <= 12; gem++)
-				{
-					try
-					{
-						string spellName = MQ.Query<string>($"${{Me.Gem[{gem}]}}");
-						Int32 spellID = MQ.Query<Int32>($"${{Me.Gem[{gem}].ID}}");
-						localGems[gem - 1] = spellID.ToString();
-
-						// Get spell icon index if we have a valid spell
-						if (!string.IsNullOrEmpty(spellName) && !spellName.Equals("NULL", StringComparison.OrdinalIgnoreCase))
-						{
-							localGemIcons[gem - 1] = GetLocalSpellIconIndex(spellName);
-						}
-						else
-						{
-							localGemIcons[gem - 1] = -1;
-						}
-					}
-					catch
-					{
-						localGems[gem - 1] = "ERROR";
-						localGemIcons[gem - 1] = -1;
-					}
-				}
-				lock (_dataLock)
-				{
-					_cfg_CatalogGems = localGems;
-					_cfg_CatalogGemIcons = localGemIcons;
-					_state.State_GemsAvailable = true;
-				}
-			}
-			catch (Exception ex)
-			{
-				_log.WriteDelayed($"Fetching data Error: {ex.Message}", Logging.LogLevels.Debug);
-				_state.State_GemsAvailable = false;
-			}
-		}
-		private static void ProcessBackground_UpdateLocalPlayer()
-		{
-			SortedDictionary<string, SortedDictionary<string, List<E3Spell>>> mapSpells = new SortedDictionary<string, SortedDictionary<string, List<E3Spell>>>(),
-					mapAAs = new SortedDictionary<string, SortedDictionary<string, List<E3Spell>>>(),
-					mapDiscs = new SortedDictionary<string, SortedDictionary<string, List<E3Spell>>>(),
-					mapSkills = new SortedDictionary<string, SortedDictionary<string, List<E3Spell>>>(),
-					mapItems = new SortedDictionary<string, SortedDictionary<string, List<E3Spell>>>();
-
-			_state.Status_CatalogRequest = "Loading catalogs (local)...";
-			_cfg_CatalogSource = "Local";
-
-			_log.WriteDelayed($"Fetching data (local)", Logging.LogLevels.Debug);
-
-			var spellList = e3util.ListAllBookSpells();
-			mapSpells = data.OrganizeLoadingCatalog(spellList);
-			var spellLookup = data.ConvertSpellsToSpellDataLookup(spellList);
-
-			var aaList = e3util.ListAllActiveAA();
-			mapAAs = data.OrganizeLoadingCatalog(aaList);
-			var aaLookup = data.ConvertSpellsToSpellDataLookup(aaList);
-
-			var discList = e3util.ListAllDiscData();
-			mapDiscs = data.OrganizeLoadingCatalog(discList);
-			var discLookup = data.ConvertSpellsToSpellDataLookup(discList);
-
-			var skillList = e3util.ListAllActiveSkills();
-			mapSkills = data.OrganizeLoadingSkillsCatalog(skillList);
-			var skillLookup = data.ConvertSpellsToSpellDataLookup(skillList);
-
-			var itemList = e3util.ListAllItemWithClickyData();
-			mapItems = OrganizeLoadingItemsCatalog(itemList);
-			var itemLookup = data.ConvertSpellsToSpellDataLookup(itemList);
-
-			// Also collect local gem data with spell icon indices
-			UpdateLocalSpellGemDataViaLocal();
-
-			_log.WriteDelayed($"Fetching data (local) Complete!", Logging.LogLevels.Debug);
-
-			lock (_dataLock)
-			{
-				// Publish atomically
-				data._catalog_Spells = mapSpells;
-				data._spellCatalogLookup = spellLookup;
-
-				data._catalog_AA = mapAAs;
-				data._aaCatalogLookup = aaLookup;
-
-				data._catalog_Disc = mapDiscs;
-				data._discCatalogLookup = discLookup;
-
-				data._catalog_Skills = mapSkills;
-				data._skillCatalogLookup = skillLookup;
-
-				data._catalog_Items = mapItems;
-				data._itemCatalogLookup = itemLookup;
-
-				_catalogLookups = new[]
-				{
-					(data._catalog_Spells, "Spell"),
-					(data._catalog_AA, "AA"),
-					(data._catalog_Disc, "Disc"),
-					(data._catalog_Skills, "Skill"),
-					(data._catalog_Items, "Item")
-				};
-				_state.State_CatalogReady = true;
-				_state.Status_CatalogRequest = "Catalogs loaded.";
-				_state.State_CatalogLoading = false;
-				_state.State_CatalogLoadRequested = false;
-
-			}
-		}
-		// Background worker tick invoked from E3.Process(): handle catalog loads and icon system
-		private static void ProcessBackgroundWork()
-		{
-			if (_state.State_CatalogLoadRequested && !_state.State_CatalogLoading)
-			{
-
-				_state.State_CatalogLoading = true;
-				_log.WriteDelayed("Making background request", Logging.LogLevels.Debug);
-
-
-				_log.WriteDelayed("Tryign to fetch data for user", Logging.LogLevels.Debug);
-
-				// Always fetch via RouterServer, same as e3config
-				string targetToon = GetSelectedIniOwnerName();
-
-				_log.WriteDelayed($"Target tooon: {targetToon}", Logging.LogLevels.Debug);
-
-				bool isLocal = string.IsNullOrEmpty(targetToon) || targetToon.Equals(E3.CurrentName, StringComparison.OrdinalIgnoreCase);
-
-				_log.WriteDelayed($"Are they local?: {isLocal}", Logging.LogLevels.Debug);
-
-				try
-				{
-					if (isLocal)
-					{
-						ProcessBackground_UpdateLocalPlayer();
-					}
-					else
-					{
-						if (GetOnlineToonNames().ContainsKey(targetToon))
-						{
-							ProcessBackground_UpdateRemotePlayer(targetToon);
-						}
-					}
-
-				}
-				finally
-				{
-					_state.State_CatalogLoading = false;
-					_state.State_CatalogLoadRequested = false;
-				}
-			}
-			// Food/Drink inventory scan (local or remote peer) — non-blocking
-			if (_cfgFoodDrinkScanRequested && !_cfgFoodDrinkPending)
-			{
-				_cfgFoodDrinkScanRequested = false;
-				try
-				{
-					string owner = GetSelectedIniOwnerName();
-					bool isLocal = string.IsNullOrEmpty(owner) || owner.Equals(E3.CurrentName, StringComparison.OrdinalIgnoreCase);
-					if (!isLocal)
-					{
-						// Start remote request and mark pending; actual receive handled below
-						E3Core.Server.PubServer.AddTopicMessage($"InvReq-{owner}", _cfgFoodDrinkKey);
-						_cfgFoodDrinkPending = true;
-						_cfgFoodDrinkPendingToon = owner;
-						_cfgFoodDrinkPendingType = _cfgFoodDrinkKey;
-						_cfgFoodDrinkTimeoutAt = Core.StopWatch.ElapsedMilliseconds + 2000;
-						_cfgFoodDrinkStatus = $"Scanning {_cfgFoodDrinkKey} on {owner}...";
-					}
-					else
-					{
-						var list = ScanInventoryForType(_cfgFoodDrinkKey);
-						_cfgFoodDrinkCandidates = list ?? new List<string>();
-						_cfgFoodDrinkStatus = _cfgFoodDrinkCandidates.Count == 0 ? "No matches found in inventory." : $"Found {_cfgFoodDrinkCandidates.Count} items.";
-					}
-				}
-				catch (Exception ex)
-				{
-					_cfgFoodDrinkStatus = "Scan failed: " + (ex.Message ?? "error");
-				}
-			}
-			// Remote response polling — checked each tick without blocking
-			if (_cfgFoodDrinkPending)
-			{
-				try
-				{
-					string toon = _cfgFoodDrinkPendingToon;
-					string type = _cfgFoodDrinkPendingType;
-					string topic = $"InvResp-{E3.CurrentName}-{type}";
-					// Prefer remote publisher bucket
-					if (E3Core.Server.NetMQServer.SharedDataClient.TopicUpdates.TryGetValue(toon, out var topics)
-						&& topics.TryGetValue(topic, out var entry))
-					{
-						string payload = entry.Data ?? string.Empty;
-						int first = payload.IndexOf(':');
-						int second = first >= 0 ? payload.IndexOf(':', first + 1) : -1;
-						string b64 = (second > 0 && second + 1 < payload.Length) ? payload.Substring(second + 1) : payload;
-						try
-						{
-							var bytes = Convert.FromBase64String(b64);
-							var joined = Encoding.UTF8.GetString(bytes);
-							_cfgFoodDrinkCandidates = (joined ?? string.Empty).Split(new[] { '\n' }, StringSplitOptions.RemoveEmptyEntries)
-								.Select(s => s.Trim())
-								.Where(s => s.Length > 0)
-								.Distinct(StringComparer.OrdinalIgnoreCase)
-								.OrderBy(s => s, StringComparer.OrdinalIgnoreCase)
-								.ToList();
-						}
-						catch
-						{
-							_cfgFoodDrinkCandidates = new List<string>();
-						}
-						_cfgFoodDrinkStatus = _cfgFoodDrinkCandidates.Count == 0 ? $"No {type} found on {toon}." : $"Found {_cfgFoodDrinkCandidates.Count} items on {toon}.";
-						_cfgFoodDrinkPending = false;
-					}
-					else if (E3Core.Server.NetMQServer.SharedDataClient.TopicUpdates.TryGetValue(E3.CurrentName, out var topics2)
-							 && topics2.TryGetValue(topic, out var entry2))
-					{
-						string payload = entry2.Data ?? string.Empty;
-						int first = payload.IndexOf(':');
-						int second = first >= 0 ? payload.IndexOf(':', first + 1) : -1;
-						string b64 = (second > 0 && second + 1 < payload.Length) ? payload.Substring(second + 1) : payload;
-						try
-						{
-							var bytes = Convert.FromBase64String(b64);
-							var joined = Encoding.UTF8.GetString(bytes);
-							_cfgFoodDrinkCandidates = (joined ?? string.Empty).Split(new[] { '\n' }, StringSplitOptions.RemoveEmptyEntries)
-								.Select(s => s.Trim())
-								.Where(s => s.Length > 0)
-								.Distinct(StringComparer.OrdinalIgnoreCase)
-								.OrderBy(s => s, StringComparer.OrdinalIgnoreCase)
-								.ToList();
-						}
-						catch
-						{
-							_cfgFoodDrinkCandidates = new List<string>();
-						}
-						_cfgFoodDrinkStatus = _cfgFoodDrinkCandidates.Count == 0 ? $"No {type} found on {toon}." : $"Found {_cfgFoodDrinkCandidates.Count} items on {toon}.";
-						_cfgFoodDrinkPending = false;
-					}
-					else if (Core.StopWatch.ElapsedMilliseconds >= _cfgFoodDrinkTimeoutAt)
-					{
-						_cfgFoodDrinkStatus = $"Remote {type} scan timed out for {toon}.";
-						_cfgFoodDrinkCandidates = new List<string>();
-						_cfgFoodDrinkPending = false;
-					}
-				}
-				catch
-				{
-					_cfgFoodDrinkStatus = "Remote scan error.";
-					_cfgFoodDrinkCandidates = new List<string>();
-					_cfgFoodDrinkPending = false;
-				}
-			}
-
-			if (_state.Request_AllplayersRefresh && !_cfgAllPlayersRefreshing)
-			{
-				var mainWindowState = _state.GetState<State_MainWindow>();
-				var allPlayerState = _state.GetState<State_AllPlayers>();
-
-				_state.Request_AllplayersRefresh = false; // consume the pending request before we start
-				_cfgAllPlayersRefreshing = true;
-				allPlayerState.ReqSection = mainWindowState.SelectedSection;
-				allPlayerState.ReqKey = mainWindowState.SelectedKey;
-
-				System.Threading.Tasks.Task.Run(() =>
-				{
-					try
-					{
-
-						allPlayerState.Status = "Refreshing...";
-
-						var newRows = new List<KeyValuePair<string, string>>();
-						string section = allPlayerState.ReqSection;
-						string key = allPlayerState.ReqKey;
-
-						foreach (var toon in GetOnlineToonNames().Keys)
-						{
-							string value = string.Empty;
-
-							// First, try reading directly from the toon's local INI (if present on this machine)
-							bool gotLocal = TryReadIniValueForToon(toon, section, key, out value);
-
-							// If we didn't get a value locally and it's a remote toon, request from peer
-							if (!gotLocal && !toon.Equals(E3.CurrentName, StringComparison.OrdinalIgnoreCase))
-							{
-								string requestTopic = $"ConfigValueReq-{toon}";
-								string payload = $"{section}:{key}";
-								E3Core.Server.PubServer.AddTopicMessage(requestTopic, payload);
-
-								string responseTopic = $"ConfigValueResp-{E3.CurrentName}-{section}:{key}";
-								long end = Core.StopWatch.ElapsedMilliseconds + 2000;
-								bool found = false;
-								while (Core.StopWatch.ElapsedMilliseconds < end)
-								{
-									if (E3Core.Server.NetMQServer.SharedDataClient.TopicUpdates.TryGetValue(toon, out var topics) &&
-										topics.TryGetValue(responseTopic, out var entry))
-									{
-										value = entry.Data;
-										found = true;
-										break;
-									}
-									if (E3Core.Server.NetMQServer.SharedDataClient.TopicUpdates.TryGetValue(E3.CurrentName, out var topics2) &&
-										topics2.TryGetValue(responseTopic, out var entry2))
-									{
-										value = entry2.Data;
-										found = true;
-										break;
-									}
-									System.Threading.Thread.Sleep(25);
-								}
-								if (!found) value = "<timeout>";
-							}
-
-							newRows.Add(new KeyValuePair<string, string>(toon, value));
-						}
-
-						lock (allPlayerState.DataLock)
-						{
-							allPlayerState.Data_Rows = newRows;
-							allPlayerState.Data_Edit = new Dictionary<string, string>(StringComparer.OrdinalIgnoreCase);
-							foreach (var row in newRows)
-							{
-								var toonKey = row.Key ?? string.Empty;
-								allPlayerState.Data_Edit[toonKey] = row.Value ?? string.Empty;
-							}
-						}
-						allPlayerState.LastUpdatedAt = Core.StopWatch.ElapsedMilliseconds;
-					}
-					catch (Exception ex)
-					{
-						allPlayerState.Status = "Refresh failed: " + ex.Message;
-					}
-					finally
-					{
-						_cfgAllPlayersRefreshing = false;
-					}
-				});
-			}
-		}
+		
 
 		// Fetch gem data from peer catalog response (now includes spell icon indices)
-		private static bool TryFetchPeerGemData(string toon, out string[] gemData)
-		{
-			gemData = new string[12];
-			try
-			{
-				_log.WriteDelayed($"Tryign to fetch gem data for:{toon}", Logging.LogLevels.Debug);
-
-				if (string.IsNullOrEmpty(toon)) return false;
-
-				string topic = $"CatalogResp-{E3.CurrentName}-Gems";
-				// Poll SharedDataClient.TopicUpdates for gem data
-				long end = Core.StopWatch.ElapsedMilliseconds + 2000; // 2 second timeout
-				while (Core.StopWatch.ElapsedMilliseconds < end)
-				{
-					if (E3Core.Server.NetMQServer.SharedDataClient.TopicUpdates.TryGetValue(toon, out var topics)
-						&& topics.TryGetValue(topic, out var entry))
-					{
-						string payload = entry.Data;
-						ParseGemDataWithIcons(payload, out gemData, out _cfg_CatalogGemIcons);
-						return true;
-					}
-
-					// Also check if data came back under current name
-					if (E3Core.Server.NetMQServer.SharedDataClient.TopicUpdates.TryGetValue(E3.CurrentName, out var topics2)
-						&& topics2.TryGetValue(topic, out var entry2))
-					{
-						string payload = entry2.Data;
-						ParseGemDataWithIcons(payload, out gemData, out _cfg_CatalogGemIcons);
-						return true;
-					}
-
-					System.Threading.Thread.Sleep(25);
-				}
-			}
-			catch { }
-
-			// Fill with ERROR if failed
-			for (int i = 0; i < 12; i++)
-			{
-				gemData[i] = "ERROR";
-				_cfg_CatalogGemIcons[i] = -1;
-			}
-			return false;
-		}
-
-		// Helper method to parse gem data with icon indices from pipe-separated format
-		private static void ParseGemDataWithIcons(string payload, out string[] gemNames, out int[] gemIcons)
-		{
-			gemNames = new string[12];
-			gemIcons = new int[12];
-			_log.WriteDelayed($"Parsing gem data with payload:{payload}", Logging.LogLevels.Debug);
-
-			try
-			{
-				// Parse pipe-separated gem data: "SpellName:IconIndex|SpellName:IconIndex|..."
-				var gems = payload.Split('|');
-				int count = Math.Min(gems.Length, 12);
-
-				for (int i = 0; i < count; i++)
-				{
-					string gemEntry = gems[i] ?? "NULL:-1";
-					string[] parts = gemEntry.Split(':');
-
-					if (parts.Length >= 2)
-					{
-						gemNames[i] = parts[0] ?? "NULL";
-						if (int.TryParse(parts[1], out int iconIndex))
-						{
-							gemIcons[i] = iconIndex;
-						}
-						else
-						{
-							gemIcons[i] = -1;
-						}
-					}
-					else
-					{
-						// Fallback for old format without icons
-						gemNames[i] = gemEntry ?? "NULL";
-						gemIcons[i] = -1;
-					}
-				}
-
-				// Fill remaining slots if needed
-				for (int i = count; i < 12; i++)
-				{
-					gemNames[i] = "NULL";
-					gemIcons[i] = -1;
-				}
-			}
-			catch
-			{
-				// Error case - fill with defaults
-				for (int i = 0; i < 12; i++)
-				{
-					gemNames[i] = "ERROR";
-					gemIcons[i] = -1;
-				}
-			}
-		}
-
+		
 		// Helper method to get spell icon index for local spells
-		private static int GetLocalSpellIconIndex(string spellName)
-		{
-			if (string.IsNullOrEmpty(spellName)) return -1;
-
-			try
-			{
-				// Use the catalog lookups if they're available
-				var spellInfo = FindSpellItemAAByName(spellName);
-				if (spellInfo != null && spellInfo.SpellIcon >= 0)
-				{
-					return spellInfo.SpellIcon;
-				}
-
-				// Fallback: Query MQ directly for spell icon
-				int iconIndex = E3.MQ.Query<int>($"${{Spell[{spellName}].SpellIcon}}");
-				return iconIndex > 0 ? iconIndex : -1;
-			}
-			catch
-			{
-				return -1;
-			}
-		}
-
+		
 		// PubSub relay approach: request peer to publish SpellDataList as base64 on response topic
-		private static bool TryFetchPeerSpellDataListPub(string toon, string listKey, out Google.Protobuf.Collections.RepeatedField<SpellData> data, Int64 dataMustBeOlderThan)
-		{
-			data = new Google.Protobuf.Collections.RepeatedField<SpellData>();
-			//topics are stored in toon specific keys
-			string topic = $"CatalogResp-{E3.CurrentName}-{listKey}";
-			// Poll SharedDataClient.TopicUpdates for up to ~2s
-			long end = Core.StopWatch.ElapsedMilliseconds + 4000;
-
-			_log.WriteDelayed($"Trying to fetch data with key:{topic}", Logging.LogLevels.Debug);
-
-
-			while (Core.StopWatch.ElapsedMilliseconds < end)
-			{
-				if (NetMQServer.SharedDataClient.TopicUpdates.TryGetValue(toon, out var topics)
-					&& topics.TryGetValue(topic, out var entry))
-				{
-					if (entry.LastUpdate < dataMustBeOlderThan) continue;
-					_log.WriteDelayed($"Data found with key:{topic}", Logging.LogLevels.Debug);
-
-					string payload = entry.Data;
-					int first = payload.IndexOf(':');
-					int second = first >= 0 ? payload.IndexOf(':', first + 1) : -1;
-					string b64 = (second > 0 && second + 1 < payload.Length) ? payload.Substring(second + 1) : payload;
-					byte[] bytes = Convert.FromBase64String(b64);
-					var list = SpellDataList.Parser.ParseFrom(bytes);
-					data = list.Data;
-					return true;
-				}
-				System.Threading.Thread.Sleep(25);
-			}
-			_log.WriteDelayed($"Data NOT FOUND with key:{topic}", Logging.LogLevels.Debug);
-
-			return false;
-		}
-
-		private static string GetSelectedIniOwnerName()
-		{
-			try
-			{
-				string path = GetActiveSettingsPath();
-				if (string.IsNullOrEmpty(path)) return E3.CurrentName;
-				string file = Path.GetFileNameWithoutExtension(path);
-				int us = file.IndexOf('_');
-				if (us > 0) return file.Substring(0, us);
-				return file;
-			}
-			catch { return E3.CurrentName; }
-		}
+	
 		private static bool IsActiveIniBard()
 		{
 			try
 			{
-				var data = GetActiveCharacterIniData();
-				if (data?.Sections != null)
+				var chardata = GetActiveCharacterIniData();
+				if (chardata?.Sections != null)
 				{
-					if (data.Sections.ContainsSection("Bard")) return true;
+					if (chardata.Sections.ContainsSection("Bard")) return true;
 				}
 
-				string path = GetActiveSettingsPath() ?? string.Empty;
+				string path = data.GetActiveSettingsPath() ?? string.Empty;
 				if (string.IsNullOrEmpty(path)) return string.Equals(E3.CurrentClass.ToString(), "Bard", StringComparison.OrdinalIgnoreCase);
 
 				string file = Path.GetFileNameWithoutExtension(path) ?? string.Empty;
@@ -2486,44 +1788,7 @@ namespace E3Core.UI.Windows.CharacterSettings
 			}
 		}
 
-		private static ConcurrentDictionary<string, string> _onlineToonsCache = new ConcurrentDictionary<string, string>(StringComparer.OrdinalIgnoreCase);
-		private static Int64 _onlineToonsLastUpdate = 0;
-		private static Int64 _onlineToonsLastsUpdateInterval = 3000;
-		private static ConcurrentDictionary<string, string> GetOnlineToonNames()
-		{
 
-			if (!e3util.ShouldCheck(ref _onlineToonsLastUpdate, _onlineToonsLastsUpdateInterval))
-			{
-				lock (_onlineToonsCache)
-				{
-					return _onlineToonsCache;
-
-				}
-			}
-			lock (_onlineToonsCache)
-			{
-				_onlineToonsCache.Clear();
-
-				try
-				{
-					var connected = E3Core.Server.NetMQServer.SharedDataClient?.UsersConnectedTo?.Keys;
-					if (connected != null)
-					{
-						foreach (var name in connected)
-						{
-							if (!string.IsNullOrEmpty(name)) _onlineToonsCache.TryAdd(name, name);
-						}
-					}
-				}
-				catch { }
-
-				if (!string.IsNullOrEmpty(E3.CurrentName)) _onlineToonsCache.TryAdd(E3.CurrentName, E3.CurrentName);
-
-
-				return _onlineToonsCache;
-			}
-
-		}
 		private static bool IsIniForOnlineToon(string iniPath, ConcurrentDictionary<string, string> onlineToons)
 		{
 			if (onlineToons == null || onlineToons.Count == 0) return false;
@@ -2539,154 +1804,10 @@ namespace E3Core.UI.Windows.CharacterSettings
 		
 
 		
-		private static SortedDictionary<string, SortedDictionary<string, List<E3Spell>>> OrganizeLoadingItemsCatalog(List<Spell> data)
-		{
-			var dest = new SortedDictionary<string, SortedDictionary<string, List<E3Spell>>>(StringComparer.OrdinalIgnoreCase);
-			foreach (var s in data)
-			{
-				if (s == null) continue;
-				string cat = s.CastName ?? string.Empty; // item name
-				string sub = s.SpellName ?? string.Empty; // click spell
-				if (!dest.TryGetValue(cat, out var submap))
-				{
-					submap = new SortedDictionary<string, List<E3Spell>>(StringComparer.OrdinalIgnoreCase);
-					dest.Add(cat, submap);
-				}
-				if (!submap.TryGetValue(sub, out var l))
-				{
-					l = new List<E3Spell>();
-					submap.Add(sub, l);
-				}
-				l.Add(new E3Spell
-				{
-					Name = s.CastName ?? string.Empty,
-					Category = cat,
-					Subcategory = sub,
-					Level = s.Level,
-					CastName = s.CastName ?? string.Empty,
-					TargetType = s.TargetType ?? string.Empty,
-					SpellType = s.SpellType ?? string.Empty,
-					Mana = s.Mana,
-					CastTime = Convert.ToDouble(s.MyCastTimeInSeconds),
-					Recast = s.RecastTime != 0 ? s.RecastTime : s.RecastDelay,
-					Range = s.MyRange,
-					Description = s.Description ?? string.Empty,
-					ResistType = s.ResistType ?? string.Empty,
-					ResistAdj = s.ResistAdj,
-					CastType = s.CastType.ToString(),
-					SpellGem = s.SpellGem,
-					SpellEffects = s.SpellEffects != null
-						? s.SpellEffects.Where(e => !string.IsNullOrWhiteSpace(e)).Select(e => e.Trim()).ToList()
-						: new List<string>(),
-					SpellIcon = s.SpellIcon
-				});
-			}
-			return dest;
-		}
-		// Organize items like e3config: first key = CastName (item), subkey = SpellName, and list entries by item (CastName)
-		private static SortedDictionary<string, SortedDictionary<string, List<E3Spell>>> OrganizeItemsCatalog(Google.Protobuf.Collections.RepeatedField<SpellData> data)
-		{
-			var dest = new SortedDictionary<string, SortedDictionary<string, List<E3Spell>>>(StringComparer.OrdinalIgnoreCase);
-			foreach (var s in data)
-			{
-				if (s == null) continue;
-				string cat = s.CastName ?? string.Empty; // item name
-				string sub = s.SpellName ?? string.Empty; // click spell
-				if (!dest.TryGetValue(cat, out var submap))
-				{
-					submap = new SortedDictionary<string, List<E3Spell>>(StringComparer.OrdinalIgnoreCase);
-					dest.Add(cat, submap);
-				}
-				if (!submap.TryGetValue(sub, out var l))
-				{
-					l = new List<E3Spell>();
-					submap.Add(sub, l);
-				}
-				l.Add(new E3Spell
-				{
-					Name = s.CastName ?? string.Empty,
-					Category = cat,
-					Subcategory = sub,
-					Level = s.Level,
-					CastName = s.CastName ?? string.Empty,
-					TargetType = s.TargetType ?? string.Empty,
-					SpellType = s.SpellType ?? string.Empty,
-					Mana = s.Mana,
-					CastTime = s.MyCastTimeInSeconds,
-					Recast = s.RecastTime != 0 ? s.RecastTime : s.RecastDelay,
-					Range = s.MyRange,
-					Description = s.Description ?? string.Empty,
-					ResistType = s.ResistType ?? string.Empty,
-					ResistAdj = s.ResistAdj,
-					CastType = s.CastType.ToString(),
-					SpellGem = s.SpellGem,
-					SpellEffects = s.SpellEffects != null
-						? s.SpellEffects.Where(e => !string.IsNullOrWhiteSpace(e)).Select(e => e.Trim()).ToList()
-						: new List<string>(),
-					SpellIcon = s.SpellIcon
-				});
-			}
-			return dest;
-		}
-
-
+	
 		// Resolves a toon’s ini path by scanning known .ini files and preferring a match
 		// that includes the server name if we have it.
-		private static bool TryGetIniPathForToon(string toon, out string path)
-		{
-			var state = _state.GetState<State_MainWindow>();
-
-			path = null;
-			if (string.IsNullOrWhiteSpace(toon)) return false;
-
-			// Keep our list of ini files fresh
-			ScanCharIniFilesIfNeeded();
-
-			// Current character is easy
-			if (!string.IsNullOrEmpty(E3.CurrentName) &&
-				string.Equals(E3.CurrentName, toon, StringComparison.OrdinalIgnoreCase))
-			{
-				path = GetCurrentCharacterIniPath();
-				return !string.IsNullOrEmpty(path);
-			}
-
-			if (state.IniFilesFromDisk == null || state.IniFilesFromDisk.Length == 0) return false;
-
-			// Optional: prefer matches that also contain server in the filename
-			_cfgAllPlayersServerByToon.TryGetValue(toon, out var serverHint);
-			serverHint = serverHint ?? string.Empty;
-
-			// Gather candidates: filename starts with "<Toon>_" or equals "<Toon>.ini"
-			var candidates = new List<string>();
-			foreach (var f in state.IniFilesFromDisk)
-			{
-				var name = System.IO.Path.GetFileName(f);
-				if (name.StartsWith(toon + "_", StringComparison.OrdinalIgnoreCase) ||
-					name.Equals(toon + ".ini", StringComparison.OrdinalIgnoreCase))
-				{
-					candidates.Add(f);
-				}
-			}
-
-			if (candidates.Count == 0) return false;
-
-			// Prefer one that mentions the server (common pattern: Toon_Server_Class.ini)
-			if (!string.IsNullOrEmpty(serverHint))
-			{
-				var withServer = candidates.FirstOrDefault(f =>
-					System.IO.Path.GetFileName(f).IndexOf("_" + serverHint + "_", StringComparison.OrdinalIgnoreCase) >= 0);
-				if (!string.IsNullOrEmpty(withServer))
-				{
-					path = withServer;
-					return true;
-				}
-			}
-
-			// Fallback: first candidate
-			path = candidates[0];
-			return true;
-		}
-
+		
 		// Reads, updates, and writes a single INI value for a toon.
 
 		private static bool IsStringConfigKey(string key)
@@ -2802,52 +1923,7 @@ namespace E3Core.UI.Windows.CharacterSettings
 		}
 
 		// Inventory helper that uses MQ TLOs to scan for Food/Drink items
-		private static List<string> ScanInventoryForType(string key)
-		{
-			var found = new HashSet<string>(StringComparer.OrdinalIgnoreCase);
-			if (string.IsNullOrWhiteSpace(key)) return found.ToList();
-			string target = key.Trim();
-
-			// Scan a generous set of inventory indices and their bag contents
-			for (int inv = 1; inv <= 40; inv++)
-			{
-				try
-				{
-					bool present = E3.MQ.Query<bool>($"${{Me.Inventory[{inv}]}}");
-					if (!present) continue;
-
-					// top-level item type
-					string t = E3.MQ.Query<string>($"${{Me.Inventory[{inv}].Type}}") ?? string.Empty;
-					if (!string.IsNullOrEmpty(t) && t.Equals(target, StringComparison.OrdinalIgnoreCase))
-					{
-						string name = E3.MQ.Query<string>($"${{Me.Inventory[{inv}]}}") ?? string.Empty;
-						if (!string.IsNullOrEmpty(name)) found.Add(name);
-					}
-
-					// bag contents if container
-					int slots = E3.MQ.Query<int>($"${{Me.Inventory[{inv}].Container}}");
-					if (slots <= 0) continue;
-					for (int i = 1; i <= slots; i++)
-					{
-						try
-						{
-							bool ipresent = E3.MQ.Query<bool>($"${{Me.Inventory[{inv}].Item[{i}]}}");
-							if (!ipresent) continue;
-							string it = E3.MQ.Query<string>($"${{Me.Inventory[{inv}].Item[{i}].Type}}") ?? string.Empty;
-							if (!string.IsNullOrEmpty(it) && it.Equals(target, StringComparison.OrdinalIgnoreCase))
-							{
-								string iname = E3.MQ.Query<string>($"${{Me.Inventory[{inv}].Item[{i}]}}") ?? string.Empty;
-								if (!string.IsNullOrEmpty(iname)) found.Add(iname);
-							}
-						}
-						catch { }
-					}
-				}
-				catch { }
-			}
-
-			return found.OrderBy(x => x, StringComparer.OrdinalIgnoreCase).ToList();
-		}
+	
 		private static void RenderAddFromCatalogModal_CalculateAddType(AddType typeofadd,out float leftW, out float middleW, out float rightW)
 		{
 			float totalW = imgui_GetContentRegionAvailX();
@@ -2907,16 +1983,17 @@ namespace E3Core.UI.Windows.CharacterSettings
 			imgui_Separator();
 			imgui_TextColored(0.8f, 0.9f, 1.0f, 1.0f, "Catalog Source:");
 			imgui_SameLine();
+			var gemstate = _state.GetState<State_CatalogGems>();
 
 			// Color code the source based on type
-			if (_cfg_CatalogSource.StartsWith("Remote"))
-				imgui_TextColored(0.7f, 1.0f, 0.7f, 1.0f, _cfg_CatalogSource); // Green for remote
-			else if (_cfg_CatalogSource.StartsWith("Local (fallback)"))
-				imgui_TextColored(1.0f, 0.8f, 0.4f, 1.0f, _cfg_CatalogSource); // Orange for fallback
-			else if (_cfg_CatalogSource.StartsWith("Local"))
-				imgui_TextColored(0.8f, 0.8f, 1.0f, 1.0f, _cfg_CatalogSource); // Light blue for local
+			if (gemstate._cfg_CatalogSource.StartsWith("Remote"))
+				imgui_TextColored(0.7f, 1.0f, 0.7f, 1.0f, gemstate._cfg_CatalogSource); // Green for remote
+			else if (gemstate._cfg_CatalogSource.StartsWith("Local (fallback)"))
+				imgui_TextColored(1.0f, 0.8f, 0.4f, 1.0f, gemstate._cfg_CatalogSource); // Orange for fallback
+			else if (gemstate._cfg_CatalogSource.StartsWith("Local"))
+				imgui_TextColored(0.8f, 0.8f, 1.0f, 1.0f, gemstate._cfg_CatalogSource); // Light blue for local
 			else
-				imgui_TextColored(0.8f, 0.8f, 0.8f, 1.0f, _cfg_CatalogSource); // Gray for unknown
+				imgui_TextColored(0.8f, 0.8f, 0.8f, 1.0f, gemstate._cfg_CatalogSource); // Gray for unknown
 
 			imgui_SameLine();
 			if (imgui_Button("Refresh Catalog"))
@@ -3169,7 +2246,7 @@ namespace E3Core.UI.Windows.CharacterSettings
 				{
 					float listH = imgui_GetContentRegionAvailY() - 120f; // Reserve space for header/footer
 					float leftW, middleW, rightW;
-					var currentCatalog = GetCatalogByType(state.CurrentAddType);
+					var currentCatalog = data.GetCatalogByType(state.CurrentAddType);
 
 					RenderAddFromCatalogModal_CalculateAddType(state.CurrentAddType, out leftW, out middleW, out rightW);
 					RenderAddFromCatalogModal_Header();
@@ -3198,55 +2275,9 @@ namespace E3Core.UI.Windows.CharacterSettings
 			}
 		}
 
-		private static SortedDictionary<string, SortedDictionary<string, List<E3Spell>>> GetCatalogByType(AddType t)
-		{
-			lock (_dataLock)
-			{
-				switch (t)
-				{
-					case AddType.AAs: return data._catalog_AA;
-					case AddType.Discs: return data._catalog_Disc;
-					case AddType.Skills: return data._catalog_Skills;
-					case AddType.Items: return data._catalog_Items;
-					case AddType.Spells:
-					default: return data._catalog_Spells;
-				}
-			}
-		}
-		private static (SortedDictionary<string, SortedDictionary<string, List<E3Spell>>>, string)[] _catalogLookups = new[]
-		{
-			(data._catalog_Spells, "Spell"),
-			(data._catalog_AA, "AA"),
-			(data._catalog_Disc, "Disc"),
-			(data._catalog_Skills, "Skill"),
-			(data._catalog_Items, "Item")
-		};
+		
 		// Search all catalogs for a spell/item/AA by name
-		private static E3Spell FindSpellItemAAByName(string name)
-		{
-			if (string.IsNullOrEmpty(name)) return null;
-
-			// Search all catalog types for an exact match
-			foreach (var (catalog, type) in _catalogLookups)
-			{
-				foreach (var categoryKvp in catalog)
-				{
-					foreach (var subCategoryKvp in categoryKvp.Value)
-					{
-						var match = subCategoryKvp.Value.FirstOrDefault(spell =>
-							string.Equals(spell.Name, name, StringComparison.OrdinalIgnoreCase));
-						if (match != null)
-						{
-							// Set the cast type if not already set
-							if (string.IsNullOrEmpty(match.CastType)) match.CastType = type;
-							return match;
-						}
-					}
-				}
-			}
-			return null;
-		}
-
+	
 
 		// Helper: format milliseconds as seconds, or minutes+seconds over 60s
 		private static string FormatMsSmart(int ms)
@@ -3639,7 +2670,7 @@ namespace E3Core.UI.Windows.CharacterSettings
 									{
 										string newValue = allPlayerState.Data_Edit[row.Key] ?? string.Empty;
 
-										if (TrySaveIniValueForToon(row.Key, mainWindowState.SelectedSection, mainWindowState.SelectedKey, newValue, out var err))
+										if (data.TrySaveIniValueForToon(row.Key, mainWindowState.SelectedSection, mainWindowState.SelectedKey, newValue, out var err))
 										{
 											_log.WriteDelayed($"Saved [{mainWindowState.SelectedSection}] {mainWindowState.SelectedKey} for {row.Key}.", Logging.LogLevels.Debug);
 										}
@@ -3664,58 +2695,7 @@ namespace E3Core.UI.Windows.CharacterSettings
 				}
 			}
 		}
-		private static bool TrySaveIniValueForToon(string toon, string section, string key, string newValue, out string error)
-		{
-			error = null;
-			if (!TryGetIniPathForToon(toon, out var iniPath))
-			{
-				error = $"Could not resolve ini path for '{toon}'.";
-				return false;
-			}
-
-			try
-			{
-				var parser = E3Core.Utility.e3util.CreateIniParser();       // you already use this elsewhere
-				var data = parser.ReadFile(iniPath);                         // IniParser.Model.IniData
-				if (!data.Sections.ContainsSection(section))
-					data.Sections.AddSection(section);
-				data[section][key] = newValue ?? string.Empty;               // simplest way to set a value
-				parser.WriteFile(iniPath, data);                             // persist to disk
-
-				return true;
-			}
-			catch (Exception ex)
-			{
-				error = ex.Message;
-				return false;
-			}
-		}
-
-		// Reads a single INI value for a toon. Returns true if the toon/path exists and read succeeded.
-		private static bool TryReadIniValueForToon(string toon, string section, string key, out string value)
-		{
-			value = string.Empty;
-			try
-			{
-				if (!TryGetIniPathForToon(toon, out var iniPath))
-					return false;
-
-				var parser = E3Core.Utility.e3util.CreateIniParser();
-				var data = parser.ReadFile(iniPath);
-				if (!data.Sections.ContainsSection(section))
-					return true; // file exists but section missing -> empty
-
-				value = data[section][key] ?? string.Empty;
-				return true;
-			}
-			catch
-			{
-				value = string.Empty;
-				return false;
-			}
-		}
-
-
+	
 		private static void EnsureConfigEditorInit()
 		{
 			if (_cfg_Inited) return;
@@ -3812,36 +2792,13 @@ namespace E3Core.UI.Windows.CharacterSettings
 		return matches;
 	}
 		
-		private static string GetActiveSettingsPath()
-		{
-			switch (_activeSettingsTab)
-			{
-				case SettingsTab.General:
-					if (E3.GeneralSettings != null && !string.IsNullOrEmpty(E3.GeneralSettings._fileLastModifiedFileName))
-						return E3.GeneralSettings._fileLastModifiedFileName;
-					return E3Core.Settings.BaseSettings.GetSettingsFilePath("General Settings.ini");
-				case SettingsTab.Advanced:
-					var adv = E3Core.Settings.BaseSettings.GetSettingsFilePath("Advanced Settings.ini");
-					if (!string.IsNullOrEmpty(E3Core.Settings.BaseSettings.CurrentSet)) adv = adv.Replace(".ini", "_" + E3Core.Settings.BaseSettings.CurrentSet + ".ini");
-					return adv;
-				case SettingsTab.Character:
-				default:
-					var state = _state.GetState<State_MainWindow>();
-					if (string.IsNullOrEmpty(state.CurrentINIFileNameFull))
-					{
-						var currentPath = GetCurrentCharacterIniPath();
-						state.CurrentINIFileNameFull = currentPath;
-					}
-					return state.CurrentINIFileNameFull;
-			}
-		}
 		// Ifs sample import helpers and modal
 		private static string ResolveSampleIfsPath()
 		{
 			var dirs = new List<string>();
 			try
 			{
-				string cfg = GetActiveSettingsPath();
+				string cfg = data.GetActiveSettingsPath();
 				if (!string.IsNullOrEmpty(cfg))
 				{
 					var dir = Path.GetDirectoryName(cfg);
@@ -3851,7 +2808,7 @@ namespace E3Core.UI.Windows.CharacterSettings
 			catch { }
 			try
 			{
-				string botIni = GetCurrentCharacterIniPath();
+				string botIni = data.GetCurrentCharacterIniPath();
 				if (!string.IsNullOrEmpty(botIni))
 				{
 					var botDir = Path.GetDirectoryName(botIni);
@@ -4075,40 +3032,9 @@ namespace E3Core.UI.Windows.CharacterSettings
 
 			return mainWindowState.CurrentINIData;
 		}
-		private static string GetCurrentCharacterIniPath()
-		{
-			string returnValue = E3.CharacterSettings._fileName;
-			if (E3.CharacterSettings != null && !string.IsNullOrEmpty(E3.CharacterSettings._fileName))
-			{
-				return returnValue;
+	
 
-			}
-			var name = E3.CurrentName ?? string.Empty;
-			var server = E3.ServerName ?? string.Empty;
-			var klass = E3.CurrentClass.ToString();
-			returnValue = E3Core.Settings.BaseSettings.GetBoTFilePath(name, server, klass);
-			return returnValue;
-		}
-
-		private static Int64 _iniFileScanInterval = 3000;
-		private static Int64 _iniFileScanTimeStamp = 0;
-		private static void ScanCharIniFilesIfNeeded()
-		{
-			if (!e3util.ShouldCheck(ref _iniFileScanTimeStamp, _iniFileScanInterval))
-			{
-				return;
-			}
-			var dir = BaseSettings.GetBotPath();// Path.GetDirectoryName(curPath);
-			var server = E3.ServerName ?? string.Empty;
-			var pattern = "*_*" + server + ".ini";
-			var files = Directory.GetFiles(dir, pattern, SearchOption.TopDirectoryOnly);
-			if (files == null || files.Length == 0)
-				files = Directory.GetFiles(dir, "*.ini", SearchOption.TopDirectoryOnly);
-			Array.Sort(files, StringComparer.OrdinalIgnoreCase);
-
-			var mainWindowState = _state.GetState<State_MainWindow>();
-			mainWindowState.IniFilesFromDisk = files;
-		}
+	
 		// Safe combo wrapper for older MQ2Mono
 		private static bool BeginComboSafe(string label, string preview)
 		{
@@ -4833,42 +3759,44 @@ namespace E3Core.UI.Windows.CharacterSettings
 			if (shouldDraw)
 			{
 				var mainWindowState = _state.GetState<State_MainWindow>();
+				var foodDrinkState = _state.GetState<State_FoodDrink>();
+
 
 				// Header with better styling
-				imgui_TextColored(0.95f, 0.85f, 0.35f, 1.0f, $"Pick {_cfgFoodDrinkKey} from inventory");
+				imgui_TextColored(0.95f, 0.85f, 0.35f, 1.0f, $"Pick {foodDrinkState._cfgFoodDrinkKey} from inventory");
 				imgui_Separator();
 
 				// Status and scan button
-				if (string.IsNullOrEmpty(_cfgFoodDrinkStatus))
+				if (string.IsNullOrEmpty(foodDrinkState._cfgFoodDrinkStatus))
 				{
 					if (imgui_Button("Scan Inventory"))
 					{
-						_cfgFoodDrinkStatus = "Scanning...";
-						_cfgFoodDrinkScanRequested = true;
+						foodDrinkState._cfgFoodDrinkStatus = "Scanning...";
+						foodDrinkState._cfgFoodDrinkScanRequested = true;
 					}
 					imgui_Text("Click above to scan your inventory.");
 				}
 				else
 				{
-					imgui_TextColored(0.7f, 0.9f, 0.7f, 1.0f, _cfgFoodDrinkStatus);
+					imgui_TextColored(0.7f, 0.9f, 0.7f, 1.0f, foodDrinkState._cfgFoodDrinkStatus);
 				}
 
 				imgui_Separator();
 
 				// Results list with better sizing
-				if (_cfgFoodDrinkCandidates.Count > 0)
+				if (foodDrinkState._cfgFoodDrinkCandidates.Count > 0)
 				{
 					imgui_TextColored(0.8f, 0.9f, 1.0f, 1.0f, "Found items (click to select):");
 
 					// Use responsive sizing for the list
-					float listHeight = Math.Min(400f, Math.Max(150f, _cfgFoodDrinkCandidates.Count * 20f + 40f));
+					float listHeight = Math.Min(400f, Math.Max(150f, foodDrinkState._cfgFoodDrinkCandidates.Count * 20f + 40f));
 					float listWidth = Math.Max(300f, imgui_GetContentRegionAvailX() * 0.9f);
 
 					if (imgui_BeginChild("FoodDrinkList", listWidth, listHeight, 1, 0))
 					{
-						for (int i = 0; i < _cfgFoodDrinkCandidates.Count; i++)
+						for (int i = 0; i < foodDrinkState._cfgFoodDrinkCandidates.Count; i++)
 						{
-							var item = _cfgFoodDrinkCandidates[i];
+							var item = foodDrinkState._cfgFoodDrinkCandidates[i];
 							if (imgui_Selectable($"{item}##item_{i}", false))
 							{
 								// Apply selection
@@ -4890,7 +3818,7 @@ namespace E3Core.UI.Windows.CharacterSettings
 					}
 					imgui_EndChild();
 				}
-				else if (!string.IsNullOrEmpty(_cfgFoodDrinkStatus) && !_cfgFoodDrinkStatus.Contains("Scanning"))
+				else if (!string.IsNullOrEmpty(foodDrinkState._cfgFoodDrinkStatus) && !foodDrinkState._cfgFoodDrinkStatus.Contains("Scanning"))
 				{
 					imgui_TextColored(0.9f, 0.7f, 0.7f, 1.0f, "No matching items found.");
 				}
@@ -4898,13 +3826,13 @@ namespace E3Core.UI.Windows.CharacterSettings
 				imgui_Separator();
 
 				// Action buttons
-				if (_cfgFoodDrinkCandidates.Count > 0)
+				if (foodDrinkState._cfgFoodDrinkCandidates.Count > 0)
 				{
 					if (imgui_Button("Rescan"))
 					{
-						_cfgFoodDrinkStatus = "Scanning...";
-						_cfgFoodDrinkCandidates.Clear();
-						_cfgFoodDrinkScanRequested = true;
+						foodDrinkState._cfgFoodDrinkStatus = "Scanning...";
+						foodDrinkState._cfgFoodDrinkCandidates.Clear();
+						foodDrinkState._cfgFoodDrinkScanRequested = true;
 					}
 					imgui_SameLine();
 				}

@@ -9,6 +9,8 @@ namespace E3Core.UI.Windows.CharacterSettings
 {
 	public enum AddType { Spells, AAs, Discs, Skills, Items }
 	public enum CatalogMode { Standard, BardSong }
+	public enum SettingsTab { Character, General, Advanced }
+
 	public class E3Spell
 	{
 		public string Name;
@@ -91,6 +93,12 @@ namespace E3Core.UI.Windows.CharacterSettings
 		public long LastUpdatedAt = 0;
 		public int RefershInterval = 5000;
 		public string Status = string.Empty;
+		public Dictionary<string, string> _cfgAllPlayersServerByToon = new Dictionary<string, string>(StringComparer.OrdinalIgnoreCase);
+		// "All Players" key view state/cache
+		public long _cfgAllPlayersNextRefreshAtMs = 0;
+		public bool _cfgAllPlayersRefreshing = false;
+
+
 	}
 	public class State_BardEditor
 	{
@@ -136,6 +144,26 @@ namespace E3Core.UI.Windows.CharacterSettings
 			ManualInputBufferInUse = false;
 		}
 	}
+	public class State_CatalogGems
+	{
+
+		public string _cfg_CatalogSource = "Unknown"; // "Local", "Remote (ToonName)", or "Unknown"
+		public string[] _cfg_CatalogGems = new string[12]; // Gem data from catalog response
+		public int[] _cfg_CatalogGemIcons = new int[12]; // Spell icon indices for gems
+
+	}
+	public class State_FoodDrink
+	{
+		public string _cfgFoodDrinkKey = string.Empty; // "Food" or "Drink"
+		public string _cfgFoodDrinkStatus = string.Empty;
+		public List<string> _cfgFoodDrinkCandidates = new List<string>();
+		public bool _cfgFoodDrinkScanRequested = false;
+		public bool _cfgFoodDrinkPending = false;
+		public string _cfgFoodDrinkPendingToon = string.Empty;
+		public string _cfgFoodDrinkPendingType = string.Empty;
+		public long _cfgFoodDrinkTimeoutAt = 0;
+	}
+
 	public class CharacterSettingsState
 	{
 		private State_CatalogWindow _catalogWindowState = new State_CatalogWindow();
@@ -144,6 +172,8 @@ namespace E3Core.UI.Windows.CharacterSettings
 		private State_BardEditor _bardEditorState = new State_BardEditor();
 		private State_SpellInfo _spellInfoState = new State_SpellInfo();
 		private State_SpellEditor _spellEditorState = new State_SpellEditor();
+		private State_CatalogGems _catalogGemsState = new State_CatalogGems();
+		private State_FoodDrink _foodDrinkState = new State_FoodDrink();
 		public CharacterSettingsState()
 		{
 			//set all initial windows to not show
@@ -164,6 +194,14 @@ namespace E3Core.UI.Windows.CharacterSettings
 			else if (type == typeof(State_AllPlayers))
 			{
 				return (T)(object)_allPlayersState;
+			}
+			else if(type==typeof(State_CatalogGems))
+			{
+				return (T)(object)_catalogGemsState;
+			}
+			else if(type==typeof(State_FoodDrink))
+			{
+				return (T)(object)_foodDrinkState;
 			}
 			else if (type == typeof(State_BardEditor))
 			{
