@@ -883,7 +883,12 @@ namespace E3Core.UI.Windows.CharacterSettings
 			var sectionData = iniData?.Sections?.GetSectionData(mainWindowState.SelectedSection ?? string.Empty);
 			var keyData = sectionData?.Keys?.GetKeyData(mainWindowState.SelectedKey ?? string.Empty);
 			var values = GetValues(keyData);
-			if (mainWindowState.SelectedValueIndex < 0 || mainWindowState.SelectedValueIndex >= values.Count)
+
+
+			var kd = GetCurrentEditedSpellKeyData();
+			if (kd == null) return;
+
+			if (mainWindowState.SelectedValueIndex < 0 || mainWindowState.SelectedValueIndex >= kd.ValueList.Count)
 			{
 				mainWindowState.Show_ShowIntegratedEditor = false;
 				return;
@@ -891,7 +896,7 @@ namespace E3Core.UI.Windows.CharacterSettings
 			imgui_Separator();
 			imgui_TextColored(0.95f, 0.85f, 0.35f, 1.0f, "Spell Modifier Editor");
 			imgui_Separator();
-			RenderSpellModifierEditor2();
+			RenderSpellEditor();
 		}
 
 		// Safe gem display using catalog data (no TLO queries from UI thread)
@@ -1561,8 +1566,7 @@ namespace E3Core.UI.Windows.CharacterSettings
 				if (mainWindowState.SelectedValueIndex < values.Count)
 				{
 					string selectedValue = values[mainWindowState.SelectedValueIndex];
-					var editState = EnsureSpellEditState(mainWindowState.SelectedSection, mainWindowState.SelectedKey, mainWindowState.SelectedValueIndex, selectedValue);
-					if (editState != null)
+					if (mainWindowState.Currently_EditableSpell != null)
 					{
 						imgui_TextColored(0.95f, 0.85f, 0.35f, 1.0f, "Value Actions");
 
@@ -1671,8 +1675,9 @@ namespace E3Core.UI.Windows.CharacterSettings
 				if (mainWindowState.SelectedValueIndex < values.Count)
 				{
 					string selectedValue = values[mainWindowState.SelectedValueIndex];
-					var editState = EnsureSpellEditState(mainWindowState.SelectedSection, mainWindowState.SelectedKey, mainWindowState.SelectedValueIndex, selectedValue);
-					string lookupName = editState?.BaseName;
+					var editableSpell = mainWindowState.Currently_EditableSpell;
+					
+					string lookupName = editableSpell?.CastName;
 					if (string.IsNullOrWhiteSpace(lookupName))
 					{
 						lookupName = selectedValue;
@@ -4488,97 +4493,6 @@ namespace E3Core.UI.Windows.CharacterSettings
 			_cfgSpellEditSignature = string.Empty;
 		}
 
-
-		private static SpellValueEditState EnsureSpellEditState(string section, string key, int index, string rawValue)
-		{
-			string signature = $"{section ?? string.Empty}::{key ?? string.Empty}::{index}::{rawValue ?? string.Empty}";
-			if (!string.Equals(signature, _cfgSpellEditSignature, StringComparison.Ordinal))
-			{
-				_cfgSpellEditState = ParseSpellValueEditState(section, key, index, rawValue);
-				_cfgSpellEditSignature = signature;
-			}
-			return _cfgSpellEditState;
-		}
-
-		private static SpellValueEditState ParseSpellValueEditState(string section, string key, int index, string rawValue)
-		{
-			var state = new SpellValueEditState
-			{
-				Section = section ?? string.Empty,
-				Key = key ?? string.Empty,
-				ValueIndex = index,
-				OriginalValue = rawValue ?? string.Empty,
-				BaseName = string.Empty,
-				CastTarget = string.Empty,
-				Enabled = true
-			};
-
-			string working = rawValue ?? string.Empty;
-			if (working.Length == 0)
-			{
-				return state;
-			}
-
-			var segments = working.Split('/');
-			if (segments.Length > 0)
-			{
-				state.BaseName = segments[0].Trim();
-			}
-
-			for (int i = 1; i < segments.Length; i++)
-			{
-				string segment = segments[i];
-				if (string.IsNullOrWhiteSpace(segment))
-				{
-					continue;
-				}
-
-				segment = segment.Trim();
-				int pipeIdx = segment.IndexOf('|');
-				if (pipeIdx > 0)
-				{
-					string rawKey = segment.Substring(0, pipeIdx).Trim();
-					string rawVal = segment.Substring(pipeIdx + 1).Trim();
-					string canonicalKey = NormalizeSpellKey(rawKey);
-
-					if (_spellKnownKeys.Contains(canonicalKey))
-					{
-						state.SetValue(canonicalKey, rawVal);
-						state.RememberAlias(canonicalKey, rawKey);
-					}
-					else
-					{
-						state.UnknownSegments.Add(segment);
-					}
-				}
-				else
-				{
-					if (segment.Equals("Disabled", StringComparison.OrdinalIgnoreCase))
-					{
-						state.Enabled = false;
-						continue;
-					}
-
-					if (_spellKnownFlags.Contains(segment))
-					{
-						state.Flags.Add(segment);
-						continue;
-					}
-
-					if (string.IsNullOrEmpty(state.CastTarget))
-					{
-						state.CastTarget = segment;
-					}
-					else
-					{
-						state.UnknownSegments.Add(segment);
-					}
-				}
-			}
-
-			return state;
-		}
-
 		private const float SpellEditorDefaultTextWidth = 320f;
 		private const float SpellEditorDefaultNumberWidth = 140f;
         private const float SpellEditorDefaultCheckboxWidth = 20f;
@@ -4765,7 +4679,9 @@ namespace E3Core.UI.Windows.CharacterSettings
 						var split = u.Split(',');
 						foreach(var check in split)
 						{
+
 							string tKey = check.Trim();
+							if (String.IsNullOrWhiteSpace(tKey)) continue;
 							if(!currentSpell.CheckForCollection.ContainsKey(tKey))
 							{
 								currentSpell.CheckForCollection.Add(tKey, 0);
@@ -5008,9 +4924,27 @@ namespace E3Core.UI.Windows.CharacterSettings
 			var mainWindowState = _state.GetState<State_MainWindow>();
 			var spellEditorState = _state.GetState<State_SpellEditor>();
 			//check if this has changed from what we were before
-			if (String.IsNullOrWhiteSpace(mainWindowState.SelectedSection)) return;
-			if (String.IsNullOrWhiteSpace(mainWindowState.SelectedKey)) return;
-			if (mainWindowState.SelectedValueIndex == -1) return;
+			if (String.IsNullOrWhiteSpace(mainWindowState.SelectedSection))
+			{
+				mainWindowState.Signature_CurrentEditedSpell = String.Empty;
+				mainWindowState.Currently_EditableSpell = null;
+				return;
+
+			}
+			if (String.IsNullOrWhiteSpace(mainWindowState.SelectedKey))
+			{
+				mainWindowState.Signature_CurrentEditedSpell = String.Empty;
+				mainWindowState.Currently_EditableSpell = null;
+				return;
+
+			}
+			if (mainWindowState.SelectedValueIndex == -1)
+			{
+				mainWindowState.Signature_CurrentEditedSpell = String.Empty;
+				mainWindowState.Currently_EditableSpell = null;
+				return;
+
+			}
 			//lets get the actual entry
 			var kd = GetCurrentEditedSpellKeyData();
 			if (kd == null) return;
@@ -5042,7 +4976,7 @@ namespace E3Core.UI.Windows.CharacterSettings
 
 			return kd;
 		}
-		private static void RenderSpellModifierEditor2()
+		private static void RenderSpellEditor()
 		{
 			var mainWindowState = _state.GetState<State_MainWindow>();
 			var spellEditorState = _state.GetState<State_SpellEditor>();
