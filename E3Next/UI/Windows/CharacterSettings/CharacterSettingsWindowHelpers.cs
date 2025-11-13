@@ -7,9 +7,11 @@ using MonoCore;
 using System;
 using System.Collections.Concurrent;
 using System.Collections.Generic;
+using System.Globalization;
 using System.IO;
 using System.Linq;
 using System.Text;
+using System.Text.RegularExpressions;
 using System.Threading.Tasks;
 using static System.Windows.Forms.AxHost;
 using window = E3Core.UI.Windows.CharacterSettings.CharacterSettingsWindow;
@@ -585,7 +587,129 @@ namespace E3Core.UI.Windows.CharacterSettings
 			}
 			return false;
 		}
+		public static bool IsActiveIniBard()
+		{
+			try
+			{
+				var chardata = GetActiveCharacterIniData();
+				if (chardata?.Sections != null)
+				{
+					if (chardata.Sections.ContainsSection("Bard")) return true;
+				}
 
+				string path = GetActiveSettingsPath() ?? string.Empty;
+				if (string.IsNullOrEmpty(path)) return string.Equals(E3.CurrentClass.ToString(), "Bard", StringComparison.OrdinalIgnoreCase);
+
+				string file = Path.GetFileNameWithoutExtension(path) ?? string.Empty;
+				var parts = file.Split(new[] { '_' }, StringSplitOptions.RemoveEmptyEntries);
+				if (parts.Length >= 2)
+				{
+					string cls = parts.Last();
+					if (string.Equals(cls, "Bard", StringComparison.OrdinalIgnoreCase)) return true;
+				}
+
+				return string.Equals(E3.CurrentClass.ToString(), "Bard", StringComparison.OrdinalIgnoreCase);
+			}
+			catch
+			{
+				return string.Equals(E3.CurrentClass.ToString(), "Bard", StringComparison.OrdinalIgnoreCase);
+			}
+		}
+		public static string FormatMsSmart(int ms)
+		{
+			if (ms <= 0) return string.Empty;
+			double totalSec = ms / 1000.0;
+			if (totalSec < 60.0)
+			{
+				return totalSec < 10 ? totalSec.ToString("0.##") + "s" : totalSec.ToString("0.#") + "s";
+			}
+			int m = (int)(totalSec / 60.0);
+			double rs = totalSec - m * 60;
+			if (rs < 0.5) return m.ToString() + "m";
+			return m.ToString() + "m " + rs.ToString("0.#") + "s";
+		}
+		public static string AppendIfToken(string value, string ifKey)
+		{
+			string v = value ?? string.Empty;
+			// We support both legacy "Ifs|" and preferred "/Ifs|" tokens when extending,
+			// but we always write using "/Ifs|" going forward.
+			const string tokenPreferred = "/Ifs|";
+			const string tokenLegacy = "Ifs|";
+			int posSlash = v.IndexOf(tokenPreferred, StringComparison.OrdinalIgnoreCase);
+			int posLegacy = v.IndexOf(tokenLegacy, StringComparison.OrdinalIgnoreCase);
+			int pos = posSlash >= 0 ? posSlash : posLegacy;
+			int tokenLen = posSlash >= 0 ? tokenPreferred.Length : tokenLegacy.Length;
+
+			if (pos < 0)
+			{
+				// No Ifs present; append preferred token with NO leading separator
+				if (v.Length == 0) return tokenPreferred + ifKey;
+				return v + tokenPreferred + ifKey;
+			}
+
+			// Extend existing Ifs list; rebuild using preferred token
+			int start = pos + tokenLen;
+			int end = v.IndexOf('|', start);
+			string head = v.Substring(0, pos) + tokenPreferred; // normalize token
+			string rest = end >= 0 ? v.Substring(end) : string.Empty;
+			string list = end >= 0 ? v.Substring(start, end - start) : v.Substring(start);
+			var items = list.Split(new[] { ',' }, StringSplitOptions.RemoveEmptyEntries)
+							.Select(x => x.Trim())
+							.Where(x => x.Length > 0)
+							.ToList();
+			if (!items.Contains(ifKey, StringComparer.OrdinalIgnoreCase)) items.Add(ifKey);
+			string rebuilt = head + string.Join(",", items) + rest;
+			return rebuilt;
+		}
+		public static string FormatSecondsSmart(double seconds)
+		{
+			if (seconds <= 0) return string.Empty;
+			if (seconds < 1.0)
+			{
+				return seconds.ToString("0.###") + " s";
+			}
+			if (seconds < 60.0)
+			{
+				return seconds < 10.0 ? seconds.ToString("0.##") + " s" : seconds.ToString("0.#") + " s";
+			}
+			int minutes = (int)(seconds / 60.0);
+			double remainder = seconds - minutes * 60.0;
+			if (remainder < 0.5)
+			{
+				return minutes + "m";
+			}
+			return minutes + "m " + remainder.ToString("0.#") + "s";
+		}
+
+		private static readonly Regex _inlineNumberRegex = new Regex(@"\b\d{4,}\b", RegexOptions.Compiled);
+
+		public static string FormatWithSeparators(long value)
+		{
+			return value.ToString("N0", CultureInfo.InvariantCulture);
+		}
+
+		public static string FormatInlineNumbers(string input)
+		{
+			if (string.IsNullOrEmpty(input)) return input;
+			return _inlineNumberRegex.Replace(input, m =>
+			{
+				if (long.TryParse(m.Value, out var numeric))
+				{
+					return FormatWithSeparators(numeric);
+				}
+				return m.Value;
+			});
+		}
+
+		public static bool IsIniForOnlineToon(string iniPath, ConcurrentDictionary<string, string> onlineToons)
+		{
+			if (onlineToons == null || onlineToons.Count == 0) return false;
+			string file = Path.GetFileNameWithoutExtension(iniPath) ?? string.Empty;
+			if (string.IsNullOrEmpty(file)) return false;
+			int underscore = file.IndexOf('_');
+			string toon = underscore > 0 ? file.Substring(0, underscore) : file;
+			return onlineToons.ContainsKey(toon);
+		}
 		static List<String> _catalogRefreshKeyTypes = new List<string>() { "Spells", "AAs", "Discs", "Skills", "Items" };
 		static Int64 _numberofMillisecondsBeforeCatalogNeedsRefresh = 30000;
 

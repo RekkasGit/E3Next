@@ -28,16 +28,19 @@ namespace E3Core.UI.Windows.CharacterSettings
 		private static ISpawns _spawns = E3.Spawns;
 
 		public static CharacterSettingsState _state = new CharacterSettingsState();
+		private const float SpellEditorDefaultTextWidth = 320f;
+		private const float SpellEditorDefaultNumberWidth = 140f;
+		private const float SpellEditorDefaultCheckboxWidth = 20f;
 
 		//A very large bandaid on the Threading of this window
 		//used when trying to get a pointer to the _cfg objects.
-		
+
 		#region Variables
 		/// <summary>
 		///Data organized into Category, Sub Category, List of Spells.
 		///always get a pointer to these via the method GetCatalogByType
 		/// </summary>
-	
+
 		// Toon picker (Heals: Tank / Important Bot)
 		private static string _cfgToonPickerStatus = string.Empty;
 		private static List<string> _cfgToonCandidates = new List<string>();
@@ -335,7 +338,7 @@ namespace E3Core.UI.Windows.CharacterSettings
 					foreach (var f in state.IniFilesFromDisk)
 					{
 						if (string.Equals(f, loggedInCharIniFile, StringComparison.OrdinalIgnoreCase)) continue;
-						if (!state.ShowOfflineCharacters && !IsIniForOnlineToon(f, onlineToons)) continue;
+						if (!state.ShowOfflineCharacters && !data.IsIniForOnlineToon(f, onlineToons)) continue;
 						string name = Path.GetFileName(f);
 						bool sel = string.Equals(state.CurrentINIFileNameFull, f, StringComparison.OrdinalIgnoreCase);
 						if (imgui_Selectable($"{name}", sel))
@@ -1382,9 +1385,9 @@ namespace E3Core.UI.Windows.CharacterSettings
 
 			if (mainWindowState.Currently_EditableSpell == null) return;
 
-			bool isBardIni = IsActiveIniBard();
+			bool isBardIni = data.IsActiveIniBard();
 			if (isBardIni)
-			{
+			{	
 				imgui_TextColored(0.95f, 0.85f, 0.35f, 1.0f, "Bard Tools");
 				if (imgui_Button("Open Melody Helper"))
 				{
@@ -1668,105 +1671,6 @@ namespace E3Core.UI.Windows.CharacterSettings
 	
 		
 
-		// Fetch gem data from peer catalog response (now includes spell icon indices)
-		
-		// Helper method to get spell icon index for local spells
-		
-		// PubSub relay approach: request peer to publish SpellDataList as base64 on response topic
-	
-		private static bool IsActiveIniBard()
-		{
-			try
-			{
-				var chardata = data.GetActiveCharacterIniData();
-				if (chardata?.Sections != null)
-				{
-					if (chardata.Sections.ContainsSection("Bard")) return true;
-				}
-
-				string path = data.GetActiveSettingsPath() ?? string.Empty;
-				if (string.IsNullOrEmpty(path)) return string.Equals(E3.CurrentClass.ToString(), "Bard", StringComparison.OrdinalIgnoreCase);
-
-				string file = Path.GetFileNameWithoutExtension(path) ?? string.Empty;
-				var parts = file.Split(new[] { '_' }, StringSplitOptions.RemoveEmptyEntries);
-				if (parts.Length >= 2)
-				{
-					string cls = parts.Last();
-					if (string.Equals(cls, "Bard", StringComparison.OrdinalIgnoreCase)) return true;
-				}
-
-				return string.Equals(E3.CurrentClass.ToString(), "Bard", StringComparison.OrdinalIgnoreCase);
-			}
-			catch
-			{
-				return string.Equals(E3.CurrentClass.ToString(), "Bard", StringComparison.OrdinalIgnoreCase);
-			}
-		}
-
-
-		private static bool IsIniForOnlineToon(string iniPath, ConcurrentDictionary<string, string> onlineToons)
-		{
-			if (onlineToons == null || onlineToons.Count == 0) return false;
-			string file = Path.GetFileNameWithoutExtension(iniPath) ?? string.Empty;
-			if (string.IsNullOrEmpty(file)) return false;
-			int underscore = file.IndexOf('_');
-			string toon = underscore > 0 ? file.Substring(0, underscore) : file;
-			return onlineToons.ContainsKey(toon);
-		}
-
-		// Organize from SpellData (protobuf) into the UI catalog structure
-
-		
-
-		
-	
-		// Resolves a toon’s ini path by scanning known .ini files and preferring a match
-		// that includes the server name if we have it.
-		
-		// Reads, updates, and writes a single INI value for a toon.
-
-	
-
-
-		
-
-
-		// Helper to append or extend an Ifs| key list token in a config value
-		private static string AppendIfToken(string value, string ifKey)
-		{
-			string v = value ?? string.Empty;
-			// We support both legacy "Ifs|" and preferred "/Ifs|" tokens when extending,
-			// but we always write using "/Ifs|" going forward.
-			const string tokenPreferred = "/Ifs|";
-			const string tokenLegacy = "Ifs|";
-			int posSlash = v.IndexOf(tokenPreferred, StringComparison.OrdinalIgnoreCase);
-			int posLegacy = v.IndexOf(tokenLegacy, StringComparison.OrdinalIgnoreCase);
-			int pos = posSlash >= 0 ? posSlash : posLegacy;
-			int tokenLen = posSlash >= 0 ? tokenPreferred.Length : tokenLegacy.Length;
-
-			if (pos < 0)
-			{
-				// No Ifs present; append preferred token with NO leading separator
-				if (v.Length == 0) return tokenPreferred + ifKey;
-				return v + tokenPreferred + ifKey;
-			}
-
-			// Extend existing Ifs list; rebuild using preferred token
-			int start = pos + tokenLen;
-			int end = v.IndexOf('|', start);
-			string head = v.Substring(0, pos) + tokenPreferred; // normalize token
-			string rest = end >= 0 ? v.Substring(end) : string.Empty;
-			string list = end >= 0 ? v.Substring(start, end - start) : v.Substring(start);
-			var items = list.Split(new[] { ',' }, StringSplitOptions.RemoveEmptyEntries)
-							.Select(x => x.Trim())
-							.Where(x => x.Length > 0)
-							.ToList();
-			if (!items.Contains(ifKey, StringComparer.OrdinalIgnoreCase)) items.Add(ifKey);
-			string rebuilt = head + string.Join(",", items) + rest;
-			return rebuilt;
-		}
-
-		// Inventory helper that uses MQ TLOs to scan for Food/Drink items
 	
 		private static void RenderAddFromCatalogModal_CalculateAddType(AddType typeofadd,out float leftW, out float middleW, out float rightW)
 		{
@@ -2124,68 +2028,16 @@ namespace E3Core.UI.Windows.CharacterSettings
 	
 
 		// Helper: format milliseconds as seconds, or minutes+seconds over 60s
-		private static string FormatMsSmart(int ms)
-		{
-			if (ms <= 0) return string.Empty;
-			double totalSec = ms / 1000.0;
-			if (totalSec < 60.0)
-			{
-				return totalSec < 10 ? totalSec.ToString("0.##") + "s" : totalSec.ToString("0.#") + "s";
-			}
-			int m = (int)(totalSec / 60.0);
-			double rs = totalSec - m * 60;
-			if (rs < 0.5) return m.ToString() + "m";
-			return m.ToString() + "m " + rs.ToString("0.#") + "s";
-		}
 
-		private static string FormatSecondsSmart(double seconds)
-		{
-			if (seconds <= 0) return string.Empty;
-			if (seconds < 1.0)
-			{
-				return seconds.ToString("0.###") + " s";
-			}
-			if (seconds < 60.0)
-			{
-				return seconds < 10.0 ? seconds.ToString("0.##") + " s" : seconds.ToString("0.#") + " s";
-			}
-			int minutes = (int)(seconds / 60.0);
-			double remainder = seconds - minutes * 60.0;
-			if (remainder < 0.5)
-			{
-				return minutes + "m";
-			}
-			return minutes + "m " + remainder.ToString("0.#") + "s";
-		}
-
-		private static readonly Regex _inlineNumberRegex = new Regex(@"\b\d{4,}\b", RegexOptions.Compiled);
-
-		private static string FormatWithSeparators(long value)
-		{
-			return value.ToString("N0", CultureInfo.InvariantCulture);
-		}
-
-		private static string FormatInlineNumbers(string input)
-		{
-			if (string.IsNullOrEmpty(input)) return input;
-			return _inlineNumberRegex.Replace(input, m =>
-			{
-				if (long.TryParse(m.Value, out var numeric))
-				{
-					return FormatWithSeparators(numeric);
-				}
-				return m.Value;
-			});
-		}
 
 		private static void RenderSpellAdditionalInfo(E3Spell spellInfo)
 		{
 			if (spellInfo == null) return;
 
 			bool hasMana = spellInfo.Mana > 0;
-			string castTimeText = FormatSecondsSmart(spellInfo.CastTime);
+			string castTimeText = data.FormatSecondsSmart(spellInfo.CastTime);
 			bool hasCastTime = !string.IsNullOrEmpty(castTimeText);
-			string recastText = FormatMsSmart(spellInfo.Recast);
+			string recastText = data.FormatMsSmart(spellInfo.Recast);
 			bool hasRecast = !string.IsNullOrEmpty(recastText);
 			bool hasGem = spellInfo.SpellGem > 0;
 			var slotEffects = spellInfo.SpellEffects ?? new List<string>();
@@ -2203,7 +2055,7 @@ namespace E3Core.UI.Windows.CharacterSettings
 				imgui_TextColored(0.75f, 0.9f, 1.0f, 1.0f, "Spell Details");
 				if (hasMana)
 				{
-					imgui_Text($"Mana: {FormatWithSeparators(spellInfo.Mana)}");
+					imgui_Text($"Mana: {data.FormatWithSeparators(spellInfo.Mana)}");
 				}
 				if (hasCastTime)
 				{
@@ -2231,7 +2083,7 @@ namespace E3Core.UI.Windows.CharacterSettings
 				{
 					string effect = slotEffects[i];
 					if (string.IsNullOrWhiteSpace(effect)) continue;
-					string formattedEffect = FormatInlineNumbers(effect);
+					string formattedEffect = data.FormatInlineNumbers(effect);
 					imgui_TextWrapped($"{formattedEffect}");
 				}
 			}
@@ -2264,7 +2116,7 @@ namespace E3Core.UI.Windows.CharacterSettings
 									var vals = GetValues(kd);
 									if (_cfgIfAppendRow < vals.Count)
 									{
-										string updated = AppendIfToken(vals[_cfgIfAppendRow] ?? string.Empty, key);
+										string updated = data.AppendIfToken(vals[_cfgIfAppendRow] ?? string.Empty, key);
 										vals[_cfgIfAppendRow] = updated;
 										WriteValues(kd, vals);
 									}
@@ -2818,13 +2670,7 @@ namespace E3Core.UI.Windows.CharacterSettings
 			}
 			imgui_End();
 		}
-
-
-
 		
-	
-
-	
 		// Safe combo wrapper for older MQ2Mono
 		private static bool BeginComboSafe(string label, string preview)
 		{
@@ -2834,20 +2680,6 @@ namespace E3Core.UI.Windows.CharacterSettings
 		{
 			imgui_EndCombo();
 		}
-		
-
-		private static string NormalizeSpellKey(string key)
-		{
-			if (string.IsNullOrWhiteSpace(key)) return key ?? string.Empty;
-			if (data._spellKeyAliasMap.TryGetValue(key, out var mapped))
-			{
-				return mapped;
-			}
-			return key;
-		}
-
-	
-		
 		private static void RenderDescriptionRichText(List<string> rawText)
 		{
 			if (rawText.Count == 0)
@@ -2936,10 +2768,7 @@ namespace E3Core.UI.Windows.CharacterSettings
 		
 		}
 
-		private const float SpellEditorDefaultTextWidth = 320f;
-		private const float SpellEditorDefaultNumberWidth = 140f;
-        private const float SpellEditorDefaultCheckboxWidth = 20f;
-
+	
         private static void RenderTableTextEditRow(string id, string label,string current, Action<string> action, string tooltip = null, float width = SpellEditorDefaultTextWidth)
 		{
 			var spellEditorState = _state.GetState<State_SpellEditor>();
@@ -3359,12 +3188,11 @@ namespace E3Core.UI.Windows.CharacterSettings
 		}
 
 		#endregion
-
 		/// <summary>
 		/// Used to determine if the UI state can return a valid spell. 
 		/// </summary>
 		/// <returns>Spell object</returns>
-		
+
 		private static void RenderSpellEditor()
 		{
 			var mainWindowState = _state.GetState<State_MainWindow>();
@@ -3486,9 +3314,6 @@ namespace E3Core.UI.Windows.CharacterSettings
 			string preview = previewString;
 			imgui_TextWrapped(string.IsNullOrEmpty(preview) ? "(empty)" : preview);
 		}
-
-	
-
 		private static List<string> GetValues(KeyData kd)
 		{
 			return kd.ValueList;
@@ -3854,7 +3679,6 @@ namespace E3Core.UI.Windows.CharacterSettings
 				state.MelodyGems.RemoveAt(state.MelodyGems.Count - 1);
 			}
 		}
-
 		private static void ReindexBardMelodyBuffers()
 		{
 			var state = _state.GetState<State_BardEditor>();
@@ -4295,8 +4119,6 @@ namespace E3Core.UI.Windows.CharacterSettings
 
 			return true;
 		}
-		
-
 		// Toon picker modal for Heals section (Tank / Important Bot)
 		private static void RenderToonPickerModal(SectionData selectedSection)
 		{
@@ -4339,9 +4161,7 @@ namespace E3Core.UI.Windows.CharacterSettings
 			imgui_End();
 			if (!_open_toon) _state.Show_ToonPickerModal = false;
 		}
-
 		// Spell Info modal (read-only details) using real ImGui tables + colored labels
-
 		private static void RenderSpellInfoModal()
 		{
 			var state = _state.GetState<State_SpellInfo>();
@@ -4390,7 +4210,7 @@ namespace E3Core.UI.Windows.CharacterSettings
 							// Colored label (soft yellow)
 							imgui_TextColored(0.95f, 0.85f, 0.35f, 1f, "Mana");
 							imgui_TableNextColumn();
-							imgui_Text(FormatWithSeparators(s.Mana));
+							imgui_Text(data.FormatWithSeparators(s.Mana));
 						}
 						if (s.CastTime > 0)
 						{
@@ -4408,7 +4228,7 @@ namespace E3Core.UI.Windows.CharacterSettings
 							// Colored label (soft yellow)
 							imgui_TextColored(0.95f, 0.85f, 0.35f, 1f, "Recast");
 							imgui_TableNextColumn();
-							imgui_Text(FormatMsSmart(s.Recast));
+							imgui_Text(data.FormatMsSmart(s.Recast));
 						}
 						if (s.Range > 0)
 						{
