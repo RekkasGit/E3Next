@@ -38,11 +38,6 @@ namespace E3Core.UI.Windows.CharacterSettings
 		///always get a pointer to these via the method GetCatalogByType
 		/// </summary>
 	
-		//lookups of spell name to spell data, used to display data/icons to user.
-		
-
-		// Food/Drink picker state
-	
 		// Toon picker (Heals: Tank / Important Bot)
 		private static string _cfgToonPickerStatus = string.Empty;
 		private static List<string> _cfgToonCandidates = new List<string>();
@@ -51,32 +46,18 @@ namespace E3Core.UI.Windows.CharacterSettings
 		private static List<string> _cfgIfAppendCandidates = new List<string>();
 		private static string _cfgIfAppendStatus = string.Empty;
 		// Ifs import (sample) modal state
-		private static List<System.Collections.Generic.KeyValuePair<string, string>> _cfgIfSampleLines = new List<System.Collections.Generic.KeyValuePair<string, string>>();
+		private static List<KeyValuePair<string, string>> _cfgIfSampleLines = new List<KeyValuePair<string, string>>();
 		private static string _cfgIfSampleStatus = string.Empty;
 
-	
-
 		// Config UI toggle: "/e3imgui".
-		
 		private static bool _imguiContextReady = false;
 		public static SettingsTab _activeSettingsTab = SettingsTab.Character;
 		// Inline edit helpers
 		private const float _valueRowActionStartOffset = 46f;
 		// Collapsible section state tracking
 		private static Dictionary<string, bool> _cfgSectionExpanded = new Dictionary<string, bool>(StringComparer.OrdinalIgnoreCase);
-
 		// Integrated editor panel state (replaces modal)
 		private static string _cfgManualEditBuffer = string.Empty;
-		
-
-	
-		// Character .ini selection state
-		
-		private static long _nextIniFileScanAtMs = 0;
-		// Dropdown support (feature-detect combo availability to avoid crashes on older MQ2Mono)
-		private static bool _comboAvailable = true;
-		
-		
 		private static bool _cfg_Inited = false;
 
 		#endregion
@@ -304,23 +285,8 @@ namespace E3Core.UI.Windows.CharacterSettings
 				}
 			}
 		}
-		private static void ResetCatalogs()
-		{
-			data._catalog_Spells.Clear();
-			data._catalog_AA.Clear();
-			data._catalog_Disc.Clear();
-			data._catalog_Skills.Clear();
-			data._catalog_Items.Clear();
-		}
-		private static void RequestCatalogUpdate()
-		{
-			var gemstate = _state.GetState<State_CatalogGems>();
-			_state.State_CatalogReady = false;
-			ResetCatalogs();
-			_state.State_CatalogLoadRequested = true;
-			_state.Status_CatalogRequest = "Queued catalog load...";
-			gemstate._cfg_CatalogSource = "Refreshing...";
-		}
+		
+		
 		private static void ChangeSelectedCharacter(string filename)
 		{
 			var state = _state.GetState<State_MainWindow>();
@@ -334,7 +300,7 @@ namespace E3Core.UI.Windows.CharacterSettings
 			state.SignatureOfSelectedKeyValue = String.Empty;
 			
 			// Trigger catalog reload for the selected peer
-			RequestCatalogUpdate();
+			data.RequestCatalogUpdate();
 		}
 		public static void RenderCharacterIniSelector()
 		{
@@ -423,23 +389,7 @@ namespace E3Core.UI.Windows.CharacterSettings
 			imgui_Separator();
 		}
 
-		private static void RebuildSectionsOrderIfNeeded()
-		{
-			var state = _state.GetState<State_MainWindow>();
-
-			// Rebuild sections order when ini path changes
-			string activeIniPath = data.GetActiveSettingsPath() ?? string.Empty;
-			if (!string.Equals(activeIniPath, state.LastIniPath, StringComparison.OrdinalIgnoreCase))
-			{
-				state.LastIniPath = activeIniPath;
-				state.SelectedSection = string.Empty;
-				state.SelectedKey = string.Empty;
-				state.SelectedValueIndex = -1;
-				data.BuildConfigSectionOrder();
-				// Auto-load catalogs on ini switch without blocking UI
-				RequestCatalogUpdate();
-			}
-		}
+		
 		private static void RenderConfigEditor_CatalogStatus()
 		{
 			// Catalog status / loader with better styling
@@ -464,18 +414,7 @@ namespace E3Core.UI.Windows.CharacterSettings
 				imgui_Separator();
 			}
 		}
-		private static SectionData GetCurrentSectionData()
-		{
-			var mainWindowState = _state.GetState<State_MainWindow>();
 
-			if (mainWindowState.CurrentINIData != null)
-			{
-				var data = mainWindowState.CurrentINIData;
-				var sec = data.Sections.GetSectionData(mainWindowState.SelectedSection);
-				return sec;
-			}
-			return null;
-		}
 
 		#region RenderConfigEditor
 		private static void RenderConfigEditor()
@@ -490,7 +429,7 @@ namespace E3Core.UI.Windows.CharacterSettings
 			if (pd == null || pd.Sections == null){	imgui_TextColored(1.0f, 0.8f, 0.8f, 1.0f, "No character INI loaded.");return;}
 
 			RenderConfigEditor_CatalogStatus();
-			RebuildSectionsOrderIfNeeded();
+			data.RebuildSectionsOrderIfNeeded();
 			// Use ImGui Table for responsive 3-column layout
 			float availY = imgui_GetContentRegionAvailY();
 				// Reserve space for spell gems display at bottom (header + separator + gem row with 40px icons + padding)
@@ -527,7 +466,7 @@ namespace E3Core.UI.Windows.CharacterSettings
 			// Render integrated editor after table if active
 			if (state.Show_ShowIntegratedEditor && state.SelectedValueIndex >= 0) { RenderIntegratedModifierEditor(); }
 			//Ensure popups/ modals render even when the tools column is hidden
-			SectionData activeSection = GetCurrentSectionData();
+			SectionData activeSection = data.GetCurrentSectionData();
 			RenderActiveModals(activeSection);
 			//Display memorized spells if available from catalog data (safe)
 			RenderCatalogGemData();
@@ -1999,7 +1938,7 @@ namespace E3Core.UI.Windows.CharacterSettings
 			if (imgui_Button("Refresh Catalog"))
 			{
 				// Trigger catalog refresh
-				RequestCatalogUpdate();
+				data.RequestCatalogUpdate();
 			}
 
 		}
@@ -3003,21 +2942,7 @@ namespace E3Core.UI.Windows.CharacterSettings
 		}
 
 	
-		private static readonly Dictionary<string, (float r, float g, float b, float a)> _richTextColorMapping = new Dictionary<string, (float, float, float, float)>(StringComparer.OrdinalIgnoreCase)
-		{
-			["color=gold"] = (0.95f, 0.85f, 0.35f, 1.0f),
-			["color=yellow"] = (1.0f, 0.92f, 0.23f, 1.0f),
-			["color=orange"] = (1.0f, 0.6f, 0.2f, 1.0f),
-			["color=red"] = (0.9f, 0.3f, 0.3f, 1.0f),
-			["color=green"] = (0.3f, 0.9f, 0.5f, 1.0f),
-			["color=blue"] = (0.35f, 0.6f, 0.95f, 1.0f),
-			["color=teal"] = (0.3f, 0.85f, 0.85f, 1.0f),
-			["color=purple"] = (0.75f, 0.55f, 0.95f, 1.0f),
-			["color=white"] = (0.95f, 0.95f, 0.95f, 1.0f),
-			["color=gray"] = (0.6f, 0.6f, 0.6f, 1.0f),
-			["color=silver"] = (0.8f, 0.8f, 0.85f, 1.0f)
-		};
-
+		
 		private static void RenderDescriptionRichText(List<string> rawText)
 		{
 			if (rawText.Count == 0)
@@ -3033,7 +2958,7 @@ namespace E3Core.UI.Windows.CharacterSettings
 				float totalLineLength = 0;
 				for (Int32 i = 0; i < rawText.Count; i++)
 				{
-					if (_richTextColorMapping.TryGetValue(rawText[i], out var color))
+					if (data.RichTextColorMapping.TryGetValue(rawText[i], out var color))
 					{
 						//next line is a color
 						if ((i + 1) < rawText.Count)

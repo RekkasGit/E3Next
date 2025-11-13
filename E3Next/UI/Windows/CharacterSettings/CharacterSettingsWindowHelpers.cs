@@ -36,6 +36,22 @@ namespace E3Core.UI.Windows.CharacterSettings
 		_catalog_Skills = new SortedDictionary<string, SortedDictionary<string, List<E3Spell>>>(),
 		_catalog_Items = new SortedDictionary<string, SortedDictionary<string, List<E3Spell>>>();
 
+		public static readonly Dictionary<string, (float r, float g, float b, float a)> RichTextColorMapping = new Dictionary<string, (float, float, float, float)>(StringComparer.OrdinalIgnoreCase)
+		{
+			["color=gold"] = (0.95f, 0.85f, 0.35f, 1.0f),
+			["color=yellow"] = (1.0f, 0.92f, 0.23f, 1.0f),
+			["color=orange"] = (1.0f, 0.6f, 0.2f, 1.0f),
+			["color=red"] = (0.9f, 0.3f, 0.3f, 1.0f),
+			["color=green"] = (0.3f, 0.9f, 0.5f, 1.0f),
+			["color=blue"] = (0.35f, 0.6f, 0.95f, 1.0f),
+			["color=teal"] = (0.3f, 0.85f, 0.85f, 1.0f),
+			["color=purple"] = (0.75f, 0.55f, 0.95f, 1.0f),
+			["color=white"] = (0.95f, 0.95f, 0.95f, 1.0f),
+			["color=gray"] = (0.6f, 0.6f, 0.6f, 1.0f),
+			["color=silver"] = (0.8f, 0.8f, 0.85f, 1.0f)
+		};
+
+
 		public static readonly string[] _spellKeyOutputOrder = new[]
 		{
 			"Gem", "Ifs", "CheckFor", "CastIF", "HealPct", "HealthMax", "Zone", "MinSick",
@@ -65,7 +81,52 @@ namespace E3Core.UI.Windows.CharacterSettings
 		};
 
 		public static readonly string[] _spellCastTypeOptions = new[] { "Spell", "AA", "Disc", "Ability", "Item", "None" };
+		public static void RebuildSectionsOrderIfNeeded()
+		{
+			var state = window._state.GetState<State_MainWindow>();
 
+			// Rebuild sections order when ini path changes
+			string activeIniPath = GetActiveSettingsPath() ?? string.Empty;
+			if (!string.Equals(activeIniPath, state.LastIniPath, StringComparison.OrdinalIgnoreCase))
+			{
+				state.LastIniPath = activeIniPath;
+				state.SelectedSection = string.Empty;
+				state.SelectedKey = string.Empty;
+				state.SelectedValueIndex = -1;
+				BuildConfigSectionOrder();
+				// Auto-load catalogs on ini switch without blocking UI
+				RequestCatalogUpdate();
+			}
+		}
+		public static void ResetCatalogs()
+		{
+			_catalog_Spells.Clear();
+			_catalog_AA.Clear();
+			_catalog_Disc.Clear();
+			_catalog_Skills.Clear();
+			_catalog_Items.Clear();
+		}
+		public static void RequestCatalogUpdate()
+		{
+			var gemstate = window._state.GetState<State_CatalogGems>();
+			window._state.State_CatalogReady = false;
+			ResetCatalogs();
+			window._state.State_CatalogLoadRequested = true;
+			window._state.Status_CatalogRequest = "Queued catalog load...";
+			gemstate._cfg_CatalogSource = "Refreshing...";
+		}
+		public static SectionData GetCurrentSectionData()
+		{
+			var mainWindowState = window._state.GetState<State_MainWindow>();
+
+			if (mainWindowState.CurrentINIData != null)
+			{
+				var data = mainWindowState.CurrentINIData;
+				var sec = data.Sections.GetSectionData(mainWindowState.SelectedSection);
+				return sec;
+			}
+			return null;
+		}
 
 		public static Int32 GetIconFromIniString(string value)
 		{
