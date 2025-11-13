@@ -3358,7 +3358,8 @@ namespace E3Core.UI.Windows.CharacterSettings
 							}
 							else
 							{
-								var kd = selectedSection?.Keys?.GetKeyData(mainWindowState.SelectedKey ?? string.Empty);
+
+								var kd = GetCurrentEditedSpellKeyData();
 								if (kd != null)
 								{
 									var vals = GetValues(kd);
@@ -3366,7 +3367,6 @@ namespace E3Core.UI.Windows.CharacterSettings
 									if (state.ReplaceMode && state.ReplaceIndex >= 0 && state.ReplaceIndex < vals.Count)
 									{
 										vals[state.ReplaceIndex] = v;
-										WriteValues(kd, vals);
 										mainWindowState.PendingValueSelection = state.ReplaceIndex;
 										state.ReplaceMode = false;
 										state.ReplaceIndex = -1;
@@ -3374,7 +3374,6 @@ namespace E3Core.UI.Windows.CharacterSettings
 									else if (!vals.Contains(v, StringComparer.OrdinalIgnoreCase))
 									{
 										vals.Add(v);
-										WriteValues(kd, vals);
 										mainWindowState.PendingValueSelection = vals.Count - 1;
 									}
 								}
