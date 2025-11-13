@@ -377,7 +377,7 @@ namespace E3Core.Processors
 						}
 
 						_log.Write("Checking for Feigning....");
-						if (MQ.Query<bool>("${Me.Feigning}"))
+						if (MQ.Query<bool>("${Me.Feigning}") && String.Compare(spell.CastName,"Mend",true)!=0)
 						{
 							E3.Bots.Broadcast($"skipping [{spell.CastName}] , i am feigned.");
 							MQ.Delay(200);
