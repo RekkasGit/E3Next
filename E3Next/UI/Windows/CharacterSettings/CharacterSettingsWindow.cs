@@ -454,96 +454,43 @@ namespace E3Core.UI.Windows.CharacterSettings
 			Render_MainWindow_CatalogGemData();
 		}
 
-		private static void Render_MainWindow_ConfigEditor_RightPane(IniData pd)
+	private static void Render_MainWindow_ConfigEditor_RightPane(IniData pd)
+	{
+		var state = _state.GetState<State_MainWindow>();
+		float paneAvailY = imgui_GetContentRegionAvailY();
+		float reservedSpellEditorSpace = (state.Show_ShowIntegratedEditor && state.SelectedValueIndex >= 0) ? 340f : 0f;
+		float contentHeight = Math.Max(160f, paneAvailY - reservedSpellEditorSpace);
+
+		bool contentVisible = imgui_BeginChild("E3Config_EditorPane_Content", 0, contentHeight, ImGuiChildFlags_None, 0);
+		if (contentVisible)
 		{
-			var state = _state.GetState<State_MainWindow>();
-			float availX = imgui_GetContentRegionAvailX();
-			float availY = imgui_GetContentRegionAvailY();
-			float spacing = 6f;
-			float minValuesWidth = 320f;
-			float minToolsWidth = 240f;
-			float valuesWidth;
-			float toolsWidth;
-			float totalMinWidth = minValuesWidth + minToolsWidth + spacing;
-
-			// Initialize stored width on first run or use stored width
-			if (state.RightPaneValuesWidth < 0)
-			{
-				// First time initialization - calculate default width
-				if (availX <= totalMinWidth)
-				{
-					valuesWidth = Math.Max(200f, availX * 0.55f);
-					toolsWidth = Math.Max(140f, availX - valuesWidth - spacing);
-					if (toolsWidth < 120f)
-					{
-						toolsWidth = 120f;
-						valuesWidth = Math.Max(180f, availX - toolsWidth - spacing);
-					}
-				}
-				else
-				{
-					float desiredToolsWidth = Math.Max(minToolsWidth, availX * 0.34f);
-					float maxToolsWidth = Math.Max(minToolsWidth, availX - minValuesWidth - spacing);
-					if (desiredToolsWidth > maxToolsWidth)
-					{
-						desiredToolsWidth = maxToolsWidth;
-					}
-					toolsWidth = desiredToolsWidth;
-					valuesWidth = Math.Max(minValuesWidth, availX - toolsWidth - spacing);
-				}
-
-				valuesWidth = Math.Max(160f, valuesWidth);
-				if (valuesWidth + toolsWidth + spacing > availX)
-				{
-					valuesWidth = Math.Max(160f, availX - toolsWidth - spacing);
-				}
-				
-				state.RightPaneValuesWidth = valuesWidth;
-			}
-			else
-			{
-				// Use stored width, but clamp to reasonable bounds
-				valuesWidth = state.RightPaneValuesWidth;
-				valuesWidth = Math.Max(160f, Math.Min(valuesWidth, availX - minToolsWidth - spacing));
-			}
-
-			// Tools pane takes remaining space
-			toolsWidth = Math.Max(120f, availX - valuesWidth - spacing);
-
-			bool valuesPaneVisible = imgui_BeginChild("E3Config_ValuesPane", valuesWidth, availY, ImGuiChildFlags_Borders | ImGuiChildFlags_ResizeX | ImGuiChildFlags_ResizeY, 0);
-			if (valuesPaneVisible)
-			{
-				Render_MainWindow_ConfigEditor_Values(pd);
-			}
-			imgui_EndChild();
-
-			// Store the actual width after user potentially resized it
-			float newValuesWidth = imgui_GetItemRectMaxX() - imgui_GetItemRectMinX();
-			if (newValuesWidth > 0 && Math.Abs(newValuesWidth - state.RightPaneValuesWidth) > 0.5f)
-			{
-				state.RightPaneValuesWidth = newValuesWidth;
-			}
-
-			imgui_SameLine();
-			bool toolsPaneVisible = imgui_BeginChild("E3Config_ToolsPane", toolsWidth, availY, ImGuiChildFlags_Borders | ImGuiChildFlags_ResizeY, 0);
-			if (toolsPaneVisible)
-			{
-				Render_MainWindow_ConfigEditor_Tools(pd);
-			}
-			imgui_EndChild();
+			Render_MainWindow_ConfigEditor_RightPaneContent(pd);
 		}
+		imgui_EndChild();
 
-		private static void Render_MainWindow_ConfigEditor_RightPaneContent(IniData pd)
+		if (state.Show_ShowIntegratedEditor && state.SelectedValueIndex >= 0)
 		{
-			float availX = imgui_GetContentRegionAvailX();
-			float availY = imgui_GetContentRegionAvailY();
-			float spacing = 6f;
-			float minValuesWidth = 320f;
-			float minToolsWidth = 240f;
-			float valuesWidth;
-			float toolsWidth;
-			float totalMinWidth = minValuesWidth + minToolsWidth + spacing;
+			imgui_Separator();
+			Render_MainWindow_SpellEditor();
+		}
+	}
 
+	private static void Render_MainWindow_ConfigEditor_RightPaneContent(IniData pd)
+	{
+		var state = _state.GetState<State_MainWindow>();
+		float availX = imgui_GetContentRegionAvailX();
+		float availY = imgui_GetContentRegionAvailY();
+		float spacing = 6f;
+		float minValuesWidth = 320f;
+		float minToolsWidth = 240f;
+		float valuesWidth;
+		float toolsWidth;
+		float totalMinWidth = minValuesWidth + minToolsWidth + spacing;
+
+		// Initialize stored width on first run or use stored width
+		if (state.RightPaneValuesWidth < 0)
+		{
+			// First time initialization - calculate default width
 			if (availX <= totalMinWidth)
 			{
 				valuesWidth = Math.Max(200f, availX * 0.55f);
@@ -571,22 +518,41 @@ namespace E3Core.UI.Windows.CharacterSettings
 			{
 				valuesWidth = Math.Max(160f, availX - toolsWidth - spacing);
 			}
-
-			bool valuesPaneVisible = imgui_BeginChild("E3Config_ValuesPane", valuesWidth, availY, ImGuiChildFlags_Borders | ImGuiChildFlags_ResizeY, 0);
-			if (valuesPaneVisible)
-			{
-				Render_MainWindow_ConfigEditor_Values(pd);
-			}
-			imgui_EndChild();
-
-			imgui_SameLine();
-			bool toolsPaneVisible = imgui_BeginChild("E3Config_ToolsPane", toolsWidth, availY, ImGuiChildFlags_Borders | ImGuiChildFlags_ResizeY, 0);
-			if (toolsPaneVisible)
-			{
-				Render_MainWindow_ConfigEditor_Tools(pd);
-			}
-			imgui_EndChild();
+			
+			state.RightPaneValuesWidth = valuesWidth;
 		}
+		else
+		{
+			// Use stored width, but clamp to reasonable bounds
+			valuesWidth = state.RightPaneValuesWidth;
+			valuesWidth = Math.Max(160f, Math.Min(valuesWidth, availX - minToolsWidth - spacing));
+		}
+
+		// Tools pane takes remaining space
+		toolsWidth = Math.Max(120f, availX - valuesWidth - spacing);
+
+		bool valuesPaneVisible = imgui_BeginChild("E3Config_ValuesPane", valuesWidth, availY, ImGuiChildFlags_Borders | ImGuiChildFlags_ResizeX | ImGuiChildFlags_ResizeY, 0);
+		if (valuesPaneVisible)
+		{
+			Render_MainWindow_ConfigEditor_Values(pd);
+		}
+		imgui_EndChild();
+
+		// Store the actual width after user potentially resized it
+		float newValuesWidth = imgui_GetItemRectMaxX() - imgui_GetItemRectMinX();
+		if (newValuesWidth > 0 && Math.Abs(newValuesWidth - state.RightPaneValuesWidth) > 0.5f)
+		{
+			state.RightPaneValuesWidth = newValuesWidth;
+		}
+
+		imgui_SameLine();
+		bool toolsPaneVisible = imgui_BeginChild("E3Config_ToolsPane", toolsWidth, availY, ImGuiChildFlags_Borders | ImGuiChildFlags_ResizeY, 0);
+		if (toolsPaneVisible)
+		{
+			Render_MainWindow_ConfigEditor_Tools(pd);
+		}
+		imgui_EndChild();
+	}
 		public static void Render_MainWindow_ConfigEditor_SelectionTree(IniData pd)
 		{
 			var state = _state.GetState<State_MainWindow>();
