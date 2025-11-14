@@ -135,6 +135,8 @@ namespace E3Core.UI.Windows.CharacterSettings
 		public string ManualEditBuffer = String.Empty;
 		public bool ManualInputBufferInUse = false;
 		public bool IsDirty = false;
+		public bool ShowCastTargetHelper = false;
+		public bool ShowCastTargetPicker = false;
 
 		public void Reset()
 		{
@@ -142,6 +144,8 @@ namespace E3Core.UI.Windows.CharacterSettings
 			CurrentSpellPreviewCache = String.Empty;
 			ManualEditBuffer = String.Empty;
 			ManualInputBufferInUse = false;
+			ShowCastTargetHelper = false;
+			ShowCastTargetPicker = false;
 		}
 	}
 	public class State_CatalogGems

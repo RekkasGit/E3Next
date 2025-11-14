@@ -31,6 +31,8 @@ namespace E3Core.UI.Windows.CharacterSettings
 		private const float SpellEditorDefaultTextWidth = 320f;
 		private const float SpellEditorDefaultNumberWidth = 140f;
 		private const float SpellEditorDefaultCheckboxWidth = 20f;
+		private const string CastTargetHelperWindowTitle = "Cast Target Helper";
+		private const string CastTargetPickerWindowTitle = "Cast Target Picker";
 		private const int ImGuiChildFlags_None = 0;
 		private const int ImGuiChildFlags_Borders = 1 << 0;
 		private const int ImGuiChildFlags_ResizeX = 1 << 2;
@@ -1647,10 +1649,10 @@ namespace E3Core.UI.Windows.CharacterSettings
 					imgui_TableSetupColumn("Value", (int)ValueColumnFlags, 0f);
 
 
-					//to specify the id of an input text use ## so its not visable
+				//to specify the id of an input text use ## so its not visable
 
 					RenderTableTextEditRow("##SpellEditor_CastName", "Cast Name:", currentSpell.CastName, (u) => { currentSpell.CastName = u; currentSpell.SpellName = u; });
-					RenderTableTextEditRow("##SpellEditor_CastTarget", "Cast Target:", currentSpell.CastTarget, (u) => { currentSpell.CastTarget = u; });
+					RenderSpellEditorCastTargetRow(currentSpell);
 					///GEM SLOTS
 					imgui_TableNextRow();
 					imgui_TableNextColumn();
@@ -1709,7 +1711,234 @@ namespace E3Core.UI.Windows.CharacterSettings
 				}
 
 			}
+
+			if (spellEditorState.ShowCastTargetPicker)
+			{
+				RenderCastTargetPickerWindow();
+			}
+			if (spellEditorState.ShowCastTargetHelper)
+			{
+				RenderCastTargetHelperWindow();
+			}
 		}
+
+		private static void RenderSpellEditorCastTargetRow(Spell currentSpell)
+		{
+			var spellEditorState = _state.GetState<State_SpellEditor>();
+			imgui_TableNextRow();
+			imgui_TableNextColumn();
+			imgui_Text("Cast Target:");
+			imgui_TableNextColumn();
+			const float helperButtonWidth = 24f;
+			const float pickerButtonWidth = 56f;
+			const float helperSpacing = 6f;
+			float avail = imgui_GetContentRegionAvailX();
+			float totalButtons = pickerButtonWidth + helperButtonWidth + (helperSpacing * 2);
+			float inputWidth = Math.Max(160f, Math.Min(SpellEditorDefaultTextWidth, avail - totalButtons));
+			imgui_SetNextItemWidth(inputWidth);
+			string castTargetId = "##SpellEditor_CastTarget";
+			string value = currentSpell.CastTarget ?? string.Empty;
+			if (imgui_InputText(castTargetId, value))
+			{
+				currentSpell.CastTarget = imgui_InputText_Get(castTargetId) ?? string.Empty;
+				spellEditorState.IsDirty = true;
+			}
+			imgui_SameLine(0f, helperSpacing);
+			if (imgui_Button("Pick##CastTargetPickBtn"))
+			{
+				spellEditorState.ShowCastTargetPicker = true;
+			}
+			if (imgui_IsItemHovered())
+			{
+				imgui_BeginTooltip();
+				imgui_Text("Select from connected bots");
+				imgui_EndTooltip();
+			}
+			imgui_SameLine(0f, helperSpacing);
+			if (imgui_Button("?##CastTargetHelpBtn"))
+			{
+				spellEditorState.ShowCastTargetHelper = true;
+			}
+			if (imgui_IsItemHovered())
+			{
+				imgui_BeginTooltip();
+				imgui_Text("Show Cast Target helper");
+				imgui_EndTooltip();
+			}
+		}
+
+		private static void RenderCastTargetHelperWindow()
+		{
+			var spellEditorState = _state.GetState<State_SpellEditor>();
+			imgui_Begin_OpenFlagSet(CastTargetHelperWindowTitle, spellEditorState.ShowCastTargetHelper);
+			if (!imgui_Begin_OpenFlagGet(CastTargetHelperWindowTitle))
+			{
+				spellEditorState.ShowCastTargetHelper = false;
+				return;
+			}
+			Int32 helperFlags = (int)(ImGuiWindowFlags.ImGuiWindowFlags_AlwaysAutoResize | ImGuiWindowFlags.ImGuiWindowFlags_NoDocking | ImGuiWindowFlags.ImGuiWindowFlags_NoCollapse | ImGuiWindowFlags.ImGuiWindowFlags_NoResize);
+			bool open = imgui_Begin(CastTargetHelperWindowTitle, helperFlags);
+			if (open)
+			{
+				imgui_TextColored(0.95f, 0.85f, 0.35f, 1.0f, "Cast Target Keywords");
+				imgui_Separator();
+				imgui_Text("- Specific bot or toon name: targets that character directly (case-insensitive).");
+				imgui_Text("- Self: always target yourself.");
+				imgui_Text("- bots: iterate through every connected bot in your network.");
+				imgui_Text("- gbots: limit the rotation to connected bots currently in your EQ group.");
+				string classList = string.Join(", ", EQClasses.ClassShortNames);
+				imgui_Text($"- Class short codes ({classList}): cast on each bot of that class.");
+				imgui_Text("- Leave blank to use the spell's natural target type.");
+				imgui_Separator();
+				if (imgui_Button("Close##CastTargetHelpClose"))
+				{
+					spellEditorState.ShowCastTargetHelper = false;
+				}
+			}
+			imgui_End();
+			if (!open)
+			{
+				spellEditorState.ShowCastTargetHelper = false;
+				imgui_Begin_OpenFlagSet(CastTargetHelperWindowTitle, false);
+			}
+		}
+
+		private static void RenderCastTargetPickerWindow()
+		{
+			var spellEditorState = _state.GetState<State_SpellEditor>();
+			var mainWindowState = _state.GetState<State_MainWindow>();
+			var currentSpell = mainWindowState.Currently_EditableSpell;
+			if (currentSpell == null)
+			{
+				spellEditorState.ShowCastTargetPicker = false;
+				return;
+			}
+			imgui_Begin_OpenFlagSet(CastTargetPickerWindowTitle, spellEditorState.ShowCastTargetPicker);
+			const ImGuiWindowFlags pickerFlags = ImGuiWindowFlags.ImGuiWindowFlags_AlwaysAutoResize
+				| ImGuiWindowFlags.ImGuiWindowFlags_NoDocking
+				| ImGuiWindowFlags.ImGuiWindowFlags_NoCollapse
+				| ImGuiWindowFlags.ImGuiWindowFlags_NoResize;
+			bool open = imgui_Begin(CastTargetPickerWindowTitle, (int)pickerFlags);
+			if (open)
+			{
+				var bots = E3.Bots?.BotsConnected() ?? new List<string>();
+				bots.Sort(StringComparer.OrdinalIgnoreCase);
+				var selectedEntries = GetCastTargetEntries(currentSpell.CastTarget);
+				imgui_TextColored(0.95f, 0.85f, 0.35f, 1.0f, $"Connected bots ({bots.Count})");
+				imgui_Separator();
+				const float listWidth = 320f;
+				const float listHeight = 240f;
+				if (imgui_BeginChild("CastTargetPicker_List", listWidth, listHeight, ImGuiChildFlags_Borders, 0))
+				{
+					if (bots.Count == 0)
+					{
+						imgui_Text("No connected bots detected.");
+					}
+					else
+					{
+						int idx = 0;
+						foreach (var bot in bots)
+						{
+							string checkboxId = $"{bot}##CastTargetBot_{idx}";
+							bool selected = ContainsCastTargetEntry(selectedEntries, bot);
+							if (imgui_Checkbox(checkboxId, selected))
+							{
+								bool newState = imgui_Checkbox_Get(checkboxId);
+								ToggleCastTargetEntry(currentSpell, bot, newState);
+								selectedEntries = GetCastTargetEntries(currentSpell.CastTarget);
+								spellEditorState.IsDirty = true;
+							}
+							idx++;
+						}
+					}
+				}
+				imgui_EndChild();
+
+				imgui_Separator();
+				imgui_Text("Quick keywords:");
+				if (imgui_Button("Self##CastTargetSelf"))
+				{
+					ToggleCastTargetEntry(currentSpell, "Self", true);
+					spellEditorState.IsDirty = true;
+				}
+				imgui_SameLine();
+				if (imgui_Button("bots##CastTargetBots"))
+				{
+					ToggleCastTargetEntry(currentSpell, "bots", true);
+					spellEditorState.IsDirty = true;
+				}
+				imgui_SameLine();
+				if (imgui_Button("gbots##CastTargetGroupBots"))
+				{
+					ToggleCastTargetEntry(currentSpell, "gbots", true);
+					spellEditorState.IsDirty = true;
+				}
+				imgui_SameLine();
+				if (imgui_Button("Clear##CastTargetClear"))
+				{
+					currentSpell.CastTarget = string.Empty;
+					spellEditorState.IsDirty = true;
+				}
+				imgui_Text("Class short codes:");
+				int buttonCount = 0;
+				foreach (var shortName in EQClasses.ClassShortNames)
+				{
+					string buttonLabel = $"{shortName}##CastTargetClass_{buttonCount}";
+					if (imgui_Button(buttonLabel))
+					{
+						ToggleCastTargetEntry(currentSpell, shortName, true);
+						spellEditorState.IsDirty = true;
+					}
+					buttonCount++;
+					if ((buttonCount % 6) != 0) imgui_SameLine();
+				}
+
+				imgui_Separator();
+				if (imgui_Button("Close##CastTargetPickerClose"))
+				{
+					spellEditorState.ShowCastTargetPicker = false;
+				}
+			}
+			imgui_End();
+			// Check if user clicked the X button to close the window
+			if (!imgui_Begin_OpenFlagGet(CastTargetPickerWindowTitle))
+			{
+				spellEditorState.ShowCastTargetPicker = false;
+			}
+		}
+
+		private static List<string> GetCastTargetEntries(string castTarget)
+		{
+			return (castTarget ?? string.Empty)
+				.Split(new[] { ',' }, StringSplitOptions.RemoveEmptyEntries)
+				.Select(entry => entry.Trim())
+				.Where(entry => !string.IsNullOrEmpty(entry))
+				.Distinct(StringComparer.OrdinalIgnoreCase)
+				.ToList();
+		}
+
+		private static bool ContainsCastTargetEntry(List<string> entries, string value)
+		{
+			return entries.Any(entry => string.Equals(entry, value, StringComparison.OrdinalIgnoreCase));
+		}
+
+		private static void ToggleCastTargetEntry(Spell spell, string entry, bool shouldBePresent)
+		{
+			if (spell == null || string.IsNullOrEmpty(entry)) return;
+			var entries = GetCastTargetEntries(spell.CastTarget);
+			bool exists = ContainsCastTargetEntry(entries, entry);
+			if (shouldBePresent && !exists)
+			{
+				entries.Add(entry);
+			}
+			else if (!shouldBePresent && exists)
+			{
+				entries = entries.Where(e => !string.Equals(e, entry, StringComparison.OrdinalIgnoreCase)).ToList();
+
+			}
+			spell.CastTarget = string.Join(",", entries);
+		}
+
 		private static void Render_MainWindow_SpellEditor_Tab_Conditions()
 		{
 			var spellEditorState = _state.GetState<State_SpellEditor>();
