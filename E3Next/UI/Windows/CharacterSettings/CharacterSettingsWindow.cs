@@ -31,6 +31,10 @@ namespace E3Core.UI.Windows.CharacterSettings
 		private const float SpellEditorDefaultTextWidth = 320f;
 		private const float SpellEditorDefaultNumberWidth = 140f;
 		private const float SpellEditorDefaultCheckboxWidth = 20f;
+		private const int ImGuiChildFlags_None = 0;
+		private const int ImGuiChildFlags_Borders = 1 << 0;
+		private const int ImGuiChildFlags_ResizeX = 1 << 2;
+		private const int ImGuiChildFlags_ResizeY = 1 << 3;
 
 		//A very large bandaid on the Threading of this window
 		//used when trying to get a pointer to the _cfg objects.
@@ -412,46 +416,116 @@ namespace E3Core.UI.Windows.CharacterSettings
 
 			Render_MainWindow_CatalogStatus();
 			data.RebuildSectionsOrderIfNeeded();
-			// Use ImGui Table for responsive 3-column layout
+			float availX = imgui_GetContentRegionAvailX();
 			float availY = imgui_GetContentRegionAvailY();
-				// Reserve space for spell gems display at bottom (header + separator + gem row with 40px icons + padding)
+			// Reserve space for spell gems display at bottom (header + separator + gem row with 40px icons + padding)
 			float reservedBottomSpace = _state.State_GemsAvailable ? 100f : 10f;
-			// Reserve additional space for integrated editor panel if open
-			if (state.Show_ShowIntegratedEditor && state.SelectedValueIndex >= 0)
-			{
-				reservedBottomSpace += 350f; // Space for integrated editor tabs and controls
-			}
-			float tableHeight = Math.Max(200f, availY - reservedBottomSpace);
-			Int32 flags = (int)(ImGuiTableFlags.ImGuiTableFlags_Borders | ImGuiTableFlags.ImGuiTableFlags_Resizable | ImGuiTableFlags.ImGuiTableFlags_ScrollY | ImGuiTableFlags.ImGuiTableFlags_SizingStretchProp | ImGuiTableFlags.ImGuiTableFlags_NoPadInnerX | ImGuiTableFlags.ImGuiTableFlags_NoPadOuterX);
+			float regionHeight = Math.Max(200f, availY - reservedBottomSpace);
 
-			if (imgui_BeginTable("E3ConfigEditorTable", 3, flags, 0, tableHeight))
+			float leftPaneWidth = Math.Max(240f, availX * 0.32f);
+			float minRightPaneWidth = 360f;
+			if (availX - leftPaneWidth < minRightPaneWidth)
 			{
-				try
-				{
-					// Set up columns with initial proportions
-					imgui_TableSetupColumn("Sections & Keys", (int)ImGuiTableColumnFlags.ImGuiTableColumnFlags_WidthStretch, 0.35f);
-					imgui_TableSetupColumn("Values", (int)ImGuiTableColumnFlags.ImGuiTableColumnFlags_WidthStretch, 0.35f);
-					imgui_TableSetupColumn("Tools & Info", (int)ImGuiTableColumnFlags.ImGuiTableColumnFlags_WidthStretch, 0.30f);
-					imgui_TableHeadersRow();
-					imgui_TableNextRow();
-					// Column 1: Sections and Keys (with TreeNodes)
-					if (imgui_TableNextColumn()) { Render_MainWindow_ConfigEditor_SelectionTree(pd);}
-					if (imgui_TableNextColumn()) { Render_MainWindow_ConfigEditor_Values(pd); }
-					if (imgui_TableNextColumn()) { Render_MainWindow_ConfigEditor_Tools(pd); }
-				}
-				finally
-				{
-					imgui_EndTable();
-				}
+				leftPaneWidth = Math.Max(200f, availX - minRightPaneWidth);
 			}
+			float maxLeftPaneWidth = Math.Max(200f, availX - 240f);
+			leftPaneWidth = Math.Max(200f, Math.Min(leftPaneWidth, maxLeftPaneWidth));
 
-			// Render integrated editor after table if active
-			if (state.Show_ShowIntegratedEditor && state.SelectedValueIndex >= 0) { Render_MainWindow_SpellEditor(); }
+			bool leftPaneVisible = imgui_BeginChild("E3Config_SectionTreePane", leftPaneWidth, regionHeight, ImGuiChildFlags_Borders | ImGuiChildFlags_ResizeX | ImGuiChildFlags_ResizeY, 0);
+			if (leftPaneVisible)
+			{
+				Render_MainWindow_ConfigEditor_SelectionTree(pd);
+			}
+			imgui_EndChild();
+
+			imgui_SameLine();
+			bool rightPaneVisible = imgui_BeginChild("E3Config_EditorPane", 0, regionHeight, ImGuiChildFlags_Borders | ImGuiChildFlags_ResizeY, 0);
+			if (rightPaneVisible)
+			{
+				Render_MainWindow_ConfigEditor_RightPane(pd);
+			}
+			imgui_EndChild();
 			//Ensure popups/ modals render even when the tools column is hidden
 			SectionData activeSection = data.GetCurrentSectionData();
 			Render_Active_Windows(activeSection);
 			//Display memorized spells if available from catalog data (safe)
 			Render_MainWindow_CatalogGemData();
+		}
+
+		private static void Render_MainWindow_ConfigEditor_RightPane(IniData pd)
+		{
+			var state = _state.GetState<State_MainWindow>();
+			float paneAvailY = imgui_GetContentRegionAvailY();
+			float reservedSpellEditorSpace = (state.Show_ShowIntegratedEditor && state.SelectedValueIndex >= 0) ? 340f : 0f;
+			float contentHeight = Math.Max(160f, paneAvailY - reservedSpellEditorSpace);
+
+			bool contentVisible = imgui_BeginChild("E3Config_EditorPane_Content", 0, contentHeight, ImGuiChildFlags_None, 0);
+			if (contentVisible)
+			{
+				Render_MainWindow_ConfigEditor_RightPaneContent(pd);
+			}
+			imgui_EndChild();
+
+			if (state.Show_ShowIntegratedEditor && state.SelectedValueIndex >= 0)
+			{
+				imgui_Separator();
+				Render_MainWindow_SpellEditor();
+			}
+		}
+
+		private static void Render_MainWindow_ConfigEditor_RightPaneContent(IniData pd)
+		{
+			float availX = imgui_GetContentRegionAvailX();
+			float availY = imgui_GetContentRegionAvailY();
+			float spacing = 6f;
+			float minValuesWidth = 320f;
+			float minToolsWidth = 240f;
+			float valuesWidth;
+			float toolsWidth;
+			float totalMinWidth = minValuesWidth + minToolsWidth + spacing;
+
+			if (availX <= totalMinWidth)
+			{
+				valuesWidth = Math.Max(200f, availX * 0.55f);
+				toolsWidth = Math.Max(140f, availX - valuesWidth - spacing);
+				if (toolsWidth < 120f)
+				{
+					toolsWidth = 120f;
+					valuesWidth = Math.Max(180f, availX - toolsWidth - spacing);
+				}
+			}
+			else
+			{
+				float desiredToolsWidth = Math.Max(minToolsWidth, availX * 0.34f);
+				float maxToolsWidth = Math.Max(minToolsWidth, availX - minValuesWidth - spacing);
+				if (desiredToolsWidth > maxToolsWidth)
+				{
+					desiredToolsWidth = maxToolsWidth;
+				}
+				toolsWidth = desiredToolsWidth;
+				valuesWidth = Math.Max(minValuesWidth, availX - toolsWidth - spacing);
+			}
+
+			valuesWidth = Math.Max(160f, valuesWidth);
+			if (valuesWidth + toolsWidth + spacing > availX)
+			{
+				valuesWidth = Math.Max(160f, availX - toolsWidth - spacing);
+			}
+
+			bool valuesPaneVisible = imgui_BeginChild("E3Config_ValuesPane", valuesWidth, availY, ImGuiChildFlags_Borders | ImGuiChildFlags_ResizeY, 0);
+			if (valuesPaneVisible)
+			{
+				Render_MainWindow_ConfigEditor_Values(pd);
+			}
+			imgui_EndChild();
+
+			imgui_SameLine();
+			bool toolsPaneVisible = imgui_BeginChild("E3Config_ToolsPane", toolsWidth, availY, ImGuiChildFlags_Borders | ImGuiChildFlags_ResizeY, 0);
+			if (toolsPaneVisible)
+			{
+				Render_MainWindow_ConfigEditor_Tools(pd);
+			}
+			imgui_EndChild();
 		}
 		public static void Render_MainWindow_ConfigEditor_SelectionTree(IniData pd)
 		{
