@@ -1,4 +1,4 @@
-﻿using E3Core.Data;
+using E3Core.Data;
 using IniParser.Model;
 using System;
 using System.Collections.Generic;
@@ -79,6 +79,9 @@ namespace E3Core.UI.Windows.CharacterSettings
 
 		public string Signature_CurrentEditedSpell = String.Empty;
 		public Spell Currently_EditableSpell = null;
+
+		// Store the width of the right panel's values pane (left column of right panel)
+		public float RightPaneValuesWidth = -1f; // -1 means not yet initialized
 
 
 	}
