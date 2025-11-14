@@ -177,9 +177,9 @@ namespace E3Core.UI.Windows.CharacterSettings
 						imgui_Separator();
 						Render_MainWindow_SearchBar();
 						var allPlayersState = _state.GetState<State_AllPlayers>();
-						if (allPlayersState.ShowWindow) RenderAllPlayersView();
+						if (allPlayersState.ShowWindow) Render_MainWindow_AllPlayersView();
 						if (!allPlayersState.ShowWindow) Render_MainWindow_ConfigEditor();
-						if (_state.Show_ThemeSettings) RenderThemeSettingsModal();
+						if (_state.Show_ThemeSettings) Render_ThemeSettingsWindow();
 						if (_state.Show_Donate) RenderDonateModal();
 					}
 					finally
@@ -957,7 +957,7 @@ namespace E3Core.UI.Windows.CharacterSettings
 					using (var p = PushStyle.Aquire())
 					{
 						p.PushStyleColor((int)E3ImGUI.ImGuiCol.Text, 0.95f, 0.85f, 0.35f, 1.0f);
-						RenderDescriptionRichText(description);
+						Render_RichText(description);
 						imgui_Separator();
 					}
 					//vs
@@ -1575,8 +1575,8 @@ namespace E3Core.UI.Windows.CharacterSettings
 
 					//to specify the id of an input text use ## so its not visable
 
-					RenderTableTextEditRow("##SpellEditor_CastName", "Cast Name:", currentSpell.CastName, (u) => { currentSpell.CastName = u; currentSpell.SpellName = u; });
-					RenderTableTextEditRow("##SpellEditor_CastTarget", "Cast Target:", currentSpell.CastTarget, (u) => { currentSpell.CastTarget = u; });
+					Render_TwoColumn_TableText("##SpellEditor_CastName", "Cast Name:", currentSpell.CastName, (u) => { currentSpell.CastName = u; currentSpell.SpellName = u; });
+					Render_TwoColumn_TableText("##SpellEditor_CastTarget", "Cast Target:", currentSpell.CastTarget, (u) => { currentSpell.CastTarget = u; });
 					///GEM SLOTS
 					imgui_TableNextRow();
 					imgui_TableNextColumn();
@@ -1626,7 +1626,7 @@ namespace E3Core.UI.Windows.CharacterSettings
 						}
 						EndComboSafe();
 					}
-					RenderTableCheckboxEditRow("##spell_enabled", "Enabled:", currentSpell.Enabled, (u) => { currentSpell.Enabled = u; }, tooltip: "Enable or Disable entry");
+					Render_TwoColumn_TableCheckbox("##spell_enabled", "Enabled:", currentSpell.Enabled, (u) => { currentSpell.Enabled = u; }, tooltip: "Enable or Disable entry");
 
 				}
 				finally
@@ -1653,8 +1653,8 @@ namespace E3Core.UI.Windows.CharacterSettings
 				{
 					imgui_TableSetupColumn("Label", (int)LabelColumnFlags, 0f);
 					imgui_TableSetupColumn("Value", (int)ValueColumnFlags, 0f);
-					RenderTableTextEditRow("##SpellEditor_ifsKeys", "Ifs Keys:", currentSpell.IfsKeys, (u) => { currentSpell.IfsKeys = u; });
-					RenderTableTextEditRow("##SpellEditor_CheckFor", "Check For:", String.Join(",", currentSpell.CheckForCollection.Keys), (u) =>
+					Render_TwoColumn_TableText("##SpellEditor_ifsKeys", "Ifs Keys:", currentSpell.IfsKeys, (u) => { currentSpell.IfsKeys = u; });
+					Render_TwoColumn_TableText("##SpellEditor_CheckFor", "Check For:", String.Join(",", currentSpell.CheckForCollection.Keys), (u) =>
 					{
 						currentSpell.CheckForCollection.Clear();
 						var split = u.Split(',');
@@ -1669,10 +1669,10 @@ namespace E3Core.UI.Windows.CharacterSettings
 							}
 						}
 					});
-					RenderTableTextEditRow("##SpellEditor_CastIfs", "Cast If:", currentSpell.CastIF, (u) => { currentSpell.CastIF = u; });
-					RenderTableTextEditRow("##SpellEditor_Zone", "Zone:", currentSpell.Zone, (u) => { currentSpell.Zone = u; });
-					RenderTableTextEditRow("##SpellEditor_MinSick", "Min Sick:", currentSpell.MinSick.ToString(), (u) => { Int32.TryParse(u, out currentSpell.MinSick); });
-					RenderTableTextEditRow("##SpellEditor_TriggerSpell", "Trigger Spell:", currentSpell.TriggerSpell, (u) => { currentSpell.TriggerSpell = u; });
+					Render_TwoColumn_TableText("##SpellEditor_CastIfs", "Cast If:", currentSpell.CastIF, (u) => { currentSpell.CastIF = u; });
+					Render_TwoColumn_TableText("##SpellEditor_Zone", "Zone:", currentSpell.Zone, (u) => { currentSpell.Zone = u; });
+					Render_TwoColumn_TableText("##SpellEditor_MinSick", "Min Sick:", currentSpell.MinSick.ToString(), (u) => { Int32.TryParse(u, out currentSpell.MinSick); });
+					Render_TwoColumn_TableText("##SpellEditor_TriggerSpell", "Trigger Spell:", currentSpell.TriggerSpell, (u) => { currentSpell.TriggerSpell = u; });
 				}
 				finally
 				{
@@ -1697,15 +1697,15 @@ namespace E3Core.UI.Windows.CharacterSettings
 					imgui_TableSetupColumn("Label", (int)LabelColumnFlags, 0f);
 					imgui_TableSetupColumn("Value", (int)ValueColumnFlags, 0f);
 
-					RenderTableIntEditRow("##SpellEditor_MinMana", "Min Mana:", currentSpell.MinMana, (u) => { currentSpell.MinMana = u; });
-					RenderTableIntEditRow("##SpellEditor_MinEnd", "Min End:", currentSpell.MinEnd, (u) => { currentSpell.MinEnd = u; });
-					RenderTableIntEditRow("##SpellEditor_MinPctHP", "Min HP%:", currentSpell.MinHP, (u) => { currentSpell.MinEnd = u; });
-					RenderTableIntEditRow("##SpellEditor_MinHPTotal", "Min HP%:", currentSpell.MinHPTotal, (u) => { currentSpell.MinHPTotal = u; });
-					RenderTableIntEditRow("##SpellEditor_HealPct", "Heal %:", currentSpell.HealPct, (u) => { currentSpell.HealPct = u; });
-					RenderTableIntEditRow("##SpellEditor_HealthMax", "Cancel Heal Above %:", currentSpell.HealthMax, (u) => { currentSpell.HealthMax = u; });
-					RenderTableIntEditRow("##SpellEditor_PctAggro", "Pct Aggro:", currentSpell.PctAggro, (u) => { currentSpell.PctAggro = u; }, tooltip: "Skip this entry if your current aggro percent exceeds the specified threshold.");
-					RenderTableIntEditRow("##SpellEditor_MinAggro", "Min Aggro:", currentSpell.MinAggro, (u) => { currentSpell.MinAggro = u; }, tooltip: "Only cast when your aggro percent is at least this value (helps gate low-threat openers).");
-					RenderTableIntEditRow("##SpellEditor_MaxAggro", "Max Aggro:", currentSpell.MaxAggro, (u) => { currentSpell.MaxAggro = u; }, tooltip: "Do not cast once your aggro percent is above this value (useful for backing off).");
+					Render_TwoColumn_TableInt("##SpellEditor_MinMana", "Min Mana:", currentSpell.MinMana, (u) => { currentSpell.MinMana = u; });
+					Render_TwoColumn_TableInt("##SpellEditor_MinEnd", "Min End:", currentSpell.MinEnd, (u) => { currentSpell.MinEnd = u; });
+					Render_TwoColumn_TableInt("##SpellEditor_MinPctHP", "Min HP%:", currentSpell.MinHP, (u) => { currentSpell.MinEnd = u; });
+					Render_TwoColumn_TableInt("##SpellEditor_MinHPTotal", "Min HP%:", currentSpell.MinHPTotal, (u) => { currentSpell.MinHPTotal = u; });
+					Render_TwoColumn_TableInt("##SpellEditor_HealPct", "Heal %:", currentSpell.HealPct, (u) => { currentSpell.HealPct = u; });
+					Render_TwoColumn_TableInt("##SpellEditor_HealthMax", "Cancel Heal Above %:", currentSpell.HealthMax, (u) => { currentSpell.HealthMax = u; });
+					Render_TwoColumn_TableInt("##SpellEditor_PctAggro", "Pct Aggro:", currentSpell.PctAggro, (u) => { currentSpell.PctAggro = u; }, tooltip: "Skip this entry if your current aggro percent exceeds the specified threshold.");
+					Render_TwoColumn_TableInt("##SpellEditor_MinAggro", "Min Aggro:", currentSpell.MinAggro, (u) => { currentSpell.MinAggro = u; }, tooltip: "Only cast when your aggro percent is at least this value (helps gate low-threat openers).");
+					Render_TwoColumn_TableInt("##SpellEditor_MaxAggro", "Max Aggro:", currentSpell.MaxAggro, (u) => { currentSpell.MaxAggro = u; }, tooltip: "Do not cast once your aggro percent is above this value (useful for backing off).");
 				}
 				finally
 				{
@@ -1732,21 +1732,21 @@ namespace E3Core.UI.Windows.CharacterSettings
 					imgui_TableSetupColumn("Label", (int)LabelColumnFlags, 0f);
 					imgui_TableSetupColumn("Value", (int)ValueColumnFlags, 0f);
 
-					RenderTableIntEditRow("##SpellEditor_Delay", "Delay:", currentSpell.Delay, (u) => { currentSpell.Delay = u; });
-					RenderTableIntEditRow("##SpellEditor_RecastDelay", "Recast Delay:", currentSpell.RecastDelay, (u) => { currentSpell.RecastDelay = u; });
-					RenderTableIntEditRow("##SpellEditor_DelayBeforeRecast", "Min Duration Before Recast:", (int)currentSpell.MinDurationBeforeRecast, (u) => { currentSpell.MinDurationBeforeRecast = u; });
-					RenderTableIntEditRow("##SpellEditor_BeforeSpellDelay", "Before Spell Delay:", currentSpell.BeforeSpellDelay, (u) => { currentSpell.BeforeSpellDelay = u; });
-					RenderTableIntEditRow("##SpellEditor_AfterSpellDelay", "After Spell Delay:", currentSpell.AfterSpellDelay, (u) => { currentSpell.AfterSpellDelay = u; });
+					Render_TwoColumn_TableInt("##SpellEditor_Delay", "Delay:", currentSpell.Delay, (u) => { currentSpell.Delay = u; });
+					Render_TwoColumn_TableInt("##SpellEditor_RecastDelay", "Recast Delay:", currentSpell.RecastDelay, (u) => { currentSpell.RecastDelay = u; });
+					Render_TwoColumn_TableInt("##SpellEditor_DelayBeforeRecast", "Min Duration Before Recast:", (int)currentSpell.MinDurationBeforeRecast, (u) => { currentSpell.MinDurationBeforeRecast = u; });
+					Render_TwoColumn_TableInt("##SpellEditor_BeforeSpellDelay", "Before Spell Delay:", currentSpell.BeforeSpellDelay, (u) => { currentSpell.BeforeSpellDelay = u; });
+					Render_TwoColumn_TableInt("##SpellEditor_AfterSpellDelay", "After Spell Delay:", currentSpell.AfterSpellDelay, (u) => { currentSpell.AfterSpellDelay = u; });
 
-					RenderTableIntEditRow("##SpellEditor_BeforeEventDelay", "Before Event Delay:", currentSpell.BeforeEventDelay, (u) => { currentSpell.BeforeEventDelay = u; });
-					RenderTableIntEditRow("##SpellEditor_AfterEventDelay", "After Event Delay:", currentSpell.AfterEventDelay, (u) => { currentSpell.AfterEventDelay = u; });
+					Render_TwoColumn_TableInt("##SpellEditor_BeforeEventDelay", "Before Event Delay:", currentSpell.BeforeEventDelay, (u) => { currentSpell.BeforeEventDelay = u; });
+					Render_TwoColumn_TableInt("##SpellEditor_AfterEventDelay", "After Event Delay:", currentSpell.AfterEventDelay, (u) => { currentSpell.AfterEventDelay = u; });
 
-					RenderTableIntEditRow("##SpellEditor_AfterCastDelay", "After Cast Delay:", currentSpell.AfterCastDelay, (u) => { currentSpell.AfterCastDelay = u; });
-					RenderTableIntEditRow("##SpellEditor_AfterCastCompletedDelay", "After Cast Completed Delay:", currentSpell.AfterCastCompletedDelay, (u) => { currentSpell.AfterCastCompletedDelay = u; });
+					Render_TwoColumn_TableInt("##SpellEditor_AfterCastDelay", "After Cast Delay:", currentSpell.AfterCastDelay, (u) => { currentSpell.AfterCastDelay = u; });
+					Render_TwoColumn_TableInt("##SpellEditor_AfterCastCompletedDelay", "After Cast Completed Delay:", currentSpell.AfterCastCompletedDelay, (u) => { currentSpell.AfterCastCompletedDelay = u; });
 
 
-					RenderTableIntEditRow("##SpellEditor_MaxTries", "Max Tries:", currentSpell.MaxTries, (u) => { currentSpell.MaxTries = u; });
-					RenderTableIntEditRow("##SpellEditor_SongRefreshTime", "Song Refresh Time:", currentSpell.SongRefreshTime, (u) => { currentSpell.SongRefreshTime = u; });
+					Render_TwoColumn_TableInt("##SpellEditor_MaxTries", "Max Tries:", currentSpell.MaxTries, (u) => { currentSpell.MaxTries = u; });
+					Render_TwoColumn_TableInt("##SpellEditor_SongRefreshTime", "Song Refresh Time:", currentSpell.SongRefreshTime, (u) => { currentSpell.SongRefreshTime = u; });
 
 				}
 				finally
@@ -1773,11 +1773,11 @@ namespace E3Core.UI.Windows.CharacterSettings
 				{
 					imgui_TableSetupColumn("Label", (int)LabelColumnFlags, 0f);
 					imgui_TableSetupColumn("Value", (int)ValueColumnFlags, 0f);
-					RenderTableTextEditRow("##SpellEditor_BeforeSpell", "Before Spell:", currentSpell.BeforeSpell, (u) => { currentSpell.BeforeSpell = u; });
-					RenderTableTextEditRow("##SpellEditor_AfterSpell", "After Spell:", currentSpell.AfterSpell, (u) => { currentSpell.AfterSpell = u; });
-					RenderTableTextEditRow("##SpellEditor_BeforeEvent", "Before Event:", currentSpell.BeforeEventKeys, (u) => { currentSpell.BeforeEventKeys = u; });
-					RenderTableTextEditRow("##SpellEditor_AfterEvent", "After Event:", currentSpell.AfterEventKeys, (u) => { currentSpell.AfterEventKeys = u; });
-					RenderTableTextEditRow("##SpellEditor_Regent", "Regent:", currentSpell.Reagent, (u) => { currentSpell.Reagent = u; });
+					Render_TwoColumn_TableText("##SpellEditor_BeforeSpell", "Before Spell:", currentSpell.BeforeSpell, (u) => { currentSpell.BeforeSpell = u; });
+					Render_TwoColumn_TableText("##SpellEditor_AfterSpell", "After Spell:", currentSpell.AfterSpell, (u) => { currentSpell.AfterSpell = u; });
+					Render_TwoColumn_TableText("##SpellEditor_BeforeEvent", "Before Event:", currentSpell.BeforeEventKeys, (u) => { currentSpell.BeforeEventKeys = u; });
+					Render_TwoColumn_TableText("##SpellEditor_AfterEvent", "After Event:", currentSpell.AfterEventKeys, (u) => { currentSpell.AfterEventKeys = u; });
+					Render_TwoColumn_TableText("##SpellEditor_Regent", "Regent:", currentSpell.Reagent, (u) => { currentSpell.Reagent = u; });
 				}
 				finally
 				{
@@ -1793,7 +1793,7 @@ namespace E3Core.UI.Windows.CharacterSettings
 				{
 					imgui_TableSetupColumn("Label", (int)LabelColumnFlags, 0f);
 					imgui_TableSetupColumn("Value", (int)ValueColumnFlags, 0f);
-					RenderTableTextEditRow("##SpellEditor_ExcludeClasses", "Excluded Classes:", String.Join(",", currentSpell.ExcludedClasses.ToList()), (u) => {
+					Render_TwoColumn_TableText("##SpellEditor_ExcludeClasses", "Excluded Classes:", String.Join(",", currentSpell.ExcludedClasses.ToList()), (u) => {
 
 						string[] excludeClasses = u.Split(',');
 						foreach (var eclass in excludeClasses)
@@ -1806,7 +1806,7 @@ namespace E3Core.UI.Windows.CharacterSettings
 							}
 						}
 					}, tooltip: "Short class name: IE: WAR,PAL,SHD comma seperated");
-					RenderTableTextEditRow("##SpellEditor_ExcludeNames", "Excluded Names:", String.Join(",", currentSpell.ExcludedNames.ToList()), (u) => {
+					Render_TwoColumn_TableText("##SpellEditor_ExcludeNames", "Excluded Names:", String.Join(",", currentSpell.ExcludedNames.ToList()), (u) => {
 
 						string[] excludeClasses = u.Split(',');
 						foreach (var ename in excludeClasses)
@@ -1850,13 +1850,13 @@ namespace E3Core.UI.Windows.CharacterSettings
 					imgui_TableSetupColumn("FlagColumnLabel", (int)FlagLabelColumnFlags, flagLabelColumnWidth);
 					imgui_TableSetupColumn("FlagColumnCheckbox", (int)FlagCheckboxColumnFlags, FlagCheckboxColumnWidth);
 					imgui_TableSetupColumn("FlagColumnSpacer", (int)FlagSpacerColumnFlags, 0f);
-					RenderTableCheckboxEditRow("##Flag_NoInterrupt", "No Interrupt:", currentSpell.NoInterrupt, (u) => { currentSpell.NoInterrupt = u; }, tooltip: "Do not interrupt this cast for emergency heals, nowcasts, or queued commands once the bar starts.");
-					RenderTableCheckboxEditRow("##Flag_IgnoreStackRules", "Ignore Stack Rules:", currentSpell.IgnoreStackRules, (u) => { currentSpell.IgnoreStackRules = u; }, tooltip: "Skip the Spell.StacksTarget check; cast even if EQ reports the effect will not land due to stacking.");
-					RenderTableCheckboxEditRow("##Flag_NoTarget", "No Target:", currentSpell.NoTarget, (u) => { currentSpell.NoTarget = u; }, tooltip: "Leave the current target untouched so the spell can fire on self or without a target lock.\"");
-					RenderTableCheckboxEditRow("##Flag_NoAggro", "No Aggro:", currentSpell.NoAggro, (u) => { currentSpell.NoAggro = u; }, tooltip: "Suppress this spell if the mob currently has you targeted to reduce aggro spikes.");
-					RenderTableCheckboxEditRow("##Flag_NoMidSongCast", "No Mid Song Cast:", currentSpell.NoMidSongCast, (u) => { currentSpell.NoMidSongCast = u; }, tooltip: "Bards: block this action while a song is already channeling so twisting is not disrupted.");
-					RenderTableCheckboxEditRow("##Flag_GoM", "Gift of Mana Required:", currentSpell.GiftOfMana, (u) => { currentSpell.GiftOfMana = u; }, tooltip: "Only cast when a Gift of Mana-style proc is active, saving mana on expensive spells.");
-					RenderTableCheckboxEditRow("##Flag_Debug", "Debug output:", currentSpell.Debug, (u) => { currentSpell.Debug = u; }, tooltip: "Enable detailed logging for this spell to the MQ chat/log window.");
+					Render_TwoColumn_TableCheckbox("##Flag_NoInterrupt", "No Interrupt:", currentSpell.NoInterrupt, (u) => { currentSpell.NoInterrupt = u; }, tooltip: "Do not interrupt this cast for emergency heals, nowcasts, or queued commands once the bar starts.");
+					Render_TwoColumn_TableCheckbox("##Flag_IgnoreStackRules", "Ignore Stack Rules:", currentSpell.IgnoreStackRules, (u) => { currentSpell.IgnoreStackRules = u; }, tooltip: "Skip the Spell.StacksTarget check; cast even if EQ reports the effect will not land due to stacking.");
+					Render_TwoColumn_TableCheckbox("##Flag_NoTarget", "No Target:", currentSpell.NoTarget, (u) => { currentSpell.NoTarget = u; }, tooltip: "Leave the current target untouched so the spell can fire on self or without a target lock.\"");
+					Render_TwoColumn_TableCheckbox("##Flag_NoAggro", "No Aggro:", currentSpell.NoAggro, (u) => { currentSpell.NoAggro = u; }, tooltip: "Suppress this spell if the mob currently has you targeted to reduce aggro spikes.");
+					Render_TwoColumn_TableCheckbox("##Flag_NoMidSongCast", "No Mid Song Cast:", currentSpell.NoMidSongCast, (u) => { currentSpell.NoMidSongCast = u; }, tooltip: "Bards: block this action while a song is already channeling so twisting is not disrupted.");
+					Render_TwoColumn_TableCheckbox("##Flag_GoM", "Gift of Mana Required:", currentSpell.GiftOfMana, (u) => { currentSpell.GiftOfMana = u; }, tooltip: "Only cast when a Gift of Mana-style proc is active, saving mana on expensive spells.");
+					Render_TwoColumn_TableCheckbox("##Flag_Debug", "Debug output:", currentSpell.Debug, (u) => { currentSpell.Debug = u; }, tooltip: "Enable detailed logging for this spell to the MQ chat/log window.");
 				}
 				finally
 				{
@@ -2441,7 +2441,7 @@ namespace E3Core.UI.Windows.CharacterSettings
 			if (!_open_if) _state.Show_IfAppendModal = false;
 		}
 
-		private static void RenderThemeSettingsModal()
+		private static void Render_ThemeSettingsWindow()
 		{
 			bool modalOpen = imgui_Begin(_state.WinName_ThemeSettings, (int)(ImGuiWindowFlags.ImGuiWindowFlags_AlwaysAutoResize | ImGuiWindowFlags.ImGuiWindowFlags_NoDocking));
 			if (modalOpen)
@@ -2576,7 +2576,7 @@ namespace E3Core.UI.Windows.CharacterSettings
 			}
 		}
 
-		private static void RenderAllPlayersView()
+		private static void Render_MainWindow_AllPlayersView()
 		{
 			var mainWindowState = _state.GetState<State_MainWindow>();
 			var allPlayerState = _state.GetState<State_AllPlayers>();
@@ -2897,7 +2897,7 @@ namespace E3Core.UI.Windows.CharacterSettings
 		{
 			imgui_EndCombo();
 		}
-		private static void RenderDescriptionRichText(List<string> rawText)
+		private static void Render_RichText(List<string> rawText)
 		{
 			if (rawText.Count == 0)
 			{
@@ -2982,7 +2982,7 @@ namespace E3Core.UI.Windows.CharacterSettings
 		
 		
 	
-        private static void RenderTableTextEditRow(string id, string label,string current, Action<string> action, string tooltip = null, float width = SpellEditorDefaultTextWidth)
+        private static void Render_TwoColumn_TableText(string id, string label,string current, Action<string> action, string tooltip = null, float width = SpellEditorDefaultTextWidth)
 		{
 			var spellEditorState = _state.GetState<State_SpellEditor>();
 			imgui_TableNextRow();
@@ -3006,7 +3006,7 @@ namespace E3Core.UI.Windows.CharacterSettings
 				spellEditorState.IsDirty = true;
 			}
 		}
-		private static void RenderTableIntEditRow(string id, string label, int current, Action<Int32> action, string tooltip=null, float width = SpellEditorDefaultNumberWidth)
+		private static void Render_TwoColumn_TableInt(string id, string label, int current, Action<Int32> action, string tooltip=null, float width = SpellEditorDefaultNumberWidth)
 		{
 			var spellEditorState = _state.GetState<State_SpellEditor>();
 			imgui_TableNextRow();
@@ -3030,8 +3030,7 @@ namespace E3Core.UI.Windows.CharacterSettings
 				spellEditorState.IsDirty = true;
 			}
 		}
-
-		private static void RenderTableCheckboxEditRow(string id, string label, bool current, Action<bool> action, string tooltip = null, float width = SpellEditorDefaultCheckboxWidth)
+		private static void Render_TwoColumn_TableCheckbox(string id, string label, bool current, Action<bool> action, string tooltip = null, float width = SpellEditorDefaultCheckboxWidth)
 		{
 			var spellEditorState = _state.GetState<State_SpellEditor>();
 			imgui_TableNextRow();
