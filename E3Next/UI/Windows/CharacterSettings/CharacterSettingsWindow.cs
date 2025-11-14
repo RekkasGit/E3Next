@@ -1767,41 +1767,39 @@ namespace E3Core.UI.Windows.CharacterSettings
 			}
 		}
 
-		private static void RenderCastTargetHelperWindow()
+	private static void RenderCastTargetHelperWindow()
+	{
+		var spellEditorState = _state.GetState<State_SpellEditor>();
+		imgui_Begin_OpenFlagSet(CastTargetHelperWindowTitle, spellEditorState.ShowCastTargetHelper);
+		if (!imgui_Begin_OpenFlagGet(CastTargetHelperWindowTitle))
 		{
-			var spellEditorState = _state.GetState<State_SpellEditor>();
-			imgui_Begin_OpenFlagSet(CastTargetHelperWindowTitle, spellEditorState.ShowCastTargetHelper);
-			if (!imgui_Begin_OpenFlagGet(CastTargetHelperWindowTitle))
+			spellEditorState.ShowCastTargetHelper = false;
+			return;
+		}
+		Int32 helperFlags = (int)(ImGuiWindowFlags.ImGuiWindowFlags_AlwaysAutoResize | ImGuiWindowFlags.ImGuiWindowFlags_NoDocking | ImGuiWindowFlags.ImGuiWindowFlags_NoCollapse | ImGuiWindowFlags.ImGuiWindowFlags_NoResize);
+		if (imgui_Begin(CastTargetHelperWindowTitle, helperFlags))
+		{
+			imgui_TextColored(0.95f, 0.85f, 0.35f, 1.0f, "Cast Target Keywords");
+			imgui_Separator();
+			imgui_Text("- Specific bot or toon name: targets that character directly (case-insensitive).");
+			imgui_Text("- Self: always target yourself.");
+			imgui_Text("- bots: iterate through every connected bot in your network.");
+			imgui_Text("- gbots: limit the rotation to connected bots currently in your EQ group.");
+			string classList = string.Join(", ", EQClasses.ClassShortNames);
+			imgui_Text($"- Class short codes ({classList}): cast on each bot of that class.");
+			imgui_Text("- Leave blank to use the spell's natural target type.");
+			imgui_Separator();
+			if (imgui_Button("Close##CastTargetHelpClose"))
 			{
 				spellEditorState.ShowCastTargetHelper = false;
-				return;
-			}
-			Int32 helperFlags = (int)(ImGuiWindowFlags.ImGuiWindowFlags_AlwaysAutoResize | ImGuiWindowFlags.ImGuiWindowFlags_NoDocking | ImGuiWindowFlags.ImGuiWindowFlags_NoCollapse | ImGuiWindowFlags.ImGuiWindowFlags_NoResize);
-			bool open = imgui_Begin(CastTargetHelperWindowTitle, helperFlags);
-			if (open)
-			{
-				imgui_TextColored(0.95f, 0.85f, 0.35f, 1.0f, "Cast Target Keywords");
-				imgui_Separator();
-				imgui_Text("- Specific bot or toon name: targets that character directly (case-insensitive).");
-				imgui_Text("- Self: always target yourself.");
-				imgui_Text("- bots: iterate through every connected bot in your network.");
-				imgui_Text("- gbots: limit the rotation to connected bots currently in your EQ group.");
-				string classList = string.Join(", ", EQClasses.ClassShortNames);
-				imgui_Text($"- Class short codes ({classList}): cast on each bot of that class.");
-				imgui_Text("- Leave blank to use the spell's natural target type.");
-				imgui_Separator();
-				if (imgui_Button("Close##CastTargetHelpClose"))
-				{
-					spellEditorState.ShowCastTargetHelper = false;
-				}
-			}
-			imgui_End();
-			if (!open)
-			{
-				spellEditorState.ShowCastTargetHelper = false;
-				imgui_Begin_OpenFlagSet(CastTargetHelperWindowTitle, false);
 			}
 		}
+		imgui_End();
+		if (!imgui_Begin_OpenFlagGet(CastTargetHelperWindowTitle))
+		{
+			spellEditorState.ShowCastTargetHelper = false;
+		}
+	}
 
 		private static void RenderCastTargetPickerWindow()
 		{
