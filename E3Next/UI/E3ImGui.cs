@@ -1,20 +1,7 @@
 using System;
-using System.Collections.Generic;
-using System.Linq;
 using System.Collections.Concurrent;
-using System.IO;
-using System.Text;
-using IniParser.Model;
-using E3Core.Processors;
-using NetMQ;
-using NetMQ.Sockets;
-using Google.Protobuf;
-using System.Runtime.InteropServices;
-using System.Diagnostics;
 using System.Runtime.CompilerServices;
-using System.Globalization;
-using E3Core.Utility;
-using E3Core.Data;
+using System.Windows.Forms;
 
 namespace MonoCore
 {
@@ -99,7 +86,20 @@ namespace MonoCore
 			ButtonTextAlign,        // ImVec2
 			SelectableTextAlign     // ImVec2
 		}
+		public enum ImGuiChildFlags
+		{
+			None = 0,
+			Borders = 1 << 0,   // Show an outer border and enable WindowPadding. (IMPORTANT: this is always == 1 == true for legacy reason)
+			AlwaysUseWindowPadding = 1 << 1,   // Pad with style.WindowPadding even if no border are drawn (no padding by default for non-bordered child windows because it makes more sense)
+			ResizeX = 1 << 2,   // Allow resize from right border (layout direction). Enable .ini saving (unless ImGuiWindowFlags_NoSavedSettings passed to window flags)
+			ResizeY = 1 << 3,   // Allow resize from bottom border (layout direction). "
+			AutoResizeX = 1 << 4,   // Enable auto-resizing width. Read "IMPORTANT: Size measurement" details above.
+			AutoResizeY = 1 << 5,   // Enable auto-resizing height. Read "IMPORTANT: Size measurement" details above.
+			AlwaysAutoResize = 1 << 6,   // Combined with AutoResizeX/AutoResizeY. Always measure size even when child is hidden, always return true, always disable clipping optimization! NOT RECOMMENDED.
+			FrameStyle = 1 << 7,   // Style the child window like a framed item: use FrameBg, FrameRounding, FrameBorderSize, FramePadding instead of ChildBg, ChildRounding, ChildBorderSize, WindowPadding.
+			NavFlattened = 1 << 8,   // [BETA] Share focus scope, allow keyboard/gamepad navigation to cross over parent border to this child or between sibling child windows.
 
+		};
 		public enum ImGuiCol
 		{
 			Text,
@@ -782,7 +782,228 @@ namespace MonoCore
                 RegisteredWindows.TryAdd(windowName, method);
             }
         }
+		public class ImGUIWindow : IDisposable
+		{
 
+			public bool Begin(string id, int window_flags)
+			{
+				return imgui_Begin(id, window_flags);
+			}
+			#region objectPoolingStuff
+			//private constructor, needs to be created so that you are forced to use the pool.
+			private ImGUIWindow()
+			{
+
+			}
+			public static ImGUIWindow Aquire()
+			{
+				ImGUIWindow obj;
+				if (!StaticObjectPool.TryPop<ImGUIWindow>(out obj))
+				{
+					obj = new ImGUIWindow();
+				}
+
+				return obj;
+			}
+			public void Dispose()
+			{
+				/*ImGui::End():
+				Every ImGui::Begin() call must be paired with an 
+				ImGui::End() call to properly close the window context and ensure correct rendering.*/
+
+				imgui_End();
+				StaticObjectPool.Push(this);
+			}
+			~ImGUIWindow()
+			{
+				//DO NOT CALL DISPOSE FROM THE FINALIZER! This should only ever be used in using statements
+				//if this is called, it will cause the domain to hang in the GC when shuttind down
+				//This is only here to warn you
+
+			}
+
+			#endregion
+		}
+		public class ImGUITree : IDisposable
+		{
+			public bool IsOpen = false;
+			public bool TreeNodeEx(string id, int flags)
+			{
+				IsOpen = imgui_TreeNodeEx(id, flags);
+				return IsOpen;
+			}
+			#region objectPoolingStuff
+			//private constructor, needs to be created so that you are forced to use the pool.
+			private ImGUITree()
+			{
+
+			}
+			public static ImGUITree Aquire()
+			{
+				ImGUITree obj;
+				if (!StaticObjectPool.TryPop<ImGUITree>(out obj))
+				{
+					obj = new ImGUITree();
+				}
+
+				return obj;
+			}
+			public void Dispose()
+			{
+				//only call pop if the original call was set to open per IMGUI docs
+				/*ImGui::TreePop():
+				 * When TreeNodeEx returns true, you must call ImGui::TreePop() 
+				 * after drawing all the child elements to correctly manage the tree's indentation and state
+				 */
+				if (IsOpen)
+				{
+					imgui_TreePop();
+				}
+				IsOpen = false;
+				StaticObjectPool.Push(this);
+			}
+			~ImGUITree()
+			{
+				//DO NOT CALL DISPOSE FROM THE FINALIZER! This should only ever be used in using statements
+				//if this is called, it will cause the domain to hang in the GC when shuttind down
+				//This is only here to warn you
+
+			}
+
+			#endregion
+		}
+		public class ImGUIPopUpContext : IDisposable
+		{
+			bool IsOpen = false;
+			public bool BeginPopupContextItem(string id, int flags)
+			{
+				IsOpen = imgui_BeginPopupContextItem(id, flags);
+				return IsOpen;
+			}
+			#region objectPoolingStuff
+			//private constructor, needs to be created so that you are forced to use the pool.
+			private ImGUIPopUpContext()
+			{
+
+			}
+			public static ImGUIPopUpContext Aquire()
+			{
+				ImGUIPopUpContext obj;
+				if (!StaticObjectPool.TryPop<ImGUIPopUpContext>(out obj))
+				{
+					obj = new ImGUIPopUpContext();
+				}
+
+				return obj;
+			}
+			public void Dispose()
+			{
+				/*Call ImGui::EndPopup() after drawing the contents to properly close the popup scope.
+				 aka, only close if it was open to begin with*/
+
+				if (IsOpen)
+				{
+					imgui_EndPopup();
+				}
+				IsOpen = false;
+				StaticObjectPool.Push(this);
+			}
+			~ImGUIPopUpContext()
+			{
+				//DO NOT CALL DISPOSE FROM THE FINALIZER! This should only ever be used in using statements
+				//if this is called, it will cause the domain to hang in the GC when shuttind down
+				//This is only here to warn you
+
+			}
+
+			#endregion
+		}
+		public class ImGUITable : IDisposable
+		{
+			public bool IsOpen = false;
+			public bool BeginTable(string id, int columns, int flags, float outerWidth, float outerHeight)
+			{
+				IsOpen = imgui_BeginTable(id, columns, flags, outerWidth, outerHeight);
+				return IsOpen;
+			}
+			#region objectPoolingStuff
+			//private constructor, needs to be created so that you are forced to use the pool.
+			private ImGUITable()
+			{
+
+			}
+			public static ImGUITable Aquire()
+			{
+				ImGUITable obj;
+				if (!StaticObjectPool.TryPop<ImGUITable>(out obj))
+				{
+					obj = new ImGUITable();
+				}
+
+				return obj;
+			}
+			public void Dispose()
+			{
+				/*
+				Return Value:
+				ImGui::BeginTable() returns true if the table is visible and active, and false otherwise. 
+				You should only call ImGui::EndTable() if BeginTable() returns true.
+				*/
+				if(IsOpen)
+				{
+					imgui_EndTable();
+				}
+				IsOpen = false;
+				StaticObjectPool.Push(this);
+			}
+			~ImGUITable()
+			{
+				//DO NOT CALL DISPOSE FROM THE FINALIZER! This should only ever be used in using statements
+				//if this is called, it will cause the domain to hang in the GC when shuttind down
+				//This is only here to warn you
+
+			}
+
+			#endregion
+		}
+		public class ImGUIChild : IDisposable
+		{
+
+			public bool BeginChild(string id, float width, float height, int child_flags, int window_flags)
+			{
+				return imgui_BeginChild(id, width, height, child_flags, window_flags);
+			}
+			#region objectPoolingStuff
+			//private constructor, needs to be created so that you are forced to use the pool.
+			private ImGUIChild()
+			{
+
+			}
+			public static ImGUIChild Aquire()
+			{
+				ImGUIChild obj;
+				if (!StaticObjectPool.TryPop<ImGUIChild>(out obj))
+				{
+					obj = new ImGUIChild();
+				}
+
+				return obj;
+			}
+			public void Dispose()
+			{
+				imgui_EndChild();
+				StaticObjectPool.Push(this);
+			}
+			~ImGUIChild()
+			{
+				//DO NOT CALL DISPOSE FROM THE FINALIZER! This should only ever be used in using statements
+				//if this is called, it will cause the domain to hang in the GC when shuttind down
+				//This is only here to warn you
+
+			}
+
+			#endregion
+		}
 		public class PushStyle : IDisposable
 		{
 

@@ -13,6 +13,7 @@ using System.IO;
 using System.Linq;
 using System.Text;
 using System.Text.RegularExpressions;
+using System.Web;
 using static MonoCore.E3ImGUI;
 using data = E3Core.UI.Windows.CharacterSettings.CharacterSettingsWindowHelpers;
 
@@ -174,26 +175,29 @@ namespace E3Core.UI.Windows.CharacterSettings
 				// Apply current theme
 				E3ImGUI.PushCurrentTheme();
 				// No size constraints - allow window to be resized to any size
-				if (imgui_Begin(_windowName, (int)(ImGuiWindowFlags.ImGuiWindowFlags_NoCollapse | ImGuiWindowFlags.ImGuiWindowFlags_NoDocking)))
+				try
 				{
-					try
+					using (var window = ImGUIWindow.Aquire())
 					{
-						Render_MainWindow_Header();
-						imgui_Separator();
-						Render_MainWindow_CharIniSelector();
-						imgui_Separator();
-						Render_MainWindow_SearchBar();
-						var allPlayersState = _state.GetState<State_AllPlayers>();
-						if (allPlayersState.ShowWindow) Render_MainWindow_AllPlayersView();
-						if (!allPlayersState.ShowWindow) Render_MainWindow_ConfigEditor();
-						if (_state.Show_ThemeSettings) Render_ThemeSettingsWindow();
-						if (_state.Show_Donate) RenderDonateModal();
+						if (window.Begin(_windowName, (int)(ImGuiWindowFlags.ImGuiWindowFlags_NoCollapse | ImGuiWindowFlags.ImGuiWindowFlags_NoDocking)))
+						{
+
+							Render_MainWindow_Header();
+							imgui_Separator();
+							Render_MainWindow_CharIniSelector();
+							imgui_Separator();
+							Render_MainWindow_SearchBar();
+							var allPlayersState = _state.GetState<State_AllPlayers>();
+							if (allPlayersState.ShowWindow) Render_MainWindow_AllPlayersView();
+							if (!allPlayersState.ShowWindow) Render_MainWindow_ConfigEditor();
+							//if (_state.Show_ThemeSettings) Render_ThemeSettingsWindow();
+							//if (_state.Show_Donate) RenderDonateModal();
+						}
 					}
-					finally
-					{
-						imgui_End();
-						PopCurrentTheme();
-					}
+				}
+				finally
+				{
+					PopCurrentTheme();
 				}
 			}
 		}
@@ -201,14 +205,14 @@ namespace E3Core.UI.Windows.CharacterSettings
 		private static void Render_MainWindow_Header()
 		{
 			// Header bar: version text on left, buttons on right
-			if (imgui_BeginTable("E3HeaderBar", 2, (int)ImGuiTableFlags.ImGuiTableFlags_SizingStretchProp, imgui_GetContentRegionAvailX(), 0))
+
+			using (var table = ImGUITable.Aquire())
 			{
-				try
+				if (table.BeginTable("E3HeaderBar", 2, (int)ImGuiTableFlags.ImGuiTableFlags_SizingStretchProp, imgui_GetContentRegionAvailX(), 0))
 				{
 					imgui_TableSetupColumn("Left", 0, 0.70f);
 					imgui_TableSetupColumn("Right", 0, 0.30f);
 					imgui_TableNextRow();
-
 					//Left: version / build text
 					imgui_TableNextColumn();
 					imgui_TextColored(0.95f, 0.85f, 0.35f, 1.0f, _versionInfo);
@@ -240,10 +244,6 @@ namespace E3Core.UI.Windows.CharacterSettings
 					{
 						imgui_Begin_OpenFlagSet(_windowName, false);
 					}
-				}
-				finally
-				{
-					imgui_EndTable();
 				}
 			}
 		}
@@ -434,33 +434,22 @@ namespace E3Core.UI.Windows.CharacterSettings
 			float maxLeftPaneWidth = Math.Max(200f, availX - 240f);
 			leftPaneWidth = Math.Max(200f, Math.Min(leftPaneWidth, maxLeftPaneWidth));
 
-			if (imgui_BeginChild("E3Config_SectionTreePane", leftPaneWidth, regionHeight, ImGuiChildFlags_Borders | ImGuiChildFlags_ResizeX | ImGuiChildFlags_ResizeY, 0))
+			using (var child = ImGUIChild.Aquire())
 			{
-				try
+				if (child.BeginChild("E3Config_SectionTreePane", leftPaneWidth, regionHeight, ImGuiChildFlags_Borders | ImGuiChildFlags_ResizeX | ImGuiChildFlags_ResizeY, 0))
 				{
 					Render_MainWindow_ConfigEditor_SelectionTree(pd);
 				}
-				finally
-				{
-					imgui_EndChild();
-				}
 			}
 
-
 			imgui_SameLine();
-			if (imgui_BeginChild("E3Config_EditorPane", 0, regionHeight, ImGuiChildFlags_Borders | ImGuiChildFlags_ResizeY, 0))
+			using (var child = ImGUIChild.Aquire())
 			{
-				try
+				if (child.BeginChild("E3Config_EditorPane", 0, regionHeight, ImGuiChildFlags_Borders | ImGuiChildFlags_ResizeY, 0))
 				{
 					Render_MainWindow_ConfigEditor_RightPane(pd);
 				}
-				finally
-				{
-					imgui_EndChild();
-
-				}
 			}
-
 			//Ensure popups/ modals render even when the tools column is hidden
 			SectionData activeSection = data.GetCurrentSectionData();
 			Render_Active_Windows(activeSection);
@@ -474,19 +463,13 @@ namespace E3Core.UI.Windows.CharacterSettings
 			float paneAvailY = imgui_GetContentRegionAvailY();
 			float reservedSpellEditorSpace = (state.Show_ShowIntegratedEditor && state.SelectedValueIndex >= 0) ? 340f : 0f;
 			float contentHeight = Math.Max(160f, paneAvailY - reservedSpellEditorSpace);
-
-			if (imgui_BeginChild("E3Config_EditorPane_Content", 0, contentHeight, ImGuiChildFlags_None, 0))
+			using (var child = ImGUIChild.Aquire())
 			{
-				try
+				if (child.BeginChild("E3Config_EditorPane_Content", 0, contentHeight, ImGuiChildFlags_None, 0))
 				{
 					Render_MainWindow_ConfigEditor_RightPaneContent(pd);
 				}
-				finally
-				{
-					imgui_EndChild();
-				}
 			}
-
 
 			if (state.Show_ShowIntegratedEditor && state.SelectedValueIndex >= 0)
 			{
@@ -550,18 +533,14 @@ namespace E3Core.UI.Windows.CharacterSettings
 
 			// Tools pane takes remaining space
 			toolsWidth = Math.Max(120f, availX - valuesWidth - spacing);
-
-			if (imgui_BeginChild("E3Config_ValuesPane", valuesWidth, availY, ImGuiChildFlags_Borders | ImGuiChildFlags_ResizeX | ImGuiChildFlags_ResizeY, 0))
+			using (var child = ImGUIChild.Aquire())
 			{
-				try
+				if (child.BeginChild("E3Config_ValuesPane", valuesWidth, availY, ImGuiChildFlags_Borders | ImGuiChildFlags_ResizeX | ImGuiChildFlags_ResizeY, 0))
 				{
 					Render_MainWindow_ConfigEditor_Values(pd);
 				}
-				finally
-				{
-					imgui_EndChild();
-				}
 			}
+
 
 			// Store the actual width after user potentially resized it
 			float newValuesWidth = imgui_GetItemRectMaxX() - imgui_GetItemRectMinX();
@@ -571,32 +550,29 @@ namespace E3Core.UI.Windows.CharacterSettings
 			}
 
 			imgui_SameLine();
-			if (imgui_BeginChild("E3Config_ToolsPane", toolsWidth, availY, ImGuiChildFlags_Borders | ImGuiChildFlags_ResizeY, 0))
+			using (var child = ImGUIChild.Aquire())
 			{
-				try
+				if (child.BeginChild("E3Config_ToolsPane", toolsWidth, availY, ImGuiChildFlags_Borders | ImGuiChildFlags_ResizeY, 0))
 				{
 					Render_MainWindow_ConfigEditor_Tools(pd);
 				}
-				finally
-				{
-					imgui_EndChild();
-				}
 			}
+
 		}
 		public static void Render_MainWindow_ConfigEditor_SelectionTree(IniData pd)
 		{
 			var state = _state.GetState<State_MainWindow>();
 			//Use a 1 - column table with RowBg to get built-in alternating backgrounds
 			int tableFlags = (int)(ImGuiTableFlags.ImGuiTableFlags_RowBg | ImGuiTableFlags.ImGuiTableFlags_ScrollY);
-			if (imgui_BeginTable("SectionsTreeTable", 1, tableFlags, 0, 0))
+
+			using (var table = ImGUITable.Aquire())
 			{
-				try
+				if (table.BeginTable("SectionsTreeTable", 1, tableFlags, 0, 0))
 				{
 					imgui_TableSetupColumn("Section", 0, 0.35f);
 					var sectionsToRender = GetSectionsForDisplay();
 					imgui_TableNextRow();
 					imgui_TableNextColumn();
-
 					if (sectionsToRender.Count == 0)
 					{
 						imgui_TextColored(0.95f, 0.75f, 0.75f, 1.0f, "No sections match the current search.");
@@ -621,110 +597,107 @@ namespace E3Core.UI.Windows.CharacterSettings
 							}
 
 							string sectionLabel = $"{sec}##section_{sec}";
-							bool nodeOpen = imgui_TreeNodeEx(sectionLabel, treeFlagsSection);
-							bool itemHovered = imgui_IsItemHovered();
-
-							if (itemHovered && imgui_IsMouseClicked(0))
+							using (var tree = ImGUITree.Aquire())
 							{
-								state.SelectedSection = sec;
-								_state.ClearAddInLine();
-							}
-
-							if (sec.Equals("Ifs", StringComparison.OrdinalIgnoreCase) || sec.Equals("Burn", StringComparison.OrdinalIgnoreCase))
-							{
-								if (itemHovered && imgui_IsMouseClicked(1))
+								tree.TreeNodeEx(sectionLabel, treeFlagsSection);
+								bool itemHovered = imgui_IsItemHovered();
+								if (itemHovered && imgui_IsMouseClicked(0))
 								{
-									state.Show_ContextMenu = true;
-									state.ContextMenuFor = sec;
 									state.SelectedSection = sec;
+									_state.ClearAddInLine();
 								}
-							}
 
-							if (sec.Equals("Ifs", StringComparison.OrdinalIgnoreCase))
-							{
-								if (imgui_BeginPopupContextItem(null, 1))
+								if (sec.Equals("Ifs", StringComparison.OrdinalIgnoreCase) || sec.Equals("Burn", StringComparison.OrdinalIgnoreCase))
 								{
-									imgui_PushStyleColor((int)ImGuiCol.Text, 0.95f, 0.85f, 0.35f, 1.0f);
-									bool addIfs = imgui_MenuItem("Add New Ifs");
-									imgui_PopStyleColor(1);
-
-									if (addIfs)
+									if (itemHovered && imgui_IsMouseClicked(1))
 									{
-										_state.ClearAddInLine();
-										state.Show_AddInLine = true;
-										state.SelectedAddInLine = "Ifs";
-										state.SelectedSection = "Ifs";
-										state.SelectedValueIndex = -1;
-
-									}
-
-									imgui_EndPopup();
-								}
-							}
-							else if (sec.Equals("Burn", StringComparison.OrdinalIgnoreCase))
-							{
-								if (imgui_BeginPopupContextItem(null, 1))
-								{
-									imgui_PushStyleColor((int)ImGuiCol.Text, 0.95f, 0.85f, 0.35f, 1.0f);
-									bool addBurn = imgui_MenuItem("Add New Burn");
-									imgui_PopStyleColor(1);
-
-									if (addBurn)
-									{
-										_state.ClearAddInLine();
-										state.Show_AddInLine = true;
-										state.SelectedAddInLine = "Burn";
-										state.SelectedSection = "Burn";
-										state.SelectedValueIndex = -1;
-
-									}
-
-									imgui_EndPopup();
-								}
-							}
-
-							_cfgSectionExpanded[sec] = nodeOpen;
-							if (nodeOpen)
-							{
-								var keys = secData.Keys.Select(k => k.KeyName).ToArray();
-								foreach (var key in keys)
-								{
-									//imgui_TableNextRow();
-									//imgui_TableNextColumn();
-
-									bool keySelected = string.Equals(state.SelectedSection, sec, StringComparison.OrdinalIgnoreCase) &&
-										string.Equals(state.SelectedKey, key, StringComparison.OrdinalIgnoreCase);
-
-									string keyLabel = $"  {key}"; // simple indent under section
-									if (imgui_Selectable(keyLabel, keySelected))
-									{
-										_state.ClearAddInLine();
+										state.Show_ContextMenu = true;
+										state.ContextMenuFor = sec;
 										state.SelectedSection = sec;
-										state.SelectedKey = key;
-										state.SelectedValueIndex = -1;
 									}
-									if(data._customKeySections.Contains(sec))
+								}
+
+								if (sec.Equals("Ifs", StringComparison.OrdinalIgnoreCase))
+								{
+									using (var popup = ImGUIPopUpContext.Aquire())
 									{
-										// Context menu for all keys (right-click)
-										if (imgui_BeginPopupContextItem(null, 1))
+										if (popup.BeginPopupContextItem(null, 1))
 										{
-											if (imgui_MenuItem("Delete Key"))
+											imgui_PushStyleColor((int)ImGuiCol.Text, 0.95f, 0.85f, 0.35f, 1.0f);
+											bool addIfs = imgui_MenuItem("Add New Ifs");
+											imgui_PopStyleColor(1);
+
+											if (addIfs)
 											{
-												data.DeleteKeyFromActiveIni(sec, key);
+												_state.ClearAddInLine();
+												state.Show_AddInLine = true;
+												state.SelectedAddInLine = "Ifs";
+												state.SelectedSection = "Ifs";
+												state.SelectedValueIndex = -1;
 											}
-											imgui_EndPopup();
+										}
+									}
+								}
+								else if (sec.Equals("Burn", StringComparison.OrdinalIgnoreCase))
+								{
+									using (var popup = ImGUIPopUpContext.Aquire())
+									{
+										if (popup.BeginPopupContextItem(null, 1))
+										{
+											imgui_PushStyleColor((int)ImGuiCol.Text, 0.95f, 0.85f, 0.35f, 1.0f);
+											bool addBurn = imgui_MenuItem("Add New Burn");
+											imgui_PopStyleColor(1);
+
+											if (addBurn)
+											{
+												_state.ClearAddInLine();
+												state.Show_AddInLine = true;
+												state.SelectedAddInLine = "Burn";
+												state.SelectedSection = "Burn";
+												state.SelectedValueIndex = -1;
+
+											}
 										}
 									}
 								}
 
-								imgui_TreePop();
+								_cfgSectionExpanded[sec] = tree.IsOpen;
+								if (tree.IsOpen)
+								{
+									var keys = secData.Keys.Select(k => k.KeyName).ToArray();
+									foreach (var key in keys)
+									{
+										bool keySelected = string.Equals(state.SelectedSection, sec, StringComparison.OrdinalIgnoreCase) &&
+											string.Equals(state.SelectedKey, key, StringComparison.OrdinalIgnoreCase);
+
+										string keyLabel = $"  {key}"; // simple indent under section
+										if (imgui_Selectable(keyLabel, keySelected))
+										{
+											_state.ClearAddInLine();
+											state.SelectedSection = sec;
+											state.SelectedKey = key;
+											state.SelectedValueIndex = -1;
+										}
+										if (data._customKeySections.Contains(sec))
+										{
+											// Context menu for all keys (right-click)
+											using (var popup = ImGUIPopUpContext.Aquire())
+											{
+												if (popup.BeginPopupContextItem(null, 1))
+												{
+													if (imgui_MenuItem("Delete Key"))
+													{
+														data.DeleteKeyFromActiveIni(sec, key);
+													}
+												}
+											}
+										}
+									}
+									//imgui_TreePop();
+								}
 							}
 						}
 					}
-				}
-				finally
-				{
-					imgui_EndTable();
 				}
 			}
 		}
@@ -1913,7 +1886,7 @@ namespace E3Core.UI.Windows.CharacterSettings
 						imgui_EndChild();
 					}
 				}
-				
+
 
 				imgui_Separator();
 				imgui_Text("Quick keywords:");
@@ -2768,7 +2741,7 @@ namespace E3Core.UI.Windows.CharacterSettings
 		{
 			var mainWindowState = _state.GetState<State_MainWindow>();
 
-			if(imgui_Begin(_state.WinName_IfAppendModal, (int)(ImGuiWindowFlags.ImGuiWindowFlags_AlwaysAutoResize | ImGuiWindowFlags.ImGuiWindowFlags_NoDocking)))
+			if (imgui_Begin(_state.WinName_IfAppendModal, (int)(ImGuiWindowFlags.ImGuiWindowFlags_AlwaysAutoResize | ImGuiWindowFlags.ImGuiWindowFlags_NoDocking)))
 			{
 				try
 				{
@@ -3264,7 +3237,7 @@ namespace E3Core.UI.Windows.CharacterSettings
 						imgui_EndChild();
 					}
 				}
-				
+
 				imgui_SameLine();
 				if (imgui_Button("Import All"))
 				{
@@ -4393,16 +4366,15 @@ namespace E3Core.UI.Windows.CharacterSettings
 		private static void RenderToonPickerModal(SectionData selectedSection)
 		{
 			var mainWindowState = _state.GetState<State_MainWindow>();
-
-			if (imgui_Begin(_state.WinName_ToonPickerModal, (int)(ImGuiWindowFlags.ImGuiWindowFlags_AlwaysAutoResize | ImGuiWindowFlags.ImGuiWindowFlags_NoDocking)))
+			using (var window = ImGUIWindow.Aquire())
 			{
-				try
+				if (window.Begin(_state.WinName_ToonPickerModal, (int)(ImGuiWindowFlags.ImGuiWindowFlags_AlwaysAutoResize | ImGuiWindowFlags.ImGuiWindowFlags_NoDocking)))
 				{
 					if (!string.IsNullOrEmpty(_cfgToonPickerStatus)) imgui_Text(_cfgToonPickerStatus);
 					float h = 300f; float w = 420f;
-					if (imgui_BeginChild("ToonList", w, h, 1, 0))
+					using (var child = ImGUIChild.Aquire())
 					{
-						try
+						if (child.BeginChild("ToonList", w, h, 1, 0))
 						{
 							var list = _cfgToonCandidates ?? new List<string>();
 							var kd = selectedSection?.Keys?.GetKeyData(mainWindowState.SelectedKey ?? string.Empty);
@@ -4428,19 +4400,10 @@ namespace E3Core.UI.Windows.CharacterSettings
 								i++;
 							}
 						}
-						finally
-						{
-							imgui_EndChild();
-						}
 					}
 					if (imgui_Button("Close")) _state.Show_ToonPickerModal = false;
 				}
-				finally
-				{
-					imgui_End();
-				}
 			}
-			
 		}
 		// Spell Info modal (read-only details) using real ImGui tables + colored labels
 		private static void RenderSpellInfoModal()
