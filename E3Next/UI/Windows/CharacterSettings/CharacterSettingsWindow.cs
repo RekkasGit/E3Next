@@ -2542,7 +2542,7 @@ namespace E3Core.UI.Windows.CharacterSettings
 		}
 		private static void Render_CatalogAddWindow_RightPanel(float rightW, float listH, SectionData selectedSection)
 		{
-			var state = _state.GetState<State_CatalogWindow>();
+			var catalogState = _state.GetState<State_CatalogWindow>();
 			var mainWindowState = _state.GetState<State_MainWindow>();
 			// -------- RIGHT: Info Panel --------
 			if (imgui_BeginChild("InfoPanel", rightW, listH, 1, 0))
@@ -2551,16 +2551,16 @@ namespace E3Core.UI.Windows.CharacterSettings
 				{
 					imgui_TextColored(0.9f, 0.95f, 1.0f, 1.0f, "Info");
 					// Add button on same line as Info header, right-aligned
-					if (state.SelectedCategorySpell != null)
+					if (catalogState.SelectedCategorySpell != null)
 					{
-						string addLabel = (state.Mode == CatalogMode.BardSong) ? "Use" : "Add";
+						string addLabel = (catalogState.Mode == CatalogMode.BardSong) ? "Use" : "Add";
 						float buttonWidth = 60f;
 						imgui_SameLine(rightW - buttonWidth - 10f);
 						if (imgui_ButtonEx($"{addLabel}##add_selected", buttonWidth, 0))
 						{
-							if (state.Mode == CatalogMode.BardSong)
+							if (catalogState.Mode == CatalogMode.BardSong)
 							{
-								ApplyBardSongSelection(state.SelectedCategorySpell.Name ?? string.Empty);
+								ApplyBardSongSelection(catalogState.SelectedCategorySpell.Name ?? string.Empty);
 							}
 							else
 							{
@@ -2569,21 +2569,23 @@ namespace E3Core.UI.Windows.CharacterSettings
 								if (kd != null)
 								{
 									var vals = GetValues(kd);
-									string v = (state.SelectedCategorySpell.Name ?? string.Empty).Trim();
-									if (state.ReplaceMode && state.ReplaceIndex >= 0 && state.ReplaceIndex < vals.Count)
+									string v = (catalogState.SelectedCategorySpell.Name ?? string.Empty).Trim();
+									if (catalogState.ReplaceMode && catalogState.ReplaceIndex >= 0 && catalogState.ReplaceIndex < vals.Count)
 									{
-										vals[state.ReplaceIndex] = v;
-										mainWindowState.PendingValueSelection = state.ReplaceIndex;
-										state.ReplaceMode = false;
-										state.ReplaceIndex = -1;
+										vals[catalogState.ReplaceIndex] = v;
+										mainWindowState.PendingValueSelection = catalogState.ReplaceIndex;
+										catalogState.ReplaceMode = false;
+										catalogState.ReplaceIndex = -1;
 										data.RefreshEditableSpellState(force:true);
 										_state.Show_AddModal = false;//close the window
 										
 									}
 									else if (!vals.Contains(v, StringComparer.OrdinalIgnoreCase))
 									{
+										if (vals.Count == 1 && String.IsNullOrWhiteSpace(vals[0])) vals.Clear();
 										vals.Add(v);
 										mainWindowState.PendingValueSelection = vals.Count - 1;
+										data.RefreshEditableSpellState(force: true);
 										_state.Show_AddModal = false;//close the window
 									}
 								}
@@ -2593,22 +2595,22 @@ namespace E3Core.UI.Windows.CharacterSettings
 
 					imgui_Separator();
 
-					if (state.SelectedCategorySpell != null)
+					if (catalogState.SelectedCategorySpell != null)
 					{
 						// Display name and icon
-						imgui_DrawSpellIconByIconIndex(state.SelectedCategorySpell.SpellIcon, 40.0f);
+						imgui_DrawSpellIconByIconIndex(catalogState.SelectedCategorySpell.SpellIcon, 40.0f);
 						imgui_SameLine();
-						imgui_TextColored(0.95f, 0.85f, 0.35f, 1.0f, state.SelectedCategorySpell.Name ?? string.Empty);
+						imgui_TextColored(0.95f, 0.85f, 0.35f, 1.0f, catalogState.SelectedCategorySpell.Name ?? string.Empty);
 
 						// Show additional info (mana, cast time, recast, etc.)
-						RenderSpellAdditionalInfo(state.SelectedCategorySpell);
+						RenderSpellAdditionalInfo(catalogState.SelectedCategorySpell);
 
 						// Show description if available
-						if (!string.IsNullOrEmpty(state.SelectedCategorySpell.Description))
+						if (!string.IsNullOrEmpty(catalogState.SelectedCategorySpell.Description))
 						{
 							imgui_Separator();
 							imgui_TextColored(0.75f, 0.85f, 1.0f, 1.0f, "Description");
-							imgui_TextWrapped(state.SelectedCategorySpell.Description);
+							imgui_TextWrapped(catalogState.SelectedCategorySpell.Description);
 						}
 					}
 					else
