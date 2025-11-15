@@ -703,16 +703,17 @@ namespace E3Core.UI.Windows.CharacterSettings
 										state.SelectedKey = key;
 										state.SelectedValueIndex = -1;
 									}
-
-									// Context menu for all keys (right-click)
-									if (imgui_BeginPopupContextItem(null, 1))
+									if(data._customKeySections.Contains(sec))
 									{
-										if (imgui_MenuItem("Delete Key"))
+										// Context menu for all keys (right-click)
+										if (imgui_BeginPopupContextItem(null, 1))
 										{
-											data.DeleteKeyFromActiveIni(sec, key);
+											if (imgui_MenuItem("Delete Key"))
+											{
+												data.DeleteKeyFromActiveIni(sec, key);
+											}
+											imgui_EndPopup();
 										}
-
-										imgui_EndPopup();
 									}
 								}
 
@@ -1883,29 +1884,36 @@ namespace E3Core.UI.Windows.CharacterSettings
 				const float listHeight = 240f;
 				if (imgui_BeginChild("CastTargetPicker_List", listWidth, listHeight, ImGuiChildFlags_Borders, 0))
 				{
-					if (bots.Count == 0)
+					try
 					{
-						imgui_Text("No connected bots detected.");
-					}
-					else
-					{
-						int idx = 0;
-						foreach (var bot in bots)
+						if (bots.Count == 0)
 						{
-							string checkboxId = $"{bot}##CastTargetBot_{idx}";
-							bool selected = ContainsCastTargetEntry(selectedEntries, bot);
-							if (imgui_Checkbox(checkboxId, selected))
+							imgui_Text("No connected bots detected.");
+						}
+						else
+						{
+							int idx = 0;
+							foreach (var bot in bots)
 							{
-								bool newState = imgui_Checkbox_Get(checkboxId);
-								ToggleCastTargetEntry(currentSpell, bot, newState);
-								selectedEntries = GetCastTargetEntries(currentSpell.CastTarget);
-								spellEditorState.IsDirty = true;
+								string checkboxId = $"{bot}##CastTargetBot_{idx}";
+								bool selected = ContainsCastTargetEntry(selectedEntries, bot);
+								if (imgui_Checkbox(checkboxId, selected))
+								{
+									bool newState = imgui_Checkbox_Get(checkboxId);
+									ToggleCastTargetEntry(currentSpell, bot, newState);
+									selectedEntries = GetCastTargetEntries(currentSpell.CastTarget);
+									spellEditorState.IsDirty = true;
+								}
+								idx++;
 							}
-							idx++;
 						}
 					}
+					finally
+					{
+						imgui_EndChild();
+					}
 				}
-				imgui_EndChild();
+				
 
 				imgui_Separator();
 				imgui_Text("Quick keywords:");
@@ -2760,46 +2768,60 @@ namespace E3Core.UI.Windows.CharacterSettings
 		{
 			var mainWindowState = _state.GetState<State_MainWindow>();
 
-			bool _open_if = imgui_Begin(_state.WinName_IfAppendModal, (int)(ImGuiWindowFlags.ImGuiWindowFlags_AlwaysAutoResize | ImGuiWindowFlags.ImGuiWindowFlags_NoDocking));
-			if (_open_if)
+			if(imgui_Begin(_state.WinName_IfAppendModal, (int)(ImGuiWindowFlags.ImGuiWindowFlags_AlwaysAutoResize | ImGuiWindowFlags.ImGuiWindowFlags_NoDocking)))
 			{
-				if (!string.IsNullOrEmpty(_cfgIfAppendStatus)) imgui_Text(_cfgIfAppendStatus);
-				float h = 300f; float w = 520f;
-				if (imgui_BeginChild("IfList", w, h, 1, 0))
+				try
 				{
-					var list = _cfgIfAppendCandidates ?? new List<string>();
-					int i = 0;
-					foreach (var key in list)
+					if (!string.IsNullOrEmpty(_cfgIfAppendStatus)) imgui_Text(_cfgIfAppendStatus);
+					float h = 300f; float w = 520f;
+					if (imgui_BeginChild("IfList", w, h, 1, 0))
 					{
-						string label = $"{key}##ifkey_{i}";
-						if (imgui_Selectable(label, false))
+						try
 						{
-							try
+							var list = _cfgIfAppendCandidates ?? new List<string>();
+							int i = 0;
+							foreach (var key in list)
 							{
-								var kd = selectedSection?.Keys?.GetKeyData(mainWindowState.SelectedKey ?? string.Empty);
-								if (kd != null && _cfgIfAppendRow >= 0)
+								string label = $"{key}##ifkey_{i}";
+								if (imgui_Selectable(label, false))
 								{
-									var vals = GetValues(kd);
-									if (_cfgIfAppendRow < vals.Count)
+									try
 									{
-										string updated = data.AppendIfToken(vals[_cfgIfAppendRow] ?? string.Empty, key);
-										vals[_cfgIfAppendRow] = updated;
-										WriteValues(kd, vals);
+										var kd = selectedSection?.Keys?.GetKeyData(mainWindowState.SelectedKey ?? string.Empty);
+										if (kd != null && _cfgIfAppendRow >= 0)
+										{
+											var vals = GetValues(kd);
+											if (_cfgIfAppendRow < vals.Count)
+											{
+												string updated = data.AppendIfToken(vals[_cfgIfAppendRow] ?? string.Empty, key);
+												vals[_cfgIfAppendRow] = updated;
+												WriteValues(kd, vals);
+											}
+										}
 									}
+									catch { }
+									_state.Show_IfAppendModal = false;
+									break;
 								}
+								i++;
 							}
-							catch { }
-							_state.Show_IfAppendModal = false;
-							break;
 						}
-						i++;
+						finally
+						{
+							imgui_EndChild();
+						}
 					}
+					if (imgui_Button("Close")) _state.Show_IfAppendModal = false;
 				}
-				imgui_EndChild();
-				if (imgui_Button("Close")) _state.Show_IfAppendModal = false;
+				finally
+				{
+					imgui_End();
+				}
 			}
-			imgui_End();
-			if (!_open_if) _state.Show_IfAppendModal = false;
+			else
+			{
+				_state.Show_IfAppendModal = false;
+			}
 		}
 
 		private static void Render_ThemeSettingsWindow()
@@ -3225,17 +3247,24 @@ namespace E3Core.UI.Windows.CharacterSettings
 				float h = 300f; float w = 640f;
 				if (imgui_BeginChild("IfsSampleList", w, h, 1, 0))
 				{
-					for (int i = 0; i < _cfgIfSampleLines.Count; i++)
+					try
 					{
-						var kv = _cfgIfSampleLines[i];
-						string display = string.IsNullOrEmpty(kv.Value) ? kv.Key : (kv.Key + " = " + kv.Value);
-						if (imgui_Selectable($"{display}##IF_{i}", false))
+						for (int i = 0; i < _cfgIfSampleLines.Count; i++)
 						{
-							data.AddIfToActiveIni(kv.Key, kv.Value);
+							var kv = _cfgIfSampleLines[i];
+							string display = string.IsNullOrEmpty(kv.Value) ? kv.Key : (kv.Key + " = " + kv.Value);
+							if (imgui_Selectable($"{display}##IF_{i}", false))
+							{
+								data.AddIfToActiveIni(kv.Key, kv.Value);
+							}
 						}
 					}
+					finally
+					{
+						imgui_EndChild();
+					}
 				}
-				imgui_EndChild();
+				
 				imgui_SameLine();
 				if (imgui_Button("Import All"))
 				{
@@ -3625,29 +3654,35 @@ namespace E3Core.UI.Windows.CharacterSettings
 
 					if (imgui_BeginChild("FoodDrinkList", listWidth, listHeight, 1, 0))
 					{
-						for (int i = 0; i < foodDrinkState.Candidates.Count; i++)
+						try
 						{
-							var item = foodDrinkState.Candidates[i];
-							if (imgui_Selectable($"{item}##item_{i}", false))
+							for (int i = 0; i < foodDrinkState.Candidates.Count; i++)
 							{
-								// Apply selection
-								var pdAct = data.GetActiveCharacterIniData();
-								var secData = pdAct.Sections.GetSectionData(mainWindowState.SelectedSection);
-								var keyData = secData?.Keys.GetKeyData(mainWindowState.SelectedKey);
-								if (keyData != null)
+								var item = foodDrinkState.Candidates[i];
+								if (imgui_Selectable($"{item}##item_{i}", false))
 								{
-									var vals = GetValues(keyData);
-									// Replace first value or add if empty
-									if (vals.Count == 0) vals.Add(item);
-									else vals[0] = item;
-									WriteValues(keyData, vals);
+									// Apply selection
+									var pdAct = data.GetActiveCharacterIniData();
+									var secData = pdAct.Sections.GetSectionData(mainWindowState.SelectedSection);
+									var keyData = secData?.Keys.GetKeyData(mainWindowState.SelectedKey);
+									if (keyData != null)
+									{
+										var vals = GetValues(keyData);
+										// Replace first value or add if empty
+										if (vals.Count == 0) vals.Add(item);
+										else vals[0] = item;
+										WriteValues(keyData, vals);
+									}
+									_state.Show_FoodDrinkModal = false;
+									break; // Exit loop after selection
 								}
-								_state.Show_FoodDrinkModal = false;
-								break; // Exit loop after selection
 							}
 						}
+						finally
+						{
+							imgui_EndChild();
+						}
 					}
-					imgui_EndChild();
 				}
 				else if (!string.IsNullOrEmpty(foodDrinkState.Status) && !foodDrinkState.Status.Contains("Scanning"))
 				{
@@ -4117,42 +4152,47 @@ namespace E3Core.UI.Windows.CharacterSettings
 					float tableHeight = Math.Min(420f, Math.Max(220f, displayList.Count * 24f));
 					if (imgui_BeginChild("BardSampleIfList", tableWidth, tableHeight, 1, 0))
 					{
-						if (imgui_BeginTable("E3BardSampleIfTable", 3, 0, tableWidth, 0))
+						try
 						{
-							try
+							if (imgui_BeginTable("E3BardSampleIfTable", 3, 0, tableWidth, 0))
 							{
-								imgui_TableSetupColumn("Name", 0, tableWidth * 0.25f);
-								imgui_TableSetupColumn("Expression", 0, tableWidth * 0.55f);
-								imgui_TableSetupColumn("Actions", 0, tableWidth * 0.2f);
-								imgui_TableHeadersRow();
-
-								foreach (var kv in displayList)
+								try
 								{
-									imgui_TableNextRow();
-									imgui_TableNextColumn();
-									imgui_Text(kv.Key);
+									imgui_TableSetupColumn("Name", 0, tableWidth * 0.25f);
+									imgui_TableSetupColumn("Expression", 0, tableWidth * 0.55f);
+									imgui_TableSetupColumn("Actions", 0, tableWidth * 0.2f);
+									imgui_TableHeadersRow();
 
-									imgui_TableNextColumn();
-									imgui_TextWrapped(string.IsNullOrEmpty(kv.Value) ? "(empty)" : kv.Value);
-
-									imgui_TableNextColumn();
-									string expression = string.IsNullOrEmpty(kv.Value) ? kv.Key : kv.Value;
-									if (imgui_Button($"Use##bard_sample_if_use_{kv.Key}"))
+									foreach (var kv in displayList)
 									{
-										state.MelodyCondition = expression;
-										state.ConditionInputVersion++;
-										_state.Show_BardSampleIfModal = false;
-										break;
+										imgui_TableNextRow();
+										imgui_TableNextColumn();
+										imgui_Text(kv.Key);
+
+										imgui_TableNextColumn();
+										imgui_TextWrapped(string.IsNullOrEmpty(kv.Value) ? "(empty)" : kv.Value);
+
+										imgui_TableNextColumn();
+										string expression = string.IsNullOrEmpty(kv.Value) ? kv.Key : kv.Value;
+										if (imgui_Button($"Use##bard_sample_if_use_{kv.Key}"))
+										{
+											state.MelodyCondition = expression;
+											state.ConditionInputVersion++;
+											_state.Show_BardSampleIfModal = false;
+											break;
+										}
 									}
 								}
+								finally
+								{
+									imgui_EndTable();
+								}
 							}
-							finally
-							{
-								imgui_EndTable();
-							}
-
 						}
-						imgui_EndChild();
+						finally
+						{
+							imgui_EndChild();
+						}
 					}
 				}
 
@@ -4354,42 +4394,53 @@ namespace E3Core.UI.Windows.CharacterSettings
 		{
 			var mainWindowState = _state.GetState<State_MainWindow>();
 
-			bool _open_toon = imgui_Begin(_state.WinName_ToonPickerModal, (int)(ImGuiWindowFlags.ImGuiWindowFlags_AlwaysAutoResize | ImGuiWindowFlags.ImGuiWindowFlags_NoDocking));
-			if (_open_toon)
+			if (imgui_Begin(_state.WinName_ToonPickerModal, (int)(ImGuiWindowFlags.ImGuiWindowFlags_AlwaysAutoResize | ImGuiWindowFlags.ImGuiWindowFlags_NoDocking)))
 			{
-				if (!string.IsNullOrEmpty(_cfgToonPickerStatus)) imgui_Text(_cfgToonPickerStatus);
-				float h = 300f; float w = 420f;
-				if (imgui_BeginChild("ToonList", w, h, 1, 0))
+				try
 				{
-					var list = _cfgToonCandidates ?? new List<string>();
-					var kd = selectedSection?.Keys?.GetKeyData(mainWindowState.SelectedKey ?? string.Empty);
-					var current = kd != null ? GetValues(kd) : new List<string>();
-					int i = 0;
-					foreach (var name in list)
+					if (!string.IsNullOrEmpty(_cfgToonPickerStatus)) imgui_Text(_cfgToonPickerStatus);
+					float h = 300f; float w = 420f;
+					if (imgui_BeginChild("ToonList", w, h, 1, 0))
 					{
-						string label = $"{name}##toon_{i}";
-						bool already = current.Contains(name, StringComparer.OrdinalIgnoreCase);
-						if (imgui_Selectable(label, false))
+						try
 						{
-							if (kd != null)
+							var list = _cfgToonCandidates ?? new List<string>();
+							var kd = selectedSection?.Keys?.GetKeyData(mainWindowState.SelectedKey ?? string.Empty);
+							var current = kd != null ? GetValues(kd) : new List<string>();
+							int i = 0;
+							foreach (var name in list)
 							{
-								var vals = GetValues(kd);
-								if (!vals.Contains(name, StringComparer.OrdinalIgnoreCase))
+								string label = $"{name}##toon_{i}";
+								bool already = current.Contains(name, StringComparer.OrdinalIgnoreCase);
+								if (imgui_Selectable(label, false))
 								{
-									vals.Add(name);
-									WriteValues(kd, vals);
+									if (kd != null)
+									{
+										var vals = GetValues(kd);
+										if (!vals.Contains(name, StringComparer.OrdinalIgnoreCase))
+										{
+											vals.Add(name);
+											WriteValues(kd, vals);
+										}
+									}
 								}
+								if (already) { imgui_SameLine(); imgui_Text("(added)"); }
+								i++;
 							}
 						}
-						if (already) { imgui_SameLine(); imgui_Text("(added)"); }
-						i++;
+						finally
+						{
+							imgui_EndChild();
+						}
 					}
+					if (imgui_Button("Close")) _state.Show_ToonPickerModal = false;
 				}
-				imgui_EndChild();
-				if (imgui_Button("Close")) _state.Show_ToonPickerModal = false;
+				finally
+				{
+					imgui_End();
+				}
 			}
-			imgui_End();
-			if (!_open_toon) _state.Show_ToonPickerModal = false;
+			
 		}
 		// Spell Info modal (read-only details) using real ImGui tables + colored labels
 		private static void RenderSpellInfoModal()
