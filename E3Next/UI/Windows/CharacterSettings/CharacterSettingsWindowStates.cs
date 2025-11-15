@@ -138,9 +138,19 @@ namespace E3Core.UI.Windows.CharacterSettings
 		public string ManualEditBuffer = String.Empty;
 		public bool ManualInputBufferInUse = false;
 		public bool IsDirty = false;
-		public bool ShowCastTargetHelper = false;
-		public bool ShowCastTargetPicker = false;
+		public readonly string WinName_CastTargetHelperWindow = "Cast Target Helper";
+		public readonly string WinName_CastTargetPickerWindowTitle = "Cast Target Picker";
 
+		public bool ShowCastTargetPicker
+		{
+			get { return imgui_Begin_OpenFlagGet(WinName_CastTargetPickerWindowTitle); }
+			set { imgui_Begin_OpenFlagSet(WinName_CastTargetPickerWindowTitle, value); }
+		}
+		public bool ShowCastTargetHelper
+		{
+			get { return imgui_Begin_OpenFlagGet(WinName_CastTargetHelperWindow); }
+			set { imgui_Begin_OpenFlagSet(WinName_CastTargetHelperWindow, value); }
+		}
 		public void Reset()
 		{
 			IsDirty = false;
@@ -265,7 +275,6 @@ namespace E3Core.UI.Windows.CharacterSettings
 
 
 		public string WinName_AddModal = "E3Catalog";
-
 		public bool Show_AddModal
 		{
 			get

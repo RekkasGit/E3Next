@@ -872,6 +872,43 @@ namespace MonoCore
 
 			#endregion
 		}
+		public class ImGUIToolTip : IDisposable
+		{
+			public void BeginToolTip()
+			{
+			}
+			#region objectPoolingStuff
+			//private constructor, needs to be created so that you are forced to use the pool.
+			private ImGUIToolTip()
+			{
+
+			}
+			public static ImGUIToolTip Aquire()
+			{
+				ImGUIToolTip obj;
+				if (!StaticObjectPool.TryPop<ImGUIToolTip>(out obj))
+				{
+					obj = new ImGUIToolTip();
+				}
+				//super simple method, just call it on the aquire so user doesn't have to call it themselves.
+				imgui_BeginTooltip();
+				return obj;
+			}
+			public void Dispose()
+			{
+				imgui_EndTooltip();
+				StaticObjectPool.Push(this);
+			}
+			~ImGUIToolTip()
+			{
+				//DO NOT CALL DISPOSE FROM THE FINALIZER! This should only ever be used in using statements
+				//if this is called, it will cause the domain to hang in the GC when shuttind down
+				//This is only here to warn you
+
+			}
+
+			#endregion
+		}
 		public class ImGUIPopUpContext : IDisposable
 		{
 			bool IsOpen = false;
