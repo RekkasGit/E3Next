@@ -829,6 +829,7 @@ namespace MonoCore
 
 			#endregion
 		}
+
 		public class ImGUIWindow : IDisposable
 		{
 
@@ -862,6 +863,102 @@ namespace MonoCore
 				StaticObjectPool.Push(this);
 			}
 			~ImGUIWindow()
+			{
+				//DO NOT CALL DISPOSE FROM THE FINALIZER! This should only ever be used in using statements
+				//if this is called, it will cause the domain to hang in the GC when shuttind down
+				//This is only here to warn you
+
+			}
+
+			#endregion
+		}
+		public class ImGUITabBar : IDisposable
+		{
+			public bool IsOpen = false;
+			public bool BeginTabBar(string id)
+			{
+				IsOpen = imgui_BeginTabBar(id);
+				return IsOpen;
+			}
+			#region objectPoolingStuff
+			//private constructor, needs to be created so that you are forced to use the pool.
+			private ImGUITabBar()
+			{
+
+			}
+			public static ImGUITabBar Aquire()
+			{
+				ImGUITabBar obj;
+				if (!StaticObjectPool.TryPop<ImGUITabBar>(out obj))
+				{
+					obj = new ImGUITabBar();
+				}
+
+				return obj;
+			}
+			public void Dispose()
+			{
+				//only call pop if the original call was set to open per IMGUI docs
+				/*ImGui::TreePop():
+				 * When TreeNodeEx returns true, you must call ImGui::TreePop() 
+				 * after drawing all the child elements to correctly manage the tree's indentation and state
+				 */
+				if (IsOpen)
+				{
+					imgui_EndTabBar();
+				}
+				IsOpen = false;
+				StaticObjectPool.Push(this);
+			}
+			~ImGUITabBar()
+			{
+				//DO NOT CALL DISPOSE FROM THE FINALIZER! This should only ever be used in using statements
+				//if this is called, it will cause the domain to hang in the GC when shuttind down
+				//This is only here to warn you
+
+			}
+
+			#endregion
+		}
+		public class ImGUITabItem : IDisposable
+		{
+			public bool IsOpen = false;
+			public bool BeginTabItem(string id)
+			{
+				IsOpen = imgui_BeginTabItem(id);
+				return IsOpen;
+			}
+			#region objectPoolingStuff
+			//private constructor, needs to be created so that you are forced to use the pool.
+			private ImGUITabItem()
+			{
+
+			}
+			public static ImGUITabItem Aquire()
+			{
+				ImGUITabItem obj;
+				if (!StaticObjectPool.TryPop<ImGUITabItem>(out obj))
+				{
+					obj = new ImGUITabItem();
+				}
+
+				return obj;
+			}
+			public void Dispose()
+			{
+				//only call pop if the original call was set to open per IMGUI docs
+				/*ImGui::TreePop():
+				 * When TreeNodeEx returns true, you must call ImGui::TreePop() 
+				 * after drawing all the child elements to correctly manage the tree's indentation and state
+				 */
+				if (IsOpen)
+				{
+					imgui_EndTabItem();
+				}
+				IsOpen = false;
+				StaticObjectPool.Push(this);
+			}
+			~ImGUITabItem()
 			{
 				//DO NOT CALL DISPOSE FROM THE FINALIZER! This should only ever be used in using statements
 				//if this is called, it will cause the domain to hang in the GC when shuttind down

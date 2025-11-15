@@ -2713,127 +2713,120 @@ namespace E3Core.UI.Windows.CharacterSettings
 
 		private static void Render_ThemeSettingsWindow()
 		{
-			bool modalOpen = imgui_Begin(_state.WinName_ThemeSettings, (int)(ImGuiWindowFlags.ImGuiWindowFlags_AlwaysAutoResize | ImGuiWindowFlags.ImGuiWindowFlags_NoDocking));
-			if (modalOpen)
+			
+			using(var window = ImGUIWindow.Aquire())
 			{
-				imgui_TextColored(0.95f, 0.85f, 0.35f, 1.0f, "UI Theme Selection");
-				imgui_Separator();
-
-				// Theme preview and selection using selectable buttons
-				string[] themeNames = { "Dark Teal (Default)", "Dark Blue", "Dark Purple", "Dark Orange", "Dark Green" };
-				UITheme[] themeValues = { UITheme.DarkTeal, UITheme.DarkBlue, UITheme.DarkPurple, UITheme.DarkOrange, UITheme.DarkGreen };
-
-				imgui_Text("Select Theme:");
-				imgui_Separator();
-
-				for (int i = 0; i < themeNames.Length; i++)
+				if (window.Begin(_state.WinName_ThemeSettings, (int)(ImGuiWindowFlags.ImGuiWindowFlags_AlwaysAutoResize | ImGuiWindowFlags.ImGuiWindowFlags_NoDocking)))
 				{
-					bool isSelected = (_currentTheme == themeValues[i]);
+					imgui_TextColored(0.95f, 0.85f, 0.35f, 1.0f, "UI Theme Selection");
+					imgui_Separator();
 
-					// Use selectable for theme selection (acts like radio button)
-					if (imgui_Selectable(themeNames[i], isSelected))
+					// Theme preview and selection using selectable buttons
+					string[] themeNames = { "Dark Teal (Default)", "Dark Blue", "Dark Purple", "Dark Orange", "Dark Green" };
+					UITheme[] themeValues = { UITheme.DarkTeal, UITheme.DarkBlue, UITheme.DarkPurple, UITheme.DarkOrange, UITheme.DarkGreen };
+
+					imgui_Text("Select Theme:");
+					imgui_Separator();
+
+					for (int i = 0; i < themeNames.Length; i++)
 					{
-						_currentTheme = themeValues[i];
-						// Save theme to character INI
-						if (E3.CharacterSettings != null)
+						bool isSelected = (_currentTheme == themeValues[i]);
+
+						// Use selectable for theme selection (acts like radio button)
+						if (imgui_Selectable(themeNames[i], isSelected))
 						{
-							E3.CharacterSettings.UITheme_E3Config = _currentTheme.ToString();
-							E3.CharacterSettings.SaveData();
+							_currentTheme = themeValues[i];
+							// Save theme to character INI
+							if (E3.CharacterSettings != null)
+							{
+								E3.CharacterSettings.UITheme_E3Config = _currentTheme.ToString();
+								E3.CharacterSettings.SaveData();
+							}
+						}
+
+						// Show theme preview as colored text on the same line
+						if (isSelected)
+						{
+							imgui_SameLine();
+							float[] previewColors = GetThemePreviewColor(themeValues[i]);
+							imgui_TextColored(previewColors[0], previewColors[1], previewColors[2], previewColors[3], "<-- Current");
 						}
 					}
 
-					// Show theme preview as colored text on the same line
-					if (isSelected)
+					imgui_Separator();
+
+					// Theme info
+					imgui_TextColored(0.8f, 0.9f, 1.0f, 1.0f, "Theme Info:");
+					string themeDescription = GetThemeDescription(_currentTheme);
+					imgui_TextWrapped(themeDescription);
+
+					imgui_Separator();
+
+					// Rounding controls
+					imgui_Text("Corner Rounding:");
+					imgui_SameLine();
+					if (string.IsNullOrEmpty(_roundingBuf))
 					{
-						imgui_SameLine();
-						float[] previewColors = GetThemePreviewColor(themeValues[i]);
-						imgui_TextColored(previewColors[0], previewColors[1], previewColors[2], previewColors[3], "<-- Current");
+						_roundingBuf = _rounding.ToString("0.0", CultureInfo.InvariantCulture);
 					}
-				}
-
-				imgui_Separator();
-
-				// Theme info
-				imgui_TextColored(0.8f, 0.9f, 1.0f, 1.0f, "Theme Info:");
-				string themeDescription = GetThemeDescription(_currentTheme);
-				imgui_TextWrapped(themeDescription);
-
-				imgui_Separator();
-
-				// Rounding controls
-				imgui_Text("Corner Rounding:");
-				imgui_SameLine();
-				if (string.IsNullOrEmpty(_roundingBuf))
-				{
-					_roundingBuf = _rounding.ToString("0.0", CultureInfo.InvariantCulture);
-				}
-				imgui_SetNextItemWidth(100f);
-				string roundingInputId = $"##rounding_value_{_roundingVersion}";
-				if (imgui_InputText(roundingInputId, _roundingBuf))
-				{
-					_roundingBuf = imgui_InputText_Get(roundingInputId) ?? string.Empty;
-					if (float.TryParse(_roundingBuf, NumberStyles.Float, CultureInfo.InvariantCulture, out var rv))
+					imgui_SetNextItemWidth(100f);
+					string roundingInputId = $"##rounding_value_{_roundingVersion}";
+					if (imgui_InputText(roundingInputId, _roundingBuf))
 					{
-						_rounding = Math.Max(0f, Math.Min(12f, rv));
-						// Save rounding to character INI
-						if (E3.CharacterSettings != null)
+						_roundingBuf = imgui_InputText_Get(roundingInputId) ?? string.Empty;
+						if (float.TryParse(_roundingBuf, NumberStyles.Float, CultureInfo.InvariantCulture, out var rv))
 						{
-							E3.CharacterSettings.UITheme_Rounding = _rounding;
-							E3.CharacterSettings.SaveData();
+							_rounding = Math.Max(0f, Math.Min(12f, rv));
+							// Save rounding to character INI
+							if (E3.CharacterSettings != null)
+							{
+								E3.CharacterSettings.UITheme_Rounding = _rounding;
+								E3.CharacterSettings.SaveData();
+							}
 						}
 					}
+					imgui_SameLine();
+					imgui_Text($"({_rounding.ToString("0.0", CultureInfo.InvariantCulture)})");
+					imgui_SameLine();
+					if (imgui_Button("-"))
+					{
+						_rounding = Math.Max(0f, _rounding - 1f);
+						_roundingBuf = _rounding.ToString("0.0", CultureInfo.InvariantCulture);
+						_roundingVersion++;
+						SaveRoundingToSettings();
+					}
+					imgui_SameLine();
+					if (imgui_Button("+"))
+					{
+						_rounding = Math.Min(12f, _rounding + 1f);
+						_roundingBuf = _rounding.ToString("0.0", CultureInfo.InvariantCulture);
+						_roundingVersion++;
+						SaveRoundingToSettings();
+					}
+					string roundingString = _rounding.ToString("0.0", CultureInfo.InvariantCulture);
+					// Presets
+					imgui_Text("Presets:");
+					if (imgui_Button("0")) { _rounding = 0f; _roundingBuf = roundingString; _roundingVersion++; SaveRoundingToSettings(); }
+					imgui_SameLine();
+					if (imgui_Button("3")) { _rounding = 3f; _roundingBuf = roundingString; _roundingVersion++; SaveRoundingToSettings(); }
+					imgui_SameLine();
+					if (imgui_Button("6")) { _rounding = 6f; _roundingBuf = roundingString; _roundingVersion++; SaveRoundingToSettings(); }
+					imgui_SameLine();
+					if (imgui_Button("9")) { _rounding = 9f; _roundingBuf = roundingString; _roundingVersion++; SaveRoundingToSettings(); }
+					imgui_SameLine();
+					if (imgui_Button("12")) { _rounding = 12f; _roundingBuf = roundingString; _roundingVersion++; SaveRoundingToSettings(); }
+
+					imgui_Separator();
+					// Preview the accent color
+					float[] currentAccentColor = GetThemePreviewColor(_currentTheme);
+					imgui_TextColored(currentAccentColor[0], currentAccentColor[1], currentAccentColor[2], currentAccentColor[3], "Preview: This text shows the accent color");
+					imgui_Separator();
+					// Close button
+					if (imgui_Button("Close"))
+					{
+						_state.Show_ThemeSettings = false;
+					}
 				}
-				imgui_SameLine();
-				imgui_Text($"({_rounding.ToString("0.0", CultureInfo.InvariantCulture)})");
-				imgui_SameLine();
-				if (imgui_Button("-"))
-				{
-					_rounding = Math.Max(0f, _rounding - 1f);
-					_roundingBuf = _rounding.ToString("0.0", CultureInfo.InvariantCulture);
-					_roundingVersion++;
-					SaveRoundingToSettings();
-				}
-				imgui_SameLine();
-				if (imgui_Button("+"))
-				{
-					_rounding = Math.Min(12f, _rounding + 1f);
-					_roundingBuf = _rounding.ToString("0.0", CultureInfo.InvariantCulture);
-					_roundingVersion++;
-					SaveRoundingToSettings();
-				}
-
-				string roundingString = _rounding.ToString("0.0", CultureInfo.InvariantCulture);
-				// Presets
-				imgui_Text("Presets:");
-				if (imgui_Button("0")) { _rounding = 0f; _roundingBuf = roundingString; _roundingVersion++; SaveRoundingToSettings(); }
-				imgui_SameLine();
-				if (imgui_Button("3")) { _rounding = 3f; _roundingBuf = roundingString; _roundingVersion++; SaveRoundingToSettings(); }
-				imgui_SameLine();
-				if (imgui_Button("6")) { _rounding = 6f; _roundingBuf = roundingString; _roundingVersion++; SaveRoundingToSettings(); }
-				imgui_SameLine();
-				if (imgui_Button("9")) { _rounding = 9f; _roundingBuf = roundingString; _roundingVersion++; SaveRoundingToSettings(); }
-				imgui_SameLine();
-				if (imgui_Button("12")) { _rounding = 12f; _roundingBuf = roundingString; _roundingVersion++; SaveRoundingToSettings(); }
-
-				imgui_Separator();
-
-				// Preview the accent color
-				float[] currentAccentColor = GetThemePreviewColor(_currentTheme);
-				imgui_TextColored(currentAccentColor[0], currentAccentColor[1], currentAccentColor[2], currentAccentColor[3], "Preview: This text shows the accent color");
-
-				imgui_Separator();
-
-				// Close button
-				if (imgui_Button("Close"))
-				{
-					_state.Show_ThemeSettings = false;
-				}
-			}
-			imgui_End();
-
-			if (!modalOpen)
-			{
-				_state.Show_ThemeSettings = false;
 			}
 		}
 
@@ -3120,53 +3113,40 @@ namespace E3Core.UI.Windows.CharacterSettings
 
 		private static void RenderIfsSampleModal()
 		{
-			bool _open_ifs = imgui_Begin(_state.WinName_IfSampleModal, (int)(ImGuiWindowFlags.ImGuiWindowFlags_AlwaysAutoResize | ImGuiWindowFlags.ImGuiWindowFlags_NoDocking));
-			if (_open_ifs)
+			using (var window = ImGUIWindow.Aquire())
 			{
-				if (!string.IsNullOrEmpty(_cfgIfSampleStatus)) imgui_Text(_cfgIfSampleStatus);
-				float h = 300f; float w = 640f;
-				if (imgui_BeginChild("IfsSampleList", w, h, 1, 0))
+				if (window.Begin(_state.WinName_IfSampleModal, (int)(ImGuiWindowFlags.ImGuiWindowFlags_AlwaysAutoResize | ImGuiWindowFlags.ImGuiWindowFlags_NoDocking)))
 				{
-					try
+					if (!string.IsNullOrEmpty(_cfgIfSampleStatus)) imgui_Text(_cfgIfSampleStatus);
+					float h = 300f; float w = 640f;
+					using (var child = ImGUIChild.Aquire())
 					{
-						for (int i = 0; i < _cfgIfSampleLines.Count; i++)
+						if (child.BeginChild("IfsSampleList", w, h, 1, 0))
 						{
-							var kv = _cfgIfSampleLines[i];
-							string display = string.IsNullOrEmpty(kv.Value) ? kv.Key : (kv.Key + " = " + kv.Value);
-							if (imgui_Selectable($"{display}##IF_{i}", false))
+							for (int i = 0; i < _cfgIfSampleLines.Count; i++)
 							{
-								data.AddIfToActiveIni(kv.Key, kv.Value);
+								var kv = _cfgIfSampleLines[i];
+								string display = string.IsNullOrEmpty(kv.Value) ? kv.Key : (kv.Key + " = " + kv.Value);
+								if (imgui_Selectable($"{display}##IF_{i}", false))
+								{
+									data.AddIfToActiveIni(kv.Key, kv.Value);
+								}
 							}
 						}
 					}
-					finally
+					imgui_SameLine();
+					if (imgui_Button("Import All"))
 					{
-						imgui_EndChild();
+						int cnt = 0;
+						for (int i = 0; i < _cfgIfSampleLines.Count; i++) { var kv = _cfgIfSampleLines[i]; if (data.AddIfToActiveIni(kv.Key, kv.Value)) cnt++; }
+						_cfgIfSampleStatus = cnt > 0 ? ($"Imported {cnt} If(s)") : "No new If's to import.";
 					}
+					imgui_SameLine();
+					if (imgui_Button("Close")) { _state.Show_IfSampleModal = false; }
 				}
-
-				imgui_SameLine();
-				if (imgui_Button("Import All"))
-				{
-					int cnt = 0;
-					for (int i = 0; i < _cfgIfSampleLines.Count; i++) { var kv = _cfgIfSampleLines[i]; if (data.AddIfToActiveIni(kv.Key, kv.Value)) cnt++; }
-					_cfgIfSampleStatus = cnt > 0 ? ($"Imported {cnt} If(s)") : "No new If's to import.";
-				}
-				imgui_SameLine();
-				if (imgui_Button("Close")) { _state.Show_IfSampleModal = false; }
-			}
-			imgui_End();
+			}	
 		}
 
-		// Safe combo wrapper for older MQ2Mono
-		//private static bool BeginComboSafe(string label, string preview)
-		//{
-		//	return imgui_BeginCombo(label, preview, 0);
-		//}
-		//private static void EndComboSafe()
-		//{
-		//	imgui_EndCombo();
-		//}
 		private static void Render_RichText(List<string> rawText)
 		{
 			if (rawText.Count == 0)
@@ -3260,11 +3240,13 @@ namespace E3Core.UI.Windows.CharacterSettings
 			imgui_Text(label);
 			if (!string.IsNullOrWhiteSpace(tooltip) && imgui_IsItemHovered())
 			{
-				imgui_BeginTooltip();
-				imgui_PushTextWrapPos(320f);
-				imgui_TextWrapped(tooltip);
-				imgui_PopTextWrapPos();
-				imgui_EndTooltip();
+				using(var tt = ImGUIToolTip.Aquire())
+				{
+					imgui_PushTextWrapPos(320f);
+					imgui_TextWrapped(tooltip);
+					imgui_PopTextWrapPos();
+				}
+			
 			}
 			imgui_TableNextColumn();
 			imgui_SetNextItemWidth(width);
@@ -3284,11 +3266,12 @@ namespace E3Core.UI.Windows.CharacterSettings
 			imgui_Text(label);
 			if (!string.IsNullOrWhiteSpace(tooltip) && imgui_IsItemHovered())
 			{
-				imgui_BeginTooltip();
-				imgui_PushTextWrapPos(320f);
-				imgui_TextWrapped(tooltip);
-				imgui_PopTextWrapPos();
-				imgui_EndTooltip();
+				using (var tt = ImGUIToolTip.Aquire())
+				{
+					imgui_PushTextWrapPos(320f);
+					imgui_TextWrapped(tooltip);
+					imgui_PopTextWrapPos();
+				}
 			}
 			imgui_TableNextColumn();
 			imgui_SetNextItemWidth(width);
@@ -3399,47 +3382,61 @@ namespace E3Core.UI.Windows.CharacterSettings
 
 			imgui_Separator();
 
-			if (imgui_BeginTabBar($"SpellModifierTabs"))
+			using(var tabbar = ImGUITabBar.Aquire())
 			{
-				if (imgui_BeginTabItem($"General##spell_tab_general"))
+				if (tabbar.BeginTabBar($"SpellModifierTabs"))
 				{
-					Render_MainWindow_SpellEditor_Tab_General();
-					imgui_EndTabItem();
+					using (var tabitem = ImGUITabItem.Aquire())
+					{
+						if (tabitem.BeginTabItem($"General##spell_tab_general"))
+						{
+							Render_MainWindow_SpellEditor_Tab_General();
+						}
+					}
+					using (var tabitem = ImGUITabItem.Aquire())
+					{
+						if (tabitem.BeginTabItem($"Conditions##spell_tab_conditions"))
+						{
+							Render_MainWindow_SpellEditor_Tab_Conditions();
+						}
+					}
+					using (var tabitem = ImGUITabItem.Aquire())
+					{
+						if (tabitem.BeginTabItem($"Resources##spell_tab_resources"))
+						{
+							Render_MainWindow_SpellEditor_Tab_Resources();
+						}
+					}
+					using (var tabitem = ImGUITabItem.Aquire())
+					{
+						if (tabitem.BeginTabItem($"Timing##spell_tab_timing"))
+						{
+							Render_MainWindow_SpellEditor_Tab_Timing();
+						}
+					}
+					using (var tabitem = ImGUITabItem.Aquire())
+					{
+						if (tabitem.BeginTabItem($"Advanced##spell_tab_advanced"))
+						{
+							Render_MainWindow_SpellEditor_Tab_Advanced();
+						}
+					}
+					using (var tabitem = ImGUITabItem.Aquire())
+					{
+						if (tabitem.BeginTabItem($"Flags##spell_tab_flags"))
+						{
+							Render_MainWindow_SpellEditor_Tab_Flags();
+						}
+					}
+					using (var tabitem = ImGUITabItem.Aquire())
+					{
+						if (tabitem.BeginTabItem($"Manual Edit##spell_tab_manual"))
+						{
+							Render_MainWindow_SpellEditor_Tab_Manual();
+						}
+					}
 				}
-				if (imgui_BeginTabItem($"Conditions##spell_tab_conditions"))
-				{
-					Render_MainWindow_SpellEditor_Tab_Conditions();
-					imgui_EndTabItem();
-				}
-				if (imgui_BeginTabItem($"Resources##spell_tab_resources"))
-				{
-					Render_MainWindow_SpellEditor_Tab_Resources();
-					imgui_EndTabItem();
-				}
-				if (imgui_BeginTabItem($"Timing##spell_tab_timing"))
-				{
-					Render_MainWindow_SpellEditor_Tab_Timing();
-					imgui_EndTabItem();
-				}
-				if (imgui_BeginTabItem($"Advanced##spell_tab_advanced"))
-				{
-					Render_MainWindow_SpellEditor_Tab_Advanced();
-					imgui_EndTabItem();
-				}
-				if (imgui_BeginTabItem($"Flags##spell_tab_flags"))
-				{
-					Render_MainWindow_SpellEditor_Tab_Flags();
-					imgui_EndTabItem();
-				}
-				if (imgui_BeginTabItem($"Manual Edit##spell_tab_manual"))
-				{
-					Render_MainWindow_SpellEditor_Tab_Manual();
-					imgui_EndTabItem();
-				}
-				imgui_EndTabBar();
 			}
-
-
 
 			imgui_Separator();
 			imgui_TextColored(0.8f, 0.9f, 0.95f, 1.0f, "Preview");
@@ -3456,18 +3453,6 @@ namespace E3Core.UI.Windows.CharacterSettings
 		private static List<string> GetValues(KeyData kd)
 		{
 			return kd.ValueList;
-			//var vals = new List<string>();
-			//if (kd.ValueList != null && kd.ValueList.Count > 0)
-			//{
-			//	foreach (var v in kd.ValueList) vals.Add(v ?? string.Empty);
-			//}
-			//else if (!string.IsNullOrEmpty(kd.Value))
-			//{
-			//	// Support pipe-delimited storage if present
-			//	var parts = (kd.Value ?? string.Empty).Split(new[] { '|' }, StringSplitOptions.RemoveEmptyEntries).Select(x => x.Trim());
-			//	foreach (var p in parts) vals.Add(p);
-			//}
-			//return vals;
 		}
 
 		private static void WriteValues(KeyData kd, List<string> values)
