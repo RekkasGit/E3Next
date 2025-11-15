@@ -782,6 +782,53 @@ namespace MonoCore
                 RegisteredWindows.TryAdd(windowName, method);
             }
         }
+		public class ImGUICombo : IDisposable
+		{
+			bool IsOpen = false;
+			public bool BeginCombo(string id,string preview, int window_flags=0)
+			{
+				IsOpen = imgui_BeginCombo(id, preview, window_flags);
+				return IsOpen;
+			}
+			#region objectPoolingStuff
+			//private constructor, needs to be created so that you are forced to use the pool.
+			private ImGUICombo()
+			{
+
+			}
+			public static ImGUICombo Aquire()
+			{
+				ImGUICombo obj;
+				if (!StaticObjectPool.TryPop<ImGUICombo>(out obj))
+				{
+					obj = new ImGUICombo();
+				}
+
+				return obj;
+			}
+			public void Dispose()
+			{
+				/*ImGui::End():
+				Every ImGui::Begin() call must be paired with an 
+				ImGui::End() call to properly close the window context and ensure correct rendering.*/
+				if(IsOpen)
+				{
+					imgui_EndCombo();
+
+				}
+				IsOpen = false;
+				StaticObjectPool.Push(this);
+			}
+			~ImGUICombo()
+			{
+				//DO NOT CALL DISPOSE FROM THE FINALIZER! This should only ever be used in using statements
+				//if this is called, it will cause the domain to hang in the GC when shuttind down
+				//This is only here to warn you
+
+			}
+
+			#endregion
+		}
 		public class ImGUIWindow : IDisposable
 		{
 

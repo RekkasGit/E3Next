@@ -184,8 +184,8 @@ namespace E3Core.UI.Windows.CharacterSettings
 							var allPlayersState = _state.GetState<State_AllPlayers>();
 							if (allPlayersState.ShowWindow) Render_MainWindow_AllPlayersView();
 							if (!allPlayersState.ShowWindow) Render_MainWindow_ConfigEditor();
-							//if (_state.Show_ThemeSettings) Render_ThemeSettingsWindow();
-							//if (_state.Show_Donate) RenderDonateModal();
+							if (_state.Show_ThemeSettings) Render_ThemeSettingsWindow();
+							if (_state.Show_Donate) RenderDonateModal();
 						}
 					}
 				}
@@ -305,9 +305,9 @@ namespace E3Core.UI.Windows.CharacterSettings
 			imgui_Text("Select Character:");
 			imgui_SameLine();
 			imgui_SetNextItemWidth(260f);
-			if (BeginComboSafe("##Select Character", selectedINIFile))
+			using (var combo = ImGUICombo.Aquire())
 			{
-				try
+				if (combo.BeginCombo("##Select Character", selectedINIFile))
 				{
 					if (!string.IsNullOrEmpty(loggedInCharIniFile))
 					{
@@ -331,11 +331,8 @@ namespace E3Core.UI.Windows.CharacterSettings
 						}
 					}
 				}
-				finally
-				{
-					imgui_EndCombo();
-				}
 			}
+
 
 			imgui_SameLine();
 
@@ -430,7 +427,7 @@ namespace E3Core.UI.Windows.CharacterSettings
 
 			using (var child = ImGUIChild.Aquire())
 			{
-				if (child.BeginChild("E3Config_SectionTreePane", leftPaneWidth, regionHeight,(int)( ImGuiChildFlags.Borders| ImGuiChildFlags.ResizeX | ImGuiChildFlags.ResizeY), 0))
+				if (child.BeginChild("E3Config_SectionTreePane", leftPaneWidth, regionHeight, (int)(ImGuiChildFlags.Borders | ImGuiChildFlags.ResizeX | ImGuiChildFlags.ResizeY), 0))
 				{
 					Render_MainWindow_ConfigEditor_SelectionTree(pd);
 				}
@@ -439,7 +436,7 @@ namespace E3Core.UI.Windows.CharacterSettings
 			imgui_SameLine();
 			using (var child = ImGUIChild.Aquire())
 			{
-				if (child.BeginChild("E3Config_EditorPane", 0, regionHeight,(int)( ImGuiChildFlags.Borders | ImGuiChildFlags.ResizeY), 0))
+				if (child.BeginChild("E3Config_EditorPane", 0, regionHeight, (int)(ImGuiChildFlags.Borders | ImGuiChildFlags.ResizeY), 0))
 				{
 					Render_MainWindow_ConfigEditor_RightPane(pd);
 				}
@@ -459,7 +456,7 @@ namespace E3Core.UI.Windows.CharacterSettings
 			float contentHeight = Math.Max(160f, paneAvailY - reservedSpellEditorSpace);
 			using (var child = ImGUIChild.Aquire())
 			{
-				if (child.BeginChild("E3Config_EditorPane_Content", 0, contentHeight,(int) ImGuiChildFlags.None, 0))
+				if (child.BeginChild("E3Config_EditorPane_Content", 0, contentHeight, (int)ImGuiChildFlags.None, 0))
 				{
 					Render_MainWindow_ConfigEditor_RightPaneContent(pd);
 				}
@@ -529,7 +526,7 @@ namespace E3Core.UI.Windows.CharacterSettings
 			toolsWidth = Math.Max(120f, availX - valuesWidth - spacing);
 			using (var child = ImGUIChild.Aquire())
 			{
-				if (child.BeginChild("E3Config_ValuesPane", valuesWidth, availY,(int)( ImGuiChildFlags.Borders | ImGuiChildFlags.ResizeX | ImGuiChildFlags.ResizeY), 0))
+				if (child.BeginChild("E3Config_ValuesPane", valuesWidth, availY, (int)(ImGuiChildFlags.Borders | ImGuiChildFlags.ResizeX | ImGuiChildFlags.ResizeY), 0))
 				{
 					Render_MainWindow_ConfigEditor_Values(pd);
 				}
@@ -546,7 +543,7 @@ namespace E3Core.UI.Windows.CharacterSettings
 			imgui_SameLine();
 			using (var child = ImGUIChild.Aquire())
 			{
-				if (child.BeginChild("E3Config_ToolsPane", toolsWidth, availY,(int)( ImGuiChildFlags.Borders | ImGuiChildFlags.ResizeY), 0))
+				if (child.BeginChild("E3Config_ToolsPane", toolsWidth, availY, (int)(ImGuiChildFlags.Borders | ImGuiChildFlags.ResizeY), 0))
 				{
 					Render_MainWindow_ConfigEditor_Tools(pd);
 				}
@@ -1087,29 +1084,32 @@ namespace E3Core.UI.Windows.CharacterSettings
 
 			string current = parts[0];
 			string display = current.Length == 0 ? "(unset)" : current;
-			if (BeginComboSafe("Value", display))
+			using (var combo = ImGUICombo.Aquire())
 			{
-				foreach (var opt in enumOpts)
+				if (combo.BeginCombo("Value", display, 0))
 				{
-					bool sel = string.Equals(current, opt, StringComparison.OrdinalIgnoreCase);
-					if (imgui_Selectable(opt, sel))
+					foreach (var opt in enumOpts)
 					{
-						string chosen = opt;
-						var pdAct = data.GetActiveCharacterIniData();
-						var selSec = pdAct.Sections.GetSectionData(mainWindowState.SelectedSection);
-						if (selSec != null && selSec.Keys.ContainsKey(mainWindowState.SelectedKey))
+						bool sel = string.Equals(current, opt, StringComparison.OrdinalIgnoreCase);
+						if (imgui_Selectable(opt, sel))
 						{
-							var kdata = selSec.Keys.GetKeyData(mainWindowState.SelectedKey);
-							if (kdata != null)
+							string chosen = opt;
+							var pdAct = data.GetActiveCharacterIniData();
+							var selSec = pdAct.Sections.GetSectionData(mainWindowState.SelectedSection);
+							if (selSec != null && selSec.Keys.ContainsKey(mainWindowState.SelectedKey))
 							{
-								WriteValues(kdata, new List<string> { chosen });
+								var kdata = selSec.Keys.GetKeyData(mainWindowState.SelectedKey);
+								if (kdata != null)
+								{
+									WriteValues(kdata, new List<string> { chosen });
+								}
 							}
 						}
 					}
 				}
-				EndComboSafe();
+				imgui_Separator();
 			}
-			imgui_Separator();
+
 		}
 		private static void Render_MainWindow_ConfigEditor_SelectedKeyValues_Boolean(List<string> parts, SectionData selectedSection)
 		{
@@ -1139,28 +1139,31 @@ namespace E3Core.UI.Windows.CharacterSettings
 			}
 
 			string display = current.Length == 0 ? "(unset)" : current;
-			if (BeginComboSafe("Value", display))
+			using (var combo = ImGUICombo.Aquire())
 			{
-				foreach (var opt in baseOpts)
+				if (combo.BeginCombo("Value", display))
 				{
-					bool sel = string.Equals(current, opt, StringComparison.OrdinalIgnoreCase);
-					if (imgui_Selectable(opt, sel))
+					foreach (var opt in baseOpts)
 					{
-						string chosen = opt;
-						var pdAct = data.GetActiveCharacterIniData();
-						var selSec = pdAct.Sections.GetSectionData(mainWindowState.SelectedSection);
-						if (selSec != null && selSec.Keys.ContainsKey(mainWindowState.SelectedKey))
+						bool sel = string.Equals(current, opt, StringComparison.OrdinalIgnoreCase);
+						if (imgui_Selectable(opt, sel))
 						{
-							var kdata = selSec.Keys.GetKeyData(mainWindowState.SelectedKey);
-							if (kdata != null)
+							string chosen = opt;
+							var pdAct = data.GetActiveCharacterIniData();
+							var selSec = pdAct.Sections.GetSectionData(mainWindowState.SelectedSection);
+							if (selSec != null && selSec.Keys.ContainsKey(mainWindowState.SelectedKey))
 							{
-								WriteValues(kdata, new List<string> { chosen });
+								var kdata = selSec.Keys.GetKeyData(mainWindowState.SelectedKey);
+								if (kdata != null)
+								{
+									WriteValues(kdata, new List<string> { chosen });
+								}
 							}
 						}
 					}
 				}
-				EndComboSafe();
 			}
+
 			imgui_Separator();
 		}
 		private static void Render_MainWindow_ConfigEditor_SelectedKeyValues_Collections(List<string> parts, SectionData selectedSection)
@@ -1667,25 +1670,28 @@ namespace E3Core.UI.Windows.CharacterSettings
 					var gemSlot = currentSpell.SpellGem;
 					string gemPreview = gemSlot >= 1 && gemSlot <= 12 ? $"Gem {gemSlot}" : "No Gem";
 					imgui_SetNextItemWidth(ComboFieldWidth);
-					if (BeginComboSafe($"##spell_gem", gemPreview))
+					using (var combo = ImGUICombo.Aquire())
 					{
-						if (imgui_Selectable("No Gem", gemSlot == 0))
+						if (combo.BeginCombo($"##spell_gem", gemPreview))
 						{
-							currentSpell.SpellGem = 0;
-							spellEditorState.IsDirty = true;
-						}
-						for (int g = 1; g <= 12; g++)
-						{
-							bool sel = gemSlot == g;
-							if (imgui_Selectable($"Gem {g}", sel))
+							if (imgui_Selectable("No Gem", gemSlot == 0))
 							{
-								currentSpell.SpellGem = g;
-								gemSlot = g;
+								currentSpell.SpellGem = 0;
 								spellEditorState.IsDirty = true;
 							}
+							for (int g = 1; g <= 12; g++)
+							{
+								bool sel = gemSlot == g;
+								if (imgui_Selectable($"Gem {g}", sel))
+								{
+									currentSpell.SpellGem = g;
+									gemSlot = g;
+									spellEditorState.IsDirty = true;
+								}
+							}
 						}
-						EndComboSafe();
 					}
+
 
 					//CAST TYPES
 					imgui_TableNextRow();
@@ -1695,19 +1701,22 @@ namespace E3Core.UI.Windows.CharacterSettings
 					string castTypeString = currentSpell.CastTypeOverride.ToString();
 					//string castPreview = string.IsNullOrEmpty(castTypeString) ? "Auto (Detect)" : castTypeString;
 					imgui_SetNextItemWidth(ComboFieldWidth);
-					if (BeginComboSafe($"##spell_casttype", castTypeString))
+					using (var combo = ImGUICombo.Aquire())
 					{
-						foreach (var option in data._spellCastTypeOptions)
+						if (combo.BeginCombo($"##spell_casttype", castTypeString))
 						{
-							bool sel = string.Equals(castTypeString, option, StringComparison.OrdinalIgnoreCase);
-							if (imgui_Selectable(option, sel))
+							foreach (var option in data._spellCastTypeOptions)
 							{
-								currentSpell.CastTypeOverride = (CastingType)Enum.Parse(typeof(CastingType), option);
-								spellEditorState.IsDirty = true;
+								bool sel = string.Equals(castTypeString, option, StringComparison.OrdinalIgnoreCase);
+								if (imgui_Selectable(option, sel))
+								{
+									currentSpell.CastTypeOverride = (CastingType)Enum.Parse(typeof(CastingType), option);
+									spellEditorState.IsDirty = true;
+								}
 							}
 						}
-						EndComboSafe();
 					}
+
 					Render_TwoColumn_TableCheckbox("##spell_enabled", "Enabled:", currentSpell.Enabled, (u) => { currentSpell.Enabled = u; }, tooltip: "Enable or Disable entry");
 				}
 			}
@@ -1752,7 +1761,7 @@ namespace E3Core.UI.Windows.CharacterSettings
 			}
 			if (imgui_IsItemHovered())
 			{
-				using(var tooltip = ImGUIToolTip.Aquire())
+				using (var tooltip = ImGUIToolTip.Aquire())
 				{
 					imgui_Text("Select from connected bots");
 				}
@@ -1774,10 +1783,10 @@ namespace E3Core.UI.Windows.CharacterSettings
 		private static void RenderCastTargetHelperWindow()
 		{
 			var spellEditorState = _state.GetState<State_SpellEditor>();
-			
+
 			Int32 helperFlags = (int)(ImGuiWindowFlags.ImGuiWindowFlags_AlwaysAutoResize | ImGuiWindowFlags.ImGuiWindowFlags_NoDocking | ImGuiWindowFlags.ImGuiWindowFlags_NoCollapse | ImGuiWindowFlags.ImGuiWindowFlags_NoResize);
-			
-			using(var window = ImGUIWindow.Aquire())
+
+			using (var window = ImGUIWindow.Aquire())
 			{
 				if (window.Begin(spellEditorState.WinName_CastTargetHelperWindow, helperFlags))
 				{
@@ -1815,7 +1824,7 @@ namespace E3Core.UI.Windows.CharacterSettings
 				| ImGuiWindowFlags.ImGuiWindowFlags_NoCollapse
 				| ImGuiWindowFlags.ImGuiWindowFlags_NoResize;
 
-			using(var window = ImGUIWindow.Aquire())
+			using (var window = ImGUIWindow.Aquire())
 			{
 				if (window.Begin(spellEditorState.WinName_CastTargetPickerWindowTitle, (int)pickerFlags))
 				{
@@ -2043,10 +2052,9 @@ namespace E3Core.UI.Windows.CharacterSettings
 			const ImGuiTableColumnFlags ValueColumnFlags = ImGuiTableColumnFlags.ImGuiTableColumnFlags_WidthStretch;
 			var mainWindowState = _state.GetState<State_MainWindow>();
 			var currentSpell = mainWindowState.Currently_EditableSpell;
-
-			if (imgui_BeginTable("SpellOrderingTable", 2, (int)FieldTableFlags, imgui_GetContentRegionAvailX(), 0))
+			using (var table = ImGUITable.Aquire())
 			{
-				try
+				if (table.BeginTable("SpellOrderingTable", 2, (int)FieldTableFlags, imgui_GetContentRegionAvailX(), 0))
 				{
 					imgui_TableSetupColumn("Label", (int)LabelColumnFlags, 0f);
 					imgui_TableSetupColumn("Value", (int)ValueColumnFlags, 0f);
@@ -2056,17 +2064,13 @@ namespace E3Core.UI.Windows.CharacterSettings
 					Render_TwoColumn_TableText("##SpellEditor_AfterEvent", "After Event:", currentSpell.AfterEventKeys, (u) => { currentSpell.AfterEventKeys = u; });
 					Render_TwoColumn_TableText("##SpellEditor_Regent", "Regent:", currentSpell.Reagent, (u) => { currentSpell.Reagent = u; });
 				}
-				finally
-				{
-					imgui_EndTable();
-				}
 			}
+
 			imgui_Separator();
 			imgui_TextColored(0.8f, 0.9f, 0.95f, 1.0f, "Exclusions");
-
-			if (imgui_BeginTable("SpellExclusionsTable", 2, (int)FieldTableFlags, imgui_GetContentRegionAvailX(), 0))
+			using (var table = ImGUITable.Aquire())
 			{
-				try
+				if (table.BeginTable("SpellExclusionsTable", 2, (int)FieldTableFlags, imgui_GetContentRegionAvailX(), 0))
 				{
 					imgui_TableSetupColumn("Label", (int)LabelColumnFlags, 0f);
 					imgui_TableSetupColumn("Value", (int)ValueColumnFlags, 0f);
@@ -2099,12 +2103,8 @@ namespace E3Core.UI.Windows.CharacterSettings
 						}
 					}, tooltip: "Name of toons in your party, comma seperated");
 				}
-				finally
-				{
-					imgui_EndTable();
-
-				}
 			}
+
 
 		}
 
@@ -2120,10 +2120,9 @@ namespace E3Core.UI.Windows.CharacterSettings
 			const float FlagCheckboxColumnWidth = 32f;
 			var mainWindowState = _state.GetState<State_MainWindow>();
 			var currentSpell = mainWindowState.Currently_EditableSpell;
-
-			if (imgui_BeginTable($"E3SpellFlagTable", 3, (int)FlagTableFlags, imgui_GetContentRegionAvailX(), 0))
+			using (var table = ImGUITable.Aquire())
 			{
-				try
+				if (table.BeginTable($"E3SpellFlagTable", 3, (int)FlagTableFlags, imgui_GetContentRegionAvailX(), 0))
 				{
 					float flagLabelColumnWidth = Math.Max(200f, imgui_CalcTextSizeX("Gift of Mana Required:") + FlagLabelPadding);
 					imgui_TableSetupColumn("FlagColumnLabel", (int)FlagLabelColumnFlags, flagLabelColumnWidth);
@@ -2137,13 +2136,7 @@ namespace E3Core.UI.Windows.CharacterSettings
 					Render_TwoColumn_TableCheckbox("##Flag_GoM", "Gift of Mana Required:", currentSpell.GiftOfMana, (u) => { currentSpell.GiftOfMana = u; }, tooltip: "Only cast when a Gift of Mana-style proc is active, saving mana on expensive spells.");
 					Render_TwoColumn_TableCheckbox("##Flag_Debug", "Debug output:", currentSpell.Debug, (u) => { currentSpell.Debug = u; }, tooltip: "Enable detailed logging for this spell to the MQ chat/log window.");
 				}
-				finally
-				{
-					imgui_EndTable();
-				}
-
 			}
-
 		}
 		private static void Render_MainWindow_SpellEditor_Tab_Manual()
 		{
@@ -2297,19 +2290,22 @@ namespace E3Core.UI.Windows.CharacterSettings
 			{
 				imgui_SameLine();
 				imgui_SetNextItemWidth(100f); // Fixed width for type dropdown
-				if (imgui_BeginCombo("##type", state.CurrentAddType.ToString(), 0))
+				using (var combo = ImGUICombo.Aquire())
 				{
-					foreach (AddType t in Enum.GetValues(typeof(AddType)))
+					if (combo.BeginCombo("##type", state.CurrentAddType.ToString(), 0))
 					{
-						bool sel = t == state.CurrentAddType;
-						if (imgui_Selectable(t.ToString(), sel))
+						foreach (AddType t in Enum.GetValues(typeof(AddType)))
 						{
-							state.CurrentAddType = t;
-							state.SelectedCategorySpell = null; // Clear selection when type changes
+							bool sel = t == state.CurrentAddType;
+							if (imgui_Selectable(t.ToString(), sel))
+							{
+								state.CurrentAddType = t;
+								state.SelectedCategorySpell = null; // Clear selection when type changes
+							}
 						}
 					}
-					EndComboSafe();
 				}
+
 			}
 			imgui_SameLine();
 			imgui_Text("Filter:");
@@ -2349,16 +2345,14 @@ namespace E3Core.UI.Windows.CharacterSettings
 
 			// Resolve the catalog for the chosen type
 			// -------- LEFT: Top-level categories --------
-			if (imgui_BeginChild("TopLevelCats", leftW, listH, 1, 0))
+			using (var child = ImGUIChild.Aquire())
 			{
-				try
+				if (child.BeginChild("TopLevelCats", leftW, listH, 1, 0))
 				{
 					imgui_TextColored(0.9f, 0.95f, 1.0f, 1.0f, "Categories");
 					var cats = currentCatalog.Keys; //keys are already sorted in a sorted dictionary
 					foreach (var c in cats)
 					{
-
-
 						bool selectedCategory = string.Equals(state.SelectedCategory, c, StringComparison.OrdinalIgnoreCase);
 						if (imgui_Selectable(c, selectedCategory))
 						{
@@ -2368,21 +2362,19 @@ namespace E3Core.UI.Windows.CharacterSettings
 						}
 					}
 				}
-				finally
-				{
-					imgui_EndChild();
-				}
 			}
+
 		}
 		private static void Render_CatalogAddWindow_MiddlePanel(float middleW, float listH, SortedDictionary<string, SortedDictionary<string, List<E3Spell>>> currentCatalog)
 		{
 			var state = _state.GetState<State_CatalogWindow>();
 
 			// -------- MIDDLE: Subcategory dropdown + Entries --------
-			if (imgui_BeginChild("MiddlePanel", middleW, listH, 1, 0))
+			using (var child = ImGUIChild.Aquire())
 			{
-				try
-				{   // Subcategory dropdown selector (not shown for Items)
+				if (child.BeginChild("MiddlePanel", middleW, listH, 1, 0))
+				{
+					// Subcategory dropdown selector (not shown for Items)
 					float entriesHeight = listH;
 					if (state.CurrentAddType != AddType.Items)
 					{
@@ -2392,45 +2384,48 @@ namespace E3Core.UI.Windows.CharacterSettings
 						string comboLabel = string.IsNullOrEmpty(state.SelectedSubCategory) ? "(All)" : state.SelectedSubCategory;
 						if (!string.IsNullOrEmpty(state.SelectedCategory) && currentCatalog.TryGetValue(state.SelectedCategory, out var submap))
 						{
-							if (imgui_BeginCombo("##subcategory", comboLabel, 0))
+							using (var combo = ImGUICombo.Aquire())
 							{
-								// "(All)" option to show all entries in the category
-								bool selAll = string.IsNullOrEmpty(state.SelectedSubCategory);
-								if (imgui_Selectable("(All)##SubAll", selAll))
+								if (combo.BeginCombo("##subcategory", comboLabel))
 								{
-									state.SelectedSubCategory = string.Empty;
-								}
-
-								var subs = submap.Keys.ToList();
-								subs.Sort(StringComparer.OrdinalIgnoreCase);
-								foreach (var sc in subs)
-								{
-									// Find the highest level spell in this subcategory for icon display
-									int iconIndex = -1;
-									if (submap.TryGetValue(sc, out var spellList) && spellList.Count > 0)
+									// "(All)" option to show all entries in the category
+									bool selAll = string.IsNullOrEmpty(state.SelectedSubCategory);
+									if (imgui_Selectable("(All)##SubAll", selAll))
 									{
-										var highestSpell = spellList.OrderByDescending(s => s.Level).FirstOrDefault();
-										if (highestSpell != null)
+										state.SelectedSubCategory = string.Empty;
+									}
+
+									var subs = submap.Keys.ToList();
+									subs.Sort(StringComparer.OrdinalIgnoreCase);
+									foreach (var sc in subs)
+									{
+										// Find the highest level spell in this subcategory for icon display
+										int iconIndex = -1;
+										if (submap.TryGetValue(sc, out var spellList) && spellList.Count > 0)
 										{
-											iconIndex = highestSpell.SpellIcon;
+											var highestSpell = spellList.OrderByDescending(s => s.Level).FirstOrDefault();
+											if (highestSpell != null)
+											{
+												iconIndex = highestSpell.SpellIcon;
+											}
+										}
+
+										// Draw icon if available
+										if (iconIndex >= 0)
+										{
+											imgui_DrawSpellIconByIconIndex(iconIndex, 20.0f);
+											imgui_SameLine();
+										}
+
+										bool sel = string.Equals(state.SelectedSubCategory, sc, StringComparison.OrdinalIgnoreCase);
+										if (imgui_Selectable($"{sc}##Sub_{sc}", sel))
+										{
+											state.SelectedSubCategory = sc;
 										}
 									}
-
-									// Draw icon if available
-									if (iconIndex >= 0)
-									{
-										imgui_DrawSpellIconByIconIndex(iconIndex, 20.0f);
-										imgui_SameLine();
-									}
-
-									bool sel = string.Equals(state.SelectedSubCategory, sc, StringComparison.OrdinalIgnoreCase);
-									if (imgui_Selectable($"{sc}##Sub_{sc}", sel))
-									{
-										state.SelectedSubCategory = sc;
-									}
 								}
-								EndComboSafe();
 							}
+
 						}
 						else
 						{
@@ -2443,9 +2438,9 @@ namespace E3Core.UI.Windows.CharacterSettings
 					}
 
 					// Entries list
-					if (imgui_BeginChild("EntryList", middleW - 10f, entriesHeight, 0, 0))
+					using (var child2 = ImGUIChild.Aquire())
 					{
-						try
+						if (child2.BeginChild("EntryList", middleW - 10f, entriesHeight, 0, 0))
 						{
 							imgui_TextColored(0.9f, 0.95f, 1.0f, 1.0f, "Entries");
 
@@ -2464,7 +2459,7 @@ namespace E3Core.UI.Windows.CharacterSettings
 
 							// stable ordering
 							entries = entries.OrderByDescending(e => e.Level)
-											 .ThenBy(e => e.Name, StringComparer.OrdinalIgnoreCase);
+												.ThenBy(e => e.Name, StringComparer.OrdinalIgnoreCase);
 
 							int i = 0;
 							foreach (var e in entries)
@@ -2483,16 +2478,12 @@ namespace E3Core.UI.Windows.CharacterSettings
 								}
 								i++;
 							}
-
 							if (i == 0) imgui_Text("No entries found");
 						}
-						finally { imgui_EndChild(); }
 					}
-
 				}
-				finally { imgui_EndChild(); }
-
 			}
+
 
 		}
 		private static void Render_CatalogAddWindow_RightPanel(float rightW, float listH, SectionData selectedSection)
@@ -2500,9 +2491,9 @@ namespace E3Core.UI.Windows.CharacterSettings
 			var catalogState = _state.GetState<State_CatalogWindow>();
 			var mainWindowState = _state.GetState<State_MainWindow>();
 			// -------- RIGHT: Info Panel --------
-			if (imgui_BeginChild("InfoPanel", rightW, listH, 1, 0))
+			using (var child = ImGUIChild.Aquire())
 			{
-				try
+				if (child.BeginChild("InfoPanel", rightW, listH, 1, 0))
 				{
 					imgui_TextColored(0.9f, 0.95f, 1.0f, 1.0f, "Info");
 					// Add button on same line as Info header, right-aligned
@@ -2549,7 +2540,6 @@ namespace E3Core.UI.Windows.CharacterSettings
 					}
 
 					imgui_Separator();
-
 					if (catalogState.SelectedCategorySpell != null)
 					{
 						// Display name and icon
@@ -2573,7 +2563,6 @@ namespace E3Core.UI.Windows.CharacterSettings
 						imgui_TextColored(0.7f, 0.7f, 0.7f, 1.0f, "Select an entry to view details.");
 					}
 				}
-				finally { imgui_EndChild(); }
 			}
 		}
 		private static void Render_CatalogAddWindow(IniData pd, SectionData selectedSection)
@@ -2582,9 +2571,10 @@ namespace E3Core.UI.Windows.CharacterSettings
 
 			// Set initial size only on first use - window is resizable and remembers user's size
 			imgui_SetNextWindowSizeWithCond(900f, 600f, (int)ImGuiCond.FirstUseEver); // ImGuiCond_FirstUseEver = 4
-			if (imgui_Begin(_state.WinName_AddModal, (int)ImGuiWindowFlags.ImGuiWindowFlags_NoDocking))
+
+			using (var window = ImGUIWindow.Aquire())
 			{
-				try
+				if (window.Begin(_state.WinName_AddModal, (int)ImGuiWindowFlags.ImGuiWindowFlags_NoDocking))
 				{
 					float listH = imgui_GetContentRegionAvailY() - 120f; // Reserve space for header/footer
 					float leftW, middleW, rightW;
@@ -2609,10 +2599,6 @@ namespace E3Core.UI.Windows.CharacterSettings
 					{
 						_state.Show_AddModal = false;
 					}
-				}
-				finally
-				{
-					imgui_End();
 				}
 			}
 		}
@@ -2680,17 +2666,17 @@ namespace E3Core.UI.Windows.CharacterSettings
 		private static void RenderIfAppendModal(SectionData selectedSection)
 		{
 			var mainWindowState = _state.GetState<State_MainWindow>();
-
-			if (imgui_Begin(_state.WinName_IfAppendModal, (int)(ImGuiWindowFlags.ImGuiWindowFlags_AlwaysAutoResize | ImGuiWindowFlags.ImGuiWindowFlags_NoDocking)))
+			using (var window = ImGUIWindow.Aquire())
 			{
-				try
+				if (window.Begin(_state.WinName_IfAppendModal, (int)(ImGuiWindowFlags.ImGuiWindowFlags_AlwaysAutoResize | ImGuiWindowFlags.ImGuiWindowFlags_NoDocking)))
 				{
 					if (!string.IsNullOrEmpty(_cfgIfAppendStatus)) imgui_Text(_cfgIfAppendStatus);
 					float h = 300f; float w = 520f;
-					if (imgui_BeginChild("IfList", w, h, 1, 0))
+					using (var child = ImGUIChild.Aquire())
 					{
-						try
+						if (child.BeginChild("IfList", w, h, 1, 0))
 						{
+
 							var list = _cfgIfAppendCandidates ?? new List<string>();
 							int i = 0;
 							foreach (var key in list)
@@ -2719,21 +2705,9 @@ namespace E3Core.UI.Windows.CharacterSettings
 								i++;
 							}
 						}
-						finally
-						{
-							imgui_EndChild();
-						}
 					}
 					if (imgui_Button("Close")) _state.Show_IfAppendModal = false;
 				}
-				finally
-				{
-					imgui_End();
-				}
-			}
-			else
-			{
-				_state.Show_IfAppendModal = false;
 			}
 		}
 
@@ -2892,16 +2866,16 @@ namespace E3Core.UI.Windows.CharacterSettings
 			if (imgui_Button("Refresh")) _state.Request_AllplayersRefresh = true;
 
 			imgui_Separator();
-
-			if (imgui_BeginChild("AllPlayersList", 0, 0, 1, 0))
+			using (var child = ImGUIChild.Aquire())
 			{
-				try
+				if (child.BeginChild("AllPlayersList", 0, 0, 1, 0))
 				{
 					float outerW = Math.Max(720f, imgui_GetContentRegionAvailX()); // keep it roomy
-																				   // Columns: Toon | Value (editable) | Actions
-					if (imgui_BeginTable("E3AllPlayersTable", 3, 0, outerW, 0))
+
+					// Columns: Toon | Value (editable) | Actions
+					using (var table = ImGUITable.Aquire())
 					{
-						try
+						if (table.BeginTable("E3AllPlayersTable", 3, 0, outerW, 0))
 						{
 							imgui_TableSetupColumn("Toon", 0, 180f);
 							imgui_TableSetupColumn("Value", 0, Math.Max(260f, outerW - (180f + 100f))); // leave room for Save
@@ -2931,25 +2905,27 @@ namespace E3Core.UI.Windows.CharacterSettings
 
 									if (isBool)
 									{
-										if (BeginComboSafe($"##value_{toon}", currentValue))
+										using (var combo = ImGUICombo.Aquire())
 										{
-											if (imgui_Selectable("True", string.Equals(currentValue, "True", StringComparison.OrdinalIgnoreCase)))
+											if (combo.BeginCombo($"##value_{toon}", currentValue))
 											{
-												allPlayerState.Data_Edit[toon] = "True";
+												if (imgui_Selectable("True", string.Equals(currentValue, "True", StringComparison.OrdinalIgnoreCase)))
+												{
+													allPlayerState.Data_Edit[toon] = "True";
+												}
+												if (imgui_Selectable("False", string.Equals(currentValue, "False", StringComparison.OrdinalIgnoreCase)))
+												{
+													allPlayerState.Data_Edit[toon] = "False";
+												}
+												if (imgui_Selectable("On", string.Equals(currentValue, "On", StringComparison.OrdinalIgnoreCase)))
+												{
+													allPlayerState.Data_Edit[toon] = "On";
+												}
+												if (imgui_Selectable("Off", string.Equals(currentValue, "Off", StringComparison.OrdinalIgnoreCase)))
+												{
+													allPlayerState.Data_Edit[toon] = "Off";
+												}
 											}
-											if (imgui_Selectable("False", string.Equals(currentValue, "False", StringComparison.OrdinalIgnoreCase)))
-											{
-												allPlayerState.Data_Edit[toon] = "False";
-											}
-											if (imgui_Selectable("On", string.Equals(currentValue, "On", StringComparison.OrdinalIgnoreCase)))
-											{
-												allPlayerState.Data_Edit[toon] = "On";
-											}
-											if (imgui_Selectable("Off", string.Equals(currentValue, "Off", StringComparison.OrdinalIgnoreCase)))
-											{
-												allPlayerState.Data_Edit[toon] = "Off";
-											}
-											EndComboSafe();
 										}
 									}
 									else
@@ -2979,16 +2955,7 @@ namespace E3Core.UI.Windows.CharacterSettings
 								}
 							}
 						}
-						finally
-						{
-							imgui_EndTable();
-						}
-
 					}
-				}
-				finally
-				{
-					imgui_EndChild();
 				}
 			}
 		}
@@ -3192,14 +3159,14 @@ namespace E3Core.UI.Windows.CharacterSettings
 		}
 
 		// Safe combo wrapper for older MQ2Mono
-		private static bool BeginComboSafe(string label, string preview)
-		{
-			return imgui_BeginCombo(label, preview, 0);
-		}
-		private static void EndComboSafe()
-		{
-			imgui_EndCombo();
-		}
+		//private static bool BeginComboSafe(string label, string preview)
+		//{
+		//	return imgui_BeginCombo(label, preview, 0);
+		//}
+		//private static void EndComboSafe()
+		//{
+		//	imgui_EndCombo();
+		//}
 		private static void Render_RichText(List<string> rawText)
 		{
 			if (rawText.Count == 0)
