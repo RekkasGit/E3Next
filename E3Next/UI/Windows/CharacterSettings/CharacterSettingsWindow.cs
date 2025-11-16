@@ -29,18 +29,9 @@ namespace E3Core.UI.Windows.CharacterSettings
 		private static ISpawns _spawns = E3.Spawns;
 
 		public static CharacterSettingsState _state = new CharacterSettingsState();
-		private const float SpellEditorDefaultTextWidth = 320f;
-		private const float SpellEditorDefaultNumberWidth = 140f;
-		private const float SpellEditorDefaultCheckboxWidth = 20f;
-
-		//A very large bandaid on the Threading of this window
-		//used when trying to get a pointer to the _cfg objects.
 
 		#region Variables
-		/// <summary>
-		///Data organized into Category, Sub Category, List of Spells.
-		///always get a pointer to these via the method GetCatalogByType
-		/// </summary>
+
 
 		// Toon picker (Heals: Tank / Important Bot)
 		private static string _cfgToonPickerStatus = string.Empty;
@@ -622,7 +613,7 @@ namespace E3Core.UI.Windows.CharacterSettings
 											if (addIfs)
 											{
 												_state.ClearAddInLine();
-												state.Show_AddInLine = true;
+												state.Show_AddKey = true;
 												state.SelectedAddInLine = "Ifs";
 												state.SelectedSection = "Ifs";
 												state.SelectedValueIndex = -1;
@@ -643,7 +634,7 @@ namespace E3Core.UI.Windows.CharacterSettings
 											if (addBurn)
 											{
 												_state.ClearAddInLine();
-												state.Show_AddInLine = true;
+												state.Show_AddKey = true;
 												state.SelectedAddInLine = "Burn";
 												state.SelectedSection = "Burn";
 												state.SelectedValueIndex = -1;
@@ -738,7 +729,7 @@ namespace E3Core.UI.Windows.CharacterSettings
 						}
 					}
 					// Inline Add New editor (triggered from header context menu)
-					if (state.Show_AddInLine
+					if (state.Show_AddKey
 						&& string.Equals(state.SelectedAddInLine, state.SelectedSection, StringComparison.OrdinalIgnoreCase)
 						&& string.IsNullOrEmpty(state.SelectedKey))
 					{
@@ -753,15 +744,15 @@ namespace E3Core.UI.Windows.CharacterSettings
 						{
 							state.Buffer_NewKey = imgui_InputText_Get("##inline_new_key") ?? string.Empty;
 						}
-						imgui_Text("Value:");
-						float inlineValueAvail = imgui_GetContentRegionAvailX();
-						float inlineValueWidth = Math.Max(420f, inlineValueAvail * 0.70f);
-						inlineValueWidth = Math.Min(inlineValueWidth, Math.Max(320f, inlineValueAvail - 80f));
-						float inlineValueHeight = Math.Max(140f, imgui_GetTextLineHeightWithSpacing() * 6f);
-						if (imgui_InputTextMultiline("##inline_new_value", state.Buffer_NewValue ?? string.Empty, inlineValueWidth, inlineValueHeight))
-						{
-							state.Buffer_NewValue = imgui_InputText_Get("##inline_new_value") ?? string.Empty;
-						}
+						//imgui_Text("Value:");
+						//float inlineValueAvail = imgui_GetContentRegionAvailX();
+						//float inlineValueWidth = Math.Max(420f, inlineValueAvail * 0.70f);
+						//inlineValueWidth = Math.Min(inlineValueWidth, Math.Max(320f, inlineValueAvail - 80f));
+						//float inlineValueHeight = Math.Max(140f, imgui_GetTextLineHeightWithSpacing() * 6f);
+						//if (imgui_InputTextMultiline("##inline_new_value", state.Buffer_NewValue ?? string.Empty, inlineValueWidth, inlineValueHeight))
+						//{
+						//	state.Buffer_NewValue = imgui_InputText_Get("##inline_new_value") ?? string.Empty;
+						//}
 						if (imgui_Button("Add##inline_add"))
 						{
 							string key = (state.Buffer_NewKey ?? string.Empty).Trim();
@@ -769,18 +760,14 @@ namespace E3Core.UI.Windows.CharacterSettings
 							bool added = false;
 							if (state.SelectedAddInLine.Equals("Ifs", StringComparison.OrdinalIgnoreCase))
 							{
-								added = data.AddIfToActiveIni(key, val);
+								added = data.AddIfToActiveIni(key, String.Empty);
 							}
 							else if (state.SelectedAddInLine.Equals("Burn", StringComparison.OrdinalIgnoreCase))
 							{
-								added = data.AddBurnToActiveIni(key, val);
+								added = data.AddBurnToActiveIni(key, string.Empty);
 							}
-							if (added)
-							{
-								_state.ClearAddInLine();
-								// Open blank value editor if value was empty
-								state.InLineEditIndex = 0;
-							}
+							_state.ClearAddInLine();
+
 						}
 						imgui_SameLine();
 						if (imgui_Button("Cancel##inline_cancel"))
@@ -1166,6 +1153,39 @@ namespace E3Core.UI.Windows.CharacterSettings
 
 			imgui_Separator();
 		}
+		private static void Render_ReorderButton(string label, bool enabled, Action onClick)
+		{
+			if (!enabled)
+			{
+				imgui_PushStyleVarFloat((int)ImGuiStyleVar.Alpha, 0.4f);
+			}
+			bool pressed = imgui_Button(label);
+			if (!enabled)
+			{
+				imgui_PopStyleVar(1);
+			}
+			if (pressed && enabled)
+			{
+				onClick?.Invoke();
+			}
+		}
+		private static void SwapAndMark(int fromIndex, int toIndex, out bool listChanged)
+		{
+			var mainWindowState = _state.GetState<State_MainWindow>();
+			listChanged = false;
+			var key = data.GetCurrentEditedSpellKeyData();
+			if (key == null) return;
+
+			var vals = GetValues(key);
+			if (fromIndex < 0 || fromIndex >= vals.Count) return;
+			if (toIndex < 0 || toIndex >= vals.Count) return;
+
+			string temp = vals[toIndex];
+			vals[toIndex] = vals[fromIndex];
+			vals[fromIndex] = temp;
+			listChanged = true;
+			mainWindowState.PendingValueSelection = toIndex;
+		}
 		private static void Render_MainWindow_ConfigEditor_SelectedKeyValues_Collections(List<string> parts, SectionData selectedSection)
 		{
 			var catalogState = _state.GetState<State_CatalogWindow>();
@@ -1176,151 +1196,44 @@ namespace E3Core.UI.Windows.CharacterSettings
 			for (int i = 0; i < parts.Count; i++)
 			{
 				string v = parts[i];
-				bool editing = (mainWindowState.InLineEditIndex == i);
 				// Create a unique ID for this item that doesn't depend on its position in the list
 				string itemUid = $"{mainWindowState.SelectedSection}_{mainWindowState.SelectedKey}_{i}_{(v ?? string.Empty).GetHashCode()}";
 
-				if (!editing)
+
+				// Row with better styling and alignment
+				Int32 iconID = data.GetIconFromIniString(v);
+				imgui_DrawSpellIconByIconIndex(iconID, 30.0f);
+				imgui_SameLine();
+				imgui_Text($"{i + 1}.");
+				imgui_SameLine(_valueRowActionStartOffset + 20);
+
+				bool canMoveUp = i > 0;
+				bool canMoveDown = i < parts.Count - 1;
+
+				Render_ReorderButton($"^##moveup_{itemUid}", canMoveUp, () => SwapAndMark(i, i - 1, out listChanged));
+				imgui_SameLine();
+				Render_ReorderButton($"v##movedown_{itemUid}", canMoveDown, () => SwapAndMark(i, i + 1, out listChanged));
+				imgui_SameLine();
+
+				// Make value selectable to show info in right panel
+				bool isSelected = (mainWindowState.SelectedValueIndex == i);
+				if (imgui_Selectable($"{v}##select_{itemUid}", isSelected))
 				{
-					// Row with better styling and alignment
-					Int32 iconID = data.GetIconFromIniString(v);
-					imgui_DrawSpellIconByIconIndex(iconID, 30.0f);
-					imgui_SameLine();
-					imgui_Text($"{i + 1}.");
-					imgui_SameLine(_valueRowActionStartOffset + 20);
-
-					bool canMoveUp = i > 0;
-					bool canMoveDown = i < parts.Count - 1;
-
-					void SwapAndMark(int fromIndex, int toIndex)
-					{
-						var pdAct = data.GetActiveCharacterIniData();
-						var selSec = pdAct.Sections.GetSectionData(mainWindowState.SelectedSection);
-						var key = selSec?.Keys.GetKeyData(mainWindowState.SelectedKey);
-						if (key == null) return;
-
-						var vals = GetValues(key);
-						if (fromIndex < 0 || fromIndex >= vals.Count) return;
-						if (toIndex < 0 || toIndex >= vals.Count) return;
-
-						string temp = vals[toIndex];
-						vals[toIndex] = vals[fromIndex];
-						vals[fromIndex] = temp;
-						WriteValues(key, vals);
-						listChanged = true;
-						mainWindowState.PendingValueSelection = toIndex;
-					}
-
-					void StartInlineEdit(int index, string currentValue)
-					{
-						mainWindowState.InLineEditIndex = index;
-						mainWindowState.Buffer_InlineEdit = currentValue ?? string.Empty;
-					}
-
-					void DeleteValueAt(int index)
-					{
-						var pdAct = data.GetActiveCharacterIniData();
-						var selSec = pdAct.Sections.GetSectionData(mainWindowState.SelectedSection);
-						var key = selSec?.Keys.GetKeyData(mainWindowState.SelectedKey);
-						if (key != null)
-						{
-							var vals = GetValues(key);
-							if (index >= 0 && index < vals.Count)
-							{
-								vals.RemoveAt(index);
-								WriteValues(key, vals);
-								listChanged = true;
-							}
-						}
-					}
-
-					void RenderReorderButton(string label, bool enabled, Action onClick)
-					{
-						if (!enabled)
-						{
-							imgui_PushStyleVarFloat((int)ImGuiStyleVar.Alpha, 0.4f);
-						}
-						bool pressed = imgui_Button(label);
-						if (!enabled)
-						{
-							imgui_PopStyleVar(1);
-						}
-						if (pressed && enabled)
-						{
-							onClick?.Invoke();
-						}
-					}
-
-					RenderReorderButton($"^##moveup_{itemUid}", canMoveUp, () => SwapAndMark(i, i - 1));
-					imgui_SameLine();
-					RenderReorderButton($"v##movedown_{itemUid}", canMoveDown, () => SwapAndMark(i, i + 1));
-					imgui_SameLine();
-
-					// Make value selectable to show info in right panel
-					bool isSelected = (mainWindowState.SelectedValueIndex == i);
-					if (imgui_Selectable($"{v}##select_{itemUid}", isSelected))
-					{
-						mainWindowState.SelectedValueIndex = i;
-						mainWindowState.Buffer_InlineEdit = v;
-					}
-					using (var popup = ImGUIPopUpContext.Aquire())
-					{
-						if (popup.BeginPopupContextItem($"ValueCtx_{itemUid}", 1))
-						{
-							if (canMoveUp && imgui_MenuItem("Move Up")) SwapAndMark(i, i - 1);
-							if (canMoveDown && imgui_MenuItem("Move Down")) SwapAndMark(i, i + 1);
-							if (imgui_MenuItem("Replace From Catalog"))
-							{
-								catalogState.ReplaceMode = true;
-								catalogState.ReplaceIndex = i;
-								_state.Show_AddModal = true;
-							}
-						}
-					}
-
+					mainWindowState.SelectedValueIndex = i;
+					mainWindowState.Buffer_InlineEdit = v;
 				}
-				else
+				using (var popup = ImGUIPopUpContext.Aquire())
 				{
-					// Edit mode with better styling
-					imgui_Text($"* {i + 1}.");
-					imgui_SameLine(_valueRowActionStartOffset);
-
-					float editAvail = imgui_GetContentRegionAvailX();
-					float editWidth = Math.Max(420f, editAvail - 140f);
-					editWidth = Math.Min(editWidth, Math.Max(260f, editAvail - 80f));
-					float editHeight = Math.Max(140f, imgui_GetTextLineHeightWithSpacing() * 6f);
-					if (imgui_InputTextMultiline($"##edit_text_{itemUid}", mainWindowState.Buffer_InlineEdit ?? string.Empty, editWidth, editHeight))
+					if (popup.BeginPopupContextItem($"ValueCtx_{itemUid}", 1))
 					{
-						mainWindowState.Buffer_InlineEdit = imgui_InputText_Get($"##edit_text_{itemUid}");
-					}
-
-					if (imgui_Button($"Save##save_{itemUid}"))
-					{
-						string newText = mainWindowState.Buffer_InlineEdit ?? string.Empty;
-						int idx = i;
-						var pdAct = data.GetActiveCharacterIniData();
-						var selSec = pdAct.Sections.GetSectionData(mainWindowState.SelectedSection);
-						var key = selSec?.Keys.GetKeyData(mainWindowState.SelectedKey);
-						if (key != null)
+						if (canMoveUp && imgui_MenuItem("Move Up")) SwapAndMark(i, i - 1, out listChanged);
+						if (canMoveDown && imgui_MenuItem("Move Down")) SwapAndMark(i, i + 1, out listChanged);
+						if (imgui_MenuItem("Replace From Catalog"))
 						{
-							var vals = GetValues(key);
-							if (idx >= 0 && idx < vals.Count)
-							{
-								vals[idx] = newText;
-								WriteValues(key, vals);
-								listChanged = true;
-							}
+							catalogState.ReplaceMode = true;
+							catalogState.ReplaceIndex = i;
+							_state.Show_AddModal = true;
 						}
-						mainWindowState.InLineEditIndex = -1;
-						mainWindowState.Buffer_InlineEdit = string.Empty;
-						// continue to render items; parts refresh handled below
-					}
-					imgui_SameLine();
-
-					if (imgui_Button($"Cancel##cancel_{itemUid}"))
-					{
-						mainWindowState.InLineEditIndex = -1;
-						mainWindowState.Buffer_InlineEdit = string.Empty;
 					}
 				}
 
@@ -1745,7 +1658,7 @@ namespace E3Core.UI.Windows.CharacterSettings
 			const float helperSpacing = 6f;
 			float avail = imgui_GetContentRegionAvailX();
 			float totalButtons = pickerButtonWidth + helperButtonWidth + (helperSpacing * 2);
-			float inputWidth = Math.Max(160f, Math.Min(SpellEditorDefaultTextWidth, avail - totalButtons));
+			float inputWidth = Math.Max(160f, Math.Min(State_SpellEditor.SpellEditorDefaultTextWidth, avail - totalButtons));
 			imgui_SetNextItemWidth(inputWidth);
 			string castTargetId = "##SpellEditor_CastTarget";
 			string value = currentSpell.CastTarget ?? string.Empty;
@@ -2518,6 +2431,17 @@ namespace E3Core.UI.Windows.CharacterSettings
 									string v = (catalogState.SelectedCategorySpell.Name ?? string.Empty).Trim();
 									if (catalogState.ReplaceMode && catalogState.ReplaceIndex >= 0 && catalogState.ReplaceIndex < vals.Count)
 									{
+										string currentValue = vals[catalogState.ReplaceIndex];
+										Int32 indexOfSlash = currentValue.IndexOf('/');
+
+										if (indexOfSlash > -1)
+										{
+											string flags = String.Empty;
+											//copy over the flags
+											flags = currentValue.Substring(indexOfSlash + 1);
+											v = v + $"/{flags}";
+										}
+
 										vals[catalogState.ReplaceIndex] = v;
 										mainWindowState.PendingValueSelection = catalogState.ReplaceIndex;
 										catalogState.ReplaceMode = false;
@@ -2526,7 +2450,7 @@ namespace E3Core.UI.Windows.CharacterSettings
 										_state.Show_AddModal = false;//close the window
 
 									}
-									else if (!vals.Contains(v, StringComparer.OrdinalIgnoreCase))
+									else
 									{
 										if (vals.Count == 1 && String.IsNullOrWhiteSpace(vals[0])) vals.Clear();
 										vals.Add(v);
@@ -3232,7 +3156,7 @@ namespace E3Core.UI.Windows.CharacterSettings
 
 
 
-		private static void Render_TwoColumn_TableText(string id, string label, string current, Action<string> action, string tooltip = null, float width = SpellEditorDefaultTextWidth)
+		private static void Render_TwoColumn_TableText(string id, string label, string current, Action<string> action, string tooltip = null, float width = State_SpellEditor.SpellEditorDefaultTextWidth)
 		{
 			var spellEditorState = _state.GetState<State_SpellEditor>();
 			imgui_TableNextRow();
@@ -3258,7 +3182,7 @@ namespace E3Core.UI.Windows.CharacterSettings
 				spellEditorState.IsDirty = true;
 			}
 		}
-		private static void Render_TwoColumn_TableInt(string id, string label, int current, Action<Int32> action, string tooltip = null, float width = SpellEditorDefaultNumberWidth)
+		private static void Render_TwoColumn_TableInt(string id, string label, int current, Action<Int32> action, string tooltip = null, float width = State_SpellEditor.SpellEditorDefaultNumberWidth)
 		{
 			var spellEditorState = _state.GetState<State_SpellEditor>();
 			imgui_TableNextRow();
@@ -3283,7 +3207,7 @@ namespace E3Core.UI.Windows.CharacterSettings
 				spellEditorState.IsDirty = true;
 			}
 		}
-		private static void Render_TwoColumn_TableCheckbox(string id, string label, bool current, Action<bool> action, string tooltip = null, float width = SpellEditorDefaultCheckboxWidth)
+		private static void Render_TwoColumn_TableCheckbox(string id, string label, bool current, Action<bool> action, string tooltip = null, float width = State_SpellEditor.SpellEditorDefaultCheckboxWidth)
 		{
 			var spellEditorState = _state.GetState<State_SpellEditor>();
 			imgui_TableNextRow();
@@ -3291,13 +3215,13 @@ namespace E3Core.UI.Windows.CharacterSettings
 			imgui_Text(label);
 			if (!string.IsNullOrWhiteSpace(tooltip) && imgui_IsItemHovered())
 			{
-				using(var tt = ImGUIToolTip.Aquire())
+				using (var tt = ImGUIToolTip.Aquire())
 				{
 					imgui_PushTextWrapPos(320f);
 					imgui_TextWrapped(tooltip);
 					imgui_PopTextWrapPos();
 				}
-				
+
 			}
 			imgui_TableNextColumn();
 			imgui_SetNextItemWidth(width);
@@ -3466,7 +3390,7 @@ namespace E3Core.UI.Windows.CharacterSettings
 			var mainWindowState = _state.GetState<State_MainWindow>();
 			mainWindowState.ConfigIsDirty = true;
 
-			if (Object.ReferenceEquals(kd.ValueList, values)) return;
+			if (Object.ReferenceEquals(kd.ValueList, values)) return; //don't try and write to the same list you are reading from
 
 			// Preserve exact row semantics: one value per row, including empties
 			if (kd.ValueList != null)
@@ -4418,7 +4342,7 @@ namespace E3Core.UI.Windows.CharacterSettings
 
 		private static void RenderDonateModal()
 		{
-			using(var window = ImGUIWindow.Aquire())
+			using (var window = ImGUIWindow.Aquire())
 			{
 				if (window.Begin(_state.WinName_Donate, (int)(ImGuiWindowFlags.ImGuiWindowFlags_AlwaysAutoResize | ImGuiWindowFlags.ImGuiWindowFlags_NoDocking)))
 				{

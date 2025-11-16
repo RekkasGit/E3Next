@@ -62,7 +62,7 @@ namespace E3Core.UI.Windows.CharacterSettings
 		public List<string> SectionsOrdered = new List<string>();
 
 		public bool Show_ShowIntegratedEditor = true;
-		public bool Show_AddInLine = false;
+		public bool Show_AddKey = false;
 		public bool ShowOfflineCharacters = false;
 		public bool ConfigIsDirty = false;
 		public string LastIniPath = String.Empty;
@@ -140,7 +140,9 @@ namespace E3Core.UI.Windows.CharacterSettings
 		public bool IsDirty = false;
 		public readonly string WinName_CastTargetHelperWindow = "Cast Target Helper";
 		public readonly string WinName_CastTargetPickerWindowTitle = "Cast Target Picker";
-
+		public const float SpellEditorDefaultTextWidth = 320f;
+		public const float SpellEditorDefaultNumberWidth = 140f;
+		public const float SpellEditorDefaultCheckboxWidth = 20f;
 		public bool ShowCastTargetPicker
 		{
 			get { return imgui_Begin_OpenFlagGet(WinName_CastTargetPickerWindowTitle); }
@@ -380,7 +382,7 @@ namespace E3Core.UI.Windows.CharacterSettings
 		public void ClearAddInLine()
 		{
 			var state = this.GetState<State_MainWindow>();
-			state.Show_AddInLine = false;
+			state.Show_AddKey = false;
 			state.SelectedKey = string.Empty;
 			state.SelectedAddInLine = String.Empty;
 			state.Buffer_NewKey = string.Empty;

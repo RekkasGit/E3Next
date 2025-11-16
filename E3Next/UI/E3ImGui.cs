@@ -946,11 +946,7 @@ namespace MonoCore
 			}
 			public void Dispose()
 			{
-				//only call pop if the original call was set to open per IMGUI docs
-				/*ImGui::TreePop():
-				 * When TreeNodeEx returns true, you must call ImGui::TreePop() 
-				 * after drawing all the child elements to correctly manage the tree's indentation and state
-				 */
+			
 				if (IsOpen)
 				{
 					imgui_EndTabItem();
