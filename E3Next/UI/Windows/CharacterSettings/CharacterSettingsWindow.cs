@@ -2713,8 +2713,8 @@ namespace E3Core.UI.Windows.CharacterSettings
 
 		private static void Render_ThemeSettingsWindow()
 		{
-			
-			using(var window = ImGUIWindow.Aquire())
+
+			using (var window = ImGUIWindow.Aquire())
 			{
 				if (window.Begin(_state.WinName_ThemeSettings, (int)(ImGuiWindowFlags.ImGuiWindowFlags_AlwaysAutoResize | ImGuiWindowFlags.ImGuiWindowFlags_NoDocking)))
 				{
@@ -3144,7 +3144,7 @@ namespace E3Core.UI.Windows.CharacterSettings
 					imgui_SameLine();
 					if (imgui_Button("Close")) { _state.Show_IfSampleModal = false; }
 				}
-			}	
+			}
 		}
 
 		private static void Render_RichText(List<string> rawText)
@@ -3240,13 +3240,13 @@ namespace E3Core.UI.Windows.CharacterSettings
 			imgui_Text(label);
 			if (!string.IsNullOrWhiteSpace(tooltip) && imgui_IsItemHovered())
 			{
-				using(var tt = ImGUIToolTip.Aquire())
+				using (var tt = ImGUIToolTip.Aquire())
 				{
 					imgui_PushTextWrapPos(320f);
 					imgui_TextWrapped(tooltip);
 					imgui_PopTextWrapPos();
 				}
-			
+
 			}
 			imgui_TableNextColumn();
 			imgui_SetNextItemWidth(width);
@@ -3291,11 +3291,13 @@ namespace E3Core.UI.Windows.CharacterSettings
 			imgui_Text(label);
 			if (!string.IsNullOrWhiteSpace(tooltip) && imgui_IsItemHovered())
 			{
-				imgui_BeginTooltip();
-				imgui_PushTextWrapPos(320f);
-				imgui_TextWrapped(tooltip);
-				imgui_PopTextWrapPos();
-				imgui_EndTooltip();
+				using(var tt = ImGUIToolTip.Aquire())
+				{
+					imgui_PushTextWrapPos(320f);
+					imgui_TextWrapped(tooltip);
+					imgui_PopTextWrapPos();
+				}
+				
 			}
 			imgui_TableNextColumn();
 			imgui_SetNextItemWidth(width);
@@ -3382,7 +3384,7 @@ namespace E3Core.UI.Windows.CharacterSettings
 
 			imgui_Separator();
 
-			using(var tabbar = ImGUITabBar.Aquire())
+			using (var tabbar = ImGUITabBar.Aquire())
 			{
 				if (tabbar.BeginTabBar($"SpellModifierTabs"))
 				{
@@ -3479,247 +3481,242 @@ namespace E3Core.UI.Windows.CharacterSettings
 		private static void RenderFoodDrinkPicker(SectionData selectedSection)
 		{
 			// Respect current open state instead of forcing true every frame
-			bool shouldDraw = imgui_Begin(_state.WinName_FoodDrinkModal, (int)(ImGuiWindowFlags.ImGuiWindowFlags_AlwaysAutoResize | ImGuiWindowFlags.ImGuiWindowFlags_NoCollapse | ImGuiWindowFlags.ImGuiWindowFlags_NoDocking));
 
-			if (shouldDraw)
+
+			using (var window = ImGUIWindow.Aquire())
 			{
-				var mainWindowState = _state.GetState<State_MainWindow>();
-				var foodDrinkState = _state.GetState<State_FoodDrink>();
-
-
-				// Header with better styling
-				imgui_TextColored(0.95f, 0.85f, 0.35f, 1.0f, $"Pick {foodDrinkState.Key} from inventory");
-				imgui_Separator();
-
-				// Status and scan button
-				if (string.IsNullOrEmpty(foodDrinkState.Status))
+				if (window.Begin(_state.WinName_FoodDrinkModal, (int)(ImGuiWindowFlags.ImGuiWindowFlags_AlwaysAutoResize | ImGuiWindowFlags.ImGuiWindowFlags_NoCollapse | ImGuiWindowFlags.ImGuiWindowFlags_NoDocking)))
 				{
-					if (imgui_Button("Scan Inventory"))
+					var mainWindowState = _state.GetState<State_MainWindow>();
+					var foodDrinkState = _state.GetState<State_FoodDrink>();
+					// Header with better styling
+					imgui_TextColored(0.95f, 0.85f, 0.35f, 1.0f, $"Pick {foodDrinkState.Key} from inventory");
+					imgui_Separator();
+
+					// Status and scan button
+					if (string.IsNullOrEmpty(foodDrinkState.Status))
 					{
-						foodDrinkState.Status = "Scanning...";
-						foodDrinkState.ScanRequested = true;
-					}
-					imgui_Text("Click above to scan your inventory.");
-				}
-				else
-				{
-					imgui_TextColored(0.7f, 0.9f, 0.7f, 1.0f, foodDrinkState.Status);
-				}
-
-				imgui_Separator();
-
-				// Results list with better sizing
-				if (foodDrinkState.Candidates.Count > 0)
-				{
-					imgui_TextColored(0.8f, 0.9f, 1.0f, 1.0f, "Found items (click to select):");
-
-					// Use responsive sizing for the list
-					float listHeight = Math.Min(400f, Math.Max(150f, foodDrinkState.Candidates.Count * 20f + 40f));
-					float listWidth = Math.Max(300f, imgui_GetContentRegionAvailX() * 0.9f);
-
-					if (imgui_BeginChild("FoodDrinkList", listWidth, listHeight, 1, 0))
-					{
-						try
+						if (imgui_Button("Scan Inventory"))
 						{
-							for (int i = 0; i < foodDrinkState.Candidates.Count; i++)
+							foodDrinkState.Status = "Scanning...";
+							foodDrinkState.ScanRequested = true;
+						}
+						imgui_Text("Click above to scan your inventory.");
+					}
+					else
+					{
+						imgui_TextColored(0.7f, 0.9f, 0.7f, 1.0f, foodDrinkState.Status);
+					}
+
+					imgui_Separator();
+					// Results list with better sizing
+					if (foodDrinkState.Candidates.Count > 0)
+					{
+						imgui_TextColored(0.8f, 0.9f, 1.0f, 1.0f, "Found items (click to select):");
+
+						// Use responsive sizing for the list
+						float listHeight = Math.Min(400f, Math.Max(150f, foodDrinkState.Candidates.Count * 20f + 40f));
+						float listWidth = Math.Max(300f, imgui_GetContentRegionAvailX() * 0.9f);
+
+						using (var child = ImGUIChild.Aquire())
+						{
+							if (child.BeginChild("FoodDrinkList", listWidth, listHeight, 1, 0))
 							{
-								var item = foodDrinkState.Candidates[i];
-								if (imgui_Selectable($"{item}##item_{i}", false))
+								for (int i = 0; i < foodDrinkState.Candidates.Count; i++)
 								{
-									// Apply selection
-									var pdAct = data.GetActiveCharacterIniData();
-									var secData = pdAct.Sections.GetSectionData(mainWindowState.SelectedSection);
-									var keyData = secData?.Keys.GetKeyData(mainWindowState.SelectedKey);
-									if (keyData != null)
+									var item = foodDrinkState.Candidates[i];
+									if (imgui_Selectable($"{item}##item_{i}", false))
 									{
-										var vals = GetValues(keyData);
-										// Replace first value or add if empty
-										if (vals.Count == 0) vals.Add(item);
-										else vals[0] = item;
-										WriteValues(keyData, vals);
+										// Apply selection
+										var pdAct = data.GetActiveCharacterIniData();
+										var secData = pdAct.Sections.GetSectionData(mainWindowState.SelectedSection);
+										var keyData = secData?.Keys.GetKeyData(mainWindowState.SelectedKey);
+										if (keyData != null)
+										{
+											var vals = GetValues(keyData);
+											// Replace first value or add if empty
+											if (vals.Count == 0) vals.Add(item);
+											else vals[0] = item;
+											WriteValues(keyData, vals);
+										}
+										_state.Show_FoodDrinkModal = false;
+										break; // Exit loop after selection
 									}
-									_state.Show_FoodDrinkModal = false;
-									break; // Exit loop after selection
 								}
 							}
 						}
-						finally
-						{
-							imgui_EndChild();
-						}
 					}
-				}
-				else if (!string.IsNullOrEmpty(foodDrinkState.Status) && !foodDrinkState.Status.Contains("Scanning"))
-				{
-					imgui_TextColored(0.9f, 0.7f, 0.7f, 1.0f, "No matching items found.");
-				}
-
-				imgui_Separator();
-
-				// Action buttons
-				if (foodDrinkState.Candidates.Count > 0)
-				{
-					if (imgui_Button("Rescan"))
+					else if (!string.IsNullOrEmpty(foodDrinkState.Status) && !foodDrinkState.Status.Contains("Scanning"))
 					{
-						foodDrinkState.Status = "Scanning...";
-						foodDrinkState.Candidates.Clear();
-						foodDrinkState.ScanRequested = true;
+						imgui_TextColored(0.9f, 0.7f, 0.7f, 1.0f, "No matching items found.");
 					}
-					imgui_SameLine();
-				}
 
-				if (imgui_Button("Close"))
-				{
-					_state.Show_FoodDrinkModal = false;
+					imgui_Separator();
+
+					// Action buttons
+					if (foodDrinkState.Candidates.Count > 0)
+					{
+						if (imgui_Button("Rescan"))
+						{
+							foodDrinkState.Status = "Scanning...";
+							foodDrinkState.Candidates.Clear();
+							foodDrinkState.ScanRequested = true;
+						}
+						imgui_SameLine();
+					}
+
+					if (imgui_Button("Close"))
+					{
+						_state.Show_FoodDrinkModal = false;
+					}
 				}
 			}
-
-			imgui_End();
-
-
 		}
 		private static void RenderBardMelodyHelperModal()
 		{
 
 			var state = _state.GetState<State_BardEditor>();
-
-			bool open = imgui_Begin(_state.WinName_BardMelodyHelper, (int)(ImGuiWindowFlags.ImGuiWindowFlags_AlwaysAutoResize | ImGuiWindowFlags.ImGuiWindowFlags_NoCollapse | ImGuiWindowFlags.ImGuiWindowFlags_NoDocking));
-			if (open)
+			using (var window = ImGUIWindow.Aquire())
 			{
-				imgui_TextColored(0.95f, 0.85f, 0.35f, 1.0f, "Create a Bard Melody");
-				imgui_TextWrapped("Answer the prompts below to build a melody and optional IF condition. We'll add everything to your INI for you.");
-				imgui_Separator();
-
-				imgui_Text("Melody name:");
-				imgui_SameLine();
-				imgui_SetNextItemWidth(260f);
-				if (imgui_InputText("##bard_melody_name", state.MelodyName ?? string.Empty))
+				if (window.Begin(_state.WinName_BardMelodyHelper, (int)(ImGuiWindowFlags.ImGuiWindowFlags_AlwaysAutoResize | ImGuiWindowFlags.ImGuiWindowFlags_NoCollapse | ImGuiWindowFlags.ImGuiWindowFlags_NoDocking)))
 				{
-					state.MelodyName = (imgui_InputText_Get("##bard_melody_name") ?? string.Empty).Trim();
-				}
-				if (string.IsNullOrEmpty(state.MelodyName))
-				{
-					imgui_TextColored(0.7f, 0.7f, 0.7f, 1.0f, "Example: \"Caster\" or \"Main\"");
-				}
-				imgui_Separator();
+					imgui_TextColored(0.95f, 0.85f, 0.35f, 1.0f, "Create a Bard Melody");
+					imgui_TextWrapped("Answer the prompts below to build a melody and optional IF condition. We'll add everything to your INI for you.");
+					imgui_Separator();
 
-				EnsureBardMelodySongEntries();
-				bool catalogsReady = _state.State_CatalogReady;
-				imgui_Text("Songs (cast order):");
-				if (!catalogsReady)
-				{
-					imgui_TextColored(0.8f, 0.6f, 0.6f, 1.0f, "Catalog data not yet loaded. Use manual entry or load catalogs first.");
-				}
-				for (int i = 0; i < state.MelodySongs.Count; i++)
-				{
-					string label = $"Song {i + 1}";
-					imgui_SetNextItemWidth(300f);
-					string inputId = $"{label}##bard_song_{i}_{state.SongInputVersion}";
-
-					// Ensure buffer exists and is synchronized with the songs list
-					if (!state.MelodyBuffers.ContainsKey(i))
-					{
-						state.MelodyBuffers[i] = state.MelodySongs[i] ?? string.Empty;
-					}
-
-					string buffer = state.MelodyBuffers[i];
-					if (imgui_InputText(inputId, buffer))
-					{
-						buffer = imgui_InputText_Get(inputId) ?? string.Empty;
-						state.MelodyBuffers[i] = buffer;
-						state.MelodySongs[i] = buffer.Trim();
-					}
+					imgui_Text("Melody name:");
 					imgui_SameLine();
-					if (imgui_Button($"Remove##bard_song_remove_{i}"))
+					imgui_SetNextItemWidth(260f);
+					if (imgui_InputText("##bard_melody_name", state.MelodyName ?? string.Empty))
 					{
-						state.MelodySongs.RemoveAt(i);
-						ReindexBardMelodyBuffers();
-						i--;
-						continue;
+						state.MelodyName = (imgui_InputText_Get("##bard_melody_name") ?? string.Empty).Trim();
 					}
-					if (catalogsReady)
+					if (string.IsNullOrEmpty(state.MelodyName))
 					{
-						imgui_SameLine();
-						if (imgui_Button($"Pick##bard_song_pick_{i}"))
+						imgui_TextColored(0.7f, 0.7f, 0.7f, 1.0f, "Example: \"Caster\" or \"Main\"");
+					}
+					imgui_Separator();
+
+					EnsureBardMelodySongEntries();
+					bool catalogsReady = _state.State_CatalogReady;
+					imgui_Text("Songs (cast order):");
+					if (!catalogsReady)
+					{
+						imgui_TextColored(0.8f, 0.6f, 0.6f, 1.0f, "Catalog data not yet loaded. Use manual entry or load catalogs first.");
+					}
+					for (int i = 0; i < state.MelodySongs.Count; i++)
+					{
+						string label = $"Song {i + 1}";
+						imgui_SetNextItemWidth(300f);
+						string inputId = $"{label}##bard_song_{i}_{state.SongInputVersion}";
+
+						// Ensure buffer exists and is synchronized with the songs list
+						if (!state.MelodyBuffers.ContainsKey(i))
 						{
-							OpenBardSongPicker(i);
+							state.MelodyBuffers[i] = state.MelodySongs[i] ?? string.Empty;
 						}
-					}
-					imgui_SameLine();
-					imgui_Text("Gem:");
-					imgui_SameLine();
-					imgui_SetNextItemWidth(50f);
-					string gemPreview = state.MelodyGems[i].ToString();
-					if (imgui_BeginCombo($"##bard_gem_combo_{i}_{state.SongInputVersion}", gemPreview, 0))
-					{
-						for (int gem = 1; gem <= 12; gem++)
+
+						string buffer = state.MelodyBuffers[i];
+						if (imgui_InputText(inputId, buffer))
 						{
-							if (imgui_MenuItem(gem.ToString()))
+							buffer = imgui_InputText_Get(inputId) ?? string.Empty;
+							state.MelodyBuffers[i] = buffer;
+							state.MelodySongs[i] = buffer.Trim();
+						}
+						imgui_SameLine();
+						if (imgui_Button($"Remove##bard_song_remove_{i}"))
+						{
+							state.MelodySongs.RemoveAt(i);
+							ReindexBardMelodyBuffers();
+							i--;
+							continue;
+						}
+						if (catalogsReady)
+						{
+							imgui_SameLine();
+							if (imgui_Button($"Pick##bard_song_pick_{i}"))
 							{
-								state.MelodyGems[i] = gem;
-								state.MelodyGemBuffers[i] = gem.ToString();
+								OpenBardSongPicker(i);
 							}
 						}
-						imgui_EndCombo();
-					}
-				}
-				if (imgui_Button("Add Another Song"))
-				{
-					state.MelodySongs.Add(string.Empty);
-					state.MelodyBuffers[state.MelodySongs.Count - 1] = string.Empty;
-					state.MelodyGems.Add(1);
-					state.MelodyGemBuffers[state.MelodySongs.Count - 1] = "1";
-				}
-				imgui_Separator();
-
-				imgui_Text("When should we play it?");
-				imgui_SetNextItemWidth(350f);
-				string conditionId = $"##bard_melody_condition_{state.ConditionInputVersion}";
-				if (imgui_InputText(conditionId, state.MelodyCondition ?? string.Empty))
-				{
-					state.MelodyCondition = (imgui_InputText_Get(conditionId) ?? string.Empty).Trim();
-				}
-				imgui_SameLine();
-				if (imgui_Button("Sample IFs..."))
-				{
-					if (!EnsureBardSampleIfsLoaded())
-					{
-						if (string.IsNullOrEmpty(state.SampleIfStatus))
+						imgui_SameLine();
+						imgui_Text("Gem:");
+						imgui_SameLine();
+						imgui_SetNextItemWidth(50f);
+						string gemPreview = state.MelodyGems[i].ToString();
+						using (var combo = ImGUICombo.Aquire())
 						{
-							state.SampleIfStatus = "Sample file not found.";
+							if (combo.BeginCombo($"##bard_gem_combo_{i}_{state.SongInputVersion}", gemPreview, 0))
+							{
+								for (int gem = 1; gem <= 12; gem++)
+								{
+									if (imgui_MenuItem(gem.ToString()))
+									{
+										state.MelodyGems[i] = gem;
+										state.MelodyGemBuffers[i] = gem.ToString();
+									}
+								}
+							}
 						}
 					}
-					_state.Show_BardSampleIfModal = true;
-				}
-				imgui_TextColored(0.7f, 0.7f, 0.7f, 1.0f, "Optional E3 IF expression. Leave blank to run the melody whenever possible.");
-				imgui_Separator();
-
-				if (!string.IsNullOrEmpty(state.MelodyModalStatus))
-				{
-					imgui_TextColored(0.9f, 0.6f, 0.6f, 1.0f, state.MelodyModalStatus);
+					if (imgui_Button("Add Another Song"))
+					{
+						state.MelodySongs.Add(string.Empty);
+						state.MelodyBuffers[state.MelodySongs.Count - 1] = string.Empty;
+						state.MelodyGems.Add(1);
+						state.MelodyGemBuffers[state.MelodySongs.Count - 1] = "1";
+					}
 					imgui_Separator();
-				}
 
-				if (imgui_Button("Create Melody"))
-				{
-					if (TryCreateBardMelody(out var successMessage, out var errorMessage))
+					imgui_Text("When should we play it?");
+					imgui_SetNextItemWidth(350f);
+					string conditionId = $"##bard_melody_condition_{state.ConditionInputVersion}";
+					if (imgui_InputText(conditionId, state.MelodyCondition ?? string.Empty))
 					{
-						state.MelodyStatus = successMessage;
-						state.MelodyModalStatus = string.Empty;
-						ResetBardMelodyHelperForm();
+						state.MelodyCondition = (imgui_InputText_Get(conditionId) ?? string.Empty).Trim();
 					}
-					else
+					imgui_SameLine();
+					if (imgui_Button("Sample IFs..."))
 					{
-						state.MelodyModalStatus = errorMessage;
+						if (!EnsureBardSampleIfsLoaded())
+						{
+							if (string.IsNullOrEmpty(state.SampleIfStatus))
+							{
+								state.SampleIfStatus = "Sample file not found.";
+							}
+						}
+						_state.Show_BardSampleIfModal = true;
 					}
-				}
-				imgui_SameLine();
-				if (imgui_Button("Cancel##bard_helper_cancel"))
-				{
-					_state.Show_BardMelodyHelper = false;
+					imgui_TextColored(0.7f, 0.7f, 0.7f, 1.0f, "Optional E3 IF expression. Leave blank to run the melody whenever possible.");
+					imgui_Separator();
+
+					if (!string.IsNullOrEmpty(state.MelodyModalStatus))
+					{
+						imgui_TextColored(0.9f, 0.6f, 0.6f, 1.0f, state.MelodyModalStatus);
+						imgui_Separator();
+					}
+
+					if (imgui_Button("Create Melody"))
+					{
+						if (TryCreateBardMelody(out var successMessage, out var errorMessage))
+						{
+							state.MelodyStatus = successMessage;
+							state.MelodyModalStatus = string.Empty;
+							ResetBardMelodyHelperForm();
+						}
+						else
+						{
+							state.MelodyModalStatus = errorMessage;
+						}
+					}
+					imgui_SameLine();
+					if (imgui_Button("Cancel##bard_helper_cancel"))
+					{
+						_state.Show_BardMelodyHelper = false;
+					}
 				}
 			}
-			imgui_End();
+
 
 			// Reset the picker state after rendering
 			if (state.SongPickerJustSelected)
@@ -3949,125 +3946,116 @@ namespace E3Core.UI.Windows.CharacterSettings
 		private static void RenderBardSampleIfModal()
 		{
 			var state = _state.GetState<State_BardEditor>();
-
-			bool open = imgui_Begin(_state.WinName_BardSampleIfModal, (int)(ImGuiWindowFlags.ImGuiWindowFlags_AlwaysAutoResize | ImGuiWindowFlags.ImGuiWindowFlags_NoCollapse | ImGuiWindowFlags.ImGuiWindowFlags_NoDocking));
-			if (open)
+			using (var window = ImGUIWindow.Aquire())
 			{
-				bool ready = EnsureBardSampleIfsLoaded();
-				imgui_TextColored(0.95f, 0.85f, 0.35f, 1.0f, "Sample IFs");
-				imgui_TextWrapped("Select a sample condition to copy it into the melody helper.");
-				imgui_Separator();
+				if (window.Begin(_state.WinName_BardSampleIfModal, (int)(ImGuiWindowFlags.ImGuiWindowFlags_AlwaysAutoResize | ImGuiWindowFlags.ImGuiWindowFlags_NoCollapse | ImGuiWindowFlags.ImGuiWindowFlags_NoDocking)))
+				{
+					bool ready = EnsureBardSampleIfsLoaded();
+					imgui_TextColored(0.95f, 0.85f, 0.35f, 1.0f, "Sample IFs");
+					imgui_TextWrapped("Select a sample condition to copy it into the melody helper.");
+					imgui_Separator();
 
-				if (!ready)
-				{
-					imgui_TextColored(0.85f, 0.6f, 0.6f, 1.0f, string.IsNullOrEmpty(state.SampleIfStatus) ? "Sample file not found." : state.SampleIfStatus);
-				}
-				else if (!string.IsNullOrEmpty(state.SampleIfStatus))
-				{
-					imgui_TextColored(0.7f, 0.9f, 0.7f, 1.0f, state.SampleIfStatus);
-				}
-
-				if (imgui_Button("Reload Samples"))
-				{
-					state.SampleIfLines.Clear();
-					EnsureBardSampleIfsLoaded();
-				}
-				imgui_SameLine();
-				imgui_Text("Filter:");
-				imgui_SameLine();
-				imgui_SetNextItemWidth(260f);
-				if (imgui_InputText("##bard_sample_if_filter", state.SampleIfFilter ?? string.Empty))
-				{
-					state.SampleIfFilter = (imgui_InputText_Get("##bard_sample_if_filter") ?? string.Empty).Trim();
-				}
-				imgui_SameLine();
-				if (imgui_Button("Clear##bard_sample_if_filter_clear"))
-				{
-					state.SampleIfFilter = string.Empty;
-				}
-
-				imgui_Separator();
-
-				var displayList = new List<KeyValuePair<string, string>>();
-				if (ready)
-				{
-					if (string.IsNullOrEmpty(state.SampleIfFilter))
+					if (!ready)
 					{
-						displayList.AddRange(state.SampleIfLines);
+						imgui_TextColored(0.85f, 0.6f, 0.6f, 1.0f, string.IsNullOrEmpty(state.SampleIfStatus) ? "Sample file not found." : state.SampleIfStatus);
+					}
+					else if (!string.IsNullOrEmpty(state.SampleIfStatus))
+					{
+						imgui_TextColored(0.7f, 0.9f, 0.7f, 1.0f, state.SampleIfStatus);
+					}
+
+					if (imgui_Button("Reload Samples"))
+					{
+						state.SampleIfLines.Clear();
+						EnsureBardSampleIfsLoaded();
+					}
+					imgui_SameLine();
+					imgui_Text("Filter:");
+					imgui_SameLine();
+					imgui_SetNextItemWidth(260f);
+					if (imgui_InputText("##bard_sample_if_filter", state.SampleIfFilter ?? string.Empty))
+					{
+						state.SampleIfFilter = (imgui_InputText_Get("##bard_sample_if_filter") ?? string.Empty).Trim();
+					}
+					imgui_SameLine();
+					if (imgui_Button("Clear##bard_sample_if_filter_clear"))
+					{
+						state.SampleIfFilter = string.Empty;
+					}
+
+					imgui_Separator();
+
+					var displayList = new List<KeyValuePair<string, string>>();
+					if (ready)
+					{
+						if (string.IsNullOrEmpty(state.SampleIfFilter))
+						{
+							displayList.AddRange(state.SampleIfLines);
+						}
+						else
+						{
+							var tokens = state.SampleIfFilter.Split(new[] { ' ' }, StringSplitOptions.RemoveEmptyEntries);
+							foreach (var kv in state.SampleIfLines)
+							{
+								string searchText = (kv.Key + " " + kv.Value).ToLowerInvariant();
+								bool matches = tokens.All(t => searchText.Contains(t.ToLowerInvariant()));
+								if (matches) displayList.Add(kv);
+							}
+						}
+					}
+
+					if (displayList.Count == 0)
+					{
+						imgui_TextColored(0.8f, 0.8f, 0.6f, 1.0f, ready ? "No IFs match the current filter." : "No IFs available.");
 					}
 					else
 					{
-						var tokens = state.SampleIfFilter.Split(new[] { ' ' }, StringSplitOptions.RemoveEmptyEntries);
-						foreach (var kv in state.SampleIfLines)
+						float tableWidth = Math.Max(520f, imgui_GetContentRegionAvailX());
+						float tableHeight = Math.Min(420f, Math.Max(220f, displayList.Count * 24f));
+						using (var child = ImGUIChild.Aquire())
 						{
-							string searchText = (kv.Key + " " + kv.Value).ToLowerInvariant();
-							bool matches = tokens.All(t => searchText.Contains(t.ToLowerInvariant()));
-							if (matches) displayList.Add(kv);
-						}
-					}
-				}
-
-				if (displayList.Count == 0)
-				{
-					imgui_TextColored(0.8f, 0.8f, 0.6f, 1.0f, ready ? "No IFs match the current filter." : "No IFs available.");
-				}
-				else
-				{
-					float tableWidth = Math.Max(520f, imgui_GetContentRegionAvailX());
-					float tableHeight = Math.Min(420f, Math.Max(220f, displayList.Count * 24f));
-					if (imgui_BeginChild("BardSampleIfList", tableWidth, tableHeight, 1, 0))
-					{
-						try
-						{
-							if (imgui_BeginTable("E3BardSampleIfTable", 3, 0, tableWidth, 0))
+							if (child.BeginChild("BardSampleIfList", tableWidth, tableHeight, 1, 0))
 							{
-								try
+								using (var table = ImGUITable.Aquire())
 								{
-									imgui_TableSetupColumn("Name", 0, tableWidth * 0.25f);
-									imgui_TableSetupColumn("Expression", 0, tableWidth * 0.55f);
-									imgui_TableSetupColumn("Actions", 0, tableWidth * 0.2f);
-									imgui_TableHeadersRow();
-
-									foreach (var kv in displayList)
+									if (table.BeginTable("E3BardSampleIfTable", 3, 0, tableWidth, 0))
 									{
-										imgui_TableNextRow();
-										imgui_TableNextColumn();
-										imgui_Text(kv.Key);
+										imgui_TableSetupColumn("Name", 0, tableWidth * 0.25f);
+										imgui_TableSetupColumn("Expression", 0, tableWidth * 0.55f);
+										imgui_TableSetupColumn("Actions", 0, tableWidth * 0.2f);
+										imgui_TableHeadersRow();
 
-										imgui_TableNextColumn();
-										imgui_TextWrapped(string.IsNullOrEmpty(kv.Value) ? "(empty)" : kv.Value);
-
-										imgui_TableNextColumn();
-										string expression = string.IsNullOrEmpty(kv.Value) ? kv.Key : kv.Value;
-										if (imgui_Button($"Use##bard_sample_if_use_{kv.Key}"))
+										foreach (var kv in displayList)
 										{
-											state.MelodyCondition = expression;
-											state.ConditionInputVersion++;
-											_state.Show_BardSampleIfModal = false;
-											break;
+											imgui_TableNextRow();
+											imgui_TableNextColumn();
+											imgui_Text(kv.Key);
+
+											imgui_TableNextColumn();
+											imgui_TextWrapped(string.IsNullOrEmpty(kv.Value) ? "(empty)" : kv.Value);
+
+											imgui_TableNextColumn();
+											string expression = string.IsNullOrEmpty(kv.Value) ? kv.Key : kv.Value;
+											if (imgui_Button($"Use##bard_sample_if_use_{kv.Key}"))
+											{
+												state.MelodyCondition = expression;
+												state.ConditionInputVersion++;
+												_state.Show_BardSampleIfModal = false;
+												break;
+											}
 										}
 									}
 								}
-								finally
-								{
-									imgui_EndTable();
-								}
 							}
 						}
-						finally
-						{
-							imgui_EndChild();
-						}
+					}
+					imgui_Separator();
+					if (imgui_Button("Close##bard_sample_if_close"))
+					{
+						_state.Show_BardSampleIfModal = false;
 					}
 				}
-
-				imgui_Separator();
-				if (imgui_Button("Close##bard_sample_if_close"))
-				{
-					_state.Show_BardSampleIfModal = false;
-				}
 			}
-			imgui_End();
 		}
 		private static bool TryCreateBardMelody(out string successMessage, out string errorMessage)
 		{
@@ -4305,166 +4293,160 @@ namespace E3Core.UI.Windows.CharacterSettings
 			var s = state.Spell;
 
 			if (s == null) { _state.Show_SpellInfoModal = false; return; }
-			bool open = imgui_Begin(_state.WinName_SpellInfoModal, (int)(ImGuiWindowFlags.ImGuiWindowFlags_AlwaysAutoResize | ImGuiWindowFlags.ImGuiWindowFlags_NoDocking));
-			if (open)
+
+			using (var window = ImGUIWindow.Aquire())
 			{
-				// Header with better styling
-				imgui_TextColored(0.95f, 0.85f, 0.35f, 1.0f, $"{s.Name ?? string.Empty}");
-				imgui_Separator();
-
-				float width = Math.Max(520f, imgui_GetContentRegionAvailX());
-				if (imgui_BeginTable("E3SpellInfoTable", 2, 0, width, 0))
+				if (window.Begin(_state.WinName_SpellInfoModal, (int)(ImGuiWindowFlags.ImGuiWindowFlags_AlwaysAutoResize | ImGuiWindowFlags.ImGuiWindowFlags_NoDocking)))
 				{
-					try
-					{
-						imgui_TableSetupColumn("Property", 0, 140f);
-						imgui_TableSetupColumn("Value", 0, Math.Max(260f, width - 160f));
-						imgui_TableHeadersRow();
-						if (!String.IsNullOrWhiteSpace(s.CastType))
-						{
-							imgui_TableNextRow();
-							imgui_TableNextColumn();
-							// Colored label (soft yellow)
-							imgui_TextColored(0.95f, 0.85f, 0.35f, 1f, "Type");
-							imgui_TableNextColumn();
-							imgui_Text(s.CastType);
-						}
-
-						if (s.Level > 0)
-						{
-							imgui_TableNextRow();
-							imgui_TableNextColumn();
-							// Colored label (soft yellow)
-							imgui_TextColored(0.95f, 0.85f, 0.35f, 1f, "Level");
-							imgui_TableNextColumn();
-							imgui_Text(s.Level.ToString());
-						}
-						if (s.Mana > 0)
-						{
-							imgui_TableNextRow();
-							imgui_TableNextColumn();
-							// Colored label (soft yellow)
-							imgui_TextColored(0.95f, 0.85f, 0.35f, 1f, "Mana");
-							imgui_TableNextColumn();
-							imgui_Text(data.FormatWithSeparators(s.Mana));
-						}
-						if (s.CastTime > 0)
-						{
-							imgui_TableNextRow();
-							imgui_TableNextColumn();
-							// Colored label (soft yellow)
-							imgui_TextColored(0.95f, 0.85f, 0.35f, 1f, "Cast Time");
-							imgui_TableNextColumn();
-							imgui_Text($"{s.CastTime:0.00}s");
-						}
-						if (s.Recast > 0)
-						{
-							imgui_TableNextRow();
-							imgui_TableNextColumn();
-							// Colored label (soft yellow)
-							imgui_TextColored(0.95f, 0.85f, 0.35f, 1f, "Recast");
-							imgui_TableNextColumn();
-							imgui_Text(data.FormatMsSmart(s.Recast));
-						}
-						if (s.Range > 0)
-						{
-							imgui_TableNextRow();
-							imgui_TableNextColumn();
-							// Colored label (soft yellow)
-							imgui_TextColored(0.95f, 0.85f, 0.35f, 1f, "Range");
-							imgui_TableNextColumn();
-							imgui_Text(s.Range.ToString("0"));
-						}
-						if (!String.IsNullOrWhiteSpace(s.TargetType))
-						{
-							imgui_TableNextRow();
-							imgui_TableNextColumn();
-							// Colored label (soft yellow)
-							imgui_TextColored(0.95f, 0.85f, 0.35f, 1f, "Target");
-							imgui_TableNextColumn();
-							imgui_Text(s.TargetType);
-						}
-						if (!String.IsNullOrWhiteSpace(s.SpellType))
-						{
-							imgui_TableNextRow();
-							imgui_TableNextColumn();
-							// Colored label (soft yellow)
-							imgui_TextColored(0.95f, 0.85f, 0.35f, 1f, "School");
-							imgui_TableNextColumn();
-							imgui_Text(s.SpellType);
-						}
-
-						if (!String.IsNullOrWhiteSpace(s.ResistType))
-						{
-							imgui_TableNextRow();
-							imgui_TableNextColumn();
-							// Colored label (soft yellow)
-							imgui_TextColored(0.95f, 0.85f, 0.35f, 1f, "Resist");
-							imgui_TableNextColumn();
-							imgui_Text(s.ResistType);
-						}
-					}
-					finally
-					{
-						imgui_EndTable();
-					}
-				}
-
-				if (!string.IsNullOrEmpty(s.Description))
-				{
+					// Header with better styling
+					imgui_TextColored(0.95f, 0.85f, 0.35f, 1.0f, $"{s.Name ?? string.Empty}");
 					imgui_Separator();
-					imgui_TextColored(0.75f, 0.85f, 1.0f, 1f, "Description:");
-					imgui_Text(s.Description);
-				}
 
-				imgui_Separator();
+					float width = Math.Max(520f, imgui_GetContentRegionAvailX());
+					using (var table = ImGUITable.Aquire())
+					{
+						if (table.BeginTable("E3SpellInfoTable", 2, 0, width, 0))
+						{
+							imgui_TableSetupColumn("Property", 0, 140f);
+							imgui_TableSetupColumn("Value", 0, Math.Max(260f, width - 160f));
+							imgui_TableHeadersRow();
+							if (!String.IsNullOrWhiteSpace(s.CastType))
+							{
+								imgui_TableNextRow();
+								imgui_TableNextColumn();
+								// Colored label (soft yellow)
+								imgui_TextColored(0.95f, 0.85f, 0.35f, 1f, "Type");
+								imgui_TableNextColumn();
+								imgui_Text(s.CastType);
+							}
 
-				if (imgui_Button("Close"))
-				{
-					_state.Show_SpellInfoModal = false;
-					state.Spell = null;
+							if (s.Level > 0)
+							{
+								imgui_TableNextRow();
+								imgui_TableNextColumn();
+								// Colored label (soft yellow)
+								imgui_TextColored(0.95f, 0.85f, 0.35f, 1f, "Level");
+								imgui_TableNextColumn();
+								imgui_Text(s.Level.ToString());
+							}
+							if (s.Mana > 0)
+							{
+								imgui_TableNextRow();
+								imgui_TableNextColumn();
+								// Colored label (soft yellow)
+								imgui_TextColored(0.95f, 0.85f, 0.35f, 1f, "Mana");
+								imgui_TableNextColumn();
+								imgui_Text(data.FormatWithSeparators(s.Mana));
+							}
+							if (s.CastTime > 0)
+							{
+								imgui_TableNextRow();
+								imgui_TableNextColumn();
+								// Colored label (soft yellow)
+								imgui_TextColored(0.95f, 0.85f, 0.35f, 1f, "Cast Time");
+								imgui_TableNextColumn();
+								imgui_Text($"{s.CastTime:0.00}s");
+							}
+							if (s.Recast > 0)
+							{
+								imgui_TableNextRow();
+								imgui_TableNextColumn();
+								// Colored label (soft yellow)
+								imgui_TextColored(0.95f, 0.85f, 0.35f, 1f, "Recast");
+								imgui_TableNextColumn();
+								imgui_Text(data.FormatMsSmart(s.Recast));
+							}
+							if (s.Range > 0)
+							{
+								imgui_TableNextRow();
+								imgui_TableNextColumn();
+								// Colored label (soft yellow)
+								imgui_TextColored(0.95f, 0.85f, 0.35f, 1f, "Range");
+								imgui_TableNextColumn();
+								imgui_Text(s.Range.ToString("0"));
+							}
+							if (!String.IsNullOrWhiteSpace(s.TargetType))
+							{
+								imgui_TableNextRow();
+								imgui_TableNextColumn();
+								// Colored label (soft yellow)
+								imgui_TextColored(0.95f, 0.85f, 0.35f, 1f, "Target");
+								imgui_TableNextColumn();
+								imgui_Text(s.TargetType);
+							}
+							if (!String.IsNullOrWhiteSpace(s.SpellType))
+							{
+								imgui_TableNextRow();
+								imgui_TableNextColumn();
+								// Colored label (soft yellow)
+								imgui_TextColored(0.95f, 0.85f, 0.35f, 1f, "School");
+								imgui_TableNextColumn();
+								imgui_Text(s.SpellType);
+							}
+
+							if (!String.IsNullOrWhiteSpace(s.ResistType))
+							{
+								imgui_TableNextRow();
+								imgui_TableNextColumn();
+								// Colored label (soft yellow)
+								imgui_TextColored(0.95f, 0.85f, 0.35f, 1f, "Resist");
+								imgui_TableNextColumn();
+								imgui_Text(s.ResistType);
+							}
+						}
+					}
+					if (!string.IsNullOrEmpty(s.Description))
+					{
+						imgui_Separator();
+						imgui_TextColored(0.75f, 0.85f, 1.0f, 1f, "Description:");
+						imgui_Text(s.Description);
+					}
+
+					imgui_Separator();
+
+					if (imgui_Button("Close"))
+					{
+						_state.Show_SpellInfoModal = false;
+						state.Spell = null;
+					}
 				}
 			}
-			imgui_End();
+
+
 			if (!_state.Show_SpellInfoModal) { state.Spell = null; }
 		}
 
 		private static void RenderDonateModal()
 		{
-
-			bool open = imgui_Begin(_state.WinName_Donate, (int)(ImGuiWindowFlags.ImGuiWindowFlags_AlwaysAutoResize | ImGuiWindowFlags.ImGuiWindowFlags_NoDocking));
-			if (open)
+			using(var window = ImGUIWindow.Aquire())
 			{
-				imgui_TextColored(0.9f, 0.9f, 0.6f, 1.0f, "Hi, Ty for thinking of donating!\nIf you wish to donate, please use friends and family.");
-				imgui_Separator();
+				if (window.Begin(_state.WinName_Donate, (int)(ImGuiWindowFlags.ImGuiWindowFlags_AlwaysAutoResize | ImGuiWindowFlags.ImGuiWindowFlags_NoDocking)))
+				{
+					imgui_TextColored(0.9f, 0.9f, 0.6f, 1.0f, "Hi, Ty for thinking of donating!\nIf you wish to donate, please use friends and family.");
+					imgui_Separator();
 
-				// Buttons centered horizontally
-				float avail = imgui_GetContentRegionAvailX();
-				float yesW = 60f;
-				float noW = 60f;
-				float spacing = 8f;
-				float total = yesW + spacing + noW;
-				if (total < avail)
-				{
-					imgui_SameLineEx((avail - total) / 2f, 0f);
+					// Buttons centered horizontally
+					float avail = imgui_GetContentRegionAvailX();
+					float yesW = 60f;
+					float noW = 60f;
+					float spacing = 8f;
+					float total = yesW + spacing + noW;
+					if (total < avail)
+					{
+						imgui_SameLineEx((avail - total) / 2f, 0f);
+					}
+					if (imgui_Button("Yes"))
+					{
+						e3util.OpenUrl("https://www.paypal.com/paypalme/RekkaSoftware");
+						_state.Show_Donate = false;
+					}
+					imgui_SameLine();
+					if (imgui_Button("No"))
+					{
+						_state.Show_Donate = false;
+					}
 				}
-				if (imgui_Button("Yes"))
-				{
-					e3util.OpenUrl("https://www.paypal.com/paypalme/RekkaSoftware");
-					_state.Show_Donate = false;
-				}
-				imgui_SameLine();
-				if (imgui_Button("No"))
-				{
-					_state.Show_Donate = false;
-				}
-			}
-			imgui_End();
-			if (!open)
-			{
-				_state.Show_Donate = false;
 			}
 		}
-
 	}
 }
