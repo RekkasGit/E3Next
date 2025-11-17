@@ -311,6 +311,16 @@ namespace MonoCore
 		[MethodImpl(MethodImplOptions.InternalCall)]
 		public extern static float imgui_GetContentRegionAvailY();
 		[MethodImpl(MethodImplOptions.InternalCall)]
+		public extern static float imgui_GetWindowContentRegionMinX();
+		[MethodImpl(MethodImplOptions.InternalCall)]
+		public extern static float imgui_GetWindowContentRegionMinY();
+		[MethodImpl(MethodImplOptions.InternalCall)]
+		public extern static float imgui_GetWindowContentRegionMaxX();
+		[MethodImpl(MethodImplOptions.InternalCall)]
+		public extern static float imgui_GetWindowContentRegionMaxY();
+
+
+		[MethodImpl(MethodImplOptions.InternalCall)]
 		public extern static void imgui_SetNextItemWidth(float width);
 		[MethodImpl(MethodImplOptions.InternalCall)]
 		public extern static bool imgui_BeginCombo(string label, string preview, int flags);
@@ -458,9 +468,24 @@ namespace MonoCore
 		public extern static IntPtr mq_CreateTextureFromData(byte[] data, int width, int height, int channels);
 		[MethodImpl(MethodImplOptions.InternalCall)]
 		public extern static void mq_DestroyTexture(IntPtr textureId);
-	[MethodImpl(MethodImplOptions.InternalCall)]
-	public extern static void imgui_SetNextWindowSize(float width, float height);
-	[MethodImpl(MethodImplOptions.InternalCall)]
+		[MethodImpl(MethodImplOptions.InternalCall)]
+		public extern static void imgui_SetNextWindowSize(float width, float height);
+
+		[MethodImpl(MethodImplOptions.InternalCall)]
+		public extern static void imgui_SetNextWindowPos(float x, float y, int flags, float xpiv, float ypiv);
+		[MethodImpl(MethodImplOptions.InternalCall)]
+		public extern static float imgui_GetWindowPosX();
+		[MethodImpl(MethodImplOptions.InternalCall)]
+		public extern static float imgui_GetWindowPosY();
+		[MethodImpl(MethodImplOptions.InternalCall)]
+		public extern static float imgui_GetWindowSizeX();
+		[MethodImpl(MethodImplOptions.InternalCall)]
+		public extern static float imgui_GetWindowSizeY();
+		[MethodImpl(MethodImplOptions.InternalCall)]
+		public extern static void imgui_SetNextWindowFocus();
+
+
+		[MethodImpl(MethodImplOptions.InternalCall)]
 	public extern static void imgui_SetNextWindowSizeWithCond(float width, float height, int cond);
 
 	[MethodImpl(MethodImplOptions.InternalCall)]

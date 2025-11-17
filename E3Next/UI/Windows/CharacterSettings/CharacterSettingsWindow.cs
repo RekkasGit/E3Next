@@ -11,6 +11,7 @@ using System.Collections.Generic;
 using System.Globalization;
 using System.IO;
 using System.Linq;
+using System.Numerics;
 using System.Text;
 using System.Text.RegularExpressions;
 using System.Web;
@@ -445,22 +446,33 @@ namespace E3Core.UI.Windows.CharacterSettings
 			float paneAvailY = imgui_GetContentRegionAvailY();
 			float reservedSpellEditorSpace = (state.Show_ShowIntegratedEditor && state.SelectedValueIndex >= 0) ? 340f : 0f;
 			float contentHeight = Math.Max(160f, paneAvailY - reservedSpellEditorSpace);
+			bool showSpellEditor = state.Show_ShowIntegratedEditor && state.SelectedValueIndex >= 0;
+
+		
 			using (var child = ImGUIChild.Aquire())
 			{
 				if (child.BeginChild("E3Config_EditorPane_Content", 0, contentHeight, (int)ImGuiChildFlags.None, 0))
 				{
-					Render_MainWindow_ConfigEditor_RightPaneContent(pd);
+					Render_MainWindow_ConfigEditor_RightPaneContent(pd,showSpellEditor);
 				}
 			}
-
-			if (state.Show_ShowIntegratedEditor && state.SelectedValueIndex >= 0)
+			
+			if (showSpellEditor)
 			{
 				imgui_Separator();
-				Render_MainWindow_SpellEditor();
+				using (var child = ImGUIChild.Aquire())
+				{
+					if (child.BeginChild("E3Config_EditorPane_Content_SpellEditor", 0, 0, (int)ImGuiChildFlags.None, 0))
+					{
+						
+						Render_MainWindow_SpellEditor();
+					}
+				}
+				
 			}
 		}
 
-		private static void Render_MainWindow_ConfigEditor_RightPaneContent(IniData pd)
+		private static void Render_MainWindow_ConfigEditor_RightPaneContent(IniData pd, bool spellEditorShown)
 		{
 			var state = _state.GetState<State_MainWindow>();
 			float availX = imgui_GetContentRegionAvailX();
@@ -471,6 +483,8 @@ namespace E3Core.UI.Windows.CharacterSettings
 			float valuesWidth;
 			float toolsWidth;
 			float totalMinWidth = minValuesWidth + minToolsWidth + spacing;
+
+			if (spellEditorShown) availY = availY / 2;
 
 			// Initialize stored width on first run or use stored width
 			if (state.RightPaneValuesWidth < 0)
@@ -1693,12 +1707,33 @@ namespace E3Core.UI.Windows.CharacterSettings
 			}
 		}
 
+		private static Vector2 GetCenterParentPos(Vector2 child_size)
+		{
+			Vector2 parent_pos = new Vector2(imgui_GetWindowPosX(), imgui_GetWindowPosY());
+			Vector2 parent_size = new Vector2(imgui_GetWindowSizeX(), imgui_GetWindowSizeY());
+			Vector2 targetPos = new Vector2(
+									parent_pos.X + (parent_size.X - child_size.X) * 0.5f,
+									parent_pos.Y + (parent_size.Y - child_size.Y) * 0.5f
+								);
+
+			return targetPos;
+		}
+
 		private static void RenderCastTargetHelperWindow()
 		{
 			var spellEditorState = _state.GetState<State_SpellEditor>();
 
+			
+		
 			Int32 helperFlags = (int)(ImGuiWindowFlags.ImGuiWindowFlags_AlwaysAutoResize | ImGuiWindowFlags.ImGuiWindowFlags_NoDocking | ImGuiWindowFlags.ImGuiWindowFlags_NoCollapse | ImGuiWindowFlags.ImGuiWindowFlags_NoResize);
+			Vector2 child_size = new Vector2(700, 250);
+			imgui_SetNextWindowSize(child_size.X, child_size.Y);
+			
+			
+			Vector2 targetPos = GetCenterParentPos(child_size);
 
+			imgui_SetNextWindowPos(targetPos.X, targetPos.Y, (int)ImGuiCond.Once, 0, 0);
+			imgui_SetNextWindowFocus();
 			using (var window = ImGUIWindow.Aquire())
 			{
 				if (window.Begin(spellEditorState.WinName_CastTargetHelperWindow, helperFlags))
@@ -1736,6 +1771,11 @@ namespace E3Core.UI.Windows.CharacterSettings
 				| ImGuiWindowFlags.ImGuiWindowFlags_NoDocking
 				| ImGuiWindowFlags.ImGuiWindowFlags_NoCollapse
 				| ImGuiWindowFlags.ImGuiWindowFlags_NoResize;
+
+
+			Vector2 targetPos = GetCenterParentPos(new Vector2 (200, 400));
+			imgui_SetNextWindowPos(targetPos.X, targetPos.Y, (int)ImGuiCond.Once, 0, 0);
+			imgui_SetNextWindowFocus();
 
 			using (var window = ImGUIWindow.Aquire())
 			{
