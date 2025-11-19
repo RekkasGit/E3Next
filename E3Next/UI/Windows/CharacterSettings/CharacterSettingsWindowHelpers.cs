@@ -73,10 +73,16 @@ namespace E3Core.UI.Windows.CharacterSettings
 		public static readonly HashSet<string> _spellKnownKeys = new HashSet<string>(_spellKeyOutputOrder, StringComparer.OrdinalIgnoreCase);
 		public static readonly HashSet<string> _spellKnownFlags = new HashSet<string>(_spellFlagOutputOrder, StringComparer.OrdinalIgnoreCase);
 		public static readonly HashSet<string> _customKeySections = new HashSet<string>(StringComparer.OrdinalIgnoreCase) { "Burn", "CommandSets", "Ifs", "Events", "E3BotsPublishData (key/value)", "EventLoopTiming", "EventRegMatches" };
+		public static readonly Dictionary<string, List<string>> _stringCollectionSections = new Dictionary<string, List<string>>(StringComparer.OrdinalIgnoreCase) 
+		{ { "Startup Commands",new List<string>() }, {"CommandSets", new List<string>() }, {"Zoning Commands", new List<string>() },
+		{ "Manastone",new List<string>(){ "ExceptionMQQuery","ExceptionZone"} },
+		};
+
 		public static readonly Dictionary<string, List<string>> _singleEntryKeys = new Dictionary<string, List<string>>(StringComparer.OrdinalIgnoreCase) 
 		{ { "Buffs", new List<string>(){"Aura" } }, { "Heals", new List<string>(){ "Who to Heal","Who to HoT" } }, {"Ifs",new List<string>() }, {"Events",new List<string>() },{"E3BotsPublishData",new List<string>() }
 		,{"E3BotsPublishData (key/value)",new List<string>()},{"EventLoopTiming",new List<string>() },{"EventRegMatches",new List<string>() }
 		};
+
 		public static readonly Dictionary<string, string> _spellKeyAliasMap = new Dictionary<string, string>(StringComparer.OrdinalIgnoreCase)
 		{
 			{"AfterCast", "AfterSpell"},
@@ -552,6 +558,7 @@ namespace E3Core.UI.Windows.CharacterSettings
 			{"Melee Stick Point", new List<string>() { "Front","Behind","BehindOnce","Pin","!Front" } }
 
 		};
+
 		static List<String> _KeyOptionsOnOff = new List<string>() { "On", "Off" };
 		// Attempt to derive an explicit set of allowed options from the key label, e.g.
 		// "Assist Type (Melee/Ranged/Off)" => ["Melee","Ranged","Off"]

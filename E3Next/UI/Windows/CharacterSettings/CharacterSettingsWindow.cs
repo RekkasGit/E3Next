@@ -15,7 +15,9 @@ using System.Numerics;
 using System.Text;
 using System.Text.RegularExpressions;
 using System.Web;
+using System.Xml.Linq;
 using static MonoCore.E3ImGUI;
+using static System.Windows.Forms.AxHost;
 using data = E3Core.UI.Windows.CharacterSettings.CharacterSettingsWindowHelpers;
 
 namespace E3Core.UI.Windows.CharacterSettings
@@ -795,26 +797,6 @@ namespace E3Core.UI.Windows.CharacterSettings
 						// Section has keys, but no key selected yet: keep values panel empty
 						imgui_Text("Select a configuration key from the left panel.");
 					}
-					else if(data._singleEntryKeys.ContainsKey(state.SelectedSection) && (data._singleEntryKeys[state.SelectedSection].Count==0 || data._singleEntryKeys[state.SelectedSection].Contains(state.SelectedKey)))
-					{
-						var kd = data.GetCurrentEditedSpellKeyData();
-						if (kd == null) return;
-
-						//this is a single key/value entry, just show the edit for that.
-						imgui_TextColored(0.8f, 0.9f, 0.95f, 1.0f, state.SelectedAddInLine.Equals("Ifs", StringComparison.OrdinalIgnoreCase) ? "Add New If" : "Add New Burn Key");
-						imgui_Text("Value:");
-						imgui_SameLine();
-
-						imgui_SetNextItemWidth(800);
-						if (imgui_InputText("##inline_edit_value", kd.Value))
-						{
-							kd.ValueList.Clear();
-							kd.Value = imgui_InputText_Get("##inline_edit_value") ?? string.Empty;
-							state.ConfigIsDirty = true;
-						}
-						
-						
-					}
 					else
 					{
 						Render_MainWindow_ConfigEditor_SelectedKeyValues(selectedSection);
@@ -1043,6 +1025,15 @@ namespace E3Core.UI.Windows.CharacterSettings
 			{
 				Render_MainWindow_ConfigEditor_SelectedKeyValues_String(parts, selectedSection);
 			}
+			else if (data._singleEntryKeys.ContainsKey(mainWindowState.SelectedSection) && (data._singleEntryKeys[mainWindowState.SelectedSection].Count == 0 || data._singleEntryKeys[mainWindowState.SelectedSection].Contains(mainWindowState.SelectedKey)))
+			{
+				Render_MainWindow_ConfigEditor_SelectedKeyValues_String(parts, selectedSection);
+
+			}
+			else if(data._stringCollectionSections.ContainsKey(mainWindowState.SelectedSection) && (data._stringCollectionSections[mainWindowState.SelectedSection].Count == 0 || data._stringCollectionSections[mainWindowState.SelectedSection].Contains(mainWindowState.SelectedKey)))
+			{
+				Render_MainWindow_ConfigEditor_String_Collections(parts, selectedSection);
+			}
 			else if (!(String.IsNullOrWhiteSpace(mainWindowState.SelectedKey) || String.IsNullOrWhiteSpace(mainWindowState.SelectedSection)))
 			{
 				Render_MainWindow_ConfigEditor_SelectedKeyValues_Collections(parts, selectedSection);
@@ -1072,7 +1063,7 @@ namespace E3Core.UI.Windows.CharacterSettings
 		private static void Render_MainWindow_ConfigEditor_SelectedKeyValues_String(List<string> parts, SectionData selectedSection)
 		{
 			var mainWindowState = _state.GetState<State_MainWindow>();
-
+			imgui_SetNextItemWidth(800);
 			if (imgui_InputText($"##edit_string_{mainWindowState.SelectedKey}", parts[0]))
 			{
 				//parts is a direct pointer to ValuesList from the IniData, so can update it directly. 
@@ -1219,6 +1210,133 @@ namespace E3Core.UI.Windows.CharacterSettings
 			vals[fromIndex] = temp;
 			listChanged = true;
 			mainWindowState.PendingValueSelection = toIndex;
+		}
+		private static void Render_MainWindow_ConfigEditor_String_Collections(List<string> parts, SectionData selectedSection)
+		{
+			var catalogState = _state.GetState<State_CatalogWindow>();
+			var mainWindowState = _state.GetState<State_MainWindow>();
+			bool listChanged = false;
+			imgui_TextColored(0.9f, 0.95f, 1.0f, 1.0f, "Configuration Values");
+
+			for (int i = 0; i < parts.Count; i++)
+			{
+				string v = parts[i];
+				// Create a unique ID for this item that doesn't depend on its position in the list
+				string itemUid = $"{mainWindowState.SelectedSection}_{mainWindowState.SelectedKey}_{i}_{(v ?? string.Empty).GetHashCode()}";
+
+
+				// Row with better styling and alignment
+				//Int32 iconID = data.GetIconFromIniString(v);
+				//imgui_DrawSpellIconByIconIndex(iconID, 30.0f);
+				//imgui_SameLine();
+				imgui_Text($"{i + 1}.");
+				//imgui_SameLine(_valueRowActionStartOffset + 20);
+				imgui_SameLine();
+				bool canMoveUp = i > 0;
+				bool canMoveDown = i < parts.Count - 1;
+
+				Render_ReorderButton($"^##moveup_{itemUid}", canMoveUp, () => SwapAndMark(i, i - 1, out listChanged));
+				imgui_SameLine();
+				Render_ReorderButton($"v##movedown_{itemUid}", canMoveDown, () => SwapAndMark(i, i + 1, out listChanged));
+				imgui_SameLine();
+
+				// Make value selectable to show info in right panel
+
+				if(imgui_InputText($"##select_{itemUid}",v))
+				{
+					parts[i] = imgui_InputText_Get($"##select_{itemUid}");
+				}
+
+				imgui_SameLine();
+				if (parts.Count > 1)
+				{
+					if (imgui_Button($"X##delete_{itemUid}"))
+					{
+						//need to delete the current index
+						parts.RemoveAt(i);
+						mainWindowState.ConfigIsDirty = true;
+					}
+				}
+
+				// If a change was made, we need to refresh the parts list for subsequent iterations
+				if (listChanged)
+				{
+					// Re-get the values after modification
+					var updatedKd = selectedSection.Keys.GetKeyData(mainWindowState.SelectedKey ?? string.Empty);
+					parts = GetValues(updatedKd);
+					listChanged = false; // Reset the flag
+					if (mainWindowState.PendingValueSelection >= 0 && mainWindowState.PendingValueSelection < parts.Count)
+					{
+						mainWindowState.SelectedValueIndex = mainWindowState.PendingValueSelection;
+					}
+					else
+					{
+						mainWindowState.SelectedValueIndex = -1;
+					}
+					mainWindowState.PendingValueSelection = -1;
+					// Adjust the loop counter since we've removed an item
+					i--;
+				}
+			}
+
+			// Handle adding a new manual entry (if we're in add mode)
+			if (mainWindowState.InLineEditIndex >= parts.Count)
+			{
+				imgui_Separator();
+				imgui_TextColored(0.8f, 0.9f, 0.95f, 1.0f, "Add New Value");
+
+				imgui_Text($"+ {parts.Count + 1}.");
+				imgui_SameLine(_valueRowActionStartOffset);
+
+				float addAvail = imgui_GetContentRegionAvailX();
+				float addManualWidth = Math.Max(420f, addAvail - 140f);
+				addManualWidth = Math.Min(addManualWidth, Math.Max(260f, addAvail - 80f));
+				float addManualHeight = Math.Max(140f, imgui_GetTextLineHeightWithSpacing() * 6f);
+				if (imgui_InputTextMultiline($"##add_new_manual", mainWindowState.Buffer_InlineEdit ?? string.Empty, addManualWidth, addManualHeight))
+				{
+					mainWindowState.Buffer_InlineEdit = imgui_InputText_Get($"##add_new_manual");
+				}
+
+				if (imgui_Button($"Add##add_manual"))
+				{
+					string newText = mainWindowState.Buffer_InlineEdit ?? string.Empty;
+					if (!string.IsNullOrWhiteSpace(newText))
+					{
+						var pdAct = data.GetActiveCharacterIniData();
+						var selSec = pdAct.Sections.GetSectionData(mainWindowState.SelectedSection);
+						var key = selSec?.Keys.GetKeyData(mainWindowState.SelectedKey);
+						if (key != null)
+						{
+							var vals = GetValues(key);
+							vals.Add(newText.Trim());
+							WriteValues(key, vals);
+							mainWindowState.PendingValueSelection = vals.Count - 1;
+						}
+					}
+					mainWindowState.InLineEditIndex = -1;
+					mainWindowState.Buffer_InlineEdit = string.Empty;
+				}
+				imgui_SameLine();
+
+				if (imgui_Button($"Cancel##cancel_manual"))
+				{
+					mainWindowState.InLineEditIndex = -1;
+					mainWindowState.Buffer_InlineEdit = string.Empty;
+				}
+			}
+			// Add new value button (only show when not editing)
+			else if (!listChanged && mainWindowState.InLineEditIndex == -1)
+			{
+				imgui_Separator();
+				imgui_TextColored(0.8f, 0.9f, 0.95f, 1.0f, "Add New Values");
+				if (imgui_Button("Add Manual"))
+				{
+					mainWindowState.InLineEditIndex = parts.Count;
+					mainWindowState.Buffer_InlineEdit = string.Empty;
+				}
+				imgui_SameLine();
+
+			}
 		}
 		private static void Render_MainWindow_ConfigEditor_SelectedKeyValues_Collections(List<string> parts, SectionData selectedSection)
 		{
@@ -2554,7 +2672,7 @@ namespace E3Core.UI.Windows.CharacterSettings
 
 			// Set initial size only on first use - window is resizable and remembers user's size
 			imgui_SetNextWindowSizeWithCond(900f, 600f, (int)ImGuiCond.FirstUseEver); // ImGuiCond_FirstUseEver = 4
-			imgui_SetNextWindowFocus();
+			//imgui_SetNextWindowFocus();
 			using (var window = ImGUIWindow.Aquire())
 			{
 				if (window.Begin(_state.WinName_AddModal, (int)ImGuiWindowFlags.ImGuiWindowFlags_NoDocking))
