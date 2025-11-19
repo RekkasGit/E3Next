@@ -12,6 +12,7 @@ using System.Net.Configuration;
 using System.ServiceModel.Configuration;
 using System.ServiceModel.PeerResolvers;
 using System.Windows.Forms;
+using System.Xml.Linq;
 
 namespace E3Core.Processors
 {
@@ -569,9 +570,11 @@ namespace E3Core.Processors
 					e3util.YieldToEQ();
                     if (e3util.IsShuttingDown() || E3.IsPaused()) return;
                     EventProcessor.ProcessEventsInQueues("/lootoff");
-					EventProcessor.ProcessEventsInQueues("/assistme");
 					if (!E3.CharacterSettings.Misc_AutoLootEnabled) return;
-                    
+					if (EventProcessor.EventList["/assistme"].queuedEvents.Count > 0)
+                    {
+                        return;
+                    }
                     if(Basics.InCombat())
                     {
 						if (LootStackableSettings.Enabled && !LootStackableSettings.LootInCombat) return;
@@ -976,6 +979,8 @@ namespace E3Core.Processors
 							}
 						}
 
+						
+
 						if (stackable && !nodrop)
 						{
 							if (!importantItem && LootStackableSettings.LootOnlyCommonTradeSkillItems)
@@ -1002,6 +1007,19 @@ namespace E3Core.Processors
 						{
 							importantItem = false;
 						}
+                        //exclude if exist
+						if (importantItem && LootStackableSettings.ExcludeStackableItemsContains.Count > 0)
+						{
+							foreach (var item in LootStackableSettings.ExcludeStackableItemsContains)
+							{
+								if (corpseItem.IndexOf(item, StringComparison.OrdinalIgnoreCase) > -1)
+								{
+									importantItem = false;
+									break;
+								}
+							}
+						}
+
 					}
 					else if (E3.GeneralSettings.Loot_OnlyStackableEnabled)
 					{

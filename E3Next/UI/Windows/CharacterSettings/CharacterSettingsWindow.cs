@@ -1781,8 +1781,7 @@ namespace E3Core.UI.Windows.CharacterSettings
 			{
 				if (window.Begin(spellEditorState.WinName_CastTargetPickerWindowTitle, (int)pickerFlags))
 				{
-					var bots = E3.Bots?.BotsConnected() ?? new List<string>();
-					bots.Sort(StringComparer.OrdinalIgnoreCase);
+					var bots = E3.Bots.BotsConnected();
 					var selectedEntries = GetCastTargetEntries(currentSpell.CastTarget);
 					imgui_TextColored(0.95f, 0.85f, 0.35f, 1.0f, $"Connected bots ({bots.Count})");
 					imgui_Separator();

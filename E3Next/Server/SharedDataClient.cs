@@ -839,12 +839,8 @@ namespace E3Core.Server
 							//MQ.WriteDelayed("Error in shared data thread. Message:" + ex.Message + "  stack:" + ex.StackTrace);
 						}
 					}
-
 				}
-
 				subSocket.Dispose();
-
-
 			}
 			MQ.WriteDelayed($"Shutting down Share Data Thread.");
 		}

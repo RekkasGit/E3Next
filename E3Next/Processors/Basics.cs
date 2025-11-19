@@ -1365,9 +1365,13 @@ namespace E3Core.Processors
         /// Am I in combat?
         /// </summary>
         /// <returns>Returns a bool indicating whether or not you're in combat</returns>
-        public static bool InCombat()
+        public static bool InCombat(bool skipBotCheck = false)
         {
             bool inCombat = Assist.IsAssisting || MQ.Query<bool>("${Me.Combat}") || MQ.Query<bool>("${Me.CombatState.Equal[Combat]}");
+            if (!skipBotCheck)
+            {
+                if (E3.Bots.BotsInCombat().Count > 0) inCombat = true;
+            }
             return inCombat;
         }
         public static bool InGameCombat()

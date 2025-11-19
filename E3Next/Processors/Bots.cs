@@ -11,6 +11,8 @@ using System.IO;
 using System.Linq;
 using System.Net;
 using System.Net.Http.Headers;
+using System.Reflection;
+using System.Runtime.CompilerServices;
 using System.Text;
 using System.Text.RegularExpressions;
 using System.Threading;
@@ -25,6 +27,8 @@ namespace E3Core.Processors
        
      //   Boolean InZone(string Name);
         Int32 PctHealth(string name);
+		Boolean InCombat(string name);
+		List<string> BotsInCombat();
 		Int32 PctMana(string name);
 		List<string> BotsConnected();
         Boolean HasShortBuff(string name, Int32 buffid);
@@ -164,7 +168,15 @@ namespace E3Core.Processors
 				int spellDamage = MQ.Query<Int32>("${Me.SpellDamageBonus}");
 				int hitPoints = MQ.Query<Int32>("${Me.CurrentHPs}");
 				int manaPoints = MQ.Query<Int32>("${Me.CurrentMana}");
-				Broadcast($"HP:\ag{hitPoints}\aw MP:\ag{manaPoints} \awSpellShield:\ag{spellShield} \awSpell DMG:\ag{spellDamage}");
+
+				Int32 plat = MQ.Query<Int32>("${Me.Platinum}") + MQ.Query<Int32>("${PlatinumBank}");
+
+				Int32 AAPts = MQ.Query<Int32>("${Me.AAPoints}");
+				Int32 AAAsigned = MQ.Query<Int32>("${Me.AAPointsAssigned}");
+				Int32 AASpent = MQ.Query<Int32>("${Me.AAPointsSpent}");
+				string AATotal = MQ.Query<string>("${Me.AAPointsTotal}");
+	
+				Broadcast($"HP:\ag{hitPoints}\aw MP:\ag{manaPoints} \awSpellShield:\ag{spellShield} \awSpell DMG:\ag{spellDamage} \awAA:\ag{AAPts.ToString("N0")} \awAA Total:\ag{AASpent.ToString("N0")}  \awPlat:\ag {plat.ToString("N0")}");
 				if (x.args.Count == 0)
 				{
 					BroadcastCommand("/e3botreport me");
@@ -500,11 +512,36 @@ namespace E3Core.Processors
 				//need to udpate
 				_botsConnectedCount = NetMQServer.SharedDataClient.TopicUpdates.Keys.Count;
 				_botsConnectedCache = NetMQServer.SharedDataClient.TopicUpdates.Keys.ToList();
+				_botsConnectedCache.Sort(StringComparer.OrdinalIgnoreCase);
 			}
 			return _botsConnectedCache;
 		}
 
-        public void Broadcast(string message, bool noparse = false)
+		Int64 _botsInCombatTimeStamp = 0;
+		Int64 _botsInCombatTimeInterval = 1000;
+
+		[ExposedData("Bots", "BotsInCombat")]
+		static List<string> _botsInCombatResultCache = new List<string>();
+		public List<string> BotsInCombat()
+		{
+			if(!e3util.ShouldCheck(ref _botsInCombatTimeStamp,_botsInCombatTimeInterval))
+			{
+				return _botsInCombatResultCache;
+			}
+			_botsInCombatResultCache.Clear();
+			var botsConnected = BotsConnected();
+			foreach(var bot in botsConnected)
+			{
+				if(InCombat(bot))
+				{
+					_botsInCombatResultCache.Add(bot);
+				}
+			}
+			return _botsInCombatResultCache;
+		}
+
+
+		public void Broadcast(string message, bool noparse = false)
         {
 			//have to parse out all the MQ macro information
 			if (!noparse)
@@ -915,8 +952,42 @@ namespace E3Core.Processors
                 return true;
             }
             return false;
-	    }
-
+		}
+		Dictionary<string, SharedNumericDataBool> _inCombatCollection = new Dictionary<string, SharedNumericDataBool>();
+		public bool InCombat(string name)
+		{
+			//register the user to get their buff data if its not already there
+			if (!NetMQServer.SharedDataClient.TopicUpdates.ContainsKey(name))
+			{
+				return false; //dunno just say full health
+			}
+			var userTopics = NetMQServer.SharedDataClient.TopicUpdates[name];
+			//check to see if it has been filled out yet.
+			string keyToUse = "${Me.InCombat}";
+			if (!userTopics.ContainsKey(keyToUse))
+			{
+				//don't have the data yet kick out and assume everything is ok.
+				return false;
+			}
+			var entry = userTopics[keyToUse];
+			if (!_inCombatCollection.ContainsKey(name))
+			{
+				_inCombatCollection.Add(name, new SharedNumericDataBool { Data = false });
+			}
+			var sharedInfo = _inCombatCollection[name];
+			lock (entry)
+			{
+				if (entry.LastUpdate > sharedInfo.LastUpdate)
+				{
+					if (Boolean.TryParse(entry.Data, out var result))
+					{
+						sharedInfo.Data = result;
+						sharedInfo.LastUpdate = entry.LastUpdate;
+					}
+				}
+			}
+			return sharedInfo.Data;
+		}
         Dictionary<string, SharedNumericDataInt32> _pctHealthCollection = new Dictionary<string, SharedNumericDataInt32>();
 		public int PctHealth(string name)
 		{
@@ -1048,6 +1119,11 @@ namespace E3Core.Processors
             public Int32 Data { get; set; }
             public Int64 LastUpdate { get; set; }
         }
+		class SharedNumericDataBool
+		{
+			public Boolean Data { get; set; }
+			public Int64 LastUpdate { get; set; }
+		}
 
 	}
 	/*

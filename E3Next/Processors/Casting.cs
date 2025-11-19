@@ -2149,6 +2149,7 @@ namespace E3Core.Processors
 						var field = pair.Value;
 						if (field.IsGenericList(typeof(String)))
 						{
+
 							List<string> fieldValue = (List<string>)field.GetValue(E3.CharacterSettings);
 							string finallist = string.Join(",", fieldValue);
 							tIF = tIF.ReplaceInsensitive(pair.Key, finallist);

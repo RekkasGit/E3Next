@@ -314,7 +314,9 @@ namespace E3Core.Processors
 		}
 		public static void StateUpdates_Misc()
 		{
-			PubServer.AddTopicMessage("${InCombat}", CurrentInCombat.ToString());
+			string combatString = Basics.InCombat(skipBotCheck: true).ToString();
+			PubServer.AddTopicMessage("${InCombat}", combatString);
+			PubServer.AddTopicMessage("${Me.InCombat}", combatString);
 			PubServer.AddTopicMessage("${EQ.CurrentFocusedWindowName}", MQ.GetFocusedWindowName());
 			//PubServer.AddTopicMessage("${EQ.CurrentHoveredWindowName}", MQ.GetHoverWindowName());
 			PubServer.AddTopicMessage("${Me.CurrentTargetID}", MQ.Query<string>("${Target.ID}"));

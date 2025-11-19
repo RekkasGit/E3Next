@@ -41,6 +41,11 @@ namespace E3NextConfigEditor.Client
 			return new List<string>();
 		}
 
+		public List<string> BotsInCombat()
+		{
+			return new List<string>();
+		}
+
 		public void Broadcast(string message, bool noparse = false)
 		{
 			
@@ -82,6 +87,11 @@ namespace E3NextConfigEditor.Client
 		}
 
 		public bool HasShortBuff(string name, int buffid)
+		{
+			return false;
+		}
+
+		public bool InCombat(string name)
 		{
 			return false;
 		}
