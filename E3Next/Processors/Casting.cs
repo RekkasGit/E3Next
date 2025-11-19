@@ -2192,7 +2192,60 @@ namespace E3Core.Processors
 					}
 				}
 			}
-			if (tIF.IndexOf("${E3N.State", 0, StringComparison.OrdinalIgnoreCase) > -1)
+			if (tIF.IndexOf("${E3N.State.Bots.", 0, StringComparison.OrdinalIgnoreCase) > -1)
+			{
+
+				foreach (var pair in Setup.ExposedDataReflectionLookup)
+				{
+					if (tIF.IndexOf(pair.Key, 0, StringComparison.OrdinalIgnoreCase) > -1)
+					{
+						var field = pair.Value;
+						if (field.IsGenericList(typeof(String)))
+						{
+
+							List<string> fieldValue = (List<string>)field.GetValue(E3.Bots);
+							string finallist = string.Join(",", fieldValue);
+							tIF = tIF.ReplaceInsensitive(pair.Key, finallist);
+						}
+						else if (field.IsGenericList(typeof(Int32)))
+						{
+							List<Int32> fieldValue = (List<Int32>)field.GetValue(E3.Bots);
+							string finallist = string.Join(",", fieldValue);
+							tIF = tIF.ReplaceInsensitive(pair.Key, finallist);
+						}
+						else if (field.IsGenericList(typeof(Spell)))
+						{
+							List<Spell> fieldValue = (List<Spell>)field.GetValue(E3.Bots);
+							_ifsStringBuilder.Clear();
+							foreach (var spell in fieldValue)
+							{
+								if (_ifsStringBuilder.Length == 0)
+								{
+									_ifsStringBuilder.Append(spell.CastName);
+								}
+								else
+								{
+									_ifsStringBuilder.Append("," + spell.CastName);
+								}
+							}
+							tIF = tIF.ReplaceInsensitive(pair.Key, _ifsStringBuilder.ToString());
+						}
+						else if (field.IsGenericList(typeof(Int64)))
+						{
+							List<Int64> fieldValue = (List<Int64>)field.GetValue(E3.Bots);
+							string finallist = string.Join(",", fieldValue);
+							tIF = tIF.ReplaceInsensitive(pair.Key, finallist);
+						}
+						else
+						{
+							tIF = tIF.ReplaceInsensitive(pair.Key, pair.Value.GetValue(E3.Bots).ToString());
+
+						}
+
+					}
+				}
+			}
+			else if (tIF.IndexOf("${E3N.State", 0, StringComparison.OrdinalIgnoreCase) > -1)
 			{
 				foreach (var pair in Setup.ExposedDataReflectionLookup)
 				{
@@ -2244,12 +2297,12 @@ namespace E3Core.Processors
 								string[] keylookupArray = pair.Key.Split('.');
 								string keytoUse = keylookupArray[3].Replace("}", "");
 
-								Dictionary<string, Burn> fieldValue = (Dictionary<string,Burn>)field.GetValue(E3.CharacterSettings);
-								if(fieldValue.TryGetValue(keytoUse,out var tburn))
+								Dictionary<string, Burn> fieldValue = (Dictionary<string, Burn>)field.GetValue(E3.CharacterSettings);
+								if (fieldValue.TryGetValue(keytoUse, out var tburn))
 								{
-									tIF = tIF.ReplaceInsensitive(pair.Key,tburn.Active.ToString());
+									tIF = tIF.ReplaceInsensitive(pair.Key, tburn.Active.ToString());
 								}
-								
+
 							}
 							else
 							{

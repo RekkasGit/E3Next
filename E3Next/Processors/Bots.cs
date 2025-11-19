@@ -521,7 +521,7 @@ namespace E3Core.Processors
 		Int64 _botsInCombatTimeInterval = 1000;
 
 		[ExposedData("Bots", "BotsInCombat")]
-		static List<string> _botsInCombatResultCache = new List<string>();
+		List<string> _botsInCombatResultCache = new List<string>();
 		public List<string> BotsInCombat()
 		{
 			if(!e3util.ShouldCheck(ref _botsInCombatTimeStamp,_botsInCombatTimeInterval))
