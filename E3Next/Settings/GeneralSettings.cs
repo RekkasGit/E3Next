@@ -31,7 +31,7 @@ namespace E3Core.Settings
         public string General_Networking_ExternalIPToQueryForLocal = "8.8.8.8";
         public string General_Networking_LocalIPOverride = string.Empty;
 
-        public Int32 Loot_LootItemDelay = 300;
+        public Int32 Loot_LootItemDelay = 350;
         public string Loot_LinkChannel = String.Empty;
         public List<string> Loot_LinkChannelValid = new List<string>() {"g","gu","say","rsay","shout","gsay", "rs","bc","e3bc"};
         public Int32 MaxGemSlots = 8 + MQ.Query<Int32>("${Me.AltAbility[Mnemonic Retention].Rank}");
@@ -179,10 +179,10 @@ namespace E3Core.Settings
             LoadKeyData("Loot", "Corpse Seek Radius", parsedData, ref Loot_CorpseSeekRadius);
             LoadKeyData("Loot", "LootItemDelay", parsedData, ref Loot_LootItemDelay);
             //no lower than 300ms
-            if (Loot_LootItemDelay < 300)
+            if (Loot_LootItemDelay < 350)
             {
-                MQ.Write("Minimum LootItemDelay is 300ms, defaulting to 300ms");
-                Loot_LootItemDelay = 300;
+                MQ.Write("Minimum LootItemDelay is 300ms, defaulting to 350ms");
+                Loot_LootItemDelay = 350;
             }
 
             LoadKeyData("Loot", "Loot in Combat", parsedData, ref Loot_LootInCombat);

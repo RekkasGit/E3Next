@@ -503,15 +503,27 @@ namespace E3Core.Processors
 			return DebuffCounterFunction(name, "${Me.CountersCorrupted}", _debuffCorruptedCounterCollection);
 
 		}
-		private Int32 _botsConnectedCount = 0;
+
+		[ExposedData("Bots", "BotsConnected")]
 		private List<string> _botsConnectedCache = new List<string>();
+		Int64 _botsConnectredTimeStamp = 0;
+		Int64 _botsConnectedTimeInterval = 2000;
 		public List<string> BotsConnected()
         {
-			if(NetMQServer.SharedDataClient.TopicUpdates.Keys.Count!=_botsConnectedCount)
+			if(e3util.ShouldCheck(ref _botsConnectredTimeStamp,_botsConnectedTimeInterval))
 			{
-				//need to udpate
-				_botsConnectedCount = NetMQServer.SharedDataClient.TopicUpdates.Keys.Count;
-				_botsConnectedCache = NetMQServer.SharedDataClient.TopicUpdates.Keys.ToList();
+				_botsConnectedCache.Clear();
+				foreach(var pair in NetMQServer.SharedDataClient.TopicUpdates)
+				{
+					//this key should always be there and always be updated
+					if(pair.Value.TryGetValue("${Me.PctHPs}",out var data))
+					{
+						if(Core.StopWatch.ElapsedMilliseconds < (data.LastUpdate + 5000))
+						{
+							_botsConnectedCache.Add(pair.Key);
+						}
+					}
+				}
 				_botsConnectedCache.Sort(StringComparer.OrdinalIgnoreCase);
 			}
 			return _botsConnectedCache;
@@ -986,6 +998,13 @@ namespace E3Core.Processors
 					}
 				}
 			}
+			//is the data too old?
+			if(Core.StopWatch.ElapsedMilliseconds > sharedInfo.LastUpdate+5000)
+			{
+				//haven't updated in 5 seconds, return false
+				return false;
+			}
+
 			return sharedInfo.Data;
 		}
         Dictionary<string, SharedNumericDataInt32> _pctHealthCollection = new Dictionary<string, SharedNumericDataInt32>();
