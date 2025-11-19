@@ -74,7 +74,9 @@ namespace E3Core.UI.Windows.CharacterSettings
 		public static readonly HashSet<string> _spellKnownFlags = new HashSet<string>(_spellFlagOutputOrder, StringComparer.OrdinalIgnoreCase);
 		public static readonly HashSet<string> _customKeySections = new HashSet<string>(StringComparer.OrdinalIgnoreCase) { "Burn", "CommandSets", "Ifs", "Events", "E3BotsPublishData (key/value)", "EventLoopTiming", "EventRegMatches" };
 		public static readonly Dictionary<string, List<string>> _singleEntryKeys = new Dictionary<string, List<string>>(StringComparer.OrdinalIgnoreCase) 
-		{ { "Buffs", new List<string>(){"Aura" } }, { "Heals", new List<string>(){ "Who to Heal","Who to HoT" } }};
+		{ { "Buffs", new List<string>(){"Aura" } }, { "Heals", new List<string>(){ "Who to Heal","Who to HoT" } }, {"Ifs",new List<string>() }, {"Events",new List<string>() },{"E3BotsPublishData",new List<string>() }
+		,{"E3BotsPublishData (key/value)",new List<string>()},{"EventLoopTiming",new List<string>() },{"EventRegMatches",new List<string>() }
+		};
 		public static readonly Dictionary<string, string> _spellKeyAliasMap = new Dictionary<string, string>(StringComparer.OrdinalIgnoreCase)
 		{
 			{"AfterCast", "AfterSpell"},

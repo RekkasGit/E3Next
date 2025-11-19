@@ -795,6 +795,26 @@ namespace E3Core.UI.Windows.CharacterSettings
 						// Section has keys, but no key selected yet: keep values panel empty
 						imgui_Text("Select a configuration key from the left panel.");
 					}
+					else if(data._singleEntryKeys.ContainsKey(state.SelectedSection) && (data._singleEntryKeys[state.SelectedSection].Count==0 || data._singleEntryKeys[state.SelectedSection].Contains(state.SelectedKey)))
+					{
+						var kd = data.GetCurrentEditedSpellKeyData();
+						if (kd == null) return;
+
+						//this is a single key/value entry, just show the edit for that.
+						imgui_TextColored(0.8f, 0.9f, 0.95f, 1.0f, state.SelectedAddInLine.Equals("Ifs", StringComparison.OrdinalIgnoreCase) ? "Add New If" : "Add New Burn Key");
+						imgui_Text("Value:");
+						imgui_SameLine();
+
+						imgui_SetNextItemWidth(800);
+						if (imgui_InputText("##inline_edit_value", kd.Value))
+						{
+							kd.ValueList.Clear();
+							kd.Value = imgui_InputText_Get("##inline_edit_value") ?? string.Empty;
+							state.ConfigIsDirty = true;
+						}
+						
+						
+					}
 					else
 					{
 						Render_MainWindow_ConfigEditor_SelectedKeyValues(selectedSection);
@@ -2534,7 +2554,7 @@ namespace E3Core.UI.Windows.CharacterSettings
 
 			// Set initial size only on first use - window is resizable and remembers user's size
 			imgui_SetNextWindowSizeWithCond(900f, 600f, (int)ImGuiCond.FirstUseEver); // ImGuiCond_FirstUseEver = 4
-
+			imgui_SetNextWindowFocus();
 			using (var window = ImGUIWindow.Aquire())
 			{
 				if (window.Begin(_state.WinName_AddModal, (int)ImGuiWindowFlags.ImGuiWindowFlags_NoDocking))
