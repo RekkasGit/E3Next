@@ -513,7 +513,8 @@ namespace E3Core.Processors
 			if(!readOnly && e3util.ShouldCheck(ref _botsConnectredTimeStamp,_botsConnectedTimeInterval))
 			{
 				//prevent issues with forloops and the like, just create a new list every timestamp.
-				_botsConnectedCache = new List<string>();
+				
+				var tempList = new List<string>();
 				foreach(var pair in NetMQServer.SharedDataClient.TopicUpdates)
 				{
 					//this key should always be there and always be updated
@@ -521,11 +522,12 @@ namespace E3Core.Processors
 					{
 						if(Core.StopWatch.ElapsedMilliseconds < (data.LastUpdate + 5000))
 						{
-							_botsConnectedCache.Add(pair.Key);
+							tempList.Add(pair.Key);
 						}
 					}
 				}
-				_botsConnectedCache.Sort(StringComparer.OrdinalIgnoreCase);
+				tempList.Sort(StringComparer.OrdinalIgnoreCase);
+				_botsConnectedCache = tempList;
 			}
 			return _botsConnectedCache;
 		}
@@ -541,15 +543,18 @@ namespace E3Core.Processors
 			{
 				return _botsInCombatResultCache;
 			}
-			_botsInCombatResultCache = new List<string>();
+			//create new list to deal with other threads accessing this and hitting the update
+			
+			var tempList = new List<string>();
 			var botsConnected = BotsConnected(readOnly:true);
 			foreach(var bot in botsConnected)
 			{
 				if(InCombat(bot))
 				{
-					_botsInCombatResultCache.Add(bot);
+					tempList.Add(bot);
 				}
 			}
+			_botsConnectedCache = tempList;
 			return _botsInCombatResultCache;
 		}
 
