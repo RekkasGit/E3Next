@@ -2,6 +2,7 @@
 using E3Core.Settings;
 using E3Core.Settings.FeatureSettings;
 using E3Core.Utility;
+using Google.Protobuf.Collections;
 using MonoCore;
 using System;
 using System.Collections.Generic;
@@ -914,7 +915,7 @@ namespace E3Core.Processors
 
                 return;
             }
-
+            Dictionary<Int32,List<String>> itemStates = new Dictionary<Int32,List<String>>();
             for(Int32 i =1;i<=corpseItemsCount;i++)
             {
                 //lets try and loot them.
@@ -923,12 +924,20 @@ namespace E3Core.Processors
                 MQ.Delay(1000, $"${{Corpse.Item[{i}].ID}}");
 
                 var itemId = MQ.Query<int>($"${{Corpse.Item[{i}].ID}}");
+
+                if(!itemStates.ContainsKey(itemId))
+                {
+                    itemStates.Add(itemId, new List<String>());
+                }
+
                 string corpseItem = MQ.Query<string>($"${{Corpse.Item[{i}].Name}}");
                 bool stackable = MQ.Query<bool>($"${{Corpse.Item[{i}].Stackable}}");
                 bool nodrop = MQ.Query<bool>($"${{Corpse.Item[{i}].NoDrop}}");
                 Int32 itemValue = MQ.Query<Int32>($"${{Corpse.Item[{i}].Value}}");
                 Int32 stackCount = MQ.Query<Int32>($"${{Corpse.Item[{i}].Stack}}");
                 bool tradeskillItem = MQ.Query<bool>($"${{Corpse.Item[{i}].Tradeskills}}");
+
+
 
                 
                 //destroy things we don't like
@@ -1094,6 +1103,20 @@ namespace E3Core.Processors
                 //if in bank or on our person
                 bool weHaveItem = MQ.Query<bool>($"${{FindItemCount[={corpseItem}]}}");
                 bool weHaveItemInBank = MQ.Query<bool>($"${{FindItemBankCount[={corpseItem}]}}");
+
+
+                if (itemStates[itemId].Count==0)
+                {
+                    var list = itemStates[itemId];
+
+                    //new add lets add the item states
+                    if (isLore) list.Add("Lore");
+                    if (nodrop) list.Add("Nodrop");
+                    if (weHaveItem) list.Add("HaveItem");
+                    if (weHaveItemInBank) list.Add("HaveItemBank");
+
+                }
+
                 if (isLore && (weHaveItem || weHaveItemInBank))
                 {
                     importantItem = false;
@@ -1143,7 +1166,7 @@ namespace E3Core.Processors
                     
                     if(MQ.Query<bool>("${Group}"))
                     {
-                        PrintCorpseItems(corpse,corpseItemsCount);
+                        PrintCorpseItems(corpse,corpseItemsCount, itemStates);
 //						PrintLink($"{E3.GeneralSettings.Loot_LinkChannel} {corpse.ID} - ");
 					}
 				}
@@ -1152,7 +1175,7 @@ namespace E3Core.Processors
         }
 
         private static List<string> _printCorpseItemList = new List<string>(10); 
-        private static void PrintCorpseItems(Spawn corpse,Int32 initialCountOfItems)
+        private static void PrintCorpseItems(Spawn corpse,Int32 initialCountOfItems,Dictionary<Int32,List<string>> itemstates)
 		{
             //need the initial count in case items were looted, so that we display all items
 			Int32 corpseItems = initialCountOfItems;
@@ -1168,7 +1191,15 @@ namespace E3Core.Processors
 				if (itemId > 0)
 				{
 					string link = MQ.Query<string>($"${{Corpse.Item[{i}].ItemLink[CLICKABLE]}}");
-					_printCorpseItemList.Add(link);
+
+                    if (itemstates.ContainsKey(itemId) && itemstates[itemId].Count>0)
+                    {
+                        _printCorpseItemList.Add($"({String.Join(",", itemstates[itemId])})- {link}");
+					}
+                    else
+                    {
+						_printCorpseItemList.Add(link);
+					}
 				}
 			}
             if(_printCorpseItemList.Count > 0 )
