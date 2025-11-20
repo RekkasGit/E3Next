@@ -572,7 +572,7 @@ namespace E3Core.Processors
                     if (e3util.IsShuttingDown() || E3.IsPaused()) return;
                     EventProcessor.ProcessEventsInQueues("/lootoff");
 					if (!E3.CharacterSettings.Misc_AutoLootEnabled) return;
-					if (EventProcessor.EventList["/assistme"].queuedEvents.Count > 0)
+					if (EventProcessor.CommandListQueueHasCommand("/assistme"))
                     {
                         return;
                     }
