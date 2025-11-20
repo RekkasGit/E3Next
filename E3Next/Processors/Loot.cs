@@ -1112,8 +1112,7 @@ namespace E3Core.Processors
                     //new add lets add the item states
                     if (isLore) list.Add("Lore");
                     if (nodrop) list.Add("Nodrop");
-                    if (weHaveItem) list.Add("HaveItem");
-                    if (weHaveItemInBank) list.Add("HaveItemBank");
+                    
 
                 }
 

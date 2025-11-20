@@ -30,7 +30,7 @@ namespace E3Core.Processors
 		Boolean InCombat(string name);
 		List<string> BotsInCombat();
 		Int32 PctMana(string name);
-		List<string> BotsConnected();
+		List<string> BotsConnected(bool readOnly = false);
         Boolean HasShortBuff(string name, Int32 buffid);
         void BroadcastCommand(string command, bool noparse = false, CommandMatch match = null);
         void BroadcastCommandToGroup(string command, CommandMatch match=null, bool noparse = false);
@@ -508,11 +508,12 @@ namespace E3Core.Processors
 		private List<string> _botsConnectedCache = new List<string>();
 		Int64 _botsConnectredTimeStamp = 0;
 		Int64 _botsConnectedTimeInterval = 2000;
-		public List<string> BotsConnected()
+		public List<string> BotsConnected(bool readOnly = false)
         {
-			if(e3util.ShouldCheck(ref _botsConnectredTimeStamp,_botsConnectedTimeInterval))
+			if(!readOnly && e3util.ShouldCheck(ref _botsConnectredTimeStamp,_botsConnectedTimeInterval))
 			{
-				_botsConnectedCache.Clear();
+				//prevent issues with forloops and the like, just create a new list every timestamp.
+				_botsConnectedCache = new List<string>();
 				foreach(var pair in NetMQServer.SharedDataClient.TopicUpdates)
 				{
 					//this key should always be there and always be updated
@@ -540,8 +541,8 @@ namespace E3Core.Processors
 			{
 				return _botsInCombatResultCache;
 			}
-			_botsInCombatResultCache.Clear();
-			var botsConnected = BotsConnected();
+			_botsInCombatResultCache = new List<string>();
+			var botsConnected = BotsConnected(readOnly:true);
 			foreach(var bot in botsConnected)
 			{
 				if(InCombat(bot))

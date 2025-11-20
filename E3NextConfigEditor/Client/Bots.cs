@@ -36,7 +36,7 @@ namespace E3NextConfigEditor.Client
 			return 0;
 		}
 
-		public List<string> BotsConnected()
+		public List<string> BotsConnected(bool readOnly = false)
 		{
 			return new List<string>();
 		}
