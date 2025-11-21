@@ -11,7 +11,9 @@ using System.Collections.Generic;
 using System.Globalization;
 using System.IO;
 using System.Linq;
+using System.Linq.Expressions;
 using System.Numerics;
+using System.Reflection;
 using System.Text;
 using System.Text.RegularExpressions;
 using System.Web;
@@ -450,15 +452,15 @@ namespace E3Core.UI.Windows.CharacterSettings
 			float contentHeight = Math.Max(160f, paneAvailY - reservedSpellEditorSpace);
 			bool showSpellEditor = state.Show_ShowIntegratedEditor && state.SelectedValueIndex >= 0;
 
-		
+
 			using (var child = ImGUIChild.Aquire())
 			{
 				if (child.BeginChild("E3Config_EditorPane_Content", 0, contentHeight, (int)ImGuiChildFlags.None, 0))
 				{
-					Render_MainWindow_ConfigEditor_RightPaneContent(pd,showSpellEditor);
+					Render_MainWindow_ConfigEditor_RightPaneContent(pd, showSpellEditor);
 				}
 			}
-			
+
 			if (showSpellEditor)
 			{
 				imgui_Separator();
@@ -466,11 +468,11 @@ namespace E3Core.UI.Windows.CharacterSettings
 				{
 					if (child.BeginChild("E3Config_EditorPane_Content_SpellEditor", 0, 0, (int)ImGuiChildFlags.None, 0))
 					{
-						
+
 						Render_MainWindow_SpellEditor();
 					}
 				}
-				
+
 			}
 		}
 
@@ -718,32 +720,32 @@ namespace E3Core.UI.Windows.CharacterSettings
 						imgui_Text("No section selected.");
 						return;
 					}
-					else if (selectedSection.Keys == null || selectedSection.Keys.Count() == 0)
-					{
-						// Empty section: allow creating a new key directly here
-						imgui_TextColored(0.8f, 0.9f, 0.95f, 1.0f, $"[{state.SelectedSection}] (empty)");
-						imgui_Separator();
-						imgui_Text("Create new entry:");
-						imgui_SameLine();
-						imgui_SetNextItemWidth(220f);
-						if (imgui_InputText("##new_key_name", state.Buffer_NewKey))
-						{
-							state.Buffer_NewKey = imgui_InputText_Get("##new_key_name") ?? string.Empty;
-						}
-						imgui_SameLine();
-						if (imgui_Button("Add Key"))
-						{
-							string newKey = (state.Buffer_NewKey ?? string.Empty).Trim();
-							if (newKey.Length > 0 && !selectedSection.Keys.ContainsKey(newKey))
-							{
-								selectedSection.Keys.AddKey(newKey, string.Empty);
-								state.SelectedKey = newKey;
-								state.Buffer_NewKey = string.Empty;
-								state.InLineEditIndex = -1;
-								// On next frame the normal values editor will show for the new key
-							}
-						}
-					}
+					//else if (selectedSection.Keys == null || selectedSection.Keys.Count() == 0)
+					//{
+					//	// Empty section: allow creating a new key directly here
+					//	imgui_TextColored(0.8f, 0.9f, 0.95f, 1.0f, $"[{state.SelectedSection}] (empty)");
+					//	imgui_Separator();
+					//	imgui_Text("Create new entry:");
+					//	imgui_SameLine();
+					//	imgui_SetNextItemWidth(220f);
+					//	if (imgui_InputText("##new_key_name", state.Buffer_NewKey))
+					//	{
+					//		state.Buffer_NewKey = imgui_InputText_Get("##new_key_name") ?? string.Empty;
+					//	}
+					//	imgui_SameLine();
+					//	if (imgui_Button("Add Key"))
+					//	{
+					//		string newKey = (state.Buffer_NewKey ?? string.Empty).Trim();
+					//		if (newKey.Length > 0 && !selectedSection.Keys.ContainsKey(newKey))
+					//		{
+					//			selectedSection.Keys.AddKey(newKey, string.Empty);
+					//			state.SelectedKey = newKey;
+					//			state.Buffer_NewKey = string.Empty;
+					//			state.InLineEditIndex = -1;
+					//			// On next frame the normal values editor will show for the new key
+					//		}
+					//	}
+					//}
 					// Inline Add New editor (triggered from header context menu)
 					if (state.Show_AddKey
 						&& string.Equals(state.SelectedAddInLine, state.SelectedSection, StringComparison.OrdinalIgnoreCase)
@@ -1030,7 +1032,7 @@ namespace E3Core.UI.Windows.CharacterSettings
 				Render_MainWindow_ConfigEditor_SelectedKeyValues_String(parts, selectedSection);
 
 			}
-			else if(data._stringCollectionSections.ContainsKey(mainWindowState.SelectedSection) && (data._stringCollectionSections[mainWindowState.SelectedSection].Count == 0 || data._stringCollectionSections[mainWindowState.SelectedSection].Contains(mainWindowState.SelectedKey)))
+			else if (data._stringCollectionSections.ContainsKey(mainWindowState.SelectedSection) && (data._stringCollectionSections[mainWindowState.SelectedSection].Count == 0 || data._stringCollectionSections[mainWindowState.SelectedSection].Contains(mainWindowState.SelectedKey)))
 			{
 				Render_MainWindow_ConfigEditor_String_Collections(parts, selectedSection);
 			}
@@ -1242,7 +1244,7 @@ namespace E3Core.UI.Windows.CharacterSettings
 
 				// Make value selectable to show info in right panel
 
-				if(imgui_InputText($"##select_{itemUid}",v))
+				if (imgui_InputText($"##select_{itemUid}", v))
 				{
 					parts[i] = imgui_InputText_Get($"##select_{itemUid}");
 				}
@@ -1796,6 +1798,7 @@ namespace E3Core.UI.Windows.CharacterSettings
 			{
 				RenderCastTargetHelperWindow();
 			}
+			
 		}
 
 		private static void RenderSpellEditorCastTargetRow(Spell currentSpell)
@@ -1861,13 +1864,13 @@ namespace E3Core.UI.Windows.CharacterSettings
 		{
 			var spellEditorState = _state.GetState<State_SpellEditor>();
 
-			
-		
+
+
 			Int32 helperFlags = (int)(ImGuiWindowFlags.ImGuiWindowFlags_AlwaysAutoResize | ImGuiWindowFlags.ImGuiWindowFlags_NoDocking | ImGuiWindowFlags.ImGuiWindowFlags_NoCollapse | ImGuiWindowFlags.ImGuiWindowFlags_NoResize);
 			Vector2 child_size = new Vector2(700, 250);
 			imgui_SetNextWindowSize(child_size.X, child_size.Y);
-			
-			
+
+
 			Vector2 targetPos = GetCenterParentPos(child_size);
 
 			imgui_SetNextWindowPos(targetPos.X, targetPos.Y, (int)ImGuiCond.Once, 0, 0);
@@ -1894,6 +1897,85 @@ namespace E3Core.UI.Windows.CharacterSettings
 			}
 		}
 
+		private static void Render_Generic_PickerWindow()
+		{
+
+			var spellEditorState = _state.GetState<State_SpellEditor>();
+			var mainWindowState = _state.GetState<State_MainWindow>();
+			var currentSpell = mainWindowState.Currently_EditableSpell;
+			if (currentSpell == null)
+			{
+				_log.WriteDelayed($"current spell not found, setting picker to not show.");
+
+				spellEditorState.ShowGenericPicker = false;
+				return;
+			}
+			Type type = currentSpell.GetType();
+			FieldInfo fieldInfo = type.GetField(spellEditorState.GenericPickerFieldName, BindingFlags.Instance | BindingFlags.Public);
+			if (fieldInfo == null)
+			{
+				_log.WriteDelayed($"Field [{spellEditorState.GenericPickerFieldName}] not found");
+				spellEditorState.ShowGenericPicker = false;
+				return;
+			}
+
+			const ImGuiWindowFlags pickerFlags = ImGuiWindowFlags.ImGuiWindowFlags_AlwaysAutoResize
+				| ImGuiWindowFlags.ImGuiWindowFlags_NoDocking
+				| ImGuiWindowFlags.ImGuiWindowFlags_NoCollapse
+				| ImGuiWindowFlags.ImGuiWindowFlags_NoResize;
+
+
+			Vector2 targetPos = GetCenterParentPos(new Vector2(200, 400));
+			imgui_SetNextWindowPos(targetPos.X, targetPos.Y, (int)ImGuiCond.Once, 0, 0);
+			imgui_SetNextWindowFocus();
+
+			using (var window = ImGUIWindow.Aquire())
+			{
+				if (window.Begin(spellEditorState.WinName_GenericPickerWindow, (int)pickerFlags))
+				{
+					var selectedEntries = SplitCSVToList((string)fieldInfo.GetValue(currentSpell));
+					imgui_TextColored(0.95f, 0.85f, 0.35f, 1.0f, $"selectable items ({spellEditorState.GenericPickerList.Count})");
+					imgui_Separator();
+					const float listWidth = 320f;
+					const float listHeight = 240f;
+
+					using (var child = ImGUIChild.Aquire())
+					{
+						if (child.BeginChild($"GenericPicker_List", listWidth, listHeight, (int)ImGuiChildFlags.Borders, 0))
+						{
+							if (spellEditorState.GenericPickerList.Count == 0)
+							{
+								imgui_Text("No valid selections.");
+							}
+							else
+							{
+								int idx = 0;
+								foreach (var selection in spellEditorState.GenericPickerList)
+								{
+									string checkboxId = $"{selection}##GenericPickerCheckbox_{idx}";
+									bool selected = ListContainsValue(selectedEntries, selection);
+									if (imgui_Checkbox(checkboxId, selected))
+									{
+										bool newState = imgui_Checkbox_Get(checkboxId);
+										ToggleGenericSpellEntry(currentSpell, selection, newState, spellEditorState.GenericPickerFieldName);
+										selectedEntries = SplitCSVToList(currentSpell.CastTarget);
+										spellEditorState.IsDirty = true;
+									}
+									idx++;
+								}
+							}
+						}
+					}
+					imgui_Separator();
+					if (imgui_Button("Close##GenericPickerClose"))
+					{
+						spellEditorState.GenericPickerFieldName = String.Empty;
+						spellEditorState.ShowGenericPicker = false;
+						spellEditorState.GenericPickerList.Clear();
+					}
+				}
+			}
+		}
 		private static void RenderCastTargetPickerWindow()
 		{
 
@@ -1911,7 +1993,7 @@ namespace E3Core.UI.Windows.CharacterSettings
 				| ImGuiWindowFlags.ImGuiWindowFlags_NoResize;
 
 
-			Vector2 targetPos = GetCenterParentPos(new Vector2 (200, 400));
+			Vector2 targetPos = GetCenterParentPos(new Vector2(200, 400));
 			imgui_SetNextWindowPos(targetPos.X, targetPos.Y, (int)ImGuiCond.Once, 0, 0);
 			imgui_SetNextWindowFocus();
 
@@ -1920,9 +2002,9 @@ namespace E3Core.UI.Windows.CharacterSettings
 				if (window.Begin(spellEditorState.WinName_CastTargetPickerWindowTitle, (int)pickerFlags))
 				{
 					//use readonly so you don't modify a collection that might be mid looping
-					var bots = E3.Bots.BotsConnected(readOnly:true);
+					var bots = E3.Bots.BotsConnected(readOnly: true);
 
-					var selectedEntries = GetCastTargetEntries(currentSpell.CastTarget);
+					var selectedEntries = SplitCSVToList(currentSpell.CastTarget);
 					imgui_TextColored(0.95f, 0.85f, 0.35f, 1.0f, $"Connected bots ({bots.Count})");
 					imgui_Separator();
 					const float listWidth = 320f;
@@ -1942,12 +2024,12 @@ namespace E3Core.UI.Windows.CharacterSettings
 								foreach (var bot in bots)
 								{
 									string checkboxId = $"{bot}##CastTargetBot_{idx}";
-									bool selected = ContainsCastTargetEntry(selectedEntries, bot);
+									bool selected = ListContainsValue(selectedEntries, bot);
 									if (imgui_Checkbox(checkboxId, selected))
 									{
 										bool newState = imgui_Checkbox_Get(checkboxId);
 										ToggleCastTargetEntry(currentSpell, bot, newState);
-										selectedEntries = GetCastTargetEntries(currentSpell.CastTarget);
+										selectedEntries = SplitCSVToList(currentSpell.CastTarget);
 										spellEditorState.IsDirty = true;
 									}
 									idx++;
@@ -2004,7 +2086,7 @@ namespace E3Core.UI.Windows.CharacterSettings
 			}
 		}
 
-		private static List<string> GetCastTargetEntries(string castTarget)
+		private static List<string> SplitCSVToList(string castTarget)
 		{
 			return (castTarget ?? string.Empty)
 				.Split(new[] { ',' }, StringSplitOptions.RemoveEmptyEntries)
@@ -2014,16 +2096,47 @@ namespace E3Core.UI.Windows.CharacterSettings
 				.ToList();
 		}
 
-		private static bool ContainsCastTargetEntry(List<string> entries, string value)
+		private static bool ListContainsValue(List<string> entries, string value)
 		{
-			return entries.Any(entry => string.Equals(entry, value, StringComparison.OrdinalIgnoreCase));
+			return entries.Contains(value, StringComparer.OrdinalIgnoreCase);
+		}
+		private static List<string> GetSpellFieldEntries(string propertyValue, char split = ',')
+		{
+			return (propertyValue ?? string.Empty)
+				.Split(new[] { split }, StringSplitOptions.RemoveEmptyEntries)
+				.Select(entry => entry.Trim())
+				.Where(entry => !string.IsNullOrEmpty(entry))
+				.Distinct(StringComparer.OrdinalIgnoreCase)
+				.ToList();
+		}
+		private static void ToggleGenericSpellEntry(Spell spell, string entry, bool shouldBePresent, string propertyName)
+		{
+			if (spell == null || string.IsNullOrEmpty(entry)) return;
+
+			Type type = spell.GetType();
+			FieldInfo fieldInfo = type.GetField(propertyName, BindingFlags.Instance | BindingFlags.Public);
+			if (fieldInfo != null)
+			{
+				var entries = GetSpellFieldEntries((string)fieldInfo.GetValue(spell));
+				bool exists = ListContainsValue(entries, entry);
+				if (shouldBePresent && !exists)
+				{
+					entries.Add(entry);
+				}
+				else if (!shouldBePresent && exists)
+				{
+					entries = entries.Where(e => !string.Equals(e, entry, StringComparison.OrdinalIgnoreCase)).ToList();
+
+				}
+				fieldInfo.SetValue(spell, string.Join(",", entries));
+			}
 		}
 
 		private static void ToggleCastTargetEntry(Spell spell, string entry, bool shouldBePresent)
 		{
 			if (spell == null || string.IsNullOrEmpty(entry)) return;
-			var entries = GetCastTargetEntries(spell.CastTarget);
-			bool exists = ContainsCastTargetEntry(entries, entry);
+			var entries = SplitCSVToList(spell.CastTarget);
+			bool exists = ListContainsValue(entries, entry);
 			if (shouldBePresent && !exists)
 			{
 				entries.Add(entry);
@@ -2054,6 +2167,35 @@ namespace E3Core.UI.Windows.CharacterSettings
 					imgui_TableSetupColumn("Label", (int)LabelColumnFlags, 0f);
 					imgui_TableSetupColumn("Value", (int)ValueColumnFlags, 0f);
 					Render_TwoColumn_TableText("##SpellEditor_ifsKeys", "Ifs Keys:", currentSpell.IfsKeys, (u) => { currentSpell.IfsKeys = u; });
+					imgui_SameLine();
+					if (imgui_Button("Select Ifs##IfsGenericPickerBtn"))
+					{
+						//specify what property name on the spells object to update
+						var pd = data.GetActiveCharacterIniData();
+						if (pd != null)
+						{
+							_log.Write("Active Character INI Data found");
+							var ifsSection = pd.Sections.GetSectionData("Ifs");
+							if (ifsSection != null)
+							{
+								_log.Write("Ifs Section found");
+
+								spellEditorState.GenericPickerList.Clear();
+								spellEditorState.GenericPickerFieldName = "IfsKeys";
+
+								foreach (var key in ifsSection.Keys) //need to populate the list to show to the user
+								{
+									spellEditorState.GenericPickerList.Add(key.KeyName);
+								}
+								_log.Write($"Added values to collection{String.Join(",", spellEditorState.GenericPickerList)}");
+								_log.Write($"Setting show generic picker to true");
+
+								spellEditorState.ShowGenericPicker = true;
+							}
+						}
+					}
+
+
 					Render_TwoColumn_TableText("##SpellEditor_CheckFor", "Check For:", String.Join(",", currentSpell.CheckForCollection.Keys), (u) =>
 					{
 						currentSpell.CheckForCollection.Clear();
@@ -2073,6 +2215,10 @@ namespace E3Core.UI.Windows.CharacterSettings
 					Render_TwoColumn_TableText("##SpellEditor_MinSick", "Min Sick:", currentSpell.MinSick.ToString(), (u) => { Int32.TryParse(u, out currentSpell.MinSick); });
 					Render_TwoColumn_TableText("##SpellEditor_TriggerSpell", "Trigger Spell:", currentSpell.TriggerSpell, (u) => { currentSpell.TriggerSpell = u; });
 				}
+			}
+			if (spellEditorState.ShowGenericPicker)
+			{
+				Render_Generic_PickerWindow();
 			}
 		}
 		private static void Render_MainWindow_SpellEditor_Tab_Resources()
@@ -2453,6 +2599,13 @@ namespace E3Core.UI.Windows.CharacterSettings
 							state.SelectedCategorySpell = null; // Clear selection when category changes
 						}
 					}
+					//final ALL sub category
+					if (imgui_Selectable("All", state.SelectedCategory == "ALL"))
+					{
+						state.SelectedCategory = "ALL";
+						state.SelectedSubCategory = string.Empty; // reset mid level on cat change
+						state.SelectedCategorySpell = null; // Clear selection when category changes
+					}
 				}
 			}
 
@@ -2536,22 +2689,36 @@ namespace E3Core.UI.Windows.CharacterSettings
 						{
 							imgui_TextColored(0.9f, 0.95f, 1.0f, 1.0f, "Entries");
 
-							IEnumerable<E3Spell> entries = Enumerable.Empty<E3Spell>();
-							if (!string.IsNullOrEmpty(state.SelectedCategory) && currentCatalog.TryGetValue(state.SelectedCategory, out var submap2))
+							List<E3Spell> entries = new List<E3Spell>();
+							if (state.SelectedCategory == "ALL")
 							{
-								if (!string.IsNullOrEmpty(state.SelectedSubCategory) && submap2.TryGetValue(state.SelectedSubCategory, out var l))
-									entries = l;
-								else
-									entries = submap2.Values.SelectMany(x => x);
+								foreach (var c_pair in currentCatalog)
+								{
+									foreach (var sc_pair in c_pair.Value)
+									{
+										entries.AddRange(sc_pair.Value);
+									}
+								}
 							}
-
+							else
+							{
+								if (!string.IsNullOrEmpty(state.SelectedCategory) && currentCatalog.TryGetValue(state.SelectedCategory, out var submap2))
+								{
+									if (!string.IsNullOrEmpty(state.SelectedSubCategory) && submap2.TryGetValue(state.SelectedSubCategory, out var l))
+										entries = l;
+									else
+										entries = submap2.Values.SelectMany(x => x).ToList();
+								}
+							}
 							string filter = (state.Filter ?? string.Empty).Trim();
 							if (filter.Length > 0)
-								entries = entries.Where(e => e.Name.IndexOf(filter, StringComparison.OrdinalIgnoreCase) >= 0);
-
+							{
+								entries = entries.Where(e => e.Name.IndexOf(filter, StringComparison.OrdinalIgnoreCase) >= 0).OrderByDescending(e => e.Level)
+												.ThenBy(e => e.Name, StringComparer.OrdinalIgnoreCase).ToList();
+							}
 							// stable ordering
 							entries = entries.OrderByDescending(e => e.Level)
-												.ThenBy(e => e.Name, StringComparer.OrdinalIgnoreCase);
+												.ThenBy(e => e.Name, StringComparer.OrdinalIgnoreCase).ToList();
 
 							int i = 0;
 							foreach (var e in entries)
@@ -2674,7 +2841,7 @@ namespace E3Core.UI.Windows.CharacterSettings
 
 			// Set initial size only on first use - window is resizable and remembers user's size
 			imgui_SetNextWindowSizeWithCond(900f, 600f, (int)ImGuiCond.FirstUseEver); // ImGuiCond_FirstUseEver = 4
-			//imgui_SetNextWindowFocus();
+																					  //imgui_SetNextWindowFocus();
 			using (var window = ImGUIWindow.Aquire())
 			{
 				if (window.Begin(_state.WinName_AddModal, (int)ImGuiWindowFlags.ImGuiWindowFlags_NoDocking))

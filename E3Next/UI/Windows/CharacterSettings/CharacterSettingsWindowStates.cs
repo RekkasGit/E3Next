@@ -140,9 +140,19 @@ namespace E3Core.UI.Windows.CharacterSettings
 		public bool IsDirty = false;
 		public readonly string WinName_CastTargetHelperWindow = "Cast Target Helper";
 		public readonly string WinName_CastTargetPickerWindowTitle = "Cast Target Picker";
+		public readonly string WinName_GenericPickerWindow = "Generic Picker";
+	
 		public const float SpellEditorDefaultTextWidth = 320f;
 		public const float SpellEditorDefaultNumberWidth = 140f;
 		public const float SpellEditorDefaultCheckboxWidth = 20f;
+
+		public List<string> GenericPickerList = new List<string>();
+		public string GenericPickerFieldName = String.Empty;
+		public bool ShowGenericPicker
+		{
+			get { return imgui_Begin_OpenFlagGet(WinName_GenericPickerWindow); }
+			set { imgui_Begin_OpenFlagSet(WinName_GenericPickerWindow, value); }
+		}
 		public bool ShowCastTargetPicker
 		{
 			get { return imgui_Begin_OpenFlagGet(WinName_CastTargetPickerWindowTitle); }
@@ -161,6 +171,7 @@ namespace E3Core.UI.Windows.CharacterSettings
 			ManualInputBufferInUse = false;
 			ShowCastTargetHelper = false;
 			ShowCastTargetPicker = false;
+			ShowGenericPicker = false;
 		}
 	}
 	public class State_CatalogGems
