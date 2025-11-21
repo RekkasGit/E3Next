@@ -199,7 +199,7 @@ namespace MonoCore
         {
             foreach (var value in CommandListQueue)
             {
-                if (value.eventName == command) return true;
+                if (String.Equals(value.eventName,command,StringComparison.OrdinalIgnoreCase)) return true;
             }
             return false;
         }
