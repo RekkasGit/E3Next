@@ -500,15 +500,6 @@ namespace E3Core.Processors
 				if (Bots == null)
 				{
                    	Bots = new SharedDataBots();
-
-                    //if ("DANNET".Equals(E3.GeneralSettings.General_NetworkMethod, StringComparison.OrdinalIgnoreCase) && Core._MQ2MonoVersion > 0.20m)
-                    //{
-                    //    Bots = new DanBots();
-                    //}
-                    //else
-                    //{
-                    //    Bots = new Bots();
-                    //}
                 }
 				GlobalIfs = new GlobalIfs();
 				GlobalCursorDelete = new GlobalCursorDelete();

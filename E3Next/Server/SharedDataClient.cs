@@ -482,6 +482,8 @@ namespace E3Core.Server
 				entry = new ShareDataEntry() { Data = messageReceived, LastUpdate = updateTime };
 				usertopics.TryAdd(messageTopicReceived, entry);
 			}
+
+
 			if (!String.Equals(entry.Data, messageReceived))
 			{
 				lock (entry)

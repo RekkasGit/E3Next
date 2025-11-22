@@ -3,6 +3,7 @@ using E3Core.Processors;
 using E3Core.Server;
 using E3Core.Settings;
 using E3Core.Utility;
+using Google.Protobuf.Reflection;
 using IniParser.Model;
 using MonoCore;
 using System;
@@ -840,7 +841,7 @@ namespace E3Core.UI.Windows.CharacterSettings
 			imgui_Separator();
 			imgui_TextColored(0.95f, 0.85f, 0.35f, 1.0f, "Spell Modifier Editor");
 			imgui_Separator();
-			RenderSpellEditor();
+			Render_SpellEditor();
 		}
 		// Safe gem display using catalog data (no TLO queries from UI thread)
 		private static void Render_MainWindow_CatalogGemData()
@@ -1790,15 +1791,6 @@ namespace E3Core.UI.Windows.CharacterSettings
 
 
 
-			if (spellEditorState.ShowCastTargetPicker)
-			{
-				RenderCastTargetPickerWindow();
-			}
-			if (spellEditorState.ShowCastTargetHelper)
-			{
-				RenderCastTargetHelperWindow();
-			}
-			
 		}
 
 		private static void RenderSpellEditorCastTargetRow(Spell currentSpell)
@@ -1933,7 +1925,25 @@ namespace E3Core.UI.Windows.CharacterSettings
 			{
 				if (window.Begin(spellEditorState.WinName_GenericPickerWindow, (int)pickerFlags))
 				{
-					var selectedEntries = SplitCSVToList((string)fieldInfo.GetValue(currentSpell));
+					List<string> selectedEntries = new List<string>();
+
+					//just assume all hashsets are of type string
+					if (fieldInfo.FieldType.IsGenericType && fieldInfo.FieldType.GetGenericTypeDefinition() == typeof(HashSet<>))
+					{
+						HashSet<string> hashset = (HashSet<string>)fieldInfo.GetValue(currentSpell);
+
+						//_log.WriteDelayed($"Is hashset<string> selected entries:[{String.Join(",", hashset)}]");
+						selectedEntries.AddRange(hashset);
+					}
+					else if(fieldInfo.FieldType==typeof(string))
+					{
+						//_log.WriteDelayed("Is string");
+
+						selectedEntries = SplitCSVToList((string)fieldInfo.GetValue(currentSpell));
+					}
+				
+
+						
 					imgui_TextColored(0.95f, 0.85f, 0.35f, 1.0f, $"selectable items ({spellEditorState.GenericPickerList.Count})");
 					imgui_Separator();
 					const float listWidth = 320f;
@@ -1957,8 +1967,7 @@ namespace E3Core.UI.Windows.CharacterSettings
 									if (imgui_Checkbox(checkboxId, selected))
 									{
 										bool newState = imgui_Checkbox_Get(checkboxId);
-										ToggleGenericSpellEntry(currentSpell, selection, newState, spellEditorState.GenericPickerFieldName);
-										selectedEntries = SplitCSVToList(currentSpell.CastTarget);
+										ToggleGenericSpellEntry(currentSpell, selection, newState,fieldInfo);
 										spellEditorState.IsDirty = true;
 									}
 									idx++;
@@ -2109,26 +2118,54 @@ namespace E3Core.UI.Windows.CharacterSettings
 				.Distinct(StringComparer.OrdinalIgnoreCase)
 				.ToList();
 		}
-		private static void ToggleGenericSpellEntry(Spell spell, string entry, bool shouldBePresent, string propertyName)
+		private static void ToggleGenericSpellEntry(Spell spell, string entry, bool shouldBePresent, FieldInfo fieldInfo)
 		{
 			if (spell == null || string.IsNullOrEmpty(entry)) return;
 
-			Type type = spell.GetType();
-			FieldInfo fieldInfo = type.GetField(propertyName, BindingFlags.Instance | BindingFlags.Public);
 			if (fieldInfo != null)
 			{
-				var entries = GetSpellFieldEntries((string)fieldInfo.GetValue(spell));
-				bool exists = ListContainsValue(entries, entry);
-				if (shouldBePresent && !exists)
+				var fieldType = fieldInfo.FieldType;
+				//should check generic arguments, but just assume all hashsets are of type string
+				if(fieldInfo.FieldType.IsGenericType && fieldType.GetGenericTypeDefinition()==typeof(HashSet<>))
 				{
-					entries.Add(entry);
-				}
-				else if (!shouldBePresent && exists)
-				{
-					entries = entries.Where(e => !string.Equals(e, entry, StringComparison.OrdinalIgnoreCase)).ToList();
+					_log.WriteDelayed("Is hashset<string>");
+					var entries = (HashSet<string>)fieldInfo.GetValue(spell);
+					bool exists = entries.Contains(entry);
+					if (shouldBePresent && !exists)
+					{
+						_log.WriteDelayed("adding to hashset<string>");
+						entries.Add(entry);
+					}
+					else if (!shouldBePresent && exists)
+					{
+						_log.WriteDelayed("removing to hashset<string>");
+
+						entries.Remove(entry);
+					}
 
 				}
-				fieldInfo.SetValue(spell, string.Join(",", entries));
+				else if(fieldType==typeof(string))
+				{
+					_log.WriteDelayed("Is string");
+
+					//assume string? probably should actually test
+					var entries = GetSpellFieldEntries((string)fieldInfo.GetValue(spell));
+					bool exists = ListContainsValue(entries, entry);
+					if (shouldBePresent && !exists)
+					{
+						_log.WriteDelayed("adding to string");
+
+						entries.Add(entry);
+					}
+					else if (!shouldBePresent && exists)
+					{
+						_log.WriteDelayed("removing from string");
+
+						entries = entries.Where(e => !string.Equals(e, entry, StringComparison.OrdinalIgnoreCase)).ToList();
+
+					}
+					fieldInfo.SetValue(spell, string.Join(",", entries));
+				}
 			}
 		}
 
@@ -2216,10 +2253,7 @@ namespace E3Core.UI.Windows.CharacterSettings
 					Render_TwoColumn_TableText("##SpellEditor_TriggerSpell", "Trigger Spell:", currentSpell.TriggerSpell, (u) => { currentSpell.TriggerSpell = u; });
 				}
 			}
-			if (spellEditorState.ShowGenericPicker)
-			{
-				Render_Generic_PickerWindow();
-			}
+			
 		}
 		private static void Render_MainWindow_SpellEditor_Tab_Resources()
 		{
@@ -2297,7 +2331,19 @@ namespace E3Core.UI.Windows.CharacterSettings
 					imgui_TableSetupColumn("Label", (int)LabelColumnFlags, 0f);
 					imgui_TableSetupColumn("Value", (int)ValueColumnFlags, 0f);
 					Render_TwoColumn_TableText("##SpellEditor_BeforeSpell", "Before Spell:", currentSpell.BeforeSpell, (u) => { currentSpell.BeforeSpell = u; });
+					imgui_SameLine(); 
+					if(imgui_Button("Pick##BeforeSpellPicker"))
+					{
+						spellEditorState.GenericPickerFieldName = "BeforeSpell";
+						_state.Show_AddModal = true;
+					}
 					Render_TwoColumn_TableText("##SpellEditor_AfterSpell", "After Spell:", currentSpell.AfterSpell, (u) => { currentSpell.AfterSpell = u; });
+					imgui_SameLine();
+					if (imgui_Button("Pick##AfterSpellPicker"))
+					{
+						spellEditorState.GenericPickerFieldName = "AfterSpell";
+						_state.Show_AddModal = true;
+					}
 					Render_TwoColumn_TableText("##SpellEditor_BeforeEvent", "Before Event:", currentSpell.BeforeEventKeys, (u) => { currentSpell.BeforeEventKeys = u; });
 					Render_TwoColumn_TableText("##SpellEditor_AfterEvent", "After Event:", currentSpell.AfterEventKeys, (u) => { currentSpell.AfterEventKeys = u; });
 					Render_TwoColumn_TableText("##SpellEditor_Regent", "Regent:", currentSpell.Reagent, (u) => { currentSpell.Reagent = u; });
@@ -2314,11 +2360,12 @@ namespace E3Core.UI.Windows.CharacterSettings
 					imgui_TableSetupColumn("Value", (int)ValueColumnFlags, 0f);
 					Render_TwoColumn_TableText("##SpellEditor_ExcludeClasses", "Excluded Classes:", String.Join(",", currentSpell.ExcludedClasses.ToList()), (u) =>
 					{
-
 						string[] excludeClasses = u.Split(',');
+						currentSpell.ExcludedClasses.Clear();
 						foreach (var eclass in excludeClasses)
 						{
 							var tclass = eclass.Trim();
+							if (String.IsNullOrWhiteSpace(tclass)) continue;
 
 							if (!currentSpell.ExcludedClasses.Contains(tclass.Trim()))
 							{
@@ -2326,13 +2373,27 @@ namespace E3Core.UI.Windows.CharacterSettings
 							}
 						}
 					}, tooltip: "Short class name: IE: WAR,PAL,SHD comma seperated");
+
+					imgui_SameLine();
+					if(imgui_Button("Pick##ExcludedClassesBtn"))
+					{
+						spellEditorState.GenericPickerList.Clear();
+						spellEditorState.GenericPickerList.AddRange(EQClasses.ClassShortNames);
+						spellEditorState.GenericPickerFieldName = "ExcludedClasses";
+						spellEditorState.ShowGenericPicker = true;
+					}
+
 					Render_TwoColumn_TableText("##SpellEditor_ExcludeNames", "Excluded Names:", String.Join(",", currentSpell.ExcludedNames.ToList()), (u) =>
 					{
 
-						string[] excludeClasses = u.Split(',');
-						foreach (var ename in excludeClasses)
+						string[] excludedNames = u.Split(',');
+						currentSpell.ExcludedNames.Clear();
+						foreach (var ename in excludedNames)
 						{
+
 							var tname = ename.Trim();
+
+							if (String.IsNullOrWhiteSpace(tname)) continue;
 
 							if (!currentSpell.ExcludedNames.Contains(tname.Trim()))
 							{
@@ -2340,6 +2401,15 @@ namespace E3Core.UI.Windows.CharacterSettings
 							}
 						}
 					}, tooltip: "Name of toons in your party, comma seperated");
+					imgui_SameLine();
+					if (imgui_Button("Pick##ExcludedNamesBtn"))
+					{
+						var bots = E3.Bots.BotsConnected();
+						spellEditorState.GenericPickerList.Clear();
+						spellEditorState.GenericPickerList.AddRange(bots);
+						spellEditorState.GenericPickerFieldName = "ExcludedNames";
+						spellEditorState.ShowGenericPicker = true;
+					}
 				}
 			}
 
@@ -2749,6 +2819,7 @@ namespace E3Core.UI.Windows.CharacterSettings
 		{
 			var catalogState = _state.GetState<State_CatalogWindow>();
 			var mainWindowState = _state.GetState<State_MainWindow>();
+			var spellEditorState = _state.GetState<State_SpellEditor>();
 			// -------- RIGHT: Info Panel --------
 			using (var child = ImGUIChild.Aquire())
 			{
@@ -2763,7 +2834,23 @@ namespace E3Core.UI.Windows.CharacterSettings
 						imgui_SameLine(rightW - buttonWidth - 10f);
 						if (imgui_ButtonEx($"{addLabel}##add_selected", buttonWidth, 0))
 						{
-							if (catalogState.Mode == CatalogMode.BardSong)
+
+							
+							//addeding to a spell object instead
+							if(!String.IsNullOrWhiteSpace(spellEditorState.GenericPickerFieldName) && mainWindowState.Currently_EditableSpell!=null)
+							{
+								string spellNameToAdd = (catalogState.SelectedCategorySpell.Name ?? string.Empty).Trim();
+								Type type = mainWindowState.Currently_EditableSpell.GetType();
+								FieldInfo fieldInfo = type.GetField(spellEditorState.GenericPickerFieldName, BindingFlags.Instance | BindingFlags.Public);
+								if (fieldInfo != null)
+								{
+									fieldInfo.SetValue(mainWindowState.Currently_EditableSpell, spellNameToAdd);
+								}
+								spellEditorState.GenericPickerFieldName = String.Empty;
+								spellEditorState.IsDirty = true;
+								_state.Show_AddModal = false;//close the window
+							}
+							else if (catalogState.Mode == CatalogMode.BardSong)
 							{
 								ApplyBardSongSelection(catalogState.SelectedCategorySpell.Name ?? string.Empty);
 							}
@@ -3587,7 +3674,7 @@ namespace E3Core.UI.Windows.CharacterSettings
 		/// </summary>
 		/// <returns>Spell object</returns>
 
-		private static void RenderSpellEditor()
+		private static void Render_SpellEditor()
 		{
 			var mainWindowState = _state.GetState<State_MainWindow>();
 			var spellEditorState = _state.GetState<State_SpellEditor>();
@@ -3604,7 +3691,7 @@ namespace E3Core.UI.Windows.CharacterSettings
 
 			string entryLabel = $"[{mainWindowState.SelectedSection}] {mainWindowState.SelectedKey} entry #{mainWindowState.SelectedValueIndex + 1}";
 
-
+			
 			// Header row with title on left and buttons on right
 			imgui_TextColored(0.95f, 0.85f, 0.35f, 1.0f, entryLabel);
 			// Position Apply/Reset buttons on the same line, aligned to the right
@@ -3612,13 +3699,13 @@ namespace E3Core.UI.Windows.CharacterSettings
 			float spacing = 8f;
 			float totalButtonWidth = (buttonWidth * 2) + spacing;
 			float availWidth = imgui_GetContentRegionAvailX();
-			if (availWidth > totalButtonWidth)
+			//if (availWidth > totalButtonWidth)
+			//{
+			//	imgui_SameLineEx(availWidth - totalButtonWidth, 0f);
+			//}
+			//else
 			{
-				imgui_SameLineEx(availWidth - totalButtonWidth, 0f);
-			}
-			else
-			{
-				imgui_SameLine();
+				imgui_SameLine(200f);
 			}
 			string idForAppply = $"Apply##spell_apply";
 			if (spellEditorState.IsDirty) idForAppply = $"Apply*##spell_apply";
@@ -3721,6 +3808,20 @@ namespace E3Core.UI.Windows.CharacterSettings
 			}
 			string preview = previewString;
 			imgui_TextWrapped(string.IsNullOrEmpty(preview) ? "(empty)" : preview);
+		
+			if (spellEditorState.ShowGenericPicker)
+			{
+				Render_Generic_PickerWindow();
+			}
+			if (spellEditorState.ShowCastTargetPicker)
+			{
+				RenderCastTargetPickerWindow();
+			}
+			if (spellEditorState.ShowCastTargetHelper)
+			{
+				RenderCastTargetHelperWindow();
+			}
+
 		}
 		private static List<string> GetValues(KeyData kd)
 		{

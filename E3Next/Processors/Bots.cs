@@ -17,6 +17,7 @@ using System.Text;
 using System.Text.RegularExpressions;
 using System.Threading;
 using System.Threading.Tasks;
+using System.Web.UI;
 using System.Xml.Linq;
 using static MonoCore.EventProcessor;
 
@@ -513,9 +514,8 @@ namespace E3Core.Processors
 			if(!readOnly && e3util.ShouldCheck(ref _botsConnectredTimeStamp,_botsConnectedTimeInterval))
 			{
 				//prevent issues with forloops and the like, just create a new list every timestamp.
-				
 				var tempList = new List<string>();
-				foreach(var pair in NetMQServer.SharedDataClient.TopicUpdates)
+				foreach (var pair in NetMQServer.SharedDataClient.TopicUpdates)
 				{
 					//this key should always be there and always be updated
 					if(pair.Value.TryGetValue("${Me.PctHPs}",out var data))
@@ -528,6 +528,7 @@ namespace E3Core.Processors
 				}
 				tempList.Sort(StringComparer.OrdinalIgnoreCase);
 				_botsConnectedCache = tempList;
+		
 			}
 			return _botsConnectedCache;
 		}
@@ -546,7 +547,7 @@ namespace E3Core.Processors
 			//create new list to deal with other threads accessing this and hitting the update
 			
 			var tempList = new List<string>();
-			var botsConnected = BotsConnected(readOnly:true);
+			var botsConnected = BotsConnected();
 			foreach(var bot in botsConnected)
 			{
 				if(InCombat(bot))
@@ -554,7 +555,7 @@ namespace E3Core.Processors
 					tempList.Add(bot);
 				}
 			}
-			_botsConnectedCache = tempList;
+			_botsInCombatResultCache = tempList;
 			return _botsInCombatResultCache;
 		}
 

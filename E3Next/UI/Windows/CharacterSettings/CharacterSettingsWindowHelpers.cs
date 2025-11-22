@@ -92,7 +92,7 @@ namespace E3Core.UI.Windows.CharacterSettings
 			{"MinHpTotal", "MinHPTotal"},
 			{"MinHp", "MinHP"}
 		};
-
+	
 		public static readonly string[] _spellCastTypeOptions = new[] { "Spell", "AA", "Disc", "Ability", "Item", "None" };
 		public static void RebuildSectionsOrderIfNeeded()
 		{

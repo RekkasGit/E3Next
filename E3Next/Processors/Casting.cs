@@ -2203,7 +2203,7 @@ namespace E3Core.Processors
 						if (field.IsGenericList(typeof(String)))
 						{
 
-							List<string> fieldValue = (List<string>)field.GetValue(E3.Bots);
+							List<string> fieldValue = (List<string>)field.GetValue((SharedDataBots)E3.Bots);
 							string finallist = string.Join(",", fieldValue);
 							tIF = tIF.ReplaceInsensitive(pair.Key, finallist);
 						}
