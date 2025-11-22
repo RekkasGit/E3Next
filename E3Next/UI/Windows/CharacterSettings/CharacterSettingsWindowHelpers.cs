@@ -191,7 +191,8 @@ namespace E3Core.UI.Windows.CharacterSettings
 					l = new List<E3Spell>();
 					submap.Add(sub, l);
 				}
-				l.Add(new E3Spell
+
+				var newSpell = new E3Spell
 				{
 					Name = s.SpellName ?? string.Empty,
 					Category = cat,
@@ -213,7 +214,11 @@ namespace E3Core.UI.Windows.CharacterSettings
 						? s.SpellEffects.Where(e => !string.IsNullOrWhiteSpace(e)).Select(e => e.Trim()).ToList()
 						: new List<string>(),
 					SpellIcon = s.SpellIcon
-				});
+				};
+
+				if (String.IsNullOrWhiteSpace(newSpell.CastName)) newSpell.CastName = newSpell.Name;
+
+				l.Add(newSpell);
 			}
 			foreach (var submap in dest.Values)
 			{
@@ -242,7 +247,8 @@ namespace E3Core.UI.Windows.CharacterSettings
 					l = new List<E3Spell>();
 					submap.Add(sub, l);
 				}
-				l.Add(new E3Spell
+
+				var newSpell = new E3Spell
 				{
 					Name = s.SpellName ?? string.Empty,
 					Category = cat,
@@ -264,7 +270,12 @@ namespace E3Core.UI.Windows.CharacterSettings
 						? s.SpellEffects.Where(e => !string.IsNullOrWhiteSpace(e)).Select(e => e.Trim()).ToList()
 						: new List<string>(),
 					SpellIcon = s.SpellIcon
-				});
+				};
+				if (String.IsNullOrWhiteSpace(newSpell.CastName)) newSpell.CastName = newSpell.Name;
+				l.Add(newSpell);
+
+
+
 			}
 			foreach (var submap in dest.Values)
 			{
@@ -286,7 +297,7 @@ namespace E3Core.UI.Windows.CharacterSettings
 			foreach (var s in data)
 			{
 				if (s == null) continue;
-				list.Add(new E3Spell
+				var newSpell = new E3Spell
 				{
 					Name = s.SpellName ?? string.Empty,
 					Category = cat,
@@ -300,7 +311,9 @@ namespace E3Core.UI.Windows.CharacterSettings
 						? s.SpellEffects.Where(e => !string.IsNullOrWhiteSpace(e)).Select(e => e.Trim()).ToList()
 						: new List<string>(),
 					SpellIcon = s.SpellIcon
-				});
+				};
+				if (String.IsNullOrWhiteSpace(newSpell.CastName)) newSpell.CastName = newSpell.Name;
+				list.Add(newSpell);
 			}
 			list.Sort((a, b) => string.Compare(a.Name, b.Name, StringComparison.OrdinalIgnoreCase));
 			return dest;
@@ -411,6 +424,7 @@ namespace E3Core.UI.Windows.CharacterSettings
 				list.Add(new E3Spell
 				{
 					Name = s.SpellName ?? string.Empty,
+					CastName = s.CastName ?? s.SpellName,
 					Category = cat,
 					Subcategory = sub,
 					Level = s.Level,
@@ -1785,7 +1799,38 @@ namespace E3Core.UI.Windows.CharacterSettings
 			}
 		}
 
-
+		public static bool AddToActiveIni(string sectionName ,string key, string value)
+		{
+			var mainWindowState = window._state.GetState<State_MainWindow>();
+			try
+			{
+				var pd = GetActiveCharacterIniData();
+				if (pd == null) return false;
+				var section = pd.Sections.GetSectionData(sectionName);
+				if (section == null)
+				{
+					pd.Sections.AddSection(sectionName);
+					section = pd.Sections.GetSectionData(sectionName);
+				}
+				if (section == null) return false;
+				string baseKey = key ?? string.Empty;
+				if (string.IsNullOrWhiteSpace(baseKey)) return false;
+				string unique = baseKey;
+				int idx = 1;
+				while (section.Keys.ContainsKey(unique)) { unique = baseKey + " (" + idx.ToString() + ")"; idx++; if (idx > 1000) break; }
+				if (!section.Keys.ContainsKey(unique))
+				{
+					section.Keys.AddKey(unique, value ?? string.Empty);
+					mainWindowState.ConfigIsDirty = true;
+					mainWindowState.SelectedSection = sectionName;
+					mainWindowState.SelectedKey = unique;
+					mainWindowState.SelectedValueIndex = -1;
+					return true;
+				}
+				return false;
+			}
+			catch { return false; }
+		}
 		public static bool AddIfToActiveIni(string key, string value)
 		{
 			var mainWindowState = window._state.GetState<State_MainWindow>();

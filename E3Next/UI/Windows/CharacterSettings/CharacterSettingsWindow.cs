@@ -15,6 +15,7 @@ using System.Linq;
 using System.Linq.Expressions;
 using System.Numerics;
 using System.Reflection;
+using System.ServiceModel;
 using System.Text;
 using System.Text.RegularExpressions;
 using System.Web;
@@ -456,7 +457,7 @@ namespace E3Core.UI.Windows.CharacterSettings
 
 			using (var child = ImGUIChild.Aquire())
 			{
-				if (child.BeginChild("E3Config_EditorPane_Content", 0, contentHeight, (int)ImGuiChildFlags.None, 0))
+				if (child.BeginChild("E3Config_EditorPane_Content", 0, contentHeight, (int)(ImGuiChildFlags.Borders | ImGuiChildFlags.ResizeX | ImGuiChildFlags.ResizeY), 0))
 				{
 					Render_MainWindow_ConfigEditor_RightPaneContent(pd, showSpellEditor);
 				}
@@ -467,7 +468,7 @@ namespace E3Core.UI.Windows.CharacterSettings
 				imgui_Separator();
 				using (var child = ImGUIChild.Aquire())
 				{
-					if (child.BeginChild("E3Config_EditorPane_Content_SpellEditor", 0, 0, (int)ImGuiChildFlags.None, 0))
+					if (child.BeginChild("E3Config_EditorPane_Content_SpellEditor", 0, 0, (int)(ImGuiChildFlags.Borders | ImGuiChildFlags.ResizeX | ImGuiChildFlags.ResizeY), 0))
 					{
 
 						Render_MainWindow_SpellEditor();
@@ -560,6 +561,141 @@ namespace E3Core.UI.Windows.CharacterSettings
 			}
 
 		}
+		public static void Render_MainWindow_ConfigEditor_SelectionTree_ContextMenus(string sectionName)
+		{
+			var state = _state.GetState<State_MainWindow>();
+			if (sectionName.Equals("Ifs", StringComparison.OrdinalIgnoreCase))
+			{
+				using (var popup = ImGUIPopUpContext.Aquire())
+				{
+					if (popup.BeginPopupContextItem(null, 1))
+					{
+						imgui_PushStyleColor((int)ImGuiCol.Text, 0.95f, 0.85f, 0.35f, 1.0f);
+						bool addIfs = imgui_MenuItem("Add New Ifs");
+						imgui_PopStyleColor(1);
+
+						if (addIfs)
+						{
+							_state.ClearAddInLine();
+							state.Show_AddKey = true;
+							state.SelectedAddInLine = "Ifs";
+							state.SelectedSection = "Ifs";
+							state.SelectedValueIndex = -1;
+						}
+					}
+				}
+			}
+			else if (sectionName.Equals("Burn", StringComparison.OrdinalIgnoreCase))
+			{
+				using (var popup = ImGUIPopUpContext.Aquire())
+				{
+					if (popup.BeginPopupContextItem(null, 1))
+					{
+						imgui_PushStyleColor((int)ImGuiCol.Text, 0.95f, 0.85f, 0.35f, 1.0f);
+						bool addBurn = imgui_MenuItem("Add New Burn");
+						imgui_PopStyleColor(1);
+
+						if (addBurn)
+						{
+							_state.ClearAddInLine();
+							state.Show_AddKey = true;
+							state.SelectedAddInLine = "Burn";
+							state.SelectedSection = "Burn";
+							state.SelectedValueIndex = -1;
+
+						}
+					}
+				}
+			}
+			else if (sectionName.Equals("Events", StringComparison.OrdinalIgnoreCase))
+			{
+				using (var popup = ImGUIPopUpContext.Aquire())
+				{
+					if (popup.BeginPopupContextItem(null, 1))
+					{
+						imgui_PushStyleColor((int)ImGuiCol.Text, 0.95f, 0.85f, 0.35f, 1.0f);
+						bool addBurn = imgui_MenuItem("Add New Event");
+						imgui_PopStyleColor(1);
+
+						if (addBurn)
+						{
+							_state.ClearAddInLine();
+							state.Show_AddKey = true;
+							state.SelectedAddInLine = "Events";
+							state.SelectedSection = "Events";
+							state.SelectedValueIndex = -1;
+
+						}
+					}
+				}
+			}
+			else if (sectionName.Equals("EventLoop", StringComparison.OrdinalIgnoreCase))
+			{
+				using (var popup = ImGUIPopUpContext.Aquire())
+				{
+					if (popup.BeginPopupContextItem(null, 1))
+					{
+						imgui_PushStyleColor((int)ImGuiCol.Text, 0.95f, 0.85f, 0.35f, 1.0f);
+						bool addBurn = imgui_MenuItem("Add New EventLoop");
+						imgui_PopStyleColor(1);
+
+						if (addBurn)
+						{
+							_state.ClearAddInLine();
+							state.Show_AddKey = true;
+							state.SelectedAddInLine = "EventLoop";
+							state.SelectedSection = "EventLoop";
+							state.SelectedValueIndex = -1;
+
+						}
+					}
+				}
+			}
+			else if (sectionName.Equals("EventLoopTiming", StringComparison.OrdinalIgnoreCase))
+			{
+				using (var popup = ImGUIPopUpContext.Aquire())
+				{
+					if (popup.BeginPopupContextItem(null, 1))
+					{
+						imgui_PushStyleColor((int)ImGuiCol.Text, 0.95f, 0.85f, 0.35f, 1.0f);
+						bool addBurn = imgui_MenuItem("Add New EventLoopTiming");
+						imgui_PopStyleColor(1);
+
+						if (addBurn)
+						{
+							_state.ClearAddInLine();
+							state.Show_AddKey = true;
+							state.SelectedAddInLine = "EventLoopTiming";
+							state.SelectedSection = "EventLoopTiming";
+							state.SelectedValueIndex = -1;
+
+						}
+					}
+				}
+			}
+			else if (sectionName.Equals("EventRegMatches", StringComparison.OrdinalIgnoreCase))
+			{
+				using (var popup = ImGUIPopUpContext.Aquire())
+				{
+					if (popup.BeginPopupContextItem(null, 1))
+					{
+						imgui_PushStyleColor((int)ImGuiCol.Text, 0.95f, 0.85f, 0.35f, 1.0f);
+						bool addBurn = imgui_MenuItem("Add New EventRegMatche");
+						imgui_PopStyleColor(1);
+
+						if (addBurn)
+						{
+							_state.ClearAddInLine();
+							state.Show_AddKey = true;
+							state.SelectedAddInLine = "EventRegMatches";
+							state.SelectedSection = "EventRegMatches";
+							state.SelectedValueIndex = -1;
+
+						}
+					}
+				}
+			}
+		}
 		public static void Render_MainWindow_ConfigEditor_SelectionTree(IniData pd)
 		{
 			var state = _state.GetState<State_MainWindow>();
@@ -619,49 +755,9 @@ namespace E3Core.UI.Windows.CharacterSettings
 									}
 								}
 
-								if (sec.Equals("Ifs", StringComparison.OrdinalIgnoreCase))
-								{
-									using (var popup = ImGUIPopUpContext.Aquire())
-									{
-										if (popup.BeginPopupContextItem(null, 1))
-										{
-											imgui_PushStyleColor((int)ImGuiCol.Text, 0.95f, 0.85f, 0.35f, 1.0f);
-											bool addIfs = imgui_MenuItem("Add New Ifs");
-											imgui_PopStyleColor(1);
+								//put call here
+								Render_MainWindow_ConfigEditor_SelectionTree_ContextMenus(sec);
 
-											if (addIfs)
-											{
-												_state.ClearAddInLine();
-												state.Show_AddKey = true;
-												state.SelectedAddInLine = "Ifs";
-												state.SelectedSection = "Ifs";
-												state.SelectedValueIndex = -1;
-											}
-										}
-									}
-								}
-								else if (sec.Equals("Burn", StringComparison.OrdinalIgnoreCase))
-								{
-									using (var popup = ImGUIPopUpContext.Aquire())
-									{
-										if (popup.BeginPopupContextItem(null, 1))
-										{
-											imgui_PushStyleColor((int)ImGuiCol.Text, 0.95f, 0.85f, 0.35f, 1.0f);
-											bool addBurn = imgui_MenuItem("Add New Burn");
-											imgui_PopStyleColor(1);
-
-											if (addBurn)
-											{
-												_state.ClearAddInLine();
-												state.Show_AddKey = true;
-												state.SelectedAddInLine = "Burn";
-												state.SelectedSection = "Burn";
-												state.SelectedValueIndex = -1;
-
-											}
-										}
-									}
-								}
 
 								_cfgSectionExpanded[sec] = tree.IsOpen;
 								if (tree.IsOpen)
@@ -752,7 +848,7 @@ namespace E3Core.UI.Windows.CharacterSettings
 						&& string.Equals(state.SelectedAddInLine, state.SelectedSection, StringComparison.OrdinalIgnoreCase)
 						&& string.IsNullOrEmpty(state.SelectedKey))
 					{
-						imgui_TextColored(0.8f, 0.9f, 0.95f, 1.0f, state.SelectedAddInLine.Equals("Ifs", StringComparison.OrdinalIgnoreCase) ? "Add New If" : "Add New Burn Key");
+						imgui_TextColored(0.8f, 0.9f, 0.95f, 1.0f, $"Add New {state.SelectedAddInLine}");
 						imgui_Text("Name:");
 						imgui_SameLine();
 						float inlineFieldAvail = imgui_GetContentRegionAvailX();
@@ -784,6 +880,10 @@ namespace E3Core.UI.Windows.CharacterSettings
 							else if (state.SelectedAddInLine.Equals("Burn", StringComparison.OrdinalIgnoreCase))
 							{
 								added = data.AddBurnToActiveIni(key, string.Empty);
+							}
+							else
+							{
+								added = data.AddToActiveIni(state.SelectedAddInLine, key, String.Empty);
 							}
 							_state.ClearAddInLine();
 
@@ -1225,7 +1325,7 @@ namespace E3Core.UI.Windows.CharacterSettings
 			{
 				string v = parts[i];
 				// Create a unique ID for this item that doesn't depend on its position in the list
-				string itemUid = $"{mainWindowState.SelectedSection}_{mainWindowState.SelectedKey}_{i}_{(v ?? string.Empty).GetHashCode()}";
+				string itemUid = $"{mainWindowState.SelectedSection}_{mainWindowState.SelectedKey}_{i}";
 
 
 				// Row with better styling and alignment
@@ -1248,6 +1348,7 @@ namespace E3Core.UI.Windows.CharacterSettings
 				if (imgui_InputText($"##select_{itemUid}", v))
 				{
 					parts[i] = imgui_InputText_Get($"##select_{itemUid}");
+					mainWindowState.ConfigIsDirty = true;
 				}
 
 				imgui_SameLine();
@@ -2800,8 +2901,8 @@ namespace E3Core.UI.Windows.CharacterSettings
 								imgui_SameLine();
 
 								// Selectable entry with level and name
-								bool isSelected = state.SelectedCategorySpell != null && string.Equals(state.SelectedCategorySpell.Name, e.Name, StringComparison.OrdinalIgnoreCase);
-								if (imgui_Selectable($"[{e.Level}] {e.Name}##{uid}", isSelected))
+								bool isSelected = state.SelectedCategorySpell != null && string.Equals(state.SelectedCategorySpell.CastName, e.CastName, StringComparison.OrdinalIgnoreCase);
+								if (imgui_Selectable($"[{e.Level}] {e.CastName}##{uid}", isSelected))
 								{
 									state.SelectedCategorySpell = e;
 								}
@@ -2834,12 +2935,10 @@ namespace E3Core.UI.Windows.CharacterSettings
 						imgui_SameLine(rightW - buttonWidth - 10f);
 						if (imgui_ButtonEx($"{addLabel}##add_selected", buttonWidth, 0))
 						{
-
-							
 							//addeding to a spell object instead
 							if(!String.IsNullOrWhiteSpace(spellEditorState.GenericPickerFieldName) && mainWindowState.Currently_EditableSpell!=null)
 							{
-								string spellNameToAdd = (catalogState.SelectedCategorySpell.Name ?? string.Empty).Trim();
+								string spellNameToAdd = (catalogState.SelectedCategorySpell.CastName ?? string.Empty).Trim();
 								Type type = mainWindowState.Currently_EditableSpell.GetType();
 								FieldInfo fieldInfo = type.GetField(spellEditorState.GenericPickerFieldName, BindingFlags.Instance | BindingFlags.Public);
 								if (fieldInfo != null)
@@ -2861,7 +2960,7 @@ namespace E3Core.UI.Windows.CharacterSettings
 								if (kd != null)
 								{
 									var vals = GetValues(kd);
-									string v = (catalogState.SelectedCategorySpell.Name ?? string.Empty).Trim();
+									string v = (catalogState.SelectedCategorySpell.CastName ?? string.Empty).Trim();
 									if (catalogState.ReplaceMode && catalogState.ReplaceIndex >= 0 && catalogState.ReplaceIndex < vals.Count)
 									{
 										string currentValue = vals[catalogState.ReplaceIndex];
@@ -2902,7 +3001,7 @@ namespace E3Core.UI.Windows.CharacterSettings
 						// Display name and icon
 						imgui_DrawSpellIconByIconIndex(catalogState.SelectedCategorySpell.SpellIcon, 40.0f);
 						imgui_SameLine();
-						imgui_TextColored(0.95f, 0.85f, 0.35f, 1.0f, catalogState.SelectedCategorySpell.Name ?? string.Empty);
+						imgui_TextColored(0.95f, 0.85f, 0.35f, 1.0f, catalogState.SelectedCategorySpell.CastName ?? string.Empty);
 
 						// Show additional info (mana, cast time, recast, etc.)
 						RenderSpellAdditionalInfo(catalogState.SelectedCategorySpell);
@@ -3730,6 +3829,7 @@ namespace E3Core.UI.Windows.CharacterSettings
 				//save the value to the current key data
 				kd.ValueList[mainWindowState.SelectedValueIndex] = mainWindowState.Currently_EditableSpell.ToConfigEntry();
 				spellEditorState.Reset();
+				mainWindowState.ConfigIsDirty = true;
 			}
 			imgui_SameLine();
 			if (imgui_Button($"Reset##spell_reset"))
