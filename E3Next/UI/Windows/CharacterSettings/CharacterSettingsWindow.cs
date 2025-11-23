@@ -1999,7 +1999,7 @@ namespace E3Core.UI.Windows.CharacterSettings
 			if (currentSpell == null)
 			{
 				_log.WriteDelayed($"current spell not found, setting picker to not show.");
-
+				spellEditorState.ResetGenericPicker();
 				spellEditorState.ShowGenericPicker = false;
 				return;
 			}
@@ -2008,6 +2008,7 @@ namespace E3Core.UI.Windows.CharacterSettings
 			if (fieldInfo == null)
 			{
 				_log.WriteDelayed($"Field [{spellEditorState.GenericPickerFieldName}] not found");
+				spellEditorState.ResetGenericPicker();
 				spellEditorState.ShowGenericPicker = false;
 				return;
 			}
@@ -2068,7 +2069,8 @@ namespace E3Core.UI.Windows.CharacterSettings
 									if (imgui_Checkbox(checkboxId, selected))
 									{
 										bool newState = imgui_Checkbox_Get(checkboxId);
-										ToggleGenericSpellEntry(currentSpell, selection, newState,fieldInfo);
+										
+										ToggleGenericSpellEntry(currentSpell, selection, newState,fieldInfo, spellEditorState.GenericPickerSingleSelection);
 										spellEditorState.IsDirty = true;
 									}
 									idx++;
@@ -2079,9 +2081,8 @@ namespace E3Core.UI.Windows.CharacterSettings
 					imgui_Separator();
 					if (imgui_Button("Close##GenericPickerClose"))
 					{
-						spellEditorState.GenericPickerFieldName = String.Empty;
+						spellEditorState.ResetGenericPicker();
 						spellEditorState.ShowGenericPicker = false;
-						spellEditorState.GenericPickerList.Clear();
 					}
 				}
 			}
@@ -2219,7 +2220,7 @@ namespace E3Core.UI.Windows.CharacterSettings
 				.Distinct(StringComparer.OrdinalIgnoreCase)
 				.ToList();
 		}
-		private static void ToggleGenericSpellEntry(Spell spell, string entry, bool shouldBePresent, FieldInfo fieldInfo)
+		private static void ToggleGenericSpellEntry(Spell spell, string entry, bool shouldBePresent, FieldInfo fieldInfo, bool singleSelection = false)
 		{
 			if (spell == null || string.IsNullOrEmpty(entry)) return;
 
@@ -2248,24 +2249,30 @@ namespace E3Core.UI.Windows.CharacterSettings
 				else if(fieldType==typeof(string))
 				{
 					_log.WriteDelayed("Is string");
-
-					//assume string? probably should actually test
-					var entries = GetSpellFieldEntries((string)fieldInfo.GetValue(spell));
-					bool exists = ListContainsValue(entries, entry);
-					if (shouldBePresent && !exists)
+					if(singleSelection)
 					{
-						_log.WriteDelayed("adding to string");
-
-						entries.Add(entry);
+						fieldInfo.SetValue(spell,entry );
 					}
-					else if (!shouldBePresent && exists)
+					else
 					{
-						_log.WriteDelayed("removing from string");
+						//assume string? probably should actually test
+						var entries = GetSpellFieldEntries((string)fieldInfo.GetValue(spell));
+						bool exists = ListContainsValue(entries, entry);
+						if (shouldBePresent && !exists)
+						{
+							_log.WriteDelayed("adding to string");
 
-						entries = entries.Where(e => !string.Equals(e, entry, StringComparison.OrdinalIgnoreCase)).ToList();
+							entries.Add(entry);
+						}
+						else if (!shouldBePresent && exists)
+						{
+							_log.WriteDelayed("removing from string");
 
-					}
-					fieldInfo.SetValue(spell, string.Join(",", entries));
+							entries = entries.Where(e => !string.Equals(e, entry, StringComparison.OrdinalIgnoreCase)).ToList();
+
+						}
+						fieldInfo.SetValue(spell, string.Join(",", entries));
+					}	
 				}
 			}
 		}
@@ -2318,7 +2325,7 @@ namespace E3Core.UI.Windows.CharacterSettings
 							{
 								_log.Write("Ifs Section found");
 
-								spellEditorState.GenericPickerList.Clear();
+								spellEditorState.ResetGenericPicker();
 								spellEditorState.GenericPickerFieldName = "IfsKeys";
 
 								foreach (var key in ifsSection.Keys) //need to populate the list to show to the user
@@ -2446,7 +2453,51 @@ namespace E3Core.UI.Windows.CharacterSettings
 						_state.Show_AddModal = true;
 					}
 					Render_TwoColumn_TableText("##SpellEditor_BeforeEvent", "Before Event:", currentSpell.BeforeEventKeys, (u) => { currentSpell.BeforeEventKeys = u; });
+					imgui_SameLine();
+					if (imgui_Button("Pick##BeforeEventPicker"))
+					{
+						//specify what property name on the spells object to update
+						var pd = data.GetActiveCharacterIniData();
+						if (pd != null)
+						{
+							var iniEvents = pd.Sections.GetSectionData("Events");
+							if (iniEvents != null)
+							{
+								spellEditorState.ResetGenericPicker();
+								spellEditorState.GenericPickerSingleSelection = true;
+								spellEditorState.GenericPickerFieldName = "BeforeEventKeys";
+						
+								foreach (var key in iniEvents.Keys) //need to populate the list to show to the user
+								{
+									spellEditorState.GenericPickerList.Add(key.KeyName);
+								}
+								spellEditorState.ShowGenericPicker = true;
+							}
+						}
+					}
 					Render_TwoColumn_TableText("##SpellEditor_AfterEvent", "After Event:", currentSpell.AfterEventKeys, (u) => { currentSpell.AfterEventKeys = u; });
+					imgui_SameLine();
+					if (imgui_Button("Pick##AfterEventPicker"))
+					{
+						//specify what property name on the spells object to update
+						var pd = data.GetActiveCharacterIniData();
+						if (pd != null)
+						{
+							var iniEvents = pd.Sections.GetSectionData("Events");
+							if (iniEvents != null)
+							{
+								spellEditorState.ResetGenericPicker();
+								spellEditorState.GenericPickerSingleSelection = true;
+								spellEditorState.GenericPickerFieldName = "AfterEventKeys";
+
+								foreach (var key in iniEvents.Keys) //need to populate the list to show to the user
+								{
+									spellEditorState.GenericPickerList.Add(key.KeyName);
+								}
+								spellEditorState.ShowGenericPicker = true;
+							}
+						}
+					}
 					Render_TwoColumn_TableText("##SpellEditor_Regent", "Regent:", currentSpell.Reagent, (u) => { currentSpell.Reagent = u; });
 				}
 			}
@@ -2478,7 +2529,7 @@ namespace E3Core.UI.Windows.CharacterSettings
 					imgui_SameLine();
 					if(imgui_Button("Pick##ExcludedClassesBtn"))
 					{
-						spellEditorState.GenericPickerList.Clear();
+						spellEditorState.ResetGenericPicker();
 						spellEditorState.GenericPickerList.AddRange(EQClasses.ClassShortNames);
 						spellEditorState.GenericPickerFieldName = "ExcludedClasses";
 						spellEditorState.ShowGenericPicker = true;
@@ -2506,7 +2557,7 @@ namespace E3Core.UI.Windows.CharacterSettings
 					if (imgui_Button("Pick##ExcludedNamesBtn"))
 					{
 						var bots = E3.Bots.BotsConnected();
-						spellEditorState.GenericPickerList.Clear();
+						spellEditorState.ResetGenericPicker();
 						spellEditorState.GenericPickerList.AddRange(bots);
 						spellEditorState.GenericPickerFieldName = "ExcludedNames";
 						spellEditorState.ShowGenericPicker = true;

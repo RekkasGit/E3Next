@@ -146,8 +146,18 @@ namespace E3Core.UI.Windows.CharacterSettings
 		public const float SpellEditorDefaultNumberWidth = 140f;
 		public const float SpellEditorDefaultCheckboxWidth = 20f;
 
+
+		public void ResetGenericPicker()
+		{
+			GenericPickerList.Clear();
+			GenericPickerFieldName = String.Empty;
+			GenericPickerSingleSelection = false;
+			
+		}
+
 		public List<string> GenericPickerList = new List<string>();
 		public string GenericPickerFieldName = String.Empty;
+		public bool GenericPickerSingleSelection = false;
 		public bool ShowGenericPicker
 		{
 			get { return imgui_Begin_OpenFlagGet(WinName_GenericPickerWindow); }
@@ -172,7 +182,10 @@ namespace E3Core.UI.Windows.CharacterSettings
 			ShowCastTargetHelper = false;
 			ShowCastTargetPicker = false;
 			ShowGenericPicker = false;
-		}
+			GenericPickerList.Clear();
+		    GenericPickerFieldName = String.Empty;
+		    GenericPickerSingleSelection = false;
+	}
 	}
 	public class State_CatalogGems
 	{

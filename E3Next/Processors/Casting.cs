@@ -991,24 +991,29 @@ namespace E3Core.Processors
 				string tevent = Ifs_Results(spell.BeforeEvent);
 
 				bool internalComand = false;
-				foreach (var pair in EventProcessor.CommandList)
+
+				//if we don't have any tlo calls
+				if (!tevent.Contains("${"))
 				{
-					string compareCommandTo = pair.Key;
-					if (tevent.Contains(" "))
+					foreach (var pair in EventProcessor.CommandList)
 					{
-						compareCommandTo = pair.Value.commandwithSpace;
-					}
-					if (tevent.StartsWith(compareCommandTo, StringComparison.OrdinalIgnoreCase))
-					{
-						internalComand = true;
-						//no need to send this to mq if its our own command, just drop it into the queues to be processed. 
-						EventProcessor.ProcessInternalCommandAndExecute(tevent, pair.Value.command);
-						break;
+						string compareCommandTo = pair.Key;
+						if (tevent.Contains(" "))
+						{
+							compareCommandTo = pair.Value.commandwithSpace;
+						}
+						if (tevent.StartsWith(compareCommandTo, StringComparison.OrdinalIgnoreCase))
+						{
+							internalComand = true;
+							//no need to send this to mq if its our own command, just drop it into the queues to be processed. 
+							EventProcessor.ProcessInternalCommandAndExecute(tevent, pair.Value.command);
+							break;
+						}
 					}
 				}
+				
 				if (!internalComand)
 				{
-				
 					MQ.Cmd($"/docommand {tevent}");
 				}
 				if (spell.BeforeEvent.StartsWith("/exchange", StringComparison.OrdinalIgnoreCase)) MQ.Delay(500);
@@ -1031,29 +1036,28 @@ namespace E3Core.Processors
 				string tevent = Ifs_Results(spell.AfterEvent);
 
 				bool internalComand = false;
-				foreach (var pair in EventProcessor.CommandList)
+				if (!tevent.Contains("${"))
 				{
-					string compareCommandTo = pair.Key;
-					if (tevent.Contains(" "))
+					foreach (var pair in EventProcessor.CommandList)
 					{
-						compareCommandTo = pair.Value.commandwithSpace;
-					}
-					if (tevent.StartsWith(compareCommandTo, StringComparison.OrdinalIgnoreCase))
-					{
-						internalComand = true;
-						EventProcessor.ProcessInternalCommandAndExecute(tevent, pair.Value.command);
-						break;
+						string compareCommandTo = pair.Key;
+						if (tevent.Contains(" "))
+						{
+							compareCommandTo = pair.Value.commandwithSpace;
+						}
+						if (tevent.StartsWith(compareCommandTo, StringComparison.OrdinalIgnoreCase))
+						{
+							internalComand = true;
+							EventProcessor.ProcessInternalCommandAndExecute(tevent, pair.Value.command);
+							break;
+						}
 					}
 				}
 				if (!internalComand)
 				{
-
 					MQ.Cmd($"/docommand {tevent}");
 				}
-
-				
 			}
-
 		}
 		private static void AfterSpellCheck(Spell spell, Int32 targetID)
 		{
