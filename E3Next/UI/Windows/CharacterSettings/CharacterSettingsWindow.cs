@@ -554,7 +554,7 @@ namespace E3Core.UI.Windows.CharacterSettings
 			imgui_SameLine();
 			using (var child = ImGUIChild.Aquire())
 			{
-				if (child.BeginChild("E3Config_ToolsPane", toolsWidth, availY, (int)(ImGuiChildFlags.Borders | ImGuiChildFlags.ResizeY), 0))
+				if (child.BeginChild("E3Config_ToolsPane", toolsWidth, 0, (int)(ImGuiChildFlags.Borders | ImGuiChildFlags.ResizeY), 0))
 				{
 					Render_MainWindow_ConfigEditor_Tools(pd);
 				}
@@ -581,6 +581,28 @@ namespace E3Core.UI.Windows.CharacterSettings
 							state.SelectedAddInLine = "Ifs";
 							state.SelectedSection = "Ifs";
 							state.SelectedValueIndex = -1;
+						}
+					}
+				}
+			}
+			else if (sectionName.Equals("CommandSets", StringComparison.OrdinalIgnoreCase))
+			{
+				using (var popup = ImGUIPopUpContext.Aquire())
+				{
+					if (popup.BeginPopupContextItem(null, 1))
+					{
+						imgui_PushStyleColor((int)ImGuiCol.Text, 0.95f, 0.85f, 0.35f, 1.0f);
+						bool addBurn = imgui_MenuItem("Add New Command Set");
+						imgui_PopStyleColor(1);
+
+						if (addBurn)
+						{
+							_state.ClearAddInLine();
+							state.Show_AddKey = true;
+							state.SelectedAddInLine = "CommandSets";
+							state.SelectedSection = "CommandSets";
+							state.SelectedValueIndex = -1;
+
 						}
 					}
 				}

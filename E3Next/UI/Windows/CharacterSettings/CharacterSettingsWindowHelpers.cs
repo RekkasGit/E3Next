@@ -75,7 +75,7 @@ namespace E3Core.UI.Windows.CharacterSettings
 		public static readonly HashSet<string> _customKeySections = new HashSet<string>(StringComparer.OrdinalIgnoreCase) { "Burn", "CommandSets", "Ifs", "Events", "E3BotsPublishData (key/value)", "EventLoopTiming", "EventRegMatches" };
 		public static readonly Dictionary<string, List<string>> _stringCollectionSections = new Dictionary<string, List<string>>(StringComparer.OrdinalIgnoreCase) 
 		{ { "Startup Commands",new List<string>() }, {"CommandSets", new List<string>() }, {"Zoning Commands", new List<string>() },
-		{ "Manastone",new List<string>(){ "ExceptionMQQuery","ExceptionZone"} },
+		{ "Manastone",new List<string>(){ "ExceptionMQQuery","ExceptionZone"} },{ "Heals",new List<string>(){ "Tank","Important Bot","Pet Owner"} }
 		};
 
 		public static readonly Dictionary<string, List<string>> _singleEntryKeys = new Dictionary<string, List<string>>(StringComparer.OrdinalIgnoreCase) 
@@ -1530,18 +1530,18 @@ namespace E3Core.UI.Windows.CharacterSettings
 			// Class-prioritized defaults similar to e3config
 			var cls = E3.CurrentClass;
 			List<String> currentOrder = _configSectionOrderDefault;
-			if (cls.ToString().Equals("Bard", StringComparison.OrdinalIgnoreCase))
-			{
-				currentOrder = _configSectionOrderBard;
-			}
-			else if (cls.ToString().Equals("Necromancer", StringComparison.OrdinalIgnoreCase))
-			{
-				currentOrder = _configSectionOrderNecro;
-			}
-			else if (cls.ToString().Equals("Shadowknight", StringComparison.OrdinalIgnoreCase))
-			{
-				currentOrder = _configSectionOrderSK;
-			}
+			//if (cls.ToString().Equals("Bard", StringComparison.OrdinalIgnoreCase))
+			//{
+			//	currentOrder = _configSectionOrderBard;
+			//}
+			//else if (cls.ToString().Equals("Necromancer", StringComparison.OrdinalIgnoreCase))
+			//{
+			//	currentOrder = _configSectionOrderNecro;
+			//}
+			//else if (cls.ToString().Equals("Shadowknight", StringComparison.OrdinalIgnoreCase))
+			//{
+			//	currentOrder = _configSectionOrderSK;
+			//}
 			mainWindowState.SectionsOrdered.Clear();
 			// Seed ordered list with defaults that exist in the INI
 			foreach (var d in currentOrder)
