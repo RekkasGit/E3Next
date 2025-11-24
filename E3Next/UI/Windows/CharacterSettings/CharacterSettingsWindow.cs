@@ -259,33 +259,35 @@ namespace E3Core.UI.Windows.CharacterSettings
 				imgui_InputText_Clear(searchId); //necessary to clear out the C++ buffer for the search
 				mainWindowState.Buffer_KeySearch = string.Empty;
 			}
-			imgui_SameLine();
-			imgui_Text("View Mode:");
-			imgui_SameLine();
-			if (imgui_Button(allPlayerState.ShowWindow ? "Switch to Character View" : "Switch to All Players View"))
-			{
-				allPlayerState.ShowWindow = !allPlayerState.ShowWindow;
-			}
-			imgui_SameLine();
-			imgui_TextColored(0.3f, 0.8f, 0.3f, 1.0f, allPlayerState.ShowWindow ? "All Players Mode" : "Character Mode");
+			//imgui_SameLine();
+
+			//disable view mode for now
+			//imgui_Text("View Mode:");
+			//imgui_SameLine();
+			//if (imgui_Button(allPlayerState.ShowWindow ? "Switch to Character View" : "Switch to All Players View"))
+			//{
+			//	allPlayerState.ShowWindow = !allPlayerState.ShowWindow;
+			//}
+			//imgui_SameLine();
+			//imgui_TextColored(0.3f, 0.8f, 0.3f, 1.0f, allPlayerState.ShowWindow ? "All Players Mode" : "Character Mode");
 
 			imgui_Separator();
 
 
-			if (allPlayerState.ShowWindow)
-			{
-				string currentSig = $"{mainWindowState.SelectedSection}::{mainWindowState.SelectedKey}";
-				if (!string.Equals(currentSig, mainWindowState.SignatureOfSelectedKeyValue, StringComparison.OrdinalIgnoreCase))
-				{
-					mainWindowState.SignatureOfSelectedKeyValue = currentSig;
-					lock (allPlayerState.DataLock)
-					{
-						allPlayerState.Data_Rows = new List<KeyValuePair<string, string>>();
-						allPlayerState.Data_Edit = new Dictionary<string, string>(StringComparer.OrdinalIgnoreCase);
-					}
-					_state.Request_AllplayersRefresh = true;
-				}
-			}
+			//if (allPlayerState.ShowWindow)
+			//{
+			//	string currentSig = $"{mainWindowState.SelectedSection}::{mainWindowState.SelectedKey}";
+			//	if (!string.Equals(currentSig, mainWindowState.SignatureOfSelectedKeyValue, StringComparison.OrdinalIgnoreCase))
+			//	{
+			//		mainWindowState.SignatureOfSelectedKeyValue = currentSig;
+			//		lock (allPlayerState.DataLock)
+			//		{
+			//			allPlayerState.Data_Rows = new List<KeyValuePair<string, string>>();
+			//			allPlayerState.Data_Edit = new Dictionary<string, string>(StringComparer.OrdinalIgnoreCase);
+			//		}
+			//		_state.Request_AllplayersRefresh = true;
+			//	}
+			//}
 		}
 		public static void Render_MainWindow_CharIniSelector()
 		{
