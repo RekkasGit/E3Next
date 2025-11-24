@@ -719,7 +719,7 @@ namespace E3Core.Processors
 									if (_spawns.TryByName(name, out var s))
 									{
 										string classShortName = s.ClassShortName;
-										if (spell.CastTarget.Equals(classShortName, StringComparison.OrdinalIgnoreCase))
+										if (t_target.Equals(classShortName, StringComparison.OrdinalIgnoreCase))
 										{
 											string previousTarget = spell.CastTarget;
 											try
