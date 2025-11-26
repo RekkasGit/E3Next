@@ -91,7 +91,7 @@ namespace E3Core.UI.Windows.CharacterSettings
 			}
 
 			// Toggle the in-game ImGui config window
-			EventProcessor.RegisterCommand("/e3imgui", (x) =>
+			EventProcessor.RegisterCommand("/e3config", (x) =>
 			{
 
 				if (Core._MQ2MonoVersion < 0.35m)
