@@ -479,7 +479,7 @@ namespace E3Core.UI.Windows.CharacterSettings
 
 				}
 			}
-			
+
 
 		}
 
@@ -540,7 +540,7 @@ namespace E3Core.UI.Windows.CharacterSettings
 
 			//// Tools pane takes remaining space
 			//toolsWidth = Math.Max(120f, availX - valuesWidth - spacing);
-		
+
 			//using(var parent = ImGUIChild.Aquire())
 			{
 				//if(parent.BeginChild("E3Config_Values_UpperContainer",valuesWidth,400f, (int)(ImGuiChildFlags.Borders | ImGuiChildFlags.ResizeX | ImGuiChildFlags.ResizeY), 0))
@@ -570,9 +570,9 @@ namespace E3Core.UI.Windows.CharacterSettings
 						}
 					}
 				}
-				
+
 			}
-			
+
 
 		}
 		public static void Render_MainWindow_ConfigEditor_SelectionTree_ContextMenus(string sectionName)
@@ -1146,7 +1146,7 @@ namespace E3Core.UI.Windows.CharacterSettings
 
 				}
 			}
-		
+
 		}
 		#region RenderSelectedKeyValues
 		// Helper method to render values for the selected key
@@ -1418,15 +1418,23 @@ namespace E3Core.UI.Windows.CharacterSettings
 				}
 
 				imgui_SameLine();
-				if (parts.Count > 1)
+
+				if (imgui_Button($"X##delete_{itemUid}"))
 				{
-					if (imgui_Button($"X##delete_{itemUid}"))
+					//need to delete the current index
+
+					if (parts.Count == 1)
 					{
-						//need to delete the current index
-						parts.RemoveAt(i);
-						mainWindowState.ConfigIsDirty = true;
+						parts[0] = String.Empty;
 					}
+					else
+					{
+						parts.RemoveAt(i);
+					}
+
+					mainWindowState.ConfigIsDirty = true;
 				}
+
 
 				// If a change was made, we need to refresh the parts list for subsequent iterations
 				if (listChanged)
@@ -1735,7 +1743,7 @@ namespace E3Core.UI.Windows.CharacterSettings
 								var vals = GetValues(key);
 								if (mainWindowState.SelectedValueIndex >= 0 && mainWindowState.SelectedValueIndex < vals.Count)
 								{
-									if(vals.Count==1)
+									if (vals.Count == 1)
 									{
 										vals[0] = String.Empty;
 									}
@@ -2110,15 +2118,15 @@ namespace E3Core.UI.Windows.CharacterSettings
 						//_log.WriteDelayed($"Is hashset<string> selected entries:[{String.Join(",", hashset)}]");
 						selectedEntries.AddRange(hashset);
 					}
-					else if(fieldInfo.FieldType==typeof(string))
+					else if (fieldInfo.FieldType == typeof(string))
 					{
 						//_log.WriteDelayed("Is string");
 
 						selectedEntries = SplitCSVToList((string)fieldInfo.GetValue(currentSpell));
 					}
-				
 
-						
+
+
 					imgui_TextColored(0.95f, 0.85f, 0.35f, 1.0f, $"selectable items ({spellEditorState.GenericPickerList.Count})");
 					imgui_Separator();
 					const float listWidth = 320f;
@@ -2142,8 +2150,8 @@ namespace E3Core.UI.Windows.CharacterSettings
 									if (imgui_Checkbox(checkboxId, selected))
 									{
 										bool newState = imgui_Checkbox_Get(checkboxId);
-										
-										ToggleGenericSpellEntry(currentSpell, selection, newState,fieldInfo, spellEditorState.GenericPickerSingleSelection);
+
+										ToggleGenericSpellEntry(currentSpell, selection, newState, fieldInfo, spellEditorState.GenericPickerSingleSelection);
 										spellEditorState.IsDirty = true;
 									}
 									idx++;
@@ -2301,7 +2309,7 @@ namespace E3Core.UI.Windows.CharacterSettings
 			{
 				var fieldType = fieldInfo.FieldType;
 				//should check generic arguments, but just assume all hashsets are of type string
-				if(fieldInfo.FieldType.IsGenericType && fieldType.GetGenericTypeDefinition()==typeof(HashSet<>))
+				if (fieldInfo.FieldType.IsGenericType && fieldType.GetGenericTypeDefinition() == typeof(HashSet<>))
 				{
 					_log.WriteDelayed("Is hashset<string>");
 					var entries = (HashSet<string>)fieldInfo.GetValue(spell);
@@ -2319,12 +2327,12 @@ namespace E3Core.UI.Windows.CharacterSettings
 					}
 
 				}
-				else if(fieldType==typeof(string))
+				else if (fieldType == typeof(string))
 				{
 					_log.WriteDelayed("Is string");
-					if(singleSelection)
+					if (singleSelection)
 					{
-						fieldInfo.SetValue(spell,entry );
+						fieldInfo.SetValue(spell, entry);
 					}
 					else
 					{
@@ -2345,7 +2353,7 @@ namespace E3Core.UI.Windows.CharacterSettings
 
 						}
 						fieldInfo.SetValue(spell, string.Join(",", entries));
-					}	
+					}
 				}
 			}
 		}
@@ -2434,7 +2442,7 @@ namespace E3Core.UI.Windows.CharacterSettings
 					Render_TwoColumn_TableText("##SpellEditor_TriggerSpell", "Trigger Spell:", currentSpell.TriggerSpell, (u) => { currentSpell.TriggerSpell = u; });
 				}
 			}
-			
+
 		}
 		private static void Render_MainWindow_SpellEditor_Tab_Resources()
 		{
@@ -2512,8 +2520,8 @@ namespace E3Core.UI.Windows.CharacterSettings
 					imgui_TableSetupColumn("Label", (int)LabelColumnFlags, 0f);
 					imgui_TableSetupColumn("Value", (int)ValueColumnFlags, 0f);
 					Render_TwoColumn_TableText("##SpellEditor_BeforeSpell", "Before Spell:", currentSpell.BeforeSpell, (u) => { currentSpell.BeforeSpell = u; });
-					imgui_SameLine(); 
-					if(imgui_Button("Pick##BeforeSpellPicker"))
+					imgui_SameLine();
+					if (imgui_Button("Pick##BeforeSpellPicker"))
 					{
 						spellEditorState.GenericPickerFieldName = "BeforeSpell";
 						_state.Show_AddModal = true;
@@ -2539,7 +2547,7 @@ namespace E3Core.UI.Windows.CharacterSettings
 								spellEditorState.ResetGenericPicker();
 								spellEditorState.GenericPickerSingleSelection = true;
 								spellEditorState.GenericPickerFieldName = "BeforeEventKeys";
-						
+
 								foreach (var key in iniEvents.Keys) //need to populate the list to show to the user
 								{
 									spellEditorState.GenericPickerList.Add(key.KeyName);
@@ -2600,7 +2608,7 @@ namespace E3Core.UI.Windows.CharacterSettings
 					}, tooltip: "Short class name: IE: WAR,PAL,SHD comma seperated");
 
 					imgui_SameLine();
-					if(imgui_Button("Pick##ExcludedClassesBtn"))
+					if (imgui_Button("Pick##ExcludedClassesBtn"))
 					{
 						spellEditorState.ResetGenericPicker();
 						spellEditorState.GenericPickerList.AddRange(EQClasses.ClassShortNames);
@@ -3060,7 +3068,7 @@ namespace E3Core.UI.Windows.CharacterSettings
 						if (imgui_ButtonEx($"{addLabel}##add_selected", buttonWidth, 0))
 						{
 							//addeding to a spell object instead
-							if(!String.IsNullOrWhiteSpace(spellEditorState.GenericPickerFieldName) && mainWindowState.Currently_EditableSpell!=null)
+							if (!String.IsNullOrWhiteSpace(spellEditorState.GenericPickerFieldName) && mainWindowState.Currently_EditableSpell != null)
 							{
 								string spellNameToAdd = (catalogState.SelectedCategorySpell.CastName ?? string.Empty).Trim();
 								Type type = mainWindowState.Currently_EditableSpell.GetType();
@@ -3914,7 +3922,7 @@ namespace E3Core.UI.Windows.CharacterSettings
 
 			string entryLabel = $"[{mainWindowState.SelectedSection}] {mainWindowState.SelectedKey} entry #{mainWindowState.SelectedValueIndex + 1}";
 
-			
+
 			// Header row with title on left and buttons on right
 			imgui_TextColored(0.95f, 0.85f, 0.35f, 1.0f, entryLabel);
 			// Position Apply/Reset buttons on the same line, aligned to the right
@@ -4032,7 +4040,7 @@ namespace E3Core.UI.Windows.CharacterSettings
 			}
 			string preview = previewString;
 			imgui_TextWrapped(string.IsNullOrEmpty(preview) ? "(empty)" : preview);
-		
+
 			if (spellEditorState.ShowGenericPicker)
 			{
 				Render_Generic_PickerWindow();
