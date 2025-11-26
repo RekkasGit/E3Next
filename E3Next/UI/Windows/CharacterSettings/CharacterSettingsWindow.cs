@@ -445,7 +445,12 @@ namespace E3Core.UI.Windows.CharacterSettings
 			SectionData activeSection = data.GetCurrentSectionData();
 			Render_Active_Windows(activeSection);
 			//Display memorized spells if available from catalog data (safe)
-			Render_MainWindow_CatalogGemData();
+
+			var onlineToons = data.GetOnlineToonNames();
+			if (data.IsIniForOnlineToon(state.CurrentINIFileNameFull, onlineToons))
+			{
+				Render_MainWindow_CatalogGemData();
+			}
 		}
 
 		private static void Render_MainWindow_ConfigEditor_RightPane(IniData pd)

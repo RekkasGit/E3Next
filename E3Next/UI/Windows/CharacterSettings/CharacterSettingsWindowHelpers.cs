@@ -758,7 +758,6 @@ namespace E3Core.UI.Windows.CharacterSettings
 		{
 			//put lower case as zeromq is case sensitive
 			targetToon = targetToon.ToLower();
-
 			//have to make a network call and wait for a response. 
 			System.Threading.Tasks.Task.Run(() =>
 			{
