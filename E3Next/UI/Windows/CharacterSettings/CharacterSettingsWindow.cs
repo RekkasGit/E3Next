@@ -452,32 +452,35 @@ namespace E3Core.UI.Windows.CharacterSettings
 		{
 			var state = _state.GetState<State_MainWindow>();
 			float paneAvailY = imgui_GetContentRegionAvailY();
-			float reservedSpellEditorSpace = (state.Show_ShowIntegratedEditor && state.SelectedValueIndex >= 0) ? 340f : 0f;
+			float reservedSpellEditorSpace = (state.Show_ShowIntegratedEditor && state.SelectedValueIndex >= 0) ? 380f : 0f;
 			float contentHeight = Math.Max(160f, paneAvailY - reservedSpellEditorSpace);
 			bool showSpellEditor = state.Show_ShowIntegratedEditor && state.SelectedValueIndex >= 0;
 
 
 			using (var child = ImGUIChild.Aquire())
 			{
-				if (child.BeginChild("E3Config_EditorPane_Content", 0, contentHeight, (int)(ImGuiChildFlags.Borders | ImGuiChildFlags.ResizeX | ImGuiChildFlags.ResizeY), 0))
+				if (child.BeginChild("E3Config_EditorPane_Content", 0, paneAvailY, (int)(ImGuiChildFlags.Borders | ImGuiChildFlags.ResizeX | ImGuiChildFlags.ResizeY), 0))
 				{
 					Render_MainWindow_ConfigEditor_RightPaneContent(pd, showSpellEditor);
-				}
-			}
 
-			if (showSpellEditor)
-			{
-				imgui_Separator();
-				using (var child = ImGUIChild.Aquire())
-				{
-					if (child.BeginChild("E3Config_EditorPane_Content_SpellEditor", 0, 0, (int)(ImGuiChildFlags.Borders | ImGuiChildFlags.ResizeX | ImGuiChildFlags.ResizeY), 0))
+					if (showSpellEditor)
 					{
 
-						Render_MainWindow_SpellEditor();
-					}
-				}
+						using (var child2 = ImGUIChild.Aquire())
+						{
+							if (child2.BeginChild("E3Config_EditorPane_Content_SpellEditor", 0, 0, (int)(ImGuiChildFlags.Borders | ImGuiChildFlags.ResizeX | ImGuiChildFlags.ResizeY), 0))
+							{
 
+								Render_MainWindow_SpellEditor();
+							}
+						}
+
+					}
+
+				}
 			}
+			
+
 		}
 
 		private static void Render_MainWindow_ConfigEditor_RightPaneContent(IniData pd, bool spellEditorShown)
@@ -485,82 +488,91 @@ namespace E3Core.UI.Windows.CharacterSettings
 			var state = _state.GetState<State_MainWindow>();
 			float availX = imgui_GetContentRegionAvailX();
 			float availY = imgui_GetContentRegionAvailY();
-			float spacing = 6f;
-			float minValuesWidth = 320f;
-			float minToolsWidth = 240f;
-			float valuesWidth;
-			float toolsWidth;
-			float totalMinWidth = minValuesWidth + minToolsWidth + spacing;
+			//float spacing = 6f;
+			//float minValuesWidth = 320f;
+			//float minToolsWidth = 240f;
+			//float valuesWidth;
+			//float toolsWidth;
+			//float totalMinWidth = minValuesWidth + minToolsWidth + spacing;
 
-			if (spellEditorShown) availY = availY / 2;
+			//if (spellEditorShown) availY = availY *.50f;
 
-			// Initialize stored width on first run or use stored width
-			if (state.RightPaneValuesWidth < 0)
+			//// Initialize stored width on first run or use stored width
+			//if (state.RightPaneValuesWidth < 0)
+			//{
+			//	// First time initialization - calculate default width
+			//	if (availX <= totalMinWidth)
+			//	{
+			//		valuesWidth = Math.Max(200f, availX * 0.55f);
+			//		toolsWidth = Math.Max(140f, availX - valuesWidth - spacing);
+			//		if (toolsWidth < 120f)
+			//		{
+			//			toolsWidth = 120f;
+			//			valuesWidth = Math.Max(180f, availX - toolsWidth - spacing);
+			//		}
+			//	}
+			//	else
+			//	{
+			//		float desiredToolsWidth = Math.Max(minToolsWidth, availX * 0.34f);
+			//		float maxToolsWidth = Math.Max(minToolsWidth, availX - minValuesWidth - spacing);
+			//		if (desiredToolsWidth > maxToolsWidth)
+			//		{
+			//			desiredToolsWidth = maxToolsWidth;
+			//		}
+			//		toolsWidth = desiredToolsWidth;
+			//		valuesWidth = Math.Max(minValuesWidth, availX - toolsWidth - spacing);
+			//	}
+
+			//	valuesWidth = Math.Max(160f, valuesWidth);
+			//	if (valuesWidth + toolsWidth + spacing > availX)
+			//	{
+			//		valuesWidth = Math.Max(160f, availX - toolsWidth - spacing);
+			//	}
+
+			//	state.RightPaneValuesWidth = valuesWidth;
+			//}
+			//else
+			//{
+			//	// Use stored width, but clamp to reasonable bounds
+			//	valuesWidth = state.RightPaneValuesWidth;
+			//	valuesWidth = Math.Max(160f, Math.Min(valuesWidth, availX - minToolsWidth - spacing));
+			//}
+
+			//// Tools pane takes remaining space
+			//toolsWidth = Math.Max(120f, availX - valuesWidth - spacing);
+		
+			//using(var parent = ImGUIChild.Aquire())
 			{
-				// First time initialization - calculate default width
-				if (availX <= totalMinWidth)
+				//if(parent.BeginChild("E3Config_Values_UpperContainer",valuesWidth,400f, (int)(ImGuiChildFlags.Borders | ImGuiChildFlags.ResizeX | ImGuiChildFlags.ResizeY), 0))
 				{
-					valuesWidth = Math.Max(200f, availX * 0.55f);
-					toolsWidth = Math.Max(140f, availX - valuesWidth - spacing);
-					if (toolsWidth < 120f)
+					using (var child = ImGUIChild.Aquire())
 					{
-						toolsWidth = 120f;
-						valuesWidth = Math.Max(180f, availX - toolsWidth - spacing);
+						if (child.BeginChild("E3Config_ValuesPane", 0, 400f, (int)(ImGuiChildFlags.Borders | ImGuiChildFlags.ResizeX | ImGuiChildFlags.ResizeY), 0))
+						{
+							Render_MainWindow_ConfigEditor_Values(pd);
+						}
+					}
+
+
+					// Store the actual width after user potentially resized it
+					float newValuesWidth = imgui_GetItemRectMaxX() - imgui_GetItemRectMinX();
+					if (newValuesWidth > 0 && Math.Abs(newValuesWidth - state.RightPaneValuesWidth) > 0.5f)
+					{
+						state.RightPaneValuesWidth = newValuesWidth;
+					}
+
+					imgui_SameLine();
+					using (var child = ImGUIChild.Aquire())
+					{
+						if (child.BeginChild("E3Config_ToolsPane", 0, 400f, (int)(ImGuiChildFlags.Borders | ImGuiChildFlags.ResizeY), 0))
+						{
+							Render_MainWindow_ConfigEditor_Tools(pd);
+						}
 					}
 				}
-				else
-				{
-					float desiredToolsWidth = Math.Max(minToolsWidth, availX * 0.34f);
-					float maxToolsWidth = Math.Max(minToolsWidth, availX - minValuesWidth - spacing);
-					if (desiredToolsWidth > maxToolsWidth)
-					{
-						desiredToolsWidth = maxToolsWidth;
-					}
-					toolsWidth = desiredToolsWidth;
-					valuesWidth = Math.Max(minValuesWidth, availX - toolsWidth - spacing);
-				}
-
-				valuesWidth = Math.Max(160f, valuesWidth);
-				if (valuesWidth + toolsWidth + spacing > availX)
-				{
-					valuesWidth = Math.Max(160f, availX - toolsWidth - spacing);
-				}
-
-				state.RightPaneValuesWidth = valuesWidth;
+				
 			}
-			else
-			{
-				// Use stored width, but clamp to reasonable bounds
-				valuesWidth = state.RightPaneValuesWidth;
-				valuesWidth = Math.Max(160f, Math.Min(valuesWidth, availX - minToolsWidth - spacing));
-			}
-
-			// Tools pane takes remaining space
-			toolsWidth = Math.Max(120f, availX - valuesWidth - spacing);
-			using (var child = ImGUIChild.Aquire())
-			{
-				if (child.BeginChild("E3Config_ValuesPane", valuesWidth, availY, (int)(ImGuiChildFlags.Borders | ImGuiChildFlags.ResizeX | ImGuiChildFlags.ResizeY), 0))
-				{
-					Render_MainWindow_ConfigEditor_Values(pd);
-				}
-			}
-
-
-			// Store the actual width after user potentially resized it
-			float newValuesWidth = imgui_GetItemRectMaxX() - imgui_GetItemRectMinX();
-			if (newValuesWidth > 0 && Math.Abs(newValuesWidth - state.RightPaneValuesWidth) > 0.5f)
-			{
-				state.RightPaneValuesWidth = newValuesWidth;
-			}
-
-			imgui_SameLine();
-			using (var child = ImGUIChild.Aquire())
-			{
-				if (child.BeginChild("E3Config_ToolsPane", toolsWidth, 0, (int)(ImGuiChildFlags.Borders | ImGuiChildFlags.ResizeY), 0))
-				{
-					Render_MainWindow_ConfigEditor_Tools(pd);
-				}
-			}
+			
 
 		}
 		public static void Render_MainWindow_ConfigEditor_SelectionTree_ContextMenus(string sectionName)
@@ -977,134 +989,141 @@ namespace E3Core.UI.Windows.CharacterSettings
 				if (!_state.State_GemsAvailable || gemState.Gems == null) return;
 
 			}
-
-			try
+			using (var child = ImGUIChild.Aquire())
 			{
-				imgui_Separator();
-
-				// Show header with source info
-				string sourceText = gemState.Source.StartsWith("Remote") ? "Memorized Spells" : "Currently Memorized Spells";
-				imgui_TextColored(0.8f, 0.9f, 1.0f, 1.0f, sourceText);
-
-				if (gemState.Source.StartsWith("Remote"))
+				if (child.BeginChild("E3Config_GemDataArea", 0, 0, (int)(ImGuiChildFlags.Borders | ImGuiChildFlags.ResizeY), 0))
 				{
-					imgui_SameLine();
-					imgui_TextColored(0.7f, 1.0f, 0.7f, 1.0f, $"({gemState.Source.Replace("Remote (", "").Replace(")", "")})")
-;
-				}
-				using (var table = ImGUITable.Aquire())
-				{
-					if (table.BeginTable("E3CatalogGems", 12, (int)(ImGuiTableFlags.ImGuiTableFlags_Borders | ImGuiTableFlags.ImGuiTableFlags_SizingStretchSame), imgui_GetContentRegionAvailX(), 0))
+					try
 					{
-						// Column headers
-						for (int gem = 1; gem <= 12; gem++)
+						imgui_Separator();
+
+						// Show header with source info
+						string sourceText = gemState.Source.StartsWith("Remote") ? "Memorized Spells" : "Currently Memorized Spells";
+						imgui_TextColored(0.8f, 0.9f, 1.0f, 1.0f, sourceText);
+
+						if (gemState.Source.StartsWith("Remote"))
 						{
-							imgui_TableSetupColumn($"Gem {gem}", (int)ImGuiTableColumnFlags.ImGuiTableColumnFlags_WidthStretch, 1.0f);
+							imgui_SameLine();
+							imgui_TextColored(0.7f, 1.0f, 0.7f, 1.0f, $"({gemState.Source.Replace("Remote (", "").Replace(")", "")})")
+		;
 						}
-						imgui_TableHeadersRow();
-						imgui_TableNextRow();
-
-						// Display gem data from catalog
-						for (int gem = 0; gem < 12; gem++)
+						using (var table = ImGUITable.Aquire())
 						{
-							imgui_TableNextColumn();
-
-							Int32 spellID = -1;
-							Int32.TryParse(gemState.Gems[gem], out spellID);
-
-							string spellName = MQ.Query<string>($"${{Spell[{spellID}]}}", false);
-
-							if (!string.IsNullOrEmpty(spellName) && !spellName.Equals("NULL", StringComparison.OrdinalIgnoreCase) && !spellName.Equals("ERROR", StringComparison.OrdinalIgnoreCase))
+							if (table.BeginTable("E3CatalogGems", 12, (int)(ImGuiTableFlags.ImGuiTableFlags_Borders | ImGuiTableFlags.ImGuiTableFlags_SizingStretchSame), imgui_GetContentRegionAvailX(), 0))
 							{
-								// Get spell icon index for this gem
-								int iconIndex = (gemState.GemIcons != null && gem < gemState.GemIcons.Length) ? gemState.GemIcons[gem] : -1;
-
-								// Display spell icon using native EQ texture
-								if (iconIndex >= 0)
+								// Column headers
+								for (int gem = 1; gem <= 12; gem++)
 								{
-									imgui_DrawSpellIconByIconIndex(iconIndex, 40.0f);
+									imgui_TableSetupColumn($"Gem {gem}", (int)ImGuiTableColumnFlags.ImGuiTableColumnFlags_WidthStretch, 1.0f);
 								}
+								imgui_TableHeadersRow();
+								imgui_TableNextRow();
 
-								// Try to find spell info for color coding
-								if (_state.State_CatalogReady)
+								// Display gem data from catalog
+								for (int gem = 0; gem < 12; gem++)
 								{
-									var spellInfo = data.FindSpellItemAAByName(spellName);
-									if (spellInfo != null && spellInfo.Level > 0)
+									imgui_TableNextColumn();
+
+									Int32 spellID = -1;
+									Int32.TryParse(gemState.Gems[gem], out spellID);
+
+									string spellName = MQ.Query<string>($"${{Spell[{spellID}]}}", false);
+
+									if (!string.IsNullOrEmpty(spellName) && !spellName.Equals("NULL", StringComparison.OrdinalIgnoreCase) && !spellName.Equals("ERROR", StringComparison.OrdinalIgnoreCase))
 									{
-										// Color code by spell level
-										float r = 0.9f, g = 0.9f, b = 0.9f;
-										if (spellInfo.Level <= 10) { r = 0.7f; g = 1.0f; b = 0.7f; }
-										else if (spellInfo.Level <= 50) { r = 0.9f; g = 0.9f; b = 0.7f; }
-										else if (spellInfo.Level <= 85) { r = 1.0f; g = 0.8f; b = 0.6f; }
-										else { r = 1.0f; g = 0.7f; b = 0.7f; }
+										// Get spell icon index for this gem
+										int iconIndex = (gemState.GemIcons != null && gem < gemState.GemIcons.Length) ? gemState.GemIcons[gem] : -1;
 
-										// Only show details in tooltip (no inline name)
-										if (imgui_IsItemHovered())
+										// Display spell icon using native EQ texture
+										if (iconIndex >= 0)
 										{
-											imgui_SetNextWindowSize(200, 200);
-											using (var tooltip = ImGUIToolTip.Aquire())
-											{
-												imgui_Text($"Spell: {spellName}");
-												imgui_Text($"Level: {spellInfo.Level}");
-												if (iconIndex >= 0)
-													imgui_Text($"Icon: {iconIndex}");
-												if (!string.IsNullOrEmpty(spellInfo.Description))
-												{
-													imgui_Separator();
-													imgui_TextWrapped(spellInfo.Description);
-												}
-											}
-
+											imgui_DrawSpellIconByIconIndex(iconIndex, 40.0f);
 										}
 
+										// Try to find spell info for color coding
+										if (_state.State_CatalogReady)
+										{
+											var spellInfo = data.FindSpellItemAAByName(spellName);
+											if (spellInfo != null && spellInfo.Level > 0)
+											{
+												// Color code by spell level
+												float r = 0.9f, g = 0.9f, b = 0.9f;
+												if (spellInfo.Level <= 10) { r = 0.7f; g = 1.0f; b = 0.7f; }
+												else if (spellInfo.Level <= 50) { r = 0.9f; g = 0.9f; b = 0.7f; }
+												else if (spellInfo.Level <= 85) { r = 1.0f; g = 0.8f; b = 0.6f; }
+												else { r = 1.0f; g = 0.7f; b = 0.7f; }
+
+												// Only show details in tooltip (no inline name)
+												if (imgui_IsItemHovered())
+												{
+													imgui_SetNextWindowSize(200, 200);
+													using (var tooltip = ImGUIToolTip.Aquire())
+													{
+														imgui_Text($"Spell: {spellName}");
+														imgui_Text($"Level: {spellInfo.Level}");
+														if (iconIndex >= 0)
+															imgui_Text($"Icon: {iconIndex}");
+														if (!string.IsNullOrEmpty(spellInfo.Description))
+														{
+															imgui_Separator();
+															imgui_TextWrapped(spellInfo.Description);
+														}
+													}
+
+												}
+
+											}
+											else
+											{
+												// Only show details in tooltip (no inline name)
+												// Add basic hover tooltip
+												if (imgui_IsItemHovered())
+												{
+													using (var tooltip = ImGUIToolTip.Aquire())
+													{
+														imgui_Text($"Spell: {spellName}");
+														if (iconIndex >= 0) imgui_Text($"Icon: {iconIndex}");
+													}
+												}
+											}
+										}
+										else
+										{
+											imgui_TextColored(0.9f, 0.9f, 0.9f, 1.0f, spellName);
+
+											// Add basic hover tooltip
+											if (imgui_IsItemHovered())
+											{
+												using (var tooltip = ImGUIToolTip.Aquire())
+												{
+													imgui_Text($"Spell: {spellName}");
+													if (iconIndex >= 0) imgui_Text($"Icon: {iconIndex}");
+												}
+											}
+										}
+									}
+									else if (spellName == "ERROR")
+									{
+										imgui_TextColored(0.8f, 0.4f, 0.4f, 1.0f, "(error)");
 									}
 									else
 									{
-										// Only show details in tooltip (no inline name)
-										// Add basic hover tooltip
-										if (imgui_IsItemHovered())
-										{
-											using (var tooltip = ImGUIToolTip.Aquire())
-											{
-												imgui_Text($"Spell: {spellName}");
-												if (iconIndex >= 0) imgui_Text($"Icon: {iconIndex}");
-											}
-										}
+										imgui_TextColored(0.5f, 0.5f, 0.5f, 1.0f, "(empty)");
 									}
 								}
-								else
-								{
-									imgui_TextColored(0.9f, 0.9f, 0.9f, 1.0f, spellName);
-
-									// Add basic hover tooltip
-									if (imgui_IsItemHovered())
-									{
-										using (var tooltip = ImGUIToolTip.Aquire())
-										{
-											imgui_Text($"Spell: {spellName}");
-											if (iconIndex >= 0) imgui_Text($"Icon: {iconIndex}");
-										}
-									}
-								}
-							}
-							else if (spellName == "ERROR")
-							{
-								imgui_TextColored(0.8f, 0.4f, 0.4f, 1.0f, "(error)");
-							}
-							else
-							{
-								imgui_TextColored(0.5f, 0.5f, 0.5f, 1.0f, "(empty)");
 							}
 						}
-					}
-				}
-				// Use horizontal table for gem display
+						// Use horizontal table for gem display
 
+					}
+					catch (Exception ex)
+					{
+						imgui_TextColored(0.8f, 0.4f, 0.4f, 1.0f, $"Error displaying gems: {ex.Message}");
+					}
+
+				}
 			}
-			catch (Exception ex)
-			{
-				imgui_TextColored(0.8f, 0.4f, 0.4f, 1.0f, $"Error displaying gems: {ex.Message}");
-			}
+		
 		}
 		#region RenderSelectedKeyValues
 		// Helper method to render values for the selected key
@@ -1693,7 +1712,14 @@ namespace E3Core.UI.Windows.CharacterSettings
 								var vals = GetValues(key);
 								if (mainWindowState.SelectedValueIndex >= 0 && mainWindowState.SelectedValueIndex < vals.Count)
 								{
-									vals.RemoveAt(mainWindowState.SelectedValueIndex);
+									if(vals.Count==1)
+									{
+										vals[0] = String.Empty;
+									}
+									else
+									{
+										vals.RemoveAt(mainWindowState.SelectedValueIndex);
+									}
 									mainWindowState.SelectedValueIndex = -1; // Clear selection after delete
 									data.RefreshEditableSpellState(force: true);
 
