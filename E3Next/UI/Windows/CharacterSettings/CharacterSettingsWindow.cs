@@ -731,6 +731,29 @@ namespace E3Core.UI.Windows.CharacterSettings
 					}
 				}
 			}
+			else if (sectionName.Equals("E3BotsPublishData", StringComparison.OrdinalIgnoreCase)
+				|| sectionName.Equals("E3BotsPublishData (key/value)", StringComparison.OrdinalIgnoreCase))
+			{
+				using (var popup = ImGUIPopUpContext.Aquire())
+				{
+					if (popup.BeginPopupContextItem(null, 1))
+					{
+						imgui_PushStyleColor((int)ImGuiCol.Text, 0.95f, 0.85f, 0.35f, 1.0f);
+						bool addKey = imgui_MenuItem("Add New Key Value");
+						imgui_PopStyleColor(1);
+
+						if (addKey)
+						{
+							_state.ClearAddInLine();
+							state.Show_AddKey = true;
+							state.SelectedAddInLine = sectionName;
+							state.SelectedSection = sectionName;
+							state.SelectedValueIndex = -1;
+
+						}
+					}
+				}
+			}
 		}
 		public static void Render_MainWindow_ConfigEditor_SelectionTree(IniData pd)
 		{
