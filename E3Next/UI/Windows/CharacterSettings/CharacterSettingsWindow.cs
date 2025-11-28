@@ -2399,6 +2399,7 @@ namespace E3Core.UI.Windows.CharacterSettings
 					imgui_TableSetupColumn("Label", (int)LabelColumnFlags, 0f);
 					imgui_TableSetupColumn("Value", (int)ValueColumnFlags, 0f);
 					Render_TwoColumn_TableText("##SpellEditor_ifsKeys", "Ifs Keys:", currentSpell.IfsKeys, (u) => { currentSpell.IfsKeys = u; });
+					Render_InlineHelpButton("SpellEditor_IfsKeysHelp", "Comma-separated keys from the [Ifs] section. Every referenced conditional must evaluate true before this entry can fire.");
 					imgui_SameLine();
 					if (imgui_Button("Select Ifs##IfsGenericPickerBtn"))
 					{
@@ -2442,10 +2443,15 @@ namespace E3Core.UI.Windows.CharacterSettings
 							}
 						}
 					});
+					Render_InlineHelpButton("SpellEditor_CheckForHelp", "Comma-separated spell names to check. For detrimental entries it looks at the mob's debuffs; for buffs/songs it checks the target buff list. If any entry already exists the cast is skipped.");
 					Render_TwoColumn_TableText("##SpellEditor_CastIfs", "Cast If:", currentSpell.CastIF, (u) => { currentSpell.CastIF = u; });
+					Render_InlineHelpButton("SpellEditor_CastIfHelp", "Only cast when the target already has this exact buff/debuff active. Leave blank to skip this dependency.");
 					Render_TwoColumn_TableText("##SpellEditor_Zone", "Zone:", currentSpell.Zone, (u) => { currentSpell.Zone = u; });
+					Render_InlineHelpButton("SpellEditor_ZoneHelp", "Comma-separated EQ short zone names that allow this entry. Leave blank to enable it everywhere.");
 					Render_TwoColumn_TableText("##SpellEditor_MinSick", "Min Sick:", currentSpell.MinSick.ToString(), (u) => { Int32.TryParse(u, out currentSpell.MinSick); });
+					Render_InlineHelpButton("SpellEditor_MinSickHelp", "Minimum number of allies showing the matching debuff before this cure entry fires.");
 					Render_TwoColumn_TableText("##SpellEditor_TriggerSpell", "Trigger Spell:", currentSpell.TriggerSpell, (u) => { currentSpell.TriggerSpell = u; });
+					Render_InlineHelpButton("SpellEditor_TriggerSpellHelp", "Optional metadata: note the spell this entry triggers so other tools know what effect to expect.");
 				}
 			}
 
@@ -2467,14 +2473,23 @@ namespace E3Core.UI.Windows.CharacterSettings
 					imgui_TableSetupColumn("Value", (int)ValueColumnFlags, 0f);
 
 					Render_TwoColumn_TableInt("##SpellEditor_MinMana", "Min Mana:", currentSpell.MinMana, (u) => { currentSpell.MinMana = u; });
+					Render_InlineHelpButton("SpellEditor_MinManaHelp", "Require at least this mana percent before the entry can fire.");
 					Render_TwoColumn_TableInt("##SpellEditor_MinEnd", "Min End:", currentSpell.MinEnd, (u) => { currentSpell.MinEnd = u; });
+					Render_InlineHelpButton("SpellEditor_MinEndHelp", "Minimum endurance percent needed to allow this ability to cast.");
 					Render_TwoColumn_TableInt("##SpellEditor_MinPctHP", "Min HP%:", currentSpell.MinHP, (u) => { currentSpell.MinEnd = u; });
+					Render_InlineHelpButton("SpellEditor_MinHPPctHelp", "Require your HP percent to be at least this value before casting (handy for cannibalization rules).");
 					Render_TwoColumn_TableInt("##SpellEditor_MinHPTotal", "Min HP%:", currentSpell.MinHPTotal, (u) => { currentSpell.MinHPTotal = u; });
+					Render_InlineHelpButton("SpellEditor_MinHPTotalHelp", "Minimum absolute HP you must have before the entry is eligible.");
 					Render_TwoColumn_TableInt("##SpellEditor_HealPct", "Heal %:", currentSpell.HealPct, (u) => { currentSpell.HealPct = u; });
+					Render_InlineHelpButton("SpellEditor_HealPctHelp", "Start this heal when the target falls to this HP percent or lower.");
 					Render_TwoColumn_TableInt("##SpellEditor_HealthMax", "Cancel Heal Above %:", currentSpell.HealthMax, (u) => { currentSpell.HealthMax = u; });
-					Render_TwoColumn_TableInt("##SpellEditor_PctAggro", "Pct Aggro:", currentSpell.PctAggro, (u) => { currentSpell.PctAggro = u; }, tooltip: "Skip this entry if your current aggro percent exceeds the specified threshold.");
-					Render_TwoColumn_TableInt("##SpellEditor_MinAggro", "Min Aggro:", currentSpell.MinAggro, (u) => { currentSpell.MinAggro = u; }, tooltip: "Only cast when your aggro percent is at least this value (helps gate low-threat openers).");
-					Render_TwoColumn_TableInt("##SpellEditor_MaxAggro", "Max Aggro:", currentSpell.MaxAggro, (u) => { currentSpell.MaxAggro = u; }, tooltip: "Do not cast once your aggro percent is above this value (useful for backing off).");
+					Render_InlineHelpButton("SpellEditor_HealthMaxHelp", "Abort the cast if the target climbs above this HP percent while casting.");
+					Render_TwoColumn_TableInt("##SpellEditor_PctAggro", "Pct Aggro:", currentSpell.PctAggro, (u) => { currentSpell.PctAggro = u; });
+					Render_InlineHelpButton("SpellEditor_PctAggroHelp", "Skip the entry whenever your aggro percent exceeds this cap.");
+					Render_TwoColumn_TableInt("##SpellEditor_MinAggro", "Min Aggro:", currentSpell.MinAggro, (u) => { currentSpell.MinAggro = u; });
+					Render_InlineHelpButton("SpellEditor_MinAggroHelp", "Only cast once your aggro percent is at least this value.");
+					Render_TwoColumn_TableInt("##SpellEditor_MaxAggro", "Max Aggro:", currentSpell.MaxAggro, (u) => { currentSpell.MaxAggro = u; });
+					Render_InlineHelpButton("SpellEditor_MaxAggroHelp", "Hold off whenever your aggro percent meets or exceeds this limit.");
 				}
 			}
 		}
@@ -2495,18 +2510,29 @@ namespace E3Core.UI.Windows.CharacterSettings
 					imgui_TableSetupColumn("Value", (int)ValueColumnFlags, 0f);
 
 					Render_TwoColumn_TableInt("##SpellEditor_Delay", "Delay:", currentSpell.Delay, (u) => { currentSpell.Delay = u; });
+					Render_InlineHelpButton("SpellEditor_DelayHelp", "Seconds to pause after a successful cast before this entry can fire again.");
 					Render_TwoColumn_TableInt("##SpellEditor_RecastDelay", "Recast Delay:", currentSpell.RecastDelay, (u) => { currentSpell.RecastDelay = u; });
+					Render_InlineHelpButton("SpellEditor_RecastDelayHelp", "Extra cooldown (in seconds) inserted before reusing this entry.");
 					Render_TwoColumn_TableInt("##SpellEditor_DelayBeforeRecast", "Min Duration Before Recast:", (int)currentSpell.MinDurationBeforeRecast, (u) => { currentSpell.MinDurationBeforeRecast = u; });
+					Render_InlineHelpButton("SpellEditor_MinDurationHelp", "Minimum duration (seconds) that must elapse before the spell is considered for recast—great for songs/buffs.");
 					Render_TwoColumn_TableInt("##SpellEditor_BeforeSpellDelay", "Before Spell Delay:", currentSpell.BeforeSpellDelay, (u) => { currentSpell.BeforeSpellDelay = u; });
+					Render_InlineHelpButton("SpellEditor_BeforeSpellDelayHelp", "Milliseconds to wait just before casting this entry.");
 					Render_TwoColumn_TableInt("##SpellEditor_AfterSpellDelay", "After Spell Delay:", currentSpell.AfterSpellDelay, (u) => { currentSpell.AfterSpellDelay = u; });
+					Render_InlineHelpButton("SpellEditor_AfterSpellDelayHelp", "Milliseconds to pause immediately after this spell completes before moving on.");
 
 					Render_TwoColumn_TableInt("##SpellEditor_BeforeEventDelay", "Before Event Delay:", currentSpell.BeforeEventDelay, (u) => { currentSpell.BeforeEventDelay = u; });
+					Render_InlineHelpButton("SpellEditor_BeforeEventDelayHelp", "Milliseconds to wait before firing the configured event hook.");
 					Render_TwoColumn_TableInt("##SpellEditor_AfterEventDelay", "After Event Delay:", currentSpell.AfterEventDelay, (u) => { currentSpell.AfterEventDelay = u; });
+					Render_InlineHelpButton("SpellEditor_AfterEventDelayHelp", "Milliseconds to wait after triggering the event before continuing.");
 
 					Render_TwoColumn_TableInt("##SpellEditor_AfterCastDelay", "After Cast Delay:", currentSpell.AfterCastDelay, (u) => { currentSpell.AfterCastDelay = u; });
+					Render_InlineHelpButton("SpellEditor_AfterCastDelayHelp", "Milliseconds to pause after the cast bar finishes but before spell gems refresh.");
 					Render_TwoColumn_TableInt("##SpellEditor_AfterCastCompletedDelay", "After Cast Completed Delay:", currentSpell.AfterCastCompletedDelay, (u) => { currentSpell.AfterCastCompletedDelay = u; });
+					Render_InlineHelpButton("SpellEditor_AfterCastCompletedDelayHelp", "Milliseconds to pause once the spell window fully closes (after recast timers reset).");
 					Render_TwoColumn_TableInt("##SpellEditor_MaxTries", "Max Tries:", currentSpell.MaxTries, (u) => { currentSpell.MaxTries = u; });
+					Render_InlineHelpButton("SpellEditor_MaxTriesHelp", "How many times to attempt a debuff/dot before giving up.");
 					Render_TwoColumn_TableInt("##SpellEditor_SongRefreshTime", "Song Refresh Time:", currentSpell.SongRefreshTime, (u) => { currentSpell.SongRefreshTime = u; });
+					Render_InlineHelpButton("SpellEditor_SongRefreshHelp", "Seconds of duration that must remain before a song is eligible for refresh.");
 				}
 			}
 		}
@@ -2526,6 +2552,7 @@ namespace E3Core.UI.Windows.CharacterSettings
 					imgui_TableSetupColumn("Label", (int)LabelColumnFlags, 0f);
 					imgui_TableSetupColumn("Value", (int)ValueColumnFlags, 0f);
 					Render_TwoColumn_TableText("##SpellEditor_BeforeSpell", "Before Spell:", currentSpell.BeforeSpell, (u) => { currentSpell.BeforeSpell = u; });
+					Render_InlineHelpButton("SpellEditor_BeforeSpellHelp", "Ensure this entry only fires after the named spell finishes.");
 					imgui_SameLine();
 					if (imgui_Button("Pick##BeforeSpellPicker"))
 					{
@@ -2533,6 +2560,7 @@ namespace E3Core.UI.Windows.CharacterSettings
 						_state.Show_AddModal = true;
 					}
 					Render_TwoColumn_TableText("##SpellEditor_AfterSpell", "After Spell:", currentSpell.AfterSpell, (u) => { currentSpell.AfterSpell = u; });
+					Render_InlineHelpButton("SpellEditor_AfterSpellHelp", "Queue this spell immediately after the specified entry completes.");
 					imgui_SameLine();
 					if (imgui_Button("Pick##AfterSpellPicker"))
 					{
@@ -2540,6 +2568,7 @@ namespace E3Core.UI.Windows.CharacterSettings
 						_state.Show_AddModal = true;
 					}
 					Render_TwoColumn_TableText("##SpellEditor_BeforeEvent", "Before Event:", currentSpell.BeforeEventKeys, (u) => { currentSpell.BeforeEventKeys = u; });
+					Render_InlineHelpButton("SpellEditor_BeforeEventHelp", "Only cast when this event chain is the next scheduled action.");
 					imgui_SameLine();
 					if (imgui_Button("Pick##BeforeEventPicker"))
 					{
@@ -2563,6 +2592,7 @@ namespace E3Core.UI.Windows.CharacterSettings
 						}
 					}
 					Render_TwoColumn_TableText("##SpellEditor_AfterEvent", "After Event:", currentSpell.AfterEventKeys, (u) => { currentSpell.AfterEventKeys = u; });
+					Render_InlineHelpButton("SpellEditor_AfterEventHelp", "Kick off the named event right after this spell completes.");
 					imgui_SameLine();
 					if (imgui_Button("Pick##AfterEventPicker"))
 					{
@@ -2586,6 +2616,7 @@ namespace E3Core.UI.Windows.CharacterSettings
 						}
 					}
 					Render_TwoColumn_TableText("##SpellEditor_Regent", "Regent:", currentSpell.Reagent, (u) => { currentSpell.Reagent = u; });
+					Render_InlineHelpButton("SpellEditor_ReagentHelp", "Optional reagent name to associate with this entry when auto-buying or validating consumables.");
 				}
 			}
 
@@ -2677,7 +2708,7 @@ namespace E3Core.UI.Windows.CharacterSettings
 					imgui_TableSetupColumn("FlagColumnSpacer", (int)FlagSpacerColumnFlags, 0f);
 					Render_TwoColumn_TableCheckbox("##Flag_NoInterrupt", "No Interrupt:", currentSpell.NoInterrupt, (u) => { currentSpell.NoInterrupt = u; }, tooltip: "Do not interrupt this cast for emergency heals, nowcasts, or queued commands once the bar starts.");
 					Render_TwoColumn_TableCheckbox("##Flag_IgnoreStackRules", "Ignore Stack Rules:", currentSpell.IgnoreStackRules, (u) => { currentSpell.IgnoreStackRules = u; }, tooltip: "Skip the Spell.StacksTarget check; cast even if EQ reports the effect will not land due to stacking.");
-					Render_TwoColumn_TableCheckbox("##Flag_NoTarget", "No Target:", currentSpell.NoTarget, (u) => { currentSpell.NoTarget = u; }, tooltip: "Leave the current target untouched so the spell can fire on self or without a target lock.\"");
+					Render_TwoColumn_TableCheckbox("##Flag_NoTarget", "No Target:", currentSpell.NoTarget, (u) => { currentSpell.NoTarget = u; }, tooltip: "Leave the current target untouched so the spell can fire on self or without a target lock.");
 					Render_TwoColumn_TableCheckbox("##Flag_NoAggro", "No Aggro:", currentSpell.NoAggro, (u) => { currentSpell.NoAggro = u; }, tooltip: "Suppress this spell if the mob currently has you targeted to reduce aggro spikes.");
 					Render_TwoColumn_TableCheckbox("##Flag_NoMidSongCast", "No Mid Song Cast:", currentSpell.NoMidSongCast, (u) => { currentSpell.NoMidSongCast = u; }, tooltip: "Bards: block this action while a song is already channeling so twisting is not disrupted.");
 					Render_TwoColumn_TableCheckbox("##Flag_GoM", "Gift of Mana Required:", currentSpell.GiftOfMana, (u) => { currentSpell.GiftOfMana = u; }, tooltip: "Only cast when a Gift of Mana-style proc is active, saving mana on expensive spells.");
@@ -3850,6 +3881,21 @@ namespace E3Core.UI.Windows.CharacterSettings
 				string updated = imgui_InputText_Get(id) ?? string.Empty;
 				action.Invoke(updated);
 				spellEditorState.IsDirty = true;
+			}
+		}
+		private static void Render_InlineHelpButton(string idSuffix, string tooltip)
+		{
+			const float helperSpacing = 6f;
+			imgui_SameLine(0f, helperSpacing);
+			if (imgui_Button($"?##{idSuffix}")) { }
+			if (!string.IsNullOrWhiteSpace(tooltip) && imgui_IsItemHovered())
+			{
+				using (var tt = ImGUIToolTip.Aquire())
+				{
+					imgui_PushTextWrapPos(360f);
+					imgui_TextWrapped(tooltip);
+					imgui_PopTextWrapPos();
+				}
 			}
 		}
 		private static void Render_TwoColumn_TableInt(string id, string label, int current, Action<Int32> action, string tooltip = null, float width = State_SpellEditor.SpellEditorDefaultNumberWidth)
