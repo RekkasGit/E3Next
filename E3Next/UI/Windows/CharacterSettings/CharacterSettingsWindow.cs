@@ -247,7 +247,8 @@ namespace E3Core.UI.Windows.CharacterSettings
 			imgui_Text("Search:");
 			imgui_SameLine();
 			imgui_SetNextItemWidth(Math.Max(200f, imgui_GetContentRegionAvailX() * 0.2f));
-			string searchId = $"configKeySearch";
+			// prepend ## so the label is hidden and we only use it as an ID
+			string searchId = $"##configKeySearch";
 			string sectionSearchBefore = mainWindowState.Buffer_KeySearch ?? string.Empty;
 			if (imgui_InputText(searchId, sectionSearchBefore))
 			{
