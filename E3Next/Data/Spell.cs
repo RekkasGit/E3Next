@@ -1465,7 +1465,7 @@ namespace E3Core.Data
             string t_CastTypeOverride = (this.CastTypeOverride == CastingType.None) ? String.Empty : $"/CastType|{CastTypeOverride.ToString()}";
             string t_GemNumber = (this.SpellGem == 0) ? String.Empty : $"/Gem|{SpellGem}";
             string t_Enabled = (Enabled == true) ? String.Empty : $"/Disabled";
-            string t_CastTarget = (String.IsNullOrWhiteSpace(this.CastTarget) || this.IsBuff == false) ? String.Empty : $"/{CastTarget}";
+            string t_CastTarget = (String.IsNullOrWhiteSpace(this.CastTarget)) ? String.Empty : $"/{CastTarget}";
             string t_PctAggro = (PctAggro == 0) ? String.Empty : $"/PctAggro|{PctAggro}";
             string t_MinAggro = (MinAggro == 0) ? String.Empty : $"/MinAggro|{MinAggro}";
             string t_MaxAggro = (MaxAggro == 0) ? String.Empty : $"/MaxAggro|{MaxAggro}";
