@@ -408,7 +408,7 @@ namespace MonoCore
                             }
                         }
                     }
-                    catch (Exception e)
+                    catch (Exception)
                     {
                         //Try catch was added to deal with chinese characters causing some logic issue and forcing the thread to crash. Just catch and eat the exception.
                     }

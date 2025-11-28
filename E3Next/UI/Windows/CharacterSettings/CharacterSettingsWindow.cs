@@ -1076,11 +1076,11 @@ namespace E3Core.UI.Windows.CharacterSettings
 											if (spellInfo != null && spellInfo.Level > 0)
 											{
 												// Color code by spell level
-												float r = 0.9f, g = 0.9f, b = 0.9f;
-												if (spellInfo.Level <= 10) { r = 0.7f; g = 1.0f; b = 0.7f; }
-												else if (spellInfo.Level <= 50) { r = 0.9f; g = 0.9f; b = 0.7f; }
-												else if (spellInfo.Level <= 85) { r = 1.0f; g = 0.8f; b = 0.6f; }
-												else { r = 1.0f; g = 0.7f; b = 0.7f; }
+												//float r = 0.9f, g = 0.9f, b = 0.9f;
+												//if (spellInfo.Level <= 10) { r = 0.7f; g = 1.0f; b = 0.7f; }
+												//else if (spellInfo.Level <= 50) { r = 0.9f; g = 0.9f; b = 0.7f; }
+												//else if (spellInfo.Level <= 85) { r = 1.0f; g = 0.8f; b = 0.6f; }
+												//else { r = 1.0f; g = 0.7f; b = 0.7f; }
 
 												// Only show details in tooltip (no inline name)
 												if (imgui_IsItemHovered())
@@ -4007,7 +4007,7 @@ namespace E3Core.UI.Windows.CharacterSettings
 					}
 					catch (Exception ex)
 					{
-						_log.Write("Exception creating spell from the manual buffer.", Logging.LogLevels.Debug);
+						_log.Write($"Exception creating spell from the manual buffer.{ex.Message}", Logging.LogLevels.Debug);
 					}
 				}
 				//save the value to the current key data

@@ -934,7 +934,7 @@ namespace E3Core.Processors
 						//if (targetid > 0)
 						{
 
-							Spawn s;
+							//Spawn s;
 							//if (_spawns.TryByID(targetid, out s))
 							{
 								if (e3util.IsEQLive())

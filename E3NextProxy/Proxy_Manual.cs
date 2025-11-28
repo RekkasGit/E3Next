@@ -174,7 +174,7 @@ namespace E3NextProxy
 										_publisherSocket.SendMoreFrame(messageTopicReceived).SendFrame(messageReceived);
 										if(_externalProxySubscriberCount > 0) _externalPublisherSocket.SendMoreFrame(messageTopicReceived).SendFrame(messageReceived);
 									}
-									catch (Exception ex)
+									catch (Exception)
 									{
 
 									}

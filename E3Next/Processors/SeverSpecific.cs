@@ -147,7 +147,6 @@ namespace E3Core.Processors
 
 					_petrequester = x.match.Groups[1].ToString();
 
-					Spawn s;
 					//[AoC] EQMight Specific
 
 					if (!_spawns.TryByName(_petrequester, out var s1))
