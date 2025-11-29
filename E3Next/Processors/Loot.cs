@@ -889,7 +889,7 @@ namespace E3Core.Processors
                 {
                     //Retry once
                     lootTryCount++;
-                    if (lootTryCount < 2)
+                    if (lootTryCount < 4)
                     {
                         goto tryandLoot;
                     }
