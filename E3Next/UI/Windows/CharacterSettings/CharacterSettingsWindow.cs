@@ -2478,8 +2478,8 @@ namespace E3Core.UI.Windows.CharacterSettings
 					Render_InlineHelpButton("SpellEditor_MinEndHelp", "Minimum endurance percent needed to allow this ability to cast.");
 					Render_TwoColumn_TableInt("##SpellEditor_MinPctHP", "Min HP%:", currentSpell.MinHP, (u) => { currentSpell.MinEnd = u; });
 					Render_InlineHelpButton("SpellEditor_MinHPPctHelp", "Require your HP percent to be at least this value before casting (handy for cannibalization rules).");
-					Render_TwoColumn_TableInt("##SpellEditor_MinHPTotal", "Min HP%:", currentSpell.MinHPTotal, (u) => { currentSpell.MinHPTotal = u; });
-					Render_InlineHelpButton("SpellEditor_MinHPTotalHelp", "Minimum absolute HP you must have before the entry is eligible.");
+					Render_TwoColumn_TableInt("##SpellEditor_MinHPTotal", "Min HP Total:", currentSpell.MinHPTotal, (u) => { currentSpell.MinHPTotal = u; });
+					Render_InlineHelpButton("SpellEditor_MinHPTotalHelp", "Minimum absolute HP value you must have before the entry is eligible. Mainly for Shaman Canni");
 					Render_TwoColumn_TableInt("##SpellEditor_HealPct", "Heal %:", currentSpell.HealPct, (u) => { currentSpell.HealPct = u; });
 					Render_InlineHelpButton("SpellEditor_HealPctHelp", "Start this heal when the target falls to this HP percent or lower.");
 					Render_TwoColumn_TableInt("##SpellEditor_HealthMax", "Cancel Heal Above %:", currentSpell.HealthMax, (u) => { currentSpell.HealthMax = u; });
