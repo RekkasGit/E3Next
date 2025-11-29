@@ -1688,7 +1688,7 @@ namespace E3Core.UI.Windows.CharacterSettings
 			var mainWindowState = _state.GetState<State_MainWindow>();
 			var bardEditorState = _state.GetState<State_BardEditor>();
 
-			if (mainWindowState.Currently_EditableSpell == null) return;
+			//if (mainWindowState.Currently_EditableSpell == null) return;
 			var kd = data.GetCurrentEditedSpellKeyData();
 			if (kd == null) return;
 
@@ -1842,7 +1842,7 @@ namespace E3Core.UI.Windows.CharacterSettings
 			imgui_Separator();
 
 			// Display selected value information
-			if (mainWindowState.SelectedValueIndex >= 0)
+			if (mainWindowState.Currently_EditableSpell!=null && mainWindowState.SelectedValueIndex >= 0)
 			{
 				var values = GetValues(kd);
 				if (mainWindowState.SelectedValueIndex < values.Count)
